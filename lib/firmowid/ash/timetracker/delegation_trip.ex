@@ -79,9 +79,21 @@ defmodule Firmowid.Ash.Timetracker.DelegationTrip do
 
   attributes do
     uuid_v7_primary_key :id
-    attribute :departure_city, :string, allow_nil?: false, default: "", public?: true
+
+    attribute :departure_city, :string,
+      allow_nil?: false,
+      default: "",
+      constraints: [allow_empty?: true],
+      public?: true
+
     attribute :departure_datetime, :utc_datetime, public?: true
-    attribute :arrival_city, :string, allow_nil?: false, default: "", public?: true
+
+    attribute :arrival_city, :string,
+      allow_nil?: false,
+      default: "",
+      constraints: [allow_empty?: true],
+      public?: true
+
     attribute :arrival_datetime, :utc_datetime, public?: true
     attribute :description, :string, public?: true
     Resource.firmowid_timestamps()

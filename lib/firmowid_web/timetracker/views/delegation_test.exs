@@ -1,11 +1,30 @@
 defmodule FirmowidWeb.Timetracker.Views.DelegationTest do
-  use FirmowidWeb.ConnCase, async: true
+  use FirmowidWeb.ConnCase, async: false
 
   import Firmowid.AccountsFixtures
   import Phoenix.LiveViewTest
 
   alias Firmowid.Ash.Scope
   alias Firmowid.Ash.Timetracker
+
+  defmodule ReductoClient do
+    @moduledoc false
+
+    def extract_file(_path, _schema, _options),
+      do: {:ok, %{"document_number" => "FV/2026/001", "expense_amount" => 123.45}}
+  end
+
+  setup do
+    previous_client = Application.get_env(:firmowid, :reducto_api_client_module)
+    previous_enabled = Application.get_env(:firmowid, :delegation_expense_extraction_enabled)
+    Application.put_env(:firmowid, :reducto_api_client_module, ReductoClient)
+    Application.put_env(:firmowid, :delegation_expense_extraction_enabled, true)
+
+    on_exit(fn ->
+      restore_env(:reducto_api_client_module, previous_client)
+      restore_env(:delegation_expense_extraction_enabled, previous_enabled)
+    end)
+  end
 
   test "renders an approved delegation settlement page", %{conn: conn} do
     {_view, html, _delegation, _scope} = approved_delegation_view(conn)
@@ -34,7 +53,14 @@ defmodule FirmowidWeb.Timetracker.Views.DelegationTest do
         load: [transport_expenses: [:trips]]
       )
 
-    assert [%{trips: [%{departure_city: "-", arrival_city: "-"}]}] = delegation.transport_expenses
+    assert [%{document_number: "FV/2026/001", expense_amount: expense_amount, trips: [trip]}] =
+             delegation.transport_expenses
+
+    assert Money.equal?(expense_amount, Money.new(:PLN, "123.45"))
+    assert trip.departure_city == ""
+    assert trip.arrival_city == ""
+    assert is_nil(trip.departure_datetime)
+    assert is_nil(trip.arrival_datetime)
   end
 
   test "updates a transport trip", %{conn: conn} do
@@ -83,6 +109,40 @@ defmodule FirmowidWeb.Timetracker.Views.DelegationTest do
     assert trip.arrival_city == "Gdańsk"
     assert trip.departure_datetime
     assert trip.arrival_datetime
+  end
+
+  test "leaves unextracted accommodation and other fields blank", %{conn: conn} do
+    {view, _html, delegation, scope} = approved_delegation_view(conn)
+
+    view
+    |> file_input("#accommodation-upload-form", :accommodation, [
+      %{name: "nocleg.pdf", content: "PDF content", type: "application/pdf"}
+    ])
+    |> render_upload("nocleg.pdf")
+
+    view
+    |> file_input("#other-upload-form", :other, [
+      %{name: "inne.pdf", content: "PDF content", type: "application/pdf"}
+    ])
+    |> render_upload("inne.pdf")
+
+    {:ok, delegation} =
+      Timetracker.get_delegation(delegation.id,
+        scope: scope,
+        load: [:accommodation_expenses, :other_expenses]
+      )
+
+    assert [
+             %{
+               document_number: "FV/2026/001",
+               locality: "",
+               arrival_date: nil,
+               departure_date: nil
+             }
+           ] =
+             delegation.accommodation_expenses
+
+    assert [%{document_number: "FV/2026/001", description: ""}] = delegation.other_expenses
   end
 
   test "shows a pending expense while its file uploads", %{conn: conn} do
@@ -169,4 +229,7 @@ defmodule FirmowidWeb.Timetracker.Views.DelegationTest do
 
     {view, html, delegation, scope}
   end
+
+  defp restore_env(key, nil), do: Application.delete_env(:firmowid, key)
+  defp restore_env(key, value), do: Application.put_env(:firmowid, key, value)
 end
