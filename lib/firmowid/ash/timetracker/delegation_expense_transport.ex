@@ -84,6 +84,57 @@ defmodule Firmowid.Ash.Timetracker.DelegationExpenseTransport do
         execute("DROP FUNCTION require_transport_expense_trip()")
         """
       end
+
+      statement :fix_require_trip_trigger do
+        after_tables ["delegation_trip"]
+        code? true
+
+        up """
+        execute(~S|CREATE OR REPLACE FUNCTION require_transport_expense_trip() RETURNS trigger AS $$
+        DECLARE
+          transport_expense_id uuid;
+        BEGIN
+          transport_expense_id := CASE
+            WHEN TG_OP = 'INSERT' THEN (to_jsonb(NEW) ->> 'id')::uuid
+            ELSE (to_jsonb(OLD) ->> 'delegation_expense_transport_id')::uuid
+          END;
+
+          IF EXISTS (SELECT 1 FROM delegation_expense_transport WHERE id = transport_expense_id)
+             AND NOT EXISTS (
+               SELECT 1 FROM delegation_trip
+               WHERE delegation_expense_transport_id = transport_expense_id
+             ) THEN
+            RAISE EXCEPTION 'transport expense must contain at least one trip';
+          END IF;
+
+          RETURN NULL;
+        END;
+        $$ LANGUAGE plpgsql;|)
+        """
+
+        down """
+        execute(~S|CREATE OR REPLACE FUNCTION require_transport_expense_trip() RETURNS trigger AS $$
+        DECLARE
+          transport_expense_id uuid;
+        BEGIN
+          transport_expense_id := CASE
+            WHEN TG_TABLE_NAME = 'delegation_expense_transport' THEN NEW.id
+            ELSE OLD.delegation_expense_transport_id
+          END;
+
+          IF EXISTS (SELECT 1 FROM delegation_expense_transport WHERE id = transport_expense_id)
+             AND NOT EXISTS (
+               SELECT 1 FROM delegation_trip
+               WHERE delegation_expense_transport_id = transport_expense_id
+             ) THEN
+            RAISE EXCEPTION 'transport expense must contain at least one trip';
+          END IF;
+
+          RETURN NULL;
+        END;
+        $$ LANGUAGE plpgsql;|)
+        """
+      end
     end
   end
 
@@ -108,19 +159,16 @@ defmodule Firmowid.Ash.Timetracker.DelegationExpenseTransport do
       ]
 
       change after_action(fn _changeset, expense, context ->
-               now = DateTime.utc_now(:second)
-
-               trip = %DelegationTrip{
-                 id: Ash.UUID.generate(),
-                 departure_city: "",
-                 arrival_city: "",
-                 delegation_expense_transport_id: expense.id,
-                 organization_id: expense.organization_id,
-                 inserted_at: now,
-                 updated_at: now
-               }
-
-               case Firmowid.Repo.insert(trip) do
+               case Ash.create(
+                      DelegationTrip,
+                      %{
+                        departure_city: "-",
+                        arrival_city: "-",
+                        delegation_expense_transport_id: expense.id
+                      },
+                      actor: context.actor,
+                      tenant: context.tenant
+                    ) do
                  {:ok, _trip} -> {:ok, expense}
                  {:error, _reason} = error -> error
                end
