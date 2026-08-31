@@ -51,6 +51,7 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
             editable?={@editable?}
             sort_active?={@sort_active?}
             description_visible?={@description_visible?}
+            timezone={@timezone}
           >
             <:icon><Lucideicons.plane class="size-5" /></:icon>
           </.expense_section>
@@ -62,6 +63,7 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
             editable?={@editable?}
             sort_active?={false}
             description_visible?={@description_visible?}
+            timezone={@timezone}
           >
             <:icon><Lucideicons.bed_double class="size-5" /></:icon>
           </.expense_section>
@@ -73,6 +75,7 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
             editable?={@editable?}
             sort_active?={false}
             description_visible?={@description_visible?}
+            timezone={@timezone}
           >
             <:icon><Lucideicons.wallet class="size-5" /></:icon>
           </.expense_section>
@@ -130,6 +133,7 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
   attr :editable?, :boolean, required: true
   attr :sort_active?, :boolean, required: true
   attr :description_visible?, :map, default: %{}
+  attr :timezone, :string, required: true
 
   defp expense_section(assigns) do
     ~H"""
@@ -214,7 +218,7 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
               label="Wymeldowanie"
             />
             <.expense_description
-              :if={@kind in ["transport", "accommodation"]}
+              :if={@kind == "accommodation"}
               expense={expense}
               kind={@kind}
               visible?={Map.get(@description_visible?, expense.id, false)}
@@ -230,6 +234,13 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
               class="col-span-full"
             />
           </form>
+          <.trip_fields
+            :if={@kind == "transport"}
+            trips={expense.trips || []}
+            editable?={@editable?}
+            timezone={@timezone}
+            description_visible?={@description_visible?}
+          />
         </article>
         <.pending_expense
           :for={entry <- if(@upload, do: @upload.entries, else: [])}
@@ -291,6 +302,133 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
         PLN
       </span>
     </div>
+    """
+  end
+
+  attr :trips, :list, required: true
+  attr :editable?, :boolean, required: true
+  attr :timezone, :string, required: true
+  attr :description_visible?, :map, required: true
+
+  defp trip_fields(assigns) do
+    ~H"""
+    <section :for={trip <- @trips} class="border-grey-100 mt-4 border-t pt-4">
+      <form
+        :if={@editable?}
+        id={"transport-trip-#{trip.id}"}
+        phx-change="update-trip"
+        phx-value-id={trip.id}
+      >
+        <table class="border-separate border-spacing-y-3 text-left text-sm">
+          <thead class="text-grey-500">
+            <tr>
+              <th scope="col"></th>
+              <th scope="col" class="font-normal">Miejscowość</th>
+              <th scope="col" class="font-normal">Data</th>
+              <th scope="col" class="font-normal">Godzina</th>
+              <th scope="col"></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <th scope="row" class="text-grey-700 pr-3 font-normal">Wyjazd</th>
+              <td class="pr-3">
+                <.input
+                  id={"trip-departure-city-#{trip.id}"}
+                  name="departure_city"
+                  value={trip.departure_city}
+                  type="text"
+                  new
+                  aria-label="Miejscowość wyjazdu"
+                  input_class="w-36"
+                />
+              </td>
+              <td class="pr-3">
+                <.input
+                  id={"trip-departure-date-#{trip.id}"}
+                  name="departure_date"
+                  value={date_value(trip.departure_datetime, @timezone)}
+                  type="date"
+                  new
+                  aria-label="Data wyjazdu"
+                  input_class="w-34"
+                />
+              </td>
+              <td>
+                <.input
+                  id={"trip-departure-time-#{trip.id}"}
+                  name="departure_time"
+                  value={time_value(trip.departure_datetime, @timezone)}
+                  type="time"
+                  new
+                  aria-label="Godzina wyjazdu"
+                  input_class="w-24"
+                />
+              </td>
+              <td rowspan="2" class="pl-3 align-bottom">
+                <.button
+                  type="button"
+                  variant="unstyled"
+                  class={[
+                    "block text-sm whitespace-nowrap",
+                    Map.get(@description_visible?, trip.id, false) && "text-red-700"
+                  ]}
+                  phx-click="toggle-description"
+                  phx-value-id={trip.id}
+                >{if Map.get(@description_visible?, trip.id, false),
+                  do: "Usuń opis",
+                  else: "Dodaj opis"}</.button>
+              </td>
+            </tr>
+            <tr>
+              <th scope="row" class="text-grey-700 pr-3 font-normal">Przyjazd</th>
+              <td class="pr-3">
+                <.input
+                  id={"trip-arrival-city-#{trip.id}"}
+                  name="arrival_city"
+                  value={trip.arrival_city}
+                  type="text"
+                  new
+                  aria-label="Miejscowość przyjazdu"
+                  input_class="w-36"
+                />
+              </td>
+              <td class="pr-3">
+                <.input
+                  id={"trip-arrival-date-#{trip.id}"}
+                  name="arrival_date"
+                  value={date_value(trip.arrival_datetime, @timezone)}
+                  type="date"
+                  new
+                  aria-label="Data przyjazdu"
+                  input_class="w-34"
+                />
+              </td>
+              <td>
+                <.input
+                  id={"trip-arrival-time-#{trip.id}"}
+                  name="arrival_time"
+                  value={time_value(trip.arrival_datetime, @timezone)}
+                  type="time"
+                  new
+                  aria-label="Godzina przyjazdu"
+                  input_class="w-24"
+                />
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <.input
+          :if={Map.get(@description_visible?, trip.id, false)}
+          id={"trip-description-#{trip.id}"}
+          name="description"
+          value={trip.description}
+          type="textarea"
+          new
+          label="Opis"
+        />
+      </form>
+    </section>
     """
   end
 
@@ -371,6 +509,17 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
      if(match?({:ok, _}, result),
        do: reload(socket),
        else: put_flash(socket, :error, "Nie udało się zapisać danych.")
+     )}
+  end
+
+  def handle_event("update-trip", %{"id" => id} = params, socket) do
+    result =
+      update_trip(id, trip_attrs(params, socket.assigns.timezone), socket.assigns.ash_scope)
+
+    {:noreply,
+     if(match?({:ok, _}, result),
+       do: reload(socket),
+       else: put_flash(socket, :error, "Nie udało się zapisać trasy.")
      )}
   end
 
@@ -532,6 +681,12 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
 
   defp get_expense("other", id, scope), do: Delegations.get_other_expense(id, scope: scope, not_found_error?: false)
 
+  defp update_trip(id, attrs, scope) do
+    with {:ok, trip} <- Timetracker.get_delegation_trip(id, scope: scope, not_found_error?: false) do
+      Timetracker.update_delegation_trip(trip, attrs, scope: scope)
+    end
+  end
+
   defp update_attrs(kind, params) do
     params
     |> Map.take([
@@ -553,6 +708,52 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
   defp maybe_atom(attrs, _key, kind) when kind != "transport", do: attrs
 
   defp maybe_atom(attrs, key, _kind), do: Map.update(attrs, key, :other, &String.to_existing_atom/1)
+
+  defp trip_attrs(params, timezone) do
+    params
+    |> Map.take(["departure_city", "arrival_city"])
+    |> Map.put(
+      "departure_datetime",
+      parse_datetime(params["departure_date"], params["departure_time"], timezone)
+    )
+    |> Map.put(
+      "arrival_datetime",
+      parse_datetime(params["arrival_date"], params["arrival_time"], timezone)
+    )
+    |> maybe_put_description(params)
+  end
+
+  defp maybe_put_description(attrs, %{"description" => description}), do: Map.put(attrs, "description", description)
+
+  defp maybe_put_description(attrs, _params), do: attrs
+
+  defp parse_datetime("", _time, _timezone), do: nil
+  defp parse_datetime(_date, "", _timezone), do: nil
+  defp parse_datetime(nil, _time, _timezone), do: nil
+  defp parse_datetime(_date, nil, _timezone), do: nil
+
+  defp parse_datetime(date, time, timezone) do
+    with {:ok, naive_datetime} <- NaiveDateTime.from_iso8601("#{date}T#{time}:00"),
+         {:ok, datetime} <- DateTime.from_naive(naive_datetime, timezone) do
+      datetime
+    end
+  end
+
+  defp date_value(nil, _timezone), do: nil
+
+  defp date_value(datetime, timezone) do
+    datetime
+    |> DateTime.shift_zone!(timezone)
+    |> Calendar.strftime("%Y-%m-%d")
+  end
+
+  defp time_value(nil, _timezone), do: nil
+
+  defp time_value(datetime, timezone) do
+    datetime
+    |> DateTime.shift_zone!(timezone)
+    |> Calendar.strftime("%H:%M")
+  end
 
   defp assign_summary(socket) do
     total =
