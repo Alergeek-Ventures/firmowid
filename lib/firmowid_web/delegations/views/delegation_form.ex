@@ -32,8 +32,7 @@ defmodule FirmowidWeb.Delegations.Views.DelegationForm do
   def render(assigns) do
     ~H"""
     <div class="relative mt-4 min-h-screen font-[340]">
-      <.back_link
-        kind="unstyled"
+      <.back
         navigate={~p"/ustawienia/profil"}
         class="absolute top-0 left-0.5 inline-flex text-sm"
       />
