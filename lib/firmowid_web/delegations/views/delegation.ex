@@ -285,8 +285,13 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
       value={@expense.document_number}
       type="text"
       new
-      label="Nr dokumentu"
-    />
+    >
+      <:label_slot>
+        <span class="inline-flex items-center gap-1">
+          <Lucideicons.sparkles class="size-4" aria-hidden="true" /> Nr dokumentu
+        </span>
+      </:label_slot>
+    </.input>
     <div class="flex items-end gap-2">
       <div class="min-w-0 flex-1">
         <.input
@@ -297,9 +302,14 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
           new
           min="0"
           step="0.01"
-          label="Kwota"
           aria-describedby={"expense-amount-currency-#{@expense.id}"}
-        />
+        >
+          <:label_slot>
+            <span class="inline-flex items-center gap-1">
+              <Lucideicons.sparkles class="size-4" aria-hidden="true" /> Kwota
+            </span>
+          </:label_slot>
+        </.input>
       </div>
       <span
         id={"expense-amount-currency-#{@expense.id}"}

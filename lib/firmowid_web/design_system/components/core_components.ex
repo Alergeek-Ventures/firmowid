@@ -398,6 +398,8 @@ defmodule FirmowidWeb.DesignSystem.Components.CoreComponents do
   attr :rest, :global, include: ~w(accept autocomplete capture cols disabled form list max maxlength min minlength
                 multiple pattern placeholder readonly required rows size step)
 
+  slot :label_slot
+
   def input(%{field: %FormField{} = field} = assigns) do
     errors = if Phoenix.Component.used_input?(field), do: field.errors, else: []
 
@@ -576,7 +578,9 @@ defmodule FirmowidWeb.DesignSystem.Components.CoreComponents do
   def input(%{new: true} = assigns) do
     ~H"""
     <div class={@rest[:class]}>
-      <.label :if={@label} for={@id} class={["mb-2", @rest[:class]]}>{@label}</.label>
+      <.label :if={@label || Enum.any?(@label_slot)} for={@id} class={["mb-2", @rest[:class]]}>
+        {if Enum.any?(@label_slot), do: render_slot(@label_slot), else: @label}
+      </.label>
       <input
         type={@type}
         name={@name}
