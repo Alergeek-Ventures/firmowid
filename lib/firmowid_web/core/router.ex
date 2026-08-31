@@ -288,8 +288,8 @@ defmodule FirmowidWeb.Core.Router do
 
       live "/ustawienia", Settings.Views.Index, :index
       live "/ustawienia/:section", Settings.Views.Index, :index
-      live "/delegacje/dodaj", Timetracker.Views.DelegationForm, :new
-      live "/delegacje/:id", Timetracker.Views.Delegation, :show
+      live "/delegacje/dodaj", Delegations.Views.DelegationForm, :new
+      live "/delegacje/:id", Delegations.Views.Delegation, :show
     end
   end
 

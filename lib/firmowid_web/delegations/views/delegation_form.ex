@@ -1,15 +1,15 @@
-defmodule FirmowidWeb.Timetracker.Views.DelegationForm do
+defmodule FirmowidWeb.Delegations.Views.DelegationForm do
   @moduledoc "Form for submitting a new business trip delegation."
 
   use FirmowidWeb, :live_view
 
+  import FirmowidWeb.Delegations.Components.Delegation
   import FirmowidWeb.DesignSystem.Components.Button
   import FirmowidWeb.DesignSystem.Components.CoreComponents, except: [button: 1]
   import FirmowidWeb.DesignSystem.Components.MonthPicker
-  import FirmowidWeb.Timetracker.Components.Delegation
   import Phoenix.Component, except: [link: 1]
 
-  alias Firmowid.Ash.Timetracker.Delegation
+  alias Firmowid.Ash.Delegations.Delegation
 
   @impl true
   def mount(_params, _session, socket) do

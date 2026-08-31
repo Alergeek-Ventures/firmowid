@@ -1,11 +1,11 @@
-defmodule FirmowidWeb.Timetracker.Components.DelegationsList do
+defmodule FirmowidWeb.Delegations.Components.DelegationsList do
   @moduledoc "Shared delegation list for employee profiles and management tabs."
 
   use FirmowidWeb, :html
 
+  import FirmowidWeb.Delegations.Components.Delegation
   import FirmowidWeb.DesignSystem.Components.Button
   import FirmowidWeb.DesignSystem.Components.Link
-  import FirmowidWeb.Timetracker.Components.Delegation
   import Phoenix.Component, except: [link: 1]
 
   attr :delegations, :list, required: true
@@ -50,7 +50,7 @@ defmodule FirmowidWeb.Timetracker.Components.DelegationsList do
       <.link
         :if={@is_link}
         kind="unstyled"
-        navigate={~p"/delegacje/#{@delegation.id}"}
+        navigate={FirmowidWeb.Delegations.Utilities.Navigation.show_path(@delegation.id)}
         class="hover:underline"
       >
         <span class="truncate">{@delegation.title}</span>

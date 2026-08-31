@@ -1,17 +1,17 @@
 # credo:disable-for-this-file AshCredo.Check.Design.MissingPrimaryAction
-defmodule Firmowid.Ash.Timetracker.Delegation do
+defmodule Firmowid.Ash.Delegations.Delegation do
   @moduledoc "A company-funded business trip submitted by an employee."
 
   use Ash.Resource,
     otp_app: :firmowid,
-    domain: Firmowid.Ash.Timetracker,
+    domain: Firmowid.Ash.Delegations,
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer],
     extensions: [AshStateMachine]
 
   alias Firmowid.Ash.Core.User
+  alias Firmowid.Ash.Delegations.Workers.DelegationEmailWorker
   alias Firmowid.Ash.Resource
-  alias Firmowid.Ash.Timetracker.Workers.DelegationEmailWorker
 
   require Resource
 
