@@ -120,8 +120,7 @@ defmodule FirmowidWeb.Management.Views.Counterparty do
     <div class="mx-auto my-4 grid w-full max-w-screen-2xl grid-cols-[96px_minmax(0,1fr)_96px] grid-rows-[repeat(5,max-content)] gap-x-10 gap-y-5">
       <.back
         navigate={Navigation.counterparty_return_path(@params)}
-        class="col-start-1 row-start-1 flex items-center gap-2 self-center text-sm"
-        variant={:outline}
+        class="col-start-1 row-start-1 self-center"
       />
 
       <.page_header counterparty={@counterparty} params={@params} class="col-start-2 row-start-1" />

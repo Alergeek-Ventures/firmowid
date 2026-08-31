@@ -7,21 +7,20 @@ defmodule FirmowidWeb.DesignSystem.Components.CoreComponentsTest do
 
   alias FirmowidWeb.DesignSystem.Components.CoreComponents
 
-  test "renders the text variant with its legacy wrapper and navigate target" do
-    html = render_back(%{navigate: "/posts", variant: :text, label: "Wróć do wpisów"})
+  test "renders the filled link with a custom label and navigate target" do
+    html = render_back(%{navigate: "/posts", label: "Wróć do wpisów"})
 
-    assert html =~ "mt-16"
     assert html =~ "href=\"/posts\""
     assert html =~ "data-phx-link=\"redirect\""
-    assert html =~ "hero-arrow-left-solid"
+    assert html =~ "rounded-full bg-black text-white"
+    assert html =~ "lucide-chevron-left"
     assert html =~ "Wróć do wpisów"
   end
 
-  test "renders the default label on an outline link with a patch target" do
+  test "renders the default label on a link with a patch target" do
     html =
       render_component(&CoreComponents.back/1,
         patch: "/faktury/kreator?krok=1",
-        variant: :outline,
         class: "absolute text-sm"
       )
 
@@ -29,26 +28,24 @@ defmodule FirmowidWeb.DesignSystem.Components.CoreComponentsTest do
     assert html =~ "data-phx-link=\"patch\""
     assert html =~ "absolute text-sm"
     assert html =~ "Wróć"
-    assert html =~ "lucide-circle-chevron-left"
   end
 
-  test "renders an accessible icon-only circular arrow link" do
+  test "renders an accessible icon-only link" do
     html =
       render_component(&CoreComponents.back/1,
         navigate: "/faktury",
-        variant: :solid,
-        aria_label: "Wróć do faktur",
-        icon_class: "size-7"
+        icon_only: true,
+        aria_label: "Wróć do faktur"
       )
 
     assert html =~ "aria-label=\"Wróć do faktur\""
-    assert html =~ "hero-arrow-left-circle-solid"
-    assert html =~ "size-7"
+    assert html =~ "rounded-full bg-black text-white"
+    assert html =~ "lucide-chevron-left"
     refute html =~ ">Wróć<"
   end
 
-  test "renders the filled variant with the default label" do
-    html = render_component(&CoreComponents.back/1, navigate: "/delegacje", variant: :filled)
+  test "renders the default label" do
+    html = render_component(&CoreComponents.back/1, navigate: "/delegacje")
 
     assert html =~ "size-6"
     assert html =~ "rounded-full bg-black text-white"
@@ -59,7 +56,7 @@ defmodule FirmowidWeb.DesignSystem.Components.CoreComponentsTest do
   defp render_back(assigns) do
     assigns =
       Map.merge(
-        %{navigate: nil, patch: nil, class: nil, icon_class: nil, aria_label: "Wróć"},
+        %{navigate: nil, patch: nil, class: nil, icon_only: false, aria_label: "Wróć"},
         assigns
       )
 
@@ -71,9 +68,8 @@ defmodule FirmowidWeb.DesignSystem.Components.CoreComponentsTest do
     <CoreComponents.back
       navigate={@navigate}
       patch={@patch}
-      variant={@variant}
       class={@class}
-      icon_class={@icon_class}
+      icon_only={@icon_only}
       aria_label={@aria_label}
     >
       {@label}

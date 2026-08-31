@@ -970,67 +970,32 @@ defmodule FirmowidWeb.DesignSystem.Components.CoreComponents do
   end
 
   @doc """
-  Renders a back navigation link in one of the supported visual variants.
+  Renders a filled back navigation link.
 
   ## Examples
 
-      <.back navigate={~p"/posts"} variant={:outline} />
-      <.back patch={~p"/faktury/kreator?krok=1"} variant={:outline} />
+      <.back navigate={~p"/posts"} />
+      <.back patch={~p"/faktury/kreator?krok=1"} icon_only />
   """
-  attr :variant, :atom,
-    default: :text,
-    values: [:text, :outline, :solid, :filled]
-
   attr :navigate, :any, default: nil
   attr :patch, :any, default: nil
   attr :class, :any, default: nil
-  attr :icon_class, :any, default: nil
+  attr :icon_only, :boolean, default: false
   attr :aria_label, :string, default: "Wróć"
   slot :inner_block
 
   def back(assigns) do
     ~H"""
-    <div :if={@variant == :text} class="mt-16">
-      <.link
-        navigate={@navigate}
-        patch={@patch}
-        class={["hover:text-darkGrey text-sm/6 font-semibold", @class]}
-      >
-        <.icon name="hero-arrow-left-solid" class={["size-3", @icon_class]} />
-        <.back_label blocks={@inner_block} />
-      </.link>
-    </div>
-
     <.link
-      :if={@variant == :outline}
       navigate={@navigate}
       patch={@patch}
-      class={@class}
-    >
-      <Lucideicons.circle_chevron_left class={@icon_class} />
-      <.back_label blocks={@inner_block} />
-    </.link>
-
-    <.link
-      :if={@variant == :solid}
-      navigate={@navigate}
-      patch={@patch}
-      aria-label={@aria_label}
-      class={@class}
-    >
-      <.icon name="hero-arrow-left-circle-solid" class={@icon_class} />
-    </.link>
-
-    <.link
-      :if={@variant == :filled}
-      navigate={@navigate}
-      patch={@patch}
-      class={["inline-flex items-center gap-2", @class]}
+      aria-label={@icon_only && @aria_label}
+      class={["inline-flex items-center gap-2 text-sm", @class]}
     >
       <span class="inline-flex size-6 items-center justify-center rounded-full bg-black text-white">
-        <Lucideicons.chevron_left class={["size-4", @icon_class]} />
+        <Lucideicons.chevron_left class="size-4" />
       </span>
-      <.back_label blocks={@inner_block} />
+      <.back_label :if={!@icon_only} blocks={@inner_block} />
     </.link>
     """
   end

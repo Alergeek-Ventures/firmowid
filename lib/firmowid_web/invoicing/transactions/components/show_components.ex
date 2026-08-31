@@ -34,8 +34,7 @@ defmodule FirmowidWeb.Invoicing.Transactions.Components.ShowComponents do
     <header class={header_styles(@transaction)}>
       <.back
         navigate={@return_to || default_return_path(@transaction)}
-        variant={:solid}
-        icon_class="size-7"
+        icon_only
       />
 
       <div class="flex min-w-0 flex-col gap-2">
