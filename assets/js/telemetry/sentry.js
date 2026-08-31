@@ -17,21 +17,29 @@ export function initSentry() {
     environment: telemetryConfig.sentryEnvironment,
     release: telemetryConfig.sentryRelease || undefined,
     replaysSessionSampleRate: 0,
-    replaysOnErrorSampleRate: 0,
-    integrations: [
-      replayIntegration({
-        maskAllText: true,
-        blockAllMedia: true
-      })
-    ]
+    replaysOnErrorSampleRate: 0
   });
-
 }
 
 export function enableSentryReplay() {
-  void getReplay()?.start();
+  const client = getClient();
+
+  if (!client || getReplay()) {
+    return;
+  }
+
+  const options = client.getOptions();
+  options.replaysSessionSampleRate = 0;
+  options.replaysOnErrorSampleRate = 1.0;
+
+  client.addIntegration(
+    replayIntegration({
+      maskAllText: true,
+      blockAllMedia: true
+    })
+  );
 }
 
 export function disableSentryReplay() {
-  void getReplay()?.stop();
+  void getReplay()?.stop({ flush: false });
 }
