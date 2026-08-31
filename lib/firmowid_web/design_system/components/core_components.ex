@@ -974,12 +974,12 @@ defmodule FirmowidWeb.DesignSystem.Components.CoreComponents do
 
   ## Examples
 
-      <.back navigate={~p"/posts"} variant={:circle_chevron}>Wróć</.back>
-      <.back patch={~p"/faktury/kreator?krok=1"} variant={:circle_chevron}>Wróć</.back>
+      <.back navigate={~p"/posts"} variant={:outline} />
+      <.back patch={~p"/faktury/kreator?krok=1"} variant={:outline} />
   """
   attr :variant, :atom,
-    default: :plain,
-    values: [:plain, :circle_chevron, :circle_arrow, :delegation]
+    default: :text,
+    values: [:text, :outline, :solid, :filled]
 
   attr :navigate, :any, default: nil
   attr :patch, :any, default: nil
@@ -990,28 +990,29 @@ defmodule FirmowidWeb.DesignSystem.Components.CoreComponents do
 
   def back(assigns) do
     ~H"""
-    <div :if={@variant == :plain} class="mt-16">
+    <div :if={@variant == :text} class="mt-16">
       <.link
         navigate={@navigate}
         patch={@patch}
         class={["hover:text-darkGrey text-sm/6 font-semibold", @class]}
       >
         <.icon name="hero-arrow-left-solid" class={["size-3", @icon_class]} />
-        {render_slot(@inner_block)}
+        <.back_label blocks={@inner_block} />
       </.link>
     </div>
 
     <.link
-      :if={@variant == :circle_chevron}
+      :if={@variant == :outline}
       navigate={@navigate}
       patch={@patch}
       class={@class}
     >
-      <Lucideicons.circle_chevron_left class={@icon_class} /> {render_slot(@inner_block)}
+      <Lucideicons.circle_chevron_left class={@icon_class} />
+      <.back_label blocks={@inner_block} />
     </.link>
 
     <.link
-      :if={@variant == :circle_arrow}
+      :if={@variant == :solid}
       navigate={@navigate}
       patch={@patch}
       aria-label={@aria_label}
@@ -1021,7 +1022,7 @@ defmodule FirmowidWeb.DesignSystem.Components.CoreComponents do
     </.link>
 
     <.link
-      :if={@variant == :delegation}
+      :if={@variant == :filled}
       navigate={@navigate}
       patch={@patch}
       class={["inline-flex items-center gap-2", @class]}
@@ -1029,8 +1030,20 @@ defmodule FirmowidWeb.DesignSystem.Components.CoreComponents do
       <span class="inline-flex size-6 items-center justify-center rounded-full bg-black text-white">
         <Lucideicons.chevron_left class={["size-4", @icon_class]} />
       </span>
-      {render_slot(@inner_block)}
+      <.back_label blocks={@inner_block} />
     </.link>
+    """
+  end
+
+  attr :blocks, :list, required: true
+
+  defp back_label(assigns) do
+    ~H"""
+    <%= if @blocks == [] do %>
+      Wróć
+    <% else %>
+      {render_slot(@blocks)}
+    <% end %>
     """
   end
 

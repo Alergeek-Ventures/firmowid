@@ -35,7 +35,7 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceDetails do
     ]}>
       <.back
         navigate={@return_to || default_return_path(@issue_date)}
-        variant={:circle_arrow}
+        variant={:solid}
         icon_class="size-7"
       />
       <div class="flex flex-col gap-2">

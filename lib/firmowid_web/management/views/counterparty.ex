@@ -121,10 +121,8 @@ defmodule FirmowidWeb.Management.Views.Counterparty do
       <.back
         navigate={Navigation.counterparty_return_path(@params)}
         class="col-start-1 row-start-1 flex items-center gap-2 self-center text-sm"
-        variant={:circle_chevron}
-      >
-        Wróć
-      </.back>
+        variant={:outline}
+      />
 
       <.page_header counterparty={@counterparty} params={@params} class="col-start-2 row-start-1" />
 

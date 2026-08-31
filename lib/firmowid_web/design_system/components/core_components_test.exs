@@ -7,8 +7,8 @@ defmodule FirmowidWeb.DesignSystem.Components.CoreComponentsTest do
 
   alias FirmowidWeb.DesignSystem.Components.CoreComponents
 
-  test "renders the plain variant with its legacy wrapper and navigate target" do
-    html = render_back(%{navigate: "/posts", variant: :plain, label: "Wróć do wpisów"})
+  test "renders the text variant with its legacy wrapper and navigate target" do
+    html = render_back(%{navigate: "/posts", variant: :text, label: "Wróć do wpisów"})
 
     assert html =~ "mt-16"
     assert html =~ "href=\"/posts\""
@@ -17,15 +17,13 @@ defmodule FirmowidWeb.DesignSystem.Components.CoreComponentsTest do
     assert html =~ "Wróć do wpisów"
   end
 
-  test "renders a labeled circular chevron link with a patch target" do
+  test "renders the default label on an outline link with a patch target" do
     html =
-      render_back(%{
-        navigate: nil,
+      render_component(&CoreComponents.back/1,
         patch: "/faktury/kreator?krok=1",
-        variant: :circle_chevron,
-        class: "absolute text-sm",
-        label: "Wróć"
-      })
+        variant: :outline,
+        class: "absolute text-sm"
+      )
 
     assert html =~ "href=\"/faktury/kreator?krok=1\""
     assert html =~ "data-phx-link=\"patch\""
@@ -38,7 +36,7 @@ defmodule FirmowidWeb.DesignSystem.Components.CoreComponentsTest do
     html =
       render_component(&CoreComponents.back/1,
         navigate: "/faktury",
-        variant: :circle_arrow,
+        variant: :solid,
         aria_label: "Wróć do faktur",
         icon_class: "size-7"
       )
@@ -49,8 +47,8 @@ defmodule FirmowidWeb.DesignSystem.Components.CoreComponentsTest do
     refute html =~ ">Wróć<"
   end
 
-  test "renders the delegation variant" do
-    html = render_back(%{navigate: "/delegacje", variant: :delegation, label: "Wróć"})
+  test "renders the filled variant with the default label" do
+    html = render_component(&CoreComponents.back/1, navigate: "/delegacje", variant: :filled)
 
     assert html =~ "size-6"
     assert html =~ "rounded-full bg-black text-white"
