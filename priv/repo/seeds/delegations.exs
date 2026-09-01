@@ -32,17 +32,17 @@ defmodule Firmowid.Seeds.Delegations do
         bytecraft.id
       )
 
-    train_expense =
+    outbound_train_expense =
       seed_transport_expense!(
         train_delegation.id,
         bytecraft.id,
-        "PKP Intercity Wrocław - Kraków - Wrocław",
-        "bilet-pkp-krakow.pdf",
-        Helpers.money!(:PLN, "220.00")
+        "PKP Intercity Wrocław - Kraków",
+        "bilet-pkp-wroclaw-krakow.pdf",
+        Helpers.money!(:PLN, "110.00")
       )
 
     seed_trip!(
-      train_expense.id,
+      outbound_train_expense.id,
       bytecraft.id,
       "Wrocław Główny",
       local_datetime!(monday, ~T[07:30:00]),
@@ -50,8 +50,17 @@ defmodule Firmowid.Seeds.Delegations do
       local_datetime!(monday, ~T[11:00:00])
     )
 
+    return_train_expense =
+      seed_transport_expense!(
+        train_delegation.id,
+        bytecraft.id,
+        "PKP Intercity Kraków - Wrocław",
+        "bilet-pkp-krakow-wroclaw.pdf",
+        Helpers.money!(:PLN, "110.00")
+      )
+
     seed_trip!(
-      train_expense.id,
+      return_train_expense.id,
       bytecraft.id,
       "Kraków Główny",
       local_datetime!(thursday, ~T[18:30:00]),
