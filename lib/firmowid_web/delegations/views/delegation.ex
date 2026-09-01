@@ -6,6 +6,8 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
   import FirmowidWeb.Delegations.Components.Delegation
   import FirmowidWeb.DesignSystem.Components.Button
   import FirmowidWeb.DesignSystem.Components.CoreComponents, except: [button: 1]
+  import FirmowidWeb.DesignSystem.Components.Link
+  import Phoenix.Component, except: [link: 1]
 
   alias Firmowid.Ash.Delegations
   alias Firmowid.Ash.Delegations.DelegationExpenseExtractor
@@ -119,6 +121,7 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
             size="big"
             class="mt-6 w-full"
             phx-click="submit"
+            disabled={@uploading?}
           >Wyślij</.button>
         </aside>
       </main>
@@ -158,7 +161,15 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
       <div class="space-y-3">
         <article :for={expense <- @expenses} class="border-grey-200 rounded-lg border p-4">
           <div class="text-grey-500 flex items-center justify-between gap-3 text-sm">
-            <span class="flex min-w-0 items-center gap-2 truncate"><.icon
+            <.link
+              :if={expense.blob}
+              kind="unstyled"
+              external={expense.blob.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              class="flex min-w-0 items-center gap-2 truncate hover:underline"
+            ><.icon name="hero-document" class="size-5 shrink-0" />{expense.original_filename}</.link>
+            <span :if={!expense.blob} class="flex min-w-0 items-center gap-2 truncate"><.icon
               name="hero-document"
               class="size-5 shrink-0"
             />{expense.original_filename}</span>
@@ -655,11 +666,13 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
   end
 
   @impl true
-  def handle_event("upload", _params, socket), do: {:noreply, socket}
+  def handle_event("upload", _params, socket), do: {:noreply, assign(socket, :uploading?, true)}
 
   def handle_event("update", %{"kind" => kind, "id" => id} = params, socket) do
-    attrs = update_attrs(kind, params)
-    result = update_expense(kind, id, attrs, socket.assigns.ash_scope)
+    result =
+      with {:ok, attrs} <- update_attrs(kind, params) do
+        update_expense(kind, id, attrs, socket.assigns.ash_scope)
+      end
 
     {:noreply,
      if(match?({:ok, _}, result),
@@ -704,6 +717,8 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
   end
 
   def handle_event("submit", _params, %{assigns: %{editable?: false}} = socket), do: {:noreply, socket}
+
+  def handle_event("submit", _params, %{assigns: %{uploading?: true}} = socket), do: {:noreply, socket}
 
   def handle_event("submit", _params, socket) do
     case Delegations.complete_delegation(socket.assigns.delegation.id,
@@ -756,6 +771,7 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
     |> assign(
       delegation: delegation,
       editable?: delegation.status == :in_progress,
+      uploading?: false,
       page_title: "Rozliczenie delegacji",
       sort_active?: sort_active?
     )
@@ -767,7 +783,11 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
     do:
       Delegations.get_delegation(id,
         scope: socket.assigns.ash_scope,
-        load: [:accommodation_expenses, :other_expenses, transport_expenses: [:trips]],
+        load: [
+          accommodation_expenses: [blob: [:url]],
+          other_expenses: [blob: [:url]],
+          transport_expenses: [:trips, blob: [:url]]
+        ],
         not_found_error?: false
       )
 
@@ -808,7 +828,7 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
     )
   end
 
-  defp handle_upload_progress(_kind, %{done?: false}, socket), do: {:noreply, socket}
+  defp handle_upload_progress(_kind, %{done?: false}, socket), do: {:noreply, assign(socket, :uploading?, true)}
 
   defp handle_upload_progress(kind, entry, socket) do
     socket =
@@ -818,6 +838,7 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
                 kind,
                 socket.assigns.delegation.id,
                 entry.client_name,
+                entry.client_type,
                 path,
                 socket.assigns.ash_scope
               )}
@@ -826,24 +847,45 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
         {:error, _reason} -> put_flash(socket, :error, "Nie udało się dodać dokumentu.")
       end
 
-    {:noreply, socket}
+    {:noreply, assign(socket, :uploading?, uploads_in_progress?(socket))}
   end
 
-  defp create_expense(:transport, id, filename, path, scope) do
-    %{delegation_id: id, original_filename: filename}
+  defp create_expense(:transport, id, filename, content_type, path, scope) do
+    %{
+      delegation_id: id,
+      original_filename: filename,
+      document_number: "",
+      expense_amount: Money.new(:PLN, 0),
+      upload_path: path,
+      content_type: content_type
+    }
     |> Map.merge(DelegationExpenseExtractor.extract(path, :transport))
     |> Delegations.create_transport_expense(scope: scope)
   end
 
-  defp create_expense(:accommodation, id, filename, path, scope),
+  defp create_expense(:accommodation, id, filename, content_type, path, scope),
     do:
-      %{delegation_id: id, original_filename: filename}
+      %{
+        delegation_id: id,
+        original_filename: filename,
+        document_number: "",
+        expense_amount: Money.new(:PLN, 0),
+        upload_path: path,
+        content_type: content_type
+      }
       |> Map.merge(DelegationExpenseExtractor.extract(path, :accommodation))
       |> Delegations.create_accommodation_expense(scope: scope)
 
-  defp create_expense(:other, id, filename, path, scope),
+  defp create_expense(:other, id, filename, content_type, path, scope),
     do:
-      %{delegation_id: id, original_filename: filename}
+      %{
+        delegation_id: id,
+        original_filename: filename,
+        document_number: "",
+        expense_amount: Money.new(:PLN, 0),
+        upload_path: path,
+        content_type: content_type
+      }
       |> Map.merge(DelegationExpenseExtractor.extract(path, :other))
       |> Delegations.create_other_expense(scope: scope)
 
@@ -882,26 +924,36 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
   end
 
   defp update_attrs(kind, params) do
-    params
-    |> Map.take([
-      "document_number",
-      "description",
-      "locality",
-      "arrival_date",
-      "departure_date",
-      "transport_type"
-    ])
-    |> maybe_put_amount(params["expense_amount"])
-    |> maybe_atom(:transport_type, kind)
+    with {:ok, attrs} <-
+           maybe_put_amount(Map.take(params, expense_fields()), params["expense_amount"]) do
+      validate_transport_type(attrs, kind)
+    end
   end
 
-  defp maybe_put_amount(attrs, nil), do: attrs
+  defp expense_fields,
+    do: ["document_number", "description", "locality", "arrival_date", "departure_date", "transport_type"]
 
-  defp maybe_put_amount(attrs, amount), do: Map.put(attrs, :expense_amount, Money.new(:PLN, Decimal.new(amount)))
+  defp maybe_put_amount(attrs, nil), do: {:ok, attrs}
 
-  defp maybe_atom(attrs, _key, kind) when kind != "transport", do: attrs
+  defp maybe_put_amount(attrs, amount) do
+    case Decimal.parse(amount) do
+      {decimal, ""} -> {:ok, Map.put(attrs, :expense_amount, Money.new(:PLN, decimal))}
+      _ -> :error
+    end
+  end
 
-  defp maybe_atom(attrs, key, _kind), do: Map.update(attrs, key, :other, &String.to_existing_atom/1)
+  defp validate_transport_type(attrs, kind) when kind != "transport", do: {:ok, attrs}
+
+  defp validate_transport_type(attrs, _kind) do
+    if attrs["transport_type"] in ~w(railway airplane bus other), do: {:ok, attrs}, else: :error
+  end
+
+  defp uploads_in_progress?(socket) do
+    Enum.any?([:transport, :accommodation, :other], fn name ->
+      {_completed, in_progress} = uploaded_entries(socket, name)
+      in_progress != []
+    end)
+  end
 
   defp trip_attrs(params, timezone) do
     params

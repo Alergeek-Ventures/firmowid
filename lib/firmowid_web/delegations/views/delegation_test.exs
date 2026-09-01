@@ -50,13 +50,22 @@ defmodule FirmowidWeb.Delegations.Views.DelegationTest do
     {:ok, delegation} =
       Delegations.get_delegation(delegation.id,
         scope: scope,
-        load: [transport_expenses: [:trips]]
+        load: [transport_expenses: [:trips, blob: [:url]]]
       )
 
-    assert [%{document_number: "FV/2026/001", expense_amount: expense_amount, trips: [trip]}] =
+    assert [
+             %{
+               document_number: "FV/2026/001",
+               expense_amount: expense_amount,
+               trips: [trip],
+               blob: %{original_filename: "bilet.pdf", url: url}
+             }
+           ] =
              delegation.transport_expenses
 
     assert Money.equal?(expense_amount, Money.new(:PLN, "123.45"))
+    assert is_binary(url)
+    assert has_element?(view, "a[href='#{url}']", "bilet.pdf")
     assert trip.departure_city == ""
     assert trip.arrival_city == ""
     assert is_nil(trip.departure_datetime)
@@ -277,6 +286,42 @@ defmodule FirmowidWeb.Delegations.Views.DelegationTest do
     assert has_element?(view, "[id^='other-pending-expense-']", "Nr dokumentu")
     assert has_element?(view, "[id^='other-pending-expense-']", "Kwota")
     assert has_element?(view, "[id^='other-pending-expense-']", "Opis")
+  end
+
+  test "prevents submitting while an upload is in progress", %{conn: conn} do
+    {view, _html, delegation, scope} = approved_delegation_view(conn)
+
+    view
+    |> file_input("#transport-upload-form", :transport, [
+      %{name: "bilet.pdf", content: "PDF content", type: "application/pdf"}
+    ])
+    |> render_upload("bilet.pdf", 50)
+
+    assert has_element?(view, "button[disabled]", "Wyślij")
+
+    assert {:ok, %{status: :in_progress}} =
+             Delegations.get_delegation(delegation.id, scope: scope)
+  end
+
+  test "rejects malformed expense values without crashing", %{conn: conn} do
+    {_view, _html, delegation, scope} = approved_delegation_view(conn)
+
+    {:ok, expense} =
+      Delegations.create_other_expense(
+        %{delegation_id: delegation.id, original_filename: "inne.pdf", document_number: "-"},
+        scope: scope
+      )
+
+    {:ok, view, _html} =
+      conn
+      |> log_in_user(scope.actor)
+      |> live(~p"/delegacje/#{delegation.id}")
+
+    view
+    |> element("#other-expense-#{expense.id}")
+    |> render_change(%{"expense_amount" => "not-a-number"})
+
+    assert has_element?(view, "[role='alert']", "Nie udało się zapisać danych.")
   end
 
   test "removes an existing transport expense", %{conn: conn} do

@@ -7,6 +7,7 @@ defmodule Firmowid.Ash.Delegations.DelegationExpenseAccommodation do
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer]
 
+  alias Firmowid.Ash.Delegations.Changes.CreateExpenseBlob
   alias Firmowid.Ash.Resource
 
   require Resource
@@ -37,6 +38,14 @@ defmodule Firmowid.Ash.Delegations.DelegationExpenseAccommodation do
         :arrival_date,
         :departure_date
       ]
+
+      argument :upload_path, :string
+      argument :content_type, :string
+
+      change CreateExpenseBlob
+
+      validate compare(:departure_date, greater_than_or_equal_to: :arrival_date),
+        message: "musi być na lub po dacie zameldowania"
     end
 
     update :update do
@@ -51,6 +60,13 @@ defmodule Firmowid.Ash.Delegations.DelegationExpenseAccommodation do
         :arrival_date,
         :departure_date
       ]
+
+      validate compare(:expense_amount, greater_than: Money.new(:PLN, 0)),
+        where: [changing(:expense_amount)],
+        message: "musi być większa od zera"
+
+      validate compare(:departure_date, greater_than_or_equal_to: :arrival_date),
+        message: "musi być na lub po dacie zameldowania"
     end
   end
 
@@ -99,6 +115,12 @@ defmodule Firmowid.Ash.Delegations.DelegationExpenseAccommodation do
   relationships do
     belongs_to :delegation, Firmowid.Ash.Delegations.Delegation do
       allow_nil? false
+      attribute_writable? true
+    end
+
+    belongs_to :blob, Firmowid.Ash.Blobs.Blob do
+      description "Uploaded accommodation receipt."
+      allow_nil? true
       attribute_writable? true
     end
 
