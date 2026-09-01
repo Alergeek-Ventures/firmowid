@@ -753,7 +753,9 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
   end
 
   aggregates do
-    sum :corrections_amount, :correction_invoices, :amount_value
+    sum :corrections_amount, :correction_invoices, :amount_value do
+      filter expr(amount_currency == parent(amount_currency))
+    end
 
     first :latest_correction_currency, :correction_invoices, :amount_currency do
       sort ksef_permanent_storage_date: :desc

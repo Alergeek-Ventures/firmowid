@@ -318,6 +318,37 @@ defmodule Firmowid.Ash.Invoicing.CostInvoiceTest do
       assert Money.to_currency_code(invoice.effective_amount) == :PLN
     end
 
+    test "excludes a historical correction in another currency" do
+      user = admin_fixture()
+      scope = %Scope{actor: user, tenant: user.organization_id}
+
+      original =
+        insert_cost_invoice!(user.organization_id, %{
+          ksef_number: "KSEF-EFFECTIVE-MULTI-CURRENCY",
+          amount: Money.new!("PLN", "-100.00")
+        })
+
+      insert_cost_invoice!(user.organization_id, %{
+        invoice_type: :kor,
+        original_invoice_ksef_number: original.ksef_number,
+        amount: Money.new!("EUR", "10.00"),
+        ksef_permanent_storage_date: ~N[2026-02-01 12:00:00]
+      })
+
+      insert_cost_invoice!(user.organization_id, %{
+        invoice_type: :kor,
+        original_invoice_ksef_number: original.ksef_number,
+        amount: Money.new!("PLN", "5.00"),
+        ksef_permanent_storage_date: ~N[2026-02-02 12:00:00]
+      })
+
+      invoice = Ash.load!(original, [:corrections_amount, :effective_amount], scope: scope)
+
+      assert invoice.corrections_amount == Decimal.new("5.00")
+      assert Money.to_decimal(invoice.effective_amount) == Decimal.new("-95.00")
+      assert Money.to_currency_code(invoice.effective_amount) == :PLN
+    end
+
     test "keeps an orphan correction out of an invoice effective amount" do
       user = admin_fixture()
       scope = %Scope{actor: user, tenant: user.organization_id}

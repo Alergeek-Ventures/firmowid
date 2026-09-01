@@ -19,6 +19,10 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Controllers.Pdf do
   @pdf_loads [
     :amount,
     :internal_note,
+    :corrected_invoice,
+    :net_value,
+    :vat_value,
+    :gross_value,
     sales_invoice_items: @item_calcs,
     corrections: [:amount, sales_invoice_items: @item_calcs],
     reference_invoice: [],
@@ -45,6 +49,22 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Controllers.Pdf do
 
     sales_invoice =
       then(sales_invoice, fn inv -> %{inv | corrections: AnnotatedCorrections.annotate(inv)} end)
+
+    sales_invoice =
+      case sales_invoice.reference_invoice do
+        %SalesInvoice{} = reference_invoice ->
+          reference_invoice =
+            Ash.load!(
+              reference_invoice,
+              [:net_value, :vat_value, :gross_value, :amount, sales_invoice_items: @item_calcs],
+              scope: conn.assigns.ash_scope
+            )
+
+          %{sales_invoice | reference_invoice: reference_invoice}
+
+        _ ->
+          sales_invoice
+      end
 
     render(conn, :sales_invoice,
       layout: false,

@@ -19,12 +19,6 @@ defmodule Firmowid.Repo.Migrations.RetireCostInvoiceLegacyMoneyFields do
   end
 
   def down do
-    create constraint(:cost_invoices, :cost_invoices_amount_matches_legacy,
-             check: """
-               amount IS NULL OR ((amount).amount = total_amount AND (amount).currency_code = currency)
-             """
-           )
-
     alter table(:cost_invoices) do
       add :currency, :text
       add :total_amount, :decimal
@@ -34,12 +28,6 @@ defmodule Firmowid.Repo.Migrations.RetireCostInvoiceLegacyMoneyFields do
       repo().query!(~S|
   SELECT DISTINCT currency_code
   FROM (
-    SELECT currency AS currency_code
-    FROM cost_invoices
-    WHERE currency IS NOT NULL
-
-    UNION
-
     SELECT (amount).currency_code AS currency_code
     FROM cost_invoices
     WHERE amount IS NOT NULL
@@ -59,41 +47,39 @@ defmodule Firmowid.Repo.Migrations.RetireCostInvoiceLegacyMoneyFields do
     end
 
     execute(~S|
+UPDATE cost_invoices
+SET currency = (amount).currency_code,
+    total_amount = (amount).amount
+WHERE amount IS NOT NULL;
+|)
+
+    execute(~S|
 DO $$
 BEGIN
   IF EXISTS (
     SELECT 1
     FROM cost_invoices
     WHERE (total_amount IS NULL) <> (currency IS NULL)
+       OR total_amount IS NULL
   ) THEN
     RAISE EXCEPTION
-      'Cost invoice money backfill failed: split money fields must both be present or absent';
+      'Cost invoice money rollback failed: some rows have no legacy money values';
   END IF;
 END
 $$;
 |)
 
-    execute(~S|
-UPDATE cost_invoices
-SET amount = ROW(currency, total_amount)::public.money_with_currency
-WHERE amount IS NULL
-  AND currency IS NOT NULL
-  AND total_amount IS NOT NULL;
-|)
+    create constraint(:cost_invoices, :cost_invoices_amount_matches_legacy,
+             check: """
+               amount IS NULL OR ((amount).amount = total_amount AND (amount).currency_code = currency)
+             """
+           )
 
-    execute(~S|
-DO $$
-BEGIN
-  IF EXISTS (
-    SELECT 1
-    FROM cost_invoices
-    WHERE amount IS NULL
-  ) THEN
-    RAISE EXCEPTION
-      'Cost invoice money backfill failed: some rows have no composite amount';
-  END IF;
-END
-$$;
-|)
+    create constraint(:cost_invoices, :cost_invoices_non_correction_total_amount_non_positive,
+             check: """
+               COALESCE((invoice_type)::text = ANY ((ARRAY['kor'::character varying, 'kor_zal'::character varying, 'kor_roz'::character varying])::text[]), false)
+               OR total_amount <= (0)::numeric
+             """
+           )
   end
 end
