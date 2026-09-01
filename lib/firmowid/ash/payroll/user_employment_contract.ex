@@ -11,9 +11,9 @@ defmodule Firmowid.Ash.Payroll.UserEmploymentContract do
   alias AshOban.Checks.AshObanInteraction
   alias Firmowid.Ash.Blobs
   alias Firmowid.Ash.Checks.SystemActorRole
-  alias Firmowid.Ash.Payroll.Changes.UpdateUserPosition
+  alias Firmowid.Ash.Payroll.Changes.MaybeActivateContract
   alias Firmowid.Ash.Payroll.UserEmploymentContract.Worker.ActivateSigned
-  alias Firmowid.Ash.Payroll.UserEmploymentContract.Worker.TerminateExpired
+  alias Firmowid.Ash.Payroll.Workers.EmploymentContractEmailWorker
   alias Firmowid.Ash.Resource
 
   require Logger
@@ -42,26 +42,13 @@ defmodule Firmowid.Ash.Payroll.UserEmploymentContract do
       trigger :activate_signed_contracts do
         action :activate
         read_action :read_global
-        where expr(status == :signed and starts_at <= fragment("CURRENT_DATE"))
-        scheduler_cron "0 1 * * *"
+        where expr(status == :signed and starts_at <= today())
+        scheduler_cron "0 3 * * *"
         max_attempts 3
         queue :default
 
         worker_module_name ActivateSigned
         scheduler_module_name Firmowid.Ash.Payroll.UserEmploymentContract.Scheduler.ActivateSigned
-      end
-
-      trigger :terminate_expired_contracts do
-        action :terminate
-        read_action :read_global
-        where expr(status == :active)
-        scheduler_cron "0 1 * * *"
-        max_attempts 3
-        queue :contract_lifecycle
-
-        worker_module_name TerminateExpired
-
-        scheduler_module_name Firmowid.Ash.Payroll.UserEmploymentContract.Scheduler.TerminateExpired
       end
     end
   end
@@ -214,7 +201,7 @@ defmodule Firmowid.Ash.Payroll.UserEmploymentContract do
     update :update do
       description "Update employment contract details."
       primary? true
-      accept [:contract_type, :status, :signed_at]
+      accept [:contract_type, :status, :signed_at, :position, :starts_at]
     end
 
     update :submit_signed do
@@ -227,6 +214,7 @@ defmodule Firmowid.Ash.Payroll.UserEmploymentContract do
 
       change transition_state(:signed)
 
+      # Replace the blob with the uploaded signed contract
       change fn changeset, context ->
         upload_path = Ash.Changeset.get_argument(changeset, :upload_path)
 
@@ -282,7 +270,8 @@ defmodule Firmowid.Ash.Payroll.UserEmploymentContract do
     policy action_type(:read) do
       authorize_if actor_attribute_equals(:role, :admin)
       authorize_if expr(user_id == ^actor(:id))
-      authorize_if {SystemActorRole, roles: [:document_blob_processor]}
+
+      authorize_if {SystemActorRole, roles: [:document_blob_processor, :employment_contract_notifier]}
     end
 
     policy action(:update) do

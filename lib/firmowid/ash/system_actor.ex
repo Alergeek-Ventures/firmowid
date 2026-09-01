@@ -52,6 +52,10 @@ defmodule Firmowid.Ash.SystemActor do
   - `:leave_notifier` — emails org admins about new leave/absence requests.
     Can read leave requests and list/read users needed for delivery.
 
+  - `:employment_contract_notifier` — emails employees about pending employment
+    contracts awaiting their signature. Can read employment contracts and users
+    needed for delivery.
+
   - `:anonymous` — unauthenticated share-token access. Can only read the specific
     invoice identified by the share token.
 
@@ -75,6 +79,7 @@ defmodule Firmowid.Ash.SystemActor do
           | :billing_snapshotter
           | :document_blob_processor
           | :leave_notifier
+          | :employment_contract_notifier
           | :anonymous
           | :avatar_cleanup
 
