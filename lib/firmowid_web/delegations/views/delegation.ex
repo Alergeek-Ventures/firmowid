@@ -159,7 +159,17 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
         >Sortuj chronologicznie <Lucideicons.arrow_down_up class="size-4" /></.button>
       </header>
       <div class="space-y-3">
-        <article :for={expense <- @expenses} class="border-grey-200 rounded-lg border p-4">
+        <div
+          :if={!@editable? && @expenses == []}
+          id={"#{@kind}-empty-state"}
+          class="text-grey-500 px-4 py-5 text-sm"
+        >
+          Nie dodano żadnych wydatków w tej kategorii.
+        </div>
+        <article
+          :for={expense <- @expenses}
+          class={["border-grey-200 rounded-lg border p-4", !@editable? && "bg-white"]}
+        >
           <div class="text-grey-500 flex items-center justify-between gap-3 text-sm">
             <.link
               :if={expense.blob}
@@ -173,6 +183,17 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
               name="hero-document"
               class="size-5 shrink-0"
             />{expense.original_filename}</span>
+            <.link
+              :if={!@editable? && expense.blob}
+              kind="button"
+              external={expense.blob.url}
+              variant="secondary"
+              size="small"
+              download={expense.original_filename}
+              class="shrink-0"
+            >
+              <Lucideicons.download class="size-4" /> Pobierz
+            </.link>
             <.button
               :if={@editable?}
               type="button"
@@ -246,6 +267,12 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
               class="col-span-full"
             />
           </form>
+          <.expense_details
+            :if={!@editable?}
+            expense={expense}
+            kind={@kind}
+            timezone={@timezone}
+          />
           <.trip_fields
             :if={@kind == "transport"}
             trips={expense.trips || []}
@@ -430,6 +457,114 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
         PLN
       </span>
     </div>
+    """
+  end
+
+  attr :expense, :map, required: true
+  attr :kind, :string, required: true
+  attr :timezone, :string, required: true
+
+  defp expense_details(assigns) do
+    ~H"""
+    <dl class="mt-4 grid gap-3 text-sm sm:grid-cols-2 lg:grid-cols-3">
+      <.expense_detail
+        :if={@kind == "transport"}
+        label="Środek lokomocji"
+        value={transport_label(to_string(@expense.transport_type))}
+      />
+      <.expense_detail label="Nr dokumentu" value={@expense.document_number} />
+      <.expense_detail label="Kwota" value={Money.to_string!(@expense.expense_amount)} />
+      <.expense_detail :if={@kind == "accommodation"} label="Miejscowość" value={@expense.locality} />
+      <.expense_detail
+        :if={@kind == "accommodation"}
+        label="Zameldowanie"
+        value={format_expense_date(@expense.arrival_date)}
+      />
+      <.expense_detail
+        :if={@kind == "accommodation"}
+        label="Wymeldowanie"
+        value={format_expense_date(@expense.departure_date)}
+      />
+      <.expense_detail
+        :if={@kind in ["accommodation", "other"]}
+        label="Opis"
+        value={@expense.description}
+        class="sm:col-span-2 lg:col-span-3"
+      />
+      <.trip_details
+        :if={@kind == "transport"}
+        trips={@expense.trips || []}
+        timezone={@timezone}
+      />
+    </dl>
+    """
+  end
+
+  attr :label, :string, required: true
+  attr :value, :any, required: true
+  attr :class, :any, default: nil
+
+  defp expense_detail(assigns) do
+    ~H"""
+    <div class={@class}>
+      <dt class="text-grey-500">{@label}</dt>
+      <dd class="text-grey-700 mt-1 whitespace-pre-wrap">{present_expense_value(@value)}</dd>
+    </div>
+    """
+  end
+
+  attr :trips, :list, required: true
+  attr :timezone, :string, required: true
+
+  defp trip_details(assigns) do
+    ~H"""
+    <section
+      :for={{trip, index} <- Enum.with_index(@trips, 1)}
+      class={[
+        "border-grey-100 mt-1 border-t pt-4 sm:col-span-2 lg:col-span-3",
+        length(@trips) > 1 && "grid grid-cols-[1.5rem_minmax(0,1fr)] gap-x-4"
+      ]}
+    >
+      <span
+        :if={length(@trips) > 1}
+        class="text-grey-900 self-center text-center text-sm font-medium"
+      >
+        {roman_numeral(index)}
+      </span>
+      <div class={length(@trips) > 1 && "border-grey-200 border-l pl-4"}>
+        <table class="border-separate border-spacing-y-3 text-left text-sm">
+          <thead class="text-grey-500">
+            <tr>
+              <th scope="col"></th>
+              <th scope="col" class="font-normal">Miejscowość</th>
+              <th scope="col" class="font-normal">Data</th>
+              <th scope="col" class="font-normal">Godzina</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <th scope="row" class="text-grey-700 pr-3 font-normal">Wyjazd</th>
+              <td class="pr-3">{present_expense_value(trip.departure_city)}</td>
+              <td class="pr-3">
+                {format_expense_date(datetime_date(trip.departure_datetime, @timezone))}
+              </td>
+              <td>{format_expense_time(trip.departure_datetime, @timezone)}</td>
+            </tr>
+            <tr>
+              <th scope="row" class="text-grey-700 pr-3 font-normal">Przyjazd</th>
+              <td class="pr-3">{present_expense_value(trip.arrival_city)}</td>
+              <td class="pr-3">
+                {format_expense_date(datetime_date(trip.arrival_datetime, @timezone))}
+              </td>
+              <td>{format_expense_time(trip.arrival_datetime, @timezone)}</td>
+            </tr>
+          </tbody>
+        </table>
+        <dl class="mt-3">
+          <.expense_detail label="Opis" value={trip.description} />
+        </dl>
+      </div>
+    </section>
     """
   end
 
@@ -1000,6 +1135,28 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
     |> DateTime.shift_zone!(timezone)
     |> Calendar.strftime("%H:%M")
   end
+
+  defp format_expense_date(nil), do: "—"
+  defp format_expense_date(date), do: Calendar.strftime(date, "%d.%m.%Y")
+
+  defp datetime_date(nil, _timezone), do: nil
+
+  defp datetime_date(datetime, timezone) do
+    datetime
+    |> DateTime.shift_zone!(timezone)
+    |> DateTime.to_date()
+  end
+
+  defp format_expense_time(nil, _timezone), do: "—"
+
+  defp format_expense_time(datetime, timezone) do
+    datetime
+    |> DateTime.shift_zone!(timezone)
+    |> Calendar.strftime("%H:%M")
+  end
+
+  defp present_expense_value(value) when value in [nil, ""], do: "—"
+  defp present_expense_value(value), do: value
 
   defp assign_summary(socket) do
     total =
