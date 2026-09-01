@@ -45,19 +45,7 @@ defmodule FirmowidWeb.Delegations.Views.DelegationTest do
     employee = user_fixture()
     admin = admin_fixture(%{organization_id: employee.organization_id})
 
-    delegation =
-      Ash.Seed.seed!(Delegation, %{
-        id: Ash.UUIDv7.generate(),
-        organization_id: employee.organization_id,
-        user_id: employee.id,
-        title: "Zakończony wyjazd służbowy",
-        billing_month: ~D[2026-08-01],
-        purpose: "Spotkanie z klientem",
-        advance_payment_amount: Money.new(:PLN, 100),
-        start_date: ~D[2026-08-10],
-        end_date: ~D[2026-08-11],
-        status: :complete
-      })
+    delegation = completed_delegation_fixture(employee)
 
     for user <- [employee, admin] do
       {:ok, view, _html} = conn |> log_in_user(user) |> live(~p"/delegacje/#{delegation.id}")
@@ -79,19 +67,7 @@ defmodule FirmowidWeb.Delegations.Views.DelegationTest do
   test "shows completed expense details and document download links", %{conn: conn} do
     employee = user_fixture()
 
-    delegation =
-      Ash.Seed.seed!(Delegation, %{
-        id: Ash.UUIDv7.generate(),
-        organization_id: employee.organization_id,
-        user_id: employee.id,
-        title: "Zakończony wyjazd służbowy",
-        billing_month: ~D[2026-08-01],
-        purpose: "Spotkanie z klientem",
-        advance_payment_amount: Money.new(:PLN, 100),
-        start_date: ~D[2026-08-10],
-        end_date: ~D[2026-08-11],
-        status: :complete
-      })
+    delegation = completed_delegation_fixture(employee)
 
     transport_expense =
       Ash.Seed.seed!(DelegationExpenseTransport, %{
@@ -506,6 +482,21 @@ defmodule FirmowidWeb.Delegations.Views.DelegationTest do
 
     refute has_element?(view, "article", "bilet.pdf")
     refute has_element?(view, "[role='alert']", "Nie udało się usunąć dokumentu.")
+  end
+
+  defp completed_delegation_fixture(employee) do
+    Ash.Seed.seed!(Delegation, %{
+      id: Ash.UUIDv7.generate(),
+      organization_id: employee.organization_id,
+      user_id: employee.id,
+      title: "Zakończony wyjazd służbowy",
+      billing_month: ~D[2026-08-01],
+      purpose: "Spotkanie z klientem",
+      advance_payment_amount: Money.new(:PLN, 100),
+      start_date: ~D[2026-08-10],
+      end_date: ~D[2026-08-11],
+      status: :complete
+    })
   end
 
   defp approved_delegation_view(conn) do
