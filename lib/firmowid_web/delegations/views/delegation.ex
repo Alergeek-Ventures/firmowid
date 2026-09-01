@@ -439,7 +439,7 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
     >
       <span
         :if={length(@trips) > 1}
-        class="text-grey-900 self-center text-center text-sm font-[540]"
+        class="text-grey-900 self-center text-center text-sm font-medium"
       >
         {roman_numeral(index)}
       </span>
