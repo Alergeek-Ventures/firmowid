@@ -531,7 +531,7 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
       >
         {roman_numeral(index)}
       </span>
-      <div class={length(@trips) > 1 && "border-grey-200 border-l pl-4"}>
+      <div class={[length(@trips) > 1 && "border-grey-200 border-l pl-4"]}>
         <table class="border-separate border-spacing-y-3 text-left text-sm">
           <thead class="text-grey-500">
             <tr>
