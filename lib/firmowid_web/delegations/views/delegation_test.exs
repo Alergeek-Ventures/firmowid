@@ -4,8 +4,13 @@ defmodule FirmowidWeb.Delegations.Views.DelegationTest do
   import Firmowid.AccountsFixtures
   import Phoenix.LiveViewTest
 
+  alias Firmowid.Ash.Blobs.Blob
   alias Firmowid.Ash.Delegations
   alias Firmowid.Ash.Delegations.Delegation
+  alias Firmowid.Ash.Delegations.DelegationExpenseAccommodation
+  alias Firmowid.Ash.Delegations.DelegationExpenseOther
+  alias Firmowid.Ash.Delegations.DelegationExpenseTransport
+  alias Firmowid.Ash.Delegations.DelegationTrip
   alias Firmowid.Ash.Scope
 
   defmodule ReductoClient do
@@ -58,10 +63,116 @@ defmodule FirmowidWeb.Delegations.Views.DelegationTest do
       {:ok, view, _html} = conn |> log_in_user(user) |> live(~p"/delegacje/#{delegation.id}")
 
       assert has_element?(view, "#delegation-settlement-title", "Rozliczenie delegacji")
+
+      assert has_element?(
+               view,
+               "#other-empty-state",
+               "Nie dodano żadnych wydatków w tej kategorii."
+             )
+
       refute has_element?(view, "form[id$='-upload-form']")
       refute has_element?(view, "button", "Sortuj chronologicznie")
       refute has_element?(view, "button[phx-click='submit']")
     end
+  end
+
+  test "shows completed expense details and document download links", %{conn: conn} do
+    employee = user_fixture()
+
+    delegation =
+      Ash.Seed.seed!(Delegation, %{
+        id: Ash.UUIDv7.generate(),
+        organization_id: employee.organization_id,
+        user_id: employee.id,
+        title: "Zakończony wyjazd służbowy",
+        billing_month: ~D[2026-08-01],
+        purpose: "Spotkanie z klientem",
+        advance_payment_amount: Money.new(:PLN, 100),
+        start_date: ~D[2026-08-10],
+        end_date: ~D[2026-08-11],
+        status: :complete
+      })
+
+    transport_expense =
+      Ash.Seed.seed!(DelegationExpenseTransport, %{
+        id: Ash.UUIDv7.generate(),
+        organization_id: employee.organization_id,
+        delegation_id: delegation.id,
+        original_filename: "bilet.pdf",
+        document_number: "PKP/123",
+        expense_amount: Money.new(:PLN, 45),
+        transport_type: :railway
+      })
+
+    Ash.Seed.seed!(DelegationTrip, %{
+      id: Ash.UUIDv7.generate(),
+      organization_id: employee.organization_id,
+      delegation_expense_transport_id: transport_expense.id,
+      departure_city: "Warszawa",
+      departure_datetime: ~U[2026-08-10 10:00:00Z],
+      arrival_city: "Gdańsk",
+      arrival_datetime: ~U[2026-08-10 13:00:00Z],
+      description: "Spotkanie z klientem"
+    })
+
+    Ash.Seed.seed!(DelegationExpenseAccommodation, %{
+      id: Ash.UUIDv7.generate(),
+      organization_id: employee.organization_id,
+      delegation_id: delegation.id,
+      original_filename: "nocleg.pdf",
+      document_number: "HOTEL/456",
+      expense_amount: Money.new(:PLN, 200),
+      locality: "Gdańsk",
+      arrival_date: ~D[2026-08-10],
+      departure_date: ~D[2026-08-11],
+      description: "Pokój jednoosobowy"
+    })
+
+    blob =
+      Ash.Seed.seed!(Blob, %{
+        id: Ash.UUIDv7.generate(),
+        organization_id: employee.organization_id,
+        blob_path: "delegations/inne.pdf",
+        blob_checksum: "other-expense-checksum",
+        original_filename: "inne.pdf"
+      })
+
+    Ash.Seed.seed!(DelegationExpenseOther, %{
+      id: Ash.UUIDv7.generate(),
+      organization_id: employee.organization_id,
+      delegation_id: delegation.id,
+      blob_id: blob.id,
+      original_filename: "inne.pdf",
+      document_number: "INNE/789",
+      expense_amount: Money.new(:PLN, 25),
+      description: "Opłata parkingowa"
+    })
+
+    {:ok, view, _html} = conn |> log_in_user(employee) |> live(~p"/delegacje/#{delegation.id}")
+
+    for value <- [
+          "PKP/123",
+          "45,00",
+          "Kolej",
+          "Warszawa",
+          "Gdańsk",
+          "10.08.2026",
+          "12:00",
+          "15:00",
+          "HOTEL/456",
+          "200,00",
+          "Pokój jednoosobowy",
+          "INNE/789",
+          "25,00",
+          "Opłata parkingowa"
+        ] do
+      assert has_element?(view, "article", value)
+    end
+
+    assert has_element?(view, "article table th", "Miejscowość")
+    assert has_element?(view, "article table th", "Data")
+    assert has_element?(view, "article table th", "Godzina")
+    assert has_element?(view, "a[download='inne.pdf']", "Pobierz")
   end
 
   test "adds an expense after its file upload completes", %{conn: conn} do
