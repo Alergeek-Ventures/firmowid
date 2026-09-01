@@ -5,6 +5,7 @@ defmodule FirmowidWeb.Delegations.Views.DelegationTest do
   import Phoenix.LiveViewTest
 
   alias Firmowid.Ash.Delegations
+  alias Firmowid.Ash.Delegations.Delegation
   alias Firmowid.Ash.Scope
 
   defmodule ReductoClient do
@@ -31,6 +32,36 @@ defmodule FirmowidWeb.Delegations.Views.DelegationTest do
 
     assert html =~ "Rozliczenie delegacji"
     assert html =~ "100,00"
+  end
+
+  test "employees and administrators can view completed delegations without editing controls", %{
+    conn: conn
+  } do
+    employee = user_fixture()
+    admin = admin_fixture(%{organization_id: employee.organization_id})
+
+    delegation =
+      Ash.Seed.seed!(Delegation, %{
+        id: Ash.UUIDv7.generate(),
+        organization_id: employee.organization_id,
+        user_id: employee.id,
+        title: "Zakończony wyjazd służbowy",
+        billing_month: ~D[2026-08-01],
+        purpose: "Spotkanie z klientem",
+        advance_payment_amount: Money.new(:PLN, 100),
+        start_date: ~D[2026-08-10],
+        end_date: ~D[2026-08-11],
+        status: :complete
+      })
+
+    for user <- [employee, admin] do
+      {:ok, view, _html} = conn |> log_in_user(user) |> live(~p"/delegacje/#{delegation.id}")
+
+      assert has_element?(view, "#delegation-settlement-title", "Rozliczenie delegacji")
+      refute has_element?(view, "form[id$='-upload-form']")
+      refute has_element?(view, "button", "Sortuj chronologicznie")
+      refute has_element?(view, "button[phx-click='submit']")
+    end
   end
 
   test "adds an expense after its file upload completes", %{conn: conn} do
