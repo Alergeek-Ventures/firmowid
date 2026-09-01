@@ -49,7 +49,7 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
           <.expense_section
             title="Przejazdy"
             expenses={@delegation.transport_expenses}
-            upload={Map.get(@uploads, :transport)}
+            upload={Map.get(assigns[:uploads] || %{}, :transport)}
             kind="transport"
             editable?={@editable?}
             sort_active?={@sort_active?}
@@ -61,7 +61,7 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
           <.expense_section
             title="Nocleg"
             expenses={@delegation.accommodation_expenses}
-            upload={Map.get(@uploads, :accommodation)}
+            upload={Map.get(assigns[:uploads] || %{}, :accommodation)}
             kind="accommodation"
             editable?={@editable?}
             sort_active?={false}
@@ -73,7 +73,7 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
           <.expense_section
             title="Inne wydatki"
             expenses={@delegation.other_expenses}
-            upload={Map.get(@uploads, :other)}
+            upload={Map.get(assigns[:uploads] || %{}, :other)}
             kind="other"
             editable?={@editable?}
             sort_active?={false}
@@ -147,7 +147,7 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
           {render_slot(@icon)}{@title}
         </h2>
         <.button
-          :if={@kind == "transport"}
+          :if={@kind == "transport" && @editable?}
           type="button"
           variant="ghost"
           size="small"
