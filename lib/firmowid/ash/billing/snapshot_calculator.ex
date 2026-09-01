@@ -68,7 +68,8 @@ defmodule Firmowid.Ash.Billing.SnapshotCalculator do
   def existing_snapshot(organization_id, month) do
     scope = org_scope(organization_id)
 
-    %{month: normalize_month(month)}
+    month
+    |> normalize_month()
     |> Billing.query_to_get_billing_snapshot_for_month(scope: scope)
     |> Ash.read_one!(scope: scope)
   end

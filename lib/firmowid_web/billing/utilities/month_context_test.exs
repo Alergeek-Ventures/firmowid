@@ -44,6 +44,9 @@ defmodule FirmowidWeb.Billing.Utilities.MonthContextTest do
           scope: SnapshotCalculator.org_scope(organization.id)
         )
 
+      assert SnapshotCalculator.existing_snapshot(organization.id, ~D[2026-03-15]).id ==
+               snapshot.id
+
       context =
         MonthContext.load(organization, snapshot_month, admin,
           current_month: current_month,
