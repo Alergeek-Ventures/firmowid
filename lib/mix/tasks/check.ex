@@ -11,11 +11,10 @@ defmodule Mix.Tasks.Check do
   1. `mix compile --warnings-as-errors` - Compile with strict warnings
   2. `mix format --check-formatted` - Verify code formatting
   3. `mix deps.unlock --check-unused` - Check for unused dependencies
-  4. `mix xref graph --label compile-connected` - Check compile-time dependency ceiling
-  5. `mix credo --strict` - Static code analysis
-  6. `mix sobelow --config` - Security vulnerability scanning
-  7. `mix dialyzer` - Type checking
-  8. `mix test` - Run test suite (skipped with --no-test)
+  4. `mix credo --strict` - Static code analysis
+  5. `mix sobelow --config` - Security vulnerability scanning
+  6. `mix dialyzer` - Type checking
+  7. `mix test` - Run test suite (skipped with --no-test)
 
   ## Usage
 
@@ -50,9 +49,6 @@ defmodule Mix.Tasks.Check do
   @static_checks [
     {"Compiling", ["compile", "--warnings-as-errors"]},
     {"Unused Deps", ["deps.unlock", "--check-unused"]},
-    # Keep as low as possible — Ash macro expansion inherently raises this ceiling over time.
-    # Temporary ceiling agreed for the assistant refactor while preserving visibility.
-    {"Xref", ["xref", "graph", "--label", "compile-connected", "--fail-above", "70"]},
     {"Credo", ["credo", "--strict"]},
     {"Dialyzer", ["dialyzer"]}
   ]

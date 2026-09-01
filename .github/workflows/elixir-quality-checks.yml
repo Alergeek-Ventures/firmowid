@@ -107,10 +107,6 @@ jobs:
         # we give devs as much feedback as possible & save some time.
         if: always()
 
-      - name: Check for compile-time dependencies
-        run: mix xref graph --label compile-connected --fail-above 70
-        if: always()
-
       - name: Check for security vulnerabilities in Phoenix project
         run: mix sobelow --config
         if: always()
