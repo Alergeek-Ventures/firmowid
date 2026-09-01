@@ -49,6 +49,9 @@ defmodule Firmowid.Ash.Delegations.Delegation do
       validate compare(:end_date, greater_than_or_equal_to: :start_date),
         message: "musi być na lub po dacie wyjazdu"
 
+      validate compare(:advance_payment_amount, greater_than_or_equal_to: Money.new(:PLN, 0)),
+        message: "musi być większa lub równa 0 PLN"
+
       change after_transaction(fn
                _changeset, {:ok, delegation}, _context ->
                  DelegationEmailWorker.enqueue(delegation.id, delegation.organization_id)
@@ -65,6 +68,15 @@ defmodule Firmowid.Ash.Delegations.Delegation do
       require_atomic? false
       accept []
       change transition_state(:in_progress)
+
+      change after_transaction(fn
+               _changeset, {:ok, delegation}, _context ->
+                 DelegationEmailWorker.enqueue_approval(delegation.id, delegation.organization_id)
+                 {:ok, delegation}
+
+               _changeset, {:error, reason}, _context ->
+                 {:error, reason}
+             end)
     end
 
     update :complete do

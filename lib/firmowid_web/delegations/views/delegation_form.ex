@@ -151,10 +151,16 @@ defmodule FirmowidWeb.Delegations.Views.DelegationForm do
       |> AshPhoenix.Form.validate(Map.put(AshPhoenix.Form.params(socket.assigns.form.source), "billing_month", month))
       |> to_form()
 
-    {:noreply,
-     socket
-     |> assign(:billing_month, Date.from_iso8601!(month))
-     |> assign(:form, form)}
+    case Date.from_iso8601(month) do
+      {:ok, billing_month} ->
+        {:noreply, socket |> assign(:billing_month, billing_month) |> assign(:form, form)}
+
+      {:error, _reason} ->
+        {:noreply,
+         socket
+         |> assign(:form, form)
+         |> put_flash(:error, "Wybierz poprawny miesiąc rozliczeniowy.")}
+    end
   end
 
   @impl true
