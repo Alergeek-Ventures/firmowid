@@ -31,21 +31,23 @@ defmodule Firmowid.Ash.Delegations.DelegationExpenseExtractor do
     if Application.get_env(:firmowid, :delegation_expense_extraction_enabled, true) do
       extract_details(file_path)
     else
-      %{}
+      fallback_details()
     end
   end
 
   defp extract_details(file_path) do
     case ProcessBlobHelpers.reducto_client().extract_file(file_path, @schema, system_prompt: @system_prompt) do
       {:ok, metadata} ->
-        details(metadata) || %{}
+        details(metadata) || fallback_details()
 
       {:error, _reason} ->
-        %{}
+        fallback_details()
     end
   rescue
-    _error -> %{}
+    _error -> fallback_details()
   end
+
+  defp fallback_details, do: %{document_number: "DEMO-#{System.unique_integer([:positive])}"}
 
   defp details(%{"document_number" => document_number, "expense_amount" => amount})
        when is_binary(document_number) and document_number != "" do

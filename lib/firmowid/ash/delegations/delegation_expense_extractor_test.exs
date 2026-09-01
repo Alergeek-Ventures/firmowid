@@ -21,16 +21,22 @@ defmodule Firmowid.Ash.Delegations.DelegationExpenseExtractorTest do
     end)
   end
 
-  test "leaves fields blank when Reducto is unavailable" do
-    assert %{} = DelegationExpenseExtractor.extract("/tmp/bilet.pdf", :transport)
-    assert %{} = DelegationExpenseExtractor.extract("/tmp/nocleg.pdf", :accommodation)
-    assert %{} = DelegationExpenseExtractor.extract("/tmp/inne.pdf", :other)
+  test "returns fabricated document details when Reducto is unavailable" do
+    for expense_type <- [:transport, :accommodation, :other] do
+      assert %{document_number: document_number} =
+               DelegationExpenseExtractor.extract("/tmp/document.pdf", expense_type)
+
+      assert document_number =~ ~r/^DEMO-[0-9]+$/
+    end
   end
 
-  test "leaves fields blank when extraction is disabled" do
+  test "returns fabricated document details when extraction is disabled" do
     Application.put_env(:firmowid, :delegation_expense_extraction_enabled, false)
 
-    assert %{} = DelegationExpenseExtractor.extract("/tmp/bilet.pdf", :transport)
+    assert %{document_number: document_number} =
+             DelegationExpenseExtractor.extract("/tmp/document.pdf", :transport)
+
+    assert document_number =~ ~r/^DEMO-[0-9]+$/
   end
 
   defp restore_env(key, nil), do: Application.delete_env(:firmowid, key)
