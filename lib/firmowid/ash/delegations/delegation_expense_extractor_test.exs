@@ -21,19 +21,16 @@ defmodule Firmowid.Ash.Delegations.DelegationExpenseExtractorTest do
     end)
   end
 
-  test "uses type-specific samples when Reducto is unavailable" do
-    assert %{document_number: "TRANSPORT-001", expense_amount: transport_amount} =
-             DelegationExpenseExtractor.extract("/tmp/bilet.pdf", :transport)
+  test "leaves fields blank when Reducto is unavailable" do
+    assert %{} = DelegationExpenseExtractor.extract("/tmp/bilet.pdf", :transport)
+    assert %{} = DelegationExpenseExtractor.extract("/tmp/nocleg.pdf", :accommodation)
+    assert %{} = DelegationExpenseExtractor.extract("/tmp/inne.pdf", :other)
+  end
 
-    assert %{document_number: "NOCLEG-001", expense_amount: accommodation_amount} =
-             DelegationExpenseExtractor.extract("/tmp/nocleg.pdf", :accommodation)
+  test "leaves fields blank when extraction is disabled" do
+    Application.put_env(:firmowid, :delegation_expense_extraction_enabled, false)
 
-    assert %{document_number: "INNE-001", expense_amount: other_amount} =
-             DelegationExpenseExtractor.extract("/tmp/inne.pdf", :other)
-
-    assert Money.equal?(transport_amount, Money.new(:PLN, "36.20"))
-    assert Money.equal?(accommodation_amount, Money.new(:PLN, "530.20"))
-    assert Money.equal?(other_amount, Money.new(:PLN, "78.00"))
+    assert %{} = DelegationExpenseExtractor.extract("/tmp/bilet.pdf", :transport)
   end
 
   defp restore_env(key, nil), do: Application.delete_env(:firmowid, key)

@@ -18,7 +18,7 @@ defmodule FirmowidWeb.Delegations.Components.DelegationsList do
       <li :for={delegation <- @delegations} class="flex items-center gap-3 py-3 first:pt-0 last:pb-0">
         <.delegation_title
           delegation={delegation}
-          is_link={delegation.status == :in_progress && !@management?}
+          is_link={delegation.status in [:in_progress, :complete] && !@management?}
         />
         <p class="shrink-0 text-sm tabular-nums">
           <.date_range start_date={delegation.start_date} end_date={delegation.end_date} />

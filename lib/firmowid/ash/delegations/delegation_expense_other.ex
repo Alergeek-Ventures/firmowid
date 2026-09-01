@@ -7,6 +7,7 @@ defmodule Firmowid.Ash.Delegations.DelegationExpenseOther do
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer]
 
+  alias Firmowid.Ash.Delegations.Changes.CreateExpenseBlob
   alias Firmowid.Ash.Resource
 
   require Resource
@@ -27,12 +28,21 @@ defmodule Firmowid.Ash.Delegations.DelegationExpenseOther do
       description "Create another expense for a delegation."
       primary? true
       accept [:delegation_id, :original_filename, :document_number, :expense_amount, :description]
+
+      argument :upload_path, :string
+      argument :content_type, :string
+
+      change CreateExpenseBlob
     end
 
     update :update do
       description "Update another expense while settling a delegation."
       primary? true
       accept [:document_number, :expense_amount, :description]
+
+      validate compare(:expense_amount, greater_than: Money.new(:PLN, 0)),
+        where: [changing(:expense_amount)],
+        message: "musi być większa od zera"
     end
   end
 
@@ -77,6 +87,12 @@ defmodule Firmowid.Ash.Delegations.DelegationExpenseOther do
   relationships do
     belongs_to :delegation, Firmowid.Ash.Delegations.Delegation do
       allow_nil? false
+      attribute_writable? true
+    end
+
+    belongs_to :blob, Firmowid.Ash.Blobs.Blob do
+      description "Uploaded other-expense receipt."
+      allow_nil? true
       attribute_writable? true
     end
 
