@@ -29,6 +29,24 @@ defmodule Firmowid.Ash.Delegations.DelegationEmails do
     with {:ok, _metadata} <- Mailer.deliver(email), do: {:ok, email}
   end
 
+  @doc "Delivers a confirmation to the employee whose delegation was approved."
+  @spec deliver_approved_delegation(Delegation.t(), User.t() | map()) ::
+          {:ok, Swoosh.Email.t()} | {:error, term()}
+  def deliver_approved_delegation(delegation, employee) do
+    name = employee_name(employee)
+    assigns = %{name: name, delegation: delegation}
+
+    email =
+      new()
+      |> to(to_string(employee.email))
+      |> from({"Firmowid", "piotr@firmowid.pl"})
+      |> subject("Delegacja została zatwierdzona")
+      |> html_body(to_html(approval_html(assigns)))
+      |> text_body(approval_text(assigns))
+
+    with {:ok, _metadata} <- Mailer.deliver(email), do: {:ok, email}
+  end
+
   defp html(assigns) do
     ~H"""
     <.email preheader="Nowe zgłoszenie delegacji">
@@ -60,6 +78,34 @@ defmodule Firmowid.Ash.Delegations.DelegationEmails do
 
     Otwórz wniosek w Firmowidzie:
     #{assigns.url}
+    """
+  end
+
+  defp approval_html(assigns) do
+    ~H"""
+    <.email preheader="Delegacja została zatwierdzona">
+      <.greeting>Delegacja została zatwierdzona</.greeting>
+      <.paragraph>
+        {@name}, Twoja delegacja została zaakceptowana.
+      </.paragraph>
+      <.detail_row label="Data wyjazdu" value={date_range(@delegation)} />
+      <.detail_row label="Cel wyjazdu" value={@delegation.purpose} />
+      <.detail_row
+        label="Przewidywana kwota"
+        value={Money.to_string!(@delegation.advance_payment_amount)}
+      />
+      <.signature />
+    </.email>
+    """
+  end
+
+  defp approval_text(assigns) do
+    """
+    Delegacja została zatwierdzona
+    #{assigns.name}, Twoja delegacja została zaakceptowana.
+    Data wyjazdu: #{date_range(assigns.delegation)}
+    Cel wyjazdu: #{assigns.delegation.purpose}
+    Przewidywana kwota: #{Money.to_string!(assigns.delegation.advance_payment_amount)}
     """
   end
 
