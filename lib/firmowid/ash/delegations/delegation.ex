@@ -10,6 +10,7 @@ defmodule Firmowid.Ash.Delegations.Delegation do
     extensions: [AshStateMachine]
 
   alias Firmowid.Ash.Core.User
+  alias Firmowid.Ash.Delegations.Changes.ValidateSettlement
   alias Firmowid.Ash.Delegations.Workers.DelegationEmailWorker
   alias Firmowid.Ash.Resource
 
@@ -94,6 +95,7 @@ defmodule Firmowid.Ash.Delegations.Delegation do
       description "Mark an in-progress delegation as complete."
       require_atomic? false
       accept []
+      change ValidateSettlement
       change transition_state(:complete)
     end
   end
@@ -115,8 +117,11 @@ defmodule Firmowid.Ash.Delegations.Delegation do
       authorize_if expr(user_id == ^actor(:id))
     end
 
-    policy action([:approve, :complete]) do
-      authorize_if action(:approve)
+    policy action(:approve) do
+      forbid_if always()
+    end
+
+    policy action(:complete) do
       authorize_if expr(status == :in_progress and user_id == ^actor(:id))
     end
   end

@@ -23,37 +23,28 @@ defmodule Firmowid.Ash.Delegations.DelegationExpenseExtractor do
     required: ["document_number", "expense_amount"]
   }
 
-  @fallbacks %{
-    transport: %{document_number: "TRANSPORT-001", expense_amount: "36.20"},
-    accommodation: %{document_number: "NOCLEG-001", expense_amount: "530.20"},
-    other: %{document_number: "INNE-001", expense_amount: "78.00"}
-  }
-
   @doc """
-  Returns extracted details, or type-specific samples when extraction is unavailable.
+  Returns extracted details, or an empty map when extraction is unavailable.
   """
-  @spec extract(Path.t(), :transport | :accommodation | :other) :: %{
-          document_number: String.t(),
-          expense_amount: Money.t()
-        }
-  def extract(file_path, expense_type) do
+  @spec extract(Path.t(), :transport | :accommodation | :other) :: map()
+  def extract(file_path, _expense_type) do
     if Application.get_env(:firmowid, :delegation_expense_extraction_enabled, true) do
-      extract_details(file_path, expense_type)
+      extract_details(file_path)
     else
-      fallback(expense_type)
+      %{}
     end
   end
 
-  defp extract_details(file_path, expense_type) do
+  defp extract_details(file_path) do
     case ProcessBlobHelpers.reducto_client().extract_file(file_path, @schema, system_prompt: @system_prompt) do
       {:ok, metadata} ->
-        details(metadata) || fallback(expense_type)
+        details(metadata) || %{}
 
       {:error, _reason} ->
-        fallback(expense_type)
+        %{}
     end
   rescue
-    _error -> fallback(expense_type)
+    _error -> %{}
   end
 
   defp details(%{"document_number" => document_number, "expense_amount" => amount})
@@ -68,13 +59,6 @@ defmodule Firmowid.Ash.Delegations.DelegationExpenseExtractor do
   end
 
   defp details(_metadata), do: nil
-
-  defp fallback(expense_type) do
-    %{document_number: document_number, expense_amount: amount} =
-      Map.fetch!(@fallbacks, expense_type)
-
-    %{document_number: document_number, expense_amount: Money.new(:PLN, Decimal.new(amount))}
-  end
 
   defp decimal(amount) when is_integer(amount) and amount > 0, do: {:ok, Decimal.new(amount)}
   defp decimal(amount) when is_float(amount) and amount > 0, do: {:ok, Decimal.from_float(amount)}
