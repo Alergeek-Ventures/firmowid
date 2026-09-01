@@ -696,7 +696,12 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
     {:noreply, assign(socket, :description_visible?, description_visible?)}
   end
 
-  def handle_event("sort", _params, socket), do: {:noreply, assign(socket, :sort_active?, true)}
+  def handle_event("sort", _params, socket) do
+    delegation =
+      Map.update!(socket.assigns.delegation, :transport_expenses, &sort_transport_expenses/1)
+
+    {:noreply, assign(socket, delegation: delegation, sort_active?: true)}
+  end
 
   def handle_event("submit", _params, %{assigns: %{editable?: false}} = socket), do: {:noreply, socket}
 
@@ -713,6 +718,9 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
   end
 
   defp setup_socket(socket, delegation) do
+    sort_active? = socket.assigns[:sort_active?] || false
+    delegation = maybe_sort_transport_expenses(delegation, sort_active?)
+
     transport =
       if delegation.status == :complete,
         do: nil,
@@ -749,7 +757,7 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
       delegation: delegation,
       editable?: delegation.status == :in_progress,
       page_title: "Rozliczenie delegacji",
-      sort_active?: false
+      sort_active?: sort_active?
     )
     |> assign_new(:description_visible?, fn -> %{} end)
     |> assign_summary()
@@ -769,8 +777,35 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
 
   defp refresh_delegation(socket) do
     socket
-    |> assign(:delegation, load_delegation!(socket.assigns.delegation.id, socket))
+    |> assign(
+      :delegation,
+      socket.assigns.delegation.id
+      |> load_delegation!(socket)
+      |> maybe_sort_transport_expenses(socket.assigns.sort_active?)
+    )
     |> assign_summary()
+  end
+
+  defp maybe_sort_transport_expenses(delegation, false), do: delegation
+
+  defp maybe_sort_transport_expenses(delegation, true) do
+    Map.update!(delegation, :transport_expenses, &sort_transport_expenses/1)
+  end
+
+  defp sort_transport_expenses(expenses) do
+    Enum.sort_by(
+      expenses,
+      fn expense ->
+        case expense.trips do
+          [%{departure_datetime: %DateTime{} = departure_datetime}] ->
+            {0, DateTime.to_unix(departure_datetime, :microsecond), expense.inserted_at, expense.id}
+
+          _ ->
+            {1, 0, expense.inserted_at, expense.id}
+        end
+      end,
+      :asc
+    )
   end
 
   defp handle_upload_progress(_kind, %{done?: false}, socket), do: {:noreply, socket}

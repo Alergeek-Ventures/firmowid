@@ -111,6 +111,67 @@ defmodule FirmowidWeb.Delegations.Views.DelegationTest do
     assert trip.arrival_datetime
   end
 
+  test "sorts transport expenses by departure and puts undated expenses last", %{conn: conn} do
+    {_view, _html, delegation, scope} = approved_delegation_view(conn)
+
+    for filename <- ["later.pdf", "earlier.pdf", "undated-1.pdf", "undated-2.pdf"] do
+      {:ok, _expense} =
+        Delegations.create_transport_expense(
+          %{delegation_id: delegation.id, original_filename: filename, document_number: "-"},
+          scope: scope
+        )
+    end
+
+    {:ok, delegation} =
+      Delegations.get_delegation(delegation.id,
+        scope: scope,
+        load: [transport_expenses: [:trips]]
+      )
+
+    expenses_by_filename = Map.new(delegation.transport_expenses, &{&1.original_filename, &1})
+
+    for {filename, departure_datetime} <- [
+          {"later.pdf", ~U[2026-08-11 10:00:00Z]},
+          {"earlier.pdf", ~U[2026-08-10 10:00:00Z]}
+        ] do
+      [trip] = expenses_by_filename[filename].trips
+
+      assert {:ok, _trip} =
+               Delegations.update_delegation_trip(trip, %{departure_datetime: departure_datetime}, scope: scope)
+    end
+
+    {:ok, delegation} =
+      Delegations.get_delegation(delegation.id,
+        scope: scope,
+        load: [transport_expenses: [:trips]]
+      )
+
+    assert Enum.all?(delegation.transport_expenses, &(length(&1.trips) == 1))
+    expenses_by_filename = Map.new(delegation.transport_expenses, &{&1.original_filename, &1})
+    assert [%{departure_datetime: %DateTime{}}] = expenses_by_filename["earlier.pdf"].trips
+
+    {:ok, view, _html} =
+      conn
+      |> log_in_user(scope.actor)
+      |> live(~p"/delegacje/#{delegation.id}")
+
+    refute has_element?(view, "button[disabled]", "Sortuj chronologicznie")
+    [earlier_trip] = expenses_by_filename["earlier.pdf"].trips
+    assert has_element?(view, "#trip-departure-date-#{earlier_trip.id}[value='2026-08-10']")
+
+    html =
+      view
+      |> element("button", "Sortuj chronologicznie")
+      |> render_click()
+
+    assert Regex.scan(~r/(?:earlier|later|undated-[12])\.pdf/, html) == [
+             ["earlier.pdf"],
+             ["later.pdf"],
+             ["undated-1.pdf"],
+             ["undated-2.pdf"]
+           ]
+  end
+
   test "orders expense fields by document type and keeps the currency next to the amount", %{
     conn: conn
   } do
