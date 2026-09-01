@@ -429,124 +429,164 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
 
   defp trip_fields(assigns) do
     ~H"""
-    <section :for={trip <- @trips} class="border-grey-100 mt-4 border-t pt-4">
+    <section
+      :for={{trip, index} <- Enum.with_index(@trips, 1)}
+      :if={@editable?}
+      class={[
+        "border-grey-100 mt-4 border-t pt-4",
+        length(@trips) > 1 && "grid grid-cols-[1.5rem_minmax(0,1fr)] gap-x-4"
+      ]}
+    >
+      <span
+        :if={length(@trips) > 1}
+        class="text-grey-900 self-center text-center text-sm font-[540]"
+      >
+        {roman_numeral(index)}
+      </span>
       <form
-        :if={@editable?}
         id={"transport-trip-#{trip.id}"}
         phx-change="update-trip"
         phx-value-id={trip.id}
+        class={[
+          length(@trips) > 1 && "border-grey-200 border-l pl-4"
+        ]}
       >
-        <table class="border-separate border-spacing-y-3 text-left text-sm">
-          <thead class="text-grey-500">
-            <tr>
-              <th scope="col"></th>
-              <th scope="col" class="font-normal">Miejscowość</th>
-              <th scope="col" class="font-normal">Data</th>
-              <th scope="col" class="font-normal">Godzina</th>
-              <th scope="col"></th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <th scope="row" class="text-grey-700 pr-3 font-normal">Wyjazd</th>
-              <td class="pr-3">
-                <.input
-                  id={"trip-departure-city-#{trip.id}"}
-                  name="departure_city"
-                  value={trip.departure_city}
-                  type="text"
-                  new
-                  aria-label="Miejscowość wyjazdu"
-                  input_class="w-36"
-                />
-              </td>
-              <td class="pr-3">
-                <.input
-                  id={"trip-departure-date-#{trip.id}"}
-                  name="departure_date"
-                  value={date_value(trip.departure_datetime, @timezone)}
-                  type="date"
-                  new
-                  aria-label="Data wyjazdu"
-                  input_class="w-34"
-                />
-              </td>
-              <td>
-                <.input
-                  id={"trip-departure-time-#{trip.id}"}
-                  name="departure_time"
-                  value={time_value(trip.departure_datetime, @timezone)}
-                  type="time"
-                  new
-                  aria-label="Godzina wyjazdu"
-                  input_class="w-24"
-                />
-              </td>
-              <td rowspan="2" class="pl-3 align-bottom">
-                <.button
-                  type="button"
-                  variant="unstyled"
-                  class={[
-                    "block text-sm whitespace-nowrap",
-                    Map.get(@description_visible?, trip.id, false) && "text-red-700"
-                  ]}
-                  phx-click="toggle-description"
-                  phx-value-id={trip.id}
-                >{if Map.get(@description_visible?, trip.id, false),
-                  do: "Usuń opis",
-                  else: "Dodaj opis"}</.button>
-              </td>
-            </tr>
-            <tr>
-              <th scope="row" class="text-grey-700 pr-3 font-normal">Przyjazd</th>
-              <td class="pr-3">
-                <.input
-                  id={"trip-arrival-city-#{trip.id}"}
-                  name="arrival_city"
-                  value={trip.arrival_city}
-                  type="text"
-                  new
-                  aria-label="Miejscowość przyjazdu"
-                  input_class="w-36"
-                />
-              </td>
-              <td class="pr-3">
-                <.input
-                  id={"trip-arrival-date-#{trip.id}"}
-                  name="arrival_date"
-                  value={date_value(trip.arrival_datetime, @timezone)}
-                  type="date"
-                  new
-                  aria-label="Data przyjazdu"
-                  input_class="w-34"
-                />
-              </td>
-              <td>
-                <.input
-                  id={"trip-arrival-time-#{trip.id}"}
-                  name="arrival_time"
-                  value={time_value(trip.arrival_datetime, @timezone)}
-                  type="time"
-                  new
-                  aria-label="Godzina przyjazdu"
-                  input_class="w-24"
-                />
-              </td>
-            </tr>
-          </tbody>
-        </table>
-        <.input
-          :if={Map.get(@description_visible?, trip.id, false)}
-          id={"trip-description-#{trip.id}"}
-          name="description"
-          value={trip.description}
-          type="textarea"
-          new
-          label="Opis"
-        />
+        <div class="min-w-0">
+          <table class="border-separate border-spacing-y-3 text-left text-sm">
+            <thead class="text-grey-500">
+              <tr>
+                <th scope="col"></th>
+                <th scope="col" class="font-normal">Miejscowość</th>
+                <th scope="col" class="font-normal">Data</th>
+                <th scope="col" class="font-normal">Godzina</th>
+                <th scope="col"></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <th scope="row" class="text-grey-700 pr-3 font-normal">Wyjazd</th>
+                <td class="pr-3">
+                  <.input
+                    id={"trip-departure-city-#{trip.id}"}
+                    name="departure_city"
+                    value={trip.departure_city}
+                    type="text"
+                    new
+                    aria-label="Miejscowość wyjazdu"
+                    input_class="w-36"
+                  />
+                </td>
+                <td class="pr-3">
+                  <.input
+                    id={"trip-departure-date-#{trip.id}"}
+                    name="departure_date"
+                    value={date_value(trip.departure_datetime, @timezone)}
+                    type="date"
+                    new
+                    aria-label="Data wyjazdu"
+                    input_class="w-34"
+                  />
+                </td>
+                <td>
+                  <.input
+                    id={"trip-departure-time-#{trip.id}"}
+                    name="departure_time"
+                    value={time_value(trip.departure_datetime, @timezone)}
+                    type="time"
+                    new
+                    aria-label="Godzina wyjazdu"
+                    input_class="w-24"
+                  />
+                </td>
+                <td rowspan="2" class="pl-3 align-bottom">
+                  <.button
+                    type="button"
+                    variant="unstyled"
+                    class={[
+                      "block text-sm whitespace-nowrap",
+                      Map.get(@description_visible?, trip.id, false) && "text-red-700"
+                    ]}
+                    phx-click="toggle-description"
+                    phx-value-id={trip.id}
+                  >{if Map.get(@description_visible?, trip.id, false),
+                    do: "Usuń opis",
+                    else: "Dodaj opis"}</.button>
+                </td>
+              </tr>
+              <tr>
+                <th scope="row" class="text-grey-700 pr-3 font-normal">Przyjazd</th>
+                <td class="pr-3">
+                  <.input
+                    id={"trip-arrival-city-#{trip.id}"}
+                    name="arrival_city"
+                    value={trip.arrival_city}
+                    type="text"
+                    new
+                    aria-label="Miejscowość przyjazdu"
+                    input_class="w-36"
+                  />
+                </td>
+                <td class="pr-3">
+                  <.input
+                    id={"trip-arrival-date-#{trip.id}"}
+                    name="arrival_date"
+                    value={date_value(trip.arrival_datetime, @timezone)}
+                    type="date"
+                    new
+                    aria-label="Data przyjazdu"
+                    input_class="w-34"
+                  />
+                </td>
+                <td>
+                  <.input
+                    id={"trip-arrival-time-#{trip.id}"}
+                    name="arrival_time"
+                    value={time_value(trip.arrival_datetime, @timezone)}
+                    type="time"
+                    new
+                    aria-label="Godzina przyjazdu"
+                    input_class="w-24"
+                  />
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          <.input
+            :if={Map.get(@description_visible?, trip.id, false)}
+            id={"trip-description-#{trip.id}"}
+            name="description"
+            value={trip.description}
+            type="textarea"
+            new
+            label="Opis"
+          />
+        </div>
       </form>
     </section>
     """
+  end
+
+  defp roman_numeral(number) do
+    [
+      {1000, "M"},
+      {900, "CM"},
+      {500, "D"},
+      {400, "CD"},
+      {100, "C"},
+      {90, "XC"},
+      {50, "L"},
+      {40, "XL"},
+      {10, "X"},
+      {9, "IX"},
+      {5, "V"},
+      {4, "IV"},
+      {1, "I"}
+    ]
+    |> Enum.reduce({number, ""}, fn {value, numeral}, {remainder, result} ->
+      count = div(remainder, value)
+      {remainder - count * value, result <> String.duplicate(numeral, count)}
+    end)
+    |> elem(1)
   end
 
   attr :expense, :any, required: true
