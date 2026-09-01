@@ -7,6 +7,7 @@ defmodule Firmowid.Ash.Delegations.DelegationExpenseTransport do
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer]
 
+  alias Firmowid.Ash.Delegations.Changes.CreateExpenseBlob
   alias Firmowid.Ash.Delegations.DelegationTrip
   alias Firmowid.Ash.Resource
 
@@ -158,6 +159,11 @@ defmodule Firmowid.Ash.Delegations.DelegationExpenseTransport do
         :description
       ]
 
+      argument :upload_path, :string
+      argument :content_type, :string
+
+      change CreateExpenseBlob
+
       change after_action(fn _changeset, expense, context ->
                case Ash.create(
                       DelegationTrip,
@@ -179,6 +185,10 @@ defmodule Firmowid.Ash.Delegations.DelegationExpenseTransport do
       description "Update a transport expense while settling a delegation."
       primary? true
       accept [:document_number, :expense_amount, :transport_type, :description]
+
+      validate compare(:expense_amount, greater_than: Money.new(:PLN, 0)),
+        where: [changing(:expense_amount)],
+        message: "musi być większa od zera"
     end
   end
 
@@ -225,6 +235,12 @@ defmodule Firmowid.Ash.Delegations.DelegationExpenseTransport do
   relationships do
     belongs_to :delegation, Firmowid.Ash.Delegations.Delegation do
       allow_nil? false
+      attribute_writable? true
+    end
+
+    belongs_to :blob, Firmowid.Ash.Blobs.Blob do
+      description "Uploaded transport receipt."
+      allow_nil? true
       attribute_writable? true
     end
 

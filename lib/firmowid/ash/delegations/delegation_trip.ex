@@ -39,6 +39,9 @@ defmodule Firmowid.Ash.Delegations.DelegationTrip do
         :arrival_datetime,
         :description
       ]
+
+      validate compare(:arrival_datetime, greater_than_or_equal_to: :departure_datetime),
+        message: "musi być po lub o tej samej godzinie co wyjazd"
     end
 
     update :update do
@@ -52,6 +55,9 @@ defmodule Firmowid.Ash.Delegations.DelegationTrip do
         :arrival_datetime,
         :description
       ]
+
+      validate compare(:arrival_datetime, greater_than_or_equal_to: :departure_datetime),
+        message: "musi być po lub o tej samej godzinie co wyjazd"
     end
   end
 
