@@ -53,7 +53,8 @@ defmodule Firmowid.Ash.SystemActor do
     Can read leave requests and list/read users needed for delivery.
 
   - `:employment_contract_notifier` — emails employees about pending employment
-    contracts awaiting their signature. Can read employment contracts and users
+    contracts awaiting their signature and notifies org admins when a signed
+    contract is submitted. Can read employment contracts and list/read users
     needed for delivery.
 
   - `:anonymous` — unauthenticated share-token access. Can only read the specific
