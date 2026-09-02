@@ -2,6 +2,7 @@ defmodule FirmowidWeb.Management.Components.ProfileTab do
   @moduledoc "LiveComponent for displaying employee profile information."
   use FirmowidWeb, :live_component
 
+  import FirmowidWeb.DesignSystem.Components.CoreComponents, except: [button: 1]
   import FirmowidWeb.DesignSystem.Components.Link
   import FirmowidWeb.Management.Components.Card
   import Phoenix.Component, except: [link: 1]
@@ -30,6 +31,8 @@ defmodule FirmowidWeb.Management.Components.ProfileTab do
       socket
       |> assign(assigns)
       |> assign(:employment_contract, employment_contract)
+      |> assign_new(:editing_contract, fn -> false end)
+      |> assign(:contract_form, contract_form(employment_contract, scope))
       |> assign(:salary, salary)
 
     {:ok, socket}
@@ -52,7 +55,7 @@ defmodule FirmowidWeb.Management.Components.ProfileTab do
               {present(@user.email)}
             </.user_card_info>
             <.user_card_info label="Slack">
-              {present(@user.slack_id)}
+              {present(@user.slack_url) |> String.replace_prefix("https://", "")}
             </.user_card_info>
           </div>
           <div class="flex flex-col gap-5">
@@ -71,29 +74,68 @@ defmodule FirmowidWeb.Management.Components.ProfileTab do
         <.card class="flex h-fit w-1/2 grow flex-col">
           <.card_header>
             Informacje o zatrudnieniu
-          </.card_header>
-          <div class="flex flex-col gap-4">
-            <.user_card_info label="Rodzaj umowy">
-              {format_contract_type(@employment_contract && @employment_contract.contract_type)}
-            </.user_card_info>
-            <.user_card_info label="Stanowisko">
-              {present(@employment_contract && @employment_contract.position)}
-            </.user_card_info>
-            <.user_card_info label="Data podpisania umowy">
-              {present_date(@employment_contract && @employment_contract.signed_at)}
-              <.link
+            <:actions>
+              <.card_edit_actions
                 :if={@employment_contract}
-                kind="button"
-                variant="outline"
-                size="small"
-                class="ml-auto"
-                redirect={~p"/zarzadzanie/umowy/#{@employment_contract.id}"}
-                download
-              >
-                <Lucideicons.file_text class="size-4" /> <span class="font-medium">Umowa</span>
-              </.link>
-            </.user_card_info>
-          </div>
+                editing={@editing_contract}
+                form="contract-form"
+                toggle_event="toggle_contract_editor"
+                target={@myself}
+              />
+            </:actions>
+          </.card_header>
+          <.form
+            id="contract-form"
+            for={@contract_form}
+            phx-target={@myself}
+            phx-submit="save_contract_employment"
+          >
+            <div class="flex flex-col gap-4">
+              <%= if @editing_contract do %>
+                <.user_card_info label="Rodzaj umowy" for={@contract_form[:contract_type].id}>
+                  <.input
+                    field={@contract_form[:contract_type]}
+                    container_class="w-full"
+                    type="select"
+                    options={[
+                      {"Umowa o pracę", :uop},
+                      {"B2B", :b2b},
+                      {"Umowa zlecenie", :uz},
+                      {"Umowa o dzieło", :uod}
+                    ]}
+                    new
+                  />
+                </.user_card_info>
+                <.user_card_info label="Stanowisko" for={@contract_form[:position].id}>
+                  <.input field={@contract_form[:position]} class="w-full" new />
+                </.user_card_info>
+                <.user_card_info label="Data podpisania umowy" for={@contract_form[:signed_at].id}>
+                  <.input field={@contract_form[:signed_at]} type="date" class="w-full" new />
+                </.user_card_info>
+              <% else %>
+                <.user_card_info label="Rodzaj umowy">
+                  {format_contract_type(@employment_contract && @employment_contract.contract_type)}
+                </.user_card_info>
+                <.user_card_info label="Stanowisko">
+                  {present(@employment_contract && @employment_contract.position)}
+                </.user_card_info>
+                <.user_card_info label="Data podpisania umowy">
+                  {present_date(@employment_contract && @employment_contract.signed_at)}
+                  <.link
+                    :if={@employment_contract}
+                    kind="button"
+                    variant="outline"
+                    size="small"
+                    class="ml-auto"
+                    redirect={~p"/zarzadzanie/umowy/#{@employment_contract.id}"}
+                    download
+                  >
+                    <Lucideicons.file_text class="size-4" /> <span class="font-medium">Umowa</span>
+                  </.link>
+                </.user_card_info>
+              <% end %>
+            </div>
+          </.form>
         </.card>
 
         <.card class="flex h-fit w-1/2 shrink-0 flex-col">
@@ -105,6 +147,34 @@ defmodule FirmowidWeb.Management.Components.ProfileTab do
       </div>
     </div>
     """
+  end
+
+  @impl true
+  def handle_event("toggle_contract_editor", _params, socket) do
+    {:noreply,
+     socket
+     |> update(:editing_contract, &(!&1))
+     |> assign(
+       :contract_form,
+       contract_form(socket.assigns.employment_contract, socket.assigns.scope)
+     )}
+  end
+
+  def handle_event("save_contract_employment", %{"contract" => params}, socket) do
+    case AshPhoenix.Form.submit(socket.assigns.contract_form,
+           params: params,
+           scope: socket.assigns.scope
+         ) do
+      {:ok, updated} ->
+        {:noreply,
+         socket
+         |> assign(:employment_contract, updated)
+         |> assign(:editing_contract, false)
+         |> assign(:contract_form, contract_form(updated, socket.assigns.scope))}
+
+      {:error, form} ->
+        {:noreply, assign(socket, :contract_form, form)}
+    end
   end
 
   defp format_contract_type(nil), do: "Nieokreślony"
@@ -121,4 +191,12 @@ defmodule FirmowidWeb.Management.Components.ProfileTab do
   defp present_date(""), do: "—"
   defp present_date(%Date{} = date), do: TimeFormatter.format_date(date)
   defp present_date(date), do: to_string(date)
+
+  defp contract_form(nil, _scope), do: nil
+
+  defp contract_form(contract, scope) do
+    contract
+    |> AshPhoenix.Form.for_update(:update, domain: Payroll, scope: scope, as: "contract")
+    |> to_form()
+  end
 end

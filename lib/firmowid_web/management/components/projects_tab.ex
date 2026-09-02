@@ -108,42 +108,17 @@ defmodule FirmowidWeb.Management.Components.ProjectsTab do
     ~H"""
     <div class="flex h-full min-h-0 flex-col gap-6">
       <.card class="relative z-10" dimmed={@user.archived_at}>
-        <div class="flex min-h-8.5 flex-row items-center gap-2">
-          <.card_header>
-            Dane do przelewu
-          </.card_header>
-          <%= if @editing_payout do %>
-            <.button
-              class="ml-2"
+        <.card_header>
+          Dane do przelewu
+          <:actions>
+            <.card_edit_actions
+              editing={@editing_payout}
               form="payout-form"
-              type="submit"
-              variant="secondary"
-              size="small"
-              accent="orange"
-            >
-              Zapisz
-            </.button>
-            <.button
-              type="button"
-              variant="ghost"
-              size="small"
-              phx-click="toggle_payout_editor"
-              phx-target={@myself}
-            >
-              <.icon name="hero-arrow-uturn-left-micro" class="size-4" />
-            </.button>
-          <% else %>
-            <.button
-              type="button"
-              variant="ghost"
-              size="small"
-              phx-click="toggle_payout_editor"
-              phx-target={@myself}
-            >
-              <.icon name="hero-pencil-square" class="size-5" />
-            </.button>
-          <% end %>
-        </div>
+              toggle_event="toggle_payout_editor"
+              target={@myself}
+            />
+          </:actions>
+        </.card_header>
 
         <.form
           id="payout-form"
@@ -152,7 +127,7 @@ defmodule FirmowidWeb.Management.Components.ProjectsTab do
           phx-submit="save_payout"
         >
           <div class="grid grid-cols-[minmax(min-content,2fr)_minmax(min-content,1fr)] gap-4">
-            <.user_card_info label="Numer konta bankowego">
+            <.user_card_info label="Numer konta bankowego" for={@payout_form[:bank_account_number].id}>
               <%= if @editing_payout do %>
                 <.input
                   field={@payout_form[:bank_account_number]}
@@ -166,7 +141,11 @@ defmodule FirmowidWeb.Management.Components.ProjectsTab do
             </.user_card_info>
             <div class="flex items-end justify-between gap-4">
               <%= if @editing_payout do %>
-                <.user_card_info label="Nowa stawka" class="text-nowrap">
+                <.user_card_info
+                  label="Nowa stawka"
+                  for={@payout_form[:hourly_rate].id}
+                  class="text-nowrap"
+                >
                   <div class="flex items-center gap-2">
                     <.input
                       field={@payout_form[:hourly_rate]}

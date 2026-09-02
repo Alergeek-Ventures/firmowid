@@ -187,7 +187,7 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
             <Lucideicons.file_text class="size-4" /> Nowa umowa
           </h3>
           <p class="text-grey-500 text-sm">
-            Podpisz do: {present_date(@pending_contract.starts_at)}
+            Podpisz do: {present_date(@pending_contract.signed_at)}
           </p>
         </div>
 
