@@ -4,13 +4,15 @@ defmodule Firmowid.Seeds.Timetracker do
   Seeds for the timetracker: salaries, time tracking sessions, and hours records.
 
   Creates:
-  - Active salary for each employee (+ one historical entry for Kira)
+  - Active employment contract for each employee (Sable has pending_signature for signing flow)
+  - Active salary for each employee (+ one historical entry for Kira), linked to contracts
   - Sessions for M-2 and M-1 (completed months, locked down by hours records)
   - Sessions for M-0 (current month, open — no hours record)
   - Hours records for M-2 and M-1 (with placeholder blob attachments)
   - No hours records for M-0 (so the upload wizard is testable)
   """
 
+  alias Firmowid.Ash.Payroll.UserEmploymentContract
   alias Firmowid.Ash.Payroll.UserSalary
   alias Firmowid.Ash.Timetracker.HoursRecord
   alias Firmowid.Ash.Timetracker.Session
@@ -25,7 +27,8 @@ defmodule Firmowid.Seeds.Timetracker do
   # ---------------------------------------------------------------------------
 
   def seed!(ctx) do
-    seed_salaries(ctx)
+    contracts_by_user_id = seed_employment_contracts(ctx)
+    seed_salaries(ctx, contracts_by_user_id)
     seed_sessions_m2(ctx)
     seed_sessions_m1(ctx)
     seed_sessions_m0(ctx)
@@ -33,10 +36,109 @@ defmodule Firmowid.Seeds.Timetracker do
   end
 
   # ---------------------------------------------------------------------------
+  # Employment contracts
+  # ---------------------------------------------------------------------------
+
+  defp seed_employment_contracts(ctx) do
+    %{users: users, bytecraft: bytecraft} = ctx
+    org_id = bytecraft.id
+
+    contract_specs = [
+      {users.kira,
+       %{
+         position: "Lead Engineer",
+         contract_type: :uop,
+         status: :active,
+         hourly_rate: Decimal.new("150.00")
+       }},
+      {users.tomek,
+       %{
+         position: "Accountant",
+         contract_type: :uop,
+         status: :active,
+         hourly_rate: Decimal.new("120.00")
+       }},
+      {users.sable,
+       %{
+         position: "Product Designer",
+         contract_type: :uz,
+         status: :pending_signature,
+         hourly_rate: Decimal.new("100.00")
+       }},
+      {users.jules,
+       %{
+         position: "DevOps Engineer",
+         contract_type: :b2b,
+         status: :active,
+         hourly_rate: Decimal.new("130.00")
+       }},
+      {users.maren,
+       %{
+         position: "Frontend Developer",
+         contract_type: :uop,
+         status: :active,
+         hourly_rate: Decimal.new("110.00")
+       }}
+    ]
+
+    Enum.reduce(contract_specs, %{}, fn {user, spec}, acc ->
+      contract = seed_employment_contract!(user, org_id, spec)
+      Map.put(acc, user.id, contract.id)
+    end)
+  end
+
+  defp seed_employment_contract!(user, org_id, spec) do
+    starts_at = user.employment_date || Date.utc_today()
+
+    signed_at =
+      if spec.status == :pending_signature do
+        Date.add(Date.utc_today(), 14)
+      else
+        starts_at
+      end
+
+    checksum =
+      :sha256
+      |> :crypto.hash("employment-contract:#{user.id}:#{org_id}")
+      |> Base.encode16(case: :lower)
+
+    blob =
+      Helpers.seed_blob!(
+        %{
+          blob_path: "employment-contracts/#{user.id}/umowa.pdf",
+          blob_checksum: checksum,
+          original_filename: "umowa.pdf"
+        },
+        org_id
+      )
+
+    Ash.Seed.upsert!(
+      UserEmploymentContract,
+      %{
+        user_id: user.id,
+        organization_id: org_id,
+        starts_at: starts_at,
+        salary: contract_salary!(spec.hourly_rate),
+        blob_id: blob.id,
+        contract_type: spec.contract_type,
+        position: spec.position,
+        status: spec.status,
+        signed_at: signed_at
+      },
+      identity: :unique_contract_per_user_org,
+      tenant: org_id
+    )
+  end
+
+  defp contract_salary!(hourly_rate) do
+    Helpers.money!("PLN", Decimal.mult(hourly_rate, 160))
+  end
+
+  # ---------------------------------------------------------------------------
   # Salaries
   # ---------------------------------------------------------------------------
 
-  defp seed_salaries(ctx) do
+  defp seed_salaries(ctx, contracts_by_user_id) do
     %{users: users, bytecraft: bytecraft} = ctx
 
     salary_data = [
@@ -48,24 +150,34 @@ defmodule Firmowid.Seeds.Timetracker do
     ]
 
     for {user, rate} <- salary_data do
-      get_or_create_salary(user.id, bytecraft.id, rate)
+      get_or_create_salary(user.id, bytecraft.id, rate, Map.get(contracts_by_user_id, user.id))
     end
 
     # Historical salary for Kira — she got a raise from 120 to 150
     create_historical_salary(users.kira.id, bytecraft.id, Decimal.new("120.00"))
   end
 
-  defp get_or_create_salary(user_id, org_id, hourly_rate) do
-    Ash.Seed.seed!(
-      UserSalary,
+  defp get_or_create_salary(user_id, org_id, hourly_rate, employment_contract_id \\ nil) do
+    attrs =
       %{
         hourly_rate: hourly_rate,
         user_id: user_id,
         organization_id: org_id,
         starts_at: DateTime.utc_now()
-      },
+      }
+      |> maybe_put_employment_contract_id(employment_contract_id)
+
+    Ash.Seed.seed!(
+      UserSalary,
+      attrs,
       tenant: org_id
     )
+  end
+
+  defp maybe_put_employment_contract_id(attrs, nil), do: attrs
+
+  defp maybe_put_employment_contract_id(attrs, employment_contract_id) do
+    Map.put(attrs, :employment_contract_id, employment_contract_id)
   end
 
   defp create_historical_salary(user_id, org_id, hourly_rate) do

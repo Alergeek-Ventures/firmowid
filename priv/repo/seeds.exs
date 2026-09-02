@@ -50,7 +50,7 @@ else
   MonthM1.seed!(ctx)
   MonthM0.seed!(ctx)
 
-  # — Timetracker: salaries, sessions, hours records —
+  # — Timetracker: employment contracts, salaries, sessions, hours records —
   TimetrackerSeeds.seed!(ctx)
 
   # — Evil org: VoidStack Labs —
