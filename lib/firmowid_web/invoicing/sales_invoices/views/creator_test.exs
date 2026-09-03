@@ -424,6 +424,56 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.CreatorTest do
            )
   end
 
+  test "copied invoice renders its Money total in the preview", %{conn: conn} do
+    admin = admin_fixture()
+    scope = scope_for(admin)
+
+    {:ok, bank_account} =
+      Finances.create_manual_bank_account(
+        %{
+          iban: "DE03120300000000303030303030",
+          name: "EUR default",
+          currency: "EUR",
+          is_default: true
+        },
+        scope: scope
+      )
+
+    source_invoice =
+      sales_invoice_fixture!(admin, %{
+        sales_invoice_items: [
+          base_item_attrs(%{
+            name: "Usługa testowa",
+            quantity: Decimal.new("1"),
+            unit_price: Decimal.new("100.00"),
+            vat_rate: "23"
+          })
+        ]
+      })
+
+    conn = log_in_user(conn, admin)
+    {:ok, _view, _html} = live(conn, "/sprzedazowe?skopiuj=#{source_invoice.id}")
+    copied_draft = copied_draft!(admin)
+
+    {:ok, copied_draft} =
+      WizardDraft.update_payment(
+        copied_draft,
+        %{
+          sale_date: ~D[2026-02-01],
+          due_date: ~D[2026-02-14],
+          payment_method: :transfer,
+          seller_account_number: bank_account.iban
+        },
+        scope: scope
+      )
+
+    {:ok, preview, html} =
+      live(conn, ~p"/sprzedazowe?szkic_kreatora=#{copied_draft.id}&krok=4")
+
+    assert has_element?(preview, "h1", "Podgląd faktury")
+    assert html =~ Money.to_string!(Money.new("EUR", Decimal.new("123.00")))
+  end
+
   test "recent invoices copy repopulates the current draft with matching values", %{conn: conn} do
     admin = admin_fixture()
     scope = scope_for(admin)
