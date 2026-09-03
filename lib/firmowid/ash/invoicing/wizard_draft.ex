@@ -36,6 +36,7 @@ defmodule Firmowid.Ash.Invoicing.WizardDraft do
     data_layer: Ash.DataLayer.Ets,
     authorizers: [Ash.Policy.Authorizer]
 
+  alias AshMoney.Types.Money
   alias Firmowid.Ash.Invoicing.Changes
   alias Firmowid.Ash.Invoicing.CountryCodes
   alias Firmowid.Ash.Invoicing.Validations
@@ -307,6 +308,22 @@ defmodule Firmowid.Ash.Invoicing.WizardDraft do
   end
 
   calculations do
+    calculate :amount,
+              Money,
+              expr(
+                if is_nil(currency) do
+                  nil
+                else
+                  composite_type(
+                    %{
+                      currency: currency,
+                      amount: if(is_nil(gross_value), do: 0, else: gross_value)
+                    },
+                    Money
+                  )
+                end
+              )
+
     # NOTE: This expr() logic is intentionally duplicated across SalesInvoice,
     # WizardDraft, and Counterparty (as :tax_id_type) because Ash expr()
     # calculations run in the DB and cannot call Elixir functions.

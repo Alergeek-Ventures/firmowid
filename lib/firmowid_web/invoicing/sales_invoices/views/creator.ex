@@ -65,6 +65,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
     :net_value,
     :vat_value,
     :gross_value,
+    :amount,
     items: [:net_value, :vat_value, :gross_value]
   ]
 
@@ -591,6 +592,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
       net_value: draft.net_value,
       vat_value: draft.vat_value,
       gross_value: draft.gross_value,
+      amount: draft.amount,
       sales_invoice_items: items,
       vat_exemption_type: draft.vat_exemption_type || organization.vat_exemption_type,
       vat_exemption_basis: draft.vat_exemption_basis || organization.vat_exemption_basis,
