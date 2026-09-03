@@ -20,15 +20,18 @@ defmodule FirmowidWeb.Delegations.Views.DelegationTest do
       do: {:ok, %{"document_number" => "FV/2026/001", "expense_amount" => 123.45}}
   end
 
+  defmodule FailingReductoClient do
+    @moduledoc false
+
+    def extract_file(_path, _schema, _options), do: {:error, :missing_reducto_api_key}
+  end
+
   setup do
     previous_client = Application.get_env(:firmowid, :reducto_api_client_module)
-    previous_enabled = Application.get_env(:firmowid, :delegation_expense_extraction_enabled)
     Application.put_env(:firmowid, :reducto_api_client_module, ReductoClient)
-    Application.put_env(:firmowid, :delegation_expense_extraction_enabled, true)
 
     on_exit(fn ->
       restore_env(:reducto_api_client_module, previous_client)
-      restore_env(:delegation_expense_extraction_enabled, previous_enabled)
     end)
   end
 
@@ -188,6 +191,21 @@ defmodule FirmowidWeb.Delegations.Views.DelegationTest do
     assert trip.arrival_city == ""
     assert is_nil(trip.departure_datetime)
     assert is_nil(trip.arrival_datetime)
+  end
+
+  test "shows a generic error when document extraction fails", %{conn: conn} do
+    Application.put_env(:firmowid, :reducto_api_client_module, FailingReductoClient)
+
+    {view, _html, _delegation, _scope} = approved_delegation_view(conn)
+
+    upload =
+      file_input(view, "#transport-upload-form", :transport, [
+        %{name: "bilet.pdf", content: "PDF content", type: "application/pdf"}
+      ])
+
+    render_upload(upload, "bilet.pdf")
+
+    assert render(view) =~ "Nie udało się dodać dokumentu."
   end
 
   test "updates a transport trip", %{conn: conn} do

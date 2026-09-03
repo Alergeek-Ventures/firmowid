@@ -5,6 +5,8 @@ defmodule Firmowid.Ash.Delegations.DelegationExpenseExtractor do
 
   alias Firmowid.Ash.Blobs.Utils.ProcessBlobHelpers
 
+  require Logger
+
   @system_prompt """
   Extract the document number and gross total amount from this delegation expense document.
 
@@ -24,30 +26,32 @@ defmodule Firmowid.Ash.Delegations.DelegationExpenseExtractor do
   }
 
   @doc """
-  Returns extracted details, or an empty map when extraction is unavailable.
+  Returns extracted details or the reason extraction failed.
   """
-  @spec extract(Path.t(), :transport | :accommodation | :other) :: map()
+  @spec extract(Path.t(), :transport | :accommodation | :other) :: {:ok, map()} | {:error, term()}
   def extract(file_path, _expense_type) do
-    if Application.get_env(:firmowid, :delegation_expense_extraction_enabled, true) do
-      extract_details(file_path)
-    else
-      fallback_details()
-    end
+    extract_details(file_path)
   end
 
   defp extract_details(file_path) do
     case ProcessBlobHelpers.reducto_client().extract_file(file_path, @schema, system_prompt: @system_prompt) do
       {:ok, metadata} ->
-        details(metadata) || fallback_details()
+        case details(metadata) do
+          nil -> extraction_error(:invalid_response)
+          details -> {:ok, details}
+        end
 
-      {:error, _reason} ->
-        fallback_details()
+      {:error, reason} ->
+        extraction_error(reason)
     end
   rescue
-    _error -> fallback_details()
+    error -> extraction_error(Exception.message(error))
   end
 
-  defp fallback_details, do: %{document_number: "DEMO-#{System.unique_integer([:positive])}"}
+  defp extraction_error(reason) do
+    Logger.error("Delegation expense extraction failed: #{inspect(reason)}")
+    {:error, reason}
+  end
 
   defp details(%{"document_number" => document_number, "expense_amount" => amount})
        when is_binary(document_number) and document_number != "" do
