@@ -175,20 +175,13 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
               >
                 <span class="absolute block size-full animate-pulse bg-orange-600" />
                 <span class="bg-lightGreyBg z-10 flex size-5 items-center justify-center rounded-full">
-                  <%= if @currently_uploading_count > 0 do %>
-                    <Lucideicons.arrow_up class="size-4 leading-none text-orange-900" />
-                  <% else %>
-                    <%= case @processing_blobs_count do %>
-                      <% 1 -> %>
-                        <.icon
-                          name="hero-arrow-up-circle-solid"
-                          class="size-5 leading-none text-white"
-                        />
-                      <% 0 -> %>
-                      <% _ -> %>
-                        <span>{@processing_blobs_count}</span>
-                    <% end %>
-                  <% end %>
+                  <Lucideicons.arrow_up
+                    :if={@currently_uploading_count > 0 or @processing_blobs_count == 1}
+                    class="size-4 leading-none text-orange-900"
+                  />
+                  <span :if={@currently_uploading_count == 0 and @processing_blobs_count > 1}>
+                    {@processing_blobs_count}
+                  </span>
                 </span>
               </span>
             <% else %>
