@@ -986,20 +986,22 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
   end
 
   defp create_expense(:transport, id, filename, content_type, path, scope) do
-    %{
-      delegation_id: id,
-      original_filename: filename,
-      document_number: "",
-      expense_amount: Money.new(:PLN, 0),
-      upload_path: path,
-      content_type: content_type
-    }
-    |> Map.merge(DelegationExpenseExtractor.extract(path, :transport))
-    |> Delegations.create_transport_expense(scope: scope)
+    with {:ok, extracted_details} <- DelegationExpenseExtractor.extract(path, :transport) do
+      %{
+        delegation_id: id,
+        original_filename: filename,
+        document_number: "",
+        expense_amount: Money.new(:PLN, 0),
+        upload_path: path,
+        content_type: content_type
+      }
+      |> Map.merge(extracted_details)
+      |> Delegations.create_transport_expense(scope: scope)
+    end
   end
 
-  defp create_expense(:accommodation, id, filename, content_type, path, scope),
-    do:
+  defp create_expense(:accommodation, id, filename, content_type, path, scope) do
+    with {:ok, extracted_details} <- DelegationExpenseExtractor.extract(path, :accommodation) do
       %{
         delegation_id: id,
         original_filename: filename,
@@ -1008,11 +1010,13 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
         upload_path: path,
         content_type: content_type
       }
-      |> Map.merge(DelegationExpenseExtractor.extract(path, :accommodation))
+      |> Map.merge(extracted_details)
       |> Delegations.create_accommodation_expense(scope: scope)
+    end
+  end
 
-  defp create_expense(:other, id, filename, content_type, path, scope),
-    do:
+  defp create_expense(:other, id, filename, content_type, path, scope) do
+    with {:ok, extracted_details} <- DelegationExpenseExtractor.extract(path, :other) do
       %{
         delegation_id: id,
         original_filename: filename,
@@ -1021,8 +1025,10 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
         upload_path: path,
         content_type: content_type
       }
-      |> Map.merge(DelegationExpenseExtractor.extract(path, :other))
+      |> Map.merge(extracted_details)
       |> Delegations.create_other_expense(scope: scope)
+    end
+  end
 
   defp update_expense(kind, id, attrs, scope) do
     with {:ok, expense} <- get_expense(kind, id, scope) do

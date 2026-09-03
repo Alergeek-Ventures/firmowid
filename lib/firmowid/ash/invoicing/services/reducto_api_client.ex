@@ -33,20 +33,22 @@ defmodule Firmowid.Ash.Invoicing.Services.ReductoApiClient do
   Returns {:ok, response} or {:error, reason}.
   """
   @spec extract(String.t(), map(), extract_options) ::
-          {:ok, map()} | {:error, :invalid_document | String.t()}
+          {:ok, map()} | {:error, term()}
   def extract(file_url, json_schema, options \\ []) do
-    file_url
-    |> upload_to_reducto(s3_host())
-    |> extract_input(json_schema, options)
+    with :ok <- ensure_configured() do
+      file_url
+      |> upload_to_reducto(s3_host())
+      |> extract_input(json_schema, options)
+    end
   end
 
   @doc """
   Uploads a local file to Reducto and extracts metadata from it.
   """
   @spec extract_file(Path.t(), map(), extract_options) ::
-          {:ok, map()} | {:error, :invalid_document | String.t()}
+          {:ok, map()} | {:error, term()}
   def extract_file(file_path, json_schema, options \\ []) do
-    with {:ok, file_id} <- upload_file(file_path) do
+    with :ok <- ensure_configured(), {:ok, file_id} <- upload_file(file_path) do
       extract_input(file_id, json_schema, options)
     end
   end
@@ -151,6 +153,22 @@ defmodule Firmowid.Ash.Invoicing.Services.ReductoApiClient do
     :firmowid
     |> Application.get_env(:s3)
     |> Keyword.get(:host)
+  end
+
+  defp ensure_configured do
+    if Application.get_env(:firmowid, :reducto_api_key) || local_transport_configured?() do
+      :ok
+    else
+      Logger.error("Reducto API is not configured: REDUCTO_API_KEY is missing")
+      {:error, :missing_reducto_api_key}
+    end
+  end
+
+  defp local_transport_configured? do
+    :firmowid
+    |> Application.get_env(:reducto_api_client, [])
+    |> Keyword.get(:extract, [])
+    |> Keyword.has_key?(:plug)
   end
 
   defp upload_to_reducto(file_url, "localhost") do
