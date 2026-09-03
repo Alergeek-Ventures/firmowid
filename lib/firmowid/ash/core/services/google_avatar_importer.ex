@@ -9,6 +9,7 @@ defmodule Firmowid.Ash.Core.Services.GoogleAvatarImporter do
   alias Firmowid.Ash.Core
   alias Firmowid.Ash.Core.User
   alias Firmowid.Ash.Scope
+  alias Firmowid.ErrorKind
 
   require Logger
 
@@ -55,7 +56,10 @@ defmodule Firmowid.Ash.Core.Services.GoogleAvatarImporter do
           {:ok, updated_user}
         else
           {:error, reason} ->
-            Logger.warning("Skipping Google avatar import for user #{user.id}: #{inspect(reason)}")
+            Logger.warning("Skipping Google avatar import",
+              user_id: user.id,
+              error_kind: ErrorKind.classify(reason)
+            )
 
             {:ok, user}
         end
@@ -64,7 +68,11 @@ defmodule Firmowid.Ash.Core.Services.GoogleAvatarImporter do
       end
     else
       {:error, reason} ->
-        Logger.warning("Skipping Google avatar import for user #{user.id}: #{inspect(reason)}")
+        Logger.warning("Skipping Google avatar import",
+          user_id: user.id,
+          error_kind: ErrorKind.classify(reason)
+        )
+
         {:ok, user}
     end
   end

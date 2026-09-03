@@ -4,6 +4,8 @@ defmodule Firmowid.Ash.Invoicing.Services.ReductoApiClient do
   Uses Reducto API V3 - see https://docs.reducto.ai/extract/overview
   """
 
+  alias Firmowid.ErrorKind
+
   require Logger
 
   @default_base_url "https://platform.reducto.ai"
@@ -88,24 +90,24 @@ defmodule Firmowid.Ash.Invoicing.Services.ReductoApiClient do
             {:ok, unwrap_citations(extracted_metadata)}
 
           [] ->
-            Logger.error("Reducto API returned empty result. Response body: #{inspect(body)}")
+            Logger.error("Reducto API returned empty result: status=#{response.status} outcome=empty_result")
+
             {:error, "Reducto API returned empty result"}
 
           nil ->
-            Logger.error("Reducto API response missing 'result' field. Response body: #{inspect(body)}")
+            Logger.error("Reducto API response missing 'result' field: status=#{response.status} outcome=missing_result")
 
             case Map.get(body, "error") do
               %{"code" => 415, "name" => "DOCUMENT_CORRUPT"} ->
                 {:error, :invalid_document}
 
               error ->
-                {:error,
-                 "Reducto API response missing 'result' field: #{inspect(Map.get(body, "detail"))} --- #{inspect(error)}"}
+                {:error, "Reducto API response missing 'result' field: #{ErrorKind.classify(error)}"}
             end
         end
 
       {:error, err} ->
-        Logger.error("Reducto API error: #{inspect(err)}")
+        Logger.error("Reducto API request failed: error_kind=#{ErrorKind.classify(err)}")
 
         {:error, err}
     end

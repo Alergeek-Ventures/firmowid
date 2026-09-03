@@ -1,5 +1,31 @@
 import Config
 
+safe_sentry_metadata = [
+  :request_id,
+  :user_id,
+  :organization_id,
+  :bank_account_id,
+  :blob_id,
+  :account_id,
+  :requisition_id,
+  :leave_request_id,
+  :digest_id,
+  :invoice_id,
+  :inbound_email_id,
+  :error_kind,
+  :details_kind,
+  :service,
+  :operation,
+  :stage,
+  :status,
+  :attachment_count,
+  :content_type,
+  :bytes,
+  :kind,
+  :key_count,
+  :health_check
+]
+
 config :firmowid, Firmowid.Ash.Currencies.Converter, rates_provider: :api
 
 # Note we also include the path to a cache manifest
@@ -24,16 +50,16 @@ config :firmowid, FirmowidWeb.Core.Endpoint,
 config :logger, level: :info
 
 config :sentry,
-  dsn: "https://dc33e5660f563be6b0423120825f8da3@o4511195748630528.ingest.de.sentry.io/4511195751317584",
   environment_name: "production",
   in_app_otp_apps: [:firmowid],
-  enable_source_code_context: true,
-  root_source_code_paths: [File.cwd!()],
-  before_send_log: {Firmowid.SentryFilter, :before_send_log},
+  enable_source_code_context: false,
   enable_logs: true,
   logs: [
     level: :info,
-    metadata: [:request_id, :user_id, :health_check]
+    metadata: safe_sentry_metadata ++ [:mfa],
+    capture_metadata: safe_sentry_metadata ++ [:sentry_live_view_captured],
+    capture_excluded_domains: [:cowboy, :bandit],
+    excluded_domains: [:otp, :sasl]
   ],
   integrations: [
     oban: [

@@ -24,6 +24,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
   alias Firmowid.Ash.Invoicing.Services.CorrectionReason
   alias Firmowid.Ash.Ksef
   alias Firmowid.Ash.Ksef.SubmissionInfo
+  alias Firmowid.ErrorKind
   alias FirmowidWeb.Invoicing.FormHelpers
   alias FirmowidWeb.Invoicing.SalesInvoices.Components.InvoicePayment
   alias FirmowidWeb.Invoicing.SalesInvoices.Utilities.PaymentDateSuggestions
@@ -384,7 +385,11 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
            |> push_navigate(to: Navigation.sales_invoice_show_path(invoice, socket.assigns.return_to))}
 
         {:error, form} ->
-          Logger.error("Failed to save draft: #{inspect(form.source.errors)}")
+          Logger.error("Failed to save draft",
+            invoice_id: socket.assigns.invoice.id,
+            error_kind: ErrorKind.classify(form.source.errors)
+          )
+
           {:noreply, put_flash(socket, :error, "Nie udało się zapisać faktury")}
       end
     else
@@ -452,7 +457,10 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
   end
 
   defp handle_submit_result({:error, error}, socket) do
-    Logger.error("Failed to create invoice: #{inspect(error)}")
+    Logger.error("Failed to create invoice",
+      invoice_id: socket.assigns.invoice.id,
+      error_kind: ErrorKind.classify(error)
+    )
 
     {:noreply, put_flash(socket, :error, get_error_message(error))}
   end
@@ -467,7 +475,10 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
          |> push_navigate(to: Navigation.sales_invoice_summary_path(invoice, socket.assigns.return_to))}
 
       {:error, reason} ->
-        Logger.error("Failed to submit invoice to KSeF: #{inspect(reason)}")
+        Logger.error("Failed to submit invoice to KSeF",
+          invoice_id: invoice.id,
+          error_kind: ErrorKind.classify(reason)
+        )
 
         handle_failed_ksef_submission(socket, invoice, reason)
     end
@@ -483,7 +494,10 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
          |> push_navigate(to: Navigation.sales_invoice_edit_path(original_invoice_id, socket.assigns.return_to))}
 
       {:error, destroy_error} ->
-        Logger.error("Failed to clean up correction invoice #{invoice.id}: #{inspect(destroy_error)}")
+        Logger.error("Failed to clean up correction invoice",
+          invoice_id: invoice.id,
+          error_kind: ErrorKind.classify(destroy_error)
+        )
 
         {:noreply,
          socket

@@ -7,6 +7,7 @@ defmodule Firmowid.Ash.Invoicing.Services.SellerDisplayNameEnrichment do
   """
 
   alias Firmowid.Ash.Invoicing.CostInvoice
+  alias Firmowid.ErrorKind
   alias OpenaiEx.Chat
   alias OpenaiEx.ChatMessage
 
@@ -133,7 +134,10 @@ defmodule Firmowid.Ash.Invoicing.Services.SellerDisplayNameEnrichment do
     |> Map.get("content")
   rescue
     error ->
-      Logger.warning("Failed to generate seller display name via OpenAI: #{inspect(error)}")
+      Logger.warning("Failed to generate seller display name via OpenAI",
+        error_kind: ErrorKind.classify(error)
+      )
+
       nil
   end
 

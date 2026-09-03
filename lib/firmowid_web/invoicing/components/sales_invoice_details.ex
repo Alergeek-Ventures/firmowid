@@ -15,6 +15,7 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
   alias Firmowid.Ash.Invoicing.SalesInvoice
   alias Firmowid.Ash.Ksef
   alias Firmowid.Ash.Ksef.SubmissionInfo
+  alias Firmowid.ErrorKind
   alias FirmowidWeb.Invoicing.Assistant.Utilities.SessionCloser
   alias FirmowidWeb.Invoicing.Components.InvoiceAssistant
   alias FirmowidWeb.Invoicing.Components.InvoiceDetails
@@ -562,7 +563,11 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
          |> put_flash(:info, "Wysyłka do KSeF rozpoczęta")}
 
       {:error, reason} ->
-        Logger.error("Failed to submit to KSeF: #{inspect(reason)}")
+        Logger.error("Failed to submit to KSeF",
+          invoice_id: invoice.id,
+          error_kind: ErrorKind.classify(reason)
+        )
+
         {:noreply, put_flash(socket, :error, ksef_error_message(reason))}
     end
   end

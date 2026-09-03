@@ -7,6 +7,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Show do
   alias Firmowid.Ash.Invoicing.SalesInvoice
   alias Firmowid.Ash.Invoicing.Services.SalesInvoiceSharing
   alias Firmowid.Ash.Ksef
+  alias Firmowid.ErrorKind
   alias FirmowidWeb.Invoicing.Utilities.Navigation
 
   require Logger
@@ -223,20 +224,26 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Show do
          |> push_navigate(to: Navigation.sales_invoice_summary_path(correction, socket.assigns.return_to))}
 
       {:error, reason} ->
-        Logger.error("Failed to submit cancellation correction to KSeF: #{inspect(reason)}")
+        Logger.error("Failed to submit cancellation correction to KSeF",
+          invoice_id: correction.id,
+          error_kind: ErrorKind.classify(reason)
+        )
 
         case Ksef.cleanup_failed_correction(correction.id, socket.assigns.ash_scope) do
           {:ok, :deleted, _original_invoice_id} ->
             {:noreply, put_flash(socket, :error, Ksef.failed_correction_message(reason))}
 
           {:error, cleanup_error} ->
-            Logger.error("Failed to clean up cancellation correction #{correction.id}: #{inspect(cleanup_error)}")
+            Logger.error("Failed to clean up cancellation correction",
+              invoice_id: correction.id,
+              error_kind: ErrorKind.classify(cleanup_error)
+            )
 
             {:noreply, put_flash(socket, :error, "Nie udało się wysłać korekty anulującej do KSeF")}
 
           cleanup_result ->
             Logger.error(
-              "Unexpected cleanup result for cancellation correction #{correction.id}: #{inspect(cleanup_result)}"
+              "Unexpected cleanup result for cancellation correction invoice #{correction.id} (kind=#{ErrorKind.classify(cleanup_result)})"
             )
 
             {:noreply, put_flash(socket, :error, "Nie udało się wysłać korekty anulującej do KSeF")}

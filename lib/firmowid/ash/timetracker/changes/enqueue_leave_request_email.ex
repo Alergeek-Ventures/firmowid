@@ -5,6 +5,7 @@ defmodule Firmowid.Ash.Timetracker.Changes.EnqueueLeaveRequestEmail do
   use Ash.Resource.Change
 
   alias Firmowid.Ash.Timetracker.Workers.LeaveRequestEmailWorker
+  alias Firmowid.ErrorKind
 
   require Logger
 
@@ -31,7 +32,7 @@ defmodule Firmowid.Ash.Timetracker.Changes.EnqueueLeaveRequestEmail do
 
         {:error, reason} ->
           Logger.error(
-            "Failed to enqueue leave request admin email leave_request_id=#{leave_request.id} reason=#{inspect(reason)}"
+            "Failed to enqueue leave request admin email leave_request_id=#{leave_request.id} reason=#{ErrorKind.classify(reason)}"
           )
 
           {:ok, leave_request}

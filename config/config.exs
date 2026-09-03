@@ -11,6 +11,7 @@ import Config
 config :ash, Ash.Type.UUIDv7, match_v4_uuids?: true
 
 config :ash,
+  default_string_length_count: :codepoints,
   default_belongs_to_type: :uuid_v7,
   # TEMPORARY: Repo.put_org_id stores org context in the process dictionary.
   # Ash spawns async tasks for relationship loading which don't inherit it,
@@ -166,14 +167,29 @@ config :logger, :console,
   metadata: [
     :request_id,
     :module,
-    :org_id,
-    :sender,
-    :resend_email_id,
-    :health_check,
     :user_id,
-    :user_email,
     :organization_id,
-    :organization_name
+    :bank_account_id,
+    :blob_id,
+    :account_id,
+    :requisition_id,
+    :leave_request_id,
+    :digest_id,
+    :invoice_id,
+    :inbound_email_id,
+    :error_kind,
+    :details_kind,
+    :service,
+    :operation,
+    :stage,
+    :status,
+    :attachment_count,
+    :content_type,
+    :bytes,
+    :kind,
+    :key_count,
+    :health_check,
+    :sentry_live_view_captured
   ]
 
 config :mime, :types, %{
@@ -186,6 +202,10 @@ config :phoenix, :json_library, Jason
 config :posthog,
   enable: false,
   enable_error_tracking: false
+
+config :sentry,
+  before_send: {Firmowid.Sentry, :before_send},
+  before_send_log: {Firmowid.Sentry, :before_send_log}
 
 config :spark,
   formatter: [

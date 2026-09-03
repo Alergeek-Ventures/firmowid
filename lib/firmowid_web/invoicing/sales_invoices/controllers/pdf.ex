@@ -9,6 +9,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Controllers.Pdf do
   alias Firmowid.Ash.Invoicing
   alias Firmowid.Ash.Invoicing.SalesInvoice
   alias Firmowid.Ash.Invoicing.Services.SalesInvoicePdf
+  alias Firmowid.ErrorKind
   alias FirmowidWeb.Invoicing.Utilities.InvoiceDownloadParams
 
   require Logger
@@ -107,7 +108,11 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Controllers.Pdf do
             |> send_resp(200, pdf_binary)
 
           {:error, reason} ->
-            Logger.error("PDF generation failed for invoice #{id}: #{inspect(reason)}")
+            Logger.error("PDF generation failed",
+              invoice_id: id,
+              error_kind: ErrorKind.classify(reason)
+            )
+
             send_resp(conn, 500, "PDF generation failed")
         end
     end

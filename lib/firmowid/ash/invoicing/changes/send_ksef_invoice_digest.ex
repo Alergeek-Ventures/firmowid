@@ -12,6 +12,7 @@ defmodule Firmowid.Ash.Invoicing.Changes.SendKsefInvoiceDigest do
   alias Firmowid.Ash.Invoicing.InvoiceMatching
   alias Firmowid.Ash.Scope
   alias Firmowid.Ash.SystemActor
+  alias Firmowid.ErrorKind
 
   require Logger
 
@@ -88,7 +89,7 @@ defmodule Firmowid.Ash.Invoicing.Changes.SendKsefInvoiceDigest do
   defp log_digest_delivery_attempt(digest, admins, selected_admin_user_ids) do
     Logger.info(
       "Sending KSeF digest for organization_id=#{digest.organization_id} " <>
-        "organization_name=#{digest.organization.name}"
+        "invoice_count=#{length(digest.cost_invoices)}"
     )
 
     Logger.info("Digest contains #{length(digest.cost_invoices)} invoice(s) in the selected window")
@@ -111,7 +112,7 @@ defmodule Firmowid.Ash.Invoicing.Changes.SendKsefInvoiceDigest do
                invoice_summaries: invoice_summaries
              ) do
           {:ok, _email} -> nil
-          {:error, reason} -> {admin.email, reason}
+          {:error, reason} -> {admin.id, ErrorKind.classify(reason)}
         end
       end)
       |> Enum.reject(&is_nil/1)
@@ -228,5 +229,5 @@ defmodule Firmowid.Ash.Invoicing.Changes.SendKsefInvoiceDigest do
     end
   end
 
-  defp format_failure({email, reason}), do: "#{email}: #{inspect(reason)}"
+  defp format_failure({admin_id, reason_kind}), do: "admin_id=#{admin_id}: error_kind=#{reason_kind}"
 end

@@ -62,11 +62,11 @@ defmodule Firmowid.MixProject do
   # Type `mix help deps` for examples and options.
   defp deps do
     [
-      {:ash_authentication_oauth2_server, "~> 0.3"},
-      {:ash_ai, "~> 1.0"},
+      {:ash_authentication_oauth2_server, "~> 0.3.1"},
+      {:ash_ai, "~> 1.0.3"},
       {:sourceror, "~> 1.8"},
-      {:ash, "~> 3.32.1"},
-      {:ash_postgres, "~> 2.13.0"},
+      {:ash, "~> 3.33.1"},
+      {:ash_postgres, "~> 2.13.1"},
       {:ash_phoenix, "~> 2.3"},
       {:ash_oban, "~> 0.8.7"},
       {:ash_jido, "== 1.0.1"},
@@ -161,7 +161,7 @@ defmodule Firmowid.MixProject do
       {:csv, "~> 3.2"},
       {:lucide_icons, "~> 2.0"},
       {:eqrcode, "~> 0.2.1"},
-      {:usage_rules, "~> 1.1", only: [:dev]},
+      {:usage_rules, "~> 1.2.8", only: [:dev]},
       {:canonical_tailwind, "~> 0.1", only: [:dev, :test], runtime: false},
       {:depscheck, "~> 1.0.11", only: [:dev, :test], runtime: false}
     ]

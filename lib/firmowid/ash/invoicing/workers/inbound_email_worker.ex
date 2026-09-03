@@ -20,6 +20,7 @@ defmodule Firmowid.Ash.Invoicing.Workers.InboundEmailWorker do
   alias Firmowid.Ash.Invoicing.Services.ResendClient
   alias Firmowid.Ash.Scope
   alias Firmowid.Ash.SystemActor
+  alias Firmowid.ErrorKind
 
   require Logger
 
@@ -31,7 +32,7 @@ defmodule Firmowid.Ash.Invoicing.Workers.InboundEmailWorker do
     opts = [scope: scope]
     inbound_email = Invoicing.get_inbound_email!(id, opts)
 
-    Logger.info("Processing inbound email #{id} from #{inbound_email.sender_email}")
+    Logger.info("Processing inbound email", inbound_email_id: id, organization_id: org_id)
 
     case process_email(inbound_email, org_id, scope) do
       {:ok, count} ->
@@ -40,7 +41,10 @@ defmodule Firmowid.Ash.Invoicing.Workers.InboundEmailWorker do
         :ok
 
       {:error, :unexpected_sender} ->
-        Logger.warning("Rejecting email #{id} from unexpected sender #{inbound_email.sender_email}")
+        Logger.warning("Rejecting inbound email from unexpected sender",
+          inbound_email_id: id,
+          organization_id: org_id
+        )
 
         Invoicing.mark_inbound_email_processed!(inbound_email, :unexpected_sender, opts)
         {:cancel, :unexpected_sender}
@@ -51,7 +55,12 @@ defmodule Firmowid.Ash.Invoicing.Workers.InboundEmailWorker do
         {:cancel, :no_attachments}
 
       {:error, reason} ->
-        Logger.error("Failed to process inbound email #{id}: #{inspect(reason)}")
+        Logger.error("Failed to process inbound email",
+          inbound_email_id: id,
+          organization_id: org_id,
+          error_kind: ErrorKind.classify(reason)
+        )
+
         Invoicing.mark_inbound_email_processed!(inbound_email, :processing_failed, opts)
         {:error, reason}
     end
@@ -104,11 +113,11 @@ defmodule Firmowid.Ash.Invoicing.Workers.InboundEmailWorker do
         :ok
 
       {[], failures} ->
-        Logger.warning("All attachments failed to schedule: #{inspect(failures)}")
+        Logger.warning("All attachments failed to schedule", attachment_count: length(failures))
         {:error, :all_attachments_failed}
 
       {_successes, failures} ->
-        Logger.warning("Some attachments failed to schedule: #{inspect(failures)}")
+        Logger.warning("Some attachments failed to schedule", attachment_count: length(failures))
         :ok
     end
   end
@@ -118,7 +127,7 @@ defmodule Firmowid.Ash.Invoicing.Workers.InboundEmailWorker do
     content_type = attachment["content_type"] || attachment[:content_type]
     download_url = attachment["download_url"] || attachment[:download_url]
 
-    Logger.debug("Scheduling attachment #{filename} (#{content_type})")
+    Logger.debug("Scheduling inbound attachment", content_type: content_type)
 
     with {:ok, binary} <- ResendClient.download_attachment(download_url),
          {:ok, temp_path} <- write_to_temp_file(binary, filename),
@@ -133,7 +142,11 @@ defmodule Firmowid.Ash.Invoicing.Workers.InboundEmailWorker do
       {:ok, filename}
     else
       {:error, reason} = error ->
-        Logger.error("Failed to schedule attachment #{filename}: #{inspect(reason)}")
+        Logger.error("Failed to schedule inbound attachment",
+          content_type: content_type,
+          error_kind: ErrorKind.classify(reason)
+        )
+
         error
     end
   end

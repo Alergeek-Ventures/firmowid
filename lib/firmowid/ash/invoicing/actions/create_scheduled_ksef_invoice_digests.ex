@@ -10,6 +10,7 @@ defmodule Firmowid.Ash.Invoicing.Actions.CreateScheduledKsefInvoiceDigests do
   alias Firmowid.Ash.Ksef
   alias Firmowid.Ash.Scope
   alias Firmowid.Ash.SystemActor
+  alias Firmowid.ErrorKind
   alias Firmowid.Oban
 
   require Logger
@@ -54,14 +55,12 @@ defmodule Firmowid.Ash.Invoicing.Actions.CreateScheduledKsefInvoiceDigests do
       invoice_ids = invoice_ids_for_window(organization, run_started_at, actor)
 
       Logger.info(
-        "KSeF digest candidate organization_id=#{organization.id} organization_name=#{organization.name} " <>
+        "KSeF digest candidate organization_id=#{organization.id} " <>
           "invoice_count=#{length(invoice_ids)}"
       )
 
       if invoice_ids == [] do
-        Logger.info(
-          "Skipping KSeF digest for organization_id=#{organization.id} organization_name=#{organization.name}: no eligible invoices"
-        )
+        Logger.info("Skipping KSeF digest for organization_id=#{organization.id}: no eligible invoices")
 
         :skipped
       else
@@ -79,14 +78,17 @@ defmodule Firmowid.Ash.Invoicing.Actions.CreateScheduledKsefInvoiceDigests do
             :created
 
           {:error, error} ->
-            Logger.error("Failed to create KSeF digest for organization_id=#{organization.id}: #{inspect(error)}")
+            Logger.error("Failed to create KSeF digest",
+              organization_id: organization.id,
+              error_kind: ErrorKind.classify(error)
+            )
 
             :skipped
         end
       end
     else
       Logger.info(
-        "Skipping KSeF digest for organization_id=#{organization.id} organization_name=#{organization.name}: " <>
+        "Skipping KSeF digest for organization_id=#{organization.id}: " <>
           "organization has no KSeF credentials"
       )
 

@@ -8,6 +8,8 @@ defmodule FirmowidWeb.Infrastructure.Utilities.FormErrorReporter do
   """
 
   alias Ash.Error.Forbidden.Policy
+  alias Firmowid.ErrorKind
+  alias Firmowid.Sentry
 
   require Logger
 
@@ -21,7 +23,7 @@ defmodule FirmowidWeb.Infrastructure.Utilities.FormErrorReporter do
   def report_policy_denial(%Policy{} = error) do
     message = "AshPhoenix form submission forbidden for #{resource_action(error)}"
 
-    Logger.error("#{message}: #{Exception.message(error)}")
+    Logger.error(message)
     capture_exception(error)
     send_toast(@authorization_message)
 
@@ -37,10 +39,12 @@ defmodule FirmowidWeb.Infrastructure.Utilities.FormErrorReporter do
 
   defp action_name(%{name: name}), do: name
   defp action_name(action) when is_atom(action), do: action
-  defp action_name(action), do: inspect(action)
+  defp action_name(action), do: ErrorKind.classify(action)
 
   defp capture_exception(error) do
-    Sentry.capture_exception(error,
+    exception = RuntimeError.exception("AshPhoenix form policy denial")
+
+    Sentry.capture_exception(exception,
       event_source: :ash_phoenix_form,
       tags: %{
         source: "ash_phoenix_form",
@@ -49,8 +53,8 @@ defmodule FirmowidWeb.Infrastructure.Utilities.FormErrorReporter do
       }
     )
   rescue
-    sentry_error ->
-      Logger.warning("Failed to report AshPhoenix form policy denial to Sentry: #{Exception.message(sentry_error)}")
+    _sentry_error ->
+      Logger.warning("Failed to report AshPhoenix form policy denial to Sentry")
   end
 
   defp send_toast(message) do

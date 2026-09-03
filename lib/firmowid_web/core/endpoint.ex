@@ -1,6 +1,13 @@
 defmodule FirmowidWeb.Core.Endpoint do
-  use Sentry.PlugCapture
+  # Endpoint integration must install Sentry's PlugCapture plug directly.
+  # credo:disable-for-next-line Checks.RejectDirectSentrySdk
+  use Elixir.Sentry.PlugCapture
   use Phoenix.Endpoint, otp_app: :firmowid
+
+  # The endpoint must configure the SDK plug with the application's scrubbers.
+  # credo:disable-for-next-line Checks.RejectDirectSentrySdk
+  alias Elixir.Sentry, as: SentrySDK
+  alias Firmowid.Sentry
 
   # The session will be stored in the cookie and signed,
   # this means its contents can be read but not tampered with.
@@ -53,7 +60,11 @@ defmodule FirmowidWeb.Core.Endpoint do
     body_reader: {FirmowidWeb.Core.CacheBodyReader, :read_body, []},
     json_decoder: Phoenix.json_library()
 
-  plug Sentry.PlugContext
+  plug SentrySDK.PlugContext,
+    body_scrubber: {Sentry, :scrub_body},
+    header_scrubber: {Sentry, :scrub_headers},
+    cookie_scrubber: {Sentry, :scrub_cookies},
+    url_scrubber: {Sentry, :scrub_url}
 
   plug Plug.MethodOverride
   plug Plug.Head

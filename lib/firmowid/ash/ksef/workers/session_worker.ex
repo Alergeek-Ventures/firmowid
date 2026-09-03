@@ -23,6 +23,7 @@ defmodule Firmowid.Ash.Ksef.Workers.SessionWorker do
   alias Firmowid.Ash.Ksef.Services.ApiClient
   alias Firmowid.Ash.Scope
   alias Firmowid.Ash.SystemActor
+  alias Firmowid.ErrorKind
   alias Firmowid.Repo
 
   require Logger
@@ -202,8 +203,9 @@ defmodule Firmowid.Ash.Ksef.Workers.SessionWorker do
           raise RuntimeError, "Refresh token expired, re-authentication scheduled"
 
         {:error, reason} ->
-          Logger.error("Session renewal failed: #{inspect(reason)}")
-          raise RuntimeError, "KSeF session renewal failed: #{inspect(reason)}"
+          error_kind = ErrorKind.classify(reason)
+          Logger.error("Session renewal failed", error_kind: error_kind)
+          raise RuntimeError, "KSeF session renewal failed (error_kind=#{error_kind})"
       end
     end)
   end

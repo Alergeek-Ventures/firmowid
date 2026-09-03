@@ -189,7 +189,7 @@ defmodule FirmowidWeb.Organization.Views.Index do
 
     trimmed_code = String.trim(invite_code)
 
-    Logger.metadata(user_id: user.id, user_email: user.email)
+    Logger.metadata(user_id: user.id)
 
     # Find invite by code (unscoped read - invite codes are unique)
     invite =
@@ -199,7 +199,6 @@ defmodule FirmowidWeb.Organization.Views.Index do
 
     Logger.metadata(
       user_id: user.id,
-      user_email: user.email,
       organization_id: invite.organization_id
     )
 

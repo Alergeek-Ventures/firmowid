@@ -29,6 +29,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
   alias Firmowid.Ash.Invoicing.SalesInvoice.EmailRecipientEligibility
   alias Firmowid.Ash.Invoicing.WizardDraft
   alias Firmowid.Ash.Ksef
+  alias Firmowid.ErrorKind
   alias FirmowidWeb.Infrastructure.Utilities.PolishValues
   alias FirmowidWeb.Invoicing.SalesInvoices.Components.InvoicePayment
   alias FirmowidWeb.Invoicing.SalesInvoices.Utilities.CreatorQueryParams
@@ -1090,7 +1091,11 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
          |> redirect(to: Navigation.sales_invoice_show_path(invoice))}
 
       {:error, error} ->
-        Logger.error("Failed to save invoice as draft: #{inspect(error)}")
+        Logger.error("Failed to save invoice as draft",
+          organization_id: organization.id,
+          error_kind: ErrorKind.classify(error)
+        )
+
         {:noreply, put_flash(socket, :error, "Nie udało się zapisać faktury")}
     end
   end
@@ -1114,7 +1119,11 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
       {:noreply, push_navigate(socket, to: Navigation.sales_invoice_summary_path(invoice))}
     else
       {:error, error} ->
-        Logger.error("Failed to confirm invoice: #{inspect(error)}")
+        Logger.error("Failed to confirm invoice",
+          organization_id: organization.id,
+          error_kind: ErrorKind.classify(error)
+        )
+
         {:noreply, put_flash(socket, :error, get_error_message(error))}
     end
   end
@@ -1138,7 +1147,11 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
       submit_to_ksef_and_navigate(socket, invoice)
     else
       {:error, error} ->
-        Logger.error("Failed to confirm invoice: #{inspect(error)}")
+        Logger.error("Failed to confirm invoice",
+          organization_id: organization.id,
+          error_kind: ErrorKind.classify(error)
+        )
+
         {:noreply, put_flash(socket, :error, get_error_message(error))}
     end
   end
@@ -1205,7 +1218,9 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
         end
 
       {:error, error} ->
-        Logger.warning("Failed to fetch counterparty during selection: #{inspect(error)}")
+        Logger.warning("Failed to fetch counterparty during selection",
+          error_kind: ErrorKind.classify(error)
+        )
 
         {:noreply,
          LiveToast.put_toast(
@@ -1222,7 +1237,10 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
         {:noreply, push_navigate(socket, to: Navigation.sales_invoice_summary_path(invoice))}
 
       {:error, reason} ->
-        Logger.error("Failed to submit invoice to KSeF: #{inspect(reason)}")
+        Logger.error("Failed to submit invoice to KSeF",
+          invoice_id: invoice.id,
+          error_kind: ErrorKind.classify(reason)
+        )
 
         {:noreply,
          socket

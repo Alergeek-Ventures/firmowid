@@ -16,6 +16,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Summary do
   alias Firmowid.Ash.Invoicing.SalesInvoice
   alias Firmowid.Ash.Ksef
   alias Firmowid.Ash.Ksef.SubmissionInfo
+  alias Firmowid.ErrorKind
   alias FirmowidWeb.Invoicing.Utilities.Navigation
 
   require Logger
@@ -270,7 +271,10 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Summary do
          |> put_flash(:info, "Wysyłka do KSeF rozpoczęta")}
 
       {:error, reason} ->
-        Logger.error("Failed to submit invoice to KSeF from summary: #{inspect(reason)}")
+        Logger.error("Failed to submit invoice to KSeF from summary",
+          invoice_id: invoice.id,
+          error_kind: ErrorKind.classify(reason)
+        )
 
         handle_failed_summary_submission(socket, invoice, reason)
     end
@@ -285,7 +289,10 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Summary do
          |> push_navigate(to: Navigation.sales_invoice_edit_path(original_invoice_id, socket.assigns.return_to))}
 
       {:error, destroy_error} ->
-        Logger.error("Failed to clean up correction invoice #{invoice.id} from summary: #{inspect(destroy_error)}")
+        Logger.error("Failed to clean up correction invoice from summary",
+          invoice_id: invoice.id,
+          error_kind: ErrorKind.classify(destroy_error)
+        )
 
         {:noreply, put_flash(socket, :error, "Nie udało się wysłać faktury do KSeF")}
 

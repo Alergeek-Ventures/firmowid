@@ -18,6 +18,7 @@ defmodule FirmowidWeb.Infrastructure.Flags do
   Missing flags always default to `false`.
   """
 
+  alias Firmowid.ErrorKind
   alias PostHog.FeatureFlags
   alias PostHog.FeatureFlags.Evaluations
 
@@ -46,7 +47,10 @@ defmodule FirmowidWeb.Infrastructure.Flags do
           resolve_flags(snapshot)
 
         {:error, error} ->
-          Logger.warning("PostHog feature flag evaluation failed: #{inspect(error)}")
+          Logger.warning("PostHog feature flag evaluation failed",
+            error_kind: ErrorKind.classify(error)
+          )
+
           empty_flags()
       end
     else

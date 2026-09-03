@@ -1,5 +1,7 @@
 # Reviewed pre-existing findings: historical credentials were rotated, and current matches are dev/test values.
 # Fingerprint-specific suppression preserves detection of new findings.
+# Synthetic credential URL in the Sentry scrubber test verifies URL userinfo/path/query removal; it is not a real credential.
+lib/firmowid/sentry_test.exs:generic-credential-uri:37
 085eab07110f07e1404726de55fd0b2a79bc2797:.vscode/settings.json:generic-password:11
 0b5d35c90d625d72bb1ba8043073bea004a36806:priv/repo/seeds.exs:generic-password:563
 0b8979d97caf855e9ffdc29eb027e5b2f8787773:priv/repo/seeds.exs:generic-password:15

@@ -1,9 +1,8 @@
 name: Sentry Release
 
 on:
-  push:
-    branches:
-      - main
+  workflow_call:
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -15,6 +14,7 @@ concurrency:
 jobs:
   extract-versions:
     name: Extract versions from .tool-versions
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     outputs:
       elixir: ${{ steps.versions.outputs.elixir }}
@@ -38,6 +38,7 @@ jobs:
 
   release:
     name: Create and finalize Sentry release
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     environment: production
     needs: extract-versions
@@ -72,9 +73,7 @@ jobs:
         run: |
           npm ci --prefix assets
           mix esbuild.install --if-missing
-          mix tailwind firmowid --minify
-          mix esbuild firmowid --minify --sourcemap=external
-          mix phx.digest
+          mix assets.sentry.deploy
 
       - name: Create and finalize Sentry release
         uses: getsentry/action-release@ff07929a6537bac57790c3451cf4d364aca38528 # v3
@@ -87,3 +86,4 @@ jobs:
           release: ${{ github.sha }}
           sourcemaps: ./priv/static/assets
           url_prefix: ~/assets
+          inject: false

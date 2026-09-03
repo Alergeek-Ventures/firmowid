@@ -189,6 +189,10 @@ sentry_environment =
     if config_env() == :prod, do: "production", else: to_string(config_env())
 
 sentry_release = System.get_env("SENTRY_RELEASE") || System.get_env("SOURCE_COMMIT")
+release_name = System.get_env("RELEASE_NAME")
+
+production_release_runtime =
+  config_env() == :prod and is_binary(release_name) and String.trim(release_name) != ""
 
 defmodule RuntimeSentry do
   @moduledoc false
@@ -214,13 +218,20 @@ end
 
 # Pre-validate frontend and server DSNs
 frontend_raw =
-  System.get_env(
-    "SENTRY_FRONTEND_DSN",
-    "https://a2fd6c45d207e5d5b3079064e79d1339@o4511195748630528.ingest.de.sentry.io/4511195751317584"
-  )
+  System.get_env("SENTRY_FRONTEND_DSN")
+
+server_raw = System.get_env("SENTRY_DSN")
+
+if production_release_runtime and is_nil(frontend_raw) do
+  raise "SENTRY_FRONTEND_DSN is missing. Provide a valid DSN or the exact token 'disabled'."
+end
+
+if production_release_runtime and is_nil(server_raw) do
+  raise "SENTRY_DSN is missing. Provide a valid DSN or the exact token 'disabled'."
+end
 
 frontend_sentry = RuntimeSentry.validate(frontend_raw, "SENTRY_FRONTEND_DSN")
-server_sentry = RuntimeSentry.validate(System.get_env("SENTRY_DSN"), "SENTRY_DSN")
+server_sentry = RuntimeSentry.validate(server_raw, "SENTRY_DSN")
 
 # If the raw env was the explicit disable token, remove it from process env
 # so Sentry's own config fill-in-from-env won't pick it up.

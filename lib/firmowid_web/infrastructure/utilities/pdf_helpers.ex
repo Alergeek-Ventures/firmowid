@@ -4,6 +4,8 @@ defmodule FirmowidWeb.Infrastructure.Utilities.PdfHelpers do
   Handles asset embedding and HTML rendering.
   """
 
+  alias Firmowid.ErrorKind
+
   require Logger
 
   @doc """
@@ -32,11 +34,11 @@ defmodule FirmowidWeb.Infrastructure.Utilities.PdfHelpers do
         "data:#{mime_type};base64,#{encoded}"
 
       {:ok, %{status: status}} ->
-        Logger.warning("Failed to fetch asset for PDF: #{url} (HTTP #{status})")
+        Logger.warning("Failed to fetch asset for PDF", status: status)
         nil
 
       {:error, reason} ->
-        Logger.error("Error fetching asset for PDF: #{url}, reason: #{inspect(reason)}")
+        Logger.error("Error fetching asset for PDF", error_kind: ErrorKind.classify(reason))
         nil
     end
   end
@@ -68,7 +70,7 @@ defmodule FirmowidWeb.Infrastructure.Utilities.PdfHelpers do
         "data:#{mime_type};base64,#{encoded}"
 
       {:error, reason} ->
-        Logger.error("Error reading file for PDF: #{path}, reason: #{inspect(reason)}")
+        Logger.error("Error reading file for PDF", error_kind: ErrorKind.classify(reason))
         nil
     end
   end
@@ -164,7 +166,9 @@ defmodule FirmowidWeb.Infrastructure.Utilities.PdfHelpers do
         )
 
       {:error, reason} ->
-        Logger.warning("Could not read app.css for PDF generation: #{inspect(reason)}. PDF may lack styles.")
+        Logger.warning("Could not read app.css for PDF generation; PDF may lack styles",
+          error_kind: ErrorKind.classify(reason)
+        )
 
         ""
     end

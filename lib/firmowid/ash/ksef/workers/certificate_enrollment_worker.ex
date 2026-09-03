@@ -25,6 +25,8 @@ defmodule Firmowid.Ash.Ksef.Workers.CertificateEnrollmentWorker do
   alias Firmowid.Ash.Ksef.Workers.SessionWorker
   alias Firmowid.Ash.Scope
   alias Firmowid.Ash.SystemActor
+  alias Firmowid.ErrorKind
+  alias Firmowid.Sentry
 
   require Logger
 
@@ -343,7 +345,10 @@ defmodule Firmowid.Ash.Ksef.Workers.CertificateEnrollmentWorker do
     if retrying?(job) do
       {:error, reason}
     else
-      Logger.error("KSeF certificate refresh failed for organization #{scope.tenant}: #{inspect(reason)}")
+      Logger.error(
+        "KSeF certificate refresh failed for organization #{scope.tenant}: " <>
+          "operation=refresh stage=certificate error_kind=#{ErrorKind.classify(reason)}"
+      )
 
       report_refresh_failure(reason, scope.tenant)
 
@@ -357,18 +362,25 @@ defmodule Firmowid.Ash.Ksef.Workers.CertificateEnrollmentWorker do
     Sentry.capture_exception(
       RuntimeError.exception("KSeF certificate refresh failed"),
       tags: %{source: "ksef_certificate_refresh"},
-      extra: %{organization_id: organization_id, reason: inspect(reason)}
+      extra: %{
+        organization_id: organization_id,
+        operation: "refresh",
+        error_kind: ErrorKind.classify(reason)
+      }
     )
   rescue
-    sentry_error ->
-      Logger.warning("Failed to report KSeF certificate refresh error to Sentry: #{Exception.message(sentry_error)}")
+    _sentry_error ->
+      Logger.warning("Failed to report KSeF certificate refresh error to Sentry")
   end
 
   defp handle_enrollment_failure(credential, scope, reason, job) do
     if retrying?(job) do
       {:error, reason}
     else
-      Logger.error("KSeF certificate enrollment failed for organization #{scope.tenant}: #{inspect(reason)}")
+      Logger.error(
+        "KSeF certificate enrollment failed for organization #{scope.tenant}: " <>
+          "operation=enrollment stage=certificate error_kind=#{ErrorKind.classify(reason)}"
+      )
 
       Credential.delete_failed!(credential, enrollment_failure_reason(reason), scope: scope)
 

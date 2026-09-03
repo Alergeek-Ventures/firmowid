@@ -10,6 +10,7 @@ defmodule Firmowid.Ash.Finances.GoCardless.ApiClient do
   """
 
   alias Firmowid.Ash.Finances.GoCardless.TokenManager
+  alias Firmowid.ErrorKind
 
   require Logger
 
@@ -286,8 +287,8 @@ defmodule Firmowid.Ash.Finances.GoCardless.ApiClient do
     {:ok, body}
   end
 
-  defp handle_response({:ok, %Req.Response{status: 400, body: body}}) do
-    Logger.warning("GoCardless API bad request: #{inspect(body)}")
+  defp handle_response({:ok, %Req.Response{status: 400}}) do
+    Logger.warning("GoCardless API bad request: status=400 error_kind=bad_request")
     {:error, :bad_request}
   end
 
@@ -304,8 +305,8 @@ defmodule Firmowid.Ash.Finances.GoCardless.ApiClient do
     {:error, :unauthorized}
   end
 
-  defp handle_response({:ok, %Req.Response{status: 403, body: body}}) do
-    Logger.warning("GoCardless API forbidden: #{inspect(body)}")
+  defp handle_response({:ok, %Req.Response{status: 403}}) do
+    Logger.warning("GoCardless API forbidden: status=403 error_kind=forbidden")
     {:error, :forbidden}
   end
 
@@ -313,8 +314,9 @@ defmodule Firmowid.Ash.Finances.GoCardless.ApiClient do
     {:error, :not_found}
   end
 
-  defp handle_response({:ok, %Req.Response{status: 409, body: body}}) do
-    Logger.warning("GoCardless API conflict (account suspended/error state): #{inspect(body)}")
+  defp handle_response({:ok, %Req.Response{status: 409}}) do
+    Logger.warning("GoCardless API conflict (account suspended/error state): status=409 error_kind=conflict")
+
     {:error, :conflict}
   end
 
@@ -322,23 +324,26 @@ defmodule Firmowid.Ash.Finances.GoCardless.ApiClient do
     {:error, :rate_limited}
   end
 
-  defp handle_response({:ok, %Req.Response{status: status, body: body}}) when status >= 500 and status < 600 do
-    Logger.warning("GoCardless API server error #{status}: #{inspect(body)}")
+  defp handle_response({:ok, %Req.Response{status: status}}) when status >= 500 and status < 600 do
+    Logger.warning("GoCardless API server error: status=#{status} error_kind=server_error")
     {:error, :server_error}
   end
 
-  defp handle_response({:ok, %Req.Response{status: status, body: body}}) do
-    Logger.warning("GoCardless API unexpected status #{status}: #{inspect(body)}")
+  defp handle_response({:ok, %Req.Response{status: status}}) do
+    Logger.warning("GoCardless API unexpected status: status=#{status} error_kind=unexpected_status")
+
     {:error, {:unexpected_status, status}}
   end
 
   defp handle_response({:error, %Req.TransportError{} = error}) do
-    Logger.warning("GoCardless API transport error: #{inspect(error)}")
+    Logger.warning("GoCardless API transport error: error_kind=#{ErrorKind.classify(error)}")
+
     {:error, :transport_error}
   end
 
   defp handle_response({:error, reason}) do
-    Logger.warning("GoCardless API request failed: #{inspect(reason)}")
+    Logger.warning("GoCardless API request failed: error_kind=#{ErrorKind.classify(reason)}")
+
     {:error, {:request_failed, reason}}
   end
 

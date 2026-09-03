@@ -8,6 +8,7 @@ defmodule FirmowidWeb.Invoicing.CostInvoices.Controllers.Inbound do
   alias Firmowid.Ash.Invoicing.Workers.InboundEmailWorker
   alias Firmowid.Ash.Scope
   alias Firmowid.Ash.SystemActor
+  alias Firmowid.ErrorKind
 
   require Logger
 
@@ -17,7 +18,7 @@ defmodule FirmowidWeb.Invoicing.CostInvoices.Controllers.Inbound do
          attrs = build_inbound_email_attrs(data, org_id),
          {:ok, inbound_email} <- create_inbound_email(attrs, org_id) do
       enqueue_processing(inbound_email, org_id)
-      log_success(org_id, data)
+      log_success(org_id, inbound_email, data)
       json(conn, %{status: "ok"})
     else
       {:error, :no_valid_recipient} ->
@@ -34,7 +35,8 @@ defmodule FirmowidWeb.Invoicing.CostInvoices.Controllers.Inbound do
   end
 
   def handle_webhook(conn, params) do
-    Logger.warning("Unknown webhook type received: #{inspect(params)}")
+    key_count = if(is_map(params), do: map_size(params), else: 0)
+    Logger.warning("Unknown webhook type received: key_count=#{key_count}")
     json(conn, %{status: "ok", message: "unknown type"})
   end
 
@@ -98,20 +100,28 @@ defmodule FirmowidWeb.Invoicing.CostInvoices.Controllers.Inbound do
     |> Firmowid.Oban.insert(skip_organization_id: true)
   end
 
-  defp log_success(org_id, data) do
+  defp log_success(org_id, inbound_email, data) do
     Logger.info("Inbound email received",
-      org_id: org_id,
-      sender: Map.get(data, "from"),
-      resend_email_id: Map.get(data, "email_id")
+      organization_id: org_id,
+      inbound_email_id: inbound_email.id,
+      attachment_count: attachment_count(data)
     )
   end
 
-  defp handle_ash_error(conn, error, data) do
+  defp attachment_count(data) do
+    case Map.get(data, "attachments", []) do
+      attachments when is_list(attachments) -> length(attachments)
+      _other -> 0
+    end
+  end
+
+  defp handle_ash_error(conn, error, _data) do
     if duplicate_resend_email?(error) do
-      Logger.debug("Duplicate webhook received: #{Map.get(data, "email_id")}")
+      Logger.debug("Duplicate inbound email webhook received")
       json(conn, %{status: "ok", message: "already processed"})
     else
-      Logger.error("Failed to create inbound_email record: #{inspect(error)}")
+      Logger.error("Failed to create inbound_email record: error_kind=#{ErrorKind.classify(error)}")
+
       json(conn, %{status: "error", message: "failed to create record"})
     end
   end

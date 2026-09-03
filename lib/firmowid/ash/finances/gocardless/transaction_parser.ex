@@ -6,6 +6,7 @@ defmodule Firmowid.Ash.Finances.GoCardless.TransactionParser do
 
   alias Firmowid.Ash.Finances.BankAccount
   alias Firmowid.Ash.Finances.GoCardless.RevolutTransactionNormalizer
+  alias Firmowid.ErrorKind
 
   require Logger
 
@@ -194,7 +195,10 @@ defmodule Firmowid.Ash.Finances.GoCardless.TransactionParser do
     end
   rescue
     error ->
-      Logger.error("Failed to normalize Nest Bank card transaction: #{Exception.message(error)}")
+      Logger.error("Failed to normalize Nest Bank card transaction",
+        error_kind: ErrorKind.classify(error)
+      )
+
       data
   end
 

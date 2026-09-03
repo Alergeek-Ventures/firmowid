@@ -33,6 +33,7 @@ defmodule Firmowid.Ash.Ksef.KsefAwarePruner do
 
   import Ecto.Query
 
+  alias Firmowid.ErrorKind
   alias Oban.Job
   alias Oban.Peer
   alias Oban.Plugin
@@ -120,7 +121,7 @@ defmodule Firmowid.Ash.Ksef.KsefAwarePruner do
   @doc false
   def handle_info(message, state) do
     Logger.warning(
-      message: "Received unexpected message: #{inspect(message)}",
+      message: "Received unexpected message: #{ErrorKind.classify(message)}",
       source: :oban,
       module: __MODULE__
     )

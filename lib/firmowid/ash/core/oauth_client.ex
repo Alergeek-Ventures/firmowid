@@ -4,7 +4,8 @@ defmodule Firmowid.Ash.Core.OauthClient do
     otp_app: :firmowid,
     domain: Firmowid.Ash.Core,
     data_layer: AshPostgres.DataLayer,
-    authorizers: [Ash.Policy.Authorizer]
+    authorizers: [Ash.Policy.Authorizer],
+    extensions: [AshAuthentication.Oauth2Server.ClientResource]
 
   alias Firmowid.Ash.Resource
 
@@ -21,6 +22,7 @@ defmodule Firmowid.Ash.Core.OauthClient do
     define :register, action: :register
     define :register_cimd, action: :register_cimd
     define :touch, action: :touch
+    define :expunge_expired, action: :expunge_expired
   end
 
   actions do

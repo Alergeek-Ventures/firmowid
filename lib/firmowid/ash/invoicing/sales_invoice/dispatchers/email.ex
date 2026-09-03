@@ -6,6 +6,7 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice.Dispatchers.Email do
   alias Firmowid.Ash.Invoicing
   alias Firmowid.Ash.Invoicing.SalesInvoice
   alias Firmowid.Ash.Scope
+  alias Firmowid.ErrorKind
 
   require Logger
 
@@ -46,7 +47,7 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice.Dispatchers.Email do
 
   defp normalize_dispatch_result({:error, reason}, invoice, scope, event) do
     Logger.error(
-      "Failed to dispatch #{event} email invoice_id=#{invoice.id} org=#{scope.tenant} reason=#{inspect(reason)}"
+      "Failed to dispatch #{event} email invoice_id=#{invoice.id} org=#{scope.tenant} reason=#{ErrorKind.classify(reason)}"
     )
 
     {:error, reason}

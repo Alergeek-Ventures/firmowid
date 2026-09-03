@@ -13,6 +13,7 @@ defmodule FirmowidWeb.BankSync.Views.Create do
   import Phoenix.Component, except: [link: 1]
 
   alias Firmowid.Ash.Finances
+  alias Firmowid.ErrorKind
 
   require Logger
 
@@ -140,7 +141,10 @@ defmodule FirmowidWeb.BankSync.Views.Create do
       else
         details = params["details"]
 
-        Logger.warning("Failed to connect to bank. Error: #{error} #{details}")
+        Logger.warning("Failed to connect to bank",
+          error_kind: ErrorKind.classify(error),
+          details_kind: ErrorKind.classify(details)
+        )
 
         {:noreply,
          socket

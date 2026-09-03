@@ -10,6 +10,7 @@ defmodule Firmowid.Ash.Invoicing.Services.SalesInvoicePdf do
   alias Firmowid.Ash.Invoicing.SalesInvoice
   alias Firmowid.Ash.Invoicing.Services.PdfAugmentations.InternalNote
   alias Firmowid.Ash.Invoicing.Services.SalesInvoiceBasePdf
+  alias Firmowid.ErrorKind
 
   require Logger
 
@@ -28,7 +29,11 @@ defmodule Firmowid.Ash.Invoicing.Services.SalesInvoicePdf do
       {:ok, final_pdf}
     else
       {:error, reason} = error ->
-        Logger.error("Sales invoice PDF generation failed for #{invoice.id}: #{inspect(reason)}")
+        Logger.error("Sales invoice PDF generation failed",
+          invoice_id: invoice.id,
+          error_kind: ErrorKind.classify(reason)
+        )
+
         error
     end
   end

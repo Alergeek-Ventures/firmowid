@@ -38,6 +38,7 @@ defmodule Firmowid.Ash.Ksef.Workers.FetchWorker do
   alias Firmowid.Ash.Ksef.Workers.SessionWorker
   alias Firmowid.Ash.Scope
   alias Firmowid.Ash.SystemActor
+  alias Firmowid.ErrorKind
 
   require Ash.Query
   require Logger
@@ -75,7 +76,10 @@ defmodule Firmowid.Ash.Ksef.Workers.FetchWorker do
         )
 
       {:error, reason} = error ->
-        Logger.error("Failed to initiate KSeF export: #{inspect(reason)}")
+        Logger.error(
+          "Failed to initiate KSeF export: organization_id=#{organization_id} error_kind=#{ErrorKind.classify(reason)}"
+        )
+
         error
     end
   end
@@ -94,7 +98,10 @@ defmodule Firmowid.Ash.Ksef.Workers.FetchWorker do
         handle_expired_export(args, scope)
 
       {:error, reason} = error ->
-        Logger.error("Failed to poll KSeF export: #{inspect(reason)}")
+        Logger.error(
+          "Failed to poll KSeF export: organization_id=#{scope.tenant} error_kind=#{ErrorKind.classify(reason)}"
+        )
+
         error
     end
   end
@@ -212,8 +219,12 @@ defmodule Firmowid.Ash.Ksef.Workers.FetchWorker do
       timeout: to_timeout(minute: 5)
     )
     |> Stream.map(fn
-      {:ok, body} -> body
-      {:exit, reason} -> raise RuntimeError, "Failed to download package part: #{inspect(reason)}"
+      {:ok, body} ->
+        body
+
+      {:exit, reason} ->
+        raise RuntimeError,
+              "Failed to download package part: error_kind=#{ErrorKind.classify(reason)}"
     end)
     |> Enum.to_list()
   end
@@ -226,7 +237,8 @@ defmodule Firmowid.Ash.Ksef.Workers.FetchWorker do
         Enum.map(files, fn {filename, content} -> {to_string(filename), content} end)
 
       {:error, reason} ->
-        raise RuntimeError, "Failed to unzip KSeF package: #{inspect(reason)}"
+        raise RuntimeError,
+              "Failed to unzip KSeF package: error_kind=#{ErrorKind.classify(reason)}"
     end
   end
 
@@ -269,7 +281,7 @@ defmodule Firmowid.Ash.Ksef.Workers.FetchWorker do
 
     ksef_numbers = Map.keys(metadata_by_ksef_number)
 
-    Logger.info("KSeF invoice numbers from export: #{inspect(ksef_numbers)}")
+    Logger.info("KSeF export metadata loaded: invoice_count=#{length(ksef_numbers)}")
 
     existing_invoices =
       CostInvoice
@@ -289,8 +301,8 @@ defmodule Firmowid.Ash.Ksef.Workers.FetchWorker do
       end)
 
     Logger.info(
-      "KSeF invoice download results: downloaded=#{inspect(Enum.map(downloaded_invoices, &elem(&1, 0)))} " <>
-        "rejected=#{inspect(Enum.map(rejected_invoices, &elem(&1, 0)))}"
+      "KSeF invoice download results: downloaded_count=#{length(downloaded_invoices)} " <>
+        "rejected_count=#{length(rejected_invoices)}"
     )
 
     results =
@@ -302,7 +314,7 @@ defmodule Firmowid.Ash.Ksef.Workers.FetchWorker do
             :ok
 
           {:error, reason} = error ->
-            report_invoice_failure(ksef_number, reason, scope.tenant)
+            report_invoice_failure(reason, scope.tenant)
             error
         end
       end)
@@ -326,7 +338,8 @@ defmodule Firmowid.Ash.Ksef.Workers.FetchWorker do
       _ ->
         stamp_job_meta(job, summary)
 
-        {:error, "Failed to process #{length(errors)} invoice(s): #{Enum.map_join(errors, "; ", &inspect/1)}"}
+        error_kinds = errors |> Enum.map(&ErrorKind.classify/1) |> Enum.uniq() |> Enum.join(",")
+        {:error, "Failed to process #{length(errors)} invoice(s): error_kinds=#{error_kinds}"}
     end
   end
 
@@ -344,8 +357,11 @@ defmodule Firmowid.Ash.Ksef.Workers.FetchWorker do
     end)
   end
 
-  defp report_invoice_failure(ksef_number, reason, organization_id) do
-    Logger.error("KSeF invoice processing failed for #{ksef_number} (org: #{organization_id}): #{inspect(reason)}")
+  defp report_invoice_failure(reason, organization_id) do
+    Logger.error(
+      "KSeF invoice processing failed: organization_id=#{organization_id} " <>
+        "error_kind=#{ErrorKind.classify(reason)}"
+    )
   end
 
   defp parse_metadata_json(metadata_json) do
@@ -367,7 +383,7 @@ defmodule Firmowid.Ash.Ksef.Workers.FetchWorker do
       |> handle_blob_upload_result(ksef_number, attrs, blob_opts, path)
     else
       {:error, reason} ->
-        {:error, "Failed to create cost invoice from XML #{ksef_number}.xml: #{inspect(reason)}"}
+        {:error, "Failed to create cost invoice from XML: stage=parse error_kind=#{ErrorKind.classify(reason)}"}
     end
   end
 
@@ -430,12 +446,12 @@ defmodule Firmowid.Ash.Ksef.Workers.FetchWorker do
     if blob_checksum_conflict?(error) do
       handle_duplicate_blob(ksef_number, attrs, blob_opts, path)
     else
-      {:error, "Failed to upload cost invoice from XML #{ksef_number}.xml: #{inspect(error)}"}
+      {:error, "Failed to upload cost invoice from XML: stage=upload error_kind=#{ErrorKind.classify(error)}"}
     end
   end
 
-  defp handle_blob_upload_result({:error, reason}, ksef_number, _attrs, _blob_opts, _path) do
-    {:error, "Failed to upload cost invoice from XML #{ksef_number}.xml: #{inspect(reason)}"}
+  defp handle_blob_upload_result({:error, reason}, _ksef_number, _attrs, _blob_opts, _path) do
+    {:error, "Failed to upload cost invoice from XML: stage=upload error_kind=#{ErrorKind.classify(reason)}"}
   end
 
   defp handle_duplicate_blob(ksef_number, attrs, blob_opts, path) do
@@ -445,33 +461,31 @@ defmodule Firmowid.Ash.Ksef.Workers.FetchWorker do
     case Blobs.find_blob_with_cost_invoice(checksum, scope: scope) do
       {:ok, _blob, %CostInvoice{ksef_number: existing_ksef_number}}
       when existing_ksef_number == ksef_number ->
-        Logger.info("KSeF invoice #{ksef_number} already has a cost invoice, skipping")
+        Logger.info("KSeF invoice already has a cost invoice, skipping")
         :ok
 
       {:ok, _blob, %CostInvoice{} = existing_invoice} ->
         {:error,
-         "Checksum collision for #{ksef_number}.xml: blob is already linked to cost invoice " <>
-           "#{existing_invoice.id} (ksef_number=#{inspect(existing_invoice.ksef_number)}, " <>
-           "invoice_type=#{inspect(existing_invoice.invoice_type)})."}
+         "Checksum collision while creating cost invoice: stage=upload existing_invoice_id=#{existing_invoice.id}"}
 
       {:ok, blob, nil} ->
-        Logger.info("Found orphan blob for #{ksef_number}, creating cost invoice")
+        Logger.info("Found orphan KSeF blob, creating cost invoice")
         create_cost_invoice_for_blob(blob, ksef_number, attrs, blob_opts)
 
       {:error, :not_found} ->
-        {:error, "Duplicate blob conflict for #{ksef_number}.xml but blob not found by checksum"}
+        {:error, "Duplicate blob conflict but blob not found by checksum"}
     end
   end
 
-  defp create_cost_invoice_for_blob(blob, ksef_number, attrs, _blob_opts) do
-    Logger.info("Creating cost invoice #{ksef_number} from #{ksef_number}.xml")
+  defp create_cost_invoice_for_blob(blob, _ksef_number, attrs, _blob_opts) do
+    Logger.info("Creating cost invoice from KSeF XML")
 
     case attrs |> Map.put(:blob_id, blob.id) |> Invoicing.create_cost_invoice() do
       {:ok, _job} ->
         :ok
 
       {:error, reason} ->
-        {:error, "Failed to create cost invoice from XML #{ksef_number}.xml: #{inspect(reason)}"}
+        {:error, "Failed to create cost invoice from XML: stage=create error_kind=#{ErrorKind.classify(reason)}"}
     end
   end
 

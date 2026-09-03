@@ -2,6 +2,8 @@ defmodule FirmowidWeb.Infrastructure.Controllers.Health do
   @moduledoc false
   use FirmowidWeb, :controller
 
+  alias Firmowid.ErrorKind
+
   require Logger
 
   @doc "Returns the health status of the database and Oban checks."
@@ -33,7 +35,11 @@ defmodule FirmowidWeb.Infrastructure.Controllers.Health do
         %{status: "ok", message: "Database connection successful"}
 
       {:error, reason} ->
-        Logger.error("Database health check failed: #{inspect(reason)}")
+        Logger.error("Database health check failed",
+          health_check: true,
+          error_kind: ErrorKind.classify(reason)
+        )
+
         %{status: "error", message: "Database query failed"}
     end
   end
@@ -44,7 +50,11 @@ defmodule FirmowidWeb.Infrastructure.Controllers.Health do
     %{status: "ok", message: "Oban is running"}
   rescue
     error ->
-      Logger.error("Oban health check failed: #{inspect(error)}")
+      Logger.error("Oban health check failed",
+        health_check: true,
+        error_kind: ErrorKind.classify(error)
+      )
+
       %{status: "error", message: "Oban is not running"}
   end
 end

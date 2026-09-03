@@ -9,6 +9,7 @@ defmodule Firmowid.Ash.Blobs.Changes.DeleteFromS3 do
   """
   use Ash.Resource.Change
 
+  alias Firmowid.ErrorKind
   alias Firmowid.S3Client
 
   require Logger
@@ -21,7 +22,11 @@ defmodule Firmowid.Ash.Blobs.Changes.DeleteFromS3 do
           {:ok, record}
 
         {:error, reason} ->
-          Logger.error("Failed to delete S3 object #{record.blob_path}: #{inspect(reason)}")
+          Logger.error("Failed to delete S3 object",
+            blob_id: record.id,
+            error_kind: ErrorKind.classify(reason)
+          )
+
           {:ok, record}
       end
     end)

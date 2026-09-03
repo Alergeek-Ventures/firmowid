@@ -18,6 +18,8 @@ defmodule FirmowidWeb.Infrastructure.Plugs.WebhookAuth do
 
   import Plug.Conn
 
+  alias Firmowid.ErrorKind
+
   require Logger
 
   @five_minutes_in_seconds 300
@@ -34,7 +36,10 @@ defmodule FirmowidWeb.Infrastructure.Plugs.WebhookAuth do
       assign(conn, :raw_body, body)
     else
       {:error, reason} ->
-        Logger.warning("Webhook verification failed: #{inspect(reason)}")
+        Logger.warning("Webhook verification failed",
+          error_kind: ErrorKind.classify(reason)
+        )
+
         conn |> send_resp(401, "Unauthorized") |> halt()
     end
   end

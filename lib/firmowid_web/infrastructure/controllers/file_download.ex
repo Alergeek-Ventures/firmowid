@@ -3,6 +3,7 @@ defmodule FirmowidWeb.Infrastructure.Controllers.FileDownload do
   use FirmowidWeb, :controller
 
   alias Firmowid.Ash.Invoicing.Services.MonthDownloadEntries
+  alias Firmowid.ErrorKind
   alias FirmowidWeb.Core.Endpoint
   alias FirmowidWeb.Infrastructure.Utilities.QueryParams
   alias FirmowidWeb.Invoicing.Utilities.InvoiceDownloadParams
@@ -48,23 +49,23 @@ defmodule FirmowidWeb.Infrastructure.Controllers.FileDownload do
     end
   end
 
-  defp log_packmatic_event(%Packmatic.Event.EntryStarted{entry: entry}) do
-    Logger.info("Packmatic: starting #{entry.path}")
+  defp log_packmatic_event(%Packmatic.Event.EntryStarted{entry: _entry}) do
+    Logger.info("Packmatic: entry starting")
     :ok
   end
 
-  defp log_packmatic_event(%Packmatic.Event.EntryCompleted{entry: entry}) do
-    Logger.info("Packmatic: completed #{entry.path}")
+  defp log_packmatic_event(%Packmatic.Event.EntryCompleted{entry: _entry}) do
+    Logger.info("Packmatic: entry completed")
     :ok
   end
 
-  defp log_packmatic_event(%Packmatic.Event.EntryFailed{entry: entry, reason: reason}) do
-    Logger.error("Packmatic: FAILED #{entry.path} - reason: #{inspect(reason)}")
+  defp log_packmatic_event(%Packmatic.Event.EntryFailed{entry: _entry, reason: reason}) do
+    Logger.error("Packmatic: entry failed", error_kind: ErrorKind.classify(reason))
     :ok
   end
 
   defp log_packmatic_event(%Packmatic.Event.StreamEnded{reason: reason, stream_bytes_emitted: bytes}) do
-    Logger.info("Packmatic: stream ended - reason: #{inspect(reason)}, bytes: #{bytes}")
+    Logger.info("Packmatic: stream ended", status: ErrorKind.classify(reason), bytes: bytes)
     :ok
   end
 

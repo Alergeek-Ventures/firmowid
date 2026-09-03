@@ -14,6 +14,7 @@ defmodule Firmowid.Ash.Finances.Changes.DeleteRemoteRequisition do
 
   alias Ash.Error.Changes.InvalidAttribute
   alias Firmowid.Ash.Finances.GoCardless.ApiClient
+  alias Firmowid.ErrorKind
 
   require Logger
 
@@ -32,7 +33,10 @@ defmodule Firmowid.Ash.Finances.Changes.DeleteRemoteRequisition do
           mark_deleted(changeset)
 
         {:error, reason} ->
-          Logger.error("Failed to delete remote requisition #{record.id}: #{inspect(reason)}")
+          Logger.error("Failed to delete remote requisition",
+            requisition_id: record.id,
+            error_kind: ErrorKind.classify(reason)
+          )
 
           Ash.Changeset.add_error(
             changeset,

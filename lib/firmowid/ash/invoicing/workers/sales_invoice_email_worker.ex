@@ -11,6 +11,7 @@ defmodule Firmowid.Ash.Invoicing.Workers.SalesInvoiceEmailWorker do
   alias Firmowid.Ash.Invoicing.Services.SalesInvoiceEmailSender
   alias Firmowid.Ash.Scope
   alias Firmowid.Ash.SystemActor
+  alias Firmowid.ErrorKind
 
   require Logger
 
@@ -48,7 +49,7 @@ defmodule Firmowid.Ash.Invoicing.Workers.SalesInvoiceEmailWorker do
   defp handle_delivery_error(attrs, reason, job, scope) do
     Logger.warning(
       "Sales invoice email attempt failed invoice_id=#{attrs.sales_invoice_id} delivery_type=#{attrs.delivery_type} " <>
-        "attempt=#{job.attempt}/#{job.max_attempts} reason=#{inspect(reason)}"
+        "attempt=#{job.attempt}/#{job.max_attempts} reason=#{ErrorKind.classify(reason)}"
     )
 
     if job.attempt >= job.max_attempts do

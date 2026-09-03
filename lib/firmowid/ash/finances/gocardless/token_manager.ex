@@ -13,6 +13,8 @@ defmodule Firmowid.Ash.Finances.GoCardless.TokenManager do
 
   use GenServer
 
+  alias Firmowid.ErrorKind
+
   require Logger
 
   @base_url "https://bankaccountdata.gocardless.com/api/v2"
@@ -151,7 +153,10 @@ defmodule Firmowid.Ash.Finances.GoCardless.TokenManager do
           fetch_new_token_pair(state)
 
         {:error, reason} ->
-          Logger.warning("Token refresh failed: #{inspect(reason)}, falling back to /token/new/")
+          Logger.warning(
+            "Token refresh failed at operation=refresh error_kind=#{ErrorKind.classify(reason)}, falling back to /token/new/"
+          )
+
           fetch_new_token_pair(state)
       end
     else
@@ -172,12 +177,14 @@ defmodule Firmowid.Ash.Finances.GoCardless.TokenManager do
       {:ok, %{status: 401}} ->
         {:error, :invalid_refresh_token}
 
-      {:ok, %{status: status, body: body}} ->
-        Logger.warning("Unexpected response from /token/refresh/: #{status} #{inspect(body)}")
+      {:ok, %{status: status}} ->
+        Logger.warning("Unexpected response from /token/refresh/: status=#{status} error_kind=unexpected_status")
+
         {:error, {:unexpected_status, status}}
 
       {:error, reason} ->
-        Logger.warning("Network error calling /token/refresh/: #{inspect(reason)}")
+        Logger.warning("Network error calling /token/refresh/: error_kind=#{ErrorKind.classify(reason)}")
+
         {:error, {:network_error, reason}}
     end
   end
@@ -203,13 +210,14 @@ defmodule Firmowid.Ash.Finances.GoCardless.TokenManager do
         Logger.debug("New token pair obtained via /token/new/")
         {:ok, new_state}
 
-      {:ok, %{status: status, body: body}} ->
-        Logger.error("Failed to obtain token pair from /token/new/: #{status} #{inspect(body)}")
+      {:ok, %{status: status}} ->
+        Logger.error("Failed to obtain token pair from /token/new/: status=#{status} error_kind=unexpected_status")
 
         {:error, {:unexpected_status, status}, %{state | fetch_failures: state.fetch_failures + 1}}
 
       {:error, reason} ->
-        Logger.error("Network error calling /token/new/: #{inspect(reason)}")
+        Logger.error("Network error calling /token/new/: error_kind=#{ErrorKind.classify(reason)}")
+
         {:error, {:network_error, reason}, %{state | fetch_failures: state.fetch_failures + 1}}
     end
   end

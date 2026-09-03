@@ -10,6 +10,7 @@ defmodule FirmowidWeb.Documents.Components.DocumentsSection do
   alias Firmowid.Ash.Blobs.Blob
   alias Firmowid.Ash.Payroll
   alias Firmowid.Ash.Timetracker
+  alias Firmowid.ErrorKind
   alias FirmowidWeb.Infrastructure.Utilities.TimeFormatter
 
   require Logger
@@ -520,7 +521,7 @@ defmodule FirmowidWeb.Documents.Components.DocumentsSection do
           LiveToast.send_toast(:success, "Plik został wysłany.")
 
         {:error, err} ->
-          Logger.warning("Upload failed: #{inspect(err)}")
+          Logger.warning("Upload failed", error_kind: ErrorKind.classify(err))
           LiveToast.send_toast(:error, "Wystąpił błąd podczas wysyłania pliku.")
       end
     end)

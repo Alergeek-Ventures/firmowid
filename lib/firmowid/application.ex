@@ -5,6 +5,7 @@ defmodule Firmowid.Application do
 
   use Application
 
+  alias Firmowid.Sentry
   alias FirmowidWeb.Core.Endpoint
 
   @impl true
@@ -16,7 +17,7 @@ defmodule Firmowid.Application do
 
     Oban.Telemetry.attach_default_logger()
     Ecto.DevLogger.install(Firmowid.Repo)
-    Firmowid.SentryLiveViewHandler.setup()
+    Sentry.setup()
 
     # Merge AshOban trigger/scheduled_action cron entries into the Oban runtime config.
     ash_oban_config =

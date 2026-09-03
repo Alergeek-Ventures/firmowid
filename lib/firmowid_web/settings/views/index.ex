@@ -34,6 +34,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
   alias Firmowid.Ash.Ksef
   alias Firmowid.Ash.Ksef.Credential
   alias Firmowid.Ash.Timetracker
+  alias Firmowid.ErrorKind
   alias FirmowidWeb.Billing.Utilities.MonthContext
   alias FirmowidWeb.Core.Endpoint
   alias FirmowidWeb.Documents.Components.DocumentsSection
@@ -308,7 +309,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
         handle_avatar_upload(name, blob.id, socket)
 
       {:error, err} ->
-        Logger.warning("Avatar upload failed for #{name}: #{inspect(err)}")
+        Logger.warning("Avatar upload failed", error_kind: ErrorKind.classify(err))
         LiveToast.send_toast(:error, "Wystąpił błąd podczas aktualizacji zdjęcia.")
         {:noreply, socket}
     end
@@ -340,7 +341,9 @@ defmodule FirmowidWeb.Settings.Views.Index do
         {:error, error} ->
           LiveToast.send_toast(:error, "Wystąpił błąd podczas usuwania konta")
 
-          Logger.error("Failed to delete user account: #{inspect(error)}")
+          Logger.error("Failed to delete user account",
+            error_kind: ErrorKind.classify(error)
+          )
 
           {:noreply, socket}
       end
@@ -509,7 +512,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
         {:noreply, socket}
 
       {:error, error} ->
-        Logger.error("Failed to update user role: #{inspect(error)}")
+        Logger.error("Failed to update user role", error_kind: ErrorKind.classify(error))
         LiveToast.send_toast(:error, "Nie udało się zmienić roli użytkownika.")
         {:noreply, socket}
     end
@@ -541,7 +544,10 @@ defmodule FirmowidWeb.Settings.Views.Index do
         {:noreply, socket}
 
       {:error, error} ->
-        Logger.error("Failed to archive organization user: #{inspect(error)}")
+        Logger.error("Failed to archive organization user",
+          error_kind: ErrorKind.classify(error)
+        )
+
         LiveToast.send_toast(:error, "Nie udało się zarchiwizować użytkownika.")
         {:noreply, socket}
     end
@@ -1447,7 +1453,10 @@ defmodule FirmowidWeb.Settings.Views.Index do
           |> Map.new(&{&1.id, &1})
 
         {:error, error} ->
-          Logger.warning("Failed to load bank institution metadata: #{inspect(error)}")
+          Logger.warning("Failed to load bank institution metadata",
+            error_kind: ErrorKind.classify(error)
+          )
+
           %{}
       end
     end

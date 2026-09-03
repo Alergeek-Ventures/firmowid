@@ -48,6 +48,7 @@ alias ExSlop.Check.Warning.PathExpandPriv
         ],
         enabled: [
           {Checks.RejectDirectHistoryRates, []},
+          {Checks.RejectDirectSentrySdk, []},
           {Checks.ClassAttributeFormat, []},
           {Checks.EnforceDesignSystemMarkup, []},
           {Checks.EnforceVerifiedRoutesInDsLink, []},

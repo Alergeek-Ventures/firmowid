@@ -2,6 +2,7 @@ defmodule FirmowidWeb.Invoicing.Components.Assistant do
   @moduledoc false
   use FirmowidWeb, :html
 
+  alias Firmowid.ErrorKind
   alias FirmowidWeb.Infrastructure.Utilities.TimeFormatter
 
   require Logger
@@ -282,7 +283,10 @@ defmodule FirmowidWeb.Invoicing.Components.Assistant do
   end
 
   def message(message, _, opts) do
-    Logger.warning("Unknown message type in assistant: #{inspect(message)}")
+    Logger.warning("Unknown message type in assistant",
+      kind: ErrorKind.classify(message),
+      key_count: if(is_map(message), do: map_size(message), else: 0)
+    )
 
     if Keyword.get(opts, :debug, false) do
       case message do

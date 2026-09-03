@@ -20,6 +20,7 @@ defmodule Firmowid.Ash.Finances.Changes.CheckRequisitionStatus do
   alias AshOban.Errors.SnoozeJob
   alias Firmowid.Ash.Finances.GoCardless.ApiClient
   alias Firmowid.Ash.Finances.Requisition
+  alias Firmowid.ErrorKind
 
   require Logger
 
@@ -97,7 +98,10 @@ defmodule Firmowid.Ash.Finances.Changes.CheckRequisitionStatus do
   end
 
   defp handle_status_result({:error, reason}, changeset, record, _tenant, _ash_opts) do
-    Logger.error("Failed to fetch requisition status for #{record.id}: #{inspect(reason)}")
+    Logger.error("Failed to fetch requisition status",
+      requisition_id: record.id,
+      error_kind: ErrorKind.classify(reason)
+    )
 
     Ash.Changeset.add_error(
       changeset,

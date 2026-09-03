@@ -12,6 +12,7 @@ defmodule Firmowid.Ash.Timetracker.Workers.LeaveRequestEmailWorker do
   alias Firmowid.Ash.SystemActor
   alias Firmowid.Ash.Timetracker
   alias Firmowid.Ash.Timetracker.LeaveRequestEmails
+  alias Firmowid.ErrorKind
 
   require Logger
 
@@ -47,7 +48,10 @@ defmodule Firmowid.Ash.Timetracker.Workers.LeaveRequestEmailWorker do
         notify_admins(leave_request, attachment, scope)
 
       {:error, reason} ->
-        Logger.error("Failed to load leave request leave_request_id=#{leave_request_id} reason=#{inspect(reason)}")
+        Logger.error("Failed to load leave request",
+          leave_request_id: leave_request_id,
+          error_kind: ErrorKind.classify(reason)
+        )
 
         {:error, reason}
     end

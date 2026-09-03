@@ -18,6 +18,7 @@ defmodule Firmowid.Ash.Invoicing do
   alias Firmowid.Ash.Ksef
   alias Firmowid.Ash.Scope
   alias Firmowid.Ash.SystemActor
+  alias Firmowid.ErrorKind
 
   require Ash.Query
 
@@ -678,7 +679,10 @@ defmodule Firmowid.Ash.Invoicing do
       {:error, reason} ->
         require Logger
 
-        Logger.error("Failed to fetch KSeF XML for cost invoice #{invoice.id}: #{inspect(reason)}")
+        Logger.error("Failed to fetch KSeF XML for cost invoice",
+          invoice_id: invoice.id,
+          error_kind: ErrorKind.classify(reason)
+        )
 
         invoice
     end

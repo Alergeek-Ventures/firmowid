@@ -26,6 +26,8 @@ defmodule Firmowid.Ash.Finances.Changes.SyncTransactions do
   alias Firmowid.Ash.Finances.TransactionDirection
   alias Firmowid.Ash.Scope
   alias Firmowid.Ash.SystemActor
+  alias Firmowid.ErrorKind
+  alias Firmowid.Sentry
 
   require Logger
 
@@ -43,7 +45,7 @@ defmodule Firmowid.Ash.Finances.Changes.SyncTransactions do
           {:ok, bank_account}
 
         {:error, reason} ->
-          {:error, Ash.Changeset.add_error(changeset, "sync failed: #{inspect(reason)}")}
+          {:error, Ash.Changeset.add_error(changeset, "sync failed: #{ErrorKind.classify(reason)}")}
       end
     end)
   end
@@ -105,7 +107,10 @@ defmodule Firmowid.Ash.Finances.Changes.SyncTransactions do
         :ok
 
       {:error, reason} ->
-        Logger.warning("Could not expire requisition #{requisition_id}: #{inspect(reason)}")
+        Logger.warning(
+          "Could not expire requisition #{requisition_id} during sync: error_kind=#{ErrorKind.classify(reason)}"
+        )
+
         {:error, reason}
     end
   end
@@ -115,7 +120,7 @@ defmodule Firmowid.Ash.Finances.Changes.SyncTransactions do
       Logger.warning("Cannot expire missing requisition #{requisition_id} during sync")
       :ok
     else
-      Logger.warning("Could not load requisition #{requisition_id} during sync: #{inspect(reason)}")
+      Logger.warning("Could not load requisition #{requisition_id} during sync: error_kind=#{ErrorKind.classify(reason)}")
 
       {:error, reason}
     end
@@ -181,14 +186,18 @@ defmodule Firmowid.Ash.Finances.Changes.SyncTransactions do
       %{status: :partial_success, errors: errors} ->
         Logger.warning(
           "Partial sync for bank account #{bank_account.id}: " <>
-            "#{length(errors)} errors — #{inspect(Enum.take(errors, 3))}"
+            "#{length(errors)} errors error_kinds=#{inspect(error_kinds(errors))}"
         )
 
         report_upsert_errors(errors, bank_account)
         :ok
 
       %{status: :error, errors: errors} ->
-        Logger.error("Failed to sync transactions: #{inspect(Enum.take(errors, 3))}")
+        Logger.error(
+          "Failed to sync transactions for bank account #{bank_account.id}: " <>
+            "stage=upsert errors=#{length(errors)} error_kinds=#{inspect(error_kinds(errors))}"
+        )
+
         report_upsert_errors(errors, bank_account)
         {:error, :upsert_failed}
     end
@@ -201,29 +210,37 @@ defmodule Firmowid.Ash.Finances.Changes.SyncTransactions do
   end
 
   defp report_parse_error(error, bank_account) do
-    Logger.warning("Skipping GoCardless transaction for bank account #{bank_account.id}: #{Exception.message(error)}")
+    Logger.warning(
+      "Skipping GoCardless transaction for bank account #{bank_account.id}: " <>
+        "stage=parse error_kind=#{ErrorKind.classify(error)}"
+    )
 
-    Sentry.capture_exception(error,
+    error_kind = ErrorKind.classify(error)
+
+    Sentry.capture_exception(
+      RuntimeError.exception("Transaction parse failed during GoCardless sync"),
       tags: %{
         source: "gocardless_transaction_sync",
-        stage: "parse"
+        stage: "parse",
+        error_kind: error_kind
       },
       extra: %{
         bank_account_id: bank_account.id,
         organization_id: bank_account.organization_id,
         requisition_id: bank_account.requisition_id,
-        transaction_id: Map.get(error, :transaction_id),
-        internal_transaction_id: Map.get(error, :internal_transaction_id),
-        raw_amount: inspect(Map.get(error, :raw_amount))
+        error_kind: error_kind
       }
     )
   rescue
-    sentry_error ->
-      Logger.warning("Failed to report transaction parse error to Sentry: #{Exception.message(sentry_error)}")
+    _sentry_error ->
+      Logger.warning("Failed to report transaction parse error to Sentry")
   end
 
   defp report_upsert_errors(errors, bank_account) do
-    Logger.error("Transaction upsert errors for bank account #{bank_account.id}: #{inspect(Enum.take(errors, 3))}")
+    Logger.error(
+      "Transaction upsert errors for bank account #{bank_account.id}: " <>
+        "stage=upsert errors=#{length(errors)} error_kinds=#{inspect(error_kinds(errors))}"
+    )
 
     Sentry.capture_exception(
       RuntimeError.exception("Transaction upsert failed during GoCardless sync"),
@@ -235,13 +252,16 @@ defmodule Firmowid.Ash.Finances.Changes.SyncTransactions do
         bank_account_id: bank_account.id,
         organization_id: bank_account.organization_id,
         requisition_id: bank_account.requisition_id,
-        errors: inspect(Enum.take(errors, 10))
+        error_count: length(errors),
+        error_kinds: error_kinds(errors)
       }
     )
   rescue
-    sentry_error ->
-      Logger.warning("Failed to report transaction upsert error to Sentry: #{Exception.message(sentry_error)}")
+    _sentry_error ->
+      Logger.warning("Failed to report transaction upsert error to Sentry")
   end
+
+  defp error_kinds(errors), do: errors |> Enum.map(&ErrorKind.classify/1) |> Enum.uniq()
 
   defp build_sync_scope(bank_account) do
     %Scope{

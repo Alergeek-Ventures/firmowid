@@ -18,6 +18,8 @@ defmodule Firmowid.Ash.Assistant.InvoiceMatching do
   alias Firmowid.Ash.Invoicing.CostInvoice
   alias Firmowid.Ash.Invoicing.SalesInvoice
   alias Firmowid.Ash.Scope
+  alias Firmowid.ErrorKind
+  alias Firmowid.Sentry
   alias Jido.AI.Context, as: AIContext
 
   require Logger
@@ -346,7 +348,7 @@ defmodule Firmowid.Ash.Assistant.InvoiceMatching do
       },
       extra: %{
         assistant_type: session.assistant_type,
-        error: inspect(error),
+        error_kind: ErrorKind.classify(error),
         organization_id: session.organization_id,
         session_id: session.id,
         status: session.status,
@@ -354,8 +356,8 @@ defmodule Firmowid.Ash.Assistant.InvoiceMatching do
       }
     )
   rescue
-    sentry_error ->
-      Logger.warning("Failed to report assistant error to Sentry: #{Exception.message(sentry_error)}")
+    _sentry_error ->
+      Logger.warning("Failed to report assistant error to Sentry")
   end
 
   defp maybe_stop_agent(pid) when is_pid(pid) do

@@ -20,6 +20,7 @@ defmodule Firmowid.Ash.Ksef.Workers.SubmissionWorker do
   alias Firmowid.Ash.Ksef.Workers.SessionWorker
   alias Firmowid.Ash.Scope
   alias Firmowid.Ash.SystemActor
+  alias Firmowid.ErrorKind
 
   require Logger
 
@@ -92,12 +93,20 @@ defmodule Firmowid.Ash.Ksef.Workers.SubmissionWorker do
 
   defp handle_submission_success({session_reference, invoice_reference}, sales_invoice_id, scope) do
     schedule_verification(sales_invoice_id, session_reference, invoice_reference, scope.tenant)
-    Logger.info("Invoice #{sales_invoice_id} submitted to KSeF, reference: #{invoice_reference}")
+
+    Logger.info("Invoice submitted to KSeF",
+      invoice_id: sales_invoice_id,
+      operation: "submission"
+    )
   end
 
   defp handle_submission_error(sales_invoice_id, {:exception, e, stacktrace}, job, scope, _error) do
     maybe_unlock_invoice(sales_invoice_id, scope)
-    Logger.error("Exception during KSeF submission for #{sales_invoice_id}: #{inspect(e)}")
+
+    Logger.error("Exception during KSeF submission",
+      invoice_id: sales_invoice_id,
+      error_kind: ErrorKind.classify(e)
+    )
 
     if final_attempt?(job) do
       finalize_failed_submission(sales_invoice_id, scope)
@@ -109,7 +118,11 @@ defmodule Firmowid.Ash.Ksef.Workers.SubmissionWorker do
 
   defp handle_submission_error(sales_invoice_id, reason, job, scope, error) do
     maybe_unlock_invoice(sales_invoice_id, scope)
-    Logger.error("Failed to submit invoice #{sales_invoice_id}: #{inspect(reason)}")
+
+    Logger.error("Failed to submit invoice",
+      invoice_id: sales_invoice_id,
+      error_kind: ErrorKind.classify(reason)
+    )
 
     if final_attempt?(job) do
       finalize_failed_submission(sales_invoice_id, scope)
@@ -186,8 +199,8 @@ defmodule Firmowid.Ash.Ksef.Workers.SubmissionWorker do
         :ok
 
       {:error, reason} ->
-        Logger.warning(
-          "Failed to close KSeF session #{session_reference} after submission; continuing verification: #{inspect(reason)}"
+        Logger.warning("Failed to close KSeF session after submission; continuing verification",
+          error_kind: ErrorKind.classify(reason)
         )
     end
   end
@@ -321,7 +334,11 @@ defmodule Firmowid.Ash.Ksef.Workers.SubmissionWorker do
         opts
       )
 
-    Logger.info("Invoice #{invoice.id} received KSeF number: #{ksef_number}")
+    Logger.info("Invoice received KSeF confirmation",
+      invoice_id: invoice.id,
+      operation: "verification"
+    )
+
     dispatch_after_ksef_confirmation(updated_invoice, scope)
     Ksef.broadcast_ksef_status(scope.tenant, invoice.id, :submitted)
   end
@@ -354,13 +371,11 @@ defmodule Firmowid.Ash.Ksef.Workers.SubmissionWorker do
          invoice,
          _job,
          scope,
-         verification_context
+         _verification_context
        ) do
-    Logger.warning(
-      "Invoice #{invoice.id} matched existing KSeF document; rejecting submission so invoice can be edited and resubmitted. " <>
-        "requested_session_reference=#{verification_context.requested_session_reference}, " <>
-        "requested_invoice_reference=#{verification_context.requested_invoice_reference}, " <>
-        "canonical_session_reference=#{session_ref}, canonical_ksef_number=#{ksef_number}"
+    Logger.warning("Invoice matched existing KSeF document; rejecting submission",
+      invoice_id: invoice.id,
+      operation: "verification"
     )
 
     fail_invoice_status(invoice, scope)
@@ -393,7 +408,10 @@ defmodule Firmowid.Ash.Ksef.Workers.SubmissionWorker do
   end
 
   defp handle_verification_result({:error, reason} = error, invoice, job, scope, _verification_context) do
-    Logger.error("Failed to verify invoice #{invoice.id}: #{inspect(reason)}")
+    Logger.error("Failed to verify invoice",
+      invoice_id: invoice.id,
+      error_kind: ErrorKind.classify(reason)
+    )
 
     if final_attempt?(job), do: fail_invoice_status(invoice, scope)
 
@@ -406,7 +424,11 @@ defmodule Firmowid.Ash.Ksef.Workers.SubmissionWorker do
   end
 
   defp fail_invoice(invoice, error, scope) do
-    Logger.error("Invoice #{invoice.id} verification failed: #{inspect(error)}")
+    Logger.error("Invoice verification failed",
+      invoice_id: invoice.id,
+      error_kind: ErrorKind.classify(error)
+    )
+
     fail_invoice_status(invoice, scope)
     {:cancel, error}
   end
@@ -426,7 +448,10 @@ defmodule Firmowid.Ash.Ksef.Workers.SubmissionWorker do
         Logger.info("Auto-deleted failed unsent correction invoice #{sales_invoice_id}")
 
       {:error, reason} ->
-        Logger.error("Failed to auto-delete correction #{sales_invoice_id}: #{inspect(reason)}")
+        Logger.error("Failed to auto-delete correction",
+          invoice_id: sales_invoice_id,
+          error_kind: ErrorKind.classify(reason)
+        )
 
       _ ->
         :ok

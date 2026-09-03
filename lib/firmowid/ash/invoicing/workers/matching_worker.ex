@@ -9,6 +9,7 @@ defmodule Firmowid.Ash.Invoicing.Workers.MatchingWorker do
   alias Firmowid.Ash.Invoicing.InvoiceMatching
   alias Firmowid.Ash.Scope
   alias Firmowid.Ash.SystemActor
+  alias Firmowid.ErrorKind
 
   require Logger
 
@@ -47,7 +48,10 @@ defmodule Firmowid.Ash.Invoicing.Workers.MatchingWorker do
         InvoiceMatching.match_cost_invoice(cost_invoice_id, scope)
 
       _ ->
-        Logger.error("Unknown job args: #{inspect(job.args)}")
+        Logger.error("Unknown matching job args",
+          kind: ErrorKind.classify(job.args),
+          key_count: if(is_map(job.args), do: map_size(job.args), else: 0)
+        )
     end
 
     :ok

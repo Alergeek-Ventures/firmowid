@@ -15,7 +15,14 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  sentry-release:
+    if: github.ref == 'refs/heads/main'
+    uses: ./.github/workflows/sentry-release.yml
+    secrets: inherit
+
   deploy:
+    if: github.ref == 'refs/heads/main'
+    needs: sentry-release
     runs-on: ubuntu-latest
     environment: production
 

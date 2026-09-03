@@ -10,6 +10,7 @@ defmodule Firmowid.Ash.Finances.Changes.CreateBankAccounts do
 
   alias Firmowid.Ash.Finances
   alias Firmowid.Ash.Finances.GoCardless.ApiClient
+  alias Firmowid.ErrorKind
 
   require Logger
 
@@ -22,7 +23,10 @@ defmodule Firmowid.Ash.Finances.Changes.CreateBankAccounts do
           {:ok, record}
 
         {:error, reason} ->
-          Logger.warning("Failed to create bank accounts for requisition #{record.id}: #{inspect(reason)}")
+          Logger.warning("Failed to create bank accounts for requisition",
+            requisition_id: record.id,
+            error_kind: ErrorKind.classify(reason)
+          )
 
           {:ok, record}
       end
@@ -65,6 +69,9 @@ defmodule Firmowid.Ash.Finances.Changes.CreateBankAccounts do
     AshOban.run_trigger(account, :sync_transactions, tenant: account.organization_id)
   rescue
     error ->
-      Logger.warning("Failed to enqueue sync for account #{account.id}: #{inspect(error)}")
+      Logger.warning("Failed to enqueue sync for account",
+        account_id: account.id,
+        error_kind: ErrorKind.classify(error)
+      )
   end
 end
