@@ -10,7 +10,7 @@ defmodule Firmowid.Ash.Delegations.Delegation do
     extensions: [AshStateMachine]
 
   alias Firmowid.Ash.Core.User
-  alias Firmowid.Ash.Delegations.Changes.ValidateSettlement
+  alias Firmowid.Ash.Delegations.Validations.HasExpenses
   alias Firmowid.Ash.Delegations.Workers.DelegationEmailWorker
   alias Firmowid.Ash.Resource
 
@@ -95,7 +95,34 @@ defmodule Firmowid.Ash.Delegations.Delegation do
       description "Mark an in-progress delegation as complete."
       require_atomic? false
       accept []
-      change ValidateSettlement
+
+      argument :transport_expenses, {:array, :map}, allow_nil?: false, default: []
+      argument :accommodation_expenses, {:array, :map}, allow_nil?: false, default: []
+      argument :other_expenses, {:array, :map}, allow_nil?: false, default: []
+
+      change manage_relationship(:transport_expenses,
+               type: :direct_control,
+               on_match: {:update, :complete},
+               on_no_match: :error,
+               on_missing: :ignore
+             )
+
+      change manage_relationship(:accommodation_expenses,
+               type: :direct_control,
+               on_match: {:update, :complete},
+               on_no_match: :error,
+               on_missing: :ignore
+             )
+
+      change manage_relationship(:other_expenses,
+               type: :direct_control,
+               on_match: {:update, :complete},
+               on_no_match: :error,
+               on_missing: :ignore
+             )
+
+      validate {HasExpenses, []}
+
       change transition_state(:complete)
     end
   end

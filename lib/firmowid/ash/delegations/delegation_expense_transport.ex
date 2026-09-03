@@ -1,3 +1,6 @@
+# credo:disable-for-this-file Credo.Check.Design.DuplicatedCode
+# These resource-local policies intentionally repeat the authorization expression
+# because each resource has a different relationship path to the delegation.
 defmodule Firmowid.Ash.Delegations.DelegationExpenseTransport do
   @moduledoc "Transport expense attached to a delegation."
 
@@ -141,6 +144,7 @@ defmodule Firmowid.Ash.Delegations.DelegationExpenseTransport do
 
   code_interface do
     define :read, action: :read
+    define :complete, action: :complete
   end
 
   actions do
@@ -190,6 +194,28 @@ defmodule Firmowid.Ash.Delegations.DelegationExpenseTransport do
         where: [changing(:expense_amount)],
         message: "musi być większa od zera"
     end
+
+    update :complete do
+      description "Validate and save a transport expense while completing its delegation."
+      require_atomic? false
+      accept [:document_number, :expense_amount, :transport_type, :description]
+
+      argument :trips, {:array, :map}, allow_nil?: false
+
+      change manage_relationship(:trips,
+               type: :direct_control,
+               on_match: {:update, :complete},
+               on_no_match: :error,
+               on_missing: :ignore
+             )
+
+      validate string_length(:document_number, min: 1), message: "Uzupełnij to pole."
+
+      validate compare(:expense_amount, greater_than: Money.new(:PLN, 0)),
+        message: "musi być większa od zera"
+
+      validate present([:trips]), message: "Dodaj przynajmniej jedną trasę."
+    end
   end
 
   policies do
@@ -201,8 +227,19 @@ defmodule Firmowid.Ash.Delegations.DelegationExpenseTransport do
       authorize_if relates_to_actor_via([:delegation, :user])
     end
 
-    policy action_type([:create, :update, :destroy]) do
+    policy action_type([:create, :destroy]) do
       authorize_if expr(delegation.status == :in_progress and delegation.user_id == ^actor(:id))
+    end
+
+    policy action(:update) do
+      authorize_if expr(delegation.status == :in_progress and delegation.user_id == ^actor(:id))
+    end
+
+    policy action(:complete) do
+      authorize_if expr(
+                     delegation.status in [:in_progress, :complete] and
+                       delegation.user_id == ^actor(:id)
+                   )
     end
   end
 
