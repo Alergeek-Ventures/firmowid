@@ -531,7 +531,7 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
           <div class="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-1">
             <h2 class="text-grey-900 text-base leading-none font-medium">Twoje projekty</h2>
             <span class="text-grey-500 text-sm">
-              {TimeFormatter.format_date(@date, "MMMM y")}
+              {TimeFormatter.format_date(@date, "LLLL y")}
             </span>
           </div>
           <span class="text-grey-700 shrink-0 tabular-nums">
