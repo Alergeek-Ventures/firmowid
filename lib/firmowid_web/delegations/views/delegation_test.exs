@@ -224,7 +224,8 @@ defmodule FirmowidWeb.Delegations.Views.DelegationTest do
         load: [transport_expenses: [:trips]]
       )
 
-    [trip] = List.first(delegation.transport_expenses).trips
+    expense = List.first(delegation.transport_expenses)
+    [trip] = expense.trips
 
     assert has_element?(view, "#transport-trip-#{trip.id} th", "Miejscowość")
     assert has_element?(view, "#transport-trip-#{trip.id} th", "Data")
@@ -238,15 +239,30 @@ defmodule FirmowidWeb.Delegations.Views.DelegationTest do
     assert has_element?(view, "#trip-description-#{trip.id}")
 
     view
-    |> element("#transport-trip-#{trip.id}")
-    |> render_change(%{
-      "departure_city" => "Warszawa",
-      "departure_date" => "2026-08-10",
-      "departure_time" => "10:00",
-      "arrival_city" => "Gdańsk",
-      "arrival_date" => "2026-08-10",
-      "arrival_time" => "13:00"
+    |> form("#delegation-complete-form", %{
+      "delegation" => %{
+        "transport_expenses" => %{
+          "0" => %{
+            "id" => expense.id,
+            "document_number" => expense.document_number,
+            "expense_amount" => "123.45",
+            "transport_type" => "other",
+            "trips" => %{
+              "0" => %{
+                "id" => trip.id,
+                "departure_city" => "Warszawa",
+                "departure_date" => "2026-08-10",
+                "departure_time" => "10:00",
+                "arrival_city" => "Gdańsk",
+                "arrival_date" => "2026-08-10",
+                "arrival_time" => "13:00"
+              }
+            }
+          }
+        }
+      }
     })
+    |> render_submit()
 
     {:ok, trip} = Delegations.get_delegation_trip(trip.id, scope: scope)
 
@@ -439,6 +455,40 @@ defmodule FirmowidWeb.Delegations.Views.DelegationTest do
              Delegations.get_delegation(delegation.id, scope: scope)
   end
 
+  test "marks incomplete uploaded ticket fields invalid on submit", %{
+    conn: conn
+  } do
+    {view, _html, delegation, scope} = approved_delegation_view(conn)
+
+    view
+    |> file_input("#transport-upload-form", :transport, [
+      %{name: "bilet.pdf", content: "PDF content", type: "application/pdf"}
+    ])
+    |> render_upload("bilet.pdf")
+
+    view
+    |> form("#delegation-complete-form")
+    |> render_submit()
+
+    {:ok, delegation} =
+      Delegations.get_delegation(delegation.id,
+        scope: scope,
+        load: [transport_expenses: [:trips]]
+      )
+
+    [trip] = List.first(delegation.transport_expenses).trips
+
+    assert has_element?(view, "#trip-departure-city-#{trip.id}[aria-invalid='true']")
+    assert has_element?(view, "#trip-departure-date-#{trip.id}[aria-invalid='true']")
+    assert has_element?(view, "#trip-arrival-city-#{trip.id}[aria-invalid='true']")
+    assert has_element?(view, "#trip-arrival-time-#{trip.id}[aria-invalid='true']")
+    assert has_element?(view, "#transport-trip-#{trip.id} p", "Uzupełnij to pole.")
+    refute has_element?(view, "[role='alert']", "Nie udało się wysłać rozliczenia.")
+
+    assert {:ok, %{status: :in_progress}} =
+             Delegations.get_delegation(delegation.id, scope: scope)
+  end
+
   test "rejects malformed expense values without crashing", %{conn: conn} do
     {_view, _html, delegation, scope} = approved_delegation_view(conn)
 
@@ -454,10 +504,20 @@ defmodule FirmowidWeb.Delegations.Views.DelegationTest do
       |> live(~p"/delegacje/#{delegation.id}")
 
     view
-    |> element("#other-expense-#{expense.id}")
-    |> render_change(%{"expense_amount" => "not-a-number"})
+    |> form("#delegation-complete-form", %{
+      "delegation" => %{
+        "other_expenses" => %{
+          "0" => %{
+            "id" => expense.id,
+            "document_number" => expense.document_number,
+            "expense_amount" => "not-a-number"
+          }
+        }
+      }
+    })
+    |> render_change()
 
-    assert has_element?(view, "[role='alert']", "Nie udało się zapisać danych.")
+    assert has_element?(view, "#expense-amount-#{expense.id}[aria-invalid='true']")
   end
 
   test "removes an existing transport expense", %{conn: conn} do
