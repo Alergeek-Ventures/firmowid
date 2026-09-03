@@ -29,6 +29,7 @@ defmodule Firmowid.Ash.Delegations do
       define :get_transport_expense, action: :read, get_by: [:id]
       define :create_transport_expense, action: :create
       define :update_transport_expense, action: :update
+      define :complete_transport_expense, action: :complete
       define :destroy_transport_expense, action: :destroy
     end
 
@@ -37,6 +38,7 @@ defmodule Firmowid.Ash.Delegations do
       define :get_accommodation_expense, action: :read, get_by: [:id]
       define :create_accommodation_expense, action: :create
       define :update_accommodation_expense, action: :update
+      define :complete_accommodation_expense, action: :complete
       define :destroy_accommodation_expense, action: :destroy
     end
 
@@ -45,6 +47,7 @@ defmodule Firmowid.Ash.Delegations do
       define :get_other_expense, action: :read, get_by: [:id]
       define :create_other_expense, action: :create
       define :update_other_expense, action: :update
+      define :complete_other_expense, action: :complete
       define :destroy_other_expense, action: :destroy
     end
 
@@ -53,6 +56,7 @@ defmodule Firmowid.Ash.Delegations do
       define :get_delegation_trip, action: :read, get_by: [:id]
       define :create_delegation_trip, action: :create
       define :update_delegation_trip, action: :update
+      define :complete_delegation_trip, action: :complete
       define :destroy_delegation_trip, action: :destroy
     end
   end

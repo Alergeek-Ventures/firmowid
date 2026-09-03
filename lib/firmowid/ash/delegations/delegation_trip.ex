@@ -1,3 +1,6 @@
+# credo:disable-for-this-file Credo.Check.Design.DuplicatedCode
+# This resource-local policy intentionally repeats the authorization expression
+# because the relationship path to the delegation is specific to trips.
 defmodule Firmowid.Ash.Delegations.DelegationTrip do
   @moduledoc "A single departure and arrival pair from a transport expense."
 
@@ -22,6 +25,7 @@ defmodule Firmowid.Ash.Delegations.DelegationTrip do
 
   code_interface do
     define :read, action: :read
+    define :complete, action: :complete
   end
 
   actions do
@@ -59,6 +63,27 @@ defmodule Firmowid.Ash.Delegations.DelegationTrip do
       validate compare(:arrival_datetime, greater_than_or_equal_to: :departure_datetime),
         message: "musi być po lub o tej samej godzinie co wyjazd"
     end
+
+    update :complete do
+      description "Validate and save a trip while completing its delegation."
+      require_atomic? false
+
+      accept [
+        :departure_city,
+        :departure_datetime,
+        :arrival_city,
+        :arrival_datetime,
+        :description
+      ]
+
+      validate string_length(:departure_city, min: 1), message: "Uzupełnij to pole."
+      validate present(:departure_datetime), message: "Uzupełnij datę i godzinę."
+      validate string_length(:arrival_city, min: 1), message: "Uzupełnij to pole."
+      validate present(:arrival_datetime), message: "Uzupełnij datę i godzinę."
+
+      validate compare(:arrival_datetime, greater_than_or_equal_to: :departure_datetime),
+        message: "musi być po lub o tej samej godzinie co wyjazd"
+    end
   end
 
   policies do
@@ -70,9 +95,23 @@ defmodule Firmowid.Ash.Delegations.DelegationTrip do
       authorize_if relates_to_actor_via([:delegation_expense_transport, :delegation, :user])
     end
 
-    policy action_type([:create, :update, :destroy]) do
+    policy action_type([:create, :destroy]) do
       authorize_if expr(
                      delegation_expense_transport.delegation.status == :in_progress and
+                       delegation_expense_transport.delegation.user_id == ^actor(:id)
+                   )
+    end
+
+    policy action(:update) do
+      authorize_if expr(
+                     delegation_expense_transport.delegation.status == :in_progress and
+                       delegation_expense_transport.delegation.user_id == ^actor(:id)
+                   )
+    end
+
+    policy action(:complete) do
+      authorize_if expr(
+                     delegation_expense_transport.delegation.status in [:in_progress, :complete] and
                        delegation_expense_transport.delegation.user_id == ^actor(:id)
                    )
     end
