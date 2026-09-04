@@ -31,7 +31,7 @@ defmodule FirmowidWeb.Infrastructure.UserAuth do
   """
   @spec load_scope_and_avatars(map()) :: {map(), map(), Scope.t()}
   def load_scope_and_avatars(user) do
-    scope = %Scope{actor: user, tenant: user.organization_id}
+    scope = Scope.new!(user, user.organization_id)
     user = Ash.load!(user, [:organization, avatar_blob: [:url]], scope: scope)
     org = Ash.load!(user.organization, [avatar_blob: [:url]], scope: scope)
     {user, org, scope}
