@@ -3,17 +3,22 @@ defmodule Firmowid.Ash.Invoicing.Services.NipApiClientTest do
 
   alias Firmowid.Ash.Invoicing.Services.NipApiClient
 
+  @legal_entity Application.compile_env!(:firmowid, :legal_entity)
+
   @moduletag capture_log: true
 
   describe "nip api client" do
     test "fetches the org data by nip" do
-      {:ok, org} = NipApiClient.fetch_org_data_by_nip("6793209719")
+      {:ok, org} = NipApiClient.fetch_org_data_by_nip(@legal_entity.nip)
 
-      assert org.name ==
-               "ALERGEEK VENTURES SPÓŁKA Z OGRANICZONĄ ODPOWIEDZIALNOŚCIĄ"
+      assert org.name == String.upcase(@legal_entity.official_name)
 
-      assert org.nip == "6793209719"
-      assert org.address == "WŁADYSŁAWA SYROKOMLI 24/10, 30-102 KRAKÓW"
+      assert org.nip == @legal_entity.nip
+
+      assert org.address ==
+               @legal_entity.address
+               |> String.replace_prefix("ul. ", "")
+               |> String.upcase()
     end
 
     test "returns not found when the nip is not found" do
