@@ -19,16 +19,9 @@ defmodule Firmowid.Ash.Delegations.Validations.HasExpenses do
     end
   end
 
-  defp expense_loads, do: [:transport_expenses, :accommodation_expenses, :other_expenses]
+  defp expense_loads, do: [:expenses]
 
   defp has_expenses?(delegation) do
-    Enum.any?(
-      [
-        delegation.transport_expenses,
-        delegation.accommodation_expenses,
-        delegation.other_expenses
-      ],
-      &(not Enum.empty?(&1))
-    )
+    delegation.expenses != []
   end
 end

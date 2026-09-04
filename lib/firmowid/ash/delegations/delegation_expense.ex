@@ -1,8 +1,5 @@
-# credo:disable-for-this-file Credo.Check.Design.DuplicatedCode
-# These resource-local policies intentionally repeat the authorization expression
-# because each resource has a different relationship path to the delegation.
-defmodule Firmowid.Ash.Delegations.DelegationExpenseAccommodation do
-  @moduledoc "Accommodation expense attached to a delegation."
+defmodule Firmowid.Ash.Delegations.DelegationExpense do
+  @moduledoc "A document-backed cost included in a business-trip delegation settlement."
 
   use Ash.Resource,
     otp_app: :firmowid,
@@ -11,12 +8,15 @@ defmodule Firmowid.Ash.Delegations.DelegationExpenseAccommodation do
     authorizers: [Ash.Policy.Authorizer]
 
   alias Firmowid.Ash.Delegations.Changes.CreateExpenseBlob
+  alias Firmowid.Ash.Delegations.DelegationExpense.Details
+  alias Firmowid.Ash.Delegations.Validations.ExpenseDetailsComplete
+  alias Firmowid.Ash.Delegations.Validations.ExpenseDetailsMatchKind
   alias Firmowid.Ash.Resource
 
   require Resource
 
   postgres do
-    table "delegation_expense_accommodation"
+    table "delegation_expenses"
     repo Firmowid.Repo
   end
 
@@ -29,73 +29,46 @@ defmodule Firmowid.Ash.Delegations.DelegationExpenseAccommodation do
     defaults [:read, :destroy]
 
     create :create do
-      description "Create an accommodation expense for a delegation."
+      description "Create a document-backed expense for a delegation."
       primary? true
 
       accept [
         :delegation_id,
+        :kind,
         :original_filename,
         :document_number,
         :expense_amount,
-        :description,
-        :locality,
-        :arrival_date,
-        :departure_date
+        :details
       ]
 
       argument :upload_path, :string
       argument :content_type, :string
 
       change CreateExpenseBlob
-
-      validate compare(:departure_date, greater_than_or_equal_to: :arrival_date),
-        message: "musi być na lub po dacie zameldowania"
+      validate {ExpenseDetailsMatchKind, []}
     end
 
     update :update do
-      description "Update an accommodation expense while settling a delegation."
+      description "Update an expense while settling a delegation."
       primary? true
+      require_atomic? false
+      accept [:document_number, :expense_amount, :details]
 
-      accept [
-        :document_number,
-        :expense_amount,
-        :description,
-        :locality,
-        :arrival_date,
-        :departure_date
-      ]
-
-      validate compare(:expense_amount, greater_than: Money.new(:PLN, 0)),
-        where: [changing(:expense_amount)],
-        message: "musi być większa od zera"
-
-      validate compare(:departure_date, greater_than_or_equal_to: :arrival_date),
-        message: "musi być na lub po dacie zameldowania"
+      validate {ExpenseDetailsMatchKind, []}
     end
 
     update :complete do
-      description "Validate and save an accommodation expense while completing its delegation."
+      description "Validate and save an expense while completing its delegation."
       require_atomic? false
-
-      accept [
-        :document_number,
-        :expense_amount,
-        :description,
-        :locality,
-        :arrival_date,
-        :departure_date
-      ]
+      accept [:document_number, :expense_amount, :details]
 
       validate string_length(:document_number, min: 1), message: "Uzupełnij to pole."
-      validate string_length(:locality, min: 1), message: "Uzupełnij to pole."
-      validate present(:arrival_date), message: "Uzupełnij datę."
-      validate present(:departure_date), message: "Uzupełnij datę."
 
       validate compare(:expense_amount, greater_than: Money.new(:PLN, 0)),
         message: "musi być większa od zera"
 
-      validate compare(:departure_date, greater_than_or_equal_to: :arrival_date),
-        message: "musi być na lub po dacie zameldowania"
+      validate {ExpenseDetailsMatchKind, []}
+      validate {ExpenseDetailsComplete, []}
     end
   end
 
@@ -108,11 +81,7 @@ defmodule Firmowid.Ash.Delegations.DelegationExpenseAccommodation do
       authorize_if relates_to_actor_via([:delegation, :user])
     end
 
-    policy action_type([:create, :destroy]) do
-      authorize_if expr(delegation.status == :in_progress and delegation.user_id == ^actor(:id))
-    end
-
-    policy action(:update) do
+    policy action_type([:create, :update, :destroy]) do
       authorize_if expr(delegation.status == :in_progress and delegation.user_id == ^actor(:id))
     end
 
@@ -131,6 +100,12 @@ defmodule Firmowid.Ash.Delegations.DelegationExpenseAccommodation do
 
   attributes do
     uuid_v7_primary_key :id
+
+    attribute :kind, :atom,
+      allow_nil?: false,
+      public?: true,
+      constraints: [one_of: [:transport, :accommodation, :other]]
+
     attribute :original_filename, :string, allow_nil?: false, public?: true
     attribute :document_number, :string, allow_nil?: false, default: "", public?: true
 
@@ -139,16 +114,7 @@ defmodule Firmowid.Ash.Delegations.DelegationExpenseAccommodation do
       public?: true,
       default: Money.new(:PLN, 0)
 
-    attribute :description, :string, public?: true
-
-    attribute :locality, :string,
-      allow_nil?: false,
-      default: "",
-      constraints: [allow_empty?: true],
-      public?: true
-
-    attribute :arrival_date, :date, public?: true
-    attribute :departure_date, :date, public?: true
+    attribute :details, Details, allow_nil?: false, public?: true
     Resource.firmowid_timestamps()
   end
 
@@ -159,7 +125,7 @@ defmodule Firmowid.Ash.Delegations.DelegationExpenseAccommodation do
     end
 
     belongs_to :blob, Firmowid.Ash.Blobs.Blob do
-      description "Uploaded accommodation receipt."
+      description "Uploaded expense document."
       allow_nil? true
       attribute_writable? true
     end
