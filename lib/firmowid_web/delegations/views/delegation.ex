@@ -11,10 +11,8 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
 
   alias AshPhoenix.Form.Auto
   alias Firmowid.Ash.Delegations
-  alias Firmowid.Ash.Delegations.DelegationExpenseAccommodation
+  alias Firmowid.Ash.Delegations.DelegationExpense
   alias Firmowid.Ash.Delegations.DelegationExpenseExtractor
-  alias Firmowid.Ash.Delegations.DelegationExpenseOther
-  alias Firmowid.Ash.Delegations.DelegationExpenseTransport
   alias Phoenix.HTML.Form
 
   @impl true
@@ -53,7 +51,7 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
 
           <.expense_section
             title="Przejazdy"
-            expenses={@delegation.transport_expenses}
+            expenses={expenses_for(@delegation, :transport)}
             upload={Map.get(assigns[:uploads] || %{}, :transport)}
             upload_form={Map.fetch!(@upload_forms, "transport")}
             kind="transport"
@@ -68,7 +66,7 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
           </.expense_section>
           <.expense_section
             title="Nocleg"
-            expenses={@delegation.accommodation_expenses}
+            expenses={expenses_for(@delegation, :accommodation)}
             upload={Map.get(assigns[:uploads] || %{}, :accommodation)}
             upload_form={Map.fetch!(@upload_forms, "accommodation")}
             kind="accommodation"
@@ -83,7 +81,7 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
           </.expense_section>
           <.expense_section
             title="Inne wydatki"
-            expenses={@delegation.other_expenses}
+            expenses={expenses_for(@delegation, :other)}
             upload={Map.get(assigns[:uploads] || %{}, :other)}
             upload_form={Map.fetch!(@upload_forms, "other")}
             kind="other"
@@ -115,9 +113,9 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
           <div class="mt-6 rounded-lg bg-white px-6 py-4 shadow-sm lg:mt-47">
             <h2 class="text-grey-500 font-normal">Podsumowanie</h2>
             <dl class="mt-6 space-y-3 text-sm">
-              <.summary_row label="Przejazdy" value={sum(@delegation.transport_expenses)} />
-              <.summary_row label="Nocleg" value={sum(@delegation.accommodation_expenses)} />
-              <.summary_row label="Inne" value={sum(@delegation.other_expenses)} />
+              <.summary_row label="Przejazdy" value={sum(expenses_for(@delegation, :transport))} />
+              <.summary_row label="Nocleg" value={sum(expenses_for(@delegation, :accommodation))} />
+              <.summary_row label="Inne" value={sum(expenses_for(@delegation, :other))} />
               <div class="border-grey-100 my-5 space-y-3 border-y py-5">
                 <.summary_row label="Razem koszty" value={@total} class="font-medium" />
                 <.summary_row
@@ -865,10 +863,10 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
   end
 
   def handle_event("sort", _params, socket) do
-    delegation =
-      Map.update!(socket.assigns.delegation, :transport_expenses, &sort_transport_expenses/1)
+    delegation = Map.update!(socket.assigns.delegation, :expenses, &sort_transport_expenses/1)
 
-    form = complete_form(delegation, socket.assigns.ash_scope, socket.assigns.timezone)
+    form =
+      complete_form(socket.assigns.delegation, socket.assigns.ash_scope, socket.assigns.timezone)
 
     {:noreply,
      socket
@@ -894,7 +892,8 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
 
   defp setup_socket(socket, delegation) do
     sort_active? = socket.assigns[:sort_active?] || false
-    delegation = maybe_sort_transport_expenses(delegation, sort_active?)
+    complete_form = complete_form(delegation, socket.assigns.ash_scope, socket.assigns.timezone)
+    delegation = decorate_delegation(delegation, sort_active?)
 
     transport =
       if delegation.status == :complete,
@@ -927,8 +926,6 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
             progress: &handle_upload_progress/3
           )
 
-    complete_form = complete_form(delegation, socket.assigns.ash_scope, socket.assigns.timezone)
-
     socket
     |> assign(
       delegation: delegation,
@@ -947,11 +944,7 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
     do:
       Delegations.get_delegation(id,
         scope: socket.assigns.ash_scope,
-        load: [
-          accommodation_expenses: [blob: [:url]],
-          other_expenses: [blob: [:url]],
-          transport_expenses: [:trips, blob: [:url]]
-        ],
+        load: [expenses: [blob: [:url]]],
         not_found_error?: false
       )
 
@@ -963,7 +956,7 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
     delegation =
       socket.assigns.delegation.id
       |> load_delegation!(socket)
-      |> maybe_sort_transport_expenses(socket.assigns.sort_active?)
+      |> decorate_delegation(socket.assigns.sort_active?)
 
     complete_form = complete_form(delegation, socket.assigns.ash_scope, socket.assigns.timezone)
 
@@ -976,17 +969,40 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
     |> assign_summary()
   end
 
-  defp maybe_sort_transport_expenses(delegation, false), do: delegation
+  defp decorate_delegation(delegation, sort_active?) do
+    expenses =
+      if sort_active?, do: sort_transport_expenses(delegation.expenses), else: delegation.expenses
 
-  defp maybe_sort_transport_expenses(delegation, true) do
-    Map.update!(delegation, :transport_expenses, &sort_transport_expenses/1)
+    Map.put(delegation, :expenses, Enum.map(expenses, &decorate_expense/1))
   end
+
+  defp expenses_for(delegation, kind), do: Enum.filter(delegation.expenses, &(&1.kind == kind))
+
+  defp decorate_expense(
+         %{details: %{__struct__: Firmowid.Ash.Delegations.DelegationExpense.TransportDetails} = details} = expense
+       ) do
+    expense |> Map.put(:transport_type, details.transport_type) |> Map.put(:trips, details.trips)
+  end
+
+  defp decorate_expense(
+         %{details: %{__struct__: Firmowid.Ash.Delegations.DelegationExpense.AccommodationDetails} = details} = expense
+       ) do
+    expense
+    |> Map.put(:locality, details.locality)
+    |> Map.put(:arrival_date, details.arrival_date)
+    |> Map.put(:departure_date, details.departure_date)
+    |> Map.put(:description, details.description)
+  end
+
+  defp decorate_expense(
+         %{details: %{__struct__: Firmowid.Ash.Delegations.DelegationExpense.OtherDetails} = details} = expense
+       ), do: Map.put(expense, :description, details.description)
 
   defp sort_transport_expenses(expenses) do
     Enum.sort_by(
       expenses,
       fn expense ->
-        case expense.trips do
+        case Map.get(expense, :trips, []) do
           [%{departure_datetime: %DateTime{} = departure_datetime}] ->
             {0, DateTime.to_unix(departure_datetime, :microsecond), expense.inserted_at, expense.id}
 
@@ -1020,84 +1036,46 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
     {:noreply, assign(socket, :uploading?, uploads_in_progress?(socket))}
   end
 
-  defp create_expense(:transport, id, filename, content_type, path, scope) do
-    with {:ok, extracted_details} <- DelegationExpenseExtractor.extract(path, :transport) do
-      create_expense_form(
-        DelegationExpenseTransport,
-        id,
-        filename,
-        content_type,
-        path,
-        extracted_details,
-        scope
-      )
+  defp create_expense(kind, id, filename, content_type, path, scope) do
+    with {:ok, extracted_details} <- DelegationExpenseExtractor.extract(path, kind) do
+      create_expense_form(id, filename, content_type, path, kind, extracted_details, scope)
     end
   end
 
-  defp create_expense(:accommodation, id, filename, content_type, path, scope) do
-    with {:ok, extracted_details} <- DelegationExpenseExtractor.extract(path, :accommodation) do
-      create_expense_form(
-        DelegationExpenseAccommodation,
-        id,
-        filename,
-        content_type,
-        path,
-        extracted_details,
-        scope
-      )
-    end
-  end
-
-  defp create_expense(:other, id, filename, content_type, path, scope) do
-    with {:ok, extracted_details} <- DelegationExpenseExtractor.extract(path, :other) do
-      create_expense_form(
-        DelegationExpenseOther,
-        id,
-        filename,
-        content_type,
-        path,
-        extracted_details,
-        scope
-      )
-    end
-  end
-
-  defp create_expense_form(resource, id, filename, content_type, path, extracted_details, scope) do
-    resource
+  defp create_expense_form(id, filename, content_type, path, kind, extracted_details, scope) do
+    DelegationExpense
     |> AshPhoenix.Form.for_create(:create, scope: scope)
     |> AshPhoenix.Form.submit(
       params:
         Map.merge(
           %{
             delegation_id: id,
+            kind: kind,
             original_filename: filename,
             document_number: "",
             expense_amount: Money.new(:PLN, 0),
             upload_path: path,
-            content_type: content_type
+            content_type: content_type,
+            details: initial_expense_details(kind)
           },
           extracted_details
         )
     )
   end
 
+  defp initial_expense_details(:transport), do: %{type: "transport", transport_type: :other, trips: []}
+
+  defp initial_expense_details(:accommodation), do: %{type: "accommodation", locality: ""}
+  defp initial_expense_details(:other), do: %{type: "other", description: ""}
+
   defp destroy_expense(kind, id, scope) do
     with {:ok, expense} <- get_expense(kind, id, scope) do
-      case kind do
-        "transport" -> Delegations.destroy_transport_expense(expense, scope: scope)
-        "accommodation" -> Delegations.destroy_accommodation_expense(expense, scope: scope)
-        "other" -> Delegations.destroy_other_expense(expense, scope: scope)
-      end
+      _ = kind
+      Delegations.destroy_expense(expense, scope: scope)
     end
   end
 
-  defp get_expense("transport", id, scope),
-    do: Delegations.get_transport_expense(id, scope: scope, not_found_error?: false)
-
-  defp get_expense("accommodation", id, scope),
-    do: Delegations.get_accommodation_expense(id, scope: scope, not_found_error?: false)
-
-  defp get_expense("other", id, scope), do: Delegations.get_other_expense(id, scope: scope, not_found_error?: false)
+  defp get_expense(_kind, id, scope), do: Delegations.get_expense(id, scope: scope, not_found_error?: false)
 
   defp complete_form(delegation, scope, timezone) do
     forms =
@@ -1108,13 +1086,9 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
           config |> Keyword.fetch!(:updater) |> then(& &1.(config)) |> Keyword.delete(:updater)
 
         config =
-          if key == :transport_expenses do
-            Keyword.update!(config, :forms, fn forms ->
-              Keyword.update!(forms, :trips, fn trip_config ->
-                Keyword.put(trip_config, :transform_params, fn params, type ->
-                  transform_trip_params(params, type, timezone)
-                end)
-              end)
+          if key == :expenses do
+            Keyword.put(config, :transform_params, fn params, _type ->
+              transform_expense_params(params, timezone)
             end)
           else
             config
@@ -1134,15 +1108,11 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
 
   defp assign_complete_form(socket, form) do
     expense_forms =
-      [:transport_expenses, :accommodation_expenses, :other_expenses]
+      [:expenses]
       |> Enum.flat_map(&nested_forms(form, &1))
       |> Map.new(&{&1.data.id, &1})
 
-    trip_forms =
-      form
-      |> nested_forms(:transport_expenses)
-      |> Enum.flat_map(&nested_forms(&1, :trips))
-      |> Map.new(&{&1.data.id, &1})
+    trip_forms = %{}
 
     assign(socket, complete_form: form, expense_forms: expense_forms, trip_forms: trip_forms)
   end
@@ -1175,9 +1145,9 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
 
   defp upload_forms(scope) do
     %{
-      "transport" => upload_form(DelegationExpenseTransport, scope, "transport"),
-      "accommodation" => upload_form(DelegationExpenseAccommodation, scope, "accommodation"),
-      "other" => upload_form(DelegationExpenseOther, scope, "other")
+      "transport" => upload_form(DelegationExpense, scope, "transport"),
+      "accommodation" => upload_form(DelegationExpense, scope, "accommodation"),
+      "other" => upload_form(DelegationExpense, scope, "other")
     }
   end
 
@@ -1199,39 +1169,28 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
     end)
   end
 
-  defp transform_trip_params(params, _type, timezone) do
-    result =
-      params
-      |> Map.take(["id", "_form_type", "departure_city", "arrival_city"])
-      |> Map.put(
-        "departure_datetime",
-        params["departure_datetime"] ||
-          parse_datetime(params["departure_date"], params["departure_time"], timezone)
-      )
-      |> Map.put(
-        "arrival_datetime",
-        params["arrival_datetime"] ||
-          parse_datetime(params["arrival_date"], params["arrival_time"], timezone)
-      )
-      |> maybe_put_description(params)
+  defp transform_expense_params(%{"kind" => kind} = params, _timezone) do
+    details =
+      case kind do
+        "transport" ->
+          %{
+            "type" => kind,
+            "transport_type" => params["transport_type"] || "other",
+            "trips" => []
+          }
 
-    result
-  end
+        "accommodation" ->
+          params
+          |> Map.take(["locality", "arrival_date", "departure_date", "description"])
+          |> Map.put("type", kind)
 
-  defp maybe_put_description(attrs, %{"description" => description}), do: Map.put(attrs, "description", description)
+        "other" ->
+          params |> Map.take(["description"]) |> Map.put("type", kind)
+      end
 
-  defp maybe_put_description(attrs, _params), do: attrs
-
-  defp parse_datetime("", _time, _timezone), do: nil
-  defp parse_datetime(_date, "", _timezone), do: nil
-  defp parse_datetime(nil, _time, _timezone), do: nil
-  defp parse_datetime(_date, nil, _timezone), do: nil
-
-  defp parse_datetime(date, time, timezone) do
-    with {:ok, naive_datetime} <- NaiveDateTime.from_iso8601("#{date}T#{time}:00"),
-         {:ok, datetime} <- DateTime.from_naive(naive_datetime, timezone) do
-      datetime
-    end
+    params
+    |> Map.take(["id", "_form_type", "document_number", "expense_amount"])
+    |> Map.put("details", details)
   end
 
   defp date_value(nil, _timezone), do: nil
@@ -1274,15 +1233,7 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
 
   defp assign_summary(socket) do
     total =
-      Enum.reduce(
-        [
-          socket.assigns.delegation.transport_expenses,
-          socket.assigns.delegation.accommodation_expenses,
-          socket.assigns.delegation.other_expenses
-        ],
-        Money.new(:PLN, 0),
-        fn expenses, acc -> Enum.reduce(expenses, acc, &Money.add!(&2, &1.expense_amount)) end
-      )
+      sum(socket.assigns.delegation.expenses)
 
     advance = socket.assigns.delegation.advance_payment_amount
     comparison = Money.compare(total, advance)
