@@ -36,7 +36,7 @@ defmodule FirmowidWeb.Landing.Views.PrivacyPolicy do
       <h2>§1. Administrator danych</h2>
       <p>
         Administratorem danych osobowych jest <strong>{@legal_entity.name}</strong>
-        z siedzibą pod adresem {@legal_entity.address}, wpisana do Rejestru
+        z siedzibą w {@legal_entity.headquarters_location}, {@legal_entity.address}, wpisana do Rejestru
         Przedsiębiorców prowadzonego przez XI Wydział Gospodarczy Krajowego Rejestru
         Sądowego Sądu Rejonowego dla Krakowa-Śródmieścia w Krakowie pod numerem
         KRS: {@legal_entity.krs}, NIP: {@legal_entity.nip}, REGON: {@legal_entity.regon} (dalej: „Administrator" lub „Alergeek Ventures").

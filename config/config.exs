@@ -122,6 +122,7 @@ config :firmowid, Packmatic.Source.URL, timeout: 30_000
 
 config :firmowid, :legal_entity, %{
   name: "Alergeek Ventures sp. z o.o.",
+  headquarters_location: "Krakowie",
   address: "ul. Władysława Syrokomli 24/10, 30-102 Kraków",
   krs: "0000874932",
   nip: "6793209719",
