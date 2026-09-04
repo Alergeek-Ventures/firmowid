@@ -13,6 +13,7 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
   alias Firmowid.Ash.Delegations
   alias Firmowid.Ash.Delegations.DelegationExpense
   alias Firmowid.Ash.Delegations.DelegationExpenseExtractor
+  alias FirmowidWeb.Delegations.Utilities.SettlementPresentation
   alias Phoenix.HTML.Form
 
   @impl true
@@ -51,7 +52,7 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
 
           <.expense_section
             title="Przejazdy"
-            expenses={expenses_for(@delegation, :transport)}
+            expenses={SettlementPresentation.expenses_for(@delegation.expenses, :transport)}
             upload={Map.get(assigns[:uploads] || %{}, :transport)}
             upload_form={Map.fetch!(@upload_forms, "transport")}
             kind="transport"
@@ -66,7 +67,7 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
           </.expense_section>
           <.expense_section
             title="Nocleg"
-            expenses={expenses_for(@delegation, :accommodation)}
+            expenses={SettlementPresentation.expenses_for(@delegation.expenses, :accommodation)}
             upload={Map.get(assigns[:uploads] || %{}, :accommodation)}
             upload_form={Map.fetch!(@upload_forms, "accommodation")}
             kind="accommodation"
@@ -81,7 +82,7 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
           </.expense_section>
           <.expense_section
             title="Inne wydatki"
-            expenses={expenses_for(@delegation, :other)}
+            expenses={SettlementPresentation.expenses_for(@delegation.expenses, :other)}
             upload={Map.get(assigns[:uploads] || %{}, :other)}
             upload_form={Map.fetch!(@upload_forms, "other")}
             kind="other"
@@ -113,9 +114,30 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
           <div class="mt-6 rounded-lg bg-white px-6 py-4 shadow-sm lg:mt-47">
             <h2 class="text-grey-500 font-normal">Podsumowanie</h2>
             <dl class="mt-6 space-y-3 text-sm">
-              <.summary_row label="Przejazdy" value={sum(expenses_for(@delegation, :transport))} />
-              <.summary_row label="Nocleg" value={sum(expenses_for(@delegation, :accommodation))} />
-              <.summary_row label="Inne" value={sum(expenses_for(@delegation, :other))} />
+              <.summary_row
+                label="Przejazdy"
+                value={
+                  SettlementPresentation.sum(
+                    SettlementPresentation.expenses_for(@delegation.expenses, :transport)
+                  )
+                }
+              />
+              <.summary_row
+                label="Nocleg"
+                value={
+                  SettlementPresentation.sum(
+                    SettlementPresentation.expenses_for(@delegation.expenses, :accommodation)
+                  )
+                }
+              />
+              <.summary_row
+                label="Inne"
+                value={
+                  SettlementPresentation.sum(
+                    SettlementPresentation.expenses_for(@delegation.expenses, :other)
+                  )
+                }
+              />
               <div class="border-grey-100 my-5 space-y-3 border-y py-5">
                 <.summary_row label="Razem koszty" value={@total} class="font-medium" />
                 <.summary_row
@@ -243,7 +265,7 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
               type="select"
               new
               label="Środek lokomocji"
-              options={transport_options()}
+              options={SettlementPresentation.transport_options()}
             />
             <.input
               :if={@kind == "accommodation"}
@@ -498,7 +520,7 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
       <.expense_detail
         :if={@kind == "transport"}
         label="Środek lokomocji"
-        value={transport_label(to_string(@expense.transport_type))}
+        value={SettlementPresentation.transport_label(to_string(@expense.transport_type))}
       />
       <.expense_detail label="Nr dokumentu" value={@expense.document_number} />
       <.expense_detail label="Kwota" value={Money.to_string!(@expense.expense_amount)} />
@@ -506,12 +528,12 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
       <.expense_detail
         :if={@kind == "accommodation"}
         label="Zameldowanie"
-        value={format_expense_date(@expense.arrival_date)}
+        value={SettlementPresentation.format_date(@expense.arrival_date)}
       />
       <.expense_detail
         :if={@kind == "accommodation"}
         label="Wymeldowanie"
-        value={format_expense_date(@expense.departure_date)}
+        value={SettlementPresentation.format_date(@expense.departure_date)}
       />
       <.expense_detail
         :if={@kind in ["accommodation", "other"]}
@@ -536,7 +558,9 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
     ~H"""
     <div class={@class}>
       <dt class="text-grey-500">{@label}</dt>
-      <dd class="text-grey-700 mt-1 whitespace-pre-wrap">{present_expense_value(@value)}</dd>
+      <dd class="text-grey-700 mt-1 whitespace-pre-wrap">
+        {SettlementPresentation.present_value(@value)}
+      </dd>
     </div>
     """
   end
@@ -557,7 +581,7 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
         :if={length(@trips) > 1}
         class="text-grey-900 self-center text-center text-sm font-medium"
       >
-        {roman_numeral(index)}
+        {SettlementPresentation.roman_numeral(index)}
       </span>
       <div class={[length(@trips) > 1 && "border-grey-200 border-l pl-4"]}>
         <table class="border-separate border-spacing-y-3 text-left text-sm">
@@ -572,19 +596,23 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
           <tbody>
             <tr>
               <th scope="row" class="text-grey-700 pr-3 font-normal">Wyjazd</th>
-              <td class="pr-3">{present_expense_value(trip.departure_city)}</td>
+              <td class="pr-3">{SettlementPresentation.present_value(trip.departure_city)}</td>
               <td class="pr-3">
-                {format_expense_date(datetime_date(trip.departure_datetime, @timezone))}
+                {SettlementPresentation.format_date(
+                  SettlementPresentation.datetime_date(trip.departure_datetime, @timezone)
+                )}
               </td>
-              <td>{format_expense_time(trip.departure_datetime, @timezone)}</td>
+              <td>{SettlementPresentation.format_time(trip.departure_datetime, @timezone)}</td>
             </tr>
             <tr>
               <th scope="row" class="text-grey-700 pr-3 font-normal">Przyjazd</th>
-              <td class="pr-3">{present_expense_value(trip.arrival_city)}</td>
+              <td class="pr-3">{SettlementPresentation.present_value(trip.arrival_city)}</td>
               <td class="pr-3">
-                {format_expense_date(datetime_date(trip.arrival_datetime, @timezone))}
+                {SettlementPresentation.format_date(
+                  SettlementPresentation.datetime_date(trip.arrival_datetime, @timezone)
+                )}
               </td>
-              <td>{format_expense_time(trip.arrival_datetime, @timezone)}</td>
+              <td>{SettlementPresentation.format_time(trip.arrival_datetime, @timezone)}</td>
             </tr>
           </tbody>
         </table>
@@ -617,7 +645,7 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
         :if={length(@trips) > 1}
         class="text-grey-900 self-center text-center text-sm font-medium"
       >
-        {roman_numeral(index)}
+        {SettlementPresentation.roman_numeral(index)}
       </span>
       <div
         id={"transport-trip-#{trip.id}"}
@@ -746,29 +774,6 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
       </div>
     </section>
     """
-  end
-
-  defp roman_numeral(number) do
-    [
-      {1000, "M"},
-      {900, "CM"},
-      {500, "D"},
-      {400, "CD"},
-      {100, "C"},
-      {90, "XC"},
-      {50, "L"},
-      {40, "XL"},
-      {10, "X"},
-      {9, "IX"},
-      {5, "V"},
-      {4, "IV"},
-      {1, "I"}
-    ]
-    |> Enum.reduce({number, ""}, fn {value, numeral}, {remainder, result} ->
-      count = div(remainder, value)
-      {remainder - count * value, result <> String.duplicate(numeral, count)}
-    end)
-    |> elem(1)
   end
 
   attr :expense, :any, required: true
@@ -975,8 +980,6 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
 
     Map.put(delegation, :expenses, Enum.map(expenses, &decorate_expense/1))
   end
-
-  defp expenses_for(delegation, kind), do: Enum.filter(delegation.expenses, &(&1.kind == kind))
 
   defp decorate_expense(
          %{details: %{__struct__: Firmowid.Ash.Delegations.DelegationExpense.TransportDetails} = details} = expense
@@ -1209,55 +1212,16 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
     |> Calendar.strftime("%H:%M")
   end
 
-  defp format_expense_date(nil), do: "—"
-  defp format_expense_date(date), do: Calendar.strftime(date, "%d.%m.%Y")
-
-  defp datetime_date(nil, _timezone), do: nil
-
-  defp datetime_date(datetime, timezone) do
-    datetime
-    |> DateTime.shift_zone!(timezone)
-    |> DateTime.to_date()
-  end
-
-  defp format_expense_time(nil, _timezone), do: "—"
-
-  defp format_expense_time(datetime, timezone) do
-    datetime
-    |> DateTime.shift_zone!(timezone)
-    |> Calendar.strftime("%H:%M")
-  end
-
-  defp present_expense_value(value) when value in [nil, ""], do: "—"
-  defp present_expense_value(value), do: value
-
   defp assign_summary(socket) do
-    total =
-      sum(socket.assigns.delegation.expenses)
+    total = SettlementPresentation.sum(socket.assigns.delegation.expenses)
 
     advance = socket.assigns.delegation.advance_payment_amount
-    comparison = Money.compare(total, advance)
-
-    {label, balance} =
-      if comparison in [:gt, :eq],
-        do: {"Do dopłaty", Money.sub!(total, advance)},
-        else: {"Pomniejszenie wypłaty", Money.sub!(advance, total)}
+    {label, balance} = SettlementPresentation.settlement_balance(total, advance)
 
     assign(socket,
       total: total,
       balance_label: label,
       balance: balance
     )
-  end
-
-  defp sum(expenses), do: Enum.reduce(expenses, Money.new(:PLN, 0), &Money.add!(&2, &1.expense_amount))
-
-  defp transport_label("railway"), do: "Kolej"
-  defp transport_label("airplane"), do: "Samolot"
-  defp transport_label("bus"), do: "Autobus"
-  defp transport_label("other"), do: "Inne"
-
-  defp transport_options do
-    Enum.map(~w(railway airplane bus other), &{transport_label(&1), &1})
   end
 end
