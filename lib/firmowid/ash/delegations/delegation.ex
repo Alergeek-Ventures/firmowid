@@ -96,25 +96,9 @@ defmodule Firmowid.Ash.Delegations.Delegation do
       require_atomic? false
       accept []
 
-      argument :transport_expenses, {:array, :map}, allow_nil?: false, default: []
-      argument :accommodation_expenses, {:array, :map}, allow_nil?: false, default: []
-      argument :other_expenses, {:array, :map}, allow_nil?: false, default: []
+      argument :expenses, {:array, :map}, allow_nil?: false, default: []
 
-      change manage_relationship(:transport_expenses,
-               type: :direct_control,
-               on_match: {:update, :complete},
-               on_no_match: :error,
-               on_missing: :ignore
-             )
-
-      change manage_relationship(:accommodation_expenses,
-               type: :direct_control,
-               on_match: {:update, :complete},
-               on_no_match: :error,
-               on_missing: :ignore
-             )
-
-      change manage_relationship(:other_expenses,
+      change manage_relationship(:expenses,
                type: :direct_control,
                on_match: {:update, :complete},
                on_no_match: :error,
@@ -197,8 +181,10 @@ defmodule Firmowid.Ash.Delegations.Delegation do
       allow_nil? false
     end
 
-    has_many :transport_expenses, Firmowid.Ash.Delegations.DelegationExpenseTransport
-    has_many :accommodation_expenses, Firmowid.Ash.Delegations.DelegationExpenseAccommodation
-    has_many :other_expenses, Firmowid.Ash.Delegations.DelegationExpenseOther
+    has_many :expenses, Firmowid.Ash.Delegations.DelegationExpense
+  end
+
+  aggregates do
+    sum :expenses_total, :expenses, :expense_amount
   end
 end

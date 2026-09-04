@@ -44,8 +44,6 @@ defmodule Firmowid.Ash.Delegations.DelegationExpenseExtractor do
       {:error, reason} ->
         extraction_error(reason)
     end
-  rescue
-    error -> extraction_error(Exception.message(error))
   end
 
   defp extraction_error(reason) do

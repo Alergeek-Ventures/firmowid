@@ -21,6 +21,18 @@
       "references": null,
       "scale": null,
       "size": null,
+      "source": "kind",
+      "type": "text"
+    },
+    {
+      "allow_nil?": false,
+      "default": "nil",
+      "generated?": false,
+      "precision": null,
+      "primary_key?": false,
+      "references": null,
+      "scale": null,
+      "size": null,
       "source": "original_filename",
       "type": "text"
     },
@@ -50,15 +62,15 @@
     },
     {
       "allow_nil?": false,
-      "default": "\"\"",
+      "default": "nil",
       "generated?": false,
       "precision": null,
       "primary_key?": false,
       "references": null,
       "scale": null,
       "size": null,
-      "source": "description",
-      "type": "text"
+      "source": "details",
+      "type": "map"
     },
     {
       "allow_nil?": false,
@@ -105,7 +117,7 @@
           "global": false,
           "strategy": "attribute"
         },
-        "name": "delegation_expense_other_delegation_id_fkey",
+        "name": "delegation_expenses_delegation_id_fkey",
         "on_delete": null,
         "on_update": null,
         "primary_key?": true,
@@ -138,7 +150,7 @@
           "global": false,
           "strategy": "attribute"
         },
-        "name": "delegation_expense_other_blob_id_fkey",
+        "name": "delegation_expenses_blob_id_fkey",
         "on_delete": null,
         "on_update": null,
         "primary_key?": true,
@@ -171,7 +183,7 @@
           "global": null,
           "strategy": null
         },
-        "name": "delegation_expense_other_organization_id_fkey",
+        "name": "delegation_expenses_organization_id_fkey",
         "on_delete": null,
         "on_update": null,
         "primary_key?": true,
@@ -190,7 +202,7 @@
   "custom_indexes": [],
   "custom_statements": [],
   "has_create_action": true,
-  "hash": "ADB90F3E26468ED714659F5D9BDD25176E824937E38F15877147CC71EF073CB6",
+  "hash": "83F6D7DED03929F4C7581F2F54036B58BB56852ACC412DC612A279ACE8F984DD",
   "identities": [],
   "multitenancy": {
     "attribute": "organization_id",
@@ -199,5 +211,5 @@
   },
   "repo": "Elixir.Firmowid.Repo",
   "schema": null,
-  "table": "delegation_expense_other"
+  "table": "delegation_expenses"
 }
