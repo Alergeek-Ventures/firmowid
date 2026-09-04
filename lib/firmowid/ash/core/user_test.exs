@@ -30,4 +30,14 @@ defmodule Firmowid.Ash.Core.UserTest do
   test "exposes the self-scoped profile update tool" do
     assert :update_profile in (Core |> AshAi.Info.tools() |> Enum.map(& &1.name))
   end
+
+  test "a user cannot assign themselves to another organization" do
+    user = user_fixture()
+    other_user = user_fixture()
+
+    assert {:error, _} =
+             Core.set_organization(user, %{organization_id: other_user.organization_id},
+               scope: %Scope{actor: user, tenant: user.organization_id}
+             )
+  end
 end

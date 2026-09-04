@@ -71,16 +71,14 @@ defmodule Firmowid.Ash.Core.OrganizationInvite do
       accept []
       require_atomic? false
 
-      argument :user_id, :uuid, allow_nil?: false
-
       validate attribute_equals(:consumed_at, nil),
         message: "invite has already been consumed"
 
-      change fn changeset, _context ->
-        user_id = Ash.Changeset.get_argument(changeset, :user_id)
+      change fn changeset, context ->
+        actor = Map.fetch!(context, :actor)
 
         changeset
-        |> Ash.Changeset.change_attribute(:consumed_by_id, user_id)
+        |> Ash.Changeset.change_attribute(:consumed_by_id, actor.id)
         |> Ash.Changeset.change_attribute(
           :consumed_at,
           DateTime.utc_now(:second)
@@ -145,8 +143,9 @@ defmodule Firmowid.Ash.Core.OrganizationInvite do
       authorize_if actor_attribute_equals(:role, :admin)
     end
 
-    # Anyone with the code can consume the invite (the code is the auth)
-    policy action(:consume) do
+    # The invite code identifies an invitation, but only an authenticated user
+    # who has not joined an organization may redeem it for themselves.
+    policy [action(:consume), actor_attribute_equals(:organization_id, nil)] do
       authorize_if always()
     end
 

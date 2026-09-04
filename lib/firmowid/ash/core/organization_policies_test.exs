@@ -36,6 +36,19 @@ defmodule Firmowid.Ash.Core.OrganizationPoliciesTest do
     end
   end
 
+  describe "tenant isolation" do
+    test "an admin cannot read or update another organization" do
+      admin = admin_fixture()
+      other_admin = admin_fixture()
+      other_organization = Core.get_organization!(other_admin.organization_id, authorize?: false)
+
+      assert {:error, _} = Core.get_organization(other_organization.id, scope: admin_scope(admin))
+
+      assert {:error, %Forbidden{}} =
+               Core.update_organization(other_organization, %{name: "Przejęta organizacja"}, scope: admin_scope(admin))
+    end
+  end
+
   defp admin_scope(admin), do: %Scope{actor: admin, tenant: admin.organization_id}
 
   defp superuser_scope(admin) do

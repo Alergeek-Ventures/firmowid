@@ -68,19 +68,18 @@ defmodule Firmowid.AccountsFixtures do
         nil ->
           org =
             Core.create_organization!(
-              %{nip: unique_nip(), name: "Test Organization", owner_id: user.id},
-              authorize?: false,
-              actor: %{}
+              %{nip: unique_nip(), name: "Test Organization"},
+              actor: user
             )
 
           Core.set_organization!(user, %{organization_id: org.id},
-            actor: user,
+            actor: %SystemActor{org_id: org.id, role: :organization_owner_setup, user_id: user.id},
             tenant: org.id
           )
 
         org_id ->
           Core.set_organization!(user, %{organization_id: org_id},
-            actor: user,
+            actor: %SystemActor{org_id: org_id, role: :organization_owner_setup, user_id: user.id},
             tenant: org_id
           )
       end

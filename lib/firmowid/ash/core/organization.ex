@@ -47,8 +47,7 @@ defmodule Firmowid.Ash.Core.Organization do
         :is_vat_payer
       ]
 
-      argument :owner_id, :uuid, allow_nil?: false
-      change manage_relationship(:owner_id, :owner, type: :append)
+      change set_attribute(:owner_id, actor(:id))
       change GenerateNickname
       change SetOwnerOrganization
 
@@ -172,32 +171,40 @@ defmodule Firmowid.Ash.Core.Organization do
   end
 
   policies do
+    bypass actor_attribute_equals(:system_role, :superuser) do
+      authorize_if always()
+    end
+
     policy action_type(:read) do
+      authorize_if expr(id == ^actor(:organization_id))
+    end
+
+    # Organization onboarding is available only to an authenticated user who has
+    # not joined an organization yet. The owner is always the acting user.
+    policy [action_type(:create), actor_attribute_equals(:organization_id, nil)] do
       authorize_if always()
     end
 
-    # Org creation at registration — anyone can create an org
-    policy action_type(:create) do
-      authorize_if always()
-    end
-
-    policy action([
-             :update,
-             :update_basic_info,
-             :update_avatar,
-             :add_sender_email,
-             :remove_sender_email,
-             :regenerate_nickname
-           ]) do
-      authorize_if actor_attribute_equals(:role, :admin)
+    policy [
+      action([
+        :update,
+        :update_basic_info,
+        :update_avatar,
+        :add_sender_email,
+        :remove_sender_email,
+        :regenerate_nickname
+      ]),
+      actor_attribute_equals(:role, :admin)
+    ] do
+      authorize_if expr(id == ^actor(:organization_id))
     end
 
     policy action(:update_billing_plan) do
       authorize_if actor_attribute_equals(:system_role, :superuser)
     end
 
-    policy action_type(:destroy) do
-      authorize_if actor_attribute_equals(:role, :admin)
+    policy [action_type(:destroy), actor_attribute_equals(:role, :admin)] do
+      authorize_if expr(id == ^actor(:organization_id))
     end
   end
 

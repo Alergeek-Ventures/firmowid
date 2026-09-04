@@ -33,7 +33,7 @@ defmodule FirmowidWeb.Management.Views.EmployeesTest do
 
     invite = Core.get_invite!(invite.id, tenant: admin.organization_id, actor: admin)
 
-    Core.consume_invite!(invite, %{user_id: invited_user.id}, tenant: admin.organization_id)
+    Core.consume_invite!(invite, %{}, tenant: admin.organization_id, actor: invited_user)
 
     assert_eventually(fn -> render(lv) =~ email end)
   end
@@ -53,7 +53,7 @@ defmodule FirmowidWeb.Management.Views.EmployeesTest do
 
     invite = Core.get_invite!(invite.id, tenant: admin.organization_id, actor: admin)
 
-    Core.consume_invite!(invite, %{user_id: invited_user.id}, tenant: admin.organization_id)
+    Core.consume_invite!(invite, %{}, tenant: admin.organization_id, actor: invited_user)
 
     conn = log_in_user(conn, admin)
     {:ok, lv, _html} = live(conn, ~p"/zarzadzanie/pracownicy")

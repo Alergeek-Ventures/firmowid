@@ -159,12 +159,7 @@ defmodule FirmowidWeb.Organization.Views.Index do
 
   @impl true
   def handle_event("create", %{"organization" => organization, "address" => address_form}, socket) do
-    user = socket.assigns.current_user
-
-    params =
-      organization
-      |> add_address(address_form)
-      |> Map.put("owner_id", user.id)
+    params = add_address(organization, address_form)
 
     case AshPhoenix.Form.submit(socket.assigns.organization_form.source,
            params: params
@@ -200,18 +195,16 @@ defmodule FirmowidWeb.Organization.Views.Index do
     invite =
       %{invite_code: trimmed_code}
       |> Core.query_to_read_invite_by_code(actor: user)
-      |> Ash.Query.load([:organization])
       |> Ash.read_one!(actor: user)
 
     Logger.metadata(
       user_id: user.id,
       user_email: user.email,
-      organization_id: invite.organization_id,
-      organization_name: invite.organization.name
+      organization_id: invite.organization_id
     )
 
     # Consume the invite (scoped to the invite's organization)
-    Core.consume_invite!(invite, %{user_id: user.id}, tenant: invite.organization_id, actor: user)
+    Core.consume_invite!(invite, %{}, tenant: invite.organization_id, actor: user)
 
     {:noreply, redirect(socket, to: "/")}
   end

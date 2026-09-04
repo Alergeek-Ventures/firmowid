@@ -445,8 +445,8 @@ defmodule Firmowid.Ash.Core.User do
       authorize_if actor_attribute_equals(:role, :admin)
     end
 
-    bypass action(:set_organization) do
-      authorize_if expr(id == ^actor(:id))
+    policy action(:set_organization) do
+      forbid_if always()
     end
 
     bypass action(:clear_organization) do
