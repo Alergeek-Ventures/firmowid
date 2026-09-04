@@ -44,7 +44,7 @@ defmodule Firmowid.Ash.Ksef.Workers.SessionWorker do
     Logger.info("Starting KSeF authentication for organization #{organization_id}")
 
     with {:ok, %Credential{} = credential} <- get_credential(scope),
-         {:ok, tokens} <- perform_authentication(credential) do
+         {:ok, tokens} <- perform_authentication(credential, scope) do
       establish_session(tokens, credential, scope)
     else
       {:error, :no_credential} ->
@@ -76,15 +76,15 @@ defmodule Firmowid.Ash.Ksef.Workers.SessionWorker do
     end
   end
 
-  defp perform_authentication(%Credential{organization_id: org_id, auth_type: :token, credentials: token}) do
-    organization = Core.get_organization!(org_id)
+  defp perform_authentication(%Credential{organization_id: org_id, auth_type: :token, credentials: token}, scope) do
+    organization = Core.get_organization!(org_id, scope: scope)
 
     ApiClient.auth_with_token(organization.nip, token)
   end
 
-  defp perform_authentication(%Credential{organization_id: org_id, auth_type: auth_type, credentials: credentials})
+  defp perform_authentication(%Credential{organization_id: org_id, auth_type: auth_type, credentials: credentials}, scope)
        when auth_type in [:certificate, :generated_certificate] do
-    organization = Core.get_organization!(org_id)
+    organization = Core.get_organization!(org_id, scope: scope)
 
     case Jason.decode(credentials) do
       {:ok,

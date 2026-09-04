@@ -13,6 +13,7 @@ defmodule Firmowid.Ash.Core.Organization do
 
   alias Firmowid.Ash.Billing.PlanCatalog
   alias Firmowid.Ash.Blobs.Blob
+  alias Firmowid.Ash.Checks.SystemActorRole
   alias Firmowid.Ash.Core.Changes.CleanupOldAvatarBlob
   alias Firmowid.Ash.Core.Changes.ClearVatExemptionFields
   alias Firmowid.Ash.Core.Changes.GenerateNickname
@@ -173,6 +174,10 @@ defmodule Firmowid.Ash.Core.Organization do
   policies do
     bypass actor_attribute_equals(:system_role, :superuser) do
       authorize_if always()
+    end
+
+    bypass {SystemActorRole, roles: [:billing_snapshotter, :cross_tenant_reader, :ksef_session]} do
+      authorize_if action_type(:read)
     end
 
     policy action_type(:read) do
