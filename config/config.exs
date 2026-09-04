@@ -120,6 +120,14 @@ config :firmowid, Oban,
 # Packmatic URL source - increase connect timeout for batch downloads
 config :firmowid, Packmatic.Source.URL, timeout: 30_000
 
+config :firmowid, :legal_entity, %{
+  name: "Alergeek Ventures sp. z o.o.",
+  address: "ul. Władysława Syrokomli 24/10, 30-102 Kraków",
+  krs: "0000874932",
+  nip: "6793209719",
+  regon: "387738728"
+}
+
 config :firmowid,
   ecto_repos: [Firmowid.Repo],
   generators: [timestamp_type: :utc_datetime],

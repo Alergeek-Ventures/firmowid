@@ -10,6 +10,8 @@ defmodule FirmowidWeb.Landing.Views.PrivacyPolicy do
 
   import FirmowidWeb.Landing.Components.LegalPage, only: [legal_page: 1]
 
+  @legal_entity Application.compile_env!(:firmowid, :legal_entity)
+
   @impl true
   def mount(_params, _session, socket) do
     {:ok,
@@ -17,7 +19,8 @@ defmodule FirmowidWeb.Landing.Views.PrivacyPolicy do
        page_title: "Polityka Prywatności",
        meta_description:
          "Polityka prywatności Firmowida opisuje zasady przetwarzania danych, cookies i prawa użytkowników usługi.",
-       public_marketing?: true
+       public_marketing?: true,
+       legal_entity: @legal_entity
      ), layout: false}
   end
 
@@ -27,18 +30,16 @@ defmodule FirmowidWeb.Landing.Views.PrivacyPolicy do
     <.legal_page>
       <h1 class="text-4xl font-bold">Polityka Prywatności</h1>
       <p class="text-sm text-neutral-500">
-        Ostatnia aktualizacja: 31 marca 2026 r.
+        Ostatnia aktualizacja: 4 września 2026 r.
       </p>
 
       <h2>§1. Administrator danych</h2>
       <p>
-        Administratorem danych osobowych jest <strong>Alergeek Ventures sp. z o.o.</strong>
-        z siedzibą w Krakowie,
-        ul. Jana Kantego Federowicza 5/96, 30-392 Kraków, wpisana do Rejestru
+        Administratorem danych osobowych jest <strong>{@legal_entity.name}</strong>
+        z siedzibą pod adresem {@legal_entity.address}, wpisana do Rejestru
         Przedsiębiorców prowadzonego przez XI Wydział Gospodarczy Krajowego Rejestru
         Sądowego Sądu Rejonowego dla Krakowa-Śródmieścia w Krakowie pod numerem
-        KRS: 0000874932, NIP: 6793209719, REGON: 387738728
-        (dalej: „Administrator" lub „Alergeek Ventures").
+        KRS: {@legal_entity.krs}, NIP: {@legal_entity.nip}, REGON: {@legal_entity.regon} (dalej: „Administrator" lub „Alergeek Ventures").
       </p>
       <p>
         Kontakt w sprawach ochrony danych osobowych:
