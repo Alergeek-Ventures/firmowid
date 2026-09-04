@@ -112,43 +112,77 @@ defmodule Firmowid.Ash.Timetracker.LeaveRequest do
         description "Request reason: indisposition, rest, or other. This action only creates absence requests."
       end
 
+      change set_attribute(:user_id, actor(:id))
+      change set_attribute(:reason, arg(:reason))
+
+      # TODO: Determine category based on employment contract
+
+      validate one_of(:reason, [:sick, :vacation, :unpaid]) do
+        where [attribute_equals(:category, :leave)]
+        message "nie jest prawidłowy dla tej kategorii urlopu"
+      end
+
+      validate one_of(:reason, [:indisposition, :rest, :other]) do
+        where [attribute_equals(:category, :absence)]
+        message "nie jest prawidłowy dla tej kategorii nieobecności"
+      end
+
+      validate compare(:starts_on, greater_than_or_equal_to: &Date.utc_today/0) do
+        message "musi być dzisiejsza lub późniejsza"
+      end
+
+      validate compare(:ends_on, greater_than_or_equal_to: :starts_on) do
+        message "musi być na lub po dacie rozpoczęcia"
+      end
+
+      change after_transaction(fn
+               _changeset, {:ok, leave_request}, _context ->
+                 LeaveRequestEmailWorker.enqueue(leave_request.id, leave_request.organization_id)
+                 {:ok, leave_request}
+
+               _changeset, {:error, reason}, _context ->
+                 {:error, reason}
+             end)
+    end
+
+    create :create_with_upload do
+      description "Employee submits a leave or absence request with a browser-uploaded attachment."
+      accept [:starts_on, :ends_on, :note]
+
+      argument :reason, :atom do
+        allow_nil? false
+        constraints one_of: [:indisposition, :rest, :other]
+      end
+
       argument :upload_path, :string do
-        allow_nil? true
-        description "Temporary file path of the uploaded attachment."
+        allow_nil? false
+        description "Path from the server-managed browser upload temporary directory."
       end
 
       argument :upload_filename, :string do
-        allow_nil? true
+        allow_nil? false
         description "Original filename of the uploaded attachment."
       end
 
       change set_attribute(:user_id, actor(:id))
       change set_attribute(:reason, arg(:reason))
 
-      # TODO: Determine category based on employment contract
-
       change fn changeset, context ->
-        case Ash.Changeset.get_argument(changeset, :upload_path) do
-          nil ->
-            changeset
+        upload_path = Ash.Changeset.get_argument(changeset, :upload_path)
+        upload_filename = Ash.Changeset.get_argument(changeset, :upload_filename)
 
-          upload_path ->
-            upload_filename =
-              Ash.Changeset.get_argument(changeset, :upload_filename) || "zalacznik"
+        case Blobs.create_or_reuse_blob(
+               upload_path,
+               "binary/octet-stream",
+               upload_filename,
+               tenant: context.tenant,
+               actor: context.actor
+             ) do
+          {:ok, blob} ->
+            Ash.Changeset.force_change_attribute(changeset, :blob_id, blob.id)
 
-            case Blobs.create_or_reuse_blob(
-                   upload_path,
-                   "binary/octet-stream",
-                   upload_filename,
-                   tenant: context.tenant,
-                   actor: context.actor
-                 ) do
-              {:ok, blob} ->
-                Ash.Changeset.force_change_attribute(changeset, :blob_id, blob.id)
-
-              {:error, error} ->
-                Ash.Changeset.add_error(changeset, error)
-            end
+          {:error, error} ->
+            Ash.Changeset.add_error(changeset, error)
         end
       end
 

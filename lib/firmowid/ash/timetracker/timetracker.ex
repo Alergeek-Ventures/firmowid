@@ -22,6 +22,9 @@ defmodule Firmowid.Ash.Timetracker do
 
     resource LeaveRequest do
       define :create_leave_request, action: :create
+
+      define :create_leave_request_with_upload, action: :create_with_upload
+
       define :get_leave_request, action: :read, get_by: [:id]
       define :list_leave_requests_for_user, action: :list_for_user, args: [:user_id]
       define :list_current_user_leave_requests, action: :list_current_user

@@ -180,6 +180,13 @@ defmodule Firmowid.Ash.Timetracker.LeaveRequestTest do
                "rest",
                "other"
              ]
+
+      refute Map.has_key?(get_in(schema, ["properties", "input", "properties"]), "upload_path")
+
+      refute Map.has_key?(
+               get_in(schema, ["properties", "input", "properties"]),
+               "upload_filename"
+             )
     end
   end
 

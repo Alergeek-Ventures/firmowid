@@ -1292,7 +1292,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
   defp create_leave_request_with_upload(socket, entry, attrs, scope) do
     consume_uploaded_entry(socket, entry, fn %{path: path} ->
       {:ok,
-       Timetracker.create_leave_request(
+       Timetracker.create_leave_request_with_upload(
          Map.merge(attrs, %{
            upload_path: path,
            upload_filename: entry.client_name
