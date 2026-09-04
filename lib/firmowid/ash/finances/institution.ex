@@ -6,7 +6,8 @@ defmodule Firmowid.Ash.Finances.Institution do
   Used to present available banks when creating a requisition.
   """
   use Ash.Resource,
-    domain: Firmowid.Ash.Finances
+    domain: Firmowid.Ash.Finances,
+    authorizers: [Ash.Policy.Authorizer]
 
   actions do
     read :for_country do
@@ -14,6 +15,12 @@ defmodule Firmowid.Ash.Finances.Institution do
       argument :country, :string, allow_nil?: false
 
       manual Firmowid.Ash.Finances.Institution.ForCountry
+    end
+  end
+
+  policies do
+    policy action(:for_country) do
+      authorize_if actor_attribute_equals(:role, :admin)
     end
   end
 

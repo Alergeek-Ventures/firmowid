@@ -216,10 +216,9 @@ defmodule Firmowid.Ash.Finances.Requisition do
       authorize_if actor_attribute_equals(:role, :admin)
     end
 
-    # Internal lifecycle actions are executed by background automation and
-    # delegated transitions where actor metadata may be absent.
+    # Internal lifecycle actions run through the AshOban interaction bypass.
     policy action([:check_status, :accept, :reject]) do
-      authorize_if always()
+      forbid_if always()
     end
 
     # :invoicing and :accountant: read-only

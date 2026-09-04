@@ -12,6 +12,7 @@ defmodule Firmowid.Ash.Core.UserIdentity do
   use Ash.Resource,
     domain: Firmowid.Ash.Core,
     data_layer: AshPostgres.DataLayer,
+    authorizers: [Ash.Policy.Authorizer],
     extensions: [AshAuthentication.UserIdentity]
 
   alias Firmowid.Ash.Resource
@@ -42,6 +43,24 @@ defmodule Firmowid.Ash.Core.UserIdentity do
       argument :strategy, :string, allow_nil?: false
 
       filter expr(user_id == ^arg(:user_id) and strategy == ^arg(:strategy))
+    end
+  end
+
+  policies do
+    bypass AshAuthentication.Checks.AshAuthenticationInteraction do
+      authorize_if always()
+    end
+
+    policy action_type(:read) do
+      authorize_if expr(user_id == ^actor(:id))
+    end
+
+    policy action_type(:destroy) do
+      authorize_if expr(user_id == ^actor(:id))
+    end
+
+    policy action(:upsert) do
+      forbid_if always()
     end
   end
 

@@ -207,6 +207,10 @@ defmodule Firmowid.Ash.Finances.BankAccount do
       authorize_if action(:read_global_for_sync)
     end
 
+    bypass {SystemActorRole, roles: [:bank_sync]} do
+      authorize_if action(:sync_from_bank)
+    end
+
     policy action(:read_global_for_sync) do
       forbid_if always()
     end
@@ -216,15 +220,14 @@ defmodule Firmowid.Ash.Finances.BankAccount do
       authorize_if always()
     end
 
-    # Internal upsert used by requisition acceptance flow.
-    policy action(:sync_from_bank) do
-      authorize_if always()
-    end
-
-    # User-facing writes: admin only.
-    # Internal :sync_from_bank upsert is authorized separately above.
+    # User-facing writes: admin only. Internal upserts run under the AshOban
+    # interaction bypass above.
     policy action([:create_manual, :update, :clear_default, :destroy]) do
       authorize_if actor_attribute_equals(:role, :admin)
+    end
+
+    policy action(:sync_from_bank) do
+      forbid_if always()
     end
   end
 
