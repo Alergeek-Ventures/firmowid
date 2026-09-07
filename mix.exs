@@ -159,7 +159,7 @@ defmodule Firmowid.MixProject do
       {:jido_ai, "~> 2.1"},
       {:csv, "~> 3.2"},
       {:lucide_icons, "~> 2.0"},
-      {:qr_code, "~> 3.2.0"},
+      {:eqrcode, "~> 0.2.1"},
       {:usage_rules, "~> 1.1", only: [:dev]},
       {:canonical_tailwind, "~> 0.1", only: [:dev, :test], runtime: false}
     ]

@@ -788,12 +788,12 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.Template do
   attr :sales_invoice, :map, required: true
 
   defp qrcode(assigns) do
-    {:ok, qrcode} =
+    qrcode =
       assigns.sales_invoice
       |> Ksef.invoice_url!()
-      |> QRCode.create()
-      |> QRCode.render(:svg)
-      |> QRCode.to_base64()
+      |> EQRCode.encode()
+      |> EQRCode.svg()
+      |> Base.encode64()
 
     assigns = assign(assigns, :qrcode, qrcode)
 

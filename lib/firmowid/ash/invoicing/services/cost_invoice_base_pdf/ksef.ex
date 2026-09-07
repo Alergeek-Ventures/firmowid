@@ -65,11 +65,11 @@ defmodule Firmowid.Ash.Invoicing.Services.CostInvoiceBasePdf.Ksef do
   end
 
   defp qrcode_data_uri(invoice, ash_scope) do
-    {:ok, png_binary} =
+    png_binary =
       invoice
       |> Ksef.invoice_url!(scope: ash_scope)
-      |> QRCode.create()
-      |> QRCode.render(:png)
+      |> EQRCode.encode()
+      |> EQRCode.png()
 
     {:ok, "data:image/png;base64,#{Base.encode64(png_binary)}"}
   end
