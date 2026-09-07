@@ -15,6 +15,7 @@ defmodule Firmowid.MixProject do
       test_paths: ["lib"],
       test_pattern: "*_test.exs",
       test_coverage: [tool: ExCoveralls],
+      licenses: ["AGPL-3.0-or-later"],
 
       # TEMP: remove this once https://github.com/jeremyjh/dialyxir/issues/561 is resolved
       dialyzer: [
@@ -161,7 +162,8 @@ defmodule Firmowid.MixProject do
       {:lucide_icons, "~> 2.0"},
       {:eqrcode, "~> 0.2.1"},
       {:usage_rules, "~> 1.1", only: [:dev]},
-      {:canonical_tailwind, "~> 0.1", only: [:dev, :test], runtime: false}
+      {:canonical_tailwind, "~> 0.1", only: [:dev, :test], runtime: false},
+      {:depscheck, "~> 1.0.11", only: [:dev, :test], runtime: false}
     ]
   end
 
@@ -228,7 +230,8 @@ defmodule Firmowid.MixProject do
         "tailwind firmowid --minify",
         "esbuild firmowid --minify --sourcemap=external",
         "phx.digest"
-      ]
+      ],
+      "assets.licenses": ["cmd npm run licenses:check --prefix assets"]
     ]
   end
 end

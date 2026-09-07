@@ -101,6 +101,14 @@ jobs:
       - name: Check for unused deps
         run: mix deps.unlock --check-unused
 
+      - name: Check Hex dependency licenses
+        run: mix depscheck
+        if: always()
+
+      - name: Check npm dependency licenses
+        run: mix assets.licenses
+        if: always()
+
       - name: Check code formatting
         run: mix format --check-formatted
         # Check formatting even if there were unused deps so that

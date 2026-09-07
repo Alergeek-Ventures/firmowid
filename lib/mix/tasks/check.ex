@@ -43,12 +43,14 @@ defmodule Mix.Tasks.Check do
   # exit code and prevents false "Tests OK" results.
   @cmd_checks [
     {"Format", ["format"]},
-    {"Sobelow", ["sobelow", "--config", "--compact", "--private"]}
+    {"Sobelow", ["sobelow", "--config", "--compact", "--private"]},
+    {"Npm licenses", ["assets.licenses"]}
   ]
 
   @static_checks [
     {"Compiling", ["compile", "--warnings-as-errors"]},
     {"Unused Deps", ["deps.unlock", "--check-unused"]},
+    {"Depscheck", ["depscheck"]},
     {"Credo", ["credo", "--strict"]},
     {"Dialyzer", ["dialyzer"]}
   ]
