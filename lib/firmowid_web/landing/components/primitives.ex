@@ -140,6 +140,12 @@ defmodule FirmowidWeb.Landing.Components.Primitives do
                 <div class="space-y-2 text-[14px] text-[rgba(245,241,234,0.6)]">
                   <a href="/#funkcje" class="block hover:text-white">Funkcje</a>
                   <a href="/#cennik" class="block hover:text-white">Cennik</a>
+                  <a
+                    href="https://github.com/Alergeek-Ventures/firmowid"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="block hover:text-white"
+                  >Kod źródłowy</a>
                 </div>
               </div>
               <div class="space-y-4">
