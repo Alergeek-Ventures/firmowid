@@ -167,6 +167,7 @@ defmodule Firmowid.Ash.Finances.Transaction do
 
     bypass {SystemActorRole, roles: [:bank_sync]} do
       authorize_if action(:upsert_from_sync)
+      authorize_if action_type(:read)
     end
 
     bypass {SystemActorRole, roles: [:analysis_reader, :ksef_digest]} do
