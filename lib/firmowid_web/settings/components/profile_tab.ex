@@ -233,7 +233,7 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
         >
           <div class="space-y-2">
             <.row_input field={@user_form[:phone]} label="Numer telefonu" type="tel" />
-            <.row_input field={@user_form[:slack_id]} label="Slack" type="text" />
+            <.row_input field={@user_form[:slack_url]} label="Slack" type="url" />
             <.row_input
               field={@user_form[:residence_address]}
               label="Adres zamieszkania"
@@ -621,14 +621,11 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
   defp present_date(nil), do: "—"
   defp present_date(value), do: TimeFormatter.format_date(value)
 
-  defp present_slack(%{slack_id: nil}), do: nil
+  defp present_slack(%{slack_url: slack_url}) when slack_url in [nil, ""], do: nil
 
-  defp present_slack(%{slack_id: slack_id, slack_url: slack_url}) do
-    slack_workspace = slack_url || "https://alergeekventures.slack.com"
-    "#{slack_id} (#{slack_workspace})"
-  end
+  defp present_slack(%{slack_url: slack_url}), do: String.replace_prefix(slack_url, "https://", "")
 
-  defp slack_present?(%{slack_id: slack_id}) when slack_id in [nil, ""], do: false
+  defp slack_present?(%{slack_url: slack_url}) when slack_url in [nil, ""], do: false
   defp slack_present?(_user), do: true
 
   defp leave_attachment_submit_disabled?(upload) do

@@ -80,10 +80,6 @@ defmodule FirmowidWeb.Management.Views.Employee do
 
   defp get_employee_display_name(employee), do: employee.name || employee.email
 
-  defp get_employee_slack_url(employee) do
-    employee.slack_url || "https://alergeekventures.slack.com"
-  end
-
   @impl true
   def handle_event("change-month", %{"month" => month}, socket) do
     employee = socket.assigns.employee

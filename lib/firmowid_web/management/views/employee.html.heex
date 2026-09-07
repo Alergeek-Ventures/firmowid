@@ -45,13 +45,14 @@
       <div>
         <h2 class="text-lg font-medium">{get_employee_display_name(@employee)}</h2>
         <div
-          :if={@employee.slack_id != nil}
+          :if={@employee.slack_url not in [nil, ""]}
           class="text-darkGrey flex items-center gap-2 text-sm"
         >
           <img src="/images/slack.png" alt="slack logo" width={24} height={24} />
           <.link
             kind="unstyled"
-            external={"#{get_employee_slack_url(@employee)}/team/#{@employee.slack_id}"}
+            external={@employee.slack_url}
+            target="_blank"
             class="hover:border-darkGrey border-b border-transparent transition-colors"
           >
             napisz na Slacku

@@ -20,7 +20,7 @@ defmodule Firmowid.Ash.Core.User.Actions.UpdateCurrentProfile do
       :name,
       :employment_date,
       :phone,
-      :slack_id,
+      :slack_url,
       :bank_account_number,
       :position,
       :correspondence_address,

@@ -232,7 +232,6 @@ defmodule Firmowid.Ash.Core.User do
         :avatar_blob_id,
         :phone,
         :slack_url,
-        :slack_id,
         :bank_account_number,
         :birthday,
         :position,
@@ -274,7 +273,7 @@ defmodule Firmowid.Ash.Core.User do
       argument :name, :string
       argument :employment_date, :date
       argument :phone, :string
-      argument :slack_id, :string
+      argument :slack_url, :string
       argument :bank_account_number, :string
       argument :position, :string
       argument :correspondence_address, :string
@@ -504,7 +503,6 @@ defmodule Firmowid.Ash.Core.User do
 
     attribute :phone, :string, public?: true
     attribute :slack_url, :string, public?: true
-    attribute :slack_id, :string, public?: true
     attribute :bank_account_number, :string, public?: true
     attribute :birthday, :date, public?: true
     attribute :position, :string, public?: true
