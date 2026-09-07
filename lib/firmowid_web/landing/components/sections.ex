@@ -42,7 +42,7 @@ defmodule FirmowidWeb.Landing.Components.Sections do
       bullets: [
         "Automatyczna walidacja zgodności z KSeF",
         "Ponowienie wysyłki przy obciążeniu systemu rządowego",
-        "Eksport faktur (w formacie PDF i XML)"
+        "Eksport faktur w formacie PDF"
       ],
       variant: :invoice,
       reverse: false
@@ -80,12 +80,12 @@ defmodule FirmowidWeb.Landing.Components.Sections do
       tags: [{"płace", :default}, {"rozliczenia", :default}],
       title: "Płace, które nie gubią się w excelu",
       description:
-        "Z godzin pracy, stawek i umów Firmowid sam policzy, kto ile zarobił. Paski wypłat, przelewy, rozliczenia - wszystko z jednego miejsca.",
+        "Z godzin pracy i stawek Firmowid sam policzy, kto ile zarobił. Wynagrodzenia i raporty masz w jednym miejscu.",
       bullets: [
-        "Automatyczne obliczenia na podstawie ewidencji godzin",
-        "Obsługa umów zlecenia, UoP, B2B",
-        "Generowanie pasków i deklaracji",
-        "Przelewy zbiorcze do banku"
+        "Automatyczne wyliczanie wynagrodzeń na podstawie ewidencji godzin",
+        "Stawki godzinowe i historia ich zmian",
+        "Informacja o liczbie godzin wykonania zlecenia",
+        "Raport wypłat w formacie CSV"
       ],
       variant: :payroll,
       reverse: true
@@ -207,7 +207,7 @@ defmodule FirmowidWeb.Landing.Components.Sections do
       id: "faq-banks",
       question: "Jakie banki obsługujecie?",
       answer:
-        "Obsługiwane są banki, w których polscy przedsiębiorcy mogą mieć konto. Między innymi: PKO BP, Pekao, Santander, mBank, ING, Alior Bank, Millennium, Revolut."
+        "Obsługiwane są banki, w których polscy przedsiębiorcy mogą mieć konto. Między innymi: PKO BP, Pekao, mBank, ING, Alior Bank, Millennium, Revolut."
     }
   ]
 
@@ -880,8 +880,8 @@ defmodule FirmowidWeb.Landing.Components.Sections do
       <div class="rounded-[10px] border border-[#e5ddd0] bg-[#faf7f3] p-4">
         <div class="flex items-center justify-between border-b border-[#e9ddd2] pb-3">
           <div>
-            <p class="text-sm font-bold text-[#1a1a1a]">Rozliczenia płac</p>
-            <p class="mt-1 text-[10px] text-[#4e4e4e]">Od ewidencji do wypłaty z jednego miejsca</p>
+            <p class="text-sm font-bold text-[#1a1a1a]">Rozliczenia zespołu</p>
+            <p class="mt-1 text-[10px] text-[#4e4e4e]">Godziny i wynagrodzenia w jednym miejscu</p>
           </div>
           <span class="rounded-full bg-[#e8efe5] px-3 py-1 text-[10px] font-bold text-[#475e45]">
             Gotowe
@@ -891,13 +891,13 @@ defmodule FirmowidWeb.Landing.Components.Sections do
           <div class="flex items-center justify-between rounded-lg bg-white p-3 shadow-[0_4px_16px_rgba(80,50,30,0.08)]">
             <div>
               <p class="text-xs font-semibold text-[#1a1a1a]">Jan Nowak</p>
-              <p class="text-[11px] text-[#4e4e4e]">Umowa B2B • 160h</p>
+              <p class="text-[11px] text-[#4e4e4e]">160h • 80 zł/godz.</p>
             </div>
             <p class="text-sm font-bold text-[#1a1a1a]">12 800 zł</p>
           </div>
           <div class="flex items-center justify-between rounded-lg border border-dashed border-[#d8c7bb] p-3 text-[11px] text-[#4e4e4e]">
-            <span>Paczka przelewów przygotowana</span>
-            <strong class="text-[#8b3f13]">4 osoby</strong>
+            <span>Raport wypłat gotowy</span>
+            <strong class="text-[#8b3f13]">CSV</strong>
           </div>
         </div>
       </div>
