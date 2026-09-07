@@ -194,7 +194,7 @@ defmodule Firmowid.Ash.Core do
   end
 
   defp organization_opts(opts, organization_id) do
-    [scope: %Scope{actor: actor_from_opts(opts), tenant: organization_id}]
+    [scope: Scope.new!(actor_from_opts(opts), organization_id)]
   end
 
   defp ensure_actor(opts, actor) do

@@ -10,6 +10,7 @@ defmodule Firmowid.Ash.Finances.FinancesTest do
   alias Firmowid.Ash.Invoicing.CostInvoice
   alias Firmowid.Ash.Invoicing.CostInvoiceTransaction
   alias Firmowid.Ash.Scope
+  alias Firmowid.Ash.SystemActor
 
   setup do
     # Admin user required — transactions are not accessible to :employee role
@@ -285,6 +286,27 @@ defmodule Firmowid.Ash.Finances.FinancesTest do
         Ash.load!([ctx.skipped_tx, ctx.matched_tx], :groupable?, scope: scope_for(ctx.user))
 
       assert Enum.all?(loaded, &(not &1.groupable?))
+    end
+  end
+
+  describe "system actor authorization" do
+    test "unrelated system actors cannot read transactions", ctx do
+      scope = %Scope{
+        actor: %SystemActor{org_id: ctx.org_id, role: :avatar_cleanup},
+        tenant: ctx.org_id
+      }
+
+      assert {:error, _} = Finances.list_transactions(%{}, scope: scope)
+    end
+
+    test "analysis readers can read transactions in their organization", ctx do
+      scope = %Scope{
+        actor: %SystemActor{org_id: ctx.org_id, role: :analysis_reader},
+        tenant: ctx.org_id
+      }
+
+      assert {:ok, transactions} = Finances.list_transactions(%{}, scope: scope)
+      assert ctx.pending_tx.id in Enum.map(transactions, & &1.id)
     end
   end
 

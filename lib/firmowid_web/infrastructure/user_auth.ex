@@ -283,7 +283,7 @@ defmodule FirmowidWeb.Infrastructure.UserAuth do
 
   defp maybe_load_organization_for_signed_in_path(%{organization_id: organization_id} = user)
        when not is_nil(organization_id) do
-    scope = %Scope{actor: user, tenant: organization_id}
+    scope = Scope.new!(user, organization_id)
     Ash.load!(user, [:organization], scope: scope)
   end
 
