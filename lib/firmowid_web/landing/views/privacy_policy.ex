@@ -30,7 +30,7 @@ defmodule FirmowidWeb.Landing.Views.PrivacyPolicy do
     <.legal_page>
       <h1 class="text-4xl font-bold">Polityka Prywatności</h1>
       <p class="text-sm text-neutral-500">
-        Ostatnia aktualizacja: 4 września 2026 r.
+        Ostatnia aktualizacja: 7 września 2026 r.
       </p>
 
       <h2>§1. Administrator danych</h2>
@@ -67,6 +67,11 @@ defmodule FirmowidWeb.Landing.Views.PrivacyPolicy do
         <li>
           <strong>Dane fakturowe</strong>
           — treść faktur sprzedażowych i kosztowych, dane kontrahentów.
+        </li>
+        <li>
+          <strong>Dane z analizy dokumentów</strong> — pliki dokumentów przesyłane
+          przez użytkownika oraz dane z nich wyodrębnione, w szczególności dane
+          faktur, sprzedawców i pozycji faktur.
         </li>
         <li>
           <strong>Dane rachunków bankowych</strong> — informacje o rachunkach i transakcjach
@@ -132,6 +137,16 @@ defmodule FirmowidWeb.Landing.Views.PrivacyPolicy do
           <strong>GoCardless SAS</strong> — synchronizacja rachunków bankowych
           (Open Banking / Bank Account Data). Spółka zarejestrowana we Francji,
           regulowana przez ACPR.
+        </li>
+        <li>
+          <strong>Reducto, Inc.</strong> — analiza przesłanych dokumentów oraz
+          wyodrębnianie z nich danych potrzebnych do ich przetwarzania w Usłudze.
+        </li>
+        <li>
+          <strong>OpenAI Ireland Limited</strong>
+          (The Liffey Trust Centre, 117-126 Sheriff Street Upper, Dublin 1, Irlandia) — analiza danych wyodrębnionych z dokumentów
+          oraz innych danych wprowadzonych do Usługi w celu automatyzacji ich
+          przetwarzania oraz wspomagania funkcji Usługi.
         </li>
       </ul>
 

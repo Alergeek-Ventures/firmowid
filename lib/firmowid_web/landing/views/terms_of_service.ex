@@ -30,7 +30,7 @@ defmodule FirmowidWeb.Landing.Views.TermsOfService do
     <.legal_page>
       <h1 class="text-4xl font-bold">Regulamin</h1>
       <p class="text-sm text-neutral-500">
-        Ostatnia aktualizacja: 4 września 2026 r.
+        Ostatnia aktualizacja: 7 września 2026 r.
       </p>
 
       <h2>§1. Postanowienia ogólne</h2>
@@ -57,7 +57,7 @@ defmodule FirmowidWeb.Landing.Views.TermsOfService do
         <li>Synchronizację i podgląd firmowych rachunków bankowych (Open Banking)</li>
         <li>Automatyczne przyporządkowywanie faktur do transakcji bankowych</li>
         <li>Ewidencję czasu pracy i zarządzanie projektami</li>
-        <li>Zarządzanie pracownikami, urlopami i umowami (w ramach rozwoju Usługi)</li>
+        <li>Zarządzanie pracownikami, urlopami i umowami</li>
         <li>Zarządzanie kontrahentami i danymi organizacji</li>
         <li>Inne funkcje związane z prowadzeniem działalności gospodarczej,
           wprowadzane w ramach rozwoju Usługi</li>
