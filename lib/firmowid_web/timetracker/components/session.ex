@@ -126,81 +126,114 @@ defmodule FirmowidWeb.Timetracker.Components.Session do
         class="border-grey-200 space-y-6 rounded-lg border bg-white px-6 py-4 shadow-lg"
       >
         <div class="grid grid-cols-[repeat(5,auto)] gap-x-4 gap-y-3">
-          <div class="text-grey-700 col-span-5 grid grid-cols-subgrid text-sm">
-            <p class="col-start-2">Data</p>
-            <p>Od</p>
-            <p>Do</p>
+          <div class="text-grey-500 col-span-5 grid grid-cols-subgrid text-sm">
+            <p class="col-start-2 px-2">Data</p>
+            <p class="px-2">Od</p>
+            <p class="px-2">Do</p>
           </div>
           <div class="col-span-5 grid grid-cols-subgrid items-center gap-y-4">
             <.inputs_for :let={session} field={sessions_form[:start_end_times]}>
               <.input type="hidden" field={session[:id]} />
               <%= if overnight_session?(session) do %>
-                <p class="text-grey-600 line-clamp-1 text-sm font-semibold">
-                  Sesja {session.index + 1}
-                </p>
-                <.input
-                  type="date"
-                  field={session[:date]}
-                  input_class="border-grey-200 rounded-lg py-2 px-3"
-                />
-                <.input
-                  type="time"
-                  step="60"
-                  field={session[:start_time]}
-                  value={format_time(session[:start_time].value)}
-                  input_class="border-grey-200 rounded-lg py-2 px-3"
-                />
-                <span class="text-grey-500 text-center">-</span>
+                <div class="col-span-5 grid grid-cols-subgrid items-center gap-y-2">
+                  <p class="text-grey-500 line-clamp-1 text-sm">
+                    Sesja {session.index + 1}
+                  </p>
+                  <.input
+                    type="date"
+                    size="small"
+                    field={session[:date]}
+                    input_class="border-grey-200 rounded-lg"
+                    new
+                  />
+                  <.input
+                    type="time"
+                    size="small"
+                    step="60"
+                    field={session[:start_time]}
+                    value={format_time(session[:start_time].value)}
+                    new
+                    input_class="border-grey-200 rounded-lg"
+                  />
 
-                <span></span>
-                <span></span>
+                  <.input
+                    type="time"
+                    name="time_placeholder"
+                    value=""
+                    size="small"
+                    readonly
+                    disabled
+                    new
+                    input_class="border-grey-200 rounded-lg"
+                  />
 
-                <.input
-                  type="date"
-                  field={session[:end_date]}
-                  input_class="border-grey-200 rounded-lg py-2 px-3"
-                />
+                  <div />
+                  <div />
 
-                <span class="text-grey-500 text-center">-</span>
+                  <.input
+                    type="date"
+                    size="small"
+                    field={session[:end_date]}
+                    new
+                    input_class="border-grey-200 rounded-lg"
+                  />
 
-                <.input
-                  type="time"
-                  step="60"
-                  field={session[:end_time]}
-                  value={format_time(session[:end_time].value)}
-                  input_class="border-grey-200 rounded-lg py-2 px-3"
-                />
+                  <.input
+                    type="time"
+                    name="time_placeholder"
+                    value=""
+                    size="small"
+                    readonly
+                    disabled
+                    new
+                    input_class="border-grey-200 rounded-lg"
+                  />
 
-                <.button
-                  type="button"
-                  phx-click="collapse_overnight_session"
-                  phx-value-id={session[:id].value}
-                  variant="unstyled"
-                >
-                  <Lucideicons.trash_2 class="hover:text-darkGrey text-grey-500 transition-all" />
-                </.button>
+                  <.input
+                    type="time"
+                    size="small"
+                    step="60"
+                    field={session[:end_time]}
+                    value={format_time(session[:end_time].value)}
+                    new
+                    input_class="border-grey-200 rounded-lg"
+                  />
+
+                  <.button
+                    type="button"
+                    phx-click="collapse_overnight_session"
+                    phx-value-id={session[:id].value}
+                    data-confirm="Skrócić sesję nocną do jednego dnia? Czas po północy zostanie usunięty, bez możliwości przywrócenia."
+                    variant="unstyled"
+                  >
+                    <Lucideicons.trash_2 class="hover:text-darkGrey text-grey-500 transition-all" />
+                  </.button>
+                </div>
               <% else %>
-                <p class="text-grey-600 line-clamp-1 text-sm font-semibold">
+                <p class="text-grey-500 line-clamp-1 text-sm">
                   Sesja {session.index + 1}
                 </p>
                 <.input
                   type="date"
                   field={session[:date]}
-                  input_class="border-grey-200 rounded-lg py-2 px-3"
+                  new
+                  input_class="border-grey-200 rounded-lg"
                 />
                 <.input
                   type="time"
                   step="60"
                   field={session[:start_time]}
                   value={format_time(session[:start_time].value)}
-                  input_class="border-grey-200 rounded-lg py-2 px-3"
+                  new
+                  input_class="border-grey-200 rounded-lg"
                 />
                 <.input
                   type="time"
                   step="60"
                   field={session[:end_time]}
                   value={format_time(session[:end_time].value)}
-                  input_class="border-grey-200 rounded-lg py-2 px-3"
+                  new
+                  input_class="border-grey-200 rounded-lg"
                 />
                 <.button
                   type="button"
@@ -219,12 +252,13 @@ defmodule FirmowidWeb.Timetracker.Components.Session do
           <.button
             type="button"
             variant="outline"
-            class="max-w-28 flex-1 text-sm"
+            class="text-sm"
+            size="small"
             phx-click={hide_popover(popover_id)}
           >
             Anuluj
           </.button>
-          <.button type="submit" class="max-w-28 flex-1 text-sm">
+          <.button type="submit" class="text-sm" size="small">
             Zapisz
           </.button>
         </div>
