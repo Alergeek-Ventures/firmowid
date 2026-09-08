@@ -109,47 +109,67 @@ defmodule FirmowidWeb.Landing.Views.PrivacyPolicy do
 
       <h2>§4. Podmioty przetwarzające</h2>
       <p>
-        W celu świadczenia usługi korzystamy z następujących podmiotów przetwarzających
-        dane w naszym imieniu:
+        W celu świadczenia Usługi korzystamy z usług następujących podmiotów.
+        Zakres danych przekazywanych każdemu z nich ograniczamy do danych niezbędnych
+        do realizacji danego celu:
       </p>
       <ul>
         <li>
-          <strong>OVH SAS</strong> — hosting serwerów oraz przechowywanie plików
-          (Object Storage / S3). Dane przechowywane na terenie UE.
+          <strong>OVH SAS</strong> (2 rue Kellermann, 59100 Roubaix, Francja) —
+          hosting infrastruktury aplikacji i przechowywanie plików w Object Storage.
+          Dane przechowywane są na terenie Unii Europejskiej.
         </li>
         <li>
-          <strong>PostHog Inc.</strong> — analityka produktowa (instancja EU).
-          W przypadku braku zgody na cookies analityczne, dane są anonimizowane.
+          <strong>PostHog Inc.</strong> (2261 Market Street, #4008, San Francisco,
+          CA 94114, USA) — analityka korzystania z Usługi. Korzystamy z instancji EU;
+          bez zgody na cookies analityczne nie zapisujemy trwałych identyfikatorów
+          analitycznych w przeglądarce.
         </li>
         <li>
-          <strong>Sentry</strong> — monitoring błędów aplikacji i, po uzyskaniu
-          zgody, nagrania sesji diagnostycznych (Replay).
+          <strong>Functional Software, Inc. (Sentry)</strong> (45 Fremont Street,
+          8th Floor, San Francisco, CA 94105, USA) — monitorowanie błędów, awarii
+          i wydajności Usługi. Raporty mogą zawierać dane techniczne oraz kontekst
+          niezbędny do zdiagnozowania błędu. Po wyrażeniu zgody mogą obejmować także
+          nagrania sesji diagnostycznych (Replay).
         </li>
         <li>
-          <strong>Plus Five Five, Inc.</strong> (Resend) — wysyłka i odbiór wiadomości
-          e-mail (powiadomienia transakcyjne oraz przetwarzanie faktur przychodzących).
+          <strong>Plus Five Five, Inc. (Resend)</strong> (2261 Market Street #5039,
+          San Francisco, CA 94114, USA) — obsługa wiadomości e-mail, w tym wysyłanie
+          wiadomości transakcyjnych, odbiór wiadomości kierowanych do Usługi oraz
+          pobieranie ich załączników, w szczególności dokumentów przekazywanych
+          do przetworzenia.
         </li>
         <li>
           <strong>Google Ireland Limited</strong> (Gordon House, Barrow Street, Dublin 4, Irlandia) —
-          uwierzytelnianie użytkowników (Google OAuth).
+          uwierzytelnianie użytkowników przez Google OAuth. W tym celu otrzymujemy
+          dane profilu udostępnione podczas logowania, w szczególności adres e-mail,
+          imię i nazwisko oraz identyfikator konta Google.
         </li>
         <li>
-          <strong>GoCardless SAS</strong> — synchronizacja rachunków bankowych
-          (Open Banking / Bank Account Data). Spółka zarejestrowana we Francji,
-          regulowana przez ACPR.
+          <strong>GoCardless Limited</strong> (Sutton Yard, 65 Goswell Road, London,
+          EC1V 7EN, Wielka Brytania) — usługi Open Banking, tj. uwierzytelnienie
+          połączenia z rachunkiem bankowym oraz pobieranie informacji o rachunkach
+          i transakcjach. GoCardless działa jako niezależny administrator w zakresie
+          wymaganym do świadczenia regulowanych usług bankowych.
         </li>
         <li>
-          <strong>Reducto, Inc.</strong> — analiza przesłanych dokumentów oraz
-          wyodrębnianie z nich danych potrzebnych do ich przetwarzania w Usłudze.
+          <strong>Reducto, Inc.</strong>
+          (77 Geary Street, San Francisco, CA 94108, USA) — analiza plików dokumentów przesłanych
+          przez użytkownika, w tym dokumentów fakturowych i umów, oraz OCR i
+          wyodrębnianie z nich danych potrzebnych do działania funkcji Usługi.
+          Do Reducto przekazywana jest treść dokumentu lub bezpieczny adres umożliwiający
+          jego pobranie.
         </li>
         <li>
           <strong>OpenAI Ireland Limited</strong>
-          (The Liffey Trust Centre, 117-126 Sheriff Street Upper, Dublin 1, Irlandia) — analiza danych wyodrębnionych z dokumentów
-          oraz innych danych wprowadzonych do Usługi w celu automatyzacji ich
-          przetwarzania oraz wspomagania funkcji Usługi.
+          (1st Floor, The Liffey Trust Centre, 117-126 Sheriff Street Upper, Dublin 1,
+          D01 YC43, Irlandia) — automatyczne tworzenie opisów faktur kosztowych,
+          ujednolicanie nazw sprzedawców oraz wspomaganie funkcji asystenta i
+          dopasowywania faktur do transakcji. Do OpenAI mogą trafiać dane wyodrębnione
+          z faktur, w szczególności dane sprzedawcy, pozycje i wartości faktury,
+          oraz dane przekazane do tych funkcji przez użytkownika.
         </li>
       </ul>
-
       <h2>§5. Przechowywanie danych</h2>
       <p>
         Dane osobowe przechowywane są przez okres korzystania z usługi Firmowid.
