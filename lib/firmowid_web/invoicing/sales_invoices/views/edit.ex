@@ -223,8 +223,6 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
         scope: scope
       )
 
-    latest = original_invoice.effective_snapshot
-
     # Pre-populate form params from the latest snapshot
     params =
       maybe_put_exemption_params(

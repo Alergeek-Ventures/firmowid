@@ -314,8 +314,10 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Summary do
   def handle_info({:ksef_invoice_status, %{invoice_id: invoice_id, status: :failed}}, socket) do
     # The worker may have already deleted a failed unsent correction.
     # If the invoice is gone, redirect back to the original invoice edit page.
+    # Existence check is intentionally sparse; reload with @invoice_loads before UI work.
     case SalesInvoice.by_id(invoice_id, scope: socket.assigns.ash_scope) do
-      {:ok, invoice} ->
+      {:ok, _invoice} ->
+        invoice = load_invoice!(invoice_id, socket.assigns.ash_scope)
         handle_existing_invoice_status(socket, invoice, invoice_id, :failed)
 
       {:error, _} ->
@@ -370,9 +372,10 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Summary do
     alias Firmowid.Ash.Invoicing.Calculations.AnnotatedCorrections
 
     # Re-fetch corrected invoice to ensure all attributes are loaded,
-    # then annotate corrections directly (avoids Ash.load! re-fetch issue)
+    # then annotate corrections directly (avoids Ash.load! re-fetch issue).
+    # Use the FK attribute — :corrected_invoice may be NotLoaded on sparse reloads.
     original_invoice =
-      invoice.corrected_invoice.id
+      invoice.corrected_invoice_id
       |> SalesInvoice.by_id!(
         scope: scope,
         load: [
@@ -381,7 +384,13 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Summary do
           :gross_value,
           :amount,
           sales_invoice_items: [:net_value, :vat_value, :gross_value],
-          corrections: [:amount, sales_invoice_items: [:net_value, :vat_value, :gross_value]]
+          corrections: [
+            :net_value,
+            :vat_value,
+            :gross_value,
+            :amount,
+            sales_invoice_items: [:net_value, :vat_value, :gross_value]
+          ]
         ]
       )
       |> then(fn inv -> %{inv | corrections: AnnotatedCorrections.annotate(inv)} end)
