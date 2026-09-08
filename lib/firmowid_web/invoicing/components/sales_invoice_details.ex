@@ -93,23 +93,7 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
 
     latest_invoice_snapshot =
       assigns.invoice
-      |> Ash.load!(
-        [
-          :effective_snapshot,
-          :amount,
-          latest_correction: [
-            :net_value,
-            :vat_value,
-            :gross_value,
-            :amount,
-            :sale_date,
-            :due_date,
-            :buyer_display_name_label,
-            sales_invoice_items: [:net_value, :vat_value, :gross_value]
-          ]
-        ],
-        scope: assigns.scope
-      )
+      |> Ash.load!([:amount, :effective_snapshot], scope: assigns.scope)
       |> Map.get(:effective_snapshot)
       |> Ash.load!(
         [
@@ -117,6 +101,8 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
           :vat_value,
           :gross_value,
           :amount,
+          :sale_date,
+          :due_date,
           :buyer_display_name_label,
           sales_invoice_items: [:net_value, :vat_value, :gross_value]
         ],

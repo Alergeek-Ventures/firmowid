@@ -5,6 +5,9 @@ defmodule Firmowid.Ash.Invoicing.Changes.PrepareCorrection do
   Reads the original invoice from the `original_invoice_id` argument,
   finds the latest snapshot in the correction chain, and copies seller/buyer/payment
   fields to the changeset. Sets `ksef_invoice_kind: :kor` and `corrected_invoice_id`.
+
+  Loads `:effective_snapshot`, then reloads needed fields on that struct — a bare
+  `:struct` calc result leaves attributes as `%Ash.NotLoaded{}`.
   """
   use Ash.Resource.Change
 
@@ -78,15 +81,11 @@ defmodule Firmowid.Ash.Invoicing.Changes.PrepareCorrection do
     original_invoice =
       SalesInvoice.by_id!(
         original_invoice_id,
-        Keyword.put(opts, :load, [
-          :effective_snapshot,
-          :sales_invoice_items,
-          corrections: :sales_invoice_items,
-          latest_correction: @latest_snapshot_load
-        ])
+        Keyword.put(opts, :load, [:effective_snapshot])
       )
 
-    latest_snapshot = original_invoice.effective_snapshot
+    latest_snapshot =
+      Ash.load!(original_invoice.effective_snapshot, @latest_snapshot_load, opts)
 
     # Copy fields from the latest snapshot, but don't overwrite explicitly provided values
     changeset =

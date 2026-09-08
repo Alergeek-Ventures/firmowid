@@ -186,43 +186,42 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
     original_invoice =
       if invoice.ksef_invoice_kind == :kor, do: invoice.corrected_invoice, else: invoice
 
-    # Get latest snapshot (most recent correction or original)
-    original_invoice =
+    # Bare :effective_snapshot leaves attributes as %Ash.NotLoaded{}; reload them.
+    original_invoice = Ash.load!(original_invoice, [:effective_snapshot], scope: scope)
+
+    latest =
       Ash.load!(
-        original_invoice,
+        original_invoice.effective_snapshot,
         [
-          :effective_snapshot,
-          latest_correction: [
-            :currency,
-            :sale_date,
-            :due_date,
-            :payment_method,
-            :seller_account_number,
-            :seller_nip,
-            :seller_display_name,
-            :seller_address,
-            :buyer_type,
-            :buyer_id,
-            :buyer_full_name,
-            :buyer_given_name,
-            :buyer_surname,
-            :buyer_pesel,
-            :buyer_display_name,
-            :buyer_address,
-            :buyer_country,
-            :counterparty_id,
-            :should_send_emails,
-            :buyer_email,
-            :buyer_phone,
-            :buyer_description,
-            :is_reverse_charge,
-            :sales_invoice_items
-          ]
+          :currency,
+          :sale_date,
+          :due_date,
+          :payment_method,
+          :seller_account_number,
+          :seller_nip,
+          :seller_display_name,
+          :seller_address,
+          :buyer_type,
+          :buyer_id,
+          :buyer_full_name,
+          :buyer_given_name,
+          :buyer_surname,
+          :buyer_pesel,
+          :buyer_display_name,
+          :buyer_address,
+          :buyer_country,
+          :counterparty_id,
+          :should_send_emails,
+          :buyer_email,
+          :buyer_phone,
+          :buyer_description,
+          :is_reverse_charge,
+          :vat_exemption_type,
+          :vat_exemption_basis,
+          :sales_invoice_items
         ],
         scope: scope
       )
-
-    latest = original_invoice.effective_snapshot
 
     # Pre-populate form params from the latest snapshot
     params =
