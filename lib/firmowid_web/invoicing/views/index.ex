@@ -36,11 +36,13 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
     :invoice_source,
     :transactions,
     :effective_amount,
+    :effective_due_date,
     :effective_seller_display_name
   ]
   @sales_invoice_loads [
     :invoice_source,
-    :amount,
+    :effective_amount,
+    :effective_due_date,
     :sales_invoice_items,
     :buyer_display_name_label,
     :transactions,
@@ -910,8 +912,8 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
     %{entries: Enum.take(invoices, @dashboard_tile_limit), total_count: length(invoices)}
   end
 
-  defp due_date_for_invoice(%CostInvoice{due_date: date}), do: date
-  defp due_date_for_invoice(%SalesInvoice{due_date: date}), do: date
+  defp due_date_for_invoice(%CostInvoice{effective_due_date: date}), do: date
+  defp due_date_for_invoice(%SalesInvoice{effective_due_date: date}), do: date
 
   defp fetch_unmatched_transactions(from, to, scope) do
     transactions =

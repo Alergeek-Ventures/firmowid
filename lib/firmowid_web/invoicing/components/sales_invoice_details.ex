@@ -72,6 +72,8 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
           :vat_value,
           :gross_value,
           :amount,
+          :effective_sale_date,
+          :effective_due_date,
           :internal_note,
           sales_invoice_items: [:net_value, :vat_value, :gross_value],
           corrections: [
@@ -426,12 +428,12 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
               />
               <InvoiceDetails.invoice_metadata_piece
                 label="Data sprzedaży"
-                value={@latest_invoice_snapshot.sale_date}
+                value={@invoice.effective_sale_date}
                 piece_id="sale-date"
               />
               <InvoiceDetails.invoice_metadata_piece
                 label="Termin płatności"
-                value={@latest_invoice_snapshot.due_date}
+                value={@invoice.effective_due_date}
                 piece_id="due-date"
               />
             </InvoiceDetails.invoice_metadata>

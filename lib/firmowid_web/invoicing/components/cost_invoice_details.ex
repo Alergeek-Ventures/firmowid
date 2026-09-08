@@ -209,12 +209,12 @@ defmodule FirmowidWeb.Invoicing.Components.CostInvoiceDetails do
                 />
                 <InvoiceDetails.invoice_metadata_piece
                   label="Data sprzedaży"
-                  value={@invoice.sale_date}
+                  value={@invoice.effective_sale_date}
                   piece_id="sale-date"
                 />
                 <InvoiceDetails.invoice_metadata_piece
                   label="Termin płatności"
-                  value={@invoice.due_date}
+                  value={@invoice.effective_due_date}
                   piece_id="due-date"
                 />
               </InvoiceDetails.invoice_metadata>

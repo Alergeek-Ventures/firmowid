@@ -111,17 +111,17 @@ defmodule FirmowidWeb.Invoicing.Components.DashboardTiles do
     {
       entry.buyer_display_name_label,
       entry.invoice_number,
-      Money.to_decimal(entry.amount),
-      entry.amount |> Money.to_currency_code() |> Atom.to_string(),
+      Money.to_decimal(entry.effective_amount),
+      entry.effective_amount |> Money.to_currency_code() |> Atom.to_string(),
       Navigation.sales_invoice_show_path(entry, return_to),
       entry.issue_date
     }
   end
 
-  defp format_due_date_status(%CostInvoice{due_date: nil}), do: {nil, false}
-  defp format_due_date_status(%SalesInvoice{due_date: nil}), do: {nil, false}
+  defp format_due_date_status(%CostInvoice{effective_due_date: nil}), do: {nil, false}
+  defp format_due_date_status(%SalesInvoice{effective_due_date: nil}), do: {nil, false}
 
-  defp format_due_date_status(%{due_date: due_date}) do
+  defp format_due_date_status(%{effective_due_date: due_date}) do
     today = Date.utc_today()
     days_diff = Date.diff(due_date, today)
 
@@ -251,8 +251,8 @@ defmodule FirmowidWeb.Invoicing.Components.DashboardTiles do
     {
       entry.buyer_display_name_label,
       entry.invoice_number,
-      Money.to_decimal(entry.amount),
-      entry.amount |> Money.to_currency_code() |> Atom.to_string(),
+      Money.to_decimal(entry.effective_amount),
+      entry.effective_amount |> Money.to_currency_code() |> Atom.to_string(),
       Navigation.sales_invoice_show_path(entry, return_to),
       nil
     }

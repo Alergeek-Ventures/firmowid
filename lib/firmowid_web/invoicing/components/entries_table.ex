@@ -177,7 +177,7 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
         case assigns.invoicing_entry do
           %Transaction{} -> Money.to_decimal(assigns.invoicing_entry.amount)
           %CostInvoice{} -> Money.to_decimal(assigns.invoicing_entry.effective_amount)
-          %SalesInvoice{} -> Money.to_decimal(assigns.invoicing_entry.amount)
+          %SalesInvoice{} -> Money.to_decimal(assigns.invoicing_entry.effective_amount)
         end
       )
       |> assign(
@@ -239,7 +239,7 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
   end
 
   defp render_cell(%{column: "amount", invoicing_entry: %SalesInvoice{} = invoice} = assigns) do
-    amount = invoice.amount
+    amount = invoice.effective_amount
 
     assigns = assign(assigns, :amount, amount)
 
@@ -506,6 +506,22 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
 
   defp render_cell(%{invoicing_entry: %SalesInvoice{}, column: "due_or_booking_date"} = assigns),
     do: assigns |> assign(:column, "due_date") |> render_cell()
+
+  defp render_cell(%{invoicing_entry: %CostInvoice{} = invoice, column: "due_date"} = assigns) do
+    assigns = assign(assigns, :value, invoice.effective_due_date)
+
+    ~H"""
+    {@value}
+    """
+  end
+
+  defp render_cell(%{invoicing_entry: %SalesInvoice{} = invoice, column: "due_date"} = assigns) do
+    assigns = assign(assigns, :value, invoice.effective_due_date)
+
+    ~H"""
+    {@value}
+    """
+  end
 
   defp render_cell(%{invoicing_entry: %CostInvoice{}, column: "issue_or_value_date"} = assigns),
     do: assigns |> assign(:column, "issue_date") |> render_cell()
@@ -875,6 +891,10 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
   defp income_for_entry(%CostInvoice{effective_amount: %Money{} = amount}), do: Money.positive?(amount)
 
   defp income_for_entry(%CostInvoice{amount: amount}), do: Money.positive?(amount)
+
+  defp income_for_entry(%SalesInvoice{effective_amount: %Money{} = amount}), do: Money.positive?(amount)
+
   defp income_for_entry(%SalesInvoice{amount: amount}), do: Money.positive?(amount)
+
   defp income_for_entry(%{amount: amount}), do: Money.positive?(amount)
 end
