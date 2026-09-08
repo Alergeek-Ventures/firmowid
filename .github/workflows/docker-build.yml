@@ -15,7 +15,7 @@ concurrency:
 jobs:
   docker-build:
     name: Verify Docker image builds successfully
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     container:
       image: ghcr.io/alergeek-ventures/infrastructure/cicd-image:5b1d7150888c47322a6b5cda04796dfd1dbfb34c
       credentials:
@@ -32,5 +32,4 @@ jobs:
           context: .
           file: ./deployment/Containerfile.app
           push: false
-          # All self-hosted runners share the Docker daemon; cacheonly avoids loading a validation image.
           outputs: type=cacheonly

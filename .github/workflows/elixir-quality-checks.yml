@@ -39,7 +39,7 @@ jobs:
 
   quality_checks:
     name: Formatting, Credo, and Unused Deps
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     container:
       image: ghcr.io/alergeek-ventures/infrastructure/cicd-image:5b1d7150888c47322a6b5cda04796dfd1dbfb34c
       credentials:
