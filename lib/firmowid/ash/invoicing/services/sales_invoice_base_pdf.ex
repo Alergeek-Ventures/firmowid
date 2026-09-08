@@ -52,9 +52,23 @@ defmodule Firmowid.Ash.Invoicing.Services.SalesInvoiceBasePdf do
 
   defp maybe_load_reference_invoice(
          %{reference_invoice: %SalesInvoice{}, corrected_invoice: %SalesInvoice{}} = invoice,
-         _ash_opts
+         ash_opts
        ) do
-    invoice
+    reference_invoice =
+      Ash.load!(
+        invoice.reference_invoice,
+        [
+          :net_value,
+          :vat_value,
+          :gross_value,
+          :amount,
+          :currency,
+          sales_invoice_items: @item_calcs
+        ],
+        ash_opts
+      )
+
+    %{invoice | reference_invoice: reference_invoice}
   end
 
   defp maybe_load_reference_invoice(invoice, ash_opts) do
@@ -63,7 +77,14 @@ defmodule Firmowid.Ash.Invoicing.Services.SalesInvoiceBasePdf do
     reference_invoice =
       Ash.load!(
         invoice.reference_invoice,
-        [:net_value, :vat_value, :gross_value, :amount, sales_invoice_items: @item_calcs],
+        [
+          :net_value,
+          :vat_value,
+          :gross_value,
+          :amount,
+          :currency,
+          sales_invoice_items: @item_calcs
+        ],
         ash_opts
       )
 
