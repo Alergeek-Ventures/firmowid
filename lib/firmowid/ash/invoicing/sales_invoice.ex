@@ -212,7 +212,7 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
         where present(:kind)
       end
 
-      prepare build(filter: expr(amount[:currency_code] == ^arg(:currency))) do
+      prepare build(filter: expr(amount[:currency] == ^arg(:currency))) do
         where present(:currency)
       end
 

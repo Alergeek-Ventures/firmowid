@@ -72,7 +72,7 @@ defmodule Firmowid.Ash.Finances.Transaction do
         where present(:date_to)
       end
 
-      prepare build(filter: expr(amount[:currency_code] == ^arg(:currency))) do
+      prepare build(filter: expr(amount[:currency] == ^arg(:currency))) do
         where present(:currency)
       end
 

@@ -185,7 +185,7 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
       prepare {Firmowid.Ash.Preparations.ParadeDBSearch,
                columns: ~w(seller seller_display_name description invoice_identifier)}
 
-      prepare build(filter: expr(amount[:currency_code] == ^arg(:currency))) do
+      prepare build(filter: expr(amount[:currency] == ^arg(:currency))) do
         where present(:currency)
       end
 
@@ -696,7 +696,7 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
 
     calculate :amount_value, :decimal, expr(amount[:amount])
 
-    calculate :amount_currency, :string, expr(amount[:currency_code])
+    calculate :amount_currency, :string, expr(amount[:currency])
 
     # Effective fields — coalesce latest correction snapshot with original.
     # DB-pushable, filterable, sortable.
