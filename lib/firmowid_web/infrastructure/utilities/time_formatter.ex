@@ -7,15 +7,18 @@ defmodule FirmowidWeb.Infrastructure.Utilities.TimeFormatter do
     hours = div(duration, 60 * 60)
     minutes = rem(div(duration, 60), 60)
     seconds = rem(duration, 60)
-    :io_lib.format("~2..0B:~2..0B:~2..0B", [hours, minutes, seconds])
+
+    "#{pad_time(hours)}:#{pad_time(minutes)}:#{pad_time(seconds)}"
   end
 
   def format_timer(duration) when is_integer(duration) do
     hours = div(duration, 3600)
     minutes = rem(div(duration, 60), 60)
 
-    :io_lib.format("~2..0B:~2..0B", [hours, minutes])
+    "#{pad_time(hours)}:#{pad_time(minutes)}"
   end
+
+  defp pad_time(time), do: time |> Integer.to_string() |> String.pad_leading(2, "0")
 
   @doc """
   Format seconds into a human-readable string with hours and minutes.
