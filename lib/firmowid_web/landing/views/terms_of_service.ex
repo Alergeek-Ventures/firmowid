@@ -30,7 +30,7 @@ defmodule FirmowidWeb.Landing.Views.TermsOfService do
     <.legal_page>
       <h1 class="text-4xl font-bold">Regulamin</h1>
       <p class="text-sm text-neutral-500">
-        Ostatnia aktualizacja: 7 września 2026 r.
+        Ostatnia aktualizacja: 8 września 2026 r.
       </p>
 
       <h2>§1. Postanowienia ogólne</h2>
