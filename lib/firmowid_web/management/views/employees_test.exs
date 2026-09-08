@@ -184,38 +184,17 @@ defmodule FirmowidWeb.Management.Views.EmployeesTest do
     assert html =~ "Delegacje"
   end
 
-  test "admin approval refreshes the employee delegation loaded through the relationship", %{
-    conn: conn
-  } do
-    admin = admin_fixture()
-    employee = user_in_org_fixture(admin.organization_id, %{role: :employee})
-    Delegations.create_delegation!(delegation_attrs(), scope: current_scope(employee))
-
-    {:ok, view, html} =
-      conn
-      |> log_in_user(admin)
-      |> live(~p"/zarzadzanie/pracownicy/#{employee.id}/delegacje")
-
-    assert html =~ "Spotkanie z klientem"
-    assert html =~ "oczekiwanie"
-
-    view
-    |> element("button[phx-click='approve_delegation']")
-    |> render_click()
-
-    assert render(view) =~ "w toku"
-  end
-
-  test "admin can open an employee's completed delegation from the management list", %{conn: conn} do
+  test "management delegations are grouped by status and pending entries link to the command page",
+       %{conn: conn} do
     admin = admin_fixture()
     employee = user_in_org_fixture(admin.organization_id, %{role: :employee})
 
-    delegation =
+    pending_delegation =
       Ash.Seed.seed!(Delegation, %{
         id: Ash.UUIDv7.generate(),
         organization_id: admin.organization_id,
         user_id: employee.id,
-        title: "Zakończony wyjazd służbowy",
+        title: "Delegacja wymagająca podpisu",
         billing_month: ~D[2026-08-01],
         destination: "Kraków",
         transport_types: [:railway],
@@ -223,15 +202,85 @@ defmodule FirmowidWeb.Management.Views.EmployeesTest do
         advance_payment_amount: Money.new(:PLN, 100),
         start_date: ~D[2026-08-10],
         end_date: ~D[2026-08-11],
-        status: :complete
+        status: :pending
       })
+
+    Ash.Seed.seed!(Delegation, %{
+      id: Ash.UUIDv7.generate(),
+      organization_id: admin.organization_id,
+      user_id: employee.id,
+      title: "Delegacja w trakcie",
+      billing_month: ~D[2026-08-01],
+      purpose: "Spotkanie z klientem",
+      advance_payment_amount: Money.new(:PLN, 100),
+      start_date: ~D[2026-08-10],
+      end_date: ~D[2026-08-11],
+      status: :in_progress
+    })
+
+    Ash.Seed.seed!(Delegation, %{
+      id: Ash.UUIDv7.generate(),
+      organization_id: admin.organization_id,
+      user_id: employee.id,
+      title: "Zakończony wyjazd służbowy",
+      billing_month: ~D[2026-08-01],
+      purpose: "Spotkanie z klientem",
+      advance_payment_amount: Money.new(:PLN, 100),
+      start_date: ~D[2026-08-10],
+      end_date: ~D[2026-08-11],
+      status: :complete
+    })
 
     {:ok, view, _html} =
       conn
       |> log_in_user(admin)
       |> live(~p"/zarzadzanie/pracownicy/#{employee.id}/delegacje")
 
-    assert has_element?(view, "a[href='/delegacje/#{delegation.id}']", delegation.title)
+    assert has_element?(view, "h2", "Delegacje w toku")
+    assert has_element?(view, "h2", "Poprzednie delegacje")
+
+    assert has_element?(
+             view,
+             "a[href='/zarzadzanie/pracownicy/#{employee.id}/delegacje/#{pending_delegation.id}']"
+           )
+
+    assert render(view) =~ "wymaga podpisu"
+  end
+
+  test "admin can open a pending delegation command page", %{conn: conn} do
+    admin = admin_fixture()
+
+    employee = user_in_org_fixture(admin.organization_id, %{role: :employee})
+
+    employee =
+      Core.update_profile!(employee, %{name: "Jan Kowalski"},
+        actor: employee,
+        tenant: admin.organization_id
+      )
+
+    delegation =
+      Ash.Seed.seed!(Delegation, %{
+        id: Ash.UUIDv7.generate(),
+        organization_id: admin.organization_id,
+        user_id: employee.id,
+        title: "Wyjazd do klienta",
+        billing_month: ~D[2026-08-01],
+        purpose: "Spotkanie z klientem",
+        advance_payment_amount: Money.new(:PLN, 100),
+        start_date: ~D[2026-08-10],
+        end_date: ~D[2026-08-11],
+        status: :pending
+      })
+
+    {:ok, view, html} =
+      conn
+      |> log_in_user(admin)
+      |> live(~p"/zarzadzanie/pracownicy/#{employee.id}/delegacje/#{delegation.id}")
+
+    assert html =~ "Polecenie wyjazdu służbowego"
+    assert html =~ "Jan Kowalski"
+    assert html =~ "Wygeneruj polecenie, aby móc je podpisać."
+    assert has_element?(view, "input[disabled][name='delegation_command[amount]']")
   end
 
   test "admin can restore archived employee from employee detail page", %{conn: conn} do
