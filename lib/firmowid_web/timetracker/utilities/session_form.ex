@@ -91,14 +91,24 @@ defmodule FirmowidWeb.Timetracker.Utilities.SessionForm do
     |> Map.drop([:start_time, :end_time, :date])
   end
 
-  def times_to_datetimes(%{start_time: start_time, end_time: end_time, date: date}, timezone) do
+  def times_to_datetimes(%{start_time: start_time, end_time: end_time, date: date} = attrs, timezone) do
+    end_date = Map.get(attrs, :end_date)
+
     start_datetime = date_to_datetime(date, start_time, timezone)
-    # This allows for adding sessions which cross midnight
+
     end_datetime =
-      if end_time && Time.before?(end_time, start_time) do
-        date_to_datetime(Date.add(date, 1), end_time, timezone)
-      else
-        date_to_datetime(date, end_time, timezone)
+      cond do
+        is_nil(end_time) ->
+          nil
+
+        end_date ->
+          date_to_datetime(end_date, end_time, timezone)
+
+        Time.before?(end_time, start_time) ->
+          date_to_datetime(Date.add(date, 1), end_time, timezone)
+
+        true ->
+          date_to_datetime(date, end_time, timezone)
       end
 
     {start_datetime, end_datetime}

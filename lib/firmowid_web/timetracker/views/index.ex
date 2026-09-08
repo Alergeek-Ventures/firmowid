@@ -646,6 +646,38 @@ defmodule FirmowidWeb.Timetracker.Views.Index do
      |> assign_sessions()}
   end
 
+  def handle_event("collapse_overnight_session", %{"id" => id}, socket) do
+    scope = socket.assigns.ash_scope
+    timezone = socket.assigns.timezone
+    session = Timetracker.get_session_by_id!(id, scope: scope)
+
+    start_local = DateTime.shift_zone!(session.start_datetime, timezone)
+    start_date = DateTime.to_date(start_local)
+
+    end_datetime =
+      start_date
+      |> DateTime.new!(~T[23:59:00], timezone)
+      |> DateTime.shift_zone!("Etc/UTC")
+
+    case AshSession.update(session, %{end_datetime: end_datetime}, scope: scope) do
+      {:ok, _} ->
+        {:noreply, assign_sessions(socket)}
+
+      {:error, %Unknown{} = error} ->
+        if overlap_error?(error) do
+          LiveToast.send_toast(:error, "Sesja nachodzi na inną sesję.")
+        else
+          LiveToast.send_toast(:error, "Nie udało się zaktualizować sesji")
+        end
+
+        {:noreply, socket}
+
+      {:error, _} ->
+        LiveToast.send_toast(:error, "Nie udało się zaktualizować sesji")
+        {:noreply, socket}
+    end
+  end
+
   def format_day_header(%Date{} = date) do
     day_name =
       Calendar.strftime(date, "%A", day_of_week_names: fn number -> Map.get(@day_names, number, "Unknown") end)

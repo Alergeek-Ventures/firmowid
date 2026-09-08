@@ -13,6 +13,7 @@ defmodule FirmowidWeb.Timetracker.Utilities.GroupedSessionForm do
 
     embeds_many :start_end_times, SessionStartEndTime do
       field :date, :date
+      field :end_date, :date
       field :start_time, :time
       field :end_time, :time
     end
@@ -32,7 +33,7 @@ defmodule FirmowidWeb.Timetracker.Utilities.GroupedSessionForm do
 
   defp start_end_time_changeset(start_end_time, attrs) do
     start_end_time
-    |> cast(attrs, [:id, :date, :start_time, :end_time])
+    |> cast(attrs, [:id, :date, :start_time, :end_time, :end_date])
     |> validate_required([:id, :date, :start_time])
   end
 
@@ -46,9 +47,13 @@ defmodule FirmowidWeb.Timetracker.Utilities.GroupedSessionForm do
         sessions
         |> Enum.sort_by(& &1.start_datetime)
         |> Enum.map(fn session ->
+          start_date = DateTime.to_date(session.start_datetime)
+          end_date = session.end_datetime && DateTime.to_date(session.end_datetime)
+
           %{
             id: session.id,
-            date: DateTime.to_date(session.start_datetime),
+            date: start_date,
+            end_date: end_date || start_date,
             start_time: DateTime.to_time(session.start_datetime),
             end_time: session.end_datetime && DateTime.to_time(session.end_datetime)
           }
