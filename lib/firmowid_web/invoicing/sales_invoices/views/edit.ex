@@ -223,52 +223,57 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
         scope: scope
       )
 
+    latest = original_invoice.effective_snapshot
+
     # Pre-populate form params from the latest snapshot
     params =
-      %{
-        "original_invoice_id" => original_invoice.id,
-        "issue_date" => Date.to_iso8601(Date.utc_today()),
-        "invoice_number" => SalesInvoice.get_next_number!(Date.utc_today(), "FK", nil, nil, scope: scope),
-        "ksef_invoice_kind" => "kor",
-        "sale_date" => if(latest.sale_date, do: Date.to_iso8601(latest.sale_date)),
-        "due_date" => if(latest.due_date, do: Date.to_iso8601(latest.due_date)),
-        "payment_method" => to_string(latest.payment_method),
-        "currency" => latest.currency,
-        "seller_account_number" => latest.seller_account_number,
-        "seller_nip" => latest.seller_nip,
-        "seller_display_name" => latest.seller_display_name,
-        "seller_address" => latest.seller_address,
-        "correction_reason" => "",
-        "buyer_type" => to_string(latest.buyer_type),
-        "buyer_id" => latest.buyer_id,
-        "buyer_full_name" => latest.buyer_full_name,
-        "buyer_given_name" => latest.buyer_given_name,
-        "buyer_surname" => latest.buyer_surname,
-        "buyer_pesel" => latest.buyer_pesel,
-        "buyer_display_name" => latest.buyer_display_name,
-        "buyer_address" => latest.buyer_address,
-        "buyer_country" => latest.buyer_country,
-        "buyer_email" => latest.buyer_email,
-        "buyer_phone" => latest.buyer_phone,
-        "buyer_description" => latest.buyer_description,
-        "should_send_emails" => to_string(latest.should_send_emails || false),
-        "is_reverse_charge" => to_string(latest.is_reverse_charge || false),
-        "sales_invoice_items" =>
-          latest.sales_invoice_items
-          |> Enum.sort_by(& &1.index)
-          |> Enum.with_index()
-          |> Map.new(fn {item, idx} ->
-            {to_string(idx),
-             %{
-               "index" => to_string(item.index),
-               "name" => item.name,
-               "quantity" => to_string(item.quantity),
-               "unit" => item.unit,
-               "unit_price" => to_string(item.unit_price),
-               "vat_rate" => item.vat_rate
-             }}
-          end)
-      }
+      maybe_put_exemption_params(
+        %{
+          "original_invoice_id" => original_invoice.id,
+          "issue_date" => Date.to_iso8601(Date.utc_today()),
+          "invoice_number" => SalesInvoice.get_next_number!(Date.utc_today(), "FK", nil, nil, scope: scope),
+          "ksef_invoice_kind" => "kor",
+          "sale_date" => if(latest.sale_date, do: Date.to_iso8601(latest.sale_date)),
+          "due_date" => if(latest.due_date, do: Date.to_iso8601(latest.due_date)),
+          "payment_method" => to_string(latest.payment_method),
+          "currency" => latest.currency,
+          "seller_account_number" => latest.seller_account_number,
+          "seller_nip" => latest.seller_nip,
+          "seller_display_name" => latest.seller_display_name,
+          "seller_address" => latest.seller_address,
+          "correction_reason" => "",
+          "buyer_type" => to_string(latest.buyer_type),
+          "buyer_id" => latest.buyer_id,
+          "buyer_full_name" => latest.buyer_full_name,
+          "buyer_given_name" => latest.buyer_given_name,
+          "buyer_surname" => latest.buyer_surname,
+          "buyer_pesel" => latest.buyer_pesel,
+          "buyer_display_name" => latest.buyer_display_name,
+          "buyer_address" => latest.buyer_address,
+          "buyer_country" => latest.buyer_country,
+          "buyer_email" => latest.buyer_email,
+          "buyer_phone" => latest.buyer_phone,
+          "buyer_description" => latest.buyer_description,
+          "should_send_emails" => to_string(latest.should_send_emails || false),
+          "is_reverse_charge" => to_string(latest.is_reverse_charge || false),
+          "sales_invoice_items" =>
+            latest.sales_invoice_items
+            |> Enum.sort_by(& &1.index)
+            |> Enum.with_index()
+            |> Map.new(fn {item, idx} ->
+              {to_string(idx),
+               %{
+                 "index" => to_string(item.index),
+                 "name" => item.name,
+                 "quantity" => to_string(item.quantity),
+                 "unit" => item.unit,
+                 "unit_price" => to_string(item.unit_price),
+                 "vat_rate" => item.vat_rate
+               }}
+            end)
+        },
+        latest
+      )
 
     AshPhoenix.Form.for_create(SalesInvoice, :create_correction,
       scope: scope,
@@ -283,7 +288,46 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
     )
   end
 
+  # Seed exemption only when the latest snapshot already has values.
+  defp maybe_put_exemption_params(params, latest) do
+    params
+    |> maybe_put_present(
+      "vat_exemption_type",
+      loaded_attr(latest, :vat_exemption_type),
+      &to_string/1
+    )
+    |> maybe_put_present("vat_exemption_basis", loaded_attr(latest, :vat_exemption_basis), & &1)
+  end
+
+  defp maybe_put_present(params, _key, nil, _transform), do: params
+  defp maybe_put_present(params, _key, "", _transform), do: params
+
+  defp maybe_put_present(params, key, value, transform) do
+    Map.put(params, key, transform.(value))
+  end
+
+  defp loaded_attr(record, field) do
+    case Map.get(record, field) do
+      %Ash.NotLoaded{} -> nil
+      value -> value
+    end
+  end
+
   @impl true
+  def handle_event("add_item", %{"field" => field}, socket) do
+    ash_form =
+      AshPhoenix.Form.add_form(
+        socket.assigns.form.source,
+        String.to_existing_atom(field),
+        params: %{"vat_rate" => "23", "quantity" => "1", "unit" => "szt."}
+      )
+
+    {:noreply,
+     socket
+     |> assign_form_with_preview(ash_form)
+     |> push_event("unsaved-changed", %{value: true})}
+  end
+
   def handle_event("validate", params, socket) do
     # AshPhoenix.Form uses "form" as default form name
     form_params = params["form"] || params["sales_invoice"] || %{}
@@ -606,6 +650,12 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
           correction_reason: AshPhoenix.Form.value(ash_form, :correction_reason),
           invoice_note: AshPhoenix.Form.value(ash_form, :invoice_note),
           internal_note: AshPhoenix.Form.value(ash_form, :internal_note),
+          vat_exemption_type:
+            form_value_atom(ash_form, :vat_exemption_type) ||
+              loaded_attr(invoice, :vat_exemption_type),
+          vat_exemption_basis:
+            AshPhoenix.Form.value(ash_form, :vat_exemption_basis) ||
+              loaded_attr(invoice, :vat_exemption_basis),
           sales_invoice_items: items,
           net_value: net_value,
           vat_value: vat_value,
@@ -624,7 +674,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
     |> Enum.map(fn {item_form, idx} ->
       quantity = parse_decimal(AshPhoenix.Form.value(item_form, :quantity)) || Decimal.new(0)
       unit_price = parse_decimal(AshPhoenix.Form.value(item_form, :unit_price)) || Decimal.new(0)
-      vat_rate = to_string(AshPhoenix.Form.value(item_form, :vat_rate) || "0")
+      vat_rate = to_string(AshPhoenix.Form.value(item_form, :vat_rate) || "23")
       {net_value, vat_value, gross_value} = preview_item_totals(quantity, unit_price, vat_rate)
 
       struct(SalesInvoiceItem,

@@ -389,19 +389,24 @@ defmodule Firmowid.Ash.Ksef.Services.InvoiceRenderer do
   end
 
   @doc """
-  Validates that seller data hasn't changed in correction invoice.
-  Raises if seller NIP, name, or address differ between correction and corrected invoice.
+  Validates that seller identity hasn't changed in a correction invoice.
+
+  Raises if seller NIP, name, or address differ between the correction and the
+  corrected (original) invoice. VAT exemption type/basis may change on purpose
+  and are not checked here.
   """
   @spec validate_correction_seller_data!(map()) :: map()
   def validate_correction_seller_data!(%{ksef_invoice_kind: :kor, corrected_invoice: corrected} = invoice) do
+    seller_fields = [
+      :seller_nip,
+      :seller_display_name,
+      :seller_name,
+      :seller_surname,
+      :seller_address
+    ]
+
     seller_data_changed? =
-      invoice.seller_nip != corrected.seller_nip or
-        invoice.seller_display_name != corrected.seller_display_name or
-        invoice.seller_name != corrected.seller_name or
-        invoice.seller_surname != corrected.seller_surname or
-        invoice.seller_address != corrected.seller_address or
-        invoice.vat_exemption_type != corrected.vat_exemption_type or
-        invoice.vat_exemption_basis != corrected.vat_exemption_basis
+      Enum.any?(seller_fields, &seller_attr_changed?(invoice, corrected, &1))
 
     if seller_data_changed? do
       raise ArgumentError,
@@ -414,6 +419,10 @@ defmodule Firmowid.Ash.Ksef.Services.InvoiceRenderer do
   end
 
   def validate_correction_seller_data!(invoice), do: invoice
+
+  defp seller_attr_changed?(invoice, corrected, field) do
+    Map.get(invoice, field) != Map.get(corrected, field)
+  end
 
   @doc """
   Checks if buyer data changed between the current invoice and the reference invoice.
