@@ -46,6 +46,8 @@ defmodule Firmowid.Ash.Delegations.DelegationTest do
       %{
         title: "Spotkanie z klientem",
         billing_month: ~D[2026-09-01],
+        destination: "Kraków",
+        transport_types: [:railway, :bus],
         purpose: "Spotkanie z klientem",
         advance_payment_amount: Money.new(:PLN, 100),
         start_date: ~D[2026-09-10],

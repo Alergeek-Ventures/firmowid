@@ -461,7 +461,9 @@ defmodule FirmowidWeb.DesignSystem.Components.CoreComponents do
           multiple={@multiple}
           {@rest}
         >
-          <option :if={@prompt} value="">{@prompt}</option>
+          <option :if={@prompt} value="" disabled selected={@value in [nil, ""]} hidden>
+            {@prompt}
+          </option>
           {Form.options_for_select(@options, @value)}
         </select>
         <Lucideicons.chevron_down class="peer-disabled:text-grey-300 text-grey-700 pointer-events-none absolute top-1/2 right-3 size-4 -translate-y-1/2" />
@@ -489,7 +491,9 @@ defmodule FirmowidWeb.DesignSystem.Components.CoreComponents do
         multiple={@multiple}
         {@rest}
       >
-        <option :if={@prompt} value="">{@prompt}</option>
+        <option :if={@prompt} value="" disabled selected={@value in [nil, ""]} hidden>
+          {@prompt}
+        </option>
         {Form.options_for_select(@options, @value)}
       </select>
       <.error :for={msg <- @errors} :if={@show_error}>{msg}</.error>
