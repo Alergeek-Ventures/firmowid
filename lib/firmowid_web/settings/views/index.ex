@@ -195,6 +195,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
      |> assign(:pending_requisitions, pending_requisitions)
      |> assign(:organization_users, organization_users)
      |> assign(:organization_invites, organization_invites)
+     |> assign(:selected_user, nil)
      |> assign(:bank_account_statuses, derive_statuses(bank_accounts))
      |> assign(:google_connected?, google_connected?)
      |> assign(:uploaded_files, [])
@@ -493,6 +494,31 @@ defmodule FirmowidWeb.Settings.Views.Index do
     end
   end
 
+  def handle_event("open_update_role_modal", %{"user_id" => user_id}, socket) do
+    current_user = socket.assigns.current_user
+
+    if current_user.role != :admin do
+      raise Forbidden, message: "Tylko administrator może zmieniać role użytkowników."
+    end
+
+    with {:ok, user} <- find_loaded_organization_user(socket.assigns.organization_users, user_id),
+         :ok <- prevent_self_role_change(current_user, user) do
+      {:noreply, assign(socket, :selected_user, user)}
+    else
+      {:error, :self_role_change} ->
+        LiveToast.send_toast(:error, "Nie możesz zmienić własnej roli.")
+        {:noreply, socket}
+
+      {:error, :unknown_user} ->
+        LiveToast.send_toast(:error, "Nie znaleziono użytkownika w organizacji.")
+        {:noreply, socket}
+    end
+  end
+
+  def handle_event("clear_selected_user", _params, socket) do
+    {:noreply, assign(socket, :selected_user, nil)}
+  end
+
   def handle_event("update_user_role", %{"user_id" => user_id, "role" => role_param}, socket) do
     current_user = socket.assigns.current_user
 
@@ -510,24 +536,25 @@ defmodule FirmowidWeb.Settings.Views.Index do
       {:noreply,
        socket
        |> assign(:organization_users, list_organization_users(socket.assigns.ash_scope))
+       |> assign(:selected_user, nil)
        |> assign_subscription_preview_if_visible()}
     else
       {:error, :self_role_change} ->
         LiveToast.send_toast(:error, "Nie możesz zmienić własnej roli w tym miejscu.")
-        {:noreply, socket}
+        {:noreply, assign(socket, :selected_user, nil)}
 
       {:error, :unknown_role} ->
         LiveToast.send_toast(:error, "Nieznana rola użytkownika.")
-        {:noreply, socket}
+        {:noreply, assign(socket, :selected_user, nil)}
 
       {:error, :unknown_user} ->
         LiveToast.send_toast(:error, "Nie znaleziono użytkownika w organizacji.")
-        {:noreply, socket}
+        {:noreply, assign(socket, :selected_user, nil)}
 
       {:error, error} ->
         Logger.error("Failed to update user role", error_kind: ErrorKind.classify(error))
         LiveToast.send_toast(:error, "Nie udało się zmienić roli użytkownika.")
-        {:noreply, socket}
+        {:noreply, assign(socket, :selected_user, nil)}
     end
   end
 
@@ -938,7 +965,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
     {:noreply, assign(socket, :show_active_invites, !socket.assigns.show_active_invites)}
   end
 
-  def handle_event("create_organization_invite", _params, socket) do
+  def handle_event("create_organization_invite", %{"role" => role}, socket) do
     current_user = socket.assigns.current_user
     scope = socket.assigns.ash_scope
 
@@ -946,7 +973,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
       raise Forbidden, message: "Tylko administrator może tworzyć zaproszenia."
     end
 
-    invite = Core.create_invite!(%{issued_by_id: current_user.id}, scope: scope)
+    invite = Core.create_invite!(%{issued_by_id: current_user.id, role: role}, scope: scope)
     LiveToast.send_toast(:success, "Kod zaproszenia został wygenerowany i skopiowany do schowka.")
 
     {:noreply,
@@ -960,6 +987,22 @@ defmodule FirmowidWeb.Settings.Views.Index do
     LiveToast.send_toast(:info, "Kod zaproszenia został skopiowany do schowka.")
 
     {:noreply, push_event(socket, "copy-to-clipboard", %{text: invite_code})}
+  end
+
+  def handle_event("delete_organization_invite", %{"id" => id}, socket) do
+    current_user = socket.assigns.current_user
+    scope = socket.assigns.ash_scope
+
+    if current_user.role != :admin do
+      raise Forbidden, message: "Tylko administrator może usuwać zaproszenia."
+    end
+
+    invite = Core.get_invite!(id, scope: scope)
+    Core.destroy_invite!(invite, scope: scope)
+
+    LiveToast.send_toast(:info, "Zaproszenie zostało usunięte.")
+
+    {:noreply, assign(socket, :organization_invites, list_organization_invites(scope))}
   end
 
   def handle_event("toggle_editing_credentials", _params, socket) do
@@ -1435,6 +1478,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
             organization_users={@organization_users}
             organization_invites={@organization_invites}
             show_active_invites={@show_active_invites}
+            selected_user={@selected_user}
             bank_account_statuses={@bank_account_statuses}
             uploads={@uploads}
           />

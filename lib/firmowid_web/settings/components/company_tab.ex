@@ -36,6 +36,7 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
   attr :organization_users, :list, required: true
   attr :organization_invites, :list, required: true
   attr :show_active_invites, :boolean, required: true
+  attr :selected_user, :any, default: nil
   attr :bank_account_statuses, :map, required: true
   attr :uploads, :map, required: true
 
@@ -70,6 +71,7 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
         organization_users={@organization_users}
         organization_invites={@organization_invites}
         show_active_invites={@show_active_invites}
+        selected_user={@selected_user}
         current_user={@current_user}
       />
     </div>
@@ -803,6 +805,7 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
   attr :organization_users, :list, required: true
   attr :organization_invites, :list, required: true
   attr :show_active_invites, :boolean, required: true
+  attr :selected_user, :any, default: nil
   attr :current_user, :map, required: true
 
   defp administrators_section(assigns) do
@@ -823,8 +826,9 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
             variant="unstyled"
             phx-click="toggle_active_invites"
             role="switch"
+            size="small"
             aria-checked={to_string(@show_active_invites)}
-            class="hover:bg-grey-100 text-grey-700 inline-flex h-11 items-center justify-between gap-3 rounded-lg bg-white px-3 text-sm font-medium transition focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-700"
+            class="text-grey-700 inline-flex h-11 items-center justify-between gap-3 rounded-lg bg-white px-3 text-sm font-medium transition focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-700"
           >
             <span>Aktywne zaproszenia</span>
             <span class={invite_toggle_track_styles(@show_active_invites)}>
@@ -832,14 +836,10 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
             </span>
           </.button>
           <.button
-            id="settings-create-invite-tooltip"
-            phx-hook="Tippy"
-            data-tippy-content="Wygeneruj nowy kod i skopiuj go do schowka"
-            data-tippy-delay="100"
             type="button"
-            variant="primary"
-            size="big"
-            phx-click="create_organization_invite"
+            variant="secondary"
+            size="small"
+            phx-click={show_modal("organization_invite_modal")}
           >
             Wygeneruj zaproszenie
           </.button>
@@ -848,7 +848,7 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
 
       <div
         :if={@show_active_invites}
-        class="bg-grey-50 border-grey-200 scrollbar-card h-151 overflow-y-auto rounded-lg border p-4"
+        class="border-grey-200 scrollbar-card h-151 overflow-y-auto rounded-lg border bg-white p-6 shadow-sm"
       >
         <div
           :if={@active_invites == []}
@@ -857,37 +857,42 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
           Brak aktywnych zaproszeń.
         </div>
 
-        <div :if={@active_invites != []} class="space-y-3">
+        <div :if={@active_invites != []} class="space-y-6">
           <div
             :for={invite <- @active_invites}
-            class="flex flex-col gap-3 rounded-lg bg-white p-3 shadow-sm sm:flex-row sm:items-center sm:justify-between"
+            class="grid grid-cols-[minmax(0,1fr)_1fr_auto] items-center gap-4 rounded-lg"
           >
-            <div class="min-w-0 space-y-1">
-              <p class="text-grey-900 truncate font-mono text-sm">{invite.invite_code}</p>
-              <p class="text-grey-600 text-xs leading-[1.35]">
-                Ważne do {format_invite_expiration(invite.expires_at)} · utworzone przez {invite_issuer(
-                  invite
-                )}
-              </p>
-            </div>
+            <p class="text-sm">
+              <span class="text-grey-500">Wygenerowano:</span> {TimeFormatter.format_date(
+                invite.inserted_at
+              )} | {invite_issuer(invite)}
+            </p>
 
-            <span
-              id={"settings-copy-invite-#{invite.id}-tooltip"}
-              phx-hook="Tippy"
-              data-tippy-content="Skopiuj kod zaproszenia"
-              data-tippy-delay="100"
-              class="shrink-0"
+            <.button
+              type="button"
+              variant="unstyled"
+              size="small"
+              class="bg-turquoise-100 text-turquoise-700 flex w-full max-w-80 cursor-pointer items-center justify-between gap-5 rounded p-1 py-2 pl-3 text-sm"
+              phx-click="copy_organization_invite"
+              phx-value-code={invite.invite_code}
             >
+              {invite.invite_code}
+              <Lucideicons.copy class="size-5" />
+            </.button>
+
+            <div class="flex items-center gap-4">
+              <span class={role_badge_styles(invite.role)}>{role_label(invite.role)}</span>
+
               <.button
                 type="button"
-                variant="outline"
-                size="small"
-                phx-click="copy_organization_invite"
-                phx-value-code={invite.invite_code}
+                variant="unstyled"
+                phx-click="delete_organization_invite"
+                phx-value-id={invite.id}
+                aria-label="Usuń zaproszenie"
               >
-                Kopiuj
+                <Lucideicons.trash_2 class="hover:text-darkGrey text-grey-500 transition-all" />
               </.button>
-            </span>
+            </div>
           </div>
         </div>
       </div>
@@ -930,32 +935,24 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
                   </span>
                 </:trigger>
 
-                <div class="border-grey-200 flex w-60 flex-col overflow-hidden rounded-lg border bg-white py-1 shadow-lg">
+                <div class="border-grey-200 mt-10 flex w-40 flex-col overflow-hidden rounded-lg border bg-white p-1 shadow-lg">
                   <.button
-                    :for={role <- promotable_roles(user.role)}
                     type="button"
                     variant="unstyled"
-                    phx-click="update_user_role"
+                    phx-click="open_update_role_modal"
                     phx-value-user_id={user.id}
-                    phx-value-role={role_param(role)}
                     class={menu_item_styles()}
                   >
-                    Awansuj na {role_label(role)}
+                    Zmień rolę
                   </.button>
 
-                  <.button
-                    :for={role <- demotable_roles(user.role)}
-                    type="button"
-                    variant="unstyled"
-                    phx-click="update_user_role"
-                    phx-value-user_id={user.id}
-                    phx-value-role={role_param(role)}
+                  <.link
+                    kind="unstyled"
+                    navigate={~p"/zarzadzanie/pracownicy/#{user.id}"}
                     class={menu_item_styles()}
                   >
-                    Zdegraduj na {role_label(role)}
-                  </.button>
-
-                  <div class="bg-grey-100 mx-3 my-1 h-px"></div>
+                    Pokaż profil
+                  </.link>
 
                   <.button
                     type="button"
@@ -975,6 +972,9 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
         </div>
       </div>
     </section>
+
+    <.organization_invite_modal />
+    <.update_role_modal :if={@selected_user} user={@selected_user} />
     """
   end
 
@@ -1049,7 +1049,7 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
                 type="button"
                 variant="unstyled"
                 phx-click={show_modal("confirm_delete_bank_account_#{@account.id}")}
-                class={["text-red-800 hover:bg-red-100", menu_item_styles()]}
+                class={["text-red-700 hover:bg-red-100", menu_item_styles()]}
               >
                 Usuń
               </.button>
@@ -1209,6 +1209,117 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
     """
   end
 
+  defp organization_invite_modal(assigns) do
+    ~H"""
+    <.modal
+      id="organization_invite_modal"
+      on_cancel={hide_modal("organization_invite_modal")}
+      class="max-w-lg"
+    >
+      <div class="space-y-8">
+        <h3 class="text-xl font-medium">Zaproś nowego pracownika</h3>
+        <p>
+          Wybierz rolę, a następnie wygeneruj kod. Pracownik, podając go przy zakładaniu konta, automatycznie dołączy do twojej organizacji.
+        </p>
+
+        <.form
+          for={%{}}
+          phx-submit="create_organization_invite"
+          id="organization_invite_form"
+          class="flex flex-col gap-8"
+        >
+          <.role_row_input
+            :for={role <- [:employee, :admin, :accountant, :invoicing]}
+            role={role}
+            checked={role == :employee}
+          />
+
+          <div class="flex flex-col-reverse gap-4 sm:flex-row sm:justify-end">
+            <.button
+              type="button"
+              variant="secondary"
+              size="small"
+              phx-click={hide_modal("organization_invite_modal")}
+            >
+              Anuluj
+            </.button>
+
+            <.button
+              type="submit"
+              variant="primary"
+              accent="turquoise"
+              size="small"
+              phx-click={hide_modal("organization_invite_modal")}
+            >
+              Wygeneruj kod
+            </.button>
+          </div>
+        </.form>
+      </div>
+    </.modal>
+    """
+  end
+
+  attr :user, :map, required: true
+
+  defp update_role_modal(assigns) do
+    current_role = assigns.user.role
+    other_roles = Enum.reject(role_ladder(), &(&1 == current_role))
+
+    assigns =
+      assigns
+      |> assign(:current_role, current_role)
+      |> assign(:other_roles, other_roles)
+
+    ~H"""
+    <.modal
+      id="update_role_modal"
+      show
+      on_cancel={JS.push("clear_selected_user")}
+      class="max-w-lg"
+    >
+      <div class="space-y-8">
+        <h3 class="text-xl font-medium">Zmiana roli</h3>
+        <p>
+          Zmieniasz rolę użytkownikowi {present(@user.name || to_string(@user.email))}. Jego dotychczasowa rola to:
+        </p>
+
+        <.form
+          for={%{}}
+          phx-submit="update_user_role"
+          id="update_role_form"
+          class="flex flex-col gap-8"
+        >
+          <input type="hidden" name="user_id" value={@user.id} />
+
+          <.role_row_input role={@current_role} checked />
+          <.role_row_input :for={role <- @other_roles} role={role} />
+
+          <div class="flex flex-col-reverse gap-4 sm:flex-row sm:justify-end">
+            <.button
+              type="button"
+              variant="secondary"
+              size="small"
+              phx-click={JS.push("clear_selected_user") |> hide_modal("update_role_modal")}
+            >
+              Anuluj
+            </.button>
+
+            <.button
+              type="submit"
+              variant="primary"
+              accent="turquoise"
+              size="small"
+            >
+              Zmień rolę
+            </.button>
+          </div>
+        </.form>
+      </div>
+    </.modal>
+    """
+  end
+
   attr :label, :string, required: true
   slot :inner_block, required: true
 
@@ -1234,6 +1345,27 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
     """
   end
 
+  attr :role, :atom, required: true
+  attr :checked, :boolean, default: false
+
+  defp role_row_input(assigns) do
+    ~H"""
+    <.label class="flex cursor-pointer flex-row items-start gap-2">
+      <input
+        name="role"
+        type="radio"
+        value={role_param(@role)}
+        checked={@checked}
+        class="border-grey-300 checked:bg-turquoise-700 text-turquoise-700 size-5 shrink-0 appearance-none rounded-full border-2 bg-white focus:outline-none"
+      />
+      <div>
+        <span class="font-medium capitalize">{role_label(@role)}</span>
+        <p class="text-sm">{role_desc(@role)}</p>
+      </div>
+    </.label>
+    """
+  end
+
   defp invite_toggle_track_styles(true), do: "bg-turquoise-700 relative inline-flex h-[24px] w-[44px] rounded-full"
 
   defp invite_toggle_track_styles(false), do: "bg-grey-200 relative inline-flex h-[24px] w-[44px] rounded-full"
@@ -1256,13 +1388,11 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
     |> Enum.sort_by(&DateTime.to_unix(&1.expires_at))
   end
 
-  defp format_invite_expiration(expires_at), do: TimeFormatter.format_date(expires_at)
-
-  defp invite_issuer(%{issued_by: %{email: email}}) when is_binary(email), do: email
-  defp invite_issuer(_invite), do: "administratora"
+  defp invite_issuer(%{issued_by: %{email: email}}) when not is_nil(email), do: to_string(email)
+  defp invite_issuer(_invite), do: "administrator"
 
   defp menu_item_styles do
-    "text-grey-700 hover:bg-grey-100 hover:text-grey-900 w-full justify-start rounded-none px-3 py-2 text-left text-sm font-medium transition"
+    "hover:text-turquoise-800 hover:bg-turquoise-100 w-full justify-start rounded-none px-3 py-2 text-left text-sm transition cursor-pointer"
   end
 
   defp format_last_sync_info(:manual, _datetime), do: "konto dodane ręcznie"
@@ -1336,33 +1466,40 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
   defp role_label(:accountant), do: "księgowość"
   defp role_label(role), do: present(role)
 
-  defp promotable_roles(role) do
-    role
-    |> role_index()
-    |> then(&Enum.drop(role_ladder(), &1 + 1))
+  defp role_desc(:admin) do
+    ~s|Pełny dostęp do zakładki "Zarządzanie" — w tym zarządzania pracownikami, kontrahentami oraz projektami. Ta rola pozwala także na pełny dostęp do faktur oraz do wgrywania faktur spoza KSeF.|
   end
 
-  defp demotable_roles(role) do
-    role
-    |> role_index()
-    |> then(&Enum.take(role_ladder(), &1))
-    |> Enum.reverse()
+  defp role_desc(:employee) do
+    "Podstawowy dostęp do organizacji, w tym do Czasośledzia (śledzenie czasu pracy). Możliwość zgłaszania urlopów oraz przesyłania dokumentów."
+  end
+
+  defp role_desc(:invoicing) do
+    "Dostęp do fakturowania wyłącznie w trybie podglądu, bez możliwości dodawania i edycji."
+  end
+
+  defp role_desc(:accountant) do
+    "Pełny dostęp do fakturowania (przeglądanie, dodawanie i edycja), z wyjątkiem dodawania faktur spoza KSeF."
   end
 
   defp role_param(role), do: Atom.to_string(role)
 
-  defp role_index(role) do
-    Enum.find_index(role_ladder(), &(&1 == role)) || 0
-  end
-
   defp role_ladder, do: [:employee, :invoicing, :accountant, :admin]
 
   defp role_badge_styles(:admin) do
-    "bg-blueBg text-blueText inline-flex w-28 items-center justify-center rounded-sm px-3 py-1 text-sm leading-[1.35]"
+    "bg-turquoise-200 text-turquoise-700 inline-flex w-28 items-center justify-center rounded-sm px-3 py-1 text-sm leading-[1.35]"
+  end
+
+  defp role_badge_styles(:accountant) do
+    "bg-green-200 text-green-700 inline-flex w-28 items-center justify-center rounded-sm px-3 py-1 text-sm leading-[1.35]"
+  end
+
+  defp role_badge_styles(:invoicing) do
+    "bg-orange-200 text-orange-700 inline-flex w-28 items-center justify-center rounded-sm px-3 py-1 text-sm leading-[1.35]"
   end
 
   defp role_badge_styles(_role) do
-    "bg-grey-100 text-grey-700 inline-flex w-28 items-center justify-center rounded-sm px-3 py-1 text-sm leading-[1.35]"
+    "bg-grey-200 text-grey-700 inline-flex w-28 items-center justify-center rounded-sm px-3 py-1 text-sm leading-[1.35]"
   end
 
   defp multiline_address(nil), do: "—"

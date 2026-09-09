@@ -31,7 +31,7 @@ defmodule Firmowid.Ash.Core.OrganizationInvite do
 
     create :create do
       description "Create a new invitation for joining an organization."
-      accept []
+      accept [:role]
 
       argument :issued_by_id, :uuid, allow_nil?: false
       change manage_relationship(:issued_by_id, :issued_by, type: :append)
@@ -118,6 +118,8 @@ defmodule Firmowid.Ash.Core.OrganizationInvite do
                  bridge_opts
                )
                |> Ash.update!()
+               |> Core.changeset_to_update_role(%{role: invite.role}, bridge_opts)
+               |> Ash.update!()
 
                {:ok, invite}
              end)
@@ -165,6 +167,11 @@ defmodule Firmowid.Ash.Core.OrganizationInvite do
     attribute :expires_at, :utc_datetime, public?: true, allow_nil?: false
     attribute :consumed_at, :utc_datetime, public?: true
     attribute :invite_code, :string, public?: true, allow_nil?: false
+
+    attribute :role, :atom,
+      public?: true,
+      constraints: [one_of: [:employee, :invoicing, :accountant, :admin]],
+      default: :employee
 
     Resource.firmowid_timestamps()
   end
