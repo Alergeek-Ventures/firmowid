@@ -12,6 +12,7 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoiceTransaction do
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer]
 
+  alias Firmowid.Ash.Checks.AtLeastRole
   alias Firmowid.Ash.Checks.SystemActorRole
   alias Firmowid.Ash.Resource
 
@@ -52,7 +53,11 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoiceTransaction do
     end
 
     # :accountant and above: all actions
-    policy {Firmowid.Ash.Checks.AtLeastRole, role: :accountant} do
+    policy {AtLeastRole, role: :accountant} do
+      authorize_if always()
+    end
+
+    policy [action_type(:read), {AtLeastRole, role: :invoicing}] do
       authorize_if always()
     end
   end

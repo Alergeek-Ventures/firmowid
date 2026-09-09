@@ -75,11 +75,16 @@ defmodule FirmowidWeb.Invoicing.Transactions.Views.Show do
                 return_to={@return_to}
               />
             <% @transaction.skip_invoicing -> %>
-              <ShowComponents.transaction_skipped_view />
+              <ShowComponents.transaction_skipped_view can_write={
+                Ash.can?({Transaction, :set_skip_invoicing}, @current_user)
+              } />
             <% linked_invoices?(@transaction) -> %>
               <ShowComponents.linked_state transaction={@transaction} return_to={@return_to} />
             <% true -> %>
-              <ShowComponents.empty_state transaction={@transaction} />
+              <ShowComponents.empty_state
+                transaction={@transaction}
+                can_write={Ash.can?({Transaction, :set_skip_invoicing}, @current_user)}
+              />
           <% end %>
         </InvoiceDetails.main>
       </div>

@@ -147,7 +147,8 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
         invoices_for_preview: Enum.reverse([invoice | invoice.corrections]),
         internal_notes: internal_notes,
         cancelled?: cancelled?,
-        show_timeline_button: show_timeline_button?(submission_info)
+        show_timeline_button: show_timeline_button?(submission_info),
+        can_write_invoicing?: Ash.can?({SalesInvoice, :update}, assigns.current_user)
       )
 
     {:ok, socket}
@@ -188,6 +189,7 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
             <div class="flex flex-row justify-between gap-4">
               <div class="flex flex-row gap-3 xl:gap-4">
                 <.link
+                  :if={@can_write_invoicing?}
                   navigate={
                     Navigation.sales_invoice_creator_path(%{skopiuj: @latest_invoice_snapshot.id})
                   }
@@ -198,54 +200,56 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
                   <Lucideicons.copy /><span class="hidden xl:inline">Kopiuj</span>
                 </.link>
 
-                <%= if SubmissionInfo.editing_blocked?(@invoice, @submission_info) do %>
-                  <span
-                    id="edit-invoice-button-tooltip"
-                    phx-hook="Tippy"
-                    data-tippy-content="Faktura jest zablokowana. Edycja będzie dostępna po zakończeniu wysyłki do KSeF."
-                    data-tippy-delay="100"
-                    class="inline-flex"
-                    tabindex="0"
-                  >
-                    <.button
-                      id="edit-invoice-button"
-                      type="button"
+                <%= if @can_write_invoicing? do %>
+                  <%= if SubmissionInfo.editing_blocked?(@invoice, @submission_info) do %>
+                    <span
+                      id="edit-invoice-button-tooltip"
+                      phx-hook="Tippy"
+                      data-tippy-content="Faktura jest zablokowana. Edycja będzie dostępna po zakończeniu wysyłki do KSeF."
+                      data-tippy-delay="100"
+                      class="inline-flex"
+                      tabindex="0"
+                    >
+                      <.button
+                        id="edit-invoice-button"
+                        type="button"
+                        variant="secondary"
+                        size="small"
+                        disabled
+                        aria-describedby="edit-invoice-button-description"
+                      >
+                        <.icon name="hero-pencil-square" class="size-4" />
+                        <span class="hidden xl:inline">Edytuj</span>
+                      </.button>
+                    </span>
+                    <span id="edit-invoice-button-description" class="sr-only">
+                      Edycja jest niedostępna, ponieważ faktura jest zablokowana.
+                    </span>
+                  <% else %>
+                    <.link
+                      id="edit-invoice-link"
+                      phx-hook="Tippy"
+                      data-tippy-content={
+                        if @invoice.ksef_number,
+                          do: "Wystaw fakturę korygującą",
+                          else: "Edytuj fakturę"
+                      }
+                      data-tippy-delay="100"
+                      navigate={
+                        Navigation.sales_invoice_edit_path(@latest_invoice_snapshot, @return_to)
+                      }
+                      kind="button"
                       variant="secondary"
                       size="small"
-                      disabled
-                      aria-describedby="edit-invoice-button-description"
                     >
                       <.icon name="hero-pencil-square" class="size-4" />
                       <span class="hidden xl:inline">Edytuj</span>
-                    </.button>
-                  </span>
-                  <span id="edit-invoice-button-description" class="sr-only">
-                    Edycja jest niedostępna, ponieważ faktura jest zablokowana.
-                  </span>
-                <% else %>
-                  <.link
-                    id="edit-invoice-link"
-                    phx-hook="Tippy"
-                    data-tippy-content={
-                      if @invoice.ksef_number,
-                        do: "Wystaw fakturę korygującą",
-                        else: "Edytuj fakturę"
-                    }
-                    data-tippy-delay="100"
-                    navigate={
-                      Navigation.sales_invoice_edit_path(@latest_invoice_snapshot, @return_to)
-                    }
-                    kind="button"
-                    variant="secondary"
-                    size="small"
-                  >
-                    <.icon name="hero-pencil-square" class="size-4" />
-                    <span class="hidden xl:inline">Edytuj</span>
-                  </.link>
+                    </.link>
+                  <% end %>
                 <% end %>
 
                 <.button
-                  :if={@invoice.is_deletable}
+                  :if={@can_write_invoicing? and @invoice.is_deletable}
                   phx-click={show_modal("delete-invoice-modal")}
                   variant="secondary"
                   size="small"
@@ -257,7 +261,7 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
                 </.button>
 
                 <.button
-                  :if={!!@invoice.ksef_number and not @cancelled?}
+                  :if={@can_write_invoicing? and !!@invoice.ksef_number and not @cancelled?}
                   phx-click={show_modal("cancel-invoice-modal")}
                   variant="secondary"
                   size="small"
@@ -302,7 +306,8 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
 
               <.button
                 :if={
-                  @ksef_connected? and not is_nil(@invoice.invoice_number) and
+                  @can_write_invoicing? and @ksef_connected? and
+                    not is_nil(@invoice.invoice_number) and
                     (SubmissionInfo.not_submitted?(@submission_info) or
                        SubmissionInfo.submitting?(@submission_info))
                 }
@@ -330,7 +335,7 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
                 <% end %>
               </.button>
 
-              <div :if={@invoice.is_deletable} class="absolute">
+              <div :if={@can_write_invoicing? and @invoice.is_deletable} class="absolute">
                 <.modal id="delete-invoice-modal" on_cancel={hide_modal("delete-invoice-modal")}>
                   <p>
                     Czy na pewno chcesz usunąć fakturę <span class="font-semibold">{@invoice.invoice_number}</span>?
@@ -357,7 +362,10 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
                 </.modal>
               </div>
 
-              <div class="absolute">
+              <div
+                :if={@can_write_invoicing? and !!@invoice.ksef_number and not @cancelled?}
+                class="absolute"
+              >
                 <.modal id="cancel-invoice-modal" on_cancel={hide_modal("cancel-invoice-modal")}>
                   <p>
                     Czy na pewno chcesz anulować fakturę <span class="font-semibold">{@invoice.invoice_number}</span>?
@@ -475,7 +483,10 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
         <InvoiceDetails.main>
           <%= cond do %>
             <% @invoice.skip_invoicing -> %>
-              <InvoiceDetails.invoice_skipped_view is_cost_invoice={false} />
+              <InvoiceDetails.invoice_skipped_view
+                is_cost_invoice={false}
+                can_write={@can_write_invoicing?}
+              />
             <% @chat -> %>
               <.live_component
                 module={InvoiceAssistant}
@@ -518,6 +529,7 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
                 potential_transactions={@potential_transactions}
                 is_cost_invoice={@is_cost_invoice}
                 invoice={@invoice}
+                can_write={@can_write_invoicing?}
               />
           <% end %>
         </InvoiceDetails.main>

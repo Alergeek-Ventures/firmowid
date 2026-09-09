@@ -47,7 +47,13 @@ defmodule FirmowidWeb.Invoicing.Components.CostInvoiceDetails do
 
   @impl true
   def update(assigns, socket) do
-    socket = assign(socket, assigns)
+    socket =
+      socket
+      |> assign(assigns)
+      |> assign(
+        :can_write_invoicing?,
+        Ash.can?({CostInvoice, :toggle_skip}, assigns.current_user)
+      )
 
     socket =
       if Map.has_key?(assigns, :invoice) do
@@ -114,7 +120,7 @@ defmodule FirmowidWeb.Invoicing.Components.CostInvoiceDetails do
                 </.link>
 
                 <.button
-                  :if={@invoice.is_deletable}
+                  :if={@can_write_invoicing? and @invoice.is_deletable}
                   phx-click={show_modal("delete-invoice-modal")}
                   variant="secondary"
                   size="small"
@@ -125,7 +131,10 @@ defmodule FirmowidWeb.Invoicing.Components.CostInvoiceDetails do
                   </span>
                 </.button>
 
-                <div :if={@invoice.is_deletable} class="absolute">
+                <div
+                  :if={@can_write_invoicing? and @invoice.is_deletable}
+                  class="absolute"
+                >
                   <.modal id="delete-invoice-modal" on_cancel={hide_modal("delete-invoice-modal")}>
                     <p>
                       Czy na pewno chcesz usunąć fakturę <span class="font-semibold">{@invoice.invoice_identifier}</span>?
@@ -273,7 +282,10 @@ defmodule FirmowidWeb.Invoicing.Components.CostInvoiceDetails do
         <InvoiceDetails.main>
           <%= cond do %>
             <% @invoice.skip_invoicing -> %>
-              <InvoiceDetails.invoice_skipped_view is_cost_invoice={@is_cost_invoice} />
+              <InvoiceDetails.invoice_skipped_view
+                is_cost_invoice={@is_cost_invoice}
+                can_write={@can_write_invoicing?}
+              />
             <% @chat -> %>
               <.live_component
                 module={InvoiceAssistant}
@@ -316,6 +328,7 @@ defmodule FirmowidWeb.Invoicing.Components.CostInvoiceDetails do
                 potential_transactions={@potential_transactions}
                 is_cost_invoice={@is_cost_invoice}
                 invoice={@invoice}
+                can_write={@can_write_invoicing?}
               />
           <% end %>
         </InvoiceDetails.main>

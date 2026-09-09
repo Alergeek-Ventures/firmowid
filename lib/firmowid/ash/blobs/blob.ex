@@ -287,17 +287,8 @@ defmodule Firmowid.Ash.Blobs.Blob do
       forbid_if always()
     end
 
-    # :employee: read + create (for HoursRecord PDF uploads)
-    policy [action(:read), actor_attribute_equals(:role, :employee)] do
-      authorize_if always()
-    end
-
-    policy [action(:create_blob), actor_attribute_equals(:role, :employee)] do
-      authorize_if always()
-    end
-
-    # :invoicing and :accountant: read only
-    policy [action(:read), {Firmowid.Ash.Checks.AtLeastRole, role: :invoicing}] do
+    # all employees: read and create_blob for hours records, uploading avatar, documents, etc.
+    policy [action([:read, :create_blob]), {Firmowid.Ash.Checks.AtLeastRole, role: :employee}] do
       authorize_if always()
     end
   end

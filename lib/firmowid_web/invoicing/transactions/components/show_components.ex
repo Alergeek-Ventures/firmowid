@@ -188,6 +188,7 @@ defmodule FirmowidWeb.Invoicing.Transactions.Components.ShowComponents do
   end
 
   attr :transaction, Transaction, required: true
+  attr :can_write, :boolean, default: true
 
   def empty_state(assigns) do
     ~H"""
@@ -213,7 +214,7 @@ defmodule FirmowidWeb.Invoicing.Transactions.Components.ShowComponents do
         </.button>
       </div>
 
-      <div class="space-y-6">
+      <div :if={@can_write} class="space-y-6">
         <h3 class="leading-tight font-medium">Co jeszcze możesz zrobić?</h3>
 
         <div class="grid grid-cols-[1fr_8rem] gap-6 lg:gap-x-10">
@@ -282,12 +283,14 @@ defmodule FirmowidWeb.Invoicing.Transactions.Components.ShowComponents do
     """
   end
 
+  attr :can_write, :boolean, default: true
+
   def transaction_skipped_view(assigns) do
     ~H"""
     <div class="space-y-4 pt-8">
       <div class="flex flex-row items-center justify-between">
         <p class="text-lg/tight font-medium">Transakcja pominięta</p>
-        <div class="flex w-32 flex-row gap-2">
+        <div :if={@can_write} class="flex w-32 flex-row gap-2">
           <div class="flex flex-1 items-center justify-center rounded-md bg-green-200 px-2 text-green-700">
             <.icon name="hero-document-text-micro" class="size-4" />
           </div>

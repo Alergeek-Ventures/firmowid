@@ -21,6 +21,7 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
   attr :invoicing_entries, :list, required: true
   attr :mode, :atom, required: true
   attr :return_to, :string, default: nil
+  attr :can_write_invoicing, :boolean, default: true
 
   @default_columns ["party", "issue_or_value_date", "due_or_booking_date", "status", "amount"]
 
@@ -63,6 +64,7 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
     assigns =
       assigns
       |> assign_new(:return_to, fn -> nil end)
+      |> assign_new(:can_write_invoicing, fn -> true end)
       |> assign(
         :columns,
         case assigns.mode do
@@ -114,12 +116,18 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
         <%= for entry <- @invoicing_entries do %>
           <%= case entry do %>
             <% %TransactionGroup{} = group -> %>
-              <.group_row group={group} columns={@columns} return_to={@return_to} />
+              <.group_row
+                group={group}
+                columns={@columns}
+                return_to={@return_to}
+                can_write_invoicing={@can_write_invoicing}
+              />
             <% invoicing_entry -> %>
               <.table_row
                 columns={@columns}
                 invoicing_entry={invoicing_entry}
                 return_to={@return_to}
+                can_write_invoicing={@can_write_invoicing}
               />
           <% end %>
         <% end %>
@@ -218,7 +226,12 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
             column != "amount" && "w-full truncate"
           ]
         }>
-          <.render_cell column={column} invoicing_entry={@invoicing_entry} return_to={@return_to} />
+          <.render_cell
+            column={column}
+            invoicing_entry={@invoicing_entry}
+            return_to={@return_to}
+            can_write_invoicing={@can_write_invoicing}
+          />
         </div>
       </td>
     </tr>
@@ -305,7 +318,11 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
     >
       <div
         id={"#{@invoicing_entry.id}-label"}
-        class="bg-greenBg text-greenText flex h-6 w-20 flex-row items-center justify-center rounded-md p-2 text-xs transition-all duration-500"
+        class={[
+          "bg-greenBg text-greenText flex h-6 flex-row items-center justify-center rounded-md p-2 text-xs transition-all duration-500",
+          @can_write_invoicing && "w-20",
+          !@can_write_invoicing && "w-full"
+        ]}
       >
         <.icon
           name={
@@ -321,6 +338,7 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
         />
       </div>
       <.status_button
+        :if={@can_write_invoicing}
         id={"#{@invoicing_entry.id}-button"}
         phx-click="toggle-skip-invoicing"
         phx-value-id={@invoicing_entry.id}
@@ -435,7 +453,9 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
       <div
         id={"#{@invoicing_entry.id}-label"}
         class={[
-          "flex h-6 w-10 flex-row items-center justify-center rounded-md p-2 text-xs transition-all duration-500",
+          "flex h-6 flex-row items-center justify-center rounded-md p-2 text-xs transition-all duration-500",
+          @can_write_invoicing && "w-10",
+          !@can_write_invoicing && "w-full",
           case @invoicing_entry do
             %Transaction{} -> "bg-redBg text-redText"
             _ -> "bg-greyButtonBg text-darkGrey"
@@ -456,6 +476,7 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
         />
       </div>
       <.status_button
+        :if={@can_write_invoicing}
         id={"#{@invoicing_entry.id}-button"}
         phx-click="toggle-skip-invoicing"
         phx-value-id={@invoicing_entry.id}
@@ -476,7 +497,14 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
   defp render_cell(%{column: "status"} = assigns) do
     assigns = assign(assigns, :status, status_for_entry(assigns.invoicing_entry))
 
-    ~H"<.render_cell column={@column} status={@status} invoicing_entry={@invoicing_entry} />"
+    ~H"""
+    <.render_cell
+      column={@column}
+      status={@status}
+      invoicing_entry={@invoicing_entry}
+      can_write_invoicing={@can_write_invoicing}
+    />
+    """
   end
 
   # rest of the cells are rendered more or less in the same way
@@ -678,6 +706,7 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
   attr :group, TransactionGroup, required: true
   attr :columns, :list, required: true
   attr :return_to, :string, default: nil
+  attr :can_write_invoicing, :boolean, default: true
 
   defp group_row(assigns) do
     assigns = assign(assigns, :bank_badge, bank_badge_for_group(assigns.group))
@@ -728,7 +757,12 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
               </span>
             </div>
           <% else %>
-            <.render_group_cell column={column} group={@group} columns={@columns} />
+            <.render_group_cell
+              column={column}
+              group={@group}
+              columns={@columns}
+              can_write_invoicing={@can_write_invoicing}
+            />
           <% end %>
         </div>
       </td>
@@ -760,6 +794,7 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
                   column={column}
                   invoicing_entry={transaction}
                   return_to={@return_to}
+                  can_write_invoicing={@can_write_invoicing}
                 />
               </div>
             <% else %>
@@ -767,6 +802,7 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
                 column={column}
                 invoicing_entry={transaction}
                 return_to={@return_to}
+                can_write_invoicing={@can_write_invoicing}
               />
             <% end %>
           </div>
@@ -810,11 +846,16 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
         <div class="flex w-32 flex-row gap-2 overflow-hidden">
           <div
             id={"#{@group.id}-label"}
-            class="bg-greenBg text-greenText flex h-6 w-20 flex-row items-center justify-center rounded-md p-2 text-xs transition-all duration-500"
+            class={[
+              "bg-greenBg text-greenText flex h-6 flex-row items-center justify-center rounded-md p-2 text-xs transition-all duration-500",
+              @can_write_invoicing && "w-20",
+              !@can_write_invoicing && "w-full"
+            ]}
           >
             <.icon name="hero-credit-card-mini" class="size-4" />
           </div>
           <.status_button
+            :if={@can_write_invoicing}
             id={"#{@group.id}-button"}
             phx-click={
               JS.push("toggle-skip-invoicing-group",
@@ -831,6 +872,7 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
             <.icon name="hero-credit-card-mini" class="size-4" />
           </div>
           <.status_button
+            :if={@can_write_invoicing}
             id={"#{@group.id}-button"}
             phx-click={
               JS.push("toggle-skip-invoicing-group",

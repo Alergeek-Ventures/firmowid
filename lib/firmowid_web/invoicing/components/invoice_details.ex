@@ -476,13 +476,14 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceDetails do
   end
 
   attr :is_cost_invoice, :boolean, required: true
+  attr :can_write, :boolean, default: true
 
   def invoice_skipped_view(assigns) do
     ~H"""
     <div class="space-y-4">
       <div class="flex flex-row items-center justify-between">
         <p class="text-lg/tight font-medium">Transakcja pominięta</p>
-        <div class="flex w-32 flex-row gap-1">
+        <div :if={@can_write} class="flex w-32 flex-row gap-1">
           <div class="flex flex-1 items-center justify-center rounded-md bg-green-200 px-2 text-green-700">
             <.icon name="hero-document-text-micro" class="size-4" />
           </div>
@@ -517,6 +518,7 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceDetails do
   attr :invoice, :map, required: true
   attr :show_bank_transfer_modal, :boolean, default: true
   attr :show_assistant, :boolean, default: false
+  attr :can_write, :boolean, default: true
 
   def skip_invoicing(assigns) do
     ~H"""
@@ -550,7 +552,7 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceDetails do
         </.button>
       </div>
 
-      <div class="col-span-full grid grid-cols-subgrid items-center">
+      <div :if={@can_write} class="col-span-full grid grid-cols-subgrid items-center">
         <p class="text-grey-700 text-sm/snug text-balance">
           A może żadna transakcja nie pasuje, bo zapłacono gotówką, lub na inne konto?
           Pomiń jej szukanie. Firmowid oznaczy ją jako rozliczoną poza systemem.
@@ -576,6 +578,7 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceDetails do
   attr :invoice, :map, required: true
   attr :is_cost_invoice, :boolean, required: true
   attr :potential_transactions, :list, required: true
+  attr :can_write, :boolean, default: true
 
   def potential_transactions(assigns) do
     assigns = assign(assigns, :not_found, Enum.empty?(assigns.potential_transactions))
@@ -612,11 +615,14 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceDetails do
       <% end %>
 
       <div class="space-y-6">
-        <h3 :if={@not_found} class="leading-tight font-medium">Co jeszcze mozesz zrobic?</h3>
+        <h3 :if={@not_found and (@can_write or @is_cost_invoice)} class="leading-tight font-medium">
+          Co jeszcze mozesz zrobic?
+        </h3>
         <.skip_invoicing
           show_assistant={not @not_found}
           show_bank_transfer_modal={@is_cost_invoice}
           invoice={@invoice}
+          can_write={@can_write}
         />
       </div>
     </div>

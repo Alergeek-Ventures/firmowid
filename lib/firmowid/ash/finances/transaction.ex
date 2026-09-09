@@ -11,6 +11,7 @@ defmodule Firmowid.Ash.Finances.Transaction do
     primary_read_warning?: false
 
   alias AshMoney.Types.Money
+  alias Firmowid.Ash.Checks.AtLeastRole
   alias Firmowid.Ash.Checks.SystemActorRole
   alias Firmowid.Ash.Finances.Transaction.Calculations
   alias Firmowid.Ash.Invoicing.CostInvoiceTransaction
@@ -175,12 +176,17 @@ defmodule Firmowid.Ash.Finances.Transaction do
     end
 
     # :invoicing and :accountant: read-only
-    policy [action_type(:read), {Firmowid.Ash.Checks.AtLeastRole, role: :invoicing}] do
+    policy [action_type(:read), {AtLeastRole, role: :invoicing}] do
+      authorize_if always()
+    end
+
+    # :accountant+: set_skip_invoicing (only user-facing update)
+    policy [action_type(:update), {AtLeastRole, role: :accountant}] do
       authorize_if always()
     end
 
     # Write actions (non-system, non-admin): admin only
-    policy action_type([:create, :update, :destroy]) do
+    policy action_type([:create, :destroy]) do
       authorize_if actor_attribute_equals(:role, :admin)
     end
   end

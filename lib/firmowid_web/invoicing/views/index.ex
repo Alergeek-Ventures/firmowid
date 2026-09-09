@@ -75,7 +75,7 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
     end
 
     socket =
-      if user.role == :admin do
+      if can_write_invoicing?(user) do
         allow_upload(socket, :file,
           max_entries: 50,
           accept: ["application/pdf", "image/*"],
@@ -142,7 +142,7 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
       </div>
 
       <div
-        phx-drop-target={@current_user.role == :admin && @uploads.file.ref}
+        phx-drop-target={can_write_invoicing?(@current_user) && @uploads.file.ref}
         class="flex flex-row gap-4"
       >
         <%= if @invoicing_entries != [] do %>
@@ -153,7 +153,7 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
           />
         <% end %>
         <form
-          :if={@current_user.role == :admin}
+          :if={can_write_invoicing?(@current_user)}
           id="upload-form"
           phx-change="upload"
           phx-submit="upload"
@@ -201,7 +201,7 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
           </FirmowidWeb.DesignSystem.Components.Button.button>
         </form>
         <.link
-          :if={@current_user.role == :admin}
+          :if={can_write_invoicing?(@current_user)}
           navigate={Navigation.sales_invoice_creator_path()}
           kind="button"
           variant="secondary"
@@ -232,7 +232,7 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
     />
 
     <div
-      :if={@current_user.role == :admin}
+      :if={can_view_invoicing?(@current_user)}
       class="relative mt-2 flex flex-col gap-4 max-md:hidden"
     >
       <%= cond do %>
@@ -260,15 +260,16 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
             mode={@params.filter}
             invoicing_entries={@invoicing_entries}
             return_to={build_invoicing_url(@params)}
+            can_write_invoicing={can_write_invoicing?(@current_user)}
           />
       <% end %>
 
       <div
-        :if={@current_user.role == :admin}
+        :if={can_write_invoicing?(@current_user)}
         id="file-drop-overlay"
         class="border-turquoise-200 absolute -inset-3 z-20 hidden rounded-lg border-2 bg-[#EDF5F599] opacity-60 transition-opacity"
         phx-hook="FileUploadDragNDrop"
-        phx-drop-target={@current_user.role == :admin && @uploads.file.ref}
+        phx-drop-target={can_write_invoicing?(@current_user) && @uploads.file.ref}
       >
         <div class="sticky top-0 flex size-full max-h-dvh items-center justify-center">
           <div class="bg-turquoise-200 text-turquoise-700 flex w-fit flex-col items-center gap-6 rounded-4xl px-10 pt-6 pb-8">
@@ -853,7 +854,7 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
   @dashboard_tile_limit 5
 
   defp fetch_dashboard_data(socket) do
-    if socket.assigns.current_user.role == :admin do
+    if can_view_invoicing?(socket.assigns.current_user) do
       month = socket.assigns.params.month
       scope = socket.assigns.ash_scope
       date_range_from = Date.beginning_of_month(month)
@@ -1266,4 +1267,12 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
 
   defp entry_invoice_number(%SalesInvoice{invoice_number: num}), do: num
   defp entry_invoice_number(_), do: nil
+
+  defp can_write_invoicing?(user) do
+    Ash.can_do_all?([{SalesInvoice, :create}, {CostInvoice, :create}], user)
+  end
+
+  defp can_view_invoicing?(user) do
+    Ash.can?({SalesInvoice, :read}, user)
+  end
 end

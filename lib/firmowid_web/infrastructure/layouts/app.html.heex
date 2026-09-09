@@ -44,7 +44,7 @@
           "border-b px-4 py-4.5",
         "border-darkGrey flex items-center gap-16 uppercase max-md:hidden"
       ]}>
-        <%= if @current_user.role == :admin do %>
+        <%= if @current_user.role != :employee do %>
           <.link
             kind="unstyled"
             navigate={~p"/fakturowanie"}
