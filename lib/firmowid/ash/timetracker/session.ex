@@ -1,3 +1,4 @@
+# credo:disable-for-this-file AshCredo.Check.Refactor.LargeResource
 defmodule Firmowid.Ash.Timetracker.Session do
   @moduledoc """
   Ash resource wrapping the existing `sessions` table.
@@ -13,6 +14,7 @@ defmodule Firmowid.Ash.Timetracker.Session do
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer]
 
+  alias Firmowid.Ash.Checks.SystemActorRole
   alias Firmowid.Ash.Resource
   alias Firmowid.Ash.Timetracker.Changes.NormalizeSessionBoundaries
   alias Firmowid.Ash.Timetracker.Checks.HoursRecordNotSubmitted
@@ -22,7 +24,9 @@ defmodule Firmowid.Ash.Timetracker.Session do
   alias Firmowid.Ash.Timetracker.Session.Overlap
   alias Firmowid.Ash.Timetracker.Validations.DatetimeOrder
   alias Firmowid.Ash.Timetracker.Validations.ProjectAccess
+  alias Firmowid.Ash.Timetracker.Workers.StopSessionWorker
 
+  require Logger
   require Resource
 
   postgres do
@@ -67,6 +71,7 @@ defmodule Firmowid.Ash.Timetracker.Session do
     define :start
     define :stop
     define :stop_current
+    define :auto_stop
     define :edit_current_user_session
     define :create
     define :update
@@ -74,7 +79,7 @@ defmodule Firmowid.Ash.Timetracker.Session do
   end
 
   actions do
-    defaults [:read, :destroy]
+    defaults [:read]
 
     # ── Read actions ──────────────────────────────────────────────────
 
@@ -209,6 +214,20 @@ defmodule Firmowid.Ash.Timetracker.Session do
       change set_attribute(:start_datetime, &DateTime.utc_now/0)
       change NormalizeSessionBoundaries
       change relate_actor(:user)
+
+      change after_action(fn _changeset, session, _context ->
+               case StopSessionWorker.enqueue(session) do
+                 {:ok, _job} ->
+                   Logger.info("Enqueued session auto-stop session_id=#{session.id} org=#{session.organization_id}")
+
+                   {:ok, session}
+
+                 {:error, reason} ->
+                   Logger.error("Failed to enqueue session auto-stop session_id=#{session.id} reason=#{inspect(reason)}")
+
+                   {:ok, session}
+               end
+             end)
     end
 
     create :create do
@@ -224,6 +243,40 @@ defmodule Firmowid.Ash.Timetracker.Session do
 
       change set_attribute(:end_datetime, &DateTime.utc_now/0)
       change NormalizeSessionBoundaries
+
+      change after_action(fn _changeset, session, _context ->
+               StopSessionWorker.cancel(session.id)
+               {:ok, session}
+             end)
+    end
+
+    update :auto_stop do
+      description """
+      Cap a forgotten running session at start_datetime + 12 hours.
+
+      Used by StopSessionWorker. Does not accept client input.
+      """
+
+      accept []
+      require_atomic? false
+
+      change fn changeset, _context ->
+        start_datetime = Ash.Changeset.get_attribute(changeset, :start_datetime)
+
+        end_datetime =
+          start_datetime
+          |> DateTime.shift(second: StopSessionWorker.max_running_seconds())
+          |> DateTime.shift_zone!("Etc/UTC")
+
+        Ash.Changeset.force_change_attribute(changeset, :end_datetime, end_datetime)
+      end
+
+      change NormalizeSessionBoundaries
+
+      change after_action(fn _changeset, session, _context ->
+               StopSessionWorker.cancel(session.id)
+               {:ok, session}
+             end)
     end
 
     action :stop_current, :struct do
@@ -273,10 +326,34 @@ defmodule Firmowid.Ash.Timetracker.Session do
       require_atomic? false
 
       change NormalizeSessionBoundaries
+
+      change after_action(fn _changeset, session, _context ->
+               if session.end_datetime do
+                 StopSessionWorker.cancel(session.id)
+               end
+
+               {:ok, session}
+             end)
+    end
+
+    destroy :destroy do
+      description "Delete a session and cancel auto-stop worker."
+      primary? true
+      require_atomic? false
+
+      change after_action(fn _changeset, session, _context ->
+               StopSessionWorker.cancel(session.id)
+               {:ok, session}
+             end)
     end
   end
 
   policies do
+    bypass {SystemActorRole, roles: [:session_auto_stopper]} do
+      authorize_if action_type(:read)
+      authorize_if action(:auto_stop)
+    end
+
     policy Firmowid.Ash.Checks.IsSystemActor do
       forbid_if always()
     end

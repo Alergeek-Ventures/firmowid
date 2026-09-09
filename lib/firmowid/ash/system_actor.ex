@@ -57,6 +57,9 @@ defmodule Firmowid.Ash.SystemActor do
     contract is submitted. Can read employment contracts and list/read users
     needed for delivery.
 
+  - `:session_auto_stopper` — caps forgotten running timetracker sessions at
+    12 hours. Can read sessions and run the auto-stop action.
+
   - `:anonymous` — unauthenticated share-token access. Can only read the specific
     invoice identified by the share token.
 
@@ -81,6 +84,7 @@ defmodule Firmowid.Ash.SystemActor do
           | :document_blob_processor
           | :leave_notifier
           | :employment_contract_notifier
+          | :session_auto_stopper
           | :anonymous
           | :avatar_cleanup
 

@@ -7,6 +7,7 @@ defmodule Firmowid.Ash.Timetracker.SessionTest do
   alias Firmowid.Ash.Scope
   alias Firmowid.Ash.Timetracker
   alias Firmowid.Ash.Timetracker.Session, as: AshSession
+  alias Firmowid.Ash.Timetracker.Workers.StopSessionWorker
 
   setup do
     user = user_fixture()
@@ -383,6 +384,57 @@ defmodule Firmowid.Ash.Timetracker.SessionTest do
         )
 
       assert {:error, _} = result
+    end
+  end
+
+  describe "auto-stop worker" do
+    test "cancels pending auto-stop when session is stopped", %{project: project, scope: scope} do
+      Oban.Testing.with_testing_mode(:manual, fn ->
+        {:ok, session} =
+          AshSession.start(%{title: "Running", project_id: project.id}, scope: scope)
+
+        assert_enqueued(worker: StopSessionWorker)
+
+        {:ok, _stopped} = AshSession.stop(session, scope: scope)
+
+        refute_enqueued(worker: StopSessionWorker)
+      end)
+    end
+
+    test "caps a still-running session at start + 12 hours", %{project: project, scope: scope} do
+      Oban.Testing.with_testing_mode(:manual, fn ->
+        {:ok, session} =
+          AshSession.start(%{title: "Running", project_id: project.id}, scope: scope)
+
+        assert :ok =
+                 perform_job(StopSessionWorker, %{
+                   "session_id" => session.id,
+                   "organization_id" => session.organization_id
+                 })
+
+        updated = Ash.reload!(session, scope: scope)
+        expected_end = DateTime.shift(session.start_datetime, hour: 12)
+
+        assert updated.end_datetime == expected_end
+      end)
+    end
+
+    test "no-ops when session is already stopped", %{project: project, scope: scope} do
+      Oban.Testing.with_testing_mode(:manual, fn ->
+        {:ok, session} =
+          AshSession.start(%{title: "Running", project_id: project.id}, scope: scope)
+
+        {:ok, stopped} = AshSession.stop(session, scope: scope)
+
+        assert :ok =
+                 perform_job(StopSessionWorker, %{
+                   "session_id" => stopped.id,
+                   "organization_id" => stopped.organization_id
+                 })
+
+        reloaded = Ash.reload!(stopped, scope: scope)
+        assert reloaded.end_datetime == stopped.end_datetime
+      end)
     end
   end
 end
