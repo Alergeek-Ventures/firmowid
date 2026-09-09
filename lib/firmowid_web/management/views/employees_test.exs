@@ -279,8 +279,17 @@ defmodule FirmowidWeb.Management.Views.EmployeesTest do
 
     assert html =~ "Polecenie wyjazdu służbowego"
     assert html =~ "Jan Kowalski"
+    assert html =~ "sierpień 2026"
     assert html =~ "Wygeneruj polecenie, aby móc je podpisać."
     assert has_element?(view, "input[disabled][name='delegation_command[amount]']")
+    assert has_element?(view, "input[name='delegation_command[amount]'][value='100']")
+
+    view
+    |> element("#delegation-command-form")
+    |> render_change(%{"delegation_command" => %{"advance" => "true"}})
+
+    refute has_element?(view, "input[disabled][name='delegation_command[amount]']")
+    assert has_element?(view, "input[name='delegation_command[amount]'][value='100']")
   end
 
   test "admin can restore archived employee from employee detail page", %{conn: conn} do

@@ -14,7 +14,7 @@ defmodule FirmowidWeb.Management.Views.Delegation do
 
   @impl true
   def mount(_params, _session, socket) do
-    {:ok, assign(socket, :command_form, command_form(false))}
+    {:ok, socket}
   end
 
   @impl true
@@ -36,6 +36,7 @@ defmodule FirmowidWeb.Management.Views.Delegation do
            socket
            |> assign(:employee, employee)
            |> assign(:delegation, delegation)
+           |> assign(:command_form, command_form(false, delegation.advance_payment_amount))
            |> assign(:page_title, "Polecenie wyjazdu służbowego")}
         else
           {:noreply, push_navigate(socket, to: Navigation.employee_path(employee.id))}
@@ -45,18 +46,23 @@ defmodule FirmowidWeb.Management.Views.Delegation do
 
   @impl true
   def handle_event("toggle-advance", %{"delegation_command" => %{"advance" => value}}, socket) do
-    {:noreply, assign(socket, :command_form, command_form(value == "true"))}
+    {:noreply,
+     assign(
+       socket,
+       :command_form,
+       command_form(value == "true", socket.assigns.delegation.advance_payment_amount)
+     )}
   end
 
   @impl true
   def render(assigns) do
     ~H"""
-    <main class="mx-auto w-full max-w-7xl p-6 lg:px-12">
+    <main class="w-full p-6 lg:px-4">
       <.back navigate={Navigation.employee_path(@employee.id)} class="justify-self-start">
         Profil pracownika
       </.back>
 
-      <h1 class="mt-10 text-2xl/tight font-normal">Polecenie wyjazdu służbowego</h1>
+      <h1 class="mt-10 text-2xl/tight font-medium">Polecenie wyjazdu służbowego</h1>
 
       <div class="mt-10 grid grid-cols-1 items-start gap-10 lg:grid-cols-2">
         <section>
@@ -80,31 +86,39 @@ defmodule FirmowidWeb.Management.Views.Delegation do
             for={@command_form}
             id="delegation-command-form"
             phx-change="toggle-advance"
-            class="mt-10 space-y-5"
+            class="mt-10"
           >
-            <.switch field={@command_form[:advance]} label="Zaliczka" color="turquoise" />
+            <dl class="grid grid-cols-[minmax(10rem,auto)_1fr] items-start gap-x-8 gap-y-5">
+              <dt class="text-grey-700 text-base">Zaliczka</dt>
+              <dd><.switch field={@command_form[:advance]} color="turquoise" /></dd>
 
-            <div>
-              <label for={@command_form[:amount].id} class="text-grey-700 text-base">Na kwotę</label>
-              <div class="mt-2 flex items-center gap-2">
-                <.input
-                  field={@command_form[:amount]}
-                  type="number"
-                  new
-                  min="0"
-                  step="0.01"
-                  placeholder="0.00"
-                  disabled={not @command_form[:advance].value}
-                  aria-describedby="delegation-command-currency"
-                  input_class="w-25 text-right placeholder:text-grey-300"
-                />
-                <span id="delegation-command-currency" class="text-grey-500 text-sm">PLN</span>
-              </div>
-            </div>
-
-            <.button type="button" variant="primary" accent="turquoise" size="small">
-              Wygeneruj polecenie
-            </.button>
+              <dt class="text-grey-500 text-base">Na kwotę</dt>
+              <dd>
+                <div class="inline-grid grid-cols-[8rem_auto] items-center gap-x-2 gap-y-5">
+                  <.input
+                    field={@command_form[:amount]}
+                    type="number"
+                    new
+                    min="0"
+                    step="0.01"
+                    placeholder="0.00"
+                    disabled={not @command_form[:advance].value}
+                    aria-describedby="delegation-command-currency"
+                    input_class="w-32 text-right text-grey-700 placeholder:text-grey-700 disabled:border-grey-400 disabled:text-grey-400 disabled:placeholder:text-grey-300"
+                  />
+                  <span id="delegation-command-currency" class="text-grey-500 text-sm">PLN</span>
+                  <.button
+                    type="button"
+                    variant="primary"
+                    accent="turquoise"
+                    size="small"
+                    class="col-span-2 w-full"
+                  >
+                    Wygeneruj polecenie
+                  </.button>
+                </div>
+              </dd>
+            </dl>
           </.form>
         </section>
 
@@ -114,13 +128,20 @@ defmodule FirmowidWeb.Management.Views.Delegation do
             <dd>{format_billing_month(@delegation.billing_month)}</dd>
           </dl>
 
-          <div class="border-grey-200 mt-8 flex min-h-96 items-center justify-center rounded-md border bg-white p-8 text-center shadow-sm">
-            <p class="text-grey-700 max-w-xs text-base">Wygeneruj polecenie, aby móc je podpisać.</p>
+          <div class="border-grey-200 mt-8 flex min-h-96 items-center justify-center rounded-md border p-8 text-center shadow-sm">
+            <p class="text-grey-700 text-base">Wygeneruj polecenie, aby móc je podpisać.</p>
           </div>
 
           <div class="mt-5 flex gap-3">
-            <.button type="button" variant="destructive" size="small">Odrzuć</.button>
-            <.button type="button" variant="primary" accent="turquoise" size="small">Wyślij</.button>
+            <.button type="button" variant="secondary" class="w-[170px]">Odrzuć</.button>
+            <.button
+              type="button"
+              variant="primary"
+              accent="turquoise"
+              class="active:bg-turquoise-700! bg-turquoise-500! hover:bg-turquoise-600! w-[170px]"
+            >
+              Wyślij
+            </.button>
           </div>
         </section>
       </div>
@@ -128,11 +149,13 @@ defmodule FirmowidWeb.Management.Views.Delegation do
     """
   end
 
-  defp command_form(advance?) do
-    to_form(%{"advance" => advance?, "amount" => ""}, as: :delegation_command)
+  defp command_form(advance?, amount) do
+    to_form(%{"advance" => advance?, "amount" => Money.to_decimal(amount)},
+      as: :delegation_command
+    )
   end
 
   defp format_billing_month(billing_month) do
-    Cldr.Date.to_string!(billing_month, Firmowid.Cldr, format: "MMMM y", locale: "pl")
+    Cldr.Date.to_string!(billing_month, Firmowid.Cldr, format: "LLLL y", locale: "pl")
   end
 end
