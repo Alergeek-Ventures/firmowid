@@ -115,7 +115,7 @@ asdf install elixir
 ### 4. Zainstaluj paczki systemowe
 
 ```
-sudo apt-get install -y build-essential git libstdc++6 openssl libncurses5 locales ca-certificates libvips chromium
+sudo apt-get install -y build-essential git libstdc++6 openssl libncurses6 locales ca-certificates libvips chromium
 ```
 
 ## Zmienne środowiskowe
