@@ -10,11 +10,12 @@ defmodule FirmowidWeb.Delegations.Components.Delegation do
   @spec form_row(map()) :: Rendered.t()
   attr :label, :string, required: true
   attr :for, :string, required: true
+  attr :label_class, :any, default: nil
   slot :inner_block, required: true
 
   def form_row(assigns) do
     ~H"""
-    <label for={@for} class="text-grey-700 text-base">{@label}</label>
+    <label for={@for} class={["text-grey-700 text-base", @label_class]}>{@label}</label>
     <div>{render_slot(@inner_block)}</div>
     """
   end
