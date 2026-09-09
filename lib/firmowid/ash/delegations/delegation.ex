@@ -43,7 +43,18 @@ defmodule Firmowid.Ash.Delegations.Delegation do
     create :create do
       description "Submit a new business trip delegation."
       primary? true
-      accept [:title, :billing_month, :purpose, :advance_payment_amount, :start_date, :end_date]
+
+      accept [
+        :title,
+        :billing_month,
+        :destination,
+        :transport_types,
+        :purpose,
+        :advance_payment_amount,
+        :start_date,
+        :end_date
+      ]
+
       change set_attribute(:user_id, actor(:id))
 
       validate compare(:end_date, greater_than_or_equal_to: :start_date),
@@ -118,6 +129,16 @@ defmodule Firmowid.Ash.Delegations.Delegation do
     uuid_v7_primary_key :id
     attribute :title, :string, allow_nil?: false, public?: true
     attribute :billing_month, :date, allow_nil?: false, public?: true
+    attribute :destination, :string, allow_nil?: false, public?: true
+
+    attribute :transport_types, {:array, :atom},
+      allow_nil?: false,
+      public?: true,
+      constraints: [
+        min_length: 1,
+        items: [one_of: [:railway, :airplane, :bus, :other]]
+      ]
+
     attribute :purpose, :string, allow_nil?: false, public?: true
     attribute :advance_payment_amount, AshMoney.Types.Money, allow_nil?: false, public?: true
     attribute :start_date, :date, allow_nil?: false, public?: true

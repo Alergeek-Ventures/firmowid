@@ -25,6 +25,7 @@ defmodule FirmowidWeb.Delegations.Views.DelegationForm do
      |> assign(:months, months)
      |> assign(:default_month, default_month)
      |> assign(:billing_month, default_month)
+     |> assign(:transport_types, [""])
      |> assign(:form, form)}
   end
 
@@ -102,6 +103,64 @@ defmodule FirmowidWeb.Delegations.Views.DelegationForm do
                   />
                 </div>
               </.form_row>
+              <.form_row
+                label="Miejsce podróży"
+                for="delegation_destination"
+                label_class="self-start pt-2"
+              >
+                <.input
+                  field={@form[:destination]}
+                  id="delegation_destination"
+                  type="text"
+                  new
+                  required
+                  input_class="max-w-125"
+                />
+              </.form_row>
+              <.form_row
+                label="Środek lokomocji"
+                for="delegation_transport_types_0"
+                label_class="self-start pt-2"
+              >
+                <div class="flex w-125 flex-col gap-2">
+                  <div
+                    :for={{transport_type, index} <- Enum.with_index(@transport_types)}
+                    class="flex gap-2"
+                  >
+                    <.input
+                      id={"delegation_transport_types_#{index}"}
+                      name={@form[:transport_types].name <> "[]"}
+                      value={transport_type}
+                      type="select"
+                      new
+                      required
+                      prompt="Wybierz z listy"
+                      options={transport_options()}
+                      input_class="w-28 invalid:text-grey-300"
+                    />
+                    <.button
+                      :if={index < length(@transport_types) - 1}
+                      type="button"
+                      variant="unstyled"
+                      phx-click="remove_transport_type"
+                      phx-value-index={index}
+                      class="text-grey-500 inline-flex size-8 items-center justify-center transition-colors hover:text-red-700"
+                      aria-label="Usuń środek lokomocji"
+                    >
+                      <Lucideicons.x class="size-4" />
+                    </.button>
+                    <.button
+                      :if={index == length(@transport_types) - 1}
+                      type="button"
+                      variant="secondary"
+                      size="small"
+                      phx-click="add_transport_type"
+                    >
+                      + Dodaj kolejny
+                    </.button>
+                  </div>
+                </div>
+              </.form_row>
               <.form_row label="Cel wyjazdu" for="delegation_purpose">
                 <.input
                   field={@form[:purpose]}
@@ -170,7 +229,20 @@ defmodule FirmowidWeb.Delegations.Views.DelegationForm do
       |> AshPhoenix.Form.validate(params)
       |> to_form()
 
-    {:noreply, assign(socket, :form, form)}
+    {:noreply,
+     socket
+     |> assign(:form, form)
+     |> assign(:transport_types, transport_types(params))}
+  end
+
+  def handle_event("add_transport_type", _params, socket) do
+    {:noreply, update(socket, :transport_types, &(&1 ++ [""]))}
+  end
+
+  def handle_event("remove_transport_type", %{"index" => index}, socket) do
+    {index, ""} = Integer.parse(index)
+
+    {:noreply, update(socket, :transport_types, &List.delete_at(&1, index))}
   end
 
   def handle_event("save", %{"delegation" => params}, socket) do
@@ -200,5 +272,18 @@ defmodule FirmowidWeb.Delegations.Views.DelegationForm do
       transform_params: fn params, _type -> Map.put(params, "title", params["purpose"]) end
     )
     |> to_form()
+  end
+
+  defp transport_types(%{"transport_types" => transport_types}) when is_list(transport_types), do: transport_types
+
+  defp transport_types(_params), do: [""]
+
+  defp transport_options do
+    [
+      {"Kolej", "railway"},
+      {"Samolot", "airplane"},
+      {"Autobus", "bus"},
+      {"Inne", "other"}
+    ]
   end
 end
