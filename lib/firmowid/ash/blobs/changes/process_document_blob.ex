@@ -49,7 +49,12 @@ defmodule Firmowid.Ash.Blobs.Changes.ProcessDocumentBlob do
     end
   end
 
-  defp handle_processing_result({:error, reason}, _blob, _opts), do: {:error, reason}
+  defp handle_processing_result({:error, reason}, blob, opts) do
+    case handle_unexpected_failure(blob, reason, opts) do
+      {:ok, _updated_blob} -> {:ok, blob}
+      {:error, reason} -> {:error, reason}
+    end
+  end
 
   defp run_processing(blob, opts) do
     with {:ok, blob} <- ensure_processing(blob, opts),
@@ -117,6 +122,16 @@ defmodule Firmowid.Ash.Blobs.Changes.ProcessDocumentBlob do
       error: ":missing_salary_metadata",
       error_code: "missing_salary_metadata",
       error_message: "Nie udało się wyekstrahować danych wynagrodzenia z umowy."
+    }
+
+    update_failed_blob(blob, failure, opts)
+  end
+
+  defp handle_unexpected_failure(blob, reason, opts) do
+    failure = %{
+      error: inspect(reason),
+      error_code: "processing_failed",
+      error_message: "Nie udało się przetworzyć pliku."
     }
 
     update_failed_blob(blob, failure, opts)

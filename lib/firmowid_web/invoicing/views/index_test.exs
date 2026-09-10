@@ -357,7 +357,10 @@ defmodule FirmowidWeb.Invoicing.Views.IndexTest do
       refute rendered =~ "Wystąpił problem po naszej stronie"
     end
 
-    test "propagates unexpected Reducto processing failures", %{conn: conn, user: user} do
+    test "shows a processing error toast when Reducto fails unexpectedly", %{
+      conn: conn,
+      user: user
+    } do
       put_reducto_extract_result({:http_error, 401, %{"error" => "Invalid API key"}})
 
       {:ok, view, _html} =
@@ -365,9 +368,15 @@ defmodule FirmowidWeb.Invoicing.Views.IndexTest do
         |> log_in_user(user)
         |> live(~p"/fakturowanie?miesiac=2026-04-01&filtr=faktury&widok=lista")
 
-      error = catch_exit(upload_invoice(view, "upload-reducto-error.png"))
+      subscribe_to_upload_notifications(user)
+      upload_invoice(view, "upload-reducto-error.png")
+      assert_cost_invoice_blob_failed(user)
 
-      assert inspect(error) =~ "Reducto API response missing 'result' field"
+      rendered = render(view)
+      assert rendered =~ "Nie udało się wgrać pliku"
+      assert rendered =~ "Nie udało się przetworzyć pliku."
+      refute rendered =~ "Nieprawidłowy dokument"
+      assert cost_invoices_for_upload_month(user) == []
     end
 
     test "shows a duplicate toast when uploading the same cost invoice twice", %{
