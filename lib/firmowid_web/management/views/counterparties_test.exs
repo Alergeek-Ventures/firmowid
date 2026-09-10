@@ -102,6 +102,13 @@ defmodule FirmowidWeb.Management.Views.CounterpartiesTest do
     assert has_element?(view, "button[phx-click='fetch_by_nip']", "Pobierz dane")
 
     view
+    |> element("button[phx-click='fetch_by_nip']")
+    |> render_click()
+
+    assert has_element?(view, "#counterparty_tax_id[aria-invalid='true']")
+    assert render(view) =~ "NIP jest wymagany"
+
+    view
     |> form("form[phx-submit='save'][phx-change='validate']", %{
       "counterparty" => %{"tax_id" => "123"}
     })
@@ -111,7 +118,8 @@ defmodule FirmowidWeb.Management.Views.CounterpartiesTest do
     |> element("button[phx-click='fetch_by_nip']")
     |> render_click()
 
-    assert render(view) =~ "Podaj poprawny numer NIP"
+    assert has_element?(view, "#counterparty_tax_id[aria-invalid='true']")
+    assert render(view) =~ "musi być poprawnym numerem NIP"
   end
 
   defp current_scope(admin) do

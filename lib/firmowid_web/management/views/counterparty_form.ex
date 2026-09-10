@@ -9,6 +9,8 @@ defmodule FirmowidWeb.Management.Views.CounterpartyForm do
   import FirmowidWeb.DesignSystem.Components.Link
   import Phoenix.Component, except: [link: 1]
 
+  alias Ash.Error.Changes.InvalidAttribute
+  alias Firmowid.Ash.Core.Nip
   alias Firmowid.Ash.Invoicing
   alias Firmowid.Ash.Invoicing.Counterparty
   alias Firmowid.Ash.Invoicing.CountryCodes
@@ -80,8 +82,10 @@ defmodule FirmowidWeb.Management.Views.CounterpartyForm do
     end
   end
 
-  def handle_event("fetch_by_nip", %{"nip" => nip}, socket) do
-    case NipApiClient.fetch_org_data_by_nip(nip) do
+  def handle_event("fetch_by_nip", params, socket) do
+    nip = Map.get(params, "nip", "")
+
+    case fetch_counterparty_data(nip) do
       {:ok, organization} ->
         params =
           Map.merge(socket.assigns.form.params, %{
@@ -98,20 +102,32 @@ defmodule FirmowidWeb.Management.Views.CounterpartyForm do
           |> AshPhoenix.Form.validate(params, errors: false)
           |> to_form()
 
-        {:noreply,
-         socket
-         |> assign(:form, form)
-         |> LiveToast.put_toast(:success, "Pobrano dane kontrahenta")}
+        {:noreply, assign(socket, :form, form)}
 
-      {:error, :invalid_nip} ->
-        {:noreply, put_flash(socket, :error, "Podaj poprawny numer NIP")}
-
-      {:error, :not_found} ->
-        {:noreply, put_flash(socket, :error, "Nie znaleziono kontrahenta dla podanego NIP")}
-
-      {:error, _reason} ->
-        {:noreply, put_flash(socket, :error, "Nie udało się pobrać danych kontrahenta")}
+      {:error, message} ->
+        {:noreply, assign(socket, :form, form_with_tax_id_error(socket.assigns.form, nip, message))}
     end
+  end
+
+  defp fetch_counterparty_data(""), do: {:error, "NIP jest wymagany"}
+
+  defp fetch_counterparty_data(nip) do
+    if Nip.valid?(nip) do
+      case NipApiClient.fetch_org_data_by_nip(nip) do
+        {:ok, organization} -> {:ok, organization}
+        {:error, :not_found} -> {:error, "Nie znaleziono kontrahenta dla podanego NIP"}
+        {:error, _reason} -> {:error, "Nie udało się pobrać danych kontrahenta"}
+      end
+    else
+      {:error, "musi być poprawnym numerem NIP"}
+    end
+  end
+
+  defp form_with_tax_id_error(form, nip, message) do
+    form
+    |> AshPhoenix.Form.validate(Map.put(form.params, "tax_id", nip))
+    |> AshPhoenix.Form.add_error(%InvalidAttribute{field: :tax_id, message: message})
+    |> to_form()
   end
 
   defp assign_navigation(socket, counterparty, params),
