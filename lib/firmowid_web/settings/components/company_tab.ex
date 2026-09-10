@@ -12,6 +12,7 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
   import FirmowidWeb.Settings.Components.EditButton
   import Phoenix.Component, except: [link: 1]
 
+  alias Firmowid.Ash.Core.UserRole
   alias FirmowidWeb.Infrastructure.Utilities.TimeFormatter
   alias FirmowidWeb.Invoicing.Utilities.VatExemption
   alias FirmowidWeb.Settings.Components.Helpers
@@ -881,7 +882,7 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
             </.button>
 
             <div class="flex items-center gap-4">
-              <span class={role_badge_styles(invite.role)}>{role_label(invite.role)}</span>
+              <span class={role_badge_styles(invite.role)}>{UserRole.label(invite.role)}</span>
 
               <.button
                 type="button"
@@ -925,7 +926,7 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
             </div>
 
             <div class="flex items-center justify-end gap-2">
-              <span class={role_badge_styles(user.role)}>{role_label(user.role)}</span>
+              <span class={role_badge_styles(user.role)}>{UserRole.label(user.role)}</span>
 
               <.dropdown :if={user.id != @current_user.id} id={"organization_user_#{user.id}"}>
                 <:trigger>
@@ -1229,7 +1230,7 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
           class="flex flex-col gap-8"
         >
           <.role_row_input
-            :for={role <- [:employee, :admin, :accountant, :invoicing]}
+            :for={role <- UserRole.roles()}
             role={role}
             checked={role == :employee}
           />
@@ -1264,7 +1265,7 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
 
   defp update_role_modal(assigns) do
     current_role = assigns.user.role
-    other_roles = Enum.reject(role_ladder(), &(&1 == current_role))
+    other_roles = Enum.reject(UserRole.roles(), &(&1 == current_role))
 
     assigns =
       assigns
@@ -1354,12 +1355,12 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
       <input
         name="role"
         type="radio"
-        value={role_param(@role)}
+        value={UserRole.param(@role)}
         checked={@checked}
         class="border-grey-300 checked:bg-turquoise-700 text-turquoise-700 size-5 shrink-0 appearance-none rounded-full border-2 bg-white focus:outline-none"
       />
       <div>
-        <span class="font-medium capitalize">{role_label(@role)}</span>
+        <span class="font-medium capitalize">{UserRole.label(@role)}</span>
         <p class="text-sm">{role_desc(@role)}</p>
       </div>
     </.label>
@@ -1460,12 +1461,6 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
     "Nie udało się połączyć z KSeF. Spróbuj ponownie."
   end
 
-  defp role_label(:admin), do: "admin"
-  defp role_label(:employee), do: "pracownik"
-  defp role_label(:invoicing), do: "fakturowanie"
-  defp role_label(:accountant), do: "księgowość"
-  defp role_label(role), do: present(role)
-
   defp role_desc(:admin) do
     ~s|Pełny dostęp do zakładki "Zarządzanie" — w tym zarządzania pracownikami, kontrahentami oraz projektami. Ta rola pozwala także na pełny dostęp do faktur oraz do wgrywania faktur spoza KSeF.|
   end
@@ -1481,10 +1476,6 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
   defp role_desc(:accountant) do
     "Pełny dostęp do fakturowania (przeglądanie, dodawanie i edycja), z wyjątkiem dodawania faktur spoza KSeF."
   end
-
-  defp role_param(role), do: Atom.to_string(role)
-
-  defp role_ladder, do: [:employee, :invoicing, :accountant, :admin]
 
   defp role_badge_styles(:admin) do
     "bg-turquoise-200 text-turquoise-700 inline-flex w-28 items-center justify-center rounded-sm px-3 py-1 text-sm leading-[1.35]"

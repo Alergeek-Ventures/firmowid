@@ -7,6 +7,8 @@ defmodule Firmowid.Ash.Checks.AtLeastRole do
 
       :employee < :invoicing < :accountant < :admin
 
+  The ordered list comes from `Firmowid.Ash.Core.UserRole.roles/0`.
+
   ## Options
 
   - `role` — the minimum required role (required)
@@ -24,8 +26,7 @@ defmodule Firmowid.Ash.Checks.AtLeastRole do
   use Ash.Policy.SimpleCheck
 
   alias Firmowid.Ash.Core.User
-
-  @role_hierarchy [:employee, :invoicing, :accountant, :admin]
+  alias Firmowid.Ash.Core.UserRole
 
   @impl true
   def describe(opts) do
@@ -53,5 +54,5 @@ defmodule Firmowid.Ash.Checks.AtLeastRole do
 
   def match?(_actor, _context, _opts), do: {:ok, false}
 
-  defp role_index(role), do: Enum.find_index(@role_hierarchy, &(&1 == role))
+  defp role_index(role), do: Enum.find_index(UserRole.roles(), &(&1 == role))
 end

@@ -5,7 +5,9 @@ defmodule FirmowidWeb.Settings.Utilities.Navigation do
 
   use FirmowidWeb, :verified_routes
 
-  @type role :: :employee | :invoicing | :accountant | :admin
+  alias Firmowid.Ash.Core.UserRole
+
+  @type role :: UserRole.t()
   @type tab_id :: :account | :profile | :organization | :subscription | :invoices
   @type tab :: %{id: tab_id(), label: String.t(), path: String.t()}
   @type visibility_context :: %{
@@ -13,7 +15,7 @@ defmodule FirmowidWeb.Settings.Utilities.Navigation do
           required(:current_org) => %{required(:owner_id) => term()}
         }
 
-  @all_roles [:employee, :invoicing, :accountant, :admin]
+  @all_roles UserRole.roles()
 
   @tabs [
     %{

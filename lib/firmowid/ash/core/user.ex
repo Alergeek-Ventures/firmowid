@@ -25,6 +25,7 @@ defmodule Firmowid.Ash.Core.User do
   alias Firmowid.Ash.Core.Services.GoogleAvatarImporter
   alias Firmowid.Ash.Core.User.Actions.UpdateCurrentProfile
   alias Firmowid.Ash.Core.UserIdentity
+  alias Firmowid.Ash.Core.UserRole
   alias Firmowid.Ash.Resource
 
   require Resource
@@ -123,7 +124,7 @@ defmodule Firmowid.Ash.Core.User do
       end
 
       argument :role, :atom do
-        constraints one_of: [:employee, :invoicing, :accountant, :admin]
+        constraints one_of: UserRole.roles()
       end
 
       prepare fn query, _context ->
@@ -501,7 +502,7 @@ defmodule Firmowid.Ash.Core.User do
 
     attribute :role, :atom,
       public?: true,
-      constraints: [one_of: [:employee, :invoicing, :accountant, :admin]],
+      constraints: [one_of: UserRole.roles()],
       default: :employee
 
     attribute :system_role, :atom,

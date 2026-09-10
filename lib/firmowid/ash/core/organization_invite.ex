@@ -16,6 +16,7 @@ defmodule Firmowid.Ash.Core.OrganizationInvite do
   alias Firmowid.Ash.Core
   alias Firmowid.Ash.Core.Organization
   alias Firmowid.Ash.Core.User
+  alias Firmowid.Ash.Core.UserRole
   alias Firmowid.Ash.Resource
   alias Firmowid.Ash.SystemActor
 
@@ -170,7 +171,7 @@ defmodule Firmowid.Ash.Core.OrganizationInvite do
 
     attribute :role, :atom,
       public?: true,
-      constraints: [one_of: [:employee, :invoicing, :accountant, :admin]],
+      constraints: [one_of: UserRole.roles()],
       default: :employee
 
     Resource.firmowid_timestamps()

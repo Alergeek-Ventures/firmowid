@@ -28,6 +28,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
   alias Firmowid.Ash.Blobs
   alias Firmowid.Ash.Blobs.Blob
   alias Firmowid.Ash.Core
+  alias Firmowid.Ash.Core.UserRole
   alias Firmowid.Ash.Finances
   alias Firmowid.Ash.Finances.GoCardless.ApiClient
   alias Firmowid.Ash.Finances.Requisition
@@ -42,13 +43,6 @@ defmodule FirmowidWeb.Settings.Views.Index do
   alias FirmowidWeb.Infrastructure.Components.BlobProcessingToasts
   alias FirmowidWeb.Settings.Utilities.Navigation
   alias Phoenix.Socket.Broadcast
-
-  @role_params %{
-    "employee" => :employee,
-    "invoicing" => :invoicing,
-    "accountant" => :accountant,
-    "admin" => :admin
-  }
 
   @invite_load [issued_by: [:email], consumed_by: [:email]]
 
@@ -965,7 +959,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
     {:noreply, assign(socket, :show_active_invites, !socket.assigns.show_active_invites)}
   end
 
-  def handle_event("create_organization_invite", %{"role" => role}, socket) do
+  def handle_event("create_organization_invite", %{"role" => role_param}, socket) do
     current_user = socket.assigns.current_user
     scope = socket.assigns.ash_scope
 
@@ -973,14 +967,25 @@ defmodule FirmowidWeb.Settings.Views.Index do
       raise Forbidden, message: "Tylko administrator może tworzyć zaproszenia."
     end
 
-    invite = Core.create_invite!(%{issued_by_id: current_user.id, role: role}, scope: scope)
-    LiveToast.send_toast(:success, "Kod zaproszenia został wygenerowany i skopiowany do schowka.")
+    case parse_role(role_param) do
+      {:ok, role} ->
+        invite = Core.create_invite!(%{issued_by_id: current_user.id, role: role}, scope: scope)
 
-    {:noreply,
-     socket
-     |> assign(:organization_invites, list_organization_invites(scope))
-     |> assign(:show_active_invites, true)
-     |> push_event("copy-to-clipboard", %{text: invite.invite_code})}
+        LiveToast.send_toast(
+          :success,
+          "Kod zaproszenia został wygenerowany i skopiowany do schowka."
+        )
+
+        {:noreply,
+         socket
+         |> assign(:organization_invites, list_organization_invites(scope))
+         |> assign(:show_active_invites, true)
+         |> push_event("copy-to-clipboard", %{text: invite.invite_code})}
+
+      {:error, :unknown_role} ->
+        LiveToast.send_toast(:error, "Nieprawidłowa rola.")
+        {:noreply, socket}
+    end
   end
 
   def handle_event("copy_organization_invite", %{"code" => invite_code}, socket) do
@@ -1643,12 +1648,14 @@ defmodule FirmowidWeb.Settings.Views.Index do
     |> assign(:subscription_worksheet, worksheet)
   end
 
-  defp parse_role(role_param) do
-    case Map.fetch(@role_params, role_param) do
-      {:ok, role} -> {:ok, role}
-      :error -> {:error, :unknown_role}
+  defp parse_role(role_param) when is_binary(role_param) do
+    case Enum.find(UserRole.roles(), &(UserRole.param(&1) == role_param)) do
+      nil -> {:error, :unknown_role}
+      role -> {:ok, role}
     end
   end
+
+  defp parse_role(_role_param), do: {:error, :unknown_role}
 
   defp find_loaded_organization_user(users, user_id) do
     case Enum.find(users, &(to_string(&1.id) == user_id)) do
