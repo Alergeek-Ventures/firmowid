@@ -35,14 +35,17 @@ defmodule Firmowid.Ash.Invoicing.Services.NipApiClient do
     date = Date.to_string(Date.utc_today())
     url = "https://wl-api.mf.gov.pl/api/search/nip/#{nip}?date=#{date}"
 
-    case Req.get(
-           [
-             url: url,
-             headers: %{
-               "Accept" => "application/json"
-             }
-           ] ++ request_options
-         ) do
+    request_options =
+      [
+        url: url,
+        headers: %{
+          "Accept" => "application/json"
+        }
+      ]
+      |> Keyword.merge(Application.get_env(:firmowid, :nip_api_request_options, []))
+      |> Keyword.merge(request_options)
+
+    case Req.get(request_options) do
       {:ok, %Req.Response{status: 200, body: %{"result" => %{"subject" => nil}}}} ->
         {:error, :not_found}
 

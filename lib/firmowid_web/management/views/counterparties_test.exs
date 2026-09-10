@@ -92,14 +92,51 @@ defmodule FirmowidWeb.Management.Views.CounterpartiesTest do
     assert active_html =~ "Acme po edycji"
   end
 
-  test "new counterparty form validates NIP before fetching data", %{conn: conn} do
+  test "new counterparty form fetches company data by NIP", %{conn: conn} do
     admin = admin_fixture()
     conn = log_in_user(conn, admin)
 
     {:ok, view, _html} = live(conn, ~p"/zarzadzanie/kontrahenci/dodaj")
 
+    Req.Test.stub(:nip_api, fn conn ->
+      assert conn.request_path == "/api/search/nip/5261040828"
+
+      Req.Test.json(conn, %{
+        "result" => %{
+          "subject" => %{
+            "name" => "Acme Sp. z o.o.",
+            "nip" => "5261040828",
+            "statusVat" => "Czynny",
+            "workingAddress" => "Prosta 1, 00-001 Warszawa"
+          }
+        }
+      })
+    end)
+
     assert has_element?(view, "label[for='counterparty_tax_id']", "NIP/ID*")
     assert has_element?(view, "button[phx-click='fetch_by_nip']", "Pobierz dane")
+    refute has_element?(view, "#counterparty_tax_id[pattern]")
+
+    view
+    |> form("#counterparty-form", %{"counterparty" => %{"tax_id" => "526-104-08-28"}})
+    |> render_change()
+
+    view
+    |> element("button[phx-click='fetch_by_nip']")
+    |> render_click()
+
+    assert has_element?(view, "#counterparty_tax_id[value='5261040828']")
+    assert has_element?(view, "#counterparty_display_name[value='Acme Sp. z o.o.']")
+    assert has_element?(view, "#counterparty_full_name[value='Acme Sp. z o.o.']")
+    assert has_element?(view, "#counterparty_address", "Prosta 1, 00-001 Warszawa")
+    assert has_element?(view, "#counterparty_country option[value='PL'][selected]")
+  end
+
+  test "new counterparty form validates NIP before fetching data", %{conn: conn} do
+    admin = admin_fixture()
+    conn = log_in_user(conn, admin)
+
+    {:ok, view, _html} = live(conn, ~p"/zarzadzanie/kontrahenci/dodaj")
 
     view
     |> element("button[phx-click='fetch_by_nip']")
