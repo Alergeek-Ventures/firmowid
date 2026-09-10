@@ -121,10 +121,18 @@ defmodule Firmowid.Seeds.Helpers do
   end
 
   def seed_bank_account!(attrs, org_id) do
-    Ash.Seed.upsert!(AshBankAccount, Map.put(attrs, :organization_id, org_id),
-      identity: :unique_iban_currency,
-      tenant: org_id
-    )
+    attrs = Map.put(attrs, :organization_id, org_id)
+    iban = Map.fetch!(attrs, :iban)
+    currency = Map.fetch!(attrs, :currency)
+
+    # Ash.Seed.upsert! does not expand attribute-tenant identity keys;
+    # serial seed execution makes this read/write workaround appropriate.
+    query = Ash.Query.filter(AshBankAccount, iban == ^iban and currency == ^currency)
+
+    case Ash.read_one!(query, actor: @seed_actor, tenant: org_id) do
+      nil -> Ash.Seed.seed!(AshBankAccount, attrs, tenant: org_id)
+      bank_account -> Ash.Seed.update!(bank_account, attrs, tenant: org_id)
+    end
   end
 
   def seed_transaction!(attrs, org_id) do
