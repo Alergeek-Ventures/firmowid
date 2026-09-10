@@ -445,15 +445,19 @@ defmodule Firmowid.Ash.Core.User do
       authorize_if expr(id == ^actor(:id))
     end
 
-    bypass action(:update_role) do
+    policy action(:update_role) do
+      forbid_if expr(organization.owner_id == id)
+      forbid_if expr(id == ^actor(:id))
       authorize_if actor_attribute_equals(:role, :admin)
     end
 
-    bypass action(:archive) do
+    policy action(:archive) do
+      forbid_if expr(organization.owner_id == id)
       authorize_if actor_attribute_equals(:role, :admin)
     end
 
-    bypass action(:unarchive) do
+    policy action(:unarchive) do
+      forbid_if expr(organization.owner_id == id)
       authorize_if actor_attribute_equals(:role, :admin)
     end
 

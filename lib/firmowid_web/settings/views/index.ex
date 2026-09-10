@@ -489,19 +489,9 @@ defmodule FirmowidWeb.Settings.Views.Index do
   end
 
   def handle_event("open_update_role_modal", %{"user_id" => user_id}, socket) do
-    current_user = socket.assigns.current_user
-
-    if current_user.role != :admin do
-      raise Forbidden, message: "Tylko administrator może zmieniać role użytkowników."
-    end
-
-    with {:ok, user} <- find_loaded_organization_user(socket.assigns.organization_users, user_id),
-         :ok <- prevent_self_role_change(current_user, user) do
-      {:noreply, assign(socket, :selected_user, user)}
-    else
-      {:error, :self_role_change} ->
-        LiveToast.send_toast(:error, "Nie możesz zmienić własnej roli.")
-        {:noreply, socket}
+    case find_loaded_organization_user(socket.assigns.organization_users, user_id) do
+      {:ok, user} ->
+        {:noreply, assign(socket, :selected_user, user)}
 
       {:error, :unknown_user} ->
         LiveToast.send_toast(:error, "Nie znaleziono użytkownika w organizacji.")
@@ -514,18 +504,11 @@ defmodule FirmowidWeb.Settings.Views.Index do
   end
 
   def handle_event("update_user_role", %{"user_id" => user_id, "role" => role_param}, socket) do
-    current_user = socket.assigns.current_user
-
-    if current_user.role != :admin do
-      raise Forbidden, message: "Tylko administrator może zmieniać role użytkowników."
-    end
-
     with {:ok, role} <- parse_role(role_param),
          {:ok, user} <- find_loaded_organization_user(socket.assigns.organization_users, user_id),
-         :ok <- prevent_self_role_change(current_user, user),
          {:ok, _updated_user} <-
            Core.update_role(user, %{role: role}, scope: socket.assigns.ash_scope) do
-      LiveToast.send_toast(:info, "Rola użytkownika została zmieniona.")
+      LiveToast.send_toast(:success, "Rola użytkownika została zmieniona.")
 
       {:noreply,
        socket
@@ -533,10 +516,6 @@ defmodule FirmowidWeb.Settings.Views.Index do
        |> assign(:selected_user, nil)
        |> assign_subscription_preview_if_visible()}
     else
-      {:error, :self_role_change} ->
-        LiveToast.send_toast(:error, "Nie możesz zmienić własnej roli w tym miejscu.")
-        {:noreply, assign(socket, :selected_user, nil)}
-
       {:error, :unknown_role} ->
         LiveToast.send_toast(:error, "Nieznana rola użytkownika.")
         {:noreply, assign(socket, :selected_user, nil)}
@@ -545,8 +524,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
         LiveToast.send_toast(:error, "Nie znaleziono użytkownika w organizacji.")
         {:noreply, assign(socket, :selected_user, nil)}
 
-      {:error, error} ->
-        Logger.error("Failed to update user role", error_kind: ErrorKind.classify(error))
+      {:error, _error} ->
         LiveToast.send_toast(:error, "Nie udało się zmienić roli użytkownika.")
         {:noreply, assign(socket, :selected_user, nil)}
     end
@@ -577,11 +555,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
         LiveToast.send_toast(:error, "Nie znaleziono użytkownika w organizacji.")
         {:noreply, socket}
 
-      {:error, error} ->
-        Logger.error("Failed to archive organization user",
-          error_kind: ErrorKind.classify(error)
-        )
-
+      {:error, _error} ->
         LiveToast.send_toast(:error, "Nie udało się zarchiwizować użytkownika.")
         {:noreply, socket}
     end
@@ -963,10 +937,6 @@ defmodule FirmowidWeb.Settings.Views.Index do
     current_user = socket.assigns.current_user
     scope = socket.assigns.ash_scope
 
-    if current_user.role != :admin do
-      raise Forbidden, message: "Tylko administrator może tworzyć zaproszenia."
-    end
-
     case parse_role(role_param) do
       {:ok, role} ->
         invite = Core.create_invite!(%{issued_by_id: current_user.id, role: role}, scope: scope)
@@ -995,12 +965,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
   end
 
   def handle_event("delete_organization_invite", %{"id" => id}, socket) do
-    current_user = socket.assigns.current_user
     scope = socket.assigns.ash_scope
-
-    if current_user.role != :admin do
-      raise Forbidden, message: "Tylko administrator może usuwać zaproszenia."
-    end
 
     invite = Core.get_invite!(id, scope: scope)
     Core.destroy_invite!(invite, scope: scope)
@@ -1669,13 +1634,6 @@ defmodule FirmowidWeb.Settings.Views.Index do
       {:error, :self_user_management}
     else
       :ok
-    end
-  end
-
-  defp prevent_self_role_change(current_user, user) do
-    case prevent_self_user_management(current_user, user) do
-      :ok -> :ok
-      {:error, :self_user_management} -> {:error, :self_role_change}
     end
   end
 
