@@ -54,7 +54,7 @@ jobs:
       - name: Install system dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y build-essential git libstdc++6 openssl libncurses6 locales ca-certificates libvips chromium
+          sudo apt-get install -y build-essential git libstdc++6 openssl libncurses6 locales ca-certificates libvips
 
       - name: Setup Elixir project
         uses: ./.github/actions/elixir-setup
