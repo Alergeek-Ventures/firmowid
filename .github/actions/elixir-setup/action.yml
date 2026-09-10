@@ -65,6 +65,8 @@ runs:
       with:
         path: _build/${{env.MIX_ENV}}/
         key: build-${{ inputs.cache-key }}-${{ runner.os }}-${{ inputs.otp-version }}-${{ inputs.elixir-version }}-${{ env.MIX_ENV }}-${{ hashFiles('mix.lock') }}
+        restore-keys: |
+          build-${{ inputs.cache-key }}-${{ runner.os }}-${{ inputs.otp-version }}-${{ inputs.elixir-version }}-${{ env.MIX_ENV }}-
 
     - name: Get Hex cache
       uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
