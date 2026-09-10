@@ -5,6 +5,7 @@ defmodule Firmowid.Ash.Invoicing.Services.NipApiClient do
 
   use Ecto.Schema
 
+  alias Firmowid.Ash.Core.Nip
   alias Firmowid.Ash.Invoicing.Services.NipResponse
 
   @type organization :: %{
@@ -17,20 +18,30 @@ defmodule Firmowid.Ash.Invoicing.Services.NipApiClient do
   Fetches organization data by NIP (tax identification number).
   Returns {:ok, response} or {:error, reason}.
   """
-  @spec fetch_org_data_by_nip(String.t()) ::
+  @spec fetch_org_data_by_nip(String.t(), keyword()) ::
           {:ok, organization()}
           | {:error, :not_found}
           | {:error, :invalid_nip}
           | {:error, String.t()}
-  def fetch_org_data_by_nip(nip) when is_binary(nip) do
+  def fetch_org_data_by_nip(nip, request_options \\ []) when is_binary(nip) do
+    if Nip.valid?(nip) do
+      fetch_valid_nip(Nip.normalize_digits(nip), request_options)
+    else
+      {:error, :invalid_nip}
+    end
+  end
+
+  defp fetch_valid_nip(nip, request_options) do
     date = Date.to_string(Date.utc_today())
-    url = "https://wl-api.mf.gov.pl/api/search/nip/#{String.trim(nip)}?date=#{date}"
+    url = "https://wl-api.mf.gov.pl/api/search/nip/#{nip}?date=#{date}"
 
     case Req.get(
-           url: url,
-           headers: %{
-             "Accept" => "application/json"
-           }
+           [
+             url: url,
+             headers: %{
+               "Accept" => "application/json"
+             }
+           ] ++ request_options
          ) do
       {:ok, %Req.Response{status: 200, body: %{"result" => %{"subject" => nil}}}} ->
         {:error, :not_found}

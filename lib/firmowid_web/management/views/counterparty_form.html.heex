@@ -1,5 +1,11 @@
 <div class="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-8">
-  <.form for={@form} phx-change="validate" phx-submit="save" class="flex flex-col gap-8 pt-4">
+  <.form
+    id="counterparty-form"
+    for={@form}
+    phx-change="validate"
+    phx-submit="save"
+    class="flex flex-col gap-8 pt-4"
+  >
     <div class="flex flex-row items-start justify-between">
       <div class="space-y-1">
         <p :if={@live_action == :edit} class="text-grey-500 text-sm/snug">
@@ -36,6 +42,29 @@
         <div class="flex flex-col gap-4">
           <h2 class="text-grey-900 mb-6 text-base/tight font-medium">Informacje podstawowe</h2>
           <div class="grid grid-cols-[min-content_1fr] items-start gap-x-5 gap-y-3">
+            <label class="text-grey-700 pt-1.5 text-sm text-nowrap" for={@form[:tax_id].id}>
+              NIP/ID*
+            </label>
+            <div class="flex gap-3">
+              <.input
+                field={@form[:tax_id]}
+                new={true}
+                autocomplete="off"
+                class="flex-1"
+                pattern="[0-9 .-]{10,}"
+              />
+              <.button
+                type="button"
+                variant="tertiary"
+                size="small"
+                phx-click="fetch_by_nip"
+                phx-value-nip={@form[:tax_id].value}
+                class="active:bg-grey-400! bg-grey-200! hover:bg-grey-300! text-grey-900! w-[107px]"
+              >
+                Pobierz dane
+              </.button>
+            </div>
+
             <label class="text-grey-700 text-sm text-nowrap" for={@form[:type].id}>Typ</label>
             <.input
               field={@form[:type]}
@@ -50,11 +79,6 @@
             <.input field={@form[:display_name]} new={true} />
 
             <%= if to_string(@form[:type].value) == "company" do %>
-              <label class="text-grey-700 pt-1.5 text-sm text-nowrap" for={@form[:tax_id].id}>
-                NIP / ID
-              </label>
-              <.input field={@form[:tax_id]} new={true} />
-
               <label class="text-grey-700 pt-1.5 text-sm text-nowrap" for={@form[:full_name].id}>
                 Pełna nazwa*
               </label>

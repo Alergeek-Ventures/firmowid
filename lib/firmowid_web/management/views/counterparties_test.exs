@@ -92,6 +92,28 @@ defmodule FirmowidWeb.Management.Views.CounterpartiesTest do
     assert active_html =~ "Acme po edycji"
   end
 
+  test "new counterparty form validates NIP before fetching data", %{conn: conn} do
+    admin = admin_fixture()
+    conn = log_in_user(conn, admin)
+
+    {:ok, view, _html} = live(conn, ~p"/zarzadzanie/kontrahenci/dodaj")
+
+    assert has_element?(view, "label[for='counterparty_tax_id']", "NIP/ID*")
+    assert has_element?(view, "button[phx-click='fetch_by_nip']", "Pobierz dane")
+
+    view
+    |> form("form[phx-submit='save'][phx-change='validate']", %{
+      "counterparty" => %{"tax_id" => "123"}
+    })
+    |> render_change()
+
+    view
+    |> element("button[phx-click='fetch_by_nip']")
+    |> render_click()
+
+    assert render(view) =~ "Podaj poprawny numer NIP"
+  end
+
   defp current_scope(admin) do
     %Scope{actor: admin, tenant: admin.organization_id}
   end

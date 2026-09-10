@@ -12,6 +12,7 @@ defmodule FirmowidWeb.Management.Views.CounterpartyForm do
   alias Firmowid.Ash.Invoicing
   alias Firmowid.Ash.Invoicing.Counterparty
   alias Firmowid.Ash.Invoicing.CountryCodes
+  alias Firmowid.Ash.Invoicing.Services.NipApiClient
   alias FirmowidWeb.Invoicing.Utilities.Navigation, as: InvoicingNavigation
   alias FirmowidWeb.Management.Utilities.Navigation
 
@@ -76,6 +77,40 @@ defmodule FirmowidWeb.Management.Views.CounterpartyForm do
 
       {:error, form} ->
         {:noreply, assign(socket, :form, to_form(form))}
+    end
+  end
+
+  def handle_event("fetch_by_nip", %{"nip" => nip}, socket) do
+    case NipApiClient.fetch_org_data_by_nip(nip) do
+      {:ok, organization} ->
+        params =
+          Map.merge(socket.assigns.form.params, %{
+            "type" => "company",
+            "tax_id" => organization.nip,
+            "display_name" => organization.name,
+            "full_name" => organization.name,
+            "address" => organization.address,
+            "country" => "PL"
+          })
+
+        form =
+          socket.assigns.form
+          |> AshPhoenix.Form.validate(params, errors: false)
+          |> to_form()
+
+        {:noreply,
+         socket
+         |> assign(:form, form)
+         |> LiveToast.put_toast(:success, "Pobrano dane kontrahenta")}
+
+      {:error, :invalid_nip} ->
+        {:noreply, put_flash(socket, :error, "Podaj poprawny numer NIP")}
+
+      {:error, :not_found} ->
+        {:noreply, put_flash(socket, :error, "Nie znaleziono kontrahenta dla podanego NIP")}
+
+      {:error, _reason} ->
+        {:noreply, put_flash(socket, :error, "Nie udało się pobrać danych kontrahenta")}
     end
   end
 
