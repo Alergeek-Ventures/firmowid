@@ -62,6 +62,17 @@ defmodule Firmowid.Ash.Blobs.Utils.ProcessCostInvoiceBlob do
     }
   }
 
+  @required_cost_invoice_fields ~w(
+    seller
+    invoice_identifier
+    sale_date
+    issue_date
+    due_date
+    total_amount
+    currency
+    items_list
+  )
+
   def run_processing(blob_url, blob, opts) do
     with {:ok, extracted_metadata} <- extract_metadata(blob_url),
          :ok <- ensure_cost_invoice_document(extracted_metadata) do
@@ -78,7 +89,14 @@ defmodule Firmowid.Ash.Blobs.Utils.ProcessCostInvoiceBlob do
     )
   end
 
-  defp ensure_cost_invoice_document(%{"document_type" => "cost_invoice"}), do: :ok
+  defp ensure_cost_invoice_document(%{"document_type" => "cost_invoice"} = extracted_metadata) do
+    if Enum.all?(@required_cost_invoice_fields, &(not is_nil(extracted_metadata[&1]))) do
+      :ok
+    else
+      {:error, :invalid_document}
+    end
+  end
+
   defp ensure_cost_invoice_document(_), do: {:error, :invalid_document}
 
   defp create_invoice(extracted_metadata, blob, _opts) do

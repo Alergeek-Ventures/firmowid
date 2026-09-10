@@ -304,6 +304,28 @@ defmodule FirmowidWeb.Invoicing.Views.IndexTest do
                )
     end
 
+    test "shows an invalid document toast when Reducto omits required invoice data", %{
+      conn: conn,
+      user: user
+    } do
+      put_reducto_extract_result({:ok, Map.delete(cost_invoice_document(), "total_amount")})
+
+      {:ok, view, _html} =
+        conn
+        |> log_in_user(user)
+        |> live(~p"/fakturowanie?miesiac=2026-04-01&filtr=faktury&widok=lista")
+
+      subscribe_to_upload_notifications(user)
+      upload_invoice(view, "upload-missing-data.png")
+      assert_cost_invoice_blob_failed(user)
+
+      rendered = render(view)
+
+      assert rendered =~ "Nieprawidłowy dokument"
+      assert rendered =~ "Plik nie zawiera danych wymaganych dla faktury kosztowej."
+      assert cost_invoices_for_upload_month(user) == []
+    end
+
     test "shows an invalid document toast when Reducto cannot process the file", %{
       conn: conn,
       user: user
