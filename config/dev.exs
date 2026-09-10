@@ -25,8 +25,6 @@ config :firmowid, Endpoint,
     ]
   ]
 
-config :firmowid, Endpoint, secret_key_base: "REMOVED_PHOENIX_SECRET_KEY_BASE"
-
 # Database (port 5433 matches local/compose.yml)
 config :firmowid, Firmowid.Repo,
   url: "postgresql://postgres:postgres@localhost:5433/firmowid",
@@ -34,16 +32,6 @@ config :firmowid, Firmowid.Repo,
   stacktrace: true,
   show_sensitive_data_on_connection_error: true,
   log: false
-
-# Vault key for Cloak encryption (32 bytes, base64 encoded)
-# This is a cryptographically random dev key that matches runtime.exs dev_vault_key.
-# Previous key was a human-readable string ("this is a 32 byte key!!") which
-# could cause issues when migrating encrypted data between environments.
-config :firmowid, Firmowid.Vault,
-  ciphers: [
-    default:
-      {Cloak.Ciphers.AES.GCM, tag: "AES.GCM.V1", key: Base.decode64!("REMOVED_DEV_VAULT_KEY")}
-  ]
 
 config :firmowid, :s3,
   host: "localhost",

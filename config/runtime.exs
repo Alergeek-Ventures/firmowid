@@ -29,34 +29,10 @@ end
 # import_config/1 is not enabled for this configuration file.
 # Some configuration files do not allow importing other files as they are often copied to external systems
 
-# The secret key base is used to sign/encrypt cookies and other secrets.
-# A default value is used in config/dev.exs and config/test.exs but you
-# want to use a different value for prod and you most likely don't want
-# to check this value into version control, so we use an environment
-# variable instead.
-#
-# Dev/test default: safe to use for local development only
-dev_secret_key_base = "REMOVED_PHOENIX_SECRET_KEY_BASE"
-# Dev/test default vault key (32 bytes, base64 encoded)
-dev_vault_key = "REMOVED_DEV_VAULT_KEY"
-
-secret_key_base =
-  if config_env() == :prod do
-    System.get_env("SECRET_KEY_BASE") ||
-      raise """
-      environment variable SECRET_KEY_BASE is missing.
-      You can generate one by calling: mix phx.gen.secret
-      """
-  else
-    System.get_env("SECRET_KEY_BASE", dev_secret_key_base)
-  end
-
-vault_key =
-  if config_env() == :prod do
-    "CLOAK_VAULT_KEY" |> System.get_env() |> Base.decode64!()
-  else
-    "CLOAK_VAULT_KEY" |> System.get_env(dev_vault_key) |> Base.decode64!()
-  end
+# The secret key base signs and encrypts cookies, while the vault key encrypts
+# application data. Local dev/test loads both from Infisical before this file runs.
+secret_key_base = System.fetch_env!("SECRET_KEY_BASE")
+vault_key = "CLOAK_VAULT_KEY" |> System.fetch_env!() |> Base.decode64!()
 
 ksef_env =
   System.get_env("KSEF_ENV") ||

@@ -7,9 +7,7 @@ System.put_env([
   {"GO_LIMITLESS_SECRET_ID", "your_secret_id"},
   {"GO_LIMITLESS_SECRET_KEY", "your_secret_key"},
   {"OPENAI_API_KEY", "your_openai_api_key"},
-  {"REDUCTO_API_KEY", "your_reducto_api_key"},
-  {"DATABASE_URL", "postgresql://postgres:postgres@localhost:5433/firmowid?sslmode=prefer"},
-  {"SECRET_KEY_BASE", "REMOVED_PHOENIX_SECRET_KEY_BASE"}
+  {"REDUCTO_API_KEY", "your_reducto_api_key"}
 ])
 
 Mix.install(

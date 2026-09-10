@@ -171,9 +171,6 @@ jobs:
       POSTGRES_HOST: db
       DB_PORT: "5432"
 
-      SECRET_KEY_BASE: "REMOVED_PHOENIX_SECRET_KEY_BASE"
-      CLOAK_VAULT_KEY: "REMOVED_CLOAK_VAULT_KEY"
-
       # S3 / SeaweedFS configuration (matches config/test.exs)
       S3_HOST: seaweedfs
       S3_SCHEME: "http://"
@@ -206,6 +203,12 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Generate isolated test keys
+        run: |
+          secret_key_base="$(openssl rand -base64 48)"
+          cloak_vault_key="$(openssl rand -base64 32)"
+          printf '%s\n' "SECRET_KEY_BASE=$secret_key_base" "CLOAK_VAULT_KEY=$cloak_vault_key" >> "$GITHUB_ENV"
 
       - name: Setup Elixir Project
         uses: ./.github/actions/elixir-setup
