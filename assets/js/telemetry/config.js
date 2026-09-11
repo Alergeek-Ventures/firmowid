@@ -14,7 +14,6 @@ const telemetryConfigSchema = z.object({
   posthogApiHost: datasetString,
   publicMarketing: datasetBoolean,
   currentUserId: datasetString,
-  currentUserEmail: datasetString,
   currentUserRole: datasetString,
   currentOrganizationId: datasetString,
   sentryDsn: datasetString,
@@ -31,13 +30,7 @@ function readTelemetryConfig() {
 }
 
 function currentUserProperties(config) {
-  const emailDomain = config.currentUserEmail.includes("@")
-    ? config.currentUserEmail.split("@").at(-1)
-    : "";
-
   return {
-    email: config.currentUserEmail || undefined,
-    email_domain: emailDomain || undefined,
     role: config.currentUserRole || undefined,
     organization_id: config.currentOrganizationId || undefined
   };

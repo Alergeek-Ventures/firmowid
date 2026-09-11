@@ -103,24 +103,14 @@ defmodule FirmowidWeb.Infrastructure.Flags do
 
   defp person_properties(user) do
     user
-    |> Map.take([:email, :organization_id, :role])
+    |> Map.take([:organization_id, :role])
     |> Map.new(fn
       {:role, role} -> {:role, role && to_string(role)}
       entry -> entry
     end)
-    |> Map.put(:email_domain, email_domain(user))
     |> Enum.reject(fn {_key, value} -> is_nil(value) end)
     |> Map.new()
   end
-
-  defp email_domain(%{email: email}) when is_binary(email) do
-    case String.split(email, "@", parts: 2) do
-      [_local_part, domain] when domain != "" -> domain
-      _ -> nil
-    end
-  end
-
-  defp email_domain(_user), do: nil
 
   defp posthog_enabled? do
     Application.get_env(:posthog, :enable, false)

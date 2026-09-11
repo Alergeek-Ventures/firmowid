@@ -9,6 +9,7 @@ import {
 } from "@sentry/browser";
 
 import { telemetryConfig } from "./config";
+import { sanitizeTelemetryUrl } from "./privacy.js";
 
 // These schema constants mirror the installed Sentry 10.73 event/Replay contracts.
 const ID = /^[0-9a-f]{32}$/i;
@@ -56,30 +57,6 @@ function scalar(value) {
     (typeof value === "number" && Number.isFinite(value));
 }
 
-function stripUrl(value) {
-  if (typeof value !== "string" || (!value.startsWith("/") && !/^https?:\/\//i.test(value))) {
-    return undefined;
-  }
-
-  try {
-    const parsed = new URL(value, window.location.origin);
-    if (!/^https?:$/.test(parsed.protocol)) return undefined;
-    if (value.startsWith("/") && parsed.origin !== window.location.origin) return undefined;
-    if (parsed.username || parsed.password) return undefined;
-    parsed.search = "";
-    parsed.hash = "";
-    parsed.pathname = parsed.pathname.replace(
-      /\/(resetuj-haslo|potwierdz-email|faktura)\/[^/]+(?=\/|$)/i,
-      "/$1/:redacted",
-    );
-    return parsed.origin === window.location.origin
-      ? parsed.pathname
-      : parsed.href;
-  } catch (_error) {
-    return undefined;
-  }
-}
-
 function fields(value, names) {
   if (!object(value)) return {};
   const result = {};
@@ -98,7 +75,7 @@ function sanitizeUser(user) {
 function sanitizeRequest(request) {
   if (!object(request)) return {};
   const result = {};
-  if (typeof request.url === "string") result.url = stripUrl(request.url);
+  if (typeof request.url === "string") result.url = sanitizeTelemetryUrl(request.url);
   if (result.url === undefined) delete result.url;
   if (typeof request.method === "string") result.method = request.method;
   return result;
@@ -128,7 +105,7 @@ function sanitizeBreadcrumb(breadcrumb) {
     for (const name of BREADCRUMB_DATA_FIELDS) {
       if (!scalar(breadcrumb.data[name])) continue;
       if (name === "url" || name === "from" || name === "to") {
-        const url = stripUrl(breadcrumb.data[name]);
+        const url = sanitizeTelemetryUrl(breadcrumb.data[name]);
         if (url !== undefined) data[name] = url;
       } else {
         data[name] = breadcrumb.data[name];
@@ -229,7 +206,7 @@ function sanitizeEvent(event) {
   if (typeof event.timestamp === "number" && Number.isFinite(event.timestamp)) result.timestamp = event.timestamp;
   if (typeof event.message === "string") result.message = "Browser message captured";
   if (typeof event.transaction === "string") {
-    const transaction = stripUrl(event.transaction);
+    const transaction = sanitizeTelemetryUrl(event.transaction);
     if (transaction !== undefined) result.transaction = transaction;
   }
   if (object(event.logentry) && typeof event.logentry.message === "string") {
@@ -261,10 +238,10 @@ function sanitizeReplayMetadata(event) {
       !Array.isArray(event.segment_names) || !event.segment_names.every((name) => typeof name === "string") ||
       !Array.isArray(event.urls) ||
       !event.urls.every((url) => typeof url === "string")) return null;
-    const urls = event.urls.map(stripUrl);
+    const urls = event.urls.map(sanitizeTelemetryUrl);
     if (urls.some((url) => url === undefined)) return null;
     const transaction = typeof event.transaction === "string"
-      ? stripUrl(event.transaction)
+      ? sanitizeTelemetryUrl(event.transaction)
       : undefined;
     return {
       type: "replay_event",

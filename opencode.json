@@ -1,7 +1,8 @@
 {
   "$schema": "https://opencode.ai/config.json",
   "permission": {
-    "sentry_*": "deny"
+    "sentry_*": "deny",
+    "posthog_*": "deny"
   },
   "agent": {
     "sentry": {
@@ -11,6 +12,14 @@
       },
       "description": "An agent that has access to Sentry's MCP to check issue details",
       "prompt": "Your goal is to access Sentry and provide information about issues"
+    },
+    "posthog": {
+      "mode": "subagent",
+      "permission": {
+        "posthog_*": "allow"
+      },
+      "description": "An agent that has access to PostHog's MCP to check analytics details",
+      "prompt": "Your goal is to access PostHog and provide information about analytics"
     }
   },
   "mcp": {
@@ -22,6 +31,11 @@
     "sentry": {
       "type": "remote",
       "url": "https://mcp.sentry.dev/mcp/alergeek/firmowid"
+    },
+    "posthog": {
+      "type": "remote",
+      "url": "https://mcp.posthog.com/mcp",
+      "enabled": true
     },
     "figma": {
       "type": "remote",
