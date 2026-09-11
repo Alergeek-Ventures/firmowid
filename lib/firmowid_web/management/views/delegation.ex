@@ -138,7 +138,10 @@ defmodule FirmowidWeb.Management.Views.Delegation do
           <dl class="mt-8 grid grid-cols-[minmax(10rem,auto)_1fr] gap-x-8 gap-y-5">
             <.detail_row label="Imię i nazwisko">
               <span class="flex items-center gap-2">
-                <.avatar id="delegation-employee-avatar" class="bg-grey-100 size-6 rounded-full">
+                <.avatar
+                  id="delegation-employee-avatar"
+                  class="bg-grey-100 border-grey-200 size-6 rounded-full border"
+                >
                   <.avatar_image
                     :if={@employee.avatar_blob && @employee.avatar_blob.url}
                     src={@employee.avatar_blob.url}
@@ -236,7 +239,7 @@ defmodule FirmowidWeb.Management.Views.Delegation do
                     download
                     class="ml-2 inline-flex"
                   >
-                    <Lucideicons.file_text class="size-4 fill-current" />
+                    <Lucideicons.file_text class="text-grey-900 size-4" />
                     {command_filename(@employee)}
                   </.link>
                 </li>
@@ -246,9 +249,9 @@ defmodule FirmowidWeb.Management.Views.Delegation do
                     kind="unstyled"
                     external={ElectronicSignature.trusted_profile_url()}
                     target="_blank"
-                    class="text-turquoise-700"
+                    class="text-turquoise-700 inline-flex items-center gap-1 font-medium whitespace-nowrap"
                   >
-                    Profilem Zaufanym <Lucideicons.external_link class="inline size-4" />
+                    Profilem Zaufanym <Lucideicons.external_link class="size-4" />
                   </.link>
                 </li>
                 <li>Wgraj podpisane polecenie wyjazdu służbowego.</li>

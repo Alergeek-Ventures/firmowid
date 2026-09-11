@@ -1,4 +1,4 @@
-defmodule FirmowidWeb.Management.Components.DelegationCommandPdf do
+defmodule FirmowidWeb.Management.Components.DelegationOrderPdf do
   @moduledoc "Printable business trip order PDF template."
 
   use FirmowidWeb, :html
@@ -12,29 +12,26 @@ defmodule FirmowidWeb.Management.Components.DelegationCommandPdf do
   attr :delegation, :map, required: true
   attr :footer_logo_data_uri, :string, required: true
 
-  def command(assigns) do
+  def order(assigns) do
     ~H"""
-    <div class="font-lexend relative mx-auto flex h-[297mm] w-[210mm] flex-col border bg-white p-8 text-[10px]">
+    <div class="font-lexend relative mx-auto box-content h-248 w-182.5 bg-white p-8 text-[10px]">
       <header class="flex items-start justify-between">
         <div>
-          <h1 class="text-[14px] font-medium">
+          <h1 class="text-sm font-medium">
             Polecenie wyjazdu służbowego nr <strong>{@delegation.id}</strong>
           </h1>
           <p class="mt-1">
             z dnia <strong>{DelegationPresentation.format_date(@delegation.inserted_at)}</strong>
           </p>
         </div>
-        <div class="bg-grey-200 flex size-[34px] items-center justify-center text-[8px]">
-          logo firmy
-        </div>
       </header>
 
-      <.section title="DANE PRACOWNIKA">
+      <.section title="Dane pracownika" separated={false}>
         <.row label="Imię i nazwisko:"><strong>{@employee.name || @employee.email}</strong></.row>
         <.row label="Stanowisko:">{@employee.position || "—"}</.row>
       </.section>
 
-      <.section title="SZCZEGÓŁY DELEGACJI">
+      <.section title="Szczegóły delegacji">
         <.row label="Termin podróży:">
           {DelegationPresentation.format_range(@delegation.start_date, @delegation.end_date)}
         </.row>
@@ -43,19 +40,24 @@ defmodule FirmowidWeb.Management.Components.DelegationCommandPdf do
         <.row label="Cel podróży:">{@delegation.purpose}</.row>
       </.section>
 
-      <.section title="PRZYZNANA ZALICZKA">
+      <.section title="Przyznana zaliczka">
         <.row label="Kwota:">
           <strong>{DelegationPresentation.format_money(@delegation.advance_amount)}</strong>
         </.row>
       </.section>
 
-      <div class="mt-[150px] ml-auto w-[200px] text-center text-[8px]">
+      <div class="mt-37.5 ml-auto w-50 text-center text-[8px]">
         <div class="border-grey-200 border-b border-dotted pb-1" />
         <p class="mt-1">Podpis pracodawcy</p>
       </div>
 
-      <footer class="mt-auto flex items-center gap-2 text-[8px]">
-        <img src={@footer_logo_data_uri} class="size-6 object-contain" />
+      <footer class="absolute bottom-8 left-8 flex items-end gap-2 text-[8px]/2.5">
+        <div class="h-13.5 w-8.25 overflow-hidden">
+          <img
+            src={@footer_logo_data_uri}
+            class="h-14.5 w-auto max-w-none object-contain object-top"
+          />
+        </div>
         <div>
           <p>Dokument 1/<span class="text-grey-400">2</span></p>
           <p>
@@ -71,12 +73,13 @@ defmodule FirmowidWeb.Management.Components.DelegationCommandPdf do
   end
 
   attr :title, :string, required: true
+  attr :separated, :boolean, default: true
   slot :inner_block, required: true
 
   defp section(assigns) do
     ~H"""
-    <section class="border-grey-200 mt-5 border-t pt-3">
-      <h2 class="text-grey-600 mb-2 text-[8px] font-bold">{@title}</h2>
+    <section class={["mt-5 pt-3", @separated && "border-grey-200 border-t"]}>
+      <h2 class="text-grey-600 mb-2 text-[8px] font-bold uppercase">{@title}</h2>
       <div class="space-y-1">{render_slot(@inner_block)}</div>
     </section>
     """
