@@ -283,7 +283,7 @@ defmodule FirmowidWeb.Core.Router do
     get "/czasosledz/ewidencja/:id", HoursRecord.Controllers.Record, :download
 
     get "/zarzadzanie/pracownicy/:employee_id/delegacje/:id/pdf",
-        Management.Controllers.DelegationCommand,
+        Management.Controllers.DelegationOrder,
         :pdf
 
     ash_authentication_live_session :with_org_extended,

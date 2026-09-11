@@ -1,4 +1,4 @@
-defmodule FirmowidWeb.Management.Controllers.DelegationCommand do
+defmodule FirmowidWeb.Management.Controllers.DelegationOrder do
   @moduledoc "Controller for downloading business trip order PDFs."
 
   use FirmowidWeb, :controller
@@ -20,12 +20,12 @@ defmodule FirmowidWeb.Management.Controllers.DelegationCommand do
          true <- delegation.user_id == employee.id do
       html =
         PdfHelpers.render_pdf_html(
-          FirmowidWeb.Management.Components.DelegationCommandPdf,
-          :command,
+          FirmowidWeb.Management.Components.DelegationOrderPdf,
+          :order,
           employee: employee,
           delegation: delegation,
           footer_logo_data_uri:
-            PdfHelpers.file_to_data_uri(Path.join(:code.priv_dir(:firmowid), "static/images/invoice_firmowid_logo.png"))
+            PdfHelpers.file_to_data_uri(Path.join(:code.priv_dir(:firmowid), "static/images/figurine.png"))
         )
 
       {:ok, result} =
@@ -39,6 +39,9 @@ defmodule FirmowidWeb.Management.Controllers.DelegationCommand do
             |> send_file(200, path)
           end,
           page_size: "A4",
+          evaluate: %{
+            expression: "document.body.style.margin = '0'; document.body.style.padding = '0';"
+          },
           print_to_pdf: %{
             marginTop: 0,
             marginLeft: 0,
