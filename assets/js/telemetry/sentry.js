@@ -221,9 +221,12 @@ function sanitizeEvent(event) {
   }
   if (typeof event.timestamp === "number" && Number.isFinite(event.timestamp)) result.timestamp = event.timestamp;
   if (typeof event.message === "string") result.message = "Browser message captured";
+  const currentPath = sanitizeTelemetryUrl(window.location.pathname);
   if (typeof event.transaction === "string") {
     const transaction = sanitizeTelemetryUrl(event.transaction);
     if (transaction !== undefined) result.transaction = transaction;
+  } else if (typeof currentPath === "string" && currentPath !== "") {
+    result.transaction = currentPath;
   }
   if (object(event.logentry) && typeof event.logentry.message === "string") {
     const logentry = {};
