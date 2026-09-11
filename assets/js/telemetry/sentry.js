@@ -173,7 +173,7 @@ function sanitizeException(exception) {
     values: exception.values.filter(object).map((value) => ({
       ...(typeof value.type === "string" ? { type: value.type } : {}),
       ...(typeof value.module === "string" ? { module: value.module } : {}),
-      value: "Browser exception captured",
+      ...(typeof value.value === "string" ? { value: value.value } : {}),
       ...(scalar(value.thread_id) ? { thread_id: value.thread_id } : {}),
       ...(object(value.mechanism) ? { mechanism: fields(value.mechanism, [
         "type", "handled", "synthetic", "source", "is_exception_group", "exception_id", "parent_id",
@@ -220,7 +220,7 @@ function sanitizeEvent(event) {
     if (scalar(event[name])) result[name] = event[name];
   }
   if (typeof event.timestamp === "number" && Number.isFinite(event.timestamp)) result.timestamp = event.timestamp;
-  if (typeof event.message === "string") result.message = "Browser message captured";
+  if (typeof event.message === "string") result.message = event.message;
   const currentPath = sanitizeTelemetryUrl(window.location.pathname);
   if (typeof event.transaction === "string") {
     const transaction = sanitizeTelemetryUrl(event.transaction);
@@ -230,7 +230,7 @@ function sanitizeEvent(event) {
   }
   if (object(event.logentry) && typeof event.logentry.message === "string") {
     const logentry = {};
-    logentry.message = "Browser message captured";
+    logentry.message = event.logentry.message;
     result.logentry = logentry;
   }
   if ("user" in event) result.user = sanitizeUser(event.user);

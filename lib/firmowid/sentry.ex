@@ -78,8 +78,6 @@ defmodule Firmowid.Sentry do
     trace: [:trace_id, :span_id, :parent_span_id, :op, :status, :origin, :sampled]
   }
   @default_fingerprint "{{ default }}"
-  @log_body "Log captured"
-
   @doc "Attaches the LiveView telemetry exception handler once at application startup."
   @spec setup() :: :ok | {:error, :already_exists}
   def setup, do: :telemetry.attach_many(@handler_id, @events, &__MODULE__.handle_event/4, :no_config)
@@ -163,9 +161,7 @@ defmodule Firmowid.Sentry do
     else
       %{
         event
-        | body: @log_body,
-          template: nil,
-          parameters: nil,
+        | parameters: nil,
           attributes: scrub_log_attributes(attributes)
       }
     end
@@ -327,7 +323,7 @@ defmodule Firmowid.Sentry do
   defp scrub_breadcrumbs(breadcrumbs) when is_list(breadcrumbs) do
     breadcrumbs
     |> Enum.map(fn
-      %SentrySDK.Interfaces.Breadcrumb{} = breadcrumb -> %{breadcrumb | message: nil, data: nil}
+      %SentrySDK.Interfaces.Breadcrumb{} = breadcrumb -> %{breadcrumb | data: nil}
       _ -> nil
     end)
     |> Enum.reject(&is_nil/1)
@@ -341,12 +337,7 @@ defmodule Firmowid.Sentry do
 
   defp scrub_exception_item(%SentrySDK.Interfaces.Exception{} = exception),
     do: [
-      %{
-        exception
-        | value: "Exception captured",
-          mechanism: scrub_mechanism(exception.mechanism),
-          stacktrace: scrub_stacktrace(exception.stacktrace)
-      }
+      %{exception | mechanism: scrub_mechanism(exception.mechanism), stacktrace: scrub_stacktrace(exception.stacktrace)}
     ]
 
   defp scrub_exception_item(_exception), do: []
@@ -364,11 +355,8 @@ defmodule Firmowid.Sentry do
   defp scrub_frames(frames) when is_list(frames),
     do:
       Enum.flat_map(frames, fn
-        %SentrySDK.Interfaces.Stacktrace.Frame{} = frame ->
-          [%{frame | filename: nil, vars: nil, context_line: nil, pre_context: [], post_context: []}]
-
-        _ ->
-          []
+        %SentrySDK.Interfaces.Stacktrace.Frame{} = frame -> [%{frame | vars: nil}]
+        _ -> []
       end)
 
   defp scrub_frames(_frames), do: []
@@ -390,7 +378,7 @@ defmodule Firmowid.Sentry do
   defp scrub_event_message(%SentrySDK.Event{exception: exception}) when is_list(exception) and exception != [], do: nil
 
   defp scrub_event_message(%SentrySDK.Event{message: %SentrySDK.Interfaces.Message{} = message}),
-    do: %{message | message: "Message captured", formatted: "Message captured", params: nil}
+    do: %{message | params: nil}
 
   defp scrub_event_message(_event), do: nil
 
