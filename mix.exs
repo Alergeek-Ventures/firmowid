@@ -228,7 +228,6 @@ defmodule Firmowid.MixProject do
       "assets.sentry.deploy": [
         "tailwind firmowid --minify",
         "esbuild firmowid --minify --sourcemap=external",
-        "cmd npm run sentry:sourcemaps:inject --prefix assets",
         "phx.digest"
       ],
       "assets.licenses": ["cmd npm run licenses:check --prefix assets"]
