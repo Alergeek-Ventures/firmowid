@@ -8,6 +8,7 @@ defmodule FirmowidWeb.Management.Views.EmployeesTest do
 
   alias Firmowid.Ash.Blobs.Blob
   alias Firmowid.Ash.Core
+  alias Firmowid.Ash.Delegations, as: DelegationsDomain
   alias Firmowid.Ash.Delegations.Delegation
   alias Firmowid.Ash.Payroll
   alias Firmowid.Ash.Scope
@@ -195,7 +196,7 @@ defmodule FirmowidWeb.Management.Views.EmployeesTest do
         destination: "Kraków",
         transport_types: [:railway],
         purpose: "Spotkanie z klientem",
-        advance_payment_amount: Money.new(:PLN, 100),
+        expected_cost: Money.new(:PLN, 100),
         start_date: ~D[2026-08-10],
         end_date: ~D[2026-08-11],
         status: :pending
@@ -207,8 +208,10 @@ defmodule FirmowidWeb.Management.Views.EmployeesTest do
       user_id: employee.id,
       title: "Delegacja w trakcie",
       billing_month: ~D[2026-08-01],
+      destination: "Kraków",
+      transport_types: [:railway],
       purpose: "Spotkanie z klientem",
-      advance_payment_amount: Money.new(:PLN, 100),
+      expected_cost: Money.new(:PLN, 100),
       start_date: ~D[2026-08-10],
       end_date: ~D[2026-08-11],
       status: :in_progress
@@ -220,8 +223,10 @@ defmodule FirmowidWeb.Management.Views.EmployeesTest do
       user_id: employee.id,
       title: "Zakończony wyjazd służbowy",
       billing_month: ~D[2026-08-01],
+      destination: "Kraków",
+      transport_types: [:railway],
       purpose: "Spotkanie z klientem",
-      advance_payment_amount: Money.new(:PLN, 100),
+      expected_cost: Money.new(:PLN, 100),
       start_date: ~D[2026-08-10],
       end_date: ~D[2026-08-11],
       status: :complete
@@ -264,7 +269,7 @@ defmodule FirmowidWeb.Management.Views.EmployeesTest do
         purpose: "Spotkanie z klientem",
         destination: "Kraków",
         transport_types: [:railway],
-        advance_payment_amount: Money.new(:PLN, 100),
+        expected_cost: Money.new(:PLN, 100),
         start_date: ~D[2026-08-10],
         end_date: ~D[2026-08-11],
         status: :pending
@@ -279,15 +284,59 @@ defmodule FirmowidWeb.Management.Views.EmployeesTest do
     assert html =~ "Jan Kowalski"
     assert html =~ "sierpień 2026"
     assert html =~ "Wygeneruj polecenie, aby móc je podpisać."
+    assert has_element?(view, "#delegation-employee-avatar")
     assert has_element?(view, "input[disabled][name='delegation_command[amount]']")
-    assert has_element?(view, "input[name='delegation_command[amount]'][value='100']")
+    assert has_element?(view, "input[name='delegation_command[amount]'][value='0']")
 
     view
     |> element("#delegation-command-form")
     |> render_change(%{"delegation_command" => %{"advance" => "true"}})
 
     refute has_element?(view, "input[disabled][name='delegation_command[amount]']")
-    assert has_element?(view, "input[name='delegation_command[amount]'][value='100']")
+    assert has_element?(view, "input[name='delegation_command[amount]'][value='0']")
+
+    view
+    |> form("#delegation-command-form", %{
+      "delegation_command" => %{"advance" => "false"}
+    })
+    |> render_submit()
+
+    assert render(view) =~ "Bez zaliczki"
+
+    view
+    |> element("#delegation-command-form")
+    |> render_change(%{"delegation_command" => %{"advance" => "true"}})
+
+    view
+    |> form("#delegation-command-form", %{
+      "delegation_command" => %{"advance" => "true", "amount" => "1300.00"}
+    })
+    |> render_submit()
+
+    assert has_element?(view, "#signed-command-upload")
+    assert render(view) =~ "Zaliczka: 1 300,00 zł"
+
+    upload =
+      file_input(view, "#signed-command-upload", :signed_command, [
+        %{
+          name: "podpisane-polecenie.pdf",
+          content: "%PDF-1.4 signed",
+          type: "application/pdf"
+        }
+      ])
+
+    render_upload(upload, "podpisane-polecenie.pdf")
+
+    assert {:error, {:live_redirect, %{to: redirect_path}}} =
+             view |> form("#signed-command-upload") |> render_submit()
+
+    assert redirect_path == ~p"/zarzadzanie/pracownicy/#{employee.id}/delegacje"
+
+    approved = DelegationsDomain.get_delegation!(delegation.id, scope: current_scope(admin))
+    assert approved.status == :in_progress
+    assert Money.equal?(approved.advance_amount, Money.new(:PLN, 1300))
+    assert approved.signed_command_filename == "podpisane-polecenie.pdf"
+    assert approved.signed_command_blob_id
   end
 
   test "admin can restore archived employee from employee detail page", %{conn: conn} do

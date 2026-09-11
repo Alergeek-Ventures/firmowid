@@ -183,7 +183,7 @@ defmodule FirmowidWeb.Delegations.Views.DelegationForm do
               <.form_row label="Przewidywana kwota" for="delegation_amount">
                 <div class="flex items-center gap-2">
                   <.input
-                    field={@form[:advance_payment_amount]}
+                    field={@form[:expected_cost]}
                     id="delegation_amount"
                     type="number"
                     new
