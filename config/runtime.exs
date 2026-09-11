@@ -157,6 +157,7 @@ end
 #   POSTHOG_ENABLED - enable PostHog analytics, defaults to "false"
 #   POSTHOG_API_KEY - PostHog project API key (required if PostHog enabled)
 #   POSTHOG_API_HOST - PostHog API host, defaults to "https://i.alergeek.workers.dev"
+#   SENTRY_DSN - shared browser and server Sentry DSN, or the exact token "disabled"
 #   SENTRY_ENVIRONMENT - Sentry environment name, defaults to "production" in prod
 posthog_enabled = System.get_env("POSTHOG_ENABLED", "false") == "true"
 
@@ -192,22 +193,14 @@ defmodule RuntimeSentry do
     do: raise("Invalid Sentry DSN in #{name}: #{inspect(val)}. Provide a valid DSN or the exact token 'disabled'.")
 end
 
-# Pre-validate frontend and server DSNs
-frontend_raw =
-  System.get_env("SENTRY_FRONTEND_DSN")
+# Pre-validate the shared browser and server DSN
+sentry_raw = System.get_env("SENTRY_DSN")
 
-server_raw = System.get_env("SENTRY_DSN")
-
-if production_release_runtime and is_nil(frontend_raw) do
-  raise "SENTRY_FRONTEND_DSN is missing. Provide a valid DSN or the exact token 'disabled'."
-end
-
-if production_release_runtime and is_nil(server_raw) do
+if production_release_runtime and is_nil(sentry_raw) do
   raise "SENTRY_DSN is missing. Provide a valid DSN or the exact token 'disabled'."
 end
 
-frontend_sentry = RuntimeSentry.validate(frontend_raw, "SENTRY_FRONTEND_DSN")
-server_sentry = RuntimeSentry.validate(server_raw, "SENTRY_DSN")
+sentry_dsn = RuntimeSentry.validate(sentry_raw, "SENTRY_DSN")
 
 # If the raw env was the explicit disable token, remove it from process env
 # so Sentry's own config fill-in-from-env won't pick it up.
@@ -226,7 +219,7 @@ if posthog_enabled do
     posthog_enabled: true,
     posthog_api_key: posthog_api_key,
     posthog_api_host: posthog_api_host,
-    sentry_dsn: frontend_sentry,
+    sentry_dsn: sentry_dsn,
     sentry_environment: sentry_environment,
     sentry_release: sentry_release || ""
 
@@ -240,7 +233,7 @@ else
     posthog_enabled: false,
     posthog_api_key: "",
     posthog_api_host: "",
-    sentry_dsn: frontend_sentry,
+    sentry_dsn: sentry_dsn,
     sentry_environment: sentry_environment,
     sentry_release: sentry_release || ""
 
@@ -249,9 +242,9 @@ else
     enable_error_tracking: false
 end
 
-# server-side Sentry DSN
+# Shared browser and server Sentry DSN
 config :sentry,
-  dsn: server_sentry,
+  dsn: sentry_dsn,
   environment_name: sentry_environment,
   release: sentry_release
 
