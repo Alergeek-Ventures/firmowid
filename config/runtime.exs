@@ -218,7 +218,6 @@ if posthog_enabled do
   config :firmowid, :frontend_observability,
     posthog_enabled: true,
     posthog_api_key: posthog_api_key,
-    posthog_api_host: posthog_api_host,
     sentry_dsn: sentry_dsn,
     sentry_environment: sentry_environment,
     sentry_release: sentry_release || ""
@@ -232,7 +231,6 @@ else
   config :firmowid, :frontend_observability,
     posthog_enabled: false,
     posthog_api_key: "",
-    posthog_api_host: "",
     sentry_dsn: sentry_dsn,
     sentry_environment: sentry_environment,
     sentry_release: sentry_release || ""

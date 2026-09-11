@@ -9,9 +9,12 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@sentry/cli": "3.7.0",
     "license-checker": "^25.0.1"
   },
   "scripts": {
-    "licenses:check": "license-checker --production --excludePrivatePackages --onlyAllow 'MIT;Apache-2.0;BSD-2-Clause;BSD-3-Clause;ISC;0BSD;CC0-1.0;Unlicense;BlueOak-1.0.0;MPL-2.0'"
+    "licenses:check": "license-checker --production --excludePrivatePackages --onlyAllow 'MIT;Apache-2.0;BSD-2-Clause;BSD-3-Clause;ISC;0BSD;CC0-1.0;Unlicense;BlueOak-1.0.0;MPL-2.0'",
+    "sentry:sourcemaps:inject": "sentry-cli sourcemaps inject ../priv/static/assets",
+    "sentry:sourcemaps:clean": "find ../priv/static/assets -type f \\( -name '*.map' -o -name '*.map.*' \\) -delete"
   }
 }

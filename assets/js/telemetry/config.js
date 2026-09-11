@@ -11,7 +11,6 @@ const datasetString = z.preprocess(
 const telemetryConfigSchema = z.object({
   posthogEnabled: datasetBoolean,
   posthogApiKey: datasetString,
-  posthogApiHost: datasetString,
   publicMarketing: datasetBoolean,
   currentUserId: datasetString,
   currentUserRole: datasetString,

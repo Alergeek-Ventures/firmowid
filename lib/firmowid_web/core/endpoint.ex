@@ -54,6 +54,8 @@ defmodule FirmowidWeb.Core.Endpoint do
   plug FirmowidWeb.Core.RequestLogMetadata
   plug Plug.Telemetry, event_prefix: [:phoenix, :endpoint]
 
+  plug FirmowidWeb.Infrastructure.Plugs.TelemetryProxy
+
   plug Plug.Parsers,
     parsers: [:urlencoded, :multipart, :json],
     pass: ["*/*"],

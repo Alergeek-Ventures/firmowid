@@ -15,7 +15,25 @@ function currentTelemetryUrl() {
 
 function posthogOptions() {
   return {
-    api_host: telemetryConfig.posthogApiHost,
+    api_host: window.location.origin,
+    rewriteRequestPath: (url) => {
+      const paths = {
+        "/i/v0/e/": "/_x/19a4/",
+        "/e/": "/_x/27bf/",
+        "/s/": "/_x/3d81/",
+        "/flags/": "/_x/4c6e/",
+        "/array/": "/_x/5ab2/",
+        "/static/": "/_x/6f93/"
+      };
+
+      const entry = Object.entries(paths).find(([original]) => url.pathname.startsWith(original));
+
+      if (entry) {
+        url.pathname = entry[1] + url.pathname.slice(entry[0].length);
+      }
+
+      return url;
+    },
     defaults: "2026-01-30",
     capture_pageview: "history_change",
     // Autocapture stays enabled; future data-ph-capture-attribute-* properties require privacy review.

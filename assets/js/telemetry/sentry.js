@@ -13,6 +13,7 @@ import { sanitizeTelemetryUrl } from "./privacy.js";
 
 // These schema constants mirror the installed Sentry 10.73 event/Replay contracts.
 const ID = /^[0-9a-f]{32}$/i;
+const DEBUG_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const DEFAULT_FINGERPRINT = "{{ default }}";
 const BOOLEAN_REPLAY_OPTION_FIELDS = [
   "blockAllMedia",
@@ -151,6 +152,20 @@ function applicationPath(value) {
   }
 }
 
+function sanitizeDebugMeta(debugMeta) {
+  if (!object(debugMeta) || !Array.isArray(debugMeta.images)) return null;
+  const images = debugMeta.images
+    .filter((image) => object(image) && image.type === "sourcemap" &&
+      DEBUG_ID.test(image.debug_id) && typeof image.code_file === "string" &&
+      applicationPath(image.code_file))
+    .map((image) => ({
+      type: "sourcemap",
+      code_file: image.code_file,
+      debug_id: image.debug_id,
+    }));
+  return images.length ? { images } : null;
+}
+
 function sanitizeException(exception) {
   if (!object(exception) || !Array.isArray(exception.values)) return {};
   return {
@@ -223,6 +238,8 @@ function sanitizeEvent(event) {
   if (object(event.threads)) result.threads = sanitizeThreads(event.threads);
   if (Array.isArray(event.fingerprint) && event.fingerprint.includes(DEFAULT_FINGERPRINT)) result.fingerprint = [DEFAULT_FINGERPRINT];
   if (object(event.sdk)) result.sdk = sanitizeSdk(event.sdk);
+  const debugMeta = sanitizeDebugMeta(event.debug_meta);
+  if (debugMeta) result.debug_meta = debugMeta;
   return result;
 }
 
@@ -324,6 +341,7 @@ export function initSentry() {
   if (getClient() || !telemetryConfig.sentryDsn) return;
   init({
     dsn: telemetryConfig.sentryDsn,
+    tunnel: "/_x/8e2f",
     environment: telemetryConfig.sentryEnvironment,
     release: telemetryConfig.sentryRelease || undefined,
     sendDefaultPii: false,

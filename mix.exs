@@ -131,7 +131,6 @@ defmodule Firmowid.MixProject do
       {:any_ascii, "~> 0.3.3"},
       {:multipart, "~> 0.6.0"},
       {:posthog, "~> 2.15.0"},
-      {:reverse_proxy_plug, "~> 3.0"},
       {:ecto_dev_logger, "~> 0.14"},
       {:nx, "~> 0.10"},
       {:mdex, "~> 0.7"},
@@ -229,6 +228,7 @@ defmodule Firmowid.MixProject do
       "assets.sentry.deploy": [
         "tailwind firmowid --minify",
         "esbuild firmowid --minify --sourcemap=external",
+        "cmd npm run sentry:sourcemaps:inject --prefix assets",
         "phx.digest"
       ],
       "assets.licenses": ["cmd npm run licenses:check --prefix assets"]

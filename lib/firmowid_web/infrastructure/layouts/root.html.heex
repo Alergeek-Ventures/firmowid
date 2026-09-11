@@ -55,13 +55,6 @@
           ""
         )
       }
-      data-posthog-api-host={
-        Keyword.get(
-          Application.get_env(:firmowid, :frontend_observability, []),
-          :posthog_api_host,
-          ""
-        )
-      }
       data-sentry-dsn={
         Keyword.get(Application.get_env(:firmowid, :frontend_observability, []), :sentry_dsn, "")
       }

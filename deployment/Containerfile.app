@@ -64,6 +64,9 @@ RUN mix localize.setup
 
 # compile assets (must come after mix compile for phoenix-colocated hooks)
 RUN mix assets.sentry.deploy
+# Source maps are uploaded separately by CI and must not be shipped in the runtime image.
+# This runs after digesting so the deployed JavaScript remains byte-identical to CI's artifact.
+RUN npm run sentry:sourcemaps:clean --prefix assets
 
 # Changes to config/runtime.exs don't require recompiling the code
 COPY config/runtime.exs config/
