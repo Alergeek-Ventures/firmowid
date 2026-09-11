@@ -262,6 +262,8 @@ defmodule FirmowidWeb.Management.Views.EmployeesTest do
         title: "Wyjazd do klienta",
         billing_month: ~D[2026-08-01],
         purpose: "Spotkanie z klientem",
+        destination: "Kraków",
+        transport_types: [:railway],
         advance_payment_amount: Money.new(:PLN, 100),
         start_date: ~D[2026-08-10],
         end_date: ~D[2026-08-11],
