@@ -9,6 +9,7 @@ defmodule FirmowidWeb.HoursRecord.Components.UploadForm do
 
   alias Firmowid.Ash.Timetracker
   alias Firmowid.Ash.Timetracker.HoursRecord, as: AshHoursRecord
+  alias FirmowidWeb.Infrastructure.Utilities.ElectronicSignature
 
   @impl true
   def mount(socket) do
@@ -79,7 +80,7 @@ defmodule FirmowidWeb.HoursRecord.Components.UploadForm do
           <div class="flex items-center justify-between">
             <.link
               kind="unstyled"
-              external="https://moj.gov.pl/nforms/signer/upload?xFormsAppName=SIGNER"
+              external={ElectronicSignature.trusted_profile_url()}
               target="_blank"
               class="hover:underline"
             >
