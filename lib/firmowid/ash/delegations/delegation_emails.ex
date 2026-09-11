@@ -60,7 +60,7 @@ defmodule Firmowid.Ash.Delegations.DelegationEmails do
       <.detail_row label="Cel wyjazdu" value={@delegation.purpose} />
       <.detail_row
         label="Przewidywana kwota"
-        value={Money.to_string!(@delegation.advance_payment_amount)}
+        value={Money.to_string!(@delegation.expected_cost)}
       />
       <.button href={@url}>Otwórz wniosek w Firmowidzie</.button>
       <.signature />
@@ -75,7 +75,7 @@ defmodule Firmowid.Ash.Delegations.DelegationEmails do
     Pracownik: #{assigns.name}
     Data wyjazdu: #{date_range(assigns.delegation)}
     Cel wyjazdu: #{assigns.delegation.purpose}
-    Przewidywana kwota: #{Money.to_string!(assigns.delegation.advance_payment_amount)}
+    Przewidywana kwota: #{Money.to_string!(assigns.delegation.expected_cost)}
 
     Otwórz wniosek w Firmowidzie:
     #{assigns.url}
@@ -93,7 +93,7 @@ defmodule Firmowid.Ash.Delegations.DelegationEmails do
       <.detail_row label="Cel wyjazdu" value={@delegation.purpose} />
       <.detail_row
         label="Przewidywana kwota"
-        value={Money.to_string!(@delegation.advance_payment_amount)}
+        value={Money.to_string!(@delegation.expected_cost)}
       />
       <.signature />
     </.email>
@@ -106,7 +106,7 @@ defmodule Firmowid.Ash.Delegations.DelegationEmails do
     #{assigns.name}, Twoja delegacja została zaakceptowana.
     Data wyjazdu: #{date_range(assigns.delegation)}
     Cel wyjazdu: #{assigns.delegation.purpose}
-    Przewidywana kwota: #{Money.to_string!(assigns.delegation.advance_payment_amount)}
+    Przewidywana kwota: #{Money.to_string!(assigns.delegation.expected_cost)}
     """
   end
 

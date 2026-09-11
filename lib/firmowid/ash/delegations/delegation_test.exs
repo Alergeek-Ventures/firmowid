@@ -21,10 +21,10 @@ defmodule Firmowid.Ash.Delegations.DelegationTest do
     }
   end
 
-  test "rejects a negative advance payment amount", %{employee_scope: employee_scope} do
+  test "rejects a negative expected cost", %{employee_scope: employee_scope} do
     assert {:error, _error} =
              Delegations.create_delegation(
-               delegation_attrs(%{advance_payment_amount: Money.new(:PLN, -1)}),
+               delegation_attrs(%{expected_cost: Money.new(:PLN, -1)}),
                scope: employee_scope
              )
   end
@@ -34,14 +34,17 @@ defmodule Firmowid.Ash.Delegations.DelegationTest do
     admin_scope: admin_scope
   } do
     delegation = Delegations.create_delegation!(delegation_attrs(), scope: employee_scope)
+    approval_attrs = approval_attrs()
 
     assert {:error, %Forbidden{}} =
-             Delegations.approve_delegation(delegation.id, scope: employee_scope)
+             Delegations.approve_delegation(delegation.id, approval_attrs, scope: employee_scope)
 
     assert {:ok, approved_delegation} =
-             Delegations.approve_delegation(delegation.id, scope: admin_scope)
+             Delegations.approve_delegation(delegation.id, approval_attrs, scope: admin_scope)
 
     assert approved_delegation.status == :in_progress
+    assert approved_delegation.advance_amount == Money.new(:PLN, 50)
+    assert approved_delegation.signed_command_blob_id
   end
 
   test "cannot complete an empty settlement", %{
@@ -49,7 +52,9 @@ defmodule Firmowid.Ash.Delegations.DelegationTest do
     admin_scope: admin_scope
   } do
     delegation = Delegations.create_delegation!(delegation_attrs(), scope: employee_scope)
-    {:ok, delegation} = Delegations.approve_delegation(delegation.id, scope: admin_scope)
+
+    {:ok, delegation} =
+      Delegations.approve_delegation(delegation.id, approval_attrs(), scope: admin_scope)
 
     assert {:error, _} = Delegations.complete_delegation(delegation.id, scope: employee_scope)
   end
@@ -151,7 +156,9 @@ defmodule Firmowid.Ash.Delegations.DelegationTest do
     admin_scope: admin_scope
   } do
     delegation = Delegations.create_delegation!(delegation_attrs(), scope: employee_scope)
-    {:ok, delegation} = Delegations.approve_delegation(delegation.id, scope: admin_scope)
+
+    {:ok, delegation} =
+      Delegations.approve_delegation(delegation.id, approval_attrs(), scope: admin_scope)
 
     assert {:error, _} =
              %{
@@ -179,7 +186,9 @@ defmodule Firmowid.Ash.Delegations.DelegationTest do
     admin_scope: admin_scope
   } do
     delegation = Delegations.create_delegation!(delegation_attrs(), scope: employee_scope)
-    {:ok, delegation} = Delegations.approve_delegation(delegation.id, scope: admin_scope)
+
+    {:ok, delegation} =
+      Delegations.approve_delegation(delegation.id, approval_attrs(), scope: admin_scope)
 
     assert {:ok, _expense} =
              %{
@@ -214,7 +223,9 @@ defmodule Firmowid.Ash.Delegations.DelegationTest do
     admin_scope: admin_scope
   } do
     delegation = Delegations.create_delegation!(delegation_attrs(), scope: employee_scope)
-    {:ok, delegation} = Delegations.approve_delegation(delegation.id, scope: admin_scope)
+
+    {:ok, delegation} =
+      Delegations.approve_delegation(delegation.id, approval_attrs(), scope: admin_scope)
 
     expense =
       seed_expense(delegation, employee_scope.actor,
@@ -270,7 +281,9 @@ defmodule Firmowid.Ash.Delegations.DelegationTest do
     admin_scope: admin_scope
   } do
     delegation = Delegations.create_delegation!(delegation_attrs(), scope: employee_scope)
-    {:ok, delegation} = Delegations.approve_delegation(delegation.id, scope: admin_scope)
+
+    {:ok, delegation} =
+      Delegations.approve_delegation(delegation.id, approval_attrs(), scope: admin_scope)
 
     assert {:error, _error} =
              Delegations.create_expense(
@@ -344,7 +357,7 @@ defmodule Firmowid.Ash.Delegations.DelegationTest do
         destination: "Kraków",
         transport_types: [:railway, :bus],
         purpose: "Spotkanie z klientem",
-        advance_payment_amount: Money.new(:PLN, 100),
+        expected_cost: Money.new(:PLN, 100),
         start_date: ~D[2026-09-10],
         end_date: ~D[2026-09-11]
       },
@@ -357,5 +370,17 @@ defmodule Firmowid.Ash.Delegations.DelegationTest do
     File.write!(path, "delegation expense")
 
     %{upload_path: path, content_type: "application/pdf"}
+  end
+
+  defp approval_attrs do
+    path = Briefly.create!(extname: ".pdf")
+    File.write!(path, "%PDF-1.4 signed command")
+
+    %{
+      advance_amount: Money.new(:PLN, 50),
+      signed_command_filename: "polecenie.pdf",
+      upload_path: path,
+      content_type: "application/pdf"
+    }
   end
 end

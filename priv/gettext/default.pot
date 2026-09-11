@@ -1701,17 +1701,17 @@ msgstr ""
 msgid "Change requested"
 msgstr ""
 
-#: lib/firmowid_web/hours_record/components/upload_form.ex:124
+#: lib/firmowid_web/hours_record/components/upload_form.ex:125
 #, elixir-autogen, elixir-format
 msgid "Check the month, hours and your details in the downloaded document. Submitting the signed record will lock editing of this month's hours. Later changes require a correction or cancellation request to your organization administrators."
 msgstr ""
 
-#: lib/firmowid_web/hours_record/components/upload_form.ex:121
+#: lib/firmowid_web/hours_record/components/upload_form.ex:122
 #, elixir-autogen, elixir-format
 msgid "Check your hours before signing"
 msgstr ""
 
-#: lib/firmowid_web/hours_record/components/upload_form.ex:144
+#: lib/firmowid_web/hours_record/components/upload_form.ex:145
 #, elixir-autogen, elixir-format
 msgid "Continue to signing"
 msgstr ""
@@ -1728,7 +1728,7 @@ msgstr ""
 msgid "Could not submit the request. Enter a reason (up to 2000 characters). If a request already exists, refresh the page."
 msgstr ""
 
-#: lib/firmowid_web/hours_record/components/upload_form.ex:134
+#: lib/firmowid_web/hours_record/components/upload_form.ex:135
 #, elixir-autogen, elixir-format
 msgid "Go back and check"
 msgstr ""
@@ -1754,7 +1754,7 @@ msgstr ""
 msgid "Request type"
 msgstr ""
 
-#: lib/firmowid_web/hours_record/components/upload_form.ex:86
+#: lib/firmowid_web/hours_record/components/upload_form.ex:87
 #, elixir-autogen, elixir-format
 msgid "Sign hours record"
 msgstr ""

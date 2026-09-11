@@ -23,7 +23,7 @@ defmodule Firmowid.Ash.Delegations.Workers.DelegationEmailWorkerTest do
         destination: "Kraków",
         transport_types: [:railway],
         purpose: "Spotkanie z klientem",
-        advance_payment_amount: Money.new(:PLN, 100),
+        expected_cost: Money.new(:PLN, 100),
         start_date: ~D[2026-08-10],
         end_date: ~D[2026-08-11],
         status: :pending
@@ -54,7 +54,7 @@ defmodule Firmowid.Ash.Delegations.Workers.DelegationEmailWorkerTest do
         destination: "Kraków",
         transport_types: [:railway],
         purpose: "Spotkanie z klientem",
-        advance_payment_amount: Money.new(:PLN, 100),
+        expected_cost: Money.new(:PLN, 100),
         start_date: ~D[2026-08-10],
         end_date: ~D[2026-08-11],
         status: :in_progress
