@@ -19,6 +19,8 @@ defmodule FirmowidWeb.Delegations.Views.DelegationTest do
         %{
           title: "Wyjazd służbowy",
           billing_month: ~D[2026-08-01],
+          destination: "Kraków",
+          transport_types: [:railway],
           purpose: "Spotkanie z klientem",
           advance_payment_amount: Money.new(:PLN, 100),
           start_date: ~D[2026-08-10],
