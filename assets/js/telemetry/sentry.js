@@ -145,7 +145,8 @@ function applicationPath(value) {
     const url = new URL(value, window.location.origin);
     if (url.username || url.password) return false;
     const file = url.pathname.split("/").pop();
-    return url.origin === window.location.origin && !url.search && !url.hash &&
+    return url.origin === window.location.origin &&
+      (url.search === "" || url.search === "?vsn=d") && !url.hash &&
       /^\/assets\/(?:app\.js|app-[0-9a-f]+\.js)$/i.test(url.pathname) && !!file;
   } catch (_error) {
     return false;
