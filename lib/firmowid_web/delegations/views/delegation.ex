@@ -137,7 +137,7 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
             <small>
               <dt class="inline">Zaliczka:</dt>
               <dd class="text-grey-700 inline">
-                {Money.to_string!(@delegation.advance_payment_amount)}
+                {Money.to_string!(@delegation.advance_amount)}
               </dd>
             </small>
           </dl>
@@ -231,7 +231,7 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
                 <.summary_row label="Razem koszty" value={@total} class="font-medium" />
                 <.summary_row
                   label="Pobrana zaliczka"
-                  value={@delegation.advance_payment_amount}
+                  value={@delegation.advance_amount}
                 />
               </div>
               <.summary_row label={@balance_label} value={@balance} />
@@ -1019,7 +1019,7 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
   defp assign_summary(socket) do
     total = SettlementPresentation.sum(socket.assigns.delegation.expenses)
 
-    advance = socket.assigns.delegation.advance_payment_amount
+    advance = socket.assigns.delegation.advance_amount
     {label, balance} = SettlementPresentation.settlement_balance(total, advance)
 
     assign(socket,

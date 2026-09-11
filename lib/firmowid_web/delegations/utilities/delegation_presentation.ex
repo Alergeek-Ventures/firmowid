@@ -18,4 +18,21 @@ defmodule FirmowidWeb.Delegations.Utilities.DelegationPresentation do
 
   @spec format_date(Date.t()) :: String.t()
   def format_date(date), do: Calendar.strftime(date, "%d.%m.%Y")
+
+  @doc "Formats money with grouped thousands for delegation documents."
+  @spec format_money(Money.t()) :: String.t()
+  def format_money(money) do
+    [_, integer, fraction, suffix] =
+      Regex.run(~r/^(\d+)([,.]\d+)?(.*)$/u, Money.to_string!(money))
+
+    grouped_integer =
+      integer
+      |> String.graphemes()
+      |> Enum.reverse()
+      |> Enum.chunk_every(3)
+      |> Enum.reverse()
+      |> Enum.map_join(" ", &(&1 |> Enum.reverse() |> Enum.join()))
+
+    grouped_integer <> fraction <> String.replace(suffix, "\u00A0", " ")
+  end
 end
