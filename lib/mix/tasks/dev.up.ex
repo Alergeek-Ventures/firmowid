@@ -51,7 +51,6 @@ defmodule Mix.Tasks.Dev.Up do
     db_port = Map.fetch!(env, "DB_PORT")
     s3_port = Map.fetch!(env, "S3_PORT")
     chrome_port = Map.fetch!(env, "CHROME_PORT")
-    debugger_port = Map.fetch!(env, "DEBUGGER_PORT")
 
     start_services(branch, port, db_port, s3_port, chrome_port)
 
@@ -63,21 +62,7 @@ defmodule Mix.Tasks.Dev.Up do
 
     start_phoenix_server(port)
 
-    Mix.shell().info("")
-    Mix.shell().info("Environment ready:")
-
-    Mix.shell().info(
-      "  Phoenix:   http://#{branch |> sanitize_branch() |> dev_hostname() |> caddy_host(caddy_port())} (or http://localhost:#{port})"
-    )
-
-    Mix.shell().info("  Tidewave:  https://localhost:#{port}/tidewave/mcp")
-    Mix.shell().info("  Postgres:  localhost:#{db_port}")
-    Mix.shell().info("  S3:        localhost:#{s3_port}")
-    Mix.shell().info("  Chromium:  localhost:#{chrome_port}")
-    Mix.shell().info("  Debugger:  localhost:#{debugger_port}")
-    Mix.shell().info("")
-    Mix.shell().info("Logs: tail -f tmp/phoenix.log")
-    Mix.shell().info("Stop: mix dev.down")
+    Shared.print_environment(env, caddy_port())
   end
 
   defp load_env do
@@ -193,7 +178,9 @@ defmodule Mix.Tasks.Dev.Up do
     end
   end
 
-  defp start_phoenix_server(port) do
+  @doc "Starts Phoenix in the background using tmux or nohup."
+  @spec start_phoenix_server(String.t()) :: :ok
+  def start_phoenix_server(port) do
     Mix.shell().info("Starting Phoenix server in background...")
 
     # Ensure tmp directory exists

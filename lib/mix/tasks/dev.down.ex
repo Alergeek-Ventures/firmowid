@@ -61,7 +61,9 @@ defmodule Mix.Tasks.Dev.Down do
     Mix.shell().info("Services stopped for branch '#{branch}'")
   end
 
-  defp stop_phoenix_server do
+  @doc "Stops Phoenix using the PID file created by `mix dev.up`."
+  @spec stop_phoenix_server() :: :ok
+  def stop_phoenix_server do
     pid_file = "tmp/phoenix.pid"
 
     case File.read(pid_file) do

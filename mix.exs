@@ -21,7 +21,7 @@ defmodule Firmowid.MixProject do
       dialyzer: [
         flags: [:no_opaque],
         plt_file: {:no_warn, "priv/plts/dialyzer.plt"},
-        plt_add_apps: [:mix, :ex_unit]
+        plt_add_apps: [:mix, :ex_unit, :esc]
       ],
       usage_rules: usage_rules(),
       consolidate_protocols: Mix.env() != :dev
@@ -162,7 +162,8 @@ defmodule Firmowid.MixProject do
       {:eqrcode, "~> 0.2.1"},
       {:usage_rules, "~> 1.2.8", only: [:dev]},
       {:canonical_tailwind, "~> 0.1", only: [:dev, :test], runtime: false},
-      {:depscheck, "~> 1.0.11", only: [:dev, :test], runtime: false}
+      {:depscheck, "~> 1.0.11", only: [:dev, :test], runtime: false},
+      {:esc, "~> 0.9", runtime: false}
     ]
   end
 

@@ -276,6 +276,19 @@ wt switch --create feature-auth
 wt remove feature-auth
 ```
 
+### Komendy środowiska
+
+- `mix dev.up` - uruchamia usługi deweloperskie.
+- `mix dev.down` - zatrzymuje usługi deweloperskie i usuwa ich route z Caddy.
+- `mix dev.status` - wyświetla endpointy oraz sprawdza stan Phoenix, Tidewave,
+  PostgreSQL, S3, Chromium i LiveDebugger.
+- `mix dev.restart` - interaktywnie pozwala wybrać usługi do ponownego
+  uruchomienia za pomocą strzałek góra/dół i Spacji (zaznaczanie), a Enter
+  zatwierdza wybór. Escape lub `q` anuluje operację. Phoenix obejmuje również
+  Tidewave i LiveDebugger. Wybranie PostgreSQL
+  wykonuje destrukcyjne pełne `mix dev.down` / `mix dev.up` z usunięciem
+  wolumenów i wymaga potwierdzenia.
+
 ### Jak to działa
 
 1. `wt switch --create` wywołuje hooki z `.config/wt.toml`:
