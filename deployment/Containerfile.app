@@ -12,7 +12,7 @@
 #
 # NOTE: Chromium runs in a separate container (see docker-compose.yml)
 
-ARG BUILDER_IMAGE="hexpm/elixir:1.20.1-erlang-29.0.1-alpine-3.23.4@sha256:27d06bcda28874e29b32c75d97f2391428e947b2cbd4bcb54fc22a4d4679b19f"
+ARG BUILDER_IMAGE="hexpm/elixir:1.20.4-erlang-29.0.6-alpine-3.23.5@sha256:534e1f77442a657c6886f81bba80010355249e31edf6b06750ecc56d21a3f38c"
 ARG RUNNER_IMAGE="alpine:3.22@sha256:55ae5d250caebc548793f321534bc6a8ef1d116f334f18f4ada1b2daad3251b2"
 
 FROM ${BUILDER_IMAGE} AS builder

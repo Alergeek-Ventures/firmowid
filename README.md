@@ -118,6 +118,14 @@ asdf install elixir
 sudo apt-get install -y build-essential git libstdc++6 openssl libncurses6 locales ca-certificates libvips chromium
 ```
 
+### Nix/NixOS: devenv i direnv
+
+Na Linuxie można zamiast ręcznej instalacji użyć [devenv](https://devenv.sh/)
+oraz [direnv](https://direnv.net/). Po zainstalowaniu obu narzędzi zaakceptuj
+środowisko poleceniem `direnv allow` (albo uruchom `devenv shell`). Środowisko
+zostanie opisane w `devenv.nix` i aktywowane automatycznie po wejściu do katalogu
+projektu. Menedżerem zależności JavaScript nadal jest npm (`npm ci --prefix assets`).
+
 ## Zmienne środowiskowe
 
 Aplikacja używa Infisical jako źródła wspólnych zmiennych środowiskowych. W środowiskach `dev` i `test` konfiguracja importowana przez `config/dev.exs` i `config/test.exs` automatycznie pobiera wartości z Infisical `dev` ze ścieżki `/app`, a następnie nakłada lokalne nadpisania z `.env.worktree`.
