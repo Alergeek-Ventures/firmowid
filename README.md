@@ -285,9 +285,10 @@ wt remove feature-auth
 - `mix dev.restart` - interaktywnie pozwala wybrać usługi do ponownego
   uruchomienia za pomocą strzałek góra/dół i Spacji (zaznaczanie), a Enter
   zatwierdza wybór. Escape lub `q` anuluje operację. Phoenix obejmuje również
-  Tidewave i LiveDebugger. Wybranie PostgreSQL
-  wykonuje destrukcyjne pełne `mix dev.down` / `mix dev.up` z usunięciem
-  wolumenów i wymaga potwierdzenia.
+  Tidewave i LiveDebugger. Wybranie PostgreSQL oznacza wybranie i ponowne
+  uruchomienie całego środowiska (Phoenix, S3, Chromium i PostgreSQL): wykonuje
+  destrukcyjne pełne `mix dev.down` / `mix dev.up` z usunięciem wolumenów i
+  wymaga potwierdzenia.
 
 ### Jak to działa
 

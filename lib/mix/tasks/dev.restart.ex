@@ -4,8 +4,9 @@ defmodule Mix.Tasks.Dev.Restart do
   @moduledoc """
   Interactively restarts selected worktree development services.
 
-  Phoenix includes Tidewave and LiveDebugger. PostgreSQL is a destructive full
-  environment reset: it runs `mix dev.down` followed by `mix dev.up`, including
+  Phoenix includes Tidewave and LiveDebugger. Selecting PostgreSQL selects the
+  entire environment. It is a destructive full environment reset: it runs
+  `mix dev.down` followed by `mix dev.up`, including
   removal of compose volumes. Escape or `q` cancels the operation.
 
   ## Usage
@@ -21,14 +22,18 @@ defmodule Mix.Tasks.Dev.Restart do
     {"Phoenix (includes Tidewave + LiveDebugger)", :phoenix},
     {"S3", :s3},
     {"Chromium", :chromium},
-    {"PostgreSQL (full down/up with volume reset)", :postgresql}
+    {"PostgreSQL (restarts the entire environment: full down/up + volumes)", :postgresql}
   ]
+
+  @all_targets [:phoenix, :s3, :chromium, :postgresql]
   @impl Mix.Task
   def run(_args) do
     Application.ensure_all_started(:req)
 
     case choose_targets() do
       {:ok, targets} ->
+        targets = normalize_targets(targets)
+
         if :postgresql in targets do
           restart_database()
         else
@@ -46,6 +51,10 @@ defmodule Mix.Tasks.Dev.Restart do
     |> Esc.MultiSelect.markers("[x] ", "[ ] ")
     |> Esc.MultiSelect.min_selections(1)
     |> Esc.MultiSelect.run()
+  end
+
+  defp normalize_targets(targets) do
+    if :postgresql in targets, do: @all_targets, else: targets
   end
 
   defp restart_database do
