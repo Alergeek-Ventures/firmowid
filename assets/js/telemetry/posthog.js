@@ -10,7 +10,7 @@ import { sanitizePosthogEvent } from "./posthog-privacy.js";
 import { sanitizeTelemetryUrl } from "./privacy.js";
 
 function currentTelemetryUrl() {
-  return sanitizeTelemetryUrl(window.location.href) || window.location.origin;
+  return sanitizeTelemetryUrl(window.location.href, { output: "absolute" }) || window.location.origin;
 }
 
 function posthogOptions() {

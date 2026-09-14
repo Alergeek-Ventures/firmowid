@@ -21,7 +21,7 @@ function redactPathname(pathname) {
 }
 
 /** Return a query- and hash-free URL safe for telemetry. */
-export function sanitizeTelemetryUrl(value) {
+export function sanitizeTelemetryUrl(value, { output = "default" } = {}) {
   if (typeof value !== "string" || (!value.startsWith("/") && !/^https?:\/\//i.test(value))) {
     return undefined;
   }
@@ -34,7 +34,8 @@ export function sanitizeTelemetryUrl(value) {
     parsed.search = "";
     parsed.hash = "";
     parsed.pathname = redactPathname(parsed.pathname);
-    return parsed.origin === window.location.origin ? parsed.pathname : parsed.href;
+    if (output === "pathname") return parsed.pathname;
+    return output === "absolute" || parsed.origin !== window.location.origin ? parsed.href : parsed.pathname;
   } catch (_error) {
     return undefined;
   }

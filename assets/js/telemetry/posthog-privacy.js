@@ -1,10 +1,10 @@
 import { sanitizeTelemetryUrl } from "./privacy.js";
 
 const URL_PROPERTIES = [
-  "$current_url", "$pathname", "$referrer", "$initial_referrer", "$initial_current_url",
-  "$external_click_url", "$session_entry_url", "$session_entry_referrer", "$session_entry_pathname",
-  "$prev_pageview_pathname",
+  "$current_url", "$initial_current_url", "$referrer", "$initial_referrer",
+  "$external_click_url", "$session_entry_url", "$session_entry_referrer",
 ];
+const PATHNAME_PROPERTIES = ["$pathname", "$session_entry_pathname", "$prev_pageview_pathname"];
 const PERSON_PROPERTIES = ["$set", "$set_once"];
 const EMAIL_KEYS = new Set(["email", "email_domain", "$email", "$email_domain"]);
 const REMOVED_KEYS = new Set([
@@ -75,7 +75,13 @@ function sanitizeProperties(properties) {
   const result = sanitizeNested(properties);
   for (const key of URL_PROPERTIES) {
     if (!(key in result)) continue;
-    const url = sanitizeTelemetryUrl(result[key]);
+    const url = sanitizeTelemetryUrl(result[key], { output: "absolute" });
+    if (url === undefined) delete result[key];
+    else result[key] = url;
+  }
+  for (const key of PATHNAME_PROPERTIES) {
+    if (!(key in result)) continue;
+    const url = sanitizeTelemetryUrl(result[key], { output: "pathname" });
     if (url === undefined) delete result[key];
     else result[key] = url;
   }
