@@ -64,10 +64,18 @@ defmodule FirmowidWeb.Landing.Components.Hero do
             </p>
 
             <div class="mt-8 flex flex-col gap-4 sm:max-w-[344px] lg:mt-8 lg:max-w-none lg:flex-row lg:flex-wrap lg:gap-[25px]">
-              <.hero_action_button navigate={~p"/zarejestruj"} variant={:filled}>
+              <.hero_action_button
+                navigate={~p"/zarejestruj"}
+                variant={:filled}
+                analytics_cta="hero_register"
+              >
                 Zacznij za darmo
               </.hero_action_button>
-              <.hero_action_button navigate={~p"/zaloguj"} variant={:outline}>
+              <.hero_action_button
+                navigate={~p"/zaloguj"}
+                variant={:outline}
+                analytics_cta="hero_login"
+              >
                 Zaloguj się
               </.hero_action_button>
             </div>
@@ -212,6 +220,7 @@ defmodule FirmowidWeb.Landing.Components.Hero do
   @doc false
   attr :navigate, :string, required: true
   attr :variant, :atom, values: [:filled, :outline], required: true
+  attr :analytics_cta, :string, values: ["hero_register", "hero_login"], default: nil
   slot :inner_block, required: true
 
   defp hero_action_button(assigns) do
@@ -219,6 +228,7 @@ defmodule FirmowidWeb.Landing.Components.Hero do
     <.link
       kind="unstyled"
       navigate={@navigate}
+      data-landing-cta={@analytics_cta}
       class={[
         "relative inline-flex min-h-[56px] items-center justify-center overflow-hidden rounded-[4px] px-8 py-4 text-base font-medium transition-transform duration-150 hover:-translate-y-0.5",
         @variant == :filled &&

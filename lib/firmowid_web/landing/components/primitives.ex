@@ -44,6 +44,7 @@ defmodule FirmowidWeb.Landing.Components.Primitives do
           </a>
           <a
             href="/#cta-footer"
+            data-landing-cta="navbar_trial"
             class="landing-nav__text landing-nav__trial rounded-[5px] border-2 border-[#f5f5f5] px-4 py-2 text-base font-medium text-[#0f0f0f] transition-colors hover:border-[#d7c8bd] hover:bg-white/40"
           >
             Wypróbuj
@@ -91,12 +92,14 @@ defmodule FirmowidWeb.Landing.Components.Primitives do
               <.link
                 kind="unstyled"
                 navigate={~p"/zarejestruj"}
+                data-landing-cta="footer_register"
                 class="relative flex w-full shrink-0 items-center justify-center overflow-hidden rounded-sm border-2 border-[#d2936d] bg-[#d2936d] p-4 text-base font-medium text-black transition-transform duration-150 before:absolute before:inset-0 before:bg-[url('/images/button_hover.svg')] before:bg-size-[100%_100%] before:bg-no-repeat before:opacity-45 before:content-[''] hover:-translate-y-0.5 lg:w-auto lg:text-[20px]"
               >
                 <span class="relative z-10">Zacznij za darmo</span>
               </.link>
               <a
                 href="https://cal.com/franek-madej/firmowid"
+                data-landing-cta="footer_demo_booking"
                 target="_blank"
                 rel="noopener noreferrer"
                 class="relative flex shrink-0 items-center justify-center overflow-hidden rounded-sm border-2 border-white/80 p-4 text-base font-medium text-white transition-transform duration-150 hover:-translate-y-0.5 hover:bg-white/5 lg:text-[20px]"

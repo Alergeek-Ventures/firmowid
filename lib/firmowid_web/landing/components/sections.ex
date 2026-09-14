@@ -1087,6 +1087,9 @@ defmodule FirmowidWeb.Landing.Components.Sections do
           <.link
             kind="unstyled"
             navigate={~p"/zarejestruj"}
+            data-landing-cta="pricing_register"
+            data-landing-plan={@plan.key}
+            data-landing-billing-period={@billing_period}
             class={[
               "relative flex min-h-[56px] w-full items-center justify-center overflow-hidden rounded-[4px] px-8 py-4 text-base font-medium transition-transform duration-150 hover:-translate-y-0.5",
               @plan.highlighted &&

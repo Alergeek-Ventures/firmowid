@@ -44,7 +44,7 @@ defmodule FirmowidWeb.Landing.Views.Index do
   @spec render(map()) :: Phoenix.LiveView.Rendered.t()
   def render(assigns) do
     ~H"""
-    <div id="top" class="min-h-screen bg-[#f5f5f5] text-[#0f0f0f]">
+    <div id="top" data-landing-page="true" class="min-h-screen bg-[#f5f5f5] text-[#0f0f0f]">
       <.landing_navbar />
 
       <main>

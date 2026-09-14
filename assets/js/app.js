@@ -25,7 +25,7 @@ import { createLiveToastHook } from "live_toast";
 import { Hooks } from "./hooks";
 import { hooks as colocatedHooks } from "phoenix-colocated/firmowid";
 import { initTelemetry } from "./telemetry";
-import { installPosthogLogoutReset } from "./telemetry/posthog";
+import { installLandingCtaTracking, installPosthogLogoutReset } from "./telemetry/posthog";
 import { consentAccepted } from "./telemetry/consent";
 
 let csrfToken = document
@@ -61,6 +61,7 @@ window.addEventListener("phx:js-exec", ({ detail }) => {
 liveSocket.connect();
 initTelemetry();
 installPosthogLogoutReset();
+installLandingCtaTracking();
 
 // expose liveSocket on window for web console debug logs and latency simulation:
 // >> liveSocket.enableDebug()

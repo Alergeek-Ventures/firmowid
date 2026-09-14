@@ -83,6 +83,53 @@ function telemetryResetForm(element) {
   return element.dataset.posthogResetOnSubmit === "true" ? element : null;
 }
 
+const LANDING_CTAS = new Map([
+  ["hero_register", { cta: "hero_register" }],
+  ["hero_login", { cta: "hero_login" }],
+  ["navbar_trial", { cta: "navbar_trial" }],
+  ["pricing_register", { cta: "pricing_register" }],
+  ["footer_register", { cta: "footer_register" }],
+  ["footer_demo_booking", { cta: "footer_demo_booking" }],
+]);
+const LANDING_PLANS = new Set(["start", "przedsiebiorca", "firma"]);
+const LANDING_BILLING_PERIODS = new Set(["monthly", "yearly"]);
+let landingCtaTrackingInstalled = false;
+
+function landingCtaProperties(element) {
+  const cta = LANDING_CTAS.get(element.dataset.landingCta);
+  if (!cta) return null;
+
+  const properties = { ...cta };
+  if (element.dataset.landingCta === "pricing_register") {
+    if (!LANDING_PLANS.has(element.dataset.landingPlan) ||
+      !LANDING_BILLING_PERIODS.has(element.dataset.landingBillingPeriod)) return null;
+    properties.plan = element.dataset.landingPlan;
+    properties.billing_period = element.dataset.landingBillingPeriod;
+  }
+  return properties;
+}
+
+/** Install the delegated, semantic landing CTA tracker once. */
+export function installLandingCtaTracking() {
+  if (landingCtaTrackingInstalled) return;
+  landingCtaTrackingInstalled = true;
+
+  document.addEventListener("click", (event) => {
+    if (!telemetryConfig.posthogEnabled || !telemetryConfig.posthogApiKey ||
+      !consentAccepted() || !(event.target instanceof Element)) return;
+    const element = event.target.closest("[data-landing-cta]");
+    if (!element || !element.closest('[data-landing-page="true"]')) return;
+    const properties = landingCtaProperties(element);
+    if (properties) {
+      try {
+        posthog.capture("landing_cta_clicked", properties);
+      } catch (_error) {
+        // Analytics must never interfere with the CTA's navigation.
+      }
+    }
+  });
+}
+
 export function bootPosthog() {
   if (!telemetryConfig.posthogEnabled || !telemetryConfig.posthogApiKey) {
     return;
