@@ -5,14 +5,16 @@ defmodule FirmowidWeb.Delegations.Views.DelegationFormTest do
   import Firmowid.AccountsFixtures
   import Phoenix.LiveViewTest
 
+  alias Firmowid.Ash.Blobs.Blob
   alias Firmowid.Ash.Delegations
   alias Firmowid.Ash.Payroll
   alias Firmowid.Ash.Scope
+  alias Firmowid.Ash.SystemActor
 
   test "renders, validates, and submits a delegation", %{conn: conn} do
     employee = user_fixture()
     scope = %Scope{actor: employee, tenant: employee.organization_id}
-    create_employment_contract(employee, scope)
+    create_employment_contract(employee)
     {:ok, view, html} = conn |> log_in_user(employee) |> live(~p"/delegacje/dodaj")
 
     assert html =~ "Planowanie delegacji"
@@ -84,15 +86,27 @@ defmodule FirmowidWeb.Delegations.Views.DelegationFormTest do
     )
   end
 
-  defp create_employment_contract(employee, scope) do
+  defp create_employment_contract(employee) do
+    blob =
+      Ash.Seed.seed!(Blob, %{
+        blob_path: "/test/contracts/#{System.unique_integer([:positive])}.pdf",
+        blob_checksum: "contract-#{System.unique_integer([:positive])}",
+        original_filename: "contract.pdf",
+        organization_id: employee.organization_id
+      })
+
     Payroll.create_employment_contract!(
       %{
         starts_at: ~D[2026-01-01],
-        salary: Money.new(:PLN, "10_000"),
+        salary: Money.new(:PLN, "10000"),
         user_id: employee.id,
+        blob_id: blob.id,
         position: "Software Developer"
       },
-      scope: scope
+      scope: %Scope{
+        actor: %SystemActor{org_id: employee.organization_id, role: :document_blob_processor},
+        tenant: employee.organization_id
+      }
     )
   end
 end

@@ -19,7 +19,9 @@ defmodule FirmowidWeb.Delegations.Views.DelegationForm do
     default_month = Date.beginning_of_month(today)
     months = billing_months(user.employment_date, today)
     form = delegation_form(socket.assigns.ash_scope, default_month)
-    employment_contract = Payroll.load_latest_contract(user.id, scope: socket.assigns.ash_scope)
+
+    {:ok, employment_contract} =
+      Payroll.load_latest_contract(user.id, scope: socket.assigns.ash_scope)
 
     {:ok,
      socket
