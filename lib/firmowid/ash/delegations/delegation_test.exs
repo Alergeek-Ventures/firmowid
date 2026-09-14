@@ -6,11 +6,13 @@ defmodule Firmowid.Ash.Delegations.DelegationTest do
   import Firmowid.AccountsFixtures
 
   alias Ash.Error.Forbidden
+  alias Firmowid.Ash.Core
   alias Firmowid.Ash.Delegations
   alias Firmowid.Ash.Scope
 
   setup do
     employee = user_fixture()
+    employee = Core.update_profile!(employee, %{name: "Kira Voss"}, actor: employee)
     admin = admin_fixture(%{organization_id: employee.organization_id})
 
     %{
@@ -33,8 +35,8 @@ defmodule Firmowid.Ash.Delegations.DelegationTest do
     first = Delegations.create_delegation!(delegation_attrs(), scope: employee_scope)
     second = Delegations.create_delegation!(delegation_attrs(), scope: employee_scope)
 
-    assert first.reference =~ ~r/^U[0-9A-F-]+-2026-09-1$/
-    assert second.reference =~ ~r/^U[0-9A-F-]+-2026-09-2$/
+    assert first.reference == "KV-2026-09-1"
+    assert second.reference == "KV-2026-09-2"
   end
 
   test "only an administrator can approve a delegation", %{
