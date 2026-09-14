@@ -5,6 +5,7 @@ defmodule FirmowidWeb.Management.Controllers.DelegationOrder do
 
   alias Firmowid.Ash.Core
   alias Firmowid.Ash.Delegations
+  alias Firmowid.Ash.Payroll
   alias FirmowidWeb.Infrastructure.Utilities.PdfHelpers
 
   @dialyzer {:no_return, pdf: 2}
@@ -17,12 +18,14 @@ defmodule FirmowidWeb.Management.Controllers.DelegationOrder do
     with true <- conn.assigns.current_user.role == :admin,
          {:ok, employee} <- Core.get_org_user(%{id: employee_id}, scope: scope),
          {:ok, delegation} <- Delegations.get_delegation_by_reference(reference, scope: scope),
+         {:ok, employment_contract} <- Payroll.load_latest_contract(employee.id, scope: scope),
          true <- delegation.user_id == employee.id do
       html =
         PdfHelpers.render_pdf_html(
           FirmowidWeb.Management.Components.DelegationOrderPdf,
           :order,
           employee: employee,
+          employment_contract: employment_contract,
           delegation: delegation,
           footer_logo_data_uri:
             PdfHelpers.file_to_data_uri(Path.join(:code.priv_dir(:firmowid), "static/images/figurine.png"))

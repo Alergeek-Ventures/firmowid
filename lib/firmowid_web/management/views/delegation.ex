@@ -11,6 +11,7 @@ defmodule FirmowidWeb.Management.Views.Delegation do
 
   alias Firmowid.Ash.Core
   alias Firmowid.Ash.Delegations
+  alias Firmowid.Ash.Payroll
   alias FirmowidWeb.Delegations.Utilities.DelegationPresentation
   alias FirmowidWeb.Infrastructure.Utilities.ElectronicSignature
   alias FirmowidWeb.Management.Utilities.Navigation
@@ -33,6 +34,7 @@ defmodule FirmowidWeb.Management.Views.Delegation do
 
       employee ->
         employee = Ash.load!(employee, [avatar_blob: [:url]], scope: scope)
+        {:ok, employment_contract} = Payroll.load_latest_contract(employee.id, scope: scope)
 
         delegation =
           case Delegations.get_delegation_by_reference(reference,
@@ -47,6 +49,7 @@ defmodule FirmowidWeb.Management.Views.Delegation do
           {:noreply,
            socket
            |> assign(:employee, employee)
+           |> assign(:employment_contract, employment_contract)
            |> assign(:delegation, delegation)
            |> assign(:command_form, command_form(false, delegation.advance_amount))
            |> assign(:page_title, "Polecenie wyjazdu służbowego")}
@@ -158,7 +161,9 @@ defmodule FirmowidWeb.Management.Views.Delegation do
                 {@employee.name || @employee.email}
               </span>
             </.detail_row>
-            <.detail_row label="Stanowisko">{@employee.position || "—"}</.detail_row>
+            <.detail_row label="Stanowisko">
+              {(@employment_contract && @employment_contract.position) || "—"}
+            </.detail_row>
             <.detail_row label="Data wyjazdu">
               {DelegationPresentation.format_range(@delegation.start_date, @delegation.end_date)}
             </.detail_row>
