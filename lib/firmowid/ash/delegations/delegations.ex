@@ -17,6 +17,7 @@ defmodule Firmowid.Ash.Delegations do
     resource Delegation do
       define :create_delegation, action: :create
       define :get_delegation, action: :read, get_by: [:id]
+      define :get_delegation_by_reference, action: :by_reference, args: [:reference]
       define :list_delegations_for_user, action: :list_for_user, args: [:user_id]
       define :prepare_delegation_command, action: :prepare_command, get_by: [:id]
 

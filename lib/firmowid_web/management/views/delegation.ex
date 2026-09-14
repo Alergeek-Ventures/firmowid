@@ -24,7 +24,7 @@ defmodule FirmowidWeb.Management.Views.Delegation do
   end
 
   @impl true
-  def handle_params(%{"id" => employee_id, "delegation_id" => delegation_id}, _uri, socket) do
+  def handle_params(%{"id" => employee_id, "reference" => reference}, _uri, socket) do
     scope = socket.assigns.ash_scope
 
     case Core.get_org_user!(%{id: employee_id}, scope: scope, not_found_error?: false) do
@@ -35,9 +35,13 @@ defmodule FirmowidWeb.Management.Views.Delegation do
         employee = Ash.load!(employee, [avatar_blob: [:url]], scope: scope)
 
         delegation =
-          employee_id
-          |> Delegations.list_delegations_for_user!(scope: scope)
-          |> Enum.find(&(&1.id == delegation_id))
+          case Delegations.get_delegation_by_reference(reference,
+                 scope: scope,
+                 not_found_error?: false
+               ) do
+            {:ok, %{user_id: ^employee_id} = delegation} -> delegation
+            _ -> nil
+          end
 
         if delegation do
           {:noreply,
@@ -234,7 +238,7 @@ defmodule FirmowidWeb.Management.Views.Delegation do
                     variant="outline"
                     size="small"
                     redirect={
-                      ~p"/zarzadzanie/pracownicy/#{@employee.id}/delegacje/#{@delegation.id}/pdf"
+                      ~p"/zarzadzanie/pracownicy/#{@employee.id}/delegacje/#{@delegation.reference}/pdf"
                     }
                     download
                     class="ml-2 inline-flex"
