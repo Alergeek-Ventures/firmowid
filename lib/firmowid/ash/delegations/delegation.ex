@@ -58,7 +58,7 @@ defmodule Firmowid.Ash.Delegations.Delegation do
       change set_attribute(:user_id, actor(:id))
 
       validate compare(:end_date, greater_than_or_equal_to: :start_date),
-        message: "musi być na lub po dacie wyjazdu"
+        message: "nie może być wcześniejsza niż data wyjazdu"
 
       validate compare(:advance_payment_amount, greater_than_or_equal_to: Money.new(:PLN, 0)),
         message: "musi być większa lub równa 0 PLN"

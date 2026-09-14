@@ -26,7 +26,7 @@ defmodule FirmowidWeb.Delegations.Views.DelegationFormTest do
         "delegation" => delegation_params(%{"end_date" => "2026-09-09"})
       })
 
-    assert invalid_html =~ "musi być na lub po dacie wyjazdu"
+    assert invalid_html =~ "nie może być wcześniejsza niż data wyjazdu"
 
     view
     |> form("#delegation-form", delegation: delegation_params())
