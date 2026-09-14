@@ -220,7 +220,7 @@ defmodule FirmowidWeb.Landing.Components.Hero do
   @doc false
   attr :navigate, :string, required: true
   attr :variant, :atom, values: [:filled, :outline], required: true
-  attr :analytics_cta, :string, values: ["hero_register", "hero_login"], default: nil
+  attr :analytics_cta, :string, values: ["hero_register", "hero_login"], required: true
   slot :inner_block, required: true
 
   defp hero_action_button(assigns) do
