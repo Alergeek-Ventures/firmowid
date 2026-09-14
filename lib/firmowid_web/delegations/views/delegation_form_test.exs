@@ -58,6 +58,14 @@ defmodule FirmowidWeb.Delegations.Views.DelegationFormTest do
     assert render(view) =~ "Planowanie delegacji"
   end
 
+  test "renders without an employment contract", %{conn: conn} do
+    employee = user_fixture()
+    {:ok, _view, html} = conn |> log_in_user(employee) |> live(~p"/delegacje/dodaj")
+
+    assert html =~ "Stanowisko"
+    assert html =~ "—"
+  end
+
   test "adds and removes transport type selects", %{conn: conn} do
     employee = user_fixture()
     {:ok, view, html} = conn |> log_in_user(employee) |> live(~p"/delegacje/dodaj")
