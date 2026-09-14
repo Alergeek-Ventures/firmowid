@@ -15,7 +15,7 @@ concurrency:
 jobs:
   extract-versions:
     name: Extract versions from .tool-versions
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-4vcpu-ubuntu-2404
     outputs:
       elixir: ${{ steps.versions.outputs.elixir }}
       otp: ${{ steps.versions.outputs.otp }}
@@ -39,7 +39,7 @@ jobs:
 
   quality_checks:
     name: Formatting, Credo, and Unused Deps
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-4vcpu-ubuntu-2404
     container:
       image: ghcr.io/alergeek-ventures/infrastructure/cicd-image:5b1d7150888c47322a6b5cda04796dfd1dbfb34c
       credentials:

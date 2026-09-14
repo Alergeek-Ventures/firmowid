@@ -15,7 +15,7 @@ concurrency:
 jobs:
   build-and-push:
     name: Build and push SeaweedFS S3 image
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-4vcpu-ubuntu-2404
     container:
       image: ghcr.io/alergeek-ventures/infrastructure/cicd-image:5b1d7150888c47322a6b5cda04796dfd1dbfb34c
       credentials:
@@ -37,8 +37,8 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@37fe631027851001ddb9b187196cc803df7f5f0e # v4
+      - name: Setup Blacksmith Builder
+        uses: useblacksmith/setup-docker-builder@v1
 
       - name: Extract SeaweedFS version from Containerfile
         id: version
@@ -48,7 +48,7 @@ jobs:
           echo "Detected SeaweedFS version: $VERSION"
 
       - name: Build and push
-        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7.3.0
+        uses: useblacksmith/build-push-action@v2
         with:
           context: .
           file: ./deployment/Containerfile.seaweedfs
@@ -57,5 +57,3 @@ jobs:
             ghcr.io/alergeek-ventures/firmowid/seaweedfs-s3:main
             ghcr.io/alergeek-ventures/firmowid/seaweedfs-s3:${{ steps.version.outputs.tag }}
             ghcr.io/alergeek-ventures/firmowid/seaweedfs-s3:sha-${{ github.sha }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max

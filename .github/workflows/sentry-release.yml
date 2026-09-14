@@ -15,7 +15,7 @@ jobs:
   extract-versions:
     name: Extract versions from .tool-versions
     if: github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-4vcpu-ubuntu-2404
     outputs:
       elixir: ${{ steps.versions.outputs.elixir }}
       otp: ${{ steps.versions.outputs.otp }}
@@ -39,7 +39,7 @@ jobs:
   release:
     name: Create and finalize Sentry release
     if: github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-4vcpu-ubuntu-2404
     environment: production
     needs: extract-versions
     env:

@@ -14,7 +14,7 @@ concurrency:
 jobs:
   secret-scan:
     name: Scan repository for secrets
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-4vcpu-ubuntu-2404
     permissions:
       contents: read
 
@@ -35,7 +35,7 @@ jobs:
 
   extract-versions:
     name: Extract versions and service images
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-4vcpu-ubuntu-2404
     permissions:
       contents: read
       packages: read
@@ -148,7 +148,7 @@ jobs:
   build:
     name: Build and test
 
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-4vcpu-ubuntu-2404
     container:
       image: ghcr.io/alergeek-ventures/infrastructure/cicd-image:5b1d7150888c47322a6b5cda04796dfd1dbfb34c
       credentials:
@@ -239,7 +239,7 @@ jobs:
 
   coverage-report:
     name: Publish coverage summary and PR comment
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-4vcpu-ubuntu-2404
     needs: build
     permissions:
       actions: read
