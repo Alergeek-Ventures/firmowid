@@ -79,6 +79,12 @@
       data-current-organization-id={
         if assigns[:current_user], do: assigns.current_user.organization_id || "", else: ""
       }
+      data-current-organization-plan={
+        case assigns[:current_org] do
+          %{billing_plan: billing_plan} when not is_nil(billing_plan) -> to_string(billing_plan)
+          _ -> ""
+        end
+      }
     >
     </script>
   </head>

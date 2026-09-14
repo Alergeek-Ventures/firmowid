@@ -31,6 +31,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
   alias Firmowid.Ash.Ksef
   alias Firmowid.ErrorKind
   alias FirmowidWeb.Infrastructure.Utilities.PolishValues
+  alias FirmowidWeb.Infrastructure.Utilities.PosthogBusinessEvents
   alias FirmowidWeb.Invoicing.SalesInvoices.Components.InvoicePayment
   alias FirmowidWeb.Invoicing.SalesInvoices.Utilities.CreatorQueryParams
   alias FirmowidWeb.Invoicing.SalesInvoices.Utilities.PaymentDateSuggestions
@@ -1119,7 +1120,10 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
              should_send_emails,
              scope
            ) do
-      {:noreply, push_navigate(socket, to: Navigation.sales_invoice_summary_path(invoice))}
+      {:noreply,
+       socket
+       |> PosthogBusinessEvents.capture(:invoice_created)
+       |> push_navigate(to: Navigation.sales_invoice_summary_path(invoice))}
     else
       {:error, error} ->
         Logger.error("Failed to confirm invoice",
@@ -1147,7 +1151,10 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
              should_send_emails,
              scope
            ) do
-      submit_to_ksef_and_navigate(socket, invoice)
+      submit_to_ksef_and_navigate(
+        PosthogBusinessEvents.capture(socket, :invoice_created),
+        invoice
+      )
     else
       {:error, error} ->
         Logger.error("Failed to confirm invoice",

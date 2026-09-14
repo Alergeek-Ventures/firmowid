@@ -14,6 +14,7 @@ defmodule FirmowidWeb.BankSync.Views.Create do
 
   alias Firmowid.Ash.Finances
   alias Firmowid.ErrorKind
+  alias FirmowidWeb.Infrastructure.Utilities.PosthogBusinessEvents
 
   require Logger
 
@@ -132,6 +133,7 @@ defmodule FirmowidWeb.BankSync.Views.Create do
       if is_nil(error) do
         {:noreply,
          socket
+         |> PosthogBusinessEvents.capture(:bank_connection_completed)
          |> LiveToast.put_toast(
            :success,
            "Konto bankowe zostało poprawnie połączone.",

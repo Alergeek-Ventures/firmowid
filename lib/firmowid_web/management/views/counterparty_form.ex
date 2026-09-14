@@ -14,6 +14,7 @@ defmodule FirmowidWeb.Management.Views.CounterpartyForm do
   alias Firmowid.Ash.Invoicing.Counterparty
   alias Firmowid.Ash.Invoicing.CountryCodes
   alias Firmowid.Ash.Invoicing.Services.NipApiClient
+  alias FirmowidWeb.Infrastructure.Utilities.PosthogBusinessEvents
   alias FirmowidWeb.Invoicing.Utilities.Navigation, as: InvoicingNavigation
   alias FirmowidWeb.Management.Utilities.Navigation
 
@@ -70,9 +71,15 @@ defmodule FirmowidWeb.Management.Views.CounterpartyForm do
   def handle_event("save", %{"counterparty" => params}, socket) do
     case AshPhoenix.Form.submit(socket.assigns.form, params: params) do
       {:ok, counterparty} ->
+        event =
+          case socket.assigns.live_action do
+            :new -> :counterparty_created
+            :edit -> :counterparty_updated
+          end
+
         {:noreply,
          push_navigate(
-           socket,
+           PosthogBusinessEvents.capture(socket, event),
            to: save_destination(counterparty, socket.assigns.live_action, socket.assigns.params)
          )}
 

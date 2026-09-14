@@ -15,6 +15,7 @@ const telemetryConfigSchema = z.object({
   currentUserId: datasetString,
   currentUserRole: datasetString,
   currentOrganizationId: datasetString,
+  currentOrganizationPlan: datasetString,
   sentryDsn: datasetString,
   sentryEnvironment: datasetString,
   sentryRelease: datasetString
@@ -31,7 +32,8 @@ function readTelemetryConfig() {
 function currentUserProperties(config) {
   return {
     role: config.currentUserRole || undefined,
-    organization_id: config.currentOrganizationId || undefined
+    organization_id: config.currentOrganizationId || undefined,
+    plan: config.currentOrganizationPlan || undefined
   };
 }
 

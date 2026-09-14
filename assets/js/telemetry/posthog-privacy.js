@@ -46,7 +46,7 @@ function scalar(value) {
 function sanitizePersonProperties(properties) {
   if (!plainObject(properties)) return null;
   const result = {};
-  for (const key of ["organization_id", "role"]) {
+  for (const key of ["organization_id", "role", "plan"]) {
     if (scalar(properties[key])) result[key] = properties[key];
   }
   return result;

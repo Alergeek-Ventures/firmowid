@@ -16,6 +16,7 @@ defmodule FirmowidWeb.Timetracker.Views.Index do
   alias Firmowid.Ash.Timetracker.OverlapResolver
   alias Firmowid.Ash.Timetracker.Session, as: AshSession
   alias Firmowid.Ash.Timetracker.TrimPlan
+  alias FirmowidWeb.Infrastructure.Utilities.PosthogBusinessEvents
   alias FirmowidWeb.Infrastructure.Utilities.TimeFormatter
   alias FirmowidWeb.Timetracker.Utilities.GroupedSessionForm
   alias FirmowidWeb.Timetracker.Utilities.SessionForm
@@ -361,8 +362,16 @@ defmodule FirmowidWeb.Timetracker.Views.Index do
 
     result = create_session(attrs, scope)
 
-    handle_session_save_result(result, socket)
+    handle_new_session_save_result(result, socket)
   end
+
+  defp handle_new_session_save_result({:ok, session}, socket) do
+    socket
+    |> PosthogBusinessEvents.capture(:time_entry_created)
+    |> then(&handle_session_save_result({:ok, session}, &1))
+  end
+
+  defp handle_new_session_save_result(result, socket), do: handle_session_save_result(result, socket)
 
   defp create_session(attrs, scope) do
     OverlapResolver.create_session(attrs, scope)
@@ -548,7 +557,7 @@ defmodule FirmowidWeb.Timetracker.Views.Index do
 
     case result do
       {:ok, new_session} ->
-        handle_session_save_result({:ok, new_session}, socket)
+        handle_new_session_save_result({:ok, new_session}, socket)
 
       {:error, %Unknown{} = error} ->
         if overlap_error?(error) do

@@ -63,6 +63,16 @@ function applyIdentifiedState() {
   if (telemetryConfig.currentUserId) {
     posthog.identify(telemetryConfig.currentUserId, telemetryUserProperties);
   }
+
+  if (telemetryConfig.currentOrganizationId) {
+    if (telemetryConfig.currentOrganizationPlan) {
+      posthog.group("organization", telemetryConfig.currentOrganizationId, {
+        plan: telemetryConfig.currentOrganizationPlan
+      });
+    } else {
+      posthog.group("organization", telemetryConfig.currentOrganizationId);
+    }
+  }
 }
 
 function telemetryResetForm(element) {

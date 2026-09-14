@@ -13,6 +13,7 @@ defmodule FirmowidWeb.Management.Views.Employees do
   alias Firmowid.Ash.Payroll
   alias Firmowid.Ash.Timetracker
   alias FirmowidWeb.Core.Endpoint
+  alias FirmowidWeb.Infrastructure.Utilities.PosthogBusinessEvents
   alias FirmowidWeb.Management.Utilities.Navigation
   alias FirmowidWeb.Timetracker.Utilities.Navigation, as: TimetrackerNavigation
   alias Phoenix.Socket.Broadcast
@@ -183,6 +184,10 @@ defmodule FirmowidWeb.Management.Views.Employees do
         {:noreply,
          socket
          |> assign(:view, :wages)
+         |> PosthogBusinessEvents.capture(
+           :payroll_rates_updated,
+           %{changed_employee_count: length(entries)}
+         )
          |> push_event("unsaved-changed", %{value: false})
          |> assign_employees()}
 
