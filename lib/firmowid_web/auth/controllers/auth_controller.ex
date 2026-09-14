@@ -14,6 +14,7 @@ defmodule FirmowidWeb.Auth.Controllers.AuthController do
   alias AshAuthentication.Strategy.RememberMe.Plug.Helpers
   alias FirmowidWeb.Core.Endpoint
   alias FirmowidWeb.Infrastructure.UserAuth
+  alias FirmowidWeb.Infrastructure.Utilities.PosthogBusinessEvents
 
   require Logger
 
@@ -30,6 +31,20 @@ defmodule FirmowidWeb.Auth.Controllers.AuthController do
     |> Helpers.maybe_put_remember_me_cookies(conn.private[:ash_authentication])
     |> assign(:current_user, user)
     |> LiveToast.put_toast(:success, "Hasło zmienione poprawnie")
+    |> redirect(to: return_to)
+  end
+
+  def success(conn, {:password, :register}, user, _token) do
+    PosthogBusinessEvents.capture_account_created(conn, user)
+
+    return_to = get_session(conn, :return_to) || UserAuth.signed_in_path_for_user(user)
+
+    conn
+    |> renew_session()
+    |> delete_session(:return_to)
+    |> store_in_session(user)
+    |> Helpers.maybe_put_remember_me_cookies(conn.private[:ash_authentication])
+    |> assign(:current_user, user)
     |> redirect(to: return_to)
   end
 

@@ -14,7 +14,8 @@ defmodule FirmowidWeb.Infrastructure.Utilities.PosthogBusinessEvents do
     time_entry_created: "time_entry_created",
     payroll_rates_updated: "payroll_rates_updated",
     counterparty_created: "counterparty_created",
-    counterparty_updated: "counterparty_updated"
+    counterparty_updated: "counterparty_updated",
+    account_created: "account_created"
   }
 
   @doc """
@@ -41,6 +42,30 @@ defmodule FirmowidWeb.Infrastructure.Utilities.PosthogBusinessEvents do
   end
 
   def capture(socket, _event, _properties), do: socket
+
+  @doc """
+  Captures a successfully created password account when cookie consent allows it.
+
+  Registration is intentionally handled separately from the organization-scoped
+  LiveView events: onboarding has not created an organization yet.
+  """
+  @spec capture_account_created(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def capture_account_created(conn, %{id: user_id}) when not is_nil(user_id) do
+    conn = Plug.Conn.fetch_cookies(conn)
+
+    if conn.cookies["cookie_consent"] == "accepted" and analytics_enabled?() do
+      PostHog.capture("account_created", %{
+        "method" => "password",
+        distinct_id: to_string(user_id)
+      })
+    end
+
+    conn
+  rescue
+    _ -> conn
+  end
+
+  def capture_account_created(conn, _user), do: conn
 
   defp context_ids(socket) do
     with true <- socket.assigns[:analytics_consent_accepted] == true,
