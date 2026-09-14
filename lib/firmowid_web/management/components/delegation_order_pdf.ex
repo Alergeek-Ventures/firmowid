@@ -9,6 +9,7 @@ defmodule FirmowidWeb.Management.Components.DelegationOrderPdf do
   alias FirmowidWeb.Delegations.Utilities.DelegationPresentation
 
   attr :employee, :map, required: true
+  attr :employment_contract, :map, required: true
   attr :delegation, :map, required: true
   attr :footer_logo_data_uri, :string, required: true
 
@@ -28,7 +29,9 @@ defmodule FirmowidWeb.Management.Components.DelegationOrderPdf do
 
       <.section title="Dane pracownika" separated={false}>
         <.row label="Imię i nazwisko:"><strong>{@employee.name || @employee.email}</strong></.row>
-        <.row label="Stanowisko:">{@employee.position || "—"}</.row>
+        <.row label="Stanowisko:">
+          {(@employment_contract && @employment_contract.position) || "—"}
+        </.row>
       </.section>
 
       <.section title="Szczegóły delegacji">
