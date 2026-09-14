@@ -36,6 +36,14 @@ defmodule Firmowid.Ash.Delegations.Delegation do
   actions do
     defaults [:read]
 
+    read :by_reference do
+      description "Find a delegation by its public reference."
+      get? true
+
+      argument :reference, :string, allow_nil?: false
+      filter expr(reference == ^arg(:reference))
+    end
+
     read :list_for_user do
       description "Delegations submitted by a given employee."
       argument :user_id, :uuid, allow_nil?: false
@@ -58,6 +66,7 @@ defmodule Firmowid.Ash.Delegations.Delegation do
       ]
 
       change set_attribute(:user_id, actor(:id))
+      change set_attribute(:reference, "pending")
 
       validate compare(:end_date, greater_than_or_equal_to: :start_date),
         message: "nie może być wcześniejsza niż data wyjazdu"
@@ -172,6 +181,7 @@ defmodule Firmowid.Ash.Delegations.Delegation do
 
   attributes do
     uuid_v7_primary_key :id
+    attribute :reference, :string, allow_nil?: false, default: "", public?: true
     attribute :title, :string, allow_nil?: false, public?: true
     attribute :billing_month, :date, allow_nil?: false, public?: true
     attribute :destination, :string, allow_nil?: false, public?: true
@@ -227,5 +237,9 @@ defmodule Firmowid.Ash.Delegations.Delegation do
 
   aggregates do
     sum :expenses_total, :expenses, :expense_amount
+  end
+
+  identities do
+    identity :unique_reference, [:reference]
   end
 end

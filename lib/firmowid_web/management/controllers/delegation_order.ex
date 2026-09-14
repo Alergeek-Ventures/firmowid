@@ -11,12 +11,12 @@ defmodule FirmowidWeb.Management.Controllers.DelegationOrder do
 
   # sobelow_skip ["Traversal.SendFile"]
   # The PDF path is allocated by ChromicPDF, never supplied by a request parameter.
-  def pdf(conn, %{"employee_id" => employee_id, "id" => id}) do
+  def pdf(conn, %{"employee_id" => employee_id, "reference" => reference}) do
     scope = conn.assigns.ash_scope
 
     with true <- conn.assigns.current_user.role == :admin,
          {:ok, employee} <- Core.get_org_user(%{id: employee_id}, scope: scope),
-         {:ok, delegation} <- Delegations.get_delegation(id, scope: scope),
+         {:ok, delegation} <- Delegations.get_delegation_by_reference(reference, scope: scope),
          true <- delegation.user_id == employee.id do
       html =
         PdfHelpers.render_pdf_html(

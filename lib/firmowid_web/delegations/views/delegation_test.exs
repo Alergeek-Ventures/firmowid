@@ -30,12 +30,13 @@ defmodule FirmowidWeb.Delegations.Views.DelegationTest do
           advance_amount: Money.new(:PLN, 50),
           start_date: ~D[2026-08-10],
           end_date: ~D[2026-08-11],
-          status: :in_progress
+          status: :in_progress,
+          reference: "UK-2026-08-1"
         },
         tenant: user.organization_id
       )
 
-    {:ok, _view, html} = conn |> log_in_user(user) |> live(~p"/delegacje/#{delegation.id}")
+    {:ok, _view, html} = conn |> log_in_user(user) |> live(~p"/delegacje/#{delegation.reference}")
 
     assert html =~ "Rozliczenie delegacji"
     assert html =~ "Przejazdy"

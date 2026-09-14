@@ -199,7 +199,8 @@ defmodule FirmowidWeb.Management.Views.EmployeesTest do
         expected_cost: Money.new(:PLN, 100),
         start_date: ~D[2026-08-10],
         end_date: ~D[2026-08-11],
-        status: :pending
+        status: :pending,
+        reference: "JK-2026-08-1"
       })
 
     Ash.Seed.seed!(Delegation, %{
@@ -214,7 +215,8 @@ defmodule FirmowidWeb.Management.Views.EmployeesTest do
       expected_cost: Money.new(:PLN, 100),
       start_date: ~D[2026-08-10],
       end_date: ~D[2026-08-11],
-      status: :in_progress
+      status: :in_progress,
+      reference: "JK-2026-08-2"
     })
 
     Ash.Seed.seed!(Delegation, %{
@@ -229,7 +231,8 @@ defmodule FirmowidWeb.Management.Views.EmployeesTest do
       expected_cost: Money.new(:PLN, 100),
       start_date: ~D[2026-08-10],
       end_date: ~D[2026-08-11],
-      status: :complete
+      status: :complete,
+      reference: "JK-2026-08-3"
     })
 
     {:ok, view, _html} =
@@ -242,7 +245,7 @@ defmodule FirmowidWeb.Management.Views.EmployeesTest do
 
     assert has_element?(
              view,
-             "a[href='/zarzadzanie/pracownicy/#{employee.id}/delegacje/#{pending_delegation.id}']"
+             "a[href='/zarzadzanie/pracownicy/#{employee.id}/delegacje/#{pending_delegation.reference}']"
            )
 
     assert render(view) =~ "wymaga podpisu"
@@ -272,13 +275,14 @@ defmodule FirmowidWeb.Management.Views.EmployeesTest do
         expected_cost: Money.new(:PLN, 100),
         start_date: ~D[2026-08-10],
         end_date: ~D[2026-08-11],
-        status: :pending
+        status: :pending,
+        reference: "JK-2026-08-1"
       })
 
     {:ok, view, html} =
       conn
       |> log_in_user(admin)
-      |> live(~p"/zarzadzanie/pracownicy/#{employee.id}/delegacje/#{delegation.id}")
+      |> live(~p"/zarzadzanie/pracownicy/#{employee.id}/delegacje/#{delegation.reference}")
 
     assert html =~ "Polecenie wyjazdu służbowego"
     assert html =~ "Jan Kowalski"

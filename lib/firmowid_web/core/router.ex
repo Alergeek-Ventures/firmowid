@@ -257,7 +257,7 @@ defmodule FirmowidWeb.Core.Router do
       live "/zarzadzanie/pracownicy/:id/urlopy", Employee, :leaves
       live "/zarzadzanie/pracownicy/:id/delegacje", Employee, :delegations
 
-      live "/zarzadzanie/pracownicy/:id/delegacje/:delegation_id",
+      live "/zarzadzanie/pracownicy/:id/delegacje/:reference",
            Management.Views.Delegation,
            :show
 
@@ -280,7 +280,7 @@ defmodule FirmowidWeb.Core.Router do
     get "/czasosledz/ewidencja/:date/podglad", HoursRecord.Controllers.Record, :preview
     get "/czasosledz/ewidencja/:id", HoursRecord.Controllers.Record, :download
 
-    get "/zarzadzanie/pracownicy/:employee_id/delegacje/:id/pdf",
+    get "/zarzadzanie/pracownicy/:employee_id/delegacje/:reference/pdf",
         Management.Controllers.DelegationOrder,
         :pdf
 
@@ -298,7 +298,7 @@ defmodule FirmowidWeb.Core.Router do
       live "/ustawienia", Settings.Views.Index, :index
       live "/ustawienia/:section", Settings.Views.Index, :index
       live "/delegacje/dodaj", Delegations.Views.DelegationForm, :new
-      live "/delegacje/:id", Delegations.Views.Delegation, :show
+      live "/delegacje/:reference", Delegations.Views.Delegation, :show
     end
   end
 
