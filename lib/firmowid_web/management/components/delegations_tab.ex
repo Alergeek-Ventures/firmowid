@@ -75,7 +75,7 @@ defmodule FirmowidWeb.Management.Components.DelegationsTab do
     ~H"""
     <.link
       kind="unstyled"
-      navigate={~p"/zarzadzanie/pracownicy/#{@employee_id}/delegacje/#{@delegation.id}"}
+      navigate={~p"/zarzadzanie/pracownicy/#{@employee_id}/delegacje/#{@delegation.reference}"}
       aria-label={"Otwórz delegację: #{@delegation.title}"}
       class="flex shrink-0 items-center gap-1"
     >

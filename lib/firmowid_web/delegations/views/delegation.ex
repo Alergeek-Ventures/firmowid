@@ -14,8 +14,8 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
   alias Phoenix.HTML.Form
 
   @impl true
-  def mount(%{"id" => id}, _session, socket) do
-    case load_delegation(id, socket) do
+  def mount(%{"reference" => reference}, _session, socket) do
+    case load_delegation(reference, socket) do
       {:ok, nil} ->
         {:ok, push_navigate(socket, to: ~p"/ustawienia/profil")}
 
@@ -191,7 +191,7 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
 
     case AshPhoenix.Form.submit(socket.assigns.complete_form, params: params) do
       {:ok, delegation} ->
-        {:noreply, reload(socket, delegation.id)}
+        {:noreply, reload(socket, delegation.reference)}
 
       {:error, %Form{} = complete_form} ->
         socket =
@@ -278,23 +278,23 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
     |> assign_summary()
   end
 
-  defp load_delegation(id, socket),
+  defp load_delegation(reference, socket),
     do:
-      Delegations.get_delegation(id,
+      Delegations.get_delegation_by_reference(reference,
         scope: socket.assigns.ash_scope,
         load: [expenses: [blob: [:url], statement_blob: [:url], related_blobs: [:url]]],
         not_found_error?: false
       )
 
-  defp reload(socket, id \\ nil) do
-    case load_delegation(id || socket.assigns.delegation.id, socket) do
+  defp reload(socket, reference \\ nil) do
+    case load_delegation(reference || socket.assigns.delegation.reference, socket) do
       {:ok, delegation} when not is_nil(delegation) -> setup_socket(socket, delegation)
       _ -> unavailable_delegation(socket)
     end
   end
 
   defp refresh_delegation(socket, options \\ []) do
-    case load_delegation(socket.assigns.delegation.id, socket) do
+    case load_delegation(socket.assigns.delegation.reference, socket) do
       {:ok, delegation} when not is_nil(delegation) ->
         complete_form =
           SettlementForm.complete_form(

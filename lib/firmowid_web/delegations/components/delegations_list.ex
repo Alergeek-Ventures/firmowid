@@ -52,7 +52,7 @@ defmodule FirmowidWeb.Delegations.Components.DelegationsList do
       <.link
         :if={@is_link}
         kind="unstyled"
-        navigate={FirmowidWeb.Delegations.Utilities.Navigation.show_path(@delegation.id)}
+        navigate={FirmowidWeb.Delegations.Utilities.Navigation.show_path(@delegation.reference)}
         class="hover:underline"
       >
         <span class="truncate">{@delegation.title}</span>
