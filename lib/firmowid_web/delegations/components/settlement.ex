@@ -58,7 +58,7 @@ defmodule FirmowidWeb.Delegations.Components.Settlement do
           :for={expense <- @expenses}
           class={["border-grey-200 rounded-lg border p-4", !@editable? && "bg-white"]}
         >
-          <% expense_form = Map.fetch!(@expense_forms, expense.id) %>
+          <% forms = Map.fetch!(@expense_forms, expense.id) %>
           <div class="text-grey-500 flex items-center justify-between gap-3 text-sm">
             <.link
               :if={expense.blob}
@@ -101,7 +101,7 @@ defmodule FirmowidWeb.Delegations.Components.Settlement do
             <.input
               :if={@kind == "transport"}
               id={"#{@kind}-transport-type-#{expense.id}"}
-              field={expense_form[:transport_type]}
+              field={forms.details[:transport_type]}
               form="delegation-complete-form"
               type="select"
               new
@@ -111,17 +111,17 @@ defmodule FirmowidWeb.Delegations.Components.Settlement do
             <.input
               :if={@kind == "accommodation"}
               id={"#{@kind}-locality-#{expense.id}"}
-              field={expense_form[:locality]}
+              field={forms.details[:locality]}
               form="delegation-complete-form"
               type="text"
               new
               label="Miejscowość"
             />
-            <.document_fields expense={expense} form={expense_form} />
+            <.document_fields expense={expense} form={forms.expense} />
             <.input
               :if={@kind == "accommodation"}
               id={"#{@kind}-arrival-date-#{expense.id}"}
-              field={expense_form[:arrival_date]}
+              field={forms.details[:arrival_date]}
               form="delegation-complete-form"
               type="date"
               new
@@ -130,7 +130,7 @@ defmodule FirmowidWeb.Delegations.Components.Settlement do
             <.input
               :if={@kind == "accommodation"}
               id={"#{@kind}-departure-date-#{expense.id}"}
-              field={expense_form[:departure_date]}
+              field={forms.details[:departure_date]}
               form="delegation-complete-form"
               type="date"
               new
@@ -139,14 +139,14 @@ defmodule FirmowidWeb.Delegations.Components.Settlement do
             <.expense_description
               :if={@kind == "accommodation"}
               expense={expense}
-              form={expense_form}
+              form={forms.details}
               kind={@kind}
               visible?={Map.get(@description_visible?, expense.id, false)}
             />
             <.input
               :if={@kind == "other"}
               id={"#{@kind}-description-#{expense.id}"}
-              field={expense_form[:description]}
+              field={forms.details[:description]}
               form="delegation-complete-form"
               type="textarea"
               new
