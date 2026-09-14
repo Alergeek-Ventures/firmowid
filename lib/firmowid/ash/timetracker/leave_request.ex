@@ -169,7 +169,7 @@ defmodule Firmowid.Ash.Timetracker.LeaveRequest do
       end
 
       validate compare(:ends_on, greater_than_or_equal_to: :starts_on) do
-        message "musi być na lub po dacie rozpoczęcia"
+        message "nie może być wcześniejsza niż data rozpoczęcia"
       end
 
       change after_transaction(fn
@@ -238,7 +238,7 @@ defmodule Firmowid.Ash.Timetracker.LeaveRequest do
       end
 
       validate compare(:ends_on, greater_than_or_equal_to: :starts_on) do
-        message "musi być na lub po dacie rozpoczęcia"
+        message "nie może być wcześniejsza niż data rozpoczęcia"
       end
 
       change after_transaction(fn
