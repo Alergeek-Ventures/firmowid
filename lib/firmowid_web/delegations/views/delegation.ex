@@ -312,6 +312,9 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
     Map.put(delegation, :expenses, Enum.map(expenses, &decorate_expense/1))
   end
 
+  defp decorate_expense(%{details: %Ash.Union{value: details}} = expense),
+    do: decorate_expense(%{expense | details: details})
+
   defp decorate_expense(
          %{details: %{__struct__: Firmowid.Ash.Delegations.DelegationExpense.TransportDetails} = details} = expense
        ) do
@@ -444,9 +447,13 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
     expense_forms =
       [:expenses]
       |> Enum.flat_map(&nested_forms(form, &1))
-      |> Map.new(&{&1.data.id, &1})
+      |> Map.new(&{&1.data.id, %{expense: &1, details: nested_form(&1, :details)}})
 
-    trip_forms = %{}
+    trip_forms =
+      expense_forms
+      |> Map.values()
+      |> Enum.flat_map(&nested_forms(&1.details, :trips))
+      |> Map.new(&{&1.data.id, &1})
 
     assign(socket, complete_form: form, expense_forms: expense_forms, trip_forms: trip_forms)
   end
@@ -457,6 +464,8 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
     |> List.wrap()
     |> Enum.map(&to_form/1)
   end
+
+  defp nested_form(%Form{source: %{forms: forms}}, field), do: forms |> Map.fetch!(field) |> to_form()
 
   attr :form, Form, required: true
 
@@ -517,6 +526,12 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
           params |> Map.take(["description"]) |> Map.put("type", kind)
       end
 
+    params
+    |> Map.take(["id", "_form_type", "document_number", "expense_amount"])
+    |> Map.put("details", details)
+  end
+
+  defp transform_expense_params(%{"details" => details} = params, _timezone) do
     params
     |> Map.take(["id", "_form_type", "document_number", "expense_amount"])
     |> Map.put("details", details)
