@@ -18,8 +18,8 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
   alias Phoenix.HTML.Form
 
   @impl true
-  def mount(%{"id" => id}, _session, socket) do
-    case load_delegation(id, socket) do
+  def mount(%{"reference" => reference}, _session, socket) do
+    case load_delegation(reference, socket) do
       {:ok, nil} ->
         {:ok, push_navigate(socket, to: ~p"/ustawienia/profil")}
 
@@ -488,17 +488,17 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
     |> assign_summary()
   end
 
-  defp load_delegation(id, socket),
+  defp load_delegation(reference, socket),
     do:
-      Delegations.get_delegation(id,
+      Delegations.get_delegation_by_reference(reference,
         scope: socket.assigns.ash_scope,
         load: [expenses: [blob: [:url], statement_blob: [:url], related_blobs: [:url]]],
         not_found_error?: false
       )
 
-  defp load_delegation!(id, socket), do: elem(load_delegation(id, socket), 1)
+  defp load_delegation!(reference, socket), do: elem(load_delegation(reference, socket), 1)
 
-  defp reload(socket), do: setup_socket(socket, load_delegation!(socket.assigns.delegation.id, socket))
+  defp reload(socket), do: setup_socket(socket, load_delegation!(socket.assigns.delegation.reference, socket))
 
   defp refresh_delegation(socket, options \\ []) do
     delegation = load_delegation!(socket.assigns.delegation.id, socket)

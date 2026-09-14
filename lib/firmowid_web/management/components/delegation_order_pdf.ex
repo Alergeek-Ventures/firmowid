@@ -18,7 +18,7 @@ defmodule FirmowidWeb.Management.Components.DelegationOrderPdf do
       <header class="flex items-start justify-between">
         <div>
           <h1 class="text-sm font-medium">
-            Polecenie wyjazdu służbowego nr <strong>{@delegation.id}</strong>
+            Polecenie wyjazdu służbowego nr <strong>{@delegation.reference}</strong>
           </h1>
           <p class="mt-1">
             z dnia <strong>{DelegationPresentation.format_date(@delegation.inserted_at)}</strong>
