@@ -26,8 +26,8 @@ defmodule FirmowidWeb.Infrastructure.Utilities.PosthogBusinessEventsTest do
   end
 
   test "account creation capture does not require an organization" do
-    conn = Plug.Test.conn(:get, "/")
-    conn = Plug.Conn.put_req_cookie(conn, "cookie_consent", "accepted")
+    conn = Plug.Test.conn(:get, "/", "")
+    conn = Plug.Conn.put_req_header(conn, "cookie", "cookie_consent=accepted")
 
     result = PosthogBusinessEvents.capture_account_created(conn, %{id: "user-id"})
 
