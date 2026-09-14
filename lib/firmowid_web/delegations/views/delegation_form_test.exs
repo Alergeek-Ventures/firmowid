@@ -6,15 +6,18 @@ defmodule FirmowidWeb.Delegations.Views.DelegationFormTest do
   import Phoenix.LiveViewTest
 
   alias Firmowid.Ash.Delegations
+  alias Firmowid.Ash.Payroll
   alias Firmowid.Ash.Scope
 
   test "renders, validates, and submits a delegation", %{conn: conn} do
     employee = user_fixture()
     scope = %Scope{actor: employee, tenant: employee.organization_id}
+    create_employment_contract(employee, scope)
     {:ok, view, html} = conn |> log_in_user(employee) |> live(~p"/delegacje/dodaj")
 
     assert html =~ "Planowanie delegacji"
     assert html =~ "Gdy zostanie zaakceptowany otrzymasz maila z potwierdzeniem."
+    assert html =~ "Software Developer"
 
     invalid_html =
       render_change(view, "validate", %{
@@ -78,6 +81,18 @@ defmodule FirmowidWeb.Delegations.Views.DelegationFormTest do
         "end_date" => "2026-09-11"
       },
       overrides
+    )
+  end
+
+  defp create_employment_contract(employee, scope) do
+    Payroll.create_employment_contract!(
+      %{
+        starts_at: ~D[2026-01-01],
+        salary: Money.new(:PLN, "10_000"),
+        user_id: employee.id,
+        position: "Software Developer"
+      },
+      scope: scope
     )
   end
 end
