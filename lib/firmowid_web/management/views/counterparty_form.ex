@@ -10,7 +10,6 @@ defmodule FirmowidWeb.Management.Views.CounterpartyForm do
   import Phoenix.Component, except: [link: 1]
 
   alias Ash.Error.Changes.InvalidAttribute
-  alias Firmowid.Ash.Core.Nip
   alias Firmowid.Ash.Invoicing
   alias Firmowid.Ash.Invoicing.Counterparty
   alias Firmowid.Ash.Invoicing.CountryCodes
@@ -112,14 +111,11 @@ defmodule FirmowidWeb.Management.Views.CounterpartyForm do
   defp fetch_counterparty_data(""), do: {:error, "NIP jest wymagany"}
 
   defp fetch_counterparty_data(nip) do
-    if Nip.valid?(nip) do
-      case NipApiClient.fetch_org_data_by_nip(nip) do
-        {:ok, organization} -> {:ok, organization}
-        {:error, :not_found} -> {:error, "Nie znaleziono kontrahenta dla podanego NIP"}
-        {:error, _reason} -> {:error, "Nie udało się pobrać danych kontrahenta"}
-      end
-    else
-      {:error, "musi być poprawnym numerem NIP"}
+    case NipApiClient.fetch_org_data_by_nip(nip) do
+      {:ok, organization} -> {:ok, organization}
+      {:error, :invalid_nip} -> {:error, "musi być poprawnym numerem NIP"}
+      {:error, :not_found} -> {:error, "Nie znaleziono kontrahenta dla podanego NIP"}
+      {:error, _reason} -> {:error, "Nie udało się pobrać danych kontrahenta"}
     end
   end
 
