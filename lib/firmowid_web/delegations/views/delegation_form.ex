@@ -10,6 +10,7 @@ defmodule FirmowidWeb.Delegations.Views.DelegationForm do
   import Phoenix.Component, except: [link: 1]
 
   alias Firmowid.Ash.Delegations.Delegation
+  alias Firmowid.Ash.Payroll
 
   @impl true
   def mount(_params, _session, socket) do
@@ -18,6 +19,7 @@ defmodule FirmowidWeb.Delegations.Views.DelegationForm do
     default_month = Date.beginning_of_month(today)
     months = billing_months(user.employment_date, today)
     form = delegation_form(socket.assigns.ash_scope, default_month)
+    employment_contract = Payroll.load_latest_contract(user.id, scope: socket.assigns.ash_scope)
 
     {:ok,
      socket
@@ -26,6 +28,7 @@ defmodule FirmowidWeb.Delegations.Views.DelegationForm do
      |> assign(:default_month, default_month)
      |> assign(:billing_month, default_month)
      |> assign(:transport_types, [""])
+     |> assign(:employment_contract, employment_contract)
      |> assign(:form, form)}
   end
 
@@ -74,7 +77,9 @@ defmodule FirmowidWeb.Delegations.Views.DelegationForm do
                 <.detail_row dd_class="mt-8" dt_class="mt-8" label="Imię i nazwisko">
                   {@current_user.name || @current_user.email}
                 </.detail_row>
-                <.detail_row label="Stanowisko">{@current_user.position || "—"}</.detail_row>
+                <.detail_row label="Stanowisko">
+                  {(@employment_contract && @employment_contract.position) || "—"}
+                </.detail_row>
               </dl>
               <.form_row label="Data wyjazdu" for="delegation_start_date">
                 <div class="flex items-start gap-2">
