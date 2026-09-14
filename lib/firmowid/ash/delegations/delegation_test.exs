@@ -29,6 +29,16 @@ defmodule Firmowid.Ash.Delegations.DelegationTest do
              )
   end
 
+  test "assigns sequential references for a user and billing month", %{
+    employee_scope: employee_scope
+  } do
+    first = Delegations.create_delegation!(delegation_attrs(), scope: employee_scope)
+    second = Delegations.create_delegation!(delegation_attrs(), scope: employee_scope)
+
+    assert first.reference =~ ~r/^U[0-9A-F-]+-2026-09-1$/
+    assert second.reference =~ ~r/^U[0-9A-F-]+-2026-09-2$/
+  end
+
   test "only an administrator can approve a delegation", %{
     employee_scope: employee_scope,
     admin_scope: admin_scope
