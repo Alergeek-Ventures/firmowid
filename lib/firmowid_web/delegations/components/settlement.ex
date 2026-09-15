@@ -26,14 +26,24 @@ defmodule FirmowidWeb.Delegations.Components.Settlement do
   attr :expense_forms, :map, required: true
   attr :trip_forms, :map, required: true
   attr :timezone, :string, required: true
+  attr :related_upload, :any, required: true
 
   def expense_section(assigns) do
     ~H"""
     <section class="mt-10">
-      <header class="mb-3 flex items-center justify-between">
-        <h2 class="flex items-center gap-2 font-normal">
-          {render_slot(@icon)}{@title}
-        </h2>
+      <header class="mb-3 flex items-center justify-between gap-4">
+        <div class="flex items-center gap-3">
+          <h2 class="flex items-center gap-2 font-normal">
+            {render_slot(@icon)}{@title}
+          </h2>
+          <span class="bg-grey-200 h-5 w-px" aria-hidden="true" />
+          <.button
+            type="button"
+            variant="unstyled"
+            class="text-grey-700 text-sm font-medium hover:underline"
+            phx-click={show_modal("#{@kind}-documents-modal")}
+          >Jakie dokumenty załączyć?</.button>
+        </div>
         <.button
           :if={@kind == "transport" && @editable?}
           type="button"
@@ -83,15 +93,49 @@ defmodule FirmowidWeb.Delegations.Components.Settlement do
             >
               <Lucideicons.download class="size-4" /> Pobierz
             </.link>
-            <.button
-              :if={@editable?}
-              type="button"
-              variant="icon"
-              aria-label="Usuń dokument"
-              phx-click="delete"
-              phx-value-kind={@kind}
-              phx-value-id={expense.id}
-            ><Lucideicons.x class="size-4" /></.button>
+            <.dropdown :if={@editable?} id={"expense-menu-#{expense.id}"}>
+              <:trigger>
+                <span
+                  class="hover:bg-grey-100 text-grey-500 inline-flex size-8 cursor-pointer items-center justify-center rounded"
+                  aria-label="Opcje pozycji"
+                >
+                  <Lucideicons.ellipsis_vertical class="size-4" />
+                </span>
+              </:trigger>
+              <div class="border-grey-200 flex min-w-64 flex-col items-stretch rounded-lg border bg-white p-1 text-left shadow-sm">
+                <label
+                  id={"add-related-document-#{expense.id}"}
+                  for={@related_upload.ref}
+                  class="hover:bg-grey-50 text-grey-700 cursor-pointer rounded px-3 py-2 text-left text-sm font-medium"
+                  phx-click="select-related-expense"
+                  phx-value-id={expense.id}
+                >
+                  Dodaj powiązany dokument
+                </label>
+                <.button
+                  :if={@kind == "accommodation"}
+                  type="button"
+                  variant="unstyled"
+                  class="hover:bg-grey-50 text-grey-700 cursor-pointer justify-start rounded px-3 py-2 text-left text-sm font-medium"
+                  phx-click={
+                    if Map.get(@description_visible?, expense.id, false),
+                      do: "hide-description",
+                      else: "show-description"
+                  }
+                  phx-value-id={expense.id}
+                >{if Map.get(@description_visible?, expense.id, false),
+                  do: "Usuń opis",
+                  else: "Dodaj opis"}</.button>
+                <.button
+                  type="button"
+                  variant="unstyled"
+                  class="cursor-pointer justify-start rounded px-3 py-2 text-left text-sm font-medium text-red-700 hover:bg-red-50"
+                  phx-click="delete"
+                  phx-value-kind={@kind}
+                  phx-value-id={expense.id}
+                >Usuń pozycję</.button>
+              </div>
+            </.dropdown>
           </div>
           <div
             :if={@editable?}
@@ -168,6 +212,11 @@ defmodule FirmowidWeb.Delegations.Components.Settlement do
             description_visible?={@description_visible?}
             trip_forms={@trip_forms}
           />
+          <.related_documents
+            :if={expense.related_blobs != []}
+            expense={expense}
+            editable?={@editable?}
+          />
         </article>
         <.pending_expense
           :for={entry <- if(@upload, do: @upload.entries, else: [])}
@@ -198,7 +247,134 @@ defmodule FirmowidWeb.Delegations.Components.Settlement do
           >Wybierz plik</.button>
         </.form>
       </div>
+      <.documents_modal
+        id={"#{@kind}-documents-modal"}
+        title={@title}
+        icon={render_slot(@icon)}
+        kind={@kind}
+      />
     </section>
+    """
+  end
+
+  attr :expense, :any, required: true
+  attr :editable?, :boolean, required: true
+
+  defp related_documents(assigns) do
+    ~H"""
+    <div class="mt-4 flex flex-wrap items-center gap-2 text-sm">
+      <span class="text-grey-700 font-medium">Powiązane dokumenty:</span>
+      <div class="flex flex-wrap gap-2">
+        <span
+          :for={blob <- @expense.related_blobs}
+          class="bg-grey-200 text-grey-600 inline-flex cursor-pointer items-center gap-1 rounded px-2 py-1 font-medium whitespace-nowrap"
+        >
+          <.link
+            :if={blob.url}
+            kind="unstyled"
+            external={blob.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            class="inline-flex items-center gap-1"
+          ><Lucideicons.file class="size-4 shrink-0" />{blob.original_filename}</.link>
+          <span :if={!blob.url} class="inline-flex items-center gap-1">
+            <Lucideicons.file class="size-4 shrink-0" />{blob.original_filename}
+          </span>
+          <.button
+            :if={@editable?}
+            type="button"
+            variant="unstyled"
+            class="text-grey-500 cursor-pointer"
+            phx-click="remove-related-document"
+            phx-value-expense-id={@expense.id}
+            phx-value-blob-id={blob.id}
+            aria-label={"Usuń #{blob.original_filename}"}
+          ><Lucideicons.x class="size-3" /></.button>
+        </span>
+      </div>
+    </div>
+    """
+  end
+
+  attr :id, :string, required: true
+  attr :title, :string, required: true
+  attr :icon, :any, required: true
+  attr :kind, :string, required: true
+
+  defp documents_modal(assigns) do
+    ~H"""
+    <.modal id={@id} on_cancel={hide_modal(@id)} class="max-w-[600px]">
+      <h2 id={"#{@id}-title"} class="flex items-center gap-2 text-base font-medium text-black">
+        {@icon}{@title} - jakie dokumenty załączyć?
+      </h2>
+      <div id={"#{@id}-description"} class="mt-5 flex flex-col gap-2 text-sm text-black">
+        <%= case @kind do %>
+          <% "transport" -> %>
+            <.modal_paragraph heading="Masz Fakturę?">
+              Jeśli masz
+              <.document_emphasis>fakturę</.document_emphasis>
+              za bilet lub przejazd, dodaj ją jako podstawowy dokument rozliczeniowy.
+            </.modal_paragraph>
+            <.modal_paragraph heading="Nie masz faktury?">
+              Załącz
+              <.document_emphasis>bilet</.document_emphasis>
+              np. bilet kolejowy, autobusowy, lotniczy lub bilet komunikacji miejskiej wykorzystany w trakcie delegacji.
+            </.modal_paragraph>
+            <.modal_paragraph heading="Nie masz ani faktury, ani biletu?">
+              Załącz
+              <.document_emphasis>rezerwację</.document_emphasis>
+              lub <.document_emphasis>potwierdzenie rezerwacji</.document_emphasis>. Dokument powinien pokazywać, czego dotyczył wydatek: trasę, datę, przewoźnika lub usługę. W tym przypadku załącz także <.document_emphasis>potwierdzenie płatności</.document_emphasis>.
+            </.modal_paragraph>
+            <hr class="border-grey-200 my-2 w-full" />
+            <p>
+              <span class="font-medium">Uwaga:</span>
+              Samo potwierdzenie płatności nie wystarczy. Jeśli załączasz potwierdzenie przelewu lub płatności kartą, dodaj do niego dokument potwierdzający, za co była płatność, np. rezerwację.
+            </p>
+          <% "accommodation" -> %>
+            <.modal_paragraph heading="Masz fakturę?">
+              Jeśli masz
+              <.document_emphasis>fakturę</.document_emphasis>
+              za nocleg, dodaj ją jako podstawowy dokument rozliczeniowy.
+            </.modal_paragraph>
+            <.modal_paragraph heading="Nie masz faktury?">
+              Załącz
+              <.document_emphasis>rezerwację noclegu</.document_emphasis>
+              oraz <.document_emphasis>potwierdzenie zapłaty</.document_emphasis>. Dotyczy to np. sytuacji, gdy nocleg był rezerwowany przez Booking lub podobny serwis i obiekt nie wystawił faktury. Wtedy do rozliczenia dodaj dokument rezerwacji oraz dowód, że nocleg został opłacony.
+            </.modal_paragraph>
+            <.modal_paragraph heading="Nie masz żadnego dokumentu?">
+              Możesz wybrać
+              <.document_emphasis>ryczałt</.document_emphasis>
+              za nocleg. W takiej sytuacji musisz jednak mieć inne potwierdzenie, że delegacja faktycznie się odbyła, np. bilety transportowe lub inny dokument związany z wyjazdem. Do tego wystarczy ci wypełniona sekcja "Przejazdy".
+            </.modal_paragraph>
+          <% "other" -> %>
+            <p>
+              Inne wydatki powinny mieć dokument pokazujący, czego dotyczył koszt. Najlepiej załączyć fakturę, rachunek, bilet, rezerwację, polisę albo inny dokument potwierdzający usługę lub zakup. Jeśli masz tylko potwierdzenie płatności, dodaj też dokument opisujący, za co zapłacono.
+            </p>
+            <p>
+              Wydatek musi być związany z delegacją. Przykładowo ubezpieczenie lub bilet tramwajowy można rozliczyć wtedy, gdy pokrywa się z podróżą służbową.
+            </p>
+        <% end %>
+      </div>
+    </.modal>
+    """
+  end
+
+  attr :heading, :string, required: true
+  slot :inner_block, required: true
+
+  defp modal_paragraph(assigns) do
+    ~H"""
+    <div>
+      <h3 class="font-medium">{@heading}</h3><p>{render_slot(@inner_block)}</p>
+    </div>
+    """
+  end
+
+  slot :inner_block, required: true
+
+  defp document_emphasis(assigns) do
+    ~H"""
+    <span class="text-turquoise-700 font-medium underline">{render_slot(@inner_block)}</span>
     """
   end
 
@@ -361,7 +537,7 @@ defmodule FirmowidWeb.Delegations.Components.Settlement do
       </:label_slot>
     </.input>
     <div class="flex items-end gap-2">
-      <div class="min-w-0 flex-1">
+      <div class="w-25 shrink-0">
         <.input
           id={"expense-amount-#{@expense.id}"}
           field={@form[:expense_amount]}
@@ -372,6 +548,7 @@ defmodule FirmowidWeb.Delegations.Components.Settlement do
           min="0"
           step="0.01"
           aria-describedby={"expense-amount-currency-#{@expense.id}"}
+          input_class="w-25"
         >
           <:label_slot>
             <span class="inline-flex items-center gap-1">
@@ -444,13 +621,6 @@ defmodule FirmowidWeb.Delegations.Components.Settlement do
         label="Opis"
         class="w-full"
       />
-      <.button
-        type="button"
-        variant="unstyled"
-        class={["text-sm", @visible? && "text-red-700"]}
-        phx-click="toggle-description"
-        phx-value-id={@expense.id}
-      >{if @visible?, do: "Usuń opis", else: "Dodaj opis"}</.button>
     </div>
     """
   end
@@ -530,19 +700,20 @@ defmodule FirmowidWeb.Delegations.Components.Settlement do
                     input_class="w-24"
                   />
                 </td>
-                <td rowspan="2" class="pl-3 align-bottom">
+                <td rowspan="2" class="w-24 pl-3 align-bottom">
+                  <% description_visible? = Map.get(@description_visible?, trip.id, false) %>
                   <.button
                     type="button"
                     variant="unstyled"
                     class={[
-                      "block text-sm whitespace-nowrap",
-                      Map.get(@description_visible?, trip.id, false) && "text-red-700"
+                      "block w-24 cursor-pointer text-left text-sm font-medium whitespace-nowrap",
+                      description_visible? && "text-red-700"
                     ]}
-                    phx-click="toggle-description"
+                    phx-click={
+                      if description_visible?, do: "hide-description", else: "show-description"
+                    }
                     phx-value-id={trip.id}
-                  >{if Map.get(@description_visible?, trip.id, false),
-                    do: "Usuń opis",
-                    else: "Dodaj opis"}</.button>
+                  >{if description_visible?, do: "Usuń opis", else: "Dodaj opis"}</.button>
                 </td>
               </tr>
               <tr>
@@ -587,15 +758,23 @@ defmodule FirmowidWeb.Delegations.Components.Settlement do
               </tr>
             </tbody>
           </table>
-          <.input
-            :if={Map.get(@description_visible?, trip.id, false)}
-            id={"trip-description-#{trip.id}"}
-            field={trip_form[:description]}
-            form="delegation-complete-form"
-            type="textarea"
-            new
-            label="Opis"
-          />
+          <div
+            :if={
+              Map.get(@description_visible?, trip.id, false) ||
+                trip_form[:description].value not in [nil, ""]
+            }
+            class="mt-3 grid grid-cols-[auto_minmax(0,1fr)] gap-x-3"
+          >
+            <span class="text-grey-700 pt-2 text-sm font-normal">Opis</span>
+            <.input
+              id={"trip-description-#{trip.id}"}
+              field={trip_form[:description]}
+              form="delegation-complete-form"
+              type="textarea"
+              new
+              aria-label="Opis"
+            />
+          </div>
         </div>
       </div>
     </section>

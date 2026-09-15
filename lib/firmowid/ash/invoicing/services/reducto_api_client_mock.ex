@@ -16,12 +16,10 @@ defmodule Firmowid.Ash.Invoicing.Services.ReductoApiClientMock do
   end
 
   def call(%Plug.Conn{method: "POST", request_path: "/extract"} = conn, _opts) do
-    json(conn, %{
-      "result" => %{
-        "document_number" => "DEV/2026/001",
-        "expense_amount" => 123.45
-      }
-    })
+    {:ok, body, conn} = read_body(conn)
+    %{"instructions" => %{"system_prompt" => system_prompt}} = Jason.decode!(body)
+
+    json(conn, %{"result" => extraction_result(system_prompt)})
   end
 
   def call(conn, _opts), do: send_resp(conn, 404, "not found")
@@ -30,5 +28,56 @@ defmodule Firmowid.Ash.Invoicing.Services.ReductoApiClientMock do
     conn
     |> put_resp_content_type("application/json")
     |> send_resp(200, Jason.encode!(body))
+  end
+
+  defp extraction_result(system_prompt) do
+    cond do
+      String.contains?(system_prompt, "Expense category: transport.") ->
+        %{
+          "document_number" => "DEV/TRN/2026/001",
+          "expense_amount" => 123.45,
+          "details" => %{
+            "type" => "transport",
+            "transport_type" => "railway",
+            "trips" => [
+              %{
+                "departure_city" => "Wrocław",
+                "departure_datetime" => "2026-09-14T08:15:00Z",
+                "arrival_city" => "Kraków",
+                "arrival_datetime" => "2026-09-14T11:30:00Z"
+              }
+            ]
+          }
+        }
+
+      String.contains?(system_prompt, "Expense category: accommodation.") ->
+        %{
+          "document_number" => "DEV/NOC/2026/001",
+          "expense_amount" => 289.00,
+          "details" => %{
+            "type" => "accommodation",
+            "locality" => "Studencka 12, Kraków",
+            "arrival_date" => "2026-09-14",
+            "departure_date" => "2026-09-15",
+            "description" => "Nocleg służbowy"
+          }
+        }
+
+      String.contains?(system_prompt, "Expense category: other.") ->
+        %{
+          "document_number" => "DEV/INN/2026/001",
+          "expense_amount" => 76.50,
+          "details" => %{
+            "type" => "other",
+            "description" => "Polisa ubezpieczeniowa podróży służbowej"
+          }
+        }
+
+      true ->
+        %{
+          "document_number" => "DEV/2026/001",
+          "expense_amount" => 123.45
+        }
+    end
   end
 end
