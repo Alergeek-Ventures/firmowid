@@ -149,11 +149,6 @@ jobs:
     name: Build and test
 
     runs-on: blacksmith-4vcpu-ubuntu-2404
-    container:
-      image: ghcr.io/alergeek-ventures/infrastructure/cicd-image:5b1d7150888c47322a6b5cda04796dfd1dbfb34c
-      credentials:
-        username: ${{ github.actor }}
-        password: ${{ secrets.github_token }}
 
     needs:
       - extract-versions
@@ -168,11 +163,11 @@ jobs:
       # Database configuration (matches config/test.exs)
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
-      POSTGRES_HOST: db
+      POSTGRES_HOST: localhost
       DB_PORT: "5432"
 
       # S3 / SeaweedFS configuration (matches config/test.exs)
-      S3_HOST: seaweedfs
+      S3_HOST: localhost
       S3_SCHEME: "http://"
       S3_PORT: "8333"
       S3_BUCKET: firmowid-uploads
@@ -190,6 +185,8 @@ jobs:
         options: >-
           --health-cmd "pg_isready -U postgres -d firmowid_test" --health-interval 2s
           --health-timeout 5s --health-retries 30
+        ports:
+          - 5432:5432
 
       seaweedfs:
         image: ${{ needs.extract-versions.outputs.seaweedfs_image }}
@@ -199,10 +196,17 @@ jobs:
         env:
           AWS_ACCESS_KEY_ID: test
           AWS_SECRET_ACCESS_KEY: test
+        ports:
+          - 8333:8333
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential git libstdc++6 openssl libncurses6 locales ca-certificates libvips
 
       - name: Generate isolated test keys
         run: |
