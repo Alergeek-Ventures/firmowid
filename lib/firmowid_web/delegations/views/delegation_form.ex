@@ -143,7 +143,7 @@ defmodule FirmowidWeb.Delegations.Views.DelegationForm do
                       required
                       prompt="Wybierz z listy"
                       options={transport_options()}
-                      input_class="w-28 invalid:text-grey-300"
+                      input_class="w-28"
                     />
                     <.button
                       :if={index < length(@transport_types) - 1}
