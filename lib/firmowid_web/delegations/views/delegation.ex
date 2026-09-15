@@ -182,7 +182,7 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
                   <.summary_row label="Razem koszty" value={@total} class="font-medium" />
                   <.summary_row
                     label="Pobrana zaliczka"
-                    value={@delegation.advance_payment_amount}
+                    value={@delegation.advance_amount}
                   />
                 </div>
                 <.summary_row label={@balance_label} value={@balance} />
@@ -404,7 +404,7 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
 
     case safely(fn -> AshPhoenix.Form.submit(socket.assigns.complete_form, params: params) end) do
       {:ok, delegation} ->
-        {:noreply, setup_socket(socket, load_delegation!(delegation.id, socket))}
+        {:noreply, setup_socket(socket, load_delegation!(delegation.reference, socket))}
 
       {:error, %Form{} = complete_form} ->
         socket =
@@ -501,9 +501,10 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
   defp reload(socket), do: setup_socket(socket, load_delegation!(socket.assigns.delegation.reference, socket))
 
   defp refresh_delegation(socket, options \\ []) do
-    delegation = load_delegation!(socket.assigns.delegation.id, socket)
+    delegation = load_delegation!(socket.assigns.delegation.reference, socket)
 
     complete_form = complete_form(delegation, socket.assigns.ash_scope, socket.assigns.timezone)
+    delegation = decorate_delegation(delegation, socket.assigns.sort_active?)
 
     complete_form =
       if Keyword.get(options, :preserve_form?, false) do
