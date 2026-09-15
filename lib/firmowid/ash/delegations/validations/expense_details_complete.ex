@@ -9,7 +9,15 @@ defmodule Firmowid.Ash.Delegations.Validations.ExpenseDetailsComplete do
 
   @impl true
   def validate(changeset, _opts, _context) do
-    case Ash.Changeset.get_attribute(changeset, :details) do
+    changeset
+    |> Ash.Changeset.get_attribute(:details)
+    |> validate_details()
+  end
+
+  defp validate_details(%Ash.Union{value: details}), do: validate_details(details)
+
+  defp validate_details(details) do
+    case details do
       %TransportDetails{trips: trips} when is_list(trips) and trips != [] ->
         validate_trips(trips)
 

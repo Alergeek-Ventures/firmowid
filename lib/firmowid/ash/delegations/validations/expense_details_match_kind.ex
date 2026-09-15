@@ -17,6 +17,9 @@ defmodule Firmowid.Ash.Delegations.Validations.ExpenseDetailsMatchKind do
       else: {:error, field: :details, message: "nie pasują do kategorii wydatku"}
   end
 
+  defp matches?(:transport, %Ash.Union{value: %TransportDetails{}}), do: true
+  defp matches?(:accommodation, %Ash.Union{value: %AccommodationDetails{}}), do: true
+  defp matches?(:other, %Ash.Union{value: %OtherDetails{}}), do: true
   defp matches?(:transport, %TransportDetails{}), do: true
   defp matches?(:accommodation, %AccommodationDetails{}), do: true
   defp matches?(:other, %OtherDetails{}), do: true
