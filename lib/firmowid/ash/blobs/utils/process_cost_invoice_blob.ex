@@ -5,6 +5,8 @@ defmodule Firmowid.Ash.Blobs.Utils.ProcessCostInvoiceBlob do
   alias Firmowid.Ash.Blobs.Utils.ProcessBlobHelpers
   alias Firmowid.Ash.Invoicing
 
+  require Logger
+
   @cost_invoice_system_prompt """
   Extract data from this cost invoice, receipt, or bill document.
 
@@ -75,6 +77,7 @@ defmodule Firmowid.Ash.Blobs.Utils.ProcessCostInvoiceBlob do
 
   def run_processing(blob_url, blob, opts) do
     with {:ok, extracted_metadata} <- extract_metadata(blob_url),
+         extracted_metadata = maybe_fallback(extracted_metadata),
          :ok <- ensure_cost_invoice_document(extracted_metadata) do
       create_invoice(extracted_metadata, blob, opts)
     end
@@ -90,9 +93,16 @@ defmodule Firmowid.Ash.Blobs.Utils.ProcessCostInvoiceBlob do
   end
 
   defp ensure_cost_invoice_document(%{"document_type" => "cost_invoice"} = extracted_metadata) do
-    if Enum.all?(@required_cost_invoice_fields, &(not is_nil(extracted_metadata[&1]))) do
+    missing_fields =
+      Enum.reject(@required_cost_invoice_fields, &(not is_nil(extracted_metadata[&1])))
+
+    if Enum.empty?(missing_fields) do
       :ok
     else
+      Logger.warning(
+        "Cost invoice extraction missing required fields: missing_fields=#{inspect(missing_fields)} document_type=cost_invoice"
+      )
+
       {:error, :invalid_document}
     end
   end
@@ -119,6 +129,21 @@ defmodule Firmowid.Ash.Blobs.Utils.ProcessCostInvoiceBlob do
       {:error, {:duplicate_ksef_invoice, _id} = dup} -> {:error, dup}
       {:error, reason} -> {:error, reason}
     end
+  end
+
+  defp maybe_fallback(extracted_metadata) do
+    issue_date = extracted_metadata["issue_date"]
+
+    extracted_metadata
+    |> maybe_update("sale_date", issue_date)
+    |> maybe_update("due_date", issue_date)
+  end
+
+  defp maybe_update(metadata, key, fallback_value) do
+    Map.update(metadata, key, fallback_value, fn
+      nil -> fallback_value
+      value -> value
+    end)
   end
 
   defp maybe_put_inbound_email_id(attrs, nil), do: attrs
