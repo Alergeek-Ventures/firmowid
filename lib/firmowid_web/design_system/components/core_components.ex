@@ -455,7 +455,9 @@ defmodule FirmowidWeb.DesignSystem.Components.CoreComponents do
           id={@id}
           name={@name}
           class={[
-            "bg-grey-50 border-grey-200 peer text-grey-900 w-full rounded-lg border bg-none px-3 py-1.5 pr-10 text-base/tight",
+            "bg-grey-50 border-grey-200 peer w-full rounded-lg border bg-none px-3 py-1.5 pr-10 text-base/tight",
+            if(@value in [nil, ""], do: "text-grey-300", else: "text-grey-900"),
+            @input_class,
             @rest[:class]
           ]}
           multiple={@multiple}
