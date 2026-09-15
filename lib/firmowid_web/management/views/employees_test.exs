@@ -289,15 +289,22 @@ defmodule FirmowidWeb.Management.Views.EmployeesTest do
 
     assert html =~ "Polecenie wyjazdu służbowego"
     assert html =~ "Jan Kowalski"
-    assert html =~ "sierpień 2026"
+    assert html =~ "2026-08-01"
     assert html =~ "Wygeneruj polecenie, aby móc je podpisać."
     assert has_element?(view, "#delegation-employee-avatar")
     assert has_element?(view, "input[disabled][name='delegation_command[amount]']")
     assert has_element?(view, "input[name='delegation_command[amount]'][value='0']")
 
+    assert has_element?(view, "#delegation-billing-month")
+
+    render_hook(view, "change-month", %{"month" => "2026-09-01"})
+
+    assert DelegationsDomain.get_delegation!(delegation.id, scope: current_scope(admin)).billing_month ==
+             ~D[2026-09-01]
+
     view
     |> element("#delegation-command-form")
-    |> render_change(%{"delegation_command" => %{"advance" => "true"}})
+    |> render_change(%{"delegation_command" => %{"advance" => "true", "amount" => "0"}})
 
     refute has_element?(view, "input[disabled][name='delegation_command[amount]']")
     assert has_element?(view, "input[name='delegation_command[amount]'][value='0']")
@@ -309,10 +316,17 @@ defmodule FirmowidWeb.Management.Views.EmployeesTest do
     |> render_submit()
 
     assert render(view) =~ "Bez zaliczki"
+    assert has_element?(view, "button[disabled]", "Wygeneruj polecenie")
+
+    render_hook(view, "change-month", %{"month" => "2026-10-01"})
+
+    refute has_element?(view, "button[disabled]", "Wygeneruj polecenie")
 
     view
     |> element("#delegation-command-form")
-    |> render_change(%{"delegation_command" => %{"advance" => "true"}})
+    |> render_change(%{"delegation_command" => %{"advance" => "true", "amount" => "100"}})
+
+    refute has_element?(view, "button[disabled]", "Wygeneruj polecenie")
 
     view
     |> form("#delegation-command-form", %{
