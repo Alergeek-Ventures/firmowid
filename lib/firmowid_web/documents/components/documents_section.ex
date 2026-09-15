@@ -268,11 +268,14 @@ defmodule FirmowidWeb.Documents.Components.DocumentsSection do
 
   defp documents_list(%{variant: :profile} = assigns) do
     ~H"""
-    <div class="scrollbar-card max-h-80 space-y-2 overflow-y-auto">
-      <p :if={Enum.empty?(@documents)} class="text-grey-500 text-sm">
-        Brak dokumentów.
-      </p>
-      <.document_element :for={document <- @documents} document={document} />
+    <div class="scrollbar-card h-100 max-h-100 space-y-2 overflow-y-auto">
+      <%= if Enum.empty?(@documents) do %>
+        <div class="bg-grey-50 text-grey-700 flex size-full items-center justify-center rounded-lg text-sm">
+          <p>Brak dokumentów</p>
+        </div>
+      <% else %>
+        <.document_element :for={document <- @documents} document={document} />
+      <% end %>
     </div>
     """
   end
@@ -282,7 +285,9 @@ defmodule FirmowidWeb.Documents.Components.DocumentsSection do
     <div class="relative w-full flex-1">
       <div class="scrollbar-card absolute inset-0 space-y-2 overflow-y-auto pr-2">
         <%= if Enum.empty?(@documents) do %>
-          <div class="text-darkGrey mt-4 text-sm">Brak dokumentów</div>
+          <div class="bg-grey-50 text-grey-700 flex size-full items-center justify-center rounded-lg text-sm">
+            <p>Brak dokumentów</p>
+          </div>
         <% else %>
           <.document_element :for={document <- @documents} document={document} />
         <% end %>
