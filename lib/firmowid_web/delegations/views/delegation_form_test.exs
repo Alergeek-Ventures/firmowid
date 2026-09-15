@@ -61,6 +61,8 @@ defmodule FirmowidWeb.Delegations.Views.DelegationFormTest do
     assert html =~ "Środek lokomocji"
     assert html =~ "Wybierz z listy"
     assert html =~ ~r/<option[^>]*value=""[^>]*disabled[^>]*hidden[^>]*>\s*Wybierz z listy/
+    assert html =~ "Autobus (z wyłączeniem komunikacji miejskiej)"
+    assert html =~ "Komunikacja miejska"
     assert html =~ "+ Dodaj kolejny"
 
     html = render_click(view, "add_transport_type")
