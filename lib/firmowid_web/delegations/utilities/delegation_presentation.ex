@@ -1,6 +1,8 @@
 defmodule FirmowidWeb.Delegations.Utilities.DelegationPresentation do
   @moduledoc "Presentation helpers shared by employee and management delegation lists."
 
+  alias FirmowidWeb.Infrastructure.Utilities.TimeFormatter
+
   @spec status_label(atom()) :: String.t()
   def status_label(:pending), do: "oczekiwanie"
   def status_label(:in_progress), do: "w toku"
@@ -12,9 +14,7 @@ defmodule FirmowidWeb.Delegations.Utilities.DelegationPresentation do
   def status_badge_styles(:complete), do: ["bg-grey-100 text-grey-700"]
 
   @spec format_range(Date.t(), Date.t()) :: String.t()
-  def format_range(start_date, end_date) do
-    "#{format_date(start_date)} - #{format_date(end_date)}"
-  end
+  def format_range(start_date, end_date), do: TimeFormatter.format_date_range(start_date, end_date)
 
   @spec format_date(Date.t()) :: String.t()
   def format_date(date), do: Calendar.strftime(date, "%d.%m.%Y")
