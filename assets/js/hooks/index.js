@@ -19,6 +19,7 @@ import { DownloadPdf } from "./download_pdf";
 import { LandingNavbarTheme } from "./landing_navbar_theme";
 import { NumberPopIn } from "./number_pop_in";
 import { ImageLoadReveal } from "./image_load_reveal";
+import { SelectLabelOverride } from "./select_label_override";
 
 export const Hooks = {
   Confetti,
@@ -42,5 +43,6 @@ export const Hooks = {
   DownloadPdf,
   LandingNavbarTheme,
   NumberPopIn,
-  ImageLoadReveal
+  ImageLoadReveal,
+  SelectLabelOverride
 };
