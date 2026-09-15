@@ -7,6 +7,7 @@ defmodule FirmowidWeb.Management.Views.Delegation do
   import FirmowidWeb.DesignSystem.Components.Button
   import FirmowidWeb.DesignSystem.Components.CoreComponents, except: [button: 1]
   import FirmowidWeb.DesignSystem.Components.Link
+  import FirmowidWeb.DesignSystem.Components.MonthPicker
   import Phoenix.Component, except: [link: 1]
 
   alias Firmowid.Ash.Core
@@ -20,7 +21,9 @@ defmodule FirmowidWeb.Management.Views.Delegation do
   def mount(_params, _session, socket) do
     {:ok,
      socket
-     |> assign(:command_generated, false)
+     |> assign(:generated_advance_amount, nil)
+     |> assign(:generated_billing_month, nil)
+     |> assign(:current_advance_amount, Money.new(:PLN, 0))
      |> allow_upload(:signed_command, accept: ~w(.pdf), max_entries: 1)}
   end
 
@@ -52,6 +55,8 @@ defmodule FirmowidWeb.Management.Views.Delegation do
            |> assign(:employment_contract, employment_contract)
            |> assign(:delegation, delegation)
            |> assign(:command_form, command_form(false, delegation.advance_amount))
+           |> assign(:current_advance_amount, delegation.advance_amount)
+           |> assign(:billing_month, delegation.billing_month)
            |> assign(:page_title, "Polecenie wyjazdu służbowego")}
         else
           {:noreply, push_navigate(socket, to: Navigation.employee_path(employee.id))}
@@ -60,13 +65,16 @@ defmodule FirmowidWeb.Management.Views.Delegation do
   end
 
   @impl true
-  def handle_event("toggle-advance", %{"delegation_command" => %{"advance" => value}}, socket) do
+  def handle_event("toggle-advance", %{"delegation_command" => params}, socket) do
+    advance_amount = advance_amount(params)
+
     {:noreply,
-     assign(
-       socket,
+     socket
+     |> assign(
        :command_form,
-       command_form(value == "true", socket.assigns.delegation.advance_amount)
-     )}
+       command_form(params["advance"] == "true", advance_amount)
+     )
+     |> assign(:current_advance_amount, advance_amount)}
   end
 
   @impl true
@@ -82,11 +90,37 @@ defmodule FirmowidWeb.Management.Views.Delegation do
         {:noreply,
          socket
          |> assign(:delegation, delegation)
-         |> assign(:command_generated, true)
+         |> assign(:generated_advance_amount, advance_amount)
+         |> assign(:generated_billing_month, delegation.billing_month)
+         |> assign(:current_advance_amount, advance_amount)
          |> assign(:command_form, command_form(params["advance"] == "true", advance_amount))}
 
       {:error, _error} ->
         {:noreply, put_flash(socket, :error, "Nie udało się wygenerować polecenia.")}
+    end
+  end
+
+  @impl true
+  def handle_event("change-month", %{"month" => month}, socket) do
+    case Date.from_iso8601(month) do
+      {:ok, billing_month} ->
+        case Delegations.update_delegation_billing_month(
+               socket.assigns.delegation.id,
+               %{billing_month: billing_month},
+               scope: socket.assigns.ash_scope
+             ) do
+          {:ok, delegation} ->
+            {:noreply,
+             socket
+             |> assign(:delegation, delegation)
+             |> assign(:billing_month, delegation.billing_month)}
+
+          {:error, _error} ->
+            {:noreply, put_flash(socket, :error, "Nie udało się zmienić miesiąca rozliczeniowego.")}
+        end
+
+      {:error, _reason} ->
+        {:noreply, put_flash(socket, :error, "Nieprawidłowy miesiąc rozliczeniowy.")}
     end
   end
 
@@ -205,6 +239,14 @@ defmodule FirmowidWeb.Management.Views.Delegation do
                     accent="turquoise"
                     size="small"
                     class="col-span-2 w-full"
+                    disabled={
+                      not command_changed?(
+                        @generated_advance_amount,
+                        @current_advance_amount,
+                        @generated_billing_month,
+                        @billing_month
+                      )
+                    }
                   >
                     Wygeneruj polecenie
                   </.button>
@@ -215,12 +257,21 @@ defmodule FirmowidWeb.Management.Views.Delegation do
         </section>
 
         <section>
-          <dl class="grid grid-cols-[auto_1fr] gap-x-6 text-base">
-            <dt class="text-grey-700">Miesiąc rozliczeniowy</dt>
-            <dd>{format_billing_month(@delegation.billing_month)}</dd>
-          </dl>
+          <div class="grid w-fit grid-cols-[auto_1fr] items-center gap-x-6 text-base lg:ml-auto">
+            <span class="text-grey-700">Miesiąc rozliczeniowy</span>
+            <div class="relative w-57">
+              <.month_picker
+                id="delegation-billing-month"
+                selected_date={Date.to_iso8601(@billing_month)}
+                variant="outline"
+                size="small"
+                class="w-full pr-10"
+              />
+              <Lucideicons.chevron_down class="text-grey-700 pointer-events-none absolute top-1/2 right-3 size-4 -translate-y-1/2" />
+            </div>
+          </div>
 
-          <%= if not @command_generated do %>
+          <%= if is_nil(@generated_advance_amount) do %>
             <div class="border-grey-200 mt-8 flex min-h-96 items-center justify-center rounded-md border p-8 text-center shadow-sm">
               <p class="text-grey-700 text-base">Wygeneruj polecenie, aby móc je podpisać.</p>
             </div>
@@ -328,6 +379,13 @@ defmodule FirmowidWeb.Management.Views.Delegation do
 
   defp advance_amount(_params), do: Money.new(:PLN, 0)
 
+  defp command_changed?(nil, _advance_amount, _generated_billing_month, _billing_month), do: true
+
+  defp command_changed?(generated_advance_amount, advance_amount, generated_billing_month, billing_month) do
+    not Money.equal?(generated_advance_amount, advance_amount) or
+      generated_billing_month != billing_month
+  end
+
   defp upload_error(:too_large), do: "Plik jest zbyt duży."
   defp upload_error(:too_many_files), do: "Możesz dodać tylko jeden plik."
   defp upload_error(:not_accepted), do: "Wgraj plik PDF."
@@ -373,8 +431,4 @@ defmodule FirmowidWeb.Management.Views.Delegation do
   end
 
   defp initial(name), do: name |> String.trim() |> String.first() |> String.upcase()
-
-  defp format_billing_month(billing_month) do
-    Cldr.Date.to_string!(billing_month, Firmowid.Cldr, format: "LLLL y", locale: "pl")
-  end
 end

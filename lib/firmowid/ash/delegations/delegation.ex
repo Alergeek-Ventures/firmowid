@@ -124,6 +124,13 @@ defmodule Firmowid.Ash.Delegations.Delegation do
         message: "musi być większa lub równa 0 PLN"
     end
 
+    update :update_billing_month do
+      description "Set the billing month for a pending business trip delegation."
+      require_atomic? false
+      accept [:billing_month]
+      validate attribute_equals(:status, :pending)
+    end
+
     update :complete do
       description "Mark an in-progress delegation as complete."
       require_atomic? false
