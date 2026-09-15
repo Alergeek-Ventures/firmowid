@@ -47,6 +47,8 @@ defmodule FirmowidWeb.Delegations.Views.DelegationTest do
     user = user_fixture()
     admin = admin_fixture(%{organization_id: user.organization_id})
     scope = %Scope{actor: user, tenant: user.organization_id}
+    signed_command_path = Briefly.create!(extname: ".pdf")
+    File.write!(signed_command_path, "%PDF-1.4 signed command")
 
     delegation =
       Delegations.create_delegation!(
@@ -56,7 +58,7 @@ defmodule FirmowidWeb.Delegations.Views.DelegationTest do
           destination: "Kraków",
           transport_types: [:railway],
           purpose: "Spotkanie z klientem",
-          advance_payment_amount: Money.new(:PLN, 100),
+          expected_cost: Money.new(:PLN, 100),
           start_date: ~D[2026-08-10],
           end_date: ~D[2026-08-11]
         },
@@ -64,7 +66,14 @@ defmodule FirmowidWeb.Delegations.Views.DelegationTest do
       )
 
     {:ok, delegation} =
-      Delegations.approve_delegation(delegation.id,
+      Delegations.approve_delegation(
+        delegation.id,
+        %{
+          advance_amount: Money.new(:PLN, 0),
+          signed_command_filename: "polecenie.pdf",
+          upload_path: signed_command_path,
+          content_type: "application/pdf"
+        },
         scope: %Scope{actor: admin, tenant: user.organization_id}
       )
 
@@ -102,7 +111,7 @@ defmodule FirmowidWeb.Delegations.Views.DelegationTest do
       )
     end
 
-    {:ok, _view, html} = conn |> log_in_user(user) |> live(~p"/delegacje/#{delegation.id}")
+    {:ok, _view, html} = conn |> log_in_user(user) |> live(~p"/delegacje/#{delegation.reference}")
 
     assert html =~ "transport-transport-type-"
     assert html =~ "accommodation-locality-"
