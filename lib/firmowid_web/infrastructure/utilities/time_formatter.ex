@@ -68,6 +68,23 @@ defmodule FirmowidWeb.Infrastructure.Utilities.TimeFormatter do
     Calendar.strftime(date, "%d.%m.%Y")
   end
 
+  @doc """
+  Formats a date range compactly, omitting repeated month and year parts.
+  """
+  @spec format_date_range(Date.t(), Date.t()) :: String.t()
+  def format_date_range(%Date{} = start_date, %Date{} = end_date) do
+    cond do
+      start_date.year == end_date.year and start_date.month == end_date.month ->
+        "#{Calendar.strftime(start_date, "%d")}-#{format_date(end_date)}"
+
+      start_date.year == end_date.year ->
+        "#{Calendar.strftime(start_date, "%d.%m")}-#{format_date(end_date)}"
+
+      true ->
+        "#{format_date(start_date)}-#{format_date(end_date)}"
+    end
+  end
+
   def format_date(date, format) do
     Cldr.Date.to_string!(date, Firmowid.Cldr, format: format, locale: "pl")
   end
