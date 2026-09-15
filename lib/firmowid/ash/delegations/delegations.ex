@@ -11,6 +11,7 @@ defmodule Firmowid.Ash.Delegations do
 
   alias Firmowid.Ash.Delegations.Delegation
   alias Firmowid.Ash.Delegations.DelegationExpense
+  alias Firmowid.Ash.Delegations.DelegationExpenseRelatedBlob
 
   resources do
     resource Delegation do
@@ -28,6 +29,12 @@ defmodule Firmowid.Ash.Delegations do
       define :update_expense, action: :update
       define :complete_expense, action: :complete
       define :destroy_expense, action: :destroy
+      define :add_related_document, action: :add_related_document
+      define :remove_related_document, action: :remove_related_document
+    end
+
+    resource DelegationExpenseRelatedBlob do
+      define :read_related_expense_blobs, action: :read
     end
   end
 

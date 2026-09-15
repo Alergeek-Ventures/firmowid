@@ -20,23 +20,24 @@ defmodule Firmowid.Ash.Delegations.DelegationExpenseExtractor do
     type: "object",
     properties: %{
       document_number: %{type: "string"},
-      expense_amount: %{type: "number", exclusiveMinimum: 0}
+      expense_amount: %{type: "number", exclusiveMinimum: 0},
+      details: %{type: "object"}
     },
-    required: ["document_number", "expense_amount"]
+    required: ["document_number", "expense_amount", "details"]
   }
 
   @doc """
   Returns extracted details or the reason extraction failed.
   """
   @spec extract(Path.t(), :transport | :accommodation | :other) :: {:ok, map()} | {:error, term()}
-  def extract(file_path, _expense_type) do
-    extract_details(file_path)
+  def extract(file_path, expense_type) do
+    extract_details(file_path, expense_type)
   end
 
-  defp extract_details(file_path) do
-    case ProcessBlobHelpers.reducto_client().extract_file(file_path, @schema, system_prompt: @system_prompt) do
+  defp extract_details(file_path, expense_type) do
+    case ProcessBlobHelpers.reducto_client().extract_file(file_path, @schema, system_prompt: system_prompt(expense_type)) do
       {:ok, metadata} ->
-        case details(metadata) do
+        case extracted_details(metadata, expense_type) do
           nil -> extraction_error(:invalid_response)
           details -> {:ok, details}
         end
@@ -51,18 +52,52 @@ defmodule Firmowid.Ash.Delegations.DelegationExpenseExtractor do
     {:error, reason}
   end
 
-  defp details(%{"document_number" => document_number, "expense_amount" => amount})
-       when is_binary(document_number) and document_number != "" do
+  defp extracted_details(
+         %{"document_number" => document_number, "expense_amount" => amount, "details" => details},
+         expense_type
+       )
+       when is_binary(document_number) and document_number != "" and is_map(details) do
     case decimal(amount) do
       {:ok, amount} ->
-        %{document_number: document_number, expense_amount: Money.new(:PLN, amount)}
+        %{
+          document_number: document_number,
+          expense_amount: Money.new(:PLN, amount),
+          details: Map.put(details, "_union_type", Atom.to_string(expense_type))
+        }
 
       :error ->
         nil
     end
   end
 
-  defp details(_metadata), do: nil
+  defp extracted_details(_metadata, _expense_type), do: nil
+
+  defp system_prompt(:transport) do
+    @system_prompt <>
+      """
+
+      Expense category: transport.
+      Include details with type "transport", transport_type, and trips. Each trip must include departure_city, departure_datetime, arrival_city, and arrival_datetime.
+      """
+  end
+
+  defp system_prompt(:accommodation) do
+    @system_prompt <>
+      """
+
+      Expense category: accommodation.
+      Include details with type "accommodation", locality, arrival_date, departure_date, and an optional description.
+      """
+  end
+
+  defp system_prompt(:other) do
+    @system_prompt <>
+      """
+
+      Expense category: other.
+      Include details with type "other" and description.
+      """
+  end
 
   defp decimal(amount) when is_integer(amount) and amount > 0, do: {:ok, Decimal.new(amount)}
   defp decimal(amount) when is_float(amount) and amount > 0, do: {:ok, Decimal.from_float(amount)}

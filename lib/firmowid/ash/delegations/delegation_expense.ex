@@ -7,6 +7,7 @@ defmodule Firmowid.Ash.Delegations.DelegationExpense do
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer]
 
+  alias Firmowid.Ash.Blobs.Blob
   alias Firmowid.Ash.Delegations.Changes.CreateExpenseBlob
   alias Firmowid.Ash.Delegations.DelegationExpense.Details
   alias Firmowid.Ash.Delegations.Validations.ExpenseDetailsComplete
@@ -70,6 +71,37 @@ defmodule Firmowid.Ash.Delegations.DelegationExpense do
       validate {ExpenseDetailsMatchKind, []}
       validate {ExpenseDetailsComplete, []}
     end
+
+    update :add_related_document do
+      description "Attach an additional supporting document to an expense."
+      require_atomic? false
+      accept []
+
+      argument :upload_path, :string, allow_nil?: false
+      argument :content_type, :string, allow_nil?: false
+      argument :original_filename, :string, allow_nil?: false
+
+      change Firmowid.Ash.Delegations.Changes.AddRelatedExpenseBlob
+    end
+
+    update :remove_related_document do
+      description "Remove an additional supporting document from an expense."
+      require_atomic? false
+      accept []
+
+      argument :blob_id, :uuid, allow_nil?: false
+
+      change fn changeset, _context ->
+        Ash.Changeset.manage_relationship(
+          changeset,
+          :related_blobs,
+          [%{id: Ash.Changeset.get_argument(changeset, :blob_id)}],
+          type: :remove,
+          on_match: :unrelate,
+          on_no_match: :ignore
+        )
+      end
+    end
   end
 
   policies do
@@ -81,7 +113,7 @@ defmodule Firmowid.Ash.Delegations.DelegationExpense do
       authorize_if relates_to_actor_via([:delegation, :user])
     end
 
-    policy action_type([:create, :update, :destroy]) do
+    policy action([:create, :update, :add_related_document, :remove_related_document, :destroy]) do
       authorize_if expr(delegation.status == :in_progress and delegation.user_id == ^actor(:id))
     end
 
@@ -124,10 +156,16 @@ defmodule Firmowid.Ash.Delegations.DelegationExpense do
       attribute_writable? true
     end
 
-    belongs_to :blob, Firmowid.Ash.Blobs.Blob do
+    belongs_to :blob, Blob do
       description "Uploaded expense document."
       allow_nil? true
       attribute_writable? true
+    end
+
+    many_to_many :related_blobs, Blob do
+      through Firmowid.Ash.Delegations.DelegationExpenseRelatedBlob
+      source_attribute_on_join_resource :delegation_expense_id
+      destination_attribute_on_join_resource :blob_id
     end
 
     belongs_to :organization, Firmowid.Ash.Core.Organization do
