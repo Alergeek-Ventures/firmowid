@@ -10,6 +10,7 @@ defmodule Firmowid.Ash.Delegations.DelegationEmails do
   alias Firmowid.Ash.Core.User
   alias Firmowid.Ash.Delegations.Delegation
   alias Firmowid.Mailer
+  alias FirmowidWeb.Infrastructure.Utilities.TimeFormatter
 
   @spec deliver_new_delegation([User.t() | map()], Delegation.t(), User.t() | map()) ::
           {:ok, Swoosh.Email.t()} | {:error, term()}
@@ -113,6 +114,6 @@ defmodule Firmowid.Ash.Delegations.DelegationEmails do
   defp employee_name(%{email: email}), do: to_string(email)
 
   defp date_range(%{start_date: start_date, end_date: end_date}) do
-    "#{Calendar.strftime(start_date, "%d-%m-%Y")} - #{Calendar.strftime(end_date, "%d-%m-%Y")}"
+    TimeFormatter.format_date_range(start_date, end_date)
   end
 end

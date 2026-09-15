@@ -61,12 +61,8 @@ defmodule FirmowidWeb.Delegations.Components.Delegation do
 
   def date_range(assigns) do
     ~H"""
-    <time datetime={Date.to_iso8601(@start_date)}>
-      {DelegationPresentation.format_date(@start_date)}
-    </time>
-    <span aria-hidden="true"> - </span>
-    <time datetime={Date.to_iso8601(@end_date)}>
-      {DelegationPresentation.format_date(@end_date)}
+    <time datetime={"#{Date.to_iso8601(@start_date)}/#{Date.to_iso8601(@end_date)}"}>
+      {DelegationPresentation.format_range(@start_date, @end_date)}
     </time>
     """
   end
