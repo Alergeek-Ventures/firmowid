@@ -143,7 +143,8 @@ defmodule FirmowidWeb.Delegations.Views.DelegationForm do
                       required
                       prompt="Wybierz z listy"
                       options={transport_options()}
-                      input_class="w-28"
+                      selected_labels={%{"bus" => "Autobus"}}
+                      input_class="w-56"
                     />
                     <.button
                       :if={index < length(@transport_types) - 1}
@@ -289,7 +290,8 @@ defmodule FirmowidWeb.Delegations.Views.DelegationForm do
     [
       {"Kolej", "railway"},
       {"Samolot", "airplane"},
-      {"Autobus", "bus"},
+      {"Autobus (z wyłączeniem komunikacji miejskiej)", "bus"},
+      {"Komunikacja miejska", "public_transport"},
       {"Inne", "other"}
     ]
   end
