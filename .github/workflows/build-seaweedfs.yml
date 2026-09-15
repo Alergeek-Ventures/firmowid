@@ -49,6 +49,6 @@ jobs:
           file: ./deployment/Containerfile.seaweedfs
           push: true
           tags: |
-            ghcr.io/alergeek-ventures/firmowid/seaweedfs-s3:main
-            ghcr.io/alergeek-ventures/firmowid/seaweedfs-s3:${{ steps.version.outputs.tag }}
-            ghcr.io/alergeek-ventures/firmowid/seaweedfs-s3:sha-${{ github.sha }}
+            ghcr.io/alergeek-ventures/firmowid-new/seaweedfs-s3:main
+            ghcr.io/alergeek-ventures/firmowid-new/seaweedfs-s3:${{ steps.version.outputs.tag }}
+            ghcr.io/alergeek-ventures/firmowid-new/seaweedfs-s3:sha-${{ github.sha }}

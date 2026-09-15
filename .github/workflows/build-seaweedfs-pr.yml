@@ -104,4 +104,4 @@ jobs:
           file: ./deployment/Containerfile.seaweedfs
           push: true
           tags: |
-            ghcr.io/alergeek-ventures/firmowid/seaweedfs-s3:pr-${{ inputs.pr-number }}-${{ inputs.head-sha }}
+            ghcr.io/alergeek-ventures/firmowid-new/seaweedfs-s3:pr-${{ inputs.pr-number }}-${{ inputs.head-sha }}

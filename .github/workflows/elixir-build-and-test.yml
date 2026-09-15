@@ -76,7 +76,7 @@ jobs:
         run: |
           PARADEDB_IMAGE=$(grep 'image:.*paradedb/paradedb' local/compose.yml | sed 's/.*image: *//')
           SEAWEEDFS_VERSION=$(grep '^FROM' deployment/Containerfile.seaweedfs | sed 's/.*seaweedfs://' | sed 's/@.*//')
-          SEAWEEDFS_IMAGE="ghcr.io/alergeek-ventures/firmowid/seaweedfs-s3:${SEAWEEDFS_VERSION}"
+          SEAWEEDFS_IMAGE="ghcr.io/alergeek-ventures/firmowid-new/seaweedfs-s3:${SEAWEEDFS_VERSION}"
           SEAWEEDFS_PR_IMAGE_REQUIRED="false"
 
           if [ "$EVENT_NAME" = "pull_request" ]; then
@@ -86,7 +86,7 @@ jobs:
               --header "Authorization: Bearer $GITHUB_TOKEN" \
               --header "X-GitHub-Api-Version: 2022-11-28" \
               "$PR_FILES_URL" | grep '"filename": "deployment/Containerfile.seaweedfs"' >/dev/null; then
-              SEAWEEDFS_IMAGE="ghcr.io/alergeek-ventures/firmowid/seaweedfs-s3:pr-${PR_NUMBER}-${PR_HEAD_SHA}"
+              SEAWEEDFS_IMAGE="ghcr.io/alergeek-ventures/firmowid-new/seaweedfs-s3:pr-${PR_NUMBER}-${PR_HEAD_SHA}"
               SEAWEEDFS_PR_IMAGE_REQUIRED="true"
             fi
           fi
