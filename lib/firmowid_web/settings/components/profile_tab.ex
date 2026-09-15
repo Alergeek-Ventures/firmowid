@@ -573,28 +573,35 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
           <span class="text-grey-700 pl-1 font-medium">{@leave_days} dni</span>
         </div>
       </div>
-      <ul class="divide-grey-100 scrollbar-card max-h-80 divide-y overflow-y-auto">
-        <li
-          :for={request <- @filtered_leave_requests}
-          class="flex items-center gap-3 py-3 first:pt-0 last:pb-0"
+      <div class="scrollbar-card h-100 max-h-100 overflow-y-auto pr-1">
+        <ul class="divide-grey-100 divide-y">
+          <li
+            :for={request <- @filtered_leave_requests}
+            class="flex items-center gap-3 py-3 first:pt-0 last:pb-0"
+          >
+            <span class="bg-grey-100 text-grey-700 flex size-6.5 items-center justify-center rounded">
+              <.reason_icon reason={request.reason} />
+            </span>
+            <span class="min-w-0 flex-1 truncate">
+              {LeavePresentation.reason_label(request.reason, :short)}
+            </span>
+            <span class="shrink-0 tabular-nums">
+              {LeavePresentation.format_range(request.starts_on, request.ends_on)}
+            </span>
+            <span class={leave_status_badge_styles(request.status)}>
+              {LeavePresentation.status_label(request.status)}
+            </span>
+          </li>
+        </ul>
+        <div
+          :if={Enum.empty?(@filtered_leave_requests)}
+          class="bg-grey-50 text-grey-700 flex size-full items-center justify-center rounded-lg text-sm"
         >
-          <span class="bg-grey-100 text-grey-700 flex size-6.5 items-center justify-center rounded">
-            <.reason_icon reason={request.reason} />
-          </span>
-          <span class="min-w-0 flex-1 truncate">
-            {LeavePresentation.reason_label(request.reason, :short)}
-          </span>
-          <span class="shrink-0 tabular-nums">
-            {LeavePresentation.format_range(request.starts_on, request.ends_on)}
-          </span>
-          <span class={leave_status_badge_styles(request.status)}>
-            {LeavePresentation.status_label(request.status)}
-          </span>
-        </li>
-      </ul>
-      <p :if={Enum.empty?(@filtered_leave_requests)} class="text-grey-500 text-sm">
-        Brak wniosków o nieobecności.
-      </p>
+          <p>
+            Brak wniosków o nieobecności.
+          </p>
+        </div>
+      </div>
 
       <.modal id="leave-request-modal" class="max-w-xl">
         <h2 class="mb-8 text-xl font-medium">

@@ -147,9 +147,14 @@ defmodule FirmowidWeb.Management.Components.LeavesTab do
                 myself={@myself}
               />
             </ul>
-            <p :if={@other_requests == []} class="text-grey-500 text-sm">
-              Brak pozostałych wniosków.
-            </p>
+            <div
+              :if={Enum.empty?(@other_requests)}
+              class="bg-grey-50 text-grey-700 flex size-full items-center justify-center rounded-lg text-sm"
+            >
+              <p>
+                Brak pozostałych wniosków.
+              </p>
+            </div>
           </div>
         </div>
       </.card>
