@@ -140,7 +140,7 @@ defmodule FirmowidWeb.Delegations.Components.Settlement do
           <div
             :if={@editable?}
             id={"#{@kind}-expense-#{expense.id}"}
-            class="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3"
+            class="mt-4 grid items-end gap-3 sm:grid-cols-2 lg:grid-cols-3"
           >
             <.input
               :if={@kind == "transport"}
@@ -706,7 +706,7 @@ defmodule FirmowidWeb.Delegations.Components.Settlement do
                     type="button"
                     variant="unstyled"
                     class={[
-                      "block w-24 cursor-pointer text-left text-sm font-medium whitespace-nowrap",
+                      "block w-24 cursor-pointer text-left text-sm font-normal whitespace-nowrap",
                       description_visible? && "text-red-700"
                     ]}
                     phx-click={
@@ -756,25 +756,24 @@ defmodule FirmowidWeb.Delegations.Components.Settlement do
                   />
                 </td>
               </tr>
+              <tr :if={
+                Map.get(@description_visible?, trip.id, false) ||
+                  trip_form[:description].value not in [nil, ""]
+              }>
+                <th scope="row" class="text-grey-700 pt-2 pr-3 align-top font-normal">Opis</th>
+                <td colspan="4">
+                  <.input
+                    id={"trip-description-#{trip.id}"}
+                    field={trip_form[:description]}
+                    form="delegation-complete-form"
+                    type="textarea"
+                    new
+                    aria-label="Opis"
+                  />
+                </td>
+              </tr>
             </tbody>
           </table>
-          <div
-            :if={
-              Map.get(@description_visible?, trip.id, false) ||
-                trip_form[:description].value not in [nil, ""]
-            }
-            class="mt-3 grid grid-cols-[auto_minmax(0,1fr)] gap-x-3"
-          >
-            <span class="text-grey-700 pt-2 text-sm font-normal">Opis</span>
-            <.input
-              id={"trip-description-#{trip.id}"}
-              field={trip_form[:description]}
-              form="delegation-complete-form"
-              type="textarea"
-              new
-              aria-label="Opis"
-            />
-          </div>
         </div>
       </div>
     </section>
