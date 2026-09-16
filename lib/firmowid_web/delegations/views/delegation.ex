@@ -455,6 +455,8 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
                   entry.client_name,
                   entry.client_type,
                   path,
+                  socket.assigns.delegation.start_date,
+                  socket.assigns.delegation.end_date,
                   socket.assigns.ash_scope
                 )
               end)}
@@ -508,8 +510,14 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
     consume_uploaded_entry(socket, entry, fn _meta -> {:ok, {:error, :expense_not_selected}} end)
   end
 
-  defp create_expense(kind, id, filename, content_type, path, scope) do
-    with {:ok, extracted_details} <- DelegationExpenseExtractor.extract(path, kind) do
+  defp create_expense(kind, id, filename, content_type, path, start_date, end_date, scope) do
+    with {:ok, extracted_details} <-
+           DelegationExpenseExtractor.extract(
+             path,
+             kind,
+             start_date,
+             end_date
+           ) do
       create_expense_form(id, filename, content_type, path, kind, extracted_details, scope)
     end
   end
