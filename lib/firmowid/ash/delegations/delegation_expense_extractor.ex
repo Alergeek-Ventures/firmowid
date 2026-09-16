@@ -29,13 +29,16 @@ defmodule Firmowid.Ash.Delegations.DelegationExpenseExtractor do
   @doc """
   Returns extracted details or the reason extraction failed.
   """
-  @spec extract(Path.t(), :transport | :accommodation | :other) :: {:ok, map()} | {:error, term()}
-  def extract(file_path, expense_type) do
-    extract_details(file_path, expense_type)
+  @spec extract(Path.t(), :transport | :accommodation | :other, Date.t(), Date.t()) ::
+          {:ok, map()} | {:error, term()}
+  def extract(file_path, expense_type, start_date, end_date) do
+    extract_details(file_path, expense_type, start_date, end_date)
   end
 
-  defp extract_details(file_path, expense_type) do
-    case ProcessBlobHelpers.reducto_client().extract_file(file_path, @schema, system_prompt: system_prompt(expense_type)) do
+  defp extract_details(file_path, expense_type, start_date, end_date) do
+    case ProcessBlobHelpers.reducto_client().extract_file(file_path, @schema,
+           system_prompt: system_prompt(expense_type, start_date, end_date)
+         ) do
       {:ok, metadata} ->
         case extracted_details(metadata, expense_type) do
           nil -> extraction_error(:invalid_response)
@@ -72,25 +75,27 @@ defmodule Firmowid.Ash.Delegations.DelegationExpenseExtractor do
 
   defp extracted_details(_metadata, _expense_type), do: nil
 
-  defp system_prompt(:transport) do
+  defp system_prompt(:transport, start_date, end_date) do
     @system_prompt <>
       """
 
       Expense category: transport.
       Include details with type "transport", transport_type, and trips. Each trip must include departure_city, departure_datetime, arrival_city, and arrival_datetime.
+      All trip datetimes must be between #{start_date} and #{end_date}, inclusive.
       """
   end
 
-  defp system_prompt(:accommodation) do
+  defp system_prompt(:accommodation, start_date, end_date) do
     @system_prompt <>
       """
 
       Expense category: accommodation.
       Include details with type "accommodation", locality, arrival_date, departure_date, and an optional description.
+      Arrival and departure dates must be between #{start_date} and #{end_date}, inclusive.
       """
   end
 
-  defp system_prompt(:other) do
+  defp system_prompt(:other, _start_date, _end_date) do
     @system_prompt <>
       """
 

@@ -20,7 +20,12 @@ defmodule Firmowid.Ash.Delegations.DelegationExpenseExtractorTest do
 
     for expense_type <- [:transport, :accommodation, :other] do
       assert {:error, :unavailable} =
-               DelegationExpenseExtractor.extract("/tmp/document.pdf", expense_type)
+               DelegationExpenseExtractor.extract(
+                 "/tmp/document.pdf",
+                 expense_type,
+                 ~D[2026-08-10],
+                 ~D[2026-08-11]
+               )
     end
   end
 
@@ -53,9 +58,9 @@ defmodule Firmowid.Ash.Delegations.DelegationExpenseExtractorTest do
               "trips" => [
                 %{
                   "departure_city" => "Wrocław",
-                  "departure_datetime" => "2026-09-14T08:15:00Z",
+                  "departure_datetime" => "2026-08-10T08:15:00Z",
                   "arrival_city" => "Kraków",
-                  "arrival_datetime" => "2026-09-14T11:30:00Z"
+                  "arrival_datetime" => "2026-08-10T11:30:00Z"
                 }
               ],
               "_union_type" => "transport"
@@ -68,8 +73,8 @@ defmodule Firmowid.Ash.Delegations.DelegationExpenseExtractorTest do
             %{
               "type" => "accommodation",
               "locality" => "Studencka 12, Kraków",
-              "arrival_date" => "2026-09-14",
-              "departure_date" => "2026-09-15",
+              "arrival_date" => "2026-08-10",
+              "departure_date" => "2026-08-11",
               "description" => "Nocleg służbowy",
               "_union_type" => "accommodation"
             }
@@ -91,7 +96,12 @@ defmodule Firmowid.Ash.Delegations.DelegationExpenseExtractorTest do
                 expense_amount: actual_amount,
                 details: ^details
               }} =
-               DelegationExpenseExtractor.extract(path, expense_type)
+               DelegationExpenseExtractor.extract(
+                 path,
+                 expense_type,
+                 ~D[2026-08-10],
+                 ~D[2026-08-11]
+               )
 
       assert Money.equal?(actual_amount, Money.new(:PLN, Decimal.new(amount)))
     end

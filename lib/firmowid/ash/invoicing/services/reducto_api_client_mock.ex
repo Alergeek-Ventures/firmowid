@@ -31,6 +31,8 @@ defmodule Firmowid.Ash.Invoicing.Services.ReductoApiClientMock do
   end
 
   defp extraction_result(system_prompt) do
+    {start_date, end_date} = delegation_dates(system_prompt)
+
     cond do
       String.contains?(system_prompt, "Expense category: transport.") ->
         %{
@@ -42,9 +44,9 @@ defmodule Firmowid.Ash.Invoicing.Services.ReductoApiClientMock do
             "trips" => [
               %{
                 "departure_city" => "Wrocław",
-                "departure_datetime" => "2026-09-14T08:15:00Z",
+                "departure_datetime" => "#{start_date}T08:15:00Z",
                 "arrival_city" => "Kraków",
-                "arrival_datetime" => "2026-09-14T11:30:00Z"
+                "arrival_datetime" => "#{start_date}T11:30:00Z"
               }
             ]
           }
@@ -57,8 +59,8 @@ defmodule Firmowid.Ash.Invoicing.Services.ReductoApiClientMock do
           "details" => %{
             "type" => "accommodation",
             "locality" => "Studencka 12, Kraków",
-            "arrival_date" => "2026-09-14",
-            "departure_date" => "2026-09-15",
+            "arrival_date" => start_date,
+            "departure_date" => end_date,
             "description" => "Nocleg służbowy"
           }
         }
@@ -78,6 +80,16 @@ defmodule Firmowid.Ash.Invoicing.Services.ReductoApiClientMock do
           "document_number" => "DEV/2026/001",
           "expense_amount" => 123.45
         }
+    end
+  end
+
+  defp delegation_dates(system_prompt) do
+    case Regex.run(
+           ~r/between (\d{4}-\d{2}-\d{2}) and (\d{4}-\d{2}-\d{2}), inclusive/,
+           system_prompt
+         ) do
+      [_, start_date, end_date] -> {start_date, end_date}
+      nil -> {"2026-09-14", "2026-09-15"}
     end
   end
 end
