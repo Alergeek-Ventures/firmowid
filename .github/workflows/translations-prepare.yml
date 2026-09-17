@@ -1,0 +1,67 @@
+name: Prepare translations
+
+on:
+  push:
+    branches:
+      - '**'
+  workflow_call:
+    inputs:
+      version:
+        description: Full commit SHA whose translations should be snapshotted
+        required: true
+        type: string
+    secrets:
+      ACCENT_SNAPSHOT_API_KEY:
+        description: Accent project key with read/export and create_version permissions
+        required: true
+
+jobs:
+  prepare:
+    name: Prepare Accent snapshot and PO catalog
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    env:
+      ACCENT_VERSION: ${{ inputs.version || github.sha }}
+      CALLER_COMMIT: ${{ github.event.pull_request.head.sha || github.sha }}
+
+    steps:
+      - name: Reject fork pull requests before credentials
+        if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository
+        run: |
+          echo "Translation snapshots are not created for fork pull requests."
+          echo "Run this workflow from a branch in the repository, or use a maintainer-triggered workflow."
+          exit 1
+
+      - name: Validate exact full caller SHA
+        run: |
+          if [[ ! "$ACCENT_VERSION" =~ ^[0-9a-fA-F]{40}$ ]]; then
+            echo "Accent version must be a full 40-character Git SHA."
+            exit 1
+          fi
+
+          if [[ "${CALLER_COMMIT,,}" != "${ACCENT_VERSION,,}" ]]; then
+            echo "Accent version must equal the calling workflow commit."
+            exit 1
+          fi
+
+      - name: Checkout exact caller commit
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ inputs.version || github.sha }}
+          persist-credentials: false
+
+      - name: Setup Accent CLI
+        uses: ./.github/actions/setup-accent
+
+      - name: Create or reuse and export exact Accent catalog
+        env:
+          ACCENT_API_KEY: ${{ secrets.ACCENT_SNAPSHOT_API_KEY }}
+        run: elixir scripts/accent.exs prepare --version "$ACCENT_VERSION"
+
+      - name: Upload generated PO catalog
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: accent-po-${{ env.ACCENT_VERSION }}
+          path: priv/gettext/pl/LC_MESSAGES/default.po
+          if-no-files-found: error

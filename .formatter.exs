@@ -17,6 +17,11 @@
   ],
   subdirectories: ["priv/*/migrations"],
   plugins: [Phoenix.LiveView.HTMLFormatter, Spark.Formatter, Styler],
-  inputs: ["*.{heex,ex,exs}", "{config,lib,test}/**/*.{heex,ex,exs}", "priv/*/seeds.exs"],
+  inputs: [
+    "*.{heex,ex,exs}",
+    "{config,lib,test}/**/*.{heex,ex,exs}",
+    "scripts/*.exs",
+    "priv/*/seeds.exs"
+  ],
   attribute_formatters: %{class: CanonicalTailwind}
 ]

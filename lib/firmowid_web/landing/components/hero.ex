@@ -11,22 +11,26 @@ defmodule FirmowidWeb.Landing.Components.Hero do
   alias Phoenix.LiveView.Rendered
 
   @benefits [
-    "30 dni za darmo",
-    "Synchronizacja z KSeF",
-    "Bezpieczne przechowywanie danych",
-    "Integracja z bankami"
+    gettext_noop("30 days free"),
+    gettext_noop("KSeF synchronization"),
+    gettext_noop("Secure data storage"),
+    gettext_noop("Bank integrations")
   ]
 
   @desktop_metrics [
-    %{label: "Rozwijany przez Alergeek Ventures przez", value: "2 lata", width: "257px"},
-    %{label: "Zgodność z KSeF:", value: "100%", width: "112px"},
-    %{label: "Średni czas onboardingu:", value: "15 min", width: "160px"}
+    %{
+      label: gettext_noop("Developed by Alergeek Ventures for"),
+      value: gettext_noop("2 years"),
+      width: "257px"
+    },
+    %{label: gettext_noop("KSeF compliance:"), value: "100%", width: "112px"},
+    %{label: gettext_noop("Average onboarding time:"), value: "15 min", width: "160px"}
   ]
 
   @mobile_metrics [
-    %{label: "Zgodność z KSeF", value: "100%"},
-    %{label: "Średni czas onboardingu", value: "15 min"},
-    %{label: "Rozwijany przez Alergeek Ventures", value: "2 lata"}
+    %{label: gettext_noop("KSeF compliance"), value: "100%"},
+    %{label: gettext_noop("Average onboarding time"), value: "15 min"},
+    %{label: gettext_noop("Developed by Alergeek Ventures"), value: gettext_noop("2 years")}
   ]
 
   @doc """
@@ -34,7 +38,12 @@ defmodule FirmowidWeb.Landing.Components.Hero do
   """
   @spec hero_section(map()) :: Rendered.t()
   def hero_section(assigns) do
-    assigns = assign(assigns, :benefits, @benefits)
+    assigns =
+      assign(
+        assigns,
+        :benefits,
+        Enum.map(@benefits, &Gettext.gettext(FirmowidWeb.Core.Gettext, &1))
+      )
 
     ~H"""
     <section class="px-4 py-8 sm:px-6 lg:min-h-[calc(100vh-96px)] lg:px-10 lg:py-0">
@@ -42,7 +51,7 @@ defmodule FirmowidWeb.Landing.Components.Hero do
         <div class="flex items-end justify-between gap-8 px-0 lg:h-[730px] lg:px-[140px] lg:py-20">
           <div class="relative w-full lg:max-w-[501px]">
             <h1 class="relative text-[53px] leading-[0.98] font-bold tracking-[-0.04em] text-[#0f0f0f] sm:max-w-[620px] sm:text-[64px] lg:text-[72px] lg:leading-[1.02]">
-              Fakturowanie z KSeF <br />
+              {gettext("Invoicing with KSeF")} <br />
               <span class="relative inline-block">
                 <img
                   src={~p"/images/hero_price_scribble.svg"}
@@ -53,14 +62,15 @@ defmodule FirmowidWeb.Landing.Components.Hero do
                   decoding="async"
                   class="pointer-events-none absolute bottom-[0.06em] left-[-0.04em] h-[0.24em] w-[4.1em] max-w-none sm:bottom-[0.05em] lg:bottom-[0.07em]"
                 />
-                <span class="relative">od 5 zł</span>
+                <span class="relative">{gettext("from PLN 5")}</span>
               </span>
-              <br /> miesięcznie
+              <br /> {pgettext("landing-hero-pricing", "per month")}
             </h1>
 
             <p class="mt-6 max-w-[500px] text-[18px] leading-[1.4] text-[#4e4e4e] lg:mt-8 lg:text-[20px]">
-              Wszystko w jednym miejscu: faktury, bank, godziny pracy i płace. Bez stresu,
-              bez chaosu.
+              {gettext(
+                "Everything in one place: invoices, banking, working hours, and payroll. No stress, no chaos."
+              )}
             </p>
 
             <div class="mt-8 flex flex-col gap-4 sm:max-w-[344px] lg:mt-8 lg:max-w-none lg:flex-row lg:flex-wrap lg:gap-[25px]">
@@ -69,14 +79,14 @@ defmodule FirmowidWeb.Landing.Components.Hero do
                 variant={:filled}
                 analytics_cta="hero_register"
               >
-                Zacznij za darmo
+                {gettext("Start for free")}
               </.hero_action_button>
               <.hero_action_button
                 navigate={~p"/zaloguj"}
                 variant={:outline}
                 analytics_cta="hero_login"
               >
-                Zaloguj się
+                {gettext("Log in")}
               </.hero_action_button>
             </div>
 
@@ -95,7 +105,7 @@ defmodule FirmowidWeb.Landing.Components.Hero do
                 "#{~p"/images/landing_screenshots/timetracker-560.webp"} 560w, #{~p"/images/landing_screenshots/timetracker-1120.webp"} 1120w"
               }
               sizes="(min-width: 1280px) 560px, 500px"
-              alt="zrzut ekranu z Firmowida - ewidencja czasu pracy i lista ostatnich wpisów"
+              alt={gettext("Firmowid screenshot - time tracking and a list of recent entries")}
               width="1923"
               height="963"
               card_class="top-[3.75rem] left-10 z-10 w-[252px] -rotate-[11deg] xl:left-14 xl:w-[286px]"
@@ -108,7 +118,7 @@ defmodule FirmowidWeb.Landing.Components.Hero do
                 "#{~p"/images/landing_screenshots/invoicing_1-420.webp"} 420w, #{~p"/images/landing_screenshots/invoicing_1-840.webp"} 840w"
               }
               sizes="(min-width: 1280px) 420px, 370px"
-              alt="zrzut ekranu z Firmowida - nieopłacone faktury i transakcje do dopasowania"
+              alt={gettext("Firmowid screenshot - unpaid invoices and transactions to match")}
               width="1021"
               height="834"
               card_class="top-3 right-10 z-20 w-[278px] rotate-[9deg] xl:right-10 xl:w-[310px]"
@@ -121,7 +131,9 @@ defmodule FirmowidWeb.Landing.Components.Hero do
                 "#{~p"/images/landing_screenshots/invoicing_2-700.webp"} 700w, #{~p"/images/landing_screenshots/invoicing_2-1400.webp"} 1400w"
               }
               sizes="(min-width: 1280px) 700px, 620px"
-              alt="zrzut ekranu z Firmowida - podgląd i edycja faktury z wysyłką do KSeF"
+              alt={
+                gettext("Firmowid screenshot - invoice preview and editing with submission to KSeF")
+              }
               width="1711"
               height="948"
               fetchpriority="high"
@@ -150,8 +162,12 @@ defmodule FirmowidWeb.Landing.Components.Hero do
       <div class="mx-auto w-full max-w-[1416px] lg:px-[140px]">
         <div class="grid gap-8 text-center lg:hidden">
           <div :for={metric <- @mobile_metrics} class="flex flex-col items-center gap-2">
-            <p class="text-[14px]/4 font-normal text-[#303030]">{metric.label}</p>
-            <p class="text-[44px] leading-[1.08] font-bold text-[#0f0f0f]">{metric.value}</p>
+            <p class="text-[14px]/4 font-normal text-[#303030]">
+              {Gettext.gettext(FirmowidWeb.Core.Gettext, metric.label)}
+            </p>
+            <p class="text-[44px] leading-[1.08] font-bold text-[#0f0f0f]">
+              {Gettext.gettext(FirmowidWeb.Core.Gettext, metric.value)}
+            </p>
           </div>
         </div>
 
@@ -164,10 +180,10 @@ defmodule FirmowidWeb.Landing.Components.Hero do
               class="text-right text-[13px]/4 font-normal text-[#4e4e4e]"
               style={"width: #{metric.width}"}
             >
-              {metric.label}
+              {Gettext.gettext(FirmowidWeb.Core.Gettext, metric.label)}
             </p>
             <p class="text-[22px] leading-[1.24] font-bold text-[#0f0f0f]">
-              {metric.value}
+              {Gettext.gettext(FirmowidWeb.Core.Gettext, metric.value)}
             </p>
           </div>
         </div>

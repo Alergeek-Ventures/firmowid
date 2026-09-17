@@ -40,14 +40,14 @@ defmodule FirmowidWeb.Landing.Components.Primitives do
             href="/#zespol"
             class="landing-nav__text rounded-[5px] px-5 py-[15px] text-base font-medium text-[#0f0f0f] transition-colors hover:text-[#7a4a2d]"
           >
-            O nas
+            {gettext("About us")}
           </a>
           <a
             href="/#cta-footer"
             data-landing-cta="navbar_trial"
             class="landing-nav__text landing-nav__trial rounded-[5px] border-2 border-[#f5f5f5] px-4 py-2 text-base font-medium text-[#0f0f0f] transition-colors hover:border-[#d7c8bd] hover:bg-white/40"
           >
-            Wypróbuj
+            {gettext("Try it")}
           </a>
         </div>
       </nav>
@@ -75,17 +75,18 @@ defmodule FirmowidWeb.Landing.Components.Primitives do
         <div class="flex flex-col gap-10 lg:flex-row lg:items-start lg:justify-between lg:gap-8">
           <div class="max-w-[680px]">
             <p class="hidden font-['Nothing_You_Could_Do',cursive] text-[32px] leading-normal text-[#d2936d] lg:block">
-              TWÓJ RUCH!
+              {gettext("YOUR MOVE!")}
             </p>
             <h2 class="mt-2 text-[48px] leading-[0.98] font-bold tracking-[-0.03em] text-[#fafafa] lg:mt-4 lg:text-[64px] lg:leading-[57px]">
-              Prowadź firmę <br />z lżejszą głową.
+              {gettext("Run your business")} <br />{gettext("with a lighter mind.")}
             </h2>
             <p class="mt-1 text-right font-['Nothing_You_Could_Do',cursive] text-[41px] leading-[1.2] text-[#d2936d] lg:hidden">
-              TWÓJ RUCH!
+              {gettext("YOUR MOVE!")}
             </p>
             <p class="mt-6 max-w-[680px] text-[18px] leading-[27px] text-[#dddddd]">
-              30 dni bez opłat. Bez karty kredytowej. Bez zobowiązań. Jeśli program Ci nie
-              pasuje - usuwasz konto jednym kliknięciem.
+              {gettext(
+                "30 days free. No credit card. No commitment. If the software is not for you, delete your account with one click."
+              )}
             </p>
 
             <div class="mt-8 flex flex-col gap-6 sm:max-w-[358px] lg:max-w-none lg:flex-row lg:gap-8">
@@ -95,7 +96,7 @@ defmodule FirmowidWeb.Landing.Components.Primitives do
                 data-landing-cta="footer_register"
                 class="relative flex w-full shrink-0 items-center justify-center overflow-hidden rounded-sm border-2 border-[#d2936d] bg-[#d2936d] p-4 text-base font-medium text-black transition-transform duration-150 before:absolute before:inset-0 before:bg-[url('/images/button_hover.svg')] before:bg-size-[100%_100%] before:bg-no-repeat before:opacity-45 before:content-[''] hover:-translate-y-0.5 lg:w-auto lg:text-[20px]"
               >
-                <span class="relative z-10">Zacznij za darmo</span>
+                <span class="relative z-10">{gettext("Start for free")}</span>
               </.link>
               <a
                 href="https://cal.com/franek-madej/firmowid"
@@ -104,7 +105,7 @@ defmodule FirmowidWeb.Landing.Components.Primitives do
                 rel="noopener noreferrer"
                 class="relative flex shrink-0 items-center justify-center overflow-hidden rounded-sm border-2 border-white/80 p-4 text-base font-medium text-white transition-transform duration-150 hover:-translate-y-0.5 hover:bg-white/5 lg:text-[20px]"
               >
-                <span class="relative z-10">Umów 15 minutową rozmowę</span>
+                <span class="relative z-10">{gettext("Book a 15-minute call")}</span>
               </a>
             </div>
           </div>
@@ -130,30 +131,30 @@ defmodule FirmowidWeb.Landing.Components.Primitives do
             <div>
               <p class="text-[16px] font-bold text-[#f5f1ea] lg:text-[22px]">Firmowid</p>
               <p class="mt-2 text-[12px] leading-[1.4] text-[rgba(245,241,234,0.6)] lg:text-[14px]">
-                Fakturowanie, bank i godziny pracy.
-                <br class="hidden lg:block" />Opracowane przez przedsiębiorców dla przedsiębiorców.
+                {gettext("Invoicing, banking, and working hours.")}
+                <br class="hidden lg:block" />{gettext("Built by entrepreneurs for entrepreneurs.")}
               </p>
             </div>
 
             <div class="grid gap-8 sm:grid-cols-3 lg:flex lg:justify-end lg:gap-[68px]">
               <div class="space-y-4">
                 <p class="text-[12px] font-semibold tracking-[0.12em] text-[#f5f1ea] uppercase">
-                  Produkt
+                  {gettext("Product")}
                 </p>
                 <div class="space-y-2 text-[14px] text-[rgba(245,241,234,0.6)]">
-                  <a href="/#funkcje" class="block hover:text-white">Funkcje</a>
-                  <a href="/#cennik" class="block hover:text-white">Cennik</a>
+                  <a href="/#funkcje" class="block hover:text-white">{gettext("Features")}</a>
+                  <a href="/#cennik" class="block hover:text-white">{gettext("Pricing")}</a>
                   <a
                     href="https://github.com/Alergeek-Ventures/firmowid"
                     target="_blank"
                     rel="noopener noreferrer"
                     class="block hover:text-white"
-                  >Kod źródłowy</a>
+                  >{gettext("Source code")}</a>
                 </div>
               </div>
               <div class="space-y-4">
                 <p class="text-[12px] font-semibold tracking-[0.12em] text-[#f5f1ea] uppercase">
-                  Firma
+                  {gettext("Company")}
                 </p>
                 <div class="space-y-2 text-[14px] text-[rgba(245,241,234,0.6)]">
                   <a
@@ -162,17 +163,17 @@ defmodule FirmowidWeb.Landing.Components.Primitives do
                     rel="noopener noreferrer"
                     class="block hover:text-white"
                   >
-                    Kontakt
+                    {gettext("Contact")}
                   </a>
                   <.link kind="unstyled" navigate={~p"/regulamin#top"} class="block hover:text-white">
-                    Regulamin
+                    {gettext("Terms of Service")}
                   </.link>
                   <.link
                     kind="unstyled"
                     navigate={~p"/polityka-prywatnosci#top"}
                     class="block hover:text-white"
                   >
-                    Polityka prywatności
+                    {pgettext("footer-policy-link", "Privacy Policy")}
                   </.link>
                 </div>
               </div>
@@ -182,7 +183,9 @@ defmodule FirmowidWeb.Landing.Components.Primitives do
           <div class="mt-8 border-t border-[rgba(78,78,78,0.3)] py-8 lg:mt-8 lg:pb-10">
             <div class="flex flex-col gap-4 text-[10px] text-[rgba(245,241,234,0.6)] lg:flex-row lg:items-center lg:justify-between lg:text-xs">
               <p>
-                © {Date.utc_today().year} Firmowid (Alergeek Ventures). Wszelkie prawa zastrzeżone.
+                {gettext("© %{year} Firmowid (Alergeek Ventures). All rights reserved.",
+                  year: Date.utc_today().year
+                )}
               </p>
               <div class="hidden gap-4 lg:flex">
                 <a
