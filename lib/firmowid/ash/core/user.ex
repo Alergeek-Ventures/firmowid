@@ -177,7 +177,7 @@ defmodule Firmowid.Ash.Core.User do
       description "Register or sign in a user through the Google OAuth strategy."
       primary? true
       argument :user_info, :map, allow_nil?: false
-      argument :oauth_tokens, :map, allow_nil?: false
+      argument :oauth_tokens, :map, allow_nil?: false, sensitive?: true
       upsert? true
       upsert_identity :unique_email
       upsert_fields []
