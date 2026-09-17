@@ -14,7 +14,8 @@ defmodule Firmowid.Ash.Core.Token do
     domain: Firmowid.Ash.Core,
     data_layer: AshPostgres.DataLayer,
     extensions: [AshAuthentication.TokenResource],
-    authorizers: [Ash.Policy.Authorizer]
+    authorizers: [Ash.Policy.Authorizer],
+    simple_notifiers: [AshAuthentication.Phoenix.TokenRevocationNotifier]
 
   postgres do
     table "tokens"
@@ -23,6 +24,11 @@ defmodule Firmowid.Ash.Core.Token do
 
   token do
     created_at_attribute_name :inserted_at
+    endpoints [FirmowidWeb.Core.Endpoint]
+
+    live_socket_id_template fn data ->
+      "users_sessions:#{Map.get(data, "jti") || Map.get(data, :jti)}"
+    end
   end
 
   code_interface do

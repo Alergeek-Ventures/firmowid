@@ -12,7 +12,6 @@ defmodule FirmowidWeb.Auth.Controllers.AuthController do
   alias Ash.Error.Invalid
   alias AshAuthentication.Errors.AuthenticationFailed
   alias AshAuthentication.Strategy.RememberMe.Plug.Helpers
-  alias FirmowidWeb.Core.Endpoint
   alias FirmowidWeb.Infrastructure.UserAuth
   alias FirmowidWeb.Infrastructure.Utilities.PosthogBusinessEvents
 
@@ -21,20 +20,21 @@ defmodule FirmowidWeb.Auth.Controllers.AuthController do
   @doc """
   Success callback after authentication (password sign-in, Google OAuth, etc.)
   """
-  def success(conn, {:password, :reset}, user, _token) do
+  def success(conn, {:password, :reset}, user, token) do
     return_to = get_session(conn, :return_to) || UserAuth.signed_in_path_for_user(user)
 
     conn
     |> renew_session()
     |> delete_session(:return_to)
     |> store_in_session(user)
+    |> set_live_socket_id(token)
     |> Helpers.maybe_put_remember_me_cookies(conn.private[:ash_authentication])
     |> assign(:current_user, user)
     |> LiveToast.put_toast(:success, "Hasło zmienione poprawnie")
     |> redirect(to: return_to)
   end
 
-  def success(conn, {:password, :register}, user, _token) do
+  def success(conn, {:password, :register}, user, token) do
     PosthogBusinessEvents.capture_account_created(conn, user)
 
     return_to = get_session(conn, :return_to) || UserAuth.signed_in_path_for_user(user)
@@ -43,6 +43,7 @@ defmodule FirmowidWeb.Auth.Controllers.AuthController do
     |> renew_session()
     |> delete_session(:return_to)
     |> store_in_session(user)
+    |> set_live_socket_id(token)
     |> Helpers.maybe_put_remember_me_cookies(conn.private[:ash_authentication])
     |> assign(:current_user, user)
     |> redirect(to: return_to)
@@ -55,26 +56,28 @@ defmodule FirmowidWeb.Auth.Controllers.AuthController do
     |> redirect(to: ~p"/zaloguj")
   end
 
-  def success(conn, {:confirm, :confirm}, user, _token) do
+  def success(conn, {:confirm, :confirm}, user, token) do
     return_to = get_session(conn, :return_to) || UserAuth.signed_in_path_for_user(user)
 
     conn
     |> renew_session()
     |> delete_session(:return_to)
     |> store_in_session(user)
+    |> set_live_socket_id(token)
     |> Helpers.maybe_put_remember_me_cookies(conn.private[:ash_authentication])
     |> assign(:current_user, user)
     |> LiveToast.put_toast(:success, "Adres email został potwierdzony.")
     |> redirect(to: return_to)
   end
 
-  def success(conn, _activity, user, _token) do
+  def success(conn, _activity, user, token) do
     return_to = get_session(conn, :return_to) || UserAuth.signed_in_path_for_user(user)
 
     conn
     |> renew_session()
     |> delete_session(:return_to)
     |> store_in_session(user)
+    |> set_live_socket_id(token)
     |> Helpers.maybe_put_remember_me_cookies(conn.private[:ash_authentication])
     |> assign(:current_user, user)
     |> redirect(to: return_to)
@@ -199,14 +202,13 @@ defmodule FirmowidWeb.Auth.Controllers.AuthController do
   defp unconfirmed_user_error?(_), do: false
 
   @doc """
-  Sign out action — clears session, remember-me cookies, and broadcasts disconnect
+  Sign out action — clears session and remember-me cookies.
+
+  `clear_session/2` revokes the session token; the token resource notifier
+  broadcasts the LiveView disconnect, including for revocations initiated by
+  other flows.
   """
   def sign_out(conn, _params) do
-    # Broadcast disconnect for LiveView sessions
-    if live_socket_id = get_session(conn, :live_socket_id) do
-      Endpoint.broadcast(live_socket_id, "disconnect", %{})
-    end
-
     conn
     |> clear_session(:firmowid)
     |> Helpers.delete_all_remember_me_cookies(:firmowid)

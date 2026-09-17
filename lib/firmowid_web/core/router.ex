@@ -8,7 +8,9 @@ defmodule FirmowidWeb.Core.Router do
   import Oban.Web.Router
   import Phoenix.LiveDashboard.Router
 
+  alias AshAuthentication.Phoenix.LiveSession
   alias Auth.Controllers.AuthController
+  alias FirmowidWeb.Core.Telemetry
   alias FirmowidWeb.Infrastructure.Hooks.CurrentPath
   alias FirmowidWeb.Infrastructure.Hooks.FeatureFlags
   alias FirmowidWeb.Infrastructure.Hooks.RedirectAuthenticated
@@ -40,6 +42,7 @@ defmodule FirmowidWeb.Core.Router do
 
     plug :sign_in_with_remember_me
     plug :load_from_session
+    plug :restore_live_socket_id
     plug :set_actor, :user
   end
 
@@ -132,14 +135,31 @@ defmodule FirmowidWeb.Core.Router do
   scope "/admin" do
     if Mix.env() == :dev do
       pipe_through [:browser]
+
+      live_dashboard "/dashboard",
+        metrics: Telemetry
+
+      oban_dashboard("/oban", oban_name: Oban)
     else
       pipe_through [:browser, :require_authenticated_user_with_organization, :require_superuser]
+
+      live_dashboard "/dashboard",
+        metrics: Telemetry,
+        on_mount: [
+          LiveSession,
+          {RequireOrganization, :default},
+          {RequireSuperuser, :default}
+        ]
+
+      oban_dashboard("/oban",
+        oban_name: Oban,
+        on_mount: [
+          LiveSession,
+          {RequireOrganization, :default},
+          {RequireSuperuser, :default}
+        ]
+      )
     end
-
-    live_dashboard "/dashboard",
-      metrics: FirmowidWeb.Core.Telemetry
-
-    oban_dashboard("/oban", oban_name: Oban)
 
     forward "/mailbox", Plug.Swoosh.MailboxPreview
 
@@ -216,7 +236,9 @@ defmodule FirmowidWeb.Core.Router do
 
       live "/analiza", Analysis.Views.Dashboard, :index
 
-      live "/development", Development.Views.Index, :index
+      if Mix.env() == :dev do
+        live "/development", Development.Views.Index, :index
+      end
     end
 
     ash_authentication_live_session :with_org_management,

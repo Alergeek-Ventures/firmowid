@@ -10,6 +10,7 @@ defmodule FirmowidWeb.Infrastructure.UserAuth do
   import Phoenix.Controller
   import Plug.Conn
 
+  alias AshAuthentication.Phoenix.Controller, as: AuthController
   alias Firmowid.Ash.Scope
   alias FirmowidWeb.Organization.Utilities.Navigation, as: OrganizationNavigation
 
@@ -38,6 +39,29 @@ defmodule FirmowidWeb.Infrastructure.UserAuth do
   end
 
   @type billing_block_status :: :owner | :member | nil
+
+  @doc """
+  Plug: restores or refreshes the LiveView socket ID from the validated session token.
+
+  The existing connection is returned when the topic is already current, avoiding
+  an unnecessary session-cookie write on every browser request.
+  """
+  @spec restore_live_socket_id(Plug.Conn.t(), term()) :: Plug.Conn.t()
+  def restore_live_socket_id(conn, _opts) do
+    case {conn.assigns[:current_user], get_session(conn, :user_token)} do
+      {user, token} when not is_nil(user) and is_binary(token) ->
+        updated_conn = AuthController.set_live_socket_id(conn, token)
+
+        if get_session(updated_conn, :live_socket_id) == get_session(conn, :live_socket_id) do
+          conn
+        else
+          updated_conn
+        end
+
+      _ ->
+        conn
+    end
+  end
 
   @doc """
   Plug: Requires authenticated user with organization (browser).
