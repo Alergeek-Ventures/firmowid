@@ -448,3 +448,9 @@ html {
   75% { transform: rotateZ(-3deg) rotateY(-2deg); }
   100% { transform: rotateZ(0deg) rotateY(0deg); }
 }
+
+/* LiveToast stability */
+#toast-group [phx-hook="LiveToast"] {
+  backface-visibility: hidden;
+  transform: translateZ(0);
+}
