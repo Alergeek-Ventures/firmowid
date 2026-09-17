@@ -44,11 +44,13 @@ defmodule Mix.Tasks.Check do
   @cmd_checks [
     {"Format", ["format"]},
     {"Sobelow", ["sobelow", "--config", "--compact", "--private"]},
-    {"Npm licenses", ["assets.licenses"]}
+    {"Npm licenses", ["assets.licenses"]},
+    {"Translation extraction", ["gettext.extract", "--check-up-to-date"]}
   ]
 
   @static_checks [
     {"Compiling", ["compile", "--warnings-as-errors"]},
+    {"Translations", ["translations.check"]},
     {"Unused Deps", ["deps.unlock", "--check-unused"]},
     {"Depscheck", ["depscheck"]},
     {"Credo", ["credo", "--strict"]},
@@ -101,7 +103,20 @@ defmodule Mix.Tasks.Check do
     mix = System.find_executable("mix") || "mix"
     cmd_args = [task | args]
 
-    {output, exit_code} = System.cmd(mix, cmd_args, stderr_to_stdout: true)
+    # Extraction forces a full compilation and can wait for the live reloader's
+    # build lock. Show that progress rather than buffering an apparently hung check.
+    {output, exit_code} =
+      if task == "gettext.extract" do
+        IO.puts("(recompiles application; progress below)")
+
+        {_, status} =
+          System.cmd(mix, cmd_args, stderr_to_stdout: true, into: IO.stream(:stdio, :line))
+
+        IO.write(padded_name <> " ")
+        {"", status}
+      else
+        System.cmd(mix, cmd_args, stderr_to_stdout: true)
+      end
 
     case exit_code do
       0 ->

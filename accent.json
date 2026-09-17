@@ -1,0 +1,12 @@
+{
+  "apiUrl": "https://accent.alergeek.me",
+  "project": "c37e42c5-cfd0-44f7-9225-9d0e99e71672",
+  "files": [
+    {
+      "format": "gettext",
+      "source": "gettext/landing-native/*.pot",
+      "target": "exports/%slug%/default.po",
+      "namePattern": "parentDirectory"
+    }
+  ]
+}

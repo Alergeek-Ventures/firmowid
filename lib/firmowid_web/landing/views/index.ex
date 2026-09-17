@@ -19,10 +19,12 @@ defmodule FirmowidWeb.Landing.Views.Index do
     else
       {:ok,
        socket
-       |> assign(page_title: "Firmowid")
+       |> assign(page_title: gettext("Firmowid"))
        |> assign(
          meta_description:
-           "Firmowid to fakturowanie zgodne z KSeF, synchronizacja banku, ewidencja czasu pracy i rozliczenia zespołu dla polskich firm."
+           gettext(
+             "Firmowid is KSeF-compliant invoicing, bank synchronization, working-time tracking, and team payroll for Polish companies."
+           )
        )
        |> assign(public_marketing?: true)
        |> assign(billing_period: "monthly")
