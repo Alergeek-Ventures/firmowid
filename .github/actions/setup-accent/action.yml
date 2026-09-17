@@ -1,0 +1,19 @@
+name: Setup Accent CLI
+description: Install the pinned Accent CLI used by translation tooling
+runs:
+  using: composite
+  steps:
+    - name: Setup Node.js
+      uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+      with:
+        node-version: 26.8.1
+    - name: Setup Erlang and Elixir
+      uses: erlef/setup-beam@fc68ffb90438ef2936bbb3251622353b3dcb2f93
+      with:
+        version-file: .tool-versions
+        version-type: strict
+        install-hex: true
+        install-rebar: false
+    - name: Install Accent CLI
+      shell: bash
+      run: npm install --global accent-cli@0.19.0

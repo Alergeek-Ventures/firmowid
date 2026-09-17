@@ -12,6 +12,15 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  translations:
+    name: Prepare translations
+    if: github.ref == 'refs/heads/main'
+    uses: ./.github/workflows/translations-prepare.yml
+    with:
+      version: ${{ github.sha }}
+    secrets:
+      ACCENT_SNAPSHOT_API_KEY: ${{ secrets.ACCENT_SNAPSHOT_API_KEY }}
+
   extract-versions:
     name: Extract versions from .tool-versions
     if: github.ref == 'refs/heads/main'
@@ -23,6 +32,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
 
       - name: Extract versions
         id: versions
@@ -41,15 +52,27 @@ jobs:
     if: github.ref == 'refs/heads/main'
     runs-on: blacksmith-4vcpu-ubuntu-2404
     environment: production
-    needs: extract-versions
+    needs:
+      - translations
+      - extract-versions
     env:
       MIX_ENV: prod
 
     steps:
+      - name: Verify Sentry token
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+        run: |
+          : "${SENTRY_AUTH_TOKEN:?SENTRY_AUTH_TOKEN must be configured in the production environment}"
+
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          ref: ${{ github.sha }}
           fetch-depth: 0
+
+      - name: Download generated PO catalog
+        uses: ./.github/actions/download-translations
 
       - name: Install system dependencies
         run: |

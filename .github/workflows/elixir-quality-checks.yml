@@ -13,6 +13,16 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  translations:
+    name: Prepare translations
+    uses: ./.github/workflows/translations-prepare.yml
+    with:
+      version: ${{ github.event.pull_request.head.sha || github.sha }}
+    secrets:
+      ACCENT_SNAPSHOT_API_KEY: ${{ secrets.ACCENT_SNAPSHOT_API_KEY }}
+    permissions:
+      contents: read
+
   extract-versions:
     name: Extract versions from .tool-versions
     runs-on: ubuntu-latest
@@ -22,6 +32,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
       - name: Extract versions
         id: versions
@@ -40,11 +52,18 @@ jobs:
   quality_checks:
     name: Formatting, Credo, and Unused Deps
     runs-on: ubuntu-latest
-    needs: extract-versions
+    needs:
+      - translations
+      - extract-versions
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - name: Download generated PO catalog
+        uses: ./.github/actions/download-translations
 
       - name: Install system dependencies
         run: |
