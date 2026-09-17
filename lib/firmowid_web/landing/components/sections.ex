@@ -4,88 +4,88 @@ defmodule FirmowidWeb.Landing.Components.Sections do
   """
 
   use FirmowidWeb, :html
+  use Gettext, backend: FirmowidWeb.Core.Gettext
 
   import FirmowidWeb.DesignSystem.Components.Link
   import Phoenix.Component, except: [link: 1]
 
   alias Firmowid.Ash.Billing.PlanCatalog
-  alias FirmowidWeb.Infrastructure.Utilities.PolishQuantity
   alias Phoenix.LiveView.Rendered
 
   @problems [
     %{
       number: "01",
-      title: "Rozproszone narzędzia",
+      title: gettext_noop("Scattered tools"),
       description:
-        "Inny program do faktur, inny do czasu pracy, jeszcze inny do rozliczeń z bankiem. Dane się nie zgadzają, raporty robi się ręcznie."
+        gettext_noop("One program for invoicing, another for time tracking, and yet another for bank reconciliation. Data does not match and reports are prepared manually.")
     },
     %{
       number: "02",
-      title: "Niepewność wokół KSeF",
+      title: gettext_noop("Uncertainty around KSeF"),
       description:
-        "Przepisy się zmieniają, terminy przesuwają. Twój obecny system może nie nadążyć za aktualizacjami, a kary za błędy są realne."
+        gettext_noop("Regulations change and deadlines move. Your current system may not keep up with updates, and penalties for mistakes are real.")
     },
     %{
       number: "03",
-      title: "Budżet, który dezaktualizuje się w dniu utworzenia",
+      title: gettext_noop("A budget that is outdated the day it is created"),
       description:
-        "Kto dokładnie ile przepracował? Co się zmieściło w budżecie projektu? Zanim zrobisz zestawienie, tydzień się skończy."
+        gettext_noop("Who worked how much? What fit within the project budget? By the time you prepare a summary, the week is over.")
     }
   ]
 
   @features [
     %{
-      tags: [{"fakturowanie", :default}, {"KSeF", :default}, {"nowość", :accent}],
-      title: "Faktury, które trafiają do KSeF same",
+      tags: [{gettext_noop("invoicing"), :default}, {"KSeF", :default}, {gettext_noop("new"), :accent}],
+      title: gettext_noop("Invoices that reach KSeF by themselves"),
       description:
-        "Wystaw, wyślij, odbierz. Firmowid łączy się z Krajowym Systemem e-Faktur i pilnuje każdej zmiany w przepisach za Ciebie.",
+        gettext_noop("Create, send, receive. Firmowid connects to the National e-Invoice System and tracks every regulatory change for you."),
       bullets: [
-        "Automatyczna walidacja zgodności z KSeF",
-        "Ponowienie wysyłki przy obciążeniu systemu rządowego",
-        "Eksport faktur w formacie PDF"
+        gettext_noop("Automatic KSeF compliance validation"),
+        gettext_noop("Retry sending when the government system is overloaded"),
+        gettext_noop("Export invoices as PDF")
       ],
       variant: :invoice,
       reverse: false
     },
     %{
-      tags: [{"fakturowanie", :default}, {"rachunki bankowe", :default}],
-      title: "Transakcje dopasowane do faktur",
+      tags: [{gettext_noop("invoicing"), :default}, {gettext_noop("bank accounts"), :default}],
+      title: gettext_noop("Transactions matched to invoices"),
       description:
-        "Każda transakcja trafia do właściwej faktury automatycznie. Koniec z ręcznym kojarzeniem przelewów na koniec miesiąca.",
+        gettext_noop("Every transaction is automatically assigned to the right invoice. No more manually matching transfers at the end of the month."),
       bullets: [
-        "Automatyczne dopasowanie transakcji do faktur",
-        "Integracja z polskimi i zagranicznymi bankami",
-        "Eksport dla księgowości w jednym kliknięciu",
-        "Informacje przy nieopłaconych fakturach",
-        "Flagowanie transakcji bez dokumentów"
+        gettext_noop("Automatic transaction matching to invoices"),
+        gettext_noop("Integration with Polish and foreign banks"),
+        gettext_noop("One-click export for accounting"),
+        gettext_noop("Notifications about unpaid invoices"),
+        gettext_noop("Flag transactions without documents")
       ],
       variant: :banking,
       reverse: true
     },
     %{
-      tags: [{"ewidencja", :default}, {"czas pracy", :default}],
-      title: "Godziny, które same się liczą",
+      tags: [{gettext_noop("record-keeping"), :default}, {gettext_noop("working hours"), :default}],
+      title: gettext_noop("Hours that count themselves"),
       description:
-        "Twoi pracownicy liczą swój czas godzinowo, a Ty w sumie dalej nie wiesz, ile naprawdę kosztuje praca zespołu? Firmowid ma wszystko pod kontrolą.",
+        gettext_noop("Your employees track their hours, but you still do not know what your team really costs? Firmowid keeps everything under control."),
       bullets: [
-        "Monitorowanie czasu pracy w czasie rzeczywistym",
-        "Ewidencja godzin per projekt i per pracownik",
-        "Koszty pracy od razu widoczne w raportach",
-        "Eksport ewidencji w jednym kliknięciu"
+        gettext_noop("Real-time working hours monitoring"),
+        gettext_noop("Hours recorded per project and employee"),
+        gettext_noop("Labor costs visible in reports immediately"),
+        gettext_noop("One-click time tracking export")
       ],
       variant: :time,
       reverse: false
     },
     %{
-      tags: [{"płace", :default}, {"rozliczenia", :default}],
-      title: "Płace, które nie gubią się w excelu",
+      tags: [{gettext_noop("payroll"), :default}, {gettext_noop("settlements"), :default}],
+      title: gettext_noop("Payroll that never gets lost in Excel"),
       description:
-        "Z godzin pracy i stawek Firmowid sam policzy, kto ile zarobił. Wynagrodzenia i raporty masz w jednym miejscu.",
+        gettext_noop("From working hours and rates, Firmowid calculates who earned what. Payroll and reports are in one place."),
       bullets: [
-        "Automatyczne wyliczanie wynagrodzeń na podstawie ewidencji godzin",
-        "Stawki godzinowe i historia ich zmian",
-        "Informacja o liczbie godzin wykonania zlecenia",
-        "Raport wypłat w formacie CSV"
+        gettext_noop("Automatic payroll calculation based on tracked hours"),
+        gettext_noop("Hourly rates and their change history"),
+        gettext_noop("Information about the hours worked on an assignment"),
+        gettext_noop("Payroll report in CSV format")
       ],
       variant: :payroll,
       reverse: true
@@ -95,18 +95,18 @@ defmodule FirmowidWeb.Landing.Components.Sections do
   @how_it_works [
     %{
       number: 1,
-      title: "Załóż konto",
-      description: "E-mail, hasło, nazwa firmy. Zero karty kredytowej. 30 dni za darmo."
+      title: gettext_noop("Create an account"),
+      description: gettext_noop("Email, password, company name. No credit card. 30 days free.")
     },
     %{
       number: 2,
-      title: "Zintegruj dane",
-      description: "Połączymy konto bankowe i KSeF. Zaimportujemy kontrahentów z pliku lub poprzedniego systemu."
+      title: gettext_noop("Integrate your data"),
+      description: gettext_noop("We will connect your bank account and KSeF. We will import contacts from a file or your previous system.")
     },
     %{
       number: 3,
-      title: "Wystaw pierwszą fakturę",
-      description: "Wybierz kontrahenta, kliknij „wystaw”. Firmowid zajmie się resztą - włącznie z wysyłką do KSeF."
+      title: gettext_noop("Create your first invoice"),
+      description: gettext_noop("Choose a contact, click “create”. Firmowid will handle the rest — including sending it to KSeF.")
     }
   ]
 
@@ -114,37 +114,37 @@ defmodule FirmowidWeb.Landing.Components.Sections do
     start: %{
       key: "start",
       name: "Start",
-      audience: "Polecany dla: wszystkich osób korzystających z KSeF",
+      audience: gettext_noop("Recommended for: everyone using KSeF"),
       features: [
-        "Integracja z KSeF",
-        "Przejrzysty kreator faktur",
-        "Baza kontrahentów"
+        gettext_noop("KSeF integration"),
+        gettext_noop("Clear invoice creator"),
+        gettext_noop("Contacts database")
       ],
       highlighted: false
     },
     przedsiebiorca: %{
       key: "przedsiebiorca",
-      name: "Przedsiębiorca",
-      audience: "Polecany dla: jednoosobowych działalności i freelancerów",
+      name: gettext_noop("Entrepreneur"),
+      audience: gettext_noop("Recommended for: sole traders and freelancers"),
       features: [
-        "Integracja z KSeF",
-        "Przejrzysty kreator faktur",
-        "Baza kontrahentów",
-        "Powiadomienia e-mail"
+        gettext_noop("KSeF integration"),
+        gettext_noop("Clear invoice creator"),
+        gettext_noop("Contacts database"),
+        gettext_noop("Email notifications")
       ],
       highlighted: true
     },
     firma: %{
       key: "firma",
-      name: "Firma",
-      audience: "Polecany dla: zespołów, firm powyżej 15 osób",
+      name: gettext_noop("Company"),
+      audience: gettext_noop("Recommended for: teams and companies with more than 15 people"),
       features: [
-        "Integracja z KSeF",
-        "Przejrzysty kreator faktur",
-        "Baza kontrahentów",
-        "Powiadomienia e-mail",
-        "Czasośledzenie",
-        "Zarządzanie pracownikami i projektami"
+        gettext_noop("KSeF integration"),
+        gettext_noop("Clear invoice creator"),
+        gettext_noop("Contacts database"),
+        gettext_noop("Email notifications"),
+        gettext_noop("Time recording"),
+        gettext_noop("Employee and project management")
       ],
       highlighted: false
     }
@@ -154,60 +154,55 @@ defmodule FirmowidWeb.Landing.Components.Sections do
     %{
       name: "Franek Madej",
       role: "CEO · Alergeek Ventures",
-      portrait_alt: "Portret Franka Madeja",
+      portrait_alt: gettext_noop("Portrait of Franek Madej"),
       portrait_id: "team-portrait-franek",
       portrait_width: "832",
       portrait_height: "1248",
       bio:
-        "Od dekady doradza firmom w tworzeniu oprogramowania, pracując m.in. ze startupami z ekosystemu Y Combinator. Ma obsesję na punkcie produktów dopracowanych w każdym szczególe i przekładania złożonych procesów na proste narzędzia."
+        gettext_noop("For a decade, he has advised companies on software development, including startups from the Y Combinator ecosystem. He is obsessed with polished products and turning complex processes into simple tools.")
     },
     %{
       name: "Stanisław Madej",
       role: "COO · Alergeek Ventures",
-      portrait_alt: "Portret Stanisława Madeja",
+      portrait_alt: gettext_noop("Portrait of Stanisław Madej"),
       portrait_id: "team-portrait-stanislaw",
       portrait_width: "2731",
       portrait_height: "4096",
       bio:
-        "W firmie Alergeek Ventures dba o logistykę firmy, zarządzanie 20-osobowym zespołem. Szczęśliwy użytkownik Firmowida, którego wykorzystuje do codziennych zadań; dzięki czemu więcej czasu na zarządzanie a coraz mniej czasu poświęca na faktury oraz rozliczenia."
+        gettext_noop("At Alergeek Ventures, he handles company logistics and manages a team of 20. A happy Firmowid user, he uses it for daily tasks, leaving more time for management and less for invoices and settlements.")
     }
   ]
 
   @faqs [
     %{
       id: "faq-ksef",
-      question: "Czy Firmowid jest zgodny z KSeF?",
-      answer:
-        "Tak. Pełna zgodność z KSeF i automatyczne śledzenie zmian w przepisach - nasi programiści wdrażają je od razu po komunikacji od Ministerstwa Finansów."
+      question: gettext_noop("Is Firmowid compliant with KSeF?"),
+      answer: gettext_noop("Yes. Full KSeF compliance and automatic tracking of regulatory changes — our developers implement them immediately after announcements from the Ministry of Finance."),
     },
     %{
       id: "faq-migration",
-      question: "Jak wygląda migracja z innego programu?",
-      answer:
-        "Zaczynasz od połączenia KSeF i banku - importujemy dane z ostatnich 3 miesięcy. Momentalnie możesz zacząć dopasowywać transakcje do faktur i zacząć analizować przepływy finansowe."
+      question: gettext_noop("How does migration from another program work?"),
+      answer: gettext_noop("Start by connecting KSeF and your bank — we import data from the last three months. You can immediately match transactions to invoices and analyze cash flow."),
     },
     %{
       id: "faq-security",
-      question: "Czy moje dane są bezpieczne?",
-      answer:
-        "Tak. Firmowid akcentuje bezpieczne przechowywanie danych, a cały przepływ jest projektowany pod obsługę firmowych danych finansowych."
+      question: gettext_noop("Is my data safe?"),
+      answer: gettext_noop("Yes. Firmowid emphasizes secure data storage, and the entire flow is designed for handling company financial data."),
     },
     %{
       id: "faq-cancel",
-      question: "Czy mogę anulować w każdej chwili?",
-      answer: "Tak. Możesz zrezygnować w dowolnym momencie, a konto usunąć bez długoterminowych zobowiązań."
+      question: gettext_noop("Can I cancel at any time?"),
+      answer: gettext_noop("Yes. You can cancel at any time and delete your account without long-term commitments."),
     },
     %{
       id: "faq-overage",
-      question: "Jak działają dodatkowe opłaty za faktury spoza KSeF i konta bankowe?",
-      answer:
-        "W pakiecie Start nie ma w cenie faktur spoza KSeF, a każde dodatkowe konto bankowe kosztuje 10 zł netto + VAT miesięcznie. W pakiecie Przedsiębiorca masz w cenie 20 faktur spoza KSeF, 3 konta bankowe i 5 pracowników miesięcznie, a w pakiecie Firma 100 faktur, 10 kont bankowych i 20 pracowników. Po wykorzystaniu limitu naliczamy opłaty zgodnie z cennikiem pakietu."
+      question: gettext_noop("How do extra charges for invoices outside KSeF and bank accounts work?"),
+      answer: gettext_noop("The Start plan does not include invoices outside KSeF, and each additional bank account costs PLN 10 net + VAT per month. Entrepreneur includes 20 invoices outside KSeF, 3 bank accounts, and 5 employees monthly; Company includes 100 invoices, 10 bank accounts, and 20 employees. After reaching the limit, charges follow the plan price list."),
     },
     %{
       id: "faq-banks",
-      question: "Jakie banki obsługujecie?",
-      answer:
-        "Obsługiwane są banki, w których polscy przedsiębiorcy mogą mieć konto. Między innymi: PKO BP, Pekao, mBank, ING, Alior Bank, Millennium, Revolut."
+      question: gettext_noop("Which banks do you support?"),
+      answer: gettext_noop("We support banks where Polish entrepreneurs can hold an account, including PKO BP, Pekao, mBank, ING, Alior Bank, Millennium, and Revolut.")
     }
   ]
 
@@ -216,7 +211,7 @@ defmodule FirmowidWeb.Landing.Components.Sections do
   """
   @spec audience_section(map()) :: Rendered.t()
   def audience_section(assigns) do
-    assigns = assign(assigns, :problems, @problems)
+    assigns = assign(assigns, :problems, localize(@problems, [:title, :description]))
 
     ~H"""
     <section
@@ -226,14 +221,14 @@ defmodule FirmowidWeb.Landing.Components.Sections do
     >
       <div class="mx-auto max-w-[1419px] lg:px-[140px]">
         <div class="max-w-[680px]">
-          <.section_eyebrow dark>Dla kogo</.section_eyebrow>
+          <.section_eyebrow dark>{gettext("Who it is for")}</.section_eyebrow>
           <h2 class="mt-2 text-[38px] leading-[1.08] font-bold tracking-[-0.03em] text-[#fafafa] lg:text-[48px] lg:leading-[50px]">
-            Prowadzisz firmę. <br class="hidden lg:block" />
-            Nie chcesz prowadzić arkuszy kalkulacyjnych.
+            {gettext("You run a business.")} <br class="hidden lg:block" />
+            {gettext("You do not want to manage spreadsheets.")}
           </h2>
           <p class="mt-4 text-[18px] leading-[27px] text-[#dddddd] lg:mt-4">
-            Firmowid powstał dla polskich MŚP, które mają już dość przeskakiwania z programu do
-            programu i zapisywaniu wszystkiego w excelu.
+            {gettext("Firmowid was created for Polish SMEs that are tired of jumping from one program
+              to another and recording everything in spreadsheets.")}
           </p>
         </div>
 
@@ -263,20 +258,20 @@ defmodule FirmowidWeb.Landing.Components.Sections do
   """
   @spec capabilities_section(map()) :: Rendered.t()
   def capabilities_section(assigns) do
-    assigns = assign(assigns, :features, @features)
+    assigns = assign(assigns, :features, localize_features(@features))
 
     ~H"""
     <section id="funkcje" class="px-4 py-16 sm:px-6 lg:px-10 lg:py-20">
       <div class="mx-auto max-w-[1419px] lg:px-[140px]">
         <div class="max-w-[680px]">
-          <.section_eyebrow>Co potrafi Firmowid</.section_eyebrow>
+          <.section_eyebrow>{gettext("What Firmowid can do")}</.section_eyebrow>
           <h2 class="mt-2 text-[38px] leading-[1.08] font-bold tracking-[-0.03em] text-[#0f0f0f] lg:text-[48px] lg:leading-[50px]">
-            Cztery rzeczy, których Twoja firma potrzebuje. <br class="hidden lg:block" />
-            W jednym miejscu.
+            {gettext("Four things your business needs.")} <br class="hidden lg:block" />
+            {gettext("In one place.")}
           </h2>
           <p class="mt-4 text-[18px] leading-[27px] text-[#4e4e4e] lg:hidden">
-            Firmowid powstał dla polskich MŚP, które mają już dość przeskakiwania z programu do
-            programu i zapisywaniu wszystkiego w excelu.
+            {gettext("Firmowid was created for Polish SMEs that are tired of jumping from one program
+              to another and recording everything in spreadsheets.")}
           </p>
         </div>
 
@@ -299,7 +294,7 @@ defmodule FirmowidWeb.Landing.Components.Sections do
   """
   @spec proof_and_how_it_works_section(map()) :: Rendered.t()
   def proof_and_how_it_works_section(assigns) do
-    assigns = assign(assigns, :steps, @how_it_works)
+    assigns = assign(assigns, :steps, localize(@how_it_works, [:title, :description]))
 
     ~H"""
     <section id="jak-dziala" class="bg-white">
@@ -308,8 +303,7 @@ defmodule FirmowidWeb.Landing.Components.Sections do
           <div class="flex flex-col gap-8 lg:flex-row lg:items-center lg:justify-between">
             <div class="max-w-[718px]">
               <blockquote class="relative ml-4 text-[23px]/8 font-medium tracking-[-0.01em] text-[#1a1a1a] lg:ml-0 lg:text-[32px] lg:leading-[1.15] lg:tracking-[-0.01em]">
-                <span class="absolute top-0 -left-7 text-[56px] leading-[0.66] text-[#8b3f13] lg:-left-8 lg:text-[64px]">„</span>Przez dwa lata kleiliśmy trzy różne programy z Excelem. Teraz jedna osoba robi to,
-                co wcześniej robiło troje - a raporty są gotowe na koniec miesiąca, nie po tygodniu<span class="align-bottom text-[56px] leading-[0.66] text-[#8b3f13] lg:text-[64px]">”</span>
+                <span class="absolute top-0 -left-7 text-[56px] leading-[0.66] text-[#8b3f13] lg:-left-8 lg:text-[64px]">„</span>{gettext("For two years, we patched together three different programs with Excel. Now one person does what three people used to do — and reports are ready at the end of the month, not a week later.")}<span class="align-bottom text-[56px] leading-[0.66] text-[#8b3f13] lg:text-[64px]">”</span>
               </blockquote>
 
               <div class="mt-8 flex items-center gap-3">
@@ -318,10 +312,10 @@ defmodule FirmowidWeb.Landing.Components.Sections do
                 </div>
                 <div>
                   <p class="text-[15px] font-semibold text-[#1a1a1a]">
-                    Prezes spółki produkcji telewizyjnej
+                    {gettext("CEO of a television production company")}
                   </p>
                   <p class="mt-1 text-[13px] text-[#4e4e4e]">
-                    uczestnik programu beta
+                    {gettext("beta program participant")}
                   </p>
                 </div>
               </div>
@@ -332,11 +326,11 @@ defmodule FirmowidWeb.Landing.Components.Sections do
               <div class="space-y-6">
                 <div>
                   <p class="text-[42px] font-bold text-[#8b3f13]">−12h</p>
-                  <p class="text-[13px] text-[#4e4e4e]">mniej pracy administracyjnej tygodniowo</p>
+                   <p class="text-[13px] text-[#4e4e4e]">{gettext("less administrative work per week")}</p>
                 </div>
                 <div>
                   <p class="text-[42px] font-bold text-[#8b3f13]">0</p>
-                  <p class="text-[13px] text-[#4e4e4e]">błędów w KSeF od wdrożenia</p>
+                  <p class="text-[13px] text-[#4e4e4e]">{gettext("KSeF errors since implementation")}</p>
                 </div>
               </div>
             </div>
@@ -347,9 +341,9 @@ defmodule FirmowidWeb.Landing.Components.Sections do
       <div class="bg-[#f5f5f5] px-4 py-16 sm:px-6 lg:px-10 lg:py-[104px]">
         <div class="mx-auto max-w-[1419px] lg:px-[100px]">
           <div class="mx-auto max-w-[680px] text-center">
-            <.section_eyebrow>Jak działa Firmowid</.section_eyebrow>
+            <.section_eyebrow>{gettext("How Firmowid works")}</.section_eyebrow>
             <h2 class="mt-2 text-[38px] leading-[1.08] font-bold tracking-[-0.03em] text-[#0f0f0f] lg:text-[48px] lg:leading-[50px]">
-              Od zera do pierwszej faktury w 15 minut
+              {gettext("From zero to your first invoice in 15 minutes")}
             </h2>
           </div>
 
@@ -402,21 +396,22 @@ defmodule FirmowidWeb.Landing.Components.Sections do
   attr :billing_period, :string, required: true
 
   def pricing_section(assigns) do
-    assigns = assign(assigns, :plans, pricing_plans())
+    assigns = assign(assigns, :plans, localize_plans(pricing_plans()))
 
     ~H"""
     <section id="cennik" class="bg-white px-4 py-16 sm:px-6 lg:px-10 lg:py-[100px]">
       <div class="mx-auto max-w-[1419px] lg:px-8 xl:px-[140px]">
         <div class="mx-auto max-w-[588px] text-center">
-          <.section_eyebrow>Cennik</.section_eyebrow>
+          <.section_eyebrow>{gettext("Pricing")}</.section_eyebrow>
           <h2 class="mt-2 text-[38px] leading-[1.08] font-bold tracking-[-0.03em] text-[#0f0f0f] lg:text-[48px] lg:leading-[50px]">
-            Uczciwy cennik.<br /> <span class="underline">Bez gwiazdek.</span>
+            {gettext("Fair pricing.")}<br /> <span class="underline">{gettext("No surprises.")}</span>
           </h2>
           <p class="mt-4 text-[18px] leading-[27px] text-[#4e4e4e]">
-            Płacisz za to, z czego rzeczywiście korzystasz. Wybierz pakiet i rodzaj rozliczenia,
-            które najlepiej do Ciebie pasują.
+            {gettext(
+              "Pay only for what you actually use. Choose the plan and billing cycle that suit you best."
+            )}
           </p>
-          <p class="mt-2 text-sm font-medium text-[#8b3f13]">Wszystkie ceny netto + VAT.</p>
+          <p class="mt-2 text-sm font-medium text-[#8b3f13]">{gettext("All prices are net + VAT.")}</p>
         </div>
 
         <div class="mt-10 hidden justify-center md:flex">
@@ -432,7 +427,7 @@ defmodule FirmowidWeb.Landing.Components.Sections do
               ]}
               aria-pressed={@billing_period == "monthly"}
             >
-              Miesięcznie
+              {pgettext("billing period", "Monthly")}
             </button>
             <button
               type="button"
@@ -445,13 +440,13 @@ defmodule FirmowidWeb.Landing.Components.Sections do
               ]}
               aria-pressed={@billing_period == "yearly"}
             >
-              Rocznie
+              {pgettext("billing period", "Yearly")}
               <span class={[
                 "rounded-2xl px-2 py-1 text-xs font-medium",
                 @billing_period == "yearly" && "bg-[#dea785] text-[#4e2005]",
                 @billing_period != "yearly" && "bg-[#8b3f13] text-white"
               ]}>
-                Taniej
+                {pgettext("landing-billing-discount", "Save")}
               </span>
             </button>
           </div>
@@ -470,7 +465,7 @@ defmodule FirmowidWeb.Landing.Components.Sections do
   """
   @spec team_section(map()) :: Rendered.t()
   def team_section(assigns) do
-    assigns = assign(assigns, :team, @team)
+    assigns = assign(assigns, :team, localize(@team, [:portrait_alt, :bio]))
 
     ~H"""
     <section
@@ -479,14 +474,12 @@ defmodule FirmowidWeb.Landing.Components.Sections do
     >
       <div class="mx-auto max-w-[1419px] lg:grid lg:grid-cols-[minmax(0,1fr)_572px] lg:items-center lg:gap-12 lg:px-[140px]">
         <div class="max-w-[543px] lg:max-w-none">
-          <.section_eyebrow>Kto za tym stoi</.section_eyebrow>
+          <.section_eyebrow>{gettext("Who is behind it")}</.section_eyebrow>
           <h2 class="mt-2 text-[38px] leading-[1.08] font-bold tracking-[-0.03em] text-[#0f0f0f] lg:text-[48px] lg:leading-[50px]">
-            Dwie osoby. Jedno biuro w Krakowie.
+            {gettext("Two people. One office in Krakow.")}
           </h2>
           <p class="mt-4 text-[18px] leading-[27px] text-[#4e4e4e]">
-            Firmowid nie jest produktem stu menedżerów od stu procesów. To narzędzie zrobione przez
-            ludzi, którzy sami prowadzą firmę i wiedzą, jak wygląda praca z KSeF, rozliczaniem
-            pracowników i zamykaniem miesiąca.
+            {gettext("Firmowid is not a product made by a hundred managers for a hundred processes. It is a tool made by people who run a company themselves and know what working with KSeF, payroll, and month-end closing really looks like.")}
           </p>
         </div>
 
@@ -548,24 +541,24 @@ defmodule FirmowidWeb.Landing.Components.Sections do
   attr :open_faq, :string, default: nil
 
   def faq_section(assigns) do
-    assigns = assign(assigns, :faqs, @faqs)
+    assigns = assign(assigns, :faqs, localize(@faqs, [:question, :answer]))
 
     ~H"""
     <section id="faq" class="border-t border-[#e6d7ce] px-4 py-16 sm:px-6 lg:px-10 lg:py-[140px]">
       <div class="mx-auto max-w-[1419px] lg:flex lg:items-start lg:gap-12 lg:px-[140px]">
         <div class="max-w-[460px] lg:flex-1">
-          <.section_eyebrow>Pytania i odpowiedzi</.section_eyebrow>
+          <.section_eyebrow>{gettext("Questions and answers")}</.section_eyebrow>
           <h2 class="mt-2 text-[38px] leading-[1.08] font-bold tracking-[-0.03em] text-[#0f0f0f] lg:text-[48px] lg:leading-[50px]">
-            Zanim zapytasz <br />- może już odpowiedzieliśmy.
+            {gettext("Before you ask")} <br />{gettext("— we may have already answered.")}
           </h2>
           <p class="mt-4 text-[18px] leading-[27px] text-[#4e4e4e]">
-            Nie znalazłeś swojego pytania?
+            {gettext("Didn't find your question?")}
             <.link
               kind="unstyled"
               mailto="contact@alergeek.ventures"
               class="font-bold text-[#4e4e4e] underline underline-offset-4 hover:text-[#8b3f13]"
             >
-              Napisz do nas.
+              {gettext("Contact us.")}
             </.link>
           </p>
         </div>
@@ -767,7 +760,7 @@ defmodule FirmowidWeb.Landing.Components.Sections do
           @compact && "text-[6.8px] leading-[10px]",
           !@compact && "text-[10px] leading-[15px]"
         ]}>
-          <p>Faktura FV 10/2026</p>
+          <p>{gettext("Invoice FV 10/2026")}</p>
           <p>01.10.2026</p>
         </div>
       </div>
@@ -777,16 +770,16 @@ defmodule FirmowidWeb.Landing.Components.Sections do
         !@compact && "pt-3 text-[11px] leading-[16.5px]"
       ]}>
         <div class="flex items-start justify-between border-b border-dashed border-[#e5ddd0] py-[6px]">
-          <span>Usługi doradcze (40h)</span><span>16 000,00</span>
+          <span>{gettext("Consulting services (40h)")}</span><span>16 000,00</span>
         </div>
         <div class="flex items-start justify-between border-b border-dashed border-[#e5ddd0] py-[6px]">
-          <span>Licencja oprogramowania</span><span>1 788,00</span>
+          <span>{gettext("Software license")}</span><span>1 788,00</span>
         </div>
         <div class="flex items-start justify-between border-b border-dashed border-[#e5ddd0] py-[6px]">
           <span>VAT 23%</span><span>1 620,00</span>
         </div>
         <div class="flex items-start justify-between pt-[10px] font-bold">
-          <span>Razem brutto</span><span>19 408,00 zł</span>
+          <span>{gettext("Total incl. tax")}</span><span>19 408,00 zł</span>
         </div>
       </div>
     </div>
@@ -802,9 +795,9 @@ defmodule FirmowidWeb.Landing.Components.Sections do
       <div class="rounded-[10px] border border-[#e5ddd0] bg-[#faf7f3] p-4">
         <div class="flex items-center justify-between border-b border-[#e9ddd2] pb-3">
           <div>
-            <p class="text-sm font-bold text-[#1a1a1a]">Powiązane płatności</p>
+            <p class="text-sm font-bold text-[#1a1a1a]">{gettext("Linked payments")}</p>
             <p class="mt-1 text-[10px] text-[#4e4e4e]">
-              Automatyczne dopasowanie faktur do przelewów
+              {gettext("Automatically match invoices to transfers")}
             </p>
           </div>
           <span class="rounded-full bg-[#e8efe5] px-3 py-1 text-[10px] font-bold text-[#475e45]">
@@ -822,7 +815,7 @@ defmodule FirmowidWeb.Landing.Components.Sections do
           <div class="flex items-center justify-between rounded-lg border border-dashed border-[#d8c7bb] p-3">
             <div>
               <p class="text-xs font-semibold text-[#1a1a1a]">mBank • 01.10.2026</p>
-              <p class="text-[11px] text-[#4e4e4e]">Przelew dopasowany automatycznie</p>
+            <p class="text-[11px] text-[#4e4e4e]">{gettext("Transfer matched automatically")}</p>
             </div>
             <p class="text-sm font-bold text-[#699166]">✓</p>
           </div>
@@ -841,8 +834,8 @@ defmodule FirmowidWeb.Landing.Components.Sections do
       <div class="rounded-[10px] border border-[#e5ddd0] bg-[#faf7f3] p-4">
         <div class="flex items-center justify-between border-b border-[#e9ddd2] pb-3">
           <div>
-            <p class="text-sm font-bold text-[#1a1a1a]">Ewidencja czasu</p>
-            <p class="mt-1 text-[10px] text-[#4e4e4e]">Koszty i godziny w czasie rzeczywistym</p>
+            <p class="text-sm font-bold text-[#1a1a1a]">{pgettext("landing-feature", "Time tracking")}</p>
+            <p class="mt-1 text-[10px] text-[#4e4e4e]">{gettext("Costs and hours in real time")}</p>
           </div>
           <span class="rounded-full bg-[#f0eae6] px-3 py-1 text-[10px] font-bold text-[#8b3f13]">
             40h
@@ -862,8 +855,8 @@ defmodule FirmowidWeb.Landing.Components.Sections do
             <div class="h-2 w-[48%] rounded-full bg-[#dea785]"></div>
           </div>
           <div class="flex items-center justify-between rounded-lg bg-white p-3 text-[11px] shadow-[0_4px_16px_rgba(80,50,30,0.08)]">
-            <span>Koszt pracy w tym tygodniu</span>
-            <strong class="text-sm text-[#1a1a1a]">8 640 zł</strong>
+             <span>{gettext("Labor cost this week")}</span>
+             <strong class="text-sm text-[#1a1a1a]">8 640 zł</strong>
           </div>
         </div>
       </div>
@@ -880,11 +873,11 @@ defmodule FirmowidWeb.Landing.Components.Sections do
       <div class="rounded-[10px] border border-[#e5ddd0] bg-[#faf7f3] p-4">
         <div class="flex items-center justify-between border-b border-[#e9ddd2] pb-3">
           <div>
-            <p class="text-sm font-bold text-[#1a1a1a]">Rozliczenia zespołu</p>
-            <p class="mt-1 text-[10px] text-[#4e4e4e]">Godziny i wynagrodzenia w jednym miejscu</p>
+            <p class="text-sm font-bold text-[#1a1a1a]">{gettext("Team payroll")}</p>
+            <p class="mt-1 text-[10px] text-[#4e4e4e]">{gettext("Hours and compensation in one place")}</p>
           </div>
           <span class="rounded-full bg-[#e8efe5] px-3 py-1 text-[10px] font-bold text-[#475e45]">
-            Gotowe
+             {gettext("Ready")}
           </span>
         </div>
         <div class="mt-4 space-y-3">
@@ -896,7 +889,7 @@ defmodule FirmowidWeb.Landing.Components.Sections do
             <p class="text-sm font-bold text-[#1a1a1a]">12 800 zł</p>
           </div>
           <div class="flex items-center justify-between rounded-lg border border-dashed border-[#d8c7bb] p-3 text-[11px] text-[#4e4e4e]">
-            <span>Raport wypłat gotowy</span>
+            <span>{gettext("Payroll report ready")}</span>
             <strong class="text-[#8b3f13]">CSV</strong>
           </div>
         </div>
@@ -966,8 +959,8 @@ defmodule FirmowidWeb.Landing.Components.Sections do
             !@plan.highlighted && "text-[#5f5f5f]"
           ]}>
             {if @billing_period == "yearly",
-              do: "netto + VAT / mies. przy płatności za rok",
-              else: "netto + VAT / mies."}
+               do: gettext("net + VAT / month when billed annually"),
+               else: gettext("net + VAT / month")}
           </p>
           <p
             :if={@billing_period == "yearly"}
@@ -977,7 +970,7 @@ defmodule FirmowidWeb.Landing.Components.Sections do
               !@plan.highlighted && "text-[#5f5f5f]"
             ]}
           >
-            Płatność z góry za rok:<br />
+            {gettext("Paid upfront for one year:")}<br />
             <span class="line-through">
               {@plan.yearly_regular_price}
             </span>
@@ -998,7 +991,7 @@ defmodule FirmowidWeb.Landing.Components.Sections do
               @plan.highlighted && "text-[#d2936d]",
               !@plan.highlighted && "text-[#8b3f13]"
             ]}>
-              Limity w pakiecie
+              {gettext("Included limits")}
             </p>
             <ul class="mt-3 space-y-2 text-[14px]/6">
               <li :for={usage <- @plan.included_usage} class="flex items-start gap-2">
@@ -1020,7 +1013,7 @@ defmodule FirmowidWeb.Landing.Components.Sections do
               @plan.highlighted && "text-[#d2936d]",
               !@plan.highlighted && "text-[#8b3f13]"
             ]}>
-              Dostępne funkcje
+              {gettext("Available features")}
             </p>
             <ul class="mt-3 space-y-2 text-[14px]/6">
               <li :for={feature <- @plan.features} class="flex items-start gap-2">
@@ -1056,7 +1049,7 @@ defmodule FirmowidWeb.Landing.Components.Sections do
               ]}
               aria-pressed={@billing_period == "monthly"}
             >
-              Miesięcznie
+              {pgettext("billing period", "Monthly")}
             </button>
             <button
               type="button"
@@ -1071,7 +1064,7 @@ defmodule FirmowidWeb.Landing.Components.Sections do
               ]}
               aria-pressed={@billing_period == "yearly"}
             >
-              Rocznie
+              {pgettext("billing period", "Yearly")}
               <span class={[
                 "rounded-2xl px-2 py-1 text-[10px]",
                 @plan.highlighted && @billing_period == "yearly" && "bg-[#dea785] text-[#4e2005]",
@@ -1079,7 +1072,7 @@ defmodule FirmowidWeb.Landing.Components.Sections do
                 !@plan.highlighted && @billing_period == "yearly" && "bg-white/20 text-white",
                 !@plan.highlighted && @billing_period != "yearly" && "bg-[#8b3f13] text-white"
               ]}>
-                Taniej
+                 {pgettext("landing-billing-discount", "Save")}
               </span>
             </button>
           </div>
@@ -1098,7 +1091,7 @@ defmodule FirmowidWeb.Landing.Components.Sections do
                 "text-[#1a1a1a] before:absolute before:inset-0 before:bg-[url('/images/button_login.svg')] before:bg-size-[100%_100%] before:bg-no-repeat before:content-[''] hover:bg-black/3"
             ]}
           >
-            <span class="relative z-10">Zacznij za darmo</span>
+            <span class="relative z-10">{gettext("Start for free")}</span>
           </.link>
         </div>
       </div>
@@ -1116,6 +1109,33 @@ defmodule FirmowidWeb.Landing.Components.Sections do
 
   defp price_graphemes(price) do
     String.graphemes(price)
+  end
+
+  defp localize(records, fields) do
+    Enum.map(records, fn record ->
+      Enum.reduce(fields, record, fn field, record ->
+        Map.update!(record, field, fn value -> Gettext.gettext(FirmowidWeb.Core.Gettext, value) end)
+      end)
+    end)
+  end
+
+  defp localize_features(features) do
+    Enum.map(features, fn feature ->
+      feature
+      |> Map.update!(:tags, fn tags -> Enum.map(tags, fn {label, variant} -> {Gettext.gettext(FirmowidWeb.Core.Gettext, label), variant} end) end)
+      |> Map.update!(:title, fn value -> Gettext.gettext(FirmowidWeb.Core.Gettext, value) end)
+      |> Map.update!(:description, fn value -> Gettext.gettext(FirmowidWeb.Core.Gettext, value) end)
+      |> Map.update!(:bullets, fn bullets -> Enum.map(bullets, fn value -> Gettext.gettext(FirmowidWeb.Core.Gettext, value) end) end)
+    end)
+  end
+
+  defp localize_plans(plans) do
+    Enum.map(plans, fn plan ->
+      plan
+      |> Map.update!(:name, fn value -> Gettext.gettext(FirmowidWeb.Core.Gettext, value) end)
+      |> Map.update!(:audience, fn value -> Gettext.gettext(FirmowidWeb.Core.Gettext, value) end)
+      |> Map.update!(:features, fn features -> Enum.map(features, fn value -> Gettext.gettext(FirmowidWeb.Core.Gettext, value) end) end)
+    end)
   end
 
   defp pricing_plans do
@@ -1155,31 +1175,33 @@ defmodule FirmowidWeb.Landing.Components.Sections do
       [
         included_usage_line(
           rules.manual_external_invoices,
-          "faktura spoza KSeF",
-          "faktury spoza KSeF",
-          "faktur spoza KSeF"
+          :external_invoice
         ),
         included_usage_line(
           rules.synced_bank_accounts,
-          "konto bankowe",
-          "konta bankowe",
-          "kont bankowych"
+          :bank_account
         ),
         included_usage_line(
           rules.active_non_owner_users,
-          "pracownik",
-          "pracowników",
-          "pracowników"
+          :employee
         )
       ],
       &is_nil/1
     )
   end
 
-  defp included_usage_line(%{included_units: 0}, _singular, _paucal, _plural), do: nil
+  defp included_usage_line(%{included_units: 0}, _kind), do: nil
 
-  defp included_usage_line(%{included_units: included_units}, singular, paucal, plural) do
-    "#{PolishQuantity.quantity(included_units, singular, paucal, plural)} / mies."
+  defp included_usage_line(%{included_units: included_units}, :external_invoice) do
+    "#{ngettext("%{count} invoice outside KSeF", "%{count} invoices outside KSeF", included_units)} #{pgettext("landing-pricing-short", "per month")}"
+  end
+
+  defp included_usage_line(%{included_units: included_units}, :bank_account) do
+    "#{ngettext("%{count} bank account", "%{count} bank accounts", included_units)} #{pgettext("landing-pricing-short", "per month")}"
+  end
+
+  defp included_usage_line(%{included_units: included_units}, :employee) do
+    "#{ngettext("%{count} employee", "%{count} employees", included_units)} #{pgettext("landing-pricing-short", "per month")}"
   end
 
   defp money_with_currency(nil), do: nil

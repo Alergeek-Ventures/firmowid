@@ -7,6 +7,7 @@ defmodule FirmowidWeb.Landing.Views.TermsOfService do
   pricing, data handling, and governing law.
   """
   use FirmowidWeb, :live_view
+  use Gettext, backend: FirmowidWeb.Core.Gettext
 
   import FirmowidWeb.Landing.Components.LegalPage, only: [legal_page: 1]
 
@@ -16,9 +17,11 @@ defmodule FirmowidWeb.Landing.Views.TermsOfService do
   def mount(_params, _session, socket) do
     {:ok,
      assign(socket,
-       page_title: "Regulamin",
+       page_title: gettext("Terms of Service"),
        meta_description:
-         "Regulamin Firmowida określa zasady korzystania z usługi do fakturowania, obsługi KSeF, banku i ewidencji pracy.",
+         gettext(
+           "Firmowid's Terms of Service define the rules for using its invoicing, KSeF, banking, and work-tracking service."
+         ),
        public_marketing?: true,
        legal_entity: @legal_entity
      ), layout: false}
@@ -28,154 +31,165 @@ defmodule FirmowidWeb.Landing.Views.TermsOfService do
   def render(assigns) do
     ~H"""
     <.legal_page>
-      <h1 class="text-4xl font-bold">Regulamin</h1>
+      <h1 class="text-4xl font-bold">{gettext("Terms of Service")}</h1>
       <p class="text-sm text-neutral-500">
-        Ostatnia aktualizacja: 8 września 2026 r.
+        {gettext("Last updated: September 8, 2026")}
       </p>
 
-      <h2>§1. Postanowienia ogólne</h2>
+      <h2>{gettext("§1. General provisions")}</h2>
       <p>
-        Niniejszy Regulamin określa zasady korzystania z usługi internetowej Firmowid
-        (dalej: „Usługa"), dostępnej pod adresem <FirmowidWeb.DesignSystem.Components.Link.link
+        {gettext(
+          "These Terms of Service set out the rules for using the Firmowid online service (hereinafter: the “Service”), available at"
+        )} <FirmowidWeb.DesignSystem.Components.Link.link
           kind="unstyled"
           external="https://firmowid.pl"
           class="text-orange-700 hover:underline"
         >firmowid.pl</FirmowidWeb.DesignSystem.Components.Link.link>.
       </p>
       <p>
-        Usługodawcą jest <strong>{@legal_entity.name}</strong>
-        z siedzibą w {@legal_entity.headquarters_location}, {@legal_entity.address}, wpisana do Rejestru
-        Przedsiębiorców prowadzonego przez XI Wydział Gospodarczy Krajowego Rejestru
-        Sądowego Sądu Rejonowego dla Krakowa-Śródmieścia w Krakowie pod numerem
-        KRS: {@legal_entity.krs}, NIP: {@legal_entity.nip}, REGON: {@legal_entity.regon} (dalej: „Usługodawca" lub „Alergeek Ventures").
+        {gettext("The service provider is")} <strong>{@legal_entity.name}</strong>
+        {gettext("with its registered office at")} {@legal_entity.headquarters_location}, {@legal_entity.address}, {gettext(
+          "entered in the Register of"
+        )}
+        {gettext(
+          "Entrepreneurs maintained by the XI Commercial Division of the National Court Register of the District Court for Kraków-Śródmieście in Kraków under number"
+        )} KRS: {@legal_entity.krs}, NIP: {@legal_entity.nip}, REGON: {@legal_entity.regon} {gettext(
+          "(hereinafter: the “Service Provider” or “Alergeek Ventures”)."
+        )}
       </p>
       <p>
-        Usługa obejmuje w szczególności:
+        {gettext("The Service includes, in particular:")}
       </p>
       <ul>
-        <li>Wystawianie, zarządzanie i przechowywanie faktur sprzedażowych i kosztowych</li>
-        <li>Synchronizację i podgląd firmowych rachunków bankowych (Open Banking)</li>
-        <li>Automatyczne przyporządkowywanie faktur do transakcji bankowych</li>
-        <li>Ewidencję czasu pracy i zarządzanie projektami</li>
-        <li>Zarządzanie pracownikami, urlopami i umowami</li>
-        <li>Zarządzanie kontrahentami i danymi organizacji</li>
-        <li>Inne funkcje związane z prowadzeniem działalności gospodarczej,
-          wprowadzane w ramach rozwoju Usługi</li>
+        <li>
+          {gettext("Issuing, managing, and storing sales and purchase invoices")}
+        </li>
+        <li>{gettext("Synchronizing and viewing company bank accounts (Open Banking)")}</li>
+        <li>{gettext("Automatically matching invoices to bank transactions")}</li>
+        <li>{gettext("Recording working time and managing projects")}</li>
+        <li>{gettext("Managing employees, leave, and contracts")}</li>
+        <li>{gettext("Managing counterparties and organization data")}</li>
+        <li>
+          {gettext(
+            "Other functions related to conducting business, introduced as the Service develops"
+          )}
+        </li>
       </ul>
 
-      <h2>§2. Konto użytkownika</h2>
+      <h2>{gettext("§2. User account")}</h2>
       <p>
-        Korzystanie z Usługi wymaga utworzenia konta użytkownika. Rejestracja
-        jest możliwa za pomocą adresu e-mail lub konta Google (OAuth).
+        {gettext("Using the Service requires creating a user account. Registration")}
+        {gettext("is possible using an email address or a Google account (OAuth).")}
       </p>
       <p>
-        Użytkownik zobowiązuje się do podania prawdziwych danych oraz do zachowania
-        poufności danych logowania. Użytkownik ponosi odpowiedzialność za wszelkie
-        działania wykonane za pośrednictwem swojego konta.
+        {gettext(
+          "The User undertakes to provide accurate information and keep login credentials confidential. The User is responsible for all"
+        )}
+        {gettext("actions performed through their account.")}
       </p>
 
-      <h2>§3. Charakter Usługi</h2>
+      <h2>{gettext("§3. Nature of the Service")}</h2>
       <p>
-        Firmowid jest narzędziem wspomagającym prowadzenie działalności gospodarczej.
+        {gettext("Firmowid is a tool supporting the conduct of business activities.")}
       </p>
       <p>
         <strong>
-          Usługa nie stanowi doradztwa podatkowego, księgowego ani prawnego.
+          {gettext("The Service does not constitute tax, accounting, or legal advice.")}
         </strong>
-        Użytkownik ponosi wyłączną odpowiedzialność za poprawność wprowadzanych danych,
-        treść generowanych dokumentów oraz ich zgodność z obowiązującymi przepisami prawa.
+        {gettext(
+          "The User is solely responsible for the accuracy of entered data, the content of generated documents, and their compliance with applicable law."
+        )}
       </p>
       <p>
-        Usługodawca nie weryfikuje poprawności merytorycznej danych wprowadzanych przez
-        użytkowników i nie ponosi odpowiedzialności za skutki wynikające z ich
-        nieprawidłowości.
+        {gettext(
+          "The Service Provider does not verify the substantive correctness of data entered by users and is not responsible for consequences arising from inaccuracies in that data."
+        )}
       </p>
 
-      <h2>§4. Dostępność i ograniczenie odpowiedzialności</h2>
+      <h2>{gettext("§4. Availability and limitation of liability")}</h2>
       <p>
-        Usługa świadczona jest w modelu „tak jak jest" (<em>as is</em>).
-        Usługodawca dokłada starań w celu zapewnienia ciągłości i poprawności
-        działania Usługi, jednak nie gwarantuje jej nieprzerwanej dostępności
-        ani braku błędów.
+        {gettext("The Service is provided on an “as is” basis (")}<em>as is</em>{gettext(
+          "). The Service Provider makes efforts to ensure the continuity and proper operation of the Service, but does not guarantee uninterrupted availability or the absence of errors."
+        )}
       </p>
       <p>
         <strong>
-          W najszerszym zakresie dozwolonym przez obowiązujące prawo, Alergeek Ventures
-          nie ponosi odpowiedzialności za jakiekolwiek szkody wynikające z korzystania
-          z Usługi lub niemożności korzystania z niej, w tym w szczególności za szkody
-          bezpośrednie, pośrednie, przypadkowe, następcze, utracone korzyści, utratę
-          danych, przerwy w działalności gospodarczej ani jakiekolwiek inne straty
-          finansowe lub niefinansowe.
+          {gettext(
+            "To the fullest extent permitted by applicable law, Alergeek Ventures is not liable for any damages arising from the use of or inability to use the Service, including in particular direct, indirect, incidental, consequential damages, lost profits, data loss, business interruption, or any other financial or non-financial losses."
+          )}
         </strong>
       </p>
       <p>
-        Usługodawca zastrzega sobie prawo do przerw technicznych w działaniu Usługi
-        w celu przeprowadzenia prac konserwacyjnych, aktualizacji lub napraw.
+        {gettext(
+          "The Service Provider reserves the right to suspend the Service temporarily for maintenance, updates, or repairs."
+        )}
       </p>
 
-      <h2>§5. Cennik</h2>
+      <h2>{gettext("§5. Pricing")}</h2>
       <p>
-        Usługa dostępna jest w modelu freemium — obejmującym bezpłatny plan podstawowy
-        oraz płatne plany subskrypcyjne z rozszerzonym zakresem funkcji.
+        {gettext(
+          "The Service is available on a freemium model, comprising a free basic plan and paid subscription plans with an expanded range of features."
+        )}
       </p>
       <p>
-        Aktualny cennik dostępny jest na stronie Usługi. Usługodawca zastrzega sobie
-        prawo do zmiany cennika z co najmniej 30-dniowym wyprzedzeniem. Zmiana cennika
-        nie wpływa na już opłacone okresy subskrypcyjne.
+        {gettext(
+          "The current pricing is available on the Service website. The Service Provider reserves the right to change the pricing with at least 30 days’ notice. A pricing change does not affect subscription periods that have already been paid for."
+        )}
       </p>
 
-      <h2>§6. Ochrona danych osobowych</h2>
+      <h2>{gettext("§6. Personal data protection")}</h2>
       <p>
-        Zasady przetwarzania danych osobowych określa <FirmowidWeb.DesignSystem.Components.Link.link
+        {gettext("The rules for processing personal data are set out in")} <FirmowidWeb.DesignSystem.Components.Link.link
           kind="unstyled"
           navigate={~p"/polityka-prywatnosci"}
           class="text-orange-700 hover:underline"
         >
-            Polityka Prywatności</FirmowidWeb.DesignSystem.Components.Link.link>, stanowiąca integralną część niniejszego Regulaminu.
+            {gettext("the Privacy Policy")}</FirmowidWeb.DesignSystem.Components.Link.link>{gettext(
+          ", which forms an integral part of these Terms of Service."
+        )}
       </p>
 
-      <h2>§7. Usunięcie konta</h2>
+      <h2>{gettext("§7. Account deletion")}</h2>
       <p>
-        Użytkownik może usunąć swoje konto w dowolnym momencie. Po usunięciu konta
-        dane użytkownika są niezwłocznie usuwane z bazy danych oraz pamięci masowej
-        Usługi.
+        {gettext(
+          "The User may delete their account at any time. After the account is deleted, the User’s data is promptly removed from the Service database and storage."
+        )}
       </p>
       <p>
-        Resztki danych mogą pozostać w logach zewnętrznych usług (analityka, e-mail)
-        przez ich standardowe okresy retencji, zgodnie z informacjami zawartymi
-        w Polityce Prywatności.
-      </p>
-
-      <h2>§8. Rozwiązanie umowy</h2>
-      <p>
-        Usługodawca zastrzega sobie prawo do zawieszenia lub usunięcia konta
-        użytkownika w przypadku naruszenia postanowień niniejszego Regulaminu,
-        działania na szkodę Usługi lub innych użytkowników, bądź wykorzystywania
-        Usługi w sposób niezgodny z prawem.
+        {gettext(
+          "Residual data may remain in the logs of external services (analytics, email) for their standard retention periods, as described in the Privacy Policy."
+        )}
       </p>
 
-      <h2>§9. Zmiany Regulaminu</h2>
+      <h2>{gettext("§8. Termination of the agreement")}</h2>
       <p>
-        Usługodawca zastrzega sobie prawo do zmiany niniejszego Regulaminu.
-        O planowanych zmianach użytkownicy zostaną poinformowani z odpowiednim
-        wyprzedzeniem drogą elektroniczną lub poprzez komunikat w Usłudze.
-      </p>
-      <p>
-        Dalsze korzystanie z Usługi po wejściu w życie zmian Regulaminu oznacza
-        ich akceptację. W przypadku braku akceptacji użytkownik ma prawo usunąć
-        konto przed datą wejścia zmian w życie.
+        {gettext(
+          "The Service Provider reserves the right to suspend or delete a user account in the event of a breach of these Terms of Service, actions to the detriment of the Service or other users, or use of the Service in an unlawful manner."
+        )}
       </p>
 
-      <h2>§10. Prawo właściwe i rozstrzyganie sporów</h2>
+      <h2>{gettext("§9. Changes to the Terms of Service")}</h2>
       <p>
-        Niniejszy Regulamin podlega prawu polskiemu. Wszelkie spory wynikające
-        z korzystania z Usługi będą rozstrzygane przez sąd właściwy dla siedziby
-        Usługodawcy, tj. sąd w Krakowie.
+        {gettext(
+          "The Service Provider reserves the right to amend these Terms of Service. Users will be informed of planned changes in good time by electronic means or through a notice in the Service."
+        )}
+      </p>
+      <p>
+        {gettext(
+          "Continued use of the Service after changes to the Terms of Service take effect constitutes acceptance of those changes. If the User does not accept them, they may delete their account before the changes take effect."
+        )}
       </p>
 
-      <h2>§11. Kontakt</h2>
+      <h2>{gettext("§10. Governing law and dispute resolution")}</h2>
       <p>
-        Wszelkie pytania dotyczące Regulaminu lub Usługi należy kierować na adres:
+        {gettext(
+          "These Terms of Service are governed by Polish law. Any disputes arising from the use of the Service will be resolved by the court having jurisdiction over the Service Provider’s registered office, namely a court in Kraków."
+        )}
+      </p>
+
+      <h2>{gettext("§11. Contact")}</h2>
+      <p>
+        {gettext("Any questions regarding the Terms of Service or the Service should be sent to:")}
         <FirmowidWeb.DesignSystem.Components.Link.link
           kind="unstyled"
           mailto="contact@alergeek.ventures"

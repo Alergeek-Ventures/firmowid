@@ -13,6 +13,7 @@ defmodule FirmowidWeb.Landing.Components.CookieConsent do
   The banner auto-hides when a preference has already been set.
   """
   use FirmowidWeb, :html
+  use Gettext, backend: FirmowidWeb.Core.Gettext
 
   import FirmowidWeb.DesignSystem.Components.Link
   import Phoenix.Component, except: [link: 1]
@@ -35,16 +36,13 @@ defmodule FirmowidWeb.Landing.Components.CookieConsent do
           <div class="flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div class="flex-1 text-sm text-white/80">
               <p>
-                Zawsze monitorujemy błędy aplikacji, aby utrzymywać niezawodność
-                usługi. Po akceptacji możemy dodatkowo zapisywać cookies
-                analityczne, uruchomić nagrywanie sesji diagnostycznych i
-                powiązać dane z zalogowanym użytkownikiem.
-                Szczegóły w naszej <.link
+                {gettext("We always monitor application errors to keep the service reliable. After accepting, we may additionally store analytics cookies, enable diagnostic session recordings, and associate the data with the logged-in user.")}
+                {gettext("Details are available in our")} <.link
                   kind="unstyled"
                   navigate={~p"/polityka-prywatnosci"}
                   class="font-semibold text-white underline hover:text-orange-300"
                 >
-                   Polityce Prywatności</.link>.
+                   {gettext("Privacy Policy")}</.link>.
               </p>
             </div>
             <div class="flex shrink-0 gap-3">
@@ -55,7 +53,7 @@ defmodule FirmowidWeb.Landing.Components.CookieConsent do
                 size="small"
                 class="border-white/20 text-white/70 hover:border-white/40 hover:bg-transparent hover:text-white active:bg-white/10 disabled:border-white/10 disabled:text-white/40"
               >
-                Odrzuć
+                {gettext("Reject")}
               </FirmowidWeb.DesignSystem.Components.Button.button>
               <FirmowidWeb.DesignSystem.Components.Button.button
                 id="cookie-consent-accept"
@@ -64,7 +62,7 @@ defmodule FirmowidWeb.Landing.Components.CookieConsent do
                 size="small"
                 class="bg-white text-black hover:bg-white/90 active:bg-white/80"
               >
-                Akceptuję
+                {gettext("Accept")}
               </FirmowidWeb.DesignSystem.Components.Button.button>
             </div>
           </div>
