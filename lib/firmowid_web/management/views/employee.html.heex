@@ -150,10 +150,10 @@
     </.user_card_info>
 
     <span
-      :if={@employee.birthday != nil}
+      :if={@employee.shared_birthday != nil}
       class="text-grey-700 mt-auto inline-flex items-center gap-2 text-sm/snug"
     >
-      {TimeFormatter.format_date(@employee.birthday, "d MMMM")}
+      {format_shared_birthday(@employee.shared_birthday)}
       <.icon name="hero-cake" class="size-5" />
     </span>
   </.card>
