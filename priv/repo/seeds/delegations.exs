@@ -56,7 +56,7 @@ defmodule Firmowid.Seeds.Delegations do
          purpose,
          start_date,
          end_date,
-         advance,
+         expected_cost,
          user_id,
          organization_id
        ) do
@@ -70,7 +70,8 @@ defmodule Firmowid.Seeds.Delegations do
         billing_month: Date.beginning_of_month(start_date),
         start_date: start_date,
         end_date: end_date,
-        advance_payment_amount: Helpers.money!(:PLN, advance),
+        expected_cost: Helpers.money!(:PLN, expected_cost),
+        advance_amount: Helpers.money!(:PLN, expected_cost),
         status: :in_progress,
         user_id: user_id,
         organization_id: organization_id

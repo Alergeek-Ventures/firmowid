@@ -10,6 +10,7 @@ defmodule Firmowid.Ash.Delegations.Delegation do
     extensions: [AshStateMachine]
 
   alias Firmowid.Ash.Core.User
+  alias Firmowid.Ash.Delegations.Changes.CreateSignedCommandBlob
   alias Firmowid.Ash.Delegations.Validations.HasExpenses
   alias Firmowid.Ash.Delegations.Workers.DelegationEmailWorker
   alias Firmowid.Ash.Resource
@@ -35,6 +36,14 @@ defmodule Firmowid.Ash.Delegations.Delegation do
   actions do
     defaults [:read]
 
+    read :by_reference do
+      description "Find a delegation by its public reference."
+      get? true
+
+      argument :reference, :string, allow_nil?: false
+      filter expr(reference == ^arg(:reference))
+    end
+
     read :list_for_user do
       description "Delegations submitted by a given employee."
       argument :user_id, :uuid, allow_nil?: false
@@ -51,17 +60,18 @@ defmodule Firmowid.Ash.Delegations.Delegation do
         :destination,
         :transport_types,
         :purpose,
-        :advance_payment_amount,
+        :expected_cost,
         :start_date,
         :end_date
       ]
 
       change set_attribute(:user_id, actor(:id))
+      change set_attribute(:reference, "pending")
 
       validate compare(:end_date, greater_than_or_equal_to: :start_date),
         message: "nie może być wcześniejsza niż data wyjazdu"
 
-      validate compare(:advance_payment_amount, greater_than_or_equal_to: Money.new(:PLN, 0)),
+      validate compare(:expected_cost, greater_than_or_equal_to: Money.new(:PLN, 0)),
         message: "musi być większa lub równa 0 PLN"
 
       change after_transaction(fn
@@ -78,7 +88,20 @@ defmodule Firmowid.Ash.Delegations.Delegation do
       description "Approve a pending delegation and mark it as in progress."
       primary? true
       require_atomic? false
-      accept []
+      accept [:advance_amount, :signed_command_filename]
+
+      argument :upload_path, :string, allow_nil?: false
+
+      argument :content_type, :string,
+        allow_nil?: false,
+        constraints: [match: ~r/^application\/pdf$/]
+
+      change CreateSignedCommandBlob
+      validate present(:signed_command_filename)
+
+      validate compare(:advance_amount, greater_than_or_equal_to: Money.new(:PLN, 0)),
+        message: "musi być większa lub równa 0 PLN"
+
       change transition_state(:in_progress)
 
       change after_transaction(fn
@@ -89,6 +112,23 @@ defmodule Firmowid.Ash.Delegations.Delegation do
                _changeset, {:error, reason}, _context ->
                  {:error, reason}
              end)
+    end
+
+    update :prepare_command do
+      description "Set the advance amount used in a pending business trip order."
+      require_atomic? false
+      accept [:advance_amount]
+      validate attribute_equals(:status, :pending)
+
+      validate compare(:advance_amount, greater_than_or_equal_to: Money.new(:PLN, 0)),
+        message: "musi być większa lub równa 0 PLN"
+    end
+
+    update :update_billing_month do
+      description "Set the billing month for a pending business trip delegation."
+      require_atomic? false
+      accept [:billing_month]
+      validate attribute_equals(:status, :pending)
     end
 
     update :complete do
@@ -132,6 +172,10 @@ defmodule Firmowid.Ash.Delegations.Delegation do
       forbid_if always()
     end
 
+    policy action(:prepare_command) do
+      forbid_if always()
+    end
+
     policy action(:complete) do
       authorize_if expr(status == :in_progress and user_id == ^actor(:id))
     end
@@ -144,6 +188,7 @@ defmodule Firmowid.Ash.Delegations.Delegation do
 
   attributes do
     uuid_v7_primary_key :id
+    attribute :reference, :string, allow_nil?: false, default: "", public?: true
     attribute :title, :string, allow_nil?: false, public?: true
     attribute :billing_month, :date, allow_nil?: false, public?: true
     attribute :destination, :string, allow_nil?: false, public?: true
@@ -157,7 +202,14 @@ defmodule Firmowid.Ash.Delegations.Delegation do
       ]
 
     attribute :purpose, :string, allow_nil?: false, public?: true
-    attribute :advance_payment_amount, AshMoney.Types.Money, allow_nil?: false, public?: true
+    attribute :expected_cost, AshMoney.Types.Money, allow_nil?: false, public?: true
+
+    attribute :advance_amount, AshMoney.Types.Money,
+      allow_nil?: false,
+      default: Money.new(:PLN, 0),
+      public?: true
+
+    attribute :signed_command_filename, :string, public?: true
     attribute :start_date, :date, allow_nil?: false, public?: true
     attribute :end_date, :date, allow_nil?: false, public?: true
 
@@ -181,10 +233,20 @@ defmodule Firmowid.Ash.Delegations.Delegation do
       allow_nil? false
     end
 
+    belongs_to :signed_command_blob, Firmowid.Ash.Blobs.Blob do
+      description "Employer-signed business trip order."
+      allow_nil? true
+      attribute_writable? true
+    end
+
     has_many :expenses, Firmowid.Ash.Delegations.DelegationExpense
   end
 
   aggregates do
     sum :expenses_total, :expenses, :expense_amount
+  end
+
+  identities do
+    identity :unique_reference, [:reference]
   end
 end
