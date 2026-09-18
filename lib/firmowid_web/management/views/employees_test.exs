@@ -8,6 +8,7 @@ defmodule FirmowidWeb.Management.Views.EmployeesTest do
 
   alias Firmowid.Ash.Blobs.Blob
   alias Firmowid.Ash.Core
+  alias Firmowid.Ash.Delegations.Delegation
   alias Firmowid.Ash.Payroll
   alias Firmowid.Ash.Scope
   alias Firmowid.Ash.Timetracker.HoursRecord, as: AshHoursRecord
@@ -177,6 +178,34 @@ defmodule FirmowidWeb.Management.Views.EmployeesTest do
     assert html =~ "Wynagrodzenie"
     assert html =~ "EWIDENCJA"
     assert html =~ "April Session"
+  end
+
+  test "admin can open an employee's completed delegation from the management list", %{conn: conn} do
+    admin = admin_fixture()
+    employee = user_in_org_fixture(admin.organization_id, %{role: :employee})
+
+    delegation =
+      Ash.Seed.seed!(Delegation, %{
+        id: Ash.UUIDv7.generate(),
+        organization_id: admin.organization_id,
+        user_id: employee.id,
+        title: "Zakończony wyjazd służbowy",
+        billing_month: ~D[2026-08-01],
+        destination: "Kraków",
+        transport_types: [:railway],
+        purpose: "Spotkanie z klientem",
+        advance_payment_amount: Money.new(:PLN, 100),
+        start_date: ~D[2026-08-10],
+        end_date: ~D[2026-08-11],
+        status: :complete
+      })
+
+    {:ok, view, _html} =
+      conn
+      |> log_in_user(admin)
+      |> live(~p"/zarzadzanie/pracownicy/#{employee.id}/delegacje")
+
+    assert has_element?(view, "a[href='/delegacje/#{delegation.id}']", delegation.title)
   end
 
   test "admin can restore archived employee from employee detail page", %{conn: conn} do

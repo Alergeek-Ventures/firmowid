@@ -10,6 +10,7 @@ defmodule Firmowid.Ash.Delegations.Delegation do
     extensions: [AshStateMachine]
 
   alias Firmowid.Ash.Core.User
+  alias Firmowid.Ash.Delegations.Validations.HasExpenses
   alias Firmowid.Ash.Delegations.Workers.DelegationEmailWorker
   alias Firmowid.Ash.Resource
 
@@ -94,6 +95,18 @@ defmodule Firmowid.Ash.Delegations.Delegation do
       description "Mark an in-progress delegation as complete."
       require_atomic? false
       accept []
+
+      argument :expenses, {:array, :map}, allow_nil?: false, default: []
+
+      change manage_relationship(:expenses,
+               type: :direct_control,
+               on_match: {:update, :complete},
+               on_no_match: :error,
+               on_missing: :ignore
+             )
+
+      validate {HasExpenses, []}
+
       change transition_state(:complete)
     end
   end
@@ -115,8 +128,12 @@ defmodule Firmowid.Ash.Delegations.Delegation do
       authorize_if expr(user_id == ^actor(:id))
     end
 
-    policy action([:approve, :complete]) do
+    policy action(:approve) do
       forbid_if always()
+    end
+
+    policy action(:complete) do
+      authorize_if expr(status == :in_progress and user_id == ^actor(:id))
     end
   end
 
@@ -163,5 +180,11 @@ defmodule Firmowid.Ash.Delegations.Delegation do
     belongs_to :organization, Firmowid.Ash.Core.Organization do
       allow_nil? false
     end
+
+    has_many :expenses, Firmowid.Ash.Delegations.DelegationExpense
+  end
+
+  aggregates do
+    sum :expenses_total, :expenses, :expense_amount
   end
 end

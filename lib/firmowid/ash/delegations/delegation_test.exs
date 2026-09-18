@@ -1,5 +1,6 @@
 defmodule Firmowid.Ash.Delegations.DelegationTest do
   @moduledoc false
+
   use Firmowid.DataCase, async: true
 
   import Firmowid.AccountsFixtures
@@ -39,6 +40,45 @@ defmodule Firmowid.Ash.Delegations.DelegationTest do
              Delegations.approve_delegation(delegation.id, scope: admin_scope)
 
     assert approved_delegation.status == :in_progress
+  end
+
+  test "cannot complete an empty settlement", %{
+    employee_scope: employee_scope,
+    admin_scope: admin_scope
+  } do
+    delegation = Delegations.create_delegation!(delegation_attrs(), scope: employee_scope)
+    {:ok, delegation} = Delegations.approve_delegation(delegation.id, scope: admin_scope)
+
+    assert {:error, _} = Delegations.complete_delegation(delegation.id, scope: employee_scope)
+  end
+
+  test "rejects transport details with a reversed trip", %{
+    employee_scope: employee_scope,
+    admin_scope: admin_scope
+  } do
+    delegation = Delegations.create_delegation!(delegation_attrs(), scope: employee_scope)
+    {:ok, delegation} = Delegations.approve_delegation(delegation.id, scope: admin_scope)
+
+    assert {:error, _} =
+             Delegations.create_expense(
+               %{
+                 delegation_id: delegation.id,
+                 kind: :transport,
+                 original_filename: "bilet.pdf",
+                 details: %{
+                   type: "transport",
+                   trips: [
+                     %{
+                       departure_city: "Warszawa",
+                       departure_datetime: ~U[2026-08-10 12:00:00Z],
+                       arrival_city: "Kraków",
+                       arrival_datetime: ~U[2026-08-10 10:00:00Z]
+                     }
+                   ]
+                 }
+               },
+               scope: employee_scope
+             )
   end
 
   defp delegation_attrs(overrides \\ %{}) do

@@ -10,6 +10,8 @@ defmodule Firmowid.Ash.Delegations do
     extensions: [Ash.Policy.Authorizer]
 
   alias Firmowid.Ash.Delegations.Delegation
+  alias Firmowid.Ash.Delegations.DelegationExpense
+  alias Firmowid.Ash.Delegations.DelegationExpenseRelatedBlob
 
   resources do
     resource Delegation do
@@ -18,6 +20,21 @@ defmodule Firmowid.Ash.Delegations do
       define :list_delegations_for_user, action: :list_for_user, args: [:user_id]
       define :approve_delegation, action: :approve, get_by: [:id]
       define :complete_delegation, action: :complete, get_by: [:id]
+    end
+
+    resource DelegationExpense do
+      define :read_expenses, action: :read
+      define :get_expense, action: :read, get_by: [:id]
+      define :create_expense, action: :create
+      define :update_expense, action: :update
+      define :complete_expense, action: :complete
+      define :destroy_expense, action: :destroy
+      define :add_related_document, action: :add_related_document
+      define :remove_related_document, action: :remove_related_document
+    end
+
+    resource DelegationExpenseRelatedBlob do
+      define :read_related_expense_blobs, action: :read
     end
   end
 
