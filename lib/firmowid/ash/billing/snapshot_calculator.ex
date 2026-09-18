@@ -7,6 +7,7 @@ defmodule Firmowid.Ash.Billing.SnapshotCalculator do
   alias Firmowid.Ash.Billing.Month
   alias Firmowid.Ash.Billing.Snapshot
   alias Firmowid.Ash.Core
+  alias Firmowid.Ash.Core.Organization
   alias Firmowid.Ash.Finances
   alias Firmowid.Ash.Invoicing
   alias Firmowid.Ash.Scope
@@ -21,11 +22,10 @@ defmodule Firmowid.Ash.Billing.SnapshotCalculator do
 
   `month` must be the first day of the target month in Europe/Warsaw terms.
   """
-  @spec build_snapshot_attrs!(binary(), Date.t()) :: map()
-  def build_snapshot_attrs!(organization_id, month) do
+  @spec build_snapshot_attrs!(binary() | Organization.t(), Date.t()) :: map()
+  def build_snapshot_attrs!(%Organization{} = organization, month) do
     month = normalize_month(month)
-    scope = org_scope(organization_id)
-    organization = Core.get_organization!(organization_id, scope: scope)
+    scope = org_scope(organization.id)
     {inserted_from, inserted_to} = warsaw_month_utc_bounds(month)
 
     %{
@@ -41,6 +41,12 @@ defmodule Firmowid.Ash.Billing.SnapshotCalculator do
       active_non_owner_users_count: active_non_owner_users_count(scope, organization.owner_id),
       frozen_at: DateTime.utc_now()
     }
+  end
+
+  def build_snapshot_attrs!(organization_id, month) when is_binary(organization_id) do
+    scope = org_scope(organization_id)
+    organization = Core.get_organization!(organization_id, scope: scope)
+    build_snapshot_attrs!(organization, month)
   end
 
   @doc """
