@@ -127,6 +127,7 @@ defmodule FirmowidWeb.Core.Router do
         :list_leave_requests,
         :create_leave_request,
         :update_profile,
+        :get_shared_birthday,
         :list_projects
       ],
       otp_app: :firmowid

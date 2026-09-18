@@ -22,6 +22,8 @@ defmodule Firmowid.Ash.Core.User.Actions.UpdateCurrentProfile do
       :phone,
       :slack_url,
       :bank_account_number,
+      :birthday,
+      :birthday_visibility,
       :correspondence_address,
       :residence_address,
       :is_same_correspondence_address

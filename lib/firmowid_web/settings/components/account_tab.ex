@@ -9,6 +9,7 @@ defmodule FirmowidWeb.Settings.Components.AccountTab do
   import FirmowidWeb.DesignSystem.Components.CoreComponents, except: [button: 1]
   import FirmowidWeb.Settings.Components.EditButton
 
+  alias FirmowidWeb.Infrastructure.Utilities.TimeFormatter
   alias FirmowidWeb.Settings.Components.Helpers
   alias Phoenix.LiveView.Rendered
 
@@ -115,9 +116,9 @@ defmodule FirmowidWeb.Settings.Components.AccountTab do
   defp name_section(assigns) do
     ~H"""
     <.account_section
-      title="Imię i nazwisko"
+      title="Dane osobowe"
       action={if(!@editing_account_name, do: "toggle_editing_account_name")}
-      action_label="Edytuj imię i nazwisko"
+      action_label="Edytuj dane osobowe"
     >
       <%= if @editing_account_name do %>
         <form phx-submit="save" class="space-y-4">
@@ -145,6 +146,46 @@ defmodule FirmowidWeb.Settings.Components.AccountTab do
                 input_class="w-full"
               />
             </Helpers.settings_field>
+
+            <Helpers.settings_field label="Data urodzenia" layout={:row} for="user_birthday">
+              <.input
+                type="date"
+                name="user[birthday]"
+                id="user_birthday"
+                value={birthday_input_value(@current_user.birthday)}
+                new
+                input_class="w-full"
+              />
+            </Helpers.settings_field>
+
+            <Helpers.settings_field
+              label="Udostępnianie daty urodzenia"
+              layout={:row}
+              for="user_birthday_visibility"
+            >
+              <.input
+                type="select"
+                name="user[birthday_visibility]"
+                id="user_birthday_visibility"
+                value={to_string(@current_user.birthday_visibility || :not_shared)}
+                options={[
+                  {"Nie udostępniam", "not_shared"},
+                  {"Dzień i miesiąc", "day_with_month"},
+                  {"Pełna data", "full_date"}
+                ]}
+                new
+                input_class="w-full"
+              />
+            </Helpers.settings_field>
+
+            <Helpers.settings_display_field>
+              <div class="bg-grey-50 text-grey-700 flex items-start gap-4 rounded-lg p-4 text-sm">
+                <span class="shrink-0"><.icon name="hero-information-circle" class="size-5" /></span>
+                <p>
+                  Jeżeli wyrażasz zgodę na udostępnienie swojej daty urodzenia wybierz odpowiednią opcję z listy.
+                </p>
+              </div>
+            </Helpers.settings_display_field>
           </div>
 
           <div class="flex w-full justify-end gap-3">
@@ -166,6 +207,7 @@ defmodule FirmowidWeb.Settings.Components.AccountTab do
         <div class="space-y-2">
           <.detail_row label="Imię">{first_name(@current_user.name)}</.detail_row>
           <.detail_row label="Nazwisko">{last_name(@current_user.name)}</.detail_row>
+          <.detail_row label="Data urodzenia">{format_birthday(@current_user.birthday)}</.detail_row>
         </div>
       <% end %>
     </.account_section>
@@ -467,4 +509,19 @@ defmodule FirmowidWeb.Settings.Components.AccountTab do
   defp default_dash(nil), do: "—"
   defp default_dash(""), do: "—"
   defp default_dash(value), do: value
+
+  defp birthday_input_value(nil), do: ""
+  defp birthday_input_value(%Date{} = date), do: Date.to_iso8601(date)
+  defp birthday_input_value(date) when is_binary(date), do: date
+
+  defp format_birthday(nil), do: "—"
+  defp format_birthday(""), do: "—"
+
+  defp format_birthday(%Date{} = date) do
+    TimeFormatter.format_date(date)
+  end
+
+  defp format_birthday(date) when is_binary(date) do
+    TimeFormatter.format_date(date)
+  end
 end

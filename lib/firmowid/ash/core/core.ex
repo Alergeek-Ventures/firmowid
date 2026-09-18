@@ -22,6 +22,9 @@ defmodule Firmowid.Ash.Core do
   tools do
     tool :update_profile, User, :update_current_profile,
       description: "Update the authenticated user's profile information"
+
+    tool :get_shared_birthday, User, :get_shared_birthday,
+      description: "Returns the authenticated user's shared birthday (nil if not shared)"
   end
 
   resources do
@@ -48,6 +51,7 @@ defmodule Firmowid.Ash.Core do
       define :update_profile, action: :update_profile
       define :change_email, action: :change_email
       define :update_current_profile, action: :update_current_profile
+      define :get_shared_birthday, action: :get_shared_birthday
       define :update_role, action: :update_role
       define :archive_user, action: :archive
       define :unarchive_user, action: :unarchive

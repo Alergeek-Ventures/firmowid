@@ -51,8 +51,11 @@ defmodule FirmowidWeb.Management.Views.Employee do
         %{id: id}
         |> Core.get_org_user!(scope: scope, not_found_error?: false)
         |> case do
-          nil -> nil
-          loaded_user -> Ash.load!(loaded_user, [avatar_blob: [:url]], scope: scope)
+          nil ->
+            nil
+
+          loaded_user ->
+            Ash.load!(loaded_user, [:shared_birthday, avatar_blob: [:url]], scope: scope)
         end
 
       socket =
@@ -81,6 +84,18 @@ defmodule FirmowidWeb.Management.Views.Employee do
 
   defp get_employee_display_name(employee), do: employee.name || employee.email
 
+  def format_shared_birthday(%{day: day, month: month, year: year}) do
+    {:ok, date} = Date.new(year, month, day)
+    TimeFormatter.format_date(date, "d MMMM yyyy")
+  end
+
+  def format_shared_birthday(%{day: day, month: month}) do
+    {:ok, date} = Date.new(Date.utc_today().year, month, day)
+    TimeFormatter.format_date(date, "d MMMM")
+  end
+
+  def format_shared_birthday(_), do: nil
+
   @impl true
   def handle_event("change-month", %{"month" => month}, socket) do
     employee = socket.assigns.employee
@@ -101,7 +116,8 @@ defmodule FirmowidWeb.Management.Views.Employee do
              not_found_error?: false
            ),
          {:ok, archived_user} <- Core.archive_user(user, %{}, scope: scope) do
-      loaded_user = Ash.load!(archived_user, [avatar_blob: [:url]], scope: scope)
+      loaded_user =
+        Ash.load!(archived_user, [:shared_birthday, avatar_blob: [:url]], scope: scope)
 
       {:noreply,
        socket
@@ -129,7 +145,8 @@ defmodule FirmowidWeb.Management.Views.Employee do
              not_found_error?: false
            ),
          {:ok, unarchived_user} <- Core.unarchive_user(user, %{}, scope: scope) do
-      loaded_user = Ash.load!(unarchived_user, [avatar_blob: [:url]], scope: scope)
+      loaded_user =
+        Ash.load!(unarchived_user, [:shared_birthday, avatar_blob: [:url]], scope: scope)
 
       {:noreply,
        socket

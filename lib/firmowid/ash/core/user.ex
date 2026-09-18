@@ -21,6 +21,7 @@ defmodule Firmowid.Ash.Core.User do
 
   alias Firmowid.Ash.Checks.SystemActorRole
   alias Firmowid.Ash.Core.Calculations.AcceptedLeaveDaysForYear
+  alias Firmowid.Ash.Core.Calculations.SharedBirthday
   alias Firmowid.Ash.Core.Secrets
   alias Firmowid.Ash.Core.Services.GoogleAvatarImporter
   alias Firmowid.Ash.Core.User.Actions.UpdateCurrentProfile
@@ -235,6 +236,7 @@ defmodule Firmowid.Ash.Core.User do
         :slack_url,
         :bank_account_number,
         :birthday,
+        :birthday_visibility,
         :correspondence_address,
         :residence_address
       ]
@@ -275,11 +277,26 @@ defmodule Firmowid.Ash.Core.User do
       argument :phone, :string
       argument :slack_url, :string
       argument :bank_account_number, :string
+      argument :birthday, :date
+
+      argument :birthday_visibility, :atom do
+        constraints one_of: [:not_shared, :day_with_month, :full_date]
+      end
+
       argument :correspondence_address, :string
       argument :residence_address, :string
       argument :is_same_correspondence_address, :boolean
 
       run &UpdateCurrentProfile.run/2
+    end
+
+    action :get_shared_birthday, :string do
+      description "Returns the authenticated user's shared birthday (nil if not shared)."
+
+      run fn _input, context ->
+        user = Ash.load!(context.actor, :shared_birthday, actor: context.actor)
+        {:ok, user.shared_birthday}
+      end
     end
 
     update :update_role do
@@ -441,6 +458,10 @@ defmodule Firmowid.Ash.Core.User do
       authorize_if actor_present()
     end
 
+    policy action(:get_shared_birthday) do
+      authorize_if actor_present()
+    end
+
     bypass action(:update_avatar) do
       authorize_if expr(id == ^actor(:id))
     end
@@ -521,7 +542,13 @@ defmodule Firmowid.Ash.Core.User do
     attribute :phone, :string, public?: true
     attribute :slack_url, :string, public?: true
     attribute :bank_account_number, :string, public?: true
-    attribute :birthday, :date, public?: true
+    attribute :birthday, :date, public?: false
+
+    attribute :birthday_visibility, :atom,
+      public?: true,
+      allow_nil?: false,
+      default: :not_shared,
+      constraints: [one_of: [:not_shared, :day_with_month, :full_date]]
 
     attribute :correspondence_address, :string, public?: true
     attribute :residence_address, :string, public?: true
@@ -551,6 +578,10 @@ defmodule Firmowid.Ash.Core.User do
               {AcceptedLeaveDaysForYear, []} do
       public? true
       argument :year, :integer, allow_nil?: false
+    end
+
+    calculate :shared_birthday, :map, SharedBirthday do
+      public? true
     end
   end
 
