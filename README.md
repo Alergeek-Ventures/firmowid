@@ -126,6 +126,17 @@ oraz [direnv](https://direnv.net/). Po zainstalowaniu obu narzędzi zaakceptuj
 zostanie opisane w `devenv.nix` i aktywowane automatycznie po wejściu do katalogu
 projektu. Menedżerem zależności JavaScript nadal jest npm (`npm ci --prefix assets`).
 
+CLI Accent jest dostarczany automatycznie przez środowisko devenv. Weryfikację
+instalacji można wykonać poleceniem:
+
+```bash
+accent --version
+```
+
+Pobieranie tłumaczeń uruchamiaj przez `mix translations.fetch`. Wymaga klucza
+`ACCENT_API_KEY` z uprawnieniami odczytu, dostępnego przez istniejącą konfigurację
+Infisical; klucza nie umieszczaj w plikach repozytorium.
+
 ## Zmienne środowiskowe
 
 Aplikacja używa Infisical jako źródła wspólnych zmiennych środowiskowych. W środowiskach `dev` i `test` konfiguracja importowana przez `config/dev.exs` i `config/test.exs` automatycznie pobiera wartości z Infisical `dev` ze ścieżki `/app`, a następnie nakłada lokalne nadpisania z `.env.worktree`.
