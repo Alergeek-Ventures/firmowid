@@ -48,12 +48,22 @@ defmodule FirmowidWeb.Billing.Utilities.Worksheet do
         rules.manual_external_invoices
       )
 
+    base_fee = base_fee_line(rules)
+    suggestions = suggestion_rows(source, rules)
+
+    base_value = if base_fee, do: base_fee.amount_value, else: Decimal.new(0)
+
+    month_total_value =
+      Enum.reduce(suggestions, base_value, fn row, acc -> Decimal.add(acc, row.amount_value) end)
+
     %{
       selected_plan: plan,
       selected_plan_label: plan_label(plan),
-      base_fee_line: base_fee_line(rules),
+      base_fee_line: base_fee,
       usage_rows: [bank_row, employee_row, invoice_row],
-      suggestion_rows: suggestion_rows(source, rules),
+      suggestion_rows: suggestions,
+      month_total_value: month_total_value,
+      month_total_text: money_to_string(month_total_value),
       no_plan_note: no_plan_note(plan)
     }
   end
@@ -107,7 +117,8 @@ defmodule FirmowidWeb.Billing.Utilities.Worksheet do
       %{
         label: "Dodatkowe konta bankowe",
         detail: "#{over_limit} ponad limit × #{money_to_string(unit_price)} / mies.",
-        amount: money_to_string(total)
+        amount: money_to_string(total),
+        amount_value: total
       }
     end
   end
@@ -123,7 +134,8 @@ defmodule FirmowidWeb.Billing.Utilities.Worksheet do
       %{
         label: "Dodatkowi pracownicy",
         detail: "#{over_limit} ponad limit × #{money_to_string(unit_price)} / mies.",
-        amount: money_to_string(total)
+        amount: money_to_string(total),
+        amount_value: total
       }
     end
   end
@@ -144,7 +156,8 @@ defmodule FirmowidWeb.Billing.Utilities.Worksheet do
         label: "Nadwyżka faktur kosztowych spoza KSeF",
         detail:
           "#{over_limit} ponad limit. Pakiety rozliczeniowe: #{packs} × #{pack_size} za #{money_to_string(pack_price)}.",
-        amount: money_to_string(total)
+        amount: money_to_string(total),
+        amount_value: total
       }
     end
   end
@@ -156,7 +169,8 @@ defmodule FirmowidWeb.Billing.Utilities.Worksheet do
   defp base_fee_line(%{monthly_price_pln: monthly_price_pln}) do
     %{
       label: "Miesięczna opłata bazowa",
-      amount: money_to_string(monthly_price_pln)
+      amount: money_to_string(monthly_price_pln),
+      amount_value: monthly_price_pln
     }
   end
 
@@ -165,9 +179,7 @@ defmodule FirmowidWeb.Billing.Utilities.Worksheet do
 
   defp no_plan_note(_plan), do: nil
 
-  defp usage_total_text(count, included_units) when included_units > 0, do: "#{count} / #{included_units}"
-
-  defp usage_total_text(count, _included_units), do: "#{count} użyte"
+  defp usage_total_text(count, included_units), do: "#{count} / #{included_units}"
 
   defp usage_text(_count, included_units, over_limit) when included_units > 0 and over_limit > 0, do: "Limit przekroczony"
 
