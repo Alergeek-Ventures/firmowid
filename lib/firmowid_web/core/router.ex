@@ -172,7 +172,8 @@ defmodule FirmowidWeb.Core.Router do
         {CurrentPath, :save_request_uri},
         Timezone
       ] do
-      live "/rozliczenie", FirmowidWeb.Admin.Views.Settlement, :index
+      live "/rozliczenia", FirmowidWeb.Admin.Views.Organizations, :index
+      live "/rozliczenia/:org_id", FirmowidWeb.Admin.Views.Settlement, :show
     end
   end
 

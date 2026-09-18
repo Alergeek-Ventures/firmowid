@@ -178,6 +178,15 @@
                 Konta bankowe
               </.link>
             <% end %>
+            <%= if @current_user.system_role == :superuser do %>
+              <.link
+                kind="unstyled"
+                navigate={~p"/admin/rozliczenia"}
+                class="hover:bg-darkGrey/50 rounded-md p-2"
+              >
+                Rozliczenia
+              </.link>
+            <% end %>
             <.form
               for={%{}}
               id="app-logout-form"
