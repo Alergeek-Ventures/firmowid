@@ -90,7 +90,7 @@ defmodule Firmowid.Mailer.Components do
   @doc "Renders the email greeting."
   def greeting(assigns) do
     ~H"""
-    <h1 style="margin:0; font-size:28px; line-height:1.2; font-weight:600; color: #292929;">
+    <h1 style="margin:0 0 0.75rem; font-size:28px; line-height:1.2; font-weight:600; color: #292929;">
       {render_slot(@inner_block)}
     </h1>
     """
@@ -101,7 +101,7 @@ defmodule Firmowid.Mailer.Components do
   @doc "Renders a primary paragraph."
   def paragraph(assigns) do
     ~H"""
-    <p style="margin:0; max-width:420px; font-size:16px; line-height:1.7; color: #707070;">
+    <p style="margin:0 0 1.25rem; max-width:420px; font-size:16px; line-height:1.7; color: #707070;">
       {render_slot(@inner_block)}
     </p>
     """
@@ -129,15 +129,16 @@ defmodule Firmowid.Mailer.Components do
       cellspacing="0"
       cellpadding="0"
       border="0"
-      style="border-collapse:collapse; margin:32px 0;"
+      width="100%"
+      style="width:100%; border-collapse:collapse; margin:2rem auto;"
     >
       <tr>
-        <td align="center" style="padding:16px 0 24px 0;">
+        <td align="center" style="padding:1rem 0 1.5rem;">
           <.link
             kind="unstyled"
             external={@href}
             target="_blank"
-            style="display:inline-block; background-color:#292929; color:#FFFFFF; text-decoration:none; padding:14px 20px; font-size:16px; font-weight:500;"
+            style="display:inline-block; background-color:#000000; border-radius:0.5rem; color:#FFFFFF; text-decoration:none; padding:14px 20px; font-size:16px; font-weight:500;"
           >
             {render_slot(@inner_block)}
           </.link>
@@ -172,13 +173,13 @@ defmodule Firmowid.Mailer.Components do
     ~H"""
     <table
       role="presentation"
-      style="width:100%; border-collapse:collapse; border-top:1px solid #ECECEC;"
+      style="width:100%; border-collapse:collapse;"
     >
       <tr>
-        <td style="padding:12px 0; border-bottom:1px solid #ECECEC; width:140px; vertical-align:top; font-size:15px; color: #707070;">
+        <td style="padding:0.375rem 0; width:140px; vertical-align:top; font-size:15px; color: #707070;">
           {@label}
         </td>
-        <td style="padding:12px 0; border-bottom:1px solid #ECECEC; vertical-align:top; font-size:15px; line-height:1.6; color: #292929; font-weight:500;">
+        <td style="padding:0.375rem 0; vertical-align:top; font-size:15px; line-height:1.6; color: #292929; font-weight:500;">
           {@value}
         </td>
       </tr>

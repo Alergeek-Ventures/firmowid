@@ -5,6 +5,7 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
 
   use FirmowidWeb, :html
 
+  import FirmowidWeb.Delegations.Components.DelegationsList
   import FirmowidWeb.DesignSystem.Components.Button
   import FirmowidWeb.DesignSystem.Components.CoreComponents, except: [button: 1]
   import FirmowidWeb.DesignSystem.Components.Link
@@ -39,6 +40,7 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
   attr :pending_contract, :map, default: nil
   attr :latest_contract, :map, default: nil
   attr :signed_contract_upload, :map, default: nil
+  attr :delegations, :list, required: true
 
   def profile_tab(assigns) do
     ~H"""
@@ -87,7 +89,29 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
           leave_days={@leave_days}
         />
       </div>
+      <.delegations_section delegations={@delegations} />
     </div>
+    """
+  end
+
+  attr :delegations, :list, required: true
+
+  defp delegations_section(assigns) do
+    ~H"""
+    <section class="flex w-full flex-col gap-6 rounded-lg bg-white p-6 shadow lg:col-span-2">
+      <div class="flex items-start justify-between gap-3">
+        <h2 class="text-grey-900 text-base leading-none font-medium">Delegacje</h2>
+        <.link
+          kind="button"
+          navigate={~p"/delegacje/dodaj"}
+          variant="secondary"
+          size="small"
+        >
+          <.icon name="hero-map" class="size-4" /> Zaplanuj delegację
+        </.link>
+      </div>
+      <.delegations_list delegations={@delegations} />
+    </section>
     """
   end
 
