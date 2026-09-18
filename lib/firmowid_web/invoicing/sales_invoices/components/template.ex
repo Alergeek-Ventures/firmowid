@@ -19,7 +19,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.Template do
     ~H"""
     <div class="mt-1 flex justify-between text-[10px]">
       <div class="flex flex-col gap-x-2">
-        <div class="text-sm font-bold uppercase">
+        <div class="text-sm uppercase">
           {case @sales_invoice.invoice_type do
             :poland ->
               case @sales_invoice.ksef_invoice_kind do
@@ -36,7 +36,9 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.Template do
                   ["Faktura korygująca / Correction Invoice"]
               end
           end}
-          {@sales_invoice.invoice_number}
+          <span class="font-bold">
+            {@sales_invoice.invoice_number}
+          </span>
         </div>
 
         <%= if @sales_invoice.ksef_invoice_kind == :kor do %>
@@ -70,7 +72,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.Template do
           <% end %>
         <% end %>
 
-        <div class="mt-4">
+        <div class={if @sales_invoice.ksef_invoice_kind == :kor, do: "mt-4", else: "mt-2"}>
           <span>
             {case @sales_invoice.invoice_type do
               :poland -> "Data wystawienia:"
@@ -95,14 +97,6 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.Template do
       </div>
       <div>
         <div class="flex items-center gap-4">
-          <div class="text-right">
-            <%= if @sales_invoice.is_reverse_charge do %>
-              <div>Odwrotne obciążenie <br /> / Reverse charge</div>
-            <% end %>
-            <%= if @sales_invoice.is_cash_account do %>
-              Metoda kasowa
-            <% end %>
-          </div>
           <%= if @logo_data_uri do %>
             <img src={@logo_data_uri} class="size-8" />
           <% else %>
@@ -124,14 +118,14 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.Template do
     ~H"""
     <div class="grid grid-cols-2 gap-5 text-[10px]/[14px]">
       <div>
-        <h2 class="text-darkGrey/70 mb-2 text-[8px] font-bold">
+        <h2 class="text-grey-600 mb-2 text-[8px] font-bold">
           {case @sales_invoice.invoice_type do
             :poland -> "SPRZEDAWCA"
             :foreign -> "SPRZEDAWCA / SELLER"
           end}
         </h2>
         <div class="grid grid-cols-[auto_1fr] gap-1">
-          <span>
+          <span class="text-[8px]">
             {case @sales_invoice.invoice_type do
               :poland -> "Nazwa:"
               :foreign -> "Nazwa / Name:"
@@ -141,7 +135,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.Template do
             {@sales_invoice.seller_display_name}
           </span>
 
-          <span>
+          <span class="text-[8px]">
             {case @sales_invoice.invoice_type do
               :poland -> "Adres:"
               :foreign -> "Adres / Address:"
@@ -149,7 +143,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.Template do
           </span>
           <span>{@sales_invoice.seller_address}</span>
 
-          <span>
+          <span class="text-[8px]">
             {case @sales_invoice.invoice_type do
               :poland -> "NIP:"
               :foreign -> "VAT-ID:"
@@ -165,7 +159,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.Template do
         </div>
       </div>
       <div>
-        <h2 class="text-darkGrey/70 mb-2 text-[8px] font-bold">
+        <h2 class="text-grey-600 mb-2 text-[8px] font-bold">
           {case @sales_invoice.invoice_type do
             :poland -> "NABYWCA"
             :foreign -> "NABYWCA / BUYER"
@@ -173,7 +167,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.Template do
         </h2>
         <div class="grid grid-cols-[auto_1fr] gap-1">
           <%= if @sales_invoice.buyer_type == :company do %>
-            <span>
+            <span class="text-[8px]">
               {case @sales_invoice.invoice_type do
                 :poland -> "Nazwa:"
                 :foreign -> "Nazwa / Name:"
@@ -185,7 +179,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.Template do
           <% end %>
 
           <%= if @sales_invoice.buyer_type == :individual do %>
-            <span>
+            <span class="text-[8px]">
               {case @sales_invoice.invoice_type do
                 :poland -> "Imię i nazwisko:"
                 :foreign -> "Imię i nazwisko / Name and surname:"
@@ -195,7 +189,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.Template do
           <% end %>
 
           <%= if @sales_invoice.buyer_address && @sales_invoice.buyer_address != "" do %>
-            <span>
+            <span class="text-[8px]">
               {case @sales_invoice.invoice_type do
                 :poland -> "Adres:"
                 :foreign -> "Adres / Address:"
@@ -207,11 +201,11 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.Template do
           <%= if @sales_invoice.buyer_type == :individual and @sales_invoice.invoice_type == :poland do %>
             <%= if !is_nil(@sales_invoice.buyer_pesel) and
                 @sales_invoice.buyer_pesel != "" do %>
-              <span>PESEL:</span>
+              <span class="text-[8px]">PESEL:</span>
               <span class="text-[10px]">{@sales_invoice.buyer_pesel}</span>
             <% end %>
           <% else %>
-            <span>
+            <span class="text-[8px]">
               {case @sales_invoice.invoice_type do
                 :poland -> "NIP:"
                 :foreign -> "VAT-ID:"
@@ -237,7 +231,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.Template do
   defp items_table(assigns) do
     ~H"""
     <div>
-      <h2 class="text-darkGrey/70 text-[8px] font-bold">
+      <h2 class="text-grey-600 text-[8px] font-bold">
         {case @sales_invoice.invoice_type do
           :poland -> "TOWARY LUB USŁUGI"
           :foreign -> "TOWARY LUB USŁUGI / GOODS OR SERVICES"
@@ -343,7 +337,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.Template do
   defp correction_items_section(assigns) do
     ~H"""
     <div>
-      <h3 class="text-darkGrey/70 text-[8px] font-bold uppercase">
+      <h3 class="text-grey-600 text-[8px] font-bold uppercase">
         {@title}
       </h3>
       <table class="mt-1 w-full">
@@ -489,8 +483,11 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.Template do
 
   defp summary(assigns) do
     ~H"""
-    <div class="bg-greyButtonBg/30 mt-6 ml-auto flex w-[347px] flex-col gap-2 rounded-md px-4 py-2 text-[10px]">
-      <h2 class="text-darkGrey/70 text-[8px] font-bold uppercase">
+    <div class={[
+      "bg-grey-100 mt-6 ml-auto flex flex-col gap-2 rounded-md px-4 py-2 text-[10px]",
+      if(@sales_invoice.invoice_type == :poland, do: "w-63.75", else: "w-86.75")
+    ]}>
+      <h2 class="text-grey-600 text-[8px] font-bold uppercase">
         {case @sales_invoice.invoice_type do
           :poland -> "Podsumowanie"
           :foreign -> "Podsumowanie / Summary"
@@ -749,6 +746,14 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.Template do
           {@sales_invoice.due_date |> Calendar.strftime("%d.%m.%Y")}
         </span>
       </div>
+      <div class="font-bold">
+        <%= if @sales_invoice.is_reverse_charge do %>
+          Odwrotne obciążenie / Reverse charge
+        <% end %>
+        <%= if @sales_invoice.is_cash_account do %>
+          Metoda kasowa
+        <% end %>
+      </div>
     </div>
     """
   end
@@ -758,16 +763,16 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.Template do
 
   defp footer(assigns) do
     ~H"""
-    <div class="absolute inset-x-0 bottom-8 mx-auto flex items-end justify-center text-[8px]">
-      <div class="flex flex-col items-center">
+    <div class="absolute inset-x-0 bottom-8 left-8 flex items-end justify-start text-[8px]">
+      <div class="flex items-end gap-0.5">
         <%= if @footer_logo_data_uri do %>
-          <img src={@footer_logo_data_uri} class="mb-2 size-10" />
+          <img src={@footer_logo_data_uri} class="size-10" />
         <% else %>
-          <img src="/images/invoice_firmowid_logo.png" class="mb-2 size-10" />
+          <img src="/images/invoice_firmowid_logo.png" class="size-10" />
         <% end %>
         <p class="text-center">
           {case @invoice_type do
-            :poland -> "Faktura za pomocą"
+            :poland -> "Faktura wygenerowana za pomocą"
             :foreign -> "Invoice from"
           end}
           <.link
@@ -798,17 +803,17 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.Template do
     assigns = assign(assigns, :qrcode, qrcode)
 
     ~H"""
-    <div class="absolute right-12 bottom-12 flex w-24 flex-col items-center justify-center">
-      <p class="text-center text-[8px] font-medium">
+    <div class="absolute right-8 bottom-8 flex w-26 flex-col items-start justify-center">
+      <p class="text-grey-600 px-1 text-[8px] font-medium">
         <%= case @sales_invoice.invoice_type do %>
           <% :poland -> %>
             Sprawdź w KSeF
           <% :foreign -> %>
-            Sprawdź w KSeF/<br />View in KSeF
+            Sprawdź w KSeF<br />View in KSeF
         <% end %>
       </p>
-      <img src={"data:image/svg+xml; base64, #{@qrcode}"} alt="KSeF QR code" width="96" height="96" />
-      <p class="text-center text-[8px]">{@sales_invoice.ksef_number}</p>
+      <img src={"data:image/svg+xml; base64, #{@qrcode}"} alt="KSeF QR code" width="104" height="104" />
+      <p class="max-w-26 text-center text-[8px]">{@sales_invoice.ksef_number}</p>
     </div>
     """
   end
