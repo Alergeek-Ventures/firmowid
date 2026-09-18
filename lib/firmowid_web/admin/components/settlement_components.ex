@@ -5,55 +5,63 @@ defmodule FirmowidWeb.Admin.Components.SettlementComponents do
 
   use FirmowidWeb, :html
 
+  import FirmowidWeb.DesignSystem.Components.CoreComponents, except: [button: 1]
+  import FirmowidWeb.DesignSystem.Components.Link
+  import FirmowidWeb.DesignSystem.Components.MonthPicker
+  import Phoenix.Component, except: [link: 1]
+
   alias Firmowid.Ash.Billing.PlanCatalog
+  alias FirmowidWeb.Admin.Utilities.Navigation
   alias FirmowidWeb.Billing.Utilities.Worksheet
 
-  attr :selected_org, :map, default: nil
-  attr :status, :map, default: nil
+  attr :selected_month, :any, default: nil
+  attr :active_months, :list, default: []
 
   def page_header(assigns) do
     ~H"""
-    <div class="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-      <div class="space-y-1">
-        <h1 class="text-grey-900 text-2xl font-medium">Rozliczenie</h1>
-        <p class="text-grey-700 max-w-2xl text-sm/snug">
-          Orientacyjny podgląd bieżącego miesiąca albo widok utrwalonego snapshotu historycznego.
-        </p>
-      </div>
-
-      <div :if={@selected_org} class="flex flex-col items-start gap-2 lg:items-end">
-        <span class={status_chip_styles(@status)}>
-          {status_chip_label(@status)}
-        </span>
-
-        <p class="text-grey-700 max-w-xs text-sm/snug lg:text-right">
-          {status_description(@status)}
-        </p>
-
-        <p :if={@status.kind == :snapshot} class="text-grey-700 text-sm/snug lg:text-right">
-          Zamrożono {format_datetime(@status.frozen_at)}
-        </p>
-      </div>
+    <div>
+      <.month_picker
+        :if={@selected_month}
+        id="month"
+        class="max-md:inline-flex"
+        selected_date={@selected_month}
+        active_months={@active_months}
+      />
     </div>
     """
   end
 
   attr :selected_org, :map, required: true
-  attr :selected_month, :any, required: true
-  attr :organization_options, :list, required: true
-  attr :month_options, :list, required: true
+  attr :status, :map, required: true
   attr :pending_billing_plan, :string, required: true
 
   def organization_panel(assigns) do
     ~H"""
     <section class="rounded-lg bg-white p-6 shadow-[0px_1px_6px_0px_rgba(0,0,0,0.1)]">
-      <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-        <div class="space-y-1">
-          <p class="text-grey-700 text-sm/snug">Wybrana organizacja</p>
-          <h2 class="text-grey-900 text-xl/tight font-medium">{@selected_org.name}</h2>
-        </div>
+      <div class="flex items-start justify-between">
+        <.link
+          kind="unstyled"
+          navigate={Navigation.settlements_path()}
+          class="text-grey-700 text-sm/snug hover:underline"
+        >
+          ← Wróć do listy organizacji
+        </.link>
+        <span class={status_chip_styles(@status)}>
+          {status_chip_label(@status)}
+        </span>
+      </div>
+      <div class="mt-4 space-y-1">
+        <h2 class="text-grey-900 text-xl/tight font-medium">{@selected_org.name}</h2>
+        <p class="text-grey-700 text-sm/snug">
+          {status_description(@status)}
+          <span :if={@status.kind == :snapshot}>
+            Zamrożono {format_datetime(@status.frozen_at)}
+          </span>
+        </p>
+      </div>
 
-        <div class="flex flex-wrap gap-x-6 gap-y-3 text-sm/snug">
+      <div class="border-grey-200 mt-6 grid gap-4 border-t pt-5 lg:grid-cols-[minmax(0,1.45fr)_minmax(0,1fr)]">
+        <div class="grid gap-4 text-sm/snug sm:grid-cols-2">
           <div class="space-y-1">
             <p class="text-grey-700">NIP</p>
             <p class="text-black">{@selected_org.nip}</p>
@@ -66,36 +74,13 @@ defmodule FirmowidWeb.Admin.Components.SettlementComponents do
 
           <div class="space-y-1">
             <p class="text-grey-700">E-mail właściciela</p>
-            <p class="break-all text-black">{owner_email(@selected_org.owner)}</p>
+            <p class="break-all text-black">{present_text(@selected_org.owner.email)}</p>
           </div>
-        </div>
-      </div>
 
-      <div class="border-grey-200 mt-6 grid gap-4 border-t pt-5 lg:grid-cols-[minmax(0,1.45fr)_minmax(0,1fr)]">
-        <div class="grid gap-4 sm:grid-cols-2">
-          <.form for={to_form(%{}, as: :filters)} phx-change="change-organization">
-            <.input
-              id="org_id"
-              name="org_id"
-              type="select"
-              label="Organizacja"
-              value={@selected_org.id}
-              options={@organization_options}
-              new
-            />
-          </.form>
-
-          <.form for={to_form(%{}, as: :filters)} phx-change="change-month">
-            <.input
-              id="month"
-              name="month"
-              type="select"
-              label="Miesiąc"
-              value={Date.to_iso8601(@selected_month)}
-              options={@month_options}
-              new
-            />
-          </.form>
+          <div class="space-y-1">
+            <p class="text-grey-700">Telefon właściciela</p>
+            <p class="break-all text-black">{present_text(@selected_org.owner.phone)}</p>
+          </div>
         </div>
 
         <div class="space-y-3">
@@ -137,6 +122,7 @@ defmodule FirmowidWeb.Admin.Components.SettlementComponents do
   attr :selected_month, :any, required: true
   attr :status, :map, required: true
   attr :worksheet, :map, required: true
+  attr :selected_org, :map, required: true
 
   def worksheet_panel(assigns) do
     ~H"""
@@ -196,29 +182,51 @@ defmodule FirmowidWeb.Admin.Components.SettlementComponents do
               <% end %>
             </div>
           </div>
+
+          <div :if={@worksheet.selected_plan != :no_plan} class="space-y-4">
+            <h3 class="text-grey-900 text-base/tight font-medium">
+              Do zapłaty za {format_month(@selected_month)}
+            </h3>
+
+            <div class="divide-grey-200 divide-y">
+              <div class="flex items-center justify-between gap-4 py-3 text-sm/snug">
+                <span class="font-medium text-black">Razem</span>
+                <div class="flex shrink-0 items-center gap-2">
+                  <.billing_status_badge :if={@selected_org.on_trial?} status={:trial} />
+                  <span class="font-medium text-black">{@worksheet.month_total_text}</span>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
 
         <div class="space-y-4">
-          <div class="space-y-1">
-            <h3 class="text-grey-900 text-base/tight font-medium">Fakty użycia</h3>
-            <p class="text-grey-700 text-sm/snug">Surowe wartości dla wybranego miesiąca.</p>
-          </div>
+          <h3 class="text-grey-900 text-base/tight font-medium">Liczniki użycia</h3>
+          <div class="bg-grey-50 rounded-lg p-4">
+            <div class="divide-grey-200 divide-y">
+              <div :for={row <- @worksheet.usage_rows} class="space-y-2 py-4 first:pt-0 last:pb-0">
+                <div class="flex items-start justify-between gap-4 text-sm leading-[1.35]">
+                  <div class="min-w-0">
+                    <p class="text-grey-900">{row.label}</p>
+                    <p class="text-grey-700">{counter_context(row.key)}</p>
+                  </div>
 
-          <div class="divide-grey-200 divide-y">
-            <div
-              :for={row <- @worksheet.usage_rows}
-              class="flex items-center justify-between gap-4 py-3 text-sm/snug"
-            >
-              <div class="min-w-0">
-                <p class="font-medium text-black">{row.label}</p>
-                <p class="text-grey-700">W cenie: {row.included_units}</p>
-              </div>
+                  <div class="shrink-0 text-right">
+                    <p class="text-grey-900 font-medium">{row.total_text}</p>
+                    <p :if={row.over_limit > 0} class="text-orange-700">
+                      +{row.over_limit} ponad limit
+                    </p>
+                  </div>
+                </div>
 
-              <div class="text-right">
-                <p class="font-medium text-black">{row.count}</p>
-                <p :if={row.over_limit > 0} class="text-grey-700">
-                  +{row.over_limit} ponad limit
-                </p>
+                <div class="bg-grey-200 h-2 overflow-hidden rounded-full">
+                  <div class={counter_bar_fill_styles(row)} style={"width: #{row.bar_width}%"}></div>
+                </div>
+
+                <div class="text-grey-700 flex items-center justify-between gap-4 text-xs leading-[1.35]">
+                  <span>W cenie: {row.included_units}</span>
+                  <span>{row.usage_text}</span>
+                </div>
               </div>
             </div>
           </div>
@@ -236,21 +244,37 @@ defmodule FirmowidWeb.Admin.Components.SettlementComponents do
     """
   end
 
+  attr :status, :atom, required: true, values: [:trial]
+
+  def billing_status_badge(assigns) do
+    ~H"""
+    <span class={billing_status_badge_styles(@status)}>
+      {billing_status_badge_label(@status)}
+    </span>
+    """
+  end
+
   defp plan_options do
     Enum.map(PlanCatalog.plans(), fn plan ->
       {Worksheet.plan_label(plan), Atom.to_string(plan)}
     end)
   end
 
+  defp billing_status_badge_label(:trial), do: "okres próbny"
+
+  defp billing_status_badge_styles(:trial) do
+    "inline-flex items-center rounded-full bg-orange-100 px-3 py-1 text-sm/tight text-orange-700"
+  end
+
   defp status_chip_label(%{kind: :live_preview}), do: "Na żywo"
   defp status_chip_label(%{kind: :snapshot}), do: "Snapshot historyczny"
 
   defp status_chip_styles(%{kind: :live_preview}) do
-    "inline-flex items-center rounded-full px-3 py-1 text-sm/snug font-medium bg-grey-200 text-grey-900"
+    "inline-flex items-center rounded-full px-3 py-1 text-sm/snug font-medium bg-grey-200 text-grey-900 text-center"
   end
 
   defp status_chip_styles(%{kind: :snapshot}) do
-    "inline-flex items-center rounded-full px-3 py-1 text-sm/snug font-medium bg-orange-100 text-orange-700"
+    "inline-flex items-center rounded-full px-3 py-1 text-sm/snug font-medium bg-orange-100 text-orange-700 text-center"
   end
 
   defp status_description(%{kind: :live_preview}) do
@@ -270,12 +294,21 @@ defmodule FirmowidWeb.Admin.Components.SettlementComponents do
   defp format_month(%Date{} = month), do: Calendar.strftime(month, "%m.%Y")
   defp format_datetime(%DateTime{} = datetime), do: Calendar.strftime(datetime, "%d.%m.%Y %H:%M")
 
+  defp counter_context(:synced_bank_accounts), do: "Aktualnie podłączone konta z synchronizacją."
+
+  defp counter_context(:active_non_owner_users), do: "Aktywni użytkownicy organizacji poza właścicielem."
+
+  defp counter_context(:manual_external_invoices) do
+    "Dokumenty dodane ręcznie w bieżącym miesiącu rozliczeniowym."
+  end
+
+  defp counter_bar_fill_styles(%{over_limit: over_limit}) when over_limit > 0, do: "h-full rounded-full bg-orange-500"
+
+  defp counter_bar_fill_styles(_row), do: "h-full rounded-full bg-turquoise-700"
+
   defp owner_display_name(%{name: name}) when is_binary(name) and name != "", do: name
   defp owner_display_name(%{email: email}), do: present_text(email)
   defp owner_display_name(_owner), do: "—"
-
-  defp owner_email(%{email: email}), do: present_text(email)
-  defp owner_email(_owner), do: "—"
 
   defp present_text(nil), do: "—"
 

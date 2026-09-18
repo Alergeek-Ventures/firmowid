@@ -25,9 +25,29 @@ defmodule Firmowid.Ash.Core.Organization do
 
   require Resource
 
+  @trial_days 30
+
   postgres do
     table "organizations"
     repo Firmowid.Repo
+
+    custom_statements do
+      statement :organizations_paradedb_search_idx do
+        up """
+        CREATE INDEX IF NOT EXISTS organizations_search_idx
+        ON organizations
+        USING bm25 (id, name, nip)
+        WITH (key_field='id', text_fields='{
+          "name": {"tokenizer": {"type": "ngram", "min_gram": 2, "max_gram": 4, "prefix_only": false}},
+          "nip": {"tokenizer": {"type": "ngram", "min_gram": 2, "max_gram": 10, "prefix_only": true}}
+        }');
+        """
+
+        down """
+        DROP INDEX IF EXISTS organizations_search_idx;
+        """
+      end
+    end
   end
 
   code_interface do
@@ -36,6 +56,22 @@ defmodule Firmowid.Ash.Core.Organization do
 
   actions do
     defaults [:read]
+
+    read :list do
+      description "List organizations with optional search and plan filters."
+
+      argument :search, :string
+
+      argument :billing_plan, :atom do
+        constraints one_of: PlanCatalog.plans()
+      end
+
+      prepare build(filter: expr(billing_plan == ^arg(:billing_plan))) do
+        where present(:billing_plan)
+      end
+
+      prepare {Firmowid.Ash.Preparations.ParadeDBSearch, columns: ~w(name nip), argument: :search}
+    end
 
     # ── Create ──────────────────────────────────────────────────────
     create :create do
@@ -269,6 +305,8 @@ defmodule Firmowid.Ash.Core.Organization do
 
   calculations do
     calculate :vat_eu, :string, expr("PL" <> nip)
+
+    calculate :on_trial?, :boolean, expr(inserted_at >= ago(@trial_days, :day))
   end
 
   identities do

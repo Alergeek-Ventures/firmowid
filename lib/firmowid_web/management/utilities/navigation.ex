@@ -346,19 +346,6 @@ defmodule FirmowidWeb.Management.Utilities.Navigation do
   defp counterparties_live_action("/zarzadzanie/kontrahenci/archiwum"), do: :archive
 
   defp take_allowed_params(params, allowed_keys) do
-    Enum.reduce(allowed_keys, %{}, fn key, filtered_params ->
-      atom_key = Map.fetch!(@param_atom_keys, key)
-
-      cond do
-        Map.has_key?(params, key) ->
-          Map.put(filtered_params, key, Map.fetch!(params, key))
-
-        Map.has_key?(params, atom_key) ->
-          Map.put(filtered_params, key, Map.fetch!(params, atom_key))
-
-        true ->
-          filtered_params
-      end
-    end)
+    QueryParams.take_allowed_params(params, allowed_keys, @param_atom_keys)
   end
 end

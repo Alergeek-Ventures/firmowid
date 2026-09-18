@@ -55,6 +55,28 @@ defmodule FirmowidWeb.Infrastructure.Utilities.QueryParams do
     end
   end
 
+  @doc """
+  Filters a query map down to allowlisted string keys.
+  """
+  @spec take_allowed_params(map(), [String.t()], %{String.t() => atom()}) :: map()
+  def take_allowed_params(params, allowed_keys, param_atom_keys)
+      when is_map(params) and is_list(allowed_keys) and is_map(param_atom_keys) do
+    Enum.reduce(allowed_keys, %{}, fn key, filtered_params ->
+      atom_key = Map.fetch!(param_atom_keys, key)
+
+      cond do
+        Map.has_key?(params, key) ->
+          Map.put(filtered_params, key, Map.fetch!(params, key))
+
+        Map.has_key?(params, atom_key) ->
+          Map.put(filtered_params, key, Map.fetch!(params, atom_key))
+
+        true ->
+          filtered_params
+      end
+    end)
+  end
+
   defp blank_param?({_key, value}), do: blank_param?(value)
   defp blank_param?(nil), do: true
   defp blank_param?(""), do: true
