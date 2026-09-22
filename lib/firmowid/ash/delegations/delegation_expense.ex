@@ -9,6 +9,7 @@ defmodule Firmowid.Ash.Delegations.DelegationExpense do
 
   alias Firmowid.Ash.Blobs.Blob
   alias Firmowid.Ash.Delegations.Changes.CreateExpenseBlob
+  alias Firmowid.Ash.Delegations.Changes.UpdateDetectedDelegationDates
   alias Firmowid.Ash.Delegations.DelegationExpense.Details
   alias Firmowid.Ash.Delegations.Validations.ExpenseDetailsComplete
   alias Firmowid.Ash.Delegations.Validations.ExpenseDetailsMatchKind
@@ -46,6 +47,7 @@ defmodule Firmowid.Ash.Delegations.DelegationExpense do
       argument :content_type, :string
 
       change CreateExpenseBlob
+      change UpdateDetectedDelegationDates
       validate {ExpenseDetailsMatchKind, []}
     end
 
