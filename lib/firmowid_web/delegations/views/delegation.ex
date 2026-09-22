@@ -99,8 +99,9 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
             <:icon><Lucideicons.wallet class="size-5" /></:icon>
           </.expense_section>
           <.date_change_notice
-            :if={date_change?(@delegation)}
+            :if={@date_change}
             delegation={@delegation}
+            date_change={@date_change}
             form={@complete_form}
             editable?={@editable?}
           />
@@ -175,7 +176,7 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
                 <.summary_row label={@balance_label} value={@balance} />
               </dl>
             </div>
-            <.error :if={@submission_failed?}>
+            <.error :if={@submission_failed? and is_nil(@date_change)}>
               Nie udało się wysłać ewidencji. Uzupełnij wymagane pola.
             </.error>
             <.button
@@ -240,8 +241,14 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
   def handle_event("upload", _params, socket), do: {:noreply, assign(socket, :uploading?, true)}
 
   def handle_event("validate", %{"delegation" => params}, socket) do
-    form = AshPhoenix.Form.validate(socket.assigns.complete_form, params)
-    {:noreply, socket |> assign(submission_failed?: false) |> assign_complete_form(form)}
+    date_change = detected_date_change(socket.assigns.delegation, params)
+    params = put_detected_dates(params, date_change)
+    form = validate_complete_form(socket.assigns.complete_form, params)
+
+    {:noreply,
+     socket
+     |> assign(submission_failed?: false, date_change: date_change)
+     |> assign_complete_form(form)}
   end
 
   def handle_event("select-related-expense", %{"id" => expense_id}, socket),
@@ -301,6 +308,8 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
 
   def handle_event("submit", params, socket) do
     params = Map.get(params, "delegation", %{})
+    date_change = detected_date_change(socket.assigns.delegation, params)
+    params = put_detected_dates(params, date_change)
 
     case safely(fn -> AshPhoenix.Form.submit(socket.assigns.complete_form, params: params) end) do
       {:ok, delegation} ->
@@ -309,7 +318,7 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
       {:error, %Form{} = complete_form} ->
         {:noreply,
          socket
-         |> assign(submission_failed?: true)
+         |> assign(submission_failed?: true, date_change: date_change)
          |> assign_complete_form(complete_form)}
 
       {:error, _reason} ->
@@ -368,6 +377,7 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
       related_expense_id: nil,
       page_title: "Rozliczenie delegacji",
       sort_active?: sort_active?,
+      date_change: persisted_date_change(delegation),
       upload_forms: upload_forms(socket.assigns.ash_scope)
     )
     |> assign_complete_form(complete_form)
@@ -705,17 +715,91 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
     )
   end
 
-  defp date_change?(delegation) do
-    not is_nil(delegation.detected_start_date) or not is_nil(delegation.detected_end_date)
+  defp detected_date_change(delegation, params) do
+    case dates_from_params(params) do
+      [] -> persisted_date_change(delegation)
+      dates -> date_change(delegation, dates)
+    end
   end
 
+  defp dates_from_params(params) do
+    params
+    |> Enum.flat_map(&dates_from_param/1)
+    |> Enum.reject(&is_nil/1)
+  end
+
+  defp dates_from_param({key, value}) when key in ["arrival_date", "departure_date"], do: [date_from_param(value)]
+
+  defp dates_from_param({_key, value}) when is_map(value), do: Enum.flat_map(value, &dates_from_param/1)
+
+  defp dates_from_param({_key, value}) when is_list(value), do: Enum.flat_map(value, &dates_from_value/1)
+
+  defp dates_from_param({_key, _value}), do: []
+
+  defp dates_from_value(value) when is_map(value), do: Enum.flat_map(value, &dates_from_param/1)
+  defp dates_from_value(_value), do: []
+
+  defp date_from_param(%Date{} = date), do: date
+
+  defp date_from_param(date) when is_binary(date) do
+    case Date.from_iso8601(date) do
+      {:ok, date} -> date
+      {:error, _reason} -> nil
+    end
+  end
+
+  defp date_from_param(_date), do: nil
+
+  defp date_change(delegation, dates) do
+    earliest_date = Enum.min_by(dates, &Date.to_iso8601/1)
+    latest_date = Enum.max_by(dates, &Date.to_iso8601/1)
+
+    date_change = %{
+      detected_start_date: if(Date.before?(earliest_date, delegation.start_date), do: earliest_date),
+      detected_end_date: if(Date.after?(latest_date, delegation.end_date), do: latest_date)
+    }
+
+    if date_change.detected_start_date || date_change.detected_end_date, do: date_change
+  end
+
+  defp persisted_date_change(delegation) do
+    if delegation.detected_start_date || delegation.detected_end_date do
+      %{
+        detected_start_date: delegation.detected_start_date,
+        detected_end_date: delegation.detected_end_date
+      }
+    end
+  end
+
+  defp put_detected_dates(params, nil) do
+    params
+    |> Map.put("detected_start_date", nil)
+    |> Map.put("detected_end_date", nil)
+  end
+
+  defp put_detected_dates(params, date_change) do
+    params
+    |> Map.put("detected_start_date", date_to_param(date_change.detected_start_date))
+    |> Map.put("detected_end_date", date_to_param(date_change.detected_end_date))
+  end
+
+  defp date_to_param(%Date{} = date), do: Date.to_iso8601(date)
+  defp date_to_param(nil), do: nil
+
+  defp validate_complete_form(form, params), do: AshPhoenix.Form.validate(form, params)
+
+  defp blank?(value) when is_binary(value), do: String.trim(value) == ""
+  defp blank?(nil), do: true
+  defp blank?(_value), do: false
+
   attr :delegation, :map, required: true
+  attr :date_change, :map, required: true
   attr :form, Form, required: true
   attr :editable?, :boolean, required: true
 
   defp date_change_notice(assigns) do
-    detected_start_date = assigns.delegation.detected_start_date || assigns.delegation.start_date
-    detected_end_date = assigns.delegation.detected_end_date || assigns.delegation.end_date
+    detected_start_date = assigns.date_change.detected_start_date || assigns.delegation.start_date
+    detected_end_date = assigns.date_change.detected_end_date || assigns.delegation.end_date
 
     assigns =
       assigns
@@ -742,9 +826,12 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
         Terminy różnią się od tych podanych w zgłoszeniu. Jeśli jest to zmiana celowa, podaj jej powód. Jeśli nie, sprawdź poprawność powyższych danych.
       </p>
       <.input
-        field={@form[:date_change_reason]}
+        id={@form[:date_change_reason].id}
         form="delegation-complete-form"
+        name={@form[:date_change_reason].name}
         type="textarea"
+        value={@form[:date_change_reason].value}
+        errors={if blank?(@form[:date_change_reason].value), do: ["To pole jest wymagane"], else: []}
         new
         placeholder="Podaj powód zmiany terminu delegacji..."
         disabled={!@editable?}
