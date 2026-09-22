@@ -159,6 +159,12 @@ defmodule FirmowidWeb.Delegations.Views.DelegationTest do
     assert html =~ "To pole jest wymagane"
 
     view
+    |> form("#delegation-complete-form", %{delegation: changed_expense_params})
+    |> render_submit()
+
+    assert_push_event(view, "scroll-to-date-change", %{})
+
+    view
     |> form("#delegation-complete-form", %{
       delegation: Map.put(changed_expense_params, "date_change_reason", "Zmiana biletu")
     })
@@ -171,6 +177,96 @@ defmodule FirmowidWeb.Delegations.Views.DelegationTest do
 
     assert completed_delegation.date_change_reason == "Zmiana biletu"
     assert completed_delegation.detected_end_date == ~D[2026-08-12]
+  end
+
+  test "keeps both edited transport trip dates", %{conn: conn} do
+    {user, delegation} = approved_delegation()
+
+    expense =
+      Ash.Seed.seed!(
+        DelegationExpense,
+        %{
+          delegation_id: delegation.id,
+          organization_id: user.organization_id,
+          kind: :transport,
+          original_filename: "bilet.pdf",
+          document_number: "BIL/1",
+          expense_amount: Money.new(:PLN, 100),
+          details: %{
+            type: "transport",
+            transport_type: :railway,
+            trips: [
+              %{
+                departure_city: "Wrocław",
+                departure_datetime: ~U[2026-08-10 08:00:00Z],
+                arrival_city: "Kraków",
+                arrival_datetime: ~U[2026-08-10 10:00:00Z]
+              }
+            ]
+          }
+        },
+        tenant: user.organization_id
+      )
+
+    trip = List.first(expense.details.value.trips)
+    {:ok, view, _html} = conn |> log_in_user(user) |> live(~p"/delegacje/#{delegation.id}")
+
+    params = %{
+      "expenses" => %{
+        "0" => %{
+          "_form_type" => "update",
+          "id" => expense.id,
+          "document_number" => "BIL/1",
+          "expense_amount" => "100",
+          "details" => %{
+            "_union_type" => "transport",
+            "transport_type" => "railway",
+            "trips" => %{
+              "0" => %{
+                "_form_type" => "update",
+                "id" => trip.id,
+                "departure_city" => "Wrocław",
+                "departure_date" => "2026-08-09",
+                "departure_time" => "08:00",
+                "arrival_city" => "Kraków",
+                "arrival_date" => "2026-08-12",
+                "arrival_time" => "10:00"
+              }
+            }
+          }
+        }
+      }
+    }
+
+    view
+    |> form("#delegation-complete-form", %{delegation: params})
+    |> render_change()
+
+    assert has_element?(view, "#trip-departure-date-#{trip.id}[value='2026-08-09']")
+    assert has_element?(view, "#trip-arrival-date-#{trip.id}[value='2026-08-12']")
+
+    view
+    |> form("#delegation-complete-form", %{
+      delegation: Map.put(params, "date_change_reason", "Zmiana biletu")
+    })
+    |> render_submit()
+
+    refute has_element?(view, "#delegation-complete-form")
+
+    assert {:ok, completed_delegation} =
+             Delegations.get_delegation(delegation.id,
+               scope: %Scope{actor: user, tenant: user.organization_id},
+               load: [:expenses]
+             )
+
+    completed_trip =
+      completed_delegation.expenses
+      |> List.first()
+      |> then(& &1.details.value.trips)
+      |> List.first()
+
+    assert DateTime.to_date(completed_trip.departure_datetime) == ~D[2026-08-09]
+    assert DateTime.to_date(completed_trip.arrival_datetime) == ~D[2026-08-12]
   end
 
   test "prefills category-specific expense details from the Reducto mock", %{conn: conn} do

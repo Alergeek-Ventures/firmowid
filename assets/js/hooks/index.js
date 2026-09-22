@@ -20,6 +20,7 @@ import { LandingNavbarTheme } from "./landing_navbar_theme";
 import { NumberPopIn } from "./number_pop_in";
 import { ImageLoadReveal } from "./image_load_reveal";
 import { SelectLabelOverride } from "./select_label_override";
+import { DelegationDateChange } from "./delegation_date_change";
 
 export const Hooks = {
   Confetti,
@@ -44,5 +45,6 @@ export const Hooks = {
   LandingNavbarTheme,
   NumberPopIn,
   ImageLoadReveal,
-  SelectLabelOverride
+  SelectLabelOverride,
+  DelegationDateChange
 };

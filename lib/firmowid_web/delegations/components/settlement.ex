@@ -679,7 +679,10 @@ defmodule FirmowidWeb.Delegations.Components.Settlement do
                     id={"trip-departure-date-#{trip.id}"}
                     form="delegation-complete-form"
                     name={"#{trip_form.name}[departure_date]"}
-                    value={date_value(trip.departure_datetime, @timezone)}
+                    value={
+                      trip_form.params["departure_date"] ||
+                        date_value(trip_form[:departure_datetime].value, @timezone)
+                    }
                     errors={translated_errors(trip_form[:departure_datetime])}
                     type="date"
                     new
@@ -692,7 +695,10 @@ defmodule FirmowidWeb.Delegations.Components.Settlement do
                     id={"trip-departure-time-#{trip.id}"}
                     form="delegation-complete-form"
                     name={"#{trip_form.name}[departure_time]"}
-                    value={time_value(trip.departure_datetime, @timezone)}
+                    value={
+                      trip_form.params["departure_time"] ||
+                        time_value(trip_form[:departure_datetime].value, @timezone)
+                    }
                     errors={translated_errors(trip_form[:departure_datetime])}
                     type="time"
                     new
@@ -734,7 +740,10 @@ defmodule FirmowidWeb.Delegations.Components.Settlement do
                     id={"trip-arrival-date-#{trip.id}"}
                     form="delegation-complete-form"
                     name={"#{trip_form.name}[arrival_date]"}
-                    value={date_value(trip.arrival_datetime, @timezone)}
+                    value={
+                      trip_form.params["arrival_date"] ||
+                        date_value(trip_form[:arrival_datetime].value, @timezone)
+                    }
                     errors={translated_errors(trip_form[:arrival_datetime])}
                     type="date"
                     new
@@ -747,7 +756,10 @@ defmodule FirmowidWeb.Delegations.Components.Settlement do
                     id={"trip-arrival-time-#{trip.id}"}
                     form="delegation-complete-form"
                     name={"#{trip_form.name}[arrival_time]"}
-                    value={time_value(trip.arrival_datetime, @timezone)}
+                    value={
+                      trip_form.params["arrival_time"] ||
+                        time_value(trip_form[:arrival_datetime].value, @timezone)
+                    }
                     errors={translated_errors(trip_form[:arrival_datetime])}
                     type="time"
                     new
