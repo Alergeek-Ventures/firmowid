@@ -34,7 +34,7 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
   @impl true
   def render(assigns) do
     ~H"""
-    <div class="relative mt-4">
+    <div id="delegation-settlement" phx-hook="DelegationDateChange" class="relative mt-4">
       <.back
         navigate={~p"/ustawienia/profil"}
         class="absolute top-0 left-0.5 inline-flex text-sm"
@@ -242,7 +242,12 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
 
   def handle_event("validate", %{"delegation" => params}, socket) do
     date_change = detected_date_change(socket.assigns.delegation, params)
-    params = put_detected_dates(params, date_change)
+
+    params =
+      params
+      |> transform_trip_datetimes(socket.assigns.timezone)
+      |> put_detected_dates(date_change)
+
     form = validate_complete_form(socket.assigns.complete_form, params)
 
     {:noreply,
@@ -309,17 +314,24 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
   def handle_event("submit", params, socket) do
     params = Map.get(params, "delegation", %{})
     date_change = detected_date_change(socket.assigns.delegation, params)
-    params = put_detected_dates(params, date_change)
+
+    params =
+      params
+      |> transform_trip_datetimes(socket.assigns.timezone)
+      |> put_detected_dates(date_change)
 
     case safely(fn -> AshPhoenix.Form.submit(socket.assigns.complete_form, params: params) end) do
       {:ok, delegation} ->
         {:noreply, setup_socket(socket, load_delegation!(delegation.id, socket))}
 
       {:error, %Form{} = complete_form} ->
-        {:noreply,
-         socket
-         |> assign(submission_failed?: true, date_change: date_change)
-         |> assign_complete_form(complete_form)}
+        socket =
+          socket
+          |> assign(submission_failed?: true, date_change: date_change)
+          |> assign_complete_form(complete_form)
+          |> scroll_to_date_change(date_change)
+
+        {:noreply, socket}
 
       {:error, _reason} ->
         {:noreply, put_flash(socket, :error, "Nie udało się wysłać ewidencji.")}
@@ -702,6 +714,38 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
     |> Map.put("details", details)
   end
 
+  defp transform_trip_datetimes(params, timezone) when is_map(params) do
+    params =
+      Map.new(params, fn {key, value} -> {key, transform_trip_datetimes(value, timezone)} end)
+
+    if Map.has_key?(params, "departure_time") || Map.has_key?(params, "arrival_time") do
+      params
+      |> put_trip_datetime("departure", timezone)
+      |> put_trip_datetime("arrival", timezone)
+      |> Map.drop(["departure_date", "departure_time", "arrival_date", "arrival_time"])
+    else
+      params
+    end
+  end
+
+  defp transform_trip_datetimes(params, timezone) when is_list(params),
+    do: Enum.map(params, &transform_trip_datetimes(&1, timezone))
+
+  defp transform_trip_datetimes(params, _timezone), do: params
+
+  defp put_trip_datetime(params, prefix, timezone) do
+    with date when is_binary(date) <- params["#{prefix}_date"],
+         time when is_binary(time) <- params["#{prefix}_time"],
+         {:ok, date} <- Date.from_iso8601(date),
+         {:ok, time} <- Time.from_iso8601(time <> ":00"),
+         {:ok, datetime} <- DateTime.new(date, time, timezone) do
+      datetime = DateTime.shift_zone!(datetime, "Etc/UTC")
+      Map.put(params, "#{prefix}_datetime", DateTime.to_iso8601(datetime))
+    else
+      _ -> params
+    end
+  end
+
   defp assign_summary(socket) do
     total = SettlementPresentation.sum(socket.assigns.delegation.expenses)
 
@@ -786,6 +830,11 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
   defp date_to_param(%Date{} = date), do: Date.to_iso8601(date)
   defp date_to_param(nil), do: nil
 
+  defp scroll_to_date_change(socket, date_change) when is_map(date_change),
+    do: push_event(socket, "scroll-to-date-change", %{})
+
+  defp scroll_to_date_change(socket, nil), do: socket
+
   defp validate_complete_form(form, params), do: AshPhoenix.Form.validate(form, params)
 
   defp blank?(value) when is_binary(value), do: String.trim(value) == ""
@@ -807,12 +856,15 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
       |> assign(:detected_end_date, detected_end_date)
 
     ~H"""
-    <section class="bg-turquoise-100 border-grey-200 text-turquoise-700 mt-6 w-full rounded-lg border p-6">
+    <section
+      id="delegation-date-change"
+      class="bg-turquoise-100 border-grey-200 text-turquoise-700 mt-6 w-full rounded-lg border p-6"
+    >
       <div class="flex flex-wrap items-center justify-between gap-3">
         <h2 class="flex items-center gap-2 font-medium">
           <Lucideicons.calendar_1 class="size-5" /> Zmiana terminu delegacji
         </h2>
-        <div class="flex items-center gap-2 tabular-nums">
+        <div class="flex items-center gap-2 font-medium tabular-nums">
           <span class="text-grey-500 line-through">
             <.date_range
               start_date={@delegation.start_date}
