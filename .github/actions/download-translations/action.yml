@@ -1,0 +1,27 @@
+name: Download translations
+description: Download and validate the Polish catalog for an exact commit SHA
+inputs:
+  version:
+    description: Full commit SHA whose translation artifact should be downloaded
+    required: false
+    default: ${{ github.event.pull_request.head.sha || github.sha }}
+runs:
+  using: composite
+  steps:
+    - name: Download generated PO catalog
+      uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+      with:
+        name: accent-po-${{ inputs.version }}
+        path: priv/gettext/pl/LC_MESSAGES
+    - name: Validate catalog version
+      shell: bash
+      env:
+        ACCENT_VERSION: ${{ inputs.version }}
+      run: |
+        set -euo pipefail
+        catalog=priv/gettext/pl/LC_MESSAGES/default.po
+        test -f "$catalog"
+        test "$(head -n 1 "$catalog")" = "# Accent version: $ACCENT_VERSION" || {
+          echo "Downloaded catalog does not match $ACCENT_VERSION." >&2
+          exit 1
+        }

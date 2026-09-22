@@ -12,6 +12,16 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  translations:
+    name: Prepare translations
+    uses: ./.github/workflows/translations-prepare.yml
+    with:
+      version: ${{ github.event.pull_request.head.sha || github.sha }}
+    secrets:
+      ACCENT_SNAPSHOT_API_KEY: ${{ secrets.ACCENT_SNAPSHOT_API_KEY }}
+    permissions:
+      contents: read
+
   secret-scan:
     name: Scan repository for secrets
     runs-on: blacksmith-4vcpu-ubuntu-2404
@@ -22,6 +32,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          ref: ${{ github.sha }}
           fetch-depth: 0
 
       - name: Scan repository with Betterleaks
@@ -51,6 +62,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
       - name: Extract versions
         id: versions
@@ -151,6 +164,7 @@ jobs:
     runs-on: blacksmith-4vcpu-ubuntu-2404
 
     needs:
+      - translations
       - extract-versions
     permissions:
       contents: read
@@ -202,6 +216,11 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - name: Download generated PO catalog
+        uses: ./.github/actions/download-translations
 
       - name: Install system dependencies
         run: |

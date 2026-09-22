@@ -209,6 +209,7 @@ defmodule Firmowid.MixProject do
     [
       "localize.setup": ["localize.download_locales pl"],
       setup: [
+        &fetch_translations/1,
         "deps.get",
         "localize.setup",
         "db.setup",
@@ -233,5 +234,21 @@ defmodule Firmowid.MixProject do
       ],
       "assets.licenses": ["cmd npm run licenses:check --prefix assets"]
     ]
+  end
+
+  defp fetch_translations(_args) do
+    {version, status} = System.cmd("git", ["rev-parse", "HEAD"], stderr_to_stdout: true)
+
+    if status != 0 do
+      Mix.raise("could not determine Git HEAD: #{String.trim(version)}")
+    end
+
+    case System.cmd("elixir", ["scripts/accent.exs", "export", "--version", String.trim(version)], stderr_to_stdout: true) do
+      {_, 0} ->
+        :ok
+
+      {output, exit_status} ->
+        Mix.raise("Accent catalog export failed (status #{exit_status}): #{String.trim(output)}")
+    end
   end
 end
