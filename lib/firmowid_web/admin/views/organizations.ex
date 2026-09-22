@@ -18,8 +18,7 @@ defmodule FirmowidWeb.Admin.Views.Organizations do
   alias FirmowidWeb.Admin.Utilities.Navigation
   alias FirmowidWeb.Billing.Utilities.Worksheet
 
-  @initial_limit 15
-  @limit_step 15
+  @page_limit 25
 
   @legal_form_abbreviations [
     {"spółka komandytowo-akcyjna", "S.K.A."},
@@ -40,8 +39,9 @@ defmodule FirmowidWeb.Admin.Views.Organizations do
      |> assign(:search, "")
      |> assign(:plan_filter, nil)
      |> assign(:only_over_limit?, false)
-     |> assign(:row_limit, @initial_limit)
      |> assign(:rows, [])
+     |> assign(:keyset, nil)
+     |> assign(:more?, false)
      |> assign(:current_month, Month.current())
      |> assign(:form, to_form(%{"tylko_nadwyzki" => false}))}
   end
@@ -54,15 +54,13 @@ defmodule FirmowidWeb.Admin.Views.Organizations do
     only_over_limit? = Navigation.parse_only_over_limit?(parsed)
     current_month = Month.current()
 
-    row_limit =
-      if filters_changed?(socket, search, plan_filter, only_over_limit?) do
-        @initial_limit
-      else
-        socket.assigns.row_limit
-      end
+    page =
+      list_organizations_page(socket.assigns.current_user,
+        search: search,
+        plan_filter: plan_filter
+      )
 
-    organizations = list_organizations(socket.assigns.current_user, search, plan_filter)
-    rows = build_rows(organizations, current_month, only_over_limit?)
+    rows = build_rows(page.results, current_month, only_over_limit?)
 
     socket =
       socket
@@ -70,10 +68,11 @@ defmodule FirmowidWeb.Admin.Views.Organizations do
       |> assign(:search, search)
       |> assign(:plan_filter, plan_filter)
       |> assign(:only_over_limit?, only_over_limit?)
-      |> assign(:row_limit, row_limit)
       |> assign(:current_month, current_month)
       |> assign(:form, to_form(%{"tylko_nadwyzki" => only_over_limit?}))
       |> assign(:rows, rows)
+      |> assign(:keyset, next_keyset(page))
+      |> assign(:more?, page.more?)
 
     {:noreply, socket}
   end
@@ -113,14 +112,28 @@ defmodule FirmowidWeb.Admin.Views.Organizations do
   end
 
   def handle_event("show_more", _params, socket) do
-    {:noreply, assign(socket, :row_limit, socket.assigns.row_limit + @limit_step)}
+    page =
+      list_organizations_page(
+        socket.assigns.current_user,
+        search: socket.assigns.search,
+        plan_filter: socket.assigns.plan_filter,
+        keyset: socket.assigns.keyset
+      )
+
+    rows = build_rows(page.results, socket.assigns.current_month, socket.assigns.only_over_limit?)
+
+    {:noreply,
+     socket
+     |> assign(:rows, socket.assigns.rows ++ rows)
+     |> assign(:keyset, next_keyset(page))
+     |> assign(:more?, page.more?)}
   end
 
   @impl true
   def render(assigns) do
     ~H"""
     <div class="mx-auto flex w-full max-w-7xl flex-col gap-3 pb-4">
-      <div class="bg-lightGreyBg sticky top-10.5 z-10 flex flex-col gap-6 py-4">
+      <div class="bg-lightGreyBg top-navbar sticky z-10 flex flex-col gap-6 py-4">
         <div class="flex items-center justify-between gap-4">
           <form class="flex gap-4" phx-submit="search">
             <div class="bg-lightGreyBg border-greyButtonBg flex h-11 w-90 items-center gap-2 rounded-lg border p-1 focus-within:ring-2">
@@ -186,7 +199,7 @@ defmodule FirmowidWeb.Admin.Views.Organizations do
 
         <div id="organizations-list" class="grid gap-2">
           <div
-            :for={row <- Enum.take(@rows, @row_limit)}
+            :for={row <- @rows}
             :key={row.org.id}
             class="grid items-center gap-x-6 gap-y-2 rounded-sm bg-white p-4 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.4fr)_auto]"
           >
@@ -248,7 +261,7 @@ defmodule FirmowidWeb.Admin.Views.Organizations do
         </div>
 
         <.button
-          :if={length(@rows) > @row_limit}
+          :if={@more?}
           variant="ghost"
           size="small"
           phx-click="show_more"
@@ -261,24 +274,26 @@ defmodule FirmowidWeb.Admin.Views.Organizations do
     """
   end
 
-  defp list_organizations(current_user, search, plan_filter) do
+  defp list_organizations_page(current_user, opts) do
+    search = Keyword.get(opts, :search, "")
+    plan_filter = opts[:plan_filter]
+    keyset = opts[:keyset]
+
+    page_opts =
+      Enum.reject([limit: @page_limit, after: keyset], fn {_key, val} -> is_nil(val) end)
+
     %{search: search, billing_plan: plan_filter}
-    |> Core.query_to_list_organizations(actor: current_user)
+    |> Core.query_to_list_organizations()
     |> Ash.Query.load([:on_trial?])
     |> sort_organizations(search)
-    |> Ash.read!(actor: current_user)
+    |> Ash.read!(actor: current_user, page: page_opts)
   end
 
   defp sort_organizations(query, search) when search in [nil, ""] do
-    Ash.Query.sort(query, name: :asc)
+    Ash.Query.sort(query, name: :asc, id: :asc)
   end
 
   defp sort_organizations(query, _search), do: query
-
-  defp filters_changed?(socket, search, plan_filter, only_over_limit?) do
-    socket.assigns.search != search or socket.assigns.plan_filter != plan_filter or
-      socket.assigns.only_over_limit? != only_over_limit?
-  end
 
   defp filter_over_limit(rows, false), do: rows
   defp filter_over_limit(rows, true), do: Enum.filter(rows, & &1.over_limit?)
@@ -324,4 +339,10 @@ defmodule FirmowidWeb.Admin.Views.Organizations do
   defp short_org_name(name), do: to_string(name)
 
   defp format_date(%Date{} = date), do: Calendar.strftime(date, "%d.%m.%Y")
+
+  defp next_keyset(%{results: []}), do: nil
+
+  defp next_keyset(%{results: results}) do
+    results |> List.last() |> Map.get(:__metadata__) |> Map.get(:keyset)
+  end
 end

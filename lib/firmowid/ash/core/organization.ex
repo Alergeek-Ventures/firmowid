@@ -60,6 +60,8 @@ defmodule Firmowid.Ash.Core.Organization do
     read :list do
       description "List organizations with optional search and plan filters."
 
+      pagination keyset?: true, required?: false
+
       argument :search, :string
 
       argument :billing_plan, :atom do
