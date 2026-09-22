@@ -14,7 +14,7 @@ defmodule FirmowidWeb.Delegations.Views.DelegationForm do
 
   @impl true
   def mount(_params, _session, socket) do
-    user = socket.assigns.current_user
+    user = Ash.load!(socket.assigns.current_user, :display_name, scope: socket.assigns.ash_scope)
     today = Date.utc_today()
     default_month = Date.beginning_of_month(today)
     months = billing_months(user.employment_date, today)
@@ -25,6 +25,7 @@ defmodule FirmowidWeb.Delegations.Views.DelegationForm do
 
     {:ok,
      socket
+     |> assign(:current_user, user)
      |> assign(:page_title, "Planowanie delegacji")
      |> assign(:months, months)
      |> assign(:default_month, default_month)
@@ -77,7 +78,7 @@ defmodule FirmowidWeb.Delegations.Views.DelegationForm do
               </.form_row>
               <dl class="contents">
                 <.detail_row dd_class="mt-8" dt_class="mt-8" label="Imię i nazwisko">
-                  {@current_user.name || @current_user.email}
+                  {@current_user.display_name}
                 </.detail_row>
                 <.detail_row label="Stanowisko">
                   {(@employment_contract && @employment_contract.position) || "—"}
