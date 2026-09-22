@@ -351,7 +351,7 @@ defmodule FirmowidWeb.Delegations.Components.Settlement do
               Inne wydatki powinny mieć dokument pokazujący, czego dotyczył koszt. Najlepiej załączyć fakturę, rachunek, bilet, rezerwację, polisę albo inny dokument potwierdzający usługę lub zakup. Jeśli masz tylko potwierdzenie płatności, dodaj też dokument opisujący, za co zapłacono.
             </p>
             <p>
-              Wydatek musi być związany z delegacją. Przykładowo ubezpieczenie lub bilet tramwajowy można rozliczyć wtedy, gdy pokrywa się z podróżą służbową.
+              Wydatek musi być związany z delegacją. Przykładowo ubezpieczenie można rozliczyć wtedy, gdy pokrywa się z podróżą służbową.
             </p>
         <% end %>
       </div>
