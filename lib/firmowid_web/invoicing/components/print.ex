@@ -8,7 +8,7 @@ defmodule FirmowidWeb.Invoicing.Components.Print do
   def a4_page(assigns) do
     ~H"""
     <div class={[
-      "relative mx-auto box-content h-[calc(842px-2*32px)] w-[calc(595px-2*32px)] bg-white p-8",
+      "relative mx-auto box-content flex min-h-[calc(842px-2*32px)] w-[calc(595px-2*32px)] flex-col bg-white p-8 print:h-auto print:min-h-[calc(842px-2*32px)]",
       @class
     ]}>
       {render_slot(@inner_block)}
