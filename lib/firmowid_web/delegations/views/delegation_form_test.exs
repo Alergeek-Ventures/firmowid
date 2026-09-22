@@ -20,6 +20,7 @@ defmodule FirmowidWeb.Delegations.Views.DelegationFormTest do
     assert html =~ "Planowanie delegacji"
     assert html =~ "Gdy zostanie zaakceptowany otrzymasz maila z potwierdzeniem."
     assert html =~ "Software Developer"
+    assert html =~ to_string(employee.email)
 
     invalid_html =
       render_change(view, "validate", %{

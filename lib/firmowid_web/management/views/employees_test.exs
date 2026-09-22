@@ -8,6 +8,7 @@ defmodule FirmowidWeb.Management.Views.EmployeesTest do
 
   alias Firmowid.Ash.Blobs.Blob
   alias Firmowid.Ash.Core
+  alias Firmowid.Ash.Delegations
   alias Firmowid.Ash.Payroll
   alias Firmowid.Ash.Scope
   alias Firmowid.Ash.Timetracker.HoursRecord, as: AshHoursRecord
@@ -147,6 +148,8 @@ defmodule FirmowidWeb.Management.Views.EmployeesTest do
     project = project_fixture(%{organization_id: admin.organization_id, name: "Payroll Project"})
     user_project_fixture(employee.id, project.id, admin.organization_id)
 
+    Delegations.create_delegation!(delegation_attrs(), scope: current_scope(employee))
+
     user_salary_fixture(%{
       organization_id: admin.organization_id,
       user_id: employee.id,
@@ -177,6 +180,29 @@ defmodule FirmowidWeb.Management.Views.EmployeesTest do
     assert html =~ "Wynagrodzenie"
     assert html =~ "EWIDENCJA"
     assert html =~ "April Session"
+    assert html =~ "Delegacje"
+  end
+
+  test "admin approval refreshes the employee delegation loaded through the relationship", %{
+    conn: conn
+  } do
+    admin = admin_fixture()
+    employee = user_in_org_fixture(admin.organization_id, %{role: :employee})
+    Delegations.create_delegation!(delegation_attrs(), scope: current_scope(employee))
+
+    {:ok, view, html} =
+      conn
+      |> log_in_user(admin)
+      |> live(~p"/zarzadzanie/pracownicy/#{employee.id}/delegacje")
+
+    assert html =~ "Spotkanie z klientem"
+    assert html =~ "oczekiwanie"
+
+    view
+    |> element("button[phx-click='approve_delegation']")
+    |> render_click()
+
+    assert render(view) =~ "w toku"
   end
 
   test "admin can restore archived employee from employee detail page", %{conn: conn} do
@@ -205,6 +231,19 @@ defmodule FirmowidWeb.Management.Views.EmployeesTest do
 
   defp current_scope(admin) do
     %Scope{actor: admin, tenant: admin.organization_id}
+  end
+
+  defp delegation_attrs do
+    %{
+      title: "Spotkanie z klientem",
+      billing_month: ~D[2026-09-01],
+      destination: "Kraków",
+      transport_types: [:railway],
+      purpose: "Spotkanie z klientem",
+      advance_payment_amount: Money.new(:PLN, 100),
+      start_date: ~D[2026-09-10],
+      end_date: ~D[2026-09-11]
+    }
   end
 
   defp seed_hours_record!(user_id, organization_id, month, year, hours) do
