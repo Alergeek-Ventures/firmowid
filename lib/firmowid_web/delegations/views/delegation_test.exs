@@ -124,31 +124,44 @@ defmodule FirmowidWeb.Delegations.Views.DelegationTest do
 
   test "shows detected date change and requires its reason", %{conn: conn} do
     {user, delegation} = approved_delegation()
-    seed_expense(delegation, user)
-
-    delegation =
-      delegation
-      |> Ash.Changeset.for_update(:detect_dates, %{detected_end_date: ~D[2026-08-12]},
-        actor: user,
-        tenant: user.organization_id
-      )
-      |> Ash.update!()
+    expense = seed_expense(delegation, user)
 
     {:ok, view, html} = conn |> log_in_user(user) |> live(~p"/delegacje/#{delegation.id}")
+
+    refute html =~ "Zmiana terminu delegacji"
+
+    changed_expense_params = %{
+      "expenses" => %{
+        "0" => %{
+          "_form_type" => "update",
+          "id" => expense.id,
+          "document_number" => "REZ/1",
+          "expense_amount" => "250",
+          "details" => %{
+            "_union_type" => "accommodation",
+            "locality" => "Kraków",
+            "arrival_date" => "2026-08-10",
+            "departure_date" => "2026-08-12"
+          }
+        }
+      }
+    }
+
+    view
+    |> form("#delegation-complete-form", %{delegation: changed_expense_params})
+    |> render_change()
+
+    html = render(view)
 
     assert html =~ "Zmiana terminu delegacji"
     assert html =~ "10-11.08.2026"
     assert html =~ "10-12.08.2026"
-
-    html =
-      view
-      |> form("#delegation-complete-form", %{delegation: %{date_change_reason: ""}})
-      |> render_change()
-
     assert html =~ "To pole jest wymagane"
 
     view
-    |> form("#delegation-complete-form", %{delegation: %{date_change_reason: "Zmiana biletu"}})
+    |> form("#delegation-complete-form", %{
+      delegation: Map.put(changed_expense_params, "date_change_reason", "Zmiana biletu")
+    })
     |> render_submit()
 
     assert {:ok, completed_delegation} =
@@ -157,6 +170,7 @@ defmodule FirmowidWeb.Delegations.Views.DelegationTest do
              )
 
     assert completed_delegation.date_change_reason == "Zmiana biletu"
+    assert completed_delegation.detected_end_date == ~D[2026-08-12]
   end
 
   test "prefills category-specific expense details from the Reducto mock", %{conn: conn} do

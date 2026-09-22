@@ -95,7 +95,7 @@ defmodule Firmowid.Ash.Delegations.Delegation do
     update :complete do
       description "Mark an in-progress delegation as complete."
       require_atomic? false
-      accept [:date_change_reason]
+      accept [:date_change_reason, :detected_start_date, :detected_end_date]
 
       argument :expenses, {:array, :map}, allow_nil?: false, default: []
 
