@@ -122,6 +122,43 @@ defmodule FirmowidWeb.Delegations.Views.DelegationTest do
     assert html =~ "Nie udało się wysłać ewidencji. Uzupełnij wymagane pola."
   end
 
+  test "shows detected date change and requires its reason", %{conn: conn} do
+    {user, delegation} = approved_delegation()
+    seed_expense(delegation, user)
+
+    delegation =
+      delegation
+      |> Ash.Changeset.for_update(:detect_dates, %{detected_end_date: ~D[2026-08-12]},
+        actor: user,
+        tenant: user.organization_id
+      )
+      |> Ash.update!()
+
+    {:ok, view, html} = conn |> log_in_user(user) |> live(~p"/delegacje/#{delegation.id}")
+
+    assert html =~ "Zmiana terminu delegacji"
+    assert html =~ "10-11.08.2026"
+    assert html =~ "10-12.08.2026"
+
+    html =
+      view
+      |> form("#delegation-complete-form", %{delegation: %{date_change_reason: ""}})
+      |> render_change()
+
+    assert html =~ "To pole jest wymagane"
+
+    view
+    |> form("#delegation-complete-form", %{delegation: %{date_change_reason: "Zmiana biletu"}})
+    |> render_submit()
+
+    assert {:ok, completed_delegation} =
+             Delegations.get_delegation(delegation.id,
+               scope: %Scope{actor: user, tenant: user.organization_id}
+             )
+
+    assert completed_delegation.date_change_reason == "Zmiana biletu"
+  end
+
   test "prefills category-specific expense details from the Reducto mock", %{conn: conn} do
     previous_reducto_config = Application.get_env(:firmowid, :reducto_api_client)
 

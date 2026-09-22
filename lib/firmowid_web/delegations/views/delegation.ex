@@ -98,6 +98,12 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
           >
             <:icon><Lucideicons.wallet class="size-5" /></:icon>
           </.expense_section>
+          <.date_change_notice
+            :if={date_change?(@delegation)}
+            delegation={@delegation}
+            form={@complete_form}
+            editable?={@editable?}
+          />
         </section>
         <aside class="lg:pt-1">
           <dl class="text-grey-500 flex justify-end gap-4">
@@ -697,6 +703,55 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
       balance_label: label,
       balance: balance
     )
+  end
+
+  defp date_change?(delegation) do
+    not is_nil(delegation.detected_start_date) or not is_nil(delegation.detected_end_date)
+  end
+
+  attr :delegation, :map, required: true
+  attr :form, Form, required: true
+  attr :editable?, :boolean, required: true
+
+  defp date_change_notice(assigns) do
+    detected_start_date = assigns.delegation.detected_start_date || assigns.delegation.start_date
+    detected_end_date = assigns.delegation.detected_end_date || assigns.delegation.end_date
+
+    assigns =
+      assigns
+      |> assign(:detected_start_date, detected_start_date)
+      |> assign(:detected_end_date, detected_end_date)
+
+    ~H"""
+    <section class="bg-turquoise-100 border-grey-200 text-turquoise-700 mt-6 w-full rounded-lg border p-6">
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        <h2 class="flex items-center gap-2 font-medium">
+          <Lucideicons.calendar_1 class="size-5" /> Zmiana terminu delegacji
+        </h2>
+        <div class="flex items-center gap-2 tabular-nums">
+          <span class="text-grey-500 line-through">
+            <.date_range
+              start_date={@delegation.start_date}
+              end_date={@delegation.end_date}
+            />
+          </span>
+          <.date_range start_date={@detected_start_date} end_date={@detected_end_date} />
+        </div>
+      </div>
+      <p class="mt-4">
+        Terminy różnią się od tych podanych w zgłoszeniu. Jeśli jest to zmiana celowa, podaj jej powód. Jeśli nie, sprawdź poprawność powyższych danych.
+      </p>
+      <.input
+        field={@form[:date_change_reason]}
+        form="delegation-complete-form"
+        type="textarea"
+        new
+        placeholder="Podaj powód zmiany terminu delegacji..."
+        disabled={!@editable?}
+        class="mt-4"
+      />
+    </section>
+    """
   end
 
   defp safely(fun) do

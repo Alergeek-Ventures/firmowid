@@ -20,6 +20,7 @@ defmodule Firmowid.Ash.Delegations do
       define :list_delegations_for_user, action: :list_for_user, args: [:user_id]
       define :approve_delegation, action: :approve, get_by: [:id]
       define :complete_delegation, action: :complete, get_by: [:id]
+      define :detect_dates, action: :detect_dates
     end
 
     resource DelegationExpense do
