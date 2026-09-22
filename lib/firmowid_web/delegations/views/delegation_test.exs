@@ -179,6 +179,27 @@ defmodule FirmowidWeb.Delegations.Views.DelegationTest do
     assert completed_delegation.detected_end_date == ~D[2026-08-12]
   end
 
+  test "shows foreign currency controls when an expense currency changes", %{conn: conn} do
+    {user, delegation} = approved_delegation()
+    expense = seed_expense(delegation, user)
+    {:ok, view, _html} = conn |> log_in_user(user) |> live(~p"/delegacje/#{delegation.id}")
+
+    refute has_element?(view, "#foreign-currency-notice-#{expense.id}")
+
+    view
+    |> element("#expense-currency-#{expense.id}")
+    |> render_change(%{"expense_currencies" => %{expense.id => "EUR"}})
+
+    assert has_element?(view, "#foreign-currency-notice-#{expense.id}", "Wykryto obcą walutę")
+    assert has_element?(view, "#expense-currency-#{expense.id}.bg-turquoise-100")
+    assert has_element?(view, "button", "Mam kwotę z wyciągu")
+    assert has_element?(view, "button", "Przelicz wg kursu NBP")
+
+    view |> element("button", "Mam kwotę z wyciągu") |> render_click()
+
+    assert render(view) =~ "Ta funkcja nie jest jeszcze dostępna."
+  end
+
   test "keeps both edited transport trip dates", %{conn: conn} do
     {user, delegation} = approved_delegation()
 

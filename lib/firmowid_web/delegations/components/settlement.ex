@@ -12,6 +12,8 @@ defmodule FirmowidWeb.Delegations.Components.Settlement do
   alias Phoenix.HTML.Form
   alias Phoenix.LiveView.Rendered
 
+  @company_currency "PLN"
+
   @doc "Renders an expense category, its documents, and upload control."
   @spec expense_section(map()) :: Rendered.t()
   attr :title, :string, required: true
@@ -27,6 +29,7 @@ defmodule FirmowidWeb.Delegations.Components.Settlement do
   attr :trip_forms, :map, required: true
   attr :timezone, :string, required: true
   attr :related_upload, :any, required: true
+  attr :expense_currencies, :map, default: %{}
 
   def expense_section(assigns) do
     ~H"""
@@ -161,7 +164,11 @@ defmodule FirmowidWeb.Delegations.Components.Settlement do
               new
               label="Miejscowość"
             />
-            <.document_fields expense={expense} form={forms.expense} />
+            <.document_fields
+              expense={expense}
+              form={forms.expense}
+              currency={Map.get(@expense_currencies, expense.id)}
+            />
             <.input
               :if={@kind == "accommodation"}
               id={"#{@kind}-arrival-date-#{expense.id}"}
@@ -520,8 +527,18 @@ defmodule FirmowidWeb.Delegations.Components.Settlement do
 
   attr :expense, :any, required: true
   attr :form, Form, required: true
+  attr :currency, :string, default: nil
 
   defp document_fields(assigns) do
+    amount_field = assigns.form[:expense_amount]
+    currency = assigns.currency || expense_currency(amount_field.value)
+
+    assigns =
+      assigns
+      |> assign(:amount_field, amount_field)
+      |> assign(:currency, currency)
+      |> assign(:foreign_currency?, currency != @company_currency)
+
     ~H"""
     <.input
       id={"document-number-#{@expense.id}"}
@@ -547,7 +564,6 @@ defmodule FirmowidWeb.Delegations.Components.Settlement do
           new
           min="0"
           step="0.01"
-          aria-describedby={"expense-amount-currency-#{@expense.id}"}
           input_class="w-25"
         >
           <:label_slot>
@@ -557,15 +573,68 @@ defmodule FirmowidWeb.Delegations.Components.Settlement do
           </:label_slot>
         </.input>
       </div>
-      <span
-        id={"expense-amount-currency-#{@expense.id}"}
-        class="text-grey-500 shrink-0 pb-2 text-sm whitespace-nowrap"
-      >
-        PLN
-      </span>
+      <form phx-change="select-expense-currency">
+        <.input
+          id={"expense-currency-#{@expense.id}"}
+          name={"expense_currencies[#{@expense.id}]"}
+          value={@currency}
+          type="select"
+          new
+          options={currency_options()}
+          input_class={["w-24 shrink-0", @foreign_currency? && "bg-turquoise-100"]}
+          aria-label="Waluta"
+        />
+      </form>
     </div>
+    <.foreign_currency_notice :if={@foreign_currency?} expense_id={@expense.id} />
     """
   end
+
+  attr :expense_id, :string, required: true
+
+  defp foreign_currency_notice(assigns) do
+    ~H"""
+    <section
+      id={"foreign-currency-notice-#{@expense_id}"}
+      class="bg-turquoise-100 border-grey-200 text-turquoise-700 mt-1 flex w-full flex-wrap items-center justify-between gap-3 rounded-lg border p-6 sm:col-span-2 lg:col-span-3"
+    >
+      <p>Wykryto obcą walutę</p>
+      <div class="flex gap-2">
+        <.button
+          type="button"
+          variant="primary"
+          accent="turquoise"
+          size="small"
+          phx-click="foreign-currency-action"
+          phx-value-action="statement"
+        >Mam kwotę z wyciągu</.button>
+        <.button
+          type="button"
+          variant="primary"
+          accent="turquoise"
+          size="small"
+          phx-click="foreign-currency-action"
+          phx-value-action="nbp"
+        >Przelicz wg kursu NBP</.button>
+      </div>
+    </section>
+    """
+  end
+
+  defp currency_options do
+    popular = ~w(PLN EUR GBP USD)
+    currencies = Enum.map(Money.known_current_currencies(), &Atom.to_string/1)
+
+    [
+      {"Najczęściej używane", popular},
+      {"Wszystkie waluty", currencies -- popular}
+    ]
+  end
+
+  defp expense_currency(%Money{} = amount), do: amount |> Money.to_currency_code() |> Atom.to_string()
+
+  defp expense_currency(%{"currency" => currency}) when is_binary(currency), do: currency
+  defp expense_currency(_amount), do: @company_currency
 
   attr :expense, :any, required: true
   attr :kind, :string, required: true
