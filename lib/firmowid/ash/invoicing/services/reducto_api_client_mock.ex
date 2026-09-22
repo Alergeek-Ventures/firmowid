@@ -85,7 +85,7 @@ defmodule Firmowid.Ash.Invoicing.Services.ReductoApiClientMock do
 
   defp delegation_dates(system_prompt) do
     case Regex.run(
-           ~r/between (\d{4}-\d{2}-\d{2}) and (\d{4}-\d{2}-\d{2}), inclusive/,
+           ~r/reported period is (\d{4}-\d{2}-\d{2}) to (\d{4}-\d{2}-\d{2})/,
            system_prompt
          ) do
       [_, start_date, end_date] -> {start_date, end_date}

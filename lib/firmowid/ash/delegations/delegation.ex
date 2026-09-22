@@ -10,6 +10,7 @@ defmodule Firmowid.Ash.Delegations.Delegation do
     extensions: [AshStateMachine]
 
   alias Firmowid.Ash.Core.User
+  alias Firmowid.Ash.Delegations.Validations.HasDateChangeReason
   alias Firmowid.Ash.Delegations.Validations.HasExpenses
   alias Firmowid.Ash.Delegations.Workers.DelegationEmailWorker
   alias Firmowid.Ash.Resource
@@ -94,7 +95,7 @@ defmodule Firmowid.Ash.Delegations.Delegation do
     update :complete do
       description "Mark an in-progress delegation as complete."
       require_atomic? false
-      accept []
+      accept [:date_change_reason]
 
       argument :expenses, {:array, :map}, allow_nil?: false, default: []
 
@@ -106,8 +107,15 @@ defmodule Firmowid.Ash.Delegations.Delegation do
              )
 
       validate {HasExpenses, []}
+      validate {HasDateChangeReason, []}
 
       change transition_state(:complete)
+    end
+
+    update :detect_dates do
+      description "Store delegation dates detected from its evidence documents."
+      require_atomic? false
+      accept [:detected_start_date, :detected_end_date]
     end
   end
 
@@ -135,6 +143,10 @@ defmodule Firmowid.Ash.Delegations.Delegation do
     policy action(:complete) do
       authorize_if expr(status == :in_progress and user_id == ^actor(:id))
     end
+
+    policy action(:detect_dates) do
+      authorize_if expr(status == :in_progress and user_id == ^actor(:id))
+    end
   end
 
   multitenancy do
@@ -160,6 +172,9 @@ defmodule Firmowid.Ash.Delegations.Delegation do
     attribute :advance_payment_amount, AshMoney.Types.Money, allow_nil?: false, public?: true
     attribute :start_date, :date, allow_nil?: false, public?: true
     attribute :end_date, :date, allow_nil?: false, public?: true
+    attribute :detected_start_date, :date, public?: true
+    attribute :detected_end_date, :date, public?: true
+    attribute :date_change_reason, :string, public?: true
 
     attribute :status, :atom do
       allow_nil? false

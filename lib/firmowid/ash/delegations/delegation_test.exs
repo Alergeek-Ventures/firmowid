@@ -81,6 +81,42 @@ defmodule Firmowid.Ash.Delegations.DelegationTest do
              )
   end
 
+  test "detects a delegation end date from a return ticket", %{
+    employee_scope: employee_scope,
+    admin_scope: admin_scope
+  } do
+    delegation = Delegations.create_delegation!(delegation_attrs(), scope: employee_scope)
+    {:ok, delegation} = Delegations.approve_delegation(delegation.id, scope: admin_scope)
+
+    assert {:ok, _expense} =
+             Delegations.create_expense(
+               %{
+                 delegation_id: delegation.id,
+                 kind: :transport,
+                 original_filename: "bilet-powrotny.pdf",
+                 document_number: "POW/1",
+                 details: %{
+                   type: "transport",
+                   trips: [
+                     %{
+                       departure_city: "Kraków",
+                       departure_datetime: ~U[2026-09-11 16:00:00Z],
+                       arrival_city: "Warszawa",
+                       arrival_datetime: ~U[2026-09-12 19:00:00Z]
+                     }
+                   ]
+                 }
+               },
+               scope: employee_scope
+             )
+
+    detected_delegation =
+      Delegations.get_delegation!(delegation.id, scope: employee_scope)
+
+    assert detected_delegation.detected_start_date == nil
+    assert detected_delegation.detected_end_date == ~D[2026-09-12]
+  end
+
   defp delegation_attrs(overrides \\ %{}) do
     Map.merge(
       %{

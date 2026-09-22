@@ -79,9 +79,10 @@ defmodule Firmowid.Ash.Delegations.DelegationExpenseExtractor do
     @system_prompt <>
       """
 
-      Expense category: transport.
-      Include details with type "transport", transport_type, and trips. Each trip must include departure_city, departure_datetime, arrival_city, and arrival_datetime.
-      All trip datetimes must be between #{start_date} and #{end_date}, inclusive.
+       Expense category: transport.
+       Include details with type "transport", transport_type, and trips. Each trip must include departure_city, departure_datetime, arrival_city, and arrival_datetime.
+       The delegation's reported period is #{start_date} to #{end_date}. It is context only.
+       Extract every date and time exactly as it appears in the document. Do not adjust dates to fit the delegation period.
       """
   end
 
@@ -89,9 +90,10 @@ defmodule Firmowid.Ash.Delegations.DelegationExpenseExtractor do
     @system_prompt <>
       """
 
-      Expense category: accommodation.
-      Include details with type "accommodation", locality, arrival_date, departure_date, and an optional description.
-      Arrival and departure dates must be between #{start_date} and #{end_date}, inclusive.
+       Expense category: accommodation.
+       Include details with type "accommodation", locality, arrival_date, departure_date, and an optional description.
+       The delegation's reported period is #{start_date} to #{end_date}. It is context only.
+       Extract every date exactly as it appears in the document. Do not adjust dates to fit the delegation period.
       """
   end
 
