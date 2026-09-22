@@ -331,15 +331,84 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.Template do
 
   attr :sales_invoice, :map, required: true
   attr :show_vat, :boolean, default: true
-  attr :items, :list, required: true
-  attr :title, :string, required: true
+  attr :item, :map, required: true
+  attr :index, :integer, required: true
+  attr :struck, :boolean, default: false
 
-  defp correction_items_section(assigns) do
+  defp correction_item_row(assigns) do
     ~H"""
-    <div>
-      <h3 class="text-grey-600 text-[8px] font-bold uppercase">
-        {@title}
-      </h3>
+    <tr class={["align-top *:py-1 last:*:pb-0", @struck && "text-grey-500 *:line-through"]}>
+      <td class="py-1">{@index}.</td>
+      <td class="max-w-40 py-1">{@item.name}</td>
+      <td class="py-1 text-right">{@item.quantity}</td>
+      <td class="py-1 text-right">{@item.unit}</td>
+      <%= if @sales_invoice.invoice_type == :poland do %>
+        <td class="py-1 text-right">
+          {Money.new(
+            @sales_invoice.currency,
+            @item.unit_price,
+            currency_symbol: ""
+          )}
+        </td>
+        <td :if={@show_vat} class="py-1 text-right">
+          {VatRate.label(@item.vat_rate)}
+        </td>
+        <td class="py-1 text-right">
+          {Money.new(
+            @sales_invoice.currency,
+            @item.net_value,
+            currency_symbol: ""
+          )}
+        </td>
+        <td :if={@show_vat} class="py-1 text-right">
+          {Money.new(
+            @sales_invoice.currency,
+            @item.gross_value,
+            currency_symbol: ""
+          )}
+        </td>
+      <% end %>
+      <%= if @sales_invoice.invoice_type == :foreign do %>
+        <td class="py-1 text-right">
+          {Money.new!(@sales_invoice.currency, @item.unit_price)
+          |> Money.to_string!(currency_symbol: "")}
+        </td>
+        <td class="py-1 text-right">
+          {Money.new!(
+            @sales_invoice.currency,
+            @item.net_value
+          )
+          |> Money.to_string!(currency_symbol: "")}
+        </td>
+      <% end %>
+    </tr>
+    """
+  end
+
+  attr :sales_invoice, :map, required: true
+  attr :show_vat, :boolean, default: true
+  attr :reference_invoice, :map, required: true
+
+  defp correction_items_table(assigns) do
+    compare_vat_rate? = assigns.sales_invoice.invoice_type == :poland and assigns.show_vat
+
+    rows =
+      correction_table_rows(
+        assigns.sales_invoice.sales_invoice_items,
+        assigns.reference_invoice.sales_invoice_items,
+        compare_vat_rate?
+      )
+
+    assigns = assign(assigns, :rows, rows)
+
+    ~H"""
+    <div class="mb-4">
+      <h2 class="text-darkGrey/70 mb-4 text-[8px] font-bold">
+        {case @sales_invoice.invoice_type do
+          :poland -> "TOWARY LUB USŁUGI"
+          :foreign -> "TOWARY LUB USŁUGI / GOODS OR SERVICES"
+        end}
+      </h2>
       <table class="mt-1 w-full">
         <thead class="text-darkGrey/70 text-[8px]/[11px]">
           <%= if @sales_invoice.invoice_type == :poland do %>
@@ -379,101 +448,16 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.Template do
           <% end %>
         </thead>
         <tbody class="text-[10px]/[14px]">
-          <%= for {item, index} <- Enum.with_index(@items, 1) do %>
-            <tr class="align-top *:py-1 last:*:pb-0">
-              <td class="py-1">{index}.</td>
-              <td class="max-w-40 py-1">{item.name}</td>
-              <td class="py-1 text-right">{item.quantity}</td>
-              <td class="py-1 text-right">{item.unit}</td>
-              <%= if @sales_invoice.invoice_type == :poland do %>
-                <td class="py-1 text-right">
-                  {Money.new(
-                    @sales_invoice.currency,
-                    item.unit_price,
-                    currency_symbol: ""
-                  )}
-                </td>
-                <td :if={@show_vat} class="py-1 text-right">
-                  {VatRate.label(item.vat_rate)}
-                </td>
-                <td class="py-1 text-right">
-                  {Money.new(
-                    @sales_invoice.currency,
-                    item.net_value,
-                    currency_symbol: ""
-                  )}
-                </td>
-                <td :if={@show_vat} class="py-1 text-right">
-                  {Money.new(
-                    @sales_invoice.currency,
-                    item.gross_value,
-                    currency_symbol: ""
-                  )}
-                </td>
-              <% end %>
-              <%= if @sales_invoice.invoice_type == :foreign do %>
-                <td class="py-1 text-right">
-                  {Money.new!(@sales_invoice.currency, item.unit_price)
-                  |> Money.to_string!(currency_symbol: "")}
-                </td>
-                <td class="py-1 text-right">
-                  {Money.new!(
-                    @sales_invoice.currency,
-                    item.net_value
-                  )
-                  |> Money.to_string!(currency_symbol: "")}
-                </td>
-              <% end %>
-            </tr>
-          <% end %>
+          <.correction_item_row
+            :for={{item, index, struck} <- @rows}
+            sales_invoice={@sales_invoice}
+            show_vat={@show_vat}
+            item={item}
+            index={index}
+            struck={struck}
+          />
         </tbody>
       </table>
-    </div>
-    """
-  end
-
-  attr :sales_invoice, :map, required: true
-  attr :show_vat, :boolean, default: true
-  attr :reference_invoice, :map, required: true
-
-  defp correction_items_table(assigns) do
-    before_title =
-      case assigns.sales_invoice.invoice_type do
-        :poland -> "Przed korektą"
-        :foreign -> "Przed korektą / Before correction"
-      end
-
-    after_title =
-      case assigns.sales_invoice.invoice_type do
-        :poland -> "Po korekcie"
-        :foreign -> "Po korekcie / After correction"
-      end
-
-    assigns =
-      assigns
-      |> assign(:before_title, before_title)
-      |> assign(:after_title, after_title)
-
-    ~H"""
-    <div class="mb-4 space-y-2.5">
-      <h2 class="text-darkGrey/70 mb-4 text-[8px] font-bold">
-        {case @sales_invoice.invoice_type do
-          :poland -> "TOWARY LUB USŁUGI"
-          :foreign -> "TOWARY LUB USŁUGI / GOODS OR SERVICES"
-        end}
-      </h2>
-      <.correction_items_section
-        sales_invoice={@sales_invoice}
-        show_vat={@show_vat}
-        items={@reference_invoice.sales_invoice_items}
-        title={@before_title}
-      />
-      <.correction_items_section
-        sales_invoice={@sales_invoice}
-        show_vat={@show_vat}
-        items={@sales_invoice.sales_invoice_items}
-        title={@after_title}
-      />
     </div>
     """
   end
@@ -748,10 +732,10 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.Template do
       </div>
       <div class="font-bold">
         <%= if @sales_invoice.is_reverse_charge do %>
-          Odwrotne obciążenie / Reverse charge
+          <div>Odwrotne obciążenie / Reverse charge</div>
         <% end %>
         <%= if @sales_invoice.is_cash_account do %>
-          Metoda kasowa
+          <div>Metoda kasowa</div>
         <% end %>
       </div>
     </div>
@@ -930,20 +914,49 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.Template do
          %{sales_invoice_items: reference_items},
          show_vat
        ) do
-    if length(current_items) == length(reference_items) do
-      compare_vat_rate? = invoice_type == :poland and show_vat
+    compare_vat_rate? = invoice_type == :poland and show_vat
 
+    length(current_items) != length(reference_items) or
       current_items
       |> Enum.zip(reference_items)
-      |> Enum.any?(fn {current_item, reference_item} ->
-        current_item.name != reference_item.name or
-          not Decimal.eq?(current_item.quantity, reference_item.quantity) or
-          current_item.unit != reference_item.unit or
-          not Decimal.eq?(current_item.unit_price, reference_item.unit_price) or
-          (compare_vat_rate? and current_item.vat_rate != reference_item.vat_rate)
+      |> Enum.any?(fn {curr, ref} -> correction_item_changed?(curr, ref, compare_vat_rate?) end)
+  end
+
+  defp correction_item_changed?(current, reference, compare_vat_rate?) do
+    current.name != reference.name or
+      current.unit != reference.unit or
+      (compare_vat_rate? and current.vat_rate != reference.vat_rate) or
+      not Decimal.eq?(current.quantity, reference.quantity) or
+      not Decimal.eq?(current.unit_price, reference.unit_price)
+  end
+
+  defp correction_table_rows(current_items, reference_items, compare_vat_rate?) do
+    paired =
+      current_items
+      |> Enum.zip(reference_items)
+      |> Enum.with_index(1)
+      |> Enum.flat_map(fn {{curr, ref}, index} ->
+        if correction_item_changed?(curr, ref, compare_vat_rate?) do
+          [{ref, index, true}, {curr, index, false}]
+        else
+          [{curr, index, false}]
+        end
       end)
-    else
-      true
-    end
+
+    paired_count = length(paired)
+
+    added =
+      current_items
+      |> Enum.drop(paired_count)
+      |> Enum.with_index(paired_count + 1)
+      |> Enum.map(fn {item, index} -> {item, index, false} end)
+
+    removed =
+      reference_items
+      |> Enum.drop(paired_count)
+      |> Enum.with_index(paired_count + 1)
+      |> Enum.map(fn {item, index} -> {item, index, true} end)
+
+    paired ++ added ++ removed
   end
 end
