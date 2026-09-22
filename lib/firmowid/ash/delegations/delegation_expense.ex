@@ -67,8 +67,7 @@ defmodule Firmowid.Ash.Delegations.DelegationExpense do
 
       validate string_length(:document_number, min: 1), message: "Uzupełnij to pole."
 
-      validate compare(:expense_amount, greater_than: Money.new(:PLN, 0)),
-        message: "musi być większa od zera"
+      validate compare(:expense_amount, greater_than: 0), message: "musi być większa od zera"
 
       validate {ExpenseDetailsMatchKind, []}
       validate {ExpenseDetailsComplete, []}
