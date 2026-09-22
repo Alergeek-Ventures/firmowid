@@ -124,7 +124,7 @@ defmodule FirmowidWeb.Infrastructure.Utilities.PdfHelpers do
 
     # Inline CSS by reading the compiled app.css file
     # CSS includes @font-face rule for Lexend font installed in container
-    css_content = get_app_css()
+    css_content = get_app_css() <> pdf_pagination_css()
 
     """
     <!DOCTYPE html>
@@ -139,6 +139,33 @@ defmodule FirmowidWeb.Infrastructure.Utilities.PdfHelpers do
         #{content}
       </body>
     </html>
+    """
+  end
+
+  # Paged-media rules so long invoices flow across A4 pages instead of
+  # clipping inside the single-page container. Matches PdfUtils
+  # zero-margin print_to_pdf settings.
+  # Subsequent pages receive top and bottom margin
+  defp pdf_pagination_css do
+    """
+    @page {
+      margin-top: 32px;
+      margin-bottom: 32px;
+      margin-left: 0;
+      margin-right: 0;
+    }
+    @page :first {
+      margin-top: 0;
+      margin-bottom: 0;
+    }
+    @media print {
+      html, body { height: auto; min-height: auto; }
+      thead { display: table-header-group; break-inside: avoid; }
+      tfoot { display: table-footer-group; break-inside: avoid; }
+      tr { break-inside: avoid; page-break-inside: avoid; }
+      h2, h3 { break-after: avoid; page-break-after: avoid; }
+      .pdf-keep-together { break-inside: avoid; page-break-inside: avoid; }
+    }
     """
   end
 
