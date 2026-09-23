@@ -13,6 +13,7 @@ defmodule Firmowid.Ash.Delegations.DelegationExpense do
   alias Firmowid.Ash.Delegations.DelegationExpense.Details
   alias Firmowid.Ash.Delegations.Validations.ExpenseDetailsComplete
   alias Firmowid.Ash.Delegations.Validations.ExpenseDetailsMatchKind
+  alias Firmowid.Ash.Delegations.Validations.ForeignCurrencySettlementComplete
   alias Firmowid.Ash.Resource
 
   require Resource
@@ -55,7 +56,16 @@ defmodule Firmowid.Ash.Delegations.DelegationExpense do
       description "Update an expense while settling a delegation."
       primary? true
       require_atomic? false
-      accept [:document_number, :expense_amount, :details]
+
+      accept [
+        :document_number,
+        :expense_amount,
+        :details,
+        :settlement_method,
+        :settlement_amount,
+        :nbp_rate,
+        :nbp_rate_date
+      ]
 
       validate {ExpenseDetailsMatchKind, []}
     end
@@ -63,7 +73,16 @@ defmodule Firmowid.Ash.Delegations.DelegationExpense do
     update :complete do
       description "Validate and save an expense while completing its delegation."
       require_atomic? false
-      accept [:document_number, :expense_amount, :details]
+
+      accept [
+        :document_number,
+        :expense_amount,
+        :details,
+        :settlement_method,
+        :settlement_amount,
+        :nbp_rate,
+        :nbp_rate_date
+      ]
 
       validate string_length(:document_number, min: 1), message: "Uzupełnij to pole."
 
@@ -71,6 +90,7 @@ defmodule Firmowid.Ash.Delegations.DelegationExpense do
 
       validate {ExpenseDetailsMatchKind, []}
       validate {ExpenseDetailsComplete, []}
+      validate {ForeignCurrencySettlementComplete, []}
     end
 
     update :add_related_document do
@@ -83,6 +103,25 @@ defmodule Firmowid.Ash.Delegations.DelegationExpense do
       argument :original_filename, :string, allow_nil?: false
 
       change Firmowid.Ash.Delegations.Changes.AddRelatedExpenseBlob
+    end
+
+    update :add_statement_document do
+      description "Attach a bank statement used to settle a foreign-currency expense."
+      require_atomic? false
+      accept []
+
+      argument :upload_path, :string, allow_nil?: false
+      argument :content_type, :string, allow_nil?: false
+      argument :original_filename, :string, allow_nil?: false
+
+      change Firmowid.Ash.Delegations.Changes.CreateExpenseStatementBlob
+    end
+
+    update :remove_statement_document do
+      description "Detach the bank statement used to settle a foreign-currency expense."
+      require_atomic? false
+      accept []
+      change set_attribute(:statement_blob_id, nil)
     end
 
     update :remove_related_document do
@@ -114,7 +153,15 @@ defmodule Firmowid.Ash.Delegations.DelegationExpense do
       authorize_if relates_to_actor_via([:delegation, :user])
     end
 
-    policy action([:create, :update, :add_related_document, :remove_related_document, :destroy]) do
+    policy action([
+             :create,
+             :update,
+             :add_related_document,
+             :add_statement_document,
+             :remove_statement_document,
+             :remove_related_document,
+             :destroy
+           ]) do
       authorize_if expr(delegation.status == :in_progress and delegation.user_id == ^actor(:id))
     end
 
@@ -147,6 +194,14 @@ defmodule Firmowid.Ash.Delegations.DelegationExpense do
       public?: true,
       default: Money.new(:PLN, 0)
 
+    attribute :settlement_method, :atom,
+      public?: true,
+      constraints: [one_of: [:statement, :nbp]]
+
+    attribute :settlement_amount, AshMoney.Types.Money, public?: true
+    attribute :nbp_rate, :decimal, public?: true
+    attribute :nbp_rate_date, :date, public?: true
+
     attribute :details, Details, allow_nil?: false, public?: true
     Resource.firmowid_timestamps()
   end
@@ -159,6 +214,12 @@ defmodule Firmowid.Ash.Delegations.DelegationExpense do
 
     belongs_to :blob, Blob do
       description "Uploaded expense document."
+      allow_nil? true
+      attribute_writable? true
+    end
+
+    belongs_to :statement_blob, Blob do
+      description "Bank statement documenting the converted expense amount."
       allow_nil? true
       attribute_writable? true
     end

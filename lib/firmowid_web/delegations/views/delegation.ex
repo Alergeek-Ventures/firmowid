@@ -10,6 +10,7 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
   import Phoenix.Component, except: [link: 1]
 
   alias AshPhoenix.Form.Auto
+  alias Firmowid.Ash.Currencies.NbpApiClient
   alias Firmowid.Ash.Delegations
   alias Firmowid.Ash.Delegations.DelegationExpense
   alias Firmowid.Ash.Delegations.DelegationExpenseExtractor
@@ -64,6 +65,10 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
             timezone={@timezone}
             related_upload={Map.get(assigns[:uploads] || %{}, :related_document)}
             expense_currencies={@expense_currencies}
+            foreign_currency_modes={@foreign_currency_modes}
+            settlement_currencies={@settlement_currencies}
+            nbp_settlements={@nbp_settlements}
+            statement_upload={Map.get(assigns[:uploads] || %{}, :statement_document)}
           >
             <:icon><Lucideicons.plane class="size-5" /></:icon>
           </.expense_section>
@@ -81,6 +86,10 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
             timezone={@timezone}
             related_upload={Map.get(assigns[:uploads] || %{}, :related_document)}
             expense_currencies={@expense_currencies}
+            foreign_currency_modes={@foreign_currency_modes}
+            settlement_currencies={@settlement_currencies}
+            nbp_settlements={@nbp_settlements}
+            statement_upload={Map.get(assigns[:uploads] || %{}, :statement_document)}
           >
             <:icon><Lucideicons.bed_double class="size-5" /></:icon>
           </.expense_section>
@@ -98,6 +107,10 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
             timezone={@timezone}
             related_upload={Map.get(assigns[:uploads] || %{}, :related_document)}
             expense_currencies={@expense_currencies}
+            foreign_currency_modes={@foreign_currency_modes}
+            settlement_currencies={@settlement_currencies}
+            nbp_settlements={@nbp_settlements}
+            statement_upload={Map.get(assigns[:uploads] || %{}, :statement_document)}
           >
             <:icon><Lucideicons.wallet class="size-5" /></:icon>
           </.expense_section>
@@ -236,6 +249,16 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
           class="pointer-events-none fixed -top-full -left-full size-px opacity-0"
         />
       </form>
+      <form
+        :if={@editable?}
+        id="statement-document-upload-form"
+        phx-change="upload-statement-document"
+      >
+        <.live_file_input
+          upload={@uploads.statement_document}
+          class="pointer-events-none fixed -top-full -left-full size-px opacity-0"
+        />
+      </form>
     </div>
     """
   end
@@ -245,6 +268,7 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
 
   def handle_event("validate", %{"delegation" => params}, socket) do
     params = merge_expense_currencies(params, socket.assigns.expense_currencies)
+
     date_change = detected_date_change(socket.assigns.delegation, params)
 
     params =
@@ -260,8 +284,29 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
      |> assign_complete_form(form)}
   end
 
-  def handle_event("foreign-currency-action", _params, socket) do
-    {:noreply, put_flash(socket, :info, "Ta funkcja nie jest jeszcze dostępna.")}
+  def handle_event("foreign-currency-action", %{"action" => "notice", "expense-id" => expense_id}, socket) do
+    {:noreply, update(socket, :foreign_currency_modes, &Map.delete(&1, expense_id))}
+  end
+
+  def handle_event("foreign-currency-action", %{"action" => "statement", "expense-id" => expense_id}, socket) do
+    {:noreply, update(socket, :foreign_currency_modes, &Map.put(&1, expense_id, :statement))}
+  end
+
+  def handle_event("foreign-currency-action", %{"action" => "nbp", "expense-id" => expense_id}, socket) do
+    case nbp_settlement(
+           socket,
+           expense_id,
+           Map.get(socket.assigns.settlement_currencies, expense_id, "PLN")
+         ) do
+      {:ok, settlement} ->
+        {:noreply,
+         socket
+         |> update(:foreign_currency_modes, &Map.put(&1, expense_id, :nbp))
+         |> update(:nbp_settlements, &Map.put(&1, expense_id, settlement))}
+
+      {:error, _reason} ->
+        {:noreply, put_flash(socket, :error, "Nie udało się pobrać kursu NBP.")}
+    end
   end
 
   def handle_event("select-expense-currency", %{"expense_currencies" => currencies}, socket) do
@@ -270,10 +315,37 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
     {:noreply, update(socket, :expense_currencies, &Map.put(&1, expense_id, currency))}
   end
 
+  def handle_event("select-settlement-currency", %{"settlement_currencies" => currencies}, socket) do
+    {expense_id, currency} = Enum.at(currencies, 0)
+
+    socket = update(socket, :settlement_currencies, &Map.put(&1, expense_id, currency))
+
+    case Map.get(socket.assigns.foreign_currency_modes, expense_id) do
+      :nbp ->
+        case nbp_settlement(socket, expense_id, currency) do
+          {:ok, settlement} ->
+            {:noreply, update(socket, :nbp_settlements, &Map.put(&1, expense_id, settlement))}
+
+          {:error, _reason} ->
+            {:noreply, put_flash(socket, :error, "Nie udało się pobrać kursu NBP.")}
+        end
+
+      _ ->
+        {:noreply, socket}
+    end
+  end
+
   def handle_event("select-related-expense", %{"id" => expense_id}, socket),
     do: {:noreply, assign(socket, :related_expense_id, expense_id)}
 
+  def handle_event("select-statement-expense", %{"id" => expense_id}, socket),
+    do:
+      {:noreply,
+       socket |> assign(:statement_expense_id, expense_id) |> push_event("preserve-statement-upload-scroll", %{})}
+
   def handle_event("upload-related-document", _params, socket), do: {:noreply, assign(socket, :uploading?, true)}
+
+  def handle_event("upload-statement-document", _params, socket), do: {:noreply, assign(socket, :uploading?, true)}
 
   def handle_event("delete", %{"kind" => kind, "id" => id}, socket) do
     result = safely(fn -> destroy_expense(kind, id, socket.assigns.ash_scope) end)
@@ -298,6 +370,20 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
     case result do
       :ok -> {:noreply, reload(socket)}
       _ -> {:noreply, put_flash(socket, :error, "Nie udało się usunąć powiązanego dokumentu.")}
+    end
+  end
+
+  def handle_event("remove-statement-document", %{"expense-id" => expense_id}, socket) do
+    result =
+      safely(fn ->
+        with {:ok, expense} <- get_expense(nil, expense_id, socket.assigns.ash_scope) do
+          Delegations.remove_statement_document(expense, scope: socket.assigns.ash_scope)
+        end
+      end)
+
+    case result do
+      {:ok, _expense} -> {:noreply, refresh_delegation(socket)}
+      _ -> {:noreply, put_flash(socket, :error, "Nie udało się usunąć wyciągu.")}
     end
   end
 
@@ -326,42 +412,34 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
   def handle_event("submit", _params, %{assigns: %{uploading?: true}} = socket), do: {:noreply, socket}
 
   def handle_event("submit", params, socket) do
-    if foreign_currency_selected?(socket.assigns.expense_currencies) do
-      {:noreply,
-       put_flash(
-         socket,
-         :info,
-         "Rozliczanie dokumentów w obcej walucie nie jest jeszcze dostępne."
-       )}
-    else
-      params =
-        params
-        |> Map.get("delegation", %{})
-        |> merge_expense_currencies(socket.assigns.expense_currencies)
+    params =
+      params
+      |> Map.get("delegation", %{})
+      |> merge_expense_currencies(socket.assigns.expense_currencies)
+      |> merge_foreign_currency_settlements(socket)
 
-      date_change = detected_date_change(socket.assigns.delegation, params)
+    date_change = detected_date_change(socket.assigns.delegation, params)
 
-      params =
-        params
-        |> transform_trip_datetimes(socket.assigns.timezone)
-        |> put_detected_dates(date_change)
+    params =
+      params
+      |> transform_trip_datetimes(socket.assigns.timezone)
+      |> put_detected_dates(date_change)
 
-      case safely(fn -> AshPhoenix.Form.submit(socket.assigns.complete_form, params: params) end) do
-        {:ok, delegation} ->
-          {:noreply, setup_socket(socket, load_delegation!(delegation.id, socket))}
+    case safely(fn -> AshPhoenix.Form.submit(socket.assigns.complete_form, params: params) end) do
+      {:ok, delegation} ->
+        {:noreply, setup_socket(socket, load_delegation!(delegation.id, socket))}
 
-        {:error, %Form{} = complete_form} ->
-          socket =
-            socket
-            |> assign(submission_failed?: true, date_change: date_change)
-            |> assign_complete_form(complete_form)
-            |> scroll_to_date_change(date_change)
+      {:error, %Form{} = complete_form} ->
+        socket =
+          socket
+          |> assign(submission_failed?: true, date_change: date_change)
+          |> assign_complete_form(complete_form)
+          |> scroll_to_date_change(date_change)
 
-          {:noreply, socket}
+        {:noreply, socket}
 
-        {:error, _reason} ->
-          {:noreply, put_flash(socket, :error, "Nie udało się wysłać ewidencji.")}
-      end
+      {:error, _reason} ->
+        {:noreply, put_flash(socket, :error, "Nie udało się wysłać ewidencji.")}
     end
   end
 
@@ -406,6 +484,12 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
             auto_upload: true,
             progress: &handle_related_upload_progress/3
           )
+          |> allow_upload(:statement_document,
+            accept: ~w(.pdf .png .jpg .jpeg),
+            max_entries: 1,
+            auto_upload: true,
+            progress: &handle_statement_upload_progress/3
+          )
 
     socket
     |> assign(
@@ -414,10 +498,14 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
       uploading?: false,
       submission_failed?: false,
       related_expense_id: nil,
+      statement_expense_id: nil,
       page_title: "Rozliczenie delegacji",
       sort_active?: sort_active?,
       date_change: persisted_date_change(delegation),
       expense_currencies: expense_currencies(delegation.expenses),
+      foreign_currency_modes: %{},
+      settlement_currencies: settlement_currencies(delegation.expenses),
+      nbp_settlements: %{},
       upload_forms: upload_forms(socket.assigns.ash_scope)
     )
     |> assign_complete_form(complete_form)
@@ -429,7 +517,7 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
     do:
       Delegations.get_delegation(id,
         scope: socket.assigns.ash_scope,
-        load: [expenses: [blob: [:url], related_blobs: [:url]]],
+        load: [expenses: [blob: [:url], statement_blob: [:url], related_blobs: [:url]]],
         not_found_error?: false
       )
 
@@ -525,6 +613,25 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
     {:noreply, assign(socket, :uploading?, uploads_in_progress?(socket))}
   end
 
+  defp handle_statement_upload_progress(_kind, %{done?: false}, socket), do: {:noreply, assign(socket, :uploading?, true)}
+
+  defp handle_statement_upload_progress(_kind, entry, socket) do
+    expense_id = socket.assigns.statement_expense_id
+
+    socket =
+      case consume_statement_document(socket, entry, expense_id) do
+        {:ok, _expense} ->
+          socket |> refresh_delegation() |> assign(:statement_expense_id, nil)
+
+        {:error, _reason} ->
+          socket
+          |> assign(:statement_expense_id, nil)
+          |> put_flash(:error, "Nie udało się dodać wyciągu.")
+      end
+
+    {:noreply, assign(socket, :uploading?, uploads_in_progress?(socket))}
+  end
+
   defp handle_related_upload_progress(_kind, %{done?: false}, socket), do: {:noreply, assign(socket, :uploading?, true)}
 
   defp handle_related_upload_progress(_kind, entry, socket) do
@@ -564,6 +671,29 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
   end
 
   defp consume_related_document(socket, entry, _expense_id) do
+    consume_uploaded_entry(socket, entry, fn _meta -> {:ok, {:error, :expense_not_selected}} end)
+  end
+
+  defp consume_statement_document(socket, entry, expense_id) when is_binary(expense_id) do
+    consume_uploaded_entry(socket, entry, fn %{path: path} ->
+      {:ok,
+       safely(fn ->
+         with {:ok, expense} <- get_expense(nil, expense_id, socket.assigns.ash_scope) do
+           Delegations.add_statement_document(
+             expense,
+             %{
+               upload_path: path,
+               content_type: entry.client_type,
+               original_filename: entry.client_name
+             },
+             scope: socket.assigns.ash_scope
+           )
+         end
+       end)}
+    end)
+  end
+
+  defp consume_statement_document(socket, entry, _expense_id) do
     consume_uploaded_entry(socket, entry, fn _meta -> {:ok, {:error, :expense_not_selected}} end)
   end
 
@@ -707,10 +837,13 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
   end
 
   defp uploads_in_progress?(socket) do
-    Enum.any?([:transport, :accommodation, :other, :related_document], fn name ->
-      {_completed, in_progress} = uploaded_entries(socket, name)
-      in_progress != []
-    end)
+    Enum.any?(
+      [:transport, :accommodation, :other, :related_document, :statement_document],
+      fn name ->
+        {_completed, in_progress} = uploaded_entries(socket, name)
+        in_progress != []
+      end
+    )
   end
 
   defp transform_expense_params(%{"kind" => kind} = params, _timezone) do
@@ -733,15 +866,39 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
       end
 
     params
-    |> Map.take(["id", "_form_type", "document_number", "expense_amount", "expense_currency"])
+    |> Map.take([
+      "id",
+      "_form_type",
+      "document_number",
+      "expense_amount",
+      "expense_currency",
+      "settlement_method",
+      "settlement_amount",
+      "settlement_currency",
+      "nbp_rate",
+      "nbp_rate_date"
+    ])
     |> normalize_expense_amount()
+    |> normalize_settlement_amount()
     |> Map.put("details", details)
   end
 
   defp transform_expense_params(%{"details" => details} = params, _timezone) do
     params
-    |> Map.take(["id", "_form_type", "document_number", "expense_amount", "expense_currency"])
+    |> Map.take([
+      "id",
+      "_form_type",
+      "document_number",
+      "expense_amount",
+      "expense_currency",
+      "settlement_method",
+      "settlement_amount",
+      "settlement_currency",
+      "nbp_rate",
+      "nbp_rate_date"
+    ])
     |> normalize_expense_amount()
+    |> normalize_settlement_amount()
     |> Map.put("details", details)
   end
 
@@ -759,11 +916,105 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
     end)
   end
 
+  defp normalize_settlement_amount(params) do
+    currency = Map.get(params, "settlement_currency")
+
+    params
+    |> Map.delete("settlement_currency")
+    |> Map.update("settlement_amount", nil, fn amount ->
+      %{"amount" => amount, "currency" => currency || "PLN"}
+    end)
+  end
+
   defp expense_currencies(expenses) do
     Map.new(expenses, fn expense ->
       currency = expense.expense_amount |> Money.to_currency_code() |> Atom.to_string()
       {expense.id, currency}
     end)
+  end
+
+  defp settlement_currencies(expenses) do
+    Map.new(expenses, fn expense ->
+      currency =
+        case expense.settlement_amount do
+          %Money{} = amount -> amount |> Money.to_currency_code() |> Atom.to_string()
+          _ -> "PLN"
+        end
+
+      {expense.id, currency}
+    end)
+  end
+
+  defp merge_foreign_currency_settlements(params, socket) do
+    Map.update(params, "expenses", %{}, fn expenses ->
+      Map.new(expenses, fn {index, expense} ->
+        expense_id = expense["id"]
+        currency = Map.get(socket.assigns.settlement_currencies, expense_id, "PLN")
+
+        expense =
+          case Map.get(socket.assigns.foreign_currency_modes, expense_id) do
+            :statement ->
+              expense
+              |> Map.put("settlement_method", "statement")
+              |> Map.put("settlement_currency", currency)
+
+            :nbp ->
+              case Map.get(socket.assigns.nbp_settlements, expense_id) do
+                %{amount: amount, rate: rate, date: date} ->
+                  expense
+                  |> Map.put("settlement_method", "nbp")
+                  |> Map.put(
+                    "settlement_amount",
+                    Decimal.to_string(Money.to_decimal(amount), :normal)
+                  )
+                  |> Map.put("settlement_currency", currency)
+                  |> Map.put("nbp_rate", Decimal.to_string(rate, :normal))
+                  |> Map.put("nbp_rate_date", Date.to_iso8601(date))
+
+                nil ->
+                  expense
+              end
+
+            _ ->
+              expense
+          end
+
+        {index, expense}
+      end)
+    end)
+  end
+
+  defp nbp_settlement(socket, expense_id, target_currency) do
+    with true <- target_currency == "PLN" or NbpApiClient.supported_currency?(target_currency),
+         %{expense: form} <- Map.fetch!(socket.assigns.expense_forms, expense_id),
+         %Money{} = amount <- form[:expense_amount].value,
+         source_currency = Map.get(socket.assigns.expense_currencies, expense_id, "PLN"),
+         date = nbp_conversion_date(),
+         {:ok, source_rate} <- nbp_rate(source_currency, date),
+         {:ok, target_rate} <- nbp_rate(target_currency, date) do
+      rate = source_rate |> Decimal.div(target_rate) |> Decimal.round(4)
+
+      {:ok,
+       %{
+         amount: Money.new(target_currency, Decimal.mult(Money.to_decimal(amount), rate)),
+         rate: rate,
+         date: date
+       }}
+    else
+      _ -> {:error, :rate_unavailable}
+    end
+  end
+
+  # Kept separate because the purchase-date rule will be configurable later.
+  defp nbp_conversion_date, do: Date.utc_today()
+
+  defp nbp_rate("PLN", _date), do: {:ok, Decimal.new(1)}
+
+  defp nbp_rate(currency, date) do
+    case NbpApiClient.get_exchange_rate(currency, date) do
+      {:ok, %{rate: rate}} -> {:ok, Decimal.from_float(rate)}
+      {:error, _reason} -> {:error, :rate_unavailable}
+    end
   end
 
   defp merge_expense_currencies(params, expense_currencies) do
@@ -773,9 +1024,6 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
       end)
     end)
   end
-
-  defp foreign_currency_selected?(expense_currencies),
-    do: Enum.any?(expense_currencies, fn {_id, currency} -> currency != "PLN" end)
 
   defp transform_trip_datetimes(params, timezone) when is_map(params) do
     params =

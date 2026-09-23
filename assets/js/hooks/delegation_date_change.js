@@ -8,5 +8,15 @@ export const DelegationDateChange = {
         block: "center",
       });
     });
+
+    this.handleEvent("preserve-statement-upload-scroll", () => {
+      this.statementUploadScrollY = window.scrollY;
+    });
+  },
+  updated() {
+    if (this.statementUploadScrollY !== undefined) {
+      window.scrollTo({ top: this.statementUploadScrollY });
+      this.statementUploadScrollY = undefined;
+    }
   },
 };
