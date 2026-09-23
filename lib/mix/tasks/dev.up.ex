@@ -5,7 +5,7 @@ defmodule Mix.Tasks.Dev.Up do
   Sets up a complete worktree development environment.
 
   1. Loads configuration from .env.worktree (or uses defaults)
-  2. Starts Podman Compose services via local/compose.yml (Postgres, SeaweedFS S3, Chromium)
+  2. Starts Podman Compose services via local/compose.yml (Postgres, SeaweedFS S3, Gotenberg)
   3. Runs mix setup (Ash setup/migrations, assets)
   4. Registers the app on the wave.exposed dashboard (`wave dashboard add`) when the
      `wave` CLI is available, otherwise a local Caddy route for `{branch}.firmowid.localhost`,
@@ -33,7 +33,7 @@ defmodule Mix.Tasks.Dev.Up do
     "PORT" => "4000",
     "DB_PORT" => "5433",
     "S3_PORT" => "4566",
-    "CHROME_PORT" => "9222",
+    "GOTENBERG_PORT" => "3000",
     "DEBUGGER_PORT" => "9229",
     "BRANCH" => "main",
     "DATABASE_URL" => "postgresql://postgres:postgres@localhost:5433/firmowid",
@@ -52,9 +52,9 @@ defmodule Mix.Tasks.Dev.Up do
     port = Map.fetch!(env, "PORT")
     db_port = Map.fetch!(env, "DB_PORT")
     s3_port = Map.fetch!(env, "S3_PORT")
-    chrome_port = Map.fetch!(env, "CHROME_PORT")
+    gotenberg_port = Map.fetch!(env, "GOTENBERG_PORT")
 
-    start_services(branch, port, db_port, s3_port, chrome_port)
+    start_services(branch, port, db_port, s3_port, gotenberg_port)
 
     run_setup()
 
@@ -89,7 +89,7 @@ defmodule Mix.Tasks.Dev.Up do
     PORT=#{env["PORT"]}
     DB_PORT=#{env["DB_PORT"]}
     S3_PORT=#{env["S3_PORT"]}
-    CHROME_PORT=#{env["CHROME_PORT"]}
+    GOTENBERG_PORT=#{env["GOTENBERG_PORT"]}
     DEBUGGER_PORT=#{env["DEBUGGER_PORT"]}
     BRANCH=#{env["BRANCH"]}
     DATABASE_URL=#{env["DATABASE_URL"]}
@@ -103,7 +103,7 @@ defmodule Mix.Tasks.Dev.Up do
     Mix.shell().info("Generated .env.worktree with defaults")
   end
 
-  defp start_services(branch, port, db_port, s3_port, chrome_port) do
+  defp start_services(branch, port, db_port, s3_port, gotenberg_port) do
     Mix.shell().info("Starting Podman Compose services...")
 
     compose_env = [
@@ -111,7 +111,7 @@ defmodule Mix.Tasks.Dev.Up do
       {"PORT", to_string(port)},
       {"DB_PORT", to_string(db_port)},
       {"S3_PORT", to_string(s3_port)},
-      {"CHROME_PORT", to_string(chrome_port)}
+      {"GOTENBERG_PORT", to_string(gotenberg_port)}
     ]
 
     compose_result =
