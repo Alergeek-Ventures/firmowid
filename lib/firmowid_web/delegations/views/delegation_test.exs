@@ -57,15 +57,19 @@ defmodule FirmowidWeb.Delegations.Views.DelegationTest do
         user_id: employee.id,
         title: "Zakończony wyjazd służbowy",
         billing_month: ~D[2026-08-01],
+        destination: "Kraków",
+        transport_types: [:railway],
         purpose: "Spotkanie z klientem",
-        advance_payment_amount: Money.new(:PLN, 100),
+        expected_cost: Money.new(:PLN, 100),
         start_date: ~D[2026-08-10],
         end_date: ~D[2026-08-11],
-        status: :complete
+        status: :complete,
+        reference: "U-2026-08-1"
       })
 
     for user <- [employee, admin] do
-      {:ok, view, _html} = conn |> log_in_user(user) |> live(~p"/delegacje/#{delegation.id}")
+      {:ok, view, _html} =
+        conn |> log_in_user(user) |> live(~p"/delegacje/#{delegation.reference}")
 
       assert has_element?(view, "#delegation-settlement-title", "Rozliczenie delegacji")
       refute has_element?(view, "form[id$='-upload-form']")
@@ -167,7 +171,7 @@ defmodule FirmowidWeb.Delegations.Views.DelegationTest do
     {user, delegation} = approved_delegation()
     expense = seed_expense(delegation, user)
 
-    {:ok, view, html} = conn |> log_in_user(user) |> live(~p"/delegacje/#{delegation.id}")
+    {:ok, view, html} = conn |> log_in_user(user) |> live(~p"/delegacje/#{delegation.reference}")
 
     refute html =~ "Zmiana terminu delegacji"
 
@@ -223,7 +227,7 @@ defmodule FirmowidWeb.Delegations.Views.DelegationTest do
   test "shows foreign currency controls when an expense currency changes", %{conn: conn} do
     {user, delegation} = approved_delegation()
     expense = seed_expense(delegation, user)
-    {:ok, view, _html} = conn |> log_in_user(user) |> live(~p"/delegacje/#{delegation.id}")
+    {:ok, view, _html} = conn |> log_in_user(user) |> live(~p"/delegacje/#{delegation.reference}")
 
     refute has_element?(view, "#foreign-currency-notice-#{expense.id}")
     assert has_element?(view, "#delegation-complete-form #expense-currency-#{expense.id}")
@@ -325,7 +329,7 @@ defmodule FirmowidWeb.Delegations.Views.DelegationTest do
     expense = seed_transport_expense(delegation, user)
 
     trip = List.first(expense.details.value.trips)
-    {:ok, view, _html} = conn |> log_in_user(user) |> live(~p"/delegacje/#{delegation.id}")
+    {:ok, view, _html} = conn |> log_in_user(user) |> live(~p"/delegacje/#{delegation.reference}")
 
     params = %{
       "expenses" => %{
