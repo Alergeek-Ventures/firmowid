@@ -30,6 +30,10 @@ defmodule FirmowidWeb.Delegations.Components.Settlement do
   attr :timezone, :string, required: true
   attr :related_upload, :any, required: true
   attr :expense_currencies, :map, default: %{}
+  attr :foreign_currency_modes, :map, default: %{}
+  attr :settlement_currencies, :map, default: %{}
+  attr :nbp_settlements, :map, default: %{}
+  attr :statement_upload, :any, required: true
 
   def expense_section(assigns) do
     ~H"""
@@ -168,6 +172,11 @@ defmodule FirmowidWeb.Delegations.Components.Settlement do
               expense={expense}
               form={forms.expense}
               currency={Map.get(@expense_currencies, expense.id)}
+              foreign_currency_mode={Map.get(@foreign_currency_modes, expense.id, :notice)}
+              settlement_currency={Map.get(@settlement_currencies, expense.id, "PLN")}
+              nbp_settlement={Map.get(@nbp_settlements, expense.id)}
+              statement_upload={@statement_upload}
+              statement_blob={expense.statement_blob}
             />
             <.input
               :if={@kind == "accommodation"}
@@ -528,6 +537,11 @@ defmodule FirmowidWeb.Delegations.Components.Settlement do
   attr :expense, :any, required: true
   attr :form, Form, required: true
   attr :currency, :string, default: nil
+  attr :foreign_currency_mode, :atom, default: :notice
+  attr :settlement_currency, :string, default: @company_currency
+  attr :nbp_settlement, :map, default: nil
+  attr :statement_upload, :any, required: true
+  attr :statement_blob, :any, default: nil
 
   defp document_fields(assigns) do
     amount_field = assigns.form[:expense_amount]
@@ -586,16 +600,33 @@ defmodule FirmowidWeb.Delegations.Components.Settlement do
         />
       </form>
     </div>
-    <.foreign_currency_notice :if={@foreign_currency?} expense_id={@expense.id} />
+    <.foreign_currency_settlement
+      :if={@foreign_currency?}
+      expense={@expense}
+      form={@form}
+      currency={@currency}
+      mode={@foreign_currency_mode}
+      settlement_currency={@settlement_currency}
+      nbp_settlement={@nbp_settlement}
+      statement_upload={@statement_upload}
+      statement_blob={@statement_blob}
+    />
     """
   end
 
-  attr :expense_id, :string, required: true
+  attr :expense, :any, required: true
+  attr :form, Form, required: true
+  attr :currency, :string, required: true
+  attr :mode, :atom, required: true
+  attr :settlement_currency, :string, required: true
+  attr :nbp_settlement, :map, default: nil
+  attr :statement_upload, :any, required: true
+  attr :statement_blob, :any, default: nil
 
-  defp foreign_currency_notice(assigns) do
+  defp foreign_currency_settlement(%{mode: :notice} = assigns) do
     ~H"""
     <section
-      id={"foreign-currency-notice-#{@expense_id}"}
+      id={"foreign-currency-notice-#{@expense.id}"}
       class="bg-turquoise-100 border-grey-200 text-turquoise-700 mt-1 flex w-full flex-wrap items-center justify-between gap-3 rounded-lg border p-6 sm:col-span-2 lg:col-span-3"
     >
       <p>Wykryto obcą walutę</p>
@@ -607,6 +638,7 @@ defmodule FirmowidWeb.Delegations.Components.Settlement do
           size="small"
           phx-click="foreign-currency-action"
           phx-value-action="statement"
+          phx-value-expense-id={@expense.id}
         >Mam kwotę z wyciągu</.button>
         <.button
           type="button"
@@ -615,9 +647,169 @@ defmodule FirmowidWeb.Delegations.Components.Settlement do
           size="small"
           phx-click="foreign-currency-action"
           phx-value-action="nbp"
+          phx-value-expense-id={@expense.id}
         >Przelicz wg kursu NBP</.button>
       </div>
     </section>
+    """
+  end
+
+  defp foreign_currency_settlement(assigns) do
+    assigns = assign(assigns, :mode_label, mode_label(assigns.mode))
+
+    ~H"""
+    <section class="mt-1 grid w-full grid-cols-subgrid gap-3 sm:col-span-2 lg:col-span-3">
+      <div class="flex items-start">
+        <.button
+          type="button"
+          variant="unstyled"
+          class="text-turquoise-700 inline-flex cursor-pointer items-center gap-1 text-sm/6 font-medium"
+          phx-click="foreign-currency-action"
+          phx-value-action="notice"
+          phx-value-expense-id={@expense.id}
+        ><Lucideicons.chevron_left class="size-4" />{@mode_label}</.button>
+      </div>
+      <%= if @mode == :statement do %>
+        <div>
+          <.label for={@statement_upload.ref} class="mb-2">Wyciąg z rachunku</.label>
+          <.statement_document
+            :if={@statement_blob}
+            expense_id={@expense.id}
+            blob={@statement_blob}
+          />
+          <.button
+            :if={!@statement_blob}
+            as="label"
+            for={@statement_upload.ref}
+            type="button"
+            variant="secondary"
+            size="small"
+            class="bg-grey-200 border-grey-200"
+            phx-click="select-statement-expense"
+            phx-value-id={@expense.id}
+          >Wgraj dokument</.button>
+        </div>
+        <.settlement_amount_field
+          form={@form}
+          expense_id={@expense.id}
+          currency={@settlement_currency}
+        />
+      <% else %>
+        <div>
+          <.label class="mb-2">Kurs | {format_date(@nbp_settlement && @nbp_settlement.date)}</.label>
+          <div class="border-grey-200 text-grey-700 rounded-lg border bg-transparent px-3 py-1.5 text-base/tight">
+            {format_rate(@currency, @nbp_settlement, @settlement_currency)}
+          </div>
+        </div>
+        <.nbp_amount_field
+          expense_id={@expense.id}
+          amount={@nbp_settlement && @nbp_settlement.amount}
+          currency={@settlement_currency}
+        />
+      <% end %>
+    </section>
+    """
+  end
+
+  attr :expense_id, :string, required: true
+  attr :blob, :any, required: true
+
+  defp statement_document(assigns) do
+    ~H"""
+    <span class="bg-grey-200 text-grey-600 inline-flex items-center gap-1 rounded px-2 py-1 text-sm font-medium whitespace-nowrap">
+      <.link
+        :if={@blob.url}
+        kind="unstyled"
+        external={@blob.url}
+        target="_blank"
+        rel="noopener noreferrer"
+        class="inline-flex items-center gap-1"
+      ><Lucideicons.file class="size-4 shrink-0" />{@blob.original_filename}</.link>
+      <span :if={!@blob.url} class="inline-flex items-center gap-1">
+        <Lucideicons.file class="size-4 shrink-0" />{@blob.original_filename}
+      </span>
+      <.button
+        type="button"
+        variant="unstyled"
+        class="text-grey-500 cursor-pointer"
+        phx-click="remove-statement-document"
+        phx-value-expense-id={@expense_id}
+        aria-label={"Usuń #{@blob.original_filename}"}
+      ><Lucideicons.x class="size-3" /></.button>
+    </span>
+    """
+  end
+
+  attr :form, Form, required: true
+  attr :expense_id, :string, required: true
+  attr :currency, :string, required: true
+
+  defp settlement_amount_field(assigns) do
+    ~H"""
+    <div class="flex items-end gap-2">
+      <div class="w-25 shrink-0">
+        <.input
+          id={"settlement-amount-#{@expense_id}"}
+          field={@form[:settlement_amount]}
+          form="delegation-complete-form"
+          type="number"
+          new
+          label={"Kwota w #{@currency}"}
+          min="0"
+          step="0.01"
+          placeholder="0,00"
+          input_class="w-25"
+        />
+      </div>
+      <form id={"settlement-currency-form-#{@expense_id}"} phx-change="select-settlement-currency">
+        <.input
+          id={"settlement-currency-#{@expense_id}"}
+          name={"settlement_currencies[#{@expense_id}]"}
+          value={@currency}
+          type="select"
+          new
+          options={nbp_currency_options()}
+          input_class="w-24 shrink-0"
+          aria-label="Waluta rozliczenia"
+        />
+      </form>
+    </div>
+    """
+  end
+
+  attr :expense_id, :string, required: true
+  attr :amount, :any, default: nil
+  attr :currency, :string, required: true
+
+  defp nbp_amount_field(assigns) do
+    ~H"""
+    <div class="flex items-end gap-2">
+      <div class="w-25 shrink-0">
+        <.input
+          id={"settlement-amount-#{@expense_id}"}
+          name={"settlement_amounts[#{@expense_id}]"}
+          form="delegation-complete-form"
+          value={expense_amount_value(@amount)}
+          type="number"
+          new
+          label="Po przeliczeniu"
+          readonly
+          input_class="w-25 bg-transparent text-grey-700"
+        />
+      </div>
+      <form id={"settlement-currency-form-#{@expense_id}"} phx-change="select-settlement-currency">
+        <.input
+          id={"settlement-currency-#{@expense_id}"}
+          name={"settlement_currencies[#{@expense_id}]"}
+          value={@currency}
+          type="select"
+          new
+          options={nbp_currency_options()}
+          input_class="w-24 shrink-0"
+          aria-label="Waluta rozliczenia"
+        />
+      </form>
+    </div>
     """
   end
 
@@ -630,6 +822,27 @@ defmodule FirmowidWeb.Delegations.Components.Settlement do
       {"Wszystkie waluty", currencies -- popular}
     ]
   end
+
+  defp nbp_currency_options do
+    popular = ~w(PLN EUR GBP USD)
+    currencies = ["PLN" | Firmowid.Ash.Currencies.NbpApiClient.supported_currencies()]
+
+    [
+      {"Najczęściej używane", popular},
+      {"Wszystkie waluty", Enum.sort(currencies -- popular)}
+    ]
+  end
+
+  defp mode_label(:statement), do: "Mam kwotę z wyciągu"
+  defp mode_label(:nbp), do: "Przelicz wg kursu NBP"
+
+  defp format_date(nil), do: "—"
+  defp format_date(date), do: Calendar.strftime(date, "%d.%m.%Y")
+
+  defp format_rate(_source, nil, _target), do: "Nie udało się pobrać kursu"
+
+  defp format_rate(source, %{rate: rate}, target),
+    do: "1 #{source} = #{rate |> Decimal.to_string(:normal) |> String.replace(".", ",")} #{target}"
 
   defp expense_currency(%Money{} = amount), do: amount |> Money.to_currency_code() |> Atom.to_string()
 

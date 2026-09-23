@@ -32,6 +32,8 @@ defmodule Firmowid.Ash.Delegations do
       define :destroy_expense, action: :destroy
       define :add_related_document, action: :add_related_document
       define :remove_related_document, action: :remove_related_document
+      define :add_statement_document, action: :add_statement_document
+      define :remove_statement_document, action: :remove_statement_document
     end
 
     resource DelegationExpenseRelatedBlob do

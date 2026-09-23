@@ -199,7 +199,15 @@ defmodule FirmowidWeb.Delegations.Views.DelegationTest do
 
     view |> element("button", "Mam kwotę z wyciągu") |> render_click()
 
-    assert render(view) =~ "Ta funkcja nie jest jeszcze dostępna."
+    refute has_element?(view, "#foreign-currency-notice-#{expense.id}")
+    assert has_element?(view, "label", "Wyciąg z rachunku")
+    assert has_element?(view, "label", "Kwota w PLN")
+    assert has_element?(view, "label", "Wgraj dokument")
+    assert has_element?(view, "button", "Mam kwotę z wyciągu")
+
+    view |> element("button", "Mam kwotę z wyciągu") |> render_click()
+
+    assert has_element?(view, "#foreign-currency-notice-#{expense.id}", "Wykryto obcą walutę")
   end
 
   test "keeps both edited transport trip dates", %{conn: conn} do

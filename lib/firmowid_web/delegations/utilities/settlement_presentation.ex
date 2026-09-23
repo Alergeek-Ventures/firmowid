@@ -7,7 +7,13 @@ defmodule FirmowidWeb.Delegations.Utilities.SettlementPresentation do
   def expenses_for(expenses, kind), do: Enum.filter(expenses, &(&1.kind == kind))
 
   @spec sum([map()]) :: Money.t()
-  def sum(expenses), do: Enum.reduce(expenses, Money.new(:PLN, 0), &Money.add!(&2, &1.expense_amount))
+  def sum(expenses),
+    do: Enum.reduce(expenses, Money.new(:PLN, 0), fn expense, total -> Money.add!(total, settlement_amount(expense)) end)
+
+  @doc "Returns the amount used in the delegation settlement summary."
+  @spec settlement_amount(map()) :: Money.t()
+  def settlement_amount(%{settlement_amount: %Money{} = amount}), do: amount
+  def settlement_amount(expense), do: expense.expense_amount
 
   @spec settlement_balance(Money.t(), Money.t()) :: {String.t(), Money.t()}
   def settlement_balance(total, advance) do
