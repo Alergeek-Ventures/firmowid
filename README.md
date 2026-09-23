@@ -115,7 +115,7 @@ asdf install elixir
 ### 4. Zainstaluj paczki systemowe
 
 ```
-sudo apt-get install -y build-essential git libstdc++6 openssl libncurses6 locales ca-certificates libvips chromium
+sudo apt-get install -y build-essential git libstdc++6 openssl libncurses6 locales ca-certificates libvips
 ```
 
 ### Nix/NixOS: devenv i direnv
@@ -221,7 +221,7 @@ Analityka i flagi funkcjonalności są obsługiwane przez PostHog.
 Dependabot otwiera PR-y w każdy poniedziałek o 06:00 czasu warszawskiego. Śledzi:
 
 - **Paczki Elixir** — `mix.exs` / `mix.lock`
-- **Obrazy kontenerów** — `deployment/Containerfile.*` (app, seaweedfs, chromium)
+- **Obrazy kontenerów** — `deployment/Containerfile.*` (app, seaweedfs, gotenberg)
 - **Obrazy w Compose** — `local/compose.yml` (paradedb, seaweedfs)
 - **GitHub Actions** — wersje akcji w `.github/workflows/`
 
