@@ -921,8 +921,12 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
 
     params
     |> Map.delete("settlement_currency")
-    |> Map.update("settlement_amount", nil, fn amount ->
-      %{"amount" => amount, "currency" => currency || "PLN"}
+    |> Map.update("settlement_amount", nil, fn
+      %{"amount" => _amount} = amount ->
+        if currency, do: Map.put(amount, "currency", currency), else: amount
+
+      amount ->
+        %{"amount" => amount, "currency" => currency || "PLN"}
     end)
   end
 
