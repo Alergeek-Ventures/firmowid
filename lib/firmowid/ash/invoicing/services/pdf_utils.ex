@@ -1,38 +1,17 @@
 defmodule Firmowid.Ash.Invoicing.Services.PdfUtils do
   @moduledoc false
 
+  alias Firmowid.Ash.Invoicing.Services.GotenbergClient
   alias FirmowidWeb.Infrastructure.Utilities.PdfHelpers
 
   @spec render_html_to_pdf(binary(), keyword()) :: {:ok, binary()} | {:error, term()}
-  # sobelow_skip ["Traversal.FileModule"]
-  # ChromicPDF writes the rendered PDF to a temp file path that we allocate
-  # through the PDF library itself, so the path is not user-controlled.
   def render_html_to_pdf(html_content, opts \\ []) do
-    evaluate =
-      Keyword.get(opts, :evaluate, %{
-        expression: "document.querySelector('body').classList.add('bg-white');"
-      })
-
-    wait_for = Keyword.get(opts, :wait_for)
-
-    chromic_opts = [
-      output: fn path -> File.read!(path) end,
-      page_size: Keyword.get(opts, :page_size, "A4"),
-      evaluate: evaluate,
-      print_to_pdf: %{
-        marginTop: 0,
-        marginLeft: 0,
-        marginRight: 0,
-        marginBottom: 0,
-        scale: Keyword.get(opts, :scale, 1.25),
-        printBackground: true
-      }
-    ]
-
-    chromic_opts =
-      if wait_for, do: Keyword.put(chromic_opts, :wait_for, wait_for), else: chromic_opts
-
-    ChromicPDF.print_to_pdf({:html, html_content}, chromic_opts)
+    GotenbergClient.convert_html(html_content,
+      scale: Keyword.get(opts, :scale, 1.25),
+      wait_delay: Keyword.get(opts, :wait_delay),
+      wait_for_expression: Keyword.get(opts, :wait_for_expression),
+      wait_for_selector: Keyword.get(opts, :wait_for_selector)
+    )
   end
 
   @spec render_component_html(module(), atom(), map()) :: binary()

@@ -2,14 +2,13 @@ defmodule FirmowidWeb.HoursRecord.Controllers.Record do
   @moduledoc false
   use FirmowidWeb, :controller
 
+  alias Firmowid.Ash.Invoicing.Services.PdfUtils
   alias Firmowid.Ash.Timetracker
   alias Firmowid.Ash.Timetracker.HoursRecord, as: AshHoursRecord
   alias FirmowidWeb.Infrastructure.Utilities.PdfHelpers
 
   @dialyzer {:no_return, pdf: 2}
 
-  # sobelow_skip ["Traversal.SendFile"]
-  # This is safe because pdf_path is not user-controlled
   def pdf(conn, %{"date" => date}) do
     scope = conn.assigns.ash_scope
 
@@ -58,36 +57,18 @@ defmodule FirmowidWeb.HoursRecord.Controllers.Record do
         avatar_data_uri: avatar_data_uri
       )
 
-    evaluate = %{
-      expression: """
-      document.querySelector('body').classList.add('bg-white');
-      """
-    }
+    {:ok, pdf_binary} = PdfUtils.render_html_to_pdf(html_content, scale: 1.0)
 
-    {:ok, result} =
-      ChromicPDF.print_to_pdf(
-        {:html, html_content},
-        output: fn pdf_path ->
-          conn
-          |> put_resp_header(
-            "content-disposition",
-            "attachment; filename=Ewidencja #{date}.pdf"
-          )
-          |> send_file(200, pdf_path)
-        end,
-        page_size: "A4",
-        evaluate: evaluate,
-        print_to_pdf: %{
-          marginTop: 0,
-          marginLeft: 0,
-          marginRight: 0,
-          marginBottom: 0,
-          scale: 1,
-          printBackground: true
-        }
-      )
-
-    result
+    # sobelow_skip ["XSS.SendResp"]
+    # This is safe because pdf_binary is a generated PDF served as a download,
+    # not user-controlled HTML executed by the browser.
+    conn
+    |> put_resp_content_type("application/pdf")
+    |> put_resp_header(
+      "content-disposition",
+      "attachment; filename=Ewidencja #{date}.pdf"
+    )
+    |> send_resp(200, pdf_binary)
   end
 
   def preview(conn, %{"date" => date}) do
