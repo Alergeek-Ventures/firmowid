@@ -1,6 +1,6 @@
 defmodule FirmowidWeb.Infrastructure.Utilities.PdfHelpers do
   @moduledoc """
-  Helpers for PDF generation with ChromicPDF.
+  Helpers for PDF generation with Gotenberg.
   Handles asset embedding and HTML rendering.
   """
 
@@ -102,7 +102,7 @@ defmodule FirmowidWeb.Infrastructure.Utilities.PdfHelpers do
   @doc """
   Renders a Phoenix template to an HTML string for PDF generation.
 
-  Wraps the content in a complete HTML document with inlined CSS for ChromicPDF.
+  Wraps the content in a complete HTML document with inlined CSS for Gotenberg.
 
   ## Examples
 

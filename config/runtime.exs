@@ -134,19 +134,18 @@ config :ex_money,
 config :firmowid, :s3, s3_config
 
 # S3 bucket for uploads
-# ChromicPDF - configure remote Chrome connection
-# CHROME_ADDRESS: "host:port" format for prod (e.g., "chromium:9222")
-# CHROME_PORT: port only, uses localhost (for local dev/worktree)
 config :firmowid,
   uploads_bucket: System.get_env("S3_BUCKET", "firmowid-uploads")
 
+# Gotenberg - Chromium HTML-to-PDF service
+# GOTENBERG_URL: full URL for prod (e.g., "http://gotenberg:3000")
+# GOTENBERG_PORT: port only, uses localhost (for local dev/worktree)
 cond do
-  chrome_port = System.get_env("CHROME_PORT") ->
-    config :firmowid, ChromicPDF, chrome_address: {"localhost", String.to_integer(chrome_port)}
+  gotenberg_port = System.get_env("GOTENBERG_PORT") ->
+    config :firmowid, :gotenberg, base_url: "http://localhost:#{gotenberg_port}"
 
-  chrome_address = System.get_env("CHROME_ADDRESS") ->
-    [host, port] = String.split(chrome_address, ":")
-    config :firmowid, ChromicPDF, chrome_address: {host, String.to_integer(port)}
+  gotenberg_url = System.get_env("GOTENBERG_URL") ->
+    config :firmowid, :gotenberg, base_url: gotenberg_url
 
   true ->
     :ok
