@@ -7,8 +7,6 @@ config :ash, policies: [show_policy_breakdowns?: true]
 
 config :ash_authentication, debug_authentication_failures?: true
 
-config :firmowid, ChromicPDF, chrome_address: {"localhost", 9222}
-
 config :firmowid, Endpoint,
   http: [port: 4000],
   check_origin: false,
@@ -40,6 +38,8 @@ config :firmowid, Firmowid.Repo,
 config :firmowid, :reducto_api_client,
   upload: [plug: ReductoApiClientMock],
   extract: [plug: ReductoApiClientMock]
+
+config :firmowid, :gotenberg, base_url: "http://localhost:3000"
 
 config :firmowid, :s3,
   host: "localhost",
