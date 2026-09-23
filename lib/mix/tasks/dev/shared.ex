@@ -12,7 +12,7 @@ defmodule Mix.Tasks.Dev.Shared do
       "PORT" => "4000",
       "DB_PORT" => "5433",
       "S3_PORT" => "4566",
-      "CHROME_PORT" => "9222",
+      "GOTENBERG_PORT" => "3000",
       "DEBUGGER_PORT" => "9229",
       "BRANCH" => "main"
     }
@@ -35,7 +35,7 @@ defmodule Mix.Tasks.Dev.Shared do
     Mix.shell().info("  Tidewave:  http://localhost:#{port}/tidewave/mcp")
     Mix.shell().info("  Postgres:  localhost:#{env["DB_PORT"]}")
     Mix.shell().info("  S3:        localhost:#{env["S3_PORT"]}")
-    Mix.shell().info("  Chromium:  localhost:#{env["CHROME_PORT"]}")
+    Mix.shell().info("  Gotenberg:  localhost:#{env["GOTENBERG_PORT"]}")
     Mix.shell().info("  Debugger:  localhost:#{env["DEBUGGER_PORT"]}")
     Mix.shell().info("")
     Mix.shell().info("Logs: tail -f tmp/phoenix.log")
@@ -108,7 +108,7 @@ defmodule Mix.Tasks.Dev.Shared do
   @doc "Builds the compose environment for a configured worktree."
   @spec compose_env(%{String.t() => String.t()}) :: [{String.t(), String.t()}]
   def compose_env(env) do
-    ["PORT", "DB_PORT", "S3_PORT", "CHROME_PORT"]
+    ["PORT", "DB_PORT", "S3_PORT", "GOTENBERG_PORT"]
     |> Enum.map(&{&1, Map.fetch!(env, &1)})
     |> then(&[{"COMPOSE_PROJECT_NAME", "firmowid-#{Map.fetch!(env, "BRANCH")}"} | &1])
   end

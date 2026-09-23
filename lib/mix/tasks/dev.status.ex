@@ -38,8 +38,8 @@ defmodule Mix.Tasks.Dev.Status do
         check_http("http://localhost:#{env["S3_PORT"]}/healthz", &success_response?/1)
       },
       {
-        "Chromium",
-        check_http("http://localhost:#{env["CHROME_PORT"]}/json/version", &success_response?/1)
+        "Gotenberg",
+        check_http("http://localhost:#{env["GOTENBERG_PORT"]}/health", &success_response?/1)
       },
       {"LiveDebugger", check_tcp(env["DEBUGGER_PORT"])}
     ]
