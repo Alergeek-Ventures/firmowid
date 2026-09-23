@@ -58,10 +58,6 @@ config :ex_money,
   exchange_rates_retrieve_every: :never,
   exchange_rates_cache_module: Firmowid.Ash.Currencies.DatabaseCache
 
-config :firmowid, ChromicPDF,
-  discard_stderr: false,
-  no_sandbox: true
-
 config :firmowid, Firmowid.Ash.Currencies.Converter, rates_provider: :mock
 config :firmowid, Firmowid.Cldr, locales: ["pl"]
 

@@ -5,8 +5,6 @@ config :argon2_elixir, t_cost: 1, m_cost: 8
 
 config :ash, policies: [show_policy_breakdowns?: true]
 
-config :firmowid, ChromicPDF, on_demand: true
-
 # In test we don't send emails
 config :firmowid, Firmowid.Mailer, adapter: Swoosh.Adapters.Test
 
