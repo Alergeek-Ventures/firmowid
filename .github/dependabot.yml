@@ -10,7 +10,7 @@
 #
 # Ecosystems:
 #   - mix          → Elixir deps (mix.exs / mix.lock)
-#   - docker       → Containerfiles in /deployment (app, seaweedfs, chromium)
+#   - docker       → Containerfiles in /deployment (app, seaweedfs, gotenberg)
 #   - docker-compose → Service images in /local/compose.yml (paradedb, seaweedfs)
 #   - github-actions → Action versions in .github/workflows/
 
@@ -34,7 +34,7 @@ updates:
           - "minor"
           - "patch"
 
-  # ── Container images (Containerfile.app, .seaweedfs, .chromium) ─────
+  # ── Container images (Containerfile.app, .seaweedfs, .gotenberg) ─────
   - package-ecosystem: "docker"
     directory: "/deployment"
     schedule:
