@@ -187,8 +187,10 @@ defmodule FirmowidWeb.Delegations.Views.DelegationTest do
     refute has_element?(view, "#foreign-currency-notice-#{expense.id}")
 
     view
-    |> element("#expense-currency-#{expense.id}")
-    |> render_change(%{"expense_currencies" => %{expense.id => "EUR"}})
+    |> form("#expense-currency-form-#{expense.id}", %{
+      "expense_currencies" => %{expense.id => "EUR"}
+    })
+    |> render_change()
 
     assert has_element?(view, "#foreign-currency-notice-#{expense.id}", "Wykryto obcą walutę")
     assert has_element?(view, "#expense-currency-#{expense.id}.bg-turquoise-100")
