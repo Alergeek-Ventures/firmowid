@@ -24,7 +24,7 @@ cat > .env.worktree << 'EOF'
 PORT=4000
 DB_PORT=5433
 S3_PORT=4566
-CHROME_PORT=9222
+GOTENBERG_PORT=3000
 DEBUGGER_PORT=9229
 BRANCH=main
 DATABASE_URL=postgresql://postgres:postgres@localhost:5433/firmowid
@@ -38,7 +38,7 @@ cat > .env.worktree << 'EOF'
 PORT={{ branch | hash_port }}
 DB_PORT={{ ('db-' ~ branch) | hash_port }}
 S3_PORT={{ ('s3-' ~ branch) | hash_port }}
-CHROME_PORT={{ ('chrome-' ~ branch) | hash_port }}
+GOTENBERG_PORT={{ ('gotenberg-' ~ branch) | hash_port }}
 DEBUGGER_PORT={{ ('debugger-' ~ branch) | hash_port }}
 BRANCH={{ branch | sanitize }}
 DATABASE_URL=postgresql://postgres:postgres@localhost:{{ ('db-' ~ branch) | hash_port }}/firmowid
