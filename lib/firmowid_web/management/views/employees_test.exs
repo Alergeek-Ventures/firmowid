@@ -299,7 +299,7 @@ defmodule FirmowidWeb.Management.Views.EmployeesTest do
 
     render_hook(view, "change-month", %{"month" => "2026-09-01"})
 
-    assert DelegationsDomain.get_delegation!(delegation.id, scope: current_scope(admin)).billing_month ==
+    assert Delegations.get_delegation!(delegation.id, scope: current_scope(admin)).billing_month ==
              ~D[2026-09-01]
 
     view
@@ -395,7 +395,7 @@ defmodule FirmowidWeb.Management.Views.EmployeesTest do
       destination: "Kraków",
       transport_types: [:railway],
       purpose: "Spotkanie z klientem",
-      advance_payment_amount: Money.new(:PLN, 100),
+      expected_cost: Money.new(:PLN, 100),
       start_date: ~D[2026-09-10],
       end_date: ~D[2026-09-11]
     }
