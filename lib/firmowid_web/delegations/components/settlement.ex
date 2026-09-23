@@ -573,7 +573,7 @@ defmodule FirmowidWeb.Delegations.Components.Settlement do
           </:label_slot>
         </.input>
       </div>
-      <form phx-change="select-expense-currency">
+      <form id={"expense-currency-form-#{@expense.id}"} phx-change="select-expense-currency">
         <.input
           id={"expense-currency-#{@expense.id}"}
           name={"expense_currencies[#{@expense.id}]"}
