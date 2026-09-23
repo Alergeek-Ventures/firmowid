@@ -5,7 +5,7 @@
 #   COMPOSE_PROJECT_NAME - e.g., firmowid-feature-auth (default: firmowid)
 #   DB_PORT              - Postgres port (mapped to container 5432)
 #   S3_PORT              - SeaweedFS S3 port (mapped to container 8333)
-#   CHROME_PORT          - Chromium port (mapped to container 9222)
+#   GOTENBERG_PORT       - Gotenberg port (mapped to container 3000)
 
 services:
   db:
@@ -43,13 +43,13 @@ services:
       timeout: 3s
       retries: 15
 
-  chromium:
+  gotenberg:
     build:
       context: ..
-      dockerfile: deployment/Containerfile.chromium
-    container_name: ${COMPOSE_PROJECT_NAME:-firmowid}-chromium
+      dockerfile: deployment/Containerfile.gotenberg
+    container_name: ${COMPOSE_PROJECT_NAME:-firmowid}-gotenberg
     ports:
-      - "${CHROME_PORT:-9222}:9222"
+      - "${GOTENBERG_PORT:-3000}:3000"
     healthcheck:
       test:
         [
@@ -58,7 +58,7 @@ services:
           "--fail",
           "--silent",
           "--show-error",
-          "http://127.0.0.1:9222/json/version",
+          "http://127.0.0.1:3000/health",
         ]
       interval: 30s
       timeout: 10s
