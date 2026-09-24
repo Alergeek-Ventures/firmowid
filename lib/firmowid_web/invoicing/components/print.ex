@@ -8,7 +8,7 @@ defmodule FirmowidWeb.Invoicing.Components.Print do
   def a4_page(assigns) do
     ~H"""
     <div class={[
-      "relative mx-auto box-content flex min-h-[calc(842px-2*32px)] w-[calc(595px-2*32px)] flex-col bg-white p-8 print:h-auto print:min-h-[calc(842px-2*32px)]",
+      "relative mx-auto box-content flex min-h-[calc(842px-2*32px)] w-[calc(595px-2*32px)] flex-col bg-white p-8 print:h-auto print:min-h-0 print:w-full print:p-0",
       @class
     ]}>
       {render_slot(@inner_block)}
@@ -21,13 +21,11 @@ defmodule FirmowidWeb.Invoicing.Components.Print do
 
   def internal_note_page(assigns) do
     ~H"""
-    <.a4_page class="mt-4">
+    <.a4_page class="mt-4 print:static">
       <div class="flex h-full flex-col">
-        <div class="mt-6 flex-1 text-sm/6 whitespace-pre-wrap text-neutral-900">
-          {@internal_note}
-        </div>
+        <div class="mt-6 flex-1 text-sm/6 whitespace-pre-wrap text-neutral-900">{@internal_note}</div>
 
-        <div class="flex w-full flex-col items-center justify-center">
+        <div class="flex w-full flex-col items-center justify-center print:absolute print:inset-x-0 print:bottom-0">
           <%= if @footer_logo_data_uri do %>
             <img src={@footer_logo_data_uri} class="mb-2 size-8 object-contain" />
           <% end %>

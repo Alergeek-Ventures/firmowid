@@ -24,10 +24,15 @@ defmodule Firmowid.Ash.Invoicing.Services.PdfAugmentations.InternalNote do
     footer_logo_data_uri = PdfHelpers.file_to_data_uri(footer_logo_path())
 
     note_html =
-      PdfUtils.render_component_html(Print, :internal_note_page, %{
-        internal_note: internal_note,
-        footer_logo_data_uri: footer_logo_data_uri
-      })
+      PdfHelpers.render_pdf_html(
+        Print,
+        :internal_note_page,
+        %{
+          internal_note: internal_note,
+          footer_logo_data_uri: footer_logo_data_uri
+        },
+        page_margins: %{top: 32, bottom: 32, left: 32, right: 32}
+      )
 
     with {:ok, note_pdf} <- PdfUtils.render_html_to_pdf(note_html, scale: 1.25) do
       PdfUtils.insert_page_after_first(pdf_binary, note_pdf)
