@@ -68,6 +68,7 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
             foreign_currency_modes={@foreign_currency_modes}
             nbp_settlements={@nbp_settlements}
             statement_upload={Map.get(assigns[:uploads] || %{}, :statement_document)}
+            statement_expense_id={@statement_expense_id}
           >
             <:icon><Lucideicons.plane class="size-5" /></:icon>
           </.expense_section>
@@ -88,6 +89,7 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
             foreign_currency_modes={@foreign_currency_modes}
             nbp_settlements={@nbp_settlements}
             statement_upload={Map.get(assigns[:uploads] || %{}, :statement_document)}
+            statement_expense_id={@statement_expense_id}
           >
             <:icon><Lucideicons.bed_double class="size-5" /></:icon>
           </.expense_section>
@@ -108,6 +110,7 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
             foreign_currency_modes={@foreign_currency_modes}
             nbp_settlements={@nbp_settlements}
             statement_upload={Map.get(assigns[:uploads] || %{}, :statement_document)}
+            statement_expense_id={@statement_expense_id}
           >
             <:icon><Lucideicons.wallet class="size-5" /></:icon>
           </.expense_section>
