@@ -7,6 +7,7 @@ defmodule Firmowid.Ash.Invoicing.Services.SalesInvoiceBasePdf do
   alias Firmowid.Ash.Invoicing.SalesInvoice
   alias Firmowid.Ash.Invoicing.Services.PdfUtils
   alias FirmowidWeb.Infrastructure.Utilities.PdfHelpers
+  alias FirmowidWeb.Invoicing.SalesInvoices.Components.Pdf
 
   @item_calcs [:net_value, :vat_value, :gross_value]
   @doc """
@@ -32,20 +33,46 @@ defmodule Firmowid.Ash.Invoicing.Services.SalesInvoiceBasePdf do
 
     html_content =
       PdfHelpers.render_pdf_html(
-        FirmowidWeb.Invoicing.SalesInvoices.Components.Pdf,
+        Pdf,
         :sales_invoice,
-        layout: false,
-        sales_invoice: invoice,
-        currency_rate: Invoicing.get_currency_rate(invoice),
-        reference_invoice: invoice.reference_invoice,
-        show_vat: show_vat,
-        logo_data_uri: logo_data_uri,
-        footer_logo_data_uri: footer_logo_data_uri,
-        class: "mx-auto",
-        include_internal_note_page: false
+        [
+          layout: false,
+          sales_invoice: invoice,
+          currency_rate: Invoicing.get_currency_rate(invoice),
+          reference_invoice: invoice.reference_invoice,
+          show_vat: show_vat,
+          logo_data_uri: logo_data_uri,
+          footer_logo_data_uri: footer_logo_data_uri,
+          class: "mx-auto",
+          body_chrome: false,
+          include_internal_note_page: false
+        ],
+        page_margins: %{top: 96, bottom: 204, left: 32, right: 32},
+        first_page_margin_top: 64
       )
 
-    PdfUtils.render_html_to_pdf(html_content, scale: 1.25)
+    PdfUtils.render_html_to_pdf(html_content,
+      scale: 1.25,
+      header_html:
+        PdfHelpers.render_pdf_html(
+          Pdf,
+          :sales_invoice_print_header,
+          [
+            layout: false,
+            sales_invoice: invoice,
+            show_vat: show_vat,
+            logo_data_uri: logo_data_uri
+          ],
+          page_margins: %{top: 64, bottom: 204, left: 32, right: 32}
+        ),
+      footer_html:
+        PdfHelpers.render_pdf_html(
+          Pdf,
+          :sales_invoice_print_footer,
+          [layout: false, sales_invoice: invoice, footer_logo_data_uri: footer_logo_data_uri],
+          page_margins: %{top: 64, bottom: 204, left: 32, right: 32}
+        )
+    )
   end
 
   defp maybe_load_reference_invoice(%{ksef_invoice_kind: kind} = invoice, _ash_opts) when kind != :kor, do: invoice

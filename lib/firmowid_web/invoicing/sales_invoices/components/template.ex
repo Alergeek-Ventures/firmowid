@@ -12,6 +12,72 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.Template do
 
   attr :sales_invoice, :map, required: true
   attr :show_vat, :boolean, default: true
+
+  defp invoice_title(assigns) do
+    ~H"""
+    <div class="text-sm uppercase">
+      {case @sales_invoice.invoice_type do
+        :poland ->
+          case @sales_invoice.ksef_invoice_kind do
+            :vat -> [(@show_vat && "Faktura VAT") || "Faktura"]
+            :kor -> ["Faktura korygująca"]
+          end
+
+        :foreign ->
+          case @sales_invoice.ksef_invoice_kind do
+            :vat ->
+              [(@show_vat && "Faktura VAT / VAT Invoice:") || "Faktura / Invoice:"]
+
+            :kor ->
+              ["Faktura korygująca / Correction Invoice"]
+          end
+      end}
+      <span class="font-bold">
+        {@sales_invoice.invoice_number}
+      </span>
+    </div>
+    """
+  end
+
+  attr :logo_data_uri, :string, default: nil
+  attr :logo_url, :string, default: nil
+
+  defp invoice_logo(assigns) do
+    ~H"""
+    <div class="flex items-center gap-4">
+      <%= if @logo_data_uri do %>
+        <img src={@logo_data_uri} class="size-8" />
+      <% else %>
+        <img
+          :if={@logo_url}
+          src={@logo_url}
+          class="size-8"
+        />
+      <% end %>
+    </div>
+    """
+  end
+
+  attr :sales_invoice, :map, required: true
+  attr :show_vat, :boolean, default: true
+  attr :logo_data_uri, :string, default: nil
+  attr :logo_url, :string, default: nil
+
+  def sales_invoice_print_header(assigns) do
+    ~H"""
+    <div class="absolute inset-x-0 top-8 flex justify-between px-8 text-[10px]">
+      <div class="flex flex-col gap-x-2">
+        <.invoice_title sales_invoice={@sales_invoice} show_vat={@show_vat} />
+      </div>
+      <div>
+        <.invoice_logo logo_data_uri={@logo_data_uri} logo_url={@logo_url} />
+      </div>
+    </div>
+    """
+  end
+
+  attr :sales_invoice, :map, required: true
+  attr :show_vat, :boolean, default: true
   attr :logo_data_uri, :string, default: nil
   attr :logo_url, :string, default: nil
 
@@ -19,95 +85,75 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.Template do
     ~H"""
     <div class="mt-1 flex justify-between text-[10px]">
       <div class="flex flex-col gap-x-2">
-        <div class="text-sm uppercase">
-          {case @sales_invoice.invoice_type do
-            :poland ->
-              case @sales_invoice.ksef_invoice_kind do
-                :vat -> [(@show_vat && "Faktura VAT") || "Faktura"]
-                :kor -> ["Faktura korygująca"]
-              end
-
-            :foreign ->
-              case @sales_invoice.ksef_invoice_kind do
-                :vat ->
-                  [(@show_vat && "Faktura VAT / VAT Invoice:") || "Faktura / Invoice:"]
-
-                :kor ->
-                  ["Faktura korygująca / Correction Invoice"]
-              end
-          end}
-          <span class="font-bold">
-            {@sales_invoice.invoice_number}
-          </span>
-        </div>
-
-        <%= if @sales_invoice.ksef_invoice_kind == :kor do %>
-          <div class="mt-1">
-            <span>
-              {case @sales_invoice.invoice_type do
-                :poland -> "Do faktury nr "
-                :foreign -> "Do faktury nr / For invoice no. "
-              end}
-            </span>
-            <span class="font-bold">{@sales_invoice.corrected_invoice.invoice_number}</span>
-            <span>
-              {case @sales_invoice.invoice_type do
-                :poland -> "z dnia"
-                :foreign -> "z dnia / dated"
-              end}
-              {@sales_invoice.corrected_invoice.issue_date |> Calendar.strftime("%d.%m.%Y")}
-            </span>
-          </div>
-
-          <%= if @sales_invoice.correction_reason && @sales_invoice.correction_reason != "" do %>
-            <div class="mt-1">
-              <span>
-                {case @sales_invoice.invoice_type do
-                  :poland -> "Przyczyna korekty:"
-                  :foreign -> "Przyczyna korekty / Correction reason:"
-                end}
-              </span>
-              <span class="font-bold">{@sales_invoice.correction_reason}</span>
-            </div>
-          <% end %>
-        <% end %>
-
-        <div class={[if(@sales_invoice.ksef_invoice_kind == :kor, do: "mt-4", else: "mt-2")]}>
-          <span>
-            {case @sales_invoice.invoice_type do
-              :poland -> "Data wystawienia:"
-              :foreign -> "Data wystawienia / Issue date:"
-            end}
-          </span>
-          <span class="font-bold">
-            {@sales_invoice.issue_date |> Calendar.strftime("%d.%m.%Y")}
-          </span>
-        </div>
-        <div class="mt-1">
-          <span>
-            {case @sales_invoice.invoice_type do
-              :poland -> "Data sprzedaży:"
-              :foreign -> "Data sprzedaży / Sale date:"
-            end}
-          </span>
-          <span class="font-bold">
-            {@sales_invoice.sale_date |> Calendar.strftime("%d.%m.%Y")}
-          </span>
-        </div>
+        <.invoice_title sales_invoice={@sales_invoice} show_vat={@show_vat} />
+        <.invoice_header_details sales_invoice={@sales_invoice} />
       </div>
       <div>
-        <div class="flex items-center gap-4">
-          <%= if @logo_data_uri do %>
-            <img src={@logo_data_uri} class="size-8" />
-          <% else %>
-            <img
-              :if={@logo_url}
-              src={@logo_url}
-              class="size-8"
-            />
-          <% end %>
-        </div>
+        <.invoice_logo logo_data_uri={@logo_data_uri} logo_url={@logo_url} />
       </div>
+    </div>
+    """
+  end
+
+  attr :sales_invoice, :map, required: true
+
+  defp invoice_header_details(assigns) do
+    ~H"""
+    <%= if @sales_invoice.ksef_invoice_kind == :kor do %>
+      <div class="mt-1 text-[10px]">
+        <span>
+          {case @sales_invoice.invoice_type do
+            :poland -> "Do faktury nr "
+            :foreign -> "Do faktury nr / For invoice no. "
+          end}
+        </span>
+        <span class="font-bold">{@sales_invoice.corrected_invoice.invoice_number}</span>
+        <span>
+          {case @sales_invoice.invoice_type do
+            :poland -> "z dnia"
+            :foreign -> "z dnia / dated"
+          end}
+          {@sales_invoice.corrected_invoice.issue_date |> Calendar.strftime("%d.%m.%Y")}
+        </span>
+      </div>
+
+      <%= if @sales_invoice.correction_reason && @sales_invoice.correction_reason != "" do %>
+        <div class="mt-1 text-[10px]">
+          <span>
+            {case @sales_invoice.invoice_type do
+              :poland -> "Przyczyna korekty:"
+              :foreign -> "Przyczyna korekty / Correction reason:"
+            end}
+          </span>
+          <span class="font-bold">{@sales_invoice.correction_reason}</span>
+        </div>
+      <% end %>
+    <% end %>
+
+    <div class={[
+      "text-[10px]",
+      if(@sales_invoice.ksef_invoice_kind == :kor, do: "mt-4", else: "mt-2")
+    ]}>
+      <span>
+        {case @sales_invoice.invoice_type do
+          :poland -> "Data wystawienia:"
+          :foreign -> "Data wystawienia / Issue date:"
+        end}
+      </span>
+      <span class="font-bold">
+        {@sales_invoice.issue_date |> Calendar.strftime("%d.%m.%Y")}
+      </span>
+    </div>
+    <div class="mt-1 text-[10px]">
+      <span>
+        {case @sales_invoice.invoice_type do
+          :poland -> "Data sprzedaży:"
+          :foreign -> "Data sprzedaży / Sale date:"
+        end}
+      </span>
+      <span class="font-bold">
+        {@sales_invoice.sale_date |> Calendar.strftime("%d.%m.%Y")}
+      </span>
     </div>
     """
   end
@@ -744,17 +790,27 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.Template do
 
   attr :footer_logo_data_uri, :string, default: nil
   attr :invoice_type, :atom, required: true
+  attr :page_counter, :boolean, default: false
 
   defp footer(assigns) do
     ~H"""
-    <div class="mt-auto mr-auto flex items-end justify-start pt-4 text-[8px]">
+    <div class="flex items-end justify-start text-[8px]">
       <div class="flex items-end gap-0.5">
         <%= if @footer_logo_data_uri do %>
           <img src={@footer_logo_data_uri} class="size-10" />
         <% else %>
           <img src="/images/invoice_firmowid_logo.png" class="size-10" />
         <% end %>
-        <p class="text-center">
+        <p>
+          <span :if={@page_counter} class="mb-0.5 block font-semibold">
+            {case @invoice_type do
+              :poland -> "Strona"
+              :foreign -> "Page"
+            end}
+            <span class="pageNumber"></span>
+            <span class="text-grey-400">/</span>
+            <span class="text-grey-400 totalPages"></span>
+          </span>
           {case @invoice_type do
             :poland -> "Faktura wygenerowana za pomocą"
             :foreign -> "Invoice from"
@@ -777,17 +833,10 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.Template do
   attr :sales_invoice, :map, required: true
 
   defp qrcode(assigns) do
-    qrcode =
-      assigns.sales_invoice
-      |> Ksef.invoice_url!()
-      |> EQRCode.encode()
-      |> EQRCode.svg()
-      |> Base.encode64()
-
-    assigns = assign(assigns, :qrcode, qrcode)
+    assigns = assign(assigns, :qrcode, ksef_qrcode_data_uri(assigns.sales_invoice))
 
     ~H"""
-    <div class="absolute right-8 bottom-8 flex w-26 flex-col items-start justify-center">
+    <div class="flex w-26 flex-col items-start justify-center">
       <p class="text-grey-600 px-1 text-[8px] font-medium">
         <%= case @sales_invoice.invoice_type do %>
           <% :poland -> %>
@@ -796,8 +845,34 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.Template do
             Sprawdź w KSeF<br />View in KSeF
         <% end %>
       </p>
-      <img src={"data:image/svg+xml; base64, #{@qrcode}"} alt="KSeF QR code" width="104" height="104" />
+      <img src={"data:image/png; base64, #{@qrcode}"} alt="KSeF QR code" width="104" height="104" />
       <p class="max-w-26 text-center text-[8px]">{@sales_invoice.ksef_number}</p>
+    </div>
+    """
+  end
+
+  defp ksef_qrcode_data_uri(%{ksef_number: nil}), do: nil
+
+  defp ksef_qrcode_data_uri(sales_invoice) do
+    sales_invoice
+    |> Ksef.invoice_url!()
+    |> EQRCode.encode()
+    |> EQRCode.png(width: 104)
+    |> Base.encode64()
+  end
+
+  attr :sales_invoice, :map, required: true
+  attr :footer_logo_data_uri, :string, default: nil
+
+  def sales_invoice_print_footer(assigns) do
+    ~H"""
+    <div class="absolute inset-x-0 bottom-8 flex items-end justify-between px-8 text-[8px]">
+      <.footer
+        footer_logo_data_uri={@footer_logo_data_uri}
+        invoice_type={@sales_invoice.invoice_type}
+        page_counter={true}
+      />
+      <.qrcode :if={@sales_invoice.ksef_number} sales_invoice={@sales_invoice} />
     </div>
     """
   end
@@ -809,6 +884,8 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.Template do
   attr :footer_logo_data_uri, :string, default: nil
   attr :reference_invoice, :map, default: nil
   attr :currency_rate, :map, default: nil
+  attr :include_internal_note_page, :boolean, default: false
+  attr :body_chrome, :boolean, default: true
 
   def sales_invoice(assigns) do
     if assigns.sales_invoice.ksef_invoice_kind == :kor and is_nil(assigns.reference_invoice) do
@@ -819,11 +896,13 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.Template do
     ~H"""
     <Print.a4_page>
       <.invoice_header
+        :if={@body_chrome}
         sales_invoice={@sales_invoice}
         show_vat={@show_vat}
         logo_data_uri={@logo_data_uri}
         logo_url={@logo_url}
       />
+      <.invoice_header_details :if={not @body_chrome} sales_invoice={@sales_invoice} />
       <hr class="border-greyButtonBg my-6" />
       <.seller_buyer_section sales_invoice={@sales_invoice} />
       <hr class="border-greyButtonBg my-6" />
@@ -891,14 +970,18 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.Template do
         </div>
       <% end %>
 
-      <.footer
-        footer_logo_data_uri={@footer_logo_data_uri}
-        invoice_type={@sales_invoice.invoice_type}
-      />
-      <.qrcode
-        :if={@sales_invoice.ksef_number}
-        sales_invoice={@sales_invoice}
-      />
+      <div :if={@body_chrome} class="mt-auto mr-auto pt-4">
+        <.footer
+          footer_logo_data_uri={@footer_logo_data_uri}
+          invoice_type={@sales_invoice.invoice_type}
+        />
+      </div>
+      <div
+        :if={@body_chrome && @sales_invoice.ksef_number}
+        class="absolute right-8 bottom-8 print:right-0 print:bottom-0"
+      >
+        <.qrcode sales_invoice={@sales_invoice} />
+      </div>
     </Print.a4_page>
 
     <Print.internal_note_page
