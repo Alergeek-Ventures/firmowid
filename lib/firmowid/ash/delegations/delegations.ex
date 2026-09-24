@@ -12,6 +12,7 @@ defmodule Firmowid.Ash.Delegations do
   alias Firmowid.Ash.Delegations.Delegation
   alias Firmowid.Ash.Delegations.DelegationExpense
   alias Firmowid.Ash.Delegations.DelegationExpenseRelatedBlob
+  alias Firmowid.Ash.Delegations.DelegationReferenceCounter
 
   resources do
     resource Delegation do
@@ -44,6 +45,8 @@ defmodule Firmowid.Ash.Delegations do
     resource DelegationExpenseRelatedBlob do
       define :read_related_expense_blobs, action: :read
     end
+
+    resource DelegationReferenceCounter
   end
 
   policies do
