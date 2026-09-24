@@ -43,7 +43,11 @@ defmodule Firmowid.Ash.Delegations.Validations.ForeignCurrencySettlementComplete
     end
   end
 
-  defp positive_money?(%Money{} = amount), do: not Money.zero?(amount)
+  defp positive_money?(%Money{} = amount) do
+    Money.to_currency_code(amount) == @company_currency and
+      Decimal.compare(amount.amount, 0) == :gt
+  end
+
   defp positive_money?(_), do: false
 
   defp positive_decimal?(%Decimal{} = value), do: Decimal.compare(value, 0) == :gt

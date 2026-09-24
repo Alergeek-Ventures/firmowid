@@ -268,10 +268,7 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
 
     date_change = detected_date_change(socket.assigns.delegation, params)
 
-    params =
-      params
-      |> transform_trip_datetimes(socket.assigns.timezone)
-      |> put_detected_dates(date_change)
+    params = transform_trip_datetimes(params, socket.assigns.timezone)
 
     form = validate_complete_form(socket.assigns.complete_form, params)
 
@@ -397,10 +394,7 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
 
     date_change = detected_date_change(socket.assigns.delegation, params)
 
-    params =
-      params
-      |> transform_trip_datetimes(socket.assigns.timezone)
-      |> put_detected_dates(date_change)
+    params = transform_trip_datetimes(params, socket.assigns.timezone)
 
     case safely(fn -> AshPhoenix.Form.submit(socket.assigns.complete_form, params: params) end) do
       {:ok, delegation} ->
@@ -1092,21 +1086,6 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
       }
     end
   end
-
-  defp put_detected_dates(params, nil) do
-    params
-    |> Map.put("detected_start_date", nil)
-    |> Map.put("detected_end_date", nil)
-  end
-
-  defp put_detected_dates(params, date_change) do
-    params
-    |> Map.put("detected_start_date", date_to_param(date_change.detected_start_date))
-    |> Map.put("detected_end_date", date_to_param(date_change.detected_end_date))
-  end
-
-  defp date_to_param(%Date{} = date), do: Date.to_iso8601(date)
-  defp date_to_param(nil), do: nil
 
   defp scroll_to_date_change(socket, date_change) when is_map(date_change),
     do: push_event(socket, "scroll-to-date-change", %{})
