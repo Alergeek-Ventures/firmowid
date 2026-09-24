@@ -29,7 +29,7 @@ defmodule Firmowid.Ash.Delegations.DelegationExpense do
   end
 
   actions do
-    defaults [:read, :destroy]
+    defaults [:read]
 
     create :create do
       description "Create a document-backed expense for a delegation."
@@ -44,12 +44,19 @@ defmodule Firmowid.Ash.Delegations.DelegationExpense do
         :details
       ]
 
-      argument :upload_path, :string
-      argument :content_type, :string
+      argument :upload_path, :string, allow_nil?: false
+      argument :content_type, :string, allow_nil?: false
 
       change CreateExpenseBlob
       change UpdateDetectedDelegationDates
       validate {ExpenseDetailsMatchKind, []}
+    end
+
+    destroy :destroy do
+      description "Remove an expense document from a delegation."
+      primary? true
+      require_atomic? false
+      change {UpdateDetectedDelegationDates, operation: :destroy}
     end
 
     update :update do
@@ -68,6 +75,7 @@ defmodule Firmowid.Ash.Delegations.DelegationExpense do
       ]
 
       validate {ExpenseDetailsMatchKind, []}
+      change UpdateDetectedDelegationDates
     end
 
     update :complete do
@@ -214,6 +222,7 @@ defmodule Firmowid.Ash.Delegations.DelegationExpense do
 
     belongs_to :blob, Blob do
       description "Uploaded expense document."
+      # Historical expenses may predate mandatory upload arguments.
       allow_nil? true
       attribute_writable? true
     end

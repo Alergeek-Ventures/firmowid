@@ -6,6 +6,7 @@ defmodule FirmowidWeb.Delegations.Views.DelegationTest do
   import Firmowid.AccountsFixtures
   import Phoenix.LiveViewTest
 
+  alias Firmowid.Ash.Blobs.Blob
   alias Firmowid.Ash.Delegations
   alias Firmowid.Ash.Delegations.DelegationExpense
   alias Firmowid.Ash.Invoicing.Services.ReductoApiClientMock
@@ -92,6 +93,7 @@ defmodule FirmowidWeb.Delegations.Views.DelegationTest do
         %{
           delegation_id: delegation.id,
           organization_id: user.organization_id,
+          blob_id: seed_blob(user).id,
           kind: kind,
           original_filename: "rachunek.pdf",
           document_number: "FV/1",
@@ -203,6 +205,8 @@ defmodule FirmowidWeb.Delegations.Views.DelegationTest do
     assert has_element?(view, "label", "Wyciąg z rachunku")
     assert has_element?(view, "label", "Kwota w PLN")
     assert has_element?(view, "label", "Wgraj dokument")
+    assert has_element?(view, "#settlement-currency-#{expense.id}", "PLN")
+    refute has_element?(view, "form#settlement-currency-form-#{expense.id}")
     assert has_element?(view, "button", "Mam kwotę z wyciągu")
 
     view |> element("button", "Mam kwotę z wyciągu") |> render_click()
@@ -219,6 +223,7 @@ defmodule FirmowidWeb.Delegations.Views.DelegationTest do
         %{
           delegation_id: delegation.id,
           organization_id: user.organization_id,
+          blob_id: seed_blob(user).id,
           kind: :transport,
           original_filename: "bilet.pdf",
           document_number: "BIL/1",
@@ -400,6 +405,7 @@ defmodule FirmowidWeb.Delegations.Views.DelegationTest do
       %{
         delegation_id: delegation.id,
         organization_id: user.organization_id,
+        blob_id: seed_blob(user).id,
         kind: :accommodation,
         original_filename: "rezerwacja.pdf",
         document_number: "REZ/1",
@@ -417,4 +423,13 @@ defmodule FirmowidWeb.Delegations.Views.DelegationTest do
 
   defp restore_env(key, nil), do: Application.delete_env(:firmowid, key)
   defp restore_env(key, value), do: Application.put_env(:firmowid, key, value)
+
+  defp seed_blob(user) do
+    Ash.Seed.seed!(Blob, %{
+      blob_path: "/test/delegations/#{System.unique_integer([:positive])}.pdf",
+      blob_checksum: "delegation-#{System.unique_integer([:positive])}",
+      original_filename: "rachunek.pdf",
+      organization_id: user.organization_id
+    })
+  end
 end

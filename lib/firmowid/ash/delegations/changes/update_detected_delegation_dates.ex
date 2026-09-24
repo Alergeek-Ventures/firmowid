@@ -1,12 +1,12 @@
 defmodule Firmowid.Ash.Delegations.Changes.UpdateDetectedDelegationDates do
-  @moduledoc "Updates a delegation's detected date range after evidence is added."
+  @moduledoc "Updates a delegation's detected date range after evidence changes."
 
   use Ash.Resource.Change
 
   alias Firmowid.Ash.Delegations
 
   @impl true
-  def change(changeset, _opts, context) do
+  def change(changeset, opts, context) do
     Ash.Changeset.after_action(changeset, fn _changeset, expense ->
       with {:ok, delegation} <-
              Delegations.get_delegation(expense.delegation_id,
@@ -14,14 +14,17 @@ defmodule Firmowid.Ash.Delegations.Changes.UpdateDetectedDelegationDates do
                actor: context.actor,
                tenant: context.tenant
              ),
-           {:ok, _delegation} <- update_dates(delegation, expense, context) do
+           {:ok, _delegation} <- update_dates(delegation, expense, opts, context) do
         {:ok, expense}
       end
     end)
   end
 
-  defp update_dates(delegation, expense, context) do
-    dates = delegation.expenses |> prepend_expense(expense) |> Enum.flat_map(&expense_dates/1)
+  defp update_dates(delegation, expense, opts, context) do
+    dates =
+      delegation.expenses
+      |> expenses_after_action(expense, opts)
+      |> Enum.flat_map(&expense_dates/1)
 
     delegation
     |> Ash.Changeset.for_update(:detect_dates, detected_date_params(delegation, dates),
@@ -31,7 +34,11 @@ defmodule Firmowid.Ash.Delegations.Changes.UpdateDetectedDelegationDates do
     |> Ash.update()
   end
 
-  defp prepend_expense(expenses, expense) do
+  defp expenses_after_action(expenses, expense, operation: :destroy) do
+    Enum.reject(expenses, &(&1.id == expense.id))
+  end
+
+  defp expenses_after_action(expenses, expense, _opts) do
     [expense | Enum.reject(expenses, &(&1.id == expense.id))]
   end
 
