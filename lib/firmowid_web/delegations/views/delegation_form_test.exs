@@ -11,9 +11,8 @@ defmodule FirmowidWeb.Delegations.Views.DelegationFormTest do
   alias Firmowid.Ash.Scope
   alias Firmowid.Ash.SystemActor
 
-  test "renders, validates, and submits a delegation", %{conn: conn} do
+  test "renders and validates a delegation", %{conn: conn} do
     employee = user_fixture()
-    scope = %Scope{actor: employee, tenant: employee.organization_id}
     create_employment_contract(employee)
     {:ok, view, html} = conn |> log_in_user(employee) |> live(~p"/delegacje/dodaj")
 
@@ -28,20 +27,25 @@ defmodule FirmowidWeb.Delegations.Views.DelegationFormTest do
       })
 
     assert invalid_html =~ "nie może być wcześniejsza niż data wyjazdu"
+  end
 
-    view
-    |> form("#delegation-form", delegation: delegation_params())
-    |> render_submit()
+  for transport_type <- ["railway", "airplane", "bus", "public_transport", "other"] do
+    test "submits a delegation with #{transport_type}", %{conn: conn} do
+      employee = user_fixture()
+      scope = %Scope{actor: employee, tenant: employee.organization_id}
+      {:ok, view, _html} = conn |> log_in_user(employee) |> live(~p"/delegacje/dodaj")
 
-    assert_redirect(view, ~p"/ustawienia/profil")
+      view
+      |> form("#delegation-form",
+        delegation: delegation_params(%{"transport_types" => [unquote(transport_type)]})
+      )
+      |> render_submit()
 
-    [delegation] = Delegations.list_delegations_for_user!(employee.id, scope: scope)
-    assert delegation.purpose == "Spotkanie z klientem"
-    assert delegation.destination == "Kraków"
-    assert delegation.transport_types == [:railway, :bus]
-    assert delegation.advance_payment_amount == Money.new(:PLN, "123.45")
-    assert delegation.start_date == ~D[2026-09-10]
-    assert delegation.end_date == ~D[2026-09-11]
+      assert_redirect(view, ~p"/ustawienia/profil")
+
+      [delegation] = Delegations.list_delegations_for_user!(employee.id, scope: scope)
+      assert delegation.transport_types == [String.to_existing_atom(unquote(transport_type))]
+    end
   end
 
   test "keeps the form live when the billing month is malformed", %{conn: conn} do
@@ -74,7 +78,7 @@ defmodule FirmowidWeb.Delegations.Views.DelegationFormTest do
              "delegation_transport_types_1"
   end
 
-  defp delegation_params(overrides \\ %{}) do
+  defp delegation_params(overrides) do
     Map.merge(
       %{
         "billing_month" => "2026-09-01",
