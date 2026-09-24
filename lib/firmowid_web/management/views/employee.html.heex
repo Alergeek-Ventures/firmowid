@@ -32,6 +32,13 @@
       >
         Urlopy
       </.tab>
+      <.tab
+        :if={@employee.delegations != []}
+        patch={~p"/zarzadzanie/pracownicy/#{@employee.id}/delegacje"}
+        active={@live_action == :delegations}
+      >
+        Delegacje
+      </.tab>
     </div>
   </div>
 
@@ -44,13 +51,13 @@
           alt="Avatar"
         />
         <.avatar_fallback class="bg-blueBg text-blueText text-2xl">
-          {to_string(get_employee_display_name(@employee) || "")
+          {to_string(@employee.display_name || "")
           |> String.slice(0, 1)
           |> String.upcase()}
         </.avatar_fallback>
       </.avatar>
       <div>
-        <h2 class="text-lg font-medium">{get_employee_display_name(@employee)}</h2>
+        <h2 class="text-lg font-medium">{@employee.display_name}</h2>
         <div
           :if={@employee.slack_url not in [nil, ""]}
           class="text-darkGrey flex items-center gap-2 text-sm"
@@ -213,6 +220,17 @@
           employee={@employee}
           scope={@ash_scope}
         />
+      <% :delegations -> %>
+        <%!-- TODO: Replace this visually consistent placeholder when the delegation tab design is ready. --%>
+        <.card>
+          <.card_header>Delegacje</.card_header>
+          <div class="mt-6">
+            <DelegationsList.delegations_list
+              delegations={@employee.delegations}
+              management?={true}
+            />
+          </div>
+        </.card>
     <% end %>
   </div>
 </div>
