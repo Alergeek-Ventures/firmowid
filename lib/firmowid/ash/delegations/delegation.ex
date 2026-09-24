@@ -12,6 +12,7 @@ defmodule Firmowid.Ash.Delegations.Delegation do
 
   alias Firmowid.Ash.Core.User
   alias Firmowid.Ash.Delegations.Changes.PrepareDelegationCompletion
+  alias Firmowid.Ash.Delegations.Changes.AssignReference
   alias Firmowid.Ash.Delegations.Changes.CreateSignedCommandBlob
   alias Firmowid.Ash.Delegations.Validations.HasDateChangeReason
   alias Firmowid.Ash.Delegations.Validations.HasExpenses
@@ -70,6 +71,7 @@ defmodule Firmowid.Ash.Delegations.Delegation do
 
       change set_attribute(:user_id, actor(:id))
       change set_attribute(:reference, "pending")
+      change AssignReference
 
       validate compare(:end_date, greater_than_or_equal_to: :start_date),
         message: "nie może być wcześniejsza niż data wyjazdu"
@@ -206,7 +208,7 @@ defmodule Firmowid.Ash.Delegations.Delegation do
 
   attributes do
     uuid_v7_primary_key :id
-    attribute :reference, :string, allow_nil?: false, default: "", public?: true
+    attribute :reference, :string, allow_nil?: false, public?: true
     attribute :title, :string, allow_nil?: false, public?: true
     attribute :billing_month, :date, allow_nil?: false, public?: true
     attribute :destination, :string, allow_nil?: false, public?: true
@@ -268,6 +270,6 @@ defmodule Firmowid.Ash.Delegations.Delegation do
   end
 
   identities do
-    identity :unique_reference, [:reference]
+    identity :unique_reference, [:organization_id, :reference]
   end
 end

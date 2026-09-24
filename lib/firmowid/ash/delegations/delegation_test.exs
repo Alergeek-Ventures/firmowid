@@ -6,6 +6,7 @@ defmodule Firmowid.Ash.Delegations.DelegationTest do
   import Firmowid.AccountsFixtures
 
   alias Ash.Error.Forbidden
+  alias Ecto.Adapters.SQL.Sandbox
   alias Firmowid.Ash.Blobs.Blob
   alias Firmowid.Ash.Core
   alias Firmowid.Ash.Delegations
@@ -39,6 +40,81 @@ defmodule Firmowid.Ash.Delegations.DelegationTest do
 
     assert first.reference == "KV-2026-09-1"
     assert second.reference == "KV-2026-09-2"
+  end
+
+  test "shares a calendar-month reference sequence between employees with the same initials", %{
+    employee_scope: employee_scope
+  } do
+    employee = employee_scope.actor
+
+    second_employee = user_in_org_fixture(employee.organization_id)
+
+    second_employee =
+      Core.update_profile!(second_employee, %{name: "Kamil Voss"}, actor: second_employee)
+
+    second_scope = %Scope{actor: second_employee, tenant: employee.organization_id}
+
+    first =
+      Delegations.create_delegation!(delegation_attrs(%{billing_month: ~D[2026-09-01]}),
+        scope: employee_scope
+      )
+
+    second =
+      Delegations.create_delegation!(delegation_attrs(%{billing_month: ~D[2026-09-30]}),
+        scope: second_scope
+      )
+
+    assert first.reference == "KV-2026-09-1"
+    assert second.reference == "KV-2026-09-2"
+  end
+
+  test "uses the same reference namespace independently in each organization", %{
+    employee_scope: employee_scope
+  } do
+    other_employee = user_fixture()
+
+    other_employee =
+      Core.update_profile!(other_employee, %{name: "Kira Voss"}, actor: other_employee)
+
+    other_scope = %Scope{actor: other_employee, tenant: other_employee.organization_id}
+
+    first = Delegations.create_delegation!(delegation_attrs(), scope: employee_scope)
+    second = Delegations.create_delegation!(delegation_attrs(), scope: other_scope)
+
+    assert first.reference == "KV-2026-09-1"
+    assert second.reference == "KV-2026-09-1"
+  end
+
+  test "uses a stable fallback prefix for a blank employee name", %{
+    employee_scope: employee_scope
+  } do
+    employee = %{employee_scope.actor | name: "   "}
+    scope = %Scope{actor: employee, tenant: employee.organization_id}
+
+    delegation = Delegations.create_delegation!(delegation_attrs(), scope: scope)
+
+    assert delegation.reference == "U#{String.upcase(String.slice(employee.id, 0, 8))}-2026-09-1"
+  end
+
+  test "assigns unique consecutive references to concurrent submissions", %{
+    employee_scope: employee_scope
+  } do
+    parent = self()
+
+    references =
+      1..8
+      |> Task.async_stream(
+        fn _ ->
+          :ok = Sandbox.allow(Repo, parent, self())
+          Delegations.create_delegation!(delegation_attrs(), scope: employee_scope).reference
+        end,
+        max_concurrency: 8,
+        ordered: false,
+        timeout: 15_000
+      )
+      |> Enum.map(fn {:ok, reference} -> reference end)
+
+    assert Enum.sort(references) == Enum.map(1..8, &"KV-2026-09-#{&1}")
   end
 
   test "only an administrator can approve a delegation", %{

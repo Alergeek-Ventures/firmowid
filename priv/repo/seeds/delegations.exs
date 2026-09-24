@@ -59,7 +59,10 @@ defmodule Firmowid.Seeds.Delegations do
          expected_cost,
          user_id,
          organization_id
-       ) do
+        ) do
+    reference =
+      "DEMO-#{String.slice(user_id, 0, 8)}-#{Calendar.strftime(Date.beginning_of_month(start_date), "%Y-%m")}-#{start_date.day}"
+
     Ash.Seed.seed!(
       Delegation,
       %{
@@ -73,6 +76,7 @@ defmodule Firmowid.Seeds.Delegations do
         expected_cost: Helpers.money!(:PLN, expected_cost),
         advance_amount: Helpers.money!(:PLN, expected_cost),
         status: :in_progress,
+        reference: reference,
         user_id: user_id,
         organization_id: organization_id
       },
