@@ -104,7 +104,13 @@ defmodule FirmowidWeb.Management.Components.DelegationOrderPdf do
     Enum.map_join(
       types,
       ", ",
-      &%{railway: "kolej", airplane: "samolot", bus: "autobus", other: "inny"}[&1]
+      &%{
+        railway: "kolej",
+        airplane: "samolot",
+        bus: "autobus",
+        public_transport: "komunikacja publiczna",
+        other: "inny"
+      }[&1]
     )
   end
 end
