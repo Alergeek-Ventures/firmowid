@@ -21,11 +21,11 @@ defmodule Mix.Tasks.Dev.Restart do
   @targets [
     {"Phoenix (includes Tidewave + LiveDebugger)", :phoenix},
     {"S3", :s3},
-    {"Chromium", :chromium},
+    {"Gotenberg", :gotenberg},
     {"PostgreSQL (restarts the entire environment: full down/up + volumes)", :postgresql}
   ]
 
-  @all_targets [:phoenix, :s3, :chromium, :postgresql]
+  @all_targets [:phoenix, :s3, :gotenberg, :postgresql]
   @impl Mix.Task
   def run(_args) do
     Application.ensure_all_started(:req)
@@ -72,7 +72,7 @@ defmodule Mix.Tasks.Dev.Restart do
 
   defp restart_selected(targets) do
     env = Shared.load_env()
-    compose_targets = Enum.filter(targets, &(&1 in [:s3, :chromium]))
+    compose_targets = Enum.filter(targets, &(&1 in [:s3, :gotenberg]))
 
     if compose_targets != [] do
       services = Enum.map(compose_targets, &Atom.to_string/1)
@@ -121,10 +121,10 @@ defmodule Mix.Tasks.Dev.Restart do
     wait_for_http_service("S3", "http://localhost:#{port}/healthz", &success_response?/1)
   end
 
-  defp wait_for_service(:chromium, port) do
+  defp wait_for_service(:gotenberg, port) do
     wait_for_http_service(
-      "Chromium",
-      "http://localhost:#{port}/json/version",
+      "Gotenberg",
+      "http://localhost:#{port}/health",
       &success_response?/1
     )
   end
@@ -149,5 +149,5 @@ defmodule Mix.Tasks.Dev.Restart do
   end
 
   defp port_key(:s3), do: "S3_PORT"
-  defp port_key(:chromium), do: "CHROME_PORT"
+  defp port_key(:gotenberg), do: "GOTENBERG_PORT"
 end

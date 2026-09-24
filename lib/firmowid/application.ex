@@ -33,7 +33,6 @@ defmodule Firmowid.Application do
       [
         FirmowidWeb.Core.Telemetry,
         Firmowid.Repo,
-        {ChromicPDF, Application.get_env(:firmowid, ChromicPDF)},
         {Ecto.Migrator, repos: Application.fetch_env!(:firmowid, :ecto_repos)},
         {DNSCluster, query: Application.get_env(:firmowid, :dns_cluster_query) || :ignore},
         {Phoenix.PubSub, name: Firmowid.PubSub},

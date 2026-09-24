@@ -1,6 +1,6 @@
 defmodule FirmowidWeb.Infrastructure.Utilities.PdfHelpers do
   @moduledoc """
-  Helpers for PDF generation with ChromicPDF.
+  Helpers for PDF generation with Gotenberg.
   Handles asset embedding and HTML rendering.
   """
 
@@ -102,14 +102,14 @@ defmodule FirmowidWeb.Infrastructure.Utilities.PdfHelpers do
   @doc """
   Renders a Phoenix template to an HTML string for PDF generation.
 
-  Wraps the content in a complete HTML document with inlined CSS for ChromicPDF.
+  Wraps the content in a complete HTML document with inlined CSS for Gotenberg..
 
   ## Examples
 
        iex> render_pdf_html(FirmowidWeb.Invoicing.SalesInvoices.Components.Pdf, :sales_invoice, assigns)
        "<!DOCTYPE html><html>...</html>"
   """
-  def render_pdf_html(view_module, template, assigns) do
+  def render_pdf_html(view_module, template, assigns, opts \\ []) do
     # Render template to string using Phoenix.Template
     # Template name needs to be a string with format
     template_name = to_string(template)
@@ -124,7 +124,7 @@ defmodule FirmowidWeb.Infrastructure.Utilities.PdfHelpers do
 
     # Inline CSS by reading the compiled app.css file
     # CSS includes @font-face rule for Lexend font installed in container
-    css_content = get_app_css() <> pdf_pagination_css()
+    css_content = get_app_css() <> pdf_pagination_css(page_margins(opts))
 
     """
     <!DOCTYPE html>
@@ -143,22 +143,19 @@ defmodule FirmowidWeb.Infrastructure.Utilities.PdfHelpers do
   end
 
   # Paged-media rules so long invoices flow across A4 pages instead of
-  # clipping inside the single-page container. Matches PdfUtils
-  # zero-margin print_to_pdf settings.
-  # Subsequent pages receive top and bottom margin
-  defp pdf_pagination_css do
+  # clipping inside the single-page container. Vertical margins reserve room for
+  # repeating Gotenberg header/footer files: their height plus the page inset
+  # they keep from the paper edge.
+  defp pdf_pagination_css(page_margins) do
     """
     @page {
-      margin-top: 32px;
-      margin-bottom: 32px;
-      margin-left: 0;
-      margin-right: 0;
+      margin: #{page_margins.top}px #{page_margins.right}px #{page_margins.bottom}px #{page_margins.left}px;
     }
     @page :first {
-      margin-top: 0;
-      margin-bottom: 0;
+      margin-top: 64px;
     }
     @media print {
+      html { font-size: 16px; }
       html, body { height: auto; min-height: auto; }
       thead { display: table-header-group; break-inside: avoid; }
       tfoot { display: table-footer-group; break-inside: avoid; }
@@ -167,6 +164,10 @@ defmodule FirmowidWeb.Infrastructure.Utilities.PdfHelpers do
       .pdf-keep-together { break-inside: avoid; page-break-inside: avoid; }
     }
     """
+  end
+
+  defp page_margins(opts) do
+    Map.merge(%{top: 48, bottom: 192, left: 0, right: 0}, Keyword.get(opts, :page_margins, %{}))
   end
 
   # sobelow_skip ["Traversal.FileModule"]

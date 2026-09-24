@@ -1,0 +1,34 @@
+# Containerfile for Gotenberg service with invoice fonts
+# Upstream Gotenberg ships without Lexend / Open Sans / Montserrat, which the
+# invoice PDFs rely on (see PdfHelpers font handling). This image adds them
+# so local and deployed renders use the same typefaces.
+#
+# Build: docker build -f deployment/Containerfile.gotenberg -t firmowid-gotenberg:latest .
+# Run:   docker run -p 3000:3000 firmowid-gotenberg:latest
+
+FROM gotenberg/gotenberg:8.35.0@sha256:a16a14e1f18a71405624bc028e90d4ef50ea774c352b303639c10bf7b141f760
+
+# Install custom fonts
+USER root
+RUN mkdir -p /usr/share/fonts/truetype/lexend \
+             /usr/share/fonts/truetype/open-sans \
+             /usr/share/fonts/truetype/montserrat && \
+    cd /tmp && \
+    curl -fsSL https://github.com/google/fonts/raw/main/ofl/lexend/Lexend%5Bwght%5D.ttf -o Lexend.ttf && \
+    mv Lexend.ttf /usr/share/fonts/truetype/lexend/ && \
+    curl -fsSL https://github.com/google/fonts/raw/main/ofl/opensans/OpenSans%5Bwdth%2Cwght%5D.ttf -o OpenSans.ttf && \
+    curl -fsSL https://github.com/google/fonts/raw/main/ofl/opensans/OpenSans-Italic%5Bwdth%2Cwght%5D.ttf -o OpenSans-Italic.ttf && \
+    mv OpenSans.ttf OpenSans-Italic.ttf /usr/share/fonts/truetype/open-sans/ && \
+    curl -fsSL https://github.com/google/fonts/raw/main/ofl/montserrat/Montserrat%5Bwght%5D.ttf -o Montserrat.ttf && \
+    curl -fsSL https://github.com/google/fonts/raw/main/ofl/montserrat/Montserrat-Italic%5Bwght%5D.ttf -o Montserrat-Italic.ttf && \
+    mv Montserrat.ttf Montserrat-Italic.ttf /usr/share/fonts/truetype/montserrat/ && \
+    fc-cache -f -v
+
+USER gotenberg
+
+# Gotenberg API port
+EXPOSE 3000
+
+# Health check to ensure the API is responding
+HEALTHCHECK --interval=30s --timeout=10s --retries=3 --start-period=60s \
+  CMD curl --fail --silent --show-error http://127.0.0.1:3000/health || exit 1
