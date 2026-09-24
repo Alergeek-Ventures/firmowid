@@ -31,7 +31,6 @@ defmodule FirmowidWeb.Delegations.Components.Settlement do
   attr :related_upload, :any, required: true
   attr :expense_currencies, :map, default: %{}
   attr :foreign_currency_modes, :map, default: %{}
-  attr :settlement_currencies, :map, default: %{}
   attr :nbp_settlements, :map, default: %{}
   attr :statement_upload, :any, required: true
 
@@ -173,7 +172,6 @@ defmodule FirmowidWeb.Delegations.Components.Settlement do
               form={forms.expense}
               currency={Map.get(@expense_currencies, expense.id)}
               foreign_currency_mode={Map.get(@foreign_currency_modes, expense.id, :notice)}
-              settlement_currency={Map.get(@settlement_currencies, expense.id, "PLN")}
               nbp_settlement={Map.get(@nbp_settlements, expense.id)}
               statement_upload={@statement_upload}
               statement_blob={expense.statement_blob}
@@ -538,7 +536,6 @@ defmodule FirmowidWeb.Delegations.Components.Settlement do
   attr :form, Form, required: true
   attr :currency, :string, default: nil
   attr :foreign_currency_mode, :atom, default: :notice
-  attr :settlement_currency, :string, default: @company_currency
   attr :nbp_settlement, :map, default: nil
   attr :statement_upload, :any, required: true
   attr :statement_blob, :any, default: nil
@@ -606,7 +603,6 @@ defmodule FirmowidWeb.Delegations.Components.Settlement do
       form={@form}
       currency={@currency}
       mode={@foreign_currency_mode}
-      settlement_currency={@settlement_currency}
       nbp_settlement={@nbp_settlement}
       statement_upload={@statement_upload}
       statement_blob={@statement_blob}
@@ -618,7 +614,6 @@ defmodule FirmowidWeb.Delegations.Components.Settlement do
   attr :form, Form, required: true
   attr :currency, :string, required: true
   attr :mode, :atom, required: true
-  attr :settlement_currency, :string, required: true
   attr :nbp_settlement, :map, default: nil
   attr :statement_upload, :any, required: true
   attr :statement_blob, :any, default: nil
@@ -692,19 +687,19 @@ defmodule FirmowidWeb.Delegations.Components.Settlement do
         <.settlement_amount_field
           form={@form}
           expense_id={@expense.id}
-          currency={@settlement_currency}
+          currency="PLN"
         />
       <% else %>
         <div>
           <.label class="mb-2">Kurs | {format_date(@nbp_settlement && @nbp_settlement.date)}</.label>
           <div class="border-grey-200 text-grey-700 rounded-lg border bg-transparent px-3 py-1.5 text-base/tight">
-            {format_rate(@currency, @nbp_settlement, @settlement_currency)}
+            {format_rate(@currency, @nbp_settlement, "PLN")}
           </div>
         </div>
         <.nbp_amount_field
           expense_id={@expense.id}
           amount={@nbp_settlement && @nbp_settlement.amount}
-          currency={@settlement_currency}
+          currency="PLN"
         />
       <% end %>
     </section>
@@ -761,18 +756,10 @@ defmodule FirmowidWeb.Delegations.Components.Settlement do
           input_class="w-25"
         />
       </div>
-      <form id={"settlement-currency-form-#{@expense_id}"} phx-change="select-settlement-currency">
-        <.input
-          id={"settlement-currency-#{@expense_id}"}
-          name={"settlement_currencies[#{@expense_id}]"}
-          value={@currency}
-          type="select"
-          new
-          options={nbp_currency_options()}
-          input_class="w-24 shrink-0"
-          aria-label="Waluta rozliczenia"
-        />
-      </form>
+      <span
+        id={"settlement-currency-#{@expense_id}"}
+        class="text-grey-500 shrink-0 pb-2 text-sm whitespace-nowrap"
+      >{@currency}</span>
     </div>
     """
   end
@@ -797,18 +784,10 @@ defmodule FirmowidWeb.Delegations.Components.Settlement do
           input_class="w-25 bg-transparent text-grey-700"
         />
       </div>
-      <form id={"settlement-currency-form-#{@expense_id}"} phx-change="select-settlement-currency">
-        <.input
-          id={"settlement-currency-#{@expense_id}"}
-          name={"settlement_currencies[#{@expense_id}]"}
-          value={@currency}
-          type="select"
-          new
-          options={nbp_currency_options()}
-          input_class="w-24 shrink-0"
-          aria-label="Waluta rozliczenia"
-        />
-      </form>
+      <span
+        id={"settlement-currency-#{@expense_id}"}
+        class="text-grey-500 shrink-0 pb-2 text-sm whitespace-nowrap"
+      >{@currency}</span>
     </div>
     """
   end
@@ -820,16 +799,6 @@ defmodule FirmowidWeb.Delegations.Components.Settlement do
     [
       {"Najczęściej używane", popular},
       {"Wszystkie waluty", currencies -- popular}
-    ]
-  end
-
-  defp nbp_currency_options do
-    popular = ~w(PLN EUR GBP USD)
-    currencies = ["PLN" | Firmowid.Ash.Currencies.NbpApiClient.supported_currencies()]
-
-    [
-      {"Najczęściej używane", popular},
-      {"Wszystkie waluty", Enum.sort(currencies -- popular)}
     ]
   end
 
