@@ -26,12 +26,19 @@ defmodule Firmowid.Ash.Delegations.Changes.UpdateDetectedDelegationDates do
       |> expenses_after_action(expense, opts)
       |> Enum.flat_map(&expense_dates/1)
 
-    delegation
-    |> Ash.Changeset.for_update(:detect_dates, detected_date_params(delegation, dates),
-      actor: context.actor,
-      tenant: context.tenant
-    )
-    |> Ash.update()
+    params = detected_date_params(delegation, dates)
+
+    with :ok <- require_date_change_reason(delegation, params, opts) do
+      delegation
+      |> Ash.Changeset.for_update(:detect_dates, params,
+        actor: context.actor,
+        tenant: context.tenant,
+        # The expense action that invoked this internal update is already authorized.
+        # credo:disable-for-next-line AshCredo.Check.Warning.AuthorizeFalse
+        authorize?: false
+      )
+      |> Ash.update()
+    end
   end
 
   defp expenses_after_action(expenses, expense, operation: :destroy) do
@@ -83,4 +90,18 @@ defmodule Firmowid.Ash.Delegations.Changes.UpdateDetectedDelegationDates do
 
   defp before_delegation?(date, start_date), do: Date.before?(date, start_date)
   defp after_delegation?(date, end_date), do: Date.after?(date, end_date)
+
+  defp require_date_change_reason(delegation, params, opts) do
+    if opts[:require_date_change_reason?] &&
+         (params.detected_start_date || params.detected_end_date) &&
+         blank?(delegation.date_change_reason) do
+      {:error, field: :date_change_reason, message: "To pole jest wymagane"}
+    else
+      :ok
+    end
+  end
+
+  defp blank?(value) when is_binary(value), do: String.trim(value) == ""
+  defp blank?(nil), do: true
+  defp blank?(_value), do: false
 end

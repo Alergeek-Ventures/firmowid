@@ -584,18 +584,17 @@ defmodule FirmowidWeb.Delegations.Components.Settlement do
           </:label_slot>
         </.input>
       </div>
-      <form id={"expense-currency-form-#{@expense.id}"} phx-change="select-expense-currency">
-        <.input
-          id={"expense-currency-#{@expense.id}"}
-          name={"expense_currencies[#{@expense.id}]"}
-          value={@currency}
-          type="select"
-          new
-          options={currency_options()}
-          input_class={["w-24 shrink-0", @foreign_currency? && "bg-turquoise-100"]}
-          aria-label="Waluta"
-        />
-      </form>
+      <.input
+        id={"expense-currency-#{@expense.id}"}
+        name={"expense_currencies[#{@expense.id}]"}
+        value={@currency}
+        type="select"
+        new
+        options={currency_options()}
+        input_class={["w-24 shrink-0", @foreign_currency? && "bg-turquoise-100"]}
+        phx-change="select-expense-currency"
+        aria-label="Waluta"
+      />
     </div>
     <.foreign_currency_settlement
       :if={@foreign_currency?}

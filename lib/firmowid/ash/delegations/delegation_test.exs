@@ -8,6 +8,7 @@ defmodule Firmowid.Ash.Delegations.DelegationTest do
   alias Ash.Error.Forbidden
   alias Firmowid.Ash.Blobs.Blob
   alias Firmowid.Ash.Delegations
+  alias Firmowid.Ash.Delegations.DelegationExpense
   alias Firmowid.Ash.Scope
 
   setup do
@@ -51,6 +52,98 @@ defmodule Firmowid.Ash.Delegations.DelegationTest do
     {:ok, delegation} = Delegations.approve_delegation(delegation.id, scope: admin_scope)
 
     assert {:error, _} = Delegations.complete_delegation(delegation.id, scope: employee_scope)
+  end
+
+  test "cannot complete a delegation with an incomplete uploaded expense", %{
+    employee_scope: employee_scope,
+    admin_scope: admin_scope
+  } do
+    delegation = Delegations.create_delegation!(delegation_attrs(), scope: employee_scope)
+    {:ok, delegation} = Delegations.approve_delegation(delegation.id, scope: admin_scope)
+
+    _expense =
+      Ash.Seed.seed!(DelegationExpense, %{
+        delegation_id: delegation.id,
+        organization_id: employee_scope.actor.organization_id,
+        blob_id: seed_blob(employee_scope.actor).id,
+        kind: :other,
+        original_filename: "rachunek.pdf",
+        document_number: "RACH/1",
+        expense_amount: Money.new(:PLN, 0),
+        details: %{type: "other", description: "Parking"}
+      })
+
+    assert {:error, _} = Delegations.complete_delegation(delegation.id, scope: employee_scope)
+  end
+
+  test "requires a reason when final expense dates extend the delegation", %{
+    employee_scope: employee_scope,
+    admin_scope: admin_scope
+  } do
+    delegation = Delegations.create_delegation!(delegation_attrs(), scope: employee_scope)
+    {:ok, delegation} = Delegations.approve_delegation(delegation.id, scope: admin_scope)
+
+    expense =
+      seed_expense(delegation, employee_scope.actor,
+        arrival_date: ~D[2026-09-10],
+        departure_date: ~D[2026-09-11]
+      )
+
+    assert {:error, _} =
+             Delegations.complete_delegation(
+               delegation.id,
+               %{
+                 expenses: [
+                   %{
+                     id: expense.id,
+                     details: %{
+                       type: "accommodation",
+                       locality: "Kraków",
+                       arrival_date: ~D[2026-09-10],
+                       departure_date: ~D[2026-09-12]
+                     }
+                   }
+                 ]
+               },
+               scope: employee_scope
+             )
+  end
+
+  test "cannot complete an expense after its delegation is complete", %{
+    employee_scope: employee_scope,
+    admin_scope: admin_scope
+  } do
+    delegation = Delegations.create_delegation!(delegation_attrs(), scope: employee_scope)
+    {:ok, delegation} = Delegations.approve_delegation(delegation.id, scope: admin_scope)
+
+    expense =
+      seed_expense(delegation, employee_scope.actor,
+        arrival_date: ~D[2026-09-10],
+        departure_date: ~D[2026-09-11]
+      )
+
+    assert {:ok, _} = Delegations.complete_delegation(delegation.id, scope: employee_scope)
+
+    assert {:error, %Forbidden{}} =
+             Delegations.complete_expense(expense, %{document_number: "NOWY/1"}, scope: employee_scope)
+  end
+
+  test "rejects negative and non-PLN foreign currency settlements", %{
+    employee_scope: employee_scope,
+    admin_scope: admin_scope
+  } do
+    delegation = Delegations.create_delegation!(delegation_attrs(), scope: employee_scope)
+    {:ok, delegation} = Delegations.approve_delegation(delegation.id, scope: admin_scope)
+    expense = seed_foreign_expense(delegation, employee_scope.actor)
+
+    for settlement_amount <- [Money.new(:PLN, -1), Money.new(:EUR, 100)] do
+      assert {:error, _} =
+               Delegations.complete_expense(
+                 expense,
+                 %{settlement_method: :statement, settlement_amount: settlement_amount},
+                 scope: employee_scope
+               )
+    end
   end
 
   test "rejects transport details with a reversed trip", %{
@@ -200,7 +293,7 @@ defmodule Firmowid.Ash.Delegations.DelegationTest do
         organization_id: user.organization_id
       })
 
-    Ash.Seed.seed!(Firmowid.Ash.Delegations.DelegationExpense, %{
+    Ash.Seed.seed!(DelegationExpense, %{
       delegation_id: delegation.id,
       organization_id: user.organization_id,
       blob_id: blob.id,
@@ -209,6 +302,37 @@ defmodule Firmowid.Ash.Delegations.DelegationTest do
       document_number: "REZ/1",
       expense_amount: Money.new(:PLN, 100),
       details: Map.merge(%{type: "accommodation", locality: "Kraków"}, Map.new(details))
+    })
+  end
+
+  defp seed_foreign_expense(delegation, user) do
+    statement_blob =
+      Ash.Seed.seed!(Blob, %{
+        blob_path: "/test/delegations/statement-#{System.unique_integer([:positive])}.pdf",
+        blob_checksum: "statement-#{System.unique_integer([:positive])}",
+        original_filename: "wyciag.pdf",
+        organization_id: user.organization_id
+      })
+
+    Ash.Seed.seed!(DelegationExpense, %{
+      delegation_id: delegation.id,
+      organization_id: user.organization_id,
+      blob_id: statement_blob.id,
+      statement_blob_id: statement_blob.id,
+      kind: :other,
+      original_filename: "rachunek.pdf",
+      document_number: "RACH/1",
+      expense_amount: Money.new(:EUR, 100),
+      details: %{type: "other", description: "Parking"}
+    })
+  end
+
+  defp seed_blob(user) do
+    Ash.Seed.seed!(Blob, %{
+      blob_path: "/test/delegations/#{System.unique_integer([:positive])}.pdf",
+      blob_checksum: "delegation-#{System.unique_integer([:positive])}",
+      original_filename: "rachunek.pdf",
+      organization_id: user.organization_id
     })
   end
 
