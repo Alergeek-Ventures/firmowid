@@ -772,17 +772,13 @@ defmodule FirmowidWeb.Delegations.Components.Settlement do
     ~H"""
     <div class="flex items-end gap-2">
       <div class="w-25 shrink-0">
-        <.input
+        <.label class="mb-2">Po przeliczeniu</.label>
+        <div
           id={"settlement-amount-#{@expense_id}"}
-          name={"settlement_amounts[#{@expense_id}]"}
-          form="delegation-complete-form"
-          value={expense_amount_value(@amount)}
-          type="number"
-          new
-          label="Po przeliczeniu"
-          readonly
-          input_class="w-25 bg-transparent text-grey-700"
-        />
+          class="border-grey-200 text-grey-700 rounded-lg border bg-transparent px-3 py-1.5 text-base/tight"
+        >
+          {Money.to_string!(@amount, fractional_digits: 2, currency_symbol: "")}
+        </div>
       </div>
       <span
         id={"settlement-currency-#{@expense_id}"}
