@@ -282,6 +282,7 @@ defmodule FirmowidWeb.DesignSystem.Components.CoreComponents do
   attr :error_formatter, :any, default: nil
   attr :show_errors, :boolean, default: true
   attr :disabled, :boolean, default: false
+  attr :phx_change, :string, default: nil
 
   def file_upload(assigns) do
     ~H"""
@@ -298,7 +299,12 @@ defmodule FirmowidWeb.DesignSystem.Components.CoreComponents do
           {@prompt}
         </div>
 
-        <Phoenix.Component.live_file_input upload={@upload} class="sr-only" disabled={@disabled} />
+        <Phoenix.Component.live_file_input
+          upload={@upload}
+          class="sr-only"
+          disabled={@disabled}
+          phx-change={@phx_change}
+        />
 
         <div :if={!Enum.empty?(@upload.entries)}>
           <%= for entry <- @upload.entries do %>
@@ -757,6 +763,7 @@ defmodule FirmowidWeb.DesignSystem.Components.CoreComponents do
     ~H"""
     <div class={["relative", @class]}>
       <button
+        type="button"
         phx-click={
           JS.toggle(
             to: "#dropdown_menu_#{@id}",

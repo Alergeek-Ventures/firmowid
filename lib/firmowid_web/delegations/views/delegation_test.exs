@@ -187,12 +187,16 @@ defmodule FirmowidWeb.Delegations.Views.DelegationTest do
     {:ok, view, _html} = conn |> log_in_user(user) |> live(~p"/delegacje/#{delegation.id}")
 
     refute has_element?(view, "#foreign-currency-notice-#{expense.id}")
+    assert has_element?(view, "#delegation-complete-form #expense-currency-#{expense.id}")
+    refute has_element?(view, "#delegation-complete-form form")
+    refute has_element?(view, "#delegation-complete-form button:not([type])")
 
     view
-    |> element("#expense-currency-#{expense.id}")
-    |> render_change(%{
+    |> form("#delegation-complete-form", %{
+      "delegation" => %{},
       "expense_currencies" => %{expense.id => "EUR"}
     })
+    |> render_change()
 
     assert has_element?(view, "#foreign-currency-notice-#{expense.id}", "Wykryto obcą walutę")
     assert has_element?(view, "#expense-currency-#{expense.id}.bg-turquoise-100")
@@ -212,6 +216,42 @@ defmodule FirmowidWeb.Delegations.Views.DelegationTest do
     view |> element("button", "Mam kwotę z wyciągu") |> render_click()
 
     assert has_element?(view, "#foreign-currency-notice-#{expense.id}", "Wykryto obcą walutę")
+  end
+
+  test "keeps the settlement editable after sorting expenses", %{conn: conn} do
+    {user, delegation} = approved_delegation()
+
+    Ash.Seed.seed!(
+      DelegationExpense,
+      %{
+        delegation_id: delegation.id,
+        organization_id: user.organization_id,
+        blob_id: seed_blob(user).id,
+        kind: :transport,
+        original_filename: "bilet.pdf",
+        document_number: "BIL/1",
+        expense_amount: Money.new(:PLN, 100),
+        details: %{
+          type: "transport",
+          transport_type: :railway,
+          trips: [
+            %{
+              departure_city: "Wrocław",
+              departure_datetime: ~U[2026-08-10 08:00:00Z],
+              arrival_city: "Kraków",
+              arrival_datetime: ~U[2026-08-10 10:00:00Z]
+            }
+          ]
+        }
+      },
+      tenant: user.organization_id
+    )
+
+    {:ok, view, _html} = conn |> log_in_user(user) |> live(~p"/delegacje/#{delegation.id}")
+
+    view |> element("button", "Sortuj chronologicznie") |> render_click()
+
+    assert has_element?(view, "#delegation-complete-form button[type='submit']", "Wyślij")
   end
 
   test "keeps both edited transport trip dates", %{conn: conn} do
@@ -287,7 +327,7 @@ defmodule FirmowidWeb.Delegations.Views.DelegationTest do
     })
     |> render_submit()
 
-    refute has_element?(view, "#delegation-complete-form")
+    refute has_element?(view, "#delegation-complete-form button[type='submit']")
 
     assert {:ok, completed_delegation} =
              Delegations.get_delegation(delegation.id,
@@ -367,7 +407,7 @@ defmodule FirmowidWeb.Delegations.Views.DelegationTest do
 
     view |> form("#delegation-complete-form") |> render_submit()
 
-    refute has_element?(view, "#delegation-complete-form")
+    refute has_element?(view, "#delegation-complete-form button[type='submit']")
     assert render(view) =~ "REZ/1"
   end
 

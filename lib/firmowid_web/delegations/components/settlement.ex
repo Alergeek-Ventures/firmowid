@@ -20,7 +20,6 @@ defmodule FirmowidWeb.Delegations.Components.Settlement do
   slot :icon, required: true
   attr :expenses, :list, required: true
   attr :upload, :any, required: true
-  attr :upload_form, Form, required: true
   attr :kind, :string, required: true
   attr :editable?, :boolean, required: true
   attr :sort_active?, :boolean, required: true
@@ -153,7 +152,6 @@ defmodule FirmowidWeb.Delegations.Components.Settlement do
               :if={@kind == "transport"}
               id={"#{@kind}-transport-type-#{expense.id}"}
               field={forms.details[:transport_type]}
-              form="delegation-complete-form"
               type="select"
               new
               label="Środek lokomocji"
@@ -163,7 +161,6 @@ defmodule FirmowidWeb.Delegations.Components.Settlement do
               :if={@kind == "accommodation"}
               id={"#{@kind}-locality-#{expense.id}"}
               field={forms.details[:locality]}
-              form="delegation-complete-form"
               type="text"
               new
               label="Miejscowość"
@@ -182,7 +179,6 @@ defmodule FirmowidWeb.Delegations.Components.Settlement do
               :if={@kind == "accommodation"}
               id={"#{@kind}-arrival-date-#{expense.id}"}
               field={forms.details[:arrival_date]}
-              form="delegation-complete-form"
               type="date"
               new
               label="Zameldowanie"
@@ -191,7 +187,6 @@ defmodule FirmowidWeb.Delegations.Components.Settlement do
               :if={@kind == "accommodation"}
               id={"#{@kind}-departure-date-#{expense.id}"}
               field={forms.details[:departure_date]}
-              form="delegation-complete-form"
               type="date"
               new
               label="Wymeldowanie"
@@ -207,7 +202,6 @@ defmodule FirmowidWeb.Delegations.Components.Settlement do
               :if={@kind == "other"}
               id={"#{@kind}-description-#{expense.id}"}
               field={forms.details[:description]}
-              form="delegation-complete-form"
               type="textarea"
               new
               label="Opis"
@@ -239,12 +233,9 @@ defmodule FirmowidWeb.Delegations.Components.Settlement do
           entry={entry}
           kind={@kind}
         />
-        <.form
+        <div
           :if={@editable? && @upload}
-          for={@upload_form}
           id={"#{@kind}-upload-form"}
-          phx-change="upload"
-          phx-submit="upload"
           class="relative"
         >
           <.file_upload
@@ -252,6 +243,7 @@ defmodule FirmowidWeb.Delegations.Components.Settlement do
             prompt="Przeciągnij tu fakturę/rachunek lub wybierz plik z komputera"
             content_class="text-grey-700!"
             class="border-grey-200! justify-between! rounded-lg! border! px-4! py-7!"
+            phx_change="upload"
           />
           <.button
             as="label"
@@ -261,7 +253,7 @@ defmodule FirmowidWeb.Delegations.Components.Settlement do
             size="small"
             class="absolute top-1/2 right-3 -translate-y-1/2"
           >Wybierz plik</.button>
-        </.form>
+        </div>
       </div>
       <.documents_modal
         id={"#{@kind}-documents-modal"}
@@ -546,7 +538,6 @@ defmodule FirmowidWeb.Delegations.Components.Settlement do
     <.input
       id={"document-number-#{@expense.id}"}
       field={@form[:document_number]}
-      form="delegation-complete-form"
       type="text"
       new
     >
@@ -561,7 +552,6 @@ defmodule FirmowidWeb.Delegations.Components.Settlement do
         <.input
           id={"expense-amount-#{@expense.id}"}
           field={@form[:expense_amount]}
-          form="delegation-complete-form"
           value={expense_amount_value(@form[:expense_amount].value)}
           type="number"
           new
@@ -584,7 +574,6 @@ defmodule FirmowidWeb.Delegations.Components.Settlement do
         new
         options={currency_options()}
         input_class={["w-24 shrink-0", @foreign_currency? && "bg-turquoise-100"]}
-        phx-change="select-expense-currency"
         aria-label="Waluta"
       />
     </div>
@@ -779,7 +768,6 @@ defmodule FirmowidWeb.Delegations.Components.Settlement do
         <.input
           id={"settlement-amount-#{@expense_id}"}
           field={@form[:settlement_amount]}
-          form="delegation-complete-form"
           type="number"
           new
           label={"Kwota w #{@currency}"}
@@ -895,7 +883,6 @@ defmodule FirmowidWeb.Delegations.Components.Settlement do
         :if={@visible?}
         id={"#{@kind}-description-#{@expense.id}"}
         field={@form[:description]}
-        form="delegation-complete-form"
         type="textarea"
         new
         label="Opis"
@@ -947,7 +934,6 @@ defmodule FirmowidWeb.Delegations.Components.Settlement do
                   <.input
                     id={"trip-departure-city-#{trip.id}"}
                     field={trip_form[:departure_city]}
-                    form="delegation-complete-form"
                     type="text"
                     new
                     aria-label="Miejscowość wyjazdu"
@@ -957,7 +943,6 @@ defmodule FirmowidWeb.Delegations.Components.Settlement do
                 <td class="pr-3">
                   <.input
                     id={"trip-departure-date-#{trip.id}"}
-                    form="delegation-complete-form"
                     name={"#{trip_form.name}[departure_date]"}
                     value={
                       trip_form.params["departure_date"] ||
@@ -973,7 +958,6 @@ defmodule FirmowidWeb.Delegations.Components.Settlement do
                 <td>
                   <.input
                     id={"trip-departure-time-#{trip.id}"}
-                    form="delegation-complete-form"
                     name={"#{trip_form.name}[departure_time]"}
                     value={
                       trip_form.params["departure_time"] ||
@@ -1008,7 +992,6 @@ defmodule FirmowidWeb.Delegations.Components.Settlement do
                   <.input
                     id={"trip-arrival-city-#{trip.id}"}
                     field={trip_form[:arrival_city]}
-                    form="delegation-complete-form"
                     type="text"
                     new
                     aria-label="Miejscowość przyjazdu"
@@ -1018,7 +1001,6 @@ defmodule FirmowidWeb.Delegations.Components.Settlement do
                 <td class="pr-3">
                   <.input
                     id={"trip-arrival-date-#{trip.id}"}
-                    form="delegation-complete-form"
                     name={"#{trip_form.name}[arrival_date]"}
                     value={
                       trip_form.params["arrival_date"] ||
@@ -1034,7 +1016,6 @@ defmodule FirmowidWeb.Delegations.Components.Settlement do
                 <td>
                   <.input
                     id={"trip-arrival-time-#{trip.id}"}
-                    form="delegation-complete-form"
                     name={"#{trip_form.name}[arrival_time]"}
                     value={
                       trip_form.params["arrival_time"] ||
@@ -1057,7 +1038,6 @@ defmodule FirmowidWeb.Delegations.Components.Settlement do
                   <.input
                     id={"trip-description-#{trip.id}"}
                     field={trip_form[:description]}
-                    form="delegation-complete-form"
                     type="textarea"
                     new
                     aria-label="Opis"
