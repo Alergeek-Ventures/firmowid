@@ -136,7 +136,7 @@ defmodule Firmowid.Ash.Delegations.Delegation do
       public?: true,
       constraints: [
         min_length: 1,
-        items: [one_of: [:railway, :airplane, :bus, :other]]
+        items: [one_of: [:railway, :airplane, :bus, :public_transport, :other]]
       ]
 
     attribute :purpose, :string, allow_nil?: false, public?: true
