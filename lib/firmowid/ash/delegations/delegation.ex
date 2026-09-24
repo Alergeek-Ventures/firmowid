@@ -10,6 +10,7 @@ defmodule Firmowid.Ash.Delegations.Delegation do
     extensions: [AshStateMachine]
 
   alias Firmowid.Ash.Core.User
+  alias Firmowid.Ash.Delegations.Changes.PrepareDelegationCompletion
   alias Firmowid.Ash.Delegations.Validations.HasDateChangeReason
   alias Firmowid.Ash.Delegations.Validations.HasExpenses
   alias Firmowid.Ash.Delegations.Workers.DelegationEmailWorker
@@ -95,15 +96,20 @@ defmodule Firmowid.Ash.Delegations.Delegation do
     update :complete do
       description "Mark an in-progress delegation as complete."
       require_atomic? false
-      accept [:date_change_reason, :detected_start_date, :detected_end_date]
+      accept [:date_change_reason]
 
       argument :expenses, {:array, :map}, allow_nil?: false, default: []
+
+      change PrepareDelegationCompletion
 
       change manage_relationship(:expenses,
                type: :direct_control,
                on_match: {:update, :complete},
                on_no_match: :error,
-               on_missing: :ignore
+               on_missing: :ignore,
+               # The parent completion action authorizes the employee and owns this transaction.
+               # credo:disable-for-next-line AshCredo.Check.Warning.AuthorizeFalse
+               authorize?: false
              )
 
       validate {HasExpenses, []}

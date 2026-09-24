@@ -99,6 +99,7 @@ defmodule Firmowid.Ash.Delegations.DelegationExpense do
       validate {ExpenseDetailsMatchKind, []}
       validate {ExpenseDetailsComplete, []}
       validate {ForeignCurrencySettlementComplete, []}
+      change {UpdateDetectedDelegationDates, require_date_change_reason?: true}
     end
 
     update :add_related_document do
@@ -174,10 +175,7 @@ defmodule Firmowid.Ash.Delegations.DelegationExpense do
     end
 
     policy action(:complete) do
-      authorize_if expr(
-                     delegation.status in [:in_progress, :complete] and
-                       delegation.user_id == ^actor(:id)
-                   )
+      authorize_if expr(delegation.status == :in_progress and delegation.user_id == ^actor(:id))
     end
   end
 
