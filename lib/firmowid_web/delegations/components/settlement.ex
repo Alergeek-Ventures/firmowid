@@ -33,6 +33,7 @@ defmodule FirmowidWeb.Delegations.Components.Settlement do
   attr :foreign_currency_modes, :map, default: %{}
   attr :nbp_settlements, :map, default: %{}
   attr :statement_upload, :any, required: true
+  attr :statement_expense_id, :string, default: nil
 
   def expense_section(assigns) do
     ~H"""
@@ -175,6 +176,7 @@ defmodule FirmowidWeb.Delegations.Components.Settlement do
               nbp_settlement={Map.get(@nbp_settlements, expense.id)}
               statement_upload={@statement_upload}
               statement_blob={expense.statement_blob}
+              statement_expense_id={@statement_expense_id}
             />
             <.input
               :if={@kind == "accommodation"}
@@ -279,31 +281,20 @@ defmodule FirmowidWeb.Delegations.Components.Settlement do
     <div class="mt-4 flex flex-wrap items-center gap-2 text-sm">
       <span class="text-grey-700 font-medium">Powiązane dokumenty:</span>
       <div class="flex flex-wrap gap-2">
-        <span
-          :for={blob <- @expense.related_blobs}
-          class="bg-grey-200 text-grey-600 inline-flex cursor-pointer items-center gap-1 rounded px-2 py-1 font-medium whitespace-nowrap"
-        >
-          <.link
-            :if={blob.url}
-            kind="unstyled"
-            external={blob.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            class="inline-flex items-center gap-1"
-          ><Lucideicons.file class="size-4 shrink-0" />{blob.original_filename}</.link>
-          <span :if={!blob.url} class="inline-flex items-center gap-1">
-            <Lucideicons.file class="size-4 shrink-0" />{blob.original_filename}
-          </span>
-          <.button
-            :if={@editable?}
-            type="button"
-            variant="unstyled"
-            class="text-grey-500 cursor-pointer"
-            phx-click="remove-related-document"
-            phx-value-expense-id={@expense.id}
-            phx-value-blob-id={blob.id}
-            aria-label={"Usuń #{blob.original_filename}"}
-          ><Lucideicons.x class="size-3" /></.button>
+        <span :for={blob <- @expense.related_blobs}>
+          <.document_pill filename={blob.original_filename} url={blob.url}>
+            <:action :if={@editable?}>
+              <.button
+                type="button"
+                variant="unstyled"
+                class="text-grey-500 cursor-pointer"
+                phx-click="remove-related-document"
+                phx-value-expense-id={@expense.id}
+                phx-value-blob-id={blob.id}
+                aria-label={"Usuń #{blob.original_filename}"}
+              ><Lucideicons.x class="size-3" /></.button>
+            </:action>
+          </.document_pill>
         </span>
       </div>
     </div>
@@ -539,6 +530,7 @@ defmodule FirmowidWeb.Delegations.Components.Settlement do
   attr :nbp_settlement, :map, default: nil
   attr :statement_upload, :any, required: true
   attr :statement_blob, :any, default: nil
+  attr :statement_expense_id, :string, default: nil
 
   defp document_fields(assigns) do
     amount_field = assigns.form[:expense_amount]
@@ -605,6 +597,7 @@ defmodule FirmowidWeb.Delegations.Components.Settlement do
       nbp_settlement={@nbp_settlement}
       statement_upload={@statement_upload}
       statement_blob={@statement_blob}
+      statement_expense_id={@statement_expense_id}
     />
     """
   end
@@ -616,6 +609,7 @@ defmodule FirmowidWeb.Delegations.Components.Settlement do
   attr :nbp_settlement, :map, default: nil
   attr :statement_upload, :any, required: true
   attr :statement_blob, :any, default: nil
+  attr :statement_expense_id, :string, default: nil
 
   defp foreign_currency_settlement(%{mode: :notice} = assigns) do
     ~H"""
@@ -649,7 +643,15 @@ defmodule FirmowidWeb.Delegations.Components.Settlement do
   end
 
   defp foreign_currency_settlement(assigns) do
-    assigns = assign(assigns, :mode_label, mode_label(assigns.mode))
+    statement_entry =
+      if assigns.statement_expense_id == assigns.expense.id do
+        List.first(assigns.statement_upload.entries)
+      end
+
+    assigns =
+      assigns
+      |> assign(:mode_label, mode_label(assigns.mode))
+      |> assign(:statement_entry, statement_entry)
 
     ~H"""
     <section class="mt-1 grid w-full grid-cols-subgrid gap-3 sm:col-span-2 lg:col-span-3">
@@ -671,8 +673,13 @@ defmodule FirmowidWeb.Delegations.Components.Settlement do
             expense_id={@expense.id}
             blob={@statement_blob}
           />
+          <.document_pill
+            :if={!@statement_blob && @statement_entry}
+            filename={@statement_entry.client_name}
+            loading?
+          />
           <.button
-            :if={!@statement_blob}
+            :if={!@statement_blob && !@statement_entry}
             as="label"
             for={@statement_upload.ref}
             type="button"
@@ -710,26 +717,53 @@ defmodule FirmowidWeb.Delegations.Components.Settlement do
 
   defp statement_document(assigns) do
     ~H"""
-    <span class="bg-grey-200 text-grey-600 inline-flex items-center gap-1 rounded px-2 py-1 text-sm font-medium whitespace-nowrap">
+    <.document_pill filename={@blob.original_filename} url={@blob.url}>
+      <:action>
+        <.button
+          type="button"
+          variant="unstyled"
+          class="text-grey-500 cursor-pointer"
+          phx-click="remove-statement-document"
+          phx-value-expense-id={@expense_id}
+          aria-label={"Usuń #{@blob.original_filename}"}
+        ><Lucideicons.x class="size-3" /></.button>
+      </:action>
+    </.document_pill>
+    """
+  end
+
+  @doc "Renders a document pill with an optional action."
+  @spec document_pill(map()) :: Rendered.t()
+  attr :filename, :string, required: true
+  attr :url, :string, default: nil
+  attr :loading?, :boolean, default: false
+  slot :action
+
+  def document_pill(assigns) do
+    ~H"""
+    <span
+      aria-busy={@loading?}
+      class={[
+        "bg-grey-200 text-grey-600 inline-flex max-w-full items-center gap-1 rounded px-2 py-1 text-sm font-medium",
+        @loading? && "animate-pulse"
+      ]}
+    >
       <.link
-        :if={@blob.url}
+        :if={@url}
         kind="unstyled"
-        external={@blob.url}
+        external={@url}
         target="_blank"
         rel="noopener noreferrer"
-        class="inline-flex items-center gap-1"
-      ><Lucideicons.file class="size-4 shrink-0" />{@blob.original_filename}</.link>
-      <span :if={!@blob.url} class="inline-flex items-center gap-1">
-        <Lucideicons.file class="size-4 shrink-0" />{@blob.original_filename}
+        class="inline-flex min-w-0 items-center gap-1"
+      ><Lucideicons.file class="size-4 shrink-0" /><span
+        class="max-w-[220px] truncate"
+        title={@filename}
+      >{@filename}</span></.link>
+      <span :if={!@url} class="inline-flex min-w-0 items-center gap-1">
+        <Lucideicons.file class="size-4 shrink-0" />
+        <span class="max-w-[220px] truncate" title={@filename}>{@filename}</span>
       </span>
-      <.button
-        type="button"
-        variant="unstyled"
-        class="text-grey-500 cursor-pointer"
-        phx-click="remove-statement-document"
-        phx-value-expense-id={@expense_id}
-        aria-label={"Usuń #{@blob.original_filename}"}
-      ><Lucideicons.x class="size-3" /></.button>
+      {render_slot(@action)}
     </span>
     """
   end

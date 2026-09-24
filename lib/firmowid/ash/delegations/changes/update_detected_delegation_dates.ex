@@ -1,3 +1,4 @@
+# credo:disable-for-this-file AshCredo.Check.Warning.AuthorizeFalse
 defmodule Firmowid.Ash.Delegations.Changes.UpdateDetectedDelegationDates do
   @moduledoc "Updates a delegation's detected date range after evidence changes."
 
@@ -33,8 +34,7 @@ defmodule Firmowid.Ash.Delegations.Changes.UpdateDetectedDelegationDates do
       |> Ash.Changeset.for_update(:detect_dates, params,
         actor: context.actor,
         tenant: context.tenant,
-        # The expense action that invoked this internal update is already authorized.
-        # credo:disable-for-next-line AshCredo.Check.Warning.AuthorizeFalse
+        # This after-action update has no actor context after Ash commits the expense action.
         authorize?: false
       )
       |> Ash.update()
