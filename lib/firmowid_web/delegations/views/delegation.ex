@@ -38,9 +38,16 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
     <div id="delegation-settlement" phx-hook="DelegationDateChange" class="relative mt-4">
       <.back
         navigate={~p"/ustawienia/profil"}
-        class="absolute top-0 left-0.5 inline-flex text-sm"
+        class="absolute top-0 left-0.5 z-10 inline-flex text-sm"
       />
-      <main class="grid gap-10 px-32 pr-34 pb-12 font-[340] lg:grid-cols-[auto_22.5rem]">
+      <.form
+        for={@complete_form}
+        id="delegation-complete-form"
+        phx-change={if @editable?, do: "validate"}
+        phx-submit={if @editable?, do: "submit"}
+        class="group relative grid gap-10 px-32 pr-34 pb-12 font-[340] lg:grid-cols-[auto_22.5rem]"
+      >
+        <.nested_hidden_inputs :if={@editable?} form={@complete_form} />
         <section aria-labelledby="delegation-settlement-title">
           <small class="text-grey-500 text-sm">Cel:
           <span class="text-grey-700">{@delegation.purpose}</span></small>
@@ -55,7 +62,6 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
             title="Przejazdy"
             expenses={SettlementPresentation.expenses_for(@delegation.expenses, :transport)}
             upload={Map.get(assigns[:uploads] || %{}, :transport)}
-            upload_form={Map.fetch!(@upload_forms, "transport")}
             kind="transport"
             editable?={@editable?}
             sort_active?={@sort_active?}
@@ -76,7 +82,6 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
             title="Nocleg"
             expenses={SettlementPresentation.expenses_for(@delegation.expenses, :accommodation)}
             upload={Map.get(assigns[:uploads] || %{}, :accommodation)}
-            upload_form={Map.fetch!(@upload_forms, "accommodation")}
             kind="accommodation"
             editable?={@editable?}
             sort_active?={false}
@@ -97,7 +102,6 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
             title="Inne wydatki"
             expenses={SettlementPresentation.expenses_for(@delegation.expenses, :other)}
             upload={Map.get(assigns[:uploads] || %{}, :other)}
-            upload_form={Map.fetch!(@upload_forms, "other")}
             kind="other"
             editable?={@editable?}
             sort_active?={false}
@@ -137,14 +141,7 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
               </dd>
             </small>
           </dl>
-          <.form
-            :if={@editable?}
-            for={@complete_form}
-            id="delegation-complete-form"
-            phx-change="validate"
-            phx-submit="submit"
-            class="group relative mt-6 lg:mt-47"
-          >
+          <div :if={@editable?} class="relative mt-6 lg:mt-47">
             <div class="absolute -top-12 right-0 flex h-6 items-center justify-end">
               <span class="font-lexend text-grey-500 inline-flex items-center gap-1 text-[11px] font-medium uppercase group-[.phx-change-loading]:hidden">
                 Zmiany zostały zapisane <.save_check_icon class="size-3" />
@@ -154,7 +151,6 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
                 <Lucideicons.refresh_ccw class="size-3 animate-spin [animation-direction:reverse]" />
               </span>
             </div>
-            <.nested_hidden_inputs form={@complete_form} />
             <div class="rounded-lg bg-white px-6 py-4 shadow-sm">
               <h2 class="text-grey-500 font-normal">Podsumowanie</h2>
               <dl class="mt-6 space-y-3 text-sm">
@@ -203,7 +199,7 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
               class="mt-6 w-full"
               disabled={@uploading?}
             >Wyślij</.button>
-          </.form>
+          </div>
           <div :if={!@editable?} class="mt-6 rounded-lg bg-white px-6 py-4 shadow-sm lg:mt-47">
             <h2 class="text-grey-500 font-normal">Podsumowanie</h2>
             <dl class="mt-6 space-y-3 text-sm">
@@ -242,23 +238,21 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
             </dl>
           </div>
         </aside>
-      </main>
-      <form :if={@editable?} id="related-document-upload-form" phx-change="upload-related-document">
-        <.live_file_input
-          upload={@uploads.related_document}
-          class="pointer-events-none fixed -top-full -left-full size-px opacity-0"
-        />
-      </form>
-      <form
-        :if={@editable?}
-        id="statement-document-upload-form"
-        phx-change="upload-statement-document"
-      >
-        <.live_file_input
-          upload={@uploads.statement_document}
-          class="pointer-events-none fixed -top-full -left-full size-px opacity-0"
-        />
-      </form>
+        <div :if={@editable?} id="related-document-upload-form">
+          <.live_file_input
+            upload={@uploads.related_document}
+            class="pointer-events-none fixed -top-full -left-full size-px opacity-0"
+            phx-change="upload-related-document"
+          />
+        </div>
+        <div :if={@editable?} id="statement-document-upload-form">
+          <.live_file_input
+            upload={@uploads.statement_document}
+            class="pointer-events-none fixed -top-full -left-full size-px opacity-0"
+            phx-change="upload-statement-document"
+          />
+        </div>
+      </.form>
     </div>
     """
   end
@@ -266,8 +260,18 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
   @impl true
   def handle_event("upload", _params, socket), do: {:noreply, assign(socket, :uploading?, true)}
 
-  def handle_event("validate", %{"delegation" => params}, socket) do
-    params = merge_expense_currencies(params, socket.assigns.expense_currencies)
+  def handle_event("upload-related-document", _params, socket), do: {:noreply, assign(socket, :uploading?, true)}
+
+  def handle_event("upload-statement-document", _params, socket), do: {:noreply, assign(socket, :uploading?, true)}
+
+  def handle_event("validate", %{"delegation" => params} = event_params, socket) do
+    expense_currencies =
+      Map.merge(
+        socket.assigns.expense_currencies,
+        Map.get(event_params, "expense_currencies", %{})
+      )
+
+    params = merge_expense_currencies(params, expense_currencies)
 
     date_change = detected_date_change(socket.assigns.delegation, params)
 
@@ -277,9 +281,15 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
 
     {:noreply,
      socket
-     |> assign(submission_failed?: false, date_change: date_change)
+     |> assign(
+       expense_currencies: expense_currencies,
+       submission_failed?: false,
+       date_change: date_change
+     )
      |> assign_complete_form(form)}
   end
+
+  def handle_event("validate", _params, socket), do: {:noreply, socket}
 
   def handle_event("foreign-currency-action", %{"action" => "notice", "expense-id" => expense_id}, socket) do
     {:noreply, update(socket, :foreign_currency_modes, &Map.delete(&1, expense_id))}
@@ -306,12 +316,6 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
     end
   end
 
-  def handle_event("select-expense-currency", %{"expense_currencies" => currencies}, socket) do
-    {expense_id, currency} = Enum.at(currencies, 0)
-
-    {:noreply, update(socket, :expense_currencies, &Map.put(&1, expense_id, currency))}
-  end
-
   def handle_event("select-related-expense", %{"id" => expense_id}, socket),
     do: {:noreply, assign(socket, :related_expense_id, expense_id)}
 
@@ -319,10 +323,6 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
     do:
       {:noreply,
        socket |> assign(:statement_expense_id, expense_id) |> push_event("preserve-statement-upload-scroll", %{})}
-
-  def handle_event("upload-related-document", _params, socket), do: {:noreply, assign(socket, :uploading?, true)}
-
-  def handle_event("upload-statement-document", _params, socket), do: {:noreply, assign(socket, :uploading?, true)}
 
   def handle_event("delete", %{"kind" => kind, "id" => id}, socket) do
     result = safely(fn -> destroy_expense(kind, id, socket.assigns.ash_scope) end)
@@ -389,10 +389,13 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
   def handle_event("submit", _params, %{assigns: %{uploading?: true}} = socket), do: {:noreply, socket}
 
   def handle_event("submit", params, socket) do
+    expense_currencies =
+      Map.merge(socket.assigns.expense_currencies, Map.get(params, "expense_currencies", %{}))
+
     params =
       params
       |> Map.get("delegation", %{})
-      |> merge_expense_currencies(socket.assigns.expense_currencies)
+      |> merge_expense_currencies(expense_currencies)
       |> merge_foreign_currency_settlements(socket)
 
     date_change = detected_date_change(socket.assigns.delegation, params)
@@ -478,8 +481,7 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
       date_change: persisted_date_change(delegation),
       expense_currencies: expense_currencies(delegation.expenses),
       foreign_currency_modes: %{},
-      nbp_settlements: %{},
-      upload_forms: upload_forms(socket.assigns.ash_scope)
+      nbp_settlements: %{}
     )
     |> assign_complete_form(complete_form)
     |> assign_new(:description_visible?, fn -> %{} end)
@@ -507,8 +509,7 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
     socket
     |> assign(
       delegation: delegation,
-      expense_currencies: Map.merge(expense_currencies(delegation.expenses), socket.assigns.expense_currencies),
-      upload_forms: upload_forms(socket.assigns.ash_scope)
+      expense_currencies: Map.merge(expense_currencies(delegation.expenses), socket.assigns.expense_currencies)
     )
     |> assign_complete_form(complete_form)
     |> assign_summary()
@@ -793,20 +794,6 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
     <% end %>
     <.nested_hidden_inputs :for={child <- @children} form={child} />
     """
-  end
-
-  defp upload_forms(scope) do
-    %{
-      "transport" => upload_form(DelegationExpense, scope, "transport"),
-      "accommodation" => upload_form(DelegationExpense, scope, "accommodation"),
-      "other" => upload_form(DelegationExpense, scope, "other")
-    }
-  end
-
-  defp upload_form(resource, scope, name) do
-    resource
-    |> AshPhoenix.Form.for_create(:create, scope: scope, as: name)
-    |> to_form()
   end
 
   defp uploads_in_progress?(socket) do
@@ -1139,7 +1126,6 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
       </p>
       <.input
         id={@form[:date_change_reason].id}
-        form="delegation-complete-form"
         name={@form[:date_change_reason].name}
         type="textarea"
         value={@form[:date_change_reason].value}
