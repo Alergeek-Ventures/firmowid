@@ -1,4 +1,5 @@
 # credo:disable-for-this-file AshCredo.Check.Design.MissingPrimaryAction
+# credo:disable-for-this-file AshCredo.Check.Warning.AuthorizeFalse
 defmodule Firmowid.Ash.Delegations.Delegation do
   @moduledoc "A company-funded business trip submitted by an employee."
 
@@ -108,7 +109,6 @@ defmodule Firmowid.Ash.Delegations.Delegation do
                on_no_match: :error,
                on_missing: :ignore,
                # The parent completion action authorizes the employee and owns this transaction.
-               # credo:disable-for-next-line AshCredo.Check.Warning.AuthorizeFalse
                authorize?: false
              )
 
