@@ -2,21 +2,10 @@ defmodule Firmowid.Ash.Invoicing.Services.PdfUtils do
   @moduledoc false
 
   alias Firmowid.Ash.Invoicing.Services.GotenbergClient
-  alias FirmowidWeb.Infrastructure.Utilities.PdfHelpers
 
   @spec render_html_to_pdf(binary(), keyword()) :: {:ok, binary()} | {:error, term()}
   def render_html_to_pdf(html_content, opts \\ []) do
-    GotenbergClient.convert_html(html_content,
-      scale: Keyword.get(opts, :scale, 1.25),
-      wait_delay: Keyword.get(opts, :wait_delay),
-      wait_for_expression: Keyword.get(opts, :wait_for_expression),
-      wait_for_selector: Keyword.get(opts, :wait_for_selector)
-    )
-  end
-
-  @spec render_component_html(module(), atom(), map()) :: binary()
-  def render_component_html(view_module, template, assigns) do
-    PdfHelpers.render_pdf_html(view_module, template, assigns)
+    GotenbergClient.convert_html(html_content, Keyword.put_new(opts, :scale, 1.25))
   end
 
   @doc """
