@@ -66,7 +66,6 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
             related_upload={Map.get(assigns[:uploads] || %{}, :related_document)}
             expense_currencies={@expense_currencies}
             foreign_currency_modes={@foreign_currency_modes}
-            settlement_currencies={@settlement_currencies}
             nbp_settlements={@nbp_settlements}
             statement_upload={Map.get(assigns[:uploads] || %{}, :statement_document)}
           >
@@ -87,7 +86,6 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
             related_upload={Map.get(assigns[:uploads] || %{}, :related_document)}
             expense_currencies={@expense_currencies}
             foreign_currency_modes={@foreign_currency_modes}
-            settlement_currencies={@settlement_currencies}
             nbp_settlements={@nbp_settlements}
             statement_upload={Map.get(assigns[:uploads] || %{}, :statement_document)}
           >
@@ -108,7 +106,6 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
             related_upload={Map.get(assigns[:uploads] || %{}, :related_document)}
             expense_currencies={@expense_currencies}
             foreign_currency_modes={@foreign_currency_modes}
-            settlement_currencies={@settlement_currencies}
             nbp_settlements={@nbp_settlements}
             statement_upload={Map.get(assigns[:uploads] || %{}, :statement_document)}
           >
@@ -296,7 +293,7 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
     case nbp_settlement(
            socket,
            expense_id,
-           Map.get(socket.assigns.settlement_currencies, expense_id, "PLN")
+           "PLN"
          ) do
       {:ok, settlement} ->
         {:noreply,
@@ -313,26 +310,6 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
     {expense_id, currency} = Enum.at(currencies, 0)
 
     {:noreply, update(socket, :expense_currencies, &Map.put(&1, expense_id, currency))}
-  end
-
-  def handle_event("select-settlement-currency", %{"settlement_currencies" => currencies}, socket) do
-    {expense_id, currency} = Enum.at(currencies, 0)
-
-    socket = update(socket, :settlement_currencies, &Map.put(&1, expense_id, currency))
-
-    case Map.get(socket.assigns.foreign_currency_modes, expense_id) do
-      :nbp ->
-        case nbp_settlement(socket, expense_id, currency) do
-          {:ok, settlement} ->
-            {:noreply, update(socket, :nbp_settlements, &Map.put(&1, expense_id, settlement))}
-
-          {:error, _reason} ->
-            {:noreply, put_flash(socket, :error, "Nie udało się pobrać kursu NBP.")}
-        end
-
-      _ ->
-        {:noreply, socket}
-    end
   end
 
   def handle_event("select-related-expense", %{"id" => expense_id}, socket),
@@ -504,7 +481,6 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
       date_change: persisted_date_change(delegation),
       expense_currencies: expense_currencies(delegation.expenses),
       foreign_currency_modes: %{},
-      settlement_currencies: settlement_currencies(delegation.expenses),
       nbp_settlements: %{},
       upload_forms: upload_forms(socket.assigns.ash_scope)
     )
@@ -937,30 +913,17 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
     end)
   end
 
-  defp settlement_currencies(expenses) do
-    Map.new(expenses, fn expense ->
-      currency =
-        case expense.settlement_amount do
-          %Money{} = amount -> amount |> Money.to_currency_code() |> Atom.to_string()
-          _ -> "PLN"
-        end
-
-      {expense.id, currency}
-    end)
-  end
-
   defp merge_foreign_currency_settlements(params, socket) do
     Map.update(params, "expenses", %{}, fn expenses ->
       Map.new(expenses, fn {index, expense} ->
         expense_id = expense["id"]
-        currency = Map.get(socket.assigns.settlement_currencies, expense_id, "PLN")
 
         expense =
           case Map.get(socket.assigns.foreign_currency_modes, expense_id) do
             :statement ->
               expense
               |> Map.put("settlement_method", "statement")
-              |> Map.put("settlement_currency", currency)
+              |> Map.put("settlement_currency", "PLN")
 
             :nbp ->
               case Map.get(socket.assigns.nbp_settlements, expense_id) do
@@ -971,7 +934,7 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
                     "settlement_amount",
                     Decimal.to_string(Money.to_decimal(amount), :normal)
                   )
-                  |> Map.put("settlement_currency", currency)
+                  |> Map.put("settlement_currency", "PLN")
                   |> Map.put("nbp_rate", Decimal.to_string(rate, :normal))
                   |> Map.put("nbp_rate_date", Date.to_iso8601(date))
 
