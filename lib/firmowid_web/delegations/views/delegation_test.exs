@@ -218,34 +218,60 @@ defmodule FirmowidWeb.Delegations.Views.DelegationTest do
     assert has_element?(view, "#foreign-currency-notice-#{expense.id}", "Wykryto obcą walutę")
   end
 
+  test "keeps foreign currency form values after uploading a statement", %{conn: conn} do
+    {user, delegation} = approved_delegation()
+    expense = seed_expense(delegation, user)
+    upload_fixture = Path.expand("../../../test/fixtures/receipt.png", __DIR__)
+    {:ok, view, _html} = conn |> log_in_user(user) |> live(~p"/delegacje/#{delegation.id}")
+
+    params = %{
+      "expenses" => %{
+        "0" => %{
+          "_form_type" => "update",
+          "id" => expense.id,
+          "document_number" => "REZ/1",
+          "expense_amount" => "250",
+          "details" => %{
+            "_union_type" => "accommodation",
+            "locality" => "Kraków",
+            "arrival_date" => "2026-08-10",
+            "departure_date" => "2026-08-12"
+          }
+        }
+      }
+    }
+
+    view
+    |> form("#delegation-complete-form", %{
+      "delegation" => params,
+      "expense_currencies" => %{expense.id => "EUR"}
+    })
+    |> render_change()
+
+    view
+    |> element("#foreign-currency-notice-#{expense.id} button", "Mam kwotę z wyciągu")
+    |> render_click()
+
+    view
+    |> form("#delegation-complete-form", %{
+      "delegation" => put_in(params, ["expenses", "0", "settlement_amount"], "321")
+    })
+    |> render_change()
+
+    view
+    |> file_input("#statement-document-upload-form", :statement_document, [
+      %{name: "wyciag.png", content: File.read!(upload_fixture), type: "image/png"}
+    ])
+    |> render_upload("wyciag.png")
+
+    assert render(view) =~ "321"
+    assert has_element?(view, "#accommodation-departure-date-#{expense.id}[value='2026-08-12']")
+  end
+
   test "keeps the settlement editable after sorting expenses", %{conn: conn} do
     {user, delegation} = approved_delegation()
 
-    Ash.Seed.seed!(
-      DelegationExpense,
-      %{
-        delegation_id: delegation.id,
-        organization_id: user.organization_id,
-        blob_id: seed_blob(user).id,
-        kind: :transport,
-        original_filename: "bilet.pdf",
-        document_number: "BIL/1",
-        expense_amount: Money.new(:PLN, 100),
-        details: %{
-          type: "transport",
-          transport_type: :railway,
-          trips: [
-            %{
-              departure_city: "Wrocław",
-              departure_datetime: ~U[2026-08-10 08:00:00Z],
-              arrival_city: "Kraków",
-              arrival_datetime: ~U[2026-08-10 10:00:00Z]
-            }
-          ]
-        }
-      },
-      tenant: user.organization_id
-    )
+    seed_transport_expense(delegation, user)
 
     {:ok, view, _html} = conn |> log_in_user(user) |> live(~p"/delegacje/#{delegation.id}")
 
@@ -257,32 +283,7 @@ defmodule FirmowidWeb.Delegations.Views.DelegationTest do
   test "keeps both edited transport trip dates", %{conn: conn} do
     {user, delegation} = approved_delegation()
 
-    expense =
-      Ash.Seed.seed!(
-        DelegationExpense,
-        %{
-          delegation_id: delegation.id,
-          organization_id: user.organization_id,
-          blob_id: seed_blob(user).id,
-          kind: :transport,
-          original_filename: "bilet.pdf",
-          document_number: "BIL/1",
-          expense_amount: Money.new(:PLN, 100),
-          details: %{
-            type: "transport",
-            transport_type: :railway,
-            trips: [
-              %{
-                departure_city: "Wrocław",
-                departure_datetime: ~U[2026-08-10 08:00:00Z],
-                arrival_city: "Kraków",
-                arrival_datetime: ~U[2026-08-10 10:00:00Z]
-              }
-            ]
-          }
-        },
-        tenant: user.organization_id
-      )
+    expense = seed_transport_expense(delegation, user)
 
     trip = List.first(expense.details.value.trips)
     {:ok, view, _html} = conn |> log_in_user(user) |> live(~p"/delegacje/#{delegation.id}")
@@ -455,6 +456,34 @@ defmodule FirmowidWeb.Delegations.Views.DelegationTest do
           locality: "Kraków",
           arrival_date: ~D[2026-08-10],
           departure_date: ~D[2026-08-11]
+        }
+      },
+      tenant: user.organization_id
+    )
+  end
+
+  defp seed_transport_expense(delegation, user) do
+    Ash.Seed.seed!(
+      DelegationExpense,
+      %{
+        delegation_id: delegation.id,
+        organization_id: user.organization_id,
+        blob_id: seed_blob(user).id,
+        kind: :transport,
+        original_filename: "bilet.pdf",
+        document_number: "BIL/1",
+        expense_amount: Money.new(:PLN, 100),
+        details: %{
+          type: "transport",
+          transport_type: :railway,
+          trips: [
+            %{
+              departure_city: "Wrocław",
+              departure_datetime: ~U[2026-08-10 08:00:00Z],
+              arrival_city: "Kraków",
+              arrival_datetime: ~U[2026-08-10 10:00:00Z]
+            }
+          ]
         }
       },
       tenant: user.organization_id
