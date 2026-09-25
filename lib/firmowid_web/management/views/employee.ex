@@ -14,10 +14,8 @@ defmodule FirmowidWeb.Management.Views.Employee do
   alias Ash.Notifier.Notification
   alias Firmowid.Ash.Blobs.Blob
   alias Firmowid.Ash.Core
-  alias Firmowid.Ash.Delegations
   alias Firmowid.Ash.Timetracker
   alias FirmowidWeb.Core.Endpoint
-  alias FirmowidWeb.Delegations.Components.DelegationsList
   alias FirmowidWeb.Documents.Components.DocumentsSection, as: DocumentsTab
   alias FirmowidWeb.Infrastructure.Components.BlobProcessingToasts
   alias FirmowidWeb.Infrastructure.Utilities.TimeFormatter
@@ -109,22 +107,6 @@ defmodule FirmowidWeb.Management.Views.Employee do
   def handle_event("change-year", %{"year" => year}, socket) do
     send_update(LeavesTab, id: "leaves-tab", year: String.to_integer(year))
     {:noreply, socket}
-  end
-
-  def handle_event("approve_delegation", %{"id" => id}, socket) do
-    case Delegations.approve_delegation(id, scope: socket.assigns.ash_scope) do
-      {:ok, _delegation} ->
-        {:noreply,
-         socket
-         |> assign(
-           :employee,
-           Ash.load!(socket.assigns.employee, [:projects, :delegations], scope: socket.assigns.ash_scope)
-         )
-         |> put_flash(:info, "Delegacja została zatwierdzona.")}
-
-      {:error, _error} ->
-        {:noreply, put_flash(socket, :error, "Nie udało się zatwierdzić delegacji.")}
-    end
   end
 
   def handle_event("archive_employee", _params, socket) do

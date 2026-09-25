@@ -45,6 +45,11 @@ defmodule FirmowidWeb.Delegations.Views.DelegationFormTest do
 
       [delegation] = Delegations.list_delegations_for_user!(employee.id, scope: scope)
       assert delegation.transport_types == [String.to_existing_atom(unquote(transport_type))]
+      assert delegation.purpose == "Spotkanie z klientem"
+      assert delegation.destination == "Kraków"
+      assert delegation.expected_cost == Money.new(:PLN, "123.45")
+      assert delegation.start_date == ~D[2026-09-10]
+      assert delegation.end_date == ~D[2026-09-11]
     end
   end
 
@@ -93,7 +98,7 @@ defmodule FirmowidWeb.Delegations.Views.DelegationFormTest do
         "destination" => "Kraków",
         "transport_types" => ["railway", "bus"],
         "purpose" => "Spotkanie z klientem",
-        "advance_payment_amount" => "123.45",
+        "expected_cost" => "123.45",
         "start_date" => "2026-09-10",
         "end_date" => "2026-09-11"
       },

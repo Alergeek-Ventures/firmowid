@@ -6,13 +6,16 @@ defmodule Firmowid.Ash.Delegations.DelegationTest do
   import Firmowid.AccountsFixtures
 
   alias Ash.Error.Forbidden
+  alias Ecto.Adapters.SQL.Sandbox
   alias Firmowid.Ash.Blobs.Blob
+  alias Firmowid.Ash.Core
   alias Firmowid.Ash.Delegations
   alias Firmowid.Ash.Delegations.DelegationExpense
   alias Firmowid.Ash.Scope
 
   setup do
     employee = user_fixture()
+    employee = Core.update_profile!(employee, %{name: "Kira Voss"}, actor: employee)
     admin = admin_fixture(%{organization_id: employee.organization_id})
 
     %{
@@ -21,12 +24,97 @@ defmodule Firmowid.Ash.Delegations.DelegationTest do
     }
   end
 
-  test "rejects a negative advance payment amount", %{employee_scope: employee_scope} do
+  test "rejects a negative expected cost", %{employee_scope: employee_scope} do
     assert {:error, _error} =
              Delegations.create_delegation(
-               delegation_attrs(%{advance_payment_amount: Money.new(:PLN, -1)}),
+               delegation_attrs(%{expected_cost: Money.new(:PLN, -1)}),
                scope: employee_scope
              )
+  end
+
+  test "assigns sequential references for a user and billing month", %{
+    employee_scope: employee_scope
+  } do
+    first = Delegations.create_delegation!(delegation_attrs(), scope: employee_scope)
+    second = Delegations.create_delegation!(delegation_attrs(), scope: employee_scope)
+
+    assert first.reference == "KV-2026-09-1"
+    assert second.reference == "KV-2026-09-2"
+  end
+
+  test "shares a calendar-month reference sequence between employees with the same initials", %{
+    employee_scope: employee_scope
+  } do
+    employee = employee_scope.actor
+
+    second_employee = user_in_org_fixture(employee.organization_id)
+
+    second_employee =
+      Core.update_profile!(second_employee, %{name: "Kamil Voss"}, actor: second_employee)
+
+    second_scope = %Scope{actor: second_employee, tenant: employee.organization_id}
+
+    first =
+      Delegations.create_delegation!(delegation_attrs(%{billing_month: ~D[2026-09-01]}),
+        scope: employee_scope
+      )
+
+    second =
+      Delegations.create_delegation!(delegation_attrs(%{billing_month: ~D[2026-09-30]}),
+        scope: second_scope
+      )
+
+    assert first.reference == "KV-2026-09-1"
+    assert second.reference == "KV-2026-09-2"
+  end
+
+  test "uses the same reference namespace independently in each organization", %{
+    employee_scope: employee_scope
+  } do
+    other_employee = user_fixture()
+
+    other_employee =
+      Core.update_profile!(other_employee, %{name: "Kira Voss"}, actor: other_employee)
+
+    other_scope = %Scope{actor: other_employee, tenant: other_employee.organization_id}
+
+    first = Delegations.create_delegation!(delegation_attrs(), scope: employee_scope)
+    second = Delegations.create_delegation!(delegation_attrs(), scope: other_scope)
+
+    assert first.reference == "KV-2026-09-1"
+    assert second.reference == "KV-2026-09-1"
+  end
+
+  test "uses a stable fallback prefix for a blank employee name", %{
+    employee_scope: employee_scope
+  } do
+    employee = %{employee_scope.actor | name: "   "}
+    scope = %Scope{actor: employee, tenant: employee.organization_id}
+
+    delegation = Delegations.create_delegation!(delegation_attrs(), scope: scope)
+
+    assert delegation.reference == "U#{String.upcase(String.slice(employee.id, 0, 8))}-2026-09-1"
+  end
+
+  test "assigns unique consecutive references to concurrent submissions", %{
+    employee_scope: employee_scope
+  } do
+    parent = self()
+
+    references =
+      1..8
+      |> Task.async_stream(
+        fn _ ->
+          :ok = Sandbox.allow(Repo, parent, self())
+          Delegations.create_delegation!(delegation_attrs(), scope: employee_scope).reference
+        end,
+        max_concurrency: 8,
+        ordered: false,
+        timeout: 15_000
+      )
+      |> Enum.map(fn {:ok, reference} -> reference end)
+
+    assert Enum.sort(references) == Enum.map(1..8, &"KV-2026-09-#{&1}")
   end
 
   test "only an administrator can approve a delegation", %{
@@ -34,14 +122,17 @@ defmodule Firmowid.Ash.Delegations.DelegationTest do
     admin_scope: admin_scope
   } do
     delegation = Delegations.create_delegation!(delegation_attrs(), scope: employee_scope)
+    approval_attrs = approval_attrs()
 
     assert {:error, %Forbidden{}} =
-             Delegations.approve_delegation(delegation.id, scope: employee_scope)
+             Delegations.approve_delegation(delegation.id, approval_attrs, scope: employee_scope)
 
     assert {:ok, approved_delegation} =
-             Delegations.approve_delegation(delegation.id, scope: admin_scope)
+             Delegations.approve_delegation(delegation.id, approval_attrs, scope: admin_scope)
 
     assert approved_delegation.status == :in_progress
+    assert approved_delegation.advance_amount == Money.new(:PLN, 50)
+    assert approved_delegation.signed_command_blob_id
   end
 
   test "cannot complete an empty settlement", %{
@@ -49,7 +140,9 @@ defmodule Firmowid.Ash.Delegations.DelegationTest do
     admin_scope: admin_scope
   } do
     delegation = Delegations.create_delegation!(delegation_attrs(), scope: employee_scope)
-    {:ok, delegation} = Delegations.approve_delegation(delegation.id, scope: admin_scope)
+
+    {:ok, delegation} =
+      Delegations.approve_delegation(delegation.id, approval_attrs(), scope: admin_scope)
 
     assert {:error, _} = Delegations.complete_delegation(delegation.id, scope: employee_scope)
   end
@@ -59,7 +152,9 @@ defmodule Firmowid.Ash.Delegations.DelegationTest do
     admin_scope: admin_scope
   } do
     delegation = Delegations.create_delegation!(delegation_attrs(), scope: employee_scope)
-    {:ok, delegation} = Delegations.approve_delegation(delegation.id, scope: admin_scope)
+
+    {:ok, delegation} =
+      Delegations.approve_delegation(delegation.id, approval_attrs(), scope: admin_scope)
 
     _expense =
       Ash.Seed.seed!(DelegationExpense, %{
@@ -81,7 +176,9 @@ defmodule Firmowid.Ash.Delegations.DelegationTest do
     admin_scope: admin_scope
   } do
     delegation = Delegations.create_delegation!(delegation_attrs(), scope: employee_scope)
-    {:ok, delegation} = Delegations.approve_delegation(delegation.id, scope: admin_scope)
+
+    {:ok, delegation} =
+      Delegations.approve_delegation(delegation.id, approval_attrs(), scope: admin_scope)
 
     expense =
       seed_expense(delegation, employee_scope.actor,
@@ -114,7 +211,9 @@ defmodule Firmowid.Ash.Delegations.DelegationTest do
     admin_scope: admin_scope
   } do
     delegation = Delegations.create_delegation!(delegation_attrs(), scope: employee_scope)
-    {:ok, delegation} = Delegations.approve_delegation(delegation.id, scope: admin_scope)
+
+    {:ok, delegation} =
+      Delegations.approve_delegation(delegation.id, approval_attrs(), scope: admin_scope)
 
     expense =
       seed_expense(delegation, employee_scope.actor,
@@ -133,7 +232,10 @@ defmodule Firmowid.Ash.Delegations.DelegationTest do
     admin_scope: admin_scope
   } do
     delegation = Delegations.create_delegation!(delegation_attrs(), scope: employee_scope)
-    {:ok, delegation} = Delegations.approve_delegation(delegation.id, scope: admin_scope)
+
+    {:ok, delegation} =
+      Delegations.approve_delegation(delegation.id, approval_attrs(), scope: admin_scope)
+
     expense = seed_foreign_expense(delegation, employee_scope.actor)
 
     for settlement_amount <- [Money.new(:PLN, -1), Money.new(:EUR, 100)] do
@@ -151,7 +253,9 @@ defmodule Firmowid.Ash.Delegations.DelegationTest do
     admin_scope: admin_scope
   } do
     delegation = Delegations.create_delegation!(delegation_attrs(), scope: employee_scope)
-    {:ok, delegation} = Delegations.approve_delegation(delegation.id, scope: admin_scope)
+
+    {:ok, delegation} =
+      Delegations.approve_delegation(delegation.id, approval_attrs(), scope: admin_scope)
 
     assert {:error, _} =
              %{
@@ -179,7 +283,9 @@ defmodule Firmowid.Ash.Delegations.DelegationTest do
     admin_scope: admin_scope
   } do
     delegation = Delegations.create_delegation!(delegation_attrs(), scope: employee_scope)
-    {:ok, delegation} = Delegations.approve_delegation(delegation.id, scope: admin_scope)
+
+    {:ok, delegation} =
+      Delegations.approve_delegation(delegation.id, approval_attrs(), scope: admin_scope)
 
     assert {:ok, _expense} =
              %{
@@ -214,7 +320,9 @@ defmodule Firmowid.Ash.Delegations.DelegationTest do
     admin_scope: admin_scope
   } do
     delegation = Delegations.create_delegation!(delegation_attrs(), scope: employee_scope)
-    {:ok, delegation} = Delegations.approve_delegation(delegation.id, scope: admin_scope)
+
+    {:ok, delegation} =
+      Delegations.approve_delegation(delegation.id, approval_attrs(), scope: admin_scope)
 
     expense =
       seed_expense(delegation, employee_scope.actor,
@@ -270,7 +378,9 @@ defmodule Firmowid.Ash.Delegations.DelegationTest do
     admin_scope: admin_scope
   } do
     delegation = Delegations.create_delegation!(delegation_attrs(), scope: employee_scope)
-    {:ok, delegation} = Delegations.approve_delegation(delegation.id, scope: admin_scope)
+
+    {:ok, delegation} =
+      Delegations.approve_delegation(delegation.id, approval_attrs(), scope: admin_scope)
 
     assert {:error, _error} =
              Delegations.create_expense(
@@ -344,7 +454,7 @@ defmodule Firmowid.Ash.Delegations.DelegationTest do
         destination: "Kraków",
         transport_types: [:railway, :bus],
         purpose: "Spotkanie z klientem",
-        advance_payment_amount: Money.new(:PLN, 100),
+        expected_cost: Money.new(:PLN, 100),
         start_date: ~D[2026-09-10],
         end_date: ~D[2026-09-11]
       },
@@ -357,5 +467,17 @@ defmodule Firmowid.Ash.Delegations.DelegationTest do
     File.write!(path, "delegation expense")
 
     %{upload_path: path, content_type: "application/pdf"}
+  end
+
+  defp approval_attrs do
+    path = Briefly.create!(extname: ".pdf")
+    File.write!(path, "%PDF-1.4 signed command")
+
+    %{
+      advance_amount: Money.new(:PLN, 50),
+      signed_command_filename: "polecenie.pdf",
+      upload_path: path,
+      content_type: "application/pdf"
+    }
   end
 end

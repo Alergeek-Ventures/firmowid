@@ -18,8 +18,8 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
   alias Phoenix.HTML.Form
 
   @impl true
-  def mount(%{"id" => id}, _session, socket) do
-    case load_delegation(id, socket) do
+  def mount(%{"reference" => reference}, _session, socket) do
+    case load_delegation(reference, socket) do
       {:ok, nil} ->
         {:ok, push_navigate(socket, to: ~p"/ustawienia/profil")}
 
@@ -137,7 +137,7 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
             <small>
               <dt class="inline">Zaliczka:</dt>
               <dd class="text-grey-700 inline">
-                {Money.to_string!(@delegation.advance_payment_amount)}
+                {Money.to_string!(@delegation.advance_amount)}
               </dd>
             </small>
           </dl>
@@ -182,7 +182,7 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
                   <.summary_row label="Razem koszty" value={@total} class="font-medium" />
                   <.summary_row
                     label="Pobrana zaliczka"
-                    value={@delegation.advance_payment_amount}
+                    value={@delegation.advance_amount}
                   />
                 </div>
                 <.summary_row label={@balance_label} value={@balance} />
@@ -231,7 +231,7 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
                 <.summary_row label="Razem koszty" value={@total} class="font-medium" />
                 <.summary_row
                   label="Pobrana zaliczka"
-                  value={@delegation.advance_payment_amount}
+                  value={@delegation.advance_amount}
                 />
               </div>
               <.summary_row label={@balance_label} value={@balance} />
@@ -372,7 +372,7 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
 
   def handle_event("sort", _params, socket) do
     delegation =
-      socket.assigns.delegation.id
+      socket.assigns.delegation.reference
       |> load_delegation!(socket)
       |> Map.update!(:expenses, &sort_transport_expenses/1)
 
@@ -404,7 +404,7 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
 
     case safely(fn -> AshPhoenix.Form.submit(socket.assigns.complete_form, params: params) end) do
       {:ok, delegation} ->
-        {:noreply, setup_socket(socket, load_delegation!(delegation.id, socket))}
+        {:noreply, setup_socket(socket, load_delegation!(delegation.reference, socket))}
 
       {:error, %Form{} = complete_form} ->
         socket =
@@ -488,22 +488,23 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
     |> assign_summary()
   end
 
-  defp load_delegation(id, socket),
+  defp load_delegation(reference, socket),
     do:
-      Delegations.get_delegation(id,
+      Delegations.get_delegation_by_reference(reference,
         scope: socket.assigns.ash_scope,
         load: [expenses: [blob: [:url], statement_blob: [:url], related_blobs: [:url]]],
         not_found_error?: false
       )
 
-  defp load_delegation!(id, socket), do: elem(load_delegation(id, socket), 1)
+  defp load_delegation!(reference, socket), do: elem(load_delegation(reference, socket), 1)
 
-  defp reload(socket), do: setup_socket(socket, load_delegation!(socket.assigns.delegation.id, socket))
+  defp reload(socket), do: setup_socket(socket, load_delegation!(socket.assigns.delegation.reference, socket))
 
   defp refresh_delegation(socket, options \\ []) do
-    delegation = load_delegation!(socket.assigns.delegation.id, socket)
+    delegation = load_delegation!(socket.assigns.delegation.reference, socket)
 
     complete_form = complete_form(delegation, socket.assigns.ash_scope, socket.assigns.timezone)
+    delegation = decorate_delegation(delegation, socket.assigns.sort_active?)
 
     complete_form =
       if Keyword.get(options, :preserve_form?, false) do
@@ -1019,7 +1020,7 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
   defp assign_summary(socket) do
     total = SettlementPresentation.sum(socket.assigns.delegation.expenses)
 
-    advance = socket.assigns.delegation.advance_payment_amount
+    advance = socket.assigns.delegation.advance_amount
     {label, balance} = SettlementPresentation.settlement_balance(total, advance)
 
     assign(socket,
