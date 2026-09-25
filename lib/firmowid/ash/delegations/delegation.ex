@@ -1,4 +1,5 @@
 # credo:disable-for-this-file AshCredo.Check.Design.MissingPrimaryAction
+# credo:disable-for-this-file AshCredo.Check.Warning.AuthorizeFalse
 defmodule Firmowid.Ash.Delegations.Delegation do
   @moduledoc "A company-funded business trip submitted by an employee."
 
@@ -10,6 +11,9 @@ defmodule Firmowid.Ash.Delegations.Delegation do
     extensions: [AshStateMachine]
 
   alias Firmowid.Ash.Core.User
+  alias Firmowid.Ash.Delegations.Changes.PrepareDelegationCompletion
+  alias Firmowid.Ash.Delegations.Validations.HasDateChangeReason
+  alias Firmowid.Ash.Delegations.Validations.HasExpenses
   alias Firmowid.Ash.Delegations.Workers.DelegationEmailWorker
   alias Firmowid.Ash.Resource
 
@@ -93,8 +97,31 @@ defmodule Firmowid.Ash.Delegations.Delegation do
     update :complete do
       description "Mark an in-progress delegation as complete."
       require_atomic? false
-      accept []
+      accept [:date_change_reason]
+
+      argument :expenses, {:array, :map}, allow_nil?: false, default: []
+
+      change PrepareDelegationCompletion
+
+      change manage_relationship(:expenses,
+               type: :direct_control,
+               on_match: {:update, :complete},
+               on_no_match: :error,
+               on_missing: :ignore,
+               # The parent completion action authorizes the employee and owns this transaction.
+               authorize?: false
+             )
+
+      validate {HasExpenses, []}
+      validate {HasDateChangeReason, []}
+
       change transition_state(:complete)
+    end
+
+    update :detect_dates do
+      description "Store delegation dates detected from its evidence documents."
+      require_atomic? false
+      accept [:detected_start_date, :detected_end_date]
     end
   end
 
@@ -115,8 +142,16 @@ defmodule Firmowid.Ash.Delegations.Delegation do
       authorize_if expr(user_id == ^actor(:id))
     end
 
-    policy action([:approve, :complete]) do
+    policy action(:approve) do
       forbid_if always()
+    end
+
+    policy action(:complete) do
+      authorize_if expr(status == :in_progress and user_id == ^actor(:id))
+    end
+
+    policy action(:detect_dates) do
+      authorize_if expr(status == :in_progress and user_id == ^actor(:id))
     end
   end
 
@@ -143,6 +178,9 @@ defmodule Firmowid.Ash.Delegations.Delegation do
     attribute :advance_payment_amount, AshMoney.Types.Money, allow_nil?: false, public?: true
     attribute :start_date, :date, allow_nil?: false, public?: true
     attribute :end_date, :date, allow_nil?: false, public?: true
+    attribute :detected_start_date, :date, public?: true
+    attribute :detected_end_date, :date, public?: true
+    attribute :date_change_reason, :string, public?: true
 
     attribute :status, :atom do
       allow_nil? false
@@ -163,5 +201,11 @@ defmodule Firmowid.Ash.Delegations.Delegation do
     belongs_to :organization, Firmowid.Ash.Core.Organization do
       allow_nil? false
     end
+
+    has_many :expenses, Firmowid.Ash.Delegations.DelegationExpense
+  end
+
+  aggregates do
+    sum :expenses_total, :expenses, :expense_amount
   end
 end
