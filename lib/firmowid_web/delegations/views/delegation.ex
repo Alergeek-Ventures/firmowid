@@ -147,7 +147,7 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
     do: {:noreply, update(socket, :description_visible?, &Map.put(&1, id, false))}
 
   def handle_event("sort", _params, socket) do
-    case load_delegation(socket.assigns.delegation.id, socket) do
+    case load_delegation(socket.assigns.delegation.reference, socket) do
       {:ok, delegation} when not is_nil(delegation) ->
         delegation = Map.update!(delegation, :expenses, &sort_transport_expenses/1)
 
