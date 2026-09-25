@@ -345,7 +345,7 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
       end)
 
     case result do
-      :ok -> {:noreply, reload(socket)}
+      :ok -> {:noreply, refresh_delegation(socket, preserve_form?: true)}
       _ -> {:noreply, put_flash(socket, :error, "Nie udało się usunąć powiązanego dokumentu.")}
     end
   end
@@ -359,7 +359,7 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
       end)
 
     case result do
-      {:ok, _expense} -> {:noreply, refresh_delegation(socket)}
+      {:ok, _expense} -> {:noreply, refresh_delegation(socket, preserve_form?: true)}
       _ -> {:noreply, put_flash(socket, :error, "Nie udało się usunąć wyciągu.")}
     end
   end
@@ -500,10 +500,18 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
 
   defp reload(socket), do: setup_socket(socket, load_delegation!(socket.assigns.delegation.id, socket))
 
-  defp refresh_delegation(socket) do
+  defp refresh_delegation(socket, options \\ []) do
     delegation = load_delegation!(socket.assigns.delegation.id, socket)
 
     complete_form = complete_form(delegation, socket.assigns.ash_scope, socket.assigns.timezone)
+
+    complete_form =
+      if Keyword.get(options, :preserve_form?, false) do
+        validate_complete_form(complete_form, socket.assigns.complete_form.source.raw_params)
+      else
+        complete_form
+      end
+
     delegation = decorate_delegation(delegation, socket.assigns.sort_active?)
 
     socket
@@ -595,7 +603,7 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
     socket =
       case consume_statement_document(socket, entry, expense_id) do
         {:ok, _expense} ->
-          socket |> refresh_delegation() |> assign(:statement_expense_id, nil)
+          socket |> refresh_delegation(preserve_form?: true) |> assign(:statement_expense_id, nil)
 
         {:error, _reason} ->
           socket
@@ -614,7 +622,7 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
     socket =
       case consume_related_document(socket, entry, expense_id) do
         {:ok, _expense} ->
-          socket |> refresh_delegation() |> assign(:related_expense_id, nil)
+          socket |> refresh_delegation(preserve_form?: true) |> assign(:related_expense_id, nil)
 
         {:error, _reason} ->
           socket
