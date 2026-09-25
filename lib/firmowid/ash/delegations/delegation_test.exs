@@ -152,7 +152,9 @@ defmodule Firmowid.Ash.Delegations.DelegationTest do
     admin_scope: admin_scope
   } do
     delegation = Delegations.create_delegation!(delegation_attrs(), scope: employee_scope)
-    {:ok, delegation} = Delegations.approve_delegation(delegation.id, scope: admin_scope)
+
+    {:ok, delegation} =
+      Delegations.approve_delegation(delegation.id, approval_attrs(), scope: admin_scope)
 
     _expense =
       Ash.Seed.seed!(DelegationExpense, %{
@@ -174,7 +176,9 @@ defmodule Firmowid.Ash.Delegations.DelegationTest do
     admin_scope: admin_scope
   } do
     delegation = Delegations.create_delegation!(delegation_attrs(), scope: employee_scope)
-    {:ok, delegation} = Delegations.approve_delegation(delegation.id, scope: admin_scope)
+
+    {:ok, delegation} =
+      Delegations.approve_delegation(delegation.id, approval_attrs(), scope: admin_scope)
 
     expense =
       seed_expense(delegation, employee_scope.actor,
@@ -207,7 +211,9 @@ defmodule Firmowid.Ash.Delegations.DelegationTest do
     admin_scope: admin_scope
   } do
     delegation = Delegations.create_delegation!(delegation_attrs(), scope: employee_scope)
-    {:ok, delegation} = Delegations.approve_delegation(delegation.id, scope: admin_scope)
+
+    {:ok, delegation} =
+      Delegations.approve_delegation(delegation.id, approval_attrs(), scope: admin_scope)
 
     expense =
       seed_expense(delegation, employee_scope.actor,
@@ -226,7 +232,10 @@ defmodule Firmowid.Ash.Delegations.DelegationTest do
     admin_scope: admin_scope
   } do
     delegation = Delegations.create_delegation!(delegation_attrs(), scope: employee_scope)
-    {:ok, delegation} = Delegations.approve_delegation(delegation.id, scope: admin_scope)
+
+    {:ok, delegation} =
+      Delegations.approve_delegation(delegation.id, approval_attrs(), scope: admin_scope)
+
     expense = seed_foreign_expense(delegation, employee_scope.actor)
 
     for settlement_amount <- [Money.new(:PLN, -1), Money.new(:EUR, 100)] do

@@ -372,7 +372,7 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
 
   def handle_event("sort", _params, socket) do
     delegation =
-      socket.assigns.delegation.id
+      socket.assigns.delegation.reference
       |> load_delegation!(socket)
       |> Map.update!(:expenses, &sort_transport_expenses/1)
 

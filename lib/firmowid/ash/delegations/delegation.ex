@@ -11,9 +11,9 @@ defmodule Firmowid.Ash.Delegations.Delegation do
     extensions: [AshStateMachine]
 
   alias Firmowid.Ash.Core.User
-  alias Firmowid.Ash.Delegations.Changes.PrepareDelegationCompletion
   alias Firmowid.Ash.Delegations.Changes.AssignReference
   alias Firmowid.Ash.Delegations.Changes.CreateSignedCommandBlob
+  alias Firmowid.Ash.Delegations.Changes.PrepareDelegationCompletion
   alias Firmowid.Ash.Delegations.Validations.HasDateChangeReason
   alias Firmowid.Ash.Delegations.Validations.HasExpenses
   alias Firmowid.Ash.Delegations.Workers.DelegationEmailWorker
