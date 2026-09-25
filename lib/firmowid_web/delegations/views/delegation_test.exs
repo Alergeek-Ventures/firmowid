@@ -265,7 +265,7 @@ defmodule FirmowidWeb.Delegations.Views.DelegationTest do
     {user, delegation} = approved_delegation()
     expense = seed_expense(delegation, user)
     upload_fixture = Path.expand("../../../test/fixtures/receipt.png", __DIR__)
-    {:ok, view, _html} = conn |> log_in_user(user) |> live(~p"/delegacje/#{delegation.id}")
+    {:ok, view, _html} = conn |> log_in_user(user) |> live(~p"/delegacje/#{delegation.reference}")
 
     params = %{
       "expenses" => %{
@@ -316,7 +316,7 @@ defmodule FirmowidWeb.Delegations.Views.DelegationTest do
 
     seed_transport_expense(delegation, user)
 
-    {:ok, view, _html} = conn |> log_in_user(user) |> live(~p"/delegacje/#{delegation.id}")
+    {:ok, view, _html} = conn |> log_in_user(user) |> live(~p"/delegacje/#{delegation.reference}")
 
     view |> element("button", "Sortuj chronologicznie") |> render_click()
 
