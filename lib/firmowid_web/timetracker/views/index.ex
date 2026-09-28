@@ -405,10 +405,13 @@ defmodule FirmowidWeb.Timetracker.Views.Index do
 
         {:noreply, socket}
 
-      {:error, session_id, %Invalid{errors: errors}} ->
-        Enum.each(errors, fn error ->
-          LiveToast.send_toast(:error, "#{Exception.message(error)} (sesja ID: #{session_id})")
-        end)
+      {:error, _session_id, %Invalid{errors: errors}} ->
+        messages =
+          Enum.map_join(errors, ", ", fn error ->
+            Map.get(error, :message, "Nieznany błąd")
+          end)
+
+        LiveToast.send_toast(:error, messages)
 
         {:noreply, socket}
 
