@@ -53,6 +53,10 @@ config :firmowid, :bank_data_api_client,
     plug: {Req.Test, :bank_data_transactions}
   ]
 
+config :firmowid, :gotenberg, base_url: "http://localhost:3000"
+
+# Gotenberg is not running during tests, so it is excluded from /health.
+config :firmowid, :health_checks, [:database, :oban]
 config :firmowid, :nip_api_request_options, plug: {Req.Test, :nip_api}
 config :firmowid, :openai_api_key, "test-openai-api-key"
 config :firmowid, :reducto_api_key, "test-reducto-api-key"
