@@ -3,10 +3,10 @@ defmodule FirmowidWeb.Management.Views.Delegation do
 
   use FirmowidWeb, :live_view
 
-  import FirmowidWeb.Delegations.Components.Delegation, only: [detail_row: 1]
   import FirmowidUI.Components.Button
-  import FirmowidWeb.DesignSystem.Components.CoreComponents, except: [button: 1]
   import FirmowidUI.Components.Link
+  import FirmowidWeb.Delegations.Components.Delegation, only: [detail_row: 1]
+  import FirmowidWeb.DesignSystem.Components.CoreComponents, except: [button: 1]
   import FirmowidWeb.DesignSystem.Components.MonthPicker
   import Phoenix.Component, except: [link: 1]
 
@@ -21,7 +21,9 @@ defmodule FirmowidWeb.Management.Views.Delegation do
   def mount(_params, _session, socket) do
     {:ok,
      socket
-     |> assign(:command_generated, false)
+     |> assign(:generated_advance_amount, nil)
+     |> assign(:generated_billing_month, nil)
+     |> assign(:current_advance_amount, Money.new(:PLN, 0))
      |> allow_upload(:signed_command, accept: ~w(.pdf), max_entries: 1)}
   end
 
@@ -53,6 +55,8 @@ defmodule FirmowidWeb.Management.Views.Delegation do
            |> assign(:employment_contract, employment_contract)
            |> assign(:delegation, delegation)
            |> assign(:command_form, command_form(false, delegation.advance_amount))
+           |> assign(:current_advance_amount, delegation.advance_amount)
+           |> assign(:billing_month, delegation.billing_month)
            |> assign(:page_title, "Polecenie wyjazdu służbowego")}
         else
           {:noreply, push_navigate(socket, to: Navigation.employee_path(employee.id))}
@@ -61,13 +65,16 @@ defmodule FirmowidWeb.Management.Views.Delegation do
   end
 
   @impl true
-  def handle_event("toggle-advance", %{"delegation_command" => %{"advance" => value}}, socket) do
+  def handle_event("toggle-advance", %{"delegation_command" => params}, socket) do
+    advance_amount = advance_amount(params)
+
     {:noreply,
-     assign(
-       socket,
+     socket
+     |> assign(
        :command_form,
-       command_form(value == "true", socket.assigns.delegation.advance_amount)
-     )}
+       command_form(params["advance"] == "true", advance_amount)
+     )
+     |> assign(:current_advance_amount, advance_amount)}
   end
 
   @impl true
@@ -83,11 +90,37 @@ defmodule FirmowidWeb.Management.Views.Delegation do
         {:noreply,
          socket
          |> assign(:delegation, delegation)
-         |> assign(:command_generated, true)
+         |> assign(:generated_advance_amount, advance_amount)
+         |> assign(:generated_billing_month, delegation.billing_month)
+         |> assign(:current_advance_amount, advance_amount)
          |> assign(:command_form, command_form(params["advance"] == "true", advance_amount))}
 
       {:error, _error} ->
         {:noreply, put_flash(socket, :error, "Nie udało się wygenerować polecenia.")}
+    end
+  end
+
+  @impl true
+  def handle_event("change-month", %{"month" => month}, socket) do
+    case Date.from_iso8601(month) do
+      {:ok, billing_month} ->
+        case Delegations.update_delegation_billing_month(
+               socket.assigns.delegation.id,
+               %{billing_month: billing_month},
+               scope: socket.assigns.ash_scope
+             ) do
+          {:ok, delegation} ->
+            {:noreply,
+             socket
+             |> assign(:delegation, delegation)
+             |> assign(:billing_month, delegation.billing_month)}
+
+          {:error, _error} ->
+            {:noreply, put_flash(socket, :error, "Nie udało się zmienić miesiąca rozliczeniowego.")}
+        end
+
+      {:error, _reason} ->
+        {:noreply, put_flash(socket, :error, "Nieprawidłowy miesiąc rozliczeniowy.")}
     end
   end
 
@@ -130,7 +163,7 @@ defmodule FirmowidWeb.Management.Views.Delegation do
   @impl true
   def render(assigns) do
     ~H"""
-    <main class="w-full p-6 lg:px-4">
+    <main class="w-full px-4 py-6">
       <.back navigate={Navigation.employee_path(@employee.id)} class="justify-self-start">
         Profil pracownika
       </.back>
@@ -139,23 +172,23 @@ defmodule FirmowidWeb.Management.Views.Delegation do
 
       <div class="mt-10 grid grid-cols-1 items-start gap-10 lg:grid-cols-2">
         <section>
-          <p class="text-grey-700 max-w-xl text-base text-balance">
+          <p class="max-w-xl text-base text-balance text-grey-700">
             Poniżej znajdziesz szczegóły delegacji zgłoszonej przez pracownika. Na tej podstawie ustal, czy przysługuje mu zaliczka, a następnie wygeneruj polecenie.
           </p>
 
-          <dl class="mt-8 grid grid-cols-[minmax(10rem,auto)_1fr] gap-x-8 gap-y-5">
+          <dl class="mt-8 grid grid-cols-1 gap-x-8 gap-y-5 lg:grid-cols-[minmax(10rem,auto)_1fr]">
             <.detail_row label="Imię i nazwisko">
               <span class="flex items-center gap-2">
                 <.avatar
                   id="delegation-employee-avatar"
-                  class="bg-grey-100 border-grey-200 size-6 rounded-full border"
+                  class="size-6 rounded-full border border-grey-200 bg-grey-100"
                 >
                   <.avatar_image
                     :if={@employee.avatar_blob && @employee.avatar_blob.url}
                     src={@employee.avatar_blob.url}
                     alt={@employee.name || @employee.email}
                   />
-                  <.avatar_fallback class="text-grey-700 text-[10px] font-medium">
+                  <.avatar_fallback class="text-[10px] font-medium text-grey-700">
                     {initial(@employee.name || @employee.email)}
                   </.avatar_fallback>
                 </.avatar>
@@ -181,13 +214,13 @@ defmodule FirmowidWeb.Management.Views.Delegation do
             phx-submit="generate"
             class="mt-10"
           >
-            <dl class="grid grid-cols-[minmax(10rem,auto)_1fr] items-start gap-x-8 gap-y-5">
-              <dt class="text-grey-700 text-base">Zaliczka</dt>
+            <dl class="grid grid-cols-1 items-start gap-x-8 gap-y-5 lg:grid-cols-[minmax(10rem,auto)_1fr]">
+              <dt class="text-base text-grey-700">Zaliczka</dt>
               <dd><.switch field={@command_form[:advance]} color="turquoise" /></dd>
 
-              <dt class="text-grey-500 text-base">Na kwotę</dt>
+              <dt class="text-base text-grey-500">Na kwotę</dt>
               <dd>
-                <div class="inline-grid grid-cols-[8rem_auto] items-center gap-x-2 gap-y-5">
+                <div class="grid w-full grid-cols-[8rem_auto] items-center gap-x-2 gap-y-5 lg:w-auto">
                   <.input
                     field={@command_form[:amount]}
                     type="number"
@@ -199,13 +232,21 @@ defmodule FirmowidWeb.Management.Views.Delegation do
                     aria-describedby="delegation-command-currency"
                     input_class="w-32 text-right text-grey-700 placeholder:text-grey-700 disabled:border-grey-400 disabled:text-grey-400 disabled:placeholder:text-grey-300"
                   />
-                  <span id="delegation-command-currency" class="text-grey-500 text-sm">PLN</span>
+                  <span id="delegation-command-currency" class="text-sm text-grey-500">PLN</span>
                   <.button
                     type="submit"
                     variant="primary"
                     accent="turquoise"
                     size="small"
                     class="col-span-2 w-full"
+                    disabled={
+                      not command_changed?(
+                        @generated_advance_amount,
+                        @current_advance_amount,
+                        @generated_billing_month,
+                        @billing_month
+                      )
+                    }
                   >
                     Wygeneruj polecenie
                   </.button>
@@ -216,20 +257,30 @@ defmodule FirmowidWeb.Management.Views.Delegation do
         </section>
 
         <section>
-          <dl class="grid grid-cols-[auto_1fr] gap-x-6 text-base">
-            <dt class="text-grey-700">Miesiąc rozliczeniowy</dt>
-            <dd>{format_billing_month(@delegation.billing_month)}</dd>
-          </dl>
+          <div class="grid w-full grid-cols-1 gap-y-2 text-base lg:ml-auto lg:w-fit lg:grid-cols-[auto_1fr] lg:items-center lg:gap-x-6">
+            <span class="text-grey-700">Miesiąc rozliczeniowy</span>
+            <div class="relative w-57">
+              <.month_picker
+                id="delegation-billing-month"
+                selected_date={Date.to_iso8601(@billing_month)}
+                show_on_mobile
+                variant="outline"
+                size="small"
+                class="w-full pr-10"
+              />
+              <Lucideicons.chevron_down class="pointer-events-none absolute top-1/2 right-3 size-4 -translate-y-1/2 text-grey-700" />
+            </div>
+          </div>
 
-          <%= if not @command_generated do %>
-            <div class="border-grey-200 mt-8 flex min-h-96 items-center justify-center rounded-md border p-8 text-center shadow-sm">
-              <p class="text-grey-700 text-base">Wygeneruj polecenie, aby móc je podpisać.</p>
+          <%= if is_nil(@generated_advance_amount) do %>
+            <div class="mt-8 flex min-h-96 items-center justify-center rounded-md border border-grey-200 p-8 text-center shadow-sm">
+              <p class="text-base text-grey-700">Wygeneruj polecenie, aby móc je podpisać.</p>
             </div>
           <% else %>
-            <div class="border-grey-200 mt-8 min-h-96 rounded-md border p-8 shadow-sm">
+            <div class="mt-8 min-h-96 rounded-md border border-grey-200 p-8 shadow-sm">
               <div class="flex items-center justify-between gap-4">
-                <h2 class="text-turquoise-700 text-base font-medium">Polecenie wyjazdu służbowego</h2>
-                <p class="text-grey-400 text-base">
+                <h2 class="text-base font-medium text-turquoise-700">Polecenie wyjazdu służbowego</h2>
+                <p class="text-base text-grey-400">
                   {if Money.equal?(@delegation.advance_amount, Money.new(:PLN, 0)),
                     do: "Bez zaliczki",
                     else:
@@ -247,10 +298,10 @@ defmodule FirmowidWeb.Management.Views.Delegation do
                       ~p"/zarzadzanie/pracownicy/#{@employee.id}/delegacje/#{@delegation.reference}/pdf"
                     }
                     download
-                    class="ml-2 inline-flex"
+                    class="mt-2 flex w-fit max-w-full sm:mt-0 sm:ml-2 sm:inline-flex"
                   >
-                    <Lucideicons.file_text class="text-grey-900 size-4" />
-                    {command_filename(@employee)}
+                    <Lucideicons.file_text class="size-4 shrink-0 text-grey-900" />
+                    <span class="truncate">{command_filename(@employee)}</span>
                   </.link>
                 </li>
                 <li>
@@ -259,7 +310,7 @@ defmodule FirmowidWeb.Management.Views.Delegation do
                     kind="unstyled"
                     external={ElectronicSignature.trusted_profile_url()}
                     target="_blank"
-                    class="text-turquoise-700 inline-flex items-center gap-1 font-medium whitespace-nowrap"
+                    class="inline-flex items-center gap-1 font-medium whitespace-nowrap text-turquoise-700"
                   >
                     Profilem Zaufanym <Lucideicons.external_link class="size-4" />
                   </.link>
@@ -277,9 +328,10 @@ defmodule FirmowidWeb.Management.Views.Delegation do
                   :if={@uploads.signed_command.entries == []}
                   for={@uploads.signed_command.ref}
                   phx-drop-target={@uploads.signed_command.ref}
-                  class="border-turquoise-200 flex min-h-28 cursor-pointer items-center justify-center rounded-[5px] border border-dashed px-4 text-center"
+                  class="flex min-h-28 cursor-pointer items-center justify-center rounded-[5px] border border-dashed border-turquoise-200 px-4 text-center"
                 >
-                  <span>Przeciągnij plik tutaj lub
+                  <span class="text-turquoise-700 sm:hidden">Wybierz plik</span>
+                  <span class="hidden sm:inline">Przeciągnij plik tutaj lub
                   <span class="text-turquoise-700">wybierz z komputera</span></span>
                 </label>
                 <.file_display
@@ -329,6 +381,13 @@ defmodule FirmowidWeb.Management.Views.Delegation do
 
   defp advance_amount(_params), do: Money.new(:PLN, 0)
 
+  defp command_changed?(nil, _advance_amount, _generated_billing_month, _billing_month), do: true
+
+  defp command_changed?(generated_advance_amount, advance_amount, generated_billing_month, billing_month) do
+    not Money.equal?(generated_advance_amount, advance_amount) or
+      generated_billing_month != billing_month
+  end
+
   defp upload_error(:too_large), do: "Plik jest zbyt duży."
   defp upload_error(:too_many_files), do: "Możesz dodać tylko jeden plik."
   defp upload_error(:not_accepted), do: "Wgraj plik PDF."
@@ -340,10 +399,10 @@ defmodule FirmowidWeb.Management.Views.Delegation do
     ~H"""
     <div
       phx-drop-target={@upload.ref}
-      class="bg-turquoise-100 flex min-h-28 items-center justify-between rounded-[5px] px-4"
+      class="flex min-h-28 items-center justify-between rounded-[5px] bg-turquoise-100 px-4"
     >
       <span class="flex min-w-0 items-center gap-2 text-sm">
-        <Lucideicons.file_text class="size-5 shrink-0 fill-current" />
+        <Lucideicons.file_text class="size-5 shrink-0" />
         <span class="truncate">{@entry.client_name}</span>
       </span>
       <.button
@@ -351,7 +410,7 @@ defmodule FirmowidWeb.Management.Views.Delegation do
         variant="unstyled"
         phx-click="cancel-upload"
         phx-value-ref={@entry.ref}
-        class="hover:text-turquoise-700 text-turquoise-500 ml-3 flex size-8 shrink-0 items-center justify-center transition"
+        class="ml-3 flex size-8 shrink-0 items-center justify-center text-turquoise-500 transition hover:text-turquoise-700"
         aria-label="Usuń podpisane polecenie"
       >
         <Lucideicons.x class="size-5" />
@@ -374,8 +433,4 @@ defmodule FirmowidWeb.Management.Views.Delegation do
   end
 
   defp initial(name), do: name |> String.trim() |> String.first() |> String.upcase()
-
-  defp format_billing_month(billing_month) do
-    Cldr.Date.to_string!(billing_month, Firmowid.Cldr, format: "LLLL y", locale: "pl")
-  end
 end
