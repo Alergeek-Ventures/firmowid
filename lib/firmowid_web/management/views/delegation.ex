@@ -163,7 +163,7 @@ defmodule FirmowidWeb.Management.Views.Delegation do
   @impl true
   def render(assigns) do
     ~H"""
-    <main class="w-full p-6 lg:px-4">
+    <main class="w-full px-4 py-6">
       <.back navigate={Navigation.employee_path(@employee.id)} class="justify-self-start">
         Profil pracownika
       </.back>
@@ -176,7 +176,7 @@ defmodule FirmowidWeb.Management.Views.Delegation do
             Poniżej znajdziesz szczegóły delegacji zgłoszonej przez pracownika. Na tej podstawie ustal, czy przysługuje mu zaliczka, a następnie wygeneruj polecenie.
           </p>
 
-          <dl class="mt-8 grid grid-cols-[minmax(10rem,auto)_1fr] gap-x-8 gap-y-5">
+          <dl class="mt-8 grid grid-cols-1 gap-x-8 gap-y-5 lg:grid-cols-[minmax(10rem,auto)_1fr]">
             <.detail_row label="Imię i nazwisko">
               <span class="flex items-center gap-2">
                 <.avatar
@@ -214,13 +214,13 @@ defmodule FirmowidWeb.Management.Views.Delegation do
             phx-submit="generate"
             class="mt-10"
           >
-            <dl class="grid grid-cols-[minmax(10rem,auto)_1fr] items-start gap-x-8 gap-y-5">
+            <dl class="grid grid-cols-1 items-start gap-x-8 gap-y-5 lg:grid-cols-[minmax(10rem,auto)_1fr]">
               <dt class="text-grey-700 text-base">Zaliczka</dt>
               <dd><.switch field={@command_form[:advance]} color="turquoise" /></dd>
 
               <dt class="text-grey-500 text-base">Na kwotę</dt>
               <dd>
-                <div class="inline-grid grid-cols-[8rem_auto] items-center gap-x-2 gap-y-5">
+                <div class="grid w-full grid-cols-[8rem_auto] items-center gap-x-2 gap-y-5 lg:w-auto">
                   <.input
                     field={@command_form[:amount]}
                     type="number"
@@ -257,12 +257,13 @@ defmodule FirmowidWeb.Management.Views.Delegation do
         </section>
 
         <section>
-          <div class="grid w-fit grid-cols-[auto_1fr] items-center gap-x-6 text-base lg:ml-auto">
+          <div class="grid w-full grid-cols-1 gap-y-2 text-base lg:ml-auto lg:w-fit lg:grid-cols-[auto_1fr] lg:items-center lg:gap-x-6">
             <span class="text-grey-700">Miesiąc rozliczeniowy</span>
             <div class="relative w-57">
               <.month_picker
                 id="delegation-billing-month"
                 selected_date={Date.to_iso8601(@billing_month)}
+                show_on_mobile
                 variant="outline"
                 size="small"
                 class="w-full pr-10"
@@ -297,10 +298,10 @@ defmodule FirmowidWeb.Management.Views.Delegation do
                       ~p"/zarzadzanie/pracownicy/#{@employee.id}/delegacje/#{@delegation.reference}/pdf"
                     }
                     download
-                    class="ml-2 inline-flex"
+                    class="mt-2 flex w-fit max-w-full sm:mt-0 sm:ml-2 sm:inline-flex"
                   >
-                    <Lucideicons.file_text class="text-grey-900 size-4" />
-                    {command_filename(@employee)}
+                    <Lucideicons.file_text class="text-grey-900 size-4 shrink-0" />
+                    <span class="truncate">{command_filename(@employee)}</span>
                   </.link>
                 </li>
                 <li>
@@ -329,7 +330,8 @@ defmodule FirmowidWeb.Management.Views.Delegation do
                   phx-drop-target={@uploads.signed_command.ref}
                   class="border-turquoise-200 flex min-h-28 cursor-pointer items-center justify-center rounded-[5px] border border-dashed px-4 text-center"
                 >
-                  <span>Przeciągnij plik tutaj lub
+                  <span class="text-turquoise-700 sm:hidden">Wybierz plik</span>
+                  <span class="hidden sm:inline">Przeciągnij plik tutaj lub
                   <span class="text-turquoise-700">wybierz z komputera</span></span>
                 </label>
                 <.file_display
@@ -400,7 +402,7 @@ defmodule FirmowidWeb.Management.Views.Delegation do
       class="bg-turquoise-100 flex min-h-28 items-center justify-between rounded-[5px] px-4"
     >
       <span class="flex min-w-0 items-center gap-2 text-sm">
-        <Lucideicons.file_text class="size-5 shrink-0 fill-current" />
+        <Lucideicons.file_text class="size-5 shrink-0" />
         <span class="truncate">{@entry.client_name}</span>
       </span>
       <.button
