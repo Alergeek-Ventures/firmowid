@@ -1014,32 +1014,33 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.Template do
   end
 
   defp correction_table_rows(current_items, reference_items, compare_vat_rate?) do
-    paired =
+    rows =
       current_items
-      |> Enum.zip(reference_items)
-      |> Enum.with_index(1)
-      |> Enum.flat_map(fn {{curr, ref}, index} ->
-        if correction_item_changed?(curr, ref, compare_vat_rate?) do
-          [{ref, index, true}, {curr, index, false}]
-        else
-          [{curr, index, false}]
+      |> Enum.with_index()
+      |> Enum.flat_map(fn {curr, offset} ->
+        index = offset + 1
+
+        case Enum.at(reference_items, offset) do
+          nil ->
+            [{curr, index, false}]
+
+          ref ->
+            if correction_item_changed?(curr, ref, compare_vat_rate?) do
+              [{ref, index, true}, {curr, index, false}]
+            else
+              [{curr, index, false}]
+            end
         end
       end)
 
-    paired_count = length(paired)
-
-    added =
-      current_items
-      |> Enum.drop(paired_count)
-      |> Enum.with_index(paired_count + 1)
-      |> Enum.map(fn {item, index} -> {item, index, false} end)
+    removed_from = length(current_items)
 
     removed =
       reference_items
-      |> Enum.drop(paired_count)
-      |> Enum.with_index(paired_count + 1)
+      |> Enum.drop(removed_from)
+      |> Enum.with_index(removed_from + 1)
       |> Enum.map(fn {item, index} -> {item, index, true} end)
 
-    paired ++ added ++ removed
+    rows ++ removed
   end
 end
