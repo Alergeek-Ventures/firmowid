@@ -38,12 +38,11 @@ defmodule FirmowidWeb.Delegations.Views.DelegationForm do
   @impl true
   def render(assigns) do
     ~H"""
-    <div class="relative mt-4 min-h-screen font-[340]">
-      <.back
-        navigate={~p"/ustawienia/profil"}
-        class="absolute top-0 left-0.5 inline-flex text-sm"
-      />
-      <main class="px-32 pb-12">
+    <div class="mt-4 min-h-screen font-[340]">
+      <div class="mb-6">
+        <.back navigate={~p"/ustawienia/profil"} class="inline-flex text-sm" />
+      </div>
+      <main class="px-0 pb-12 sm:px-32">
         <h1 class="text-2xl/tight font-normal">Planowanie delegacji</h1>
         <p class="text-grey-700 mt-6 max-w-3xl text-base text-balance">
           Wypełnij poniższy wniosek. Po wysłaniu zostanie on przesłany do Twojego pracodawcy. Gdy zostanie zaakceptowany otrzymasz maila z potwierdzeniem.
@@ -53,17 +52,18 @@ defmodule FirmowidWeb.Delegations.Views.DelegationForm do
           id="delegation-form"
           phx-change="validate"
           phx-submit="save"
-          class="mt-19"
+          class="mt-10 sm:mt-19"
         >
           <fieldset class="contents">
             <legend class="sr-only">Dane delegacji</legend>
-            <div class="grid max-w-216 grid-cols-[auto_1fr] items-center gap-x-5 gap-y-4">
+            <div class="grid max-w-216 grid-cols-1 gap-y-2 sm:grid-cols-[auto_1fr] sm:items-center sm:gap-x-5 sm:gap-y-4">
               <.form_row label="Miesiąc rozliczeniowy" for="delegation_billing_month">
                 <div class="relative w-57">
                   <.month_picker
                     id="delegation_billing_month"
                     selected_date={Date.to_iso8601(@billing_month)}
                     active_months={@months}
+                    show_on_mobile
                     variant="outline"
                     size="small"
                     class="bg-grey-50 w-full pr-10"
@@ -77,7 +77,7 @@ defmodule FirmowidWeb.Delegations.Views.DelegationForm do
                 </div>
               </.form_row>
               <dl class="contents">
-                <.detail_row dd_class="mt-8" dt_class="mt-8" label="Imię i nazwisko">
+                <.detail_row dd_class="sm:mt-8" dt_class="sm:mt-8" label="Imię i nazwisko">
                   {@current_user.display_name}
                 </.detail_row>
                 <.detail_row label="Stanowisko">
@@ -85,30 +85,36 @@ defmodule FirmowidWeb.Delegations.Views.DelegationForm do
                 </.detail_row>
               </dl>
               <.form_row label="Data wyjazdu" for="delegation_start_date">
-                <div class="flex items-start gap-2">
-                  <.input
-                    field={@form[:start_date]}
-                    id="delegation_start_date"
-                    type="date"
-                    new
-                    required
-                    placeholder="__.__.____"
-                    pattern="[0-9]{2}\.[0-9]{2}\.[0-9]{4}"
-                    aria-label="Data wyjazdu"
-                    input_class="placeholder:text-grey-300 max-w-48"
-                  />
-                  <span aria-hidden="true" class="mt-2">-</span>
-                  <.input
-                    field={@form[:end_date]}
-                    id="delegation_end_date"
-                    type="date"
-                    new
-                    required
-                    placeholder="__.__.____"
-                    pattern="[0-9]{2}\.[0-9]{2}\.[0-9]{4}"
-                    aria-label="Data powrotu"
-                    input_class="placeholder:text-grey-300 max-w-48"
-                  />
+                <div class="flex flex-wrap items-start gap-2">
+                  <div class="w-full sm:w-auto">
+                    <span class="text-grey-700 text-sm sm:hidden">od</span>
+                    <.input
+                      field={@form[:start_date]}
+                      id="delegation_start_date"
+                      type="date"
+                      new
+                      required
+                      placeholder="__.__.____"
+                      pattern="[0-9]{2}\.[0-9]{2}\.[0-9]{4}"
+                      aria-label="Data wyjazdu"
+                      input_class="placeholder:text-grey-300 w-full sm:max-w-48"
+                    />
+                  </div>
+                  <span aria-hidden="true" class="mt-2 hidden sm:block">-</span>
+                  <div class="w-full sm:w-auto">
+                    <span class="text-grey-700 text-sm sm:hidden">do</span>
+                    <.input
+                      field={@form[:end_date]}
+                      id="delegation_end_date"
+                      type="date"
+                      new
+                      required
+                      placeholder="__.__.____"
+                      pattern="[0-9]{2}\.[0-9]{2}\.[0-9]{4}"
+                      aria-label="Data powrotu"
+                      input_class="placeholder:text-grey-300 w-full sm:max-w-48"
+                    />
+                  </div>
                 </div>
               </.form_row>
               <.form_row
@@ -122,7 +128,7 @@ defmodule FirmowidWeb.Delegations.Views.DelegationForm do
                   type="text"
                   new
                   required
-                  input_class="max-w-125"
+                  input_class="w-full sm:max-w-125"
                 />
               </.form_row>
               <.form_row
@@ -130,10 +136,10 @@ defmodule FirmowidWeb.Delegations.Views.DelegationForm do
                 for="delegation_transport_types_0"
                 label_class="self-start pt-2"
               >
-                <div class="flex w-125 flex-col gap-2">
+                <div class="flex w-full flex-col gap-2 sm:w-125">
                   <div
                     :for={{transport_type, index} <- Enum.with_index(@transport_types)}
-                    class="flex gap-2"
+                    class="flex flex-wrap gap-2"
                   >
                     <.input
                       id={"delegation_transport_types_#{index}"}
@@ -145,7 +151,7 @@ defmodule FirmowidWeb.Delegations.Views.DelegationForm do
                       prompt="Wybierz z listy"
                       options={transport_options()}
                       selected_labels={%{"bus" => "Autobus"}}
-                      input_class="w-56"
+                      container_class="w-full sm:w-56"
                     />
                     <.button
                       :if={index < length(@transport_types) - 1}
@@ -178,23 +184,25 @@ defmodule FirmowidWeb.Delegations.Views.DelegationForm do
                   new
                   required
                   placeholder="np. Wyjazd na Elixir Conf"
-                  input_class="placeholder:text-grey-300 max-w-125"
+                  input_class="placeholder:text-grey-300 w-full sm:max-w-125"
                 />
               </.form_row>
               <.form_row label="Przewidywana kwota" for="delegation_amount">
-                <div class="flex items-center gap-2">
-                  <.input
-                    field={@form[:advance_payment_amount]}
-                    id="delegation_amount"
-                    type="number"
-                    new
-                    min="0"
-                    step="0.01"
-                    required
-                    placeholder="0.00"
-                    aria-describedby="delegation_amount_currency"
-                    input_class="w-25 text-right placeholder:text-grey-300 max-w-25"
-                  />
+                <div class="flex flex-wrap items-center gap-2">
+                  <div class="min-w-0 flex-1 sm:flex-none">
+                    <.input
+                      field={@form[:advance_payment_amount]}
+                      id="delegation_amount"
+                      type="number"
+                      new
+                      min="0"
+                      step="0.01"
+                      required
+                      placeholder="0.00"
+                      aria-describedby="delegation_amount_currency"
+                      input_class="w-full text-right placeholder:text-grey-300 sm:w-25"
+                    />
+                  </div>
                   <span id="delegation_amount_currency" class="text-grey-500 text-sm">PLN</span>
                 </div>
               </.form_row>
@@ -204,7 +212,7 @@ defmodule FirmowidWeb.Delegations.Views.DelegationForm do
             type="submit"
             variant="primary"
             accent="turquoise"
-            class="float-end mt-20 mr-4 w-42"
+            class="mt-20 w-full sm:float-end sm:mr-4 sm:w-42"
           >Zaplanuj</.button>
         </.form>
       </main>
