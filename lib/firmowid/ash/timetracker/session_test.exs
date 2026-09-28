@@ -4,6 +4,7 @@ defmodule Firmowid.Ash.Timetracker.SessionTest do
   import Firmowid.AccountsFixtures
   import Firmowid.TimetrackerFixtures
 
+  alias Ash.Error.Invalid
   alias Firmowid.Ash.Scope
   alias Firmowid.Ash.Timetracker
   alias Firmowid.Ash.Timetracker.Session, as: AshSession
@@ -401,10 +402,26 @@ defmodule Firmowid.Ash.Timetracker.SessionTest do
       end)
     end
 
-    test "caps a still-running session at start + 12 hours", %{project: project, scope: scope} do
+    test "caps a still-running session at start + 12 hours", %{
+      user: user,
+      project: project,
+      scope: scope
+    } do
       Oban.Testing.with_testing_mode(:manual, fn ->
+        start_datetime = ~U[2026-03-10 08:00:00Z]
+
         {:ok, session} =
-          AshSession.start(%{title: "Running", project_id: project.id}, scope: scope)
+          AshSession.create(
+            %{
+              title: "Running",
+              project_id: project.id,
+              user_id: user.id,
+              start_datetime: start_datetime
+            },
+            scope: scope
+          )
+
+        assert is_nil(session.end_datetime)
 
         assert :ok =
                  perform_job(StopSessionWorker, %{
@@ -413,9 +430,37 @@ defmodule Firmowid.Ash.Timetracker.SessionTest do
                  })
 
         updated = Ash.reload!(session, scope: scope)
-        expected_end = DateTime.shift(session.start_datetime, hour: 12)
 
-        assert updated.end_datetime == expected_end
+        assert updated.end_datetime == DateTime.shift(start_datetime, hour: 12)
+      end)
+    end
+
+    test "clamps the cap to the end of the start month", %{
+      user: user,
+      project: project,
+      scope: scope
+    } do
+      Oban.Testing.with_testing_mode(:manual, fn ->
+        {:ok, session} =
+          AshSession.create(
+            %{
+              title: "Running",
+              project_id: project.id,
+              user_id: user.id,
+              start_datetime: ~U[2026-08-31 20:00:00Z]
+            },
+            scope: scope
+          )
+
+        assert :ok =
+                 perform_job(StopSessionWorker, %{
+                   "session_id" => session.id,
+                   "organization_id" => session.organization_id
+                 })
+
+        updated = Ash.reload!(session, scope: scope)
+
+        assert updated.end_datetime == ~U[2026-08-31 23:59:00Z]
       end)
     end
 
@@ -435,6 +480,44 @@ defmodule Firmowid.Ash.Timetracker.SessionTest do
         reloaded = Ash.reload!(stopped, scope: scope)
         assert reloaded.end_datetime == stopped.end_datetime
       end)
+    end
+  end
+
+  describe "same-month boundary" do
+    test "rejects a created session whose end falls in the next month", %{
+      user: user,
+      project: project,
+      scope: scope
+    } do
+      assert {:error, %Invalid{errors: [reason]}} =
+               AshSession.create(
+                 %{
+                   title: "Month straddle",
+                   project_id: project.id,
+                   user_id: user.id,
+                   start_datetime: ~U[2026-08-31 23:00:00Z],
+                   end_datetime: ~U[2026-09-01 01:00:00Z]
+                 },
+                 scope: scope
+               )
+
+      assert reason.field == :end_datetime
+    end
+
+    test "rejects a session longer than 24 hours", %{user: user, project: project, scope: scope} do
+      assert {:error, %Invalid{errors: [reason]}} =
+               AshSession.create(
+                 %{
+                   title: "Too long",
+                   project_id: project.id,
+                   user_id: user.id,
+                   start_datetime: ~U[2026-09-10 09:00:00Z],
+                   end_datetime: ~U[2026-09-11 09:01:00Z]
+                 },
+                 scope: scope
+               )
+
+      assert reason.field == :end_datetime
     end
   end
 end

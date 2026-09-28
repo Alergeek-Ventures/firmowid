@@ -16,6 +16,7 @@ defmodule Firmowid.Ash.Timetracker.Session do
 
   alias Firmowid.Ash.Checks.SystemActorRole
   alias Firmowid.Ash.Resource
+  alias Firmowid.Ash.Timetracker.Changes.ClampSessionBoundaries
   alias Firmowid.Ash.Timetracker.Changes.NormalizeSessionBoundaries
   alias Firmowid.Ash.Timetracker.Checks.HoursRecordNotSubmitted
   alias Firmowid.Ash.Timetracker.HoursRecord
@@ -24,6 +25,7 @@ defmodule Firmowid.Ash.Timetracker.Session do
   alias Firmowid.Ash.Timetracker.Session.Overlap
   alias Firmowid.Ash.Timetracker.Validations.DatetimeOrder
   alias Firmowid.Ash.Timetracker.Validations.ProjectAccess
+  alias Firmowid.Ash.Timetracker.Validations.SessionMonthBoundaries
   alias Firmowid.Ash.Timetracker.Workers.StopSessionWorker
 
   require Logger
@@ -242,6 +244,7 @@ defmodule Firmowid.Ash.Timetracker.Session do
       require_atomic? false
 
       change set_attribute(:end_datetime, &DateTime.utc_now/0)
+      change ClampSessionBoundaries
       change NormalizeSessionBoundaries
 
       change after_action(fn _changeset, session, _context ->
@@ -254,7 +257,9 @@ defmodule Firmowid.Ash.Timetracker.Session do
       description """
       Cap a forgotten running session at start_datetime + 12 hours.
 
-      Used by StopSessionWorker. Does not accept client input.
+      Used by StopSessionWorker. Does not accept client input. The result is
+      additionally clamped to the end of the start month, so a session left
+      running across a month boundary still lands wholly in one month.
       """
 
       accept []
@@ -263,14 +268,14 @@ defmodule Firmowid.Ash.Timetracker.Session do
       change fn changeset, _context ->
         start_datetime = Ash.Changeset.get_attribute(changeset, :start_datetime)
 
-        end_datetime =
-          start_datetime
-          |> DateTime.shift(second: StopSessionWorker.max_running_seconds())
-          |> DateTime.shift_zone!("Etc/UTC")
-
-        Ash.Changeset.force_change_attribute(changeset, :end_datetime, end_datetime)
+        Ash.Changeset.force_change_attribute(
+          changeset,
+          :end_datetime,
+          DateTime.shift(start_datetime, second: StopSessionWorker.max_running_seconds())
+        )
       end
 
+      change ClampSessionBoundaries
       change NormalizeSessionBoundaries
 
       change after_action(fn _changeset, session, _context ->
@@ -388,6 +393,8 @@ defmodule Firmowid.Ash.Timetracker.Session do
   validations do
     validate {DatetimeOrder, start_field: :start_datetime, end_field: :end_datetime},
       on: [:create, :update]
+
+    validate {SessionMonthBoundaries, []}, on: [:create, :update]
 
     validate {ProjectAccess, []},
       on: [:create, :update],
