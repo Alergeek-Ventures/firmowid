@@ -35,22 +35,40 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
   @impl true
   def render(assigns) do
     ~H"""
-    <div id="delegation-settlement" phx-hook="DelegationDateChange" class="relative mt-4">
-      <.back
-        navigate={~p"/ustawienia/profil"}
-        class="absolute top-0 left-0.5 z-10 inline-flex text-sm"
-      />
+    <main
+      id="delegation-settlement"
+      phx-hook="DelegationDateChange"
+      class="mx-auto w-full px-4 py-10 sm:px-6"
+    >
+      <.back navigate={~p"/ustawienia/profil"} />
       <.form
         for={@complete_form}
         id="delegation-complete-form"
         phx-change={if @editable?, do: "validate"}
         phx-submit={if @editable?, do: "submit"}
-        class="group relative grid gap-10 px-32 pr-34 pb-12 font-[340] lg:grid-cols-[auto_22.5rem]"
+        class="group relative mt-10 grid w-full gap-10 pb-12 font-[340] lg:grid-cols-[minmax(0,1fr)_22.5rem]"
       >
         <.nested_hidden_inputs :if={@editable?} form={@complete_form} />
-        <section aria-labelledby="delegation-settlement-title">
+        <section aria-labelledby="delegation-settlement-title" class="min-w-0">
           <small class="text-grey-500 text-sm">Cel:
           <span class="text-grey-700">{@delegation.purpose}</span></small>
+          <dl class="text-grey-500 mt-2 flex gap-4 lg:hidden">
+            <small>
+              <dt class="inline">Termin:</dt>
+              <dd class="text-grey-700 inline tabular-nums">
+                <.date_range start_date={@delegation.start_date} end_date={@delegation.end_date} />
+              </dd>
+            </small>
+          </dl>
+          <div :if={@editable?} class="mt-2 lg:hidden">
+            <span class="font-lexend text-grey-500 inline-flex items-center gap-1 text-[11px] font-medium uppercase group-[.phx-change-loading]:hidden">
+              Zmiany zostały zapisane <.save_check_icon class="size-3" />
+            </span>
+            <span class="font-lexend text-grey-500 hidden items-center gap-1 text-[11px] font-medium uppercase group-[.phx-change-loading]:inline-flex">
+              Zapisywanie zmian
+              <Lucideicons.refresh_ccw class="size-3 animate-spin [animation-direction:reverse]" />
+            </span>
+          </div>
           <h1 id="delegation-settlement-title" class="mt-1 text-2xl font-medium">
             Rozliczenie delegacji
           </h1>
@@ -126,8 +144,8 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
             editable?={@editable?}
           />
         </section>
-        <aside class="lg:pt-1">
-          <dl class="text-grey-500 flex justify-end gap-4">
+        <aside class="min-w-0 lg:pt-1">
+          <dl class="text-grey-500 hidden justify-end gap-4 lg:flex">
             <small>
               <dt class="inline">Termin:</dt>
               <dd class="text-grey-700 inline tabular-nums">
@@ -142,7 +160,7 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
             </small>
           </dl>
           <div :if={@editable?} class="relative mt-6 lg:mt-47">
-            <div class="absolute -top-12 right-0 flex h-6 items-center justify-end">
+            <div class="absolute -top-12 right-0 hidden h-6 items-center justify-end lg:flex">
               <span class="font-lexend text-grey-500 inline-flex items-center gap-1 text-[11px] font-medium uppercase group-[.phx-change-loading]:hidden">
                 Zmiany zostały zapisane <.save_check_icon class="size-3" />
               </span>
@@ -253,7 +271,7 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
           />
         </div>
       </.form>
-    </div>
+    </main>
     """
   end
 

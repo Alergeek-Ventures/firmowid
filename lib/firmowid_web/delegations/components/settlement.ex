@@ -37,30 +37,41 @@ defmodule FirmowidWeb.Delegations.Components.Settlement do
   def expense_section(assigns) do
     ~H"""
     <section class="mt-10">
-      <header class="mb-3 flex items-center justify-between gap-4">
-        <div class="flex items-center gap-3">
+      <header class="mb-3">
+        <div class="flex flex-wrap items-center gap-3">
           <h2 class="flex items-center gap-2 font-normal">
             {render_slot(@icon)}{@title}
           </h2>
-          <span class="bg-grey-200 h-5 w-px" aria-hidden="true" />
+          <span
+            :if={@kind == "transport" && @editable?}
+            class="bg-grey-200 h-5 w-px sm:hidden"
+            aria-hidden="true"
+          />
+          <.button
+            :if={@kind == "transport" && @editable?}
+            type="button"
+            variant="ghost"
+            size="small"
+            disabled={
+              @expenses == [] or
+                (length(@expenses) > 0 and Enum.any?(@expenses, &(length(&1.trips || []) > 1)))
+            }
+            phx-click="sort"
+          >Sortuj chronologicznie <Lucideicons.arrow_down_up class="size-4" /></.button>
+          <span class="bg-grey-200 hidden h-5 w-px sm:block" aria-hidden="true" />
           <.button
             type="button"
             variant="unstyled"
-            class="text-grey-700 text-sm font-medium hover:underline"
+            class="text-grey-700 hidden text-sm font-medium hover:underline sm:inline-flex"
             phx-click={show_modal("#{@kind}-documents-modal")}
           >Jakie dokumenty załączyć?</.button>
         </div>
         <.button
-          :if={@kind == "transport" && @editable?}
           type="button"
-          variant="ghost"
-          size="small"
-          disabled={
-            @expenses == [] or
-              (length(@expenses) > 0 and Enum.any?(@expenses, &(length(&1.trips || []) > 1)))
-          }
-          phx-click="sort"
-        >Sortuj chronologicznie <Lucideicons.arrow_down_up class="size-4" /></.button>
+          variant="unstyled"
+          class="text-grey-700 mt-2 text-sm font-medium hover:underline sm:hidden"
+          phx-click={show_modal("#{@kind}-documents-modal")}
+        >Jakie dokumenty załączyć?</.button>
       </header>
       <div class="space-y-3">
         <div
@@ -240,11 +251,15 @@ defmodule FirmowidWeb.Delegations.Components.Settlement do
         >
           <.file_upload
             upload={@upload}
-            prompt="Przeciągnij tu fakturę/rachunek lub wybierz plik z komputera"
+            prompt="Wgraj fakturę/rachunek"
             content_class="text-grey-700!"
+            prompt_class="sm:hidden"
             class="border-grey-200! justify-between! rounded-lg! border! px-4! py-7!"
             phx_change="upload"
           />
+          <p class="text-grey-700 pointer-events-none absolute top-1/2 left-4 hidden -translate-y-1/2 text-sm sm:block">
+            Przeciągnij tu fakturę/rachunek lub wybierz plik z komputera
+          </p>
           <.button
             as="label"
             for={@upload.ref}
@@ -917,8 +932,8 @@ defmodule FirmowidWeb.Delegations.Components.Settlement do
         class={[length(@trips) > 1 && "border-grey-200 border-l pl-4"]}
       >
         <div class="min-w-0">
-          <table class="border-separate border-spacing-y-3 text-left text-sm">
-            <thead class="text-grey-500">
+          <table class="block w-full border-separate border-spacing-y-3 text-left text-sm sm:table sm:w-auto">
+            <thead class="text-grey-500 hidden sm:table-header-group">
               <tr>
                 <th scope="col"></th>
                 <th scope="col" class="font-normal">Miejscowość</th>
@@ -927,20 +942,22 @@ defmodule FirmowidWeb.Delegations.Components.Settlement do
                 <th scope="col"></th>
               </tr>
             </thead>
-            <tbody>
-              <tr>
-                <th scope="row" class="text-grey-700 pr-3 font-normal">Wyjazd</th>
-                <td class="pr-3">
+            <tbody class="block sm:table-row-group">
+              <tr class="grid grid-cols-2 gap-3 sm:table-row">
+                <th scope="row" class="text-grey-700 col-span-full font-normal sm:table-cell sm:pr-3">
+                  Wyjazd
+                </th>
+                <td class="col-span-full block sm:table-cell sm:pr-3">
                   <.input
                     id={"trip-departure-city-#{trip.id}"}
                     field={trip_form[:departure_city]}
                     type="text"
                     new
                     aria-label="Miejscowość wyjazdu"
-                    input_class="w-36"
+                    input_class="w-full sm:w-36"
                   />
                 </td>
-                <td class="pr-3">
+                <td class="block sm:table-cell sm:pr-3">
                   <.input
                     id={"trip-departure-date-#{trip.id}"}
                     name={"#{trip_form.name}[departure_date]"}
@@ -952,10 +969,10 @@ defmodule FirmowidWeb.Delegations.Components.Settlement do
                     type="date"
                     new
                     aria-label="Data wyjazdu"
-                    input_class="w-34"
+                    input_class="w-full sm:w-34"
                   />
                 </td>
-                <td>
+                <td class="block sm:table-cell">
                   <.input
                     id={"trip-departure-time-#{trip.id}"}
                     name={"#{trip_form.name}[departure_time]"}
@@ -967,16 +984,19 @@ defmodule FirmowidWeb.Delegations.Components.Settlement do
                     type="time"
                     new
                     aria-label="Godzina wyjazdu"
-                    input_class="w-24"
+                    input_class="w-full sm:w-24"
                   />
                 </td>
-                <td rowspan="2" class="w-24 pl-3 align-bottom">
+                <td
+                  rowspan="2"
+                  class="col-span-full block sm:table-cell sm:w-24 sm:pl-3 sm:align-bottom"
+                >
                   <% description_visible? = Map.get(@description_visible?, trip.id, false) %>
                   <.button
                     type="button"
                     variant="unstyled"
                     class={[
-                      "block w-24 cursor-pointer text-left text-sm font-normal whitespace-nowrap",
+                      "block w-full cursor-pointer text-left text-sm font-normal whitespace-nowrap sm:w-24",
                       description_visible? && "text-red-700"
                     ]}
                     phx-click={
@@ -986,19 +1006,21 @@ defmodule FirmowidWeb.Delegations.Components.Settlement do
                   >{if description_visible?, do: "Usuń opis", else: "Dodaj opis"}</.button>
                 </td>
               </tr>
-              <tr>
-                <th scope="row" class="text-grey-700 pr-3 font-normal">Przyjazd</th>
-                <td class="pr-3">
+              <tr class="mt-4 grid grid-cols-2 gap-3 sm:mt-0 sm:table-row">
+                <th scope="row" class="text-grey-700 col-span-full font-normal sm:table-cell sm:pr-3">
+                  Przyjazd
+                </th>
+                <td class="col-span-full block sm:table-cell sm:pr-3">
                   <.input
                     id={"trip-arrival-city-#{trip.id}"}
                     field={trip_form[:arrival_city]}
                     type="text"
                     new
                     aria-label="Miejscowość przyjazdu"
-                    input_class="w-36"
+                    input_class="w-full sm:w-36"
                   />
                 </td>
-                <td class="pr-3">
+                <td class="block sm:table-cell sm:pr-3">
                   <.input
                     id={"trip-arrival-date-#{trip.id}"}
                     name={"#{trip_form.name}[arrival_date]"}
@@ -1010,10 +1032,10 @@ defmodule FirmowidWeb.Delegations.Components.Settlement do
                     type="date"
                     new
                     aria-label="Data przyjazdu"
-                    input_class="w-34"
+                    input_class="w-full sm:w-34"
                   />
                 </td>
-                <td>
+                <td class="block sm:table-cell">
                   <.input
                     id={"trip-arrival-time-#{trip.id}"}
                     name={"#{trip_form.name}[arrival_time]"}
@@ -1025,16 +1047,24 @@ defmodule FirmowidWeb.Delegations.Components.Settlement do
                     type="time"
                     new
                     aria-label="Godzina przyjazdu"
-                    input_class="w-24"
+                    input_class="w-full sm:w-24"
                   />
                 </td>
               </tr>
-              <tr :if={
-                Map.get(@description_visible?, trip.id, false) ||
-                  trip_form[:description].value not in [nil, ""]
-              }>
-                <th scope="row" class="text-grey-700 pt-2 pr-3 align-top font-normal">Opis</th>
-                <td colspan="4">
+              <tr
+                :if={
+                  Map.get(@description_visible?, trip.id, false) ||
+                    trip_form[:description].value not in [nil, ""]
+                }
+                class="block sm:table-row"
+              >
+                <th
+                  scope="row"
+                  class="text-grey-700 block pt-2 font-normal sm:table-cell sm:pr-3 sm:align-top"
+                >
+                  Opis
+                </th>
+                <td colspan="4" class="block sm:table-cell">
                   <.input
                     id={"trip-description-#{trip.id}"}
                     field={trip_form[:description]}
