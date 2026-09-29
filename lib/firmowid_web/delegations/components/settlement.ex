@@ -254,7 +254,7 @@ defmodule FirmowidWeb.Delegations.Components.Settlement do
             prompt="Wgraj fakturę/rachunek"
             content_class="text-grey-700!"
             prompt_class="sm:hidden"
-            class="border-grey-200! justify-between! rounded-lg! border! px-4! py-7!"
+            class="border-grey-200! justify-between! rounded-lg! border! px-4! py-7! sm:py-10!"
             phx_change="upload"
           />
           <p class="text-grey-700 pointer-events-none absolute top-1/2 left-4 hidden -translate-y-1/2 text-sm sm:block">
