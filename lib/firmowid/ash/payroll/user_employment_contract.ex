@@ -132,7 +132,8 @@ defmodule Firmowid.Ash.Payroll.UserEmploymentContract do
       prepare build(
                 filter:
                   expr(
-                    user_id == ^arg(:user_id) and status in [:signed, :active] and
+                    user_id == ^arg(:user_id) and
+                      status in [:pending_signature, :signed, :active] and
                       starts_at <= today()
                   ),
                 sort: [starts_at: :desc],
@@ -209,6 +210,9 @@ defmodule Firmowid.Ash.Payroll.UserEmploymentContract do
       description "Update employment contract details."
       primary? true
       accept [:contract_type, :status, :signed_at, :position, :starts_at]
+      require_atomic? false
+
+      change MaybeActivateContract
     end
 
     update :submit_signed do
