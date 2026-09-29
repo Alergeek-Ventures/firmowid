@@ -165,7 +165,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
     google_connected? = google_identities != []
 
     {:ok, pending_contract} = Payroll.load_pending_contract(current_user.id, scope: scope)
-    {:ok, latest_contract} = Payroll.load_latest_contract(current_user.id, scope: scope)
+    {:ok, current_contract} = Payroll.load_current_contract(current_user.id, scope: scope)
 
     {:ok,
      socket
@@ -221,9 +221,9 @@ defmodule FirmowidWeb.Settings.Views.Index do
      |> assign(:projects_total, profile_projects_total)
      |> assign(:projects_date, profile_projects_date)
      |> assign(:current_org, org_with_avatar)
-     |> assign(:latest_contract, latest_contract)
+     |> assign(:current_contract, current_contract)
      |> assign(:pending_contract, pending_contract)
-     |> assign(:contract_form, form_contract_form(latest_contract, scope))
+     |> assign(:contract_form, form_contract_form(current_contract, scope))
      |> assign(:main_class, "bg-white")}
   end
 
@@ -1486,7 +1486,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
             projects_total={@projects_total}
             projects_date={@projects_date}
             pending_contract={@pending_contract}
-            latest_contract={@latest_contract}
+            current_contract={@current_contract}
             signed_contract_upload={@uploads.signed_contract}
           />
       <% end %>
@@ -1658,14 +1658,14 @@ defmodule FirmowidWeb.Settings.Views.Index do
     current_user = Ash.load!(user, [avatar_blob: [:url]], scope: scope)
 
     {:ok, pending_contract} = Payroll.load_pending_contract(current_user.id, scope: scope)
-    {:ok, latest_contract} = Payroll.load_latest_contract(current_user.id, scope: scope)
+    {:ok, current_contract} = Payroll.load_current_contract(current_user.id, scope: scope)
 
     socket
     |> assign(:current_user, current_user)
     |> assign(:user_form, form_user_form(current_user, scope))
     |> assign(:pending_contract, pending_contract)
-    |> assign(:latest_contract, latest_contract)
-    |> assign(:contract_form, form_contract_form(latest_contract, scope))
+    |> assign(:current_contract, current_contract)
+    |> assign(:contract_form, form_contract_form(current_contract, scope))
   end
 
   defp profile_section_assign("employment"), do: :editing_profile_employment

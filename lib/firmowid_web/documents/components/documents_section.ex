@@ -42,6 +42,7 @@ defmodule FirmowidWeb.Documents.Components.DocumentsSection do
       |> assign(Map.delete(assigns, :refetch))
       |> assign_new(:dimmed, fn -> false end)
       |> assign_new(:variant, fn -> :management end)
+      |> assign_new(:current_contract_id, fn -> nil end)
       |> assign(:can_upload?, can_upload?)
       |> maybe_allow_document_upload(can_upload?)
       |> refetch_documents()
@@ -381,16 +382,34 @@ defmodule FirmowidWeb.Documents.Components.DocumentsSection do
 
   defp refetch_documents(socket) do
     documents =
-      build_documents(
-        socket.assigns.user.id,
+      socket.assigns.user.id
+      |> build_documents(
         socket.assigns.scope,
         %{
           search: socket.assigns.search,
           type_filter: socket.assigns.type_filter
         }
       )
+      |> badge_only_current_contract(socket.assigns[:current_contract_id])
 
     assign(socket, :documents, documents)
+  end
+
+  # Contracts are never retired, so a user accumulates several `:active` ones as
+  # renewals land. Only the current contract should be badged as such, so we remove the `:status` key from all other active contracts.
+  defp badge_only_current_contract(documents, nil), do: documents
+
+  defp badge_only_current_contract(documents, current_contract_id) do
+    Enum.map(documents, fn
+      %{type: :employment_contract, status: :active, id: ^current_contract_id} = document ->
+        document
+
+      %{type: :employment_contract, status: :active} = document ->
+        Map.delete(document, :status)
+
+      document ->
+        document
+    end)
   end
 
   defp build_documents(user_id, scope, %{search: search, type_filter: type_filter}) do

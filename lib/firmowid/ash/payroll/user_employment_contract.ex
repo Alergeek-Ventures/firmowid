@@ -66,8 +66,8 @@ defmodule Firmowid.Ash.Payroll.UserEmploymentContract do
       get?: true,
       not_found_error?: false
 
-    define :load_latest_contract,
-      action: :load_latest_contract,
+    define :load_current_contract,
+      action: :load_current_contract,
       args: [:user_id],
       get?: true,
       not_found_error?: false
@@ -121,13 +121,20 @@ defmodule Firmowid.Ash.Payroll.UserEmploymentContract do
       prepare build(filter: expr(user_id == ^arg(:user_id) and status == :pending_signature))
     end
 
-    read :load_latest_contract do
-      description "Returns most recent contract for a user."
+    read :load_current_contract do
+      description """
+      Returns the contract currently in effect for a user, or nil.
+      """
+
       argument :user_id, :uuid, allow_nil?: false
       get? true
 
       prepare build(
-                filter: expr(user_id == ^arg(:user_id)),
+                filter:
+                  expr(
+                    user_id == ^arg(:user_id) and status in [:signed, :active] and
+                      starts_at <= today()
+                  ),
                 sort: [starts_at: :desc],
                 limit: 1
               )

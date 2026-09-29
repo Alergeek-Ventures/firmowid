@@ -37,7 +37,7 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
   attr :projects_total, :integer, required: true
   attr :projects_date, :any, required: true
   attr :pending_contract, :map, default: nil
-  attr :latest_contract, :map, default: nil
+  attr :current_contract, :map, default: nil
   attr :signed_contract_upload, :map, default: nil
 
   def profile_tab(assigns) do
@@ -49,7 +49,7 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
           contract_form={@contract_form}
           editing_profile_employment={@editing_profile_employment}
           pending_contract={@pending_contract}
-          latest_contract={@latest_contract}
+          current_contract={@current_contract}
           signed_contract_upload={@signed_contract_upload}
           ash_scope={@ash_scope}
         />
@@ -78,6 +78,7 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
           user={@current_user}
           scope={@ash_scope}
           variant={:profile}
+          current_contract_id={@current_contract && @current_contract.id}
         />
         <.leave_section
           leave_requests={@leave_requests}
@@ -142,7 +143,7 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
   attr :contract_form, :map, default: nil
   attr :editing_profile_employment, :boolean, required: true
   attr :pending_contract, :map, default: nil
-  attr :latest_contract, :map, default: nil
+  attr :current_contract, :map, default: nil
   attr :signed_contract_upload, :map, default: nil
   attr :ash_scope, :map, default: nil
 
@@ -306,7 +307,7 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
     <.profile_section
       title="Informacje o zatrudnieniu"
       action={
-        if(!@editing_profile_employment and can_edit_contract?(@latest_contract, @ash_scope),
+        if(!@editing_profile_employment and can_edit_contract?(@current_contract, @ash_scope),
           do: "toggle_editing_profile_employment"
         )
       }
@@ -355,25 +356,26 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
         </.form>
       <% else %>
         <div class="space-y-2">
-          <.detail_row :if={@latest_contract} label="Umowa">
+          <.detail_row :if={@current_contract} label="Umowa">
             <.link
               kind="button"
               variant="outline"
               size="small"
-              redirect={~p"/zarzadzanie/umowy/#{@latest_contract.id}"}
+              redirect={~p"/zarzadzanie/umowy/#{@current_contract.id}"}
               download
             >
-              <Lucideicons.file_text class="size-4" /> <span class="font-medium">Pobierz umowę</span>
+              <Lucideicons.file_text class="size-4" />
+              <span class="font-medium">{contract_filename(@current_contract, @current_user)}</span>
             </.link>
           </.detail_row>
           <.detail_row label="Stanowisko">
-            {present(@latest_contract && @latest_contract.position)}
+            {present(@current_contract && @current_contract.position)}
           </.detail_row>
           <.detail_row label="Rodzaj umowy">
-            {format_contract_type(@latest_contract && @latest_contract.contract_type)}
+            {format_contract_type(@current_contract && @current_contract.contract_type)}
           </.detail_row>
           <.detail_row label="Obowiązuje od">
-            {present_date(@latest_contract && @latest_contract.starts_at)}
+            {present_date(@current_contract && @current_contract.starts_at)}
           </.detail_row>
         </div>
       <% end %>
@@ -863,6 +865,12 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
   defp upload_error_to_string(:too_many_files), do: "Można wgrać tylko jeden plik."
   defp upload_error_to_string(:not_accepted), do: "Dozwolone są tylko pliki PDF."
   defp upload_error_to_string(other), do: "Błąd wgrywania: #{inspect(other)}"
+
+  # Mirrors the name `FirmowidWeb.Management.Controllers.EmploymentContract` puts
+  # in the `content-disposition` header.
+  defp contract_filename(contract, user) do
+    "Umowa_#{user.name || "pracownik"}_#{contract.starts_at}.pdf"
+  end
 
   defp format_contract_type(nil), do: "Nieokreślona"
   defp format_contract_type(:uop), do: "Umowa o pracę"
