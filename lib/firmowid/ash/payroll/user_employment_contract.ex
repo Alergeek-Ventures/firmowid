@@ -12,6 +12,7 @@ defmodule Firmowid.Ash.Payroll.UserEmploymentContract do
   alias Firmowid.Ash.Blobs
   alias Firmowid.Ash.Checks.SystemActorRole
   alias Firmowid.Ash.Payroll.Changes.MaybeActivateContract
+  alias Firmowid.Ash.Payroll.Changes.SyncUserBankAccount
   alias Firmowid.Ash.Payroll.UserEmploymentContract.Worker.ActivateSigned
   alias Firmowid.Ash.Payroll.Workers.EmploymentContractEmailWorker
   alias Firmowid.Ash.Resource
@@ -157,6 +158,7 @@ defmodule Firmowid.Ash.Payroll.UserEmploymentContract do
       ]
 
       argument :user_salary, :map
+      argument :bank_account_number, :string
 
       change fn changeset, _context ->
         salary = Ash.Changeset.get_attribute(changeset, :salary)
@@ -173,6 +175,7 @@ defmodule Firmowid.Ash.Payroll.UserEmploymentContract do
       change manage_relationship(:user_salary, type: :create)
 
       change MaybeActivateContract
+      change SyncUserBankAccount
 
       # Schedule email notification to the employee if the contract is pending signature. The email will be sent at 9:00 AM Warsaw time on the signed_at date (or today if signed_at is nil).
       change after_transaction(fn

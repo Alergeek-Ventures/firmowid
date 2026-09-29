@@ -23,6 +23,10 @@ defmodule Firmowid.Ash.Blobs.Utils.ProcessEmploymentContractBlob do
     If you cannot determine the position, return null
   - signed_at should be the date the contract was signed
     If you cannot determine the signed date, return null
+  - bank_account_number is the employee's (or contractor's) own bank account for
+    salary payments, e.g. "Nr konta", "Numer rachunku bankowego", "do wypłaty wynagrodzenia"
+    Return it exactly as printed, including spaces. Do NOT return the employer's
+    or the company's account. If the document contains no such number, return null
   """
 
   @employment_contract_schema %{
@@ -37,7 +41,8 @@ defmodule Firmowid.Ash.Blobs.Utils.ProcessEmploymentContractBlob do
       salary_currency: %{type: "string"},
       contract_type: %{type: ["string", "null"], enum: ["uop", "b2b", "uz", "uod", nil]},
       position: %{type: ["string", "null"]},
-      signed_at: %{type: ["string", "null"], format: "date"}
+      signed_at: %{type: ["string", "null"], format: "date"},
+      bank_account_number: %{type: ["string", "null"]}
     },
     required: ["document_type"],
     if: %{
@@ -102,6 +107,7 @@ defmodule Firmowid.Ash.Blobs.Utils.ProcessEmploymentContractBlob do
         )
         |> Map.put("blob_id", blob.id)
         |> Map.put("user_id", blob.processing_metadata["user_id"])
+        |> Map.put("bank_account_number", extracted_metadata["bank_account_number"])
 
       case Payroll.create_employment_contract(attrs, opts) do
         {:ok, _contract} -> :ok
