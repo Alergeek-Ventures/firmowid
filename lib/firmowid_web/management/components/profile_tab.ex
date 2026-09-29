@@ -92,6 +92,19 @@ defmodule FirmowidWeb.Management.Components.ProfileTab do
           >
             <div class="flex flex-col gap-4">
               <%= if @editing_contract do %>
+                <.user_card_info label="Status" for={@contract_form[:status].id}>
+                  <.input
+                    field={@contract_form[:status]}
+                    container_class="w-full"
+                    type="select"
+                    options={[
+                      {"Oczekuje na podpis", :pending_signature},
+                      {"Podpisana", :signed},
+                      {"Obowiązująca", :active}
+                    ]}
+                    new
+                  />
+                </.user_card_info>
                 <.user_card_info label="Rodzaj umowy" for={@contract_form[:contract_type].id}>
                   <.input
                     field={@contract_form[:contract_type]}
@@ -113,6 +126,9 @@ defmodule FirmowidWeb.Management.Components.ProfileTab do
                   <.input field={@contract_form[:signed_at]} type="date" class="w-full" new />
                 </.user_card_info>
               <% else %>
+                <.user_card_info label="Status umowy">
+                  {format_contract_status(@employment_contract && @employment_contract.status)}
+                </.user_card_info>
                 <.user_card_info label="Rodzaj umowy">
                   {format_contract_type(@employment_contract && @employment_contract.contract_type)}
                 </.user_card_info>
@@ -182,6 +198,11 @@ defmodule FirmowidWeb.Management.Components.ProfileTab do
   defp format_contract_type(:b2b), do: "B2B"
   defp format_contract_type(:uz), do: "Umowa zlecenie"
   defp format_contract_type(:uod), do: "Umowa o dzieło"
+
+  defp format_contract_status(nil), do: "—"
+  defp format_contract_status(:pending_signature), do: "Oczekuje na podpis"
+  defp format_contract_status(:signed), do: "Podpisana"
+  defp format_contract_status(:active), do: "Obowiązująca"
 
   defp present(nil), do: "—"
   defp present(""), do: "—"
