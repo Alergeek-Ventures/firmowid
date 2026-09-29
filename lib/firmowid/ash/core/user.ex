@@ -27,6 +27,7 @@ defmodule Firmowid.Ash.Core.User do
   alias Firmowid.Ash.Core.User.Actions.UpdateCurrentProfile
   alias Firmowid.Ash.Core.UserIdentity
   alias Firmowid.Ash.Core.UserRole
+  alias Firmowid.Ash.Core.Validations.ValidateIban
   alias Firmowid.Ash.Resource
 
   require Resource
@@ -256,6 +257,8 @@ defmodule Firmowid.Ash.Core.User do
                  end
              end),
              where: [changing(:bank_account_number)]
+
+      validate ValidateIban, where: [changing(:bank_account_number)]
 
       change set_attribute(:correspondence_address, nil),
         where: [argument_equals(:is_same_correspondence_address, true)]

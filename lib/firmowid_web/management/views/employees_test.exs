@@ -138,7 +138,7 @@ defmodule FirmowidWeb.Management.Views.EmployeesTest do
         %{
           name: "Jan Kowalski",
           phone: "+48 600 700 800",
-          bank_account_number: "PL44 1140 2004 0000 3002 0135 5362"
+          bank_account_number: "PL23 1140 2004 0000 3002 0135 5362"
         },
         actor: employee,
         tenant: admin.organization_id
@@ -171,7 +171,7 @@ defmodule FirmowidWeb.Management.Views.EmployeesTest do
 
     assert html =~ "Jan Kowalski"
     assert html =~ "+48 600 700 800"
-    assert html =~ "PL44 1140 2004 0000 3002 0135 5362"
+    assert html =~ "PL23 1140 2004 0000 3002 0135 5362"
     assert html =~ "Payroll Project"
     assert html =~ "3 godz."
     assert html =~ "Wynagrodzenie"
