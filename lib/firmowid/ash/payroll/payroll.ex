@@ -29,8 +29,8 @@ defmodule Firmowid.Ash.Payroll do
         get?: true,
         not_found_error?: false
 
-      define :load_latest_contract,
-        action: :load_latest_contract,
+      define :load_current_contract,
+        action: :load_current_contract,
         args: [:user_id],
         get?: true,
         not_found_error?: false

@@ -14,6 +14,7 @@ defmodule FirmowidWeb.Management.Views.Employee do
   alias Ash.Notifier.Notification
   alias Firmowid.Ash.Blobs.Blob
   alias Firmowid.Ash.Core
+  alias Firmowid.Ash.Payroll
   alias Firmowid.Ash.Timetracker
   alias FirmowidWeb.Core.Endpoint
   alias FirmowidWeb.Documents.Components.DocumentsSection, as: DocumentsTab
@@ -65,10 +66,12 @@ defmodule FirmowidWeb.Management.Views.Employee do
           )
         else
           active_months = months_with_sessions(%{user_id: id}, scope)
+          {:ok, current_contract} = Payroll.load_current_contract(id, scope: scope)
 
           socket
           |> assign(:employee, with_projects(user, scope))
           |> assign(:active_months, active_months)
+          |> assign(:current_contract, current_contract)
           |> assign(:projects_filter_date, selected_date)
           |> assign(:page_title, get_employee_display_name(user))
         end

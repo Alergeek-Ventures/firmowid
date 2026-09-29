@@ -20,7 +20,7 @@ defmodule FirmowidWeb.Management.Components.ProfileTab do
     user = assigns.user
     scope = assigns.scope
 
-    {:ok, employment_contract} = Payroll.load_latest_contract(user.id, scope: scope)
+    {:ok, employment_contract} = Payroll.load_current_contract(user.id, scope: scope)
 
     {:ok, salaries} =
       Payroll.list_salaries(%{user_id: user.id, active_at: Date.utc_today()}, scope: scope)
