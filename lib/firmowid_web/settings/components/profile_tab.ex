@@ -397,7 +397,12 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
       <%= if @editing_profile_finance do %>
         <.form for={@user_form} phx-submit="save_profile_finance" class="space-y-4">
           <div class="space-y-2">
-            <.row_input field={@user_form[:bank_account_number]} label="Nr konta" type="text" />
+            <.row_input
+              field={@user_form[:bank_account_number]}
+              label="Nr konta"
+              label_class="self-baseline mt-2"
+              type="text"
+            />
           </div>
 
           <div class="flex w-full justify-end gap-3">
@@ -414,7 +419,9 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
         </.form>
       <% else %>
         <div class="w-full space-y-2">
-          <.detail_row label="Nr konta">{present(@current_user.bank_account_number)}</.detail_row>
+          <.detail_row label="Nr konta">
+            <p class="text-nowrap">{present(@current_user.bank_account_number)}</p>
+          </.detail_row>
         </div>
       <% end %>
     </.profile_section>
