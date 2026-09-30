@@ -1,16 +1,19 @@
 ---
 name: polish-quantity
-description: Polish pluralization and count labels using PolishQuantity.quantity/4. Use when adding or changing Polish user-facing text that combines an integer with a declined noun.
+description: Maintain legacy PolishQuantity.quantity/4 count labels. New or changed Gettext user-facing text uses ngettext and Accent; consult user-facing-text.
 ---
 
 # Polish Quantity Labels
 
-Use this skill when adding or changing a Polish user-facing quantity label,
-such as a count of invoices, accounts, transactions, employees, or plan limits.
+This skill documents the existing `PolishQuantity.quantity/4` utility for
+legacy Polish quantity labels. For new or changed user-facing labels, follow
+`user-facing-text`: use Gettext `ngettext` and translate through Accent rather
+than hardcoding Polish forms with this utility.
 
 ## Shared Utility
 
-Use `FirmowidWeb.Infrastructure.Utilities.PolishQuantity.quantity/4`:
+For legacy labels that still use the utility, call
+`FirmowidWeb.Infrastructure.Utilities.PolishQuantity.quantity/4`:
 
 ```elixir
 alias FirmowidWeb.Infrastructure.Utilities.PolishQuantity
