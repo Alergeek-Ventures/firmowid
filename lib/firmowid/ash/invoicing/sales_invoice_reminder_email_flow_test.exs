@@ -197,6 +197,36 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoiceReminderEmailFlowTest do
       end)
     end
 
+    test "zero-value correction flow does not send a reminder" do
+      Oban.Testing.with_testing_mode(:manual, fn ->
+        admin = admin_fixture()
+        processor_scope = processor_scope(admin.organization_id)
+        counterparty = valid_counterparty_fixture!(admin)
+
+        original =
+          confirmed_sales_invoice_fixture!(admin, processor_scope, %{
+            counterparty_id: counterparty.id,
+            should_send_emails: true,
+            due_date: Date.add(Date.utc_today(), -10)
+          })
+
+        correction =
+          admin
+          |> sales_invoice_correction_fixture!(original, %{
+            should_send_emails: true,
+            due_date: Date.add(Date.utc_today(), -1),
+            sales_invoice_items: [base_item_attrs(%{quantity: Decimal.new(0)})]
+          })
+          |> confirm_invoice_in_ksef!(processor_scope, correction_locked_at())
+
+        assert 0 == run_reminder_scan!(processor_scope)
+        refute_enqueued_email_job(original, :reminder)
+        refute_enqueued_email_job(correction, :reminder)
+        assert [] == email_deliveries_for(original, processor_scope)
+        assert [] == email_deliveries_for(correction, processor_scope)
+      end)
+    end
+
     test "correction flow resets reminder cadence from the original invoice" do
       Oban.Testing.with_testing_mode(:manual, fn ->
         admin = admin_fixture()

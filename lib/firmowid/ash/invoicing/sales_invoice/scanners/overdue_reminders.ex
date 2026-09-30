@@ -72,19 +72,15 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice.Scanners.OverdueReminders do
     |> Ash.read!(scope: scope)
   end
 
-  defp overdue_candidate_query(query, today, nil) do
-    Ash.Query.filter(
-      query,
-      not is_nil(invoice_number) and
-        not is_nil(ksef_number) and
-        not is_nil(due_date) and
-        due_date < ^today and
-        skip_invoicing == false and
-        not exists(transactions, true)
-    )
-  end
+  defp overdue_candidate_query(query, today, nil), do: overdue_candidate_base_query(query, today)
 
   defp overdue_candidate_query(query, today, {inserted_at, id}) do
+    query
+    |> overdue_candidate_base_query(today)
+    |> Ash.Query.filter(inserted_at > ^inserted_at or (inserted_at == ^inserted_at and id > ^id))
+  end
+
+  defp overdue_candidate_base_query(query, today) do
     Ash.Query.filter(
       query,
       not is_nil(invoice_number) and
@@ -92,8 +88,8 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice.Scanners.OverdueReminders do
         not is_nil(due_date) and
         due_date < ^today and
         skip_invoicing == false and
-        not exists(transactions, true) and
-        (inserted_at > ^inserted_at or (inserted_at == ^inserted_at and id > ^id))
+        gross_value != 0 and
+        not exists(transactions, true)
     )
   end
 
