@@ -5,6 +5,7 @@ defmodule FirmowidWeb.Auth.Views.RegistrationTest do
   import Phoenix.LiveViewTest
 
   alias Firmowid.Ash.Core
+  alias Firmowid.Test.Support.PosthogClient
 
   describe "Registration page" do
     test "renders registration page", %{conn: conn} do
@@ -39,6 +40,8 @@ defmodule FirmowidWeb.Auth.Views.RegistrationTest do
 
   describe "register user" do
     test "creates account and logs the user in", %{conn: conn} do
+      PosthogClient.enable()
+      conn = Plug.Test.put_req_cookie(conn, "cookie_consent", "rejected")
       {:ok, lv, _html} = live(conn, ~p"/zarejestruj")
 
       email = unique_user_email()
@@ -47,6 +50,12 @@ defmodule FirmowidWeb.Auth.Views.RegistrationTest do
       conn = follow_trigger_action(form, conn)
 
       assert redirected_to(conn) == ~p"/czasosledz"
+      user = Core.get_user_by_email!(email, authorize?: false)
+
+      assert_receive {:posthog_capture, "account_created", distinct_id, %{"method" => "password"}}
+
+      assert distinct_id == to_string(user.id)
+      refute_receive {:posthog_capture, "account_created", _, _}
     end
 
     test "renders errors for duplicated email", %{conn: conn} do

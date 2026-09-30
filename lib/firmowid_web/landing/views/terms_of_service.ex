@@ -30,7 +30,7 @@ defmodule FirmowidWeb.Landing.Views.TermsOfService do
     <.legal_page>
       <h1 class="text-4xl font-bold">Regulamin</h1>
       <p class="text-sm text-neutral-500">
-        Ostatnia aktualizacja: 8 września 2026 r.
+        Ostatnia aktualizacja: 30 września 2026 r.
       </p>
 
       <h2>§1. Postanowienia ogólne</h2>
@@ -132,6 +132,16 @@ defmodule FirmowidWeb.Landing.Views.TermsOfService do
           class="text-orange-700 hover:underline"
         >
             Polityka Prywatności</FirmowidWeb.DesignSystem.Components.Link.link>, stanowiąca integralną część niniejszego Regulaminu.
+      </p>
+      <p>
+        W ramach działania Usługi wybrane zdarzenia biznesowe są przekazywane
+        do PostHog z identyfikatorem użytkownika, a w przypadku zdarzeń dotyczących
+        organizacji również z jej identyfikatorem, niezależnie od wyboru dotyczącego
+        cookies. Przed decyzją analityka przeglądarkowa działa tylko w pamięci,
+        bez trwałych identyfikatorów i identyfikacji konta. Zgoda włącza trwałe
+        identyfikatory, identyfikację i Replay; odmowa zatrzymuje analitykę
+        przeglądarkową, ale nie zdarzenia serwerowe. Szczegóły opisuje Polityka
+        Prywatności.
       </p>
 
       <h2>§7. Usunięcie konta</h2>

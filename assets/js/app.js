@@ -26,7 +26,6 @@ import { Hooks } from "./hooks";
 import { hooks as colocatedHooks } from "phoenix-colocated/firmowid";
 import { initTelemetry } from "./telemetry";
 import { installLandingCtaTracking, installPosthogLogoutReset } from "./telemetry/posthog";
-import { consentAccepted } from "./telemetry/consent";
 
 let csrfToken = document
   .querySelector("meta[name='csrf-token']")
@@ -37,7 +36,6 @@ let liveSocket = new LiveSocket("/live", Socket, {
   params: {
     _csrf_token: csrfToken,
     timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-    analytics_consent: consentAccepted(),
   },
   hooks: {
     LiveToast: createLiveToastHook(),

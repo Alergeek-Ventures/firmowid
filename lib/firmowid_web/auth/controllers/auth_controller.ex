@@ -12,8 +12,8 @@ defmodule FirmowidWeb.Auth.Controllers.AuthController do
   alias Ash.Error.Invalid
   alias AshAuthentication.Errors.AuthenticationFailed
   alias AshAuthentication.Strategy.RememberMe.Plug.Helpers
+  alias Firmowid.Analytics
   alias FirmowidWeb.Infrastructure.UserAuth
-  alias FirmowidWeb.Infrastructure.Utilities.PosthogBusinessEvents
 
   require Logger
 
@@ -35,8 +35,7 @@ defmodule FirmowidWeb.Auth.Controllers.AuthController do
   end
 
   def success(conn, {:password, :register}, user, token) do
-    PosthogBusinessEvents.capture_account_created(conn, user)
-
+    Analytics.capture_account_created(user, :password)
     return_to = get_session(conn, :return_to) || UserAuth.signed_in_path_for_user(user)
 
     conn
