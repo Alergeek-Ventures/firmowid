@@ -55,7 +55,10 @@
               "flex items-center gap-1 opacity-50 transition-all hover:opacity-100"
             ]}
           >
-            <.icon name="hero-clipboard-document-list" class="size-5" /> Fakturowanie
+            <.icon name="hero-clipboard-document-list" class="size-5" />{pgettext(
+              "main navigation",
+              "Invoicing"
+            )}
           </.link>
         <% end %>
         <%= if flag_enabled?(:analysis_dashboard, assigns) and @current_user.role == :admin do %>
@@ -67,12 +70,16 @@
               "flex items-center gap-1 opacity-50 transition-all hover:opacity-100"
             ]}
           >
-            <.icon name="hero-scale" class="size-5" /> Analiza
+            <.icon name="hero-scale" class="size-5" />{pgettext("main navigation", "Analysis")}
             <span
               id="analiza-beta"
               class="ml-1 rounded bg-white/20 px-1.5 py-0.5 text-xs"
               phx-hook="Tippy"
-              data-tippy-content="Prace nad tą funkcjonalnością jeszcze trwają! Twój feedback pozwoli nam sprawić, że będzie jeszcze lepsza."
+              data-tippy-content={
+                gettext(
+                  "This feature is still in progress! Your feedback will help us make it even better."
+                )
+              }
             >
               BETA
             </span>
@@ -86,7 +93,7 @@
             "flex items-center gap-1 opacity-50 transition-all hover:opacity-100"
           ]}
         >
-          <.icon name="hero-clock" class="size-5" /> Czasośledź
+          <.icon name="hero-clock" class="size-5" />{pgettext("main navigation", "Time tracking")}
         </.link>
         <%= if @current_user.role == :admin do %>
           <.link
@@ -100,7 +107,7 @@
             <.icon
               name="hero-presentation-chart-line"
               class="size-5"
-            /> Zarządzanie
+            />{pgettext("main navigation", "Management")}
           </.link>
         <% end %>
       </div>
@@ -113,7 +120,7 @@
           class="inline-flex items-center justify-center text-white transition-colors hover:text-white/80 active:text-white/70"
         >
           <span class="flex items-center gap-1.5">
-            <.icon name="hero-chat-bubble-left-ellipsis" class="size-5" /> Feedback
+            <.icon name="hero-chat-bubble-left-ellipsis" class="size-5" />{gettext("Feedback")}
           </span>
         </FirmowidWeb.DesignSystem.Components.Button.button>
         <div class="relative">
@@ -167,7 +174,7 @@
               navigate={~p"/ustawienia"}
               class="hover:bg-darkGrey/50 rounded-md p-2"
             >
-              Ustawienia
+              {pgettext("avatar menu", "Settings")}
             </.link>
             <%= if @current_user.role == :admin do %>
               <.link
@@ -175,7 +182,7 @@
                 navigate={~p"/ustawienia/firma"}
                 class="hover:bg-darkGrey/50 rounded-md p-2"
               >
-                Konta bankowe
+                {pgettext("avatar menu", "Bank accounts")}
               </.link>
             <% end %>
             <%= if @current_user.system_role == :superuser do %>
@@ -184,7 +191,7 @@
                 navigate={~p"/admin/rozliczenia"}
                 class="hover:bg-darkGrey/50 rounded-md p-2"
               >
-                Rozliczenia
+                {pgettext("avatar menu", "Billing")}
               </.link>
             <% end %>
             <.form
@@ -201,7 +208,8 @@
                 class="active:bg-darkGrey/70 hover:bg-darkGrey/50 block w-full cursor-pointer rounded-md text-white hover:text-white"
               >
                 <span class="flex w-full items-center justify-between p-2">
-                  Wyloguj się <.icon name="hero-arrow-right-start-on-rectangle" />
+                  {pgettext("avatar menu", "Log out")}
+                  <.icon name="hero-arrow-right-start-on-rectangle" />
                 </span>
               </FirmowidWeb.DesignSystem.Components.Button.button>
             </.form>
@@ -228,7 +236,7 @@
                 "text-white/90"
             ]}
           >
-            Pracownicy
+            {pgettext("management navigation", "Employees")}
           </.link>
           <.link
             kind="unstyled"
@@ -238,7 +246,7 @@
               String.starts_with?(@current_uri.path, "/zarzadzanie/projekty") && "text-white/90"
             ]}
           >
-            Projekty
+            {pgettext("management navigation", "Projects")}
           </.link>
           <.link
             kind="unstyled"
@@ -249,7 +257,7 @@
                 "text-white/90"
             ]}
           >
-            Kontrahenci
+            {pgettext("management navigation", "Counterparties")}
           </.link>
         </div>
         <.button

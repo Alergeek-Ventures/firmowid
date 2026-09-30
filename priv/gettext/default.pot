@@ -1494,3 +1494,79 @@ msgstr ""
 #, elixir-autogen, elixir-format
 msgid "— operates continuously to ensure the security and reliability of the Service. With consent, we may additionally enable session recording in the browser, which helps reproduce the steps leading to an error."
 msgstr ""
+
+#: lib/firmowid_web/infrastructure/layouts/app.html.heex:123
+#, elixir-autogen, elixir-format
+msgid "Feedback"
+msgstr ""
+
+#: lib/firmowid_web/infrastructure/layouts/app.html.heex:79
+#, elixir-autogen, elixir-format
+msgid "This feature is still in progress! Your feedback will help us make it even better."
+msgstr ""
+
+#: lib/firmowid_web/infrastructure/layouts/app.html.heex:185
+#, elixir-autogen, elixir-format
+msgctxt "avatar menu"
+msgid "Bank accounts"
+msgstr ""
+
+#: lib/firmowid_web/infrastructure/layouts/app.html.heex:194
+#, elixir-autogen, elixir-format
+msgctxt "avatar menu"
+msgid "Billing"
+msgstr ""
+
+#: lib/firmowid_web/infrastructure/layouts/app.html.heex:211
+#, elixir-autogen, elixir-format
+msgctxt "avatar menu"
+msgid "Log out"
+msgstr ""
+
+#: lib/firmowid_web/infrastructure/layouts/app.html.heex:177
+#, elixir-autogen, elixir-format
+msgctxt "avatar menu"
+msgid "Settings"
+msgstr ""
+
+#: lib/firmowid_web/infrastructure/layouts/app.html.heex:73
+#, elixir-autogen, elixir-format
+msgctxt "main navigation"
+msgid "Analysis"
+msgstr ""
+
+#: lib/firmowid_web/infrastructure/layouts/app.html.heex:58
+#, elixir-autogen, elixir-format
+msgctxt "main navigation"
+msgid "Invoicing"
+msgstr ""
+
+#: lib/firmowid_web/infrastructure/layouts/app.html.heex:110
+#, elixir-autogen, elixir-format
+msgctxt "main navigation"
+msgid "Management"
+msgstr ""
+
+#: lib/firmowid_web/infrastructure/layouts/app.html.heex:96
+#, elixir-autogen, elixir-format
+msgctxt "main navigation"
+msgid "Time tracking"
+msgstr ""
+
+#: lib/firmowid_web/infrastructure/layouts/app.html.heex:260
+#, elixir-autogen, elixir-format
+msgctxt "management navigation"
+msgid "Counterparties"
+msgstr ""
+
+#: lib/firmowid_web/infrastructure/layouts/app.html.heex:239
+#, elixir-autogen, elixir-format
+msgctxt "management navigation"
+msgid "Employees"
+msgstr ""
+
+#: lib/firmowid_web/infrastructure/layouts/app.html.heex:249
+#, elixir-autogen, elixir-format
+msgctxt "management navigation"
+msgid "Projects"
+msgstr ""
