@@ -108,20 +108,20 @@ defmodule FirmowidWeb.Landing.Views.PrivacyPolicy do
         </li>
       </ul>
       <p>
-        Aby analizować i rozwijać Usługę, przekazujemy PostHog informacje o założeniu
-        konta oraz korzystaniu z wybranych funkcji: faktur, połączeń bankowych,
-        ewidencji czasu pracy, stawek wynagrodzeń i kontrahentów. Informacje te
-        są powiązane z kontem użytkownika, a w przypadku funkcji organizacji także
-        z organizacją. Nie przekazujemy treści faktur ani danych kontrahentów.
-        Dzieje się to również wtedy, gdy użytkownik odmówi zgody na cookies
-        analityczne.
+        Informacje o założeniu konta i korzystaniu z wybranych funkcji pomagają nam
+        lepiej rozumieć potrzeby użytkowników i rozwijać Firmowid. W tym celu
+        korzystamy z PostHog. Informacje te są powiązane z kontem użytkownika,
+        a w przypadku korzystania z funkcji organizacji także z organizacją.
+        Analiza nie obejmuje treści faktur ani danych kontrahentów. Ten zakres
+        analizy nie korzysta z cookies analitycznych i jest niezależny od ustawień
+        dotyczących tych cookies.
       </p>
 
       <h2>§4. Podmioty przetwarzające</h2>
       <p>
-        W celu świadczenia Usługi korzystamy z usług następujących podmiotów.
-        Zakres danych przekazywanych każdemu z nich ograniczamy do danych niezbędnych
-        do realizacji danego celu:
+        W działaniu Firmowida wspierają nas wymienieni poniżej dostawcy. W ramach
+        świadczonych usług przetwarzają informacje potrzebne do realizacji
+        opisanych celów:
       </p>
       <ul>
         <li>
@@ -143,10 +143,9 @@ defmodule FirmowidWeb.Landing.Views.PrivacyPolicy do
         </li>
         <li>
           <strong>Plus Five Five, Inc. (Resend)</strong> (2261 Market Street #5039,
-          San Francisco, CA 94114, USA) — obsługa wiadomości e-mail, w tym wysyłanie
-          wiadomości transakcyjnych, odbiór wiadomości kierowanych do Usługi oraz
-          pobieranie ich załączników, w szczególności dokumentów przekazywanych
-          do przetworzenia.
+          San Francisco, CA 94114, USA) — obsługa poczty e-mail: wysyłanie wiadomości
+          transakcyjnych, odbiór wiadomości kierowanych do Usługi oraz obsługa
+          załączników, w tym dokumentów przesyłanych do przetworzenia.
         </li>
         <li>
           <strong>Google Ireland Limited</strong> (Gordon House, Barrow Street, Dublin 4, Irlandia) —
@@ -166,17 +165,17 @@ defmodule FirmowidWeb.Landing.Views.PrivacyPolicy do
           (77 Geary Street, San Francisco, CA 94108, USA) — analiza plików dokumentów przesłanych
           przez użytkownika, w tym dokumentów fakturowych i umów, oraz OCR i
           wyodrębnianie z nich danych potrzebnych do działania funkcji Usługi.
-          Do Reducto przekazywana jest treść dokumentu lub bezpieczny adres umożliwiający
-          jego pobranie.
+          W ramach tej usługi Reducto przetwarza treść dokumentu lub adres
+          umożliwiający jego pobranie.
         </li>
         <li>
           <strong>OpenAI Ireland Limited</strong>
           (1st Floor, The Liffey Trust Centre, 117-126 Sheriff Street Upper, Dublin 1,
           D01 YC43, Irlandia) — automatyczne tworzenie opisów faktur kosztowych,
           ujednolicanie nazw sprzedawców oraz wspomaganie funkcji asystenta i
-          dopasowywania faktur do transakcji. Do OpenAI mogą trafiać dane wyodrębnione
-          z faktur, w szczególności dane sprzedawcy, pozycje i wartości faktury,
-          oraz dane przekazane do tych funkcji przez użytkownika.
+          dopasowywania faktur do transakcji. W ramach tych funkcji OpenAI przetwarza
+          dane wyodrębnione z faktur, w szczególności dane sprzedawcy, pozycje i
+          wartości faktury, a także informacje podane przez użytkownika.
         </li>
       </ul>
       <h2>§5. Przechowywanie danych</h2>
@@ -225,12 +224,11 @@ defmodule FirmowidWeb.Landing.Views.PrivacyPolicy do
         </li>
         <li>
           <strong>Cookies analityczne (PostHog)</strong> — pomagają analizować
-          korzystanie z Usługi w przeglądarce. Zanim podejmiesz decyzję, analiza
-          działa bez trwałego zapisywania danych w przeglądarce i bez powiązania
-          z kontem.
-          Po wyrażeniu zgody możemy zapisywać cookies i powiązać tę analizę z kontem;
-          po odmowie analiza w przeglądarce zostaje zatrzymana. Nie wpływa to na
-          analizę wybranych czynności powiązanych z kontem, opisaną w §3.
+          korzystanie z Usługi w przeglądarce. Są opcjonalne i zapisujemy je po
+          wyrażeniu zgody. Przed dokonaniem wyboru analiza nie zapisuje trwale
+          danych w przeglądarce ani nie jest powiązana z kontem. Wybór „Odrzuć”
+          wyłącza tę formę analizy. Ustawienia cookies dotyczą analizy w
+          przeglądarce; zakres analizy związanej z kontem opisujemy w §3.
         </li>
         <li>
           <strong>Monitoring błędów (Sentry)</strong> — działa stale w celu
