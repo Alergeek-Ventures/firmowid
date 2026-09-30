@@ -568,7 +568,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
     case Creator.validate_organization_for_invoicing(organization) do
       :ok ->
         issue_date = Date.utc_today()
-        invoice_number = SalesInvoice.get_next_number!(issue_date, scope: scope)
+        invoice_number = SalesInvoice.get_next_number!(issue_date, nil, nil, scope: scope)
 
         override_params =
           Map.merge(form_params, %{
