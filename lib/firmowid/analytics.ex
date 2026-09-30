@@ -27,7 +27,7 @@ defmodule Firmowid.Analytics do
       properties =
         Map.put(safe_properties, "$groups", %{"organization" => to_string(organization_id)})
 
-      client().bare_capture(event_name, to_string(user_id), properties)
+      PostHog.bare_capture(event_name, to_string(user_id), properties)
     end
 
     :ok
@@ -41,7 +41,7 @@ defmodule Firmowid.Analytics do
   @spec capture_account_created(map(), :password | :google) :: :ok
   def capture_account_created(%{id: user_id}, method) when not is_nil(user_id) and method in [:password, :google] do
     if enabled?() do
-      client().bare_capture("account_created", to_string(user_id), %{
+      PostHog.bare_capture("account_created", to_string(user_id), %{
         "method" => Atom.to_string(method)
       })
     end
@@ -54,12 +54,10 @@ defmodule Firmowid.Analytics do
   def capture_account_created(_user, _method), do: :ok
 
   defp enabled? do
-    match?(%{enabled: true}, client().config())
+    match?(%{enabled: true}, PostHog.config())
   rescue
     _ -> false
   end
-
-  defp client, do: Application.get_env(:firmowid, :posthog_client, PostHog)
 
   defp validate_properties(event, properties)
        when event in [

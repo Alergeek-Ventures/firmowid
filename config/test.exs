@@ -57,7 +57,6 @@ config :firmowid, :bank_data_api_client,
 
 config :firmowid, :nip_api_request_options, plug: {Req.Test, :nip_api}
 config :firmowid, :openai_api_key, "test-openai-api-key"
-config :firmowid, :posthog_client, Firmowid.Test.Support.PosthogClient
 config :firmowid, :reducto_api_key, "test-reducto-api-key"
 
 config :firmowid, :s3,

@@ -134,13 +134,8 @@ defmodule FirmowidWeb.Landing.Views.TermsOfService do
             Polityka Prywatności</FirmowidWeb.DesignSystem.Components.Link.link>, stanowiąca integralną część niniejszego Regulaminu.
       </p>
       <p>
-        W ramach działania Usługi wybrane zdarzenia biznesowe są przekazywane
-        do PostHog z identyfikatorem użytkownika, a w przypadku zdarzeń dotyczących
-        organizacji również z jej identyfikatorem, niezależnie od wyboru dotyczącego
-        cookies. Przed decyzją analityka przeglądarkowa działa tylko w pamięci,
-        bez trwałych identyfikatorów i identyfikacji konta. Zgoda włącza trwałe
-        identyfikatory, identyfikację i Replay; odmowa zatrzymuje analitykę
-        przeglądarkową, ale nie zdarzenia serwerowe. Szczegóły opisuje Polityka
+        Informacje o analizie korzystania z Usługi, w tym o czynnościach
+        powiązanych z kontem niezależnie od zgody na cookies, znajdziesz w Polityce
         Prywatności.
       </p>
 

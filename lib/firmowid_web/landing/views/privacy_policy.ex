@@ -108,17 +108,13 @@ defmodule FirmowidWeb.Landing.Views.PrivacyPolicy do
         </li>
       </ul>
       <p>
-        Niezależnie od wyboru dotyczącego cookies, Usługa wysyła do PostHog
-        wybrane zdarzenia biznesowe rejestrowane po stronie serwera. Obejmują one
-        utworzenie konta (<code>account_created</code>, z metodą rejestracji: hasło
-        lub Google) oraz wybrane zdarzenia dotyczące faktur, połączenia bankowego,
-        ewidencji czasu pracy, stawek wynagrodzeń i kontrahentów. Zdarzenia są
-        powiązane ze stałym identyfikatorem użytkownika, a zdarzenia w organizacji
-        także z identyfikatorem organizacji. Przekazywane właściwości są ograniczone
-        do nazwy zdarzenia i wskazanych właściwości technicznych (w tym metody
-        rejestracji lub liczby zmienionych stawek); nie obejmują treści faktur ani
-        danych kontrahentów. Celem jest analiza korzystania z Usługi i jej rozwój.
-        Nie jest to analityka anonimowa ani zależna od zgody na cookies.
+        Aby analizować i rozwijać Usługę, przekazujemy PostHog informacje o założeniu
+        konta oraz korzystaniu z wybranych funkcji: faktur, połączeń bankowych,
+        ewidencji czasu pracy, stawek wynagrodzeń i kontrahentów. Informacje te
+        są powiązane z kontem użytkownika, a w przypadku funkcji organizacji także
+        z organizacją. Nie przekazujemy treści faktur ani danych kontrahentów.
+        Dzieje się to również wtedy, gdy użytkownik odmówi zgody na cookies
+        analityczne.
       </p>
 
       <h2>§4. Podmioty przetwarzające</h2>
@@ -135,21 +131,15 @@ defmodule FirmowidWeb.Landing.Views.PrivacyPolicy do
         </li>
         <li>
           <strong>PostHog Inc.</strong> (2261 Market Street, #4008, San Francisco,
-          CA 94114, USA) — odbiorca danych analitycznych. Korzystamy z instancji
-          EU. PostHog otrzymuje opisane w §3 wybrane zdarzenia biznesowe wraz
-          z identyfikatorem użytkownika i, dla zdarzeń organizacji, identyfikatorem
-          organizacji. Przed wyborem dotyczącym cookies analityka przeglądarkowa
-          działa wyłącznie w pamięci, bez trwałych identyfikatorów i identyfikacji
-          konta. Zgoda włącza trwałe identyfikatory, identyfikację i Replay;
-          odmowa zatrzymuje analitykę przeglądarkową, ale nie opisane wyżej
-          zdarzenia serwerowe.
+          CA 94114, USA) — analiza korzystania z Usługi, w tym czynności opisanych
+          w §3. Korzystamy z usług PostHog świadczonych w Unii Europejskiej.
         </li>
         <li>
           <strong>Functional Software, Inc. (Sentry)</strong> (45 Fremont Street,
           8th Floor, San Francisco, CA 94105, USA) — monitorowanie błędów, awarii
           i wydajności Usługi. Raporty mogą zawierać dane techniczne oraz kontekst
           niezbędny do zdiagnozowania błędu. Po wyrażeniu zgody mogą obejmować także
-          nagrania sesji diagnostycznych (Replay).
+          nagrania sesji pomagające ustalić przyczynę błędu.
         </li>
         <li>
           <strong>Plus Five Five, Inc. (Resend)</strong> (2261 Market Street #5039,
@@ -234,18 +224,18 @@ defmodule FirmowidWeb.Landing.Views.PrivacyPolicy do
           Nie wymagają zgody.
         </li>
         <li>
-          <strong>Cookies analityczne (PostHog)</strong> — przeglądarkowa analityka
-          działa przed decyzją wyłącznie w pamięci — bez trwałych identyfikatorów
-          i bez identyfikacji konta. Zgoda umożliwia trwałe identyfikatory,
-          identyfikację i Replay. Po odmowie analityka przeglądarkowa zostaje
-          zatrzymana, ale wybrane zdarzenia biznesowe wysyłane po stronie serwera
-          nadal są rejestrowane; są powiązane z identyfikatorem użytkownika i mogą
-          być grupowane według organizacji, nie są anonimowe.
+          <strong>Cookies analityczne (PostHog)</strong> — pomagają analizować
+          korzystanie z Usługi w przeglądarce. Zanim podejmiesz decyzję, analiza
+          działa bez trwałego zapisywania danych w przeglądarce i bez powiązania
+          z kontem.
+          Po wyrażeniu zgody możemy zapisywać cookies i powiązać tę analizę z kontem;
+          po odmowie analiza w przeglądarce zostaje zatrzymana. Nie wpływa to na
+          analizę wybranych czynności powiązanych z kontem, opisaną w §3.
         </li>
         <li>
           <strong>Monitoring błędów (Sentry)</strong> — działa stale w celu
           zapewnienia bezpieczeństwa i niezawodności usługi. Po wyrażeniu zgody
-          możemy dodatkowo uruchomić nagrywanie sesji diagnostycznych (Replay),
+          możemy dodatkowo uruchomić nagrywanie sesji w przeglądarce,
           które pomaga odtworzyć kroki prowadzące do błędu.
         </li>
         <li>
