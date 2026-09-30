@@ -131,8 +131,6 @@ config :firmowid, :legal_entity, %{
   regon: "387738728"
 }
 
-config :firmowid, :posthog_client, PostHog
-
 config :firmowid,
   ecto_repos: [Firmowid.Repo],
   generators: [timestamp_type: :utc_datetime],
