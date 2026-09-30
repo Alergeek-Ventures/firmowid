@@ -2,46 +2,48 @@ defmodule FirmowidWeb.Infrastructure.Utilities.PosthogBusinessEventsTest do
   @moduledoc false
   use ExUnit.Case, async: true
 
+  alias Firmowid.Test.Support.PosthogClient
   alias FirmowidWeb.Infrastructure.Utilities.PosthogBusinessEvents
   alias Phoenix.LiveView.Socket
 
-  test "does not capture without analytics consent" do
-    socket = socket(%{analytics_consent_accepted: false})
+  test "captures authenticated business events with a stable ID and organization group regardless of consent" do
+    PosthogClient.enable()
 
-    assert PosthogBusinessEvents.capture(socket, :invoice_created) == socket
+    for consent <- [false, nil] do
+      socket = socket(%{analytics_consent_accepted: consent})
+      assert PosthogBusinessEvents.capture(socket, :invoice_created) == socket
+
+      assert_receive {:posthog_capture, "invoice_created", "user-id",
+                      %{"$groups" => %{"organization" => "organization-id"}}}
+    end
+
+    assert PosthogBusinessEvents.capture(socket(%{}), :payroll_rates_updated, %{
+             changed_employee_count: 2
+           }) ==
+             socket(%{})
+
+    assert_receive {:posthog_capture, "payroll_rates_updated", "user-id", %{"changed_employee_count" => 2}}
+
+    PosthogBusinessEvents.capture(socket(%{}), :invoice_created, %{email: "private@example.com"})
+    refute_receive {:posthog_capture, _, _, _}
   end
 
-  test "does not capture when PostHog is disabled" do
-    socket = socket(%{analytics_consent_accepted: true})
+  test "does not capture without a user or organization or when analytics is disabled" do
+    PosthogClient.enable()
+    PosthogBusinessEvents.capture(socket(%{current_user: nil}), :invoice_created)
+    PosthogBusinessEvents.capture(socket(%{current_org: nil}), :invoice_created)
+    refute_receive {:posthog_capture, _, _, _}
 
-    assert PosthogBusinessEvents.capture(socket, :invoice_created) == socket
-  end
-
-  test "account creation capture is gated by the consent cookie" do
-    conn = Plug.Test.conn(:get, "/")
-
-    result = PosthogBusinessEvents.capture_account_created(conn, %{id: "user-id"})
-
-    assert result.cookies == %{}
-  end
-
-  test "account creation capture does not require an organization" do
-    conn = Plug.Test.conn(:get, "/", "")
-    conn = Plug.Conn.put_req_header(conn, "cookie", "cookie_consent=accepted")
-
-    result = PosthogBusinessEvents.capture_account_created(conn, %{id: "user-id"})
-
-    assert result.cookies["cookie_consent"] == "accepted"
+    PosthogClient.disable()
+    PosthogBusinessEvents.capture(socket(%{}), :invoice_created)
+    refute_receive {:posthog_capture, _, _, _}
   end
 
   defp socket(assigns) do
     %Socket{
       assigns:
         Map.merge(
-          %{
-            current_user: %{id: "user-id"},
-            current_org: %{id: "organization-id"}
-          },
+          %{current_user: %{id: "user-id"}, current_org: %{id: "organization-id"}},
           assigns
         )
     }

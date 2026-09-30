@@ -30,7 +30,7 @@ defmodule FirmowidWeb.Landing.Views.PrivacyPolicy do
     <.legal_page>
       <h1 class="text-4xl font-bold">Polityka Prywatności</h1>
       <p class="text-sm text-neutral-500">
-        Ostatnia aktualizacja: 8 września 2026 r.
+        Ostatnia aktualizacja: 30 września 2026 r.
       </p>
 
       <h2>§1. Administrator danych</h2>
@@ -103,9 +103,23 @@ defmodule FirmowidWeb.Landing.Views.PrivacyPolicy do
         </li>
         <li>
           <strong>Zgoda</strong> (art. 6 ust. 1 lit. a RODO) — opcjonalne komunikaty marketingowe,
-          analityczne pliki cookies. Zgodę można wycofać w dowolnym momencie.
+          analityczne pliki cookies i nagrywanie sesji. Zgodę można wycofać
+          w dowolnym momencie.
         </li>
       </ul>
+      <p>
+        Niezależnie od wyboru dotyczącego cookies, Usługa wysyła do PostHog
+        wybrane zdarzenia biznesowe rejestrowane po stronie serwera. Obejmują one
+        utworzenie konta (<code>account_created</code>, z metodą rejestracji: hasło
+        lub Google) oraz wybrane zdarzenia dotyczące faktur, połączenia bankowego,
+        ewidencji czasu pracy, stawek wynagrodzeń i kontrahentów. Zdarzenia są
+        powiązane ze stałym identyfikatorem użytkownika, a zdarzenia w organizacji
+        także z identyfikatorem organizacji. Przekazywane właściwości są ograniczone
+        do nazwy zdarzenia i wskazanych właściwości technicznych (w tym metody
+        rejestracji lub liczby zmienionych stawek); nie obejmują treści faktur ani
+        danych kontrahentów. Celem jest analiza korzystania z Usługi i jej rozwój.
+        Nie jest to analityka anonimowa ani zależna od zgody na cookies.
+      </p>
 
       <h2>§4. Podmioty przetwarzające</h2>
       <p>
@@ -121,9 +135,14 @@ defmodule FirmowidWeb.Landing.Views.PrivacyPolicy do
         </li>
         <li>
           <strong>PostHog Inc.</strong> (2261 Market Street, #4008, San Francisco,
-          CA 94114, USA) — analityka korzystania z Usługi. Korzystamy z instancji EU;
-          bez zgody na cookies analityczne nie zapisujemy trwałych identyfikatorów
-          analitycznych w przeglądarce.
+          CA 94114, USA) — odbiorca danych analitycznych. Korzystamy z instancji
+          EU. PostHog otrzymuje opisane w §3 wybrane zdarzenia biznesowe wraz
+          z identyfikatorem użytkownika i, dla zdarzeń organizacji, identyfikatorem
+          organizacji. Przed wyborem dotyczącym cookies analityka przeglądarkowa
+          działa wyłącznie w pamięci, bez trwałych identyfikatorów i identyfikacji
+          konta. Zgoda włącza trwałe identyfikatory, identyfikację i Replay;
+          odmowa zatrzymuje analitykę przeglądarkową, ale nie opisane wyżej
+          zdarzenia serwerowe.
         </li>
         <li>
           <strong>Functional Software, Inc. (Sentry)</strong> (45 Fremont Street,
@@ -215,13 +234,13 @@ defmodule FirmowidWeb.Landing.Views.PrivacyPolicy do
           Nie wymagają zgody.
         </li>
         <li>
-          <strong>Cookies analityczne (PostHog)</strong> — wykorzystywane do analizy
-          korzystania z usługi w celu jej ulepszania. Wymagają zgody użytkownika,
-          zanim zapiszemy trwałe identyfikatory analityczne w przeglądarce.
-          Do momentu podjęcia decyzji analityka działa wyłącznie w trybie
-          anonimowym i pamięciowym (bez identyfikacji użytkownika i bez
-          utrwalania identyfikatorów PostHog w przeglądarce). Po odmowie dalsza
-          analityka przestaje działać.
+          <strong>Cookies analityczne (PostHog)</strong> — przeglądarkowa analityka
+          działa przed decyzją wyłącznie w pamięci — bez trwałych identyfikatorów
+          i bez identyfikacji konta. Zgoda umożliwia trwałe identyfikatory,
+          identyfikację i Replay. Po odmowie analityka przeglądarkowa zostaje
+          zatrzymana, ale wybrane zdarzenia biznesowe wysyłane po stronie serwera
+          nadal są rejestrowane; są powiązane z identyfikatorem użytkownika i mogą
+          być grupowane według organizacji, nie są anonimowe.
         </li>
         <li>
           <strong>Monitoring błędów (Sentry)</strong> — działa stale w celu

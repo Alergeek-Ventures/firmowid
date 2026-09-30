@@ -22,6 +22,7 @@ defmodule Firmowid.Ash.Core.User do
   alias Firmowid.Ash.Checks.SystemActorRole
   alias Firmowid.Ash.Core.Calculations.AcceptedLeaveDaysForYear
   alias Firmowid.Ash.Core.Calculations.SharedBirthday
+  alias Firmowid.Ash.Core.Changes.CaptureGoogleRegistration
   alias Firmowid.Ash.Core.Secrets
   alias Firmowid.Ash.Core.Services.GoogleAvatarImporter
   alias Firmowid.Ash.Core.User.Actions.UpdateCurrentProfile
@@ -183,6 +184,10 @@ defmodule Firmowid.Ash.Core.User do
       upsert? true
       upsert_identity :unique_email
       upsert_fields []
+      # Existing Google identities and verified-email links must not count as new accounts.
+      # A skipped conflict carries Ash's :upsert_skipped metadata on the returned user.
+      upsert_condition expr(false)
+      return_skipped_upsert? true
 
       # Canonical policy: auto-link only for provider-verified emails.
       # TODO: Make verified-email auto-linking configurable per organization
@@ -221,6 +226,7 @@ defmodule Firmowid.Ash.Core.User do
 
       change AshAuthentication.GenerateTokenChange
       change AshAuthentication.Strategy.OAuth2.IdentityChange
+      change CaptureGoogleRegistration
     end
 
     # ── Profile management ──────────────────────────────────────────

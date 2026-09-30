@@ -40,8 +40,7 @@ defmodule FirmowidWeb.Infrastructure.Hooks.RequireOrganization do
              socket
              |> assign(:current_user, user)
              |> assign(:current_org, org)
-             |> assign(:ash_scope, scope)
-             |> assign(:analytics_consent_accepted, analytics_consent_accepted?(socket))}
+             |> assign(:ash_scope, scope)}
 
           %{path: path, message: message} ->
             {:halt,
@@ -50,10 +49,5 @@ defmodule FirmowidWeb.Infrastructure.Hooks.RequireOrganization do
              |> redirect(to: path)}
         end
     end
-  end
-
-  defp analytics_consent_accepted?(socket) do
-    connected?(socket) and
-      get_connect_params(socket)["analytics_consent"] in [true, "true"]
   end
 end
