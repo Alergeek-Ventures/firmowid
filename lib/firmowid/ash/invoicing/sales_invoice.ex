@@ -505,9 +505,8 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
                 given_name_field: :buyer_given_name,
                 surname_field: :buyer_surname}
 
-      validate {Validations.ValidateItemsNotEmpty, field: :sales_invoice_items, source: :argument} do
-        where present(:sales_invoice_items)
-      end
+      validate {Validations.ValidateItemsNotEmpty,
+                field: :sales_invoice_items, source: :argument, require_argument?: false}
 
       validate string_length(:internal_note, max: 10_000) do
         where present(:internal_note)
