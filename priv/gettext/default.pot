@@ -120,7 +120,7 @@ msgstr ""
 
 #: lib/firmowid_web/landing/views/privacy_policy.ex:184
 #, elixir-autogen, elixir-format
-msgid "After the user deletes an account, the data is promptly removed from the database and storage (Object Storage). Residual data may remain in the logs of external services (PostHog, Resend) for their standard retention periods, over which the Controller has no direct control."
+msgid "After the user deletes an account or an organization is deleted, the Controller immediately attempts to delete the associated data from the database. Full cleanup of data in the Service’s systems, including storage (Object Storage), may take up to 30 days. If an external service error occurs, deleting objects from storage may require manual intervention. Deletion does not cover data whose continued retention is required by law or data retained by external providers over which the Controller has no direct control; such data may be subject to those providers’ retention periods. Residual data may remain in the logs of external services (PostHog, Resend) for their standard retention periods."
 msgstr ""
 
 #: lib/firmowid_web/landing/components/sections.ex:464
@@ -291,6 +291,11 @@ msgstr ""
 #: lib/firmowid_web/landing/components/sections.ex:50
 #, elixir-autogen, elixir-format
 msgid "Create, send, receive. Firmowid connects to the National e-Invoice System and tracks every regulatory change for you."
+msgstr ""
+
+#: lib/firmowid_web/landing/views/terms_of_service.ex:163
+#, elixir-autogen, elixir-format
+msgid "Deletion does not cover data whose continued retention is required by law or data retained by external providers over which the Service Provider has no direct control. Residual data may remain in the logs of external services (analytics, email) for their standard retention periods. Details of data retention by providers are set out in the Privacy Policy."
 msgstr ""
 
 #: lib/firmowid_web/landing/components/cookie_consent.ex:41
@@ -764,11 +769,6 @@ msgstr ""
 msgid "Reject"
 msgstr ""
 
-#: lib/firmowid_web/landing/views/terms_of_service.ex:163
-#, elixir-autogen, elixir-format
-msgid "Residual data may remain in the logs of external services (analytics, email) for their standard retention periods, as described in the Privacy Policy."
-msgstr ""
-
 #: lib/firmowid_web/landing/components/sections.ex:55
 #, elixir-autogen, elixir-format
 msgid "Retry sending when the government system is overloaded"
@@ -930,7 +930,7 @@ msgstr ""
 
 #: lib/firmowid_web/landing/views/terms_of_service.ex:158
 #, elixir-autogen, elixir-format
-msgid "The User may delete their account at any time. After the account is deleted, the User’s data is promptly removed from the Service database and storage."
+msgid "The User may delete their account at any time. After an account or organization is deleted, the Service Provider immediately attempts to delete the associated data from the database. Full cleanup of data in the Service’s systems, including storage, may take up to 30 days. If an external service error occurs, deleting objects from storage may require manual intervention."
 msgstr ""
 
 #: lib/firmowid_web/landing/views/terms_of_service.ex:84

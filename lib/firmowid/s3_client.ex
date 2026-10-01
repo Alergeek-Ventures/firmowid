@@ -7,6 +7,7 @@ defmodule Firmowid.S3Client do
     * upload file from local path
     * upload binary payload
     * delete object
+    * delete all objects belonging to an organization
     * generate presigned GET URL
   """
 
@@ -52,6 +53,95 @@ defmodule Firmowid.S3Client do
   end
 
   @doc """
+  Deletes every object under the exact `organization_id/` prefix.
+
+  Returns a sanitized error on listing failures, or a count of failed deletes.
+  `request_options` can be used to supply a Req transport (for example in tests).
+  """
+  @spec delete_organization_objects(String.t(), keyword()) :: :ok | {:error, term()}
+  def delete_organization_objects(organization_id, request_options \\ []) do
+    prefix = "#{organization_id}/"
+    request = req(request_options)
+
+    with {:ok, keys} <- list_organization_keys(request, prefix, nil, MapSet.new(), []) do
+      failures =
+        Enum.count(keys, fn key ->
+          case safe_request(fn ->
+                 Req.delete(request, url: s3_url(bucket(), encode_object_key(key)))
+               end) do
+            {:ok, %{status: status}} when status in 200..299 -> false
+            _ -> true
+          end
+        end)
+
+      if failures == 0, do: :ok, else: {:error, {:delete_failed, failures}}
+    end
+  end
+
+  defp list_organization_keys(request, prefix, token, seen_tokens, keys) do
+    params = ["list-type": "2", prefix: prefix]
+    params = if token, do: Keyword.put(params, :"continuation-token", token), else: params
+
+    case safe_request(fn -> Req.get(request, url: "s3://#{bucket()}", params: params) end) do
+      {:ok, %{status: status, body: body}} when status in 200..299 ->
+        parse_list_page(request, prefix, seen_tokens, keys, body)
+
+      {:ok, %{status: status}} ->
+        {:error, {:list_http_error, status}}
+
+      {:error, _} ->
+        {:error, :list_request_failed}
+    end
+  end
+
+  defp parse_list_page(request, prefix, seen_tokens, keys, %{"ListBucketResult" => result}) when is_map(result) do
+    contents = Map.get(result, "Contents", [])
+    truncated = Map.get(result, "IsTruncated")
+    token = Map.get(result, "NextContinuationToken")
+
+    with true <- is_list(contents),
+         true <- Enum.all?(contents, &valid_content?(&1, prefix)),
+         true <- truncated in ["true", "false"] do
+      keys = Enum.reduce(contents, keys, fn %{"Key" => key}, acc -> [key | acc] end)
+
+      case truncated do
+        "false" ->
+          {:ok, Enum.reverse(keys)}
+
+        "true" when is_binary(token) and byte_size(token) > 0 ->
+          if MapSet.member?(seen_tokens, token) do
+            {:error, :invalid_list_response}
+          else
+            list_organization_keys(request, prefix, token, MapSet.put(seen_tokens, token), keys)
+          end
+
+        _ ->
+          {:error, :invalid_list_response}
+      end
+    else
+      _ -> {:error, :invalid_list_response}
+    end
+  end
+
+  defp parse_list_page(_request, _prefix, _seen_tokens, _keys, _body), do: {:error, :invalid_list_response}
+
+  defp valid_content?(%{"Key" => key}, prefix) when is_binary(key), do: String.starts_with?(key, prefix)
+
+  defp valid_content?(_, _prefix), do: false
+
+  defp encode_object_key(key), do: URI.encode(key, &(&1 == ?/ or URI.char_unreserved?(&1)))
+
+  # Neither transport exceptions nor response bodies may contain safe-to-log details.
+  defp safe_request(fun) do
+    case fun.() do
+      {:ok, response} -> {:ok, response}
+      {:error, _reason} -> {:error, :request_failed}
+    end
+  rescue
+    _ -> {:error, :request_failed}
+  end
+
+  @doc """
   Generates a presigned GET URL for an object key.
   """
   @spec presigned_get_url(object_key(), keyword()) :: {:ok, String.t()} | {:error, Exception.t()}
@@ -73,8 +163,8 @@ defmodule Firmowid.S3Client do
       {:error, error}
   end
 
-  defp req do
-    ReqS3.attach(Req.new(), aws_sigv4: aws_sigv4(), aws_endpoint_url_s3: endpoint_url())
+  defp req(options \\ []) do
+    ReqS3.attach(Req.new(options), aws_sigv4: aws_sigv4(), aws_endpoint_url_s3: endpoint_url())
   end
 
   defp aws_sigv4 do

@@ -17,8 +17,9 @@ defmodule Firmowid.Ash.Timetracker.Changes.CleanupProjectTag do
   @impl true
   def change(changeset, _opts, context) do
     Ash.Changeset.after_action(changeset, fn _changeset, project ->
-      delete_tag_definition(project.tag_definition_id, context)
-      {:ok, project}
+      with :ok <- delete_tag_definition(project.tag_definition_id, context) do
+        {:ok, project}
+      end
     end)
   end
 
@@ -37,10 +38,13 @@ defmodule Firmowid.Ash.Timetracker.Changes.CleanupProjectTag do
         :ok
 
       {:ok, tag_def} ->
-        TagDefinition.destroy_tag_definition(tag_def, opts)
+        TagDefinition.destroy(tag_def, opts)
 
       {:error, %Ash.Error.Query.NotFound{}} ->
         :ok
+
+      {:error, error} ->
+        {:error, error}
     end
   end
 end

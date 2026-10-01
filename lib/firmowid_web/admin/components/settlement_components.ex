@@ -87,6 +87,7 @@ defmodule FirmowidWeb.Admin.Components.SettlementComponents do
           <.form
             :let={plan_form}
             for={to_form(%{"billing_plan" => @pending_billing_plan}, as: "plan")}
+            id="current-plan-form"
             phx-change="change-current-plan"
             phx-submit="save-current-plan"
             class="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end"
@@ -115,6 +116,115 @@ defmodule FirmowidWeb.Admin.Components.SettlementComponents do
           </p>
         </div>
       </div>
+    </section>
+    """
+  end
+
+  attr :activity, :map, required: true
+
+  def activity_panel(assigns) do
+    ~H"""
+    <section class="rounded-lg bg-white p-6 shadow-[0px_1px_6px_0px_rgba(0,0,0,0.1)]">
+      <h2 class="text-grey-900 text-lg/tight font-medium">Aktywność organizacji</h2>
+      <p class="text-grey-700 mt-1 text-sm/snug">
+        Utrwalone zdarzenia w organizacji, niezależne od wybranego miesiąca rozliczenia.
+        Liczby obejmują ostatnie 30 dni (ruchome 720 godzin). Nie są to daty logowania.
+      </p>
+      <div class="divide-grey-200 mt-4 divide-y text-sm/snug">
+        <div
+          :for={{label, trace} <- activity_rows(@activity)}
+          class="flex flex-wrap justify-between gap-3 py-3"
+        >
+          <span class="text-grey-900">{label}</span>
+          <span class="text-grey-700">
+            Ostatnio: {format_activity_datetime(trace.last_at)} · Ostatnie 30 dni: {trace.count_30_days}
+          </span>
+        </div>
+      </div>
+      <p class="text-grey-700 mt-3 text-sm/snug">Ostatnie logowanie: niedostępne.</p>
+    </section>
+    """
+  end
+
+  defp activity_rows(activity) do
+    [
+      {"Utworzenie faktury sprzedażowej", activity.sales},
+      {"Ręczny import faktury kosztowej (bez KSeF)", activity.costs},
+      {"Rozpoczęcie sesji czasu pracy", activity.sessions}
+    ]
+  end
+
+  defp format_activity_datetime(nil), do: "brak"
+  defp format_activity_datetime(datetime), do: Calendar.strftime(datetime, "%d.%m.%Y %H:%M UTC")
+
+  attr :selected_org, :map, required: true
+  attr :delete_org_id, :string, default: nil
+
+  def deletion_panel(assigns) do
+    ~H"""
+    <section
+      id="organization-deletion"
+      class="rounded-lg border border-red-200 bg-white p-6 shadow-[0px_1px_6px_0px_rgba(0,0,0,0.1)]"
+    >
+      <h2 class="text-grey-900 text-lg/tight font-medium">Usunięcie organizacji</h2>
+      <p class="text-grey-700 mt-2 text-sm/snug">
+        Usunięcie organizacji i jej danych z bazy jest trwałe. Konta użytkowników zostają zachowane
+        i odłączone od organizacji. Czyszczenie danych w usługach zewnętrznych jest podejmowane
+        niezwłocznie; w razie niepowodzenia może wymagać ręcznej interwencji, a pełne usunięcie
+        danych następuje w ciągu 30 dni.
+      </p>
+
+      <%= if @delete_org_id == @selected_org.id do %>
+        <.form
+          :let={form}
+          for={to_form(%{}, as: :deletion)}
+          id="organization-deletion-form"
+          phx-submit="delete-organization"
+          class="mt-5 space-y-4"
+        >
+          <.input
+            field={form[:name]}
+            type="text"
+            label={"Wpisz dokładną nazwę organizacji: #{@selected_org.name}"}
+            autocomplete="off"
+            required
+            new
+          />
+          <.input
+            field={form[:testowa_lub_porzucona]}
+            type="checkbox"
+            label="Potwierdzam, że organizacja jest testowa lub porzucona"
+            new
+          />
+          <div class="flex flex-wrap gap-3">
+            <FirmowidWeb.DesignSystem.Components.Button.button
+              type="submit"
+              variant="destructive"
+              size="small"
+            >
+              Usuń organizację na stałe
+            </FirmowidWeb.DesignSystem.Components.Button.button>
+            <FirmowidWeb.DesignSystem.Components.Button.button
+              type="button"
+              variant="outline"
+              size="small"
+              phx-click="cancel-delete-organization"
+            >
+              Anuluj
+            </FirmowidWeb.DesignSystem.Components.Button.button>
+          </div>
+        </.form>
+      <% else %>
+        <FirmowidWeb.DesignSystem.Components.Button.button
+          type="button"
+          variant="destructive"
+          size="small"
+          phx-click="open-delete-organization"
+          class="mt-4"
+        >
+          Usuń organizację
+        </FirmowidWeb.DesignSystem.Components.Button.button>
+      <% end %>
     </section>
     """
   end

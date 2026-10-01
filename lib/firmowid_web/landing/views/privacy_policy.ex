@@ -182,7 +182,7 @@ defmodule FirmowidWeb.Landing.Views.PrivacyPolicy do
       </p>
       <p>
         {gettext(
-          "After the user deletes an account, the data is promptly removed from the database and storage (Object Storage). Residual data may remain in the logs of external services (PostHog, Resend) for their standard retention periods, over which the Controller has no direct control."
+          "After the user deletes an account or an organization is deleted, the Controller immediately attempts to delete the associated data from the database. Full cleanup of data in the Service’s systems, including storage (Object Storage), may take up to 30 days. If an external service error occurs, deleting objects from storage may require manual intervention. Deletion does not cover data whose continued retention is required by law or data retained by external providers over which the Controller has no direct control; such data may be subject to those providers’ retention periods. Residual data may remain in the logs of external services (PostHog, Resend) for their standard retention periods."
         )}
       </p>
 

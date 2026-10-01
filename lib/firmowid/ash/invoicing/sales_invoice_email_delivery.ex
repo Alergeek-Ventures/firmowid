@@ -1,5 +1,5 @@
 defmodule Firmowid.Ash.Invoicing.SalesInvoiceEmailDelivery do
-  @moduledoc false
+  @moduledoc "Persists sales invoice email delivery outcomes and supports organization cleanup."
 
   use Ash.Resource,
     otp_app: :firmowid,
@@ -24,12 +24,42 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoiceEmailDelivery do
   end
 
   code_interface do
+    define :destroy, action: :destroy
     define :read, action: :read
     define :record_delivery, action: :record_delivery
   end
 
   actions do
-    defaults [:read]
+    destroy :destroy do
+      description "Delete a sales invoice email delivery outcome."
+      primary? true
+    end
+
+    read :read do
+      description "List email delivery outcomes with optional invoice, type and status filters."
+      primary? true
+      argument :sales_invoice_id, :uuid
+
+      argument :delivery_type, :atom do
+        constraints one_of: [:basic, :reminder, :invoice_correction]
+      end
+
+      argument :status, :atom do
+        constraints one_of: [:sent, :failed]
+      end
+
+      prepare build(filter: expr(sales_invoice_id == ^arg(:sales_invoice_id))) do
+        where present(:sales_invoice_id)
+      end
+
+      prepare build(filter: expr(delivery_type == ^arg(:delivery_type))) do
+        where present(:delivery_type)
+      end
+
+      prepare build(filter: expr(status == ^arg(:status))) do
+        where present(:status)
+      end
+    end
 
     create :record_delivery do
       description "Persist a sales invoice email delivery outcome."
@@ -60,6 +90,13 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoiceEmailDelivery do
   end
 
   policies do
+    bypass [
+      {SystemActorRole, roles: [:organization_cleanup]},
+      action([:read, :destroy])
+    ] do
+      authorize_if expr(not is_nil(^actor(:org_id)) and organization_id == ^actor(:org_id))
+    end
+
     # sales_invoice_processor: full access for background email jobs
     bypass {SystemActorRole, roles: [:sales_invoice_processor]} do
       authorize_if action_type(:read)

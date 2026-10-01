@@ -1,5 +1,5 @@
 defmodule Firmowid.Ash.Core.OauthRefreshToken do
-  @moduledoc false
+  @moduledoc "OAuth refresh tokens, including account-bound deletion cleanup."
   use Ash.Resource,
     otp_app: :firmowid,
     domain: Firmowid.Ash.Core,
@@ -7,6 +7,7 @@ defmodule Firmowid.Ash.Core.OauthRefreshToken do
     extensions: [AshAuthentication.Oauth2Server.RefreshTokenResource],
     authorizers: [Ash.Policy.Authorizer]
 
+  alias Firmowid.Ash.Checks.AccountCleanup
   alias Firmowid.Ash.Resource
 
   require Resource
@@ -26,7 +27,17 @@ defmodule Firmowid.Ash.Core.OauthRefreshToken do
   end
 
   actions do
-    defaults [:read, :destroy]
+    defaults [:destroy]
+
+    read :read do
+      description "List refresh tokens, optionally filtered by user."
+      primary? true
+      argument :user_id, :uuid
+
+      prepare build(filter: expr(user_id == ^arg(:user_id))) do
+        where present(:user_id)
+      end
+    end
 
     create :issue do
       description "Persist a newly issued OAuth refresh token."
@@ -61,6 +72,10 @@ defmodule Firmowid.Ash.Core.OauthRefreshToken do
   end
 
   policies do
+    policy action([:read, :destroy]) do
+      authorize_if AccountCleanup
+    end
+
     bypass AshAuthentication.Checks.AshAuthenticationInteraction do
       authorize_if always()
     end

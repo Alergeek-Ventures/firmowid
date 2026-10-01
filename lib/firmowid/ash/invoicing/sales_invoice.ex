@@ -14,7 +14,8 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
 
     * `:read` — consolidated read with optional filters: `date_from`, `date_to`,
       `date_field` (`:issue_date` | `:sale_date` | `:due_date` | `:any`),
-      `kind` (`:vat` | `:kor`), `status` (`:unmatched` | `:confirmed`), `ids`
+      `kind` (`:vat` | `:kor`), `status` (`:unmatched` | `:confirmed`), `ids`,
+      `inserted_from` (inclusive), `inserted_to` (exclusive)
     * `:by_id` — single record by ID, preloads items, transactions, corrections, corrected_invoice
     * `:by_share_token` — find by share token (cross-tenant)
 
@@ -192,6 +193,8 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
       end
 
       argument :ids, {:array, :uuid_v7}
+      argument :inserted_from, :utc_datetime
+      argument :inserted_to, :utc_datetime
       argument :buyer_type, :atom, constraints: [one_of: [:company, :individual]]
       argument :is_cash, :boolean
       argument :is_reverse_charge, :boolean
@@ -264,6 +267,14 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
       # Filter by IDs
       prepare build(filter: expr(id in ^arg(:ids))) do
         where present(:ids)
+      end
+
+      prepare build(filter: expr(inserted_at >= ^arg(:inserted_from))) do
+        where present(:inserted_from)
+      end
+
+      prepare build(filter: expr(inserted_at < ^arg(:inserted_to))) do
+        where present(:inserted_to)
       end
 
       prepare build(filter: expr(buyer_type == ^arg(:buyer_type))) do

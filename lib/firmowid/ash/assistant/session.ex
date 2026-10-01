@@ -46,6 +46,7 @@ defmodule Firmowid.Ash.Assistant.Session do
   end
 
   code_interface do
+    define :destroy, action: :destroy
     define :by_id, args: [:id], action: :by_id
     define :read, action: :read
     define :start, args: [:entry_context], action: :start_invoice_matching
@@ -62,9 +63,28 @@ defmodule Firmowid.Ash.Assistant.Session do
   actions do
     defaults []
 
+    destroy :destroy do
+      description "Delete an assistant session."
+      primary? true
+    end
+
     read :read do
       description "List assistant sessions ordered by most recently updated."
       primary? true
+      argument :user_id, :uuid
+
+      argument :status, :atom do
+        constraints one_of: [:active, :processing, :waiting_confirmation, :closed, :errored]
+      end
+
+      prepare build(filter: expr(user_id == ^arg(:user_id))) do
+        where present(:user_id)
+      end
+
+      prepare build(filter: expr(status == ^arg(:status))) do
+        where present(:status)
+      end
+
       prepare build(sort: [updated_at: :desc])
     end
 
@@ -181,6 +201,13 @@ defmodule Firmowid.Ash.Assistant.Session do
   end
 
   policies do
+    bypass [
+      {Firmowid.Ash.Checks.SystemActorRole, roles: [:organization_cleanup]},
+      action([:read, :destroy])
+    ] do
+      authorize_if expr(not is_nil(^actor(:org_id)) and organization_id == ^actor(:org_id))
+    end
+
     bypass actor_attribute_equals(:role, :admin) do
       authorize_if always()
     end

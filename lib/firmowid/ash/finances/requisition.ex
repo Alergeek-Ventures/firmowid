@@ -12,6 +12,7 @@ defmodule Firmowid.Ash.Finances.Requisition do
     notifiers: [Ash.Notifier.PubSub]
 
   alias AshOban.Checks.AshObanInteraction
+  alias Firmowid.Ash.Checks.SystemActorRole
   alias Firmowid.Ash.Finances.Changes.DeleteRemoteRequisition
   alias Firmowid.Ash.Resource
 
@@ -64,7 +65,7 @@ defmodule Firmowid.Ash.Finances.Requisition do
       end
 
       trigger :cleanup_orphan do
-        action :cleanup_orphan
+        action :destroy
         read_action :read_global
         where expr(inserted_at < ago(1, "hour") and not exists(bank_accounts, true))
         scheduler_cron "0 * * * *"
@@ -90,12 +91,12 @@ defmodule Firmowid.Ash.Finances.Requisition do
   end
 
   code_interface do
+    define :read, action: :read
     define :destroy, action: :destroy
     define :read_global, action: :read_global
     define :persist, action: :persist
     define :check_status, action: :check_status
     define :auto_reject, action: :auto_reject
-    define :cleanup_orphan, action: :cleanup_orphan
     define :delete_remote, action: :delete_remote
     define :accept
     define :reject
@@ -103,7 +104,22 @@ defmodule Firmowid.Ash.Finances.Requisition do
   end
 
   actions do
-    defaults [:read, :destroy]
+    read :read do
+      description "List requisitions, optionally filtered by remote deletion state."
+      primary? true
+
+      argument :remote_deleted?, :boolean do
+        description "Omit to list all requisitions; false selects pending remote deletion, true selects completed deletion."
+      end
+
+      prepare build(filter: expr(is_nil(remote_deleted_at))) do
+        where argument_equals(:remote_deleted?, false)
+      end
+
+      prepare build(filter: expr(not is_nil(remote_deleted_at))) do
+        where argument_equals(:remote_deleted?, true)
+      end
+    end
 
     read :read_global do
       description "Unscoped read for AshOban schedulers — reads across all organizations."
@@ -164,11 +180,10 @@ defmodule Firmowid.Ash.Finances.Requisition do
       change transition_state(:rejected)
     end
 
-    # Scheduled trigger: deletes orphaned requisitions (no bank accounts).
-    # Not exposed through domain — internal only.
-    destroy :cleanup_orphan do
+    destroy :destroy do
       require_atomic? false
-      description "Scheduled trigger — deletes requisitions with no bank accounts after 1 hour."
+      primary? true
+      description "Delete a requisition and its remote GoCardless connection."
       change DeleteRemoteRequisition
     end
 
@@ -190,6 +205,13 @@ defmodule Firmowid.Ash.Finances.Requisition do
   end
 
   policies do
+    bypass [
+      {SystemActorRole, roles: [:organization_cleanup]},
+      action(:read)
+    ] do
+      authorize_if expr(not is_nil(^actor(:org_id)) and organization_id == ^actor(:org_id))
+    end
+
     bypass AshObanInteraction do
       authorize_if always()
     end
@@ -198,7 +220,7 @@ defmodule Firmowid.Ash.Finances.Requisition do
       authorize_if always()
     end
 
-    bypass {Firmowid.Ash.Checks.SystemActorRole, roles: [:bank_sync]} do
+    bypass {SystemActorRole, roles: [:bank_sync]} do
       authorize_if action(:read)
       authorize_if action(:expire)
     end
@@ -227,7 +249,7 @@ defmodule Firmowid.Ash.Finances.Requisition do
     end
 
     # Internal actions — should never be called directly
-    policy action([:persist, :auto_reject, :cleanup_orphan, :delete_remote]) do
+    policy action([:persist, :auto_reject, :destroy, :delete_remote]) do
       forbid_if always()
     end
 

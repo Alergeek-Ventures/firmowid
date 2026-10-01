@@ -55,6 +55,7 @@ defmodule Firmowid.Ash.Payroll.UserEmploymentContract do
   end
 
   code_interface do
+    define :read, action: :read
     define :destroy, action: :destroy
     define :update_employment_contract, action: :update
     define :submit_signed, action: :submit_signed
@@ -276,6 +277,13 @@ defmodule Firmowid.Ash.Payroll.UserEmploymentContract do
   end
 
   policies do
+    bypass [
+      {SystemActorRole, roles: [:organization_cleanup]},
+      action([:read, :destroy])
+    ] do
+      authorize_if expr(not is_nil(^actor(:org_id)) and organization_id == ^actor(:org_id))
+    end
+
     policy action_type(:create) do
       authorize_if {SystemActorRole, roles: [:document_blob_processor]}
       forbid_if always()

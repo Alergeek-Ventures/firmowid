@@ -11,13 +11,27 @@ defmodule Firmowid.Ash.Core do
   """
   use Ash.Domain, extensions: [AshPhoenix, AshAi]
 
+  alias Ash.Error.Query.NotFound
   alias Firmowid.Ash.Analysis.TagDefinition
+  alias Firmowid.Ash.Assistant.Session
+  alias Firmowid.Ash.Billing.Snapshot
+  alias Firmowid.Ash.Core.OauthAuthorizationCode
+  alias Firmowid.Ash.Core.OauthConsent
+  alias Firmowid.Ash.Core.OauthRefreshToken
   alias Firmowid.Ash.Core.Organization
+  alias Firmowid.Ash.Core.OrganizationCleanup
+  alias Firmowid.Ash.Core.OrganizationExternalCleanup
   alias Firmowid.Ash.Core.User
+  alias Firmowid.Ash.Finances.Requisition
+  alias Firmowid.Ash.Invoicing.KsefInvoiceDigest
+  alias Firmowid.Ash.Invoicing.KsefInvoiceDigestItem
+  alias Firmowid.Ash.Invoicing.SalesInvoiceEmailDelivery
+  alias Firmowid.Ash.Payroll.UserEmploymentContract
+  alias Firmowid.Ash.Payroll.UserSalary
   alias Firmowid.Ash.Scope
+  alias Firmowid.Ash.SystemActor
+  alias Firmowid.Ash.Timetracker.LeaveRequest
   alias Firmowid.Ash.Timetracker.Project
-
-  require Ash.Query
 
   tools do
     tool :update_profile, User, :update_current_profile,
@@ -80,39 +94,76 @@ defmodule Firmowid.Ash.Core do
     end
 
     resource Firmowid.Ash.Core.OauthClient
-    resource Firmowid.Ash.Core.OauthAuthorizationCode
-    resource Firmowid.Ash.Core.OauthRefreshToken
-    resource Firmowid.Ash.Core.OauthConsent
+    resource OauthAuthorizationCode
+    resource OauthRefreshToken
+    resource OauthConsent
   end
 
   authorization do
     authorize :by_default
   end
 
-  @transaction_resources [User, Organization, Project, TagDefinition]
+  @transaction_resources [
+    User,
+    Organization,
+    Session,
+    Snapshot,
+    KsefInvoiceDigestItem,
+    KsefInvoiceDigest,
+    UserSalary,
+    UserEmploymentContract,
+    LeaveRequest,
+    SalesInvoiceEmailDelivery,
+    Project,
+    TagDefinition,
+    OauthAuthorizationCode,
+    OauthConsent,
+    OauthRefreshToken
+  ]
 
   @doc """
   Destroys a user inside a single explicit Ash transaction.
 
-  If the user owns an organization, the organization cleanup and the final user
-  destroy are executed in the same database transaction.
+  If the user owns an organization, best-effort remote cleanup happens after
+  authorization and before the local transaction. Organization cleanup and the
+  final user destroy share that transaction. Local failures roll it back and
+  are reported for manual follow-up when remote cleanup was attempted.
   """
   @spec destroy_user(User.t(), Keyword.t()) :: :ok | {:error, term()}
   def destroy_user(%User{} = user, opts \\ []) do
-    case Ash.transact(@transaction_resources, fn -> destroy_user_in_transaction(user, opts) end) do
-      {:ok, :ok} -> :ok
-      {:error, error} -> {:error, error}
+    opts = ensure_actor(opts, user)
+
+    with :ok <- authorize_destroy(user, opts),
+         {:ok, organization} <- owned_organization(user, opts),
+         :ok <- maybe_prepare_organization_deletion(organization, opts) do
+      result = transact(fn -> destroy_user_in_transaction(user, opts) end)
+      report_local_failure(result, organization, "owner_account_delete")
+      result
     end
   end
 
   @doc """
-  Destroys an organization inside a single explicit Ash transaction.
+  Destroys an organization after authorized, best-effort remote cleanup.
+
+  Remote failures are reported but do not prevent the local transaction. Local
+  failures roll back database changes and are reported for manual follow-up.
   """
   @spec destroy_organization(Organization.t(), Keyword.t()) :: :ok | {:error, term()}
   def destroy_organization(%Organization{} = organization, opts \\ []) do
-    case Ash.transact(@transaction_resources, fn ->
-           destroy_organization_in_transaction(organization, opts)
-         end) do
+    with :ok <- prepare_organization_deletion(organization, opts) do
+      result = transact(fn -> destroy_organization_in_transaction(organization, opts) end)
+      report_local_failure(result, organization, "organization_delete")
+      result
+    end
+  end
+
+  defp report_local_failure({:error, reason}, %Organization{id: id}, step),
+    do: OrganizationExternalCleanup.report_local_failure(id, step, reason)
+
+  defp report_local_failure(_result, _organization, _step), do: :ok
+
+  defp transact(fun) do
+    case Ash.transact(@transaction_resources, fun) do
       {:ok, :ok} -> :ok
       {:error, error} -> {:error, error}
     end
@@ -127,8 +178,12 @@ defmodule Firmowid.Ash.Core do
   """
   @spec destroy_user_in_transaction(User.t(), Keyword.t()) :: :ok | {:error, term()}
   def destroy_user_in_transaction(%User{} = user, opts \\ []) do
-    with :ok <- maybe_destroy_owned_organization_in_transaction(user, opts) do
-      Ash.destroy(user, Keyword.put(opts, :action, :destroy))
+    opts = ensure_actor(opts, user)
+
+    with :ok <- authorize_destroy(user, opts),
+         :ok <- maybe_destroy_owned_organization_in_transaction(user, opts),
+         :ok <- OrganizationCleanup.remove_account_oauth_dependents(account_cleanup_scope(user)) do
+      User.destroy(user, opts)
     end
   end
 
@@ -142,30 +197,26 @@ defmodule Firmowid.Ash.Core do
   @spec destroy_organization_in_transaction(Organization.t(), Keyword.t()) ::
           :ok | {:error, term()}
   def destroy_organization_in_transaction(%Organization{} = organization, opts \\ []) do
-    org_opts = organization_opts(opts, organization.id)
+    case authorize_destroy(organization, opts) do
+      :ok ->
+        scope = organization_cleanup_scope(organization)
 
-    with {:ok, projects} <- Ash.read(Project, org_opts),
-         :ok <- destroy_all(projects, Keyword.put(org_opts, :action, :destroy)),
-         {:ok, tag_definitions} <- Ash.read(TagDefinition, org_opts),
-         :ok <-
-           destroy_all(tag_definitions, Keyword.put(org_opts, :action, :destroy_tag_definition)),
-         {:ok, organization_users} <- organization_users(organization.id, org_opts),
-         :ok <- clear_organization_for_all(organization_users, org_opts) do
-      Ash.destroy(organization, Keyword.put(opts, :action, :destroy))
+        with :ok <- OrganizationCleanup.remove_dependents(scope),
+             :ok <- OrganizationCleanup.detach_users(scope) do
+          Organization.destroy(organization, opts)
+        end
+
+      {:error, error} ->
+        {:error, error}
     end
   end
 
-  defp maybe_destroy_owned_organization_in_transaction(%User{organization_id: nil}, _opts), do: :ok
-
-  defp maybe_destroy_owned_organization_in_transaction(%User{id: user_id, organization_id: organization_id} = user, opts) do
-    case Ash.get(Organization, organization_id, ensure_actor(opts, user)) do
-      {:ok, %Organization{owner_id: ^user_id} = organization} ->
+  defp maybe_destroy_owned_organization_in_transaction(user, opts) do
+    case owned_organization(user, opts) do
+      {:ok, %Organization{} = organization} ->
         destroy_organization_in_transaction(organization, opts)
 
-      {:ok, _organization} ->
-        :ok
-
-      {:error, %Ash.Error.Query.NotFound{}} ->
+      {:ok, nil} ->
         :ok
 
       {:error, error} ->
@@ -173,32 +224,80 @@ defmodule Firmowid.Ash.Core do
     end
   end
 
-  defp organization_users(organization_id, opts) do
-    User
-    |> Ash.Query.filter(organization_id: organization_id)
-    |> Ash.read(opts)
+  defp organization_cleanup_scope(%Organization{id: id}) do
+    %Scope{actor: %SystemActor{org_id: id, role: :organization_cleanup}, tenant: id}
   end
 
-  defp clear_organization_for_all(users, opts) do
-    Enum.reduce_while(users, :ok, fn user, :ok ->
-      case Ash.update(user, %{}, Keyword.put(opts, :action, :clear_organization)) do
-        {:ok, _user} -> {:cont, :ok}
-        {:error, error} -> {:halt, {:error, error}}
-      end
-    end)
+  defp account_cleanup_scope(%User{id: id, organization_id: organization_id}) do
+    %Scope{
+      actor: %SystemActor{org_id: organization_id, user_id: id, role: :account_cleanup},
+      tenant: organization_id
+    }
   end
 
-  defp destroy_all(records, opts) do
-    Enum.reduce_while(records, :ok, fn record, :ok ->
-      case Ash.destroy(record, opts) do
-        :ok -> {:cont, :ok}
-        {:error, error} -> {:halt, {:error, error}}
-      end
-    end)
+  defp authorize_destroy(record, opts) do
+    actor = actor_from_opts(opts)
+
+    case Ash.can({record, :destroy}, actor,
+           scope: %Scope{actor: actor, tenant: organization_id_for(record)},
+           return_forbidden_error?: true
+         ) do
+      {:ok, true} -> :ok
+      {:ok, false, error} -> {:error, error}
+      {:ok, false} -> {:error, :forbidden}
+      {:error, error} -> {:error, error}
+      _ -> {:error, :forbidden}
+    end
   end
 
-  defp organization_opts(opts, organization_id) do
-    [scope: Scope.new!(actor_from_opts(opts), organization_id)]
+  defp organization_id_for(%Organization{id: id}), do: id
+  defp organization_id_for(%User{organization_id: id}), do: id
+
+  defp owned_organization(%User{organization_id: nil}, _opts), do: {:ok, nil}
+
+  defp owned_organization(%User{id: id, organization_id: organization_id}, opts) do
+    case get_organization(organization_id, opts) do
+      {:ok, %Organization{owner_id: ^id} = organization} -> {:ok, organization}
+      {:ok, _} -> {:ok, nil}
+      {:error, %NotFound{}} -> {:ok, nil}
+      {:error, error} -> {:error, error}
+    end
+  end
+
+  defp maybe_prepare_organization_deletion(nil, _opts), do: :ok
+
+  defp maybe_prepare_organization_deletion(organization, opts), do: prepare_organization_deletion(organization, opts)
+
+  defp prepare_organization_deletion(organization, opts) do
+    case authorize_destroy(organization, opts) do
+      :ok ->
+        scope = organization_cleanup_scope(organization)
+
+        case requisition_ids(scope) do
+          {:ok, requisitions} -> OrganizationExternalCleanup.run(organization.id, requisitions)
+          {:error, error} -> {:error, error}
+        end
+
+      {:error, error} ->
+        {:error, error}
+    end
+  end
+
+  defp requisition_ids(scope) do
+    case Requisition.read(%{remote_deleted?: false}, scope: scope, query: [select: [:id]]) do
+      {:ok, requisitions} when is_list(requisitions) ->
+        if Enum.all?(requisitions, &is_binary(&1.id)) do
+          {:ok, Enum.map(requisitions, & &1.id)}
+        else
+          {:error, :invalid_cleanup_requisition_id}
+        end
+
+      {:ok, _invalid_result} ->
+        {:error, :invalid_cleanup_requisitions}
+
+      {:error, error} ->
+        {:error, error}
+    end
   end
 
   defp ensure_actor(opts, actor) do
