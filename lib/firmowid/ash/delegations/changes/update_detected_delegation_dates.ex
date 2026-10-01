@@ -1,4 +1,3 @@
-# credo:disable-for-this-file AshCredo.Check.Warning.AuthorizeFalse
 defmodule Firmowid.Ash.Delegations.Changes.UpdateDetectedDelegationDates do
   @moduledoc "Updates a delegation's detected date range after evidence changes."
 
@@ -11,9 +10,8 @@ defmodule Firmowid.Ash.Delegations.Changes.UpdateDetectedDelegationDates do
     Ash.Changeset.after_action(changeset, fn _changeset, expense ->
       with {:ok, delegation} <-
              Delegations.get_delegation(expense.delegation_id,
-               load: [:expenses],
-               actor: context.actor,
-               tenant: context.tenant
+               scope: context,
+               load: [:expenses]
              ),
            {:ok, _delegation} <- update_dates(delegation, expense, opts, context) do
         {:ok, expense}
@@ -30,14 +28,7 @@ defmodule Firmowid.Ash.Delegations.Changes.UpdateDetectedDelegationDates do
     params = detected_date_params(delegation, dates)
 
     with :ok <- require_date_change_reason(delegation, params, opts) do
-      delegation
-      |> Ash.Changeset.for_update(:detect_dates, params,
-        actor: context.actor,
-        tenant: context.tenant,
-        # This after-action update has no actor context after Ash commits the expense action.
-        authorize?: false
-      )
-      |> Ash.update()
+      Delegations.detect_dates(delegation, params, scope: context)
     end
   end
 
@@ -75,21 +66,10 @@ defmodule Firmowid.Ash.Delegations.Changes.UpdateDetectedDelegationDates do
     latest_date = Enum.max_by(dates, &Date.to_iso8601/1)
 
     %{
-      detected_start_date: detected_start_date(earliest_date, delegation.start_date),
-      detected_end_date: detected_end_date(latest_date, delegation.end_date)
+      detected_start_date: if(Date.before?(earliest_date, delegation.start_date), do: earliest_date),
+      detected_end_date: if(Date.after?(latest_date, delegation.end_date), do: latest_date)
     }
   end
-
-  defp detected_start_date(date, start_date) do
-    if before_delegation?(date, start_date), do: date
-  end
-
-  defp detected_end_date(date, end_date) do
-    if after_delegation?(date, end_date), do: date
-  end
-
-  defp before_delegation?(date, start_date), do: Date.before?(date, start_date)
-  defp after_delegation?(date, end_date), do: Date.after?(date, end_date)
 
   defp require_date_change_reason(delegation, params, opts) do
     if opts[:require_date_change_reason?] &&
