@@ -9,7 +9,7 @@ defmodule Firmowid.Translations.Accent do
 
   @request_timeout 30_000
   @cli_timeout "120"
-  @usage "usage: accent.exs <prepare|export> --version FULL_SHA"
+  @usage "usage: accent.exs <prepare|export> --version FULL_SHA (export also accepts a 7-39 character SHA prefix)"
   @version_marker ~r/^# Accent version: [[:xdigit:]]{40}$/
   @bad_plural "\"Plural-Forms: nplrls=3; plural===1 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\\n\""
   @good_plural "\"Plural-Forms: nplurals=3; plural=(n==1 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\\n\""
@@ -33,11 +33,24 @@ defmodule Firmowid.Translations.Accent do
   }
   """
 
+  @versions_query """
+  query ProjectVersions($projectId: ID!, $page: Int!, $pageSize: Int!) {
+    viewer {
+      project(id: $projectId) {
+        versions(page: $page, pageSize: $pageSize) {
+          meta { totalEntries }
+          entries { tag }
+        }
+      }
+    }
+  }
+  """
+
   @doc """
   Runs the standalone Accent operation.
 
-  The operation is either `prepare` or `export`, and both require a full Git
-  SHA in the form `--version FULL_SHA`.
+  `prepare` requires a full Git SHA. `export` accepts a full SHA or a
+  7-39-character hexadecimal prefix that uniquely identifies an existing snapshot.
   """
   @spec run([String.t()]) :: :ok
   def run(["prepare", "--version", version]), do: run_operation(:prepare, version)
@@ -45,16 +58,18 @@ defmodule Firmowid.Translations.Accent do
   def run(_args), do: raise(RuntimeError, message: @usage)
 
   defp run_operation(operation, version) do
-    validate_version(version)
+    validate_version(operation, version)
     context = context()
 
-    case operation do
-      :prepare ->
-        prepare(context, version)
+    version =
+      case operation do
+        :prepare ->
+          prepare(context, version)
+          version
 
-      :export ->
-        :ok
-    end
+        :export ->
+          resolve_export_version(context, version)
+      end
 
     with_temp_directory(fn temporary_directory ->
       export_catalog(version, temporary_directory, context.api_key)
@@ -64,12 +79,102 @@ defmodule Firmowid.Translations.Accent do
     :ok
   end
 
-  defp validate_version(version) when is_binary(version) do
-    if Regex.match?(~r/^[[:xdigit:]]{40}$/, version) do
-      :ok
-    else
-      raise RuntimeError, "version must be a full 40-character Git SHA"
+  defp validate_version(:prepare, version) when is_binary(version) do
+    if Regex.match?(~r/^[[:xdigit:]]{40}$/, version),
+      do: :ok,
+      else: raise(RuntimeError, "version must be a full 40-character Git SHA")
+  end
+
+  defp validate_version(:export, version) when is_binary(version) do
+    if Regex.match?(~r/^[[:xdigit:]]{7,40}$/, version),
+      do: :ok,
+      else:
+        raise(
+          RuntimeError,
+          "version must be a full 40-character Git SHA or a 7-39 character hexadecimal prefix"
+        )
+  end
+
+  defp resolve_export_version(_context, <<_::binary-size(40)>> = version), do: version
+
+  defp resolve_export_version(context, prefix) do
+    normalized_prefix = String.downcase(prefix)
+
+    matches =
+      context
+      |> list_snapshot_tags()
+      |> Enum.filter(&String.starts_with?(String.downcase(&1), normalized_prefix))
+
+    case matches do
+      [tag] ->
+        tag
+
+      [] ->
+        raise RuntimeError, "No Accent snapshot matches commit prefix #{prefix}"
+
+      _multiple ->
+        raise RuntimeError,
+              "Multiple Accent snapshots match commit prefix #{prefix}; supply full SHA"
     end
+  end
+
+  defp list_snapshot_tags(context), do: list_snapshot_tags(context, 1, 0, [])
+
+  defp list_snapshot_tags(context, page, loaded, tags) do
+    {total, entries} = version_page(context, page)
+
+    page_tags =
+      Enum.flat_map(entries, fn
+        %{"tag" => tag} when is_binary(tag) ->
+          if Regex.match?(~r/^[[:xdigit:]]{40}$/, tag), do: [tag], else: []
+
+        _other ->
+          []
+      end)
+
+    new_loaded = loaded + length(entries)
+    new_tags = tags ++ page_tags
+
+    cond do
+      new_loaded >= total ->
+        new_tags
+
+      entries == [] ->
+        raise RuntimeError, "Accent snapshot lookup returned incomplete pagination data"
+
+      true ->
+        list_snapshot_tags(context, page + 1, new_loaded, new_tags)
+    end
+  end
+
+  defp version_page(context, page) do
+    body = %{
+      "query" => @versions_query,
+      "variables" => %{"projectId" => context.project, "page" => page, "pageSize" => 100}
+    }
+
+    case Req.request(context.client, method: :post, url: "/graphql", json: body) do
+      {:ok, %Req.Response{status: 200, body: response_body}} ->
+        parse_version_page(response_body)
+
+      {:ok, %Req.Response{status: status}} ->
+        raise RuntimeError, "Accent snapshot lookup failed (HTTP #{status})"
+
+      {:error, _reason} ->
+        raise RuntimeError, "Accent snapshot lookup failed (network or timeout)"
+    end
+  end
+
+  defp parse_version_page(%{
+         "data" => %{
+           "viewer" => %{"project" => %{"versions" => %{"meta" => %{"totalEntries" => total}, "entries" => entries}}}
+         }
+       })
+       when is_integer(total) and total >= 0 and is_list(entries), do: {total, entries}
+
+  defp parse_version_page(_response_body) do
+    raise RuntimeError,
+          "Accent snapshot lookup failed; check project read and index_versions permissions"
   end
 
   defp context do
