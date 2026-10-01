@@ -562,7 +562,7 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
   defp assign_summary(socket) do
     total = SettlementPresentation.sum(socket.assigns.delegation.expenses)
 
-    advance = socket.assigns.delegation.advance_payment_amount
+    advance = socket.assigns.delegation.advance_amount
     {label, balance} = SettlementPresentation.settlement_balance(total, advance)
 
     assign(socket,
