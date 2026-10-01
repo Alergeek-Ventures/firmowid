@@ -30,7 +30,8 @@ defmodule Firmowid.Sentry do
     :error_kind,
     :oban_worker,
     :oban_queue,
-    :oban_state
+    :oban_state,
+    :service
   ]
   @extra_keys [
     :callback,
@@ -45,9 +46,16 @@ defmodule Firmowid.Sentry do
     :session_id,
     :error_kind,
     :status,
-    :operation
+    :operation,
+    :agreement_id,
+    :certificate_serial_number,
+    :step,
+    :failed_count,
+    :service
   ]
   @log_keys [
+    :agreement_id,
+    :certificate_serial_number,
     :request_id,
     :user_id,
     :organization_id,

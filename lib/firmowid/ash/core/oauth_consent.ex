@@ -1,11 +1,12 @@
 defmodule Firmowid.Ash.Core.OauthConsent do
-  @moduledoc false
+  @moduledoc "OAuth consent grants, including account-bound deletion cleanup."
   use Ash.Resource,
     otp_app: :firmowid,
     domain: Firmowid.Ash.Core,
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer]
 
+  alias Firmowid.Ash.Checks.AccountCleanup
   alias Firmowid.Ash.Resource
 
   require Resource
@@ -22,7 +23,17 @@ defmodule Firmowid.Ash.Core.OauthConsent do
   end
 
   actions do
-    defaults [:read, :destroy]
+    defaults [:destroy]
+
+    read :read do
+      description "List OAuth consents, optionally filtered by user."
+      primary? true
+      argument :user_id, :uuid
+
+      prepare build(filter: expr(user_id == ^arg(:user_id))) do
+        where present(:user_id)
+      end
+    end
 
     create :grant do
       description "Record or refresh a user's granted OAuth scopes for a client."
@@ -34,6 +45,10 @@ defmodule Firmowid.Ash.Core.OauthConsent do
   end
 
   policies do
+    policy action([:read, :destroy]) do
+      authorize_if AccountCleanup
+    end
+
     bypass AshAuthentication.Checks.AshAuthenticationInteraction do
       authorize_if always()
     end

@@ -88,6 +88,8 @@ defmodule Firmowid.Ash.Timetracker.Session do
     read :list do
       description """
       Flexible session listing with optional filters.
+      started_from is inclusive and started_to is exclusive; omitted bounds
+      leave the session start time unrestricted.
       Sorting, loading (duration, lockdown, month_start, week_start), and
       aggregation controlled at callsite.
       """
@@ -98,6 +100,8 @@ defmodule Firmowid.Ash.Timetracker.Session do
       argument :year, :integer
       argument :running_only, :boolean
       argument :ids, {:array, :uuid}
+      argument :started_from, :utc_datetime
+      argument :started_to, :utc_datetime
 
       prepare build(filter: expr(user_id == ^arg(:user_id))) do
         where present(:user_id)
@@ -123,6 +127,14 @@ defmodule Firmowid.Ash.Timetracker.Session do
 
       prepare build(filter: expr(id in ^arg(:ids))) do
         where present(:ids)
+      end
+
+      prepare build(filter: expr(start_datetime >= ^arg(:started_from))) do
+        where present(:started_from)
+      end
+
+      prepare build(filter: expr(start_datetime < ^arg(:started_to))) do
+        where present(:started_to)
       end
     end
 
@@ -364,6 +376,8 @@ defmodule Firmowid.Ash.Timetracker.Session do
     end
 
     policy action_type(:read) do
+      description "Human superusers can read all sessions within the tenant; other users can read their own."
+      authorize_if actor_attribute_equals(:system_role, :superuser)
       authorize_if relates_to_actor_via(:user)
     end
 

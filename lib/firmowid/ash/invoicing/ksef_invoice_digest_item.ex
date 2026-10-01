@@ -7,6 +7,7 @@ defmodule Firmowid.Ash.Invoicing.KsefInvoiceDigestItem do
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer]
 
+  alias Firmowid.Ash.Checks.SystemActorRole
   alias Firmowid.Ash.Invoicing.Changes.SetOrganizationIdFromTenant
   alias Firmowid.Ash.Resource
 
@@ -35,7 +36,14 @@ defmodule Firmowid.Ash.Invoicing.KsefInvoiceDigestItem do
   end
 
   policies do
-    bypass {Firmowid.Ash.Checks.SystemActorRole, roles: [:ksef_digest]} do
+    bypass [
+      {SystemActorRole, roles: [:organization_cleanup]},
+      action([:read, :destroy])
+    ] do
+      authorize_if expr(not is_nil(^actor(:org_id)) and organization_id == ^actor(:org_id))
+    end
+
+    bypass {SystemActorRole, roles: [:ksef_digest]} do
       authorize_if always()
     end
 

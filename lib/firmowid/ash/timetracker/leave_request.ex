@@ -12,6 +12,7 @@ defmodule Firmowid.Ash.Timetracker.LeaveRequest do
     primary_read_warning?: false
 
   alias Firmowid.Ash.Blobs
+  alias Firmowid.Ash.Checks.SystemActorRole
   alias Firmowid.Ash.Core.User
   alias Firmowid.Ash.Resource
   alias Firmowid.Ash.Timetracker.Workers.LeaveRequestEmailWorker
@@ -57,8 +58,44 @@ defmodule Firmowid.Ash.Timetracker.LeaveRequest do
     end
   end
 
+  code_interface do
+    define :read, action: :read
+    define :destroy, action: :destroy
+  end
+
   actions do
-    defaults [:read]
+    destroy :destroy do
+      description "Delete a leave request."
+      primary? true
+    end
+
+    read :read do
+      description "List leave requests with optional user, overlapping date range and status filters."
+      primary? true
+      argument :user_id, :uuid
+      argument :start_date, :date
+      argument :end_date, :date
+
+      argument :status, :atom do
+        constraints one_of: [:pending, :accepted, :declined]
+      end
+
+      prepare build(filter: expr(user_id == ^arg(:user_id))) do
+        where present(:user_id)
+      end
+
+      prepare build(filter: expr(ends_on >= ^arg(:start_date))) do
+        where present(:start_date)
+      end
+
+      prepare build(filter: expr(starts_on <= ^arg(:end_date))) do
+        where present(:end_date)
+      end
+
+      prepare build(filter: expr(status == ^arg(:status))) do
+        where present(:status)
+      end
+    end
 
     read :list_for_user do
       description "Leave requests for a given user."
@@ -234,11 +271,18 @@ defmodule Firmowid.Ash.Timetracker.LeaveRequest do
   end
 
   policies do
+    bypass [
+      {SystemActorRole, roles: [:organization_cleanup]},
+      action([:read, :destroy])
+    ] do
+      authorize_if expr(not is_nil(^actor(:org_id)) and organization_id == ^actor(:org_id))
+    end
+
     bypass actor_attribute_equals(:role, :admin) do
       authorize_if always()
     end
 
-    bypass {Firmowid.Ash.Checks.SystemActorRole, roles: [:leave_notifier]} do
+    bypass {SystemActorRole, roles: [:leave_notifier]} do
       authorize_if action_type(:read)
     end
 

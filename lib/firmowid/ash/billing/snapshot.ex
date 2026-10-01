@@ -21,6 +21,7 @@ defmodule Firmowid.Ash.Billing.Snapshot do
   end
 
   code_interface do
+    define :destroy, action: :destroy
     define :read, action: :read
     define :read_global, action: :read_global
     define :by_month, args: [:month], action: :by_month
@@ -28,7 +29,30 @@ defmodule Firmowid.Ash.Billing.Snapshot do
   end
 
   actions do
-    defaults [:read]
+    destroy :destroy do
+      description "Delete a billing snapshot."
+      primary? true
+    end
+
+    read :read do
+      description "List billing snapshots, optionally restricted to a month range."
+      primary? true
+      argument :month, :date
+      argument :start_month, :date
+      argument :end_month, :date
+
+      prepare build(filter: expr(month == ^arg(:month))) do
+        where present(:month)
+      end
+
+      prepare build(filter: expr(month >= ^arg(:start_month))) do
+        where present(:start_month)
+      end
+
+      prepare build(filter: expr(month <= ^arg(:end_month))) do
+        where present(:end_month)
+      end
+    end
 
     read :by_month do
       description "Fetch the billing snapshot for a specific month."
@@ -62,6 +86,13 @@ defmodule Firmowid.Ash.Billing.Snapshot do
   end
 
   policies do
+    bypass [
+      {SystemActorRole, roles: [:organization_cleanup]},
+      action([:read, :destroy])
+    ] do
+      authorize_if expr(not is_nil(^actor(:org_id)) and organization_id == ^actor(:org_id))
+    end
+
     bypass {SystemActorRole, roles: [:billing_snapshotter]} do
       authorize_if action_type([:read, :create])
     end

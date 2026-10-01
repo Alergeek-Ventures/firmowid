@@ -8,6 +8,14 @@ defmodule Firmowid.Ash.SystemActor do
 
   ## Roles
 
+  - `:organization_cleanup` — tenant-bound dependent deletion and user detachment.
+    Created only after the original actor passes the organization's destroy
+    authorization; `org_id` identifies the only organization it may clean up.
+
+  - `:account_cleanup` — deletes OAuth dependents of an authorized account deletion.
+    Created only after the original actor passes the user's destroy authorization;
+    `user_id` identifies the account, including accounts without an organization.
+
   - `:cost_invoice_processor` — processes incoming cost invoices (inbound email
     worker, OCR pipeline). Can read/write cost invoices, blobs, and bank accounts.
 
@@ -69,7 +77,9 @@ defmodule Firmowid.Ash.SystemActor do
   """
 
   @type role ::
-          :cost_invoice_processor
+          :organization_cleanup
+          | :account_cleanup
+          | :cost_invoice_processor
           | :sales_invoice_processor
           | :ksef_session
           | :invoice_matcher

@@ -27,6 +27,7 @@ defmodule Firmowid.Ash.Payroll.UserSalary do
   end
 
   code_interface do
+    define :read, action: :read
     define :destroy, action: :destroy
   end
 
@@ -103,6 +104,13 @@ defmodule Firmowid.Ash.Payroll.UserSalary do
   end
 
   policies do
+    bypass [
+      {SystemActorRole, roles: [:organization_cleanup]},
+      action([:read, :destroy])
+    ] do
+      authorize_if expr(not is_nil(^actor(:org_id)) and organization_id == ^actor(:org_id))
+    end
+
     bypass actor_attribute_equals(:role, :admin) do
       authorize_if always()
     end

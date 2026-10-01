@@ -156,12 +156,12 @@ defmodule FirmowidWeb.Landing.Views.TermsOfService do
       <h2>{gettext("§7. Account deletion")}</h2>
       <p>
         {gettext(
-          "The User may delete their account at any time. After the account is deleted, the User’s data is promptly removed from the Service database and storage."
+          "The User may delete their account at any time. After an account or organization is deleted, the Service Provider immediately attempts to delete the associated data from the database. Full cleanup of data in the Service’s systems, including storage, may take up to 30 days. If an external service error occurs, deleting objects from storage may require manual intervention."
         )}
       </p>
       <p>
         {gettext(
-          "Residual data may remain in the logs of external services (analytics, email) for their standard retention periods, as described in the Privacy Policy."
+          "Deletion does not cover data whose continued retention is required by law or data retained by external providers over which the Service Provider has no direct control. Residual data may remain in the logs of external services (analytics, email) for their standard retention periods. Details of data retention by providers are set out in the Privacy Policy."
         )}
       </p>
 

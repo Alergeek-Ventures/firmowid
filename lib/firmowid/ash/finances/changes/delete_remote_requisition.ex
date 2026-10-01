@@ -2,8 +2,8 @@ defmodule Firmowid.Ash.Finances.Changes.DeleteRemoteRequisition do
   @moduledoc """
   Before-action change that deletes a requisition from GoCardless.
 
-  Used by both `:delete_remote` (scheduled update) and `:cleanup_orphan`
-  (destroy). Treats `:not_found` and `:expired_eua` as success — the remote
+  Used by both `:delete_remote` (scheduled update) and `:destroy`
+  (scheduled orphan cleanup). Treats `:not_found` and `:expired_eua` as success — the remote
   resource is already gone. On update actions, stamps `remote_deleted_at` so
   the scheduler stops picking up the record. On destroy actions, the timestamp
   is skipped since the record is being removed.

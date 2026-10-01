@@ -8,6 +8,8 @@ safe_sentry_metadata = [
   :blob_id,
   :account_id,
   :requisition_id,
+  :agreement_id,
+  :certificate_serial_number,
   :leave_request_id,
   :digest_id,
   :invoice_id,

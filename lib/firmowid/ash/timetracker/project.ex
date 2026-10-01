@@ -15,6 +15,7 @@ defmodule Firmowid.Ash.Timetracker.Project do
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer]
 
+  alias Firmowid.Ash.Checks.SystemActorRole
   alias Firmowid.Ash.Resource
   alias Firmowid.Ash.Timetracker.Changes.CleanupProjectTag
   alias Firmowid.Ash.Timetracker.Changes.CreateProjectTag
@@ -149,13 +150,21 @@ defmodule Firmowid.Ash.Timetracker.Project do
 
     destroy :destroy do
       description "Delete a project and clean up its orphaned tag definition."
+      primary? true
       require_atomic? false
       change CleanupProjectTag
     end
   end
 
   policies do
-    bypass {Firmowid.Ash.Checks.SystemActorRole, roles: [:project_tag_manager]} do
+    bypass [
+      {SystemActorRole, roles: [:organization_cleanup]},
+      action([:list, :destroy])
+    ] do
+      authorize_if expr(not is_nil(^actor(:org_id)) and organization_id == ^actor(:org_id))
+    end
+
+    bypass {SystemActorRole, roles: [:project_tag_manager]} do
       authorize_if action(:link_tag)
     end
 

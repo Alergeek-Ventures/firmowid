@@ -7,7 +7,9 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
 
     * `:read` — primary, with optional filters: `date_from`, `date_to`, `date_field`,
       `reconciliation` (`:pending`/`:matched`/`:skipped`), `ids`, `corrections`
-      (`:include` corrections only, `:exclude` corrections, `nil` for both).
+      (`:include` corrections only, `:exclude` corrections, `nil` for both),
+      `source`, `is_ksef_imported` (true/false, omitted for both),
+      `inserted_from` (inclusive), `inserted_to` (exclusive).
     * `:by_id` — single record by ID, preloads all relationships including blob URLs
     * `:by_checksum` — find by blob checksum (join on blobs)
 
@@ -165,6 +167,7 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
       argument :ids, {:array, :uuid_v7}
       argument :inserted_from, :utc_datetime
       argument :inserted_to, :utc_datetime
+      argument :is_ksef_imported, :boolean
 
       argument :limit, :integer do
         constraints min: 1
@@ -235,6 +238,10 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
 
       prepare build(filter: expr(inserted_at < ^arg(:inserted_to))) do
         where present(:inserted_to)
+      end
+
+      prepare build(filter: expr(is_ksef_imported == ^arg(:is_ksef_imported))) do
+        where present(:is_ksef_imported)
       end
 
       prepare build(sort: [issue_date: :desc]) do

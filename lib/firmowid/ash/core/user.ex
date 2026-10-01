@@ -102,6 +102,7 @@ defmodule Firmowid.Ash.Core.User do
   end
 
   code_interface do
+    define :detach_for_organization_cleanup, action: :detach_for_organization_cleanup
     define :destroy, action: :destroy
     define :log_out_everywhere, action: :log_out_everywhere
     define :confirm, action: :confirm
@@ -117,6 +118,15 @@ defmodule Firmowid.Ash.Core.User do
 
   actions do
     defaults [:read]
+
+    update :detach_for_organization_cleanup do
+      description "Detach a preserved account and its avatar during organization deletion."
+      accept []
+      # Remote objects are cleaned up once, before the transaction. Do not run
+      # the regular avatar replacement callback and attempt duplicate S3 cleanup.
+      change set_attribute(:organization_id, nil)
+      change set_attribute(:avatar_blob_id, nil)
+    end
 
     read :list do
       description "List organization users with search, status, and role filters."
@@ -408,6 +418,13 @@ defmodule Firmowid.Ash.Core.User do
   end
 
   policies do
+    bypass [
+      {SystemActorRole, roles: [:organization_cleanup]},
+      action([:list, :detach_for_organization_cleanup])
+    ] do
+      authorize_if expr(not is_nil(^actor(:org_id)) and organization_id == ^actor(:org_id))
+    end
+
     bypass AshAuthentication.Checks.AshAuthenticationInteraction do
       authorize_if always()
     end

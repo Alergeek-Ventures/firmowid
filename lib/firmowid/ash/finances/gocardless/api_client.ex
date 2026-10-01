@@ -223,31 +223,61 @@ defmodule Firmowid.Ash.Finances.GoCardless.ApiClient do
 
   @doc """
   Deletes a requisition and its associated agreement from GoCardless.
-  First fetches the requisition to get the agreement ID, then deletes both.
+  Keeps the original top-level error contract for existing callers, including
+  `with_token_refresh/1` and the scheduled requisition cleanup action.
   """
   @spec delete_requisition(String.t()) :: {:ok, map()} | {:error, term()}
   def delete_requisition(requisition_id) do
-    access_token = get_access_token!()
-    options = Keyword.merge([auth: {:bearer, access_token}], mock_data(:bank_data_requisition))
+    case delete_requisition(requisition_id, false) do
+      {:error, {step, _agreement_id, reason}}
+      when step in [:requisition_deletion_failed, :agreement_deletion_failed] ->
+        {:error, reason}
 
-    with {:ok, requisition_body} <-
-           options
-           |> Keyword.put(:url, "#{@base_url}/requisitions/#{requisition_id}")
-           |> Req.get()
-           |> handle_response(),
-         {:ok, _} <-
-           options
-           |> Keyword.put(:url, "#{@base_url}/requisitions/#{requisition_id}")
-           |> Req.delete()
-           |> handle_response(),
-         {:ok, _} <-
-           options
-           |> Keyword.put(:url, "#{@base_url}/agreements/#{requisition_body["agreement"]}")
-           |> Req.delete()
-           |> handle_response() do
-      {:ok, requisition_body}
+      result ->
+        result
     end
   end
+
+  @doc """
+  Deletes both GoCardless resources with step-local token refresh.
+
+  Unlike `delete_requisition/1`, errors after fetching the requisition include
+  the agreement ID. A failed agreement deletion retries only that agreement,
+  never the already-deleted requisition.
+  """
+  @spec delete_requisition_detailed(String.t()) :: {:ok, map()} | {:error, term()}
+  def delete_requisition_detailed(requisition_id), do: delete_requisition(requisition_id, true)
+
+  defp delete_requisition(requisition_id, refresh?) do
+    with {:ok, requisition_body} <-
+           maybe_refresh(fn -> get_requisition(requisition_id) end, refresh?) do
+      agreement_id = requisition_body["agreement"]
+
+      case maybe_refresh(fn -> delete_remote("requisitions", requisition_id) end, refresh?) do
+        {:ok, _} ->
+          case maybe_refresh(fn -> delete_remote("agreements", agreement_id) end, refresh?) do
+            {:ok, _} -> {:ok, requisition_body}
+            {:error, reason} -> {:error, {:agreement_deletion_failed, agreement_id, reason}}
+          end
+
+        {:error, reason} ->
+          {:error, {:requisition_deletion_failed, agreement_id, reason}}
+      end
+    end
+  end
+
+  defp delete_remote(resource, id) do
+    options =
+      Keyword.merge([auth: {:bearer, get_access_token!()}], mock_data(:bank_data_requisition))
+
+    options
+    |> Keyword.put(:url, "#{@base_url}/#{resource}/#{id}")
+    |> Req.delete()
+    |> handle_response()
+  end
+
+  defp maybe_refresh(operation, true), do: with_token_refresh(operation)
+  defp maybe_refresh(operation, false), do: operation.()
 
   @doc """
   Wraps an API call with a single token-refresh retry on `:unauthorized`.

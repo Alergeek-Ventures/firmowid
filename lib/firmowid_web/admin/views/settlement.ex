@@ -11,6 +11,7 @@ defmodule FirmowidWeb.Admin.Views.Settlement do
   alias Firmowid.Ash.Core.Organization
   alias FirmowidWeb.Admin.Components.SettlementComponents
   alias FirmowidWeb.Admin.Utilities.Navigation
+  alias FirmowidWeb.Admin.Utilities.OrganizationActivity
   alias FirmowidWeb.Billing.Utilities.MonthContext
 
   @impl true
@@ -19,6 +20,8 @@ defmodule FirmowidWeb.Admin.Views.Settlement do
      socket
      |> assign(:page_title, "Rozliczenie")
      |> assign(:selected_org, nil)
+     |> assign(:delete_org_id, nil)
+     |> assign(:activity, nil)
      |> assign(:selected_month, nil)
      |> assign(:selected_snapshot, nil)
      |> assign(:available_months, [])
@@ -57,8 +60,9 @@ defmodule FirmowidWeb.Admin.Views.Settlement do
   @impl true
   def handle_event("change-month", %{"month" => month}, socket) do
     {:noreply,
-     push_patch(
-       socket,
+     socket
+     |> assign(:delete_org_id, nil)
+     |> push_patch(
        to:
          Navigation.settlement_path(
            socket.assigns.selected_org.id,
@@ -69,6 +73,66 @@ defmodule FirmowidWeb.Admin.Views.Settlement do
 
   def handle_event("change-current-plan", %{"plan" => %{"billing_plan" => billing_plan}}, socket) do
     {:noreply, assign(socket, :pending_billing_plan, billing_plan)}
+  end
+
+  def handle_event("open-delete-organization", _params, socket) do
+    case {socket.assigns.current_user.system_role, socket.assigns.selected_org} do
+      {:superuser, %Organization{id: id}} ->
+        {:noreply, assign(socket, :delete_org_id, id)}
+
+      _ ->
+        {:noreply, socket}
+    end
+  end
+
+  def handle_event("cancel-delete-organization", _params, socket) do
+    {:noreply, assign(socket, :delete_org_id, nil)}
+  end
+
+  def handle_event("delete-organization", %{"deletion" => confirmation}, socket) do
+    user = socket.assigns.current_user
+
+    with :superuser <- user.system_role,
+         %Organization{id: id} <- socket.assigns.selected_org,
+         ^id <- socket.assigns.delete_org_id,
+         true <- confirmation["name"] == socket.assigns.selected_org.name,
+         "true" <- confirmation["testowa_lub_porzucona"],
+         {:ok, %{system_role: :superuser} = fresh_user} <- Core.get_user(user.id, actor: user),
+         {:ok, %Organization{name: name} = organization} <-
+           Core.get_organization(id, actor: fresh_user),
+         true <- confirmation["name"] == name,
+         :ok <- Core.destroy_organization(organization, actor: fresh_user) do
+      LiveToast.send_toast(
+        :success,
+        "Organizacja została usunięta z bazy. Usunięcie danych zewnętrznych może wymagać ręcznej weryfikacji."
+      )
+
+      {:noreply,
+       socket
+       |> assign(:delete_org_id, nil)
+       |> push_navigate(to: Navigation.settlements_path())}
+    else
+      {:error, _error} ->
+        LiveToast.send_toast(:error, "Nie udało się usunąć organizacji z bazy. Spróbuj ponownie.")
+        {:noreply, socket}
+
+      _ ->
+        LiveToast.send_toast(
+          :error,
+          "Potwierdź nazwę organizacji i zaznacz, że jest testowa lub porzucona."
+        )
+
+        {:noreply, socket}
+    end
+  end
+
+  def handle_event("delete-organization", _params, socket) do
+    LiveToast.send_toast(
+      :error,
+      "Potwierdź nazwę organizacji i zaznacz, że jest testowa lub porzucona."
+    )
+
+    {:noreply, socket}
   end
 
   def handle_event("save-current-plan", %{"plan" => %{"billing_plan" => billing_plan}}, socket) do
@@ -121,6 +185,13 @@ defmodule FirmowidWeb.Admin.Views.Settlement do
           pending_billing_plan={@pending_billing_plan}
         />
 
+        <SettlementComponents.activity_panel activity={@activity} />
+
+        <SettlementComponents.deletion_panel
+          selected_org={@selected_org}
+          delete_org_id={@delete_org_id}
+        />
+
         <SettlementComponents.worksheet_panel
           selected_month={@selected_month}
           status={@status}
@@ -153,6 +224,11 @@ defmodule FirmowidWeb.Admin.Views.Settlement do
       {:ok,
        socket
        |> assign(:selected_org, selected_org)
+       |> assign(:delete_org_id, nil)
+       |> assign(
+         :activity,
+         OrganizationActivity.load!(selected_org.id, socket.assigns.current_user)
+       )
        |> assign(:selected_month, billing_context.selected_month)
        |> assign(:selected_snapshot, billing_context.selected_snapshot)
        |> assign(:available_months, available_months)

@@ -51,6 +51,7 @@ defmodule Firmowid.Ash.Invoicing.KsefInvoiceDigest do
   end
 
   code_interface do
+    define :destroy, action: :destroy
     define :read, action: :read
     define :read_global, action: :read_global
     define :read_for_delivery, action: :read_for_delivery
@@ -60,7 +61,29 @@ defmodule Firmowid.Ash.Invoicing.KsefInvoiceDigest do
   end
 
   actions do
-    defaults [:read]
+    destroy :destroy do
+      description "Delete a KSeF invoice digest."
+      primary? true
+    end
+
+    read :read do
+      description "List KSeF invoice digests with optional ID and delivery filters."
+      primary? true
+      argument :ids, {:array, :uuid}
+      argument :delivered?, :boolean
+
+      prepare build(filter: expr(id in ^arg(:ids))) do
+        where present(:ids)
+      end
+
+      prepare build(filter: expr(is_nil(delivered_at))) do
+        where argument_equals(:delivered?, false)
+      end
+
+      prepare build(filter: expr(not is_nil(delivered_at))) do
+        where argument_equals(:delivered?, true)
+      end
+    end
 
     read :read_global do
       description "Unscoped read for AshOban digest delivery."
@@ -104,6 +127,13 @@ defmodule Firmowid.Ash.Invoicing.KsefInvoiceDigest do
   end
 
   policies do
+    bypass [
+      {SystemActorRole, roles: [:organization_cleanup]},
+      action([:read, :destroy])
+    ] do
+      authorize_if expr(not is_nil(^actor(:org_id)) and organization_id == ^actor(:org_id))
+    end
+
     policy action_type(:read) do
       authorize_if actor_attribute_equals(:role, :admin)
       authorize_if {Firmowid.Ash.Checks.AtLeastRole, role: :accountant}

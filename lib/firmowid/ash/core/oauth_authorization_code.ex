@@ -1,5 +1,5 @@
 defmodule Firmowid.Ash.Core.OauthAuthorizationCode do
-  @moduledoc false
+  @moduledoc "OAuth authorization codes, including account-bound deletion cleanup."
   use Ash.Resource,
     otp_app: :firmowid,
     domain: Firmowid.Ash.Core,
@@ -7,6 +7,7 @@ defmodule Firmowid.Ash.Core.OauthAuthorizationCode do
     extensions: [AshAuthentication.Oauth2Server.AuthorizationCodeResource],
     authorizers: [Ash.Policy.Authorizer]
 
+  alias Firmowid.Ash.Checks.AccountCleanup
   alias Firmowid.Ash.Resource
 
   require Resource
@@ -25,7 +26,17 @@ defmodule Firmowid.Ash.Core.OauthAuthorizationCode do
   end
 
   actions do
-    defaults [:read, :destroy]
+    defaults [:destroy]
+
+    read :read do
+      description "List authorization codes, optionally filtered by user."
+      primary? true
+      argument :user_id, :uuid
+
+      prepare build(filter: expr(user_id == ^arg(:user_id))) do
+        where present(:user_id)
+      end
+    end
 
     create :create do
       description "Issue a PKCE authorization code for an OAuth client and user."
@@ -54,6 +65,10 @@ defmodule Firmowid.Ash.Core.OauthAuthorizationCode do
   end
 
   policies do
+    policy action([:read, :destroy]) do
+      authorize_if AccountCleanup
+    end
+
     bypass AshAuthentication.Checks.AshAuthenticationInteraction do
       authorize_if always()
     end

@@ -30,7 +30,6 @@ defmodule Firmowid.Ash.Analysis.TagDefinition do
     define :destroy, action: :destroy
     define :create_tag_definition
     define :update_tag_definition
-    define :destroy_tag_definition
     define :list_tag_definitions
     define :get_tag_definition, action: :read, get_by: [:id]
     define :create_for_project, args: [:name]
@@ -40,7 +39,18 @@ defmodule Firmowid.Ash.Analysis.TagDefinition do
     defaults [:read, :destroy]
 
     read :list_tag_definitions do
-      description "Lists all tag definitions for the current organization, ordered by name."
+      description "List organization tag definitions by name with optional ID and search filters."
+      argument :ids, {:array, :uuid}
+      argument :search, :string
+
+      prepare build(filter: expr(id in ^arg(:ids))) do
+        where present(:ids)
+      end
+
+      prepare build(filter: expr(contains(name, ^arg(:search)))) do
+        where present(:search)
+      end
+
       prepare build(sort: [name: :asc])
     end
 
@@ -61,13 +71,16 @@ defmodule Firmowid.Ash.Analysis.TagDefinition do
       accept [:name, :color]
       require_atomic? false
     end
-
-    destroy :destroy_tag_definition do
-      description "Deletes a tag definition. Associated entity tags are cleaned up via ON DELETE CASCADE."
-    end
   end
 
   policies do
+    bypass [
+      {SystemActorRole, roles: [:organization_cleanup]},
+      action([:read, :list_tag_definitions, :destroy])
+    ] do
+      authorize_if expr(not is_nil(^actor(:org_id)) and organization_id == ^actor(:org_id))
+    end
+
     bypass actor_attribute_equals(:role, :admin) do
       authorize_if always()
     end
@@ -77,7 +90,7 @@ defmodule Firmowid.Ash.Analysis.TagDefinition do
                      :create_for_project,
                      :read,
                      :update_tag_definition,
-                     :destroy_tag_definition
+                     :destroy
                    ])
     end
 
