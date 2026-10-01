@@ -28,7 +28,10 @@ defmodule FirmowidWeb.Delegations.Views.DelegationFormTest do
 
     invalid_html =
       render_change(view, "validate", %{
-        "delegation" => delegation_params(%{"end_date" => "2026-09-09"})
+        "delegation" =>
+          delegation_params(%{
+            "end_date" => delegation_start_date() |> Date.add(-1) |> Date.to_iso8601()
+          })
       })
 
     assert invalid_html =~ "nie może być wcześniejsza niż data wyjazdu"
@@ -84,19 +87,27 @@ defmodule FirmowidWeb.Delegations.Views.DelegationFormTest do
   end
 
   defp delegation_params(overrides) do
+    billing_month = current_billing_month()
+
     Map.merge(
       %{
-        "billing_month" => "2026-09-01",
+        "billing_month" => Date.to_iso8601(billing_month),
         "destination" => "Kraków",
         "transport_types" => ["railway", "bus"],
         "purpose" => "Spotkanie z klientem",
         "advance_payment_amount" => "123.45",
-        "start_date" => "2026-09-10",
-        "end_date" => "2026-09-11"
+        "start_date" => Date.to_iso8601(delegation_start_date()),
+        "end_date" => delegation_start_date() |> Date.add(1) |> Date.to_iso8601()
       },
       overrides
     )
   end
+
+  defp current_billing_month do
+    Date.beginning_of_month(Date.utc_today())
+  end
+
+  defp delegation_start_date, do: Date.add(Date.utc_today(), 9)
 
   defp create_employment_contract(employee) do
     blob =
