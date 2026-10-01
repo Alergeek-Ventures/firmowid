@@ -128,7 +128,7 @@ defmodule FirmowidWeb.Delegations.Components.SettlementPage do
             <small>
               <dt class="inline">Zaliczka:</dt>
               <dd class="text-grey-700 inline">
-                {Money.to_string!(@delegation.advance_payment_amount)}
+                {Money.to_string!(@delegation.advance_amount)}
               </dd>
             </small>
           </dl>
@@ -271,7 +271,7 @@ defmodule FirmowidWeb.Delegations.Components.SettlementPage do
         />
         <div class="border-grey-100 my-5 space-y-3 border-y py-5">
           <.summary_row label="Razem koszty" value={@total} class="font-medium" />
-          <.summary_row label="Pobrana zaliczka" value={@delegation.advance_payment_amount} />
+          <.summary_row label="Pobrana zaliczka" value={@delegation.advance_amount} />
         </div>
         <.summary_row label={@balance_label} value={@balance} />
       </dl>
