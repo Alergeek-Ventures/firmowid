@@ -19,14 +19,16 @@ RUN mix deps.get --only $MIX_ENV
 RUN mkdir config
 
 COPY config/config.exs config/${MIX_ENV}.exs config/
-COPY assets assets
-RUN npm ci --prefix assets
-RUN npm install --global accent-cli@0.19.0
 
+# Keep expensive dependency compilation independent of npm and asset changes.
 RUN export HALF_CORES=$(($(nproc) / 2)) && \
     export MAKEFLAGS="-j${HALF_CORES}" && \
     export MIX_OS_DEPS_COMPILE_PARTITION_COUNT="${HALF_CORES}" && \
     mix deps.compile
+
+COPY assets/package.json assets/package-lock.json assets/
+RUN npm ci --prefix assets
+RUN npm install --global accent-cli@0.19.0
 
 COPY priv priv
 
@@ -43,6 +45,8 @@ RUN mix compile
 
 RUN mix localize.setup
 
+# Copy source assets late so JS/CSS changes preserve BEAM compilation layers.
+COPY assets assets
 RUN mix assets.sentry.deploy
 # Keep CI-uploaded source maps out of the runtime image after asset digesting.
 RUN npm run sentry:sourcemaps:clean --prefix assets
