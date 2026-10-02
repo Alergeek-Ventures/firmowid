@@ -77,6 +77,13 @@ config :firmowid,
 config :firmowid,
   oauth2_signing_secret: System.get_env("OAUTH2_SIGNING_SECRET") || secret_key_base
 
+# Development requires the canonical MCP resource URL from shared configuration.
+# Test and production retain the endpoint-derived resource URL.
+if config_env() == :dev do
+  config :firmowid,
+    oauth2_resource_url: Firmowid.Config.McpResourceUrl.validate!(System.fetch_env!("MCP_RESOURCE_URL"))
+end
+
 config :req_llm,
   openai_api_key: System.get_env("OPENAI_API_KEY") || Application.get_env(:firmowid, :openai_api_key)
 

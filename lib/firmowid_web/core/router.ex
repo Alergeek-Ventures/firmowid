@@ -114,6 +114,12 @@ defmodule FirmowidWeb.Core.Router do
 
   ## MCP resource server
 
+  scope "/mcp-chatgpt" do
+    pipe_through :mcp
+
+    forward "/", FirmowidWeb.Mcp.Chatgpt.Router
+  end
+
   scope "/mcp" do
     pipe_through :mcp
 
@@ -130,6 +136,7 @@ defmodule FirmowidWeb.Core.Router do
         :get_shared_birthday,
         :list_projects
       ],
+      mcp_resources: [],
       otp_app: :firmowid
   end
 
