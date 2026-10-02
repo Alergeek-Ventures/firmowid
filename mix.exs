@@ -60,7 +60,6 @@ defmodule Firmowid.MixProject do
   # Specifies your project dependencies.
   #
   # Type `mix help deps` for examples and options.
-  # Synthetic Docker benchmark: invalidate dependency layers without changing versions.
   defp deps do
     [
       {:ash_authentication_oauth2_server, "~> 0.3.1"},
