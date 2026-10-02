@@ -149,6 +149,7 @@ defmodule Mix.Tasks.Chatgpt.Tunnel do
     end
   end
 
+  @spec invalid_port!() :: no_return()
   defp invalid_port!, do: Mix.raise("Invalid .server.port: expected a decimal port in 1..65535.")
 
   defp parent_pid! do

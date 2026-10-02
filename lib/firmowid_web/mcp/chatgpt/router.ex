@@ -31,7 +31,7 @@ defmodule FirmowidWeb.Mcp.Chatgpt.Router do
   end
 
   @doc "Rejects undeclared inputs and enforces a positive, bounded preview size."
-  @spec bound_arguments(AshAi.Tool.t(), map(), map()) :: {:ok, map()} | {:error, String.t()}
+  @spec bound_arguments(struct(), map(), map()) :: {:ok, map()} | {:error, String.t()}
   def bound_arguments(_tool, arguments, _context) when is_map(arguments) do
     limit = Map.get(arguments, "limit", 25)
     input = Map.get(arguments, "input", %{})

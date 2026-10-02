@@ -40,44 +40,13 @@ This skill is for day-to-day usage, not migration. For migration, use `commands/
 - `.env.worktree` is allowed for local worktree-specific overrides and should stay untracked.
 - Personal long-term overrides should usually live in Infisical personal overrides, not in project files.
 
-## Firmowid Development Namespace
+## Development Namespace
 
-Use the **Firmowid project**, Infisical environment **`dev`**:
-
-| Folder | Purpose |
-| --- | --- |
-| `/app` | Application runtime secrets and configuration; loaded by local Elixir config. |
-| `/dev/<tool>` | Shared development-tool credentials/configuration, separate from app runtime. |
-| `/dev/openai-tunnel` | Shared OpenAI Secure MCP Tunnel runtime values for ChatGPT app testing. |
-
-The environment `dev` (`--env=dev`) and folder `/dev` (`--path=...`) are different concepts. Do not move, rename, or duplicate existing secrets as part of using this convention.
-
-The optional **non-secret** `CHATGPT_OAUTH_RESOURCE_URL` belongs only in the
-isolated current worktree's **untracked `.env.worktree`**, applied last by the
-existing app loader. **Never insert it into shared Infisical dev `/app`**: that
-folder is loaded by all developers/worktrees, and approval covers only this
-worktree. The operator writes the exact observed HTTPS tunnel resource URL;
-do not guess it or duplicate transport credentials into `/app`. Before an agent
-edit, verify `.env.worktree` is git-ignored; if safety tooling blocks access, stop
-and ask the user to add the non-secret line without bypassing the block. Runtime
-config reads/strictly validates this URL only in dev; test and prod ignore it.
-This approved temporary ChatGPT/Tidewave-only worktree override changes the
-shared product MCP canonical resource/audience, including existing `/mcp`
-clients in this worktree, without rewriting incoming resource parameters. No shared
-Infisical key, second environment
-or production secrets are needed. The user must restart the app after changing
-it: hot code reload does not rerun runtime config or Infisical loading. Agents
-must not restart the app/tunnel. See the prototype README for exact validation
-and DCR rather than incompatible 0.3.1 CIMD guidance.
-
-The required exact names in `/dev/openai-tunnel` are:
-
-- `CONTROL_PLANE_API_KEY`: an OpenAI **runtime** API key whose principal has Tunnels **Read + Use**. It is not an admin key; do not substitute `OPENAI_ADMIN_KEY` or an unrelated account key.
-- `CONTROL_PLANE_TUNNEL_ID`: the shared tunnel identifier.
-
-Fetch each by exact name with `infisical secrets get NAME --domain https://infisical.alergeek.me --env=dev --path=/dev/openai-tunnel --plain --secret-overriding=false`. Capture output into a variable, never run this as a value-printing command. Disabling personal overrides selects the shared values; check installed `infisical secrets get --help` before use and stop if the option is unsupported.
-
-For the foreground run, operator handoff, OAuth checks, and actual ChatGPT acceptance flow, load the sibling `chatgpt-app-testing` skill. Neither folder contents nor live tunnel access have been verified by this documentation.
+- `/app` holds application runtime secrets and configuration.
+- `/dev/<tool>` holds shared development-tool credentials and configuration, separate from app runtime.
+- The environment `dev` and folder `/dev` are different concepts; select the appropriate environment and folder independently.
+- Keep local, non-secret worktree configuration only in untracked `.env.worktree`, not in shared folders.
+- Do not move, rename, or duplicate existing secrets as part of using this convention.
 
 ## One-Off Secret Access
 
