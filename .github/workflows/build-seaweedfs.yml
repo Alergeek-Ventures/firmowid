@@ -15,7 +15,7 @@ concurrency:
 jobs:
   build-and-push:
     name: Build and push SeaweedFS S3 image
-    runs-on: blacksmith-4vcpu-ubuntu-2404
+    runs-on: ubuntu-latest
 
     permissions:
       contents: read

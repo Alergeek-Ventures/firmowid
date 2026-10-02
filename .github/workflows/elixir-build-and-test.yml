@@ -24,7 +24,7 @@ jobs:
 
   secret-scan:
     name: Scan repository for secrets
-    runs-on: blacksmith-4vcpu-ubuntu-2404
+    runs-on: ubuntu-latest
     permissions:
       contents: read
 
@@ -46,7 +46,7 @@ jobs:
 
   extract-versions:
     name: Extract versions and service images
-    runs-on: blacksmith-2vcpu-ubuntu-2404
+    runs-on: ubuntu-latest
     permissions:
       contents: read
       packages: read
@@ -161,7 +161,7 @@ jobs:
   build:
     name: Build and test
 
-    runs-on: blacksmith-4vcpu-ubuntu-2404
+    runs-on: ubuntu-latest
 
     needs:
       - translations
@@ -262,7 +262,7 @@ jobs:
 
   coverage-report:
     name: Publish coverage summary and PR comment
-    runs-on: blacksmith-2vcpu-ubuntu-2404
+    runs-on: ubuntu-latest
     needs: build
     permissions:
       actions: read
