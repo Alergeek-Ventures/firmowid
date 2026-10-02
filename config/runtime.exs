@@ -77,11 +77,11 @@ config :firmowid,
 config :firmowid,
   oauth2_signing_secret: System.get_env("OAUTH2_SIGNING_SECRET") || secret_key_base
 
-# Temporary isolated ChatGPT worktree only: changes the shared product MCP
-# resource/audience. Never read this environment override in test or production.
+# Development requires the canonical MCP resource URL from shared configuration.
+# Test and production retain the endpoint-derived resource URL.
 if config_env() == :dev do
   config :firmowid,
-    oauth2_resource_url: Firmowid.Config.ChatgptOauthResource.validate!(System.get_env("CHATGPT_OAUTH_RESOURCE_URL"))
+    oauth2_resource_url: Firmowid.Config.McpResourceUrl.validate!(System.fetch_env!("MCP_RESOURCE_URL"))
 end
 
 config :req_llm,
