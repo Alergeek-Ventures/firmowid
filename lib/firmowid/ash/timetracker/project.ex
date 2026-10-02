@@ -8,7 +8,7 @@ defmodule Firmowid.Ash.Timetracker.Project do
 
   Read actions: `:get` (single project by ID, loads users + counterparty) and
   `:list` (flexible listing with optional filters — archive, user membership,
-  ParadeDB search, ID set).
+  ParadeDB search, ID set, tag definition).
   """
   use Ash.Resource,
     domain: Firmowid.Ash.Timetracker,
@@ -59,6 +59,7 @@ defmodule Firmowid.Ash.Timetracker.Project do
       """
 
       argument :user_id, :uuid
+      argument :tag_definition_id, :uuid
       argument :search, :string
 
       argument :status, :atom do
@@ -69,6 +70,10 @@ defmodule Firmowid.Ash.Timetracker.Project do
 
       prepare build(filter: expr(exists(project_users, user_id == ^arg(:user_id)))) do
         where present(:user_id)
+      end
+
+      prepare build(filter: expr(tag_definition_id == ^arg(:tag_definition_id))) do
+        where present(:tag_definition_id)
       end
 
       prepare build(filter: expr(is_nil(archived_at))) do
@@ -164,8 +169,11 @@ defmodule Firmowid.Ash.Timetracker.Project do
       authorize_if expr(not is_nil(^actor(:org_id)) and organization_id == ^actor(:org_id))
     end
 
-    bypass {SystemActorRole, roles: [:project_tag_manager]} do
-      authorize_if action(:link_tag)
+    bypass [
+      {SystemActorRole, roles: [:project_tag_manager]},
+      action([:list, :link_tag])
+    ] do
+      authorize_if expr(not is_nil(^actor(:org_id)) and organization_id == ^actor(:org_id))
     end
 
     # System actors have no access to employee timetracking data
