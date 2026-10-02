@@ -88,9 +88,11 @@ defmodule Firmowid.Ash.Core.OrganizationExternalCleanup do
       %{}
   end
 
-  @doc "Report a local transaction failure after remote cleanup without leaking its error payload."
+  @doc "Log the actual local exception to stdout and send a sanitized failure report to Sentry."
   @spec report_local_failure(String.t(), String.t(), term()) :: :ok
   def report_local_failure(organization_id, step, reason) do
+    Logger.error("Organization #{organization_id} deletion failed at #{step}: #{Exception.format(:error, reason)}")
+
     report(organization_id, "database", step, %{}, reason)
   end
 
