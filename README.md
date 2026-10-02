@@ -28,11 +28,11 @@ Po uruchomieniu serwera, zaloguj się na `kira@bytecraft.collective` / `kolejka1
 
 ## CI: cache obrazów Dockera
 
-`DockerBuildCheck` działa na standardowych runnerach GitHub-hosted i używa Buildx
+`Docker Build Check` działa na standardowych runnerach GitHub-hosted i używa Buildx
 `gha` cache o zakresie `firmowid-app`, w trybie `max`, obejmującym również
-pośrednie warstwy zależności. Kosztowne `depscompile` jest wykonywane przed
-kopiowaniem źródeł npm i assetów; `npminstall` zależy tylko od manifestów, a pełne
-`assets` jest budowane po `BEAMcompile`.
+pośrednie warstwy zależności. Kosztowne `mix deps.compile` jest wykonywane przed
+kopiowaniem źródeł npm i assetów; `npm ci` zależy tylko od manifestów. Pełne
+źródła assetów są kopiowane po `mix compile`, przed budowaniem assetów.
 
 Eksport cache jest opcjonalny (`ignore-error`): błędy eksportu nie przerywają
 jobu, ale błędy samego builda nadal są fatalne. Cache jest izolowany między
@@ -47,13 +47,14 @@ Zmierzony przypadek dla PR #38 — ten sam SHA i artefakt, drugi przebieg:
 | Zimny | 6:21 |
 | Ciepły | 0:33 |
 
-[Pierwszy przebieg](https://github.com/alergeek/firmowid/actions/runs/37020260453/job/110881514104)
+[Pierwszy przebieg](https://github.com/Alergeek-Ventures/firmowid/actions/runs/37020260453/job/110881514104)
 (build 5:53, eksport cache 79,2 s) i
-[drugi przebieg](https://github.com/alergeek/firmowid/actions/runs/37020260453/job/110884360739)
+[drugi przebieg](https://github.com/Alergeek-Ventures/firmowid/actions/runs/37020260453/job/110884360739)
 (build 0:07, eksport 3,3 s) pokazują najlepszy przypadek ponowienia dla
-niezmienionego SHA, a nie typowy czas po zmianie źródeł. Nowy znacznik
-`SOURCE_DATE_EPOCH` unieważnia cache kompilacji aplikacji; rzeczywistego wpływu
-zmiany źródeł jeszcze nie zmierzono.
+niezmienionego SHA, a nie typowy czas po zmianie źródeł. Zmiana
+`SOURCE_COMMIT` lub znacznika wygenerowanego `default.po` może unieważnić warstwy
+tłumaczeń i aplikacji mimo niezmienionych zależności. Nie zakładamy, że pierwszy
+build `main` po merge będzie miał ciepły cache.
 
 ## Konwencje architektury frontendu (`lib/firmowid_web`)
 
