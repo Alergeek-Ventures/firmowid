@@ -1,0 +1,107 @@
+# TEMPORARY controlled Docker cache benchmark: remove before merging.
+# Normal CI, publishing, releases, deployment, and services are unchanged.
+name: Docker Cache Benchmark
+
+on:
+  push:
+    branches: [optimize-docker-cache]
+    paths:
+      - .github/workflows/docker-cache-benchmark.yml
+      - .github/docker-cache-benchmark-case.json
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  translations:
+    name: Prepare benchmark translations
+    uses: ./.github/workflows/translations-prepare.yml
+    with:
+      version: ${{ github.sha }}
+    secrets:
+      ACCENT_SNAPSHOT_API_KEY: ${{ secrets.ACCENT_SNAPSHOT_API_KEY }}
+
+  benchmark:
+    name: Docker benchmark / ${{ matrix.variant }} / replica ${{ matrix.replica }}
+    needs: translations
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      max-parallel: 6
+      matrix:
+        variant: [original, layered, cached]
+        replica: [1, 2]
+    env:
+      BASELINE_COMMIT: c02674c38a4328283f4be670767e7834fe19ab0d
+      CASE_FILE: .github/docker-cache-benchmark-case.json
+      CURRENT_DOCKERFILE: deployment/Containerfile.app
+      CATALOG_FILE: priv/gettext/pl/LC_MESSAGES/default.po
+      SOURCE_COMMIT: ${{ github.sha }}
+      BENCHMARK_VARIANT: ${{ matrix.variant }}
+      BENCHMARK_REPLICA: ${{ matrix.replica }}
+      LC_ALL: C
+
+    steps:
+      - name: Checkout exact benchmark commit
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Download generated PO catalog
+        uses: ./.github/actions/download-translations
+        with:
+          version: ${{ github.sha }}
+
+      - name: Prepare benchmark inputs
+        id: inputs
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          # Validate the scenario as data, never shell code. JSON encoding also
+          # escapes control characters so scenario/CPU text cannot inject logs.
+          scenario=$(jq -ce '.scenario | select(type == "string")' "$CASE_FILE")
+          cpu_model=$(lscpu --json | jq -ce '.lscpu[] | select(.field == "Model name:") | .data')
+          printf 'Scenario: %s\nVariant: %s\nReplica: %s\n' "$scenario" "$BENCHMARK_VARIANT" "$BENCHMARK_REPLICA"
+          printf 'CPU count: %s\nCPU model: %s\n' "$(nproc)" "$cpu_model"
+          printf 'Source commit: %s\nBaseline commit: %s\n' "$SOURCE_COMMIT" "$BASELINE_COMMIT"
+
+          dockerfile="$CURRENT_DOCKERFILE"
+          if [[ "$BENCHMARK_VARIANT" == original ]]; then
+            dockerfile="$RUNNER_TEMP/benchmark-original.Containerfile"
+            git show "${BASELINE_COMMIT}:deployment/Containerfile.app" > "$dockerfile"
+          fi
+
+          printf 'dockerfile=%s\n' "$dockerfile" >> "$GITHUB_OUTPUT"
+          sha256sum "$CASE_FILE" "$dockerfile" "$CATALOG_FILE"
+
+      # Original intentionally uses the default Docker builder, as old CI did.
+      # Each job has a fresh runner; layered/cached get a fresh container builder.
+      - name: Set up Docker Buildx
+        if: matrix.variant != 'original'
+        uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+        with:
+          driver: docker-container
+          # GitHub-hosted runners are ephemeral; skip builder removal overhead.
+          cleanup: false
+
+      - name: Build benchmark image
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: .
+          file: ${{ steps.inputs.outputs.dockerfile }}
+          push: false
+          outputs: type=cacheonly
+          # Only cached imports/exports; replica scopes stay stable across cases.
+          cache-from: ${{ matrix.variant == 'cached' && format('type=gha,scope=firmowid-benchmark-{0}', matrix.replica) || '' }}
+          # Export errors are fatal: never silently claim a successful cache seed.
+          cache-to: ${{ matrix.variant == 'cached' && format('type=gha,scope=firmowid-benchmark-{0},mode=max', matrix.replica) || '' }}
+          build-args: |
+            SOURCE_COMMIT=${{ github.sha }}
