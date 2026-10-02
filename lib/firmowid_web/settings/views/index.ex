@@ -145,6 +145,12 @@ defmodule FirmowidWeb.Settings.Views.Index do
         )
         |> allow_upload(:ksef_credentials, accept: ~w(.crt .key), max_entries: 2)
         |> allow_upload(:signed_auth_token_request, accept: ~w(.xml), max_entries: 1)
+        |> allow_upload(:document_upload,
+          accept: ~w(.pdf .doc .docx),
+          max_entries: 1,
+          auto_upload: true,
+          progress: &handle_progress/3
+        )
       else
         socket
       end
@@ -289,6 +295,36 @@ defmodule FirmowidWeb.Settings.Views.Index do
      socket
      |> assign(:current_org, updated_with_avatar)
      |> assign_subscription_preview_if_visible()}
+  end
+
+  defp handle_progress(:document_upload, %{done?: false}, socket) do
+    {:noreply, socket}
+  end
+
+  defp handle_progress(:document_upload, entry, socket) do
+    scope = socket.assigns.ash_scope
+    user_id = socket.assigns.current_user.id
+
+    case consume_uploaded_entry(socket, entry, fn %{path: path} ->
+           {:ok,
+            Blobs.create_blob_for_processing(
+              path,
+              entry.client_type,
+              entry.client_name,
+              :employment_contract,
+              %{user_id: user_id},
+              scope: scope
+            )}
+         end) do
+      {:ok, %Blob{}} ->
+        LiveToast.send_toast(:success, "Plik został wysłany.")
+
+      {:error, err} ->
+        Logger.warning("Employment contract upload failed", error_kind: ErrorKind.classify(err))
+        LiveToast.send_toast(:error, "Wystąpił błąd podczas wysyłania pliku.")
+    end
+
+    {:noreply, socket}
   end
 
   defp handle_progress(name, %{done?: false}, socket) when name in [:organization_avatar, :user_avatar] do
@@ -1488,6 +1524,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
             pending_contract={@pending_contract}
             current_contract={@current_contract}
             signed_contract_upload={@uploads.signed_contract}
+            document_upload={Map.get(@uploads, :document_upload)}
           />
       <% end %>
     </.settings_page>
