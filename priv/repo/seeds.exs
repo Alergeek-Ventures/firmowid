@@ -8,6 +8,7 @@
 #   seeds/month_m1.exs   — 1 month ago: fully matched revenue, costs, THB, tags
 #   seeds/month_m0.exs   — current month: unmatched transactions, KSeF showcase, 1 matched entry
 #   seeds/timetracker.exs — salaries, time tracking sessions, hours records
+#   seeds/delegations.exs — example business trips and settlement expenses
 #   seeds/voidstack.exs  — VoidStack Labs evil org for authorization testing
 #
 # Run with: mix run priv/repo/seeds.exs
@@ -17,6 +18,7 @@
 
 alias Firmowid.Ash.Core.Organization, as: CoreOrganization
 alias Firmowid.Seeds.Bytecraft
+alias Firmowid.Seeds.Delegations
 alias Firmowid.Seeds.MonthM0
 alias Firmowid.Seeds.MonthM1
 alias Firmowid.Seeds.MonthM2
@@ -29,7 +31,7 @@ seed_actor = %{id: "00000000-0000-0000-0000-000000000000", role: :admin}
 
 seeds_dir = Path.join(__DIR__, "seeds")
 
-for file <- ~w(helpers bytecraft month_m2 month_m1 month_m0 timetracker voidstack) do
+for file <- ~w(helpers bytecraft month_m2 month_m1 month_m0 timetracker delegations voidstack) do
   Code.require_file("#{file}.exs", seeds_dir)
 end
 
@@ -52,6 +54,9 @@ else
 
   # — Timetracker: employment contracts, salaries, sessions, hours records —
   TimetrackerSeeds.seed!(ctx)
+
+  # — Example delegations for the primary employee —
+  Delegations.seed!(ctx)
 
   # — Evil org: VoidStack Labs —
   Voidstack.seed!()

@@ -1,0 +1,244 @@
+defmodule Firmowid.Ash.Delegations.DelegationExpense do
+  @moduledoc "A document-backed cost included in a business-trip delegation settlement."
+
+  use Ash.Resource,
+    otp_app: :firmowid,
+    domain: Firmowid.Ash.Delegations,
+    data_layer: AshPostgres.DataLayer,
+    authorizers: [Ash.Policy.Authorizer]
+
+  alias Firmowid.Ash.Blobs.Blob
+  alias Firmowid.Ash.Delegations.Changes.CreateExpenseBlob
+  alias Firmowid.Ash.Delegations.Changes.UpdateDetectedDelegationDates
+  alias Firmowid.Ash.Delegations.DelegationExpense.Details
+  alias Firmowid.Ash.Delegations.Validations.ExpenseDetailsComplete
+  alias Firmowid.Ash.Delegations.Validations.ExpenseDetailsMatchKind
+  alias Firmowid.Ash.Delegations.Validations.ForeignCurrencySettlementComplete
+  alias Firmowid.Ash.Resource
+
+  require Resource
+
+  postgres do
+    table "delegation_expenses"
+    repo Firmowid.Repo
+  end
+
+  code_interface do
+    define :read, action: :read
+    define :complete, action: :complete
+  end
+
+  actions do
+    defaults [:read]
+
+    create :create do
+      description "Create a document-backed expense for a delegation."
+      primary? true
+
+      accept [
+        :delegation_id,
+        :kind,
+        :original_filename,
+        :document_number,
+        :expense_amount,
+        :details
+      ]
+
+      argument :upload_path, :string, allow_nil?: false
+      argument :content_type, :string, allow_nil?: false
+
+      change CreateExpenseBlob
+      change UpdateDetectedDelegationDates
+      validate {ExpenseDetailsMatchKind, []}
+    end
+
+    destroy :destroy do
+      description "Remove an expense document from a delegation."
+      primary? true
+      require_atomic? false
+      change {UpdateDetectedDelegationDates, operation: :destroy}
+    end
+
+    update :update do
+      description "Update an expense while settling a delegation."
+      primary? true
+      require_atomic? false
+
+      accept [
+        :document_number,
+        :expense_amount,
+        :details,
+        :settlement_method,
+        :settlement_amount,
+        :nbp_rate,
+        :nbp_rate_date
+      ]
+
+      validate {ExpenseDetailsMatchKind, []}
+      change UpdateDetectedDelegationDates
+    end
+
+    update :complete do
+      description "Validate and save an expense while completing its delegation."
+      require_atomic? false
+
+      accept [
+        :document_number,
+        :expense_amount,
+        :details,
+        :settlement_method,
+        :settlement_amount,
+        :nbp_rate,
+        :nbp_rate_date
+      ]
+
+      validate string_length(:document_number, min: 1), message: "Uzupełnij to pole."
+
+      validate compare(:expense_amount, greater_than: 0), message: "musi być większa od zera"
+
+      validate {ExpenseDetailsMatchKind, []}
+      validate {ExpenseDetailsComplete, []}
+      validate {ForeignCurrencySettlementComplete, []}
+      change {UpdateDetectedDelegationDates, require_date_change_reason?: true}
+    end
+
+    update :add_related_document do
+      description "Attach an additional supporting document to an expense."
+      require_atomic? false
+      accept []
+
+      argument :upload_path, :string, allow_nil?: false
+      argument :content_type, :string, allow_nil?: false
+      argument :original_filename, :string, allow_nil?: false
+
+      change Firmowid.Ash.Delegations.Changes.AddRelatedExpenseBlob
+    end
+
+    update :add_statement_document do
+      description "Attach a bank statement used to settle a foreign-currency expense."
+      require_atomic? false
+      accept []
+
+      argument :upload_path, :string, allow_nil?: false
+      argument :content_type, :string, allow_nil?: false
+      argument :original_filename, :string, allow_nil?: false
+
+      change Firmowid.Ash.Delegations.Changes.CreateExpenseStatementBlob
+    end
+
+    update :remove_statement_document do
+      description "Detach the bank statement used to settle a foreign-currency expense."
+      require_atomic? false
+      accept []
+      change set_attribute(:statement_blob_id, nil)
+    end
+
+    update :remove_related_document do
+      description "Remove an additional supporting document from an expense."
+      require_atomic? false
+      accept []
+
+      argument :blob_id, :uuid, allow_nil?: false
+
+      change fn changeset, _context ->
+        Ash.Changeset.manage_relationship(
+          changeset,
+          :related_blobs,
+          [%{id: Ash.Changeset.get_argument(changeset, :blob_id)}],
+          type: :remove,
+          on_match: :unrelate,
+          on_no_match: :ignore
+        )
+      end
+    end
+  end
+
+  policies do
+    bypass actor_attribute_equals(:role, :admin) do
+      authorize_if always()
+    end
+
+    policy action_type(:read) do
+      authorize_if relates_to_actor_via([:delegation, :user])
+    end
+
+    policy action([
+             :create,
+             :update,
+             :add_related_document,
+             :add_statement_document,
+             :remove_statement_document,
+             :remove_related_document,
+             :destroy
+           ]) do
+      authorize_if expr(delegation.status == :in_progress and delegation.user_id == ^actor(:id))
+    end
+
+    policy action(:complete) do
+      authorize_if expr(delegation.status == :in_progress and delegation.user_id == ^actor(:id))
+    end
+  end
+
+  multitenancy do
+    strategy :attribute
+    attribute :organization_id
+  end
+
+  attributes do
+    uuid_v7_primary_key :id
+
+    attribute :kind, :atom,
+      allow_nil?: false,
+      public?: true,
+      constraints: [one_of: [:transport, :accommodation, :other]]
+
+    attribute :original_filename, :string, allow_nil?: false, public?: true
+    attribute :document_number, :string, allow_nil?: false, default: "", public?: true
+
+    attribute :expense_amount, AshMoney.Types.Money,
+      allow_nil?: false,
+      public?: true,
+      default: Money.new(:PLN, 0)
+
+    attribute :settlement_method, :atom,
+      public?: true,
+      constraints: [one_of: [:statement, :nbp]]
+
+    attribute :settlement_amount, AshMoney.Types.Money, public?: true
+    attribute :nbp_rate, :decimal, public?: true
+    attribute :nbp_rate_date, :date, public?: true
+
+    attribute :details, Details, allow_nil?: false, public?: true
+    Resource.firmowid_timestamps()
+  end
+
+  relationships do
+    belongs_to :delegation, Firmowid.Ash.Delegations.Delegation do
+      allow_nil? false
+      attribute_writable? true
+    end
+
+    belongs_to :blob, Blob do
+      description "Uploaded expense document."
+      # Historical expenses may predate mandatory upload arguments.
+      allow_nil? true
+      attribute_writable? true
+    end
+
+    belongs_to :statement_blob, Blob do
+      description "Bank statement documenting the converted expense amount."
+      allow_nil? true
+      attribute_writable? true
+    end
+
+    many_to_many :related_blobs, Blob do
+      through Firmowid.Ash.Delegations.DelegationExpenseRelatedBlob
+      source_attribute_on_join_resource :delegation_expense_id
+      destination_attribute_on_join_resource :blob_id
+    end
+
+    belongs_to :organization, Firmowid.Ash.Core.Organization do
+      allow_nil? false
+    end
+  end
+end

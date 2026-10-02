@@ -1,5 +1,6 @@
 import Config
 
+alias Firmowid.Ash.Invoicing.Services.ReductoApiClientMock
 alias FirmowidWeb.Core.Endpoint
 
 config :ash, policies: [show_policy_breakdowns?: true]
@@ -32,6 +33,12 @@ config :firmowid, Firmowid.Repo,
   stacktrace: true,
   show_sensitive_data_on_connection_error: true,
   log: false
+
+# Keep the Reducto request flow identical to production without requiring
+# credentials or making external calls during local development.
+config :firmowid, :reducto_api_client,
+  upload: [plug: ReductoApiClientMock],
+  extract: [plug: ReductoApiClientMock]
 
 config :firmowid, :s3,
   host: "localhost",
