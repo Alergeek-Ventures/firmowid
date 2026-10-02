@@ -8,6 +8,7 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
   alias Firmowid.Ash.Delegations
   alias Firmowid.Ash.Delegations.DelegationExpense
   alias Firmowid.Ash.Delegations.DelegationExpenseExtractor
+  alias FirmowidWeb.Delegations.Utilities.NbpSettlement
   alias FirmowidWeb.Delegations.Utilities.SettlementForm
   alias FirmowidWeb.Delegations.Utilities.SettlementPresentation
   alias Phoenix.HTML.Form
@@ -78,7 +79,7 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
   end
 
   def handle_event("foreign-currency-action", %{"action" => "nbp", "expense-id" => expense_id}, socket) do
-    case SettlementForm.nbp_settlement(
+    case NbpSettlement.calculate(
            socket.assigns.expense_forms,
            socket.assigns.expense_currencies,
            expense_id,

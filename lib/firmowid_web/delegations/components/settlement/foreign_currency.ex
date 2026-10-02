@@ -3,9 +3,9 @@ defmodule FirmowidWeb.Delegations.Components.Settlement.ForeignCurrency do
 
   use FirmowidWeb, :html
 
+  import FirmowidWeb.Delegations.Components.Settlement.Documents, only: [document_pill: 1]
   import FirmowidWeb.DesignSystem.Components.Button
   import FirmowidWeb.DesignSystem.Components.CoreComponents, except: [button: 1]
-  import FirmowidWeb.DesignSystem.Components.Link
   import Phoenix.Component, except: [link: 1]
 
   alias Phoenix.HTML.Form
@@ -205,42 +205,6 @@ defmodule FirmowidWeb.Delegations.Components.Settlement.ForeignCurrency do
         ><Lucideicons.x class="size-3" /></.button>
       </:action>
     </.document_pill>
-    """
-  end
-
-  @doc "Renders a document pill with an optional action."
-  @spec document_pill(map()) :: Rendered.t()
-  attr :filename, :string, required: true
-  attr :url, :string, default: nil
-  attr :loading?, :boolean, default: false
-  slot :action
-
-  def document_pill(assigns) do
-    ~H"""
-    <span
-      aria-busy={@loading?}
-      class={[
-        "bg-grey-200 text-grey-600 inline-flex max-w-full items-center gap-1 rounded px-2 py-1 text-sm font-medium",
-        @loading? && "animate-pulse"
-      ]}
-    >
-      <.link
-        :if={@url}
-        kind="unstyled"
-        external={@url}
-        target="_blank"
-        rel="noopener noreferrer"
-        class="inline-flex min-w-0 items-center gap-1"
-      ><Lucideicons.file class="size-4 shrink-0" /><span
-        class="max-w-[220px] truncate"
-        title={@filename}
-      >{@filename}</span></.link>
-      <span :if={!@url} class="inline-flex min-w-0 items-center gap-1">
-        <Lucideicons.file class="size-4 shrink-0" />
-        <span class="max-w-[220px] truncate" title={@filename}>{@filename}</span>
-      </span>
-      {render_slot(@action)}
-    </span>
     """
   end
 

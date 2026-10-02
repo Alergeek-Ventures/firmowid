@@ -4,7 +4,7 @@ defmodule FirmowidWeb.Delegations.Components.SettlementPage do
   use FirmowidWeb, :html
 
   import FirmowidWeb.Delegations.Components.Delegation
-  import FirmowidWeb.Delegations.Components.Settlement
+  import FirmowidWeb.Delegations.Components.Settlement.Expense
   import FirmowidWeb.DesignSystem.Components.Button
   import FirmowidWeb.DesignSystem.Components.CoreComponents, except: [button: 1]
   import Phoenix.Component, except: [link: 1]
@@ -275,6 +275,20 @@ defmodule FirmowidWeb.Delegations.Components.SettlementPage do
         </div>
         <.summary_row label={@balance_label} value={@balance} />
       </dl>
+    </div>
+    """
+  end
+
+  attr :label, :string, required: true
+  attr :value, Money, required: true
+  attr :class, :string, default: ""
+
+  defp summary_row(assigns) do
+    ~H"""
+    <div class={["flex justify-between gap-4", @class]}>
+      <dt>{@label}</dt><dd class={[Money.zero?(@value) && "text-grey-500"]}>
+        {Money.to_string!(@value)}
+      </dd>
     </div>
     """
   end
