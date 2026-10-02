@@ -1,4 +1,3 @@
-/* Synthetic Docker benchmark: invalidate an asset source layer without changing styles. */
 @import "tailwindcss";
 
 @font-face {
