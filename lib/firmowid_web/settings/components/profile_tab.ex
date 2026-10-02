@@ -42,6 +42,10 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
   attr :signed_contract_upload, :map, default: nil
   attr :delegations, :list, required: true
 
+  attr :document_upload, :map,
+    default: nil,
+    doc: "Contract document upload, only allowed for admins viewing their own profile."
+
   def profile_tab(assigns) do
     ~H"""
     <div class="grid items-start gap-8 lg:grid-cols-2 lg:gap-16">
@@ -53,6 +57,7 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
           pending_contract={@pending_contract}
           current_contract={@current_contract}
           signed_contract_upload={@signed_contract_upload}
+          document_upload={@document_upload}
           ash_scope={@ash_scope}
         />
         <.finance_section
@@ -163,12 +168,56 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
     """
   end
 
+  attr :current_contract, :map, required: true
+  attr :current_user, :map, required: true
+  attr :document_upload, :map, default: nil
+
+  defp contract_document_row(assigns) do
+    ~H"""
+    <.detail_row label="Umowa">
+      <div class="flex w-full min-w-0 items-center gap-2">
+        <.link
+          kind="button"
+          variant="outline"
+          class="min-w-0 flex-1 justify-start"
+          size="small"
+          redirect={~p"/zarzadzanie/umowy/#{@current_contract.id}"}
+          download
+        >
+          <Lucideicons.file_text class="size-4" />
+          <span class="truncate font-medium">{contract_filename(
+            @current_contract,
+            @current_user
+          )}</span>
+        </.link>
+
+        <form :if={@document_upload} phx-submit="upload" phx-change="upload">
+          <.live_file_input upload={@document_upload} class="sr-only" aria-label="Wgraj umowę" />
+
+          <.button
+            as="label"
+            for={@document_upload.ref}
+            type="button"
+            variant="secondary"
+            size="small"
+            class="h-7.5 w-8"
+            aria-label="Wgraj umowę"
+          >
+            <.icon name="hero-cloud-arrow-up" class="size-4" />
+          </.button>
+        </form>
+      </div>
+    </.detail_row>
+    """
+  end
+
   attr :current_user, :map, required: true
   attr :contract_form, :map, default: nil
   attr :editing_profile_employment, :boolean, required: true
   attr :pending_contract, :map, default: nil
   attr :current_contract, :map, default: nil
   attr :signed_contract_upload, :map, default: nil
+  attr :document_upload, :map, default: nil
   attr :ash_scope, :map, default: nil
 
   defp employment_section(assigns) do
@@ -338,60 +387,67 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
       action_label="Edytuj informacje o zatrudnieniu"
     >
       <%= if @editing_profile_employment do %>
-        <.form for={@contract_form} phx-submit="save_contract_employment" class="space-y-4">
-          <div class="space-y-2">
-            <.row_input field={@contract_form[:position]} label="Stanowisko" type="text" />
-            <Helpers.settings_field
-              label="Rodzaj umowy"
-              layout={:row}
-              block_class="flex items-center"
-              for={@contract_form[:contract_type].id}
-            >
-              <.input
-                type="select"
-                field={@contract_form[:contract_type]}
-                options={[
-                  {"Umowa o pracę", :uop},
-                  {"B2B", :b2b},
-                  {"Umowa zlecenie", :uz},
-                  {"Umowa o dzieło", :uod}
-                ]}
-                container_class="w-full"
-                new
-              />
-            </Helpers.settings_field>
-            <.row_input field={@contract_form[:starts_at]} label="Obowiązuje od" type="date" />
-          </div>
+        <div class="space-y-2">
+          <.contract_document_row
+            :if={@current_contract}
+            current_contract={@current_contract}
+            current_user={@current_user}
+            document_upload={@document_upload}
+          />
 
-          <div class="flex w-full justify-end gap-3">
-            <.button
-              type="button"
-              variant="ghost"
-              size="small"
-              phx-click="toggle_editing_profile_employment"
-            >
-              Anuluj
-            </.button>
+          <.form
+            for={@contract_form}
+            phx-submit="save_contract_employment"
+            class="mt-2 space-y-4"
+          >
+            <div class="space-y-2">
+              <.row_input field={@contract_form[:position]} label="Stanowisko" type="text" />
+              <Helpers.settings_field
+                label="Rodzaj umowy"
+                layout={:row}
+                block_class="flex items-center"
+                for={@contract_form[:contract_type].id}
+              >
+                <.input
+                  type="select"
+                  field={@contract_form[:contract_type]}
+                  options={[
+                    {"Umowa o pracę", :uop},
+                    {"B2B", :b2b},
+                    {"Umowa zlecenie", :uz},
+                    {"Umowa o dzieło", :uod}
+                  ]}
+                  container_class="w-full"
+                  new
+                />
+              </Helpers.settings_field>
+              <.row_input field={@contract_form[:starts_at]} label="Obowiązuje od" type="date" />
+            </div>
 
-            <.button type="submit" variant="success" size="small">
-              Zapisz
-            </.button>
-          </div>
-        </.form>
+            <div class="flex w-full justify-end gap-3">
+              <.button
+                type="button"
+                variant="ghost"
+                size="small"
+                phx-click="toggle_editing_profile_employment"
+              >
+                Anuluj
+              </.button>
+
+              <.button type="submit" variant="success" size="small">
+                Zapisz
+              </.button>
+            </div>
+          </.form>
+        </div>
       <% else %>
         <div class="space-y-2">
-          <.detail_row :if={@current_contract} label="Umowa">
-            <.link
-              kind="button"
-              variant="outline"
-              size="small"
-              redirect={~p"/zarzadzanie/umowy/#{@current_contract.id}"}
-              download
-            >
-              <Lucideicons.file_text class="size-4" />
-              <span class="font-medium">{contract_filename(@current_contract, @current_user)}</span>
-            </.link>
-          </.detail_row>
+          <.contract_document_row
+            :if={@current_contract}
+            current_contract={@current_contract}
+            current_user={@current_user}
+            document_upload={@document_upload}
+          />
           <.detail_row label="Stanowisko">
             {present(@current_contract && @current_contract.position)}
           </.detail_row>
