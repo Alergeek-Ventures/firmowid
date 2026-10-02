@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Moje sesje pracy</title>
+  <style>
+    :root { color-scheme: light dark; font: 16px system-ui, sans-serif; }
+    body { margin: 0; padding: 20px; }
+    h1 { font-size: 1.3rem; margin-top: 0; }
+    form { display: flex; flex-wrap: wrap; gap: 12px; align-items: end; }
+    label { display: grid; gap: 4px; }
+    input, button { font: inherit; padding: 8px; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { text-align: left; padding: 10px 6px; border-bottom: 1px solid #8885; }
+    .scroll { overflow-x: auto; }
+    #status { min-height: 1.5em; }
+  </style>
+</head>
+<body>
+  <h1>Moje sesje pracy</h1>
+  <p>Tylko do odczytu · najnowsze sesje · daty w UTC</p>
+  <form id="filters">
+    <label>Od dnia (UTC)<input id="after" type="date"></label>
+    <label>Limit wyników<input id="limit" type="number" min="1" max="50" value="25" required></label>
+    <button id="refresh" disabled>Odśwież</button>
+  </form>
+  <p id="status" role="status" aria-live="polite">Łączenie z aplikacją…</p>
+  <p id="range"></p>
+  <div class="scroll">
+    <table aria-label="Sesje pracy" hidden id="table">
+      <thead><tr><th scope="col">Sesja</th><th scope="col">Projekt</th><th scope="col">Początek (UTC)</th><th scope="col">Czas pracy</th></tr></thead>
+      <tbody id="rows"></tbody>
+    </table>
+  </div>
+  <script>
+    "use strict";
+    const status = document.getElementById("status");
+    const refresh = document.getElementById("refresh");
+    const pending = new Map();
+    let nextId = 1;
+    let ready = false;
+    let parentOrigin = null;
+    function post(message) { window.parent.postMessage(message, parentOrigin && parentOrigin !== "null" ? parentOrigin : "*"); }
+    function request(method, params) {
+      const id = nextId++;
+      return new Promise((resolve, reject) => {
+        const timer = setTimeout(() => { pending.delete(id); reject(new Error("Upłynął czas oczekiwania.")); }, 15000);
+        pending.set(id, { resolve, reject, timer });
+        post({ jsonrpc: "2.0", id, method, params });
+      });
+    }
+    function error(message) { status.textContent = message; refresh.disabled = !ready; }
+    function object(value) { return value !== null && typeof value === "object" && !Array.isArray(value); }
+    function datetime(value) {
+      return typeof value === "string" && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/.test(value) &&
+        validDate(value.slice(0, 10)) && Number.isFinite(Date.parse(value));
+    }
+    function validDate(value) {
+      return typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value) &&
+        Number.isFinite(Date.parse(value)) && new Date(value).toISOString().slice(0, 10) === value;
+    }
+    function validPreview(data) {
+      return object(data) && Array.isArray(data.sessions) && data.sessions.length <= 50 &&
+        Number.isInteger(data.limit) && data.limit >= 1 && data.limit <= 50 && data.sessions.length <= data.limit &&
+        (data.after_date === null || validDate(data.after_date)) && typeof data.possibly_truncated === "boolean" &&
+        data.sessions.every(session => object(session) && typeof session.title === "string" &&
+          datetime(session.start_datetime) && (session.end_datetime === null || datetime(session.end_datetime)) &&
+          Number.isInteger(session.duration) && Number.isFinite(session.duration) && session.duration >= 0 &&
+          (session.project === null || (object(session.project) && typeof session.project.name === "string")));
+    }
+    function render(result) {
+      try { renderPreview(result); }
+      catch { error("Nieprawidłowy format odpowiedzi. Spróbuj ponownie."); }
+    }
+    function renderPreview(result) {
+      if (!object(result) || (result.isError !== undefined && typeof result.isError !== "boolean")) throw new Error("Invalid result");
+      if (result.isError) { error("Nie udało się pobrać sesji. Spróbuj ponownie."); return; }
+      const data = result?.structuredContent;
+      if (!validPreview(data)) throw new Error("Invalid preview");
+      const rows = document.getElementById("rows");
+      const newRows = document.createDocumentFragment();
+      for (const session of data.sessions) {
+        const row = document.createElement("tr");
+        const seconds = Number(session.duration);
+        const duration = Number.isFinite(seconds) && seconds >= 0
+          ? `${Math.floor(seconds / 3600)} h ${Math.floor(seconds % 3600 / 60)} min` : "—";
+        const start = new Date(session.start_datetime);
+        const date = Number.isNaN(start.getTime()) ? "—" : start.toISOString().slice(0, 16).replace("T", " ");
+        for (const value of [session.title || "—", session.project?.name || "—", date,
+          session.end_datetime ? duration : `${duration} · w toku`]) {
+          const cell = document.createElement("td");
+          cell.textContent = value;
+          row.append(cell);
+        }
+        newRows.append(row);
+      }
+      rows.replaceChildren(newRows);
+      document.getElementById("table").hidden = data.sessions.length === 0;
+      document.getElementById("after").value = data.after_date || "";
+      document.getElementById("limit").value = data.limit;
+      document.getElementById("range").textContent =
+        `Zakres: ${data.after_date || "bez daty początkowej"}, bez daty końcowej (UTC). Limit: ${data.limit}. ` +
+        (data.possibly_truncated ? "Lista może być ucięta — to nie jest pełne zestawienie." : "Podgląd dla wybranego zakresu.");
+      status.textContent = data.sessions.length ? "Sesje zostały wczytane." : "Brak sesji w wybranym zakresie.";
+      refresh.disabled = !ready;
+    }
+    window.addEventListener("message", event => {
+      if (event.source !== window.parent || (parentOrigin !== null && event.origin !== parentOrigin)) return;
+      const message = event.data;
+      if (!object(message) || message.jsonrpc !== "2.0") return;
+      if (pending.has(message.id) && ("result" in message || "error" in message)) {
+        const entry = pending.get(message.id);
+        if (parentOrigin === null) parentOrigin = event.origin;
+        pending.delete(message.id);
+        clearTimeout(entry.timer);
+        if (message.error) entry.reject(new Error("Host odrzucił żądanie."));
+        else entry.resolve(message.result);
+      } else if (message.method === "ui/notifications/tool-result") {
+        render(message.params);
+      } else if (message.method === "ui/notifications/tool-cancelled") {
+        error("Pobieranie zostało anulowane.");
+      }
+    });
+    document.getElementById("filters").addEventListener("submit", async event => {
+      event.preventDefault();
+      if (!ready) return;
+      refresh.disabled = true;
+      status.textContent = "Wczytywanie sesji…";
+      const toolArguments = { input: {}, limit: Number(document.getElementById("limit").value) };
+      const after = document.getElementById("after").value;
+      if (after) toolArguments.input.after_date = after;
+      try { render(await request("tools/call", { name: "chatgpt_list_sessions", arguments: toolArguments })); }
+      catch (failure) { error(failure.message); }
+    });
+    request("ui/initialize", {
+      protocolVersion: "2026-01-26",
+      appInfo: { name: "Firmowid — sesje", version: "0.1.0" },
+      appCapabilities: {}
+    }).then(() => {
+      ready = true;
+      post({ jsonrpc: "2.0", method: "ui/notifications/initialized", params: {} });
+      refresh.disabled = false;
+      if (status.textContent === "Łączenie z aplikacją…") status.textContent = "Oczekiwanie na wynik narzędzia…";
+    }).catch(failure => error(failure.message));
+  </script>
+</body>
+</html>

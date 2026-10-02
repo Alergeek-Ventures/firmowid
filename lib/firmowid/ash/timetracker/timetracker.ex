@@ -47,6 +47,16 @@ defmodule Firmowid.Ash.Timetracker do
   end
 
   tools do
+    tool :chatgpt_list_sessions, Session, :list_user_sessions,
+      _meta: %{"securitySchemes" => [%{"type" => "oauth2", "scopes" => ["mcp"]}]},
+      description:
+        "Read-only preview of the authenticated user's newest work sessions. At most 50 sessions; not a complete report. Optional after_date is inclusive UTC.",
+      action_parameters: [:limit],
+      select: [:title, :start_datetime, :end_datetime],
+      load: [:duration, project: [:name]],
+      load_strict?: true,
+      ui: "ui://firmowid/chatgpt/sessions.html"
+
     tool :list_sessions, Session, :list_user_sessions do
       description "Paginated work sessions for the authenticated user, newest first. Default limit is 25 - results are truncated. For whole-month or multi-month analysis paginate with limit+offset (e.g. offset 0, 25, 50) or increase limit. If the returned count equals your limit, fetch the next page with offset+limit. Optionally filter with after_date (UTC, sessions starting on or after that date). Use result_type count to get the total number of matching sessions."
       action_parameters [:sort, :limit, :offset, :filter, :result_type]
@@ -88,6 +98,16 @@ defmodule Firmowid.Ash.Timetracker do
 
     tool :list_projects, Project, :list_current_user do
       description "List all projects of the authenticated user"
+    end
+  end
+
+  mcp_resources do
+    mcp_ui_resource :chatgpt_sessions, "ui://firmowid/chatgpt/sessions.html" do
+      html_path "priv/mcp_apps/chatgpt/sessions.html"
+      title "Moje sesje pracy"
+      description "Ograniczony podgląd sesji pracy zalogowanej osoby, tylko do odczytu."
+      domain nil
+      csp connect_domains: [], resource_domains: [], frame_domains: [], base_uri_domains: []
     end
   end
 
