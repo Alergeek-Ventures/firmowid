@@ -13,7 +13,7 @@ defmodule Firmowid.Ash.Core do
 
   alias Ash.Error.Query.NotFound
   alias Firmowid.Ash.Analysis.TagDefinition
-  alias Firmowid.Ash.Assistant.Session
+  alias Firmowid.Ash.Assistant.Session, as: AssistantSession
   alias Firmowid.Ash.Billing.Snapshot
   alias Firmowid.Ash.Core.OauthAuthorizationCode
   alias Firmowid.Ash.Core.OauthConsent
@@ -32,6 +32,7 @@ defmodule Firmowid.Ash.Core do
   alias Firmowid.Ash.SystemActor
   alias Firmowid.Ash.Timetracker.LeaveRequest
   alias Firmowid.Ash.Timetracker.Project
+  alias Firmowid.Ash.Timetracker.Session
 
   tools do
     tool :update_profile, User, :update_current_profile,
@@ -106,6 +107,7 @@ defmodule Firmowid.Ash.Core do
   @transaction_resources [
     User,
     Organization,
+    AssistantSession,
     Session,
     Snapshot,
     KsefInvoiceDigestItem,

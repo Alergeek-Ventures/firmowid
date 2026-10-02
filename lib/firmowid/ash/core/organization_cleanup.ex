@@ -8,7 +8,7 @@ defmodule Firmowid.Ash.Core.OrganizationCleanup do
   """
 
   alias Firmowid.Ash.Analysis.TagDefinition
-  alias Firmowid.Ash.Assistant.Session
+  alias Firmowid.Ash.Assistant.Session, as: AssistantSession
   alias Firmowid.Ash.Billing.Snapshot
   alias Firmowid.Ash.Core
   alias Firmowid.Ash.Core.OauthAuthorizationCode
@@ -23,11 +23,17 @@ defmodule Firmowid.Ash.Core.OrganizationCleanup do
   alias Firmowid.Ash.Scope
   alias Firmowid.Ash.Timetracker.LeaveRequest
   alias Firmowid.Ash.Timetracker.Project
+  alias Firmowid.Ash.Timetracker.Session
 
   @doc "Remove restrictive organization dependents, explicitly deleting children first."
   @spec remove_dependents(Scope.t()) :: :ok | {:error, term()}
   def remove_dependents(scope) do
-    with :ok <- destroy_records(Session.read(%{}, scope: scope), &Session.destroy/2, scope),
+    with :ok <-
+           destroy_records(
+             AssistantSession.read(%{}, scope: scope),
+             &AssistantSession.destroy/2,
+             scope
+           ),
          :ok <- destroy_records(Snapshot.read(%{}, scope: scope), &Snapshot.destroy/2, scope),
          :ok <-
            destroy_records(
@@ -54,6 +60,12 @@ defmodule Firmowid.Ash.Core.OrganizationCleanup do
            destroy_records(
              SalesInvoiceEmailDelivery.read(%{}, scope: scope),
              &SalesInvoiceEmailDelivery.destroy/2,
+             scope
+           ),
+         :ok <-
+           destroy_records(
+             Firmowid.Ash.Timetracker.list_sessions(%{}, scope: scope),
+             &Session.destroy/2,
              scope
            ),
          :ok <- destroy_records(Project.list(%{}, scope: scope), &Project.destroy/2, scope) do

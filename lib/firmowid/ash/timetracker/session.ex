@@ -366,6 +366,13 @@ defmodule Firmowid.Ash.Timetracker.Session do
   end
 
   policies do
+    bypass [
+      {SystemActorRole, roles: [:organization_cleanup]},
+      action([:list, :destroy])
+    ] do
+      authorize_if expr(not is_nil(^actor(:org_id)) and organization_id == ^actor(:org_id))
+    end
+
     bypass {SystemActorRole, roles: [:session_auto_stopper]} do
       authorize_if action_type(:read)
       authorize_if action(:auto_stop)
