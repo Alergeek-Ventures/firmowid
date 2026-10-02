@@ -26,6 +26,35 @@
 
 Po uruchomieniu serwera, zaloguj się na `kira@bytecraft.collective` / `kolejka123456` i odwiedź [`/development`](http://localhost:4000/development) aby zobaczyć pełny przewodnik po danych testowych, kontrahentach, projektach i scenariuszach KSeF.
 
+## CI: cache obrazów Dockera
+
+`DockerBuildCheck` działa na standardowych runnerach GitHub-hosted i używa Buildx
+`gha` cache o zakresie `firmowid-app`, w trybie `max`, obejmującym również
+pośrednie warstwy zależności. Kosztowne `depscompile` jest wykonywane przed
+kopiowaniem źródeł npm i assetów; `npminstall` zależy tylko od manifestów, a pełne
+`assets` jest budowane po `BEAMcompile`.
+
+Eksport cache jest opcjonalny (`ignore-error`): błędy eksportu nie przerywają
+jobu, ale błędy samego builda nadal są fatalne. Cache jest izolowany między
+branchami: `main` nie może odtworzyć cache utworzonego wyłącznie dla PR-a, choć
+PR może korzystać z cache `main`. Pierwszy build `main` po merge może więc być
+zimny.
+
+Zmierzony przypadek dla PR #38 — ten sam SHA i artefakt, drugi przebieg:
+
+| Przebieg | Czas jobu |
+|---|---:|
+| Zimny | 6:21 |
+| Ciepły | 0:33 |
+
+[Pierwszy przebieg](https://github.com/alergeek/firmowid/actions/runs/37020260453/job/110881514104)
+(build 5:53, eksport cache 79,2 s) i
+[drugi przebieg](https://github.com/alergeek/firmowid/actions/runs/37020260453/job/110884360739)
+(build 0:07, eksport 3,3 s) pokazują najlepszy przypadek ponowienia dla
+niezmienionego SHA, a nie typowy czas po zmianie źródeł. Nowy znacznik
+`SOURCE_DATE_EPOCH` unieważnia cache kompilacji aplikacji; rzeczywistego wpływu
+zmiany źródeł jeszcze nie zmierzono.
+
 ## Konwencje architektury frontendu (`lib/firmowid_web`)
 
 - Ścieżka pliku musi odpowiadać namespace modułu
