@@ -56,6 +56,13 @@ niezmienionego SHA, a nie typowy czas po zmianie źródeł. Zmiana
 tłumaczeń i aplikacji mimo niezmienionych zależności. Nie zakładamy, że pierwszy
 build `main` po merge będzie miał ciepły cache.
 
+[Raport pięciu scenariuszy benchmarku](DOCKER_CACHE_BENCHMARK.md) porównuje
+oryginalny build, samo przełożenie warstw i cache `gha` na świeżych runnerach.
+W przypadkach zmian źródeł cache zależności skrócił joby, ale invalidacja
+manifestu Mix była z cache wolniejsza. To pomiary syntetycznych zmian przy
+zmieniającym się SHA i katalogu PO, bliższe codziennemu CI niż ponowienie tego
+samego SHA; nie stanowią gwarancji czasu kolejnych buildów.
+
 ## Konwencje architektury frontendu (`lib/firmowid_web`)
 
 - Ścieżka pliku musi odpowiadać namespace modułu
