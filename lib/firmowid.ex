@@ -1,4 +1,5 @@
 defmodule Firmowid do
+  # Synthetic Docker benchmark: invalidate an Elixir source layer without changing runtime behavior.
   @moduledoc """
   Firmowid keeps the contexts that define your domain
   and business logic.
