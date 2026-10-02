@@ -14,9 +14,11 @@ defmodule FirmowidWeb.Management.Views.Employee do
   alias Ash.Notifier.Notification
   alias Firmowid.Ash.Blobs.Blob
   alias Firmowid.Ash.Core
+  alias Firmowid.Ash.Delegations
   alias Firmowid.Ash.Payroll
   alias Firmowid.Ash.Timetracker
   alias FirmowidWeb.Core.Endpoint
+  alias FirmowidWeb.Delegations.Components.DelegationsList
   alias FirmowidWeb.Documents.Components.DocumentsSection, as: DocumentsTab
   alias FirmowidWeb.Infrastructure.Components.BlobProcessingToasts
   alias FirmowidWeb.Infrastructure.Utilities.TimeFormatter
@@ -56,7 +58,11 @@ defmodule FirmowidWeb.Management.Views.Employee do
             nil
 
           loaded_user ->
-            Ash.load!(loaded_user, [:shared_birthday, avatar_blob: [:url]], scope: scope)
+            Ash.load!(
+              loaded_user,
+              [:display_name, :projects, :delegations, :shared_birthday, avatar_blob: [:url]],
+              scope: scope
+            )
         end
 
       socket =
@@ -69,11 +75,11 @@ defmodule FirmowidWeb.Management.Views.Employee do
           {:ok, current_contract} = Payroll.load_current_contract(id, scope: scope)
 
           socket
-          |> assign(:employee, with_projects(user, scope))
+          |> assign(:employee, user)
           |> assign(:active_months, active_months)
           |> assign(:current_contract, current_contract)
           |> assign(:projects_filter_date, selected_date)
-          |> assign(:page_title, get_employee_display_name(user))
+          |> assign(:page_title, user.display_name)
         end
 
       {:noreply, socket}
@@ -84,8 +90,6 @@ defmodule FirmowidWeb.Management.Views.Employee do
        )}
     end
   end
-
-  defp get_employee_display_name(employee), do: employee.name || employee.email
 
   def format_shared_birthday(%{day: day, month: month, year: year}) do
     {:ok, date} = Date.new(year, month, day)
@@ -110,6 +114,22 @@ defmodule FirmowidWeb.Management.Views.Employee do
     {:noreply, socket}
   end
 
+  def handle_event("approve_delegation", %{"id" => id}, socket) do
+    case Delegations.approve_delegation(id, scope: socket.assigns.ash_scope) do
+      {:ok, _delegation} ->
+        {:noreply,
+         socket
+         |> assign(
+           :employee,
+           Ash.load!(socket.assigns.employee, [:projects, :delegations], scope: socket.assigns.ash_scope)
+         )
+         |> put_flash(:info, "Delegacja została zatwierdzona.")}
+
+      {:error, _error} ->
+        {:noreply, put_flash(socket, :error, "Nie udało się zatwierdzić delegacji.")}
+    end
+  end
+
   def handle_event("archive_employee", _params, socket) do
     scope = socket.assigns.ash_scope
 
@@ -120,12 +140,16 @@ defmodule FirmowidWeb.Management.Views.Employee do
            ),
          {:ok, archived_user} <- Core.archive_user(user, %{}, scope: scope) do
       loaded_user =
-        Ash.load!(archived_user, [:shared_birthday, avatar_blob: [:url]], scope: scope)
+        Ash.load!(
+          archived_user,
+          [:display_name, :projects, :delegations, :shared_birthday, avatar_blob: [:url]],
+          scope: scope
+        )
 
       {:noreply,
        socket
-       |> assign(:employee, with_projects(loaded_user, scope))
-       |> assign(:page_title, get_employee_display_name(loaded_user))}
+       |> assign(:employee, loaded_user)
+       |> assign(:page_title, loaded_user.display_name)}
     else
       {:error, %Ash.Error.Forbidden{}}
       when socket.assigns.current_user.id == socket.assigns.employee.id ->
@@ -149,12 +173,16 @@ defmodule FirmowidWeb.Management.Views.Employee do
            ),
          {:ok, unarchived_user} <- Core.unarchive_user(user, %{}, scope: scope) do
       loaded_user =
-        Ash.load!(unarchived_user, [:shared_birthday, avatar_blob: [:url]], scope: scope)
+        Ash.load!(
+          unarchived_user,
+          [:display_name, :projects, :delegations, :shared_birthday, avatar_blob: [:url]],
+          scope: scope
+        )
 
       {:noreply,
        socket
-       |> assign(:employee, with_projects(loaded_user, scope))
-       |> assign(:page_title, get_employee_display_name(loaded_user))}
+       |> assign(:employee, loaded_user)
+       |> assign(:page_title, loaded_user.display_name)}
     else
       _ ->
         {:noreply, put_flash(socket, :error, "Nie udało się przywrócić pracownika")}
@@ -173,10 +201,6 @@ defmodule FirmowidWeb.Management.Views.Employee do
      socket
      |> push_event("copy-to-clipboard", %{text: email})
      |> LiveToast.put_toast(:success, "Skopiowano adres e-mail")}
-  end
-
-  defp with_projects(user, scope) do
-    Map.put(user, :projects, Timetracker.list_projects!(%{user_id: user.id}, scope: scope))
   end
 
   defp humanize_ash_error(%Ash.Error.Invalid{errors: [first_error | _]}) do
@@ -321,7 +345,21 @@ defmodule FirmowidWeb.Management.Views.Employee do
     {:noreply, socket}
   end
 
+  # The Swoosh test adapter delivers emails directly to the LiveView process.
+  def handle_info({:email, %Swoosh.Email{}}, socket) do
+    {:noreply, socket}
+  end
+
   def handle_info({:employee_updated, user}, socket) do
-    {:noreply, assign(socket, :employee, with_projects(user, socket.assigns.ash_scope))}
+    {:noreply,
+     assign(
+       socket,
+       :employee,
+       Ash.load!(
+         user,
+         [:display_name, :projects, :delegations, :shared_birthday, avatar_blob: [:url]],
+         scope: socket.assigns.ash_scope
+       )
+     )}
   end
 end

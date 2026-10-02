@@ -362,6 +362,15 @@ defmodule FirmowidWeb.DesignSystem.Components.CoreComponents do
   attr :checked, :boolean, doc: "the checked flag for checkbox inputs"
   attr :prompt, :string, default: nil, doc: "the prompt for select inputs"
   attr :options, :list, doc: "the options to pass to Form.options_for_select/2"
+
+  attr :selected_label, :string,
+    default: nil,
+    doc: "an alternate label to display for the selected select option"
+
+  attr :selected_labels, :map,
+    default: %{},
+    doc: "alternate labels keyed by select option value"
+
   attr :multiple, :boolean, default: false, doc: "the multiple flag for select inputs"
 
   attr :input_class, :any, default: nil, doc: "the class to apply to the input tag"
@@ -454,16 +463,40 @@ defmodule FirmowidWeb.DesignSystem.Components.CoreComponents do
         <select
           id={@id}
           name={@name}
+          phx-hook={@selected_labels != %{} && "SelectLabelOverride"}
+          data-prompt={@prompt}
+          data-selected-labels={Jason.encode!(@selected_labels)}
           class={[
-            "bg-grey-50 border-grey-200 peer text-grey-900 w-full rounded-lg border bg-none px-3 py-1.5 pr-10 text-base/tight",
+            "bg-grey-50 border-grey-200 peer w-full rounded-lg border bg-none px-3 py-1.5 pr-10 text-base/tight",
+            if(@selected_labels != %{},
+              do: "text-transparent",
+              else: if(@value in [nil, ""], do: "text-grey-300", else: "text-grey-900")
+            ),
+            @input_class,
             @rest[:class]
           ]}
           multiple={@multiple}
           {@rest}
         >
-          <option :if={@prompt} value="">{@prompt}</option>
+          <option :if={@prompt} value="" disabled selected={@value in [nil, ""]} hidden>
+            {@prompt}
+          </option>
           {Form.options_for_select(@options, @value)}
         </select>
+        <span
+          :if={@selected_labels != %{}}
+          aria-hidden="true"
+          data-select-label-override
+          class={[
+            "pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-base/tight",
+            if(@value in [nil, ""], do: "text-grey-300", else: "text-grey-900")
+          ]}
+        >
+          {if(@value in [nil, ""],
+            do: @prompt,
+            else: Map.get(@selected_labels, @value, selected_option_label(@options, @value))
+          )}
+        </span>
         <Lucideicons.chevron_down class="peer-disabled:text-grey-300 text-grey-700 pointer-events-none absolute top-1/2 right-3 size-4 -translate-y-1/2" />
       </div>
       <.error :for={msg <- @errors} :if={@show_error} is_tooltip={@is_tooltip} target={@id}>
@@ -489,7 +522,9 @@ defmodule FirmowidWeb.DesignSystem.Components.CoreComponents do
         multiple={@multiple}
         {@rest}
       >
-        <option :if={@prompt} value="">{@prompt}</option>
+        <option :if={@prompt} value="" disabled selected={@value in [nil, ""]} hidden>
+          {@prompt}
+        </option>
         {Form.options_for_select(@options, @value)}
       </select>
       <.error :for={msg <- @errors} :if={@show_error}>{msg}</.error>
@@ -585,6 +620,14 @@ defmodule FirmowidWeb.DesignSystem.Components.CoreComponents do
       <.error :for={msg <- @errors} :if={@show_error}>{msg}</.error>
     </div>
     """
+  end
+
+  defp selected_option_label(options, value) do
+    Enum.find_value(options, fn
+      {label, ^value} -> label
+      option when option == value -> option
+      _option -> nil
+    end)
   end
 
   @doc """

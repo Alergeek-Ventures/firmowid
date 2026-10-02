@@ -15,6 +15,7 @@ defmodule FirmowidWeb.DesignSystem.Components.MonthPicker do
   attr :active_months, :list, default: nil
   attr :selected_date, :string, required: true
   attr :disabled, :boolean, default: false
+  attr :show_on_mobile, :boolean, default: false
   attr :rest, :global
   attr :class, :any, default: nil
   attr :value, :string, default: nil
@@ -29,7 +30,8 @@ defmodule FirmowidWeb.DesignSystem.Components.MonthPicker do
       size={@size}
       class={
         [
-          "group has-disabled:bg-grey-100 has-disabled:text-grey-600 max-md:hidden",
+          "group has-disabled:bg-grey-100 has-disabled:text-grey-600",
+          !@show_on_mobile && "max-md:hidden",
           # icon has "spacing" in it, we have to compensate
           @size == "big" && "min-w-42 pr-4",
           @size == "small" && "min-w-38 pr-2",

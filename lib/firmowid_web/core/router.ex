@@ -257,6 +257,7 @@ defmodule FirmowidWeb.Core.Router do
       live "/zarzadzanie/pracownicy/:id/profil", Employee, :profile
       live "/zarzadzanie/pracownicy/:id/dokumenty", Employee, :documents
       live "/zarzadzanie/pracownicy/:id/urlopy", Employee, :leaves
+      live "/zarzadzanie/pracownicy/:id/delegacje", Employee, :delegations
       live "/zarzadzanie/kontrahenci", Counterparties, :index
       live "/zarzadzanie/kontrahenci/archiwum", Counterparties, :archive
       live "/zarzadzanie/kontrahenci/dodaj", CounterpartyForm, :new
@@ -289,6 +290,8 @@ defmodule FirmowidWeb.Core.Router do
 
       live "/ustawienia", Settings.Views.Index, :index
       live "/ustawienia/:section", Settings.Views.Index, :index
+      live "/delegacje/dodaj", Delegations.Views.DelegationForm, :new
+      live "/delegacje/:id", Delegations.Views.Delegation, :show
     end
   end
 

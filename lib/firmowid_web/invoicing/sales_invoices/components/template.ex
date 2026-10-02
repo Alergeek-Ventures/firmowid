@@ -848,7 +848,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.Template do
       <% end %>
 
       <hr class="border-greyButtonBg my-6" />
-      <%= if @sales_invoice.currency != "PLN" do %>
+      <%= if @sales_invoice.currency != "PLN" and @currency_rate do %>
         <div class="pdf-keep-together mb-3">
           <h2 class="text-darkGrey/70 mb-2 text-[8px] font-bold uppercase">
             {case @sales_invoice.invoice_type do

@@ -4,7 +4,7 @@ defmodule Firmowid.Ash.Timetracker.Workers.LeaveRequestEmailWorker do
   """
 
   use Oban.Worker,
-    queue: :default,
+    queue: :notification_emails,
     max_attempts: 3
 
   alias Firmowid.Ash.Core
