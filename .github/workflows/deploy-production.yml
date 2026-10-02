@@ -23,7 +23,7 @@ jobs:
   deploy:
     if: github.ref == 'refs/heads/main'
     needs: sentry-release
-    runs-on: blacksmith-4vcpu-ubuntu-2404
+    runs-on: ubuntu-latest
     environment: production
 
     steps:
