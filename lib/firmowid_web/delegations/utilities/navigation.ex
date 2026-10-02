@@ -7,5 +7,5 @@ defmodule FirmowidWeb.Delegations.Utilities.Navigation do
 
   @doc "Returns the path for viewing a delegation."
   @spec show_path(String.t()) :: String.t()
-  def show_path(id), do: "/delegacje/#{id}"
+  def show_path(reference), do: "/delegacje/#{reference}"
 end

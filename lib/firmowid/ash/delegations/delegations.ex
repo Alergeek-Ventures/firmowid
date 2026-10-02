@@ -12,13 +12,19 @@ defmodule Firmowid.Ash.Delegations do
   alias Firmowid.Ash.Delegations.Delegation
   alias Firmowid.Ash.Delegations.DelegationExpense
   alias Firmowid.Ash.Delegations.DelegationExpenseRelatedBlob
+  alias Firmowid.Ash.Delegations.DelegationReferenceCounter
 
   resources do
     resource Delegation do
       define :create_delegation, action: :create
       define :get_delegation, action: :read, get_by: [:id]
+      define :get_delegation_by_reference, action: :by_reference, args: [:reference]
       define :list_delegations_for_user, action: :list_for_user, args: [:user_id]
+      define :prepare_delegation_command, action: :prepare_command, get_by: [:id]
+      define :update_delegation_billing_month, action: :update_billing_month, get_by: [:id]
+
       define :approve_delegation, action: :approve, get_by: [:id]
+
       define :complete_delegation, action: :complete, get_by: [:id]
       define :detect_dates, action: :detect_dates
     end
@@ -39,6 +45,8 @@ defmodule Firmowid.Ash.Delegations do
     resource DelegationExpenseRelatedBlob do
       define :read_related_expense_blobs, action: :read
     end
+
+    resource DelegationReferenceCounter
   end
 
   policies do
