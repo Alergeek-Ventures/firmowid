@@ -14,6 +14,6 @@
 # Build: docker build -f deployment/Containerfile.seaweedfs -t seaweedfs-s3:latest .
 # Run:   docker run -p 8333:8333 seaweedfs-s3:latest
 
-FROM docker.io/chrislusf/seaweedfs:4.30@sha256:20fb6eabf1468d3e53fb7b8bd05d929f8b01ae8ceccc2668b501176b2366940f
+FROM docker.io/chrislusf/seaweedfs:4.47@sha256:ce9e796f1fe6f06968f4c04bdaf8f678dad9c8acdfef3d244133d71bfa6bf882
 
 CMD ["server", "-s3"]
