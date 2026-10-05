@@ -63,7 +63,7 @@ defmodule Firmowid.MixProject do
   defp deps do
     [
       {:ash_authentication_oauth2_server, "~> 0.3.1"},
-      {:ash_ai, "~> 1.0.3"},
+      {:ash_ai, "~> 1.1.1"},
       {:sourceror, "~> 1.8"},
       {:ash, "~> 3.33.4"},
       {:ash_postgres, "~> 2.13.1"},
@@ -130,7 +130,7 @@ defmodule Firmowid.MixProject do
       {:ecto_psql_extras, "~> 0.6"},
       {:any_ascii, "~> 0.3.3"},
       {:multipart, "~> 0.6.0"},
-      {:posthog, "~> 2.15.0"},
+      {:posthog, "~> 2.16.0"},
       {:ecto_dev_logger, "~> 0.14"},
       {:nx, "~> 0.10"},
       {:mdex, "~> 0.7"},
@@ -138,7 +138,7 @@ defmodule Firmowid.MixProject do
       {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},
       {:excoveralls, "~> 0.18", only: :test},
       {:openai_ex, "~> 0.9.19"},
-      {:req_llm, "~> 1.24.0"},
+      {:req_llm, "~> 1.25.0"},
       {:live_debugger, "~> 1.0", only: [:dev], runtime: Mix.env() == :dev},
       {:oban_web, "~> 2.11"},
       {:igniter, "~> 0.5", only: [:dev]},
