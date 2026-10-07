@@ -71,6 +71,17 @@ defmodule FirmowidWeb.Analysis.Components.CategorySelector do
             >
               {gettext("Company")}
             </FirmowidWeb.DesignSystem.Components.Button.button>
+            <FirmowidWeb.DesignSystem.Components.Button.button
+              type="button"
+              variant="unstyled"
+              phx-click="set-entity-category"
+              phx-value-entity_type={@type}
+              phx-value-entity_id={@entry.id}
+              phx-value-kind="internal"
+              class="text-left text-sm"
+            >
+              {gettext("Omitted")}
+            </FirmowidWeb.DesignSystem.Components.Button.button>
             <p class="border-grey-200 text-darkGrey border-t pt-2 text-xs">
               {gettext("Active projects")}
             </p>
@@ -120,7 +131,7 @@ defmodule FirmowidWeb.Analysis.Components.CategorySelector do
   defp editable?(row), do: row.skip_invoicing or row.transactions != []
 
   defp tag_label(%{kind: :company}), do: gettext("Company")
-  defp tag_label(%{kind: :internal}), do: gettext("Internal")
+  defp tag_label(%{kind: :internal}), do: gettext("Omitted")
   defp tag_label(%{kind: :project, tag_definition: %{name: name}}), do: name
   defp tag_label(_), do: gettext("Project")
 

@@ -44,7 +44,7 @@ defmodule Firmowid.Ash.Analysis do
   transactions (skipped AND not matched) are included to prevent double-counting.
   Transfers between the organization's own bank accounts are excluded.
 
-  Entities tagged as `:internal` are always excluded from totals.
+  Entities tagged as `:internal` remain editable in entry lists but are excluded from totals.
 
   Returns the existing signed totals and entity lists, plus `:income_categories`
   and `:expense_categories`. Category rows contain `:key` (`{:project, id}`,
@@ -69,13 +69,13 @@ defmodule Firmowid.Ash.Analysis do
     entries = get_organization_entries(date_from, date_to, scope)
 
     sales_invoices =
-      Enum.filter(entries.sales_invoices, &matches_tag_filters?(&1.entity_tags, tag_filters))
+      Enum.filter(entries.sales_invoices, &visible_entry?(&1.entity_tags, tag_filters))
 
     cost_invoices =
-      Enum.filter(entries.cost_invoices, &matches_tag_filters?(&1.entity_tags, tag_filters))
+      Enum.filter(entries.cost_invoices, &visible_entry?(&1.entity_tags, tag_filters))
 
     transactions =
-      Enum.filter(entries.transactions, &matches_tag_filters?(&1.entity_tags, tag_filters))
+      Enum.filter(entries.transactions, &visible_entry?(&1.entity_tags, tag_filters))
 
     totals =
       (sales_invoices ++ cost_invoices ++ transactions)
@@ -139,7 +139,7 @@ defmodule Firmowid.Ash.Analysis do
   Only includes invoices that are matched to an external transaction or marked
   `skip_invoicing`.
   Excludes transfers between the organization's own bank accounts.
-  Excludes entities tagged as `:internal`.
+  Includes months with entries tagged as `:internal` so they remain editable.
   """
   @spec get_months_with_entries(Scope.t()) :: [Date.t()]
   def get_months_with_entries(scope) do
@@ -303,12 +303,14 @@ defmodule Firmowid.Ash.Analysis do
       {Map.put(entity, :entity_tags, tags), tags}
     end)
     |> Enum.filter(fn {_entity, tags} ->
-      not internal?(tags) and matches_tag_filters?(tags, tag_filters)
+      visible_entry?(tags, tag_filters)
     end)
     |> Enum.map(&elem(&1, 0))
   end
 
   defp internal?(tags), do: Enum.any?(tags, &(&1.kind == :internal))
+
+  defp visible_entry?(tags, filters), do: internal?(tags) or matches_tag_filters?(tags, filters)
 
   defp matches_tag_filters?(_tags, []), do: true
 

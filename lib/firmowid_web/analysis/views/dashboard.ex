@@ -162,16 +162,18 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
   def handle_info(:analysis_classification_updated, socket), do: {:noreply, load_data(socket)}
 
   defp entries_for_section(%{expanded_section: :income} = assigns) do
-    assigns.sales_invoices ++
-      Enum.filter(assigns.transactions, &Money.positive?(&1.amount))
+    omitted_last(assigns.sales_invoices ++ Enum.filter(assigns.transactions, &Money.positive?(&1.amount)))
   end
 
   defp entries_for_section(%{expanded_section: :expenses} = assigns) do
-    assigns.cost_invoices ++
-      Enum.filter(assigns.transactions, &Money.negative?(&1.amount))
+    omitted_last(assigns.cost_invoices ++ Enum.filter(assigns.transactions, &Money.negative?(&1.amount)))
   end
 
   defp entries_for_section(_assigns), do: []
+
+  defp omitted_last(entries) do
+    Enum.sort_by(entries, fn entry -> Enum.any?(entry.entity_tags, &(&1.kind == :internal)) end)
+  end
 
   defp category_entity_type(%SalesInvoice{}), do: :sales_invoice
   defp category_entity_type(%CostInvoice{}), do: :cost_invoice
@@ -188,9 +190,13 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
     )
   end
 
-  defp change_category("set-entity-category", %{"kind" => "company"}, row, socket) do
+  defp change_category("set-entity-category", %{"kind" => kind}, row, socket) when kind in ["company", "internal"] do
     EntityTag.set_entity_category(
-      %{entity_type: category_entity_type(row), resource_id: row.id, kind: :company},
+      %{
+        entity_type: category_entity_type(row),
+        resource_id: row.id,
+        kind: if(kind == "company", do: :company, else: :internal)
+      },
       scope: socket.assigns.ash_scope
     )
   end
