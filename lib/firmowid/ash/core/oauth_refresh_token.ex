@@ -72,12 +72,12 @@ defmodule Firmowid.Ash.Core.OauthRefreshToken do
   end
 
   policies do
-    policy action([:read, :destroy]) do
-      authorize_if AccountCleanup
-    end
-
     bypass AshAuthentication.Checks.AshAuthenticationInteraction do
       authorize_if always()
+    end
+
+    policy action([:read, :destroy]) do
+      authorize_if AccountCleanup
     end
   end
 
