@@ -665,6 +665,7 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
     end
 
     has_many :entity_tags, Firmowid.Ash.Analysis.EntityTag do
+      relationship_context %{data_layer: %{table: "cost_invoice_entity_tags"}}
       source_attribute :id
       destination_attribute :resource_id
     end

@@ -104,6 +104,7 @@ config :firmowid, Oban,
     ksef_sessions: 5,
     ksef_fetch: 2,
     leave_request_emails: 2,
+    analysis_classification: 1,
     default: 1
   ],
   plugins: [
@@ -120,6 +121,7 @@ config :firmowid, Oban,
 
 # Packmatic URL source - increase connect timeout for batch downloads
 config :firmowid, Packmatic.Source.URL, timeout: 30_000
+config :firmowid, :environment, config_env()
 
 config :firmowid, :legal_entity, %{
   name: "Alergeek Ventures sp. z o.o.",

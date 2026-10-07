@@ -226,6 +226,13 @@ defmodule Firmowid.Ash.Finances.Transaction do
   end
 
   relationships do
+    has_many :entity_tags, Firmowid.Ash.Analysis.EntityTag do
+      relationship_context %{data_layer: %{table: "transaction_entity_tags"}}
+      source_attribute :id
+      destination_attribute :resource_id
+      read_action :for_transactions
+    end
+
     belongs_to :bank_account, Firmowid.Ash.Finances.BankAccount do
       allow_nil? false
       attribute_writable? true

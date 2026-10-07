@@ -102,6 +102,7 @@ defmodule Firmowid.Ash.Core.User do
   end
 
   code_interface do
+    define :get, action: :read, get_by: [:id]
     define :detach_for_organization_cleanup, action: :detach_for_organization_cleanup
     define :destroy, action: :destroy
     define :log_out_everywhere, action: :log_out_everywhere
