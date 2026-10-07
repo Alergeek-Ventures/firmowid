@@ -248,9 +248,17 @@ defmodule Firmowid.Ash.Analysis do
     |> String.replace(~r/[^[:alnum:]]/, "")
     |> String.upcase()
     |> case do
-      "" -> nil
-      "NA" -> nil
-      iban -> iban
+      "" ->
+        nil
+
+      "NA" ->
+        nil
+
+      <<"PL", account::binary-size(26)>> = iban ->
+        if String.match?(account, ~r/^\d{26}$/), do: account, else: iban
+
+      iban ->
+        iban
     end
   end
 
