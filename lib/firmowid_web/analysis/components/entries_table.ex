@@ -11,6 +11,7 @@ defmodule FirmowidWeb.Analysis.Components.EntriesTable do
 
   attr :entries, :list, required: true
   attr :categories, :list, default: []
+  attr :colors, :map, required: true
   attr :can_write, :boolean, default: false
 
   @doc "Renders full document amounts and category controls for authorized users."
@@ -33,7 +34,13 @@ defmodule FirmowidWeb.Analysis.Components.EntriesTable do
         <tr :if={@entries == []}>
           <td colspan="4" class="text-darkGrey py-8 text-center">Brak wpisów</td>
         </tr>
-        <.row :for={entry <- @entries} entry={entry} categories={@categories} can_write={@can_write} />
+        <.row
+          :for={entry <- @entries}
+          entry={entry}
+          categories={@categories}
+          colors={@colors}
+          can_write={@can_write}
+        />
       </tbody>
     </table>
     """
@@ -107,6 +114,7 @@ defmodule FirmowidWeb.Analysis.Components.EntriesTable do
         <FirmowidWeb.Analysis.Components.CategorySelector.cell
           entry={@entry}
           categories={@categories}
+          colors={@colors}
           can_write={@can_write}
         />
       </td>

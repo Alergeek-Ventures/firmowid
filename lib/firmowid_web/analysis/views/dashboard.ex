@@ -309,6 +309,11 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
                     phx-value-tag="firma"
                     class="border-darkGrey size-4 rounded-[3px] border"
                   />
+                  <span
+                    class="size-2.5 shrink-0 rounded-full"
+                    style={"background-color: #{@category_colors.company}"}
+                    aria-hidden="true"
+                  />
                   {gettext("Company")}
                 </label>
                 <label
@@ -321,6 +326,11 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
                     phx-click="toggle-tag"
                     phx-value-tag={"projekt:#{tag_def.id}"}
                     class="border-darkGrey size-4 rounded-[3px] border"
+                  />
+                  <span
+                    class="size-2.5 shrink-0 rounded-full"
+                    style={"background-color: #{Map.fetch!(@category_colors, {:project, tag_def.id})}"}
+                    aria-hidden="true"
                   />
                   <span class="text-darkGrey truncate">{tag_def.name}</span>
                 </label>
@@ -376,6 +386,7 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
           <FirmowidWeb.Analysis.Components.EntriesTable.table
             entries={entries_for_section(assigns)}
             categories={@categories}
+            colors={@category_colors}
             can_write={
               flag_enabled?(:analysis_dashboard, assigns) and
                 @ash_scope.actor.role in [:admin, :accountant]

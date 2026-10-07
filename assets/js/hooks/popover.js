@@ -20,9 +20,11 @@ export default {
     this.cleanUp = autoUpdate(reference, this.el, () => {
       computePosition(reference, this.el, {
         placement: this.el.dataset.placement,
+        strategy: this.el.dataset.strategy || "absolute",
         middleware: [flip()],
       }).then(({ x, y }) => {
         Object.assign(this.el.style, {
+          position: this.el.dataset.strategy || "absolute",
           top: `${y}px`,
           left: `${x}px`,
         });

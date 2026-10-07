@@ -231,9 +231,9 @@ msgid "Clear invoice creator"
 msgstr ""
 
 #: lib/firmowid_web/analysis/components/category_chart.ex:127
-#: lib/firmowid_web/analysis/components/category_selector.ex:72
-#: lib/firmowid_web/analysis/components/category_selector.ex:133
-#: lib/firmowid_web/analysis/views/dashboard.ex:312
+#: lib/firmowid_web/analysis/components/category_selector.ex:81
+#: lib/firmowid_web/analysis/components/category_selector.ex:198
+#: lib/firmowid_web/analysis/views/dashboard.ex:317
 #: lib/firmowid_web/landing/components/primitives.ex:157
 #: lib/firmowid_web/landing/components/sections.ex:163
 #, elixir-autogen, elixir-format
@@ -1572,28 +1572,28 @@ msgctxt "management navigation"
 msgid "Projects"
 msgstr ""
 
-#: lib/firmowid_web/analysis/components/entries_table.ex:27
+#: lib/firmowid_web/analysis/components/entries_table.ex:28
 #: lib/firmowid_web/analysis/views/dashboard.ex:294
 #, elixir-autogen, elixir-format
 msgid "Categories"
 msgstr ""
 
-#: lib/firmowid_web/analysis/views/dashboard.ex:335
+#: lib/firmowid_web/analysis/views/dashboard.ex:345
 #, elixir-autogen, elixir-format
 msgid "Clear filters"
 msgstr ""
 
-#: lib/firmowid_web/analysis/views/dashboard.ex:368
+#: lib/firmowid_web/analysis/views/dashboard.ex:378
 #, elixir-autogen, elixir-format
 msgid "Expense entries"
 msgstr ""
 
-#: lib/firmowid_web/analysis/views/dashboard.ex:354
+#: lib/firmowid_web/analysis/views/dashboard.ex:364
 #, elixir-autogen, elixir-format
 msgid "Expenses"
 msgstr ""
 
-#: lib/firmowid_web/analysis/views/dashboard.ex:346
+#: lib/firmowid_web/analysis/views/dashboard.ex:356
 #, elixir-autogen, elixir-format
 msgid "Income"
 msgstr ""
@@ -1603,7 +1603,7 @@ msgstr ""
 msgid "Income and expenses by project"
 msgstr ""
 
-#: lib/firmowid_web/analysis/views/dashboard.ex:367
+#: lib/firmowid_web/analysis/views/dashboard.ex:377
 #, elixir-autogen, elixir-format
 msgid "Income entries"
 msgstr ""
@@ -1618,14 +1618,14 @@ msgstr ""
 msgid "Show entries"
 msgstr ""
 
-#: lib/firmowid_web/analysis/views/dashboard.ex:371
+#: lib/firmowid_web/analysis/views/dashboard.ex:381
 #, elixir-autogen, elixir-format
 msgid "The list shows full document amounts; the charts show the selected projects' shares."
 msgstr ""
 
 #: lib/firmowid_web/analysis/components/category_chart.ex:128
-#: lib/firmowid_web/analysis/components/category_selector.ex:61
-#: lib/firmowid_web/analysis/components/category_selector.ex:117
+#: lib/firmowid_web/analysis/components/category_selector.ex:67
+#: lib/firmowid_web/analysis/components/category_selector.ex:138
 #, elixir-autogen, elixir-format
 msgid "Unassigned"
 msgstr ""
@@ -1646,7 +1646,7 @@ msgstr ""
 msgid "Assignment started in the background."
 msgstr ""
 
-#: lib/firmowid_web/analysis/components/category_selector.ex:86
+#: lib/firmowid_web/analysis/components/category_selector.ex:99
 #, elixir-autogen, elixir-format
 msgid "Active projects"
 msgstr ""
@@ -1656,18 +1656,18 @@ msgstr ""
 msgid "Could not update categories."
 msgstr ""
 
-#: lib/firmowid_web/analysis/components/category_selector.ex:40
+#: lib/firmowid_web/analysis/components/category_selector.ex:41
 #, elixir-autogen, elixir-format
 msgid "Edit categories"
 msgstr ""
 
-#: lib/firmowid_web/analysis/components/category_selector.ex:136
+#: lib/firmowid_web/analysis/components/category_selector.ex:201
 #, elixir-autogen, elixir-format
 msgid "Project"
 msgstr ""
 
-#: lib/firmowid_web/analysis/components/category_selector.ex:101
-#: lib/firmowid_web/analysis/views/dashboard.ex:362
+#: lib/firmowid_web/analysis/components/category_selector.ex:115
+#: lib/firmowid_web/analysis/views/dashboard.ex:372
 #, elixir-autogen, elixir-format
 msgid "Selected projects share the amount equally."
 msgstr ""
@@ -1677,8 +1677,8 @@ msgstr ""
 msgid "This feature is still in progress! Your feedback will help us make it even better."
 msgstr ""
 
-#: lib/firmowid_web/analysis/components/category_selector.ex:83
-#: lib/firmowid_web/analysis/components/category_selector.ex:134
+#: lib/firmowid_web/analysis/components/category_selector.ex:95
+#: lib/firmowid_web/analysis/components/category_selector.ex:199
 #, elixir-autogen, elixir-format
 msgid "Omitted"
 msgstr ""

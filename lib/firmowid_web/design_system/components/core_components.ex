@@ -1041,6 +1041,7 @@ defmodule FirmowidWeb.DesignSystem.Components.CoreComponents do
 
   attr :id, :string, required: true
   attr :reference_id, :string, required: true
+  attr :strategy, :string, default: "absolute", values: ["absolute", "fixed"]
   attr :class, :any, default: nil
 
   attr :placement, :string,
@@ -1076,6 +1077,7 @@ defmodule FirmowidWeb.DesignSystem.Components.CoreComponents do
         id={@id}
         data-reference={@reference_id}
         data-placement={@placement}
+        data-strategy={@strategy}
       >
         {render_slot(@inner_block)}
       </div>
