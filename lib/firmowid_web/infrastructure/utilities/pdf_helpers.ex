@@ -1,6 +1,6 @@
 defmodule FirmowidWeb.Infrastructure.Utilities.PdfHelpers do
   @moduledoc """
-  Helpers for PDF generation with ChromicPDF.
+  Helpers for PDF generation with Gotenberg.
   Handles asset embedding and HTML rendering.
   """
 
@@ -102,14 +102,28 @@ defmodule FirmowidWeb.Infrastructure.Utilities.PdfHelpers do
   @doc """
   Renders a Phoenix template to an HTML string for PDF generation.
 
-  Wraps the content in a complete HTML document with inlined CSS for ChromicPDF.
+  Wraps the content in a complete HTML document with inlined CSS for Gotenberg.
+
+  ## Options
+
+    * `:page_margins` - page insets as a map of `:top`, `:right`, `:bottom` and
+      `:left` pixel values. Defaults to zero insets, which suits a full-bleed
+      single-page document whose container is sized to the full A4 sheet.
+    * `:first_page_margin_top` - top inset in pixels for the first page only.
+      Omitted by default, so the first page keeps the `:page_margins` top inset.
+      Use it when repeating Gotenberg header/footer chrome needs more room on
+      the first page than on continuation pages.
+
+  Any document that overflows its page will spill the excess onto a further
+  page, so single-page templates must size their container against
+  `:page_margins` rather than assuming the full sheet.
 
   ## Examples
 
        iex> render_pdf_html(FirmowidWeb.Invoicing.SalesInvoices.Components.Pdf, :sales_invoice, assigns)
        "<!DOCTYPE html><html>...</html>"
   """
-  def render_pdf_html(view_module, template, assigns) do
+  def render_pdf_html(view_module, template, assigns, opts \\ []) do
     # Render template to string using Phoenix.Template
     # Template name needs to be a string with format
     template_name = to_string(template)
@@ -124,7 +138,7 @@ defmodule FirmowidWeb.Infrastructure.Utilities.PdfHelpers do
 
     # Inline CSS by reading the compiled app.css file
     # CSS includes @font-face rule for Lexend font installed in container
-    css_content = get_app_css() <> pdf_pagination_css()
+    css_content = get_app_css() <> pdf_pagination_css(opts)
 
     """
     <!DOCTYPE html>
@@ -142,23 +156,22 @@ defmodule FirmowidWeb.Infrastructure.Utilities.PdfHelpers do
     """
   end
 
-  # Paged-media rules so long invoices flow across A4 pages instead of
-  # clipping inside the single-page container. Matches PdfUtils
-  # zero-margin print_to_pdf settings.
-  # Subsequent pages receive top and bottom margin
-  defp pdf_pagination_css do
+  # Paged-media rules so long documents flow across A4 pages instead of
+  # clipping inside the single-page container. The `@page` margin is the single
+  # source of truth for page insets: Chromium gives it precedence over the
+  # `marginTop`/`marginBottom`/... Gotenberg request fields, which
+  # `GotenbergClient` therefore does not send.
+  #
+  # Insets default to zero so a full-bleed single-page document keeps its whole
+  # sheet. A document that repeats Gotenberg header/footer files passes
+  # `:page_margins` to reserve room for them, plus `:first_page_margin_top` when
+  # the first page needs a deeper top inset than continuation pages.
+  defp pdf_pagination_css(opts) do
     """
-    @page {
-      margin-top: 32px;
-      margin-bottom: 32px;
-      margin-left: 0;
-      margin-right: 0;
-    }
-    @page :first {
-      margin-top: 0;
-      margin-bottom: 0;
-    }
+    #{page_rule(page_margins(opts))}
+    #{first_page_rule(Keyword.get(opts, :first_page_margin_top))}
     @media print {
+      html { font-size: 16px; }
       html, body { height: auto; min-height: auto; }
       thead { display: table-header-group; break-inside: avoid; }
       tfoot { display: table-footer-group; break-inside: avoid; }
@@ -167,6 +180,28 @@ defmodule FirmowidWeb.Infrastructure.Utilities.PdfHelpers do
       .pdf-keep-together { break-inside: avoid; page-break-inside: avoid; }
     }
     """
+  end
+
+  defp page_rule(margins) do
+    """
+    @page {
+      margin: #{margins.top}px #{margins.right}px #{margins.bottom}px #{margins.left}px;
+    }
+    """
+  end
+
+  defp first_page_rule(nil), do: ""
+
+  defp first_page_rule(margin_top) do
+    """
+    @page :first {
+      margin-top: #{margin_top}px;
+    }
+    """
+  end
+
+  defp page_margins(opts) do
+    Map.merge(%{top: 0, bottom: 0, left: 0, right: 0}, Keyword.get(opts, :page_margins, %{}))
   end
 
   # sobelow_skip ["Traversal.FileModule"]

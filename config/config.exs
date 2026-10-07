@@ -58,10 +58,6 @@ config :ex_money,
   exchange_rates_retrieve_every: :never,
   exchange_rates_cache_module: Firmowid.Ash.Currencies.DatabaseCache
 
-config :firmowid, ChromicPDF,
-  discard_stderr: false,
-  no_sandbox: true
-
 config :firmowid, Firmowid.Ash.Currencies.Converter, rates_provider: :mock
 config :firmowid, Firmowid.Cldr, locales: ["pl"]
 
@@ -122,6 +118,7 @@ config :firmowid, Oban,
 # Packmatic URL source - increase connect timeout for batch downloads
 config :firmowid, Packmatic.Source.URL, timeout: 30_000
 config :firmowid, :environment, config_env()
+config :firmowid, :gotenberg, base_url: "http://localhost:3000"
 
 config :firmowid, :legal_entity, %{
   name: "Alergeek Ventures sp. z o.o.",

@@ -29,7 +29,7 @@ defmodule Mix.Tasks.Dev.Down do
     "PORT" => "4000",
     "DB_PORT" => "5433",
     "S3_PORT" => "4566",
-    "CHROME_PORT" => "9222",
+    "GOTENBERG_PORT" => "3000",
     "DEBUGGER_PORT" => "9229",
     "BRANCH" => "main"
   }
@@ -45,7 +45,7 @@ defmodule Mix.Tasks.Dev.Down do
     port = Map.fetch!(env, "PORT")
     db_port = Map.fetch!(env, "DB_PORT")
     s3_port = Map.fetch!(env, "S3_PORT")
-    chrome_port = Map.fetch!(env, "CHROME_PORT")
+    gotenberg_port = Map.fetch!(env, "GOTENBERG_PORT")
 
     Mix.shell().info("Stopping services for branch '#{branch}'...")
 
@@ -56,7 +56,7 @@ defmodule Mix.Tasks.Dev.Down do
     unregister_caddy_route(branch)
 
     # Stop Podman Compose services
-    stop_services(branch, port, db_port, s3_port, chrome_port)
+    stop_services(branch, port, db_port, s3_port, gotenberg_port)
 
     Mix.shell().info("Services stopped for branch '#{branch}'")
   end
@@ -139,13 +139,13 @@ defmodule Mix.Tasks.Dev.Down do
     Shared.sanitize_branch(branch)
   end
 
-  defp stop_services(branch, port, db_port, s3_port, chrome_port) do
+  defp stop_services(branch, port, db_port, s3_port, gotenberg_port) do
     compose_env = [
       {"COMPOSE_PROJECT_NAME", "firmowid-#{branch}"},
       {"PORT", port},
       {"DB_PORT", db_port},
       {"S3_PORT", s3_port},
-      {"CHROME_PORT", chrome_port}
+      {"GOTENBERG_PORT", gotenberg_port}
     ]
 
     compose_result = podman(["compose", "-f", "local/compose.yml", "down", "-v"], compose_env)

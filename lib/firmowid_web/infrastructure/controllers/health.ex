@@ -2,17 +2,20 @@ defmodule FirmowidWeb.Infrastructure.Controllers.Health do
   @moduledoc false
   use FirmowidWeb, :controller
 
+  alias Firmowid.Ash.Invoicing.Services.GotenbergClient
   alias Firmowid.ErrorKind
 
   require Logger
 
-  @doc "Returns the health status of the database and Oban checks."
+  @default_checks [:database, :oban, :gotenberg]
+
+  @doc "Returns the health status of the database, Oban and Gotenberg checks."
   @spec check(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def check(conn, _params) do
-    checks = %{
-      database: check_database(),
-      oban: check_oban()
-    }
+    checks =
+      :firmowid
+      |> Application.get_env(:health_checks, @default_checks)
+      |> Map.new(fn name -> {name, run_check(name)} end)
 
     all_healthy = Enum.all?(checks, fn {_key, %{status: status}} -> status == "ok" end)
 
@@ -27,6 +30,25 @@ defmodule FirmowidWeb.Infrastructure.Controllers.Health do
     conn
     |> put_status(status_code)
     |> json(response)
+  end
+
+  defp run_check(:database), do: check_database()
+  defp run_check(:oban), do: check_oban()
+  defp run_check(:gotenberg), do: check_gotenberg()
+
+  defp check_gotenberg do
+    case GotenbergClient.health() do
+      :ok ->
+        %{status: "ok", message: "Gotenberg is running"}
+
+      {:error, reason} ->
+        Logger.error("Gotenberg health check failed",
+          health_check: true,
+          error_kind: ErrorKind.classify(reason)
+        )
+
+        %{status: "error", message: "Gotenberg is not running"}
+    end
   end
 
   defp check_database do
