@@ -33,8 +33,6 @@ config :firmowid, Firmowid.Repo,
   show_sensitive_data_on_connection_error: true,
   log: false
 
-config :firmowid, :gotenberg, base_url: "http://localhost:3000"
-
 # Keep the Reducto request flow identical to production without requiring
 # credentials or making external calls during local development.
 config :firmowid, :reducto_api_client,
