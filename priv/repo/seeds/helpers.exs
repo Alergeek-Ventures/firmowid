@@ -245,7 +245,11 @@ defmodule Firmowid.Seeds.Helpers do
   def get_or_create_cost_invoice(invoice_identifier, org_id, attrs) do
     case find_cost_invoice(invoice_identifier, org_id) do
       nil ->
-        checksum = :sha256 |> :crypto.hash("cost-invoice:#{invoice_identifier}:#{org_id}") |> Base.encode16(case: :lower)
+        checksum =
+          :sha256
+          |> :crypto.hash("cost-invoice:#{invoice_identifier}:#{org_id}")
+          |> Base.encode16(case: :lower)
+
         filename = "#{String.replace(invoice_identifier, "/", "-")}.pdf"
 
         blob =
@@ -260,8 +264,7 @@ defmodule Firmowid.Seeds.Helpers do
 
         Ash.Seed.seed!(
           AshCostInvoice,
-          attrs
-          |> Map.merge(%{
+          Map.merge(attrs, %{
             invoice_identifier: invoice_identifier,
             organization_id: org_id,
             blob_id: blob.id
@@ -280,10 +283,9 @@ defmodule Firmowid.Seeds.Helpers do
       |> Ash.Query.filter(invoice_number == ^inv_number and organization_id == ^org_id)
       |> Ash.Query.limit(1)
 
-    case Ash.read(query, tenant: org_id, actor: @seed_actor) do
-      {:ok, [invoice | _]} -> invoice
-      _ -> nil
-    end
+    %{}
+    |> AshSalesInvoice.read!(query: query, tenant: org_id, actor: @seed_actor, authorize?: false)
+    |> List.first()
   end
 
   defp find_cost_invoice(invoice_identifier, org_id) do
@@ -292,10 +294,9 @@ defmodule Firmowid.Seeds.Helpers do
       |> Ash.Query.filter(invoice_identifier == ^invoice_identifier and organization_id == ^org_id)
       |> Ash.Query.limit(1)
 
-    case Ash.read(query, tenant: org_id, actor: @seed_actor) do
-      {:ok, [invoice | _]} -> invoice
-      _ -> nil
-    end
+    %{}
+    |> AshCostInvoice.read!(query: query, tenant: org_id, actor: @seed_actor, authorize?: false)
+    |> List.first()
   end
 
   def seed_blob!(attrs, org_id) do
@@ -352,10 +353,12 @@ defmodule Firmowid.Seeds.Helpers do
       )
       |> Ash.Query.limit(1)
 
-    case Ash.read(query, tenant: org_id, actor: @seed_actor) do
-      {:ok, [_ | _]} -> true
-      _ -> false
-    end
+    AshSalesInvoiceTransaction.read!(%{},
+      query: query,
+      tenant: org_id,
+      actor: @seed_actor,
+      authorize?: false
+    ) != []
   end
 
   defp cost_invoice_transaction_exists?(cost_invoice_id, transaction_id, org_id) do
@@ -368,10 +371,12 @@ defmodule Firmowid.Seeds.Helpers do
       )
       |> Ash.Query.limit(1)
 
-    case Ash.read(query, tenant: org_id, actor: @seed_actor) do
-      {:ok, [_ | _]} -> true
-      _ -> false
-    end
+    AshCostInvoiceTransaction.read!(%{},
+      query: query,
+      tenant: org_id,
+      actor: @seed_actor,
+      authorize?: false
+    ) != []
   end
 
   defp upload_seed_blob_to_s3!(blob_path) do

@@ -61,17 +61,20 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
   end
 
   def table(assigns) do
+    columns =
+      case assigns.mode do
+        :invoices -> @invoice_columns
+        :transactions -> @transaction_columns
+        _ -> @default_columns
+      end
+
     assigns =
       assigns
       |> assign_new(:return_to, fn -> nil end)
       |> assign_new(:can_write_invoicing, fn -> true end)
       |> assign(
         :columns,
-        case assigns.mode do
-          :invoices -> @invoice_columns
-          :transactions -> @transaction_columns
-          _ -> @default_columns
-        end
+        columns
       )
 
     ~H"""
@@ -492,6 +495,8 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
       />
     </div>
     """
+
+    # rest of the cells are rendered more or less in the same way
   end
 
   defp render_cell(%{column: "status"} = assigns) do
@@ -506,8 +511,6 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
     />
     """
   end
-
-  # rest of the cells are rendered more or less in the same way
 
   defp render_cell(%{column: "SKIPPED"} = assigns) do
     ~H"""

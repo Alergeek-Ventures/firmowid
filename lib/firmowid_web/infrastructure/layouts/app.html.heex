@@ -61,8 +61,22 @@
             )}
           </.link>
         <% end %>
-        <%= if flag_enabled?(:analysis_dashboard, assigns) and @current_user.role == :admin do %>
+        <%= if @current_user.role == :admin do %>
           <.link
+            kind="unstyled"
+            navigate={~p"/zarzadzanie/pracownicy"}
+            class={[
+              String.starts_with?(@current_uri.path, "/zarzadzanie") && "opacity-90",
+              "flex items-center gap-1 opacity-50 transition-all hover:opacity-100"
+            ]}
+          >
+            <.icon name="hero-presentation-chart-line" class="size-5" />{pgettext(
+              "main navigation",
+              "Management"
+            )}
+          </.link>
+          <.link
+            :if={flag_enabled?(:analysis_dashboard, assigns)}
             kind="unstyled"
             navigate={~p"/analiza"}
             class={[
@@ -95,21 +109,6 @@
         >
           <.icon name="hero-clock" class="size-5" />{pgettext("main navigation", "Time tracking")}
         </.link>
-        <%= if @current_user.role == :admin do %>
-          <.link
-            kind="unstyled"
-            navigate={~p"/zarzadzanie/pracownicy"}
-            class={[
-              String.starts_with?(@current_uri.path, "/zarzadzanie") && "opacity-90",
-              "flex items-center gap-1 opacity-50 transition-all hover:opacity-100"
-            ]}
-          >
-            <.icon
-              name="hero-presentation-chart-line"
-              class="size-5"
-            />{pgettext("main navigation", "Management")}
-          </.link>
-        <% end %>
       </div>
 
       <div class="relative flex flex-1 items-center justify-end gap-3 text-right max-md:hidden">

@@ -796,6 +796,8 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
     socket = assign(socket, :invoicing_entries, entries)
 
     # Pending entries for badge count (no subfilter - we want all unmatched)
+    # ── Dashboard data fetching ─────────────────────────────────────────
+
     pending_entries =
       fetch_entries(date_range_from, date_range_to, :unmatched, nil, scope)
 
@@ -848,8 +850,6 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
     )
     |> assign(:currently_uploading_count, currently_uploading_count)
   end
-
-  # ── Dashboard data fetching ─────────────────────────────────────────
 
   @dashboard_tile_limit 5
 
@@ -1008,6 +1008,8 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
         build_transaction_group(:cost, party, txns)
       end)
 
+    # ── Entries — direct resource calls ─────────────────────────────────
+
     income_group_structs =
       Enum.map(income_groups, fn {party, txns} ->
         build_transaction_group(:income, party, txns)
@@ -1064,8 +1066,6 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
   defp transaction_group_id(kind, party) do
     "group-#{kind}-#{:erlang.phash2({kind, party})}"
   end
-
-  # ── Entries — direct resource calls ─────────────────────────────────
 
   defp fetch_entries(from, to, filter, subfilter, scope) do
     case {filter, subfilter} do
@@ -1161,6 +1161,7 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
   end
 
   defp list_sales_invoices(from, to, extra_args, scope) do
+    # ── Active months — 3 Ash reads + Elixir dedup ─────────────────────
     args = Map.merge(%{date_from: from, date_to: to}, extra_args)
 
     Invoicing.list_sales_invoices!(args, load: @sales_invoice_loads, scope: scope)
@@ -1186,13 +1187,12 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
     )
   end
 
-  # ── Active months — 3 Ash reads + Elixir dedup ─────────────────────
-
   defp get_active_months(scope) do
     scope_opts = [scope: scope]
 
     sales_months =
       SalesInvoice
+      # ── Entry sorting for display ──────────────────────────────────────
       |> Ash.Query.select([:issue_date])
       |> Ash.Query.for_read(:read, %{}, scope_opts)
       |> Ash.read!(scope_opts)
@@ -1217,8 +1217,6 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
     |> Enum.uniq()
     |> Enum.sort(Date)
   end
-
-  # ── Entry sorting for display ──────────────────────────────────────
 
   @doc false
   defp order_entries_for_display(entries) do

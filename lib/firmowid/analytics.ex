@@ -1,9 +1,11 @@
 defmodule Firmowid.Analytics do
   @moduledoc """
-  Captures allowlisted server-side business and registration events in PostHog.
+  Captures allowlisted server-side events and synchronizes user identity in PostHog.
 
-  Uses only stable user/organization IDs and approved properties. Browser consent
-  controls browser telemetry separately; server-side events do not use cookies.
+  Uses stable user/organization IDs and approved properties. Identity sync explicitly
+  permits the current account email for person profiles and flag management.
+  Browser consent controls browser telemetry separately; server-side events do not
+  use cookies.
   """
 
   @event_names %{
@@ -14,6 +16,26 @@ defmodule Firmowid.Analytics do
     counterparty_created: "counterparty_created",
     counterparty_updated: "counterparty_updated"
   }
+
+  @doc "Synchronizes the current account email to its PostHog person profile, independently of browser consent."
+  @spec identify_user(map() | nil) :: :ok
+  def identify_user(%{id: user_id, email: email}) when not is_nil(user_id) and not is_nil(email) do
+    if Application.get_env(:posthog, :enable, false) and enabled?() do
+      # This SDK has no identify helper; its capture API supports PostHog's
+      # $identify/$set protocol without changing the business-event allowlist.
+      PostHog.bare_capture("$identify", to_string(user_id), %{
+        "$set" => %{"email" => to_string(email)}
+      })
+    end
+
+    :ok
+  rescue
+    _ -> :ok
+  catch
+    :exit, _ -> :ok
+  end
+
+  def identify_user(_user), do: :ok
 
   @doc "Captures an allowlisted organization-scoped event, ignoring invalid inputs or telemetry failures."
   @spec capture_business_event(atom(), term(), term(), map()) :: :ok

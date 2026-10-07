@@ -15,7 +15,7 @@ defmodule FirmowidWeb.Infrastructure.Flags do
         <.link navigate={~p"/analiza"}>Analiza</.link>
       <% end %>
 
-  Missing flags always default to `false`.
+  Development enables every flag. Elsewhere missing flags default to `false`.
   """
 
   alias Firmowid.ErrorKind
@@ -38,6 +38,14 @@ defmodule FirmowidWeb.Infrastructure.Flags do
   def evaluate_for_user(nil), do: empty_flags()
 
   def evaluate_for_user(user) when is_map(user) do
+    if development?() do
+      Map.new(@flag_keys, fn {key, _} -> {key, true} end)
+    else
+      evaluate_posthog_flags(user)
+    end
+  end
+
+  defp evaluate_posthog_flags(user) do
     if posthog_enabled?() do
       user
       |> evaluation_payload()
@@ -61,15 +69,16 @@ defmodule FirmowidWeb.Infrastructure.Flags do
   @doc """
   Returns `true` when `flag_name` is enabled in the given assigns.
 
-  Safely returns `false` when the assigns do not contain a `:feature_flags` map
-  or when the flag does not exist.
+  Always returns `true` in development; elsewhere missing flags return `false`.
   """
   @spec flag_enabled?(atom(), map()) :: boolean()
   def flag_enabled?(flag_name, %{feature_flags: feature_flags}) when is_atom(flag_name) do
-    Map.get(feature_flags, flag_name, false)
+    development?() or Map.get(feature_flags, flag_name, false)
   end
 
-  def flag_enabled?(flag_name, _assigns) when is_atom(flag_name), do: false
+  def flag_enabled?(flag_name, _assigns) when is_atom(flag_name), do: development?()
+
+  defp development?, do: Application.get_env(:firmowid, :environment) == :dev
 
   @doc """
   Returns an empty `:feature_flags` map with all supported flags set to `false`.
@@ -103,8 +112,9 @@ defmodule FirmowidWeb.Infrastructure.Flags do
 
   defp person_properties(user) do
     user
-    |> Map.take([:organization_id, :role])
+    |> Map.take([:email, :organization_id, :role])
     |> Map.new(fn
+      {:email, email} -> {:email, email && to_string(email)}
       {:role, role} -> {:role, role && to_string(role)}
       entry -> entry
     end)

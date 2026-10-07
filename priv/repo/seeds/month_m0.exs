@@ -480,7 +480,11 @@ defmodule Firmowid.Seeds.MonthM0 do
   # synthetic admin actor to bypass policies.
   defp seed_scope(bytecraft) do
     %Firmowid.Ash.Scope{
-      actor: %{id: "00000000-0000-0000-0000-000000000000", role: :admin},
+      actor: %Firmowid.Ash.Core.User{
+        id: "00000000-0000-0000-0000-000000000000",
+        role: :admin,
+        organization_id: bytecraft.id
+      },
       tenant: bytecraft.id
     }
   end

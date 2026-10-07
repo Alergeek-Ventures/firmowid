@@ -497,7 +497,11 @@ defmodule Firmowid.Seeds.MonthM1 do
     tag_project!(
       :transaction,
       txn_wage_tomek.id,
-      [projects.firmowid.tag_definition_id, projects.ghostpet.tag_definition_id, projects.taco.tag_definition_id],
+      [
+        projects.firmowid.tag_definition_id,
+        projects.ghostpet.tag_definition_id,
+        projects.taco.tag_definition_id
+      ],
       scope
     )
 
@@ -635,14 +639,22 @@ defmodule Firmowid.Seeds.MonthM1 do
 
   defp tag_project!(entity_type, resource_id, tag_definition_ids, scope) do
     EntityTag.set_entity_project_tags!(
-      %{entity_type: entity_type, resource_id: resource_id, tag_definition_ids: tag_definition_ids},
+      %{
+        entity_type: entity_type,
+        resource_id: resource_id,
+        tag_definition_ids: tag_definition_ids
+      },
       scope: scope
     )
   end
 
   defp seed_scope(bytecraft) do
     %Firmowid.Ash.Scope{
-      actor: %{id: "00000000-0000-0000-0000-000000000000", role: :admin},
+      actor: %Firmowid.Ash.Core.User{
+        id: "00000000-0000-0000-0000-000000000000",
+        role: :admin,
+        organization_id: bytecraft.id
+      },
       tenant: bytecraft.id
     }
   end
