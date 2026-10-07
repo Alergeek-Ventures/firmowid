@@ -174,6 +174,10 @@ Pobieranie tłumaczeń uruchamiaj przez `mix translations.fetch`. Wymaga klucza
 `ACCENT_API_KEY` z uprawnieniami odczytu, dostępnego przez istniejącą konfigurację
 Infisical; klucza nie umieszczaj w plikach repozytorium.
 
+Eksportowany katalog PO zawiera tylko wpisy używane przez bieżący POT.
+Historyczne tłumaczenia pozostają w Accent; brakujące tłumaczenia, konteksty,
+formy liczby mnogiej i placeholdery nadal są weryfikowane bez wyjątków.
+
 ## Zmienne środowiskowe
 
 Aplikacja używa Infisical jako źródła wspólnych zmiennych środowiskowych. W środowiskach `dev` i `test` konfiguracja importowana przez `config/dev.exs` i `config/test.exs` automatycznie pobiera wartości z Infisical `dev` ze ścieżki `/app`, a następnie nakłada lokalne nadpisania z `.env.worktree`.

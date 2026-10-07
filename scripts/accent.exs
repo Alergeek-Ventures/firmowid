@@ -1,4 +1,8 @@
-Mix.install([{:req, "~> 0.7.4"}], lockfile: Path.expand("../mix.lock", __DIR__))
+Mix.install([{:req, "~> 0.7.4"}, {:expo, "~> 1.1"}],
+  lockfile: Path.expand("../mix.lock", __DIR__)
+)
+
+Code.require_file("../lib/firmowid/translations.ex", __DIR__)
 
 defmodule Firmowid.Translations.Accent do
   @moduledoc "Prepares and exports the Polish Accent translation catalog."
@@ -383,7 +387,21 @@ defmodule Firmowid.Translations.Accent do
     end
 
     lines = text |> String.split("\n", trim: false) |> remove_old_version_marker()
-    content = Enum.join(["# Accent version: #{version}" | fix_plural_header(lines)], "\n")
+
+    catalog =
+      lines
+      |> fix_plural_header()
+      |> Enum.join("\n")
+      |> Expo.PO.parse_string!()
+
+    content =
+      @catalog
+      |> Expo.PO.parse_file!()
+      |> Firmowid.Translations.catalog_for_source(catalog, "default")
+      |> Expo.PO.compose()
+      |> IO.iodata_to_binary()
+      |> then(&("# Accent version: #{version}\n" <> &1))
+
     output = Path.join(@root, "priv/gettext/pl/LC_MESSAGES/default.po")
     temporary_output = Path.join(temporary_directory, "catalog.po")
 

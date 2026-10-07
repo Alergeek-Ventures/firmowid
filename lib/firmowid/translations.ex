@@ -45,6 +45,21 @@ defmodule Firmowid.Translations do
     |> MapSet.new()
   end
 
+  @doc "Projects an exported catalog onto current source identities, preserving headers and translation values."
+  @spec catalog_for_source(Expo.Messages.t(), Expo.Messages.t(), String.t()) :: Expo.Messages.t()
+  def catalog_for_source(pot, po, domain) do
+    identities = MapSet.new(source_messages(pot), &message_key(&1, domain))
+
+    %{
+      po
+      | messages:
+          Enum.filter(
+            po.messages,
+            &(header?(&1) or MapSet.member?(identities, message_key(&1, domain)))
+          )
+    }
+  end
+
   @doc "Validates source and Polish PO catalogs using technical checks only."
   @spec validate_catalog(struct(), struct(), String.t()) :: :ok | {:error, String.t()}
   def validate_catalog(pot, po, domain) do
