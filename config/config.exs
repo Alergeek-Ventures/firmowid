@@ -118,6 +118,7 @@ config :firmowid, Oban,
 # Packmatic URL source - increase connect timeout for batch downloads
 config :firmowid, Packmatic.Source.URL, timeout: 30_000
 config :firmowid, :environment, config_env()
+config :firmowid, :gotenberg, base_url: "http://localhost:3000"
 
 config :firmowid, :legal_entity, %{
   name: "Alergeek Ventures sp. z o.o.",

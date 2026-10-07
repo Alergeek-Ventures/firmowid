@@ -31,8 +31,6 @@ config :firmowid, Firmowid.Repo,
   show_sensitive_data_on_connection_error: true,
   log: false
 
-config :firmowid, :gotenberg, base_url: "http://localhost:3000"
-
 config :firmowid, :s3,
   host: "localhost",
   scheme: "http://",

@@ -133,6 +133,20 @@ release_name = System.get_env("RELEASE_NAME")
 production_release_runtime =
   config_env() == :prod and is_binary(release_name) and String.trim(release_name) != ""
 
+# Gotenberg - Chromium HTML-to-PDF service
+# GOTENBERG_URL: full URL for prod (e.g., "http://gotenberg:3000")
+# GOTENBERG_PORT: port only, uses localhost (for local dev/worktree)
+#
+# A production release without either variable cannot render PDFs, so fail at
+# config evaluation rather than on the first invoice. Dev and test supply a
+# base URL from their own config, so the raise is release-only.
+gotenberg_base_url =
+  System.get_env("GOTENBERG_URL") ||
+    case System.get_env("GOTENBERG_PORT") do
+      nil -> nil
+      port -> "http://localhost:#{port}"
+    end
+
 # Open Exchange Rates API for currency conversion (optional)
 config :ex_money,
   open_exchange_rates_app_id: System.get_env("OPEN_EXCHANGE_RATES_APP_ID")
@@ -143,13 +157,20 @@ config :firmowid, :s3, s3_config
 config :firmowid,
   uploads_bucket: System.get_env("S3_BUCKET", "firmowid-uploads")
 
-# Gotenberg - Chromium HTML-to-PDF service
-# GOTENBERG_URL: full URL for prod (e.g., "http://gotenberg:3000")
-# GOTENBERG_PORT: port only, uses localhost (for local dev/worktree)
-#
-# A production release without either variable cannot render PDFs, so fail at
-# config evaluation rather than on the first invoice. Dev and test supply a
-# base URL from their own config, so the raise is release-only.
+cond do
+  gotenberg_base_url ->
+    config :firmowid, :gotenberg, base_url: gotenberg_base_url
+
+  production_release_runtime ->
+    raise """
+    Gotenberg base URL is not set. Provide the GOTENBERG_URL environment variable \
+    or GOTENBERG_PORT to use http://localhost:<port> during local development.\
+    """
+
+  true ->
+    :ok
+end
+
 cond do
   gotenberg_url = System.get_env("GOTENBERG_URL") ->
     config :firmowid, :gotenberg, base_url: gotenberg_url

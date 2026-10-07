@@ -6,7 +6,10 @@
 # Build: docker build -f deployment/Containerfile.gotenberg -t firmowid-gotenberg:latest .
 # Run:   docker run -p 3000:3000 firmowid-gotenberg:latest
 
-FROM gotenberg/gotenberg:8.35.0@sha256:a16a14e1f18a71405624bc028e90d4ef50ea774c352b303639c10bf7b141f760
+FROM gotenberg/gotenberg:8.35.0-chromium@sha256:d2aa8428406e71ad69b91399eec1546611a3b2a6a6f4f6513754add32cbea286
+
+# Keep Chromium warm from boot instead of starting on first conversion.
+ENV CHROMIUM_AUTO_START=true
 
 # Install custom fonts
 USER root
