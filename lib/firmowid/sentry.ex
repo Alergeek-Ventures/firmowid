@@ -7,6 +7,7 @@ defmodule Firmowid.Sentry do
   # This module is the application's boundary to the Sentry SDK.
   # credo:disable-for-next-line Checks.RejectDirectSentrySdk
   alias Elixir.Sentry, as: SentrySDK
+  alias Firmowid.ErrorKind
 
   require Logger
 
@@ -132,16 +133,61 @@ defmodule Firmowid.Sentry do
   def before_send(%SentrySDK.Event{} = event) do
     if live_view_captured?(event), do: nil, else: scrub_event(event)
   rescue
-    _ -> nil
+    error -> scrub_failure_event(event, error)
   end
 
   def before_send(%SentrySDK.Transaction{} = transaction) do
     scrub_transaction(transaction)
   rescue
-    _ -> nil
+    error ->
+      Logger.warning("Firmowid.Sentry failed to scrub transaction",
+        error_kind: ErrorKind.classify(error)
+      )
+
+      nil
   end
 
   def before_send(_), do: nil
+
+  # The original payload may still contain private data, but dropping the event
+  # would hide the error completely. Report only exception types, so the failure
+  # stays visible in Sentry without leaking anything.
+  defp scrub_failure_event(event, error) do
+    error_kind = ErrorKind.classify(error)
+    Logger.warning("Firmowid.Sentry failed to scrub event", error_kind: error_kind)
+
+    exception_types =
+      case exception_types(event.exception) do
+        [] -> ["Firmowid.Sentry.ScrubFailure"]
+        types -> types
+      end
+
+    %SentrySDK.Event{
+      event_id: event.event_id,
+      timestamp: event.timestamp,
+      environment: event.environment,
+      release: event.release,
+      level: event.level,
+      sdk: event.sdk,
+      exception:
+        Enum.map(exception_types, fn type ->
+          %SentrySDK.Interfaces.Exception{
+            type: type,
+            value: "Sentry event scrubbing failed (#{error_kind})"
+          }
+        end),
+      tags: %{error_kind: error_kind, source: "sentry_scrub_failure"},
+      fingerprint: ["sentry_scrub_failure" | exception_types]
+    }
+  rescue
+    _ -> nil
+  end
+
+  defp exception_types(exceptions) when is_list(exceptions) do
+    for %{type: type} <- exceptions, is_binary(type), do: type
+  end
+
+  defp exception_types(_exceptions), do: []
 
   defp scrub_event(event) do
     %{
