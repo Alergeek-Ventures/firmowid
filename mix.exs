@@ -237,18 +237,37 @@ defmodule Firmowid.MixProject do
   end
 
   defp fetch_translations(_args) do
-    {version, status} = System.cmd("git", ["rev-parse", "HEAD"], stderr_to_stdout: true)
+    version = translations_version()
 
-    if status != 0 do
-      Mix.raise("could not determine Git HEAD: #{String.trim(version)}")
-    end
-
-    case System.cmd("elixir", ["scripts/accent.exs", "export", "--version", String.trim(version)], stderr_to_stdout: true) do
+    case System.cmd("elixir", ["scripts/accent.exs", "export", "--version", version], stderr_to_stdout: true) do
       {_, 0} ->
         :ok
 
       {output, exit_status} ->
         Mix.raise("Accent catalog export failed (status #{exit_status}): #{String.trim(output)}")
+    end
+  end
+
+  # Accent snapshots exist only for pushed commits (CI prepares one per push).
+  # Local, unpushed commits fall back to the closest commit shared with origin/main.
+  defp translations_version do
+    head = git!(["rev-parse", "HEAD"])
+
+    if git!(["branch", "--remotes", "--contains", head]) == "" do
+      base = git!(["merge-base", head, "origin/main"])
+
+      Mix.shell().info("HEAD #{head} is not pushed; using Accent translations of #{base} from origin/main")
+
+      base
+    else
+      head
+    end
+  end
+
+  defp git!(args) do
+    case System.cmd("git", args, stderr_to_stdout: true) do
+      {output, 0} -> String.trim(output)
+      {output, _status} -> Mix.raise("git #{Enum.join(args, " ")} failed: #{String.trim(output)}")
     end
   end
 end
