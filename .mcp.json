@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "tidewave": {
+      "type": "http",
+      "url": "http://localhost:${TIDEWAVE_PORT:-4000}/tidewave/mcp"
+    }
+  }
+}
