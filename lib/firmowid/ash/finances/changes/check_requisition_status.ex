@@ -20,6 +20,7 @@ defmodule Firmowid.Ash.Finances.Changes.CheckRequisitionStatus do
   alias AshOban.Errors.SnoozeJob
   alias Firmowid.Ash.Finances.GoCardless.ApiClient
   alias Firmowid.Ash.Finances.Requisition
+  alias Firmowid.Ash.SystemActor
   alias Firmowid.ErrorKind
 
   require Logger
@@ -112,8 +113,15 @@ defmodule Firmowid.Ash.Finances.Changes.CheckRequisitionStatus do
     )
   end
 
+  # The AshOban interaction bypass only covers the triggered :check_status
+  # action, not the transitions it delegates to, so those run as the bank sync
+  # system actor of the requisition's organization.
   defp delegate_to(changeset, record, action, tenant, ash_opts) do
-    opts = ash_opts |> Keyword.delete(:tenant) |> Keyword.put(:tenant, tenant)
+    opts =
+      Keyword.merge(ash_opts,
+        tenant: tenant,
+        actor: %SystemActor{org_id: tenant, role: :bank_sync}
+      )
 
     case apply(Requisition, action, [record, opts]) do
       {:ok, _} ->
