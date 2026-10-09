@@ -30,22 +30,35 @@ defmodule Firmowid.Ash.Invoicing.Services.SalesInvoiceBasePdf do
       |> maybe_load_reference_invoice(ash_opts)
       |> then(fn inv -> %{inv | corrections: AnnotatedCorrections.annotate(inv)} end)
 
-    html_content =
-      PdfHelpers.render_pdf_html(
-        FirmowidWeb.Invoicing.SalesInvoices.Components.Pdf,
-        :sales_invoice,
-        layout: false,
-        sales_invoice: invoice,
-        currency_rate: Invoicing.get_currency_rate(invoice),
-        reference_invoice: invoice.reference_invoice,
-        show_vat: show_vat,
-        logo_data_uri: logo_data_uri,
-        footer_logo_data_uri: footer_logo_data_uri,
-        class: "mx-auto",
-        include_internal_note_page: false
-      )
+    with {:ok, currency_rate} <- currency_rate(invoice) do
+      html_content =
+        PdfHelpers.render_pdf_html(
+          FirmowidWeb.Invoicing.SalesInvoices.Components.Pdf,
+          :sales_invoice,
+          layout: false,
+          sales_invoice: invoice,
+          currency_rate: currency_rate,
+          reference_invoice: invoice.reference_invoice,
+          show_vat: show_vat,
+          logo_data_uri: logo_data_uri,
+          footer_logo_data_uri: footer_logo_data_uri,
+          class: "mx-auto",
+          include_internal_note_page: false
+        )
 
-    PdfUtils.render_html_to_pdf(html_content, scale: 1.25)
+      PdfUtils.render_html_to_pdf(html_content, scale: 1.25)
+    end
+  end
+
+  # A foreign-currency invoice must state the NBP rate, so the PDF is not
+  # generated without it; callers get an error they can retry.
+  defp currency_rate(%SalesInvoice{currency: "PLN"}), do: {:ok, nil}
+
+  defp currency_rate(invoice) do
+    case Invoicing.get_currency_rate(invoice) do
+      nil -> {:error, :currency_rate_unavailable}
+      rate -> {:ok, rate}
+    end
   end
 
   defp maybe_load_reference_invoice(%{ksef_invoice_kind: kind} = invoice, _ash_opts) when kind != :kor, do: invoice

@@ -856,7 +856,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.Template do
               :foreign -> "Przewalutowanie / Currency conversion"
             end}
           </h2>
-          <div>
+          <div :if={@currency_rate}>
             <div class="text-[10px]/[14px]">
               Kurs {@sales_invoice.currency} / {@sales_invoice.currency} exchange rate: {@currency_rate.rate
               |> Firmowid.Cldr.Number.to_string!(format: "#0.0000 ¤¤", currency: "PLN")}
@@ -866,6 +866,10 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.Template do
               <br />
               Exchange rate according to average exchange rate table No. {@currency_rate.table_number} of {@currency_rate.effective_date}
             </div>
+          </div>
+          <%!-- NBP can be unreachable; previews still render, while PDF generation refuses to run without a rate. --%>
+          <div :if={is_nil(@currency_rate)} class="text-[10px]/[14px]">
+            Nie udało się pobrać kursu NBP. Spróbuj ponownie za chwilę.
           </div>
         </div>
       <% end %>

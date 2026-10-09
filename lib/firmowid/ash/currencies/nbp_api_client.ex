@@ -5,6 +5,9 @@ defmodule Firmowid.Ash.Currencies.NbpApiClient do
   Provides exchange rates for currencies supported by NBP Table A.
   """
 
+  @cache :currencies
+  @cache_ttl to_timeout(day: 1)
+
   @supported_currencies ~w(AUD BRL CAD CHF CLP CNY CZK DKK EUR GBP HKD HUF IDR ILS INR ISK JPY KRW MXN MYR NOK NZD PHP RON SEK SGD THB TRY UAH USD XDR ZAR)
 
   @doc """
@@ -30,6 +33,10 @@ defmodule Firmowid.Ash.Currencies.NbpApiClient do
   Queries a 20-day range ending at (date - 1 day) to account for weekends/holidays.
   Returns the most recent rate in the range.
 
+  Successful lookups are cached for a day, because invoice previews ask for the
+  same rate on every re-render. Requests time out after 5 seconds and are
+  retried twice on transient failures; failures are not cached.
+
   ## Returns
 
     * `{:ok, %{effective_date: String.t(), rate: float(), table_number: String.t()}}` on success
@@ -39,39 +46,52 @@ defmodule Firmowid.Ash.Currencies.NbpApiClient do
           {:ok, %{effective_date: String.t(), rate: float(), table_number: String.t()}}
           | {:error, term()}
   def get_exchange_rate(currency, date) do
+    end_date = date |> clamp_to_today() |> Date.shift(day: -1)
+
+    case Cachex.fetch(@cache, {:nbp_rate, currency, end_date}, fn _key ->
+           fetch_rate(currency, end_date)
+         end) do
+      {status, {:ok, _rate} = result} when status in [:ok, :commit] -> result
+      {:ignore, {:error, _reason} = error} -> error
+      {:error, reason} -> {:error, {:cache_failed, reason}}
+    end
+  end
+
+  defp clamp_to_today(date) do
     today = Date.utc_today()
+    if Date.before?(date, today), do: date, else: today
+  end
 
-    clamped_date =
-      case Date.compare(date, today) do
-        :lt -> date
-        _ -> today
-      end
+  defp fetch_rate(currency, end_date) do
+    start_date = Date.shift(end_date, day: -20)
 
-    date_max_till_yesterday = Date.shift(clamped_date, Duration.new!(day: -1))
+    request_options =
+      Keyword.merge(
+        [
+          url: "https://api.nbp.pl/api/exchangerates/rates/a/#{currency}/#{start_date}/#{end_date}",
+          receive_timeout: 5_000,
+          retry: :transient,
+          max_retries: 2,
+          retry_delay: 500
+        ],
+        Application.get_env(:firmowid, :nbp_api_request_options, [])
+      )
 
-    end_date_str = Date.to_iso8601(date_max_till_yesterday)
-
-    start_date_str =
-      date_max_till_yesterday |> Date.shift(Duration.new!(day: -20)) |> Date.to_iso8601()
-
-    url =
-      "https://api.nbp.pl/api/exchangerates/rates/a/#{currency}/#{start_date_str}/#{end_date_str}"
-
-    case Req.get(url) do
+    case Req.get(request_options) do
       {:ok, %{status: 200, body: %{"rates" => [_ | _] = rates}}} ->
         %{"effectiveDate" => effective_date, "mid" => rate, "no" => table_number} =
           List.last(rates)
 
-        {:ok, %{effective_date: effective_date, rate: rate, table_number: table_number}}
+        {:commit, {:ok, %{effective_date: effective_date, rate: rate, table_number: table_number}}, expire: @cache_ttl}
 
       {:ok, %{status: 404}} ->
-        {:error, {:no_rates_found, currency, date}}
+        {:ignore, {:error, {:no_rates_found, currency, end_date}}}
 
       {:ok, %{status: status, body: body}} ->
-        {:error, {:unexpected_status, status, body}}
+        {:ignore, {:error, {:unexpected_status, status, body}}}
 
       {:error, reason} ->
-        {:error, {:request_failed, reason}}
+        {:ignore, {:error, {:request_failed, reason}}}
     end
   end
 end
