@@ -145,26 +145,37 @@ defmodule Firmowid.Ash.Invoicing.Matching.ParametrizedResult do
 
   @spec invoice_identifier_present_in_remittance_information_unstructured(
           String.t() | nil,
-          String.t()
+          String.t() | nil
         ) ::
           float()
   defp invoice_identifier_present_in_remittance_information_unstructured(nil, _), do: 0.0
+
+  defp invoice_identifier_present_in_remittance_information_unstructured(_, nil), do: 0.0
 
   defp invoice_identifier_present_in_remittance_information_unstructured(
          remittance_information_unstructured,
          invoice_identifier
        ) do
-    remittance_information_unstructured
-    |> String.contains?(normalize_invoice_identifier(invoice_identifier))
-    |> boolean_to_float()
+    identifier_tokens = identifier_tokens(invoice_identifier)
+    remittance_tokens = identifier_tokens(remittance_information_unstructured)
+
+    boolean_to_float(identifier_tokens != [] and contains_token_sequence?(remittance_tokens, identifier_tokens))
   end
 
-  defp normalize_invoice_identifier(nil), do: "NA"
+  # Both sides are split the same way, so separators ("FV 12/2026", "fv-12-2026",
+  # "FV12/2026") and letter case do not matter, while token boundaries keep
+  # "1/2026" from matching inside "11/2026".
+  @spec identifier_tokens(String.t()) :: [String.t()]
+  defp identifier_tokens(text) do
+    ~r/\p{L}+|\p{N}+/u
+    |> Regex.scan(String.upcase(text))
+    |> List.flatten()
+  end
 
-  defp normalize_invoice_identifier(invoice_identifier) do
-    invoice_identifier
-    |> String.upcase()
-    |> String.replace(~r/[^A-Z0-9\-\/]/, "")
+  defp contains_token_sequence?(tokens, sequence) do
+    tokens
+    |> Enum.chunk_every(length(sequence), 1, :discard)
+    |> Enum.member?(sequence)
   end
 
   @spec calculate_difference_in_days(Date.t(), Date.t()) :: integer()
