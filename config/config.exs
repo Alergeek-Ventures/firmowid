@@ -114,7 +114,7 @@ config :firmowid, Oban,
      timezone: "Europe/Warsaw",
      crontab: [
        {"0 6 1 * *", Firmowid.Ash.Billing.Workers.MonthlySnapshotDispatcher, args: %{}},
-       {"0 13 * * *", Firmowid.Ash.Invoicing.Workers.MatchingWorker, args: %{name: "matching"}},
+       {"15 * * * *", Firmowid.Ash.Invoicing.Workers.MatchingWorker, args: %{name: "matching"}},
        {"0 */2 * * *", Firmowid.Ash.Ksef.Workers.FetchDispatcher, args: %{}}
      ]}
   ]

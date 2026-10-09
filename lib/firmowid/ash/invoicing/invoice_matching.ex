@@ -42,19 +42,23 @@ defmodule Firmowid.Ash.Invoicing.InvoiceMatching do
   """
   @spec match_cost_invoices(Scope.t()) :: :ok
   def match_cost_invoices(scope) do
-    unmatched_cost_invoices =
-      Invoicing.list_cost_invoices!(
-        %{
-          date_from: ~D[1970-01-01],
-          date_to: ~D[2100-01-01],
-          date_field: :due_date,
-          reconciliation: :pending,
-          corrections: :exclude
-        },
-        scope: scope
+    %{
+      date_from: ~D[1970-01-01],
+      date_to: ~D[2100-01-01],
+      date_field: :due_date,
+      reconciliation: :pending,
+      corrections: :exclude
+    }
+    |> Invoicing.list_cost_invoices!(scope: scope)
+    |> match_invoices(list_pending_transactions(scope), fn %{id: id}, transactions ->
+      id
+      |> Invoicing.get_cost_invoice!(load: [:effective_amount], scope: scope)
+      |> match_invoice(
+        transactions,
+        &Invoicing.connect_cost_invoice_transactions_auto_match!/4,
+        scope
       )
-
-    Enum.each(unmatched_cost_invoices, &match_cost_invoice(&1.id, scope))
+    end)
   end
 
   @doc """
@@ -62,41 +66,15 @@ defmodule Firmowid.Ash.Invoicing.InvoiceMatching do
   """
   @spec match_cost_invoice(String.t(), Scope.t()) :: :ok
   def match_cost_invoice(cost_invoice_id, scope) do
-    org_id = scope.tenant
+    cost_invoice_id
+    |> Invoicing.get_cost_invoice!(load: [:effective_amount], scope: scope)
+    |> match_invoice(
+      list_pending_transactions(scope),
+      &Invoicing.connect_cost_invoice_transactions_auto_match!/4,
+      scope
+    )
 
-    cost_invoice =
-      Invoicing.get_cost_invoice!(cost_invoice_id, load: [:effective_amount], scope: scope)
-
-    Logger.info("Matching cost invoice #{cost_invoice.id} for organization #{org_id}")
-
-    unmatched_transactions =
-      Finances.list_transactions!(
-        %{date_from: ~D[2000-01-01], date_to: ~D[2100-12-30], reconciliation: :pending},
-        scope: scope
-      )
-
-    Logger.info("Found #{length(unmatched_transactions)} unmatched transactions")
-
-    case score_and_sort_transactions(cost_invoice, unmatched_transactions) do
-      [{transaction, prediction_score} | _] ->
-        Logger.info("Prediction score: #{prediction_score}")
-
-        if Matching.RegressionPredictor.confident_match?(prediction_score) do
-          Invoicing.connect_cost_invoice_transactions_auto_match!(
-            cost_invoice,
-            [transaction.id],
-            prediction_score,
-            scope
-          )
-
-          Logger.info("Matched cost invoice #{cost_invoice.id} with transaction #{transaction.id}")
-        else
-          Logger.info("No confident match for cost invoice #{cost_invoice.id}")
-        end
-
-      [] ->
-        Logger.info("No match found for cost invoice #{cost_invoice.id}")
-    end
+    :ok
   end
 
   @doc """
@@ -104,58 +82,57 @@ defmodule Firmowid.Ash.Invoicing.InvoiceMatching do
   """
   @spec match_sales_invoices(Scope.t()) :: :ok
   def match_sales_invoices(scope) do
-    unmatched_sales_invoices =
-      Invoicing.list_sales_invoices!(
-        %{kind: :vat, reconciliation: :pending, submission: :confirmed, date_field: :due_date},
-        scope: scope
-      )
-
-    Enum.each(unmatched_sales_invoices, &match_sales_invoice(&1.id, scope))
-  end
-
-  @doc """
-  Auto-matches a single sales invoice to the best available transaction.
-  """
-  @spec match_sales_invoice(String.t(), Scope.t()) :: :ok
-  def match_sales_invoice(sales_invoice_id, scope) do
-    org_id = scope.tenant
-
-    sales_invoice =
-      Invoicing.get_sales_invoice!(sales_invoice_id,
+    %{kind: :vat, reconciliation: :pending, submission: :confirmed, date_field: :due_date}
+    |> Invoicing.list_sales_invoices!(scope: scope)
+    |> match_invoices(list_pending_transactions(scope), fn %{id: id}, transactions ->
+      id
+      |> Invoicing.get_sales_invoice!(
         load: [:buyer_display_name_label, :effective_amount],
         scope: scope
       )
-
-    Logger.info("Matching sales invoice #{sales_invoice.id} for organization #{org_id}")
-
-    unmatched_transactions =
-      Finances.list_transactions!(
-        %{date_from: ~D[2000-01-01], date_to: ~D[2100-12-30], reconciliation: :pending},
-        scope: scope
+      |> match_invoice(
+        transactions,
+        &Invoicing.connect_sales_invoice_transactions_auto_match!/4,
+        scope
       )
+    end)
+  end
 
-    Logger.info("Found #{length(unmatched_transactions)} unmatched transactions")
+  # Threads the still-available transactions through consecutive invoices, so
+  # a whole organization pass reads pending transactions only once.
+  defp match_invoices([], _transactions, _match_fun), do: :ok
 
-    case score_and_sort_transactions(sales_invoice, unmatched_transactions) do
+  defp match_invoices([invoice | rest], transactions, match_fun) do
+    match_invoices(rest, match_fun.(invoice, transactions), match_fun)
+  end
+
+  # Connects the invoice to its best candidate when the score is confident enough.
+  # Returns the transactions that are still available for the next invoice.
+  defp match_invoice(invoice, transactions, connect, scope) do
+    case score_and_sort_transactions(invoice, transactions) do
       [{transaction, prediction_score} | _] ->
-        Logger.info("Prediction score: #{prediction_score}")
-
         if Matching.RegressionPredictor.confident_match?(prediction_score) do
-          Invoicing.connect_sales_invoice_transactions_auto_match!(
-            sales_invoice,
-            [transaction.id],
-            prediction_score,
-            scope
-          )
+          connect.(invoice, [transaction.id], prediction_score, scope)
 
-          Logger.info("Matched sales invoice #{sales_invoice.id} with transaction #{transaction.id}")
+          Logger.info("Matched invoice #{invoice.id} with transaction #{transaction.id} (score #{prediction_score})")
+
+          Enum.reject(transactions, &(&1.id == transaction.id))
         else
-          Logger.info("No confident match for sales invoice #{sales_invoice.id}")
+          Logger.debug("No confident match for invoice #{invoice.id} (best score #{prediction_score})")
+
+          transactions
         end
 
       [] ->
-        Logger.info("No match found for sales invoice #{sales_invoice.id}")
+        transactions
     end
+  end
+
+  defp list_pending_transactions(scope) do
+    Finances.list_transactions!(
+      %{date_from: ~D[2000-01-01], date_to: ~D[2100-12-30], reconciliation: :pending},
+      scope: scope
+    )
   end
 
   @doc """
