@@ -2,7 +2,10 @@ defmodule Firmowid.Ash.Invoicing.KsefInvoiceDigest do
   @moduledoc """
   Persisted digest of KSeF cost invoices created in Firmowid.
   """
+  # The primary read intentionally supports optional filters; omitted arguments
+  # leave relationship loads unfiltered.
   use Ash.Resource,
+    primary_read_warning?: false,
     domain: Firmowid.Ash.Invoicing,
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer],

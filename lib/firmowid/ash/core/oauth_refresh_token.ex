@@ -1,6 +1,8 @@
 defmodule Firmowid.Ash.Core.OauthRefreshToken do
   @moduledoc "OAuth refresh tokens, including account-bound deletion cleanup."
+  # The optional user filter is intentional; omitted arguments leave the primary read unfiltered.
   use Ash.Resource,
+    primary_read_warning?: false,
     otp_app: :firmowid,
     domain: Firmowid.Ash.Core,
     data_layer: AshPostgres.DataLayer,
