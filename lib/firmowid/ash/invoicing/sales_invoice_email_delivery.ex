@@ -1,7 +1,10 @@
 defmodule Firmowid.Ash.Invoicing.SalesInvoiceEmailDelivery do
   @moduledoc "Persists sales invoice email delivery outcomes and supports organization cleanup."
 
+  # The primary read intentionally supports optional filters; omitted arguments
+  # leave relationship loads unfiltered.
   use Ash.Resource,
+    primary_read_warning?: false,
     otp_app: :firmowid,
     domain: Firmowid.Ash.Invoicing,
     data_layer: AshPostgres.DataLayer,

@@ -3,7 +3,10 @@ defmodule Firmowid.Ash.Billing.Snapshot do
   Monthly frozen usage facts for organization billing.
   """
 
+  # The primary read intentionally supports optional filters; omitted arguments
+  # leave relationship loads unfiltered.
   use Ash.Resource,
+    primary_read_warning?: false,
     domain: Firmowid.Ash.Billing,
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer]

@@ -4,7 +4,10 @@ defmodule Firmowid.Ash.Finances.Requisition do
 
   Tracks the lifecycle of a bank connection request.
   """
+  # The optional remote deletion filter is intentional; omitted arguments leave
+  # relationship loads unfiltered.
   use Ash.Resource,
+    primary_read_warning?: false,
     domain: Firmowid.Ash.Finances,
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer],
