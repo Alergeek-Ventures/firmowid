@@ -287,7 +287,7 @@ defmodule Firmowid.Ash.Ksef.Workers.FetchWorker do
       CostInvoice
       |> Ash.Query.filter(ksef_number in ^ksef_numbers)
       |> Ash.Query.select([:ksef_number])
-      |> Ash.read!(scope: scope)
+      |> then(&CostInvoice.list!(scope: scope, query: &1))
       |> MapSet.new(& &1.ksef_number)
 
     invoice_entries =

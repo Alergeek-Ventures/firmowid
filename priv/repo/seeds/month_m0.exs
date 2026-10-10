@@ -495,7 +495,7 @@ defmodule Firmowid.Seeds.MonthM0 do
       |> Ash.Query.filter(invoice_number == ^inv_number and organization_id == ^org_id)
       |> Ash.Query.limit(1)
 
-    case Ash.read(query, tenant: org_id, actor: @seed_actor) do
+    case AshSalesInvoice.list(query: query, tenant: org_id, actor: @seed_actor) do
       {:ok, [invoice | _]} -> invoice
       _ -> nil
     end

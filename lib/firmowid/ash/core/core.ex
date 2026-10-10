@@ -286,7 +286,7 @@ defmodule Firmowid.Ash.Core do
   end
 
   defp requisition_ids(scope) do
-    case Requisition.read(%{remote_deleted?: false}, scope: scope, query: [select: [:id]]) do
+    case Requisition.list(%{remote_deleted?: false}, scope: scope, query: [select: [:id]]) do
       {:ok, requisitions} when is_list(requisitions) ->
         if Enum.all?(requisitions, &is_binary(&1.id)) do
           {:ok, Enum.map(requisitions, & &1.id)}

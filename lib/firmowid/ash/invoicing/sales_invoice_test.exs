@@ -163,7 +163,7 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoiceTest do
         |> Ash.Query.filter(amount > ^Money.new!("EUR", Decimal.new("100")))
         |> Ash.Query.sort(amount: :desc)
         |> Ash.Query.load(:amount)
-        |> Ash.read!(scope: scope)
+        |> then(&SalesInvoice.list!(query: &1, scope: scope))
 
       assert Enum.map(invoices, & &1.id) == [higher_amount_invoice.id, lower_amount_invoice.id]
 

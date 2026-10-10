@@ -539,7 +539,7 @@ defmodule FirmowidWeb.Management.Views.Counterparty do
     |> Invoicing.query_to_list_sales_invoices(scope: scope)
     |> Ash.Query.filter(counterparty_id == ^counterparty_id)
     |> Ash.Query.load([:amount, :reconciliation_status])
-    |> Ash.read!(scope: scope)
+    |> then(&Invoicing.list_sales_invoices!(args, scope: scope, query: &1))
   end
 
   defp maybe_put_reconciliation(args, :unpaid), do: Map.put(args, :reconciliation, :pending)

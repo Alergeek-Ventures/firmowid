@@ -44,7 +44,7 @@ defmodule Firmowid.Ash.Invoicing.Services.MonthDownloadEntries do
       |> Invoicing.query_to_list_cost_invoices(ash_opts)
       |> Ash.Query.filter(not is_nil(blob_id))
       |> Ash.Query.load([:effective_seller_display_name, blob: [:url]])
-      |> Ash.read!(ash_opts)
+      |> then(&Invoicing.list_cost_invoices!(Keyword.put(ash_opts, :query, &1)))
       |> Enum.filter(&include_cost_invoice?(&1, include_opts))
       |> Enum.map(fn document ->
         file_name =
@@ -58,7 +58,7 @@ defmodule Firmowid.Ash.Invoicing.Services.MonthDownloadEntries do
     sales_invoices =
       if include_opts.include_sales do
         %{date_from: date_range_from, date_to: date_range_to, date_field: :any}
-        |> SalesInvoice.read!(Keyword.put(ash_opts, :load, [:buyer_display_name_label]))
+        |> SalesInvoice.list!(Keyword.put(ash_opts, :load, [:buyer_display_name_label]))
         |> Enum.map(fn invoice ->
           file_name =
             clean_filename("#{invoice.invoice_number}_#{invoice.buyer_display_name_label}")

@@ -399,9 +399,10 @@ defmodule Firmowid.Ash.Invoicing.KsefInvoiceDigestTest do
   end
 
   defp list_digests(organization_id) do
-    KsefInvoiceDigest
-    |> Ash.Query.sort(inserted_at: :desc)
-    |> Ash.read!(scope: digest_scope(organization_id))
+    KsefInvoiceDigest.list!(%{},
+      scope: digest_scope(organization_id),
+      query: [sort: [inserted_at: :desc]]
+    )
   end
 
   defp digest_scope(organization_id) do

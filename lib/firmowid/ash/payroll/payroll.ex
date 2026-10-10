@@ -15,12 +15,12 @@ defmodule Firmowid.Ash.Payroll do
     resource Firmowid.Ash.Payroll.UserSalary do
       define :create_salary, action: :create
       define :bulk_create_salaries, action: :bulk_create_salaries, args: [:entries]
-      define :list_salaries, action: :read
+      define :list_salaries, action: :list
     end
 
     resource UserEmploymentContract do
       define :create_employment_contract, action: :create
-      define :list_employment_contracts, action: :read
+      define :list_employment_contracts, action: :list
       define :get_employment_contract, action: :get_by_id, args: [:id]
 
       define :load_pending_contract,

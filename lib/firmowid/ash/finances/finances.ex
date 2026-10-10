@@ -34,12 +34,12 @@ defmodule Firmowid.Ash.Finances do
         args: [:institution_id, :max_transaction_days, :redirect_url]
 
       define :get_requisition, action: :read, get_by: [:id]
-      define :list_requisitions, action: :read
+      define :list_requisitions, action: :list
     end
 
     resource Firmowid.Ash.Finances.Transaction do
       define :get_transaction, action: :read, get_by: [:id]
-      define :list_transactions, action: :read
+      define :list_transactions, action: :list
       define :upsert_transaction_from_sync, action: :upsert_from_sync
       define :set_transaction_skip_invoicing, action: :set_skip_invoicing
     end

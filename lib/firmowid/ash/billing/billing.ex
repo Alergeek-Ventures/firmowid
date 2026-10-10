@@ -9,7 +9,7 @@ defmodule Firmowid.Ash.Billing do
 
   resources do
     resource Snapshot do
-      define :list_billing_snapshots, action: :read
+      define :list_billing_snapshots, action: :list
       define :list_billing_snapshots_global, action: :read_global
       define :get_billing_snapshot, action: :read, get_by: [:id]
       define :get_billing_snapshot_for_month, action: :by_month, args: [:month]

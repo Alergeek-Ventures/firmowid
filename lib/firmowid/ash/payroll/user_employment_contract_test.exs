@@ -6,6 +6,7 @@ defmodule Firmowid.Ash.Payroll.UserEmploymentContractTest do
   alias Ash.Error.Forbidden
   alias Firmowid.Ash.Blobs.Blob
   alias Firmowid.Ash.Payroll
+  alias Firmowid.Ash.Payroll.UserEmploymentContract
   alias Firmowid.Ash.Payroll.Workers.EmploymentContractEmailWorker
   alias Firmowid.Ash.Scope
   alias Firmowid.Ash.SystemActor
@@ -23,6 +24,48 @@ defmodule Firmowid.Ash.Payroll.UserEmploymentContractTest do
       employee_scope: scope(employee),
       processor_scope: processor_scope(org_id)
     }
+  end
+
+  describe "read and list authorization" do
+    test "employee reads only their own contracts even when listing another user", %{
+      admin: admin,
+      employee: employee,
+      employee_scope: employee_scope,
+      processor_scope: processor_scope
+    } do
+      own_contract = contract_fixture!(employee, processor_scope, %{})
+      contract_fixture!(admin, processor_scope, %{})
+
+      assert {:ok, [read_contract]} = UserEmploymentContract.read(scope: employee_scope)
+      assert read_contract.id == own_contract.id
+      assert {:ok, [listed_contract]} = Payroll.list_employment_contracts(scope: employee_scope)
+      assert listed_contract.id == own_contract.id
+
+      assert {:ok, []} =
+               Payroll.list_employment_contracts(%{user_id: admin.id}, scope: employee_scope)
+
+      assert {:ok, fetched_contract} =
+               Payroll.get_employment_contract(own_contract.id, scope: employee_scope)
+
+      assert fetched_contract.id == own_contract.id
+    end
+
+    test "organization cleanup keeps list access without gaining framework read access", %{
+      employee: employee,
+      org_id: org_id,
+      processor_scope: processor_scope
+    } do
+      contract = contract_fixture!(employee, processor_scope, %{})
+
+      cleanup_scope = %Scope{
+        actor: %SystemActor{org_id: org_id, role: :organization_cleanup},
+        tenant: org_id
+      }
+
+      assert {:ok, [listed_contract]} = Payroll.list_employment_contracts(scope: cleanup_scope)
+      assert listed_contract.id == contract.id
+      assert {:ok, []} = UserEmploymentContract.read(scope: cleanup_scope)
+    end
   end
 
   describe "submit_signed/3 activation" do

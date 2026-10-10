@@ -74,10 +74,10 @@ defmodule Firmowid.Ash.Finances.Changes.SyncTransactionsTest do
                  tenant: ctx.org_id
                )
 
+      query = Ash.Query.filter(Transaction, expr(bank_account_id == ^ctx.bank_account_1.id))
+
       persisted =
-        Transaction
-        |> Ash.Query.filter(expr(bank_account_id == ^ctx.bank_account_1.id))
-        |> Ash.read!(actor: ctx.actor, tenant: ctx.org_id)
+        Finances.list_transactions!(%{}, query: query, actor: ctx.actor, tenant: ctx.org_id)
 
       assert length(persisted) == 1
       assert first.id == second.id
@@ -101,11 +101,13 @@ defmodule Firmowid.Ash.Finances.Changes.SyncTransactionsTest do
                  tenant: ctx.org_id
                )
 
-      persisted =
+      query =
         Transaction
         |> Ash.Query.filter(expr(internal_transaction_id == "shared-internal-id"))
         |> Ash.Query.sort(:bank_account_id)
-        |> Ash.read!(actor: ctx.actor, tenant: ctx.org_id)
+
+      persisted =
+        Finances.list_transactions!(%{}, query: query, actor: ctx.actor, tenant: ctx.org_id)
 
       assert length(persisted) == 2
       assert tx_1.id != tx_2.id

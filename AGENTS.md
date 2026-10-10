@@ -5,40 +5,38 @@ This document contains instructions for AI agents working on this codebase.
 This is an Elixir LiveView app. It is focused on invoicing, bank accounts synchronization,
 and other tasks related to company management, like payroll or client's billing.
 
-## Development server
+## Worktree autonomy
 
-When running, assume that the whole application - with all required services -
-is properly running. We use `wt` (`worktrunk`) to maintain each worktree.
-Parallel worktrees are running on the same host, so we use different ports.
-They are stored in `.env.worktree` and `.server.port` files and are used by
-development scripts.
+Within the agreed task, you have full autonomy to edit files, modify local
+application data, and start, stop, or restart the development server without
+separate approval. Stay within your current worktree and its dedicated local
+services. Do not interfere with other worktrees or their processes, data, and
+services.
 
-**Accessing the dev server:**
+Use `mix dev.status` to display the current worktree's service endpoints and
+check their health before deciding whether a restart is needed.
 
-- Check `.server.port` for the port number - for example: `http://localhost:16423`
-- Use `kira@bytecraft.collective` / `kolejka123456` as credentials (look at
-  `seeds.exs` if in doubt)
-- Visit `/development` for the full seed data guide
+Use `mix dev.down` and `mix dev.up` to restart the development environment.
+This clears the worktree's local database; `mix dev.up` automatically recreates
+it and runs the seeds. Any data not included in the seeds will be lost.
 
-**Local setup:**
+Tidewave MCP always targets your current worktree. Use it as the primary tool
+for runtime inspection and debugging. Temporary unavailability during a restart
+is expected; report it if the connection remains unavailable after startup.
 
-- `mix dev.up` - starts services, reads config from `.env.worktree` (or uses defaults)
-- `mix dev.down` - stops services
-- Worktrunk generates `.env.worktree` with hashed ports for feature branches
+## Local access and seed data
 
-Tidewave MCP should be available, allowing you to inspect the running system.
-If not - flag that instantly. It's the best way to debug so if it's missing
-**it's a huge issue.**
+The local database is seeded by default, so sample accounts and data are
+available for development and manual testing.
 
-Do not start own servers or restart. Ask the user to do that if something is
-malfunctioning. You can by mistake kill other worktrees / your MCPs / your
-process running on this machine.
+- Sign in with `kira@bytecraft.collective` / `kolejka123456`.
+- Visit `/development` in the application for the full seed data guide.
 
 ## Use git
 
-Before starting the work, ask user if they want you to commit the changes.
-If they say so, after each successful, atomic change - commit it.
-Make sure it works and is correct before doing so. Instructions below.
+Complete the work and verify it first, then ask the user whether to commit the
+resulting changes. Do not ask about committing before starting the work, and do
+not decide to commit on your own. Commit only after the user explicitly approves.
 
 All commit messages must follow **Conventional Commits (Angular variant)**:
 
@@ -58,8 +56,13 @@ While we employ a bunch of tools to analyze code and catch bugs early, it's
 still important to test your changes manually. This is especially true for
 changes that affect the user interface or are introducing something new.
 
-Always go above and beyond to make sure that that whoever comes after you
+Always go above and beyond to make sure that whoever comes after you
 understands what you've done, that it works and that it's correct.
+
+For example, after changing an invoice form, open the application in a browser
+and click through the affected flow as a real user: fill in the form, submit it,
+check validation messages, and verify the saved invoice. Use browser interaction
+to validate the behavior, not just compilation or automated tests.
 
 ## Automated Tests
 

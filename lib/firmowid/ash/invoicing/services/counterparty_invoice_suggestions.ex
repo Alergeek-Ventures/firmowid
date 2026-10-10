@@ -71,7 +71,7 @@ defmodule Firmowid.Ash.Invoicing.Services.CounterpartyInvoiceSuggestions do
     |> Ash.Query.sort(issue_date: :desc, inserted_at: :desc)
     |> Ash.Query.limit(limit)
     |> Ash.Query.select([:id])
-    |> Ash.read!(scope: scope)
+    |> then(&SalesInvoice.list!(query: &1, scope: scope))
     |> Enum.map(& &1.id)
   end
 
@@ -80,9 +80,9 @@ defmodule Firmowid.Ash.Invoicing.Services.CounterpartyInvoiceSuggestions do
   defp load_invoices(invoice_ids, scope) do
     invoices_by_id =
       %{ids: invoice_ids}
-      |> SalesInvoice.query_to_read(scope: scope)
+      |> SalesInvoice.query_to_list(scope: scope)
       |> Ash.Query.load([:amount, :transactions])
-      |> Ash.read!(scope: scope)
+      |> then(&SalesInvoice.list!(query: &1, scope: scope))
       |> Map.new(&{&1.id, &1})
 
     invoice_ids
@@ -108,7 +108,7 @@ defmodule Firmowid.Ash.Invoicing.Services.CounterpartyInvoiceSuggestions do
 
   defp suggested_invoice_query(counterparty, :tax_id, normalized_tax_id, %Scope{} = scope) do
     %{}
-    |> SalesInvoice.query_to_read(scope: scope)
+    |> SalesInvoice.query_to_list(scope: scope)
     |> Ash.Query.filter(
       organization_id == ^scope.tenant and
         is_nil(counterparty_id) and
@@ -125,7 +125,7 @@ defmodule Firmowid.Ash.Invoicing.Services.CounterpartyInvoiceSuggestions do
 
   defp suggested_invoice_query(counterparty, :pesel, normalized_pesel, %Scope{} = scope) do
     %{}
-    |> SalesInvoice.query_to_read(scope: scope)
+    |> SalesInvoice.query_to_list(scope: scope)
     |> Ash.Query.filter(
       organization_id == ^scope.tenant and
         is_nil(counterparty_id) and

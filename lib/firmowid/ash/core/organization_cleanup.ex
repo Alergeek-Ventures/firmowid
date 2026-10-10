@@ -30,35 +30,35 @@ defmodule Firmowid.Ash.Core.OrganizationCleanup do
   def remove_dependents(scope) do
     with :ok <-
            destroy_records(
-             AssistantSession.read(%{}, scope: scope),
+             AssistantSession.list(%{}, scope: scope),
              &AssistantSession.destroy/2,
              scope
            ),
-         :ok <- destroy_records(Snapshot.read(%{}, scope: scope), &Snapshot.destroy/2, scope),
+         :ok <- destroy_records(Snapshot.list(%{}, scope: scope), &Snapshot.destroy/2, scope),
          :ok <-
            destroy_records(
              KsefInvoiceDigestItem.read(%{}, scope: scope),
              &KsefInvoiceDigestItem.destroy/2,
              scope
            ),
-         :ok <- destroy_records(UserSalary.read(%{}, scope: scope), &UserSalary.destroy/2, scope),
+         :ok <- destroy_records(UserSalary.list(%{}, scope: scope), &UserSalary.destroy/2, scope),
          :ok <-
            destroy_records(
-             KsefInvoiceDigest.read(%{}, scope: scope),
+             KsefInvoiceDigest.list(%{}, scope: scope),
              &KsefInvoiceDigest.destroy/2,
              scope
            ),
          :ok <-
-           destroy_records(LeaveRequest.read(%{}, scope: scope), &LeaveRequest.destroy/2, scope),
+           destroy_records(LeaveRequest.list(%{}, scope: scope), &LeaveRequest.destroy/2, scope),
          :ok <-
            destroy_records(
-             UserEmploymentContract.read(%{}, scope: scope),
+             UserEmploymentContract.list(%{}, scope: scope),
              &UserEmploymentContract.destroy/2,
              scope
            ),
          :ok <-
            destroy_records(
-             SalesInvoiceEmailDelivery.read(%{}, scope: scope),
+             SalesInvoiceEmailDelivery.list(%{}, scope: scope),
              &SalesInvoiceEmailDelivery.destroy/2,
              scope
            ),
@@ -103,14 +103,14 @@ defmodule Firmowid.Ash.Core.OrganizationCleanup do
 
     with :ok <-
            destroy_records(
-             OauthAuthorizationCode.read(args, scope: scope),
+             OauthAuthorizationCode.list(args, scope: scope),
              &OauthAuthorizationCode.destroy/2,
              scope
            ),
          :ok <-
-           destroy_records(OauthConsent.read(args, scope: scope), &OauthConsent.destroy/2, scope) do
+           destroy_records(OauthConsent.list(args, scope: scope), &OauthConsent.destroy/2, scope) do
       destroy_records(
-        OauthRefreshToken.read(args, scope: scope),
+        OauthRefreshToken.list(args, scope: scope),
         &OauthRefreshToken.destroy/2,
         scope
       )

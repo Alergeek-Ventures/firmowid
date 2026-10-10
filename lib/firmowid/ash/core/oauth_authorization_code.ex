@@ -1,8 +1,6 @@
 defmodule Firmowid.Ash.Core.OauthAuthorizationCode do
   @moduledoc "OAuth authorization codes, including account-bound deletion cleanup."
-  # The optional user filter is intentional; omitted arguments leave the primary read unfiltered.
   use Ash.Resource,
-    primary_read_warning?: false,
     otp_app: :firmowid,
     domain: Firmowid.Ash.Core,
     data_layer: AshPostgres.DataLayer,
@@ -21,6 +19,7 @@ defmodule Firmowid.Ash.Core.OauthAuthorizationCode do
 
   code_interface do
     define :read, action: :read
+    define :list, action: :list
     define :destroy, action: :destroy
     define :create, action: :create
     define :consume, action: :consume
@@ -28,11 +27,10 @@ defmodule Firmowid.Ash.Core.OauthAuthorizationCode do
   end
 
   actions do
-    defaults [:destroy]
+    defaults [:read, :destroy]
 
-    read :read do
+    read :list do
       description "List authorization codes, optionally filtered by user."
-      primary? true
       argument :user_id, :uuid
 
       prepare build(filter: expr(user_id == ^arg(:user_id))) do
@@ -71,7 +69,7 @@ defmodule Firmowid.Ash.Core.OauthAuthorizationCode do
       authorize_if always()
     end
 
-    policy action([:read, :destroy]) do
+    policy action([:read, :list, :destroy]) do
       authorize_if AccountCleanup
     end
   end

@@ -231,7 +231,7 @@ defmodule Firmowid.Ash.Ksef.Workers.FetchWorkerTest do
     |> Ash.Query.filter(ksef_number in ^ksef_numbers)
     |> Ash.Query.sort(ksef_number: :asc)
     |> Ash.Query.load([:blob])
-    |> Ash.read!(scope: scope)
+    |> then(&CostInvoice.list!(scope: scope, query: &1))
   end
 
   defp insert_existing_cost_invoice!(organization_id, ksef_number) do

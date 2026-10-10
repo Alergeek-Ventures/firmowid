@@ -25,6 +25,7 @@ defmodule Firmowid.Ash.Assistant.Actions.ReadTransactions do
 
   alias Firmowid.Ash.Assistant.Actions.SearchSupport
   alias Firmowid.Ash.Finances
+  alias Firmowid.Ash.Finances.Transaction
   alias Firmowid.Ash.Scope
 
   require Ash.Query
@@ -63,14 +64,15 @@ defmodule Firmowid.Ash.Assistant.Actions.ReadTransactions do
           currency: params[:currency]
         })
 
-      transactions =
-        args
-        |> Finances.query_to_list_transactions(scope: scope)
+      query =
+        Transaction
+        |> Ash.Query.new()
         |> maybe_filter_amount(:amount_gt, amount_gt)
         |> maybe_filter_amount(:amount_lt, amount_lt)
         |> Ash.Query.limit(SearchSupport.normalized_limit(params[:limit], @max_limit))
         |> Ash.Query.load([:amount])
-        |> Ash.read!(scope: scope)
+
+      transactions = Finances.list_transactions!(args, query: query, scope: scope)
 
       serialized_transactions = Enum.map(transactions, &serialize_transaction/1)
       {:ok, %{transactions: serialized_transactions, count: length(serialized_transactions)}}

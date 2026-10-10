@@ -69,7 +69,7 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice.Scanners.OverdueReminders do
     |> overdue_candidate_query(today, cursor)
     |> Ash.Query.sort(inserted_at: :asc, id: :asc)
     |> Ash.Query.limit(@batch_size)
-    |> Ash.read!(scope: scope)
+    |> then(&SalesInvoice.list!(query: &1, scope: scope))
   end
 
   defp overdue_candidate_query(query, today, nil), do: overdue_candidate_base_query(query, today)
@@ -98,7 +98,7 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice.Scanners.OverdueReminders do
 
     SalesInvoice
     |> Ash.Query.filter(id in ^root_ids or corrected_invoice_id in ^root_ids)
-    |> Ash.read!(scope: scope)
+    |> then(&SalesInvoice.list!(query: &1, scope: scope))
     |> Enum.group_by(&(&1.corrected_invoice_id || &1.id))
     |> Map.new(fn {root_id, chain} ->
       latest_invoice =

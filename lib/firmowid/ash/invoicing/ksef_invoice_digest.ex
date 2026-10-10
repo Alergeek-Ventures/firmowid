@@ -2,10 +2,7 @@ defmodule Firmowid.Ash.Invoicing.KsefInvoiceDigest do
   @moduledoc """
   Persisted digest of KSeF cost invoices created in Firmowid.
   """
-  # The primary read intentionally supports optional filters; omitted arguments
-  # leave relationship loads unfiltered.
   use Ash.Resource,
-    primary_read_warning?: false,
     domain: Firmowid.Ash.Invoicing,
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer],
@@ -56,6 +53,7 @@ defmodule Firmowid.Ash.Invoicing.KsefInvoiceDigest do
   code_interface do
     define :destroy, action: :destroy
     define :read, action: :read
+    define :list, action: :list
     define :read_global, action: :read_global
     define :read_for_delivery, action: :read_for_delivery
     define :create_digest, action: :create_digest
@@ -64,14 +62,15 @@ defmodule Firmowid.Ash.Invoicing.KsefInvoiceDigest do
   end
 
   actions do
+    defaults [:read]
+
     destroy :destroy do
       description "Delete a KSeF invoice digest."
       primary? true
     end
 
-    read :read do
+    read :list do
       description "List KSeF invoice digests with optional ID and delivery filters."
-      primary? true
       argument :ids, {:array, :uuid}
       argument :delivered?, :boolean
 
@@ -132,7 +131,7 @@ defmodule Firmowid.Ash.Invoicing.KsefInvoiceDigest do
   policies do
     bypass [
       {SystemActorRole, roles: [:organization_cleanup]},
-      action([:read, :destroy])
+      action([:read, :list, :destroy])
     ] do
       authorize_if expr(not is_nil(^actor(:org_id)) and organization_id == ^actor(:org_id))
     end

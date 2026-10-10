@@ -5,8 +5,7 @@ defmodule Firmowid.Ash.Payroll.UserEmploymentContract do
     domain: Firmowid.Ash.Payroll,
     authorizers: [Ash.Policy.Authorizer],
     data_layer: AshPostgres.DataLayer,
-    extensions: [AshStateMachine, AshOban],
-    primary_read_warning?: false
+    extensions: [AshStateMachine, AshOban]
 
   alias AshOban.Checks.AshObanInteraction
   alias Firmowid.Ash.Blobs
@@ -56,6 +55,7 @@ defmodule Firmowid.Ash.Payroll.UserEmploymentContract do
 
   code_interface do
     define :read, action: :read
+    define :list, action: :list
     define :destroy, action: :destroy
     define :update_employment_contract, action: :update
     define :submit_signed, action: :submit_signed
@@ -76,12 +76,11 @@ defmodule Firmowid.Ash.Payroll.UserEmploymentContract do
   end
 
   actions do
-    defaults [:destroy]
+    defaults [:read, :destroy]
 
     read :get_by_id do
       description "Returns an employment contract given its id."
       argument :id, :uuid
-      primary? true
       get? true
 
       prepare build(filter: expr(id == ^arg(:id))) do
@@ -89,7 +88,7 @@ defmodule Firmowid.Ash.Payroll.UserEmploymentContract do
       end
     end
 
-    read :read do
+    read :list do
       description "Returns all employment contracts given user_id."
 
       argument :user_id, :uuid
@@ -279,7 +278,7 @@ defmodule Firmowid.Ash.Payroll.UserEmploymentContract do
   policies do
     bypass [
       {SystemActorRole, roles: [:organization_cleanup]},
-      action([:read, :destroy])
+      action([:list, :destroy])
     ] do
       authorize_if expr(not is_nil(^actor(:org_id)) and organization_id == ^actor(:org_id))
     end

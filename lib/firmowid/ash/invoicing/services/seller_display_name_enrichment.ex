@@ -59,7 +59,7 @@ defmodule Firmowid.Ash.Invoicing.Services.SellerDisplayNameEnrichment do
     )
     |> Ash.Query.sort(inserted_at: :desc, seller_display_name: :asc, seller: :asc, id: :desc)
     |> Ash.Query.limit(@max_history_scan)
-    |> Ash.read!(ash_opts)
+    |> then(&CostInvoice.list!(Keyword.put(ash_opts, :query, &1)))
     |> unique_candidates()
     |> Enum.take(@candidate_limit)
   end
@@ -67,7 +67,7 @@ defmodule Firmowid.Ash.Invoicing.Services.SellerDisplayNameEnrichment do
   @spec historical_candidates_query(Ash.UUID.t() | nil, keyword()) :: Ash.Query.t()
   defp historical_candidates_query(current_cost_invoice_id, ash_opts) do
     %{}
-    |> CostInvoice.query_to_read(ash_opts)
+    |> CostInvoice.query_to_list(ash_opts)
     |> Ash.Query.select([:id, :seller, :seller_display_name, :seller_nip, :inserted_at])
     |> Ash.Query.filter(Ash.Expr.expr(not is_nil(seller_display_name) and seller_display_name != ""))
     |> maybe_exclude_current_invoice(current_cost_invoice_id)

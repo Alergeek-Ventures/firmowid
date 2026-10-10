@@ -269,7 +269,7 @@ defmodule FirmowidWeb.Invoicing.Views.IndexTest do
       assert rendered =~ "Zakup testowy"
 
       [invoice] =
-        CostInvoice.read!(
+        CostInvoice.list!(
           %{date_from: ~D[2026-04-01], date_to: ~D[2026-04-30], date_field: :issue_date},
           scope: scope_for(user)
         )
@@ -300,7 +300,7 @@ defmodule FirmowidWeb.Invoicing.Views.IndexTest do
       assert rendered =~ "Plik nie zawiera danych wymaganych dla faktury kosztowej."
 
       assert [] ==
-               CostInvoice.read!(
+               CostInvoice.list!(
                  %{date_from: ~D[2026-04-01], date_to: ~D[2026-04-30], date_field: :issue_date},
                  scope: scope_for(user)
                )
@@ -408,7 +408,7 @@ defmodule FirmowidWeb.Invoicing.Views.IndexTest do
       assert rendered =~ "Wyświetl"
 
       invoices =
-        CostInvoice.read!(
+        CostInvoice.list!(
           %{date_from: ~D[2026-04-01], date_to: ~D[2026-04-30], date_field: :issue_date},
           scope: scope_for(user)
         )
@@ -520,7 +520,7 @@ defmodule FirmowidWeb.Invoicing.Views.IndexTest do
   end
 
   defp cost_invoices_for_upload_month(user) do
-    CostInvoice.read!(
+    CostInvoice.list!(
       %{date_from: ~D[2026-04-01], date_to: ~D[2026-04-30], date_field: :issue_date},
       scope: scope_for(user)
     )

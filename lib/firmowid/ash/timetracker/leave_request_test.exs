@@ -39,6 +39,29 @@ defmodule Firmowid.Ash.Timetracker.LeaveRequestTest do
     Timetracker.create_leave_request!(attrs, scope: scope)
   end
 
+  describe "read and list authorization" do
+    test "employee cannot use list filters to read another user's requests", %{
+      user: user,
+      admin: admin,
+      employee_scope: employee_scope,
+      admin_scope: admin_scope
+    } do
+      own_request = create_request!(employee_scope, %{})
+      create_request!(admin_scope, %{})
+
+      assert {:ok, [read_request]} = LeaveRequest.read(scope: employee_scope)
+      assert read_request.id == own_request.id
+
+      assert {:ok, [listed_request]} =
+               Timetracker.list_leave_requests(%{user_id: user.id}, scope: employee_scope)
+
+      assert listed_request.id == own_request.id
+
+      assert {:ok, []} =
+               Timetracker.list_leave_requests(%{user_id: admin.id}, scope: employee_scope)
+    end
+  end
+
   describe "overlap prevention on create" do
     test "rejects create that overlaps an accepted request", %{
       employee_scope: employee_scope,
