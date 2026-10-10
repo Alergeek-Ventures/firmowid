@@ -3,9 +3,9 @@ defmodule FirmowidWeb.Delegations.Components.DelegationsList do
 
   use FirmowidWeb, :html
 
+  import FirmowidUI.Components.Button
+  import FirmowidUI.Components.Link
   import FirmowidWeb.Delegations.Components.Delegation
-  import FirmowidWeb.DesignSystem.Components.Button
-  import FirmowidWeb.DesignSystem.Components.Link
   import Phoenix.Component, except: [link: 1]
 
   attr :delegations, :list, required: true

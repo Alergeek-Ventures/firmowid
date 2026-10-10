@@ -9,10 +9,9 @@ defmodule FirmowidWeb.Development.Views.Index do
   """
   use FirmowidWeb, :live_view
 
-  import FirmowidWeb.DesignSystem.Components.Button
-  import FirmowidWeb.DesignSystem.Components.CoreComponents, except: [button: 1]
+  import FirmowidUI.Components.Button
+  import FirmowidUI.Components.Link
   import FirmowidWeb.DesignSystem.Components.InvoicingBadges
-  import FirmowidWeb.DesignSystem.Components.Link
   import Phoenix.Component, except: [link: 1]
 
   alias FirmowidWeb.DesignSystem.Components.InvoicingBadges

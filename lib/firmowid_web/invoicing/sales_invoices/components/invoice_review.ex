@@ -2,7 +2,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceReview do
   @moduledoc "Shared final review of invoice numbering, notes and delivery options."
   use FirmowidWeb, :html
 
-  import FirmowidWeb.DesignSystem.Components.Button
+  import FirmowidUI.Components.Button
 
   attr :invoice, :map, required: true
   attr :preview_invoice, :map, required: true

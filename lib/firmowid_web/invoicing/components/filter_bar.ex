@@ -8,7 +8,7 @@ defmodule FirmowidWeb.Invoicing.Components.FilterBar do
   """
   use FirmowidWeb, :html
 
-  import FirmowidWeb.DesignSystem.Components.Link
+  import FirmowidUI.Components.Link
   import Phoenix.Component, except: [link: 1]
 
   alias FirmowidWeb.Invoicing.Utilities.Navigation

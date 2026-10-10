@@ -2,7 +2,7 @@ defmodule FirmowidWeb.Auth.Views.ExpiredSubscription do
   @moduledoc false
   use FirmowidWeb, :live_view
 
-  import FirmowidWeb.DesignSystem.Components.Link
+  import FirmowidUI.Components.Link
   import Phoenix.Component, except: [link: 1]
 
   alias FirmowidWeb.Infrastructure.UserAuth

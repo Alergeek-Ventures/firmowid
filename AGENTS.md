@@ -113,16 +113,10 @@ external APIs are excluded by default; include them deliberately with
 
 ## Code Style Guidelines
 
-### Frontend architecture conventions (`lib/firmowid_web`)
+### Repository organization
 
-- **Directory path = module namespace** (`FirmowidWeb.X.Y.Z` lives in
-  `lib/firmowid_web/x/y/z.ex`).
-- Prefer a **feature-first layout** with standard subfolders:
-  `views/`, `components/`, `controllers/`, `utilities/`.
-- Keep dependencies directional: nested/child features may depend on shared
-  parent feature modules, but avoid cross-sibling dependencies.
-- Keep these conventions enforceable in practice (Credo + code review), and
-  always finish refactors with `mix check`.
+Consult the [repository-organization skill](.opencode/skills/repository-organization/SKILL.md)
+when placing code, organizing modules, extracting shared components or reviewing architectural boundaries.
 
 ### User-facing URL language
 

@@ -3,9 +3,9 @@ defmodule FirmowidWeb.Delegations.Components.SettlementPage do
 
   use FirmowidWeb, :html
 
+  import FirmowidUI.Components.Button
   import FirmowidWeb.Delegations.Components.Delegation
   import FirmowidWeb.Delegations.Components.Settlement.Expense
-  import FirmowidWeb.DesignSystem.Components.Button
   import FirmowidWeb.DesignSystem.Components.CoreComponents, except: [button: 1]
   import Phoenix.Component, except: [link: 1]
 

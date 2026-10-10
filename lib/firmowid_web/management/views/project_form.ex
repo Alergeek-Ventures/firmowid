@@ -2,9 +2,9 @@ defmodule FirmowidWeb.Management.Views.ProjectForm do
   @moduledoc false
   use FirmowidWeb, :live_view
 
-  import FirmowidWeb.DesignSystem.Components.Button
+  import FirmowidUI.Components.Button
+  import FirmowidUI.Components.Link
   import FirmowidWeb.DesignSystem.Components.CoreComponents, except: [button: 1]
-  import FirmowidWeb.DesignSystem.Components.Link
   import Phoenix.Component, except: [link: 1]
 
   alias Firmowid.Ash.Core

@@ -1,4 +1,4 @@
-defmodule FirmowidWeb.DesignSystem.Components.Link do
+defmodule FirmowidUI.Components.Link do
   @moduledoc """
   App-owned link primitive for the design system.
 
@@ -21,9 +21,9 @@ defmodule FirmowidWeb.DesignSystem.Components.Link do
   strict and explicit.
   """
 
-  use FirmowidWeb, :html
+  use FirmowidUI, :html
 
-  alias FirmowidWeb.DesignSystem.Utilities.ButtonStyles
+  alias FirmowidUI.Utilities.ButtonStyles
 
   @button_variants ~w(special primary secondary tertiary outline ghost destructive success)
   @accents ~w(orange turquoise)

@@ -7,10 +7,9 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
   # to domain actions/calculations — LiveView should only handle presentation
   use FirmowidWeb, :live_view
 
+  import FirmowidUI.Components.Button
+  import FirmowidUI.Components.Link
   import FirmowidWeb.Core.PubSubDebounce
-  import FirmowidWeb.DesignSystem.Components.Button
-  import FirmowidWeb.DesignSystem.Components.CoreComponents, except: [button: 1]
-  import FirmowidWeb.DesignSystem.Components.Link
   import FirmowidWeb.DesignSystem.Components.MonthPicker
   import Phoenix.Component, except: [link: 1]
 
@@ -161,7 +160,7 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
           <div class="hidden">
             <.live_file_input upload={@uploads.file} />
           </div>
-          <FirmowidWeb.DesignSystem.Components.Button.button
+          <FirmowidUI.Components.Button.button
             as="label"
             for={@uploads.file.ref}
             variant="secondary"
@@ -198,7 +197,7 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
             <span class="block sm:grow sm:text-center md:hidden lg:block">
               Faktura spoza KSeF
             </span>
-          </FirmowidWeb.DesignSystem.Components.Button.button>
+          </FirmowidUI.Components.Button.button>
         </form>
         <.link
           :if={can_write_invoicing?(@current_user)}

@@ -8,7 +8,7 @@ defmodule FirmowidWeb.Landing.Components.Primitives do
 
   use FirmowidWeb, :html
 
-  import FirmowidWeb.DesignSystem.Components.Link
+  import FirmowidUI.Components.Link
   import Phoenix.Component, except: [link: 1]
 
   alias Phoenix.LiveView.Rendered

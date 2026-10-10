@@ -5,10 +5,10 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
 
   use FirmowidWeb, :html
 
+  import FirmowidUI.Components.Button
+  import FirmowidUI.Components.Link
   import FirmowidWeb.Delegations.Components.DelegationsList
-  import FirmowidWeb.DesignSystem.Components.Button
   import FirmowidWeb.DesignSystem.Components.CoreComponents, except: [button: 1]
-  import FirmowidWeb.DesignSystem.Components.Link
   import FirmowidWeb.Settings.Components.EditButton
   import Phoenix.Component, except: [link: 1]
 

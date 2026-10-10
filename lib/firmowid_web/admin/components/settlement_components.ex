@@ -5,8 +5,7 @@ defmodule FirmowidWeb.Admin.Components.SettlementComponents do
 
   use FirmowidWeb, :html
 
-  import FirmowidWeb.DesignSystem.Components.CoreComponents, except: [button: 1]
-  import FirmowidWeb.DesignSystem.Components.Link
+  import FirmowidUI.Components.Link
   import FirmowidWeb.DesignSystem.Components.MonthPicker
   import Phoenix.Component, except: [link: 1]
 
@@ -100,7 +99,7 @@ defmodule FirmowidWeb.Admin.Components.SettlementComponents do
               new
             />
 
-            <FirmowidWeb.DesignSystem.Components.Button.button
+            <FirmowidUI.Components.Button.button
               type="submit"
               variant="primary"
               size="small"
@@ -108,7 +107,7 @@ defmodule FirmowidWeb.Admin.Components.SettlementComponents do
               class="justify-center sm:min-w-32"
             >
               Zapisz plan
-            </FirmowidWeb.DesignSystem.Components.Button.button>
+            </FirmowidUI.Components.Button.button>
           </.form>
 
           <p class="text-sm/snug text-grey-700">
@@ -197,25 +196,25 @@ defmodule FirmowidWeb.Admin.Components.SettlementComponents do
             new
           />
           <div class="flex flex-wrap gap-3">
-            <FirmowidWeb.DesignSystem.Components.Button.button
+            <FirmowidUI.Components.Button.button
               type="submit"
               variant="destructive"
               size="small"
             >
               Usuń organizację na stałe
-            </FirmowidWeb.DesignSystem.Components.Button.button>
-            <FirmowidWeb.DesignSystem.Components.Button.button
+            </FirmowidUI.Components.Button.button>
+            <FirmowidUI.Components.Button.button
               type="button"
               variant="outline"
               size="small"
               phx-click="cancel-delete-organization"
             >
               Anuluj
-            </FirmowidWeb.DesignSystem.Components.Button.button>
+            </FirmowidUI.Components.Button.button>
           </div>
         </.form>
       <% else %>
-        <FirmowidWeb.DesignSystem.Components.Button.button
+        <FirmowidUI.Components.Button.button
           type="button"
           variant="destructive"
           size="small"
@@ -223,7 +222,7 @@ defmodule FirmowidWeb.Admin.Components.SettlementComponents do
           class="mt-4"
         >
           Usuń organizację
-        </FirmowidWeb.DesignSystem.Components.Button.button>
+        </FirmowidUI.Components.Button.button>
       <% end %>
     </section>
     """

@@ -1,3 +1,5 @@
+import { computePosition, autoUpdate, flip } from "@floating-ui/dom";
+
 export default {
   mounted() {
     this.el.addEventListener("showPopover", this.showPopover.bind(this));
@@ -12,8 +14,6 @@ export default {
       );
       return;
     }
-
-    const { computePosition, autoUpdate, flip } = window.FloatingUIDOM;
 
     document.body.style.pointerEvents = "none";
 

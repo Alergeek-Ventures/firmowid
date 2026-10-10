@@ -2,7 +2,7 @@ defmodule FirmowidWeb.Management.Components.Tab do
   @moduledoc false
   use FirmowidWeb, :html
 
-  import FirmowidWeb.DesignSystem.Components.Link
+  import FirmowidUI.Components.Link
   import Phoenix.Component, except: [link: 1]
 
   attr :patch, :string, required: true

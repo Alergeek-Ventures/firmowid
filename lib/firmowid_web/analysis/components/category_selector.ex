@@ -34,7 +34,7 @@ defmodule FirmowidWeb.Analysis.Components.CategorySelector do
     ~H"""
     <div class="relative flex flex-wrap items-center gap-1">
       <%= if @can_write and @editable do %>
-        <FirmowidWeb.DesignSystem.Components.Button.button
+        <FirmowidUI.Components.Button.button
           id={"#{@popover_id}-trigger"}
           type="button"
           variant="unstyled"
@@ -45,7 +45,7 @@ defmodule FirmowidWeb.Analysis.Components.CategorySelector do
         >
           <.badges tags={@tags} colors={@colors} />
           <.icon name="hero-chevron-down-mini" class="size-4 shrink-0" />
-        </FirmowidWeb.DesignSystem.Components.Button.button>
+        </FirmowidUI.Components.Button.button>
         <.popover
           id={@popover_id}
           reference_id={"#{@popover_id}-trigger"}
@@ -54,7 +54,7 @@ defmodule FirmowidWeb.Analysis.Components.CategorySelector do
           class="w-64 rounded-lg border border-grey-200 bg-grey-50"
         >
           <div class="flex max-h-80 flex-col gap-1 overflow-auto p-2">
-            <FirmowidWeb.DesignSystem.Components.Button.button
+            <FirmowidUI.Components.Button.button
               type="button"
               variant="unstyled"
               phx-click="clear-entity-tags"
@@ -66,8 +66,8 @@ defmodule FirmowidWeb.Analysis.Components.CategorySelector do
               <.color_dot color={Map.fetch!(@colors, :unassigned)} />
               <span class="flex-1">{gettext("Unassigned")}</span>
               <.icon :if={@selected_kind == :unassigned} name="hero-check-mini" class="size-4" />
-            </FirmowidWeb.DesignSystem.Components.Button.button>
-            <FirmowidWeb.DesignSystem.Components.Button.button
+            </FirmowidUI.Components.Button.button>
+            <FirmowidUI.Components.Button.button
               type="button"
               variant="unstyled"
               phx-click="set-entity-category"
@@ -80,8 +80,8 @@ defmodule FirmowidWeb.Analysis.Components.CategorySelector do
               <.color_dot color={Map.fetch!(@colors, :company)} />
               <span class="flex-1">{gettext("Company")}</span>
               <.icon :if={@selected_kind == :company} name="hero-check-mini" class="size-4" />
-            </FirmowidWeb.DesignSystem.Components.Button.button>
-            <FirmowidWeb.DesignSystem.Components.Button.button
+            </FirmowidUI.Components.Button.button>
+            <FirmowidUI.Components.Button.button
               type="button"
               variant="unstyled"
               phx-click="set-entity-category"
@@ -94,7 +94,7 @@ defmodule FirmowidWeb.Analysis.Components.CategorySelector do
               <.icon name="hero-minus-circle-mini" class="size-4 shrink-0 text-grey-500" />
               <span class="flex-1">{gettext("Omitted")}</span>
               <.icon :if={@selected_kind == :internal} name="hero-check-mini" class="size-4" />
-            </FirmowidWeb.DesignSystem.Components.Button.button>
+            </FirmowidUI.Components.Button.button>
             <p class="border-t border-grey-200 pt-2 text-xs text-darkGrey">
               {gettext("Active projects")}
             </p>

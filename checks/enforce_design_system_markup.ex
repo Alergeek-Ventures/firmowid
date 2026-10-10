@@ -37,7 +37,7 @@ defmodule Checks.EnforceDesignSystemMarkup do
   @ds_link_patterns [
     ~r/use\s+FirmowidWeb\s*,\s*:ds_links\b/,
     ~r/use\s+FirmowidWeb\s*,\s*:ds_controls\b/,
-    ~r/import\s+FirmowidWeb\.DesignSystem\.Components\.Link\b/,
+    ~r/import\s+FirmowidUI\.Components\.Link\b/,
     ~r/use\s+FirmowidWeb\.DesignSystem\.Imports\s*,\s*:(?:links|controls)\b/
   ]
 
@@ -56,7 +56,8 @@ defmodule Checks.EnforceDesignSystemMarkup do
 
   defp excluded_path?(filename) do
     String.contains?(filename, "lib/firmowid_web/landing/") or
-      String.contains?(filename, "lib/firmowid_web/design_system/")
+      String.contains?(filename, "lib/firmowid_web/design_system/") or
+      String.contains?(filename, "lib/firmowid_ui/")
   end
 
   defp scan_forbidden_import(%SourceFile{filename: filename} = source_file, issue_meta) do
@@ -81,6 +82,7 @@ defmodule Checks.EnforceDesignSystemMarkup do
   defp traverse({:sigil_H, meta, [{:<<>>, _, [content]}, _]} = ast, issues, issue_meta, filename, source_file)
        when is_binary(content) do
     line = meta[:line] || 1
+
     {ast, issues ++ scan_markup(content, issue_meta, line, ds_link_enabled?(filename, source_file))}
   end
 
@@ -133,7 +135,8 @@ defmodule Checks.EnforceDesignSystemMarkup do
 
           format_issue(
             issue_meta,
-            message: "`<.link>` requires the design-system link component to be imported via `:ds_links` or `:ds_controls`.",
+            message:
+              "`<.link>` requires the design-system link component to be imported via `:ds_links` or `:ds_controls`.",
             line_no: line_no,
             trigger: trigger
           )

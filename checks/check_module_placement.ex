@@ -1,10 +1,11 @@
 defmodule Checks.CheckModulePlacement do
   @moduledoc """
-  Enforces that Phoenix modules are placed in their correct folders based on type.
+  Enforces Phoenix module placement through the Web, MCP and shared UI entrypoints.
 
   ## Rules
 
-  1. Files in `*/views/` must contain `use FirmowidWeb, :live_view` (direct `Phoenix.LiveView` is forbidden)
+  1. Files in `*/views/` must contain `use FirmowidWeb, :live_view` or its `{:live_view, opts}` form
+     (direct `Phoenix.LiveView` is forbidden)
   2. Files in `*/components/` must contain `use FirmowidWeb, :live_component`
      or `use FirmowidWeb, :html` (direct `Phoenix.Component` or `Phoenix.LiveComponent` is forbidden)
   3. Files in `*/controllers/` must contain `use FirmowidWeb, :controller` (direct `Phoenix.Controller` is forbidden)
@@ -19,8 +20,8 @@ defmodule Checks.CheckModulePlacement do
 
   This enforces the vertical "by feature" organization where folder structure
   communicates module type, eliminating the need for type suffixes in module names.
-  All modules must go through the `FirmowidWeb` macro hub to ensure consistent
-  imports and helpers.
+  Use the owning entrypoint (`FirmowidWeb`, `FirmowidMcp` or `FirmowidUI`) to
+  provide the appropriate imports and helpers for that interface.
   """
 
   use Credo.Check,
@@ -93,7 +94,7 @@ defmodule Checks.CheckModulePlacement do
           issue_meta,
           message: """
           Do not use `use Phoenix.LiveView` directly in views/ folder.
-          Use `use FirmowidWeb, :live_view` instead to ensure consistent helpers.
+          Use the owning interface's `:live_view` entrypoint instead.
           """,
           line_no: line_no,
           trigger: "Phoenix.LiveView"
@@ -111,7 +112,7 @@ defmodule Checks.CheckModulePlacement do
           format_issue(
             issue_meta,
             message: """
-            Files in views/ folder must contain `use FirmowidWeb, :live_view`.
+            Files in views/ folder must use an interface's `:live_view` entrypoint.
             This ensures LiveViews are only placed in views folders.
             """,
             line_no: 1,
@@ -142,7 +143,7 @@ defmodule Checks.CheckModulePlacement do
             issue_meta,
             message: """
             Do not use `use Phoenix.Component` directly in components/ folder.
-            Use `use FirmowidWeb, :html` instead to ensure consistent helpers.
+            Use the owning interface's `:html` entrypoint instead.
             """,
             line_no: line_no,
             trigger: "Phoenix.Component"
@@ -153,7 +154,7 @@ defmodule Checks.CheckModulePlacement do
             issue_meta,
             message: """
             Do not use `use Phoenix.LiveComponent` directly in components/ folder.
-            Use `use FirmowidWeb, :live_component` instead to ensure consistent helpers.
+            Use the owning interface's `:live_component` entrypoint instead.
             """,
             line_no: line_no,
             trigger: "Phoenix.LiveComponent"
@@ -176,8 +177,8 @@ defmodule Checks.CheckModulePlacement do
           format_issue(
             issue_meta,
             message: """
-            Files in components/ folder must contain `use FirmowidWeb, :live_component`
-            or `use FirmowidWeb, :html`.
+            Files in components/ folder must use an interface's `:live_component`
+            or `:html` entrypoint.
             This ensures components are only placed in components folders.
             """,
             line_no: 1,
@@ -398,9 +399,15 @@ defmodule Checks.CheckModulePlacement do
   defp find_sigil_h({:sigil_H, meta, _args} = ast, acc), do: {ast, [meta[:line] | acc]}
   defp find_sigil_h(ast, acc), do: {ast, acc}
 
-  # Pattern: use FirmowidWeb, :type (e.g., :live_view, :controller)
-  defp find_use_statements({:use, meta, [{:__aliases__, _, [:FirmowidWeb]}, type]} = ast, acc) when is_atom(type) do
+  # All interface entrypoints participate in the same folder-type rules.
+  defp find_use_statements({:use, meta, [{:__aliases__, _, [interface]}, type]} = ast, acc)
+       when interface in [:FirmowidWeb, :FirmowidMcp, :FirmowidUI] and is_atom(type) do
     {ast, [{:firmowid_web, type, meta[:line]} | acc]}
+  end
+
+  defp find_use_statements({:use, meta, [{:__aliases__, _, [interface]}, {:live_view, opts}]} = ast, acc)
+       when interface in [:FirmowidWeb, :FirmowidMcp, :FirmowidUI] and is_list(opts) do
+    {ast, [{:firmowid_web, :live_view, meta[:line]} | acc]}
   end
 
   # Pattern: use Phoenix.LiveView

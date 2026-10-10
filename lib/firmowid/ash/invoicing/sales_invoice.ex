@@ -168,9 +168,15 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
     read :list do
       description "List sales invoices with search, status, and reconciliation filters."
 
+      pagination do
+        required? false
+        keyset? true
+        max_page_size 100
+      end
+
       argument :date_from, :date
       argument :date_to, :date
-      argument :query, :string
+      argument :query, :string, constraints: [max_length: 500]
       argument :currency, :string
       argument :amount_gt, :decimal
       argument :amount_lt, :decimal
@@ -202,6 +208,22 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
       argument :limit, :integer do
         constraints min: 1
       end
+
+      argument :listing_sort, :atom, constraints: [one_of: [:newest, :oldest]]
+
+      validate compare(:date_to, greater_than_or_equal_to: :date_from),
+        where: [present(:date_from), present(:date_to)],
+        message: "Must be on or after date_from"
+
+      prepare fn query, _context ->
+        case Ash.Query.get_argument(query, :currency) do
+          nil -> query
+          currency -> Ash.Query.set_argument(query, :currency, String.upcase(currency))
+        end
+      end
+
+      validate one_of(:currency, Enum.map(Elixir.Money.known_currencies(), &to_string/1)),
+        message: "Must be a recognized currency code"
 
       # Date filtering — conditional on date_field
       prepare {Firmowid.Ash.Invoicing.Preparations.FilterByDateField, []}
@@ -296,6 +318,8 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
       prepare build(limit: arg(:limit)) do
         where present(:limit)
       end
+
+      prepare Firmowid.Ash.Invoicing.Preparations.SortInvoiceListing
     end
 
     read :by_id do
@@ -1299,6 +1323,14 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
     calculate :is_draft, :boolean, expr(is_nil(invoice_number))
     calculate :is_confirmed, :boolean, expr(not is_nil(invoice_number))
     calculate :is_ksef_submitted, :boolean, expr(not is_nil(ksef_number))
+
+    calculate :ksef_submission_status,
+              :atom,
+              Firmowid.Ash.Invoicing.Calculations.KsefSubmissionStatus do
+      constraints one_of: [:not_submitted, :submitting, :submitted, :failed]
+      public? true
+    end
+
     calculate :is_deletable, :boolean, expr(is_nil(ksef_number) and is_nil(locked_at))
 
     calculate :reconciliation_status,

@@ -2,9 +2,9 @@ defmodule FirmowidWeb.HoursRecord.Components.UploadForm do
   @moduledoc "Guides downloading, signing and submitting a monthly hours record."
   use FirmowidWeb, :live_component
 
-  import FirmowidWeb.DesignSystem.Components.Button
+  import FirmowidUI.Components.Button
+  import FirmowidUI.Components.Link
   import FirmowidWeb.DesignSystem.Components.CoreComponents, except: [button: 1]
-  import FirmowidWeb.DesignSystem.Components.Link
   import Phoenix.Component, except: [link: 1]
 
   alias Firmowid.Ash.Timetracker

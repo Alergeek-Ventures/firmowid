@@ -33,11 +33,11 @@ defmodule FirmowidWeb.Settings.Views.Index do
   alias Firmowid.Ash.Finances
   alias Firmowid.Ash.Finances.GoCardless.ApiClient
   alias Firmowid.Ash.Finances.Requisition
-  alias Firmowid.Ash.Ksef
   alias Firmowid.Ash.Ksef.Credential
   alias Firmowid.Ash.Payroll
   alias Firmowid.Ash.Timetracker
   alias Firmowid.ErrorKind
+  alias FirmowidUI.Ksef.Connection
   alias FirmowidWeb.Billing.Utilities.MonthContext
   alias FirmowidWeb.Core.Endpoint
   alias FirmowidWeb.Documents.Components.DocumentsSection
@@ -130,23 +130,15 @@ defmodule FirmowidWeb.Settings.Views.Index do
 
     socket =
       if admin? do
-        ksef_internal_credential = Credential.get_internal!(scope: scope)
-
         socket
+        |> Connection.init(scope)
         |> assign(:company_form, form_basic_info_form(current_org, scope))
-        |> assign(:ksef_credential, Ksef.get_credential!(scope: scope))
-        |> assign(:ksef_auth_challenge, nil)
-        |> assign(:ksef_auth_method, :trusted_profile)
-        |> assign(:ksef_auth_status, ksef_connection_status(ksef_internal_credential))
-        |> assign(:ksef_failure, nil)
         |> allow_upload(:organization_avatar,
           accept: ~w(.jpg .jpeg .png),
           max_entries: 1,
           auto_upload: true,
           progress: &handle_progress/3
         )
-        |> allow_upload(:ksef_credentials, accept: ~w(.crt .key), max_entries: 2)
-        |> allow_upload(:signed_auth_token_request, accept: ~w(.xml), max_entries: 1)
       else
         socket
       end
@@ -235,13 +227,6 @@ defmodule FirmowidWeb.Settings.Views.Index do
       Endpoint.subscribe("requisition:linked:#{organization_id}")
       Endpoint.subscribe("requisition:rejected:#{organization_id}")
       Endpoint.subscribe("requisition:expired:#{organization_id}")
-      Endpoint.subscribe("credential:authenticating:#{organization_id}")
-      Endpoint.subscribe("credential:authenticating_epuap:#{organization_id}")
-      Endpoint.subscribe("credential:preparing_enrollment:#{organization_id}")
-      Endpoint.subscribe("credential:wait_for_certificate:#{organization_id}")
-      Endpoint.subscribe("credential:refreshing:#{organization_id}")
-      Endpoint.subscribe("credential:working:#{organization_id}")
-      Endpoint.subscribe("credential:failed:#{organization_id}")
     end
   end
 
@@ -754,162 +739,18 @@ defmodule FirmowidWeb.Settings.Views.Index do
     end
   end
 
-  def handle_event("save_ksef_token", %{"ksef_token" => ksef_token}, socket) do
-    if socket.assigns.current_user.role != :admin do
-      raise Forbidden, message: "Tylko administrator może zarządzać KSeF."
-    end
-
-    case Credential.authenticate_with_token(ksef_token, scope: socket.assigns.ash_scope) do
-      {:ok, credential} ->
-        LiveToast.send_toast(:info, "Rozpoczęto uwierzytelnianie w KSeF.")
-
-        {:noreply,
-         socket
-         |> assign(:ksef_credential, Ksef.get_credential!(scope: socket.assigns.ash_scope))
-         |> assign(:ksef_auth_status, credential.status)
-         |> assign(:ksef_failure, nil)}
-
-      {:error, %Invalid{errors: [%{message: message} | _]}} ->
-        LiveToast.send_toast(:error, message)
-        {:noreply, socket}
-    end
-  end
-
-  def handle_event("select_ksef_auth_method", %{"method" => method}, socket)
-      when method in ~w(token trusted_profile certificate) do
-    {:noreply,
-     socket
-     |> assign(:ksef_auth_method, String.to_existing_atom(method))
-     |> assign(:ksef_failure, nil)}
-  end
-
-  def handle_event("validate_ksef_certificate", _params, socket), do: {:noreply, socket}
-
-  def handle_event("download_ksef_auth_token_request", _params, socket) do
-    if socket.assigns.current_user.role != :admin do
-      raise Forbidden, message: "Tylko administrator może zarządzać KSeF."
-    end
-
-    case Ksef.prepare_external_auth_token_request(socket.assigns.ash_scope) do
-      {:ok, request} ->
-        socket = assign(socket, :ksef_auth_challenge, request.challenge)
-
-        {:noreply,
-         push_event(socket, "download-ksef-auth-token-request", %{
-           content: request.xml,
-           filename: "wniosek.xml"
-         })}
-
-      {:error, _reason} ->
-        LiveToast.send_toast(:error, "Nie udało się pobrać dokumentu z KSeF.")
-        {:noreply, socket}
-    end
-  end
-
-  # LiveView requires a phx-change handler to initialize and track uploaded files.
-  def handle_event("validate_signed_auth_token_request", _params, socket), do: {:noreply, socket}
-
-  # LiveView supplies upload paths from its managed temporary directory; they
-  # are not derived from client-provided filenames or other user input.
-  # sobelow_skip ["Traversal.FileModule"]
-  def handle_event("upload_signed_auth_token_request", _params, socket) do
-    if socket.assigns.current_user.role != :admin do
-      raise Forbidden, message: "Tylko administrator może zarządzać KSeF."
-    end
-
-    challenge = socket.assigns.ksef_auth_challenge
-
-    uploaded_xml =
-      consume_uploaded_entries(socket, :signed_auth_token_request, fn %{path: path}, _entry ->
-        File.read(path)
-      end)
-
-    with [signed_xml] <- uploaded_xml,
-         {:ok, _credential} <-
-           Credential.enroll_ksef_certificate(
-             signed_xml,
-             challenge,
-             scope: socket.assigns.ash_scope
-           ) do
-      LiveToast.send_toast(:info, "Rozpoczęto generowanie certyfikatu KSeF.")
-
-      {:noreply,
-       socket
-       |> assign(:ksef_auth_challenge, nil)
-       |> assign(:ksef_auth_status, :authenticating_epuap)
-       |> assign(:ksef_failure, nil)}
-    else
-      _error ->
-        LiveToast.send_toast(
-          :error,
-          "Podpisany dokument nie zgadza się z pobranym wnioskiem."
-        )
-
-        {:noreply, socket}
-    end
-  end
-
-  # LiveView supplies upload paths from its managed temporary directory; they
-  # are not derived from client-provided filenames or other user input.
-  # sobelow_skip ["Traversal.FileModule"]
-  def handle_event("save_ksef_certificate", %{"private_key_password" => private_key_password}, socket) do
-    if socket.assigns.current_user.role != :admin do
-      raise Forbidden, message: "Tylko administrator może zarządzać KSeF."
-    end
-
-    files =
-      consume_uploaded_entries(socket, :ksef_credentials, fn %{path: path}, entry ->
-        with {:ok, contents} <- File.read(path) do
-          {:ok, {Path.extname(entry.client_name), contents}}
-        end
-      end)
-
-    with {".crt", certificate} <- List.keyfind(files, ".crt", 0),
-         {".key", private_key} <- List.keyfind(files, ".key", 0) do
-      case Credential.authenticate_with_uploaded_certificate(
-             certificate,
-             private_key,
-             private_key_password,
-             scope: socket.assigns.ash_scope
-           ) do
-        {:ok, credential} ->
-          LiveToast.send_toast(:info, "Rozpoczęto uwierzytelnianie w KSeF.")
-
-          {:noreply,
-           socket
-           |> assign(:ksef_credential, Ksef.get_credential!(scope: socket.assigns.ash_scope))
-           |> assign(:ksef_auth_status, credential.status)
-           |> assign(:ksef_failure, nil)}
-
-        {:error, _reason} ->
-          LiveToast.send_toast(
-            :error,
-            "Nie udało się zalogować do KSeF. Sprawdź pliki i hasło do klucza."
-          )
-
-          {:noreply, socket}
-      end
-    else
-      _ ->
-        LiveToast.send_toast(:error, "Wybierz certyfikat i klucz prywatny.")
-        {:noreply, socket}
-    end
-  end
-
-  def handle_event("disconnect_ksef", _params, socket) do
-    if socket.assigns.current_user.role != :admin do
-      raise Forbidden, message: "Tylko administrator może zarządzać KSeF."
-    end
-
-    case Ksef.unauthenticate(socket.assigns.ash_scope) do
-      {:ok, _} ->
-        LiveToast.send_toast(:info, "Rozłączono z KSeF.")
-        {:noreply, assign(socket, :ksef_credential, nil)}
-
-      {:error, _} ->
-        LiveToast.send_toast(:error, "Wystąpił błąd podczas rozłączania z KSeF.")
-        {:noreply, socket}
-    end
+  def handle_event(event, params, socket)
+      when event in [
+             "save_ksef_token",
+             "select_ksef_auth_method",
+             "validate_ksef_certificate",
+             "download_ksef_auth_token_request",
+             "validate_signed_auth_token_request",
+             "upload_signed_auth_token_request",
+             "save_ksef_certificate",
+             "disconnect_ksef"
+           ] do
+    Connection.handle_event(event, params, socket, socket.assigns.ash_scope)
   end
 
   def handle_event("toggle_editing_basic_info", _params, socket) do
@@ -1215,41 +1056,8 @@ defmodule FirmowidWeb.Settings.Views.Index do
     end
   end
 
-  def handle_info(
-        %Broadcast{
-          topic: "credential:" <> topic,
-          payload: %Notification{resource: Credential, data: credential} = notification
-        },
-        socket
-      ) do
-    status = credential_status_from_topic(topic, credential)
-    socket = assign(socket, :ksef_auth_status, status)
-
-    case status do
-      :working ->
-        if notification.action != :recover_certificate_refresh do
-          LiveToast.send_toast(:success, "Połączono z KSeF.")
-        end
-
-        {:noreply,
-         socket
-         |> assign(:ksef_failure, nil)
-         |> assign(:ksef_credential, Ksef.get_credential!(scope: socket.assigns.ash_scope))}
-
-      :failed ->
-        reason = Ash.Changeset.get_argument(notification.changeset, :reason)
-
-        {:noreply,
-         socket
-         |> assign(:ksef_failure, %{reason: reason, auth_type: credential.auth_type})
-         |> assign(:ksef_credential, Ksef.get_credential!(scope: socket.assigns.ash_scope))}
-
-      :refreshing ->
-        {:noreply, assign(socket, :ksef_credential, Ksef.get_credential!(scope: socket.assigns.ash_scope))}
-
-      _ ->
-        {:noreply, socket}
-    end
+  def handle_info(%Broadcast{topic: "credential:" <> _, payload: %Notification{resource: Credential}} = message, socket) do
+    Connection.handle_info(message, socket, socket.assigns.ash_scope)
   end
 
   # Handle Ash native PubSub broadcasts for requisition status changes
@@ -1411,18 +1219,6 @@ defmodule FirmowidWeb.Settings.Views.Index do
          scope: scope
        )}
     end)
-  end
-
-  defp ksef_connection_status(nil), do: :idle
-  defp ksef_connection_status(%Credential{status: status}), do: status
-
-  defp credential_status_from_topic(topic, credential) do
-    topic
-    |> String.split(":")
-    |> List.first()
-    |> String.to_existing_atom()
-  rescue
-    ArgumentError -> credential.status
   end
 
   def render(assigns) do

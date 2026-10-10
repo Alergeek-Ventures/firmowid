@@ -16,7 +16,7 @@ defmodule FirmowidWeb.Invoicing.Components.StatusButton do
 
   def status_button(assigns) do
     ~H"""
-    <FirmowidWeb.DesignSystem.Components.Button.button
+    <FirmowidUI.Components.Button.button
       type={@type}
       variant="unstyled"
       class={[
@@ -28,7 +28,7 @@ defmodule FirmowidWeb.Invoicing.Components.StatusButton do
     >
       <.icon :if={@icon} name={@icon} class="size-4" />
       <span :if={@label}>{@label}</span>
-    </FirmowidWeb.DesignSystem.Components.Button.button>
+    </FirmowidUI.Components.Button.button>
     """
   end
 end

@@ -2,7 +2,7 @@ defmodule FirmowidWeb.HoursRecord.Components.ChangeRequest do
   @moduledoc "Shared presentation and organization-admin review controls for hours record change requests."
   use FirmowidWeb, :html
 
-  import FirmowidWeb.DesignSystem.Components.Button
+  import FirmowidUI.Components.Button
   import FirmowidWeb.Management.Components.HoursRecordStatus, only: [hours_record_status: 1]
 
   alias Phoenix.LiveView.Rendered

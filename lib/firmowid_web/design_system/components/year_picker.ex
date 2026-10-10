@@ -12,7 +12,7 @@ defmodule FirmowidWeb.DesignSystem.Components.YearPicker do
 
   def year_picker(assigns) do
     ~H"""
-    <FirmowidWeb.DesignSystem.Components.Button.button
+    <FirmowidUI.Components.Button.button
       as="label"
       variant={@variant}
       size={@size}
@@ -30,7 +30,7 @@ defmodule FirmowidWeb.DesignSystem.Components.YearPicker do
         data-enabled-years={@active_years && @active_years |> Enum.join(",")}
         {@rest}
       />
-    </FirmowidWeb.DesignSystem.Components.Button.button>
+    </FirmowidUI.Components.Button.button>
     """
   end
 end

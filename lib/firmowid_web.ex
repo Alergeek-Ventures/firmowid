@@ -43,7 +43,7 @@ defmodule FirmowidWeb do
         formats: [:html, :json],
         layouts: [html: FirmowidWeb.Infrastructure.Layouts]
 
-      use Gettext, backend: FirmowidWeb.Core.Gettext
+      use Gettext, backend: Firmowid.Gettext
 
       import Plug.Conn
 
@@ -51,6 +51,8 @@ defmodule FirmowidWeb do
     end
   end
 
+  @doc "Defines a LiveView with the browser application's layout and helpers."
+  @spec live_view() :: Macro.t()
   def live_view do
     quote do
       use Phoenix.LiveView,
@@ -84,11 +86,13 @@ defmodule FirmowidWeb do
 
   defp html_helpers do
     quote do
-      use Gettext, backend: FirmowidWeb.Core.Gettext
+      use Gettext, backend: Firmowid.Gettext
 
+      import FirmowidUI.Components.Inputs
       import FirmowidWeb.DesignSystem.Components.CoreComponents
       # HTML escaping functionality
       import Phoenix.HTML
+
       # Core UI components and translation
 
       # Shortcut for generating JS commands

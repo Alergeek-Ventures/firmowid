@@ -20,7 +20,9 @@ defmodule Firmowid.Ash.Ksef.Credential do
     notifiers: [Ash.Notifier.PubSub]
 
   alias AshOban.Checks.AshObanInteraction
+  alias Firmowid.Ash.Checks.AtLeastRole
   alias Firmowid.Ash.Checks.SystemActorRole
+  alias Firmowid.Ash.Ksef.Actions.ConnectionStatus
   alias Firmowid.Ash.Ksef.Changes.RevokeSupersededCertificate
   alias Firmowid.Ash.Ksef.Changes.SetCredentialExpiration
   alias Firmowid.Ash.Ksef.Validations.ValidateKsefToken
@@ -77,6 +79,7 @@ defmodule Firmowid.Ash.Ksef.Credential do
   end
 
   code_interface do
+    define :connection_status
     define :read, action: :read
     define :destroy
     define :prepare_enrollment
@@ -103,6 +106,32 @@ defmodule Firmowid.Ash.Ksef.Credential do
   actions do
     # Default and lifecycle actions are internal; disconnect is exposed as Ksef.unauthenticate/1.
     defaults [:read, :destroy]
+
+    action :connection_status, :map do
+      description "Return only the current organization's KSeF connection metadata, never credentials."
+      allow_nil? false
+
+      constraints fields: [
+                    status: [
+                      type: :atom,
+                      allow_nil?: false,
+                      constraints: [one_of: [:disconnected, :connecting, :connected, :expired]]
+                    ],
+                    can_connect: [type: :boolean, allow_nil?: false],
+                    auth_method: [
+                      type: :atom,
+                      constraints: [one_of: [:token, :certificate, :generated_certificate]]
+                    ],
+                    expires_on: [type: :date],
+                    data_freshness: [
+                      type: :atom,
+                      allow_nil?: false,
+                      constraints: [one_of: [:unknown]]
+                    ]
+                  ]
+
+      run ConnectionStatus
+    end
 
     update :prepare_enrollment do
       description "Mark generated-certificate enrollment as ready to submit a certificate request."
@@ -323,9 +352,9 @@ defmodule Firmowid.Ash.Ksef.Credential do
       authorize_if action([:all_organization_ids, :refreshable_certificates])
     end
 
-    # Other actors: no access
-    policy always() do
-      forbid_if always()
+    # All other human access remains implicitly denied, including credential reads.
+    policy action(:connection_status) do
+      authorize_if {AtLeastRole, role: :invoicing}
     end
   end
 

@@ -15,11 +15,11 @@ and technical/internal strings that are not user-facing (for example logs).
 
 - The managed locale is Polish (`pl`); English is the source language. Current
   tooling and Accent catalog are configured for `en`/`pl`, not arbitrary locales.
-- `FirmowidWeb.Core.Gettext` is the backend Gettext module. In a module that
+- `Firmowid.Gettext` is the backend Gettext module. In a module that
   needs Gettext macros, use the actual backend declaration:
 
   ```elixir
-  use Gettext, backend: FirmowidWeb.Core.Gettext
+  use Gettext, backend: Firmowid.Gettext
   ```
 - The default Gettext locale is Polish. Do not add browser-locale detection or an
   English UI-language switcher as an assumed part of translating a string.
@@ -34,7 +34,7 @@ Use complete, stable English msgids as the source. Keep the meaning in the
 Gettext call rather than composing fragments or interpolating values first:
 
 ```elixir
-use Gettext, backend: FirmowidWeb.Core.Gettext
+use Gettext, backend: Firmowid.Gettext
 
 gettext("Save")
 gettext("Invoice %{number}", number: invoice.number)

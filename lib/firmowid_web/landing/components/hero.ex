@@ -5,7 +5,7 @@ defmodule FirmowidWeb.Landing.Components.Hero do
 
   use FirmowidWeb, :html
 
-  import FirmowidWeb.DesignSystem.Components.Link
+  import FirmowidUI.Components.Link
   import Phoenix.Component, except: [link: 1]
 
   alias Phoenix.LiveView.Rendered
@@ -42,7 +42,7 @@ defmodule FirmowidWeb.Landing.Components.Hero do
       assign(
         assigns,
         :benefits,
-        Enum.map(@benefits, &Gettext.gettext(FirmowidWeb.Core.Gettext, &1))
+        Enum.map(@benefits, &Gettext.gettext(Firmowid.Gettext, &1))
       )
 
     ~H"""
@@ -163,10 +163,10 @@ defmodule FirmowidWeb.Landing.Components.Hero do
         <div class="grid gap-8 text-center lg:hidden">
           <div :for={metric <- @mobile_metrics} class="flex flex-col items-center gap-2">
             <p class="text-sm/4 font-normal text-grey-800">
-              {Gettext.gettext(FirmowidWeb.Core.Gettext, metric.label)}
+              {Gettext.gettext(Firmowid.Gettext, metric.label)}
             </p>
             <p class="text-[44px] leading-[1.08] font-bold text-[#0f0f0f]">
-              {Gettext.gettext(FirmowidWeb.Core.Gettext, metric.value)}
+              {Gettext.gettext(Firmowid.Gettext, metric.value)}
             </p>
           </div>
         </div>
@@ -180,10 +180,10 @@ defmodule FirmowidWeb.Landing.Components.Hero do
               class="text-right text-[13px]/4 font-normal text-[#4e4e4e]"
               style={"width: #{metric.width}"}
             >
-              {Gettext.gettext(FirmowidWeb.Core.Gettext, metric.label)}
+              {Gettext.gettext(Firmowid.Gettext, metric.label)}
             </p>
             <p class="text-[22px] leading-[1.24] font-bold text-[#0f0f0f]">
-              {Gettext.gettext(FirmowidWeb.Core.Gettext, metric.value)}
+              {Gettext.gettext(Firmowid.Gettext, metric.value)}
             </p>
           </div>
         </div>

@@ -11,9 +11,9 @@ defmodule FirmowidWeb.DesignSystem.Components.InvoicingBadges do
 
   alias Firmowid.Ash.Invoicing.CostInvoice
   alias Firmowid.Ash.Invoicing.SalesInvoice
+  alias FirmowidUI.Components.InvoiceSourceBadge
   alias FirmowidWeb.DesignSystem.Components.InvoicingBadgeSpecs
   alias FirmowidWeb.DesignSystem.Components.InvoicingBankBadge
-  alias FirmowidWeb.DesignSystem.Components.InvoicingInvoiceSourceBadge
   alias Phoenix.LiveView.Rendered
 
   @bank_sizes ["full", "mini"]
@@ -76,7 +76,7 @@ defmodule FirmowidWeb.DesignSystem.Components.InvoicingBadges do
 
   attr :rest, :global, include: ~w(aria-label title phx-click phx-hook id data-test-id)
 
-  def invoice_source_badge(assigns), do: InvoicingInvoiceSourceBadge.invoice_source_badge(assigns)
+  def invoice_source_badge(assigns), do: InvoiceSourceBadge.invoice_source_badge(assigns)
 
   @doc """
   Resolves the invoice badge variant for a cost or sales invoice.

@@ -43,7 +43,7 @@ defmodule FirmowidWeb.Invoicing.Components.Assistant do
         disabled={@loading}
         class="w-full border-none p-0 text-black placeholder:text-grey-200 focus:ring-0 focus:outline-hidden disabled:cursor-not-allowed disabled:opacity-50"
       />
-      <FirmowidWeb.DesignSystem.Components.Button.button
+      <FirmowidUI.Components.Button.button
         type="submit"
         variant="unstyled"
         disabled={@loading}
@@ -57,7 +57,7 @@ defmodule FirmowidWeb.Invoicing.Components.Assistant do
         <% else %>
           <Lucideicons.send class="size-6" />
         <% end %>
-      </FirmowidWeb.DesignSystem.Components.Button.button>
+      </FirmowidUI.Components.Button.button>
     </form>
     """
   end

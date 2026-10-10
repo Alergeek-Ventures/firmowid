@@ -2,8 +2,7 @@ defmodule FirmowidWeb.Management.Components.ProfileTab do
   @moduledoc "LiveComponent for displaying employee profile information."
   use FirmowidWeb, :live_component
 
-  import FirmowidWeb.DesignSystem.Components.CoreComponents, except: [button: 1]
-  import FirmowidWeb.DesignSystem.Components.Link
+  import FirmowidUI.Components.Link
   import FirmowidWeb.Management.Components.Card
   import Phoenix.Component, except: [link: 1]
 

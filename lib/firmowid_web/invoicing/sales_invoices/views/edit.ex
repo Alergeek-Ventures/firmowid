@@ -12,7 +12,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
   """
   use FirmowidWeb, :live_view
 
-  import FirmowidWeb.DesignSystem.Components.Button
+  import FirmowidUI.Components.Button
   import FirmowidWeb.DesignSystem.Components.CoreComponents, except: [button: 1]
 
   alias Firmowid.Ash.Core

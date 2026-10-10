@@ -9,7 +9,7 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceDetails do
 
   use FirmowidWeb, :html
 
-  import FirmowidWeb.DesignSystem.Components.Button
+  import FirmowidUI.Components.Button
   import FirmowidWeb.DesignSystem.Components.CoreComponents, except: [button: 1]
   import FirmowidWeb.DesignSystem.Components.InvoicingBadges
   import FirmowidWeb.Invoicing.Components.StatusButton

@@ -1,8 +1,19 @@
-defmodule FirmowidWeb.Mcp.Utilities.RewriteLoopbackRedirectUriTest do
+defmodule FirmowidMcp.Utilities.RewriteLoopbackRedirectUriTest do
   @moduledoc false
   use ExUnit.Case, async: true
 
-  alias FirmowidWeb.Mcp.Utilities.RewriteLoopbackRedirectUri
+  alias FirmowidMcp.Utilities.RewriteLoopbackRedirectUri
+
+  test "never rewrites incoming resource parameters" do
+    params = %{
+      "resource" => "https://arbitrary.example/mcp",
+      "redirect_uri" => "http://localhost:54321/callback"
+    }
+
+    conn = :post |> Plug.Test.conn("/oauth/token", params) |> RewriteLoopbackRedirectUri.call([])
+    assert conn.params["resource"] == params["resource"]
+    assert conn.body_params["resource"] == params["resource"]
+  end
 
   test "rewrites localhost redirect URIs from authorization query parameters" do
     redirect_uri = "http://localhost:54321/callback"

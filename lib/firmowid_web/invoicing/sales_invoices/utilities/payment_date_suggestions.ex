@@ -3,7 +3,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Utilities.PaymentDateSuggestions d
   Builds and applies quick date suggestions for sales invoice payment forms.
   """
 
-  use Gettext, backend: FirmowidWeb.Core.Gettext
+  use Gettext, backend: Firmowid.Gettext
 
   @type suggestion_target :: :sale_date | :due_date
   @type suggestion_key ::

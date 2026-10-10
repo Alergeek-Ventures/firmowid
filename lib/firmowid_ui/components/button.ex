@@ -1,4 +1,4 @@
-defmodule FirmowidWeb.DesignSystem.Components.Button do
+defmodule FirmowidUI.Components.Button do
   @moduledoc """
   App-owned button primitive for the design system.
 
@@ -7,9 +7,9 @@ defmodule FirmowidWeb.DesignSystem.Components.Button do
   styling logic private to the component.
   """
 
-  use FirmowidWeb, :html
+  use FirmowidUI, :html
 
-  alias FirmowidWeb.DesignSystem.Utilities.ButtonStyles
+  alias FirmowidUI.Utilities.ButtonStyles
 
   @doc """
   Renders a design-system button.

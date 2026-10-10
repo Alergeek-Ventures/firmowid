@@ -2,7 +2,7 @@ defmodule FirmowidWeb.Invoicing.Components.DownloadModal do
   @moduledoc false
   use FirmowidWeb, :live_component
 
-  import FirmowidWeb.DesignSystem.Components.Link
+  import FirmowidUI.Components.Link
   import Phoenix.Component, except: [link: 1]
 
   alias FirmowidWeb.Invoicing.Utilities.Navigation
@@ -33,7 +33,7 @@ defmodule FirmowidWeb.Invoicing.Components.DownloadModal do
 
     ~H"""
     <div>
-      <FirmowidWeb.DesignSystem.Components.Button.button
+      <FirmowidUI.Components.Button.button
         id="download-button"
         type="button"
         variant="secondary"
@@ -46,7 +46,7 @@ defmodule FirmowidWeb.Invoicing.Components.DownloadModal do
         <span class="max-xl:hidden">
           Pobierz
         </span>
-      </FirmowidWeb.DesignSystem.Components.Button.button>
+      </FirmowidUI.Components.Button.button>
 
       <.modal id="download-modal" on_cancel={hide_modal("download-modal")}>
         <div class="flex flex-col gap-8 p-4">

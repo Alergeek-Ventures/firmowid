@@ -44,13 +44,13 @@ defmodule FirmowidWeb.Landing.Views.PrivacyPolicy do
       </p>
       <p>
         {gettext("Contact regarding personal data protection:")}
-        <FirmowidWeb.DesignSystem.Components.Link.link
+        <FirmowidUI.Components.Link.link
           kind="unstyled"
           mailto="contact@alergeek.ventures"
           class="text-orange-700 hover:underline"
         >
           contact@alergeek.ventures
-        </FirmowidWeb.DesignSystem.Components.Link.link>
+        </FirmowidUI.Components.Link.link>
       </p>
 
       <h2>{gettext("§2. What data we collect")}</h2>
@@ -203,13 +203,13 @@ defmodule FirmowidWeb.Landing.Views.PrivacyPolicy do
       </ul>
       <p>
         {gettext("To exercise the above rights, please contact us:")}
-        <FirmowidWeb.DesignSystem.Components.Link.link
+        <FirmowidUI.Components.Link.link
           kind="unstyled"
           mailto="contact@alergeek.ventures"
           class="text-orange-700 hover:underline"
         >
           contact@alergeek.ventures
-        </FirmowidWeb.DesignSystem.Components.Link.link>
+        </FirmowidUI.Components.Link.link>
       </p>
 
       <h2>{gettext("§7. Cookies")}</h2>
@@ -242,13 +242,13 @@ defmodule FirmowidWeb.Landing.Views.PrivacyPolicy do
         {gettext(
           "The Controller reserves the right to amend this Privacy Policy. Users will be informed of any changes by publication of the updated version on the page"
         )}
-        <FirmowidWeb.DesignSystem.Components.Link.link
+        <FirmowidUI.Components.Link.link
           kind="unstyled"
           navigate={~p"/polityka-prywatnosci"}
           class="text-orange-700 hover:underline"
         >
           firmowid.pl/polityka-prywatnosci
-        </FirmowidWeb.DesignSystem.Components.Link.link>
+        </FirmowidUI.Components.Link.link>
         {gettext("together with the date of the latest update.")}
       </p>
     </.legal_page>

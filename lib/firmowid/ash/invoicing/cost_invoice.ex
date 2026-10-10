@@ -147,11 +147,12 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
       pagination do
         required? false
         keyset? true
+        max_page_size 100
       end
 
       argument :date_from, :date
       argument :date_to, :date
-      argument :query, :string
+      argument :query, :string, constraints: [max_length: 500]
       argument :currency, :string
       argument :amount_gt, :decimal
       argument :amount_lt, :decimal
@@ -173,6 +174,22 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
       argument :limit, :integer do
         constraints min: 1
       end
+
+      argument :listing_sort, :atom, constraints: [one_of: [:newest, :oldest]]
+
+      validate compare(:date_to, greater_than_or_equal_to: :date_from),
+        where: [present(:date_from), present(:date_to)],
+        message: "Must be on or after date_from"
+
+      prepare fn query, _context ->
+        case Ash.Query.get_argument(query, :currency) do
+          nil -> query
+          currency -> Ash.Query.set_argument(query, :currency, String.upcase(currency))
+        end
+      end
+
+      validate one_of(:currency, Enum.map(Money.known_currencies(), &to_string/1)),
+        message: "Must be a recognized currency code"
 
       argument :source, :atom do
         constraints one_of: [:manual_import, :ksef]
@@ -252,6 +269,8 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
       prepare build(limit: arg(:limit)) do
         where present(:limit)
       end
+
+      prepare Firmowid.Ash.Invoicing.Preparations.SortInvoiceListing
 
       argument :corrections, :atom do
         constraints one_of: [:include, :exclude]

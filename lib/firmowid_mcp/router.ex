@@ -1,0 +1,198 @@
+defmodule FirmowidMcp.Router do
+  @moduledoc "Native AshAi MCP transport with feature-owned, optional LiveView presentations."
+  @behaviour Plug
+
+  import Plug.Conn
+
+  alias AshAi.Mcp.Router, as: Transport
+  alias FirmowidMcp.Runtime
+  alias FirmowidMcp.Widgets
+
+  @security_schemes [%{"type" => "oauth2", "scopes" => ["mcp"]}]
+
+  @instructions """
+  Before working with invoices, call get_ksef_connection_status for the authenticated organization.
+  If disconnected or expired, propose connecting KSeF using show_ksef_connection when can_connect is true;
+  otherwise explain that an organization administrator must connect it.
+  Stored invoice data remains available without a KSeF connection: continue reading it if the user wants,
+  and explain that it may be out of date. A connected status does not guarantee synchronization freshness;
+  the server does not currently track the time of the last successful synchronization.
+  Recheck the status after the user completes connection. Never ask for KSeF tokens, passwords,
+  private keys or signed authentication files in chat; these belong only in the connection widget.
+  Use list_sales_invoices and list_cost_invoices to read invoice data with filters and pagination.
+  After show_ksef_connection successfully opens its widget, stop and let the user interact with it.
+  Do not repeat its status, setup instructions or a summary in chat beneath the widget.
+  The administrator completes setup directly in the embedded widget, not in a separate Firmowid page.
+  Opening the widget does not attempt a connection: an initial disconnected status is expected,
+  not evidence of a failed attempt. Explain actual tool errors only when the widget cannot be opened.
+  """
+
+  @impl true
+  @doc "Initializes the explicit tool and resource allowlists."
+  @spec init(keyword()) :: keyword()
+  def init(opts) do
+    opts
+    |> Keyword.put(:otp_app, :firmowid)
+    |> Keyword.put(:instructions, @instructions)
+    |> Transport.init()
+  end
+
+  @impl true
+  @doc "Preserves native protocol validation/envelopes and decorates successful presentations."
+  @spec call(Plug.Conn.t(), keyword()) :: Plug.Conn.t()
+  def call(conn, opts) do
+    conn
+    |> put_resp_header("cache-control", "no-store")
+    |> resolve_resource_request()
+    |> register_before_send(&decorate_response/1)
+    |> Transport.call(opts)
+  end
+
+  defp resolve_resource_request(conn) do
+    body = resolve_resource_request_uri(conn.body_params)
+    %{conn | body_params: body, params: Map.merge(conn.params, body)}
+  end
+
+  defp resolve_resource_request_uri(%{"_json" => requests} = body) when is_list(requests) do
+    %{body | "_json" => Enum.map(requests, &resolve_resource_request_uri/1)}
+  end
+
+  defp resolve_resource_request_uri(%{"method" => "resources/read", "params" => %{"uri" => uri}} = body)
+       when is_binary(uri) do
+    # AshAi registers static URIs; expose content-addressed URIs at the transport boundary.
+    case Enum.find(Widgets.all(), &(Runtime.resource_uri(&1) == uri)) do
+      nil -> body
+      app -> put_in(body, ["params", "uri"], app.resource_uri())
+    end
+  end
+
+  defp resolve_resource_request_uri(body), do: body
+
+  defp decorate_response(conn) do
+    case Jason.decode(conn.resp_body || "") do
+      {:ok, response} ->
+        response = decorate(response, conn.body_params, conn)
+        %{conn | resp_body: Jason.encode!(response)}
+
+      _ ->
+        conn
+    end
+  end
+
+  defp decorate(responses, %{"_json" => requests}, conn) when is_list(responses) do
+    Enum.map(responses, fn response ->
+      request = Enum.find(requests, &(&1["id"] == response["id"])) || %{}
+      decorate(response, request, conn)
+    end)
+  end
+
+  defp decorate(%{"result" => %{"tools" => tools}} = response, _request, _conn) do
+    put_in(response, ["result", "tools"], Enum.map(tools, &tool_metadata/1))
+  end
+
+  defp decorate(%{"result" => %{"capabilities" => capabilities}} = response, request, _conn) do
+    params = request["params"] || %{}
+
+    client =
+      params["capabilities"] ||
+        get_in(params, ["_meta", "io.modelcontextprotocol/clientCapabilities"]) || %{}
+
+    mime_types = get_in(client, ["extensions", "io.modelcontextprotocol/ui", "mimeTypes"]) || []
+
+    if is_list(mime_types) and "text/html;profile=mcp-app" in mime_types do
+      capabilities = Map.update(capabilities, "extensions", %{}, & &1)
+
+      put_in(
+        response,
+        ["result", "capabilities"],
+        put_in(capabilities, ["extensions", "io.modelcontextprotocol/ui"], %{
+          "mimeTypes" => ["text/html;profile=mcp-app"]
+        })
+      )
+    else
+      response
+    end
+  end
+
+  defp decorate(%{"result" => %{"contents" => contents}} = response, _request, _conn) do
+    put_in(response, ["result", "contents"], Enum.map(contents, &resource_metadata/1))
+  end
+
+  defp decorate(%{"result" => %{"resources" => resources}} = response, _request, _conn) do
+    put_in(response, ["result", "resources"], Enum.map(resources, &resource_metadata/1))
+  end
+
+  defp decorate(
+         %{"result" => %{"isError" => false, "structuredContent" => _data}} = response,
+         %{"method" => "tools/call", "params" => %{"name" => name} = params},
+         conn
+       ) do
+    case Widgets.for_tool(name) do
+      nil ->
+        response
+
+      app ->
+        arguments = params["arguments"] || %{}
+
+        update_in(response, ["result", "_meta"], fn meta ->
+          Map.put(meta || %{}, "firmowid/app", Runtime.mount_metadata(conn, app, arguments))
+        end)
+    end
+  end
+
+  defp decorate(response, _request, _conn), do: response
+
+  defp tool_metadata(%{"name" => name} = tool) when name in ~w(list_sales_invoices list_cost_invoices) do
+    authorized_tool_metadata(tool, %{
+      "readOnlyHint" => true,
+      "destructiveHint" => false,
+      "openWorldHint" => false
+    })
+  end
+
+  defp tool_metadata(tool) do
+    case Enum.find(Widgets.all(), &(tool["name"] in [&1.tool_name(), &1.data_tool_name()])) do
+      nil ->
+        tool
+
+      app ->
+        presentation_meta =
+          if tool["name"] == app.tool_name() do
+            uri = Runtime.resource_uri(app)
+
+            %{
+              "ui" => %{"resourceUri" => uri},
+              "openai/outputTemplate" => uri
+            }
+          else
+            %{}
+          end
+
+        tool
+        |> authorized_tool_metadata(app.annotations())
+        |> update_in(["_meta"], fn meta ->
+          Map.merge(meta, presentation_meta)
+        end)
+    end
+  end
+
+  defp authorized_tool_metadata(tool, annotations) do
+    tool
+    |> Map.put("securitySchemes", @security_schemes)
+    |> Map.put("annotations", annotations)
+    |> update_in(["_meta"], &Map.put(&1 || %{}, "securitySchemes", @security_schemes))
+  end
+
+  defp resource_metadata(resource) do
+    if app = Widgets.for_resource(resource["uri"]) do
+      metadata = Runtime.resource_metadata(app)
+      html = Map.get_lazy(resource, "text", &Runtime.document/0)
+
+      resource
+      |> Map.put("uri", Runtime.resource_uri(app, html))
+      |> Map.update("_meta", metadata, &Map.merge(&1, metadata))
+    else
+      resource
+    end
+  end
+end

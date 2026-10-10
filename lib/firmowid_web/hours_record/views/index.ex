@@ -2,9 +2,9 @@ defmodule FirmowidWeb.HoursRecord.Views.Index do
   @moduledoc "Shows monthly hours and allows submission and change requests for signed records."
   use FirmowidWeb, :live_view
 
-  import FirmowidWeb.DesignSystem.Components.Button
+  import FirmowidUI.Components.Button
+  import FirmowidUI.Components.Link
   import FirmowidWeb.DesignSystem.Components.CoreComponents, except: [button: 1]
-  import FirmowidWeb.DesignSystem.Components.Link
   import FirmowidWeb.DesignSystem.Components.MonthPicker
   import FirmowidWeb.HoursRecord.Components.ChangeRequest
   import Phoenix.Component, except: [link: 1]
