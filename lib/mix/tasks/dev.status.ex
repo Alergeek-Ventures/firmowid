@@ -24,7 +24,7 @@ defmodule Mix.Tasks.Dev.Status do
     Application.ensure_all_started(:req)
 
     env = load_env()
-    Shared.print_environment(env, caddy_port())
+    Shared.print_environment(env)
 
     results = [
       {"Phoenix", check_http("http://localhost:#{env["PORT"]}", &http_response?/1)},
@@ -118,8 +118,4 @@ defmodule Mix.Tasks.Dev.Status do
 
   defp format_reason(reason) when is_atom(reason), do: Atom.to_string(reason)
   defp format_reason(reason), do: inspect(reason)
-
-  defp caddy_port do
-    System.get_env("CADDY_PORT") || "8080"
-  end
 end

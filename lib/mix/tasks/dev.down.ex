@@ -1,12 +1,12 @@
 defmodule Mix.Tasks.Dev.Down do
-  @shortdoc "Stops worktree dev services and unregisters Caddy route"
+  @shortdoc "Stops worktree dev services and removes its route"
 
   @moduledoc """
   Stops worktree development services.
 
   1. Loads configuration from .env.worktree (or uses defaults)
   2. Stops Phoenix server
-  3. Unregisters Caddy route
+  3. Removes the app from the wave.exposed dashboard, or unregisters the local Caddy route
   4. Stops and removes Podman Compose services (including volumes)
 
   ## Usage
@@ -52,8 +52,8 @@ defmodule Mix.Tasks.Dev.Down do
     # Stop Phoenix server first
     stop_phoenix_server()
 
-    # Unregister Caddy route
-    unregister_caddy_route(branch)
+    # Remove the dashboard registration or Caddy route
+    unregister_route(branch)
 
     # Stop Podman Compose services
     stop_services(branch, port, db_port, s3_port, chrome_port)
@@ -104,34 +104,40 @@ defmodule Mix.Tasks.Dev.Down do
     end
   end
 
-  defp unregister_caddy_route(branch) do
+  defp unregister_route(branch) do
     branch = sanitize_branch(branch)
+
+    case Shared.wave_executable() do
+      nil ->
+        unregister_local_caddy_route(branch)
+
+      wave ->
+        Mix.shell().info("Removing from the wave dashboard...")
+
+        case System.cmd(wave, ["dashboard", "remove", "firmowid", branch], stderr_to_stdout: true) do
+          {_output, 0} ->
+            Mix.shell().info("Removed from the wave dashboard")
+
+          {output, _status} ->
+            Mix.shell().info("Warning: Failed to remove from the wave dashboard")
+            Mix.shell().info(String.trim(output))
+        end
+    end
+  end
+
+  defp unregister_local_caddy_route(branch) do
     Mix.shell().info("Unregistering Caddy route...")
+    admin_base_url = System.get_env("CADDY_ADMIN_URL") || "http://localhost:2019"
 
-    if System.user_home!() =~ "kosciak" do
-      case Req.delete("http://localhost:11190/api/routes/#{branch}") do
-        {:ok, %{status: status}} when status in 200..299 ->
-          Mix.shell().info("Caddy route unregistered")
+    case Req.delete("#{admin_base_url}/id/wt:firmowid:#{branch}") do
+      {:ok, %{status: status}} when status in 200..299 ->
+        Mix.shell().info("Caddy route unregistered")
 
-        {:ok, _} ->
-          Mix.shell().info("Warning: Caddy route not found")
+      {:ok, _} ->
+        Mix.shell().info("Warning: Caddy route not found")
 
-        {:error, _} ->
-          Mix.shell().info("Warning: development-caddy not running")
-      end
-    else
-      admin_base_url = System.get_env("CADDY_ADMIN_URL") || "http://localhost:2019"
-
-      case Req.delete("#{admin_base_url}/id/wt:firmowid:#{branch}") do
-        {:ok, %{status: status}} when status in 200..299 ->
-          Mix.shell().info("Caddy route unregistered")
-
-        {:ok, _} ->
-          Mix.shell().info("Warning: Caddy route not found")
-
-        {:error, _} ->
-          Mix.shell().info("Warning: Caddy not running")
-      end
+      {:error, _} ->
+        Mix.shell().info("Warning: Caddy not running")
     end
   end
 

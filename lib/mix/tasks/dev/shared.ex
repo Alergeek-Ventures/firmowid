@@ -21,16 +21,18 @@ defmodule Mix.Tasks.Dev.Shared do
   @doc """
   Prints the endpoint summary for the configured development environment.
   """
-  @spec print_environment(%{String.t() => String.t()}, String.t()) :: :ok
-  def print_environment(env, caddy_port) do
-    branch = sanitize_branch(env["BRANCH"])
+  @spec print_environment(%{String.t() => String.t()}) :: :ok
+  def print_environment(env) do
     port = env["PORT"]
-    caddy_suffix = if caddy_port in ["80", "443"], do: "", else: ":#{caddy_port}"
 
     Mix.shell().info("")
     Mix.shell().info("Environment ready:")
 
-    Mix.shell().info("  Phoenix:   http://#{branch}.firmowid.localhost#{caddy_suffix} (or http://localhost:#{port})")
+    if phx_url = env["PHX_URL"] do
+      Mix.shell().info("  Phoenix:   #{phx_url} (or http://localhost:#{port})")
+    else
+      Mix.shell().info("  Phoenix:   http://localhost:#{port}")
+    end
 
     Mix.shell().info("  Tidewave:  http://localhost:#{port}/tidewave/mcp")
     Mix.shell().info("  Postgres:  localhost:#{env["DB_PORT"]}")
@@ -40,6 +42,30 @@ defmodule Mix.Tasks.Dev.Shared do
     Mix.shell().info("")
     Mix.shell().info("Logs: tail -f tmp/phoenix.log")
     Mix.shell().info("Stop: mix dev.down")
+  end
+
+  @doc """
+  Returns the `wave` CLI path on hosts that publish worktrees on the wave.exposed
+  dashboard, or `nil` where worktrees use a local Caddy instead.
+  """
+  @spec wave_executable() :: String.t() | nil
+  def wave_executable, do: System.find_executable("wave")
+
+  @doc """
+  Stores the app's URL as `PHX_URL` in .env.worktree, from which Phoenix builds its URLs.
+  """
+  @spec put_phx_url(%{String.t() => String.t()}, String.t()) :: %{String.t() => String.t()}
+  def put_phx_url(env, url) do
+    lines =
+      ".env.worktree"
+      |> File.read!()
+      |> String.trim_trailing()
+      |> String.split("\n")
+      |> Enum.reject(&String.starts_with?(&1, "PHX_URL="))
+
+    File.write!(".env.worktree", Enum.join(lines ++ ["PHX_URL=#{url}"], "\n") <> "\n")
+
+    Map.put(env, "PHX_URL", url)
   end
 
   @doc """

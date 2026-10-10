@@ -26,6 +26,16 @@ if System.get_env("PHX_SERVER") do
   config :firmowid, Endpoint, server: true
 end
 
+# Public URL of this instance: the domain in staging and production, the worktree's
+# URL in development (written to .env.worktree by `mix dev.up`). Tests keep the URL
+# from config/config.exs.
+if config_env() != :test do
+  %URI{scheme: scheme, host: host, port: port} =
+    URI.parse(System.get_env("PHX_URL") || raise("PHX_URL environment variable is not set"))
+
+  config :firmowid, Endpoint, url: [scheme: scheme, host: host, port: port]
+end
+
 # import_config/1 is not enabled for this configuration file.
 # Some configuration files do not allow importing other files as they are often copied to external systems
 
@@ -251,9 +261,7 @@ config :sentry,
 if config_env() == :dev and System.get_env("PORT") do
   port = String.to_integer(System.get_env("PORT"))
 
-  config :firmowid, Endpoint,
-    http: [port: port],
-    url: [host: "localhost", port: port]
+  config :firmowid, Endpoint, http: [port: port]
 end
 
 # LiveDebugger port - only override if DEBUGGER_PORT is set (worktree)
@@ -296,13 +304,11 @@ if config_env() == :prod do
     config :firmowid, Firmowid.Repo, ssl: database_ssl_config
   end
 
-  # PHX_HOST depends on the machine you deploy to, so we use https
+  # LiveView sockets are accepted only from the public URL. Development keeps
+  # `check_origin: false` (config/dev.exs) because worktrees are also opened on
+  # http://localhost:PORT, e.g. by agents.
   config :firmowid, Endpoint,
-    url: [
-      host: System.get_env("PHX_HOST") || raise("PHX_HOST environment variable is not set"),
-      port: 443,
-      scheme: "https"
-    ],
+    check_origin: [System.fetch_env!("PHX_URL")],
     http: [
       ip: {0, 0, 0, 0, 0, 0, 0, 0},
       port: String.to_integer(System.get_env("PORT", "4000"))

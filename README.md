@@ -216,6 +216,7 @@ AV_SKIP_INFISICAL=1 mix phx.server
 
 - `DATABASE_URL` - string połączenia do PostgreSQL
 - `SECRET_KEY_BASE` - klucz tajny Phoenix (wygeneruj przez `mix phx.gen.secret`)
+- `PHX_URL` - publiczny adres aplikacji, np. `https://firmowid.pl` (w worktree ustawia go `mix dev.up`)
 
 ### S3 Object Storage
 
@@ -261,7 +262,6 @@ Analityka i flagi funkcjonalności są obsługiwane przez PostHog.
 
 ### Zmienne tylko dla produkcji
 
-- `PHX_HOST` - domena aplikacji (wymagane w produkcji)
 - `PHX_SERVER` - ustaw na `true` aby uruchomić serwer
 - `PORT` - port HTTP (domyślnie: 4000)
 - `POOL_SIZE` - rozmiar puli połączeń do bazy danych (domyślnie: 5)

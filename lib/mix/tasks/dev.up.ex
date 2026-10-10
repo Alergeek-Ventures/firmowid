@@ -1,5 +1,5 @@
 defmodule Mix.Tasks.Dev.Up do
-  @shortdoc "Sets up worktree dev environment (env, services, db, caddy)"
+  @shortdoc "Sets up worktree dev environment (env, services, db, route)"
 
   @moduledoc """
   Sets up a complete worktree development environment.
@@ -7,7 +7,9 @@ defmodule Mix.Tasks.Dev.Up do
   1. Loads configuration from .env.worktree (or uses defaults)
   2. Starts Podman Compose services via local/compose.yml (Postgres, SeaweedFS S3, Chromium)
   3. Runs mix setup (Ash setup/migrations, assets)
-  4. Registers Caddy route for `{branch}.firmowid.localhost`
+  4. Registers the app on the wave.exposed dashboard (`wave dashboard add`) when the
+     `wave` CLI is available, otherwise a local Caddy route for `{branch}.firmowid.localhost`,
+     and stores the app's URL as `PHX_URL` in .env.worktree
   5. Starts Phoenix server in background
 
   ## Usage
@@ -19,7 +21,7 @@ defmodule Mix.Tasks.Dev.Up do
 
   ## Prerequisites
 
-  - Caddy must be running with admin API on localhost/caddy
+  - Without the `wave` CLI, Caddy must be running with admin API on localhost/caddy
   - Podman must be available
   """
 
@@ -58,11 +60,11 @@ defmodule Mix.Tasks.Dev.Up do
 
     sync_usage_rules()
 
-    register_caddy_route(branch, port)
+    env = Shared.put_phx_url(env, register_route(branch, port))
 
     start_phoenix_server(port)
 
-    Shared.print_environment(env, caddy_port())
+    Shared.print_environment(env)
   end
 
   defp load_env do
@@ -251,43 +253,45 @@ defmodule Mix.Tasks.Dev.Up do
     end
   end
 
-  defp register_caddy_route(branch, port) do
+  defp register_route(branch, port) do
     branch = sanitize_branch(branch)
     hostname = dev_hostname(branch)
 
+    case Shared.wave_executable() do
+      nil ->
+        register_local_caddy_route(branch, hostname, port)
+
+      wave ->
+        Mix.shell().info("Registering on the wave dashboard...")
+
+        case System.cmd(wave, ["dashboard", "add", "firmowid", branch, "--port", port], stderr_to_stdout: true) do
+          {output, 0} ->
+            url = String.trim(output)
+            Mix.shell().info("Registered on the wave dashboard: #{url}")
+            url
+
+          {output, _status} ->
+            Mix.shell().error("Warning: Failed to register on the wave dashboard")
+            Mix.shell().error(String.trim(output))
+            "http://localhost:#{port}"
+        end
+    end
+  end
+
+  defp register_local_caddy_route(branch, hostname, port) do
     Mix.shell().info("Registering Caddy route for #{hostname}...")
+    admin_base_url = System.get_env("CADDY_ADMIN_URL") || "http://localhost:2019"
 
-    if System.user_home!() =~ "kosciak" do
-      route_config = %{
-        "id" => branch,
-        "hostname" => hostname,
-        "upstream" => "127.0.0.1:#{port}"
-      }
+    case ensure_wt_server_exists(admin_base_url, branch, port) do
+      :ok ->
+        url = "http://#{caddy_host(hostname, caddy_port())}"
+        Mix.shell().info("Caddy route registered: #{url} -> localhost:#{port}")
+        url
 
-      case Req.post("http://localhost:11190/api/routes", json: route_config) do
-        {:ok, %{status: status}} when status in 200..299 ->
-          Mix.shell().info("Caddy route registered: https://#{branch}.firmowid.localhost -> http://localhost:#{port}")
-
-        {:ok, %{status: status, body: body}} ->
-          Mix.shell().error("Warning: Failed to register Caddy route (status #{status})")
-          Mix.shell().error(inspect(body))
-
-        {:error, reason} ->
-          Mix.shell().error("Warning: Failed to register Caddy route (is development-caddy running?)")
-
-          Mix.shell().error(inspect(reason))
-      end
-    else
-      admin_base_url = System.get_env("CADDY_ADMIN_URL") || "http://localhost:2019"
-
-      case ensure_wt_server_exists(admin_base_url, branch, port) do
-        :ok ->
-          Mix.shell().info("Caddy route registered: http://#{caddy_host(hostname, caddy_port())} -> localhost:#{port}")
-
-        {:error, reason} ->
-          Mix.shell().error("Warning: Failed to register Caddy route")
-          Mix.shell().error(reason)
-      end
+      {:error, reason} ->
+        Mix.shell().error("Warning: Failed to register Caddy route")
+        Mix.shell().error(reason)
+        "http://localhost:#{port}"
     end
   end
 

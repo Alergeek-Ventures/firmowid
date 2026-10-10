@@ -38,8 +38,6 @@ config :firmowid, Firmowid.Ash.Currencies.Converter, rates_provider: :api
 config :firmowid, FirmowidWeb.Core.Endpoint,
   cache_static_manifest: "priv/static/cache_manifest.json",
   http: [port: {:system, "PORT"}],
-  url: [host: "firmowid.pl", port: 80],
-  check_origin: ["https://firmowid.pl", "https://staging.firmowid.pl"],
   force_ssl: [
     hsts: true,
     preload: true,
