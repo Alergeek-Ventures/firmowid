@@ -50,6 +50,14 @@ runs:
         elixir-version: ${{ inputs.elixir-version }}
         otp-version: ${{ inputs.otp-version }}
 
+    # Quality and Build/Test share compiled artifacts. Different compile-time
+    # service ports invalidate the whole application, even on an exact cache hit.
+    - name: Set shared test service ports
+      if: env.MIX_ENV == 'test'
+      run: |
+        printf '%s\n' 'DB_PORT=5432' 'S3_PORT=8333' >> "$GITHUB_ENV"
+      shell: sh
+
     - name: Get deps cache
       uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v5
       id: deps-cache
