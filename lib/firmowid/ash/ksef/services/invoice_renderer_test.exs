@@ -24,7 +24,6 @@ defmodule Firmowid.Ash.Ksef.Services.InvoiceRendererTest do
   @moduletag :ksef_xsd
 
   setup_all do
-    ensure_schemas_cached!()
     model = compile_ksef_schema!()
     %{model: model}
   end

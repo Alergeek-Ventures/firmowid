@@ -2,8 +2,7 @@ defmodule Firmowid.Ash.Ksef.KsefTestHelpers do
   @moduledoc """
   Helpers for KSeF FA(3) XSD validation in tests.
 
-  Downloads and caches external XSD schemas from gov.pl,
-  compiles the FA(3) schema with erlsom, and provides
+  Compiles the pinned official FA(3) schema with erlsom and provides
   validation and invoice fixture functions.
 
   All fixture functions use `Ash.Seed.seed!` to create real database records
@@ -19,18 +18,9 @@ defmodule Firmowid.Ash.Ksef.KsefTestHelpers do
   alias Firmowid.Ash.SystemActor
 
   # erlsom is a test-only dependency, suppress undefined module warning in non-test envs
-  @compile {:no_warn_undefined, [:erlsom]}
+  @compile {:no_warn_undefined, [:erlsom, :erlsom_lib]}
 
-  @schema_cache_dir Path.join([:code.priv_dir(:firmowid), "ksef_schemas"])
-
-  @base_url "http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2022/01/05/eD/DefinicjeTypy"
-
-  @external_schemas [
-    {"schemat.xsd", "http://crd.gov.pl/wzor/2025/06/25/13775/schemat.xsd"},
-    {"KodyKrajow_v10-0E.xsd", "#{@base_url}/KodyKrajow_v10-0E.xsd"},
-    {"ElementarneTypyDanych_v10-0E.xsd", "#{@base_url}/ElementarneTypyDanych_v10-0E.xsd"},
-    {"StrukturyDanych_v10-0E.xsd", "#{@base_url}/StrukturyDanych_v10-0E.xsd"}
-  ]
+  @schema_dir Path.join(__DIR__, "fixtures/fa3")
 
   @doc "Generates a unique invoice number with an optional prefix."
   @spec unique_invoice_number(String.t()) :: String.t()
@@ -52,38 +42,23 @@ defmodule Firmowid.Ash.Ksef.KsefTestHelpers do
     "#{header}.#{payload}.signature"
   end
 
-  @doc "Downloads and caches external XSD schemas from gov.pl for FA(3) validation."
-  @spec ensure_schemas_cached!() :: :ok
-  # sobelow_skip ["Traversal.FileModule"]
-  # path is constructed from @schema_cache_dir (priv/ksef_schemas), not user input.
-  # This caches external XSD schemas for FA(3) validation in tests.
-  def ensure_schemas_cached! do
-    File.mkdir_p!(@schema_cache_dir)
-
-    # Download external schemas if not cached
-    for {filename, url} <- @external_schemas do
-      path = Path.join(@schema_cache_dir, filename)
-
-      if !File.exists?(path) do
-        response = Req.get!(url)
-        content = localize_schema_refs(response.body)
-
-        File.write!(path, content)
-      end
-    end
-
-    :ok
-  end
-
   @doc "Compiles the FA(3) XSD schema with erlsom. Returns the compiled model."
   @spec compile_ksef_schema!() :: term()
   def compile_ksef_schema! do
-    schema_path = Path.join(@schema_cache_dir, "schemat.xsd")
+    schema_path = Path.join(@schema_dir, "schemat.xsd")
     charlist_path = String.to_charlist(schema_path)
-    include_dir = String.to_charlist(@schema_cache_dir)
+    include_dir = String.to_charlist(@schema_dir)
 
-    # Use include_dirs option to tell erlsom where to find imported schemas
-    case :erlsom.compile_xsd_file(charlist_path, include_dirs: [include_dir]) do
+    # Official schemas use HTTP locations. Resolve only their local filenames
+    # through erlsom's include callback so validation never fetches the network.
+    include_fun = fn namespace, location, includes, dirs ->
+      :erlsom_lib.findFile(namespace, :filename.basename(location), includes, dirs)
+    end
+
+    case :erlsom.compile_xsd_file(charlist_path,
+           include_dirs: [include_dir],
+           include_fun: include_fun
+         ) do
       {:ok, model} -> model
       {:error, reason} -> raise RuntimeError, "Failed to compile KSeF schema: #{inspect(reason)}"
     end
@@ -501,22 +476,6 @@ defmodule Firmowid.Ash.Ksef.KsefTestHelpers do
         })
       )
     end)
-  end
-
-  defp localize_schema_refs(content) do
-    content
-    |> String.replace(
-      ~s|schemaLocation="#{@base_url}/KodyKrajow_v10-0E.xsd"|,
-      ~s|schemaLocation="KodyKrajow_v10-0E.xsd"|
-    )
-    |> String.replace(
-      ~s|schemaLocation="#{@base_url}/ElementarneTypyDanych_v10-0E.xsd"|,
-      ~s|schemaLocation="ElementarneTypyDanych_v10-0E.xsd"|
-    )
-    |> String.replace(
-      ~s|schemaLocation="#{@base_url}/StrukturyDanych_v10-0E.xsd"|,
-      ~s|schemaLocation="StrukturyDanych_v10-0E.xsd"|
-    )
   end
 
   defp build_item_attrs(count, vat_rate, opts) do
