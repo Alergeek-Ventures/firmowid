@@ -243,22 +243,26 @@ jobs:
         run: mix ash.setup
 
       - name: Run tests with LCOV coverage report
+        id: tests
         run: |
-          if mix coveralls.lcov > coveralls.log 2>&1; then
-            echo "Tests passed and LCOV coverage report was generated in cover/lcov.info."
-          else
-            echo "mix coveralls.lcov failed. Full log:"
-            cat coveralls.log
-            exit 1
-          fi
+          set -o pipefail
+          mix coveralls.lcov --slowest 20 2>&1 | tee coveralls.log
+
+      - name: Upload test log
+        if: ${{ always() && (steps.tests.outcome == 'success' || steps.tests.outcome == 'failure') }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: excoveralls-test-log
+          path: coveralls.log
+          if-no-files-found: warn
 
       - name: Upload coverage LCOV report
-        if: always()
+        if: ${{ always() && (steps.tests.outcome == 'success' || steps.tests.outcome == 'failure') }}
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: excoveralls-lcov-report
           path: cover/lcov.info
-          if-no-files-found: error
+          if-no-files-found: ${{ steps.tests.outcome == 'success' && 'error' || 'warn' }}
 
   coverage-report:
     name: Publish coverage summary and PR comment
