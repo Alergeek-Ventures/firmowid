@@ -145,9 +145,9 @@ Follow these steps in order when changing user-facing text:
   Actions and Dependabot secrets; Dependabot does not receive Actions secrets,
   even on reruns. Main alone uses `ACCENT_SNAPSHOT_API_KEY` for read/export and
   `create_version`; it is not permission to sync or merge translations.
-- The writer token previously placed in Dependabot was a temporary workaround.
-  Remove it only when old workflows no longer need it; do not assume this secret
-  migration is already deployed.
+- Do not configure `ACCENT_SNAPSHOT_API_KEY` in Dependabot secrets. Old PRs with
+  writer-dependent workflows must update to the read-only export workflow;
+  do not restore a writer token to make them pass.
 - Local/prod Infisical `/app` `ACCENT_API_KEY` is read-only. A translation
   update needs an authorized write-capable development credential; ask for its
   approved location/permissions if unavailable. Infisical `dev` `/dev`

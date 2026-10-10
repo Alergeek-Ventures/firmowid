@@ -78,10 +78,9 @@ Należy skonfigurować istniejący token projektu tylko do odczytu zarówno w
 GitHub Actions, jak i osobno w Dependabot secrets tego repozytorium. Workflowy
 uruchamiane przez Dependabota nie otrzymują sekretów Actions, również po ręcznym
 ponowieniu. `ACCENT_SNAPSHOT_API_KEY` (odczyt/eksport/`create_version`, bez edycji
-tłumaczeń) jest używany wyłącznie na `main`. Dotychczasowy token tworzący wersje
-w Dependabot był tymczasowym obejściem; można go usunąć dopiero, gdy stare
-workflowy przestaną go potrzebować. Nie oznacza to, że migracja sekretów została
-już wdrożona.
+tłumaczeń) jest używany wyłącznie na `main` i nie jest udostępniany Dependabotowi.
+Stare PR-y wymagające tego sekretu trzeba zaktualizować do nowych workflowów;
+nie przywracamy im klucza zapisu.
 
 Istniejący Infisical `/app` `ACCENT_API_KEY` jest tylko do odczytu. Klucz
 `ACCENT_API_KEY` z folderu `/dev` w środowisku Infisical `dev` służy do pracy
