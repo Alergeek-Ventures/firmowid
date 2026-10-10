@@ -1833,3 +1833,44 @@ msgstr ""
 #, elixir-autogen, elixir-format
 msgid "Withdrawal request"
 msgstr ""
+
+#: lib/firmowid_web/invoicing/sales_invoices/views/creator.ex:1296
+#: lib/firmowid_web/invoicing/sales_invoices/views/edit.ex:751
+#, elixir-autogen, elixir-format
+msgid "Invoice number is required."
+msgstr ""
+
+#: lib/firmowid_web/invoicing/components/sales_invoice_details.ex:406
+#, elixir-autogen, elixir-format
+msgid "Draft"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/components/sales_invoice_details.ex:405
+#, elixir-autogen, elixir-format
+msgid "Invoice status"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/sales_invoices/utilities/payment_date_suggestions.ex:43
+#: lib/firmowid_web/invoicing/sales_invoices/utilities/payment_date_suggestions.ex:44
+#: lib/firmowid_web/invoicing/sales_invoices/utilities/payment_date_suggestions.ex:45
+#: lib/firmowid_web/invoicing/sales_invoices/utilities/payment_date_suggestions.ex:46
+#, elixir-autogen, elixir-format
+msgid "%{count} day"
+msgid_plural "%{count} days"
+msgstr[0] ""
+msgstr[1] ""
+
+#: lib/firmowid_web/invoicing/sales_invoices/utilities/payment_date_suggestions.ex:47
+#, elixir-autogen, elixir-format
+msgid "end of current month"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/sales_invoices/utilities/payment_date_suggestions.ex:25
+#, elixir-autogen, elixir-format
+msgid "last day of previous month"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/sales_invoices/utilities/payment_date_suggestions.ex:24
+#, elixir-autogen, elixir-format
+msgid "today"
+msgstr ""

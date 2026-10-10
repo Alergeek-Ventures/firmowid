@@ -1,176 +1,28 @@
-<div class="relative mx-auto my-4 flex w-full max-w-6xl flex-1 flex-col">
-  <.back
-    patch={
-      Navigation.sales_invoice_creator_path(%{
-        szkic_kreatora: @creator_draft_id,
-        krok: @step_number - 1
-      })
-    }
-    class="absolute top-[-2.5px] -left-[calc(68px+1.5rem)]"
-  />
-
-  <div class="px-9">
+<FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceReview.invoice_review
+  invoice={@invoice}
+  preview_invoice={@preview_invoice}
+  invoice_number={@invoice_number}
+  invoice_warnings={@invoice_warnings}
+  series_suggestions={@series_suggestions}
+  organization={@organization}
+  currency_rate={@currency_rate}
+  logo_url={@logo_url}
+  counterparty_check={@counterparty_check}
+  should_send_emails={@should_send_emails}
+  ksef_connected?={@ksef_connected?}
+>
+  <:back>
+    <.back
+      patch={
+        Navigation.sales_invoice_creator_path(%{
+          szkic_kreatora: @creator_draft_id,
+          krok: @step_number - 1
+        })
+      }
+      class="absolute inset-s-[calc(-68px-1.5rem)] inset-bs-[-2.5px]"
+    />
+  </:back>
+  <:header>
     <.render_header invoice={@invoice} step={@step_number} title="Podgląd faktury" />
-
-    <div class="mt-8 flex gap-6">
-      <div class="max-w-[650px] flex-1">
-        <div class="border-grey-200 overflow-hidden rounded-lg border bg-white shadow-sm">
-          <FirmowidWeb.Invoicing.SalesInvoices.Components.Pdf.sales_invoice
-            sales_invoice={@preview_invoice}
-            currency_rate={@currency_rate}
-            show_vat={@organization.is_vat_payer}
-            logo_url={@logo_url}
-          />
-        </div>
-      </div>
-
-      <div class="space-y-6">
-        <h2 class="text-grey-700 mb-4 text-lg font-medium">Dane faktury</h2>
-        <form
-          phx-change="update_invoice_number"
-          phx-submit={if @ksef_connected?, do: "send_to_ksef", else: "confirm_invoice"}
-        >
-          <label class="text-grey-500 mb-2 block text-sm">Numer faktury</label>
-          <input
-            type="text"
-            name="invoice_number"
-            value={@invoice_number}
-            phx-debounce="300"
-            class="border-grey-200 focus:ring-turquoise-500 placeholder:text-grey-400 text-grey-700 w-full rounded-lg border px-3 py-2 text-sm focus:border-transparent focus:ring-2 focus:outline-hidden"
-          />
-        </form>
-
-        <%!-- Invoice number warnings or series suggestions --%>
-        <%= if @invoice_warnings != [] do %>
-          <div class="space-y-3">
-            <%= for warning <- @invoice_warnings do %>
-              <div class="bg-orangeBg rounded-lg bg-amber-50 p-3 text-sm">
-                <div class="text-orangeText flex items-start gap-2">
-                  <Lucideicons.alert_triangle class="mt-0.5 size-4 shrink-0 text-amber-500" />
-                  <span>
-                    <%= case warning do %>
-                      <% {:invalid_format, _} -> %>
-                        Format numeru może być nieprawidłowy.
-                      <% {:duplicate, _} -> %>
-                        Numer faktury już istnieje.
-                      <% {:gap, _} -> %>
-                        Numer tworzy lukę w numeracji.
-                    <% end %>
-                  </span>
-                </div>
-                <div class="mt-2 ml-6 flex flex-wrap gap-2">
-                  <%= for suggestion <- warning_suggestions(warning) do %>
-                    <.button
-                      type="button"
-                      phx-click="select_series"
-                      phx-value-number={suggestion}
-                      variant="secondary"
-                      accent="turquoise"
-                      size="small"
-                      class="text-xs"
-                    >
-                      Użyj {suggestion}
-                    </.button>
-                  <% end %>
-                </div>
-              </div>
-            <% end %>
-          </div>
-        <% else %>
-          <div class="flex flex-wrap gap-2">
-            <%= for {_series, next_number} <- Enum.sort_by(@series_suggestions, fn {s, _} -> if s == nil, do: "", else: s end) do %>
-              <.button
-                type="button"
-                phx-click="select_series"
-                phx-value-number={next_number}
-                variant={if(@invoice_number == next_number, do: "secondary", else: "outline")}
-                accent="turquoise"
-                size="small"
-                class={
-                  if(@invoice_number == next_number,
-                    do: "border-turquoise-500 text-turquoise-700",
-                    else: "hover:bg-grey-50 text-grey-600"
-                  )
-                }
-              >
-                {next_number}
-              </.button>
-            <% end %>
-          </div>
-        <% end %>
-
-        <form phx-change="update_notes" phx-debounce="300">
-          <label class="text-grey-500 mb-2 block text-sm">Notatka na fakturze</label>
-          <textarea
-            name="invoice_note"
-            rows="3"
-            class="border-grey-200 focus:ring-turquoise-500 placeholder:text-grey-400 text-grey-700 w-full resize-none rounded-lg border px-3 py-2 text-sm focus:border-transparent focus:ring-2 focus:outline-hidden"
-            placeholder="Widoczna na fakturze i w KSeF (stopka faktury)"
-          ><%= @invoice.invoice_note || "" %></textarea>
-
-          <label class="text-grey-500 mt-3 mb-2 block text-sm">Komentarz</label>
-          <textarea
-            name="internal_note"
-            rows="3"
-            class="border-grey-200 focus:ring-turquoise-500 placeholder:text-grey-400 text-grey-700 w-full resize-none rounded-lg border px-3 py-2 text-sm focus:border-transparent focus:ring-2 focus:outline-hidden"
-            placeholder="Notatka wewnętrzna (niewidoczna na fakturze - tylko w Firmowidzie)"
-          ><%= @invoice.internal_note || "" %></textarea>
-        </form>
-
-        <form phx-change="toggle_should_send_emails">
-          <label
-            class="text-grey-700 flex items-center gap-3 text-sm font-medium"
-            title={@counterparty_check.tooltip}
-          >
-            <input
-              type="checkbox"
-              name="should_send_emails"
-              value="true"
-              checked={@should_send_emails}
-              disabled={!@counterparty_check.valid}
-              class="border-grey-300 focus:ring-turquoise-500 text-turquoise-600 size-4 rounded disabled:cursor-not-allowed disabled:opacity-60"
-            />
-            <span>Wyślij fakturę e-mailem do kontrahenta po otrzymaniu numeru KSeF</span>
-          </label>
-        </form>
-
-        <%!-- Action buttons --%>
-        <div class="flex flex-row gap-4 pt-4">
-          <.button
-            type="button"
-            phx-click="save_as_draft"
-            phx-disable-with="Zapisywanie..."
-            class="h-11 w-full"
-            variant="secondary"
-          >
-            Zapisz wersję roboczą
-          </.button>
-
-          <%= if @ksef_connected? do %>
-            <.button
-              type="button"
-              phx-click="send_to_ksef"
-              phx-disable-with="Wysyłanie..."
-              class="h-11 w-full"
-              variant="primary"
-              accent="turquoise"
-            >
-              Zapisz i wyślij do KSeF
-            </.button>
-          <% else %>
-            <.button
-              type="button"
-              phx-click="confirm_invoice"
-              phx-disable-with="Zapisywanie..."
-              class="h-11 w-full"
-              variant="primary"
-              accent="turquoise"
-            >
-              Zatwierdź fakturę
-            </.button>
-          <% end %>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
+  </:header>
+</FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceReview.invoice_review>

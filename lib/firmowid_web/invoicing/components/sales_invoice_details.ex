@@ -401,6 +401,13 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
 
             <InvoiceDetails.invoice_metadata>
               <InvoiceDetails.invoice_metadata_piece
+                :if={is_nil(@invoice.invoice_number)}
+                label={gettext("Invoice status")}
+                value={gettext("Draft")}
+                piece_id="invoice-status"
+              />
+              <InvoiceDetails.invoice_metadata_piece
+                :if={!is_nil(@invoice.invoice_number)}
                 label="Numer faktury"
                 value={@invoice.invoice_number}
                 piece_id="inv-id"

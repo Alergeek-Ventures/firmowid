@@ -3,32 +3,28 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Utilities.PaymentDateSuggestions d
   Builds and applies quick date suggestions for sales invoice payment forms.
   """
 
+  use Gettext, backend: FirmowidWeb.Core.Gettext
+
   @type suggestion_target :: :sale_date | :due_date
   @type suggestion_key ::
           :today
           | :end_of_previous_month
           | :days_3
           | :days_7
+          | :days_21
           | :days_30
           | :end_of_current_month
-
-  @sale_date_suggestions [
-    {"today", "dzisiaj"},
-    {"end_of_previous_month", "ostatni dzień ubiegłego miesiąca"}
-  ]
-
-  @due_date_suggestions [
-    {"days_3", "3 dni"},
-    {"days_7", "7 dni"},
-    {"days_30", "30 dni"},
-    {"end_of_current_month", "koniec obecnego miesiąca"}
-  ]
 
   @doc """
   Returns available sale date suggestions.
   """
   @spec sale_date_suggestions() :: [{String.t(), String.t()}]
-  def sale_date_suggestions, do: @sale_date_suggestions
+  def sale_date_suggestions do
+    [
+      {"today", gettext("today")},
+      {"end_of_previous_month", gettext("last day of previous month")}
+    ]
+  end
 
   @doc """
   Parses a payment date field name used by the UI.
@@ -42,7 +38,15 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Utilities.PaymentDateSuggestions d
   Returns available due date suggestions.
   """
   @spec due_date_suggestions() :: [{String.t(), String.t()}]
-  def due_date_suggestions, do: @due_date_suggestions
+  def due_date_suggestions do
+    [
+      {"days_3", ngettext("%{count} day", "%{count} days", 3)},
+      {"days_7", ngettext("%{count} day", "%{count} days", 7)},
+      {"days_21", ngettext("%{count} day", "%{count} days", 21)},
+      {"days_30", ngettext("%{count} day", "%{count} days", 30)},
+      {"end_of_current_month", gettext("end of current month")}
+    ]
+  end
 
   @doc """
   Parses a suggestion key used by the UI.
@@ -52,6 +56,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Utilities.PaymentDateSuggestions d
   def parse_suggestion("end_of_previous_month"), do: :end_of_previous_month
   def parse_suggestion("days_3"), do: :days_3
   def parse_suggestion("days_7"), do: :days_7
+  def parse_suggestion("days_21"), do: :days_21
   def parse_suggestion("days_30"), do: :days_30
   def parse_suggestion("end_of_current_month"), do: :end_of_current_month
   def parse_suggestion(_), do: nil
@@ -80,6 +85,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Utilities.PaymentDateSuggestions d
 
   defp suggested_date(:due_date, :days_3, issue_date, _today), do: Date.add(issue_date, 3)
   defp suggested_date(:due_date, :days_7, issue_date, _today), do: Date.add(issue_date, 7)
+  defp suggested_date(:due_date, :days_21, issue_date, _today), do: Date.add(issue_date, 21)
   defp suggested_date(:due_date, :days_30, issue_date, _today), do: Date.add(issue_date, 30)
 
   defp suggested_date(:due_date, :end_of_current_month, _issue_date, today), do: Date.end_of_month(today)

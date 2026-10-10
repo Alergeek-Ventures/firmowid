@@ -13,6 +13,40 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoiceTest do
 
   require Ash.Query
 
+  describe "invoice number uniqueness" do
+    test "allows multiple unnumbered drafts in the same organization" do
+      user = admin_fixture()
+
+      attrs =
+        Map.merge(base_invoice_attrs(), %{
+          invoice_number: nil,
+          sales_invoice_items: [base_item_attrs(%{})]
+        })
+
+      first = create_sales_invoice!(user, attrs)
+      second = create_sales_invoice!(user, attrs)
+
+      assert first.id != second.id
+      assert is_nil(first.invoice_number)
+      assert is_nil(second.invoice_number)
+      assert is_nil(first.locked_at)
+      assert is_nil(second.locked_at)
+    end
+
+    test "rejects a duplicate nonempty invoice number in the same organization" do
+      user = admin_fixture()
+      attrs = Map.put(base_invoice_attrs(), :sales_invoice_items, [base_item_attrs(%{})])
+      create_sales_invoice!(user, attrs)
+
+      assert {:error, %Invalid{errors: errors}} =
+               Invoicing.create_sales_invoice(attrs, scope: scope_for(user))
+
+      assert Enum.any?(errors, fn error ->
+               match?(%Ash.Error.Changes.InvalidAttribute{field: :invoice_number}, error)
+             end)
+    end
+  end
+
   describe "Money amounts" do
     test "read action filters invoice amounts through Money" do
       user = admin_fixture()

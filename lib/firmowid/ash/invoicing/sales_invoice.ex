@@ -1380,7 +1380,7 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
 
   identities do
     identity :invoice_number_per_org, [:invoice_number, :organization_id],
-      nils_distinct?: false,
+      nils_distinct?: true,
       message: "numer faktury już istnieje dla tej organizacji"
   end
 

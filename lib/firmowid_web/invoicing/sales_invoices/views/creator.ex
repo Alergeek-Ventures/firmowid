@@ -499,11 +499,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
       )
 
     # Validate initial invoice number
-    invoice_warnings =
-      SalesInvoice.validate_number!(invoice_number, issue_date, nil,
-        actor: actor,
-        scope: scope
-      )
+    invoice_warnings = number_warnings(String.trim(invoice_number), issue_date, actor, scope)
 
     # Build preview invoice map with seller data from organization
     logo_url = Invoicing.get_logo_url(org_id, scope: socket.assigns.ash_scope)
@@ -1018,11 +1014,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
     scope = socket.assigns.ash_scope
     actor = socket.assigns.current_user
 
-    invoice_warnings =
-      SalesInvoice.validate_number!(invoice_number, issue_date, nil,
-        actor: actor,
-        scope: scope
-      )
+    invoice_warnings = number_warnings(String.trim(invoice_number), issue_date, actor, scope)
 
     {:noreply,
      socket
@@ -1069,11 +1061,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
     scope = socket.assigns.ash_scope
     actor = socket.assigns.current_user
 
-    invoice_warnings =
-      SalesInvoice.validate_number!(invoice_number, issue_date, nil,
-        actor: actor,
-        scope: scope
-      )
+    invoice_warnings = number_warnings(String.trim(invoice_number), issue_date, actor, scope)
 
     {:noreply,
      socket
@@ -1104,14 +1092,15 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
     end
   end
 
-  def handle_event("confirm_invoice", _params, socket) do
+  def handle_event("confirm_invoice", params, socket) do
     scope = socket.assigns.ash_scope
     organization = socket.assigns.organization
     draft = socket.assigns.draft
-    invoice_number = socket.assigns.invoice_number
+    invoice_number = Map.get(params, "invoice_number", socket.assigns.invoice_number)
     should_send_emails = socket.assigns.should_send_emails
 
-    with :ok <- validate_organization_for_invoicing(organization),
+    with :ok <- validate_invoice_number(invoice_number),
+         :ok <- validate_organization_for_invoicing(organization),
          {:ok, invoice} <-
            create_invoice_from_draft(
              draft,
@@ -1135,14 +1124,15 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
     end
   end
 
-  def handle_event("send_to_ksef", _params, socket) do
+  def handle_event("send_to_ksef", params, socket) do
     scope = socket.assigns.ash_scope
     organization = socket.assigns.organization
     draft = socket.assigns.draft
-    invoice_number = socket.assigns.invoice_number
+    invoice_number = Map.get(params, "invoice_number", socket.assigns.invoice_number)
     should_send_emails = socket.assigns.should_send_emails
 
-    with :ok <- validate_organization_for_invoicing(organization),
+    with :ok <- validate_invoice_number(invoice_number),
+         :ok <- validate_organization_for_invoicing(organization),
          {:ok, invoice} <-
            create_invoice_from_draft(
              draft,
@@ -1303,6 +1293,8 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
     end
   end
 
+  defp get_error_message(:missing_invoice_number), do: gettext("Invoice number is required.")
+
   defp get_error_message(_), do: "Nie udało się wystawić faktury"
 
   @doc """
@@ -1333,10 +1325,14 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
 
   defp maybe_clear_should_send_emails(socket, _check), do: assign(socket, :should_send_emails, false)
 
-  # Extract suggestions from invoice number warnings for display in template
-  def warning_suggestions({:invalid_format, suggestions}), do: suggestions
-  def warning_suggestions({:duplicate, suggestions}), do: suggestions
-  def warning_suggestions({:gap, expected}), do: [expected]
+  defp number_warnings("", _issue_date, _actor, _scope), do: []
+
+  defp number_warnings(number, issue_date, actor, scope),
+    do: SalesInvoice.validate_number!(number, issue_date, nil, actor: actor, scope: scope)
+
+  defp validate_invoice_number(number) do
+    if String.trim(number || "") == "", do: {:error, :missing_invoice_number}, else: :ok
+  end
 
   # Confirmed VAT invoices from the previous 2 months (replaces list_recent action).
   # The range covers [first_of_month - 2 months, last day of previous month].
