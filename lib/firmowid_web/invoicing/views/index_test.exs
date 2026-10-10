@@ -174,7 +174,9 @@ defmodule FirmowidWeb.Invoicing.Views.IndexTest do
       assert skipped_tx1.skip_invoicing
       assert skipped_tx2.skip_invoicing
 
-      Process.sleep(10_100)
+      # Exercise the refresh without waiting for the animation delay. Timer
+      # scheduling and cancellation are covered by PubSubDebounceTest.
+      send(view.pid, {:debounced_refetch, :invoicing_entries})
 
       html_after_debounce = render(view)
 
