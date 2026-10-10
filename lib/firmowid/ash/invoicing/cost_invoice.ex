@@ -5,7 +5,8 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
 
   ## Read Actions
 
-    * `:read` — primary, with optional filters: `date_from`, `date_to`, `date_field`,
+    * `:read` — basic primary read for framework and relationship reads
+    * `:list` — application listing with optional filters: `date_from`, `date_to`, `date_field`,
       `reconciliation` (`:pending`/`:matched`/`:skipped`), `ids`, `corrections`
       (`:include` corrections only, `:exclude` corrections, `nil` for both),
       `source`, `is_ksef_imported` (true/false, omitted for both),
@@ -40,8 +41,7 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer],
     extensions: [AshOban, AshEvents.Events, AshJido],
-    notifiers: [Ash.Notifier.PubSub],
-    primary_read_warning?: false
+    notifiers: [Ash.Notifier.PubSub]
 
   alias AshMoney.Types.Money, as: MoneyType
   alias AshOban.Checks.AshObanInteraction
@@ -103,7 +103,7 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
   end
 
   jido do
-    action :read,
+    action :list,
       name: "list_cost_invoices",
       description: "Listuje faktury kosztowe z bezpiecznymi filtrami Ash.",
       category: "ash.invoicing.read",
@@ -126,6 +126,7 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
     define :by_id, args: [:id], action: :by_id
     define :get, args: [:id], action: :by_id
     define :read, action: :read
+    define :list, action: :list
     define :read_global, action: :read_global
     define :read_missing_description, action: :read_missing_description
     define :by_checksum, args: [:blob_checksum]
@@ -138,10 +139,10 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
   end
 
   actions do
-    # No `defaults [:read]` — the explicit `:read` below serves as primary
-    read :read do
+    defaults [:read]
+
+    read :list do
       description "List cost invoices with search and reconciliation filters."
-      primary? true
 
       pagination do
         required? false

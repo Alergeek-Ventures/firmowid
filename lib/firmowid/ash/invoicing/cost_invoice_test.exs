@@ -403,7 +403,7 @@ defmodule Firmowid.Ash.Invoicing.CostInvoiceTest do
         )
         |> Ash.Query.sort(effective_amount: :desc)
         |> Ash.Query.load(:effective_amount)
-        |> Ash.read!(scope: scope)
+        |> then(&CostInvoice.list!(query: &1, scope: scope))
 
       assert Enum.map(invoices, & &1.id) == [second_invoice.id, first_invoice.id]
 

@@ -442,9 +442,7 @@ defmodule FirmowidWeb.Documents.Components.DocumentsSection do
         %{user_id: user_id}
         |> maybe_add_month(parsed.month)
         |> maybe_add_year(parsed.year)
-        |> Payroll.query_to_list_employment_contracts(scope: scope)
-        |> Ash.Query.load([:blob], scope: scope)
-        |> Ash.read!(scope: scope)
+        |> Payroll.list_employment_contracts!(scope: scope, load: [:blob])
         |> Enum.map(fn doc ->
           %{
             id: doc.id,

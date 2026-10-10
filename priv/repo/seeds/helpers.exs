@@ -284,7 +284,7 @@ defmodule Firmowid.Seeds.Helpers do
       |> Ash.Query.limit(1)
 
     %{}
-    |> AshSalesInvoice.read!(query: query, tenant: org_id, actor: @seed_actor, authorize?: false)
+    |> AshSalesInvoice.list!(query: query, tenant: org_id, actor: @seed_actor, authorize?: false)
     |> List.first()
   end
 
@@ -295,7 +295,7 @@ defmodule Firmowid.Seeds.Helpers do
       |> Ash.Query.limit(1)
 
     %{}
-    |> AshCostInvoice.read!(query: query, tenant: org_id, actor: @seed_actor, authorize?: false)
+    |> AshCostInvoice.list!(query: query, tenant: org_id, actor: @seed_actor, authorize?: false)
     |> List.first()
   end
 

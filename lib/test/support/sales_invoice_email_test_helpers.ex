@@ -10,8 +10,6 @@ defmodule Firmowid.Test.Support.SalesInvoiceEmailTestHelpers do
   alias Firmowid.Ash.Invoicing.Services.Pdf
   alias Firmowid.Ash.Invoicing.Workers.SalesInvoiceEmailWorker
 
-  require Ash.Query
-
   @oban_test_opts [repo: Firmowid.Repo, prefix: "oban"]
 
   @doc """
@@ -156,10 +154,10 @@ defmodule Firmowid.Test.Support.SalesInvoiceEmailTestHelpers do
   """
   @spec email_deliveries_for(struct(), struct()) :: [struct()]
   def email_deliveries_for(invoice, scope) do
-    SalesInvoiceEmailDelivery
-    |> Ash.Query.filter(sales_invoice_id == ^invoice.id)
-    |> Ash.Query.sort(inserted_at: :asc, id: :asc)
-    |> Ash.read!(scope: scope)
+    SalesInvoiceEmailDelivery.list!(%{sales_invoice_id: invoice.id},
+      scope: scope,
+      query: [sort: [inserted_at: :asc, id: :asc]]
+    )
   end
 
   @doc """

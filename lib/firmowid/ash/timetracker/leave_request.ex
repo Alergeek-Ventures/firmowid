@@ -8,8 +8,7 @@ defmodule Firmowid.Ash.Timetracker.LeaveRequest do
     domain: Firmowid.Ash.Timetracker,
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer],
-    extensions: [AshStateMachine],
-    primary_read_warning?: false
+    extensions: [AshStateMachine]
 
   alias Firmowid.Ash.Blobs
   alias Firmowid.Ash.Checks.SystemActorRole
@@ -60,18 +59,20 @@ defmodule Firmowid.Ash.Timetracker.LeaveRequest do
 
   code_interface do
     define :read, action: :read
+    define :list, action: :list
     define :destroy, action: :destroy
   end
 
   actions do
+    defaults [:read]
+
     destroy :destroy do
       description "Delete a leave request."
       primary? true
     end
 
-    read :read do
+    read :list do
       description "List leave requests with optional user, overlapping date range and status filters."
-      primary? true
       argument :user_id, :uuid
       argument :start_date, :date
       argument :end_date, :date
@@ -273,7 +274,7 @@ defmodule Firmowid.Ash.Timetracker.LeaveRequest do
   policies do
     bypass [
       {SystemActorRole, roles: [:organization_cleanup]},
-      action([:read, :destroy])
+      action([:read, :list, :destroy])
     ] do
       authorize_if expr(not is_nil(^actor(:org_id)) and organization_id == ^actor(:org_id))
     end

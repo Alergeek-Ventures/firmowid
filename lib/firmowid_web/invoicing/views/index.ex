@@ -1194,22 +1194,19 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
       SalesInvoice
       # ── Entry sorting for display ──────────────────────────────────────
       |> Ash.Query.select([:issue_date])
-      |> Ash.Query.for_read(:read, %{}, scope_opts)
-      |> Ash.read!(scope_opts)
+      |> then(&Invoicing.list_sales_invoices!(Keyword.put(scope_opts, :query, &1)))
       |> Enum.map(& &1.issue_date)
 
     cost_months =
       CostInvoice
       |> Ash.Query.select([:issue_date])
-      |> Ash.Query.for_read(:read, %{}, scope_opts)
-      |> Ash.read!(scope_opts)
+      |> then(&Invoicing.list_cost_invoices!(Keyword.put(scope_opts, :query, &1)))
       |> Enum.map(& &1.issue_date)
 
     tx_months =
       Transaction
       |> Ash.Query.select([:booking_date])
-      |> Ash.Query.for_read(:read, %{}, scope_opts)
-      |> Ash.read!(scope_opts)
+      |> then(&Finances.list_transactions!(Keyword.put(scope_opts, :query, &1)))
       |> Enum.map(& &1.booking_date)
 
     (sales_months ++ cost_months ++ tx_months)
@@ -1271,6 +1268,6 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
   end
 
   defp can_view_invoicing?(user) do
-    Ash.can?({SalesInvoice, :read}, user)
+    Ash.can?({SalesInvoice, :list}, user)
   end
 end

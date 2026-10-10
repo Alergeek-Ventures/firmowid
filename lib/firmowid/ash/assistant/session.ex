@@ -10,8 +10,7 @@ defmodule Firmowid.Ash.Assistant.Session do
     domain: Firmowid.Ash.Assistant,
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer],
-    extensions: [AshStateMachine],
-    primary_read_warning?: false
+    extensions: [AshStateMachine]
 
   alias Firmowid.Ash.Assistant.PendingMatch
   alias Firmowid.Ash.Assistant.Prompts.InvoiceMatching, as: InvoiceMatchingPrompt
@@ -49,6 +48,7 @@ defmodule Firmowid.Ash.Assistant.Session do
     define :destroy, action: :destroy
     define :by_id, args: [:id], action: :by_id
     define :read, action: :read
+    define :list, action: :list
     define :start, args: [:entry_context], action: :start_invoice_matching
     define :claim_processing, action: :claim_processing
     define :complete_turn, args: [:messages], action: :complete_turn
@@ -61,16 +61,15 @@ defmodule Firmowid.Ash.Assistant.Session do
   end
 
   actions do
-    defaults []
+    defaults [:read]
 
     destroy :destroy do
       description "Delete an assistant session."
       primary? true
     end
 
-    read :read do
+    read :list do
       description "List assistant sessions ordered by most recently updated."
-      primary? true
       argument :user_id, :uuid
 
       argument :status, :atom do
@@ -203,7 +202,7 @@ defmodule Firmowid.Ash.Assistant.Session do
   policies do
     bypass [
       {Firmowid.Ash.Checks.SystemActorRole, roles: [:organization_cleanup]},
-      action([:read, :destroy])
+      action([:read, :list, :destroy])
     ] do
       authorize_if expr(not is_nil(^actor(:org_id)) and organization_id == ^actor(:org_id))
     end

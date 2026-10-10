@@ -4,10 +4,7 @@ defmodule Firmowid.Ash.Finances.Requisition do
 
   Tracks the lifecycle of a bank connection request.
   """
-  # The optional remote deletion filter is intentional; omitted arguments leave
-  # relationship loads unfiltered.
   use Ash.Resource,
-    primary_read_warning?: false,
     domain: Firmowid.Ash.Finances,
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer],
@@ -95,6 +92,7 @@ defmodule Firmowid.Ash.Finances.Requisition do
 
   code_interface do
     define :read, action: :read
+    define :list, action: :list
     define :destroy, action: :destroy
     define :read_global, action: :read_global
     define :persist, action: :persist
@@ -107,9 +105,10 @@ defmodule Firmowid.Ash.Finances.Requisition do
   end
 
   actions do
-    read :read do
+    defaults [:read]
+
+    read :list do
       description "List requisitions, optionally filtered by remote deletion state."
-      primary? true
 
       argument :remote_deleted?, :boolean do
         description "Omit to list all requisitions; false selects pending remote deletion, true selects completed deletion."
@@ -210,7 +209,7 @@ defmodule Firmowid.Ash.Finances.Requisition do
   policies do
     bypass [
       {SystemActorRole, roles: [:organization_cleanup]},
-      action(:read)
+      action([:read, :list])
     ] do
       authorize_if expr(not is_nil(^actor(:org_id)) and organization_id == ^actor(:org_id))
     end
@@ -226,7 +225,7 @@ defmodule Firmowid.Ash.Finances.Requisition do
     # bank_sync: status transitions delegated from :check_status and expiry
     # detected during transaction sync.
     bypass {SystemActorRole, roles: [:bank_sync]} do
-      authorize_if action(:read)
+      authorize_if action([:read, :list])
       authorize_if action([:accept, :reject, :expire])
     end
 
@@ -249,7 +248,7 @@ defmodule Firmowid.Ash.Finances.Requisition do
     end
 
     # :invoicing and :accountant: read-only
-    policy [action(:read), {Firmowid.Ash.Checks.AtLeastRole, role: :invoicing}] do
+    policy [action([:read, :list]), {Firmowid.Ash.Checks.AtLeastRole, role: :invoicing}] do
       authorize_if always()
     end
 

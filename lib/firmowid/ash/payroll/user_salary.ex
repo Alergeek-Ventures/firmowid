@@ -12,8 +12,7 @@ defmodule Firmowid.Ash.Payroll.UserSalary do
   use Ash.Resource,
     domain: Firmowid.Ash.Payroll,
     data_layer: AshPostgres.DataLayer,
-    authorizers: [Ash.Policy.Authorizer],
-    primary_read_warning?: false
+    authorizers: [Ash.Policy.Authorizer]
 
   alias Firmowid.Ash.Checks.SystemActorRole
   alias Firmowid.Ash.Core.User
@@ -28,11 +27,12 @@ defmodule Firmowid.Ash.Payroll.UserSalary do
 
   code_interface do
     define :read, action: :read
+    define :list, action: :list
     define :destroy, action: :destroy
   end
 
   actions do
-    defaults [:destroy]
+    defaults [:read, :destroy]
 
     create :create do
       description "Create a salary record for a user."
@@ -41,13 +41,11 @@ defmodule Firmowid.Ash.Payroll.UserSalary do
       change {Firmowid.Ash.Payroll.Changes.SkipUnchangedRate, []}
     end
 
-    read :read do
+    read :list do
       description """
       Returns all salaries for all users.
       Can be filter by active_at (date) to return salaries active on a specific date and by user_id to return salaries for a specific user.
       """
-
-      primary? true
 
       argument :user_id, :uuid
       argument :active_at, :date
@@ -106,7 +104,7 @@ defmodule Firmowid.Ash.Payroll.UserSalary do
   policies do
     bypass [
       {SystemActorRole, roles: [:organization_cleanup]},
-      action([:read, :destroy])
+      action([:read, :list, :destroy])
     ] do
       authorize_if expr(not is_nil(^actor(:org_id)) and organization_id == ^actor(:org_id))
     end

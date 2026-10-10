@@ -1,10 +1,7 @@
 defmodule Firmowid.Ash.Invoicing.SalesInvoiceEmailDelivery do
   @moduledoc "Persists sales invoice email delivery outcomes and supports organization cleanup."
 
-  # The primary read intentionally supports optional filters; omitted arguments
-  # leave relationship loads unfiltered.
   use Ash.Resource,
-    primary_read_warning?: false,
     otp_app: :firmowid,
     domain: Firmowid.Ash.Invoicing,
     data_layer: AshPostgres.DataLayer,
@@ -29,18 +26,20 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoiceEmailDelivery do
   code_interface do
     define :destroy, action: :destroy
     define :read, action: :read
+    define :list, action: :list
     define :record_delivery, action: :record_delivery
   end
 
   actions do
+    defaults [:read]
+
     destroy :destroy do
       description "Delete a sales invoice email delivery outcome."
       primary? true
     end
 
-    read :read do
+    read :list do
       description "List email delivery outcomes with optional invoice, type and status filters."
-      primary? true
       argument :sales_invoice_id, :uuid
 
       argument :delivery_type, :atom do
@@ -95,7 +94,7 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoiceEmailDelivery do
   policies do
     bypass [
       {SystemActorRole, roles: [:organization_cleanup]},
-      action([:read, :destroy])
+      action([:read, :list, :destroy])
     ] do
       authorize_if expr(not is_nil(^actor(:org_id)) and organization_id == ^actor(:org_id))
     end

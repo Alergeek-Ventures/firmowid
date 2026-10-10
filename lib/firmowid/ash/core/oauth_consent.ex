@@ -1,8 +1,6 @@
 defmodule Firmowid.Ash.Core.OauthConsent do
   @moduledoc "OAuth consent grants, including account-bound deletion cleanup."
-  # The optional user filter is intentional; omitted arguments leave the primary read unfiltered.
   use Ash.Resource,
-    primary_read_warning?: false,
     otp_app: :firmowid,
     domain: Firmowid.Ash.Core,
     data_layer: AshPostgres.DataLayer,
@@ -20,16 +18,16 @@ defmodule Firmowid.Ash.Core.OauthConsent do
 
   code_interface do
     define :read, action: :read
+    define :list, action: :list
     define :destroy, action: :destroy
     define :grant, action: :grant
   end
 
   actions do
-    defaults [:destroy]
+    defaults [:read, :destroy]
 
-    read :read do
+    read :list do
       description "List OAuth consents, optionally filtered by user."
-      primary? true
       argument :user_id, :uuid
 
       prepare build(filter: expr(user_id == ^arg(:user_id))) do
@@ -51,7 +49,7 @@ defmodule Firmowid.Ash.Core.OauthConsent do
       authorize_if always()
     end
 
-    policy action([:read, :destroy]) do
+    policy action([:read, :list, :destroy]) do
       authorize_if AccountCleanup
     end
   end

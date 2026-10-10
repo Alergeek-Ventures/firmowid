@@ -410,11 +410,13 @@ defmodule Firmowid.Ash.Finances.Changes.SyncTransactions do
   defp load_existing_transactions_for_dedupe(bank_account, transactions, scope) do
     {oldest_date, newest_date} = replay_date_bounds(transactions)
 
-    Transaction
-    |> Ash.Query.filter(expr(bank_account_id == ^bank_account.id))
-    |> apply_replay_date_filter(oldest_date, newest_date)
-    |> Ash.Query.sort(inserted_at: :desc)
-    |> Ash.read!(scope: scope)
+    query =
+      Transaction
+      |> Ash.Query.filter(expr(bank_account_id == ^bank_account.id))
+      |> apply_replay_date_filter(oldest_date, newest_date)
+      |> Ash.Query.sort(inserted_at: :desc)
+
+    Transaction.list!(%{}, query: query, scope: scope)
   end
 
   defp apply_replay_date_filter(query, nil, nil), do: query

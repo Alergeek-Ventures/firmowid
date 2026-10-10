@@ -69,7 +69,13 @@ defmodule Firmowid.Ash.Invoicing.Services.SalesInvoiceChain do
       :buyer_display_name_label,
       sales_invoice_items: [:net_value, :vat_value, :gross_value]
     ])
-    |> Ash.read!(opts)
+    |> then(
+      &SalesInvoice.public_shared_chain!(
+        root_invoice_id,
+        root_share_token,
+        Keyword.put(opts, :query, &1)
+      )
+    )
     |> assemble_public_shared_chain()
   end
 

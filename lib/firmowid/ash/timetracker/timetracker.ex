@@ -26,6 +26,7 @@ defmodule Firmowid.Ash.Timetracker do
       define :create_leave_request_with_upload, action: :create_with_upload
 
       define :get_leave_request, action: :read, get_by: [:id]
+      define :list_leave_requests, action: :list
       define :list_leave_requests_for_user, action: :list_for_user, args: [:user_id]
       define :list_current_user_leave_requests, action: :list_current_user
       define :accept_leave_request, action: :accept, get_by: [:id]
@@ -116,40 +117,49 @@ defmodule Firmowid.Ash.Timetracker do
   """
   @spec months_with_sessions(map(), keyword()) :: [NaiveDateTime.t()]
   def months_with_sessions(filters, scope) do
+    query =
+      filters
+      |> query_to_list_sessions(scope: scope)
+      |> Ash.Query.distinct(:month_start)
+      |> Ash.Query.distinct_sort(month_start: :desc)
+      |> Ash.Query.sort(month_start: :desc)
+      |> Ash.Query.load(:month_start)
+
     filters
-    |> query_to_list_sessions(scope: scope)
-    |> Ash.Query.distinct(:month_start)
-    |> Ash.Query.distinct_sort(month_start: :desc)
-    |> Ash.Query.sort(month_start: :desc)
-    |> Ash.Query.load(:month_start)
-    |> Ash.read!(scope: scope)
+    |> list_sessions!(scope: scope, query: query)
     |> Enum.map(& &1.month_start)
   end
 
   def years_with_leave_requests(user_id, scope) do
+    query =
+      user_id
+      |> query_to_list_leave_requests_for_user(scope: scope)
+      |> Ash.Query.filter(status != :pending)
+      |> Ash.Query.select([:starts_on, :ends_on])
+
     user_id
-    |> query_to_list_leave_requests_for_user(scope: scope)
-    |> Ash.Query.filter(status != :pending)
-    |> Ash.Query.select([:starts_on, :ends_on])
-    |> Ash.read!(scope: scope)
+    |> list_leave_requests_for_user!(scope: scope, query: query)
     |> Enum.flat_map(&[&1.starts_on.year, &1.ends_on.year])
     |> Enum.uniq()
     |> Enum.sort(:desc)
   end
 
   def projects_duration_for_month(user_id, %Date{} = date, scope) do
+    query =
+      %{user_id: user_id}
+      |> query_to_list_projects(scope: scope)
+      |> Ash.Query.aggregate(:duration, :sum, :sessions,
+        field: :duration,
+        default: 0,
+        query:
+          query_to_list_sessions(
+            %{user_id: user_id, month: date.month, year: date.year},
+            scope: scope
+          )
+      )
+
     %{user_id: user_id}
-    |> query_to_list_projects(scope: scope)
-    |> Ash.Query.aggregate(:duration, :sum, :sessions,
-      field: :duration,
-      default: 0,
-      query:
-        query_to_list_sessions(
-          %{user_id: user_id, month: date.month, year: date.year},
-          scope: scope
-        )
-    )
-    |> Ash.read!(scope: scope)
+    |> list_projects!(scope: scope, query: query)
     |> Enum.map(fn project ->
       %{id: project.id, name: project.name, duration: project.aggregates[:duration] || 0}
     end)

@@ -10,8 +10,6 @@ defmodule FirmowidWeb.Billing.Utilities.MonthContext do
   alias Firmowid.Ash.Core.Organization
   alias FirmowidWeb.Billing.Utilities.Worksheet
 
-  require Ash.Query
-
   @type status :: %{kind: :live_preview} | %{kind: :snapshot, frozen_at: DateTime.t()}
 
   @type t :: %{
@@ -48,11 +46,10 @@ defmodule FirmowidWeb.Billing.Utilities.MonthContext do
   """
   @spec list_snapshots(binary(), map()) :: [Snapshot.t()]
   def list_snapshots(organization_id, current_user) do
-    %{}
-    |> Billing.query_to_list_billing_snapshots_global(actor: current_user)
-    |> Ash.Query.filter(organization_id == ^organization_id)
-    |> Ash.Query.sort(month: :desc)
-    |> Ash.read!(actor: current_user)
+    Billing.list_billing_snapshots_global!(%{},
+      actor: current_user,
+      query: [filter: [organization_id: organization_id], sort: [month: :desc]]
+    )
   end
 
   defp load_usage_source(organization, selected_month, _current_user, current_month, _snapshots)

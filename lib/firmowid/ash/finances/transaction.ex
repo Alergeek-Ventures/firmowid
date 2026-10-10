@@ -7,8 +7,7 @@ defmodule Firmowid.Ash.Finances.Transaction do
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer],
     extensions: [AshJido],
-    notifiers: [Ash.Notifier.PubSub],
-    primary_read_warning?: false
+    notifiers: [Ash.Notifier.PubSub]
 
   alias AshMoney.Types.Money
   alias Firmowid.Ash.Checks.AtLeastRole
@@ -27,17 +26,22 @@ defmodule Firmowid.Ash.Finances.Transaction do
   end
 
   jido do
-    action :read,
+    action :list,
       name: "list_transactions",
       description: "Listuje transakcje z bezpiecznymi filtrami Ash.",
       category: "ash.finances.read",
       tags: ["assistant", "transactions"]
   end
 
-  actions do
-    read :read do
-      primary? true
+  code_interface do
+    define :read, action: :read
+    define :list, action: :list
+  end
 
+  actions do
+    defaults [:read]
+
+    read :list do
       description """
       Lists transactions with optional filtering.
 

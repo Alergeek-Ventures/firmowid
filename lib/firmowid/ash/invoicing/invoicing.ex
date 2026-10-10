@@ -44,7 +44,7 @@ defmodule Firmowid.Ash.Invoicing do
     end
 
     resource CostInvoice do
-      define :list_cost_invoices, action: :read
+      define :list_cost_invoices, action: :list
       define :get_cost_invoice, action: :by_id, args: [:id]
       define :get_cost_invoice_by_checksum, action: :by_checksum, args: [:blob_checksum]
       define :get_cost_invoice_by_blob_id, action: :read, get_by: [:blob_id]
@@ -74,7 +74,7 @@ defmodule Firmowid.Ash.Invoicing do
     resource Firmowid.Ash.Invoicing.KsefInvoiceDigestItem
 
     resource SalesInvoice do
-      define :list_sales_invoices, action: :read
+      define :list_sales_invoices, action: :list
       define :get_sales_invoice, action: :by_id, args: [:id]
       define :get_sales_invoice_by_share_token, action: :by_share_token, args: [:token]
       define :create_sales_invoice, action: :create
@@ -159,7 +159,7 @@ defmodule Firmowid.Ash.Invoicing do
   @doc """
   Searches across cost and sales invoices, merging results by relevance.
 
-  Calls the primary `:read` actions on CostInvoice and SalesInvoice
+  Calls the application `:list` actions on CostInvoice and SalesInvoice
   independently, then merges, sorts (by BM25 score when a query is present,
   by issue_date otherwise), and limits to 50 results.
 

@@ -8,7 +8,7 @@ defmodule Firmowid.Ash.Assistant do
   resources do
     resource Firmowid.Ash.Assistant.Session do
       define :get_session, action: :by_id, args: [:id]
-      define :list_sessions, action: :read
+      define :list_sessions, action: :list
       define :start_session, action: :start_invoice_matching, args: [:entry_context]
       define :claim_session_processing, action: :claim_processing
       define :complete_session_turn, action: :complete_turn, args: [:messages]

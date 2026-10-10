@@ -12,7 +12,8 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
 
   ## Read Actions
 
-    * `:read` — consolidated read with optional filters: `date_from`, `date_to`,
+    * `:read` — basic primary read for framework and relationship reads
+    * `:list` — application listing with optional filters: `date_from`, `date_to`,
       `date_field` (`:issue_date` | `:sale_date` | `:due_date` | `:any`),
       `kind` (`:vat` | `:kor`), `status` (`:unmatched` | `:confirmed`), `ids`,
       `inserted_from` (inclusive), `inserted_to` (exclusive)
@@ -46,8 +47,7 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer],
     extensions: [AshEvents.Events, AshJido, AshOban],
-    notifiers: [Ash.Notifier.PubSub],
-    primary_read_warning?: false
+    notifiers: [Ash.Notifier.PubSub]
 
   alias AshMoney.Types.Money
   alias AshOban.Checks.AshObanInteraction
@@ -83,7 +83,7 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
   end
 
   jido do
-    action :read,
+    action :list,
       name: "list_sales_invoices",
       description: "Listuje faktury sprzedażowe z bezpiecznymi filtrami Ash.",
       category: "ash.invoicing.read",
@@ -119,6 +119,7 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
     define :by_id, args: [:id], action: :by_id
     define :get, args: [:id], action: :by_id
     define :read, action: :read
+    define :list, action: :list
     define :by_share_token, args: [:token]
 
     define :public_shared_chain,
@@ -162,11 +163,10 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
   end
 
   actions do
-    defaults []
+    defaults [:read]
 
-    read :read do
+    read :list do
       description "List sales invoices with search, status, and reconciliation filters."
-      primary? true
 
       argument :date_from, :date
       argument :date_to, :date
@@ -1485,7 +1485,7 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
       end
 
     query
-    |> Ash.read!(opts)
+    |> then(&__MODULE__.list!(Keyword.put(opts, :query, &1)))
     |> Enum.map(& &1.invoice_number)
   end
 
@@ -1495,7 +1495,7 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
   def read_all_invoice_numbers(opts) do
     __MODULE__
     |> Ash.Query.filter(not is_nil(invoice_number))
-    |> Ash.read!(opts)
+    |> then(&__MODULE__.list!(Keyword.put(opts, :query, &1)))
     |> Enum.map(& &1.invoice_number)
   end
 end

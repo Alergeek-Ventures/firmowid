@@ -3,10 +3,7 @@ defmodule Firmowid.Ash.Billing.Snapshot do
   Monthly frozen usage facts for organization billing.
   """
 
-  # The primary read intentionally supports optional filters; omitted arguments
-  # leave relationship loads unfiltered.
   use Ash.Resource,
-    primary_read_warning?: false,
     domain: Firmowid.Ash.Billing,
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer]
@@ -26,20 +23,22 @@ defmodule Firmowid.Ash.Billing.Snapshot do
   code_interface do
     define :destroy, action: :destroy
     define :read, action: :read
+    define :list, action: :list
     define :read_global, action: :read_global
     define :by_month, args: [:month], action: :by_month
     define :create, action: :create
   end
 
   actions do
+    defaults [:read]
+
     destroy :destroy do
       description "Delete a billing snapshot."
       primary? true
     end
 
-    read :read do
+    read :list do
       description "List billing snapshots, optionally restricted to a month range."
-      primary? true
       argument :month, :date
       argument :start_month, :date
       argument :end_month, :date
@@ -91,7 +90,7 @@ defmodule Firmowid.Ash.Billing.Snapshot do
   policies do
     bypass [
       {SystemActorRole, roles: [:organization_cleanup]},
-      action([:read, :destroy])
+      action([:read, :list, :destroy])
     ] do
       authorize_if expr(not is_nil(^actor(:org_id)) and organization_id == ^actor(:org_id))
     end
@@ -108,7 +107,7 @@ defmodule Firmowid.Ash.Billing.Snapshot do
       authorize_if actor_attribute_equals(:system_role, :superuser)
     end
 
-    policy action([:read, :by_month]) do
+    policy action([:read, :list, :by_month]) do
       authorize_if actor_attribute_equals(:role, :admin)
     end
   end
