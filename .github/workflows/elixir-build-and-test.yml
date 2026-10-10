@@ -18,7 +18,8 @@ jobs:
     with:
       version: ${{ github.event.pull_request.head.sha || github.sha }}
     secrets:
-      ACCENT_SNAPSHOT_API_KEY: ${{ secrets.ACCENT_SNAPSHOT_API_KEY }}
+      ACCENT_API_KEY: ${{ secrets.ACCENT_API_KEY }}
+      ACCENT_SNAPSHOT_API_KEY: ${{ github.ref == 'refs/heads/main' && github.actor != 'dependabot[bot]' && secrets.ACCENT_SNAPSHOT_API_KEY || '' }}
     permissions:
       contents: read
 
@@ -219,6 +220,8 @@ jobs:
 
       - name: Download generated PO catalog
         uses: ./.github/actions/download-translations
+        with:
+          catalog-version: ${{ needs.translations.outputs.catalog-version }}
 
       - name: Install system dependencies
         run: |
