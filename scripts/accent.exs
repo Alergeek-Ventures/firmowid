@@ -13,7 +13,7 @@ defmodule Firmowid.Translations.Accent do
 
   @request_timeout 30_000
   @cli_timeout "120"
-  @usage "usage: accent.exs <prepare|export> --version FULL_SHA (export also accepts a 7-39 character SHA prefix)"
+  @usage "usage: accent.exs <prepare|export> --version SHA [--fallback-version FULL_SHA] (fallback is export-only; export accepts a unique 7-39 character SHA prefix)"
   @version_marker ~r/^# Accent version: [[:xdigit:]]{40}$/
   @bad_plural "\"Plural-Forms: nplrls=3; plural===1 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\\n\""
   @good_plural "\"Plural-Forms: nplurals=3; plural=(n==1 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\\n\""
@@ -55,13 +55,21 @@ defmodule Firmowid.Translations.Accent do
 
   `prepare` requires a full Git SHA. `export` accepts a full SHA or a
   7-39-character hexadecimal prefix that uniquely identifies an existing snapshot.
+  An explicit full fallback SHA is used only when the requested full SHA returns HTTP 404.
   """
   @spec run([String.t()]) :: :ok
   def run(["prepare", "--version", version]), do: run_operation(:prepare, version)
   def run(["export", "--version", version]), do: run_operation(:export, version)
+
+  def run(["export", "--version", version, "--fallback-version", fallback]) do
+    validate_version(:prepare, version)
+    validate_version(:prepare, fallback)
+    run_operation(:export, version, fallback)
+  end
+
   def run(_args), do: raise(RuntimeError, message: @usage)
 
-  defp run_operation(operation, version) do
+  defp run_operation(operation, version, fallback \\ nil) do
     validate_version(operation, version)
     context = context()
 
@@ -72,7 +80,8 @@ defmodule Firmowid.Translations.Accent do
           version
 
         :export ->
-          resolve_export_version(context, version)
+          selected = resolve_export_version(context, version)
+          select_existing_snapshot(context, selected, fallback)
       end
 
     with_temp_directory(fn temporary_directory ->
@@ -81,6 +90,32 @@ defmodule Firmowid.Translations.Accent do
     end)
 
     :ok
+  end
+
+  defp select_existing_snapshot(_context, version, nil), do: version
+
+  defp select_existing_snapshot(context, version, fallback) do
+    case request_status(context.client,
+           method: :get,
+           url: "/export",
+           params: export_params(context, version)
+         ) do
+      {:ok, 200} ->
+        version
+
+      {:ok, 404} when version != fallback ->
+        IO.puts("No Accent snapshot for #{version}; using main snapshot #{fallback}")
+        select_existing_snapshot(context, fallback, fallback)
+
+      {:ok, 404} ->
+        raise RuntimeError, "No Accent snapshot for main commit #{fallback}"
+
+      {:ok, status} ->
+        raise RuntimeError, "Accent snapshot export failed (HTTP #{status})"
+
+      {:error, :network_failure} ->
+        raise RuntimeError, "Accent snapshot export failed (network or timeout)"
+    end
   end
 
   defp validate_version(:prepare, version) when is_binary(version) do

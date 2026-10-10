@@ -1,18 +1,28 @@
 defmodule Mix.Tasks.Translations.Fetch do
   @shortdoc "Fetches the Polish catalog for a pinned Git revision"
-  @moduledoc "Fetches the Polish Accent catalog for an explicit revision without creating snapshots or falling back to latest."
+  @moduledoc "Fetches the Polish Accent catalog for an explicit revision, optionally falling back to a pinned main revision on HTTP 404. Never creates snapshots."
 
   use Mix.Task
 
   @impl Mix.Task
   @spec run([String.t()]) :: :ok
   def run(args) do
-    {options, remaining} = OptionParser.parse!(args, strict: [version: :string])
+    {options, remaining} =
+      OptionParser.parse!(args, strict: [version: :string, fallback_version: :string])
+
     ensure_no_arguments!(remaining)
 
     version = Keyword.get_lazy(options, :version, &git_head!/0)
 
-    case System.cmd("elixir", ["scripts/accent.exs", "export", "--version", version], stderr_to_stdout: true) do
+    fallback_arguments =
+      case Keyword.fetch(options, :fallback_version) do
+        {:ok, fallback} -> ["--fallback-version", fallback]
+        :error -> []
+      end
+
+    arguments = ["scripts/accent.exs", "export", "--version", version] ++ fallback_arguments
+
+    case System.cmd("elixir", arguments, stderr_to_stdout: true) do
       {_output, 0} ->
         :ok
 

@@ -39,6 +39,55 @@ OTP/Elixir. Drzewo obejmuje zarówno treść, jak i ścieżki plików, więc zmi
 ponowną kontrolę. Cache nie przechowuje ani nie nadpisuje POT. Pozostałe kontrole
 działają normalnie; lokalny pełny `mix check` zawsze wykonuje ekstrakcję.
 
+### CI: przypięte snapshoty tłumaczeń
+
+Każdy PR, także Dependabota, może wykorzystać istniejący snapshot Accent dla
+własnego SHA, ale nie tworzy go ani nie wymaga jego istnienia. Jeśli snapshotu
+brakuje, workflow używa snapshotu bieżącego HEAD `main`: pełny SHA `main` jest
+ustalany raz na przebieg workflow i przekazywany jako jawny fallback. Nie
+korzystamy z mutowalnego katalogu `latest`. Błędy 401/403, 5xx i problemy sieciowe
+przerywają przygotowanie; nie uruchamiają fallbacku. Brak snapshotu fallback
+również jest błędem.
+
+`main` nadal tworzy lub ponownie wykorzystuje niezmienny snapshot dla pełnego
+SHA przez `elixir scripts/accent.exs prepare --version FULL_SHA`. PR-y tylko
+eksportują katalog. Własny snapshot jest opcjonalny, ale nowe i zmienione teksty
+muszą mieć poprawne polskie tłumaczenia w wybranym katalogu. Ekstrakcja Gettext
+i walidacja tłumaczeń pozostają rygorystyczne.
+
+Jawny fallback obsługują oba polecenia:
+
+```bash
+elixir scripts/accent.exs export --version FULL_SHA --fallback-version MAIN_FULL_SHA
+mix translations.fetch --version FULL_SHA --fallback-version MAIN_FULL_SHA
+```
+
+Bez `--fallback-version` eksport pozostaje ściśle przypięty do żądanej wersji;
+unikalny prefiks SHA o długości 7–39 znaków jest rozwiązywany do pełnego SHA.
+Lokalny `mix setup` próbuje snapshotu `HEAD`, a przy jego braku używa
+`origin/main`. Przed setupem wykonaj `git fetch origin main`, jeśli ta lokalna
+referencja ma wskazywać aktualny `main`.
+Artefakt katalogu zachowuje nazwę opartą na SHA kodu/wywołującego, natomiast
+pierwszy znacznik PO zawiera SHA faktycznie wybranego snapshotu. Joby korzystające
+z artefaktu weryfikują ten znacznik względem outputu producenta `catalog-version`,
+nie względem nazwy artefaktu. Katalog jest kompilowany podczas builda; aplikacja
+nie wywołuje Accent w runtime.
+
+PR-y wymagają tylko sekretu `ACCENT_API_KEY` z uprawnieniami odczytu/eksportu.
+Należy skonfigurować istniejący token projektu tylko do odczytu zarówno w
+GitHub Actions, jak i osobno w Dependabot secrets tego repozytorium. Workflowy
+uruchamiane przez Dependabota nie otrzymują sekretów Actions, również po ręcznym
+ponowieniu. `ACCENT_SNAPSHOT_API_KEY` (odczyt/eksport/`create_version`, bez edycji
+tłumaczeń) jest używany wyłącznie na `main`. Dotychczasowy token tworzący wersje
+w Dependabot był tymczasowym obejściem; można go usunąć dopiero, gdy stare
+workflowy przestaną go potrzebować. Nie oznacza to, że migracja sekretów została
+już wdrożona.
+
+Istniejący Infisical `/app` `ACCENT_API_KEY` jest tylko do odczytu. Klucz
+`ACCENT_API_KEY` z folderu `/dev` w środowisku Infisical `dev` służy do pracy
+deweloperskiej/administracji Accent i nie może być kopiowany do CI. Bot nie
+otrzymuje sekretów wdrożeniowych ani klucza administracyjnego.
+
 ## CI: cache obrazów Dockera
 
 `Docker Build Check` działa na standardowych runnerach GitHub-hosted i używa Buildx

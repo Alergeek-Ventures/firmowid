@@ -237,30 +237,21 @@ defmodule Firmowid.MixProject do
   end
 
   defp fetch_translations(_args) do
-    version = translations_version()
+    arguments = [
+      "scripts/accent.exs",
+      "export",
+      "--version",
+      git!(["rev-parse", "HEAD"]),
+      "--fallback-version",
+      git!(["rev-parse", "origin/main"])
+    ]
 
-    case System.cmd("elixir", ["scripts/accent.exs", "export", "--version", version], stderr_to_stdout: true) do
+    case System.cmd("elixir", arguments, stderr_to_stdout: true) do
       {_, 0} ->
         :ok
 
       {output, exit_status} ->
         Mix.raise("Accent catalog export failed (status #{exit_status}): #{String.trim(output)}")
-    end
-  end
-
-  # Accent snapshots exist only for pushed commits (CI prepares one per push).
-  # Local, unpushed commits fall back to the closest commit shared with origin/main.
-  defp translations_version do
-    head = git!(["rev-parse", "HEAD"])
-
-    if git!(["branch", "--remotes", "--contains", head]) == "" do
-      base = git!(["merge-base", head, "origin/main"])
-
-      Mix.shell().info("HEAD #{head} is not pushed; using Accent translations of #{base} from origin/main")
-
-      base
-    else
-      head
     end
   end
 

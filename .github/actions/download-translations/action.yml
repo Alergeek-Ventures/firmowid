@@ -1,10 +1,13 @@
 name: Download translations
-description: Download and validate the Polish catalog for an exact commit SHA
+description: Download the code commit artifact and validate its selected snapshot SHA
 inputs:
   version:
     description: Full commit SHA whose translation artifact should be downloaded
     required: false
     default: ${{ github.event.pull_request.head.sha || github.sha }}
+  catalog-version:
+    description: Actual full snapshot SHA selected by the translations job
+    required: false
 runs:
   using: composite
   steps:
@@ -16,9 +19,10 @@ runs:
     - name: Validate catalog version
       shell: bash
       env:
-        ACCENT_VERSION: ${{ inputs.version }}
+        ACCENT_VERSION: ${{ inputs.catalog-version || inputs.version }}
       run: |
         set -euo pipefail
+        [[ "$ACCENT_VERSION" =~ ^[0-9a-fA-F]{40}$ ]]
         catalog=priv/gettext/pl/LC_MESSAGES/default.po
         test -f "$catalog"
         test "$(head -n 1 "$catalog")" = "# Accent version: $ACCENT_VERSION" || {
