@@ -20,7 +20,7 @@ defmodule Firmowid.MixProject do
       # TEMP: remove this once https://github.com/jeremyjh/dialyxir/issues/561 is resolved
       dialyzer: [
         flags: [:no_opaque],
-        plt_file: {:no_warn, "priv/plts/dialyzer.plt"},
+        plt_core_path: "_build/plts/core",
         plt_add_apps: [:mix, :ex_unit, :esc]
       ],
       usage_rules: usage_rules(),

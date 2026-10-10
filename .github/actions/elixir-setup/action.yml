@@ -9,7 +9,7 @@ inputs:
     description: OTP version to set up
   cache-key:
     required: false
-    default: "v1"
+    default: "v2"
     description: Cache key prefix for dependency and build caches
   build-app:
     required: false
@@ -51,22 +51,26 @@ runs:
         otp-version: ${{ inputs.otp-version }}
 
     - name: Get deps cache
-      uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+      uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v5
       id: deps-cache
       with:
         path: deps/
-        key: deps-${{ inputs.cache-key }}-${{ runner.os }}-${{ hashFiles('mix.lock') }}
+        key: deps-${{ inputs.cache-key }}-${{ runner.os }}-${{ runner.arch }}-${{ steps.beam.outputs.otp-version }}-${{ steps.beam.outputs.elixir-version }}-${{ env.MIX_ENV || 'dev' }}-${{ hashFiles('mix.exs', 'config/**/*.exs') }}-${{ hashFiles('mix.lock') }}
         restore-keys: |
-          deps-${{ inputs.cache-key }}-${{ runner.os }}-
+          deps-${{ inputs.cache-key }}-${{ runner.os }}-${{ runner.arch }}-${{ steps.beam.outputs.otp-version }}-${{ steps.beam.outputs.elixir-version }}-${{ env.MIX_ENV || 'dev' }}-${{ hashFiles('mix.exs', 'config/**/*.exs') }}-
 
     - name: Get build cache
-      uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+      uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v5
       id: build-cache
       with:
-        path: _build/${{env.MIX_ENV}}/
-        key: build-${{ inputs.cache-key }}-${{ runner.os }}-${{ inputs.otp-version }}-${{ inputs.elixir-version }}-${{ env.MIX_ENV }}-${{ hashFiles('mix.lock') }}
+        # Keep PLTs out of the revision cache; they have their own lifecycle.
+        path: |
+          _build/${{ env.MIX_ENV || 'dev' }}/lib
+          _build/${{ env.MIX_ENV || 'dev' }}/.mix
+          _build/${{ env.MIX_ENV || 'dev' }}/consolidated
+        key: build-${{ inputs.cache-key }}-${{ runner.os }}-${{ runner.arch }}-${{ steps.beam.outputs.otp-version }}-${{ steps.beam.outputs.elixir-version }}-${{ env.MIX_ENV || 'dev' }}-${{ hashFiles('mix.exs', 'config/**/*.exs') }}-${{ hashFiles('mix.lock') }}-${{ github.event.pull_request.head.sha || github.sha }}
         restore-keys: |
-          build-${{ inputs.cache-key }}-${{ runner.os }}-${{ inputs.otp-version }}-${{ inputs.elixir-version }}-${{ env.MIX_ENV }}-
+          build-${{ inputs.cache-key }}-${{ runner.os }}-${{ runner.arch }}-${{ steps.beam.outputs.otp-version }}-${{ steps.beam.outputs.elixir-version }}-${{ env.MIX_ENV || 'dev' }}-${{ hashFiles('mix.exs', 'config/**/*.exs') }}-${{ hashFiles('mix.lock') }}-
 
     - name: Get Hex cache
       uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
@@ -74,21 +78,9 @@ runs:
       if: steps.deps-cache.outputs.cache-hit != 'true'
       with:
         path: ~/.hex
-        key: build-${{ runner.os }}-${{ inputs.otp-version }}-${{ inputs.elixir-version }}-${{ hashFiles('mix.lock') }}
+        key: hex-${{ inputs.cache-key }}-${{ runner.os }}-${{ runner.arch }}-${{ steps.beam.outputs.otp-version }}-${{ steps.beam.outputs.elixir-version }}-${{ env.MIX_ENV || 'dev' }}-${{ hashFiles('mix.lock') }}
         restore-keys: |
-          build-${{ runner.os }}-${{ inputs.otp-version }}-${{ inputs.elixir-version }}-
-
-    # In my experience, I have issues with incremental builds maybe 1 in 100
-    # times that are fixed by doing a full recompile.
-    # In order to not waste dev time on such trivial issues (while also reaping
-    # the time savings of incremental builds for *most* day-to-day development),
-    # I force a full recompile only on builds that we retry.
-    - name: Clean to rule out incremental build as a source of flakiness
-      if: github.run_attempt != '1'
-      run: |
-        mix deps.clean --all
-        mix clean
-      shell: sh
+          hex-${{ inputs.cache-key }}-${{ runner.os }}-${{ runner.arch }}-${{ steps.beam.outputs.otp-version }}-${{ steps.beam.outputs.elixir-version }}-${{ env.MIX_ENV || 'dev' }}-
 
     - name: Install Rebar
       run: mix local.rebar --force
@@ -102,10 +94,6 @@ runs:
 
     - name: Install Dependencies
       run: mix deps.get
-      shell: sh
-
-    - name: Download Locales
-      run: mix localize.setup
       shell: sh
 
     # Normally we'd use `mix deps.compile` here, however that incurs a large
@@ -127,3 +115,26 @@ runs:
       if: inputs.build-app == 'true'
       env:
         ERL_COMPILER_OPTIONS: "+JPn"
+
+    - name: Download Locales
+      run: mix localize.setup
+      shell: sh
+      if: inputs.build-app == 'true'
+
+    # Save completed setup before a later quality check or test can fail.
+    - name: Save deps cache
+      uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v5
+      if: steps.deps-cache.outputs.cache-hit != 'true'
+      with:
+        path: deps/
+        key: ${{ steps.deps-cache.outputs.cache-primary-key }}
+
+    - name: Save build cache
+      uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v5
+      if: inputs.build-app == 'true' && steps.build-cache.outputs.cache-hit != 'true'
+      with:
+        path: |
+          _build/${{ env.MIX_ENV || 'dev' }}/lib
+          _build/${{ env.MIX_ENV || 'dev' }}/.mix
+          _build/${{ env.MIX_ENV || 'dev' }}/consolidated
+        key: ${{ steps.build-cache.outputs.cache-primary-key }}
