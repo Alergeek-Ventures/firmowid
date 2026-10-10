@@ -445,6 +445,7 @@ defmodule Firmowid.Ash.Core.User do
       authorize_if {SystemActorRole,
                     roles: [
                       :leave_notifier,
+                      :hours_record_change_notifier,
                       :document_blob_processor,
                       :employment_contract_notifier
                     ]}
@@ -461,6 +462,7 @@ defmodule Firmowid.Ash.Core.User do
                       :ksef_digest,
                       :billing_snapshotter,
                       :leave_notifier,
+                      :hours_record_change_notifier,
                       :employment_contract_notifier
                     ]}
     end

@@ -113,7 +113,7 @@ msgstr ""
 msgid "Account data"
 msgstr ""
 
-#: lib/firmowid_web/design_system/components/core_components.ex:917
+#: lib/firmowid_web/design_system/components/core_components.ex:971
 #, elixir-autogen, elixir-format
 msgid "Actions"
 msgstr ""
@@ -1681,4 +1681,155 @@ msgstr ""
 #: lib/firmowid_web/analysis/components/category_selector.ex:199
 #, elixir-autogen, elixir-format
 msgid "Omitted"
+msgstr ""
+
+#: lib/firmowid_web/hours_record/views/index.html.heex:165
+#, elixir-autogen, elixir-format
+msgid "Cancel"
+msgstr ""
+
+#: lib/firmowid/ash/timetracker/workers/hours_record_change_email_worker.ex:43
+#: lib/firmowid_web/hours_record/components/change_request.ex:99
+#: lib/firmowid_web/hours_record/views/index.html.heex:147
+#, elixir-autogen, elixir-format
+msgid "Cancellation"
+msgstr ""
+
+#: lib/firmowid_web/management/components/hours_record_status.ex:76
+#, elixir-autogen, elixir-format
+msgid "Change requested"
+msgstr ""
+
+#: lib/firmowid_web/hours_record/components/upload_form.ex:124
+#, elixir-autogen, elixir-format
+msgid "Check the month, hours and your details in the downloaded document. Submitting the signed record will lock editing of this month's hours. Later changes require a correction or cancellation request to your organization administrators."
+msgstr ""
+
+#: lib/firmowid_web/hours_record/components/upload_form.ex:121
+#, elixir-autogen, elixir-format
+msgid "Check your hours before signing"
+msgstr ""
+
+#: lib/firmowid_web/hours_record/components/upload_form.ex:144
+#, elixir-autogen, elixir-format
+msgid "Continue to signing"
+msgstr ""
+
+#: lib/firmowid/ash/timetracker/workers/hours_record_change_email_worker.ex:42
+#: lib/firmowid_web/hours_record/components/change_request.ex:98
+#: lib/firmowid_web/hours_record/views/index.html.heex:146
+#, elixir-autogen, elixir-format
+msgid "Correction"
+msgstr ""
+
+#: lib/firmowid_web/hours_record/views/index.ex:97
+#, elixir-autogen, elixir-format
+msgid "Could not submit the request. Enter a reason (up to 2000 characters). If a request already exists, refresh the page."
+msgstr ""
+
+#: lib/firmowid_web/hours_record/components/upload_form.ex:134
+#, elixir-autogen, elixir-format
+msgid "Go back and check"
+msgstr ""
+
+#: lib/firmowid/ash/timetracker/workers/hours_record_change_email_worker.ex:65
+#, elixir-autogen, elixir-format
+msgid "Hours record change request"
+msgstr ""
+
+#: lib/firmowid_web/hours_record/views/index.html.heex:154
+#, elixir-autogen, elixir-format
+msgid "Reason"
+msgstr ""
+
+#: lib/firmowid_web/hours_record/views/index.html.heex:109
+#: lib/firmowid_web/hours_record/views/index.html.heex:134
+#, elixir-autogen, elixir-format
+msgid "Request correction or cancellation"
+msgstr ""
+
+#: lib/firmowid_web/hours_record/views/index.html.heex:144
+#, elixir-autogen, elixir-format
+msgid "Request type"
+msgstr ""
+
+#: lib/firmowid_web/hours_record/components/upload_form.ex:86
+#, elixir-autogen, elixir-format
+msgid "Sign hours record"
+msgstr ""
+
+#: lib/firmowid_web/hours_record/views/index.html.heex:168
+#, elixir-autogen, elixir-format
+msgid "Submit request"
+msgstr ""
+
+#: lib/firmowid_web/hours_record/views/index.html.heex:167
+#, elixir-autogen, elixir-format
+msgid "Submitting..."
+msgstr ""
+
+#: lib/firmowid_web/hours_record/views/index.html.heex:137
+#, elixir-autogen, elixir-format
+msgid "Your request will be saved and emailed to your organization administrators. It does not cancel the signature or unlock hours automatically."
+msgstr ""
+
+#: lib/firmowid_web/hours_record/components/change_request.ex:54
+#, elixir-autogen, elixir-format
+msgid "Accept request"
+msgstr ""
+
+#: lib/firmowid_web/management/components/hours_record_status.ex:74
+#, elixir-autogen, elixir-format
+msgid "Change request rejected"
+msgstr ""
+
+#: lib/firmowid_web/management/components/projects_tab.ex:310
+#, elixir-autogen, elixir-format
+msgid "Could not save the decision. The request may already have been reviewed."
+msgstr ""
+
+#: lib/firmowid_web/management/components/hours_record_status.ex:34
+#, elixir-autogen, elixir-format
+msgid "Document submitted on %{date}"
+msgstr ""
+
+#: lib/firmowid/ash/timetracker/workers/hours_record_change_email_worker.ex:47
+#, elixir-autogen, elixir-format
+msgid "Employee: %{employee}\nPeriod: %{month}/%{year}\nRequest: %{kind}\nReason: %{reason}\n\nReview this request in Firmowid: %{url}\nThis email is a notification only. Accept or reject the request in the application."
+msgstr ""
+
+#: lib/firmowid_web/hours_record/components/change_request.ex:87
+#, elixir-autogen, elixir-format
+msgid "Previous documents"
+msgstr ""
+
+#: lib/firmowid_web/hours_record/components/change_request.ex:68
+#, elixir-autogen, elixir-format
+msgid "Reject request"
+msgstr ""
+
+#: lib/firmowid_web/hours_record/components/change_request.ex:52
+#: lib/firmowid_web/hours_record/components/change_request.ex:66
+#, elixir-autogen, elixir-format
+msgid "Saving..."
+msgstr ""
+
+#: lib/firmowid_web/management/components/projects_tab.ex:302
+#, elixir-autogen, elixir-format
+msgid "The request decision has been saved."
+msgstr ""
+
+#: lib/firmowid_web/hours_record/components/change_request.ex:35
+#, elixir-autogen, elixir-format
+msgid "The request was rejected. The submitted document remains current and the month's hours stay locked."
+msgstr ""
+
+#: lib/firmowid_web/management/components/hours_record_status.ex:48
+#, elixir-autogen, elixir-format
+msgid "Withdrawn"
+msgstr ""
+
+#: lib/firmowid_web/hours_record/components/change_request.ex:23
+#, elixir-autogen, elixir-format
+msgid "Withdrawal request"
 msgstr ""

@@ -462,7 +462,7 @@ defmodule Firmowid.Ash.Timetracker.Session do
       description "HoursRecords matching this session's user, month, year, and org — used for lockdown checks."
 
       filter expr(
-               user_id == parent(user_id) and
+               submission_status == :submitted and user_id == parent(user_id) and
                  organization_id == parent(organization_id) and
                  month == fragment("EXTRACT(MONTH FROM ?)::integer", parent(start_datetime)) and
                  year == fragment("EXTRACT(YEAR FROM ?)::integer", parent(start_datetime))

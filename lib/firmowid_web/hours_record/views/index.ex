@@ -1,10 +1,12 @@
 defmodule FirmowidWeb.HoursRecord.Views.Index do
-  @moduledoc false
+  @moduledoc "Shows monthly hours and allows submission and change requests for signed records."
   use FirmowidWeb, :live_view
 
+  import FirmowidWeb.DesignSystem.Components.Button
   import FirmowidWeb.DesignSystem.Components.CoreComponents, except: [button: 1]
   import FirmowidWeb.DesignSystem.Components.Link
   import FirmowidWeb.DesignSystem.Components.MonthPicker
+  import FirmowidWeb.HoursRecord.Components.ChangeRequest
   import Phoenix.Component, except: [link: 1]
 
   alias Firmowid.Ash.Timetracker
@@ -36,7 +38,11 @@ defmodule FirmowidWeb.HoursRecord.Views.Index do
   def handle_params(params, _url, socket) do
     month = QueryParams.parse_date(params, "miesiac", Date.beginning_of_month(Date.utc_today()))
 
-    {:noreply, socket |> assign(selected_date: month) |> refetch_data()}
+    {:noreply,
+     socket
+     |> assign(selected_date: month, change_request_error: nil)
+     |> assign(:change_request_form, to_form(%{}, as: :change_request))
+     |> refetch_data()}
   end
 
   @impl true
@@ -62,6 +68,37 @@ defmodule FirmowidWeb.HoursRecord.Views.Index do
       |> push_patch(to: Navigation.hours_record_index_path(month))
 
     {:noreply, socket}
+  end
+
+  def handle_event("request-change", %{"change_request" => params}, socket) do
+    scope = socket.assigns.ash_scope
+    date = socket.assigns.selected_date
+
+    with {:ok, record} <-
+           AshHoursRecord.by_month(socket.assigns.current_user.id, date.month, date.year, scope: scope),
+         {:ok, _record} <-
+           AshHoursRecord.request_change(
+             record,
+             Map.take(params, ["change_request_kind", "change_request_reason"]),
+             scope: scope
+           ) do
+      {:noreply,
+       socket
+       |> assign(:change_request_error, nil)
+       |> refetch_data()
+       |> push_event("js-exec", %{to: "#hours-record-change-request", attr: "data-cancel"})}
+    else
+      {:error, _error} ->
+        {:noreply,
+         socket
+         |> assign(:change_request_form, to_form(params, as: :change_request))
+         |> assign(
+           :change_request_error,
+           gettext(
+             "Could not submit the request. Enter a reason (up to 2000 characters). If a request already exists, refresh the page."
+           )
+         )}
+    end
   end
 
   @impl true
@@ -126,8 +163,22 @@ defmodule FirmowidWeb.HoursRecord.Views.Index do
         not_found_error?: false
       )
 
+    period_records =
+      Timetracker.list_hours_records!(
+        %{user_id: user_id, month: month, year: year, submission_status: nil},
+        scope: scope
+      )
+
     socket
     |> assign(:current_hours_record, current_month_hours_record)
+    |> assign(
+      :change_requests,
+      Enum.filter(period_records, &(&1.change_requested_at && &1.submission_status == :submitted))
+    )
+    |> assign(
+      :previous_hours_records,
+      Enum.filter(period_records, &(&1.submission_status == :withdrawn))
+    )
     |> assign(:projects, projects)
     |> assign(:total_duration, total_duration)
   end

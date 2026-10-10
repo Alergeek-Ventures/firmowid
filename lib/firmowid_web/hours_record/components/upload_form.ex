@@ -1,5 +1,5 @@
 defmodule FirmowidWeb.HoursRecord.Components.UploadForm do
-  @moduledoc false
+  @moduledoc "Guides downloading, signing and submitting a monthly hours record."
   use FirmowidWeb, :live_component
 
   import FirmowidWeb.DesignSystem.Components.Button
@@ -77,17 +77,14 @@ defmodule FirmowidWeb.HoursRecord.Components.UploadForm do
           </.link>
         <% :sign -> %>
           <div class="flex items-center justify-between">
-            <.link
-              kind="unstyled"
-              external="https://moj.gov.pl/nforms/signer/upload?xFormsAppName=SIGNER"
-              target="_blank"
-              class="hover:underline"
+            <.button
+              id="hours-record-sign"
+              type="button"
+              variant="outline"
+              phx-click={show_modal("hours-record-sign-warning")}
             >
-              Podpisz ewidencję<.icon
-                name="hero-arrow-top-right-on-square"
-                class="text-orangeText mb-1 ml-1 size-6"
-              />
-            </.link>
+              {gettext("Sign hours record")}
+            </.button>
             <.button
               type="button"
               phx-click="sign"
@@ -118,6 +115,37 @@ defmodule FirmowidWeb.HoursRecord.Components.UploadForm do
             </.button>
           </form>
       <% end %>
+      <.modal id="hours-record-sign-warning">
+        <div class="flex flex-col gap-6">
+          <h2 id="hours-record-sign-warning-title" class="font-bold">
+            {gettext("Check your hours before signing")}
+          </h2>
+          <p id="hours-record-sign-warning-description">
+            {gettext(
+              "Check the month, hours and your details in the downloaded document. Submitting the signed record will lock editing of this month's hours. Later changes require a correction or cancellation request to your organization administrators."
+            )}
+          </p>
+          <div class="flex flex-wrap justify-end gap-3">
+            <.button
+              type="button"
+              variant="outline"
+              phx-click={hide_modal("hours-record-sign-warning")}
+            >
+              {gettext("Go back and check")}
+            </.button>
+            <.link
+              id="hours-record-confirm-sign"
+              kind="button"
+              external="https://moj.gov.pl/nforms/signer/upload?xFormsAppName=SIGNER"
+              target="_blank"
+              rel="noopener noreferrer"
+              phx-click={hide_modal("hours-record-sign-warning")}
+            >
+              {gettext("Continue to signing")}
+            </.link>
+          </div>
+        </div>
+      </.modal>
     </div>
     """
   end

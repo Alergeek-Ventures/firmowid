@@ -54,7 +54,12 @@ defmodule Firmowid.Ash.Timetracker.Checks.HoursRecordNotSubmitted do
       year = dt.year
 
       HoursRecord
-      |> Ash.Query.filter(user_id: user_id, month: month, year: year)
+      |> Ash.Query.filter(
+        user_id: user_id,
+        month: month,
+        year: year,
+        submission_status: :submitted
+      )
       |> Ash.exists?(actor: actor, tenant: org_id)
     else
       false

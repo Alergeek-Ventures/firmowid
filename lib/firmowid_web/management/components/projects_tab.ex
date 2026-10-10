@@ -5,12 +5,14 @@ defmodule FirmowidWeb.Management.Components.ProjectsTab do
   import FirmowidWeb.DesignSystem.Components.Button
   import FirmowidWeb.DesignSystem.Components.CoreComponents, except: [button: 1]
   import FirmowidWeb.DesignSystem.Components.MonthPicker
+  import FirmowidWeb.HoursRecord.Components.ChangeRequest
   import FirmowidWeb.Management.Components.Card
   import FirmowidWeb.Management.Components.HoursRecordStatus, only: [hours_record_status: 1]
 
   alias Firmowid.Ash.Core
   alias Firmowid.Ash.Payroll
   alias Firmowid.Ash.Timetracker
+  alias Firmowid.Ash.Timetracker.HoursRecord
   alias FirmowidWeb.Infrastructure.Utilities.TimeFormatter
 
   @impl true
@@ -80,12 +82,6 @@ defmodule FirmowidWeb.Management.Components.ProjectsTab do
         salary -> salary.hourly_rate
       end
 
-    # 5. Hours record for this month
-    hours_record =
-      %{user_id: user_id, month: date.month, year: date.year}
-      |> Timetracker.list_hours_records!(scope: scope)
-      |> List.first()
-
     # 6. Total time worked
     total_time = sessions |> Enum.map(& &1.duration) |> Enum.sum()
 
@@ -94,7 +90,7 @@ defmodule FirmowidWeb.Management.Components.ProjectsTab do
       |> assign(assigns)
       |> assign(:projects, projects)
       |> assign(:hourly_rate, hourly_rate)
-      |> assign(:hours_record, hours_record)
+      |> assign_hours_records()
       |> assign(:time_worked, total_time)
       |> assign(:salary_history, salary_history)
       |> assign(:editing_payout, false)
@@ -237,9 +233,33 @@ defmodule FirmowidWeb.Management.Components.ProjectsTab do
               Ewidencja
             </.card_header>
             <div class="flex gap-3">
-              <.hours_record_status hours_record={@hours_record} user={@user} />
+              <.hours_record_status
+                hours_record={@hours_record}
+                user={@user}
+                show_change_request={false}
+              />
             </div>
           </.card>
+          <div
+            :if={@hours_record_requests != [] || @previous_hours_records != []}
+            id="employee-hours-record-requests"
+            class="scrollbar-card flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto contain-[size]"
+          >
+            <.card
+              :for={record <- @hours_record_requests}
+              gap_size="4"
+              class="min-h-0 flex-1 border border-orange-700"
+            >
+              <.change_request
+                record={record}
+                reviewable={@scope.actor.role == :admin}
+                target={@myself}
+              />
+            </.card>
+            <.card :if={@previous_hours_records != []} gap_size="4" class="shrink-0">
+              <.submission_history records={@previous_hours_records} user={@user} />
+            </.card>
+          </div>
         </div>
       </div>
 
@@ -269,6 +289,29 @@ defmodule FirmowidWeb.Management.Components.ProjectsTab do
   end
 
   @impl true
+  def handle_event("review-hours-record-change", %{"id" => id, "decision" => decision}, socket)
+      when decision in ["accepted", "rejected"] do
+    scope = socket.assigns.scope
+
+    with {:ok, record} <- HoursRecord.get(id, scope: scope),
+         true <- record.user_id == socket.assigns.user.id,
+         {:ok, _record} <- review_request(record, decision, scope) do
+      {:noreply,
+       socket
+       |> assign_hours_records()
+       |> put_flash(:info, gettext("The request decision has been saved."))}
+    else
+      _error ->
+        {:noreply,
+         socket
+         |> assign_hours_records()
+         |> put_flash(
+           :error,
+           gettext("Could not save the decision. The request may already have been reviewed.")
+         )}
+    end
+  end
+
   def handle_event("toggle_payout_editor", _params, socket) do
     {:noreply,
      socket
@@ -286,6 +329,36 @@ defmodule FirmowidWeb.Management.Components.ProjectsTab do
      |> save_bank_account(%{bank_account_number: bank_account_number, user: user}, scope)
      |> assign(:editing_payout, false)
      |> then(&assign(&1, :payout_form, payout_form(&1)))}
+  end
+
+  defp review_request(record, "accepted", scope), do: HoursRecord.accept_change_request(record, scope: scope)
+
+  defp review_request(record, "rejected", scope), do: HoursRecord.reject_change_request(record, scope: scope)
+
+  defp assign_hours_records(socket) do
+    date = socket.assigns.date
+
+    records =
+      Timetracker.list_hours_records!(
+        %{
+          user_id: socket.assigns.user.id,
+          month: date.month,
+          year: date.year,
+          submission_status: nil
+        },
+        scope: socket.assigns.scope
+      )
+
+    socket
+    |> assign(:hours_record, Enum.find(records, &(&1.submission_status == :submitted)))
+    |> assign(
+      :hours_record_requests,
+      Enum.filter(records, &(&1.change_requested_at && &1.submission_status == :submitted))
+    )
+    |> assign(
+      :previous_hours_records,
+      Enum.filter(records, &(&1.submission_status == :withdrawn))
+    )
   end
 
   defp save_wage(socket, %{hourly_rate: hourly_rate, user: user}, scope) do

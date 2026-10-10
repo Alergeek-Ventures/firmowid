@@ -56,7 +56,11 @@
           <p class="text-darkGrey text-sm">{most_demanding.name}</p>
         </div>
       </div>
-      <div :if={@total_duration > 3599} class="bg-grey-50 flex flex-col gap-6 rounded-md p-4">
+      <div
+        :if={@current_hours_record || @total_duration > 3599}
+        id="hours-record-submission-card"
+        class="bg-grey-50 flex flex-col gap-6 rounded-md p-4"
+      >
         <div class="bg-grey-50 flex items-center justify-between gap-2">
           <span class="font-bold">Ewidencja godzin</span>
 
@@ -83,16 +87,87 @@
         <.live_component
           :if={!@current_hours_record && @can_use_hours_records}
           module={FirmowidWeb.HoursRecord.Components.UploadForm}
-          id="upload_form"
+          id={"upload_form-#{Date.to_iso8601(@selected_date)}"}
           selected_date={@selected_date}
           current_user={@current_user}
           total_duration={@total_duration}
           ash_scope={@ash_scope}
         />
       </div>
-      <p :if={@total_duration <= 3599} class="mt-2 text-center text-sm">
+      <div
+        :if={@current_hours_record && is_nil(@current_hours_record.change_requested_at)}
+        id="hours-record-change-card"
+        class="bg-grey-50 rounded-md"
+      >
+        <.button
+          id="hours-record-request-change"
+          type="button"
+          variant="unstyled"
+          class="active:bg-grey-200 block w-full cursor-pointer rounded-md p-4 text-center focus-visible:outline-2 focus-visible:outline-orange-500"
+          phx-click={show_modal("hours-record-change-request")}
+        >
+          {gettext("Request correction or cancellation")}
+        </.button>
+      </div>
+      <div
+        :for={record <- @change_requests}
+        class="bg-grey-50 rounded-md border border-orange-700 p-4"
+      >
+        <.change_request record={record} />
+      </div>
+      <div :if={@previous_hours_records != []} class="bg-grey-50 rounded-md p-4">
+        <.submission_history records={@previous_hours_records} user={@current_user} />
+      </div>
+      <p :if={!@current_hours_record && @total_duration <= 3599} class="mt-2 text-center text-sm">
         Aby wypełnić ewidencję godzin musisz dodać przynajmniej jedną godzinę pracy
       </p>
     </div>
   </div>
+  <.modal :if={@current_hours_record} id="hours-record-change-request">
+    <.form
+      for={@change_request_form}
+      id="hours-record-change-request-form"
+      phx-submit="request-change"
+      class="flex flex-col gap-6"
+    >
+      <h2 id="hours-record-change-request-title" class="font-bold">
+        {gettext("Request correction or cancellation")}
+      </h2>
+      <p id="hours-record-change-request-description">
+        {gettext(
+          "Your request will be saved and emailed to your organization administrators. It does not cancel the signature or unlock hours automatically."
+        )}
+      </p>
+      <.input
+        field={@change_request_form[:change_request_kind]}
+        type="select"
+        label={gettext("Request type")}
+        options={[
+          {gettext("Correction"), "correction"},
+          {gettext("Cancellation"), "cancellation"}
+        ]}
+        required
+      />
+      <.input
+        field={@change_request_form[:change_request_reason]}
+        type="textarea"
+        label={gettext("Reason")}
+        required
+        maxlength="2000"
+      />
+      <p :if={@change_request_error} role="alert">{@change_request_error}</p>
+      <div class="flex flex-wrap justify-end gap-3">
+        <.button
+          type="button"
+          variant="outline"
+          phx-click={hide_modal("hours-record-change-request")}
+        >
+          {gettext("Cancel")}
+        </.button>
+        <.button phx-disable-with={gettext("Submitting...")}>
+          {gettext("Submit request")}
+        </.button>
+      </div>
+    </.form>
+  </.modal>
 </div>

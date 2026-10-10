@@ -60,6 +60,9 @@ defmodule Firmowid.Ash.SystemActor do
   - `:leave_notifier` — emails org admins about new leave/absence requests.
     Can read leave requests and list/read users needed for delivery.
 
+  - `:hours_record_change_notifier` — reads submitted hours records and emails
+    organization admins about correction/cancellation requests.
+
   - `:employment_contract_notifier` — emails employees about pending employment
     contracts awaiting their signature and notifies org admins when a signed
     contract is submitted. Can read employment contracts and list/read users
@@ -93,6 +96,7 @@ defmodule Firmowid.Ash.SystemActor do
           | :billing_snapshotter
           | :document_blob_processor
           | :leave_notifier
+          | :hours_record_change_notifier
           | :employment_contract_notifier
           | :session_auto_stopper
           | :anonymous
