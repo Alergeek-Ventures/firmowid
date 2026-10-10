@@ -113,10 +113,42 @@ jobs:
         run: mix translations.check
         if: ${{ !cancelled() && steps.setup.outcome == 'success' }}
 
-      # Extraction forces recompilation; keep its streaming output and run it
-      # only after strict setup compilation and the cheaper checks have passed.
+      # A Git tree includes file contents AND paths, including POT references.
+      # Cache only successful validation of an identical tree/toolchain, never POTs.
+      - name: Identify translation extraction inputs
+        id: extraction_inputs
+        run: echo "tree=$(git rev-parse 'HEAD^{tree}')" >> "$GITHUB_OUTPUT"
+
+      - name: Restore translation extraction verification
+        id: extraction_cache
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v5
+        with:
+          key: gettext-extraction-v1-${{ runner.os }}-${{ runner.arch }}-${{ env.MIX_ENV }}-${{ steps.setup.outputs.otp-version }}-${{ steps.setup.outputs.elixir-version }}-${{ steps.extraction_inputs.outputs.tree }}
+          path: _build/gettext-extraction/verified
+
+      # Gettext 1.0 forces compilation even with --check-up-to-date. Keep that
+      # authoritative check on a miss; an exact hit reuses its successful result.
       - name: Check translation extraction
-        run: mix gettext.extract --check-up-to-date
+        id: extraction
+        env:
+          CACHE_HIT: ${{ steps.extraction_cache.outputs.cache-hit }}
+          SOURCE_TREE: ${{ steps.extraction_inputs.outputs.tree }}
+        run: |
+          if [ "$CACHE_HIT" = "true" ]; then
+            test "$(cat _build/gettext-extraction/verified)" = "$SOURCE_TREE"
+            echo "Gettext extraction already verified for this exact source tree and toolchain."
+          else
+            mix gettext.extract --check-up-to-date
+            mkdir -p _build/gettext-extraction
+            printf '%s\n' "$SOURCE_TREE" > _build/gettext-extraction/verified
+          fi
+
+      - name: Save translation extraction verification
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v5
+        if: steps.extraction_cache.outputs.cache-hit != 'true' && steps.extraction.outcome == 'success'
+        with:
+          key: ${{ steps.extraction_cache.outputs.cache-primary-key }}
+          path: _build/gettext-extraction/verified
 
       - name: Restore core PLT cache
         id: core_plt_cache

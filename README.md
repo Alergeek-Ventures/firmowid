@@ -26,6 +26,19 @@
 
 Po uruchomieniu serwera, zaloguj się na `kira@bytecraft.collective` / `kolejka123456` i odwiedź [`/development`](http://localhost:4000/development) aby zobaczyć pełny przewodnik po danych testowych, kontrahentach, projektach i scenariuszach KSeF.
 
+## CI: kompilacja i ekstrakcja Gettext
+
+Quality i Build/Test korzystają ze wspólnego cache kompilacji oraz tych samych
+portów PostgreSQL i S3, ustawianych przez `.github/actions/elixir-setup`.
+Różna konfiguracja tych usług wymuszałaby rekompilację całej aplikacji.
+
+Gettext 1.0 wymusza kompilację również przy `--check-up-to-date`. CI zachowuje
+tę kontrolę, ale zapamiętuje jej udany wynik dla dokładnego drzewa Git i wersji
+OTP/Elixir. Drzewo obejmuje zarówno treść, jak i ścieżki plików, więc zmiana
+źródeł, numerów linii, nazw plików, POT, konfiguracji lub zależności wymusza
+ponowną kontrolę. Cache nie przechowuje ani nie nadpisuje POT. Pozostałe kontrole
+działają normalnie; lokalny pełny `mix check` zawsze wykonuje ekstrakcję.
+
 ## CI: cache obrazów Dockera
 
 `Docker Build Check` działa na standardowych runnerach GitHub-hosted i używa Buildx

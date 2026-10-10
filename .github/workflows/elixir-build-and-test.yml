@@ -178,12 +178,10 @@ jobs:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
       POSTGRES_HOST: localhost
-      DB_PORT: "5432"
 
       # S3 / SeaweedFS configuration (matches config/test.exs)
       S3_HOST: localhost
       S3_SCHEME: "http://"
-      S3_PORT: "8333"
       S3_BUCKET: firmowid-uploads
       AWS_ACCESS_KEY_ID: test
       AWS_SECRET_ACCESS_KEY: test
