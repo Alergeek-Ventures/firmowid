@@ -460,7 +460,9 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
                 Podpisz pobrany plik
                 <.link
                   kind="unstyled"
-                  external="https://podpis.gov.pl/podpisz-dokument-elektronicznie/"
+                  external={
+                    FirmowidWeb.Infrastructure.Utilities.ElectronicSignature.trusted_profile_url()
+                  }
                   target="_blank"
                   rel="noopener noreferrer"
                   class="text-orangeText inline-flex items-center gap-1 text-sm underline underline-offset-4"

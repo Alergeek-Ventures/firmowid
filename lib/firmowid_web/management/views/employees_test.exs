@@ -184,54 +184,180 @@ defmodule FirmowidWeb.Management.Views.EmployeesTest do
     assert html =~ "Delegacje"
   end
 
-  test "admin approval refreshes the employee delegation loaded through the relationship", %{
-    conn: conn
-  } do
-    admin = admin_fixture()
-    employee = user_in_org_fixture(admin.organization_id, %{role: :employee})
-    Delegations.create_delegation!(delegation_attrs(), scope: current_scope(employee))
-
-    {:ok, view, html} =
-      conn
-      |> log_in_user(admin)
-      |> live(~p"/zarzadzanie/pracownicy/#{employee.id}/delegacje")
-
-    assert html =~ "Spotkanie z klientem"
-    assert html =~ "oczekiwanie"
-
-    view
-    |> element("button[phx-click='approve_delegation']")
-    |> render_click()
-
-    assert render(view) =~ "w toku"
-  end
-
-  test "admin can open an employee's completed delegation from the management list", %{conn: conn} do
+  test "management delegations are grouped by status and pending entries link to the command page",
+       %{conn: conn} do
     admin = admin_fixture()
     employee = user_in_org_fixture(admin.organization_id, %{role: :employee})
 
-    delegation =
+    pending_delegation =
       Ash.Seed.seed!(Delegation, %{
         id: Ash.UUIDv7.generate(),
         organization_id: admin.organization_id,
         user_id: employee.id,
-        title: "Zakończony wyjazd służbowy",
+        title: "Delegacja wymagająca podpisu",
         billing_month: ~D[2026-08-01],
         destination: "Kraków",
         transport_types: [:railway],
         purpose: "Spotkanie z klientem",
-        advance_payment_amount: Money.new(:PLN, 100),
+        expected_cost: Money.new(:PLN, 100),
         start_date: ~D[2026-08-10],
         end_date: ~D[2026-08-11],
-        status: :complete
+        status: :pending,
+        reference: "JK-2026-08-1"
       })
+
+    Ash.Seed.seed!(Delegation, %{
+      id: Ash.UUIDv7.generate(),
+      organization_id: admin.organization_id,
+      user_id: employee.id,
+      title: "Delegacja w trakcie",
+      billing_month: ~D[2026-08-01],
+      destination: "Kraków",
+      transport_types: [:railway],
+      purpose: "Spotkanie z klientem",
+      expected_cost: Money.new(:PLN, 100),
+      start_date: ~D[2026-08-10],
+      end_date: ~D[2026-08-11],
+      status: :in_progress,
+      reference: "JK-2026-08-2"
+    })
+
+    Ash.Seed.seed!(Delegation, %{
+      id: Ash.UUIDv7.generate(),
+      organization_id: admin.organization_id,
+      user_id: employee.id,
+      title: "Zakończony wyjazd służbowy",
+      billing_month: ~D[2026-08-01],
+      destination: "Kraków",
+      transport_types: [:railway],
+      purpose: "Spotkanie z klientem",
+      expected_cost: Money.new(:PLN, 100),
+      start_date: ~D[2026-08-10],
+      end_date: ~D[2026-08-11],
+      status: :complete,
+      reference: "JK-2026-08-3"
+    })
 
     {:ok, view, _html} =
       conn
       |> log_in_user(admin)
       |> live(~p"/zarzadzanie/pracownicy/#{employee.id}/delegacje")
 
-    assert has_element?(view, "a[href='/delegacje/#{delegation.id}']", delegation.title)
+    assert has_element?(view, "h2", "Delegacje w toku")
+    assert has_element?(view, "h2", "Poprzednie delegacje")
+
+    assert has_element?(
+             view,
+             "a[href='/zarzadzanie/pracownicy/#{employee.id}/delegacje/#{pending_delegation.reference}']"
+           )
+
+    assert render(view) =~ "wymaga podpisu"
+  end
+
+  test "admin can open a pending delegation command page", %{conn: conn} do
+    admin = admin_fixture()
+
+    employee = user_in_org_fixture(admin.organization_id, %{role: :employee})
+
+    employee =
+      Core.update_profile!(employee, %{name: "Jan Kowalski"},
+        actor: employee,
+        tenant: admin.organization_id
+      )
+
+    delegation =
+      Ash.Seed.seed!(Delegation, %{
+        id: Ash.UUIDv7.generate(),
+        organization_id: admin.organization_id,
+        user_id: employee.id,
+        title: "Wyjazd do klienta",
+        billing_month: ~D[2026-08-01],
+        purpose: "Spotkanie z klientem",
+        destination: "Kraków",
+        transport_types: [:railway],
+        expected_cost: Money.new(:PLN, 100),
+        start_date: ~D[2026-08-10],
+        end_date: ~D[2026-08-11],
+        status: :pending,
+        reference: "JK-2026-08-1"
+      })
+
+    {:ok, view, html} =
+      conn
+      |> log_in_user(admin)
+      |> live(~p"/zarzadzanie/pracownicy/#{employee.id}/delegacje/#{delegation.reference}")
+
+    assert html =~ "Polecenie wyjazdu służbowego"
+    assert html =~ "Jan Kowalski"
+    assert html =~ "2026-08-01"
+    assert html =~ "Wygeneruj polecenie, aby móc je podpisać."
+    assert has_element?(view, "#delegation-employee-avatar")
+    assert has_element?(view, "input[disabled][name='delegation_command[amount]']")
+    assert has_element?(view, "input[name='delegation_command[amount]'][value='0']")
+
+    assert has_element?(view, "#delegation-billing-month")
+
+    render_hook(view, "change-month", %{"month" => "2026-09-01"})
+
+    assert Delegations.get_delegation!(delegation.id, scope: current_scope(admin)).billing_month ==
+             ~D[2026-09-01]
+
+    view
+    |> element("#delegation-command-form")
+    |> render_change(%{"delegation_command" => %{"advance" => "true", "amount" => "0"}})
+
+    refute has_element?(view, "input[disabled][name='delegation_command[amount]']")
+    assert has_element?(view, "input[name='delegation_command[amount]'][value='0']")
+
+    view
+    |> form("#delegation-command-form", %{
+      "delegation_command" => %{"advance" => "false"}
+    })
+    |> render_submit()
+
+    assert render(view) =~ "Bez zaliczki"
+    assert has_element?(view, "button[disabled]", "Wygeneruj polecenie")
+
+    render_hook(view, "change-month", %{"month" => "2026-10-01"})
+
+    refute has_element?(view, "button[disabled]", "Wygeneruj polecenie")
+
+    view
+    |> element("#delegation-command-form")
+    |> render_change(%{"delegation_command" => %{"advance" => "true", "amount" => "100"}})
+
+    refute has_element?(view, "button[disabled]", "Wygeneruj polecenie")
+
+    view
+    |> form("#delegation-command-form", %{
+      "delegation_command" => %{"advance" => "true", "amount" => "1300.00"}
+    })
+    |> render_submit()
+
+    assert has_element?(view, "#signed-command-upload")
+    assert render(view) =~ "Zaliczka: 1 300,00 zł"
+
+    upload =
+      file_input(view, "#signed-command-upload", :signed_command, [
+        %{
+          name: "podpisane-polecenie.pdf",
+          content: "%PDF-1.4 signed",
+          type: "application/pdf"
+        }
+      ])
+
+    render_upload(upload, "podpisane-polecenie.pdf")
+
+    assert {:error, {:live_redirect, %{to: redirect_path}}} =
+             view |> form("#signed-command-upload") |> render_submit()
+
+    assert redirect_path == ~p"/zarzadzanie/pracownicy/#{employee.id}/delegacje"
+
+    approved = Delegations.get_delegation!(delegation.id, scope: current_scope(admin))
+    assert approved.status == :in_progress
+    assert Money.equal?(approved.advance_amount, Money.new(:PLN, 1300))
+    assert approved.signed_command_filename == "podpisane-polecenie.pdf"
+    assert approved.signed_command_blob_id
   end
 
   test "admin can restore archived employee from employee detail page", %{conn: conn} do
@@ -269,7 +395,7 @@ defmodule FirmowidWeb.Management.Views.EmployeesTest do
       destination: "Kraków",
       transport_types: [:railway],
       purpose: "Spotkanie z klientem",
-      advance_payment_amount: Money.new(:PLN, 100),
+      expected_cost: Money.new(:PLN, 100),
       start_date: ~D[2026-09-10],
       end_date: ~D[2026-09-11]
     }

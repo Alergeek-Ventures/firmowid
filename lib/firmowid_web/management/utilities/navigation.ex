@@ -168,6 +168,12 @@ defmodule FirmowidWeb.Management.Utilities.Navigation do
     ~p"/zarzadzanie/pracownicy/#{employee_id}?#{encode_params(params)}"
   end
 
+  @doc "Builds the canonical employee delegations path."
+  @spec employee_delegations_path(Ash.UUID.t() | String.t()) :: String.t()
+  def employee_delegations_path(employee_id) when is_binary(employee_id) do
+    ~p"/zarzadzanie/pracownicy/#{employee_id}/delegacje"
+  end
+
   @doc """
   Builds the canonical counterparty creation path.
   """
