@@ -52,7 +52,6 @@ defmodule Mix.Tasks.Dev.Down do
     # Stop Phoenix server first
     stop_phoenix_server()
 
-    # Remove the dashboard registration or Caddy route
     unregister_route(branch)
 
     # Stop Podman Compose services
