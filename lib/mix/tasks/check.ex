@@ -7,7 +7,7 @@ defmodule Mix.Tasks.Check do
   extraction, Dialyzer and tests. Compilation failure skips checks that may
   implicitly compile; any failed prerequisite skips the remaining costly checks.
   Each executed check reports elapsed time and its real subprocess exit status.
-  Failed checks always show their output; extraction streams compilation progress.
+  Each check uses one result line; child output is shown only on failure or with --verbose.
 
   ## Usage
 
@@ -109,14 +109,13 @@ defmodule Mix.Tasks.Check do
     padded_name = String.pad_trailing(name, 22)
     IO.write("#{padded_name} ")
     started_at = System.monotonic_time(:millisecond)
-    stream? = verbose or hd(args) == "gettext.extract"
 
     # This is a Mix task, not application code; children must use its selected environment.
     # credo:disable-for-next-line Credo.Check.Warning.MixEnv
     command_options = [stderr_to_stdout: true, env: [{"MIX_ENV", Atom.to_string(Mix.env())}]]
 
     command_options =
-      if stream? do
+      if verbose do
         IO.puts("(progress below)")
         Keyword.put(command_options, :into, IO.stream(:stdio, :line))
       else
@@ -129,13 +128,13 @@ defmodule Mix.Tasks.Check do
       System.cmd(System.find_executable("mix") || "mix", args, command_options)
 
     elapsed = Float.round((System.monotonic_time(:millisecond) - started_at) / 1000, 1)
-    if stream?, do: IO.write("#{padded_name} ")
+    if verbose, do: IO.write("#{padded_name} ")
 
     if exit_code == 0 do
       IO.puts(IO.ANSI.green() <> "OK (#{elapsed}s)" <> IO.ANSI.reset())
     else
       IO.puts(IO.ANSI.red() <> "FAIL (exit #{exit_code}; #{elapsed}s)" <> IO.ANSI.reset())
-      if not stream?, do: IO.puts("\n#{output}")
+      if not verbose, do: IO.puts("\n#{output}")
     end
 
     {name, exit_code}
