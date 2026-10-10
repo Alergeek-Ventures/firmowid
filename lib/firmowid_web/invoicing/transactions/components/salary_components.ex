@@ -3,8 +3,8 @@ defmodule FirmowidWeb.Invoicing.Transactions.Components.SalaryComponents do
 
   use FirmowidWeb, :html
 
-  import FirmowidWeb.DesignSystem.Components.Button
-  import FirmowidWeb.DesignSystem.Components.Link
+  import FirmowidUI.Components.Button
+  import FirmowidUI.Components.Link
   import FirmowidWeb.Invoicing.Components.StatusButton
   import Phoenix.Component, except: [link: 1]
 
@@ -111,7 +111,7 @@ defmodule FirmowidWeb.Invoicing.Transactions.Components.SalaryComponents do
   defp month_label(month) do
     Firmowid.Cldr.Date.to_string!(month,
       format: "LLLL y",
-      locale: Gettext.get_locale(FirmowidWeb.Core.Gettext)
+      locale: Gettext.get_locale(Firmowid.Gettext)
     )
   end
 end

@@ -270,7 +270,7 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
           <p class="mt-2 text-sm text-darkGrey">{gettext("Income and expenses by project")}</p>
         </div>
         <div class="flex items-center gap-3">
-          <FirmowidWeb.DesignSystem.Components.Button.button
+          <FirmowidUI.Components.Button.button
             :if={
               flag_enabled?(:analysis_dashboard, assigns) and
                 @ash_scope.actor.role in [:admin, :accountant]
@@ -282,9 +282,9 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
             phx-disable-with={gettext("Assign unassigned")}
           >
             {gettext("Assign unassigned")}
-          </FirmowidWeb.DesignSystem.Components.Button.button>
+          </FirmowidUI.Components.Button.button>
           <div class="relative">
-            <FirmowidWeb.DesignSystem.Components.Button.button
+            <FirmowidUI.Components.Button.button
               id="tag-filter-trigger"
               variant="secondary"
               type="button"
@@ -293,7 +293,7 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
               <Lucideicons.tag />
               {gettext("Categories")}
               <span :if={@tag_filters != []}>({length(@tag_filters)})</span>
-            </FirmowidWeb.DesignSystem.Components.Button.button>
+            </FirmowidUI.Components.Button.button>
             <.popover
               id="tag-filter-popover"
               reference_id="tag-filter-trigger"
@@ -334,7 +334,7 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
                   />
                   <span class="truncate text-darkGrey">{tag_def.name}</span>
                 </label>
-                <FirmowidWeb.DesignSystem.Components.Button.button
+                <FirmowidUI.Components.Button.button
                   :if={@tag_filters != []}
                   id="clear-tag-filters"
                   type="button"
@@ -343,7 +343,7 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
                   class="mt-1 w-full border-t p-2 text-sm text-darkGrey"
                 >
                   {gettext("Clear filters")}
-                </FirmowidWeb.DesignSystem.Components.Button.button>
+                </FirmowidUI.Components.Button.button>
               </div>
             </.popover>
           </div>

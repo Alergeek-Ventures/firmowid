@@ -1,7 +1,7 @@
 defmodule Firmowid.Ash.Timetracker.Workers.HoursRecordChangeEmailWorker do
   @moduledoc "Delivers submitted hours record change requests to organization administrators."
   use Oban.Worker, queue: :default, max_attempts: 3
-  use Gettext, backend: FirmowidWeb.Core.Gettext
+  use Gettext, backend: Firmowid.Gettext
 
   import Swoosh.Email, except: [new: 0, new: 1]
 
@@ -36,7 +36,7 @@ defmodule Firmowid.Ash.Timetracker.Workers.HoursRecordChangeEmailWorker do
   defp deliver(_record, []), do: {:error, :no_organization_admins}
 
   defp deliver(record, admins) do
-    Gettext.with_locale(FirmowidWeb.Core.Gettext, "pl", fn ->
+    Gettext.with_locale(Firmowid.Gettext, "pl", fn ->
       kind =
         case record.change_request_kind do
           :correction -> gettext("Correction")

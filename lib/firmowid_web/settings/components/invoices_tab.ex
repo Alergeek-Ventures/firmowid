@@ -5,8 +5,7 @@ defmodule FirmowidWeb.Settings.Components.InvoicesTab do
 
   use FirmowidWeb, :html
 
-  import FirmowidWeb.DesignSystem.Components.Button
-  import FirmowidWeb.DesignSystem.Components.CoreComponents, except: [button: 1]
+  import FirmowidUI.Components.Button
 
   alias Phoenix.LiveView.Rendered
 

@@ -3,9 +3,8 @@ defmodule FirmowidWeb.Delegations.Components.Settlement.ForeignCurrency do
 
   use FirmowidWeb, :html
 
+  import FirmowidUI.Components.Button
   import FirmowidWeb.Delegations.Components.Settlement.Documents, only: [document_pill: 1]
-  import FirmowidWeb.DesignSystem.Components.Button
-  import FirmowidWeb.DesignSystem.Components.CoreComponents, except: [button: 1]
   import Phoenix.Component, except: [link: 1]
 
   alias Phoenix.HTML.Form

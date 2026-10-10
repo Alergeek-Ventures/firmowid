@@ -113,7 +113,7 @@ msgstr ""
 msgid "Account data"
 msgstr ""
 
-#: lib/firmowid_web/design_system/components/core_components.ex:971
+#: lib/firmowid_web/design_system/components/core_components.ex:463
 #, elixir-autogen, elixir-format
 msgid "Actions"
 msgstr ""
@@ -579,6 +579,7 @@ msgstr ""
 msgid "KSeF errors since implementation"
 msgstr ""
 
+#: lib/firmowid_mcp/ksef/views/connection.ex:109
 #: lib/firmowid_web/landing/components/sections.ex:143
 #: lib/firmowid_web/landing/components/sections.ex:154
 #: lib/firmowid_web/landing/components/sections.ex:166
@@ -1133,7 +1134,7 @@ msgstr ""
 msgid "beta program participant"
 msgstr ""
 
-#: lib/firmowid_web/design_system/components/core_components.ex:80
+#: lib/firmowid_web/design_system/components/core_components.ex:82
 #, elixir-autogen, elixir-format
 msgid "close"
 msgstr ""
@@ -1948,7 +1949,7 @@ msgstr ""
 msgid "Ask"
 msgstr ""
 
-#: lib/firmowid_web/invoicing/components/entries_table.ex:420
+#: lib/firmowid_web/invoicing/components/entries_table.ex:419
 #: lib/firmowid_web/invoicing/components/matching_components.ex:105
 #, elixir-autogen, elixir-format
 msgid "Complete"
@@ -1994,4 +1995,42 @@ msgstr ""
 #: lib/firmowid_web/invoicing/transactions/components/salary_components.ex:104
 #, elixir-autogen, elixir-format
 msgid "View timesheet"
+msgstr ""
+
+#: lib/firmowid_mcp/runtime.ex:113
+#, elixir-autogen, elixir-format
+msgid "The view is current, but ChatGPT could not receive its context."
+msgstr ""
+
+#: lib/firmowid_mcp/ksef/views/connection.ex:126
+#, elixir-autogen, elixir-format
+msgid "Only an organization administrator can connect KSeF."
+msgstr ""
+
+#: lib/firmowid_mcp/runtime.ex:114
+#, elixir-autogen, elixir-format
+msgid "The file could not be downloaded. Try again."
+msgstr ""
+
+#: lib/firmowid_mcp/ksef/views/connection.ex:80
+#, elixir-autogen, elixir-format
+msgid "Unable to load the KSeF connection status. Try again."
+msgstr ""
+
+#: lib/firmowid_mcp/runtime.ex:115
+#, elixir-autogen, elixir-format
+msgid "Unable to open the link. Try again."
+msgstr ""
+
+#: lib/firmowid_ui/components/ksef_connection.ex:76
+#, elixir-autogen, elixir-format
+msgid "Connect KSeF with a trusted profile or certificate."
+msgstr ""
+
+#: lib/firmowid_mcp/ksef/views/connection.ex:111
+#: lib/firmowid_mcp/runtime.ex:111
+#: lib/firmowid_mcp/runtime.ex:112
+#: lib/firmowid_mcp/runtime.ex:116
+#, elixir-autogen, elixir-format
+msgid "KSeF setup is unavailable."
 msgstr ""

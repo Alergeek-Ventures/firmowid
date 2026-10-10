@@ -5,7 +5,7 @@ defmodule FirmowidWeb.Landing.Components.Sections do
 
   use FirmowidWeb, :html
 
-  import FirmowidWeb.DesignSystem.Components.Link
+  import FirmowidUI.Components.Link
   import Phoenix.Component, except: [link: 1]
 
   alias Firmowid.Ash.Billing.PlanCatalog
@@ -1172,7 +1172,7 @@ defmodule FirmowidWeb.Landing.Components.Sections do
     Enum.map(records, fn record ->
       Enum.reduce(fields, record, fn field, record ->
         Map.update!(record, field, fn value ->
-          Gettext.gettext(FirmowidWeb.Core.Gettext, value)
+          Gettext.gettext(Firmowid.Gettext, value)
         end)
       end)
     end)
@@ -1183,15 +1183,15 @@ defmodule FirmowidWeb.Landing.Components.Sections do
       feature
       |> Map.update!(:tags, fn tags ->
         Enum.map(tags, fn {label, variant} ->
-          {Gettext.gettext(FirmowidWeb.Core.Gettext, label), variant}
+          {Gettext.gettext(Firmowid.Gettext, label), variant}
         end)
       end)
-      |> Map.update!(:title, fn value -> Gettext.gettext(FirmowidWeb.Core.Gettext, value) end)
+      |> Map.update!(:title, fn value -> Gettext.gettext(Firmowid.Gettext, value) end)
       |> Map.update!(:description, fn value ->
-        Gettext.gettext(FirmowidWeb.Core.Gettext, value)
+        Gettext.gettext(Firmowid.Gettext, value)
       end)
       |> Map.update!(:bullets, fn bullets ->
-        Enum.map(bullets, fn value -> Gettext.gettext(FirmowidWeb.Core.Gettext, value) end)
+        Enum.map(bullets, fn value -> Gettext.gettext(Firmowid.Gettext, value) end)
       end)
     end)
   end
@@ -1199,10 +1199,10 @@ defmodule FirmowidWeb.Landing.Components.Sections do
   defp localize_plans(plans) do
     Enum.map(plans, fn plan ->
       plan
-      |> Map.update!(:name, fn value -> Gettext.gettext(FirmowidWeb.Core.Gettext, value) end)
-      |> Map.update!(:audience, fn value -> Gettext.gettext(FirmowidWeb.Core.Gettext, value) end)
+      |> Map.update!(:name, fn value -> Gettext.gettext(Firmowid.Gettext, value) end)
+      |> Map.update!(:audience, fn value -> Gettext.gettext(Firmowid.Gettext, value) end)
       |> Map.update!(:features, fn features ->
-        Enum.map(features, fn value -> Gettext.gettext(FirmowidWeb.Core.Gettext, value) end)
+        Enum.map(features, fn value -> Gettext.gettext(Firmowid.Gettext, value) end)
       end)
     end)
   end

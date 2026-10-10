@@ -1,4 +1,4 @@
-defmodule FirmowidWeb.Mcp.Utilities.RewriteLoopbackRedirectUri do
+defmodule FirmowidMcp.Utilities.RewriteLoopbackRedirectUri do
   @moduledoc """
   Rewrites a `localhost` `redirect_uri` to its `127.0.0.1` equivalent
   before it reaches `ash_authentication_oauth2_server`.

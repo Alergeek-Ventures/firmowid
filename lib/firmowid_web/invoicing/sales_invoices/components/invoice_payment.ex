@@ -7,9 +7,9 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoicePayment do
   """
   use FirmowidWeb, :html
 
-  import FirmowidWeb.DesignSystem.Components.Button
+  import FirmowidUI.Components.Button
+  import FirmowidUI.Components.Link
   import FirmowidWeb.DesignSystem.Components.CoreComponents, except: [button: 1]
-  import FirmowidWeb.DesignSystem.Components.Link
   import Phoenix.Component, except: [link: 1]
 
   alias Firmowid.Ash.Finances.BankAccount

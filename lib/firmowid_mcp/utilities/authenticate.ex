@@ -1,4 +1,4 @@
-defmodule FirmowidWeb.Mcp.Utilities.Authenticate do
+defmodule FirmowidMcp.Utilities.Authenticate do
   @moduledoc """
   After Oauth2Server BearerPlug, require an organization and set the Ash tenant.
   """

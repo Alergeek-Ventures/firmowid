@@ -1,11 +1,11 @@
-defmodule FirmowidWeb.Core.Gettext do
+defmodule Firmowid.Gettext do
   @moduledoc """
   A module providing Internationalization with a gettext-based API.
 
   By using [Gettext](https://hexdocs.pm/gettext),
   your module gains a set of macros for translations, for example:
 
-      use Gettext, backend: FirmowidWeb.Core.Gettext
+      use Gettext, backend: Firmowid.Gettext
 
       # Simple translation
       gettext("Here is the string to translate")

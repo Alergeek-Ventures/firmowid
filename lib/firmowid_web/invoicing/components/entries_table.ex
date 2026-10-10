@@ -2,9 +2,8 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
   @moduledoc false
   use FirmowidWeb, :html
 
-  import FirmowidWeb.DesignSystem.Components.CoreComponents, except: [button: 1]
+  import FirmowidUI.Components.Link
   import FirmowidWeb.DesignSystem.Components.InvoicingBadges
-  import FirmowidWeb.DesignSystem.Components.Link
   import FirmowidWeb.Invoicing.Components.StatusButton
   import Phoenix.Component, except: [link: 1]
 

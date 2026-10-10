@@ -3,7 +3,7 @@ defmodule Firmowid.Ash.Invoicing do
   Ash domain for invoicing — counterparties, sales invoices, cost invoices,
   and supporting resources.
   """
-  use Ash.Domain
+  use Ash.Domain, extensions: [AshAi]
 
   import Ash.Expr, only: [expr: 1]
 
@@ -21,6 +21,51 @@ defmodule Firmowid.Ash.Invoicing do
   alias Firmowid.ErrorKind
 
   require Ash.Query
+
+  tools do
+    tool :list_sales_invoices, SalesInvoice, :list do
+      description "List sales invoices as data for questions, summaries, analysis and tables in the conversation." <>
+                    " First check get_ksef_connection_status and propose connection if needed; stored invoices remain readable without it and may be out of date. Results belong to the authenticated organization. An absent invoice_number identifies a draft. Use after/before keyset cursors with the same filters to navigate pages."
+
+      action_parameters [:limit]
+
+      select [
+        :id,
+        :invoice_number,
+        :issue_date,
+        :due_date,
+        :buyer_full_name,
+        :buyer_given_name,
+        :buyer_surname,
+        :buyer_display_name,
+        :currency,
+        :ksef_number,
+        :ksef_invoice_kind,
+        :corrected_invoice_id
+      ]
+
+      load [:gross_value, :ksef_submission_status]
+    end
+
+    tool :list_cost_invoices, CostInvoice, :list do
+      description "List cost invoices as data for questions, summaries, analysis and tables in the conversation." <>
+                    " First check get_ksef_connection_status and propose connection if needed; stored invoices remain readable without it and may be out of date. Results belong to the authenticated organization and retain signed Money amounts. Use after/before keyset cursors with the same filters to navigate pages."
+
+      action_parameters [:limit]
+
+      select [
+        :id,
+        :invoice_identifier,
+        :issue_date,
+        :due_date,
+        :seller,
+        :seller_display_name,
+        :amount,
+        :ksef_number,
+        :invoice_type
+      ]
+    end
+  end
 
   resources do
     resource Firmowid.Ash.Invoicing.Counterparty do

@@ -5,10 +5,10 @@ defmodule FirmowidWeb.Invoicing.Transactions.Components.ShowComponents do
 
   use FirmowidWeb, :html
 
-  import FirmowidWeb.DesignSystem.Components.Button
+  import FirmowidUI.Components.Button
+  import FirmowidUI.Components.Link
   import FirmowidWeb.DesignSystem.Components.CoreComponents
   import FirmowidWeb.DesignSystem.Components.InvoicingBadges
-  import FirmowidWeb.DesignSystem.Components.Link
   import FirmowidWeb.Invoicing.Components.StatusButton
   import Phoenix.Component, except: [link: 1]
 

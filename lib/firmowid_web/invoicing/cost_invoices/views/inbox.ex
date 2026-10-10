@@ -121,39 +121,39 @@ defmodule FirmowidWeb.Invoicing.CostInvoices.Views.Inbox do
         assigns = assign(assigns, :invoice, invoice)
 
         ~H"""
-        <FirmowidWeb.DesignSystem.Components.Link.link
+        <FirmowidUI.Components.Link.link
           kind="unstyled"
           navigate={~p"/kosztowe/#{@invoice.id}"}
           class="text-blueText hover:underline"
         >
           {@invoice.seller_display_name || @invoice.seller} - {Money.abs(@invoice.amount)}
-        </FirmowidWeb.DesignSystem.Components.Link.link>
+        </FirmowidUI.Components.Link.link>
         """
 
       _ ->
         ~H"""
         <div class="relative" id={"invoice-dropdown-#{@email.id}"}>
-          <FirmowidWeb.DesignSystem.Components.Button.button
+          <FirmowidUI.Components.Button.button
             type="button"
             variant="unstyled"
             class="inline-flex items-center gap-1 text-blueText hover:underline"
             phx-click={JS.toggle(to: "#invoice-list-#{@email.id}")}
           >
             {length(@email.cost_invoices)} faktur <.icon name="hero-chevron-down" class="size-4" />
-          </FirmowidWeb.DesignSystem.Components.Button.button>
+          </FirmowidUI.Components.Button.button>
           <div
             id={"invoice-list-#{@email.id}"}
             class="absolute z-10 mt-2 hidden w-56 rounded-md bg-white shadow-lg ring-1 ring-black/5"
           >
             <div class="py-1">
-              <FirmowidWeb.DesignSystem.Components.Link.link
+              <FirmowidUI.Components.Link.link
                 :for={invoice <- @email.cost_invoices}
                 kind="unstyled"
                 navigate={~p"/kosztowe/#{invoice.id}"}
                 class="hover:bg-zinc-100 text-zinc-700 block px-4 py-2 text-sm"
               >
                 {invoice.seller_display_name || invoice.seller} - {Money.abs(invoice.amount)}
-              </FirmowidWeb.DesignSystem.Components.Link.link>
+              </FirmowidUI.Components.Link.link>
             </div>
           </div>
         </div>

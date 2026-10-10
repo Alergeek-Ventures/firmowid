@@ -112,7 +112,7 @@
       </div>
 
       <div class="relative flex flex-1 items-center justify-end gap-3 text-right max-md:hidden">
-        <FirmowidWeb.DesignSystem.Components.Button.button
+        <FirmowidUI.Components.Button.button
           type="button"
           phx-click={show_modal("feedback-modal")}
           variant="unstyled"
@@ -121,7 +121,7 @@
           <span class="flex items-center gap-1.5">
             <.icon name="hero-chat-bubble-left-ellipsis" class="size-5" />{gettext("Feedback")}
           </span>
-        </FirmowidWeb.DesignSystem.Components.Button.button>
+        </FirmowidUI.Components.Button.button>
         <div class="relative">
           <.button
             type="button"
@@ -201,7 +201,7 @@
               class="w-full"
               data-posthog-reset-on-submit="true"
             >
-              <FirmowidWeb.DesignSystem.Components.Button.button
+              <FirmowidUI.Components.Button.button
                 type="submit"
                 variant="unstyled"
                 class="block w-full cursor-pointer rounded-md text-white hover:bg-darkGrey/50 hover:text-white active:bg-darkGrey/70"
@@ -210,7 +210,7 @@
                   {pgettext("avatar menu", "Log out")}
                   <.icon name="hero-arrow-right-start-on-rectangle" />
                 </span>
-              </FirmowidWeb.DesignSystem.Components.Button.button>
+              </FirmowidUI.Components.Button.button>
             </.form>
           </div>
         </div>

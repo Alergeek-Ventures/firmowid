@@ -2,7 +2,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.SharedPage do
   @moduledoc false
   use FirmowidWeb, :html
 
-  import FirmowidWeb.DesignSystem.Components.Link
+  import FirmowidUI.Components.Link
   import Phoenix.Component, except: [link: 1]
 
   alias FirmowidWeb.Invoicing.Utilities.QueryCodec

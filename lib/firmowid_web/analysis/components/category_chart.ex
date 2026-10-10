@@ -91,7 +91,7 @@ defmodule FirmowidWeb.Analysis.Components.CategoryChart do
           </ul>
         <% end %>
       </div>
-      <FirmowidWeb.DesignSystem.Components.Button.button
+      <FirmowidUI.Components.Button.button
         id={@id <> "-entries"}
         variant="secondary"
         size="small"
@@ -103,7 +103,7 @@ defmodule FirmowidWeb.Analysis.Components.CategoryChart do
       >
         {gettext("Show entries")}
         <.icon name="hero-arrow-down-mini" class="size-4" />
-      </FirmowidWeb.DesignSystem.Components.Button.button>
+      </FirmowidUI.Components.Button.button>
     </section>
     """
   end

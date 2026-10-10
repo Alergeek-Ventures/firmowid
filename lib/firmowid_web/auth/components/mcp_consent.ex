@@ -1,4 +1,4 @@
-defmodule FirmowidWeb.Mcp.Components.Consent do
+defmodule FirmowidWeb.Auth.Components.McpConsent do
   @moduledoc """
   Firmowid-styled consent screen for MCP OAuth authorization.
 
@@ -8,7 +8,7 @@ defmodule FirmowidWeb.Mcp.Components.Consent do
 
   use FirmowidWeb, :html
 
-  import FirmowidWeb.DesignSystem.Components.Button
+  import FirmowidUI.Components.Button
 
   @doc """
   Render the consent screen as HTML iodata for ConsentRouter.

@@ -16,13 +16,14 @@ config :firmowid, Endpoint,
   debug_errors: true,
   watchers: [
     esbuild: {Esbuild, :install_and_run, [:firmowid, ~w(--sourcemap=inline --watch)]},
-    tailwind: {Tailwind, :install_and_run, [:firmowid, ~w(--watch)]}
+    tailwind: {Tailwind, :install_and_run, [:firmowid, ~w(--watch)]},
+    mcp_js: {Esbuild, :install_and_run, [:mcp, ~w(--watch)]}
   ],
   live_reload: [
     patterns: [
       ~r"priv/static/(?!uploads/).*(js|css|png|jpeg|jpg|gif|svg)$",
       ~r"priv/gettext/.*(po)$",
-      ~r"lib/firmowid_web/(controllers|live|components)/.*(ex|heex)$"
+      ~r"lib/(firmowid_web|firmowid_ui|firmowid_mcp)/.*(ex|heex)$"
     ]
   ]
 

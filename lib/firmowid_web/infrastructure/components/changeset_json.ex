@@ -14,9 +14,9 @@ defmodule FirmowidWeb.Infrastructure.Components.ChangesetJson do
     # uncommenting and adjusting the following code:
 
     # if count = opts[:count] do
-    #   Gettext.dngettext(FirmowidWeb.Core.Gettext, "errors", msg, msg, count, opts)
+    #   Gettext.dngettext(Firmowid.Gettext, "errors", msg, msg, count, opts)
     # else
-    #   Gettext.dgettext(FirmowidWeb.Core.Gettext, "errors", msg, opts)
+    #   Gettext.dgettext(Firmowid.Gettext, "errors", msg, opts)
     # end
 
     Enum.reduce(opts, msg, fn {key, value}, acc ->

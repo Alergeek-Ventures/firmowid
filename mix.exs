@@ -72,7 +72,8 @@ defmodule Firmowid.MixProject do
   defp deps do
     [
       {:ash_authentication_oauth2_server, "~> 0.3.1"},
-      {:ash_ai, "~> 1.1.1"},
+      # Pin the native MCP UI renderer extension until it is available upstream.
+      {:ash_ai, github: "Alergeek-Ventures/ash_ai", ref: "ca65f012c0ef054e2ef9a7001113ad4c4f18f913"},
       {:sourceror, "~> 1.8"},
       {:ash, "~> 3.34.6"},
       {:ash_postgres, "~> 2.14.1"},
@@ -143,7 +144,11 @@ defmodule Firmowid.MixProject do
       {:ecto_dev_logger, "~> 0.14"},
       {:nx, "~> 0.13.1"},
       {:mdex, "~> 0.7"},
-      {:sobelow, "~> 0.13", only: [:dev, :test], runtime: false},
+      {:sobelow,
+       github: "Alergeek-Ventures/sobelow",
+       ref: "cd2f76c5eb59b7efd1ff024e7c8d0a12cc02bff3",
+       only: [:dev, :test],
+       runtime: false},
       {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},
       {:excoveralls, "~> 0.18", only: :test},
       {:openai_ex, "~> 0.9.19"},
@@ -231,15 +236,18 @@ defmodule Firmowid.MixProject do
       # Test drops need no confirmation; AshPostgres forwards --force to compilation.
       test: ["ash_postgres.drop --force-drop --quiet", "ash.setup --quiet", "test"],
       "assets.setup": ["cmd npm ci --prefix assets", "esbuild.install --if-missing"],
-      "assets.build": ["tailwind firmowid", "esbuild firmowid"],
+      "assets.build": ["tailwind firmowid", "esbuild firmowid", "assets.mcp"],
+      "assets.mcp": ["esbuild mcp --minify"],
       "assets.deploy": [
         "tailwind firmowid --minify",
         "esbuild firmowid --minify",
+        "assets.mcp",
         "phx.digest"
       ],
       "assets.sentry.deploy": [
         "tailwind firmowid --minify",
         "esbuild firmowid --minify --sourcemap=external",
+        "assets.mcp",
         "phx.digest"
       ],
       "assets.licenses": ["cmd npm run licenses:check --prefix assets"],

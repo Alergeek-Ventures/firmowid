@@ -2,8 +2,7 @@ defmodule FirmowidWeb.Management.Components.Card do
   @moduledoc "Shared card components for the management section."
   use FirmowidWeb, :html
 
-  import FirmowidWeb.DesignSystem.Components.Button
-  import FirmowidWeb.DesignSystem.Components.CoreComponents, except: [button: 1]
+  import FirmowidUI.Components.Button
 
   attr :label, :string, required: true
   attr :for, :string, default: ""

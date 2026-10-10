@@ -55,9 +55,9 @@ alias ExSlop.Check.Warning.PathExpandPriv
           {ExDNA.Credo, [min_mass: 40]},
           {CredoNaming.Check.Consistency.ModuleFilename,
            [
-             # Only enforce within lib/firmowid_web/ — exclude everything else
+             # Interface and shared UI modules follow directory = namespace.
              excluded_paths: [
-               ~r{^(?!lib/firmowid_web/)}
+               ~r{^(?!lib/firmowid_(?:web|mcp|ui)/)}
              ]
            ]},
           {Checks.CheckModulePlacement, []},

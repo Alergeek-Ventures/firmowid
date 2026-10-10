@@ -2,8 +2,8 @@ defmodule FirmowidWeb.Documents.Components.DocumentsSection do
   @moduledoc "LiveComponent for listing, filtering, and uploading user documents."
   use FirmowidWeb, :live_component
 
-  import FirmowidWeb.DesignSystem.Components.Button
-  import FirmowidWeb.DesignSystem.Components.Link
+  import FirmowidUI.Components.Button
+  import FirmowidUI.Components.Link
   import Phoenix.Component, except: [link: 1]
 
   alias Firmowid.Ash.Blobs

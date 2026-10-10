@@ -5,8 +5,8 @@ defmodule FirmowidWeb.Management.Views.Employee do
   @moduledoc false
   use FirmowidWeb, :live_view
 
-  import FirmowidWeb.DesignSystem.Components.Button
-  import FirmowidWeb.DesignSystem.Components.Link
+  import FirmowidUI.Components.Button
+  import FirmowidUI.Components.Link
   import FirmowidWeb.Management.Components.Card
   import FirmowidWeb.Management.Components.Tab
   import Phoenix.Component, except: [link: 1]

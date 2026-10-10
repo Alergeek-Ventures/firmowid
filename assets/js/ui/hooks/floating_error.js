@@ -1,6 +1,4 @@
-function getFloatingUi() {
-  return window.FloatingUIDOM;
-}
+import { computePosition, flip, arrow, offset } from "@floating-ui/dom";
 
 export const FloatingUIError = {
   mounted() {
@@ -11,6 +9,10 @@ export const FloatingUIError = {
 
   updated() {
     this.initFloating();
+  },
+
+  destroyed() {
+    window.removeEventListener("resize", this.resizeHandler);
   },
 
   initFloating() {
@@ -25,13 +27,7 @@ export const FloatingUIError = {
   },
 
   update() {
-    const floatingUi = getFloatingUi();
-
-    if (!floatingUi) {
-      return;
-    }
-
-    const { computePosition, flip, arrow, offset } = floatingUi;
+    if (!this.targetElement || !this.arrowEl) return;
 
     computePosition(this.targetElement, this.floatingEl, {
       placement: "top",

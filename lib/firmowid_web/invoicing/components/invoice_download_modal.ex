@@ -25,7 +25,7 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceDownloadModal do
 
     ~H"""
     <div>
-      <FirmowidWeb.DesignSystem.Components.Button.button
+      <FirmowidUI.Components.Button.button
         type="button"
         variant={@trigger_variant}
         size={@trigger_size}
@@ -33,7 +33,7 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceDownloadModal do
       >
         <Lucideicons.download />
         <span class="hidden xl:inline">{@button_label}</span>
-      </FirmowidWeb.DesignSystem.Components.Button.button>
+      </FirmowidUI.Components.Button.button>
 
       <.modal id={@modal_id} on_cancel={hide_modal(@modal_id)}>
         <div class="flex flex-col gap-6 p-1">
@@ -57,7 +57,7 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceDownloadModal do
           </.form>
 
           <div class="flex justify-end gap-3">
-            <FirmowidWeb.DesignSystem.Components.Button.button
+            <FirmowidUI.Components.Button.button
               type="button"
               id={"download-btn-#{@id}"}
               phx-hook="DownloadPdf"
@@ -68,7 +68,7 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceDownloadModal do
               <span data-download-loading class="hidden items-center gap-2">
                 <Lucideicons.loader_circle class="size-4 animate-spin" /> Generowanie PDF…
               </span>
-            </FirmowidWeb.DesignSystem.Components.Button.button>
+            </FirmowidUI.Components.Button.button>
           </div>
         </div>
       </.modal>

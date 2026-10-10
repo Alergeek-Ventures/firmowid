@@ -12,7 +12,7 @@
     <div class="col-span-4 w-full space-y-2">
       <%= for project <- @projects do %>
         <div class="flex flex-col divide-y divide-greyButtonBg rounded-md bg-grey-50 px-4">
-          <FirmowidWeb.DesignSystem.Components.Button.button
+          <FirmowidUI.Components.Button.button
             phx-click="toggle-project"
             type="button"
             phx-value-id={project.id}
@@ -26,7 +26,7 @@
               <.icon :if={project.expanded} name="hero-chevron-up-mini" class="text-darkGrey" />
               <.icon :if={!project.expanded} name="hero-chevron-down-mini" class="text-darkGrey" />
             </span>
-          </FirmowidWeb.DesignSystem.Components.Button.button>
+          </FirmowidUI.Components.Button.button>
 
           <div :if={project.expanded} class="space-y-4 py-4 pr-11">
             <div :for={session <- project.sessions} class="flex justify-between text-sm">

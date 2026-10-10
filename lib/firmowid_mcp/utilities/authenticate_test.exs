@@ -1,9 +1,9 @@
-defmodule FirmowidWeb.Mcp.Utilities.AuthenticateTest do
+defmodule FirmowidMcp.Utilities.AuthenticateTest do
   use FirmowidWeb.ConnCase, async: true
 
   import Firmowid.AccountsFixtures
 
-  alias FirmowidWeb.Mcp.Utilities.Authenticate
+  alias FirmowidMcp.Utilities.Authenticate
 
   test "rejects requests without an authenticated actor", %{conn: conn} do
     conn = Authenticate.call(conn, [])

@@ -3,8 +3,7 @@ defmodule FirmowidWeb.Delegations.Components.Settlement.Trips do
 
   use FirmowidWeb, :html
 
-  import FirmowidWeb.DesignSystem.Components.Button
-  import FirmowidWeb.DesignSystem.Components.CoreComponents, except: [button: 1]
+  import FirmowidUI.Components.Button
   import Phoenix.Component, except: [link: 1]
 
   alias FirmowidWeb.Delegations.Utilities.SettlementPresentation

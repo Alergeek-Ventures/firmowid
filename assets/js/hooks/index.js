@@ -13,15 +13,15 @@ import { ConfirmLeave } from "./confirm_leave";
 import { CollapsibleNavbar } from "./collapsible_navbar";
 import { CopyToClipboard } from "./copy_to_clipboard";
 import { PaperPlane } from "./paper_plane";
-import { FloatingUIError } from "./floating_error";
+import { UIHooks } from "../ui/hooks";
 import { CookieConsent } from "./cookie_consent";
 import { DownloadPdf } from "./download_pdf";
 import { LandingNavbarTheme } from "./landing_navbar_theme";
 import { NumberPopIn } from "./number_pop_in";
 import { ImageLoadReveal } from "./image_load_reveal";
-import { SelectLabelOverride } from "./select_label_override";
 
 export const Hooks = {
+  ...UIHooks,
   Confetti,
   ScrollStyle,
   FileUploadDragNDrop,
@@ -38,11 +38,9 @@ export const Hooks = {
   ConfirmLeave,
   CopyToClipboard,
   PaperPlane,
-  FloatingUIError,
   CookieConsent,
   DownloadPdf,
   LandingNavbarTheme,
   NumberPopIn,
-  ImageLoadReveal,
-  SelectLabelOverride
+  ImageLoadReveal
 };

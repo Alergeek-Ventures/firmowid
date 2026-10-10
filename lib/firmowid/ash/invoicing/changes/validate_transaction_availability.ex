@@ -2,7 +2,7 @@ defmodule Firmowid.Ash.Invoicing.Changes.ValidateTransactionAvailability do
   @moduledoc "Checks invoice connection eligibility owned by the transaction resource."
 
   use Ash.Resource.Change
-  use Gettext, backend: FirmowidWeb.Core.Gettext
+  use Gettext, backend: Firmowid.Gettext
 
   alias Firmowid.Ash.Finances
   alias Firmowid.Ash.Scope

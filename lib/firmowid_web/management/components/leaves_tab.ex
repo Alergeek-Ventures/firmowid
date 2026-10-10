@@ -2,9 +2,9 @@ defmodule FirmowidWeb.Management.Components.LeavesTab do
   @moduledoc "Admin leave requests tab for a single employee."
   use FirmowidWeb, :live_component
 
-  import FirmowidWeb.DesignSystem.Components.Button
+  import FirmowidUI.Components.Button
+  import FirmowidUI.Components.Link
   import FirmowidWeb.DesignSystem.Components.CoreComponents, except: [button: 1]
-  import FirmowidWeb.DesignSystem.Components.Link
   import FirmowidWeb.DesignSystem.Components.YearPicker
   import FirmowidWeb.Management.Components.Card
   import Phoenix.Component, except: [link: 1]

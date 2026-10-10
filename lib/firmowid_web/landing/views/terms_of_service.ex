@@ -39,11 +39,11 @@ defmodule FirmowidWeb.Landing.Views.TermsOfService do
       <p>
         {gettext(
           "These Terms of Service set out the rules for using the Firmowid online service (hereinafter: the “Service”), available at"
-        )} <FirmowidWeb.DesignSystem.Components.Link.link
+        )} <FirmowidUI.Components.Link.link
           kind="unstyled"
           external="https://firmowid.pl"
           class="text-orange-700 hover:underline"
-        >firmowid.pl</FirmowidWeb.DesignSystem.Components.Link.link>.
+        >firmowid.pl</FirmowidUI.Components.Link.link>.
       </p>
       <p>
         {gettext("The service provider is")} <strong>{@legal_entity.name}</strong>
@@ -138,12 +138,12 @@ defmodule FirmowidWeb.Landing.Views.TermsOfService do
 
       <h2>{gettext("§6. Personal data protection")}</h2>
       <p>
-        {gettext("The rules for processing personal data are set out in")} <FirmowidWeb.DesignSystem.Components.Link.link
+        {gettext("The rules for processing personal data are set out in")} <FirmowidUI.Components.Link.link
           kind="unstyled"
           navigate={~p"/polityka-prywatnosci"}
           class="text-orange-700 hover:underline"
         >
-            {gettext("the Privacy Policy")}</FirmowidWeb.DesignSystem.Components.Link.link>{gettext(
+            {gettext("the Privacy Policy")}</FirmowidUI.Components.Link.link>{gettext(
           ", which forms an integral part of these Terms of Service."
         )}
       </p>
@@ -194,13 +194,13 @@ defmodule FirmowidWeb.Landing.Views.TermsOfService do
       <h2>{gettext("§11. Contact")}</h2>
       <p>
         {gettext("Any questions regarding the Terms of Service or the Service should be sent to:")}
-        <FirmowidWeb.DesignSystem.Components.Link.link
+        <FirmowidUI.Components.Link.link
           kind="unstyled"
           mailto="contact@alergeek.ventures"
           class="text-orange-700 hover:underline"
         >
           contact@alergeek.ventures
-        </FirmowidWeb.DesignSystem.Components.Link.link>
+        </FirmowidUI.Components.Link.link>
       </p>
     </.legal_page>
     """

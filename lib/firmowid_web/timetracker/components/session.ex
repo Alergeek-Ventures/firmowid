@@ -2,7 +2,7 @@ defmodule FirmowidWeb.Timetracker.Components.Session do
   @moduledoc false
   use FirmowidWeb, :html
 
-  import FirmowidWeb.DesignSystem.Components.Button
+  import FirmowidUI.Components.Button
   import FirmowidWeb.DesignSystem.Components.CoreComponents, except: [button: 1]
   import Phoenix.Component, except: [link: 1]
 

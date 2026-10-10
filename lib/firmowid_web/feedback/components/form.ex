@@ -7,7 +7,7 @@ defmodule FirmowidWeb.Feedback.Components.Form do
   """
   use FirmowidWeb, :live_component
 
-  import FirmowidWeb.DesignSystem.Components.Button
+  import FirmowidUI.Components.Button
   import FirmowidWeb.DesignSystem.Components.CoreComponents, except: [button: 1]
   import Phoenix.Component, except: [link: 1]
 

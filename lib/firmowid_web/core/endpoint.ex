@@ -8,6 +8,7 @@ defmodule FirmowidWeb.Core.Endpoint do
   # credo:disable-for-next-line Checks.RejectDirectSentrySdk
   alias Elixir.Sentry, as: SentrySDK
   alias Firmowid.Sentry
+  alias Phoenix.LiveView.Socket
 
   # The session will be stored in the cookie and signed,
   # this means its contents can be read but not tampered with.
@@ -19,9 +20,27 @@ defmodule FirmowidWeb.Core.Endpoint do
     same_site: "Lax"
   ]
 
-  socket "/live", Phoenix.LiveView.Socket,
+  socket "/live", Socket,
     websocket: [connect_info: [:peer_data, :uri, :user_agent, session: @session_options]],
     longpoll: [connect_info: [:peer_data, :uri, :user_agent, session: @session_options]]
+
+  # sobelow_skip ["Config.CSWH"]
+  # False positive: Sobelow cannot inspect the MFA callback's origin validation.
+  # It permits only the exact app origin or ChatGPT's HTTPS sandbox on port 443.
+  # No browser cookies are loaded; mounts and events validate an OAuth-derived,
+  # widget-bound capability and its current actor/tenant scope server-side.
+  socket "/mcp/live", Socket,
+    websocket: [
+      connect_info: [:uri],
+      check_origin: {FirmowidMcp.Session, :allowed_origin?, []}
+    ],
+    longpoll: false
+
+  # Public font assets are also loaded by the cross-origin ChatGPT sandbox.
+  plug Plug.Static,
+    at: "/fonts",
+    from: {:firmowid, "priv/static/fonts"},
+    headers: [{"access-control-allow-origin", "*"}]
 
   # Serve at "/" the static files from "priv/static" directory.
   #

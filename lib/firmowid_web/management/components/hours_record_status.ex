@@ -4,7 +4,7 @@ defmodule FirmowidWeb.Management.Components.HoursRecordStatus do
   """
   use FirmowidWeb, :html
 
-  import FirmowidWeb.DesignSystem.Components.Link
+  import FirmowidUI.Components.Link
   import Phoenix.Component, except: [link: 1]
 
   alias FirmowidWeb.Management.Utilities.Navigation

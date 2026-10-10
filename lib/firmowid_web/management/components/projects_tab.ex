@@ -2,7 +2,7 @@ defmodule FirmowidWeb.Management.Components.ProjectsTab do
   @moduledoc "LiveComponent for displaying employee projects, sessions, and salary summary."
   use FirmowidWeb, :live_component
 
-  import FirmowidWeb.DesignSystem.Components.Button
+  import FirmowidUI.Components.Button
   import FirmowidWeb.DesignSystem.Components.CoreComponents, except: [button: 1]
   import FirmowidWeb.DesignSystem.Components.MonthPicker
   import FirmowidWeb.HoursRecord.Components.ChangeRequest

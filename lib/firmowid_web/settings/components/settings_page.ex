@@ -5,8 +5,8 @@ defmodule FirmowidWeb.Settings.Components.SettingsPage do
 
   use FirmowidWeb, :html
 
-  import FirmowidWeb.DesignSystem.Components.Button
-  import FirmowidWeb.DesignSystem.Components.Link
+  import FirmowidUI.Components.Button
+  import FirmowidUI.Components.Link
   import Phoenix.Component, except: [link: 1]
 
   alias FirmowidWeb.Settings.Utilities.Navigation

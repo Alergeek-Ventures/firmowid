@@ -2,9 +2,8 @@ defmodule FirmowidWeb.Management.Views.Projects do
   @moduledoc false
   use FirmowidWeb, :live_view
 
-  import FirmowidWeb.DesignSystem.Components.Button
-  import FirmowidWeb.DesignSystem.Components.CoreComponents, except: [button: 1]
-  import FirmowidWeb.DesignSystem.Components.Link
+  import FirmowidUI.Components.Button
+  import FirmowidUI.Components.Link
   import FirmowidWeb.DesignSystem.Components.MonthPicker
   import Phoenix.Component, except: [link: 1]
 

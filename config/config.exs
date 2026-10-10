@@ -6,6 +6,8 @@
 
 import Config
 
+alias FirmowidWeb.Core.Endpoint
+
 # Existing data uses UUIDv4 PKs generated before the uuid_v7 switch.
 # Allow Ash to load both v4 and v7 UUIDs from the DB.
 config :ash, Ash.Type.UUIDv7, match_v4_uuids?: true
@@ -40,6 +42,11 @@ config :elixir, :time_zone_database, Tz.TimeZoneDatabase
 
 config :esbuild,
   version: "0.28.2",
+  mcp: [
+    args: ~w(js/mcp/bridge.js --bundle --target=es2022 --format=iife --outfile=../priv/static/assets/mcp.js),
+    cd: Path.expand("../assets", __DIR__),
+    env: %{"NODE_PATH" => Path.expand("../deps", __DIR__)}
+  ],
   firmowid: [
     args:
       ~w(js/app.js --bundle --target=es2022 --outdir=../priv/static/assets --external:/fonts/* --external:/images/* --alias:@=.),
@@ -62,6 +69,19 @@ config :firmowid, ChromicPDF,
   discard_stderr: false,
   no_sandbox: true
 
+config :firmowid, Endpoint,
+  url: [host: "localhost"],
+  adapter: Bandit.PhoenixAdapter,
+  render_errors: [
+    formats: [
+      html: FirmowidWeb.Infrastructure.Components.ErrorHtml,
+      json: FirmowidWeb.Infrastructure.Components.ErrorJson
+    ],
+    layout: {FirmowidWeb.Infrastructure.Layouts, :root}
+  ],
+  pubsub_server: Firmowid.PubSub,
+  live_view: [signing_salt: "s6RVH6WQ"]
+
 config :firmowid, Firmowid.Ash.Currencies.Converter, rates_provider: :mock
 config :firmowid, Firmowid.Cldr, locales: ["pl"]
 
@@ -75,18 +95,7 @@ config :firmowid, Firmowid.Repo,
   migration_timestamps: [type: :utc_datetime],
   types: Firmowid.PostgrexTypes
 
-config :firmowid, FirmowidWeb.Core.Endpoint,
-  url: [host: "localhost"],
-  adapter: Bandit.PhoenixAdapter,
-  render_errors: [
-    formats: [
-      html: FirmowidWeb.Infrastructure.Components.ErrorHtml,
-      json: FirmowidWeb.Infrastructure.Components.ErrorJson
-    ],
-    layout: {FirmowidWeb.Infrastructure.Layouts, :root}
-  ],
-  pubsub_server: Firmowid.PubSub,
-  live_view: [signing_salt: "s6RVH6WQ"]
+config :firmowid, FirmowidMcp, endpoint: Endpoint
 
 config :firmowid, Oban,
   repo: Firmowid.Repo,
@@ -150,7 +159,8 @@ config :firmowid,
     Firmowid.Ash.Payroll,
     Firmowid.Ash.Timetracker,
     Firmowid.Ash.Events,
-    Firmowid.Ash.Ksef
+    Firmowid.Ash.Ksef,
+    FirmowidMcp
   ]
 
 config :jido_ai,
@@ -200,6 +210,15 @@ config :mime, :types, %{
   "application/pkix-cert" => ["crt"],
   "application/pkcs8" => ["key"]
 }
+
+config :phoenix, :filter_parameters, [
+  "password",
+  "secret",
+  "token",
+  "code",
+  "client_assertion",
+  "mcp_session"
+]
 
 config :phoenix, :json_library, Jason
 

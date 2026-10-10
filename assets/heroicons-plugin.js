@@ -1,6 +1,6 @@
 // Heroicons Tailwind CSS v4 plugin
 // Embeds Heroicons (https://heroicons.com) into your app.css bundle.
-// See your `CoreComponents.icon/1` for more information.
+// See `FirmowidUI.Components.Inputs.icon/1` for more information.
 
 const plugin = require("tailwindcss/plugin");
 const fs = require("fs");

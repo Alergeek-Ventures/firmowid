@@ -2,8 +2,7 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceAssistant do
   @moduledoc false
   use FirmowidWeb, :live_component
 
-  import FirmowidWeb.DesignSystem.Components.Button
-  import FirmowidWeb.DesignSystem.Components.CoreComponents, except: [button: 1]
+  import FirmowidUI.Components.Button
   import Phoenix.Component, except: [link: 1]
 
   alias Firmowid.Ash.Assistant.InvoiceMatching
@@ -151,14 +150,14 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceAssistant do
         <%= if @zero_state do %>
           <div class={@zero_state_class}>
             <%= for possible_message <- @suggested_messages do %>
-              <FirmowidWeb.DesignSystem.Components.Button.button
+              <FirmowidUI.Components.Button.button
                 phx-click="send"
                 variant="secondary"
                 phx-target={@myself}
                 phx-value-message={possible_message}
               >
                 {possible_message}
-              </FirmowidWeb.DesignSystem.Components.Button.button>
+              </FirmowidUI.Components.Button.button>
             <% end %>
           </div>
         <% end %>

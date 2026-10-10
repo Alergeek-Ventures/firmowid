@@ -6,7 +6,7 @@ defmodule FirmowidWeb.Infrastructure.Components.ErrorHtml do
   """
   use FirmowidWeb, :html
 
-  import FirmowidWeb.DesignSystem.Components.Link
+  import FirmowidUI.Components.Link
   import Phoenix.Component, except: [link: 1]
 
   def render("404.html", assigns) do

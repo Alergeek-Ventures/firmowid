@@ -7,8 +7,7 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceTimeline do
 
   use FirmowidWeb, :html
 
-  import FirmowidWeb.DesignSystem.Components.Button
-  import FirmowidWeb.DesignSystem.Components.CoreComponents, except: [button: 1]
+  import FirmowidUI.Components.Button
 
   alias Firmowid.Ash.Invoicing.Services.Timeline
   alias Firmowid.Ash.Ksef.SubmissionInfo

@@ -1,4 +1,4 @@
-defmodule FirmowidWeb.DesignSystem.Utilities.ButtonStyles do
+defmodule FirmowidUI.Utilities.ButtonStyles do
   @moduledoc false
 
   @doc "Returns the shared design-system size classes for button-like controls."

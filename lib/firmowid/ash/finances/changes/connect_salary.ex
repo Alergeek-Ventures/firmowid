@@ -2,7 +2,7 @@ defmodule Firmowid.Ash.Finances.Changes.ConnectSalary do
   @moduledoc "Validates a salary assignment against current tenant-owned payroll and transaction data."
 
   use Ash.Resource.Change
-  use Gettext, backend: FirmowidWeb.Core.Gettext
+  use Gettext, backend: Firmowid.Gettext
 
   alias Firmowid.Ash.Finances
   alias Firmowid.Ash.Scope

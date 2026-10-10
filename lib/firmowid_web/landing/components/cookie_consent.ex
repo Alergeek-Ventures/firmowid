@@ -14,7 +14,7 @@ defmodule FirmowidWeb.Landing.Components.CookieConsent do
   """
   use FirmowidWeb, :html
 
-  import FirmowidWeb.DesignSystem.Components.Link
+  import FirmowidUI.Components.Link
   import Phoenix.Component, except: [link: 1]
 
   @doc """
@@ -47,7 +47,7 @@ defmodule FirmowidWeb.Landing.Components.CookieConsent do
               </p>
             </div>
             <div class="flex shrink-0 gap-3">
-              <FirmowidWeb.DesignSystem.Components.Button.button
+              <FirmowidUI.Components.Button.button
                 id="cookie-consent-reject"
                 type="button"
                 variant="outline"
@@ -55,8 +55,8 @@ defmodule FirmowidWeb.Landing.Components.CookieConsent do
                 class="border-white/20 text-white/70 hover:border-white/40 hover:bg-transparent hover:text-white active:bg-white/10 disabled:border-white/10 disabled:text-white/40"
               >
                 {gettext("Reject")}
-              </FirmowidWeb.DesignSystem.Components.Button.button>
-              <FirmowidWeb.DesignSystem.Components.Button.button
+              </FirmowidUI.Components.Button.button>
+              <FirmowidUI.Components.Button.button
                 id="cookie-consent-accept"
                 type="button"
                 variant="secondary"
@@ -64,7 +64,7 @@ defmodule FirmowidWeb.Landing.Components.CookieConsent do
                 class="bg-white text-black hover:bg-white/90 active:bg-white/80"
               >
                 {gettext("Accept")}
-              </FirmowidWeb.DesignSystem.Components.Button.button>
+              </FirmowidUI.Components.Button.button>
             </div>
           </div>
         </div>

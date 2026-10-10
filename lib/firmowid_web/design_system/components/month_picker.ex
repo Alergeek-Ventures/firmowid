@@ -24,7 +24,7 @@ defmodule FirmowidWeb.DesignSystem.Components.MonthPicker do
 
   def month_picker(assigns) do
     ~H"""
-    <FirmowidWeb.DesignSystem.Components.Button.button
+    <FirmowidUI.Components.Button.button
       as="label"
       variant={@variant}
       size={@size}
@@ -52,7 +52,7 @@ defmodule FirmowidWeb.DesignSystem.Components.MonthPicker do
         disabled={@disabled}
         {@rest}
       />
-    </FirmowidWeb.DesignSystem.Components.Button.button>
+    </FirmowidUI.Components.Button.button>
     """
   end
 end

@@ -9,7 +9,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Summary do
   """
   use FirmowidWeb, :live_view
 
-  import FirmowidWeb.DesignSystem.Components.Link
+  import FirmowidUI.Components.Link
   import Phoenix.Component, except: [link: 1]
 
   alias Firmowid.Ash.Invoicing
@@ -105,7 +105,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Summary do
               class="inline-flex"
               tabindex="0"
             >
-              <FirmowidWeb.DesignSystem.Components.Button.button
+              <FirmowidUI.Components.Button.button
                 id="edit-invoice-button"
                 type="button"
                 variant="secondary"
@@ -114,7 +114,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Summary do
                 aria-describedby="edit-invoice-button-description"
               >
                 <Lucideicons.pencil /> Edytuj
-              </FirmowidWeb.DesignSystem.Components.Button.button>
+              </FirmowidUI.Components.Button.button>
             </span>
             <span id="edit-invoice-button-description" class="sr-only">
               Edycja jest niedostępna, ponieważ faktura jest zablokowana.
@@ -138,7 +138,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Summary do
           >
             <Lucideicons.download /> Pobierz
           </.link>
-          <FirmowidWeb.DesignSystem.Components.Button.button
+          <FirmowidUI.Components.Button.button
             :if={
               (@ksef_connected? and not is_nil(@invoice.invoice_number) and
                  SubmissionInfo.not_submitted?(@submission_info)) or
@@ -149,7 +149,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Summary do
             phx-click="send_to_ksef"
           >
             <Lucideicons.send /> Wyślij do KSeF
-          </FirmowidWeb.DesignSystem.Components.Button.button>
+          </FirmowidUI.Components.Button.button>
         </div>
 
         <div class="flex items-center gap-4">

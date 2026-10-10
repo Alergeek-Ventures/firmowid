@@ -2,7 +2,7 @@ defmodule Checks.EnforceVerifiedRoutesInDsLink do
   @moduledoc """
   Enforces verified route sigils for literal internal paths passed to the design-system `link/1` component.
 
-  This check only applies in files that use `FirmowidWeb.DesignSystem.Components.Link`.
+  This check only applies in files that use `FirmowidUI.Components.Link`.
   It flags raw string literals passed to `navigate`, `patch`, and `redirect` on `<.link ...>`.
 
   ## Bad
@@ -27,14 +27,14 @@ defmodule Checks.EnforceVerifiedRoutesInDsLink do
 
       This check flags raw string literals in `navigate=`, `patch=`, and `redirect=`
       attributes on `<.link ...>` when the file uses
-      `FirmowidWeb.DesignSystem.Components.Link`.
+      `FirmowidUI.Components.Link`.
       """,
       params: []
     ]
 
   alias Credo.IssueMeta
 
-  @import_regex ~r/import\s+FirmowidWeb\.DesignSystem\.Components\.Link\b/
+  @import_regex ~r/import\s+FirmowidUI\.Components\.Link\b/
 
   @bad_attr_regex ~r/
     <\.link\b
@@ -119,22 +119,47 @@ defmodule Checks.EnforceVerifiedRoutesInDsLink do
       [{attr_start, attr_len}, {literal_start, literal_len}, {braced_start, braced_len}]
       when is_integer(attr_start) and is_integer(attr_len) ->
         if literal_len > 0 do
-          maybe_issue_for(content, attr_start, attr_len, literal_start, literal_len, issue_meta, base_line)
+          maybe_issue_for(
+            content,
+            attr_start,
+            attr_len,
+            literal_start,
+            literal_len,
+            issue_meta,
+            base_line
+          )
         else
-          maybe_issue_for(content, attr_start, attr_len, braced_start, braced_len, issue_meta, base_line)
+          maybe_issue_for(
+            content,
+            attr_start,
+            attr_len,
+            braced_start,
+            braced_len,
+            issue_meta,
+            base_line
+          )
         end
 
       [{attr_start, attr_len} | rest] when is_integer(attr_start) and is_integer(attr_len) ->
         # Fallback path for odd captures in older Elixir/regex results.
         case Enum.find(rest, fn
-               {start, len} when is_integer(start) and is_integer(len) and start >= 0 and len > 0 ->
+               {start, len}
+               when is_integer(start) and is_integer(len) and start >= 0 and len > 0 ->
                  true
 
                _ ->
                  false
              end) do
           {value_start, value_len} ->
-            maybe_issue_for(content, attr_start, attr_len, value_start, value_len, issue_meta, base_line)
+            maybe_issue_for(
+              content,
+              attr_start,
+              attr_len,
+              value_start,
+              value_len,
+              issue_meta,
+              base_line
+            )
 
           _ ->
             nil
@@ -150,15 +175,14 @@ defmodule Checks.EnforceVerifiedRoutesInDsLink do
        when value_start >= 0 and value_len > 0 do
     value = binary_part(content, value_start, value_len)
 
-    unless String.starts_with?(value, "#") do
+    if !String.starts_with?(value, "#") do
       attr = binary_part(content, attr_start, attr_len)
       line_no = base_line + count_newlines_before(content, attr_start)
       issue_for(attr, line_no, issue_meta)
     end
   end
 
-  defp maybe_issue_for(_content, _attr_start, _attr_len, _value_start, _value_len, _issue_meta, _base_line),
-    do: nil
+  defp maybe_issue_for(_content, _attr_start, _attr_len, _value_start, _value_len, _issue_meta, _base_line), do: nil
 
   defp count_newlines_before(content, byte_offset) do
     content

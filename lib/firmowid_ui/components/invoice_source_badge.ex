@@ -1,9 +1,9 @@
-defmodule FirmowidWeb.DesignSystem.Components.InvoicingInvoiceSourceBadge do
+defmodule FirmowidUI.Components.InvoiceSourceBadge do
   @moduledoc """
   Invoice source badge implementation for the design system.
   """
 
-  use FirmowidWeb, :html
+  use FirmowidUI, :html
 
   alias Phoenix.LiveView.Rendered
 
@@ -11,6 +11,19 @@ defmodule FirmowidWeb.DesignSystem.Components.InvoicingInvoiceSourceBadge do
   Renders an invoice source badge.
   """
   @spec invoice_source_badge(map()) :: Rendered.t()
+  attr :variant, :string,
+    required: true,
+    values: ["cost_external", "cost_ksef", "sales", "sales_draft", "sales_ksef"],
+    doc: "Visual invoice badge variant."
+
+  attr :size, :string,
+    required: true,
+    values: ["small", "big"],
+    doc: "Size modifier for compact table and larger header contexts."
+
+  attr :class, :any, default: nil, doc: "Additional classes merged into the badge root."
+  attr :rest, :global, include: ~w(aria-label title phx-click phx-hook id data-test-id)
+
   def invoice_source_badge(assigns) do
     assigns =
       assigns

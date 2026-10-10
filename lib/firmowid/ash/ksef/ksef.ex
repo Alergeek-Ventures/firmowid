@@ -13,7 +13,7 @@ defmodule Firmowid.Ash.Ksef do
   submission-info aggregation logic into a dedicated service module.
   """
 
-  use Ash.Domain
+  use Ash.Domain, extensions: [AshAi]
 
   import Ecto.Query, warn: false
 
@@ -32,8 +32,19 @@ defmodule Firmowid.Ash.Ksef do
   alias Firmowid.Ash.SystemActor
   alias Firmowid.Repo
 
+  tools do
+    tool :get_ksef_connection_status, Credential, :connection_status do
+      description "Check KSeF connection status before invoice work. If disconnected or expired, suggest show_ksef_connection when can_connect is true; otherwise ask an organization admin to connect. Stored invoices remain readable while disconnected. A connected status does not guarantee current invoice data: data_freshness is unknown. Never request tokens, certificates, private keys or passwords in chat."
+    end
+
+    tool :show_ksef_connection, Credential, :connection_status do
+      description "Open the interactive KSeF connection setup inside ChatGPT using a trusted profile or certificate; token registration is unavailable. After successfully opening the widget, stop: do not add a status table, summary, explanation or follow-up in chat. Let the user complete setup directly in the widget. This tool only reads status and makes no connection attempt, so an initial disconnected status is expected, not a failure. Only admins can connect or manage credentials. If can_connect is false, ask an organization admin to connect instead of opening the widget. Stored invoices remain readable while disconnected, and connected does not guarantee current data. Never request tokens, certificates, private keys or passwords in chat."
+    end
+  end
+
   resources do
     resource Credential do
+      define :connection_status
       define :authenticate_with_token, args: [:ksef_token]
 
       define :authenticate_with_uploaded_certificate,
@@ -93,11 +104,11 @@ defmodule Firmowid.Ash.Ksef do
   end
 
   @doc """
-  Returns `true` if the scope's organization is connected to KSeF (has a working credential),
-  otherwise `false`.
+  Returns whether the scope's organization has an active KSeF connection,
+  using the metadata-only action available to invoice readers.
   """
   @spec connected?(Scope.t()) :: boolean()
-  def connected?(scope), do: get_credential!(scope: scope) != nil
+  def connected?(scope), do: connection_status!(scope: scope).status == :connected
 
   @doc """
   Disconnects the given organization from KSeF.
@@ -384,10 +395,29 @@ defmodule Firmowid.Ash.Ksef do
   # Uses map patterns instead of %SalesInvoice{} to accept any struct with the
   # required fields (avoids compile-time coupling to SalesInvoice struct shape).
   @spec get_submission_info(map()) :: SubmissionInfo.t()
-  def get_submission_info(%{ksef_number: ksef_number} = invoice) when not is_nil(ksef_number) do
-    # Successfully submitted - has KSeF number
-    job = get_latest_submission_job(invoice.id)
+  def get_submission_info(invoice) do
+    [submission_info] = get_submission_infos([invoice])
+    submission_info
+  end
 
+  @doc """
+  Returns submission information in invoice order, fetching the latest Oban jobs
+  for all invoices in one query. Uses the same status and detail rules as
+  `get_submission_info/1`.
+  """
+  @spec get_submission_infos([map()]) :: [SubmissionInfo.t()]
+  def get_submission_infos([]), do: []
+
+  def get_submission_infos(invoices) do
+    jobs = get_latest_submission_jobs(Enum.map(invoices, & &1.id))
+
+    Enum.map(invoices, fn invoice ->
+      submission_info(invoice, Map.get(jobs, to_string(invoice.id)))
+    end)
+  end
+
+  defp submission_info(%{ksef_number: ksef_number} = invoice, job) when not is_nil(ksef_number) do
+    # Successfully submitted - has KSeF number
     %SubmissionInfo{
       status: :submitted,
       ksef_number: ksef_number,
@@ -397,10 +427,8 @@ defmodule Firmowid.Ash.Ksef do
     }
   end
 
-  def get_submission_info(%{ksef_session_reference_number: ref} = invoice) when not is_nil(ref) do
+  defp submission_info(%{ksef_session_reference_number: ref}, job) when not is_nil(ref) do
     # Has session reference - check job status for submitting vs failed
-    job = get_latest_submission_job(invoice.id)
-
     case job_status(job) do
       :failed ->
         %SubmissionInfo{
@@ -438,10 +466,8 @@ defmodule Firmowid.Ash.Ksef do
     end
   end
 
-  def get_submission_info(%{id: _id} = invoice) do
+  defp submission_info(%{id: _id}, job) do
     # No session reference - check if there's a pending job
-    job = get_latest_submission_job(invoice.id)
-
     case job_status(job) do
       :pending ->
         %SubmissionInfo{
@@ -464,16 +490,19 @@ defmodule Firmowid.Ash.Ksef do
 
   # Oban.Job is not an Ash resource — raw Ecto query is required here.
   # TODO: Evaluate wrapping Oban job queries behind a dedicated module.
-  defp get_latest_submission_job(sales_invoice_id) do
+  defp get_latest_submission_jobs(sales_invoice_ids) do
+    sales_invoice_ids = Enum.map(sales_invoice_ids, &to_string/1)
+
     Oban.Job
     |> where(
       [j],
       j.worker == "Firmowid.Ash.Ksef.Workers.SubmissionWorker" and
-        fragment("?->>'sales_invoice_id' = ?", j.args, ^to_string(sales_invoice_id))
+        fragment("?->>'sales_invoice_id'", j.args) in ^sales_invoice_ids
     )
+    |> distinct([j], fragment("?->>'sales_invoice_id'", j.args))
     |> order_by([j], desc: j.inserted_at)
-    |> limit(1)
-    |> Repo.one(oban_jobs: true)
+    |> Repo.all(oban_jobs: true)
+    |> Map.new(fn job -> {job.args["sales_invoice_id"], job} end)
   end
 
   defp job_status(nil), do: nil
