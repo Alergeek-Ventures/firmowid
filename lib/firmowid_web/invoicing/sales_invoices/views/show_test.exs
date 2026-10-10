@@ -20,6 +20,18 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.ShowTest do
   alias Firmowid.Test.Support.InvoicingCopyAssertions
   alias FirmowidWeb.Invoicing.Utilities.Navigation
 
+  test "draft metadata displays status instead of an empty invoice number", %{conn: conn} do
+    admin = admin_fixture()
+    invoice = admin |> sales_invoice_fixture!() |> Ash.Seed.update!(%{invoice_number: nil})
+    conn = log_in_user(conn, admin)
+
+    {:ok, view, _html} = live(conn, ~p"/sprzedazowe/#{invoice.id}")
+
+    assert has_element?(view, "label[for='invoice-status']", "Status faktury")
+    assert has_element?(view, "#invoice-status", "Szkic")
+    refute has_element?(view, "#inv-id")
+  end
+
   test "shows recommendation, links transaction, and allows unlinking", %{conn: conn} do
     admin = admin_fixture()
     invoice = sales_invoice_fixture!(admin)

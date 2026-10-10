@@ -1036,6 +1036,7 @@ defmodule FirmowidWeb.DesignSystem.Components.CoreComponents do
   attr :class, :any, default: nil
   attr :icon_only, :boolean, default: false
   attr :aria_label, :string, default: "Wróć"
+  attr :rest, :global
   slot :inner_block
 
   def back(assigns) do
@@ -1045,6 +1046,7 @@ defmodule FirmowidWeb.DesignSystem.Components.CoreComponents do
       patch={@patch}
       aria-label={@icon_only && @aria_label}
       class={["inline-flex items-center gap-2 text-sm", @class]}
+      {@rest}
     >
       <span class="inline-flex size-6 items-center justify-center rounded-full bg-black text-white">
         <Lucideicons.chevron_left class="size-4" />

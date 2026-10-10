@@ -27,12 +27,58 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
   alias Firmowid.ErrorKind
   alias FirmowidWeb.Invoicing.FormHelpers
   alias FirmowidWeb.Invoicing.SalesInvoices.Components.InvoicePayment
+  alias FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceReview
   alias FirmowidWeb.Invoicing.SalesInvoices.Utilities.PaymentDateSuggestions
   alias FirmowidWeb.Invoicing.SalesInvoices.Views.Creator
   alias FirmowidWeb.Invoicing.Utilities.Navigation
   alias FirmowidWeb.Invoicing.Utilities.PriceInput
 
   require Logger
+
+  embed_templates "edit_form.html"
+
+  @impl true
+  def render(assigns) do
+    ~H"""
+    <div id="invoice-edit-session" phx-hook="ConfirmLeave">
+      <%= if @step == :review do %>
+        {draft_review(assigns)}
+      <% else %>
+        {edit_form(assigns)}
+      <% end %>
+    </div>
+    """
+  end
+
+  defp draft_review(assigns) do
+    ~H"""
+    <InvoiceReview.invoice_review
+      invoice={@preview_invoice}
+      preview_invoice={@preview_invoice}
+      invoice_number={@form[:invoice_number].value || ""}
+      invoice_warnings={@invoice_warnings}
+      invoice_number_errors={Keyword.get_values(@form.errors, :invoice_number)}
+      series_suggestions={@series_suggestions}
+      organization={@organization}
+      currency_rate={@currency_rate}
+      logo_url={@logo_url}
+      counterparty_check={@counterparty_check}
+      should_send_emails={@preview_invoice.should_send_emails}
+      ksef_connected?={@ksef_connected?}
+    >
+      <:back>
+        <.back
+          id="back-to-edit"
+          phx-click="back_to_edit"
+          class="absolute inset-s-[calc(-68px-1.5rem)] inset-bs-[-2.5px]"
+        />
+      </:back>
+      <:header>
+        <Creator.render_header invoice={@invoice} step={4} title="Podgląd faktury" />
+      </:header>
+    </InvoiceReview.invoice_review>
+    """
+  end
 
   @impl true
   def mount(%{"id" => id} = params, _session, socket) do
@@ -106,6 +152,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
     counterparty_check = counterparty_check(ash_form, invoice, scope)
 
     socket
+    |> assign(:step, :edit)
     |> assign(:invoice, invoice)
     |> assign(:return_to, return_to)
     |> assign(:logo_url, logo_url)
@@ -417,7 +464,14 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
 
   def handle_event("save_as_draft", _params, socket) do
     if is_nil(socket.assigns.invoice.ksef_number) do
-      case AshPhoenix.Form.submit(socket.assigns.form.source) do
+      params = socket.assigns.form.source.params || %{}
+
+      params =
+        if is_nil(socket.assigns.invoice.invoice_number),
+          do: Map.put(params, "invoice_number", nil),
+          else: params
+
+      case AshPhoenix.Form.submit(socket.assigns.form.source, params: params) do
         {:ok, invoice} ->
           {:noreply,
            socket
@@ -431,7 +485,10 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
             error_kind: ErrorKind.classify(form.source.errors)
           )
 
-          {:noreply, put_flash(socket, :error, "Nie udało się zapisać faktury")}
+          {:noreply,
+           socket
+           |> assign_form_with_preview(form)
+           |> put_flash(:error, "Nie udało się zapisać faktury")}
       end
     else
       {:noreply, put_flash(socket, :error, "Nie można zapisać korekty jako wersji roboczej")}
@@ -439,7 +496,128 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
   end
 
   def handle_event("send_to_ksef", params, socket) do
-    form_params = params["form"] || params["sales_invoice"] || %{}
+    if is_nil(socket.assigns.invoice.invoice_number) and socket.assigns.step == :edit do
+      prepare_draft_review(params, socket)
+    else
+      submit_and_send(params, socket)
+    end
+  end
+
+  def handle_event("confirm_invoice", params, %{assigns: %{step: :review}} = socket) do
+    result = submit_invoice(review_params(params, socket), socket)
+    handle_submit_result(result, socket)
+  end
+
+  def handle_event("back_to_edit", _params, socket) do
+    {:noreply, assign(socket, :step, :edit)}
+  end
+
+  def handle_event("update_invoice_number", %{"invoice_number" => number}, socket) do
+    {:noreply, update_review_number(socket, number)}
+  end
+
+  def handle_event("select_series", %{"number" => number}, socket) do
+    {:noreply, update_review_number(socket, number)}
+  end
+
+  def handle_event("update_notes", %{"invoice_note" => note, "internal_note" => comment}, socket) do
+    params =
+      Map.merge(socket.assigns.form.source.params, %{
+        "invoice_note" => note,
+        "internal_note" => comment
+      })
+
+    form = AshPhoenix.Form.validate(socket.assigns.form.source, params)
+    {:noreply, assign_form_with_preview(socket, form)}
+  end
+
+  def handle_event("toggle_should_send_emails", params, socket) do
+    value = socket.assigns.counterparty_check.valid and params["should_send_emails"] == "true"
+    params = Map.put(socket.assigns.form.source.params, "should_send_emails", value)
+    form = AshPhoenix.Form.validate(socket.assigns.form.source, params)
+    {:noreply, assign_form_with_preview(socket, form)}
+  end
+
+  defp prepare_draft_review(params, socket) do
+    form_params =
+      params["form"] || params["sales_invoice"] || socket.assigns.form.source.params || %{}
+
+    gross_item_price_inputs =
+      PriceInput.update_gross_value_inputs(
+        socket.assigns.gross_item_price_inputs,
+        form_params,
+        :sales_invoice_items,
+        :all
+      )
+
+    socket = assign(socket, :gross_item_price_inputs, gross_item_price_inputs)
+    form_params = normalize_price_input_params(form_params)
+    scope = socket.assigns.ash_scope
+    issue_date = Date.utc_today()
+
+    number =
+      case form_params["invoice_number"] do
+        number when number in [nil, ""] ->
+          SalesInvoice.get_next_number!(issue_date, nil, socket.assigns.invoice.id, scope: scope)
+
+        number ->
+          number
+      end
+
+    form_params =
+      Map.merge(form_params, %{
+        "invoice_number" => number,
+        "issue_date" => Date.to_iso8601(issue_date)
+      })
+
+    form = AshPhoenix.Form.validate(socket.assigns.form.source, form_params, errors: true)
+
+    if form.valid? do
+      suggestions =
+        Invoicing.get_next_numbers_for_series(issue_date, [scope: scope], omit_invoice_id: socket.assigns.invoice.id)
+
+      {:noreply,
+       socket
+       |> assign(:step, :review)
+       |> assign(:series_suggestions, suggestions)
+       |> assign_form_with_preview(form)
+       |> update_review_number(number)}
+    else
+      {:noreply, assign_form_with_preview(socket, form)}
+    end
+  end
+
+  defp update_review_number(socket, number) do
+    params = Map.put(socket.assigns.form.source.params, "invoice_number", number)
+    form = AshPhoenix.Form.validate(socket.assigns.form.source, params)
+
+    warnings =
+      if String.trim(number) == "" do
+        []
+      else
+        SalesInvoice.validate_number!(
+          number,
+          current_issue_date(socket),
+          socket.assigns.invoice.id,
+          scope: socket.assigns.ash_scope
+        )
+      end
+
+    socket
+    |> assign_form_with_preview(form)
+    |> assign(:invoice_warnings, warnings)
+    |> push_event("unsaved-changed", %{value: true})
+  end
+
+  defp review_params(params, socket) do
+    Map.merge(socket.assigns.form.source.params, Map.take(params, ["invoice_number"]))
+  end
+
+  defp submit_and_send(params, socket) do
+    form_params =
+      if socket.assigns.step == :review,
+        do: review_params(params, socket),
+        else: params["form"] || params["sales_invoice"] || %{}
 
     gross_item_price_inputs =
       PriceInput.update_gross_value_inputs(
@@ -459,13 +637,12 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
   defp submit_invoice(form_params, socket) do
     organization = socket.assigns.organization
     invoice = socket.assigns.invoice
-    scope = socket.assigns.ash_scope
     ash_form = socket.assigns.form.source
     form_params = normalize_price_input_params(form_params)
 
     cond do
       is_nil(invoice.invoice_number) ->
-        create_confirmed_invoice(organization, form_params, scope, ash_form)
+        confirm_draft_invoice(organization, form_params, ash_form)
 
       is_nil(invoice.ksef_number) ->
         update_confirmed_invoice(organization, form_params, ash_form)
@@ -564,25 +741,19 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
      |> push_navigate(to: Navigation.sales_invoice_summary_path(invoice, socket.assigns.return_to))}
   end
 
-  defp create_confirmed_invoice(organization, form_params, scope, ash_form) do
-    case Creator.validate_organization_for_invoicing(organization) do
-      :ok ->
-        issue_date = Date.utc_today()
-        invoice_number = SalesInvoice.get_next_number!(issue_date, nil, nil, scope: scope)
+  defp confirm_draft_invoice(organization, form_params, ash_form) do
+    if String.trim(form_params["invoice_number"] || "") == "" do
+      form =
+        ash_form
+        |> AshPhoenix.Form.validate(form_params, errors: true)
+        |> AshPhoenix.Form.add_error(
+          field: :invoice_number,
+          message: gettext("Invoice number is required.")
+        )
 
-        override_params =
-          Map.merge(form_params, %{
-            "invoice_number" => invoice_number,
-            "issue_date" => Date.to_iso8601(issue_date),
-            "seller_display_name" => organization.name,
-            "seller_address" => organization.address,
-            "seller_nip" => organization.nip
-          })
-
-        AshPhoenix.Form.submit(ash_form, params: override_params)
-
-      {:error, changeset} ->
-        {:error, changeset}
+      {:error, form}
+    else
+      update_confirmed_invoice(organization, form_params, ash_form)
     end
   end
 
