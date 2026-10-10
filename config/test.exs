@@ -37,22 +37,27 @@ config :firmowid, FirmowidWeb.Core.Endpoint,
 
 config :firmowid, Oban, testing: :inline
 
-# stubs for request testing (for now bank_data mostly)
+# Keep production retry counts, but do not sleep between mocked responses.
 config :firmowid, :bank_data_api_client,
   bank_data_institutions: [
-    plug: {Req.Test, :bank_data_institutions}
+    plug: {Req.Test, :bank_data_institutions},
+    retry_delay: 0
   ],
   bank_data_institution: [
-    plug: {Req.Test, :bank_data_institution}
+    plug: {Req.Test, :bank_data_institution},
+    retry_delay: 0
   ],
   bank_data_requisition: [
-    plug: {Req.Test, :bank_data_requisition}
+    plug: {Req.Test, :bank_data_requisition},
+    retry_delay: 0
   ],
   bank_data_account: [
-    plug: {Req.Test, :bank_data_account}
+    plug: {Req.Test, :bank_data_account},
+    retry_delay: 0
   ],
   bank_data_transactions: [
-    plug: {Req.Test, :bank_data_transactions}
+    plug: {Req.Test, :bank_data_transactions},
+    retry_delay: 0
   ]
 
 config :firmowid, :nbp_api_request_options, plug: Firmowid.Test.Support.NbpApiStub

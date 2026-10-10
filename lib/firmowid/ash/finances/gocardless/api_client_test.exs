@@ -28,11 +28,20 @@ defmodule Firmowid.Ash.Finances.GoCardless.ApiClientTest do
     end
 
     test "returns {:error, :rate_limited} on 429" do
+      test_pid = self()
+
       Req.Test.stub(:bank_data_institutions, fn conn ->
+        send(test_pid, :institutions_request)
         Plug.Conn.send_resp(conn, 429, "")
       end)
 
       assert {:error, :rate_limited} = ApiClient.get_available_institutions_for_country("PL")
+
+      for _attempt <- 1..4 do
+        assert_received :institutions_request
+      end
+
+      refute_received :institutions_request
     end
   end
 
@@ -144,11 +153,17 @@ defmodule Firmowid.Ash.Finances.GoCardless.ApiClientTest do
     end
 
     test "returns {:error, :rate_limited} on 429" do
+      test_pid = self()
+
       Req.Test.stub(:bank_data_transactions, fn conn ->
+        send(test_pid, :transactions_request)
         Plug.Conn.send_resp(conn, 429, "")
       end)
 
       assert {:error, :rate_limited} = ApiClient.get_booked_transactions_for_account("acc-1")
+      assert_received :transactions_request
+      assert_received :transactions_request
+      refute_received :transactions_request
     end
 
     test "returns {:error, :server_error} on 500" do
