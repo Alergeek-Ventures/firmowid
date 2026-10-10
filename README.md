@@ -178,6 +178,21 @@ Eksportowany katalog PO zawiera tylko wpisy używane przez bieżący POT.
 Historyczne tłumaczenia pozostają w Accent; brakujące tłumaczenia, konteksty,
 formy liczby mnogiej i placeholdery nadal są weryfikowane bez wyjątków.
 
+## Weryfikacja zmian
+
+| Polecenie | Kiedy używać |
+| --- | --- |
+| `mix check --quick` | W trakcie pracy: szybka informacja zwrotna z kompilacji, lekkich kontroli i testów, bez Dialyzera i ekstrakcji tłumaczeń. |
+| `mix test lib/ścieżka/do/feature_test.exs` | Do sprawdzenia konkretnej zmiany lub regresji. |
+| `mix check` | Pełna weryfikacja przed oddaniem zmian; tryb szybki jej nie zastępuje. |
+| `mix check --no-test` | Gdy testy są uruchamiane i weryfikowane osobno, np. w CI. |
+| `mix check --external` | Świadome włączenie testów korzystających z prawdziwych zewnętrznych API; wymaga dostępnych usług i danych dostępowych. |
+
+Domyślnie testy z oznaczeniem `:external` są pomijane. Weryfikacja nie formatuje
+plików automatycznie. Każdy wykonany krok pokazuje czas; błędy mają pełny wynik
+polecenia, a pominięte kroki są wyraźnie oznaczone. `--verbose` pokazuje również
+wynik poprawnie zakończonych kroków.
+
 ## Zmienne środowiskowe
 
 Aplikacja używa Infisical jako źródła wspólnych zmiennych środowiskowych. W środowiskach `dev` i `test` konfiguracja importowana przez `config/dev.exs` i `config/test.exs` automatycznie pobiera wartości z Infisical `dev` ze ścieżki `/app`, a następnie nakłada lokalne nadpisania z `.env.worktree`.

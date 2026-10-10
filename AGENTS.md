@@ -84,7 +84,16 @@ Schema migrations must be managed through Ash/AshPostgres migration tooling.
 
 ## Code Quality Verification
 
-Before submitting changes, always run the quality checks:
+Use verification to get fast feedback while working and establish confidence in
+the integrated change before submitting it:
+
+- During the local edit loop, use `mix check --quick`. It keeps strict compilation,
+  inexpensive checks and tests, but skips costly type analysis and translation
+  extraction. It is feedback, not final verification.
+- For a narrow change or a failing check, run the relevant task or focused test
+  directly (for example `mix test lib/path/to/feature_test.exs`). Fix the cause
+  before repeating the broader verification.
+- Before submitting changes, run the full verification:
 
 ```bash
 mix check
@@ -92,15 +101,12 @@ mix check
 
 > Do not `tail` or `grep` the output - it's super compact, specifically for agents.
 
-This single command runs all quality checks in order:
-
-1. `mix compile --warnings-as-errors` - Compile with strict warnings
-2. `mix format --check-formatted` - Verify code formatting  
-3. `mix credo --strict` - Static code analysis
-4. `mix sobelow --config` - Security vulnerability scanning
-5. `mix test` - Run test suite
-
-All checks must pass before changes can be merged.
+All full checks must pass before changes can be merged. Verification does not
+auto-format source files; fix formatting explicitly. Timings and failure output
+identify what needs attention, and skipped checks are not evidence of success.
+Use `--no-test` only when tests are verified separately. Tests calling real
+external APIs are excluded by default; include them deliberately with
+`mix check --external` when credentials and external services are available.
 
 ## Code Style Guidelines
 
