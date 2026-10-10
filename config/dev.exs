@@ -48,6 +48,8 @@ config :firmowid, :s3,
   access_key_id: "test",
   secret_access_key: "test"
 
+config :firmowid, :tidewave_remote_access, true
+
 config :firmowid,
   uploads_bucket: "firmowid-uploads"
 
