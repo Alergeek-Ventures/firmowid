@@ -51,11 +51,20 @@ defmodule FirmowidWeb do
     end
   end
 
-  def live_view do
+  @doc "Defines a LiveView with shared helpers and optional overrides of the app defaults."
+  @spec live_view(keyword()) :: Macro.t()
+  def live_view(opts \\ []) do
+    opts =
+      Keyword.merge(
+        [
+          layout: {FirmowidWeb.Infrastructure.Layouts, :app},
+          container: {:div, class: "min-h-full flex flex-col"}
+        ],
+        opts
+      )
+
     quote do
-      use Phoenix.LiveView,
-        layout: {FirmowidWeb.Infrastructure.Layouts, :app},
-        container: {:div, class: "min-h-full flex flex-col"}
+      use Phoenix.LiveView, unquote(opts)
 
       unquote(html_helpers())
     end
@@ -113,5 +122,9 @@ defmodule FirmowidWeb do
   """
   defmacro __using__(which) when is_atom(which) do
     apply(__MODULE__, which, [])
+  end
+
+  defmacro __using__({:live_view, opts}) when is_list(opts) do
+    live_view(opts)
   end
 end

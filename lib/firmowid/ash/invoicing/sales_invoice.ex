@@ -203,6 +203,8 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
         constraints min: 1
       end
 
+      argument :listing_sort, :atom, constraints: [one_of: [:newest, :oldest]]
+
       # Date filtering — conditional on date_field
       prepare {Firmowid.Ash.Invoicing.Preparations.FilterByDateField, []}
 
@@ -296,6 +298,8 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
       prepare build(limit: arg(:limit)) do
         where present(:limit)
       end
+
+      prepare Firmowid.Ash.Invoicing.Preparations.SortInvoiceListing
     end
 
     read :by_id do

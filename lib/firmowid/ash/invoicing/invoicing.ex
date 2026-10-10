@@ -3,7 +3,7 @@ defmodule Firmowid.Ash.Invoicing do
   Ash domain for invoicing — counterparties, sales invoices, cost invoices,
   and supporting resources.
   """
-  use Ash.Domain
+  use Ash.Domain, extensions: [AshAi]
 
   import Ash.Expr, only: [expr: 1]
 
@@ -12,6 +12,7 @@ defmodule Firmowid.Ash.Invoicing do
   alias Firmowid.Ash.Finances
   alias Firmowid.Ash.Finances.Transaction
   alias Firmowid.Ash.Invoicing.CostInvoice
+  alias Firmowid.Ash.Invoicing.InvoiceList
   alias Firmowid.Ash.Invoicing.SalesInvoice
   alias Firmowid.Ash.Invoicing.Services.RecentMatchedEntries
   alias Firmowid.Ash.Invoicing.Workers.MatchingWorker
@@ -22,7 +23,18 @@ defmodule Firmowid.Ash.Invoicing do
 
   require Ash.Query
 
+  tools do
+    tool :list_invoices, InvoiceList, :list do
+      description "List sales and cost invoices for the authenticated organization. Optional issue-date, search and currency filters. Follow next_cursor with identical filters to retrieve more results. Costs retain their signed amounts."
+      ui "ui://firmowid/invoicing/invoices-v1.html"
+    end
+  end
+
   resources do
+    resource InvoiceList do
+      define :list_invoices, action: :list
+    end
+
     resource Firmowid.Ash.Invoicing.Counterparty do
       define :list_counterparties, action: :list
       define :get_counterparty, action: :by_id, args: [:id]

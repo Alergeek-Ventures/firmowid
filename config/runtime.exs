@@ -83,10 +83,28 @@ config :firmowid,
   # use DATABASE_URL if set
   google_client_secret: System.get_env("GOOGLE_CLIENT_SECRET")
 
-# OAuth2 AS access-token signing secret. Prefer a dedicated env var in prod;
-# fall back to SECRET_KEY_BASE so existing deploys keep working.
+# Production OAuth tokens require a dedicated secret, separate from session cookies.
+# Development/test retain the existing SECRET_KEY_BASE fallback.
 config :firmowid,
-  oauth2_signing_secret: System.get_env("OAUTH2_SIGNING_SECRET") || secret_key_base
+  oauth2_signing_secret:
+    (if config_env() == :prod do
+       secret = System.fetch_env!("OAUTH2_SIGNING_SECRET")
+
+       if String.trim(secret) == "" do
+         raise "OAUTH2_SIGNING_SECRET must not be empty"
+       end
+
+       secret
+     else
+       System.get_env("OAUTH2_SIGNING_SECRET") || secret_key_base
+     end)
+
+# Development requires the canonical MCP resource URL from shared configuration.
+# Test and production retain the endpoint-derived resource URL.
+if config_env() == :dev do
+  config :firmowid,
+    oauth2_resource_url: Firmowid.Config.McpResourceUrl.validate!(System.fetch_env!("MCP_RESOURCE_URL"))
+end
 
 config :req_llm,
   openai_api_key: System.get_env("OPENAI_API_KEY") || Application.get_env(:firmowid, :openai_api_key)

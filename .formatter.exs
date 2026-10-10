@@ -23,5 +23,6 @@
     "scripts/*.exs",
     "priv/*/seeds.exs"
   ],
-  attribute_formatters: %{class: CanonicalTailwind}
+  attribute_formatters: %{class: CanonicalTailwind},
+  canonical_tailwind: [profile: :firmowid]
 ]

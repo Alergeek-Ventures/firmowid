@@ -221,15 +221,18 @@ defmodule Firmowid.MixProject do
       "ecto.reset": ["ash_postgres.drop --force --force-drop", "db.setup"],
       test: ["ash_postgres.drop --force --force-drop --quiet", "ash.setup --quiet", "test"],
       "assets.setup": ["cmd npm ci --prefix assets", "esbuild.install --if-missing"],
-      "assets.build": ["tailwind firmowid", "esbuild firmowid"],
+      "assets.build": ["tailwind firmowid", "esbuild firmowid", "assets.mcp"],
+      "assets.mcp": ["esbuild mcp --minify"],
       "assets.deploy": [
         "tailwind firmowid --minify",
         "esbuild firmowid --minify",
+        "assets.mcp",
         "phx.digest"
       ],
       "assets.sentry.deploy": [
         "tailwind firmowid --minify",
         "esbuild firmowid --minify --sourcemap=external",
+        "assets.mcp",
         "phx.digest"
       ],
       "assets.licenses": ["cmd npm run licenses:check --prefix assets"]

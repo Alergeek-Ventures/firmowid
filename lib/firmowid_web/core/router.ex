@@ -53,10 +53,12 @@ defmodule FirmowidWeb.Core.Router do
 
   pipeline :oauth_api do
     plug :accepts, ["json"]
+    plug FirmowidWeb.Mcp.Utilities.PublicClientAuthentication
   end
 
-  pipeline :oauth_loopback_fix do
+  pipeline :oauth_request_normalization do
     plug FirmowidWeb.Mcp.Utilities.RewriteLoopbackRedirectUri
+    plug FirmowidWeb.Mcp.Utilities.DefaultAuthorizationScope
   end
 
   pipeline :webhook do
@@ -99,7 +101,7 @@ defmodule FirmowidWeb.Core.Router do
   end
 
   scope "/", FirmowidWeb do
-    pipe_through [:browser, :oauth_loopback_fix]
+    pipe_through [:browser, :oauth_request_normalization]
 
     oauth2_server_consent_routes(
       oauth2_server: Firmowid.Oauth2Server,
@@ -108,7 +110,7 @@ defmodule FirmowidWeb.Core.Router do
   end
 
   scope "/" do
-    pipe_through [:oauth_api, :oauth_loopback_fix]
+    pipe_through [:oauth_api, :oauth_request_normalization]
     oauth2_server_protocol_routes(oauth2_server: Firmowid.Oauth2Server)
   end
 
@@ -117,20 +119,7 @@ defmodule FirmowidWeb.Core.Router do
   scope "/mcp" do
     pipe_through :mcp
 
-    forward "/", AshAi.Mcp.Router,
-      tools: [
-        :list_sessions,
-        :get_current_session,
-        :stop_current_session,
-        :start_session,
-        :edit_session,
-        :list_leave_requests,
-        :create_leave_request,
-        :update_profile,
-        :get_shared_birthday,
-        :list_projects
-      ],
-      otp_app: :firmowid
+    forward "/", FirmowidWeb.Mcp.Router, tools: [:list_invoices], mcp_resources: [:invoices]
   end
 
   scope "/admin" do

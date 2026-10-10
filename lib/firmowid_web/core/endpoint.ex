@@ -8,6 +8,7 @@ defmodule FirmowidWeb.Core.Endpoint do
   # credo:disable-for-next-line Checks.RejectDirectSentrySdk
   alias Elixir.Sentry, as: SentrySDK
   alias Firmowid.Sentry
+  alias Phoenix.LiveView.Socket
 
   # The session will be stored in the cookie and signed,
   # this means its contents can be read but not tampered with.
@@ -19,9 +20,17 @@ defmodule FirmowidWeb.Core.Endpoint do
     same_site: "Lax"
   ]
 
-  socket "/live", Phoenix.LiveView.Socket,
+  socket "/live", Socket,
     websocket: [connect_info: [:peer_data, :uri, :user_agent, session: @session_options]],
     longpoll: [connect_info: [:peer_data, :uri, :user_agent, session: @session_options]]
+
+  # The callback validates the exact app origin or ChatGPT's sandbox HTTPS domain.
+  # No browser cookies are loaded: every mount requires an OAuth-derived capability.
+  @mcp_websocket_options [
+    connect_info: [:uri],
+    check_origin: {FirmowidWeb.Mcp.Session, :allowed_origin?, []}
+  ]
+  socket "/mcp/live", Socket, websocket: @mcp_websocket_options, longpoll: false
 
   # Serve at "/" the static files from "priv/static" directory.
   #
