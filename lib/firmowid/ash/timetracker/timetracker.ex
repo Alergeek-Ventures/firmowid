@@ -115,7 +115,7 @@ defmodule Firmowid.Ash.Timetracker do
 
   Used by management views and hours record index to populate month selectors.
   """
-  @spec months_with_sessions(map(), keyword()) :: [NaiveDateTime.t()]
+  @spec months_with_sessions(map(), Firmowid.Ash.Scope.t()) :: [NaiveDateTime.t()]
   def months_with_sessions(filters, scope) do
     query =
       filters

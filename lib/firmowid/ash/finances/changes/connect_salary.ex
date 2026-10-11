@@ -5,7 +5,6 @@ defmodule Firmowid.Ash.Finances.Changes.ConnectSalary do
   use Gettext, backend: FirmowidWeb.Core.Gettext
 
   alias Firmowid.Ash.Finances
-  alias Firmowid.Ash.Payroll.SalaryMatching
   alias Firmowid.Ash.Scope
 
   @impl true
@@ -15,13 +14,7 @@ defmodule Firmowid.Ash.Finances.Changes.ConnectSalary do
       user_id = Ash.Changeset.get_attribute(changeset, :salary_user_id)
       month = Ash.Changeset.get_attribute(changeset, :salary_month)
 
-      transaction =
-        Finances.get_transaction!(changeset.data.id,
-          load: [:direction, :bank_account, :has_salary?, :cost_invoices, :sales_invoices],
-          scope: scope
-        )
-
-      if valid_assignment?(transaction, user_id, month, scope) do
+      if valid_assignment?(changeset.data.id, user_id, month, scope) do
         changeset
       else
         Ash.Changeset.add_error(changeset,
@@ -32,16 +25,13 @@ defmodule Firmowid.Ash.Finances.Changes.ConnectSalary do
     end)
   end
 
-  defp valid_assignment?(transaction, user_id, %Date{day: 1} = month, scope) when is_binary(user_id) do
-    summary = SalaryMatching.summary(user_id, month, scope)
-
-    SalaryMatching.eligible?(transaction) and Date.compare(month, transaction.booking_date) != :gt and
-      not is_nil(summary) and
-      transaction.amount
-      |> Money.to_decimal()
-      |> Decimal.abs()
-      |> SalaryMatching.within_tolerance?(Money.to_decimal(summary.expected_amount))
+  defp valid_assignment?(transaction_id, user_id, %Date{day: 1} = month, scope) when is_binary(user_id) do
+    Finances.suggest_transaction_salaries!(
+      transaction_id,
+      %{salary_user_id: user_id, salary_month: month},
+      scope: scope
+    ) != []
   end
 
-  defp valid_assignment?(_transaction, _user_id, _month, _scope), do: false
+  defp valid_assignment?(_transaction_id, _user_id, _month, _scope), do: false
 end

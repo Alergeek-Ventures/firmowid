@@ -44,6 +44,7 @@ defmodule Firmowid.Ash.Finances do
       define :set_transaction_skip_invoicing, action: :set_skip_invoicing
       define :connect_transaction_salary, action: :connect_salary
       define :disconnect_transaction_salary, action: :disconnect_salary
+      define :suggest_transaction_salaries, action: :salary_suggestions, args: [:transaction_id]
     end
   end
 

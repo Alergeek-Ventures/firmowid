@@ -1880,29 +1880,24 @@ msgstr ""
 msgid "Ask Firmowid for help with invoices"
 msgstr ""
 
-#: lib/firmowid_web/invoicing/transactions/components/salary_components.ex:53
+#: lib/firmowid_web/invoicing/transactions/components/salary_components.ex:54
 #: lib/firmowid_web/invoicing/transactions/components/show_components.ex:227
 #, elixir-autogen, elixir-format
 msgid "Confirm"
 msgstr ""
 
-#: lib/firmowid_web/invoicing/transactions/components/salary_components.ex:107
-#, elixir-autogen, elixir-format
-msgid "Connected to salary"
-msgstr ""
-
-#: lib/firmowid_web/invoicing/transactions/views/show.ex:196
+#: lib/firmowid_web/invoicing/transactions/views/show.ex:197
 #, elixir-autogen, elixir-format
 msgid "Could not connect this transaction to a salary."
 msgstr ""
 
-#: lib/firmowid_web/invoicing/transactions/views/show.ex:210
+#: lib/firmowid_web/invoicing/transactions/views/show.ex:211
 #, elixir-autogen, elixir-format
 msgid "Could not disconnect this transaction from the salary."
 msgstr ""
 
-#: lib/firmowid_web/invoicing/transactions/components/salary_components.ex:76
 #: lib/firmowid_web/invoicing/transactions/components/salary_components.ex:77
+#: lib/firmowid_web/invoicing/transactions/components/salary_components.ex:78
 #, elixir-autogen, elixir-format
 msgid "Disconnect salary"
 msgstr ""
@@ -1917,14 +1912,9 @@ msgstr ""
 msgid "Information"
 msgstr ""
 
-#: lib/firmowid_web/invoicing/transactions/components/salary_components.ex:24
+#: lib/firmowid_web/invoicing/transactions/components/salary_components.ex:25
 #, elixir-autogen, elixir-format
 msgid "Potential salaries for this transaction"
-msgstr ""
-
-#: lib/firmowid_web/invoicing/components/entries_table.ex:402
-#, elixir-autogen, elixir-format
-msgid "Salary"
 msgstr ""
 
 #: lib/firmowid_web/invoicing/transactions/components/salary_components.ex:89
@@ -1942,17 +1932,12 @@ msgstr ""
 msgid "Unavailable"
 msgstr ""
 
-#: lib/firmowid/ash/invoicing/changes/reject_salary_transactions.ex:23
-#, elixir-autogen, elixir-format
-msgid "A salary payment cannot be linked to an invoice."
-msgstr ""
-
-#: lib/firmowid/ash/finances/changes/connect_salary.ex:29
+#: lib/firmowid/ash/finances/changes/connect_salary.ex:22
 #, elixir-autogen, elixir-format
 msgid "The salary cannot be assigned to this transaction."
 msgstr ""
 
-#: lib/firmowid_web/invoicing/transactions/components/salary_components.ex:26
+#: lib/firmowid_web/invoicing/transactions/components/salary_components.ex:27
 #: lib/firmowid_web/invoicing/transactions/components/show_components.ex:205
 #, elixir-autogen, elixir-format
 msgid "Amount"
@@ -1963,13 +1948,14 @@ msgstr ""
 msgid "Ask"
 msgstr ""
 
+#: lib/firmowid_web/invoicing/components/entries_table.ex:420
 #: lib/firmowid_web/invoicing/components/matching_components.ex:105
 #, elixir-autogen, elixir-format
 msgid "Complete"
 msgstr ""
 
-#: lib/firmowid_web/invoicing/transactions/components/salary_components.ex:33
-#: lib/firmowid_web/invoicing/transactions/components/salary_components.ex:42
+#: lib/firmowid_web/invoicing/transactions/components/salary_components.ex:34
+#: lib/firmowid_web/invoicing/transactions/components/salary_components.ex:43
 #, elixir-autogen, elixir-format
 msgid "Difference from transfer: %{amount}"
 msgstr ""
@@ -1984,12 +1970,13 @@ msgstr ""
 msgid "Matching"
 msgstr ""
 
-#: lib/firmowid_web/invoicing/transactions/components/salary_components.ex:25
+#: lib/firmowid_web/invoicing/transactions/components/salary_components.ex:26
 #, elixir-autogen, elixir-format
 msgid "Month"
 msgstr ""
 
-#: lib/firmowid_web/invoicing/transactions/views/show.ex:176
+#: lib/firmowid/ash/invoicing/changes/validate_transaction_availability.ex:27
+#: lib/firmowid_web/invoicing/transactions/views/show.ex:177
 #, elixir-autogen, elixir-format
 msgid "Could not connect this transaction to the invoice."
 msgstr ""
@@ -2004,7 +1991,7 @@ msgstr ""
 msgid "Potential invoices for this transaction"
 msgstr ""
 
-#: lib/firmowid_web/invoicing/transactions/components/salary_components.ex:103
+#: lib/firmowid_web/invoicing/transactions/components/salary_components.ex:104
 #, elixir-autogen, elixir-format
 msgid "View timesheet"
 msgstr ""

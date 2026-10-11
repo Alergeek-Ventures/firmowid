@@ -11,7 +11,7 @@ defmodule FirmowidWeb.Invoicing.Transactions.Views.Show do
   alias Firmowid.Ash.Invoicing.CostInvoice
   alias Firmowid.Ash.Invoicing.InvoiceMatching
   alias Firmowid.Ash.Invoicing.SalesInvoice
-  alias Firmowid.Ash.Payroll.SalaryMatching
+  alias Firmowid.Ash.Payroll
   alias FirmowidWeb.Invoicing.Assistant.Utilities.SessionCloser
   alias FirmowidWeb.Invoicing.Components.InvoiceDetails
   alias FirmowidWeb.Invoicing.Transactions.Components.SalaryComponents
@@ -23,6 +23,7 @@ defmodule FirmowidWeb.Invoicing.Transactions.Views.Show do
     :direction,
     :signed_amount,
     :has_salary?,
+    :reconciliation_status,
     :counterparty_display_name,
     cost_invoices: [
       :invoice_source,
@@ -77,7 +78,7 @@ defmodule FirmowidWeb.Invoicing.Transactions.Views.Show do
             <% @transaction.has_salary? -> %>
               <SalaryComponents.confirmation
                 transaction={@transaction}
-                summary={@salary_summary}
+                expected_amount={@expected_salary_amount}
                 admin?={@salary_admin?}
               />
             <% @chat -> %>
@@ -87,11 +88,11 @@ defmodule FirmowidWeb.Invoicing.Transactions.Views.Show do
                 scope={@ash_scope}
                 return_to={@return_to}
               />
-            <% @transaction.skip_invoicing -> %>
+            <% @transaction.reconciliation_status == :skipped -> %>
               <ShowComponents.transaction_skipped_view can_write={
                 Ash.can?({Transaction, :set_skip_invoicing}, @current_user)
               } />
-            <% linked_invoices?(@transaction) -> %>
+            <% @transaction.reconciliation_status == :matched -> %>
               <ShowComponents.linked_state transaction={@transaction} return_to={@return_to} />
             <% true -> %>
               <div class="flex flex-col gap-18">
@@ -212,10 +213,6 @@ defmodule FirmowidWeb.Invoicing.Transactions.Views.Show do
     end
   end
 
-  defp linked_invoices?(transaction) do
-    transaction.cost_invoices != [] or transaction.sales_invoices != []
-  end
-
   defp connect_invoice_transaction(%CostInvoice{} = invoice, transaction_id, scope) do
     Invoicing.connect_cost_invoice_transactions_manual(invoice, [transaction_id], scope)
   end
@@ -225,30 +222,43 @@ defmodule FirmowidWeb.Invoicing.Transactions.Views.Show do
   end
 
   defp reload_transaction(id, scope) do
-    loads =
-      if scope.actor.role == :admin,
-        do: [:salary_user | @transaction_loads],
-        else: @transaction_loads
-
-    Finances.get_transaction!(id, load: loads, scope: scope)
+    Finances.get_transaction!(id, load: [:salary_user | @transaction_loads], scope: scope)
   end
 
   defp assign_transaction(socket, transaction) do
     scope = socket.assigns.ash_scope
 
-    summary =
+    expected_amount =
       if socket.assigns.salary_admin? and transaction.has_salary? do
-        SalaryMatching.summary(transaction.salary_user_id, transaction.salary_month, scope)
+        salary =
+          %{
+            user_id: transaction.salary_user_id,
+            active_at: Date.end_of_month(transaction.salary_month)
+          }
+          |> Payroll.list_salaries!(
+            load: [monthly_amount: [month: transaction.salary_month]],
+            scope: scope
+          )
+          |> List.first()
+
+        if salary, do: salary.monthly_amount
+      end
+
+    salary_suggestions =
+      if socket.assigns.salary_admin? do
+        Finances.suggest_transaction_salaries!(transaction.id, scope: scope)
+      else
+        []
       end
 
     socket
     |> assign(:transaction, transaction)
-    |> assign(:salary_summary, summary)
+    |> assign(:expected_salary_amount, expected_amount)
     |> assign(
       :invoice_suggestions,
       InvoiceMatching.get_potential_invoices_for_transaction(transaction, scope)
     )
-    |> assign(:salary_suggestions, SalaryMatching.suggestions(transaction, scope))
+    |> assign(:salary_suggestions, salary_suggestions)
   end
 
   defp maybe_reset_chat(socket, id) do

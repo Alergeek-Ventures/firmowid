@@ -393,34 +393,31 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
     """
   end
 
-  defp render_cell(%{column: "status", status: "salary"} = assigns) do
-    ~H"""
-    <div
-      id={"status-#{@invoicing_entry.id}"}
-      class="flex w-32 items-center justify-between gap-2 rounded-md bg-greenBg p-2 text-xs text-greenText"
-    >
-      <span>{gettext("Salary")}</span>
-      <.icon name="hero-check-micro" class="size-5" />
-    </div>
-    """
-  end
-
   defp render_cell(%{column: "status", status: "matched"} = assigns) do
+    match_tooltip =
+      case assigns.invoicing_entry do
+        %Transaction{cost_invoices: [], sales_invoices: []} ->
+          nil
+
+        _ ->
+          "Udało się połączyć transakcje i dokument - to oznacza, " <>
+            "że faktura jest opłacona i przygotowana do zaksięgowania."
+      end
+
+    assigns = assign(assigns, :match_tooltip, match_tooltip)
+
     ~H"""
     <div
       id={"status-#{@invoicing_entry.id}"}
-      phx-hook="Tippy"
-      data-tippy-delay="1000"
-      data-tippy-content={
-            "Udało się połączyć transakcje i dokument - to oznacza, " <>
-              "że faktura jest opłacona i przygotowana do zaksięgowania."
-      }
+      phx-hook={if @match_tooltip, do: "Tippy"}
+      data-tippy-delay={if @match_tooltip, do: "1000"}
+      data-tippy-content={@match_tooltip}
       class="flex w-32 flex-row gap-2 overflow-hidden"
     >
       <div class={[
         "flex h-6 w-full flex-row items-center justify-between rounded-md bg-greenBg p-2 text-xs text-greenText transition-all duration-500"
       ]}>
-        <div class="font-normal uppercase">Komplet</div>
+        <div class="font-normal uppercase">{gettext("Complete")}</div>
         <.icon name="hero-check-micro" class="size-5" />
       </div>
     </div>
@@ -694,8 +691,12 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
     """
   end
 
+  defp status_for_entry(%Transaction{reconciliation_status: :pending}), do: "unmatched"
+
+  defp status_for_entry(%Transaction{reconciliation_status: status}) when status in [:matched, :skipped],
+    do: Atom.to_string(status)
+
   defp status_for_entry(%{skip_invoicing: true}), do: "skipped"
-  defp status_for_entry(%Transaction{has_salary?: true}), do: "salary"
 
   defp status_for_entry(%CostInvoice{transactions: []}), do: "unmatched"
   defp status_for_entry(%CostInvoice{}), do: "matched"
@@ -709,12 +710,6 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
       SubmissionInfo.failed?(submission_info) -> "ksef_failed"
       true -> if invoice.transactions == [], do: "unmatched", else: "matched"
     end
-  end
-
-  defp status_for_entry(%Transaction{} = t) do
-    if t.cost_invoices != [] or t.sales_invoices != [],
-      do: "matched",
-      else: "unmatched"
   end
 
   defp status_for_entry(_), do: "unmatched"

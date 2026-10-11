@@ -25,18 +25,6 @@ defmodule Firmowid.Ash.Finances.Transaction do
     repo Firmowid.Repo
   end
 
-  field_policies do
-    private_fields :include
-
-    field_policy [:salary_user_id, :salary_month] do
-      authorize_if actor_attribute_equals(:role, :admin)
-    end
-
-    field_policy :* do
-      authorize_if always()
-    end
-  end
-
   jido do
     action :list,
       name: "list_transactions",
@@ -117,42 +105,8 @@ defmodule Firmowid.Ash.Finances.Transaction do
         where present(:currency)
       end
 
-      # :pending — unmatched and not skipped
-      prepare build(
-                filter:
-                  expr(
-                    not exists(cost_invoices, true) and
-                      not exists(sales_invoices, true) and
-                      not has_salary? and
-                      skip_invoicing == false
-                  )
-              ) do
-        where argument_equals(:reconciliation, :pending)
-      end
-
-      # :matched — linked to at least one invoice
-      prepare build(
-                filter:
-                  expr(
-                    exists(cost_invoices, true) or
-                      exists(sales_invoices, true) or
-                      has_salary?
-                  )
-              ) do
-        where argument_equals(:reconciliation, :matched)
-      end
-
-      # :skipped — unmatched and skipped
-      prepare build(
-                filter:
-                  expr(
-                    not exists(cost_invoices, true) and
-                      not exists(sales_invoices, true) and
-                      not has_salary? and
-                      skip_invoicing == true
-                  )
-              ) do
-        where argument_equals(:reconciliation, :skipped)
+      prepare build(filter: expr(reconciliation_status == ^arg(:reconciliation))) do
+        where present(:reconciliation)
       end
 
       prepare {ParadeDBSearch, columns: ~w(debtor_name creditor_name remittance_information_unstructured)}
@@ -197,7 +151,7 @@ defmodule Firmowid.Ash.Finances.Transaction do
       description "Set whether this transaction should be skipped during matching and invoicing."
       primary? true
       accept [:skip_invoicing]
-      change filter(expr(not has_salary?))
+      change filter(expr(invoice_matchable?))
     end
 
     update :connect_salary do
@@ -208,12 +162,7 @@ defmodule Firmowid.Ash.Finances.Transaction do
       validate present([:salary_user_id, :salary_month])
       change Firmowid.Ash.Finances.Changes.ConnectSalary
 
-      change filter(
-               expr(
-                 not has_salary? and skip_invoicing == false and
-                   not exists(cost_invoices, true) and not exists(sales_invoices, true)
-               )
-             )
+      change filter(expr(reconciliation_status == :pending))
     end
 
     update :disconnect_salary do
@@ -221,6 +170,16 @@ defmodule Firmowid.Ash.Finances.Transaction do
       accept []
       change set_attribute(:salary_user_id, nil)
       change set_attribute(:salary_month, nil)
+    end
+
+    action :salary_suggestions, {:array, :map} do
+      description "Find the five closest available salaries; optional employee/month filters revalidate a chosen assignment."
+
+      argument :transaction_id, :uuid, allow_nil?: false
+      argument :salary_user_id, :uuid
+      argument :salary_month, :date
+
+      run Firmowid.Ash.Finances.Transaction.Actions.SalarySuggestions
     end
   end
 
@@ -252,7 +211,7 @@ defmodule Firmowid.Ash.Finances.Transaction do
       authorize_if always()
     end
 
-    policy action([:connect_salary, :disconnect_salary]) do
+    policy action([:connect_salary, :disconnect_salary, :salary_suggestions]) do
       authorize_if actor_attribute_equals(:role, :admin)
     end
 
@@ -303,7 +262,6 @@ defmodule Firmowid.Ash.Finances.Transaction do
     belongs_to :salary_user, Firmowid.Ash.Core.User do
       allow_nil? true
       attribute_writable? true
-      filter expr(^actor(:role) == :admin)
     end
 
     has_many :entity_tags, Firmowid.Ash.Analysis.EntityTag do
@@ -336,10 +294,39 @@ defmodule Firmowid.Ash.Finances.Transaction do
   end
 
   calculations do
+    calculate :reconciliation_status,
+              :atom,
+              expr(
+                cond do
+                  exists(cost_invoices, true) or exists(sales_invoices, true) or has_salary? ->
+                    :matched
+
+                  skip_invoicing == true ->
+                    :skipped
+
+                  true ->
+                    :pending
+                end
+              ) do
+      public? true
+      constraints one_of: [:pending, :matched, :skipped]
+
+      description "Transaction reconciliation state derived from invoice or salary links and the skip flag."
+    end
+
+    calculate :invoice_matchable?,
+              :boolean,
+              expr(
+                reconciliation_status != :matched or
+                  exists(cost_invoices, true) or exists(sales_invoices, true)
+              ) do
+      description "Allows manual invoice matching of unresolved transactions and existing multi-invoice payments."
+    end
+
     calculate :has_salary?, :boolean, expr(not is_nil(salary_user_id)) do
       public? true
 
-      description "Whether the transaction is settled by a salary, without exposing payroll details."
+      description "Whether the transaction is settled by a monthly salary assignment."
     end
 
     calculate :date, :date, expr(booking_date)

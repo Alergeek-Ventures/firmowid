@@ -8,6 +8,7 @@ defmodule FirmowidWeb.Invoicing.Transactions.Components.SalaryComponents do
   import FirmowidWeb.Invoicing.Components.StatusButton
   import Phoenix.Component, except: [link: 1]
 
+  alias Firmowid.Ash.Core.User
   alias Firmowid.Ash.Finances.Transaction
   alias FirmowidWeb.Invoicing.Components.MatchingComponents
   alias FirmowidWeb.Management.Utilities.Navigation
@@ -59,10 +60,10 @@ defmodule FirmowidWeb.Invoicing.Transactions.Components.SalaryComponents do
   end
 
   attr :transaction, Transaction, required: true
-  attr :summary, :map, default: nil
+  attr :expected_amount, Money, default: nil
   attr :admin?, :boolean, required: true
 
-  @doc "Renders payroll details only for administrators, otherwise a generic confirmation."
+  @doc "Renders the salary assignment, with expected pay and payroll controls restricted to administrators."
   @spec confirmation(map()) :: Rendered.t()
   def confirmation(assigns) do
     ~H"""
@@ -78,34 +79,31 @@ defmodule FirmowidWeb.Invoicing.Transactions.Components.SalaryComponents do
           />
         </:action>
       </MatchingComponents.confirmed_header>
-      <%= if @admin? do %>
-        <MatchingComponents.confirmed_card
-          amount={Money.abs(@transaction.signed_amount)}
-          amount_label={gettext("Transferred amount")}
-        >
-          <:detail label={gettext("Employee")}>
-            {if @summary, do: @summary.name, else: @transaction.salary_user.name}
-          </:detail>
-          <:detail label={gettext("Salary month")}>{month_label(@transaction.salary_month)}</:detail>
-          <:detail label={gettext("Expected salary")}>
-            {if @summary, do: @summary.expected_amount, else: gettext("Unavailable")}
-          </:detail>
-        </MatchingComponents.confirmed_card>
-        <.link
-          kind="text"
-          class="self-end"
-          navigate={
-            Navigation.employee_path(@transaction.salary_user_id, %{
-              miesiac: @transaction.salary_month
-            })
-          }
-        >
-          {gettext("View timesheet")}
-          <.icon name="hero-arrow-right-solid" class="size-4" />
-        </.link>
-      <% else %>
-        <p>{gettext("Connected to salary")}</p>
-      <% end %>
+      <MatchingComponents.confirmed_card
+        amount={Money.abs(@transaction.signed_amount)}
+        amount_label={gettext("Transferred amount")}
+      >
+        <:detail :if={is_struct(@transaction.salary_user, User)} label={gettext("Employee")}>
+          {@transaction.salary_user.name || to_string(@transaction.salary_user.email)}
+        </:detail>
+        <:detail label={gettext("Salary month")}>{month_label(@transaction.salary_month)}</:detail>
+        <:detail :if={@admin?} label={gettext("Expected salary")}>
+          {@expected_amount || gettext("Unavailable")}
+        </:detail>
+      </MatchingComponents.confirmed_card>
+      <.link
+        :if={@admin?}
+        kind="text"
+        class="self-end"
+        navigate={
+          Navigation.employee_path(@transaction.salary_user_id, %{
+            miesiac: @transaction.salary_month
+          })
+        }
+      >
+        {gettext("View timesheet")}
+        <.icon name="hero-arrow-right-solid" class="size-4" />
+      </.link>
     </section>
     """
   end
