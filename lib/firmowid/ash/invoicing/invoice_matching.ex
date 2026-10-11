@@ -8,6 +8,7 @@ defmodule Firmowid.Ash.Invoicing.InvoiceMatching do
   """
 
   alias Firmowid.Ash.Finances
+  alias Firmowid.Ash.Finances.Transaction
   alias Firmowid.Ash.Invoicing
   alias Firmowid.Ash.Invoicing.Matching
   alias Firmowid.Ash.Scope
@@ -35,6 +36,51 @@ defmodule Firmowid.Ash.Invoicing.InvoiceMatching do
     all_transactions = Enum.uniq_by(unmatched_transactions ++ attached_transactions, & &1.id)
 
     score_and_sort_transactions(invoice, all_transactions)
+  end
+
+  @doc "Returns unresolved invoices using the same candidate window and scores as invoice-to-transaction suggestions."
+  @spec get_potential_invoices_for_transaction(Transaction.t(), Scope.t()) :: [
+          {struct(), float()}
+        ]
+  def get_potential_invoices_for_transaction(%Transaction{id: id}, scope) do
+    case Finances.list_transactions!(%{ids: [id], reconciliation: :pending},
+           load: [:amount],
+           scope: scope
+         ) do
+      [transaction] ->
+        invoices = pending_invoices_for_transaction(transaction, scope)
+
+        suggestions =
+          for invoice <- invoices,
+              {_transaction, score} <- score_and_sort_transactions(invoice, [transaction]) do
+            {invoice, score}
+          end
+
+        Enum.sort_by(suggestions, fn {_invoice, score} -> score end, :desc)
+
+      [] ->
+        []
+    end
+  end
+
+  defp pending_invoices_for_transaction(transaction, scope) do
+    case Decimal.compare(Money.to_decimal(transaction.amount), Decimal.new(0)) do
+      :lt ->
+        Invoicing.list_cost_invoices!(%{reconciliation: :pending, corrections: :exclude},
+          load: [:effective_amount, :effective_seller_display_name],
+          scope: scope
+        )
+
+      :gt ->
+        Invoicing.list_sales_invoices!(
+          %{reconciliation: :pending, kind: :vat, submission: :confirmed},
+          load: [:effective_amount, :buyer_display_name_label, sales_invoice_items: [:name]],
+          scope: scope
+        )
+
+      :eq ->
+        []
+    end
   end
 
   @doc """

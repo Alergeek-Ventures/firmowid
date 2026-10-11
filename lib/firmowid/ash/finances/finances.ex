@@ -42,6 +42,8 @@ defmodule Firmowid.Ash.Finances do
       define :list_transactions, action: :list
       define :upsert_transaction_from_sync, action: :upsert_from_sync
       define :set_transaction_skip_invoicing, action: :set_skip_invoicing
+      define :connect_transaction_salary, action: :connect_salary
+      define :disconnect_transaction_salary, action: :disconnect_salary
     end
   end
 

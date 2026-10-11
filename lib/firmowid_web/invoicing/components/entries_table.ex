@@ -393,6 +393,18 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
     """
   end
 
+  defp render_cell(%{column: "status", status: "salary"} = assigns) do
+    ~H"""
+    <div
+      id={"status-#{@invoicing_entry.id}"}
+      class="flex w-32 items-center justify-between gap-2 rounded-md bg-greenBg p-2 text-xs text-greenText"
+    >
+      <span>{gettext("Salary")}</span>
+      <.icon name="hero-check-micro" class="size-5" />
+    </div>
+    """
+  end
+
   defp render_cell(%{column: "status", status: "matched"} = assigns) do
     ~H"""
     <div
@@ -683,6 +695,7 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
   end
 
   defp status_for_entry(%{skip_invoicing: true}), do: "skipped"
+  defp status_for_entry(%Transaction{has_salary?: true}), do: "salary"
 
   defp status_for_entry(%CostInvoice{transactions: []}), do: "unmatched"
   defp status_for_entry(%CostInvoice{}), do: "matched"

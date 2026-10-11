@@ -8,8 +8,13 @@ defmodule FirmowidWeb.Invoicing.Transactions.Views.Show do
   alias Firmowid.Ash.Finances
   alias Firmowid.Ash.Finances.Transaction
   alias Firmowid.Ash.Invoicing
+  alias Firmowid.Ash.Invoicing.CostInvoice
+  alias Firmowid.Ash.Invoicing.InvoiceMatching
+  alias Firmowid.Ash.Invoicing.SalesInvoice
+  alias Firmowid.Ash.Payroll.SalaryMatching
   alias FirmowidWeb.Invoicing.Assistant.Utilities.SessionCloser
   alias FirmowidWeb.Invoicing.Components.InvoiceDetails
+  alias FirmowidWeb.Invoicing.Transactions.Components.SalaryComponents
   alias FirmowidWeb.Invoicing.Transactions.Components.ShowComponents
   alias FirmowidWeb.Invoicing.Utilities.Navigation
 
@@ -17,6 +22,7 @@ defmodule FirmowidWeb.Invoicing.Transactions.Views.Show do
     :bank_account,
     :direction,
     :signed_amount,
+    :has_salary?,
     :counterparty_display_name,
     cost_invoices: [
       :invoice_source,
@@ -40,13 +46,14 @@ defmodule FirmowidWeb.Invoicing.Transactions.Views.Show do
      socket
      |> assign(:chat, false)
      |> assign(:no_padding, true)
-     |> assign(:return_to, nil)}
+     |> assign(:return_to, nil)
+     |> assign(:salary_admin?, socket.assigns.current_user.role == :admin)}
   end
 
   @impl true
   def handle_params(%{"id" => id} = params, _url, socket) do
     scope = socket.assigns.ash_scope
-    transaction = Finances.get_transaction!(id, load: @transaction_loads, scope: scope)
+    transaction = reload_transaction(id, scope)
     return_to = Navigation.return_to_path(params["powrot_do"])
 
     {:noreply,
@@ -67,6 +74,12 @@ defmodule FirmowidWeb.Invoicing.Transactions.Views.Show do
 
         <InvoiceDetails.main>
           <%= cond do %>
+            <% @transaction.has_salary? -> %>
+              <SalaryComponents.confirmation
+                transaction={@transaction}
+                summary={@salary_summary}
+                admin?={@salary_admin?}
+              />
             <% @chat -> %>
               <ShowComponents.assistant_state
                 transaction={@transaction}
@@ -81,10 +94,15 @@ defmodule FirmowidWeb.Invoicing.Transactions.Views.Show do
             <% linked_invoices?(@transaction) -> %>
               <ShowComponents.linked_state transaction={@transaction} return_to={@return_to} />
             <% true -> %>
-              <ShowComponents.empty_state
-                transaction={@transaction}
-                can_write={Ash.can?({Transaction, :set_skip_invoicing}, @current_user)}
-              />
+              <div class="flex flex-col gap-18">
+                <ShowComponents.invoice_suggestions suggestions={@invoice_suggestions} />
+                <SalaryComponents.suggestions suggestions={@salary_suggestions} />
+                <ShowComponents.empty_state
+                  transaction={@transaction}
+                  can_write={Ash.can?({Transaction, :set_skip_invoicing}, @current_user)}
+                  show_no_recommendations={@invoice_suggestions == [] and @salary_suggestions == []}
+                />
+              </div>
           <% end %>
         </InvoiceDetails.main>
       </div>
@@ -130,16 +148,107 @@ defmodule FirmowidWeb.Invoicing.Transactions.Views.Show do
     end
   end
 
+  def handle_event("connect_invoice", %{"invoice_id" => invoice_id}, socket) do
+    result =
+      case Enum.find(socket.assigns.invoice_suggestions, fn {invoice, _score} ->
+             invoice.id == invoice_id
+           end) do
+        {invoice, _score} ->
+          connect_invoice_transaction(
+            invoice,
+            socket.assigns.transaction.id,
+            socket.assigns.ash_scope
+          )
+
+        nil ->
+          {:error, :unknown_invoice}
+      end
+
+    case result do
+      {:ok, _invoice} ->
+        {:noreply,
+         assign_transaction(
+           socket,
+           reload_transaction(socket.assigns.transaction.id, socket.assigns.ash_scope)
+         )}
+
+      {:error, _error} ->
+        {:noreply, put_flash(socket, :error, gettext("Could not connect this transaction to the invoice."))}
+    end
+  end
+
+  def handle_event("connect_salary", %{"user_id" => user_id, "month" => month}, socket) do
+    result =
+      Finances.connect_transaction_salary(
+        socket.assigns.transaction,
+        %{salary_user_id: user_id, salary_month: month},
+        scope: socket.assigns.ash_scope
+      )
+
+    case result do
+      {:ok, transaction} ->
+        {:noreply,
+         socket
+         |> assign(:chat, false)
+         |> assign_transaction(reload_transaction(transaction.id, socket.assigns.ash_scope))}
+
+      {:error, _error} ->
+        {:noreply, put_flash(socket, :error, gettext("Could not connect this transaction to a salary."))}
+    end
+  end
+
+  def handle_event("disconnect_salary", _params, socket) do
+    case Finances.disconnect_transaction_salary(socket.assigns.transaction, %{}, scope: socket.assigns.ash_scope) do
+      {:ok, transaction} ->
+        {:noreply, assign_transaction(socket, reload_transaction(transaction.id, socket.assigns.ash_scope))}
+
+      {:error, _error} ->
+        {:noreply,
+         put_flash(
+           socket,
+           :error,
+           gettext("Could not disconnect this transaction from the salary.")
+         )}
+    end
+  end
+
   defp linked_invoices?(transaction) do
     transaction.cost_invoices != [] or transaction.sales_invoices != []
   end
 
+  defp connect_invoice_transaction(%CostInvoice{} = invoice, transaction_id, scope) do
+    Invoicing.connect_cost_invoice_transactions_manual(invoice, [transaction_id], scope)
+  end
+
+  defp connect_invoice_transaction(%SalesInvoice{} = invoice, transaction_id, scope) do
+    Invoicing.connect_sales_invoice_transactions_manual(invoice, [transaction_id], scope)
+  end
+
   defp reload_transaction(id, scope) do
-    Finances.get_transaction!(id, load: @transaction_loads, scope: scope)
+    loads =
+      if scope.actor.role == :admin,
+        do: [:salary_user | @transaction_loads],
+        else: @transaction_loads
+
+    Finances.get_transaction!(id, load: loads, scope: scope)
   end
 
   defp assign_transaction(socket, transaction) do
-    assign(socket, :transaction, transaction)
+    scope = socket.assigns.ash_scope
+
+    summary =
+      if socket.assigns.salary_admin? and transaction.has_salary? do
+        SalaryMatching.summary(transaction.salary_user_id, transaction.salary_month, scope)
+      end
+
+    socket
+    |> assign(:transaction, transaction)
+    |> assign(:salary_summary, summary)
+    |> assign(
+      :invoice_suggestions,
+      InvoiceMatching.get_potential_invoices_for_transaction(transaction, scope)
+    )
+    |> assign(:salary_suggestions, SalaryMatching.suggestions(transaction, scope))
   end
 
   defp maybe_reset_chat(socket, id) do
