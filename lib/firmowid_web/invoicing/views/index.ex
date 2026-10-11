@@ -1181,7 +1181,7 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
         :counterparty_name,
         :counterparty_display_name,
         :groupable?,
-        :has_salary?
+        :reconciliation_status
       ],
       query: [sort: [booking_date: :desc]],
       scope: scope
@@ -1251,8 +1251,7 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
 
   defp entry_matched?(%CostInvoice{} = inv), do: Enum.any?(inv.transactions) or Map.get(inv, :skip_invoicing, false)
 
-  defp entry_matched?(%Transaction{} = tx),
-    do: Enum.any?(tx.cost_invoices ++ tx.sales_invoices) or tx.skip_invoicing or tx.has_salary? == true
+  defp entry_matched?(%Transaction{} = tx), do: tx.reconciliation_status in [:matched, :skipped]
 
   # Groups only contain unmatched transactions by design
   defp entry_matched?(%TransactionGroup{}), do: false

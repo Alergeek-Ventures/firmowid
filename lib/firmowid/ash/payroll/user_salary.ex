@@ -165,6 +165,13 @@ defmodule Firmowid.Ash.Payroll.UserSalary do
 
   calculations do
     calculate :ends_at, :date, Firmowid.Ash.Payroll.Calculations.EndsAt
+
+    calculate :monthly_amount,
+              AshMoney.Types.Money,
+              Firmowid.Ash.Payroll.UserSalary.Calculations.MonthlyAmount do
+      description "Expected salary using this rate and the employee's rounded-up session hours for a month."
+      argument :month, :date, allow_nil?: false
+    end
   end
 
   identities do

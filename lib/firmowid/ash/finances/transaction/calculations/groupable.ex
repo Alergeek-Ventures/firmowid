@@ -4,16 +4,13 @@ defmodule Firmowid.Ash.Finances.Transaction.Calculations.Groupable do
   use Ash.Resource.Calculation
 
   @impl true
-  def load(_query, _opts, _context),
-    do: [:counterparty_name, :skip_invoicing, :has_cost_invoices?, :has_sales_invoices?, :has_salary?]
+  def load(_query, _opts, _context), do: [:counterparty_name, :reconciliation_status]
 
   @impl true
   def calculate(records, _opts, _context) do
     Enum.map(records, fn transaction ->
       useful_counterparty?(transaction.counterparty_name) and
-        transaction.skip_invoicing == false and
-        transaction.has_cost_invoices? == false and transaction.has_sales_invoices? == false and
-        transaction.has_salary? == false
+        transaction.reconciliation_status == :pending
     end)
   end
 

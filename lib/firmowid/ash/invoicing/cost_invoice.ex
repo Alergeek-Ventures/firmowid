@@ -463,7 +463,7 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
       argument :transaction_ids, {:array, :uuid}, allow_nil?: false
 
       change RequireTransactionIds
-      change Firmowid.Ash.Invoicing.Changes.RejectSalaryTransactions
+      change Firmowid.Ash.Invoicing.Changes.ValidateTransactionAvailability
       change manage_relationship(:transaction_ids, :transactions, type: :append)
     end
 

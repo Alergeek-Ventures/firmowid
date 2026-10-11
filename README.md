@@ -26,39 +26,6 @@
 
 Po uruchomieniu serwera, zaloguj się na `kira@bytecraft.collective` / `kolejka123456` i odwiedź [`/development`](http://localhost:4000/development) aby zobaczyć pełny przewodnik po danych testowych, kontrahentach, projektach i scenariuszach KSeF.
 
-### Prototyp przypisywania transakcji do wynagrodzeń
-
-Seedy `priv/repo/seeds/salary_matching.exs` dodają trzech pracowników z dopiskiem
-„(prototyp)”, godziny pracy w poprzednim miesiącu i siedem przelewów z opisem
-`PROTOTYP PENSJI`. Znajdziesz je w zakładce **Fakturowanie → Transakcje**
-w bieżącym miesiącu. Nie resetuj bazy, jeśli chcesz zachować ręczne przypisania.
-
-- Ada: przewidywane 300 zł; przelewy 0, 300 i 600 zł mieszczą się w tolerancji,
-  a 601 zł nie proponuje już Ady.
-- Jan: przewidywane 1000 zł; przelew 1250 zł pokazuje minimalny margines 300 zł.
-- Ewa: przewidywane 5000 zł; przelew 5900 zł mieści się w 20%, a 6001 zł nie.
-
-Na ekranie nieprzypisanej transakcji najpierw zobaczysz proponowane faktury,
-a pod nimi wynagrodzenia. Faktury są oceniane tym samym mechanizmem co transakcje
-na ekranie faktury; nic nie przypisuje się bez zatwierdzenia. Przy przelewie Jana
-1250 zł seed dodaje też fakturę `PROTOTYP/FAKTURA/...`, żeby sprawdzić obie listy
-jednocześnie i wybrać fakturę albo wynagrodzenie.
-Przelew Ady 300 zł pokazuje trzy faktury `PROTOTYP/ADA/...` na 300, 290 i 310 zł
-oraz propozycję wynagrodzenia w tym samym widoku.
-
-Otwórz przelew, zatwierdź wybraną propozycję i sprawdź krótkie podsumowanie.
-Link otwiera pracownika w **miesiącu wynagrodzenia**, z godzinami według projektów.
-Przycisk **Odłącz wynagrodzenie** pozwala powtórzyć próbę; odłącz Adę, zanim
-sprawdzisz kolejny przelew dla jej miesiąca. Jedna pensja ma tylko jeden przelew.
-
-Prototyp obsługuje wypływy w PLN. Propozycje są wyliczane wyłącznie na podstawie
-kwoty, nie nazwiska ani konta odbiorcy; wyświetlamy pięć najbliższych kandydatów.
-Porównujemy miesiące z zarejestrowaną pracą do miesiąca przelewu włącznie.
-Przewidywana kwota korzysta ze stawki na koniec miesiąca i godzin zaokrąglonych
-w górę, tak jak obecny widok zarządzania. Nie naliczamy podatków ani nie utrwalamy
-osobnej listy płac. Szczegóły płacowe i przypisywanie są dostępne administratorowi;
-pozostali użytkownicy fakturowania widzą tylko informację o powiązaniu.
-
 ## CI: kompilacja i ekstrakcja Gettext
 
 Quality i Build/Test korzystają ze wspólnego cache kompilacji oraz tych samych

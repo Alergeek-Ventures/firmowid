@@ -37,7 +37,7 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTableTest do
     refute html =~ "Pomiń"
   end
 
-  test "transaction rows preserve return_to navigation context" do
+  test "salary transaction rows show a complete badge and preserve return_to navigation context" do
     transaction = %Transaction{
       id: "transaction-row-test",
       creditor_name: "Supplier Sp. z o.o.",
@@ -47,7 +47,9 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTableTest do
       signed_amount: Money.new!("PLN", Decimal.new("-100.00")),
       counterparty_name: "Supplier Sp. z o.o.",
       counterparty_display_name: "Supplier Sp. z o.o.",
-      groupable?: true,
+      groupable?: false,
+      has_salary?: true,
+      reconciliation_status: :matched,
       booking_date: ~D[2026-01-10],
       value_date: ~D[2026-01-10],
       direction: :expense,
@@ -69,5 +71,11 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTableTest do
                transaction.id,
                "/fakturowanie?miesiac=2026-01-01&filtr=transakcje"
              )
+
+    assert html
+           |> LazyHTML.from_fragment()
+           |> LazyHTML.query("#status-transaction-row-test")
+           |> LazyHTML.text()
+           |> String.trim() == "Komplet"
   end
 end
