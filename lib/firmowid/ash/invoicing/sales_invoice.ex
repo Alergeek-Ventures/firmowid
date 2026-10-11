@@ -75,6 +75,18 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
   postgres do
     table "sales_invoices"
     repo Firmowid.Repo
+
+    custom_statements do
+      statement :ash_managed_sales_invoice_lock do
+        up "DROP TRIGGER IF EXISTS locked_sales_invoice_trigger ON sales_invoices;"
+
+        down """
+        CREATE TRIGGER locked_sales_invoice_trigger
+        BEFORE UPDATE OR DELETE ON sales_invoices
+        FOR EACH ROW EXECUTE FUNCTION prevent_locked_sales_invoice_modification();
+        """
+      end
+    end
   end
 
   events do
@@ -494,7 +506,7 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
       change {Changes.SetIsCashAccount, []}
       change {Changes.ValidateCountryCode, field: :buyer_country}
 
-      validate {Validations.CheckIfLocked, []}
+      validate {Validations.CheckIfLocked, []}, always_atomic?: true
 
       validate {Validations.ValidateTaxId,
                 id_field: :buyer_id, country_field: :buyer_country, pesel_field: :buyer_pesel, type_field: :buyer_type}
@@ -515,13 +527,11 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
     end
 
     update :attach_suggested_counterparty do
-      description "Attach an unassigned invoice to a currently suggested counterparty."
+      description "Attach an unassigned invoice to a currently suggested counterparty without changing its issued buyer data, including when locked for KSeF."
       require_atomic? false
       accept []
 
       argument :counterparty_id, :uuid_v7, allow_nil?: false
-
-      validate {Validations.CheckIfLocked, []}
 
       # Enforce suggestion eligibility atomically at write time.
       change filter(
@@ -624,14 +634,11 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
       description "Delete a sales invoice when deletion is allowed."
       require_atomic? false
 
-      validate {Validations.CheckIfLocked, []}
+      validate {Validations.CheckIfLocked, []}, always_atomic?: true
 
-      validate fn changeset, _context ->
-        if Ash.Changeset.get_data(changeset, :ksef_number) do
-          {:error, field: :base, message: "KSeF-submitted invoices cannot be deleted"}
-        else
-          :ok
-        end
+      validate absent(:ksef_number) do
+        always_atomic? true
+        message "KSeF-submitted invoices cannot be deleted"
       end
     end
 
@@ -657,6 +664,8 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
       description "Internal action to update the denormalized item_names field. Used by SetItemNames change to avoid recursion."
       require_atomic? false
       accept [:item_names]
+
+      validate {Validations.CheckIfLocked, []}, always_atomic?: true
     end
 
     update :lock_for_ksef do

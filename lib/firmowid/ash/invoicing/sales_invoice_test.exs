@@ -8,6 +8,7 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoiceTest do
   alias Firmowid.Ash.Invoicing
   alias Firmowid.Ash.Invoicing.Counterparty
   alias Firmowid.Ash.Invoicing.SalesInvoice
+  alias Firmowid.Ash.Ksef.Services.InvoiceRenderer
   alias Firmowid.Ash.Scope
   alias Firmowid.Ash.SystemActor
 
@@ -318,7 +319,122 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoiceTest do
     end
   end
 
+  describe "persisted KSeF lock" do
+    test "rejects updates and item changes from a record read before locking" do
+      user = admin_fixture()
+      scope = scope_for(user)
+
+      invoice =
+        create_sales_invoice!(
+          user,
+          Map.put(base_invoice_attrs(), :sales_invoice_items, [base_item_attrs(%{})])
+        )
+
+      [item] = invoice.sales_invoice_items
+      Invoicing.lock_sales_invoice_for_ksef!(invoice, scope: scope)
+
+      assert {:error, %Invalid{}} =
+               Invoicing.update_sales_invoice(invoice, %{buyer_full_name: "Changed buyer"}, scope: scope)
+
+      assert {:error, %Invalid{}} =
+               invoice
+               |> Ash.Changeset.for_update(
+                 :denormalize_item_names,
+                 %{item_names: "Changed item names"},
+                 scope: scope
+               )
+               |> Ash.update(scope: scope)
+
+      assert {:error, %Invalid{}} =
+               Invoicing.update_sales_invoice(
+                 invoice,
+                 %{sales_invoice_items: [%{id: item.id, name: "Changed item", unit_price: 500}]},
+                 scope: scope
+               )
+
+      refetched =
+        Invoicing.get_sales_invoice!(invoice.id, load: [:sales_invoice_items], scope: scope)
+
+      assert refetched.buyer_full_name == invoice.buyer_full_name
+      assert [%{name: name, unit_price: price}] = refetched.sales_invoice_items
+      assert name == item.name
+      assert Decimal.equal?(price, item.unit_price)
+    end
+
+    test "rejects deletion from a record read before locking" do
+      user = admin_fixture()
+      scope = scope_for(user)
+
+      invoice =
+        create_sales_invoice!(
+          user,
+          Map.put(base_invoice_attrs(), :sales_invoice_items, [base_item_attrs(%{})])
+        )
+
+      Invoicing.lock_sales_invoice_for_ksef!(invoice, scope: scope)
+
+      assert {:error, %Invalid{}} = Invoicing.destroy_sales_invoice(invoice, scope: scope)
+      assert Invoicing.get_sales_invoice!(invoice.id, scope: scope).locked_at
+    end
+
+    test "rejects deletion from a record read before receiving a KSeF number" do
+      user = admin_fixture()
+      scope = scope_for(user)
+
+      invoice =
+        create_sales_invoice!(
+          user,
+          Map.put(base_invoice_attrs(), :sales_invoice_items, [base_item_attrs(%{})])
+        )
+
+      Invoicing.update_sales_invoice_ksef_fields!(
+        invoice,
+        %{ksef_number: "5261040828-20260110-ABCDEF123456-AB"},
+        scope: scope
+      )
+
+      assert {:error, %Invalid{}} = Invoicing.destroy_sales_invoice(invoice, scope: scope)
+      assert Invoicing.get_sales_invoice!(invoice.id, scope: scope).ksef_number
+    end
+  end
+
   describe "attach_suggested_counterparty/2" do
+    for ksef_number <- [nil, "5261040828-20260110-ABCDEF123456-AB"] do
+      @ksef_number ksef_number
+
+      test "allows internal attachment without changing KSeF XML when ksef_number is #{inspect(ksef_number)}" do
+        user = admin_fixture()
+        scope = scope_for(user)
+
+        invoice =
+          user
+          |> create_sales_invoice!(Map.put(base_invoice_attrs(), :sales_invoice_items, [base_item_attrs(%{})]))
+          |> Ash.Seed.update!(%{locked_at: DateTime.utc_now(:second), ksef_number: @ksef_number})
+
+        original_xml = issued_invoice_xml(invoice, scope)
+
+        counterparty = company_counterparty_fixture(user, %{tax_id: "DE123456789", country: "DE"})
+
+        assert {:ok, updated} =
+                 Invoicing.attach_suggested_sales_invoice_counterparty(
+                   invoice,
+                   counterparty.id,
+                   scope: scope
+                 )
+
+        refetched = Invoicing.get_sales_invoice!(updated.id, scope: scope)
+        assert refetched.counterparty_id == counterparty.id
+        assert refetched.locked_at == invoice.locked_at
+        assert refetched.ksef_number == invoice.ksef_number
+        assert issued_invoice_xml(refetched, scope) == original_xml
+
+        assert {:error, %Invalid{}} =
+                 Invoicing.update_sales_invoice(refetched, %{buyer_full_name: "Changed buyer"}, scope: scope)
+
+        assert {:error, %Invalid{}} = Invoicing.destroy_sales_invoice(refetched, scope: scope)
+      end
+    end
+
     test "rejects attach when invoice no longer matches suggestion predicate" do
       user = admin_fixture()
       scope = scope_for(user)
@@ -339,7 +455,7 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoiceTest do
       assert {:error, %Invalid{}} =
                Invoicing.attach_suggested_sales_invoice_counterparty(
                  non_matching_invoice,
-                 %{counterparty_id: counterparty.id},
+                 counterparty.id,
                  scope: scope
                )
 
@@ -372,7 +488,7 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoiceTest do
       assert {:error, %Invalid{}} =
                Invoicing.attach_suggested_sales_invoice_counterparty(
                  invoice,
-                 %{counterparty_id: other_counterparty.id},
+                 other_counterparty.id,
                  scope: scope
                )
 
@@ -382,6 +498,13 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoiceTest do
   end
 
   defp scope_for(user), do: %Scope{actor: user, tenant: user.organization_id}
+
+  defp issued_invoice_xml(invoice, scope) do
+    # The renderer generates a fresh timestamp on each call; compare the issued content.
+    invoice
+    |> InvoiceRenderer.render_fa3(scope: scope)
+    |> String.replace(~r/<DataWytworzeniaFa>[^<]+<\/DataWytworzeniaFa>/, "")
+  end
 
   defp create_sales_invoice!(user, attrs) do
     invoice = Invoicing.create_sales_invoice!(attrs, scope: scope_for(user))
