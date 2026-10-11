@@ -96,6 +96,14 @@ jobs:
         run: mix depscheck
         if: ${{ !cancelled() && steps.setup.outcome == 'success' }}
 
+      - name: Audit Hex dependencies
+        run: mix hex.audit
+        if: ${{ !cancelled() && steps.setup.outcome == 'success' }}
+
+      - name: Audit npm dependencies
+        run: mix assets.audit
+        if: ${{ !cancelled() && steps.setup.outcome == 'success' && steps.npm.outcome == 'success' }}
+
       - name: Check npm dependency licenses
         run: mix assets.licenses
         if: ${{ !cancelled() && steps.setup.outcome == 'success' && steps.npm.outcome == 'success' }}

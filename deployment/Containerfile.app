@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 
-ARG BUILDER_IMAGE="hexpm/elixir:1.20.4-erlang-29.0.6-alpine-3.23.5@sha256:534e1f77442a657c6886f81bba80010355249e31edf6b06750ecc56d21a3f38c"
+ARG BUILDER_IMAGE="hexpm/elixir:1.20.4-erlang-29.1.1-alpine-3.23.6@sha256:21271f75be4cbc2d893611f3a04ab19e8399c81baf6595c21fcbdd9e9950b6c0"
 ARG RUNNER_IMAGE="alpine:3.22@sha256:55ae5d250caebc548793f321534bc6a8ef1d116f334f18f4ada1b2daad3251b2"
 
 FROM ${BUILDER_IMAGE} AS builder
@@ -27,6 +27,7 @@ RUN export HALF_CORES=$(($(nproc) / 2)) && \
     mix deps.compile
 
 COPY assets/package.json assets/package-lock.json assets/
+COPY assets/.npmrc assets/.npmrc
 RUN npm ci --prefix assets
 RUN npm install --global accent-cli@0.19.0
 

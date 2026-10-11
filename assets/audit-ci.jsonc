@@ -1,0 +1,23 @@
+{
+  "$schema": "https://github.com/IBM/audit-ci/raw/main/docs/schema.json",
+  "package-manager": "npm",
+  "low": true,
+  "report-type": "summary",
+  "show-found": false,
+  "allowlist": [
+    {
+      "GHSA-vfj7-8cjw-p6xm|@tailwindcss/cli>@parcel/watcher>micromatch>braces": {
+        "active": true,
+        "expiry": "2026-11-10T00:00:00Z",
+        "notes": "Build/watch tooling only: patterns come from project sources, not web requests. Review upstream fixes before extending this exception."
+      }
+    },
+    {
+      "GHSA-rj75-hqrm-r3gf|@tailwindcss/typography>postcss-selector-parser": {
+        "active": true,
+        "expiry": "2026-11-10T00:00:00Z",
+        "notes": "CSS build tooling only: selectors come from project sources, not web requests. Review upstream fixes before extending this exception."
+      }
+    }
+  ]
+}

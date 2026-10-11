@@ -54,6 +54,9 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Controllers.Shared do
   end
 
   # pdf download needs to know the correction_id unlike the view
+  # sobelow_skip ["XSS.SendResp"]
+  # The validated share token selects a scoped invoice; the response is a
+  # generated application/pdf attachment, not user-provided HTML.
   def pdf(conn, %{"token" => token_string}) do
     {root_token, correction_id} = split_pdf_token(token_string)
 

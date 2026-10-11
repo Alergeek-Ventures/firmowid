@@ -11,6 +11,9 @@ defmodule FirmowidWeb.Infrastructure.Controllers.Sitemap do
   @doc """
   Returns sitemap.xml containing canonical public URLs.
   """
+  # sobelow_skip ["XSS.SendResp"]
+  # This XML contains only fixed public paths, the configured endpoint URL and
+  # today's ISO date, never request input; it is served as application/xml.
   def index(conn, _params) do
     now = Date.to_iso8601(Date.utc_today())
 

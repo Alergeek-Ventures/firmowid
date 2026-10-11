@@ -5,6 +5,38 @@ defmodule Firmowid.Ash.Invoicing.Digests.EmailTest do
   alias Firmowid.Ash.Invoicing.Digests.Email
 
   describe "KSeF digest email rendering" do
+    test "escapes invoice fields and suggestion labels in HTML fragments" do
+      invoice =
+        invoice_with_sensitive_fields(%{
+          seller_display_name: "<script>alert('seller')</script>",
+          items_list: [%{name: "<img src=x onerror=alert(1)>", quantity: "<b>2</b>"}]
+        })
+
+      html =
+        Email.render_html(%{}, [invoice],
+          invoice_summaries: %{
+            invoice.id => %{
+              suggestions_count: 1,
+              top_suggestions: [
+                %{
+                  booking_date_label: "<svg onload=alert(1)>",
+                  score: 0.96,
+                  avatar_color: "#D9E7F7"
+                }
+              ]
+            }
+          }
+        )
+
+      assert html =~ "&lt;script&gt;"
+      assert html =~ "&lt;img src=x onerror=alert(1)&gt;"
+      assert html =~ "&lt;b&gt;2&lt;/b&gt;"
+      assert html =~ "&lt;svg onload=alert(1)&gt;"
+      refute html =~ "<script>"
+      refute html =~ "<img src=x"
+      refute html =~ "<svg onload="
+    end
+
     test "single invoice body shows suggestion placeholders without exposing sensitive values" do
       user = %{email: "admin@example.com"}
       digest = %{}

@@ -51,6 +51,9 @@ defmodule Firmowid.Ash.Timetracker.LeaveRequestEmails do
     end
   end
 
+  # sobelow_skip ["XSS.Raw"]
+  # format_note/1 HTML-escapes the user's note before adding fixed <br> tags;
+  # raw/1 preserves those line breaks without trusting any user-supplied markup.
   defp render_html(employee_name, leave_request, url) do
     assigns = %{
       employee_name: employee_name,

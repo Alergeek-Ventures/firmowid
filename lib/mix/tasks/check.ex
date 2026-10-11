@@ -28,10 +28,12 @@ defmodule Mix.Tasks.Check do
     {"Format", ["format", "--check-formatted"]},
     {"Translations", ["translations.check"]},
     {"Unused Deps", ["deps.unlock", "--check-unused"]},
+    {"Hex audit", ["hex.audit"]},
     {"Depscheck", ["depscheck"]},
     {"Credo", ["credo", "--strict"]},
     {"Sobelow", ["sobelow", "--config", "--compact", "--private"]},
-    {"Npm licenses", ["assets.licenses"]}
+    {"Npm licenses", ["assets.licenses"]},
+    {"Npm audit", ["assets.audit"]}
   ]
 
   @full_checks [
