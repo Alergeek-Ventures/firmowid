@@ -118,11 +118,50 @@ enabled in normal CI: this overhead does not justify removing its regression
 signal.
 
 Every sample recompiled 545 application files inside the native command despite
-the Test task's `--no-compile`. Consequently the wall times include recompilation
-and the DB-reset alias; they are **not pure coverage-instrumentation timings**.
+the Test task's `--no-compile`. These samples predate the test-alias correction
+described below. Consequently the wall times include recompilation and the
+DB-reset alias; they are **not pure coverage-instrumentation timings**.
 ExUnit times alone do not demonstrate a stable coverage slowdown. The observed
-recompilation remains a separate optimization candidate, not a reason to change
+recompilation was investigated separately, not treated as a reason to change
 coverage policy or claim that the whole measured difference is instrumentation.
+
+#### Test-alias compilation trigger
+
+The test alias included `ash_postgres.drop --force --force-drop --quiet`.
+In installed AshPostgres 2.13.1, `Drop.run/1` resolves repositories through
+`AshPostgres.Mix.Helpers.repos!/2`. That helper passes the original arguments
+unchanged to `Mix.Task.run("app.config", args)`, which in Elixir 1.20.4 forwards
+them to `compile`. Thus the drop's confirmation flag `--force` also forces
+application compilation before the test task can honor `--no-compile`.
+Ecto's later `ensure_repo/2` removes `--force`, but that is too late for the
+earlier AshPostgres helper.
+
+The test alias now omits only `--force`: Ecto 3.14.2 already skips confirmation
+when `start_permanent` is false, as it is in test. `--force-drop` remains, keeping
+the database reset and forced connection termination. Compilation still runs
+normally when source is stale, and CI's strict setup compile remains unchanged.
+Runtime confirmation and a post-fix paired measurement are pending CI.
+
+Primary sources:
+[AshPostgres Drop](https://github.com/ash-project/ash_postgres/blob/v2.13.1/lib/mix/tasks/ash_postgres.drop.ex),
+[repository loading helper](https://github.com/ash-project/ash_postgres/blob/v2.13.1/lib/mix/helpers.ex),
+[Mix app.config](https://github.com/elixir-lang/elixir/blob/v1.20.4/lib/mix/lib/mix/tasks/app.config.ex),
+[Ecto drop confirmation](https://github.com/elixir-ecto/ecto/blob/v3.14.2/lib/mix/tasks/ecto.drop.ex).
+
+#### Local development implications
+
+This is a shared project alias, not a CI-only workaround: the same forced
+recompilation affected local `mix test`, including focused tests, and the test
+stage of `mix check --quick`. Removing the confirmation flag preserves normal
+incremental compilation in all those callsites.
+
+There is also a separate, intentional full recompilation during
+`gettext.extract --check-up-to-date`: installed Gettext explicitly runs
+`compile --force-elixir` / `compile.elixir --force` to collect messages.
+The full `mix check` includes that task; `mix check --quick` skips it. This
+is not evidence that ordinary source edits or Phoenix reloads must rebuild
+the whole project. The development server's incremental-compilation behavior
+has not been measured here; do not generalize the test-alias finding to it.
 
 ### Cache first-main-scope / warm
 

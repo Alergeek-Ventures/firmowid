@@ -219,7 +219,8 @@ defmodule Firmowid.MixProject do
       ],
       "db.setup": ["ash.setup", "run priv/repo/seeds.exs"],
       "ecto.reset": ["ash_postgres.drop --force --force-drop", "db.setup"],
-      test: ["ash_postgres.drop --force --force-drop --quiet", "ash.setup --quiet", "test"],
+      # Test drops need no confirmation; AshPostgres forwards --force to compilation.
+      test: ["ash_postgres.drop --force-drop --quiet", "ash.setup --quiet", "test"],
       "assets.setup": ["cmd npm ci --prefix assets", "esbuild.install --if-missing"],
       "assets.build": ["tailwind firmowid", "esbuild firmowid"],
       "assets.deploy": [
