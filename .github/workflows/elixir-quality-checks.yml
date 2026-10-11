@@ -166,18 +166,21 @@ jobs:
         id: plt_cache
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v5
         with:
-          key: plt-v2-${{ runner.os }}-${{ runner.arch }}-${{ env.MIX_ENV }}-${{ steps.setup.outputs.otp-version }}-${{ steps.setup.outputs.elixir-version }}-${{ hashFiles('mix.exs', 'config/**/*.exs') }}-${{ hashFiles('mix.lock') }}
+          key: plt-v3-${{ runner.os }}-${{ runner.arch }}-${{ env.MIX_ENV }}-${{ steps.setup.outputs.otp-version }}-${{ steps.setup.outputs.elixir-version }}-${{ hashFiles('mix.exs', 'config/**/*.exs') }}-${{ hashFiles('mix.lock') }}
+          # Older inputs are reusable starting points, validated before the new exact save.
           restore-keys: |
-            plt-v2-${{ runner.os }}-${{ runner.arch }}-${{ env.MIX_ENV }}-${{ steps.setup.outputs.otp-version }}-${{ steps.setup.outputs.elixir-version }}-${{ hashFiles('mix.exs', 'config/**/*.exs') }}-
+            plt-v3-${{ runner.os }}-${{ runner.arch }}-${{ env.MIX_ENV }}-${{ steps.setup.outputs.otp-version }}-${{ steps.setup.outputs.elixir-version }}-${{ hashFiles('mix.exs', 'config/**/*.exs') }}-
+            plt-v3-${{ runner.os }}-${{ runner.arch }}-${{ env.MIX_ENV }}-${{ steps.setup.outputs.otp-version }}-${{ steps.setup.outputs.elixir-version }}-
+            plt-v2-${{ runner.os }}-${{ runner.arch }}-${{ env.MIX_ENV }}-${{ steps.setup.outputs.otp-version }}-${{ steps.setup.outputs.elixir-version }}-
           path: |
             _build/test/*.plt
             _build/test/*.plt.hash
 
-      # Create PLTs if no cache was found
-      - name: Create PLTs
+      # A partial hit is not exact: check its modules before saving under the new key.
+      - name: Create or update PLTs
         id: plt_create
         if: steps.plt_cache.outputs.cache-hit != 'true'
-        run: mix dialyzer --plt
+        run: mix dialyzer --plt --force-check
 
       # Preserve successfully built PLTs even if analysis later finds warnings.
       - name: Save core PLT cache
