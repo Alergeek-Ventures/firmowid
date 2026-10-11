@@ -25,6 +25,18 @@ defmodule Firmowid.Ash.Finances.Transaction do
     repo Firmowid.Repo
   end
 
+  field_policies do
+    private_fields :include
+
+    field_policy [:salary_user_id, :salary_month] do
+      authorize_if actor_attribute_equals(:role, :admin)
+    end
+
+    field_policy :* do
+      authorize_if always()
+    end
+  end
+
   jido do
     action :list,
       name: "list_transactions",
@@ -49,7 +61,7 @@ defmodule Firmowid.Ash.Finances.Transaction do
       - `date_from`, `date_to` — date range on `booking_date`.
       - `currency` — exact ISO currency code filter on `amount`.
       - `reconciliation`:
-        - `:matched` (linked to an invoice)
+        - `:matched` (linked to an invoice or monthly salary)
         - `:pending` (unmatched, not skipped)
         - `:skipped` (unmatched, skipped)
         - `nil` - omit for all transactions
@@ -64,6 +76,30 @@ defmodule Firmowid.Ash.Finances.Transaction do
       argument :date_to, :date
       argument :query, :string
       argument :currency, :string
+      argument :ids, {:array, :uuid}
+      argument :salary_user_id, :uuid
+      argument :salary_month, :date
+      argument :salary_assigned, :boolean
+
+      prepare build(filter: expr(id in ^arg(:ids))) do
+        where present(:ids)
+      end
+
+      prepare build(filter: expr(salary_user_id == ^arg(:salary_user_id))) do
+        where present(:salary_user_id)
+      end
+
+      prepare build(filter: expr(salary_month == ^arg(:salary_month))) do
+        where present(:salary_month)
+      end
+
+      prepare build(filter: expr(has_salary?)) do
+        where argument_equals(:salary_assigned, true)
+      end
+
+      prepare build(filter: expr(not has_salary?)) do
+        where argument_equals(:salary_assigned, false)
+      end
 
       argument :reconciliation, :atom do
         constraints one_of: [:matched, :skipped, :pending]
@@ -87,6 +123,7 @@ defmodule Firmowid.Ash.Finances.Transaction do
                   expr(
                     not exists(cost_invoices, true) and
                       not exists(sales_invoices, true) and
+                      not has_salary? and
                       skip_invoicing == false
                   )
               ) do
@@ -98,7 +135,8 @@ defmodule Firmowid.Ash.Finances.Transaction do
                 filter:
                   expr(
                     exists(cost_invoices, true) or
-                      exists(sales_invoices, true)
+                      exists(sales_invoices, true) or
+                      has_salary?
                   )
               ) do
         where argument_equals(:reconciliation, :matched)
@@ -110,6 +148,7 @@ defmodule Firmowid.Ash.Finances.Transaction do
                   expr(
                     not exists(cost_invoices, true) and
                       not exists(sales_invoices, true) and
+                      not has_salary? and
                       skip_invoicing == true
                   )
               ) do
@@ -156,7 +195,32 @@ defmodule Firmowid.Ash.Finances.Transaction do
 
     update :set_skip_invoicing do
       description "Set whether this transaction should be skipped during matching and invoicing."
+      primary? true
       accept [:skip_invoicing]
+      change filter(expr(not has_salary?))
+    end
+
+    update :connect_salary do
+      description "Manually assign an outgoing transaction to one employee's salary month."
+      accept [:salary_user_id, :salary_month]
+      require_atomic? false
+
+      validate present([:salary_user_id, :salary_month])
+      change Firmowid.Ash.Finances.Changes.ConnectSalary
+
+      change filter(
+               expr(
+                 not has_salary? and skip_invoicing == false and
+                   not exists(cost_invoices, true) and not exists(sales_invoices, true)
+               )
+             )
+    end
+
+    update :disconnect_salary do
+      description "Remove a monthly salary assignment without changing the bank transaction."
+      accept []
+      change set_attribute(:salary_user_id, nil)
+      change set_attribute(:salary_month, nil)
     end
   end
 
@@ -165,8 +229,7 @@ defmodule Firmowid.Ash.Finances.Transaction do
       authorize_if always()
     end
 
-    # invoice_matcher: full access for transaction linking
-    bypass {SystemActorRole, roles: [:invoice_matcher]} do
+    bypass [{SystemActorRole, roles: [:invoice_matcher]}, action_type(:read)] do
       authorize_if always()
     end
 
@@ -185,8 +248,12 @@ defmodule Firmowid.Ash.Finances.Transaction do
     end
 
     # :accountant+: set_skip_invoicing (only user-facing update)
-    policy [action_type(:update), {AtLeastRole, role: :accountant}] do
+    policy [action(:set_skip_invoicing), {AtLeastRole, role: :accountant}] do
       authorize_if always()
+    end
+
+    policy action([:connect_salary, :disconnect_salary]) do
+      authorize_if actor_attribute_equals(:role, :admin)
     end
 
     # Write actions (non-system, non-admin): admin only
@@ -201,6 +268,8 @@ defmodule Firmowid.Ash.Finances.Transaction do
 
     publish :upsert_from_sync, ["updated", :_tenant]
     publish :set_skip_invoicing, ["updated", :_tenant]
+    publish :connect_salary, ["updated", :_tenant]
+    publish :disconnect_salary, ["updated", :_tenant]
   end
 
   multitenancy do
@@ -225,11 +294,18 @@ defmodule Firmowid.Ash.Finances.Transaction do
 
     # Firmowid data
     attribute :skip_invoicing, :boolean, public?: true, default: false
+    attribute :salary_month, :date
 
     Resource.firmowid_timestamps()
   end
 
   relationships do
+    belongs_to :salary_user, Firmowid.Ash.Core.User do
+      allow_nil? true
+      attribute_writable? true
+      filter expr(^actor(:role) == :admin)
+    end
+
     has_many :entity_tags, Firmowid.Ash.Analysis.EntityTag do
       relationship_context %{data_layer: %{table: "transaction_entity_tags"}}
       source_attribute :id
@@ -260,6 +336,12 @@ defmodule Firmowid.Ash.Finances.Transaction do
   end
 
   calculations do
+    calculate :has_salary?, :boolean, expr(not is_nil(salary_user_id)) do
+      public? true
+
+      description "Whether the transaction is settled by a salary, without exposing payroll details."
+    end
+
     calculate :date, :date, expr(booking_date)
 
     calculate :direction, :atom, Calculations.Direction do
@@ -303,6 +385,8 @@ defmodule Firmowid.Ash.Finances.Transaction do
   end
 
   identities do
+    identity :unique_salary_month, [:salary_user_id, :salary_month, :organization_id]
+
     identity :unique_internal_tx_per_account, [
       :internal_transaction_id,
       :bank_account_id,

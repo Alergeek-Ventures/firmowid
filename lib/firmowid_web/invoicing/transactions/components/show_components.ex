@@ -16,8 +16,10 @@ defmodule FirmowidWeb.Invoicing.Transactions.Components.ShowComponents do
   alias Firmowid.Ash.Finances.Transaction
   alias Firmowid.Ash.Invoicing.CostInvoice
   alias Firmowid.Ash.Invoicing.SalesInvoice
+  alias Firmowid.Invoicing.RecommendationThresholds
   alias FirmowidWeb.Invoicing.Components.InvoiceAssistant
   alias FirmowidWeb.Invoicing.Components.InvoiceDetails
+  alias FirmowidWeb.Invoicing.Components.MatchingComponents
   alias FirmowidWeb.Invoicing.Utilities.Navigation
 
   @transaction_suggested_messages [
@@ -147,16 +149,11 @@ defmodule FirmowidWeb.Invoicing.Transactions.Components.ShowComponents do
 
     ~H"""
     <section class="space-y-8">
-      <div class="flex flex-row items-center justify-between">
-        <p class="text-lg/tight font-medium">Dopasowanie</p>
-
-        <div class="flex flex-row gap-2">
-          <div class="flex flex-row items-center self-stretch rounded-md bg-green-200 px-[14.5px]">
-            <p class="text-sm/tight font-medium text-green-700">Komplet</p>
-          </div>
+      <MatchingComponents.confirmed_header>
+        <:action>
           <.status_button phx-click="unlink_all" icon="hero-arrow-uturn-left-micro" />
-        </div>
-      </div>
+        </:action>
+      </MatchingComponents.confirmed_header>
 
       <div class="flex flex-col gap-4">
         <.linked_invoice_card :for={card <- @cards} card={card} />
@@ -187,13 +184,62 @@ defmodule FirmowidWeb.Invoicing.Transactions.Components.ShowComponents do
     """
   end
 
+  attr :suggestions, :list, required: true
+
+  @doc "Renders invoice recommendations for a transaction with explicit manual confirmation."
+  @spec invoice_suggestions(map()) :: Phoenix.LiveView.Rendered.t()
+  def invoice_suggestions(assigns) do
+    assigns =
+      assigns
+      |> assign(:green_idx, RecommendationThresholds.highest_green_index(assigns.suggestions))
+      |> assign(
+        :candidates,
+        Enum.map(assigns.suggestions, fn {invoice, score} -> invoice_candidate(invoice, score) end)
+      )
+
+    ~H"""
+    <section :if={@candidates != []} id="invoice-suggestions">
+      <MatchingComponents.candidates
+        title={gettext("Potential invoices for this transaction")}
+        date_label={gettext("Date")}
+        amount_label={gettext("Amount")}
+      >
+        <:candidate
+          :for={{candidate, index} <- Enum.with_index(@candidates)}
+          id={"invoice-suggestion-#{candidate.id}"}
+          name={candidate.name}
+          description={candidate.information}
+          date={candidate.date}
+          amount={candidate.amount}
+        >
+          <InvoiceDetails.prediction_score_indicator
+            transaction_id={candidate.id}
+            prediction_score={candidate.score}
+            is_highest_green={@green_idx == index}
+          />
+          <.button
+            type="button"
+            phx-click="connect_invoice"
+            phx-value-invoice_id={candidate.id}
+            variant={if @green_idx == index, do: "tertiary", else: "secondary"}
+            size="small"
+          >
+            {gettext("Confirm")}
+          </.button>
+        </:candidate>
+      </MatchingComponents.candidates>
+    </section>
+    """
+  end
+
   attr :transaction, Transaction, required: true
   attr :can_write, :boolean, default: true
+  attr :show_no_recommendations, :boolean, default: true
 
   def empty_state(assigns) do
     ~H"""
     <div class="flex flex-col gap-18">
-      <div class="flex flex-col items-center gap-4 px-4 pt-8 pb-6">
+      <div :if={@show_no_recommendations} class="flex flex-col items-center gap-4 px-4 pt-8 pb-6">
         <Lucideicons.file_question_mark class="size-12" />
 
         <div class="space-y-2 text-center">
@@ -214,11 +260,30 @@ defmodule FirmowidWeb.Invoicing.Transactions.Components.ShowComponents do
         </.button>
       </div>
 
-      <div :if={@can_write} class="space-y-6">
-        <h3 class="leading-tight font-medium">Co jeszcze możesz zrobić?</h3>
+      <div class="space-y-6">
+        <h3 :if={@can_write and @show_no_recommendations} class="leading-tight font-medium">
+          Co jeszcze możesz zrobić?
+        </h3>
 
         <div class="grid grid-cols-[1fr_8rem] gap-6 lg:gap-x-10">
-          <div class="col-span-full grid grid-cols-subgrid items-center">
+          <div
+            :if={not @show_no_recommendations}
+            class="col-span-full grid grid-cols-subgrid items-center"
+          >
+            <p class="text-sm/snug text-balance text-grey-700">
+              {gettext("Ask Firmowid for help with invoices")}
+            </p>
+            <.button
+              phx-click="show_chat"
+              variant="primary"
+              accent={assistant_accent(@transaction)}
+              size="small"
+              class="w-full"
+            >
+              {gettext("Ask")}
+            </.button>
+          </div>
+          <div :if={@can_write} class="col-span-full grid grid-cols-subgrid items-center">
             <p class="text-sm/snug text-balance text-grey-700">
               {skip_transaction_copy(@transaction)}
             </p>
@@ -248,38 +313,26 @@ defmodule FirmowidWeb.Invoicing.Transactions.Components.ShowComponents do
 
   def linked_invoice_card(assigns) do
     ~H"""
-    <div class="flex flex-col gap-4 rounded-md bg-[#D0E6CE66] p-4">
-      <div :if={@card.badge_variant} class="flex flex-row items-center justify-between">
-        <div class="space-y-1">
-          <p class="text-sm/snug text-grey-700">{@card.type_label}</p>
-          <.link kind="unstyled" navigate={@card.navigate} class="leading-snug hover:underline">
-            {@card.number}
-          </.link>
-        </div>
-
-        <.invoice_source_badge variant={@card.badge_variant} size="small" />
-      </div>
-
-      <div class="grid grid-flow-col grid-cols-[2fr_1fr_1fr] grid-rows-2 gap-x-4 gap-y-6">
-        <div :if={is_nil(@card.badge_variant)} class="space-y-1">
-          <p class="text-sm/snug text-grey-700">{@card.type_label}</p>
-          <.link kind="unstyled" navigate={@card.navigate} class="leading-snug hover:underline">
-            {@card.number}
-          </.link>
-        </div>
-
-        <%= for {label, val} <- @card.metadata do %>
+    <MatchingComponents.confirmed_card amount={@card.amount}>
+      <:heading :if={@card.badge_variant}>
+        <div class="flex flex-row items-center justify-between">
           <div class="space-y-1">
-            <p class="text-sm/snug text-grey-700">{label}</p>
-            <p class="leading-snug">{val}</p>
+            <p class="text-sm/snug text-grey-700">{@card.type_label}</p>
+            <.link kind="unstyled" navigate={@card.navigate} class="leading-snug hover:underline">
+              {@card.number}
+            </.link>
           </div>
-        <% end %>
 
-        <div class="row-span-2 flex items-end justify-end text-right">
-          <p class="text-lg/snug text-green-700">{@card.amount}</p>
+          <.invoice_source_badge variant={@card.badge_variant} size="small" />
         </div>
-      </div>
-    </div>
+      </:heading>
+      <:detail :if={is_nil(@card.badge_variant)} label={@card.type_label}>
+        <.link kind="unstyled" navigate={@card.navigate} class="leading-snug hover:underline">
+          {@card.number}
+        </.link>
+      </:detail>
+      <:detail :for={{label, val} <- @card.metadata} label={label}>{val}</:detail>
+    </MatchingComponents.confirmed_card>
     """
   end
 
@@ -410,6 +463,34 @@ defmodule FirmowidWeb.Invoicing.Transactions.Components.ShowComponents do
 
     Enum.map(transaction.sales_invoices, &sales_invoice_card(&1, invoice_return_to)) ++
       Enum.map(transaction.cost_invoices, &cost_invoice_card(&1, invoice_return_to))
+  end
+
+  defp invoice_candidate(%CostInvoice{} = invoice, score) do
+    %{
+      id: invoice.id,
+      name: invoice.effective_seller_display_name,
+      information: invoice_information(invoice.invoice_identifier, invoice.description),
+      date: invoice.issue_date,
+      amount: invoice.effective_amount,
+      score: score
+    }
+  end
+
+  defp invoice_candidate(%SalesInvoice{} = invoice, score) do
+    %{
+      id: invoice.id,
+      name: invoice.buyer_display_name_label,
+      information: invoice_information(invoice.invoice_number, first_sales_item_name(invoice)),
+      date: invoice.issue_date,
+      amount: invoice.effective_amount,
+      score: score
+    }
+  end
+
+  defp invoice_information(number, description) do
+    [number, description]
+    |> Enum.reject(&(&1 in [nil, "", "—"]))
+    |> Enum.join(" · ")
   end
 
   defp sales_invoice_card(%SalesInvoice{} = invoice, return_to) do

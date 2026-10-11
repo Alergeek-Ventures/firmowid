@@ -22,6 +22,7 @@ alias Firmowid.Seeds.Delegations
 alias Firmowid.Seeds.MonthM0
 alias Firmowid.Seeds.MonthM1
 alias Firmowid.Seeds.MonthM2
+alias Firmowid.Seeds.SalaryMatching
 alias Firmowid.Seeds.Timetracker, as: TimetrackerSeeds
 alias Firmowid.Seeds.Voidstack
 
@@ -31,7 +32,8 @@ seed_actor = %{id: "00000000-0000-0000-0000-000000000000", role: :admin}
 
 seeds_dir = Path.join(__DIR__, "seeds")
 
-for file <- ~w(helpers bytecraft month_m2 month_m1 month_m0 timetracker delegations voidstack) do
+for file <-
+      ~w(helpers bytecraft month_m2 month_m1 month_m0 timetracker salary_matching delegations voidstack) do
   Code.require_file("#{file}.exs", seeds_dir)
 end
 
@@ -54,6 +56,7 @@ else
 
   # — Timetracker: employment contracts, salaries, sessions, hours records —
   TimetrackerSeeds.seed!(ctx)
+  SalaryMatching.seed!(ctx)
 
   # — Example delegations for the primary employee —
   Delegations.seed!(ctx)

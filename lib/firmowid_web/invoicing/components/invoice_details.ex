@@ -17,6 +17,7 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceDetails do
 
   alias Firmowid.Ash.Invoicing.SalesInvoice
   alias Firmowid.Invoicing.RecommendationThresholds
+  alias FirmowidWeb.Invoicing.Components.MatchingComponents
   alias FirmowidWeb.Invoicing.Utilities.Navigation
 
   attr :is_cost_invoice, :boolean
@@ -305,65 +306,26 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceDetails do
   attr :prediction_score, :float, required: true
   attr :is_highest_green, :boolean, default: false
 
-  def prediction_score_indicator(%{predicition_level: :high} = assigns) do
-    ~H"""
-    <div
-      id={"match-prediction-score-#{@transaction_id}"}
-      phx-hook="Tippy"
-      data-tippy-content={"Ocena AI: #{Float.round(100 *@prediction_score, 2)}% pewności"}
-      class="flex size-8 shrink-0 flex-col justify-between rounded-md bg-green-200 p-2"
-    >
-      <div class="h-0.5 w-full rounded-md bg-green-700" />
-      <div class="h-0.5 w-[70%] rounded-md bg-green-700" />
-      <div class="h-0.5 w-[40%] rounded-md bg-green-700" />
-    </div>
-    """
-  end
-
-  def prediction_score_indicator(%{predicition_level: :mid} = assigns) do
-    ~H"""
-    <div
-      id={"match-prediction-score-#{@transaction_id}"}
-      phx-hook="Tippy"
-      data-tippy-content={"Ocena AI: #{Float.round(100 *@prediction_score, 2)}% pewności"}
-      class="flex size-8 shrink-0 flex-col justify-between rounded-md bg-orange-200 p-2"
-    >
-      <div class="h-0.5 w-full rounded-md bg-white" />
-      <div class="h-0.5 w-[70%] rounded-md bg-orange-700" />
-      <div class="h-0.5 w-[40%] rounded-md bg-orange-700" />
-    </div>
-    """
-  end
-
-  def prediction_score_indicator(%{predicition_level: :low} = assigns) do
-    ~H"""
-    <div
-      id={"match-prediction-score-#{@transaction_id}"}
-      phx-hook="Tippy"
-      data-tippy-content={"Ocena AI: #{Float.round(100 *@prediction_score, 2)}% pewności"}
-      class="flex size-8 shrink-0 flex-col justify-between rounded-md bg-red-200 p-2"
-    >
-      <div class="h-0.5 w-full rounded-md bg-white" />
-      <div class="h-0.5 w-[70%] rounded-md bg-white" />
-      <div class="h-0.5 w-[40%] rounded-md bg-red-700" />
-    </div>
-    """
-  end
-
   def prediction_score_indicator(assigns) do
     # consult
     # lib/firmowid/invoicing/matching/training/logisitic-regression.livemd
     # to retrain and recalculate the thresholds
 
-    predicition_level =
+    prediction_level =
       RecommendationThresholds.prediction_level(
         assigns.prediction_score,
         assigns.is_highest_green
       )
 
-    assigns = assign(assigns, predicition_level: predicition_level)
+    assigns = assign(assigns, :prediction_level, prediction_level)
 
-    prediction_score_indicator(assigns)
+    ~H"""
+    <MatchingComponents.score_indicator
+      id={"match-prediction-score-#{@transaction_id}"}
+      level={@prediction_level}
+      tooltip={"Ocena AI: #{Float.round(100 * @prediction_score, 2)}% pewności"}
+    />
+    """
   end
 
   attr :is_cost_invoice, :boolean, required: true
@@ -404,40 +366,37 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceDetails do
 
     ~H"""
     <section class="space-y-8">
-      <div class="flex flex-row items-center justify-between">
-        <p class="text-lg/tight font-medium">Dopasowanie</p>
-
-        <div class="flex flex-row gap-2">
-          <div class="flex flex-row items-center self-stretch rounded-md bg-green-200 px-[14.5px]">
-            <p class="text-sm/tight font-medium text-green-700">Komplet</p>
-          </div>
+      <MatchingComponents.confirmed_header>
+        <:action>
           {render_slot(@status_action)}
-        </div>
-      </div>
+        </:action>
+      </MatchingComponents.confirmed_header>
 
       <div class="flex flex-col gap-4">
-        <div
+        <MatchingComponents.confirmed_card
           :for={transaction <- @transactions}
-          class="grid grid-flow-col grid-cols-[2fr_1fr_1fr] grid-rows-2 gap-x-4 gap-y-6 rounded-md bg-[#D0E6CE66] p-4"
+          amount={transaction.amount}
+          large_amount?={@single_transaction?}
         >
-          <%= for {label, val} <- [
-              {"Kontrahent", if(@is_cost_invoice, do: transaction.creditor_name, else: transaction.debtor_name)},
-              {"Wierzyciel", if(not @is_cost_invoice, do: transaction.creditor_name, else: transaction.debtor_name)},
-              {"Zaksięgowano", transaction.booking_date},
-              transaction.value_date && {"Przewalutowano", transaction.value_date},
-            ] do %>
-            <div class="space-y-1">
-              <p class="text-sm/snug text-grey-700">{label}</p>
-              <p class="leading-snug">{val}</p>
-            </div>
-          <% end %>
-
-          <div class="row-span-2 flex items-end justify-end text-right">
-            <p class={["leading-snug text-green-700", @single_transaction? && "text-lg"]}>
-              {transaction.amount}
-            </p>
-          </div>
-        </div>
+          <:detail
+            :for={
+              {label, val} <- [
+                {"Kontrahent",
+                 if(@is_cost_invoice, do: transaction.creditor_name, else: transaction.debtor_name)},
+                {"Wierzyciel",
+                 if(not @is_cost_invoice,
+                   do: transaction.creditor_name,
+                   else: transaction.debtor_name
+                 )},
+                {"Zaksięgowano", transaction.booking_date},
+                transaction.value_date && {"Przewalutowano", transaction.value_date}
+              ]
+            }
+            label={label}
+          >
+            {val}
+          </:detail>
+        </MatchingComponents.confirmed_card>
 
         <div
           :if={@show_total?}
@@ -639,53 +598,34 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceDetails do
     assigns = assign(assigns, :green_idx, green_idx)
 
     ~H"""
-    <div class="@container flex flex-col gap-16">
-      <div class="flex flex-col gap-4">
-        <h2 class="text-lg/tight font-medium">Potencjalne transakcje dla dokumentu</h2>
-
-        <div class="grid grid-cols-[1fr_repeat(3,min-content)] gap-x-6 gap-y-4 @2xl:gap-x-8 @3xl:grid-cols-[1fr_120px_120px_min-content]">
-          <div class="col-span-full grid grid-cols-subgrid text-sm/snug text-grey-700">
-            <span>Informacje</span>
-            <span class="text-right">Data</span>
-            <span class="text-right">Kwota</span>
-          </div>
-
-          <%= for {{tx, score}, idx} <- Enum.with_index(@potential_transactions) do %>
-            <div
-              id={"potential-transaction-#{tx.id}"}
-              class="col-span-full grid grid-cols-subgrid items-center"
-            >
-              <div class="space-y-1">
-                <p class="text-truncate line-clamp-1 font-semibold">{Map.get(tx, @name_field)}</p>
-                <p class="text-truncate line-clamp-2 text-sm/snug text-grey-600">
-                  {tx.remittance_information_unstructured}
-                </p>
-              </div>
-              <div class="text-right text-nowrap">{tx.booking_date}</div>
-              <div class="text-right text-nowrap">
-                {tx.amount}
-              </div>
-              <div class="flex items-center gap-2">
-                <.prediction_score_indicator
-                  transaction_id={tx.id}
-                  prediction_score={score}
-                  is_highest_green={@green_idx == idx}
-                />
-
-                <.button
-                  phx-click="connect"
-                  phx-value-transaction_id={tx.id}
-                  variant={if(@green_idx == idx, do: "tertiary", else: "secondary")}
-                  size="small"
-                >
-                  Zatwierdź
-                </.button>
-              </div>
-            </div>
-          <% end %>
-        </div>
-      </div>
-    </div>
+    <MatchingComponents.candidates
+      title="Potencjalne transakcje dla dokumentu"
+      date_label="Data"
+      amount_label="Kwota"
+    >
+      <:candidate
+        :for={{{tx, score}, idx} <- Enum.with_index(@potential_transactions)}
+        id={"potential-transaction-#{tx.id}"}
+        name={Map.get(tx, @name_field)}
+        description={tx.remittance_information_unstructured}
+        date={tx.booking_date}
+        amount={tx.amount}
+      >
+        <.prediction_score_indicator
+          transaction_id={tx.id}
+          prediction_score={score}
+          is_highest_green={@green_idx == idx}
+        />
+        <.button
+          phx-click="connect"
+          phx-value-transaction_id={tx.id}
+          variant={if(@green_idx == idx, do: "tertiary", else: "secondary")}
+          size="small"
+        >
+          Zatwierdź
+        </.button>
+      </:candidate>
+    </MatchingComponents.candidates>
     """
   end
 
