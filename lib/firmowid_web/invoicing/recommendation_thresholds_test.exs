@@ -6,6 +6,7 @@ defmodule FirmowidWeb.Invoicing.RecommendationThresholdsTest do
 
   describe "match_chip_type/2" do
     test "returns manual chip with 100 percent" do
+      assert RecommendationThresholds.match_chip_type(nil, :manual) == {:manual, 100}
       assert RecommendationThresholds.match_chip_type(0.5, :manual) == {:manual, 100}
     end
 

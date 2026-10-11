@@ -32,9 +32,9 @@ defmodule Firmowid.Invoicing.RecommendationThresholds do
   Manual matches return `{:manual, 100}` regardless of score.
   """
   @spec match_chip_type(float() | nil, atom() | nil) :: {confidence_level(), integer() | nil}
-  def match_chip_type(nil, _source), do: {nil, nil}
-
   def match_chip_type(_score, :manual), do: {:manual, 100}
+
+  def match_chip_type(nil, _source), do: {nil, nil}
 
   def match_chip_type(score, _source) when is_number(score) do
     cond do
