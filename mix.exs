@@ -18,6 +18,7 @@ defmodule Firmowid.MixProject do
       licenses: ["AGPL-3.0-or-later"],
       hex: [
         ignore_advisories: [
+          # Remove both exceptions on or after 2026-11-10 and rerun mix hex.audit.
           # The vault uses authenticated AES-GCM, never the affected AES-CTR cipher.
           "CVE-2026-95105",
           # Encrypted fields use Cloak.Ecto.Binary, not the affected PBKDF2 field.
