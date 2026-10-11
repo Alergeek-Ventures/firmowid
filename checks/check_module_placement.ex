@@ -4,7 +4,8 @@ defmodule Checks.CheckModulePlacement do
 
   ## Rules
 
-  1. Files in `*/views/` must contain `use FirmowidWeb, :live_view` (direct `Phoenix.LiveView` is forbidden)
+  1. Files in `*/views/` must contain `use FirmowidWeb, :live_view` or its `{:live_view, opts}` form
+     (direct `Phoenix.LiveView` is forbidden)
   2. Files in `*/components/` must contain `use FirmowidWeb, :live_component`
      or `use FirmowidWeb, :html` (direct `Phoenix.Component` or `Phoenix.LiveComponent` is forbidden)
   3. Files in `*/controllers/` must contain `use FirmowidWeb, :controller` (direct `Phoenix.Controller` is forbidden)
@@ -401,6 +402,11 @@ defmodule Checks.CheckModulePlacement do
   # Pattern: use FirmowidWeb, :type (e.g., :live_view, :controller)
   defp find_use_statements({:use, meta, [{:__aliases__, _, [:FirmowidWeb]}, type]} = ast, acc) when is_atom(type) do
     {ast, [{:firmowid_web, type, meta[:line]} | acc]}
+  end
+
+  defp find_use_statements({:use, meta, [{:__aliases__, _, [:FirmowidWeb]}, {:live_view, opts}]} = ast, acc)
+       when is_list(opts) do
+    {ast, [{:firmowid_web, :live_view, meta[:line]} | acc]}
   end
 
   # Pattern: use Phoenix.LiveView

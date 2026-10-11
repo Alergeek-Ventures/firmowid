@@ -13,7 +13,8 @@ This skill is for day-to-day usage, not migration. For migration, use `commands/
 
 - Treat every value from Infisical as sensitive unless it is clearly a non-secret config value.
 - Never print, log, paste, summarize, or expose secret values.
-- Never run commands that would echo all environment variables, such as `env`, `printenv`, `set`, `export`, or framework debug commands that dump process env.
+- Never dump the environment with bare `env`, `printenv`, `set`, `export`, `export -p`, or framework debug commands that dump process env. Exporting specifically required variables to a child process is allowed; never display their values.
+- Disable shell tracing with `set +x` before secret access. Never use xtrace (`set -x`), credential logging, or environment/config dumps while secrets are present.
 - Prefer fetching only the exact variable needed instead of loading the whole environment when making one-off requests.
 - Use shell variables to pass secrets to commands, but do not display those variables.
 - If you need to verify a secret exists, verify by command success, variable presence, or length only. Do not reveal the value.
@@ -38,6 +39,14 @@ This skill is for day-to-day usage, not migration. For migration, use `commands/
 - App runtime secrets and variables live under `/app` in each environment.
 - `.env.worktree` is allowed for local worktree-specific overrides and should stay untracked.
 - Personal long-term overrides should usually live in Infisical personal overrides, not in project files.
+
+## Development Namespace
+
+- `/app` holds application runtime secrets and configuration.
+- `/dev/<tool>` holds shared development-tool credentials and configuration, separate from app runtime.
+- The environment `dev` and folder `/dev` are different concepts; select the appropriate environment and folder independently.
+- Keep local, non-secret worktree configuration only in untracked `.env.worktree`, not in shared folders.
+- Do not move, rename, or duplicate existing secrets as part of using this convention.
 
 ## One-Off Secret Access
 

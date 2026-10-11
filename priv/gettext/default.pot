@@ -1874,3 +1874,196 @@ msgstr ""
 #, elixir-autogen, elixir-format
 msgid "today"
 msgstr ""
+
+#: lib/firmowid_web/invoicing/mcp/views/index.ex:211
+#, elixir-autogen, elixir-format
+msgid "All invoices"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/mcp/views/index.ex:245
+#, elixir-autogen, elixir-format
+msgid "Apply filters"
+msgstr ""
+
+#: lib/firmowid_web/mcp/runtime.ex:100
+#, elixir-autogen, elixir-format
+msgid "Connected"
+msgstr ""
+
+#: lib/firmowid_web/mcp/runtime.ex:31
+#: lib/firmowid_web/mcp/runtime.ex:99
+#, elixir-autogen, elixir-format
+msgid "Connecting…"
+msgstr ""
+
+#: lib/firmowid_web/mcp/runtime.ex:102
+#, elixir-autogen, elixir-format
+msgid "Connection failed. Try refreshing."
+msgstr ""
+
+#: lib/firmowid_web/mcp/runtime.ex:101
+#, elixir-autogen, elixir-format
+msgid "Connection lost. Reconnecting…"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/mcp/views/index.ex:328
+#, elixir-autogen, elixir-format
+msgid "Cost invoice"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/mcp/views/index.ex:213
+#, elixir-autogen, elixir-format
+msgid "Cost invoices"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/mcp/views/index.ex:224
+#, elixir-autogen, elixir-format
+msgid "Currency"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/mcp/views/index.ex:288
+#, elixir-autogen, elixir-format
+msgid "Due date"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/mcp/views/index.ex:311
+#, elixir-autogen, elixir-format
+msgid "First page"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/mcp/views/index.ex:205
+#, elixir-autogen, elixir-format
+msgid "Invoice filters"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/mcp/views/index.ex:301
+#, elixir-autogen, elixir-format
+msgid "Invoice pages"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/mcp/views/index.ex:209
+#, elixir-autogen, elixir-format
+msgid "Invoice type"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/mcp/views/index.ex:180
+#, elixir-autogen, elixir-format
+msgid "Invoices"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/mcp/views/index.ex:234
+#, elixir-autogen, elixir-format
+msgid "Invoices per page"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/mcp/views/index.ex:284
+#, elixir-autogen, elixir-format
+msgid "Issue date"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/mcp/views/index.ex:222
+#, elixir-autogen, elixir-format
+msgid "Issue date from"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/mcp/views/index.ex:223
+#, elixir-autogen, elixir-format
+msgid "Issue date to"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/mcp/views/index.ex:292
+#, elixir-autogen, elixir-format
+msgid "KSeF number"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/mcp/views/index.ex:243
+#, elixir-autogen, elixir-format
+msgid "Loading…"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/mcp/views/index.ex:229
+#, elixir-autogen, elixir-format
+msgid "Newest first"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/mcp/views/index.ex:320
+#, elixir-autogen, elixir-format
+msgid "Next page"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/mcp/views/index.ex:252
+#, elixir-autogen, elixir-format
+msgid "No invoices match these filters."
+msgstr ""
+
+#: lib/firmowid_web/invoicing/mcp/views/index.ex:285
+#: lib/firmowid_web/invoicing/mcp/views/index.ex:289
+#, elixir-autogen, elixir-format
+msgid "Not provided"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/mcp/views/index.ex:229
+#, elixir-autogen, elixir-format
+msgid "Oldest first"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/mcp/views/index.ex:228
+#, elixir-autogen, elixir-format
+msgid "Order"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/mcp/views/index.ex:196
+#: lib/firmowid_web/mcp/runtime.ex:33
+#, elixir-autogen, elixir-format
+msgid "Reconnect"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/mcp/views/index.ex:189
+#, elixir-autogen, elixir-format
+msgid "Refresh"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/mcp/views/index.ex:327
+#, elixir-autogen, elixir-format
+msgid "Sales invoice"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/mcp/views/index.ex:212
+#, elixir-autogen, elixir-format
+msgid "Sales invoices"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/mcp/views/index.ex:219
+#, elixir-autogen, elixir-format
+msgid "Search invoices"
+msgstr ""
+
+#: lib/firmowid_web/mcp/runtime.ex:103
+#, elixir-autogen, elixir-format
+msgid "Session expired. Refresh to reconnect."
+msgstr ""
+
+#: lib/firmowid_web/mcp/runtime.ex:105
+#, elixir-autogen, elixir-format
+msgid "The browser blocked the connection. Check network permissions."
+msgstr ""
+
+#: lib/firmowid_web/mcp/runtime.ex:104
+#, elixir-autogen, elixir-format
+msgid "The view is current, but ChatGPT could not receive its context."
+msgstr ""
+
+#: lib/firmowid_web/invoicing/mcp/views/index.ex:194
+#, elixir-autogen, elixir-format
+msgid "This invoice session has expired. Reconnect to continue."
+msgstr ""
+
+#: lib/firmowid_web/invoicing/mcp/views/index.ex:122
+#, elixir-autogen, elixir-format
+msgid "Unable to load invoices. Check the filters and try again."
+msgstr ""
+
+#: lib/firmowid_web/invoicing/mcp/views/index.ex:272
+#, elixir-autogen, elixir-format
+msgid "Unnumbered invoice"
+msgstr ""

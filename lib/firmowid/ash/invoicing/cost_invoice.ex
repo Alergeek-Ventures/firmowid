@@ -174,6 +174,8 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
         constraints min: 1
       end
 
+      argument :listing_sort, :atom, constraints: [one_of: [:newest, :oldest]]
+
       argument :source, :atom do
         constraints one_of: [:manual_import, :ksef]
       end
@@ -252,6 +254,8 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
       prepare build(limit: arg(:limit)) do
         where present(:limit)
       end
+
+      prepare Firmowid.Ash.Invoicing.Preparations.SortInvoiceListing
 
       argument :corrections, :atom do
         constraints one_of: [:include, :exclude]

@@ -40,6 +40,11 @@ config :elixir, :time_zone_database, Tz.TimeZoneDatabase
 
 config :esbuild,
   version: "0.28.0",
+  mcp: [
+    args: ~w(js/mcp/bridge.js --bundle --target=es2022 --format=iife --outfile=../priv/static/assets/mcp.js),
+    cd: Path.expand("../assets", __DIR__),
+    env: %{"NODE_PATH" => Path.expand("../deps", __DIR__)}
+  ],
   firmowid: [
     args:
       ~w(js/app.js --bundle --target=es2022 --outdir=../priv/static/assets --external:/fonts/* --external:/images/* --alias:@=.),
@@ -134,6 +139,8 @@ config :firmowid, :legal_entity, %{
   regon: "387738728"
 }
 
+config :firmowid, :mcp_apps, [FirmowidWeb.Invoicing.Mcp.Invoices]
+
 config :firmowid,
   ecto_repos: [Firmowid.Repo],
   generators: [timestamp_type: :utc_datetime],
@@ -150,7 +157,8 @@ config :firmowid,
     Firmowid.Ash.Payroll,
     Firmowid.Ash.Timetracker,
     Firmowid.Ash.Events,
-    Firmowid.Ash.Ksef
+    Firmowid.Ash.Ksef,
+    FirmowidWeb.Invoicing.Mcp
   ]
 
 config :jido_ai,
@@ -200,6 +208,15 @@ config :mime, :types, %{
   "application/pkix-cert" => ["crt"],
   "application/pkcs8" => ["key"]
 }
+
+config :phoenix, :filter_parameters, [
+  "password",
+  "secret",
+  "token",
+  "code",
+  "client_assertion",
+  "mcp_session"
+]
 
 config :phoenix, :json_library, Jason
 

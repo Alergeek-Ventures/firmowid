@@ -29,5 +29,6 @@ defmodule Firmowid.Oauth2Server do
     # kept for backwards compatibility. Set to `false` if your auth
     # server is for a fixed set of first-party clients only.
     cimd_enabled?: true,
+    cimd_fetcher: Firmowid.Oauth2.CimdMetadataFetcher,
     sign_in_path: "/zaloguj"
 end
