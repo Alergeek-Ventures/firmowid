@@ -25,9 +25,9 @@ defmodule Mix.Tasks.Translations.Extract.Check do
     {options, remaining} = OptionParser.parse!(args, strict: [force: :boolean])
     if remaining != [], do: Mix.raise("Unexpected arguments: #{Enum.join(remaining, " ")}")
 
-    # Load the normal compiler/runtime configuration without starting services.
-    # Local environment loaders must finish before taking the fingerprint.
-    Mix.Task.run("app.config")
+    # Match native extraction: compile-time configuration, not runtime secrets/services.
+    Mix.Task.run("compile")
+    {:ok, _applications} = Application.ensure_all_started(:gettext)
 
     options =
       options ++
