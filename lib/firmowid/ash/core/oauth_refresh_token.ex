@@ -8,6 +8,7 @@ defmodule Firmowid.Ash.Core.OauthRefreshToken do
     authorizers: [Ash.Policy.Authorizer]
 
   alias Firmowid.Ash.Checks.AccountCleanup
+  alias Firmowid.Ash.Core.Changes.RequireActiveOauthUser
   alias Firmowid.Ash.Resource
 
   require Resource
@@ -53,6 +54,8 @@ defmodule Firmowid.Ash.Core.OauthRefreshToken do
         :resource_uri,
         :expires_at
       ]
+
+      change RequireActiveOauthUser
     end
 
     update :rotate do
@@ -61,6 +64,7 @@ defmodule Firmowid.Ash.Core.OauthRefreshToken do
       argument :rotated_to_id, :uuid_v7, allow_nil?: false
       accept []
 
+      change filter(expr(exists(user, is_nil(archived_at))))
       change AshAuthentication.Oauth2Server.Changes.RotateRefreshToken
     end
 

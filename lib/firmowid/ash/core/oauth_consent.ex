@@ -7,6 +7,7 @@ defmodule Firmowid.Ash.Core.OauthConsent do
     authorizers: [Ash.Policy.Authorizer]
 
   alias Firmowid.Ash.Checks.AccountCleanup
+  alias Firmowid.Ash.Core.Changes.RequireActiveOauthUser
   alias Firmowid.Ash.Resource
 
   require Resource
@@ -40,6 +41,7 @@ defmodule Firmowid.Ash.Core.OauthConsent do
       upsert? true
       upsert_identity :by_user_client
       accept [:user_id, :client_id, :scope]
+      change RequireActiveOauthUser
       change set_attribute(:granted_at, &DateTime.utc_now/0)
     end
   end
