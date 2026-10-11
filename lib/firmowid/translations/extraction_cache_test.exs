@@ -12,12 +12,22 @@ defmodule Firmowid.Translations.ExtractionCacheTest do
     File.mkdir_p!(Path.join(root, "lib"))
     File.mkdir_p!(Path.join(root, "priv/gettext/pl/LC_MESSAGES"))
     git!(root, ["init", "--quiet"])
-    File.write!(Path.join(root, ".gitignore"), "/_build/\n/priv/gettext/pl/LC_MESSAGES/default.po\n")
+
+    File.write!(
+      Path.join(root, ".gitignore"),
+      "/_build/\n/priv/gettext/pl/LC_MESSAGES/default.po\n"
+    )
+
     File.write!(Path.join(root, "lib/source.ex"), "initial source\n")
     File.write!(Path.join(root, "priv/gettext/default.pot"), "initial POT\n")
     git!(root, ["add", "."])
 
-    options = [root: root, build_path: Path.join(root, "_build/test"), context: fn -> :fixture end]
+    options = [
+      root: root,
+      build_path: Path.join(root, "_build/test"),
+      context: fn -> :fixture end
+    ]
+
     %{root: root, options: options}
   end
 
@@ -76,7 +86,9 @@ defmodule Firmowid.Translations.ExtractionCacheTest do
     assert ExtractionCache.run(changed, check) == :checked
   end
 
-  test "failures retain the original error and cannot reuse an earlier marker", %{options: options} do
+  test "failures retain the original error and cannot reuse an earlier marker", %{
+    options: options
+  } do
     assert ExtractionCache.run(options, fn -> :ok end) == :checked
     forced = Keyword.put(options, :force, true)
 

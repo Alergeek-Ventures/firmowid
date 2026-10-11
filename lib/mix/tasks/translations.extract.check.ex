@@ -60,8 +60,8 @@ defmodule Mix.Tasks.Translations.Extract.Check do
       Mix.target(),
       Mix.Project.config(),
       Code.compiler_options(),
-      Application.get_all_env(:firmowid) |> Enum.sort(),
-      Application.get_all_env(:gettext) |> Enum.sort(),
+      :firmowid |> Application.get_all_env() |> Enum.sort(),
+      :gettext |> Application.get_all_env() |> Enum.sort(),
       environment_hash
     }
   end
