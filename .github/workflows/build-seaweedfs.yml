@@ -1,16 +1,12 @@
 name: Build SeaweedFS S3 Image
 
 on:
-  push:
-    branches:
-      - main
-    paths:
-      - deployment/Containerfile.seaweedfs
+  workflow_call:
   workflow_dispatch:
 
 concurrency:
-  group: ${{ github.workflow }}
-  cancel-in-progress: true
+  group: seaweedfs-main-publisher
+  cancel-in-progress: false
 
 jobs:
   build-and-push:
@@ -22,6 +18,13 @@ jobs:
       packages: write
 
     steps:
+      - name: Require main before publishing
+        run: |
+          if [ "$GITHUB_REF" != "refs/heads/main" ]; then
+            echo "SeaweedFS images can only be published from main." >&2
+            exit 1
+          fi
+
       - name: Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
@@ -40,6 +43,8 @@ jobs:
         run: |
           VERSION=$(grep '^FROM' deployment/Containerfile.seaweedfs | sed 's/.*seaweedfs://' | sed 's/@.*//')
           echo "tag=$VERSION" >> $GITHUB_OUTPUT
+          CONTAINERFILE_HASH=$(sha256sum deployment/Containerfile.seaweedfs | cut -d ' ' -f 1)
+          echo "containerfile_hash=$CONTAINERFILE_HASH" >> $GITHUB_OUTPUT
           echo "Detected SeaweedFS version: $VERSION"
 
       - name: Build and push
@@ -52,3 +57,4 @@ jobs:
             ghcr.io/alergeek-ventures/firmowid-new/seaweedfs-s3:main
             ghcr.io/alergeek-ventures/firmowid-new/seaweedfs-s3:${{ steps.version.outputs.tag }}
             ghcr.io/alergeek-ventures/firmowid-new/seaweedfs-s3:sha-${{ github.sha }}
+            ghcr.io/alergeek-ventures/firmowid-new/seaweedfs-s3:containerfile-${{ steps.version.outputs.containerfile_hash }}

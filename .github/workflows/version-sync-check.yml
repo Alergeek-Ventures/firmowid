@@ -120,7 +120,6 @@ jobs:
           CONTAINERFILE_SEAWEEDFS=$(grep '^FROM.*seaweedfs' deployment/Containerfile.seaweedfs | sed 's/^FROM *//')
           CI_LATEST_SEAWEEDFS=$(grep 'seaweedfs-s3:latest' \
             .github/workflows/build-seaweedfs.yml \
-            .github/workflows/build-seaweedfs-pr.yml \
             .github/workflows/elixir-build-and-test.yml || true)
           CI_MAIN_SEAWEEDFS=$(grep 'seaweedfs-s3:main' .github/workflows/build-seaweedfs.yml || true)
           CI_SHA_SEAWEEDFS=$(grep 'seaweedfs-s3:sha-' .github/workflows/build-seaweedfs.yml || true)
@@ -147,7 +146,7 @@ jobs:
           if [ -n "$CI_LATEST_SEAWEEDFS" ]; then
             echo ""
             echo "❌ SeaweedFS CI still references the floating latest tag!"
-            echo "   Use a version/main tag for current main or a pr-<number>-<sha> tag for PR wrapper changes."
+            echo "   PRs use :main; main tests use the Containerfile content hash tag."
             echo ""
             echo "$CI_LATEST_SEAWEEDFS"
             exit 1

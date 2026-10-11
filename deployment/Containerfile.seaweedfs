@@ -9,7 +9,7 @@
 # Readiness is handled in workflow steps instead (retry loop on bucket creation).
 #
 # Dependabot tracks the FROM tag and opens PRs on new releases.
-# On merge, .github/workflows/build-seaweedfs.yml rebuilds and pushes to GHCR.
+# On main, Build and Test publishes missing wrapper images before running tests.
 #
 # Build: docker build -f deployment/Containerfile.seaweedfs -t seaweedfs-s3:latest .
 # Run:   docker run -p 8333:8333 seaweedfs-s3:latest

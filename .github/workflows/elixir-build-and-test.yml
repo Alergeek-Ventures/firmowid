@@ -110,15 +110,12 @@ jobs:
     permissions:
       contents: read
       packages: read
-      pull-requests: read
     outputs:
       elixir: ${{ steps.versions.outputs.elixir }}
       otp: ${{ steps.versions.outputs.otp }}
       paradedb_image: ${{ steps.images.outputs.paradedb_image }}
       seaweedfs_image: ${{ steps.images.outputs.seaweedfs_image }}
-      seaweedfs_pr_image_required: ${{ steps.images.outputs.seaweedfs_pr_image_required }}
-      seaweedfs_pr_number: ${{ steps.images.outputs.seaweedfs_pr_number }}
-      seaweedfs_pr_head_sha: ${{ steps.images.outputs.seaweedfs_pr_head_sha }}
+      seaweedfs_publish_required: ${{ steps.seaweedfs.outputs.publish_required }}
     steps:
       - name: Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -140,35 +137,19 @@ jobs:
       - name: Extract service images
         id: images
         env:
-          GITHUB_TOKEN: ${{ github.token }}
-          EVENT_NAME: ${{ github.event_name }}
-          PR_NUMBER: ${{ github.event.pull_request.number }}
-          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
-          GITHUB_API_URL: ${{ github.api_url }}
-          GITHUB_REPOSITORY: ${{ github.repository }}
+          REF: ${{ github.ref }}
         run: |
           PARADEDB_IMAGE=$(grep 'image:.*paradedb/paradedb' local/compose.yml | sed 's/.*image: *//')
-          SEAWEEDFS_VERSION=$(grep '^FROM' deployment/Containerfile.seaweedfs | sed 's/.*seaweedfs://' | sed 's/@.*//')
-          SEAWEEDFS_IMAGE="ghcr.io/alergeek-ventures/firmowid-new/seaweedfs-s3:${SEAWEEDFS_VERSION}"
-          SEAWEEDFS_PR_IMAGE_REQUIRED="false"
+          SEAWEEDFS_IMAGE="ghcr.io/alergeek-ventures/firmowid-new/seaweedfs-s3:main"
 
-          if [ "$EVENT_NAME" = "pull_request" ]; then
-            PR_FILES_URL="$GITHUB_API_URL/repos/$GITHUB_REPOSITORY/pulls/$PR_NUMBER/files?per_page=100"
-
-            if curl --fail --silent --show-error \
-              --header "Authorization: Bearer $GITHUB_TOKEN" \
-              --header "X-GitHub-Api-Version: 2022-11-28" \
-              "$PR_FILES_URL" | grep '"filename": "deployment/Containerfile.seaweedfs"' >/dev/null; then
-              SEAWEEDFS_IMAGE="ghcr.io/alergeek-ventures/firmowid-new/seaweedfs-s3:pr-${PR_NUMBER}-${PR_HEAD_SHA}"
-              SEAWEEDFS_PR_IMAGE_REQUIRED="true"
-            fi
+          # Only main tests the current wrapper; PRs use the last published main image.
+          if [ "$REF" = "refs/heads/main" ]; then
+            CONTAINERFILE_HASH=$(sha256sum deployment/Containerfile.seaweedfs | cut -d ' ' -f 1)
+            SEAWEEDFS_IMAGE="ghcr.io/alergeek-ventures/firmowid-new/seaweedfs-s3:containerfile-${CONTAINERFILE_HASH}"
           fi
 
           echo "paradedb_image=$PARADEDB_IMAGE" >> $GITHUB_OUTPUT
           echo "seaweedfs_image=$SEAWEEDFS_IMAGE" >> $GITHUB_OUTPUT
-          echo "seaweedfs_pr_image_required=$SEAWEEDFS_PR_IMAGE_REQUIRED" >> $GITHUB_OUTPUT
-          echo "seaweedfs_pr_number=$PR_NUMBER" >> $GITHUB_OUTPUT
-          echo "seaweedfs_pr_head_sha=$PR_HEAD_SHA" >> $GITHUB_OUTPUT
           echo "Detected from local/compose.yml:"
           echo "  ParadeDB: $PARADEDB_IMAGE"
           echo "Selected SeaweedFS image:"
@@ -180,49 +161,43 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Verify SeaweedFS image exists
+      - name: Check whether SeaweedFS needs publishing
+        id: seaweedfs
         env:
           SEAWEEDFS_IMAGE: ${{ steps.images.outputs.seaweedfs_image }}
-          SEAWEEDFS_PR_IMAGE_REQUIRED: ${{ steps.images.outputs.seaweedfs_pr_image_required }}
-          SEAWEEDFS_PR_NUMBER: ${{ steps.images.outputs.seaweedfs_pr_number }}
-          SEAWEEDFS_PR_HEAD_SHA: ${{ steps.images.outputs.seaweedfs_pr_head_sha }}
+          REF: ${{ github.ref }}
         run: |
           if docker manifest inspect "$SEAWEEDFS_IMAGE" >/dev/null 2>&1; then
+            echo "publish_required=false" >> $GITHUB_OUTPUT
             echo "✅ SeaweedFS image is available: $SEAWEEDFS_IMAGE"
             exit 0
           fi
 
-          echo "❌ SeaweedFS image is not available: $SEAWEEDFS_IMAGE"
-          echo ""
-
-          if [ "$SEAWEEDFS_PR_IMAGE_REQUIRED" = "true" ]; then
-            echo "This PR changes deployment/Containerfile.seaweedfs, so Build/Test requires a PR-scoped SeaweedFS image."
-            echo ""
-            echo "Publish it from your machine with GitHub CLI:"
-            echo ""
-            echo "  gh workflow run \"Build SeaweedFS S3 PR Image\" --ref main -f pr-number=$SEAWEEDFS_PR_NUMBER -f head-sha=$SEAWEEDFS_PR_HEAD_SHA"
-            echo ""
-            echo "Expected tag:"
-            echo ""
-            echo "  $SEAWEEDFS_IMAGE"
-            echo ""
-            echo "After the publisher workflow succeeds, rerun this Build and Test workflow."
-          else
-            echo "Build/Test expected the main SeaweedFS image tag to already exist."
-            echo "Run the main publisher workflow or check GHCR package availability."
-            echo ""
-            echo "Expected tag:"
-            echo ""
-            echo "  $SEAWEEDFS_IMAGE"
+          if [ "$REF" = "refs/heads/main" ]; then
+            echo "publish_required=true" >> $GITHUB_OUTPUT
+            echo "Main will publish the missing wrapper before running tests: $SEAWEEDFS_IMAGE"
+            exit 0
           fi
 
+          echo "❌ Published main SeaweedFS image is unavailable: $SEAWEEDFS_IMAGE"
+          echo "Run Build SeaweedFS S3 Image on main or check GHCR package access."
           exit 1
+
+  publish-seaweedfs:
+    name: Publish missing main SeaweedFS image
+    needs: extract-versions
+    if: ${{ needs.extract-versions.outputs.seaweedfs_publish_required == 'true' }}
+    uses: ./.github/workflows/build-seaweedfs.yml
+    permissions:
+      contents: read
+      packages: write
 
   build:
     name: ${{ github.event_name == 'workflow_dispatch' && inputs.coverage-benchmark && 'Coverage ABBA benchmark' || 'Build and test' }}
     # One shared runner/setup/service definition keeps both benchmark arms identical.
     if: >-
       ${{ !cancelled() && needs.extract-versions.result == 'success' &&
+          (needs.publish-seaweedfs.result == 'success' || needs.publish-seaweedfs.result == 'skipped') &&
           (needs.translations.result == 'success' || needs.benchmark-translations.result == 'success') }}
 
     runs-on: ubuntu-latest
@@ -232,6 +207,7 @@ jobs:
       - translations
       - benchmark-translations
       - extract-versions
+      - publish-seaweedfs
     permissions:
       contents: read
       packages: read
