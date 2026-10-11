@@ -357,7 +357,8 @@ jobs:
 
   coverage-report:
     name: Publish coverage summary and PR comment
-    if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.coverage-benchmark) }}
+    # The unused translations branch is skipped; do not propagate that to reporting.
+    if: ${{ !cancelled() && needs.build.result == 'success' && !(github.event_name == 'workflow_dispatch' && inputs.coverage-benchmark) }}
     runs-on: ubuntu-latest
     needs: build
     permissions:
