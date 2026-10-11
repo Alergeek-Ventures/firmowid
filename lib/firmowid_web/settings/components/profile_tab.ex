@@ -101,7 +101,7 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
     ~H"""
     <section class="flex w-full flex-col gap-6 rounded-lg bg-white p-6 shadow lg:col-span-2">
       <div class="flex items-start justify-between gap-3">
-        <h2 class="text-grey-900 text-base leading-none font-medium">Delegacje</h2>
+        <h2 class="text-base leading-none font-medium text-grey-900">Delegacje</h2>
         <.link
           kind="button"
           navigate={~p"/delegacje/dodaj"}
@@ -125,7 +125,7 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
     ~H"""
     <section class="space-y-4">
       <div class="flex min-h-8 items-center gap-1">
-        <h2 class="text-grey-900 text-base leading-none font-medium">{@title}</h2>
+        <h2 class="text-base leading-none font-medium text-grey-900">{@title}</h2>
 
         <span
           :if={@action}
@@ -179,15 +179,15 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
       data-expanded="false"
       class="group space-y-4"
     >
-      <div class="border-turquoise-200 flex-col gap-2 rounded-lg border p-4 group-data-[expanded=false]:flex group-data-[expanded=true]:hidden">
-        <h3 class="text-turquoise-700 flex items-center gap-1 text-sm font-medium">
+      <div class="flex-col gap-2 rounded-lg border border-turquoise-200 p-4 group-data-[expanded=false]:flex group-data-[expanded=true]:hidden">
+        <h3 class="flex items-center gap-1 text-sm font-medium text-turquoise-700">
           <Lucideicons.file_text class="size-4" /> Nowa umowa
         </h3>
-        <p class="text-grey-700 text-sm">
+        <p class="text-sm text-grey-700">
           Czeka na ciebie nowa umowa. Podpisz ją profilem zaufanym, aby sfinalizować formalności.
         </p>
         <div class="flex items-center justify-between">
-          <p class="text-grey-700 text-sm">
+          <p class="text-sm text-grey-700">
             Podpisz do: {present_date(@pending_contract.signed_at)}
           </p>
           <.button
@@ -206,17 +206,17 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
         </div>
       </div>
 
-      <div class="border-turquoise-200 flex flex-col gap-3 rounded-lg border p-4 group-data-[expanded=false]:hidden group-data-[expanded=true]:flex">
+      <div class="flex flex-col gap-3 rounded-lg border border-turquoise-200 p-4 group-data-[expanded=false]:hidden group-data-[expanded=true]:flex">
         <div class="flex items-center justify-between">
-          <h3 class="text-turquoise-700 flex items-center gap-1 text-sm font-medium">
+          <h3 class="flex items-center gap-1 text-sm font-medium text-turquoise-700">
             <Lucideicons.file_text class="size-4" /> Nowa umowa
           </h3>
-          <p class="text-grey-500 text-sm">
+          <p class="text-sm text-grey-500">
             Podpisz do: {present_date(@pending_contract.signed_at)}
           </p>
         </div>
 
-        <ol class="text-grey-700 list-decimal space-y-2 pl-4 text-sm">
+        <ol class="list-decimal space-y-2 pl-4 text-sm text-grey-700">
           <li>
             <span class="pr-2">Zapoznaj się z dokumentem</span>
             <.link
@@ -235,7 +235,7 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
               kind="button"
               size="small"
               variant="plain"
-              class="text-turquoise-700 pl-0"
+              class="pl-0 text-turquoise-700"
               external="https://podpis.gov.pl/podpisz-dokument-elektronicznie/"
               target="_blank"
             >
@@ -252,7 +252,7 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
                 phx-hook="FileUploadDragState"
                 data-dragging="false"
                 class={[
-                  "border-turquoise-200 data-[dragging=true]:bg-turquoise-100 data-[dragging=true]:border-turquoise-400 group mt-4 flex w-full flex-col items-center justify-center gap-2 rounded-md border-dashed py-6 transition-colors",
+                  "group mt-4 flex w-full flex-col items-center justify-center gap-2 rounded-md border-dashed border-turquoise-200 py-6 transition-colors data-[dragging=true]:border-turquoise-400 data-[dragging=true]:bg-turquoise-100",
                   if(Enum.empty?(@signed_contract_upload.entries),
                     do: "cursor-pointer border-2 border-dashed px-10",
                     else: "bg-turquoise-100 px-8"
@@ -261,13 +261,13 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
               >
                 <span
                   :if={Enum.empty?(@signed_contract_upload.entries)}
-                  class="text-grey-700 flex items-center gap-1 text-sm font-medium group-data-[dragging=true]:hidden"
+                  class="flex items-center gap-1 text-sm font-medium text-grey-700 group-data-[dragging=true]:hidden"
                 >
                   Przeciągnij PDF lub <span class="text-turquoise-700">Wybierz plik</span>
                 </span>
                 <span
                   :if={Enum.empty?(@signed_contract_upload.entries)}
-                  class="text-turquoise-700 hidden group-data-[dragging=true]:flex"
+                  class="hidden text-turquoise-700 group-data-[dragging=true]:flex"
                 >
                   Upuść plik
                 </span>
@@ -275,7 +275,7 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
 
                 <div
                   :for={entry <- @signed_contract_upload.entries}
-                  class="text-turquoise-700 z-10 w-full text-sm"
+                  class="z-10 w-full text-sm text-turquoise-700"
                 >
                   <div class="flex items-center justify-between">
                     <span class="flex min-w-0 items-center gap-1 truncate font-medium"><Lucideicons.file_text class="size-4" /> {entry.client_name}</span>
@@ -283,7 +283,7 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
                     <.button
                       variant="unstyled"
                       type="button"
-                      class="hover:text-grey-700 text-grey-500 shrink-0"
+                      class="shrink-0 text-grey-500 hover:text-grey-700"
                       phx-click="cancel_signed_contract"
                       phx-value-ref={entry.ref}
                     >
@@ -555,13 +555,13 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
     ~H"""
     <section class="flex size-full flex-col gap-6 rounded-lg bg-white p-6 shadow">
       <div class="flex items-start justify-between gap-3">
-        <h2 class="text-grey-900 text-base leading-none font-medium">Nieobecności</h2>
+        <h2 class="text-base leading-none font-medium text-grey-900">Nieobecności</h2>
         <div class="flex items-center gap-3">
           <form class="flex gap-4" phx-submit="search_leave_requests">
             <div
               id="profile-leave-search-container"
               data-expanded={to_string(@leave_search != "")}
-              class="data-[expanded=true]:bg-greyButtonBg group flex items-center justify-center rounded-lg transition-shadow data-[expanded=true]:focus-within:ring-2"
+              class="group flex items-center justify-center rounded-lg transition-shadow data-[expanded=true]:bg-greyButtonBg data-[expanded=true]:focus-within:ring-2"
             >
               <.input
                 type="text"
@@ -601,18 +601,18 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
         </div>
       </div>
       <div class="flex items-center gap-3">
-        <div class="bg-grey-50 text-grey-500 rounded px-3 py-1 text-sm">
+        <div class="rounded bg-grey-50 px-3 py-1 text-sm text-grey-500">
           Wykorzystane w tym roku:
-          <span class="text-grey-700 pl-1 font-medium">{@leave_days} dni</span>
+          <span class="pl-1 font-medium text-grey-700">{@leave_days} dni</span>
         </div>
       </div>
       <div class="scrollbar-card h-100 max-h-100 overflow-y-auto pr-1">
-        <ul class="divide-grey-100 divide-y">
+        <ul class="divide-y divide-grey-100">
           <li
             :for={request <- @filtered_leave_requests}
             class="flex items-center gap-3 py-3 first:pt-0 last:pb-0"
           >
-            <span class="bg-grey-100 text-grey-700 flex size-6.5 items-center justify-center rounded">
+            <span class="flex size-6.5 items-center justify-center rounded bg-grey-100 text-grey-700">
               <.reason_icon reason={request.reason} />
             </span>
             <span class="min-w-0 flex-1 truncate">
@@ -628,7 +628,7 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
         </ul>
         <div
           :if={Enum.empty?(@filtered_leave_requests)}
-          class="bg-grey-50 text-grey-700 flex size-full items-center justify-center rounded-lg text-sm"
+          class="flex size-full items-center justify-center rounded-lg bg-grey-50 text-sm text-grey-700"
         >
           <p>
             Brak wniosków o nieobecności.
@@ -648,7 +648,7 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
           class="space-y-8"
         >
           <div>
-            <p class="text-grey-700 mb-2 text-sm">
+            <p class="mb-2 text-sm text-grey-700">
               Rodzaj nieobecności:
             </p>
             <div class="flex flex-wrap gap-2">
@@ -660,7 +660,7 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
                 phx-click="select_leave_reason"
                 data-active={to_string(@leave_request_form[:reason].value) == to_string(reason)}
                 phx-value-reason={reason}
-                class="bg-grey-100 border-grey-100 text-grey-700 inline-flex items-center gap-2 rounded-2xl! px-4 py-1 text-sm transition data-active:border-orange-200 data-active:bg-orange-200 data-active:text-orange-700"
+                class="inline-flex items-center gap-2 rounded-2xl! border-grey-100 bg-grey-100 px-4 py-1 text-sm text-grey-700 transition data-active:border-orange-200 data-active:bg-orange-200 data-active:text-orange-700"
               >
                 {String.downcase(LeavePresentation.reason_label(reason, :short))}
                 <.reason_icon reason={reason} />
@@ -675,7 +675,7 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
           <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <.label
               for={@leave_request_form[:starts_on].id}
-              class="text-grey-700 flex items-center gap-2 text-sm"
+              class="flex items-center gap-2 text-sm text-grey-700"
             >
               Od:
               <.input
@@ -687,7 +687,7 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
             </.label>
             <.label
               for={@leave_request_form[:ends_on].id}
-              class="text-grey-700 flex items-center gap-2 text-sm"
+              class="flex items-center gap-2 text-sm text-grey-700"
             >
               Do:
               <.input new={true} field={@leave_request_form[:ends_on]} is_tooltip={true} type="date" />
@@ -696,7 +696,7 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
           <div>
             <.label
               for={@leave_request_form[:note].id}
-              class="text-grey-700 flex flex-col gap-2 text-sm"
+              class="flex flex-col gap-2 text-sm text-grey-700"
             >
               Dodatkowe informacje:
               <.input
@@ -719,7 +719,7 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
             </.button>
             <div
               :for={entry <- @leave_request_upload.entries}
-              class="text-grey-600 mt-2 space-y-1 text-sm"
+              class="mt-2 space-y-1 text-sm text-grey-600"
             >
               <div class="flex items-center gap-2">
                 <span class="min-w-0 truncate">{entry.client_name}</span>
@@ -727,7 +727,7 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
                 <.button
                   variant="unstyled"
                   type="button"
-                  class="hover:text-grey-700 text-grey-500 shrink-0"
+                  class="shrink-0 text-grey-500 hover:text-grey-700"
                   phx-click="cancel_leave_request_attachment"
                   phx-value-ref={entry.ref}
                 >
@@ -775,35 +775,35 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
       <section class="flex w-full flex-col gap-6 rounded-lg bg-white p-6 shadow">
         <div class="flex items-start justify-between gap-3">
           <div class="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-1">
-            <h2 class="text-grey-900 text-base leading-none font-medium">Twoje projekty</h2>
-            <span class="text-grey-500 text-sm">
+            <h2 class="text-base leading-none font-medium text-grey-900">Twoje projekty</h2>
+            <span class="text-sm text-grey-500">
               {TimeFormatter.format_date(@date, "LLLL y")}
             </span>
           </div>
-          <span class="text-grey-700 shrink-0 tabular-nums">
+          <span class="shrink-0 text-grey-700 tabular-nums">
             {format_project_duration(@total_duration)}
           </span>
         </div>
 
         <ul :if={@projects != []} class="space-y-3">
           <li :for={project <- @projects} class="flex items-center justify-between gap-3">
-            <span class="bg-turquoise-200 text-turquoise-700 rounded-full px-3 py-1 text-sm/snug font-medium">
+            <span class="rounded-full bg-turquoise-200 px-3 py-1 text-sm/snug font-medium text-turquoise-700">
               {project.name}
             </span>
-            <span class="text-grey-500 shrink-0 text-sm tabular-nums">
+            <span class="shrink-0 text-sm text-grey-500 tabular-nums">
               {format_project_duration(project.duration)}
             </span>
           </li>
         </ul>
 
-        <p :if={@projects == []} class="text-grey-500 text-sm">
+        <p :if={@projects == []} class="text-sm text-grey-500">
           Brak przepracowanego czasu w tym miesiącu.
         </p>
       </section>
       <.link
         kind="unstyled"
         navigate={Navigation.hours_record_index_path(@date)}
-        class="hover:text-grey-900 text-grey-700 inline-flex items-center gap-1 text-sm font-medium"
+        class="inline-flex items-center gap-1 text-sm font-medium text-grey-700 hover:text-grey-900"
       >
         Zobacz ewidencję <.icon name="hero-chevron-right-mini" class="size-4" />
       </.link>

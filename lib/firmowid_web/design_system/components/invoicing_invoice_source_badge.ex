@@ -45,11 +45,11 @@ defmodule FirmowidWeb.DesignSystem.Components.InvoicingInvoiceSourceBadge do
       </span>
       <Lucideicons.file_input
         :if={@variant == "cost_external"}
-        class={[if(@size == "small", do: "text-orangeText size-4", else: "text-orangeText size-5")]}
+        class={[if(@size == "small", do: "size-4 text-orangeText", else: "size-5 text-orangeText")]}
       />
       <Lucideicons.file_pen_line
         :if={@variant in ["sales", "sales_draft"]}
-        class={[if(@size == "small", do: "text-blueText size-4", else: "text-blueText size-5")]}
+        class={[if(@size == "small", do: "size-4 text-blueText", else: "size-5 text-blueText")]}
       />
       <span
         :if={@variant in ["cost_ksef", "sales_ksef"]}

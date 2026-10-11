@@ -8,7 +8,7 @@
   >
     <div class="flex flex-row items-start justify-between">
       <div class="space-y-1">
-        <p :if={@live_action == :edit} class="text-grey-500 text-sm/snug">
+        <p :if={@live_action == :edit} class="text-sm/snug text-grey-500">
           {@counterparty.display_label}
         </p>
         <p class="text-2xl/tight font-medium">
@@ -40,9 +40,9 @@
     <div class="grid grid-rows-2 gap-16 md:grid-cols-2 md:grid-rows-1">
       <section class="flex flex-col gap-8">
         <div class="flex flex-col gap-4">
-          <h2 class="text-grey-900 mb-6 text-base/tight font-medium">Informacje podstawowe</h2>
+          <h2 class="mb-6 text-base/tight font-medium text-grey-900">Informacje podstawowe</h2>
           <div class="grid grid-cols-[min-content_1fr] items-start gap-x-5 gap-y-3">
-            <label class="text-grey-700 pt-1.5 text-sm text-nowrap" for={@form[:tax_id].id}>
+            <label class="pt-1.5 text-sm text-nowrap text-grey-700" for={@form[:tax_id].id}>
               NIP/ID*
             </label>
             <div class="flex gap-3">
@@ -58,13 +58,13 @@
                 size="small"
                 phx-click="fetch_by_nip"
                 phx-value-nip={@form[:tax_id].value}
-                class="active:bg-grey-400! bg-grey-200! hover:bg-grey-300! text-grey-900! w-[107px]"
+                class="w-[107px] bg-grey-200! text-grey-900! hover:bg-grey-300! active:bg-grey-400!"
               >
                 Pobierz dane
               </.button>
             </div>
 
-            <label class="text-grey-700 text-sm text-nowrap" for={@form[:type].id}>Typ</label>
+            <label class="text-sm text-nowrap text-grey-700" for={@form[:type].id}>Typ</label>
             <.input
               field={@form[:type]}
               type="select"
@@ -72,38 +72,38 @@
               new={true}
             />
 
-            <label class="text-grey-700 pt-1.5 text-sm text-nowrap" for={@form[:display_name].id}>
+            <label class="pt-1.5 text-sm text-nowrap text-grey-700" for={@form[:display_name].id}>
               Nazwa wyświetlana
             </label>
             <.input field={@form[:display_name]} new={true} />
 
             <%= if to_string(@form[:type].value) == "company" do %>
-              <label class="text-grey-700 pt-1.5 text-sm text-nowrap" for={@form[:full_name].id}>
+              <label class="pt-1.5 text-sm text-nowrap text-grey-700" for={@form[:full_name].id}>
                 Pełna nazwa*
               </label>
               <.input field={@form[:full_name]} new={true} />
             <% else %>
-              <label class="text-grey-700 pt-1.5 text-sm text-nowrap" for={@form[:given_name].id}>
+              <label class="pt-1.5 text-sm text-nowrap text-grey-700" for={@form[:given_name].id}>
                 Imię*
               </label>
               <div>
                 <.input field={@form[:given_name]} new={true} />
               </div>
 
-              <label class="text-grey-700 pt-1.5 text-sm text-nowrap" for={@form[:surname].id}>
+              <label class="pt-1.5 text-sm text-nowrap text-grey-700" for={@form[:surname].id}>
                 Nazwisko*
               </label>
               <.input field={@form[:surname]} new={true} />
 
-              <label class="text-grey-700 pt-1.5 text-sm text-nowrap" for={@form[:pesel].id}>PESEL</label>
+              <label class="pt-1.5 text-sm text-nowrap text-grey-700" for={@form[:pesel].id}>PESEL</label>
               <.input field={@form[:pesel]} new={true} />
             <% end %>
           </div>
         </div>
         <div class="flex flex-col gap-4">
-          <h2 class="text-grey-900 mb-6 text-base/tight font-medium">Dodatkowe</h2>
+          <h2 class="mb-6 text-base/tight font-medium text-grey-900">Dodatkowe</h2>
           <div class="grid grid-cols-[min-content_1fr] items-start gap-x-5 gap-y-3">
-            <label class="text-grey-700 text-sm text-nowrap" for={@form[:description].id}>
+            <label class="text-sm text-nowrap text-grey-700" for={@form[:description].id}>
               Notatki
             </label>
             <.input
@@ -119,17 +119,17 @@
 
       <section>
         <div class="flex flex-col gap-4">
-          <h2 class="text-grey-900 mb-6 text-base/tight font-medium">
+          <h2 class="mb-6 text-base/tight font-medium text-grey-900">
             Dane kontaktowe i adresowe
           </h2>
           <div class="grid grid-cols-[min-content_1fr] items-start gap-x-5 gap-y-3">
-            <label class="text-grey-700 pt-1.5 text-sm text-nowrap" for={@form[:email].id}>Email</label>
+            <label class="pt-1.5 text-sm text-nowrap text-grey-700" for={@form[:email].id}>Email</label>
             <.input field={@form[:email]} new={true} is_tooltip={true} />
 
-            <label class="text-grey-700 pt-1.5 text-sm text-nowrap" for={@form[:phone].id}>Telefon</label>
+            <label class="pt-1.5 text-sm text-nowrap text-grey-700" for={@form[:phone].id}>Telefon</label>
             <.input field={@form[:phone]} new={true} is_tooltip={true} />
 
-            <label class="text-grey-700 pt-1.5 text-sm text-nowrap" for={@form[:address].id}>
+            <label class="pt-1.5 text-sm text-nowrap text-grey-700" for={@form[:address].id}>
               Adres
             </label>
             <.input
@@ -140,7 +140,7 @@
               placeholder="Ulica, nr budynku i/lub mieszkania, kod pocztowy, miasto"
             />
 
-            <label class="text-grey-700 pt-1.5 text-sm text-nowrap" for={@form[:country].id}>Kraj*</label>
+            <label class="pt-1.5 text-sm text-nowrap text-grey-700" for={@form[:country].id}>Kraj*</label>
             <.input
               field={@form[:country]}
               type="select"
@@ -150,7 +150,7 @@
               new={true}
             />
 
-            <label class="text-grey-700 text-sm" for={@form[:is_different_mail_address].id}>Inny adres korespondencyjny</label>
+            <label class="text-sm text-grey-700" for={@form[:is_different_mail_address].id}>Inny adres korespondencyjny</label>
             <.switch
               field={@form[:is_different_mail_address]}
               class="w-12 gap-3! self-center"
@@ -158,7 +158,7 @@
             />
 
             <%= if Phoenix.HTML.Form.normalize_value("switch", @form[:is_different_mail_address].value) do %>
-              <label class="text-grey-700 text-sm" for={@form[:mail_address].id}>
+              <label class="text-sm text-grey-700" for={@form[:mail_address].id}>
                 Adres
               </label>
               <.input
@@ -167,7 +167,7 @@
                 new={true}
                 is_tooltip={true}
               />
-              <label class="text-grey-700 text-sm" for={@form[:mail_country].id}>
+              <label class="text-sm text-grey-700" for={@form[:mail_country].id}>
                 Kraj
               </label>
               <.input

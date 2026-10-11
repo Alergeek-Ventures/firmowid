@@ -1,6 +1,6 @@
 <div :if={not @zero_state?} class="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-6 pb-4">
   <% # top -> collapsed navbar height (56px) / TODO: refactor %>
-  <div class="bg-lightGreyBg sticky top-10.5 z-10 flex flex-col gap-6 py-4">
+  <div class="sticky top-10.5 z-10 flex flex-col gap-6 bg-lightGreyBg py-4">
     <div class="flex flex-row justify-between">
       <form class="flex gap-4">
         <.month_picker
@@ -12,7 +12,7 @@
         <div
           id="search-container"
           data-expanded={to_string(@params["szukaj"] != nil and @params["szukaj"] != "")}
-          class="bg-greyButtonBg group flex min-w-10 items-center justify-center rounded-lg transition-shadow data-[expanded=true]:focus-within:ring-2"
+          class="group flex min-w-10 items-center justify-center rounded-lg bg-greyButtonBg transition-shadow data-[expanded=true]:focus-within:ring-2"
         >
           <.input
             name="szukaj"
@@ -57,7 +57,7 @@
         kind="button"
         variant="ghost"
         size="small"
-        class={if(@live_action == live_action, do: "bg-grey-700 hover:text-grey-900 text-white")}
+        class={if(@live_action == live_action, do: "bg-grey-700 text-white hover:text-grey-900")}
       >
         {label}
       </.link>
@@ -66,15 +66,15 @@
 
   <%= cond do %>
     <% Enum.empty?(@projects) -> %>
-      <div class="border-grey-200 flex flex-1 flex-col items-center justify-center gap-4 rounded-lg border p-6">
+      <div class="flex flex-1 flex-col items-center justify-center gap-4 rounded-lg border border-grey-200 p-6">
         <%= if @params["szukaj"] do %>
-          <Lucideicons.file_x class="text-grey-300 size-26" />
-          <p class="text-grey-700 text-sm/snug">
+          <Lucideicons.file_x class="size-26 text-grey-300" />
+          <p class="text-sm/snug text-grey-700">
             Nie znaleźliśmy szukanego przez Ciebie projektu.
           </p>
         <% else %>
-          <Lucideicons.presentation class="text-grey-300 size-26" />
-          <p class="text-grey-700 text-sm/snug">
+          <Lucideicons.presentation class="size-26 text-grey-300" />
+          <p class="text-sm/snug text-grey-700">
             {case @live_action do
               :index -> "Nie masz aktywnych projektów do wyświetlenia."
               :archive -> "Nie masz zarchiwizowanych projektów do wyświetlenia."
@@ -85,11 +85,11 @@
     <% @live_action == :index -> %>
       <div
         id="projects-list"
-        class="phx-change-loading:opacity-50 grid grid-cols-[4fr_8.125rem_1fr_min-content] gap-x-6 gap-y-2"
+        class="grid grid-cols-[4fr_8.125rem_1fr_min-content] gap-x-6 gap-y-2 phx-change-loading:opacity-50"
       >
         <div
           id="projects-list-header-active"
-          class="bg-lightGreyBg text-grey-700 sticky top-41 z-1 col-span-full grid grid-cols-subgrid px-4 pb-3 text-sm/snug transition-all duration-75"
+          class="sticky top-41 z-1 col-span-full grid grid-cols-subgrid bg-lightGreyBg px-4 pb-3 text-sm/snug text-grey-700 transition-all duration-75"
           phx-hook="ScrollStyle"
           data-classes="border-b-4 border-solid border-darkGrey/40 pt-3"
           data-scroll-offset="90"
@@ -115,7 +115,7 @@
               >
                 <p class="text-base/snug">{project.name}</p>
               </.link>
-              <p class="text-grey-500 text-sm/snug">
+              <p class="text-sm/snug text-grey-500">
                 {CounterpartyHelpers.party_label(project.counterparty, @current_org)}
               </p>
             </div>
@@ -126,7 +126,7 @@
             <.link
               kind="unstyled"
               navigate={Navigation.project_path(project.id, Map.take(@params, ["miesiac"]))}
-              class="hover:text-grey-700 text-grey-500"
+              class="text-grey-500 hover:text-grey-700"
             >
               <Lucideicons.chevron_right class="size-4" />
             </.link>
@@ -136,11 +136,11 @@
     <% @live_action == :archive -> %>
       <div
         id="projects-list"
-        class="phx-change-loading:opacity-50 grid grid-cols-[4fr_8.125rem_1fr_min-content_min-content] gap-x-10 gap-y-2"
+        class="grid grid-cols-[4fr_8.125rem_1fr_min-content_min-content] gap-x-10 gap-y-2 phx-change-loading:opacity-50"
       >
         <div
           id="projects-list-header-archive"
-          class="bg-lightGreyBg sticky top-41 z-1 -order-1 col-span-full grid grid-cols-subgrid px-4 pb-3 text-sm/snug transition-all duration-75"
+          class="sticky top-41 z-1 -order-1 col-span-full grid grid-cols-subgrid bg-lightGreyBg px-4 pb-3 text-sm/snug transition-all duration-75"
           phx-hook="ScrollStyle"
           data-classes="border-b-4 border-solid border-darkGrey/40 pt-3"
           data-scroll-offset="90"
@@ -167,7 +167,7 @@
               >
                 <p class="text-base/snug">{project.name}</p>
               </.link>
-              <p class="text-grey-500 text-sm/snug">
+              <p class="text-sm/snug text-grey-500">
                 {case project.counterparty && project.counterparty.display_label do
                   "" -> @current_org.name
                   nil -> @current_org.name
@@ -196,7 +196,7 @@
               <.link
                 kind="unstyled"
                 navigate={Navigation.project_path(project.id, Map.take(@params, ["miesiac"]))}
-                class="hover:text-grey-700 text-grey-500"
+                class="text-grey-500 hover:text-grey-700"
               >
                 <Lucideicons.chevron_right class="size-4" />
               </.link>
@@ -209,11 +209,11 @@
 
 <div
   :if={@zero_state?}
-  class="border-grey-200 mx-auto flex size-full max-w-7xl flex-1 flex-col items-center justify-center rounded-lg border p-8"
+  class="mx-auto flex size-full max-w-7xl flex-1 flex-col items-center justify-center rounded-lg border border-grey-200 p-8"
 >
-  <Lucideicons.presentation class="text-grey-300 size-26" size={48} />
+  <Lucideicons.presentation class="size-26 text-grey-300" size={48} />
 
-  <p class="text-grey-700 mt-4 text-center text-sm/snug text-balance">
+  <p class="mt-4 text-center text-sm/snug text-balance text-grey-700">
     Nie masz aktywnych projektów do wyświetlenia. Dodaj nowy klikając poniżej.
   </p>
 

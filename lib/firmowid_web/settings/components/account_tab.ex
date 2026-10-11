@@ -70,7 +70,7 @@ defmodule FirmowidWeb.Settings.Components.AccountTab do
     ~H"""
     <section class={["space-y-4", @class]}>
       <div class="flex min-h-8 items-center gap-1">
-        <h2 class="text-grey-900 text-base leading-none font-medium">{@title}</h2>
+        <h2 class="text-base leading-none font-medium text-grey-900">{@title}</h2>
 
         <span
           :if={@action}
@@ -179,7 +179,7 @@ defmodule FirmowidWeb.Settings.Components.AccountTab do
             </Helpers.settings_field>
 
             <Helpers.settings_display_field>
-              <div class="bg-grey-50 text-grey-700 flex items-start gap-4 rounded-lg p-4 text-sm">
+              <div class="flex items-start gap-4 rounded-lg bg-grey-50 p-4 text-sm text-grey-700">
                 <span class="shrink-0"><.icon name="hero-information-circle" class="size-5" /></span>
                 <p>
                   Jeżeli wyrażasz zgodę na udostępnienie swojej daty urodzenia wybierz odpowiednią opcję z listy.
@@ -437,11 +437,11 @@ defmodule FirmowidWeb.Settings.Components.AccountTab do
       </div>
 
       <.modal id="confirm_modal">
-        <h3 class="text-grey-900 text-lg font-semibold">
+        <h3 class="text-lg font-semibold text-grey-900">
           Czy na pewno chcesz zamknąć konto? <b>Nie da się tego cofnąć.</b>
         </h3>
 
-        <p class="text-grey-700 mt-3 text-sm">
+        <p class="mt-3 text-sm text-grey-700">
           Usuniemy Twoje konto i wszystkie przypisane do niego dane.
           <%= if @current_org.owner_id == @current_user.id do %>
             Usuniemy też całą organizację i wszystkie jej dane.
@@ -455,7 +455,7 @@ defmodule FirmowidWeb.Settings.Components.AccountTab do
             required
             new
             input_class="w-full mb-0"
-            class="text-grey-700 flex items-center gap-5 text-sm [&>label]:mb-0"
+            class="flex items-center gap-5 text-sm text-grey-700 [&>label]:mb-0"
             label="Hasło"
           />
 

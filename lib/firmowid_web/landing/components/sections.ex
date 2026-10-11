@@ -265,11 +265,11 @@ defmodule FirmowidWeb.Landing.Components.Sections do
       <div class="mx-auto max-w-[1419px] lg:px-[140px]">
         <div class="max-w-[680px]">
           <.section_eyebrow dark>{gettext("Who it is for")}</.section_eyebrow>
-          <h2 class="mt-2 text-[38px] leading-[1.08] font-bold tracking-[-0.03em] text-[#fafafa] lg:text-[48px] lg:leading-[50px]">
+          <h2 class="mt-2 text-[38px] leading-[1.08] font-bold tracking-[-0.03em] text-grey-50 lg:text-[48px] lg:leading-[50px]">
             {gettext("You run a business.")} <br class="hidden lg:block" />
             {gettext("You do not want to manage spreadsheets.")}
           </h2>
-          <p class="mt-4 text-[18px] leading-[27px] text-[#dddddd] lg:mt-4">
+          <p class="mt-4 text-h5 leading-[27px] text-[#dddddd] lg:mt-4">
             {gettext("Firmowid was created for Polish SMEs that are tired of jumping from one program
               to another and recording everything in spreadsheets.")}
           </p>
@@ -285,10 +285,10 @@ defmodule FirmowidWeb.Landing.Components.Sections do
             <p class="text-xs font-bold tracking-[0.08em] text-[#d2936d] uppercase">
               {problem.number}
             </p>
-            <h3 class="text-[22px] leading-[1.2] font-semibold text-[#fafafa]">
+            <h3 class="text-[22px] leading-[1.2] font-semibold text-grey-50">
               {problem.title}
             </h3>
-            <p class="text-[15px] leading-[1.4] text-[#cccccc]">{problem.description}</p>
+            <p class="text-[15px] leading-[1.4] text-grey-300">{problem.description}</p>
           </article>
         </div>
       </div>
@@ -312,7 +312,7 @@ defmodule FirmowidWeb.Landing.Components.Sections do
             {gettext("Four things your business needs.")} <br class="hidden lg:block" />
             {gettext("In one place.")}
           </h2>
-          <p class="mt-4 text-[18px] leading-[27px] text-[#4e4e4e] lg:hidden">
+          <p class="mt-4 text-h5 leading-[27px] text-[#4e4e4e] lg:hidden">
             {gettext("Firmowid was created for Polish SMEs that are tired of jumping from one program
               to another and recording everything in spreadsheets.")}
           </p>
@@ -345,7 +345,7 @@ defmodule FirmowidWeb.Landing.Components.Sections do
         <div class="mx-auto max-w-[1419px] lg:px-[140px]">
           <div class="flex flex-col gap-8 lg:flex-row lg:items-center lg:justify-between">
             <div class="max-w-[718px]">
-              <blockquote class="relative ml-4 text-[23px]/8 font-medium tracking-[-0.01em] text-[#1a1a1a] lg:ml-0 lg:text-[32px] lg:leading-[1.15] lg:tracking-[-0.01em]">
+              <blockquote class="relative ml-4 text-xl/8 font-medium tracking-[-0.01em] text-grey-900 lg:ml-0 lg:text-[32px] lg:leading-[1.15] lg:tracking-[-0.01em]">
                 <span class="absolute top-0 -left-7 text-[56px] leading-[0.66] text-[#8b3f13] lg:-left-8 lg:text-[64px]">„</span>{gettext(
                   "For two years, we patched together three different programs with Excel. Now one person does what three people used to do — and reports are ready at the end of the month, not a week later."
                 )}<span class="align-bottom text-[56px] leading-[0.66] text-[#8b3f13] lg:text-[64px]">”</span>
@@ -356,7 +356,7 @@ defmodule FirmowidWeb.Landing.Components.Sections do
                   EG
                 </div>
                 <div>
-                  <p class="text-[15px] font-semibold text-[#1a1a1a]">
+                  <p class="text-[15px] font-semibold text-grey-900">
                     {gettext("CEO of a television production company")}
                   </p>
                   <p class="mt-1 text-[13px] text-[#4e4e4e]">
@@ -405,11 +405,11 @@ defmodule FirmowidWeb.Landing.Components.Sections do
               <div class={[
                 "flex size-14 items-center justify-center rounded-full border-2 text-[22px] font-bold",
                 step.number == 2 && "border-[#8b3f13] bg-[#8b3f13] text-white",
-                step.number != 2 && "border-[#4e4e4e] bg-white text-[#1a1a1a]"
+                step.number != 2 && "border-[#4e4e4e] bg-white text-grey-900"
               ]}>
                 {step.number}
               </div>
-              <h3 class="mt-5 text-[22px] leading-[33px] font-semibold text-[#1a1a1a]">
+              <h3 class="mt-5 text-[22px] leading-[33px] font-semibold text-grey-900">
                 {step.title}
               </h3>
               <p class="mt-3 text-[15px] leading-[1.4] text-[#4e4e4e]">{step.description}</p>
@@ -422,13 +422,13 @@ defmodule FirmowidWeb.Landing.Components.Sections do
               <div class={[
                 "relative z-10 flex size-8 shrink-0 items-center justify-center rounded-full border-2 text-base font-bold",
                 step.number == 2 && "border-[#8b3f13] bg-[#8b3f13] text-white",
-                step.number != 2 && "border-[#4e4e4e] bg-white text-[#1a1a1a]"
+                step.number != 2 && "border-[#4e4e4e] bg-white text-grey-900"
               ]}>
                 {step.number}
               </div>
               <div>
-                <h3 class="text-[20px]/8 font-semibold text-[#1a1a1a]">{step.title}</h3>
-                <p class="mt-2 text-[14px] leading-[1.4] text-[#4e4e4e]">{step.description}</p>
+                <h3 class="text-lg/8 font-semibold text-grey-900">{step.title}</h3>
+                <p class="mt-2 text-sm leading-[1.4] text-[#4e4e4e]">{step.description}</p>
               </div>
             </article>
           </div>
@@ -455,7 +455,7 @@ defmodule FirmowidWeb.Landing.Components.Sections do
           <h2 class="mt-2 text-[38px] leading-[1.08] font-bold tracking-[-0.03em] text-[#0f0f0f] lg:text-[48px] lg:leading-[50px]">
             {gettext("Fair pricing.")}<br /> <span class="underline">{gettext("No surprises.")}</span>
           </h2>
-          <p class="mt-4 text-[18px] leading-[27px] text-[#4e4e4e]">
+          <p class="mt-4 text-h5 leading-[27px] text-[#4e4e4e]">
             {gettext(
               "Pay only for what you actually use. Choose the plan and billing cycle that suit you best."
             )}
@@ -474,7 +474,7 @@ defmodule FirmowidWeb.Landing.Components.Sections do
               class={[
                 "flex flex-1 items-center justify-center rounded-l-[14px] px-6 py-3 text-sm font-medium",
                 @billing_period == "monthly" && "bg-[#8b3f13] text-white",
-                @billing_period != "monthly" && "bg-white text-[#1a1a1a]"
+                @billing_period != "monthly" && "bg-white text-grey-900"
               ]}
               aria-pressed={@billing_period == "monthly"}
             >
@@ -487,14 +487,14 @@ defmodule FirmowidWeb.Landing.Components.Sections do
               class={[
                 "flex flex-1 items-center justify-center gap-2 rounded-r-[14px] px-4 py-3 text-sm font-medium",
                 @billing_period == "yearly" && "bg-[#8b3f13] text-white",
-                @billing_period != "yearly" && "bg-white text-[#1a1a1a]"
+                @billing_period != "yearly" && "bg-white text-grey-900"
               ]}
               aria-pressed={@billing_period == "yearly"}
             >
               {pgettext("billing period", "Yearly")}
               <span class={[
                 "rounded-2xl px-2 py-1 text-xs font-medium",
-                @billing_period == "yearly" && "bg-[#dea785] text-[#4e2005]",
+                @billing_period == "yearly" && "bg-orange-400 text-[#4e2005]",
                 @billing_period != "yearly" && "bg-[#8b3f13] text-white"
               ]}>
                 {pgettext("landing-billing-discount", "Save")}
@@ -529,7 +529,7 @@ defmodule FirmowidWeb.Landing.Components.Sections do
           <h2 class="mt-2 text-[38px] leading-[1.08] font-bold tracking-[-0.03em] text-[#0f0f0f] lg:text-[48px] lg:leading-[50px]">
             {gettext("Two people. One office in Krakow.")}
           </h2>
-          <p class="mt-4 text-[18px] leading-[27px] text-[#4e4e4e]">
+          <p class="mt-4 text-h5 leading-[27px] text-[#4e4e4e]">
             {gettext(
               "Firmowid is not a product made by a hundred managers for a hundred processes. It is a tool made by people who run a company themselves and know what working with KSeF, payroll, and month-end closing really looks like."
             )}
@@ -545,7 +545,7 @@ defmodule FirmowidWeb.Landing.Components.Sections do
               <div class={[
                 "relative size-[88px] shrink-0 overflow-hidden rounded-[8px] lg:size-[228px] lg:rounded-[8px]",
                 person.name == "Franek Madej" && "bg-[#d2936d]",
-                person.name != "Franek Madej" && "bg-[#578383]"
+                person.name != "Franek Madej" && "bg-turquoise-600"
               ]}>
                 <img
                   id={person.portrait_id}
@@ -568,14 +568,14 @@ defmodule FirmowidWeb.Landing.Components.Sections do
               </div>
 
               <div class="min-w-0 lg:mt-6">
-                <h3 class="text-[20px] font-bold text-[#1a1a1a] lg:text-[20px]">{person.name}</h3>
+                <h3 class="text-lg font-bold text-grey-900 lg:text-lg">{person.name}</h3>
                 <p class="mt-1 text-[13px] font-semibold tracking-[0.08em] text-[#8b3f13] uppercase">
                   {person.role}
                 </p>
               </div>
             </div>
 
-            <p class="mt-5 text-[14px] leading-[1.4] text-[#4e4e4e] lg:mt-0">{person.bio}</p>
+            <p class="mt-5 text-sm leading-[1.4] text-[#4e4e4e] lg:mt-0">{person.bio}</p>
           </article>
         </div>
       </div>
@@ -604,7 +604,7 @@ defmodule FirmowidWeb.Landing.Components.Sections do
           <h2 class="mt-2 text-[38px] leading-[1.08] font-bold tracking-[-0.03em] text-[#0f0f0f] lg:text-[48px] lg:leading-[50px]">
             {gettext("Before you ask")} <br />{gettext("— we may have already answered.")}
           </h2>
-          <p class="mt-4 text-[18px] leading-[27px] text-[#4e4e4e]">
+          <p class="mt-4 text-h5 leading-[27px] text-[#4e4e4e]">
             {gettext("Didn't find your question?")}
             <.link
               kind="unstyled"
@@ -627,7 +627,7 @@ defmodule FirmowidWeb.Landing.Components.Sections do
               aria-expanded={@open_faq == faq.id}
               aria-controls={faq.id <> "-panel"}
             >
-              <span class="text-[16px] leading-normal font-semibold text-[#1a1a1a] lg:text-[18px]">
+              <span class="text-base/normal font-semibold text-grey-900 lg:text-h5">
                 {faq.question}
               </span>
               <span class="text-[24px] leading-none text-[#8b3f13]">
@@ -678,7 +678,7 @@ defmodule FirmowidWeb.Landing.Components.Sections do
         "py-4 lg:hidden",
         @mobile_last && "pb-16"
       ]}>
-        <div class="rounded-[8px] border-2 border-[#dea785] bg-white p-6">
+        <div class="rounded-[8px] border-2 border-orange-400 bg-white p-6">
           <.feature_copy feature={@feature} compact />
           <.feature_preview variant={@feature.variant} class="mt-6" compact />
         </div>
@@ -712,8 +712,8 @@ defmodule FirmowidWeb.Landing.Components.Sections do
         <.feature_tag :for={{label, variant} <- @feature.tags} label={label} variant={variant} />
       </div>
       <h3 class={[
-        "mt-4 font-bold tracking-[-0.03em] text-[#1a1a1a]",
-        @compact && "text-[20px] leading-[1.1]",
+        "mt-4 font-bold tracking-[-0.03em] text-grey-900",
+        @compact && "text-lg leading-[1.1]",
         !@compact && "text-[36px] leading-[37px]"
       ]}>
         {@feature.title}
@@ -721,16 +721,16 @@ defmodule FirmowidWeb.Landing.Components.Sections do
       <p class={[
         "mt-4 text-[#4e4e4e]",
         @compact && "text-base leading-[27px]",
-        !@compact && "text-[18px] leading-[27px]"
+        !@compact && "text-h5 leading-[27px]"
       ]}>
         {@feature.description}
       </p>
       <ul :if={!@compact} class="mt-6 space-y-3">
         <li
           :for={bullet <- @feature.bullets}
-          class="flex items-start gap-2 text-[16px] leading-normal text-[#4e4e4e]"
+          class="flex items-start gap-2 text-base/normal text-[#4e4e4e]"
         >
-          <span class="mt-0.5 text-[18px] leading-none font-bold text-[#699166]">✓</span>
+          <span class="mt-0.5 text-h5 leading-none font-bold text-green-600">✓</span>
           <span>{bullet}</span>
         </li>
       </ul>
@@ -745,9 +745,9 @@ defmodule FirmowidWeb.Landing.Components.Sections do
   defp feature_tag(assigns) do
     ~H"""
     <span class={[
-      "inline-flex rounded-2xl px-4 py-1 text-[14px] leading-[1.35]",
+      "inline-flex rounded-2xl px-4 py-1 text-sm leading-[1.35]",
       @variant == :default && "bg-[rgba(234,170,132,0.3)] text-[#8b3f13]",
-      @variant == :accent && "bg-[rgba(139,201,201,0.3)] text-[#455e5e]"
+      @variant == :accent && "bg-[rgba(139,201,201,0.3)] text-turquoise-700"
     ]}>
       {@label}
     </span>
@@ -802,9 +802,9 @@ defmodule FirmowidWeb.Landing.Components.Sections do
         !@compact && "pr-20 pb-[11px]"
       ]}>
         <p class={[
-          "font-bold text-[#1a1a1a]",
+          "font-bold text-grey-900",
           @compact && "text-[9.5px] leading-[14px]",
-          !@compact && "text-[14px] leading-[21px]"
+          !@compact && "text-sm leading-[21px]"
         ]}>
           KOWALSKI CONSULTING
         </p>
@@ -818,9 +818,9 @@ defmodule FirmowidWeb.Landing.Components.Sections do
         </div>
       </div>
       <div class={[
-        "text-[#1a1a1a]",
+        "text-grey-900",
         @compact && "pt-2 text-[7.5px] leading-[11px]",
-        !@compact && "pt-3 text-[11px] leading-[16.5px]"
+        !@compact && "pt-3 text-caps-sm leading-[16.5px]"
       ]}>
         <div class="flex items-start justify-between border-b border-dashed border-[#e5ddd0] py-[6px]">
           <span>{gettext("Consulting services (40h)")}</span><span>16 000,00</span>
@@ -848,7 +848,7 @@ defmodule FirmowidWeb.Landing.Components.Sections do
       <div class="rounded-[10px] border border-[#e5ddd0] bg-[#faf7f3] p-4">
         <div class="flex items-center justify-between border-b border-[#e9ddd2] pb-3">
           <div>
-            <p class="text-sm font-bold text-[#1a1a1a]">{gettext("Linked payments")}</p>
+            <p class="text-sm font-bold text-grey-900">{gettext("Linked payments")}</p>
             <p class="mt-1 text-[10px] text-[#4e4e4e]">
               {gettext("Automatically match invoices to transfers")}
             </p>
@@ -860,17 +860,17 @@ defmodule FirmowidWeb.Landing.Components.Sections do
         <div class="mt-4 space-y-3">
           <div class="flex items-center justify-between rounded-lg bg-white p-3 shadow-[0_4px_16px_rgba(80,50,30,0.08)]">
             <div>
-              <p class="text-xs font-semibold text-[#1a1a1a]">FV 10/2026</p>
-              <p class="text-[11px] text-[#4e4e4e]">Kowalski Consulting</p>
+              <p class="text-xs font-semibold text-grey-900">FV 10/2026</p>
+              <p class="text-caps-sm text-[#4e4e4e]">Kowalski Consulting</p>
             </div>
-            <p class="text-sm font-bold text-[#1a1a1a]">19 408,00 zł</p>
+            <p class="text-sm font-bold text-grey-900">19 408,00 zł</p>
           </div>
           <div class="flex items-center justify-between rounded-lg border border-dashed border-[#d8c7bb] p-3">
             <div>
-              <p class="text-xs font-semibold text-[#1a1a1a]">mBank • 01.10.2026</p>
-              <p class="text-[11px] text-[#4e4e4e]">{gettext("Transfer matched automatically")}</p>
+              <p class="text-xs font-semibold text-grey-900">mBank • 01.10.2026</p>
+              <p class="text-caps-sm text-[#4e4e4e]">{gettext("Transfer matched automatically")}</p>
             </div>
-            <p class="text-sm font-bold text-[#699166]">✓</p>
+            <p class="text-sm font-bold text-green-600">✓</p>
           </div>
         </div>
       </div>
@@ -887,7 +887,7 @@ defmodule FirmowidWeb.Landing.Components.Sections do
       <div class="rounded-[10px] border border-[#e5ddd0] bg-[#faf7f3] p-4">
         <div class="flex items-center justify-between border-b border-[#e9ddd2] pb-3">
           <div>
-            <p class="text-sm font-bold text-[#1a1a1a]">
+            <p class="text-sm font-bold text-grey-900">
               {pgettext("landing-feature", "Time tracking")}
             </p>
             <p class="mt-1 text-[10px] text-[#4e4e4e]">{gettext("Costs and hours in real time")}</p>
@@ -897,21 +897,21 @@ defmodule FirmowidWeb.Landing.Components.Sections do
           </span>
         </div>
         <div class="mt-4 space-y-3">
-          <div class="flex items-center justify-between text-sm text-[#1a1a1a]">
+          <div class="flex items-center justify-between text-sm text-grey-900">
             <span>Projekt A</span><strong>18h</strong>
           </div>
           <div class="h-2 rounded-full bg-[#ebe4dc]">
             <div class="h-2 w-[72%] rounded-full bg-[#8b3f13]"></div>
           </div>
-          <div class="flex items-center justify-between text-sm text-[#1a1a1a]">
+          <div class="flex items-center justify-between text-sm text-grey-900">
             <span>Projekt B</span><strong>12h</strong>
           </div>
           <div class="h-2 rounded-full bg-[#ebe4dc]">
-            <div class="h-2 w-[48%] rounded-full bg-[#dea785]"></div>
+            <div class="h-2 w-[48%] rounded-full bg-orange-400"></div>
           </div>
-          <div class="flex items-center justify-between rounded-lg bg-white p-3 text-[11px] shadow-[0_4px_16px_rgba(80,50,30,0.08)]">
+          <div class="flex items-center justify-between rounded-lg bg-white p-3 text-caps-sm shadow-[0_4px_16px_rgba(80,50,30,0.08)]">
             <span>{gettext("Labor cost this week")}</span>
-            <strong class="text-sm text-[#1a1a1a]">8 640 zł</strong>
+            <strong class="text-sm text-grey-900">8 640 zł</strong>
           </div>
         </div>
       </div>
@@ -928,7 +928,7 @@ defmodule FirmowidWeb.Landing.Components.Sections do
       <div class="rounded-[10px] border border-[#e5ddd0] bg-[#faf7f3] p-4">
         <div class="flex items-center justify-between border-b border-[#e9ddd2] pb-3">
           <div>
-            <p class="text-sm font-bold text-[#1a1a1a]">{gettext("Team payroll")}</p>
+            <p class="text-sm font-bold text-grey-900">{gettext("Team payroll")}</p>
             <p class="mt-1 text-[10px] text-[#4e4e4e]">
               {gettext("Hours and compensation in one place")}
             </p>
@@ -940,12 +940,12 @@ defmodule FirmowidWeb.Landing.Components.Sections do
         <div class="mt-4 space-y-3">
           <div class="flex items-center justify-between rounded-lg bg-white p-3 shadow-[0_4px_16px_rgba(80,50,30,0.08)]">
             <div>
-              <p class="text-xs font-semibold text-[#1a1a1a]">Jan Nowak</p>
-              <p class="text-[11px] text-[#4e4e4e]">{gettext("160h • PLN 80/hour")}</p>
+              <p class="text-xs font-semibold text-grey-900">Jan Nowak</p>
+              <p class="text-caps-sm text-[#4e4e4e]">{gettext("160h • PLN 80/hour")}</p>
             </div>
-            <p class="text-sm font-bold text-[#1a1a1a]">12 800 zł</p>
+            <p class="text-sm font-bold text-grey-900">12 800 zł</p>
           </div>
-          <div class="flex items-center justify-between rounded-lg border border-dashed border-[#d8c7bb] p-3 text-[11px] text-[#4e4e4e]">
+          <div class="flex items-center justify-between rounded-lg border border-dashed border-[#d8c7bb] p-3 text-caps-sm text-[#4e4e4e]">
             <span>{gettext("Payroll report ready")}</span>
             <strong class="text-[#8b3f13]">CSV</strong>
           </div>
@@ -967,8 +967,8 @@ defmodule FirmowidWeb.Landing.Components.Sections do
     ~H"""
     <article class={[
       "h-full min-w-0 rounded-2xl p-6 md:p-7 xl:p-8",
-      @plan.highlighted && "bg-[#1a1a1a] text-white",
-      !@plan.highlighted && "bg-[#f0eae6] text-[#1a1a1a]"
+      @plan.highlighted && "bg-grey-900 text-white",
+      !@plan.highlighted && "bg-[#f0eae6] text-grey-900"
     ]}>
       <div class="flex h-full flex-col gap-8">
         <p class={[
@@ -980,7 +980,7 @@ defmodule FirmowidWeb.Landing.Components.Sections do
         </p>
         <p class={[
           "mt-2 text-[13px]",
-          @plan.highlighted && "text-[#b5b5b5]",
+          @plan.highlighted && "text-grey-400",
           !@plan.highlighted && "text-[#4e4e4e]"
         ]}>
           {@plan.audience}
@@ -989,8 +989,8 @@ defmodule FirmowidWeb.Landing.Components.Sections do
         <div class="rounded-2xl">
           <p class={[
             "mt-3 text-[38px] leading-[1.1] font-bold sm:text-[44px] sm:leading-[1.15]",
-            @plan.highlighted && "text-[#fafafa]",
-            !@plan.highlighted && "text-[#1a1a1a]"
+            @plan.highlighted && "text-grey-50",
+            !@plan.highlighted && "text-grey-900"
           ]}>
             <span
               id={"pricing-price-#{@plan.key}"}
@@ -1012,7 +1012,7 @@ defmodule FirmowidWeb.Landing.Components.Sections do
           </p>
           <p class={[
             "mt-2 text-sm/6",
-            @plan.highlighted && "text-[#b5b5b5]",
+            @plan.highlighted && "text-grey-400",
             !@plan.highlighted && "text-[#5f5f5f]"
           ]}>
             {if @billing_period == "yearly",
@@ -1023,7 +1023,7 @@ defmodule FirmowidWeb.Landing.Components.Sections do
             :if={@billing_period == "yearly"}
             class={[
               "mt-3 text-[15px]/6 font-normal",
-              @plan.highlighted && "text-[#b5b5b5]",
+              @plan.highlighted && "text-grey-400",
               !@plan.highlighted && "text-[#5f5f5f]"
             ]}
           >
@@ -1044,13 +1044,13 @@ defmodule FirmowidWeb.Landing.Components.Sections do
         <div class="space-y-4">
           <div :if={@plan.included_usage != []}>
             <p class={[
-              "text-[12px] font-semibold tracking-[0.08em] uppercase",
+              "text-xs font-semibold tracking-[0.08em] uppercase",
               @plan.highlighted && "text-[#d2936d]",
               !@plan.highlighted && "text-[#8b3f13]"
             ]}>
               {gettext("Included limits")}
             </p>
-            <ul class="mt-3 space-y-2 text-[14px]/6">
+            <ul class="mt-3 space-y-2 text-sm/6">
               <li :for={usage <- @plan.included_usage} class="flex items-start gap-2">
                 <span class={[
                   "mt-0.5 font-bold",
@@ -1066,13 +1066,13 @@ defmodule FirmowidWeb.Landing.Components.Sections do
 
           <div>
             <p class={[
-              "text-[12px] font-semibold tracking-[0.08em] uppercase",
+              "text-xs font-semibold tracking-[0.08em] uppercase",
               @plan.highlighted && "text-[#d2936d]",
               !@plan.highlighted && "text-[#8b3f13]"
             ]}>
               {gettext("Available features")}
             </p>
-            <ul class="mt-3 space-y-2 text-[14px]/6">
+            <ul class="mt-3 space-y-2 text-sm/6">
               <li :for={feature <- @plan.features} class="flex items-start gap-2">
                 <span class={[
                   "mt-0.5 font-bold",
@@ -1102,7 +1102,7 @@ defmodule FirmowidWeb.Landing.Components.Sections do
                 @plan.highlighted && @billing_period == "monthly" && "bg-white text-black",
                 @plan.highlighted && @billing_period != "monthly" && "bg-transparent text-white",
                 !@plan.highlighted && @billing_period == "monthly" && "bg-[#8b3f13] text-white",
-                !@plan.highlighted && @billing_period != "monthly" && "bg-transparent text-[#1a1a1a]"
+                !@plan.highlighted && @billing_period != "monthly" && "bg-transparent text-grey-900"
               ]}
               aria-pressed={@billing_period == "monthly"}
             >
@@ -1117,15 +1117,15 @@ defmodule FirmowidWeb.Landing.Components.Sections do
                 @plan.highlighted && @billing_period == "yearly" && "bg-white text-black",
                 @plan.highlighted && @billing_period != "yearly" && "bg-transparent text-white",
                 !@plan.highlighted && @billing_period == "yearly" && "bg-[#8b3f13] text-white",
-                !@plan.highlighted && @billing_period != "yearly" && "bg-transparent text-[#1a1a1a]"
+                !@plan.highlighted && @billing_period != "yearly" && "bg-transparent text-grey-900"
               ]}
               aria-pressed={@billing_period == "yearly"}
             >
               {pgettext("billing period", "Yearly")}
               <span class={[
                 "rounded-2xl px-2 py-1 text-[10px]",
-                @plan.highlighted && @billing_period == "yearly" && "bg-[#dea785] text-[#4e2005]",
-                @plan.highlighted && @billing_period != "yearly" && "bg-[#dea785] text-[#4e2005]",
+                @plan.highlighted && @billing_period == "yearly" && "bg-orange-400 text-[#4e2005]",
+                @plan.highlighted && @billing_period != "yearly" && "bg-orange-400 text-[#4e2005]",
                 !@plan.highlighted && @billing_period == "yearly" && "bg-white/20 text-white",
                 !@plan.highlighted && @billing_period != "yearly" && "bg-[#8b3f13] text-white"
               ]}>
@@ -1143,9 +1143,9 @@ defmodule FirmowidWeb.Landing.Components.Sections do
             class={[
               "relative flex min-h-[56px] w-full items-center justify-center overflow-hidden rounded-[4px] px-8 py-4 text-base font-medium transition-transform duration-150 hover:-translate-y-0.5",
               @plan.highlighted &&
-                "border-2 border-[#d2936d] bg-[#d2936d] text-black hover:bg-[#dea785]",
+                "border-2 border-[#d2936d] bg-[#d2936d] text-black hover:bg-orange-400",
               !@plan.highlighted &&
-                "text-[#1a1a1a] before:absolute before:inset-0 before:bg-[url('/images/button_login.svg')] before:bg-size-[100%_100%] before:bg-no-repeat before:content-[''] hover:bg-black/3"
+                "text-grey-900 before:absolute before:inset-0 before:bg-[url('/images/button_login.svg')] before:bg-size-[100%_100%] before:bg-no-repeat before:content-[''] hover:bg-black/3"
             ]}
           >
             <span class="relative z-10">{gettext("Start for free")}</span>

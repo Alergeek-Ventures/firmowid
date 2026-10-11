@@ -15,7 +15,7 @@ defmodule FirmowidWeb.Auth.Views.ConfirmEmail do
     <div class="mx-auto max-w-sm">
       <.header class="text-center">Potwierdź adres email</.header>
 
-      <p class="text-grey-600 mt-2 text-center text-sm">
+      <p class="mt-2 text-center text-sm text-grey-600">
         {confirmation_instruction(@email_change?)}
       </p>
 

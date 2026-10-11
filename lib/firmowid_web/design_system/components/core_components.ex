@@ -70,7 +70,7 @@ defmodule FirmowidWeb.DesignSystem.Components.CoreComponents do
               phx-window-keydown={JS.exec("data-cancel", to: "##{@id}")}
               phx-key="escape"
               phx-click-away={JS.exec("data-cancel", to: "##{@id}")}
-              class="ring-darkGrey/10 shadow-darkGrey/10 relative hidden rounded-md bg-white p-10 shadow-lg ring-1 transition"
+              class="relative hidden rounded-md bg-white p-10 shadow-lg ring-1 shadow-darkGrey/10 ring-darkGrey/10 transition"
             >
               <div class="absolute top-6 right-5">
                 <button
@@ -288,13 +288,13 @@ defmodule FirmowidWeb.DesignSystem.Components.CoreComponents do
     ~H"""
     <label
       class={[
-        "border-orangeText flex w-full cursor-pointer justify-center rounded-md border-2 border-dashed px-6 py-8",
-        @disabled && "border-grey-200 cursor-not-allowed",
+        "flex w-full cursor-pointer justify-center rounded-md border-2 border-dashed border-orangeText px-6 py-8",
+        @disabled && "cursor-not-allowed border-grey-200",
         @class
       ]}
       phx-drop-target={unless @disabled, do: @upload.ref}
     >
-      <div class={["text-orangeText text-sm", @disabled && "text-grey-200", @content_class]}>
+      <div class={["text-sm text-orangeText", @disabled && "text-grey-200", @content_class]}>
         <div :if={Enum.empty?(@upload.entries)} class={@prompt_class}>
           {@prompt}
         </div>
@@ -440,7 +440,7 @@ defmodule FirmowidWeb.DesignSystem.Components.CoreComponents do
       <label
         phx-disable-with=""
         class={[
-          "text-darkGrey relative flex cursor-pointer items-center font-normal has-disabled:cursor-default has-disabled:opacity-50",
+          "relative flex cursor-pointer items-center font-normal text-darkGrey has-disabled:cursor-default has-disabled:opacity-50",
           @rest[:class]
         ]}
       >
@@ -453,10 +453,10 @@ defmodule FirmowidWeb.DesignSystem.Components.CoreComponents do
           phx-disable-with=""
           checked={@checked}
           disabled={@rest[:disabled]}
-          class="border-darkGrey text-darkGrey size-4 rounded-[3px] border focus:ring-0"
+          class="size-4 rounded-[3px] border border-darkGrey text-darkGrey focus:ring-0"
           {@rest}
         />
-        <span class="text-darkGrey ml-1 text-sm">{@label}</span>
+        <span class="ml-1 text-sm text-darkGrey">{@label}</span>
       </label>
       <.error :for={msg <- @errors} :if={@show_error}>{msg}</.error>
     </div>
@@ -475,7 +475,7 @@ defmodule FirmowidWeb.DesignSystem.Components.CoreComponents do
           data-prompt={@prompt}
           data-selected-labels={Jason.encode!(@selected_labels)}
           class={[
-            "bg-grey-50 border-grey-200 peer w-full rounded-lg border bg-none px-3 py-1.5 pr-10 text-base/tight",
+            "peer w-full rounded-lg border border-grey-200 bg-grey-50 bg-none px-3 py-1.5 pr-10 text-base/tight",
             if(@selected_labels != %{},
               do: "text-transparent",
               else: if(@value in [nil, ""], do: "text-grey-300", else: "text-grey-900")
@@ -505,7 +505,7 @@ defmodule FirmowidWeb.DesignSystem.Components.CoreComponents do
             else: Map.get(@selected_labels, @value, selected_option_label(@options, @value))
           )}
         </span>
-        <Lucideicons.chevron_down class="peer-disabled:text-grey-300 text-grey-700 pointer-events-none absolute top-1/2 right-3 size-4 -translate-y-1/2" />
+        <Lucideicons.chevron_down class="pointer-events-none absolute top-1/2 right-3 size-4 -translate-y-1/2 text-grey-700 peer-disabled:text-grey-300" />
       </div>
       <.error :for={msg <- @errors} :if={@show_error} is_tooltip={@is_tooltip} target={@id}>
         {msg}
@@ -522,7 +522,7 @@ defmodule FirmowidWeb.DesignSystem.Components.CoreComponents do
         id={@id}
         name={@name}
         class={[
-          "block w-full rounded border border-gray-300 bg-white focus:border-zinc-400 focus:ring-0 sm:text-sm",
+          "border-gray-300 focus:border-zinc-400 block w-full rounded border bg-white focus:ring-0 sm:text-sm",
           @color && button_styles(:color, %{color: @color}),
           @size && button_styles(:size, %{size: @size}),
           @rest[:class]
@@ -548,7 +548,7 @@ defmodule FirmowidWeb.DesignSystem.Components.CoreComponents do
         id={@id}
         name={@name}
         class={[
-          "border-grey-200 focus:border-grey-400 placeholder:text-grey-500 text-grey-900 min-h-12 w-full resize-none rounded-lg border bg-white px-3 py-1.5 leading-tight aria-invalid:border-rose-400"
+          "aria-invalid:border-rose-400 min-h-12 w-full resize-none rounded-lg border border-grey-200 bg-white px-3 py-1.5 leading-tight text-grey-900 placeholder:text-grey-500 focus:border-grey-400"
         ]}
         aria-invalid={to_string(not Enum.empty?(@errors))}
         {@rest}
@@ -568,7 +568,7 @@ defmodule FirmowidWeb.DesignSystem.Components.CoreComponents do
         id={@id}
         name={@name}
         class={[
-          "mt-2 block min-h-24 w-full rounded text-zinc-900 focus:ring-0 sm:text-sm/6",
+          "text-zinc-900 mt-2 block min-h-24 w-full rounded focus:ring-0 sm:text-sm/6",
           @errors == [] && "border-zinc-300 focus:border-zinc-400",
           @errors != [] && "border-rose-400 focus:border-rose-400",
           @rest[:class]
@@ -595,7 +595,7 @@ defmodule FirmowidWeb.DesignSystem.Components.CoreComponents do
         value={Form.normalize_value(@type, @value)}
         aria-invalid={to_string(not Enum.empty?(@errors))}
         class={[
-          "border-grey-200 focus:border-grey-400 placeholder:text-grey-500 text-grey-900 w-full rounded-lg border bg-white px-3 py-1.5 leading-tight aria-invalid:border-red-700",
+          "w-full rounded-lg border border-grey-200 bg-white px-3 py-1.5 leading-tight text-grey-900 placeholder:text-grey-500 focus:border-grey-400 aria-invalid:border-red-700",
           @type == "number" &&
             "[appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none",
           @input_class
@@ -620,7 +620,7 @@ defmodule FirmowidWeb.DesignSystem.Components.CoreComponents do
         size={@input_size}
         value={Form.normalize_value(@type, @value)}
         class={[
-          "block w-full rounded text-zinc-900 read-only:cursor-default read-only:bg-gray-100 focus:ring-0 sm:text-sm/6",
+          "read-only:bg-gray-100 text-zinc-900 block w-full rounded read-only:cursor-default focus:ring-0 sm:text-sm/6",
           @errors == [] && "border-zinc-300 focus:border-zinc-400",
           @errors != [] && "border-rose-400 focus:border-rose-400",
           @input_class
@@ -709,7 +709,7 @@ defmodule FirmowidWeb.DesignSystem.Components.CoreComponents do
 
   def label(assigns) do
     ~H"""
-    <label for={@for} class={["block text-sm/6 text-zinc-800", @class]}>
+    <label for={@for} class={["text-zinc-800 block text-sm/6", @class]}>
       {render_slot(@inner_block)}
     </label>
     """
@@ -883,7 +883,7 @@ defmodule FirmowidWeb.DesignSystem.Components.CoreComponents do
             checked={to_string(@field.value) == to_string(value)}
             class="hidden"
           />
-          <div class="border-darkGrey text-darkGrey flex size-4 items-center justify-center rounded-[3px] border">
+          <div class="flex size-4 items-center justify-center rounded-[3px] border border-darkGrey text-darkGrey">
             <svg
               :if={to_string(@field.value) == to_string(value)}
               xmlns="http://www.w3.org/2000/svg"
@@ -896,7 +896,7 @@ defmodule FirmowidWeb.DesignSystem.Components.CoreComponents do
               <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" />
             </svg>
           </div>
-          <span class="text-darkGrey ml-1 text-sm">{render_slot(rad)}</span>
+          <span class="ml-1 text-sm text-darkGrey">{render_slot(rad)}</span>
         </label>
       </div>
     </div>
@@ -916,10 +916,10 @@ defmodule FirmowidWeb.DesignSystem.Components.CoreComponents do
     ~H"""
     <header class={[@actions != [] && "flex items-center justify-between gap-6", @class]}>
       <div>
-        <h1 class="text-lg/8 font-semibold text-zinc-800">
+        <h1 class="text-zinc-800 text-lg/8 font-semibold">
           {render_slot(@inner_block)}
         </h1>
-        <p :if={@subtitle != []} class="mt-2 text-sm/6 text-zinc-600">
+        <p :if={@subtitle != []} class="text-zinc-600 mt-2 text-sm/6">
           {render_slot(@subtitle)}
         </p>
       </div>
@@ -962,9 +962,9 @@ defmodule FirmowidWeb.DesignSystem.Components.CoreComponents do
 
     ~H"""
     <table class={[@class]}>
-      <thead class="text-left text-sm/6 text-zinc-500">
+      <thead class="text-zinc-500 text-left text-sm/6">
         <tr>
-          <th :for={col <- @col} class="text-darkGrey p-0 pr-2 font-normal uppercase">
+          <th :for={col <- @col} class="p-0 pr-2 font-normal text-darkGrey uppercase">
             {col[:label]}
           </th>
           <th :if={@action != []} class="relative p-0 pb-4">
@@ -975,7 +975,7 @@ defmodule FirmowidWeb.DesignSystem.Components.CoreComponents do
       <tbody
         id={@id}
         phx-update={match?(%Phoenix.LiveView.LiveStream{}, @rows) && "stream"}
-        class="border-lightGreyBg divide-lightGreyBg relative divide-y border-t text-sm/6 text-zinc-700"
+        class="text-zinc-700 relative divide-y divide-lightGreyBg border-t border-lightGreyBg text-sm/6"
       >
         <tr
           :for={row <- @rows}
@@ -1013,9 +1013,9 @@ defmodule FirmowidWeb.DesignSystem.Components.CoreComponents do
   def list(assigns) do
     ~H"""
     <div class="mt-14">
-      <dl class="-my-4 divide-y divide-zinc-100">
+      <dl class="divide-zinc-100 -my-4 divide-y">
         <div :for={item <- @item} class="flex gap-4 py-4 text-sm/6 sm:gap-8">
-          <dt class="w-1/4 flex-none text-zinc-500">{item.title}</dt>
+          <dt class="text-zinc-500 w-1/4 flex-none">{item.title}</dt>
           <dd class="text-zinc-700">{render_slot(item)}</dd>
         </div>
       </dl>
@@ -1174,14 +1174,14 @@ defmodule FirmowidWeb.DesignSystem.Components.CoreComponents do
         {@rest}
       />
       <div class={[
-        "bg-grey-200 relative h-[24px] w-[38px] rounded-full p-[4px] transition-colors duration-200 ease-out after:absolute after:size-[16px] after:rounded-full after:bg-white after:transition-transform after:duration-200 after:ease-out after:content-[''] peer-checked:after:translate-x-[14px] disabled:opacity-50",
+        "relative h-[24px] w-[38px] rounded-full bg-grey-200 p-[4px] transition-colors duration-200 ease-out after:absolute after:size-[16px] after:rounded-full after:bg-white after:transition-transform after:duration-200 after:ease-out after:content-[''] peer-checked:after:translate-x-[14px] disabled:opacity-50",
         @color == "orange" && "peer-checked:bg-orange-700",
         @color == "turquoise" && "peer-checked:bg-turquoise-700"
       ]}>
       </div>
       <span :if={@label} class="text-grey-900">{@label}</span>
       <%!-- hack: label_slot is a list of slots --%>
-      <span :if={Enum.any?(@label_slot)} class="text-grey-900 flex flex-row items-center">
+      <span :if={Enum.any?(@label_slot)} class="flex flex-row items-center text-grey-900">
         {render_slot(@label_slot)}
       </span>
     </label>
@@ -1413,7 +1413,7 @@ defmodule FirmowidWeb.DesignSystem.Components.CoreComponents do
       <.link
         navigate={@navigate}
         class={[
-          "text-offwhite inline-block text-xl font-extrabold tracking-wide",
+          "inline-block text-xl font-extrabold tracking-wide text-offwhite",
           @class
         ]}
         {@rest}
@@ -1423,7 +1423,7 @@ defmodule FirmowidWeb.DesignSystem.Components.CoreComponents do
     <% else %>
       <span
         class={[
-          "text-offwhite inline-block text-xl font-extrabold tracking-wide",
+          "inline-block text-xl font-extrabold tracking-wide text-offwhite",
           @class
         ]}
         {@rest}

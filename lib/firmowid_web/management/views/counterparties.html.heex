@@ -1,9 +1,9 @@
 <div :if={not @zero_state?} class="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-6 pb-4">
-  <div class="bg-lightGreyBg sticky top-10.5 z-10 flex flex-col gap-6 py-4">
+  <div class="sticky top-10.5 z-10 flex flex-col gap-6 bg-lightGreyBg py-4">
     <div class="flex items-center justify-between gap-4">
       <form class="flex gap-4" phx-submit="search">
-        <div class="bg-lightGreyBg border-greyButtonBg flex h-11 w-[360px] items-center gap-2 rounded-lg border p-1 focus-within:ring-2">
-          <Lucideicons.search class="text-grey-500 size-6 shrink-0" />
+        <div class="flex h-11 w-[360px] items-center gap-2 rounded-lg border border-greyButtonBg bg-lightGreyBg p-1 focus-within:ring-2">
+          <Lucideicons.search class="size-6 shrink-0 text-grey-500" />
           <.input
             type="text"
             name="szukaj"
@@ -45,17 +45,17 @@
             variant="ghost"
             size="small"
             class={
-              if(@live_action == live_action, do: "bg-grey-700 hover:text-grey-900 text-white")
+              if(@live_action == live_action, do: "bg-grey-700 text-white hover:text-grey-900")
             }
           >
             {label}
           </.link>
         </div>
 
-        <div class="bg-greyButtonBg mx-2 h-6 w-px"></div>
+        <div class="mx-2 h-6 w-px bg-greyButtonBg"></div>
 
         <div class="flex items-center gap-3">
-          <span class="text-darkGrey/70 text-sm font-normal">Filtry:</span>
+          <span class="text-sm font-normal text-darkGrey/70">Filtry:</span>
 
           <div class="flex flex-wrap items-center gap-2">
             <.button
@@ -91,13 +91,13 @@
 
   <%= cond do %>
     <% @counterparties_empty? -> %>
-      <div class="border-grey-200 flex flex-1 flex-col items-center justify-center gap-4 rounded-lg border p-6">
+      <div class="flex flex-1 flex-col items-center justify-center gap-4 rounded-lg border border-grey-200 p-6">
         <%= if @search != "" or not is_nil(@type_filter) do %>
-          <Lucideicons.file_x class="text-grey-300 size-26" />
-          <p class="text-grey-700 text-sm/snug">Nie znaleźliśmy szukanego kontrahenta.</p>
+          <Lucideicons.file_x class="size-26 text-grey-300" />
+          <p class="text-sm/snug text-grey-700">Nie znaleźliśmy szukanego kontrahenta.</p>
         <% else %>
-          <Lucideicons.building_2 class="text-grey-300 size-26" />
-          <p class="text-grey-700 text-sm/snug">
+          <Lucideicons.building_2 class="size-26 text-grey-300" />
+          <p class="text-sm/snug text-grey-700">
             {case @live_action do
               :index -> "Nie masz aktywnych kontrahentów do wyświetlenia."
               :archive -> "Nie masz zarchiwizowanych kontrahentów do wyświetlenia."
@@ -119,7 +119,7 @@
       >
         <div
           id="counterparties-list-header-active"
-          class="bg-lightGreyBg text-grey-700 sticky top-41 z-1 col-span-full grid grid-cols-subgrid px-4 pb-3 text-sm/snug transition-all duration-75"
+          class="sticky top-41 z-1 col-span-full grid grid-cols-subgrid bg-lightGreyBg px-4 pb-3 text-sm/snug text-grey-700 transition-all duration-75"
           phx-hook="ScrollStyle"
           data-classes="border-b-4 border-solid border-darkGrey/40 pt-3"
           data-scroll-offset="90"
@@ -157,10 +157,10 @@
                 {counterparty.display_label}
               </.link>
             </div>
-            <p class="text-grey-700 text-right">
+            <p class="text-right text-grey-700">
               <.counterparty_identifier counterparty={counterparty} />
             </p>
-            <p class="text-grey-700 hidden text-right group-data-[view=cooperation\_value]:block">
+            <p class="hidden text-right text-grey-700 group-data-[view=cooperation\_value]:block">
               {cooperation_value_cell(counterparty.cooperation_value)}
             </p>
             <.link
@@ -170,7 +170,7 @@
                   powrot_do: Navigation.counterparties_path(@live_action, @params)
                 })
               }
-              class="hover:text-grey-700 text-grey-500"
+              class="text-grey-500 hover:text-grey-700"
             >
               <Lucideicons.chevron_right class="size-4" />
             </.link>
@@ -191,7 +191,7 @@
       >
         <div
           id="counterparties-list-header-archive"
-          class="bg-lightGreyBg text-grey-700 sticky top-41 z-1 col-span-full grid grid-cols-subgrid px-4 pb-3 text-sm/snug transition-all duration-75"
+          class="sticky top-41 z-1 col-span-full grid grid-cols-subgrid bg-lightGreyBg px-4 pb-3 text-sm/snug text-grey-700 transition-all duration-75"
           phx-hook="ScrollStyle"
           data-classes="border-b-4 border-solid border-darkGrey/40 pt-3"
           data-scroll-offset="90"
@@ -228,13 +228,13 @@
                 {counterparty.display_label}
               </.link>
             </div>
-            <p class="text-grey-700 text-right">
+            <p class="text-right text-grey-700">
               <.counterparty_identifier counterparty={counterparty} />
             </p>
-            <p class="text-grey-700 text-right">
+            <p class="text-right text-grey-700">
               {Calendar.strftime(counterparty.archived_at, "%d.%m.%Y")}
             </p>
-            <p class="text-grey-700 hidden text-right group-data-[view=cooperation\_value]:block">
+            <p class="hidden text-right text-grey-700 group-data-[view=cooperation\_value]:block">
               {cooperation_value_cell(counterparty.cooperation_value)}
             </p>
             <div class="flex items-center gap-3 justify-self-end">
@@ -254,7 +254,7 @@
                     powrot_do: Navigation.counterparties_path(@live_action, @params)
                   })
                 }
-                class="hover:text-grey-700 text-grey-500"
+                class="text-grey-500 hover:text-grey-700"
               >
                 <Lucideicons.chevron_right class="size-4" />
               </.link>
@@ -267,11 +267,11 @@
 
 <div
   :if={@zero_state?}
-  class="border-grey-200 mx-auto flex size-full max-w-7xl flex-1 flex-col items-center justify-center rounded-lg border p-8"
+  class="mx-auto flex size-full max-w-7xl flex-1 flex-col items-center justify-center rounded-lg border border-grey-200 p-8"
 >
-  <Lucideicons.building_2 class="text-grey-300 size-26" size={48} />
+  <Lucideicons.building_2 class="size-26 text-grey-300" size={48} />
 
-  <p class="text-grey-700 mt-4 text-center text-sm/snug text-balance">
+  <p class="mt-4 text-center text-sm/snug text-balance text-grey-700">
     Nie masz jeszcze żadnych kontrahentów. Dodaj pierwszego, klikając poniżej.
   </p>
 

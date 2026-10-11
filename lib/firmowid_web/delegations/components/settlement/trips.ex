@@ -24,21 +24,21 @@ defmodule FirmowidWeb.Delegations.Components.Settlement.Trips do
       :for={{trip, index} <- Enum.with_index(@trips, 1)}
       :if={@editable?}
       class={[
-        "border-grey-100 mt-4 border-t pt-4",
+        "mt-4 border-t border-grey-100 pt-4",
         length(@trips) > 1 && "grid grid-cols-[1.5rem_minmax(0,1fr)] gap-x-4"
       ]}
     >
       <% trip_form = Map.fetch!(@trip_forms, trip.id) %>
-      <span :if={length(@trips) > 1} class="text-grey-900 self-center text-center text-sm font-medium">
+      <span :if={length(@trips) > 1} class="self-center text-center text-sm font-medium text-grey-900">
         {SettlementPresentation.roman_numeral(index)}
       </span>
       <div
         id={"transport-trip-#{trip.id}"}
-        class={[length(@trips) > 1 && "border-grey-200 border-l pl-4"]}
+        class={[length(@trips) > 1 && "border-l border-grey-200 pl-4"]}
       >
         <div class="min-w-0">
           <table class="block w-full border-separate border-spacing-y-3 text-left text-sm sm:table sm:w-auto">
-            <thead class="text-grey-500 hidden sm:table-header-group">
+            <thead class="hidden text-grey-500 sm:table-header-group">
               <tr>
                 <th scope="col"></th>
                 <th scope="col" class="font-normal">Miejscowość</th>
@@ -49,7 +49,7 @@ defmodule FirmowidWeb.Delegations.Components.Settlement.Trips do
             </thead>
             <tbody class="block sm:table-row-group">
               <tr class="grid grid-cols-2 gap-3 sm:table-row">
-                <th scope="row" class="text-grey-700 col-span-full font-normal sm:table-cell sm:pr-3">
+                <th scope="row" class="col-span-full font-normal text-grey-700 sm:table-cell sm:pr-3">
                   Wyjazd
                 </th>
                 <td class="col-span-full block sm:table-cell sm:pr-3">
@@ -112,7 +112,7 @@ defmodule FirmowidWeb.Delegations.Components.Settlement.Trips do
                 </td>
               </tr>
               <tr class="mt-4 grid grid-cols-2 gap-3 sm:mt-0 sm:table-row">
-                <th scope="row" class="text-grey-700 col-span-full font-normal sm:table-cell sm:pr-3">
+                <th scope="row" class="col-span-full font-normal text-grey-700 sm:table-cell sm:pr-3">
                   Przyjazd
                 </th>
                 <td class="col-span-full block sm:table-cell sm:pr-3">
@@ -165,7 +165,7 @@ defmodule FirmowidWeb.Delegations.Components.Settlement.Trips do
               >
                 <th
                   scope="row"
-                  class="text-grey-700 block pt-2 font-normal sm:table-cell sm:pr-3 sm:align-top"
+                  class="block pt-2 font-normal text-grey-700 sm:table-cell sm:pr-3 sm:align-top"
                 >
                   Opis
                 </th>
@@ -197,14 +197,14 @@ defmodule FirmowidWeb.Delegations.Components.Settlement.Trips do
     <section
       :for={{trip, index} <- Enum.with_index(@trips, 1)}
       class={[
-        "border-grey-100 mt-1 border-t pt-4 sm:col-span-2 lg:col-span-3",
+        "mt-1 border-t border-grey-100 pt-4 sm:col-span-2 lg:col-span-3",
         length(@trips) > 1 && "grid grid-cols-[1.5rem_minmax(0,1fr)] gap-x-4"
       ]}
     >
-      <span :if={length(@trips) > 1} class="text-grey-900 self-center text-center text-sm font-medium">
+      <span :if={length(@trips) > 1} class="self-center text-center text-sm font-medium text-grey-900">
         {SettlementPresentation.roman_numeral(index)}
       </span>
-      <div class={[length(@trips) > 1 && "border-grey-200 border-l pl-4"]}>
+      <div class={[length(@trips) > 1 && "border-l border-grey-200 pl-4"]}>
         <table class="border-separate border-spacing-y-3 text-left text-sm">
           <thead class="text-grey-500">
             <tr>
@@ -216,7 +216,7 @@ defmodule FirmowidWeb.Delegations.Components.Settlement.Trips do
           </thead>
           <tbody>
             <tr>
-              <th scope="row" class="text-grey-700 pr-3 font-normal">Wyjazd</th>
+              <th scope="row" class="pr-3 font-normal text-grey-700">Wyjazd</th>
               <td class="pr-3">{SettlementPresentation.present_value(trip.departure_city)}</td>
               <td class="pr-3">
                 {SettlementPresentation.format_date(
@@ -226,7 +226,7 @@ defmodule FirmowidWeb.Delegations.Components.Settlement.Trips do
               <td>{SettlementPresentation.format_time(trip.departure_datetime, @timezone)}</td>
             </tr>
             <tr>
-              <th scope="row" class="text-grey-700 pr-3 font-normal">Przyjazd</th>
+              <th scope="row" class="pr-3 font-normal text-grey-700">Przyjazd</th>
               <td class="pr-3">{SettlementPresentation.present_value(trip.arrival_city)}</td>
               <td class="pr-3">
                 {SettlementPresentation.format_date(
@@ -250,7 +250,7 @@ defmodule FirmowidWeb.Delegations.Components.Settlement.Trips do
     ~H"""
     <div>
       <dt class="text-grey-500">{@label}</dt>
-      <dd class="text-grey-700 mt-1 whitespace-pre-wrap">
+      <dd class="mt-1 whitespace-pre-wrap text-grey-700">
         {SettlementPresentation.present_value(@value)}
       </dd>
     </div>

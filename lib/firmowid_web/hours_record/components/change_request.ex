@@ -19,19 +19,19 @@ defmodule FirmowidWeb.HoursRecord.Components.ChangeRequest do
       id={"hours-record-change-#{@record.id}"}
       class="flex min-h-0 min-w-0 flex-1 flex-col gap-4"
     >
-      <h3 class="text-grey-900 shrink-0 text-base/tight font-medium">
+      <h3 class="shrink-0 text-base/tight font-medium text-grey-900">
         {gettext("Withdrawal request")}
       </h3>
-      <p class="text-grey-700 shrink-0 text-sm/snug">
+      <p class="shrink-0 text-sm/snug text-grey-700">
         {kind_label(@record.change_request_kind)}
         <span :if={@record.change_reviewed_at}>
           · {Calendar.strftime(@record.change_reviewed_at, "%d.%m.%Y %H:%M")}
         </span>
       </p>
-      <p class="scrollbar-card text-grey-900 min-h-0 flex-1 overflow-y-auto text-base/snug wrap-break-word whitespace-pre-line">
+      <p class="scrollbar-card min-h-0 flex-1 overflow-y-auto text-base/snug wrap-break-word whitespace-pre-line text-grey-900">
         {@record.change_request_reason}
       </p>
-      <p :if={@record.change_request_decision == :rejected} class="text-grey-700 text-sm/snug">
+      <p :if={@record.change_request_decision == :rejected} class="text-sm/snug text-grey-700">
         {gettext(
           "The request was rejected. The submitted document remains current and the month's hours stay locked."
         )}

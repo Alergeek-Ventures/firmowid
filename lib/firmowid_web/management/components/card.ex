@@ -13,7 +13,7 @@ defmodule FirmowidWeb.Management.Components.Card do
   def user_card_info(assigns) do
     ~H"""
     <div class={["space-y-1", @class]}>
-      <label for={@for} class="text-grey-700 block text-sm/snug">{@label}</label>
+      <label for={@for} class="block text-sm/snug text-grey-700">{@label}</label>
       <div class="flex items-center gap-2 text-base/snug">{render_slot(@inner_block)}</div>
     </div>
     """
@@ -47,7 +47,7 @@ defmodule FirmowidWeb.Management.Components.Card do
   def card_header(assigns) do
     ~H"""
     <div class="flex min-h-8.5 flex-row items-center gap-2">
-      <h3 class="text-grey-900 text-base/tight font-medium">
+      <h3 class="text-base/tight font-medium text-grey-900">
         {render_slot(@inner_block)}
       </h3>
       <div :if={Enum.any?(@actions)} class="flex items-center gap-2">

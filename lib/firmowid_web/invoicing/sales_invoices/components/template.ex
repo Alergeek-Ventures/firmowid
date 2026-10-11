@@ -118,7 +118,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.Template do
     ~H"""
     <div class="grid grid-cols-2 gap-5 text-[10px]/[14px]">
       <div>
-        <h2 class="text-grey-600 mb-2 text-[8px] font-bold">
+        <h2 class="mb-2 text-[8px] font-bold text-grey-600">
           {case @sales_invoice.invoice_type do
             :poland -> "SPRZEDAWCA"
             :foreign -> "SPRZEDAWCA / SELLER"
@@ -159,7 +159,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.Template do
         </div>
       </div>
       <div>
-        <h2 class="text-grey-600 mb-2 text-[8px] font-bold">
+        <h2 class="mb-2 text-[8px] font-bold text-grey-600">
           {case @sales_invoice.invoice_type do
             :poland -> "NABYWCA"
             :foreign -> "NABYWCA / BUYER"
@@ -231,14 +231,14 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.Template do
   defp items_table(assigns) do
     ~H"""
     <div>
-      <h2 class="text-grey-600 text-[8px] font-bold">
+      <h2 class="text-[8px] font-bold text-grey-600">
         {case @sales_invoice.invoice_type do
           :poland -> "TOWARY LUB USŁUGI"
           :foreign -> "TOWARY LUB USŁUGI / GOODS OR SERVICES"
         end}
       </h2>
       <table class="mt-1 w-full">
-        <thead class="text-darkGrey/70 text-[8px]">
+        <thead class="text-[8px] text-darkGrey/70">
           <%= if @sales_invoice.invoice_type == :poland  do %>
             <tr class="py-2">
               <th class="text-left">Lp.</th>
@@ -403,14 +403,14 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.Template do
 
     ~H"""
     <div class="mb-4">
-      <h2 class="text-darkGrey/70 mb-4 text-[8px] font-bold">
+      <h2 class="mb-4 text-[8px] font-bold text-darkGrey/70">
         {case @sales_invoice.invoice_type do
           :poland -> "TOWARY LUB USŁUGI"
           :foreign -> "TOWARY LUB USŁUGI / GOODS OR SERVICES"
         end}
       </h2>
       <table class="mt-1 w-full">
-        <thead class="text-darkGrey/70 text-[8px]/[11px]">
+        <thead class="text-[8px]/[11px] text-darkGrey/70">
           <%= if @sales_invoice.invoice_type == :poland do %>
             <tr class="*:pb-1">
               <th class="text-left">Lp.</th>
@@ -468,10 +468,10 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.Template do
   defp summary(assigns) do
     ~H"""
     <div class={[
-      "bg-grey-100 pdf-keep-together mt-6 ml-auto flex flex-col gap-2 rounded-md px-4 py-2 text-[10px]",
+      "pdf-keep-together mt-6 ml-auto flex flex-col gap-2 rounded-md bg-grey-100 px-4 py-2 text-[10px]",
       if(@sales_invoice.invoice_type == :poland, do: "w-63.75", else: "w-86.75")
     ]}>
-      <h2 class="text-grey-600 text-[8px] font-bold uppercase">
+      <h2 class="text-[8px] font-bold text-grey-600 uppercase">
         {case @sales_invoice.invoice_type do
           :poland -> "Podsumowanie"
           :foreign -> "Podsumowanie / Summary"
@@ -553,9 +553,9 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.Template do
       |> assign(:delta_vat, delta_vat)
 
     ~H"""
-    <div class="bg-greyButtonBg/30 pdf-keep-together rounded-md px-4 py-2 text-[10px]/[14px]">
+    <div class="pdf-keep-together rounded-md bg-greyButtonBg/30 px-4 py-2 text-[10px]/[14px]">
       <table class="w-full">
-        <thead class="text-grey-600 text-[8px]">
+        <thead class="text-[8px] text-grey-600">
           <%= if @sales_invoice.invoice_type == :poland do %>
             <tr class="*:pb-2.5">
               <th class="text-left uppercase">Podsumowanie</th>
@@ -584,7 +584,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.Template do
               <td class="py-0.5 text-[8px]">
                 Wartość{if @show_vat, do: " netto"}:
               </td>
-              <td class="text-grey-600 px-2 py-0.5 text-right line-through">
+              <td class="px-2 py-0.5 text-right text-grey-600 line-through">
                 {Money.new(@before_currency, @before_net)}
               </td>
               <td class="px-2 py-0.5 text-right">{Money.new(@after_currency, @after_net)}</td>
@@ -603,7 +603,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.Template do
                   Całkowita wartość VAT:
                 </td>
 
-                <td class="text-grey-600 px-2 py-0.5 text-right line-through">
+                <td class="px-2 py-0.5 text-right text-grey-600 line-through">
                   {Money.new(@before_currency, @before_vat)}
                 </td>
                 <td class="px-2 py-0.5 text-right">{Money.new(@after_currency, @after_vat)}</td>
@@ -617,11 +617,11 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.Template do
                 </td>
               </tr>
 
-              <tr class="text-[14px]/[20px] font-bold">
+              <tr class="text-sm/[20px] font-bold">
                 <td class="pt-0.5 text-[8px] font-normal">
                   Razem do zapłaty:
                 </td>
-                <td class="text-grey-600 px-2 pt-0.5 text-right line-through">
+                <td class="px-2 pt-0.5 text-right text-grey-600 line-through">
                   {@reference_invoice.amount}
                 </td>
                 <td class="px-2 pt-0.5 text-right">{@sales_invoice.amount}</td>
@@ -641,11 +641,11 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.Template do
               </td>
             </tr>
 
-            <tr class="text-[14px]/[20px] font-bold">
+            <tr class="text-sm/[20px] font-bold">
               <td class="pt-0.5 text-[8px] font-normal">
                 Razem do zapłaty / Total:
               </td>
-              <td class="text-grey-600 px-2 pt-0.5 text-right line-through">
+              <td class="px-2 pt-0.5 text-right text-grey-600 line-through">
                 {@reference_invoice.amount}
               </td>
               <td class="px-2 pt-0.5 text-right">{@sales_invoice.amount}</td>
@@ -684,7 +684,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.Template do
 
   defp payment_details(assigns) do
     ~H"""
-    <h2 class="text-darkGrey/70 mb-2 text-[8px] font-bold uppercase">
+    <h2 class="mb-2 text-[8px] font-bold text-darkGrey/70 uppercase">
       {case @sales_invoice.invoice_type do
         :poland -> "Płatność"
         :foreign -> "Płatność / Payment"
@@ -788,7 +788,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.Template do
 
     ~H"""
     <div class="absolute right-8 bottom-8 flex w-26 flex-col items-start justify-center">
-      <p class="text-grey-600 px-1 text-[8px] font-medium">
+      <p class="px-1 text-[8px] font-medium text-grey-600">
         <%= case @sales_invoice.invoice_type do %>
           <% :poland -> %>
             Sprawdź w KSeF
@@ -824,9 +824,9 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.Template do
         logo_data_uri={@logo_data_uri}
         logo_url={@logo_url}
       />
-      <hr class="border-greyButtonBg my-6" />
+      <hr class="my-6 border-greyButtonBg" />
       <.seller_buyer_section sales_invoice={@sales_invoice} />
-      <hr class="border-greyButtonBg my-6" />
+      <hr class="my-6 border-greyButtonBg" />
       <%= if @sales_invoice.ksef_invoice_kind == :kor do %>
         <% items_changed? =
           correction_items_table_changed?(@sales_invoice, @reference_invoice, @show_vat) %>
@@ -847,10 +847,10 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.Template do
         <.summary sales_invoice={@sales_invoice} show_vat={@show_vat} />
       <% end %>
 
-      <hr class="border-greyButtonBg my-6" />
+      <hr class="my-6 border-greyButtonBg" />
       <%= if @sales_invoice.currency != "PLN" do %>
         <div class="pdf-keep-together mb-3">
-          <h2 class="text-darkGrey/70 mb-2 text-[8px] font-bold uppercase">
+          <h2 class="mb-2 text-[8px] font-bold text-darkGrey/70 uppercase">
             {case @sales_invoice.invoice_type do
               :poland -> "Przewalutowanie"
               :foreign -> "Przewalutowanie / Currency conversion"
@@ -875,7 +875,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.Template do
       <% end %>
       <%= if InvoiceRenderer.has_exempt_items?(@sales_invoice) do %>
         <div class="pdf-keep-together mb-3">
-          <h3 class="text-darkGrey/70 mb-2 text-[8px] font-bold uppercase">Zwolnienie z VAT</h3>
+          <h3 class="mb-2 text-[8px] font-bold text-darkGrey/70 uppercase">Zwolnienie z VAT</h3>
           <div class="text-[10px]/[14px]">
             Podstawa zwolnienia z VAT:
             <span class="font-bold">
@@ -890,7 +890,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.Template do
       <.payment_details sales_invoice={@sales_invoice} />
       <%= if @sales_invoice.invoice_note && @sales_invoice.invoice_note != "" do %>
         <div class="pdf-keep-together mt-4 text-[10px]/[14px]">
-          <h3 class="text-darkGrey/70 mb-2 text-[8px] font-bold uppercase">Uwagi / Notes</h3>
+          <h3 class="mb-2 text-[8px] font-bold text-darkGrey/70 uppercase">Uwagi / Notes</h3>
           <div>{@sales_invoice.invoice_note}</div>
         </div>
       <% end %>

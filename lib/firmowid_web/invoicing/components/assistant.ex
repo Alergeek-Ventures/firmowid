@@ -17,7 +17,7 @@ defmodule FirmowidWeb.Invoicing.Components.Assistant do
     ~H"""
     <div
       :if={assistant_error_message(@error)}
-      class="mx-16 mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-900"
+      class="bg-red-50 mx-16 mb-4 rounded-lg border border-red-200 px-4 py-3 text-sm text-red-900"
       role="alert"
     >
       <div class="flex items-start gap-3">
@@ -31,7 +31,7 @@ defmodule FirmowidWeb.Invoicing.Components.Assistant do
   def input(assigns) do
     ~H"""
     <form
-      class="border-grey-200 mx-16 mb-8 flex h-10 flex-row gap-2 rounded-lg border bg-white px-4 py-1"
+      class="mx-16 mb-8 flex h-10 flex-row gap-2 rounded-lg border border-grey-200 bg-white px-4 py-1"
       phx-submit="send"
       phx-target={@myself}
     >
@@ -41,7 +41,7 @@ defmodule FirmowidWeb.Invoicing.Components.Assistant do
         autocomplete="off"
         placeholder={if @loading, do: "Firmowid myśli...", else: "Napisz swoją wiadomość"}
         disabled={@loading}
-        class="placeholder:text-grey-200 w-full border-none p-0 text-black focus:ring-0 focus:outline-hidden disabled:cursor-not-allowed disabled:opacity-50"
+        class="w-full border-none p-0 text-black placeholder:text-grey-200 focus:ring-0 focus:outline-hidden disabled:cursor-not-allowed disabled:opacity-50"
       />
       <FirmowidWeb.DesignSystem.Components.Button.button
         type="submit"
@@ -68,7 +68,7 @@ defmodule FirmowidWeb.Invoicing.Components.Assistant do
 
     ~H"""
     <div class="flex flex-row justify-end gap-3">
-      <p class="bg-grey-200 max-w-2xl rounded px-4 py-2">{@text}</p>
+      <p class="max-w-2xl rounded bg-grey-200 px-4 py-2">{@text}</p>
       <div class="size-10">
         <.avatar class="size-10">
           <.avatar_image
@@ -91,7 +91,7 @@ defmodule FirmowidWeb.Invoicing.Components.Assistant do
     ~H"""
     <div class="flex flex-row gap-3">
       <img src="/images/logo_firmowid.png" class="mt-2 size-10" />
-      <div class="prose prose-p:p-2 prose-p:text-black prose-p:whitespace-pre-wrap max-w-2xl">
+      <div class="prose max-w-2xl prose-p:p-2 prose-p:whitespace-pre-wrap prose-p:text-black">
         {render_content(@text)}
       </div>
     </div>
@@ -104,7 +104,7 @@ defmodule FirmowidWeb.Invoicing.Components.Assistant do
 
     ~H"""
     <div class="flex flex-row justify-end gap-3">
-      <p class="bg-grey-200 max-w-2xl rounded px-4 py-2">{@text}</p>
+      <p class="max-w-2xl rounded bg-grey-200 px-4 py-2">{@text}</p>
       <div class="size-10">
         <.avatar class="size-10">
           <.avatar_image
@@ -127,7 +127,7 @@ defmodule FirmowidWeb.Invoicing.Components.Assistant do
     ~H"""
     <div class="flex flex-row gap-3">
       <img src="/images/logo_firmowid.png" class="mt-2 size-10" />
-      <div class="prose prose-p:p-2 prose-p:text-black prose-p:whitespace-pre-wrap max-w-2xl">
+      <div class="prose max-w-2xl prose-p:p-2 prose-p:whitespace-pre-wrap prose-p:text-black">
         {render_content(@text)}
       </div>
     </div>
@@ -229,10 +229,10 @@ defmodule FirmowidWeb.Invoicing.Components.Assistant do
       <ul class="flex w-full flex-col gap-2">
         <li
           :for={transaction <- @transactions}
-          class="bg-grey-50 flex flex-row items-start justify-between gap-4 rounded px-3 py-1"
+          class="flex flex-row items-start justify-between gap-4 rounded bg-grey-50 px-3 py-1"
         >
           <div class="grid grid-cols-[min-content_1fr] gap-x-3">
-            <span class="text-grey-700 text-sm">
+            <span class="text-sm text-grey-700">
               {@displayed_party}
             </span>
             <span class="truncate text-black">
@@ -242,7 +242,7 @@ defmodule FirmowidWeb.Invoicing.Components.Assistant do
                 _ -> ""
               end}
             </span>
-            <span class="text-grey-700 text-sm">Zaksięgowano</span>
+            <span class="text-sm text-grey-700">Zaksięgowano</span>
             <span class="text-black">{TimeFormatter.format_date(transaction.booking_date)}</span>
           </div>
           <div class="flex flex-row items-center gap-3">

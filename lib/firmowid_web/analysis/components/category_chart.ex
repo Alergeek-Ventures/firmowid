@@ -39,14 +39,14 @@ defmodule FirmowidWeb.Analysis.Components.CategoryChart do
       |> assign(:boundaries, boundaries(categories, total))
 
     ~H"""
-    <section id={@id} class="border-grey-200 rounded-xl border bg-white p-6 sm:p-8">
-      <h2 class="text-darkGrey text-lg font-medium">{@title}</h2>
-      <p id={@id <> "-total"} class="text-grey-900 mt-1 text-3xl font-semibold tabular-nums">
+    <section id={@id} class="rounded-xl border border-grey-200 bg-white p-6 sm:p-8">
+      <h2 class="text-lg font-medium text-darkGrey">{@title}</h2>
+      <p id={@id <> "-total"} class="mt-1 text-3xl font-semibold text-grey-900 tabular-nums">
         {Money.new(:PLN, @total)}
       </p>
       <div class="mt-8 flex flex-col items-center gap-8 xl:flex-row xl:items-start">
         <div
-          class="bg-grey-100 size-56 shrink-0 rounded-full"
+          class="size-56 shrink-0 rounded-full bg-grey-100"
           style={@gradient}
           aria-hidden="true"
         >
@@ -67,7 +67,7 @@ defmodule FirmowidWeb.Analysis.Components.CategoryChart do
           </svg>
         </div>
         <%= if @categories == [] do %>
-          <p id={@id <> "-empty"} class="text-darkGrey py-8 text-sm">
+          <p id={@id <> "-empty"} class="py-8 text-sm text-darkGrey">
             {gettext("No entries for this month")}
           </p>
         <% else %>
@@ -79,7 +79,7 @@ defmodule FirmowidWeb.Analysis.Components.CategoryChart do
                 aria-hidden="true"
               />
               <div class="min-w-0 flex-1">
-                <span class="text-darkGrey block text-sm font-medium wrap-break-word">
+                <span class="block text-sm font-medium wrap-break-word text-darkGrey">
                   {category_name(category)}
                 </span>
                 <div class="mt-1 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 text-sm tabular-nums">

@@ -99,7 +99,7 @@ defmodule FirmowidWeb.Delegations.Components.Settlement.ForeignCurrency do
     ~H"""
     <section
       id={"foreign-currency-notice-#{@expense.id}"}
-      class="bg-turquoise-100 border-grey-200 text-turquoise-700 mt-1 flex w-full flex-wrap items-center justify-between gap-3 rounded-lg border p-6 sm:col-span-2 lg:col-span-3"
+      class="mt-1 flex w-full flex-wrap items-center justify-between gap-3 rounded-lg border border-grey-200 bg-turquoise-100 p-6 text-turquoise-700 sm:col-span-2 lg:col-span-3"
     >
       <p>Wykryto obcą walutę</p>
       <div class="flex gap-2">
@@ -143,7 +143,7 @@ defmodule FirmowidWeb.Delegations.Components.Settlement.ForeignCurrency do
         <.button
           type="button"
           variant="unstyled"
-          class="text-turquoise-700 inline-flex cursor-pointer items-center gap-1 text-sm/6 font-medium"
+          class="inline-flex cursor-pointer items-center gap-1 text-sm/6 font-medium text-turquoise-700"
           phx-click="foreign-currency-action"
           phx-value-action="notice"
           phx-value-expense-id={@expense.id}
@@ -165,7 +165,7 @@ defmodule FirmowidWeb.Delegations.Components.Settlement.ForeignCurrency do
             type="button"
             variant="secondary"
             size="small"
-            class="bg-grey-200 border-grey-200"
+            class="border-grey-200 bg-grey-200"
             phx-click="select-statement-expense"
             phx-value-id={@expense.id}
           >Wgraj dokument</.button>
@@ -174,7 +174,7 @@ defmodule FirmowidWeb.Delegations.Components.Settlement.ForeignCurrency do
       <% else %>
         <div>
           <.label class="mb-2">Kurs | {format_date(@nbp_settlement && @nbp_settlement.date)}</.label>
-          <div class="border-grey-200 text-grey-700 rounded-lg border bg-transparent px-3 py-1.5 text-base/tight">
+          <div class="rounded-lg border border-grey-200 bg-transparent px-3 py-1.5 text-base/tight text-grey-700">
             {format_rate(@currency, @nbp_settlement, "PLN")}
           </div>
         </div>
@@ -198,7 +198,7 @@ defmodule FirmowidWeb.Delegations.Components.Settlement.ForeignCurrency do
         <.button
           type="button"
           variant="unstyled"
-          class="text-grey-500 cursor-pointer"
+          class="cursor-pointer text-grey-500"
           phx-click="remove-statement-document"
           phx-value-expense-id={@expense_id}
           aria-label={"Usuń #{@blob.original_filename}"}
@@ -229,7 +229,7 @@ defmodule FirmowidWeb.Delegations.Components.Settlement.ForeignCurrency do
         />
       </div><span
         id={"settlement-currency-#{@expense_id}"}
-        class="text-grey-500 shrink-0 pb-2 text-sm whitespace-nowrap"
+        class="shrink-0 pb-2 text-sm whitespace-nowrap text-grey-500"
       >{@currency}</span>
     </div>
     """
@@ -245,13 +245,13 @@ defmodule FirmowidWeb.Delegations.Components.Settlement.ForeignCurrency do
       <div class="w-25 shrink-0">
         <.label class="mb-2">Po przeliczeniu</.label><div
           id={"settlement-amount-#{@expense_id}"}
-          class="border-grey-200 text-grey-700 rounded-lg border bg-transparent px-3 py-1.5 text-base/tight"
+          class="rounded-lg border border-grey-200 bg-transparent px-3 py-1.5 text-base/tight text-grey-700"
         >
           {Money.to_string!(@amount, fractional_digits: 2, currency_symbol: "")}
         </div>
       </div><span
         id={"settlement-currency-#{@expense_id}"}
-        class="text-grey-500 shrink-0 pb-2 text-sm whitespace-nowrap"
+        class="shrink-0 pb-2 text-sm whitespace-nowrap text-grey-500"
       >{@currency}</span>
     </div>
     """

@@ -31,7 +31,7 @@ defmodule FirmowidWeb.Landing.Views.TermsOfService do
     ~H"""
     <.legal_page>
       <h1 class="text-4xl font-bold">{gettext("Terms of Service")}</h1>
-      <p class="text-sm text-neutral-500">
+      <p class="text-neutral-500 text-sm">
         {gettext("Last updated: September 30, 2026")}
       </p>
 

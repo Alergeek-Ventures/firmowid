@@ -74,7 +74,7 @@ defmodule FirmowidWeb.Management.Components.LeavesTab do
               clickable?={true}
             />
           </ul>
-          <p :if={@pending_requests == []} class="text-grey-500 text-sm">
+          <p :if={@pending_requests == []} class="text-sm text-grey-500">
             Brak wniosków do zatwierdzenia.
           </p>
         </div>
@@ -89,7 +89,7 @@ defmodule FirmowidWeb.Management.Components.LeavesTab do
               <div
                 id="leaves-search-container"
                 data-expanded={to_string(@search != "")}
-                class="data-[expanded=true]:bg-greyButtonBg group flex items-center justify-center rounded-lg transition-shadow data-[expanded=true]:focus-within:ring-2"
+                class="group flex items-center justify-center rounded-lg transition-shadow data-[expanded=true]:bg-greyButtonBg data-[expanded=true]:focus-within:ring-2"
               >
                 <.input
                   type="text"
@@ -131,14 +131,14 @@ defmodule FirmowidWeb.Management.Components.LeavesTab do
         </div>
 
         <div class="flex gap-3">
-          <span class="bg-grey-50 text-grey-500 rounded px-3 py-1 text-sm">
+          <span class="rounded bg-grey-50 px-3 py-1 text-sm text-grey-500">
             Wykorzystane w tym roku:
-            <span class="text-grey-700 pl-1 font-medium">{@leave_days} dni</span>
+            <span class="pl-1 font-medium text-grey-700">{@leave_days} dni</span>
           </span>
         </div>
 
         <div class="relative min-h-0 w-full flex-1">
-          <div class="scrollbar-card absolute inset-0 space-y-1 overflow-y-auto pr-2">
+          <div class="absolute inset-0 scrollbar-card space-y-1 overflow-y-auto pr-2">
             <ul :if={@other_requests != []} class="space-y-1">
               <.leave_row
                 :for={request <- @other_requests}
@@ -149,7 +149,7 @@ defmodule FirmowidWeb.Management.Components.LeavesTab do
             </ul>
             <div
               :if={Enum.empty?(@other_requests)}
-              class="bg-grey-50 text-grey-700 flex size-full items-center justify-center rounded-lg text-sm"
+              class="flex size-full items-center justify-center rounded-lg bg-grey-50 text-sm text-grey-700"
             >
               <p>
                 Brak pozostałych wniosków.
@@ -165,7 +165,7 @@ defmodule FirmowidWeb.Management.Components.LeavesTab do
       >
         <div :if={@selected_request} id={"leave-review-#{@selected_request.id}"} class="space-y-8">
           <div class="flex items-center gap-3">
-            <span class="bg-grey-100 text-grey-700 flex size-6.5 shrink-0 items-center justify-center rounded">
+            <span class="flex size-6.5 shrink-0 items-center justify-center rounded bg-grey-100 text-grey-700">
               <.reason_icon reason={@selected_request.reason} />
             </span>
 
@@ -173,8 +173,8 @@ defmodule FirmowidWeb.Management.Components.LeavesTab do
               <h2 class="font-medium">
                 {LeavePresentation.reason_label(@selected_request.reason)}
               </h2>
-              <span class="text-grey-500 inline">|</span>
-              <span class="text-grey-600 text-base font-medium tabular-nums">
+              <span class="inline text-grey-500">|</span>
+              <span class="text-base font-medium text-grey-600 tabular-nums">
                 {LeavePresentation.format_range(
                   @selected_request.starts_on,
                   @selected_request.ends_on
@@ -193,7 +193,7 @@ defmodule FirmowidWeb.Management.Components.LeavesTab do
               target="_blank"
               rel="noopener noreferrer"
               download={attachment_filename(@selected_request)}
-              class="hover:text-grey-900 text-grey-700 inline-flex items-center gap-2 text-sm font-medium underline"
+              class="inline-flex items-center gap-2 text-sm font-medium text-grey-700 underline hover:text-grey-900"
             >
               <.icon name="hero-arrow-down-tray" class="size-4" />
               {attachment_filename(@selected_request)}
@@ -340,14 +340,14 @@ defmodule FirmowidWeb.Management.Components.LeavesTab do
     <li
       class={[
         "flex items-center gap-3 rounded px-1 py-2 transition",
-        @clickable? && "hover:bg-grey-50 cursor-pointer"
+        @clickable? && "cursor-pointer hover:bg-grey-50"
       ]}
       phx-click={
         @clickable? &&
           JS.push("open_leave_request", value: %{id: @request.id}, target: @myself)
       }
     >
-      <span class="bg-grey-100 text-grey-700 flex size-6.5 shrink-0 items-center justify-center rounded">
+      <span class="flex size-6.5 shrink-0 items-center justify-center rounded bg-grey-100 text-grey-700">
         <.reason_icon reason={@request.reason} />
       </span>
 
@@ -355,13 +355,13 @@ defmodule FirmowidWeb.Management.Components.LeavesTab do
         {LeavePresentation.reason_label(@request.reason)}
         <span
           :if={@show_pending_dot?}
-          class="bg-turquoise-500 size-3 shrink-0 rounded-full"
+          class="size-3 shrink-0 rounded-full bg-turquoise-500"
         />
       </span>
 
       <span
         :if={@request.blob_id}
-        class="text-grey-400 flex shrink-0 items-center"
+        class="flex shrink-0 items-center text-grey-400"
         title="Załącznik"
       >
         <.icon name="hero-paper-clip" class="size-4" />

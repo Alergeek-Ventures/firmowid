@@ -44,7 +44,7 @@ defmodule FirmowidWeb.Delegations.Views.DelegationForm do
       </div>
       <main class="px-0 pb-12 sm:px-32">
         <h1 class="text-2xl/tight font-normal">Planowanie delegacji</h1>
-        <p class="text-grey-700 mt-6 max-w-3xl text-base text-balance">
+        <p class="mt-6 max-w-3xl text-base text-balance text-grey-700">
           Wypełnij poniższy wniosek. Po wysłaniu zostanie on przesłany do Twojego pracodawcy. Gdy zostanie zaakceptowany otrzymasz maila z potwierdzeniem.
         </p>
         <.form
@@ -66,9 +66,9 @@ defmodule FirmowidWeb.Delegations.Views.DelegationForm do
                     show_on_mobile
                     variant="outline"
                     size="small"
-                    class="bg-grey-50 w-full pr-10"
+                    class="w-full bg-grey-50 pr-10"
                   />
-                  <Lucideicons.chevron_down class="text-grey-700 pointer-events-none absolute top-1/2 right-3 size-4 -translate-y-1/2" />
+                  <Lucideicons.chevron_down class="pointer-events-none absolute top-1/2 right-3 size-4 -translate-y-1/2 text-grey-700" />
                   <input
                     type="hidden"
                     name={@form[:billing_month].name}
@@ -87,7 +87,7 @@ defmodule FirmowidWeb.Delegations.Views.DelegationForm do
               <.form_row label="Data wyjazdu" for="delegation_start_date">
                 <div class="flex flex-wrap items-start gap-2">
                   <div class="w-full sm:w-auto">
-                    <span class="text-grey-700 text-sm sm:hidden">od</span>
+                    <span class="text-sm text-grey-700 sm:hidden">od</span>
                     <.input
                       field={@form[:start_date]}
                       id="delegation_start_date"
@@ -102,7 +102,7 @@ defmodule FirmowidWeb.Delegations.Views.DelegationForm do
                   </div>
                   <span aria-hidden="true" class="mt-2 hidden sm:block">-</span>
                   <div class="w-full sm:w-auto">
-                    <span class="text-grey-700 text-sm sm:hidden">do</span>
+                    <span class="text-sm text-grey-700 sm:hidden">do</span>
                     <.input
                       field={@form[:end_date]}
                       id="delegation_end_date"
@@ -159,7 +159,7 @@ defmodule FirmowidWeb.Delegations.Views.DelegationForm do
                       variant="unstyled"
                       phx-click="remove_transport_type"
                       phx-value-index={index}
-                      class="text-grey-500 inline-flex size-8 items-center justify-center transition-colors hover:text-red-700"
+                      class="inline-flex size-8 items-center justify-center text-grey-500 transition-colors hover:text-red-700"
                       aria-label="Usuń środek lokomocji"
                     >
                       <Lucideicons.x class="size-4" />
@@ -203,7 +203,7 @@ defmodule FirmowidWeb.Delegations.Views.DelegationForm do
                       input_class="w-full text-right placeholder:text-grey-300 sm:w-25"
                     />
                   </div>
-                  <span id="delegation_amount_currency" class="text-grey-500 text-sm">PLN</span>
+                  <span id="delegation_amount_currency" class="text-sm text-grey-500">PLN</span>
                 </div>
               </.form_row>
             </div>

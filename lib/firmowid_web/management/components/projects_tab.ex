@@ -192,9 +192,9 @@ defmodule FirmowidWeb.Management.Components.ProjectsTab do
           </div>
 
           <div class="relative w-full flex-1">
-            <div class="divide-lightGreyBg scrollbar-card absolute inset-0 divide-y overflow-y-auto pr-4">
+            <div class="absolute inset-0 scrollbar-card divide-y divide-lightGreyBg overflow-y-auto pr-4">
               <%= if Enum.empty?(@projects) do %>
-                <div class="text-darkGrey mt-4 text-sm">Brak projektów</div>
+                <div class="mt-4 text-sm text-darkGrey">Brak projektów</div>
               <% else %>
                 <.project_accordion :for={project <- @projects} project={project} />
               <% end %>
@@ -209,12 +209,12 @@ defmodule FirmowidWeb.Management.Components.ProjectsTab do
             </.card_header>
             <div class="flex flex-col gap-4">
               <.user_card_info label="Przepracowano">
-                <span class="text-turquoise-700 font-medium">
+                <span class="font-medium text-turquoise-700">
                   {Timetracker.seconds_to_hours(@time_worked)} godz.
                 </span>
               </.user_card_info>
               <.user_card_info label="Wynagrodzenie">
-                <span class="text-turquoise-700 font-medium">
+                <span class="font-medium text-turquoise-700">
                   {:PLN
                   |> Money.new(
                     Decimal.mult(
@@ -243,7 +243,7 @@ defmodule FirmowidWeb.Management.Components.ProjectsTab do
           <div
             :if={@hours_record_requests != [] || @previous_hours_records != []}
             id="employee-hours-record-requests"
-            class="scrollbar-card flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto contain-[size]"
+            class="flex scrollbar-card min-h-0 flex-1 flex-col gap-4 overflow-y-auto contain-[size]"
           >
             <.card
               :for={record <- @hours_record_requests}
@@ -265,7 +265,7 @@ defmodule FirmowidWeb.Management.Components.ProjectsTab do
 
       <.modal id="salary-history-modal">
         <h2 class="mb-4 text-xl font-medium">Historia stawek</h2>
-        <div class="divide-lightGreyBg scrollbar-card flex max-h-[400px] flex-col gap-2 overflow-y-auto">
+        <div class="flex scrollbar-card max-h-[400px] flex-col gap-2 divide-lightGreyBg overflow-y-auto">
           <%= if Enum.empty?(@salary_history) do %>
             <p class="text-grey-700">Brak danych</p>
           <% else %>
@@ -275,7 +275,7 @@ defmodule FirmowidWeb.Management.Components.ProjectsTab do
                 |> Money.new(salary.hourly_rate)
                 |> Money.to_string!(no_fraction_if_integer: true)}/godz.
               </span>
-              <span class="text-grey-500 text-sm">
+              <span class="text-sm text-grey-500">
                 ({TimeFormatter.format_date(salary.starts_at)} - {if salary.ends_at,
                   do: TimeFormatter.format_date(salary.ends_at),
                   else: "obecnie"})
@@ -435,7 +435,7 @@ defmodule FirmowidWeb.Management.Components.ProjectsTab do
           <% else %>
             <div
               :for={session <- @project.sessions}
-              class="text-grey-700 flex justify-between text-base/snug"
+              class="flex justify-between text-base/snug text-grey-700"
             >
               <p class="truncate text-nowrap">{session.title}</p>
               <p>

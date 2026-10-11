@@ -15,7 +15,7 @@ defmodule FirmowidWeb.Delegations.Components.Delegation do
 
   def form_row(assigns) do
     ~H"""
-    <label for={@for} class={["text-grey-700 text-base", @label_class]}>{@label}</label>
+    <label for={@for} class={["text-base text-grey-700", @label_class]}>{@label}</label>
     <div>{render_slot(@inner_block)}</div>
     """
   end
@@ -29,7 +29,7 @@ defmodule FirmowidWeb.Delegations.Components.Delegation do
 
   def detail_row(assigns) do
     ~H"""
-    <dt class={["text-grey-700 text-base", @dt_class]}>{@label}</dt>
+    <dt class={["text-base text-grey-700", @dt_class]}>{@label}</dt>
     <dd class={["text-base text-black", @dd_class]}>{render_slot(@inner_block)}</dd>
     """
   end

@@ -54,7 +54,7 @@ defmodule FirmowidWeb.Auth.Views.DisabledAccount do
           <Lucideicons.shield_alert class="size-6" />
         </div>
         <h1 class="mb-2 text-2xl/tight font-semibold">Konto wyłączone</h1>
-        <p class="text-grey-700 text-base/snug">
+        <p class="text-base/snug text-grey-700">
           To konto jest obecnie niedostępne. Skontaktuj się z administratorem organizacji,
           aby potwierdzić, czy konto zostało wyłączone lub dostęp został zablokowany.
         </p>

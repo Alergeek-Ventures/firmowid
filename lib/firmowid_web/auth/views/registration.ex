@@ -52,10 +52,10 @@ defmodule FirmowidWeb.Auth.Views.Registration do
 
       <div class="relative my-6">
         <div class="absolute inset-0 flex items-center">
-          <div class="w-full border-t border-gray-300"></div>
+          <div class="border-gray-300 w-full border-t"></div>
         </div>
         <div class="relative flex justify-center text-sm">
-          <span class="bg-white px-2 text-gray-500">lub</span>
+          <span class="text-gray-500 bg-white px-2">lub</span>
         </div>
       </div>
 
@@ -64,7 +64,7 @@ defmodule FirmowidWeb.Auth.Views.Registration do
         redirect={~p"/auth/user/google"}
         kind="button"
         variant="outline"
-        class="w-full gap-3 border-gray-300 bg-white text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50"
+        class="border-gray-300 hover:bg-gray-50 text-gray-700 w-full gap-3 bg-white text-sm font-medium shadow-sm"
       >
         <svg class="size-5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
           <path

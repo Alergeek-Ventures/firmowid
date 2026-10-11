@@ -45,7 +45,7 @@ defmodule FirmowidWeb.Delegations.Components.Settlement.Expense do
           </h2>
           <span
             :if={@kind == "transport" && @editable?}
-            class="bg-grey-200 h-5 w-px sm:hidden"
+            class="h-5 w-px bg-grey-200 sm:hidden"
             aria-hidden="true"
           />
           <.button
@@ -59,18 +59,18 @@ defmodule FirmowidWeb.Delegations.Components.Settlement.Expense do
             }
             phx-click="sort"
           >Sortuj chronologicznie <Lucideicons.arrow_down_up class="size-4" /></.button>
-          <span class="bg-grey-200 hidden h-5 w-px sm:block" aria-hidden="true" />
+          <span class="hidden h-5 w-px bg-grey-200 sm:block" aria-hidden="true" />
           <.button
             type="button"
             variant="unstyled"
-            class="text-grey-700 hidden text-sm font-medium hover:underline sm:inline-flex"
+            class="hidden text-sm font-medium text-grey-700 hover:underline sm:inline-flex"
             phx-click={show_modal("#{@kind}-documents-modal")}
           >Jakie dokumenty załączyć?</.button>
         </div>
         <.button
           type="button"
           variant="unstyled"
-          class="text-grey-700 mt-2 text-sm font-medium hover:underline sm:hidden"
+          class="mt-2 text-sm font-medium text-grey-700 hover:underline sm:hidden"
           phx-click={show_modal("#{@kind}-documents-modal")}
         >Jakie dokumenty załączyć?</.button>
       </header>
@@ -78,16 +78,16 @@ defmodule FirmowidWeb.Delegations.Components.Settlement.Expense do
         <div
           :if={!@editable? && @expenses == []}
           id={"#{@kind}-empty-state"}
-          class="text-grey-500 px-4 py-5 text-sm"
+          class="px-4 py-5 text-sm text-grey-500"
         >
           Nie dodano żadnych wydatków w tej kategorii.
         </div>
         <article
           :for={expense <- @expenses}
-          class={["border-grey-200 rounded-lg border p-4", !@editable? && "bg-white"]}
+          class={["rounded-lg border border-grey-200 p-4", !@editable? && "bg-white"]}
         >
           <% forms = Map.fetch!(@expense_forms, expense.id) %>
-          <div class="text-grey-500 flex items-center justify-between gap-3 text-sm">
+          <div class="flex items-center justify-between gap-3 text-sm text-grey-500">
             <.link
               :if={expense.blob}
               kind="unstyled"
@@ -114,17 +114,17 @@ defmodule FirmowidWeb.Delegations.Components.Settlement.Expense do
             <.dropdown :if={@editable?} id={"expense-menu-#{expense.id}"}>
               <:trigger>
                 <span
-                  class="hover:bg-grey-100 text-grey-500 inline-flex size-8 cursor-pointer items-center justify-center rounded"
+                  class="inline-flex size-8 cursor-pointer items-center justify-center rounded text-grey-500 hover:bg-grey-100"
                   aria-label="Opcje pozycji"
                 >
                   <Lucideicons.ellipsis_vertical class="size-4" />
                 </span>
               </:trigger>
-              <div class="border-grey-200 flex min-w-64 flex-col items-stretch rounded-lg border bg-white p-1 text-left shadow-sm">
+              <div class="flex min-w-64 flex-col items-stretch rounded-lg border border-grey-200 bg-white p-1 text-left shadow-sm">
                 <label
                   id={"add-related-document-#{expense.id}"}
                   for={@related_upload.ref}
-                  class="hover:bg-grey-50 text-grey-700 cursor-pointer rounded px-3 py-2 text-left text-sm font-medium"
+                  class="cursor-pointer rounded px-3 py-2 text-left text-sm font-medium text-grey-700 hover:bg-grey-50"
                   phx-click="select-related-expense"
                   phx-value-id={expense.id}
                 >
@@ -134,7 +134,7 @@ defmodule FirmowidWeb.Delegations.Components.Settlement.Expense do
                   :if={@kind == "accommodation"}
                   type="button"
                   variant="unstyled"
-                  class="hover:bg-grey-50 text-grey-700 cursor-pointer justify-start rounded px-3 py-2 text-left text-sm font-medium"
+                  class="cursor-pointer justify-start rounded px-3 py-2 text-left text-sm font-medium text-grey-700 hover:bg-grey-50"
                   phx-click={
                     if Map.get(@description_visible?, expense.id, false),
                       do: "hide-description",
@@ -147,7 +147,7 @@ defmodule FirmowidWeb.Delegations.Components.Settlement.Expense do
                 <.button
                   type="button"
                   variant="unstyled"
-                  class="cursor-pointer justify-start rounded px-3 py-2 text-left text-sm font-medium text-red-700 hover:bg-red-50"
+                  class="hover:bg-red-50 cursor-pointer justify-start rounded px-3 py-2 text-left text-sm font-medium text-red-700"
                   phx-click="delete"
                   phx-value-kind={@kind}
                   phx-value-id={expense.id}
@@ -255,10 +255,10 @@ defmodule FirmowidWeb.Delegations.Components.Settlement.Expense do
             prompt="Wgraj fakturę/rachunek"
             content_class="text-grey-700!"
             prompt_class="sm:hidden"
-            class="border-grey-200! justify-between! rounded-lg! border! px-4! py-7! sm:py-10!"
+            class="justify-between! rounded-lg! border! border-grey-200! px-4! py-7! sm:py-10!"
             phx_change="upload"
           />
-          <p class="text-grey-700 pointer-events-none absolute top-1/2 left-4 hidden -translate-y-1/2 text-sm sm:block">
+          <p class="pointer-events-none absolute top-1/2 left-4 hidden -translate-y-1/2 text-sm text-grey-700 sm:block">
             Przeciągnij tu fakturę/rachunek lub wybierz plik z komputera
           </p>
           <.button
@@ -290,9 +290,9 @@ defmodule FirmowidWeb.Delegations.Components.Settlement.Expense do
       :if={!@entry.done?}
       id={"#{@kind}-pending-expense-#{@entry.ref}"}
       aria-busy="true"
-      class="border-grey-200 rounded-lg border p-4"
+      class="rounded-lg border border-grey-200 p-4"
     >
-      <div class="text-grey-500 flex items-center justify-between gap-3 text-sm">
+      <div class="flex items-center justify-between gap-3 text-sm text-grey-500">
         <span class="flex min-w-0 items-center gap-2 truncate">
           <Lucideicons.loader_circle class="size-5 shrink-0 animate-spin" />
           {@entry.client_name}
@@ -313,7 +313,7 @@ defmodule FirmowidWeb.Delegations.Components.Settlement.Expense do
       <.skeleton_field label="Nr dokumentu" shimmer? />
       <.skeleton_amount_field />
     </div>
-    <div class="border-grey-100 mt-4 border-t pt-4">
+    <div class="mt-4 border-t border-grey-100 pt-4">
       <table class="border-separate border-spacing-y-3 text-left text-sm">
         <thead class="text-grey-500">
           <tr>
@@ -325,13 +325,13 @@ defmodule FirmowidWeb.Delegations.Components.Settlement.Expense do
         </thead>
         <tbody>
           <tr>
-            <th scope="row" class="text-grey-700 pr-3 font-normal">Wyjazd</th>
+            <th scope="row" class="pr-3 font-normal text-grey-700">Wyjazd</th>
             <td class="pr-3"><.skeleton_blob class="w-[237px] min-w-[237px]" /></td>
             <td class="pr-3"><.skeleton_blob class="w-[172px] min-w-[172px]" /></td>
             <td><.skeleton_blob class="w-[91px] min-w-[91px]" /></td>
           </tr>
           <tr>
-            <th scope="row" class="text-grey-700 pr-3 font-normal">Przyjazd</th>
+            <th scope="row" class="pr-3 font-normal text-grey-700">Przyjazd</th>
             <td class="pr-3"><.skeleton_blob class="w-[237px] min-w-[237px]" /></td>
             <td class="pr-3"><.skeleton_blob class="w-[172px] min-w-[172px]" /></td>
             <td><.skeleton_blob class="w-[91px] min-w-[91px]" /></td>
@@ -371,7 +371,7 @@ defmodule FirmowidWeb.Delegations.Components.Settlement.Expense do
   defp skeleton_field(assigns) do
     ~H"""
     <div class={["w-full min-w-0", @class]}>
-      <div class="text-grey-700 mb-2 flex items-center gap-1 text-sm/6">
+      <div class="mb-2 flex items-center gap-1 text-sm/6 text-grey-700">
         <Lucideicons.sparkles :if={@shimmer?} class="size-4" aria-hidden="true" />
         {@label}
       </div>
@@ -383,12 +383,12 @@ defmodule FirmowidWeb.Delegations.Components.Settlement.Expense do
   defp skeleton_amount_field(assigns) do
     ~H"""
     <div class="w-full min-w-0">
-      <div class="text-grey-700 mb-2 flex items-center gap-1 text-sm/6">
+      <div class="mb-2 flex items-center gap-1 text-sm/6 text-grey-700">
         <Lucideicons.sparkles class="size-4" aria-hidden="true" /> Kwota
       </div>
       <div class="flex items-end gap-2">
         <.skeleton_blob class="flex-1" />
-        <span class="text-grey-500 shrink-0 pb-2 text-sm whitespace-nowrap">PLN</span>
+        <span class="shrink-0 pb-2 text-sm whitespace-nowrap text-grey-500">PLN</span>
       </div>
     </div>
     """
@@ -399,7 +399,7 @@ defmodule FirmowidWeb.Delegations.Components.Settlement.Expense do
   defp skeleton_blob(assigns) do
     ~H"""
     <div class={[
-      "bg-grey-200 border-grey-200 block h-9 min-h-9 w-full min-w-0 animate-pulse rounded-lg border",
+      "block h-9 min-h-9 w-full min-w-0 animate-pulse rounded-lg border border-grey-200 bg-grey-200",
       @class
     ]} />
     """
@@ -470,7 +470,7 @@ defmodule FirmowidWeb.Delegations.Components.Settlement.Expense do
     ~H"""
     <div class={@class}>
       <dt class="text-grey-500">{@label}</dt>
-      <dd class="text-grey-700 mt-1 whitespace-pre-wrap">
+      <dd class="mt-1 whitespace-pre-wrap text-grey-700">
         {SettlementPresentation.present_value(@value)}
       </dd>
     </div>

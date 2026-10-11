@@ -1,4 +1,4 @@
-<div class="container mx-auto p-6">
+<div class="container p-6">
   <div class="flex justify-between">
     <.back navigate={~p"/czasosledz/"} class="my-auto" icon_only />
     <.month_picker
@@ -11,7 +11,7 @@
   <div class="mt-8 flex flex-col justify-between gap-20 md:flex-row">
     <div class="col-span-4 w-full space-y-2">
       <%= for project <- @projects do %>
-        <div class="bg-grey-50 divide-greyButtonBg flex flex-col divide-y rounded-md px-4">
+        <div class="flex flex-col divide-y divide-greyButtonBg rounded-md bg-grey-50 px-4">
           <FirmowidWeb.DesignSystem.Components.Button.button
             phx-click="toggle-project"
             type="button"
@@ -39,12 +39,12 @@
     </div>
 
     <div class="flex w-full max-w-[360px] flex-col gap-6">
-      <div class="bg-grey-50 flex flex-col space-y-8 rounded-sm p-4">
+      <div class="flex flex-col space-y-8 rounded-sm bg-grey-50 p-4">
         <h3 class="font-bold">Podsumowanie:</h3>
         <div>
           <p class="mb-3">Przepracowane godziny:</p>
           <p class="text-xl font-bold">{TimeFormatter.format_duration(@total_duration)}</p>
-          <p class="text-darkGrey text-sm">
+          <p class="text-sm text-darkGrey">
             {TimeFormatter.format_duration(@total_duration, :with_days)}
           </p>
         </div>
@@ -53,23 +53,23 @@
           <p class="text-xl font-bold">
             {TimeFormatter.format_duration(most_demanding.duration)}
           </p>
-          <p class="text-darkGrey text-sm">{most_demanding.name}</p>
+          <p class="text-sm text-darkGrey">{most_demanding.name}</p>
         </div>
       </div>
       <div
         :if={@current_hours_record || @total_duration > 3599}
         id="hours-record-submission-card"
-        class="bg-grey-50 flex flex-col gap-6 rounded-md p-4"
+        class="flex flex-col gap-6 rounded-md bg-grey-50 p-4"
       >
-        <div class="bg-grey-50 flex items-center justify-between gap-2">
+        <div class="flex items-center justify-between gap-2 bg-grey-50">
           <span class="font-bold">Ewidencja godzin</span>
 
           <%= if @current_hours_record do %>
-            <span class="bg-greenBg text-greenText flex items-center justify-center gap-1 rounded-md py-[5px] pr-1 pl-2 text-xs font-semibold uppercase">
+            <span class="flex items-center justify-center gap-1 rounded-md bg-greenBg py-[5px] pr-1 pl-2 text-xs font-semibold text-greenText uppercase">
               WYSŁANO <.icon name="hero-check-micro" />
             </span>
           <% else %>
-            <span class="bg-greyButtonBg text-darkGrey flex items-center justify-center gap-1 rounded-md py-[5px] pr-1 pl-2 text-xs font-semibold uppercase">
+            <span class="flex items-center justify-center gap-1 rounded-md bg-greyButtonBg py-[5px] pr-1 pl-2 text-xs font-semibold text-darkGrey uppercase">
               BRAK <.icon name="hero-x-mark-micro" />
             </span>
           <% end %>
@@ -97,13 +97,13 @@
       <div
         :if={@current_hours_record && is_nil(@current_hours_record.change_requested_at)}
         id="hours-record-change-card"
-        class="bg-grey-50 rounded-md"
+        class="rounded-md bg-grey-50"
       >
         <.button
           id="hours-record-request-change"
           type="button"
           variant="unstyled"
-          class="active:bg-grey-200 block w-full cursor-pointer rounded-md p-4 text-center focus-visible:outline-2 focus-visible:outline-orange-500"
+          class="block w-full cursor-pointer rounded-md p-4 text-center focus-visible:outline-2 focus-visible:outline-orange-500 active:bg-grey-200"
           phx-click={show_modal("hours-record-change-request")}
         >
           {gettext("Request correction or cancellation")}
@@ -111,11 +111,11 @@
       </div>
       <div
         :for={record <- @change_requests}
-        class="bg-grey-50 rounded-md border border-orange-700 p-4"
+        class="rounded-md border border-orange-700 bg-grey-50 p-4"
       >
         <.change_request record={record} />
       </div>
-      <div :if={@previous_hours_records != []} class="bg-grey-50 rounded-md p-4">
+      <div :if={@previous_hours_records != []} class="rounded-md bg-grey-50 p-4">
         <.submission_history records={@previous_hours_records} user={@current_user} />
       </div>
       <p :if={!@current_hours_record && @total_duration <= 3599} class="mt-2 text-center text-sm">

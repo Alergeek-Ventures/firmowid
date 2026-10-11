@@ -41,13 +41,13 @@ defmodule FirmowidWeb.Invoicing.Transactions.Components.ShowComponents do
         <h1 class="truncate text-lg/tight font-medium lg:text-2xl">
           {counterparty_name(@transaction)}
         </h1>
-        <h2 class="text-darkGrey line-clamp-2">{transaction_summary(@transaction)}</h2>
+        <h2 class="line-clamp-2 text-darkGrey">{transaction_summary(@transaction)}</h2>
       </div>
 
       <div class="ml-auto flex shrink-0 items-center gap-4">
         <div class="text-right">
-          <p class="text-darkGrey text-sm/snug">{header_account_label(@transaction)}</p>
-          <p class="text-darkGrey text-sm/snug">{bank_name(@transaction)}</p>
+          <p class="text-sm/snug text-darkGrey">{header_account_label(@transaction)}</p>
+          <p class="text-sm/snug text-darkGrey">{bank_name(@transaction)}</p>
         </div>
         <.bank_badge institution={Map.get(@transaction, :bank_account)} size="full" />
       </div>
@@ -167,7 +167,7 @@ defmodule FirmowidWeb.Invoicing.Transactions.Components.ShowComponents do
 
         <div class="grid grid-cols-[1fr_8rem] gap-6 lg:gap-x-10">
           <div class="col-span-full grid grid-cols-subgrid">
-            <p class="text-grey-700 self-center text-sm/snug text-balance">
+            <p class="self-center text-sm/snug text-balance text-grey-700">
               Poproś Firmowida o pomoc w znalezieniu kolejnych faktur dla tej transakcji.
             </p>
 
@@ -219,12 +219,12 @@ defmodule FirmowidWeb.Invoicing.Transactions.Components.ShowComponents do
 
         <div class="grid grid-cols-[1fr_8rem] gap-6 lg:gap-x-10">
           <div class="col-span-full grid grid-cols-subgrid items-center">
-            <p class="text-grey-700 text-sm/snug text-balance">
+            <p class="text-sm/snug text-balance text-grey-700">
               {skip_transaction_copy(@transaction)}
             </p>
 
             <div class="flex h-8 w-full flex-row items-start gap-2">
-              <div class="bg-grey-200 text-grey-700 flex items-center justify-center rounded-md p-2">
+              <div class="flex items-center justify-center rounded-md bg-grey-200 p-2 text-grey-700">
                 <.icon name="hero-document-text-solid" class="size-4" />
               </div>
 
@@ -251,7 +251,7 @@ defmodule FirmowidWeb.Invoicing.Transactions.Components.ShowComponents do
     <div class="flex flex-col gap-4 rounded-md bg-[#D0E6CE66] p-4">
       <div :if={@card.badge_variant} class="flex flex-row items-center justify-between">
         <div class="space-y-1">
-          <p class="text-grey-700 text-sm/snug">{@card.type_label}</p>
+          <p class="text-sm/snug text-grey-700">{@card.type_label}</p>
           <.link kind="unstyled" navigate={@card.navigate} class="leading-snug hover:underline">
             {@card.number}
           </.link>
@@ -262,7 +262,7 @@ defmodule FirmowidWeb.Invoicing.Transactions.Components.ShowComponents do
 
       <div class="grid grid-flow-col grid-cols-[2fr_1fr_1fr] grid-rows-2 gap-x-4 gap-y-6">
         <div :if={is_nil(@card.badge_variant)} class="space-y-1">
-          <p class="text-grey-700 text-sm/snug">{@card.type_label}</p>
+          <p class="text-sm/snug text-grey-700">{@card.type_label}</p>
           <.link kind="unstyled" navigate={@card.navigate} class="leading-snug hover:underline">
             {@card.number}
           </.link>
@@ -270,7 +270,7 @@ defmodule FirmowidWeb.Invoicing.Transactions.Components.ShowComponents do
 
         <%= for {label, val} <- @card.metadata do %>
           <div class="space-y-1">
-            <p class="text-grey-700 text-sm/snug">{label}</p>
+            <p class="text-sm/snug text-grey-700">{label}</p>
             <p class="leading-snug">{val}</p>
           </div>
         <% end %>
@@ -302,7 +302,7 @@ defmodule FirmowidWeb.Invoicing.Transactions.Components.ShowComponents do
         </div>
       </div>
 
-      <div class="bg-grey-100 flex flex-col gap-6 rounded p-6">
+      <div class="flex flex-col gap-6 rounded bg-grey-100 p-6">
         <p class="text-base/snug">
           Transakcja została pominięta w dopasowywaniu. Przywróć ją, jeśli jednak chcesz połączyć ją z dokumentem.
         </p>
@@ -317,7 +317,7 @@ defmodule FirmowidWeb.Invoicing.Transactions.Components.ShowComponents do
   def transaction_amount_summary(assigns) do
     ~H"""
     <div class="flex flex-col items-end justify-between gap-2 pl-1">
-      <label class="text-grey-700 text-sm/snug" for="transaction-amount">Kwota transakcji</label>
+      <label class="text-sm/snug text-grey-700" for="transaction-amount">Kwota transakcji</label>
       <p
         id="transaction-amount"
         class={[

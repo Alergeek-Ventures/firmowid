@@ -120,7 +120,7 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
       </div>
     </div>
 
-    <div class="bg-lightGreyBg top-navbar sticky z-10 flex justify-between py-3 max-md:justify-center">
+    <div class="sticky top-navbar z-10 flex justify-between bg-lightGreyBg py-3 max-md:justify-center">
       <div class="flex items-center gap-4">
         <.month_picker
           id="month"
@@ -173,10 +173,10 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
                 id="upload-count-indicator"
                 phx-hook="Tippy"
                 data-tippy-content="Pliki są przetwarzane i za kilka chwil będą dostępne w Firmowidzie"
-                class="bg-lightGreyBg absolute -top-3 -right-3 flex size-7 items-center justify-center overflow-hidden rounded-full"
+                class="absolute -top-3 -right-3 flex size-7 items-center justify-center overflow-hidden rounded-full bg-lightGreyBg"
               >
                 <span class="absolute block size-full animate-pulse bg-orange-600" />
-                <span class="bg-lightGreyBg z-10 flex size-5 items-center justify-center rounded-full">
+                <span class="z-10 flex size-5 items-center justify-center rounded-full bg-lightGreyBg">
                   <Lucideicons.arrow_up
                     :if={@currently_uploading_count > 0 or @processing_blobs_count == 1}
                     class="size-4 leading-none text-orange-900"
@@ -267,17 +267,17 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
       <div
         :if={can_write_invoicing?(@current_user)}
         id="file-drop-overlay"
-        class="border-turquoise-200 absolute -inset-3 z-20 hidden rounded-lg border-2 bg-[#EDF5F599] opacity-60 transition-opacity"
+        class="absolute -inset-3 z-20 hidden rounded-lg border-2 border-turquoise-200 bg-[#EDF5F599] opacity-60 transition-opacity"
         phx-hook="FileUploadDragNDrop"
         phx-drop-target={can_write_invoicing?(@current_user) && @uploads.file.ref}
       >
         <div class="sticky top-0 flex size-full max-h-dvh items-center justify-center">
-          <div class="bg-turquoise-200 text-turquoise-700 flex w-fit flex-col items-center gap-6 rounded-4xl px-10 pt-6 pb-8">
+          <div class="flex w-fit flex-col items-center gap-6 rounded-4xl bg-turquoise-200 px-10 pt-6 pb-8 text-turquoise-700">
             <.icon name="hero-cloud-arrow-up" class="size-16" />
             <p class="text-center text-xl font-medium">
               Przeciągnij faktury, aby<br /> załadować je do Firmowida.
             </p>
-            <p class="text-turquoise-600 max-w-sm text-center text-sm">
+            <p class="max-w-sm text-center text-sm text-turquoise-600">
               (max 50 plików, PDF, JPG oraz PNG)
             </p>
           </div>

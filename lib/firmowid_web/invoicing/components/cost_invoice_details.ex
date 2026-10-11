@@ -235,7 +235,7 @@ defmodule FirmowidWeb.Invoicing.Components.CostInvoiceDetails do
 
               <div class="group flex flex-col gap-2 py-2 pl-1">
                 <label
-                  class="text-darkGrey text-sm/snug text-nowrap"
+                  class="text-sm/snug text-nowrap text-darkGrey"
                   for="internal-note-input"
                 >
                   Komentarz

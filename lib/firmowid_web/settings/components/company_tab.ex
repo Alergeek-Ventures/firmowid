@@ -89,7 +89,7 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
     ~H"""
     <section class={["space-y-4", @class]}>
       <div class="flex min-h-8 items-center gap-1">
-        <h2 class="text-grey-900 text-base leading-none font-medium">{@title}</h2>
+        <h2 class="text-base leading-none font-medium text-grey-900">{@title}</h2>
 
         <span
           :if={@action}
@@ -282,7 +282,7 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
             <%= if @ksef_auth_status == :refreshing do %>
               <span class="inline-flex items-center gap-2">
                 <span>Trwa odnawianie certyfikatu KSeF</span>
-                <.icon name="hero-arrow-path" class="text-grey-700 size-5 animate-spin" />
+                <.icon name="hero-arrow-path" class="size-5 animate-spin text-grey-700" />
               </span>
             <% else %>
               <span class="inline-flex items-center gap-2">
@@ -322,7 +322,7 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
           </span>
         </.detail_row>
 
-        <div class="text-grey-800 mt-8 mb-3">
+        <div class="mt-8 mb-3 text-grey-800">
           Połącz KSeF jedną z trzech metod
         </div>
 
@@ -358,7 +358,7 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
           aria-labelledby="ksef-auth-tab-token"
           class="w-full max-w-lg space-y-5"
         >
-          <div class="text-grey-900 flex gap-3 rounded-lg border border-orange-700 bg-orange-200 p-4 text-sm">
+          <div class="flex gap-3 rounded-lg border border-orange-700 bg-orange-200 p-4 text-sm text-grey-900">
             <.icon
               name="hero-exclamation-triangle-solid"
               class="mt-0.5 size-5 shrink-0 text-orange-800"
@@ -372,7 +372,7 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
             </div>
           </div>
 
-          <p class="text-grey-600 text-sm">
+          <p class="text-sm text-grey-600">
             Wykonaj poniższe kroki, aby połączyć Firmowid z KSeF.
           </p>
 
@@ -385,7 +385,7 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
                   external="https://ap.ksef.mf.gov.pl/web/"
                   target="_blank"
                   rel="noopener noreferrer"
-                  class="text-orangeText inline-flex items-center gap-1 text-sm underline underline-offset-4"
+                  class="inline-flex items-center gap-1 text-sm text-orangeText underline underline-offset-4"
                 >
                   KSeF
                 </.link>, zaloguj się i wygeneruj token z uprawnieniami do wystawiania i przeglądania faktur.
@@ -434,7 +434,7 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
           aria-labelledby="ksef-auth-tab-trusted_profile"
           class="w-full max-w-lg space-y-5"
         >
-          <p class="text-grey-600 text-sm">
+          <p class="text-sm text-grey-600">
             Wykonaj poniższe kroki, aby połączyć Firmowid z KSeF.
           </p>
 
@@ -463,7 +463,7 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
                   external="https://podpis.gov.pl/podpisz-dokument-elektronicznie/"
                   target="_blank"
                   rel="noopener noreferrer"
-                  class="text-orangeText inline-flex items-center gap-1 text-sm underline underline-offset-4"
+                  class="inline-flex items-center gap-1 text-sm text-orangeText underline underline-offset-4"
                 >
                   Profilem Zaufanym
                 </.link>
@@ -536,7 +536,7 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
           aria-labelledby="ksef-auth-tab-certificate"
           class="w-full max-w-lg space-y-5"
         >
-          <p class="text-grey-600 text-sm">
+          <p class="text-sm text-grey-600">
             Wykonaj poniższe kroki, aby połączyć Firmowid z KSeF.
           </p>
 
@@ -549,7 +549,7 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
                   external="https://ap.ksef.mf.gov.pl/web/"
                   target="_blank"
                   rel="noopener noreferrer"
-                  class="text-orangeText inline-flex items-center gap-1 text-sm underline underline-offset-4"
+                  class="inline-flex items-center gap-1 text-sm text-orangeText underline underline-offset-4"
                 >
                   KSeF
                 </.link>, zaloguj się i wygeneruj certyfikat o przeznaczeniu <span class="font-medium">„Uwierzytelnienie w systemie KSeF”</span>.
@@ -612,8 +612,8 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
       <% end %>
 
       <.modal id="confirm_disconnect_ksef">
-        <h3 class="text-grey-900 text-lg font-semibold">Potwierdź rozłączenie</h3>
-        <p class="text-grey-700 mt-3 text-sm">
+        <h3 class="text-lg font-semibold text-grey-900">Potwierdź rozłączenie</h3>
+        <p class="mt-3 text-sm text-grey-700">
           Rozłączenie zatrzyma bieżącą integrację KSeF dla tej organizacji.
         </p>
 
@@ -650,13 +650,13 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
   defp ksef_step(assigns) do
     ~H"""
     <li class={["grid grid-cols-[min-content_1fr] items-center gap-x-3", @class]}>
-      <span class="bg-orangeText flex size-7 shrink-0 items-center justify-center rounded-full text-sm font-semibold text-white">
+      <span class="flex size-7 shrink-0 items-center justify-center rounded-full bg-orangeText text-sm font-semibold text-white">
         {@number}
       </span>
-      <div class="text-grey-900 text-sm font-semibold">
+      <div class="text-sm font-semibold text-grey-900">
         {render_slot(@title)}
       </div>
-      <div :for={content <- @content} class={["text-grey-600 col-start-2 text-sm", @content_class]}>
+      <div :for={content <- @content} class={["col-start-2 text-sm text-grey-600", @content_class]}>
         {render_slot(content)}
       </div>
     </li>
@@ -706,8 +706,8 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
       class={[
         "mt-4 flex items-start gap-2 rounded-lg border px-3 py-2.5 text-sm",
         if(@status == :failed,
-          do: "border-red-200 bg-red-50 text-red-900",
-          else: "bg-grey-50 border-grey-200 text-grey-700"
+          do: "bg-red-50 border-red-200 text-red-900",
+          else: "border-grey-200 bg-grey-50 text-grey-700"
         )
       ]}
     >
@@ -743,7 +743,7 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
       <.pending_requisition_banner :if={Enum.any?(@pending_requisitions)} />
 
       <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <h2 class="text-grey-900 text-base leading-none font-semibold">Konta bankowe</h2>
+        <h2 class="text-base leading-none font-semibold text-grey-900">Konta bankowe</h2>
 
         <div class="flex flex-wrap items-center gap-2.5">
           <.button
@@ -765,7 +765,7 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
         </div>
       </div>
 
-      <div :if={Enum.empty?(@bank_accounts)} class="text-grey-700 text-sm leading-[1.35]">
+      <div :if={Enum.empty?(@bank_accounts)} class="text-sm leading-[1.35] text-grey-700">
         Nie dodano jeszcze żadnych kont bankowych.
       </div>
 
@@ -788,13 +788,13 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
 
   defp pending_requisition_banner(assigns) do
     ~H"""
-    <section class="border-grey-200 rounded-lg border bg-white px-6 py-5 shadow-sm">
+    <section class="rounded-lg border border-grey-200 bg-white px-6 py-5 shadow-sm">
       <div class="flex items-start gap-4">
-        <span class="bg-blueBg text-blueText inline-flex size-10 items-center justify-center rounded-full">
+        <span class="inline-flex size-10 items-center justify-center rounded-full bg-blueBg text-blueText">
           <.icon name="hero-arrow-path" class="size-5 animate-spin" />
         </span>
 
-        <div class="text-grey-900 space-y-1 text-sm leading-[1.35]">
+        <div class="space-y-1 text-sm leading-[1.35] text-grey-900">
           <p class="font-medium">Trwa konfiguracja połączenia bankowego.</p>
           <p>Konto pojawi się na liście po zakończeniu autoryzacji i pierwszej synchronizacji.</p>
         </div>
@@ -819,7 +819,7 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
       class="col-span-2 space-y-4"
     >
       <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-        <h2 class="text-grey-900 text-base/normal font-semibold">Członkowie organizacji</h2>
+        <h2 class="text-base/normal font-semibold text-grey-900">Członkowie organizacji</h2>
 
         <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
           <.button
@@ -829,7 +829,7 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
             role="switch"
             size="small"
             aria-checked={to_string(@show_active_invites)}
-            class="text-grey-700 inline-flex h-11 items-center justify-between gap-3 rounded-lg bg-white px-3 text-sm font-medium transition focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-700"
+            class="inline-flex h-11 items-center justify-between gap-3 rounded-lg bg-white px-3 text-sm font-medium text-grey-700 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-700"
           >
             <span>Aktywne zaproszenia</span>
             <span class={invite_toggle_track_styles(@show_active_invites)}>
@@ -849,11 +849,11 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
 
       <div
         :if={@show_active_invites}
-        class="border-grey-200 scrollbar-card h-151 overflow-y-auto rounded-lg border bg-white p-6 shadow-sm"
+        class="scrollbar-card h-151 overflow-y-auto rounded-lg border border-grey-200 bg-white p-6 shadow-sm"
       >
         <div
           :if={@active_invites == []}
-          class="text-grey-700 flex min-h-96 items-center justify-center text-sm leading-[1.35]"
+          class="flex min-h-96 items-center justify-center text-sm leading-[1.35] text-grey-700"
         >
           Brak aktywnych zaproszeń.
         </div>
@@ -873,7 +873,7 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
               type="button"
               variant="unstyled"
               size="small"
-              class="bg-turquoise-100 text-turquoise-700 flex w-full max-w-80 cursor-pointer items-center justify-between gap-5 rounded p-1 py-2 pl-3 text-sm"
+              class="flex w-full max-w-80 cursor-pointer items-center justify-between gap-5 rounded bg-turquoise-100 p-1 py-2 pl-3 text-sm text-turquoise-700"
               phx-click="copy_organization_invite"
               phx-value-code={invite.invite_code}
             >
@@ -891,7 +891,7 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
                 phx-value-id={invite.id}
                 aria-label="Usuń zaproszenie"
               >
-                <Lucideicons.trash_2 class="hover:text-darkGrey text-grey-500 transition-all" />
+                <Lucideicons.trash_2 class="text-grey-500 transition-all hover:text-darkGrey" />
               </.button>
             </div>
           </div>
@@ -900,7 +900,7 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
 
       <div
         :if={not @show_active_invites}
-        class="border-grey-200 scrollbar-card h-151 overflow-y-auto rounded-lg border bg-white p-6 shadow-sm"
+        class="scrollbar-card h-151 overflow-y-auto rounded-lg border border-grey-200 bg-white p-6 shadow-sm"
       >
         <div class="flex flex-col gap-6">
           <div
@@ -908,20 +908,20 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
             class="flex min-h-12 flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
           >
             <div class="flex min-w-0 items-center gap-4 sm:max-w-sm sm:flex-1">
-              <.avatar class="bg-grey-100 size-12 rounded-full">
+              <.avatar class="size-12 rounded-full bg-grey-100">
                 <.avatar_image
                   :if={user.avatar_blob && user.avatar_blob.url}
                   src={user.avatar_blob.url}
                   alt={user.name || user.email}
                 />
-                <.avatar_fallback class="text-grey-700 text-sm font-medium">
+                <.avatar_fallback class="text-sm font-medium text-grey-700">
                   {initial(user.name || user.email)}
                 </.avatar_fallback>
               </.avatar>
 
               <div class="flex min-w-0 flex-col gap-0.5">
-                <p class="text-grey-900 truncate text-base leading-[1.35]">{present(user.name)}</p>
-                <p class="text-grey-700 truncate text-sm leading-[1.35]">{user.email}</p>
+                <p class="truncate text-base leading-[1.35] text-grey-900">{present(user.name)}</p>
+                <p class="truncate text-sm leading-[1.35] text-grey-700">{user.email}</p>
               </div>
             </div>
 
@@ -930,13 +930,13 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
 
               <.dropdown :if={user.id != @current_user.id} id={"organization_user_#{user.id}"}>
                 <:trigger>
-                  <span class="hover:bg-grey-100 text-grey-700 flex size-10 items-center justify-center rounded-lg transition">
+                  <span class="flex size-10 items-center justify-center rounded-lg text-grey-700 transition hover:bg-grey-100">
                     <span class="sr-only">Opcje użytkownika {present(user.email)}</span>
                     <.icon name="hero-ellipsis-vertical" class="size-6" />
                   </span>
                 </:trigger>
 
-                <div class="border-grey-200 mt-10 flex w-40 flex-col overflow-hidden rounded-lg border bg-white p-1 shadow-lg">
+                <div class="mt-10 flex w-40 flex-col overflow-hidden rounded-lg border border-grey-200 bg-white p-1 shadow-lg">
                   <.button
                     type="button"
                     variant="unstyled"
@@ -985,7 +985,7 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
 
   defp bank_card(assigns) do
     ~H"""
-    <article class="border-grey-200 relative flex flex-col gap-4 rounded-lg border bg-white p-4">
+    <article class="relative flex flex-col gap-4 rounded-lg border border-grey-200 bg-white p-4">
       <div class="flex items-center justify-start gap-4">
         <.bank_badge institution={@account} />
         <div class="flex items-start gap-4 self-start">
@@ -998,7 +998,7 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
             </span>
             <span
               :if={!@account.is_default}
-              class="bg-grey-100 text-grey-700 rounded-full px-4 py-1 font-semibold"
+              class="rounded-full bg-grey-100 px-4 py-1 font-semibold text-grey-700"
             >
               {present(@account.currency)}
             </span>
@@ -1008,13 +1008,13 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
         <div class="flex flex-1 justify-end">
           <.dropdown id={"bank_account_#{@account.id}"}>
             <:trigger>
-              <span class="hover:bg-grey-100 text-grey-700 inline-flex size-8 items-center justify-center rounded-lg transition">
+              <span class="inline-flex size-8 items-center justify-center rounded-lg text-grey-700 transition hover:bg-grey-100">
                 <span class="sr-only">Opcje konta {bank_account_menu_label(@account)}</span>
                 <.icon name="hero-ellipsis-horizontal" class="size-5" />
               </span>
             </:trigger>
 
-            <div class="border-grey-200 text-grey-700 flex w-48 flex-col overflow-hidden rounded-lg border bg-white py-1 text-sm font-medium shadow-lg">
+            <div class="flex w-48 flex-col overflow-hidden rounded-lg border border-grey-200 bg-white py-1 text-sm font-medium text-grey-700 shadow-lg">
               <.button
                 type="button"
                 variant="unstyled"
@@ -1128,8 +1128,8 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
     </.modal>
 
     <.modal id={"confirm_delete_bank_account_#{@account.id}"}>
-      <h3 class="text-grey-900 text-lg font-semibold">Potwierdź usunięcie</h3>
-      <p class="text-grey-700 mt-3 text-sm">
+      <h3 class="text-lg font-semibold text-grey-900">Potwierdź usunięcie</h3>
+      <p class="mt-3 text-sm text-grey-700">
         Czy na pewno chcesz usunąć to konto bankowe? Usuniemy też powiązane transakcje.
       </p>
 
@@ -1168,8 +1168,8 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
     >
       <div class="space-y-4">
         <div>
-          <h3 class="text-grey-900 text-lg font-semibold">Dodaj konto bankowe ręcznie</h3>
-          <p class="text-grey-700 mt-2 text-sm">
+          <h3 class="text-lg font-semibold text-grey-900">Dodaj konto bankowe ręcznie</h3>
+          <p class="mt-2 text-sm text-grey-700">
             Ta funkcja pozwala dodać konto bez integracji z bankiem. Synchronizacja transakcji będzie wyłączona.
           </p>
         </div>
@@ -1326,7 +1326,7 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
 
   defp bank_detail_row(assigns) do
     ~H"""
-    <label class="text-grey-700 text-sm">{@label}</label>
+    <label class="text-sm text-grey-700">{@label}</label>
     <div class="text-base leading-[1.35]">
       {render_slot(@inner_block)}
     </div>
@@ -1357,7 +1357,7 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
         type="radio"
         value={UserRole.param(@role)}
         checked={@checked}
-        class="border-grey-300 checked:bg-turquoise-700 text-turquoise-700 size-5 shrink-0 appearance-none rounded-full border-2 bg-white focus:outline-none"
+        class="size-5 shrink-0 appearance-none rounded-full border-2 border-grey-300 bg-white text-turquoise-700 checked:bg-turquoise-700 focus:outline-none"
       />
       <div>
         <span class="font-medium capitalize">{UserRole.label(@role)}</span>

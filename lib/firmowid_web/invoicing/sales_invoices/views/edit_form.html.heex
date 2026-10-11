@@ -50,38 +50,38 @@
         />
       </div>
 
-      <hr class="text-grey-200 col-start-2 col-end-9" />
+      <hr class="col-start-2 col-end-9 text-grey-200" />
 
       <div class="col-start-2 col-end-9 flex flex-row items-start gap-14">
         <div class="flex w-1/2 min-w-[400px] flex-col gap-4">
           <label
-            class="text-grey-700 font-bold whitespace-nowrap"
+            class="font-bold whitespace-nowrap text-grey-700"
             for={@form[:counterparty_id].id}
           >
             Kontrahent
           </label>
 
           <div class="col-start-2 grid grid-cols-[min-content_1fr] items-start gap-x-5 gap-y-4 py-4">
-            <p class="text-grey-700 whitespace-nowrap">Nazwa</p>
+            <p class="whitespace-nowrap text-grey-700">Nazwa</p>
             <p>
               {@form[:buyer_display_name].value}
             </p>
 
             <%= case @invoice.buyer_id_type do %>
               <% :no_id -> %>
-                <p class="text-grey-700 whitespace-nowrap">PESEL</p>
+                <p class="whitespace-nowrap text-grey-700">PESEL</p>
                 <p>
                   {@form[:buyer_pesel].value}
                 </p>
               <% :optional_id -> %>
                 <%= if @form[:buyer_id].value && @form[:buyer_id].value != "" do %>
-                  <p class="text-grey-700 whitespace-nowrap">Identyfikator</p>
+                  <p class="whitespace-nowrap text-grey-700">Identyfikator</p>
                   <p>
                     {@form[:buyer_id].value}
                   </p>
                 <% end %>
               <% id_type -> %>
-                <p class="text-grey-700 whitespace-nowrap">
+                <p class="whitespace-nowrap text-grey-700">
                   {case id_type do
                     :nip -> "NIP"
                     :eu_vat -> "VAT-EU"
@@ -93,13 +93,13 @@
                 </p>
             <% end %>
 
-            <p class="text-grey-700 whitespace-nowrap">Adres</p>
+            <p class="whitespace-nowrap text-grey-700">Adres</p>
             <p>
               {@form[:buyer_address].value}
             </p>
 
             <%= if @form[:buyer_given_name].value && @form[:buyer_surname].value do %>
-              <p class="text-grey-700 whitespace-nowrap">Imię i nazwisko</p>
+              <p class="whitespace-nowrap text-grey-700">Imię i nazwisko</p>
               <p>
                 {@form[:buyer_given_name].value} {@form[:buyer_surname].value}
               </p>
@@ -118,7 +118,7 @@
         </div>
 
         <div class="flex w-1/2 min-w-[400px] flex-col gap-4">
-          <label class="text-grey-700 font-bold whitespace-nowrap">
+          <label class="font-bold whitespace-nowrap text-grey-700">
             Płatność
           </label>
 
@@ -131,7 +131,7 @@
         </div>
       </div>
 
-      <hr class="text-grey-200 col-start-2 col-end-9" />
+      <hr class="col-start-2 col-end-9 text-grey-200" />
 
       <div :if={@invoice.ksef_number} class="col-start-2 col-end-9">
         <.input
@@ -143,7 +143,7 @@
           placeholder="np. korekta ceny, zmiana danych nabywcy..."
           maxlength="256"
         />
-        <p class="text-grey-400 mt-1 text-xs">
+        <p class="mt-1 text-xs text-grey-400">
           Wymagana prawnie (Art. 106j ust. 2 pkt 3 ustawy o VAT). Maksymalnie 256 znaków.
         </p>
       </div>
@@ -170,7 +170,7 @@
       <div class="col-start-2 col-end-9">
         <input type="hidden" name={@form[:should_send_emails].name} value="false" />
         <label
-          class="text-grey-700 flex items-center gap-3 text-sm font-medium"
+          class="flex items-center gap-3 text-sm font-medium text-grey-700"
           title={@counterparty_check.tooltip}
         >
           <input
@@ -179,7 +179,7 @@
             value="true"
             checked={@form[:should_send_emails].value in [true, "true"]}
             disabled={!@counterparty_check.valid}
-            class="border-grey-300 focus:ring-turquoise-500 text-turquoise-600 size-4 rounded disabled:cursor-not-allowed disabled:opacity-60"
+            class="size-4 rounded border-grey-300 text-turquoise-600 focus:ring-turquoise-500 disabled:cursor-not-allowed disabled:opacity-60"
           />
           <span>Wyślij fakturę e-mailem do kontrahenta po otrzymaniu numeru KSeF</span>
         </label>
@@ -192,7 +192,7 @@
               Faktura {@invoice.invoice_number}
             </p>
 
-            <div class="border-grey-200 max-w-[650px] overflow-hidden rounded-lg border bg-white shadow-sm">
+            <div class="max-w-[650px] overflow-hidden rounded-lg border border-grey-200 bg-white shadow-sm">
               <FirmowidWeb.Invoicing.SalesInvoices.Components.Pdf.sales_invoice
                 sales_invoice={@invoice}
                 reference_invoice={@reference_invoice}
@@ -209,7 +209,7 @@
             </p>
 
             <div class={[
-              "border-grey-200 max-w-[650px] overflow-hidden rounded-lg border bg-white shadow-sm",
+              "max-w-[650px] overflow-hidden rounded-lg border border-grey-200 bg-white shadow-sm",
               @stale_preview_invoice? && "opacity-50"
             ]}>
               <FirmowidWeb.Invoicing.SalesInvoices.Components.Pdf.sales_invoice
@@ -223,7 +223,7 @@
           </div>
         <% else %>
           <div class={[
-            "border-grey-200 max-w-[650px] overflow-hidden rounded-lg border bg-white shadow-sm",
+            "max-w-[650px] overflow-hidden rounded-lg border border-grey-200 bg-white shadow-sm",
             @stale_preview_invoice? && "opacity-50"
           ]}>
             <FirmowidWeb.Invoicing.SalesInvoices.Components.Pdf.sales_invoice
@@ -269,11 +269,11 @@
       </.button>
     </div>
     <.modal id="buyer-edit-modal">
-      <h2 class="text-grey-900 mb-6 text-xl font-semibold">Edytuj dane nabywcy</h2>
+      <h2 class="mb-6 text-xl font-semibold text-grey-900">Edytuj dane nabywcy</h2>
 
       <div class="space-y-6">
-        <div class="bg-grey-50 rounded-lg px-5 py-3">
-          <p class="text-grey-700 text-sm">
+        <div class="rounded-lg bg-grey-50 px-5 py-3">
+          <p class="text-sm text-grey-700">
             <%= if to_string(@form[:buyer_type].value) == "company" do %>
               Firma / Jednoosobowa Działalność Gospodarcza
             <% else %>
@@ -284,7 +284,7 @@
 
         <div class="grid grid-cols-2 gap-6">
           <div class="space-y-4">
-            <p class="text-grey-700 text-sm font-medium">Dane podstawowe</p>
+            <p class="text-sm font-medium text-grey-700">Dane podstawowe</p>
 
             <div
               :if={
@@ -292,8 +292,8 @@
               }
               class="space-y-1"
             >
-              <p class="text-grey-500 text-sm">NIP</p>
-              <p class="text-grey-900 font-medium">{@form[:buyer_tax_id].value}</p>
+              <p class="text-sm text-grey-500">NIP</p>
+              <p class="font-medium text-grey-900">{@form[:buyer_tax_id].value}</p>
             </div>
 
             <.input
@@ -310,8 +310,8 @@
               }
               class="space-y-1"
             >
-              <p class="text-grey-500 text-sm">PESEL</p>
-              <p class="text-grey-900 font-medium">{@form[:buyer_pesel].value}</p>
+              <p class="text-sm text-grey-500">PESEL</p>
+              <p class="font-medium text-grey-900">{@form[:buyer_pesel].value}</p>
             </div>
 
             <div
@@ -341,7 +341,7 @@
           </div>
 
           <div class="space-y-4">
-            <p class="text-grey-700 text-sm font-medium">Dane adresowe</p>
+            <p class="text-sm font-medium text-grey-700">Dane adresowe</p>
 
             <.input
               field={@form[:buyer_address]}
@@ -352,8 +352,8 @@
 
             <%= if to_string(@form[:buyer_country].value) == "PL" do %>
               <div class="space-y-1">
-                <p class="text-grey-500 text-sm">Kraj</p>
-                <p class="text-grey-900 font-medium">Polska</p>
+                <p class="text-sm text-grey-500">Kraj</p>
+                <p class="font-medium text-grey-900">Polska</p>
               </div>
             <% else %>
               <.input
@@ -368,7 +368,7 @@
         </div>
 
         <div class="space-y-4">
-          <p class="text-grey-700 text-sm font-medium">Dodatkowe informacje</p>
+          <p class="text-sm font-medium text-grey-700">Dodatkowe informacje</p>
 
           <div class="grid grid-cols-2 gap-4">
             <.input

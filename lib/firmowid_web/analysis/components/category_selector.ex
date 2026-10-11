@@ -41,7 +41,7 @@ defmodule FirmowidWeb.Analysis.Components.CategorySelector do
           aria-label={gettext("Edit categories")}
           phx-click={show_popover(@popover_id)}
           aria-haspopup="true"
-          class="border-grey-200 focus-visible:outline-grey-600 hover:bg-grey-50 hover:border-grey-400 text-darkGrey flex min-h-10 w-full cursor-pointer items-center justify-between gap-2 rounded-lg border bg-white px-2 py-1.5 text-left shadow-sm transition focus-visible:outline-2 focus-visible:outline-offset-2"
+          class="flex min-h-10 w-full cursor-pointer items-center justify-between gap-2 rounded-lg border border-grey-200 bg-white px-2 py-1.5 text-left text-darkGrey shadow-sm transition hover:border-grey-400 hover:bg-grey-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-grey-600"
         >
           <.badges tags={@tags} colors={@colors} />
           <.icon name="hero-chevron-down-mini" class="size-4 shrink-0" />
@@ -51,7 +51,7 @@ defmodule FirmowidWeb.Analysis.Components.CategorySelector do
           reference_id={"#{@popover_id}-trigger"}
           placement="bottom-start"
           strategy="fixed"
-          class="bg-grey-50 border-grey-200 w-64 rounded-lg border"
+          class="w-64 rounded-lg border border-grey-200 bg-grey-50"
         >
           <div class="flex max-h-80 flex-col gap-1 overflow-auto p-2">
             <FirmowidWeb.DesignSystem.Components.Button.button
@@ -91,11 +91,11 @@ defmodule FirmowidWeb.Analysis.Components.CategorySelector do
               aria-pressed={to_string(@selected_kind == :internal)}
               class={option_styles(@selected_kind == :internal)}
             >
-              <.icon name="hero-minus-circle-mini" class="text-grey-500 size-4 shrink-0" />
+              <.icon name="hero-minus-circle-mini" class="size-4 shrink-0 text-grey-500" />
               <span class="flex-1">{gettext("Omitted")}</span>
               <.icon :if={@selected_kind == :internal} name="hero-check-mini" class="size-4" />
             </FirmowidWeb.DesignSystem.Components.Button.button>
-            <p class="border-grey-200 text-darkGrey border-t pt-2 text-xs">
+            <p class="border-t border-grey-200 pt-2 text-xs text-darkGrey">
               {gettext("Active projects")}
             </p>
             <label :for={category <- @categories} class={option_styles(category.id in @project_ids)}>
@@ -106,12 +106,12 @@ defmodule FirmowidWeb.Analysis.Components.CategorySelector do
                 phx-value-entity_type={@type}
                 phx-value-entity_id={@entry.id}
                 phx-value-tag_definition_id={category.id}
-                class="border-darkGrey size-4 cursor-pointer rounded-[3px] border focus-visible:outline-2 focus-visible:outline-offset-2"
+                class="size-4 cursor-pointer rounded-[3px] border border-darkGrey focus-visible:outline-2 focus-visible:outline-offset-2"
               />
               <.color_dot color={Map.fetch!(@colors, {:project, category.id})} />
               {category.name}
             </label>
-            <p class="text-darkGrey text-xs">
+            <p class="text-xs text-darkGrey">
               {gettext("Selected projects share the amount equally.")}
             </p>
           </div>
@@ -133,16 +133,16 @@ defmodule FirmowidWeb.Analysis.Components.CategorySelector do
     <span class="flex flex-wrap items-center gap-1">
       <span
         :if={@tags == []}
-        class="border-grey-200 text-darkGrey inline-flex items-center gap-1.5 rounded-full border bg-white px-2 py-1 text-xs"
+        class="inline-flex items-center gap-1.5 rounded-full border border-grey-200 bg-white px-2 py-1 text-xs text-darkGrey"
       >
         <.color_dot color={Map.fetch!(@colors, :unassigned)} />{gettext("Unassigned")}
       </span>
       <span
         :for={tag <- @tags}
         class={[
-          "text-darkGrey inline-flex items-center gap-1.5 rounded-full border px-2 py-1 text-xs",
+          "inline-flex items-center gap-1.5 rounded-full border px-2 py-1 text-xs text-darkGrey",
           if(tag.kind == :internal,
-            do: "bg-grey-100 border-grey-400 border-dashed",
+            do: "border-dashed border-grey-400 bg-grey-100",
             else: "border-grey-200 bg-white"
           )
         ]}
@@ -150,7 +150,7 @@ defmodule FirmowidWeb.Analysis.Components.CategorySelector do
         <.icon
           :if={tag.kind == :internal}
           name="hero-minus-circle-mini"
-          class="text-grey-500 size-3.5"
+          class="size-3.5 text-grey-500"
         />
         <.color_dot :if={tag.kind != :internal} color={tag_color(tag, @colors)} />
         {tag_label(tag)}

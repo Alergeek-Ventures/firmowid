@@ -4,22 +4,22 @@
     <h1 class="mb-5 text-2xl font-bold">Bytecraft Collective</h1>
     <div class="flex flex-wrap items-center justify-between gap-3">
       <div>
-        <p class="text-darkGrey text-sm">Domyślne konto</p>
+        <p class="text-sm text-darkGrey">Domyślne konto</p>
         <p class="mt-0.5 font-medium">
           <code class="rounded bg-orange-100 px-2 py-0.5 text-sm text-orange-800">
             kira@bytecraft.collective
           </code>
-          <span class="text-darkGrey mx-1">/</span>
-          <code class="bg-grey-100 rounded px-2 py-0.5 font-mono text-sm">kolejka123456</code>
+          <span class="mx-1 text-darkGrey">/</span>
+          <code class="font-mono rounded bg-grey-100 px-2 py-0.5 text-sm">kolejka123456</code>
         </p>
       </div>
-      <div class="text-darkGrey text-right text-sm">
+      <div class="text-right text-sm text-darkGrey">
         <div>Kira Voss · Lead Architect</div>
         <div class="text-xs">admin / superuser · B2B</div>
       </div>
     </div>
 
-    <div class="border-grey-100 text-grey-700 mt-4 flex flex-col gap-8 border-t pt-4 text-sm">
+    <div class="mt-4 flex flex-col gap-8 border-t border-grey-100 pt-4 text-sm text-grey-700">
       <p>
         Pięcioosobowy software house z Warszawy. Trzy projekty komercyjne (<em>GhostPet</em>, <em>FlatMate</em>, <em>TacoOverflow</em>) + wewnętrzny <em>Firmowid</em>. Cztery waluty, egzotyczne konto THB, integracja KSeF. Trzy miesiące historii — M-2 i M-1 zamknięte, M-0 do dopasowania.
       </p>
@@ -31,7 +31,7 @@
   <%!-- Sections --%>
   <div class="space-y-3">
     <%!-- 1. Zespół --%>
-    <div class="border-grey-200 overflow-hidden rounded-lg border bg-white">
+    <div class="overflow-hidden rounded-lg border border-grey-200 bg-white">
       <.button
         phx-click={toggle_section("team")}
         type="button"
@@ -41,13 +41,13 @@
         class="flex w-full items-center justify-between px-5 py-4 text-left [&_.section-chevron]:aria-expanded:rotate-180"
       >
         <div class="flex items-center gap-3">
-          <.icon name="hero-users" class="text-darkGrey size-5" />
+          <.icon name="hero-users" class="size-5 text-darkGrey" />
           <span class="font-semibold">Zespół Bytecraft Collective</span>
-          <span class="text-darkGrey text-xs">5 osób</span>
+          <span class="text-xs text-darkGrey">5 osób</span>
         </div>
         <.icon
           name="hero-chevron-down"
-          class="section-chevron text-darkGrey size-4 transition-transform duration-300 ease-in-out"
+          class="section-chevron size-4 text-darkGrey transition-transform duration-300 ease-in-out"
         />
       </.button>
       <div
@@ -56,19 +56,19 @@
         class="grid grid-rows-[0fr] transition-all duration-300 ease-in-out data-expanded:grid-rows-[1fr]"
       >
         <div class="overflow-hidden">
-          <div class="border-grey-100 border-t px-5 pb-5">
+          <div class="border-t border-grey-100 px-5 pb-5">
             <div class="mt-4 overflow-x-auto">
               <table class="min-w-full text-sm">
                 <thead>
-                  <tr class="border-grey-200 border-b">
-                    <th class="text-darkGrey py-2 pr-4 text-left font-medium">Użytkownik</th>
-                    <th class="text-darkGrey py-2 pr-4 text-left font-medium">Email</th>
-                    <th class="text-darkGrey py-2 pr-4 text-left font-medium">Rola</th>
-                    <th class="text-darkGrey py-2 pr-4 text-left font-medium">Stanowisko</th>
-                    <th class="text-darkGrey py-2 text-left font-medium">Umowa</th>
+                  <tr class="border-b border-grey-200">
+                    <th class="py-2 pr-4 text-left font-medium text-darkGrey">Użytkownik</th>
+                    <th class="py-2 pr-4 text-left font-medium text-darkGrey">Email</th>
+                    <th class="py-2 pr-4 text-left font-medium text-darkGrey">Rola</th>
+                    <th class="py-2 pr-4 text-left font-medium text-darkGrey">Stanowisko</th>
+                    <th class="py-2 text-left font-medium text-darkGrey">Umowa</th>
                   </tr>
                 </thead>
-                <tbody class="divide-grey-100 divide-y">
+                <tbody class="divide-y divide-grey-100">
                   <tr>
                     <td class="py-2 pr-4 font-medium">Kira Voss</td>
                     <td class="py-2 pr-4">
@@ -83,7 +83,7 @@
                   <tr>
                     <td class="py-2 pr-4">Tomek Briar</td>
                     <td class="py-2 pr-4">
-                      <code class="bg-grey-100 rounded px-1.5 py-0.5 text-xs">
+                      <code class="rounded bg-grey-100 px-1.5 py-0.5 text-xs">
                         tomek@bytecraft.collective
                       </code>
                     </td>
@@ -94,7 +94,7 @@
                   <tr>
                     <td class="py-2 pr-4">Sable Orin</td>
                     <td class="py-2 pr-4">
-                      <code class="bg-grey-100 rounded px-1.5 py-0.5 text-xs">
+                      <code class="rounded bg-grey-100 px-1.5 py-0.5 text-xs">
                         sable@bytecraft.collective
                       </code>
                     </td>
@@ -105,7 +105,7 @@
                   <tr>
                     <td class="py-2 pr-4">Jules Kadar</td>
                     <td class="py-2 pr-4">
-                      <code class="bg-grey-100 rounded px-1.5 py-0.5 text-xs">
+                      <code class="rounded bg-grey-100 px-1.5 py-0.5 text-xs">
                         jules@bytecraft.collective
                       </code>
                     </td>
@@ -116,7 +116,7 @@
                   <tr>
                     <td class="py-2 pr-4">Maren Solke</td>
                     <td class="py-2 pr-4">
-                      <code class="bg-grey-100 rounded px-1.5 py-0.5 text-xs">
+                      <code class="rounded bg-grey-100 px-1.5 py-0.5 text-xs">
                         maren@bytecraft.collective
                       </code>
                     </td>
@@ -127,9 +127,9 @@
                 </tbody>
               </table>
             </div>
-            <p class="text-darkGrey mt-3 text-xs">
+            <p class="mt-3 text-xs text-darkGrey">
               Hasło dla wszystkich:
-              <code class="bg-grey-100 rounded px-1.5 py-0.5 font-mono">kolejka123456</code>
+              <code class="font-mono rounded bg-grey-100 px-1.5 py-0.5">kolejka123456</code>
             </p>
           </div>
         </div>
@@ -137,7 +137,7 @@
     </div>
 
     <%!-- 2. Organizacja i konta --%>
-    <div class="border-grey-200 overflow-hidden rounded-lg border bg-white">
+    <div class="overflow-hidden rounded-lg border border-grey-200 bg-white">
       <.button
         phx-click={toggle_section("org")}
         type="button"
@@ -147,13 +147,13 @@
         class="flex w-full items-center justify-between px-5 py-4 text-left [&_.section-chevron]:aria-expanded:rotate-180"
       >
         <div class="flex items-center gap-3">
-          <.icon name="hero-building-office" class="text-darkGrey size-5" />
+          <.icon name="hero-building-office" class="size-5 text-darkGrey" />
           <span class="font-semibold">Bytecraft Collective sp. z o.o.</span>
-          <span class="text-darkGrey font-mono text-xs">NIP 6161525811</span>
+          <span class="font-mono text-xs text-darkGrey">NIP 6161525811</span>
         </div>
         <.icon
           name="hero-chevron-down"
-          class="section-chevron text-darkGrey size-4 transition-transform duration-300 ease-in-out"
+          class="section-chevron size-4 text-darkGrey transition-transform duration-300 ease-in-out"
         />
       </.button>
       <div
@@ -162,7 +162,7 @@
         class="grid grid-rows-[0fr] transition-all duration-300 ease-in-out data-expanded:grid-rows-[1fr]"
       >
         <div class="overflow-hidden">
-          <div class="border-grey-100 border-t px-5 pb-5">
+          <div class="border-t border-grey-100 px-5 pb-5">
             <div class="mt-4 text-sm">
               <span class="text-darkGrey">Adres:</span> ul. Marszałkowska 11/4, 00-624 Warszawa
             </div>
@@ -171,37 +171,37 @@
             <div class="overflow-x-auto">
               <table class="min-w-full text-sm">
                 <thead>
-                  <tr class="border-grey-200 border-b">
-                    <th class="text-darkGrey py-2 pr-4 text-left font-medium">Waluta</th>
-                    <th class="text-darkGrey py-2 pr-4 text-left font-medium">Bank</th>
-                    <th class="text-darkGrey py-2 text-left font-medium">IBAN</th>
+                  <tr class="border-b border-grey-200">
+                    <th class="py-2 pr-4 text-left font-medium text-darkGrey">Waluta</th>
+                    <th class="py-2 pr-4 text-left font-medium text-darkGrey">Bank</th>
+                    <th class="py-2 text-left font-medium text-darkGrey">IBAN</th>
                   </tr>
                 </thead>
-                <tbody class="divide-grey-100 divide-y">
+                <tbody class="divide-y divide-grey-100">
                   <tr>
                     <td class="py-1.5 pr-4 font-medium">PLN (domyślne)</td>
                     <td class="py-1.5 pr-4">ING Bank Śląski</td>
-                    <td class="py-1.5 font-mono text-xs">PL61105000997603123456789012</td>
+                    <td class="font-mono py-1.5 text-xs">PL61105000997603123456789012</td>
                   </tr>
                   <tr>
                     <td class="py-1.5 pr-4">EUR</td>
                     <td class="py-1.5 pr-4">ING Bank Śląski</td>
-                    <td class="py-1.5 font-mono text-xs">PL85105000997603123456789013</td>
+                    <td class="font-mono py-1.5 text-xs">PL85105000997603123456789013</td>
                   </tr>
                   <tr>
                     <td class="py-1.5 pr-4">USD</td>
                     <td class="py-1.5 pr-4">ING Bank Śląski</td>
-                    <td class="py-1.5 font-mono text-xs">PL42105000997603123456789014</td>
+                    <td class="font-mono py-1.5 text-xs">PL42105000997603123456789014</td>
                   </tr>
                   <tr>
                     <td class="py-1.5 pr-4">GBP</td>
                     <td class="py-1.5 pr-4">ING Bank Śląski</td>
-                    <td class="py-1.5 font-mono text-xs">PL19105000997603123456789015</td>
+                    <td class="font-mono py-1.5 text-xs">PL19105000997603123456789015</td>
                   </tr>
                   <tr>
                     <td class="py-1.5 pr-4">THB</td>
                     <td class="py-1.5 pr-4">Bank Millennium</td>
-                    <td class="py-1.5 font-mono text-xs">PL73116022020000000512345678</td>
+                    <td class="font-mono py-1.5 text-xs">PL73116022020000000512345678</td>
                   </tr>
                 </tbody>
               </table>
@@ -212,7 +212,7 @@
     </div>
 
     <%!-- 3. Projekty --%>
-    <div class="border-grey-200 overflow-hidden rounded-lg border bg-white">
+    <div class="overflow-hidden rounded-lg border border-grey-200 bg-white">
       <.button
         phx-click={toggle_section("projects")}
         type="button"
@@ -222,13 +222,13 @@
         class="flex w-full items-center justify-between px-5 py-4 text-left [&_.section-chevron]:aria-expanded:rotate-180"
       >
         <div class="flex items-center gap-3">
-          <.icon name="hero-rectangle-stack" class="text-darkGrey size-5" />
+          <.icon name="hero-rectangle-stack" class="size-5 text-darkGrey" />
           <span class="font-semibold">Projekty i klienci</span>
-          <span class="text-darkGrey text-xs">4 projekty · 3 kontrahentów</span>
+          <span class="text-xs text-darkGrey">4 projekty · 3 kontrahentów</span>
         </div>
         <.icon
           name="hero-chevron-down"
-          class="section-chevron text-darkGrey size-4 transition-transform duration-300 ease-in-out"
+          class="section-chevron size-4 text-darkGrey transition-transform duration-300 ease-in-out"
         />
       </.button>
       <div
@@ -237,34 +237,34 @@
         class="grid grid-rows-[0fr] transition-all duration-300 ease-in-out data-expanded:grid-rows-[1fr]"
       >
         <div class="overflow-hidden">
-          <div class="border-grey-100 border-t px-5 pb-5">
+          <div class="border-t border-grey-100 px-5 pb-5">
             <div class="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2">
-              <div class="border-grey-200 rounded-lg border p-4">
+              <div class="rounded-lg border border-grey-200 p-4">
                 <div class="mb-1 flex items-center gap-2">
-                  <div class="bg-grey-400 size-2 rounded-full"></div>
+                  <div class="size-2 rounded-full bg-grey-400"></div>
                   <h4 class="text-sm font-semibold">Firmowid</h4>
                 </div>
-                <p class="text-darkGrey ml-4 text-xs">
+                <p class="ml-4 text-xs text-darkGrey">
                   Projekt wewnętrzny, brak kontrahenta. Rozliczanie kosztów infra (OVH, narzędzia).
                 </p>
-                <p class="text-grey-400 mt-1 ml-4 text-xs">Kira, Tomek</p>
+                <p class="mt-1 ml-4 text-xs text-grey-400">Kira, Tomek</p>
               </div>
 
-              <div class="border-grey-200 rounded-lg border p-4">
+              <div class="rounded-lg border border-grey-200 p-4">
                 <div class="mb-1 flex items-center gap-2">
-                  <div class="bg-turquoise-500 size-2 rounded-full"></div>
+                  <div class="size-2 rounded-full bg-turquoise-500"></div>
                   <h4 class="text-sm font-semibold">GhostPet</h4>
-                  <span class="bg-turquoise-100 text-turquoise-700 rounded px-1.5 py-0.5 text-xs">
+                  <span class="rounded bg-turquoise-100 px-1.5 py-0.5 text-xs text-turquoise-700">
                     USD
                   </span>
                 </div>
-                <p class="text-darkGrey ml-4 text-xs">
+                <p class="ml-4 text-xs text-darkGrey">
                   Rozmowy AI ze zmarłymi zwierzakami. Klient: GhostPet Inc. (US, EIN 47-8830291).
                 </p>
-                <p class="text-grey-400 mt-1 ml-4 text-xs">Tomek, Maren</p>
+                <p class="mt-1 ml-4 text-xs text-grey-400">Tomek, Maren</p>
               </div>
 
-              <div class="border-grey-200 rounded-lg border p-4">
+              <div class="rounded-lg border border-grey-200 p-4">
                 <div class="mb-1 flex items-center gap-2">
                   <div class="size-2 rounded-full bg-green-500"></div>
                   <h4 class="text-sm font-semibold">FlatMate</h4>
@@ -272,14 +272,14 @@
                     GBP
                   </span>
                 </div>
-                <p class="text-darkGrey ml-4 text-xs">
+                <p class="ml-4 text-xs text-darkGrey">
                   Randki dla zwolenników płaskiej Ziemi. Klient: FlatEarth Dating Ltd.
                   (GB, bez VAT — post-Brexit, odwrotne obciążenie).
                 </p>
-                <p class="text-grey-400 mt-1 ml-4 text-xs">Kira, Sable</p>
+                <p class="mt-1 ml-4 text-xs text-grey-400">Kira, Sable</p>
               </div>
 
-              <div class="border-grey-200 rounded-lg border p-4">
+              <div class="rounded-lg border border-grey-200 p-4">
                 <div class="mb-1 flex items-center gap-2">
                   <div class="size-2 rounded-full bg-orange-500"></div>
                   <h4 class="text-sm font-semibold">TacoOverflow</h4>
@@ -287,11 +287,11 @@
                     EUR
                   </span>
                 </div>
-                <p class="text-darkGrey ml-4 text-xs">
+                <p class="ml-4 text-xs text-darkGrey">
                   Klon SO, gdzie każda odpowiedź = przepis na taco.
                   Klient: TacoOverflow Inc. (DE, VAT DE317256842, odwrotne obciążenie).
                 </p>
-                <p class="text-grey-400 mt-1 ml-4 text-xs">Jules, Maren, Tomek</p>
+                <p class="mt-1 ml-4 text-xs text-grey-400">Jules, Maren, Tomek</p>
               </div>
             </div>
           </div>
@@ -300,7 +300,7 @@
     </div>
 
     <%!-- 4. Czasośledź / Lista płac --%>
-    <div class="border-grey-200 overflow-hidden rounded-lg border bg-white">
+    <div class="overflow-hidden rounded-lg border border-grey-200 bg-white">
       <.button
         phx-click={toggle_section("timetracker")}
         type="button"
@@ -310,12 +310,12 @@
         class="flex w-full items-center justify-between px-5 py-4 text-left [&_.section-chevron]:aria-expanded:rotate-180"
       >
         <div class="flex items-center gap-3">
-          <.icon name="hero-clock" class="text-darkGrey size-5" />
+          <.icon name="hero-clock" class="size-5 text-darkGrey" />
           <span class="font-semibold">Czasośledź i lista płac</span>
           <.link
             kind="unstyled"
             redirect="/czasosledz"
-            class="text-turquoise-600 text-xs hover:underline"
+            class="text-xs text-turquoise-600 hover:underline"
             phx-click="noop"
             phx-value-stop="true"
           >
@@ -324,7 +324,7 @@
         </div>
         <.icon
           name="hero-chevron-down"
-          class="section-chevron text-darkGrey size-4 transition-transform duration-300 ease-in-out"
+          class="section-chevron size-4 text-darkGrey transition-transform duration-300 ease-in-out"
         />
       </.button>
       <div
@@ -333,8 +333,8 @@
         class="grid grid-rows-[0fr] transition-all duration-300 ease-in-out data-expanded:grid-rows-[1fr]"
       >
         <div class="overflow-hidden">
-          <div class="border-grey-100 border-t px-5 pb-5">
-            <p class="text-darkGrey my-4 text-sm">
+          <div class="border-t border-grey-100 px-5 pb-5">
+            <p class="my-4 text-sm text-darkGrey">
               Stawki godzinowe, sesje pracy i ewidencja godzin dla 2 zamkniętych miesięcy.
               Bieżący miesiąc ma sesje, ale brak ewidencji — testuj kreator wysyłki.
             </p>
@@ -343,39 +343,39 @@
             <div class="overflow-x-auto">
               <table class="min-w-full text-sm">
                 <thead>
-                  <tr class="border-grey-200 border-b">
-                    <th class="text-darkGrey py-2 pr-4 text-left font-medium">Pracownik</th>
-                    <th class="text-darkGrey py-2 pr-4 text-left font-medium">Stawka (PLN/h)</th>
-                    <th class="text-darkGrey py-2 text-left font-medium">Uwagi</th>
+                  <tr class="border-b border-grey-200">
+                    <th class="py-2 pr-4 text-left font-medium text-darkGrey">Pracownik</th>
+                    <th class="py-2 pr-4 text-left font-medium text-darkGrey">Stawka (PLN/h)</th>
+                    <th class="py-2 text-left font-medium text-darkGrey">Uwagi</th>
                   </tr>
                 </thead>
-                <tbody class="divide-grey-100 divide-y">
+                <tbody class="divide-y divide-grey-100">
                   <tr>
                     <td class="py-1.5 pr-4">Kira Voss</td>
-                    <td class="py-1.5 pr-4 font-mono">150,00</td>
-                    <td class="text-darkGrey py-1.5 text-xs">
+                    <td class="font-mono py-1.5 pr-4">150,00</td>
+                    <td class="py-1.5 text-xs text-darkGrey">
                       Poprzednia: 120,00 (podwyżka 3 mies. temu)
                     </td>
                   </tr>
                   <tr>
                     <td class="py-1.5 pr-4">Tomek Briar</td>
-                    <td class="py-1.5 pr-4 font-mono">120,00</td>
-                    <td class="text-darkGrey py-1.5">—</td>
+                    <td class="font-mono py-1.5 pr-4">120,00</td>
+                    <td class="py-1.5 text-darkGrey">—</td>
                   </tr>
                   <tr>
                     <td class="py-1.5 pr-4">Sable Orin</td>
-                    <td class="py-1.5 pr-4 font-mono">100,00</td>
-                    <td class="text-darkGrey py-1.5">—</td>
+                    <td class="font-mono py-1.5 pr-4">100,00</td>
+                    <td class="py-1.5 text-darkGrey">—</td>
                   </tr>
                   <tr>
                     <td class="py-1.5 pr-4">Jules Kadar</td>
-                    <td class="py-1.5 pr-4 font-mono">130,00</td>
-                    <td class="text-darkGrey py-1.5">—</td>
+                    <td class="font-mono py-1.5 pr-4">130,00</td>
+                    <td class="py-1.5 text-darkGrey">—</td>
                   </tr>
                   <tr>
                     <td class="py-1.5 pr-4">Maren Solke</td>
-                    <td class="py-1.5 pr-4 font-mono">110,00</td>
-                    <td class="text-darkGrey py-1.5">—</td>
+                    <td class="font-mono py-1.5 pr-4">110,00</td>
+                    <td class="py-1.5 text-darkGrey">—</td>
                   </tr>
                 </tbody>
               </table>
@@ -384,7 +384,7 @@
             <div class="mt-5 grid grid-cols-1 gap-4 text-sm md:grid-cols-2">
               <div>
                 <h3 class="mb-1 text-sm font-semibold">Sesje pracy</h3>
-                <ul class="text-darkGrey ml-4 list-disc space-y-0.5 text-xs">
+                <ul class="ml-4 list-disc space-y-0.5 text-xs text-darkGrey">
                   <li>M-2 i M-1: ~30–36 sesji/mies., 2–5h, mix biuro/zdalnie</li>
                   <li>M-0: ~12 sesji (miesiąc w toku)</li>
                   <li>Każdy pracownik na swoich przypisanych projektach</li>
@@ -392,7 +392,7 @@
               </div>
               <div>
                 <h3 class="mb-1 text-sm font-semibold">Ewidencja godzin</h3>
-                <ul class="text-darkGrey ml-4 list-disc space-y-0.5 text-xs">
+                <ul class="ml-4 list-disc space-y-0.5 text-xs text-darkGrey">
                   <li>M-2 i M-1: wysłane z podpisanymi PDF-ami</li>
                   <li>
                     M-0: <strong>brak</strong> — kreator wysyłki do przetestowania
@@ -400,7 +400,7 @@
                 </ul>
               </div>
             </div>
-            <p class="text-grey-400 mt-3 text-xs">
+            <p class="mt-3 text-xs text-grey-400">
               Panel admina:
               <.link
                 kind="unstyled"
@@ -417,7 +417,7 @@
     </div>
 
     <%!-- 5. Dashboard analityczny --%>
-    <div class="border-grey-200 overflow-hidden rounded-lg border bg-white">
+    <div class="overflow-hidden rounded-lg border border-grey-200 bg-white">
       <.button
         phx-click={toggle_section("analysis")}
         type="button"
@@ -427,12 +427,12 @@
         class="flex w-full items-center justify-between px-5 py-4 text-left [&_.section-chevron]:aria-expanded:rotate-180"
       >
         <div class="flex items-center gap-3">
-          <.icon name="hero-chart-bar" class="text-darkGrey size-5" />
+          <.icon name="hero-chart-bar" class="size-5 text-darkGrey" />
           <span class="font-semibold">Dashboard analityczny</span>
           <.link
             kind="unstyled"
             redirect="/analiza"
-            class="text-turquoise-600 text-xs hover:underline"
+            class="text-xs text-turquoise-600 hover:underline"
             phx-click="noop"
             phx-value-stop="true"
           >
@@ -441,7 +441,7 @@
         </div>
         <.icon
           name="hero-chevron-down"
-          class="section-chevron text-darkGrey size-4 transition-transform duration-300 ease-in-out"
+          class="section-chevron size-4 text-darkGrey transition-transform duration-300 ease-in-out"
         />
       </.button>
       <div
@@ -450,22 +450,22 @@
         class="grid grid-rows-[0fr] transition-all duration-300 ease-in-out data-expanded:grid-rows-[1fr]"
       >
         <div class="overflow-hidden">
-          <div class="border-grey-100 border-t px-5 pb-5">
-            <p class="text-darkGrey my-4 text-sm">
+          <div class="border-t border-grey-100 px-5 pb-5">
+            <p class="my-4 text-sm text-darkGrey">
               Trzy miesiące danych prezentują workflow dopasowywania i tagowania.
               Daty względne — uruchom seedy ponownie, aby odświeżyć.
             </p>
 
             <div class="space-y-4">
               <%!-- M-2 --%>
-              <div class="bg-grey-100/50 rounded-lg p-4">
+              <div class="rounded-lg bg-grey-100/50 p-4">
                 <h4 class="flex items-center gap-2 text-sm font-semibold">
                   <span class="inline-flex items-center rounded bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700">
                     M-2
                   </span>
                   2 miesiące temu — w pełni dopasowane
                 </h4>
-                <div class="text-darkGrey mt-2 grid grid-cols-1 gap-x-6 gap-y-0.5 text-xs md:grid-cols-2">
+                <div class="mt-2 grid grid-cols-1 gap-x-6 gap-y-0.5 text-xs text-darkGrey md:grid-cols-2">
                   <div class="flex justify-between">
                     <span>GhostPet 5 950 $</span>
                     <span class="text-turquoise-600">projekt:GhostPet</span>
@@ -512,14 +512,14 @@
               </div>
 
               <%!-- M-1 --%>
-              <div class="bg-grey-100/50 rounded-lg p-4">
+              <div class="rounded-lg bg-grey-100/50 p-4">
                 <h4 class="flex items-center gap-2 text-sm font-semibold">
-                  <span class="bg-turquoise-100 text-turquoise-700 inline-flex items-center rounded px-2 py-0.5 text-xs font-medium">
+                  <span class="inline-flex items-center rounded bg-turquoise-100 px-2 py-0.5 text-xs font-medium text-turquoise-700">
                     M-1
                   </span>
                   1 miesiąc temu — w pełni dopasowane
                 </h4>
-                <div class="text-darkGrey mt-2 grid grid-cols-1 gap-x-6 gap-y-0.5 text-xs md:grid-cols-2">
+                <div class="mt-2 grid grid-cols-1 gap-x-6 gap-y-0.5 text-xs text-darkGrey md:grid-cols-2">
                   <div class="flex justify-between">
                     <span>GhostPet 8 500 $</span>
                     <span class="text-turquoise-600">projekt:GhostPet</span>
@@ -566,14 +566,14 @@
               </div>
 
               <%!-- M-0 --%>
-              <div class="bg-grey-100/50 rounded-lg p-4">
+              <div class="rounded-lg bg-grey-100/50 p-4">
                 <h4 class="flex items-center gap-2 text-sm font-semibold">
                   <span class="inline-flex items-center rounded bg-orange-100 px-2 py-0.5 text-xs font-medium text-orange-700">
                     M-0
                   </span>
                   Bieżący miesiąc — głównie niedopasowane
                 </h4>
-                <div class="text-darkGrey mt-2 space-y-0.5 text-xs">
+                <div class="mt-2 space-y-0.5 text-xs text-darkGrey">
                   <div>
                     7 niedopasowanych transakcji (TacoOverflow, GitHub, OVH, czynsz, materiały, opłata, OpenCode)
                   </div>
@@ -596,7 +596,7 @@
     </div>
 
     <%!-- 6. KSeF --%>
-    <div class="border-grey-200 overflow-hidden rounded-lg border bg-white">
+    <div class="overflow-hidden rounded-lg border border-grey-200 bg-white">
       <.button
         phx-click={toggle_section("ksef")}
         type="button"
@@ -606,13 +606,13 @@
         class="flex w-full items-center justify-between px-5 py-4 text-left [&_.section-chevron]:aria-expanded:rotate-180"
       >
         <div class="flex items-center gap-3">
-          <.icon name="hero-document-check" class="text-darkGrey size-5" />
+          <.icon name="hero-document-check" class="size-5 text-darkGrey" />
           <span class="font-semibold">Środowisko testowe KSeF</span>
-          <span class="text-darkGrey text-xs">4 faktury demo</span>
+          <span class="text-xs text-darkGrey">4 faktury demo</span>
         </div>
         <.icon
           name="hero-chevron-down"
-          class="section-chevron text-darkGrey size-4 transition-transform duration-300 ease-in-out"
+          class="section-chevron size-4 text-darkGrey transition-transform duration-300 ease-in-out"
         />
       </.button>
       <div
@@ -621,7 +621,7 @@
         class="grid grid-rows-[0fr] transition-all duration-300 ease-in-out data-expanded:grid-rows-[1fr]"
       >
         <div class="overflow-hidden">
-          <div class="border-grey-100 border-t px-5 pb-5">
+          <div class="border-t border-grey-100 px-5 pb-5">
             <div class="my-4 space-y-2 text-sm">
               <div>
                 <span class="text-darkGrey">URL testowy:</span>
@@ -636,24 +636,24 @@
               </div>
               <div>
                 <span class="text-darkGrey">NIP testowy:</span>
-                <code class="bg-grey-100 rounded px-1.5 py-0.5 font-mono">6161525811</code>
+                <code class="font-mono rounded bg-grey-100 px-1.5 py-0.5">6161525811</code>
               </div>
             </div>
 
             <div class="overflow-x-auto">
               <table class="min-w-full text-sm">
                 <thead>
-                  <tr class="border-grey-200 border-b">
-                    <th class="text-darkGrey py-2 pr-4 text-left font-medium">Nr faktury</th>
-                    <th class="text-darkGrey py-2 pr-4 text-left font-medium">Stan</th>
-                    <th class="text-darkGrey py-2 text-left font-medium">Opis</th>
+                  <tr class="border-b border-grey-200">
+                    <th class="py-2 pr-4 text-left font-medium text-darkGrey">Nr faktury</th>
+                    <th class="py-2 pr-4 text-left font-medium text-darkGrey">Stan</th>
+                    <th class="py-2 text-left font-medium text-darkGrey">Opis</th>
                   </tr>
                 </thead>
-                <tbody class="divide-grey-100 divide-y">
+                <tbody class="divide-y divide-grey-100">
                   <tr>
-                    <td class="py-1.5 pr-4 font-mono text-xs">01/MM/RRRR</td>
+                    <td class="font-mono py-1.5 pr-4 text-xs">01/MM/RRRR</td>
                     <td class="py-1.5 pr-4">
-                      <span class="bg-grey-200 text-grey-700 inline-flex items-center rounded px-2 py-0.5 text-xs font-medium">
+                      <span class="inline-flex items-center rounded bg-grey-200 px-2 py-0.5 text-xs font-medium text-grey-700">
                         Szkic
                       </span>
                     </td>
@@ -662,7 +662,7 @@
                     </td>
                   </tr>
                   <tr>
-                    <td class="py-1.5 pr-4 font-mono text-xs">02/MM/RRRR</td>
+                    <td class="font-mono py-1.5 pr-4 text-xs">02/MM/RRRR</td>
                     <td class="py-1.5 pr-4">
                       <span class="inline-flex items-center rounded bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700">
                         Sukces
@@ -673,7 +673,7 @@
                     </td>
                   </tr>
                   <tr>
-                    <td class="py-1.5 pr-4 font-mono text-xs">03/MM/RRRR</td>
+                    <td class="font-mono py-1.5 pr-4 text-xs">03/MM/RRRR</td>
                     <td class="py-1.5 pr-4">
                       <span class="inline-flex items-center rounded bg-orange-100 px-2 py-0.5 text-xs font-medium text-orange-700">
                         Wysyłka
@@ -684,7 +684,7 @@
                     </td>
                   </tr>
                   <tr>
-                    <td class="py-1.5 pr-4 font-mono text-xs">04/MM/RRRR</td>
+                    <td class="font-mono py-1.5 pr-4 text-xs">04/MM/RRRR</td>
                     <td class="py-1.5 pr-4">
                       <span class="inline-flex items-center rounded bg-red-100 px-2 py-0.5 text-xs font-medium text-red-700">
                         Błąd
@@ -703,7 +703,7 @@
     </div>
 
     <%!-- 7. System tagowania --%>
-    <div class="border-grey-200 overflow-hidden rounded-lg border bg-white">
+    <div class="overflow-hidden rounded-lg border border-grey-200 bg-white">
       <.button
         phx-click={toggle_section("tags")}
         type="button"
@@ -713,13 +713,13 @@
         class="flex w-full items-center justify-between px-5 py-4 text-left [&_.section-chevron]:aria-expanded:rotate-180"
       >
         <div class="flex items-center gap-3">
-          <.icon name="hero-tag" class="text-darkGrey size-5" />
+          <.icon name="hero-tag" class="size-5 text-darkGrey" />
           <span class="font-semibold">System tagowania</span>
-          <span class="text-darkGrey text-xs">3 kategorie</span>
+          <span class="text-xs text-darkGrey">3 kategorie</span>
         </div>
         <.icon
           name="hero-chevron-down"
-          class="section-chevron text-darkGrey size-4 transition-transform duration-300 ease-in-out"
+          class="section-chevron size-4 text-darkGrey transition-transform duration-300 ease-in-out"
         />
       </.button>
       <div
@@ -728,43 +728,43 @@
         class="grid grid-rows-[0fr] transition-all duration-300 ease-in-out data-expanded:grid-rows-[1fr]"
       >
         <div class="overflow-hidden">
-          <div class="border-grey-100 border-t px-5 pb-5">
-            <p class="text-darkGrey mt-4 mb-3 text-sm">
+          <div class="border-t border-grey-100 px-5 pb-5">
+            <p class="mt-4 mb-3 text-sm text-darkGrey">
               Tagi encji kategoryzują dopasowane wpisy na dashboardzie analitycznym.
               Stosowane do dopasowanych par (transakcja + faktura)
-              lub do encji z <code class="bg-grey-100 rounded px-1 text-xs">skip_invoicing</code>.
+              lub do encji z <code class="rounded bg-grey-100 px-1 text-xs">skip_invoicing</code>.
             </p>
 
             <div class="space-y-2">
-              <div class="bg-grey-100/50 flex items-start gap-3 rounded-lg p-3">
-                <code class="bg-turquoise-100 text-turquoise-700 shrink-0 rounded px-1.5 py-0.5 text-xs">
+              <div class="flex items-start gap-3 rounded-lg bg-grey-100/50 p-3">
+                <code class="shrink-0 rounded bg-turquoise-100 px-1.5 py-0.5 text-xs text-turquoise-700">
                   :project
                 </code>
-                <div class="text-darkGrey text-xs">
+                <div class="text-xs text-darkGrey">
                   <strong>Tagi projektowe</strong> — przypisanie wpisu do projektu.
                   Każdy projekt automatycznie tworzy TagDefinition.
                 </div>
               </div>
-              <div class="bg-grey-100/50 flex items-start gap-3 rounded-lg p-3">
+              <div class="flex items-start gap-3 rounded-lg bg-grey-100/50 p-3">
                 <code class="shrink-0 rounded bg-orange-100 px-1.5 py-0.5 text-xs text-orange-700">
                   :company
                 </code>
-                <div class="text-darkGrey text-xs">
+                <div class="text-xs text-darkGrey">
                   <strong>Firma</strong> — ogólne koszty firmy
                   (czynsz biura, opłaty bankowe, narzędzia).
                 </div>
               </div>
-              <div class="bg-grey-100/50 flex items-start gap-3 rounded-lg p-3">
-                <code class="bg-grey-200 text-grey-700 shrink-0 rounded px-1.5 py-0.5 text-xs">
+              <div class="flex items-start gap-3 rounded-lg bg-grey-100/50 p-3">
+                <code class="shrink-0 rounded bg-grey-200 px-1.5 py-0.5 text-xs text-grey-700">
                   :internal
                 </code>
-                <div class="text-darkGrey text-xs">
+                <div class="text-xs text-darkGrey">
                   <strong>Wewnętrzny</strong> — przelewy wewnętrzne, konwersje walut.
                   Wyłączone z podsumowań.
                 </div>
               </div>
             </div>
-            <p class="text-grey-400 mt-3 text-xs">
+            <p class="mt-3 text-xs text-grey-400">
               Kategorie wzajemnie wykluczające się: wpis może mieć tagi projektowe
               LUB wbudowaną kategorię, nie jedno i drugie.
             </p>
@@ -774,7 +774,7 @@
     </div>
 
     <%!-- 8. VoidStack Labs --%>
-    <div class="border-grey-200 overflow-hidden rounded-lg border bg-white">
+    <div class="overflow-hidden rounded-lg border border-grey-200 bg-white">
       <.button
         phx-click={toggle_section("voidstack")}
         type="button"
@@ -786,11 +786,11 @@
         <div class="flex items-center gap-3">
           <.icon name="hero-shield-exclamation" class="size-5 text-red-400" />
           <span class="font-semibold">VoidStack Labs</span>
-          <span class="text-darkGrey text-xs">testy izolacji tenantów</span>
+          <span class="text-xs text-darkGrey">testy izolacji tenantów</span>
         </div>
         <.icon
           name="hero-chevron-down"
-          class="section-chevron text-darkGrey size-4 transition-transform duration-300 ease-in-out"
+          class="section-chevron size-4 text-darkGrey transition-transform duration-300 ease-in-out"
         />
       </.button>
       <div
@@ -799,17 +799,17 @@
         class="grid grid-rows-[0fr] transition-all duration-300 ease-in-out data-expanded:grid-rows-[1fr]"
       >
         <div class="overflow-hidden">
-          <div class="border-grey-100 border-t px-5 pb-5">
-            <p class="text-darkGrey mt-4 mb-3 text-sm">
+          <div class="border-t border-grey-100 px-5 pb-5">
+            <p class="mt-4 mb-3 text-sm text-darkGrey">
               Oddzielna organizacja do testów autoryzacji. Były stażysta Bytecrafta,
               Dragan Krypt, prowadzi 12-osobową operację z przerobionej kręgielni w Bratysławie.
             </p>
             <div class="grid grid-cols-1 gap-3 text-sm md:grid-cols-2">
               <div>
                 <span class="text-darkGrey">Login:</span>
-                <code class="bg-grey-100 rounded px-1.5 py-0.5 text-xs">dragan@voidstack.io</code>
-                <span class="text-darkGrey mx-0.5">/</span>
-                <code class="bg-grey-100 rounded px-1.5 py-0.5 font-mono text-xs">
+                <code class="rounded bg-grey-100 px-1.5 py-0.5 text-xs">dragan@voidstack.io</code>
+                <span class="mx-0.5 text-darkGrey">/</span>
+                <code class="font-mono rounded bg-grey-100 px-1.5 py-0.5 text-xs">
                   kolejka123456
                 </code>
               </div>
@@ -818,7 +818,7 @@
                 <span class="font-mono">7871963656</span>
               </div>
             </div>
-            <p class="text-grey-400 mt-3 text-xs">
+            <p class="mt-3 text-xs text-grey-400">
               1 projekt (Shadow Protocol), 1 konto bankowe, 4 transakcji,
               1 faktura kosztowa, 1 faktura sprzedażowa.
             </p>
@@ -828,7 +828,7 @@
     </div>
 
     <%!-- 9. Preview odznak bankowych --%>
-    <div class="border-grey-200 overflow-hidden rounded-lg border bg-white">
+    <div class="overflow-hidden rounded-lg border border-grey-200 bg-white">
       <.button
         phx-click={toggle_section("bank-badges")}
         type="button"
@@ -838,13 +838,13 @@
         class="flex w-full items-center justify-between px-5 py-4 text-left [&_.section-chevron]:aria-expanded:rotate-180"
       >
         <div class="flex items-center gap-3">
-          <.icon name="hero-credit-card-mini" class="text-darkGrey size-5" />
+          <.icon name="hero-credit-card-mini" class="size-5 text-darkGrey" />
           <span class="font-semibold">Preview odznak bankowych</span>
-          <span class="text-darkGrey text-xs">Figma 11701:17853 · full + mini</span>
+          <span class="text-xs text-darkGrey">Figma 11701:17853 · full + mini</span>
         </div>
         <.icon
           name="hero-chevron-down"
-          class="section-chevron text-darkGrey size-4 transition-transform duration-300 ease-in-out"
+          class="section-chevron size-4 text-darkGrey transition-transform duration-300 ease-in-out"
         />
       </.button>
       <div
@@ -853,8 +853,8 @@
         class="grid grid-rows-[0fr] transition-all duration-300 ease-in-out data-expanded:grid-rows-[1fr]"
       >
         <div class="overflow-hidden">
-          <div class="border-grey-100 border-t px-5 pb-5">
-            <p class="text-darkGrey my-4 text-sm">
+          <div class="border-t border-grey-100 px-5 pb-5">
+            <p class="my-4 text-sm text-darkGrey">
               Zestaw do manualnej weryfikacji zgodności z Figmą. Zawiera też poprawione,
               jednoznacznie rozpoznawalne duplikaty z eksportu (`Neteller`, `Skrill`, `Vivid`).
             </p>
@@ -862,7 +862,7 @@
             <div class="grid grid-cols-1 gap-3 xl:grid-cols-2">
               <div
                 :for={bank <- @bank_badges}
-                class="border-grey-100 flex items-center justify-between gap-4 rounded-lg border bg-[#fafafa] p-4"
+                class="flex items-center justify-between gap-4 rounded-lg border border-grey-100 bg-grey-50 p-4"
               >
                 <div class="min-w-0">
                   <p class="truncate text-sm font-medium">{bank}</p>

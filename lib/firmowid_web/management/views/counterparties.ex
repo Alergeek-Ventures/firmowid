@@ -155,7 +155,7 @@ defmodule FirmowidWeb.Management.Views.Counterparties do
 
   defp counterparty_icon(assigns) do
     ~H"""
-    <.icon name={CounterpartyHelpers.type_icon_name(@counterparty)} class="text-grey-500 size-6" />
+    <.icon name={CounterpartyHelpers.type_icon_name(@counterparty)} class="size-6 text-grey-500" />
     """
   end
 

@@ -158,7 +158,7 @@ defmodule FirmowidWeb.Management.Components.ProfileTab do
           <.card_header>
             Kalendarz
           </.card_header>
-          <p class="text-grey-500 text-sm">Wkrótce</p>
+          <p class="text-sm text-grey-500">Wkrótce</p>
         </.card>
       </div>
     </div>
