@@ -274,7 +274,7 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
                 class={[
                   "ml-auto",
                   SubmissionInfo.failed?(@submission_info) &&
-                    "hover:bg-redText hover:ring-redText hover:text-redBg text-redText"
+                    "text-redText hover:bg-redText hover:text-redBg hover:ring-redText"
                 ]}
                 variant="secondary"
                 size="small"
@@ -284,7 +284,7 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
                 Historia faktury
                 <span
                   :if={SubmissionInfo.failed?(@submission_info)}
-                  class="bg-redText border-redBg text-redBg absolute -top-2.5 -right-2.5 flex size-5 items-center justify-center rounded-full border-2 p-1 text-xs font-bold"
+                  class="absolute -top-2.5 -right-2.5 flex size-5 items-center justify-center rounded-full border-2 border-redBg bg-redText p-1 text-xs font-bold text-redBg"
                 >
                   !
                 </span>

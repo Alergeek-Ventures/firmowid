@@ -24,7 +24,7 @@ defmodule FirmowidWeb.BankSync.Views.Create do
   @impl true
   def render(assigns) do
     ~H"""
-    <section class="container mx-auto flex flex-col gap-8 pt-4">
+    <section class="container flex flex-col gap-8 pt-4">
       <.header>
         Dodaj konto bankowe
       </.header>

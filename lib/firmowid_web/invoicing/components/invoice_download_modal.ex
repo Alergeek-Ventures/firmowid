@@ -39,7 +39,7 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceDownloadModal do
         <div class="flex flex-col gap-6 p-1">
           <div>
             <h3 class="text-lg font-semibold">Pobierz PDF</h3>
-            <p class="mt-2 text-sm text-neutral-600">
+            <p class="text-neutral-600 mt-2 text-sm">
               Wybierz, czy dołączyć stronę z komentarzem wewnętrznym.
             </p>
           </div>

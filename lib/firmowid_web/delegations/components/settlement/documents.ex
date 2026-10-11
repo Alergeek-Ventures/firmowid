@@ -18,7 +18,7 @@ defmodule FirmowidWeb.Delegations.Components.Settlement.Documents do
   def related_documents(assigns) do
     ~H"""
     <div class="mt-4 flex flex-wrap items-center gap-2 text-sm">
-      <span class="text-grey-700 font-medium">Powiązane dokumenty:</span>
+      <span class="font-medium text-grey-700">Powiązane dokumenty:</span>
       <div class="flex flex-wrap gap-2">
         <span :for={blob <- @expense.related_blobs}>
           <.document_pill filename={blob.original_filename} url={blob.url}>
@@ -26,7 +26,7 @@ defmodule FirmowidWeb.Delegations.Components.Settlement.Documents do
               <.button
                 type="button"
                 variant="unstyled"
-                class="text-grey-500 cursor-pointer"
+                class="cursor-pointer text-grey-500"
                 phx-click="remove-related-document"
                 phx-value-expense-id={@expense.id}
                 phx-value-blob-id={blob.id}
@@ -71,7 +71,7 @@ defmodule FirmowidWeb.Delegations.Components.Settlement.Documents do
               <.document_emphasis>rezerwację</.document_emphasis>
               lub <.document_emphasis>potwierdzenie rezerwacji</.document_emphasis>. Dokument powinien pokazywać, czego dotyczył wydatek: trasę, datę, przewoźnika lub usługę. W tym przypadku załącz także <.document_emphasis>potwierdzenie płatności</.document_emphasis>.
             </.modal_paragraph>
-            <hr class="border-grey-200 my-2 w-full" />
+            <hr class="my-2 w-full border-grey-200" />
             <p>
               <span class="font-medium">Uwaga:</span>
               Samo potwierdzenie płatności nie wystarczy. Jeśli załączasz potwierdzenie przelewu lub płatności kartą, dodaj do niego dokument potwierdzający, za co była płatność, np. rezerwację.
@@ -117,7 +117,7 @@ defmodule FirmowidWeb.Delegations.Components.Settlement.Documents do
     <span
       aria-busy={@loading?}
       class={[
-        "bg-grey-200 text-grey-600 inline-flex max-w-full items-center gap-1 rounded px-2 py-1 text-sm font-medium",
+        "inline-flex max-w-full items-center gap-1 rounded bg-grey-200 px-2 py-1 text-sm font-medium text-grey-600",
         @loading? && "animate-pulse"
       ]}
     >
@@ -156,7 +156,7 @@ defmodule FirmowidWeb.Delegations.Components.Settlement.Documents do
 
   defp document_emphasis(assigns) do
     ~H"""
-    <span class="text-turquoise-700 font-medium underline">{render_slot(@inner_block)}</span>
+    <span class="font-medium text-turquoise-700 underline">{render_slot(@inner_block)}</span>
     """
   end
 end

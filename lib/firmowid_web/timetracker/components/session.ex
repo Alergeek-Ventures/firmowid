@@ -50,7 +50,7 @@ defmodule FirmowidWeb.Timetracker.Components.Session do
           </:input>
         </.hidden_input>
 
-        <span :if={length(@sessions) > 1} class="text-grey-600 line-clamp-1 shrink-0">
+        <span :if={length(@sessions) > 1} class="line-clamp-1 shrink-0 text-grey-600">
           | {length(@sessions)} sesji
         </span>
 
@@ -71,7 +71,7 @@ defmodule FirmowidWeb.Timetracker.Components.Session do
         phx-click={show_popover(select_id)}
         disabled={parent_session.lockdown}
         variant="unstyled"
-        class="hover:bg-grey-200 text-darkGrey ml-auto min-w-0 cursor-pointer rounded border-none bg-transparent px-2 py-1 text-sm uppercase transition focus:ring-0 disabled:pointer-events-none"
+        class="ml-auto min-w-0 cursor-pointer rounded border-none bg-transparent px-2 py-1 text-sm text-darkGrey uppercase transition hover:bg-grey-200 focus:ring-0 disabled:pointer-events-none"
       >
         {case Enum.find(@active_projects, &(&1.id == parent_session.project_id)) do
           nil -> "Select"
@@ -83,7 +83,7 @@ defmodule FirmowidWeb.Timetracker.Components.Session do
         placement="bottom-end"
         id={select_id}
         reference_id={"project-select-#{parent_session.id}"}
-        class="bg-grey-50 border-grey-200 w-[230px] rounded-lg border"
+        class="w-[230px] rounded-lg border border-grey-200 bg-grey-50"
       >
         <ul class="flex flex-col gap-1 overflow-auto p-1">
           <li
@@ -106,7 +106,7 @@ defmodule FirmowidWeb.Timetracker.Components.Session do
       <% popover_id = "edit-sessions-popover-#{parent_session.id}" %>
       <% total_duration = @sessions |> Index.calculate_total_duration() %>
       <.button
-        class="hover:bg-grey-200 ml-4 w-14 shrink-0 rounded-md py-1 text-center font-bold transition lg:ml-8"
+        class="ml-4 w-14 shrink-0 rounded-md py-1 text-center font-bold transition hover:bg-grey-200 lg:ml-8"
         id={"session-timer-#{parent_session.id}"}
         type="button"
         phx-click={show_popover(popover_id)}
@@ -123,10 +123,10 @@ defmodule FirmowidWeb.Timetracker.Components.Session do
         id={popover_id}
         reference_id={form_id}
         placement="bottom-end"
-        class="border-grey-200 space-y-6 rounded-lg border bg-white px-6 py-4 shadow-lg"
+        class="space-y-6 rounded-lg border border-grey-200 bg-white px-6 py-4 shadow-lg"
       >
         <div class="grid grid-cols-[repeat(5,auto)] gap-x-4 gap-y-3">
-          <div class="text-grey-500 col-span-5 grid grid-cols-subgrid text-sm">
+          <div class="col-span-5 grid grid-cols-subgrid text-sm text-grey-500">
             <p class="col-start-2 px-2">Data</p>
             <p class="px-2">Od</p>
             <p class="px-2">Do</p>
@@ -136,7 +136,7 @@ defmodule FirmowidWeb.Timetracker.Components.Session do
               <.input type="hidden" field={session[:id]} />
               <%= if overnight_session?(session) do %>
                 <div class="col-span-5 grid grid-cols-subgrid items-center gap-y-2">
-                  <p class="text-grey-500 line-clamp-1 text-sm">
+                  <p class="line-clamp-1 text-sm text-grey-500">
                     Sesja {session.index + 1}
                   </p>
                   <.input
@@ -206,11 +206,11 @@ defmodule FirmowidWeb.Timetracker.Components.Session do
                     data-confirm="Skrócić sesję nocną do jednego dnia? Czas po północy zostanie usunięty, bez możliwości przywrócenia."
                     variant="unstyled"
                   >
-                    <Lucideicons.trash_2 class="hover:text-darkGrey text-grey-500 transition-all" />
+                    <Lucideicons.trash_2 class="text-grey-500 transition-all hover:text-darkGrey" />
                   </.button>
                 </div>
               <% else %>
-                <p class="text-grey-500 line-clamp-1 text-sm">
+                <p class="line-clamp-1 text-sm text-grey-500">
                   Sesja {session.index + 1}
                 </p>
                 <.input
@@ -241,7 +241,7 @@ defmodule FirmowidWeb.Timetracker.Components.Session do
                   phx-value-id={session[:id].value}
                   variant="unstyled"
                 >
-                  <Lucideicons.trash_2 class="hover:text-darkGrey text-grey-500 transition-all" />
+                  <Lucideicons.trash_2 class="text-grey-500 transition-all hover:text-darkGrey" />
                 </.button>
               <% end %>
             </.inputs_for>

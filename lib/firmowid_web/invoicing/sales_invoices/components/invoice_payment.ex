@@ -47,7 +47,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoicePayment do
   def invoice_payment(assigns) do
     ~H"""
     <div class="grid grid-cols-[min-content_min-content_1fr] items-center gap-x-5 gap-y-4">
-      <label class="text-grey-700 whitespace-nowrap" for={@payment_form[:sale_date].id}>
+      <label class="whitespace-nowrap text-grey-700" for={@payment_form[:sale_date].id}>
         Data sprzedaży
       </label>
       <.input
@@ -72,7 +72,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoicePayment do
         </.button>
       </div>
 
-      <label class="text-grey-700 whitespace-nowrap" for={@payment_form[:due_date].id}>
+      <label class="whitespace-nowrap text-grey-700" for={@payment_form[:due_date].id}>
         Termin płatności
       </label>
       <.input
@@ -97,7 +97,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoicePayment do
         </.button>
       </div>
 
-      <label class="text-grey-700 whitespace-nowrap" for={@payment_form[:payment_method].id}>
+      <label class="whitespace-nowrap text-grey-700" for={@payment_form[:payment_method].id}>
         Forma płatności
       </label>
       <.input
@@ -114,7 +114,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoicePayment do
       <div></div>
 
       <div class={[
-        "border-grey-200 col-span-2 col-start-2 grid w-min min-w-[400px] grid-cols-[min-content_1fr] items-center gap-4 gap-y-2 rounded-lg border p-4 transition-opacity duration-200",
+        "col-span-2 col-start-2 grid w-min min-w-[400px] grid-cols-[min-content_1fr] items-center gap-4 gap-y-2 rounded-lg border border-grey-200 p-4 transition-opacity duration-200",
         if(to_string(@payment_form[:payment_method].value) == "transfer",
           do: "opacity-100",
           else: "pointer-events-none opacity-0"
@@ -128,7 +128,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoicePayment do
         />
 
         <%= if Enum.empty?(@bank_accounts) do %>
-          <p class="text-grey-700 col-span-2 text-sm/snug">
+          <p class="col-span-2 text-sm/snug text-grey-700">
             Żadne z Twoich kont nie jest podpięte.
           </p>
           <.link
@@ -161,7 +161,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoicePayment do
         <% end %>
 
         <%= if is_nil(@selected_bank_account) do %>
-          <label class="text-grey-700 min-w-[150px]" for={@payment_form[:seller_account_number].id}>
+          <label class="min-w-[150px] text-grey-700" for={@payment_form[:seller_account_number].id}>
             lub wpisz ręcznie:
           </label>
           <.input
@@ -175,7 +175,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoicePayment do
 
         <%= if not Enum.empty?(@bank_accounts) and @selected_bank_account != nil do %>
           <div class="pr-2 pb-2">
-            <Lucideicons.landmark class="text-grey-700 size-[42px]" />
+            <Lucideicons.landmark class="size-[42px] text-grey-700" />
           </div>
 
           <div class="flex flex-row items-center gap-2">
@@ -191,7 +191,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoicePayment do
 
             <p
               :if={@selected_bank_account.currency != @invoice.currency}
-              class="bg-redBg text-redText h-min rounded-full px-4 py-1 text-sm/snug"
+              class="h-min rounded-full bg-redBg px-4 py-1 text-sm/snug text-redText"
             >
               waluta konta: <strong>{@selected_bank_account.currency}</strong>
             </p>
@@ -207,11 +207,11 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoicePayment do
             </.button>
           </div>
 
-          <p class="text-grey-500 text-sm/snug">Bank</p>
-          <p class="text-grey-700 text-sm/snug">{@selected_bank_account.institution_name}</p>
+          <p class="text-sm/snug text-grey-500">Bank</p>
+          <p class="text-sm/snug text-grey-700">{@selected_bank_account.institution_name}</p>
 
-          <p class="text-grey-500 text-sm/snug">Numer</p>
-          <p class="text-grey-700 text-sm/snug">{@selected_bank_account.iban}</p>
+          <p class="text-sm/snug text-grey-500">Numer</p>
+          <p class="text-sm/snug text-grey-700">{@selected_bank_account.iban}</p>
         <% end %>
       </div>
 
@@ -219,7 +219,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoicePayment do
       <div class="absolute">
         <.modal id="bank_account_selector_modal" class="max-w-4xl">
           <h2 class="mb-2 text-xl font-medium">Zmiana rachunku</h2>
-          <p class="text-grey-600 mb-6">Wybierz rachunek bankowy, na który chcesz otrzymać wpłatę.</p>
+          <p class="mb-6 text-grey-600">Wybierz rachunek bankowy, na który chcesz otrzymać wpłatę.</p>
 
           <div class="space-y-3">
             <%= for account <- @bank_accounts do %>
@@ -228,25 +228,25 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoicePayment do
                 class={[
                   "grid grid-cols-[min-content_min-content_1fr_min-content_min-content] items-center gap-2 rounded-lg border p-4 transition-colors",
                   if(@selected_bank_account && @selected_bank_account.id == account.id,
-                    do: "bg-grey-50 border-grey-400",
+                    do: "border-grey-400 bg-grey-50",
                     else: "border-grey-200 hover:border-grey-300"
                   )
                 ]}
               >
-                <Lucideicons.landmark class="text-grey-600 mr-4 size-10 shrink-0" />
+                <Lucideicons.landmark class="mr-4 size-10 shrink-0 text-grey-600" />
 
                 <div class="flex flex-col gap-2 text-sm">
-                  <span :if={account.name} class="text-grey-500 block">Nazwa</span>
-                  <span class="text-grey-500 block">Bank</span>
-                  <span class="text-grey-500 block">Numer</span>
-                  <span class="text-grey-500 block">Waluta</span>
+                  <span :if={account.name} class="block text-grey-500">Nazwa</span>
+                  <span class="block text-grey-500">Bank</span>
+                  <span class="block text-grey-500">Numer</span>
+                  <span class="block text-grey-500">Waluta</span>
                 </div>
 
                 <div class="flex flex-col gap-2 text-sm">
-                  <span :if={account.name} class="text-grey-700 block truncate">{account.name}</span>
-                  <span class="text-grey-700 block truncate">{account.institution_name}</span>
-                  <span class="text-grey-700 block">{account.iban}</span>
-                  <span class="text-grey-700 block">{account.currency}</span>
+                  <span :if={account.name} class="block truncate text-grey-700">{account.name}</span>
+                  <span class="block truncate text-grey-700">{account.institution_name}</span>
+                  <span class="block text-grey-700">{account.iban}</span>
+                  <span class="block text-grey-700">{account.currency}</span>
                 </div>
 
                 <p

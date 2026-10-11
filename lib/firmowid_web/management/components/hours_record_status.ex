@@ -16,10 +16,10 @@ defmodule FirmowidWeb.Management.Components.HoursRecordStatus do
   def hours_record_status(%{hours_record: nil} = assigns) do
     ~H"""
     <div class="flex min-w-0 flex-1 items-center gap-3">
-      <span class="bg-grey-200 text-caps-sm/tight text-grey-700 flex w-[166.5px] min-w-0 items-center justify-between gap-2.5 rounded-sm px-2 py-1 font-medium uppercase">
+      <span class="flex w-[166.5px] min-w-0 items-center justify-between gap-2.5 rounded-sm bg-grey-200 px-2 py-1 text-caps-sm/tight font-medium text-grey-700 uppercase">
         Brak <.icon name="hero-x-mark-micro" class="size-4" />
       </span>
-      <Lucideicons.file_x class="text-grey-400 shrink-0" />
+      <Lucideicons.file_x class="shrink-0 text-grey-400" />
     </div>
     """
   end
@@ -37,7 +37,7 @@ defmodule FirmowidWeb.Management.Components.HoursRecordStatus do
             end
           }
           class={[
-            "text-caps-sm/tight flex w-[166.5px] min-w-0 items-center justify-between gap-2.5 rounded-sm px-2 py-1 font-medium uppercase",
+            "flex w-[166.5px] min-w-0 items-center justify-between gap-2.5 rounded-sm px-2 py-1 text-caps-sm/tight font-medium uppercase",
             if(@hours_record.submission_status == :withdrawn,
               do: "bg-orange-200 text-orange-700",
               else: "bg-green-200 text-green-700"
@@ -54,9 +54,9 @@ defmodule FirmowidWeb.Management.Components.HoursRecordStatus do
           kind="unstyled"
           navigate={~p"/czasosledz/ewidencja/#{@hours_record.id}"}
           download={"Ewidencja_#{@hours_record.year}_#{@hours_record.month}_#{@user.name || @user.email}.pdf"}
-          class="hover:bg-greyButtonBg inline-flex shrink-0 items-center justify-center rounded-md p-0.5 transition"
+          class="inline-flex shrink-0 items-center justify-center rounded-md p-0.5 transition hover:bg-greyButtonBg"
         >
-          <.icon name="hero-arrow-down-tray-mini" class="text-grey-400 shrink-0" />
+          <.icon name="hero-arrow-down-tray-mini" class="shrink-0 text-grey-400" />
         </.link>
       </div>
       <.link

@@ -29,7 +29,7 @@ defmodule FirmowidWeb.Feedback.Components.Form do
       <.modal id="feedback-modal" on_cancel={JS.push("reset", target: "##{@id}")}>
         <div :if={!@submitted}>
           <h2 class="mb-2 text-xl font-semibold">Podziel się swoim feedbackiem</h2>
-          <p class="text-darkGrey mb-6 text-sm">
+          <p class="mb-6 text-sm text-darkGrey">
             Twoja opinia pomaga nam rozwijać Firmowida. Napisz co możemy poprawić,
             co działa dobrze, albo czego Ci brakuje.
           </p>
@@ -44,7 +44,7 @@ defmodule FirmowidWeb.Feedback.Components.Form do
                 rows="5"
                 required
                 placeholder="Opisz swój pomysł, sugestię lub zgłoś problem"
-                class="border-grey/30 focus:border-orangeText focus:ring-orangeText min-h-[120px] w-full resize-y rounded-md border px-3 py-2 text-sm"
+                class="border-grey/30 min-h-[120px] w-full resize-y rounded-md border px-3 py-2 text-sm focus:border-orangeText focus:ring-orangeText"
               ><%= @content %></textarea>
             </div>
             <div class="flex justify-end gap-3">
@@ -58,9 +58,9 @@ defmodule FirmowidWeb.Feedback.Components.Form do
           </form>
         </div>
         <div :if={@submitted} class="p-4 text-center">
-          <div class="mb-4 text-4xl">&#127881;</div>
+          <div class="text-4xl mb-4">&#127881;</div>
           <h2 class="mb-2 text-xl font-semibold">Dziękujemy za feedback!</h2>
-          <p class="text-darkGrey mb-6 text-sm">
+          <p class="mb-6 text-sm text-darkGrey">
             Twoja opinia jest dla nas bardzo ważna i pomoże nam ulepszyć
             aplikację.
           </p>

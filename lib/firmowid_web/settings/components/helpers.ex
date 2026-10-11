@@ -27,7 +27,7 @@ defmodule FirmowidWeb.Settings.Components.Helpers do
   def settings_field(%{layout: :row} = assigns) do
     ~H"""
     <div class={["grid grid-cols-2 items-center gap-x-5", @class]}>
-      <label for={@for} class={["text-grey-700 text-right text-sm leading-[1.35]", @label_class]}>
+      <label for={@for} class={["text-right text-sm leading-[1.35] text-grey-700", @label_class]}>
         {@label}
       </label>
       <div class={["min-w-0", @block_class]}>{render_slot(@inner_block)}</div>
@@ -38,7 +38,7 @@ defmodule FirmowidWeb.Settings.Components.Helpers do
   def settings_field(assigns) do
     ~H"""
     <label for={@for} class={["flex flex-col gap-1", @class]}>
-      <span class={["text-grey-700 text-sm leading-[1.35]", @label_class]}>{@label}</span>
+      <span class={["text-sm leading-[1.35] text-grey-700", @label_class]}>{@label}</span>
       {render_slot(@inner_block)}
     </label>
     """
@@ -60,10 +60,10 @@ defmodule FirmowidWeb.Settings.Components.Helpers do
   def settings_display_field(assigns) do
     ~H"""
     <div class={["grid grid-cols-2 items-baseline gap-x-5", @class]}>
-      <div class={["text-grey-700 text-right text-sm leading-[1.35]", @label_class]}>
+      <div class={["text-right text-sm leading-[1.35] text-grey-700", @label_class]}>
         {@label}
       </div>
-      <div class={["text-grey-900 text-base leading-[1.35]", @value_class]}>
+      <div class={["text-base leading-[1.35] text-grey-900", @value_class]}>
         {render_slot(@inner_block)}
       </div>
     </div>

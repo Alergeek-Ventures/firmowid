@@ -27,7 +27,7 @@ defmodule FirmowidWeb.Invoicing.Components.DashboardTiles do
 
   def tile(assigns) do
     ~H"""
-    <div class="bg-lightGreyBg min-h-24 rounded-lg p-2.5 transition-shadow hover:shadow-sm">
+    <div class="min-h-24 rounded-lg bg-lightGreyBg p-2.5 transition-shadow hover:shadow-sm">
       <%= case @type do %>
         <% :unpaid_invoice -> %>
           <.unpaid_invoice_tile entry={@entry} return_to={@return_to} />
@@ -74,7 +74,7 @@ defmodule FirmowidWeb.Invoicing.Components.DashboardTiles do
           </span>
         </div>
 
-        <div class="text-darkGrey text-xs">{@invoice_number}</div>
+        <div class="text-xs text-darkGrey">{@invoice_number}</div>
 
         <div class="mt-auto flex items-center justify-between gap-2 text-xs">
           <span class="text-grey-500">{format_date(@issue_date)}</span>
@@ -182,12 +182,12 @@ defmodule FirmowidWeb.Invoicing.Components.DashboardTiles do
       <div class="flex min-h-full flex-col gap-2">
         <div class="flex items-start justify-between gap-2">
           <span class="truncate text-sm font-medium">{@party}</span>
-          <span class="text-sm font-semibold whitespace-nowrap text-zinc-900">
+          <span class="text-zinc-900 text-sm font-semibold whitespace-nowrap">
             <span :if={!@is_income}>-</span>{format_money(@currency, decimal_abs(@amount))}
           </span>
         </div>
 
-        <div :if={@description} class="text-darkGrey truncate text-xs">
+        <div :if={@description} class="truncate text-xs text-darkGrey">
           {@description}
         </div>
 
@@ -291,9 +291,9 @@ defmodule FirmowidWeb.Invoicing.Components.DashboardTiles do
           </span>
         </div>
 
-        <div :if={@invoice_number} class="text-darkGrey mt-1 text-xs">{@invoice_number}</div>
+        <div :if={@invoice_number} class="mt-1 text-xs text-darkGrey">{@invoice_number}</div>
 
-        <div :if={@description} class="text-darkGrey mt-1 truncate text-xs">{@description}</div>
+        <div :if={@description} class="mt-1 truncate text-xs text-darkGrey">{@description}</div>
 
         <div :if={@badge_type} class="mt-auto">
           <.confidence_chip badge_type={@badge_type} confidence_percent={@confidence_percent} />
@@ -321,7 +321,7 @@ defmodule FirmowidWeb.Invoicing.Components.DashboardTiles do
 
     ~H"""
     <div class="mt-2 flex items-center justify-start gap-2">
-      <span class="bg-greenBg text-greenText inline-flex items-center gap-1 rounded-full px-2 py-1 text-[11px] font-medium">
+      <span class="inline-flex items-center gap-1 rounded-full bg-greenBg px-2 py-1 text-caps-sm font-medium text-greenText">
         <.icon name="hero-credit-card" class="size-3" />
         {@label}
       </span>
@@ -334,7 +334,7 @@ defmodule FirmowidWeb.Invoicing.Components.DashboardTiles do
 
     ~H"""
     <div class="mt-2 flex items-center justify-start gap-2">
-      <span class="bg-greenBg text-greenText inline-flex items-center gap-1 rounded-full px-2 py-1 text-[11px] font-medium">
+      <span class="inline-flex items-center gap-1 rounded-full bg-greenBg px-2 py-1 text-caps-sm font-medium text-greenText">
         <.icon name="hero-credit-card" class="size-3" />
         {@label}
       </span>
@@ -347,7 +347,7 @@ defmodule FirmowidWeb.Invoicing.Components.DashboardTiles do
 
     ~H"""
     <div class="mt-2 flex items-center justify-start gap-2">
-      <span class="inline-flex items-center gap-1 rounded-full bg-orange-100 px-2 py-1 text-[11px] font-medium text-orange-600">
+      <span class="inline-flex items-center gap-1 rounded-full bg-orange-100 px-2 py-1 text-caps-sm font-medium text-orange-600">
         <.icon name="hero-credit-card" class="size-3" />
         {@label}
       </span>
@@ -360,12 +360,12 @@ defmodule FirmowidWeb.Invoicing.Components.DashboardTiles do
 
     ~H"""
     <div class="mt-2 flex items-center justify-between gap-2">
-      <span class="bg-redBg text-redText inline-flex items-center gap-1 rounded-full px-2 py-1 text-[11px] font-medium">
+      <span class="inline-flex items-center gap-1 rounded-full bg-redBg px-2 py-1 text-caps-sm font-medium text-redText">
         <.icon name="hero-credit-card" class="size-3" />
         {@label}
       </span>
 
-      <.button type="button" variant="secondary" size="small" class="text-[11px]">
+      <.button type="button" variant="secondary" size="small" class="text-caps-sm">
         Sprawdź
       </.button>
     </div>
@@ -378,7 +378,7 @@ defmodule FirmowidWeb.Invoicing.Components.DashboardTiles do
 
     ~H"""
     <div class="mt-2 flex items-center justify-start gap-2">
-      <span class="bg-grey-200 text-darkGrey inline-flex items-center gap-1 rounded-full px-2 py-1 text-[11px] font-medium">
+      <span class="inline-flex items-center gap-1 rounded-full bg-grey-200 px-2 py-1 text-caps-sm font-medium text-darkGrey">
         <.icon name="hero-credit-card" class="size-3" />
         {@label}
       </span>
@@ -396,15 +396,15 @@ defmodule FirmowidWeb.Invoicing.Components.DashboardTiles do
     <div class="flex flex-col gap-2">
       <div class="flex items-center justify-between gap-2">
         <div class="flex items-center gap-2">
-          <div class="bg-grey-200 flex size-6 items-center justify-center rounded">
-            <.icon name="hero-document-text" class="text-grey-600 size-4" />
+          <div class="flex size-6 items-center justify-center rounded bg-grey-200">
+            <.icon name="hero-document-text" class="size-4 text-grey-600" />
           </div>
           <span class="text-sm font-medium">Brak faktury</span>
         </div>
         <span class="text-sm font-semibold whitespace-nowrap">{format_money(nil, @amount)}</span>
       </div>
 
-      <p class="text-grey-600 text-xs">
+      <p class="text-xs text-grey-600">
         <span class="font-medium">{@client_name}</span>
         {" "}płaci cyklicznie - w tym miesiącu wykryliśmy brak faktury.
       </p>
@@ -430,15 +430,15 @@ defmodule FirmowidWeb.Invoicing.Components.DashboardTiles do
     <div class="flex flex-col gap-2">
       <div class="flex items-center justify-between gap-2">
         <div class="flex items-center gap-2">
-          <div class="bg-grey-200 flex size-6 items-center justify-center rounded">
-            <.icon name="hero-banknotes" class="text-grey-600 size-4" />
+          <div class="flex size-6 items-center justify-center rounded bg-grey-200">
+            <.icon name="hero-banknotes" class="size-4 text-grey-600" />
           </div>
           <span class="text-sm font-medium">Cykliczna płatność</span>
         </div>
         <span class="text-sm font-semibold whitespace-nowrap">{format_money(nil, @amount)}</span>
       </div>
 
-      <p class="text-grey-600 text-xs">
+      <p class="text-xs text-grey-600">
         Płacisz regularnie firmie <span class="font-medium">{@client_name}</span>, w tym miesiącu nie wykryliśmy jeszcze transakcji.
       </p>
 
@@ -453,13 +453,13 @@ defmodule FirmowidWeb.Invoicing.Components.DashboardTiles do
     ~H"""
     <div class="flex flex-col gap-2">
       <div class="flex items-center gap-2">
-        <div class="bg-blueBg flex size-6 items-center justify-center rounded">
-          <.icon name="hero-building-library" class="text-blueText size-4" />
+        <div class="flex size-6 items-center justify-center rounded bg-blueBg">
+          <.icon name="hero-building-library" class="size-4 text-blueText" />
         </div>
         <span class="text-sm font-medium">Podepnij konto bankowe</span>
       </div>
 
-      <p class="text-grey-600 text-xs">Transakcje pojawią się automatycznie po podłączeniu konta.</p>
+      <p class="text-xs text-grey-600">Transakcje pojawią się automatycznie po podłączeniu konta.</p>
 
       <.link
         navigate={~p"/ustawienia/bank/dodaj"}
@@ -478,13 +478,13 @@ defmodule FirmowidWeb.Invoicing.Components.DashboardTiles do
     ~H"""
     <div class="flex flex-col gap-2">
       <div class="flex items-center gap-2">
-        <div class="bg-greenBg flex size-6 items-center justify-center rounded">
-          <.icon name="hero-document-arrow-up-solid" class="text-greenText size-4" />
+        <div class="flex size-6 items-center justify-center rounded bg-greenBg">
+          <.icon name="hero-document-arrow-up-solid" class="size-4 text-greenText" />
         </div>
         <span class="text-sm font-medium">Połącz z KSeF</span>
       </div>
 
-      <p class="text-grey-600 text-xs">
+      <p class="text-xs text-grey-600">
         Faktury będą automatycznie wysyłane do Krajowego Systemu e-Faktur.
       </p>
 
@@ -513,7 +513,7 @@ defmodule FirmowidWeb.Invoicing.Components.DashboardTiles do
     ~H"""
     <div class="flex flex-col gap-2">
       <div class="text-sm font-medium">{@title}</div>
-      <p class="text-grey-600 text-xs">{@description}</p>
+      <p class="text-xs text-grey-600">{@description}</p>
     </div>
     """
   end

@@ -264,10 +264,10 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
     <div id="analysis-dashboard" class="mx-auto w-full max-w-7xl py-4">
       <div class="mb-8 flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h1 class="text-grey-900 text-3xl font-semibold">
+          <h1 class="text-3xl font-semibold text-grey-900">
             {pgettext("main navigation", "Analysis")}
           </h1>
-          <p class="text-darkGrey mt-2 text-sm">{gettext("Income and expenses by project")}</p>
+          <p class="mt-2 text-sm text-darkGrey">{gettext("Income and expenses by project")}</p>
         </div>
         <div class="flex items-center gap-3">
           <FirmowidWeb.DesignSystem.Components.Button.button
@@ -298,7 +298,7 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
               id="tag-filter-popover"
               reference_id="tag-filter-trigger"
               placement="bottom-end"
-              class="bg-grey-50 border-grey-200 w-64 rounded-lg border"
+              class="w-64 rounded-lg border border-grey-200 bg-grey-50"
             >
               <div class="max-h-80 overflow-y-auto p-1">
                 <label class="flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-sm hover:bg-orange-100">
@@ -307,7 +307,7 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
                     checked={tag_filter_active?(@tag_filters, {:company})}
                     phx-click="toggle-tag"
                     phx-value-tag="firma"
-                    class="border-darkGrey size-4 rounded-[3px] border"
+                    class="size-4 rounded-[3px] border border-darkGrey"
                   />
                   <span
                     class="size-2.5 shrink-0 rounded-full"
@@ -325,14 +325,14 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
                     checked={tag_filter_active?(@tag_filters, {:project, tag_def.id})}
                     phx-click="toggle-tag"
                     phx-value-tag={"projekt:#{tag_def.id}"}
-                    class="border-darkGrey size-4 rounded-[3px] border"
+                    class="size-4 rounded-[3px] border border-darkGrey"
                   />
                   <span
                     class="size-2.5 shrink-0 rounded-full"
                     style={"background-color: #{Map.fetch!(@category_colors, {:project, tag_def.id})}"}
                     aria-hidden="true"
                   />
-                  <span class="text-darkGrey truncate">{tag_def.name}</span>
+                  <span class="truncate text-darkGrey">{tag_def.name}</span>
                 </label>
                 <FirmowidWeb.DesignSystem.Components.Button.button
                   :if={@tag_filters != []}
@@ -340,7 +340,7 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
                   type="button"
                   variant="unstyled"
                   phx-click="clear-tag-filters"
-                  class="text-darkGrey mt-1 w-full border-t p-2 text-sm"
+                  class="mt-1 w-full border-t p-2 text-sm text-darkGrey"
                 >
                   {gettext("Clear filters")}
                 </FirmowidWeb.DesignSystem.Components.Button.button>
@@ -368,16 +368,16 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
           active={@expanded_section == :expenses}
         />
       </div>
-      <p class="text-darkGrey mt-4 text-sm">
+      <p class="mt-4 text-sm text-darkGrey">
         {gettext("Selected projects share the amount equally.")}
       </p>
       <section id="analysis-entries" class="mt-8">
-        <h2 class="text-darkGrey text-lg font-medium">
+        <h2 class="text-lg font-medium text-darkGrey">
           {if @expanded_section == :income,
             do: gettext("Income entries"),
             else: gettext("Expense entries")}
         </h2>
-        <p :if={@tag_filters != []} class="text-darkGrey mt-1 text-sm">
+        <p :if={@tag_filters != []} class="mt-1 text-sm text-darkGrey">
           {gettext(
             "The list shows full document amounts; the charts show the selected projects' shares."
           )}

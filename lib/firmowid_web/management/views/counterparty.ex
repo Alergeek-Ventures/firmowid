@@ -171,7 +171,7 @@ defmodule FirmowidWeb.Management.Views.Counterparty do
         {@counterparty.display_label}
         <span
           :if={@counterparty.archived_at}
-          class="bg-grey-200 text-grey-700 inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm/snug font-normal"
+          class="inline-flex items-center gap-2 rounded-full bg-grey-200 px-4 py-2 text-sm/snug font-normal text-grey-700"
         >
           <Lucideicons.archive class="size-4" /> zarchiwizowany
         </span>
@@ -204,7 +204,7 @@ defmodule FirmowidWeb.Management.Views.Counterparty do
     <div
       :if={@counterparty.archived_at}
       class={[
-        "bg-grey-200 text-grey-700 flex items-center gap-4 rounded-lg p-4 shadow-[0px_1px_6px_0px_rgba(0,0,0,0.1)]",
+        "flex items-center gap-4 rounded-lg bg-grey-200 p-4 text-grey-700 shadow-[0px_1px_6px_0px_rgba(0,0,0,0.1)]",
         @class
       ]}
     >
@@ -241,7 +241,7 @@ defmodule FirmowidWeb.Management.Views.Counterparty do
           <div class="grid grid-cols-[minmax(0,265px)_minmax(0,322px)] gap-x-12 gap-y-6">
             <div class="space-y-6">
               <div class="space-y-1">
-                <p class="text-grey-700 text-sm/snug">
+                <p class="text-sm/snug text-grey-700">
                   {if @counterparty.type == :individual, do: "PESEL", else: "NIP / ID"}
                 </p>
                 <div class="flex items-center gap-2 text-base/snug text-black">
@@ -260,40 +260,40 @@ defmodule FirmowidWeb.Management.Views.Counterparty do
               </div>
 
               <div class="space-y-1">
-                <p class="text-grey-700 text-sm/snug">Adres</p>
+                <p class="text-sm/snug text-grey-700">Adres</p>
                 <p class="text-base/snug whitespace-pre-line text-black" phx-no-format>{formatted_multiline(@counterparty.address)}</p>
               </div>
 
               <div class="space-y-1">
-                <p class="text-grey-700 text-sm/snug">Kraj</p>
+                <p class="text-sm/snug text-grey-700">Kraj</p>
                 <p class="text-base/snug text-black">{country_label(@counterparty.country)}</p>
               </div>
             </div>
 
             <div class="space-y-6">
               <div class="space-y-1">
-                <p class="text-grey-700 text-sm/snug">Pełna nazwa</p>
+                <p class="text-sm/snug text-grey-700">Pełna nazwa</p>
                 <p class="text-base/snug text-black">
                   {CounterpartyHelpers.full_name(@counterparty)}
                 </p>
               </div>
 
               <div class="space-y-2">
-                <p class="text-grey-700 text-sm/snug">Kontakt</p>
+                <p class="text-sm/snug text-grey-700">Kontakt</p>
                 <div class="space-y-2 text-base/snug text-black">
                   <div class="flex items-center gap-2">
-                    <.icon name="hero-envelope" class="text-grey-700 size-4 shrink-0" />
+                    <.icon name="hero-envelope" class="size-4 shrink-0 text-grey-700" />
                     <span>{@counterparty.email || "—"}</span>
                   </div>
                   <div class="flex items-center gap-2">
-                    <.icon name="hero-phone" class="text-grey-700 size-4 shrink-0" />
+                    <.icon name="hero-phone" class="size-4 shrink-0 text-grey-700" />
                     <span>{@counterparty.phone || "—"}</span>
                   </div>
                 </div>
               </div>
 
               <div :if={@counterparty.is_different_mail_address} class="space-y-1">
-                <p class="text-grey-700 text-sm/snug">Adres korespondencyjny</p>
+                <p class="text-sm/snug text-grey-700">Adres korespondencyjny</p>
                 <p class="text-base/snug whitespace-pre-line text-black" phx-no-format>{formatted_multiline(@counterparty.mail_address)}</p>
               </div>
             </div>
@@ -301,30 +301,30 @@ defmodule FirmowidWeb.Management.Views.Counterparty do
         </section>
 
         <section class="rounded-lg bg-white p-6 shadow-[0px_1px_6px_0px_rgba(0,0,0,0.1)]">
-          <p class="text-grey-700 mb-2 text-sm/snug">Notatki</p>
+          <p class="mb-2 text-sm/snug text-grey-700">Notatki</p>
           <p class="text-base/snug whitespace-pre-line text-black" phx-no-format>{@counterparty.description || "—"}</p>
         </section>
       </div>
 
       <section class="flex min-h-[318px] flex-col justify-between rounded-lg bg-white p-6 shadow-[0px_1px_6px_0px_rgba(0,0,0,0.1)]">
         <div class="space-y-6">
-          <h3 class="text-grey-900 text-base/tight font-medium">Statystyki</h3>
+          <h3 class="text-base/tight font-medium text-grey-900">Statystyki</h3>
 
           <div class="space-y-1">
-            <p class="text-grey-700 text-sm/snug">Wartość współpracy</p>
-            <p class="text-[23px]/tight font-medium text-[#455e5e]">
+            <p class="text-sm/snug text-grey-700">Wartość współpracy</p>
+            <p class="text-xl/tight font-medium text-turquoise-700">
               {money_to_string(@stats.cooperation_value, @stats.currency)}
             </p>
           </div>
 
           <div class="grid grid-cols-2 gap-5">
             <div class="space-y-1">
-              <p class="text-grey-700 text-sm/snug">Liczba faktur</p>
+              <p class="text-sm/snug text-grey-700">Liczba faktur</p>
               <p class="text-base/snug text-black">{@stats.invoices_count}</p>
             </div>
 
             <div class="space-y-1">
-              <p class="text-grey-700 text-sm/snug">Średnia kwota faktury</p>
+              <p class="text-sm/snug text-grey-700">Średnia kwota faktury</p>
               <p class="text-base/snug text-black">
                 {money_to_string(@stats.average_value, @stats.currency)}
               </p>
@@ -332,14 +332,14 @@ defmodule FirmowidWeb.Management.Views.Counterparty do
           </div>
         </div>
 
-        <div class="border-grey-200 mt-6 border-t pt-4">
-          <div class="bg-grey-50 flex items-center justify-between rounded-lg px-3 py-2">
+        <div class="mt-6 border-t border-grey-200 pt-4">
+          <div class="flex items-center justify-between rounded-lg bg-grey-50 px-3 py-2">
             <div class="space-y-1">
-              <p class="text-grey-700 text-sm/snug">Ostatnia faktura</p>
+              <p class="text-sm/snug text-grey-700">Ostatnia faktura</p>
               <p class="text-base/snug text-black">{format_date(@stats.last_invoice_date)}</p>
             </div>
 
-            <.icon name="hero-document-text-solid" class="text-grey-700 size-6" />
+            <.icon name="hero-document-text-solid" class="size-6 text-grey-700" />
           </div>
         </div>
       </section>
@@ -361,7 +361,7 @@ defmodule FirmowidWeb.Management.Views.Counterparty do
       @class
     ]}>
       <div class="mb-4 flex items-center justify-between gap-4">
-        <h3 class="text-grey-700 text-lg font-medium">Faktury</h3>
+        <h3 class="text-lg font-medium text-grey-700">Faktury</h3>
 
         <div class="flex gap-2">
           <.link
@@ -378,7 +378,7 @@ defmodule FirmowidWeb.Management.Views.Counterparty do
             variant="outline"
             size="small"
             class={[
-              "bg-grey-100 rounded-2xl! px-4",
+              "rounded-2xl! bg-grey-100 px-4",
               if(@invoice_filter == value, do: invoice_filter_class_names(value))
             ]}
           >
@@ -388,12 +388,12 @@ defmodule FirmowidWeb.Management.Views.Counterparty do
       </div>
 
       <%= if @invoices == [] do %>
-        <div class="text-grey-700 py-6 text-center text-sm/snug">
+        <div class="py-6 text-center text-sm/snug text-grey-700">
           Brak faktur dla wybranego filtra.
         </div>
       <% else %>
         <div class="grid grid-cols-[220px_1fr_140px_123px_min-content] gap-x-6 gap-y-2">
-          <div class="text-grey-500 col-span-full grid grid-cols-subgrid px-2 py-1 text-sm/snug">
+          <div class="col-span-full grid grid-cols-subgrid px-2 py-1 text-sm/snug text-grey-500">
             <p>Numer faktury</p>
             <p class="text-left">Data wystawienia</p>
             <p class="text-right">Kwota</p>
@@ -404,7 +404,7 @@ defmodule FirmowidWeb.Management.Views.Counterparty do
             <div
               :for={invoice <- Enum.take(@invoices, @limit)}
               :key={invoice.id}
-              class="bg-grey-50 col-span-full grid grid-cols-subgrid items-center rounded-sm px-2 py-3"
+              class="col-span-full grid grid-cols-subgrid items-center rounded-sm bg-grey-50 px-2 py-3"
             >
               <.link
                 kind="unstyled"
@@ -429,7 +429,7 @@ defmodule FirmowidWeb.Management.Views.Counterparty do
                     Navigation.counterparty_path(@counterparty.id, @params)
                   )
                 }
-                class="hover:text-grey-700 text-grey-500"
+                class="text-grey-500 hover:text-grey-700"
               >
                 <Lucideicons.chevron_right class="size-4" />
               </.link>
@@ -460,8 +460,8 @@ defmodule FirmowidWeb.Management.Views.Counterparty do
     <section class={["rounded-lg bg-white p-6 shadow-[0px_1px_6px_0px_rgba(0,0,0,0.1)]", @class]}>
       <div class="mb-4 flex items-start justify-between gap-4">
         <div class="space-y-1">
-          <h3 class="text-grey-700 text-lg font-medium">Sugerowane faktury do połączenia</h3>
-          <p class="text-grey-700 text-sm/snug">
+          <h3 class="text-lg font-medium text-grey-700">Sugerowane faktury do połączenia</h3>
+          <p class="text-sm/snug text-grey-700">
             Wyszukane po NIP / VAT-ID:
             <span class="font-medium text-black">{@counterparty.tax_id}</span>
           </p>
@@ -469,7 +469,7 @@ defmodule FirmowidWeb.Management.Views.Counterparty do
       </div>
 
       <div class="grid grid-cols-[1fr_180px_140px_140px_min-content] gap-x-6 gap-y-2">
-        <div class="text-grey-500 col-span-full grid grid-cols-subgrid px-2 py-1 text-sm/snug">
+        <div class="col-span-full grid grid-cols-subgrid px-2 py-1 text-sm/snug text-grey-500">
           <p>Numer faktury</p>
           <p>Identyfikator nabywcy</p>
           <p class="text-right">Data wystawienia</p>
@@ -480,7 +480,7 @@ defmodule FirmowidWeb.Management.Views.Counterparty do
           <div
             :for={invoice <- @suggested_invoices}
             :key={invoice.id}
-            class="bg-grey-50 col-span-full grid grid-cols-subgrid items-center rounded-sm px-2 py-3"
+            class="col-span-full grid grid-cols-subgrid items-center rounded-sm bg-grey-50 px-2 py-3"
           >
             <.link
               kind="unstyled"

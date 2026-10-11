@@ -12,7 +12,7 @@ defmodule FirmowidWeb.HoursRecord.Components.PdfTemplate do
 
   def hours_record(assigns) do
     ~H"""
-    <div class="relative mx-auto h-[267mm] w-[210mm] border bg-white px-[32px] py-[120px] text-[16px] print:border-none">
+    <div class="relative mx-auto h-[267mm] w-[210mm] border bg-white px-[32px] py-[120px] text-base print:border-none">
       <div class="flex justify-between">
         <div>
           <%= if @avatar_data_uri do %>

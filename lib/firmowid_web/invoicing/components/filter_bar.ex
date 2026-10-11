@@ -57,7 +57,7 @@ defmodule FirmowidWeb.Invoicing.Components.FilterBar do
             data-confetti-enabled={if @is_month_closed, do: "true", else: "false"}
           >
             <%= if @pending_count != 0 do %>
-              <span class="bg-orangeBg border-lightGreyBg text-orangeText pointer-events-none absolute -top-3 left-full flex -translate-x-3 items-center justify-center overflow-hidden rounded-full border-2 px-2">
+              <span class="pointer-events-none absolute -top-3 left-full flex -translate-x-3 items-center justify-center overflow-hidden rounded-full border-2 border-lightGreyBg bg-orangeBg px-2 text-orangeText">
                 {@pending_count}
               </span>
             <% end %>
@@ -73,7 +73,7 @@ defmodule FirmowidWeb.Invoicing.Components.FilterBar do
           :if={@params.view_mode == :list && @params.filter in [:invoices, :transactions]}
           class="flex items-center gap-6"
         >
-          <div class="bg-greyButtonBg mx-2 h-7 w-px"></div>
+          <div class="mx-2 h-7 w-px bg-greyButtonBg"></div>
           <.sub_filters params={@params} />
         </div>
       </div>
@@ -86,7 +86,7 @@ defmodule FirmowidWeb.Invoicing.Components.FilterBar do
   defp sub_filters(%{params: %{filter: :invoices}} = assigns) do
     ~H"""
     <div class="flex items-center gap-3">
-      <span class="text-darkGrey/70 text-sm font-normal">Filtry:</span>
+      <span class="text-sm font-normal text-darkGrey/70">Filtry:</span>
       <div class="flex items-center gap-2">
         <.link
           kind="unstyled"
@@ -110,7 +110,7 @@ defmodule FirmowidWeb.Invoicing.Components.FilterBar do
   defp sub_filters(%{params: %{filter: :transactions}} = assigns) do
     ~H"""
     <div class="flex items-center gap-3">
-      <span class="text-darkGrey/70 text-sm font-normal">Filtry:</span>
+      <span class="text-sm font-normal text-darkGrey/70">Filtry:</span>
       <div class="flex items-center gap-2">
         <.link
           kind="unstyled"

@@ -23,7 +23,7 @@ defmodule FirmowidWeb.Invoicing.Components.Print do
     ~H"""
     <.a4_page class="mt-4">
       <div class="flex h-full flex-col">
-        <div class="mt-6 flex-1 text-sm/6 whitespace-pre-wrap text-neutral-900">
+        <div class="text-neutral-900 mt-6 flex-1 text-sm/6 whitespace-pre-wrap">
           {@internal_note}
         </div>
 
@@ -32,7 +32,7 @@ defmodule FirmowidWeb.Invoicing.Components.Print do
             <img src={@footer_logo_data_uri} class="mb-2 size-8 object-contain" />
           <% end %>
 
-          <p class="text-sm text-neutral-700">firmowid.pl</p>
+          <p class="text-neutral-700 text-sm">firmowid.pl</p>
         </div>
       </div>
     </.a4_page>

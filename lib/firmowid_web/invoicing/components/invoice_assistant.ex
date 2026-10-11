@@ -175,14 +175,14 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceAssistant do
         <p>{@pending_match_message}</p>
         <div class="flex w-full max-w-2xl flex-col gap-4">
           <section :if={@pending_invoices != []} class="space-y-2">
-            <p class="text-grey-700 text-sm font-medium">Faktury do połączenia</p>
+            <p class="text-sm font-medium text-grey-700">Faktury do połączenia</p>
             <ul class="flex flex-col gap-2">
               <PendingMatch.invoice_item :for={invoice <- @pending_invoices} invoice={invoice} />
             </ul>
           </section>
 
           <section :if={@pending_transactions != []} class="space-y-2">
-            <p class="text-grey-700 text-sm font-medium">Transakcje do połączenia</p>
+            <p class="text-sm font-medium text-grey-700">Transakcje do połączenia</p>
             <ul class="flex flex-col gap-2">
               <PendingMatch.transaction_item
                 :for={transaction <- @pending_transactions}

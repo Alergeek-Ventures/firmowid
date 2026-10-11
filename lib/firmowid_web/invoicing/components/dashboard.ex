@@ -89,7 +89,7 @@ defmodule FirmowidWeb.Invoicing.Components.Dashboard do
           <DashboardTiles.tile entry={suggestion} type={:suggestion} />
         <% end %>
         <%= if @suggestions == [] do %>
-          <p class="text-darkGrey px-4 py-3 text-sm">
+          <p class="px-4 py-3 text-sm text-darkGrey">
             Na ten moment Firmowid nie ma żadnych sugestii.
           </p>
         <% end %>
@@ -169,7 +169,7 @@ defmodule FirmowidWeb.Invoicing.Components.Dashboard do
 
   defp zero_state(assigns) do
     ~H"""
-    <p class="text-darkGrey px-4 py-3 text-sm">
+    <p class="px-4 py-3 text-sm text-darkGrey">
       {@message}
     </p>
     """

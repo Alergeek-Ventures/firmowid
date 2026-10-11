@@ -97,7 +97,7 @@ defmodule FirmowidWeb.Documents.Components.DocumentsSection do
         <div class={header_wrapper_styles(@variant)}>
           <%= if @profile? do %>
             <div class="flex items-start justify-between gap-3">
-              <h2 class="text-grey-900 text-base leading-none font-medium">Przesłane dokumenty</h2>
+              <h2 class="text-base leading-none font-medium text-grey-900">Przesłane dokumenty</h2>
               <.toolbar
                 id={@id}
                 myself={@myself}
@@ -110,7 +110,7 @@ defmodule FirmowidWeb.Documents.Components.DocumentsSection do
               />
             </div>
           <% else %>
-            <h3 class="text-grey-900 text-base/tight font-medium">
+            <h3 class="text-base/tight font-medium text-grey-900">
               <div class="flex items-center justify-between">
                 Przesłane dokumenty
                 <.toolbar
@@ -152,7 +152,7 @@ defmodule FirmowidWeb.Documents.Components.DocumentsSection do
         <div
           id={"#{@id}-search-container"}
           data-expanded={to_string(@search != "")}
-          class="data-[expanded=true]:bg-greyButtonBg group flex items-center justify-center rounded-lg transition-shadow data-[expanded=true]:focus-within:ring-2"
+          class="group flex items-center justify-center rounded-lg transition-shadow data-[expanded=true]:bg-greyButtonBg data-[expanded=true]:focus-within:ring-2"
         >
           <.input
             type="text"
@@ -221,7 +221,7 @@ defmodule FirmowidWeb.Documents.Components.DocumentsSection do
   defp filters(assigns) do
     ~H"""
     <div class={["flex items-center gap-3", @class]}>
-      <span class="text-darkGrey/70 text-sm font-normal">Filtry:</span>
+      <span class="text-sm font-normal text-darkGrey/70">Filtry:</span>
 
       <div class="flex flex-wrap items-center gap-2">
         <.button
@@ -271,7 +271,7 @@ defmodule FirmowidWeb.Documents.Components.DocumentsSection do
     ~H"""
     <div class="scrollbar-card h-100 max-h-100 space-y-2 overflow-y-auto">
       <%= if Enum.empty?(@documents) do %>
-        <div class="bg-grey-50 text-grey-700 flex size-full items-center justify-center rounded-lg text-sm">
+        <div class="flex size-full items-center justify-center rounded-lg bg-grey-50 text-sm text-grey-700">
           <p>Brak dokumentów</p>
         </div>
       <% else %>
@@ -284,9 +284,9 @@ defmodule FirmowidWeb.Documents.Components.DocumentsSection do
   defp documents_list(assigns) do
     ~H"""
     <div class="relative w-full flex-1">
-      <div class="scrollbar-card absolute inset-0 space-y-2 overflow-y-auto pr-2">
+      <div class="absolute inset-0 scrollbar-card space-y-2 overflow-y-auto pr-2">
         <%= if Enum.empty?(@documents) do %>
-          <div class="bg-grey-50 text-grey-700 flex size-full items-center justify-center rounded-lg text-sm">
+          <div class="flex size-full items-center justify-center rounded-lg bg-grey-50 text-sm text-grey-700">
             <p>Brak dokumentów</p>
           </div>
         <% else %>
@@ -328,14 +328,14 @@ defmodule FirmowidWeb.Documents.Components.DocumentsSection do
       class="group flex items-center justify-between gap-4 rounded-md px-2 py-2.5 transition"
     >
       <div class="flex items-center gap-3">
-        <div class="bg-grey-100 flex size-7 items-center justify-center rounded-md">
+        <div class="flex size-7 items-center justify-center rounded-md bg-grey-100">
           <%= case @document.type do %>
             <% :hours_record -> %>
-              <.icon name="hero-clock" class="text-darkGrey size-5" />
+              <.icon name="hero-clock" class="size-5 text-darkGrey" />
             <% :employment_contract -> %>
-              <.icon name="hero-document" class="text-darkGrey size-5" />
+              <.icon name="hero-document" class="size-5 text-darkGrey" />
             <% _ -> %>
-              <.icon name="hero-ellipsis-horizontal" class="text-darkGrey size-5" />
+              <.icon name="hero-ellipsis-horizontal" class="size-5 text-darkGrey" />
           <% end %>
         </div>
         <div class="group-hover:underline">
@@ -343,7 +343,7 @@ defmodule FirmowidWeb.Documents.Components.DocumentsSection do
         </div>
       </div>
 
-      <div class="text-darkGrey flex items-center gap-4 text-sm">
+      <div class="flex items-center gap-4 text-sm text-darkGrey">
         {contract_status_badge(@document)}
         {TimeFormatter.format_date(@document.date)}
       </div>
@@ -579,10 +579,10 @@ defmodule FirmowidWeb.Documents.Components.DocumentsSection do
       id={"#{@id}-upload-count-indicator"}
       phx-hook="Tippy"
       data-tippy-content="Pliki są przetwarzane i za kilka chwil będą dostępne w Firmowidzie"
-      class="bg-lightGreyBg absolute -top-3.5 -right-3.5 flex size-7 items-center justify-center overflow-hidden rounded-full"
+      class="absolute -top-3.5 -right-3.5 flex size-7 items-center justify-center overflow-hidden rounded-full bg-lightGreyBg"
     >
       <span class="absolute block size-full animate-pulse bg-orange-600" />
-      <span class="bg-lightGreyBg z-10 flex size-5 items-center justify-center rounded-full">
+      <span class="z-10 flex size-5 items-center justify-center rounded-full bg-lightGreyBg">
         <.upload_indicator_icon
           currently_uploading_count={@currently_uploading_count}
           processing_blobs_count={@processing_blobs_count}
@@ -619,7 +619,7 @@ defmodule FirmowidWeb.Documents.Components.DocumentsSection do
 
   defp contract_status_badge(%{status: :pending_signature} = assigns) do
     ~H"""
-    <span class="bg-turquoise-100 text-turquoise-700 rounded-2xl px-4 py-1 text-sm">
+    <span class="rounded-2xl bg-turquoise-100 px-4 py-1 text-sm text-turquoise-700">
       oczekiwanie
     </span>
     """
@@ -627,7 +627,7 @@ defmodule FirmowidWeb.Documents.Components.DocumentsSection do
 
   defp contract_status_badge(%{status: :signed} = assigns) do
     ~H"""
-    <span class="bg-turquoise-100 text-turquoise-700 rounded-2xl px-4 py-1 text-sm">
+    <span class="rounded-2xl bg-turquoise-100 px-4 py-1 text-sm text-turquoise-700">
       podpisana
     </span>
     """

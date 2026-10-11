@@ -14,7 +14,7 @@ defmodule FirmowidWeb.Delegations.Components.DelegationsList do
   @spec delegations_list(map()) :: Phoenix.LiveView.Rendered.t()
   def delegations_list(assigns) do
     ~H"""
-    <ul :if={@delegations != []} class="divide-grey-100 divide-y">
+    <ul :if={@delegations != []} class="divide-y divide-grey-100">
       <li :for={delegation <- @delegations} class="flex items-center gap-3 py-3 first:pt-0 last:pb-0">
         <.delegation_title
           delegation={delegation}
@@ -39,7 +39,7 @@ defmodule FirmowidWeb.Delegations.Components.DelegationsList do
         </.button>
       </li>
     </ul>
-    <p :if={@delegations == []} class="text-grey-500 text-sm">Brak delegacji.</p>
+    <p :if={@delegations == []} class="text-sm text-grey-500">Brak delegacji.</p>
     """
   end
 
@@ -60,7 +60,7 @@ defmodule FirmowidWeb.Delegations.Components.DelegationsList do
       <p :if={!@is_link} class="truncate">
         <span class="truncate">{@delegation.title}</span>
       </p>
-      <span :if={@delegation.status == :in_progress} class="text-grey-500 ml-2 text-xs uppercase">
+      <span :if={@delegation.status == :in_progress} class="ml-2 text-xs text-grey-500 uppercase">
         Wersja robocza
       </span>
     </div>

@@ -33,7 +33,7 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceTimeline do
     ~H"""
     <div class="flex flex-col gap-6">
       <div class="flex flex-row items-start justify-between">
-        <h3 class="text-grey-700 text-sm/snug">Historia dokumentu</h3>
+        <h3 class="text-sm/snug text-grey-700">Historia dokumentu</h3>
         <.button
           phx-click="hide_timeline"
           phx-target="#invoice-show"
@@ -45,12 +45,12 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceTimeline do
       </div>
 
       <%= if Enum.empty?(@events) do %>
-        <p class="text-grey-700 py-4">
+        <p class="py-4 text-grey-700">
           Brak historii dla tego dokumentu.
         </p>
       <% else %>
         <div class="relative">
-          <div class="bg-grey-200 absolute top-4 bottom-7 left-[5px] w-0.5"></div>
+          <div class="absolute top-4 bottom-7 left-[5px] w-0.5 bg-grey-200"></div>
 
           <div class="flex flex-col gap-6">
             <.event :for={event <- @events} event={event} invoice_type={@invoice_type} />
@@ -83,11 +83,11 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceTimeline do
           ]}>
             {render_slot(@label)}
           </span>
-          <span class="text-grey-700 text-sm/snug">
+          <span class="text-sm/snug text-grey-700">
             {format_datetime(@event.occurred_at)}
           </span>
         </div>
-        <span class="text-grey-700 text-sm/snug">
+        <span class="text-sm/snug text-grey-700">
           {render_slot(@content)}
         </span>
       </div>
@@ -106,7 +106,7 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceTimeline do
       </:label>
       <:content>
         numer dokumentu:
-        <span class="text-turquoise-700 font-bold">{@event.metadata.invoice_number}</span>
+        <span class="font-bold text-turquoise-700">{@event.metadata.invoice_number}</span>
       </:content>
     </.timeline_item>
     """
@@ -130,7 +130,7 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceTimeline do
       </:label>
       <:content>
         nadano numer KSeF:
-        <span class="text-turquoise-700 font-bold">{@event.metadata.ksef_number}</span>
+        <span class="font-bold text-turquoise-700">{@event.metadata.ksef_number}</span>
       </:content>
     </.timeline_item>
     """
@@ -242,7 +242,7 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceTimeline do
       </:label>
       <:content>
         nadano numer KSeF:
-        <span class="text-turquoise-700 font-bold">{@event.metadata.ksef_number}</span>
+        <span class="font-bold text-turquoise-700">{@event.metadata.ksef_number}</span>
       </:content>
     </.timeline_item>
     """
@@ -256,7 +256,7 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceTimeline do
       </:label>
       <:content>
         nadano numer KSeF:
-        <span class="text-turquoise-700 font-bold">{@event.metadata.ksef_number}</span>
+        <span class="font-bold text-turquoise-700">{@event.metadata.ksef_number}</span>
       </:content>
     </.timeline_item>
     """
@@ -270,7 +270,7 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceTimeline do
       </:label>
       <:content>
         numer dokumentu:
-        <span class="text-turquoise-700 font-bold">{@event.metadata.invoice_number}</span>
+        <span class="font-bold text-turquoise-700">{@event.metadata.invoice_number}</span>
       </:content>
     </.timeline_item>
     """
@@ -307,7 +307,7 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceTimeline do
       </:label>
       <:content>
         nadano numer KSeF:
-        <span class="text-turquoise-700 font-bold">{@event.metadata.ksef_number}</span>
+        <span class="font-bold text-turquoise-700">{@event.metadata.ksef_number}</span>
       </:content>
     </.timeline_item>
     """
@@ -338,7 +338,7 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceTimeline do
     ~H"""
     <%= if @email do %>
       <span>
-        Adres docelowy: <span class="text-turquoise-700 font-bold">{@email}</span>
+        Adres docelowy: <span class="font-bold text-turquoise-700">{@email}</span>
       </span>
     <% end %>
     """

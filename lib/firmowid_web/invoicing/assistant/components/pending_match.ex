@@ -17,13 +17,13 @@ defmodule FirmowidWeb.Invoicing.Assistant.Components.PendingMatch do
       |> assign(:amount, invoice.effective_amount)
 
     ~H"""
-    <li class="bg-grey-50 flex flex-row items-start justify-between gap-4 rounded px-3 py-2">
+    <li class="flex flex-row items-start justify-between gap-4 rounded bg-grey-50 px-3 py-2">
       <div class="grid grid-cols-[min-content_1fr] gap-x-3">
-        <span class="text-grey-700 text-sm">Typ</span>
+        <span class="text-sm text-grey-700">Typ</span>
         <span class="text-black">Faktura kosztowa</span>
-        <span class="text-grey-700 text-sm">Numer</span>
+        <span class="text-sm text-grey-700">Numer</span>
         <span class="truncate text-black">{@number}</span>
-        <span class="text-grey-700 text-sm">Kontrahent</span>
+        <span class="text-sm text-grey-700">Kontrahent</span>
         <span class="truncate text-black">{@party}</span>
       </div>
       <div class="flex flex-row items-center gap-3 text-right">
@@ -42,13 +42,13 @@ defmodule FirmowidWeb.Invoicing.Assistant.Components.PendingMatch do
       |> assign(:amount, invoice.amount)
 
     ~H"""
-    <li class="bg-grey-50 flex flex-row items-start justify-between gap-4 rounded px-3 py-2">
+    <li class="flex flex-row items-start justify-between gap-4 rounded bg-grey-50 px-3 py-2">
       <div class="grid grid-cols-[min-content_1fr] gap-x-3">
-        <span class="text-grey-700 text-sm">Typ</span>
+        <span class="text-sm text-grey-700">Typ</span>
         <span class="text-black">Faktura sprzedażowa</span>
-        <span class="text-grey-700 text-sm">Numer</span>
+        <span class="text-sm text-grey-700">Numer</span>
         <span class="truncate text-black">{@number}</span>
-        <span class="text-grey-700 text-sm">Kontrahent</span>
+        <span class="text-sm text-grey-700">Kontrahent</span>
         <span class="truncate text-black">{@party}</span>
       </div>
       <div class="flex flex-row items-center gap-3 text-right">
@@ -64,13 +64,13 @@ defmodule FirmowidWeb.Invoicing.Assistant.Components.PendingMatch do
 
   def transaction_item(assigns) do
     ~H"""
-    <li class="bg-grey-50 flex flex-row items-start justify-between gap-4 rounded px-3 py-2">
+    <li class="flex flex-row items-start justify-between gap-4 rounded bg-grey-50 px-3 py-2">
       <div class="grid grid-cols-[min-content_1fr] gap-x-3">
-        <span class="text-grey-700 text-sm">{@displayed_party_label}</span>
+        <span class="text-sm text-grey-700">{@displayed_party_label}</span>
         <span class="truncate text-black">
           {displayed_party(@transaction, @displayed_party_label)}
         </span>
-        <span class="text-grey-700 text-sm">Zaksięgowano</span>
+        <span class="text-sm text-grey-700">Zaksięgowano</span>
         <span class="text-black">{@transaction.booking_date}</span>
       </div>
       <div class="flex flex-row items-center gap-3">

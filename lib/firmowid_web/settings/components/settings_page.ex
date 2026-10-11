@@ -44,13 +44,13 @@ defmodule FirmowidWeb.Settings.Components.SettingsPage do
               aria-label="Zmień zdjęcie profilowe"
             />
 
-            <.avatar class="bg-grey-100 border-grey-100 hidden size-32 rounded-full border lg:block">
+            <.avatar class="hidden size-32 rounded-full border border-grey-100 bg-grey-100 lg:block">
               <.avatar_image
                 :if={Map.get(@current_user.avatar_blob || %{}, :url)}
                 src={Map.get(@current_user.avatar_blob || %{}, :url)}
                 alt={@current_user.name || @current_user.email}
               />
-              <.avatar_fallback class="text-grey-700 text-2xl font-medium">
+              <.avatar_fallback class="text-2xl font-medium text-grey-700">
                 {initial(@current_user.name || @current_user.email)}
               </.avatar_fallback>
             </.avatar>
@@ -73,7 +73,7 @@ defmodule FirmowidWeb.Settings.Components.SettingsPage do
           </form>
 
           <div class="flex flex-col gap-2">
-            <h1 class="text-grey-900 text-2xl font-medium">
+            <h1 class="text-2xl font-medium text-grey-900">
               Cześć, <span class="font-bold">{@current_user.name || "użytkowniku"}</span>!
             </h1>
             <p class="text-grey-700">{@current_user.email}</p>
@@ -93,14 +93,14 @@ defmodule FirmowidWeb.Settings.Components.SettingsPage do
             />
           </form>
 
-          <.avatar class="bg-grey-100 border-grey-100 size-32 rounded-2xl! border">
+          <.avatar class="size-32 rounded-2xl! border border-grey-100 bg-grey-100">
             <.avatar_image
               :if={@current_org.avatar_blob && @current_org.avatar_blob.url}
               src={@current_org.avatar_blob.url}
               alt={@current_org.name}
               class="rounded-2xl! object-contain"
             />
-            <.avatar_fallback class="text-grey-700 rounded-2xl! text-center text-2xl font-medium">
+            <.avatar_fallback class="rounded-2xl! text-center text-2xl font-medium text-grey-700">
               {initial(@current_org.name)}
             </.avatar_fallback>
           </.avatar>
@@ -126,7 +126,7 @@ defmodule FirmowidWeb.Settings.Components.SettingsPage do
 
       <nav
         aria-label="Ustawienia"
-        class="border-grey-200 flex flex-wrap gap-2 border-b"
+        class="flex flex-wrap gap-2 border-b border-grey-200"
       >
         <%= for tab <- @tabs do %>
           <.link

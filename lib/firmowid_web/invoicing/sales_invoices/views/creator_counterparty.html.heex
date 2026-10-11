@@ -27,9 +27,9 @@
     <div class="flex flex-1 flex-col-reverse items-center gap-5 md:flex-row md:items-start">
       <div
         :if={@counterparties_zero_state?}
-        class="border-grey-200 flex w-full flex-col items-center justify-center gap-6 self-stretch rounded-lg border p-10"
+        class="flex w-full flex-col items-center justify-center gap-6 self-stretch rounded-lg border border-grey-200 p-10"
       >
-        <p class="text-grey-700 text-center text-sm/snug text-balance">
+        <p class="text-center text-sm/snug text-balance text-grey-700">
           Nie wprowadziłeś jeszcze żadnego kontrahenta.
           Wprowadź go, klikając poniżej, aby wystawić fakturę.
         </p>
@@ -55,7 +55,7 @@
           class="col-span-full mb-2 flex flex-row items-center gap-4"
         >
           <div class="relative w-full max-w-lg flex-1">
-            <Lucideicons.search class="text-grey-900 absolute inset-y-0 top-0.5 left-3 my-auto size-4" />
+            <Lucideicons.search class="absolute inset-y-0 top-0.5 left-3 my-auto size-4 text-grey-900" />
 
             <.input
               field={@params[:szukaj]}
@@ -134,7 +134,7 @@
         <div
           id="counterparties_header"
           data-empty={@counterparties_empty?}
-          class="text-grey-700 col-span-full grid grid-cols-subgrid items-center px-4 py-1 text-sm/snug data-empty:hidden"
+          class="col-span-full grid grid-cols-subgrid items-center px-4 py-1 text-sm/snug text-grey-700 data-empty:hidden"
         >
           <p>Kontrahent</p>
           <p>Identyfikator</p>
@@ -144,13 +144,13 @@
         <div
           id="counterparties"
           phx-update="stream"
-          class="peer phx-change-loading:opacity-50 col-span-full grid grid-cols-subgrid gap-y-2 transition-opacity"
+          class="peer col-span-full grid grid-cols-subgrid gap-y-2 transition-opacity phx-change-loading:opacity-50"
         >
           <div
             id="counterparties_empty"
             class="col-span-full hidden flex-col items-center justify-center gap-4 p-8 only:flex"
           >
-            <p class="text-grey-500 text-center">
+            <p class="text-center text-grey-500">
               Nie znaleziono kontrahentów.
             </p>
             <.button
@@ -169,29 +169,29 @@
             variant="unstyled"
             phx-click="select_counterparty"
             phx-value-counterparty_id={counterparty.id}
-            class="-ring-offset-1 group phx-click-loading:opacity-70 ring-turquoise-300 col-span-full grid cursor-pointer grid-cols-subgrid items-center rounded-md bg-white px-4 py-3 text-left text-sm transition duration-200 ease-out hover:ring-2"
+            class="-ring-offset-1 group col-span-full grid cursor-pointer grid-cols-subgrid items-center rounded-md bg-white px-4 py-3 text-left text-sm ring-turquoise-300 transition duration-200 ease-out hover:ring-2 phx-click-loading:opacity-70"
           >
             <p class="flex flex-row items-center gap-2 text-black">
               <span class="inline-flex items-center gap-2">
                 <%= case counterparty.type do %>
                   <% :company -> %>
-                    <Lucideicons.building_2 class="text-grey-500 size-4" />
+                    <Lucideicons.building_2 class="size-4 text-grey-500" />
                   <% :individual -> %>
-                    <Lucideicons.user class="text-grey-500 size-4" />
+                    <Lucideicons.user class="size-4 text-grey-500" />
                 <% end %>
                 <span class="truncate">{counterparty.display_label}</span>
               </span>
             </p>
 
-            <p class="text-grey-500 text-left">
+            <p class="text-left text-grey-500">
               {counterparty.pesel || counterparty.tax_id}
             </p>
 
-            <p class="text-grey-500 text-left">
+            <p class="text-left text-grey-500">
               {CountryCodes.country_name(counterparty.country)}
             </p>
 
-            <Lucideicons.chevron_right class="group-hover:text-grey-900 text-grey-500 justify-self-end transition duration-200 ease-out" />
+            <Lucideicons.chevron_right class="justify-self-end text-grey-500 transition duration-200 ease-out group-hover:text-grey-900" />
           </.button>
         </div>
       </div>
@@ -208,8 +208,8 @@
             kind="unstyled"
             patch={tab_option.patch}
             class={[
-              "text-grey-700 rounded-t-lg px-4 py-3 transition-colors",
-              tab_option.tab == @tab && "bg-grey-50 text-grey-900 pointer-events-none"
+              "rounded-t-lg px-4 py-3 text-grey-700 transition-colors",
+              tab_option.tab == @tab && "pointer-events-none bg-grey-50 text-grey-900"
             ]}
           >
             {tab_option.label}
@@ -219,13 +219,13 @@
         <div
           :if={@last_counterparties != [] or @last_invoices != []}
           id="tab_content"
-          class="bg-grey-50 space-y-2 rounded-lg p-6 leading-snug"
+          class="space-y-2 rounded-lg bg-grey-50 p-6 leading-snug"
         >
           <%= case @tab do %>
             <% :last_counterparties -> %>
               <div
                 :for={counterparty <- @last_counterparties}
-                class="border-grey-200 phx-click-loading:opacity-50 flex flex-row justify-between gap-4 rounded-md border px-4 py-3.5 transition-opacity"
+                class="flex flex-row justify-between gap-4 rounded-md border border-grey-200 px-4 py-3.5 transition-opacity phx-click-loading:opacity-50"
               >
                 <div class="grid min-w-0 grid-cols-[max-content_minmax(0,1fr)] gap-x-5 gap-y-2 text-sm">
                   <p class="text-grey-700">Nazwa</p>
@@ -248,9 +248,9 @@
                 <div class="flex flex-col items-end justify-between text-right">
                   <%= case counterparty.type do %>
                     <% :company -> %>
-                      <Lucideicons.building_2 class="text-grey-500 size-4" />
+                      <Lucideicons.building_2 class="size-4 text-grey-500" />
                     <% :individual -> %>
-                      <Lucideicons.user class="text-grey-500 size-4" />
+                      <Lucideicons.user class="size-4 text-grey-500" />
                   <% end %>
 
                   <div class="flex flex-row gap-2.5">
@@ -268,7 +268,7 @@
             <% :last_invoices -> %>
               <div
                 :for={invoice <- @last_invoices}
-                class="border-grey-200 phx-click-loading:opacity-50 flex flex-row justify-between gap-4 rounded-md border px-4 py-3.5 transition-opacity"
+                class="flex flex-row justify-between gap-4 rounded-md border border-grey-200 px-4 py-3.5 transition-opacity phx-click-loading:opacity-50"
               >
                 <div class="grid min-w-0 grid-cols-[max-content_minmax(0,1fr)] gap-x-5 gap-y-2 text-sm">
                   <p class="text-grey-700">Kontrahent</p>
@@ -284,7 +284,7 @@
                 </div>
 
                 <div class="flex flex-col items-end justify-between text-right">
-                  <p class="text-grey-500 text-sm">{invoice.issue_date}</p>
+                  <p class="text-sm text-grey-500">{invoice.issue_date}</p>
 
                   <div class="flex flex-row gap-2.5">
                     <.link
@@ -319,7 +319,7 @@
   show={@open_counterparty_modal}
   on_cancel={JS.push("close_counterparty_modal")}
 >
-  <h2 class="text-grey-900 mb-6 text-xl font-semibold">Wprowadź dane kontrahenta</h2>
+  <h2 class="mb-6 text-xl font-semibold text-grey-900">Wprowadź dane kontrahenta</h2>
 
   <.form
     for={@counterparty_form}
@@ -328,7 +328,7 @@
     phx-submit="submit_counterparty"
     class="space-y-6"
   >
-    <div class="bg-grey-50 rounded-lg px-5 py-3">
+    <div class="rounded-lg bg-grey-50 px-5 py-3">
       <.radio_group field={@counterparty_form[:buyer_type]} class="gap-8">
         <:radio value="company">Firma / Jednoosobowa Działalność Gospodarcza</:radio>
         <:radio value="individual">Osoba prywatna</:radio>
@@ -337,7 +337,7 @@
 
     <div class="grid grid-cols-2 gap-6">
       <div class="space-y-4">
-        <p class="text-grey-700 text-sm font-medium">Dane podstawowe</p>
+        <p class="text-sm font-medium text-grey-700">Dane podstawowe</p>
 
         <% # Dynamic label/placeholder based on country
         buyer_country = to_string(@counterparty_form[:buyer_country].value)
@@ -405,7 +405,7 @@
       </div>
 
       <div class="space-y-4">
-        <p class="text-grey-700 text-sm font-medium">Dane adresowe</p>
+        <p class="text-sm font-medium text-grey-700">Dane adresowe</p>
 
         <.input
           field={@counterparty_form[:buyer_address]}
@@ -425,7 +425,7 @@
     </div>
 
     <div class="space-y-4">
-      <p class="text-grey-700 text-sm font-medium">Dodatkowe informacje</p>
+      <p class="text-sm font-medium text-grey-700">Dodatkowe informacje</p>
 
       <div class="grid grid-cols-2 gap-4">
         <.input

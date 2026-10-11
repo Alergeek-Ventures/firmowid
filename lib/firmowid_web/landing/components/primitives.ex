@@ -77,13 +77,13 @@ defmodule FirmowidWeb.Landing.Components.Primitives do
             <p class="hidden font-['Nothing_You_Could_Do',cursive] text-[32px] leading-normal text-[#d2936d] lg:block">
               {gettext("YOUR MOVE!")}
             </p>
-            <h2 class="mt-2 text-[48px] leading-[0.98] font-bold tracking-[-0.03em] text-[#fafafa] lg:mt-4 lg:text-[64px] lg:leading-[57px]">
+            <h2 class="mt-2 text-[48px] leading-[0.98] font-bold tracking-[-0.03em] text-grey-50 lg:mt-4 lg:text-[64px] lg:leading-[57px]">
               {gettext("Run your business")} <br />{gettext("with a lighter mind.")}
             </h2>
             <p class="mt-1 text-right font-['Nothing_You_Could_Do',cursive] text-[41px] leading-[1.2] text-[#d2936d] lg:hidden">
               {gettext("YOUR MOVE!")}
             </p>
-            <p class="mt-6 max-w-[680px] text-[18px] leading-[27px] text-[#dddddd]">
+            <p class="mt-6 max-w-[680px] text-h5 leading-[27px] text-[#dddddd]">
               {gettext(
                 "30 days free. No credit card. No commitment. If the software is not for you, delete your account with one click."
               )}
@@ -94,7 +94,7 @@ defmodule FirmowidWeb.Landing.Components.Primitives do
                 kind="unstyled"
                 navigate={~p"/zarejestruj"}
                 data-landing-cta="footer_register"
-                class="relative flex w-full shrink-0 items-center justify-center overflow-hidden rounded-sm border-2 border-[#d2936d] bg-[#d2936d] p-4 text-base font-medium text-black transition-transform duration-150 before:absolute before:inset-0 before:bg-[url('/images/button_hover.svg')] before:bg-size-[100%_100%] before:bg-no-repeat before:opacity-45 before:content-[''] hover:-translate-y-0.5 lg:w-auto lg:text-[20px]"
+                class="relative flex w-full shrink-0 items-center justify-center overflow-hidden rounded-sm border-2 border-[#d2936d] bg-[#d2936d] p-4 text-base font-medium text-black transition-transform duration-150 before:absolute before:inset-0 before:bg-[url('/images/button_hover.svg')] before:bg-size-[100%_100%] before:bg-no-repeat before:opacity-45 before:content-[''] hover:-translate-y-0.5 lg:w-auto lg:text-lg"
               >
                 <span class="relative z-10">{gettext("Start for free")}</span>
               </.link>
@@ -103,7 +103,7 @@ defmodule FirmowidWeb.Landing.Components.Primitives do
                 data-landing-cta="footer_demo_booking"
                 target="_blank"
                 rel="noopener noreferrer"
-                class="relative flex shrink-0 items-center justify-center overflow-hidden rounded-sm border-2 border-white/80 p-4 text-base font-medium text-white transition-transform duration-150 hover:-translate-y-0.5 hover:bg-white/5 lg:text-[20px]"
+                class="relative flex shrink-0 items-center justify-center overflow-hidden rounded-sm border-2 border-white/80 p-4 text-base font-medium text-white transition-transform duration-150 hover:-translate-y-0.5 hover:bg-white/5 lg:text-lg"
               >
                 <span class="relative z-10">{gettext("Book a 15-minute call")}</span>
               </a>
@@ -129,8 +129,8 @@ defmodule FirmowidWeb.Landing.Components.Primitives do
         <div class="mt-16 border-t border-[rgba(78,78,78,0.3)] pt-10 lg:mt-[60px] lg:pt-[104px]">
           <div class="grid gap-8 lg:grid-cols-[260px_1fr] lg:items-start lg:justify-between">
             <div>
-              <p class="text-[16px] font-bold text-[#f5f1ea] lg:text-[22px]">Firmowid</p>
-              <p class="mt-2 text-[12px] leading-[1.4] text-[rgba(245,241,234,0.6)] lg:text-[14px]">
+              <p class="text-base font-bold text-[#f5f1ea] lg:text-[22px]">Firmowid</p>
+              <p class="mt-2 text-xs leading-[1.4] text-[rgba(245,241,234,0.6)] lg:text-sm">
                 {gettext("Invoicing, banking, and working hours.")}
                 <br class="hidden lg:block" />{gettext("Built by entrepreneurs for entrepreneurs.")}
               </p>
@@ -138,10 +138,10 @@ defmodule FirmowidWeb.Landing.Components.Primitives do
 
             <div class="grid gap-8 sm:grid-cols-3 lg:flex lg:justify-end lg:gap-[68px]">
               <div class="space-y-4">
-                <p class="text-[12px] font-semibold tracking-[0.12em] text-[#f5f1ea] uppercase">
+                <p class="text-xs font-semibold tracking-[0.12em] text-[#f5f1ea] uppercase">
                   {gettext("Product")}
                 </p>
-                <div class="space-y-2 text-[14px] text-[rgba(245,241,234,0.6)]">
+                <div class="space-y-2 text-sm text-[rgba(245,241,234,0.6)]">
                   <a href="/#funkcje" class="block hover:text-white">{gettext("Features")}</a>
                   <a href="/#cennik" class="block hover:text-white">{gettext("Pricing")}</a>
                   <a
@@ -153,10 +153,10 @@ defmodule FirmowidWeb.Landing.Components.Primitives do
                 </div>
               </div>
               <div class="space-y-4">
-                <p class="text-[12px] font-semibold tracking-[0.12em] text-[#f5f1ea] uppercase">
+                <p class="text-xs font-semibold tracking-[0.12em] text-[#f5f1ea] uppercase">
                   {gettext("Company")}
                 </p>
-                <div class="space-y-2 text-[14px] text-[rgba(245,241,234,0.6)]">
+                <div class="space-y-2 text-sm text-[rgba(245,241,234,0.6)]">
                   <a
                     href="https://alergeek.ventures/contact-details"
                     target="_blank"

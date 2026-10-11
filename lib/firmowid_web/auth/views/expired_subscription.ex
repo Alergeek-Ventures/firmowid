@@ -55,8 +55,8 @@ defmodule FirmowidWeb.Auth.Views.ExpiredSubscription do
           <Lucideicons.shield_alert class="size-6" />
         </div>
         <h1 class="mb-2 text-2xl/tight font-semibold">Abonament wygasł</h1>
-        <p class="text-grey-900 mb-2 text-sm font-medium">{@current_org.name}</p>
-        <p class="text-grey-700 text-base/snug">
+        <p class="mb-2 text-sm font-medium text-grey-900">{@current_org.name}</p>
+        <p class="text-base/snug text-grey-700">
           Dostęp do organizacji został tymczasowo zablokowany z powodu wygaśnięcia abonamentu.
           Napisz do nas, aby odnowić dostęp.
         </p>
@@ -66,7 +66,7 @@ defmodule FirmowidWeb.Auth.Views.ExpiredSubscription do
             Skontaktuj się w sprawie abonamentu
           </.link>
 
-          <p class="text-grey-700 text-sm">
+          <p class="text-sm text-grey-700">
             Jeśli przycisk nie działa, napisz na:
             <.link kind="unstyled" mailto={@contact_email} class="font-semibold underline">
               {@contact_email}

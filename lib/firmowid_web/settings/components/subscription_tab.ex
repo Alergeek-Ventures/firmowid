@@ -20,11 +20,11 @@ defmodule FirmowidWeb.Settings.Components.SubscriptionTab do
       <div class="grid w-full gap-8 lg:grid-cols-2 lg:gap-x-12">
         <section class="space-y-4">
           <div class="space-y-2">
-            <h2 class="text-grey-900 min-h-8 text-base leading-none font-semibold">
+            <h2 class="min-h-8 text-base leading-none font-semibold text-grey-900">
               Aktualny plan
             </h2>
 
-            <p class="text-grey-700 max-w-prose text-sm leading-[1.35]">
+            <p class="max-w-prose text-sm leading-[1.35] text-grey-700">
               Plan przypisany do Twojej organizacji oraz limity, które obejmuje miesięczny snapshot rozliczeniowy.
             </p>
           </div>
@@ -49,14 +49,14 @@ defmodule FirmowidWeb.Settings.Components.SubscriptionTab do
             </Helpers.settings_display_field>
           </div>
 
-          <div class="bg-grey-50 space-y-3 rounded-lg p-4">
-            <h3 class="text-grey-900 text-sm leading-none font-medium">W cenie planu</h3>
+          <div class="space-y-3 rounded-lg bg-grey-50 p-4">
+            <h3 class="text-sm leading-none font-medium text-grey-900">W cenie planu</h3>
 
             <div class="space-y-3">
               <%= for row <- @worksheet.usage_rows do %>
                 <div class="flex items-start justify-between gap-4 text-sm leading-[1.35]">
-                  <p class="text-grey-900 min-w-0">{row.label}</p>
-                  <p class="text-grey-700 shrink-0 text-right">W cenie: {row.included_units}</p>
+                  <p class="min-w-0 text-grey-900">{row.label}</p>
+                  <p class="shrink-0 text-right text-grey-700">W cenie: {row.included_units}</p>
                 </div>
               <% end %>
             </div>
@@ -64,26 +64,26 @@ defmodule FirmowidWeb.Settings.Components.SubscriptionTab do
 
           <div
             :if={@worksheet.no_plan_note}
-            class="bg-grey-50 text-grey-700 rounded-lg p-4 text-sm leading-[1.35]"
+            class="rounded-lg bg-grey-50 p-4 text-sm leading-[1.35] text-grey-700"
           >
             {@worksheet.no_plan_note}
           </div>
 
           <div
             :if={@worksheet.suggestion_rows != []}
-            class="space-y-3 rounded-lg bg-orange-50 p-4"
+            class="bg-orange-50 space-y-3 rounded-lg p-4"
           >
-            <h3 class="text-grey-900 text-sm leading-none font-medium">Aktualne nadwyżki</h3>
+            <h3 class="text-sm leading-none font-medium text-grey-900">Aktualne nadwyżki</h3>
 
             <div class="space-y-3">
               <%= for row <- @worksheet.suggestion_rows do %>
                 <div class="flex items-start justify-between gap-4 text-sm leading-[1.35]">
                   <div class="min-w-0">
-                    <p class="text-grey-900 font-medium">{row.label}</p>
+                    <p class="font-medium text-grey-900">{row.label}</p>
                     <p :if={row.detail} class="text-grey-700">{row.detail}</p>
                   </div>
 
-                  <p :if={row.amount} class="text-grey-900 shrink-0 text-right font-medium">
+                  <p :if={row.amount} class="shrink-0 text-right font-medium text-grey-900">
                     {row.amount}
                   </p>
                 </div>
@@ -93,7 +93,7 @@ defmodule FirmowidWeb.Settings.Components.SubscriptionTab do
 
           <div
             :if={@worksheet.suggestion_rows == []}
-            class="bg-grey-50 text-grey-700 rounded-lg p-4 text-sm leading-[1.35]"
+            class="rounded-lg bg-grey-50 p-4 text-sm leading-[1.35] text-grey-700"
           >
             Brak dodatkowych nadwyżek względem planu w bieżącym miesiącu.
           </div>
@@ -101,14 +101,14 @@ defmodule FirmowidWeb.Settings.Components.SubscriptionTab do
 
         <section class="space-y-4">
           <div class="space-y-2">
-            <h2 class="text-grey-900 text-base leading-none font-semibold">Bieżące liczniki</h2>
-            <p class="text-grey-700 max-w-prose text-sm leading-[1.35]">
+            <h2 class="text-base leading-none font-semibold text-grey-900">Bieżące liczniki</h2>
+            <p class="max-w-prose text-sm leading-[1.35] text-grey-700">
               Orientacyjny podgląd na żywo dla {month_label(@month)}. Dane liczymy według tej samej logiki miesiąca rozliczeniowego, z której powstaje snapshot, ale ostateczne rozliczenie opiera się wyłącznie na utrwalonym snapshotcie.
             </p>
           </div>
 
-          <div class="bg-grey-50 rounded-lg p-4">
-            <div class="divide-grey-200 divide-y">
+          <div class="rounded-lg bg-grey-50 p-4">
+            <div class="divide-y divide-grey-200">
               <%= for row <- @worksheet.usage_rows do %>
                 <div class="space-y-2 py-4 first:pt-0 last:pb-0">
                   <div class="flex items-start justify-between gap-4 text-sm leading-[1.35]">
@@ -118,14 +118,14 @@ defmodule FirmowidWeb.Settings.Components.SubscriptionTab do
                     </div>
 
                     <div class="shrink-0 text-right">
-                      <p class="text-grey-900 font-medium">{row.total_text}</p>
+                      <p class="font-medium text-grey-900">{row.total_text}</p>
                       <p :if={row.over_limit > 0} class="text-orange-700">
                         +{row.over_limit} ponad limit
                       </p>
                     </div>
                   </div>
 
-                  <div class="bg-grey-200 h-2 overflow-hidden rounded-full">
+                  <div class="h-2 overflow-hidden rounded-full bg-grey-200">
                     <div
                       class={counter_bar_fill_styles(row)}
                       style={"width: #{row.bar_width}%"}
@@ -133,7 +133,7 @@ defmodule FirmowidWeb.Settings.Components.SubscriptionTab do
                     </div>
                   </div>
 
-                  <div class="text-grey-700 flex items-center justify-between gap-4 text-xs leading-[1.35]">
+                  <div class="flex items-center justify-between gap-4 text-xs leading-[1.35] text-grey-700">
                     <span>W cenie: {row.included_units}</span>
                     <span>{row.usage_text}</span>
                   </div>
@@ -144,7 +144,7 @@ defmodule FirmowidWeb.Settings.Components.SubscriptionTab do
         </section>
       </div>
     <% else %>
-      <div class="bg-grey-50 text-grey-700 rounded-lg p-4 text-sm leading-[1.35]">
+      <div class="rounded-lg bg-grey-50 p-4 text-sm leading-[1.35] text-grey-700">
         Ten podgląd jest dostępny tylko dla właściciela organizacji.
       </div>
     <% end %>

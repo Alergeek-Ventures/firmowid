@@ -25,7 +25,7 @@ defmodule FirmowidWeb.Invoicing.CostInvoices.Views.Inbox do
       <div class="mb-6 sm:flex sm:items-center">
         <div class="sm:flex-auto">
           <h1 class="text-xl/6 font-bold text-black">Skrzynka odbiorcza</h1>
-          <p class="text-darkGrey mt-2 text-sm">
+          <p class="mt-2 text-sm text-darkGrey">
             Lista wszystkich e-maili z fakturami kosztowymi
           </p>
         </div>
@@ -37,21 +37,21 @@ defmodule FirmowidWeb.Invoicing.CostInvoices.Views.Inbox do
         <col />
         <col class="w-36" />
         <col />
-        <thead class="bg-lightGreyBg sticky top-[130px] z-1">
+        <thead class="sticky top-[130px] z-1 bg-lightGreyBg">
           <tr>
-            <th class="text-darkGrey pt-4 pb-2 pl-5 text-left text-xs font-normal uppercase">
+            <th class="pt-4 pb-2 pl-5 text-left text-xs font-normal text-darkGrey uppercase">
               Data otrzymania
             </th>
-            <th class="text-darkGrey pt-4 pb-2 text-left text-xs font-normal uppercase">
+            <th class="pt-4 pb-2 text-left text-xs font-normal text-darkGrey uppercase">
               Nadawca
             </th>
-            <th class="text-darkGrey pt-4 pb-2 text-left text-xs font-normal uppercase">
+            <th class="pt-4 pb-2 text-left text-xs font-normal text-darkGrey uppercase">
               Temat
             </th>
-            <th class="text-darkGrey pt-4 pb-2 text-left text-xs font-normal uppercase">
+            <th class="pt-4 pb-2 text-left text-xs font-normal text-darkGrey uppercase">
               Status
             </th>
-            <th class="text-darkGrey pt-4 pb-2 text-left text-xs font-normal uppercase">
+            <th class="pt-4 pb-2 text-left text-xs font-normal text-darkGrey uppercase">
               Szczegóły
             </th>
           </tr>
@@ -73,17 +73,17 @@ defmodule FirmowidWeb.Invoicing.CostInvoices.Views.Inbox do
             </td>
             <td class="bg-white py-4 transition-all duration-500">
               <%= if is_nil(email.processed_at) do %>
-                <div class="bg-greyButtonBg text-darkGrey flex h-6 w-32 flex-row items-center justify-center rounded-md p-2 text-xs">
+                <div class="flex h-6 w-32 flex-row items-center justify-center rounded-md bg-greyButtonBg p-2 text-xs text-darkGrey">
                   <div class="font-normal uppercase">Przetwarzanie</div>
                 </div>
               <% else %>
                 <%= if is_nil(email.failure_reason) do %>
-                  <div class="bg-greenBg text-greenText flex h-6 w-32 flex-row items-center justify-center rounded-md p-2 text-xs">
+                  <div class="flex h-6 w-32 flex-row items-center justify-center rounded-md bg-greenBg p-2 text-xs text-greenText">
                     <div class="font-normal uppercase">Sukces</div>
                     <.icon name="hero-check-micro" class="ml-1 size-4" />
                   </div>
                 <% else %>
-                  <div class="bg-redBg text-redText flex h-6 w-32 flex-row items-center justify-center rounded-md p-2 text-xs">
+                  <div class="flex h-6 w-32 flex-row items-center justify-center rounded-md bg-redBg p-2 text-xs text-redText">
                     <div class="font-normal uppercase">Błąd</div>
                   </div>
                 <% end %>
@@ -136,7 +136,7 @@ defmodule FirmowidWeb.Invoicing.CostInvoices.Views.Inbox do
           <FirmowidWeb.DesignSystem.Components.Button.button
             type="button"
             variant="unstyled"
-            class="text-blueText inline-flex items-center gap-1 hover:underline"
+            class="inline-flex items-center gap-1 text-blueText hover:underline"
             phx-click={JS.toggle(to: "#invoice-list-#{@email.id}")}
           >
             {length(@email.cost_invoices)} faktur <.icon name="hero-chevron-down" class="size-4" />
@@ -150,7 +150,7 @@ defmodule FirmowidWeb.Invoicing.CostInvoices.Views.Inbox do
                 :for={invoice <- @email.cost_invoices}
                 kind="unstyled"
                 navigate={~p"/kosztowe/#{invoice.id}"}
-                class="block px-4 py-2 text-sm text-zinc-700 hover:bg-zinc-100"
+                class="hover:bg-zinc-100 text-zinc-700 block px-4 py-2 text-sm"
               >
                 {invoice.seller_display_name || invoice.seller} - {Money.abs(invoice.amount)}
               </FirmowidWeb.DesignSystem.Components.Link.link>

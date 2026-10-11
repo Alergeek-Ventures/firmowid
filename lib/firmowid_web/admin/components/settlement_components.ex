@@ -42,7 +42,7 @@ defmodule FirmowidWeb.Admin.Components.SettlementComponents do
         <.link
           kind="unstyled"
           navigate={Navigation.settlements_path()}
-          class="text-grey-700 text-sm/snug hover:underline"
+          class="text-sm/snug text-grey-700 hover:underline"
         >
           ← Wróć do listy organizacji
         </.link>
@@ -51,8 +51,8 @@ defmodule FirmowidWeb.Admin.Components.SettlementComponents do
         </span>
       </div>
       <div class="mt-4 space-y-1">
-        <h2 class="text-grey-900 text-xl/tight font-medium">{@selected_org.name}</h2>
-        <p class="text-grey-700 text-sm/snug">
+        <h2 class="text-xl/tight font-medium text-grey-900">{@selected_org.name}</h2>
+        <p class="text-sm/snug text-grey-700">
           {status_description(@status)}
           <span :if={@status.kind == :snapshot}>
             Zamrożono {format_datetime(@status.frozen_at)}
@@ -60,7 +60,7 @@ defmodule FirmowidWeb.Admin.Components.SettlementComponents do
         </p>
       </div>
 
-      <div class="border-grey-200 mt-6 grid gap-4 border-t pt-5 lg:grid-cols-[minmax(0,1.45fr)_minmax(0,1fr)]">
+      <div class="mt-6 grid gap-4 border-t border-grey-200 pt-5 lg:grid-cols-[minmax(0,1.45fr)_minmax(0,1fr)]">
         <div class="grid gap-4 text-sm/snug sm:grid-cols-2">
           <div class="space-y-1">
             <p class="text-grey-700">NIP</p>
@@ -111,7 +111,7 @@ defmodule FirmowidWeb.Admin.Components.SettlementComponents do
             </FirmowidWeb.DesignSystem.Components.Button.button>
           </.form>
 
-          <p class="text-grey-700 text-sm/snug">
+          <p class="text-sm/snug text-grey-700">
             Zmiana planu działa na bieżący i przyszłe miesiące. Historyczny snapshot niżej pozostaje bez zmian.
           </p>
         </div>
@@ -125,12 +125,12 @@ defmodule FirmowidWeb.Admin.Components.SettlementComponents do
   def activity_panel(assigns) do
     ~H"""
     <section class="rounded-lg bg-white p-6 shadow-[0px_1px_6px_0px_rgba(0,0,0,0.1)]">
-      <h2 class="text-grey-900 text-lg/tight font-medium">Aktywność organizacji</h2>
-      <p class="text-grey-700 mt-1 text-sm/snug">
+      <h2 class="text-lg/tight font-medium text-grey-900">Aktywność organizacji</h2>
+      <p class="mt-1 text-sm/snug text-grey-700">
         Utrwalone zdarzenia w organizacji, niezależne od wybranego miesiąca rozliczenia.
         Liczby obejmują ostatnie 30 dni (ruchome 720 godzin). Nie są to daty logowania.
       </p>
-      <div class="divide-grey-200 mt-4 divide-y text-sm/snug">
+      <div class="mt-4 divide-y divide-grey-200 text-sm/snug">
         <div
           :for={{label, trace} <- activity_rows(@activity)}
           class="flex flex-wrap justify-between gap-3 py-3"
@@ -141,7 +141,7 @@ defmodule FirmowidWeb.Admin.Components.SettlementComponents do
           </span>
         </div>
       </div>
-      <p class="text-grey-700 mt-3 text-sm/snug">Ostatnie logowanie: niedostępne.</p>
+      <p class="mt-3 text-sm/snug text-grey-700">Ostatnie logowanie: niedostępne.</p>
     </section>
     """
   end
@@ -166,8 +166,8 @@ defmodule FirmowidWeb.Admin.Components.SettlementComponents do
       id="organization-deletion"
       class="rounded-lg border border-red-200 bg-white p-6 shadow-[0px_1px_6px_0px_rgba(0,0,0,0.1)]"
     >
-      <h2 class="text-grey-900 text-lg/tight font-medium">Usunięcie organizacji</h2>
-      <p class="text-grey-700 mt-2 text-sm/snug">
+      <h2 class="text-lg/tight font-medium text-grey-900">Usunięcie organizacji</h2>
+      <p class="mt-2 text-sm/snug text-grey-700">
         Usunięcie organizacji i jej danych z bazy jest trwałe. Konta użytkowników zostają zachowane
         i odłączone od organizacji. Czyszczenie danych w usługach zewnętrznych jest podejmowane
         niezwłocznie; w razie niepowodzenia może wymagać ręcznej interwencji, a pełne usunięcie
@@ -238,16 +238,16 @@ defmodule FirmowidWeb.Admin.Components.SettlementComponents do
     ~H"""
     <section class="rounded-lg bg-white p-6 shadow-[0px_1px_6px_0px_rgba(0,0,0,0.1)]">
       <div class="space-y-1">
-        <h2 class="text-grey-900 text-lg/tight font-medium">Arkusz rozliczenia</h2>
-        <p class="text-grey-700 text-sm/snug">{worksheet_intro(@selected_month, @status)}</p>
+        <h2 class="text-lg/tight font-medium text-grey-900">Arkusz rozliczenia</h2>
+        <p class="text-sm/snug text-grey-700">{worksheet_intro(@selected_month, @status)}</p>
       </div>
 
       <div class="mt-8 grid gap-10 xl:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)]">
         <div class="space-y-8">
           <div class="space-y-4">
-            <h3 class="text-grey-900 text-base/tight font-medium">Plan</h3>
+            <h3 class="text-base/tight font-medium text-grey-900">Plan</h3>
 
-            <div class="divide-grey-200 divide-y">
+            <div class="divide-y divide-grey-200">
               <div class="flex items-center justify-between gap-4 py-3 text-sm/snug">
                 <span class="text-grey-700">Plan dla wybranego miesiąca</span>
                 <span class="font-medium text-black">{@worksheet.selected_plan_label}</span>
@@ -262,17 +262,17 @@ defmodule FirmowidWeb.Admin.Components.SettlementComponents do
               </div>
             </div>
 
-            <p :if={@worksheet.no_plan_note} class="text-grey-700 text-sm/snug">
+            <p :if={@worksheet.no_plan_note} class="text-sm/snug text-grey-700">
               {@worksheet.no_plan_note}
             </p>
           </div>
 
           <div class="space-y-4">
-            <h3 class="text-grey-900 text-base/tight font-medium">Interpretacja</h3>
+            <h3 class="text-base/tight font-medium text-grey-900">Interpretacja</h3>
 
-            <div class="divide-grey-200 divide-y">
+            <div class="divide-y divide-grey-200">
               <%= if @worksheet.suggestion_rows == [] do %>
-                <div class="text-grey-700 py-3 text-sm/snug">
+                <div class="py-3 text-sm/snug text-grey-700">
                   Brak dodatkowych pozycji do pokazania dla wybranego miesiąca.
                 </div>
               <% else %>
@@ -294,11 +294,11 @@ defmodule FirmowidWeb.Admin.Components.SettlementComponents do
           </div>
 
           <div :if={@worksheet.selected_plan != :no_plan} class="space-y-4">
-            <h3 class="text-grey-900 text-base/tight font-medium">
+            <h3 class="text-base/tight font-medium text-grey-900">
               Do zapłaty za {format_month(@selected_month)}
             </h3>
 
-            <div class="divide-grey-200 divide-y">
+            <div class="divide-y divide-grey-200">
               <div class="flex items-center justify-between gap-4 py-3 text-sm/snug">
                 <span class="font-medium text-black">Razem</span>
                 <div class="flex shrink-0 items-center gap-2">
@@ -311,9 +311,9 @@ defmodule FirmowidWeb.Admin.Components.SettlementComponents do
         </div>
 
         <div class="space-y-4">
-          <h3 class="text-grey-900 text-base/tight font-medium">Liczniki użycia</h3>
-          <div class="bg-grey-50 rounded-lg p-4">
-            <div class="divide-grey-200 divide-y">
+          <h3 class="text-base/tight font-medium text-grey-900">Liczniki użycia</h3>
+          <div class="rounded-lg bg-grey-50 p-4">
+            <div class="divide-y divide-grey-200">
               <div :for={row <- @worksheet.usage_rows} class="space-y-2 py-4 first:pt-0 last:pb-0">
                 <div class="flex items-start justify-between gap-4 text-sm leading-[1.35]">
                   <div class="min-w-0">
@@ -322,18 +322,18 @@ defmodule FirmowidWeb.Admin.Components.SettlementComponents do
                   </div>
 
                   <div class="shrink-0 text-right">
-                    <p class="text-grey-900 font-medium">{row.total_text}</p>
+                    <p class="font-medium text-grey-900">{row.total_text}</p>
                     <p :if={row.over_limit > 0} class="text-orange-700">
                       +{row.over_limit} ponad limit
                     </p>
                   </div>
                 </div>
 
-                <div class="bg-grey-200 h-2 overflow-hidden rounded-full">
+                <div class="h-2 overflow-hidden rounded-full bg-grey-200">
                   <div class={counter_bar_fill_styles(row)} style={"width: #{row.bar_width}%"}></div>
                 </div>
 
-                <div class="text-grey-700 flex items-center justify-between gap-4 text-xs leading-[1.35]">
+                <div class="flex items-center justify-between gap-4 text-xs leading-[1.35] text-grey-700">
                   <span>W cenie: {row.included_units}</span>
                   <span>{row.usage_text}</span>
                 </div>
@@ -348,7 +348,7 @@ defmodule FirmowidWeb.Admin.Components.SettlementComponents do
 
   def empty_state(assigns) do
     ~H"""
-    <section class="text-grey-700 rounded-lg bg-white p-6 text-sm/snug shadow-[0px_1px_6px_0px_rgba(0,0,0,0.1)]">
+    <section class="rounded-lg bg-white p-6 text-sm/snug text-grey-700 shadow-[0px_1px_6px_0px_rgba(0,0,0,0.1)]">
       Brak organizacji do rozliczenia.
     </section>
     """

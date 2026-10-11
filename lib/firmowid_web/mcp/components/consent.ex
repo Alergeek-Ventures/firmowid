@@ -46,27 +46,27 @@ defmodule FirmowidWeb.Mcp.Components.Consent do
             alt=""
             class="absolute -top-20 left-1/2 h-[135vh] opacity-10"
           />
-          <div class="ring-grey-200 z-10 w-full max-w-md rounded-2xl bg-white p-8 shadow-sm ring-1">
-            <h1 class="text-grey-900 text-center text-2xl font-bold">
+          <div class="z-10 w-full max-w-md rounded-2xl bg-white p-8 shadow-sm ring-1 ring-grey-200">
+            <h1 class="text-center text-2xl font-bold text-grey-900">
               Zezwól na dostęp
             </h1>
-            <p class="text-grey-600 mt-3 text-center text-sm">
-              Aplikacja <span class="text-grey-900 font-semibold">{@client_name}</span>
+            <p class="mt-3 text-center text-sm text-grey-600">
+              Aplikacja <span class="font-semibold text-grey-900">{@client_name}</span>
               prosi o dostęp do Twojego konta Firmowid w zakresie MCP.
             </p>
 
-            <dl class="bg-lightGreyBg text-grey-700 mt-6 space-y-3 rounded-xl p-4 text-sm">
+            <dl class="mt-6 space-y-3 rounded-xl bg-lightGreyBg p-4 text-sm text-grey-700">
               <div>
-                <dt class="text-grey-900 font-medium">Zakres</dt>
-                <dd class="text-grey-600 mt-0.5 font-mono text-xs break-all">{@scope}</dd>
+                <dt class="font-medium text-grey-900">Zakres</dt>
+                <dd class="font-mono mt-0.5 text-xs break-all text-grey-600">{@scope}</dd>
               </div>
               <div>
-                <dt class="text-grey-900 font-medium">Zasób</dt>
-                <dd class="text-grey-600 mt-0.5 font-mono text-xs break-all">{@resource}</dd>
+                <dt class="font-medium text-grey-900">Zasób</dt>
+                <dd class="font-mono mt-0.5 text-xs break-all text-grey-600">{@resource}</dd>
               </div>
               <div>
-                <dt class="text-grey-900 font-medium">Przekierowanie</dt>
-                <dd class="text-grey-600 mt-0.5 font-mono text-xs break-all">{@redirect_uri}</dd>
+                <dt class="font-medium text-grey-900">Przekierowanie</dt>
+                <dd class="font-mono mt-0.5 text-xs break-all text-grey-600">{@redirect_uri}</dd>
               </div>
             </dl>
 

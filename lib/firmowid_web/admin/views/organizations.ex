@@ -133,11 +133,11 @@ defmodule FirmowidWeb.Admin.Views.Organizations do
   def render(assigns) do
     ~H"""
     <div class="mx-auto flex w-full max-w-7xl flex-col gap-3 pb-4">
-      <div class="bg-lightGreyBg top-navbar sticky z-10 flex flex-col gap-6 py-4">
+      <div class="sticky top-navbar z-10 flex flex-col gap-6 bg-lightGreyBg py-4">
         <div class="flex items-center justify-between gap-4">
           <form class="flex gap-4" phx-submit="search">
-            <div class="bg-lightGreyBg border-greyButtonBg flex h-11 w-90 items-center gap-2 rounded-lg border p-1 focus-within:ring-2">
-              <Lucideicons.search class="text-grey-500 size-6 shrink-0" />
+            <div class="flex h-11 w-90 items-center gap-2 rounded-lg border border-greyButtonBg bg-lightGreyBg p-1 focus-within:ring-2">
+              <Lucideicons.search class="size-6 shrink-0 text-grey-500" />
               <.input
                 type="text"
                 name="szukaj"
@@ -155,7 +155,7 @@ defmodule FirmowidWeb.Admin.Views.Organizations do
         <div class="flex flex-wrap items-center justify-between gap-4">
           <div class="flex flex-wrap items-center gap-6">
             <div class="flex items-center gap-3">
-              <span class="text-darkGrey/70 text-sm font-normal">Filtry:</span>
+              <span class="text-sm font-normal text-darkGrey/70">Filtry:</span>
 
               <div class="flex flex-wrap items-center gap-2">
                 <.button
@@ -181,7 +181,7 @@ defmodule FirmowidWeb.Admin.Views.Organizations do
       </div>
 
       <%= if Enum.empty?(@rows) do %>
-        <p class="text-grey-700 text-sm/snug">
+        <p class="text-sm/snug text-grey-700">
           <%= if @search != "" or not is_nil(@plan_filter) or @only_over_limit? do %>
             Nie znaleziono organizacji dla wybranych filtrów.
           <% else %>
@@ -189,7 +189,7 @@ defmodule FirmowidWeb.Admin.Views.Organizations do
           <% end %>
         </p>
       <% else %>
-        <div class="text-grey-700 hidden gap-x-6 px-4 text-sm/snug lg:grid lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.4fr)_auto]">
+        <div class="hidden gap-x-6 px-4 text-sm/snug text-grey-700 lg:grid lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.4fr)_auto]">
           <p>Organizacja</p>
           <p>Plan</p>
           <p>Od kiedy</p>
@@ -212,7 +212,7 @@ defmodule FirmowidWeb.Admin.Views.Organizations do
                 >{short_org_name(row.org.name)}</.link>
                 <SettlementComponents.billing_status_badge :if={row.org.on_trial?} status={:trial} />
               </div>
-              <p class="text-grey-500 text-sm/snug">NIP: {row.org.nip}</p>
+              <p class="text-sm/snug text-grey-500">NIP: {row.org.nip}</p>
             </div>
 
             <div class="space-y-1 text-sm/snug">
@@ -253,7 +253,7 @@ defmodule FirmowidWeb.Admin.Views.Organizations do
             <.link
               kind="unstyled"
               navigate={Navigation.settlement_path(row.org.id, %{"miesiac" => @current_month})}
-              class="hover:text-grey-700 text-grey-500 justify-self-end"
+              class="justify-self-end text-grey-500 hover:text-grey-700"
             >
               <Lucideicons.chevron_right class="size-4" />
             </.link>

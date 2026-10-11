@@ -11,13 +11,13 @@ defmodule FirmowidWeb.Infrastructure.Components.ErrorHtml do
 
   def render("404.html", assigns) do
     ~H"""
-    <div class="bg-lightGreyBg flex h-full flex-col">
+    <div class="flex h-full flex-col bg-lightGreyBg">
       <.navbar class="sticky inset-x-0 top-0 z-50 py-4">
         <.navbar_logo navigate={~p"/"} />
       </.navbar>
       <main class="flex flex-1 items-center justify-center p-8">
         <div class="max-w-md text-center">
-          <p class="mb-2 text-6xl font-extrabold text-black/20">404</p>
+          <p class="text-6xl mb-2 font-extrabold text-black/20">404</p>
           <h1 class="mb-2 text-xl font-bold">Nie znaleziono strony</h1>
           <p class="mb-6 text-sm text-black/50">
             Strona, której szukasz, nie istnieje lub została przeniesiona.
@@ -33,13 +33,13 @@ defmodule FirmowidWeb.Infrastructure.Components.ErrorHtml do
 
   def render("500.html", assigns) do
     ~H"""
-    <div class="bg-lightGreyBg flex h-full flex-col">
+    <div class="flex h-full flex-col bg-lightGreyBg">
       <.navbar class="sticky inset-x-0 top-0 z-50 py-4">
         <.navbar_logo navigate={~p"/"} />
       </.navbar>
       <main class="flex flex-1 items-center justify-center p-8">
         <div class="max-w-md text-center">
-          <p class="mb-2 text-6xl font-extrabold text-black/20">500</p>
+          <p class="text-6xl mb-2 font-extrabold text-black/20">500</p>
           <h1 class="mb-2 text-xl font-bold">Wystąpił błąd serwera</h1>
           <p class="mb-6 text-sm text-black/50">
             Błąd został automatycznie zgłoszony — nasz zespół zajmie się nim jak najszybciej.

@@ -22,17 +22,17 @@ defmodule FirmowidWeb.Analysis.Components.EntriesTable do
       <col /><col class="w-32" /><col class="w-48" /><col class="w-36" />
       <thead>
         <tr>
-          <th class="text-darkGrey py-2 pl-5 text-left text-xs font-normal uppercase">Kontrahent</th>
-          <th class="text-darkGrey py-2 text-left text-xs font-normal uppercase">Data sprzedaży</th>
-          <th class="text-darkGrey py-2 text-left text-xs font-normal uppercase">
+          <th class="py-2 pl-5 text-left text-xs font-normal text-darkGrey uppercase">Kontrahent</th>
+          <th class="py-2 text-left text-xs font-normal text-darkGrey uppercase">Data sprzedaży</th>
+          <th class="py-2 text-left text-xs font-normal text-darkGrey uppercase">
             {gettext("Categories")}
           </th>
-          <th class="text-darkGrey py-2 text-left text-xs font-normal uppercase">Kwota</th>
+          <th class="py-2 text-left text-xs font-normal text-darkGrey uppercase">Kwota</th>
         </tr>
       </thead>
       <tbody>
         <tr :if={@entries == []}>
-          <td colspan="4" class="text-darkGrey py-8 text-center">Brak wpisów</td>
+          <td colspan="4" class="py-8 text-center text-darkGrey">Brak wpisów</td>
         </tr>
         <.row
           :for={entry <- @entries}
@@ -131,7 +131,7 @@ defmodule FirmowidWeb.Analysis.Components.EntriesTable do
   defp party_cell(assigns) do
     ~H"""
     {@party}
-    <span :if={@description not in [nil, ""]} class="text-darkGrey text-sm opacity-50">{@description}</span>
+    <span :if={@description not in [nil, ""]} class="text-sm text-darkGrey opacity-50">{@description}</span>
     """
   end
 end

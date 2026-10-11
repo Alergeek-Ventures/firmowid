@@ -53,7 +53,7 @@ defmodule FirmowidWeb.Invoicing.Components.DownloadModal do
           <h3 class="text-lg font-semibold text-balance">Pobierz faktury</h3>
           <p class="text-pretty">
             W pliku
-            <span class="bg-lightGreyBg inline-flex items-center gap-1 rounded border border-black px-2 py-1">
+            <span class="inline-flex items-center gap-1 rounded border border-black bg-lightGreyBg px-2 py-1">
               <span aria-hidden="true"><.icon name="hero-document-solid" class="size-4" /></span>
               {@month |> Calendar.strftime("%Y-%m")}-dokumenty.zip
             </span>
@@ -88,7 +88,7 @@ defmodule FirmowidWeb.Invoicing.Components.DownloadModal do
             />
           </div>
 
-          <div class="border-lightGreyBg border-t pt-4">
+          <div class="border-t border-lightGreyBg pt-4">
             <.form
               for={@switch_form}
               id="download-modal-note-filter-form"
@@ -109,8 +109,8 @@ defmodule FirmowidWeb.Invoicing.Components.DownloadModal do
             class={[
               "rounded-md py-2 text-center transition-colors",
               if(@any_selected,
-                do: "cursor-pointer bg-black text-white hover:bg-gray-800",
-                else: "pointer-events-none bg-gray-300 text-gray-500"
+                do: "hover:bg-gray-800 cursor-pointer bg-black text-white",
+                else: "bg-gray-300 text-gray-500 pointer-events-none"
               )
             ]}
             aria-disabled={if(!@any_selected, do: "true")}

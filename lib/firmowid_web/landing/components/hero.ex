@@ -67,7 +67,7 @@ defmodule FirmowidWeb.Landing.Components.Hero do
               <br /> {pgettext("landing-hero-pricing", "per month")}
             </h1>
 
-            <p class="mt-6 max-w-[500px] text-[18px] leading-[1.4] text-[#4e4e4e] lg:mt-8 lg:text-[20px]">
+            <p class="mt-6 max-w-[500px] text-h5 leading-[1.4] text-[#4e4e4e] lg:mt-8 lg:text-lg">
               {gettext(
                 "Everything in one place: invoices, banking, working hours, and payroll. No stress, no chaos."
               )}
@@ -90,9 +90,9 @@ defmodule FirmowidWeb.Landing.Components.Hero do
               </.hero_action_button>
             </div>
 
-            <ul class="mt-8 grid gap-3 text-[14px] leading-[19.5px] text-[#4e4e4e] sm:grid-cols-2 sm:gap-x-4 sm:gap-y-2 lg:mt-10 lg:flex lg:flex-wrap lg:gap-x-4 lg:gap-y-2 lg:text-[13px]">
+            <ul class="mt-8 grid gap-3 text-sm leading-[19.5px] text-[#4e4e4e] sm:grid-cols-2 sm:gap-x-4 sm:gap-y-2 lg:mt-10 lg:flex lg:flex-wrap lg:gap-x-4 lg:gap-y-2 lg:text-[13px]">
               <li :for={benefit <- @benefits} class="flex items-center gap-1.5 whitespace-nowrap">
-                <span class="text-[18px] leading-none font-bold text-[#475e45]">✓</span>
+                <span class="text-h5 leading-none font-bold text-[#475e45]">✓</span>
                 <span>{benefit}</span>
               </li>
             </ul>
@@ -158,11 +158,11 @@ defmodule FirmowidWeb.Landing.Components.Hero do
       |> assign(:mobile_metrics, @mobile_metrics)
 
     ~H"""
-    <section class="border-y border-[#e6d7ce] bg-[#dea785] px-4 py-8 sm:px-6 lg:flex lg:h-24 lg:items-center lg:bg-[#fafafa] lg:px-10 lg:py-0">
+    <section class="border-y border-[#e6d7ce] bg-orange-400 px-4 py-8 sm:px-6 lg:flex lg:h-24 lg:items-center lg:bg-grey-50 lg:px-10 lg:py-0">
       <div class="mx-auto w-full max-w-[1416px] lg:px-[140px]">
         <div class="grid gap-8 text-center lg:hidden">
           <div :for={metric <- @mobile_metrics} class="flex flex-col items-center gap-2">
-            <p class="text-[14px]/4 font-normal text-[#303030]">
+            <p class="text-sm/4 font-normal text-grey-800">
               {Gettext.gettext(FirmowidWeb.Core.Gettext, metric.label)}
             </p>
             <p class="text-[44px] leading-[1.08] font-bold text-[#0f0f0f]">
@@ -207,7 +207,7 @@ defmodule FirmowidWeb.Landing.Components.Hero do
   defp hero_screenshot_card(assigns) do
     ~H"""
     <div class={[
-      "group absolute hidden aspect-square overflow-hidden rounded-[28px] border-4 border-[#dea785] bg-[#f7f0eb] shadow-[0_20px_45px_rgba(87,54,35,0.16)] motion-safe:transition-transform motion-safe:duration-300 motion-safe:ease-[cubic-bezier(0.22,1,0.36,1)] motion-safe:hover:z-40 motion-safe:hover:-translate-y-7 motion-safe:hover:scale-[1.45] motion-safe:hover:rotate-0 motion-safe:hover:shadow-[0_46px_96px_rgba(87,54,35,0.3)] lg:block",
+      "group absolute hidden aspect-square overflow-hidden rounded-[28px] border-4 border-orange-400 bg-[#f7f0eb] shadow-[0_20px_45px_rgba(87,54,35,0.16)] motion-safe:transition-transform motion-safe:duration-300 motion-safe:ease-[cubic-bezier(0.22,1,0.36,1)] motion-safe:hover:z-40 motion-safe:hover:-translate-y-7 motion-safe:hover:scale-[1.45] motion-safe:hover:rotate-0 motion-safe:hover:shadow-[0_46px_96px_rgba(87,54,35,0.3)] lg:block",
       @card_class
     ]}>
       <picture>
@@ -250,7 +250,7 @@ defmodule FirmowidWeb.Landing.Components.Hero do
         @variant == :filled &&
           "bg-[#0f0f0f] text-white shadow-[0_2px_0_rgba(15,15,15,0.18)] before:absolute before:inset-0 before:bg-[url('/images/button_hover.svg')] before:bg-size-[100%_100%] before:bg-no-repeat before:opacity-70 before:content-['']",
         @variant == :outline &&
-          "text-[#1a1a1a] before:absolute before:inset-0 before:bg-[url('/images/button_login.svg')] before:bg-size-[100%_100%] before:bg-no-repeat before:content-[''] hover:bg-black/3"
+          "text-grey-900 before:absolute before:inset-0 before:bg-[url('/images/button_login.svg')] before:bg-size-[100%_100%] before:bg-no-repeat before:content-[''] hover:bg-black/3"
       ]}
     >
       <span class="relative z-10">{render_slot(@inner_block)}</span>

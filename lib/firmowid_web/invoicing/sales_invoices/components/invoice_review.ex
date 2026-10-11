@@ -29,7 +29,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceReview do
         {render_slot(@header)}
         <div class="mbs-8 flex gap-6">
           <div class="max-w-[650px] flex-1">
-            <div class="border-grey-200 overflow-clip rounded-lg border bg-white shadow-sm">
+            <div class="overflow-clip rounded-lg border border-grey-200 bg-white shadow-sm">
               <FirmowidWeb.Invoicing.SalesInvoices.Components.Pdf.sales_invoice
                 sales_invoice={@preview_invoice}
                 currency_rate={@currency_rate}
@@ -40,20 +40,20 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceReview do
           </div>
 
           <div class="space-y-6">
-            <h2 class="text-grey-700 mbe-4 text-lg font-medium">Dane faktury</h2>
+            <h2 class="mbe-4 text-lg font-medium text-grey-700">Dane faktury</h2>
             <form
               id="invoice-number-form"
               phx-change="update_invoice_number"
               phx-submit={if @ksef_connected?, do: "send_to_ksef", else: "confirm_invoice"}
             >
-              <label for="invoice-number" class="text-grey-500 mbe-2 block text-sm">Numer faktury</label>
+              <label for="invoice-number" class="mbe-2 block text-sm text-grey-500">Numer faktury</label>
               <input
                 id="invoice-number"
                 type="text"
                 name="invoice_number"
                 value={@invoice_number}
                 required
-                class="border-grey-200 focus:ring-turquoise-500 placeholder:text-grey-400 text-grey-700 w-full rounded-lg border px-3 py-2 text-sm focus:border-transparent focus:ring-2"
+                class="w-full rounded-lg border border-grey-200 px-3 py-2 text-sm text-grey-700 placeholder:text-grey-400 focus:border-transparent focus:ring-2 focus:ring-turquoise-500"
               />
             </form>
             <.error :for={{message, _opts} <- @invoice_number_errors}>{message}</.error>
@@ -62,10 +62,10 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceReview do
               <div class="space-y-3">
                 <div
                   :for={warning <- @invoice_warnings}
-                  class="bg-orangeBg rounded-lg bg-amber-50 p-3 text-sm"
+                  class="bg-amber-50 rounded-lg bg-orangeBg p-3 text-sm"
                 >
-                  <div class="text-orangeText flex items-start gap-2">
-                    <Lucideicons.alert_triangle class="mbs-0.5 size-4 shrink-0 text-amber-500" />
+                  <div class="flex items-start gap-2 text-orangeText">
+                    <Lucideicons.alert_triangle class="text-amber-500 mbs-0.5 size-4 shrink-0" />
                     <span>
                       <%= case warning do %>
                         <% {:invalid_format, _} -> %>
@@ -109,7 +109,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceReview do
                   class={[
                     if(@invoice_number == next_number,
                       do: "border-turquoise-500 text-turquoise-700",
-                      else: "hover:bg-grey-50 text-grey-600"
+                      else: "text-grey-600 hover:bg-grey-50"
                     )
                   ]}
                 >
@@ -119,28 +119,28 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceReview do
             <% end %>
 
             <form id="invoice-notes-form" phx-change="update_notes">
-              <label for="invoice-note" class="text-grey-500 mbe-2 block text-sm">Notatka na fakturze</label>
+              <label for="invoice-note" class="mbe-2 block text-sm text-grey-500">Notatka na fakturze</label>
               <textarea
                 id="invoice-note"
                 name="invoice_note"
                 rows="3"
-                class="border-grey-200 focus:ring-turquoise-500 placeholder:text-grey-400 text-grey-700 w-full resize-none rounded-lg border px-3 py-2 text-sm focus:border-transparent focus:ring-2"
+                class="w-full resize-none rounded-lg border border-grey-200 px-3 py-2 text-sm text-grey-700 placeholder:text-grey-400 focus:border-transparent focus:ring-2 focus:ring-turquoise-500"
                 placeholder="Widoczna na fakturze i w KSeF (stopka faktury)"
               >{@invoice.invoice_note || ""}</textarea>
 
-              <label for="internal-note" class="text-grey-500 mbs-3 mbe-2 block text-sm">Komentarz</label>
+              <label for="internal-note" class="mbs-3 mbe-2 block text-sm text-grey-500">Komentarz</label>
               <textarea
                 id="internal-note"
                 name="internal_note"
                 rows="3"
-                class="border-grey-200 focus:ring-turquoise-500 placeholder:text-grey-400 text-grey-700 w-full resize-none rounded-lg border px-3 py-2 text-sm focus:border-transparent focus:ring-2"
+                class="w-full resize-none rounded-lg border border-grey-200 px-3 py-2 text-sm text-grey-700 placeholder:text-grey-400 focus:border-transparent focus:ring-2 focus:ring-turquoise-500"
                 placeholder="Notatka wewnętrzna (niewidoczna na fakturze - tylko w Firmowidzie)"
               >{@invoice.internal_note || ""}</textarea>
             </form>
 
             <form id="invoice-email-form" phx-change="toggle_should_send_emails">
               <label
-                class="text-grey-700 flex items-center gap-3 text-sm font-medium"
+                class="flex items-center gap-3 text-sm font-medium text-grey-700"
                 title={@counterparty_check.tooltip}
               >
                 <input
@@ -149,7 +149,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceReview do
                   value="true"
                   checked={@should_send_emails}
                   disabled={!@counterparty_check.valid}
-                  class="border-grey-300 focus:ring-turquoise-500 text-turquoise-600 size-4 rounded disabled:cursor-not-allowed disabled:opacity-60"
+                  class="size-4 rounded border-grey-300 text-turquoise-600 focus:ring-turquoise-500 disabled:cursor-not-allowed disabled:opacity-60"
                 />
                 <span>Wyślij fakturę e-mailem do kontrahenta po otrzymaniu numeru KSeF</span>
               </label>

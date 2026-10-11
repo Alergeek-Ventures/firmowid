@@ -31,12 +31,12 @@ defmodule FirmowidWeb.Delegations.Components.SettlementPage do
       >
         <.nested_hidden_inputs :if={@editable?} form={@complete_form} />
         <section aria-labelledby="delegation-settlement-title" class="min-w-0">
-          <small class="text-grey-500 text-sm">Cel:
+          <small class="text-sm text-grey-500">Cel:
           <span class="text-grey-700">{@delegation.purpose}</span></small>
-          <dl class="text-grey-500 mt-2 flex gap-4 lg:hidden">
+          <dl class="mt-2 flex gap-4 text-grey-500 lg:hidden">
             <small>
               <dt class="inline">Termin:</dt>
-              <dd class="text-grey-700 inline tabular-nums">
+              <dd class="inline text-grey-700 tabular-nums">
                 <.date_range start_date={@delegation.start_date} end_date={@delegation.end_date} />
               </dd>
             </small>
@@ -45,7 +45,7 @@ defmodule FirmowidWeb.Delegations.Components.SettlementPage do
           <h1 id="delegation-settlement-title" class="mt-1 text-2xl font-medium">
             Rozliczenie delegacji
           </h1>
-          <p class="text-grey-700 mt-3 max-w-2xl text-balance">
+          <p class="mt-3 max-w-2xl text-balance text-grey-700">
             Załącz bilety i rachunki. Uzupełnij potrzebne dane. Kwoty i numery faktur uzupełnimy automatycznie.
           </p>
 
@@ -118,16 +118,16 @@ defmodule FirmowidWeb.Delegations.Components.SettlementPage do
           />
         </section>
         <aside class="min-w-0 lg:pt-1">
-          <dl class="text-grey-500 hidden justify-end gap-4 lg:flex">
+          <dl class="hidden justify-end gap-4 text-grey-500 lg:flex">
             <small>
               <dt class="inline">Termin:</dt>
-              <dd class="text-grey-700 inline tabular-nums">
+              <dd class="inline text-grey-700 tabular-nums">
                 <.date_range start_date={@delegation.start_date} end_date={@delegation.end_date} />
               </dd>
             </small>
             <small>
               <dt class="inline">Zaliczka:</dt>
-              <dd class="text-grey-700 inline">
+              <dd class="inline text-grey-700">
                 {Money.to_string!(@delegation.advance_payment_amount)}
               </dd>
             </small>
@@ -226,9 +226,9 @@ defmodule FirmowidWeb.Delegations.Components.SettlementPage do
   defp saved_notice(assigns) do
     ~H"""
     <div class={@class}>
-      <span class="font-lexend text-grey-500 inline-flex items-center gap-1 text-[11px] font-medium uppercase group-[.phx-change-loading]:hidden">Zmiany zostały zapisane
+      <span class="font-lexend inline-flex items-center gap-1 text-caps-sm font-medium text-grey-500 uppercase group-[.phx-change-loading]:hidden">Zmiany zostały zapisane
       <.save_check_icon class="size-3" /></span>
-      <span class="font-lexend text-grey-500 hidden items-center gap-1 text-[11px] font-medium uppercase group-[.phx-change-loading]:inline-flex">Zapisywanie zmian
+      <span class="font-lexend hidden items-center gap-1 text-caps-sm font-medium text-grey-500 uppercase group-[.phx-change-loading]:inline-flex">Zapisywanie zmian
       <Lucideicons.refresh_ccw class="size-3 animate-spin [animation-direction:reverse]" /></span>
     </div>
     """
@@ -243,7 +243,7 @@ defmodule FirmowidWeb.Delegations.Components.SettlementPage do
   defp summary(assigns) do
     ~H"""
     <div class={["rounded-lg bg-white px-6 py-4 shadow-sm", @class]}>
-      <h2 class="text-grey-500 font-normal">Podsumowanie</h2>
+      <h2 class="font-normal text-grey-500">Podsumowanie</h2>
       <dl class="mt-6 space-y-3 text-sm">
         <.summary_row
           label="Przejazdy"
@@ -269,7 +269,7 @@ defmodule FirmowidWeb.Delegations.Components.SettlementPage do
             )
           }
         />
-        <div class="border-grey-100 my-5 space-y-3 border-y py-5">
+        <div class="my-5 space-y-3 border-y border-grey-100 py-5">
           <.summary_row label="Razem koszty" value={@total} class="font-medium" />
           <.summary_row label="Pobrana zaliczka" value={@delegation.advance_payment_amount} />
         </div>
@@ -310,7 +310,7 @@ defmodule FirmowidWeb.Delegations.Components.SettlementPage do
     ~H"""
     <section
       id="delegation-date-change"
-      class="bg-turquoise-100 border-grey-200 text-turquoise-700 mt-6 w-full rounded-lg border p-6"
+      class="mt-6 w-full rounded-lg border border-grey-200 bg-turquoise-100 p-6 text-turquoise-700"
     >
       <div class="flex flex-wrap items-center justify-between gap-3">
         <h2 class="flex items-center gap-2 font-medium">

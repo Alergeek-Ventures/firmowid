@@ -2,7 +2,7 @@
   <%!-- simulates the navbar height, so the content does not jump when the navbar collapses --%>
   <%= if String.starts_with?(@current_uri.path, "/zarzadzanie") do %>
     <div class={[
-      "bg-lightGreyBg w-full",
+      "w-full bg-lightGreyBg",
       cond do
         String.starts_with?(@current_uri.path, "/zarzadzanie/pracownicy/") and
             not String.starts_with?(@current_uri.path, "/zarzadzanie/pracownicy/archiwum") ->
@@ -22,10 +22,10 @@
         cond do
           String.starts_with?(@current_uri.path, "/zarzadzanie/pracownicy/") and
               not String.starts_with?(@current_uri.path, "/zarzadzanie/pracownicy/archiwum") ->
-            "group-hover:h-navbar h-0 overflow-hidden py-0 opacity-0 group-hover:py-4 group-hover:opacity-100"
+            "h-0 overflow-hidden py-0 opacity-0 group-hover:h-navbar group-hover:py-4 group-hover:opacity-100"
 
           true ->
-            "h-navbar flex py-4 opacity-100"
+            "flex h-navbar py-4 opacity-100"
         end,
         "flex text-white",
         "items-center justify-between",
@@ -42,7 +42,7 @@
       <div class={[
         String.starts_with?(@current_uri.path, "/zarzadzanie") &&
           "border-b px-4 py-4.5",
-        "border-darkGrey flex items-center gap-16 uppercase max-md:hidden"
+        "flex items-center gap-16 border-darkGrey uppercase max-md:hidden"
       ]}>
         <%= if @current_user.role != :employee do %>
           <.link
@@ -165,13 +165,13 @@
             style="display: none"
             class="absolute top-[50px] right-0 z-50 w-full min-w-[250px] flex-col gap-2 rounded-md bg-black p-3 text-left font-semibold max-lg:w-auto"
           >
-            <div class="border-darkGrey/50 truncate border-b p-2 pb-4 text-xs text-white/50 lowercase">
+            <div class="truncate border-b border-darkGrey/50 p-2 pb-4 text-xs text-white/50 lowercase">
               {@current_user.email}
             </div>
             <.link
               kind="unstyled"
               navigate={~p"/ustawienia"}
-              class="hover:bg-darkGrey/50 rounded-md p-2"
+              class="rounded-md p-2 hover:bg-darkGrey/50"
             >
               {pgettext("avatar menu", "Settings")}
             </.link>
@@ -179,7 +179,7 @@
               <.link
                 kind="unstyled"
                 navigate={~p"/ustawienia/firma"}
-                class="hover:bg-darkGrey/50 rounded-md p-2"
+                class="rounded-md p-2 hover:bg-darkGrey/50"
               >
                 {pgettext("avatar menu", "Bank accounts")}
               </.link>
@@ -188,7 +188,7 @@
               <.link
                 kind="unstyled"
                 navigate={~p"/admin/rozliczenia"}
-                class="hover:bg-darkGrey/50 rounded-md p-2"
+                class="rounded-md p-2 hover:bg-darkGrey/50"
               >
                 {pgettext("avatar menu", "Billing")}
               </.link>
@@ -204,7 +204,7 @@
               <FirmowidWeb.DesignSystem.Components.Button.button
                 type="submit"
                 variant="unstyled"
-                class="active:bg-darkGrey/70 hover:bg-darkGrey/50 block w-full cursor-pointer rounded-md text-white hover:text-white"
+                class="block w-full cursor-pointer rounded-md text-white hover:bg-darkGrey/50 hover:text-white active:bg-darkGrey/70"
               >
                 <span class="flex w-full items-center justify-between p-2">
                   {pgettext("avatar menu", "Log out")}
@@ -289,7 +289,7 @@
 <main class={[
   is_nil(assigns[:no_padding]) &&
     "p-4 sm:px-6 lg:px-8",
-  "bg-lightGreyBg flex flex-1 flex-col",
+  "flex flex-1 flex-col bg-lightGreyBg",
   assigns[:main_class]
 ]}>
   <div class="mx-auto flex size-full flex-1 flex-col">

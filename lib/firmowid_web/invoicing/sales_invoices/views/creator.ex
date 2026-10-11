@@ -1365,7 +1365,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
 
     ~H"""
     <div class="flex flex-col gap-4">
-      <div class="text-grey-500 flex flex-row gap-4 text-sm/snug">
+      <div class="flex flex-row gap-4 text-sm/snug text-grey-500">
         <h2>
           Kreator faktur |
           <span class="text-grey-700">
@@ -1399,7 +1399,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
           </p>
         <% end %>
       </div>
-      <h1 class="text-[27px]/tight font-medium">
+      <h1 class="text-2xl/tight font-medium">
         {@title}
       </h1>
     </div>

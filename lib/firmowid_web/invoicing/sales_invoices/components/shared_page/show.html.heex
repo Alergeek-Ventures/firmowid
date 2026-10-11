@@ -11,7 +11,7 @@
         kind="unstyled"
         redirect={"#invoice-#{invoice.id}"}
         data-active={false}
-        class="data-active:text-grey-800 hover:text-grey-900 text-grey-700 only:hidden"
+        class="text-grey-700 only:hidden hover:text-grey-900 data-active:text-grey-800"
       >
         {invoice.invoice_number}
       </.link>
@@ -35,7 +35,7 @@
             </div>
             <div class="min-w-[350px] space-y-6">
               <div class="mb-4 flex items-center justify-between">
-                <h2 class="text-grey-700 text-lg font-medium">
+                <h2 class="text-lg font-medium text-grey-700">
                   {if @lang == :en, do: "Invoice details", else: "Dane faktury"}
                 </h2>
                 <div :if={invoice.invoice_type == :foreign} class="flex gap-1">
@@ -48,7 +48,7 @@
                       "rounded px-2 py-1 text-xs font-medium transition-colors",
                       if(@lang == :pl,
                         do: "bg-black text-white",
-                        else: "bg-greyButtonBg hover:bg-grey-300 text-darkGrey"
+                        else: "bg-greyButtonBg text-darkGrey hover:bg-grey-300"
                       )
                     ]}
                   >
@@ -63,7 +63,7 @@
                       "rounded px-2 py-1 text-xs font-medium transition-colors",
                       if(@lang == :en,
                         do: "bg-black text-white",
-                        else: "bg-greyButtonBg hover:bg-grey-300 text-darkGrey"
+                        else: "bg-greyButtonBg text-darkGrey hover:bg-grey-300"
                       )
                     ]}
                   >
@@ -84,7 +84,7 @@
                     :vat -> ~p"/faktura/#{@conn.params["token"]}/pdf"
                   end
                 }
-                class="hover:bg-orangeText flex w-full items-center justify-center gap-2 rounded-lg bg-black px-4 py-3 text-sm font-medium text-white transition-colors"
+                class="flex w-full items-center justify-center gap-2 rounded-lg bg-black px-4 py-3 text-sm font-medium text-white transition-colors hover:bg-orangeText"
               >
                 <.icon name="hero-arrow-down-tray" class="size-4" />
                 {if @lang == :en, do: "Download PDF", else: "Pobierz PDF"}
@@ -94,7 +94,7 @@
                 kind="unstyled"
                 external={Firmowid.Ash.Ksef.invoice_url!(invoice)}
                 target="_blank"
-                class="hover:bg-orangeText flex w-full items-center justify-center gap-2 rounded-lg bg-black px-4 py-3 text-sm font-medium text-white transition-colors"
+                class="flex w-full items-center justify-center gap-2 rounded-lg bg-black px-4 py-3 text-sm font-medium text-white transition-colors hover:bg-orangeText"
               >
                 <.icon name="hero-arrow-trending-up" class="size-4" />
                 {if @lang == :en, do: "View in KSeF", else: "Zobacz w KSeF"}
