@@ -141,7 +141,10 @@ jobs:
             test "$(cat _build/gettext-extraction/verified)" = "$SOURCE_TREE"
             echo "Gettext extraction already verified for this exact source tree and toolchain."
           else
-            mix gettext.extract --check-up-to-date
+            mix translations.extract.check
+            mix translations.extract.check > "$RUNNER_TEMP/gettext-local-cache-hit.log"
+            cat "$RUNNER_TEMP/gettext-local-cache-hit.log"
+            grep -Fx 'Gettext extraction verification unchanged (cached success).' "$RUNNER_TEMP/gettext-local-cache-hit.log"
             mkdir -p _build/gettext-extraction
             printf '%s\n' "$SOURCE_TREE" > _build/gettext-extraction/verified
           fi
@@ -176,11 +179,11 @@ jobs:
             _build/test/*.plt
             _build/test/*.plt.hash
 
-      # A partial hit is not exact: check its modules before saving under the new key.
+      # Dialyxir validates the lock/app selection; locked dependencies need no forced recheck.
       - name: Create or update PLTs
         id: plt_create
         if: steps.plt_cache.outputs.cache-hit != 'true'
-        run: mix dialyzer --plt --force-check
+        run: mix dialyzer --plt
 
       # Preserve successfully built PLTs even if analysis later finds warnings.
       - name: Save core PLT cache
