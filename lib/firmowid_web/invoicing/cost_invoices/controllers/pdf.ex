@@ -7,6 +7,9 @@ defmodule FirmowidWeb.Invoicing.CostInvoices.Controllers.Pdf do
   alias Firmowid.Ash.Invoicing.Services.MonthDownloadEntries
   alias FirmowidWeb.Invoicing.Utilities.InvoiceDownloadParams
 
+  # sobelow_skip ["XSS.SendResp"]
+  # The body is a generated PDF binary, served as an application/pdf attachment,
+  # not user-provided HTML; invoice lookup remains scoped to the authenticated actor.
   def pdf(conn, %{"id" => id}) do
     include_internal_note = InvoiceDownloadParams.parse_include_internal_note(conn.params)
 

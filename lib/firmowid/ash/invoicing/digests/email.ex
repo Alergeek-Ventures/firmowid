@@ -81,6 +81,9 @@ defmodule Firmowid.Ash.Invoicing.Digests.Email do
   defp digest_subject(1), do: "Nowa faktura w Firmowidzie"
   defp digest_subject(count), do: "#{count} nowe faktury w Firmowidzie"
 
+  # sobelow_skip ["XSS.Raw"]
+  # The fragments use fixed email markup and counts; dynamic text and attributes
+  # are HTML-escaped before interpolation in the fragment builders below.
   defp html_email(_digest, invoices, invoice_summaries) do
     app_url = Endpoint.url()
     visible_invoices = Enum.take(invoices, @max_visible_invoices)
@@ -150,10 +153,10 @@ defmodule Firmowid.Ash.Invoicing.Digests.Email do
           <table role="presentation" style="width:100%; border-collapse:collapse;">
             <tr>
               <td style="padding:0 16px 0 0; vertical-align:top; font-size:20px; line-height:1.3; color: #{@colors.dark}; font-weight:500;">
-                #{invoice_seller(invoice)}
+                #{escape_html(invoice_seller(invoice))}
               </td>
               <td align="right" style="vertical-align:top; white-space:nowrap; font-size:15px; line-height:1.6;">
-                <a href="#{app_url}/fakturowanie" style="color: #{@colors.accent}; text-decoration:none; font-weight:500;">
+                <a href="#{escape_html(app_url)}/fakturowanie" style="color: #{@colors.accent}; text-decoration:none; font-weight:500;">
                   Otwórz w Firmowidzie →
                 </a>
               </td>
@@ -196,7 +199,7 @@ defmodule Firmowid.Ash.Invoicing.Digests.Email do
         <table role=\"presentation\" style=\"margin:0 0 8px 0; border-collapse:collapse;\">
           <tr>
             <td style=\"width:14px; padding:0 8px 0 0; vertical-align:top;\">•</td>
-            <td style=\"vertical-align:top;\">#{name}#{quantity_suffix}</td>
+            <td style=\"vertical-align:top;\">#{escape_html(name)}#{escape_html(quantity_suffix)}</td>
           </tr>
         </table>
         """
@@ -233,7 +236,7 @@ defmodule Firmowid.Ash.Invoicing.Digests.Email do
 
   defp transaction_icon_html(suggestion) do
     """
-    <span style="display:inline-flex; width:28px; height:28px; background-color:#{suggestion.avatar_color || "#EFEFEF"}; border-radius:999px; align-items:center; justify-content:center; color: #{@colors.dark};">
+    <span style="display:inline-flex; width:28px; height:28px; background-color:#{escape_html(suggestion.avatar_color || "#EFEFEF")}; border-radius:999px; align-items:center; justify-content:center; color: #{@colors.dark};">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" style="width:14px; height:14px; display:block;">
         <path d="M10.75 2.75a.75.75 0 0 0-1.5 0v.443a39.19 39.19 0 0 0-4.121 1.11A.75.75 0 0 0 4.5 5v1.756a33.147 33.147 0 0 1-1.728.549.75.75 0 0 0-.522.716V15.25H2a.75.75 0 0 0 0 1.5h16a.75.75 0 0 0 0-1.5h-.25V8.021a.75.75 0 0 0-.522-.716 32.429 32.429 0 0 1-1.728-.549V5a.75.75 0 0 0-.629-.697 39.22 39.22 0 0 0-4.121-1.11V2.75ZM6 6.08c1.5-.417 2.726-.707 4-.91 1.274.203 2.5.493 4 .91v9.17h-1.25v-3.5a.75.75 0 0 0-.75-.75h-4a.75.75 0 0 0-.75.75v3.5H6V6.08Zm2.75 9.17v-2.75h2.5v2.75h-2.5ZM6.5 8.5a.75.75 0 0 1 .75-.75h.008a.75.75 0 0 1 .75.75v.008a.75.75 0 0 1-.75.75H7.25a.75.75 0 0 1-.75-.75V8.5Zm0 2.5a.75.75 0 0 1 .75-.75h.008a.75.75 0 0 1 .75.75v.008a.75.75 0 0 1-.75.75H7.25a.75.75 0 0 1-.75-.75V11Zm5.5-2.5a.75.75 0 0 1 .75-.75h.008a.75.75 0 0 1 .75.75v.008a.75.75 0 0 1-.75.75h-.008a.75.75 0 0 1-.75-.75V8.5Zm0 2.5a.75.75 0 0 1 .75-.75h.008a.75.75 0 0 1 .75.75v.008a.75.75 0 0 1-.75.75h-.008a.75.75 0 0 1-.75-.75V11Z" />
       </svg>
@@ -255,7 +258,7 @@ defmodule Firmowid.Ash.Invoicing.Digests.Email do
               <tr>
                 <td style="padding:0 10px 0 0; vertical-align:middle;">#{transaction_icon_html(suggestion)}</td>
                 <td style="vertical-align:middle; font-size:15px; line-height:1.4; color: #{@colors.dark}; white-space:nowrap;">
-                  #{suggestion.booking_date_label}
+                  #{escape_html(suggestion.booking_date_label)}
                 </td>
               </tr>
             </table>
@@ -373,4 +376,10 @@ defmodule Firmowid.Ash.Invoicing.Digests.Email do
   defp text_recommendation(_summary), do: nil
 
   defp text_amounts(_summary), do: nil
+
+  defp escape_html(value) do
+    value
+    |> Phoenix.HTML.html_escape()
+    |> Phoenix.HTML.safe_to_string()
+  end
 end

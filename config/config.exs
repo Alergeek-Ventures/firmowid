@@ -39,7 +39,7 @@ config :ash_oban, pro?: false
 config :elixir, :time_zone_database, Tz.TimeZoneDatabase
 
 config :esbuild,
-  version: "0.28.0",
+  version: "0.28.2",
   firmowid: [
     args:
       ~w(js/app.js --bundle --target=es2022 --outdir=../priv/static/assets --external:/fonts/* --external:/images/* --alias:@=.),

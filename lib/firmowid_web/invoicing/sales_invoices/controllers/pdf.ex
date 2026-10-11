@@ -81,6 +81,9 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Controllers.Pdf do
     )
   end
 
+  # sobelow_skip ["XSS.SendResp"]
+  # The body is a generated PDF binary, served as an application/pdf attachment,
+  # not user-provided HTML; invoice lookup remains scoped to the authenticated actor.
   def pdf(conn, %{"id" => id}) do
     include_internal_note = InvoiceDownloadParams.parse_include_internal_note(conn.params)
     opts = [scope: conn.assigns.ash_scope, load: @pdf_loads]

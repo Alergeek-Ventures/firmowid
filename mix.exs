@@ -16,6 +16,14 @@ defmodule Firmowid.MixProject do
       test_pattern: "*_test.exs",
       test_coverage: [tool: ExCoveralls],
       licenses: ["AGPL-3.0-or-later"],
+      hex: [
+        ignore_advisories: [
+          # The vault uses authenticated AES-GCM, never the affected AES-CTR cipher.
+          "CVE-2026-95105",
+          # Encrypted fields use Cloak.Ecto.Binary, not the affected PBKDF2 field.
+          "CVE-2026-94206"
+        ]
+      ],
 
       # TEMP: remove this once https://github.com/jeremyjh/dialyxir/issues/561 is resolved
       dialyzer: [
@@ -63,12 +71,12 @@ defmodule Firmowid.MixProject do
   defp deps do
     [
       {:ash_authentication_oauth2_server, "~> 0.3.1"},
-      {:ash_ai, "~> 1.0.3"},
+      {:ash_ai, "~> 1.1.1"},
       {:sourceror, "~> 1.8"},
-      {:ash, "~> 3.33.4"},
-      {:ash_postgres, "~> 2.13.1"},
+      {:ash, "~> 3.34.6"},
+      {:ash_postgres, "~> 2.14.1"},
       {:ash_phoenix, "~> 2.3"},
-      {:ash_oban, "~> 0.8.7"},
+      {:ash_oban, "~> 0.9.0"},
       {:ash_jido, "== 1.0.1"},
       {:ash_authentication, "~> 5.0.0-rc.14"},
       {:assent, "~> 0.3.0"},
@@ -130,15 +138,15 @@ defmodule Firmowid.MixProject do
       {:ecto_psql_extras, "~> 0.6"},
       {:any_ascii, "~> 0.3.3"},
       {:multipart, "~> 0.6.0"},
-      {:posthog, "~> 2.15.0"},
+      {:posthog, "~> 2.16.0"},
       {:ecto_dev_logger, "~> 0.14"},
-      {:nx, "~> 0.10"},
+      {:nx, "~> 0.13.1"},
       {:mdex, "~> 0.7"},
       {:sobelow, "~> 0.13", only: [:dev, :test], runtime: false},
       {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},
       {:excoveralls, "~> 0.18", only: :test},
       {:openai_ex, "~> 0.9.19"},
-      {:req_llm, "~> 1.24.0"},
+      {:req_llm, "~> 1.26.0"},
       {:live_debugger, "~> 1.0", only: [:dev], runtime: Mix.env() == :dev},
       {:oban_web, "~> 2.11"},
       {:igniter, "~> 0.5", only: [:dev]},
@@ -233,7 +241,8 @@ defmodule Firmowid.MixProject do
         "esbuild firmowid --minify --sourcemap=external",
         "phx.digest"
       ],
-      "assets.licenses": ["cmd npm run licenses:check --prefix assets"]
+      "assets.licenses": ["cmd npm run licenses:check --prefix assets"],
+      "assets.audit": ["cmd npm run audit:check --prefix assets"]
     ]
   end
 
