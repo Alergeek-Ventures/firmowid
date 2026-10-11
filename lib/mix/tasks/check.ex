@@ -35,7 +35,7 @@ defmodule Mix.Tasks.Check do
   ]
 
   @full_checks [
-    {"Translation extraction", ["gettext.extract", "--check-up-to-date"]},
+    {"Translation extraction", ["translations.extract.check"]},
     {"Dialyzer", ["dialyzer"]}
   ]
 

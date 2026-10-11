@@ -4,6 +4,8 @@ defmodule Firmowid.Translations do
   @type key :: {String.t(), String.t() | nil, String.t(), String.t() | nil}
 
   @domains ["default"]
+  @identity_example_limit 3
+  @identity_text_limit 120
   @polish_plural_forms "nplurals=3; plural=(n==1 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);"
 
   @doc "Returns the domains supported by the application catalogs."
@@ -87,9 +89,51 @@ defmodule Firmowid.Translations do
   end
 
   defp validate_identity(source, target, domain) do
-    if MapSet.new(Map.keys(source)) == MapSet.new(Map.keys(target)),
-      do: :ok,
-      else: {:error, "POT/PO identity mismatch for #{domain}"}
+    source_keys = MapSet.new(Map.keys(source))
+    target_keys = MapSet.new(Map.keys(target))
+
+    if source_keys == target_keys do
+      :ok
+    else
+      missing = MapSet.difference(source_keys, target_keys)
+      extra = MapSet.difference(target_keys, source_keys)
+
+      message =
+        [
+          "POT/PO identity mismatch for #{domain}",
+          identity_difference("missing from PO", missing),
+          identity_difference("extra in PO", extra),
+          "The downloaded PO may be stale; newly added or changed source identities require " <>
+            "Accent synchronization and Polish translation before exporting a matching catalog."
+        ]
+        |> Enum.join("\n")
+
+      {:error, message}
+    end
+  end
+
+  defp identity_difference(label, keys) do
+    examples =
+      keys
+      |> Enum.sort()
+      |> Enum.take(@identity_example_limit)
+      |> Enum.map(fn {domain, context, msgid, plural} ->
+        "  domain=#{identity_text(domain)} msgctxt=#{identity_text(context)} " <>
+          "msgid=#{identity_text(msgid)} msgid_plural=#{identity_text(plural)}"
+      end)
+
+    omitted = max(MapSet.size(keys) - @identity_example_limit, 0)
+    suffix = if omitted > 0, do: ["  ... #{omitted} more identities omitted"], else: []
+
+    Enum.join(["#{label}: #{MapSet.size(keys)}" | examples ++ suffix], "\n")
+  end
+
+  defp identity_text(nil), do: "nil"
+
+  defp identity_text(value) do
+    shortened = String.slice(value, 0, @identity_text_limit)
+    suffix = if String.length(value) > @identity_text_limit, do: "...", else: ""
+    inspect(shortened <> suffix)
   end
 
   defp validate_entry(original, translated, domain) do
