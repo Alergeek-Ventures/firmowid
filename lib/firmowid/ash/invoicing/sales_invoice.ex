@@ -75,18 +75,6 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
   postgres do
     table "sales_invoices"
     repo Firmowid.Repo
-
-    custom_statements do
-      statement :ash_managed_sales_invoice_lock do
-        up "DROP TRIGGER IF EXISTS locked_sales_invoice_trigger ON sales_invoices;"
-
-        down """
-        CREATE TRIGGER locked_sales_invoice_trigger
-        BEFORE UPDATE OR DELETE ON sales_invoices
-        FOR EACH ROW EXECUTE FUNCTION prevent_locked_sales_invoice_modification();
-        """
-      end
-    end
   end
 
   events do
