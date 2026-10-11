@@ -72,11 +72,10 @@ defmodule Firmowid.TranslationsTest do
   test "bounds examples and escapes catalog text without expanding placeholders" do
     long_msgid = "A %{number}\\n" <> String.duplicate("x", 200)
 
-    entries =
-      [long_msgid, "B", "C", "D", "E"]
-      |> Enum.map_join("\n", &~s(msgid "#{&1}"\nmsgstr ""\n))
+    entries = Enum.map_join([long_msgid, "B", "C", "D", "E"], "\n", &~s(msgid "#{&1}"\nmsgstr ""\n))
 
-    assert {:error, message} = Translations.validate_catalog(catalog(entries), catalog(""), "default")
+    assert {:error, message} =
+             Translations.validate_catalog(catalog(entries), catalog(""), "default")
     assert message =~ "missing from PO: 5"
     assert message =~ "extra in PO: 0"
     assert message =~ "... 2 more identities omitted"

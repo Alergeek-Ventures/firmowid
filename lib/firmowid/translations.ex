@@ -99,14 +99,16 @@ defmodule Firmowid.Translations do
       extra = MapSet.difference(target_keys, source_keys)
 
       message =
-        [
-          "POT/PO identity mismatch for #{domain}",
-          identity_difference("missing from PO", missing),
-          identity_difference("extra in PO", extra),
-          "The downloaded PO may be stale; newly added or changed source identities require " <>
-            "Accent synchronization and Polish translation before exporting a matching catalog."
-        ]
-        |> Enum.join("\n")
+        Enum.join(
+          [
+            "POT/PO identity mismatch for #{domain}",
+            identity_difference("missing from PO", missing),
+            identity_difference("extra in PO", extra),
+            "The downloaded PO may be stale; newly added or changed source identities require " <>
+              "Accent synchronization and Polish translation before exporting a matching catalog."
+          ],
+          "\n"
+        )
 
       {:error, message}
     end

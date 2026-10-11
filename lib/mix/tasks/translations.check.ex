@@ -29,7 +29,9 @@ defmodule Mix.Tasks.Translations.Check do
     po = Expo.PO.parse_file!(po_path)
 
     case Translations.validate_catalog(pot, po, domain) do
-      :ok -> :ok
+      :ok ->
+        :ok
+
       {:error, message} ->
         Mix.raise("""
         #{message}
