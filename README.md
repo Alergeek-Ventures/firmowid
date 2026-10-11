@@ -37,34 +37,8 @@ tę kontrolę, ale zapamiętuje jej udany wynik dla dokładnego drzewa Git i wer
 OTP/Elixir. Drzewo obejmuje zarówno treść, jak i ścieżki plików, więc zmiana
 źródeł, numerów linii, nazw plików, POT, konfiguracji lub zależności wymusza
 ponowną kontrolę. Cache nie przechowuje ani nie nadpisuje POT. Pozostałe kontrole
-działają normalnie.
-
-Lokalny pełny `mix check` i `mix translations.check --check-extraction` korzystają
-z `mix translations.extract.check`. Polecenie zapamiętuje wyłącznie sukces
-kontroli w ignorowanym katalogu bieżącego środowiska `_build`, bez zapisywania
-katalogów POT/PO. Klucz obejmuje faktyczną treść i ścieżki plików, także zmiany
-niezacommitowane, nowe pliki oraz ignorowany pobrany PO; uwzględnia konfigurację,
-toolchain i środowisko. Nie korzysta wyłącznie z HEAD ani czasu modyfikacji.
-Nieudana kontrola lub zmiana plików w jej trakcie nie tworzy wpisu cache.
-Walidacja polskich tłumaczeń zawsze działa, niezależnie od cache ekstrakcji.
-
-`mix translations.extract.check --force` wymusza ponowną kontrolę. Natywne
-`mix gettext.extract --check-up-to-date` nadal zawsze wykonuje ekstrakcję,
-a `mix gettext.extract` pozostaje poleceniem aktualizującym źródłowy POT.
-`mix check --quick` pomija ekstrakcję i Dialyzera w lokalnym cyklu pracy.
-
-Przy błędzie `POT/PO identity mismatch` sprawdź podaną wersję PO i przykłady
-brakujących/nadmiarowych identyfikatorów. PO jest pobierany i ignorowany przez
-Git, więc zmiana brancha nie odświeża go automatycznie. Pobierz właściwy przypięty
-katalog; nowe teksty wymagają wcześniejszej synchronizacji i tłumaczenia w Accent.
-Kontrole nie pobierają tłumaczeń automatycznie ani nie ukrywają brakujących wpisów.
-
-Cache PLT ma dokładny klucz i fallback dla tego samego OS, architektury,
-środowiska oraz wersji OTP/Elixir. Dialyxir sam sprawdza lockfile i listę aplikacji,
-aktualizując PLT w razie potrzeby; zwykła analiza kodu zawsze działa. Nie wymuszamy
-kosztownego `--force-check` dla niezmienionych, przypiętych zależności. Przy dodaniu
-lokalnych/path dependencies trzeba ponownie rozważyć wymuszoną walidację, ponieważ
-natywny skrót Dialyxira nie porównuje ich zmienionej treści BEAM.
+działają normalnie. Lokalny `mix check` również zapamiętuje udaną kontrolę;
+`mix translations.extract.check --force` wymusza jej ponowne wykonanie.
 
 ### CI: przypięte snapshoty tłumaczeń
 
