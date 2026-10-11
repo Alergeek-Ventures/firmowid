@@ -140,7 +140,35 @@ The test alias now omits only `--force`: Ecto 3.14.2 already skips confirmation
 when `start_permanent` is false, as it is in test. `--force-drop` remains, keeping
 the database reset and forced connection termination. Compilation still runs
 normally when source is stale, and CI's strict setup compile remains unchanged.
-Runtime confirmation and a post-fix paired measurement are pending CI.
+CI confirmed the correction: ordinary
+[Build/Test 38099063734](https://github.com/Alergeek-Ventures/firmowid/actions/runs/38099063734)
+and all four post-fix samples passed without application recompilation in the
+test command; each passed 686 tests/doctests with 7 external cases excluded.
+
+#### Post-fix coverage measurement
+
+[Run 38099062933](https://github.com/Alergeek-Ventures/firmowid/actions/runs/38099062933)
+used code `d7f7c2d4253affe75100bfe0edc3b93b5f4ade6a`, the same catalog,
+toolchain, seed and image as the first ABBA run, but a different runner.
+
+| Sample | Coverage | Wall seconds | ExUnit seconds |
+|---|---|---:|---:|
+| 1 | yes | 73.71 | 41.3 |
+| 2 | no | 46.11 | 41.2 |
+| 3 | no | 45.78 | 40.2 |
+| 4 | yes | 73.80 | 41.3 |
+
+Mean command time: **73.75s with coverage vs 45.95s without**; difference
+**+27.81s (+60.5%)**, with adjacent-pair differences +27.60s and +28.02s.
+Both coverage samples produced LCOV. This replaces the pre-fix run as the
+estimate of practical coverage overhead without forced recompilation. It still
+includes native command startup/reset/loading and LCOV output, not only
+instrumentation. Coverage remains enabled.
+
+Compared with the earlier runner, command means fell by about 39s with coverage
+and 45s without. These are cross-run observations, not controlled same-runner
+estimates of the alias correction's savings. The disappearance of the compile
+lines in both ordinary tests and every sample confirms the intended behavior.
 
 Primary sources:
 [AshPostgres Drop](https://github.com/ash-project/ash_postgres/blob/v2.13.1/lib/mix/tasks/ash_postgres.drop.ex),
@@ -188,6 +216,28 @@ selected the exact main SHA. First-attempt artifact downloads returned 404 after
 reruns, so baseline/warm PO byte equality could not be independently verified.
 Build/Test's coverage command still recompiled 545 files in both attempts;
 individual runner timings varied and are not the controlled coverage A/B result.
+
+#### Compatible project PLT fallback
+
+The test-alias correction also exposed over-invalidation of project PLTs:
+the v2 exact key **and its only restore prefix** included the digest of all
+`mix.exs`/config inputs. Even the removal of a test flag excluded still-existing
+compatible main/PR PLTs despite identical dependencies and toolchain.
+[Quality 38099063678](https://github.com/Alergeek-Ventures/firmowid/actions/runs/38099063678)
+restored the core PLT, missed the project PLT, then added 9,119 modules in
+10m57.12s before normal analysis passed. This was not cache eviction or a new
+OTP/Elixir version.
+
+The corrected workflow retains the strict exact-key inputs in a v3 namespace,
+but allows partial restore with unchanged OS/architecture/Mix environment/exact
+OTP and Elixir versions. A final v2 prefix imports existing compatible caches
+instead of discarding them. The namespace transition ensures the first v3 run
+exercises partial restore and validation rather than hitting an old exact entry.
+On any non-exact hit/miss, `mix dialyzer --plt --force-check` checks retained
+modules, removes obsolete ones and adds missing ones before saving under the
+new exact key. The ordinary Dialyzer analysis remains mandatory; neither
+`--no-check` nor `--no-plt` is used. The initial v3 migration's runtime results
+are pending CI, so no fallback timing saving is claimed yet.
 
 ### Test-value audit and GoCardless
 
