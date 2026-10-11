@@ -1,0 +1,9 @@
+# This literal is a password-reset test fixture, not a deployed credential.
+# Match both its value and file so other passwords remain subject to scanning.
+filter = '''
+attributes["path"] == "lib/firmowid/ash/core/user/authentication_test.exs" &&
+finding["secret"] == "a different password!!"
+'''
+
+[extend]
+useDefault = true

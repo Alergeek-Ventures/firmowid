@@ -8,6 +8,10 @@ defmodule Firmowid.Ash.SystemActor do
 
   ## Roles
 
+  - `:authentication_identity_reader` — reads only the user identified by a
+    resolved provider identity, including archived users, to prevent relinking
+    a disabled account during authentication. Bound to `user_id`.
+
   - `:organization_cleanup` — tenant-bound dependent deletion and user detachment.
     Created only after the original actor passes the organization's destroy
     authorization; `org_id` identifies the only organization it may clean up.
@@ -81,6 +85,7 @@ defmodule Firmowid.Ash.SystemActor do
 
   @type role ::
           :organization_cleanup
+          | :authentication_identity_reader
           | :account_cleanup
           | :cost_invoice_processor
           | :sales_invoice_processor

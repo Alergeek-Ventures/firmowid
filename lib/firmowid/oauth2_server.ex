@@ -2,6 +2,16 @@ defmodule Firmowid.Oauth2Server do
   @moduledoc """
   OAuth 2.1 authorization-server configuration.
 
+  Archived users are rejected by the User authentication preparation and by
+  OAuth grant actions. User archival revokes refresh tokens and removes codes
+  and consent in the archive transaction.
+
+  The installed OAuth library uses stateless access JWTs: restoring an account
+  can re-enable an unexpired pre-archive access token. Its multi-action exchange
+  also has no account-generation check across an archive/restore cycle. Permanent
+  OAuth revocation across restoration requires support at the exchange and JWT
+  verification boundaries; the current guards guarantee denial while archived.
+
   See `AshAuthentication.Oauth2Server` for all options.
   """
 

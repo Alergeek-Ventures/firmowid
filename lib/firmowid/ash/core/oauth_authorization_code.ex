@@ -8,6 +8,7 @@ defmodule Firmowid.Ash.Core.OauthAuthorizationCode do
     authorizers: [Ash.Policy.Authorizer]
 
   alias Firmowid.Ash.Checks.AccountCleanup
+  alias Firmowid.Ash.Core.Changes.RequireActiveOauthUser
   alias Firmowid.Ash.Resource
 
   require Resource
@@ -50,11 +51,15 @@ defmodule Firmowid.Ash.Core.OauthAuthorizationCode do
         :resource_uri,
         :expires_at
       ]
+
+      change RequireActiveOauthUser
     end
 
     update :consume do
       description "Mark an authorization code as used after a successful token exchange."
       accept []
+
+      change filter(expr(exists(user, is_nil(archived_at))))
 
       validate absent(:consumed_at) do
         message "code already used"

@@ -11,6 +11,7 @@ defmodule FirmowidWeb.Auth.Controllers.AuthControllerTest do
   alias AshAuthentication.Jwt
   alias AshAuthentication.Plug.Helpers
   alias AshAuthentication.TokenResource
+  alias Firmowid.Ash.Core
   alias Firmowid.Ash.Core.Token
   alias Phoenix.Socket.Broadcast
 
@@ -63,5 +64,41 @@ defmodule FirmowidWeb.Auth.Controllers.AuthControllerTest do
 
     {:ok, %{"jti" => jti}} = Jwt.peek(get_session(conn, :user_token))
     assert get_session(conn, :live_socket_id) == "users_sessions:#{jti}"
+  end
+
+  test "archiving disconnects every browser session and restoring does not revive them", %{
+    conn: conn
+  } do
+    admin = admin_fixture()
+    user = user_in_org_fixture(admin.organization_id)
+    other_user = user_in_org_fixture(admin.organization_id)
+    {:ok, other_token, _} = Jwt.token_for_user(other_user)
+
+    connections =
+      for _ <- 1..2 do
+        session = conn |> init_test_session(%{}) |> Helpers.store_in_session(user)
+        token = get_session(session, :user_token)
+        {:ok, %{"jti" => jti}} = Jwt.peek(token)
+        topic = "users_sessions:#{jti}"
+        Phoenix.PubSub.subscribe(Firmowid.PubSub, topic)
+        {session, token, topic}
+      end
+
+    archived = Core.archive_user!(user, actor: admin)
+    assert archived.archived_at
+
+    for {session, token, topic} <- connections do
+      assert TokenResource.token_revoked?(Token, token)
+      assert_receive %Broadcast{topic: ^topic, event: "disconnect"}
+      assert session |> get("/czasosledz") |> redirected_to() == "/zaloguj"
+    end
+
+    refute TokenResource.token_revoked?(Token, other_token)
+    Core.unarchive_user!(archived, actor: admin)
+
+    for {session, token, _topic} <- connections do
+      assert TokenResource.token_revoked?(Token, token)
+      assert session |> get("/czasosledz") |> redirected_to() == "/zaloguj"
+    end
   end
 end

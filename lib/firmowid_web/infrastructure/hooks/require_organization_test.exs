@@ -8,7 +8,7 @@ defmodule FirmowidWeb.Infrastructure.Hooks.RequireOrganizationTest do
   alias Firmowid.Ash.Core
   alias Firmowid.Ash.Scope
 
-  test "archived user is redirected from protected live routes", %{conn: conn} do
+  test "archived user cannot authenticate on protected live routes", %{conn: conn} do
     admin = admin_fixture()
     employee = user_in_org_fixture(admin.organization_id, %{role: :employee})
 
@@ -17,10 +17,10 @@ defmodule FirmowidWeb.Infrastructure.Hooks.RequireOrganizationTest do
     conn = log_in_user(conn, employee)
 
     assert {:error, {:redirect, %{to: to}}} = live(conn, ~p"/czasosledz")
-    assert to == ~p"/konto-wylaczone"
+    assert to == ~p"/zaloguj"
   end
 
-  test "archived user is redirected from protected controller routes", %{conn: conn} do
+  test "archived user cannot authenticate on protected controller routes", %{conn: conn} do
     admin = admin_fixture()
     employee = user_in_org_fixture(admin.organization_id, %{role: :employee})
 
@@ -31,7 +31,7 @@ defmodule FirmowidWeb.Infrastructure.Hooks.RequireOrganizationTest do
       |> log_in_user(employee)
       |> get(~p"/czasosledz/projekty/csv")
 
-    assert redirected_to(conn) == ~p"/konto-wylaczone"
+    assert redirected_to(conn) == ~p"/zaloguj"
   end
 
   test "organization owner with expired subscription is redirected from protected live routes", %{

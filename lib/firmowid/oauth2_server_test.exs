@@ -1,0 +1,216 @@
+defmodule Firmowid.Oauth2ServerTest do
+  @moduledoc "Checks OAuth issuance, exchange, and HTTP bearer authentication across user archival."
+
+  use FirmowidWeb.ConnCase, async: true
+
+  import Firmowid.AccountsFixtures
+
+  alias Ash.Error.Invalid
+  alias AshAuthentication.Oauth2Server.Authorize
+  alias AshAuthentication.Oauth2Server.PKCE
+  alias AshAuthentication.Oauth2Server.Register
+  alias AshAuthentication.Oauth2Server.Token
+  alias Firmowid.Ash.Core
+  alias Firmowid.Ash.Core.OauthAuthorizationCode
+  alias Firmowid.Ash.Core.OauthConsent
+  alias Firmowid.Ash.Core.OauthRefreshToken
+  alias Firmowid.Oauth2Server
+
+  @auth_context %{private: %{ash_authentication?: true}}
+  @redirect_uri "https://example.com/oauth/callback"
+
+  setup do
+    admin = admin_fixture()
+    user = user_in_org_fixture(admin.organization_id)
+    verifier = Base.url_encode64(:crypto.strong_rand_bytes(32), padding: false)
+
+    {:ok, client, _response} =
+      Register.register(Oauth2Server, %{
+        "client_name" => "Archived user regression #{System.unique_integer([:positive])}",
+        "redirect_uris" => [@redirect_uri],
+        "grant_types" => ["authorization_code", "refresh_token"],
+        "response_types" => ["code"],
+        "token_endpoint_auth_method" => "none"
+      })
+
+    {:ok, validated} =
+      Authorize.validate_request(Oauth2Server, %{
+        "client_id" => client.id,
+        "response_type" => "code",
+        "redirect_uri" => @redirect_uri,
+        "code_challenge" => PKCE.challenge(verifier),
+        "code_challenge_method" => "S256",
+        "scope" => "mcp",
+        "state" => Ash.UUIDv7.generate()
+      })
+
+    %{admin: admin, user: user, client: client, verifier: verifier, validated: validated}
+  end
+
+  test "active users can consent, exchange, authenticate over HTTP, and rotate", context do
+    %{user: user, client: client, validated: validated} = context
+    assert user.system_role == :user
+
+    consent = Authorize.grant_consent!(Oauth2Server, user, client, "mcp")
+    assert consent.user_id == user.id
+    assert Authorize.consented?(Oauth2Server, user, client, "mcp")
+
+    code = Authorize.issue_code!(Oauth2Server, user, validated)
+    assert {:ok, tokens} = exchange_code(code, context)
+    assert {:error, :reuse} = exchange_code(code, context)
+    assert_authenticated(tokens.access_token, user)
+
+    assert {:ok, rotated} = exchange_refresh(tokens.refresh_token, client)
+    refute rotated.refresh_token == tokens.refresh_token
+    assert_authenticated(rotated.access_token, user)
+    assert {:error, :reuse} = exchange_refresh(tokens.refresh_token, client)
+    assert {:error, :revoked} = exchange_refresh(rotated.refresh_token, client)
+  end
+
+  test "seeded archival rejects issuance and consent even with a stale active user", context do
+    %{user: user, client: client, validated: validated} = context
+    consent = Authorize.grant_consent!(Oauth2Server, user, client, "mcp")
+    Ash.Seed.update!(user, %{archived_at: Date.utc_today()})
+
+    assert_raise Invalid, fn ->
+      Authorize.issue_code!(Oauth2Server, user, validated)
+    end
+
+    assert_raise Invalid, fn ->
+      Authorize.grant_consent!(Oauth2Server, user, client, "mcp")
+    end
+
+    assert {:error, _} =
+             OauthRefreshToken.issue(refresh_attributes(user, client), context: @auth_context)
+
+    assert [] = OauthAuthorizationCode.list!(%{user_id: user.id}, context: @auth_context)
+    assert [existing_consent] = OauthConsent.list!(%{user_id: user.id}, context: @auth_context)
+    assert existing_consent.granted_at == consent.granted_at
+    assert [] = OauthRefreshToken.list!(%{user_id: user.id}, context: @auth_context)
+  end
+
+  test "seeded archival denies code consumption and atomic refresh rotation without cleanup",
+       context do
+    %{user: user, client: client, validated: validated} = context
+    code = Authorize.issue_code!(Oauth2Server, user, validated)
+    exchanged_code = Authorize.issue_code!(Oauth2Server, user, validated)
+    assert {:ok, tokens} = exchange_code(exchanged_code, context)
+    Ash.Seed.update!(user, %{archived_at: Date.utc_today()})
+
+    assert {:error, _} = OauthAuthorizationCode.consume(code, context: @auth_context)
+    assert {:error, :invalid_code} = exchange_code(code, context)
+    assert {:error, :invalid_refresh} = exchange_refresh(tokens.refresh_token, client)
+
+    assert [%{consumed_at: nil}] =
+             OauthAuthorizationCode.list!(%{user_id: user.id},
+               query: [filter: [id: code.id]],
+               context: @auth_context
+             )
+
+    assert [refresh] = OauthRefreshToken.list!(%{user_id: user.id}, context: @auth_context)
+    assert is_nil(refresh.rotated_at)
+    assert is_nil(refresh.rotated_to_id)
+    assert is_nil(refresh.revoked_at)
+
+    assert {:error, _} =
+             OauthRefreshToken.rotate(refresh, %{rotated_to_id: Ash.UUIDv7.generate()}, context: @auth_context)
+
+    assert_unauthenticated(tokens.access_token)
+  end
+
+  test "real archive invalidates outstanding grants without affecting another user", context do
+    %{admin: admin, user: user, client: client, validated: validated} = context
+    other = user_in_org_fixture(admin.organization_id)
+    Authorize.grant_consent!(Oauth2Server, user, client, "mcp")
+    code = Authorize.issue_code!(Oauth2Server, user, validated)
+    exchanged_code = Authorize.issue_code!(Oauth2Server, user, validated)
+    assert {:ok, tokens} = exchange_code(exchanged_code, context)
+    other_code = Authorize.issue_code!(Oauth2Server, other, validated)
+    assert {:ok, other_tokens} = exchange_code(other_code, context)
+    assert_authenticated(tokens.access_token, user)
+
+    archived = Core.archive_user!(user, actor: admin, tenant: admin.organization_id)
+    assert archived.archived_at
+    assert Core.get_user!(user.id, actor: admin).archived_at == archived.archived_at
+
+    assert {:error, :invalid_code} = exchange_code(code, context)
+    assert {:error, :revoked} = exchange_refresh(tokens.refresh_token, client)
+    assert_unauthenticated(tokens.access_token)
+    assert_authenticated(other_tokens.access_token, other)
+    assert {:ok, _tokens} = exchange_refresh(other_tokens.refresh_token, client)
+    refute Authorize.consented?(Oauth2Server, user, client, "mcp")
+
+    Core.unarchive_user!(archived, actor: admin, tenant: admin.organization_id)
+    assert {:error, :invalid_code} = exchange_code(code, context)
+    assert {:error, :revoked} = exchange_refresh(tokens.refresh_token, client)
+  end
+
+  defp exchange_code(code, context) do
+    Token.exchange_authorization_code(Oauth2Server, %{
+      "code" => code.id,
+      "client_id" => context.client.id,
+      "redirect_uri" => @redirect_uri,
+      "code_verifier" => context.verifier
+    })
+  end
+
+  defp exchange_refresh(raw, client) do
+    Token.exchange_refresh_token(Oauth2Server, %{
+      "refresh_token" => raw,
+      "client_id" => client.id
+    })
+  end
+
+  defp refresh_attributes(user, client) do
+    id = Ash.UUIDv7.generate()
+
+    %{
+      id: id,
+      chain_id: id,
+      token_hash: Base.url_encode64(:crypto.strong_rand_bytes(32), padding: false),
+      client_id: client.id,
+      user_id: user.id,
+      scope: "mcp",
+      resource_uri: Oauth2Server.resource_url(),
+      expires_at: DateTime.shift(DateTime.utc_now(), minute: 5)
+    }
+  end
+
+  defp assert_authenticated(token, user) do
+    conn = mcp_request(token)
+    assert conn.status == 200
+    assert %{"result" => %{"protocolVersion" => "2025-03-26"}} = json_response(conn, 200)
+    assert Ash.PlugHelpers.get_actor(conn).id == user.id
+    assert Ash.PlugHelpers.get_tenant(conn) == user.organization_id
+    assert conn.assigns.oauth_claims["scope"] == "mcp"
+  end
+
+  defp assert_unauthenticated(token) do
+    conn = mcp_request(token)
+    assert conn.status == 401
+    assert conn.halted
+    assert [challenge] = get_resp_header(conn, "www-authenticate")
+    assert challenge =~ "invalid_token"
+    assert is_nil(Ash.PlugHelpers.get_actor(conn))
+  end
+
+  defp mcp_request(token) do
+    build_conn()
+    |> put_req_header("authorization", "Bearer #{token}")
+    |> put_req_header("accept", "application/json, text/event-stream")
+    |> put_req_header("content-type", "application/json")
+    |> post(
+      "/mcp",
+      Jason.encode!(%{
+        "jsonrpc" => "2.0",
+        "id" => 1,
+        "method" => "initialize",
+        "params" => %{
+          "protocolVersion" => "2025-03-26",
+          "capabilities" => %{},
+          "clientInfo" => %{"name" => "archive-regression", "version" => "1"}
+        }
+      })
+    )
+  end
+end
