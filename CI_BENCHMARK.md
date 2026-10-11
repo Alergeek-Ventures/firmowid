@@ -91,5 +91,83 @@ failure aborts the sequence; evidence upload uses `always()`. A runner terminati
 can prevent complete evidence/summary, as with any hosted job.
 
 Local verification is limited to Bash/YAML/static checks. Runtime correctness and
-timings require the approved CI run; no local tests, compilation or services were
-run for this implementation.
+timings are verified on CI; no local tests, compilation or services were run for
+this implementation.
+
+## Recorded results
+
+### Coverage A/B
+
+[Run 38096764202](https://github.com/Alergeek-Ventures/firmowid/actions/runs/38096764202)
+measured code `aa7f73712343b36b719172f85b456a1d422263ff`, catalog
+`90be1aa8041c4da9b798d6fa2b640b98f92704a6`, Elixir 1.20.4 / OTP 29.0.6,
+seed 424242. All four samples passed 686 tests/doctests; 7 external cases
+were excluded in each sample. Both coverage samples produced LCOV.
+
+| Sample | Coverage | Wall seconds | ExUnit seconds |
+|---|---|---:|---:|
+| 1 | yes | 113.87 | 37.0 |
+| 2 | no | 93.07 | 42.8 |
+| 3 | no | 88.16 | 37.2 |
+| 4 | yes | 111.73 | 37.8 |
+
+Mean command time: **112.80s with coverage vs 90.61s without**; difference
+**+22.19s (+24.5%)**. Adjacent-pair differences were +20.80s and +23.57s.
+This is one paired run, not a statistical confidence interval. Coverage remains
+enabled in normal CI: this overhead does not justify removing its regression
+signal.
+
+Every sample recompiled 545 application files inside the native command despite
+the Test task's `--no-compile`. Consequently the wall times include recompilation
+and the DB-reset alias; they are **not pure coverage-instrumentation timings**.
+ExUnit times alone do not demonstrate a stable coverage slowdown. The observed
+recompilation remains a separate optimization candidate, not a reason to change
+coverage policy or claim that the whole measured difference is instrumentation.
+
+### Cache first-main-scope / warm
+
+Both attempts of each workflow used the identical main commit
+`90be1aa8041c4da9b798d6fa2b640b98f92704a6`; no caches were deleted. End-to-end
+seconds include runner/job preparation and reporting, not the sum of parallel
+jobs:
+
+| Workflow | First main-scope attempt | Warm attempt | Setup/build first → warm |
+|---|---:|---:|---:|
+| [Quality](https://github.com/Alergeek-Ventures/firmowid/actions/runs/38090823307/attempts/2) | 975 | 161 | 257 → 17 |
+| [Build/Test](https://github.com/Alergeek-Ventures/firmowid/actions/runs/38090823330/attempts/2) | 451 | 288 | 243 → 20 |
+| [Docker](https://github.com/Alergeek-Ventures/firmowid/actions/runs/38090823328/attempts/2) | 554 | 73 | 496 → 6 |
+
+All attempts succeeded. Warm common setup compiled zero dependency/application
+files in Quality and Build/Test. Gettext reused its exact-tree success marker
+(48s → less than 1s); both PLT caches hit, eliminating 516s of PLT creation.
+Dialyzer still analyzed the application (53s → 51s). Docker reused all executable
+build layers; its first attempt was partially cached, not an empty-cache run.
+
+The initial main misses were expected cache-scope isolation: matching PR merge-ref
+caches cannot be restored by main. All warm PO files were byte-identical and
+selected the exact main SHA. First-attempt artifact downloads returned 404 after
+reruns, so baseline/warm PO byte equality could not be independently verified.
+Build/Test's coverage command still recompiled 545 files in both attempts;
+individual runner timings varied and are not the controlled coverage A/B result.
+
+### Test-value audit and GoCardless
+
+The three pre-change CI rankings consistently put the mocked institution HTTP
+429 test at 6.5–6.8s. Req's default backoff sleeps accounted for the delay;
+transactions retained their explicit single retry and approximately 0.9–1.0s
+delays on 429/500/503. Test-only request options now set `retry_delay: 0`, without
+altering production retry configuration or removing any error case. Existing
+429 tests additionally assert four institution requests and two transaction
+requests.
+
+In [PR #50's ordinary test run](https://github.com/Alergeek-Ventures/firmowid/actions/runs/38096763440),
+the two 429 tests passed in 9.2ms and 5.1ms respectively; 686 tests/doctests
+passed overall. ABBA samples also retained those request-count assertions.
+These timings demonstrate removal of mocked waiting, not an equivalent reduction
+in total suite wall time, where async work can overlap.
+
+Keep the valuable LiveView upload/deduplication paths, counterparty lifecycle,
+OAuth/tenant/read-list regressions and KSeF XSD validation. No test was removed
+solely because it appeared in the slowest-20 ranking. Other variable upload/DB
+times and two 50ms PubSub sleeps are optional future investigations, not measured
+benefits or blockers for the completed benchmark work.
