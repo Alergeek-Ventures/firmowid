@@ -41,7 +41,6 @@ const McpContext = {
       this.contextRequest?.abort();
       const controller = new AbortController();
       this.contextRequest = controller;
-      mountData.arguments = detail.arguments;
       try {
         await connection;
         if (controller.signal.aborted) return;
@@ -112,7 +111,6 @@ function mount(result) {
   root.innerHTML = data.html;
   if (!liveSocket) {
     liveSocket = new LiveSocket(data.socket_url, Socket, {
-      params: () => ({ arguments: mountData.arguments }),
       hooks: { ...UIHooks, McpContext, McpKsefDownload, LiveToast: createLiveToastHook() },
     });
   }

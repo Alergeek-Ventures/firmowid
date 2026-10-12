@@ -214,7 +214,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Summary do
               style={"width: #{template_width * scale}px; height: #{template_height * scale}px;"}
             >
               <div class="origin-top-left" style={"transform: scale(#{scale})"}>
-                <FirmowidWeb.Invoicing.SalesInvoices.Components.Pdf.sales_invoice
+                <FirmowidUI.Invoicing.Components.SalesInvoice.sales_invoice
                   sales_invoice={previous_invoice}
                   currency_rate={@currency_rate}
                   show_vat={@current_org.is_vat_payer}
@@ -228,7 +228,10 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Summary do
 
         <div class="relative">
           <%!-- Success state - behind invoice (z-0) --%>
-          <div class="absolute inset-0 z-0 flex items-center justify-center">
+          <div
+            :if={SubmissionInfo.submitted?(@submission_info)}
+            class="absolute inset-0 z-0 flex items-center justify-center"
+          >
             <div class="text-center">
               <Lucideicons.circle_check class="mx-auto size-24 text-greenText" />
               <p class="mt-4 text-xl font-medium text-grey-700">Wysłano do KSeF!</p>
@@ -242,7 +245,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Summary do
             class="relative z-10"
           >
             <div class="w-full max-w-[650px] overflow-hidden rounded-lg border border-grey-200 bg-white shadow-sm">
-              <FirmowidWeb.Invoicing.SalesInvoices.Components.Pdf.sales_invoice
+              <FirmowidUI.Invoicing.Components.SalesInvoice.sales_invoice
                 sales_invoice={@invoice}
                 currency_rate={@currency_rate}
                 show_vat={@current_org.is_vat_payer}

@@ -6,7 +6,7 @@ defmodule Firmowid.Ash.Invoicing.Changes.CastBasedOnInvoiceType do
   and `is_reverse_charge` to `false`.
 
   When `invoice_type` changes to `:foreign`, forces `is_cash_account` to `false`
-  (only if the resource has that attribute — WizardDraft does not).
+  (only if the resource has that attribute — WizardState does not).
 
   Only acts on actual `invoice_type` changes, not on every update.
   """

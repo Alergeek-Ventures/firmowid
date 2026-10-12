@@ -6,6 +6,7 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoiceEmailDeliveryFailureFlowTest do
   import Firmowid.Test.Support.SalesInvoiceEmailTestHelpers
 
   alias Firmowid.Ash.Invoicing
+  alias Firmowid.Ash.Invoicing.SalesInvoice
   alias Firmowid.Ash.Invoicing.SalesInvoice.Dispatchers.Communication
   alias Firmowid.Ash.Scope
   alias Firmowid.Ash.SystemActor
@@ -118,7 +119,7 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoiceEmailDeliveryFailureFlowTest do
 
   defp sales_invoice_fixture!(user, attrs) do
     attrs = Map.merge(base_invoice_attrs(), attrs)
-    Invoicing.create_sales_invoice!(attrs, scope: scope_for(user))
+    Ash.create!(SalesInvoice, attrs, action: :persist_invoice, scope: scope_for(user))
   end
 
   defp confirm_invoice_in_ksef!(invoice, scope) do

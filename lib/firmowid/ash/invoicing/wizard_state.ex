@@ -1,35 +1,31 @@
 # credo:disable-for-this-file ExDNA.Credo
 # Wizard step actions intentionally repeat field lists/validations per step; extracting this
-# would require broader action DSL redesign across WizardDraft and related changes/validations.
-defmodule Firmowid.Ash.Invoicing.WizardDraft do
+# would require broader action DSL redesign across WizardState and related changes/validations.
+defmodule Firmowid.Ash.Invoicing.WizardState do
   @moduledoc """
-  Ash resource backed by ETS for the sales invoice creator wizard.
-
-  Replaces `CreatorDraftStore` (Cachex). Typed fields, proper validations
-  per wizard step, ephemeral (dies on restart — no persistence needed).
+  Ephemeral browser invoice wizard state backed by ETS, distinct from saved invoice drafts.
 
   ## Actions
 
-    * `:create` — start a new wizard draft
+    * `:create` — start a new browser wizard
     * `:update_counterparty` — step 1: counterparty data, advances to :items
     * `:update_items` — step 2: line items, advances to :payment
     * `:update_payment` — step 3: payment data, advances to :preview
     * `:populate_from_invoice` — populate from an existing invoice (copy flow)
     * `:read` — default read
-    * `:destroy` — delete a draft (cascades items)
+    * `:destroy` — discard wizard state (cascades items)
 
   ## ETS scoping
 
   `private? false` means the ETS table is managed by `Ash.DataLayer.Ets.TableManager`,
-  a GenServer that owns a named, public table shared across all processes. Drafts
+  a GenServer that owns a named, public table shared across all processes. States
   persist for the BEAM VM lifecycle. Multitenancy via `organization_id` provides
   org isolation, same as Postgres resources.
 
   ## Items relationship
 
-  Items are stored as standalone ETS resources in `WizardDraft.Item`. This enables
-  Ash aggregates (sum net_value, vat_value, gross_value) and expression calculations
-  on items, eliminating the need for the `draft_to_invoice` struct-building workaround.
+  Items are stored as standalone ETS resources in `WizardState.Item`. This enables
+  Ash aggregates (sum net_value, vat_value, gross_value) and item calculations.
   """
   use Ash.Resource,
     domain: Firmowid.Ash.Invoicing,
@@ -37,11 +33,13 @@ defmodule Firmowid.Ash.Invoicing.WizardDraft do
     authorizers: [Ash.Policy.Authorizer]
 
   alias AshMoney.Types.Money
+  alias Firmowid.Ash.Invoicing.Actions.IssueWizardState
   alias Firmowid.Ash.Invoicing.Changes
   alias Firmowid.Ash.Invoicing.CountryCodes
+  alias Firmowid.Ash.Invoicing.SalesInvoice
   alias Firmowid.Ash.Invoicing.Validations
   alias Firmowid.Ash.Invoicing.VatExemption
-  alias Firmowid.Ash.Invoicing.WizardDraft
+  alias Firmowid.Ash.Invoicing.WizardState
 
   @eu_countries CountryCodes.eu_countries_with_aliases()
 
@@ -57,10 +55,36 @@ defmodule Firmowid.Ash.Invoicing.WizardDraft do
     define :update_notes, action: :update_notes
     define :populate_from_invoice, action: :populate_from_invoice
     define :destroy, action: :destroy
+    define :issue, args: [:state_id]
+    define :preview, args: [:state_id]
   end
 
   actions do
     defaults [:read]
+
+    action :preview, :struct do
+      description "Preview the invoice collected in a browser wizard without persisting it."
+      constraints instance_of: SalesInvoice
+
+      argument :state_id, :uuid_v7, allow_nil?: false
+      argument :invoice_number, :string
+      argument :should_send_emails, :boolean, default: false
+
+      run {IssueWizardState, preview?: true}
+    end
+
+    action :issue, :struct do
+      description "Save or issue the invoice collected in a browser wizard, then discard its ephemeral state."
+      constraints instance_of: SalesInvoice
+
+      argument :state_id, :uuid_v7, allow_nil?: false
+      argument :invoice_number, :string
+      argument :draft, :boolean, default: false
+      argument :submit_to_ksef, :boolean, default: false
+      argument :should_send_emails, :boolean, default: false
+
+      run IssueWizardState
+    end
 
     destroy :destroy do
       description "Delete a wizard draft and its items."
@@ -219,9 +243,9 @@ defmodule Firmowid.Ash.Invoicing.WizardDraft do
       forbid_if always()
     end
 
-    # :accountant and above: all actions
-    policy {Firmowid.Ash.Checks.AtLeastRole, role: :accountant} do
-      authorize_if always()
+    policy always() do
+      description "Accountants can manage browser wizard state, including preview and issuance."
+      authorize_if {Firmowid.Ash.Checks.AtLeastRole, role: :accountant}
     end
   end
 
@@ -302,8 +326,8 @@ defmodule Firmowid.Ash.Invoicing.WizardDraft do
   end
 
   relationships do
-    has_many :items, WizardDraft.Item do
-      destination_attribute :wizard_draft_id
+    has_many :items, WizardState.Item do
+      destination_attribute :wizard_state_id
     end
   end
 
@@ -325,7 +349,7 @@ defmodule Firmowid.Ash.Invoicing.WizardDraft do
               )
 
     # NOTE: This expr() logic is intentionally duplicated across SalesInvoice,
-    # WizardDraft, and Counterparty (as :tax_id_type) because Ash expr()
+    # WizardState, and Counterparty (as :tax_id_type) because Ash expr()
     # calculations run in the DB and cannot call Elixir functions.
     # Runtime equivalent: CountryCodes.tax_id_type/3
     calculate :buyer_id_type,

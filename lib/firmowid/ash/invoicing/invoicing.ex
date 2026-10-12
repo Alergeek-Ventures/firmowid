@@ -65,6 +65,64 @@ defmodule Firmowid.Ash.Invoicing do
         :invoice_type
       ]
     end
+
+    tool :get_sales_invoice, SalesInvoice, :read do
+      description "Read a single authorized sales invoice, its items, effective correction snapshot and KSeF status. " <>
+                    "Use this before preparing a correction or resuming a saved draft. This tool never changes the invoice."
+
+      get_by [:id]
+      action_parameters []
+
+      load [
+        :amount,
+        :net_value,
+        :vat_value,
+        :gross_value,
+        :ksef_submission_status,
+        :effective_snapshot,
+        sales_invoice_items: [:net_value, :vat_value, :gross_value],
+        latest_correction: [:amount, sales_invoice_items: [:net_value, :vat_value, :gross_value]],
+        corrections: [:amount, sales_invoice_items: [:net_value, :vat_value, :gross_value]]
+      ]
+    end
+
+    tool :preview_sales_invoice, SalesInvoice, :preview_invoice do
+      description "Validate invoice data and open the mandatory user confirmation widget. " <>
+                    "Creates nothing. The user selects a number and confirms issuance inside the widget; " <>
+                    "an active KSeF connection is required to issue. Pass invoice_id to resume a saved draft, retaining its ID."
+
+      load [
+        :amount,
+        :net_value,
+        :vat_value,
+        :gross_value,
+        sales_invoice_items: [:net_value, :vat_value, :gross_value]
+      ]
+    end
+
+    tool :preview_sales_invoice_correction, SalesInvoice, :preview_correction do
+      description "Preview a correction to an issued invoice and open the mandatory confirmation widget. " <>
+                    "First read the source with get_sales_invoice. Supply original_invoice_id and the intended corrected items/fields. " <>
+                    "Preserves buyer tax identity and the effective correction chain. Creates nothing until the user confirms in the widget."
+
+      load [
+        :amount,
+        :net_value,
+        :vat_value,
+        :gross_value,
+        sales_invoice_items: [:net_value, :vat_value, :gross_value],
+        reference_invoice: [sales_invoice_items: [:net_value, :vat_value, :gross_value]]
+      ]
+    end
+
+    tool :save_sales_invoice_draft, SalesInvoice, :save_invoice_draft do
+      description "Save a complete but unnumbered invoice only when the user explicitly asks to issue it later. " <>
+                    "A draft requires the same data as issuance except the number; keep partial data in the chat instead. " <>
+                    "Prefer calling preview_sales_invoice directly. Saving is available without KSeF; " <>
+                    "it neither issues nor submits. Pass invoice_id to revise an existing saved draft."
+
+      load [:amount, sales_invoice_items: [:net_value, :vat_value, :gross_value]]
+    end
   end
 
   resources do
@@ -122,7 +180,10 @@ defmodule Firmowid.Ash.Invoicing do
       define :list_sales_invoices, action: :list
       define :get_sales_invoice, action: :by_id, args: [:id]
       define :get_sales_invoice_by_share_token, action: :by_share_token, args: [:token]
-      define :create_sales_invoice, action: :create
+      define :issue_sales_invoice, action: :issue_invoice
+      define :preview_sales_invoice, action: :preview_invoice
+      define :preview_sales_invoice_correction, action: :preview_correction
+      define :save_sales_invoice_draft, action: :save_invoice_draft
       define :update_sales_invoice, action: :update
 
       define :attach_suggested_sales_invoice_counterparty,
@@ -130,22 +191,13 @@ defmodule Firmowid.Ash.Invoicing do
         args: [:counterparty_id]
 
       define :destroy_sales_invoice, action: :destroy
-      define :create_sales_invoice_correction, action: :create_correction
+      define :issue_sales_invoice_correction, action: :issue_correction
       define :cancel_sales_invoice, action: :cancel, args: [:invoice_id]
       define :toggle_sales_invoice_skip, action: :toggle_skip
       define :generate_sales_invoice_share_token, action: :generate_share_token
       define :lock_sales_invoice_for_ksef, action: :lock_for_ksef
       define :unlock_sales_invoice_for_ksef, action: :unlock_for_ksef
       define :update_sales_invoice_ksef_fields, action: :update_ksef_fields
-
-      define :confirm_sales_invoice_from_draft,
-        action: :confirm_from_draft,
-        args: [
-          :draft_id,
-          {:optional, :invoice_number},
-          :organization,
-          {:optional, :should_send_emails}
-        ]
 
       define :get_next_sales_invoice_number,
         action: :get_next_number,
@@ -173,18 +225,18 @@ defmodule Firmowid.Ash.Invoicing do
     resource Firmowid.Ash.Invoicing.CostInvoiceTransaction
     resource Firmowid.Ash.Invoicing.SalesInvoiceItem
 
-    resource Firmowid.Ash.Invoicing.WizardDraft.Item
+    resource Firmowid.Ash.Invoicing.WizardState.Item
 
-    resource Firmowid.Ash.Invoicing.WizardDraft do
-      define :list_wizard_drafts, action: :read
-      define :get_wizard_draft, action: :read, get_by: [:id]
-      define :create_wizard_draft, action: :create
-      define :update_wizard_draft_counterparty, action: :update_counterparty
-      define :update_wizard_draft_items, action: :update_items
-      define :update_wizard_draft_payment, action: :update_payment
-      define :reset_wizard_draft_bank_account, action: :reset_bank_account
-      define :populate_wizard_draft_from_invoice, action: :populate_from_invoice
-      define :destroy_wizard_draft, action: :destroy
+    resource Firmowid.Ash.Invoicing.WizardState do
+      define :list_wizard_states, action: :read
+      define :get_wizard_state, action: :read, get_by: [:id]
+      define :create_wizard_state, action: :create
+      define :update_wizard_state_counterparty, action: :update_counterparty
+      define :update_wizard_state_items, action: :update_items
+      define :update_wizard_state_payment, action: :update_payment
+      define :reset_wizard_state_bank_account, action: :reset_bank_account
+      define :populate_wizard_state_from_invoice, action: :populate_from_invoice
+      define :destroy_wizard_state, action: :destroy
     end
 
     resource Firmowid.Ash.Invoicing.SalesInvoiceEmailDelivery do

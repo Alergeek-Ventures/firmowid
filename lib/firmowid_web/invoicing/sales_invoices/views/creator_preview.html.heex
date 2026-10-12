@@ -1,4 +1,15 @@
+<div :if={@preview_error} class="flex flex-col gap-4">
+  <.back patch={
+    Navigation.sales_invoice_creator_path(%{szkic_kreatora: @creator_draft_id, krok: 3})
+  } />
+  <.render_header invoice={@invoice} step={@step_number} title="Podgląd faktury" />
+  <p role="alert" class="text-sm text-red-600">{@preview_error}</p>
+  <.button type="button" phx-click="save_as_draft" variant="secondary">
+    {gettext("Save draft")}
+  </.button>
+</div>
 <FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceReview.invoice_review
+  :if={!@preview_error}
   invoice={@invoice}
   preview_invoice={@preview_invoice}
   invoice_number={@invoice_number}

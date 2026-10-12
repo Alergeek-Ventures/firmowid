@@ -299,7 +299,7 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoiceReminderEmailFlowTest do
 
   defp sales_invoice_fixture!(user, attrs) do
     attrs = Map.merge(base_invoice_attrs(), attrs)
-    Invoicing.create_sales_invoice!(attrs, scope: scope_for(user))
+    Ash.create!(SalesInvoice, attrs, action: :persist_invoice, scope: scope_for(user))
   end
 
   defp confirmed_sales_invoice_fixture!(user, processor_scope, attrs) do
@@ -323,7 +323,7 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoiceReminderEmailFlowTest do
         attrs
       )
 
-    Invoicing.create_sales_invoice_correction!(attrs, scope: scope_for(user))
+    Invoicing.issue_sales_invoice_correction!(attrs, scope: scope_for(user))
   end
 
   defp confirm_invoice_in_ksef!(invoice, scope, locked_at \\ DateTime.utc_now(:second)) do

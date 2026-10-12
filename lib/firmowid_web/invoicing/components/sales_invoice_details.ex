@@ -460,7 +460,7 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
                   id={"preview-#{invoice.id}"}
                   class="max-w-full min-w-0"
                 >
-                  <FirmowidWeb.Invoicing.SalesInvoices.Components.Pdf.sales_invoice
+                  <FirmowidUI.Invoicing.Components.SalesInvoice.sales_invoice
                     sales_invoice={invoice}
                     logo_url={assigns[:logo_url]}
                     currency_rate={Invoicing.get_currency_rate(invoice)}

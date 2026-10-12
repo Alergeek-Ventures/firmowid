@@ -8,8 +8,17 @@ defmodule Firmowid.Ash.Invoicing.Changes.PrepareCorrection do
 
   Loads `:effective_snapshot`, then reloads needed fields on that struct — a bare
   `:struct` calc result leaves attributes as `%Ash.NotLoaded{}`.
+
+  Omitted fields and Ash defaults inherit the latest snapshot, including sale
+  and due dates. Explicit values (also nil and false) are preserved, except for
+  buyer tax identity fields, which always come from the snapshot.
+
+  Stores the loaded original as `context.corrected_invoice` and the effective
+  snapshot as `context.invoice_reference` for read-only preview assembly.
+  Lookup, loading, and eligibility failures are added to the changeset.
   """
   use Ash.Resource.Change
+  use Gettext, backend: Firmowid.Gettext
 
   alias Firmowid.Ash.Invoicing.SalesInvoice
 
@@ -44,7 +53,9 @@ defmodule Firmowid.Ash.Invoicing.Changes.PrepareCorrection do
     :payment_method,
     :currency,
     :is_reverse_charge,
-    :is_cash_account
+    :is_cash_account,
+    :sale_date,
+    :due_date
   ]
 
   @forced_snapshot_fields [
@@ -78,19 +89,32 @@ defmodule Firmowid.Ash.Invoicing.Changes.PrepareCorrection do
   defp do_prepare(changeset, original_invoice_id, context) do
     opts = Ash.Context.to_opts(context)
 
-    original_invoice =
-      SalesInvoice.by_id!(
-        original_invoice_id,
-        Keyword.put(opts, :load, [:effective_snapshot])
-      )
+    with {:ok, original_invoice} <-
+           SalesInvoice.by_id(
+             original_invoice_id,
+             Keyword.put(opts, :load, [:effective_snapshot])
+           ),
+         :ok <- validate_original(original_invoice),
+         {:ok, latest_snapshot} <-
+           Ash.load(original_invoice.effective_snapshot, @latest_snapshot_load, opts) do
+      prepare_from_snapshot(changeset, original_invoice, latest_snapshot)
+    else
+      {:error, error} -> Ash.Changeset.add_error(changeset, error)
+    end
+  end
 
-    latest_snapshot =
-      Ash.load!(original_invoice.effective_snapshot, @latest_snapshot_load, opts)
+  defp validate_original(%SalesInvoice{ksef_invoice_kind: :vat, invoice_number: number}) when not is_nil(number), do: :ok
 
-    # Copy fields from the latest snapshot, but don't overwrite explicitly provided values
+  defp validate_original(_original_invoice) do
+    {:error, field: :original_invoice_id, message: gettext("Choose an issued VAT invoice to correct.")}
+  end
+
+  defp prepare_from_snapshot(changeset, original_invoice, latest_snapshot) do
+    # Defaults are changes too, but they are not caller intent. Preserve explicit
+    # values (including nil/false) and replace omitted/defaulted fields with the snapshot.
     changeset =
       Enum.reduce(@copied_fields, changeset, fn field, cs ->
-        if is_nil(Ash.Changeset.get_attribute(cs, field)) do
+        if field in cs.defaults or not Ash.Changeset.changing_attribute?(cs, field) do
           value = Map.get(latest_snapshot, field)
           Ash.Changeset.force_change_attribute(cs, field, value)
         else
@@ -106,24 +130,13 @@ defmodule Firmowid.Ash.Invoicing.Changes.PrepareCorrection do
         Ash.Changeset.force_change_attribute(cs, field, Map.get(latest_snapshot, field))
       end)
 
-    # Also copy sale_date and due_date if not explicitly set
-    changeset =
-      if is_nil(Ash.Changeset.get_attribute(changeset, :sale_date)) do
-        Ash.Changeset.force_change_attribute(changeset, :sale_date, latest_snapshot.sale_date)
-      else
-        changeset
-      end
-
-    changeset =
-      if is_nil(Ash.Changeset.get_attribute(changeset, :due_date)) do
-        Ash.Changeset.force_change_attribute(changeset, :due_date, latest_snapshot.due_date)
-      else
-        changeset
-      end
-
     changeset
     |> Ash.Changeset.force_change_attribute(:ksef_invoice_kind, :kor)
     |> Ash.Changeset.force_change_attribute(:corrected_invoice_id, original_invoice.id)
     |> Ash.Changeset.force_change_attribute(:organization_id, original_invoice.organization_id)
+    |> Ash.Changeset.set_context(%{
+      corrected_invoice: original_invoice,
+      invoice_reference: latest_snapshot
+    })
   end
 end
