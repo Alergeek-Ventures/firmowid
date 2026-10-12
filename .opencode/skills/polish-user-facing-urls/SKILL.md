@@ -21,8 +21,10 @@ Use this skill whenever you touch:
 1. User-facing pathnames must be Polish.
 2. User-facing query keys must be Polish.
 3. Human-readable query values must be Polish.
-4. Internal route names, assigns, and atoms may stay technical when that keeps the code clearer.
-5. Do not keep English compatibility aliases unless the task explicitly requires a staged migration.
+4. Internal route names, assigns, and atoms may stay technical when that keeps
+   the code clearer.
+5. Do not keep English compatibility aliases unless the task explicitly requires
+   a staged migration.
 
 ## Allowed exceptions
 
@@ -74,4 +76,5 @@ Prefer shared mechanics from infrastructure utilities for things like:
 - No English user-facing pathname remains.
 - No English user-facing query key remains.
 - No English human-readable query value remains.
-- Tests cover canonical path generation/parsing where the feature already has URL-contract tests.
+- Tests cover canonical path generation/parsing where the feature already has
+  URL-contract tests.

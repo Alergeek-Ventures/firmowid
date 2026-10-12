@@ -5,8 +5,8 @@ description: Maintain legacy PolishQuantity.quantity/4 count labels. New or chan
 
 # Polish Quantity Labels
 
-This skill documents the existing `PolishQuantity.quantity/4` utility for
-legacy Polish quantity labels. For new or changed user-facing labels, follow
+This skill documents the existing `PolishQuantity.quantity/4` utility for legacy
+Polish quantity labels. For new or changed user-facing labels, follow
 `user-facing-text`: use Gettext `ngettext` and translate through Accent rather
 than hardcoding Polish forms with this utility.
 

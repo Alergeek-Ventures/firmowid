@@ -11,10 +11,12 @@ description: Project specific rules for creating and maintaining Ash authorizati
    - conditions (when the policy applies)
    - checks (how the policy decides)
 2. Check results are `:authorized`, `:forbidden`, or `:unknown`.
-3. Within a policy, checks are evaluated in logical top-to-bottom order; the first check that decides (`:authorized`/`:forbidden`) wins.
+3. Within a policy, checks are evaluated in logical top-to-bottom order; the
+   first check that decides (`:authorized`/`:forbidden`) wins.
 4. If all checks are `:unknown`, that policy fails (treated as forbidden).
 5. Bypass policies are for early allow cases (for example, super admin).
-6. Policy ordering can affect outcomes. Treat policy order as intentional control flow, not as cosmetic ordering.
+6. Policy ordering can affect outcomes. Treat policy order as intentional
+   control flow, not as cosmetic ordering.
 7. If multiple regular policies apply, all applicable policies must pass.
 
 ## Authoring Workflow
@@ -36,8 +38,10 @@ description: Project specific rules for creating and maintaining Ash authorizati
    - `:strict`: fail with forbidden when unauthorized.
    - `:runtime`: only when truly necessary.
 6. Add field policies only when needed
-   - If any field policies exist, all fields must be covered (or use `:*` catch-all).
-   - If the resource only needs field policies, still add an explicit allow-all regular policy so actions remain authorized.
+   - If any field policies exist, all fields must be covered (or use `:*`
+     catch-all).
+   - If the resource only needs field policies, still add an explicit allow-all
+     regular policy so actions remain authorized.
 7. Validate behavior with real scenarios
    - Read list vs. single record.
    - Cross-user access.
@@ -46,11 +50,15 @@ description: Project specific rules for creating and maintaining Ash authorizati
 ## Non-Negotiables
 
 - Do not assume check order is cosmetic.
-- Do not split one coherent decision across multiple regular policies unless you want policy-to-policy interaction.
-- Do not reference created record fields inside `expr(...)` checks for create policies.
+- Do not split one coherent decision across multiple regular policies unless you
+  want policy-to-policy interaction.
+- Do not reference created record fields inside `expr(...)` checks for create
+  policies.
 - Do not add field policies without ensuring every field is covered.
-- Do not reach for `:runtime` unless simpler `:strict` or `:filter` policies cannot express the rule.
-- Do not put bypasses inside `policy_group`; policy groups cannot contain bypass policies.
+- Do not reach for `:runtime` unless simpler `:strict` or `:filter` policies
+  cannot express the rule.
+- Do not put bypasses inside `policy_group`; policy groups cannot contain bypass
+  policies.
 
 ## Policy Patterns
 
@@ -84,7 +92,8 @@ end
 
 ### 3) Create-action expression safety
 
-For create policies, inline expressions must not reference the record being created.
+For create policies, inline expressions must not reference the record being
+created.
 
 ```elixir
 policy action_type(:create) do
@@ -97,7 +106,8 @@ If you need richer create-time logic, use a custom `Ash.Policy.SimpleCheck`.
 
 ### 4) Relationship checks with `exists`
 
-Prefer `exists/2` in expressions involving related records to avoid unintended over-restriction when filters combine.
+Prefer `exists/2` in expressions involving related records to avoid unintended
+over-restriction when filters combine.
 
 ```elixir
 authorize_if expr(exists(memberships, user_id == ^actor(:id)))
@@ -117,7 +127,8 @@ field_policies do
 end
 ```
 
-If field policies are present and you are not otherwise restricting action access, add an explicit allow-all action policy:
+If field policies are present and you are not otherwise restricting action
+access, add an explicit allow-all action policy:
 
 ```elixir
 policies do
@@ -129,25 +140,31 @@ end
 
 ## Read Behavior You Must Preserve
 
-- Read actions are filtered by default, often yielding `NotFound`/missing records instead of `Forbidden`.
+- Read actions are filtered by default, often yielding `NotFound`/missing
+  records instead of `Forbidden`.
 - Use `authorize_with: :error` only when explicit forbidden errors are required.
-- Relationship loads may return `nil` or `%Ash.ForbiddenField{}` depending on relationship options and policy behavior.
+- Relationship loads may return `nil` or `%Ash.ForbiddenField{}` depending on
+  relationship options and policy behavior.
 
 ## Debugging and Verification
 
 When outcomes are surprising:
 
 1. Check policy and check ordering first.
-2. Confirm whether action is read (filter semantics) or mutation (forbidden semantics).
+2. Confirm whether action is read (filter semantics) or mutation (forbidden
+   semantics).
 3. Inspect `access_type` on relevant policies.
 
 ## Protip
 
-When working with policies, think of a short authorization matrix (actor x action x expected outcome).
+When working with policies, think of a short authorization matrix (actor x
+action x expected outcome).
 
 ## System Actor Roles
 
-For resources with many system actors with different roles, consider grouping placing them in a separate `policy_group` with `SystemActorRole` checks. This keeps system actor logic organized and separate from human actor policies.
+For resources with many system actors with different roles, consider grouping
+placing them in a separate `policy_group` with `SystemActorRole` checks. This
+keeps system actor logic organized and separate from human actor policies.
 
 ```elixir
 policies do
@@ -172,4 +189,5 @@ end
 ## Examples
 
 - `lib/firmowid/ash/timetracker/session.ex`
-- Great example of using `SystemActorRole` checks and policy structure for non-human actors: `lib/firmowid/ash/invoicing/sales_invoice.ex`
+- Great example of using `SystemActorRole` checks and policy structure for
+  non-human actors: `lib/firmowid/ash/invoicing/sales_invoice.ex`

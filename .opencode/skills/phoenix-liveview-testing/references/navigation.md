@@ -1,6 +1,7 @@
 # Navigation
 
 ## Contents
+
 - Redirects
 - Live redirects
 - Patches
@@ -72,5 +73,5 @@ assert has_element?(view, "#active-member", "Aragorn")
 
 ## Behavior vs implementation
 
-Prefer behavior-first tests.
-Use URL assertions only when deep linking, sharing, or browser state is part of the requirement.
+Prefer behavior-first tests. Use URL assertions only when deep linking, sharing,
+or browser state is part of the requirement.

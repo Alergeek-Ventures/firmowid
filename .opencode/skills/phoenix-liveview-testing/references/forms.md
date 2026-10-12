@@ -1,6 +1,7 @@
 # Forms
 
 ## Contents
+
 - Form submission
 - Form validation changes
 - False-positive traps
@@ -18,6 +19,7 @@ assert has_element?(view, "[data-role=todo]", "Buy lembas")
 ```
 
 Prefer this over direct event submission because `form/3` validates:
+
 - the form exists
 - the selector is correct
 - the form is wired for submission
@@ -41,7 +43,8 @@ html =
 assert html =~ "has invalid format"
 ```
 
-Use `has_element?/3` when multiple similar validation messages exist or precise location matters.
+Use `has_element?/3` when multiple similar validation messages exist or precise
+location matters.
 
 Avoid by default:
 
@@ -53,7 +56,9 @@ That bypasses HTML and may miss a broken or missing `phx-change`.
 
 ## False-positive traps
 
-Do not rely on broad returned HTML when the same text can appear elsewhere, such as:
+Do not rely on broad returned HTML when the same text can appear elsewhere, such
+as:
+
 - prefilled form values
 - unrelated headings
 - duplicated content

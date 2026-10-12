@@ -13,17 +13,21 @@ Use this skill when working on Phoenix LiveView tests.
 - Prefer exercising rendered HTML over sending events directly.
 - Prefer scoped assertions over broad HTML string matching.
 - Prefer stable selectors: unique IDs and semantic data attributes.
-- Avoid over-testing implementation details unless they are product requirements.
+- Avoid over-testing implementation details unless they are product
+  requirements.
 
 ## Use this skill for
 
 - Phoenix LiveView tests built with `Phoenix.LiveViewTest`
-- Writing new tests for LiveViews, forms, navigation, uploads, hooks, and async assigns
-- Reviewing existing tests for false positives, brittle selectors, or implementation coupling
+- Writing new tests for LiveViews, forms, navigation, uploads, hooks, and async
+  assigns
+- Reviewing existing tests for false positives, brittle selectors, or
+  implementation coupling
 
 ## Do not use this skill for
 
-- Full browser end-to-end testing where JavaScript behavior itself must be validated
+- Full browser end-to-end testing where JavaScript behavior itself must be
+  validated
 - Plain controller tests that do not involve LiveView
 - General ExUnit style guidance unrelated to LiveView behavior
 
@@ -56,12 +60,17 @@ assert has_element?(view, "selector", "expected text")
 
 ## Choose the right guide
 
-- Rendering and interaction basics → [references/core-patterns.md](references/core-patterns.md)
+- Rendering and interaction basics →
+  [references/core-patterns.md](references/core-patterns.md)
 - Forms and validation → [references/forms.md](references/forms.md)
-- Function components and LiveComponents → [references/components.md](references/components.md)
-- Redirects and patch navigation → [references/navigation.md](references/navigation.md)
-- Upload previews, direct-to-server, direct-to-cloud → [references/uploads.md](references/uploads.md)
-- JS hooks and async assigns → [references/async-and-hooks.md](references/async-and-hooks.md)
+- Function components and LiveComponents →
+  [references/components.md](references/components.md)
+- Redirects and patch navigation →
+  [references/navigation.md](references/navigation.md)
+- Upload previews, direct-to-server, direct-to-cloud →
+  [references/uploads.md](references/uploads.md)
+- JS hooks and async assigns →
+  [references/async-and-hooks.md](references/async-and-hooks.md)
 - CSS selector strategy → [references/selectors.md](references/selectors.md)
 
 ## Firmowid methodology extension
@@ -168,8 +177,8 @@ critical-path tests over broad coverage.
   - async helpers
   - DB assertions
   - job assertions
-- Only use `Process.sleep/1` as a last resort, keep it isolated, and explain
-  why it is unavoidable.
+- Only use `Process.sleep/1` as a last resort, keep it isolated, and explain why
+  it is unavoidable.
 
 ### Validation
 

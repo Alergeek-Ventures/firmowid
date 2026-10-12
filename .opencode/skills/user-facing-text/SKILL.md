@@ -5,28 +5,33 @@ description: User-facing text, UI copy, labels, messages, Gettext, and Accent. U
 
 # User-Facing Text
 
-Use this skill whenever adding or changing text shown to a user: UI copy, labels,
-messages, validation errors, empty states, accessibility text, and similar content.
-Write the English source in Gettext and maintain translations in Accent. Do not
-leave new UI text untranslated. Exceptions are proper names, user-provided content,
-and technical/internal strings that are not user-facing (for example logs).
+Use this skill whenever adding or changing text shown to a user: UI copy,
+labels, messages, validation errors, empty states, accessibility text, and
+similar content. Write the English source in Gettext and maintain translations
+in Accent. Do not leave new UI text untranslated. Exceptions are proper names,
+user-provided content, and technical/internal strings that are not user-facing
+(for example logs).
 
 ## Scope and locale behavior
 
 - The managed locale is Polish (`pl`); English is the source language. Current
-  tooling and Accent catalog are configured for `en`/`pl`, not arbitrary locales.
-- `Firmowid.Gettext` is the backend Gettext module. In a module that
-  needs Gettext macros, use the actual backend declaration:
+  tooling and Accent catalog are configured for `en`/`pl`, not arbitrary
+  locales.
+- `Firmowid.Gettext` is the backend Gettext module. In a module that needs
+  Gettext macros, use the actual backend declaration:
 
   ```elixir
   use Gettext, backend: Firmowid.Gettext
   ```
-- The default Gettext locale is Polish. Do not add browser-locale detection or an
-  English UI-language switcher as an assumed part of translating a string.
-- User-facing URLs and query parameters remain Polish, independently of UI locale.
-- This policy applies to new/changed user-facing text broadly. It does not request
-  migrating all existing copy, emails, PDFs, or document language.
-- Technical identifiers, proper names, and user-provided text are not translated.
+
+- The default Gettext locale is Polish. Do not add browser-locale detection or
+  an English UI-language switcher as an assumed part of translating a string.
+- User-facing URLs and query parameters remain Polish, independently of UI
+  locale.
+- This policy applies to new/changed user-facing text broadly. It does not
+  request migrating all existing copy, emails, PDFs, or document language.
+- Technical identifiers, proper names, and user-provided text are not
+  translated.
 
 ## Write source strings correctly
 
@@ -56,17 +61,17 @@ ngettext("%{count} invoice", "%{count} invoices", count)
 Follow these steps in order when changing user-facing text:
 
 1. Write the complete English source in Gettext and run extraction:
-   `mix gettext.extract`. Extraction force-compiles the app and
-   updates the tracked `priv/gettext/default.pot`; inspect that diff for the
-   intended strings, contexts, and placeholders.
+   `mix gettext.extract`. Extraction force-compiles the app and updates the
+   tracked `priv/gettext/default.pot`; inspect that diff for the intended
+   strings, contexts, and placeholders.
 2. Prepare the exact Polish wording, even when the requested wording was
    supplied in Polish. Review the latest native Accent document and preserve
    existing translations and unrelated entries.
-3. Before writing translations, sync the extracted latest source to Accent using its
-   native authenticated API/official CLI flow, with a credential permitted to
-   sync/merge. Preview/peek first when available. Do not assume the repository's
-   `accent.json` source glob is itself a sync command: the export helper stages
-   the POT in an isolated scratch directory.
+3. Before writing translations, sync the extracted latest source to Accent using
+   its native authenticated API/official CLI flow, with a credential permitted
+   to sync/merge. Preview/peek first when available. Do not assume the
+   repository's `accent.json` source glob is itself a sync command: the export
+   helper stages the POT in an isolated scratch directory.
 4. Populate the Polish entries with context and plural data intact. Verify an
    unversioned/latest Accent export contains the exact values and validate its
    technical structure/placeholders. Editorial translation review belongs in
@@ -77,18 +82,18 @@ Follow these steps in order when changing user-facing text:
    commit-SHA snapshot. PR CI, including Dependabot, only exports: it uses an
    existing own-SHA snapshot if available, otherwise the snapshot of current
    HEAD main resolved once per workflow. An own-SHA snapshot is optional, but
-   changed/new strings must validate in the selected catalog. Check that selected
-   catalog and the compiled/rendered result; latest-candidate validation alone
-   does not prove a PR's selected snapshot contains the translations. Do not
-   manually create a snapshot for the uncommitted change.
+   changed/new strings must validate in the selected catalog. Check that
+   selected catalog and the compiled/rendered result; latest-candidate
+   validation alone does not prove a PR's selected snapshot contains the
+   translations. Do not manually create a snapshot for the uncommitted change.
 
 ### Accent structure cautions
 
 - Accent's native document is the source of translation work. Use native
   `gettext` operations (for example `/sync`, `/add-translations`, and `/export`)
   against the project/document path and language, with version selection where
-  applicable. Never use a JSON bridge or overwrite a whole document from a
-  stale export; preserve contexts, metadata, and untouched translations.
+  applicable. Never use a JSON bridge or overwrite a whole document from a stale
+  export; preserve contexts, metadata, and untouched translations.
 - The current native document path is `gettext/landing-native` (configured as
   `gettext/landing-native/*.pot`). The full extracted source catalog is
   `priv/gettext/default.pot`.
@@ -99,8 +104,8 @@ Follow these steps in order when changing user-facing text:
   uncontextualized plural phrase with distinct English forms until the adapter
   supports it. If contextual plurals are essential, flag the limitation and
   explicitly verify the exported context; never silently lose it.
-- The export helper already fixes a specific malformed Polish plural header.
-  Do not duplicate that workaround or broadly rewrite/normalize PO headers.
+- The export helper already fixes a specific malformed Polish plural header. Do
+  not duplicate that workaround or broadly rewrite/normalize PO headers.
 
 ## Pinned catalog snapshots and runtime
 
@@ -115,14 +120,15 @@ Follow these steps in order when changing user-facing text:
   workflow. Never use mutable latest as a build fallback.
 - If a snapshot already exists with stale content, do not edit/delete it, force
   a fallback to latest, or pretend prepare syncs it. Sync and translate the
-  latest catalog, then use a new main commit SHA for a fresh snapshot. PRs cannot
-  bypass an existing stale snapshot by forcing the main fallback. Do not amend,
-  rewrite, or force-push history without explicit permission.
+  latest catalog, then use a new main commit SHA for a fresh snapshot. PRs
+  cannot bypass an existing stale snapshot by forcing the main fallback. Do not
+  amend, rewrite, or force-push history without explicit permission.
 - `mix translations.fetch [--version FULL_SHA] [--fallback-version FULL_SHA]`
   exports only; it never creates a snapshot. Without an explicit fallback it
   retains strict pinned export, including unique 7–39-character SHA prefix
-  resolution. `elixir scripts/accent.exs export --version FULL_SHA
-  --fallback-version MAIN_FULL_SHA` supports the same explicit fallback.
+  resolution.
+  `elixir scripts/accent.exs export --version FULL_SHA --fallback-version MAIN_FULL_SHA`
+  supports the same explicit fallback.
 - Fallback applies only when the requested snapshot is absent, not on 401/403,
   5xx, network failures, or invalid translations. A missing fallback snapshot
   also fails. Source extraction and real Polish translation validation remain
@@ -146,8 +152,8 @@ Follow these steps in order when changing user-facing text:
   even on reruns. Main alone uses `ACCENT_SNAPSHOT_API_KEY` for read/export and
   `create_version`; it is not permission to sync or merge translations.
 - Do not configure `ACCENT_SNAPSHOT_API_KEY` in Dependabot secrets. Old PRs with
-  writer-dependent workflows must update to the read-only export workflow;
-  do not restore a writer token to make them pass.
+  writer-dependent workflows must update to the read-only export workflow; do
+  not restore a writer token to make them pass.
 - Local/prod Infisical `/app` `ACCENT_API_KEY` is read-only. A translation
   update needs an authorized write-capable development credential; ask for its
   approved location/permissions if unavailable. Infisical `dev` `/dev`
@@ -158,8 +164,8 @@ Follow these steps in order when changing user-facing text:
   CLI failures that echo credentials, and do not dump full translation data
   unnecessarily. Do not use production credentials for translation editing.
 - Editing the requested feature's text authorizes that scoped translation work;
-  it does not authorize unrelated or destructive Accent changes. Preview
-  changes and preserve all unrelated content.
+  it does not authorize unrelated or destructive Accent changes. Preview changes
+  and preserve all unrelated content.
 
 ## Verification
 
