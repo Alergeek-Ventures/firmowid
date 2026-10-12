@@ -8,11 +8,15 @@ defmodule FirmowidWeb.Delegations.Utilities.DelegationPresentation do
   @spec status_label(atom()) :: String.t()
   def status_label(:pending), do: gettext("Pending")
   def status_label(:in_progress), do: pgettext("business trip status", "in progress")
-  def status_label(:complete), do: pgettext("business trip status", "completed")
+  def status_label(:awaiting_signature), do: pgettext("business trip status", "awaiting signature")
+  def status_label(:submitted), do: pgettext("business trip status", "under review")
+  def status_label(:complete), do: pgettext("business trip status", "approved")
 
   @spec status_badge_styles(atom()) :: list(String.t())
   def status_badge_styles(:pending), do: ["bg-teal-100 text-teal-700"]
   def status_badge_styles(:in_progress), do: ["bg-moss-200/80 text-moss-700"]
+  def status_badge_styles(:awaiting_signature), do: ["bg-rust-100 text-rust-700"]
+  def status_badge_styles(:submitted), do: ["bg-teal-100 text-teal-700"]
   def status_badge_styles(:complete), do: ["bg-grey-100 text-grey-700"]
 
   @spec format_range(Date.t(), Date.t()) :: String.t()

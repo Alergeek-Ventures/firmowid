@@ -27,8 +27,8 @@ defmodule FirmowidWeb.Delegations.Utilities.SettlementPresentation do
 
   def settlement_balance(total, advance) do
     if Money.compare(total, advance) in [:gt, :eq],
-      do: {gettext("Amount due"), Money.sub!(total, advance)},
-      else: {gettext("Payout reduction"), Money.sub!(advance, total)}
+      do: {gettext("To be paid to the employee"), Money.sub!(total, advance)},
+      else: {gettext("To be returned by the employee"), Money.sub!(advance, total)}
   end
 
   @spec transport_label(String.t()) :: String.t()

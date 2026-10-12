@@ -19,7 +19,10 @@ defmodule FirmowidWeb.Management.Components.DelegationsTab do
       assigns
       |> assign(
         :ongoing_delegations,
-        Enum.filter(assigns.delegations, &(&1.status in [:pending, :in_progress]))
+        Enum.filter(
+          assigns.delegations,
+          &(&1.status in [:pending, :in_progress, :awaiting_signature, :submitted])
+        )
       )
       |> assign(
         :previous_delegations,
@@ -71,7 +74,18 @@ defmodule FirmowidWeb.Management.Components.DelegationsTab do
   attr :delegation, :map, required: true
   attr :employee_id, :string, required: true
 
-  defp delegation_status(%{delegation: %{status: :pending}} = assigns) do
+  defp delegation_status(%{delegation: %{status: status} = delegation} = assigns)
+       when status in [:pending, :submitted] or (status == :complete and not is_nil(delegation.signed_settlement_blob_id)) do
+    assigns =
+      assign(
+        assigns,
+        :label,
+        if(status == :pending,
+          do: gettext("requires signature"),
+          else: DelegationPresentation.status_label(status)
+        )
+      )
+
     ~H"""
     <.link
       kind="unstyled"
@@ -79,7 +93,7 @@ defmodule FirmowidWeb.Management.Components.DelegationsTab do
       aria-label={gettext("Open business trip: %{title}", title: @delegation.title)}
       class="flex shrink-0 items-center gap-1"
     >
-      <.status_badge status={@delegation.status} label={gettext("requires signature")} />
+      <.status_badge status={@delegation.status} label={@label} />
       <Lucideicons.chevron_right class="size-4 text-grey-700" />
     </.link>
     """

@@ -173,7 +173,7 @@ defmodule Firmowid.Delegations.DelegationTest do
              )
   end
 
-  test "cannot complete an empty settlement", %{
+  test "cannot prepare an empty settlement", %{
     employee_scope: employee_scope,
     admin_scope: admin_scope
   } do
@@ -182,10 +182,10 @@ defmodule Firmowid.Delegations.DelegationTest do
     {:ok, delegation} =
       Delegations.approve_delegation(delegation.id, approval_attrs(), scope: admin_scope)
 
-    assert {:error, _} = Delegations.complete_delegation(delegation.id, scope: employee_scope)
+    assert {:error, _} = Delegations.prepare_settlement(delegation.id, scope: employee_scope)
   end
 
-  test "cannot complete a delegation with an incomplete uploaded expense", %{
+  test "cannot prepare a delegation with an incomplete uploaded expense", %{
     employee_scope: employee_scope,
     admin_scope: admin_scope
   } do
@@ -206,7 +206,7 @@ defmodule Firmowid.Delegations.DelegationTest do
         details: %{type: "other", description: "Parking"}
       })
 
-    assert {:error, _} = Delegations.complete_delegation(delegation.id, scope: employee_scope)
+    assert {:error, _} = Delegations.prepare_settlement(delegation.id, scope: employee_scope)
   end
 
   test "requires a reason when final expense dates extend the delegation", %{
@@ -225,7 +225,7 @@ defmodule Firmowid.Delegations.DelegationTest do
       )
 
     assert {:error, _} =
-             Delegations.complete_delegation(
+             Delegations.prepare_settlement(
                delegation.id,
                %{
                  expenses: [
@@ -259,7 +259,7 @@ defmodule Firmowid.Delegations.DelegationTest do
         departure_date: ~D[2026-09-11]
       )
 
-    assert {:ok, _} = Delegations.complete_delegation(delegation.id, scope: employee_scope)
+    assert {:ok, _} = Delegations.prepare_settlement(delegation.id, scope: employee_scope)
 
     assert {:error, %Forbidden{}} =
              Delegations.complete_expense(expense, %{document_number: "NOWY/1"}, scope: employee_scope)
@@ -376,10 +376,10 @@ defmodule Firmowid.Delegations.DelegationTest do
     assert Delegations.get_delegation!(delegation.id, scope: employee_scope).detected_end_date ==
              ~D[2026-09-12]
 
-    assert {:error, _} = Delegations.complete_delegation(delegation.id, scope: employee_scope)
+    assert {:error, _} = Delegations.prepare_settlement(delegation.id, scope: employee_scope)
 
     assert {:ok, completed} =
-             Delegations.complete_delegation(
+             Delegations.prepare_settlement(
                delegation.id,
                %{date_change_reason: "Powrót po północy"},
                scope: employee_scope
@@ -423,7 +423,7 @@ defmodule Firmowid.Delegations.DelegationTest do
 
       expense = seed_transport_expense(delegation, employee_scope.actor, times)
       original_trip = hd(expense.details.value.trips)
-      assert {:ok, _} = Delegations.complete_delegation(delegation.id, scope: employee_scope)
+      assert {:ok, _} = Delegations.prepare_settlement(delegation.id, scope: employee_scope)
       stored_expense = Delegations.get_expense!(expense.id, scope: employee_scope)
       assert hd(stored_expense.details.value.trips) == original_trip
     end
@@ -519,6 +519,116 @@ defmodule Firmowid.Delegations.DelegationTest do
                  details: %{type: "other", description: "Parking"}
                },
                scope: employee_scope
+             )
+  end
+
+  test "prepares, reopens, and submits a settlement through the employee workflow", %{
+    employee_scope: employee_scope,
+    admin_scope: admin_scope
+  } do
+    delegation = Delegations.create_delegation!(delegation_attrs(), scope: employee_scope)
+
+    {:ok, delegation} =
+      Delegations.approve_delegation(delegation.id, approval_attrs(), scope: admin_scope)
+
+    _expense =
+      seed_expense(delegation, employee_scope.actor,
+        arrival_date: ~D[2026-09-10],
+        departure_date: ~D[2026-09-11]
+      )
+
+    assert {:ok, prepared} =
+             Delegations.prepare_settlement(delegation.id, scope: employee_scope)
+
+    assert prepared.status == :awaiting_signature
+    assert prepared.settlement_sequence == 1
+    assert prepared.settlement_year == Date.utc_today().year
+    assert %DateTime{} = prepared.settlement_prepared_at
+
+    assert {:ok, reopened} = Delegations.edit_settlement(prepared.id, scope: employee_scope)
+    assert reopened.status == :in_progress
+
+    assert {:ok, prepared_again} =
+             Delegations.prepare_settlement(reopened.id, scope: employee_scope)
+
+    assert prepared_again.settlement_sequence == prepared.settlement_sequence
+    assert prepared_again.status == :awaiting_signature
+
+    signed_path = Briefly.create!(extname: ".pdf")
+    File.write!(signed_path, "%PDF-1.4 signed settlement")
+
+    assert {:ok, submitted} =
+             Delegations.submit_for_review(
+               prepared_again.id,
+               %{
+                 upload_path: signed_path,
+                 content_type: "application/pdf",
+                 original_filename: "podpisane-rozliczenie.pdf"
+               },
+               scope: employee_scope
+             )
+
+    assert submitted.status == :submitted
+    assert submitted.signed_settlement_blob_id
+    assert %DateTime{} = submitted.submitted_at
+
+    assert {:error, _error} =
+             Delegations.submit_for_review(
+               submitted.id,
+               %{
+                 upload_path: signed_path,
+                 content_type: "application/pdf",
+                 original_filename: "podpisane-rozliczenie.pdf"
+               },
+               scope: employee_scope
+             )
+  end
+
+  test "only the owner can prepare or submit a settlement and only with a PDF", %{
+    employee_scope: employee_scope,
+    admin_scope: admin_scope
+  } do
+    delegation = Delegations.create_delegation!(delegation_attrs(), scope: employee_scope)
+
+    {:ok, delegation} =
+      Delegations.approve_delegation(delegation.id, approval_attrs(), scope: admin_scope)
+
+    _expense =
+      seed_expense(delegation, employee_scope.actor,
+        arrival_date: ~D[2026-09-10],
+        departure_date: ~D[2026-09-11]
+      )
+
+    other_employee = user_in_org_fixture(employee_scope.tenant)
+    other_scope = %Scope{actor: other_employee, tenant: employee_scope.tenant}
+
+    assert {:error, %Forbidden{}} =
+             Delegations.prepare_settlement(delegation.id, scope: other_scope)
+
+    prepared = Delegations.prepare_settlement!(delegation.id, scope: employee_scope)
+    invalid_path = Briefly.create!(extname: ".txt")
+    File.write!(invalid_path, "not a pdf")
+
+    assert {:error, _error} =
+             Delegations.submit_for_review(
+               prepared.id,
+               %{
+                 upload_path: invalid_path,
+                 content_type: "text/plain",
+                 original_filename: "rozliczenie.txt"
+               },
+               scope: employee_scope
+             )
+
+    assert {:error, %Forbidden{}} =
+             Delegations.submit_for_review(
+               prepared.id,
+               %{
+                 upload_path: invalid_path,
+                 content_type: "application/pdf",
+                 original_filename: "rozliczenie.pdf"
+               },
+               scope: other_scope
              )
   end
 

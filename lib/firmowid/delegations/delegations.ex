@@ -26,11 +26,23 @@ defmodule Firmowid.Delegations do
 
       define :approve_delegation, action: :approve, get_by: [:id]
 
-      define :complete_delegation, action: :complete, get_by: [:id]
+      define :prepare_settlement, action: :prepare_settlement, get_by: [:id]
       define :save_delegation_draft, action: :save_draft, get_by: [:id]
+      define :edit_settlement, action: :edit_settlement, get_by: [:id]
+      define :submit_for_review, action: :submit_for_review, get_by: [:id]
+      define :accept_settlement, action: :accept_settlement, get_by: [:id]
+      define :return_settlement, action: :return_settlement, get_by: [:id]
       define :detect_dates, action: :detect_dates
       define :notify_admins_about_delegation, action: :notify_admins, args: [:signal]
       define :notify_employee_about_delegation, action: :notify_employee, args: [:signal]
+
+      define :notify_admins_about_settlement,
+        action: :notify_admins_about_settlement,
+        args: [:signal]
+
+      define :notify_employee_about_settlement,
+        action: :notify_employee_about_settlement,
+        args: [:signal]
     end
 
     resource DelegationExpense do

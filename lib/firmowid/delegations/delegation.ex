@@ -8,18 +8,23 @@ defmodule Firmowid.Delegations.Delegation do
     domain: Firmowid.Delegations,
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer],
-    extensions: [AshStateMachine]
+    extensions: [AshStateMachine],
+    fragments: [Firmowid.Delegations.Delegation.Policies]
 
   use Gettext, backend: Firmowid.Gettext
 
-  alias Firmowid.Checks.ActorRole
-  alias Firmowid.Checks.SystemActorRole
+  alias Firmowid.Blobs.Blob
   alias Firmowid.Core.Member
   alias Firmowid.Delegations.Actions.NotifyAdminsAboutDelegation
+  alias Firmowid.Delegations.Actions.NotifyAdminsAboutSubmittedSettlement
   alias Firmowid.Delegations.Actions.NotifyEmployeeAboutApprovedDelegation
+  alias Firmowid.Delegations.Actions.NotifyEmployeeAboutReviewedSettlement
   alias Firmowid.Delegations.Changes.AssignReference
   alias Firmowid.Delegations.Changes.CreateSignedCommandBlob
+  alias Firmowid.Delegations.Changes.CreateSignedSettlementBlob
   alias Firmowid.Delegations.Changes.PrepareDelegationCompletion
+  alias Firmowid.Delegations.Changes.PrepareSettlement
+  alias Firmowid.Delegations.Changes.SetSubmittedAt
   alias Firmowid.Delegations.Signals
   alias Firmowid.Delegations.Validations.HasDateChangeReason
   alias Firmowid.Delegations.Validations.HasExpenses
@@ -43,7 +48,11 @@ defmodule Firmowid.Delegations.Delegation do
 
     transitions do
       transition :approve, from: :pending, to: :in_progress
-      transition :complete, from: :in_progress, to: :complete
+      transition :prepare_settlement, from: :in_progress, to: :awaiting_signature
+      transition :edit_settlement, from: :awaiting_signature, to: :in_progress
+      transition :submit_for_review, from: :awaiting_signature, to: :submitted
+      transition :accept_settlement, from: :submitted, to: :complete
+      transition :return_settlement, from: :submitted, to: :in_progress
     end
   end
 
@@ -150,8 +159,8 @@ defmodule Firmowid.Delegations.Delegation do
              )
     end
 
-    update :complete do
-      description "Mark an in-progress delegation as complete."
+    update :prepare_settlement do
+      description "Validate an in-progress settlement and prepare it for employee signature."
       require_atomic? false
       accept [:date_change_reason]
 
@@ -171,7 +180,51 @@ defmodule Firmowid.Delegations.Delegation do
       validate {HasExpenses, []}
       validate {HasDateChangeReason, []}
 
+      change PrepareSettlement
+      change transition_state(:awaiting_signature)
+    end
+
+    update :edit_settlement do
+      description "Reopen a prepared settlement for corrections."
+      change transition_state(:in_progress)
+    end
+
+    update :submit_for_review do
+      description "Store the signed settlement and submit it to the employer for review."
+      require_atomic? false
+      accept []
+
+      argument :upload_path, :string, allow_nil?: false
+
+      argument :content_type, :string,
+        allow_nil?: false,
+        constraints: [match: ~r/^application\/pdf$/]
+
+      argument :original_filename, :string, allow_nil?: false
+
+      change CreateSignedSettlementBlob
+      change SetSubmittedAt
+      change set_attribute(:settlement_return_reason, nil)
+      change transition_state(:submitted)
+
+      emit Signals, :settlement_submitted, fields: [delegation_id: :id]
+    end
+
+    update :accept_settlement do
+      description "Accept a submitted settlement and close the delegation."
+      accept []
       change transition_state(:complete)
+
+      emit Signals, :settlement_reviewed, fields: [delegation_id: :id, reason: :settlement_return_reason]
+    end
+
+    update :return_settlement do
+      description "Return a submitted settlement to the employee for corrections."
+      accept [:settlement_return_reason]
+      validate present(:settlement_return_reason)
+      change transition_state(:in_progress)
+
+      emit Signals, :settlement_reviewed, fields: [delegation_id: :id, reason: :settlement_return_reason]
     end
 
     update :detect_dates do
@@ -191,51 +244,17 @@ defmodule Firmowid.Delegations.Delegation do
       argument :signal, Signals.DelegationApproved, allow_nil?: false
       run NotifyEmployeeAboutApprovedDelegation
     end
-  end
 
-  policies do
-    bypass [{SystemActorRole, roles: [:avatar_cleanup]}, action(:read)] do
-      authorize_if expr(signed_command_blob_id == ^actor(:blob_id))
+    action :notify_admins_about_settlement do
+      description "Emails organization admins that a signed settlement awaits review."
+      argument :signal, Signals.SettlementSubmitted, allow_nil?: false
+      run NotifyAdminsAboutSubmittedSettlement
     end
 
-    bypass {ActorRole, role: :admin} do
-      authorize_if always()
-    end
-
-    bypass {SystemActorRole, roles: [:leave_notifier]} do
-      authorize_if action_type(:read)
-    end
-
-    policy action(:create) do
-      authorize_if actor_present()
-    end
-
-    policy action(:notify_admins) do
-      authorize_if signal_in(Signals, :delegation_submitted)
-    end
-
-    policy action(:notify_employee) do
-      authorize_if signal_in(Signals, :delegation_approved)
-    end
-
-    policy action_type(:read) do
-      authorize_if expr(member_id == ^actor([:member, :id]))
-    end
-
-    policy action(:approve) do
-      forbid_if always()
-    end
-
-    policy action(:prepare_command) do
-      forbid_if always()
-    end
-
-    policy action([:complete, :save_draft]) do
-      authorize_if expr(status == :in_progress and member_id == ^actor([:member, :id]))
-    end
-
-    policy action(:detect_dates) do
-      authorize_if expr(status == :in_progress and member_id == ^actor([:member, :id]))
+    action :notify_employee_about_settlement do
+      description "Emails the employee that their settlement was accepted or returned."
+      argument :signal, Signals.SettlementReviewed, allow_nil?: false
+      run NotifyEmployeeAboutReviewedSettlement
     end
   end
 
@@ -278,8 +297,14 @@ defmodule Firmowid.Delegations.Delegation do
       allow_nil? false
       default :pending
       public? true
-      constraints one_of: [:pending, :in_progress, :complete]
+      constraints one_of: [:pending, :in_progress, :awaiting_signature, :submitted, :complete]
     end
+
+    attribute :settlement_sequence, :integer, public?: true, constraints: [min: 1]
+    attribute :settlement_year, :integer, public?: true, constraints: [min: 2000]
+    attribute :settlement_prepared_at, :utc_datetime, public?: true
+    attribute :submitted_at, :utc_datetime, public?: true
+    attribute :settlement_return_reason, :string, public?: true
 
     Resource.firmowid_timestamps()
   end
@@ -294,8 +319,14 @@ defmodule Firmowid.Delegations.Delegation do
       allow_nil? false
     end
 
-    belongs_to :signed_command_blob, Firmowid.Blobs.Blob do
+    belongs_to :signed_command_blob, Blob do
       description "Employer-signed business trip order."
+      allow_nil? true
+      attribute_writable? true
+    end
+
+    belongs_to :signed_settlement_blob, Blob do
+      description "Employee-signed delegation settlement submitted for employer review."
       allow_nil? true
       attribute_writable? true
     end
@@ -308,6 +339,12 @@ defmodule Firmowid.Delegations.Delegation do
       on :delegation_submitted, :notify_admins, delivery: {AshOban.Signals, queue: :notification_emails, max_attempts: 3}
 
       on :delegation_approved, :notify_employee, delivery: {AshOban.Signals, queue: :notification_emails, max_attempts: 3}
+
+      on :settlement_submitted, :notify_admins_about_settlement,
+        delivery: {AshOban.Signals, queue: :notification_emails, max_attempts: 3}
+
+      on :settlement_reviewed, :notify_employee_about_settlement,
+        delivery: {AshOban.Signals, queue: :notification_emails, max_attempts: 3}
     end
   end
 
@@ -317,5 +354,11 @@ defmodule Firmowid.Delegations.Delegation do
 
   identities do
     identity :unique_reference, [:organization_id, :reference]
+
+    identity :unique_settlement_number, [
+      :organization_id,
+      :settlement_year,
+      :settlement_sequence
+    ]
   end
 end

@@ -1,11 +1,15 @@
 defmodule FirmowidWeb.Management.Views.Delegation do
-  @moduledoc "Management view for preparing an employee's business-trip order."
+  @moduledoc "Management view for an employee's business-trip order and submitted settlement."
 
   use FirmowidWeb, :live_view
 
   import FirmowidUI.Components.Button
   import FirmowidUI.Components.Link
-  import FirmowidWeb.Delegations.Components.Delegation, only: [detail_row: 1]
+
+  import FirmowidWeb.Delegations.Components.Delegation,
+    only: [date_range: 1, detail_row: 1, settlement_summary: 1]
+
+  import FirmowidWeb.Delegations.Components.Settlement.Documents, only: [document_pill: 1]
   import FirmowidWeb.DesignSystem.Components.CoreComponents
   import FirmowidWeb.DesignSystem.Components.MonthPicker
   import Phoenix.Component, except: [link: 1]
@@ -14,6 +18,7 @@ defmodule FirmowidWeb.Management.Views.Delegation do
   alias Firmowid.Delegations
   alias Firmowid.Payroll
   alias FirmowidWeb.Delegations.Utilities.DelegationPresentation
+  alias FirmowidWeb.Delegations.Utilities.SettlementDocument
   alias FirmowidWeb.Infrastructure.Utilities.ElectronicSignature
   alias FirmowidWeb.Management.Utilities.Navigation
 
@@ -58,6 +63,8 @@ defmodule FirmowidWeb.Management.Views.Delegation do
           end
 
         if delegation do
+          document = settlement_document(delegation, scope)
+
           {:noreply,
            socket
            |> assign(:employee, employee)
@@ -66,7 +73,9 @@ defmodule FirmowidWeb.Management.Views.Delegation do
            |> assign(:command_form, command_form(false, delegation.advance_amount))
            |> assign(:current_advance_amount, delegation.advance_amount)
            |> assign(:billing_month, delegation.billing_month)
-           |> assign(:page_title, gettext("Business trip order"))}
+           |> assign(:document, document)
+           |> assign(:return_form, to_form(%{"reason" => ""}, as: :settlement_return))
+           |> assign(:page_title, page_title(document))}
         else
           {:noreply, push_navigate(socket, to: Navigation.employee_path(employee.id))}
         end
@@ -169,7 +178,158 @@ defmodule FirmowidWeb.Management.Views.Delegation do
     end
   end
 
+  def handle_event("accept-settlement", _params, socket) do
+    case Delegations.accept_settlement(socket.assigns.delegation.id,
+           scope: socket.assigns.ash_scope
+         ) do
+      {:ok, _delegation} ->
+        {:noreply,
+         socket
+         |> put_flash(:info, "Rozliczenie zostało zatwierdzone.")
+         |> push_navigate(to: Navigation.employee_delegations_path(socket.assigns.employee.id))}
+
+      {:error, _error} ->
+        {:noreply, put_flash(socket, :error, "Nie udało się zatwierdzić rozliczenia.")}
+    end
+  end
+
+  def handle_event("return-settlement", %{"settlement_return" => %{"reason" => reason}}, socket) do
+    if String.trim(reason) == "" do
+      {:noreply, put_flash(socket, :error, "Napisz, co pracownik ma poprawić.")}
+    else
+      return_settlement(socket, reason)
+    end
+  end
+
   @impl true
+  def render(%{delegation: %{status: status, signed_settlement_blob_id: blob_id}} = assigns)
+      when status in [:submitted, :complete] and not is_nil(blob_id) do
+    ~H"""
+    <main class="w-full px-4 py-6">
+      <.back navigate={Navigation.employee_delegations_path(@employee.id)} class="justify-self-start">
+        Delegacje pracownika
+      </.back>
+
+      <small class="mt-10 block text-grey-500">{@delegation.title}</small>
+      <h1 class="mt-1 text-2xl/tight font-medium">Rozliczenie delegacji</h1>
+      <p
+        :if={@delegation.status == :submitted}
+        class="mt-4 max-w-2xl text-base text-balance text-grey-700"
+      >
+        Pracownik przesłał podpisane rozliczenie. Sprawdź dokument i dowody kosztów, a potem zatwierdź rozliczenie albo zwróć je do poprawy.
+      </p>
+      <p
+        :if={@delegation.status == :complete}
+        class="mt-4 max-w-2xl text-base text-balance text-grey-700"
+      >
+        Rozliczenie zostało zatwierdzone.
+      </p>
+
+      <div class="mt-10 grid min-w-0 grid-cols-1 items-start gap-10 lg:grid-cols-[minmax(0,680px)_minmax(0,400px)]">
+        <section
+          class="min-w-0 rounded-lg bg-grey-200 p-4 sm:p-6"
+          aria-label="Podgląd podpisanego rozliczenia"
+        >
+          <p class="mb-4 truncate text-sm font-medium">
+            {@document.delegation.signed_settlement_blob.original_filename}
+          </p>
+          <div
+            id="signed-settlement-preview"
+            phx-update="ignore"
+            phx-hook="PDFViewer"
+            data-pdf-url={@document.delegation.signed_settlement_blob.url}
+            class="space-y-4 [&_canvas]:block [&_canvas]:h-auto! [&_canvas]:max-w-full [&_canvas]:bg-white [&_canvas]:shadow-sm"
+          >
+            <p class="p-8 text-center text-sm text-grey-700">Ładowanie dokumentu...</p>
+          </div>
+        </section>
+
+        <aside class="min-w-0 lg:sticky lg:top-6">
+          <dl class="grid grid-cols-[auto_1fr] gap-x-6 gap-y-4">
+            <.detail_row label="Imię i nazwisko">
+              {@employee.member.name || @employee.email}
+            </.detail_row>
+            <.detail_row label="Data wyjazdu">
+              <.date_range start_date={@delegation.start_date} end_date={@delegation.end_date} />
+            </.detail_row>
+            <.detail_row label="Cel wyjazdu">{@delegation.purpose}</.detail_row>
+            <.detail_row label="Numer rozliczenia">
+              {@delegation.settlement_sequence}/{@delegation.settlement_year}
+            </.detail_row>
+          </dl>
+
+          <.link
+            kind="button"
+            variant="outline"
+            size="small"
+            external={@document.delegation.signed_settlement_blob.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            class="mt-6 flex w-fit max-w-full"
+          >
+            <Lucideicons.file_down class="size-4 shrink-0 text-grey-900" />
+            <span class="truncate">Pobierz podpisane rozliczenie</span>
+          </.link>
+
+          <.settlement_summary document={@document}>
+            <div class="mt-5 border-t border-grey-100 pt-5">
+              <h3 class="text-sm text-grey-500">Dowody kosztów</h3>
+              <p :if={@document.attachments == []} class="mt-3 text-sm text-grey-700">
+                Brak załączonych dokumentów.
+              </p>
+              <div :if={@document.attachments != []} class="mt-3 flex flex-wrap gap-2">
+                <.document_pill
+                  :for={blob <- @document.attachments}
+                  filename={blob.original_filename}
+                  url={blob.url}
+                />
+              </div>
+            </div>
+          </.settlement_summary>
+
+          <section
+            :if={@delegation.status == :submitted}
+            class="mt-6 rounded-lg border border-grey-200 bg-grey-50 p-5"
+            aria-label="Decyzja"
+          >
+            <.button
+              type="button"
+              variant="primary"
+              accent="teal"
+              class="w-full"
+              phx-click="accept-settlement"
+              phx-disable-with="Zatwierdzanie..."
+            >
+              Zatwierdź rozliczenie
+            </.button>
+            <.form
+              for={@return_form}
+              id="settlement-return-form"
+              phx-submit="return-settlement"
+              class="mt-6 border-t border-grey-200 pt-5"
+            >
+              <.input
+                field={@return_form[:reason]}
+                type="textarea"
+                label="Co pracownik ma poprawić?"
+                required
+              />
+              <.button
+                type="submit"
+                variant="secondary"
+                class="mt-3 w-full"
+                phx-disable-with="Zwracanie..."
+              >
+                Zwróć do poprawy
+              </.button>
+            </.form>
+          </section>
+        </aside>
+      </div>
+    </main>
+    """
+  end
+
   def render(assigns) do
     ~H"""
     <main class="w-full px-4 py-6">
@@ -378,6 +538,41 @@ defmodule FirmowidWeb.Management.Views.Delegation do
     </main>
     """
   end
+
+  defp return_settlement(socket, reason) do
+    case Delegations.return_settlement(
+           socket.assigns.delegation.id,
+           %{settlement_return_reason: reason},
+           scope: socket.assigns.ash_scope
+         ) do
+      {:ok, _delegation} ->
+        {:noreply,
+         socket
+         |> put_flash(:info, "Rozliczenie zostało zwrócone pracownikowi do poprawy.")
+         |> push_navigate(to: Navigation.employee_delegations_path(socket.assigns.employee.id))}
+
+      {:error, _error} ->
+        {:noreply, put_flash(socket, :error, "Nie udało się zwrócić rozliczenia.")}
+    end
+  end
+
+  defp settlement_document(%{status: status, signed_settlement_blob_id: blob_id} = delegation, scope)
+       when status in [:submitted, :complete] and not is_nil(blob_id) do
+    delegation
+    |> Ash.load!(
+      [
+        signed_settlement_blob: [:url],
+        expenses: [blob: [:url], statement_blob: [:url], related_blobs: [:url]]
+      ],
+      scope: scope
+    )
+    |> SettlementDocument.build(nil, nil)
+  end
+
+  defp settlement_document(_delegation, _scope), do: nil
+
+  defp page_title(nil), do: gettext("Business trip order")
+  defp page_title(_document), do: gettext("Business trip settlement")
 
   defp command_form(advance?, amount) do
     to_form(%{"advance" => advance?, "amount" => Money.to_decimal(amount)},

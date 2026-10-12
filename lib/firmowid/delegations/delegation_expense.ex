@@ -168,6 +168,10 @@ defmodule Firmowid.Delegations.DelegationExpense do
       authorize_if always()
     end
 
+    bypass {SystemActorRole, roles: [:leave_notifier]} do
+      authorize_if action_type(:read)
+    end
+
     policy action_type(:read) do
       authorize_if expr(delegation.member_id == ^actor([:member, :id]))
     end

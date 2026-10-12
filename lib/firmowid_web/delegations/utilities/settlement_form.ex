@@ -8,9 +8,9 @@ defmodule FirmowidWeb.Delegations.Utilities.SettlementForm do
   alias Firmowid.Delegations.DelegationExpense.Trip
   alias Phoenix.HTML.Form
 
-  @doc "Builds the complete form for a delegation settlement."
+  @doc "Builds the preparation form for a delegation settlement."
   @spec complete_form(struct(), map(), atom()) :: Form.t()
-  def complete_form(delegation, scope, action \\ :complete) do
+  def complete_form(delegation, scope, action \\ :prepare_settlement) do
     detail_types = Map.new(delegation.expenses, &{&1.id, Atom.to_string(&1.details.type)})
 
     forms =
