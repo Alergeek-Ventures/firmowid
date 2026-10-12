@@ -30,7 +30,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceReview do
         <div class="mbs-8 flex gap-6">
           <div class="max-w-[650px] flex-1">
             <div class="overflow-clip rounded-lg border border-grey-200 bg-white shadow-sm">
-              <FirmowidWeb.Invoicing.SalesInvoices.Components.Pdf.sales_invoice
+              <FirmowidUI.Invoicing.Components.SalesInvoice.sales_invoice
                 sales_invoice={@preview_invoice}
                 currency_rate={@currency_rate}
                 show_vat={@organization.is_vat_payer}
@@ -41,82 +41,13 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceReview do
 
           <div class="space-y-6">
             <h2 class="mbe-4 text-lg font-medium text-grey-700">Dane faktury</h2>
-            <form
-              id="invoice-number-form"
-              phx-change="update_invoice_number"
-              phx-submit={if @ksef_connected?, do: "send_to_ksef", else: "confirm_invoice"}
-            >
-              <label for="invoice-number" class="mbe-2 block text-sm text-grey-500">Numer faktury</label>
-              <input
-                id="invoice-number"
-                type="text"
-                name="invoice_number"
-                value={@invoice_number}
-                required
-                class="w-full rounded-lg border border-grey-200 px-3 py-2 text-sm text-grey-700 placeholder:text-grey-400 focus:border-transparent focus:ring-2 focus:ring-turquoise-500"
-              />
-            </form>
-            <.error :for={{message, _opts} <- @invoice_number_errors}>{message}</.error>
-
-            <%= if @invoice_warnings != [] do %>
-              <div class="space-y-3">
-                <div
-                  :for={warning <- @invoice_warnings}
-                  class="bg-amber-50 rounded-lg bg-orangeBg p-3 text-sm"
-                >
-                  <div class="flex items-start gap-2 text-orangeText">
-                    <Lucideicons.alert_triangle class="text-amber-500 mbs-0.5 size-4 shrink-0" />
-                    <span>
-                      <%= case warning do %>
-                        <% {:invalid_format, _} -> %>
-                          Format numeru może być nieprawidłowy.
-                        <% {:duplicate, _} -> %>
-                          Numer faktury już istnieje.
-                        <% {:gap, _} -> %>
-                          Numer tworzy lukę w numeracji.
-                      <% end %>
-                    </span>
-                  </div>
-                  <div class="ms-6 mbs-2 flex flex-wrap gap-2">
-                    <.button
-                      :for={suggestion <- warning_suggestions(warning)}
-                      type="button"
-                      phx-click="select_series"
-                      phx-value-number={suggestion}
-                      variant="secondary"
-                      accent="turquoise"
-                      size="small"
-                      class="text-xs"
-                    >
-                      Użyj {suggestion}
-                    </.button>
-                  </div>
-                </div>
-              </div>
-            <% else %>
-              <div class="flex flex-wrap gap-2">
-                <.button
-                  :for={
-                    {_series, next_number} <-
-                      Enum.sort_by(@series_suggestions, fn {s, _} -> s || "" end)
-                  }
-                  type="button"
-                  phx-click="select_series"
-                  phx-value-number={next_number}
-                  variant={if(@invoice_number == next_number, do: "secondary", else: "outline")}
-                  accent="turquoise"
-                  size="small"
-                  class={[
-                    if(@invoice_number == next_number,
-                      do: "border-turquoise-500 text-turquoise-700",
-                      else: "text-grey-600 hover:bg-grey-50"
-                    )
-                  ]}
-                >
-                  {next_number}
-                </.button>
-              </div>
-            <% end %>
+            <FirmowidUI.Invoicing.Components.InvoiceNumber.invoice_number
+              invoice_number={@invoice_number}
+              next_numbers_by_series={@series_suggestions}
+              warnings={@invoice_warnings}
+              errors={@invoice_number_errors}
+              submit_event={if @ksef_connected?, do: "send_to_ksef", else: "confirm_invoice"}
+            />
 
             <form id="invoice-notes-form" phx-change="update_notes">
               <label for="invoice-note" class="mbe-2 block text-sm text-grey-500">Notatka na fakturze</label>
@@ -199,8 +130,4 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceReview do
     </div>
     """
   end
-
-  defp warning_suggestions({:invalid_format, suggestions}), do: suggestions
-  defp warning_suggestions({:duplicate, suggestions}), do: suggestions
-  defp warning_suggestions({:gap, expected}), do: [expected]
 end

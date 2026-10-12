@@ -2,7 +2,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
   @moduledoc """
   Component for editing invoice line items.
 
-  Works with AshPhoenix.Form (WizardDraft, SalesInvoice).
+  Works with AshPhoenix.Form (WizardState, SalesInvoice).
   The parent view passes a pre-built Phoenix form and the items field name.
   """
   use FirmowidWeb, :html

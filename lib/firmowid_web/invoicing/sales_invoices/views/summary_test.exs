@@ -33,7 +33,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.SummaryTest do
     test "renders sales_invoices page", %{conn: conn} do
       conn = log_in_user(conn, admin_fixture())
 
-      # Creator creates a WizardDraft in process-local ETS on connect,
+      # Creator creates a WizardState in shared ETS on connect,
       # then push_patches to ?szkic_kreatora=<id>&krok=1
       {:ok, lv, _html} = live(conn, ~p"/sprzedazowe")
       html = render(lv)
@@ -182,13 +182,14 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.SummaryTest do
 
   defp sales_invoice_fixture!(admin) do
     {:ok, invoice} =
-      SalesInvoice.create(
+      SalesInvoice.persist_invoice(
         %{
           invoice_number: "FV/SUMMARY/#{System.unique_integer([:positive])}",
           issue_date: ~D[2026-01-10],
           sale_date: ~D[2026-01-10],
           due_date: ~D[2026-01-24],
           payment_method: :transfer,
+          seller_account_number: "PL61109010140000071219812874",
           invoice_type: :foreign,
           currency: "EUR",
           seller_nip: "6161525811",

@@ -278,7 +278,7 @@ defmodule Firmowid.Ash.Invoicing.Counterparty do
 
   calculations do
     # TODO: Rename to :display_name_label for consistency with
-    # SalesInvoice.buyer_display_name_label and WizardDraft.buyer_display_name_label.
+    # SalesInvoice.buyer_display_name_label and WizardState.buyer_display_name_label.
     calculate :display_label,
               :string,
               expr(
@@ -290,7 +290,7 @@ defmodule Firmowid.Ash.Invoicing.Counterparty do
               )
 
     # NOTE: This expr() logic is intentionally duplicated across Counterparty,
-    # SalesInvoice (as :buyer_id_type), and WizardDraft (as :buyer_id_type)
+    # SalesInvoice (as :buyer_id_type), and WizardState (as :buyer_id_type)
     # because Ash expr() runs in the DB. Runtime equivalent: CountryCodes.tax_id_type/3
     calculate :tax_id_type,
               :atom,

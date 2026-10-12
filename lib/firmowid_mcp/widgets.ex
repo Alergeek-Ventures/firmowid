@@ -1,7 +1,11 @@
 defmodule FirmowidMcp.Widgets do
   @moduledoc "Feature-owned widgets exposed by the MCP endpoint."
 
-  @widgets [FirmowidMcp.Ksef.Connection]
+  @widgets [
+    FirmowidMcp.Ksef.Connection,
+    FirmowidMcp.Invoicing.IssueInvoice,
+    FirmowidMcp.Invoicing.IssueCorrection
+  ]
 
   @doc "Returns the widget modules exposed by this interface."
   @spec all() :: [module()]

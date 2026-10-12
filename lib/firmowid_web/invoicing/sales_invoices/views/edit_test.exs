@@ -72,6 +72,67 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.EditTest do
     assert is_nil(SalesInvoice.get!(invoice.id, scope: scope).invoice_number)
   end
 
+  test "editing an unsent correction previews and saves its correction and seller snapshot", %{
+    conn: conn
+  } do
+    admin = admin_fixture()
+    scope = %{tenant: admin.organization_id, actor: admin}
+
+    seller = %{
+      seller_display_name: "Historical Seller",
+      seller_address: "Historical address",
+      seller_nip: "6161525811"
+    }
+
+    original =
+      admin
+      |> draft_fixture!()
+      |> Ash.Seed.update!(Map.put(seller, :invoice_number, "FV/2026/1"))
+
+    correction =
+      admin
+      |> draft_fixture!()
+      |> Ash.Seed.update!(
+        Map.merge(seller, %{
+          invoice_number: "FK/2026/1",
+          ksef_invoice_kind: :kor,
+          corrected_invoice_id: original.id,
+          correction_reason: "Corrected service"
+        })
+      )
+
+    {:ok, view, _html} = live(log_in_user(conn, admin), ~p"/sprzedazowe/#{correction.id}/edytuj")
+
+    assert has_element?(view, "#invoice-form", "Faktura korygująca")
+    assert has_element?(view, "#invoice-form", "Historical Seller")
+    assert has_element?(view, "#invoice-form th", "Przed korektą")
+
+    view
+    |> form("#invoice-form",
+      form: %{sales_invoice_items: %{"0" => %{name: "Updated consulting", unit_price: "200"}}}
+    )
+    |> render_change()
+
+    assert has_element?(view, "#invoice-form td", "Updated consulting")
+    assert has_element?(view, "#invoice-form", "Historical Seller")
+    assert has_element?(view, "#invoice-form th", "Po korekcie")
+
+    [unchanged] =
+      SalesInvoice.get!(correction.id, load: [:sales_invoice_items], scope: scope).sales_invoice_items
+
+    assert unchanged.name == "Consulting"
+
+    view |> form("#invoice-form") |> render_submit()
+    assert_redirect(view, ~p"/sprzedazowe/#{correction.id}/podsumowanie")
+
+    saved = SalesInvoice.get!(correction.id, load: [:sales_invoice_items], scope: scope)
+    assert saved.ksef_invoice_kind == :kor
+    assert saved.seller_display_name == "Historical Seller"
+    assert saved.seller_address == "Historical address"
+    assert [%{name: "Updated consulting", unit_price: price}] = saved.sales_invoice_items
+    assert Decimal.equal?(price, Decimal.new(200))
+  end
+
   defp draft_fixture!(admin) do
     admin.organization_id
     |> Firmowid.Ash.Core.get_organization!(actor: admin, tenant: admin.organization_id)
@@ -82,6 +143,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.EditTest do
       issue_date: Date.utc_today(),
       sale_date: Date.utc_today(),
       due_date: Date.add(Date.utc_today(), 7),
+      payment_method: :cash,
       currency: "PLN",
       buyer_type: :company,
       buyer_country: "PL",
@@ -122,7 +184,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.EditTest do
       )
 
     {:ok, invoice} =
-      SalesInvoice.create(
+      SalesInvoice.persist_invoice(
         %{
           invoice_number: "FV/TEST/ACCOUNT",
           issue_date: Date.utc_today(),
@@ -168,13 +230,14 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.EditTest do
     admin = admin_fixture()
 
     {:ok, invoice} =
-      SalesInvoice.create(
+      SalesInvoice.persist_invoice(
         %{
           invoice_number: "FV/TEST/1",
           issue_date: Date.utc_today(),
           sale_date: Date.utc_today(),
           due_date: Date.add(Date.utc_today(), 14),
           payment_method: :transfer,
+          seller_account_number: "PL61109010140000071219812874",
           invoice_type: :foreign,
           currency: "EUR",
           seller_nip: "6161525811",
@@ -211,13 +274,14 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.EditTest do
     admin = admin_fixture()
 
     {:ok, invoice} =
-      SalesInvoice.create(
+      SalesInvoice.persist_invoice(
         %{
           invoice_number: "FV/TEST/KSEF",
           issue_date: Date.utc_today(),
           sale_date: Date.utc_today(),
           due_date: Date.add(Date.utc_today(), 14),
           payment_method: :transfer,
+          seller_account_number: "PL61109010140000071219812874",
           invoice_type: :foreign,
           currency: "EUR",
           seller_nip: "6161525811",
@@ -259,13 +323,14 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.EditTest do
     admin = admin_fixture()
 
     {:ok, invoice} =
-      SalesInvoice.create(
+      SalesInvoice.persist_invoice(
         %{
           invoice_number: "FV/TEST/2",
           issue_date: ~D[2026-01-10],
           sale_date: ~D[2026-01-10],
           due_date: ~D[2026-01-24],
           payment_method: :transfer,
+          seller_account_number: "PL61109010140000071219812874",
           invoice_type: :foreign,
           currency: "EUR",
           seller_nip: "6161525811",
@@ -307,13 +372,14 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.EditTest do
     admin = admin_fixture()
 
     {:ok, invoice} =
-      SalesInvoice.create(
+      SalesInvoice.persist_invoice(
         %{
           invoice_number: "FV/TEST/3",
           issue_date: Date.utc_today(),
           sale_date: Date.utc_today(),
           due_date: Date.add(Date.utc_today(), 14),
           payment_method: :transfer,
+          seller_account_number: "PL61109010140000071219812874",
           invoice_type: :foreign,
           currency: "EUR",
           seller_nip: "6161525811",

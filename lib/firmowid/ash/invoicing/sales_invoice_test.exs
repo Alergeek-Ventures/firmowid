@@ -40,7 +40,7 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoiceTest do
       create_sales_invoice!(user, attrs)
 
       assert {:error, %Invalid{errors: errors}} =
-               Invoicing.create_sales_invoice(attrs, scope: scope_for(user))
+               Ash.create(SalesInvoice, attrs, action: :persist_invoice, scope: scope_for(user))
 
       assert Enum.any?(errors, fn error ->
                match?(%Ash.Error.Changes.InvalidAttribute{field: :invoice_number}, error)
@@ -105,7 +105,7 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoiceTest do
         )
 
       assert {:ok, _correction} =
-               SalesInvoice.create_correction(
+               SalesInvoice.issue_correction(
                  %{
                    original_invoice_id: invoice.id,
                    invoice_number: "FK/#{System.unique_integer([:positive])}",
@@ -497,6 +497,95 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoiceTest do
     end
   end
 
+  describe "issue_invoice/2" do
+    test "issues a draft saved on an earlier day with today's issue date" do
+      user = invoicing_admin_fixture()
+
+      draft =
+        create_sales_invoice!(
+          user,
+          Map.merge(base_invoice_attrs(), %{
+            invoice_number: nil,
+            issue_date: Date.add(Date.utc_today(), -30),
+            sales_invoice_items: [base_item_attrs(%{})]
+          })
+        )
+
+      assert {:ok, issued} =
+               Invoicing.issue_sales_invoice(
+                 %{
+                   input: %{invoice_number: "FV/#{System.unique_integer([:positive])}"},
+                   invoice_id: draft.id
+                 },
+                 scope: scope_for(user)
+               )
+
+      assert issued.id == draft.id
+      assert issued.issue_date == Date.utc_today()
+    end
+
+    test "issues each confirmation only once" do
+      user = invoicing_admin_fixture()
+      confirmation_id = Ash.UUIDv7.generate()
+
+      attrs = %{
+        input: Map.put(issue_input(), :invoice_number, "FV/#{System.unique_integer([:positive])}"),
+        confirmation_id: confirmation_id
+      }
+
+      assert {:ok, %{id: ^confirmation_id}} =
+               Invoicing.issue_sales_invoice(attrs, scope: scope_for(user))
+
+      second_attempt =
+        Invoicing.issue_sales_invoice(
+          put_in(attrs.input.invoice_number, "FV/#{System.unique_integer([:positive])}"),
+          scope: scope_for(user)
+        )
+
+      assert {:error, %Invalid{}} = second_attempt
+
+      assert [_issued] =
+               SalesInvoice
+               |> Ash.Query.filter(id == ^confirmation_id)
+               |> Ash.read!(scope: scope_for(user))
+    end
+
+    test "points to organization settings when seller details are missing" do
+      user = admin_fixture()
+
+      assert {:error, %Invalid{errors: errors}} =
+               Invoicing.issue_sales_invoice(
+                 %{input: Map.put(issue_input(), :invoice_number, "FV/1/2026")},
+                 scope: scope_for(user)
+               )
+
+      assert %{message: "Complete the company address in the organization settings."} =
+               Enum.find(errors, &match?(%{field: :seller_address}, &1))
+    end
+  end
+
+  defp invoicing_admin_fixture do
+    user = admin_fixture()
+
+    user.organization_id
+    |> Firmowid.Ash.Core.get_organization!(actor: user, tenant: user.organization_id)
+    |> Ash.Seed.update!(%{address: "ul. Testowa 1, 00-001 Warszawa"})
+
+    user
+  end
+
+  defp issue_input do
+    base_invoice_attrs()
+    |> Map.drop([
+      :invoice_number,
+      :seller_nip,
+      :seller_display_name,
+      :seller_address,
+      :ksef_invoice_kind
+    ])
+    |> Map.put(:sales_invoice_items, [base_item_attrs(%{})])
+  end
+
   defp scope_for(user), do: %Scope{actor: user, tenant: user.organization_id}
 
   defp issued_invoice_xml(invoice, scope) do
@@ -507,7 +596,7 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoiceTest do
   end
 
   defp create_sales_invoice!(user, attrs) do
-    invoice = Invoicing.create_sales_invoice!(attrs, scope: scope_for(user))
+    invoice = Ash.create!(SalesInvoice, attrs, action: :persist_invoice, scope: scope_for(user))
     Ash.load!(invoice, [:sales_invoice_items], scope: scope_for(user))
   end
 
