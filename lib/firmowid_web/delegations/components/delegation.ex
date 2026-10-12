@@ -66,4 +66,42 @@ defmodule FirmowidWeb.Delegations.Components.Delegation do
     </time>
     """
   end
+
+  @doc "Renders the cost totals and balance of a settlement document."
+  @spec settlement_summary(map()) :: Rendered.t()
+  attr :document, :map, required: true
+  slot :inner_block
+
+  def settlement_summary(assigns) do
+    ~H"""
+    <section class="mt-6 rounded-lg bg-white p-5 shadow-sm">
+      <h2 class="text-grey-500">Podsumowanie</h2>
+      <dl class="mt-6 space-y-3 text-sm">
+        <.summary_row label="Przejazdy" value={@document.transport_total} />
+        <.summary_row label="Nocleg" value={@document.accommodation_total} />
+        <.summary_row label="Inne" value={@document.other_total} />
+        <div class="my-5 space-y-3 border-y border-grey-100 py-5">
+          <.summary_row label="Razem koszty" value={@document.total} strong />
+          <.summary_row label="Pobrana zaliczka" value={@document.delegation.advance_amount} />
+        </div>
+        <.summary_row label={@document.balance_label} value={@document.balance} strong />
+      </dl>
+      {render_slot(@inner_block)}
+    </section>
+    """
+  end
+
+  attr :label, :string, required: true
+  attr :value, Money, required: true
+  attr :strong, :boolean, default: false
+
+  defp summary_row(assigns) do
+    ~H"""
+    <div class={["flex justify-between gap-4", @strong && "font-medium"]}>
+      <dt>{@label}</dt><dd class={[Money.zero?(@value) && "text-grey-500"]}>
+        {DelegationPresentation.format_money(@value)}
+      </dd>
+    </div>
+    """
+  end
 end

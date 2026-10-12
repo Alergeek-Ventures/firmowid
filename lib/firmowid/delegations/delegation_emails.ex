@@ -13,6 +13,69 @@ defmodule Firmowid.Delegations.DelegationEmails do
   alias Firmowid.Mailer
   alias Firmowid.TimeFormatter
 
+  @doc "Notifies organization administrators that a signed settlement awaits review."
+  @spec deliver_submitted_settlement([User.t() | map()], Delegation.t(), Member.t() | map()) ::
+          {:ok, Swoosh.Email.t()} | {:error, term()}
+  def deliver_submitted_settlement(admins, delegation, employee) do
+    name = employee_name(employee)
+    url = url(~p"/zarzadzanie/pracownicy/#{employee.user_id}/delegacje/#{delegation.reference}")
+    total = settlement_total(delegation.expenses)
+    {balance_label, balance} = settlement_balance(total, delegation.advance_amount)
+
+    assigns = %{
+      name: name,
+      delegation: delegation,
+      url: url,
+      total: total,
+      balance_label: balance_label,
+      balance: balance
+    }
+
+    email =
+      new()
+      |> to(Enum.map(admins, &to_string(&1.email)))
+      |> from({"Firmowid", "piotr@firmowid.pl"})
+      |> subject("Rozliczenie delegacji do rozpatrzenia")
+      |> html_body(to_html(submitted_settlement_html(assigns)))
+      |> text_body(submitted_settlement_text(assigns))
+
+    with {:ok, _metadata} <- Mailer.deliver(email), do: {:ok, email}
+  end
+
+  @doc "Tells the employee that their settlement was accepted or returned for corrections."
+  @spec deliver_reviewed_settlement(
+          Delegation.t(),
+          Member.t() | map(),
+          :complete | :in_progress,
+          String.t() | nil
+        ) ::
+          {:ok, Swoosh.Email.t()} | {:error, term()}
+  def deliver_reviewed_settlement(delegation, employee, status, reason) do
+    total = settlement_total(delegation.expenses)
+    {balance_label, balance} = settlement_balance(total, delegation.advance_amount)
+
+    assigns = %{
+      name: employee_name(employee),
+      delegation: delegation,
+      url: url(~p"/delegacje/#{delegation.reference}"),
+      subject: reviewed_subject(status),
+      status: status,
+      reason: reason,
+      balance_label: balance_label,
+      balance: balance
+    }
+
+    email =
+      new()
+      |> to(to_string(employee.user.email))
+      |> from({"Firmowid", "piotr@firmowid.pl"})
+      |> subject(assigns.subject)
+      |> html_body(to_html(reviewed_settlement_html(assigns)))
+      |> text_body(reviewed_settlement_text(assigns))
+
+    with {:ok, _metadata} <- Mailer.deliver(email), do: {:ok, email}
+  end
+
   @spec deliver_new_delegation([User.t() | map()], Delegation.t(), Member.t() | map()) ::
           {:ok, Swoosh.Email.t()} | {:error, term()}
   def deliver_new_delegation(admins, delegation, employee) do
@@ -109,6 +172,108 @@ defmodule Firmowid.Delegations.DelegationEmails do
     Cel wyjazdu: #{assigns.delegation.purpose}
     Przewidywana kwota: #{Money.to_string!(assigns.delegation.expected_cost)}
     """
+  end
+
+  defp submitted_settlement_html(assigns) do
+    ~H"""
+    <.email preheader="Rozliczenie delegacji do rozpatrzenia">
+      <.greeting>Rozliczenie delegacji do rozpatrzenia</.greeting>
+      <.paragraph>
+        {@name} przesłał(a) podpisane rozliczenie delegacji. Dokument oraz dowody kosztów są dostępne w Firmowidzie.
+      </.paragraph>
+      <.detail_row label="Pracownik" value={@name} />
+      <.detail_row label="Termin" value={date_range(@delegation)} />
+      <.detail_row label="Cel" value={@delegation.purpose} />
+      <.detail_row label="Łączny koszt" value={Money.to_string!(@total)} />
+      <.detail_row label={@balance_label} value={Money.to_string!(@balance)} />
+      <.button href={@url}>Otwórz rozliczenie</.button>
+      <.signature />
+    </.email>
+    """
+  end
+
+  defp submitted_settlement_text(assigns) do
+    """
+    Rozliczenie delegacji do rozpatrzenia
+    #{assigns.name} przesłał(a) podpisane rozliczenie delegacji.
+    Termin: #{date_range(assigns.delegation)}
+    Cel: #{assigns.delegation.purpose}
+    Łączny koszt: #{Money.to_string!(assigns.total)}
+    #{assigns.balance_label}: #{Money.to_string!(assigns.balance)}
+
+    Otwórz rozliczenie:
+    #{assigns.url}
+    """
+  end
+
+  defp reviewed_subject(:complete), do: "Rozliczenie delegacji zostało zatwierdzone"
+  defp reviewed_subject(:in_progress), do: "Rozliczenie delegacji wymaga poprawek"
+
+  defp reviewed_settlement_html(assigns) do
+    ~H"""
+    <.email preheader={@subject}>
+      <.greeting>{@subject}</.greeting>
+      <.paragraph :if={@status == :complete}>
+        {@name}, pracodawca zatwierdził Twoje rozliczenie delegacji.
+      </.paragraph>
+      <.paragraph :if={@status == :in_progress}>
+        {@name}, pracodawca zwrócił Twoje rozliczenie delegacji do poprawy.
+      </.paragraph>
+      <.detail_row label="Termin" value={date_range(@delegation)} />
+      <.detail_row label="Cel" value={@delegation.purpose} />
+      <.detail_row
+        :if={@status == :complete}
+        label={@balance_label}
+        value={Money.to_string!(@balance)}
+      />
+      <.detail_row
+        :if={@status == :in_progress}
+        label="Uwagi"
+        value={@reason}
+      />
+      <.button href={@url}>Otwórz rozliczenie</.button>
+      <.signature />
+    </.email>
+    """
+  end
+
+  defp reviewed_settlement_text(%{status: :complete} = assigns) do
+    """
+    #{assigns.subject}
+    #{assigns.name}, pracodawca zatwierdził Twoje rozliczenie delegacji.
+    Termin: #{date_range(assigns.delegation)}
+    Cel: #{assigns.delegation.purpose}
+    #{assigns.balance_label}: #{Money.to_string!(assigns.balance)}
+
+    Otwórz rozliczenie:
+    #{assigns.url}
+    """
+  end
+
+  defp reviewed_settlement_text(%{status: :in_progress} = assigns) do
+    """
+    #{assigns.subject}
+    #{assigns.name}, pracodawca zwrócił Twoje rozliczenie delegacji do poprawy.
+    Termin: #{date_range(assigns.delegation)}
+    Cel: #{assigns.delegation.purpose}
+    Uwagi: #{assigns.reason}
+
+    Otwórz rozliczenie:
+    #{assigns.url}
+    """
+  end
+
+  defp settlement_total(expenses) do
+    Enum.reduce(expenses, Money.new(:PLN, 0), fn expense, total ->
+      amount = expense.settlement_amount || expense.expense_amount
+      Money.add!(total, amount)
+    end)
+  end
+
+  defp settlement_balance(total, advance) do
+    if Money.compare(total, advance) in [:gt, :eq],
+      do: {"Do wypłaty pracownikowi", Money.sub!(total, advance)},
+      else: {"Do zwrotu przez pracownika", Money.sub!(advance, total)}
   end
 
   defp employee_name(%{name: name}) when is_binary(name) and name != "", do: name

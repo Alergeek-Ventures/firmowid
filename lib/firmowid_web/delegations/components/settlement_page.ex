@@ -4,11 +4,13 @@ defmodule FirmowidWeb.Delegations.Components.SettlementPage do
   use FirmowidWeb, :html
 
   import FirmowidUI.Components.Button
+  import FirmowidUI.Components.Link
   import FirmowidWeb.Delegations.Components.Delegation
   import FirmowidWeb.Delegations.Components.Settlement.Expense
   import FirmowidWeb.DesignSystem.Components.CoreComponents
   import Phoenix.Component, except: [link: 1]
 
+  alias FirmowidWeb.Delegations.Utilities.Navigation
   alias FirmowidWeb.Delegations.Utilities.SettlementPresentation
   alias Phoenix.LiveView.Rendered
 
@@ -56,11 +58,20 @@ defmodule FirmowidWeb.Delegations.Components.SettlementPage do
           <h1 id="delegation-settlement-title" class="mt-1 text-2xl font-medium">
             {gettext("Business trip settlement")}
           </h1>
-          <p class="mt-3 max-w-2xl text-balance text-grey-700">
+          <p :if={@editable?} class="mt-3 max-w-2xl text-balance text-grey-700">
             {gettext(
               "Attach tickets and receipts. Fill in the required details. We will fill in amounts and invoice numbers automatically."
             )}
           </p>
+          <div
+            :if={@editable? && @delegation.settlement_return_reason}
+            id="settlement-return-reason"
+            class="mt-4 max-w-2xl rounded-lg bg-rust-100 px-4 py-3 text-sm text-rust-700"
+          >
+            <p class="font-medium">Pracodawca zwrócił rozliczenie do poprawy</p>
+            <p class="mt-1 whitespace-pre-line">{@delegation.settlement_return_reason}</p>
+          </div>
+          <.settlement_status :if={!@editable?} delegation={@delegation} />
 
           <.expense_section
             title={gettext("Journeys")}
@@ -159,7 +170,7 @@ defmodule FirmowidWeb.Delegations.Components.SettlementPage do
               size="big"
               class="mt-6 w-full"
               disabled={@uploading?}
-            >{gettext("Send")}</.button>
+            >{gettext("Go to signature")}</.button>
           </div>
           <.summary
             :if={!@editable?}
@@ -451,4 +462,29 @@ defmodule FirmowidWeb.Delegations.Components.SettlementPage do
   defp blank?(value) when is_binary(value), do: String.trim(value) == ""
   defp blank?(nil), do: true
   defp blank?(_value), do: false
+
+  attr :delegation, :map, required: true
+
+  defp settlement_status(assigns) do
+    ~H"""
+    <div class="mt-3 flex max-w-2xl flex-wrap items-center gap-3 text-grey-700">
+      <.status_badge status={@delegation.status} />
+      <p :if={@delegation.status == :submitted}>
+        Rozliczenie nr {@delegation.settlement_sequence}/{@delegation.settlement_year} czeka na rozpatrzenie przez pracodawcę.
+      </p>
+      <p :if={@delegation.status == :complete && @delegation.settlement_sequence}>
+        Rozliczenie nr {@delegation.settlement_sequence}/{@delegation.settlement_year} zostało zatwierdzone.
+      </p>
+      <.link
+        :if={@delegation.settlement_sequence}
+        kind="unstyled"
+        redirect={Navigation.settlement_download_path(@delegation.reference)}
+        download
+        class="inline-flex items-center gap-1 font-medium text-teal-700"
+      >
+        <Lucideicons.file_down class="size-4" /> Pobierz rozliczenie
+      </.link>
+    </div>
+    """
+  end
 end

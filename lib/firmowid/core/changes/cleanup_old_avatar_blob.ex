@@ -29,6 +29,7 @@ defmodule Firmowid.Core.Changes.CleanupOldAvatarBlob do
     {HoursRecord, :blob_id},
     {LeaveRequest, :blob_id},
     {Delegation, :signed_command_blob_id},
+    {Delegation, :signed_settlement_blob_id},
     {DelegationExpense, :blob_id},
     {DelegationExpense, :statement_blob_id},
     {DelegationExpenseRelatedBlob, :blob_id}

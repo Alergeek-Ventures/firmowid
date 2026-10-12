@@ -493,7 +493,12 @@ defmodule FirmowidWeb.Delegations.Views.DelegationTest do
 
     view |> element("button", "Sortuj chronologicznie") |> render_click()
 
-    assert has_element?(view, "#delegation-complete-form button[type='submit']", "Wyślij")
+    assert has_element?(
+             view,
+             "#delegation-complete-form button[type='submit']",
+             "Przejdź do podpisu"
+           )
+
     change_trip(view, %{departure_date: "2026-08-12", arrival_date: "2026-08-12"})
     assert render(view) =~ ~r/transport-trip-#{first_trip.id}.*transport-trip-#{second_trip.id}/s
   end
@@ -692,7 +697,7 @@ defmodule FirmowidWeb.Delegations.Views.DelegationTest do
     render_submit(view, "submit", params)
 
     completed = Delegations.get_delegation!(delegation.id, scope: scope, load: [:expenses])
-    assert completed.status == :complete
+    assert completed.status == :awaiting_signature
     assert [settled] = completed.expenses
     assert Money.equal?(settled.settlement_amount, Money.new!(:PLN, 40))
     assert Decimal.eq?(settled.nbp_rate, Decimal.new(4))
@@ -781,18 +786,117 @@ defmodule FirmowidWeb.Delegations.Views.DelegationTest do
         {persisted.status, amount}
       end
 
-    assert results == [{:complete, "40"}, {:in_progress, nil}]
+    assert results == [{:awaiting_signature, "40"}, {:in_progress, nil}]
   end
 
-  test "completes a seeded valid settlement", %{conn: conn} do
+  test "prepares a seeded valid settlement for signature", %{conn: conn} do
     {user, delegation} = approved_delegation()
     seed_expense(delegation, user)
     {:ok, view, _html} = conn |> log_in_user(user) |> live(~p"/delegacje/#{delegation.reference}")
 
     view |> form("#delegation-complete-form") |> render_submit()
 
-    refute has_element?(view, "#delegation-complete-form button[type='submit']")
-    assert render(view) =~ "REZ/1"
+    assert has_element?(view, "#signed-settlement-form")
+    assert render(view) =~ "Podpisz i wyślij"
+  end
+
+  test "uploads, cancels, and submits a signed settlement PDF", %{conn: conn} do
+    {user, delegation} = prepared_delegation()
+    {:ok, view, _html} = conn |> log_in_user(user) |> live(~p"/delegacje/#{delegation.reference}")
+
+    assert has_element?(view, "#signed-settlement-form button[type='submit'][disabled]", "Wyślij")
+
+    upload =
+      file_input(view, "#signed-settlement-form", :signed_settlement, [
+        %{name: "podpisane.pdf", content: "%PDF-1.4 signed settlement", type: "application/pdf"}
+      ])
+
+    render_upload(upload, "podpisane.pdf")
+    assert has_element?(view, "button[aria-label='Usuń podpisane.pdf']")
+
+    assert has_element?(
+             view,
+             "#signed-settlement-form button[type='submit']:not([disabled])",
+             "Wyślij"
+           )
+
+    view |> element("button[aria-label='Usuń podpisane.pdf']") |> render_click()
+    assert has_element?(view, "#signed-settlement-form button[type='submit'][disabled]", "Wyślij")
+
+    upload =
+      file_input(view, "#signed-settlement-form", :signed_settlement, [
+        %{name: "podpisane.pdf", content: "%PDF-1.4 signed settlement", type: "application/pdf"}
+      ])
+
+    render_upload(upload, "podpisane.pdf")
+    view |> form("#signed-settlement-form") |> render_submit()
+
+    assert_redirect(view, ~p"/ustawienia/profil")
+
+    submitted =
+      Delegations.get_delegation!(delegation.id,
+        scope: %Scope{actor: user, tenant: user.member.organization_id}
+      )
+
+    assert submitted.status == :submitted
+    assert submitted.submitted_at
+    assert submitted.signed_settlement_blob_id
+  end
+
+  test "rejects a non-PDF signed settlement", %{conn: conn} do
+    {user, delegation} = prepared_delegation()
+    {:ok, view, _html} = conn |> log_in_user(user) |> live(~p"/delegacje/#{delegation.reference}")
+
+    upload =
+      file_input(view, "#signed-settlement-form", :signed_settlement, [
+        %{name: "podpis.png", content: "not a pdf", type: "image/png"}
+      ])
+
+    assert {:error, [[_ref, :not_accepted]]} = render_upload(upload, "podpis.png")
+    assert render(view) =~ "Wybierz plik PDF."
+    assert has_element?(view, "#signed-settlement-form button[type='submit'][disabled]", "Wyślij")
+  end
+
+  test "returns a prepared settlement to expense editing", %{conn: conn} do
+    {user, delegation} = prepared_delegation()
+    {:ok, view, _html} = conn |> log_in_user(user) |> live(~p"/delegacje/#{delegation.reference}")
+
+    view |> element("button", "Edytuj dokument") |> render_click()
+
+    assert has_element?(view, "#delegation-complete-form")
+
+    edited =
+      Delegations.get_delegation!(delegation.id,
+        scope: %Scope{actor: user, tenant: user.member.organization_id}
+      )
+
+    assert edited.status == :in_progress
+  end
+
+  defp prepared_delegation do
+    user = user_fixture()
+
+    delegation =
+      Ash.Seed.seed!(Delegation, %{
+        organization_id: user.member.organization_id,
+        member_id: user.member.id,
+        title: "Wyjazd służbowy",
+        billing_month: ~D[2026-08-01],
+        destination: "Kraków",
+        transport_types: [:railway],
+        purpose: "Spotkanie z klientem",
+        expected_cost: Money.new(:PLN, 100),
+        advance_amount: Money.new(:PLN, 50),
+        start_date: ~D[2026-08-10],
+        end_date: ~D[2026-08-11],
+        status: :awaiting_signature,
+        settlement_sequence: 1,
+        settlement_year: 2026,
+        settlement_prepared_at: ~U[2026-08-12 09:00:00Z],
+        reference: "SIGN-2026-08-#{System.unique_integer([:positive])}"
+      })
+
+    {user, delegation}
   end
 
   defp approved_delegation do
