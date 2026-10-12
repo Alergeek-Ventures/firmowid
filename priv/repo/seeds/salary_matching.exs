@@ -11,7 +11,7 @@ defmodule Firmowid.Seeds.SalaryMatching do
 
   @doc "Adds demo employees and unmatched transfers without clearing existing assignments."
   @spec seed!(map()) :: [map()]
-  def seed!(%{bytecraft: organization, users: %{kira: admin}, banks: %{pln: bank}, projects: projects}) do
+  def seed!(%{bytecraft: organization, users: %{kira: admin}, bank_accounts: %{pln: bank}, projects: projects}) do
     scope = Scope.new!(admin, organization.id)
     month = Date.utc_today() |> Date.beginning_of_month() |> Date.shift(month: -1)
     booking_date = Date.utc_today()

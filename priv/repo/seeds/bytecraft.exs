@@ -21,7 +21,7 @@ defmodule Firmowid.Seeds.Bytecraft do
   def seed! do
     users = seed_users()
     bytecraft = seed_organization(users.kira)
-    seed_org_membership(bytecraft, users)
+    users = seed_org_membership(bytecraft, users)
     counterparties = seed_counterparties(bytecraft)
     projects = seed_projects(bytecraft, users, counterparties)
     blob = seed_blob(bytecraft)
@@ -146,11 +146,16 @@ defmodule Firmowid.Seeds.Bytecraft do
   end
 
   defp seed_org_membership(bytecraft, users) do
-    for user <- [users.kira, users.tomek, users.sable, users.jules, users.maren] do
-      if is_nil(user.organization_id) or user.organization_id != bytecraft.id do
-        Ash.Seed.update!(user, %{organization_id: bytecraft.id})
-      end
-    end
+    Map.new(users, fn {key, user} ->
+      user =
+        if user.organization_id == bytecraft.id do
+          user
+        else
+          Ash.Seed.update!(user, %{organization_id: bytecraft.id})
+        end
+
+      {key, user}
+    end)
   end
 
   # ===========================================================================
