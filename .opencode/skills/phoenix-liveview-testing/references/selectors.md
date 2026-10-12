@@ -1,6 +1,7 @@
 # Selector Strategy
 
 ## Contents
+
 - Preferred selectors
 - What should break tests
 - What should not break tests
@@ -35,9 +36,11 @@ assert has_element?(view, "[data-role=todo]", "Buy lembas")
 ## Patterns to prefer
 
 Prefer:
+
 - `#post-37 [data-role=like-count]`
 
 Avoid when possible:
+
 - `.post-action > .count`
 - `div > span > .count`
 - selectors based only on styling classes

@@ -12,8 +12,8 @@ workspace. It is available to workspace users and linked to the shared tunnel.
 Agree with the operator on tunnel ownership and the target worktree before use;
 only one local environment may use it at a time.
 
-Follow `infisical-secrets`. The tunnel launcher reads `CONTROL_PLANE_API_KEY` and
-`CONTROL_PLANE_TUNNEL_ID` from Infisical environment `dev`, folder
+Follow `infisical-secrets`. The tunnel launcher reads `CONTROL_PLANE_API_KEY`
+and `CONTROL_PLANE_TUNNEL_ID` from Infisical environment `dev`, folder
 `/dev/openai-tunnel`.
 
 ## MCP tools and widgets
@@ -27,10 +27,11 @@ Build interactive widgets under `lib/firmowid_mcp/`, within the owning feature;
 use `FirmowidMcp.Ksef.Connection` and its LiveView as the existing example.
 Reuse `Widgets` for tool/resource registration lookup and scoped tool execution,
 `Runtime` for the HTML shell, content-addressed URIs and resource metadata, and
-`Session`/`LiveSession` for signed mounts, authorization and expiry. The existing
-`assets/js/mcp/bridge.js` connects LiveView to the Apps SDK, updates model context
-and handles downloads and external links. Share UI through `FirmowidUI` where
-both web and MCP use it. Follow `repository-organization` for ownership rules.
+`Session`/`LiveSession` for signed mounts, authorization and expiry. The
+existing `assets/js/mcp/bridge.js` connects LiveView to the Apps SDK, updates
+model context and handles downloads and external links. Share UI through
+`FirmowidUI` where both web and MCP use it. Follow `repository-organization` for
+ownership rules.
 
 ## Feature development and testing
 
@@ -40,8 +41,8 @@ both web and MCP use it. Follow `repository-organization` for ownership rules.
    account only if prompted; do not recreate or reconfigure the app.
 4. After tool schemas or resource metadata change, ask a workspace administrator
    to refresh the app in workspace settings. Start a new conversation with the
-   app selected. Widget URIs are content-addressed by `FirmowidMcp.Runtime`;
-   use the generated URI rather than introducing manual versions.
+   app selected. Widget URIs are content-addressed by `FirmowidMcp.Runtime`; use
+   the generated URI rather than introducing manual versions.
 5. Submit a representative prompt. Verify the tool result and exercise the
    affected widget flow, including validation, submission and model-context
    updates where applicable.
@@ -63,8 +64,8 @@ applicable. `localhost` refers to the tester's computer.
 Zen/Firefox Local Network Access (LNA) can block this WebSocket inside ChatGPT
 even when the same page and form work directly. A domain exception in
 `about:config` → `network.lna.skip-domains` was verified to unblock this setup.
-Preserve existing comma-separated entries. Use the exact worktree hostname for
-a diagnostic; for a developer who explicitly wants all Wave environments, use
+Preserve existing comma-separated entries. Use the exact worktree hostname for a
+diagnostic; for a developer who explicitly wants all Wave environments, use
 `*.wave.local,*.wave.exposed`. The `*.` prefix matches nested subdomains at any
 depth; repeated wildcards are unnecessary. These exceptions affect both source
 and target domains, so any website may attempt connections to matching targets
@@ -73,13 +74,14 @@ diagnostic exceptions after testing.
 
 Identify the failing stage: MCP response/resource retrieval, widget CSP,
 WebSocket handshake, LiveView mount, form event or model-context update. Inspect
-the browser's actual CSP, `Origin`, response status and LNA diagnostics. HTTP 200
-or success on a direct local-control page does not establish success in ChatGPT.
-A local-control iframe needs `allow-forms` to exercise form submission.
+the browser's actual CSP, `Origin`, response status and LNA diagnostics. HTTP
+200 or success on a direct local-control page does not establish success in
+ChatGPT. A local-control iframe needs `allow-forms` to exercise form submission.
 
-References: [Mozilla LNA settings](https://support.mozilla.org/en-US/kb/control-personal-device-local-network-permissions-firefox),
+References:
+[Mozilla LNA settings](https://support.mozilla.org/en-US/kb/control-personal-device-local-network-permissions-firefox),
 [wildcard semantics](https://firefox-admin-docs.mozilla.org/reference/policies/localnetworkaccess),
 [Apps SDK resource metadata](https://developers.openai.com/apps-sdk/reference).
 
-Inspect the existing `mix chatgpt.tunnel` launcher when diagnosing tunnel startup
-or readiness failures.
+Inspect the existing `mix chatgpt.tunnel` launcher when diagnosing tunnel
+startup or readiness failures.

@@ -1,6 +1,7 @@
 # Uploads
 
 ## Contents
+
 - Preview testing
 - Cancel testing
 - Direct-to-server uploads
@@ -34,6 +35,7 @@ refute has_element?(view, "[data-role='image-preview']")
 ## Direct-to-server uploads
 
 Preferred flow:
+
 1. upload file
 2. submit form
 3. follow redirect
@@ -60,6 +62,7 @@ assert has_element?(show_view, "[data-role='image']")
 ## Direct-to-cloud uploads
 
 LiveView tests are most useful for:
+
 - upload metadata contract
 - saved provider URL shape
 - server-side post-upload behavior
@@ -70,5 +73,5 @@ Do not assume LiveView tests cover browser-side uploader JavaScript.
 
 ## Cleanup
 
-Clean written test files after upload tests.
-Prefer a dedicated test uploads directory so cleanup cannot affect development data.
+Clean written test files after upload tests. Prefer a dedicated test uploads
+directory so cleanup cannot affect development data.

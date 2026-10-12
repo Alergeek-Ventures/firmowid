@@ -1,6 +1,7 @@
 # Components
 
 ## Contents
+
 - Function components
 - LiveComponents
 - Test-value heuristics
@@ -8,6 +9,7 @@
 ## Function components
 
 Use either:
+
 - `render_component/2`
 - `~H` with `rendered_to_string/1`
 
@@ -25,6 +27,7 @@ assert html =~ "human"
 ```
 
 Test:
+
 - consumer-visible behavior
 - conditional rendering
 - important output differences
@@ -61,8 +64,10 @@ assert has_element?(view, "#name", "Bilbo")
 ## Test-value heuristics
 
 Prefer testing:
+
 - state transitions
 - conditional branches
 - visible behavior
 
-Be cautious about spending test budget on trivial markup with little failure risk.
+Be cautious about spending test budget on trivial markup with little failure
+risk.

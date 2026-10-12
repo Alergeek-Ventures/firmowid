@@ -1,6 +1,7 @@
 # Async Assigns and JS Hooks
 
 ## Contents
+
 - Async assigns
 - JS hooks
 - Limitations
@@ -41,10 +42,12 @@ assert has_element?(view, "[data-role=post]", post.text)
 LiveView tests do not execute browser JavaScript.
 
 They can validate:
+
 - the hook target exists
 - the hook event updates server-rendered state correctly
 
 They cannot validate:
+
 - `IntersectionObserver` behavior
 - browser-side hook implementation details
 - full end-to-end JS integration

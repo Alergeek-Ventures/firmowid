@@ -1,6 +1,7 @@
 # Core Patterns
 
 ## Contents
+
 - Setup
 - Rendering
 - Scoped assertions
@@ -71,7 +72,8 @@ view
 assert has_element?(view, "#count", "1")
 ```
 
-Avoid direct event dispatch unless intentionally testing server-side event handling apart from markup:
+Avoid direct event dispatch unless intentionally testing server-side event
+handling apart from markup:
 
 ```elixir
 render_click(view, "increase")
@@ -93,7 +95,8 @@ render_click(view, "increase")
 - `render_submit(view, "event", params)`
 - `render_change(view, "event", params)`
 
-These bypass HTML and can produce false positives unless lower-level event testing is intentional.
+These bypass HTML and can produce false positives unless lower-level event
+testing is intentional.
 
 ## Debugging
 
