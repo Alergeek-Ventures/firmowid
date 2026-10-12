@@ -259,7 +259,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.ShowTest do
 
     copied_draft =
       scope
-      |> then(&Invoicing.list_wizard_drafts!(scope: &1))
+      |> then(&Invoicing.list_wizard_states!(scope: &1))
       |> List.first()
       |> Ash.load!([:items], scope: scope)
 
@@ -360,13 +360,14 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.ShowTest do
 
   defp sales_invoice_fixture!(admin) do
     {:ok, invoice} =
-      SalesInvoice.create(
+      SalesInvoice.persist_invoice(
         %{
           invoice_number: "FV/SHOW/#{System.unique_integer([:positive])}",
           issue_date: ~D[2026-01-10],
           sale_date: ~D[2026-01-10],
           due_date: ~D[2026-01-24],
           payment_method: :transfer,
+          seller_account_number: "PL61109010140000071219812874",
           invoice_type: :foreign,
           currency: "EUR",
           seller_nip: "6161525811",

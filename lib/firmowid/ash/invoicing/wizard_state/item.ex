@@ -1,12 +1,12 @@
 # credo:disable-for-this-file ExDNA.Credo
 # This item resource intentionally mirrors SalesInvoiceItem VAT expressions for consistent
 # Ash in-memory/ETS behavior; de-duplication requires cross-resource calculation redesign.
-defmodule Firmowid.Ash.Invoicing.WizardDraft.Item do
+defmodule Firmowid.Ash.Invoicing.WizardState.Item do
   @moduledoc """
-  Standalone ETS resource for line items within a WizardDraft.
+  Standalone ETS resource for line items within a browser WizardState.
 
   Represents a single invoice line item during the wizard flow. Lives in its own
-  ETS table (`wizard_draft_items`) and is related to WizardDraft via `has_many` /
+  ETS table (`wizard_state_items`) and is related to WizardState via `has_many` /
   `belongs_to`. Expression calculations for net/vat/gross mirror `SalesInvoiceItem`.
 
   Multitenancy by `organization_id` provides org-level isolation, same as all
@@ -25,7 +25,7 @@ defmodule Firmowid.Ash.Invoicing.WizardDraft.Item do
 
   ets do
     private? false
-    table :wizard_draft_items
+    table :wizard_state_items
   end
 
   code_interface do
@@ -39,14 +39,14 @@ defmodule Firmowid.Ash.Invoicing.WizardDraft.Item do
     defaults [:read, :destroy]
 
     create :create do
-      description "Create a line item inside a wizard draft."
+      description "Create a line item inside the browser wizard state."
       primary? true
-      accept [:index, :name, :quantity, :unit, :unit_price, :vat_rate, :wizard_draft_id]
+      accept [:index, :name, :quantity, :unit, :unit_price, :vat_rate, :wizard_state_id]
       validate {ValidateVatRate, []}
     end
 
     update :update do
-      description "Update a line item inside a wizard draft."
+      description "Update a line item inside the browser wizard state."
       primary? true
       require_atomic? false
       accept [:index, :name, :quantity, :unit, :unit_price, :vat_rate]
@@ -79,7 +79,7 @@ defmodule Firmowid.Ash.Invoicing.WizardDraft.Item do
     uuid_v7_primary_key :id
     Resource.firmowid_timestamps()
     attribute :organization_id, :uuid_v7, public?: true
-    attribute :wizard_draft_id, :uuid_v7, allow_nil?: false, public?: true
+    attribute :wizard_state_id, :uuid_v7, allow_nil?: false, public?: true
 
     attribute :index, :integer, public?: true
     attribute :name, :string, public?: true, allow_nil?: false
@@ -90,11 +90,11 @@ defmodule Firmowid.Ash.Invoicing.WizardDraft.Item do
   end
 
   relationships do
-    belongs_to :wizard_draft, Firmowid.Ash.Invoicing.WizardDraft do
+    belongs_to :wizard_state, Firmowid.Ash.Invoicing.WizardState do
       allow_nil? false
       attribute_writable? true
       define_attribute? false
-      source_attribute :wizard_draft_id
+      source_attribute :wizard_state_id
     end
   end
 

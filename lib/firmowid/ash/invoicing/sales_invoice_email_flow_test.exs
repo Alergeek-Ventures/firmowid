@@ -7,6 +7,7 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoiceEmailFlowTest do
   import Swoosh.TestAssertions
 
   alias Firmowid.Ash.Invoicing
+  alias Firmowid.Ash.Invoicing.SalesInvoice
   alias Firmowid.Ash.Invoicing.SalesInvoice.Dispatchers.Communication
   alias Firmowid.Ash.Scope
   alias Firmowid.Ash.SystemActor
@@ -235,7 +236,7 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoiceEmailFlowTest do
 
   defp sales_invoice_fixture!(user, attrs) do
     attrs = Map.merge(base_invoice_attrs(), attrs)
-    invoice = Invoicing.create_sales_invoice!(attrs, scope: scope_for(user))
+    invoice = Ash.create!(SalesInvoice, attrs, action: :persist_invoice, scope: scope_for(user))
     Ash.load!(invoice, [:sales_invoice_items], scope: scope_for(user))
   end
 
@@ -254,7 +255,7 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoiceEmailFlowTest do
         attrs
       )
 
-    invoice = Invoicing.create_sales_invoice_correction!(attrs, scope: scope_for(user))
+    invoice = Invoicing.issue_sales_invoice_correction!(attrs, scope: scope_for(user))
     Ash.load!(invoice, [:sales_invoice_items], scope: scope_for(user))
   end
 

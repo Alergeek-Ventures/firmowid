@@ -2,7 +2,7 @@ defmodule Firmowid.Ash.Invoicing.Validations.ValidateItemsNotEmpty do
   @moduledoc """
   Ash validation that ensures a list attribute or argument contains at least one element.
 
-  Used on WizardDraft `:update_items` to prevent advancing with zero items,
+  Used on WizardState `:update_items` to prevent advancing with zero items,
   mirroring the `cast_assoc(:sales_invoice_items, required: true)` behavior
   from the legacy Ecto changeset.
 

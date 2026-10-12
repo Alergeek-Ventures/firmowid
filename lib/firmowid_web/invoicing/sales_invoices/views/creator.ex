@@ -2,11 +2,9 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
   @moduledoc """
   LiveView for the sales invoice creator wizard.
 
-  Uses `WizardDraft` (Ash ETS resource) for ephemeral wizard state,
-  # TODO: move organization validation (validate_organization_for_invoicing)
-  # to Ash-level command validation.
+  Uses `WizardState` (Ash ETS resource) for ephemeral browser form state,
   `AshPhoenix.Form` for per-step form building and validation, and
-  `SalesInvoice.confirm_from_draft` for final invoice creation.
+  `WizardState.issue` to adapt that state to the shared invoice issuance action.
 
   The draft itself carries expression calculations (`buyer_id_type`,
   `buyer_display_name_label`) and aggregates (`net_value`, `vat_value`,
@@ -27,7 +25,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
   alias Firmowid.Ash.Invoicing.CountryCodes
   alias Firmowid.Ash.Invoicing.SalesInvoice
   alias Firmowid.Ash.Invoicing.SalesInvoice.EmailRecipientEligibility
-  alias Firmowid.Ash.Invoicing.WizardDraft
+  alias Firmowid.Ash.Invoicing.WizardState
   alias Firmowid.Ash.Ksef
   alias Firmowid.ErrorKind
   alias FirmowidWeb.Infrastructure.Utilities.PolishValues
@@ -134,7 +132,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
   defp create_and_redirect(socket, scope) do
     org_id = scope.tenant
 
-    case WizardDraft.create(%{organization_id: org_id}, scope: scope) do
+    case WizardState.create(%{organization_id: org_id}, scope: scope) do
       {:ok, draft} ->
         {:noreply, push_patch(socket, to: creator_draft_url(draft.id, :counterparty), replace: true)}
 
@@ -164,7 +162,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
   end
 
   defp create_and_populate_draft_from_copy(socket, scope, org_id, base_invoice) do
-    case WizardDraft.create(%{organization_id: org_id}, scope: scope) do
+    case WizardState.create(%{organization_id: org_id}, scope: scope) do
       {:ok, draft} ->
         handle_populate_draft_result(
           socket,
@@ -234,7 +232,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
       items: items
     }
 
-    case WizardDraft.populate_from_invoice(draft, attrs, scope: scope) do
+    case WizardState.populate_from_invoice(draft, attrs, scope: scope) do
       {:ok, draft} ->
         # Validate counterparty data — old invoices may have data that no longer passes validation
         form =
@@ -283,7 +281,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
   end
 
   defp fetch_and_restore_draft(socket, scope, creator_draft_id, params) do
-    case Invoicing.get_wizard_draft(creator_draft_id, scope: scope) do
+    case Invoicing.get_wizard_state(creator_draft_id, scope: scope) do
       {:ok, draft} ->
         restore_draft(socket, scope, draft, params)
 
@@ -329,7 +327,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
     {:noreply, socket}
   end
 
-  # Load expression calculations and aggregates on a WizardDraft so it can
+  # Load expression calculations and aggregates on a WizardState so it can
   # serve as the @invoice assign in templates. The loaded draft has:
   #   - :buyer_id_type, :buyer_display_name_label (expression calcs)
   #   - :net_value, :vat_value, :gross_value (sum aggregates over items)
@@ -475,7 +473,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
   end
 
   defp maybe_setup_step(socket, :preview, _params) do
-    # Preview - load organization and build preview invoice map for Pdf component
+    # Organization is presentation context; the shared action builds the invoice preview.
     org_id = socket.assigns.org_id
     organization = Core.get_organization!(org_id, scope: socket.assigns.ash_scope)
     invoice = socket.assigns.invoice
@@ -501,26 +499,37 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
     # Validate initial invoice number
     invoice_warnings = number_warnings(String.trim(invoice_number), issue_date, actor, scope)
 
-    # Build preview invoice map with seller data from organization
     logo_url = Invoicing.get_logo_url(org_id, scope: socket.assigns.ash_scope)
 
-    preview_invoice = build_preview_map(invoice, organization, invoice_number, issue_date)
-    counterparty_check = counterparty_check(invoice.counterparty_id, scope)
+    case WizardState.preview(invoice.id, %{invoice_number: invoice_number}, scope: scope) do
+      {:ok, preview_invoice} ->
+        counterparty_check = counterparty_check(invoice.counterparty_id, scope)
+        currency_rate = Invoicing.get_currency_rate(preview_invoice)
 
-    # Get currency rate for non-PLN invoices
-    currency_rate = Invoicing.get_currency_rate(preview_invoice)
+        socket
+        |> assign(:organization, organization)
+        |> assign(:invoice_number, invoice_number)
+        |> assign(:logo_url, logo_url)
+        |> assign(:preview_invoice, preview_invoice)
+        |> assign(:preview_error, nil)
+        |> assign(:currency_rate, currency_rate)
+        |> assign(:series_suggestions, series_suggestions)
+        |> assign(:invoice_warnings, invoice_warnings)
+        |> assign(:counterparty_check, counterparty_check)
+        |> assign_new(:should_send_emails, fn -> false end)
+        |> maybe_clear_should_send_emails(counterparty_check)
 
-    socket
-    |> assign(:organization, organization)
-    |> assign(:invoice_number, invoice_number)
-    |> assign(:logo_url, logo_url)
-    |> assign(:preview_invoice, preview_invoice)
-    |> assign(:currency_rate, currency_rate)
-    |> assign(:series_suggestions, series_suggestions)
-    |> assign(:invoice_warnings, invoice_warnings)
-    |> assign(:counterparty_check, counterparty_check)
-    |> assign_new(:should_send_emails, fn -> false end)
-    |> maybe_clear_should_send_emails(counterparty_check)
+      {:error, error} ->
+        Logger.warning("Failed to preview wizard invoice",
+          organization_id: scope.tenant,
+          error_kind: ErrorKind.classify(error)
+        )
+
+        socket
+        |> assign(:organization, organization)
+        |> assign(:preview_invoice, nil)
+        |> assign(:preview_error, get_error_message(error))
+    end
   end
 
   defp maybe_setup_step(socket, _step, _params) do
@@ -546,65 +555,6 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
         "vat_rate" => item.vat_rate
       }
     end)
-  end
-
-  # Build a plain map from the loaded WizardDraft for the Pdf/Template component.
-  # The Pdf component declares `attr :sales_invoice, :map` so a plain map works.
-  # We map WizardDraft fields + items to the names the template expects.
-  defp build_preview_map(draft, organization, invoice_number, issue_date) do
-    items =
-      (draft.items || [])
-      |> Enum.sort_by(& &1.index)
-      |> Enum.map(fn item ->
-        %{
-          name: item.name,
-          quantity: item.quantity,
-          unit: item.unit,
-          unit_price: item.unit_price,
-          vat_rate: item.vat_rate,
-          net_value: item.net_value,
-          vat_value: item.vat_value,
-          gross_value: item.gross_value
-        }
-      end)
-
-    %{
-      invoice_number: invoice_number,
-      issue_date: issue_date,
-      sale_date: draft.sale_date,
-      due_date: draft.due_date,
-      currency: draft.currency,
-      invoice_type: draft.invoice_type,
-      is_reverse_charge: draft.is_reverse_charge,
-      is_cash_account: draft.payment_method == :cash,
-      payment_method: draft.payment_method,
-      seller_account_number: draft.seller_account_number,
-      seller_display_name: organization.name,
-      seller_address: organization.address,
-      seller_nip: organization.nip,
-      buyer_type: draft.buyer_type,
-      buyer_id: draft.buyer_id,
-      buyer_full_name: draft.buyer_full_name,
-      buyer_given_name: draft.buyer_given_name,
-      buyer_surname: draft.buyer_surname,
-      buyer_pesel: draft.buyer_pesel,
-      buyer_address: draft.buyer_address,
-      buyer_country: draft.buyer_country,
-      net_value: draft.net_value,
-      vat_value: draft.vat_value,
-      gross_value: draft.gross_value,
-      amount: draft.amount,
-      sales_invoice_items: items,
-      vat_exemption_type: draft.vat_exemption_type || organization.vat_exemption_type,
-      vat_exemption_basis: draft.vat_exemption_basis || organization.vat_exemption_basis,
-      invoice_note: draft.invoice_note,
-      internal_note: draft.internal_note,
-      # Fields the template checks but aren't relevant for new invoices
-      ksef_invoice_kind: :vat,
-      ksef_number: nil,
-      corrected_invoice: nil,
-      correction_reason: nil
-    }
   end
 
   # When copying an invoice with invalid counterparty data, the form is pre-filled
@@ -817,7 +767,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
           else
             # Reset bank account when currency changes — avoids payment step
             # validations (sale_date/due_date not set yet)
-            Invoicing.reset_wizard_draft_bank_account!(updated_draft,
+            Invoicing.reset_wizard_state_bank_account!(updated_draft,
               scope: socket.assigns.ash_scope
             )
           end
@@ -1027,7 +977,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
     scope = socket.assigns.ash_scope
     draft = socket.assigns.draft
 
-    case WizardDraft.update_notes(
+    case WizardState.update_notes(
            draft,
            %{invoice_note: invoice_note, internal_note: internal_note},
            scope: scope
@@ -1052,7 +1002,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
     end
   end
 
-  def handle_event("select_series", %{"number" => invoice_number}, socket) do
+  def handle_event("select_invoice_series", %{"number" => invoice_number}, socket) do
     # User clicked a series suggestion button - set the invoice number
     preview_invoice = Map.put(socket.assigns.preview_invoice, :invoice_number, invoice_number)
     issue_date = socket.assigns.preview_invoice.issue_date
@@ -1072,10 +1022,9 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
 
   def handle_event("save_as_draft", _params, socket) do
     scope = socket.assigns.ash_scope
-    organization = socket.assigns.organization
     draft = socket.assigns.draft
 
-    case create_invoice_from_draft(draft, nil, organization, false, scope) do
+    case create_invoice_from_draft(draft, nil, false, false, scope) do
       {:ok, invoice} ->
         {:noreply,
          socket
@@ -1084,7 +1033,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
 
       {:error, error} ->
         Logger.error("Failed to save invoice as draft",
-          organization_id: organization.id,
+          organization_id: scope.tenant,
           error_kind: ErrorKind.classify(error)
         )
 
@@ -1094,19 +1043,17 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
 
   def handle_event("confirm_invoice", params, socket) do
     scope = socket.assigns.ash_scope
-    organization = socket.assigns.organization
     draft = socket.assigns.draft
     invoice_number = Map.get(params, "invoice_number", socket.assigns.invoice_number)
     should_send_emails = socket.assigns.should_send_emails
 
     with :ok <- validate_invoice_number(invoice_number),
-         :ok <- validate_organization_for_invoicing(organization),
          {:ok, invoice} <-
            create_invoice_from_draft(
              draft,
              invoice_number,
-             organization,
              should_send_emails,
+             false,
              scope
            ) do
       {:noreply,
@@ -1116,7 +1063,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
     else
       {:error, error} ->
         Logger.error("Failed to confirm invoice",
-          organization_id: organization.id,
+          organization_id: scope.tenant,
           error_kind: ErrorKind.classify(error)
         )
 
@@ -1126,29 +1073,40 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
 
   def handle_event("send_to_ksef", params, socket) do
     scope = socket.assigns.ash_scope
-    organization = socket.assigns.organization
     draft = socket.assigns.draft
     invoice_number = Map.get(params, "invoice_number", socket.assigns.invoice_number)
     should_send_emails = socket.assigns.should_send_emails
 
     with :ok <- validate_invoice_number(invoice_number),
-         :ok <- validate_organization_for_invoicing(organization),
          {:ok, invoice} <-
            create_invoice_from_draft(
              draft,
              invoice_number,
-             organization,
              should_send_emails,
+             true,
              scope
            ) do
-      submit_to_ksef_and_navigate(
-        PosthogBusinessEvents.capture(socket, :invoice_created),
-        invoice
-      )
+      socket =
+        case Ash.Resource.get_metadata(invoice, :ksef_submission_error) do
+          nil ->
+            socket
+
+          _error ->
+            put_flash(
+              socket,
+              :error,
+              gettext("The invoice was issued, but submission to KSeF failed.")
+            )
+        end
+
+      {:noreply,
+       socket
+       |> PosthogBusinessEvents.capture(:invoice_created)
+       |> push_navigate(to: Navigation.sales_invoice_summary_path(invoice))}
     else
       {:error, error} ->
         Logger.error("Failed to confirm invoice",
-          organization_id: organization.id,
+          organization_id: scope.tenant,
           error_kind: ErrorKind.classify(error)
         )
 
@@ -1185,7 +1143,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
           buyer_description: counterparty.description
         }
 
-        case WizardDraft.update_counterparty(socket.assigns.draft, attrs, scope: scope) do
+        case WizardState.update_counterparty(socket.assigns.draft, attrs, scope: scope) do
           {:ok, updated_draft} ->
             invoice = load_draft_with_calcs(updated_draft, scope)
 
@@ -1231,38 +1189,15 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
     end
   end
 
-  defp submit_to_ksef_and_navigate(socket, invoice) do
-    case Ksef.submit_sales_invoice(invoice.id, socket.assigns.ash_scope) do
-      {:ok, _job} ->
-        {:noreply, push_navigate(socket, to: Navigation.sales_invoice_summary_path(invoice))}
-
-      {:error, reason} ->
-        Logger.error("Failed to submit invoice to KSeF",
-          invoice_id: invoice.id,
-          error_kind: ErrorKind.classify(reason)
-        )
-
-        {:noreply,
-         socket
-         |> put_flash(:error, "Faktura została wystawiona, ale wysyłka do KSeF nie powiodła się")
-         |> push_navigate(to: Navigation.sales_invoice_summary_path(invoice))}
-    end
-  end
-
-  defp create_invoice_from_draft(draft, invoice_number, organization, should_send_emails, scope) do
-    org_data = %{
-      name: organization.name,
-      address: organization.address,
-      nip: organization.nip,
-      vat_exemption_type: draft.vat_exemption_type || organization.vat_exemption_type,
-      vat_exemption_basis: draft.vat_exemption_basis || organization.vat_exemption_basis
-    }
-
-    SalesInvoice.confirm_from_draft(
+  defp create_invoice_from_draft(draft, invoice_number, should_send_emails, submit_to_ksef, scope) do
+    WizardState.issue(
       draft.id,
-      invoice_number,
-      org_data,
-      should_send_emails,
+      %{
+        invoice_number: invoice_number,
+        draft: is_nil(invoice_number),
+        should_send_emails: should_send_emails,
+        submit_to_ksef: submit_to_ksef
+      },
       scope: scope
     )
   end
@@ -1280,42 +1215,14 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
       |> Enum.uniq()
 
     case messages do
-      [] -> "Nie udało się wystawić faktury"
+      [] -> gettext("Could not issue the invoice.")
       msgs -> Enum.join(msgs, ", ")
-    end
-  end
-
-  defp get_error_message({:organization_validation, field}) do
-    case field do
-      :nip -> "Uzupełnij NIP firmy w ustawieniach organizacji."
-      :name -> "Uzupełnij nazwę firmy w ustawieniach organizacji."
-      :address -> "Uzupełnij adres firmy w ustawieniach organizacji."
     end
   end
 
   defp get_error_message(:missing_invoice_number), do: gettext("Invoice number is required.")
 
-  defp get_error_message(_), do: "Nie udało się wystawić faktury"
-
-  @doc """
-  Validates that organization has all required data for KSeF invoice submission.
-  Returns `:ok` if valid, `{:error, {:organization_validation, field}}` otherwise.
-  """
-  def validate_organization_for_invoicing(organization) do
-    cond do
-      is_nil(organization.nip) or organization.nip == "" ->
-        {:error, {:organization_validation, :nip}}
-
-      is_nil(organization.name) or organization.name == "" ->
-        {:error, {:organization_validation, :name}}
-
-      is_nil(organization.address) or organization.address == "" ->
-        {:error, {:organization_validation, :address}}
-
-      true ->
-        :ok
-    end
-  end
+  defp get_error_message(_), do: gettext("Could not issue the invoice.")
 
   def to_boolean(bool) when is_boolean(bool), do: bool
   def to_boolean("true"), do: true

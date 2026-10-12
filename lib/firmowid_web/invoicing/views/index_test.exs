@@ -457,13 +457,14 @@ defmodule FirmowidWeb.Invoicing.Views.IndexTest do
 
   defp sales_invoice_fixture!(user, invoice_number) do
     {:ok, invoice} =
-      SalesInvoice.create(
+      SalesInvoice.persist_invoice(
         %{
           invoice_number: invoice_number,
           issue_date: ~D[2026-01-10],
           sale_date: ~D[2026-01-10],
           due_date: ~D[2026-01-24],
           payment_method: :transfer,
+          seller_account_number: "PL61109010140000071219812874",
           invoice_type: :foreign,
           currency: "EUR",
           seller_nip: "6161525811",

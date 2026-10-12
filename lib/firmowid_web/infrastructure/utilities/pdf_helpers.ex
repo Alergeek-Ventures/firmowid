@@ -120,7 +120,7 @@ defmodule FirmowidWeb.Infrastructure.Utilities.PdfHelpers do
 
   ## Examples
 
-       iex> render_pdf_html(FirmowidWeb.Invoicing.SalesInvoices.Components.Pdf, :sales_invoice, assigns)
+       iex> render_pdf_html(FirmowidUI.Invoicing.Components.SalesInvoice, :sales_invoice, assigns)
        "<!DOCTYPE html><html>...</html>"
   """
   def render_pdf_html(view_module, template, assigns, opts \\ []) do

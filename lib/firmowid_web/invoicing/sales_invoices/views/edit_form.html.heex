@@ -193,7 +193,7 @@
             </p>
 
             <div class="max-w-[650px] overflow-hidden rounded-lg border border-grey-200 bg-white shadow-sm">
-              <FirmowidWeb.Invoicing.SalesInvoices.Components.Pdf.sales_invoice
+              <FirmowidUI.Invoicing.Components.SalesInvoice.sales_invoice
                 sales_invoice={@invoice}
                 reference_invoice={@reference_invoice}
                 currency_rate={Invoicing.get_currency_rate(@invoice)}
@@ -212,7 +212,7 @@
               "max-w-[650px] overflow-hidden rounded-lg border border-grey-200 bg-white shadow-sm",
               @stale_preview_invoice? && "opacity-50"
             ]}>
-              <FirmowidWeb.Invoicing.SalesInvoices.Components.Pdf.sales_invoice
+              <FirmowidUI.Invoicing.Components.SalesInvoice.sales_invoice
                 sales_invoice={@preview_invoice}
                 reference_invoice={@invoice}
                 currency_rate={@currency_rate}
@@ -226,7 +226,7 @@
             "max-w-[650px] overflow-hidden rounded-lg border border-grey-200 bg-white shadow-sm",
             @stale_preview_invoice? && "opacity-50"
           ]}>
-            <FirmowidWeb.Invoicing.SalesInvoices.Components.Pdf.sales_invoice
+            <FirmowidUI.Invoicing.Components.SalesInvoice.sales_invoice
               sales_invoice={@preview_invoice}
               currency_rate={@currency_rate}
               show_vat={@current_org.is_vat_payer}

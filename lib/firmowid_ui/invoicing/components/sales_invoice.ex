@@ -1,6 +1,12 @@
-defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.Template do
-  @moduledoc false
-  use FirmowidWeb, :html
+defmodule FirmowidUI.Invoicing.Components.SalesInvoice do
+  @moduledoc """
+  Renders the sales-invoice document shared by browser previews, MCP widgets and PDFs.
+
+  Preserves the Polish and bilingual document layouts for invoices and corrections.
+  Callers supply loaded invoice calculations and items, correction references,
+  currency rates and interface-appropriate logo URLs or embedded images.
+  """
+  use FirmowidUI, :html
 
   import FirmowidUI.Components.Link
   import Phoenix.Component, except: [link: 1]
@@ -8,7 +14,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.Template do
   alias Firmowid.Ash.Ksef
   alias Firmowid.Ash.Ksef.Services.InvoiceRenderer
   alias Firmowid.Ash.Ksef.VatRate
-  alias FirmowidWeb.Invoicing.Components.Print
+  alias FirmowidUI.Invoicing.Components.Print
 
   attr :sales_invoice, :map, required: true
   attr :show_vat, :boolean, default: true
@@ -884,9 +890,19 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.Template do
   attr :footer_logo_data_uri, :string, default: nil
   attr :reference_invoice, :map, default: nil
   attr :currency_rate, :map, default: nil
-  attr :include_internal_note_page, :boolean, default: false
   attr :body_chrome, :boolean, default: true
+  attr :class, :any, default: nil
+  attr :include_internal_note_page, :boolean, default: false
 
+  @doc """
+  Renders an invoice or correction as an A4 document, optionally followed by its internal note.
+
+  Corrections require a loaded `reference_invoice`; all invoices require their
+  items and monetary calculations. Foreign-currency previews show the existing
+  unavailable-rate notice when `currency_rate` is nil. PDF callers enforce rate
+  availability before rendering.
+  """
+  @spec sales_invoice(map()) :: Phoenix.LiveView.Rendered.t()
   def sales_invoice(assigns) do
     if assigns.sales_invoice.ksef_invoice_kind == :kor and is_nil(assigns.reference_invoice) do
       raise ArgumentError,

@@ -133,10 +133,14 @@ defmodule FirmowidWeb.Core.Router do
         :list_projects,
         :list_sales_invoices,
         :list_cost_invoices,
+        :get_sales_invoice,
+        :preview_sales_invoice,
+        :preview_sales_invoice_correction,
+        :save_sales_invoice_draft,
         :get_ksef_connection_status,
         :show_ksef_connection
       ],
-      mcp_resources: [:ksef_connection]
+      mcp_resources: [:ksef_connection, :issue_invoice, :issue_correction]
   end
 
   scope "/admin" do

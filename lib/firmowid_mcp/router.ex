@@ -125,9 +125,18 @@ defmodule FirmowidMcp.Router do
 
   defp decorate(response, _request, _conn), do: response
 
-  defp tool_metadata(%{"name" => name} = tool) when name in ~w(list_sales_invoices list_cost_invoices) do
+  defp tool_metadata(%{"name" => name} = tool)
+       when name in ~w(list_sales_invoices list_cost_invoices get_sales_invoice) do
     authorized_tool_metadata(tool, %{
       "readOnlyHint" => true,
+      "destructiveHint" => false,
+      "openWorldHint" => false
+    })
+  end
+
+  defp tool_metadata(%{"name" => "save_sales_invoice_draft"} = tool) do
+    authorized_tool_metadata(tool, %{
+      "readOnlyHint" => false,
       "destructiveHint" => false,
       "openWorldHint" => false
     })
