@@ -18,8 +18,8 @@ defmodule FirmowidWeb.Delegations.Utilities.SettlementPresentation do
   @spec settlement_balance(Money.t(), Money.t()) :: {String.t(), Money.t()}
   def settlement_balance(total, advance) do
     if Money.compare(total, advance) in [:gt, :eq],
-      do: {"Do dopłaty", Money.sub!(total, advance)},
-      else: {"Pomniejszenie wypłaty", Money.sub!(advance, total)}
+      do: {"Do wypłaty pracownikowi", Money.sub!(total, advance)},
+      else: {"Do zwrotu przez pracownika", Money.sub!(advance, total)}
   end
 
   @spec transport_label(String.t()) :: String.t()

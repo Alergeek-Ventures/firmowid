@@ -8,4 +8,8 @@ defmodule FirmowidWeb.Delegations.Utilities.Navigation do
   @doc "Returns the path for viewing a delegation."
   @spec show_path(String.t()) :: String.t()
   def show_path(reference), do: "/delegacje/#{reference}"
+
+  @doc "Returns the authenticated download path for a delegation settlement PDF."
+  @spec settlement_download_path(String.t()) :: String.t()
+  def settlement_download_path(reference), do: "/delegacje/#{reference}/rozliczenie/pobierz"
 end

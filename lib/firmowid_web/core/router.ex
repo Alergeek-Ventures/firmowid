@@ -285,6 +285,11 @@ defmodule FirmowidWeb.Core.Router do
   scope "/", FirmowidWeb do
     pipe_through [:browser, :require_authenticated_user_with_organization]
     get "/czasosledz/ewidencja/:date/pdf", HoursRecord.Controllers.Record, :pdf
+
+    get "/delegacje/:reference/rozliczenie/pobierz",
+        Delegations.Controllers.Settlement,
+        :download
+
     get "/czasosledz/ewidencja/:date/podglad", HoursRecord.Controllers.Record, :preview
     get "/czasosledz/ewidencja/:id", HoursRecord.Controllers.Record, :download
 

@@ -19,7 +19,8 @@ defmodule FirmowidWeb.Delegations.Components.DelegationsList do
         <.delegation_title
           delegation={delegation}
           is_link={
-            delegation.status == :complete || (delegation.status == :in_progress && !@management?)
+            delegation.status == :complete ||
+              (delegation.status in [:in_progress, :awaiting_signature] && !@management?)
           }
         />
         <p class="shrink-0 text-sm tabular-nums">
