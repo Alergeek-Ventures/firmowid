@@ -1,6 +1,20 @@
 defmodule FirmowidMcp.Ksef.Connection do
   @moduledoc "MCP presentation of the organization's KSeF connection workflow."
 
+  @doc "Returns the KSeF setup instructions advertised by the MCP server."
+  @spec instructions() :: String.t()
+  def instructions do
+    """
+    Recheck the status after the user completes connection. Never ask for KSeF tokens, passwords,
+    private keys or signed authentication files in chat; these belong only in the connection widget.
+    After show_ksef_connection successfully opens its widget, stop and let the user interact with it.
+    Do not repeat its status, setup instructions or a summary in chat beneath the widget.
+    The administrator completes setup directly in the embedded widget, not in a separate Firmowid page.
+    Opening the widget does not attempt a connection: an initial disconnected status is expected,
+    not evidence of a failed attempt. Explain actual tool errors only when the widget cannot be opened.
+    """
+  end
+
   @doc "Returns the tool that opens KSeF connection settings."
   @spec tool_name() :: String.t()
   def tool_name, do: "show_ksef_connection"
