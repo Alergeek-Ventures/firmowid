@@ -10,30 +10,13 @@ defmodule FirmowidMcp.Router do
 
   @security_schemes [%{"type" => "oauth2", "scopes" => ["mcp"]}]
 
-  @instructions """
-  Before working with invoices, call get_ksef_connection_status for the authenticated organization.
-  If disconnected or expired, propose connecting KSeF using show_ksef_connection when can_connect is true;
-  otherwise explain that an organization administrator must connect it.
-  Stored invoice data remains available without a KSeF connection: continue reading it if the user wants,
-  and explain that it may be out of date. A connected status does not guarantee synchronization freshness;
-  the server does not currently track the time of the last successful synchronization.
-  Recheck the status after the user completes connection. Never ask for KSeF tokens, passwords,
-  private keys or signed authentication files in chat; these belong only in the connection widget.
-  Use list_sales_invoices and list_cost_invoices to read invoice data with filters and pagination.
-  After show_ksef_connection successfully opens its widget, stop and let the user interact with it.
-  Do not repeat its status, setup instructions or a summary in chat beneath the widget.
-  The administrator completes setup directly in the embedded widget, not in a separate Firmowid page.
-  Opening the widget does not attempt a connection: an initial disconnected status is expected,
-  not evidence of a failed attempt. Explain actual tool errors only when the widget cannot be opened.
-  """
-
   @impl true
   @doc "Initializes the explicit tool and resource allowlists."
   @spec init(keyword()) :: keyword()
   def init(opts) do
     opts
     |> Keyword.put(:otp_app, :firmowid)
-    |> Keyword.put(:instructions, @instructions)
+    |> Keyword.put(:instructions, FirmowidMcp.instructions())
     |> Transport.init()
   end
 

@@ -5,14 +5,21 @@ defmodule FirmowidMcp do
   # credo:disable-for-next-line AshCredo.Check.Warning.EmptyDomain
   use Ash.Domain, extensions: [AshAi]
 
+  alias FirmowidMcp.Invoicing
+  alias FirmowidMcp.Ksef.Connection
+
   mcp_resources do
-    mcp_ui_resource :ksef_connection, FirmowidMcp.Ksef.Connection.resource_uri(),
+    mcp_ui_resource :ksef_connection, Connection.resource_uri(),
       html: {FirmowidMcp.Runtime, :document, []},
       title: "KSeF connection",
       description: "Connect the organization's KSeF account using the existing administrator workflow.",
       domain: nil,
       prefers_border: true
   end
+
+  @doc "Composes the model instructions owned by the exposed MCP features."
+  @spec instructions() :: String.t()
+  def instructions, do: Enum.join([Invoicing.instructions(), Connection.instructions()], "\n")
 
   @doc "Returns the Phoenix endpoint hosting this interface."
   @spec endpoint() :: module()
