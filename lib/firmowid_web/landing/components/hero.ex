@@ -11,7 +11,7 @@ defmodule FirmowidWeb.Landing.Components.Hero do
   alias Phoenix.LiveView.Rendered
 
   @benefits [
-    gettext_noop("30 days free"),
+    gettext_noop("Start with the free plan. No card required."),
     gettext_noop("KSeF synchronization"),
     gettext_noop("Secure data storage"),
     gettext_noop("Bank integrations")
@@ -23,12 +23,12 @@ defmodule FirmowidWeb.Landing.Components.Hero do
       value: gettext_noop("2 years"),
       width: "257px"
     },
-    %{label: gettext_noop("KSeF compliance:"), value: "100%", width: "112px"},
+    %{label: gettext_noop("Supported banks and fintechs"), value: "29", width: "184px"},
     %{label: gettext_noop("Average onboarding time:"), value: "15 min", width: "160px"}
   ]
 
   @mobile_metrics [
-    %{label: gettext_noop("KSeF compliance"), value: "100%"},
+    %{label: gettext_noop("Supported banks and fintechs"), value: "29"},
     %{label: gettext_noop("Average onboarding time"), value: "15 min"},
     %{label: gettext_noop("Developed by Alergeek Ventures"), value: gettext_noop("2 years")}
   ]
@@ -49,27 +49,25 @@ defmodule FirmowidWeb.Landing.Components.Hero do
     <section class="px-4 py-8 sm:px-6 lg:min-h-[calc(100vh-96px)] lg:px-10 lg:py-0">
       <div class="mx-auto max-w-[1416px]">
         <div class="flex items-end justify-between gap-8 px-0 lg:h-[730px] lg:px-[140px] lg:py-20">
-          <div class="relative w-full lg:max-w-[501px]">
-            <h1 class="relative text-[53px] leading-[0.98] font-bold tracking-[-0.04em] text-[#0f0f0f] sm:max-w-[620px] sm:text-[64px] lg:text-[72px] lg:leading-[1.02]">
-              {gettext("Invoicing with KSeF")} <br />
-              <span class="relative inline-block">
-                <img
-                  src={~p"/images/hero_price_scribble.svg"}
-                  alt=""
-                  aria-hidden="true"
-                  width="287"
-                  height="22"
-                  decoding="async"
-                  class="pointer-events-none absolute bottom-[0.06em] left-[-0.04em] h-[0.24em] w-[4.1em] max-w-none sm:bottom-[0.05em] lg:bottom-[0.07em]"
-                />
-                <span class="relative">{gettext("from PLN 5")}</span>
+          <div class="relative w-full lg:max-w-[543px]">
+            <div class="inline-flex items-center gap-2 rounded-full border-4 border-[#e3b79b] px-3 py-1.5 text-[13px] font-medium text-[#0f0f0f]">
+              <span aria-hidden="true" class="text-lg leading-none">◉</span>
+              <span>
+                {pgettext("landing open-source badge", "Firmowid is")}
+                <span class="text-[#8b3f13]">
+                  {pgettext("landing open-source badge", "open source")}
+                </span>
               </span>
-              <br /> {pgettext("landing-hero-pricing", "per month")}
+            </div>
+            <h1 class="relative text-[53px] leading-[0.98] font-bold tracking-[-0.04em] text-[#0f0f0f] sm:max-w-[620px] sm:text-[64px] lg:text-[72px] lg:leading-[1.02]">
+              {pgettext("landing hero headline", "KSeF invoices")} <br />
+              {pgettext("landing hero headline", "without limits.")}<br />
+              {pgettext("landing hero headline", "For PLN 0.")}
             </h1>
 
             <p class="mt-6 max-w-[500px] text-h5 leading-[1.4] text-[#4e4e4e] lg:mt-8 lg:text-lg">
               {gettext(
-                "Everything in one place: invoices, banking, working hours, and payroll. No stress, no chaos."
+                "Everything in one place: invoices, banking, working hours, leave, and business trips."
               )}
             </p>
 
