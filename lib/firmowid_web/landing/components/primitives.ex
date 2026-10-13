@@ -35,20 +35,40 @@ defmodule FirmowidWeb.Landing.Components.Primitives do
           Firmowid
         </.link>
 
-        <div class="hidden items-center gap-2 lg:flex">
+        <div class="hidden items-center gap-1 lg:flex">
+          <a
+            href="/#funkcje"
+            class="landing-nav__text rounded-[5px] px-4 py-[15px] text-base font-medium text-[#0f0f0f] transition-colors hover:text-[#7a4a2d]"
+          >
+            {gettext("Features")}
+          </a>
+          <a
+            href="/#cennik"
+            class="landing-nav__text rounded-[5px] px-4 py-[15px] text-base font-medium text-[#0f0f0f] transition-colors hover:text-[#7a4a2d]"
+          >
+            {gettext("Pricing")}
+          </a>
           <a
             href="/#zespol"
-            class="landing-nav__text rounded-[5px] px-5 py-[15px] text-base font-medium text-[#0f0f0f] transition-colors hover:text-[#7a4a2d]"
+            class="landing-nav__text rounded-[5px] px-4 py-[15px] text-base font-medium text-[#0f0f0f] transition-colors hover:text-[#7a4a2d]"
           >
             {gettext("About us")}
           </a>
-          <a
-            href="/#cta-footer"
-            data-landing-cta="navbar_trial"
-            class="landing-nav__text landing-nav__trial rounded-[5px] border-2 border-[#f5f5f5] px-4 py-2 text-base font-medium text-[#0f0f0f] transition-colors hover:border-[#d7c8bd] hover:bg-white/40"
+          <.link
+            kind="unstyled"
+            navigate={~p"/zaloguj"}
+            class="landing-nav__text rounded-[5px] border-2 border-[#0f0f0f] px-4 py-2 text-base font-medium text-[#0f0f0f] transition-colors hover:bg-black/5"
           >
-            {gettext("Try it")}
-          </a>
+            {gettext("Log in")}
+          </.link>
+          <.link
+            kind="unstyled"
+            navigate={~p"/zarejestruj"}
+            data-landing-cta="navbar_trial"
+            class="rounded-[5px] bg-[#0f0f0f] px-4 py-2 text-base font-medium text-white transition-colors hover:bg-[#313131]"
+          >
+            {gettext("Start for free")}
+          </.link>
         </div>
       </nav>
     </header>
