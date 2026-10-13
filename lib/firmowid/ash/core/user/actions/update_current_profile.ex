@@ -18,7 +18,6 @@ defmodule Firmowid.Ash.Core.User.Actions.UpdateCurrentProfile do
     arguments
     |> Map.take([
       :name,
-      :employment_date,
       :phone,
       :slack_url,
       :bank_account_number,

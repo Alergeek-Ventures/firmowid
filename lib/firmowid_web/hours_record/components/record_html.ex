@@ -6,7 +6,7 @@ defmodule FirmowidWeb.HoursRecord.Components.RecordHtml do
     ~H"""
     <FirmowidWeb.HoursRecord.Components.PdfTemplate.hours_record
       name={@name}
-      employment_date={@employment_date}
+      contract_date={@contract_date}
       start_date={@start_date}
       end_date={@end_date}
       hours={@hours}

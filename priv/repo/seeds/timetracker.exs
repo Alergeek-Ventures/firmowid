@@ -46,6 +46,7 @@ defmodule Firmowid.Seeds.Timetracker do
     contract_specs = [
       {users.kira,
        %{
+         starts_at: ~D[2022-03-01],
          position: "Lead Engineer",
          contract_type: :uop,
          status: :active,
@@ -53,6 +54,7 @@ defmodule Firmowid.Seeds.Timetracker do
        }},
       {users.tomek,
        %{
+         starts_at: ~D[2022-06-15],
          position: "Accountant",
          contract_type: :uop,
          status: :active,
@@ -60,6 +62,7 @@ defmodule Firmowid.Seeds.Timetracker do
        }},
       {users.sable,
        %{
+         starts_at: ~D[2023-01-10],
          position: "Product Designer",
          contract_type: :uz,
          status: :pending_signature,
@@ -67,6 +70,7 @@ defmodule Firmowid.Seeds.Timetracker do
        }},
       {users.jules,
        %{
+         starts_at: ~D[2023-04-01],
          position: "DevOps Engineer",
          contract_type: :b2b,
          status: :active,
@@ -74,6 +78,7 @@ defmodule Firmowid.Seeds.Timetracker do
        }},
       {users.maren,
        %{
+         starts_at: ~D[2023-09-01],
          position: "Frontend Developer",
          contract_type: :uop,
          status: :active,
@@ -88,7 +93,7 @@ defmodule Firmowid.Seeds.Timetracker do
   end
 
   defp seed_employment_contract!(user, org_id, spec) do
-    starts_at = user.employment_date || Date.utc_today()
+    starts_at = spec.starts_at
 
     signed_at =
       if spec.status == :pending_signature do

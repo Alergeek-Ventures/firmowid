@@ -1723,7 +1723,7 @@ msgstr ""
 msgid "Correction"
 msgstr ""
 
-#: lib/firmowid_web/hours_record/views/index.ex:97
+#: lib/firmowid_web/hours_record/views/index.ex:99
 #, elixir-autogen, elixir-format
 msgid "Could not submit the request. Enter a reason (up to 2000 characters). If a request already exists, refresh the page."
 msgstr ""

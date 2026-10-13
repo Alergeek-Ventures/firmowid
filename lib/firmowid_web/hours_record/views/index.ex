@@ -9,6 +9,7 @@ defmodule FirmowidWeb.HoursRecord.Views.Index do
   import FirmowidWeb.HoursRecord.Components.ChangeRequest
   import Phoenix.Component, except: [link: 1]
 
+  alias Firmowid.Ash.Payroll
   alias Firmowid.Ash.Timetracker
   alias Firmowid.Ash.Timetracker.HoursRecord, as: AshHoursRecord
   alias FirmowidWeb.Infrastructure.Utilities.QueryParams
@@ -22,8 +23,9 @@ defmodule FirmowidWeb.HoursRecord.Views.Index do
 
     selected_date = Date.utc_today()
     active_months = months_with_sessions(%{user_id: current_user.id}, scope)
+    {:ok, current_contract} = Payroll.load_current_contract(current_user.id, scope: scope)
 
-    can_use_hours_records = current_user.name && current_user.employment_date
+    can_use_hours_records = current_user.name && not is_nil(current_contract)
 
     socket =
       socket
