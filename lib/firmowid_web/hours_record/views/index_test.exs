@@ -6,8 +6,11 @@ defmodule FirmowidWeb.HoursRecord.Views.IndexTest do
   import Firmowid.TimetrackerFixtures
   import Phoenix.LiveViewTest
 
+  alias Firmowid.Ash.Blobs.Blob
   alias Firmowid.Ash.Core
+  alias Firmowid.Ash.Payroll
   alias Firmowid.Ash.Scope
+  alias Firmowid.Ash.SystemActor
   alias Firmowid.Ash.Timetracker.HoursRecord, as: AshHoursRecord
 
   setup %{conn: conn} do
@@ -16,10 +19,12 @@ defmodule FirmowidWeb.HoursRecord.Views.IndexTest do
 
     # Required by hours-record flow guard in LiveView.
     employee =
-      Core.update_profile!(employee, %{name: "Sable Orin", employment_date: ~D[2023-01-10]},
+      Core.update_profile!(employee, %{name: "Sable Orin"},
         actor: employee,
         tenant: employee.organization_id
       )
+
+    create_employment_contract(employee)
 
     project = project_fixture(%{organization_id: admin.organization_id, name: "Hours Project"})
     user_project_fixture(employee.id, project.id, admin.organization_id)
@@ -86,5 +91,29 @@ defmodule FirmowidWeb.HoursRecord.Views.IndexTest do
     scope = %Scope{actor: employee, tenant: employee.organization_id}
     {:ok, submitted_record} = AshHoursRecord.by_month(employee.id, 4, 2026, scope: scope)
     assert submitted_record.number_of_hours == 3
+  end
+
+  defp create_employment_contract(employee) do
+    blob =
+      Ash.Seed.seed!(Blob, %{
+        blob_path: "/test/contracts/#{System.unique_integer([:positive])}.pdf",
+        blob_checksum: "contract-#{System.unique_integer([:positive])}",
+        original_filename: "contract.pdf",
+        organization_id: employee.organization_id
+      })
+
+    Payroll.create_employment_contract!(
+      %{
+        starts_at: ~D[2023-01-10],
+        salary: Money.new(:PLN, "100"),
+        user_id: employee.id,
+        blob_id: blob.id,
+        position: "Software Developer"
+      },
+      scope: %Scope{
+        actor: %SystemActor{org_id: employee.organization_id, role: :document_blob_processor},
+        tenant: employee.organization_id
+      }
+    )
   end
 end

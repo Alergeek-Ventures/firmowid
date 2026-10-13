@@ -17,11 +17,12 @@ defmodule FirmowidWeb.Delegations.Views.DelegationForm do
     user = Ash.load!(socket.assigns.current_user, :display_name, scope: socket.assigns.ash_scope)
     today = Date.utc_today()
     default_month = Date.beginning_of_month(today)
-    months = billing_months(user.employment_date, today)
     form = delegation_form(socket.assigns.ash_scope, default_month)
 
     {:ok, employment_contract} =
       Payroll.load_current_contract(user.id, scope: socket.assigns.ash_scope)
+
+    months = billing_months(employment_contract && employment_contract.starts_at, today)
 
     {:ok,
      socket
@@ -274,8 +275,8 @@ defmodule FirmowidWeb.Delegations.Views.DelegationForm do
 
   defp billing_months(nil, today), do: billing_months(Date.beginning_of_month(today), today)
 
-  defp billing_months(employment_date, today) do
-    first = Date.beginning_of_month(employment_date)
+  defp billing_months(starts_at, today) do
+    first = Date.beginning_of_month(starts_at)
     last = today |> Date.beginning_of_month() |> Date.add(32) |> Date.beginning_of_month()
     first |> Stream.iterate(&Date.add(&1, 1)) |> Enum.take_while(&(Date.compare(&1, last) != :gt))
   end

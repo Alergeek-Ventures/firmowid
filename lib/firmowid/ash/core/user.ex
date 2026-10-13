@@ -287,7 +287,6 @@ defmodule Firmowid.Ash.Core.User do
 
       accept [
         :name,
-        :employment_date,
         :avatar_blob_id,
         :phone,
         :slack_url,
@@ -332,7 +331,6 @@ defmodule Firmowid.Ash.Core.User do
       constraints instance_of: __MODULE__
 
       argument :name, :string
-      argument :employment_date, :date
       argument :phone, :string
       argument :slack_url, :string
       argument :bank_account_number, :string
@@ -619,7 +617,6 @@ defmodule Firmowid.Ash.Core.User do
       constraints: [one_of: [:user, :superuser]],
       default: :user
 
-    attribute :employment_date, :date, public?: true
     attribute :archived_at, :date, public?: true
     attribute :avatar_blob_id, :uuid, public?: true
 

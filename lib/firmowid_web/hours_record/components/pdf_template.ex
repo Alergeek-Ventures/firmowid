@@ -3,7 +3,7 @@ defmodule FirmowidWeb.HoursRecord.Components.PdfTemplate do
   use FirmowidWeb, :html
 
   attr :name, :string, required: true
-  attr :employment_date, :any, required: true
+  attr :contract_date, :any, required: true
   attr :start_date, :any, required: true
   attr :end_date, :any, required: true
   attr :hours, :integer, required: true
@@ -36,7 +36,7 @@ defmodule FirmowidWeb.HoursRecord.Components.PdfTemplate do
             Informuję, iż na wykonanie zlecenia realizowanego na podstawie umowy
           </p>
           <p class="mb-2.5">
-            zawartej w dniu {format_date(@employment_date)} w okresie od {format_date(@start_date)} do {format_date(
+            zawartej w dniu {format_date(@contract_date)} w okresie od {format_date(@start_date)} do {format_date(
               @end_date
             )}
           </p>
@@ -50,6 +50,8 @@ defmodule FirmowidWeb.HoursRecord.Components.PdfTemplate do
     </div>
     """
   end
+
+  defp format_date(nil), do: "—"
 
   defp format_date(date) do
     Calendar.strftime(date, "%d.%m.%Y")

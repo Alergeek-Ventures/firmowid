@@ -3,6 +3,7 @@ defmodule FirmowidWeb.HoursRecord.Controllers.Record do
   use FirmowidWeb, :controller
 
   alias Firmowid.Ash.Invoicing.Services.PdfUtils
+  alias Firmowid.Ash.Payroll
   alias Firmowid.Ash.Timetracker
   alias Firmowid.Ash.Timetracker.HoursRecord, as: AshHoursRecord
   alias FirmowidWeb.Infrastructure.Utilities.PdfHelpers
@@ -14,6 +15,9 @@ defmodule FirmowidWeb.HoursRecord.Controllers.Record do
   # not user-controlled HTML executed by the browser.
   def pdf(conn, %{"date" => date}) do
     scope = conn.assigns.ash_scope
+
+    {:ok, contract} = Payroll.load_current_contract(conn.assigns.current_user.id, scope: scope)
+    contract_date = contract && (contract.signed_at || contract.starts_at)
 
     # Get avatar URL and convert to data URI
     avatar_url =
@@ -53,7 +57,7 @@ defmodule FirmowidWeb.HoursRecord.Controllers.Record do
         :hours_record,
         layout: false,
         name: conn.assigns.current_user.name,
-        employment_date: conn.assigns.current_user.employment_date,
+        contract_date: contract_date,
         start_date: start_date,
         end_date: end_date,
         hours: total_hours,
@@ -74,6 +78,9 @@ defmodule FirmowidWeb.HoursRecord.Controllers.Record do
   def preview(conn, %{"date" => date}) do
     scope = conn.assigns.ash_scope
 
+    {:ok, contract} = Payroll.load_current_contract(conn.assigns.current_user.id, scope: scope)
+    contract_date = contract && (contract.signed_at || contract.starts_at)
+
     date = Date.from_iso8601!(date)
     start_date = Date.beginning_of_month(date)
     end_date = Date.end_of_month(date)
@@ -92,7 +99,7 @@ defmodule FirmowidWeb.HoursRecord.Controllers.Record do
     render(conn, :preview,
       layout: false,
       name: conn.assigns.current_user.name,
-      employment_date: conn.assigns.current_user.employment_date,
+      contract_date: contract_date,
       start_date: start_date,
       end_date: end_date,
       hours: total_hours,

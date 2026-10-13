@@ -32,8 +32,7 @@ defmodule Firmowid.Seeds.SalaryMatching do
             hashed_password: Argon2.hash_pwd_salt("kolejka123456"),
             organization_id: organization.id,
             role: :employee,
-            system_role: :user,
-            employment_date: month
+            system_role: :user
           },
           identity: :unique_email
         )
