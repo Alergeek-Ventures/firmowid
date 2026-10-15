@@ -7,6 +7,7 @@ defmodule FirmowidWeb.Invoicing.Transactions.Views.ShowTest do
   import Firmowid.FinancesFixtures
   import Phoenix.LiveViewTest
 
+  alias Firmowid.Ash.Core.User
   alias Firmowid.Ash.Finances.Transaction
   alias Firmowid.Ash.Invoicing
   alias Firmowid.Ash.Invoicing.CostInvoice
@@ -27,27 +28,13 @@ defmodule FirmowidWeb.Invoicing.Transactions.Views.ShowTest do
     project =
       Ash.Seed.seed!(Project, %{name: "Salary matching", organization_id: admin.organization_id})
 
-    Ash.Seed.seed!(UserSalary, %{
-      user_id: admin.id,
-      organization_id: admin.organization_id,
-      hourly_rate: Decimal.new(100),
-      starts_at: ~U[2025-01-01 00:00:00Z]
-    })
+    month_hours =
+      for offset <- -7..1 do
+        month = Date.shift(~D[2026-01-01], month: offset)
+        {month, if(month == ~D[2025-12-01], do: 9, else: 10)}
+      end
 
-    for offset <- -7..1 do
-      month = Date.shift(~D[2026-01-01], month: offset)
-      start = DateTime.new!(month, ~T[08:00:00], "Etc/UTC")
-      hours = if month == ~D[2025-12-01], do: 9, else: 10
-
-      Ash.Seed.seed!(Session, %{
-        user_id: admin.id,
-        organization_id: admin.organization_id,
-        project_id: project.id,
-        title: "Salary matching hours",
-        start_datetime: start,
-        end_datetime: DateTime.shift(start, hour: hours)
-      })
-    end
+    seed_salary_months!(admin, project, month_hours)
 
     conn = log_in_user(conn, admin)
 
@@ -60,11 +47,7 @@ defmodule FirmowidWeb.Invoicing.Transactions.Views.ShowTest do
 
       {:ok, view, html} = live(conn, ~p"/transakcje/#{transaction.id}")
 
-      candidate_ids =
-        html
-        |> LazyHTML.from_fragment()
-        |> LazyHTML.query("#salary-suggestions [id^='salary-suggestion-']")
-        |> LazyHTML.attribute("id")
+      candidate_ids = salary_candidate_ids(html)
 
       assert length(candidate_ids) == 7
       assert hd(candidate_ids) == "salary-suggestion-#{admin.id}-#{expected_month}"
@@ -81,6 +64,73 @@ defmodule FirmowidWeb.Invoicing.Transactions.Views.ShowTest do
 
       view |> element("#disconnect-salary") |> render_click()
       assert has_element?(view, "#salary-suggestions")
+    end
+  end
+
+  test "full recipient name outranks month and amount without excluding unnamed candidates", %{
+    conn: conn
+  } do
+    admin = admin_fixture()
+    admin = Ash.Seed.update!(admin, %{name: "Łukasz Żółć"})
+
+    project =
+      Ash.Seed.seed!(Project, %{name: "Salary names", organization_id: admin.organization_id})
+
+    [partial, unrelated, unnamed] =
+      for name <- ["Adam Żółć", "Adam Nowak", nil] do
+        employee =
+          Ash.Seed.seed!(User, %{
+            name: name,
+            email: "salary-#{System.unique_integer([:positive])}@example.com",
+            organization_id: admin.organization_id,
+            hashed_password: admin.hashed_password,
+            role: :employee
+          })
+
+        seed_salary_months!(employee, project, [{~D[2025-12-01], 10}])
+        employee
+      end
+
+    seed_salary_months!(admin, project, [{~D[2025-12-01], 9}, {~D[2025-10-01], 10}])
+    conn = log_in_user(conn, admin)
+
+    for recipient <- ["ZOLC LUKASZ", "  ŁUKASZ, ŻÓŁĆ  ul. Testowa 12 "] do
+      transaction =
+        transaction_fixture!(admin, %{creditor_name: recipient, amount: Money.new!(:PLN, -1000)})
+
+      {:ok, view, html} = live(conn, ~p"/transakcje/#{transaction.id}")
+
+      ids = salary_candidate_ids(html)
+
+      assert Enum.take(ids, 3) == [
+               "salary-suggestion-#{admin.id}-2025-12-01",
+               "salary-suggestion-#{admin.id}-2025-10-01",
+               "salary-suggestion-#{partial.id}-2025-12-01"
+             ]
+
+      assert MapSet.new(Enum.drop(ids, 3)) ==
+               MapSet.new([
+                 "salary-suggestion-#{unrelated.id}-2025-12-01",
+                 "salary-suggestion-#{unnamed.id}-2025-12-01"
+               ])
+
+      assert has_element?(
+               view,
+               "#salary-suggestion-#{unnamed.id}-2025-12-01",
+               to_string(unnamed.email)
+             )
+    end
+
+    for recipient <- ["Żółć", nil] do
+      transaction =
+        transaction_fixture!(admin, %{creditor_name: recipient, amount: Money.new!(:PLN, -1000)})
+
+      {:ok, _view, html} = live(conn, ~p"/transakcje/#{transaction.id}")
+      ids = salary_candidate_ids(html)
+
+      assert length(ids) == 5
+      assert hd(ids) != "salary-suggestion-#{admin.id}-2025-12-01"
+      assert "salary-suggestion-#{admin.id}-2025-10-01" in ids
     end
   end
 
@@ -279,6 +329,35 @@ defmodule FirmowidWeb.Invoicing.Transactions.Views.ShowTest do
 
     assert html =~ ~s(href="#{default_return_to}")
     refute html =~ "https://example.com"
+  end
+
+  defp salary_candidate_ids(html) do
+    html
+    |> LazyHTML.from_fragment()
+    |> LazyHTML.query("#salary-suggestions [id^='salary-suggestion-']")
+    |> LazyHTML.attribute("id")
+  end
+
+  defp seed_salary_months!(user, project, month_hours) do
+    Ash.Seed.seed!(UserSalary, %{
+      user_id: user.id,
+      organization_id: user.organization_id,
+      hourly_rate: Decimal.new(100),
+      starts_at: ~U[2025-01-01 00:00:00Z]
+    })
+
+    Enum.each(month_hours, fn {month, hours} ->
+      start = DateTime.new!(month, ~T[08:00:00], "Etc/UTC")
+
+      Ash.Seed.seed!(Session, %{
+        user_id: user.id,
+        organization_id: user.organization_id,
+        project_id: project.id,
+        title: "Salary matching hours",
+        start_datetime: start,
+        end_datetime: DateTime.shift(start, hour: hours)
+      })
+    end)
   end
 
   defp transaction_fixture!(admin, attrs) do
