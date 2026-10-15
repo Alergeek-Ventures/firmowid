@@ -7,10 +7,11 @@ defmodule Firmowid.Ash.Invoicing.Calculations.IsEditable do
   corrections. Cannot be expressed in pure `expr()`.
 
   Rules:
-  1. KOR → true only if this is the latest correction of the corrected invoice
-  2. VAT with corrections → false
-  3. Draft (no invoice_number) → true
-  4. Not locked → true
+  1. Draft (no invoice_number) → true
+  2. Numbered without a KSeF number → false: issued before KSeF was mandatory
+     (kept only for reference) or still being submitted
+  3. KOR → true only if this is the latest correction of the corrected invoice
+  4. VAT with corrections → false
   5. Otherwise → false
   """
   use Ash.Resource.Calculation
@@ -25,6 +26,9 @@ defmodule Firmowid.Ash.Invoicing.Calculations.IsEditable do
     Enum.map(records, &editable?/1)
   end
 
+  defp editable?(%{invoice_number: nil}), do: true
+  defp editable?(%{ksef_number: nil}), do: false
+
   defp editable?(%{ksef_invoice_kind: :kor, corrected_invoice: %{corrections: corrections}} = invoice)
        when is_list(corrections) do
     case List.last(corrections) do
@@ -37,7 +41,5 @@ defmodule Firmowid.Ash.Invoicing.Calculations.IsEditable do
     Enum.empty?(corrections)
   end
 
-  defp editable?(%{invoice_number: nil}), do: true
-  defp editable?(%{locked_at: nil}), do: true
   defp editable?(%{}), do: false
 end
