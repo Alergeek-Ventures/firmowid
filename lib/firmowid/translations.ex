@@ -47,19 +47,33 @@ defmodule Firmowid.Translations do
     |> MapSet.new()
   end
 
-  @doc "Projects an exported catalog onto current source identities, preserving headers and translation values."
+  @doc "Projects an exported catalog onto current source identities with canonical Polish metadata."
   @spec catalog_for_source(Expo.Messages.t(), Expo.Messages.t(), String.t()) :: Expo.Messages.t()
   def catalog_for_source(pot, po, domain) do
     identities = MapSet.new(source_messages(pot), &message_key(&1, domain))
 
     %{
       po
-      | messages:
+      | headers: polish_headers(po.headers),
+        messages:
           Enum.filter(
             po.messages,
             &(header?(&1) or MapSet.member?(identities, message_key(&1, domain)))
           )
     }
+  end
+
+  defp polish_headers(headers) do
+    preserved =
+      headers
+      |> text()
+      |> String.split("\n", trim: true)
+      |> Enum.reject(&String.match?(&1, ~r/^(Language|Plural-Forms):/i))
+
+    Enum.map(
+      preserved ++ ["Language: pl", "Plural-Forms: #{@polish_plural_forms}"],
+      &(&1 <> "\n")
+    )
   end
 
   @doc "Validates source and Polish PO catalogs using technical checks only."

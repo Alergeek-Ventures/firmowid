@@ -4,6 +4,24 @@ defmodule Firmowid.TranslationsTest do
 
   alias Firmowid.Translations
 
+  test "exported catalogs get Polish metadata without changing translations or other headers" do
+    pot = catalog(~s(msgid "Invoice"\nmsgstr ""\n))
+    exported = Expo.PO.parse_string!(~s(msgid "Invoice"\nmsgstr "Faktura"\n))
+
+    for headers <- [[], ["Language: en\n", "Plural-Forms: broken\n", "X-Generator: Accent\n"]] do
+      projected = Translations.catalog_for_source(pot, %{exported | headers: headers}, "default")
+
+      reparsed =
+        projected |> Expo.PO.compose() |> IO.iodata_to_binary() |> Expo.PO.parse_string!()
+
+      assert :ok = Translations.validate_catalog(pot, reparsed, "default")
+      assert [%{msgstr: ["Faktura"]}] = Translations.source_messages(reparsed)
+
+      if headers != [],
+        do: assert(Expo.Messages.get_header(reparsed, "X-Generator") == ["Accent"])
+    end
+  end
+
   test "matching catalogs still validate translations and placeholders" do
     pot = catalog(~s(msgid "Invoice %{number}"\nmsgstr ""\n))
     po = catalog(~s(msgid "Invoice %{number}"\nmsgstr "Faktura %{number}"\n))

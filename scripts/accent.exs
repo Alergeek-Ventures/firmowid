@@ -15,8 +15,6 @@ defmodule Firmowid.Translations.Accent do
   @cli_timeout "120"
   @usage "usage: accent.exs <prepare|export> --version SHA [--fallback-version FULL_SHA] (fallback is export-only; export accepts a unique 7-39 character SHA prefix)"
   @version_marker ~r/^# Accent version: [[:xdigit:]]{40}$/
-  @bad_plural "\"Plural-Forms: nplrls=3; plural===1 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\\n\""
-  @good_plural "\"Plural-Forms: nplurals=3; plural=(n==1 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\\n\""
 
   @create_version_query """
   mutation CreateVersion(
@@ -425,7 +423,6 @@ defmodule Firmowid.Translations.Accent do
 
     catalog =
       lines
-      |> fix_plural_header()
       |> Enum.join("\n")
       |> Expo.PO.parse_string!()
 
@@ -446,21 +443,6 @@ defmodule Firmowid.Translations.Accent do
   end
 
   defp remove_old_version_marker(lines), do: Enum.reject(lines, &Regex.match?(@version_marker, &1))
-
-  defp fix_plural_header(lines) do
-    {fixed_lines, _state} = Enum.map_reduce(lines, :before, &fix_header_line/2)
-    fixed_lines
-  end
-
-  defp fix_header_line("msgid \"\"" = line, :before), do: {line, :header}
-  defp fix_header_line("msgstr \"\"" = line, :header), do: {line, :header_values}
-  defp fix_header_line(@bad_plural, :header_values), do: {@good_plural, :header_values}
-
-  defp fix_header_line(line, :header_values) do
-    if String.starts_with?(line, ["\"", "#"]), do: {line, :header_values}, else: {line, :done}
-  end
-
-  defp fix_header_line(line, state), do: {line, state}
 end
 
 Firmowid.Translations.Accent.run(System.argv())
