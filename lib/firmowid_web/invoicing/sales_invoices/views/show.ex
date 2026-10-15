@@ -73,7 +73,6 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Show do
         |> assign(:preview_type, :html)
         |> assign(:no_padding, true)
         |> assign(:return_to, return_to)
-        |> assign(:ksef_connected?, Ksef.connected?(socket.assigns.ash_scope))
 
       {:ok, socket}
     end
@@ -93,7 +92,6 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Show do
       potential_transactions={@potential_transactions}
       current_user={@current_user}
       return_to={@return_to}
-      ksef_connected?={@ksef_connected?}
       scope={@ash_scope}
     />
     """

@@ -34,13 +34,8 @@ defmodule Firmowid.Ash.Invoicing.Changes.SubmitIssuedInvoice do
 
   defp enqueue(invoice, scope) do
     case Ksef.submit_sales_invoice(invoice.id, scope) do
-      {:ok, job} ->
-        invoice =
-          invoice
-          |> Map.put(:ksef_submission_status, :submitting)
-          |> Ash.Resource.put_metadata(:ksef_submission_job_id, job.id)
-
-        {:ok, invoice}
+      {:ok, _job} ->
+        {:ok, Map.put(invoice, :ksef_submission_status, :submitting)}
 
       {:error, :not_authenticated} ->
         {:error, not_connected_error()}

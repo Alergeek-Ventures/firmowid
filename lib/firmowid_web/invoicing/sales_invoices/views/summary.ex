@@ -16,10 +16,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Summary do
   alias Firmowid.Ash.Invoicing.SalesInvoice
   alias Firmowid.Ash.Ksef
   alias Firmowid.Ash.Ksef.SubmissionInfo
-  alias Firmowid.ErrorKind
   alias FirmowidWeb.Invoicing.Utilities.Navigation
-
-  require Logger
 
   @invoice_loads [
     :net_value,
@@ -62,7 +59,6 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Summary do
       |> assign(:submission_info, submission_info)
       |> assign(:currency_rate, currency_rate)
       |> assign(:return_to, return_to)
-      |> assign(:ksef_connected?, Ksef.connected?(socket.assigns.ash_scope))
 
     {:ok, socket}
   end
@@ -138,17 +134,6 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Summary do
           >
             <Lucideicons.download /> Pobierz
           </.link>
-          <FirmowidUI.Components.Button.button
-            :if={
-              @ksef_connected? and not is_nil(@invoice.invoice_number) and
-                SubmissionInfo.not_submitted?(@submission_info)
-            }
-            variant="secondary"
-            size="small"
-            phx-click="send_to_ksef"
-          >
-            <Lucideicons.send /> Wyślij do KSeF
-          </FirmowidUI.Components.Button.button>
         </div>
 
         <div class="flex items-center gap-4">
@@ -256,54 +241,6 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Summary do
       </div>
     </div>
     """
-  end
-
-  @impl true
-  def handle_event("send_to_ksef", _params, socket) do
-    invoice = socket.assigns.invoice
-
-    case Ksef.submit_sales_invoice(invoice.id, socket.assigns.ash_scope) do
-      {:ok, _job} ->
-        Ksef.subscribe_ksef_status(socket.assigns.current_user.organization_id)
-
-        {:noreply,
-         socket
-         |> assign(:submission_info, %SubmissionInfo{status: :submitting})
-         |> put_flash(:info, "Wysyłka do KSeF rozpoczęta")}
-
-      {:error, reason} ->
-        Logger.error("Failed to submit invoice to KSeF from summary",
-          invoice_id: invoice.id,
-          error_kind: ErrorKind.classify(reason)
-        )
-
-        handle_failed_summary_submission(socket, invoice, reason)
-    end
-  end
-
-  defp handle_failed_summary_submission(socket, %{ksef_invoice_kind: :kor} = invoice, reason) do
-    case Ksef.cleanup_failed_correction(invoice.id, socket.assigns.ash_scope) do
-      {:ok, :deleted, original_invoice_id} ->
-        {:noreply,
-         socket
-         |> put_flash(:error, Ksef.failed_correction_message(reason))
-         |> push_navigate(to: Navigation.sales_invoice_edit_path(original_invoice_id, socket.assigns.return_to))}
-
-      {:error, destroy_error} ->
-        Logger.error("Failed to clean up correction invoice from summary",
-          invoice_id: invoice.id,
-          error_kind: ErrorKind.classify(destroy_error)
-        )
-
-        {:noreply, put_flash(socket, :error, "Nie udało się wysłać faktury do KSeF")}
-
-      _ ->
-        {:noreply, put_flash(socket, :error, "Nie udało się wysłać faktury do KSeF")}
-    end
-  end
-
-  defp handle_failed_summary_submission(socket, _invoice, _reason) do
-    {:noreply, put_flash(socket, :error, "Nie udało się wysłać faktury do KSeF")}
   end
 
   @impl true

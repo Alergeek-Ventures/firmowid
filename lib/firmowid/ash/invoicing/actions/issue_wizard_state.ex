@@ -49,7 +49,7 @@ defmodule Firmowid.Ash.Invoicing.Actions.IssueWizardState do
           if input.arguments.draft do
             Invoicing.create_sales_invoice_draft(%{input: attrs}, opts)
           else
-            Invoicing.issue_new_sales_invoice(%{input: attrs}, opts)
+            Invoicing.create_and_issue_sales_invoice(%{input: attrs}, opts)
           end
 
         with {:ok, invoice} <- result do
