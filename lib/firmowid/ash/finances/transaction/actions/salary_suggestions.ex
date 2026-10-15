@@ -1,5 +1,5 @@
 defmodule Firmowid.Ash.Finances.Transaction.Actions.SalarySuggestions do
-  @moduledoc "Finds unassigned employee/month salaries within the outgoing transaction's amount window."
+  @moduledoc "Finds recent unassigned salaries within the transfer's amount window, prioritizing its expected payroll month."
 
   use Ash.Resource.Actions.Implementation
 
@@ -10,6 +10,7 @@ defmodule Firmowid.Ash.Finances.Transaction.Actions.SalarySuggestions do
 
   @minimum_tolerance Decimal.new(300)
   @relative_tolerance Decimal.new("0.20")
+  @lookback_months 6
 
   @impl true
   def run(input, _opts, context) do
@@ -36,6 +37,7 @@ defmodule Firmowid.Ash.Finances.Transaction.Actions.SalarySuggestions do
       |> MapSet.new(&{&1.salary_user_id, &1.salary_month})
 
     amount = transaction.amount |> Money.to_decimal() |> Decimal.abs()
+    expected_month = expected_salary_month(transaction.booking_date)
 
     transaction
     |> candidate_months(arguments[:salary_month], arguments[:salary_user_id], scope)
@@ -50,19 +52,28 @@ defmodule Firmowid.Ash.Finances.Transaction.Actions.SalarySuggestions do
       |> Enum.flat_map(&suggestion(&1, month, amount))
     end)
     |> Enum.sort(fn a, b ->
-      case Decimal.compare(Money.to_decimal(a.difference), Money.to_decimal(b.difference)) do
-        :lt -> true
-        :gt -> false
-        :eq -> Date.compare(a.month, b.month) != :lt
+      if a.month == expected_month == (b.month == expected_month) do
+        case Decimal.compare(Money.to_decimal(a.difference), Money.to_decimal(b.difference)) do
+          :lt -> true
+          :gt -> false
+          :eq -> Date.compare(a.month, b.month) != :lt
+        end
+      else
+        a.month == expected_month
       end
     end)
-    |> Enum.take(5)
   end
 
   defp candidate_months(transaction, nil, user_id, scope) do
     next_month = transaction.booking_date |> Date.beginning_of_month() |> Date.shift(month: 1)
 
+    first_month =
+      transaction.booking_date
+      |> Date.beginning_of_month()
+      |> Date.shift(month: -@lookback_months)
+
     %{
+      started_from: DateTime.new!(first_month, ~T[00:00:00], "Etc/UTC"),
       started_to: DateTime.new!(next_month, ~T[00:00:00], "Etc/UTC"),
       user_id: user_id
     }
@@ -71,10 +82,23 @@ defmodule Firmowid.Ash.Finances.Transaction.Actions.SalarySuggestions do
   end
 
   defp candidate_months(transaction, %Date{day: 1} = month, _user_id, _scope) do
-    if Date.after?(month, transaction.booking_date), do: [], else: [month]
+    first_month =
+      transaction.booking_date
+      |> Date.beginning_of_month()
+      |> Date.shift(month: -@lookback_months)
+
+    if Date.before?(month, first_month) or Date.after?(month, transaction.booking_date),
+      do: [],
+      else: [month]
   end
 
   defp candidate_months(_transaction, _month, _user_id, _scope), do: []
+
+  defp expected_salary_month(%Date{day: day} = date) when day <= 14 do
+    date |> Date.beginning_of_month() |> Date.shift(month: -1)
+  end
+
+  defp expected_salary_month(date), do: Date.beginning_of_month(date)
 
   defp suggestion(%{user: nil}, _month, _amount), do: []
 

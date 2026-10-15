@@ -13,8 +13,76 @@ defmodule FirmowidWeb.Invoicing.Transactions.Views.ShowTest do
   alias Firmowid.Ash.Invoicing.CostInvoiceTransaction
   alias Firmowid.Ash.Invoicing.SalesInvoice
   alias Firmowid.Ash.Invoicing.SalesInvoiceItem
+  alias Firmowid.Ash.Payroll.UserSalary
   alias Firmowid.Ash.Scope
+  alias Firmowid.Ash.Timetracker.Project
+  alias Firmowid.Ash.Timetracker.Session
   alias FirmowidWeb.Invoicing.Utilities.Navigation
+
+  test "prioritizes the payroll month and shows all candidates up to six months back", %{
+    conn: conn
+  } do
+    admin = admin_fixture()
+
+    project =
+      Ash.Seed.seed!(Project, %{name: "Salary matching", organization_id: admin.organization_id})
+
+    Ash.Seed.seed!(UserSalary, %{
+      user_id: admin.id,
+      organization_id: admin.organization_id,
+      hourly_rate: Decimal.new(100),
+      starts_at: ~U[2025-01-01 00:00:00Z]
+    })
+
+    for offset <- -7..1 do
+      month = Date.shift(~D[2026-01-01], month: offset)
+      start = DateTime.new!(month, ~T[08:00:00], "Etc/UTC")
+      hours = if month == ~D[2025-12-01], do: 9, else: 10
+
+      Ash.Seed.seed!(Session, %{
+        user_id: admin.id,
+        organization_id: admin.organization_id,
+        project_id: project.id,
+        title: "Salary matching hours",
+        start_datetime: start,
+        end_datetime: DateTime.shift(start, hour: hours)
+      })
+    end
+
+    conn = log_in_user(conn, admin)
+
+    for {date, expected_month} <- [
+          {~D[2026-01-14], ~D[2025-12-01]},
+          {~D[2026-01-15], ~D[2026-01-01]}
+        ] do
+      transaction =
+        transaction_fixture!(admin, %{booking_date: date, amount: Money.new!(:PLN, -1000)})
+
+      {:ok, view, html} = live(conn, ~p"/transakcje/#{transaction.id}")
+
+      candidate_ids =
+        html
+        |> LazyHTML.from_fragment()
+        |> LazyHTML.query("#salary-suggestions [id^='salary-suggestion-']")
+        |> LazyHTML.attribute("id")
+
+      assert length(candidate_ids) == 7
+      assert hd(candidate_ids) == "salary-suggestion-#{admin.id}-#{expected_month}"
+      assert has_element?(view, "#salary-suggestion-#{admin.id}-2025-07-01")
+      refute has_element?(view, "#salary-suggestion-#{admin.id}-2025-06-01")
+      refute has_element?(view, "#salary-suggestion-#{admin.id}-2026-02-01")
+
+      view
+      |> element("#salary-suggestion-#{admin.id}-#{expected_month} button", "Zatwierdź")
+      |> render_click()
+
+      assert has_element?(view, "#salary-confirmation")
+      refute has_element?(view, "#salary-suggestions")
+
+      view |> element("#disconnect-salary") |> render_click()
+      assert has_element?(view, "#salary-suggestions")
+    end
+  end
 
   test "shows zero state for an unmatched transaction", %{conn: conn} do
     admin = admin_fixture()
