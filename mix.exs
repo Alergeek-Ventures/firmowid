@@ -71,7 +71,7 @@ defmodule Firmowid.MixProject do
   # Type `mix help deps` for examples and options.
   defp deps do
     [
-      {:ash_authentication_oauth2_server, "~> 0.3.1"},
+      {:ash_authentication_oauth2_server, "~> 0.4.0"},
       # Pin the native MCP UI renderer extension until it is available upstream.
       {:ash_ai, github: "Alergeek-Ventures/ash_ai", ref: "ca65f012c0ef054e2ef9a7001113ad4c4f18f913"},
       {:sourceror, "~> 1.8"},
@@ -151,8 +151,8 @@ defmodule Firmowid.MixProject do
        runtime: false},
       {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},
       {:excoveralls, "~> 0.18", only: :test},
-      {:openai_ex, "~> 0.9.19"},
-      {:req_llm, "~> 1.26.0"},
+      {:openai_ex, "~> 0.10.0"},
+      {:req_llm, "~> 1.27.0"},
       {:live_debugger, "~> 1.0", only: [:dev], runtime: Mix.env() == :dev},
       {:oban_web, "~> 2.11"},
       {:igniter, "~> 0.5", only: [:dev]},
