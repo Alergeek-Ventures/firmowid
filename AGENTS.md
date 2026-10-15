@@ -23,6 +23,8 @@ it and runs the seeds. Any data not included in the seeds will be lost.
 Tidewave MCP always targets your current worktree. Use it as the primary tool
 for runtime inspection and debugging. Temporary unavailability during a restart
 is expected; report it if the connection remains unavailable after startup.
+It never shows production; for production issues follow the
+production-debugging skill.
 
 ## Local access and seed data
 
@@ -50,6 +52,28 @@ Examples:
 - `fix: prevent duplicate invoice import`
 - `chore(ci): enforce conventional commits in workflow`
 
+## Scope and simplicity
+
+- Make the smallest change that solves the stated problem. Do not add
+  mechanisms nobody asked for: rate limiting, audit trails, caching, retries,
+  extra tables, configuration, wrappers, behaviours for a single
+  implementation, diagnostics.
+- Handle only the data shapes the code, the data or the library contract can
+  actually produce. Do not guard against impossible cases.
+- Do not change unrelated files or configuration (`runtime.exs`, workflows,
+  `mix.exs`) along the way.
+- When fixing a pattern, search the repository for other instances and fix
+  them all, or list the remaining ones.
+- Do not create Markdown files, notes, summaries or scripts in the repository
+  unless asked. Explanations belong in the reply, rationale in the PR
+  description.
+- An instruction to clean up means improving the code, not deleting the work.
+  Ask when it is unclear what should go.
+- Before reporting, read your whole diff and remove anything you cannot justify
+  by the task: duplicated or dead code, unrelated formatting and comment moves.
+- If the work grows into several independent capabilities, propose splitting
+  it into separate PRs before continuing.
+
 ## Manual testing and good will
 
 While we employ a bunch of tools to analyze code and catch bugs early, it's
@@ -64,14 +88,50 @@ and click through the affected flow as a real user: fill in the form, submit it,
 check validation messages, and verify the saved invoice. Use browser interaction
 to validate the behavior, not just compilation or automated tests.
 
+- A bug fix is done only after you reproduced the failure before the change and
+  observed the working flow after it, in the browser or through Tidewave
+  (logs, `project_eval`). State that evidence in the report.
+- Explain the root cause, and for a regression why it appears now, before
+  changing code.
+- When the user reports the same error again, read the logs and the library
+  source in `deps/` before trying another fix. Inspect real values at runtime
+  instead of assuming their shape.
+- For UI work, compare the result with the reference the user gave (design,
+  PDF, an existing component) and copy styling from the closest existing
+  component.
+
 ## Automated Tests
 
 They have value, and we have these in our codebase, as part of our validation suite.
 They have to be super fast, test critical paths for regressions.
 
-Do not **overtest**. Discuss with users about testing; we never want to be held back
-by outdated / inflexible tests.
+Do not **overtest**. We never want to be held back by outdated or inflexible
+tests.
 
+- Do not add tests by default. Write them for critical business paths (money,
+  invoices and KSeF, authorization and tenancy, data integrity) and propose them
+  to the user before writing.
+- Do not test development tooling (`mix dev.*`, Mix tasks, tunnels), internal or
+  admin views, telemetry, analytics, proxies, lint rules or glue code. When the
+  user says no tests, remove the ones already written.
+- Prefer testing features the way a user uses them, through
+  `Phoenix.LiveViewTest` (see the phoenix-liveview-testing skill), over testing
+  internal functions.
+- Tests produce no log output; capture expected logs with `capture_log`.
+
+
+## Error reporting
+
+Let errors bubble up through the Elixir layers and reach the Sentry handlers at
+the boundary: `Sentry.PlugCapture` in the endpoint, the LiveView telemetry
+handler in `Firmowid.Sentry` and the Oban integration. Do not report errors to
+Sentry by hand at each call site.
+
+- Return `{:error, _}` up the call chain or let unexpected failures crash. Do
+  not swallow errors, rescue them into fallback values or turn them into
+  `:ok`.
+- Handle an error only where there is a meaningful reaction, such as a
+  validation message for the user.
 
 ## Migrations Policy (Ash only)
 
@@ -84,6 +144,8 @@ Schema migrations must be managed through Ash/AshPostgres migration tooling.
   tooling cannot express the change in time.
 - Every emergency manual migration must be explicitly documented in PR/commit notes,
   with reason and follow-up plan to return to Ash-managed schema changes.
+- A migration that exists only on the current unmerged branch is edited or
+  regenerated in place. Do not stack a corrective migration on top of it.
 
 ## Code Quality Verification
 
@@ -115,7 +177,7 @@ external APIs are excluded by default; include them deliberately with
 
 ### Repository organization
 
-Consult the [repository-organization skill](.opencode/skills/repository-organization/SKILL.md)
+Consult the [repository-organization skill](.agents/skills/repository-organization/SKILL.md)
 when placing code, organizing modules, extracting shared components or reviewing architectural boundaries.
 
 ### User-facing URL language
@@ -145,8 +207,8 @@ at `lib/firmowid/ash/finances/finances_test.exs`.
 
 ### Module Documentation
 
-- All modules must have `@moduledoc` describing their purpose
-- Public functions should have `@doc` and `@spec`
+- All modules must have a concise `@moduledoc` describing their purpose
+- Public functions should have a concise `@doc` and `@spec`
 
 ### Sobelow
 
@@ -200,6 +262,14 @@ Follow best practices, good patterns and refactor code that's not doing that.
 Use available tools or navigate to the documentation on websites. Verify APIs
 for the used versions of packages, check cookbooks, guides and examples to make
 sure you're "holding it right".
+
+- Never write a library call from memory. Check the installed version in
+  `mix.lock` and read its documentation (Tidewave `get_docs`, HexDocs) or its
+  source in `deps/` before using a function or option.
+- Before writing a client, wrapper or helper, check whether an installed
+  dependency already provides it.
+- Back claims about library behavior or configuration with a link or a
+  `deps/` path.
 
 ## Usage rules
 

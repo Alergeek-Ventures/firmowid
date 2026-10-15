@@ -81,6 +81,7 @@ in
     beam29Packages.erlang
     infisical
     worktrunk
+    betterleaks
     bash
     curl
     jq
