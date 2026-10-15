@@ -187,21 +187,50 @@ defmodule Firmowid.Seeds.Helpers do
   # Invoice seed helpers — Ash.Seed (bypasses actions, goes to data layer)
   # ---------------------------------------------------------------------------
 
+  # Issued invoices always reach KSeF, so a seeded issued invoice carries a
+  # deterministic, fake KSeF number and checksum and is locked like a submitted one.
   def get_or_create_sales_invoice(inv_number, org_id, attrs) do
     case find_sales_invoice(inv_number, org_id) do
-      nil -> seed_sales_invoice!(inv_number, org_id, attrs)
+      nil ->
+        seed_sales_invoice!(
+          org_id,
+          Map.put(attrs, "invoice_number", inv_number),
+          ksef_fields(inv_number, attrs)
+        )
+
+      invoice ->
+        invoice
+    end
+  end
+
+  # A draft has no number yet; `key` identifies it through its internal note.
+  def get_or_create_sales_invoice_draft(key, org_id, attrs) do
+    case find_sales_invoice_draft(key, org_id) do
+      nil -> seed_sales_invoice!(org_id, attrs, %{invoice_number: nil, internal_note: key})
       invoice -> invoice
     end
   end
 
-  defp seed_sales_invoice!(inv_number, org_id, attrs) do
+  defp ksef_fields(inv_number, attrs) do
+    digest = :sha256 |> :crypto.hash(inv_number) |> Base.encode16()
+    issue_date = Map.fetch!(attrs, "issue_date")
+
+    %{
+      ksef_number:
+        "#{Map.get(attrs, "seller_nip", bc_seller_info()["seller_nip"])}-#{Calendar.strftime(issue_date, "%Y%m%d")}-#{binary_part(digest, 0, 12)}-#{binary_part(digest, 12, 2)}",
+      ksef_invoice_checksum: "seed-" <> String.downcase(binary_part(digest, 0, 32)),
+      locked_at: DateTime.new!(issue_date, ~T[12:00:00], "Etc/UTC")
+    }
+  end
+
+  defp seed_sales_invoice!(org_id, attrs, lifecycle_fields) do
     {items_raw, invoice_attrs} = Map.pop(attrs, "sales_invoice_items", [])
 
     invoice_data =
       bc_seller_info()
       |> Map.merge(invoice_attrs)
-      |> Map.put("invoice_number", inv_number)
       |> atomize_string_keys()
+      |> Map.merge(lifecycle_fields)
       |> Map.put(:organization_id, org_id)
       |> Map.put(:ksef_invoice_kind, :vat)
 
@@ -281,6 +310,17 @@ defmodule Firmowid.Seeds.Helpers do
     query =
       AshSalesInvoice
       |> Ash.Query.filter(invoice_number == ^inv_number and organization_id == ^org_id)
+      |> Ash.Query.limit(1)
+
+    %{}
+    |> AshSalesInvoice.list!(query: query, tenant: org_id, actor: @seed_actor, authorize?: false)
+    |> List.first()
+  end
+
+  defp find_sales_invoice_draft(key, org_id) do
+    query =
+      AshSalesInvoice
+      |> Ash.Query.filter(is_nil(invoice_number) and internal_note == ^key and organization_id == ^org_id)
       |> Ash.Query.limit(1)
 
     %{}
