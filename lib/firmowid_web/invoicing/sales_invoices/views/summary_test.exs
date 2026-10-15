@@ -5,8 +5,8 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.SummaryTest do
   import Phoenix.LiveViewTest
 
   alias Firmowid.Ash.Invoicing
-  alias Firmowid.Ash.Invoicing.SalesInvoice
   alias Firmowid.Ash.Ksef.Credential
+  alias Firmowid.InvoicingFixtures
   alias FirmowidWeb.Invoicing.Utilities.Navigation
 
   describe "Invoice page works" do
@@ -85,16 +85,17 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.SummaryTest do
 
       assert html =~ "Faktura wystawiona"
 
+      # The submission worker returns an invoice KSeF did not accept to a draft.
       Ash.Seed.update!(invoice, %{
+        invoice_number: nil,
         ksef_session_reference_number: "REF-#{System.unique_integer([:positive])}"
       })
 
       send(view.pid, {:ksef_invoice_status, %{invoice_id: invoice.id, status: :failed}})
 
-      updated_html = render(view)
-
-      assert updated_html =~ "Wysyłka do KSeF nie powiodła się"
-      assert updated_html =~ "Przejdź do faktury"
+      assert render(view) =~ "Wysyłka do KSeF nie powiodła się"
+      assert has_element?(view, "#returned-to-draft-notice")
+      assert has_element?(view, ~s(a[href="/sprzedazowe/#{invoice.id}/edytuj"]))
     end
 
     test "clicking send to KSeF submits invoice through mocked API", %{conn: conn} do
@@ -157,7 +158,15 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.SummaryTest do
 
     test "preserves return_to in summary navigation links", %{conn: conn} do
       admin = admin_fixture()
-      invoice = sales_invoice_fixture!(admin)
+
+      invoice =
+        admin
+        |> sales_invoice_fixture!()
+        |> Ash.Seed.update!(%{
+          ksef_number: "KSEF-ACCEPTED",
+          ksef_invoice_checksum: "accepted-hash"
+        })
+
       conn = log_in_user(conn, admin)
 
       origin_return_to =
@@ -182,7 +191,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.SummaryTest do
 
   defp sales_invoice_fixture!(admin) do
     {:ok, invoice} =
-      SalesInvoice.persist_invoice(
+      InvoicingFixtures.seed_sales_invoice(
         %{
           invoice_number: "FV/SUMMARY/#{System.unique_integer([:positive])}",
           issue_date: ~D[2026-01-10],

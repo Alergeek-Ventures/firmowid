@@ -114,11 +114,17 @@ defmodule Firmowid.Ash.Invoicing do
       ]
     end
 
-    tool :save_sales_invoice_draft, SalesInvoice, :save_invoice_draft do
+    tool :create_sales_invoice_draft, SalesInvoice, :create_draft do
       description "Save a complete but unnumbered invoice only when the user explicitly asks to issue it later. " <>
                     "A draft requires the same data as issuance except the number; keep partial data in the chat instead. " <>
-                    "Prefer calling preview_sales_invoice directly. Saving is available without KSeF; " <>
-                    "it neither issues nor submits. Pass invoice_id to revise an existing saved draft."
+                    "Prefer calling preview_sales_invoice directly. Saving is available without KSeF and neither issues nor submits."
+
+      load [:amount, sales_invoice_items: [:net_value, :vat_value, :gross_value]]
+    end
+
+    tool :update_sales_invoice_draft, SalesInvoice, :update_draft do
+      description "Revise a saved unnumbered invoice draft when the user asks to change it before issuing later. " <>
+                    "To issue a draft, call preview_sales_invoice with its invoice_id instead."
 
       load [:amount, sales_invoice_items: [:net_value, :vat_value, :gross_value]]
     end
@@ -179,11 +185,12 @@ defmodule Firmowid.Ash.Invoicing do
       define :list_sales_invoices, action: :list
       define :get_sales_invoice, action: :by_id, args: [:id]
       define :get_sales_invoice_by_share_token, action: :by_share_token, args: [:token]
-      define :issue_sales_invoice, action: :issue_invoice
+      define :create_sales_invoice_draft, action: :create_draft
+      define :update_sales_invoice_draft, action: :update_draft
+      define :issue_sales_invoice, action: :issue
+      define :issue_new_sales_invoice, action: :issue_new
       define :preview_sales_invoice, action: :preview_invoice
       define :preview_sales_invoice_correction, action: :preview_correction
-      define :save_sales_invoice_draft, action: :save_invoice_draft
-      define :update_sales_invoice, action: :update
 
       define :attach_suggested_sales_invoice_counterparty,
         action: :attach_suggested_counterparty,

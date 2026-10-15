@@ -134,7 +134,7 @@ defmodule FirmowidMcp.Router do
     })
   end
 
-  defp tool_metadata(%{"name" => "save_sales_invoice_draft"} = tool) do
+  defp tool_metadata(%{"name" => name} = tool) when name in ~w(create_sales_invoice_draft update_sales_invoice_draft) do
     authorized_tool_metadata(tool, %{
       "readOnlyHint" => false,
       "destructiveHint" => false,

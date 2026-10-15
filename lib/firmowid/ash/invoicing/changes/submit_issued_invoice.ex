@@ -1,41 +1,38 @@
 defmodule Firmowid.Ash.Invoicing.Changes.SubmitIssuedInvoice do
-  @moduledoc "Checks KSeF connectivity before saving and queues submission after commit."
+  @moduledoc """
+  Requires an active KSeF connection and queues the submission inside the issuing transaction.
+
+  An issued invoice must never stay numbered without being sent to KSeF, so a failure to
+  queue the submission rolls back the issuance instead of leaving such an invoice behind.
+  """
   use Ash.Resource.Change
   use Gettext, backend: Firmowid.Gettext
 
+  alias Ash.Error.Changes.InvalidAttribute
   alias Firmowid.Ash.Ksef
   alias Firmowid.Ash.Scope
 
-  require Logger
-
-  @doc "Validates connectivity and registers post-commit submission when requested."
+  @doc "Validates connectivity and queues the submission job before the transaction commits."
   @spec change(Ash.Changeset.t(), keyword(), Ash.Resource.Change.Context.t()) :: Ash.Changeset.t()
   @impl true
   def change(changeset, _opts, context) do
-    if Ash.Changeset.get_argument(changeset, :submit_to_ksef) do
-      scope = %Scope{actor: context.actor, tenant: context.tenant}
+    scope = %Scope{actor: context.actor, tenant: context.tenant}
 
-      case Ksef.connection_status(scope: scope) do
-        {:ok, %{status: :connected}} ->
-          Ash.Changeset.after_transaction(changeset, fn _changeset, result ->
-            enqueue(result, scope)
-          end)
+    case Ksef.connection_status(scope: scope) do
+      {:ok, %{status: :connected}} ->
+        Ash.Changeset.after_action(changeset, fn _changeset, invoice ->
+          enqueue(invoice, scope)
+        end)
 
-        {:ok, _status} ->
-          Ash.Changeset.add_error(changeset,
-            field: :submit_to_ksef,
-            message: gettext("Connect to KSeF before issuing this invoice.")
-          )
+      {:ok, _status} ->
+        Ash.Changeset.add_error(changeset, not_connected_error())
 
-        {:error, error} ->
-          Ash.Changeset.add_error(changeset, error)
-      end
-    else
-      changeset
+      {:error, error} ->
+        Ash.Changeset.add_error(changeset, error)
     end
   end
 
-  defp enqueue({:ok, invoice}, scope) do
+  defp enqueue(invoice, scope) do
     case Ksef.submit_sales_invoice(invoice.id, scope) do
       {:ok, job} ->
         invoice =
@@ -45,21 +42,22 @@ defmodule Firmowid.Ash.Invoicing.Changes.SubmitIssuedInvoice do
 
         {:ok, invoice}
 
-      {:error, error} ->
-        # The document is already committed. Return it rather than inviting a duplicate issue.
-        Logger.error("Issued invoice could not be queued for KSeF",
-          invoice_id: invoice.id,
-          error_kind: Firmowid.ErrorKind.classify(error)
-        )
+      {:error, :not_authenticated} ->
+        {:error, not_connected_error()}
 
-        invoice =
-          invoice
-          |> Map.put(:ksef_submission_status, :failed)
-          |> Ash.Resource.put_metadata(:ksef_submission_error, error)
-
-        {:ok, invoice}
+      {:error, _reason} ->
+        {:error,
+         InvalidAttribute.exception(
+           field: :invoice_number,
+           message: gettext("The invoice could not be queued for KSeF submission. Nothing was issued.")
+         )}
     end
   end
 
-  defp enqueue({:error, _error} = result, _scope), do: result
+  defp not_connected_error do
+    InvalidAttribute.exception(
+      field: :invoice_number,
+      message: gettext("Connect to KSeF before issuing this invoice.")
+    )
+  end
 end

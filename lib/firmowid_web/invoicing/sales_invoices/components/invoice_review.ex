@@ -46,7 +46,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceReview do
               next_numbers_by_series={@series_suggestions}
               warnings={@invoice_warnings}
               errors={@invoice_number_errors}
-              submit_event={if @ksef_connected?, do: "send_to_ksef", else: "confirm_invoice"}
+              submit_event={if @ksef_connected?, do: "send_to_ksef", else: "update_invoice_number"}
             />
 
             <form id="invoice-notes-form" phx-change="update_notes">
@@ -96,34 +96,27 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceReview do
               >
                 Zapisz wersję roboczą
               </.button>
-              <%= if @ksef_connected? do %>
-                <.button
-                  id="confirm-invoice-button"
-                  type="button"
-                  phx-click="send_to_ksef"
-                  phx-disable-with="Wysyłanie..."
-                  class="h-11 w-full"
-                  disabled={String.trim(@invoice_number) == ""}
-                  variant="primary"
-                  accent="turquoise"
-                >
-                  Zapisz i wyślij do KSeF
-                </.button>
-              <% else %>
-                <.button
-                  id="confirm-invoice-button"
-                  type="button"
-                  phx-click="confirm_invoice"
-                  phx-disable-with="Zapisywanie..."
-                  class="h-11 w-full"
-                  disabled={String.trim(@invoice_number) == ""}
-                  variant="primary"
-                  accent="turquoise"
-                >
-                  Zatwierdź fakturę
-                </.button>
-              <% end %>
+              <.button
+                id="confirm-invoice-button"
+                type="button"
+                phx-click="send_to_ksef"
+                phx-disable-with="Wysyłanie..."
+                class="h-11 w-full"
+                disabled={not @ksef_connected? or String.trim(@invoice_number) == ""}
+                variant="primary"
+                accent="turquoise"
+              >
+                Zapisz i wyślij do KSeF
+              </.button>
             </div>
+            <p
+              :if={not @ksef_connected?}
+              id="ksef-required-notice"
+              role="status"
+              class="text-sm text-grey-500"
+            >
+              Wystawienie faktury wymaga połączenia z KSeF. Możesz zapisać ją jako wersję roboczą.
+            </p>
           </div>
         </div>
       </div>
