@@ -12,6 +12,11 @@ workspace. It is available to workspace users and linked to the shared tunnel.
 Agree with the operator on tunnel ownership and the target worktree before use;
 only one local environment may use it at a time.
 
+**The app only works at `http://localhost:4000`.** ChatGPT keeps the app's
+OAuth and MCP origin in the app configuration; refreshing tools does not update
+it, and relinking an account does not change it. Every developer therefore runs
+the tested worktree at that origin, which resolves to their own computer.
+
 Follow `infisical-secrets`. The tunnel launcher reads `CONTROL_PLANE_API_KEY`
 and `CONTROL_PLANE_TUNNEL_ID` from Infisical environment `dev`, folder
 `/dev/openai-tunnel`.
@@ -35,10 +40,17 @@ ownership rules.
 
 ## Feature development and testing
 
-1. Use the worktree's existing services according to `AGENTS.md`.
-2. Run `mix chatgpt.tunnel` and keep it in the foreground while testing.
+1. Use the worktree's existing services according to `AGENTS.md`. The worktree
+   must listen on port 4000 (`.server.port`) with
+   `PHX_URL=http://localhost:4000` in `.env.worktree`. `mix dev.up` writes the
+   wave or Caddy URL there, so set it back afterwards and restart Phoenix
+   (`tmux kill-session -t firmowid-4000`, then start `mix phx.server` again as
+   `mix dev.up` does). Any other origin makes linking fail with 404.
+2. Run `mix chatgpt.tunnel` and keep it in the foreground while testing. Its
+   startup log must register `localhost` harpoon hosts.
 3. Open **firmowid [dev]** in ChatGPT. Link the operator's Firmowid development
-   account only if prompted; do not recreate or reconfigure the app.
+   account only if prompted; do not recreate or reconfigure the app, and never
+   change its origin away from `http://localhost:4000`.
 4. After tool schemas or resource metadata change, ask a workspace administrator
    to refresh the app in workspace settings. Start a new conversation with the
    app selected. Widget URIs are content-addressed by `FirmowidMcp.Runtime`; use
