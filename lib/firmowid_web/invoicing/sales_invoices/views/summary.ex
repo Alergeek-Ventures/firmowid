@@ -140,9 +140,8 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Summary do
           </.link>
           <FirmowidUI.Components.Button.button
             :if={
-              (@ksef_connected? and not is_nil(@invoice.invoice_number) and
-                 SubmissionInfo.not_submitted?(@submission_info)) or
-                SubmissionInfo.failed?(@submission_info)
+              @ksef_connected? and not is_nil(@invoice.invoice_number) and
+                SubmissionInfo.not_submitted?(@submission_info)
             }
             variant="secondary"
             size="small"
@@ -177,18 +176,17 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Summary do
           <p :if={@submission_info.error} class="max-w-lg text-sm">
             {@submission_info.error}
           </p>
-          <p class="mt-2 text-sm text-grey-600">
-            Jeżeli koliduje numer faktury - skopiuj ją i nadaj jej nowy numer.
-            A tę usuń.
+          <p id="returned-to-draft-notice" class="mt-2 text-sm text-grey-600">
+            Faktura wróciła do wersji roboczej bez numeru. Popraw dane i wystaw ją ponownie.
           </p>
           <.link
-            navigate={Navigation.sales_invoice_show_path(@invoice, @return_to)}
+            navigate={Navigation.sales_invoice_edit_path(@invoice, @return_to)}
             kind="button"
             variant="primary"
             accent="turquoise"
             class="mt-4"
           >
-            <Lucideicons.pencil class="size-4" /> Przejdź do faktury
+            <Lucideicons.pencil class="size-4" /> Popraw i wystaw ponownie
           </.link>
         </div>
       <% end %>

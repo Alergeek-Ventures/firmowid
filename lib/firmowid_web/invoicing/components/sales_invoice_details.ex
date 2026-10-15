@@ -134,7 +134,7 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
         internal_notes: internal_notes,
         cancelled?: cancelled?,
         show_timeline_button: show_timeline_button?(submission_info),
-        can_write_invoicing?: Ash.can?({SalesInvoice, :update}, assigns.current_user)
+        can_write_invoicing?: Ash.can?({SalesInvoice, :update_draft}, assigns.current_user)
       )
 
     {:ok, socket}

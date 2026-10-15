@@ -74,13 +74,12 @@ defmodule Firmowid.Ash.Invoicing.WizardState do
     end
 
     action :issue, :struct do
-      description "Save or issue the invoice collected in a browser wizard, then discard its ephemeral state."
+      description "Save as a draft or issue to KSeF the invoice collected in a browser wizard, then discard its state."
       constraints instance_of: SalesInvoice
 
       argument :state_id, :uuid_v7, allow_nil?: false
       argument :invoice_number, :string
       argument :draft, :boolean, default: false
-      argument :submit_to_ksef, :boolean, default: false
       argument :should_send_emails, :boolean, default: false
 
       run IssueWizardState

@@ -1270,7 +1270,7 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
   defp entry_invoice_number(_), do: nil
 
   defp can_write_invoicing?(user) do
-    Ash.can_do_all?([{SalesInvoice, :issue_invoice}, {CostInvoice, :create}], user)
+    Ash.can_do_all?([{SalesInvoice, :create_draft}, {CostInvoice, :create}], user)
   end
 
   defp can_view_invoicing?(user) do

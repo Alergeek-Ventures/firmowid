@@ -16,6 +16,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.ShowTest do
   alias Firmowid.Ash.Ksef.KsefTestHelpers
   alias Firmowid.Ash.Ksef.Workers.SubmissionWorker
   alias Firmowid.Ash.Scope
+  alias Firmowid.InvoicingFixtures
   alias Firmowid.Repo
   alias Firmowid.Test.Support.InvoicingCopyAssertions
   alias FirmowidWeb.Invoicing.Utilities.Navigation
@@ -127,7 +128,12 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.ShowTest do
 
   test "preserves transaction return context for back and edit navigation", %{conn: conn} do
     admin = admin_fixture()
-    invoice = sales_invoice_fixture!(admin)
+
+    invoice =
+      admin
+      |> sales_invoice_fixture!()
+      |> Ash.Seed.update!(%{ksef_number: "KSEF-ACCEPTED", ksef_invoice_checksum: "accepted-hash"})
+
     conn = log_in_user(conn, admin)
 
     origin_return_to =
@@ -360,7 +366,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.ShowTest do
 
   defp sales_invoice_fixture!(admin) do
     {:ok, invoice} =
-      SalesInvoice.persist_invoice(
+      InvoicingFixtures.seed_sales_invoice(
         %{
           invoice_number: "FV/SHOW/#{System.unique_integer([:positive])}",
           issue_date: ~D[2026-01-10],

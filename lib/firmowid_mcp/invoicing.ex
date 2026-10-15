@@ -20,14 +20,16 @@ defmodule FirmowidMcp.Invoicing do
     Never issue an invoice or correction just because the user approved it in chat. Opening a preview is read-only;
     only a widget click issues the document and starts submission. Issuance requires an active KSeF connection.
     Stop after a preview widget opens and let the user interact; do not repeat the invoice beneath it.
-    The widget reports whether the document is saved, sending, accepted by KSeF, failed or removed after a failed correction.
+    The widget reports whether the document is sending, accepted by KSeF, returned to a draft or removed after a failed correction.
     A saved document or queued job is not KSeF acceptance. Never claim acceptance until a KSeF number is present.
 
     A saved draft is optional, not a required step. Prefer collecting data in chat and opening the preview directly.
     A draft is a complete invoice without a number, never partial data; incomplete details stay in the conversation.
-    Use save_sales_invoice_draft only when the user explicitly wants to issue a complete invoice later; it is available without KSeF.
-    To resume, pass the saved draft's invoice_id to preview_sales_invoice and follow the same confirmation widget.
-    Do not make the user manage a separate draft-finalization operation. The original draft keeps its ID when issued.
+    Use create_sales_invoice_draft only when the user explicitly wants to issue a complete invoice later, and
+    update_sales_invoice_draft to revise such a draft; both are available without KSeF.
+    To issue a draft, pass its invoice_id to preview_sales_invoice and follow the same confirmation widget.
+    The draft keeps its ID when issued. If KSeF does not accept an issued invoice, it returns to a draft without a number;
+    a rejected correction is removed.
     """
   end
 end
