@@ -326,19 +326,22 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.EditTest do
     assert render(view) =~ ~s(value="#{Date.add(Date.utc_today(), 7)}")
   end
 
-  test "draft opens the edit form, but a numbered invoice outside KSeF is mid-submission", %{
+  test "a draft opens the edit form, and an invoice issued outside KSeF opens a correction", %{
     conn: conn
   } do
     admin = admin_fixture()
-
     invoice = foreign_draft_fixture!(admin)
-
     conn = log_in_user(conn, admin)
 
     assert {:ok, _view, html} = live(conn, ~p"/sprzedazowe/#{invoice.id}/edytuj")
     assert html =~ "Edycja faktury"
 
     Ash.Seed.update!(invoice, %{invoice_number: "FV/TEST/3"})
+
+    assert {:ok, _view, html} = live(conn, ~p"/sprzedazowe/#{invoice.id}/edytuj")
+    assert html =~ "Faktura korygująca"
+
+    Ash.Seed.update!(invoice, %{locked_at: DateTime.utc_now()})
     show_path = "/sprzedazowe/#{invoice.id}"
 
     assert {:error,

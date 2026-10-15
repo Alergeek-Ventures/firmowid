@@ -7,7 +7,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
 
   Uses AshPhoenix.Form for form building and validation:
   - Drafts → `AshPhoenix.Form.for_update(invoice, :update_draft)`, issued through `:issue`
-  - KSeF-submitted invoices → `AshPhoenix.Form.for_create(SalesInvoice, :issue_correction)`
+  - Issued invoices, including ones issued outside KSeF → `AshPhoenix.Form.for_create(SalesInvoice, :issue_correction)`
   """
   use FirmowidWeb, :live_view
 
@@ -203,7 +203,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
 
   # Build AshPhoenix.Form for edit — dispatches based on invoice state
   defp build_ash_form(invoice, scope) do
-    if is_nil(invoice.ksef_number) do
+    if is_nil(invoice.invoice_number) do
       build_update_form(invoice, scope)
     else
       build_correction_form(invoice, scope)
@@ -226,7 +226,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
     )
   end
 
-  # KSeF-submitted invoice → AshPhoenix.Form.for_create with :issue_correction
+  # Issued invoice → AshPhoenix.Form.for_create with :issue_correction
   defp build_correction_form(invoice, scope) do
     # For corrections of corrections, use the original (root) invoice
     original_invoice =
@@ -710,7 +710,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
     scope = socket.assigns.ash_scope
 
     result =
-      if is_nil(invoice.ksef_number) do
+      if is_nil(invoice.invoice_number) do
         Invoicing.preview_sales_invoice(%{input: input, invoice_id: invoice.id}, scope: scope)
       else
         original = invoice.corrected_invoice || invoice
@@ -774,7 +774,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
   # --- Correction reason auto-generation ---
 
   defp detect_correction_reason_touched(params, socket) do
-    if is_nil(socket.assigns.invoice.ksef_number) do
+    if is_nil(socket.assigns.invoice.invoice_number) do
       socket
     else
       user_reason = Map.get(params, "correction_reason", "")
@@ -789,7 +789,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
   end
 
   defp maybe_auto_fill_correction_reason(socket) do
-    if is_nil(socket.assigns.invoice.ksef_number) or socket.assigns.correction_reason_touched or
+    if is_nil(socket.assigns.invoice.invoice_number) or socket.assigns.correction_reason_touched or
          socket.assigns.stale_preview_invoice? do
       sync_user_reason_to_preview(socket)
     else
