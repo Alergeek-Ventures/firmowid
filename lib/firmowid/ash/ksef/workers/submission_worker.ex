@@ -7,6 +7,9 @@ defmodule Firmowid.Ash.Ksef.Workers.SubmissionWorker do
   2. "verify" action: Polls for KSeF number until invoice is fully processed
 
   Each invoice gets its own session (one session per invoice).
+
+  A numbered invoice must not remain outside KSeF. When a submission finally fails,
+  a VAT invoice returns to an unnumbered draft and a correction is deleted.
   """
   use Oban.Worker,
     queue: :ksef_submissions,
@@ -303,13 +306,7 @@ defmodule Firmowid.Ash.Ksef.Workers.SubmissionWorker do
     })
   rescue
     e ->
-      if final_attempt?(job) do
-        opts = [scope: scope]
-        sales_invoice = SalesInvoice.by_id!(sales_invoice_id, opts)
-        unlock_invoice(sales_invoice, scope)
-
-        Ksef.broadcast_ksef_status(scope.tenant, sales_invoice_id, :failed)
-      end
+      if final_attempt?(job), do: withdraw_failed_submission(sales_invoice_id, scope)
 
       reraise e, __STACKTRACE__
   end
@@ -357,10 +354,13 @@ defmodule Firmowid.Ash.Ksef.Workers.SubmissionWorker do
   end
 
   defp handle_verification_result(:retry, invoice, _job, scope, _verification_context) do
-    Logger.debug("Invoice #{invoice.id} needs retry, will retry")
+    Logger.warning("KSeF asked to resubmit the invoice; withdrawing it for reissue",
+      invoice_id: invoice.id,
+      operation: "verification"
+    )
 
-    # TODO: allow resubmitting locked invoices
-    unlock_invoice(invoice, scope)
+    withdraw_failed_submission(invoice.id, scope)
+    :ok
   end
 
   defp handle_verification_result(
@@ -425,22 +425,38 @@ defmodule Firmowid.Ash.Ksef.Workers.SubmissionWorker do
     {:cancel, error}
   end
 
-  defp fail_invoice_status(invoice, scope) do
-    unlock_invoice(invoice, scope)
-    Ksef.broadcast_ksef_status(scope.tenant, invoice.id, :failed)
+  defp fail_invoice_status(invoice, scope), do: withdraw_failed_submission(invoice.id, scope)
+
+  defp finalize_failed_submission(sales_invoice_id, scope), do: withdraw_failed_submission(sales_invoice_id, scope)
+
+  # Terminal failure: a numbered document must not stay outside KSeF.
+  defp withdraw_failed_submission(sales_invoice_id, scope) do
+    case SalesInvoice.by_id(sales_invoice_id, scope: scope) do
+      {:ok, %{ksef_number: nil, ksef_invoice_kind: :vat} = invoice} ->
+        SalesInvoice.return_to_draft!(invoice, scope: scope)
+
+        Logger.info("Returned invoice KSeF did not accept to a draft",
+          invoice_id: sales_invoice_id
+        )
+
+      {:ok, %{ksef_number: nil, ksef_invoice_kind: :kor} = invoice} ->
+        unlock_invoice(invoice, scope)
+        delete_failed_correction(sales_invoice_id, scope)
+
+      _accepted_or_missing ->
+        :ok
+    end
+
+    Ksef.broadcast_ksef_status(scope.tenant, sales_invoice_id, :failed)
   end
 
-  # Called once when a submission job exhausts all retries.
-  # Broadcasts failure, then attempts to cleanup correction invoices that never reached KSeF.
-  defp finalize_failed_submission(sales_invoice_id, scope) do
-    Ksef.broadcast_ksef_status(scope.tenant, sales_invoice_id, :failed)
-
+  defp delete_failed_correction(sales_invoice_id, scope) do
     case Ksef.cleanup_failed_correction(sales_invoice_id, scope) do
       {:ok, :deleted, _original_id} ->
-        Logger.info("Auto-deleted failed unsent correction invoice #{sales_invoice_id}")
+        Logger.info("Deleted correction KSeF did not accept", invoice_id: sales_invoice_id)
 
       {:error, reason} ->
-        Logger.error("Failed to auto-delete correction",
+        Logger.error("Failed to delete correction KSeF did not accept",
           invoice_id: sales_invoice_id,
           error_kind: ErrorKind.classify(reason)
         )

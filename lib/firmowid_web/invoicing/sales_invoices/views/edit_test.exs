@@ -7,11 +7,13 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.EditTest do
 
   alias Firmowid.Ash.Finances
   alias Firmowid.Ash.Invoicing.SalesInvoice
+  alias Firmowid.InvoicingFixtures
 
-  test "draft review preserves edits and confirms the selected custom number", %{conn: conn} do
+  test "draft review preserves edits and issues the selected custom number to KSeF", %{conn: conn} do
     admin = admin_fixture()
     scope = %{tenant: admin.organization_id, actor: admin}
     invoice = draft_fixture!(admin)
+    InvoicingFixtures.accept_ksef_submissions!(admin.organization_id)
 
     conn = log_in_user(conn, admin)
     {:ok, view, _html} = live(conn, ~p"/sprzedazowe/#{invoice.id}/edytuj")
@@ -51,6 +53,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.EditTest do
     assert confirmed.invoice_number == "CUSTOM/2026/42"
     assert confirmed.invoice_note == "Visible note"
     assert confirmed.internal_note == "Private comment"
+    assert confirmed.ksef_number
   end
 
   test "saving from draft review keeps the invoice unnumbered", %{conn: conn} do
@@ -72,65 +75,52 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.EditTest do
     assert is_nil(SalesInvoice.get!(invoice.id, scope: scope).invoice_number)
   end
 
-  test "editing an unsent correction previews and saves its correction and seller snapshot", %{
-    conn: conn
-  } do
+  test "issuing without KSeF is unavailable, while saving the draft still works", %{conn: conn} do
     admin = admin_fixture()
-    scope = %{tenant: admin.organization_id, actor: admin}
-
-    seller = %{
-      seller_display_name: "Historical Seller",
-      seller_address: "Historical address",
-      seller_nip: "6161525811"
-    }
-
-    original =
-      admin
-      |> draft_fixture!()
-      |> Ash.Seed.update!(Map.put(seller, :invoice_number, "FV/2026/1"))
-
-    correction =
-      admin
-      |> draft_fixture!()
-      |> Ash.Seed.update!(
-        Map.merge(seller, %{
-          invoice_number: "FK/2026/1",
-          ksef_invoice_kind: :kor,
-          corrected_invoice_id: original.id,
-          correction_reason: "Corrected service"
-        })
-      )
-
-    {:ok, view, _html} = live(log_in_user(conn, admin), ~p"/sprzedazowe/#{correction.id}/edytuj")
-
-    assert has_element?(view, "#invoice-form", "Faktura korygująca")
-    assert has_element?(view, "#invoice-form", "Historical Seller")
-    assert has_element?(view, "#invoice-form th", "Przed korektą")
-
-    view
-    |> form("#invoice-form",
-      form: %{sales_invoice_items: %{"0" => %{name: "Updated consulting", unit_price: "200"}}}
-    )
-    |> render_change()
-
-    assert has_element?(view, "#invoice-form td", "Updated consulting")
-    assert has_element?(view, "#invoice-form", "Historical Seller")
-    assert has_element?(view, "#invoice-form th", "Po korekcie")
-
-    [unchanged] =
-      SalesInvoice.get!(correction.id, load: [:sales_invoice_items], scope: scope).sales_invoice_items
-
-    assert unchanged.name == "Consulting"
+    invoice = draft_fixture!(admin)
+    {:ok, view, _html} = live(log_in_user(conn, admin), ~p"/sprzedazowe/#{invoice.id}/edytuj")
 
     view |> form("#invoice-form") |> render_submit()
-    assert_redirect(view, ~p"/sprzedazowe/#{correction.id}/podsumowanie")
 
-    saved = SalesInvoice.get!(correction.id, load: [:sales_invoice_items], scope: scope)
-    assert saved.ksef_invoice_kind == :kor
-    assert saved.seller_display_name == "Historical Seller"
-    assert saved.seller_address == "Historical address"
-    assert [%{name: "Updated consulting", unit_price: price}] = saved.sales_invoice_items
-    assert Decimal.equal?(price, Decimal.new(200))
+    assert has_element?(view, "#confirm-invoice-button[disabled]")
+    assert has_element?(view, "#ksef-required-notice")
+    assert has_element?(view, "#invoice-review button[phx-click='save_as_draft']")
+  end
+
+  defp foreign_draft_fixture!(admin) do
+    InvoicingFixtures.seed_sales_invoice!(
+      %{
+        invoice_number: nil,
+        issue_date: Date.utc_today(),
+        sale_date: Date.utc_today(),
+        due_date: Date.add(Date.utc_today(), 14),
+        payment_method: :transfer,
+        seller_account_number: "PL61109010140000071219812874",
+        invoice_type: :foreign,
+        currency: "EUR",
+        seller_nip: "6161525811",
+        seller_display_name: "Bytecraft",
+        seller_address: "Address",
+        buyer_type: :company,
+        buyer_id: "1111111111",
+        buyer_full_name: "Buyer Company",
+        buyer_display_name: "Buyer",
+        buyer_address: "Buyer address",
+        buyer_country: "PL",
+        sales_invoice_items: [
+          %{
+            index: 0,
+            name: "Line",
+            quantity: Decimal.new("2"),
+            unit: "szt",
+            unit_price: Decimal.new("10"),
+            vat_rate: "np I"
+          }
+        ]
+      },
+      tenant: admin.organization_id,
+      actor: admin
+    )
   end
 
   defp draft_fixture!(admin) do
@@ -184,9 +174,9 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.EditTest do
       )
 
     {:ok, invoice} =
-      SalesInvoice.persist_invoice(
+      InvoicingFixtures.seed_sales_invoice(
         %{
-          invoice_number: "FV/TEST/ACCOUNT",
+          invoice_number: nil,
           issue_date: Date.utc_today(),
           sale_date: Date.utc_today(),
           due_date: Date.add(Date.utc_today(), 14),
@@ -229,40 +219,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.EditTest do
   test "editing foreign invoice does not crash preview money rendering", %{conn: conn} do
     admin = admin_fixture()
 
-    {:ok, invoice} =
-      SalesInvoice.persist_invoice(
-        %{
-          invoice_number: "FV/TEST/1",
-          issue_date: Date.utc_today(),
-          sale_date: Date.utc_today(),
-          due_date: Date.add(Date.utc_today(), 14),
-          payment_method: :transfer,
-          seller_account_number: "PL61109010140000071219812874",
-          invoice_type: :foreign,
-          currency: "EUR",
-          seller_nip: "6161525811",
-          seller_display_name: "Bytecraft",
-          seller_address: "Address",
-          buyer_type: :company,
-          buyer_id: "1111111111",
-          buyer_full_name: "Buyer Company",
-          buyer_display_name: "Buyer",
-          buyer_address: "Buyer address",
-          buyer_country: "PL",
-          sales_invoice_items: [
-            %{
-              index: 0,
-              name: "Line",
-              quantity: Decimal.new("2"),
-              unit: "szt",
-              unit_price: Decimal.new("10"),
-              vat_rate: "np I"
-            }
-          ]
-        },
-        tenant: admin.organization_id,
-        actor: admin
-      )
+    invoice = foreign_draft_fixture!(admin)
 
     conn = log_in_user(conn, admin)
 
@@ -274,7 +231,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.EditTest do
     admin = admin_fixture()
 
     {:ok, invoice} =
-      SalesInvoice.persist_invoice(
+      InvoicingFixtures.seed_sales_invoice(
         %{
           invoice_number: "FV/TEST/KSEF",
           issue_date: Date.utc_today(),
@@ -323,9 +280,9 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.EditTest do
     admin = admin_fixture()
 
     {:ok, invoice} =
-      SalesInvoice.persist_invoice(
+      InvoicingFixtures.seed_sales_invoice(
         %{
-          invoice_number: "FV/TEST/2",
+          invoice_number: nil,
           issue_date: ~D[2026-01-10],
           sale_date: ~D[2026-01-10],
           due_date: ~D[2026-01-24],
@@ -365,53 +322,23 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.EditTest do
     |> element("button[phx-click='suggest_payment_date'][phx-value-field='due_date'][phx-value-suggestion='days_7']")
     |> render_click()
 
-    assert render(view) =~ ~s(value="2026-01-17")
+    # A draft is issued today, so payment suggestions count from today.
+    assert render(view) =~ ~s(value="#{Date.add(Date.utc_today(), 7)}")
   end
 
-  test "confirmed invoice opens the edit form unless it is locked", %{conn: conn} do
+  test "draft opens the edit form, but a numbered invoice outside KSeF is mid-submission", %{
+    conn: conn
+  } do
     admin = admin_fixture()
 
-    {:ok, invoice} =
-      SalesInvoice.persist_invoice(
-        %{
-          invoice_number: "FV/TEST/3",
-          issue_date: Date.utc_today(),
-          sale_date: Date.utc_today(),
-          due_date: Date.add(Date.utc_today(), 14),
-          payment_method: :transfer,
-          seller_account_number: "PL61109010140000071219812874",
-          invoice_type: :foreign,
-          currency: "EUR",
-          seller_nip: "6161525811",
-          seller_display_name: "Bytecraft",
-          seller_address: "Address",
-          buyer_type: :company,
-          buyer_id: "1111111111",
-          buyer_full_name: "Buyer Company",
-          buyer_display_name: "Buyer",
-          buyer_address: "Buyer address",
-          buyer_country: "PL",
-          sales_invoice_items: [
-            %{
-              index: 0,
-              name: "Line",
-              quantity: Decimal.new("2"),
-              unit: "szt",
-              unit_price: Decimal.new("10"),
-              vat_rate: "np I"
-            }
-          ]
-        },
-        tenant: admin.organization_id,
-        actor: admin
-      )
+    invoice = foreign_draft_fixture!(admin)
 
     conn = log_in_user(conn, admin)
 
     assert {:ok, _view, html} = live(conn, ~p"/sprzedazowe/#{invoice.id}/edytuj")
     assert html =~ "Edycja faktury"
 
-    Ash.Seed.update!(invoice, %{locked_at: DateTime.utc_now()})
+    Ash.Seed.update!(invoice, %{invoice_number: "FV/TEST/3"})
     show_path = "/sprzedazowe/#{invoice.id}"
 
     assert {:error,

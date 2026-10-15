@@ -10,6 +10,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.CreatorTest do
   alias Firmowid.Ash.Invoicing.SalesInvoice
   alias Firmowid.Ash.Invoicing.WizardState
   alias Firmowid.Ash.Scope
+  alias Firmowid.InvoicingFixtures
   alias Firmowid.Test.Support.InvoicingCopyAssertions
 
   test "payment step restores the bank account matching the draft currency", %{conn: conn} do
@@ -614,6 +615,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.CreatorTest do
       )
 
     should_send_emails = false
+    InvoicingFixtures.accept_ksef_submissions!(admin.organization_id)
 
     {:ok, copied_invoice} =
       WizardState.issue(
@@ -682,7 +684,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.CreatorTest do
     }
 
     invoice =
-      SalesInvoice.persist_invoice!(Map.merge(default_attrs, overrides),
+      InvoicingFixtures.seed_sales_invoice!(Map.merge(default_attrs, overrides),
         scope: scope_for(admin)
       )
 

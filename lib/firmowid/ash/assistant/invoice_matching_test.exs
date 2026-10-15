@@ -16,7 +16,6 @@ defmodule Firmowid.Ash.Assistant.InvoiceMatchingTest do
   alias Firmowid.Ash.Assistant.Actions.ReadTransactions
   alias Firmowid.Ash.Assistant.InvoiceMatching
   alias Firmowid.Ash.Assistant.InvoiceMatchingAgent
-  alias Firmowid.Ash.Core
   alias Firmowid.Ash.Currencies.Converter
   alias Firmowid.Ash.Currencies.DatabaseCache
   alias Firmowid.Ash.Finances.Transaction
@@ -574,10 +573,6 @@ defmodule Firmowid.Ash.Assistant.InvoiceMatchingTest do
   defp create_sales_invoice!(user, attrs) do
     scope = scope_for(user)
 
-    user.organization_id
-    |> Core.get_organization!(scope: scope)
-    |> Ash.Seed.update!(%{address: "ul. Testowa 1, 00-001 Warszawa"})
-
     base_attrs = %{
       invoice_type: :foreign,
       invoice_number: unique_string("SI-DEFAULT"),
@@ -604,7 +599,14 @@ defmodule Firmowid.Ash.Assistant.InvoiceMatchingTest do
       ]
     }
 
-    Invoicing.issue_sales_invoice!(%{input: Map.merge(base_attrs, attrs)}, scope: scope)
+    base_attrs
+    |> Map.merge(%{
+      seller_nip: "1234567890",
+      seller_display_name: "Seller",
+      seller_address: "ul. Testowa 1"
+    })
+    |> Map.merge(attrs)
+    |> Firmowid.InvoicingFixtures.seed_sales_invoice!(scope: scope)
   end
 
   defp create_transaction!(user, attrs) do

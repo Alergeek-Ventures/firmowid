@@ -18,9 +18,11 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
 
   ## Write Actions
 
-    * `:persist_invoice` — internal invoice storage with line items
-    * `:update` — update draft or confirmed invoice
-    * `:issue_correction` — issue a correction invoice (KOR) for a VAT invoice
+    * `:create_draft` — save a complete, unnumbered VAT invoice
+    * `:update_draft` — revise a saved draft
+    * `:issue` — number a draft, issued today, and queue its KSeF submission atomically
+    * `:issue_correction` — issue a correction invoice (KOR) and queue its KSeF submission
+    * `:return_to_draft` — withdraw an invoice KSeF did not accept back to a draft
     * `:destroy` — delete invoice (only if not KSeF-submitted)
     * `:toggle_skip` — toggle skip_invoicing flag
     * `:generate_share_token` — generate or return existing share token
@@ -29,8 +31,7 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
 
   ## Generic Actions
 
-    * `:issue_invoice` — issue a new invoice or an existing saved draft
-    * `:save_invoice_draft` — explicitly save an unnumbered document
+    * `:issue_new` — save and issue a new invoice in one transaction
     * `:preview_invoice` / `:preview_correction` — read-only validated document previews
     * `:cancel` — cancel a KSeF-submitted invoice via zero-quantity correction
     * `:get_next_number` — get next available invoice number for date/series
@@ -78,24 +79,9 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
   require Resource
 
   @eu_countries CountryCodes.eu_countries_with_aliases()
-  @invoice_input_fields Keyword.keys(InvoiceInput.subtype_constraints()[:fields]) --
-                          [:sales_invoice_items]
-  @document_actions [
-    :persist_invoice,
-    :update,
-    :issue_new_invoice,
-    :create_invoice_draft,
-    :issue_draft,
-    :save_draft,
-    :issue_correction
-  ]
-  @prepared_invoice_actions [
-    :issue_new_invoice,
-    :create_invoice_draft,
-    :issue_draft,
-    :save_draft,
-    :update
-  ]
+  # A draft is the complete invoice except for its number; issuance dates it today.
+  @draft_fields Keyword.keys(InvoiceInput.subtype_constraints()[:fields]) --
+                  [:sales_invoice_items, :invoice_number, :issue_date, :correction_reason]
 
   postgres do
     table "sales_invoices"
@@ -152,16 +138,13 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
       args: [:root_invoice_id, :root_share_token]
 
     # Writes
-    define :persist_invoice, action: :persist_invoice
-    define :issue_new_invoice, action: :issue_new_invoice
-    define :create_invoice_draft, action: :create_invoice_draft
-    define :issue_draft, action: :issue_draft
-    define :save_draft, action: :save_draft
-    define :issue_invoice, action: :issue_invoice
+    define :create_draft, action: :create_draft
+    define :update_draft, action: :update_draft
+    define :issue, action: :issue
+    define :issue_new, action: :issue_new
+    define :return_to_draft, action: :return_to_draft
     define :preview_invoice, action: :preview_invoice
     define :preview_correction, action: :preview_correction
-    define :save_invoice_draft, action: :save_invoice_draft
-    define :update, action: :update
 
     define :attach_suggested_counterparty,
       args: [:counterparty_id],
@@ -413,71 +396,13 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
 
     # -- Write actions ---------------------------------------------------------
 
-    create :persist_invoice do
-      description "Create a sales invoice with its line items."
+    create :create_draft do
+      description "Save a complete VAT invoice without a number. Issuing it later dates it that day."
       primary? true
-      public? false
-
-      accept [
-        :invoice_type,
-        :invoice_number,
-        :sale_date,
-        :issue_date,
-        :due_date,
-        :payment_method,
-        :currency,
-        :is_cash_account,
-        :is_reverse_charge,
-        :skip_invoicing,
-        :ksef_invoice_kind,
-        :correction_reason,
-        :counterparty_id,
-        :corrected_invoice_id,
-        :seller_nip,
-        :seller_display_name,
-        :seller_address,
-        :seller_name,
-        :seller_surname,
-        :seller_account_number,
-        :vat_exemption_type,
-        :vat_exemption_basis,
-        :buyer_type,
-        :buyer_id,
-        :buyer_full_name,
-        :buyer_given_name,
-        :buyer_surname,
-        :buyer_pesel,
-        :buyer_display_name,
-        :buyer_address,
-        :buyer_country,
-        :buyer_is_different_mail_address,
-        :buyer_mail_address,
-        :buyer_mail_country,
-        :buyer_email,
-        :buyer_phone,
-        :buyer_description,
-        :should_send_emails,
-        :invoice_note,
-        :internal_note
-      ]
-
-      argument :sales_invoice_items, {:array, :map}, allow_nil?: false
-      argument :submit_to_ksef, :boolean, default: false
-      argument :confirmation_id, :uuid_v7
-
-      change set_attribute(:id, arg(:confirmation_id)) do
-        where present(:confirmation_id)
-      end
-    end
-
-    create :issue_new_invoice do
-      description "Issue a complete new VAT invoice."
-      accept @invoice_input_fields
-      argument :input, InvoiceInput, allow_nil?: false
+      accept @draft_fields
+      argument :input, InvoiceInput
       argument :sales_invoice_items, {:array, :map}
-      argument :submit_to_ksef, :boolean, default: false
-      argument :confirmation_id, :uuid_v7
-      argument :preview?, :boolean, default: false, public?: false
+      argument :confirmation_id, :uuid_v7, public?: false
 
       change Changes.ApplyInvoiceInput
 
@@ -485,103 +410,123 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
         where present(:confirmation_id)
       end
 
-      validate Validations.InvoiceNumberRequired do
-        where argument_equals(:preview?, false)
+      change Changes.PrepareInvoiceSeller
+      change Changes.PrepareInvoiceItems
+
+      change {Changes.NormalizeReverseChargeVatRates, source: :argument, field: :sales_invoice_items}
+
+      change manage_relationship(:sales_invoice_items, type: :direct_control)
+      change Changes.SetItemNames
+      change Changes.SetIsCashAccount
+      change {Changes.ValidateCountryCode, field: :buyer_country}
+      change Changes.BindInvoiceCounterparty
+
+      validate Validations.CompleteInvoice
+
+      validate {Validations.ValidateTaxId,
+                id_field: :buyer_id, country_field: :buyer_country, pesel_field: :buyer_pesel, type_field: :buyer_type}
+
+      validate {Validations.ValidateNameFields,
+                type_field: :buyer_type,
+                full_name_field: :buyer_full_name,
+                given_name_field: :buyer_given_name,
+                surname_field: :buyer_surname}
+
+      validate string_length(:internal_note, max: 10_000) do
+        where present(:internal_note)
       end
     end
 
-    create :create_invoice_draft do
-      description "Save a complete unnumbered VAT invoice without submission."
-      accept @invoice_input_fields
-      argument :input, InvoiceInput, allow_nil?: false
-      argument :sales_invoice_items, {:array, :map}
-
-      change Changes.ApplyInvoiceInput
-      change set_attribute(:invoice_number, nil)
-    end
-
-    update :issue_draft do
-      description "Issue an existing complete VAT draft, retaining its identity."
+    update :update_draft do
+      description "Revise a saved, unnumbered VAT invoice draft."
+      primary? true
       require_atomic? false
-      accept @invoice_input_fields -- [:skip_invoicing]
-      argument :input, InvoiceInput, allow_nil?: false
+      accept @draft_fields -- [:skip_invoicing]
+      argument :input, InvoiceInput
       argument :sales_invoice_items, {:array, :map}
-      argument :submit_to_ksef, :boolean, default: false
 
       change Changes.ApplyInvoiceInput
       change filter(expr(is_nil(invoice_number) and ksef_invoice_kind == :vat))
+      change Changes.PrepareInvoiceSeller
+      change Changes.PrepareInvoiceItems
+
+      change {Changes.NormalizeReverseChargeVatRates, source: :argument, field: :sales_invoice_items}
+
+      change manage_relationship(:sales_invoice_items, type: :direct_control)
+      change Changes.SetItemNames
+      change Changes.SetIsCashAccount
+      change {Changes.ValidateCountryCode, field: :buyer_country}
+      change Changes.BindInvoiceCounterparty
+
+      validate Validations.InvoiceDraft
+      validate {Validations.CheckIfLocked, []}, always_atomic?: true
+      validate Validations.CompleteInvoice
+
+      validate {Validations.ValidateTaxId,
+                id_field: :buyer_id, country_field: :buyer_country, pesel_field: :buyer_pesel, type_field: :buyer_type}
+
+      validate {Validations.ValidateNameFields,
+                type_field: :buyer_type,
+                full_name_field: :buyer_full_name,
+                given_name_field: :buyer_given_name,
+                surname_field: :buyer_surname}
+
+      validate string_length(:internal_note, max: 10_000) do
+        where present(:internal_note)
+      end
+    end
+
+    update :issue do
+      description "Number a draft, date it today and queue its KSeF submission in the same transaction."
+      require_atomic? false
+      accept [:invoice_number | @draft_fields -- [:skip_invoicing]]
+      argument :input, InvoiceInput
+      argument :sales_invoice_items, {:array, :map}
+
+      change Changes.ApplyInvoiceInput
+      change filter(expr(is_nil(invoice_number) and ksef_invoice_kind == :vat))
+      change Changes.PrepareInvoiceSeller
+      change Changes.PrepareInvoiceItems
+
+      change {Changes.NormalizeReverseChargeVatRates, source: :argument, field: :sales_invoice_items}
+
+      change manage_relationship(:sales_invoice_items, type: :direct_control)
+      change Changes.SetItemNames
+      change Changes.SetIsCashAccount
+      change {Changes.ValidateCountryCode, field: :buyer_country}
+      change Changes.BindInvoiceCounterparty
+      # Last, so the submission job is queued only after every other write of this transaction.
+      change Changes.SubmitIssuedInvoice
+
       validate Validations.InvoiceDraft
       validate Validations.InvoiceNumberRequired
       validate {Validations.CheckIfLocked, []}, always_atomic?: true
+      validate Validations.CompleteInvoice
+
+      validate {Validations.ValidateTaxId,
+                id_field: :buyer_id, country_field: :buyer_country, pesel_field: :buyer_pesel, type_field: :buyer_type}
+
+      validate {Validations.ValidateNameFields,
+                type_field: :buyer_type,
+                full_name_field: :buyer_full_name,
+                given_name_field: :buyer_given_name,
+                surname_field: :buyer_surname}
+
+      validate string_length(:internal_note, max: 10_000) do
+        where present(:internal_note)
+      end
     end
 
-    update :save_draft do
-      description "Revise an existing complete unnumbered VAT draft."
+    update :return_to_draft do
+      description "Withdraw a VAT invoice that KSeF did not accept back to an unnumbered draft."
+      public? false
       require_atomic? false
-      accept @invoice_input_fields -- [:skip_invoicing]
-      argument :input, InvoiceInput, allow_nil?: false
-      argument :sales_invoice_items, {:array, :map}
+      accept []
 
-      change Changes.ApplyInvoiceInput
+      change filter(expr(is_nil(ksef_number) and ksef_invoice_kind == :vat))
       change set_attribute(:invoice_number, nil)
-      change filter(expr(is_nil(invoice_number) and ksef_invoice_kind == :vat))
-      validate Validations.InvoiceDraft
-      validate {Validations.CheckIfLocked, []}, always_atomic?: true
-    end
-
-    update :update do
-      description "Update an existing sales invoice and its editable fields."
-      primary? true
-      require_atomic? false
-
-      accept [
-        :invoice_type,
-        :invoice_number,
-        :sale_date,
-        :issue_date,
-        :due_date,
-        :payment_method,
-        :currency,
-        :is_cash_account,
-        :is_reverse_charge,
-        :ksef_invoice_kind,
-        :correction_reason,
-        :counterparty_id,
-        :seller_nip,
-        :seller_display_name,
-        :seller_address,
-        :seller_name,
-        :seller_surname,
-        :seller_account_number,
-        :vat_exemption_type,
-        :vat_exemption_basis,
-        :buyer_type,
-        :buyer_id,
-        :buyer_full_name,
-        :buyer_given_name,
-        :buyer_surname,
-        :buyer_pesel,
-        :buyer_display_name,
-        :buyer_address,
-        :buyer_country,
-        :buyer_is_different_mail_address,
-        :buyer_mail_address,
-        :buyer_mail_country,
-        :buyer_email,
-        :buyer_phone,
-        :buyer_description,
-        :should_send_emails,
-        :invoice_note,
-        :internal_note
-      ]
-
-      argument :sales_invoice_items, {:array, :map}
-      argument :submit_to_ksef, :boolean, default: false
-      argument :input, InvoiceInput
-
-      change Changes.ApplyInvoiceInput
-
-      validate {Validations.CheckIfLocked, []}, always_atomic?: true
+      change set_attribute(:locked_at, nil)
+      change set_attribute(:ksef_invoice_checksum, nil)
     end
 
     update :attach_suggested_counterparty do
@@ -662,7 +607,6 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
       argument :original_invoice_id, :uuid_v7, allow_nil?: false
       argument :sales_invoice_items, {:array, :map}
       argument :input, InvoiceInput
-      argument :submit_to_ksef, :boolean, default: false
       argument :confirmation_id, :uuid_v7
       argument :preview?, :boolean, default: false, public?: false
 
@@ -675,6 +619,20 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
 
       change {Changes.PrepareCorrection, []}
 
+      change Changes.PrepareInvoiceItems
+
+      change {Changes.NormalizeReverseChargeVatRates, source: :argument, field: :sales_invoice_items}
+
+      change manage_relationship(:sales_invoice_items, type: :direct_control)
+      change Changes.SetItemNames
+      change Changes.SetIsCashAccount
+      change {Changes.ValidateCountryCode, field: :buyer_country}
+
+      # Last, so the submission job is queued only after every other write of this transaction.
+      change Changes.SubmitIssuedInvoice do
+        where argument_equals(:preview?, false)
+      end
+
       validate present(:invoice_number) do
         where argument_equals(:preview?, false)
         message "Pole jest wymagane"
@@ -682,6 +640,21 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
 
       validate string_length(:correction_reason, max: 256),
         message: "Powód korekty może mieć maksymalnie 256 znaków"
+
+      validate Validations.CompleteInvoice
+
+      validate {Validations.ValidateTaxId,
+                id_field: :buyer_id, country_field: :buyer_country, pesel_field: :buyer_pesel, type_field: :buyer_type}
+
+      validate {Validations.ValidateNameFields,
+                type_field: :buyer_type,
+                full_name_field: :buyer_full_name,
+                given_name_field: :buyer_given_name,
+                surname_field: :buyer_surname}
+
+      validate string_length(:internal_note, max: 10_000) do
+        where present(:internal_note)
+      end
     end
 
     destroy :destroy do
@@ -839,27 +812,25 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
       end
     end
 
-    action :issue_invoice, :struct do
-      description "Issue a new VAT invoice or finalize an existing saved draft."
+    action :issue_new, :struct do
+      description "Save a new invoice as a draft and issue it in the same transaction."
       constraints instance_of: __MODULE__
+      transaction? true
       argument :input, InvoiceInput, allow_nil?: false
-      argument :invoice_id, :uuid_v7
-      argument :submit_to_ksef, :boolean, default: false
       argument :confirmation_id, :uuid_v7
 
       run fn input, context ->
         opts = Ash.Context.to_opts(context)
-        attrs = Map.take(input.arguments, [:input, :submit_to_ksef, :confirmation_id])
+        %{input: invoice_input} = input.arguments
 
-        case input.arguments[:invoice_id] do
-          nil ->
-            __MODULE__.issue_new_invoice(attrs, opts)
-
-          id ->
-            with {:ok, invoice} <-
-                   __MODULE__.by_id(id, Keyword.put(opts, :not_found_error?, true)) do
-              __MODULE__.issue_draft(invoice, Map.delete(attrs, :confirmation_id), opts)
-            end
+        with {:ok, draft} <-
+               __MODULE__.create_draft(
+                 %{input: invoice_input},
+                 Keyword.put(opts, :private_arguments, %{
+                   confirmation_id: input.arguments[:confirmation_id]
+                 })
+               ) do
+          __MODULE__.issue(draft, %{invoice_number: invoice_input[:invoice_number]}, opts)
         end
       end
     end
@@ -876,7 +847,7 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
         case input.arguments[:invoice_id] do
           nil ->
             %{input: input.arguments.input}
-            |> __MODULE__.changeset_to_issue_new_invoice(Keyword.put(opts, :private_arguments, %{preview?: true}))
+            |> __MODULE__.changeset_to_create_draft(opts)
             |> Preview.from_changeset(opts)
 
           id ->
@@ -889,7 +860,7 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
                      )
                    ) do
               invoice
-              |> __MODULE__.changeset_to_update(%{input: input.arguments.input}, opts)
+              |> __MODULE__.changeset_to_update_draft(%{input: input.arguments.input}, opts)
               |> Preview.from_changeset(opts)
             end
         end
@@ -908,29 +879,6 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
         input.arguments
         |> __MODULE__.changeset_to_issue_correction(Keyword.put(opts, :private_arguments, %{preview?: true}))
         |> Preview.from_changeset(opts)
-      end
-    end
-
-    action :save_invoice_draft, :struct do
-      description "Save an explicitly requested unnumbered invoice draft without submitting it to KSeF."
-      constraints instance_of: __MODULE__
-      argument :input, InvoiceInput, allow_nil?: false
-      argument :invoice_id, :uuid_v7
-
-      run fn input, context ->
-        opts = Ash.Context.to_opts(context)
-        attrs = %{input: input.arguments.input}
-
-        case input.arguments[:invoice_id] do
-          nil ->
-            __MODULE__.create_invoice_draft(attrs, opts)
-
-          id ->
-            with {:ok, invoice} <-
-                   __MODULE__.by_id(id, Keyword.put(opts, :not_found_error?, true)) do
-              __MODULE__.save_draft(invoice, attrs, opts)
-            end
-        end
       end
     end
 
@@ -1183,12 +1131,10 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
     module FirmowidWeb.Core.Endpoint
     prefix "sales_invoice"
 
-    publish :persist_invoice, ["created", :_tenant]
-    publish :issue_new_invoice, ["created", :_tenant]
-    publish :create_invoice_draft, ["created", :_tenant]
-    publish :issue_draft, ["updated", :_tenant]
-    publish :save_draft, ["updated", :_tenant]
-    publish :update, ["updated", :_tenant]
+    publish :create_draft, ["created", :_tenant]
+    publish :update_draft, ["updated", :_tenant]
+    publish :issue, ["updated", :_tenant]
+    publish :return_to_draft, ["updated", :_tenant]
     publish :destroy, ["destroyed", :_tenant]
     publish :toggle_skip, ["updated", :_tenant]
     publish :issue_correction, ["created", :_tenant]
@@ -1200,67 +1146,10 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
   end
 
   changes do
-    change Changes.PrepareInvoiceSeller do
-      where action_is(@prepared_invoice_actions)
-    end
-
-    change Changes.SubmitIssuedInvoice do
-      where action_is(@document_actions)
-    end
-
-    change Changes.PrepareInvoiceItems do
-      where action_is(@document_actions)
-    end
-
-    change {Changes.NormalizeReverseChargeVatRates, source: :argument, field: :sales_invoice_items} do
-      where action_is(@document_actions)
-    end
-
-    change manage_relationship(:sales_invoice_items, type: :direct_control) do
-      where action_is(@document_actions)
-    end
-
-    change Changes.SetItemNames do
-      where action_is(@document_actions)
-    end
-
-    change Changes.SetIsCashAccount do
-      where action_is(@document_actions)
-    end
-
-    change {Changes.ValidateCountryCode, field: :buyer_country} do
-      where action_is(@document_actions)
-    end
-
-    change Changes.BindInvoiceCounterparty do
-      where action_is(@document_actions -- [:issue_correction])
-    end
-
     change {Changes.ClearVatExemptionBasis, []}
   end
 
   validations do
-    validate Validations.CompleteInvoice do
-      where action_is(@document_actions)
-    end
-
-    validate {Validations.ValidateTaxId,
-              id_field: :buyer_id, country_field: :buyer_country, pesel_field: :buyer_pesel, type_field: :buyer_type} do
-      where action_is(@document_actions)
-    end
-
-    validate {Validations.ValidateNameFields,
-              type_field: :buyer_type,
-              full_name_field: :buyer_full_name,
-              given_name_field: :buyer_given_name,
-              surname_field: :buyer_surname} do
-      where action_is(@document_actions)
-    end
-
-    validate string_length(:internal_note, max: 10_000) do
-      where [action_is(@document_actions), present(:internal_note)]
-    end
-
     validate present(:vat_exemption_basis) do
       where attribute_equals(:vat_exemption_type, :other)
       message "Podaj podstawę prawną zwolnienia z VAT."

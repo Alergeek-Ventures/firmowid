@@ -6,7 +6,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
   For non-draft invoices, edits create a correction invoice (faktura korygujaca).
 
   Uses AshPhoenix.Form for form building and validation:
-  - Draft/confirmed invoices → `AshPhoenix.Form.for_update(invoice, :update)`
+  - Drafts → `AshPhoenix.Form.for_update(invoice, :update_draft)`, issued through `:issue`
   - KSeF-submitted invoices → `AshPhoenix.Form.for_create(SalesInvoice, :issue_correction)`
   """
   use FirmowidWeb, :live_view
@@ -210,9 +210,9 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
     end
   end
 
-  # Draft or confirmed invoice → AshPhoenix.Form.for_update with nested items
+  # Draft → AshPhoenix.Form.for_update with nested items
   defp build_update_form(invoice, scope) do
-    AshPhoenix.Form.for_update(invoice, :update,
+    AshPhoenix.Form.for_update(invoice, :update_draft,
       scope: scope,
       forms: [
         sales_invoice_items: [
@@ -502,17 +502,6 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
     end
   end
 
-  def handle_event("confirm_invoice", params, %{assigns: %{step: :review}} = socket) do
-    result =
-      submit_invoice(
-        review_params(params, socket),
-        socket,
-        Ksef.connected?(socket.assigns.ash_scope)
-      )
-
-    handle_submit_result(result, socket)
-  end
-
   def handle_event("back_to_edit", _params, socket) do
     {:noreply, assign(socket, :step, :edit)}
   end
@@ -634,53 +623,28 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
 
     socket = assign(socket, :gross_item_price_inputs, gross_item_price_inputs)
 
-    result = submit_invoice(form_params, socket, Ksef.connected?(socket.assigns.ash_scope))
+    result = submit_invoice(form_params, socket)
 
     handle_submit_result(result, socket)
   end
 
-  defp submit_invoice(form_params, socket, submit_to_ksef) do
+  defp submit_invoice(form_params, socket) do
     invoice = socket.assigns.invoice
     ash_form = socket.assigns.form.source
     form_params = normalize_price_input_params(form_params)
 
     if is_nil(invoice.invoice_number) do
-      confirm_draft_invoice(
-        invoice,
-        form_params,
-        ash_form,
-        submit_to_ksef,
-        socket.assigns.ash_scope
-      )
+      issue_draft(invoice, form_params, ash_form, socket.assigns.ash_scope)
     else
-      AshPhoenix.Form.submit(ash_form,
-        params: Map.put(form_params, "submit_to_ksef", submit_to_ksef)
-      )
+      AshPhoenix.Form.submit(ash_form, params: form_params)
     end
   end
 
   defp handle_submit_result({:ok, invoice}, socket) do
-    case Ash.Resource.get_metadata(invoice, :ksef_submission_error) do
-      nil ->
-        socket =
-          if Ksef.connected?(socket.assigns.ash_scope) do
-            socket
-          else
-            put_flash(
-              socket,
-              :info,
-              "Faktura została wystawiona, ale nie można jej wysłać do KSeF — brak połączenia z KSeF"
-            )
-          end
-
-        {:noreply,
-         socket
-         |> push_event("unsaved-changed", %{value: false})
-         |> push_navigate(to: Navigation.sales_invoice_summary_path(invoice, socket.assigns.return_to))}
-
-      error ->
-        handle_failed_ksef_submission(socket, invoice, error)
-    end
+    {:noreply,
+     socket
+     |> push_event("unsaved-changed", %{value: false})
+     |> push_navigate(to: Navigation.sales_invoice_summary_path(invoice, socket.assigns.return_to))}
   end
 
   defp handle_submit_result({:error, %AshPhoenix.Form{} = form}, socket) do
@@ -699,46 +663,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
     {:noreply, put_flash(socket, :error, get_error_message(error))}
   end
 
-  defp handle_failed_ksef_submission(socket, %{ksef_invoice_kind: :kor} = invoice, reason) do
-    case Ksef.cleanup_failed_correction(invoice.id, socket.assigns.ash_scope) do
-      {:ok, :deleted, original_invoice_id} ->
-        {:noreply,
-         socket
-         |> push_event("unsaved-changed", %{value: false})
-         |> put_flash(:error, Ksef.failed_correction_message(reason))
-         |> push_navigate(to: Navigation.sales_invoice_edit_path(original_invoice_id, socket.assigns.return_to))}
-
-      {:error, destroy_error} ->
-        Logger.error("Failed to clean up correction invoice",
-          invoice_id: invoice.id,
-          error_kind: ErrorKind.classify(destroy_error)
-        )
-
-        {:noreply,
-         socket
-         |> push_event("unsaved-changed", %{value: false})
-         |> put_flash(:error, "Nie udało się wysłać korekty do KSeF")
-         |> push_navigate(to: Navigation.sales_invoice_summary_path(invoice, socket.assigns.return_to))}
-
-      _ ->
-        # Correction already submitted or doesn't exist — shouldn't happen, fallback to summary
-        {:noreply,
-         socket
-         |> push_event("unsaved-changed", %{value: false})
-         |> put_flash(:error, "Nie udało się wysłać korekty do KSeF")
-         |> push_navigate(to: Navigation.sales_invoice_summary_path(invoice, socket.assigns.return_to))}
-    end
-  end
-
-  defp handle_failed_ksef_submission(socket, invoice, _reason) do
-    {:noreply,
-     socket
-     |> push_event("unsaved-changed", %{value: false})
-     |> put_flash(:error, "Faktura została wystawiona, ale wysyłka do KSeF nie powiodła się")
-     |> push_navigate(to: Navigation.sales_invoice_summary_path(invoice, socket.assigns.return_to))}
-  end
-
-  defp confirm_draft_invoice(invoice, form_params, ash_form, submit_to_ksef, scope) do
+  defp issue_draft(invoice, form_params, ash_form, scope) do
     if String.trim(form_params["invoice_number"] || "") == "" do
       form =
         ash_form
@@ -753,14 +678,14 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
       form = AshPhoenix.Form.validate(ash_form, form_params, errors: true)
 
       if form.valid? do
-        Invoicing.issue_sales_invoice(
-          %{
-            input: invoice_input_from_form(form),
-            invoice_id: invoice.id,
-            submit_to_ksef: submit_to_ksef
-          },
-          scope: scope
-        )
+        input =
+          Map.put(
+            invoice_input_from_form(form),
+            :invoice_number,
+            String.trim(form_params["invoice_number"])
+          )
+
+        Invoicing.issue_sales_invoice(invoice, %{input: input}, scope: scope)
       else
         {:error, form}
       end

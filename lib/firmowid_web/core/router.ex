@@ -136,7 +136,8 @@ defmodule FirmowidWeb.Core.Router do
         :get_sales_invoice,
         :preview_sales_invoice,
         :preview_sales_invoice_correction,
-        :save_sales_invoice_draft,
+        :create_sales_invoice_draft,
+        :update_sales_invoice_draft,
         :get_ksef_connection_status,
         :show_ksef_connection
       ],

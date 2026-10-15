@@ -115,21 +115,6 @@ defmodule FirmowidMcp.Invoicing.Views.Issue do
     {:noreply, if(socket.assigns.issued_id, do: refresh_issued(socket), else: load_review(socket))}
   end
 
-  defp handle_interaction("retry_ksef_submission", _params, %{assigns: %{phase: phase, issued_id: id}} = socket)
-       when phase in [:failed, :not_submitted] and not is_nil(id) do
-    scope = socket.assigns.scope
-
-    with {:ok, true} <-
-           Ash.can({SalesInvoice, :issue_invoice, %{input: %{}}}, scope, maybe_is: false),
-         {:ok, %{status: :connected}} <- Ksef.connection_status(scope: scope),
-         {:ok, _job} <- Ksef.submit_sales_invoice(id, scope) do
-      {:noreply, refresh_issued(socket)}
-    else
-      _failure ->
-        {:noreply, assign(socket, :errors, [gettext("Unable to start KSeF submission. Try again.")])}
-    end
-  end
-
   defp handle_interaction(_event, _params, socket), do: {:noreply, socket}
 
   @impl true
@@ -137,9 +122,8 @@ defmodule FirmowidMcp.Invoicing.Views.Issue do
     LiveSession.handle_info(message, socket, fn _message, socket ->
       socket =
         if socket.assigns.issued_id == id do
-          if status == :failed and socket.assigns.widget == IssueCorrection,
-            do: cleanup_failed_correction(socket),
-            else: refresh_issued(socket)
+          # The submission worker has already withdrawn a document KSeF did not accept.
+          if status == :failed, do: withdrawn(socket), else: refresh_issued(socket)
         else
           socket
         end
@@ -163,7 +147,7 @@ defmodule FirmowidMcp.Invoicing.Views.Issue do
 
       case existing do
         nil -> load_preview(socket)
-        :deleted -> deleted(socket)
+        :withdrawn -> withdrawn(socket)
         invoice -> display_issued(socket, invoice)
       end
     else
@@ -191,10 +175,10 @@ defmodule FirmowidMcp.Invoicing.Views.Issue do
   end
 
   defp previous_attempt(socket) do
-    # A deleted correction may still have its terminal submission job. Reopening
-    # the same signed confirmation must not create the correction a second time.
+    # A withdrawn document keeps its terminal submission job. Reopening the same
+    # signed confirmation must not issue it a second time.
     info = Ksef.get_submission_info(%{id: socket.assigns.confirmation_id})
-    {:ok, if(SubmissionInfo.attempted?(info), do: :deleted)}
+    {:ok, if(SubmissionInfo.attempted?(info), do: :withdrawn)}
   end
 
   defp load_preview(socket) do
@@ -287,16 +271,7 @@ defmodule FirmowidMcp.Invoicing.Views.Issue do
   defp issue(socket) do
     case issue_document(socket) do
       {:ok, invoice} ->
-        case Ash.Resource.get_metadata(invoice, :ksef_submission_error) do
-          nil ->
-            socket |> assign(:issued_id, invoice.id) |> refresh_issued()
-
-          _reason ->
-            socket
-            |> assign(:issued_id, invoice.id)
-            |> refresh_issued()
-            |> assign(:errors, [gettext("Unable to start KSeF submission. Try again.")])
-        end
+        socket |> assign(:issued_id, invoice.id) |> refresh_issued()
 
       {:error, error} ->
         recover_confirmation(socket, error)
@@ -304,15 +279,20 @@ defmodule FirmowidMcp.Invoicing.Views.Issue do
   end
 
   defp issue_document(%{assigns: %{widget: IssueInvoice}} = socket) do
-    Invoicing.issue_sales_invoice(
-      %{
-        input: confirmed_input(socket),
-        invoice_id: action_arguments(socket)["invoice_id"],
-        confirmation_id: socket.assigns.confirmation_id,
-        submit_to_ksef: true
-      },
-      scope: socket.assigns.scope
-    )
+    scope = socket.assigns.scope
+
+    case action_arguments(socket)["invoice_id"] do
+      nil ->
+        Invoicing.issue_new_sales_invoice(
+          %{input: confirmed_input(socket), confirmation_id: socket.assigns.confirmation_id},
+          scope: scope
+        )
+
+      draft_id ->
+        with {:ok, draft} <- Invoicing.get_sales_invoice(draft_id, scope: scope) do
+          Invoicing.issue_sales_invoice(draft, %{input: confirmed_input(socket)}, scope: scope)
+        end
+    end
   end
 
   defp issue_document(%{assigns: %{widget: IssueCorrection}} = socket) do
@@ -320,8 +300,7 @@ defmodule FirmowidMcp.Invoicing.Views.Issue do
       %{
         input: confirmed_input(socket),
         original_invoice_id: action_arguments(socket)["original_invoice_id"],
-        confirmation_id: socket.assigns.confirmation_id,
-        submit_to_ksef: true
+        confirmation_id: socket.assigns.confirmation_id
       },
       scope: socket.assigns.scope
     )
@@ -340,8 +319,8 @@ defmodule FirmowidMcp.Invoicing.Views.Issue do
       {:ok, %{invoice_number: number} = invoice} when not is_nil(number) ->
         display_issued(socket, invoice)
 
-      {:ok, :deleted} ->
-        deleted(socket)
+      {:ok, :withdrawn} ->
+        withdrawn(socket)
 
       _ ->
         assign(socket, :errors, error_messages(error))
@@ -356,11 +335,11 @@ defmodule FirmowidMcp.Invoicing.Views.Issue do
            load: @invoice_loads,
            not_found_error?: false
          ) do
-      {:ok, nil} ->
-        deleted(socket)
-
-      {:ok, invoice} ->
+      {:ok, %{invoice_number: number} = invoice} when not is_nil(number) ->
         display_issued(socket, invoice)
+
+      {:ok, _draft_or_missing} ->
+        withdrawn(socket)
 
       {:error, _reason} ->
         assign(socket, :errors, [gettext("Unable to refresh the invoice status. Try again.")])
@@ -382,17 +361,12 @@ defmodule FirmowidMcp.Invoicing.Views.Issue do
     |> publish_context()
   end
 
-  defp cleanup_failed_correction(socket) do
-    case Ksef.cleanup_failed_correction(socket.assigns.issued_id, socket.assigns.scope) do
-      {:ok, :deleted, _source_id} -> deleted(socket)
-      {:ok, :not_found} -> deleted(socket)
-      _other -> refresh_issued(socket)
-    end
-  end
+  # KSeF rejection removes a correction and returns an invoice to an unnumbered draft.
+  defp withdrawn(socket) do
+    phase = if socket.assigns.widget == IssueCorrection, do: :deleted, else: :returned_to_draft
 
-  defp deleted(socket) do
     socket
-    |> assign(invoice: nil, currency_rate: nil, phase: :deleted, errors: [])
+    |> assign(invoice: nil, currency_rate: nil, phase: phase, errors: [])
     |> publish_context()
   end
 
@@ -535,18 +509,6 @@ defmodule FirmowidMcp.Invoicing.Views.Issue do
           >
             {gettext("Refresh")}
           </.button>
-          <.button
-            :if={@phase in [:failed, :not_submitted] and @issued_id}
-            id="retry-invoice-submission"
-            type="button"
-            variant="outline"
-            size="small"
-            phx-click="retry_ksef_submission"
-            phx-disable-with={gettext("Sending…")}
-            class="outline-offset-2 focus-visible:outline-2 active:opacity-80"
-          >
-            {gettext("Retry KSeF submission")}
-          </.button>
         </div>
       <% end %>
     </section>
@@ -560,6 +522,12 @@ defmodule FirmowidMcp.Invoicing.Views.Issue do
   defp status_message(:failed), do: gettext("The invoice is saved, but KSeF submission failed.")
 
   defp status_message(:not_submitted), do: gettext("The invoice is saved, but KSeF submission has not started.")
+
+  defp status_message(:returned_to_draft),
+    do:
+      gettext(
+        "KSeF did not accept the invoice, so it returned to a draft without a number. Correct its details and issue it again."
+      )
 
   defp status_message(:deleted),
     do: gettext("The correction could not be sent and was removed. Prepare a new correction after fixing its details.")

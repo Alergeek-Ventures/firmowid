@@ -4,7 +4,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
 
   Uses `WizardState` (Ash ETS resource) for ephemeral browser form state,
   `AshPhoenix.Form` for per-step form building and validation, and
-  `WizardState.issue` to adapt that state to the shared invoice issuance action.
+  `WizardState.issue` to save that state as a draft or issue it to KSeF.
 
   The draft itself carries expression calculations (`buyer_id_type`,
   `buyer_display_name_label`) and aggregates (`net_value`, `vat_value`,
@@ -1024,7 +1024,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
     scope = socket.assigns.ash_scope
     draft = socket.assigns.draft
 
-    case create_invoice_from_draft(draft, nil, false, false, scope) do
+    case WizardState.issue(draft.id, %{draft: true}, scope: scope) do
       {:ok, invoice} ->
         {:noreply,
          socket
@@ -1041,36 +1041,6 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
     end
   end
 
-  def handle_event("confirm_invoice", params, socket) do
-    scope = socket.assigns.ash_scope
-    draft = socket.assigns.draft
-    invoice_number = Map.get(params, "invoice_number", socket.assigns.invoice_number)
-    should_send_emails = socket.assigns.should_send_emails
-
-    with :ok <- validate_invoice_number(invoice_number),
-         {:ok, invoice} <-
-           create_invoice_from_draft(
-             draft,
-             invoice_number,
-             should_send_emails,
-             false,
-             scope
-           ) do
-      {:noreply,
-       socket
-       |> PosthogBusinessEvents.capture(:invoice_created)
-       |> push_navigate(to: Navigation.sales_invoice_summary_path(invoice))}
-    else
-      {:error, error} ->
-        Logger.error("Failed to confirm invoice",
-          organization_id: scope.tenant,
-          error_kind: ErrorKind.classify(error)
-        )
-
-        {:noreply, put_flash(socket, :error, get_error_message(error))}
-    end
-  end
-
   def handle_event("send_to_ksef", params, socket) do
     scope = socket.assigns.ash_scope
     draft = socket.assigns.draft
@@ -1079,26 +1049,11 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
 
     with :ok <- validate_invoice_number(invoice_number),
          {:ok, invoice} <-
-           create_invoice_from_draft(
-             draft,
-             invoice_number,
-             should_send_emails,
-             true,
-             scope
+           WizardState.issue(
+             draft.id,
+             %{invoice_number: invoice_number, should_send_emails: should_send_emails},
+             scope: scope
            ) do
-      socket =
-        case Ash.Resource.get_metadata(invoice, :ksef_submission_error) do
-          nil ->
-            socket
-
-          _error ->
-            put_flash(
-              socket,
-              :error,
-              gettext("The invoice was issued, but submission to KSeF failed.")
-            )
-        end
-
       {:noreply,
        socket
        |> PosthogBusinessEvents.capture(:invoice_created)
@@ -1187,19 +1142,6 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
            "Nie udało się pobrać danych kontrahenta. Spróbuj ponownie."
          )}
     end
-  end
-
-  defp create_invoice_from_draft(draft, invoice_number, should_send_emails, submit_to_ksef, scope) do
-    WizardState.issue(
-      draft.id,
-      %{
-        invoice_number: invoice_number,
-        draft: is_nil(invoice_number),
-        should_send_emails: should_send_emails,
-        submit_to_ksef: submit_to_ksef
-      },
-      scope: scope
-    )
   end
 
   defp get_error_message(%Ash.Error.Invalid{} = error) do
