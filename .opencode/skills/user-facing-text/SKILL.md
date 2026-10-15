@@ -12,6 +12,9 @@ in Accent. Do not leave new UI text untranslated. Exceptions are proper names,
 user-provided content, and technical/internal strings that are not user-facing
 (for example logs).
 
+Writing Polish into Accent, freezing snapshots, and translation CI failures are
+documented in `accent-translations`.
+
 ## Scope and locale behavior
 
 - The managed locale is Polish (`pl`); English is the source language. Current
@@ -67,39 +70,23 @@ Follow these steps in order when changing user-facing text:
 2. Prepare the exact Polish wording, even when the requested wording was
    supplied in Polish. Review the latest native Accent document and preserve
    existing translations and unrelated entries.
-3. Before writing translations, sync the extracted latest source to Accent using
-   its native authenticated API/official CLI flow, with a credential permitted
-   to sync/merge. Preview/peek first when available. Do not assume the
-   repository's `accent.json` source glob is itself a sync command: the export
-   helper stages the POT in an isolated scratch directory.
-4. Populate the Polish entries with context and plural data intact. Verify an
-   unversioned/latest Accent export contains the exact values and validate its
-   technical structure/placeholders. Editorial translation review belongs in
-   Accent. Use this candidate export to validate the uncommitted source; do not
-   create a snapshot for the old HEAD as a proxy for the new source.
-5. Only after the latest source and translations are complete and validated,
-   commit/push if explicitly authorized. Main CI creates or reuses its immutable
-   commit-SHA snapshot. PR CI, including Dependabot, only exports: it uses an
-   existing own-SHA snapshot if available, otherwise the snapshot of current
-   HEAD main resolved once per workflow. An own-SHA snapshot is optional, but
-   changed/new strings must validate in the selected catalog. Check that
-   selected catalog and the compiled/rendered result; latest-candidate
-   validation alone does not prove a PR's selected snapshot contains the
-   translations. Do not manually create a snapshot for the uncommitted change.
+3. Commit/push if explicitly authorized. After the change is pushed, write the
+   Polish values into Accent and freeze a snapshot for that exact commit SHA,
+   following `accent-translations`. Never upload the extracted POT to Accent: it
+   rebuilds the Polish plural entries with the English two-form shape.
 
 ### Accent structure cautions
 
-- Accent's native document is the source of translation work. Use native
-  `gettext` operations (for example `/sync`, `/add-translations`, and `/export`)
-  against the project/document path and language, with version selection where
-  applicable. Never use a JSON bridge or overwrite a whole document from a stale
-  export; preserve contexts, metadata, and untouched translations.
+- Accent's native document is the source of translation work. Never use a JSON
+  bridge or overwrite a whole document from a stale export; preserve contexts,
+  metadata, and untouched translations.
 - The current native document path is `gettext/landing-native` (configured as
   `gettext/landing-native/*.pot`). The full extracted source catalog is
   `priv/gettext/default.pot`.
 - Polish requires three plural forms. An English POT usually has only two
   `msgstr` slots, so do not upload a raw POT as if it were ready to seed Polish
-  plural entries. Preserve Accent's native three-slot plural representation.
+  plural entries. Accent can machine translate, but this project does not use
+  it: Polish is prepared by humans.
 - Accent v1.26's contextual-plural export drops `msgctxt`. Prefer an
   uncontextualized plural phrase with distinct English forms until the adapter
   supports it. If contextual plurals are essential, flag the limitation and
@@ -109,20 +96,17 @@ Follow these steps in order when changing user-facing text:
 
 ## Pinned catalog snapshots and runtime
 
-- `scripts/accent.exs prepare --version FULL_SHA` only checks whether that
-  version exists (creating it if absent) and exports it. It does **not** sync
-  changed English source or translate it.
 - Only main CI creates/reuses immutable Accent snapshots for its full commit
-  SHA. A newly extracted string must be synced and translated before main
-  creates its snapshot. PRs, including Dependabot, must not create snapshots or
-  require an own-SHA snapshot: use it if present, otherwise explicitly fall back
-  to the current HEAD main snapshot, with main's full SHA resolved once per CI
-  workflow. Never use mutable latest as a build fallback.
+  SHA. PRs, including Dependabot, must not create snapshots or require an
+  own-SHA snapshot: use it if present, otherwise explicitly fall back to the
+  current HEAD main snapshot, with main's full SHA resolved once per CI
+  workflow. Never use mutable latest as a build fallback. A PR that adds
+  strings needs a snapshot for its own head commit, created manually as
+  described in `accent-translations`.
 - If a snapshot already exists with stale content, do not edit/delete it, force
-  a fallback to latest, or pretend prepare syncs it. Sync and translate the
-  latest catalog, then use a new main commit SHA for a fresh snapshot. PRs
-  cannot bypass an existing stale snapshot by forcing the main fallback. Do not
-  amend, rewrite, or force-push history without explicit permission.
+  a fallback to latest, or pretend `prepare` translates it. Write the Polish into
+  Accent, then use a new commit SHA for a fresh snapshot. Do not amend, rewrite,
+  or force-push history without explicit permission.
 - `mix translations.fetch [--version FULL_SHA] [--fallback-version FULL_SHA]`
   exports only; it never creates a snapshot. Without an explicit fallback it
   retains strict pinned export, including unique 7–39-character SHA prefix
@@ -146,19 +130,9 @@ Follow these steps in order when changing user-facing text:
 
 ## Credentials and safe operations
 
-- PRs, including Dependabot, use read-only `ACCENT_API_KEY` for read/export.
-  Configure the existing read-only project token separately in repository
-  Actions and Dependabot secrets; Dependabot does not receive Actions secrets,
-  even on reruns. Main alone uses `ACCENT_SNAPSHOT_API_KEY` for read/export and
-  `create_version`; it is not permission to sync or merge translations.
-- Do not configure `ACCENT_SNAPSHOT_API_KEY` in Dependabot secrets. Old PRs with
-  writer-dependent workflows must update to the read-only export workflow; do
-  not restore a writer token to make them pass.
-- Local/prod Infisical `/app` `ACCENT_API_KEY` is read-only. A translation
-  update needs an authorized write-capable development credential; ask for its
-  approved location/permissions if unavailable. Infisical `dev` `/dev`
-  `ACCENT_API_KEY` is a developer/admin credential and must not be copied to CI.
-  Do not assume access to a write key or admin permission.
+- Accent credential handling is documented in `accent-translations`. A
+  translation update needs an authorized write-capable development credential;
+  ask for its approved location/permissions if unavailable.
 - Follow the `infisical-secrets` skill. Never hardcode, print, or share tokens;
   never use `curl -v` or expose authenticated request headers. Avoid tools or
   CLI failures that echo credentials, and do not dump full translation data
@@ -177,7 +151,7 @@ its existing snapshot or the explicitly pinned main fallback.
 
 ```sh
 mix gettext.extract
-# Export latest candidate using the authenticated native Accent export flow.
+# Export latest candidate as described in `accent-translations`.
 mix translations.check --check-extraction
 # Main after CI snapshot creation, or an existing own-SHA snapshot:
 mix translations.fetch --version FULL_SHA
