@@ -13,7 +13,8 @@ defmodule Firmowid.Ash.Analysis.Services.Jev do
   defp request(key, state, questions) do
     case Req.post("https://api.typesafe.ai/v1/systemone",
            auth: {:bearer, key},
-           json: %{model: "jev-latest", state: state, questions: questions},
+           # Keep the evaluated release so moving aliases cannot silently change classification scores.
+           json: %{model: "jev-1.13.0", state: state, questions: questions},
            connect_options: [timeout: 5_000],
            receive_timeout: 30_000,
            redirect: false,

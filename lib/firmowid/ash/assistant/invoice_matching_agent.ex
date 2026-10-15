@@ -5,7 +5,8 @@ defmodule Firmowid.Ash.Assistant.InvoiceMatchingAgent do
 
   use Jido.AI.Agent,
     name: "firmowid_invoice_matching_agent",
-    model: :capable,
+    model: "openai:gpt-6-luna",
+    llm_opts: [reasoning_effort: :none],
     max_iterations: 30,
     system_prompt: "Pomagasz łączyć faktury z transakcjami.",
     tools: []

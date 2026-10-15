@@ -16,12 +16,50 @@ defmodule Firmowid.Ash.Delegations.DelegationExpenseExtractor do
   - Amount must be a positive number, without a currency symbol.
   """
 
+  @transport_details_schema %{
+    type: "object",
+    properties: %{
+      type: %{type: "string", enum: ["transport"]},
+      transport_type: %{type: "string", enum: ["railway", "airplane", "bus", "other"]},
+      trips: %{
+        type: "array",
+        items: %{
+          type: "object",
+          properties: %{
+            departure_city: %{type: "string"},
+            departure_datetime: %{type: "string", format: "date-time"},
+            arrival_city: %{type: "string"},
+            arrival_datetime: %{type: "string", format: "date-time"}
+          }
+        }
+      }
+    }
+  }
+
+  @accommodation_details_schema %{
+    type: "object",
+    properties: %{
+      type: %{type: "string", enum: ["accommodation"]},
+      locality: %{type: "string"},
+      arrival_date: %{type: "string", format: "date"},
+      departure_date: %{type: "string", format: "date"},
+      description: %{type: "string"}
+    }
+  }
+
+  @other_details_schema %{
+    type: "object",
+    properties: %{
+      type: %{type: "string", enum: ["other"]},
+      description: %{type: "string"}
+    }
+  }
+
   @schema %{
     type: "object",
     properties: %{
       document_number: %{type: "string"},
-      expense_amount: %{type: "number", exclusiveMinimum: 0},
-      details: %{type: "object"}
+      expense_amount: %{type: "number", exclusiveMinimum: 0}
     },
     required: ["document_number", "expense_amount", "details"]
   }
@@ -36,7 +74,9 @@ defmodule Firmowid.Ash.Delegations.DelegationExpenseExtractor do
   end
 
   defp extract_details(file_path, expense_type, start_date, end_date) do
-    case ProcessBlobHelpers.reducto_client().extract_file(file_path, @schema,
+    schema = put_in(@schema, [:properties, :details], details_schema(expense_type))
+
+    case ProcessBlobHelpers.reducto_client().extract_file(file_path, schema,
            system_prompt: system_prompt(expense_type, start_date, end_date)
          ) do
       {:ok, metadata} ->
@@ -49,6 +89,10 @@ defmodule Firmowid.Ash.Delegations.DelegationExpenseExtractor do
         extraction_error(reason)
     end
   end
+
+  defp details_schema(:transport), do: @transport_details_schema
+  defp details_schema(:accommodation), do: @accommodation_details_schema
+  defp details_schema(:other), do: @other_details_schema
 
   defp extraction_error(reason) do
     Logger.error("Delegation expense extraction failed: #{inspect(reason)}")
@@ -65,7 +109,10 @@ defmodule Firmowid.Ash.Delegations.DelegationExpenseExtractor do
         %{
           document_number: document_number,
           expense_amount: Money.new(:PLN, amount),
-          details: Map.put(details, "_union_type", Atom.to_string(expense_type))
+          details:
+            details
+            |> Map.put("type", Atom.to_string(expense_type))
+            |> Map.put("_union_type", Atom.to_string(expense_type))
         }
 
       :error ->

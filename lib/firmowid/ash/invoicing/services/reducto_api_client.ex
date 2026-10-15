@@ -1,7 +1,8 @@
 defmodule Firmowid.Ash.Invoicing.Services.ReductoApiClient do
   @moduledoc """
   Reducto is a document metadata extraction API and parsing / chunking service.
-  Uses Reducto API V3 - see https://docs.reducto.ai/extract/overview
+  Uses standard Extract with Reducto's default model (currently v4).
+  See https://docs.reducto.ai/extract/overview.
   """
 
   alias Firmowid.ErrorKind
@@ -18,7 +19,7 @@ defmodule Firmowid.Ash.Invoicing.Services.ReductoApiClient do
   def get_auth_token, do: {:bearer, Application.get_env(:firmowid, :reducto_api_key)}
 
   @doc """
-  Extracts metadata from a document using Reducto API V3. Pass in a file URL
+  Extracts metadata from a document using standard Reducto Extract. Pass in a file URL
   and JSON schema Map to get this map back with extracted metadata.
 
   ## Options

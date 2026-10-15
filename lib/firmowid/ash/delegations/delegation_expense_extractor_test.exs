@@ -4,6 +4,68 @@ defmodule Firmowid.Ash.Delegations.DelegationExpenseExtractorTest do
   alias Firmowid.Ash.Delegations.DelegationExpenseExtractor
   alias Firmowid.Ash.Invoicing.Services.ReductoApiClientMock
 
+  test "sends explicit category details schemas through the standard Extract request" do
+    previous_config = Application.get_env(:firmowid, :reducto_api_client)
+    previous_client = Application.get_env(:firmowid, :reducto_api_client_module)
+    Application.delete_env(:firmowid, :reducto_api_client_module)
+
+    Application.put_env(:firmowid, :reducto_api_client,
+      upload: [plug: {Req.Test, __MODULE__}],
+      extract: [plug: {Req.Test, __MODULE__}]
+    )
+
+    on_exit(fn ->
+      restore_env(:reducto_api_client, previous_config)
+      restore_env(:reducto_api_client_module, previous_client)
+    end)
+
+    path = Briefly.create!()
+    File.write!(path, "expense document")
+
+    for {category, fields} <- [
+          transport: ~w(type transport_type trips),
+          accommodation: ~w(type locality arrival_date departure_date description),
+          other: ~w(type description)
+        ] do
+      Req.Test.stub(__MODULE__, fn
+        %{request_path: "/upload"} = conn ->
+          Req.Test.json(conn, %{file_id: "test-file"})
+
+        %{request_path: "/extract"} = conn ->
+          {:ok, body, conn} = Plug.Conn.read_body(conn)
+          request = Jason.decode!(body)
+          schema = get_in(request, ["instructions", "schema", "properties", "details"])
+          assert Enum.sort(Map.keys(schema["properties"])) == Enum.sort(fields)
+          assert schema["properties"]["type"]["enum"] == [Atom.to_string(category)]
+          refute Map.get(request["settings"], "deep_extract", false)
+
+          if category == :transport do
+            assert get_in(schema, ["properties", "transport_type", "enum"]) ==
+                     ["railway", "airplane", "bus", "other"]
+
+            assert schema["properties"]["trips"]["items"]["properties"]
+                   |> Map.keys()
+                   |> Enum.sort() ==
+                     ~w(arrival_city arrival_datetime departure_city departure_datetime)
+          end
+
+          Req.Test.json(conn, %{
+            result: %{
+              document_number: "EXP/1",
+              expense_amount: 10.5,
+              details: %{type: nil, description: nil}
+            }
+          })
+      end)
+
+      assert {:ok, %{details: %{"_union_type" => union_type, "type" => details_type}}} =
+               DelegationExpenseExtractor.extract(path, category, ~D[2026-08-10], ~D[2026-08-11])
+
+      assert union_type == Atom.to_string(category)
+      assert details_type == Atom.to_string(category)
+    end
+  end
+
   defmodule UnavailableReductoClient do
     @moduledoc false
 

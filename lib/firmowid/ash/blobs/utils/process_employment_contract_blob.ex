@@ -44,18 +44,7 @@ defmodule Firmowid.Ash.Blobs.Utils.ProcessEmploymentContractBlob do
       signed_at: %{type: ["string", "null"], format: "date"},
       bank_account_number: %{type: ["string", "null"]}
     },
-    required: ["document_type"],
-    if: %{
-      properties: %{document_type: %{enum: ["employment_contract", "signed_employment_contract"]}},
-      required: ["document_type"]
-    },
-    then: %{
-      required: [
-        "starts_at",
-        "salary_amount",
-        "salary_currency"
-      ]
-    }
+    required: ["document_type"]
   }
 
   def run_processing(blob_url, blob, opts) do
@@ -74,8 +63,15 @@ defmodule Firmowid.Ash.Blobs.Utils.ProcessEmploymentContractBlob do
     )
   end
 
-  defp ensure_employment_contract_document(%{"document_type" => type})
-       when type in ["employment_contract", "signed_employment_contract"], do: :ok
+  defp ensure_employment_contract_document(%{"document_type" => type} = metadata)
+       when type in ["employment_contract", "signed_employment_contract"] do
+    with {:ok, _date} <- valid_date(metadata["starts_at"]),
+         :ok <- validate_signed_at(metadata["signed_at"]) do
+      :ok
+    else
+      _ -> {:error, :invalid_document}
+    end
+  end
 
   defp ensure_employment_contract_document(_), do: {:error, :invalid_document}
 
@@ -121,7 +117,8 @@ defmodule Firmowid.Ash.Blobs.Utils.ProcessEmploymentContractBlob do
     :ok
   end
 
-  defp validate_salary_metadata(%{"salary_amount" => amount}) when is_number(amount) and not is_nil(amount) do
+  defp validate_salary_metadata(%{"salary_amount" => amount, "salary_currency" => currency})
+       when is_number(amount) and is_binary(currency) and currency != "" do
     :ok
   end
 
@@ -135,7 +132,19 @@ defmodule Firmowid.Ash.Blobs.Utils.ProcessEmploymentContractBlob do
   defp parse_contract_type(type) when is_atom(type), do: type
   defp parse_contract_type(type) when is_binary(type), do: String.to_existing_atom(type)
 
-  defp parse_date(nil), do: Date.utc_today()
+  defp validate_signed_at(nil), do: :ok
+
+  defp validate_signed_at(value) do
+    case valid_date(value) do
+      {:ok, _date} -> :ok
+      _ -> {:error, :invalid_document}
+    end
+  end
+
+  defp valid_date(value) when is_binary(value), do: Date.from_iso8601(value)
+  defp valid_date(_), do: {:error, :invalid_date}
+
+  defp parse_date(nil), do: nil
   defp parse_date(date_string) when is_binary(date_string), do: Date.from_iso8601!(date_string)
   defp parse_date(%Date{} = date), do: date
 end

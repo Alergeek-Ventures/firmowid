@@ -8,7 +8,7 @@ defmodule Firmowid.Ash.Assistant.Actions.Calculate do
     description: "Wykonuje działania matematyczne na liczbach dziesiętnych.",
     schema: [
       numbers: [type: {:list, {:or, [:string, :integer, :float]}}, required: true],
-      operation: [type: :string, required: true]
+      operation: [type: {:in, ["+", "-", "*", "/"]}, required: true]
     ],
     output_schema: [
       result: [type: :string, required: true]

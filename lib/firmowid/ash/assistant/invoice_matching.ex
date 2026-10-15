@@ -26,6 +26,7 @@ defmodule Firmowid.Ash.Assistant.InvoiceMatching do
 
   @assistant_finch Firmowid.Ash.Assistant.Finch
   @agent_timeout_ms 180_000
+  @model_access_retries 5
   @accept_transaction_resources [AssistantSession, CostInvoice, SalesInvoice]
 
   @type session_entry_context :: map()
@@ -53,51 +54,96 @@ defmodule Firmowid.Ash.Assistant.InvoiceMatching do
   def send_message(session_id, message, %Scope{} = scope) when is_binary(message) do
     with {:ok, session} <- Assistant.get_session(session_id, scope: scope),
          :ok <- ensure_session_active_for_message(session),
-         {:ok, session} <- Assistant.claim_session_processing(session, scope: scope),
-         {:ok, pid} <- start_agent(session) do
-      try do
-        case InvoiceMatchingAgent.ask(pid, message,
-               tool_context: tool_context(scope, session),
-               llm_opts: [reasoning_effort: :medium],
-               stream_timeout_ms: @agent_timeout_ms,
-               req_http_options: [
-                 finch: @assistant_finch,
-                 pool_timeout: @agent_timeout_ms,
-                 receive_timeout: @agent_timeout_ms
-               ]
-             ) do
-          {:ok, request} ->
-            await_result = InvoiceMatchingAgent.await(request, timeout: @agent_timeout_ms)
+         {:ok, session} <- Assistant.claim_session_processing(session, scope: scope) do
+      deadline = System.monotonic_time(:millisecond) + @agent_timeout_ms
 
-            case build_visible_messages(
-                   session.messages,
-                   message,
-                   await_result,
-                   current_pending_match(session_id, scope)
-                 ) do
-              {:ok, messages} ->
-                case finalize_turn(session_id, messages, await_result, scope) do
-                  {:ok, updated_session} ->
-                    {:ok, updated_session}
+      case ask_agent(session, message, scope, deadline, @model_access_retries) do
+        {:ok, await_result} ->
+          case build_visible_messages(
+                 session.messages,
+                 message,
+                 await_result,
+                 current_pending_match(session_id, scope)
+               ) do
+            {:ok, messages} ->
+              case finalize_turn(session_id, messages, await_result, scope) do
+                {:ok, updated_session} ->
+                  {:ok, updated_session}
 
-                  error ->
-                    maybe_persist_error(session_id, scope, error)
-                    error
-                end
+                error ->
+                  maybe_persist_error(session_id, scope, error)
+                  error
+              end
 
-              error ->
-                maybe_persist_error(session_id, scope, error)
-                error
+            error ->
+              maybe_persist_error(session_id, scope, error)
+              error
+          end
+
+        error ->
+          maybe_persist_error(session_id, scope, error)
+          error
+      end
+    end
+  end
+
+  defp ask_agent(session, message, scope, deadline, retries) do
+    timeout = deadline - System.monotonic_time(:millisecond)
+
+    if timeout > 0 do
+      result = run_agent(session, message, scope, timeout)
+
+      case result do
+        {:ok, {:error, reason}} ->
+          if model_access_propagating?(reason) do
+            case Assistant.get_session(session.id, scope: scope) do
+              {:ok, %{status: :waiting_confirmation, pending_match: %PendingMatch{}}} ->
+                {:ok, {:ok, ""}}
+
+              # Only reads and calculations are replayed; a saved proposal must never be rerun.
+              {:ok, %{status: :processing, pending_match: nil}} when retries > 0 ->
+                Process.sleep(200)
+                ask_agent(session, message, scope, deadline, retries - 1)
+
+              _ ->
+                result
             end
+          else
+            result
+          end
 
-          error ->
-            maybe_persist_error(session_id, scope, error)
-            error
+        _ ->
+          result
+      end
+    else
+      {:ok, {:error, :timeout}}
+    end
+  end
+
+  defp run_agent(session, message, scope, timeout) do
+    with {:ok, pid} <- start_agent(session) do
+      try do
+        with {:ok, request} <-
+               InvoiceMatchingAgent.ask(pid, message,
+                 tool_context: tool_context(scope, session),
+                 stream_timeout_ms: timeout,
+                 req_http_options: [
+                   finch: @assistant_finch,
+                   pool_timeout: timeout,
+                   receive_timeout: timeout
+                 ]
+               ) do
+          {:ok, InvoiceMatchingAgent.await(request, timeout: timeout)}
         end
       after
         maybe_stop_agent(pid)
       end
     end
+  end
+
+  defp model_access_propagating?(reason) do
+    message = inspect(reason, limit: :infinity, printable_limit: :infinity)
+    String.contains?(message, "403") and String.contains?(message, "model_not_found")
   end
 
   @doc """
@@ -194,7 +240,7 @@ defmodule Firmowid.Ash.Assistant.InvoiceMatching do
     with {:ok, pid} <-
            Jido.AgentServer.start_link(
              agent: InvoiceMatchingAgent,
-             initial_state: %{context: context}
+             initial_state: %{context: context, requests: %{}}
            ),
          :ok <- register_tools(pid) do
       {:ok, pid}

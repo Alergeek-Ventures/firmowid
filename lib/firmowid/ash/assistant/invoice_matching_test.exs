@@ -24,6 +24,7 @@ defmodule Firmowid.Ash.Assistant.InvoiceMatchingTest do
   alias Firmowid.Ash.Invoicing.CostInvoiceTransaction
   alias Firmowid.Ash.Scope
   alias Jido.AI.Context, as: AIContext
+  alias Jido.AI.ToolAdapter
 
   @tool_modules [
     Calculate,
@@ -35,6 +36,27 @@ defmodule Firmowid.Ash.Assistant.InvoiceMatchingTest do
     ReadCostInvoiceById,
     ReadSalesInvoiceById
   ]
+
+  defmodule StreamAdapter do
+    @moduledoc false
+    @behaviour ReqLLM.FinchRequestAdapter
+
+    @impl true
+    def call(request) do
+      %{
+        request
+        | scheme: :http,
+          host: "127.0.0.1",
+          port: Application.fetch_env!(:req_llm, :assistant_test_port)
+      }
+    end
+  end
+
+  defmodule StreamStub do
+    @moduledoc false
+    def init(handler), do: handler
+    def call(conn, handler), do: handler.(conn)
+  end
 
   setup_all do
     original_converter_config = Application.get_env(:firmowid, Converter)
@@ -85,6 +107,31 @@ defmodule Firmowid.Ash.Assistant.InvoiceMatchingTest do
   end
 
   describe "tool registration" do
+    test "builds Luna streaming requests without reasoning and with application tools" do
+      options = InvoiceMatchingAgent.strategy_opts()
+      model = options |> Keyword.fetch!(:model) |> Jido.AI.resolve_model() |> ReqLLM.model!()
+      context = ReqLLM.Context.new([ReqLLM.Context.user("test")])
+
+      llm_options =
+        options
+        |> Keyword.fetch!(:llm_opts)
+        |> Keyword.merge(
+          api_key: "test-key",
+          tools: ToolAdapter.from_actions(@tool_modules)
+        )
+
+      assert {:ok, request} =
+               ReqLLM.Providers.OpenAI.attach_stream(model, context, llm_options, ReqLLM.Finch)
+
+      body = request.body |> IO.iodata_to_binary() |> Jason.decode!()
+
+      assert request.path == "/v1/responses"
+      assert body["model"] == "gpt-6-luna"
+      assert body["reasoning"]["effort"] == "none"
+      assert body["stream"]
+      assert Enum.any?(body["tools"], &(&1["name"] == "propose_invoice_transaction_match"))
+    end
+
     test "registers every assistant tool on the Jido agent" do
       {:ok, pid} =
         Jido.AgentServer.start_link(
@@ -102,7 +149,116 @@ defmodule Firmowid.Ash.Assistant.InvoiceMatchingTest do
     end
   end
 
+  describe "model access propagation" do
+    test "retries a model permission error without duplicating the user message", %{scope: scope} do
+      counter = start_supervised!({Agent, fn -> 0 end})
+
+      stub_assistant_stream(fn conn ->
+        attempt = Agent.get_and_update(counter, fn count -> {count + 1, count + 1} end)
+
+        if attempt == 1 do
+          permission_error(conn)
+        else
+          response = %{
+            id: "resp-retry",
+            model: "gpt-6-luna",
+            status: "completed",
+            output: [
+              %{
+                id: "msg-retry",
+                type: "message",
+                role: "assistant",
+                content: [%{type: "output_text", text: "OK"}]
+              }
+            ],
+            usage: %{input_tokens: 10, output_tokens: 1, total_tokens: 11}
+          }
+
+          events = [
+            %{
+              type: "response.output_text.delta",
+              item_id: "msg-retry",
+              output_index: 0,
+              content_index: 0,
+              delta: "OK"
+            },
+            %{type: "response.completed", response: response}
+          ]
+
+          body =
+            Enum.map_join(events, fn event ->
+              "event: #{event.type}\ndata: #{Jason.encode!(event)}\n\n"
+            end)
+
+          conn
+          |> Plug.Conn.put_resp_content_type("text/event-stream")
+          |> Plug.Conn.send_resp(200, body)
+        end
+      end)
+
+      {:ok, session} = InvoiceMatching.start_session(scope)
+      assert {:ok, updated} = InvoiceMatching.send_message(session.id, "test", scope)
+      assert updated.status == :active
+      assert Agent.get(counter, & &1) == 2
+      assert Enum.count(updated.messages, &(&1["role"] == "user")) == 1
+    end
+
+    test "does not replay tools after a proposal has already been saved", %{
+      scope: scope,
+      user: user
+    } do
+      invoice = create_cost_invoice!(user, %{amount: Money.new!("EUR", "-50")})
+      transaction = create_transaction!(user, %{})
+      {:ok, session} = InvoiceMatching.start_session(scope)
+      counter = start_supervised!({Agent, fn -> 0 end})
+
+      stub_assistant_stream(fn conn ->
+        Agent.update(counter, &(&1 + 1))
+
+        assert {:ok, _} =
+                 ProposeInvoiceTransactionMatch.run(
+                   %{
+                     message: "test",
+                     transaction_ids: [transaction.id],
+                     cost_invoice_ids: [invoice.id]
+                   },
+                   %{session_id: session.id, scope: scope}
+                 )
+
+        permission_error(conn)
+      end)
+
+      assert {:ok, updated} = InvoiceMatching.send_message(session.id, "test", scope)
+      assert updated.status == :waiting_confirmation
+      assert updated.pending_match.transaction_ids == [transaction.id]
+      assert Agent.get(counter, & &1) == 1
+    end
+
+    test "bounds retries when access remains denied", %{scope: scope} do
+      counter = start_supervised!({Agent, fn -> 0 end})
+
+      stub_assistant_stream(fn conn ->
+        Agent.update(counter, &(&1 + 1))
+        permission_error(conn)
+      end)
+
+      {:ok, session} = InvoiceMatching.start_session(scope)
+      assert {:error, _} = InvoiceMatching.send_message(session.id, "test", scope)
+      assert Agent.get(counter, & &1) == 6
+    end
+  end
+
   describe "calculate tool" do
+    test "advertises only supported arithmetic operations to the model" do
+      schema =
+        Calculate
+        |> ToolAdapter.from_action()
+        |> ReqLLM.Tool.to_json_schema()
+
+      assert get_in(schema, ["function", "parameters", "properties", "operation", "enum"]) ==
+               ["+", "-", "*", "/"]
+    end
+
     test "performs decimal arithmetic without runtime dependencies" do
       assert {:ok, %{result: "15.5"}} =
                Calculate.run(%{numbers: ["10.5", 2, 3], operation: "+"}, %{})
@@ -357,6 +513,40 @@ defmodule Firmowid.Ash.Assistant.InvoiceMatchingTest do
   end
 
   defp scope_for(user), do: %Scope{actor: user, tenant: user.organization_id}
+
+  defp stub_assistant_stream(handler) do
+    previous_adapter = Application.get_env(:req_llm, :finch_request_adapter)
+    previous_port = Application.get_env(:req_llm, :assistant_test_port)
+
+    pid =
+      start_supervised!({Bandit, plug: {StreamStub, handler}, ip: {127, 0, 0, 1}, port: 0, startup_log: false})
+
+    {:ok, {_address, port}} = ThousandIsland.listener_info(pid)
+    Application.put_env(:req_llm, :finch_request_adapter, StreamAdapter)
+    Application.put_env(:req_llm, :assistant_test_port, port)
+
+    on_exit(fn ->
+      if previous_adapter,
+        do: Application.put_env(:req_llm, :finch_request_adapter, previous_adapter),
+        else: Application.delete_env(:req_llm, :finch_request_adapter)
+
+      if previous_port,
+        do: Application.put_env(:req_llm, :assistant_test_port, previous_port),
+        else: Application.delete_env(:req_llm, :assistant_test_port)
+    end)
+  end
+
+  defp permission_error(conn) do
+    conn
+    |> Plug.Conn.put_status(403)
+    |> Req.Test.json(%{
+      error: %{
+        code: "model_not_found",
+        type: "invalid_request_error",
+        message: "Project does not have access to model gpt-6-luna"
+      }
+    })
+  end
 
   defp create_cost_invoice!(user, attrs) do
     invoice_attrs =

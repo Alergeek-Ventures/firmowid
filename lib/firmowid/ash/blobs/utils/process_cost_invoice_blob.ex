@@ -48,20 +48,7 @@ defmodule Firmowid.Ash.Blobs.Utils.ProcessCostInvoiceBlob do
         }
       }
     },
-    required: ["document_type"],
-    if: %{properties: %{document_type: %{const: "cost_invoice"}}, required: ["document_type"]},
-    then: %{
-      required: [
-        "seller",
-        "invoice_identifier",
-        "sale_date",
-        "issue_date",
-        "due_date",
-        "total_amount",
-        "currency",
-        "items_list"
-      ]
-    }
+    required: ["document_type"]
   }
 
   @required_cost_invoice_fields ~w(
@@ -96,11 +83,11 @@ defmodule Firmowid.Ash.Blobs.Utils.ProcessCostInvoiceBlob do
     missing_fields =
       Enum.reject(@required_cost_invoice_fields, &(not is_nil(extracted_metadata[&1])))
 
-    if Enum.empty?(missing_fields) do
+    if Enum.empty?(missing_fields) and valid_dates?(extracted_metadata) do
       :ok
     else
       Logger.warning(
-        "Cost invoice extraction missing required fields: missing_fields=#{inspect(missing_fields)} document_type=cost_invoice"
+        "Cost invoice extraction has missing fields or invalid dates: missing_fields=#{inspect(missing_fields)} document_type=cost_invoice"
       )
 
       {:error, :invalid_document}
@@ -108,6 +95,15 @@ defmodule Firmowid.Ash.Blobs.Utils.ProcessCostInvoiceBlob do
   end
 
   defp ensure_cost_invoice_document(_), do: {:error, :invalid_document}
+
+  defp valid_dates?(metadata) do
+    Enum.all?(~w(sale_date issue_date due_date), fn key ->
+      case metadata[key] do
+        value when is_binary(value) -> match?({:ok, _}, Date.from_iso8601(value))
+        _ -> false
+      end
+    end)
+  end
 
   defp create_invoice(extracted_metadata, blob, _opts) do
     inbound_email_id =
