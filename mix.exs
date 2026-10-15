@@ -116,7 +116,8 @@ defmodule Firmowid.MixProject do
       {:gettext, "~> 1.0", override: true},
       {:jason, "~> 1.2"},
       {:dns_cluster, "~> 0.3.0"},
-      {:bandit, "~> 1.5"},
+      # Pin the upstream CVE-2026-105659 fix until a patched Hex release is available.
+      {:bandit, github: "mtrudel/bandit", ref: "d88b21953c65061f21136ea76a89a4f95a2ac7a1", override: true},
       {:ex_cldr, "~> 2.37"},
       {:ex_cldr_dates_times, "~> 2.5"},
       {:ex_cldr_territories, "~> 2.11"},
