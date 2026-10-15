@@ -9,6 +9,7 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
   import FirmowidUI.Components.Link
   import FirmowidWeb.Delegations.Components.DelegationsList
   import FirmowidWeb.DesignSystem.Components.CoreComponents, except: [button: 1]
+  import FirmowidWeb.Infrastructure.Flags, only: [flag_enabled?: 2]
   import FirmowidWeb.Settings.Components.EditButton
   import Phoenix.Component, except: [link: 1]
 
@@ -41,6 +42,7 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
   attr :current_contract, :map, default: nil
   attr :signed_contract_upload, :map, default: nil
   attr :delegations, :list, required: true
+  attr :feature_flags, :map, required: true
 
   attr :document_upload, :map,
     default: nil,
@@ -95,7 +97,10 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
           leave_days={@leave_days}
         />
       </div>
-      <.delegations_section delegations={@delegations} />
+      <.delegations_section
+        :if={flag_enabled?(:delegations, assigns)}
+        delegations={@delegations}
+      />
     </div>
     """
   end

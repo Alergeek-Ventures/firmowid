@@ -1325,6 +1325,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
             signed_contract_upload={@uploads.signed_contract}
             document_upload={Map.get(@uploads, :document_upload)}
             delegations={@delegations}
+            feature_flags={@feature_flags}
           />
       <% end %>
     </.settings_page>
