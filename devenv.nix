@@ -76,7 +76,6 @@ in
   packages = with pkgs; [
     nodejs_26
     accent-cli
-    tunnel-client
     beam29Packages.elixir_1_20
     beam29Packages.erlang
     infisical
@@ -93,7 +92,6 @@ in
     vips
     qpdf
     cacert
-    glibcLocales
 
     # For dev.up.
     openssl
@@ -105,10 +103,14 @@ in
     oxlint
     tsgolint
 
-    # Linux-only file watching and local containers.
-    inotify-tools
     podman
     podman-compose
+  ]
+  ++ lib.optionals stdenv.isLinux [
+    tunnel-client
+    glibcLocales
+    # Linux-only file watching.
+    inotify-tools
   ];
 
   # npm-distributed native binaries expect libstdc++ in the conventional location.
