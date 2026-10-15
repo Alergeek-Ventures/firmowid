@@ -283,7 +283,7 @@ defmodule FirmowidMcp.Invoicing.Views.Issue do
 
     case action_arguments(socket)["invoice_id"] do
       nil ->
-        Invoicing.issue_new_sales_invoice(
+        Invoicing.create_and_issue_sales_invoice(
           %{input: confirmed_input(socket), confirmation_id: socket.assigns.confirmation_id},
           scope: scope
         )

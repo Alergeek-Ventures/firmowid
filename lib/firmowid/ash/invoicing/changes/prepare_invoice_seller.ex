@@ -10,12 +10,9 @@ defmodule Firmowid.Ash.Invoicing.Changes.PrepareInvoiceSeller do
 
   alias Firmowid.Ash.Core
 
-  @doc "Uses current organization details for new documents and preserves issued seller snapshots."
+  @doc "Copies the current organization's details into a new or revised draft."
   @spec change(Ash.Changeset.t(), keyword(), Ash.Resource.Change.Context.t()) :: Ash.Changeset.t()
   @impl true
-  def change(%{action_type: :update, data: %{invoice_number: number}} = changeset, _opts, _context)
-      when not is_nil(number), do: changeset
-
   def change(changeset, _opts, context) do
     case Core.get_organization(context.tenant, Ash.Context.to_opts(context)) do
       {:ok, nil} ->

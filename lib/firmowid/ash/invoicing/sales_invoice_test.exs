@@ -544,7 +544,7 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoiceTest do
       user = invoicing_admin_fixture()
 
       assert {:error, %Invalid{}} =
-               Invoicing.issue_new_sales_invoice(
+               Invoicing.create_and_issue_sales_invoice(
                  %{input: Map.put(issue_input(), :invoice_number, "FV/1/2026")},
                  scope: scope_for(user)
                )
@@ -564,8 +564,8 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoiceTest do
 
       {first_attempt, second_attempt} =
         Oban.Testing.with_testing_mode(:manual, fn ->
-          {Invoicing.issue_new_sales_invoice(attrs, scope: scope_for(user)),
-           Invoicing.issue_new_sales_invoice(
+          {Invoicing.create_and_issue_sales_invoice(attrs, scope: scope_for(user)),
+           Invoicing.create_and_issue_sales_invoice(
              put_in(attrs.input.invoice_number, "FV/#{System.unique_integer([:positive])}"),
              scope: scope_for(user)
            )}

@@ -692,15 +692,6 @@ defmodule Firmowid.Ash.Ksef do
   end
 
   @doc """
-  Returns a user-facing error message for failed correction submission.
-  """
-  @spec failed_correction_message(term()) :: String.t()
-  def failed_correction_message(reason) do
-    "Nie udało się wysłać korekty do KSeF: #{inspect(reason)}. " <>
-      "Korekta została usunięta — popraw dane i spróbuj ponownie."
-  end
-
-  @doc """
   Returns a shorter message for cases when the correction was deleted by the worker.
   """
   @spec failed_correction_deleted_message() :: String.t()

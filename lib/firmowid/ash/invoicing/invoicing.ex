@@ -188,7 +188,7 @@ defmodule Firmowid.Ash.Invoicing do
       define :create_sales_invoice_draft, action: :create_draft
       define :update_sales_invoice_draft, action: :update_draft
       define :issue_sales_invoice, action: :issue
-      define :issue_new_sales_invoice, action: :issue_new
+      define :create_and_issue_sales_invoice, action: :create_and_issue
       define :preview_sales_invoice, action: :preview_invoice
       define :preview_sales_invoice_correction, action: :preview_correction
 
