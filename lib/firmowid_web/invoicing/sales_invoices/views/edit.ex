@@ -462,13 +462,9 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
   end
 
   def handle_event("save_as_draft", _params, socket) do
-    if is_nil(socket.assigns.invoice.ksef_number) do
+    # Only drafts reach this form unnumbered; an issued invoice is edited through a correction.
+    if is_nil(socket.assigns.invoice.invoice_number) do
       params = socket.assigns.form.source.params || %{}
-
-      params =
-        if is_nil(socket.assigns.invoice.invoice_number),
-          do: Map.put(params, "invoice_number", nil),
-          else: params
 
       case AshPhoenix.Form.submit(socket.assigns.form.source, params: params) do
         {:ok, invoice} ->

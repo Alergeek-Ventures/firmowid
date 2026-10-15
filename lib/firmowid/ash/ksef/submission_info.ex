@@ -87,11 +87,6 @@ defmodule Firmowid.Ash.Ksef.SubmissionInfo do
   def failed?(%__MODULE__{status: :failed}), do: true
   def failed?(%__MODULE__{}), do: false
 
-  @doc "Returns `true` if the invoice has never been submitted."
-  @spec not_submitted?(t()) :: boolean()
-  def not_submitted?(%__MODULE__{status: :not_submitted}), do: true
-  def not_submitted?(%__MODULE__{}), do: false
-
   @doc "Returns `true` if submission has been attempted (submitted, submitting, or failed)."
   @spec attempted?(t()) :: boolean()
   def attempted?(%__MODULE__{status: :not_submitted}), do: false

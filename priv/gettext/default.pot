@@ -1799,17 +1799,17 @@ msgid "Withdrawal request"
 msgstr ""
 
 #: lib/firmowid_web/invoicing/sales_invoices/views/creator.ex:1165
-#: lib/firmowid_web/invoicing/sales_invoices/views/edit.ex:673
+#: lib/firmowid_web/invoicing/sales_invoices/views/edit.ex:669
 #, elixir-autogen, elixir-format
 msgid "Invoice number is required."
 msgstr ""
 
-#: lib/firmowid_web/invoicing/components/sales_invoice_details.ex:406
+#: lib/firmowid_web/invoicing/components/sales_invoice_details.ex:371
 #, elixir-autogen, elixir-format
 msgid "Draft"
 msgstr ""
 
-#: lib/firmowid_web/invoicing/components/sales_invoice_details.ex:405
+#: lib/firmowid_web/invoicing/components/sales_invoice_details.ex:370
 #, elixir-autogen, elixir-format
 msgid "Invoice status"
 msgstr ""
@@ -2031,7 +2031,7 @@ msgstr ""
 msgid "Connect KSeF before issuing the invoice."
 msgstr ""
 
-#: lib/firmowid/ash/invoicing/changes/submit_issued_invoice.ex:60
+#: lib/firmowid/ash/invoicing/changes/submit_issued_invoice.ex:55
 #, elixir-autogen, elixir-format
 msgid "Connect to KSeF before issuing this invoice."
 msgstr ""
@@ -2087,7 +2087,7 @@ msgstr ""
 msgid "The correction could not be sent and was removed. Prepare a new correction after fixing its details."
 msgstr ""
 
-#: lib/firmowid/ash/invoicing/changes/prepare_invoice_seller.ex:24
+#: lib/firmowid/ash/invoicing/changes/prepare_invoice_seller.ex:21
 #, elixir-autogen, elixir-format
 msgid "The current organization was not found."
 msgstr ""
@@ -2160,7 +2160,7 @@ msgstr ""
 msgid "KSeF did not accept the invoice, so it returned to a draft without a number. Correct its details and issue it again."
 msgstr ""
 
-#: lib/firmowid/ash/invoicing/changes/submit_issued_invoice.ex:52
+#: lib/firmowid/ash/invoicing/changes/submit_issued_invoice.ex:47
 #, elixir-autogen, elixir-format
 msgid "The invoice could not be queued for KSeF submission. Nothing was issued."
 msgstr ""

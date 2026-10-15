@@ -43,18 +43,6 @@ defmodule Firmowid.Ash.Ksef.SubmissionInfoTest do
     end
   end
 
-  describe "not_submitted?/1" do
-    test "returns true for :not_submitted status" do
-      assert SubmissionInfo.not_submitted?(%SubmissionInfo{status: :not_submitted})
-    end
-
-    test "returns false for other statuses" do
-      refute SubmissionInfo.not_submitted?(%SubmissionInfo{status: :submitted})
-      refute SubmissionInfo.not_submitted?(%SubmissionInfo{status: :submitting})
-      refute SubmissionInfo.not_submitted?(%SubmissionInfo{status: :failed})
-    end
-  end
-
   describe "attempted?/1" do
     test "returns false for :not_submitted" do
       refute SubmissionInfo.attempted?(%SubmissionInfo{status: :not_submitted})

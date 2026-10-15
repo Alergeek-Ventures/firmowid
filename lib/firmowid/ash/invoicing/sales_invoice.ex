@@ -31,7 +31,7 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
 
   ## Generic Actions
 
-    * `:issue_new` — save and issue a new invoice in one transaction
+    * `:create_and_issue` — save and issue a new invoice in one transaction
     * `:preview_invoice` / `:preview_correction` — read-only validated document previews
     * `:cancel` — cancel a KSeF-submitted invoice via zero-quantity correction
     * `:get_next_number` — get next available invoice number for date/series
@@ -135,7 +135,7 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
     define :create_draft, action: :create_draft
     define :update_draft, action: :update_draft
     define :issue, action: :issue
-    define :issue_new, action: :issue_new
+    define :create_and_issue, action: :create_and_issue
     define :return_to_draft, action: :return_to_draft
     define :preview_invoice, action: :preview_invoice
     define :preview_correction, action: :preview_correction
@@ -800,7 +800,7 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
       end
     end
 
-    action :issue_new, :struct do
+    action :create_and_issue, :struct do
       description "Save a new invoice as a draft and issue it in the same transaction."
       constraints instance_of: __MODULE__
       transaction? true
