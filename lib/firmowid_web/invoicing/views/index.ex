@@ -708,8 +708,13 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
     scope = socket.assigns.ash_scope
     tx = Finances.get_transaction!(id, scope: scope)
     new_skip = !tx.skip_invoicing
-    Finances.set_transaction_skip_invoicing!(tx, %{skip_invoicing: new_skip}, scope: scope)
-    toggle_transaction_skip(socket, id, new_skip)
+
+    updated_transaction =
+      tx
+      |> Finances.set_transaction_skip_invoicing!(%{skip_invoicing: new_skip}, scope: scope)
+      |> Ash.load!(:reconciliation_status, scope: scope)
+
+    toggle_transaction_skip(socket, updated_transaction)
   end
 
   defp do_toggle_skip(socket, id, "cost_invoice") do
@@ -728,18 +733,19 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
     toggle_entry_skip(socket, id, new_skip)
   end
 
-  # TODO: re-add Transaction struct constraints once legacy Ecto schema is removed
-  defp toggle_transaction_skip(socket, id, new_skip) do
+  defp toggle_transaction_skip(socket, %Transaction{id: id} = updated_transaction) do
+    status = Map.take(updated_transaction, [:skip_invoicing, :reconciliation_status])
+
     entries =
       Enum.map(socket.assigns.invoicing_entries, fn
-        %{__struct__: _, id: ^id, skip_invoicing: _} = tx ->
-          Map.put(tx, :skip_invoicing, new_skip)
+        %Transaction{id: ^id} = tx ->
+          Map.merge(tx, status)
 
         %TransactionGroup{transactions: txns} = group ->
           updated =
             Enum.map(txns, fn
-              %{__struct__: _, id: ^id, skip_invoicing: _} = tx ->
-                Map.put(tx, :skip_invoicing, new_skip)
+              %Transaction{id: ^id} = tx ->
+                Map.merge(tx, status)
 
               other ->
                 other

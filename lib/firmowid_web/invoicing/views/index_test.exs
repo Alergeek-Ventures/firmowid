@@ -115,6 +115,29 @@ defmodule FirmowidWeb.Invoicing.Views.IndexTest do
   end
 
   describe "skip invoicing from list" do
+    test "updates a transaction status immediately when skipping and restoring", %{conn: conn} do
+      user = admin_fixture()
+      transaction = transaction_fixture!(user, "Single Party", ~D[2026-01-10], "SINGLE")
+
+      {:ok, view, _html} =
+        conn
+        |> log_in_user(user)
+        |> live(~p"/fakturowanie?miesiac=2026-01-01&filtr=wszystkie&widok=lista")
+
+      assert has_element?(view, "##{transaction.id}-button", "Pomiń")
+
+      view |> element("##{transaction.id}-button", "Pomiń") |> render_click()
+
+      refute has_element?(view, "##{transaction.id}-button", "Pomiń")
+      assert has_element?(view, "##{transaction.id}-button .hero-arrow-uturn-left-micro")
+      assert Finances.get_transaction!(transaction.id, scope: scope_for(user)).skip_invoicing
+
+      view |> element("##{transaction.id}-button") |> render_click()
+
+      assert has_element?(view, "##{transaction.id}-button", "Pomiń")
+      refute Finances.get_transaction!(transaction.id, scope: scope_for(user)).skip_invoicing
+    end
+
     test "skips a single invoice from unmatched list", %{conn: conn} do
       user = admin_fixture()
       invoice = sales_invoice_fixture!(user, "FV-LIST-SINGLE")
@@ -173,6 +196,11 @@ defmodule FirmowidWeb.Invoicing.Views.IndexTest do
 
       assert skipped_tx1.skip_invoicing
       assert skipped_tx2.skip_invoicing
+
+      for transaction <- [tx1, tx2] do
+        refute has_element?(view, "##{transaction.id}-button", "Pomiń")
+        assert has_element?(view, "##{transaction.id}-button .hero-arrow-uturn-left-micro")
+      end
 
       # Exercise the refresh without waiting for the animation delay. Timer
       # scheduling and cancellation are covered by PubSubDebounceTest.
