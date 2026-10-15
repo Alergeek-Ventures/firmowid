@@ -7,7 +7,9 @@ defmodule FirmowidWeb.Invoicing.Transactions.Views.ShowTest do
   import Firmowid.FinancesFixtures
   import Phoenix.LiveViewTest
 
+  alias Firmowid.Ash.Blobs.Blob
   alias Firmowid.Ash.Core.User
+  alias Firmowid.Ash.Finances
   alias Firmowid.Ash.Finances.Transaction
   alias Firmowid.Ash.Invoicing
   alias Firmowid.Ash.Invoicing.CostInvoice
@@ -16,9 +18,63 @@ defmodule FirmowidWeb.Invoicing.Transactions.Views.ShowTest do
   alias Firmowid.Ash.Invoicing.SalesInvoiceItem
   alias Firmowid.Ash.Payroll.UserSalary
   alias Firmowid.Ash.Scope
+  alias Firmowid.Ash.Timetracker.HoursRecord
   alias Firmowid.Ash.Timetracker.Project
   alias Firmowid.Ash.Timetracker.Session
   alias FirmowidWeb.Invoicing.Utilities.Navigation
+
+  test "only proposes submitted unassigned salary months while preserving manual assignment", %{
+    conn: conn
+  } do
+    admin = admin_fixture()
+    scope = Scope.new!(admin, admin.organization_id)
+
+    project =
+      Ash.Seed.seed!(Project, %{
+        name: "Submitted salary hours",
+        organization_id: admin.organization_id
+      })
+
+    seed_salary_months!(
+      admin,
+      project,
+      [{~D[2025-10-01], 10}, {~D[2025-11-01], 10}, {~D[2025-12-01], 10}],
+      false
+    )
+
+    seed_hours_record!(admin, ~D[2025-11-01], 10, :withdrawn)
+    submitted = seed_hours_record!(admin, ~D[2025-12-01], 10, :submitted)
+
+    first = transaction_fixture!(admin, %{amount: Money.new!(:PLN, -1000)})
+    second = transaction_fixture!(admin, %{amount: Money.new!(:PLN, -1000)})
+    conn = log_in_user(conn, admin)
+    {:ok, first_view, html} = live(conn, ~p"/transakcje/#{first.id}")
+
+    assert salary_candidate_ids(html) == ["salary-suggestion-#{admin.id}-2025-12-01"]
+
+    first_view
+    |> element("#salary-suggestion-#{admin.id}-2025-12-01 button", "Zatwierdź")
+    |> render_click()
+
+    {:ok, second_view, _html} = live(conn, ~p"/transakcje/#{second.id}")
+    refute has_element?(second_view, "#salary-suggestions")
+
+    first_view |> element("#disconnect-salary") |> render_click()
+    Ash.Seed.update!(submitted, %{submission_status: :withdrawn})
+
+    {:ok, second_view, _html} = live(conn, ~p"/transakcje/#{second.id}")
+    refute has_element?(second_view, "#salary-suggestions")
+
+    assigned =
+      Finances.connect_transaction_salary!(
+        second,
+        %{salary_user_id: admin.id, salary_month: ~D[2025-12-01]},
+        scope: scope
+      )
+
+    assert assigned.salary_month == ~D[2025-12-01]
+    assert assigned.salary_user_id == admin.id
+  end
 
   test "prioritizes the payroll month and shows all candidates up to six months back", %{
     conn: conn
@@ -338,7 +394,7 @@ defmodule FirmowidWeb.Invoicing.Transactions.Views.ShowTest do
     |> LazyHTML.attribute("id")
   end
 
-  defp seed_salary_months!(user, project, month_hours) do
+  defp seed_salary_months!(user, project, month_hours, submit_hours? \\ true) do
     Ash.Seed.seed!(UserSalary, %{
       user_id: user.id,
       organization_id: user.organization_id,
@@ -357,7 +413,31 @@ defmodule FirmowidWeb.Invoicing.Transactions.Views.ShowTest do
         start_datetime: start,
         end_datetime: DateTime.shift(start, hour: hours)
       })
+
+      if submit_hours?, do: seed_hours_record!(user, month, hours, :submitted)
     end)
+  end
+
+  defp seed_hours_record!(user, month, hours, status) do
+    unique = System.unique_integer([:positive])
+
+    blob =
+      Ash.Seed.seed!(Blob, %{
+        organization_id: user.organization_id,
+        blob_path: "salary-hours-#{unique}.pdf",
+        blob_checksum: "salary-hours-#{unique}",
+        original_filename: "hours.pdf"
+      })
+
+    Ash.Seed.seed!(HoursRecord, %{
+      organization_id: user.organization_id,
+      user_id: user.id,
+      blob_id: blob.id,
+      month: month.month,
+      year: month.year,
+      number_of_hours: hours,
+      submission_status: status
+    })
   end
 
   defp transaction_fixture!(admin, attrs) do

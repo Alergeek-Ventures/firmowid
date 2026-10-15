@@ -173,11 +173,17 @@ defmodule Firmowid.Ash.Finances.Transaction do
     end
 
     action :salary_suggestions, {:array, :map} do
-      description "Find the five closest available salaries; optional employee/month filters revalidate a chosen assignment."
+      description "Find available salaries with submitted hours records; optional filters support manual assignment revalidation."
 
       argument :transaction_id, :uuid, allow_nil?: false
       argument :salary_user_id, :uuid
       argument :salary_month, :date
+
+      argument :submitted_hours_only?, :boolean do
+        allow_nil? false
+        default true
+        description "Only propose salaries with a submitted, non-withdrawn hours record."
+      end
 
       run Firmowid.Ash.Finances.Transaction.Actions.SalarySuggestions
     end

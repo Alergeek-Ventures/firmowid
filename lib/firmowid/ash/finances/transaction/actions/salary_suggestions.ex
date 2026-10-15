@@ -44,13 +44,30 @@ defmodule Firmowid.Ash.Finances.Transaction.Actions.SalarySuggestions do
     transaction
     |> candidate_months(arguments[:salary_month], arguments[:salary_user_id], scope)
     |> Enum.flat_map(fn month ->
+      submitted_users =
+        if arguments.submitted_hours_only? do
+          %{
+            month: month.month,
+            year: month.year,
+            user_id: arguments[:salary_user_id],
+            submission_status: :submitted
+          }
+          |> Timetracker.list_hours_records!(scope: scope)
+          |> MapSet.new(& &1.user_id)
+        else
+          :all
+        end
+
       %{active_at: Date.end_of_month(month), user_id: arguments[:salary_user_id]}
       |> Payroll.list_salaries!(
         load: [:user, monthly_amount: [month: month]],
         query: [filter: [user: [organization_id: scope.tenant]]],
         scope: scope
       )
-      |> Enum.reject(&MapSet.member?(assigned, {&1.user_id, month}))
+      |> Enum.filter(fn salary ->
+        not MapSet.member?(assigned, {salary.user_id, month}) and
+          (submitted_users == :all or MapSet.member?(submitted_users, salary.user_id))
+      end)
       |> Enum.flat_map(&suggestion(&1, month, amount, recipient_parts))
     end)
     |> Enum.sort(fn {a_name_rank, a}, {b_name_rank, b} ->

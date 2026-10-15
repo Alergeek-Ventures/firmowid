@@ -28,7 +28,7 @@ defmodule Firmowid.Ash.Finances.Changes.ConnectSalary do
   defp valid_assignment?(transaction_id, user_id, %Date{day: 1} = month, scope) when is_binary(user_id) do
     Finances.suggest_transaction_salaries!(
       transaction_id,
-      %{salary_user_id: user_id, salary_month: month},
+      %{salary_user_id: user_id, salary_month: month, submitted_hours_only?: false},
       scope: scope
     ) != []
   end
