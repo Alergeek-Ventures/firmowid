@@ -17,7 +17,9 @@ For how to *write* source msgids, contexts, and placeholders, see
 1. **Never upload the extracted POT to Accent, and never run `accent sync` or
    `accent sync --add-translations`.** It maps translations onto the English
    single-plural shape and permanently destroys Polish's third form, which
-   Accent cannot recreate. The one exception is the repair below.
+   Accent cannot recreate, and it removes every key missing from the uploaded
+   file. New keys are added only through the peeked passive sync in step 3;
+   the other exception is the repair below.
 2. **Never use machine translation.** Accent can machine translate (Google
    Translate and DeepL); this project deliberately does not. Polish is written
    by humans and the approved wording comes from Figma.
@@ -118,14 +120,28 @@ mutation {
    Always pass the human-approved Polish from step 2.
 3. Re-read the records. `correctedText` must be non-empty; `isTranslated: true`
    with empty `correctedText` counts as untranslated.
-4. A brand-new identity has no record yet. Create it in the Accent panel for
-   `gettext/landing-native`, language `pl`, entering the English source and the
-   Polish value (all three fields for plurals), then re-run steps 1–3.
+4. A brand-new identity has no record yet. Create it through the API, then
+   re-run steps 1–3:
+   - Export the current English master of `gettext/landing-native` (`GET
+     /export` with `language=en`, no `version`) and append the new msgids with
+     empty `msgstr`. Building on Accent's own export keeps every existing key
+     and plural shape; the extracted POT does not.
+   - `POST /sync/peek` with `language=en`, `document_format=gettext`,
+     `document_path=gettext/landing-native`, `sync_type=passive` and that file.
+     Continue only when every operation is `new` (or `renew` for a key Accent
+     removed earlier). Any `remove`, `update` or `conflict` means the file is
+     wrong: stop.
+   - Re-export right before syncing and confirm the master did not change, then
+     `POST /sync` with the same parameters. Passive sync still removes keys
+     absent from the file, so never send anything but this union.
 
 Do not use the panel's PO import, `/add-translations`, or `--add-translations`.
 Uploading a patched file with the panel's sync button is a different operation
 and is only for the repair in
 [Damaged plural forms](references/damaged-plurals.md).
+
+Call the API with `curl`; Accent rejects some HTTP clients with 403 before
+checking the key.
 
 ### 4. Verify with the latest catalog export
 
