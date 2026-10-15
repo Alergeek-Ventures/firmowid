@@ -183,11 +183,14 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
                 </.link>
 
                 <%= if @can_write_invoicing? do %>
-                  <%= if SubmissionInfo.editing_blocked?(@invoice, @submission_info) do %>
+                  <%= if SubmissionInfo.editing_blocked?(@invoice, @submission_info) or
+                          SubmissionInfo.outside_ksef?(@invoice, @submission_info) do %>
                     <span
                       id="edit-invoice-button-tooltip"
                       phx-hook="Tippy"
-                      data-tippy-content="Faktura jest zablokowana. Edycja będzie dostępna po zakończeniu wysyłki do KSeF."
+                      data-tippy-content={
+                        SubmissionInfo.edit_unavailable_reason(@invoice, @submission_info)
+                      }
                       data-tippy-delay="100"
                       class="inline-flex"
                       tabindex="0"
@@ -205,7 +208,7 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
                       </.button>
                     </span>
                     <span id="edit-invoice-button-description" class="sr-only">
-                      Edycja jest niedostępna, ponieważ faktura jest zablokowana.
+                      {SubmissionInfo.edit_unavailable_reason(@invoice, @submission_info)}
                     </span>
                   <% else %>
                     <.link
