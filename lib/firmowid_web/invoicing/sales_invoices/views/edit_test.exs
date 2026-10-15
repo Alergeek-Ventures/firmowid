@@ -326,7 +326,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.EditTest do
     assert render(view) =~ ~s(value="#{Date.add(Date.utc_today(), 7)}")
   end
 
-  test "a draft opens the edit form, and an invoice issued outside KSeF opens a correction", %{
+  test "a draft opens the edit form, but an invoice issued outside KSeF cannot be edited", %{
     conn: conn
   } do
     admin = admin_fixture()
@@ -337,11 +337,6 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.EditTest do
     assert html =~ "Edycja faktury"
 
     Ash.Seed.update!(invoice, %{invoice_number: "FV/TEST/3"})
-
-    assert {:ok, _view, html} = live(conn, ~p"/sprzedazowe/#{invoice.id}/edytuj")
-    assert html =~ "Faktura korygująca"
-
-    Ash.Seed.update!(invoice, %{locked_at: DateTime.utc_now()})
     show_path = "/sprzedazowe/#{invoice.id}"
 
     assert {:error,
@@ -349,7 +344,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.EditTest do
              %{
                to: ^show_path,
                flash: %{
-                 "error" => "Nie można edytować tej faktury — jest zablokowana podczas wysyłki do KSeF."
+                 "error" => "Faktura wystawiona poza KSeF — nie można jej edytować ani korygować."
                }
              }}} = live(conn, ~p"/sprzedazowe/#{invoice.id}/edytuj")
   end

@@ -865,6 +865,8 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
   defp item_price_input_focus_index("all"), do: nil
   defp item_price_input_focus_index(item_index), do: item_index
 
+  defp not_editable_message(%SalesInvoice{ksef_number: nil}), do: SubmissionInfo.outside_ksef_message()
+
   defp not_editable_message(%SalesInvoice{ksef_invoice_kind: :vat}) do
     "Nie można edytować tej faktury — posiada korekty. Edytuj ostatnią korektę."
   end

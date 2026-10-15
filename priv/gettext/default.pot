@@ -1804,12 +1804,12 @@ msgstr ""
 msgid "Invoice number is required."
 msgstr ""
 
-#: lib/firmowid_web/invoicing/components/sales_invoice_details.ex:371
+#: lib/firmowid_web/invoicing/components/sales_invoice_details.ex:374
 #, elixir-autogen, elixir-format
 msgid "Draft"
 msgstr ""
 
-#: lib/firmowid_web/invoicing/components/sales_invoice_details.ex:370
+#: lib/firmowid_web/invoicing/components/sales_invoice_details.ex:373
 #, elixir-autogen, elixir-format
 msgid "Invoice status"
 msgstr ""
