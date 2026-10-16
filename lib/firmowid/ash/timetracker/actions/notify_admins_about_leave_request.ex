@@ -1,11 +1,9 @@
-defmodule Firmowid.Ash.Timetracker.Workers.LeaveRequestEmailWorker do
+defmodule Firmowid.Ash.Timetracker.Actions.NotifyAdminsAboutLeaveRequest do
   @moduledoc """
   Emails active organization admins about a newly created leave request.
   """
 
-  use Oban.Worker,
-    queue: :notification_emails,
-    max_attempts: 3
+  use Ash.Resource.Actions.Implementation
 
   alias Firmowid.Ash.Core
   alias Firmowid.Ash.Scope
@@ -16,23 +14,12 @@ defmodule Firmowid.Ash.Timetracker.Workers.LeaveRequestEmailWorker do
 
   require Logger
 
-  @doc "Enqueues admin notification email for a newly created leave request."
-  @spec enqueue(Ash.UUID.t(), Ash.UUID.t()) :: {:ok, Oban.Job.t()} | {:error, term()}
-  def enqueue(leave_request_id, organization_id) do
-    %{"leave_request_id" => leave_request_id, "organization_id" => organization_id}
-    |> new()
-    |> Firmowid.Oban.insert(organization_id: organization_id)
-  end
+  @impl true
+  def run(%{arguments: %{signal: signal}}, _opts, _context) do
+    leave_request_id = signal.leave_request_id
+    scope = scope(signal.organization_id)
 
-  @impl Oban.Worker
-  def perform(%Oban.Job{args: args} = job) do
-    organization_id = args["organization_id"]
-    leave_request_id = args["leave_request_id"]
-    scope = scope(organization_id)
-
-    Logger.info(
-      "Sending leave request admin emails leave_request_id=#{leave_request_id} attempt=#{job.attempt}/#{job.max_attempts}"
-    )
+    Logger.info("Sending leave request admin emails leave_request_id=#{leave_request_id}")
 
     case Timetracker.get_leave_request(leave_request_id,
            scope: scope,
@@ -75,12 +62,14 @@ defmodule Firmowid.Ash.Timetracker.Workers.LeaveRequestEmailWorker do
       Logger.info("No admin recipients for leave request leave_request_id=#{leave_request.id}")
       :ok
     else
-      LeaveRequestEmails.deliver_new_leave_request(
-        admins,
-        leave_request,
-        attachment,
-        leave_request.user
-      )
+      with {:ok, _email} <-
+             LeaveRequestEmails.deliver_new_leave_request(
+               admins,
+               leave_request,
+               attachment,
+               leave_request.user
+             ),
+           do: :ok
     end
   end
 

@@ -163,11 +163,10 @@ defmodule Firmowid.Ash.Payroll.UserEmploymentContractTest do
                  )
 
         assert_enqueued(
-          worker: EmploymentContractEmailWorker,
+          worker: AshOban.Signals.Worker,
           args: %{
-            "contract_id" => contract.id,
-            "organization_id" => org_id,
-            "kind" => "admin_notification"
+            "listener" => "notify_admins",
+            "payload" => %{"contract_id" => contract.id, "organization_id" => org_id}
           }
         )
       end)

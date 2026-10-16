@@ -10,13 +10,14 @@ defmodule Firmowid.Ash.Payroll.UserEmploymentContract do
   alias AshOban.Checks.AshObanInteraction
   alias Firmowid.Ash.Blobs
   alias Firmowid.Ash.Checks.SystemActorRole
+  alias Firmowid.Ash.Payroll.Actions.NotifyAdminsAboutSignedContract
   alias Firmowid.Ash.Payroll.Changes.MaybeActivateContract
   alias Firmowid.Ash.Payroll.Changes.SyncUserBankAccount
+  alias Firmowid.Ash.Payroll.Signals
   alias Firmowid.Ash.Payroll.UserEmploymentContract.Worker.ActivateSigned
   alias Firmowid.Ash.Payroll.Workers.EmploymentContractEmailWorker
   alias Firmowid.Ash.Resource
 
-  require Logger
   require Resource
 
   postgres do
@@ -61,6 +62,7 @@ defmodule Firmowid.Ash.Payroll.UserEmploymentContract do
     define :submit_signed, action: :submit_signed
     define :activate, action: :activate
     define :read_global, action: :read_global
+    define :notify_admins, args: [:signal]
 
     define :load_pending_contract,
       action: :load_pending_contract,
@@ -178,34 +180,28 @@ defmodule Firmowid.Ash.Payroll.UserEmploymentContract do
       change SyncUserBankAccount
 
       # Schedule email notification to the employee if the contract is pending signature. The email will be sent at 9:00 AM Warsaw time on the signed_at date (or today if signed_at is nil).
-      change after_transaction(fn
-               _changeset, {:ok, contract}, _context ->
-                 if contract.status == :pending_signature do
-                   signed_at = contract.signed_at || Date.utc_today()
+      change after_action(fn _changeset, contract, _context ->
+               if contract.status == :pending_signature do
+                 signed_at = contract.signed_at || Date.utc_today()
 
-                   warsaw_time = DateTime.new!(signed_at, ~T[09:00:00], "Europe/Warsaw")
-                   utc_time = DateTime.shift_zone!(warsaw_time, "Etc/UTC")
+                 warsaw_time = DateTime.new!(signed_at, ~T[09:00:00], "Europe/Warsaw")
+                 utc_time = DateTime.shift_zone!(warsaw_time, "Etc/UTC")
 
-                   scheduled_at =
-                     if DateTime.after?(utc_time, DateTime.utc_now()) do
-                       utc_time
-                     end
+                 scheduled_at =
+                   if DateTime.after?(utc_time, DateTime.utc_now()) do
+                     utc_time
+                   end
 
-                   EmploymentContractEmailWorker.enqueue(
-                     contract.id,
-                     contract.organization_id,
-                     scheduled_at
-                   )
-
-                   {:ok, contract}
-                 else
-                   {:ok, contract}
-                 end
-
-               _changeset, {:error, reason}, _context ->
-                 Logger.warning("Failed to enqueue employment contract email notification reason=#{inspect(reason)}")
-
-                 {:error, reason}
+                 with {:ok, _job} <-
+                        EmploymentContractEmailWorker.enqueue(
+                          contract.id,
+                          contract.organization_id,
+                          scheduled_at
+                        ),
+                      do: {:ok, contract}
+               else
+                 {:ok, contract}
+               end
              end)
     end
 
@@ -252,18 +248,7 @@ defmodule Firmowid.Ash.Payroll.UserEmploymentContract do
 
       change MaybeActivateContract
 
-      change after_transaction(fn
-               _changeset, {:ok, contract}, _context ->
-                 EmploymentContractEmailWorker.enqueue_admin_notification(
-                   contract.id,
-                   contract.organization_id
-                 )
-
-                 {:ok, contract}
-
-               _changeset, {:error, reason}, _context ->
-                 {:error, reason}
-             end)
+      emit Signals, :employment_contract_signed, fields: [contract_id: :id]
     end
 
     update :activate do
@@ -272,6 +257,12 @@ defmodule Firmowid.Ash.Payroll.UserEmploymentContract do
       require_atomic? false
 
       change transition_state(:active)
+    end
+
+    action :notify_admins do
+      description "Emails organization admins that an employee submitted a signed contract."
+      argument :signal, Signals.EmploymentContractSigned, allow_nil?: false
+      run NotifyAdminsAboutSignedContract
     end
   end
 
@@ -314,6 +305,10 @@ defmodule Firmowid.Ash.Payroll.UserEmploymentContract do
     policy action(:read_global) do
       authorize_if {AshObanInteraction, []}
       forbid_if always()
+    end
+
+    policy action(:notify_admins) do
+      authorize_if signal_in(Signals, :employment_contract_signed)
     end
   end
 
@@ -360,6 +355,12 @@ defmodule Firmowid.Ash.Payroll.UserEmploymentContract do
 
     has_one :user_salary, Firmowid.Ash.Payroll.UserSalary do
       destination_attribute :employment_contract_id
+    end
+  end
+
+  signals_in do
+    from Signals do
+      on :employment_contract_signed, :notify_admins, delivery: {AshOban.Signals, queue: :default, max_attempts: 3}
     end
   end
 

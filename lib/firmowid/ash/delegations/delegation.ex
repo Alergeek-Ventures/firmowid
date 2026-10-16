@@ -11,12 +11,13 @@ defmodule Firmowid.Ash.Delegations.Delegation do
     extensions: [AshStateMachine]
 
   alias Firmowid.Ash.Core.User
+  alias Firmowid.Ash.Delegations.Actions.NotifyAboutDelegation
   alias Firmowid.Ash.Delegations.Changes.AssignReference
   alias Firmowid.Ash.Delegations.Changes.CreateSignedCommandBlob
   alias Firmowid.Ash.Delegations.Changes.PrepareDelegationCompletion
+  alias Firmowid.Ash.Delegations.Signals
   alias Firmowid.Ash.Delegations.Validations.HasDateChangeReason
   alias Firmowid.Ash.Delegations.Validations.HasExpenses
-  alias Firmowid.Ash.Delegations.Workers.DelegationEmailWorker
   alias Firmowid.Ash.Resource
 
   require Resource
@@ -79,14 +80,7 @@ defmodule Firmowid.Ash.Delegations.Delegation do
       validate compare(:expected_cost, greater_than_or_equal_to: Money.new(:PLN, 0)),
         message: "musi być większa lub równa 0 PLN"
 
-      change after_transaction(fn
-               _changeset, {:ok, delegation}, _context ->
-                 DelegationEmailWorker.enqueue(delegation.id, delegation.organization_id)
-                 {:ok, delegation}
-
-               _changeset, {:error, reason}, _context ->
-                 {:error, reason}
-             end)
+      emit Signals, :delegation_submitted, fields: [delegation_id: :id]
     end
 
     update :approve do
@@ -109,14 +103,7 @@ defmodule Firmowid.Ash.Delegations.Delegation do
 
       change transition_state(:in_progress)
 
-      change after_transaction(fn
-               _changeset, {:ok, delegation}, _context ->
-                 DelegationEmailWorker.enqueue_approval(delegation.id, delegation.organization_id)
-                 {:ok, delegation}
-
-               _changeset, {:error, reason}, _context ->
-                 {:error, reason}
-             end)
+      emit Signals, :delegation_approved, fields: [delegation_id: :id]
     end
 
     update :prepare_command do
@@ -165,6 +152,18 @@ defmodule Firmowid.Ash.Delegations.Delegation do
       require_atomic? false
       accept [:detected_start_date, :detected_end_date]
     end
+
+    action :notify_admins do
+      description "Emails organization admins about a newly submitted delegation."
+      argument :signal, Signals.DelegationSubmitted, allow_nil?: false
+      run {NotifyAboutDelegation, notification: :submitted}
+    end
+
+    action :notify_employee do
+      description "Emails the employee that their delegation was approved."
+      argument :signal, Signals.DelegationApproved, allow_nil?: false
+      run {NotifyAboutDelegation, notification: :approved}
+    end
   end
 
   policies do
@@ -178,6 +177,14 @@ defmodule Firmowid.Ash.Delegations.Delegation do
 
     policy action(:create) do
       authorize_if actor_present()
+    end
+
+    policy action(:notify_admins) do
+      authorize_if signal_in(Signals, :delegation_submitted)
+    end
+
+    policy action(:notify_employee) do
+      authorize_if signal_in(Signals, :delegation_approved)
     end
 
     policy action_type(:read) do
@@ -263,6 +270,14 @@ defmodule Firmowid.Ash.Delegations.Delegation do
     end
 
     has_many :expenses, Firmowid.Ash.Delegations.DelegationExpense
+  end
+
+  signals_in do
+    from Signals do
+      on :delegation_submitted, :notify_admins, delivery: {AshOban.Signals, queue: :notification_emails, max_attempts: 3}
+
+      on :delegation_approved, :notify_employee, delivery: {AshOban.Signals, queue: :notification_emails, max_attempts: 3}
+    end
   end
 
   aggregates do

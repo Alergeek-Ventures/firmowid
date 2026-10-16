@@ -1,9 +1,9 @@
-defmodule Firmowid.Ash.Timetracker.Workers.HoursRecordChangeEmailWorker do
+defmodule Firmowid.Ash.Timetracker.Actions.NotifyAdminsAboutHoursRecordChange do
   @moduledoc "Delivers submitted hours record change requests to organization administrators."
-  use Oban.Worker, queue: :default, max_attempts: 3
+  use Ash.Resource.Actions.Implementation
   use Gettext, backend: Firmowid.Gettext
 
-  import Swoosh.Email, except: [new: 0, new: 1]
+  import Swoosh.Email
 
   alias Firmowid.Ash.Core
   alias Firmowid.Ash.Scope
@@ -12,24 +12,19 @@ defmodule Firmowid.Ash.Timetracker.Workers.HoursRecordChangeEmailWorker do
   alias Firmowid.Mailer
   alias FirmowidWeb.Management.Utilities.Navigation
 
-  @doc "Queues a notification in the same transaction as the saved request."
-  @spec enqueue(Ash.UUID.t(), Ash.UUID.t()) :: {:ok, Oban.Job.t()} | {:error, term()}
-  def enqueue(record_id, organization_id) do
-    %{record_id: record_id, organization_id: organization_id}
-    |> new()
-    |> Firmowid.Oban.insert(organization_id: organization_id)
-  end
+  @impl true
+  def run(%{arguments: %{signal: signal}}, _opts, _context) do
+    organization_id = signal.organization_id
 
-  @impl Oban.Worker
-  def perform(%Oban.Job{args: %{"record_id" => id, "organization_id" => organization_id}}) do
     scope = %Scope{
       actor: %SystemActor{org_id: organization_id, role: :hours_record_change_notifier},
       tenant: organization_id
     }
 
-    with {:ok, record} <- HoursRecord.get(id, scope: scope),
-         {:ok, admins} <- Core.list_users(%{status: :active, role: :admin}, scope: scope) do
-      deliver(record, admins)
+    with {:ok, record} <- HoursRecord.get(signal.hours_record_id, scope: scope),
+         {:ok, admins} <- Core.list_users(%{status: :active, role: :admin}, scope: scope),
+         {:ok, _email} <- deliver(record, admins) do
+      :ok
     end
   end
 

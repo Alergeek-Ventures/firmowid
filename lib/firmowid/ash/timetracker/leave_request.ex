@@ -14,7 +14,8 @@ defmodule Firmowid.Ash.Timetracker.LeaveRequest do
   alias Firmowid.Ash.Checks.SystemActorRole
   alias Firmowid.Ash.Core.User
   alias Firmowid.Ash.Resource
-  alias Firmowid.Ash.Timetracker.Workers.LeaveRequestEmailWorker
+  alias Firmowid.Ash.Timetracker.Actions.NotifyAdminsAboutLeaveRequest
+  alias Firmowid.Ash.Timetracker.Signals
 
   require Resource
 
@@ -61,6 +62,7 @@ defmodule Firmowid.Ash.Timetracker.LeaveRequest do
     define :read, action: :read
     define :list, action: :list
     define :destroy, action: :destroy
+    define :notify_admins, args: [:signal]
   end
 
   actions do
@@ -173,14 +175,7 @@ defmodule Firmowid.Ash.Timetracker.LeaveRequest do
         message "nie może być wcześniejsza niż data rozpoczęcia"
       end
 
-      change after_transaction(fn
-               _changeset, {:ok, leave_request}, _context ->
-                 LeaveRequestEmailWorker.enqueue(leave_request.id, leave_request.organization_id)
-                 {:ok, leave_request}
-
-               _changeset, {:error, reason}, _context ->
-                 {:error, reason}
-             end)
+      emit Signals, :leave_request_submitted, fields: [leave_request_id: :id]
     end
 
     create :create_with_upload do
@@ -242,14 +237,7 @@ defmodule Firmowid.Ash.Timetracker.LeaveRequest do
         message "nie może być wcześniejsza niż data rozpoczęcia"
       end
 
-      change after_transaction(fn
-               _changeset, {:ok, leave_request}, _context ->
-                 LeaveRequestEmailWorker.enqueue(leave_request.id, leave_request.organization_id)
-                 {:ok, leave_request}
-
-               _changeset, {:error, reason}, _context ->
-                 {:error, reason}
-             end)
+      emit Signals, :leave_request_submitted, fields: [leave_request_id: :id]
     end
 
     update :accept do
@@ -268,6 +256,12 @@ defmodule Firmowid.Ash.Timetracker.LeaveRequest do
         message: "można odrzucać tylko wnioski urlopowe"
 
       change transition_state(:declined)
+    end
+
+    action :notify_admins do
+      description "Emails organization admins about a newly submitted leave request."
+      argument :signal, Signals.LeaveRequestSubmitted, allow_nil?: false
+      run NotifyAdminsAboutLeaveRequest
     end
   end
 
@@ -289,6 +283,10 @@ defmodule Firmowid.Ash.Timetracker.LeaveRequest do
 
     policy action(:create) do
       authorize_if actor_present()
+    end
+
+    policy action(:notify_admins) do
+      authorize_if signal_in(Signals, :leave_request_submitted)
     end
 
     policy action_type(:read) do
@@ -355,6 +353,13 @@ defmodule Firmowid.Ash.Timetracker.LeaveRequest do
     belongs_to :blob, Firmowid.Ash.Blobs.Blob do
       allow_nil? true
       attribute_writable? true
+    end
+  end
+
+  signals_in do
+    from Signals do
+      on :leave_request_submitted, :notify_admins,
+        delivery: {AshOban.Signals, queue: :notification_emails, max_attempts: 3}
     end
   end
 
