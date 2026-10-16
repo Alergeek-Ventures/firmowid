@@ -2,7 +2,12 @@ import { App } from "@modelcontextprotocol/ext-apps";
 import { Socket } from "phoenix";
 import { LiveSocket } from "phoenix_live_view";
 import { createLiveToastHook } from "live_toast";
+import tippy from "tippy.js/esm/index.all.js";
 import { UIHooks } from "../ui/hooks";
+import { Tippy } from "../hooks/tippy";
+
+// The shared Tippy hook uses the global the web layout loads from a CDN; widgets bundle it.
+window.tippy = tippy;
 
 const root = document.getElementById("mcp-root");
 const status = document.getElementById("mcp-status");
@@ -96,6 +101,33 @@ const McpKsefDownload = {
   destroyed() { this.request?.abort(); },
 };
 
+// Offers fullscreen while the widget is inline; the host provides its own exit.
+const McpFullscreen = {
+  mounted() {
+    this.sync = () => {
+      const context = app.getHostContext();
+      this.el.hidden = !(context?.displayMode === "inline" &&
+        context.availableDisplayModes?.includes("fullscreen"));
+    };
+    this.el.addEventListener("click", () => {
+      app.requestDisplayMode({ mode: "fullscreen" }, { signal: lifetime.signal })
+        .then(this.sync)
+        .catch(() => {});
+    });
+    tippy(this.el);
+    displayModeListeners.add(this.sync);
+    connection.then(this.sync, () => {});
+  },
+  destroyed() {
+    displayModeListeners.delete(this.sync);
+    this.el._tippy?.destroy();
+  },
+};
+
+const displayModeListeners = new Set();
+const syncDisplayMode = () => displayModeListeners.forEach(sync => sync());
+app.onhostcontextchanged = syncDisplayMode;
+
 function mount(result) {
   const data = result?._meta?.["firmowid/app"];
   if (lifetime.signal.aborted) return;
@@ -111,7 +143,7 @@ function mount(result) {
   root.innerHTML = data.html;
   if (!liveSocket) {
     liveSocket = new LiveSocket(data.socket_url, Socket, {
-      hooks: { ...UIHooks, McpContext, McpKsefDownload, LiveToast: createLiveToastHook() },
+      hooks: { ...UIHooks, Tippy, McpContext, McpKsefDownload, McpFullscreen, LiveToast: createLiveToastHook() },
     });
   }
   report();
@@ -150,4 +182,4 @@ app.onteardown = async () => {
   return {};
 };
 const connection = app.connect();
-connection.catch(() => report("failed"));
+connection.then(syncDisplayMode, () => report("failed"));

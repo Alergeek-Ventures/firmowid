@@ -33,7 +33,16 @@ defmodule FirmowidMcp.Router do
 
   defp resolve_resource_request(conn) do
     body = resolve_resource_request_uri(conn.body_params)
-    %{conn | body_params: body, params: Map.merge(conn.params, body)}
+    conn = %{conn | body_params: body, params: Map.merge(conn.params, body)}
+
+    # The transport requires the Mcp-Name header to match the body URI, so resolve both.
+    case {get_req_header(conn, "mcp-name"), body} do
+      {[_name], %{"method" => "resources/read", "params" => %{"uri" => uri}}} ->
+        put_req_header(conn, "mcp-name", uri)
+
+      _other ->
+        conn
+    end
   end
 
   defp resolve_resource_request_uri(%{"_json" => requests} = body) when is_list(requests) do

@@ -27,7 +27,7 @@ defmodule FirmowidMcp.Runtime do
           <%= Phoenix.HTML.raw(@css) %>
           body, button, input, select, textarea { font-family: "Lexend", ui-sans-serif, system-ui, sans-serif !important; }
           #mcp-root, #mcp-status { inline-size: min(100%, 34rem); margin-inline: auto; }
-          #mcp-root:has(#mcp-invoice-issuance) { inline-size: min(100%, 64rem); }
+          #mcp-root:has(#mcp-invoice-issuance) { inline-size: min(100%, 72rem); }
         </style>
       </head>
       <body class="bg-lightGreyBg text-grey-900">
