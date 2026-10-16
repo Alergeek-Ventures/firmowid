@@ -121,7 +121,7 @@ defmodule Firmowid.Ash.Blobs.Utils.ProcessCostInvoiceBlob do
       |> maybe_put_inbound_email_id(inbound_email_id)
 
     case Invoicing.create_cost_invoice_with_ksef_dedup(attrs) do
-      {:ok, _job} -> :ok
+      {:ok, _cost_invoice} -> :ok
       {:error, {:duplicate_ksef_invoice, _id} = dup} -> {:error, dup}
       {:error, reason} -> {:error, reason}
     end

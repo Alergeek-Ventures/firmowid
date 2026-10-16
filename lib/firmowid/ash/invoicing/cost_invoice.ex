@@ -48,11 +48,14 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
   alias Firmowid.Ash.Checks.AtLeastRole
   alias Firmowid.Ash.Checks.IsSystemActor
   alias Firmowid.Ash.Checks.SystemActorRole
+  alias Firmowid.Ash.Finances
   alias Firmowid.Ash.Invoicing.Changes.ComputeCostInvoiceDescription
   alias Firmowid.Ash.Invoicing.Changes.ComputeCostInvoiceSellerDisplayName
   alias Firmowid.Ash.Invoicing.Changes.EnqueueMissingCostInvoiceDescriptionRefresh
   alias Firmowid.Ash.Invoicing.Changes.RequireTransactionIds
   alias Firmowid.Ash.Invoicing.CostInvoiceTransaction
+  alias Firmowid.Ash.Invoicing.InvoiceMatching
+  alias Firmowid.Ash.Invoicing.Signals
   alias Firmowid.Ash.Resource
 
   require Resource
@@ -136,6 +139,8 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
     define :update_blob_id, args: [:blob_id], action: :update_blob_id
     define :refresh_seller_display_name, action: :refresh_seller_display_name
     define :refresh_description, action: :refresh_description
+    define :match_transactions, args: [:signal]
+    define :match_pending_invoices, args: [:signal]
   end
 
   actions do
@@ -374,6 +379,8 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
         validate_non_correction_amount_sign(changeset)
       end
 
+      emit Signals, :cost_invoice_created, fields: [cost_invoice_id: :id]
+
       validate string_length(:internal_note, max: 10_000) do
         where present(:internal_note)
       end
@@ -429,6 +436,8 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
       change fn changeset, _context ->
         validate_non_correction_amount_sign(changeset)
       end
+
+      emit Signals, :cost_invoice_created, fields: [cost_invoice_id: :id]
 
       validate string_length(:internal_note, max: 10_000) do
         where present(:internal_note)
@@ -503,11 +512,42 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
         Ash.Changeset.manage_relationship(changeset, :transactions, [], on_missing: :unrelate)
       end
     end
+
+    action :match_transactions do
+      description "Matches a newly created cost invoice to pending bank transactions."
+      argument :signal, Signals.CostInvoiceCreated, allow_nil?: false
+
+      run fn %{arguments: %{signal: signal}}, _context ->
+        InvoiceMatching.match_cost_invoice(
+          signal.cost_invoice_id,
+          InvoiceMatching.matcher_scope(signal.organization_id)
+        )
+      end
+    end
+
+    action :match_pending_invoices do
+      description "Matches pending cost invoices after a bank account sync."
+      argument :signal, Finances.Signals.BankAccountSynced, allow_nil?: false
+
+      run fn %{arguments: %{signal: signal}}, _context ->
+        signal.organization_id
+        |> InvoiceMatching.matcher_scope()
+        |> InvoiceMatching.match_cost_invoices()
+      end
+    end
   end
 
   policies do
     bypass actor_attribute_equals(:role, :admin) do
       authorize_if always()
+    end
+
+    policy action(:match_transactions) do
+      authorize_if signal_in(Signals, :cost_invoice_created)
+    end
+
+    policy action(:match_pending_invoices) do
+      authorize_if signal_in(Finances.Signals, :bank_account_synced)
     end
 
     bypass AshObanInteraction do
@@ -694,6 +734,19 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
     has_one :ksef_invoice_digest_item, Firmowid.Ash.Invoicing.KsefInvoiceDigestItem do
       source_attribute :id
       destination_attribute :cost_invoice_id
+    end
+  end
+
+  signals_in do
+    from Signals do
+      on :cost_invoice_created, :match_transactions, delivery: {AshOban.Signals, queue: :invoicing}
+    end
+
+    from Finances.Signals do
+      on :bank_account_synced, :match_pending_invoices,
+        delivery:
+          {AshOban.Signals,
+           queue: :invoicing, unique: [keys: [:organization_id], states: [:available, :scheduled, :retryable]]}
     end
   end
 

@@ -24,7 +24,6 @@ defmodule Firmowid.Ash.Finances.Changes.SyncTransactions do
   alias Firmowid.Ash.Finances.Requisition
   alias Firmowid.Ash.Finances.Transaction
   alias Firmowid.Ash.Finances.TransactionDirection
-  alias Firmowid.Ash.Invoicing.Workers.MatchingWorker
   alias Firmowid.Ash.Scope
   alias Firmowid.Ash.SystemActor
   alias Firmowid.ErrorKind
@@ -182,7 +181,7 @@ defmodule Firmowid.Ash.Finances.Changes.SyncTransactions do
     case result do
       %{status: :success} ->
         Logger.debug("Synced transactions for bank account #{bank_account.id}")
-        enqueue_invoice_matching(bank_account)
+        :ok
 
       %{status: :partial_success, errors: errors} ->
         Logger.warning(
@@ -191,7 +190,7 @@ defmodule Firmowid.Ash.Finances.Changes.SyncTransactions do
         )
 
         report_upsert_errors(errors, bank_account)
-        enqueue_invoice_matching(bank_account)
+        :ok
 
       %{status: :error, errors: errors} ->
         Logger.error(
@@ -201,26 +200,6 @@ defmodule Firmowid.Ash.Finances.Changes.SyncTransactions do
 
         report_upsert_errors(errors, bank_account)
         {:error, :upsert_failed}
-    end
-  end
-
-  # New transactions may settle invoices that are waiting for a payment, so match
-  # right away instead of waiting for the next scheduled matching run. A failed
-  # enqueue must not fail the sync; the cron run picks the invoices up later.
-  defp enqueue_invoice_matching(bank_account) do
-    case bank_account.organization_id
-         |> MatchingWorker.organization_job()
-         |> Firmowid.Oban.insert(skip_organization_id: true) do
-      {:ok, _job} ->
-        :ok
-
-      {:error, reason} ->
-        Logger.warning(
-          "Could not enqueue invoice matching after sync for bank account #{bank_account.id}: " <>
-            "error_kind=#{ErrorKind.classify(reason)}"
-        )
-
-        :ok
     end
   end
 

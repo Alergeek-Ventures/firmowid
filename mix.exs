@@ -10,7 +10,7 @@ defmodule Firmowid.MixProject do
       start_permanent: Mix.env() == :prod,
       aliases: aliases(),
       deps: deps(),
-      compilers: [:phoenix_live_view] ++ Mix.compilers(),
+      compilers: [:ash_signals, :phoenix_live_view] ++ Mix.compilers(),
       listeners: [Phoenix.CodeReloader],
       test_paths: ["lib"],
       test_pattern: "*_test.exs",
