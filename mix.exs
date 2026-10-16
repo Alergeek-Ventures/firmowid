@@ -75,10 +75,10 @@ defmodule Firmowid.MixProject do
       # Pin the native MCP UI renderer extension until it is available upstream.
       {:ash_ai, github: "Alergeek-Ventures/ash_ai", ref: "ca65f012c0ef054e2ef9a7001113ad4c4f18f913"},
       {:sourceror, "~> 1.8"},
-      {:ash, "~> 3.34.6"},
+      {:ash, "~> 3.36"},
       {:ash_postgres, "~> 2.14.1"},
       {:ash_phoenix, "~> 2.3"},
-      {:ash_oban, "~> 0.9.0"},
+      {:ash_oban, "~> 0.10.1"},
       {:ash_jido, "== 1.0.1"},
       {:ash_authentication, "~> 5.0.0-rc.14"},
       {:assent, "~> 0.3.0"},
