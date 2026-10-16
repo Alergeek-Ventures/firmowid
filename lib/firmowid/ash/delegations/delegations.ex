@@ -27,6 +27,8 @@ defmodule Firmowid.Ash.Delegations do
 
       define :complete_delegation, action: :complete, get_by: [:id]
       define :detect_dates, action: :detect_dates
+      define :notify_admins_about_delegation, action: :notify_admins, args: [:signal]
+      define :notify_employee_about_delegation, action: :notify_employee, args: [:signal]
     end
 
     resource DelegationExpense do

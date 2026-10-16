@@ -1652,7 +1652,7 @@ msgstr ""
 msgid "Cancel"
 msgstr ""
 
-#: lib/firmowid/ash/timetracker/workers/hours_record_change_email_worker.ex:43
+#: lib/firmowid/ash/timetracker/actions/notify_admins_about_hours_record_change.ex:38
 #: lib/firmowid_web/hours_record/components/change_request.ex:99
 #: lib/firmowid_web/hours_record/views/index.html.heex:147
 #, elixir-autogen, elixir-format
@@ -1679,7 +1679,7 @@ msgstr ""
 msgid "Continue to signing"
 msgstr ""
 
-#: lib/firmowid/ash/timetracker/workers/hours_record_change_email_worker.ex:42
+#: lib/firmowid/ash/timetracker/actions/notify_admins_about_hours_record_change.ex:37
 #: lib/firmowid_web/hours_record/components/change_request.ex:98
 #: lib/firmowid_web/hours_record/views/index.html.heex:146
 #, elixir-autogen, elixir-format
@@ -1696,7 +1696,7 @@ msgstr ""
 msgid "Go back and check"
 msgstr ""
 
-#: lib/firmowid/ash/timetracker/workers/hours_record_change_email_worker.ex:65
+#: lib/firmowid/ash/timetracker/actions/notify_admins_about_hours_record_change.ex:60
 #, elixir-autogen, elixir-format
 msgid "Hours record change request"
 msgstr ""
@@ -1757,7 +1757,7 @@ msgstr ""
 msgid "Document submitted on %{date}"
 msgstr ""
 
-#: lib/firmowid/ash/timetracker/workers/hours_record_change_email_worker.ex:47
+#: lib/firmowid/ash/timetracker/actions/notify_admins_about_hours_record_change.ex:42
 #, elixir-autogen, elixir-format
 msgid "Employee: %{employee}\nPeriod: %{month}/%{year}\nRequest: %{kind}\nReason: %{reason}\n\nReview this request in Firmowid: %{url}\nThis email is a notification only. Accept or reject the request in the application."
 msgstr ""

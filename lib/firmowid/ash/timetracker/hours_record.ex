@@ -14,6 +14,8 @@ defmodule Firmowid.Ash.Timetracker.HoursRecord do
   alias Firmowid.Ash.Blobs
   alias Firmowid.Ash.Core.User
   alias Firmowid.Ash.Resource
+  alias Firmowid.Ash.Timetracker.Actions.NotifyAdminsAboutHoursRecordChange
+  alias Firmowid.Ash.Timetracker.Signals
   alias Firmowid.Ash.Timetracker.Validations.PendingHoursRecordChange
 
   require Resource
@@ -32,6 +34,7 @@ defmodule Firmowid.Ash.Timetracker.HoursRecord do
     define :request_change
     define :accept_change_request
     define :reject_change_request
+    define :notify_admins, args: [:signal]
   end
 
   actions do
@@ -104,15 +107,7 @@ defmodule Firmowid.Ash.Timetracker.HoursRecord do
       change set_attribute(:change_requested_at, &DateTime.utc_now/0)
       validate changing(:change_requested_at, from: nil)
 
-      change after_action(fn _changeset, record, _context ->
-               with {:ok, _job} <-
-                      Firmowid.Ash.Timetracker.Workers.HoursRecordChangeEmailWorker.enqueue(
-                        record.id,
-                        record.organization_id
-                      ) do
-                 {:ok, record}
-               end
-             end)
+      emit Signals, :hours_record_change_requested, fields: [hours_record_id: :id]
     end
 
     update :accept_change_request do
@@ -183,6 +178,12 @@ defmodule Firmowid.Ash.Timetracker.HoursRecord do
         end
       end
     end
+
+    action :notify_admins do
+      description "Emails organization admins about an hours record change request."
+      argument :signal, Signals.HoursRecordChangeRequested, allow_nil?: false
+      run NotifyAdminsAboutHoursRecordChange
+    end
   end
 
   policies do
@@ -208,6 +209,10 @@ defmodule Firmowid.Ash.Timetracker.HoursRecord do
 
     policy action([:accept_change_request, :reject_change_request]) do
       authorize_if actor_attribute_equals(:role, :admin)
+    end
+
+    policy action(:notify_admins) do
+      authorize_if signal_in(Signals, :hours_record_change_requested)
     end
 
     # :invoicing and :accountant have no access to hours records (personal payroll data)
@@ -286,6 +291,12 @@ defmodule Firmowid.Ash.Timetracker.HoursRecord do
 
     belongs_to :organization, Firmowid.Ash.Core.Organization do
       allow_nil? false
+    end
+  end
+
+  signals_in do
+    from Signals do
+      on :hours_record_change_requested, :notify_admins, delivery: {AshOban.Signals, queue: :default, max_attempts: 3}
     end
   end
 

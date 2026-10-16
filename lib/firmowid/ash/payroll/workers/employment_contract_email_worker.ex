@@ -1,17 +1,14 @@
 defmodule Firmowid.Ash.Payroll.Workers.EmploymentContractEmailWorker do
   @moduledoc """
-  Employment contract notification emails.
-
-  - Employee: enqueued on contract creation when status is `pending_signature`,
-    optionally scheduled for 09:00 Europe/Warsaw on `signed_at`.
-  - Admins: enqueued when an employee submits a signed contract via `:submit_signed`.
+  Emails the employee about a contract waiting for their signature. Enqueued on
+  contract creation when status is `pending_signature`, optionally scheduled for
+  09:00 Europe/Warsaw on `signed_at`.
   """
 
   use Oban.Worker,
     queue: :default,
     max_attempts: 3
 
-  alias Firmowid.Ash.Core
   alias Firmowid.Ash.Payroll
   alias Firmowid.Ash.Payroll.EmploymentContractEmails
   alias Firmowid.Ash.Scope
@@ -35,48 +32,7 @@ defmodule Firmowid.Ash.Payroll.Workers.EmploymentContractEmailWorker do
     Firmowid.Oban.insert(changeset, organization_id: organization_id)
   end
 
-  @doc "Enqueues admin notification email after an employee submits a signed contract."
-  @spec enqueue_admin_notification(Ash.UUID.t(), Ash.UUID.t()) ::
-          {:ok, Oban.Job.t()} | {:error, term()}
-  def enqueue_admin_notification(contract_id, organization_id) do
-    %{
-      "contract_id" => contract_id,
-      "organization_id" => organization_id,
-      "kind" => "admin_notification"
-    }
-    |> new()
-    |> Firmowid.Oban.insert(organization_id: organization_id)
-  end
-
   @impl Oban.Worker
-  def perform(%Oban.Job{args: %{"kind" => "admin_notification"} = args} = job) do
-    organization_id = args["organization_id"]
-    contract_id = args["contract_id"]
-    scope = scope(organization_id)
-
-    Logger.info(
-      "Sending employment contract admin email contract_id=#{contract_id} attempt=#{job.attempt}/#{job.max_attempts}"
-    )
-
-    case Payroll.get_employment_contract(contract_id,
-           scope: scope,
-           load: [:user],
-           not_found_error?: false
-         ) do
-      {:ok, nil} ->
-        Logger.warning("Employment contract not found contract_id=#{contract_id}")
-        :ok
-
-      {:ok, contract} ->
-        notify_admins(contract, scope)
-
-      {:error, reason} ->
-        Logger.error("Failed to load employment contract contract_id=#{contract_id} reason=#{inspect(reason)}")
-
-        {:error, reason}
-    end
-  end
-
   def perform(%Oban.Job{args: args} = job) do
     organization_id = args["organization_id"]
     contract_id = args["contract_id"]
@@ -103,32 +59,6 @@ defmodule Firmowid.Ash.Payroll.Workers.EmploymentContractEmailWorker do
 
         {:error, reason}
     end
-  end
-
-  defp notify_admins(contract, scope) do
-    admins = list_admins(contract, scope)
-
-    if Enum.empty?(admins) do
-      Logger.info("No admin recipients for employment contract contract_id=#{contract.id}")
-      :ok
-    else
-      case contract.user do
-        nil ->
-          Logger.warning("Employment contract has no user contract_id=#{contract.id}")
-          :ok
-
-        user ->
-          EmploymentContractEmails.deliver_signed_submitted_to_admins(admins, contract, user)
-      end
-    end
-  end
-
-  defp list_admins(contract, scope) do
-    Core.list_users!(
-      %{status: :active, role: :admin},
-      query: [filter: [id: [not_eq: contract.user_id]]],
-      scope: scope
-    )
   end
 
   defp handle_pending_signature_contract(%{status: status} = contract, _scope) when status != :pending_signature do
