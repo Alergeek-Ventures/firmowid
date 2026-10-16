@@ -338,7 +338,7 @@ defmodule Firmowid.Seeds.MonthM0 do
   # — S08 deterministic assistant scenario (current month invoice) —
 
   defp seed_s08_current_month_invoice(bytecraft, prefix) do
-    Helpers.get_or_create_sales_invoice("AUR/#{prefix}", bytecraft.id, %{
+    Helpers.get_or_create_sales_invoice("BC/06/#{prefix}", bytecraft.id, %{
       "invoice_type" => "poland",
       "issue_date" => Helpers.date_this_month(14),
       "sale_date" => Helpers.date_this_month(14),

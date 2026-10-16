@@ -34,7 +34,7 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
     * `:create_and_issue` — save and issue a new invoice in one transaction
     * `:preview_invoice` / `:preview_correction` — read-only validated document previews
     * `:cancel` — cancel a KSeF-submitted invoice via zero-quantity correction
-    * `:get_next_number` — get next available invoice number for date/series
+    * `:get_next_number` — get next available invoice number for date/format/series
     * `:validate_number` — validate an invoice number (format, duplicate, gap)
     * `:list_series` — list distinct invoice number series
 
@@ -871,33 +871,32 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
     end
 
     action :get_next_number, :string do
-      description "Return the next available invoice number for a date and optional series."
+      description "Return the next available invoice number for a date, numbering format and optional series."
       argument :date, :date, allow_nil?: false
       argument :series, :string
       argument :omit_invoice_id, :uuid
 
+      argument :format, :atom,
+        allow_nil?: false,
+        default: :monthly,
+        constraints: [one_of: [:monthly, :yearly]]
+
       run fn input, context ->
-        date = input.arguments.date
-        year = date.year
-        month = date.month
+        %{date: date, format: format} = input.arguments
         series = input.arguments[:series]
         omit_invoice_id = input.arguments[:omit_invoice_id]
         opts = Ash.Context.to_opts(context)
 
-        existing_numbers =
-          month
-          |> read_invoice_numbers_matching(year, series, omit_invoice_id, opts)
+        starting_num =
+          format
+          |> read_invoice_numbers_matching(date, series, omit_invoice_id, opts)
           |> Enum.map(&parse_invoice_number/1)
           |> Enum.filter(&match?({:ok, _}, &1))
           |> Enum.map(fn {:ok, %{num: num}} -> num end)
+          |> Enum.max(fn -> 0 end)
+          |> Kernel.+(1)
 
-        starting_num =
-          case Enum.max(existing_numbers, fn -> 0 end) do
-            0 -> 1
-            max_num -> max_num + 1
-          end
-
-        {:ok, find_free_invoice_number(starting_num, month, year, series, omit_invoice_id, opts)}
+        {:ok, find_free_invoice_number(starting_num, format, date, series, omit_invoice_id, opts)}
       end
     end
 
@@ -918,8 +917,8 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
           |> InvoicingDomain.get_next_numbers_for_series(opts,
             omit_invoice_id: omit_invoice_id
           )
-          |> Map.values()
-          |> Enum.sort_by(fn num -> if String.contains?(num, "/A"), do: 1, else: 0 end)
+          |> Enum.sort()
+          |> Enum.map(fn {_format_and_series, number} -> number end)
 
         parsed = parse_invoice_number(invoice_number)
 
@@ -943,9 +942,15 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
 
         warnings =
           case parsed do
-            {:ok, %{num: current_num, series: parsed_series}} ->
+            {:ok, %{num: current_num, format: parsed_format, series: parsed_series}} ->
               {:ok, expected} =
-                __MODULE__.get_next_number(issue_date, parsed_series, omit_invoice_id, opts)
+                __MODULE__.get_next_number(
+                  issue_date,
+                  parsed_series,
+                  omit_invoice_id,
+                  %{format: parsed_format},
+                  opts
+                )
 
               case parse_invoice_number(expected) do
                 {:ok, %{num: expected_num}} when current_num > expected_num ->
@@ -1420,32 +1425,59 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
 
   # Invoice numbering helpers -------------------------------------------------
 
-  @invoice_number_regex ~r/^(\d+)\/(\d+)\/(\d+)(?:\/(.+))?$/
+  @monthly_number_regex ~r/^(\d+)\/(\d+)\/(\d+)(?:\/(.+))?$/
+  @yearly_number_regex ~r/^(?:([A-Z]+)\/)?(\d+)\/(\d{4})$/
 
   @doc """
-  Parses an invoice number in the `NN/MM/YYYY[/SERIES]` format.
+  Parses an invoice number in one of the supported numbering formats:
 
-  Returns parsed numeric parts and optional series as a map, or `:error` for
-  invalid input.
+    * monthly `NN/MM/YYYY[/SERIES]`, e.g. `01/10/2026` or `01/10/2026/A`,
+    * yearly `[PREFIX/]N/YYYY`, e.g. `1/2026` or `BC/1/2026`, where `PREFIX`
+      is uppercase ASCII letters (usually the organization initials).
+
+  Returns the numbering `format` (`:monthly` or `:yearly`), counter, month
+  (`nil` for yearly numbers), year and optional series (the suffix of a
+  monthly number or the prefix of a yearly one), or `:error` for other input.
   """
+  @spec parse_invoice_number(term()) ::
+          {:ok,
+           %{
+             format: :monthly | :yearly,
+             num: pos_integer(),
+             month: pos_integer() | nil,
+             year: pos_integer(),
+             series: String.t() | nil
+           }}
+          | :error
   def parse_invoice_number(invoice_number) when is_binary(invoice_number) do
-    case Regex.run(@invoice_number_regex, invoice_number) do
-      [_, num, month, year] ->
+    case Regex.run(@monthly_number_regex, invoice_number) do
+      [_, num, month, year | series] ->
         {:ok,
          %{
+           format: :monthly,
            num: String.to_integer(num),
            month: String.to_integer(month),
            year: String.to_integer(year),
-           series: nil
+           series: List.first(series)
          }}
 
-      [_, num, month, year, series] ->
+      nil ->
+        parse_yearly_invoice_number(invoice_number)
+    end
+  end
+
+  def parse_invoice_number(_), do: :error
+
+  defp parse_yearly_invoice_number(invoice_number) do
+    case Regex.run(@yearly_number_regex, invoice_number) do
+      [_, prefix, num, year] ->
         {:ok,
          %{
+           format: :yearly,
            num: String.to_integer(num),
-           month: String.to_integer(month),
+           month: nil,
            year: String.to_integer(year),
-           series: series
+           series: if(prefix != "", do: prefix)
          }}
 
       nil ->
@@ -1453,35 +1485,74 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
     end
   end
 
-  def parse_invoice_number(_), do: :error
+  @doc """
+  Formats an invoice number for a counter, numbering format, date and optional
+  series: monthly as `NN/MM/YYYY[/SERIES]`, yearly as `[SERIES/]N/YYYY`.
+  """
+  @spec format_invoice_number(pos_integer(), :monthly | :yearly, Date.t(), String.t() | nil) ::
+          String.t()
+  def format_invoice_number(num, :monthly, date, series) do
+    Enum.join(
+      [pad_two(num), pad_two(date.month), date.year] ++ List.wrap(series),
+      "/"
+    )
+  end
+
+  def format_invoice_number(num, :yearly, date, series) do
+    Enum.join(List.wrap(series) ++ [num, date.year], "/")
+  end
+
+  defp pad_two(number), do: String.pad_leading("#{number}", 2, "0")
+
+  @legal_form_words ~w(
+    SP SPOLKA Z OO O OGRANICZONA ODPOWIEDZIALNOSCIA SA AKCYJNA SK SKA SPK SJ JAWNA
+    KOMANDYTOWA KOMANDYTOWO PARTNERSKA SPP SC CYWILNA
+  )
 
   @doc """
-  Formats invoice number parts as `NN/MM/YYYY` or `NN/MM/YYYY/SERIES`.
+  Derives uppercase ASCII initials from an organization name, used as the
+  prefix of the `INITIALS/N/YYYY` yearly numbering.
+
+  The name is split into words on whitespace and hyphens. Words that are a
+  Polish legal form (`sp.`, `z`, `o.o.`, `spółka`, `ograniczoną`,
+  `odpowiedzialnością`, `S.A.`, `sp.k.`, `sp.j.`, `s.c.`, …, compared without
+  dots, diacritics and case) are skipped. The first letter of every remaining
+  word is transliterated to ASCII and upcased; words starting with a
+  non-letter contribute nothing. For example
+  `"Bytecraft Collective spółka z ograniczoną odpowiedzialnością"` and
+  `"Bytecraft Collective sp. z o.o."` both give `"BC"`. Returns `nil` when no
+  letter remains.
   """
-  def format_invoice_number(num, month, year, nil) do
-    "#{String.pad_leading("#{num}", 2, "0")}/#{String.pad_leading("#{month}", 2, "0")}/#{year}"
+  @spec organization_initials(String.t()) :: String.t() | nil
+  def organization_initials(name) do
+    name
+    |> AnyAscii.transliterate()
+    |> IO.iodata_to_binary()
+    |> String.upcase()
+    |> String.split(~r/[\s\-]+/, trim: true)
+    |> Enum.reject(&(String.replace(&1, ".", "") in @legal_form_words))
+    |> Enum.map_join(&String.slice(&1, 0, 1))
+    |> String.replace(~r/[^A-Z]/, "")
+    |> case do
+      "" -> nil
+      initials -> initials
+    end
   end
 
-  def format_invoice_number(num, month, year, series) do
-    "#{String.pad_leading("#{num}", 2, "0")}/#{String.pad_leading("#{month}", 2, "0")}/#{year}/#{series}"
-  end
+  defp build_series_pattern(:monthly, date, nil), do: "^\\d+/#{pad_two(date.month)}/#{date.year}$"
 
-  defp build_series_pattern(month, year, nil) do
-    month_str = String.pad_leading("#{month}", 2, "0")
-    "^\\d+/#{month_str}/#{year}$"
-  end
+  defp build_series_pattern(:monthly, date, series),
+    do: "^\\d+/#{pad_two(date.month)}/#{date.year}/#{Regex.escape(series)}$"
 
-  defp build_series_pattern(month, year, series) do
-    month_str = String.pad_leading("#{month}", 2, "0")
-    escaped_series = Regex.escape(series)
-    "^\\d+/#{month_str}/#{year}/#{escaped_series}$"
-  end
+  defp build_series_pattern(:yearly, date, nil), do: "^\\d+/#{date.year}$"
 
-  defp find_free_invoice_number(num, month, year, series, omit_invoice_id, opts) do
-    invoice_number = format_invoice_number(num, month, year, series)
+  defp build_series_pattern(:yearly, date, series), do: "^#{Regex.escape(series)}/\\d+/#{date.year}$"
+
+  defp find_free_invoice_number(num, format, date, series, omit_invoice_id, opts) do
+    invoice_number = format_invoice_number(num, format, date, series)
 
     if invoice_number_exists?(invoice_number, omit_invoice_id, opts) do
-      find_free_invoice_number(num + 1, month, year, series, omit_invoice_id, opts)
+      find_free_invoice_number(num + 1, format, date, series, omit_invoice_id, opts)
     else
       invoice_number
     end
@@ -1500,11 +1571,11 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
     Ash.exists?(query, opts)
   end
 
-  # Reads all invoice numbers matching a series pattern (month/year/series).
+  # Reads all invoice numbers of one numbering format and series in the date's period.
   # Uses fragment("? ~ ?", ...) for Postgres regex — Ash has no native regex operator.
   # Same escape hatch pattern as ParadeDB `&&&`.
-  defp read_invoice_numbers_matching(month, year, series, omit_invoice_id, opts) do
-    series_pattern = build_series_pattern(month, year, series)
+  defp read_invoice_numbers_matching(format, date, series, omit_invoice_id, opts) do
+    series_pattern = build_series_pattern(format, date, series)
 
     query =
       __MODULE__

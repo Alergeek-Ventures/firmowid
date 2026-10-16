@@ -8,6 +8,7 @@ defmodule Firmowid.Ash.Invoicing do
   import Ash.Expr, only: [expr: 1]
 
   alias Firmowid.Ash.Blobs
+  alias Firmowid.Ash.Core
   alias Firmowid.Ash.Currencies.NbpApiClient
   alias Firmowid.Ash.Finances
   alias Firmowid.Ash.Finances.Transaction
@@ -806,8 +807,6 @@ defmodule Firmowid.Ash.Invoicing do
   def get_logo_url(organization_id, opts \\ [])
 
   def get_logo_url(organization_id, opts) when is_binary(organization_id) do
-    alias Firmowid.Ash.Core
-
     ash_opts = Keyword.take(opts, [:scope])
 
     organization =
@@ -860,28 +859,61 @@ defmodule Firmowid.Ash.Invoicing do
   end
 
   @doc """
-  Returns a map of series => next_invoice_number for all known series.
-  Fans out multiple `:get_next_number` action calls.
+  Returns a map of `{format, series}` => next invoice number for every
+  numbering sequence worth suggesting on `date`.
+
+  Always includes the monthly `NN/MM/YYYY` and `NN/MM/YYYY/A`, the yearly
+  `N/YYYY` and, when the organization name yields initials, the yearly
+  `INITIALS/N/YYYY` (see `SalesInvoice.organization_initials/1`), plus every
+  monthly series already used by the organization's invoices (such as `FK`).
+  Yearly prefixes other than the current initials are not suggested, because a
+  number like `ABC/10/2026` may equally be a monthly one. Fans out multiple
+  `:get_next_number` action calls.
   """
   @spec get_next_numbers_for_series(Date.t(), keyword(), keyword()) :: %{
-          (String.t() | nil) => String.t()
+          {:monthly | :yearly, String.t() | nil} => String.t()
         }
   def get_next_numbers_for_series(date, opts, extra_opts \\ []) do
-    existing_series =
+    existing_monthly_sequences =
       opts
       |> SalesInvoice.read_all_invoice_numbers()
       |> Enum.map(&SalesInvoice.parse_invoice_number/1)
-      |> Enum.filter(&match?({:ok, _}, &1))
-      |> Enum.map(fn {:ok, %{series: s}} -> s end)
-      |> Enum.uniq()
+      |> Enum.flat_map(fn
+        {:ok, %{format: :monthly, series: series}} -> [{:monthly, series}]
+        _yearly_or_unparsed -> []
+      end)
 
-    all_series = Enum.uniq([nil, "A"] ++ existing_series)
+    initials_sequences =
+      case opts |> organization_name() |> SalesInvoice.organization_initials() do
+        nil -> []
+        initials -> [{:yearly, initials}]
+      end
 
-    Map.new(all_series, fn series ->
+    ([{:monthly, nil}, {:monthly, "A"}, {:yearly, nil}] ++
+       initials_sequences ++ existing_monthly_sequences)
+    |> Enum.uniq()
+    |> Map.new(fn {format, series} = sequence ->
       {:ok, number} =
-        SalesInvoice.get_next_number(date, series, extra_opts[:omit_invoice_id], opts)
+        SalesInvoice.get_next_number(
+          date,
+          series,
+          extra_opts[:omit_invoice_id],
+          %{format: format},
+          opts
+        )
 
-      {series, number}
+      {sequence, number}
     end)
+  end
+
+  # Callers pass either `scope:` or the `actor:`/`tenant:` options of an action context.
+  defp organization_name(opts) do
+    tenant =
+      case Keyword.fetch(opts, :scope) do
+        {:ok, scope} -> Ash.Scope.to_opts(scope)[:tenant]
+        :error -> Keyword.fetch!(opts, :tenant)
+      end
+
+    Core.get_organization!(tenant, opts).name
   end
 end
