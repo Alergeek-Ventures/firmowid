@@ -17,6 +17,8 @@ import { UIHooks } from "../ui/hooks";
 import { CookieConsent } from "./cookie_consent";
 import { DownloadPdf } from "./download_pdf";
 import { LandingNavbarTheme } from "./landing_navbar_theme";
+import { LandingHero } from "./landing_hero";
+import { LandingPricing } from "./landing_pricing";
 import { NumberPopIn } from "./number_pop_in";
 import { ImageLoadReveal } from "./image_load_reveal";
 import { KsefSkippedInvoicesBanner } from "./ksef_skipped_invoices_banner";
@@ -42,6 +44,8 @@ export const Hooks = {
   CookieConsent,
   DownloadPdf,
   LandingNavbarTheme,
+  LandingHero,
+  LandingPricing,
   NumberPopIn,
   ImageLoadReveal,
   KsefSkippedInvoicesBanner

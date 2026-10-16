@@ -1,144 +1,117 @@
 defmodule FirmowidWeb.Landing.Components.Hero do
   @moduledoc """
-  Hero and top-metrics components for the redesigned landing page.
+  Hero, animated compass and development metrics for the public website.
   """
 
   use FirmowidWeb, :html
 
-  import FirmowidUI.Components.Link
-  import Phoenix.Component, except: [link: 1]
+  import FirmowidWeb.Landing.Components.Primitives, only: [landing_button: 1]
 
   alias Phoenix.LiveView.Rendered
 
-  @benefits [
-    gettext_noop("Start with the free plan. No card required."),
-    gettext_noop("KSeF synchronization"),
-    gettext_noop("Secure data storage"),
-    gettext_noop("Bank integrations")
-  ]
-
-  @desktop_metrics [
-    %{
-      label: gettext_noop("Developed by Alergeek Ventures for"),
-      value: gettext_noop("2 years"),
-      width: "257px"
-    },
-    %{label: gettext_noop("Supported banks and fintechs"), value: "29", width: "184px"},
-    %{label: gettext_noop("Average onboarding time:"), value: "15 min", width: "160px"}
-  ]
-
-  @mobile_metrics [
-    %{label: gettext_noop("Supported banks and fintechs"), value: "29"},
-    %{label: gettext_noop("Average onboarding time"), value: "15 min"},
-    %{label: gettext_noop("Developed by Alergeek Ventures"), value: gettext_noop("2 years")}
-  ]
-
   @doc """
-  Renders the landing-page hero.
+  Renders the hero and four aligned compass exports.
   """
   @spec hero_section(map()) :: Rendered.t()
   def hero_section(assigns) do
+    [badge_before, badge_after] =
+      "Firmowid is %{open_source}"
+      |> gettext(open_source: "__OPEN_SOURCE__")
+      |> String.split("__OPEN_SOURCE__", parts: 2)
+
     assigns =
-      assign(
-        assigns,
-        :benefits,
-        Enum.map(@benefits, &Gettext.gettext(Firmowid.Gettext, &1))
-      )
+      assigns
+      |> assign(:states, for(state <- 1..4, do: "character-#{state}.svg"))
+      |> assign(badge_before: badge_before, badge_after: badge_after)
 
     ~H"""
-    <section class="px-4 py-8 sm:px-6 lg:min-h-[calc(100vh-96px)] lg:px-10 lg:py-0">
-      <div class="mx-auto max-w-[1416px]">
-        <div class="flex items-end justify-between gap-8 px-0 lg:h-[730px] lg:px-[140px] lg:py-20">
-          <div class="relative w-full lg:max-w-[543px]">
-            <div class="inline-flex items-center gap-2 rounded-full border-4 border-[#e3b79b] px-3 py-1.5 text-[13px] font-medium text-[#0f0f0f]">
-              <span aria-hidden="true" class="text-lg leading-none">◉</span>
-              <span>
-                {pgettext("landing open-source badge", "Firmowid is")}
-                <span class="text-[#8b3f13]">
-                  {pgettext("landing open-source badge", "open source")}
-                </span>
+    <section class="landing-hero">
+      <div class="landing-container landing-hero__layout">
+        <div class="min-w-0">
+          <a
+            href="https://github.com/Alergeek-Ventures/firmowid"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="landing-hero__badge"
+          >
+            <img src={~p"/images/github-mark.svg"} alt="" width="24" height="24" />
+            <span>
+              {@badge_before}
+              <span class="landing-hero__badge-accent">
+                {pgettext("landing open-source badge", "open source")}
               </span>
-            </div>
-            <h1 class="relative text-[53px] leading-[0.98] font-bold tracking-[-0.04em] text-[#0f0f0f] sm:max-w-[620px] sm:text-[64px] lg:text-[72px] lg:leading-[1.02]">
-              {pgettext("landing hero headline", "KSeF invoices")} <br />
-              {pgettext("landing hero headline", "without limits.")}<br />
+              {@badge_after}
+            </span>
+          </a>
+
+          <h1 class="landing-hero__heading">
+            {pgettext("landing hero headline", "KSeF invoices")}<br />
+            {pgettext("landing hero headline", "without limits.")}<br />
+            <span class="landing-hero__price">
               {pgettext("landing hero headline", "For PLN 0.")}
-            </h1>
+            </span>
+          </h1>
 
-            <p class="mt-6 max-w-[500px] text-h5 leading-[1.4] text-[#4e4e4e] lg:mt-8 lg:text-lg">
-              {gettext(
-                "Everything in one place: invoices, banking, working hours, leave, and business trips."
-              )}
-            </p>
+          <p class="landing-hero__description">
+            {gettext(
+              "Everything in one place: invoices, banking, working hours, leave, and business trips."
+            )}
+          </p>
 
-            <div class="mt-8 flex flex-col gap-4 sm:max-w-[344px] lg:mt-8 lg:max-w-none lg:flex-row lg:flex-wrap lg:gap-[25px]">
-              <.hero_action_button
-                navigate={~p"/zarejestruj"}
-                variant={:filled}
-                analytics_cta="hero_register"
-              >
-                {gettext("Start for free")}
-              </.hero_action_button>
-              <.hero_action_button
-                navigate={~p"/zaloguj"}
-                variant={:outline}
-                analytics_cta="hero_login"
-              >
-                {gettext("Log in")}
-              </.hero_action_button>
-            </div>
-
-            <ul class="mt-8 grid gap-3 text-sm leading-[19.5px] text-[#4e4e4e] sm:grid-cols-2 sm:gap-x-4 sm:gap-y-2 lg:mt-10 lg:flex lg:flex-wrap lg:gap-x-4 lg:gap-y-2 lg:text-[13px]">
-              <li :for={benefit <- @benefits} class="flex items-center gap-1.5 whitespace-nowrap">
-                <span class="text-h5 leading-none font-bold text-[#475e45]">✓</span>
-                <span>{benefit}</span>
-              </li>
-            </ul>
+          <div class="landing-hero__actions">
+            <.landing_button navigate={~p"/zarejestruj"} data-landing-cta="hero_register">
+              {gettext("Start for free")}
+            </.landing_button>
+            <.landing_button
+              navigate={~p"/zaloguj"}
+              variant={:outline}
+              data-landing-cta="hero_login"
+            >
+              {gettext("Log in")}
+            </.landing_button>
           </div>
-          <div class="relative hidden h-[520px] flex-1 lg:block xl:h-[580px]">
-            <.hero_screenshot_card
-              id="hero-screenshot-timetracker"
-              src={~p"/images/landing_screenshots/timetracker.png"}
-              webp_srcset={
-                "#{~p"/images/landing_screenshots/timetracker-560.webp"} 560w, #{~p"/images/landing_screenshots/timetracker-1120.webp"} 1120w"
-              }
-              sizes="(min-width: 1280px) 560px, 500px"
-              alt={gettext("Firmowid screenshot - time tracking and a list of recent entries")}
-              width="1923"
-              height="963"
-              card_class="top-[3.75rem] left-10 z-10 w-[252px] -rotate-[11deg] xl:left-14 xl:w-[286px]"
-              image_class="h-full w-auto max-w-none origin-center scale-[1.24] -translate-x-[23%] group-hover:scale-100 group-hover:-translate-x-[6%]"
-            />
-            <.hero_screenshot_card
-              id="hero-screenshot-invoicing-list"
-              src={~p"/images/landing_screenshots/invoicing_1.png"}
-              webp_srcset={
-                "#{~p"/images/landing_screenshots/invoicing_1-420.webp"} 420w, #{~p"/images/landing_screenshots/invoicing_1-840.webp"} 840w"
-              }
-              sizes="(min-width: 1280px) 420px, 370px"
-              alt={gettext("Firmowid screenshot - unpaid invoices and transactions to match")}
-              width="1021"
-              height="834"
-              card_class="top-3 right-10 z-20 w-[278px] rotate-[9deg] xl:right-10 xl:w-[310px]"
-              image_class="h-full w-auto max-w-none origin-center scale-[1.12] -translate-x-[7%] group-hover:scale-100 group-hover:translate-x-0"
-            />
-            <.hero_screenshot_card
-              id="hero-screenshot-invoicing-editor"
-              src={~p"/images/landing_screenshots/invoicing_2.png"}
-              webp_srcset={
-                "#{~p"/images/landing_screenshots/invoicing_2-700.webp"} 700w, #{~p"/images/landing_screenshots/invoicing_2-1400.webp"} 1400w"
-              }
-              sizes="(min-width: 1280px) 700px, 620px"
-              alt={
-                gettext("Firmowid screenshot - invoice preview and editing with submission to KSeF")
-              }
-              width="1711"
-              height="948"
-              fetchpriority="high"
-              card_class="bottom-4 left-24 z-30 w-[350px] -rotate-[5deg] xl:left-28 xl:w-[395px]"
-              image_class="h-full w-auto max-w-none origin-center scale-[1.22] -translate-x-[8%] -translate-y-[1%] group-hover:scale-100 group-hover:translate-x-[2%]"
-            />
-          </div>
+
+          <ul class="landing-hero__benefits">
+            <li>
+              <span aria-hidden="true">✓</span>
+              {gettext("Start with the free plan. No card required.")}
+            </li>
+            <li>
+              <span aria-hidden="true">✓</span>
+              {gettext("KSeF synchronization")}
+            </li>
+            <li>
+              <span aria-hidden="true">✓</span>
+              {gettext("Secure data storage")}
+            </li>
+            <li>
+              <span aria-hidden="true">✓</span>
+              {gettext("Bank integrations")}
+            </li>
+          </ul>
+        </div>
+
+        <div
+          id="landing-compass"
+          phx-hook="LandingHero"
+          phx-update="ignore"
+          class="landing-compass"
+          role="img"
+          aria-label={
+            gettext("Firmowid connects invoices and KSeF, banking, time tracking, and your team.")
+          }
+        >
+          <img
+            :for={{state, index} <- Enum.with_index(@states, 0)}
+            src={~p"/images/landing/#{state}"}
+            alt=""
+            width="730"
+            height="670"
+            decoding="async"
+            fetchpriority={if index == 0, do: "high", else: "auto"}
+            data-state={index}
+            class={["landing-compass__state", index == 0 && "is-active"]}
+          />
         </div>
       </div>
     </section>
@@ -146,113 +119,40 @@ defmodule FirmowidWeb.Landing.Components.Hero do
   end
 
   @doc """
-  Renders the top metrics section below the hero.
+  Renders the development metrics in their desktop and mobile reading orders.
   """
   @spec top_metrics_section(map()) :: Rendered.t()
   def top_metrics_section(assigns) do
-    assigns =
-      assigns
-      |> assign(:desktop_metrics, @desktop_metrics)
-      |> assign(:mobile_metrics, @mobile_metrics)
+    [before_company, after_company] =
+      "Developed by %{company} for"
+      |> gettext(company: "Alergeek Ventures")
+      |> String.split("Alergeek Ventures", parts: 2)
+
+    assigns = assign(assigns, before_company: before_company, after_company: after_company)
 
     ~H"""
-    <section class="border-y border-[#e6d7ce] bg-orange-400 px-4 py-8 sm:px-6 lg:flex lg:h-24 lg:items-center lg:bg-grey-50 lg:px-10 lg:py-0">
-      <div class="mx-auto w-full max-w-[1416px] lg:px-[140px]">
-        <div class="grid gap-8 text-center lg:hidden">
-          <div :for={metric <- @mobile_metrics} class="flex flex-col items-center gap-2">
-            <p class="text-sm/4 font-normal text-grey-800">
-              {Gettext.gettext(Firmowid.Gettext, metric.label)}
-            </p>
-            <p class="text-[44px] leading-[1.08] font-bold text-[#0f0f0f]">
-              {Gettext.gettext(Firmowid.Gettext, metric.value)}
-            </p>
-          </div>
-        </div>
-
-        <div class="hidden h-8 w-full flex-wrap items-baseline justify-between gap-y-4 text-left lg:flex">
-          <div
-            :for={metric <- @desktop_metrics}
-            class="flex items-baseline gap-2"
-          >
-            <p
-              class="text-right text-[13px]/4 font-normal text-[#4e4e4e]"
-              style={"width: #{metric.width}"}
-            >
-              {Gettext.gettext(Firmowid.Gettext, metric.label)}
-            </p>
-            <p class="text-[22px] leading-[1.24] font-bold text-[#0f0f0f]">
-              {Gettext.gettext(Firmowid.Gettext, metric.value)}
-            </p>
-          </div>
-        </div>
+    <section class="landing-metrics">
+      <div class="landing-container landing-metrics__layout">
+        <p class="landing-metrics__development">
+          <span>
+            {@before_company}
+            <a href="https://alergeek.ventures" target="_blank" rel="noopener noreferrer">
+              Alergeek Ventures
+            </a>
+            {@after_company}
+          </span>
+          <strong>{gettext("2 years")}</strong>
+        </p>
+        <p>
+          <span>{gettext("Supported banks and fintechs")}</span>
+          <strong>29</strong>
+        </p>
+        <p>
+          <span>{gettext("Average onboarding time")}</span>
+          <strong>{gettext("%{minutes} min", minutes: 15)}</strong>
+        </p>
       </div>
     </section>
-    """
-  end
-
-  @doc false
-  attr :id, :string, required: true
-  attr :src, :string, required: true
-  attr :webp_srcset, :string, required: true
-  attr :sizes, :string, required: true
-  attr :alt, :string, required: true
-  attr :width, :string, required: true
-  attr :height, :string, required: true
-  attr :fetchpriority, :string, default: nil
-  attr :card_class, :string, required: true
-  attr :image_class, :string, required: true
-
-  defp hero_screenshot_card(assigns) do
-    ~H"""
-    <div class={[
-      "group absolute hidden aspect-square overflow-hidden rounded-[28px] border-4 border-orange-400 bg-[#f7f0eb] shadow-[0_20px_45px_rgba(87,54,35,0.16)] motion-safe:transition-transform motion-safe:duration-300 motion-safe:ease-[cubic-bezier(0.22,1,0.36,1)] motion-safe:hover:z-40 motion-safe:hover:-translate-y-7 motion-safe:hover:scale-[1.45] motion-safe:hover:rotate-0 motion-safe:hover:shadow-[0_46px_96px_rgba(87,54,35,0.3)] lg:block",
-      @card_class
-    ]}>
-      <picture>
-        <source type="image/webp" srcset={@webp_srcset} sizes={@sizes} />
-        <img
-          id={@id}
-          src={@src}
-          alt={@alt}
-          width={@width}
-          height={@height}
-          loading="eager"
-          decoding="async"
-          fetchpriority={@fetchpriority}
-          data-image-reveal
-          phx-hook="ImageLoadReveal"
-          class={[
-            "absolute top-0 left-0 motion-safe:transition-transform motion-safe:duration-300 motion-safe:ease-[cubic-bezier(0.22,1,0.36,1)]",
-            @image_class
-          ]}
-        />
-      </picture>
-    </div>
-    """
-  end
-
-  @doc false
-  attr :navigate, :string, required: true
-  attr :variant, :atom, values: [:filled, :outline], required: true
-  attr :analytics_cta, :string, values: ["hero_register", "hero_login"], required: true
-  slot :inner_block, required: true
-
-  defp hero_action_button(assigns) do
-    ~H"""
-    <.link
-      kind="unstyled"
-      navigate={@navigate}
-      data-landing-cta={@analytics_cta}
-      class={[
-        "relative inline-flex min-h-[56px] items-center justify-center overflow-hidden rounded-[4px] px-8 py-4 text-base font-medium transition-transform duration-150 hover:-translate-y-0.5",
-        @variant == :filled &&
-          "bg-[#0f0f0f] text-white shadow-[0_2px_0_rgba(15,15,15,0.18)] before:absolute before:inset-0 before:bg-[url('/images/button_hover.svg')] before:bg-size-[100%_100%] before:bg-no-repeat before:opacity-70 before:content-['']",
-        @variant == :outline &&
-          "text-grey-900 before:absolute before:inset-0 before:bg-[url('/images/button_login.svg')] before:bg-size-[100%_100%] before:bg-no-repeat before:content-[''] hover:bg-black/3"
-      ]}
-    >
-      <span class="relative z-10">{render_slot(@inner_block)}</span>
-    </.link>
     """
   end
 end

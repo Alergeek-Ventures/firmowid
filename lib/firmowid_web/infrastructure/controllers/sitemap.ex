@@ -6,7 +6,7 @@ defmodule FirmowidWeb.Infrastructure.Controllers.Sitemap do
 
   alias FirmowidWeb.Core.Endpoint
 
-  @public_paths ["/", "/polityka-prywatnosci", "/regulamin"]
+  @public_paths ["/", "/cennik", "/funkcje", "/faq", "/polityka-prywatnosci", "/regulamin"]
 
   @doc """
   Returns sitemap.xml containing canonical public URLs.

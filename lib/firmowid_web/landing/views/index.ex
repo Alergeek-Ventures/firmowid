@@ -1,11 +1,13 @@
 defmodule FirmowidWeb.Landing.Views.Index do
   @moduledoc """
-  Landing page for Firmowid marketing site.
+  Public landing, pricing, features and FAQ pages.
   """
 
   use FirmowidWeb, :live_view
 
+  import FirmowidWeb.Landing.Components.Faq
   import FirmowidWeb.Landing.Components.Hero
+  import FirmowidWeb.Landing.Components.Pricing
   import FirmowidWeb.Landing.Components.Primitives
   import FirmowidWeb.Landing.Components.Sections
 
@@ -14,19 +16,13 @@ defmodule FirmowidWeb.Landing.Views.Index do
 
   @impl true
   def mount(_params, _session, socket) do
-    # Redirect authenticated users with organization to role-based landing.
-    if socket.assigns[:current_user] && Core.load_member(socket.assigns.current_user).member do
+    if socket.assigns.live_action == :home && socket.assigns[:current_user] &&
+         Core.load_member(socket.assigns.current_user).member do
       {:ok, push_navigate(socket, to: UserAuth.signed_in_path_for_user(socket.assigns.current_user))}
     else
       {:ok,
        socket
-       |> assign(page_title: gettext("Firmowid"))
-       |> assign(
-         meta_description:
-           gettext(
-             "Firmowid is KSeF-compliant invoicing, bank synchronization, working-time tracking, and team payroll for Polish companies."
-           )
-       )
+       |> assign(metadata(socket.assigns.live_action))
        |> assign(public_marketing?: true)
        |> assign(billing_period: "monthly")
        |> assign(open_faq: nil), layout: false}
@@ -47,22 +43,56 @@ defmodule FirmowidWeb.Landing.Views.Index do
   @spec render(map()) :: Phoenix.LiveView.Rendered.t()
   def render(assigns) do
     ~H"""
-    <div id="top" data-landing-page="true" class="min-h-screen bg-[#f5f5f5] text-[#0f0f0f]">
+    <div id="top" data-landing-page="true" class="landing-page">
       <.landing_navbar />
 
       <main>
-        <.hero_section />
-        <.top_metrics_section />
-        <.audience_section />
-        <.capabilities_section />
-        <.proof_and_how_it_works_section />
-        <.pricing_section billing_period={@billing_period} />
-        <.team_section />
-        <.faq_section open_faq={@open_faq} />
+        <h1 :if={@live_action != :home} class="landing-public__title">{@page_title}</h1>
+        <.hero_section :if={@live_action == :home} />
+        <.top_metrics_section :if={@live_action == :home} />
+        <.audience_section :if={@live_action == :home} />
+        <.capabilities_section :if={@live_action in [:home, :features]} />
+        <.assistants_section :if={@live_action in [:home, :features]} />
+        <.proof_section :if={@live_action == :home} />
+        <.how_it_works_section :if={@live_action == :home} />
+        <.pricing_section :if={@live_action in [:home, :pricing]} billing_period={@billing_period} />
+        <.open_source_section :if={@live_action == :home} />
+        <.team_section :if={@live_action == :home} />
+        <.faq_section :if={@live_action in [:home, :faq]} open_faq={@open_faq} />
       </main>
 
       <.cta_footer />
     </div>
     """
+  end
+
+  defp metadata(:home) do
+    [
+      page_title: gettext("Firmowid - free KSeF invoices, banking and team time tracking"),
+      meta_description:
+        gettext("Free KSeF invoicing, bank synchronization, time tracking, leave and business trips in one place.")
+    ]
+  end
+
+  defp metadata(:pricing) do
+    [
+      page_title: gettext("Firmowid pricing — choose your plan"),
+      meta_description:
+        gettext("Compare the Free, Entrepreneur and Company plans. Monthly or annual billing, no hidden charges.")
+    ]
+  end
+
+  defp metadata(:features) do
+    [
+      page_title: gettext("Firmowid features — KSeF, banking and your team"),
+      meta_description: gettext("Invoices, transaction matching, time tracking, leave and business trips in one place.")
+    ]
+  end
+
+  defp metadata(:faq) do
+    [
+      page_title: gettext("Firmowid — frequently asked questions"),
+      meta_description: gettext("Answers about KSeF, bank integrations, data security, migration and Firmowid plans.")
+    ]
   end
 end

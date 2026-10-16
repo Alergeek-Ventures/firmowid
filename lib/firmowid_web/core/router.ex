@@ -375,7 +375,10 @@ defmodule FirmowidWeb.Core.Router do
       live "/abonament-wygasl", Auth.Views.ExpiredSubscription
       live "/konto-wylaczone", Auth.Views.DisabledAccount
       live "/potwierdz-email/:token", Auth.Views.ConfirmEmail, :edit
-      live "/", Landing.Views.Index
+      live "/", Landing.Views.Index, :home
+      live "/cennik", Landing.Views.Index, :pricing
+      live "/funkcje", Landing.Views.Index, :features
+      live "/faq", Landing.Views.Index, :faq
       live "/polityka-prywatnosci", Landing.Views.PrivacyPolicy
       live "/regulamin", Landing.Views.TermsOfService
     end
