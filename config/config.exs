@@ -47,6 +47,10 @@ config :esbuild,
     cd: Path.expand("../assets", __DIR__),
     env: %{"NODE_PATH" => Path.expand("../deps", __DIR__)}
   ],
+  mcp_dev_host: [
+    args: ~w(js/mcp/dev_host.js --bundle --target=es2022 --format=iife --outfile=../priv/static/assets/mcp_dev_host.js),
+    cd: Path.expand("../assets", __DIR__)
+  ],
   firmowid: [
     args:
       ~w(js/app.js --bundle --target=es2022 --outdir=../priv/static/assets --external:/fonts/* --external:/images/* --alias:@=.),
