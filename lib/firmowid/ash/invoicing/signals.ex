@@ -11,5 +11,11 @@ defmodule Firmowid.Ash.Invoicing.Signals do
       argument :cost_invoice_id, :uuid, allow_nil?: false
       argument :organization_id, :uuid, allow_nil?: false
     end
+
+    signal :sales_invoice_confirmed_in_ksef do
+      description "KSeF accepted a sales invoice and assigned it a KSeF number."
+      argument :sales_invoice_id, :uuid, allow_nil?: false
+      argument :organization_id, :uuid, allow_nil?: false
+    end
   end
 end

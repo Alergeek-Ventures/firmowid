@@ -13,7 +13,6 @@ defmodule Firmowid.Ash.Ksef.Workers.SubmissionWorker do
     max_attempts: 3
 
   alias Firmowid.Ash.Invoicing.SalesInvoice
-  alias Firmowid.Ash.Invoicing.SalesInvoice.Dispatchers.Communication
   alias Firmowid.Ash.Ksef
   alias Firmowid.Ash.Ksef.Services.ApiClient
   alias Firmowid.Ash.Ksef.Services.InvoiceRenderer
@@ -324,22 +323,20 @@ defmodule Firmowid.Ash.Ksef.Workers.SubmissionWorker do
        ) do
     opts = [scope: scope]
 
-    updated_invoice =
-      SalesInvoice.update_ksef_fields!(
-        invoice,
-        %{
-          ksef_number: ksef_number,
-          ksef_invoice_checksum: hash
-        },
-        opts
-      )
+    SalesInvoice.update_ksef_fields!(
+      invoice,
+      %{
+        ksef_number: ksef_number,
+        ksef_invoice_checksum: hash
+      },
+      opts
+    )
 
     Logger.info("Invoice received KSeF confirmation",
       invoice_id: invoice.id,
       operation: "verification"
     )
 
-    dispatch_after_ksef_confirmation(updated_invoice, scope)
     Ksef.broadcast_ksef_status(scope.tenant, invoice.id, :submitted)
   end
 
@@ -416,11 +413,6 @@ defmodule Firmowid.Ash.Ksef.Workers.SubmissionWorker do
     if final_attempt?(job), do: fail_invoice_status(invoice, scope)
 
     error
-  end
-
-  defp dispatch_after_ksef_confirmation(invoice, scope) do
-    _ = Communication.dispatch(invoice, :ksef_confirmed, scope)
-    :ok
   end
 
   defp fail_invoice(invoice, error, scope) do

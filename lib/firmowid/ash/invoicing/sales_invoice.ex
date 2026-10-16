@@ -60,13 +60,17 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
   alias Firmowid.Ash.Invoicing.Counterparty
   alias Firmowid.Ash.Invoicing.CountryCodes
   alias Firmowid.Ash.Invoicing.InvoiceMatching
+  alias Firmowid.Ash.Invoicing.SalesInvoice.Dispatchers.Communication
   alias Firmowid.Ash.Invoicing.SalesInvoiceEmailDelivery
   alias Firmowid.Ash.Invoicing.SalesInvoiceItem
   alias Firmowid.Ash.Invoicing.SalesInvoiceTransaction
   alias Firmowid.Ash.Invoicing.Services.SalesInvoiceChain
+  alias Firmowid.Ash.Invoicing.Signals
   alias Firmowid.Ash.Invoicing.Validations
   alias Firmowid.Ash.Invoicing.VatExemption
   alias Firmowid.Ash.Resource
+  alias Firmowid.Ash.Scope
+  alias Firmowid.Ash.SystemActor
 
   require Ash.Query
   require Firmowid.Ash.Invoicing.SalesInvoice.EffectiveFields, as: EffectiveFields
@@ -142,6 +146,7 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
     define :toggle_skip, action: :toggle_skip
     define :generate_share_token, action: :generate_share_token
     define :match_pending_invoices, args: [:signal]
+    define :dispatch_ksef_confirmation, args: [:signal]
     define :lock_for_ksef, action: :lock_for_ksef
     define :unlock_for_ksef, action: :unlock_for_ksef
     define :update_ksef_fields, action: :update_ksef_fields
@@ -701,6 +706,10 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
       description "Update KSeF tracking fields stored on this sales invoice."
       require_atomic? false
       accept [:ksef_number, :ksef_session_reference_number, :ksef_invoice_checksum, :locked_at]
+
+      emit Signals, :sales_invoice_confirmed_in_ksef,
+        fields: [sales_invoice_id: :id],
+        where: [changing(:ksef_number), present(:ksef_number)]
     end
 
     # -- Generic actions -------------------------------------------------------
@@ -1019,6 +1028,24 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
       end
     end
 
+    action :dispatch_ksef_confirmation do
+      description "Sends the confirmation of an invoice accepted by KSeF to the buyer."
+      argument :signal, Signals.SalesInvoiceConfirmedInKsef, allow_nil?: false
+
+      run fn %{arguments: %{signal: signal}}, _context ->
+        scope = %Scope{
+          actor: %SystemActor{org_id: signal.organization_id, role: :sales_invoice_processor},
+          tenant: signal.organization_id
+        }
+
+        with {:ok, invoice} <-
+               InvoicingDomain.get_sales_invoice(signal.sales_invoice_id, scope: scope),
+             {:ok, _result} <- Communication.dispatch(invoice, :ksef_confirmed, scope) do
+          :ok
+        end
+      end
+    end
+
     action :match_pending_invoices do
       description "Matches pending sales invoices after a bank account sync."
       argument :signal, Finances.Signals.BankAccountSynced, allow_nil?: false
@@ -1037,12 +1064,20 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
         authorize_if signal_in(Finances.Signals, :bank_account_synced)
       end
 
+      policy action(:dispatch_ksef_confirmation) do
+        authorize_if signal_in(Signals, :sales_invoice_confirmed_in_ksef)
+      end
+
       policy {SystemActorRole, roles: [:sales_invoice_processor]} do
         authorize_if always()
       end
 
       policy AshObanInteraction do
-        authorize_if action([:dispatch_overdue_sales_invoice_reminders, :match_pending_invoices])
+        authorize_if action([
+                       :dispatch_overdue_sales_invoice_reminders,
+                       :match_pending_invoices,
+                       :dispatch_ksef_confirmation
+                     ])
       end
 
       policy {SystemActorRole, roles: [:analysis_reader]} do
@@ -1268,6 +1303,11 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
   end
 
   signals_in do
+    from Signals do
+      on :sales_invoice_confirmed_in_ksef, :dispatch_ksef_confirmation,
+        delivery: {AshOban.Signals, queue: :sales_invoice_emails, max_attempts: 3}
+    end
+
     from Finances.Signals do
       on :bank_account_synced, :match_pending_invoices,
         delivery:
