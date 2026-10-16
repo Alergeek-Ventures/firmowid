@@ -7,8 +7,8 @@ defmodule Firmowid.Ash.Invoicing.Services.PdfAugmentations.InternalNote do
   """
 
   alias Firmowid.Ash.Invoicing.Services.PdfUtils
+  alias FirmowidUI.Invoicing.Components.Print
   alias FirmowidWeb.Infrastructure.Utilities.PdfHelpers
-  alias FirmowidWeb.Invoicing.Components.Print
 
   @doc """
   Inserts the internal-note page after the first page when requested.

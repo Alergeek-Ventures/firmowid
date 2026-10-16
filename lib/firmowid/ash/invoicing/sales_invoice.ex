@@ -6,10 +6,6 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
   @moduledoc """
   Ash resource for sales invoices.
 
-  TODO: at 1270 lines, consider extracting inline `cancel` (~100 lines),
-  `confirm_from_draft` (~60 lines), and numbering helpers (~110 lines)
-  into dedicated modules — similar to how `EffectiveFields` was extracted.
-
   ## Read Actions
 
     * `:read` — basic primary read for framework and relationship reads
@@ -22,9 +18,11 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
 
   ## Write Actions
 
-    * `:create` — full invoice creation (from wizard confirm or direct)
-    * `:update` — update draft or confirmed invoice
-    * `:create_correction` — create a correction invoice (KOR) for a VAT invoice
+    * `:create_draft` — save a complete, unnumbered VAT invoice
+    * `:update_draft` — revise a saved draft
+    * `:issue` — number a draft, issued today, and queue its KSeF submission atomically
+    * `:issue_correction` — issue a correction invoice (KOR) and queue its KSeF submission
+    * `:return_to_draft` — withdraw an invoice KSeF did not accept back to a draft
     * `:destroy` — delete invoice (only if not KSeF-submitted)
     * `:toggle_skip` — toggle skip_invoicing flag
     * `:generate_share_token` — generate or return existing share token
@@ -33,8 +31,10 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
 
   ## Generic Actions
 
+    * `:create_and_issue` — save and issue a new invoice in one transaction
+    * `:preview_invoice` / `:preview_correction` — read-only validated document previews
     * `:cancel` — cancel a KSeF-submitted invoice via zero-quantity correction
-    * `:get_next_number` — get next available invoice number for date/series
+    * `:get_next_number` — get next available invoice number for date/format/series
     * `:validate_number` — validate an invoice number (format, duplicate, gap)
     * `:list_series` — list distinct invoice number series
 
@@ -58,10 +58,12 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
   alias Firmowid.Ash.Invoicing.Changes
   alias Firmowid.Ash.Invoicing.Counterparty
   alias Firmowid.Ash.Invoicing.CountryCodes
+  alias Firmowid.Ash.Invoicing.SalesInvoice.Preview
   alias Firmowid.Ash.Invoicing.SalesInvoiceEmailDelivery
   alias Firmowid.Ash.Invoicing.SalesInvoiceItem
   alias Firmowid.Ash.Invoicing.SalesInvoiceTransaction
   alias Firmowid.Ash.Invoicing.Services.SalesInvoiceChain
+  alias Firmowid.Ash.Invoicing.Types.InvoiceInput
   alias Firmowid.Ash.Invoicing.Validations
   alias Firmowid.Ash.Invoicing.VatExemption
   alias Firmowid.Ash.Resource
@@ -71,6 +73,9 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
   require Resource
 
   @eu_countries CountryCodes.eu_countries_with_aliases()
+  # A draft is the complete invoice except for its number; issuance dates it today.
+  @draft_fields Keyword.keys(InvoiceInput.subtype_constraints()[:fields]) --
+                  [:sales_invoice_items, :invoice_number, :issue_date, :correction_reason]
 
   postgres do
     table "sales_invoices"
@@ -127,15 +132,20 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
       args: [:root_invoice_id, :root_share_token]
 
     # Writes
-    define :create, action: :create
-    define :update, action: :update
+    define :create_draft, action: :create_draft
+    define :update_draft, action: :update_draft
+    define :issue, action: :issue
+    define :create_and_issue, action: :create_and_issue
+    define :return_to_draft, action: :return_to_draft
+    define :preview_invoice, action: :preview_invoice
+    define :preview_correction, action: :preview_correction
 
     define :attach_suggested_counterparty,
       args: [:counterparty_id],
       action: :attach_suggested_counterparty
 
     define :destroy, action: :destroy
-    define :create_correction, action: :create_correction
+    define :issue_correction, action: :issue_correction
     define :cancel, args: [:invoice_id], action: :cancel
     define :toggle_skip, action: :toggle_skip
     define :generate_share_token, action: :generate_share_token
@@ -143,15 +153,6 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
     define :unlock_for_ksef, action: :unlock_for_ksef
     define :update_ksef_fields, action: :update_ksef_fields
     define :denormalize_item_names, action: :denormalize_item_names
-
-    # Wizard
-    define :confirm_from_draft,
-      args: [
-        :draft_id,
-        {:optional, :invoice_number},
-        :organization,
-        {:optional, :should_send_emails}
-      ]
 
     # Invoice numbering
     define :get_next_number, args: [:date, {:optional, :series}, {:optional, :omit_invoice_id}]
@@ -387,62 +388,32 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
 
     # -- Write actions ---------------------------------------------------------
 
-    create :create do
-      description "Create a sales invoice with its line items."
+    create :create_draft do
+      description "Save a complete VAT invoice without a number. Issuing it later dates it that day."
       primary? true
+      accept @draft_fields
+      argument :input, InvoiceInput
+      argument :sales_invoice_items, {:array, :map}
+      argument :confirmation_id, :uuid_v7, public?: false
 
-      accept [
-        :invoice_type,
-        :invoice_number,
-        :sale_date,
-        :issue_date,
-        :due_date,
-        :payment_method,
-        :currency,
-        :is_cash_account,
-        :is_reverse_charge,
-        :skip_invoicing,
-        :ksef_invoice_kind,
-        :correction_reason,
-        :counterparty_id,
-        :corrected_invoice_id,
-        :seller_nip,
-        :seller_display_name,
-        :seller_address,
-        :seller_name,
-        :seller_surname,
-        :seller_account_number,
-        :vat_exemption_type,
-        :vat_exemption_basis,
-        :buyer_type,
-        :buyer_id,
-        :buyer_full_name,
-        :buyer_given_name,
-        :buyer_surname,
-        :buyer_pesel,
-        :buyer_display_name,
-        :buyer_address,
-        :buyer_country,
-        :buyer_is_different_mail_address,
-        :buyer_mail_address,
-        :buyer_mail_country,
-        :buyer_email,
-        :buyer_phone,
-        :buyer_description,
-        :should_send_emails,
-        :invoice_note,
-        :internal_note
-      ]
+      change Changes.ApplyInvoiceInput
 
-      argument :sales_invoice_items, {:array, :map}, allow_nil?: false
+      change set_attribute(:id, arg(:confirmation_id)) do
+        where present(:confirmation_id)
+      end
+
+      change Changes.PrepareInvoiceSeller
+      change Changes.PrepareInvoiceItems
 
       change {Changes.NormalizeReverseChargeVatRates, source: :argument, field: :sales_invoice_items}
 
       change manage_relationship(:sales_invoice_items, type: :direct_control)
-
-      change {Changes.SetItemNames, []}
-      change {Changes.SetIsCashAccount, []}
+      change Changes.SetItemNames
+      change Changes.SetIsCashAccount
       change {Changes.ValidateCountryCode, field: :buyer_country}
+      change Changes.BindInvoiceCounterparty
+
+      validate Validations.CompleteInvoice
 
       validate {Validations.ValidateTaxId,
                 id_field: :buyer_id, country_field: :buyer_country, pesel_field: :buyer_pesel, type_field: :buyer_type}
@@ -452,73 +423,36 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
                 full_name_field: :buyer_full_name,
                 given_name_field: :buyer_given_name,
                 surname_field: :buyer_surname}
-
-      validate present([:issue_date, :currency]), message: "Pole jest wymagane"
-
-      validate {Validations.ValidateItemsNotEmpty, field: :sales_invoice_items, source: :argument}
 
       validate string_length(:internal_note, max: 10_000) do
         where present(:internal_note)
       end
     end
 
-    update :update do
-      description "Update an existing sales invoice and its editable fields."
+    update :update_draft do
+      description "Revise a saved, unnumbered VAT invoice draft."
       primary? true
       require_atomic? false
-
-      accept [
-        :invoice_type,
-        :invoice_number,
-        :sale_date,
-        :issue_date,
-        :due_date,
-        :payment_method,
-        :currency,
-        :is_cash_account,
-        :is_reverse_charge,
-        :ksef_invoice_kind,
-        :correction_reason,
-        :counterparty_id,
-        :seller_nip,
-        :seller_display_name,
-        :seller_address,
-        :seller_name,
-        :seller_surname,
-        :seller_account_number,
-        :vat_exemption_type,
-        :vat_exemption_basis,
-        :buyer_type,
-        :buyer_id,
-        :buyer_full_name,
-        :buyer_given_name,
-        :buyer_surname,
-        :buyer_pesel,
-        :buyer_display_name,
-        :buyer_address,
-        :buyer_country,
-        :buyer_is_different_mail_address,
-        :buyer_mail_address,
-        :buyer_mail_country,
-        :buyer_email,
-        :buyer_phone,
-        :buyer_description,
-        :should_send_emails,
-        :invoice_note,
-        :internal_note
-      ]
-
+      accept @draft_fields -- [:skip_invoicing]
+      argument :input, InvoiceInput
       argument :sales_invoice_items, {:array, :map}
+
+      change Changes.ApplyInvoiceInput
+      change filter(expr(is_nil(invoice_number) and ksef_invoice_kind == :vat))
+      change Changes.PrepareInvoiceSeller
+      change Changes.PrepareInvoiceItems
 
       change {Changes.NormalizeReverseChargeVatRates, source: :argument, field: :sales_invoice_items}
 
       change manage_relationship(:sales_invoice_items, type: :direct_control)
-
-      change {Changes.SetItemNames, []}
-      change {Changes.SetIsCashAccount, []}
+      change Changes.SetItemNames
+      change Changes.SetIsCashAccount
       change {Changes.ValidateCountryCode, field: :buyer_country}
+      change Changes.BindInvoiceCounterparty
 
+      validate Validations.InvoiceDraft
       validate {Validations.CheckIfLocked, []}, always_atomic?: true
+      validate Validations.CompleteInvoice
 
       validate {Validations.ValidateTaxId,
                 id_field: :buyer_id, country_field: :buyer_country, pesel_field: :buyer_pesel, type_field: :buyer_type}
@@ -529,13 +463,62 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
                 given_name_field: :buyer_given_name,
                 surname_field: :buyer_surname}
 
-      validate {Validations.ValidateItemsNotEmpty, field: :sales_invoice_items, source: :argument} do
-        where present(:sales_invoice_items)
+      validate string_length(:internal_note, max: 10_000) do
+        where present(:internal_note)
       end
+    end
+
+    update :issue do
+      description "Number a draft, date it today and queue its KSeF submission in the same transaction."
+      require_atomic? false
+      accept [:invoice_number | @draft_fields -- [:skip_invoicing]]
+      argument :input, InvoiceInput
+      argument :sales_invoice_items, {:array, :map}
+
+      change Changes.ApplyInvoiceInput
+      change filter(expr(is_nil(invoice_number) and ksef_invoice_kind == :vat))
+      change Changes.PrepareInvoiceSeller
+      change Changes.PrepareInvoiceItems
+
+      change {Changes.NormalizeReverseChargeVatRates, source: :argument, field: :sales_invoice_items}
+
+      change manage_relationship(:sales_invoice_items, type: :direct_control)
+      change Changes.SetItemNames
+      change Changes.SetIsCashAccount
+      change {Changes.ValidateCountryCode, field: :buyer_country}
+      change Changes.BindInvoiceCounterparty
+      # Last, so the submission job is queued only after every other write of this transaction.
+      change Changes.SubmitIssuedInvoice
+
+      validate Validations.InvoiceDraft
+      validate Validations.InvoiceNumberRequired
+      validate {Validations.CheckIfLocked, []}, always_atomic?: true
+      validate Validations.CompleteInvoice
+
+      validate {Validations.ValidateTaxId,
+                id_field: :buyer_id, country_field: :buyer_country, pesel_field: :buyer_pesel, type_field: :buyer_type}
+
+      validate {Validations.ValidateNameFields,
+                type_field: :buyer_type,
+                full_name_field: :buyer_full_name,
+                given_name_field: :buyer_given_name,
+                surname_field: :buyer_surname}
 
       validate string_length(:internal_note, max: 10_000) do
         where present(:internal_note)
       end
+    end
+
+    update :return_to_draft do
+      description "Withdraw a VAT invoice that KSeF did not accept back to an unnumbered draft."
+      public? false
+      require_atomic? false
+      accept []
+
+      change filter(expr(is_nil(ksef_number) and ksef_invoice_kind == :vat))
+      change set_attribute(:invoice_number, nil)
+      change set_attribute(:locked_at, nil)
+      change set_attribute(:ksef_invoice_checksum, nil)
     end
 
     update :attach_suggested_counterparty do
@@ -583,7 +566,7 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
       change {Changes.AttachSuggestedCounterparty, []}
     end
 
-    create :create_correction do
+    create :issue_correction do
       description "Create a correction invoice for an existing sales invoice."
 
       accept [
@@ -614,18 +597,43 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
       ]
 
       argument :original_invoice_id, :uuid_v7, allow_nil?: false
-      argument :sales_invoice_items, {:array, :map}, allow_nil?: false
+      argument :sales_invoice_items, {:array, :map}
+      argument :input, InvoiceInput
+      argument :confirmation_id, :uuid_v7
+      argument :preview?, :boolean, default: false, public?: false
+
+      change Changes.ApplyInvoiceInput
+      change set_new_attribute(:issue_date, &Date.utc_today/0)
+
+      change set_attribute(:id, arg(:confirmation_id)) do
+        where present(:confirmation_id)
+      end
 
       change {Changes.PrepareCorrection, []}
+
+      change Changes.PrepareInvoiceItems
 
       change {Changes.NormalizeReverseChargeVatRates, source: :argument, field: :sales_invoice_items}
 
       change manage_relationship(:sales_invoice_items, type: :direct_control)
-
-      change {Changes.SetItemNames, []}
+      change Changes.SetItemNames
+      change Changes.SetIsCashAccount
       change {Changes.ValidateCountryCode, field: :buyer_country}
 
-      validate present([:invoice_number, :issue_date]), message: "Pole jest wymagane"
+      # Last, so the submission job is queued only after every other write of this transaction.
+      change Changes.SubmitIssuedInvoice do
+        where argument_equals(:preview?, false)
+      end
+
+      validate present(:invoice_number) do
+        where argument_equals(:preview?, false)
+        message "Pole jest wymagane"
+      end
+
+      validate string_length(:correction_reason, max: 256),
+        message: "Powód korekty może mieć maksymalnie 256 znaków"
+
+      validate Validations.CompleteInvoice
 
       validate {Validations.ValidateTaxId,
                 id_field: :buyer_id, country_field: :buyer_country, pesel_field: :buyer_pesel, type_field: :buyer_type}
@@ -636,10 +644,9 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
                 given_name_field: :buyer_given_name,
                 surname_field: :buyer_surname}
 
-      validate string_length(:correction_reason, max: 256),
-        message: "Powód korekty może mieć maksymalnie 256 znaków"
-
-      validate {Validations.ValidateItemsNotEmpty, field: :sales_invoice_items, source: :argument}
+      validate string_length(:internal_note, max: 10_000) do
+        where present(:internal_note)
+      end
     end
 
     destroy :destroy do
@@ -785,7 +792,7 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
               correction_reason: correction_reason,
               sales_invoice_items: zeroed_items
             },
-            Keyword.put(opts, :action, :create_correction)
+            Keyword.put(opts, :action, :issue_correction)
           )
         else
           {:error, "can only cancel KSeF-submitted VAT invoices"}
@@ -793,109 +800,103 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
       end
     end
 
-    action :confirm_from_draft, :struct do
-      description "Create a sales invoice from a completed wizard draft."
-      primary? true
+    action :create_and_issue, :struct do
+      description "Save a new invoice as a draft and issue it in the same transaction."
       constraints instance_of: __MODULE__
-
-      argument :draft_id, :uuid_v7, allow_nil?: false
-      argument :invoice_number, :string
-      argument :organization, :map, allow_nil?: false
-      argument :should_send_emails, :boolean, default: false
+      transaction? true
+      argument :input, InvoiceInput, allow_nil?: false
+      argument :confirmation_id, :uuid_v7
 
       run fn input, context ->
         opts = Ash.Context.to_opts(context)
+        %{input: invoice_input} = input.arguments
 
-        draft =
-          Firmowid.Ash.Invoicing.WizardDraft
-          |> Ash.get!(input.arguments.draft_id, opts)
-          |> Ash.load!([:items], opts)
-
-        org = input.arguments.organization
-
-        items =
-          draft.items
-          |> Enum.with_index()
-          |> Enum.map(fn {item, idx} ->
-            item
-            |> Map.take([:name, :quantity, :unit, :unit_price, :vat_rate])
-            |> Map.put(:index, idx)
-          end)
-
-        attrs = %{
-          counterparty_id: draft.counterparty_id,
-          buyer_type: draft.buyer_type,
-          buyer_id: draft.buyer_id,
-          buyer_full_name: draft.buyer_full_name,
-          buyer_given_name: draft.buyer_given_name,
-          buyer_surname: draft.buyer_surname,
-          buyer_pesel: draft.buyer_pesel,
-          buyer_display_name: draft.buyer_display_name,
-          buyer_address: draft.buyer_address,
-          buyer_country: draft.buyer_country,
-          buyer_email: draft.buyer_email,
-          buyer_phone: draft.buyer_phone,
-          buyer_description: draft.buyer_description,
-          invoice_type: draft.invoice_type,
-          is_reverse_charge: draft.is_reverse_charge,
-          currency: draft.currency,
-          seller_account_number: draft.seller_account_number,
-          sale_date: draft.sale_date,
-          due_date: draft.due_date,
-          payment_method: draft.payment_method,
-          invoice_number: input.arguments.invoice_number,
-          issue_date: Date.utc_today(),
-          seller_display_name: org[:name] || org["name"],
-          seller_address: org[:address] || org["address"],
-          seller_nip: org[:nip] || org["nip"],
-          vat_exemption_type: draft.vat_exemption_type || org[:vat_exemption_type] || org["vat_exemption_type"],
-          vat_exemption_basis: draft.vat_exemption_basis || org[:vat_exemption_basis] || org["vat_exemption_basis"],
-          is_cash_account: draft.payment_method == :cash,
-          invoice_note: draft.invoice_note,
-          internal_note: draft.internal_note,
-          should_send_emails: input.arguments.should_send_emails,
-          sales_invoice_items: items
-        }
-
-        case Ash.create(__MODULE__, attrs, Keyword.put(opts, :action, :create)) do
-          {:ok, invoice} ->
-            Ash.destroy!(draft, opts)
-            {:ok, invoice}
-
-          {:error, error} ->
-            {:error, error}
+        with {:ok, draft} <-
+               __MODULE__.create_draft(
+                 %{input: invoice_input},
+                 Keyword.put(opts, :private_arguments, %{
+                   confirmation_id: input.arguments[:confirmation_id]
+                 })
+               ) do
+          __MODULE__.issue(draft, %{invoice_number: invoice_input[:invoice_number]}, opts)
         end
       end
     end
 
+    action :preview_invoice, :struct do
+      description "Validate and calculate an invoice without saving it."
+      constraints instance_of: __MODULE__
+      argument :input, InvoiceInput, allow_nil?: false
+      argument :invoice_id, :uuid_v7
+
+      run fn input, context ->
+        opts = Ash.Context.to_opts(context)
+
+        case input.arguments[:invoice_id] do
+          nil ->
+            %{input: input.arguments.input}
+            |> __MODULE__.changeset_to_create_draft(opts)
+            |> Preview.from_changeset(opts)
+
+          id ->
+            with {:ok, invoice} <-
+                   __MODULE__.by_id(
+                     id,
+                     Keyword.merge(opts,
+                       not_found_error?: true,
+                       load: [:sales_invoice_items, :reference_invoice, :corrected_invoice]
+                     )
+                   ) do
+              invoice
+              |> __MODULE__.changeset_to_update_draft(%{input: input.arguments.input}, opts)
+              |> Preview.from_changeset(opts)
+            end
+        end
+      end
+    end
+
+    action :preview_correction, :struct do
+      description "Validate and calculate a correction without saving it."
+      constraints instance_of: __MODULE__
+      argument :input, InvoiceInput, allow_nil?: false
+      argument :original_invoice_id, :uuid_v7, allow_nil?: false
+
+      run fn input, context ->
+        opts = Ash.Context.to_opts(context)
+
+        input.arguments
+        |> __MODULE__.changeset_to_issue_correction(Keyword.put(opts, :private_arguments, %{preview?: true}))
+        |> Preview.from_changeset(opts)
+      end
+    end
+
     action :get_next_number, :string do
-      description "Return the next available invoice number for a date and optional series."
+      description "Return the next available invoice number for a date, numbering format and optional series."
       argument :date, :date, allow_nil?: false
       argument :series, :string
       argument :omit_invoice_id, :uuid
 
+      argument :format, :atom,
+        allow_nil?: false,
+        default: :monthly,
+        constraints: [one_of: [:monthly, :yearly]]
+
       run fn input, context ->
-        date = input.arguments.date
-        year = date.year
-        month = date.month
+        %{date: date, format: format} = input.arguments
         series = input.arguments[:series]
         omit_invoice_id = input.arguments[:omit_invoice_id]
         opts = Ash.Context.to_opts(context)
 
-        existing_numbers =
-          month
-          |> read_invoice_numbers_matching(year, series, omit_invoice_id, opts)
+        starting_num =
+          format
+          |> read_invoice_numbers_matching(date, series, omit_invoice_id, opts)
           |> Enum.map(&parse_invoice_number/1)
           |> Enum.filter(&match?({:ok, _}, &1))
           |> Enum.map(fn {:ok, %{num: num}} -> num end)
+          |> Enum.max(fn -> 0 end)
+          |> Kernel.+(1)
 
-        starting_num =
-          case Enum.max(existing_numbers, fn -> 0 end) do
-            0 -> 1
-            max_num -> max_num + 1
-          end
-
-        {:ok, find_free_invoice_number(starting_num, month, year, series, omit_invoice_id, opts)}
+        {:ok, find_free_invoice_number(starting_num, format, date, series, omit_invoice_id, opts)}
       end
     end
 
@@ -916,8 +917,8 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
           |> InvoicingDomain.get_next_numbers_for_series(opts,
             omit_invoice_id: omit_invoice_id
           )
-          |> Map.values()
-          |> Enum.sort_by(fn num -> if String.contains?(num, "/A"), do: 1, else: 0 end)
+          |> Enum.sort()
+          |> Enum.map(fn {_format_and_series, number} -> number end)
 
         parsed = parse_invoice_number(invoice_number)
 
@@ -941,9 +942,15 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
 
         warnings =
           case parsed do
-            {:ok, %{num: current_num, series: parsed_series}} ->
+            {:ok, %{num: current_num, format: parsed_format, series: parsed_series}} ->
               {:ok, expected} =
-                __MODULE__.get_next_number(issue_date, parsed_series, omit_invoice_id, opts)
+                __MODULE__.get_next_number(
+                  issue_date,
+                  parsed_series,
+                  omit_invoice_id,
+                  %{format: parsed_format},
+                  opts
+                )
 
               case parse_invoice_number(expected) do
                 {:ok, %{num: expected_num}} when current_num > expected_num ->
@@ -1076,11 +1083,13 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
     module FirmowidWeb.Core.Endpoint
     prefix "sales_invoice"
 
-    publish :create, ["created", :_tenant]
-    publish :update, ["updated", :_tenant]
+    publish :create_draft, ["created", :_tenant]
+    publish :update_draft, ["updated", :_tenant]
+    publish :issue, ["updated", :_tenant]
+    publish :return_to_draft, ["updated", :_tenant]
     publish :destroy, ["destroyed", :_tenant]
     publish :toggle_skip, ["updated", :_tenant]
-    publish :create_correction, ["created", :_tenant]
+    publish :issue_correction, ["created", :_tenant]
     publish :generate_share_token, ["updated", :_tenant]
     publish :attach_suggested_counterparty, ["updated", :_tenant]
     publish :connect_transactions, ["updated", :_tenant]
@@ -1352,7 +1361,7 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
     end
 
     # NOTE: This expr() logic is intentionally duplicated across SalesInvoice,
-    # WizardDraft, and Counterparty (as :tax_id_type) because Ash expr()
+    # WizardState, and Counterparty (as :tax_id_type) because Ash expr()
     # calculations run in the DB and cannot call Elixir functions.
     # Runtime equivalent: CountryCodes.tax_id_type/3
     calculate :buyer_id_type,
@@ -1416,32 +1425,59 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
 
   # Invoice numbering helpers -------------------------------------------------
 
-  @invoice_number_regex ~r/^(\d+)\/(\d+)\/(\d+)(?:\/(.+))?$/
+  @monthly_number_regex ~r/^(\d+)\/(\d+)\/(\d+)(?:\/(.+))?$/
+  @yearly_number_regex ~r/^(?:([A-Z]+)\/)?(\d+)\/(\d{4})$/
 
   @doc """
-  Parses an invoice number in the `NN/MM/YYYY[/SERIES]` format.
+  Parses an invoice number in one of the supported numbering formats:
 
-  Returns parsed numeric parts and optional series as a map, or `:error` for
-  invalid input.
+    * monthly `NN/MM/YYYY[/SERIES]`, e.g. `01/10/2026` or `01/10/2026/A`,
+    * yearly `[PREFIX/]N/YYYY`, e.g. `1/2026` or `BC/1/2026`, where `PREFIX`
+      is uppercase ASCII letters (usually the organization initials).
+
+  Returns the numbering `format` (`:monthly` or `:yearly`), counter, month
+  (`nil` for yearly numbers), year and optional series (the suffix of a
+  monthly number or the prefix of a yearly one), or `:error` for other input.
   """
+  @spec parse_invoice_number(term()) ::
+          {:ok,
+           %{
+             format: :monthly | :yearly,
+             num: pos_integer(),
+             month: pos_integer() | nil,
+             year: pos_integer(),
+             series: String.t() | nil
+           }}
+          | :error
   def parse_invoice_number(invoice_number) when is_binary(invoice_number) do
-    case Regex.run(@invoice_number_regex, invoice_number) do
-      [_, num, month, year] ->
+    case Regex.run(@monthly_number_regex, invoice_number) do
+      [_, num, month, year | series] ->
         {:ok,
          %{
+           format: :monthly,
            num: String.to_integer(num),
            month: String.to_integer(month),
            year: String.to_integer(year),
-           series: nil
+           series: List.first(series)
          }}
 
-      [_, num, month, year, series] ->
+      nil ->
+        parse_yearly_invoice_number(invoice_number)
+    end
+  end
+
+  def parse_invoice_number(_), do: :error
+
+  defp parse_yearly_invoice_number(invoice_number) do
+    case Regex.run(@yearly_number_regex, invoice_number) do
+      [_, prefix, num, year] ->
         {:ok,
          %{
+           format: :yearly,
            num: String.to_integer(num),
-           month: String.to_integer(month),
+           month: nil,
            year: String.to_integer(year),
-           series: series
+           series: if(prefix != "", do: prefix)
          }}
 
       nil ->
@@ -1449,35 +1485,74 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
     end
   end
 
-  def parse_invoice_number(_), do: :error
+  @doc """
+  Formats an invoice number for a counter, numbering format, date and optional
+  series: monthly as `NN/MM/YYYY[/SERIES]`, yearly as `[SERIES/]N/YYYY`.
+  """
+  @spec format_invoice_number(pos_integer(), :monthly | :yearly, Date.t(), String.t() | nil) ::
+          String.t()
+  def format_invoice_number(num, :monthly, date, series) do
+    Enum.join(
+      [pad_two(num), pad_two(date.month), date.year] ++ List.wrap(series),
+      "/"
+    )
+  end
+
+  def format_invoice_number(num, :yearly, date, series) do
+    Enum.join(List.wrap(series) ++ [num, date.year], "/")
+  end
+
+  defp pad_two(number), do: String.pad_leading("#{number}", 2, "0")
+
+  @legal_form_words ~w(
+    SP SPOLKA Z OO O OGRANICZONA ODPOWIEDZIALNOSCIA SA AKCYJNA SK SKA SPK SJ JAWNA
+    KOMANDYTOWA KOMANDYTOWO PARTNERSKA SPP SC CYWILNA
+  )
 
   @doc """
-  Formats invoice number parts as `NN/MM/YYYY` or `NN/MM/YYYY/SERIES`.
+  Derives uppercase ASCII initials from an organization name, used as the
+  prefix of the `INITIALS/N/YYYY` yearly numbering.
+
+  The name is split into words on whitespace and hyphens. Words that are a
+  Polish legal form (`sp.`, `z`, `o.o.`, `spółka`, `ograniczoną`,
+  `odpowiedzialnością`, `S.A.`, `sp.k.`, `sp.j.`, `s.c.`, …, compared without
+  dots, diacritics and case) are skipped. The first letter of every remaining
+  word is transliterated to ASCII and upcased; words starting with a
+  non-letter contribute nothing. For example
+  `"Bytecraft Collective spółka z ograniczoną odpowiedzialnością"` and
+  `"Bytecraft Collective sp. z o.o."` both give `"BC"`. Returns `nil` when no
+  letter remains.
   """
-  def format_invoice_number(num, month, year, nil) do
-    "#{String.pad_leading("#{num}", 2, "0")}/#{String.pad_leading("#{month}", 2, "0")}/#{year}"
+  @spec organization_initials(String.t()) :: String.t() | nil
+  def organization_initials(name) do
+    name
+    |> AnyAscii.transliterate()
+    |> IO.iodata_to_binary()
+    |> String.upcase()
+    |> String.split(~r/[\s\-]+/, trim: true)
+    |> Enum.reject(&(String.replace(&1, ".", "") in @legal_form_words))
+    |> Enum.map_join(&String.slice(&1, 0, 1))
+    |> String.replace(~r/[^A-Z]/, "")
+    |> case do
+      "" -> nil
+      initials -> initials
+    end
   end
 
-  def format_invoice_number(num, month, year, series) do
-    "#{String.pad_leading("#{num}", 2, "0")}/#{String.pad_leading("#{month}", 2, "0")}/#{year}/#{series}"
-  end
+  defp build_series_pattern(:monthly, date, nil), do: "^\\d+/#{pad_two(date.month)}/#{date.year}$"
 
-  defp build_series_pattern(month, year, nil) do
-    month_str = String.pad_leading("#{month}", 2, "0")
-    "^\\d+/#{month_str}/#{year}$"
-  end
+  defp build_series_pattern(:monthly, date, series),
+    do: "^\\d+/#{pad_two(date.month)}/#{date.year}/#{Regex.escape(series)}$"
 
-  defp build_series_pattern(month, year, series) do
-    month_str = String.pad_leading("#{month}", 2, "0")
-    escaped_series = Regex.escape(series)
-    "^\\d+/#{month_str}/#{year}/#{escaped_series}$"
-  end
+  defp build_series_pattern(:yearly, date, nil), do: "^\\d+/#{date.year}$"
 
-  defp find_free_invoice_number(num, month, year, series, omit_invoice_id, opts) do
-    invoice_number = format_invoice_number(num, month, year, series)
+  defp build_series_pattern(:yearly, date, series), do: "^#{Regex.escape(series)}/\\d+/#{date.year}$"
+
+  defp find_free_invoice_number(num, format, date, series, omit_invoice_id, opts) do
+    invoice_number = format_invoice_number(num, format, date, series)
 
     if invoice_number_exists?(invoice_number, omit_invoice_id, opts) do
-      find_free_invoice_number(num + 1, month, year, series, omit_invoice_id, opts)
+      find_free_invoice_number(num + 1, format, date, series, omit_invoice_id, opts)
     else
       invoice_number
     end
@@ -1496,11 +1571,11 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
     Ash.exists?(query, opts)
   end
 
-  # Reads all invoice numbers matching a series pattern (month/year/series).
+  # Reads all invoice numbers of one numbering format and series in the date's period.
   # Uses fragment("? ~ ?", ...) for Postgres regex — Ash has no native regex operator.
   # Same escape hatch pattern as ParadeDB `&&&`.
-  defp read_invoice_numbers_matching(month, year, series, omit_invoice_id, opts) do
-    series_pattern = build_series_pattern(month, year, series)
+  defp read_invoice_numbers_matching(format, date, series, omit_invoice_id, opts) do
+    series_pattern = build_series_pattern(format, date, series)
 
     query =
       __MODULE__

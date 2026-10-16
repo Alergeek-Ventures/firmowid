@@ -30,12 +30,15 @@ defmodule FirmowidMcp.LiveSession do
           )
         end
 
-        params = if connected?(socket), do: get_connect_params(socket), else: %{}
+        # Only the signed tool input may become the invoice being confirmed.
+        # Socket connect parameters are browser-controlled, including on reconnect.
+        socket =
+          assign(socket,
+            scope: capability.scope,
+            arguments: capability.query,
+            confirmation_id: capability.confirmation_id
+          )
 
-        arguments =
-          if is_map(params["arguments"]), do: params["arguments"], else: capability.query
-
-        socket = assign(socket, scope: capability.scope, arguments: arguments)
         loaded = Keyword.fetch!(callbacks, :on_mount).(socket)
 
         {:ok, within_lifetime(socket, loaded, capability.expires_at)}

@@ -19,8 +19,8 @@ defmodule FirmowidWeb.Invoicing.Views.IndexTest do
   alias Firmowid.Ash.Finances.Transaction
   alias Firmowid.Ash.Invoicing
   alias Firmowid.Ash.Invoicing.CostInvoice
-  alias Firmowid.Ash.Invoicing.SalesInvoice
   alias Firmowid.Ash.Scope
+  alias Firmowid.InvoicingFixtures
   alias FirmowidWeb.Core.Endpoint
   alias Phoenix.Socket.Broadcast
 
@@ -457,13 +457,14 @@ defmodule FirmowidWeb.Invoicing.Views.IndexTest do
 
   defp sales_invoice_fixture!(user, invoice_number) do
     {:ok, invoice} =
-      SalesInvoice.create(
+      InvoicingFixtures.seed_sales_invoice(
         %{
           invoice_number: invoice_number,
           issue_date: ~D[2026-01-10],
           sale_date: ~D[2026-01-10],
           due_date: ~D[2026-01-24],
           payment_method: :transfer,
+          seller_account_number: "PL61109010140000071219812874",
           invoice_type: :foreign,
           currency: "EUR",
           seller_nip: "6161525811",

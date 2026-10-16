@@ -1,16 +1,22 @@
 ---
 name: chatgpt-app-testing
-description: Use when developing or testing Firmowid ChatGPT tools and embedded UI through the existing firmowid [dev] app and shared tunnel.
+description: Use when developing or testing Firmowid ChatGPT tools and embedded UI through the existing [dev] firmowid app and shared tunnel.
 ---
 
 # ChatGPT App Testing
 
 ## Existing setup
 
-Use the existing **firmowid [dev]** app in the **Alergeek Ventures** ChatGPT
+Use the existing **[dev] firmowid** app in the **Alergeek Ventures** ChatGPT
 workspace. It is available to workspace users and linked to the shared tunnel.
 Agree with the operator on tunnel ownership and the target worktree before use;
 only one local environment may use it at a time.
+
+**The app only works with a server started at `http://localhost:4000`, from
+the `main` worktree.** A tunnel and its app keep the OAuth origin they were set
+up with: refreshing tools, relinking an account or editing the app does not move
+them to another origin, and any other origin fails with 404 or 502. That origin
+resolves to each developer's own computer.
 
 Follow `infisical-secrets`. The tunnel launcher reads `CONTROL_PLANE_API_KEY`
 and `CONTROL_PLANE_TUNNEL_ID` from Infisical environment `dev`, folder
@@ -35,10 +41,20 @@ ownership rules.
 
 ## Feature development and testing
 
-1. Use the worktree's existing services according to `AGENTS.md`.
-2. Run `mix chatgpt.tunnel` and keep it in the foreground while testing.
-3. Open **firmowid [dev]** in ChatGPT. Link the operator's Firmowid development
-   account only if prompted; do not recreate or reconfigure the app.
+1. When the operator wants to work on the GPT app, prepare the `main`
+   worktree: it listens on port 4000 (`.server.port`), and you set
+   `PHX_URL=http://localhost:4000` in `.env.worktree`, then restart Phoenix
+   (`tmux kill-session -t firmowid-4000`, then
+   `tmux new -d -s firmowid-4000 "sh -lc 'env TERM=xterm-256color mix phx.server 2>&1 | tee tmp/phoenix.log'"`).
+   `mix dev.up` writes the wave or Caddy URL back into `PHX_URL`, so set it
+   again after every `mix dev.up`. Confirm
+   `curl http://localhost:4000/.well-known/oauth-authorization-server` reports
+   `http://localhost:4000` as the issuer.
+2. Run `mix chatgpt.tunnel` and keep it in the foreground while testing. Its
+   startup log must register `localhost` harpoon hosts.
+3. Open **[dev] firmowid** in ChatGPT. Link the operator's Firmowid development
+   account only if prompted; do not recreate or reconfigure the app or its
+   tunnel.
 4. After tool schemas or resource metadata change, ask a workspace administrator
    to refresh the app in workspace settings. Start a new conversation with the
    app selected. Widget URIs are content-addressed by `FirmowidMcp.Runtime`; use

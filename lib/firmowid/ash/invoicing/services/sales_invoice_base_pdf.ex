@@ -6,8 +6,8 @@ defmodule Firmowid.Ash.Invoicing.Services.SalesInvoiceBasePdf do
   alias Firmowid.Ash.Invoicing
   alias Firmowid.Ash.Invoicing.SalesInvoice
   alias Firmowid.Ash.Invoicing.Services.PdfUtils
+  alias FirmowidUI.Invoicing.Components.SalesInvoice, as: InvoiceDocument
   alias FirmowidWeb.Infrastructure.Utilities.PdfHelpers
-  alias FirmowidWeb.Invoicing.SalesInvoices.Components.Pdf
 
   @item_calcs [:net_value, :vat_value, :gross_value]
   @doc """
@@ -34,7 +34,7 @@ defmodule Firmowid.Ash.Invoicing.Services.SalesInvoiceBasePdf do
     with {:ok, currency_rate} <- currency_rate(invoice) do
       html_content =
         PdfHelpers.render_pdf_html(
-          Pdf,
+          InvoiceDocument,
           :sales_invoice,
           [
             layout: false,
@@ -56,7 +56,7 @@ defmodule Firmowid.Ash.Invoicing.Services.SalesInvoiceBasePdf do
         scale: 1.25,
         header_html:
           PdfHelpers.render_pdf_html(
-            Pdf,
+            InvoiceDocument,
             :sales_invoice_print_header,
             [
               layout: false,
@@ -68,7 +68,7 @@ defmodule Firmowid.Ash.Invoicing.Services.SalesInvoiceBasePdf do
           ),
         footer_html:
           PdfHelpers.render_pdf_html(
-            Pdf,
+            InvoiceDocument,
             :sales_invoice_print_footer,
             [layout: false, sales_invoice: invoice, footer_logo_data_uri: footer_logo_data_uri],
             page_margins: %{top: 64, bottom: 204, left: 32, right: 32}

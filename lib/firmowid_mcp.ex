@@ -6,6 +6,8 @@ defmodule FirmowidMcp do
   use Ash.Domain, extensions: [AshAi]
 
   alias FirmowidMcp.Invoicing
+  alias FirmowidMcp.Invoicing.IssueCorrection
+  alias FirmowidMcp.Invoicing.IssueInvoice
   alias FirmowidMcp.Ksef.Connection
 
   mcp_resources do
@@ -13,6 +15,20 @@ defmodule FirmowidMcp do
       html: {FirmowidMcp.Runtime, :document, []},
       title: "KSeF connection",
       description: "Connect the organization's KSeF account using the existing administrator workflow.",
+      domain: nil,
+      prefers_border: true
+
+    mcp_ui_resource :issue_invoice, IssueInvoice.resource_uri(),
+      html: {FirmowidMcp.Runtime, :document, []},
+      title: "Invoice confirmation",
+      description: "Preview an invoice and confirm its number before issuing and sending to KSeF.",
+      domain: nil,
+      prefers_border: true
+
+    mcp_ui_resource :issue_correction, IssueCorrection.resource_uri(),
+      html: {FirmowidMcp.Runtime, :document, []},
+      title: "Correction confirmation",
+      description: "Review and explicitly confirm an invoice correction before sending it to KSeF.",
       domain: nil,
       prefers_border: true
   end

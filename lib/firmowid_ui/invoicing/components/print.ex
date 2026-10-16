@@ -1,10 +1,19 @@
-defmodule FirmowidWeb.Invoicing.Components.Print do
-  @moduledoc false
-  use FirmowidWeb, :html
+defmodule FirmowidUI.Invoicing.Components.Print do
+  @moduledoc """
+  Shared A4 document layout and internal-note page for invoice previews and PDFs.
+
+  These function components render document content without browser navigation
+  or PDF generation infrastructure.
+  """
+  use FirmowidUI, :html
+
+  alias Phoenix.LiveView.Rendered
 
   attr :class, :string, default: nil
   slot :inner_block, required: true
 
+  @doc "Renders slotted document content in the invoice's printable A4 page layout."
+  @spec a4_page(map()) :: Rendered.t()
   def a4_page(assigns) do
     ~H"""
     <div class={[
@@ -19,6 +28,8 @@ defmodule FirmowidWeb.Invoicing.Components.Print do
   attr :internal_note, :string, required: true
   attr :footer_logo_data_uri, :string, default: nil
 
+  @doc "Renders an internal note on a separate A4 page with an optional embedded footer logo."
+  @spec internal_note_page(map()) :: Rendered.t()
   def internal_note_page(assigns) do
     ~H"""
     <.a4_page class="mt-4 print:static">

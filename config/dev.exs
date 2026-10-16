@@ -15,7 +15,8 @@ config :firmowid, Endpoint,
   watchers: [
     esbuild: {Esbuild, :install_and_run, [:firmowid, ~w(--sourcemap=inline --watch)]},
     tailwind: {Tailwind, :install_and_run, [:firmowid, ~w(--watch)]},
-    mcp_js: {Esbuild, :install_and_run, [:mcp, ~w(--watch)]}
+    mcp_js: {Esbuild, :install_and_run, [:mcp, ~w(--watch)]},
+    mcp_dev_host_js: {Esbuild, :install_and_run, [:mcp_dev_host, ~w(--watch)]}
   ],
   live_reload: [
     patterns: [

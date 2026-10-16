@@ -4,7 +4,7 @@ defmodule Firmowid.Ash.Invoicing.Changes.NormalizeReverseChargeVatRates do
 
   Works in dual mode:
 
-  - **Attribute mode** (for WizardDraft) — reads/writes items as an attribute
+  - **Attribute mode** (for WizardState) — reads/writes items as an attribute
     containing a list of embedded resource structs.
   - **Argument mode** (for SalesInvoice) — reads/writes items as an action argument
     containing a list of maps for `manage_relationship`.
@@ -16,7 +16,7 @@ defmodule Firmowid.Ash.Invoicing.Changes.NormalizeReverseChargeVatRates do
   ## Options
 
     * `:source` — `:attribute` or `:argument` (where to read/write items)
-    * `:field` — atom (`:items` for WizardDraft, `:sales_invoice_items` for SalesInvoice)
+    * `:field` — atom (`:items` for WizardState, `:sales_invoice_items` for SalesInvoice)
   """
   use Ash.Resource.Change
 

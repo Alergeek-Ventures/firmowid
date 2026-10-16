@@ -14,7 +14,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Controllers.Pdf do
 
   require Logger
 
-  plug :put_view, html: FirmowidWeb.Invoicing.SalesInvoices.Components.Pdf
+  plug :put_view, html: FirmowidUI.Invoicing.Components.SalesInvoice
 
   @item_calcs [:net_value, :vat_value, :gross_value]
   @pdf_loads [

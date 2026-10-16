@@ -15,7 +15,6 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
   alias Firmowid.Ash.Invoicing.SalesInvoice
   alias Firmowid.Ash.Ksef
   alias Firmowid.Ash.Ksef.SubmissionInfo
-  alias Firmowid.ErrorKind
   alias FirmowidWeb.Invoicing.Assistant.Utilities.SessionCloser
   alias FirmowidWeb.Invoicing.Components.InvoiceAssistant
   alias FirmowidWeb.Invoicing.Components.InvoiceDetails
@@ -23,8 +22,6 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
   alias FirmowidWeb.Invoicing.Components.InvoiceTimeline
   alias FirmowidWeb.Invoicing.Utilities.InvoiceDetailsAssistantSubject
   alias FirmowidWeb.Invoicing.Utilities.Navigation
-
-  require Logger
 
   @invoice_suggested_messages [
     "Ta faktura pokrywa wszystkie transakcje z poprzedniego miesiąca",
@@ -134,7 +131,7 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
         internal_notes: internal_notes,
         cancelled?: cancelled?,
         show_timeline_button: show_timeline_button?(submission_info),
-        can_write_invoicing?: Ash.can?({SalesInvoice, :update}, assigns.current_user)
+        can_write_invoicing?: Ash.can?({SalesInvoice, :update_draft}, assigns.current_user)
       )
 
     {:ok, socket}
@@ -147,7 +144,6 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
   attr :show_vat_for_sales_invoice, :boolean, default: true
   attr :current_user, :map, required: true
   attr :return_to, :string, default: nil
-  attr :ksef_connected?, :boolean, default: false
   attr :scope, :map, required: true
 
   @impl true
@@ -187,11 +183,14 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
                 </.link>
 
                 <%= if @can_write_invoicing? do %>
-                  <%= if SubmissionInfo.editing_blocked?(@invoice, @submission_info) do %>
+                  <%= if SubmissionInfo.editing_blocked?(@invoice, @submission_info) or
+                          SubmissionInfo.outside_ksef?(@invoice, @submission_info) do %>
                     <span
                       id="edit-invoice-button-tooltip"
                       phx-hook="Tippy"
-                      data-tippy-content="Faktura jest zablokowana. Edycja będzie dostępna po zakończeniu wysyłki do KSeF."
+                      data-tippy-content={
+                        SubmissionInfo.edit_unavailable_reason(@invoice, @submission_info)
+                      }
                       data-tippy-delay="100"
                       class="inline-flex"
                       tabindex="0"
@@ -209,7 +208,7 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
                       </.button>
                     </span>
                     <span id="edit-invoice-button-description" class="sr-only">
-                      Edycja jest niedostępna, ponieważ faktura jest zablokowana.
+                      {SubmissionInfo.edit_unavailable_reason(@invoice, @submission_info)}
                     </span>
                   <% else %>
                     <.link
@@ -288,37 +287,6 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
                 >
                   !
                 </span>
-              </.button>
-
-              <.button
-                :if={
-                  @can_write_invoicing? and @ksef_connected? and
-                    not is_nil(@invoice.invoice_number) and
-                    (SubmissionInfo.not_submitted?(@submission_info) or
-                       SubmissionInfo.submitting?(@submission_info))
-                }
-                id="send-to-ksef-button"
-                disabled={SubmissionInfo.submitting?(@submission_info)}
-                phx-hook="Tippy"
-                data-tippy-content={
-                  if SubmissionInfo.submitting?(@submission_info),
-                    do: "Wysyłanie...",
-                    else: "Wyślij do KSeF"
-                }
-                data-tippy-delay="100"
-                variant="primary"
-                accent="turquoise"
-                size="small"
-                class={[SubmissionInfo.submitting?(@submission_info) && "cursor-wait"]}
-                phx-click="send_to_ksef"
-                phx-target={@myself}
-              >
-                Wyślij
-                <%= if SubmissionInfo.submitting?(@submission_info) do %>
-                  <.icon name="hero-arrow-path" class="size-5 animate-spin" />
-                <% else %>
-                  <Lucideicons.send class="size-5" />
-                <% end %>
               </.button>
 
               <div :if={@can_write_invoicing? and @invoice.is_deletable} class="absolute">
@@ -460,7 +428,7 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
                   id={"preview-#{invoice.id}"}
                   class="max-w-full min-w-0"
                 >
-                  <FirmowidWeb.Invoicing.SalesInvoices.Components.Pdf.sales_invoice
+                  <FirmowidUI.Invoicing.Components.SalesInvoice.sales_invoice
                     sales_invoice={invoice}
                     logo_url={assigns[:logo_url]}
                     currency_rate={Invoicing.get_currency_rate(invoice)}
@@ -554,36 +522,6 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
   def handle_event("hide_timeline", _params, socket) do
     {:noreply, assign(socket, show_timeline: false)}
   end
-
-  def handle_event("send_to_ksef", _params, socket) do
-    invoice = socket.assigns.invoice
-
-    case Ksef.submit_sales_invoice(invoice.id, socket.assigns.scope) do
-      {:ok, _job} ->
-        Ksef.subscribe_ksef_status(socket.assigns.current_user.organization_id)
-
-        {:noreply,
-         socket
-         |> assign(:submission_info, %SubmissionInfo{status: :submitting})
-         |> put_flash(:info, "Wysyłka do KSeF rozpoczęta")}
-
-      {:error, reason} ->
-        Logger.error("Failed to submit to KSeF",
-          invoice_id: invoice.id,
-          error_kind: ErrorKind.classify(reason)
-        )
-
-        {:noreply, put_flash(socket, :error, ksef_error_message(reason))}
-    end
-  end
-
-  defp ksef_error_message(:not_authenticated), do: "Organizacja nie jest połączona z KSeF"
-  defp ksef_error_message(:invoice_is_draft), do: "Nie można wysłać szkicu faktury"
-  defp ksef_error_message(:invoice_already_locked), do: "Faktura została już wysłana do KSeF"
-
-  defp ksef_error_message({:invalid_for_ksef, _}), do: "Faktura zawiera błędy uniemożliwiające wysyłkę do KSeF"
-
-  defp ksef_error_message(_), do: "Nie udało się wysłać faktury do KSeF"
 
   defp show_timeline_button?(submission_info), do: SubmissionInfo.attempted?(submission_info)
 

@@ -29,7 +29,7 @@
       <FirmowidWeb.Invoicing.SalesInvoices.Views.Creator.render_header
         invoice={@invoice}
         step={
-          if @invoice.ksef_number,
+          if @invoice.invoice_number,
             do: "Faktura korygująca",
             else: "Edycja faktury"
         }
@@ -133,7 +133,7 @@
 
       <hr class="col-start-2 col-end-9 text-grey-200" />
 
-      <div :if={@invoice.ksef_number} class="col-start-2 col-end-9">
+      <div :if={@invoice.invoice_number} class="col-start-2 col-end-9">
         <.input
           class="min-h-20"
           field={@form[:correction_reason]}
@@ -186,14 +186,14 @@
       </div>
 
       <div class="col-span-full my-14 flex flex-col items-center justify-center gap-14 xl:flex-row">
-        <%= if @invoice.ksef_number do %>
+        <%= if @invoice.invoice_number do %>
           <div class="space-y-4">
             <p class="text-lg/6 font-medium text-black">
               Faktura {@invoice.invoice_number}
             </p>
 
             <div class="max-w-[650px] overflow-hidden rounded-lg border border-grey-200 bg-white shadow-sm">
-              <FirmowidWeb.Invoicing.SalesInvoices.Components.Pdf.sales_invoice
+              <FirmowidUI.Invoicing.Components.SalesInvoice.sales_invoice
                 sales_invoice={@invoice}
                 reference_invoice={@reference_invoice}
                 currency_rate={Invoicing.get_currency_rate(@invoice)}
@@ -212,7 +212,7 @@
               "max-w-[650px] overflow-hidden rounded-lg border border-grey-200 bg-white shadow-sm",
               @stale_preview_invoice? && "opacity-50"
             ]}>
-              <FirmowidWeb.Invoicing.SalesInvoices.Components.Pdf.sales_invoice
+              <FirmowidUI.Invoicing.Components.SalesInvoice.sales_invoice
                 sales_invoice={@preview_invoice}
                 reference_invoice={@invoice}
                 currency_rate={@currency_rate}
@@ -226,7 +226,7 @@
             "max-w-[650px] overflow-hidden rounded-lg border border-grey-200 bg-white shadow-sm",
             @stale_preview_invoice? && "opacity-50"
           ]}>
-            <FirmowidWeb.Invoicing.SalesInvoices.Components.Pdf.sales_invoice
+            <FirmowidUI.Invoicing.Components.SalesInvoice.sales_invoice
               sales_invoice={@preview_invoice}
               currency_rate={@currency_rate}
               show_vat={@current_org.is_vat_payer}
@@ -249,7 +249,7 @@
       </.button>
 
       <.button
-        :if={is_nil(@invoice.ksef_number) and @invoice.ksef_invoice_kind == :vat}
+        :if={is_nil(@invoice.invoice_number) and @invoice.ksef_invoice_kind == :vat}
         type="button"
         variant="secondary"
         phx-click="save_as_draft"
@@ -263,7 +263,7 @@
         variant="primary"
         accent="turquoise"
       >
-        {if @invoice.ksef_number,
+        {if @invoice.invoice_number,
           do: "Wystaw fakturę korygującą",
           else: "Zapisz i wyślij do KSeF"}
       </.button>

@@ -268,14 +268,14 @@ defmodule Firmowid.Seeds.MonthM0 do
   }
 
   defp seed_ksef_scenarios(bytecraft, cps, prefix) do
-    seed_ksef_plain(bytecraft, cps, prefix)
-    seed_ksef_confirmed_not_sent(bytecraft, cps, prefix)
+    seed_ksef_audit_draft(bytecraft, cps, prefix)
+    seed_ksef_mvp_draft(bytecraft, cps, prefix)
   end
 
-  # 01/ — plain domestic invoice, no KSeF interaction
-  defp seed_ksef_plain(bytecraft, cps, prefix) do
-    Helpers.get_or_create_sales_invoice(
-      "BC/01/#{prefix}",
+  # Drafts ready to issue against the KSeF test environment.
+  defp seed_ksef_audit_draft(bytecraft, cps, prefix) do
+    Helpers.get_or_create_sales_invoice_draft(
+      "Scenariusz KSeF: audyt architektury (#{prefix})",
       bytecraft.id,
       Map.merge(@ksef_buyer, %{
         "invoice_type" => "poland",
@@ -304,47 +304,41 @@ defmodule Firmowid.Seeds.MonthM0 do
     )
   end
 
-  # 02/ — confirmed invoice, not submitted to KSeF
-  defp seed_ksef_confirmed_not_sent(bytecraft, cps, prefix) do
-    inv_number = "BC/02/#{prefix}"
-
-    invoice =
-      Helpers.get_or_create_sales_invoice(
-        inv_number,
-        bytecraft.id,
-        Map.merge(@ksef_buyer, %{
-          "invoice_type" => "poland",
-          "issue_date" => Helpers.date_this_month(10),
-          "sale_date" => Helpers.date_this_month(10),
-          "due_date" => Helpers.date_this_month(24),
-          "currency" => "PLN",
-          "counterparty_id" => cps.polnocny_kod.id,
-          "sales_invoice_items" => [
-            %{
-              "name" => "Prototyp MVP — panel analityczny Północnego Kodu",
-              "quantity" => 10,
-              "unit" => "godz.",
-              "unit_price" => 200.00,
-              "vat_rate" => "5"
-            },
-            %{
-              "name" => "Konsultacje dostępności cyfrowej",
-              "quantity" => 4,
-              "unit" => "godz.",
-              "unit_price" => 180.00,
-              "vat_rate" => "zw"
-            }
-          ]
-        })
-      )
-
-    Ash.Seed.update!(invoice, %{locked_at: nil})
+  defp seed_ksef_mvp_draft(bytecraft, cps, prefix) do
+    Helpers.get_or_create_sales_invoice_draft(
+      "Scenariusz KSeF: prototyp MVP (#{prefix})",
+      bytecraft.id,
+      Map.merge(@ksef_buyer, %{
+        "invoice_type" => "poland",
+        "issue_date" => Helpers.date_this_month(10),
+        "sale_date" => Helpers.date_this_month(10),
+        "due_date" => Helpers.date_this_month(24),
+        "currency" => "PLN",
+        "counterparty_id" => cps.polnocny_kod.id,
+        "sales_invoice_items" => [
+          %{
+            "name" => "Prototyp MVP — panel analityczny Północnego Kodu",
+            "quantity" => 10,
+            "unit" => "godz.",
+            "unit_price" => 200.00,
+            "vat_rate" => "5"
+          },
+          %{
+            "name" => "Konsultacje dostępności cyfrowej",
+            "quantity" => 4,
+            "unit" => "godz.",
+            "unit_price" => 180.00,
+            "vat_rate" => "zw"
+          }
+        ]
+      })
+    )
   end
 
   # — S08 deterministic assistant scenario (current month invoice) —
 
   defp seed_s08_current_month_invoice(bytecraft, prefix) do
-    Helpers.get_or_create_sales_invoice("AUR/#{prefix}", bytecraft.id, %{
+    Helpers.get_or_create_sales_invoice("BC/06/#{prefix}", bytecraft.id, %{
       "invoice_type" => "poland",
       "issue_date" => Helpers.date_this_month(14),
       "sale_date" => Helpers.date_this_month(14),

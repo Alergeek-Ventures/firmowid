@@ -25,8 +25,10 @@ defmodule FirmowidMcp.Runtime do
         <title>Firmowid</title>
         <style>
           <%= Phoenix.HTML.raw(@css) %>
-          body, button, input, select, textarea { font-family: "Lexend", ui-sans-serif, system-ui, sans-serif !important; }
+          /* ChatGPT can wrap the root in an element with its own font, which plain text would inherit. */
+          body, #mcp-root, #mcp-status, button, input, select, textarea { font-family: "Lexend", ui-sans-serif, system-ui, sans-serif !important; }
           #mcp-root, #mcp-status { inline-size: min(100%, 34rem); margin-inline: auto; }
+          #mcp-root:has(#mcp-invoice-issuance) { inline-size: min(100%, 72rem); }
         </style>
       </head>
       <body class="bg-lightGreyBg text-grey-900">
@@ -65,7 +67,9 @@ defmodule FirmowidMcp.Runtime do
 
     html =
       conn
-      |> Phoenix.Component.live_render(app.live_view(), session: %{"mcp_session" => token})
+      |> Phoenix.Component.live_render(app.live_view(),
+        session: %{"mcp_session" => token, "mcp_resource" => app.resource_uri()}
+      )
       |> Phoenix.HTML.safe_to_string()
 
     %{
@@ -108,12 +112,12 @@ defmodule FirmowidMcp.Runtime do
 
   defp messages do
     %{
-      failed: gettext("KSeF setup is unavailable."),
-      expired: gettext("KSeF setup is unavailable."),
+      failed: gettext("This view is unavailable."),
+      expired: gettext("This view is unavailable."),
       context_failed: gettext("The view is current, but ChatGPT could not receive its context."),
       download_failed: gettext("The file could not be downloaded. Try again."),
       link_failed: gettext("Unable to open the link. Try again."),
-      blocked: gettext("KSeF setup is unavailable.")
+      blocked: gettext("This view is unavailable.")
     }
   end
 

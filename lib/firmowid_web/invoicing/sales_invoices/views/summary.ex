@@ -16,10 +16,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Summary do
   alias Firmowid.Ash.Invoicing.SalesInvoice
   alias Firmowid.Ash.Ksef
   alias Firmowid.Ash.Ksef.SubmissionInfo
-  alias Firmowid.ErrorKind
   alias FirmowidWeb.Invoicing.Utilities.Navigation
-
-  require Logger
 
   @invoice_loads [
     :net_value,
@@ -62,7 +59,6 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Summary do
       |> assign(:submission_info, submission_info)
       |> assign(:currency_rate, currency_rate)
       |> assign(:return_to, return_to)
-      |> assign(:ksef_connected?, Ksef.connected?(socket.assigns.ash_scope))
 
     {:ok, socket}
   end
@@ -96,11 +92,12 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Summary do
 
       <div class="flex items-center justify-between">
         <div class="flex items-center gap-4">
-          <%= if SubmissionInfo.editing_blocked?(@invoice, @submission_info) do %>
+          <%= if SubmissionInfo.editing_blocked?(@invoice, @submission_info) or
+                  SubmissionInfo.outside_ksef?(@invoice, @submission_info) do %>
             <span
               id="edit-invoice-button-tooltip"
               phx-hook="Tippy"
-              data-tippy-content="Faktura jest zablokowana. Edycja będzie dostępna po zakończeniu wysyłki do KSeF."
+              data-tippy-content={SubmissionInfo.edit_unavailable_reason(@invoice, @submission_info)}
               data-tippy-delay="100"
               class="inline-flex"
               tabindex="0"
@@ -117,7 +114,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Summary do
               </FirmowidUI.Components.Button.button>
             </span>
             <span id="edit-invoice-button-description" class="sr-only">
-              Edycja jest niedostępna, ponieważ faktura jest zablokowana.
+              {SubmissionInfo.edit_unavailable_reason(@invoice, @submission_info)}
             </span>
           <% else %>
             <.link
@@ -138,18 +135,6 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Summary do
           >
             <Lucideicons.download /> Pobierz
           </.link>
-          <FirmowidUI.Components.Button.button
-            :if={
-              (@ksef_connected? and not is_nil(@invoice.invoice_number) and
-                 SubmissionInfo.not_submitted?(@submission_info)) or
-                SubmissionInfo.failed?(@submission_info)
-            }
-            variant="secondary"
-            size="small"
-            phx-click="send_to_ksef"
-          >
-            <Lucideicons.send /> Wyślij do KSeF
-          </FirmowidUI.Components.Button.button>
         </div>
 
         <div class="flex items-center gap-4">
@@ -177,18 +162,17 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Summary do
           <p :if={@submission_info.error} class="max-w-lg text-sm">
             {@submission_info.error}
           </p>
-          <p class="mt-2 text-sm text-grey-600">
-            Jeżeli koliduje numer faktury - skopiuj ją i nadaj jej nowy numer.
-            A tę usuń.
+          <p id="returned-to-draft-notice" class="mt-2 text-sm text-grey-600">
+            Faktura wróciła do wersji roboczej bez numeru. Popraw dane i wystaw ją ponownie.
           </p>
           <.link
-            navigate={Navigation.sales_invoice_show_path(@invoice, @return_to)}
+            navigate={Navigation.sales_invoice_edit_path(@invoice, @return_to)}
             kind="button"
             variant="primary"
             accent="turquoise"
             class="mt-4"
           >
-            <Lucideicons.pencil class="size-4" /> Przejdź do faktury
+            <Lucideicons.pencil class="size-4" /> Popraw i wystaw ponownie
           </.link>
         </div>
       <% end %>
@@ -214,7 +198,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Summary do
               style={"width: #{template_width * scale}px; height: #{template_height * scale}px;"}
             >
               <div class="origin-top-left" style={"transform: scale(#{scale})"}>
-                <FirmowidWeb.Invoicing.SalesInvoices.Components.Pdf.sales_invoice
+                <FirmowidUI.Invoicing.Components.SalesInvoice.sales_invoice
                   sales_invoice={previous_invoice}
                   currency_rate={@currency_rate}
                   show_vat={@current_org.is_vat_payer}
@@ -228,7 +212,10 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Summary do
 
         <div class="relative">
           <%!-- Success state - behind invoice (z-0) --%>
-          <div class="absolute inset-0 z-0 flex items-center justify-center">
+          <div
+            :if={SubmissionInfo.submitted?(@submission_info)}
+            class="absolute inset-0 z-0 flex items-center justify-center"
+          >
             <div class="text-center">
               <Lucideicons.circle_check class="mx-auto size-24 text-greenText" />
               <p class="mt-4 text-xl font-medium text-grey-700">Wysłano do KSeF!</p>
@@ -242,7 +229,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Summary do
             class="relative z-10"
           >
             <div class="w-full max-w-[650px] overflow-hidden rounded-lg border border-grey-200 bg-white shadow-sm">
-              <FirmowidWeb.Invoicing.SalesInvoices.Components.Pdf.sales_invoice
+              <FirmowidUI.Invoicing.Components.SalesInvoice.sales_invoice
                 sales_invoice={@invoice}
                 currency_rate={@currency_rate}
                 show_vat={@current_org.is_vat_payer}
@@ -255,54 +242,6 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Summary do
       </div>
     </div>
     """
-  end
-
-  @impl true
-  def handle_event("send_to_ksef", _params, socket) do
-    invoice = socket.assigns.invoice
-
-    case Ksef.submit_sales_invoice(invoice.id, socket.assigns.ash_scope) do
-      {:ok, _job} ->
-        Ksef.subscribe_ksef_status(socket.assigns.current_user.organization_id)
-
-        {:noreply,
-         socket
-         |> assign(:submission_info, %SubmissionInfo{status: :submitting})
-         |> put_flash(:info, "Wysyłka do KSeF rozpoczęta")}
-
-      {:error, reason} ->
-        Logger.error("Failed to submit invoice to KSeF from summary",
-          invoice_id: invoice.id,
-          error_kind: ErrorKind.classify(reason)
-        )
-
-        handle_failed_summary_submission(socket, invoice, reason)
-    end
-  end
-
-  defp handle_failed_summary_submission(socket, %{ksef_invoice_kind: :kor} = invoice, reason) do
-    case Ksef.cleanup_failed_correction(invoice.id, socket.assigns.ash_scope) do
-      {:ok, :deleted, original_invoice_id} ->
-        {:noreply,
-         socket
-         |> put_flash(:error, Ksef.failed_correction_message(reason))
-         |> push_navigate(to: Navigation.sales_invoice_edit_path(original_invoice_id, socket.assigns.return_to))}
-
-      {:error, destroy_error} ->
-        Logger.error("Failed to clean up correction invoice from summary",
-          invoice_id: invoice.id,
-          error_kind: ErrorKind.classify(destroy_error)
-        )
-
-        {:noreply, put_flash(socket, :error, "Nie udało się wysłać faktury do KSeF")}
-
-      _ ->
-        {:noreply, put_flash(socket, :error, "Nie udało się wysłać faktury do KSeF")}
-    end
-  end
-
-  defp handle_failed_summary_submission(socket, _invoice, _reason) do
-    {:noreply, put_flash(socket, :error, "Nie udało się wysłać faktury do KSeF")}
   end
 
   @impl true

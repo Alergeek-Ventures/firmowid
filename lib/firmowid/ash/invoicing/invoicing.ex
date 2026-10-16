@@ -8,6 +8,7 @@ defmodule Firmowid.Ash.Invoicing do
   import Ash.Expr, only: [expr: 1]
 
   alias Firmowid.Ash.Blobs
+  alias Firmowid.Ash.Core
   alias Firmowid.Ash.Currencies.NbpApiClient
   alias Firmowid.Ash.Finances
   alias Firmowid.Ash.Finances.Transaction
@@ -64,6 +65,70 @@ defmodule Firmowid.Ash.Invoicing do
         :ksef_number,
         :invoice_type
       ]
+    end
+
+    tool :get_sales_invoice, SalesInvoice, :read do
+      description "Read a single authorized sales invoice, its items, effective correction snapshot and KSeF status. " <>
+                    "Use this before preparing a correction or resuming a saved draft. This tool never changes the invoice."
+
+      get_by [:id]
+      action_parameters []
+
+      load [
+        :amount,
+        :net_value,
+        :vat_value,
+        :gross_value,
+        :ksef_submission_status,
+        :effective_snapshot,
+        sales_invoice_items: [:net_value, :vat_value, :gross_value],
+        latest_correction: [:amount, sales_invoice_items: [:net_value, :vat_value, :gross_value]],
+        corrections: [:amount, sales_invoice_items: [:net_value, :vat_value, :gross_value]]
+      ]
+    end
+
+    tool :preview_sales_invoice, SalesInvoice, :preview_invoice do
+      description "Validate invoice data and open the mandatory user confirmation widget. " <>
+                    "Creates nothing. The user selects a number and confirms issuance inside the widget; " <>
+                    "an active KSeF connection is required to issue. Pass invoice_id to resume a saved draft, retaining its ID."
+
+      load [
+        :amount,
+        :net_value,
+        :vat_value,
+        :gross_value,
+        sales_invoice_items: [:net_value, :vat_value, :gross_value]
+      ]
+    end
+
+    tool :preview_sales_invoice_correction, SalesInvoice, :preview_correction do
+      description "Preview a correction to an issued invoice and open the mandatory confirmation widget. " <>
+                    "First read the source with get_sales_invoice. Supply original_invoice_id and the intended corrected items/fields. " <>
+                    "Preserves buyer tax identity and the effective correction chain. Creates nothing until the user confirms in the widget."
+
+      load [
+        :amount,
+        :net_value,
+        :vat_value,
+        :gross_value,
+        sales_invoice_items: [:net_value, :vat_value, :gross_value],
+        reference_invoice: [sales_invoice_items: [:net_value, :vat_value, :gross_value]]
+      ]
+    end
+
+    tool :create_sales_invoice_draft, SalesInvoice, :create_draft do
+      description "Save a complete but unnumbered invoice only when the user explicitly asks to issue it later. " <>
+                    "A draft requires the same data as issuance except the number; keep partial data in the chat instead. " <>
+                    "Prefer calling preview_sales_invoice directly. Saving is available without KSeF and neither issues nor submits."
+
+      load [:amount, sales_invoice_items: [:net_value, :vat_value, :gross_value]]
+    end
+
+    tool :update_sales_invoice_draft, SalesInvoice, :update_draft do
+      description "Revise a saved unnumbered invoice draft when the user asks to change it before issuing later. " <>
+                    "To issue a draft, call preview_sales_invoice with its invoice_id instead."
+
+      load [:amount, sales_invoice_items: [:net_value, :vat_value, :gross_value]]
     end
   end
 
@@ -122,30 +187,25 @@ defmodule Firmowid.Ash.Invoicing do
       define :list_sales_invoices, action: :list
       define :get_sales_invoice, action: :by_id, args: [:id]
       define :get_sales_invoice_by_share_token, action: :by_share_token, args: [:token]
-      define :create_sales_invoice, action: :create
-      define :update_sales_invoice, action: :update
+      define :create_sales_invoice_draft, action: :create_draft
+      define :update_sales_invoice_draft, action: :update_draft
+      define :issue_sales_invoice, action: :issue
+      define :create_and_issue_sales_invoice, action: :create_and_issue
+      define :preview_sales_invoice, action: :preview_invoice
+      define :preview_sales_invoice_correction, action: :preview_correction
 
       define :attach_suggested_sales_invoice_counterparty,
         action: :attach_suggested_counterparty,
         args: [:counterparty_id]
 
       define :destroy_sales_invoice, action: :destroy
-      define :create_sales_invoice_correction, action: :create_correction
+      define :issue_sales_invoice_correction, action: :issue_correction
       define :cancel_sales_invoice, action: :cancel, args: [:invoice_id]
       define :toggle_sales_invoice_skip, action: :toggle_skip
       define :generate_sales_invoice_share_token, action: :generate_share_token
       define :lock_sales_invoice_for_ksef, action: :lock_for_ksef
       define :unlock_sales_invoice_for_ksef, action: :unlock_for_ksef
       define :update_sales_invoice_ksef_fields, action: :update_ksef_fields
-
-      define :confirm_sales_invoice_from_draft,
-        action: :confirm_from_draft,
-        args: [
-          :draft_id,
-          {:optional, :invoice_number},
-          :organization,
-          {:optional, :should_send_emails}
-        ]
 
       define :get_next_sales_invoice_number,
         action: :get_next_number,
@@ -173,18 +233,18 @@ defmodule Firmowid.Ash.Invoicing do
     resource Firmowid.Ash.Invoicing.CostInvoiceTransaction
     resource Firmowid.Ash.Invoicing.SalesInvoiceItem
 
-    resource Firmowid.Ash.Invoicing.WizardDraft.Item
+    resource Firmowid.Ash.Invoicing.WizardState.Item
 
-    resource Firmowid.Ash.Invoicing.WizardDraft do
-      define :list_wizard_drafts, action: :read
-      define :get_wizard_draft, action: :read, get_by: [:id]
-      define :create_wizard_draft, action: :create
-      define :update_wizard_draft_counterparty, action: :update_counterparty
-      define :update_wizard_draft_items, action: :update_items
-      define :update_wizard_draft_payment, action: :update_payment
-      define :reset_wizard_draft_bank_account, action: :reset_bank_account
-      define :populate_wizard_draft_from_invoice, action: :populate_from_invoice
-      define :destroy_wizard_draft, action: :destroy
+    resource Firmowid.Ash.Invoicing.WizardState do
+      define :list_wizard_states, action: :read
+      define :get_wizard_state, action: :read, get_by: [:id]
+      define :create_wizard_state, action: :create
+      define :update_wizard_state_counterparty, action: :update_counterparty
+      define :update_wizard_state_items, action: :update_items
+      define :update_wizard_state_payment, action: :update_payment
+      define :reset_wizard_state_bank_account, action: :reset_bank_account
+      define :populate_wizard_state_from_invoice, action: :populate_from_invoice
+      define :destroy_wizard_state, action: :destroy
     end
 
     resource Firmowid.Ash.Invoicing.SalesInvoiceEmailDelivery do
@@ -747,8 +807,6 @@ defmodule Firmowid.Ash.Invoicing do
   def get_logo_url(organization_id, opts \\ [])
 
   def get_logo_url(organization_id, opts) when is_binary(organization_id) do
-    alias Firmowid.Ash.Core
-
     ash_opts = Keyword.take(opts, [:scope])
 
     organization =
@@ -801,28 +859,61 @@ defmodule Firmowid.Ash.Invoicing do
   end
 
   @doc """
-  Returns a map of series => next_invoice_number for all known series.
-  Fans out multiple `:get_next_number` action calls.
+  Returns a map of `{format, series}` => next invoice number for every
+  numbering sequence worth suggesting on `date`.
+
+  Always includes the monthly `NN/MM/YYYY` and `NN/MM/YYYY/A`, the yearly
+  `N/YYYY` and, when the organization name yields initials, the yearly
+  `INITIALS/N/YYYY` (see `SalesInvoice.organization_initials/1`), plus every
+  monthly series already used by the organization's invoices (such as `FK`).
+  Yearly prefixes other than the current initials are not suggested, because a
+  number like `ABC/10/2026` may equally be a monthly one. Fans out multiple
+  `:get_next_number` action calls.
   """
   @spec get_next_numbers_for_series(Date.t(), keyword(), keyword()) :: %{
-          (String.t() | nil) => String.t()
+          {:monthly | :yearly, String.t() | nil} => String.t()
         }
   def get_next_numbers_for_series(date, opts, extra_opts \\ []) do
-    existing_series =
+    existing_monthly_sequences =
       opts
       |> SalesInvoice.read_all_invoice_numbers()
       |> Enum.map(&SalesInvoice.parse_invoice_number/1)
-      |> Enum.filter(&match?({:ok, _}, &1))
-      |> Enum.map(fn {:ok, %{series: s}} -> s end)
-      |> Enum.uniq()
+      |> Enum.flat_map(fn
+        {:ok, %{format: :monthly, series: series}} -> [{:monthly, series}]
+        _yearly_or_unparsed -> []
+      end)
 
-    all_series = Enum.uniq([nil, "A"] ++ existing_series)
+    initials_sequences =
+      case opts |> organization_name() |> SalesInvoice.organization_initials() do
+        nil -> []
+        initials -> [{:yearly, initials}]
+      end
 
-    Map.new(all_series, fn series ->
+    ([{:monthly, nil}, {:monthly, "A"}, {:yearly, nil}] ++
+       initials_sequences ++ existing_monthly_sequences)
+    |> Enum.uniq()
+    |> Map.new(fn {format, series} = sequence ->
       {:ok, number} =
-        SalesInvoice.get_next_number(date, series, extra_opts[:omit_invoice_id], opts)
+        SalesInvoice.get_next_number(
+          date,
+          series,
+          extra_opts[:omit_invoice_id],
+          %{format: format},
+          opts
+        )
 
-      {series, number}
+      {sequence, number}
     end)
+  end
+
+  # Callers pass either `scope:` or the `actor:`/`tenant:` options of an action context.
+  defp organization_name(opts) do
+    tenant =
+      case Keyword.fetch(opts, :scope) do
+        {:ok, scope} -> Ash.Scope.to_opts(scope)[:tenant]
+        :error -> Keyword.fetch!(opts, :tenant)
+      end
+
+    Core.get_organization!(tenant, opts).name
   end
 end

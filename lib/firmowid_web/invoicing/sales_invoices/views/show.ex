@@ -7,10 +7,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Show do
   alias Firmowid.Ash.Invoicing.SalesInvoice
   alias Firmowid.Ash.Invoicing.Services.SalesInvoiceSharing
   alias Firmowid.Ash.Ksef
-  alias Firmowid.ErrorKind
   alias FirmowidWeb.Invoicing.Utilities.Navigation
-
-  require Logger
 
   @item_calcs [:net_value, :vat_value, :gross_value]
   @detail_loads [
@@ -76,7 +73,6 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Show do
         |> assign(:preview_type, :html)
         |> assign(:no_padding, true)
         |> assign(:return_to, return_to)
-        |> assign(:ksef_connected?, Ksef.connected?(socket.assigns.ash_scope))
 
       {:ok, socket}
     end
@@ -96,7 +92,6 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Show do
       potential_transactions={@potential_transactions}
       current_user={@current_user}
       return_to={@return_to}
-      ksef_connected?={@ksef_connected?}
       scope={@ash_scope}
     />
     """
@@ -142,7 +137,10 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Show do
   def handle_event("cancel", _params, socket) do
     case SalesInvoice.cancel(socket.assigns.invoice.id, scope: socket.assigns.ash_scope) do
       {:ok, correction} ->
-        submit_cancellation_correction(socket, correction)
+        {:noreply,
+         socket
+         |> put_flash(:info, "Wystawiono korektę anulującą i rozpoczęto jej wysyłkę do KSeF")
+         |> push_navigate(to: Navigation.sales_invoice_summary_path(correction, socket.assigns.return_to))}
 
       {:error, _error} ->
         {:noreply, put_flash(socket, :error, "Nie udało się anulować faktury")}
@@ -213,42 +211,6 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Show do
      |> assign(:invoice, updated_invoice)
      |> push_event("copy-to-clipboard", %{text: url})
      |> put_flash(:info, "Link skopiowany do schowka")}
-  end
-
-  defp submit_cancellation_correction(socket, correction) do
-    case Ksef.submit_sales_invoice(correction.id, socket.assigns.ash_scope) do
-      {:ok, _job} ->
-        {:noreply,
-         socket
-         |> put_flash(:info, "Wystawiono korektę anulującą i rozpoczęto jej wysyłkę do KSeF")
-         |> push_navigate(to: Navigation.sales_invoice_summary_path(correction, socket.assigns.return_to))}
-
-      {:error, reason} ->
-        Logger.error("Failed to submit cancellation correction to KSeF",
-          invoice_id: correction.id,
-          error_kind: ErrorKind.classify(reason)
-        )
-
-        case Ksef.cleanup_failed_correction(correction.id, socket.assigns.ash_scope) do
-          {:ok, :deleted, _original_invoice_id} ->
-            {:noreply, put_flash(socket, :error, Ksef.failed_correction_message(reason))}
-
-          {:error, cleanup_error} ->
-            Logger.error("Failed to clean up cancellation correction",
-              invoice_id: correction.id,
-              error_kind: ErrorKind.classify(cleanup_error)
-            )
-
-            {:noreply, put_flash(socket, :error, "Nie udało się wysłać korekty anulującej do KSeF")}
-
-          cleanup_result ->
-            Logger.error(
-              "Unexpected cleanup result for cancellation correction invoice #{correction.id} (kind=#{ErrorKind.classify(cleanup_result)})"
-            )
-
-            {:noreply, put_flash(socket, :error, "Nie udało się wysłać korekty anulującej do KSeF")}
-        end
-    end
   end
 
   defp refresh_invoice(id, scope) do

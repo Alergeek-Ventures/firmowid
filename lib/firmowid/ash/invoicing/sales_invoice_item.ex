@@ -104,7 +104,7 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoiceItem do
     # (vat_value, gross_value) require it to be inlined for in-memory Ash.load!/3
     # on plain structs. A module-based expression/2 callback resolves correctly in SQL
     # but breaks the single-pass dependency chain for in-memory evaluation.
-    # This mapping is duplicated in WizardDraft.Item — keep both in sync.
+    # This mapping is duplicated in WizardState.Item — keep both in sync.
     calculate :vat_rate_numeric,
               :decimal,
               expr(

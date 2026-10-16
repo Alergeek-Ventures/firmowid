@@ -75,15 +75,32 @@ defmodule Firmowid.Ash.Ksef.SubmissionInfo do
 
   def editing_blocked?(_invoice, submission_info), do: submitting?(submission_info)
 
+  @doc """
+  Returns whether a numbered invoice was issued outside KSeF, before KSeF was mandatory.
+  Such invoices are kept for reference only and are neither edited nor corrected.
+  """
+  @spec outside_ksef?(map(), t()) :: boolean()
+  def outside_ksef?(%{invoice_number: number, ksef_number: nil} = invoice, submission_info) when not is_nil(number),
+    do: not editing_blocked?(invoice, submission_info)
+
+  def outside_ksef?(_invoice, _submission_info), do: false
+
+  @doc "Explains why an invoice issued outside KSeF cannot be edited."
+  @spec outside_ksef_message() :: String.t()
+  def outside_ksef_message, do: "Faktura wystawiona poza KSeF — nie można jej edytować ani korygować."
+
+  @doc "Explains why the edit control is unavailable, for an invoice that is locked or outside KSeF."
+  @spec edit_unavailable_reason(map(), t()) :: String.t()
+  def edit_unavailable_reason(invoice, submission_info) do
+    if outside_ksef?(invoice, submission_info),
+      do: outside_ksef_message(),
+      else: "Faktura jest zablokowana. Edycja będzie dostępna po zakończeniu wysyłki do KSeF."
+  end
+
   @doc "Returns `true` if the submission failed."
   @spec failed?(t()) :: boolean()
   def failed?(%__MODULE__{status: :failed}), do: true
   def failed?(%__MODULE__{}), do: false
-
-  @doc "Returns `true` if the invoice has never been submitted."
-  @spec not_submitted?(t()) :: boolean()
-  def not_submitted?(%__MODULE__{status: :not_submitted}), do: true
-  def not_submitted?(%__MODULE__{}), do: false
 
   @doc "Returns `true` if submission has been attempted (submitted, submitting, or failed)."
   @spec attempted?(t()) :: boolean()

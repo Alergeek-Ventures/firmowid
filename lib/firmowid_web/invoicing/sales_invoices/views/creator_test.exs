@@ -8,8 +8,9 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.CreatorTest do
   alias Firmowid.Ash.Finances
   alias Firmowid.Ash.Invoicing
   alias Firmowid.Ash.Invoicing.SalesInvoice
-  alias Firmowid.Ash.Invoicing.WizardDraft
+  alias Firmowid.Ash.Invoicing.WizardState
   alias Firmowid.Ash.Scope
+  alias Firmowid.InvoicingFixtures
   alias Firmowid.Test.Support.InvoicingCopyAssertions
 
   test "payment step restores the bank account matching the draft currency", %{conn: conn} do
@@ -34,7 +35,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.CreatorTest do
     formatted_iban = "de02 1203 0000 0000 2020 2020 2020"
 
     {:ok, draft} =
-      WizardDraft.update_payment(
+      WizardState.update_payment(
         draft,
         %{
           seller_account_number: formatted_iban,
@@ -74,7 +75,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.CreatorTest do
     draft = payment_step_draft!(admin)
 
     {:ok, draft} =
-      WizardDraft.update_payment(
+      WizardState.update_payment(
         draft,
         %{
           seller_account_number: "PL16109010140000071219812875",
@@ -121,7 +122,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.CreatorTest do
     scope = [tenant: admin.organization_id, actor: admin]
 
     {:ok, draft} =
-      WizardDraft.update_items(
+      WizardState.update_items(
         draft,
         %{
           currency: "PLN",
@@ -221,7 +222,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.CreatorTest do
     |> render_submit()
 
     [item] =
-      draft.id |> Invoicing.get_wizard_draft!(load: [:items], scope: scope) |> Map.fetch!(:items)
+      draft.id |> Invoicing.get_wizard_state!(load: [:items], scope: scope) |> Map.fetch!(:items)
 
     refute Decimal.eq?(item.unit_price, Decimal.new("81.30"))
 
@@ -335,10 +336,10 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.CreatorTest do
     conn = log_in_user(conn, admin)
     scope = [tenant: admin.organization_id, actor: admin, authorize?: false]
 
-    {:ok, draft} = WizardDraft.create(%{organization_id: admin.organization_id}, scope)
+    {:ok, draft} = WizardState.create(%{organization_id: admin.organization_id}, scope)
 
     {:ok, updated_draft} =
-      WizardDraft.update_counterparty(
+      WizardState.update_counterparty(
         draft,
         %{
           buyer_type: :company,
@@ -456,7 +457,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.CreatorTest do
     copied_draft = copied_draft!(admin)
 
     {:ok, copied_draft} =
-      WizardDraft.update_payment(
+      WizardState.update_payment(
         copied_draft,
         %{
           sale_date: ~D[2026-02-01],
@@ -515,7 +516,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.CreatorTest do
         ]
       })
 
-    {:ok, draft} = WizardDraft.create(%{organization_id: admin.organization_id}, scope: scope)
+    {:ok, draft} = WizardState.create(%{organization_id: admin.organization_id}, scope: scope)
     conn = log_in_user(conn, admin)
 
     {:ok, view, _html} =
@@ -525,7 +526,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.CreatorTest do
     |> element("button[phx-click='select_base_invoice'][phx-value-invoice_id='#{source_invoice.id}']")
     |> render_click()
 
-    copied_draft = Invoicing.get_wizard_draft!(draft.id, load: [:items], scope: scope)
+    copied_draft = Invoicing.get_wizard_state!(draft.id, load: [:items], scope: scope)
 
     assert InvoicingCopyAssertions.assert_preserved_fields!(source_invoice, copied_draft)
     assert InvoicingCopyAssertions.assert_cleared_dates!(copied_draft)
@@ -602,7 +603,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.CreatorTest do
     copied_draft = copied_draft!(admin)
 
     {:ok, copied_draft} =
-      WizardDraft.update_payment(
+      WizardState.update_payment(
         copied_draft,
         %{
           sale_date: ~D[2026-02-01],
@@ -614,13 +615,15 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.CreatorTest do
       )
 
     should_send_emails = false
+    InvoicingFixtures.accept_ksef_submissions!(admin.organization_id)
 
     {:ok, copied_invoice} =
-      SalesInvoice.confirm_from_draft(
+      WizardState.issue(
         copied_draft.id,
-        "FV/COPY/#{System.unique_integer([:positive])}",
-        %{name: "Test Organization", address: "ul. Organizacyjna 1, Warszawa", nip: "1234567890"},
-        should_send_emails,
+        %{
+          invoice_number: "FV/COPY/#{System.unique_integer([:positive])}",
+          should_send_emails: should_send_emails
+        },
         scope: scope
       )
 
@@ -649,12 +652,16 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.CreatorTest do
     scope = scope_for(admin)
 
     scope
-    |> then(&Invoicing.list_wizard_drafts!(scope: &1))
+    |> then(&Invoicing.list_wizard_states!(scope: &1))
     |> List.first()
     |> Ash.load!([:items], scope: scope)
   end
 
   defp sales_invoice_fixture!(admin, overrides) do
+    admin.organization_id
+    |> Firmowid.Ash.Core.get_organization!(scope: scope_for(admin))
+    |> Ash.Seed.update!(%{address: "ul. Organizacyjna 1, Warszawa"})
+
     default_attrs = %{
       invoice_type: :foreign,
       invoice_number: "FV/COPY/#{System.unique_integer([:positive])}",
@@ -677,7 +684,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.CreatorTest do
     }
 
     invoice =
-      Invoicing.create_sales_invoice!(Map.merge(default_attrs, overrides),
+      InvoicingFixtures.seed_sales_invoice!(Map.merge(default_attrs, overrides),
         scope: scope_for(admin)
       )
 
@@ -723,10 +730,10 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.CreatorTest do
   defp payment_step_draft!(admin) do
     scope = [tenant: admin.organization_id, actor: admin]
 
-    {:ok, draft} = WizardDraft.create(%{organization_id: admin.organization_id}, scope)
+    {:ok, draft} = WizardState.create(%{organization_id: admin.organization_id}, scope)
 
     {:ok, draft} =
-      WizardDraft.update_items(
+      WizardState.update_items(
         draft,
         %{
           currency: "PLN",
@@ -750,10 +757,10 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.CreatorTest do
   defp items_step_draft!(admin) do
     scope = [tenant: admin.organization_id, actor: admin]
 
-    {:ok, draft} = WizardDraft.create(%{organization_id: admin.organization_id}, scope)
+    {:ok, draft} = WizardState.create(%{organization_id: admin.organization_id}, scope)
 
     {:ok, draft} =
-      WizardDraft.update_counterparty(
+      WizardState.update_counterparty(
         draft,
         %{
           buyer_type: :individual,
