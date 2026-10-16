@@ -12,8 +12,18 @@ defmodule Firmowid.Ash.Invoicing.InvoiceMatching do
   alias Firmowid.Ash.Invoicing
   alias Firmowid.Ash.Invoicing.Matching
   alias Firmowid.Ash.Scope
+  alias Firmowid.Ash.SystemActor
 
   require Logger
+
+  @doc "Builds the scope automatic matching runs with for one organization."
+  @spec matcher_scope(Ash.UUID.t()) :: Scope.t()
+  def matcher_scope(organization_id) do
+    %Scope{
+      actor: %SystemActor{org_id: organization_id, role: :invoice_matcher},
+      tenant: organization_id
+    }
+  end
 
   @doc """
   Returns potential transactions for an invoice, scored and sorted by match likelihood.

@@ -481,7 +481,7 @@ defmodule Firmowid.Ash.Ksef.Workers.FetchWorker do
     Logger.info("Creating cost invoice from KSeF XML")
 
     case attrs |> Map.put(:blob_id, blob.id) |> Invoicing.create_cost_invoice() do
-      {:ok, _job} ->
+      {:ok, _cost_invoice} ->
         :ok
 
       {:error, reason} ->

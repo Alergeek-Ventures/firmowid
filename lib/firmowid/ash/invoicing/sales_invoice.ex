@@ -53,11 +53,13 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
   alias AshOban.Checks.AshObanInteraction
   alias Firmowid.Ash.Checks.AtLeastRole
   alias Firmowid.Ash.Checks.SystemActorRole
+  alias Firmowid.Ash.Finances
   alias Firmowid.Ash.Invoicing, as: InvoicingDomain
   alias Firmowid.Ash.Invoicing.Calculations.AnnotatedCorrections
   alias Firmowid.Ash.Invoicing.Changes
   alias Firmowid.Ash.Invoicing.Counterparty
   alias Firmowid.Ash.Invoicing.CountryCodes
+  alias Firmowid.Ash.Invoicing.InvoiceMatching
   alias Firmowid.Ash.Invoicing.SalesInvoiceEmailDelivery
   alias Firmowid.Ash.Invoicing.SalesInvoiceItem
   alias Firmowid.Ash.Invoicing.SalesInvoiceTransaction
@@ -139,6 +141,7 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
     define :cancel, args: [:invoice_id], action: :cancel
     define :toggle_skip, action: :toggle_skip
     define :generate_share_token, action: :generate_share_token
+    define :match_pending_invoices, args: [:signal]
     define :lock_for_ksef, action: :lock_for_ksef
     define :unlock_for_ksef, action: :unlock_for_ksef
     define :update_ksef_fields, action: :update_ksef_fields
@@ -1015,16 +1018,31 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
         Ash.Changeset.manage_relationship(changeset, :transactions, [], on_missing: :unrelate)
       end
     end
+
+    action :match_pending_invoices do
+      description "Matches pending sales invoices after a bank account sync."
+      argument :signal, Finances.Signals.BankAccountSynced, allow_nil?: false
+
+      run fn %{arguments: %{signal: signal}}, _context ->
+        signal.organization_id
+        |> InvoiceMatching.matcher_scope()
+        |> InvoiceMatching.match_sales_invoices()
+      end
+    end
   end
 
   policies do
     policy_group always() do
+      policy action(:match_pending_invoices) do
+        authorize_if signal_in(Finances.Signals, :bank_account_synced)
+      end
+
       policy {SystemActorRole, roles: [:sales_invoice_processor]} do
         authorize_if always()
       end
 
       policy AshObanInteraction do
-        authorize_if action(:dispatch_overdue_sales_invoice_reminders)
+        authorize_if action([:dispatch_overdue_sales_invoice_reminders, :match_pending_invoices])
       end
 
       policy {SystemActorRole, roles: [:analysis_reader]} do
@@ -1246,6 +1264,15 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
       relationship_context %{data_layer: %{table: "sales_invoice_entity_tags"}}
       source_attribute :id
       destination_attribute :resource_id
+    end
+  end
+
+  signals_in do
+    from Finances.Signals do
+      on :bank_account_synced, :match_pending_invoices,
+        delivery:
+          {AshOban.Signals,
+           queue: :invoicing, unique: [keys: [:organization_id], states: [:available, :scheduled, :retryable]]}
     end
   end
 

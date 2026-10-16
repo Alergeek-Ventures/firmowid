@@ -173,6 +173,8 @@ defmodule Firmowid.Ash.Finances.BankAccount do
       """
 
       change Firmowid.Ash.Finances.Changes.SyncTransactions
+
+      emit Firmowid.Ash.Finances.Signals, :bank_account_synced, fields: [bank_account_id: :id]
     end
 
     update :mark_sync_failed do

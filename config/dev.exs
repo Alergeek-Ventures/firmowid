@@ -11,6 +11,7 @@ config :firmowid, Endpoint,
   http: [port: 4000],
   check_origin: false,
   code_reloader: true,
+  reloadable_compilers: [:ash_signals, :phoenix_live_view, :gettext, :elixir, :app],
   debug_errors: true,
   watchers: [
     esbuild: {Esbuild, :install_and_run, [:firmowid, ~w(--sourcemap=inline --watch)]},

@@ -2,12 +2,15 @@ defmodule Firmowid.Ash.Invoicing.Workers.MatchingWorker do
   @moduledoc """
   Oban worker that runs invoice-to-transaction matching.
 
-  Handles three kinds of jobs:
+  Handles two kinds of jobs:
 
     * `"matching"` (cron) — enqueues one `"match_organization"` job per organization,
     * `"match_organization"` — matches all pending cost and sales invoices of one
-      organization (also enqueued after a bank sync brings new transactions),
-    * `"match_cost_invoice"` — matches a single cost invoice right after creation.
+      organization.
+
+  Matching after a new cost invoice or a bank sync runs in the listeners of
+  `Firmowid.Ash.Invoicing.Signals.cost_invoice_created` and
+  `Firmowid.Ash.Finances.Signals.bank_account_synced`.
   """
 
   use Oban.Worker, queue: :invoicing
@@ -20,14 +23,9 @@ defmodule Firmowid.Ash.Invoicing.Workers.MatchingWorker do
 
   require Logger
 
-  @doc """
-  Builds a job matching all pending invoices of the organization.
-
-  Only one such job per organization waits in the queue at a time, so repeated
-  triggers (cron, several bank accounts syncing) collapse into a single run.
-  """
-  @spec organization_job(Ash.UUID.t()) :: Oban.Job.changeset()
-  def organization_job(organization_id) do
+  # Only one such job per organization waits in the queue at a time, so a slow
+  # run does not pile up hourly cron jobs.
+  defp organization_job(organization_id) do
     new(%{name: "match_organization", organization_id: organization_id},
       unique: [
         period: :infinity,
@@ -65,18 +63,9 @@ defmodule Firmowid.Ash.Invoicing.Workers.MatchingWorker do
       %{"name" => "match_organization", "organization_id" => organization_id} ->
         Logger.info("Matching invoices for organization #{organization_id}")
 
-        scope = matcher_scope(organization_id)
+        scope = InvoiceMatching.matcher_scope(organization_id)
         InvoiceMatching.match_cost_invoices(scope)
         InvoiceMatching.match_sales_invoices(scope)
-
-      %{
-        "name" => "match_cost_invoice",
-        "cost_invoice_id" => cost_invoice_id,
-        "organization_id" => organization_id
-      } ->
-        Logger.info("Matching cost invoice #{cost_invoice_id}")
-
-        InvoiceMatching.match_cost_invoice(cost_invoice_id, matcher_scope(organization_id))
 
       _ ->
         Logger.error("Unknown matching job args",
@@ -86,12 +75,5 @@ defmodule Firmowid.Ash.Invoicing.Workers.MatchingWorker do
     end
 
     :ok
-  end
-
-  defp matcher_scope(organization_id) do
-    %Scope{
-      actor: %SystemActor{org_id: organization_id, role: :invoice_matcher},
-      tenant: organization_id
-    }
   end
 end

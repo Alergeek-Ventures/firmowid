@@ -14,7 +14,6 @@ defmodule Firmowid.Ash.Invoicing do
   alias Firmowid.Ash.Invoicing.CostInvoice
   alias Firmowid.Ash.Invoicing.SalesInvoice
   alias Firmowid.Ash.Invoicing.Services.RecentMatchedEntries
-  alias Firmowid.Ash.Invoicing.Workers.MatchingWorker
   alias Firmowid.Ash.Ksef
   alias Firmowid.Ash.Scope
   alias Firmowid.Ash.SystemActor
@@ -583,11 +582,10 @@ defmodule Firmowid.Ash.Invoicing do
   @doc """
   Creates a cost invoice from extracted metadata (AI or KSeF parser).
 
-  Increments the billing counter for non-correction invoices and enqueues
-  a matching job. PubSub notification is sent automatically via the `pub_sub`
-  block on `:create`.
+  The `:create` action emits `cost_invoice_created`, which matches the invoice
+  to bank transactions in a job committed together with the invoice.
   """
-  @spec create_cost_invoice(map()) :: {:ok, Oban.Job.t()} | {:error, term()}
+  @spec create_cost_invoice(map()) :: {:ok, CostInvoice.t()} | {:error, term()}
   def create_cost_invoice(extracted_metadata) do
     organization_id =
       Map.get(extracted_metadata, "organization_id") ||
@@ -603,15 +601,7 @@ defmodule Firmowid.Ash.Invoicing do
     actor = %SystemActor{org_id: organization_id, role: :cost_invoice_processor}
     scope = %Scope{actor: actor, tenant: organization_id}
 
-    with {:ok, cost_invoice} <- CostInvoice.create(sanitized_metadata, scope: scope) do
-      %{
-        name: "match_cost_invoice",
-        cost_invoice_id: cost_invoice.id,
-        organization_id: organization_id
-      }
-      |> MatchingWorker.new()
-      |> Firmowid.Oban.insert(skip_organization_id: true)
-    end
+    CostInvoice.create(sanitized_metadata, scope: scope)
   end
 
   @doc """
@@ -622,7 +612,7 @@ defmodule Firmowid.Ash.Invoicing do
   with the same KSeF number already exists.
   """
   @spec create_cost_invoice_with_ksef_dedup(map()) ::
-          {:ok, Oban.Job.t()}
+          {:ok, CostInvoice.t()}
           | {:error, {:duplicate_ksef_invoice, Ash.UUID.t()}}
           | {:error, term()}
   def create_cost_invoice_with_ksef_dedup(extracted_metadata) do
@@ -661,19 +651,7 @@ defmodule Firmowid.Ash.Invoicing do
         {:error, {:duplicate_ksef_invoice, existing_id}}
 
       _ ->
-        case __MODULE__.create_cost_invoice_dedup(sanitized_metadata, scope: scope) do
-          {:ok, record} ->
-            %{
-              name: "match_cost_invoice",
-              cost_invoice_id: record.id,
-              organization_id: organization_id
-            }
-            |> MatchingWorker.new()
-            |> Firmowid.Oban.insert(skip_organization_id: true)
-
-          {:error, reason} ->
-            {:error, reason}
-        end
+        __MODULE__.create_cost_invoice_dedup(sanitized_metadata, scope: scope)
     end
   end
 
