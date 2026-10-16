@@ -226,6 +226,10 @@ defmodule FirmowidWeb.Core.Router do
     get "/czasosledz/projekty/:id/csv", Csv, :project
     get "/zarzadzanie/umowy/:id", EmploymentContract, :download
 
+    if Mix.env() == :dev do
+      get "/development/mcp", Development.Controllers.Mcp, :index
+    end
+
     ash_authentication_live_session :with_org,
       on_mount: [
         {RequireOrganization, :default},
