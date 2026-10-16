@@ -55,6 +55,53 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoiceTest do
     end
   end
 
+  describe "invoice numbering" do
+    test "derives organization initials without legal-form words" do
+      assert SalesInvoice.organization_initials("Bytecraft Collective spółka z ograniczoną odpowiedzialnością") == "BC"
+
+      assert SalesInvoice.organization_initials("Łąka Ślusarska S.A.") == "LS"
+      assert SalesInvoice.organization_initials("sp. z o.o.") == nil
+    end
+
+    test "suggests the next number of every sequence, counting only its own format" do
+      user = admin_fixture()
+      scope = scope_for(user)
+
+      for number <- ["01/01/2026", "1/2026", "2/2026", "TO/1/2026", "TO/1/2025"] do
+        create_sales_invoice!(user, %{base_invoice_attrs() | invoice_number: number})
+      end
+
+      assert Invoicing.get_next_numbers_for_series(~D[2026-01-10], scope: scope) == %{
+               {:monthly, nil} => "02/01/2026",
+               {:monthly, "A"} => "01/01/2026/A",
+               {:yearly, nil} => "3/2026",
+               {:yearly, "TO"} => "TO/2/2026"
+             }
+
+      omitted = create_sales_invoice!(user, %{base_invoice_attrs() | invoice_number: "3/2026"})
+
+      assert {:ok, "3/2026"} =
+               SalesInvoice.get_next_number(~D[2026-12-31], nil, omitted.id, %{format: :yearly}, scope: scope)
+    end
+
+    test "validates yearly numbers for duplicates and gaps" do
+      user = admin_fixture()
+      scope = scope_for(user)
+      create_sales_invoice!(user, %{base_invoice_attrs() | invoice_number: "TO/1/2026"})
+
+      assert SalesInvoice.validate_number!("TO/2/2026", ~D[2026-03-01], nil, scope: scope) == []
+      assert SalesInvoice.validate_number!("1/2026", ~D[2026-03-01], nil, scope: scope) == []
+
+      assert [{:gap, "TO/2/2026"}] =
+               SalesInvoice.validate_number!("TO/5/2026", ~D[2026-03-01], nil, scope: scope)
+
+      assert [{:duplicate, suggestions}] =
+               SalesInvoice.validate_number!("TO/1/2026", ~D[2026-03-01], nil, scope: scope)
+
+      assert suggestions == ["01/03/2026", "01/03/2026/A", "1/2026", "TO/2/2026"]
+    end
+  end
+
   describe "Money amounts" do
     test "read action filters invoice amounts through Money" do
       user = admin_fixture()

@@ -41,10 +41,7 @@ defmodule FirmowidUI.Invoicing.Components.InvoiceNumber do
       </p>
       <div :if={@warnings == [] and @next_numbers_by_series != %{}} class="flex flex-wrap gap-2">
         <.button
-          :for={
-            {_series, next_number} <-
-              Enum.sort_by(@next_numbers_by_series, fn {series, _} -> series || "" end)
-          }
+          :for={{_sequence, next_number} <- Enum.sort(@next_numbers_by_series)}
           type="button"
           phx-click="select_invoice_series"
           phx-value-number={next_number}

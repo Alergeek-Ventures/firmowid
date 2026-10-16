@@ -489,7 +489,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
         scope: scope
       )
 
-    # Get all series suggestions (nil = default, "A" = always shown, plus any existing)
+    # Get suggestions for every numbering sequence (monthly, monthly /A, yearly, initials yearly, plus any existing)
     series_suggestions =
       Invoicing.get_next_numbers_for_series(issue_date,
         actor: actor,
