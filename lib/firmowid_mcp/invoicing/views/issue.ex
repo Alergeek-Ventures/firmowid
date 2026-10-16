@@ -15,6 +15,7 @@ defmodule FirmowidMcp.Invoicing.Views.Issue do
   alias FirmowidMcp.Invoicing.IssueInvoice
   alias FirmowidMcp.LiveSession
   alias FirmowidMcp.Widgets
+  alias FirmowidUI.Invoicing.Components.InvoiceNotes
   alias FirmowidUI.Invoicing.Components.InvoiceNumber
   alias FirmowidUI.Invoicing.Components.SalesInvoice, as: InvoicePreview
 
@@ -104,6 +105,16 @@ defmodule FirmowidMcp.Invoicing.Views.Issue do
 
   defp handle_interaction("select_invoice_series", %{"number" => number}, socket) when socket.assigns.phase == :review do
     {:noreply, select_number(socket, number)}
+  end
+
+  defp handle_interaction("update_notes", %{"invoice_note" => note, "internal_note" => comment}, socket)
+       when socket.assigns.phase == :review and not is_nil(socket.assigns.invoice) do
+    {:noreply,
+     assign(socket, :invoice, %{
+       socket.assigns.invoice
+       | invoice_note: note,
+         internal_note: comment
+     })}
   end
 
   defp handle_interaction("confirm_issuance", _params, %{assigns: %{phase: :review, invoice: invoice}} = socket)
@@ -246,6 +257,9 @@ defmodule FirmowidMcp.Invoicing.Views.Issue do
          {:ok, _result, current} <-
            Widgets.execute(socket.assigns.widget, socket.assigns.arguments, socket.assigns.scope) do
       socket = assign(socket, :connection, connection)
+      # Notes are edited in the widget, so only the tool's own data can have changed.
+      current =
+        Map.merge(current, Map.take(socket.assigns.invoice, [:invoice_note, :internal_note]))
 
       if review_snapshot(current) == review_snapshot(socket.assigns.invoice) do
         issue(socket)
@@ -312,6 +326,8 @@ defmodule FirmowidMcp.Invoicing.Views.Issue do
     attrs
     |> Map.put("invoice_number", socket.assigns.invoice_number)
     |> Map.put("issue_date", Date.to_iso8601(socket.assigns.invoice.issue_date))
+    |> Map.put("invoice_note", socket.assigns.invoice.invoice_note)
+    |> Map.put("internal_note", socket.assigns.invoice.internal_note)
   end
 
   defp recover_confirmation(socket, error) do
@@ -443,15 +459,21 @@ defmodule FirmowidMcp.Invoicing.Views.Issue do
     <section
       id="mcp-invoice-issuance"
       phx-hook="McpContext"
-      class="@container grid gap-4 p-4 min-inline-0"
+      class="@container grid gap-4 p-2 min-inline-0"
       phx-disconnected={JS.set_attribute({"inert", ""})}
       phx-connected={JS.remove_attribute("inert")}
     >
       <div class="flex items-start justify-between gap-2">
-        <h1 class="text-lg font-semibold">
-          {if @widget == IssueCorrection,
-            do: gettext("Confirm invoice correction"),
-            else: gettext("Confirm invoice")}
+        <h1 class={[
+          "flex items-baseline gap-1 text-xl/tight font-medium",
+          @phase not in [:review, :submitting, :submitted] && "text-red-600"
+        ]}>
+          {heading(@phase, @widget)}
+          <span :if={@phase == :submitting} class="inline-flex gap-1" aria-hidden="true">
+            <span class="size-1.5 animate-bounce rounded-full bg-grey-400 [animation-delay:-0.3s]"></span>
+            <span class="size-1.5 animate-bounce rounded-full bg-grey-400 [animation-delay:-0.15s]"></span>
+            <span class="size-1.5 animate-bounce rounded-full bg-grey-400"></span>
+          </span>
         </h1>
         <.button
           id="refresh-invoice-status"
@@ -467,18 +489,24 @@ defmodule FirmowidMcp.Invoicing.Views.Issue do
           <Lucideicons.refresh_cw class="size-4" aria-hidden="true" />
         </.button>
       </div>
-      <p :if={@status == :expired} role="status">{gettext("This view is unavailable.")}</p>
-      <p :for={error <- @errors} role="alert" class="text-red-700">{error}</p>
+      <p :if={@status == :expired} role="status" class="text-sm text-grey-600">
+        {gettext("This view is unavailable.")}
+      </p>
+      <p :for={error <- @errors} role="alert" class="text-sm text-red-600">{error}</p>
       <%= if @status == :ready do %>
-        <p :if={(@phase == :review and @connection) && @connection.status != :connected} role="status">
+        <p
+          :if={(@phase == :review and @connection) && @connection.status != :connected}
+          role="status"
+          class="text-sm text-grey-600"
+        >
           {gettext("Connect KSeF before issuing the invoice.")}
         </p>
         <%!-- The preview needs full width; narrower, as inline in the conversation, it is hidden. --%>
-        <div class="grid items-start gap-6 @min-[58rem]:grid-cols-[37.25rem_minmax(0,1fr)]">
+        <div class="grid items-start gap-6 @min-[58rem]:grid-cols-[37.5rem_minmax(0,1fr)]">
           <div
             :if={@invoice}
             id="invoice-preview"
-            class="overflow-x-auto bg-white @max-[58rem]:hidden @min-[58rem]:mbs-7"
+            class="overflow-clip rounded-lg border border-grey-200 bg-white shadow-sm @max-[58rem]:hidden @min-[58rem]:mbs-7"
             tabindex="0"
           >
             <%!-- mbs-7 is the number label's height, so the document starts level with the input. --%>
@@ -490,51 +518,85 @@ defmodule FirmowidMcp.Invoicing.Views.Issue do
               footer_logo_data_uri={@footer_logo_url}
             />
           </div>
-          <div class="grid gap-4">
-            <%!-- Sized by the suggestion row: the input and the action row share its width. --%>
-            <div :if={@invoice && @phase == :review} class="grid gap-4 inline-fit max-inline-full">
-              <InvoiceNumber.invoice_number
-                invoice_number={@invoice_number}
-                next_numbers_by_series={@next_numbers_by_series}
-                warnings={@invoice_warnings}
-              />
-              <div class="flex flex-wrap items-center gap-2">
-                <.button
-                  id="open-invoice-fullscreen"
-                  type="button"
-                  variant="outline"
-                  phx-hook="McpFullscreen"
-                  hidden
-                  aria-label={gettext("Preview the invoice in full screen")}
-                  data-tippy-content={gettext("Preview the invoice in full screen")}
-                  class="outline-offset-2 focus-visible:outline-2 active:opacity-80"
-                >
-                  <Lucideicons.file_text class="size-4" aria-hidden="true" />
-                </.button>
-                <.button
-                  id="confirm-invoice-issuance"
-                  type="button"
-                  variant="primary"
-                  accent="turquoise"
-                  phx-click="confirm_issuance"
-                  phx-disable-with={gettext("Issuing…")}
-                  disabled={
-                    not @connected? or is_nil(@connection) or @connection.status != :connected or
-                      @invoice_number == ""
-                  }
-                  class="ms-auto outline-offset-2 focus-visible:outline-2 active:opacity-80 disabled:opacity-50"
-                >
-                  {gettext("Confirm and send to KSeF")}
-                </.button>
-              </div>
+          <%!-- Sized by the suggestion row; centred inline, beside the preview in full screen. --%>
+          <div
+            :if={@invoice && @phase == :review}
+            class="grid gap-4 justify-self-center inline-fit max-inline-full @min-[58rem]:justify-self-start"
+          >
+            <InvoiceNumber.invoice_number
+              invoice_number={@invoice_number}
+              next_numbers_by_series={@next_numbers_by_series}
+              warnings={@invoice_warnings}
+            />
+            <InvoiceNotes.invoice_notes
+              :if={@widget == IssueInvoice}
+              invoice_note={@invoice.invoice_note}
+              internal_note={@invoice.internal_note}
+              class="@max-[58rem]:grid-cols-2 @max-[58rem]:[&_label]:text-xs @max-[58rem]:[&_textarea]:text-xs"
+            />
+            <div class="flex items-center gap-2">
+              <.button
+                id="open-invoice-fullscreen"
+                type="button"
+                variant="outline"
+                phx-hook="McpFullscreen"
+                hidden
+                aria-label={gettext("Preview the invoice in full screen")}
+                data-tippy-content={gettext("Preview the invoice in full screen")}
+                class="outline-offset-2 focus-visible:outline-2 active:opacity-80"
+              >
+                <Lucideicons.file_text class="size-4" aria-hidden="true" />
+              </.button>
+              <.button
+                id="confirm-invoice-issuance"
+                type="button"
+                variant="primary"
+                accent="turquoise"
+                phx-click="confirm_issuance"
+                phx-disable-with={gettext("Issuing…")}
+                disabled={
+                  not @connected? or is_nil(@connection) or @connection.status != :connected or
+                    @invoice_number == ""
+                }
+                class="grow justify-center outline-offset-2 focus-visible:outline-2 active:opacity-80 disabled:opacity-50"
+              >
+                <Lucideicons.send class="size-4" aria-hidden="true" />
+                {gettext("Confirm and send to KSeF")}
+              </.button>
             </div>
-            <p :if={@phase != :review} id="invoice-submission-status" role="status" aria-live="polite">
-              {status_message(@phase)}
-            </p>
-            <p :if={@phase == :submitted and @invoice} class="wrap-break-word">
+          </div>
+          <div
+            :if={@phase in [:submitting, :submitted]}
+            id="invoice-submission-status"
+            role="status"
+            aria-live="polite"
+            class="grid justify-items-center gap-3 py-6 text-center @min-[58rem]:mbs-7"
+          >
+            <Lucideicons.circle_check
+              :if={@phase == :submitted}
+              class="size-16 text-greenText"
+              aria-hidden="true"
+            />
+            <p class="text-sm text-grey-600">{status_message(@phase)}</p>
+            <p
+              :if={@phase == :submitted and @invoice}
+              class="text-sm font-medium wrap-break-word text-grey-700"
+            >
               {@invoice.ksef_number}
             </p>
-            <p :if={(@phase == :failed and @submission_info) && @submission_info.error} role="alert">
+          </div>
+          <div
+            :if={@phase in [:failed, :not_submitted, :returned_to_draft, :deleted]}
+            id="invoice-submission-status"
+            role="alert"
+            class="grid justify-items-center gap-3 rounded-md bg-redBg p-6 text-center text-redText @min-[58rem]:mbs-7"
+          >
+            <Lucideicons.triangle_alert class="size-10 text-red-600" aria-hidden="true" />
+            <p class="text-sm">{status_message(@phase)}</p>
+            <p
+              :if={(@phase == :failed and @submission_info) && @submission_info.error}
+              class="text-sm"
+            >
               {@submission_info.error}
             </p>
           </div>
@@ -543,6 +605,12 @@ defmodule FirmowidMcp.Invoicing.Views.Issue do
     </section>
     """
   end
+
+  defp heading(:review, IssueCorrection), do: gettext("Confirm invoice correction")
+  defp heading(:review, _widget), do: gettext("Confirm invoice")
+  defp heading(:submitting, _widget), do: gettext("The invoice is being sent")
+  defp heading(:submitted, _widget), do: gettext("Invoice sent to KSeF")
+  defp heading(_failed, _widget), do: gettext("KSeF submission failed")
 
   defp status_message(:submitting), do: gettext("The invoice is saved. Sending to KSeF…")
   defp status_message(:submitted), do: gettext("KSeF accepted the invoice.")

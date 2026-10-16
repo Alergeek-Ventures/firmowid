@@ -49,25 +49,10 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceReview do
               submit_event={if @ksef_connected?, do: "send_to_ksef", else: "update_invoice_number"}
             />
 
-            <form id="invoice-notes-form" phx-change="update_notes">
-              <label for="invoice-note" class="mbe-2 block text-sm text-grey-500">Notatka na fakturze</label>
-              <textarea
-                id="invoice-note"
-                name="invoice_note"
-                rows="3"
-                class="w-full resize-none rounded-lg border border-grey-200 px-3 py-2 text-sm text-grey-700 placeholder:text-grey-400 focus:border-transparent focus:ring-2 focus:ring-turquoise-500"
-                placeholder="Widoczna na fakturze i w KSeF (stopka faktury)"
-              >{@invoice.invoice_note || ""}</textarea>
-
-              <label for="internal-note" class="mbs-3 mbe-2 block text-sm text-grey-500">Komentarz</label>
-              <textarea
-                id="internal-note"
-                name="internal_note"
-                rows="3"
-                class="w-full resize-none rounded-lg border border-grey-200 px-3 py-2 text-sm text-grey-700 placeholder:text-grey-400 focus:border-transparent focus:ring-2 focus:ring-turquoise-500"
-                placeholder="Notatka wewnętrzna (niewidoczna na fakturze - tylko w Firmowidzie)"
-              >{@invoice.internal_note || ""}</textarea>
-            </form>
+            <FirmowidUI.Invoicing.Components.InvoiceNotes.invoice_notes
+              invoice_note={@invoice.invoice_note}
+              internal_note={@invoice.internal_note}
+            />
 
             <form id="invoice-email-form" phx-change="toggle_should_send_emails">
               <label
