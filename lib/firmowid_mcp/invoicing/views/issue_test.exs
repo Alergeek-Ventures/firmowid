@@ -9,10 +9,11 @@ defmodule FirmowidMcp.Invoicing.Views.IssueTest do
   alias FirmowidMcp.Invoicing.IssueInvoice
   alias FirmowidMcp.Invoicing.Views.Issue
 
-  test "reviews a resumed draft as issued today and warns about the chosen number", %{conn: conn} do
+  test "issues a resumed draft today with the chosen number and notes", %{conn: conn} do
     admin = admin_fixture()
     saved_on = Date.add(Date.utc_today(), -40)
     draft = draft_fixture!(admin, saved_on)
+    Firmowid.InvoicingFixtures.accept_ksef_submissions!(admin.organization_id)
 
     conn =
       conn
@@ -32,6 +33,19 @@ defmodule FirmowidMcp.Invoicing.Views.IssueTest do
     assert view
            |> form("#invoice-number-form", invoice_number: "not a number")
            |> render_change() =~ "Format numeru może być nieprawidłowy."
+
+    view |> form("#invoice-number-form", invoice_number: "FV/NOTES/1") |> render_change()
+
+    view
+    |> form("#invoice-notes-form", invoice_note: "Visible note", internal_note: "Private comment")
+    |> render_change()
+
+    view |> element("#confirm-invoice-issuance") |> render_click()
+
+    issued = SalesInvoice.get!(draft.id, scope: %{tenant: admin.organization_id, actor: admin})
+
+    assert {issued.invoice_number, issued.invoice_note, issued.internal_note} ==
+             {"FV/NOTES/1", "Visible note", "Private comment"}
   end
 
   defp draft_fixture!(admin, saved_on) do
