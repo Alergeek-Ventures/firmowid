@@ -40,22 +40,10 @@ defmodule Firmowid.Ash.Invoicing.Workers.SendKsefInvoiceDigestWorker do
             :ok
 
           {:error, error} ->
-            Logger.error("Failed to send KSeF digest",
-              digest_id: digest_id,
-              organization_id: organization_id,
-              error_kind: ErrorKind.classify(error)
-            )
-
             {:error, ErrorKind.classify(error)}
         end
 
       {:error, error} ->
-        Logger.error("Failed to load KSeF digest",
-          digest_id: digest_id,
-          organization_id: organization_id,
-          error_kind: ErrorKind.classify(error)
-        )
-
         {:error, ErrorKind.classify(error)}
     end
   end
