@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="description" content={meta_description(assigns)} />
     <meta name="csrf-token" content={get_csrf_token()} />
-    <.live_title suffix=" · Firmowid">
+    <.live_title suffix={if assigns[:public_marketing?], do: "", else: " · Firmowid"}>
       {assigns[:page_title] || "Firmowid"}
     </.live_title>
     <link rel="canonical" href={canonical_url(assigns)} />

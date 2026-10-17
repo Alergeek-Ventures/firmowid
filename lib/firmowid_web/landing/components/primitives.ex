@@ -1,9 +1,6 @@
 defmodule FirmowidWeb.Landing.Components.Primitives do
   @moduledoc """
-  Shared landing-page primitives.
-
-  This module contains reusable public-facing components that are shared between
-  the homepage and legal pages.
+  Navigation, actions and footer shared by public pages.
   """
 
   use FirmowidWeb, :html
@@ -13,6 +10,10 @@ defmodule FirmowidWeb.Landing.Components.Primitives do
 
   alias Phoenix.LiveView.Rendered
 
+  @legal_entity Application.compile_env!(:firmowid, :legal_entity)
+
+  @repository "https://github.com/Alergeek-Ventures/firmowid"
+
   @doc """
   Renders the landing-page navbar.
   """
@@ -20,55 +21,48 @@ defmodule FirmowidWeb.Landing.Components.Primitives do
   attr :class, :any, default: nil
 
   def landing_navbar(assigns) do
+    assigns = assign(assigns, :repository, @repository)
+
     ~H"""
     <header
       id="landing-navbar"
       phx-hook="LandingNavbarTheme"
-      class={["landing-nav sticky top-0 z-50 h-24 px-4 pt-4 sm:px-6 lg:px-10 lg:pt-6", @class]}
+      class={["landing-nav", @class]}
     >
-      <nav class="landing-nav__panel mx-auto flex max-w-[1296px] items-center justify-between rounded-lg border border-white/50 bg-black/10 p-4 shadow-[0_10px_30px_rgba(15,15,15,0.05)] backdrop-blur-sm sm:px-6 lg:py-2">
-        <.link
-          kind="unstyled"
-          navigate={~p"/#top"}
-          class="landing-nav__text text-base font-extrabold text-[#0f0f0f] sm:text-[28px]"
-        >
+      <nav class="landing-nav__panel" aria-label={gettext("Main navigation")}>
+        <.link kind="unstyled" navigate={~p"/#top"} class="landing-nav__brand">
           Firmowid
         </.link>
 
-        <div class="hidden items-center gap-1 lg:flex">
-          <a
-            href="/#funkcje"
-            class="landing-nav__text rounded-[5px] px-4 py-[15px] text-base font-medium text-[#0f0f0f] transition-colors hover:text-[#7a4a2d]"
-          >
-            {gettext("Features")}
-          </a>
-          <a
-            href="/#cennik"
-            class="landing-nav__text rounded-[5px] px-4 py-[15px] text-base font-medium text-[#0f0f0f] transition-colors hover:text-[#7a4a2d]"
-          >
-            {gettext("Pricing")}
-          </a>
-          <a
-            href="/#zespol"
-            class="landing-nav__text rounded-[5px] px-4 py-[15px] text-base font-medium text-[#0f0f0f] transition-colors hover:text-[#7a4a2d]"
-          >
+        <div class="landing-nav__actions">
+          <a href={~p"/#zespol"} class="landing-nav__text">
             {gettext("About us")}
           </a>
-          <.link
-            kind="unstyled"
+          <a href="https://firmowid.pl/blog" class="landing-nav__text">
+            {gettext("Blog")}
+          </a>
+          <a
+            href={@repository}
+            target="_blank"
+            rel="noopener noreferrer"
+            class="landing-nav__text"
+          >
+            GitHub
+          </a>
+          <.landing_button
+            navigate={~p"/zarejestruj"}
+            variant={:navbar_filled}
+            data-landing-cta="navbar_trial"
+          >
+            {gettext("Try it")}
+          </.landing_button>
+          <.landing_button
             navigate={~p"/zaloguj"}
-            class="landing-nav__text rounded-[5px] border-2 border-[#0f0f0f] px-4 py-2 text-base font-medium text-[#0f0f0f] transition-colors hover:bg-black/5"
+            variant={:navbar_outline}
+            class="landing-nav__login"
           >
             {gettext("Log in")}
-          </.link>
-          <.link
-            kind="unstyled"
-            navigate={~p"/zarejestruj"}
-            data-landing-cta="navbar_trial"
-            class="rounded-[5px] bg-[#0f0f0f] px-4 py-2 text-base font-medium text-white transition-colors hover:bg-[#313131]"
-          >
-            {gettext("Start for free")}
-          </.link>
+          </.landing_button>
         </div>
       </nav>
     </header>
@@ -76,163 +70,173 @@ defmodule FirmowidWeb.Landing.Components.Primitives do
   end
 
   @doc """
-  Renders the final CTA and footer section.
+  Renders a public-page action with brush artwork.
+  """
+  @spec landing_button(map()) :: Rendered.t()
+  attr :navigate, :string, default: nil
+  attr :external, :string, default: nil
+
+  attr :variant, :atom,
+    values: [
+      :black,
+      :orange,
+      :outline,
+      :outline_light,
+      :navbar_filled,
+      :navbar_outline
+    ],
+    default: :black
+
+  attr :class, :any, default: nil
+
+  attr :rest, :global, include: ~w(target rel data-landing-cta data-landing-plan data-landing-billing-period)
+
+  slot :inner_block, required: true
+
+  def landing_button(assigns) do
+    assigns = assign(assigns, :variant_class, "landing-button--#{assigns.variant}")
+
+    ~H"""
+    <.link
+      kind="unstyled"
+      navigate={@navigate}
+      external={@external}
+      class={["landing-button", @variant_class, @class]}
+      {@rest}
+    >
+      {render_slot(@inner_block)}
+    </.link>
+    """
+  end
+
+  @doc """
+  Renders the final CTA and the footer.
   """
   @spec cta_footer(map()) :: Rendered.t()
   attr :class, :any, default: nil
 
   def cta_footer(assigns) do
+    assigns =
+      assigns
+      |> assign(:legal_entity, @legal_entity)
+      |> assign(:repository, @repository)
+
     ~H"""
     <section
       id="cta-footer"
       data-landing-dark-surface
-      class={[
-        "relative overflow-clip bg-[#0f0f0f] text-white",
-        @class
-      ]}
+      class={["landing-footer", @class]}
     >
-      <div class="mx-auto max-w-[1419px] px-4 pt-20 pb-0 sm:px-6 lg:px-[140px] lg:pt-[120px]">
-        <div class="flex flex-col gap-10 lg:flex-row lg:items-start lg:justify-between lg:gap-8">
-          <div class="max-w-[680px]">
-            <p class="hidden font-['Nothing_You_Could_Do',cursive] text-[32px] leading-normal text-[#d2936d] lg:block">
-              {gettext("YOUR MOVE!")}
-            </p>
-            <h2 class="mt-2 text-[48px] leading-[0.98] font-bold tracking-[-0.03em] text-grey-50 lg:mt-4 lg:text-[64px] lg:leading-[57px]">
-              {gettext("Run your business")} <br />{gettext("with a lighter mind.")}
-            </h2>
-            <p class="mt-1 text-right font-['Nothing_You_Could_Do',cursive] text-[41px] leading-[1.2] text-[#d2936d] lg:hidden">
-              {gettext("YOUR MOVE!")}
-            </p>
-            <p class="mt-6 max-w-[680px] text-h5 leading-[27px] text-[#dddddd]">
-              {gettext(
-                "30 days free. No credit card. No commitment. If the software is not for you, delete your account with one click."
-              )}
-            </p>
-
-            <div class="mt-8 flex flex-col gap-6 sm:max-w-[358px] lg:max-w-none lg:flex-row lg:gap-8">
-              <.link
-                kind="unstyled"
-                navigate={~p"/zarejestruj"}
-                data-landing-cta="footer_register"
-                class="relative flex w-full shrink-0 items-center justify-center overflow-hidden rounded-sm border-2 border-[#d2936d] bg-[#d2936d] p-4 text-base font-medium text-black transition-transform duration-150 before:absolute before:inset-0 before:bg-[url('/images/button_hover.svg')] before:bg-size-[100%_100%] before:bg-no-repeat before:opacity-45 before:content-[''] hover:-translate-y-0.5 lg:w-auto lg:text-lg"
-              >
-                <span class="relative z-10">{gettext("Start for free")}</span>
-              </.link>
-              <a
-                href="https://cal.com/franek-madej/firmowid"
-                data-landing-cta="footer_demo_booking"
-                target="_blank"
-                rel="noopener noreferrer"
-                class="relative flex shrink-0 items-center justify-center overflow-hidden rounded-sm border-2 border-white/80 p-4 text-base font-medium text-white transition-transform duration-150 hover:-translate-y-0.5 hover:bg-white/5 lg:text-lg"
-              >
-                <span class="relative z-10">{gettext("Book a 15-minute call")}</span>
-              </a>
-            </div>
-          </div>
-
-          <div class="hidden lg:block lg:pr-[33px]">
+      <div class="landing-container">
+        <div class="landing-footer__cta">
+          <div class="landing-footer__figure">
             <img
               id="cta-footer-figurine"
               src={~p"/images/figurine.png"}
-              alt="Ilustracja Firmowida"
+              alt={gettext("Firmowid character holding a tablet")}
               width="905"
               height="1280"
               loading="lazy"
               decoding="async"
               data-image-reveal
               phx-hook="ImageLoadReveal"
-              class="h-auto w-[427px] object-contain object-bottom"
             />
+          </div>
+
+          <div class="landing-footer__copy">
+            <p class="landing-footer__scribble">{gettext("YOUR MOVE!")}</p>
+            <h2 class="landing-footer__heading">
+              <span class="whitespace-pre-line">{gettext("Run your business\nwith a lighter mind.")}</span>
+            </h2>
+            <p class="landing-footer__description">
+              {gettext(
+                "Start with the free plan. No card. No commitment. If the software is not for you, delete your account with one click."
+              )}
+            </p>
+
+            <div class="landing-footer__actions">
+              <.landing_button
+                navigate={~p"/zarejestruj"}
+                variant={:orange}
+                data-landing-cta="footer_register"
+              >
+                {gettext("Start for free")}
+              </.landing_button>
+              <.landing_button
+                external="https://cal.com/franek-madej/firmowid"
+                variant={:outline_light}
+                data-landing-cta="footer_demo_booking"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                {gettext("Book a 15-minute call")}
+              </.landing_button>
+            </div>
           </div>
         </div>
 
-        <div class="mt-16 border-t border-[rgba(78,78,78,0.3)] pt-10 lg:mt-[60px] lg:pt-[104px]">
-          <div class="grid gap-8 lg:grid-cols-[260px_1fr] lg:items-start lg:justify-between">
+        <div class="landing-footer__links">
+          <div class="landing-footer__navigation">
             <div>
-              <p class="text-base font-bold text-[#f5f1ea] lg:text-[22px]">Firmowid</p>
-              <p class="mt-2 text-xs leading-[1.4] text-[rgba(245,241,234,0.6)] lg:text-sm">
-                {gettext("Invoicing, banking, and working hours.")}
-                <br class="hidden lg:block" />{gettext("Built by entrepreneurs for entrepreneurs.")}
-              </p>
+              <p class="landing-footer__legend">{gettext("Product")}</p>
+              <a href={~p"/funkcje"} class="landing-footer__link">{gettext("Features")}</a>
+              <a href={~p"/cennik"} class="landing-footer__link">{gettext("Pricing")}</a>
+              <a
+                href={@repository}
+                target="_blank"
+                rel="noopener noreferrer"
+                class="landing-footer__link"
+              >
+                {gettext("Source code")}
+              </a>
             </div>
-
-            <div class="grid gap-8 sm:grid-cols-3 lg:flex lg:justify-end lg:gap-[68px]">
-              <div class="space-y-4">
-                <p class="text-xs font-semibold tracking-[0.12em] text-[#f5f1ea] uppercase">
-                  {gettext("Product")}
-                </p>
-                <div class="space-y-2 text-sm text-[rgba(245,241,234,0.6)]">
-                  <a href="/#funkcje" class="block hover:text-white">{gettext("Features")}</a>
-                  <a href="/#cennik" class="block hover:text-white">{gettext("Pricing")}</a>
-                  <a
-                    href="https://github.com/Alergeek-Ventures/firmowid"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    class="block hover:text-white"
-                  >{gettext("Source code")}</a>
-                </div>
-              </div>
-              <div class="space-y-4">
-                <p class="text-xs font-semibold tracking-[0.12em] text-[#f5f1ea] uppercase">
-                  {gettext("Company")}
-                </p>
-                <div class="space-y-2 text-sm text-[rgba(245,241,234,0.6)]">
-                  <a
-                    href="https://alergeek.ventures/contact-details"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    class="block hover:text-white"
-                  >
-                    {gettext("Contact")}
-                  </a>
-                  <.link kind="unstyled" navigate={~p"/regulamin#top"} class="block hover:text-white">
-                    {gettext("Terms of Service")}
-                  </.link>
-                  <.link
-                    kind="unstyled"
-                    navigate={~p"/polityka-prywatnosci#top"}
-                    class="block hover:text-white"
-                  >
-                    {pgettext("footer-policy-link", "Privacy Policy")}
-                  </.link>
-                </div>
-              </div>
+            <div>
+              <p class="landing-footer__legend">{gettext("Company")}</p>
+              <a
+                href="https://alergeek.ventures/contact-details"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="landing-footer__link"
+              >
+                {gettext("Contact")}
+              </a>
+              <.link kind="unstyled" navigate={~p"/regulamin#top"} class="landing-footer__link">
+                {gettext("Terms of Service")}
+              </.link>
+              <.link
+                kind="unstyled"
+                navigate={~p"/polityka-prywatnosci#top"}
+                class="landing-footer__link"
+              >
+                {pgettext("footer-policy-link", "Privacy Policy")}
+              </.link>
             </div>
           </div>
 
-          <div class="mt-8 border-t border-[rgba(78,78,78,0.3)] py-8 lg:mt-8 lg:pb-10">
-            <div class="flex flex-col gap-4 text-[10px] text-[rgba(245,241,234,0.6)] lg:flex-row lg:items-center lg:justify-between lg:text-xs">
-              <p>
-                {gettext("© %{year} Firmowid (Alergeek Ventures). All rights reserved.",
-                  year: Date.utc_today().year
-                )}
-              </p>
-              <div class="hidden gap-4 lg:flex">
-                <a
-                  href="https://pl.linkedin.com/showcase/firmowid/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  class="hover:text-white"
-                >
-                  LinkedIn
-                </a>
-                <a
-                  href="https://x.com/firmowid"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  class="hover:text-white"
-                >
-                  Twitter
-                </a>
-                <a
-                  href="https://www.facebook.com/Firmowid/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  class="hover:text-white"
-                >
-                  Facebook
-                </a>
-              </div>
+          <div class="landing-footer__brand">
+            <p class="landing-footer__wordmark">Firmowid</p>
+            <p class="landing-footer__tagline">
+              {gettext("Invoicing, banking, and working hours.")}
+              <br />{gettext("Built by entrepreneurs for entrepreneurs.")}
+            </p>
+          </div>
+
+          <div class="landing-footer__bottom">
+            <p class="landing-footer__legal">
+              © {Date.utc_today().year} Firmowid · {@legal_entity.name}, {@legal_entity.address} · NIP {@legal_entity.nip} · KRS {@legal_entity.krs} · REGON {@legal_entity.regon}
+            </p>
+            <div class="landing-footer__socials">
+              <a href={@repository} target="_blank" rel="noopener noreferrer">GitHub</a>
+              <a
+                href="https://pl.linkedin.com/showcase/firmowid/"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                LinkedIn
+              </a>
+              <a href="https://x.com/firmowid" target="_blank" rel="noopener noreferrer">
+                Twitter
+              </a>
             </div>
           </div>
         </div>

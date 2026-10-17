@@ -22,7 +22,7 @@ defmodule FirmowidWeb.Landing.Components.LegalPage do
 
   def legal_page(assigns) do
     ~H"""
-    <div id="top" class="flex min-h-screen flex-col bg-grey-100">
+    <div id="top" class="landing-page flex min-h-screen flex-col bg-grey-100">
       <.landing_navbar />
 
       <article class={@class}>
