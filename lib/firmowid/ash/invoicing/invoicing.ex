@@ -586,7 +586,17 @@ defmodule Firmowid.Ash.Invoicing do
   to bank transactions in a job committed together with the invoice.
   """
   @spec create_cost_invoice(map()) :: {:ok, CostInvoice.t()} | {:error, term()}
-  def create_cost_invoice(extracted_metadata) do
+  def create_cost_invoice(extracted_metadata), do: create_cost_invoice(extracted_metadata, &CostInvoice.create/2)
+
+  @doc """
+  Creates a cost invoice from a KSeF import like `create_cost_invoice/1`, but
+  leaves the seller display name and description to background jobs.
+  """
+  @spec create_cost_invoice_from_ksef(map()) :: {:ok, CostInvoice.t()} | {:error, term()}
+  def create_cost_invoice_from_ksef(extracted_metadata),
+    do: create_cost_invoice(extracted_metadata, &CostInvoice.create_from_ksef/2)
+
+  defp create_cost_invoice(extracted_metadata, create) do
     organization_id =
       Map.get(extracted_metadata, "organization_id") ||
         Map.get(extracted_metadata, :organization_id) ||
@@ -601,7 +611,7 @@ defmodule Firmowid.Ash.Invoicing do
     actor = %SystemActor{org_id: organization_id, role: :cost_invoice_processor}
     scope = %Scope{actor: actor, tenant: organization_id}
 
-    CostInvoice.create(sanitized_metadata, scope: scope)
+    create.(sanitized_metadata, scope: scope)
   end
 
   @doc """
