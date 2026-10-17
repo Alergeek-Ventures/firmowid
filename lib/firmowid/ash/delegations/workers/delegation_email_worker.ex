@@ -1,5 +1,5 @@
 defmodule Firmowid.Ash.Delegations.Workers.DelegationEmailWorker do
-  @moduledoc "Sends delegation submission and approval notification emails."
+  @moduledoc "Sends delegation request, approval, and settlement-review notification emails."
 
   use Oban.Worker, queue: :notification_emails, max_attempts: 3
 
@@ -25,6 +25,19 @@ defmodule Firmowid.Ash.Delegations.Workers.DelegationEmailWorker do
     |> Firmowid.Oban.insert(organization_id: organization_id)
   end
 
+  @doc "Enqueues an admin notification after an employee submits a signed settlement."
+  @spec enqueue_settlement_submission(String.t(), String.t()) ::
+          {:ok, Oban.Job.t()} | {:error, term()}
+  def enqueue_settlement_submission(delegation_id, organization_id) do
+    %{
+      delegation_id: delegation_id,
+      organization_id: organization_id,
+      notification: "settlement_submitted"
+    }
+    |> new()
+    |> Firmowid.Oban.insert(organization_id: organization_id)
+  end
+
   @impl true
   def perform(%Oban.Job{args: %{"delegation_id" => delegation_id, "organization_id" => organization_id} = args}) do
     scope = %Scope{
@@ -33,7 +46,7 @@ defmodule Firmowid.Ash.Delegations.Workers.DelegationEmailWorker do
     }
 
     with {:ok, delegation} <-
-           Delegations.get_delegation(delegation_id, scope: scope, load: [:user]) do
+           Delegations.get_delegation(delegation_id, scope: scope, load: [:user, :expenses]) do
       deliver(args["notification"], delegation, scope)
     end
   end
@@ -44,7 +57,19 @@ defmodule Firmowid.Ash.Delegations.Workers.DelegationEmailWorker do
          do: :ok
   end
 
-  defp deliver(_notification, delegation, scope) do
+  defp deliver("settlement_submitted", delegation, scope) do
+    admins = Core.list_users!(%{status: :active, role: :admin}, scope: scope)
+
+    with {:ok, _email} <-
+           DelegationEmails.deliver_submitted_settlement(
+             admins,
+             delegation,
+             delegation.user
+           ),
+         do: :ok
+  end
+
+  defp deliver(notification, delegation, scope) when notification in [nil, "submitted"] do
     admins = Core.list_users!(%{status: :active, role: :admin}, scope: scope)
 
     with {:ok, _email} <-

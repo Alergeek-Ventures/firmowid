@@ -19,7 +19,10 @@ defmodule FirmowidWeb.Management.Components.DelegationsTab do
       assigns
       |> assign(
         :ongoing_delegations,
-        Enum.filter(assigns.delegations, &(&1.status in [:pending, :in_progress]))
+        Enum.filter(
+          assigns.delegations,
+          &(&1.status in [:pending, :in_progress, :awaiting_signature, :submitted])
+        )
       )
       |> assign(
         :previous_delegations,

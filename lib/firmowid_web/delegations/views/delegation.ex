@@ -4,11 +4,13 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
   use FirmowidWeb, :live_view
 
   import FirmowidWeb.Delegations.Components.SettlementPage
+  import FirmowidWeb.Delegations.Components.SettlementSignaturePage
 
   alias Firmowid.Ash.Delegations
   alias Firmowid.Ash.Delegations.DelegationExpense
   alias Firmowid.Ash.Delegations.DelegationExpenseExtractor
   alias FirmowidWeb.Delegations.Utilities.NbpSettlement
+  alias FirmowidWeb.Delegations.Utilities.SettlementDocument
   alias FirmowidWeb.Delegations.Utilities.SettlementForm
   alias FirmowidWeb.Delegations.Utilities.SettlementPresentation
   alias Phoenix.HTML.Form
@@ -20,7 +22,7 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
         {:ok, push_navigate(socket, to: ~p"/ustawienia/profil")}
 
       {:ok, delegation} ->
-        if delegation.status in [:in_progress, :complete] do
+        if delegation.status in [:in_progress, :awaiting_signature, :submitted, :complete] do
           {:ok, setup_socket(socket, delegation)}
         else
           {:ok, push_navigate(socket, to: ~p"/ustawienia/profil")}
@@ -33,7 +35,74 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
 
   @impl true
   def render(assigns) do
-    settlement_page(assigns)
+    if assigns.delegation.status == :awaiting_signature,
+      do: settlement_signature_page(assigns),
+      else: settlement_page(assigns)
+  end
+
+  def handle_event("validate-signed-settlement", _params, socket), do: {:noreply, socket}
+
+  def handle_event("cancel-signed-settlement", %{"ref" => ref}, socket) do
+    {:noreply, cancel_upload(socket, :signed_settlement, ref)}
+  end
+
+  def handle_event("edit-settlement", _params, socket) do
+    socket =
+      Enum.reduce(socket.assigns.uploads.signed_settlement.entries, socket, fn entry, socket ->
+        cancel_upload(socket, :signed_settlement, entry.ref)
+      end)
+
+    case Delegations.edit_settlement(socket.assigns.delegation.id,
+           scope: socket.assigns.ash_scope
+         ) do
+      {:ok, delegation} ->
+        {:noreply, reload(socket, delegation.reference)}
+
+      {:error, _reason} ->
+        {:noreply, put_flash(socket, :error, "Nie udało się wrócić do edycji.")}
+    end
+  end
+
+  def handle_event("submit-for-review", _params, %{assigns: %{submitting?: true}} = socket), do: {:noreply, socket}
+
+  def handle_event("submit-for-review", _params, socket) do
+    socket = assign(socket, :submitting?, true)
+
+    result =
+      consume_uploaded_entries(socket, :signed_settlement, fn %{path: path}, entry ->
+        case Delegations.submit_for_review(
+               socket.assigns.delegation.id,
+               %{
+                 upload_path: path,
+                 content_type: entry.client_type,
+                 original_filename: entry.client_name
+               },
+               scope: socket.assigns.ash_scope
+             ) do
+          {:ok, delegation} -> {:ok, {:ok, delegation}}
+          {:error, reason} -> {:postpone, {:error, reason}}
+        end
+      end)
+
+    case result do
+      [{:ok, _delegation}] ->
+        {:noreply,
+         socket
+         |> put_flash(:info, "Rozliczenie zostało wysłane do rozpatrzenia.")
+         |> push_navigate(to: ~p"/ustawienia/profil")}
+
+      [] ->
+        {:noreply,
+         socket
+         |> assign(:submitting?, false)
+         |> put_flash(:error, "Wgraj podpisane rozliczenie w formacie PDF.")}
+
+      _errors ->
+        {:noreply,
+         socket
+         |> assign(:submitting?, false)
+         |> put_flash(:error, "Nie udało się wysłać rozliczenia. Spróbuj ponownie.")}
+    end
   end
 
   @impl true
@@ -208,6 +277,32 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
   end
 
   defp setup_socket(socket, delegation) do
+    if delegation.status == :awaiting_signature,
+      do: setup_signature_socket(socket, delegation),
+      else: setup_editor_socket(socket, delegation)
+  end
+
+  defp setup_signature_socket(socket, delegation) do
+    delegation = decorate_delegation(delegation, false)
+    document = SettlementDocument.build(delegation, nil, nil)
+
+    socket
+    |> allow_upload(:signed_settlement,
+      accept: ~w(.pdf),
+      max_entries: 1,
+      max_file_size: 10 * 1024 * 1024,
+      auto_upload: true,
+      progress: &handle_signed_upload_progress/3
+    )
+    |> assign(
+      delegation: delegation,
+      document: document,
+      submitting?: false,
+      page_title: "Podpisz rozliczenie delegacji"
+    )
+  end
+
+  defp setup_editor_socket(socket, delegation) do
     sort_active? = socket.assigns[:sort_active?] || false
 
     complete_form =
@@ -403,6 +498,8 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
 
     {:noreply, assign(socket, :uploading?, uploads_in_progress?(socket))}
   end
+
+  defp handle_signed_upload_progress(_kind, _entry, socket), do: {:noreply, socket}
 
   defp handle_statement_upload_progress(_kind, %{done?: false}, socket), do: {:noreply, assign(socket, :uploading?, true)}
 

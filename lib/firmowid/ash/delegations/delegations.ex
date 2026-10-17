@@ -25,7 +25,9 @@ defmodule Firmowid.Ash.Delegations do
 
       define :approve_delegation, action: :approve, get_by: [:id]
 
-      define :complete_delegation, action: :complete, get_by: [:id]
+      define :prepare_settlement, action: :prepare_settlement, get_by: [:id]
+      define :edit_settlement, action: :edit_settlement, get_by: [:id]
+      define :submit_for_review, action: :submit_for_review, get_by: [:id]
       define :detect_dates, action: :detect_dates
     end
 

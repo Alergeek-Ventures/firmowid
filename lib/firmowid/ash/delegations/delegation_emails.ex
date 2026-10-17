@@ -12,6 +12,35 @@ defmodule Firmowid.Ash.Delegations.DelegationEmails do
   alias Firmowid.Mailer
   alias FirmowidWeb.Infrastructure.Utilities.TimeFormatter
 
+  @doc "Notifies organization administrators that a signed settlement awaits review."
+  @spec deliver_submitted_settlement([User.t() | map()], Delegation.t(), User.t() | map()) ::
+          {:ok, Swoosh.Email.t()} | {:error, term()}
+  def deliver_submitted_settlement(admins, delegation, employee) do
+    name = employee_name(employee)
+    url = url(~p"/zarzadzanie/pracownicy/#{employee.id}/delegacje")
+    total = settlement_total(delegation.expenses)
+    {balance_label, balance} = settlement_balance(total, delegation.advance_amount)
+
+    assigns = %{
+      name: name,
+      delegation: delegation,
+      url: url,
+      total: total,
+      balance_label: balance_label,
+      balance: balance
+    }
+
+    email =
+      new()
+      |> to(Enum.map(admins, &to_string(&1.email)))
+      |> from({"Firmowid", "piotr@firmowid.pl"})
+      |> subject("Rozliczenie delegacji do rozpatrzenia")
+      |> html_body(to_html(submitted_settlement_html(assigns)))
+      |> text_body(submitted_settlement_text(assigns))
+
+    with {:ok, _metadata} <- Mailer.deliver(email), do: {:ok, email}
+  end
+
   @spec deliver_new_delegation([User.t() | map()], Delegation.t(), User.t() | map()) ::
           {:ok, Swoosh.Email.t()} | {:error, term()}
   def deliver_new_delegation(admins, delegation, employee) do
@@ -108,6 +137,51 @@ defmodule Firmowid.Ash.Delegations.DelegationEmails do
     Cel wyjazdu: #{assigns.delegation.purpose}
     Przewidywana kwota: #{Money.to_string!(assigns.delegation.expected_cost)}
     """
+  end
+
+  defp submitted_settlement_html(assigns) do
+    ~H"""
+    <.email preheader="Rozliczenie delegacji do rozpatrzenia">
+      <.greeting>Rozliczenie delegacji do rozpatrzenia</.greeting>
+      <.paragraph>
+        {@name} przesłał(a) podpisane rozliczenie delegacji. Dokument oraz dowody kosztów są dostępne w Firmowidzie.
+      </.paragraph>
+      <.detail_row label="Pracownik" value={@name} />
+      <.detail_row label="Termin" value={date_range(@delegation)} />
+      <.detail_row label="Cel" value={@delegation.purpose} />
+      <.detail_row label="Łączny koszt" value={Money.to_string!(@total)} />
+      <.detail_row label={@balance_label} value={Money.to_string!(@balance)} />
+      <.button href={@url}>Otwórz delegacje pracownika</.button>
+      <.signature />
+    </.email>
+    """
+  end
+
+  defp submitted_settlement_text(assigns) do
+    """
+    Rozliczenie delegacji do rozpatrzenia
+    #{assigns.name} przesłał(a) podpisane rozliczenie delegacji.
+    Termin: #{date_range(assigns.delegation)}
+    Cel: #{assigns.delegation.purpose}
+    Łączny koszt: #{Money.to_string!(assigns.total)}
+    #{assigns.balance_label}: #{Money.to_string!(assigns.balance)}
+
+    Otwórz delegacje pracownika:
+    #{assigns.url}
+    """
+  end
+
+  defp settlement_total(expenses) do
+    Enum.reduce(expenses, Money.new(:PLN, 0), fn expense, total ->
+      amount = expense.settlement_amount || expense.expense_amount
+      Money.add!(total, amount)
+    end)
+  end
+
+  defp settlement_balance(total, advance) do
+    if Money.compare(total, advance) in [:gt, :eq],
+      do: {"Do wypłaty pracownikowi", Money.sub!(total, advance)},
+      else: {"Do zwrotu przez pracownika", Money.sub!(advance, total)}
   end
 
   defp employee_name(%{name: name}) when is_binary(name) and name != "", do: name

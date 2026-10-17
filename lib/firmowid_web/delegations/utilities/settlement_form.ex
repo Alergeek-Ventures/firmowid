@@ -6,12 +6,12 @@ defmodule FirmowidWeb.Delegations.Utilities.SettlementForm do
   alias AshPhoenix.Form.Auto
   alias Phoenix.HTML.Form
 
-  @doc "Builds the complete form for a delegation settlement."
+  @doc "Builds the preparation form for a delegation settlement."
   @spec complete_form(struct(), map(), String.t()) :: Form.t()
   def complete_form(delegation, scope, timezone) do
     forms =
       Firmowid.Ash.Delegations.Delegation
-      |> Auto.auto(:complete)
+      |> Auto.auto(:prepare_settlement)
       |> Enum.map(fn {key, config} ->
         config =
           config |> Keyword.fetch!(:updater) |> then(& &1.(config)) |> Keyword.delete(:updater)
@@ -27,7 +27,11 @@ defmodule FirmowidWeb.Delegations.Utilities.SettlementForm do
       end)
 
     delegation
-    |> AshPhoenix.Form.for_update(:complete, scope: scope, as: "delegation", forms: forms)
+    |> AshPhoenix.Form.for_update(:prepare_settlement,
+      scope: scope,
+      as: "delegation",
+      forms: forms
+    )
     |> to_form()
   end
 

@@ -150,7 +150,7 @@ defmodule FirmowidWeb.Delegations.Components.SettlementPage do
               size="big"
               class="mt-6 w-full"
               disabled={@uploading?}
-            >Wyślij</.button>
+            >Przejdź do podpisu</.button>
           </div>
           <.summary
             :if={!@editable?}

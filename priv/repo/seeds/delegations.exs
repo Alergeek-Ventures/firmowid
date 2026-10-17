@@ -24,12 +24,31 @@ defmodule Firmowid.Seeds.Delegations do
         thursday,
         "1200.00",
         kira.id,
-        bytecraft.id
+        bytecraft.id,
+        :in_progress
       )
 
-    seed_expense!(train, bytecraft.id, :transport, "bilet-pkp-wroclaw-krakow.pdf", "110.00", %{type: "transport", transport_type: :railway, trips: [trip(monday, ~T[07:30:00], "Wrocław Główny", monday, ~T[11:00:00], "Kraków Główny")]})
-    seed_expense!(train, bytecraft.id, :transport, "bilet-pkp-krakow-wroclaw.pdf", "110.00", %{type: "transport", transport_type: :railway, trips: [trip(thursday, ~T[18:30:00], "Kraków Główny", thursday, ~T[22:00:00], "Wrocław Główny")]})
-    seed_expense!(train, bytecraft.id, :accommodation, "nocleg-studencka.pdf", "900.00", %{type: "accommodation", locality: "Studencka 12, Kraków", arrival_date: monday, departure_date: thursday, description: "Nocleg na 3 noce przy ul. Studenckiej"})
+    seed_expense!(train, bytecraft.id, :transport, "bilet-pkp-wroclaw-krakow.pdf", "110.00", %{
+      type: "transport",
+      transport_type: :railway,
+      trips: [trip(monday, ~T[07:30:00], "Wrocław Główny", monday, ~T[11:00:00], "Kraków Główny")]
+    })
+
+    seed_expense!(train, bytecraft.id, :transport, "bilet-pkp-krakow-wroclaw.pdf", "110.00", %{
+      type: "transport",
+      transport_type: :railway,
+      trips: [
+        trip(thursday, ~T[18:30:00], "Kraków Główny", thursday, ~T[22:00:00], "Wrocław Główny")
+      ]
+    })
+
+    seed_expense!(train, bytecraft.id, :accommodation, "nocleg-studencka.pdf", "900.00", %{
+      type: "accommodation",
+      locality: "Studencka 12, Kraków",
+      arrival_date: monday,
+      departure_date: thursday,
+      description: "Nocleg na 3 noce przy ul. Studenckiej"
+    })
 
     flight =
       seed_delegation!(
@@ -41,12 +60,60 @@ defmodule Firmowid.Seeds.Delegations do
         sunday,
         "3000.00",
         kira.id,
-        bytecraft.id
+        bytecraft.id,
+        :awaiting_signature
       )
 
-    seed_expense!(flight, bytecraft.id, :transport, "bilet-lotniczy-londyn.pdf", "1250.00", %{type: "transport", transport_type: :airplane, trips: [trip(friday, ~T[08:00:00], "Kraków Airport", friday, ~T[09:30:00], "London Heathrow"), trip(sunday, ~T[20:00:00], "London Heathrow", sunday, ~T[23:20:00], "Kraków Airport")]})
-    seed_expense!(flight, bytecraft.id, :accommodation, "nocleg-londyn.pdf", "1400.00", %{type: "accommodation", locality: "18 Borough High Street, London", arrival_date: friday, departure_date: sunday, description: "Nocleg na 2 noce w Londynie"})
-    seed_expense!(flight, bytecraft.id, :other, "transfer-londyn.pdf", "85.00", %{type: "other", description: "Transfer lotnisko - hotel"})
+    seed_expense!(flight, bytecraft.id, :transport, "bilet-lotniczy-londyn.pdf", "1250.00", %{
+      type: "transport",
+      transport_type: :airplane,
+      trips: [
+        trip(friday, ~T[08:00:00], "Kraków Airport", friday, ~T[09:30:00], "London Heathrow"),
+        trip(sunday, ~T[20:00:00], "London Heathrow", sunday, ~T[23:20:00], "Kraków Airport")
+      ]
+    })
+
+    seed_expense!(flight, bytecraft.id, :accommodation, "nocleg-londyn.pdf", "1400.00", %{
+      type: "accommodation",
+      locality: "18 Borough High Street, London",
+      arrival_date: friday,
+      departure_date: sunday,
+      description: "Nocleg na 2 noce w Londynie"
+    })
+
+    seed_expense!(flight, bytecraft.id, :other, "transfer-londyn.pdf", "85.00", %{
+      type: "other",
+      description: "Transfer lotnisko - hotel"
+    })
+
+    submitted =
+      seed_delegation!(
+        "Delegacja Wrocław - Warszawa",
+        "Warszawa",
+        [:railway],
+        "Rozmowy z partnerem biznesowym",
+        Date.add(monday, -14),
+        Date.add(monday, -13),
+        "700.00",
+        kira.id,
+        bytecraft.id,
+        :submitted
+      )
+
+    seed_expense!(submitted, bytecraft.id, :transport, "bilet-warszawa.pdf", "420.00", %{
+      type: "transport",
+      transport_type: :railway,
+      trips: [
+        trip(
+          Date.add(monday, -14),
+          ~T[07:00:00],
+          "Wrocław Główny",
+          Date.add(monday, -14),
+          ~T[10:40:00],
+          "Warszawa Centralna"
+        )
+      ]
+    })
   end
 
   defp seed_delegation!(
@@ -58,36 +125,80 @@ defmodule Firmowid.Seeds.Delegations do
          end_date,
          expected_cost,
          user_id,
-         organization_id
-        ) do
+         organization_id,
+         status
+       ) do
     reference =
       "DEMO-#{String.slice(user_id, 0, 8)}-#{Calendar.strftime(Date.beginning_of_month(start_date), "%Y-%m")}-#{start_date.day}"
 
+    settlement_metadata =
+      case status do
+        :awaiting_signature ->
+          %{
+            settlement_sequence: 1,
+            settlement_year: Helpers.today().year,
+            settlement_prepared_at: DateTime.utc_now()
+          }
+
+        :submitted ->
+          %{
+            settlement_sequence: 2,
+            settlement_year: Helpers.today().year,
+            settlement_prepared_at: DateTime.utc_now(),
+            submitted_at: DateTime.utc_now()
+          }
+
+        :in_progress ->
+          %{}
+      end
+
     Ash.Seed.seed!(
       Delegation,
-      %{
-        title: title,
-        destination: destination,
-        transport_types: transport_types,
-        purpose: purpose,
-        billing_month: Date.beginning_of_month(start_date),
-        start_date: start_date,
-        end_date: end_date,
-        expected_cost: Helpers.money!(:PLN, expected_cost),
-        advance_amount: Helpers.money!(:PLN, expected_cost),
-        status: :in_progress,
-        reference: reference,
-        user_id: user_id,
-        organization_id: organization_id
-      },
+      Map.merge(
+        %{
+          title: title,
+          destination: destination,
+          transport_types: transport_types,
+          purpose: purpose,
+          billing_month: Date.beginning_of_month(start_date),
+          start_date: start_date,
+          end_date: end_date,
+          expected_cost: Helpers.money!(:PLN, expected_cost),
+          advance_amount: Helpers.money!(:PLN, expected_cost),
+          status: status,
+          reference: reference,
+          user_id: user_id,
+          organization_id: organization_id
+        },
+        settlement_metadata
+      ),
       tenant: organization_id
     )
   end
 
   defp seed_expense!(delegation, organization_id, kind, filename, amount, details) do
-    Ash.Seed.seed!(DelegationExpense, %{delegation_id: delegation.id, organization_id: organization_id, kind: kind, original_filename: filename, document_number: "DEMO-#{delegation.id}", expense_amount: Helpers.money!(:PLN, amount), details: details}, tenant: organization_id)
+    Ash.Seed.seed!(
+      DelegationExpense,
+      %{
+        delegation_id: delegation.id,
+        organization_id: organization_id,
+        kind: kind,
+        original_filename: filename,
+        document_number: "DEMO-#{delegation.id}",
+        expense_amount: Helpers.money!(:PLN, amount),
+        details: details
+      },
+      tenant: organization_id
+    )
   end
 
-  defp trip(departure_date, departure_time, departure_city, arrival_date, arrival_time, arrival_city), do: %{departure_city: departure_city, departure_datetime: DateTime.new!(departure_date, departure_time, @timezone), arrival_city: arrival_city, arrival_datetime: DateTime.new!(arrival_date, arrival_time, @timezone)}
-  defp next_monday, do: Helpers.today() |> then(&Date.add(&1, rem(8 - Date.day_of_week(&1), 7)))
+  defp trip(departure_date, departure_time, departure_city, arrival_date, arrival_time, arrival_city),
+    do: %{
+      departure_city: departure_city,
+      departure_datetime: DateTime.new!(departure_date, departure_time, @timezone),
+      arrival_city: arrival_city,
+      arrival_datetime: DateTime.new!(arrival_date, arrival_time, @timezone)
+    }
+
+  defp next_monday, do: then(Helpers.today(), &Date.add(&1, rem(8 - Date.day_of_week(&1), 7)))
 end
