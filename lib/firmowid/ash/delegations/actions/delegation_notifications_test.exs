@@ -1,4 +1,4 @@
-defmodule Firmowid.Ash.Delegations.Actions.NotifyAboutDelegationTest do
+defmodule Firmowid.Ash.Delegations.Actions.DelegationNotificationsTest do
   use Firmowid.DataCase, async: true
 
   import Ash.Signals.Test
