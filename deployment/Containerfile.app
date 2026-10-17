@@ -9,7 +9,10 @@ RUN apk add --no-cache build-base git nodejs npm
 
 WORKDIR /app
 
-RUN mix local.hex --force && \
+# Keep in sync with hex-version in devenv.nix (checked by version-sync-check.yml).
+ARG HEX_VERSION="2.5.3"
+
+RUN mix local.hex "${HEX_VERSION}" --force && \
   mix local.rebar --force
 
 ENV MIX_ENV="prod"

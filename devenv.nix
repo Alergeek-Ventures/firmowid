@@ -1,6 +1,9 @@
-{ pkgs, ... }:
+{ pkgs, config, ... }:
 
 let
+  # Owner of the Hex version; version-sync-check.yml keeps CI and Containerfile.app in sync.
+  hex-version = "2.5.3";
+
   accent-cli-src = pkgs.fetchgit {
     url = "https://github.com/mirego/accent.git";
     rev = "43872af8578df4121e39ea17c679b5eebb08f3f4";
@@ -115,5 +118,11 @@ in
 
   # npm-distributed native binaries expect libstdc++ in the conventional location.
   env.LD_LIBRARY_PATH = pkgs.lib.makeLibraryPath [ pkgs.stdenv.cc.cc.lib ];
+
+  # A versioned archive directory installs the pinned Hex instead of using ~/.mix.
+  env.MIX_ARCHIVES = "${config.devenv.state}/mix-archives/hex-${hex-version}";
+  enterShell = ''
+    mix local.hex ${hex-version} --force --if-missing
+  '';
 
 }

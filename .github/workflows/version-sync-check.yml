@@ -70,6 +70,51 @@ jobs:
           echo ""
           echo "✅ Elixir/Erlang versions in sync"
 
+      # ── Hex: devenv.nix owns the version, CI and Containerfile copy it ──
+      - name: Compare Hex versions
+        run: |
+          echo "=== Hex ==="
+          echo ""
+
+          DEVENV_HEX=$(sed -n 's/^ *hex-version = "\(.*\)";$/\1/p' devenv.nix)
+          echo "  owner (devenv.nix): $DEVENV_HEX"
+
+          if [ -z "$DEVENV_HEX" ]; then
+            echo ""
+            echo "❌ Hex version owner missing!"
+            echo "   Expected devenv.nix to define hex-version = \"<version>\";"
+            exit 1
+          fi
+
+          MISMATCH=0
+
+          for ACTION in .github/actions/elixir-setup/action.yml .github/actions/setup-accent/action.yml; do
+            ACTION_HEX=$(sed -n 's/.*mix local\.hex \([0-9][0-9.]*\) --force.*/\1/p' "$ACTION")
+            if [ "$ACTION_HEX" != "$DEVENV_HEX" ]; then
+              echo "❌ Hex version mismatch in $ACTION: ${ACTION_HEX:-unpinned}"
+              MISMATCH=1
+            else
+              echo "✅ $ACTION: $ACTION_HEX"
+            fi
+          done
+
+          CONTAINERFILE_HEX=$(sed -n 's/^ARG HEX_VERSION="\(.*\)"$/\1/p' deployment/Containerfile.app)
+          if [ "$CONTAINERFILE_HEX" != "$DEVENV_HEX" ]; then
+            echo "❌ Hex version mismatch in deployment/Containerfile.app: ${CONTAINERFILE_HEX:-unpinned}"
+            MISMATCH=1
+          else
+            echo "✅ deployment/Containerfile.app: $CONTAINERFILE_HEX"
+          fi
+
+          if [ $MISMATCH -eq 1 ]; then
+            echo ""
+            echo "Please update every Hex version to match hex-version in devenv.nix."
+            exit 1
+          fi
+
+          echo ""
+          echo "✅ Hex versions in sync"
+
       # ── ParadeDB: compose.yml owns the image, CI derives from it ───
       - name: Validate ParadeDB image ownership
         run: |
