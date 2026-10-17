@@ -12,8 +12,12 @@ runs:
       with:
         version-file: .tool-versions
         version-type: strict
-        install-hex: true
+        install-hex: false
         install-rebar: false
+    # Keep in sync with hex-version in devenv.nix (checked by version-sync-check.yml).
+    - name: Install Hex
+      shell: bash
+      run: mix local.hex 2.5.3 --force
     - name: Install Accent CLI
       shell: bash
       run: npm install --global accent-cli@0.19.0

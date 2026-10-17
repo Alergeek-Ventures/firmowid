@@ -27,10 +27,6 @@ inputs:
     required: false
     default: "false"
     description: Whether to install rebar
-  install-hex:
-    required: false
-    default: "false"
-    description: Whether to install hex
 
 outputs:
   otp-version:
@@ -49,6 +45,7 @@ runs:
       with:
         elixir-version: ${{ inputs.elixir-version }}
         otp-version: ${{ inputs.otp-version }}
+        install-hex: false
 
     # Quality and Build/Test share compiled artifacts. Different compile-time
     # service ports invalidate the whole application, even on an exact cache hit.
@@ -95,10 +92,10 @@ runs:
       shell: sh
       if: inputs.install-rebar == 'true'
 
+    # Keep in sync with hex-version in devenv.nix (checked by version-sync-check.yml).
     - name: Install Hex
-      run: mix local.hex --force
+      run: mix local.hex 2.5.3 --force
       shell: sh
-      if: inputs.install-hex == 'true'
 
     - name: Install Dependencies
       run: mix deps.get
