@@ -78,7 +78,7 @@ This skill is for day-to-day usage, not migration. For migration, use
 For one-off commands, fetch only the needed variable into a shell variable:
 
 ```sh
-TOKEN=$(infisical get API_TOKEN --domain https://infisical.alergeek.me --env=dev --path="/app" --plain)
+TOKEN=$(infisical secrets get API_TOKEN --domain https://infisical.alergeek.me --env=dev --path="/app" --plain)
 ```
 
 Then pass it to the command without printing it:
@@ -99,7 +99,7 @@ Never do this:
 
 ```sh
 echo "$TOKEN"
-infisical get API_TOKEN --domain https://infisical.alergeek.me --env=dev --path="/app" --plain
+infisical secrets get API_TOKEN --domain https://infisical.alergeek.me --env=dev --path="/app" --plain
 curl -v -H "Authorization: Bearer $TOKEN" https://example.com/api/endpoint
 ```
 
@@ -122,7 +122,7 @@ When making authenticated `curl` requests:
 Example:
 
 ```sh
-API_TOKEN=$(infisical get API_TOKEN --domain https://infisical.alergeek.me --env=dev --path="/app" --plain)
+API_TOKEN=$(infisical secrets get API_TOKEN --domain https://infisical.alergeek.me --env=dev --path="/app" --plain)
 curl -sS \
   -H "Authorization: Bearer $API_TOKEN" \
   -H "Content-Type: application/json" \
@@ -164,7 +164,7 @@ centrally. Put those in Infisical instead.
 To verify that a value exists without printing it:
 
 ```sh
-VALUE=$(infisical get API_TOKEN --domain https://infisical.alergeek.me --env=dev --path="/app" --plain)
+VALUE=$(infisical secrets get API_TOKEN --domain https://infisical.alergeek.me --env=dev --path="/app" --plain)
 test -n "$VALUE"
 unset VALUE
 ```
@@ -172,7 +172,7 @@ unset VALUE
 To verify approximate shape without exposing the value, only report metadata:
 
 ```sh
-VALUE=$(infisical get API_TOKEN --domain https://infisical.alergeek.me --env=dev --path="/app" --plain)
+VALUE=$(infisical secrets get API_TOKEN --domain https://infisical.alergeek.me --env=dev --path="/app" --plain)
 printf 'API_TOKEN is set, length=%s\n' "${#VALUE}"
 unset VALUE
 ```
@@ -190,7 +190,7 @@ When a user asks to run a command that needs env values:
 3. Use plain `mix ...` commands for this Elixir app; config loads Infisical
    automatically in local `:dev` and `:test`.
 4. Use
-   `VAR=$(infisical get VAR --domain https://infisical.alergeek.me --env=dev --path="/app" --plain)`
+   `VAR=$(infisical secrets get VAR --domain https://infisical.alergeek.me --env=dev --path="/app" --plain)`
    for one-off commands needing only one or a few values.
 5. Avoid command modes that print request headers, environment variables,
    credentials, or full configs.
