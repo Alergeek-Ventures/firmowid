@@ -19,6 +19,8 @@ defmodule FirmowidUI.Components.KsefConnection do
   attr :uploads, :map, required: true
   attr :download_hook, :string, default: "KsefAuthDownload"
   attr :allow_token?, :boolean, default: true
+  attr :allow_fetch?, :boolean, default: false
+  attr :fetching?, :boolean, default: false
 
   def ksef_connection(assigns) do
     ~H"""
@@ -51,14 +53,26 @@ defmodule FirmowidUI.Components.KsefConnection do
               else: "-"}
           </.detail_row>
           <.detail_row class="mbs-2">
-            <.button
-              size="small"
-              type="button"
-              variant="destructive"
-              {%{popovertarget: "confirm_disconnect_ksef"}}
-            >
-              Rozłącz
-            </.button>
+            <div class="flex flex-wrap gap-2">
+              <.button
+                size="small"
+                type="button"
+                variant="destructive"
+                {%{popovertarget: "confirm_disconnect_ksef"}}
+              >
+                Rozłącz
+              </.button>
+              <.button
+                :if={@allow_fetch?}
+                size="small"
+                type="button"
+                variant="secondary"
+                phx-click="fetch_ksef_invoices"
+                disabled={@fetching?}
+              >
+                {if @fetching?, do: "Trwa pobieranie faktur", else: "Pobierz faktury z KSeF"}
+              </.button>
+            </div>
           </.detail_row>
         </div>
       <% else %>

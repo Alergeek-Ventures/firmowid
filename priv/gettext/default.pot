@@ -1985,7 +1985,7 @@ msgstr ""
 msgid "Unable to open the link. Try again."
 msgstr ""
 
-#: lib/firmowid_ui/components/ksef_connection.ex:76
+#: lib/firmowid_ui/components/ksef_connection.ex:90
 #, elixir-autogen, elixir-format
 msgid "Connect KSeF with a trusted profile or certificate."
 msgstr ""

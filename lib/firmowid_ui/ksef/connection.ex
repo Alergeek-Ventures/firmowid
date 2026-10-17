@@ -36,6 +36,7 @@ defmodule FirmowidUI.Ksef.Connection do
     |> assign(:ksef_auth_method, :trusted_profile)
     |> assign(:ksef_auth_status, connection_status(internal_credential))
     |> assign(:ksef_failure, nil)
+    |> assign(:ksef_fetching?, Ksef.fetching_cost_invoices?(scope))
     |> allow_upload(:ksef_credentials, accept: ~w(.crt .key), max_entries: 2)
     |> allow_upload(:signed_auth_token_request, accept: ~w(.xml), max_entries: 1)
   end
@@ -64,6 +65,7 @@ defmodule FirmowidUI.Ksef.Connection do
     |> assign(:ksef_auth_method, :trusted_profile)
     |> assign(:ksef_auth_status, :idle)
     |> assign(:ksef_failure, nil)
+    |> assign(:ksef_fetching?, false)
   end
 
   @doc "Handles an existing KSeF setup event with an explicit, authorized scope."
@@ -177,6 +179,16 @@ defmodule FirmowidUI.Ksef.Connection do
       _ ->
         LiveToast.send_toast(:error, "Wybierz certyfikat i klucz prywatny.")
         {:noreply, socket}
+    end
+  end
+
+  defp do_handle_event("fetch_ksef_invoices", _params, socket, scope) do
+    if Ksef.fetching_cost_invoices?(scope) do
+      {:noreply, assign(socket, :ksef_fetching?, true)}
+    else
+      {:ok, _job} = Ksef.fetch_new_cost_invoices(scope)
+      LiveToast.send_toast(:info, "Rozpoczęto pobieranie faktur z KSeF.")
+      {:noreply, assign(socket, :ksef_fetching?, true)}
     end
   end
 

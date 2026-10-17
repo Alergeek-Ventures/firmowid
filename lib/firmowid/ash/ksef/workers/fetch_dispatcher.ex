@@ -10,7 +10,6 @@ defmodule Firmowid.Ash.Ksef.Workers.FetchDispatcher do
     queue: :ksef_fetch,
     max_attempts: 1
 
-  alias Firmowid.Ash.Invoicing
   alias Firmowid.Ash.Ksef
   alias Firmowid.Ash.Ksef.Credential
   alias Firmowid.Ash.Scope
@@ -36,13 +35,7 @@ defmodule Firmowid.Ash.Ksef.Workers.FetchDispatcher do
       actor = %SystemActor{org_id: org_id, role: :ksef_session}
       org_scope = %Scope{actor: actor, tenant: org_id}
 
-      last_ksef_permanent_storage_date =
-        case Invoicing.last_ksef_permanent_storage_date(org_id) do
-          nil -> DateTime.shift(DateTime.utc_now(), day: -60)
-          date -> DateTime.from_naive!(date, "Etc/UTC")
-        end
-
-      Ksef.fetch_cost_invoices(last_ksef_permanent_storage_date, org_scope)
+      Ksef.fetch_new_cost_invoices(org_scope)
     end)
 
     :ok

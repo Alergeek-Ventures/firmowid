@@ -19,6 +19,7 @@ defmodule Firmowid.Ash.Ksef do
 
   alias Ash.Error.Query.NotFound
   alias Firmowid.Ash.Core
+  alias Firmowid.Ash.Invoicing
   alias Firmowid.Ash.Invoicing.CostInvoice
   alias Firmowid.Ash.Invoicing.SalesInvoice
   alias Firmowid.Ash.Ksef.Credential
@@ -174,6 +175,37 @@ defmodule Firmowid.Ash.Ksef do
     }
     |> FetchWorker.new()
     |> Firmowid.Oban.insert(skip_organization_id: true)
+  end
+
+  @doc """
+  Enqueues a fetch of cost invoices stored in KSeF since the latest imported one,
+  or from the last 60 days when nothing was imported yet.
+  """
+  @spec fetch_new_cost_invoices(Scope.t()) :: {:ok, Oban.Job.t()} | {:error, term()}
+  def fetch_new_cost_invoices(scope) do
+    date_from =
+      case Invoicing.last_ksef_permanent_storage_date(scope.tenant) do
+        nil -> DateTime.shift(DateTime.utc_now(), day: -60)
+        date -> DateTime.from_naive!(date, "Etc/UTC")
+      end
+
+    fetch_cost_invoices(date_from, scope)
+  end
+
+  @doc """
+  Returns whether a cost invoice fetch from KSeF is queued or running for the organization.
+  """
+  @spec fetching_cost_invoices?(Scope.t()) :: boolean()
+  def fetching_cost_invoices?(scope) do
+    # Oban.Job is not an Ash resource — raw Ecto query is required here.
+    Oban.Job
+    |> where(
+      [j],
+      j.worker == "Firmowid.Ash.Ksef.Workers.FetchWorker" and
+        fragment("?->>'organization_id'", j.args) == ^scope.tenant and
+        j.state in ["available", "scheduled", "executing", "retryable"]
+    )
+    |> Repo.exists?(oban_jobs: true)
   end
 
   @doc """
