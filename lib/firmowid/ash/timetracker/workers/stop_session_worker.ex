@@ -81,8 +81,6 @@ defmodule Firmowid.Ash.Timetracker.Workers.StopSessionWorker do
         auto_stop(session, scope)
 
       {:error, reason} ->
-        Logger.error("Failed to load session for auto-stop session_id=#{session_id} reason=#{inspect(reason)}")
-
         {:error, reason}
     end
   end
@@ -94,8 +92,6 @@ defmodule Firmowid.Ash.Timetracker.Workers.StopSessionWorker do
         :ok
 
       {:error, reason} ->
-        Logger.error("Failed to auto-stop session session_id=#{session.id} reason=#{inspect(reason)}")
-
         {:error, reason}
     end
   end

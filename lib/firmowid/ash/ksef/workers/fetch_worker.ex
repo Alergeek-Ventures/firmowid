@@ -75,11 +75,7 @@ defmodule Firmowid.Ash.Ksef.Workers.FetchWorker do
           args["date_from"]
         )
 
-      {:error, reason} = error ->
-        Logger.error(
-          "Failed to initiate KSeF export: organization_id=#{organization_id} error_kind=#{ErrorKind.classify(reason)}"
-        )
-
+      {:error, _reason} = error ->
         error
     end
   end
@@ -97,11 +93,7 @@ defmodule Firmowid.Ash.Ksef.Workers.FetchWorker do
       {:error, :expired} ->
         handle_expired_export(args, scope)
 
-      {:error, reason} = error ->
-        Logger.error(
-          "Failed to poll KSeF export: organization_id=#{scope.tenant} error_kind=#{ErrorKind.classify(reason)}"
-        )
-
+      {:error, _reason} = error ->
         error
     end
   end

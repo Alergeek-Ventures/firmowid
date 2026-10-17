@@ -20,7 +20,6 @@ defmodule Firmowid.Ash.Invoicing.Workers.InboundEmailWorker do
   alias Firmowid.Ash.Invoicing.Services.ResendClient
   alias Firmowid.Ash.Scope
   alias Firmowid.Ash.SystemActor
-  alias Firmowid.ErrorKind
 
   require Logger
 
@@ -55,12 +54,6 @@ defmodule Firmowid.Ash.Invoicing.Workers.InboundEmailWorker do
         {:cancel, :no_attachments}
 
       {:error, reason} ->
-        Logger.error("Failed to process inbound email",
-          inbound_email_id: id,
-          organization_id: org_id,
-          error_kind: ErrorKind.classify(reason)
-        )
-
         Invoicing.mark_inbound_email_processed!(inbound_email, :processing_failed, opts)
         {:error, reason}
     end
@@ -140,14 +133,6 @@ defmodule Firmowid.Ash.Invoicing.Workers.InboundEmailWorker do
              scope
            ) do
       {:ok, filename}
-    else
-      {:error, reason} = error ->
-        Logger.error("Failed to schedule inbound attachment",
-          content_type: content_type,
-          error_kind: ErrorKind.classify(reason)
-        )
-
-        error
     end
   end
 
