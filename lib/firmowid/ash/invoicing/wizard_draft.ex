@@ -265,7 +265,7 @@ defmodule Firmowid.Ash.Invoicing.WizardDraft do
     attribute :buyer_pesel, :string, public?: true
     attribute :buyer_display_name, :string, public?: true
     attribute :buyer_address, :string, public?: true
-    attribute :buyer_country, :string, public?: true
+    attribute :buyer_country, :string, public?: true, default: "PL"
     attribute :buyer_email, :string, public?: true
     attribute :buyer_phone, :string, public?: true
     attribute :buyer_description, :string, public?: true
