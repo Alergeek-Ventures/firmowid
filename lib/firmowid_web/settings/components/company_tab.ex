@@ -41,6 +41,7 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
   attr :selected_user, :any, default: nil
   attr :bank_account_statuses, :map, required: true
   attr :uploads, :map, required: true
+  attr :ksef_fetching?, :boolean, required: true
 
   def company_tab(assigns) do
     ~H"""
@@ -59,6 +60,8 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
             ksef_auth_status={@ksef_auth_status}
             ksef_failure={@ksef_failure}
             uploads={@uploads}
+            allow_fetch?
+            fetching?={@ksef_fetching?}
           />
         </.company_section>
       </div>

@@ -784,7 +784,8 @@ defmodule FirmowidWeb.Settings.Views.Index do
              "validate_signed_auth_token_request",
              "upload_signed_auth_token_request",
              "save_ksef_certificate",
-             "disconnect_ksef"
+             "disconnect_ksef",
+             "fetch_ksef_invoices"
            ] do
     Connection.handle_event(event, params, socket, socket.assigns.ash_scope)
   end
@@ -1277,6 +1278,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
             ksef_auth_method={@ksef_auth_method}
             ksef_auth_status={@ksef_auth_status}
             ksef_failure={@ksef_failure}
+            ksef_fetching?={@ksef_fetching?}
             bank_accounts={@bank_accounts}
             bank_institutions={@bank_institutions}
             pending_requisitions={@pending_requisitions}
