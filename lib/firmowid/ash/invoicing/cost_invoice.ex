@@ -645,7 +645,12 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
 
     attribute :amount, MoneyType, public?: true, allow_nil?: false
 
-    attribute :description, :string, public?: true, allow_nil?: false, default: ""
+    attribute :description, :string,
+      public?: true,
+      allow_nil?: false,
+      default: "",
+      constraints: [allow_empty?: true]
+
     attribute :invoice_identifier, :string, public?: true
     attribute :internal_note, :string, public?: true
 
