@@ -58,7 +58,7 @@ Use the write-capable developer credential from Infisical: environment `dev`,
 path `/dev`. It can read, export, write translations, and create snapshots.
 
 ```sh
-ACCENT_KEY=$(infisical get ACCENT_API_KEY \
+ACCENT_KEY=$(infisical secrets get ACCENT_API_KEY \
   --domain https://infisical.alergeek.me --env=dev --path="/dev" --plain)
 ```
 
