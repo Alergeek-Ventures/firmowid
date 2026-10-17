@@ -52,16 +52,14 @@ defmodule Firmowid.Ash.Payroll.Workers.EmploymentContractEmailWorker do
         :ok
 
       {:ok, contract} ->
-        handle_pending_signature_contract(contract, scope)
+        handle_pending_signature_contract(contract)
 
       {:error, reason} ->
-        Logger.error("Failed to load employment contract contract_id=#{contract_id} reason=#{inspect(reason)}")
-
         {:error, reason}
     end
   end
 
-  defp handle_pending_signature_contract(%{status: status} = contract, _scope) when status != :pending_signature do
+  defp handle_pending_signature_contract(%{status: status} = contract) when status != :pending_signature do
     Logger.info(
       "Skipping employment contract employee email contract_id=#{contract.id} status=#{status} not pending_signature"
     )
@@ -69,7 +67,7 @@ defmodule Firmowid.Ash.Payroll.Workers.EmploymentContractEmailWorker do
     :ok
   end
 
-  defp handle_pending_signature_contract(contract, scope) do
+  defp handle_pending_signature_contract(contract) do
     signed_at = contract.signed_at || Date.utc_today()
     today = Date.utc_today()
 
@@ -80,23 +78,7 @@ defmodule Firmowid.Ash.Payroll.Workers.EmploymentContractEmailWorker do
 
       :ok
     else
-      deliver_pending_signature(contract, scope)
-    end
-  end
-
-  defp deliver_pending_signature(contract, scope) do
-    case Ash.load(contract, :user, scope: scope) do
-      {:ok, %{user: user}} when not is_nil(user) ->
-        EmploymentContractEmails.deliver_pending_signature(user, contract)
-
-      {:ok, %{user: nil}} ->
-        Logger.warning("Employment contract has no user contract_id=#{contract.id}")
-        :ok
-
-      {:error, reason} ->
-        Logger.error("Failed to load user for contract contract_id=#{contract.id} reason=#{inspect(reason)}")
-
-        {:error, reason}
+      EmploymentContractEmails.deliver_pending_signature(contract.user, contract)
     end
   end
 

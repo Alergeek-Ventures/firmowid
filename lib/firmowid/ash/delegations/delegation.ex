@@ -11,7 +11,8 @@ defmodule Firmowid.Ash.Delegations.Delegation do
     extensions: [AshStateMachine]
 
   alias Firmowid.Ash.Core.User
-  alias Firmowid.Ash.Delegations.Actions.NotifyAboutDelegation
+  alias Firmowid.Ash.Delegations.Actions.NotifyAdminsAboutDelegation
+  alias Firmowid.Ash.Delegations.Actions.NotifyEmployeeAboutApprovedDelegation
   alias Firmowid.Ash.Delegations.Changes.AssignReference
   alias Firmowid.Ash.Delegations.Changes.CreateSignedCommandBlob
   alias Firmowid.Ash.Delegations.Changes.PrepareDelegationCompletion
@@ -156,13 +157,13 @@ defmodule Firmowid.Ash.Delegations.Delegation do
     action :notify_admins do
       description "Emails organization admins about a newly submitted delegation."
       argument :signal, Signals.DelegationSubmitted, allow_nil?: false
-      run {NotifyAboutDelegation, notification: :submitted}
+      run NotifyAdminsAboutDelegation
     end
 
     action :notify_employee do
       description "Emails the employee that their delegation was approved."
       argument :signal, Signals.DelegationApproved, allow_nil?: false
-      run {NotifyAboutDelegation, notification: :approved}
+      run NotifyEmployeeAboutApprovedDelegation
     end
   end
 

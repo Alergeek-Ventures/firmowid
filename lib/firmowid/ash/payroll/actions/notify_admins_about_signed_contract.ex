@@ -38,8 +38,6 @@ defmodule Firmowid.Ash.Payroll.Actions.NotifyAdminsAboutSignedContract do
         notify_admins(contract, scope)
 
       {:error, reason} ->
-        Logger.error("Failed to load employment contract contract_id=#{contract_id} reason=#{inspect(reason)}")
-
         {:error, reason}
     end
   end
@@ -51,20 +49,13 @@ defmodule Firmowid.Ash.Payroll.Actions.NotifyAdminsAboutSignedContract do
       Logger.info("No admin recipients for employment contract contract_id=#{contract.id}")
       :ok
     else
-      case contract.user do
-        nil ->
-          Logger.warning("Employment contract has no user contract_id=#{contract.id}")
-          :ok
-
-        user ->
-          with {:ok, _email} <-
-                 EmploymentContractEmails.deliver_signed_submitted_to_admins(
-                   admins,
-                   contract,
-                   user
-                 ),
-               do: :ok
-      end
+      with {:ok, _email} <-
+             EmploymentContractEmails.deliver_signed_submitted_to_admins(
+               admins,
+               contract,
+               contract.user
+             ),
+           do: :ok
     end
   end
 
