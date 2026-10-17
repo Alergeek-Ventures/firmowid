@@ -119,7 +119,8 @@ defmodule Firmowid.Ash.Invoicing.WizardDraft do
       validate {Validations.ValidateBuyerIdRequired,
                 id_field: :buyer_id, country_field: :buyer_country, pesel_field: :buyer_pesel, type_field: :buyer_type}
 
-      validate present([:buyer_country, :buyer_address])
+      validate present([:buyer_country]), message: "Kraj jest wymagany"
+      validate present([:buyer_address]), message: "Adres jest wymagany"
     end
 
     update :update_items do
