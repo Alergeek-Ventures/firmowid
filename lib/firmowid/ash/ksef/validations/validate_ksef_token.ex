@@ -6,13 +6,15 @@ defmodule Firmowid.Ash.Ksef.Validations.ValidateKsefToken do
   use Ash.Resource.Validation
 
   alias Firmowid.Ash.Core
+  alias Firmowid.Ash.Scope
 
   @impl true
-  def validate(changeset, _opts, _context) do
+  def validate(changeset, _opts, context) do
     token = Ash.Changeset.get_argument(changeset, :ksef_token)
 
     with {:ok, token_nip} <- extract_nip(token),
-         organization = Core.get_organization!(changeset.tenant),
+         scope = %Scope{actor: context.actor, tenant: changeset.tenant},
+         organization = Core.get_organization!(changeset.tenant, scope: scope),
          :ok <- validate_nip(token_nip, organization.nip) do
       :ok
     else
