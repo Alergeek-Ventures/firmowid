@@ -24,6 +24,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
   alias Firmowid.Ash.Ksef
   alias Firmowid.Ash.Ksef.SubmissionInfo
   alias Firmowid.ErrorKind
+  alias FirmowidWeb.Infrastructure.Utilities.PosthogBusinessEvents
   alias FirmowidWeb.Invoicing.FormHelpers
   alias FirmowidWeb.Invoicing.SalesInvoices.Components.InvoicePayment
   alias FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceReview
@@ -150,34 +151,46 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
     ash_form = build_ash_form(invoice, socket.assigns.ash_scope)
     counterparty_check = counterparty_check(ash_form, invoice, scope)
 
-    socket
-    |> assign(:step, :edit)
-    |> assign(:invoice, invoice)
-    |> assign(:return_to, return_to)
-    |> assign(:logo_url, logo_url)
-    |> assign(:organization, organization)
-    |> assign(:reference_invoice, reference_invoice)
-    |> assign(:correction_reason_touched, false)
-    |> assign(:last_auto_reason, "")
-    |> assign(:counterparty_check, counterparty_check)
-    |> assign(:item_price_input_modes, %{})
-    |> assign(:gross_item_price_inputs, %{})
-    |> assign(:focused_item_price_input_index, nil)
-    |> assign_form_with_preview(ash_form)
-    |> assign(:bank_accounts, bank_accounts)
-    |> assign(
-      :selected_bank_account,
-      InvoicePayment.find_selected_bank_account(
-        bank_accounts,
-        invoice.seller_account_number,
-        invoice.currency
+    socket =
+      socket
+      |> assign(:step, :edit)
+      |> assign(:invoice, invoice)
+      |> assign(:return_to, return_to)
+      |> assign(:logo_url, logo_url)
+      |> assign(:organization, organization)
+      |> assign(:reference_invoice, reference_invoice)
+      |> assign(:correction_reason_touched, false)
+      |> assign(:last_auto_reason, "")
+      |> assign(:counterparty_check, counterparty_check)
+      |> assign(:item_price_input_modes, %{})
+      |> assign(:gross_item_price_inputs, %{})
+      |> assign(:focused_item_price_input_index, nil)
+      |> assign_form_with_preview(ash_form)
+      |> assign(:bank_accounts, bank_accounts)
+      |> assign(
+        :selected_bank_account,
+        InvoicePayment.find_selected_bank_account(
+          bank_accounts,
+          invoice.seller_account_number,
+          invoice.currency
+        )
       )
-    )
-    |> assign(
-      :counterparties,
-      Invoicing.list_counterparties!(%{status: :active}, scope: socket.assigns.ash_scope)
-    )
-    |> assign(:ksef_connected?, Ksef.connected?(socket.assigns.ash_scope))
+      |> assign(
+        :counterparties,
+        Invoicing.list_counterparties!(%{status: :active}, scope: socket.assigns.ash_scope)
+      )
+      |> assign(:ksef_connected?, Ksef.connected?(socket.assigns.ash_scope))
+
+    if connected?(socket) do
+      event =
+        if is_nil(invoice.invoice_number),
+          do: :sales_invoice_edit_opened,
+          else: :sales_invoice_correction_opened
+
+      PosthogBusinessEvents.capture(socket, event)
+    else
+      socket
+    end
   end
 
   defp load_reference_invoice(%{ksef_invoice_kind: :vat}, _scope), do: nil
