@@ -473,7 +473,8 @@ defmodule Firmowid.Ash.Ksef.Services.InvoiceRenderer do
       not Decimal.eq?(current.quantity, reference.quantity) or
       current.unit != reference.unit or
       not Decimal.eq?(current.unit_price, reference.unit_price) or
-      current.vat_rate != reference.vat_rate
+      current.vat_rate != reference.vat_rate or
+      current.gtu != reference.gtu
   end
 
   # Builds the correction chain for a KOR invoice, annotating each correction
