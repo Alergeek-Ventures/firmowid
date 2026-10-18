@@ -79,7 +79,7 @@ config :sentry,
   integrations: [
     oban: [
       capture_errors: true,
-      oban_tags_to_sentry_tags: {Firmowid.JobTelemetry, :context},
+      oban_tags_to_sentry_tags: &Firmowid.JobTelemetry.context/1,
       cron: [enabled: false]
     ]
   ]
