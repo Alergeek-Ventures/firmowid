@@ -103,7 +103,9 @@ defmodule Firmowid.Ash.Ksef.Services.SalesInvoiceParser do
          :ok <- supported_annotations(doc),
          :ok <- buyer_country_consistent(doc),
          :ok <- addresses_fit(doc),
+         :ok <- single_footer(doc),
          {:ok, items, corrected_lines} <- items(doc, kind),
+         :ok <- one_rate_per_group(items),
          :ok <- single_due_date(doc),
          :ok <- supported_payment(doc),
          :ok <- no_unsupported_elements(doc),
@@ -181,9 +183,17 @@ defmodule Firmowid.Ash.Ksef.Services.SalesInvoiceParser do
       "/Faktura/Podmiot2/AdresKoresp"
     ]
 
-    if Enum.all?(paths, &(String.length(address(doc, &1) || "") <= 512)),
+    # XSD lengths count code points, not graphemes.
+    if Enum.all?(paths, &(length(String.to_charlist(address(doc, &1) || "")) <= 512)),
       do: :ok,
       else: {:error, {:unsupported, "address longer than one FA(3) address line"}}
+  end
+
+  # Firmowid keeps one invoice note; several footers would be run together.
+  defp single_footer(doc) do
+    if length(xpath(doc, tns(~x"/Faktura/Stopka/Informacje/StopkaFaktury"l))) > 1,
+      do: {:error, {:unsupported, "several invoice footers (StopkaFaktury)"}},
+      else: :ok
   end
 
   defp buyer_id_country(doc) do
@@ -431,6 +441,16 @@ defmodule Firmowid.Ash.Ksef.Services.SalesInvoiceParser do
         error -> error
       end)
     end
+  end
+
+  # FA(3) sums 22% with 23% and 7% with 8% in one total, which Firmowid's correction
+  # summary would write twice.
+  defp one_rate_per_group(items) do
+    rates = MapSet.new(items, & &1.vat_rate)
+
+    if Enum.any?([["22", "23"], ["7", "8"]], &Enum.all?(&1, fn rate -> rate in rates end)),
+      do: {:error, {:unsupported, "two VAT rates of one FA(3) group"}},
+      else: :ok
   end
 
   defp corrected_lines(:vat, _rows), do: nil
