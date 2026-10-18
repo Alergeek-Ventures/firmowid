@@ -32,9 +32,12 @@ defmodule Firmowid.Ash.Ksef.Services.SalesInvoiceImport do
     @type t :: %__MODULE__{skipped: [%{ksef_number: String.t(), reason: String.t()}]}
 
     @impl true
+    # KSeF numbers contain the seller's NIP, so they stay in the job meta, which Sentry does not get.
     def message(%{skipped: skipped}) do
-      "Skipped #{length(skipped)} KSeF sales invoice(s) Firmowid cannot import: " <>
-        Enum.map_join(skipped, "; ", &"#{&1.ksef_number} (#{&1.reason})")
+      "Skipped #{length(skipped)} KSeF sales invoice(s) Firmowid cannot import, listed in the job meta: " <>
+        (skipped
+         |> Enum.frequencies_by(& &1.reason)
+         |> Enum.map_join("; ", fn {reason, count} -> "#{reason} ×#{count}" end))
     end
   end
 
@@ -168,7 +171,11 @@ defmodule Firmowid.Ash.Ksef.Services.SalesInvoiceImport do
   defp skip_reason(:invoice_number_taken), do: "invoice number already used in Firmowid"
 
   defp skip_reason(%Invalid{errors: errors}) do
-    Enum.map_join(errors, ", ", &"#{Map.get(&1, :field)}: #{Exception.message(&1)}")
+    Enum.map_join(
+      errors,
+      ", ",
+      &"#{Map.get(&1, :field)}: #{Map.get(&1, :message) || Exception.message(&1)}"
+    )
   end
 
   defp skip_reason(reason), do: ErrorKind.classify(reason)

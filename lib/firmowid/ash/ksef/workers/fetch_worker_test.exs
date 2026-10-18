@@ -272,17 +272,39 @@ defmodule Firmowid.Ash.Ksef.Workers.FetchWorkerTest do
        sales_invoice_xml("NOKSEF/#{suffix}",
          kind: "KOR",
          lines: [{"A", "100.00", true}, {"A", "10.00", false}]
+       )},
+      # A charge (Rozliczenie) makes the amount due differ from P_15.
+      {"KSEF-SETTLEMENT-#{suffix}", sales_invoice_xml("ROZL/#{suffix}", settlement: true)},
+      {"KSEF-TIE-#{suffix}",
+       sales_invoice_xml("TIE/#{suffix}",
+         kind: "KOR",
+         corrects: original,
+         lines: [
+           {"A", "40.00", true},
+           {"B", "100.00", true},
+           {"A", "30.00", false},
+           {"B", "100.00", false}
+         ]
        )}
     ]
     |> Enum.with_index()
     |> Enum.map(fn {{ksef_number, xml}, index} ->
-      %{ksef_number: ksef_number, xml: xml, permanent_storage_date: "2026-03-08T09:0#{index}:00Z"}
+      # KSEF-TIE is stored in the same second as KOR2, so their order is undetermined.
+      second = if ksef_number == "KSEF-TIE-#{suffix}", do: 3, else: index
+
+      %{
+        ksef_number: ksef_number,
+        xml: xml,
+        permanent_storage_date: "2026-03-08T09:0#{second}:00Z"
+      }
     end)
     |> import_sales_package!(organization_id)
     |> skipped_ksef_numbers()
     |> then(
       &assert &1 ==
                 Enum.sort([
+                  "KSEF-SETTLEMENT-#{suffix}",
+                  "KSEF-TIE-#{suffix}",
                   "KSEF-PARTIAL-#{suffix}",
                   "KSEF-ROUNDING-#{suffix}",
                   "KSEF-NOKSEF-#{suffix}"
@@ -576,6 +598,7 @@ defmodule Firmowid.Ash.Ksef.Workers.FetchWorkerTest do
         <RodzajFaktury>#{kind}</RodzajFaktury>
         #{if kind == "KOR", do: "<DaneFaKorygowanej><DataWystFaKorygowanej>2026-03-06</DataWystFaKorygowanej><NrFaKorygowanej>X</NrFaKorygowanej>#{corrected}</DaneFaKorygowanej>"}
         #{rows}
+        #{if opts[:settlement], do: "<Rozliczenie><Obciazenia><Kwota>20.00</Kwota><Powod>Opłata</Powod></Obciazenia><SumaObciazen>20.00</SumaObciazen><DoZaplaty>143.00</DoZaplaty></Rozliczenie>"}
         <Platnosc>
           <TerminPlatnosci>
             <Termin>2026-03-20</Termin>

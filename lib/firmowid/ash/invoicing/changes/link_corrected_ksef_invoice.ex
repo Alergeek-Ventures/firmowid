@@ -5,7 +5,8 @@ defmodule Firmowid.Ash.Invoicing.Changes.LinkCorrectedKsefInvoice do
 
   Corrections in Firmowid all point at the original VAT invoice, so a correction of a
   correction links to that correction's original. A correction is rejected when its
-  original is missing from the organization's invoices.
+  original is missing from the organization's invoices, or when another correction of it
+  was stored in KSeF in the same second, which leaves their order undetermined.
   """
   use Ash.Resource.Change
 
@@ -36,13 +37,37 @@ defmodule Firmowid.Ash.Invoicing.Changes.LinkCorrectedKsefInvoice do
 
     case SalesInvoice.list(Keyword.put(opts, :query, query)) do
       {:ok, [%SalesInvoice{ksef_invoice_kind: :kor, corrected_invoice_id: id}]} ->
-        Ash.Changeset.force_change_attribute(changeset, :corrected_invoice_id, id)
+        link_to(changeset, id, opts)
 
       {:ok, [%SalesInvoice{id: id}]} ->
-        Ash.Changeset.force_change_attribute(changeset, :corrected_invoice_id, id)
+        link_to(changeset, id, opts)
 
       {:ok, []} ->
         add_missing(changeset)
+
+      {:error, error} ->
+        Ash.Changeset.add_error(changeset, error)
+    end
+  end
+
+  # Corrections are ordered by locked_at, which has whole seconds; a tie would make the order ambiguous.
+  defp link_to(changeset, original_id, opts) do
+    locked_at = Ash.Changeset.get_attribute(changeset, :locked_at)
+
+    query =
+      SalesInvoice
+      |> Ash.Query.filter(corrected_invoice_id == ^original_id and locked_at == ^locked_at)
+      |> Ash.Query.select([:id])
+
+    case SalesInvoice.list(Keyword.put(opts, :query, query)) do
+      {:ok, []} ->
+        Ash.Changeset.force_change_attribute(changeset, :corrected_invoice_id, original_id)
+
+      {:ok, [_same_second | _]} ->
+        Ash.Changeset.add_error(changeset,
+          field: :locked_at,
+          message: "inna korekta tej faktury została zapisana w KSeF w tej samej sekundzie"
+        )
 
       {:error, error} ->
         Ash.Changeset.add_error(changeset, error)

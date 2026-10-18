@@ -4,8 +4,9 @@ defmodule Firmowid.Ash.Ksef.Services.SalesInvoiceParser do
 
   It reads the elements `InvoiceRenderer` writes. A document the sales invoice cannot
   represent is rejected with `{:error, {:unsupported, reason}}`: invoice kinds other than
-  VAT and KOR, gross-only lines, VAT rates outside `VatRate`, and corrections listing
-  only differences instead of the state before and after.
+  VAT and KOR, charges or deductions changing the amount due, gross-only lines, VAT rates
+  outside `VatRate`, and corrections listing only differences instead of the state
+  before and after.
 
   It also reports the document's gross total (`P_15`, for a correction the change it
   makes) and, for a correction, how many lines it lists before the correction, so the
@@ -41,6 +42,7 @@ defmodule Firmowid.Ash.Ksef.Services.SalesInvoiceParser do
     doc = SweetXml.parse(xml, namespace_conformant: true)
 
     with {:ok, kind} <- invoice_kind(text(doc, "/Faktura/Fa/RodzajFaktury")),
+         :ok <- no_settlement(doc),
          {:ok, items, corrected_line_count} <- items(doc, kind),
          {:ok, payment_method} <- payment_method(text(doc, "/Faktura/Fa/Platnosc/FormaPlatnosci")) do
       issue_date = date(text(doc, "/Faktura/Fa/P_1"))
@@ -73,6 +75,14 @@ defmodule Firmowid.Ash.Ksef.Services.SalesInvoiceParser do
     e -> {:error, Exception.format(:error, e, __STACKTRACE__)}
   catch
     :exit, reason -> {:error, {:exit, reason}}
+  end
+
+  # Charges and deductions (Rozliczenie) change the amount due, which Firmowid always takes from the lines.
+  defp no_settlement(doc) do
+    case xpath(doc, tns(~x"/Faktura/Fa/Rozliczenie"o)) do
+      nil -> :ok
+      _settlement -> {:error, {:unsupported, "charges or deductions (Rozliczenie)"}}
+    end
   end
 
   defp invoice_kind("VAT"), do: {:ok, :vat}
