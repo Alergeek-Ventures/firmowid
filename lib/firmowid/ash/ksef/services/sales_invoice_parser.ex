@@ -10,8 +10,9 @@ defmodule Firmowid.Ash.Ksef.Services.SalesInvoiceParser do
   before and after.
 
   It also reports the document's gross total (`P_15`, for a correction the change it
-  makes) and, for a correction, how many lines it lists before the correction, so the
-  import can reject a document whose recalculated amounts or lines do not match it.
+  makes), its VAT per rate group with any PLN conversion and, for a correction, the
+  lines it lists before the correction, so the import can reject a document whose
+  recalculated amounts or lines do not match it.
   """
 
   import SweetXml
@@ -60,6 +61,7 @@ defmodule Firmowid.Ash.Ksef.Services.SalesInvoiceParser do
          :ok <- supported_annotations(doc),
          {:ok, items, corrected_lines} <- items(doc, kind),
          :ok <- single_due_date(doc),
+         :ok <- no_factoring(doc),
          {:ok, payment_method} <- payment_method(text(doc, "/Faktura/Fa/Platnosc/FormaPlatnosci")) do
       issue_date = date(text(doc, "/Faktura/Fa/P_1"))
 
@@ -101,6 +103,13 @@ defmodule Firmowid.Ash.Ksef.Services.SalesInvoiceParser do
       nil -> :ok
       _settlement -> {:error, {:unsupported, "charges or deductions (Rozliczenie)"}}
     end
+  end
+
+  # Payment to a factor's account (RachunekBankowyFaktora) would be shown as payment to the seller.
+  defp no_factoring(doc) do
+    if xpath(doc, tns(~x"/Faktura/Fa/Platnosc/RachunekBankowyFaktora"o)),
+      do: {:error, {:unsupported, "factoring account (RachunekBankowyFaktora)"}},
+      else: :ok
   end
 
   # A sales invoice has one due date; instalments or a descriptive term would be lost.
