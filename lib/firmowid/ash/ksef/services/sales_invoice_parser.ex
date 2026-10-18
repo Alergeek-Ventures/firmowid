@@ -17,6 +17,7 @@ defmodule Firmowid.Ash.Ksef.Services.SalesInvoiceParser do
 
   import SweetXml
 
+  alias Firmowid.Ash.Invoicing.CountryCodes
   alias Firmowid.Ash.Invoicing.VatExemption
   alias Firmowid.Ash.Ksef.VatRate
 
@@ -33,6 +34,21 @@ defmodule Firmowid.Ash.Ksef.Services.SalesInvoiceParser do
   @exemption_types Map.new(VatExemption.valid_types(), &{VatExemption.label(&1), &1})
   # The VAT rates each P_14_x (and its P_14_xW) sums; the 3% rate has no PLN amount.
   @vat_groups %{1 => ["23", "22"], 2 => ["8", "7"], 3 => ["5"], 4 => ["4"], 5 => ["3"]}
+  # The VAT rates each P_13_x net total sums.
+  @net_groups %{
+    "1" => ["23", "22"],
+    "2" => ["8", "7"],
+    "3" => ["5"],
+    "4" => ["4"],
+    "5" => ["3"],
+    "6_1" => ["0 KR"],
+    "6_2" => ["0 WDT"],
+    "6_3" => ["0 EX"],
+    "7" => ["zw"],
+    "8" => ["np I"],
+    "9" => ["np II"],
+    "10" => ["oo"]
+  }
   # Annotations whose procedures the sales invoice does not represent, set when "1".
   @unsupported_annotations %{
     "P_17" => "self-billing (P_17)",
@@ -41,6 +57,15 @@ defmodule Firmowid.Ash.Ksef.Services.SalesInvoiceParser do
     "P_23" => "triangular procedure (P_23)",
     "PMarzy/P_PMarzy" => "margin scheme (P_PMarzy)"
   }
+  # Elements the sales invoice cannot keep: other parties, a correction of the seller's data or
+  # of the invoice number, and the OSS procedure's rates.
+  @unsupported_elements [
+    {"Podmiot3", "third party (Podmiot3)"},
+    {"PodmiotUpowazniony", "authorized party (PodmiotUpowazniony)"},
+    {"Fa/Podmiot1K", "correction of seller data (Podmiot1K)"},
+    {"Fa/NrFaKorygowany", "corrected invoice number (NrFaKorygowany)"},
+    {"Fa/FaWiersz/P_12_XII", "OSS rate (P_12_XII)"}
+  ]
   @unsupported_payment [
     {"RachunekBankowyFaktora", "factoring account (RachunekBankowyFaktora)"},
     {"Skonto", "cash discount (Skonto)"},
@@ -68,7 +93,8 @@ defmodule Firmowid.Ash.Ksef.Services.SalesInvoiceParser do
          {:ok, items, corrected_lines} <- items(doc, kind),
          :ok <- single_due_date(doc),
          :ok <- supported_payment(doc),
-         :ok <- no_third_party(doc),
+         :ok <- no_unsupported_elements(doc),
+         :ok <- single_seller_account(doc),
          {:ok, payment_method} <- payment_method(text(doc, "/Faktura/Fa/Platnosc/FormaPlatnosci")) do
       issue_date = date(text(doc, "/Faktura/Fa/P_1"))
 
@@ -116,27 +142,54 @@ defmodule Firmowid.Ash.Ksef.Services.SalesInvoiceParser do
   # kind from it, so a Polish NIP, an EU VAT number or another country's ID with an address in
   # another country would change the buyer's identity on a correction.
   defp buyer_country_consistent(doc) do
-    id = "/Faktura/Podmiot2/DaneIdentyfikacyjne"
+    {id_kind, id_country} = buyer_id_country(doc)
     address_country = text(doc, "/Faktura/Podmiot2/Adres/KodKraju")
 
-    id_country =
-      cond do
-        text(doc, "#{id}/NIP") -> "PL"
-        text(doc, "#{id}/NrVatUE") -> text(doc, "#{id}/KodUE")
-        text(doc, "#{id}/NrID") -> text(doc, "#{id}/KodKraju")
-        true -> nil
-      end
+    cond do
+      # Firmowid would treat an EU buyer's ID as an EU VAT number.
+      id_kind == :nr_id and CountryCodes.eu_country?(id_country) ->
+        {:error, {:unsupported, "EU buyer identified by NrID"}}
 
-    if is_nil(id_country) or is_nil(address_country) or id_country == address_country,
-      do: :ok,
-      else: {:error, {:unsupported, "buyer tax ID country differs from address country"}}
+      is_nil(id_country) or is_nil(address_country) or id_country == address_country ->
+        :ok
+
+      true ->
+        {:error, {:unsupported, "buyer tax ID country differs from address country"}}
+    end
   end
 
-  # Other parties (Podmiot3: e.g. a recipient, payer or additional buyer) would be dropped.
-  defp no_third_party(doc) do
-    if xpath(doc, tns(~x"/Faktura/Podmiot3"o)),
-      do: {:error, {:unsupported, "third party (Podmiot3)"}},
-      else: :ok
+  defp buyer_id_country(doc) do
+    id = "/Faktura/Podmiot2/DaneIdentyfikacyjne"
+
+    cond do
+      text(doc, "#{id}/NIP") -> {:nip, "PL"}
+      text(doc, "#{id}/NrVatUE") -> {:vat_ue, text(doc, "#{id}/KodUE")}
+      text(doc, "#{id}/NrID") -> {:nr_id, text(doc, "#{id}/KodKraju")}
+      true -> {:none, nil}
+    end
+  end
+
+  defp no_unsupported_elements(doc) do
+    case Enum.find(@unsupported_elements, fn {path, _reason} ->
+           xpath(doc, tns(sigil_x("/Faktura/#{path}", ~c"o")))
+         end) do
+      nil -> :ok
+      {_path, reason} -> {:error, {:unsupported, reason}}
+    end
+  end
+
+  # Firmowid renders the seller's address in Poland and pays to one account.
+  defp single_seller_account(doc) do
+    cond do
+      text(doc, "/Faktura/Podmiot1/Adres/KodKraju") not in [nil, "PL"] ->
+        {:error, {:unsupported, "seller address outside Poland"}}
+
+      length(xpath(doc, tns(~x"/Faktura/Fa/Platnosc/RachunekBankowy"l))) > 1 ->
+        {:error, {:unsupported, "several bank accounts"}}
+
+      true ->
+        :ok
+    end
   end
 
   # Payment instructions the sales invoice does not show: a factor's account, a cash discount
@@ -280,7 +333,13 @@ defmodule Firmowid.Ash.Ksef.Services.SalesInvoiceParser do
       |> xpath(tns(~x"/Faktura/Fa/FaWiersz/KursWaluty/text()"ls))
       |> Enum.map(&(&1 |> String.trim() |> Decimal.new()))
 
-    %{groups: groups, line_rates: line_rates}
+    net_groups =
+      for {group, rates} <- @net_groups do
+        # An omitted group carries no net value.
+        %{rates: rates, net: Decimal.new(text(doc, "/Faktura/Fa/P_13_#{group}") || "0")}
+      end
+
+    %{groups: groups, net_groups: net_groups, line_rates: line_rates}
   end
 
   defp exemption(doc) do
@@ -318,6 +377,8 @@ defmodule Firmowid.Ash.Ksef.Services.SalesInvoiceParser do
           quantity: text(row, "./P_8B"),
           unit_price: text(row, "./P_9A"),
           net_value: text(row, "./P_11"),
+          gross_value: text(row, "./P_11A"),
+          vat_value: text(row, "./P_11Vat"),
           vat_rate: text(row, "./P_12"),
           before?: text(row, "./StanPrzed") == "1"
         }
@@ -360,6 +421,20 @@ defmodule Firmowid.Ash.Ksef.Services.SalesInvoiceParser do
   defp item(row, index) do
     quantity = if row.quantity, do: Decimal.new(row.quantity), else: Decimal.new(1)
 
+    with :ok <- check_line(row, quantity) do
+      {:ok,
+       %{
+         index: index,
+         name: row.name,
+         unit: row.unit || @default_unit,
+         quantity: quantity,
+         unit_price: unit_price(row, quantity),
+         vat_rate: row.vat_rate
+       }}
+    end
+  end
+
+  defp check_line(row, quantity) do
     cond do
       not VatRate.valid?(row.vat_rate) ->
         {:error, {:unsupported, "VAT rate #{inspect(row.vat_rate)}"}}
@@ -370,21 +445,27 @@ defmodule Firmowid.Ash.Ksef.Services.SalesInvoiceParser do
       is_nil(unit_price(row, quantity)) ->
         {:error, {:unsupported, "line net value not divisible by its quantity"}}
 
+      not line_amounts_match?(row, quantity) ->
+        {:error, {:unsupported, "line gross or VAT differs from Firmowid's calculation"}}
+
       # Firmowid writes unit prices to the grosz on the documents it renders, e.g. corrections.
       Decimal.scale(Decimal.normalize(unit_price(row, quantity))) > 2 ->
         {:error, {:unsupported, "unit price below the grosz"}}
 
       true ->
-        {:ok,
-         %{
-           index: index,
-           name: row.name,
-           unit: row.unit || @default_unit,
-           quantity: quantity,
-           unit_price: unit_price(row, quantity),
-           vat_rate: row.vat_rate
-         }}
+        :ok
     end
+  end
+
+  # A line's stated gross (P_11A) and VAT (P_11Vat) must be what Firmowid shows for it.
+  defp line_amounts_match?(row, quantity) do
+    net = Decimal.mult(unit_price(row, quantity), quantity)
+    vat = Decimal.mult(net, Decimal.div(VatRate.to_numeric(row.vat_rate), 100))
+
+    Enum.all?([{row.vat_value, vat}, {row.gross_value, Decimal.add(net, vat)}], fn
+      {nil, _amount} -> true
+      {stated, amount} -> Decimal.equal?(Decimal.new(stated), Decimal.round(amount, 2))
+    end)
   end
 
   # The line's net value (P_11) already accounts for a discount (P_10) the unit price leaves out.
