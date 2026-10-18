@@ -30,8 +30,16 @@ defmodule Firmowid.Ash.Ksef.Services.SalesInvoiceParser do
     "7" => :mobile
   }
   @exemption_types Map.new(VatExemption.valid_types(), &{VatExemption.label(&1), &1})
-  # The VAT rates each P_14_x / P_14_xW pair sums (the 3% rate has no PLN amount).
-  @pln_vat_groups %{1 => ["23", "22"], 2 => ["8", "7"], 3 => ["5"], 4 => ["4"]}
+  # The VAT rates each P_14_x (and its P_14_xW) sums; the 3% rate has no PLN amount.
+  @vat_groups %{1 => ["23", "22"], 2 => ["8", "7"], 3 => ["5"], 4 => ["4"], 5 => ["3"]}
+  # Annotations whose procedures the sales invoice does not represent, set when "1".
+  @unsupported_annotations %{
+    "P_17" => "self-billing (P_17)",
+    "P_18A" => "split payment (P_18A)",
+    "NoweSrodkiTransportu/P_22" => "new means of transport (P_22)",
+    "P_23" => "triangular procedure (P_23)",
+    "PMarzy/P_PMarzy" => "margin scheme (P_PMarzy)"
+  }
   # FA(3) makes the unit optional, while every Firmowid line has one.
   @default_unit "szt."
 
@@ -48,6 +56,7 @@ defmodule Firmowid.Ash.Ksef.Services.SalesInvoiceParser do
          :ok <- no_settlement(doc),
          :ok <- single_sale_date(doc),
          :ok <- no_partial_payment(doc),
+         :ok <- supported_annotations(doc),
          {:ok, items, corrected_line_count} <- items(doc, kind),
          {:ok, payment_method} <- payment_method(text(doc, "/Faktura/Fa/Platnosc/FormaPlatnosci")) do
       issue_date = date(text(doc, "/Faktura/Fa/P_1"))
@@ -68,12 +77,13 @@ defmodule Firmowid.Ash.Ksef.Services.SalesInvoiceParser do
          payment_method: payment_method,
          seller_account_number: text(doc, "/Faktura/Fa/Platnosc/RachunekBankowy/NrRB"),
          is_reverse_charge: text(doc, "/Faktura/Fa/Adnotacje/P_18") == "1",
+         is_cash_account: text(doc, "/Faktura/Fa/Adnotacje/P_16") == "1",
          invoice_note: text(doc, "/Faktura/Stopka/Informacje/StopkaFaktury"),
          correction_reason: text(doc, "/Faktura/Fa/PrzyczynaKorekty"),
          corrected_invoice_ksef_number: text(doc, "/Faktura/Fa/DaneFaKorygowanej/NrKSeFFaKorygowanej"),
          corrected_line_count: corrected_line_count,
          ksef_gross_total: Decimal.new(text(doc, "/Faktura/Fa/P_15")),
-         ksef_vat_pln: vat_pln(doc),
+         ksef_vat: vat_groups(doc),
          sales_invoice_items: items
        })}
     end
@@ -102,6 +112,15 @@ defmodule Firmowid.Ash.Ksef.Services.SalesInvoiceParser do
 
       true ->
         :ok
+    end
+  end
+
+  defp supported_annotations(doc) do
+    case Enum.find(@unsupported_annotations, fn {path, _reason} ->
+           text(doc, "/Faktura/Fa/Adnotacje/#{path}") == "1"
+         end) do
+      nil -> :ok
+      {_path, reason} -> {:error, {:unsupported, reason}}
     end
   end
 
@@ -174,24 +193,21 @@ defmodule Firmowid.Ash.Ksef.Services.SalesInvoiceParser do
       else: :foreign
   end
 
-  # The document's own conversion: each rate's VAT (P_14_x) with its PLN amount (P_14_xW),
-  # and the exchange rates stated on lines (KursWaluty).
-  defp vat_pln(doc) do
-    amounts =
-      for group <- 1..4, vat_pln = text(doc, "/Faktura/Fa/P_14_#{group}W") do
-        %{
-          rates: Map.fetch!(@pln_vat_groups, group),
-          vat: Decimal.new(text(doc, "/Faktura/Fa/P_14_#{group}")),
-          vat_pln: Decimal.new(vat_pln)
-        }
+  # The document's VAT per rate group (P_14_x), with its PLN amount (P_14_xW) for a foreign
+  # currency, and the exchange rates stated on lines (KursWaluty).
+  defp vat_groups(doc) do
+    groups =
+      for {group, rates} <- @vat_groups, vat = text(doc, "/Faktura/Fa/P_14_#{group}") do
+        vat_pln = text(doc, "/Faktura/Fa/P_14_#{group}W")
+        %{rates: rates, vat: Decimal.new(vat), vat_pln: vat_pln && Decimal.new(vat_pln)}
       end
 
-    rates =
+    line_rates =
       doc
       |> xpath(tns(~x"/Faktura/Fa/FaWiersz/KursWaluty/text()"ls))
       |> Enum.map(&(&1 |> String.trim() |> Decimal.new()))
 
-    if amounts == [] and rates == [], do: nil, else: %{amounts: amounts, rates: rates}
+    %{groups: groups, line_rates: line_rates}
   end
 
   defp exemption(doc) do
