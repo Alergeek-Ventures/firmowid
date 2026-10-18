@@ -2,13 +2,13 @@ defmodule Firmowid.Ash.Ksef.Workers.FetchWorkerTest do
   @moduledoc false
   use Firmowid.DataCase, async: false
 
-  import ExUnit.CaptureLog
   import Firmowid.AccountsFixtures
   import Firmowid.Test.Support.OpenAIEnrichmentTestHelpers
 
   alias Firmowid.Ash.Invoicing.CostInvoice
   alias Firmowid.Ash.Invoicing.SalesInvoice
   alias Firmowid.Ash.Ksef.Services.Encryption
+  alias Firmowid.Ash.Ksef.Services.SalesInvoiceImport.SkippedInvoicesError
   alias Firmowid.Ash.Ksef.Workers.FetchWorker
   alias Firmowid.Ash.Scope
   alias Firmowid.Ash.SystemActor
@@ -194,6 +194,8 @@ defmodule Firmowid.Ash.Ksef.Workers.FetchWorkerTest do
       }
     end)
     |> import_sales_package!(organization_id)
+    |> skipped_ksef_numbers()
+    |> then(&assert &1 == ["KSEF-ADVANCE-#{suffix}"])
 
     invoices =
       SalesInvoice
@@ -277,6 +279,15 @@ defmodule Firmowid.Ash.Ksef.Workers.FetchWorkerTest do
       %{ksef_number: ksef_number, xml: xml, permanent_storage_date: "2026-03-08T09:0#{index}:00Z"}
     end)
     |> import_sales_package!(organization_id)
+    |> skipped_ksef_numbers()
+    |> then(
+      &assert &1 ==
+                Enum.sort([
+                  "KSEF-PARTIAL-#{suffix}",
+                  "KSEF-ROUNDING-#{suffix}",
+                  "KSEF-NOKSEF-#{suffix}"
+                ])
+    )
 
     scope = sales_invoice_scope(organization_id)
 
@@ -478,8 +489,11 @@ defmodule Firmowid.Ash.Ksef.Workers.FetchWorkerTest do
       |> poll_export_args(encryption_data, reference)
       |> Map.put("subject_type", "Subject1")
 
-    capture_log(fn -> assert :ok = perform_job(FetchWorker, args) end)
+    perform_job(FetchWorker, args)
   end
+
+  defp skipped_ksef_numbers({:error, %SkippedInvoicesError{skipped: skipped}}),
+    do: skipped |> Enum.map(& &1.ksef_number) |> Enum.sort()
 
   # Lines are {name, unit price, before?} or {name, unit price, net value, before?}, one unit each at 23% VAT.
   defp sales_invoice_xml(invoice_number, opts) do

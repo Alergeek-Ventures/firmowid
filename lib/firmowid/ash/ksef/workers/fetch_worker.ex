@@ -23,8 +23,8 @@ defmodule Firmowid.Ash.Ksef.Workers.FetchWorker do
     invoices, so a mid-processing crash won't lose the continuation point.
   - If any cost invoice in a batch fails to parse or create, the **entire batch fails**
     and will be retried — no silent cursor advancement past failed invoices. Sales
-    invoices skip documents they cannot represent and fail the batch on any other error
-    (see `SalesInvoiceImport`).
+    invoices import the documents they can represent and then fail the batch with the
+    skipped ones, or fail it right away on any other error (see `SalesInvoiceImport`).
   - Individual invoice failures are reported to Sentry with full context.
   - Polling is bounded to 120 snoozes (~60 minutes) to prevent indefinite polling.
   """
@@ -202,7 +202,11 @@ defmodule Firmowid.Ash.Ksef.Workers.FetchWorker do
           SalesInvoiceImport.import_package(parse_metadata_json(metadata), invoices, scope)
 
         stamp_job_meta(job, Map.put(summary, :is_truncated, is_truncated))
-        :ok
+
+        case summary.skipped do
+          [] -> :ok
+          skipped -> {:error, %SalesInvoiceImport.SkippedInvoicesError{skipped: skipped}}
+        end
     end
   end
 
