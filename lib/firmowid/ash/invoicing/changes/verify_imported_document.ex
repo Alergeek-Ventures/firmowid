@@ -7,7 +7,7 @@ defmodule Firmowid.Ash.Invoicing.Changes.VerifyImportedDocument do
   Once the import is saved, its gross total (for a correction, the change from the
   state before it) must round to the document's `P_15`, each rate group's VAT must match
   its `P_14_x`, the document must convert that VAT to PLN (`P_14_xW`, `KursWaluty`) at
-  the NBP rate, and a correction must list every line of that earlier state.
+  the NBP rate, and a correction must list exactly the lines of that earlier state.
   Otherwise the error rolls the import back.
   """
   use Ash.Resource.Change
@@ -17,7 +17,7 @@ defmodule Firmowid.Ash.Invoicing.Changes.VerifyImportedDocument do
 
   @doc """
   Compares the saved invoice with the `ksef_gross_total`, `ksef_vat` and
-  `corrected_line_count` arguments.
+  `corrected_lines` arguments.
   """
   @spec change(Ash.Changeset.t(), keyword(), Ash.Resource.Change.Context.t()) :: Ash.Changeset.t()
   @impl true
@@ -36,15 +36,15 @@ defmodule Firmowid.Ash.Invoicing.Changes.VerifyImportedDocument do
         invoice.reference_invoice &&
           Ash.load!(
             invoice.reference_invoice,
-            [:gross_value, sales_invoice_items: [:vat_value]],
+            [:gross_value, sales_invoice_items: [:net_value, :vat_value]],
             opts
           )
 
-      line_count = Ash.Changeset.get_argument(changeset, :corrected_line_count)
+      corrected_lines = Ash.Changeset.get_argument(changeset, :corrected_lines)
       gross_total = Ash.Changeset.get_argument(changeset, :ksef_gross_total)
       vat = Ash.Changeset.get_argument(changeset, :ksef_vat)
 
-      with :ok <- check_lines(reference, line_count),
+      with :ok <- check_lines(reference, corrected_lines),
            :ok <- check_total(invoice, reference, gross_total),
            :ok <- check_vat_groups(invoice, reference, vat),
            :ok <- check_vat_pln(invoice, reference, vat) do
@@ -53,12 +53,23 @@ defmodule Firmowid.Ash.Invoicing.Changes.VerifyImportedDocument do
     end)
   end
 
-  defp check_lines(nil, _line_count), do: :ok
+  defp check_lines(nil, _lines), do: :ok
 
-  defp check_lines(reference, line_count) do
-    if length(reference.sales_invoice_items) == line_count,
+  # The lines a correction lists before it must be the state it corrects in Firmowid.
+  defp check_lines(reference, lines) do
+    if line_values(reference.sales_invoice_items, & &1.net_value) == line_values(lines, & &1.net),
       do: :ok,
-      else: error(:corrected_line_count, "korekta wykazuje tylko część pozycji faktury korygowanej")
+      else:
+        error(
+          :corrected_lines,
+          "pozycje przed korektą różnią się od faktury korygowanej w Firmowidzie"
+        )
+  end
+
+  defp line_values(lines, net) do
+    lines
+    |> Enum.map(&{&1 |> net.() |> Decimal.round(2) |> Decimal.to_string(:normal), &1.vat_rate})
+    |> Enum.sort()
   end
 
   defp check_total(invoice, reference, gross_total) do

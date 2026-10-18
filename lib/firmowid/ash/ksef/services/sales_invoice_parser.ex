@@ -46,7 +46,8 @@ defmodule Firmowid.Ash.Ksef.Services.SalesInvoiceParser do
   @doc """
   Parses FA(3) XML into attributes for `SalesInvoice.import_from_ksef`, including
   `:sales_invoice_items`, `:ksef_gross_total` and, for a correction,
-  `:corrected_invoice_ksef_number` and `:corrected_line_count`.
+  `:corrected_invoice_ksef_number` and `:corrected_lines` (the net value and VAT rate of
+  each line it lists before the correction).
   """
   @spec parse(binary()) :: {:ok, map()} | {:error, {:unsupported, String.t()} | term()}
   def parse(xml) when is_binary(xml) do
@@ -57,7 +58,8 @@ defmodule Firmowid.Ash.Ksef.Services.SalesInvoiceParser do
          :ok <- single_sale_date(doc),
          :ok <- no_partial_payment(doc),
          :ok <- supported_annotations(doc),
-         {:ok, items, corrected_line_count} <- items(doc, kind),
+         {:ok, items, corrected_lines} <- items(doc, kind),
+         :ok <- single_due_date(doc),
          {:ok, payment_method} <- payment_method(text(doc, "/Faktura/Fa/Platnosc/FormaPlatnosci")) do
       issue_date = date(text(doc, "/Faktura/Fa/P_1"))
 
@@ -81,7 +83,7 @@ defmodule Firmowid.Ash.Ksef.Services.SalesInvoiceParser do
          invoice_note: text(doc, "/Faktura/Stopka/Informacje/StopkaFaktury"),
          correction_reason: text(doc, "/Faktura/Fa/PrzyczynaKorekty"),
          corrected_invoice_ksef_number: text(doc, "/Faktura/Fa/DaneFaKorygowanej/NrKSeFFaKorygowanej"),
-         corrected_line_count: corrected_line_count,
+         corrected_lines: corrected_lines,
          ksef_gross_total: Decimal.new(text(doc, "/Faktura/Fa/P_15")),
          ksef_vat: vat_groups(doc),
          sales_invoice_items: items
@@ -98,6 +100,22 @@ defmodule Firmowid.Ash.Ksef.Services.SalesInvoiceParser do
     case xpath(doc, tns(~x"/Faktura/Fa/Rozliczenie"o)) do
       nil -> :ok
       _settlement -> {:error, {:unsupported, "charges or deductions (Rozliczenie)"}}
+    end
+  end
+
+  # A sales invoice has one due date; instalments or a descriptive term would be lost.
+  defp single_due_date(doc) do
+    terms = "/Faktura/Fa/Platnosc/TerminPlatnosci"
+
+    cond do
+      length(xpath(doc, tns(~x"#{terms}"l))) > 1 ->
+        {:error, {:unsupported, "several payment terms"}}
+
+      xpath(doc, tns(~x"#{terms}/TerminOpis"o)) && is_nil(text(doc, "#{terms}/Termin")) ->
+        {:error, {:unsupported, "descriptive payment term (TerminOpis)"}}
+
+      true ->
+        :ok
     end
   end
 
@@ -265,14 +283,26 @@ defmodule Firmowid.Ash.Ksef.Services.SalesInvoiceParser do
         end
       end)
       |> then(fn
-        {:ok, items} -> {:ok, Enum.reverse(items), corrected_line_count(kind, rows)}
+        {:ok, items} -> {:ok, Enum.reverse(items), corrected_lines(kind, rows)}
         error -> error
       end)
     end
   end
 
-  defp corrected_line_count(:kor, rows), do: Enum.count(rows, & &1.before?)
-  defp corrected_line_count(:vat, _rows), do: nil
+  defp corrected_lines(:vat, _rows), do: nil
+
+  defp corrected_lines(:kor, rows) do
+    for %{before?: true} = row <- rows do
+      quantity = if row.quantity, do: Decimal.new(row.quantity), else: Decimal.new(1)
+
+      net =
+        if row.net_value,
+          do: Decimal.new(row.net_value),
+          else: Decimal.mult(Decimal.new(row.unit_price), quantity)
+
+      %{net: net, vat_rate: row.vat_rate}
+    end
+  end
 
   defp item(row, index) do
     quantity = if row.quantity, do: Decimal.new(row.quantity), else: Decimal.new(1)

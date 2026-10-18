@@ -599,7 +599,7 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
       accept @ksef_import_fields
       argument :sales_invoice_items, {:array, :map}, allow_nil?: false
       argument :corrected_invoice_ksef_number, :string
-      argument :corrected_line_count, :integer
+      argument :corrected_lines, {:array, :map}
       argument :ksef_gross_total, :decimal, allow_nil?: false
       argument :ksef_vat, :map, allow_nil?: false
 
