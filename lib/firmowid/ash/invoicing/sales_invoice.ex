@@ -23,6 +23,7 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
     * `:draft` — save a complete, unnumbered VAT invoice
     * `:issue` — issue a new invoice today and queue its KSeF submission atomically
     * `:correct` — issue a correction invoice (KOR) and queue its KSeF submission
+    * `:import_from_ksef` — record an invoice issued outside Firmowid that KSeF already stores
     * `:revise` — revise a saved draft
     * `:finalize` — number a draft, issued today, and queue its KSeF submission atomically
     * `:return_to_draft` — withdraw an invoice KSeF did not accept back to a draft
@@ -30,7 +31,7 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
     * `:toggle_skip` — toggle skip_invoicing flag
     * `:generate_share_token` — generate or return existing share token
     * `:start_ksef_submission` — lock an issued invoice while it is sent to KSeF
-    * `:record_ksef_submission` — record the KSeF session, invoice reference and checksum
+    * `:record_ksef_submission` — record the KSeF session, invoice reference, checksum and storage date
     * `:confirm_in_ksef` — record the KSeF number of an accepted invoice
     * `:withdraw_ksef_submission` — unlock an invoice KSeF did not accept
 
@@ -86,6 +87,21 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
   # A draft is the complete invoice except for its number; issuance dates it today.
   @draft_fields Keyword.keys(InvoiceInput.subtype_constraints()[:fields]) --
                   [:sales_invoice_items, :invoice_number, :issue_date, :correction_reason]
+  # An imported document arrives complete, with the seller and dates the other software issued.
+  @ksef_import_fields (@draft_fields --
+                         [:counterparty_id, :internal_note, :skip_invoicing, :should_send_emails]) ++
+                        [
+                          :invoice_number,
+                          :issue_date,
+                          :correction_reason,
+                          :seller_nip,
+                          :seller_display_name,
+                          :seller_address,
+                          :ksef_invoice_kind,
+                          :ksef_number,
+                          :ksef_invoice_checksum,
+                          :ksef_permanent_storage_date
+                        ]
 
   postgres do
     table "sales_invoices"
@@ -145,6 +161,7 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
     define :draft, action: :draft
     define :issue, action: :issue
     define :correct, action: :correct
+    define :import_from_ksef, action: :import_from_ksef
     define :revise, action: :revise
     define :finalize, action: :finalize
     define :return_to_draft, action: :return_to_draft
@@ -567,6 +584,35 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
       end
     end
 
+    create :import_from_ksef do
+      description "Record an invoice issued outside Firmowid that KSeF already stores."
+      accept @ksef_import_fields
+      argument :sales_invoice_items, {:array, :map}, allow_nil?: false
+      argument :corrected_invoice_ksef_number, :string
+
+      change Changes.LinkCorrectedKsefInvoice
+      change Changes.PrepareInvoiceItems
+
+      change {Changes.NormalizeReverseChargeVatRates, source: :argument, field: :sales_invoice_items}
+
+      change manage_relationship(:sales_invoice_items, type: :direct_control)
+      change Changes.SetItemNames
+      change Changes.SetIsCashAccount
+      change {Changes.ValidateCountryCode, field: :buyer_country}
+      change Changes.BindInvoiceCounterparty
+
+      validate Validations.CompleteInvoice
+
+      validate {Validations.ValidateTaxId,
+                id_field: :buyer_id, country_field: :buyer_country, pesel_field: :buyer_pesel, type_field: :buyer_type}
+
+      validate {Validations.ValidateNameFields,
+                type_field: :buyer_type,
+                full_name_field: :buyer_full_name,
+                given_name_field: :buyer_given_name,
+                surname_field: :buyer_surname}
+    end
+
     update :revise do
       description "Revise a saved, unnumbered VAT invoice draft."
       primary? true
@@ -752,9 +798,14 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
     end
 
     update :record_ksef_submission do
-      description "Record what KSeF reported about the invoice: its session and invoice reference or checksum."
+      description "Record what KSeF reported about the invoice: its session, invoice reference or checksum and storage date."
       require_atomic? false
-      accept [:ksef_session_reference_number, :ksef_invoice_checksum]
+
+      accept [
+        :ksef_session_reference_number,
+        :ksef_invoice_checksum,
+        :ksef_permanent_storage_date
+      ]
     end
 
     update :confirm_in_ksef do
@@ -1180,6 +1231,7 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
     publish :draft, ["created", :_tenant]
     publish :issue, ["created", :_tenant]
     publish :correct, ["created", :_tenant]
+    publish :import_from_ksef, ["created", :_tenant]
     publish :revise, ["updated", :_tenant]
     publish :finalize, ["updated", :_tenant]
     publish :return_to_draft, ["updated", :_tenant]
@@ -1277,6 +1329,8 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
     attribute :ksef_session_reference_number, :string, public?: true
     attribute :ksef_invoice_checksum, :string, public?: true
     attribute :locked_at, :utc_datetime, public?: true
+    # When KSeF permanently stored the invoice; the latest one is where the next import starts.
+    attribute :ksef_permanent_storage_date, :naive_datetime, public?: true
 
     # KSeF FA(3) fields
     attribute :ksef_invoice_kind, :atom,

@@ -35,7 +35,7 @@ defmodule Firmowid.Ash.Ksef.Workers.FetchDispatcher do
       actor = %SystemActor{org_id: org_id, role: :ksef_session}
       org_scope = %Scope{actor: actor, tenant: org_id}
 
-      Ksef.fetch_new_cost_invoices(org_scope)
+      Ksef.fetch_new_invoices(org_scope)
     end)
 
     :ok

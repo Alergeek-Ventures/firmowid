@@ -3,12 +3,16 @@
 # reliability patterns; deduplicating safely requires broader worker/service boundary extraction.
 defmodule Firmowid.Ash.Ksef.Workers.FetchWorker do
   @moduledoc """
-  Oban worker for fetching cost invoices from KSeF.
+  Oban worker for fetching invoices from KSeF.
+
+  The `subject_type` argument selects the organization's side of the invoices:
+  `Subject2` (buyer, the default) imports cost invoices, `Subject1` (seller) imports
+  sales invoices issued outside Firmowid through `SalesInvoiceImport`.
 
   Manages the two-phase fetch lifecycle:
-  1. `initiate_export` — requests an encrypted export of cost invoices from KSeF
+  1. `initiate_export` — requests an encrypted export of the organization's invoices from KSeF
   2. `poll_export` — polls for export readiness, downloads encrypted package parts,
-     decrypts, unzips, parses FA(3) XML, and creates `CostInvoice` records
+     decrypts, unzips, parses FA(3) XML, and creates `CostInvoice` or `SalesInvoice` records
 
   ## Reliability guarantees
 
@@ -35,6 +39,7 @@ defmodule Firmowid.Ash.Ksef.Workers.FetchWorker do
   alias Firmowid.Ash.Ksef.Services.ApiClient
   alias Firmowid.Ash.Ksef.Services.Encryption
   alias Firmowid.Ash.Ksef.Services.InvoiceParser
+  alias Firmowid.Ash.Ksef.Services.SalesInvoiceImport
   alias Firmowid.Ash.Ksef.Workers.SessionWorker
   alias Firmowid.Ash.Scope
   alias Firmowid.Ash.SystemActor
@@ -66,13 +71,14 @@ defmodule Firmowid.Ash.Ksef.Workers.FetchWorker do
     date_from = parse_datetime!(args["date_from"])
     encryption_data = Encryption.generate_encryption_data()
 
-    case perform_initiate_export(date_from, encryption_data, organization_id) do
+    case perform_initiate_export(date_from, subject_type(args), encryption_data, organization_id) do
       {:ok, reference_number} ->
         schedule_poll_job(
           reference_number,
           encryption_data,
           organization_id,
-          args["date_from"]
+          args["date_from"],
+          subject_type(args)
         )
 
       {:error, _reason} = error ->
@@ -118,15 +124,21 @@ defmodule Firmowid.Ash.Ksef.Workers.FetchWorker do
 
     # Re-initiate the export from the original date_from instead of retrying the expired reference
     initiate_export(
-      %{"date_from" => args["date_from"], "organization_id" => scope.tenant},
+      %{
+        "date_from" => args["date_from"],
+        "organization_id" => scope.tenant,
+        "subject_type" => subject_type(args)
+      },
       scope.tenant
     )
   end
 
-  defp perform_initiate_export(date_from, encryption_data, organization_id) do
+  # Jobs queued before sales invoice imports carry no subject type and fetch cost invoices.
+  defp subject_type(args), do: Map.get(args, "subject_type", "Subject2")
+
+  defp perform_initiate_export(date_from, subject_type, encryption_data, organization_id) do
     filters = %{
-      # Subject2 means cost invoices
-      "subjectType" => "Subject2",
+      "subjectType" => subject_type,
       "dateRange" => %{
         "dateType" => "PermanentStorage",
         "from" => DateTime.to_iso8601(date_from),
@@ -159,7 +171,7 @@ defmodule Firmowid.Ash.Ksef.Workers.FetchWorker do
   defp process_downloaded_package(package, args, scope, job) do
     # Schedule next-page fetch BEFORE processing invoices.
     # This ensures continuation is not lost if the worker is killed mid-processing.
-    schedule_continuation_fetch(package, scope.tenant)
+    schedule_continuation_fetch(package, subject_type(args), scope.tenant)
 
     encryption_key = Base.decode64!(args["encryption_key"])
     encryption_iv = Base.decode64!(args["encryption_iv"])
@@ -179,12 +191,22 @@ defmodule Firmowid.Ash.Ksef.Workers.FetchWorker do
     invoices = Enum.filter(files, fn {name, _} -> String.ends_with?(name, ".xml") end)
     is_truncated = package["isTruncated"] == true
 
-    create_cost_invoices_from_package(metadata, invoices, scope, job, is_truncated)
+    case subject_type(args) do
+      "Subject2" ->
+        create_cost_invoices_from_package(metadata, invoices, scope, job, is_truncated)
+
+      "Subject1" ->
+        summary =
+          SalesInvoiceImport.import_package(parse_metadata_json(metadata), invoices, scope)
+
+        stamp_job_meta(job, Map.put(summary, :is_truncated, is_truncated))
+        :ok
+    end
   end
 
-  defp schedule_continuation_fetch(package, organization_id) do
+  defp schedule_continuation_fetch(package, subject_type, organization_id) do
     if package["isTruncated"] do
-      schedule_next_fetch(package["lastPermanentStorageDate"], organization_id)
+      schedule_next_fetch(package["lastPermanentStorageDate"], subject_type, organization_id)
     end
   end
 
@@ -404,10 +426,11 @@ defmodule Firmowid.Ash.Ksef.Workers.FetchWorker do
     end
   end
 
-  defp schedule_poll_job(reference_number, encryption_data, organization_id, date_from) do
+  defp schedule_poll_job(reference_number, encryption_data, organization_id, date_from, subject_type) do
     %{
       "action" => "poll_export",
       "organization_id" => organization_id,
+      "subject_type" => subject_type,
       "reference_number" => reference_number,
       "encryption_key" => Base.encode64(encryption_data.key),
       "encryption_iv" => Base.encode64(encryption_data.iv),
@@ -417,12 +440,13 @@ defmodule Firmowid.Ash.Ksef.Workers.FetchWorker do
     |> Firmowid.Oban.insert(skip_organization_id: true)
   end
 
-  defp schedule_next_fetch(last_permanent_storage_date, organization_id) do
+  defp schedule_next_fetch(last_permanent_storage_date, subject_type, organization_id) do
     Logger.info("Scheduling next KSeF fetch starting from #{last_permanent_storage_date}")
 
     %{
       "action" => "initiate_export",
       "organization_id" => organization_id,
+      "subject_type" => subject_type,
       "date_from" => last_permanent_storage_date
     }
     |> new()

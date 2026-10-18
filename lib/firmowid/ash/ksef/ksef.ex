@@ -4,7 +4,7 @@ defmodule Firmowid.Ash.Ksef do
 
   Handles Poland's national e-invoicing integration:
   - Authentication (token-based, per-organization)
-  - Cost invoice fetching (encrypted export → XML parsing → CostInvoice creation)
+  - Invoice fetching (encrypted export → XML parsing → CostInvoice or SalesInvoice creation)
   - Sales invoice submission (XML rendering → encryption → send → poll for confirmation)
   - Session management (access token caching via Cachex, refresh token rotation)
   - Submission status tracking (Oban job queries → SubmissionInfo struct)
@@ -164,39 +164,58 @@ defmodule Firmowid.Ash.Ksef do
   defp maybe_revoke_generated_certificate(%Credential{}, _access_token), do: :ok
 
   @doc """
-  Enqueues an Oban job to fetch cost invoices from KSeF starting from `date_from`.
+  Enqueues Oban jobs fetching the organization's cost and sales invoices stored in KSeF
+  since `date_from`.
   """
-  @spec fetch_cost_invoices(DateTime.t(), Scope.t()) :: {:ok, Oban.Job.t()} | {:error, term()}
-  def fetch_cost_invoices(date_from, scope) do
+  @spec fetch_invoices(DateTime.t(), Scope.t()) :: :ok | {:error, term()}
+  def fetch_invoices(date_from, scope), do: enqueue_fetches(fn _resource -> date_from end, scope)
+
+  @doc """
+  Enqueues fetches of cost and sales invoices stored in KSeF since the latest imported
+  one of each kind, or from the last 60 days when none was imported yet.
+  """
+  @spec fetch_new_invoices(Scope.t()) :: :ok | {:error, term()}
+  def fetch_new_invoices(scope) do
+    enqueue_fetches(
+      fn resource ->
+        case Invoicing.last_ksef_permanent_storage_date(resource, scope.tenant) do
+          nil -> DateTime.shift(DateTime.utc_now(), day: -60)
+          date -> DateTime.from_naive!(date, "Etc/UTC")
+        end
+      end,
+      scope
+    )
+  end
+
+  defp enqueue_fetches(date_from, scope) do
+    Enum.reduce_while([CostInvoice, SalesInvoice], :ok, fn resource, :ok ->
+      case fetch(resource, date_from.(resource), scope) do
+        {:ok, _job} -> {:cont, :ok}
+        error -> {:halt, error}
+      end
+    end)
+  end
+
+  defp fetch(resource, date_from, scope) do
     %{
       "action" => "initiate_export",
       "organization_id" => scope.tenant,
+      "subject_type" => subject_type(resource),
       "date_from" => DateTime.to_iso8601(date_from)
     }
     |> FetchWorker.new()
     |> Firmowid.Oban.insert(skip_organization_id: true)
   end
 
-  @doc """
-  Enqueues a fetch of cost invoices stored in KSeF since the latest imported one,
-  or from the last 60 days when nothing was imported yet.
-  """
-  @spec fetch_new_cost_invoices(Scope.t()) :: {:ok, Oban.Job.t()} | {:error, term()}
-  def fetch_new_cost_invoices(scope) do
-    date_from =
-      case Invoicing.last_ksef_permanent_storage_date(scope.tenant) do
-        nil -> DateTime.shift(DateTime.utc_now(), day: -60)
-        date -> DateTime.from_naive!(date, "Etc/UTC")
-      end
-
-    fetch_cost_invoices(date_from, scope)
-  end
+  # KSeF lists the invoices where the organization is the buyer (Subject2) or the seller (Subject1).
+  defp subject_type(CostInvoice), do: "Subject2"
+  defp subject_type(SalesInvoice), do: "Subject1"
 
   @doc """
-  Returns whether a cost invoice fetch from KSeF is queued or running for the organization.
+  Returns whether an invoice fetch from KSeF is queued or running for the organization.
   """
-  @spec fetching_cost_invoices?(Scope.t()) :: boolean()
-  def fetching_cost_invoices?(scope) do
+  @spec fetching_invoices?(Scope.t()) :: boolean()
+  def fetching_invoices?(scope) do
     # Oban.Job is not an Ash resource — raw Ecto query is required here.
     Oban.Job
     |> where(
