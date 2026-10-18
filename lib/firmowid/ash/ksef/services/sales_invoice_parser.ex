@@ -69,7 +69,12 @@ defmodule Firmowid.Ash.Ksef.Services.SalesInvoiceParser do
   @unsupported_payment [
     {"RachunekBankowyFaktora", "factoring account (RachunekBankowyFaktora)"},
     {"Skonto", "cash discount (Skonto)"},
-    {"PlatnoscInna", "other payment method (PlatnoscInna)"}
+    {"PlatnoscInna", "other payment method (PlatnoscInna)"},
+    {"RachunekBankowy/SWIFT", "bank account SWIFT"},
+    {"RachunekBankowy/OpisRachunku", "bank account description (OpisRachunku)"},
+    {"RachunekBankowy/RachunekWlasnyBanku", "bank's own account (RachunekWlasnyBanku)"},
+    {"LinkDoPlatnosci", "payment link (LinkDoPlatnosci)"},
+    {"IPKSeF", "payment identifier (IPKSeF)"}
   ]
   # FA(3) makes the unit optional, while every Firmowid line has one.
   @default_unit "szt."
@@ -193,7 +198,8 @@ defmodule Firmowid.Ash.Ksef.Services.SalesInvoiceParser do
   end
 
   # Payment instructions the sales invoice does not show: a factor's account, a cash discount
-  # for early payment, or a payment method described in text instead of a code.
+  # for early payment, a payment method described in text instead of a code, bank account
+  # details beyond its number, or a payment link.
   defp supported_payment(doc) do
     case Enum.find(@unsupported_payment, fn {element, _reason} ->
            xpath(doc, tns(sigil_x("/Faktura/Fa/Platnosc/#{element}", ~c"o")))
