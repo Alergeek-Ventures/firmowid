@@ -87,7 +87,8 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
   # A draft is the complete invoice except for its number; issuance dates it today.
   @draft_fields Keyword.keys(InvoiceInput.subtype_constraints()[:fields]) --
                   [:sales_invoice_items, :invoice_number, :issue_date, :correction_reason]
-  # An imported document arrives complete, with the seller and dates the other software issued.
+  # An imported document arrives complete, with the seller and dates the other software issued,
+  # and already locked like an invoice KSeF confirmed, so it also brings its denormalized item names.
   @ksef_import_fields (@draft_fields --
                          [:counterparty_id, :internal_note, :skip_invoicing, :should_send_emails]) ++
                         [
@@ -100,7 +101,9 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
                           :ksef_invoice_kind,
                           :ksef_number,
                           :ksef_invoice_checksum,
-                          :ksef_permanent_storage_date
+                          :ksef_permanent_storage_date,
+                          :locked_at,
+                          :item_names
                         ]
 
   postgres do
@@ -589,6 +592,7 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
       accept @ksef_import_fields
       argument :sales_invoice_items, {:array, :map}, allow_nil?: false
       argument :corrected_invoice_ksef_number, :string
+      argument :corrected_line_count, :integer
 
       change Changes.LinkCorrectedKsefInvoice
       change Changes.PrepareInvoiceItems
@@ -596,7 +600,6 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
       change {Changes.NormalizeReverseChargeVatRates, source: :argument, field: :sales_invoice_items}
 
       change manage_relationship(:sales_invoice_items, type: :direct_control)
-      change Changes.SetItemNames
       change Changes.SetIsCashAccount
       change {Changes.ValidateCountryCode, field: :buyer_country}
       change Changes.BindInvoiceCounterparty

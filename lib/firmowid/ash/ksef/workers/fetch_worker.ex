@@ -21,8 +21,10 @@ defmodule Firmowid.Ash.Ksef.Workers.FetchWorker do
     to a point where KSeF guarantees no new invoices will appear.
   - For truncated exports, the next-page fetch is scheduled **before** processing
     invoices, so a mid-processing crash won't lose the continuation point.
-  - If any invoice in a batch fails to parse or create, the **entire batch fails**
-    and will be retried — no silent cursor advancement past failed invoices.
+  - If any cost invoice in a batch fails to parse or create, the **entire batch fails**
+    and will be retried — no silent cursor advancement past failed invoices. Sales
+    invoices skip documents they cannot represent and fail the batch on any other error
+    (see `SalesInvoiceImport`).
   - Individual invoice failures are reported to Sentry with full context.
   - Polling is bounded to 120 snoozes (~60 minutes) to prevent indefinite polling.
   """

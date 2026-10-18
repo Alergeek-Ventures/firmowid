@@ -171,7 +171,6 @@ defmodule Firmowid.Ash.Ksef.Workers.FetchWorkerTest do
   } do
     suffix = System.unique_integer([:positive])
     storage_date = "2026-03-08T09:00:00Z"
-    encryption_data = Encryption.generate_encryption_data()
 
     confirmed =
       seed_sales_invoice!(organization_id, "FV/OWN/#{suffix}", ksef_number: "KSEF-OWN-#{suffix}")
@@ -186,41 +185,15 @@ defmodule Firmowid.Ash.Ksef.Workers.FetchWorkerTest do
       %{ksef_number: "KSEF-ADVANCE-#{suffix}", number: "ZAL/#{suffix}", kind: "ZAL"}
     ]
 
-    {zip_binary, encrypted_package} =
-      package
-      |> Enum.map(fn invoice ->
-        %{
-          ksef_number: invoice.ksef_number,
-          xml: sales_invoice_xml(invoice.number, invoice.kind),
-          permanent_storage_date: storage_date
-        }
-      end)
-      |> build_encrypted_package(encryption_data)
-
-    part = package_part(zip_binary, encrypted_package, "https://ksef.example/downloads/package-3")
-
-    Req.Test.stub(:ksef_api, fn conn ->
-      case conn.request_path do
-        "/invoices/exports/export-ref-3" ->
-          Req.Test.json(conn, %{
-            "status" => %{"code" => 200},
-            "package" => %{"parts" => [part], "isTruncated" => false}
-          })
-
-        "/downloads/package-3" ->
-          Plug.Conn.send_resp(conn, 200, encrypted_package)
-
-        _ ->
-          Plug.Conn.send_resp(conn, 404, "unexpected request: #{conn.request_path}")
-      end
+    package
+    |> Enum.map(fn invoice ->
+      %{
+        ksef_number: invoice.ksef_number,
+        xml: sales_invoice_xml(invoice.number, kind: invoice.kind),
+        permanent_storage_date: storage_date
+      }
     end)
-
-    args =
-      organization_id
-      |> poll_export_args(encryption_data, "export-ref-3")
-      |> Map.put("subject_type", "Subject1")
-
-    capture_log(fn -> assert :ok = perform_job(FetchWorker, args) end)
+    |> import_sales_package!(organization_id)
 
     invoices =
       SalesInvoice
@@ -245,6 +218,77 @@ defmodule Firmowid.Ash.Ksef.Workers.FetchWorkerTest do
              imported.sales_invoice_items
 
     assert Decimal.equal?(unit_price, Decimal.new("100.00"))
+  end
+
+  test "imports corrections into the chain of the VAT invoice they correct", %{
+    organization_id: organization_id
+  } do
+    suffix = System.unique_integer([:positive])
+    original = "KSEF-VAT-#{suffix}"
+    correction = "KSEF-KOR1-#{suffix}"
+    both_lines = [{"A", "100.00", false}, {"B", "100.00", false}]
+
+    [
+      {original, sales_invoice_xml("FV/#{suffix}", lines: both_lines)},
+      # A discount (P_10) leaves the unit price (P_9A) above the line's net value (P_11).
+      {"KSEF-DISCOUNT-#{suffix}", sales_invoice_xml("RAB/#{suffix}", lines: [{"A", "100.00", "90.00", false}])},
+      {correction,
+       sales_invoice_xml("KOR1/#{suffix}",
+         kind: "KOR",
+         corrects: original,
+         lines: [
+           {"A", "100.00", true},
+           {"B", "100.00", true},
+           {"A", "50.00", false},
+           {"B", "100.00", false}
+         ]
+       )},
+      {"KSEF-KOR2-#{suffix}",
+       sales_invoice_xml("KOR2/#{suffix}",
+         kind: "KOR",
+         corrects: correction,
+         lines: [
+           {"A", "50.00", true},
+           {"B", "100.00", true},
+           {"A", "40.00", false},
+           {"B", "100.00", false}
+         ]
+       )},
+      {"KSEF-PARTIAL-#{suffix}",
+       sales_invoice_xml("PART/#{suffix}",
+         kind: "KOR",
+         corrects: original,
+         lines: [{"A", "100.00", true}, {"A", "10.00", false}]
+       )},
+      {"KSEF-NOKSEF-#{suffix}",
+       sales_invoice_xml("NOKSEF/#{suffix}",
+         kind: "KOR",
+         lines: [{"A", "100.00", true}, {"A", "10.00", false}]
+       )}
+    ]
+    |> Enum.with_index()
+    |> Enum.map(fn {{ksef_number, xml}, index} ->
+      %{ksef_number: ksef_number, xml: xml, permanent_storage_date: "2026-03-08T09:0#{index}:00Z"}
+    end)
+    |> import_sales_package!(organization_id)
+
+    scope = sales_invoice_scope(organization_id)
+
+    invoices =
+      SalesInvoice
+      |> Ash.Query.load([:gross_value, :corrected_invoice_id, latest_correction: :invoice_number])
+      |> then(&SalesInvoice.list!(scope: scope, query: &1))
+      |> Map.new(&{&1.invoice_number, &1})
+
+    assert invoices |> Map.keys() |> Enum.sort() ==
+             Enum.sort(["FV/#{suffix}", "RAB/#{suffix}", "KOR1/#{suffix}", "KOR2/#{suffix}"])
+
+    assert Decimal.equal?(invoices["RAB/#{suffix}"].gross_value, Decimal.new("110.70"))
+
+    vat = invoices["FV/#{suffix}"]
+    assert invoices["KOR1/#{suffix}"].corrected_invoice_id == vat.id
+    assert invoices["KOR2/#{suffix}"].corrected_invoice_id == vat.id
+    assert vat.latest_correction.invoice_number == "KOR2/#{suffix}"
   end
 
   defp ksef_scope(organization_id) do
@@ -399,7 +443,74 @@ defmodule Firmowid.Ash.Ksef.Workers.FetchWorkerTest do
     )
   end
 
-  defp sales_invoice_xml(invoice_number, kind) do
+  defp import_sales_package!(invoices, organization_id) do
+    reference = "export-ref-#{System.unique_integer([:positive])}"
+    encryption_data = Encryption.generate_encryption_data()
+    {zip_binary, encrypted_package} = build_encrypted_package(invoices, encryption_data)
+
+    part =
+      package_part(zip_binary, encrypted_package, "https://ksef.example/downloads/#{reference}")
+
+    Req.Test.stub(:ksef_api, fn conn ->
+      case conn.request_path do
+        "/invoices/exports/" <> ^reference ->
+          Req.Test.json(conn, %{
+            "status" => %{"code" => 200},
+            "package" => %{"parts" => [part], "isTruncated" => false}
+          })
+
+        "/downloads/" <> ^reference ->
+          Plug.Conn.send_resp(conn, 200, encrypted_package)
+
+        _ ->
+          Plug.Conn.send_resp(conn, 404, "unexpected request: #{conn.request_path}")
+      end
+    end)
+
+    args =
+      organization_id
+      |> poll_export_args(encryption_data, reference)
+      |> Map.put("subject_type", "Subject1")
+
+    capture_log(fn -> assert :ok = perform_job(FetchWorker, args) end)
+  end
+
+  # Lines are {name, unit price, before?} or {name, unit price, net value, before?}, one unit each at 23% VAT.
+  defp sales_invoice_xml(invoice_number, opts) do
+    kind = Keyword.get(opts, :kind, "VAT")
+    lines = Keyword.get(opts, :lines, [{"Usługa", "100.00", false}])
+
+    rows =
+      lines
+      |> Enum.map(fn
+        {name, price, before?} -> {name, price, price, before?}
+        line -> line
+      end)
+      |> Enum.with_index(1)
+      |> Enum.map_join(fn {{name, price, net, before?}, index} ->
+        """
+        <FaWiersz>
+          <NrWierszaFa>#{index}</NrWierszaFa>
+          <P_7>#{name}</P_7>
+          <P_8A>szt.</P_8A>
+          <P_8B>1</P_8B>
+          <P_9A>#{price}</P_9A>
+          <P_11>#{net}</P_11>
+          <P_12>23</P_12>
+          #{if before?, do: "<StanPrzed>1</StanPrzed>"}
+        </FaWiersz>
+        """
+      end)
+
+    corrected =
+      case Keyword.fetch(opts, :corrects) do
+        {:ok, ksef_number} ->
+          "<NrKSeF>1</NrKSeF><NrKSeFFaKorygowanej>#{ksef_number}</NrKSeFFaKorygowanej>"
+
+        :error ->
+          "<NrKSeFN>1</NrKSeFN>"
+      end
+
     """
     <?xml version="1.0" encoding="utf-8"?>
     <Faktura xmlns="http://crd.gov.pl/wzor/2025/06/25/13775/">
@@ -427,19 +538,9 @@ defmodule Firmowid.Ash.Ksef.Workers.FetchWorkerTest do
         <KodWaluty>PLN</KodWaluty>
         <P_1>2026-03-06</P_1>
         <P_2>#{invoice_number}</P_2>
-        <P_13_1>100.00</P_13_1>
-        <P_14_1>23.00</P_14_1>
-        <P_15>123.00</P_15>
         <RodzajFaktury>#{kind}</RodzajFaktury>
-        <FaWiersz>
-          <NrWierszaFa>1</NrWierszaFa>
-          <P_7>Usługa</P_7>
-          <P_8A>szt.</P_8A>
-          <P_8B>1</P_8B>
-          <P_9A>100.00</P_9A>
-          <P_11>100.00</P_11>
-          <P_12>23</P_12>
-        </FaWiersz>
+        #{if kind == "KOR", do: "<DaneFaKorygowanej><DataWystFaKorygowanej>2026-03-06</DataWystFaKorygowanej><NrFaKorygowanej>X</NrFaKorygowanej>#{corrected}</DaneFaKorygowanej>"}
+        #{rows}
         <Platnosc>
           <TerminPlatnosci>
             <Termin>2026-03-20</Termin>

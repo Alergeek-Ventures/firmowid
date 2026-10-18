@@ -6,6 +6,9 @@ defmodule Firmowid.Ash.Ksef.Services.SalesInvoiceParser do
   represent is rejected with `{:error, {:unsupported, reason}}`: invoice kinds other than
   VAT and KOR, gross-only lines, VAT rates outside `VatRate`, and corrections listing
   only differences instead of the state before and after.
+
+  A correction also reports how many lines it lists before the correction, so the
+  import can reject one that lists only some lines of the corrected invoice.
   """
 
   import SweetXml
@@ -29,14 +32,15 @@ defmodule Firmowid.Ash.Ksef.Services.SalesInvoiceParser do
 
   @doc """
   Parses FA(3) XML into attributes for `SalesInvoice.import_from_ksef`, including
-  `:sales_invoice_items` and, for a correction, `:corrected_invoice_ksef_number`.
+  `:sales_invoice_items` and, for a correction, `:corrected_invoice_ksef_number` and
+  `:corrected_line_count`.
   """
   @spec parse(binary()) :: {:ok, map()} | {:error, {:unsupported, String.t()} | term()}
   def parse(xml) when is_binary(xml) do
     doc = SweetXml.parse(xml, namespace_conformant: true)
 
     with {:ok, kind} <- invoice_kind(text(doc, "/Faktura/Fa/RodzajFaktury")),
-         {:ok, items} <- items(doc, kind),
+         {:ok, items, corrected_line_count} <- items(doc, kind),
          {:ok, payment_method} <- payment_method(text(doc, "/Faktura/Fa/Platnosc/FormaPlatnosci")) do
       issue_date = date(text(doc, "/Faktura/Fa/P_1"))
 
@@ -59,6 +63,7 @@ defmodule Firmowid.Ash.Ksef.Services.SalesInvoiceParser do
          invoice_note: text(doc, "/Faktura/Stopka/Informacje/StopkaFaktury"),
          correction_reason: text(doc, "/Faktura/Fa/PrzyczynaKorekty"),
          corrected_invoice_ksef_number: text(doc, "/Faktura/Fa/DaneFaKorygowanej/NrKSeFFaKorygowanej"),
+         corrected_line_count: corrected_line_count,
          sales_invoice_items: items
        })}
     end
@@ -172,11 +177,14 @@ defmodule Firmowid.Ash.Ksef.Services.SalesInvoiceParser do
         end
       end)
       |> then(fn
-        {:ok, items} -> {:ok, Enum.reverse(items)}
+        {:ok, items} -> {:ok, Enum.reverse(items), corrected_line_count(kind, rows)}
         error -> error
       end)
     end
   end
+
+  defp corrected_line_count(:kor, rows), do: Enum.count(rows, & &1.before?)
+  defp corrected_line_count(:vat, _rows), do: nil
 
   defp item(row, index) do
     quantity = if row.quantity, do: Decimal.new(row.quantity), else: Decimal.new(1)
@@ -189,21 +197,27 @@ defmodule Firmowid.Ash.Ksef.Services.SalesInvoiceParser do
         {:error, {:unsupported, "line without a net price"}}
 
       true ->
-        unit_price =
-          if row.unit_price,
-            do: Decimal.new(row.unit_price),
-            else: Decimal.div(Decimal.new(row.net_value), quantity)
-
         {:ok,
          %{
            index: index,
            name: row.name,
            unit: row.unit || @default_unit,
            quantity: quantity,
-           unit_price: unit_price,
+           unit_price: unit_price(row, quantity),
            vat_rate: row.vat_rate
          }}
     end
+  end
+
+  # The line's net value (P_11) already accounts for a discount (P_10) the unit price leaves out.
+  defp unit_price(%{net_value: nil, unit_price: unit_price}, _quantity), do: Decimal.new(unit_price)
+
+  defp unit_price(%{net_value: net_value, unit_price: unit_price}, quantity) do
+    net_value = Decimal.new(net_value)
+
+    if unit_price && Decimal.equal?(Decimal.mult(Decimal.new(unit_price), quantity), net_value),
+      do: Decimal.new(unit_price),
+      else: Decimal.div(net_value, quantity)
   end
 
   defp payment_method(nil), do: {:ok, nil}
