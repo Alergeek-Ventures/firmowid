@@ -6,8 +6,9 @@ defmodule Firmowid.Ash.Invoicing.Changes.VerifyImportedDocument do
   state after it and converts a foreign-currency invoice's VAT at its own NBP rate.
   Once the import is saved, its gross total (for a correction, the change from the
   state before it) must round to the document's `P_15`, each rate group's VAT must match
-  its `P_14_x`, the document must convert that VAT to PLN (`P_14_xW`, `KursWaluty`) at
-  the NBP rate, and a correction must list exactly the lines of that earlier state.
+  its `P_14_x`, a foreign currency must have an NBP rate and the document must convert
+  that VAT to PLN (`P_14_xW`, `KursWaluty`) at it, and a correction must list exactly the
+  lines of that earlier state.
   Otherwise the error rolls the import back.
   """
   use Ash.Resource.Change
@@ -106,18 +107,12 @@ defmodule Firmowid.Ash.Invoicing.Changes.VerifyImportedDocument do
         )
   end
 
-  # A PLN document has nothing to convert, nor does one without PLN amounts or stated rates.
+  # A PLN document has nothing to convert. Any other currency needs the NBP rate Firmowid
+  # shows on the PDF, and the document must convert at it: each P_14_xW is its group's VAT
+  # at that rate, and any rate stated on a line is that rate.
   defp check_vat_pln(%{currency: "PLN"}, _reference, _vat), do: :ok
 
   defp check_vat_pln(invoice, reference, %{groups: groups, line_rates: line_rates}) do
-    if Enum.all?(groups, &is_nil(&1.vat_pln)) and line_rates == [],
-      do: :ok,
-      else: check_conversion(invoice, reference, groups, line_rates)
-  end
-
-  # The document must convert at the NBP rate Firmowid shows: each P_14_xW is its group's VAT
-  # at that rate, and any rate stated on a line is that rate.
-  defp check_conversion(invoice, reference, groups, line_rates) do
     date = Invoicing.get_currency_conversion_date(invoice.issue_date, invoice.sale_date)
 
     case NbpApiClient.get_exchange_rate(invoice.currency, date) do
