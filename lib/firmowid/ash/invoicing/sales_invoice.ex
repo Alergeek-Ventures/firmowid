@@ -551,11 +551,18 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
       change {Changes.PrepareCorrection, []}
       change Changes.PrepareInvoiceItems
 
-      change {Changes.NormalizeReverseChargeVatRates, source: :argument, field: :sales_invoice_items}
+      # An imported invoice's own rates and cash accounting stay unless the correction changes them.
+      change {Changes.NormalizeReverseChargeVatRates, source: :argument, field: :sales_invoice_items} do
+        where Validations.CorrectedRatesNormalized
+      end
 
       change manage_relationship(:sales_invoice_items, type: :direct_control)
       change Changes.SetItemNames
-      change Changes.SetIsCashAccount
+
+      change Changes.SetIsCashAccount do
+        where {Validations.DiffersFromCorrectedState, field: :payment_method}
+      end
+
       change {Changes.ValidateCountryCode, field: :buyer_country}
 
       # Last, so the submission job is queued only after every other write of this transaction.
