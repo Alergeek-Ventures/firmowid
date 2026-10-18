@@ -64,19 +64,20 @@ defmodule Firmowid.Ash.Invoicing.Changes.VerifyImportedDocument do
 
   defp check_vat_pln(_invoice, _reference, nil), do: :ok
 
-  # Each P_14_xW is rounded on its own, so their sum may differ by a grosz per amount.
+  # Each P_14_xW converts that rate's VAT rounded to the grosz and is rounded itself, so per
+  # amount they may differ from the converted total by half a grosz times the rate plus a grosz.
   defp check_vat_pln(invoice, reference, %{total: total, count: count}) do
     case Invoicing.get_currency_rate(invoice) do
       nil ->
         raise "NBP exchange rate unavailable for #{invoice.currency} on #{invoice.issue_date}"
 
       %{rate: rate} ->
-        vat_pln =
-          Decimal.mult(difference(invoice, reference, :vat_value), Decimal.from_float(rate))
+        rate = Decimal.from_float(rate)
+        vat = Decimal.round(difference(invoice, reference, :vat_value), 2)
+        gap = vat |> Decimal.mult(rate) |> Decimal.sub(total) |> Decimal.abs()
+        per_amount = Decimal.add(Decimal.new("0.01"), Decimal.mult(Decimal.new("0.005"), rate))
 
-        gap = vat_pln |> Decimal.sub(total) |> Decimal.abs()
-
-        if Decimal.compare(gap, Decimal.mult(Decimal.new("0.01"), count)) == :gt,
+        if Decimal.compare(gap, Decimal.mult(per_amount, count)) == :gt,
           do: error(:ksef_vat_pln, "VAT w PLN po kursie NBP różni się od faktury w KSeF"),
           else: :ok
     end

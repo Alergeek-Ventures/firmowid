@@ -57,7 +57,7 @@ defmodule Firmowid.Ash.Ksef.Services.SalesInvoiceParser do
        |> Map.merge(exemption(doc))
        |> Map.merge(%{
          ksef_invoice_kind: kind,
-         invoice_type: invoice_type(doc, items),
+         invoice_type: invoice_type(doc),
          invoice_number: text(doc, "/Faktura/Fa/P_2"),
          currency: text(doc, "/Faktura/Fa/KodWaluty"),
          issue_date: issue_date,
@@ -159,9 +159,13 @@ defmodule Firmowid.Ash.Ksef.Services.SalesInvoiceParser do
     })
   end
 
-  # The foreign template shows VAT as not applicable, so it only fits a document without any.
-  defp invoice_type(doc, items) do
-    taxed? = Enum.any?(items, &Decimal.gt?(VatRate.to_numeric(&1.vat_rate), 0))
+  # The foreign template shows VAT as not applicable, so it only fits a document without any,
+  # including a correction's lines before it.
+  defp invoice_type(doc) do
+    taxed? =
+      doc
+      |> xpath(tns(~x"/Faktura/Fa/FaWiersz/P_12/text()"ls))
+      |> Enum.any?(&Decimal.gt?(VatRate.to_numeric(String.trim(&1)), 0))
 
     if taxed? or text(doc, "/Faktura/Podmiot2/Adres/KodKraju") in [nil, "PL"],
       do: :poland,

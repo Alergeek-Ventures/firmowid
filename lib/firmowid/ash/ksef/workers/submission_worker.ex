@@ -267,20 +267,6 @@ defmodule Firmowid.Ash.Ksef.Workers.SubmissionWorker do
     |> Firmowid.Oban.insert!(skip_organization_id: true)
   end
 
-  # A retry of a timed-out check finds the later check already scheduled.
-  defp schedule_recheck(args) do
-    args
-    |> new(
-      schedule_in: @recheck_after_seconds,
-      unique: [
-        keys: [:sales_invoice_id, :action],
-        period: :infinity,
-        states: [:available, :scheduled, :retryable]
-      ]
-    )
-    |> Firmowid.Oban.insert!(skip_organization_id: true)
-  end
-
   defp verify_invoice(
          %{
            "sales_invoice_id" => sales_invoice_id,
@@ -339,12 +325,9 @@ defmodule Firmowid.Ash.Ksef.Workers.SubmissionWorker do
     # A snooze does not use up an attempt; Oban counts snoozes in the job's meta.
     snooze_count = Map.get(job.meta, "snoozed", 0)
 
+    # KSeF has not rejected the invoice, so it stays numbered and locked and is checked hourly from then on.
     if snooze_count >= @max_verify_snooze_count do
-      # KSeF has not rejected the invoice, so it stays numbered and locked and is checked again later.
-      schedule_recheck(job.args)
-
-      {:error,
-       "Invoice #{invoice.id} verification still pending after #{@max_verify_snooze_count} polls (~#{div(@max_verify_snooze_count * @verify_snooze_seconds, 60)} minutes)"}
+      {:snooze, @recheck_after_seconds}
     else
       Logger.debug("Invoice #{invoice.id} still pending, will retry")
       {:snooze, @verify_snooze_seconds}
