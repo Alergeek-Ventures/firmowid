@@ -159,6 +159,35 @@ jobs:
           key: ${{ steps.extraction_cache.outputs.cache-primary-key }}
           path: _build/gettext-extraction/verified
 
+  # PLTs take ~10 min to build, so dialyzer runs alongside the other checks.
+  dialyzer:
+    name: Dialyzer
+    runs-on: ubuntu-latest
+    needs:
+      - translations
+      - extract-versions
+
+    env:
+      MIX_ENV: test
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - name: Download generated PO catalog
+        uses: ./.github/actions/download-translations
+        with:
+          catalog-version: ${{ needs.translations.outputs.catalog-version }}
+
+      - name: Setup Elixir Project
+        id: setup
+        uses: ./.github/actions/elixir-setup
+        with:
+          elixir-version: ${{ needs.extract-versions.outputs.elixir }}
+          otp-version: ${{ needs.extract-versions.outputs.otp }}
+
       - name: Restore core PLT cache
         id: core_plt_cache
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v5
@@ -173,8 +202,8 @@ jobs:
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v5
         with:
           key: plt-v4-${{ runner.os }}-${{ runner.arch }}-${{ env.MIX_ENV }}-${{ steps.setup.outputs.otp-version }}-${{ steps.setup.outputs.elixir-version }}-${{ hashFiles('mix.lock') }}-${{ hashFiles('mix.exs', 'config/**/*.exs') }}
-          # Removing modules from a PLT built for another lock takes longer than
-          # rebuilding it from the core PLT, so only reuse PLTs of the same lock.
+          # Updating a PLT built for another lock takes as long as rebuilding it
+          # from the core PLT (~10 min), so only reuse PLTs of the same lock.
           restore-keys: |
             plt-v4-${{ runner.os }}-${{ runner.arch }}-${{ env.MIX_ENV }}-${{ steps.setup.outputs.otp-version }}-${{ steps.setup.outputs.elixir-version }}-${{ hashFiles('mix.lock') }}-
           path: |
