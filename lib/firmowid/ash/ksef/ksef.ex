@@ -196,6 +196,9 @@ defmodule Firmowid.Ash.Ksef do
     end)
   end
 
+  # One export at a time per organization and invoice kind: a new one is not started while
+  # any job of a running one (its export, polls or continuations) is queued or running, so
+  # pages are imported in order and the next fetch starts after everything saved.
   defp fetch(resource, date_from, scope) do
     %{
       "action" => "initiate_export",
@@ -203,7 +206,7 @@ defmodule Firmowid.Ash.Ksef do
       "subject_type" => subject_type(resource),
       "date_from" => DateTime.to_iso8601(date_from)
     }
-    |> FetchWorker.new()
+    |> FetchWorker.new(unique: [keys: [:organization_id, :subject_type], period: :infinity, states: :incomplete])
     |> Firmowid.Oban.insert(skip_organization_id: true)
   end
 
