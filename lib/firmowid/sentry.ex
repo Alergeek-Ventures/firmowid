@@ -32,6 +32,11 @@ defmodule Firmowid.Sentry do
     :oban_worker,
     :oban_queue,
     :oban_state,
+    :organization_id,
+    :subject_type,
+    :oban_job_id,
+    :oban_attempt,
+    :oban_max_attempts,
     :service
   ]
   @extra_keys [
@@ -55,6 +60,21 @@ defmodule Firmowid.Sentry do
     :service
   ]
   @log_keys [
+    :subject_type,
+    :oban_job_id,
+    :oban_worker,
+    :oban_queue,
+    :oban_state,
+    :oban_attempt,
+    :oban_max_attempts,
+    :duration_ms,
+    :total_in_package,
+    :created,
+    :skipped_known,
+    :skipped_unsupported,
+    :skipped_duplicate,
+    :failed,
+    :is_truncated,
     :agreement_id,
     :certificate_serial_number,
     :request_id,

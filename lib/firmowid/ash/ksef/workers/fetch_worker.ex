@@ -373,6 +373,21 @@ defmodule Firmowid.Ash.Ksef.Workers.FetchWorker do
   end
 
   defp stamp_job_meta(job, summary) do
+    Logger.info(
+      "KSeF invoice package processed",
+      summary
+      |> Map.take([
+        :total_in_package,
+        :created,
+        :skipped_known,
+        :skipped_unsupported,
+        :skipped_duplicate,
+        :failed,
+        :is_truncated
+      ])
+      |> Map.to_list()
+    )
+
     Oban.update_job(job.id, fn job ->
       %{meta: Map.merge(job.meta, summary)}
     end)

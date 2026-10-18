@@ -4,6 +4,21 @@ safe_sentry_metadata = [
   :request_id,
   :user_id,
   :organization_id,
+  :subject_type,
+  :oban_job_id,
+  :oban_worker,
+  :oban_queue,
+  :oban_state,
+  :oban_attempt,
+  :oban_max_attempts,
+  :duration_ms,
+  :total_in_package,
+  :created,
+  :skipped_known,
+  :skipped_unsupported,
+  :skipped_duplicate,
+  :failed,
+  :is_truncated,
   :bank_account_id,
   :blob_id,
   :account_id,
@@ -64,6 +79,7 @@ config :sentry,
   integrations: [
     oban: [
       capture_errors: true,
+      oban_tags_to_sentry_tags: {Firmowid.JobTelemetry, :context},
       cron: [enabled: false]
     ]
   ]

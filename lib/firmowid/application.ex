@@ -16,6 +16,7 @@ defmodule Firmowid.Application do
     :erlang.system_flag(:backtrace_depth, 64)
 
     Oban.Telemetry.attach_default_logger()
+    Firmowid.JobTelemetry.attach()
     Ecto.DevLogger.install(Firmowid.Repo)
     Sentry.setup()
 
