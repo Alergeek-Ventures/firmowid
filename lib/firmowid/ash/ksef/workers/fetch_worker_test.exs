@@ -607,7 +607,7 @@ defmodule Firmowid.Ash.Ksef.Workers.FetchWorkerTest do
         <KodWaluty>#{Keyword.get(opts, :currency, "PLN")}</KodWaluty>
         <P_1>2026-03-06</P_1>
         <P_2>#{invoice_number}</P_2>
-        #{if vat_pln = opts[:vat_pln], do: "<P_14_1W>#{vat_pln}</P_14_1W>"}
+        #{if vat_pln = opts[:vat_pln], do: "<P_13_1>100.00</P_13_1><P_14_1>23.00</P_14_1><P_14_1W>#{vat_pln}</P_14_1W>"}
         <P_15>#{gross_total}</P_15>
         <RodzajFaktury>#{kind}</RodzajFaktury>
         #{if kind == "KOR", do: "<DaneFaKorygowanej><DataWystFaKorygowanej>2026-03-06</DataWystFaKorygowanej><NrFaKorygowanej>X</NrFaKorygowanej>#{corrected}</DaneFaKorygowanej>"}

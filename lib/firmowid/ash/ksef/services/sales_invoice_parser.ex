@@ -172,18 +172,20 @@ defmodule Firmowid.Ash.Ksef.Services.SalesInvoiceParser do
       else: :foreign
   end
 
-  # VAT converted to PLN (P_14_xW) for a foreign-currency document, with how many amounts were rounded.
+  # The document's own conversion: each rate's VAT (P_14_x) with its PLN amount (P_14_xW),
+  # and the exchange rates stated on lines (KursWaluty).
   defp vat_pln(doc) do
-    case Enum.flat_map(1..4, &List.wrap(text(doc, "/Faktura/Fa/P_14_#{&1}W"))) do
-      [] ->
-        nil
+    amounts =
+      for group <- 1..4, vat_pln = text(doc, "/Faktura/Fa/P_14_#{group}W") do
+        %{vat: Decimal.new(text(doc, "/Faktura/Fa/P_14_#{group}")), vat_pln: Decimal.new(vat_pln)}
+      end
 
-      amounts ->
-        %{
-          total: amounts |> Enum.map(&Decimal.new/1) |> Enum.reduce(&Decimal.add/2),
-          count: length(amounts)
-        }
-    end
+    rates =
+      doc
+      |> xpath(tns(~x"/Faktura/Fa/FaWiersz/KursWaluty/text()"ls))
+      |> Enum.map(&(&1 |> String.trim() |> Decimal.new()))
+
+    if amounts == [] and rates == [], do: nil, else: %{amounts: amounts, rates: rates}
   end
 
   defp exemption(doc) do

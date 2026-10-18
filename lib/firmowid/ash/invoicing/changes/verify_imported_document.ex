@@ -5,8 +5,9 @@ defmodule Firmowid.Ash.Invoicing.Changes.VerifyImportedDocument do
   Firmowid recalculates totals from line net values, keeps a correction's complete
   state after it and converts a foreign-currency invoice's VAT at its own NBP rate.
   Once the import is saved, its gross total (for a correction, the change from the
-  state before it) must round to the document's `P_15`, its VAT in PLN must match the
-  document's `P_14_xW`, and a correction must list every line of that earlier state.
+  state before it) must round to the document's `P_15`, the document must convert its
+  VAT to PLN (`P_14_xW`, `KursWaluty`) at that NBP rate, and a correction must list
+  every line of that earlier state.
   Otherwise the error rolls the import back.
   """
   use Ash.Resource.Change
@@ -23,13 +24,13 @@ defmodule Firmowid.Ash.Invoicing.Changes.VerifyImportedDocument do
   def change(changeset, _opts, context) do
     Ash.Changeset.after_action(changeset, fn changeset, invoice ->
       opts = Ash.Context.to_opts(context)
-      invoice = Ash.load!(invoice, [:gross_value, :vat_value, :reference_invoice], opts)
+      invoice = Ash.load!(invoice, [:gross_value, :reference_invoice], opts)
 
       reference =
         invoice.reference_invoice &&
           Ash.load!(
             invoice.reference_invoice,
-            [:gross_value, :vat_value, :sales_invoice_items],
+            [:gross_value, :sales_invoice_items],
             opts
           )
 
@@ -39,7 +40,7 @@ defmodule Firmowid.Ash.Invoicing.Changes.VerifyImportedDocument do
 
       with :ok <- check_lines(reference, line_count),
            :ok <- check_total(invoice, reference, gross_total),
-           :ok <- check_vat_pln(invoice, reference, vat_pln) do
+           :ok <- check_vat_pln(invoice, vat_pln) do
         {:ok, invoice}
       end
     end)
@@ -62,24 +63,28 @@ defmodule Firmowid.Ash.Invoicing.Changes.VerifyImportedDocument do
        else: error(:ksef_gross_total, "kwota brutto po przeliczeniu różni się od faktury w KSeF")
   end
 
-  defp check_vat_pln(_invoice, _reference, nil), do: :ok
+  defp check_vat_pln(_invoice, nil), do: :ok
 
-  # Each P_14_xW converts that rate's VAT rounded to the grosz and is rounded itself, so per
-  # amount they may differ from the converted total by half a grosz times the rate plus a grosz.
-  defp check_vat_pln(invoice, reference, %{total: total, count: count}) do
+  # The document must convert at the NBP rate Firmowid shows: each P_14_xW is its rate's VAT
+  # at that rate, and any rate stated on a line is that rate.
+  defp check_vat_pln(invoice, %{amounts: amounts, rates: rates}) do
     case Invoicing.get_currency_rate(invoice) do
       nil ->
         raise "NBP exchange rate unavailable for #{invoice.currency} on #{invoice.issue_date}"
 
       %{rate: rate} ->
         rate = Decimal.from_float(rate)
-        vat = Decimal.round(difference(invoice, reference, :vat_value), 2)
-        gap = vat |> Decimal.mult(rate) |> Decimal.sub(total) |> Decimal.abs()
-        per_amount = Decimal.add(Decimal.new("0.01"), Decimal.mult(Decimal.new("0.005"), rate))
 
-        if Decimal.compare(gap, Decimal.mult(per_amount, count)) == :gt,
-          do: error(:ksef_vat_pln, "VAT w PLN po kursie NBP różni się od faktury w KSeF"),
-          else: :ok
+        converted? =
+          Enum.all?(
+            amounts,
+            &Decimal.equal?(Decimal.round(Decimal.mult(&1.vat, rate), 2), &1.vat_pln)
+          ) and
+            Enum.all?(rates, &Decimal.equal?(&1, rate))
+
+        if converted?,
+          do: :ok,
+          else: error(:ksef_vat_pln, "faktura w KSeF przelicza VAT na PLN po innym kursie niż NBP")
     end
   end
 
