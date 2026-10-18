@@ -41,6 +41,11 @@ defmodule Firmowid.Ash.Ksef.Services.SalesInvoiceParser do
     "P_23" => "triangular procedure (P_23)",
     "PMarzy/P_PMarzy" => "margin scheme (P_PMarzy)"
   }
+  @unsupported_payment [
+    {"RachunekBankowyFaktora", "factoring account (RachunekBankowyFaktora)"},
+    {"Skonto", "cash discount (Skonto)"},
+    {"PlatnoscInna", "other payment method (PlatnoscInna)"}
+  ]
   # FA(3) makes the unit optional, while every Firmowid line has one.
   @default_unit "szt."
 
@@ -62,7 +67,7 @@ defmodule Firmowid.Ash.Ksef.Services.SalesInvoiceParser do
          :ok <- buyer_country_consistent(doc),
          {:ok, items, corrected_lines} <- items(doc, kind),
          :ok <- single_due_date(doc),
-         :ok <- no_factoring(doc),
+         :ok <- supported_payment(doc),
          :ok <- no_third_party(doc),
          {:ok, payment_method} <- payment_method(text(doc, "/Faktura/Fa/Platnosc/FormaPlatnosci")) do
       issue_date = date(text(doc, "/Faktura/Fa/P_1"))
@@ -134,11 +139,15 @@ defmodule Firmowid.Ash.Ksef.Services.SalesInvoiceParser do
       else: :ok
   end
 
-  # Payment to a factor's account (RachunekBankowyFaktora) would be shown as payment to the seller.
-  defp no_factoring(doc) do
-    if xpath(doc, tns(~x"/Faktura/Fa/Platnosc/RachunekBankowyFaktora"o)),
-      do: {:error, {:unsupported, "factoring account (RachunekBankowyFaktora)"}},
-      else: :ok
+  # Payment instructions the sales invoice does not show: a factor's account, a cash discount
+  # for early payment, or a payment method described in text instead of a code.
+  defp supported_payment(doc) do
+    case Enum.find(@unsupported_payment, fn {element, _reason} ->
+           xpath(doc, tns(sigil_x("/Faktura/Fa/Platnosc/#{element}", ~c"o")))
+         end) do
+      nil -> :ok
+      {_element, reason} -> {:error, {:unsupported, reason}}
+    end
   end
 
   # A sales invoice has one due date; instalments or a descriptive term would be lost.
