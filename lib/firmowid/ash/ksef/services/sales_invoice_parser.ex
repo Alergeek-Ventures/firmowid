@@ -30,6 +30,8 @@ defmodule Firmowid.Ash.Ksef.Services.SalesInvoiceParser do
     "7" => :mobile
   }
   @exemption_types Map.new(VatExemption.valid_types(), &{VatExemption.label(&1), &1})
+  # The VAT rates each P_14_x / P_14_xW pair sums (the 3% rate has no PLN amount).
+  @pln_vat_groups %{1 => ["23", "22"], 2 => ["8", "7"], 3 => ["5"], 4 => ["4"]}
   # FA(3) makes the unit optional, while every Firmowid line has one.
   @default_unit "szt."
 
@@ -177,7 +179,11 @@ defmodule Firmowid.Ash.Ksef.Services.SalesInvoiceParser do
   defp vat_pln(doc) do
     amounts =
       for group <- 1..4, vat_pln = text(doc, "/Faktura/Fa/P_14_#{group}W") do
-        %{vat: Decimal.new(text(doc, "/Faktura/Fa/P_14_#{group}")), vat_pln: Decimal.new(vat_pln)}
+        %{
+          rates: Map.fetch!(@pln_vat_groups, group),
+          vat: Decimal.new(text(doc, "/Faktura/Fa/P_14_#{group}")),
+          vat_pln: Decimal.new(vat_pln)
+        }
       end
 
     rates =
