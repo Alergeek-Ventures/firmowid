@@ -4,7 +4,8 @@ defmodule Firmowid.Ash.Ksef.Services.SalesInvoiceParser do
 
   It reads the elements `InvoiceRenderer` writes. A document the sales invoice cannot
   represent is rejected with `{:error, {:unsupported, reason}}`: invoice kinds other than
-  VAT and KOR, charges or deductions changing the amount due, gross-only lines, VAT rates
+  VAT and KOR, charges or deductions changing the amount due, a sale period or per-line
+  sale dates instead of one sale date, gross-only lines, VAT rates
   outside `VatRate`, and corrections listing only differences instead of the state
   before and after.
 
@@ -43,6 +44,7 @@ defmodule Firmowid.Ash.Ksef.Services.SalesInvoiceParser do
 
     with {:ok, kind} <- invoice_kind(text(doc, "/Faktura/Fa/RodzajFaktury")),
          :ok <- no_settlement(doc),
+         :ok <- single_sale_date(doc),
          {:ok, items, corrected_line_count} <- items(doc, kind),
          {:ok, payment_method} <- payment_method(text(doc, "/Faktura/Fa/Platnosc/FormaPlatnosci")) do
       issue_date = date(text(doc, "/Faktura/Fa/P_1"))
@@ -82,6 +84,20 @@ defmodule Firmowid.Ash.Ksef.Services.SalesInvoiceParser do
     case xpath(doc, tns(~x"/Faktura/Fa/Rozliczenie"o)) do
       nil -> :ok
       _settlement -> {:error, {:unsupported, "charges or deductions (Rozliczenie)"}}
+    end
+  end
+
+  # A sales invoice has one sale date; a period (OkresFa) or per-line dates (P_6A) would be lost.
+  defp single_sale_date(doc) do
+    cond do
+      xpath(doc, tns(~x"/Faktura/Fa/OkresFa"o)) ->
+        {:error, {:unsupported, "sale period (OkresFa)"}}
+
+      xpath(doc, tns(~x"/Faktura/Fa/FaWiersz/P_6A"o)) ->
+        {:error, {:unsupported, "per-line sale dates (P_6A)"}}
+
+      true ->
+        :ok
     end
   end
 
@@ -148,8 +164,10 @@ defmodule Firmowid.Ash.Ksef.Services.SalesInvoiceParser do
           :error -> %{vat_exemption_type: :other, vat_exemption_basis: basis}
         end
 
-      text(doc, "#{zwolnienie}/P_19B") ->
-        %{vat_exemption_type: :directive_2006_112}
+      basis = text(doc, "#{zwolnienie}/P_19B") ->
+        if basis == VatExemption.label(:directive_2006_112),
+          do: %{vat_exemption_type: :directive_2006_112},
+          else: %{vat_exemption_type: :other, vat_exemption_basis: basis}
 
       basis = text(doc, "#{zwolnienie}/P_19C") ->
         %{vat_exemption_type: :other, vat_exemption_basis: basis}

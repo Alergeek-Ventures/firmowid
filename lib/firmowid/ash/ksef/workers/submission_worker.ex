@@ -320,17 +320,14 @@ defmodule Firmowid.Ash.Ksef.Workers.SubmissionWorker do
     Ksef.broadcast_ksef_status(scope.tenant, invoice.id, :submitted)
   end
 
-  defp handle_verification_result(:pending, invoice, job, scope, _verification_context) do
+  defp handle_verification_result(:pending, invoice, job, _scope, _verification_context) do
     # A snooze does not use up an attempt; Oban counts snoozes in the job's meta.
     snooze_count = Map.get(job.meta, "snoozed", 0)
 
     if snooze_count >= @max_verify_snooze_count do
-      Logger.error(
-        "Invoice #{invoice.id} verification timed out after #{@max_verify_snooze_count} polls (~#{div(@max_verify_snooze_count * @verify_snooze_seconds, 60)} minutes)"
-      )
-
-      fail_invoice_status(invoice, scope)
-      {:cancel, :verification_timeout}
+      # KSeF has not rejected the invoice, so it stays numbered and locked for a later check.
+      {:error,
+       "Invoice #{invoice.id} verification still pending after #{@max_verify_snooze_count} polls (~#{div(@max_verify_snooze_count * @verify_snooze_seconds, 60)} minutes)"}
     else
       Logger.debug("Invoice #{invoice.id} still pending, will retry")
       {:snooze, @verify_snooze_seconds}

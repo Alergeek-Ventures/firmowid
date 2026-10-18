@@ -596,10 +596,8 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
       argument :ksef_gross_total, :decimal, allow_nil?: false
 
       change Changes.LinkCorrectedKsefInvoice
+      # The document's own VAT rates are kept, so no reverse-charge normalization here.
       change Changes.PrepareInvoiceItems
-
-      change {Changes.NormalizeReverseChargeVatRates, source: :argument, field: :sales_invoice_items}
-
       change manage_relationship(:sales_invoice_items, type: :direct_control)
       change Changes.SetIsCashAccount
       change {Changes.ValidateCountryCode, field: :buyer_country}

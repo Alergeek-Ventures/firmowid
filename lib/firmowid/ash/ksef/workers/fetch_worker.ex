@@ -169,7 +169,7 @@ defmodule Firmowid.Ash.Ksef.Workers.FetchWorker do
   defp process_downloaded_package(package, args, scope, job) do
     # Schedule next-page fetch BEFORE processing invoices.
     # This ensures continuation is not lost if the worker is killed mid-processing.
-    schedule_continuation_fetch(package, job, subject_type(args), scope.tenant)
+    schedule_continuation_fetch(package, args, scope.tenant)
 
     encryption_key = Base.decode64!(args["encryption_key"])
     encryption_iv = Base.decode64!(args["encryption_iv"])
@@ -206,10 +206,9 @@ defmodule Firmowid.Ash.Ksef.Workers.FetchWorker do
     end
   end
 
-  # A retry of this package already has its continuation; a snooze does not count as an attempt.
-  defp schedule_continuation_fetch(package, job, subject_type, organization_id) do
-    if package["isTruncated"] and job.attempt == 1 do
-      schedule_next_fetch(package["lastPermanentStorageDate"], subject_type, organization_id)
+  defp schedule_continuation_fetch(package, args, organization_id) do
+    if package["isTruncated"] do
+      schedule_next_fetch(package["lastPermanentStorageDate"], args, organization_id)
     end
   end
 
@@ -443,16 +442,18 @@ defmodule Firmowid.Ash.Ksef.Workers.FetchWorker do
     |> Firmowid.Oban.insert(skip_organization_id: true)
   end
 
-  defp schedule_next_fetch(last_permanent_storage_date, subject_type, organization_id) do
+  # One continuation per export page: a retry of the page finds it already queued or done.
+  defp schedule_next_fetch(last_permanent_storage_date, args, organization_id) do
     Logger.info("Scheduling next KSeF fetch starting from #{last_permanent_storage_date}")
 
     %{
       "action" => "initiate_export",
       "organization_id" => organization_id,
-      "subject_type" => subject_type,
-      "date_from" => last_permanent_storage_date
+      "subject_type" => subject_type(args),
+      "date_from" => last_permanent_storage_date,
+      "continues" => args["reference_number"]
     }
-    |> new()
+    |> new(unique: [keys: [:continues], period: :infinity, states: :all])
     |> Firmowid.Oban.insert(skip_organization_id: true)
   end
 
