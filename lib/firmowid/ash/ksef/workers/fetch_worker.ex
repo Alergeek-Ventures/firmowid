@@ -19,8 +19,10 @@ defmodule Firmowid.Ash.Ksef.Workers.FetchWorker do
   - Uses `restrictToPermanentStorageHwmDate = true` to activate KSeF's HWM
     (High Water Mark) completeness guarantee — exports only include invoices up
     to a point where KSeF guarantees no new invoices will appear.
-  - For truncated exports, the next-page fetch is scheduled **before** processing
-    invoices, so a mid-processing crash won't lose the continuation point.
+  - For truncated cost-invoice exports, the next-page fetch is scheduled **before**
+    processing invoices, so a mid-processing crash won't lose the continuation point.
+    Sales-invoice pages schedule it **after** they are saved, so a correction on the next
+    page finds its original; a page that crashes is retried and schedules it then.
   - If any cost invoice in a batch fails to parse or create, the **entire batch fails**
     and will be retried — no silent cursor advancement past failed invoices. Sales
     invoices import the documents they can represent and then fail the batch with the
@@ -167,10 +169,6 @@ defmodule Firmowid.Ash.Ksef.Workers.FetchWorker do
   end
 
   defp process_downloaded_package(package, args, scope, job) do
-    # Schedule next-page fetch BEFORE processing invoices.
-    # This ensures continuation is not lost if the worker is killed mid-processing.
-    schedule_continuation_fetch(package, args, scope.tenant)
-
     encryption_key = Base.decode64!(args["encryption_key"])
     encryption_iv = Base.decode64!(args["encryption_iv"])
 
@@ -191,6 +189,8 @@ defmodule Firmowid.Ash.Ksef.Workers.FetchWorker do
 
     case subject_type(args) do
       "Subject2" ->
+        # Scheduled BEFORE processing, so a worker killed mid-processing keeps the continuation.
+        schedule_continuation_fetch(package, args, scope.tenant)
         create_cost_invoices_from_package(metadata, invoices, scope, job, is_truncated)
 
       "Subject1" ->
@@ -198,6 +198,10 @@ defmodule Firmowid.Ash.Ksef.Workers.FetchWorker do
           SalesInvoiceImport.import_package(parse_metadata_json(metadata), invoices, scope)
 
         stamp_job_meta(job, Map.put(summary, :is_truncated, is_truncated))
+
+        # Scheduled AFTER this page is saved, so corrections on the next page find their originals.
+        # A job that fails before this point is retried and schedules it then.
+        schedule_continuation_fetch(package, args, scope.tenant)
 
         case summary.skipped do
           [] -> :ok
@@ -208,7 +212,8 @@ defmodule Firmowid.Ash.Ksef.Workers.FetchWorker do
 
   defp schedule_continuation_fetch(package, args, organization_id) do
     if package["isTruncated"] do
-      schedule_next_fetch(package["lastPermanentStorageDate"], args, organization_id)
+      {:ok, _job} =
+        schedule_next_fetch(package["lastPermanentStorageDate"], args, organization_id)
     end
   end
 
