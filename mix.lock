@@ -82,7 +82,6 @@
   "fuse": {:hex, :fuse, "2.5.0", "71afa90be21da4e64f94abba9d36472faa2d799c67fedc3bd1752a88ea4c4753", [:rebar3], [], "hexpm", "7f52a1c84571731ad3c91d569e03131cc220ebaa7e2a11034405f0bac46a4fef"},
   "gettext": {:hex, :gettext, "1.0.2", "5457e1fd3f4abe47b0e13ff85086aabae760497a3497909b8473e0acee57673b", [:mix], [{:expo, "~> 0.5.1 or ~> 1.0", [hex: :expo, repo: "hexpm", optional: false]}], "hexpm", "eab805501886802071ad290714515c8c4a17196ea76e5afc9d06ca85fb1bfeb3"},
   "glob_ex": {:hex, :glob_ex, "0.1.12", "7b2d9369c20e2697efcfd185d13d6e84c94cd3bfd2730fbde613141c2e015c00", [:mix], [], "hexpm", "2e2fac83f113514434c7eaf267b4c38af2f91766f1cab2c5db7053b7fc1ee0bb"},
-  "heroicons": {:git, "https://github.com/tailwindlabs/heroicons.git", "0435d4ca364a608cc75e2f8683d374e55abbae26", [tag: "v2.2.0", sparse: "optimized", depth: 1]},
   "hpax": {:hex, :hpax, "1.1.0", "782931867cc23217c68fb5f68fe1a11f5e7544c7fda82c8a7019a5df5a4a1cdf", [:mix], [], "hexpm", "0b8d0f05832f55571d65ac720f79bf8994138ffbb133209dc4685eae0ad456a8"},
   "html_entities": {:hex, :html_entities, "0.5.2", "9e47e70598da7de2a9ff6af8758399251db6dbb7eebe2b013f2bbd2515895c3c", [:mix], [], "hexpm", "c53ba390403485615623b9531e97696f076ed415e8d8058b1dbaa28181f4fdcc"},
   "humanids": {:hex, :humanids, "0.2.0", "bd53e5924c9c0ae10ce84a8c4e1210c028446216d5d0eb074484da9607c39dd3", [:mix], [], "hexpm", "291c643eceef519ce48345d3dee0ff040c50df7b96c688718f74567a1346a7b1"},

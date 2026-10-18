@@ -102,14 +102,6 @@ defmodule Firmowid.MixProject do
       {:esbuild, "~> 0.10", runtime: Mix.env() == :dev},
       {:tailwind, "~> 0.4", runtime: Mix.env() == :dev},
       {:tz, "~> 0.28"},
-      {:heroicons,
-       github: "tailwindlabs/heroicons",
-       tag: "v2.2.0",
-       sparse: "optimized",
-       app: false,
-       compile: false,
-       runtime: false,
-       depth: 1},
       {:swoosh, "~> 1.6"},
       {:telemetry_metrics, "~> 1.0"},
       {:telemetry_poller, "~> 1.0"},
@@ -234,7 +226,7 @@ defmodule Firmowid.MixProject do
       "ecto.reset": ["ash_postgres.drop --force --force-drop", "db.setup"],
       # Test drops need no confirmation; AshPostgres forwards --force to compilation.
       test: ["ash_postgres.drop --force-drop --quiet", "ash.setup --quiet", "test"],
-      "assets.setup": ["cmd npm ci --prefix assets", "esbuild.install --if-missing"],
+      "assets.setup": ["cmd npm ci --prefix assets"],
       "assets.build": ["tailwind firmowid", "esbuild firmowid", "assets.mcp"],
       "assets.mcp": ["esbuild mcp --minify"],
       "assets.deploy": [
