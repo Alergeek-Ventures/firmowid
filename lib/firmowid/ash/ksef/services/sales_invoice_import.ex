@@ -6,11 +6,13 @@ defmodule Firmowid.Ash.Ksef.Services.SalesInvoiceImport do
   by their KSeF number, or by their invoice number while the submission still awaits
   KSeF's confirmation, and only their storage date is kept so the next import starts
   after them. An invoice the sales invoice cannot represent or accept is logged and
-  skipped, so it does not hold back the rest of the package.
+  skipped, so it does not hold back the rest of the package. Any other failure fails
+  the job, which retries the package before the next import can start after it.
   """
 
   import Firmowid.Ash.Ksef.Services.ApiClient, only: [parse_datetime!: 1]
 
+  alias Ash.Error.Invalid
   alias Firmowid.Ash.Invoicing
   alias Firmowid.Ash.Invoicing.SalesInvoice
   alias Firmowid.Ash.Ksef
@@ -36,22 +38,26 @@ defmodule Firmowid.Ash.Ksef.Services.SalesInvoiceImport do
       tenant: organization_id
     }
 
+    # In storage order, so a correction of a correction finds the one it corrects.
     parsed =
-      Enum.map(invoices, fn {filename, xml} ->
+      invoices
+      |> Enum.map(fn {filename, xml} ->
         ksef_number = String.replace_suffix(filename, ".xml", "")
-        {ksef_number, xml, SalesInvoiceParser.parse(xml)}
-      end)
 
-    known = known_invoices(parsed, scope)
-
-    results =
-      Enum.map(parsed, fn {ksef_number, xml, attrs} ->
         stored_at =
           metadata
           |> Map.fetch!(ksef_number)
           |> Map.fetch!("permanentStorageDate")
           |> parse_datetime!()
 
+        {ksef_number, xml, SalesInvoiceParser.parse(xml), stored_at}
+      end)
+      |> Enum.sort_by(&elem(&1, 3), DateTime)
+
+    known = known_invoices(parsed, scope)
+
+    results =
+      Enum.map(parsed, fn {ksef_number, xml, attrs, stored_at} ->
         import_invoice(ksef_number, xml, attrs, stored_at, known, scope)
       end)
 
@@ -67,7 +73,9 @@ defmodule Firmowid.Ash.Ksef.Services.SalesInvoiceImport do
     ksef_numbers = Enum.map(parsed, &elem(&1, 0))
 
     invoice_numbers =
-      for {_ksef_number, _xml, {:ok, %{invoice_number: number}}} <- parsed, number, do: number
+      for {_ksef_number, _xml, {:ok, %{invoice_number: number}}, _stored_at} <- parsed,
+          number,
+          do: number
 
     SalesInvoice
     |> Ash.Query.filter(ksef_number in ^ksef_numbers or invoice_number in ^invoice_numbers)
@@ -125,17 +133,30 @@ defmodule Firmowid.Ash.Ksef.Services.SalesInvoiceImport do
 
   defp record_storage_date(%SalesInvoice{}, _stored_at, _scope), do: :known
 
+  # KSeF stored the invoice when it was issued, so it is locked from then on like a confirmed one.
   defp create(attrs, ksef_number, xml, stored_at, scope) do
     attrs
     |> Map.merge(%{
       ksef_number: ksef_number,
       ksef_invoice_checksum: Ksef.compute_fa3_checksum(xml),
-      ksef_permanent_storage_date: DateTime.to_naive(stored_at)
+      ksef_permanent_storage_date: DateTime.to_naive(stored_at),
+      locked_at: DateTime.truncate(stored_at, :second),
+      item_names: Enum.map_join(attrs.sales_invoice_items, " ", & &1.name)
     })
     |> Invoicing.import_sales_invoice_from_ksef(scope: scope)
+    |> case do
+      {:ok, invoice} -> {:ok, invoice}
+      {:error, %Invalid{} = error} -> {:error, error}
+      {:error, error} -> raise error
+    end
   end
 
   defp skip_reason({:unsupported, reason}), do: reason
   defp skip_reason(:invoice_number_taken), do: "invoice number already used in Firmowid"
+
+  defp skip_reason(%Invalid{errors: errors}) do
+    Enum.map_join(errors, ", ", &"#{Map.get(&1, :field)}: #{Exception.message(&1)}")
+  end
+
   defp skip_reason(reason), do: ErrorKind.classify(reason)
 end
