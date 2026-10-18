@@ -5,9 +5,10 @@ defmodule Firmowid.Ash.Ksef.Services.SalesInvoiceImport do
   The export also lists the invoices Firmowid itself submitted. Those are recognized
   by their KSeF number, or by their invoice number while the submission still awaits
   KSeF's confirmation, and only their storage date is kept so the next import starts
-  after them. An invoice the sales invoice cannot represent or accept is logged and
-  skipped, so it does not hold back the rest of the package. Any other failure fails
-  the job, which retries the package before the next import can start after it.
+  after them. An invoice the sales invoice cannot represent or accept is skipped, so it
+  does not hold back the rest of the package, and returned as a `SkippedInvoicesError`
+  that fails the job and reaches Sentry. Any other failure fails the job right away,
+  which retries the package before the next import can start after it.
   """
 
   import Firmowid.Ash.Ksef.Services.ApiClient, only: [parse_datetime!: 1]
@@ -22,11 +23,25 @@ defmodule Firmowid.Ash.Ksef.Services.SalesInvoiceImport do
   alias Firmowid.ErrorKind
 
   require Ash.Query
-  require Logger
+
+  defmodule SkippedInvoicesError do
+    @moduledoc "KSeF sales invoices an import skipped, with the reason for each."
+
+    defexception [:skipped]
+
+    @type t :: %__MODULE__{skipped: [%{ksef_number: String.t(), reason: String.t()}]}
+
+    @impl true
+    def message(%{skipped: skipped}) do
+      "Skipped #{length(skipped)} KSeF sales invoice(s) Firmowid cannot import: " <>
+        Enum.map_join(skipped, "; ", &"#{&1.ksef_number} (#{&1.reason})")
+    end
+  end
 
   @doc """
   Imports the package's invoices for the scope's organization and returns counts of
-  `created`, `skipped_known` and `skipped_unsupported` invoices.
+  `created`, `skipped_known` and `skipped_unsupported` invoices, with the KSeF number and
+  reason of each unsupported one in `skipped`.
 
   `metadata` maps each KSeF number to its export metadata, `invoices` holds
   `{"<ksef number>.xml", xml}` entries.
@@ -61,11 +76,14 @@ defmodule Firmowid.Ash.Ksef.Services.SalesInvoiceImport do
         import_invoice(ksef_number, xml, attrs, stored_at, known, scope)
       end)
 
+    skipped = for {:skipped, invoice} <- results, do: invoice
+
     %{
       total_in_package: length(results),
       created: Enum.count(results, &(&1 == :created)),
       skipped_known: Enum.count(results, &(&1 == :known)),
-      skipped_unsupported: Enum.count(results, &(&1 == :unsupported))
+      skipped_unsupported: length(skipped),
+      skipped: skipped
     }
   end
 
@@ -97,12 +115,7 @@ defmodule Firmowid.Ash.Ksef.Services.SalesInvoiceImport do
             :known
 
           {:error, reason} ->
-            Logger.error(
-              "KSeF sales invoice skipped: organization_id=#{scope.tenant} ksef_number=#{ksef_number} " <>
-                "reason=#{skip_reason(reason)}"
-            )
-
-            :unsupported
+            {:skipped, %{ksef_number: ksef_number, reason: skip_reason(reason)}}
         end
     end
   end
