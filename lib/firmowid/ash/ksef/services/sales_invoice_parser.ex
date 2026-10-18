@@ -503,6 +503,11 @@ defmodule Firmowid.Ash.Ksef.Services.SalesInvoiceParser do
       Decimal.scale(Decimal.normalize(unit_price(row, quantity))) > 2 ->
         {:error, {:unsupported, "unit price below the grosz"}}
 
+      # FA(3) amounts (TKwotowy) allow at most 14 digits before the decimal point.
+      Decimal.compare(Decimal.abs(unit_price(row, quantity)), Decimal.new("99999999999999.99")) ==
+          :gt ->
+        {:error, {:unsupported, "unit price above the FA(3) amount range"}}
+
       true ->
         :ok
     end

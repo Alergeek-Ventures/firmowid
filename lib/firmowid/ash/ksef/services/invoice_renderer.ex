@@ -15,6 +15,7 @@ defmodule Firmowid.Ash.Ksef.Services.InvoiceRenderer do
   The XML template is compiled from `fa3_invoice_template.xml.eex` at compile time
   using `EEx.function_from_file/5`.
   """
+  alias Firmowid.Ash.Invoicing
   alias Firmowid.Ash.Invoicing.Utilities.SafeTimestamp
   alias Firmowid.Ash.Invoicing.VatExemption
   alias Firmowid.Ash.Ksef.VatRate
@@ -78,7 +79,10 @@ defmodule Firmowid.Ash.Ksef.Services.InvoiceRenderer do
     assigns = [
       invoice: xml_escape(invoice),
       reference_invoice: if(reference_invoice, do: xml_escape(reference_invoice)),
-      vat_summary: calculate_vat_summary(invoice, reference_invoice)
+      vat_summary:
+        invoice
+        |> calculate_vat_summary(reference_invoice)
+        |> add_vat_pln(invoice, reference_invoice)
     ]
 
     do_render(assigns)
@@ -186,20 +190,52 @@ defmodule Firmowid.Ash.Ksef.Services.InvoiceRenderer do
   @spec format_vat_rate(String.t()) :: String.t()
   def format_vat_rate(rate) when is_binary(rate), do: rate
 
-  # NOTE: P_14_XW (VAT in PLN for foreign currency invoices) is NOT implemented.
-  # This field is only required when:
-  #   1. Invoice currency != PLN, AND
-  #   2. Standard VAT rates apply (23%, 8%, 5%, etc.)
-  #
-  # In practice, foreign currency invoices are almost always:
-  #   - B2B services to EU → reverse charge (oo) → no VAT
-  #   - B2B goods to EU → WDT (0 WDT) → 0% VAT
-  #   - Export outside EU → export (0 EX) → 0% VAT
-  #
-  # All these cases have zero VAT, so there's nothing to convert to PLN.
-  # If a future use case requires P_14_XW (e.g., B2C to EU consumer with Polish VAT),
-  # add `vat_pln` to the summary map using `Firmowid.Ash.Currencies.Converter.normalize_amount_to_pln/3`
-  # with the rate date from `SalesInvoice.get_currency_conversion_date/1`.
+  # P_14_xW: a foreign-currency invoice's VAT in PLN at the NBP rate, for the groups FA(3)
+  # converts (23/22%, 8/7%, 5%, 4%). Each group's VAT is rounded to the grosz before
+  # conversion; a correction's amount is the difference of the converted states after and
+  # before it.
+  @pln_converted_rates ["23", "22", "8", "7", "5", "4"]
+
+  defp add_vat_pln(summary, %{currency: "PLN"}, _reference_invoice), do: summary
+
+  defp add_vat_pln(summary, invoice, reference_invoice) do
+    if Enum.any?(summary, &(&1.rate in @pln_converted_rates)) do
+      %{rate: rate} =
+        Invoicing.get_currency_rate(invoice) ||
+          raise "NBP exchange rate unavailable for #{invoice.currency} on #{invoice.issue_date}"
+
+      rate = Decimal.from_float(rate)
+      Enum.map(summary, &put_vat_pln(&1, invoice, reference_invoice, rate))
+    else
+      summary
+    end
+  end
+
+  defp put_vat_pln(%{rate: vat_rate} = group, invoice, reference_invoice, rate) when vat_rate in @pln_converted_rates do
+    after_pln = to_pln(rate_vat(invoice, vat_rate), rate)
+
+    vat_pln =
+      case invoice do
+        %{ksef_invoice_kind: :kor} ->
+          Decimal.sub(after_pln, to_pln(rate_vat(reference_invoice, vat_rate), rate))
+
+        _vat ->
+          after_pln
+      end
+
+    Map.put(group, :vat_pln, vat_pln)
+  end
+
+  defp put_vat_pln(group, _invoice, _reference_invoice, _rate), do: group
+
+  defp rate_vat(invoice, vat_rate) do
+    invoice.sales_invoice_items
+    |> Enum.filter(&(&1.vat_rate == vat_rate))
+    |> Enum.reduce(Decimal.new(0), &Decimal.add(&2, &1.vat_value))
+    |> Decimal.round(2)
+  end
+
+  defp to_pln(vat, rate), do: vat |> Decimal.mult(rate) |> Decimal.round(2)
 
   # For correction invoices (KOR) with before/after method, calculate delta (after - before)
   # Uses the reference invoice (previous correction or original) as the "before" state.
