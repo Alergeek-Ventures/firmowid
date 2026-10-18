@@ -1228,6 +1228,11 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
         authorize_if {AtLeastRole, role: :accountant}
       end
 
+      # Only the KSeF import may record invoices KSeF stores; a user could otherwise fabricate one.
+      policy action(:import_from_ksef) do
+        forbid_if always()
+      end
+
       # Only system actors/AshOban may run scheduled reminder scans - users have no UI for this.
       policy action(:dispatch_overdue_sales_invoice_reminders) do
         forbid_if always()
