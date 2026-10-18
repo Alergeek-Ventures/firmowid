@@ -265,11 +265,6 @@ jobs:
         with:
           catalog-version: ${{ needs.translations.outputs.catalog-version || needs.benchmark-translations.outputs.catalog-version }}
 
-      - name: Install system dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y build-essential git libstdc++6 openssl libncurses6 locales ca-certificates libvips
-
       - name: Generate isolated test keys
         run: |
           secret_key_base="$(openssl rand -base64 48)"

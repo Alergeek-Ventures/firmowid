@@ -71,11 +71,6 @@ jobs:
         with:
           catalog-version: ${{ needs.translations.outputs.catalog-version }}
 
-      - name: Install system dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y build-essential git libstdc++6 openssl libncurses6 locales ca-certificates libvips
-
       - name: Setup Elixir Project
         id: setup
         uses: ./.github/actions/elixir-setup
@@ -177,12 +172,11 @@ jobs:
         id: plt_cache
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v5
         with:
-          key: plt-v3-${{ runner.os }}-${{ runner.arch }}-${{ env.MIX_ENV }}-${{ steps.setup.outputs.otp-version }}-${{ steps.setup.outputs.elixir-version }}-${{ hashFiles('mix.exs', 'config/**/*.exs') }}-${{ hashFiles('mix.lock') }}
-          # Older inputs are reusable starting points, validated before the new exact save.
+          key: plt-v4-${{ runner.os }}-${{ runner.arch }}-${{ env.MIX_ENV }}-${{ steps.setup.outputs.otp-version }}-${{ steps.setup.outputs.elixir-version }}-${{ hashFiles('mix.lock') }}-${{ hashFiles('mix.exs', 'config/**/*.exs') }}
+          # Removing modules from a PLT built for another lock takes longer than
+          # rebuilding it from the core PLT, so only reuse PLTs of the same lock.
           restore-keys: |
-            plt-v3-${{ runner.os }}-${{ runner.arch }}-${{ env.MIX_ENV }}-${{ steps.setup.outputs.otp-version }}-${{ steps.setup.outputs.elixir-version }}-${{ hashFiles('mix.exs', 'config/**/*.exs') }}-
-            plt-v3-${{ runner.os }}-${{ runner.arch }}-${{ env.MIX_ENV }}-${{ steps.setup.outputs.otp-version }}-${{ steps.setup.outputs.elixir-version }}-
-            plt-v2-${{ runner.os }}-${{ runner.arch }}-${{ env.MIX_ENV }}-${{ steps.setup.outputs.otp-version }}-${{ steps.setup.outputs.elixir-version }}-
+            plt-v4-${{ runner.os }}-${{ runner.arch }}-${{ env.MIX_ENV }}-${{ steps.setup.outputs.otp-version }}-${{ steps.setup.outputs.elixir-version }}-${{ hashFiles('mix.lock') }}-
           path: |
             _build/test/*.plt
             _build/test/*.plt.hash
