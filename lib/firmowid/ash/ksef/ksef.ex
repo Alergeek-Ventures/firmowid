@@ -383,7 +383,7 @@ defmodule Firmowid.Ash.Ksef do
 
     checksum = compute_fa3_checksum(invoice_xml)
 
-    SalesInvoice.update_ksef_fields!(
+    SalesInvoice.record_ksef_submission!(
       invoice,
       %{ksef_invoice_checksum: checksum},
       tenant: invoice.organization_id

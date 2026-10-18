@@ -6,8 +6,8 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
   For non-draft invoices, edits create a correction invoice (faktura korygujaca).
 
   Uses AshPhoenix.Form for form building and validation:
-  - Drafts → `AshPhoenix.Form.for_update(invoice, :update_draft)`, issued through `:issue`
-  - Issued invoices, including ones issued outside KSeF → `AshPhoenix.Form.for_create(SalesInvoice, :issue_correction)`
+  - Drafts → `AshPhoenix.Form.for_update(invoice, :revise)`, issued through `:finalize`
+  - Issued invoices, including ones issued outside KSeF → `AshPhoenix.Form.for_create(SalesInvoice, :correct)`
   """
   use FirmowidWeb, :live_view
 
@@ -212,7 +212,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
 
   # Draft → AshPhoenix.Form.for_update with nested items
   defp build_update_form(invoice, scope) do
-    AshPhoenix.Form.for_update(invoice, :update_draft,
+    AshPhoenix.Form.for_update(invoice, :revise,
       scope: scope,
       forms: [
         sales_invoice_items: [
@@ -226,7 +226,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
     )
   end
 
-  # Issued invoice → AshPhoenix.Form.for_create with :issue_correction
+  # Issued invoice → AshPhoenix.Form.for_create with :correct
   defp build_correction_form(invoice, scope) do
     # For corrections of corrections, use the original (root) invoice
     original_invoice =
@@ -319,7 +319,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
         latest
       )
 
-    AshPhoenix.Form.for_create(SalesInvoice, :issue_correction,
+    AshPhoenix.Form.for_create(SalesInvoice, :correct,
       scope: scope,
       params: params,
       forms: [
@@ -681,7 +681,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
             String.trim(form_params["invoice_number"])
           )
 
-        Invoicing.issue_sales_invoice(invoice, %{input: input}, scope: scope)
+        Invoicing.finalize_sales_invoice_draft(invoice, %{input: input}, scope: scope)
       else
         {:error, form}
       end

@@ -325,16 +325,16 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoiceReminderEmailFlowTest do
       )
 
     InvoicingFixtures.connect_ksef!(user.organization_id)
-    Invoicing.issue_sales_invoice_correction!(attrs, scope: scope_for(user))
+    Invoicing.correct_sales_invoice!(attrs, scope: scope_for(user))
   end
 
   defp confirm_invoice_in_ksef!(invoice, scope, locked_at \\ DateTime.utc_now(:second)) do
-    Invoicing.update_sales_invoice_ksef_fields!(
-      invoice,
+    invoice
+    |> Ash.Seed.update!(%{locked_at: locked_at})
+    |> Invoicing.confirm_sales_invoice_in_ksef!(
       %{
         ksef_number: "KSEF-#{System.unique_integer([:positive])}",
-        ksef_invoice_checksum: "verified-hash-#{System.unique_integer([:positive])}",
-        locked_at: locked_at
+        ksef_invoice_checksum: "verified-hash-#{System.unique_integer([:positive])}"
       },
       scope: scope
     )

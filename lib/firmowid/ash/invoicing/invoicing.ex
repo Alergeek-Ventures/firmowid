@@ -115,7 +115,7 @@ defmodule Firmowid.Ash.Invoicing do
       ]
     end
 
-    tool :create_sales_invoice_draft, SalesInvoice, :create_draft do
+    tool :create_sales_invoice_draft, SalesInvoice, :draft do
       description "Save a complete but unnumbered invoice only when the user explicitly asks to issue it later. " <>
                     "A draft requires the same data as issuance except the number; keep partial data in the chat instead. " <>
                     "Prefer calling preview_sales_invoice directly. Saving is available without KSeF and neither issues nor submits."
@@ -123,7 +123,7 @@ defmodule Firmowid.Ash.Invoicing do
       load [:amount, sales_invoice_items: [:net_value, :vat_value, :gross_value]]
     end
 
-    tool :update_sales_invoice_draft, SalesInvoice, :update_draft do
+    tool :update_sales_invoice_draft, SalesInvoice, :revise do
       description "Revise a saved unnumbered invoice draft when the user asks to change it before issuing later. " <>
                     "To issue a draft, call preview_sales_invoice with its invoice_id instead."
 
@@ -186,10 +186,11 @@ defmodule Firmowid.Ash.Invoicing do
       define :list_sales_invoices, action: :list
       define :get_sales_invoice, action: :by_id, args: [:id]
       define :get_sales_invoice_by_share_token, action: :by_share_token, args: [:token]
-      define :create_sales_invoice_draft, action: :create_draft
-      define :update_sales_invoice_draft, action: :update_draft
+      define :draft_sales_invoice, action: :draft
       define :issue_sales_invoice, action: :issue
-      define :create_and_issue_sales_invoice, action: :create_and_issue
+      define :correct_sales_invoice, action: :correct
+      define :revise_sales_invoice_draft, action: :revise
+      define :finalize_sales_invoice_draft, action: :finalize
       define :preview_sales_invoice, action: :preview_invoice
       define :preview_sales_invoice_correction, action: :preview_correction
 
@@ -198,13 +199,13 @@ defmodule Firmowid.Ash.Invoicing do
         args: [:counterparty_id]
 
       define :destroy_sales_invoice, action: :destroy
-      define :issue_sales_invoice_correction, action: :issue_correction
       define :cancel_sales_invoice, action: :cancel, args: [:invoice_id]
       define :toggle_sales_invoice_skip, action: :toggle_skip
       define :generate_sales_invoice_share_token, action: :generate_share_token
-      define :lock_sales_invoice_for_ksef, action: :lock_for_ksef
-      define :unlock_sales_invoice_for_ksef, action: :unlock_for_ksef
-      define :update_sales_invoice_ksef_fields, action: :update_ksef_fields
+      define :start_sales_invoice_ksef_submission, action: :start_ksef_submission
+      define :record_sales_invoice_ksef_submission, action: :record_ksef_submission
+      define :confirm_sales_invoice_in_ksef, action: :confirm_in_ksef
+      define :withdraw_sales_invoice_ksef_submission, action: :withdraw_ksef_submission
 
       define :get_next_sales_invoice_number,
         action: :get_next_number,

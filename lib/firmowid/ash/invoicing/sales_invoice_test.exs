@@ -45,7 +45,11 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoiceTest do
 
       assert {:error, %Invalid{errors: errors}} =
                Oban.Testing.with_testing_mode(:manual, fn ->
-                 Invoicing.issue_sales_invoice(draft, %{invoice_number: issued.invoice_number}, scope: scope_for(user))
+                 Invoicing.finalize_sales_invoice_draft(
+                   draft,
+                   %{invoice_number: issued.invoice_number},
+                   scope: scope_for(user)
+                 )
                end)
 
       assert Enum.any?(
@@ -162,7 +166,7 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoiceTest do
 
       assert {:ok, _correction} =
                Oban.Testing.with_testing_mode(:manual, fn ->
-                 SalesInvoice.issue_correction(
+                 SalesInvoice.correct(
                    %{
                      original_invoice_id: invoice.id,
                      invoice_number: "FK/#{System.unique_integer([:positive])}",
@@ -386,10 +390,10 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoiceTest do
         create_draft!(user, Map.put(draft_attrs(), :sales_invoice_items, [base_item_attrs(%{})]))
 
       [item] = invoice.sales_invoice_items
-      Invoicing.lock_sales_invoice_for_ksef!(invoice, scope: scope)
+      Invoicing.start_sales_invoice_ksef_submission!(invoice, scope: scope)
 
       assert {:error, %Invalid{}} =
-               Invoicing.update_sales_invoice_draft(invoice, %{buyer_full_name: "Changed buyer"}, scope: scope)
+               Invoicing.revise_sales_invoice_draft(invoice, %{buyer_full_name: "Changed buyer"}, scope: scope)
 
       assert {:error, %Invalid{}} =
                invoice
@@ -401,7 +405,7 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoiceTest do
                |> Ash.update(scope: scope)
 
       assert {:error, %Invalid{}} =
-               Invoicing.update_sales_invoice_draft(
+               Invoicing.revise_sales_invoice_draft(
                  invoice,
                  %{sales_invoice_items: [%{id: item.id, name: "Changed item", unit_price: 500}]},
                  scope: scope
@@ -426,7 +430,7 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoiceTest do
           Map.put(base_invoice_attrs(), :sales_invoice_items, [base_item_attrs(%{})])
         )
 
-      Invoicing.lock_sales_invoice_for_ksef!(invoice, scope: scope)
+      Invoicing.start_sales_invoice_ksef_submission!(invoice, scope: scope)
 
       assert {:error, %Invalid{}} = Invoicing.destroy_sales_invoice(invoice, scope: scope)
       assert Invoicing.get_sales_invoice!(invoice.id, scope: scope).locked_at
@@ -442,7 +446,7 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoiceTest do
           Map.put(base_invoice_attrs(), :sales_invoice_items, [base_item_attrs(%{})])
         )
 
-      Invoicing.update_sales_invoice_ksef_fields!(
+      Invoicing.confirm_sales_invoice_in_ksef!(
         invoice,
         %{ksef_number: "5261040828-20260110-ABCDEF123456-AB"},
         scope: scope
@@ -484,7 +488,7 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoiceTest do
         assert issued_invoice_xml(refetched, scope) == original_xml
 
         assert {:error, %Invalid{}} =
-                 Invoicing.update_sales_invoice_draft(
+                 Invoicing.revise_sales_invoice_draft(
                    refetched,
                    %{buyer_full_name: "Changed buyer"},
                    scope: scope
@@ -574,7 +578,7 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoiceTest do
       # Manual mode keeps the queued KSeF job from running against the API.
       assert {:ok, issued} =
                Oban.Testing.with_testing_mode(:manual, fn ->
-                 Invoicing.issue_sales_invoice(
+                 Invoicing.finalize_sales_invoice_draft(
                    draft,
                    %{invoice_number: "FV/#{System.unique_integer([:positive])}"},
                    scope: scope_for(user)
@@ -591,7 +595,7 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoiceTest do
       user = invoicing_admin_fixture()
 
       assert {:error, %Invalid{}} =
-               Invoicing.create_and_issue_sales_invoice(
+               Invoicing.issue_sales_invoice(
                  %{input: Map.put(issue_input(), :invoice_number, "FV/1/2026")},
                  scope: scope_for(user)
                )
@@ -611,8 +615,8 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoiceTest do
 
       {first_attempt, second_attempt} =
         Oban.Testing.with_testing_mode(:manual, fn ->
-          {Invoicing.create_and_issue_sales_invoice(attrs, scope: scope_for(user)),
-           Invoicing.create_and_issue_sales_invoice(
+          {Invoicing.issue_sales_invoice(attrs, scope: scope_for(user)),
+           Invoicing.issue_sales_invoice(
              put_in(attrs.input.invoice_number, "FV/#{System.unique_integer([:positive])}"),
              scope: scope_for(user)
            )}
@@ -628,7 +632,7 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoiceTest do
       user = admin_fixture()
 
       assert {:error, %Invalid{errors: errors}} =
-               Invoicing.create_sales_invoice_draft(%{input: issue_input()},
+               Invoicing.draft_sales_invoice(%{input: issue_input()},
                  scope: scope_for(user)
                )
 
@@ -650,12 +654,12 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoiceTest do
   defp create_draft!(user, attrs) do
     user
     |> scope_for()
-    |> then(&Invoicing.create_sales_invoice_draft!(attrs, scope: &1))
+    |> then(&Invoicing.draft_sales_invoice!(attrs, scope: &1))
     |> Ash.load!([:sales_invoice_items], scope: scope_for(user))
   end
 
   defp update_sales_invoice!(user, invoice, attrs) do
-    updated = Invoicing.update_sales_invoice_draft!(invoice, attrs, scope: scope_for(user))
+    updated = Invoicing.revise_sales_invoice_draft!(invoice, attrs, scope: scope_for(user))
     Ash.load!(updated, [:sales_invoice_items], scope: scope_for(user))
   end
 

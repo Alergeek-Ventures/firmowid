@@ -18,20 +18,24 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
 
   ## Write Actions
 
-    * `:create_draft` — save a complete, unnumbered VAT invoice
-    * `:update_draft` — revise a saved draft
-    * `:issue` — number a draft, issued today, and queue its KSeF submission atomically
-    * `:issue_correction` — issue a correction invoice (KOR) and queue its KSeF submission
+  Creates name where an invoice comes from, updates name a move between its states.
+
+    * `:draft` — save a complete, unnumbered VAT invoice
+    * `:issue` — issue a new invoice today and queue its KSeF submission atomically
+    * `:correct` — issue a correction invoice (KOR) and queue its KSeF submission
+    * `:revise` — revise a saved draft
+    * `:finalize` — number a draft, issued today, and queue its KSeF submission atomically
     * `:return_to_draft` — withdraw an invoice KSeF did not accept back to a draft
     * `:destroy` — delete invoice (only if not KSeF-submitted)
     * `:toggle_skip` — toggle skip_invoicing flag
     * `:generate_share_token` — generate or return existing share token
-    * `:lock_for_ksef` / `:unlock_for_ksef` — KSeF submission lock management
-    * `:update_ksef_fields` — update KSeF tracking fields
+    * `:start_ksef_submission` — lock an issued invoice while it is sent to KSeF
+    * `:record_ksef_submission` — record the KSeF session, invoice reference and checksum
+    * `:confirm_in_ksef` — record the KSeF number of an accepted invoice
+    * `:withdraw_ksef_submission` — unlock an invoice KSeF did not accept
 
   ## Generic Actions
 
-    * `:create_and_issue` — save and issue a new invoice in one transaction
     * `:preview_invoice` / `:preview_correction` — read-only validated document previews
     * `:cancel` — cancel a KSeF-submitted invoice via zero-quantity correction
     * `:get_next_number` — get next available invoice number for date/format/series
@@ -138,10 +142,11 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
       args: [:root_invoice_id, :root_share_token]
 
     # Writes
-    define :create_draft, action: :create_draft
-    define :update_draft, action: :update_draft
+    define :draft, action: :draft
     define :issue, action: :issue
-    define :create_and_issue, action: :create_and_issue
+    define :correct, action: :correct
+    define :revise, action: :revise
+    define :finalize, action: :finalize
     define :return_to_draft, action: :return_to_draft
     define :preview_invoice, action: :preview_invoice
     define :preview_correction, action: :preview_correction
@@ -151,15 +156,15 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
       action: :attach_suggested_counterparty
 
     define :destroy, action: :destroy
-    define :issue_correction, action: :issue_correction
     define :cancel, args: [:invoice_id], action: :cancel
     define :toggle_skip, action: :toggle_skip
     define :generate_share_token, action: :generate_share_token
     define :match_pending_invoices, args: [:signal]
     define :dispatch_ksef_confirmation, args: [:signal]
-    define :lock_for_ksef, action: :lock_for_ksef
-    define :unlock_for_ksef, action: :unlock_for_ksef
-    define :update_ksef_fields, action: :update_ksef_fields
+    define :start_ksef_submission, action: :start_ksef_submission
+    define :record_ksef_submission, action: :record_ksef_submission
+    define :confirm_in_ksef, action: :confirm_in_ksef
+    define :withdraw_ksef_submission, action: :withdraw_ksef_submission
     define :denormalize_item_names, action: :denormalize_item_names
 
     # Invoice numbering
@@ -396,8 +401,8 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
 
     # -- Write actions ---------------------------------------------------------
 
-    create :create_draft do
-      description "Save a complete VAT invoice without a number. Issuing it later dates it that day."
+    create :draft do
+      description "Save a complete VAT invoice without a number. Finalizing it later dates it that day."
       primary? true
       accept @draft_fields
       argument :input, InvoiceInput
@@ -437,7 +442,132 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
       end
     end
 
-    update :update_draft do
+    create :issue do
+      description "Issue a new invoice dated today and queue its KSeF submission in the same transaction."
+      accept [:invoice_number | @draft_fields]
+      argument :input, InvoiceInput
+      argument :sales_invoice_items, {:array, :map}
+      argument :confirmation_id, :uuid_v7
+
+      change Changes.ApplyInvoiceInput
+
+      change set_attribute(:id, arg(:confirmation_id)) do
+        where present(:confirmation_id)
+      end
+
+      change Changes.PrepareInvoiceSeller
+      change Changes.PrepareInvoiceItems
+
+      change {Changes.NormalizeReverseChargeVatRates, source: :argument, field: :sales_invoice_items}
+
+      change manage_relationship(:sales_invoice_items, type: :direct_control)
+      change Changes.SetItemNames
+      change Changes.SetIsCashAccount
+      change {Changes.ValidateCountryCode, field: :buyer_country}
+      change Changes.BindInvoiceCounterparty
+      # Last, so the submission job is queued only after every other write of this transaction.
+      change Changes.SubmitIssuedInvoice
+
+      validate Validations.InvoiceNumberRequired
+      validate Validations.CompleteInvoice
+
+      validate {Validations.ValidateTaxId,
+                id_field: :buyer_id, country_field: :buyer_country, pesel_field: :buyer_pesel, type_field: :buyer_type}
+
+      validate {Validations.ValidateNameFields,
+                type_field: :buyer_type,
+                full_name_field: :buyer_full_name,
+                given_name_field: :buyer_given_name,
+                surname_field: :buyer_surname}
+
+      validate string_length(:internal_note, max: 10_000) do
+        where present(:internal_note)
+      end
+    end
+
+    create :correct do
+      description "Issue a correction of an issued invoice and queue its KSeF submission in the same transaction."
+
+      accept [
+        :invoice_number,
+        :issue_date,
+        :sale_date,
+        :due_date,
+        :correction_reason,
+        :payment_method,
+        :currency,
+        :seller_account_number,
+        :vat_exemption_type,
+        :vat_exemption_basis,
+        :buyer_type,
+        :buyer_id,
+        :buyer_full_name,
+        :buyer_given_name,
+        :buyer_surname,
+        :buyer_pesel,
+        :buyer_display_name,
+        :buyer_address,
+        :buyer_country,
+        :buyer_email,
+        :buyer_phone,
+        :buyer_description,
+        :should_send_emails,
+        :is_reverse_charge
+      ]
+
+      argument :original_invoice_id, :uuid_v7, allow_nil?: false
+      argument :sales_invoice_items, {:array, :map}
+      argument :input, InvoiceInput
+      argument :confirmation_id, :uuid_v7
+      argument :preview?, :boolean, default: false, public?: false
+
+      change Changes.ApplyInvoiceInput
+      change set_new_attribute(:issue_date, &Date.utc_today/0)
+
+      change set_attribute(:id, arg(:confirmation_id)) do
+        where present(:confirmation_id)
+      end
+
+      change {Changes.PrepareCorrection, []}
+      change Changes.PrepareInvoiceItems
+
+      change {Changes.NormalizeReverseChargeVatRates, source: :argument, field: :sales_invoice_items}
+
+      change manage_relationship(:sales_invoice_items, type: :direct_control)
+      change Changes.SetItemNames
+      change Changes.SetIsCashAccount
+      change {Changes.ValidateCountryCode, field: :buyer_country}
+
+      # Last, so the submission job is queued only after every other write of this transaction.
+      change Changes.SubmitIssuedInvoice do
+        where argument_equals(:preview?, false)
+      end
+
+      validate present(:invoice_number) do
+        where argument_equals(:preview?, false)
+        message "Pole jest wymagane"
+      end
+
+      validate string_length(:correction_reason, max: 256),
+        message: "Powód korekty może mieć maksymalnie 256 znaków"
+
+      validate Validations.CompleteInvoice
+
+      validate {Validations.ValidateTaxId,
+                id_field: :buyer_id, country_field: :buyer_country, pesel_field: :buyer_pesel, type_field: :buyer_type}
+
+      validate {Validations.ValidateNameFields,
+                type_field: :buyer_type,
+                full_name_field: :buyer_full_name,
+                given_name_field: :buyer_given_name,
+                surname_field: :buyer_surname}
+
+      validate string_length(:internal_note, max: 10_000) do
+        where present(:internal_note)
+      end
+    end
+
+    update :revise do
       description "Revise a saved, unnumbered VAT invoice draft."
       primary? true
       require_atomic? false
@@ -476,7 +606,7 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
       end
     end
 
-    update :issue do
+    update :finalize do
       description "Number a draft, date it today and queue its KSeF submission in the same transaction."
       require_atomic? false
       accept [:invoice_number | @draft_fields -- [:skip_invoicing]]
@@ -574,89 +704,6 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
       change {Changes.AttachSuggestedCounterparty, []}
     end
 
-    create :issue_correction do
-      description "Create a correction invoice for an existing sales invoice."
-
-      accept [
-        :invoice_number,
-        :issue_date,
-        :sale_date,
-        :due_date,
-        :correction_reason,
-        :payment_method,
-        :currency,
-        :seller_account_number,
-        :vat_exemption_type,
-        :vat_exemption_basis,
-        :buyer_type,
-        :buyer_id,
-        :buyer_full_name,
-        :buyer_given_name,
-        :buyer_surname,
-        :buyer_pesel,
-        :buyer_display_name,
-        :buyer_address,
-        :buyer_country,
-        :buyer_email,
-        :buyer_phone,
-        :buyer_description,
-        :should_send_emails,
-        :is_reverse_charge
-      ]
-
-      argument :original_invoice_id, :uuid_v7, allow_nil?: false
-      argument :sales_invoice_items, {:array, :map}
-      argument :input, InvoiceInput
-      argument :confirmation_id, :uuid_v7
-      argument :preview?, :boolean, default: false, public?: false
-
-      change Changes.ApplyInvoiceInput
-      change set_new_attribute(:issue_date, &Date.utc_today/0)
-
-      change set_attribute(:id, arg(:confirmation_id)) do
-        where present(:confirmation_id)
-      end
-
-      change {Changes.PrepareCorrection, []}
-
-      change Changes.PrepareInvoiceItems
-
-      change {Changes.NormalizeReverseChargeVatRates, source: :argument, field: :sales_invoice_items}
-
-      change manage_relationship(:sales_invoice_items, type: :direct_control)
-      change Changes.SetItemNames
-      change Changes.SetIsCashAccount
-      change {Changes.ValidateCountryCode, field: :buyer_country}
-
-      # Last, so the submission job is queued only after every other write of this transaction.
-      change Changes.SubmitIssuedInvoice do
-        where argument_equals(:preview?, false)
-      end
-
-      validate present(:invoice_number) do
-        where argument_equals(:preview?, false)
-        message "Pole jest wymagane"
-      end
-
-      validate string_length(:correction_reason, max: 256),
-        message: "Powód korekty może mieć maksymalnie 256 znaków"
-
-      validate Validations.CompleteInvoice
-
-      validate {Validations.ValidateTaxId,
-                id_field: :buyer_id, country_field: :buyer_country, pesel_field: :buyer_pesel, type_field: :buyer_type}
-
-      validate {Validations.ValidateNameFields,
-                type_field: :buyer_type,
-                full_name_field: :buyer_full_name,
-                given_name_field: :buyer_given_name,
-                surname_field: :buyer_surname}
-
-      validate string_length(:internal_note, max: 10_000) do
-        where present(:internal_note)
-      end
-    end
-
     destroy :destroy do
       description "Delete a sales invoice when deletion is allowed."
       require_atomic? false
@@ -695,28 +742,40 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
       validate {Validations.CheckIfLocked, []}, always_atomic?: true
     end
 
-    update :lock_for_ksef do
-      description "Lock a sales invoice for KSeF submission processing."
+    update :start_ksef_submission do
+      description "Lock an issued invoice while it is sent to KSeF, forgetting any previous attempt."
       require_atomic? false
       accept []
       change set_attribute(:locked_at, &DateTime.utc_now/0)
+      change set_attribute(:ksef_session_reference_number, nil)
+      change set_attribute(:ksef_invoice_checksum, nil)
     end
 
-    update :unlock_for_ksef do
-      description "Unlock a sales invoice after KSeF processing finishes or fails."
+    update :record_ksef_submission do
+      description "Record what KSeF reported about the invoice: its session and invoice reference or checksum."
       require_atomic? false
-      accept []
-      change set_attribute(:locked_at, nil)
+      accept [:ksef_session_reference_number, :ksef_invoice_checksum]
     end
 
-    update :update_ksef_fields do
-      description "Update KSeF tracking fields stored on this sales invoice."
+    update :confirm_in_ksef do
+      description "Record the KSeF number and checksum KSeF assigned to the accepted invoice."
       require_atomic? false
-      accept [:ksef_number, :ksef_session_reference_number, :ksef_invoice_checksum, :locked_at]
+      accept [:ksef_number, :ksef_invoice_checksum]
+
+      validate present(:ksef_number)
 
       emit Signals, :sales_invoice_confirmed_in_ksef,
         fields: [sales_invoice_id: :id],
-        where: [changing(:ksef_number), present(:ksef_number)]
+        where: [changing(:ksef_number)]
+    end
+
+    update :withdraw_ksef_submission do
+      description "Unlock an invoice KSeF did not accept, keeping the session of the last attempt."
+      require_atomic? false
+      accept []
+      change set_attribute(:ksef_number, nil)
+      change set_attribute(:locked_at, nil)
+      change set_attribute(:ksef_invoice_checksum, nil)
     end
 
     # -- Generic actions -------------------------------------------------------
@@ -804,33 +863,10 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
               correction_reason: correction_reason,
               sales_invoice_items: zeroed_items
             },
-            Keyword.put(opts, :action, :issue_correction)
+            Keyword.put(opts, :action, :correct)
           )
         else
           {:error, "can only cancel KSeF-submitted VAT invoices"}
-        end
-      end
-    end
-
-    action :create_and_issue, :struct do
-      description "Save a new invoice as a draft and issue it in the same transaction."
-      constraints instance_of: __MODULE__
-      transaction? true
-      argument :input, InvoiceInput, allow_nil?: false
-      argument :confirmation_id, :uuid_v7
-
-      run fn input, context ->
-        opts = Ash.Context.to_opts(context)
-        %{input: invoice_input} = input.arguments
-
-        with {:ok, draft} <-
-               __MODULE__.create_draft(
-                 %{input: invoice_input},
-                 Keyword.put(opts, :private_arguments, %{
-                   confirmation_id: input.arguments[:confirmation_id]
-                 })
-               ) do
-          __MODULE__.issue(draft, %{invoice_number: invoice_input[:invoice_number]}, opts)
         end
       end
     end
@@ -847,7 +883,7 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
         case input.arguments[:invoice_id] do
           nil ->
             %{input: input.arguments.input}
-            |> __MODULE__.changeset_to_create_draft(opts)
+            |> __MODULE__.changeset_to_draft(opts)
             |> Preview.from_changeset(opts)
 
           id ->
@@ -860,7 +896,7 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
                      )
                    ) do
               invoice
-              |> __MODULE__.changeset_to_update_draft(%{input: input.arguments.input}, opts)
+              |> __MODULE__.changeset_to_revise(%{input: input.arguments.input}, opts)
               |> Preview.from_changeset(opts)
             end
         end
@@ -877,7 +913,7 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
         opts = Ash.Context.to_opts(context)
 
         input.arguments
-        |> __MODULE__.changeset_to_issue_correction(Keyword.put(opts, :private_arguments, %{preview?: true}))
+        |> __MODULE__.changeset_to_correct(Keyword.put(opts, :private_arguments, %{preview?: true}))
         |> Preview.from_changeset(opts)
       end
     end
@@ -1102,7 +1138,12 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
       end
 
       policy {SystemActorRole, roles: [:ksef_session]} do
-        authorize_if action([:lock_for_ksef, :unlock_for_ksef, :update_ksef_fields])
+        authorize_if action([
+                       :start_ksef_submission,
+                       :record_ksef_submission,
+                       :confirm_in_ksef,
+                       :withdraw_ksef_submission
+                     ])
       end
 
       policy {SystemActorRole, roles: [:anonymous]} do
@@ -1136,13 +1177,14 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
     module FirmowidWeb.Core.Endpoint
     prefix "sales_invoice"
 
-    publish :create_draft, ["created", :_tenant]
-    publish :update_draft, ["updated", :_tenant]
-    publish :issue, ["updated", :_tenant]
+    publish :draft, ["created", :_tenant]
+    publish :issue, ["created", :_tenant]
+    publish :correct, ["created", :_tenant]
+    publish :revise, ["updated", :_tenant]
+    publish :finalize, ["updated", :_tenant]
     publish :return_to_draft, ["updated", :_tenant]
     publish :destroy, ["destroyed", :_tenant]
     publish :toggle_skip, ["updated", :_tenant]
-    publish :issue_correction, ["created", :_tenant]
     publish :generate_share_token, ["updated", :_tenant]
     publish :attach_suggested_counterparty, ["updated", :_tenant]
     publish :connect_transactions, ["updated", :_tenant]
