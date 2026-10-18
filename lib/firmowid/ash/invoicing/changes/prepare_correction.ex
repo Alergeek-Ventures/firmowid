@@ -54,6 +54,8 @@ defmodule Firmowid.Ash.Invoicing.Changes.PrepareCorrection do
     :currency,
     :is_reverse_charge,
     :is_cash_account,
+    :related_parties,
+    :receipt_invoice,
     :sale_date,
     :due_date
   ]

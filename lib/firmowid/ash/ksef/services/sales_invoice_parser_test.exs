@@ -66,6 +66,25 @@ defmodule Firmowid.Ash.Ksef.Services.SalesInvoiceParserTest do
     assert items(attrs) == items(correction)
   end
 
+  test "reads back GTU, related parties and receipt invoice markers", %{org_id: org_id} do
+    invoice = build_domestic_invoice(org_id: org_id)
+    [item] = invoice.sales_invoice_items
+    Ash.Seed.update!(item, %{gtu: "GTU_12"})
+
+    invoice =
+      invoice
+      |> Ash.Seed.update!(%{related_parties: true, receipt_invoice: true})
+      |> Ash.load!([sales_invoice_items: [:net_value, :vat_value, :gross_value]],
+        actor: %Firmowid.Ash.SystemActor{org_id: org_id, role: :sales_invoice_processor},
+        tenant: org_id
+      )
+
+    assert {:ok, attrs} = invoice |> render() |> SalesInvoiceParser.parse()
+
+    assert %{related_parties: true, receipt_invoice: true} = attrs
+    assert [%{gtu: "GTU_12"}] = attrs.sales_invoice_items
+  end
+
   test "rejects invoice kinds a sales invoice cannot represent", %{org_id: org_id} do
     xml =
       [org_id: org_id]

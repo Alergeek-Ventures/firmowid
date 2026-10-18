@@ -168,6 +168,12 @@
 				</Podmiot2K>
 			<% end %>
 		<% end %>
+		<%= if @invoice.receipt_invoice do %>
+			<FP>1</FP>
+		<% end %>
+		<%= if @invoice.related_parties do %>
+			<TP>1</TP>
+		<% end %>
 		<%= if @invoice.ksef_invoice_kind == :kor do %>
 			<%= if T.invoice_items_changed?(@invoice, @reference_invoice) do %>
 				<%= for item <- @reference_invoice.sales_invoice_items do %>
@@ -180,6 +186,7 @@
 						<P_9A><%= T.format_decimal(item.unit_price) %></P_9A>
 						<P_11><%= T.format_decimal(item.net_value) %></P_11>
 						<P_12><%= T.format_vat_rate(item.vat_rate) %></P_12>
+						<%= if item.gtu do %><GTU><%= item.gtu %></GTU><% end %>
 						<StanPrzed>1</StanPrzed>
 					</FaWiersz>
 				<% end %>
@@ -193,6 +200,7 @@
 						<P_9A><%= T.format_decimal(item.unit_price) %></P_9A>
 						<P_11><%= T.format_decimal(item.net_value) %></P_11>
 						<P_12><%= T.format_vat_rate(item.vat_rate) %></P_12>
+						<%= if item.gtu do %><GTU><%= item.gtu %></GTU><% end %>
 					</FaWiersz>
 				<% end %>
 			<% end %>
@@ -208,6 +216,7 @@
 					<P_9A><%= T.format_decimal(item.unit_price) %></P_9A>
 					<P_11><%= T.format_decimal(item.net_value) %></P_11>
 					<P_12><%= T.format_vat_rate(item.vat_rate) %></P_12>
+						<%= if item.gtu do %><GTU><%= item.gtu %></GTU><% end %>
 				</FaWiersz>
 			<% end %>
 		<% end %>

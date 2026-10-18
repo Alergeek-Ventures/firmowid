@@ -8,7 +8,13 @@ defmodule Firmowid.Repo.Migrations.ImportSalesInvoicesFromKsef do
   use Ecto.Migration
 
   def up do
+    alter table(:sales_invoice_items) do
+      add :gtu, :text
+    end
+
     alter table(:sales_invoices) do
+      add :related_parties, :boolean, default: false
+      add :receipt_invoice, :boolean, default: false
       add :ksef_permanent_storage_date, :naive_datetime
     end
   end
@@ -16,6 +22,12 @@ defmodule Firmowid.Repo.Migrations.ImportSalesInvoicesFromKsef do
   def down do
     alter table(:sales_invoices) do
       remove :ksef_permanent_storage_date
+      remove :receipt_invoice
+      remove :related_parties
+    end
+
+    alter table(:sales_invoice_items) do
+      remove :gtu
     end
   end
 end

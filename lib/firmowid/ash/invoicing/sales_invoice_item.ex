@@ -50,7 +50,7 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoiceItem do
     create :create do
       description "Create a sales invoice line item."
       primary? true
-      accept [:index, :name, :quantity, :unit, :unit_price, :vat_rate]
+      accept [:index, :name, :quantity, :unit, :unit_price, :vat_rate, :gtu]
       validate {ValidateVatRate, []}
     end
 
@@ -58,7 +58,7 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoiceItem do
       description "Update a sales invoice line item."
       primary? true
       require_atomic? false
-      accept [:index, :name, :quantity, :unit, :unit_price, :vat_rate]
+      accept [:index, :name, :quantity, :unit, :unit_price, :vat_rate, :gtu]
       validate {ValidateVatRate, []}
     end
   end
@@ -83,6 +83,11 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoiceItem do
     attribute :unit, :string, allow_nil?: false, public?: true
     attribute :unit_price, :decimal, allow_nil?: false, public?: true
     attribute :vat_rate, :string, public?: true
+
+    # Goods and services group (GTU_01…GTU_13) of the line in KSeF.
+    attribute :gtu, :string,
+      public?: true,
+      constraints: [match: ~r/^GTU_(0[1-9]|1[0-3])$/]
 
     Resource.firmowid_timestamps()
   end

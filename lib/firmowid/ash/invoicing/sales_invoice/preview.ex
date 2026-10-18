@@ -45,7 +45,7 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice.Preview do
 
     items
     |> Enum.reduce_while({:ok, []}, fn attrs, {:ok, items} ->
-      attrs = Map.take(attrs, [:index, :name, :quantity, :unit, :unit_price, :vat_rate])
+      attrs = Map.take(attrs, [:index, :name, :quantity, :unit, :unit_price, :vat_rate, :gtu])
 
       changeset =
         attrs

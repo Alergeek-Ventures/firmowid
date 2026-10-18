@@ -1799,7 +1799,7 @@ msgid "Withdrawal request"
 msgstr ""
 
 #: lib/firmowid_web/invoicing/sales_invoices/views/creator.ex:1165
-#: lib/firmowid_web/invoicing/sales_invoices/views/edit.ex:669
+#: lib/firmowid_web/invoicing/sales_invoices/views/edit.ex:670
 #, elixir-autogen, elixir-format
 msgid "Invoice number is required."
 msgstr ""
@@ -2005,7 +2005,7 @@ msgstr ""
 msgid "Choose an invoice number before issuing the invoice."
 msgstr ""
 
-#: lib/firmowid/ash/invoicing/changes/prepare_correction.ex:109
+#: lib/firmowid/ash/invoicing/changes/prepare_correction.ex:111
 #, elixir-autogen, elixir-format
 msgid "Choose an issued VAT invoice to correct."
 msgstr ""
