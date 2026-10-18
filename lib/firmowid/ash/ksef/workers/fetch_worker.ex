@@ -173,7 +173,7 @@ defmodule Firmowid.Ash.Ksef.Workers.FetchWorker do
   defp process_downloaded_package(package, args, scope, job) do
     # Schedule next-page fetch BEFORE processing invoices.
     # This ensures continuation is not lost if the worker is killed mid-processing.
-    schedule_continuation_fetch(package, subject_type(args), scope.tenant)
+    schedule_continuation_fetch(package, job, subject_type(args), scope.tenant)
 
     encryption_key = Base.decode64!(args["encryption_key"])
     encryption_iv = Base.decode64!(args["encryption_iv"])
@@ -210,8 +210,9 @@ defmodule Firmowid.Ash.Ksef.Workers.FetchWorker do
     end
   end
 
-  defp schedule_continuation_fetch(package, subject_type, organization_id) do
-    if package["isTruncated"] do
+  # A retry of this package already has its continuation; a snooze does not count as an attempt.
+  defp schedule_continuation_fetch(package, job, subject_type, organization_id) do
+    if package["isTruncated"] and job.attempt == 1 do
       schedule_next_fetch(package["lastPermanentStorageDate"], subject_type, organization_id)
     end
   end
