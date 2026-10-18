@@ -102,6 +102,8 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
                           :ksef_number,
                           :ksef_invoice_checksum,
                           :ksef_permanent_storage_date,
+                          :related_parties,
+                          :receipt_invoice,
                           :locked_at,
                           :item_names
                         ]
@@ -549,6 +551,7 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
       end
 
       change {Changes.PrepareCorrection, []}
+      change Changes.InheritItemGtu
       change Changes.PrepareInvoiceItems
 
       # An imported invoice's own rates and cash accounting stay unless the correction changes them.
@@ -904,7 +907,7 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
           zeroed_items =
             Enum.map(latest.sales_invoice_items, fn item ->
               item
-              |> Map.take([:index, :name, :unit, :unit_price, :vat_rate])
+              |> Map.take([:index, :name, :unit, :unit_price, :vat_rate, :gtu])
               |> Map.put(:quantity, Decimal.new(0))
             end)
 
@@ -1332,6 +1335,9 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
     # would need to encode both rules and complicate the snapshot system.
     attribute :is_cash_account, :boolean, default: false, public?: true
     attribute :is_reverse_charge, :boolean, default: false, public?: true
+    # KSeF markers: a transaction between related parties (TP) and an invoice for a receipt (FP).
+    attribute :related_parties, :boolean, default: false, public?: true
+    attribute :receipt_invoice, :boolean, default: false, public?: true
 
     attribute :skip_invoicing, :boolean, default: false, public?: true
     attribute :should_send_emails, :boolean, default: false, public?: true

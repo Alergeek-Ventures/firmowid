@@ -312,7 +312,8 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
                  "quantity" => to_string(item.quantity),
                  "unit" => item.unit,
                  "unit_price" => to_string(item.unit_price),
-                 "vat_rate" => item.vat_rate
+                 "vat_rate" => item.vat_rate,
+                 "gtu" => item.gtu
                }}
             end)
         },

@@ -58,13 +58,20 @@ defmodule Firmowid.Ash.Ksef.Services.SalesInvoiceParser do
     "PMarzy/P_PMarzy" => "margin scheme (P_PMarzy)"
   }
   # Elements the sales invoice cannot keep: other parties, a correction of the seller's data or
-  # of the invoice number, and the OSS procedure's rates.
+  # of the invoice number, the OSS procedure's rates and rarer tax markers.
   @unsupported_elements [
     {"Podmiot3", "third party (Podmiot3)"},
     {"PodmiotUpowazniony", "authorized party (PodmiotUpowazniony)"},
     {"Fa/Podmiot1K", "correction of seller data (Podmiot1K)"},
     {"Fa/NrFaKorygowany", "corrected invoice number (NrFaKorygowany)"},
-    {"Fa/FaWiersz/P_12_XII", "OSS rate (P_12_XII)"}
+    {"Fa/FaWiersz/P_12_XII", "OSS rate (P_12_XII)"},
+    {"Fa/TypKorekty", "correction tax period (TypKorekty)"},
+    {"Fa/FaWiersz/Procedura", "line procedure (Procedura)"},
+    {"Fa/FaWiersz/P_12_Zal_15", "annex 15 goods (P_12_Zal_15)"},
+    {"Fa/FaWiersz/KwotaAkcyzy", "excise duty (KwotaAkcyzy)"},
+    {"Fa/ZwrotAkcyzy", "excise refund (ZwrotAkcyzy)"},
+    {"Fa/WarunkiTransakcji/PodmiotPosredniczacy", "intermediary in a chain transaction (PodmiotPosredniczacy)"},
+    {"Podmiot1/PrefiksPodatnika", "seller VAT prefix (PrefiksPodatnika)"}
   ]
   @unsupported_payment [
     {"RachunekBankowyFaktora", "factoring account (RachunekBankowyFaktora)"},
@@ -120,6 +127,8 @@ defmodule Firmowid.Ash.Ksef.Services.SalesInvoiceParser do
          seller_account_number: text(doc, "/Faktura/Fa/Platnosc/RachunekBankowy/NrRB"),
          is_reverse_charge: text(doc, "/Faktura/Fa/Adnotacje/P_18") == "1",
          is_cash_account: text(doc, "/Faktura/Fa/Adnotacje/P_16") == "1",
+         related_parties: text(doc, "/Faktura/Fa/TP") == "1",
+         receipt_invoice: text(doc, "/Faktura/Fa/FP") == "1",
          invoice_note: text(doc, "/Faktura/Stopka/Informacje/StopkaFaktury"),
          correction_reason: text(doc, "/Faktura/Fa/PrzyczynaKorekty"),
          corrected_invoice_ksef_number: text(doc, "/Faktura/Fa/DaneFaKorygowanej/NrKSeFFaKorygowanej"),
@@ -386,6 +395,7 @@ defmodule Firmowid.Ash.Ksef.Services.SalesInvoiceParser do
           gross_value: text(row, "./P_11A"),
           vat_value: text(row, "./P_11Vat"),
           vat_rate: text(row, "./P_12"),
+          gtu: text(row, "./GTU"),
           before?: text(row, "./StanPrzed") == "1"
         }
       end)
@@ -435,7 +445,8 @@ defmodule Firmowid.Ash.Ksef.Services.SalesInvoiceParser do
          unit: row.unit || @default_unit,
          quantity: quantity,
          unit_price: unit_price(row, quantity),
-         vat_rate: row.vat_rate
+         vat_rate: row.vat_rate,
+         gtu: row.gtu
        }}
     end
   end

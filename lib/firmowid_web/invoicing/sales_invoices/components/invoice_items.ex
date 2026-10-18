@@ -443,6 +443,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
         <div class="col-span-full grid grid-cols-subgrid items-center">
           <input type="hidden" name={@sort_param} value={item.index} />
           <input type="hidden" name={item[:index].name} value={item.index} />
+          <input :if={item[:gtu].value} type="hidden" name={item[:gtu].name} value={item[:gtu].value} />
           <Lucideicons.grip_vertical class="mr-1 text-grey-700" drag-handle />
           <.input
             field={item[:name]}
