@@ -256,17 +256,17 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoiceEmailFlowTest do
       )
 
     InvoicingFixtures.connect_ksef!(user.organization_id)
-    invoice = Invoicing.issue_sales_invoice_correction!(attrs, scope: scope_for(user))
+    invoice = Invoicing.correct_sales_invoice!(attrs, scope: scope_for(user))
     Ash.load!(invoice, [:sales_invoice_items], scope: scope_for(user))
   end
 
   defp confirm_invoice_in_ksef!(invoice, scope) do
-    Invoicing.update_sales_invoice_ksef_fields!(
-      invoice,
+    invoice
+    |> Invoicing.start_sales_invoice_ksef_submission!(scope: scope)
+    |> Invoicing.confirm_sales_invoice_in_ksef!(
       %{
         ksef_number: "KSEF-#{System.unique_integer([:positive])}",
-        ksef_invoice_checksum: "verified-hash-#{System.unique_integer([:positive])}",
-        locked_at: DateTime.utc_now(:second)
+        ksef_invoice_checksum: "verified-hash-#{System.unique_integer([:positive])}"
       },
       scope: scope
     )

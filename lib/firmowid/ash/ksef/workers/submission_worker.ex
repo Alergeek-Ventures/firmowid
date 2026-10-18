@@ -156,15 +156,7 @@ defmodule Firmowid.Ash.Ksef.Workers.SubmissionWorker do
     opts = [scope: scope]
 
     updated_invoice =
-      SalesInvoice.update_ksef_fields!(
-        invoice,
-        %{
-          locked_at: DateTime.utc_now(:second),
-          ksef_session_reference_number: nil,
-          ksef_invoice_checksum: nil
-        },
-        opts
-      )
+      SalesInvoice.start_ksef_submission!(invoice, opts)
 
     {:ok, updated_invoice}
   end
@@ -173,7 +165,7 @@ defmodule Firmowid.Ash.Ksef.Workers.SubmissionWorker do
     opts = [scope: scope]
 
     updated_invoice =
-      SalesInvoice.update_ksef_fields!(
+      SalesInvoice.record_ksef_submission!(
         invoice,
         %{ksef_session_reference_number: session_reference},
         opts
@@ -186,7 +178,7 @@ defmodule Firmowid.Ash.Ksef.Workers.SubmissionWorker do
     opts = [scope: scope]
 
     updated_invoice =
-      SalesInvoice.update_ksef_fields!(
+      SalesInvoice.record_ksef_submission!(
         invoice,
         %{ksef_invoice_checksum: pending_invoice_reference(invoice_reference)},
         opts
@@ -260,15 +252,7 @@ defmodule Firmowid.Ash.Ksef.Workers.SubmissionWorker do
   defp unlock_invoice(invoice, scope) do
     opts = [scope: scope]
 
-    SalesInvoice.update_ksef_fields!(
-      invoice,
-      %{
-        ksef_number: nil,
-        locked_at: nil,
-        ksef_invoice_checksum: nil
-      },
-      opts
-    )
+    SalesInvoice.withdraw_ksef_submission!(invoice, opts)
   end
 
   defp schedule_verification(sales_invoice_id, session_reference, invoice_reference, organization_id) do
@@ -320,7 +304,7 @@ defmodule Firmowid.Ash.Ksef.Workers.SubmissionWorker do
        ) do
     opts = [scope: scope]
 
-    SalesInvoice.update_ksef_fields!(
+    SalesInvoice.confirm_in_ksef!(
       invoice,
       %{
         ksef_number: ksef_number,

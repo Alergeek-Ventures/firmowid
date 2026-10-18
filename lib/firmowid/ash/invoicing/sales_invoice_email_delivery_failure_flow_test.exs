@@ -123,12 +123,12 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoiceEmailDeliveryFailureFlowTest do
   end
 
   defp confirm_invoice_in_ksef!(invoice, scope) do
-    Invoicing.update_sales_invoice_ksef_fields!(
-      invoice,
+    invoice
+    |> Invoicing.start_sales_invoice_ksef_submission!(scope: scope)
+    |> Invoicing.confirm_sales_invoice_in_ksef!(
       %{
         ksef_number: "KSEF-#{System.unique_integer([:positive])}",
-        ksef_invoice_checksum: "verified-hash-#{System.unique_integer([:positive])}",
-        locked_at: DateTime.utc_now(:second)
+        ksef_invoice_checksum: "verified-hash-#{System.unique_integer([:positive])}"
       },
       scope: scope
     )

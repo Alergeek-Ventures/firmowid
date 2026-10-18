@@ -297,20 +297,20 @@ defmodule FirmowidMcp.Invoicing.Views.Issue do
 
     case action_arguments(socket)["invoice_id"] do
       nil ->
-        Invoicing.create_and_issue_sales_invoice(
+        Invoicing.issue_sales_invoice(
           %{input: confirmed_input(socket), confirmation_id: socket.assigns.confirmation_id},
           scope: scope
         )
 
       draft_id ->
         with {:ok, draft} <- Invoicing.get_sales_invoice(draft_id, scope: scope) do
-          Invoicing.issue_sales_invoice(draft, %{input: confirmed_input(socket)}, scope: scope)
+          Invoicing.finalize_sales_invoice_draft(draft, %{input: confirmed_input(socket)}, scope: scope)
         end
     end
   end
 
   defp issue_document(%{assigns: %{widget: IssueCorrection}} = socket) do
-    Invoicing.issue_sales_invoice_correction(
+    Invoicing.correct_sales_invoice(
       %{
         input: confirmed_input(socket),
         original_invoice_id: action_arguments(socket)["original_invoice_id"],
