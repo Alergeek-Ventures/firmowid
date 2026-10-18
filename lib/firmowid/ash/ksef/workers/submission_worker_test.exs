@@ -46,6 +46,31 @@ defmodule Firmowid.Ash.Ksef.Workers.SubmissionWorkerTest do
              SalesInvoice.by_id(correction.id, scope: scope_for(admin), not_found_error?: false)
   end
 
+  test "keeps an invoice KSeF is still processing after the polling limit and checks it again later" do
+    admin = admin_fixture()
+    invoice = submitted_invoice!(admin, %{ksef_invoice_kind: :vat})
+
+    InvoicingFixtures.accept_ksef_submissions!(admin.organization_id)
+
+    Req.Test.stub(:ksef_api, fn conn ->
+      Req.Test.json(conn, %{"status" => %{"code" => 150, "description" => "Processing"}})
+    end)
+
+    Oban.Testing.with_testing_mode(:manual, fn ->
+      assert {:error, _timeout} = verify!(invoice, meta: %{"snoozed" => 360})
+
+      assert_enqueued(
+        worker: SubmissionWorker,
+        args: %{"action" => "verify", "sales_invoice_id" => invoice.id},
+        scheduled_at: {DateTime.shift(DateTime.utc_now(), hour: 1), delta: 60}
+      )
+    end)
+
+    kept = SalesInvoice.by_id!(invoice.id, scope: scope_for(admin))
+    assert kept.invoice_number == invoice.invoice_number
+    assert kept.locked_at
+  end
+
   defp submitted_invoice!(admin, attrs) do
     %{
       invoice_number: "FV/#{System.unique_integer([:positive])}",
@@ -81,14 +106,18 @@ defmodule Firmowid.Ash.Ksef.Workers.SubmissionWorkerTest do
     end)
   end
 
-  defp verify!(invoice) do
-    perform_job(SubmissionWorker, %{
-      "action" => "verify",
-      "organization_id" => invoice.organization_id,
-      "sales_invoice_id" => invoice.id,
-      "session_reference" => "SESSION-REF",
-      "invoice_reference" => "INVOICE-REF"
-    })
+  defp verify!(invoice, opts \\ []) do
+    perform_job(
+      SubmissionWorker,
+      %{
+        "action" => "verify",
+        "organization_id" => invoice.organization_id,
+        "sales_invoice_id" => invoice.id,
+        "session_reference" => "SESSION-REF",
+        "invoice_reference" => "INVOICE-REF"
+      },
+      opts
+    )
   end
 
   defp scope_for(user), do: %Scope{actor: user, tenant: user.organization_id}
