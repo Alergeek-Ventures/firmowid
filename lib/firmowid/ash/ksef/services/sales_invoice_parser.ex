@@ -556,6 +556,24 @@ defmodule Firmowid.Ash.Ksef.Services.SalesInvoiceParser do
     end
   end
 
+  @doc """
+  Reads what identifies an invoice to its seller: its number, issue date, buyer's name,
+  gross total and currency. Works for any FA(3) document, including those `parse/1`
+  rejects.
+  """
+  @spec summary(binary()) :: map()
+  def summary(xml) when is_binary(xml) do
+    doc = SweetXml.parse(xml, namespace_conformant: true)
+
+    %{
+      invoice_number: text(doc, "/Faktura/Fa/P_2"),
+      issue_date: date(text(doc, "/Faktura/Fa/P_1")),
+      buyer_name: text(doc, "/Faktura/Podmiot2/DaneIdentyfikacyjne/Nazwa"),
+      gross_total: Decimal.new(text(doc, "/Faktura/Fa/P_15")),
+      currency: text(doc, "/Faktura/Fa/KodWaluty")
+    }
+  end
+
   defp date(nil), do: nil
   defp date(value), do: Date.from_iso8601!(value)
 

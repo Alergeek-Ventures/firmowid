@@ -6,9 +6,11 @@ defmodule Firmowid.Ash.Ksef.Services.SalesInvoiceImport do
   by their KSeF number, or by their invoice number while the submission still awaits
   KSeF's confirmation, and only their storage date is kept so the next import starts
   after them. An invoice the sales invoice cannot represent or accept is skipped, so it
-  does not hold back the rest of the package, and returned as a `SkippedInvoicesError`
-  that fails the job and reaches Sentry. Any other failure fails the job right away,
-  which retries the package before the next import can start after it.
+  does not hold back the rest of the package. It is recorded as a `SkippedKsefSalesInvoice`,
+  which shows the organization the invoice is missing until a later import records it,
+  and returned as a `SkippedInvoicesError` that fails the job and reaches Sentry. Any
+  other failure fails the job right away, which retries the package before the next
+  import can start after it.
   """
 
   import Firmowid.Ash.Ksef.Services.ApiClient, only: [parse_datetime!: 1]
@@ -16,6 +18,7 @@ defmodule Firmowid.Ash.Ksef.Services.SalesInvoiceImport do
   alias Ash.Error.Invalid
   alias Firmowid.Ash.Invoicing
   alias Firmowid.Ash.Invoicing.SalesInvoice
+  alias Firmowid.Ash.Invoicing.SkippedKsefSalesInvoice
   alias Firmowid.Ash.Ksef
   alias Firmowid.Ash.Ksef.Services.SalesInvoiceParser
   alias Firmowid.Ash.Scope
@@ -34,7 +37,8 @@ defmodule Firmowid.Ash.Ksef.Services.SalesInvoiceImport do
     @impl true
     # KSeF numbers contain the seller's NIP, so they stay in the job meta, which Sentry does not get.
     def message(%{skipped: skipped}) do
-      "Skipped #{length(skipped)} KSeF sales invoice(s) Firmowid cannot import, listed in the job meta: " <>
+      "Skipped #{length(skipped)} KSeF sales invoice(s) Firmowid cannot import, " <>
+        "listed in skipped_ksef_sales_invoices and the job meta: " <>
         (skipped
          |> Enum.frequencies_by(& &1.reason)
          |> Enum.map_join("; ", fn {reason, count} -> "#{reason} ×#{count}" end))
@@ -76,15 +80,20 @@ defmodule Firmowid.Ash.Ksef.Services.SalesInvoiceImport do
 
     results =
       Enum.map(parsed, fn {ksef_number, xml, attrs, stored_at} ->
-        import_invoice(ksef_number, xml, attrs, stored_at, known, scope)
+        {ksef_number, import_invoice(ksef_number, xml, attrs, stored_at, known, scope)}
       end)
 
-    skipped = for {:skipped, invoice} <- results, do: invoice
+    clear_skipped(
+      for({ksef_number, result} <- results, result in [:created, :known], do: ksef_number),
+      scope
+    )
+
+    skipped = for {_ksef_number, {:skipped, invoice}} <- results, do: invoice
 
     %{
       total_in_package: length(results),
-      created: Enum.count(results, &(&1 == :created)),
-      skipped_known: Enum.count(results, &(&1 == :known)),
+      created: Enum.count(results, &match?({_ksef_number, :created}, &1)),
+      skipped_known: Enum.count(results, &match?({_ksef_number, :known}, &1)),
       skipped_unsupported: length(skipped),
       skipped: skipped
     }
@@ -118,9 +127,29 @@ defmodule Firmowid.Ash.Ksef.Services.SalesInvoiceImport do
             :known
 
           {:error, reason} ->
-            {:skipped, %{ksef_number: ksef_number, reason: skip_reason(reason)}}
+            reason = skip_reason(reason)
+            record_skipped(ksef_number, xml, reason, stored_at, scope)
+            {:skipped, %{ksef_number: ksef_number, reason: reason}}
         end
     end
+  end
+
+  defp record_skipped(ksef_number, xml, reason, stored_at, scope) do
+    xml
+    |> SalesInvoiceParser.summary()
+    |> Map.merge(%{
+      ksef_number: ksef_number,
+      reason: reason,
+      ksef_permanent_storage_date: DateTime.to_naive(stored_at)
+    })
+    |> Invoicing.record_skipped_ksef_sales_invoice!(scope: scope)
+  end
+
+  # Invoices skipped by an earlier import that this one recorded, e.g. after a fix.
+  defp clear_skipped(ksef_numbers, scope) do
+    SkippedKsefSalesInvoice
+    |> Ash.Query.filter(ksef_number in ^ksef_numbers)
+    |> SkippedKsefSalesInvoice.destroy!(scope: scope)
   end
 
   # An invoice Firmowid submitted is numbered and locked before KSeF assigns its KSeF number.

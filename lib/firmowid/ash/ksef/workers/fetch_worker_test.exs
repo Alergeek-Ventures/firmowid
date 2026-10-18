@@ -5,6 +5,7 @@ defmodule Firmowid.Ash.Ksef.Workers.FetchWorkerTest do
   import Firmowid.AccountsFixtures
   import Firmowid.Test.Support.OpenAIEnrichmentTestHelpers
 
+  alias Firmowid.Ash.Invoicing
   alias Firmowid.Ash.Invoicing.CostInvoice
   alias Firmowid.Ash.Invoicing.SalesInvoice
   alias Firmowid.Ash.Ksef.Services.Encryption
@@ -220,6 +221,25 @@ defmodule Firmowid.Ash.Ksef.Workers.FetchWorkerTest do
              imported.sales_invoice_items
 
     assert Decimal.equal?(unit_price, Decimal.new("100.00"))
+
+    # The skipped invoice stays listed for the organization until an import records it.
+    assert [%{ksef_number: ksef_number, invoice_number: "ZAL/" <> _, issue_date: ~D[2026-03-06]}] =
+             Invoicing.list_skipped_ksef_sales_invoices!(scope: sales_invoice_scope(organization_id))
+
+    assert :ok =
+             import_sales_package!(
+               [
+                 %{
+                   ksef_number: ksef_number,
+                   xml: sales_invoice_xml("ZAL/#{suffix}", []),
+                   permanent_storage_date: storage_date
+                 }
+               ],
+               organization_id
+             )
+
+    assert [] =
+             Invoicing.list_skipped_ksef_sales_invoices!(scope: sales_invoice_scope(organization_id))
   end
 
   test "imports corrections into the chain of the VAT invoice they correct", %{

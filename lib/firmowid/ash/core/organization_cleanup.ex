@@ -18,6 +18,7 @@ defmodule Firmowid.Ash.Core.OrganizationCleanup do
   alias Firmowid.Ash.Invoicing.KsefInvoiceDigest
   alias Firmowid.Ash.Invoicing.KsefInvoiceDigestItem
   alias Firmowid.Ash.Invoicing.SalesInvoiceEmailDelivery
+  alias Firmowid.Ash.Invoicing.SkippedKsefSalesInvoice
   alias Firmowid.Ash.Payroll.UserEmploymentContract
   alias Firmowid.Ash.Payroll.UserSalary
   alias Firmowid.Ash.Scope
@@ -60,6 +61,12 @@ defmodule Firmowid.Ash.Core.OrganizationCleanup do
            destroy_records(
              SalesInvoiceEmailDelivery.list(%{}, scope: scope),
              &SalesInvoiceEmailDelivery.destroy/2,
+             scope
+           ),
+         :ok <-
+           destroy_records(
+             SkippedKsefSalesInvoice.list(%{}, scope: scope),
+             &SkippedKsefSalesInvoice.destroy/2,
              scope
            ),
          :ok <-
