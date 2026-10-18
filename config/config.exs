@@ -42,10 +42,10 @@ config :elixir, :time_zone_database, Tz.TimeZoneDatabase
 
 config :esbuild,
   version: "0.28.2",
+  path: Path.expand("../assets/node_modules/.bin/esbuild", __DIR__),
   mcp: [
     args: ~w(js/mcp/bridge.js --bundle --target=es2022 --format=iife --outfile=../priv/static/assets/mcp.js),
-    cd: Path.expand("../assets", __DIR__),
-    env: %{"NODE_PATH" => Path.expand("../deps", __DIR__)}
+    cd: Path.expand("../assets", __DIR__)
   ],
   mcp_dev_host: [
     args: ~w(js/mcp/dev_host.js --bundle --target=es2022 --format=iife --outfile=../priv/static/assets/mcp_dev_host.js),
@@ -55,9 +55,7 @@ config :esbuild,
     args:
       ~w(js/app.js --bundle --target=es2022 --outdir=../priv/static/assets --external:/fonts/* --external:/images/* --alias:@=.),
     cd: Path.expand("../assets", __DIR__),
-    env: %{
-      "NODE_PATH" => Enum.join([Path.expand("../deps", __DIR__), Mix.Project.build_path()], ":")
-    }
+    env: %{"NODE_PATH" => Mix.Project.build_path()}
   ]
 
 config :ex_cldr,

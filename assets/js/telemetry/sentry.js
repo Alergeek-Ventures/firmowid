@@ -11,7 +11,7 @@ import {
 import { telemetryConfig } from "./config";
 import { sanitizeTelemetryUrl } from "./privacy.js";
 
-// These schema constants mirror the installed Sentry 10.73 event/Replay contracts.
+// These schema constants mirror the installed Sentry 11.8 event/Replay contracts.
 const ID = /^[0-9a-f]{32}$/i;
 const DEBUG_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const DEFAULT_FINGERPRINT = "{{ default }}";
@@ -348,8 +348,6 @@ export function initSentry() {
     tunnel: "/_x/8e2f",
     environment: telemetryConfig.sentryEnvironment,
     release: telemetryConfig.sentryRelease || undefined,
-    sendDefaultPii: false,
-    enableLogs: false,
     dataCollection: {
       userInfo: false,
       cookies: false,
@@ -368,6 +366,7 @@ export function initSentry() {
         outputs: false,
       },
       databaseQueryData: false,
+      queues: false,
       stackFrameVariables: false,
       frameContextLines: 0,
     },

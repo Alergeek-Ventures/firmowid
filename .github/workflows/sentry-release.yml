@@ -98,7 +98,6 @@ jobs:
       - name: Build production assets with sourcemaps
         run: |
           npm ci --prefix assets
-          mix esbuild.install --if-missing
           mix assets.sentry.deploy
 
       - name: Create and finalize Sentry release
