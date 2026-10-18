@@ -98,6 +98,13 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
 
     socket = assign(socket, :active_months, active_months)
 
+    skipped_ksef_sales_invoices =
+      if can_view_invoicing?(user),
+        do: Invoicing.list_skipped_ksef_sales_invoices!(scope: socket.assigns.ash_scope),
+        else: []
+
+    socket = assign(socket, :skipped_ksef_sales_invoices, skipped_ksef_sales_invoices)
+
     socket =
       socket
       |> assign(:show_search, false)
@@ -234,6 +241,24 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
       :if={can_view_invoicing?(@current_user)}
       class="relative mt-2 flex flex-col gap-4 max-md:hidden"
     >
+      <div
+        :if={@skipped_ksef_sales_invoices != []}
+        id="skipped-ksef-sales-invoices"
+        class="flex gap-3 rounded-md bg-orange-100 p-4 text-sm text-orange-800"
+      >
+        <Lucideicons.triangle_alert class="size-5 shrink-0 text-orange-600" />
+        <div class="flex flex-col gap-2">
+          <p class="font-medium">
+            Tych faktur sprzedażowych z KSeF nie udało się jeszcze pobrać do Firmowida.
+            Sprawdzamy przyczynę i pobierzemy je, gdy tylko ją naprawimy.
+          </p>
+          <ul class="flex flex-col gap-1">
+            <li :for={invoice <- @skipped_ksef_sales_invoices}>
+              {skipped_invoice_label(invoice)}
+            </li>
+          </ul>
+        </div>
+      </div>
       <%= cond do %>
         <% @params.view_mode == :dashboard -> %>
           <FirmowidWeb.Invoicing.Components.Dashboard.dashboard
@@ -1271,6 +1296,16 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
 
   defp can_write_invoicing?(user) do
     Ash.can_do_all?([{SalesInvoice, :draft}, {CostInvoice, :create}], user)
+  end
+
+  defp skipped_invoice_label(invoice) do
+    [
+      "#{invoice.invoice_number} z #{Calendar.strftime(invoice.issue_date, "%d.%m.%Y")}",
+      invoice.buyer_name,
+      to_string(Money.new(invoice.currency, invoice.gross_total))
+    ]
+    |> Enum.reject(&is_nil/1)
+    |> Enum.join(", ")
   end
 
   defp can_view_invoicing?(user) do

@@ -248,6 +248,11 @@ defmodule Firmowid.Ash.Invoicing do
       define :destroy_wizard_state, action: :destroy
     end
 
+    resource Firmowid.Ash.Invoicing.SkippedKsefSalesInvoice do
+      define :list_skipped_ksef_sales_invoices, action: :list
+      define :record_skipped_ksef_sales_invoice, action: :record
+    end
+
     resource Firmowid.Ash.Invoicing.SalesInvoiceEmailDelivery do
       define :enqueue_sales_invoice_email,
         action: :enqueue_for_sales_invoice,
