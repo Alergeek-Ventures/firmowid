@@ -62,6 +62,7 @@ defmodule Firmowid.Ash.Ksef.Services.SalesInvoiceParser do
          {:ok, items, corrected_lines} <- items(doc, kind),
          :ok <- single_due_date(doc),
          :ok <- no_factoring(doc),
+         :ok <- no_third_party(doc),
          {:ok, payment_method} <- payment_method(text(doc, "/Faktura/Fa/Platnosc/FormaPlatnosci")) do
       issue_date = date(text(doc, "/Faktura/Fa/P_1"))
 
@@ -103,6 +104,13 @@ defmodule Firmowid.Ash.Ksef.Services.SalesInvoiceParser do
       nil -> :ok
       _settlement -> {:error, {:unsupported, "charges or deductions (Rozliczenie)"}}
     end
+  end
+
+  # Other parties (Podmiot3: e.g. a recipient, payer or additional buyer) would be dropped.
+  defp no_third_party(doc) do
+    if xpath(doc, tns(~x"/Faktura/Podmiot3"o)),
+      do: {:error, {:unsupported, "third party (Podmiot3)"}},
+      else: :ok
   end
 
   # Payment to a factor's account (RachunekBankowyFaktora) would be shown as payment to the seller.
@@ -198,12 +206,18 @@ defmodule Firmowid.Ash.Ksef.Services.SalesInvoiceParser do
         %{buyer_type: :company, buyer_full_name: name}
       end
 
+    mail_address = address(doc, "/Faktura/Podmiot2/AdresKoresp")
+
     Map.merge(names, %{
       buyer_id: buyer_id,
       buyer_country: country,
       buyer_address: address(doc, "/Faktura/Podmiot2/Adres"),
-      buyer_email: text(doc, "/Faktura/Podmiot2/DaneKontaktowe/Email"),
-      buyer_phone: text(doc, "/Faktura/Podmiot2/DaneKontaktowe/Telefon")
+      buyer_is_different_mail_address: not is_nil(mail_address),
+      buyer_mail_address: mail_address,
+      buyer_mail_country: text(doc, "/Faktura/Podmiot2/AdresKoresp/KodKraju"),
+      # Up to three contacts may be listed; the invoice keeps the first.
+      buyer_email: first_text(doc, "/Faktura/Podmiot2/DaneKontaktowe/Email"),
+      buyer_phone: first_text(doc, "/Faktura/Podmiot2/DaneKontaktowe/Telefon")
     })
   end
 
@@ -326,6 +340,10 @@ defmodule Firmowid.Ash.Ksef.Services.SalesInvoiceParser do
       is_nil(unit_price(row, quantity)) ->
         {:error, {:unsupported, "line net value not divisible by its quantity"}}
 
+      # Firmowid writes unit prices to the grosz on the documents it renders, e.g. corrections.
+      Decimal.scale(Decimal.normalize(unit_price(row, quantity))) > 2 ->
+        {:error, {:unsupported, "unit price below the grosz"}}
+
       true ->
         {:ok,
          %{
@@ -378,6 +396,13 @@ defmodule Firmowid.Ash.Ksef.Services.SalesInvoiceParser do
     case node |> xpath(tns(sigil_x("#{path}/text()", ~c"os"))) |> to_string() |> String.trim() do
       "" -> nil
       value -> value
+    end
+  end
+
+  defp first_text(node, path) do
+    case xpath(node, tns(sigil_x("#{path}/text()", ~c"ls"))) do
+      [value | _] -> String.trim(value)
+      [] -> nil
     end
   end
 
