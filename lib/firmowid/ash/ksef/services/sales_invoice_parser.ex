@@ -102,6 +102,7 @@ defmodule Firmowid.Ash.Ksef.Services.SalesInvoiceParser do
          :ok <- no_partial_payment(doc),
          :ok <- supported_annotations(doc),
          :ok <- buyer_country_consistent(doc),
+         :ok <- addresses_fit(doc),
          {:ok, items, corrected_lines} <- items(doc, kind),
          :ok <- single_due_date(doc),
          :ok <- supported_payment(doc),
@@ -170,6 +171,19 @@ defmodule Firmowid.Ash.Ksef.Services.SalesInvoiceParser do
       true ->
         {:error, {:unsupported, "buyer tax ID country differs from address country"}}
     end
+  end
+
+  # Firmowid keeps an address as one line, which FA(3) limits to 512 characters.
+  defp addresses_fit(doc) do
+    paths = [
+      "/Faktura/Podmiot1/Adres",
+      "/Faktura/Podmiot2/Adres",
+      "/Faktura/Podmiot2/AdresKoresp"
+    ]
+
+    if Enum.all?(paths, &(String.length(address(doc, &1) || "") <= 512)),
+      do: :ok,
+      else: {:error, {:unsupported, "address longer than one FA(3) address line"}}
   end
 
   defp buyer_id_country(doc) do
