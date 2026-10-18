@@ -260,6 +260,12 @@ defmodule Firmowid.Ash.Ksef.Workers.FetchWorkerTest do
          corrects: original,
          lines: [{"A", "100.00", true}, {"A", "10.00", false}]
        )},
+      # Rounding VAT per line (0.01 each) gives 0.08, while Firmowid's unrounded VAT gives 0.07.
+      {"KSEF-ROUNDING-#{suffix}",
+       sales_invoice_xml("ROUND/#{suffix}",
+         lines: [{"A", "0.03", false}, {"B", "0.03", false}],
+         gross_total: "0.08"
+       )},
       {"KSEF-NOKSEF-#{suffix}",
        sales_invoice_xml("NOKSEF/#{suffix}",
          kind: "KOR",
@@ -480,12 +486,26 @@ defmodule Firmowid.Ash.Ksef.Workers.FetchWorkerTest do
     kind = Keyword.get(opts, :kind, "VAT")
     lines = Keyword.get(opts, :lines, [{"Usługa", "100.00", false}])
 
-    rows =
-      lines
-      |> Enum.map(fn
+    lines =
+      Enum.map(lines, fn
         {name, price, before?} -> {name, price, price, before?}
         line -> line
       end)
+
+    # P_15 of a correction is the change it makes.
+    gross_total =
+      Keyword.get_lazy(opts, :gross_total, fn ->
+        lines
+        |> Enum.map(fn {_name, _price, net, before?} ->
+          gross = Decimal.mult(Decimal.new(net), Decimal.new("1.23"))
+          if before?, do: Decimal.negate(gross), else: gross
+        end)
+        |> Enum.reduce(Decimal.new(0), &Decimal.add/2)
+        |> Decimal.round(2)
+      end)
+
+    rows =
+      lines
       |> Enum.with_index(1)
       |> Enum.map_join(fn {{name, price, net, before?}, index} ->
         """
@@ -538,6 +558,7 @@ defmodule Firmowid.Ash.Ksef.Workers.FetchWorkerTest do
         <KodWaluty>PLN</KodWaluty>
         <P_1>2026-03-06</P_1>
         <P_2>#{invoice_number}</P_2>
+        <P_15>#{gross_total}</P_15>
         <RodzajFaktury>#{kind}</RodzajFaktury>
         #{if kind == "KOR", do: "<DaneFaKorygowanej><DataWystFaKorygowanej>2026-03-06</DataWystFaKorygowanej><NrFaKorygowanej>X</NrFaKorygowanej>#{corrected}</DaneFaKorygowanej>"}
         #{rows}
