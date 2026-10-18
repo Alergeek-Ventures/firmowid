@@ -28,7 +28,6 @@ defmodule Firmowid.Ash.Ksef.Workers.SubmissionWorker do
 
   @verify_snooze_seconds 10
   @max_verify_snooze_count 360
-  @worker_max_attempts 3
 
   @impl Oban.Worker
   @spec perform(Oban.Job.t()) :: Oban.Worker.result()
@@ -322,7 +321,8 @@ defmodule Firmowid.Ash.Ksef.Workers.SubmissionWorker do
   end
 
   defp handle_verification_result(:pending, invoice, job, scope, _verification_context) do
-    snooze_count = job.max_attempts - @worker_max_attempts
+    # A snooze does not use up an attempt; Oban counts snoozes in the job's meta.
+    snooze_count = Map.get(job.meta, "snoozed", 0)
 
     if snooze_count >= @max_verify_snooze_count do
       Logger.error(

@@ -52,7 +52,6 @@ defmodule Firmowid.Ash.Ksef.Workers.FetchWorker do
 
   @snooze_seconds 30
   @max_snooze_count 120
-  @worker_max_attempts 3
 
   @impl Oban.Worker
   def timeout(_job), do: to_timeout(minute: 20)
@@ -106,12 +105,9 @@ defmodule Firmowid.Ash.Ksef.Workers.FetchWorker do
     end
   end
 
-  # In OSS Oban, {:snooze, N} increments both attempt and max_attempts.
-  # We use the job's attempt field to track how many times we've polled.
-  # The initial attempt is 1, so after @max_snooze_count snoozes, attempt will
-  # be @max_snooze_count + 1 (accounting for the original max_attempts offset).
-  defp handle_pending_poll(%{max_attempts: max_attempts}, _scope) do
-    snooze_count = max_attempts - @worker_max_attempts
+  # A snooze does not use up an attempt; Oban counts snoozes in the job's meta.
+  defp handle_pending_poll(job, _scope) do
+    snooze_count = Map.get(job.meta, "snoozed", 0)
 
     if snooze_count >= @max_snooze_count do
       {:error,
