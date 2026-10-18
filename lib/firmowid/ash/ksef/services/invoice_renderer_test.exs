@@ -190,6 +190,36 @@ defmodule Firmowid.Ash.Ksef.Services.InvoiceRendererTest do
       assert xml =~ "<P_14_1W>-184.00</P_14_1W>"
       assert :ok = validate_xml(xml, model)
     end
+
+    test "states a correction's change between the rounded group VAT of both states", %{
+      model: model,
+      org_id: org_id
+    } do
+      # 0.02 → 0.03 EUR net at 23%: the documents show VAT 0.00 and 0.01 EUR, 0.00 and 0.04 PLN.
+      original =
+        [org_id: org_id, quantity: Decimal.new("0.0002")]
+        |> build_domestic_invoice()
+        |> Ash.Seed.update!(%{currency: "EUR"})
+        |> simulate_ksef_submission(with_ksef_number: true)
+
+      correction =
+        build_correction_invoice(original,
+          items: [
+            %{
+              name: "Usluga programistyczna",
+              quantity: Decimal.new("0.0003"),
+              unit: "szt.",
+              unit_price: Decimal.new("100.00"),
+              vat_rate: "23"
+            }
+          ]
+        )
+
+      xml = correction |> InvoiceRenderer.render_fa3() |> IO.iodata_to_binary()
+      assert xml =~ "<P_14_1>0.01</P_14_1>"
+      assert xml =~ "<P_14_1W>0.04</P_14_1W>"
+      assert :ok = validate_xml(xml, model)
+    end
   end
 
   describe "render_fa3/1 - correction invoices" do
@@ -200,6 +230,34 @@ defmodule Firmowid.Ash.Ksef.Services.InvoiceRendererTest do
       correction = build_correction_invoice(original)
       xml = InvoiceRenderer.render_fa3(correction)
 
+      assert :ok = validate_xml(xml, model)
+    end
+
+    test "KOR moving lines from 22% to 23% sums both rates in one P_13_1", %{
+      model: model,
+      org_id: org_id
+    } do
+      original =
+        simulate_ksef_submission(build_domestic_invoice(org_id: org_id, vat_rate: "22"),
+          with_ksef_number: true
+        )
+
+      correction =
+        build_correction_invoice(original,
+          items: [
+            %{
+              name: "Usluga programistyczna",
+              quantity: Decimal.new("1"),
+              unit: "szt.",
+              unit_price: Decimal.new("100.00"),
+              vat_rate: "23"
+            }
+          ]
+        )
+
+      xml = correction |> InvoiceRenderer.render_fa3() |> IO.iodata_to_binary()
+      assert xml =~ "<P_13_1>0.00</P_13_1>"
+      assert xml =~ "<P_14_1>1.00</P_14_1>"
       assert :ok = validate_xml(xml, model)
     end
 

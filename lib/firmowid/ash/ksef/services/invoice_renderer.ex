@@ -8,7 +8,7 @@ defmodule Firmowid.Ash.Ksef.Services.InvoiceRenderer do
   Handles the full rendering pipeline:
   - Loading required calculations and aggregates (net/vat/gross values)
   - XML escaping of all string values
-  - VAT summary calculation (grouped by rate and type)
+  - VAT summary calculation (grouped by FA(3) rate field)
   - Correction invoice (KOR) chain resolution and before/after delta computation
   - Validation of correction constraints (buyer tax ID, seller data immutability)
 
@@ -190,12 +190,36 @@ defmodule Firmowid.Ash.Ksef.Services.InvoiceRenderer do
   @spec format_vat_rate(String.t()) :: String.t()
   def format_vat_rate(rate) when is_binary(rate), do: rate
 
+  # FA(3) sums 23% with 22% (P_13_1) and 8% with 7% (P_13_2); every other rate has its own field.
+  @rate_groups [["23", "22"], ["8", "7"]]
+
   # P_14_xW: a foreign-currency invoice's VAT in PLN at the NBP rate, for the groups FA(3)
-  # converts (23/22%, 8/7%, 5%, 4%). Each group's VAT is rounded to the grosz before
-  # conversion; a correction's amount is the difference of the converted states after and
-  # before it.
+  # converts (23/22%, 8/7%, 5%, 4%).
   @pln_converted_rates ["23", "22", "8", "7", "5", "4"]
 
+  # One summary per FA(3) field. Each state's group net and VAT are rounded to the grosz
+  # first, so a correction (KOR, before/after method) states the change between the amounts
+  # its corrected state and its state after show; groups it leaves unchanged are skipped.
+  defp calculate_vat_summary(invoice, reference_invoice) do
+    {after_items, before_items} = summary_states(invoice, reference_invoice)
+
+    (after_items ++ (before_items || []))
+    |> Enum.map(&rate_group(&1.vat_rate))
+    |> Enum.uniq()
+    |> Enum.map(fn [rate | _] = rates ->
+      %{
+        rate: rate,
+        rates: rates,
+        type: VatRate.summary_type(rate),
+        net: group_change(after_items, before_items, rates, :net_value),
+        vat: group_change(after_items, before_items, rates, :vat_value)
+      }
+    end)
+    |> Enum.reject(&(before_items && Decimal.eq?(&1.net, 0) && Decimal.eq?(&1.vat, 0)))
+    |> Enum.sort_by(&VatRate.to_numeric(&1.rate), {:desc, Decimal})
+  end
+
+  # A correction's VAT in PLN is the difference of the converted states after and before it.
   defp add_vat_pln(summary, %{currency: "PLN"}, _reference_invoice), do: summary
 
   defp add_vat_pln(summary, invoice, reference_invoice) do
@@ -205,101 +229,47 @@ defmodule Firmowid.Ash.Ksef.Services.InvoiceRenderer do
           raise "NBP exchange rate unavailable for #{invoice.currency} on #{invoice.issue_date}"
 
       rate = Decimal.from_float(rate)
-      Enum.map(summary, &put_vat_pln(&1, invoice, reference_invoice, rate))
+      {after_items, before_items} = summary_states(invoice, reference_invoice)
+
+      Enum.map(summary, fn group ->
+        if group.rate in @pln_converted_rates,
+          do: Map.put(group, :vat_pln, pln_change(after_items, before_items, group.rates, rate)),
+          else: group
+      end)
     else
       summary
     end
   end
 
-  defp put_vat_pln(%{rate: vat_rate} = group, invoice, reference_invoice, rate) when vat_rate in @pln_converted_rates do
-    after_pln = to_pln(rate_vat(invoice, vat_rate), rate)
+  defp summary_states(%{ksef_invoice_kind: :kor, sales_invoice_items: after_items}, %{sales_invoice_items: before_items}),
+    do: {after_items, before_items}
 
-    vat_pln =
-      case invoice do
-        %{ksef_invoice_kind: :kor} ->
-          Decimal.sub(after_pln, to_pln(rate_vat(reference_invoice, vat_rate), rate))
+  defp summary_states(%{sales_invoice_items: items}, _reference_invoice), do: {items, nil}
 
-        _vat ->
-          after_pln
-      end
+  defp rate_group(rate), do: Enum.find(@rate_groups, [rate], &(rate in &1))
 
-    Map.put(group, :vat_pln, vat_pln)
-  end
+  defp group_change(after_items, nil, rates, field), do: group_sum(after_items, rates, field)
 
-  defp put_vat_pln(group, _invoice, _reference_invoice, _rate), do: group
+  defp group_change(after_items, before_items, rates, field),
+    do: Decimal.sub(group_sum(after_items, rates, field), group_sum(before_items, rates, field))
 
-  defp rate_vat(invoice, vat_rate) do
-    invoice.sales_invoice_items
-    |> Enum.filter(&(&1.vat_rate == vat_rate))
-    |> Enum.reduce(Decimal.new(0), &Decimal.add(&2, &1.vat_value))
+  defp pln_change(after_items, nil, rates, rate), do: to_pln(group_sum(after_items, rates, :vat_value), rate)
+
+  defp pln_change(after_items, before_items, rates, rate),
+    do:
+      Decimal.sub(
+        to_pln(group_sum(after_items, rates, :vat_value), rate),
+        to_pln(group_sum(before_items, rates, :vat_value), rate)
+      )
+
+  defp group_sum(items, rates, field) do
+    items
+    |> Enum.filter(&(&1.vat_rate in rates))
+    |> Enum.reduce(Decimal.new(0), &Decimal.add(&2, Map.fetch!(&1, field)))
     |> Decimal.round(2)
   end
 
   defp to_pln(vat, rate), do: vat |> Decimal.mult(rate) |> Decimal.round(2)
-
-  # For correction invoices (KOR) with before/after method, calculate delta (after - before)
-  # Uses the reference invoice (previous correction or original) as the "before" state.
-  defp calculate_vat_summary(%{ksef_invoice_kind: :kor, sales_invoice_items: after_items}, %{
-         sales_invoice_items: before_items
-       }) do
-    before_summary = items_to_summary_map(before_items)
-    after_summary = items_to_summary_map(after_items)
-
-    # Merge all rate keys from both before and after
-    all_keys =
-      MapSet.union(MapSet.new(Map.keys(before_summary)), MapSet.new(Map.keys(after_summary)))
-
-    all_keys
-    |> Enum.map(fn {rate, type} = key ->
-      before = Map.get(before_summary, key, %{net: Decimal.new(0), vat: Decimal.new(0)})
-      after_vals = Map.get(after_summary, key, %{net: Decimal.new(0), vat: Decimal.new(0)})
-
-      %{
-        rate: rate,
-        type: type,
-        net: Decimal.sub(after_vals.net, before.net),
-        vat: Decimal.sub(after_vals.vat, before.vat)
-      }
-    end)
-    |> Enum.reject(fn summary ->
-      # Skip rates where both net and vat are zero (no change)
-      Decimal.eq?(summary.net, 0) and Decimal.eq?(summary.vat, 0)
-    end)
-    |> Enum.sort_by(&VatRate.to_numeric(&1.rate), {:desc, Decimal})
-  end
-
-  # Regular invoice VAT summary
-  defp calculate_vat_summary(%{sales_invoice_items: items}, _reference_invoice) do
-    items
-    |> Enum.group_by(fn item ->
-      {item.vat_rate, VatRate.summary_type(item.vat_rate)}
-    end)
-    |> Enum.map(fn {{rate, type}, group_items} ->
-      net = Enum.reduce(group_items, Decimal.new(0), &Decimal.add(&2, &1.net_value))
-      vat = Enum.reduce(group_items, Decimal.new(0), &Decimal.add(&2, &1.vat_value))
-
-      %{
-        rate: rate,
-        type: type,
-        net: net,
-        vat: vat
-      }
-    end)
-    |> Enum.sort_by(&VatRate.to_numeric(&1.rate), {:desc, Decimal})
-  end
-
-  # Helper to build a summary map keyed by {rate, type}
-  defp items_to_summary_map(items) do
-    items
-    |> Enum.group_by(fn item ->
-      {item.vat_rate, VatRate.summary_type(item.vat_rate)}
-    end)
-    |> Map.new(fn {{rate, type} = key, group_items} ->
-      net = Enum.reduce(group_items, Decimal.new(0), &Decimal.add(&2, &1.net_value))
-      vat = Enum.reduce(group_items, Decimal.new(0), &Decimal.add(&2, &1.vat_value))
-      {key, %{rate: rate, type: type, net: net, vat: vat}}
-    end)
-  end
 
   @doc """
   Renders the buyer identification XML fragment for FA(3) Podmiot2/Podmiot2K.
