@@ -59,6 +59,7 @@ defmodule Firmowid.Ash.Ksef.Services.SalesInvoiceParser do
          :ok <- single_sale_date(doc),
          :ok <- no_partial_payment(doc),
          :ok <- supported_annotations(doc),
+         :ok <- buyer_country_consistent(doc),
          {:ok, items, corrected_lines} <- items(doc, kind),
          :ok <- single_due_date(doc),
          :ok <- no_factoring(doc),
@@ -104,6 +105,26 @@ defmodule Firmowid.Ash.Ksef.Services.SalesInvoiceParser do
       nil -> :ok
       _settlement -> {:error, {:unsupported, "charges or deductions (Rozliczenie)"}}
     end
+  end
+
+  # Firmowid keeps one buyer country for both the tax ID and the address, and derives the tax ID
+  # kind from it, so a Polish NIP, an EU VAT number or another country's ID with an address in
+  # another country would change the buyer's identity on a correction.
+  defp buyer_country_consistent(doc) do
+    id = "/Faktura/Podmiot2/DaneIdentyfikacyjne"
+    address_country = text(doc, "/Faktura/Podmiot2/Adres/KodKraju")
+
+    id_country =
+      cond do
+        text(doc, "#{id}/NIP") -> "PL"
+        text(doc, "#{id}/NrVatUE") -> text(doc, "#{id}/KodUE")
+        text(doc, "#{id}/NrID") -> text(doc, "#{id}/KodKraju")
+        true -> nil
+      end
+
+    if is_nil(id_country) or is_nil(address_country) or id_country == address_country,
+      do: :ok,
+      else: {:error, {:unsupported, "buyer tax ID country differs from address country"}}
   end
 
   # Other parties (Podmiot3: e.g. a recipient, payer or additional buyer) would be dropped.
