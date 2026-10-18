@@ -46,7 +46,7 @@ defmodule Firmowid.Ash.Ksef.Workers.SubmissionWorkerTest do
              SalesInvoice.by_id(correction.id, scope: scope_for(admin), not_found_error?: false)
   end
 
-  test "keeps an invoice KSeF is still processing after the polling limit and checks it again later" do
+  test "keeps an invoice KSeF is still processing after the polling limit and checks it hourly" do
     admin = admin_fixture()
     invoice = submitted_invoice!(admin, %{ksef_invoice_kind: :vat})
 
@@ -56,15 +56,7 @@ defmodule Firmowid.Ash.Ksef.Workers.SubmissionWorkerTest do
       Req.Test.json(conn, %{"status" => %{"code" => 150, "description" => "Processing"}})
     end)
 
-    Oban.Testing.with_testing_mode(:manual, fn ->
-      assert {:error, _timeout} = verify!(invoice, meta: %{"snoozed" => 360})
-
-      assert_enqueued(
-        worker: SubmissionWorker,
-        args: %{"action" => "verify", "sales_invoice_id" => invoice.id},
-        scheduled_at: {DateTime.shift(DateTime.utc_now(), hour: 1), delta: 60}
-      )
-    end)
+    assert {:snooze, 3600} = verify!(invoice, meta: %{"snoozed" => 360})
 
     kept = SalesInvoice.by_id!(invoice.id, scope: scope_for(admin))
     assert kept.invoice_number == invoice.invoice_number
