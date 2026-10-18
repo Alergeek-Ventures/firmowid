@@ -13,6 +13,7 @@ defmodule Firmowid.Ash.Invoicing.Changes.VerifyImportedDocument do
   use Ash.Resource.Change
 
   alias Ash.Error.Changes.InvalidArgument
+  alias Firmowid.Ash.Currencies.NbpApiClient
   alias Firmowid.Ash.Invoicing
 
   @doc """
@@ -28,7 +29,7 @@ defmodule Firmowid.Ash.Invoicing.Changes.VerifyImportedDocument do
       invoice =
         Ash.load!(
           invoice,
-          [:gross_value, :reference_invoice, sales_invoice_items: [:vat_value]],
+          [:gross_value, :reference_invoice, sales_invoice_items: [:net_value, :vat_value]],
           opts
         )
 
@@ -83,23 +84,44 @@ defmodule Firmowid.Ash.Invoicing.Changes.VerifyImportedDocument do
 
   # Each P_14_x is its rate group's VAT rounded to the grosz; for a correction, the change
   # between the rounded groups after and before it.
-  defp check_vat_groups(invoice, reference, %{groups: groups}) do
-    if Enum.all?(groups, &Decimal.equal?(group_change(invoice, reference, &1.rates), &1.vat)),
+  defp check_vat_groups(invoice, reference, %{groups: groups, net_groups: net_groups}) do
+    vat? =
+      Enum.all?(
+        groups,
+        &Decimal.equal?(group_change(invoice, reference, &1.rates, :vat_value), &1.vat)
+      )
+
+    net? =
+      Enum.all?(
+        net_groups,
+        &Decimal.equal?(group_change(invoice, reference, &1.rates, :net_value), &1.net)
+      )
+
+    if vat? and net?,
       do: :ok,
-      else: error(:ksef_vat, "VAT w grupach stawek po przeliczeniu różni się od faktury w KSeF")
+      else:
+        error(
+          :ksef_vat,
+          "netto lub VAT w grupach stawek po przeliczeniu różni się od faktury w KSeF"
+        )
   end
 
-  # A PLN document has nothing to convert.
+  # A PLN document has nothing to convert, nor does one without PLN amounts or stated rates.
   defp check_vat_pln(%{currency: "PLN"}, _reference, _vat), do: :ok
+
+  defp check_vat_pln(invoice, reference, %{groups: groups, line_rates: line_rates}) do
+    if Enum.all?(groups, &is_nil(&1.vat_pln)) and line_rates == [],
+      do: :ok,
+      else: check_conversion(invoice, reference, groups, line_rates)
+  end
 
   # The document must convert at the NBP rate Firmowid shows: each P_14_xW is its group's VAT
   # at that rate, and any rate stated on a line is that rate.
-  defp check_vat_pln(invoice, reference, %{groups: groups, line_rates: line_rates}) do
-    case Invoicing.get_currency_rate(invoice) do
-      nil ->
-        raise "NBP exchange rate unavailable for #{invoice.currency} on #{invoice.issue_date}"
+  defp check_conversion(invoice, reference, groups, line_rates) do
+    date = Invoicing.get_currency_conversion_date(invoice.issue_date, invoice.sale_date)
 
-      %{rate: rate} ->
+    case NbpApiClient.get_exchange_rate(invoice.currency, date) do
+      {:ok, %{rate: rate}} ->
         rate = Decimal.from_float(rate)
 
         converted? =
@@ -113,23 +135,35 @@ defmodule Firmowid.Ash.Invoicing.Changes.VerifyImportedDocument do
         if converted?,
           do: :ok,
           else: error(:ksef_vat, "faktura w KSeF przelicza VAT na PLN po innym kursie niż NBP")
+
+      # NBP's table A has no rate for this currency, so Firmowid cannot show its conversion.
+      {:error, {:no_rates_found, _currency, _date}} ->
+        error(:ksef_vat, "NBP nie publikuje kursu waluty #{invoice.currency}")
+
+      {:error, reason} ->
+        raise "NBP exchange rate unavailable for #{invoice.currency} on #{date}: #{inspect(reason)}"
     end
   end
 
-  defp group_change(invoice, nil, rates), do: group_vat(invoice, rates)
+  defp group_change(invoice, nil, rates, field), do: group_sum(invoice, rates, field)
 
-  defp group_change(invoice, reference, rates), do: Decimal.sub(group_vat(invoice, rates), group_vat(reference, rates))
+  defp group_change(invoice, reference, rates, field),
+    do: Decimal.sub(group_sum(invoice, rates, field), group_sum(reference, rates, field))
 
   # A correction's P_14_xW is the difference between the converted states after and before it.
-  defp group_pln(invoice, nil, rates, rate), do: to_pln(group_vat(invoice, rates), rate)
+  defp group_pln(invoice, nil, rates, rate), do: to_pln(group_sum(invoice, rates, :vat_value), rate)
 
   defp group_pln(invoice, reference, rates, rate),
-    do: Decimal.sub(to_pln(group_vat(invoice, rates), rate), to_pln(group_vat(reference, rates), rate))
+    do:
+      Decimal.sub(
+        to_pln(group_sum(invoice, rates, :vat_value), rate),
+        to_pln(group_sum(reference, rates, :vat_value), rate)
+      )
 
-  defp group_vat(invoice, rates) do
+  defp group_sum(invoice, rates, field) do
     invoice.sales_invoice_items
     |> Enum.filter(&(&1.vat_rate in rates))
-    |> Enum.reduce(Decimal.new(0), &Decimal.add(&1.vat_value, &2))
+    |> Enum.reduce(Decimal.new(0), &Decimal.add(Map.fetch!(&1, field), &2))
     |> Decimal.round(2)
   end
 
