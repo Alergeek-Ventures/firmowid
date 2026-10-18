@@ -593,6 +593,7 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
       argument :sales_invoice_items, {:array, :map}, allow_nil?: false
       argument :corrected_invoice_ksef_number, :string
       argument :corrected_line_count, :integer
+      argument :ksef_gross_total, :decimal, allow_nil?: false
 
       change Changes.LinkCorrectedKsefInvoice
       change Changes.PrepareInvoiceItems
@@ -603,6 +604,8 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
       change Changes.SetIsCashAccount
       change {Changes.ValidateCountryCode, field: :buyer_country}
       change Changes.BindInvoiceCounterparty
+      # Last, to compare the saved invoice and its items with the KSeF document.
+      change Changes.VerifyImportedDocument
 
       validate Validations.CompleteInvoice
 

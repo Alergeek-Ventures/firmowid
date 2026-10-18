@@ -7,8 +7,9 @@ defmodule Firmowid.Ash.Ksef.Services.SalesInvoiceParser do
   VAT and KOR, gross-only lines, VAT rates outside `VatRate`, and corrections listing
   only differences instead of the state before and after.
 
-  A correction also reports how many lines it lists before the correction, so the
-  import can reject one that lists only some lines of the corrected invoice.
+  It also reports the document's gross total (`P_15`, for a correction the change it
+  makes) and, for a correction, how many lines it lists before the correction, so the
+  import can reject a document whose recalculated amounts or lines do not match it.
   """
 
   import SweetXml
@@ -32,8 +33,8 @@ defmodule Firmowid.Ash.Ksef.Services.SalesInvoiceParser do
 
   @doc """
   Parses FA(3) XML into attributes for `SalesInvoice.import_from_ksef`, including
-  `:sales_invoice_items` and, for a correction, `:corrected_invoice_ksef_number` and
-  `:corrected_line_count`.
+  `:sales_invoice_items`, `:ksef_gross_total` and, for a correction,
+  `:corrected_invoice_ksef_number` and `:corrected_line_count`.
   """
   @spec parse(binary()) :: {:ok, map()} | {:error, {:unsupported, String.t()} | term()}
   def parse(xml) when is_binary(xml) do
@@ -64,6 +65,7 @@ defmodule Firmowid.Ash.Ksef.Services.SalesInvoiceParser do
          correction_reason: text(doc, "/Faktura/Fa/PrzyczynaKorekty"),
          corrected_invoice_ksef_number: text(doc, "/Faktura/Fa/DaneFaKorygowanej/NrKSeFFaKorygowanej"),
          corrected_line_count: corrected_line_count,
+         ksef_gross_total: Decimal.new(text(doc, "/Faktura/Fa/P_15")),
          sales_invoice_items: items
        })}
     end
@@ -196,6 +198,9 @@ defmodule Firmowid.Ash.Ksef.Services.SalesInvoiceParser do
       is_nil(row.unit_price) and is_nil(row.net_value) ->
         {:error, {:unsupported, "line without a net price"}}
 
+      is_nil(unit_price(row, quantity)) ->
+        {:error, {:unsupported, "line net value not divisible by its quantity"}}
+
       true ->
         {:ok,
          %{
@@ -210,14 +215,19 @@ defmodule Firmowid.Ash.Ksef.Services.SalesInvoiceParser do
   end
 
   # The line's net value (P_11) already accounts for a discount (P_10) the unit price leaves out.
+  # A unit price that does not multiply back to it exactly would shift the totals, so it is nil.
   defp unit_price(%{net_value: nil, unit_price: unit_price}, _quantity), do: Decimal.new(unit_price)
 
   defp unit_price(%{net_value: net_value, unit_price: unit_price}, quantity) do
     net_value = Decimal.new(net_value)
+    multiplies_back? = &Decimal.equal?(Decimal.mult(&1, quantity), net_value)
 
-    if unit_price && Decimal.equal?(Decimal.mult(Decimal.new(unit_price), quantity), net_value),
-      do: Decimal.new(unit_price),
-      else: Decimal.div(net_value, quantity)
+    cond do
+      unit_price && multiplies_back?.(Decimal.new(unit_price)) -> Decimal.new(unit_price)
+      Decimal.eq?(quantity, 0) -> nil
+      multiplies_back?.(Decimal.div(net_value, quantity)) -> Decimal.div(net_value, quantity)
+      true -> nil
+    end
   end
 
   defp payment_method(nil), do: {:ok, nil}
