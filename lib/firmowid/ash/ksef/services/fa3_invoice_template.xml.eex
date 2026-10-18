@@ -51,18 +51,22 @@
 				<% summary.rate in ["23", "22"] -> %>
 					<P_13_1><%= T.format_decimal(summary.net) %></P_13_1>
 					<P_14_1><%= T.format_decimal(summary.vat) %></P_14_1>
+					<%= if summary[:vat_pln] do %><P_14_1W><%= T.format_decimal(summary.vat_pln) %></P_14_1W><% end %>
 				<%!-- Reduced rate 1: 8% / 7% --%>
 				<% summary.rate in ["8", "7"] -> %>
 					<P_13_2><%= T.format_decimal(summary.net) %></P_13_2>
 					<P_14_2><%= T.format_decimal(summary.vat) %></P_14_2>
+					<%= if summary[:vat_pln] do %><P_14_2W><%= T.format_decimal(summary.vat_pln) %></P_14_2W><% end %>
 				<%!-- Reduced rate 2: 5% --%>
 				<% summary.rate == "5" -> %>
 					<P_13_3><%= T.format_decimal(summary.net) %></P_13_3>
 					<P_14_3><%= T.format_decimal(summary.vat) %></P_14_3>
+					<%= if summary[:vat_pln] do %><P_14_3W><%= T.format_decimal(summary.vat_pln) %></P_14_3W><% end %>
 				<%!-- Taxi flat rate: 4% --%>
 				<% summary.rate == "4" -> %>
 					<P_13_4><%= T.format_decimal(summary.net) %></P_13_4>
 					<P_14_4><%= T.format_decimal(summary.vat) %></P_14_4>
+					<%= if summary[:vat_pln] do %><P_14_4W><%= T.format_decimal(summary.vat_pln) %></P_14_4W><% end %>
 				<%!-- Special procedure (dział XII rozdział 6a): 3% --%>
 				<% summary.rate == "3" -> %>
 					<P_13_5><%= T.format_decimal(summary.net) %></P_13_5>

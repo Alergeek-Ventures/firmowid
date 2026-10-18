@@ -169,6 +169,29 @@ defmodule Firmowid.Ash.Ksef.Services.InvoiceRendererTest do
   # Correction Invoices (KOR)
   # ---------------------------------------------------------------------------
 
+  describe "render_fa3/1 - foreign currency VAT in PLN" do
+    # The NBP test stub returns a rate of 4.00.
+    test "converts a foreign-currency invoice's VAT and a correction's change to PLN", %{
+      model: model,
+      org_id: org_id
+    } do
+      original =
+        [org_id: org_id]
+        |> build_domestic_invoice()
+        |> Ash.Seed.update!(%{currency: "EUR"})
+        |> simulate_ksef_submission(with_ksef_number: true)
+
+      xml = original |> InvoiceRenderer.render_fa3() |> IO.iodata_to_binary()
+      assert xml =~ "<P_14_1W>92.00</P_14_1W>"
+      assert :ok = validate_xml(xml, model)
+
+      correction = build_correction_invoice(original)
+      xml = correction |> InvoiceRenderer.render_fa3() |> IO.iodata_to_binary()
+      assert xml =~ "<P_14_1W>-184.00</P_14_1W>"
+      assert :ok = validate_xml(xml, model)
+    end
+  end
+
   describe "render_fa3/1 - correction invoices" do
     test "KOR invoice with KSeF number passes XSD validation", %{model: model, org_id: org_id} do
       original =
