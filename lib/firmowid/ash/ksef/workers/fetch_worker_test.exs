@@ -2,10 +2,12 @@ defmodule Firmowid.Ash.Ksef.Workers.FetchWorkerTest do
   @moduledoc false
   use Firmowid.DataCase, async: false
 
+  import ExUnit.CaptureLog
   import Firmowid.AccountsFixtures
   import Firmowid.Test.Support.OpenAIEnrichmentTestHelpers
 
   alias Firmowid.Ash.Invoicing.CostInvoice
+  alias Firmowid.Ash.Invoicing.SalesInvoice
   alias Firmowid.Ash.Ksef.Services.Encryption
   alias Firmowid.Ash.Ksef.Workers.FetchWorker
   alias Firmowid.Ash.Scope
@@ -164,9 +166,97 @@ defmodule Firmowid.Ash.Ksef.Workers.FetchWorkerTest do
     assert Decimal.equal?(Money.to_decimal(imported_invoice.amount), Decimal.new("-75.50"))
   end
 
+  test "imports sales invoices issued outside Firmowid and skips its own", %{
+    organization_id: organization_id
+  } do
+    suffix = System.unique_integer([:positive])
+    storage_date = "2026-03-08T09:00:00Z"
+    encryption_data = Encryption.generate_encryption_data()
+
+    confirmed =
+      seed_sales_invoice!(organization_id, "FV/OWN/#{suffix}", ksef_number: "KSEF-OWN-#{suffix}")
+
+    pending =
+      seed_sales_invoice!(organization_id, "FV/PENDING/#{suffix}", locked_at: DateTime.utc_now())
+
+    package = [
+      %{ksef_number: confirmed.ksef_number, number: confirmed.invoice_number, kind: "VAT"},
+      %{ksef_number: "KSEF-PENDING-#{suffix}", number: pending.invoice_number, kind: "VAT"},
+      %{ksef_number: "KSEF-OTHER-#{suffix}", number: "OTHER/#{suffix}", kind: "VAT"},
+      %{ksef_number: "KSEF-ADVANCE-#{suffix}", number: "ZAL/#{suffix}", kind: "ZAL"}
+    ]
+
+    {zip_binary, encrypted_package} =
+      package
+      |> Enum.map(fn invoice ->
+        %{
+          ksef_number: invoice.ksef_number,
+          xml: sales_invoice_xml(invoice.number, invoice.kind),
+          permanent_storage_date: storage_date
+        }
+      end)
+      |> build_encrypted_package(encryption_data)
+
+    part = package_part(zip_binary, encrypted_package, "https://ksef.example/downloads/package-3")
+
+    Req.Test.stub(:ksef_api, fn conn ->
+      case conn.request_path do
+        "/invoices/exports/export-ref-3" ->
+          Req.Test.json(conn, %{
+            "status" => %{"code" => 200},
+            "package" => %{"parts" => [part], "isTruncated" => false}
+          })
+
+        "/downloads/package-3" ->
+          Plug.Conn.send_resp(conn, 200, encrypted_package)
+
+        _ ->
+          Plug.Conn.send_resp(conn, 404, "unexpected request: #{conn.request_path}")
+      end
+    end)
+
+    args =
+      organization_id
+      |> poll_export_args(encryption_data, "export-ref-3")
+      |> Map.put("subject_type", "Subject1")
+
+    capture_log(fn -> assert :ok = perform_job(FetchWorker, args) end)
+
+    invoices =
+      SalesInvoice
+      |> Ash.Query.load(:sales_invoice_items)
+      |> then(&SalesInvoice.list!(scope: sales_invoice_scope(organization_id), query: &1))
+      |> Map.new(&{&1.invoice_number, &1})
+
+    assert map_size(invoices) == 3
+
+    assert invoices[confirmed.invoice_number].ksef_permanent_storage_date ==
+             ~N[2026-03-08 09:00:00]
+
+    assert is_nil(invoices[pending.invoice_number].ksef_number)
+
+    imported = invoices["OTHER/#{suffix}"]
+    assert imported.ksef_number == "KSEF-OTHER-#{suffix}"
+    assert imported.issue_date == ~D[2026-03-06]
+    assert imported.seller_display_name == "Other Software Seller"
+    assert imported.buyer_full_name == "Kupiec Sp. z o.o."
+
+    assert [%{name: "Usługa", unit_price: unit_price, vat_rate: "23"}] =
+             imported.sales_invoice_items
+
+    assert Decimal.equal?(unit_price, Decimal.new("100.00"))
+  end
+
   defp ksef_scope(organization_id) do
     %Scope{
       actor: %SystemActor{org_id: organization_id, role: :ksef_session},
+      tenant: organization_id
+    }
+  end
+
+  defp sales_invoice_scope(organization_id) do
+    %Scope{
+      actor: %SystemActor{org_id: organization_id, role: :sales_invoice_processor},
       tenant: organization_id
     }
   end
@@ -288,6 +378,77 @@ defmodule Firmowid.Ash.Ksef.Workers.FetchWorkerTest do
           <P_8B>1</P_8B>
           <P_9A>#{total_amount}</P_9A>
         </FaWiersz>
+      </Fa>
+    </Faktura>
+    """
+  end
+
+  defp seed_sales_invoice!(organization_id, invoice_number, attrs) do
+    Ash.Seed.seed!(
+      SalesInvoice,
+      Map.merge(
+        %{
+          invoice_number: invoice_number,
+          issue_date: ~D[2026-03-06],
+          currency: "PLN",
+          buyer_full_name: "Kupiec Sp. z o.o.",
+          organization_id: organization_id
+        },
+        Map.new(attrs)
+      )
+    )
+  end
+
+  defp sales_invoice_xml(invoice_number, kind) do
+    """
+    <?xml version="1.0" encoding="utf-8"?>
+    <Faktura xmlns="http://crd.gov.pl/wzor/2025/06/25/13775/">
+      <Podmiot1>
+        <DaneIdentyfikacyjne>
+          <NIP>7191575524</NIP>
+          <Nazwa>Other Software Seller</Nazwa>
+        </DaneIdentyfikacyjne>
+        <Adres>
+          <KodKraju>PL</KodKraju>
+          <AdresL1>ul. Mockowana 10, 00-100 Warszawa</AdresL1>
+        </Adres>
+      </Podmiot1>
+      <Podmiot2>
+        <DaneIdentyfikacyjne>
+          <NIP>5260250274</NIP>
+          <Nazwa>Kupiec Sp. z o.o.</Nazwa>
+        </DaneIdentyfikacyjne>
+        <Adres>
+          <KodKraju>PL</KodKraju>
+          <AdresL1>ul. Kupiecka 2, 00-002 Kraków</AdresL1>
+        </Adres>
+      </Podmiot2>
+      <Fa>
+        <KodWaluty>PLN</KodWaluty>
+        <P_1>2026-03-06</P_1>
+        <P_2>#{invoice_number}</P_2>
+        <P_13_1>100.00</P_13_1>
+        <P_14_1>23.00</P_14_1>
+        <P_15>123.00</P_15>
+        <RodzajFaktury>#{kind}</RodzajFaktury>
+        <FaWiersz>
+          <NrWierszaFa>1</NrWierszaFa>
+          <P_7>Usługa</P_7>
+          <P_8A>szt.</P_8A>
+          <P_8B>1</P_8B>
+          <P_9A>100.00</P_9A>
+          <P_11>100.00</P_11>
+          <P_12>23</P_12>
+        </FaWiersz>
+        <Platnosc>
+          <TerminPlatnosci>
+            <Termin>2026-03-20</Termin>
+          </TerminPlatnosci>
+          <FormaPlatnosci>6</FormaPlatnosci>
+          <RachunekBankowy>
+            <NrRB>12345678901234567890123456</NrRB>
+          </RachunekBankowy>
+        </Platnosc>
       </Fa>
     </Faktura>
     """

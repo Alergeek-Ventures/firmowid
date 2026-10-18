@@ -120,7 +120,7 @@ defmodule Firmowid.Ash.Ksef.Workers.SessionWorker do
          {:ok, _job} <- schedule_reauthentication(refresh_token, organization_id),
          {:ok, _credential} <- Credential.mark_working(credential, scope: scope) do
       if status == :authenticating do
-        Ksef.fetch_cost_invoices(DateTime.shift(DateTime.utc_now(), day: -30), scope)
+        Ksef.fetch_invoices(DateTime.shift(DateTime.utc_now(), day: -30), scope)
       end
 
       :ok

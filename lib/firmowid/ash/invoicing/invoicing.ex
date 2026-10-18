@@ -189,6 +189,7 @@ defmodule Firmowid.Ash.Invoicing do
       define :draft_sales_invoice, action: :draft
       define :issue_sales_invoice, action: :issue
       define :correct_sales_invoice, action: :correct
+      define :import_sales_invoice_from_ksef, action: :import_from_ksef
       define :revise_sales_invoice_draft, action: :revise
       define :finalize_sales_invoice_draft, action: :finalize
       define :preview_sales_invoice, action: :preview_invoice
@@ -622,23 +623,27 @@ defmodule Firmowid.Ash.Invoicing do
   end
 
   @doc """
-  Returns the most recent KSeF permanent storage date across all cost invoices
-  for the given organization, or `nil` if none exist.
+  Returns the most recent KSeF permanent storage date across the organization's cost
+  or sales invoices, or `nil` if none exist.
   """
-  @spec last_ksef_permanent_storage_date(Ash.UUID.t()) :: NaiveDateTime.t() | nil
-  def last_ksef_permanent_storage_date(org_id) do
-    actor = %SystemActor{org_id: org_id, role: :ksef_session}
+  @spec last_ksef_permanent_storage_date(CostInvoice | SalesInvoice, Ash.UUID.t()) ::
+          NaiveDateTime.t() | nil
+  def last_ksef_permanent_storage_date(resource, org_id) do
+    actor = %SystemActor{org_id: org_id, role: ksef_import_role(resource)}
     scope = %Scope{actor: actor, tenant: org_id}
 
     %{last_date: date} =
       Ash.aggregate!(
-        CostInvoice,
+        resource,
         {:last_date, :max, field: :ksef_permanent_storage_date},
         scope: scope
       )
 
     date
   end
+
+  defp ksef_import_role(CostInvoice), do: :ksef_session
+  defp ksef_import_role(SalesInvoice), do: :sales_invoice_processor
 
   @doc """
   Creates a cost invoice from extracted metadata (AI or KSeF parser).
