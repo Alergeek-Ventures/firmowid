@@ -275,6 +275,10 @@ defmodule Firmowid.Ash.Ksef.Workers.FetchWorkerTest do
        )},
       # A charge (Rozliczenie) makes the amount due differ from P_15.
       {"KSEF-SETTLEMENT-#{suffix}", sales_invoice_xml("ROZL/#{suffix}", settlement: true)},
+      {"KSEF-PARTPAID-#{suffix}", sales_invoice_xml("PAID/#{suffix}", partially_paid: true)},
+      # At the NBP test rate of 4.00, 23.00 EUR of VAT is 92.00 PLN, not 99.00.
+      {"KSEF-EURVAT-#{suffix}", sales_invoice_xml("EUR/#{suffix}", currency: "EUR", vat_pln: "99.00")},
+      {"KSEF-EUR-#{suffix}", sales_invoice_xml("EUROK/#{suffix}", currency: "EUR", vat_pln: "92.00")},
       {"KSEF-TIE-#{suffix}",
        sales_invoice_xml("TIE/#{suffix}",
          kind: "KOR",
@@ -295,7 +299,7 @@ defmodule Firmowid.Ash.Ksef.Workers.FetchWorkerTest do
       %{
         ksef_number: ksef_number,
         xml: xml,
-        permanent_storage_date: "2026-03-08T09:0#{second}:00Z"
+        permanent_storage_date: "2026-03-08T09:00:#{String.pad_leading("#{second}", 2, "0")}Z"
       }
     end)
     |> import_sales_package!(organization_id)
@@ -303,6 +307,8 @@ defmodule Firmowid.Ash.Ksef.Workers.FetchWorkerTest do
     |> then(
       &assert &1 ==
                 Enum.sort([
+                  "KSEF-PARTPAID-#{suffix}",
+                  "KSEF-EURVAT-#{suffix}",
                   "KSEF-SETTLEMENT-#{suffix}",
                   "KSEF-TIE-#{suffix}",
                   "KSEF-PARTIAL-#{suffix}",
@@ -320,7 +326,13 @@ defmodule Firmowid.Ash.Ksef.Workers.FetchWorkerTest do
       |> Map.new(&{&1.invoice_number, &1})
 
     assert invoices |> Map.keys() |> Enum.sort() ==
-             Enum.sort(["FV/#{suffix}", "RAB/#{suffix}", "KOR1/#{suffix}", "KOR2/#{suffix}"])
+             Enum.sort([
+               "FV/#{suffix}",
+               "RAB/#{suffix}",
+               "KOR1/#{suffix}",
+               "KOR2/#{suffix}",
+               "EUROK/#{suffix}"
+             ])
 
     assert Decimal.equal?(invoices["RAB/#{suffix}"].gross_value, Decimal.new("110.70"))
 
@@ -444,12 +456,13 @@ defmodule Firmowid.Ash.Ksef.Workers.FetchWorkerTest do
         </Adres>
       </Podmiot1>
       <Fa>
-        <KodWaluty>PLN</KodWaluty>
+        <KodWaluty>#{Keyword.get(opts, :currency, "PLN")}</KodWaluty>
         <P_1>2026-03-06</P_1>
         <P_2>#{invoice_identifier}</P_2>
         <P_15>#{total_amount}</P_15>
         <RodzajFaktury>VAT</RodzajFaktury>
         <Platnosc>
+          #{if opts[:partially_paid], do: "<ZnacznikZaplatyCzesciowej>1</ZnacznikZaplatyCzesciowej><ZaplataCzesciowa><KwotaZaplatyCzesciowej>50.00</KwotaZaplatyCzesciowej><DataZaplatyCzesciowej>2026-03-06</DataZaplatyCzesciowej></ZaplataCzesciowa>"}
           <FormaPlatnosci>6</FormaPlatnosci>
           <TerminPlatnosci>
             <Termin>2026-03-20</Termin>
@@ -591,9 +604,10 @@ defmodule Firmowid.Ash.Ksef.Workers.FetchWorkerTest do
         </Adres>
       </Podmiot2>
       <Fa>
-        <KodWaluty>PLN</KodWaluty>
+        <KodWaluty>#{Keyword.get(opts, :currency, "PLN")}</KodWaluty>
         <P_1>2026-03-06</P_1>
         <P_2>#{invoice_number}</P_2>
+        #{if vat_pln = opts[:vat_pln], do: "<P_14_1W>#{vat_pln}</P_14_1W>"}
         <P_15>#{gross_total}</P_15>
         <RodzajFaktury>#{kind}</RodzajFaktury>
         #{if kind == "KOR", do: "<DaneFaKorygowanej><DataWystFaKorygowanej>2026-03-06</DataWystFaKorygowanej><NrFaKorygowanej>X</NrFaKorygowanej>#{corrected}</DaneFaKorygowanej>"}
@@ -603,6 +617,7 @@ defmodule Firmowid.Ash.Ksef.Workers.FetchWorkerTest do
           <TerminPlatnosci>
             <Termin>2026-03-20</Termin>
           </TerminPlatnosci>
+          #{if opts[:partially_paid], do: "<ZnacznikZaplatyCzesciowej>1</ZnacznikZaplatyCzesciowej><ZaplataCzesciowa><KwotaZaplatyCzesciowej>50.00</KwotaZaplatyCzesciowej><DataZaplatyCzesciowej>2026-03-06</DataZaplatyCzesciowej></ZaplataCzesciowa>"}
           <FormaPlatnosci>6</FormaPlatnosci>
           <RachunekBankowy>
             <NrRB>12345678901234567890123456</NrRB>

@@ -4,7 +4,7 @@ defmodule Firmowid.Ash.Ksef.Services.SalesInvoiceParser do
 
   It reads the elements `InvoiceRenderer` writes. A document the sales invoice cannot
   represent is rejected with `{:error, {:unsupported, reason}}`: invoice kinds other than
-  VAT and KOR, charges or deductions changing the amount due, a sale period or per-line
+  VAT and KOR, charges or deductions or a partial payment changing the amount due, a sale period or per-line
   sale dates instead of one sale date, gross-only lines, VAT rates
   outside `VatRate`, and corrections listing only differences instead of the state
   before and after.
@@ -45,6 +45,7 @@ defmodule Firmowid.Ash.Ksef.Services.SalesInvoiceParser do
     with {:ok, kind} <- invoice_kind(text(doc, "/Faktura/Fa/RodzajFaktury")),
          :ok <- no_settlement(doc),
          :ok <- single_sale_date(doc),
+         :ok <- no_partial_payment(doc),
          {:ok, items, corrected_line_count} <- items(doc, kind),
          {:ok, payment_method} <- payment_method(text(doc, "/Faktura/Fa/Platnosc/FormaPlatnosci")) do
       issue_date = date(text(doc, "/Faktura/Fa/P_1"))
@@ -56,7 +57,7 @@ defmodule Firmowid.Ash.Ksef.Services.SalesInvoiceParser do
        |> Map.merge(exemption(doc))
        |> Map.merge(%{
          ksef_invoice_kind: kind,
-         invoice_type: invoice_type(doc),
+         invoice_type: invoice_type(doc, items),
          invoice_number: text(doc, "/Faktura/Fa/P_2"),
          currency: text(doc, "/Faktura/Fa/KodWaluty"),
          issue_date: issue_date,
@@ -70,6 +71,7 @@ defmodule Firmowid.Ash.Ksef.Services.SalesInvoiceParser do
          corrected_invoice_ksef_number: text(doc, "/Faktura/Fa/DaneFaKorygowanej/NrKSeFFaKorygowanej"),
          corrected_line_count: corrected_line_count,
          ksef_gross_total: Decimal.new(text(doc, "/Faktura/Fa/P_15")),
+         ksef_vat_pln: vat_pln(doc),
          sales_invoice_items: items
        })}
     end
@@ -99,6 +101,13 @@ defmodule Firmowid.Ash.Ksef.Services.SalesInvoiceParser do
       true ->
         :ok
     end
+  end
+
+  # Firmowid shows the whole amount as due, which a partially paid document does not owe.
+  defp no_partial_payment(doc) do
+    if text(doc, "/Faktura/Fa/Platnosc/ZnacznikZaplatyCzesciowej") == "1",
+      do: {:error, {:unsupported, "partial payment (ZaplataCzesciowa)"}},
+      else: :ok
   end
 
   defp invoice_kind("VAT"), do: {:ok, :vat}
@@ -150,8 +159,27 @@ defmodule Firmowid.Ash.Ksef.Services.SalesInvoiceParser do
     })
   end
 
-  defp invoice_type(doc) do
-    if text(doc, "/Faktura/Podmiot2/Adres/KodKraju") in [nil, "PL"], do: :poland, else: :foreign
+  # The foreign template shows VAT as not applicable, so it only fits a document without any.
+  defp invoice_type(doc, items) do
+    taxed? = Enum.any?(items, &Decimal.gt?(VatRate.to_numeric(&1.vat_rate), 0))
+
+    if taxed? or text(doc, "/Faktura/Podmiot2/Adres/KodKraju") in [nil, "PL"],
+      do: :poland,
+      else: :foreign
+  end
+
+  # VAT converted to PLN (P_14_xW) for a foreign-currency document, with how many amounts were rounded.
+  defp vat_pln(doc) do
+    case Enum.flat_map(1..4, &List.wrap(text(doc, "/Faktura/Fa/P_14_#{&1}W"))) do
+      [] ->
+        nil
+
+      amounts ->
+        %{
+          total: amounts |> Enum.map(&Decimal.new/1) |> Enum.reduce(&Decimal.add/2),
+          count: length(amounts)
+        }
+    end
   end
 
   defp exemption(doc) do

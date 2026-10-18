@@ -594,6 +594,7 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
       argument :corrected_invoice_ksef_number, :string
       argument :corrected_line_count, :integer
       argument :ksef_gross_total, :decimal, allow_nil?: false
+      argument :ksef_vat_pln, :map
 
       change Changes.LinkCorrectedKsefInvoice
       # The document's own VAT rates are kept, so no reverse-charge normalization here.
