@@ -531,6 +531,15 @@ defmodule Firmowid.Ash.Ksef.Workers.FetchWorkerTest do
     do: skipped |> Enum.map(& &1.ksef_number) |> Enum.sort()
 
   # Lines are {name, unit price, before?} or {name, unit price, net value, before?}, one unit each at 23% VAT.
+  defp group_vat(lines) do
+    lines
+    |> Enum.map(fn {_name, _price, net, _before?} ->
+      Decimal.mult(Decimal.new(net), Decimal.new("0.23"))
+    end)
+    |> Enum.reduce(Decimal.new(0), &Decimal.add/2)
+    |> Decimal.round(2)
+  end
+
   defp sales_invoice_xml(invoice_number, opts) do
     kind = Keyword.get(opts, :kind, "VAT")
     lines = Keyword.get(opts, :lines, [{"Usługa", "100.00", false}])
@@ -540,6 +549,13 @@ defmodule Firmowid.Ash.Ksef.Workers.FetchWorkerTest do
         {name, price, before?} -> {name, price, price, before?}
         line -> line
       end)
+
+    # P_14_1 is the 23% group's VAT rounded to the grosz; for a correction, the change between
+    # the rounded groups after and before it.
+    vat_total =
+      lines
+      |> Enum.split_with(fn {_name, _price, _net, before?} -> before? end)
+      |> then(fn {before, after_} -> Decimal.sub(group_vat(after_), group_vat(before)) end)
 
     # P_15 of a correction is the change it makes.
     gross_total =
@@ -607,7 +623,8 @@ defmodule Firmowid.Ash.Ksef.Workers.FetchWorkerTest do
         <KodWaluty>#{Keyword.get(opts, :currency, "PLN")}</KodWaluty>
         <P_1>2026-03-06</P_1>
         <P_2>#{invoice_number}</P_2>
-        #{if vat_pln = opts[:vat_pln], do: "<P_13_1>100.00</P_13_1><P_14_1>23.00</P_14_1><P_14_1W>#{vat_pln}</P_14_1W>"}
+        <P_14_1>#{vat_total}</P_14_1>
+        #{if vat_pln = opts[:vat_pln], do: "<P_14_1W>#{vat_pln}</P_14_1W>"}
         <P_15>#{gross_total}</P_15>
         <RodzajFaktury>#{kind}</RodzajFaktury>
         #{if kind == "KOR", do: "<DaneFaKorygowanej><DataWystFaKorygowanej>2026-03-06</DataWystFaKorygowanej><NrFaKorygowanej>X</NrFaKorygowanej>#{corrected}</DaneFaKorygowanej>"}

@@ -197,8 +197,10 @@ defmodule Firmowid.Ash.Ksef.Services.SalesInvoiceParser do
   # currency, and the exchange rates stated on lines (KursWaluty).
   defp vat_groups(doc) do
     groups =
-      for {group, rates} <- @vat_groups, vat = text(doc, "/Faktura/Fa/P_14_#{group}") do
+      for {group, rates} <- @vat_groups do
         vat_pln = text(doc, "/Faktura/Fa/P_14_#{group}W")
+        # An omitted group carries no VAT.
+        vat = text(doc, "/Faktura/Fa/P_14_#{group}") || "0"
         %{rates: rates, vat: Decimal.new(vat), vat_pln: vat_pln && Decimal.new(vat_pln)}
       end
 
