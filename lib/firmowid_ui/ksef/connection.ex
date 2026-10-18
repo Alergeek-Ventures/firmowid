@@ -7,6 +7,7 @@ defmodule FirmowidUI.Ksef.Connection do
   alias Ash.Error.Forbidden
   alias Ash.Error.Invalid
   alias Ash.Notifier.Notification
+  alias Firmowid.Analytics
   alias Firmowid.Ash.Ksef
   alias Firmowid.Ash.Ksef.Credential
   alias Firmowid.Ash.Scope
@@ -183,7 +184,13 @@ defmodule FirmowidUI.Ksef.Connection do
   end
 
   defp do_handle_event("fetch_ksef_invoices", _params, socket, scope) do
-    if Ksef.fetching_invoices?(scope) do
+    fetching? = Ksef.fetching_invoices?(scope)
+
+    Analytics.capture_business_event(:ksef_fetch_requested, scope.actor.id, scope.tenant, %{
+      already_fetching: fetching?
+    })
+
+    if fetching? do
       {:noreply, assign(socket, :ksef_fetching?, true)}
     else
       :ok = Ksef.fetch_new_invoices(scope)

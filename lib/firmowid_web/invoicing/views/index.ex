@@ -26,6 +26,7 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
   alias Firmowid.Ash.Ksef
   alias FirmowidWeb.Core.Endpoint
   alias FirmowidWeb.Infrastructure.Components.BlobProcessingToasts
+  alias FirmowidWeb.Infrastructure.Utilities.PosthogBusinessEvents
   alias FirmowidWeb.Invoicing.Utilities.Navigation
   alias FirmowidWeb.Invoicing.Utilities.QueryCodec
   alias Phoenix.Socket.Broadcast
@@ -244,6 +245,7 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
       <div
         :if={@skipped_ksef_sales_invoices != []}
         id="skipped-ksef-sales-invoices"
+        phx-hook="KsefSkippedInvoicesBanner"
         class="flex gap-3 rounded-md bg-orange-100 p-4 text-sm text-orange-800"
       >
         <Lucideicons.triangle_alert class="size-5 shrink-0 text-orange-600" />
@@ -332,6 +334,17 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
   defp parse_subfilter_value(subfilter_string), do: QueryCodec.parse_subfilter(subfilter_string)
 
   @impl true
+  def handle_event("skipped-ksef-sales-invoices-viewed", _params, socket) do
+    if can_view_invoicing?(socket.assigns.current_user) and
+         socket.assigns.skipped_ksef_sales_invoices != [] do
+      PosthogBusinessEvents.capture(socket, :ksef_skipped_sales_invoices_banner_viewed, %{
+        skipped_invoice_count: length(socket.assigns.skipped_ksef_sales_invoices)
+      })
+    end
+
+    {:noreply, socket}
+  end
+
   def handle_event("change-month", %{"month" => month}, socket) do
     month = Date.from_iso8601!(month)
 

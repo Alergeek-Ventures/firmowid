@@ -97,6 +97,11 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
         can_manage_counterparties?(socket.assigns.current_user)
       )
 
+    socket =
+      if connected?(socket),
+        do: PosthogBusinessEvents.capture(socket, :sales_invoice_creator_opened),
+        else: socket
+
     {:ok, socket}
   end
 

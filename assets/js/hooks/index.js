@@ -19,6 +19,7 @@ import { DownloadPdf } from "./download_pdf";
 import { LandingNavbarTheme } from "./landing_navbar_theme";
 import { NumberPopIn } from "./number_pop_in";
 import { ImageLoadReveal } from "./image_load_reveal";
+import { KsefSkippedInvoicesBanner } from "./ksef_skipped_invoices_banner";
 
 export const Hooks = {
   ...UIHooks,
@@ -42,5 +43,6 @@ export const Hooks = {
   DownloadPdf,
   LandingNavbarTheme,
   NumberPopIn,
-  ImageLoadReveal
+  ImageLoadReveal,
+  KsefSkippedInvoicesBanner
 };
