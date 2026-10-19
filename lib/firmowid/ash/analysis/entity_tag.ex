@@ -365,12 +365,9 @@ defmodule Firmowid.Ash.Analysis.EntityTag do
       __MODULE__.destroy(query, %{},
         scope: scope,
         context: %{data_layer: %{table: table}},
-        bulk_options: [
-          strategy: :stream,
-          return_errors?: true,
-          return_records?: true,
-          stop_on_error?: true
-        ]
+        # The query interface sets `return_records?` from this option, overriding bulk options.
+        return_destroyed?: true,
+        bulk_options: [strategy: :stream, return_errors?: true, stop_on_error?: true]
       )
 
     case result do
