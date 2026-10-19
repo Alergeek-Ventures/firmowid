@@ -24,9 +24,10 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
 
   @impl true
   def mount(_params, _session, socket) do
-    if flag_enabled?(:analysis_dashboard, socket.assigns) do
-      scope = socket.assigns.ash_scope
+    scope = socket.assigns.ash_scope
 
+    # Employees cannot read the invoices and transactions the dashboard aggregates.
+    if flag_enabled?(:analysis_dashboard, socket.assigns) and scope.actor.role != :employee do
       if connected?(socket) do
         Phoenix.PubSub.subscribe(Firmowid.PubSub, "analysis-classification:#{scope.tenant}")
       end
