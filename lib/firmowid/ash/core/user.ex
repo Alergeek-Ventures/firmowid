@@ -360,6 +360,8 @@ defmodule Firmowid.Ash.Core.User do
     update :update_role do
       description "Update a user's organization role."
       accept [:role]
+
+      change Firmowid.Ash.Core.User.Changes.DisconnectLiveSessions
     end
 
     update :set_organization do
