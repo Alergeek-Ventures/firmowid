@@ -37,18 +37,10 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
 
       tag_definitions = TagDefinition.list_tag_definitions!(scope: scope)
 
-      categories =
-        %{status: :active}
-        |> Project.list!(load: [:tag_definition], scope: scope)
-        |> Enum.map(& &1.tag_definition)
-        |> Enum.reject(&is_nil/1)
-        |> Enum.sort_by(& &1.name)
-
       socket =
         socket
         |> assign(:active_months, active_months)
         |> assign(:tag_definitions, tag_definitions)
-        |> assign(:categories, categories)
         |> assign(:category_colors, category_colors(tag_definitions))
         |> assign(:expanded_section, :income)
 
@@ -64,9 +56,17 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
 
     tag_filters = Navigation.parse_tag_filters(params, socket.assigns.tag_definitions)
 
+    categories =
+      %{active_from: month, active_to: Date.end_of_month(month)}
+      |> Project.list!(load: [:tag_definition], scope: socket.assigns.ash_scope)
+      |> Enum.map(& &1.tag_definition)
+      |> Enum.reject(&is_nil/1)
+      |> Enum.sort_by(& &1.name)
+
     socket =
       socket
       |> assign(:params, %{month: month})
+      |> assign(:categories, categories)
       |> assign(:tag_filters, tag_filters)
       |> assign(:expanded_section, :income)
       |> load_data()
@@ -77,10 +77,6 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
   @impl true
   def handle_event(event, params, socket)
       when event in ["set-entity-category", "clear-entity-tags", "toggle-project-tag"] do
-    allowed =
-      flag_enabled?(:analysis_dashboard, socket.assigns) and
-        socket.assigns.ash_scope.actor.role in [:admin, :accountant]
-
     row =
       Enum.find(
         socket.assigns.sales_invoices ++
@@ -91,7 +87,7 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
         end
       )
 
-    if allowed and row != nil and category_editable?(row) do
+    if can_write?(socket.assigns) and row != nil and category_editable?(row) do
       case change_category(event, params, row, socket) do
         {:ok, _} ->
           {:noreply, load_data(socket)}
@@ -114,6 +110,23 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
 
       {:error, _reason} ->
         {:noreply, put_flash(socket, :error, gettext("Assignment is currently unavailable."))}
+    end
+  end
+
+  @impl true
+  def handle_event("clear-month-tags", _params, socket) do
+    if can_write?(socket.assigns) do
+      case EntityTag.clear_month(%{month: socket.assigns.params.month},
+             scope: socket.assigns.ash_scope
+           ) do
+        :ok ->
+          {:noreply, load_data(socket)}
+
+        {:error, _reason} ->
+          {:noreply, put_flash(socket, :error, gettext("Could not update categories."))}
+      end
+    else
+      {:noreply, socket}
     end
   end
 
@@ -173,6 +186,11 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
 
   defp omitted_last(entries) do
     Enum.sort_by(entries, fn entry -> Enum.any?(entry.entity_tags, &(&1.kind == :internal)) end)
+  end
+
+  defp can_write?(assigns) do
+    flag_enabled?(:analysis_dashboard, assigns) and
+      assigns.ash_scope.actor.role in [:admin, :accountant]
   end
 
   defp category_entity_type(%SalesInvoice{}), do: :sales_invoice
@@ -271,10 +289,16 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
         </div>
         <div class="flex items-center gap-3">
           <FirmowidUI.Components.Button.button
-            :if={
-              flag_enabled?(:analysis_dashboard, assigns) and
-                @ash_scope.actor.role in [:admin, :accountant]
-            }
+            :if={can_write?(assigns)}
+            id="clear-month-tags"
+            variant="secondary"
+            type="button"
+            phx-click={show_modal("clear-month-tags-modal")}
+          >
+            {gettext("Clear month's categories")}
+          </FirmowidUI.Components.Button.button>
+          <FirmowidUI.Components.Button.button
+            :if={can_write?(assigns)}
             id="assign-unassigned"
             variant="secondary"
             type="button"
@@ -387,13 +411,36 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
             entries={entries_for_section(assigns)}
             categories={@categories}
             colors={@category_colors}
-            can_write={
-              flag_enabled?(:analysis_dashboard, assigns) and
-                @ash_scope.actor.role in [:admin, :accountant]
-            }
+            can_write={can_write?(assigns)}
           />
         </div>
       </section>
+      <.modal :if={can_write?(assigns)} id="clear-month-tags-modal">
+        <div class="flex flex-col gap-6">
+          <h2 class="font-bold">{gettext("Clear month's categories?")}</h2>
+          <p>
+            {gettext(
+              "All categories assigned to this month's entries will be removed, including manual ones. This cannot be undone."
+            )}
+          </p>
+          <div class="flex flex-wrap justify-end gap-3">
+            <FirmowidUI.Components.Button.button
+              type="button"
+              variant="outline"
+              phx-click={hide_modal("clear-month-tags-modal")}
+            >
+              {gettext("Cancel")}
+            </FirmowidUI.Components.Button.button>
+            <FirmowidUI.Components.Button.button
+              id="confirm-clear-month-tags"
+              type="button"
+              phx-click={JS.push("clear-month-tags") |> hide_modal("clear-month-tags-modal")}
+            >
+              {gettext("Clear categories")}
+            </FirmowidUI.Components.Button.button>
+          </div>
+        </div>
+      </.modal>
     </div>
     """
   end
