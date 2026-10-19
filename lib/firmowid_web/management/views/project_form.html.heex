@@ -95,6 +95,10 @@
                 %{
                   id: user.id,
                   name: user.name || user.email,
+                  # autoComplete.js renders the matched key with innerHTML.
+                  search_name:
+                    Phoenix.HTML.html_escape(user.name || user.email)
+                    |> Phoenix.HTML.safe_to_string(),
                   avatar_url: Map.get(user.avatar_blob || %{}, :url),
                   initials:
                     to_string(user.name || user.email || "")
@@ -119,7 +123,7 @@
             wrapper: false,
             data: {
               src: () => this.data,
-              keys: ["name"],
+              keys: ["search_name"],
               cache: false,
             },
             threshold: 0,
@@ -141,12 +145,28 @@
               class: "p-2 cursor-pointer rounded hover:bg-grey-100 text-sm/snug truncate text-nowrap",
               selected: "bg-grey-100",
               element: (item, data) => {
-                const {avatar_url, initials} = data.value;
-                const avatarHtml = avatar_url
-                  ? `<img src="${avatar_url}" class="size-8 rounded-full object-cover" alt=""/>`
-                  : `<span class="flex size-8 items-center justify-center rounded-full bg-blueBg text-xs font-medium text-blueText">${initials}</span>`;
+                // Names are member-controlled, so build nodes instead of HTML strings.
+                const {avatar_url, initials, name} = data.value;
+                const row = document.createElement("div");
+                row.className = "flex items-center gap-2";
 
-                item.innerHTML = `<div class="flex items-center gap-2">${avatarHtml}<span>${data.match}</span></div>`;
+                if (avatar_url) {
+                  const img = document.createElement("img");
+                  img.src = avatar_url;
+                  img.alt = "";
+                  img.className = "size-8 rounded-full object-cover";
+                  row.appendChild(img);
+                } else {
+                  const badge = document.createElement("span");
+                  badge.className = "flex size-8 items-center justify-center rounded-full bg-blueBg text-xs font-medium text-blueText";
+                  badge.textContent = initials;
+                  row.appendChild(badge);
+                }
+
+                const label = document.createElement("span");
+                label.textContent = name;
+                row.appendChild(label);
+                item.replaceChildren(row);
               },
             },
 
