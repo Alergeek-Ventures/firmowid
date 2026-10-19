@@ -96,7 +96,7 @@ defmodule Firmowid.Ash.Analysis do
     own_account_ibans = own_account_ibans(scope)
 
     sales_invoices =
-      %{date_from: date_from, date_to: date_to, date_field: :sale_date}
+      %{date_from: date_from, date_to: date_to, date_field: :sale_date, merge_corrections: true}
       |> Invoicing.list_sales_invoices!(
         load: [:buyer_display_name_label, :effective_amount, :sales_invoice_items, :transactions],
         scope: analysis_scope
@@ -156,7 +156,7 @@ defmodule Firmowid.Ash.Analysis do
       invoice_months(
         &Invoicing.list_sales_invoices!/2,
         :sale_date,
-        %{},
+        %{merge_corrections: true},
         opts,
         own_account_ibans
       )
