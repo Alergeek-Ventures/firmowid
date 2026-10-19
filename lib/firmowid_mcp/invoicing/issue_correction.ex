@@ -25,8 +25,4 @@ defmodule FirmowidMcp.Invoicing.IssueCorrection do
   @doc "Returns the shared feature-owned confirmation LiveView."
   @spec live_view() :: module()
   def live_view, do: FirmowidMcp.Invoicing.Views.Issue
-
-  @doc "Describes the read-only preparation tool, not the later user interaction."
-  @spec annotations() :: map()
-  def annotations, do: %{"readOnlyHint" => true, "destructiveHint" => false, "openWorldHint" => false}
 end

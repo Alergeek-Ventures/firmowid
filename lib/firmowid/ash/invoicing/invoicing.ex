@@ -24,6 +24,8 @@ defmodule Firmowid.Ash.Invoicing do
 
   tools do
     tool :list_sales_invoices, SalesInvoice, :list do
+      annotations read_only_hint: true, destructive_hint: false, open_world_hint: false
+
       description "List sales invoices as data for questions, summaries, analysis and tables in the conversation." <>
                     " First check get_ksef_connection_status and propose connection if needed; stored invoices remain readable without it and may be out of date. Results belong to the authenticated organization. An absent invoice_number identifies a draft. Use after/before keyset cursors with the same filters to navigate pages."
 
@@ -48,6 +50,8 @@ defmodule Firmowid.Ash.Invoicing do
     end
 
     tool :list_cost_invoices, CostInvoice, :list do
+      annotations read_only_hint: true, destructive_hint: false, open_world_hint: false
+
       description "List cost invoices as data for questions, summaries, analysis and tables in the conversation." <>
                     " First check get_ksef_connection_status and propose connection if needed; stored invoices remain readable without it and may be out of date. Results belong to the authenticated organization and retain signed Money amounts. Use after/before keyset cursors with the same filters to navigate pages."
 
@@ -67,6 +71,8 @@ defmodule Firmowid.Ash.Invoicing do
     end
 
     tool :get_sales_invoice, SalesInvoice, :read do
+      annotations read_only_hint: true, destructive_hint: false, open_world_hint: false
+
       description "Read a single authorized sales invoice, its items, effective correction snapshot and KSeF status. " <>
                     "Use this before preparing a correction or resuming a saved draft. This tool never changes the invoice."
 
@@ -87,6 +93,8 @@ defmodule Firmowid.Ash.Invoicing do
     end
 
     tool :preview_sales_invoice, SalesInvoice, :preview_invoice do
+      annotations read_only_hint: true, destructive_hint: false, open_world_hint: false
+
       description "Validate invoice data and open the mandatory user confirmation widget. " <>
                     "Creates nothing. The user selects a number and confirms issuance inside the widget; " <>
                     "an active KSeF connection is required to issue. Pass invoice_id to resume a saved draft, retaining its ID."
@@ -101,6 +109,8 @@ defmodule Firmowid.Ash.Invoicing do
     end
 
     tool :preview_sales_invoice_correction, SalesInvoice, :preview_correction do
+      annotations read_only_hint: true, destructive_hint: false, open_world_hint: false
+
       description "Preview a correction to an issued invoice and open the mandatory confirmation widget. " <>
                     "First read the source with get_sales_invoice. Supply original_invoice_id and the intended corrected items/fields. " <>
                     "Preserves buyer tax identity and the effective correction chain. Creates nothing until the user confirms in the widget."
@@ -116,6 +126,8 @@ defmodule Firmowid.Ash.Invoicing do
     end
 
     tool :create_sales_invoice_draft, SalesInvoice, :draft do
+      annotations read_only_hint: false, destructive_hint: false, open_world_hint: false
+
       description "Save a complete but unnumbered invoice only when the user explicitly asks to issue it later. " <>
                     "A draft requires the same data as issuance except the number; keep partial data in the chat instead. " <>
                     "Prefer calling preview_sales_invoice directly. Saving is available without KSeF and neither issues nor submits."
@@ -124,6 +136,8 @@ defmodule Firmowid.Ash.Invoicing do
     end
 
     tool :update_sales_invoice_draft, SalesInvoice, :revise do
+      annotations read_only_hint: false, destructive_hint: true, open_world_hint: false
+
       description "Revise a saved unnumbered invoice draft when the user asks to change it before issuing later. " <>
                     "To issue a draft, call preview_sales_invoice with its invoice_id instead."
 
