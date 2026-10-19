@@ -30,7 +30,10 @@ defmodule Firmowid.Ash.Analysis do
 
   tools do
     tool :list_analysis_entries, Entry, :list do
-      annotations read_only_hint: true, destructive_hint: false, open_world_hint: false
+      annotations title: "List analysis entries",
+                  read_only_hint: true,
+                  destructive_hint: false,
+                  open_world_hint: false
 
       description "List the entries behind the monthly income and expense analysis: sales invoices, cost invoices " <>
                     "and standalone bank transactions with their full document amounts and categories. " <>
