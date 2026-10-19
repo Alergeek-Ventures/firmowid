@@ -95,10 +95,11 @@ defmodule Firmowid.Ash.Core.User do
       end
 
       log_out_everywhere do
-        # Revoke all active tokens when password is changed, forcing re-login
-        # on all other devices/sessions. Requires store_all_tokens? true and
-        # require_token_presence_for_authentication? true (both set above).
-        apply_on_password_change? true
+        # Its password-change hook never fires: the hash is set in a before_action
+        # hook, after its `changing(:hashed_password)` condition is evaluated.
+        # RevokeAuthenticationOnPasswordChange (in `changes` below) revokes sessions
+        # and OAuth grants instead.
+        apply_on_password_change? false
       end
     end
   end
@@ -601,6 +602,8 @@ defmodule Firmowid.Ash.Core.User do
 
   changes do
     change Firmowid.Ash.Core.User.Changes.RequireActiveAccount, on: [:create, :update]
+
+    change Firmowid.Ash.Core.User.Changes.RevokeAuthenticationOnPasswordChange, on: [:update]
   end
 
   attributes do

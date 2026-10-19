@@ -19,15 +19,28 @@ defmodule Firmowid.Ash.Core.User.Changes.RevokeAuthentication do
       # Archive has already been authorized and has locked this user row. The
       # authentication context grants access only to the credential resources;
       # every operation below is constrained to the archived user's ID.
-      opts = Ash.Context.to_opts(context, context: %{private: %{ash_authentication?: true}})
-
-      with :ok <- revoke_sessions(user, opts),
-           :ok <- revoke_refresh_tokens(user.id, opts),
-           :ok <- destroy_grants(OauthAuthorizationCode, user.id, opts),
-           :ok <- destroy_grants(OauthConsent, user.id, opts) do
+      with :ok <- revoke(user, context) do
         {:ok, user}
       end
     end)
+  end
+
+  @doc """
+  Revokes the user's browser sessions and OAuth grants within the current action.
+
+  `keep_jti` leaves one stored token for the caller to revoke itself, such as the
+  password reset token the reset action is consuming.
+  """
+  @spec revoke(Firmowid.Ash.Core.User.t(), Context.t(), String.t() | nil) ::
+          :ok | {:error, term()}
+  def revoke(user, context, keep_jti \\ nil) do
+    opts = Ash.Context.to_opts(context, context: %{private: %{ash_authentication?: true}})
+
+    with :ok <- revoke_sessions(user, keep_jti, opts),
+         :ok <- revoke_refresh_tokens(user.id, opts),
+         :ok <- destroy_grants(OauthAuthorizationCode, user.id, opts) do
+      destroy_grants(OauthConsent, user.id, opts)
+    end
   end
 
   @doc false
@@ -36,10 +49,13 @@ defmodule Firmowid.Ash.Core.User.Changes.RevokeAuthentication do
           {:ok, Ash.Changeset.t()}
   def atomic(changeset, opts, context), do: {:ok, change(changeset, opts, context)}
 
-  defp revoke_sessions(user, opts) do
+  defp revoke_sessions(user, keep_jti, opts) do
     # The installed log_out_everywhere add-on does not enable bulk notifications.
     # Use its native token action with notifications so LiveViews disconnect too.
     Token
+    |> then(fn query ->
+      if keep_jti, do: Ash.Query.filter(query, jti != ^keep_jti), else: query
+    end)
     |> Ash.bulk_update(
       :revoke_all_stored_for_subject,
       %{subject: AshAuthentication.user_to_subject(user)},
