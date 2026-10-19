@@ -290,7 +290,6 @@ defmodule Firmowid.Ash.Core.User do
 
       accept [
         :name,
-        :avatar_blob_id,
         :phone,
         :slack_url,
         :bank_account_number,
