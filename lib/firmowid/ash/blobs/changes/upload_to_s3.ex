@@ -17,6 +17,17 @@ defmodule Firmowid.Ash.Blobs.Changes.UploadToS3 do
   alias Firmowid.Ash.Blobs.UploadFingerprint
   alias Firmowid.S3Client
 
+  # The object extension decides the Content-Type S3 serves, and the content type
+  # comes from the client. Only passive document and image types keep theirs.
+  @document_types [
+    "application/pdf",
+    "application/xml",
+    "text/xml",
+    "text/plain",
+    "application/msword",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+  ]
+
   @impl true
   def change(changeset, _opts, _context) do
     Ash.Changeset.before_action(changeset, fn changeset ->
@@ -27,7 +38,7 @@ defmodule Firmowid.Ash.Blobs.Changes.UploadToS3 do
       original_filename = Ash.Changeset.get_argument(changeset, :original_filename)
       organization_id = changeset.tenant
 
-      extension = content_type |> MIME.extensions() |> List.first("bin")
+      extension = extension(content_type)
       {upload_path, blob_checksum} = UploadFingerprint.prepare_upload(upload_path, content_type)
       blob_path = "#{organization_id}/#{blob_id}.#{extension}"
 
@@ -39,6 +50,16 @@ defmodule Firmowid.Ash.Blobs.Changes.UploadToS3 do
       |> Ash.Changeset.force_change_attribute(:original_filename, original_filename)
     end)
   end
+
+  defp extension(content_type) do
+    if passive?(content_type),
+      do: content_type |> MIME.extensions() |> List.first("bin"),
+      else: "bin"
+  end
+
+  defp passive?("image/svg+xml"), do: false
+  defp passive?("image/" <> _subtype), do: true
+  defp passive?(content_type), do: content_type in @document_types
 
   defp upload_to_s3!(upload_path, blob_path) do
     S3Client.upload_file!(upload_path, blob_path)
