@@ -157,7 +157,7 @@ defmodule FirmowidMcp.Router do
   end
 
   defp tool_metadata(%{"name" => name} = tool)
-       when name in ~w(list_sales_invoices list_cost_invoices get_sales_invoice) do
+       when name in ~w(list_sales_invoices list_cost_invoices get_sales_invoice list_analysis_entries) do
     authorized_tool_metadata(tool, %{
       "readOnlyHint" => true,
       "destructiveHint" => false,
