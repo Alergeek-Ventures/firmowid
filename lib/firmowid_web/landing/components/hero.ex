@@ -25,14 +25,14 @@ defmodule FirmowidWeb.Landing.Components.Hero do
       |> assign(badge_before: badge_before, badge_after: badge_after)
 
     ~H"""
-    <section class="py-[24px_48px] lg:p-0">
-      <div class="mx-auto w-[calc(100%-32px)] max-w-[1139px] lg:grid lg:w-[calc(100%-64px)] lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:items-start lg:gap-8 lg:py-[77px_104px]">
+    <section class="pt-6 pb-12 lg:p-0">
+      <div class="mx-auto w-[calc(100%-var(--spacing)*8)] max-w-284.75 lg:grid lg:w-[calc(100%-var(--spacing)*16)] lg:grid-cols-2 lg:items-start lg:gap-8 lg:py-19.5 lg:pt-19.25 lg:pb-19.75">
         <div class="min-w-0">
           <a
             href="https://github.com/Alergeek-Ventures/firmowid"
             target="_blank"
             rel="noopener noreferrer"
-            class="relative isolate inline-flex min-h-10 items-center gap-2 py-2 pr-4 pl-3 text-[13px] leading-[24px] font-medium [background:url('/images/landing/frames/open-source.svg')_center/100%_100%_no-repeat]"
+            class="relative -left-1 isolate inline-flex min-h-10 items-center gap-2 bg-[url('/images/landing/frames/open-source.svg')] bg-size-[100%_100%] bg-center bg-no-repeat py-2 pr-4 pl-3 text-[13px]/6 font-medium"
           >
             <img src={~p"/images/github-mark.svg"} alt="" width="24" height="24" />
             <span>
@@ -44,34 +44,35 @@ defmodule FirmowidWeb.Landing.Components.Hero do
             </span>
           </a>
 
-          <h1 class="mt-6 text-3xl leading-[1.14] font-bold tracking-[-0.035em] lg:mt-8.5 lg:text-[72px] lg:leading-[0.966]">
+          <h1 class="mt-7.5 text-3xl leading-[1.14] font-bold tracking-[-0.125rem] lg:text-[4.5rem] lg:leading-[73.44px]">
             {pgettext("landing hero headline", "KSeF invoices")}<br />
             {pgettext("landing hero headline", "without limits.")}<br />
-            <span class="relative isolate inline-block [&::after]:absolute [&::after]:-right-5 [&::after]:-bottom-2 [&::after]:-left-1 [&::after]:-z-1 [&::after]:h-5 [&::after]:[content:''] [&::after]:[background:url('/images/landing/decorations/hero-underline.svg')_center/100%_100%_no-repeat] lg:[&::after]:-right-7">
+            <span class="relative bottom-1 isolate inline-block after:absolute after:-right-6 after:-bottom-1 after:-left-1 after:-z-1 after:h-5 after:bg-[url('/images/landing/decorations/hero-underline.svg')] after:bg-size-[100%_100%] after:bg-center after:bg-no-repeat after:content-['']">
               {pgettext("landing hero headline", "For PLN 0.")}
             </span>
           </h1>
 
-          <p class="mt-6 max-w-107.5 text-h5 leading-[27px] text-darkGrey lg:mt-7.5 lg:text-lg lg:leading-[28px]">
+          <p class="mt-6 max-w-107.5 text-h5/6.75 text-darkGrey lg:mt-5.25 lg:text-lg/7">
             {gettext(
               "Everything in one place: invoices, banking, working hours, leave, and business trips."
             )}
           </p>
 
-          <div class="mt-6 flex flex-col gap-4 lg:mt-7.5 lg:flex-row lg:gap-7">
+          <div class="mt-6 flex flex-col gap-6.25 lg:mt-7.5 lg:flex-row lg:items-center">
             <.landing_button navigate={~p"/zarejestruj"} data-landing-cta="hero_register">
               {gettext("Start for free")}
             </.landing_button>
             <.landing_button
               navigate={~p"/zaloguj"}
               variant={:outline}
+              class="h-14 min-w-38.75 lg:w-38.75"
               data-landing-cta="hero_login"
             >
               {gettext("Log in")}
             </.landing_button>
           </div>
 
-          <ul class="mt-7 grid gap-4 text-[13px] leading-[18px] text-darkGrey lg:mt-8 lg:flex lg:flex-wrap lg:gap-[8px_16px] [&_img]:shrink-0 [&_li]:flex [&_li]:items-baseline [&_li]:gap-2">
+          <ul class="mt-8 grid gap-4 text-[13px]/4.5 text-grey-600 lg:flex lg:flex-wrap lg:gap-x-4 lg:gap-y-2.5 [&_img]:shrink-0 [&_li]:flex [&_li]:items-center [&_li]:gap-2">
             <li>
               <img src={~p"/images/landing/icons/check.svg"} alt="" width="12" height="13" />
               {gettext("Start with the free plan. No card required.")}
@@ -95,7 +96,7 @@ defmodule FirmowidWeb.Landing.Components.Hero do
           id="landing-compass"
           phx-hook="LandingHero"
           phx-update="ignore"
-          class="relative mt-8 aspect-730/670 w-full lg:m-[-28px_0_0_-2.4%] lg:w-[116.5%]"
+          class="relative mt-8 aspect-730/670 w-full lg:-mt-7 lg:ml-[-2.4%] lg:w-[116.5%]"
           role="img"
           aria-label={
             gettext("Firmowid connects invoices and KSeF, banking, time tracking, and your team.")
@@ -111,7 +112,7 @@ defmodule FirmowidWeb.Landing.Components.Hero do
             fetchpriority={if index == 0, do: "high", else: "auto"}
             data-state={index}
             class={[
-              "absolute inset-0 size-full opacity-[0] [transition:opacity_300ms_ease-in-out] [&.is-active]:opacity-[1]",
+              "absolute inset-0 size-full opacity-0 transition-opacity duration-300 ease-in-out [&.is-active]:opacity-100",
               index == 0 && "is-active"
             ]}
           />
@@ -134,14 +135,12 @@ defmodule FirmowidWeb.Landing.Components.Hero do
     assigns = assign(assigns, before_company: before_company, after_company: after_company)
 
     ~H"""
-    <section class="py-10 [background:var(--color-orange-400)] [border-block:1px_solid_var(--landing-line)] lg:bg-grey-50 lg:py-8 [&_a]:text-(--landing-accent) [&_a]:underline-offset-[3px] [&_a]:[text-decoration:underline] [&_p]:flex [&_p]:flex-col-reverse [&_p]:items-center [&_p]:gap-2 [&_p]:text-center [&_p]:text-sm/[20px] lg:[&_p]:flex-row lg:[&_p]:gap-2 lg:[&_p]:text-left lg:[&_p]:text-[13px] [&_strong]:text-3xl [&_strong]:leading-[1.1] [&_strong]:font-bold lg:[&_strong]:text-[26px] lg:[&_strong]:whitespace-nowrap">
-      <div class="mx-auto flex w-[calc(100%-32px)] max-w-[1139px] flex-col gap-10 lg:w-[calc(100%-64px)] lg:flex-row lg:justify-between lg:gap-6">
+    <section class="border-y border-(--landing-line) bg-orange-400 py-10 text-grey-700 lg:bg-grey-50 lg:py-8 [&_a]:font-semibold [&_a]:text-(--landing-accent) [&_a]:no-underline [&_a]:underline-offset-4 [&_a:hover]:underline [&_p]:flex [&_p]:flex-col-reverse [&_p]:items-center [&_p]:gap-2 [&_p]:text-center [&_p]:text-[13px]/5 lg:[&_p]:flex-row lg:[&_p]:items-baseline lg:[&_p]:text-left [&_strong]:text-[1.375rem] [&_strong]:leading-none [&_strong]:font-bold [&_strong]:whitespace-nowrap [&_strong]:text-black">
+      <div class="mx-auto flex w-[calc(100%-var(--spacing)*8)] max-w-284.75 flex-col gap-10 lg:mt-0.75 lg:w-[calc(100%-var(--spacing)*16)] lg:flex-row lg:justify-between lg:gap-6">
         <p class="order-1 lg:order-0">
           <span>
             {@before_company}
-            <a href="https://alergeek.ventures" target="_blank" rel="noopener noreferrer">
-              Alergeek Ventures
-            </a>
+            <a href="https://alergeek.ventures" target="_blank" rel="noopener noreferrer">Alergeek Ventures</a>
             {@after_company}
           </span>
           <strong>{gettext("2 years")}</strong>

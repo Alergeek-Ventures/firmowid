@@ -46,14 +46,14 @@ defmodule FirmowidWeb.Landing.Views.Index do
     <div
       id="top"
       data-landing-page="true"
-      class="min-h-screen text-[#0f0f0f] [--landing-accent:#8b3f13] [--landing-beige:#f0eae6] [--landing-line:#e6d7ce] [--landing-nav-height:64px] [background:var(--color-grey-100)] motion-reduce:**:animate-none! motion-reduce:**:transition-none! lg:[--landing-nav-height:96px] motion-reduce:[&_*::after]:animate-none! motion-reduce:[&_*::after]:transition-none! motion-reduce:[&_*::before]:animate-none! motion-reduce:[&_*::before]:transition-none! [&_a:focus-visible]:[outline:2px_solid_var(--color-orange-600)] [&_a:focus-visible]:outline-offset-4 [&_button:focus-visible]:[outline:2px_solid_var(--color-orange-600)] [&_button:focus-visible]:outline-offset-4 **:[[id]]:scroll-mt-[calc(var(--landing-nav-height)+24px)]"
+      class="min-h-screen bg-grey-100 text-[#0f0f0f] [--landing-accent:#8b3f13] [--landing-beige:#f0eae6] [--landing-line:#e6d7ce] [--landing-nav-height:--spacing(16)] motion-reduce:**:animate-none! motion-reduce:**:transition-none! lg:[--landing-nav-height:--spacing(24)] motion-reduce:[&_*::after]:animate-none! motion-reduce:[&_*::after]:transition-none! motion-reduce:[&_*::before]:animate-none! motion-reduce:[&_*::before]:transition-none! [&_a:focus-visible]:outline-2 [&_a:focus-visible]:outline-offset-4 [&_a:focus-visible]:outline-orange-600 [&_button:focus-visible]:outline-2 [&_button:focus-visible]:outline-offset-4 [&_button:focus-visible]:outline-orange-600 **:[[id]]:scroll-mt-[calc(var(--landing-nav-height)+var(--spacing)*6)]"
     >
       <.landing_navbar />
 
       <main>
         <h1
           :if={@live_action != :home}
-          class="mx-auto w-[calc(100%-32px)] max-w-[1139px] py-[72px_0] text-3xl leading-[1.1] font-bold tracking-[-0.03em]"
+          class="mx-auto w-[calc(100%-var(--spacing)*8)] max-w-284.75 pt-18 text-3xl leading-[1.1] font-bold tracking-[-0.03em]"
         >
           {@page_title}
         </h1>

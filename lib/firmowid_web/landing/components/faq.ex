@@ -23,8 +23,8 @@ defmodule FirmowidWeb.Landing.Components.Faq do
 
     ~H"""
     <section id="faq" class="border-t border-orange-200 bg-grey-50 py-18 lg:py-26">
-      <div class="mx-auto grid w-[calc(100%-32px)] max-w-[1139px] gap-8 lg:w-[calc(100%-64px)] lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:gap-20 [&_article]:rounded-[8px] [&_article]:bg-white [&_article]:[border:1px_solid_var(--landing-line)] [&_button]:flex [&_button]:w-full [&_button]:cursor-pointer [&_button]:items-center [&_button]:justify-between [&_button]:gap-6 [&_button]:p-5 [&_button]:text-left [&_button]:text-base [&_button]:leading-[1.4] [&_button]:font-semibold **:[[role='region']]:p-[0_20px_20px] **:[[role='region']]:text-[15px] **:[[role='region']]:leading-[1.6] **:[[role='region']]:text-darkGrey">
-        <div class="landing-section-intro max-w-180 lg:max-w-[1139px] [&_>_p:not(.landing-eyebrow,.landing-assistants-soon,.landing-assistants-footnote)]:mt-6 [&_>_p:not(.landing-eyebrow,.landing-assistants-soon,.landing-assistants-footnote)]:text-h5 [&_>_p:not(.landing-eyebrow,.landing-assistants-soon,.landing-assistants-footnote)]:leading-[27px] [&_>_p:not(.landing-eyebrow,.landing-assistants-soon,.landing-assistants-footnote)]:text-darkGrey lg:[&_>_p:not(.landing-eyebrow,.landing-assistants-soon,.landing-assistants-footnote)]:max-w-115 lg:[&_>_p:not(.landing-eyebrow,.landing-assistants-soon,.landing-assistants-footnote)]:text-h5 [&_h2]:text-[36px] [&_h2]:leading-[1.1] [&_h2]:font-bold [&_h2]:tracking-[-0.03em] lg:[&_h2]:text-[48px] lg:[&_h2]:leading-[1.04] lg:[&.text-center]:mx-auto lg:[&.text-center]:max-w-140 lg:[&.text-center_>_p:not(.landing-eyebrow)]:mx-auto">
+      <div class="mx-auto grid w-[calc(100%-var(--spacing)*8)] max-w-284.75 gap-8 lg:w-[calc(100%-var(--spacing)*16)] lg:grid-cols-2 lg:gap-20 [&_article]:rounded-lg [&_article]:border [&_article]:border-(--landing-line) [&_article]:bg-white [&_button]:flex [&_button]:w-full [&_button]:cursor-pointer [&_button]:items-center [&_button]:justify-between [&_button]:gap-6 [&_button]:p-5 [&_button]:text-left [&_button]:text-base [&_button]:leading-[1.4] [&_button]:font-semibold **:[[role='region']]:px-5 **:[[role='region']]:pb-5 **:[[role='region']]:text-base **:[[role='region']]:leading-[1.6] **:[[role='region']]:text-darkGrey">
+        <div class="landing-section-intro max-w-180 lg:max-w-284.75 [&_>_p:not(.landing-eyebrow,.landing-assistants-soon,.landing-assistants-footnote)]:mt-6 [&_>_p:not(.landing-eyebrow,.landing-assistants-soon,.landing-assistants-footnote)]:text-h5/6.75 [&_>_p:not(.landing-eyebrow,.landing-assistants-soon,.landing-assistants-footnote)]:text-darkGrey lg:[&_>_p:not(.landing-eyebrow,.landing-assistants-soon,.landing-assistants-footnote)]:max-w-115 [&_h2]:text-[2.25rem] [&_h2]:leading-[1.1] [&_h2]:font-bold [&_h2]:tracking-[-0.03em] lg:[&_h2]:text-[3rem] lg:[&_h2]:leading-[1.04] lg:[&.text-center]:mx-auto lg:[&.text-center]:max-w-140 lg:[&.text-center_>_p:not(.landing-eyebrow)]:mx-auto">
           <p class="landing-eyebrow mb-4 text-xs font-bold tracking-[0.08em] text-(--landing-accent) uppercase">
             {gettext("Questions and answers")}
           </p>
@@ -49,7 +49,7 @@ defmodule FirmowidWeb.Landing.Components.Faq do
             >
               <span>{faq.question}</span>
               <span
-                class="flex-none text-[22px] leading-none text-(--landing-accent)"
+                class="flex-none text-xl leading-none text-(--landing-accent)"
                 aria-hidden="true"
               >
                 {if @open_faq == faq.id, do: "−", else: "+"}

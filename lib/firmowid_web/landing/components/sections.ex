@@ -151,8 +151,8 @@ defmodule FirmowidWeb.Landing.Components.Sections do
       data-landing-dark-surface
       class="bg-[#0f0f0f] py-18 text-white lg:py-26 [&_.landing-eyebrow]:text-[#d2936d] [&_.landing-section-intro_>_p:not(.landing-eyebrow)]:text-grey-300 [&_article_p]:text-grey-300"
     >
-      <div class="mx-auto w-[calc(100%-32px)] max-w-[1139px] lg:w-[calc(100%-64px)]">
-        <div class="landing-section-intro max-w-180 lg:max-w-170 [&_>_p:not(.landing-eyebrow,.landing-assistants-soon,.landing-assistants-footnote)]:mt-6 [&_>_p:not(.landing-eyebrow,.landing-assistants-soon,.landing-assistants-footnote)]:text-h5 [&_>_p:not(.landing-eyebrow,.landing-assistants-soon,.landing-assistants-footnote)]:leading-[27px] [&_>_p:not(.landing-eyebrow,.landing-assistants-soon,.landing-assistants-footnote)]:text-darkGrey lg:[&_>_p:not(.landing-eyebrow,.landing-assistants-soon,.landing-assistants-footnote)]:max-w-170 lg:[&_>_p:not(.landing-eyebrow,.landing-assistants-soon,.landing-assistants-footnote)]:text-h5 [&_h2]:text-[36px] [&_h2]:leading-[1.1] [&_h2]:font-bold [&_h2]:tracking-[-0.03em] lg:[&_h2]:text-[48px] lg:[&_h2]:leading-[1.04] lg:[&.text-center]:mx-auto lg:[&.text-center_>_p:not(.landing-eyebrow)]:mx-auto">
+      <div class="mx-auto w-[calc(100%-var(--spacing)*8)] max-w-284.75 lg:w-[calc(100%-var(--spacing)*16)]">
+        <div class="landing-section-intro max-w-180 lg:max-w-170 [&_>_p:not(.landing-eyebrow,.landing-assistants-soon,.landing-assistants-footnote)]:mt-6 [&_>_p:not(.landing-eyebrow,.landing-assistants-soon,.landing-assistants-footnote)]:text-h5/6.75 [&_>_p:not(.landing-eyebrow,.landing-assistants-soon,.landing-assistants-footnote)]:text-darkGrey lg:[&_>_p:not(.landing-eyebrow,.landing-assistants-soon,.landing-assistants-footnote)]:max-w-170 [&_h2]:text-[2.25rem] [&_h2]:leading-[1.1] [&_h2]:font-bold [&_h2]:tracking-[-0.03em] lg:[&_h2]:text-[3rem] lg:[&_h2]:leading-[1.04] lg:[&.text-center]:mx-auto lg:[&.text-center_>_p:not(.landing-eyebrow)]:mx-auto">
           <p class="landing-eyebrow mb-4 text-xs font-bold tracking-[0.08em] text-(--landing-accent) uppercase">
             {gettext("Who it is for")}
           </p>
@@ -167,7 +167,7 @@ defmodule FirmowidWeb.Landing.Components.Sections do
           </p>
         </div>
 
-        <div class="mt-10 grid gap-9 bg-[url('/images/landing/decorations/dark-separator.svg')] bg-size-[100%_2px] bg-top bg-no-repeat pt-9 lg:mt-12 lg:grid-cols-3 lg:gap-10 lg:pt-10 [&_.landing-eyebrow]:mb-5 [&_h3]:mb-5 [&_h3]:text-[22px] [&_h3]:leading-[1.3] [&_h3]:font-semibold [&_h3]:tracking-[-0.01em] lg:[&_h3]:text-[24px] [&_p]:text-[15px] [&_p]:leading-[1.4]">
+        <div class="mt-10 grid gap-9 bg-[url('/images/landing/decorations/dark-separator.svg')] bg-size-[100%_--spacing(0.5)] bg-top bg-no-repeat pt-9 lg:mt-12 lg:grid-cols-3 lg:gap-10 lg:pt-10 [&_.landing-eyebrow]:mb-5 [&_h3]:mb-5 [&_h3]:text-xl [&_h3]:leading-[1.3] [&_h3]:font-semibold [&_h3]:tracking-[-0.01em] [&_p]:text-base [&_p]:leading-[1.4]">
           <article :for={{problem, index} <- Enum.with_index(@problems, 1)}>
             <p class="landing-eyebrow mb-4 text-xs font-bold tracking-[0.08em] text-(--landing-accent) uppercase">
               0{index}
@@ -190,8 +190,8 @@ defmodule FirmowidWeb.Landing.Components.Sections do
 
     ~H"""
     <section id="funkcje" class="py-18 lg:py-26">
-      <div class="mx-auto w-[calc(100%-32px)] max-w-[1139px] lg:w-[calc(100%-64px)]">
-        <div class="landing-section-intro max-w-180 lg:max-w-[1139px] [&_>_p:not(.landing-eyebrow,.landing-assistants-soon,.landing-assistants-footnote)]:mt-6 [&_>_p:not(.landing-eyebrow,.landing-assistants-soon,.landing-assistants-footnote)]:text-h5 [&_>_p:not(.landing-eyebrow,.landing-assistants-soon,.landing-assistants-footnote)]:leading-[27px] [&_>_p:not(.landing-eyebrow,.landing-assistants-soon,.landing-assistants-footnote)]:text-darkGrey lg:[&_>_p:not(.landing-eyebrow,.landing-assistants-soon,.landing-assistants-footnote)]:max-w-115 lg:[&_>_p:not(.landing-eyebrow,.landing-assistants-soon,.landing-assistants-footnote)]:text-h5 [&_h2]:text-[36px] [&_h2]:leading-[1.1] [&_h2]:font-bold [&_h2]:tracking-[-0.03em] lg:[&_h2]:text-[48px] lg:[&_h2]:leading-[1.04] lg:[&.text-center]:mx-auto lg:[&.text-center]:max-w-140 lg:[&.text-center_>_p:not(.landing-eyebrow)]:mx-auto">
+      <div class="mx-auto w-[calc(100%-var(--spacing)*8)] max-w-284.75 lg:w-[calc(100%-var(--spacing)*16)]">
+        <div class="landing-section-intro max-w-180 lg:max-w-284.75 [&_>_p:not(.landing-eyebrow,.landing-assistants-soon,.landing-assistants-footnote)]:mt-6 [&_>_p:not(.landing-eyebrow,.landing-assistants-soon,.landing-assistants-footnote)]:text-h5/6.75 [&_>_p:not(.landing-eyebrow,.landing-assistants-soon,.landing-assistants-footnote)]:text-darkGrey lg:[&_>_p:not(.landing-eyebrow,.landing-assistants-soon,.landing-assistants-footnote)]:max-w-115 [&_h2]:text-[2.25rem] [&_h2]:leading-[1.1] [&_h2]:font-bold [&_h2]:tracking-[-0.03em] lg:[&_h2]:text-[3rem] lg:[&_h2]:leading-[1.04] lg:[&.text-center]:mx-auto lg:[&.text-center]:max-w-140 lg:[&.text-center_>_p:not(.landing-eyebrow)]:mx-auto">
           <p class="landing-eyebrow mb-4 text-xs font-bold tracking-[0.08em] text-(--landing-accent) uppercase">
             {gettext("What Firmowid can do")}
           </p>
@@ -208,14 +208,14 @@ defmodule FirmowidWeb.Landing.Components.Sections do
 
         <article
           :for={feature <- @features}
-          class="landing-feature mt-8 grid gap-6 rounded-[16px] bg-white p-6 [border:1px_solid_#e3b79b] lg:mt-20 lg:grid-cols-2 lg:items-center lg:gap-20 lg:bg-transparent lg:p-0 lg:[border:0] lg:last:pb-0 [&_h3]:mt-4 [&_h3]:mb-5 [&_h3]:text-lg [&_h3]:leading-[1.15] [&_h3]:font-bold [&_h3]:tracking-[-0.01em] lg:[&_h3]:mt-4 lg:[&_h3]:text-[36px] lg:[&_h3]:leading-[1.05] lg:[&_li]:flex lg:[&_li]:items-start lg:[&_li]:gap-3 [&_ul]:hidden lg:[&_ul]:mt-7 lg:[&_ul]:grid lg:[&_ul]:gap-3.5 lg:[&_ul]:text-base/normal lg:[&+.landing-feature]:mt-16 lg:[&+.landing-feature]:bg-[url('/images/landing/decorations/feature-separator.svg')] lg:[&+.landing-feature]:bg-size-[100%_2px] lg:[&+.landing-feature]:bg-top lg:[&+.landing-feature]:bg-no-repeat lg:[&+.landing-feature]:pt-16 lg:[&:nth-of-type(even)_>_:first-child]:order-2"
+          class="landing-feature mt-8 grid gap-6 rounded-2xl border border-[#e3b79b] bg-white p-6 lg:mt-20 lg:grid-cols-2 lg:items-center lg:gap-20 lg:border-0 lg:bg-transparent lg:p-0 lg:last:pb-0 [&_h3]:mt-4 [&_h3]:mb-5 [&_h3]:text-lg [&_h3]:leading-[1.15] [&_h3]:font-bold [&_h3]:tracking-[-0.01em] lg:[&_h3]:text-[2.25rem] lg:[&_h3]:leading-[1.05] lg:[&_li]:flex lg:[&_li]:items-start lg:[&_li]:gap-3 [&_ul]:hidden lg:[&_ul]:mt-7 lg:[&_ul]:grid lg:[&_ul]:gap-3.5 lg:[&_ul]:text-base/normal lg:[&+.landing-feature]:mt-16 lg:[&+.landing-feature]:bg-[url('/images/landing/decorations/feature-separator.svg')] lg:[&+.landing-feature]:bg-size-[100%_--spacing(0.5)] lg:[&+.landing-feature]:bg-top lg:[&+.landing-feature]:bg-no-repeat lg:[&+.landing-feature]:pt-16 lg:[&:nth-of-type(even)_>_:first-child]:order-2"
         >
           <div>
-            <p class="flex flex-wrap gap-2.5 text-xs font-bold tracking-[0.06em] text-(--landing-accent) uppercase lg:flex [&_span]:inline-block [&_span]:p-0 [&_span]:text-[13px] [&_span]:font-semibold [&_span]:tracking-[0.08em] [&_span]:uppercase lg:[&_span]:rounded-full lg:[&_span]:bg-[#f7e0d3] lg:[&_span]:p-[4px_16px] lg:[&_span]:font-normal lg:[&_span]:tracking-normal lg:[&_span]:normal-case [&_span+span]:[border:0] [&_span+span::before]:mr-2.5 [&_span+span::before]:[content:'·'] lg:[&_span+span::before]:content-none">
+            <p class="flex flex-wrap gap-2.5 text-xs font-bold tracking-[0.06em] text-(--landing-accent) uppercase lg:flex [&_span]:inline-block [&_span]:p-0 [&_span]:text-sm [&_span]:font-semibold [&_span]:tracking-[0.08em] [&_span]:uppercase lg:[&_span]:rounded-full lg:[&_span]:bg-[#f7e0d3] lg:[&_span]:px-4 lg:[&_span]:py-1 lg:[&_span]:font-normal lg:[&_span]:tracking-normal lg:[&_span]:normal-case [&_span+span]:border-0 [&_span+span::before]:mr-2.5 [&_span+span::before]:content-['·'] lg:[&_span+span::before]:content-none">
               <span :for={tag <- feature.tags}>{tag}</span>
             </p>
             <h3>{feature.title}</h3>
-            <p class="text-[17px] leading-[27px] text-darkGrey lg:text-h5">
+            <p class="text-base/6.75 text-darkGrey lg:text-h5">
               {feature.description}
             </p>
             <ul>
@@ -245,43 +245,43 @@ defmodule FirmowidWeb.Landing.Components.Sections do
     ~H"""
     <div
       class={[
-        "@container relative min-w-0 rounded-[16px] bg-[#f5f5f5] text-caps-sm leading-[1.4] shadow-[0_14px_34px_rgb(80_50_30/8%)] [border:1px_solid_var(--landing-line)] lg:p-[26px_22px] lg:text-xs [&_h4]:mb-4.5 [&_h4]:text-sm [&_h4]:font-semibold lg:[&_h4]:text-[15px]",
+        "@container relative min-w-0 rounded-2xl border border-(--landing-line) bg-[#f5f5f5] text-caps-sm leading-[1.4] shadow-[0_0.875rem_2.125rem_rgb(80_50_30/8%)] lg:px-5.5 lg:py-6.5 lg:text-xs [&_h4]:mb-4.5 [&_h4]:text-sm [&_h4]:font-semibold lg:[&_h4]:text-base",
         @visual == :invoices &&
-          "p-4 [&_.landing-preview-amount]:size-full [&_.landing-preview-amount]:rounded-none [&_.landing-preview-amount]:p-[2.2cqw_1cqw] [&_.landing-preview-amount]:text-center [&_.landing-preview-amount]:text-[1.5cqw] [&_.landing-preview-amount]:text-(--landing-accent) [&_.landing-preview-amount--teal]:text-turquoise-700 [&_.landing-preview-head]:bg-transparent [&_.landing-preview-head]:p-3 [&_.landing-preview-head]:text-[1.4cqw] [&_.landing-preview-head]:font-normal [&_.landing-preview-row]:grid [&_.landing-preview-row]:grid-cols-[minmax(0,1fr)_18%_22%] [&_.landing-preview-row]:gap-0 [&_.landing-preview-row]:rounded-none [&_.landing-preview-row]:bg-white [&_.landing-preview-row]:p-0 [&_.landing-preview-row]:text-[1.5cqw] [&_.landing-preview-status]:mx-1 [&_.landing-preview-status]:bg-[#f5f5f5] [&_.landing-preview-status]:p-[3px] [&_.landing-preview-status]:text-center [&_.landing-preview-status]:text-[1.1cqw] [&_.landing-preview-status]:leading-none [&_.landing-preview-status]:whitespace-nowrap [&_.landing-preview-status]:[border:0] [&_.landing-preview-status.landing-preview-status--paid]:bg-green-100",
+          "p-4 [&_.landing-preview-amount]:size-full [&_.landing-preview-amount]:rounded-none [&_.landing-preview-amount]:p-[2.2cqw_1cqw] [&_.landing-preview-amount]:text-center [&_.landing-preview-amount]:text-[1.5cqw] [&_.landing-preview-amount]:text-(--landing-accent) [&_.landing-preview-amount--teal]:text-turquoise-700 [&_.landing-preview-head]:bg-transparent [&_.landing-preview-head]:p-3 [&_.landing-preview-head]:text-[1.4cqw] [&_.landing-preview-head]:font-normal [&_.landing-preview-row]:grid [&_.landing-preview-row]:grid-cols-[minmax(0,1fr)_18%_22%] [&_.landing-preview-row]:gap-0 [&_.landing-preview-row]:rounded-none [&_.landing-preview-row]:bg-white [&_.landing-preview-row]:p-0 [&_.landing-preview-row]:text-[1.5cqw] [&_.landing-preview-status]:mx-1 [&_.landing-preview-status]:border-0 [&_.landing-preview-status]:bg-[#f5f5f5] [&_.landing-preview-status]:p-0.75 [&_.landing-preview-status]:text-center [&_.landing-preview-status]:text-[1.1cqw] [&_.landing-preview-status]:leading-none [&_.landing-preview-status]:whitespace-nowrap [&_.landing-preview-status.landing-preview-status--paid]:bg-green-100",
         @visual == :banking && "p-4",
         @visual == :time &&
-          "aspect-528/400 p-[24px_16px] [&_.landing-preview-caption]:mt-[8cqw] [&_.landing-preview-caption]:text-left [&_.landing-preview-caption]:text-[2.3cqw] [&_.landing-preview-caption]:text-grey-600 [&_.landing-preview-head]:mb-[4cqw] [&_.landing-preview-head]:bg-transparent [&_.landing-preview-head]:p-0 [&_.landing-preview-head]:text-[2.4cqw] [&_.landing-preview-head]:text-(--landing-accent) [&_.landing-preview-head_>_span:last-child]:bg-[#e6d7ce] [&_.landing-preview-head_>_span:last-child]:text-[3.5cqw] [&_.landing-preview-overlay]:right-[-4%] [&_.landing-preview-overlay]:bottom-[-7%] [&_.landing-preview-overlay]:left-auto [&_.landing-preview-overlay]:flex [&_.landing-preview-overlay]:w-[54%] [&_.landing-preview-overlay]:flex-col [&_.landing-preview-overlay]:items-stretch [&_.landing-preview-overlay]:gap-[1.5cqw] [&_.landing-preview-overlay]:p-[4cqw] [&_.landing-preview-overlay]:[background:#f5f5f5_url('/images/figurine_timeracker.png')_left_bottom/40%_auto_no-repeat] [&_.landing-preview-overlay_small]:text-center [&_.landing-preview-overlay_small]:text-[1.5cqw] [&_.landing-preview-overlay_small]:text-(--landing-accent) [&_.landing-preview-overlay_strong]:pt-[3cqw] [&_.landing-preview-overlay_strong]:text-center [&_.landing-preview-overlay_strong]:text-[2.7cqw] [&_.landing-preview-overlay_strong]:text-(--landing-accent) [&_.landing-preview-row]:rounded-none [&_.landing-preview-row]:bg-transparent [&_.landing-preview-row]:p-[1.8cqw_0] [&_.landing-preview-row]:text-[2.4cqw] [&_.landing-preview-row]:[border-bottom:1px_solid_#eee] [&_.landing-preview-row:nth-of-type(3)]:mt-[8cqw]",
+          "aspect-528/400 px-4 py-6 [&_.landing-preview-caption]:mt-[8cqw] [&_.landing-preview-caption]:text-left [&_.landing-preview-caption]:text-[2.3cqw] [&_.landing-preview-caption]:text-grey-600 [&_.landing-preview-head]:mb-[4cqw] [&_.landing-preview-head]:bg-transparent [&_.landing-preview-head]:p-0 [&_.landing-preview-head]:text-[2.4cqw] [&_.landing-preview-head]:text-(--landing-accent) [&_.landing-preview-head_>_span:last-child]:bg-[#e6d7ce] [&_.landing-preview-head_>_span:last-child]:text-[3.5cqw] [&_.landing-preview-overlay]:right-[-4%] [&_.landing-preview-overlay]:bottom-[-7%] [&_.landing-preview-overlay]:left-auto [&_.landing-preview-overlay]:flex [&_.landing-preview-overlay]:w-[54%] [&_.landing-preview-overlay]:flex-col [&_.landing-preview-overlay]:items-stretch [&_.landing-preview-overlay]:gap-[1.5cqw] [&_.landing-preview-overlay]:p-[4cqw] [&_.landing-preview-overlay]:[background:#f5f5f5_url('/images/figurine_timeracker.png')_left_bottom/40%_auto_no-repeat] [&_.landing-preview-overlay_small]:text-center [&_.landing-preview-overlay_small]:text-[1.5cqw] [&_.landing-preview-overlay_small]:text-(--landing-accent) [&_.landing-preview-overlay_strong]:pt-[3cqw] [&_.landing-preview-overlay_strong]:text-center [&_.landing-preview-overlay_strong]:text-[2.7cqw] [&_.landing-preview-overlay_strong]:text-(--landing-accent) [&_.landing-preview-row]:rounded-none [&_.landing-preview-row]:border-b [&_.landing-preview-row]:border-[#eee] [&_.landing-preview-row]:bg-transparent [&_.landing-preview-row]:p-[1.8cqw_0] [&_.landing-preview-row]:text-[2.4cqw] [&_.landing-preview-row:nth-of-type(3)]:mt-[8cqw]",
         @visual == :team &&
-          "aspect-528/400 p-[20px_16px_60px] [&_.landing-preview-avatar]:size-[10cqw] [&_.landing-preview-avatar]:text-[3cqw] [&_.landing-preview-caption]:m-0 [&_.landing-preview-caption]:bg-white [&_.landing-preview-caption]:p-[2cqw] [&_.landing-preview-caption]:text-left [&_.landing-preview-caption]:text-[1.5cqw] [&_.landing-preview-caption]:text-grey-600 [&_.landing-preview-head]:m-0 [&_.landing-preview-head]:rounded-[4px_4px_0_0] [&_.landing-preview-head]:bg-white [&_.landing-preview-head]:p-[2cqw] [&_.landing-preview-head]:text-[1.6cqw] [&_.landing-preview-overlay]:right-auto [&_.landing-preview-overlay]:bottom-[-6%] [&_.landing-preview-overlay]:left-[-4%] [&_.landing-preview-overlay]:w-[55%] [&_.landing-preview-overlay]:gap-[2cqw] [&_.landing-preview-overlay]:p-[2.5cqw] [&_.landing-preview-pending.landing-preview-row]:mb-[3cqw] [&_.landing-preview-pending.landing-preview-row]:pb-[3cqw] [&_.landing-preview-row]:m-0 [&_.landing-preview-row]:min-h-[5.6cqw] [&_.landing-preview-row]:rounded-none [&_.landing-preview-row]:bg-white [&_.landing-preview-row]:p-[1.3cqw_2cqw] [&_.landing-preview-row]:text-[1.7cqw] [&_.landing-preview-row_small]:text-[1.5cqw] [&_.landing-preview-row+.landing-preview-row]:mt-0 [&_.landing-preview-status]:rounded-full [&_.landing-preview-status]:p-[0.5cqw_2cqw] [&_.landing-preview-status]:text-[1.5cqw] [&_.landing-preview-status]:[border:0]"
+          "aspect-528/400 px-4 pt-5 pb-15 [&_.landing-preview-avatar]:size-[10cqw] [&_.landing-preview-avatar]:text-[3cqw] [&_.landing-preview-caption]:m-0 [&_.landing-preview-caption]:bg-white [&_.landing-preview-caption]:p-[2cqw] [&_.landing-preview-caption]:text-left [&_.landing-preview-caption]:text-[1.5cqw] [&_.landing-preview-caption]:text-grey-600 [&_.landing-preview-head]:m-0 [&_.landing-preview-head]:rounded-t-sm [&_.landing-preview-head]:rounded-b-none [&_.landing-preview-head]:bg-white [&_.landing-preview-head]:p-[2cqw] [&_.landing-preview-head]:text-[1.6cqw] [&_.landing-preview-overlay]:right-auto [&_.landing-preview-overlay]:bottom-[-6%] [&_.landing-preview-overlay]:left-[-4%] [&_.landing-preview-overlay]:w-[55%] [&_.landing-preview-overlay]:gap-[2cqw] [&_.landing-preview-overlay]:p-[2.5cqw] [&_.landing-preview-pending.landing-preview-row]:mb-[3cqw] [&_.landing-preview-pending.landing-preview-row]:pb-[3cqw] [&_.landing-preview-row]:m-0 [&_.landing-preview-row]:min-h-[5.6cqw] [&_.landing-preview-row]:rounded-none [&_.landing-preview-row]:bg-white [&_.landing-preview-row]:p-[1.3cqw_2cqw] [&_.landing-preview-row]:text-[1.7cqw] [&_.landing-preview-row_small]:text-[1.5cqw] [&_.landing-preview-row+.landing-preview-row]:mt-0 [&_.landing-preview-status]:rounded-full [&_.landing-preview-status]:border-0 [&_.landing-preview-status]:p-[0.5cqw_2cqw] [&_.landing-preview-status]:text-[1.5cqw]"
       ]}
       role="img"
       aria-label={gettext("Illustrative product preview")}
     >
       <%= case @visual do %>
         <% :invoices -> %>
-          <div class="landing-preview-head mb-1 flex items-center justify-between gap-2 rounded-[6px] bg-[#eadcd4] p-[8px_12px] font-semibold [&_span:last-child]:rounded-[4px] [&_span:last-child]:bg-white [&_span:last-child]:p-[2px_8px] [&_span:last-child]:text-[10px]">
+          <div class="landing-preview-head mb-1 flex items-center justify-between gap-2 rounded-md bg-[#eadcd4] px-3 py-2 font-semibold [&_span:last-child]:rounded-sm [&_span:last-child]:bg-white [&_span:last-child]:px-2 [&_span:last-child]:py-0.5 [&_span:last-child]:text-caps-sm">
             <span>{gettext("Counterparty")}</span>
             <span>{gettext("Status")}</span>
           </div>
           <div
             :for={row <- contractor_invoices()}
-            class="landing-preview-row flex flex-wrap items-center gap-1.5 rounded-[8px] bg-[#faf7f5] p-3 text-[10px] lg:text-caps-sm [&_small]:text-[9px] [&_small]:font-normal [&_small]:text-darkGrey lg:[&_small]:text-[10px] [&+.landing-preview-row]:mt-1.5"
+            class="landing-preview-row flex flex-wrap items-center gap-1.5 rounded-lg bg-[#faf7f5] p-3 text-caps-sm [&_small]:text-caps-sm [&_small]:font-normal [&_small]:text-darkGrey [&+.landing-preview-row]:mt-1.5"
           >
-            <span class="landing-preview-contractor flex items-center gap-[1cqw] overflow-hidden p-[1cqw] whitespace-nowrap [&_img]:size-[4cqw] [&_img]:shrink-0 [&_img]:object-contain [&_img]:[border:1px_solid_#ddd] [&_small]:overflow-hidden [&_small]:text-[1.4cqw] [&_small]:text-ellipsis [&_strong]:shrink-0 [&_strong]:font-semibold [&.landing-preview-contractor_small]:text-[1.4cqw] lg:[&.landing-preview-contractor_small]:text-[10px]"><img
+            <span class="landing-preview-contractor flex items-center gap-[1cqw] overflow-hidden p-[1cqw] whitespace-nowrap [&_img]:size-[4cqw] [&_img]:shrink-0 [&_img]:border [&_img]:border-grey-200 [&_img]:object-contain [&_small]:overflow-hidden [&_small]:text-[1.4cqw] [&_small]:text-ellipsis [&_strong]:shrink-0 [&_strong]:font-semibold [&.landing-preview-contractor_small]:text-[1.4cqw] lg:[&.landing-preview-contractor_small]:text-caps-sm"><img
               src={~p"/images/ksef.png"}
               alt=""
               width="24"
               height="24"
             /><strong>{row.name}</strong> <small>{row.note}</small></span>
             <span class={[
-              "landing-preview-status ml-auto rounded-[4px] bg-white p-[3px_8px] text-[8px] uppercase [border:1px_solid_var(--landing-line)] lg:text-[10px]",
+              "landing-preview-status ml-auto rounded-sm border border-(--landing-line) bg-white px-2 py-0.75 text-[0.5rem] uppercase lg:text-caps-sm",
               row.paid &&
                 "landing-preview-status--paid border-[#c6dcbf] [&.landing-preview-status--paid]:bg-[#dcecd8]"
             ]}>
               {row.status}
             </span>
             <span class={[
-              "landing-preview-amount ml-auto rounded-[4px] bg-[#eadcd4] p-[8px_12px] font-semibold whitespace-nowrap",
+              "landing-preview-amount ml-auto rounded-sm bg-[#eadcd4] px-3 py-2 font-semibold whitespace-nowrap",
               row.tone == :teal &&
                 "landing-preview-amount--teal [&.landing-preview-amount--teal]:bg-[#cfe6e6]"
             ]}>
@@ -289,15 +289,15 @@ defmodule FirmowidWeb.Landing.Components.Sections do
             </span>
           </div>
         <% :banking -> %>
-          <div class="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-[3cqw] [&_.landing-preview-caption]:mt-auto [&_.landing-preview-caption]:pt-[3cqw] [&_.landing-preview-caption]:pb-[1cqw] [&_.landing-preview-caption]:text-[2.3cqw] [&_.landing-preview-head]:gap-[3px] [&_.landing-preview-head]:p-[2cqw] [&_.landing-preview-head]:text-[2.2cqw] [&_.landing-preview-head_>_span:last-child]:p-[1cqw_2cqw] [&_.landing-preview-head_>_span:last-child]:text-[2cqw] [&_.landing-preview-match]:mt-0 [&_.landing-preview-match]:p-[1cqw] [&_.landing-preview-match]:text-[1.5cqw] [&_.landing-preview-row]:min-h-[10cqw] [&_.landing-preview-row]:gap-[1.2cqw] [&_.landing-preview-row]:bg-white [&_.landing-preview-row]:p-[1.6cqw] [&_.landing-preview-row]:text-[1.8cqw] [&_.landing-preview-row_>_span:first-child]:min-w-0 [&_.landing-preview-row_>_span:first-child]:flex-1 [&_.landing-preview-row_>_span:first-child]:truncate [&_.landing-preview-row_img]:ml-auto [&_.landing-preview-row_img]:h-[2.4cqw] [&_.landing-preview-row_img]:w-[4cqw] [&_.landing-preview-row_img]:object-contain [&_.landing-preview-row_small]:w-[65%] [&_.landing-preview-row_small]:text-[1.5cqw] [&_.landing-preview-row_small]:text-grey-500 [&_.landing-preview-row_strong]:text-[1.8cqw] [&_.landing-preview-row_strong]:font-semibold [&_>_div]:flex [&_>_div]:flex-col [&_>_div]:rounded-[4px] [&_>_div]:bg-[#f0eae6] [&_>_div]:p-[1.6cqw] [&_>_div+div]:bg-turquoise-100">
+          <div class="grid grid-cols-2 gap-[3cqw] [&_.landing-preview-caption]:mt-auto [&_.landing-preview-caption]:pt-[3cqw] [&_.landing-preview-caption]:pb-[1cqw] [&_.landing-preview-caption]:text-[2.3cqw] [&_.landing-preview-head]:gap-0.75 [&_.landing-preview-head]:p-[2cqw] [&_.landing-preview-head]:text-[2.2cqw] [&_.landing-preview-head_>_span:last-child]:p-[1cqw_2cqw] [&_.landing-preview-head_>_span:last-child]:text-[2cqw] [&_.landing-preview-match]:mt-0 [&_.landing-preview-match]:p-[1cqw] [&_.landing-preview-match]:text-[1.5cqw] [&_.landing-preview-row]:min-h-[10cqw] [&_.landing-preview-row]:gap-[1.2cqw] [&_.landing-preview-row]:bg-white [&_.landing-preview-row]:p-[1.6cqw] [&_.landing-preview-row]:text-[1.8cqw] [&_.landing-preview-row_>_span:first-child]:min-w-0 [&_.landing-preview-row_>_span:first-child]:flex-1 [&_.landing-preview-row_>_span:first-child]:truncate [&_.landing-preview-row_img]:ml-auto [&_.landing-preview-row_img]:h-[2.4cqw] [&_.landing-preview-row_img]:w-[4cqw] [&_.landing-preview-row_img]:object-contain [&_.landing-preview-row_small]:w-[65%] [&_.landing-preview-row_small]:text-[1.5cqw] [&_.landing-preview-row_small]:text-grey-500 [&_.landing-preview-row_strong]:text-[1.8cqw] [&_.landing-preview-row_strong]:font-semibold [&_>_div]:flex [&_>_div]:flex-col [&_>_div]:rounded-sm [&_>_div]:bg-[#f0eae6] [&_>_div]:p-[1.6cqw] [&_>_div+div]:bg-turquoise-100">
             <div>
-              <div class="landing-preview-head mb-1 flex items-center justify-between gap-2 rounded-[6px] bg-[#eadcd4] p-[8px_12px] font-semibold [&_span:last-child]:rounded-[4px] [&_span:last-child]:bg-white [&_span:last-child]:p-[2px_8px] [&_span:last-child]:text-[10px]">
+              <div class="landing-preview-head mb-1 flex items-center justify-between gap-2 rounded-md bg-[#eadcd4] px-3 py-2 font-semibold [&_span:last-child]:rounded-sm [&_span:last-child]:bg-white [&_span:last-child]:px-2 [&_span:last-child]:py-0.5 [&_span:last-child]:text-caps-sm">
                 <span>{gettext("Transactions to match")}</span>
                 <span>6</span>
               </div>
               <div
                 :for={row <- unmatched_transactions()}
-                class="landing-preview-row flex flex-wrap items-center gap-1.5 rounded-[8px] bg-[#faf7f5] p-3 text-[10px] lg:text-caps-sm [&_small]:text-[9px] [&_small]:font-normal [&_small]:text-darkGrey lg:[&_small]:text-[10px] [&+.landing-preview-row]:mt-1.5"
+                class="landing-preview-row flex flex-wrap items-center gap-1.5 rounded-lg bg-[#faf7f5] p-3 text-caps-sm [&_small]:text-caps-sm [&_small]:font-normal [&_small]:text-darkGrey [&+.landing-preview-row]:mt-1.5"
               >
                 <span>{row.name}</span>
                 <strong class={[
@@ -313,85 +313,85 @@ defmodule FirmowidWeb.Landing.Components.Sections do
                   height="12"
                 />
               </div>
-              <p class="landing-preview-caption mt-4 text-center text-[10px] text-(--landing-accent)">
+              <p class="landing-preview-caption mt-4 text-center text-caps-sm text-(--landing-accent)">
                 {gettext("See all")}
               </p>
             </div>
             <div>
-              <div class="landing-preview-head mb-1 flex items-center justify-between gap-2 rounded-[6px] bg-[#eadcd4] p-[8px_12px] font-semibold [background:var(--color-turquoise-200)] [&_span:last-child]:rounded-[4px] [&_span:last-child]:bg-white [&_span:last-child]:p-[2px_8px] [&_span:last-child]:text-[10px]">
+              <div class="landing-preview-head mb-1 flex items-center justify-between gap-2 rounded-md bg-turquoise-200 px-3 py-2 font-semibold [&_span:last-child]:rounded-sm [&_span:last-child]:bg-white [&_span:last-child]:px-2 [&_span:last-child]:py-0.5 [&_span:last-child]:text-caps-sm">
                 <span>{gettext("Matched")}</span>
                 <span>36</span>
               </div>
               <div
                 :for={row <- matched_transactions()}
-                class="landing-preview-row flex flex-wrap items-center gap-1.5 rounded-[8px] bg-[#faf7f5] p-3 text-[10px] lg:text-caps-sm [&_small]:text-[9px] [&_small]:font-normal [&_small]:text-darkGrey lg:[&_small]:text-[10px] [&+.landing-preview-row]:mt-1.5"
+                class="landing-preview-row flex flex-wrap items-center gap-1.5 rounded-lg bg-[#faf7f5] p-3 text-caps-sm [&_small]:text-caps-sm [&_small]:font-normal [&_small]:text-darkGrey [&+.landing-preview-row]:mt-1.5"
               >
                 <span>{row.name} <small>{row.reference}</small></span>
                 <strong>{pgettext("landing bank amount", "%{amount} PLN", amount: row.amount)}</strong>
-                <span class="landing-preview-match mt-1.5 flex flex-[1_1_100%] items-center gap-1.5 rounded-[4px] bg-[#dcecd8] p-[4px_8px] text-[9px] text-greenText lg:text-[10px] [&_progress]:h-1 [&_progress]:flex-1 [&_progress]:accent-green-600">
+                <span class="landing-preview-match mt-1.5 flex flex-[1_1_100%] items-center gap-1.5 rounded-sm bg-[#dcecd8] px-2 py-1 text-caps-sm text-greenText [&_progress]:h-1 [&_progress]:flex-1 [&_progress]:accent-green-600">
                   {row.confidence}%
                   <progress value={row.confidence} max="100">{row.confidence}%</progress>
                 </span>
               </div>
-              <p class="landing-preview-caption mt-4 text-center text-[10px] text-(--landing-accent)">
+              <p class="landing-preview-caption mt-4 text-center text-caps-sm text-(--landing-accent)">
                 {gettext("See all")}
               </p>
             </div>
           </div>
         <% :time -> %>
-          <div class="landing-preview-head mb-1 flex items-center justify-between gap-2 rounded-[6px] bg-[#eadcd4] p-[8px_12px] font-semibold [&_span:last-child]:rounded-[4px] [&_span:last-child]:bg-white [&_span:last-child]:p-[2px_8px] [&_span:last-child]:text-[10px]">
+          <div class="landing-preview-head mb-1 flex items-center justify-between gap-2 rounded-md bg-[#eadcd4] px-3 py-2 font-semibold [&_span:last-child]:rounded-sm [&_span:last-child]:bg-white [&_span:last-child]:px-2 [&_span:last-child]:py-0.5 [&_span:last-child]:text-caps-sm">
             <span>{gettext("Today's sessions")}</span>
             <span>00:51</span>
           </div>
           <div
             :for={row <- sessions()}
-            class="landing-preview-row flex flex-wrap items-center gap-1.5 rounded-[8px] bg-[#faf7f5] p-3 text-[10px] lg:text-caps-sm [&_small]:text-[9px] [&_small]:font-normal [&_small]:text-darkGrey lg:[&_small]:text-[10px] [&+.landing-preview-row]:mt-1.5"
+            class="landing-preview-row flex flex-wrap items-center gap-1.5 rounded-lg bg-[#faf7f5] p-3 text-caps-sm [&_small]:text-caps-sm [&_small]:font-normal [&_small]:text-darkGrey [&+.landing-preview-row]:mt-1.5"
           >
             <span>{row.name}</span>
             <span class="ml-auto">{row.project}</span>
             <span>{row.duration}</span>
           </div>
-          <p class="landing-preview-caption mt-4 text-center text-[10px] text-(--landing-accent)">
+          <p class="landing-preview-caption mt-4 text-center text-caps-sm text-(--landing-accent)">
             {gettext("Tuesday")} · {gettext("Wednesday")}
           </p>
-          <div class="landing-preview-overlay absolute right-[6%] -bottom-4.5 left-[14%] flex flex-wrap items-center gap-2.5 rounded-[12px] bg-white p-4 text-[10px] shadow-[0_12px_28px_rgb(0_0_0/12%)] [border:1px_solid_var(--landing-line)] [&_strong]:text-sm">
+          <div class="landing-preview-overlay absolute right-[6%] -bottom-4.5 left-[14%] flex flex-wrap items-center gap-2.5 rounded-xl border border-(--landing-line) bg-white p-4 text-caps-sm shadow-[0_0.75rem_1.75rem_rgb(0_0_0/12%)] [&_strong]:text-sm">
             <span class="bg-[#ddd] p-[1.2cqw] text-[1.5cqw]">{gettext("Equipment testing")}</span>
             <span class="flex justify-between bg-[#e6d7ce] p-[1.6cqw] text-[1.5cqw] text-(--landing-accent)">Qubiq
             <span aria-hidden="true">⌄</span></span>
             <span class="text-[1.5cqw]">◯ {gettext("Working from home")}</span>
             <strong>{gettext("16 hours 23 min")}</strong>
             <small>{gettext("in October")}</small>
-            <span class="self-center rounded-[3px] p-[1cqw_4cqw] text-[1.5cqw] text-white [background:var(--landing-accent)]">{gettext(
+            <span class="self-center rounded-sm bg-(--landing-accent) p-[1cqw_4cqw] text-[1.5cqw] text-white">{gettext(
               "Start"
             )}</span>
           </div>
         <% :team -> %>
-          <div class="landing-preview-head mb-1 flex items-center justify-between gap-2 rounded-[6px] bg-[#eadcd4] p-[8px_12px] font-semibold [&_span:last-child]:rounded-[4px] [&_span:last-child]:bg-white [&_span:last-child]:p-[2px_8px] [&_span:last-child]:text-[10px]">
+          <div class="landing-preview-head mb-1 flex items-center justify-between gap-2 rounded-md bg-[#eadcd4] px-3 py-2 font-semibold [&_span:last-child]:rounded-sm [&_span:last-child]:bg-white [&_span:last-child]:px-2 [&_span:last-child]:py-0.5 [&_span:last-child]:text-caps-sm">
             <span>{gettext("Leave requests to approve")}</span>
           </div>
-          <div class="landing-preview-pending landing-preview-row flex flex-wrap items-center gap-1.5 rounded-[8px] bg-[#faf7f5] p-3 text-[10px] lg:text-caps-sm [&_>_span:last-child]:rounded-full [&_>_span:last-child]:bg-turquoise-100 [&_>_span:last-child]:p-[1cqw_3cqw] [&_>_span:last-child]:text-[1.5cqw] [&_>_span:last-child]:text-turquoise-700 [&_small]:text-[9px] [&_small]:font-normal [&_small]:text-darkGrey lg:[&_small]:text-[10px] [&+.landing-preview-row]:mt-1.5">
+          <div class="landing-preview-pending landing-preview-row flex flex-wrap items-center gap-1.5 rounded-lg bg-[#faf7f5] p-3 text-caps-sm [&_>_span:last-child]:rounded-full [&_>_span:last-child]:bg-turquoise-100 [&_>_span:last-child]:p-[1cqw_3cqw] [&_>_span:last-child]:text-[1.5cqw] [&_>_span:last-child]:text-turquoise-700 [&_small]:text-caps-sm [&_small]:font-normal [&_small]:text-darkGrey [&+.landing-preview-row]:mt-1.5">
             <span>☼ {gettext("Annual leave")}</span><small>02–06.11.2026</small><span>{gettext(
               "Pending"
             )}</span>
           </div>
-          <p class="landing-preview-caption mt-4 text-center text-[10px] text-(--landing-accent)">
+          <p class="landing-preview-caption mt-4 text-center text-caps-sm text-(--landing-accent)">
             {gettext("Used this year:")} 11 · {gettext("Available:")} 15
           </p>
           <div
             :for={row <- leave_requests()}
-            class="landing-preview-row flex flex-wrap items-center gap-1.5 rounded-[8px] bg-[#faf7f5] p-3 text-[10px] lg:text-caps-sm [&_small]:text-[9px] [&_small]:font-normal [&_small]:text-darkGrey lg:[&_small]:text-[10px] [&+.landing-preview-row]:mt-1.5"
+            class="landing-preview-row flex flex-wrap items-center gap-1.5 rounded-lg bg-[#faf7f5] p-3 text-caps-sm [&_small]:text-caps-sm [&_small]:font-normal [&_small]:text-darkGrey [&+.landing-preview-row]:mt-1.5"
           >
             <span>{row.name}</span>
             <span class="ml-auto">{row.date}</span>
             <span class={[
-              "landing-preview-status ml-auto rounded-[4px] bg-white p-[3px_8px] text-[8px] uppercase [border:1px_solid_var(--landing-line)] lg:text-[10px]",
+              "landing-preview-status ml-auto rounded-sm border border-(--landing-line) bg-white px-2 py-0.75 text-[0.5rem] uppercase lg:text-caps-sm",
               row.approved &&
                 "landing-preview-status--paid border-[#c6dcbf] [&.landing-preview-status--paid]:bg-[#dcecd8]"
             ]}>
               {row.status}
             </span>
           </div>
-          <div class="landing-preview-overlay absolute right-[6%] -bottom-4.5 left-[14%] flex flex-wrap items-center gap-2.5 rounded-[12px] bg-white p-4 text-[10px] shadow-[0_12px_28px_rgb(0_0_0/12%)] [border:1px_solid_var(--landing-line)] [&_strong]:text-sm">
+          <div class="landing-preview-overlay absolute right-[6%] -bottom-4.5 left-[14%] flex flex-wrap items-center gap-2.5 rounded-xl border border-(--landing-line) bg-white p-4 text-caps-sm shadow-[0_0.75rem_1.75rem_rgb(0_0_0/12%)] [&_strong]:text-sm">
             <span class="landing-preview-avatar grid size-8.5 place-content-center rounded-full text-xs font-bold text-white [background:var(--color-turquoise-400)]">KK</span>
             <span class="landing-preview-contact flex min-w-0 flex-1 flex-col items-start gap-[1cqw] [&_img]:size-[3cqw] [&_small]:flex [&_small]:items-center [&_small]:gap-[1cqw] [&_small]:text-[1.7cqw] [&_strong]:whitespace-nowrap [&.landing-preview-contact_strong]:text-[2.7cqw]">
               <strong>Katarzyna Kowalska</strong>
@@ -543,11 +543,11 @@ defmodule FirmowidWeb.Landing.Components.Sections do
   def assistants_section(assigns) do
     ~H"""
     <section id="asystent" class="bg-turquoise-200 py-18 lg:py-26">
-      <div class="mx-auto grid w-[calc(100%-32px)] max-w-[1139px] grid-cols-[minmax(0,1fr)] gap-10 *:min-w-0 lg:w-[calc(100%-64px)] lg:grid-cols-[minmax(0,1fr)_500px] lg:gap-20 [&_.landing-eyebrow]:text-turquoise-700 [&_.landing-pill]:bg-turquoise-700 [&_.landing-pill]:p-[3px_9px] [&_.landing-pill]:text-caps-sm [&_.landing-pill]:tracking-normal [&_.landing-pill]:text-white [&_.landing-pill]:[border:0] lg:[&_.landing-section-intro_h2]:max-w-130 lg:[&_.landing-section-intro.landing-section-intro_>_p]:max-w-none">
-        <div class="landing-section-intro max-w-180 lg:max-w-[1139px] [&_>_p:not(.landing-eyebrow,.landing-assistants-soon,.landing-assistants-footnote)]:mt-6 [&_>_p:not(.landing-eyebrow,.landing-assistants-soon,.landing-assistants-footnote)]:text-h5 [&_>_p:not(.landing-eyebrow,.landing-assistants-soon,.landing-assistants-footnote)]:leading-[27px] [&_>_p:not(.landing-eyebrow,.landing-assistants-soon,.landing-assistants-footnote)]:text-darkGrey lg:[&_>_p:not(.landing-eyebrow,.landing-assistants-soon,.landing-assistants-footnote)]:max-w-115 lg:[&_>_p:not(.landing-eyebrow,.landing-assistants-soon,.landing-assistants-footnote)]:text-h5 [&_h2]:text-[36px] [&_h2]:leading-[1.1] [&_h2]:font-bold [&_h2]:tracking-[-0.03em] lg:[&_h2]:text-[48px] lg:[&_h2]:leading-[1.04] lg:[&.text-center]:mx-auto lg:[&.text-center]:max-w-140 lg:[&.text-center_>_p:not(.landing-eyebrow)]:mx-auto">
+      <div class="mx-auto grid w-[calc(100%-var(--spacing)*8)] max-w-284.75 grid-cols-1 gap-10 *:min-w-0 lg:w-[calc(100%-var(--spacing)*16)] lg:grid-cols-[minmax(0,1fr)_--spacing(125)] lg:gap-20 [&_.landing-eyebrow]:text-turquoise-700 [&_.landing-pill]:border-0 [&_.landing-pill]:bg-turquoise-700 [&_.landing-pill]:px-2.25 [&_.landing-pill]:py-0.75 [&_.landing-pill]:text-caps-sm [&_.landing-pill]:tracking-normal [&_.landing-pill]:text-white lg:[&_.landing-section-intro_h2]:max-w-130 lg:[&_.landing-section-intro.landing-section-intro_>_p]:max-w-none">
+        <div class="landing-section-intro max-w-180 lg:max-w-284.75 [&_>_p:not(.landing-eyebrow,.landing-assistants-soon,.landing-assistants-footnote)]:mt-6 [&_>_p:not(.landing-eyebrow,.landing-assistants-soon,.landing-assistants-footnote)]:text-h5/6.75 [&_>_p:not(.landing-eyebrow,.landing-assistants-soon,.landing-assistants-footnote)]:text-darkGrey lg:[&_>_p:not(.landing-eyebrow,.landing-assistants-soon,.landing-assistants-footnote)]:max-w-115 [&_h2]:text-[2.25rem] [&_h2]:leading-[1.1] [&_h2]:font-bold [&_h2]:tracking-[-0.03em] lg:[&_h2]:text-[3rem] lg:[&_h2]:leading-[1.04] lg:[&.text-center]:mx-auto lg:[&.text-center]:max-w-140 lg:[&.text-center_>_p:not(.landing-eyebrow)]:mx-auto">
           <p class="landing-eyebrow mb-4 flex flex-wrap items-center gap-3 text-xs font-bold tracking-[0.08em] text-(--landing-accent) uppercase">
             {gettext("Firmowid in ChatGPT and Claude")}
-            <span class="landing-pill inline-flex items-center rounded-full p-[5px_14px] text-caps-sm font-bold tracking-[0.04em] uppercase [border:1px_solid_currentColor]">{gettext(
+            <span class="landing-pill inline-flex items-center rounded-full border border-current px-3.5 py-1.25 text-caps-sm font-bold tracking-[0.04em] uppercase">{gettext(
               "Early access"
             )}</span>
           </p>
@@ -558,7 +558,7 @@ defmodule FirmowidWeb.Landing.Components.Sections do
             )}
           </p>
 
-          <ul class="mt-8 grid gap-4 text-[15px] leading-normal lg:text-base [&_li]:flex [&_li]:items-baseline [&_li]:gap-2.5 [&_li]:text-[#4e4e4e]">
+          <ul class="mt-8 grid gap-4 text-base/normal [&_li]:flex [&_li]:items-baseline [&_li]:gap-2.5 [&_li]:text-[#4e4e4e]">
             <li>
               <img
                 src={~p"/images/landing/icons/check.svg"}
@@ -587,7 +587,7 @@ defmodule FirmowidWeb.Landing.Components.Sections do
               />{gettext("Reading sales and cost invoices")}
             </li>
           </ul>
-          <p class="landing-assistants-soon mt-6 flex items-start gap-2.5 text-[15px] leading-normal">
+          <p class="landing-assistants-soon mt-6 flex items-start gap-2.5 text-base/normal">
             <img
               src={~p"/images/landing/icons/clock.svg"}
               alt=""
@@ -613,7 +613,7 @@ defmodule FirmowidWeb.Landing.Components.Sections do
                 alt=""
                 width="249"
                 height="62"
-                class="absolute right-0 bottom-1/2 h-[62px] w-full"
+                class="absolute right-0 bottom-1/2 h-15.5 w-full"
               />
               <img
                 src={~p"/images/landing/decorations/assistant-middle.svg"}
@@ -627,10 +627,10 @@ defmodule FirmowidWeb.Landing.Components.Sections do
                 alt=""
                 width="248"
                 height="63"
-                class="absolute top-1/2 right-0 h-[63px] w-full"
+                class="absolute top-1/2 right-0 h-15.75 w-full"
               />
             </div>
-            <ul class="grid flex-[0_0_160px] gap-7 text-[13px] leading-[1.3] [&_img]:size-9.5 [&_li]:flex [&_li]:items-center [&_li]:gap-2 [&_li:nth-child(2)_img]:filter-[invert(61%)_sepia(65%)_saturate(555%)_hue-rotate(332deg)_brightness(90%)] [&_small]:block [&_small]:text-darkGrey [&_strong]:font-bold">
+            <ul class="grid shrink-0 grow-0 basis-40 gap-7 text-sm leading-[1.3] [&_img]:size-9.5 [&_li]:flex [&_li]:items-center [&_li]:gap-2 [&_li:nth-child(2)_img]:filter-[invert(61%)_sepia(65%)_saturate(555%)_hue-rotate(332deg)_brightness(90%)] [&_small]:block [&_small]:text-darkGrey [&_strong]:font-bold">
               <li>
                 <img src={~p"/images/landing/chatgpt.svg"} width="38" height="38" alt="" /><span><strong>ChatGPT</strong><small>{gettext(
                   "app"
@@ -649,7 +649,7 @@ defmodule FirmowidWeb.Landing.Components.Sections do
             </ul>
           </div>
 
-          <p class="landing-assistants-footnote mt-14 text-sm/[20px] text-grey-500">
+          <p class="landing-assistants-footnote mt-14 text-sm/5 text-grey-500">
             {gettext(
               "*Already used by early adopters among our users. Gradually rolling out to everyone. Available in the Entrepreneur and Company plans."
             )}
@@ -657,11 +657,11 @@ defmodule FirmowidWeb.Landing.Components.Sections do
         </div>
 
         <div
-          class="self-center rounded-[16px] bg-white p-6 text-sm leading-[1.55] shadow-[0_18px_44px_rgb(47_67_67/10%)] lg:rounded-[20px] lg:p-5.5"
+          class="self-center rounded-2xl bg-white p-6 text-sm leading-[1.55] shadow-[0_1.125rem_2.75rem_rgb(47_67_67/10%)] lg:rounded-3xl lg:p-5.5"
           role="img"
           aria-label={gettext("Example conversation and invoice confirmation preview")}
         >
-          <p class="ml-10 rounded-[14px_14px_0_14px] bg-[#dde4e4] p-[14px_18px]">
+          <p class="ml-10 rounded-2xl rounded-br-none bg-[#dde4e4] px-4.5 py-3.5">
             {gettext("Issue an invoice for Północny Kod: 120 h at PLN 180 net.")}
           </p>
           <p class="mt-5 text-xs text-darkGrey">
@@ -673,18 +673,18 @@ defmodule FirmowidWeb.Landing.Components.Sections do
             )}
           </p>
 
-          <div class="mt-4 rounded-[12px] bg-[#f5f5f5] p-5 [border:1px_solid_var(--landing-line)] [&_.landing-button]:mx-auto [&_.landing-button]:mt-4 [&_.landing-button]:flex [&_.landing-button]:min-h-9 [&_.landing-button]:w-max [&_.landing-button]:max-w-full [&_.landing-button]:bg-turquoise-700 [&_.landing-button]:p-[8px_14px] [&_.landing-button]:text-sm [&_h3]:mb-4 [&_h3]:text-lg [&_h3]:font-semibold">
+          <div class="mt-4 rounded-xl border border-(--landing-line) bg-[#f5f5f5] p-5 [&_.landing-button]:mx-auto [&_.landing-button]:mt-4 [&_.landing-button]:flex [&_.landing-button]:min-h-9 [&_.landing-button]:w-max [&_.landing-button]:max-w-full [&_.landing-button]:bg-turquoise-700 [&_.landing-button]:px-3.5 [&_.landing-button]:py-2 [&_.landing-button]:text-sm [&_h3]:mb-4 [&_h3]:text-lg [&_h3]:font-semibold">
             <h3>{gettext("Confirm invoice")}</h3>
             <div class="bg-[#ddd] p-3.5">
-              <div class="relative mx-auto aspect-210/297 w-[74%] bg-white p-[18px_12px] font-[Arial,sans-serif] text-[3.5px] leading-[1.6] shadow-[0_1px_4px_#ccc] lg:p-[22px_20px] lg:text-[4.5px] [&_>_strong]:text-[5px] lg:[&_>_strong]:text-[6px] [&_dl]:mt-2.5 [&_dl]:ml-auto [&_dl]:w-[50%] [&_dl_>_div]:flex [&_dl_>_div]:justify-between [&_dl_>_div:last-child]:mt-1.5 [&_dl_>_div:last-child]:font-bold">
+              <div class="relative mx-auto aspect-210/297 w-[74%] bg-white px-3 py-4.5 font-[Arial,sans-serif] text-[0.21875rem] leading-[1.6] shadow-[0_0.0625rem_0.25rem_#ccc] lg:px-5 lg:py-5.5 lg:text-[0.28125rem] [&_>_strong]:text-[0.3125rem] lg:[&_>_strong]:text-[0.375rem] [&_dl]:mt-2.5 [&_dl]:ml-auto [&_dl]:w-1/2 [&_dl_>_div]:flex [&_dl_>_div]:justify-between [&_dl_>_div:last-child]:mt-1.5 [&_dl_>_div:last-child]:font-bold">
                 <strong>{gettext("VAT invoice %{number}", number: "01/10/2026")}</strong>
                 <p>14.10.2026</p>
-                <div class="mt-4.5 flex justify-between gap-2 pt-2.5 [border-top:1px_solid_#ddd] lg:mt-6 lg:pt-4">
+                <div class="mt-4.5 flex justify-between gap-2 border-t border-grey-200 pt-2.5 lg:mt-6 lg:pt-4">
                   <p>{gettext("Seller")}<br /><strong>Bytecraft Collective sp. z o.o.</strong></p><p>
                     {gettext("Buyer")}<br /><strong>Północny Kod sp. z o.o.</strong>
                   </p>
                 </div>
-                <div class="mt-4 flex justify-between py-2 [border-block:1px_solid_#ddd] lg:mt-6">
+                <div class="mt-4 flex justify-between border-y border-grey-200 py-2 lg:mt-6">
                   <span>{gettext("Programming services")}</span><span>{gettext("%{hours} h",
                     hours: 120
                   )}</span><span>{gettext("%{amount} PLN", amount: "180,00")}</span>
@@ -712,7 +712,7 @@ defmodule FirmowidWeb.Landing.Components.Sections do
                 </p>
               </div>
             </div>
-            <span class="landing-button relative isolate inline-flex min-h-13 items-center justify-center gap-2.5 rounded-[4px] bg-[#0f0f0f] p-[14px_32px] text-center text-base leading-[24px] font-medium text-white [transition:background-color_150ms_ease,color_150ms_ease,transform_150ms_ease] active:transform-[translateY(1px)] disabled:pointer-events-none disabled:opacity-[0.45] aria-disabled:pointer-events-none aria-disabled:opacity-[0.45] motion-reduce:active:transform-none [&:hover]:transform-[translateY(-1px)] [&:hover]:[background:var(--color-grey-800)] motion-reduce:[&:hover]:transform-none">{gettext(
+            <span class="landing-button relative isolate inline-flex min-h-13 items-center justify-center gap-2.5 rounded-sm bg-[#0f0f0f] px-8 py-3.5 text-center text-base/6 font-medium text-white">{gettext(
               "Confirm and send to KSeF"
             )}</span>
             <p class="mt-4 text-xs text-darkGrey">
@@ -732,7 +732,7 @@ defmodule FirmowidWeb.Landing.Components.Sections do
   def proof_section(assigns) do
     ~H"""
     <section class="bg-white py-18 lg:py-26">
-      <div class="mx-auto grid w-[calc(100%-32px)] max-w-[1139px] gap-10 lg:w-[calc(100%-64px)] lg:grid-cols-[minmax(0,2.2fr)_minmax(0,1fr)] lg:items-center lg:gap-16 [&_blockquote]:relative [&_blockquote]:max-w-225 [&_blockquote]:pl-7 [&_blockquote]:text-[26px] [&_blockquote]:leading-[1.35] [&_blockquote]:font-medium lg:[&_blockquote]:text-[32px] [&_blockquote::after]:text-(--landing-accent) [&_blockquote::after]:[content:'”'] [&_blockquote::before]:absolute [&_blockquote::before]:-top-4.5 [&_blockquote::before]:left-0 [&_blockquote::before]:text-[64px] [&_blockquote::before]:leading-none [&_blockquote::before]:text-(--landing-accent) [&_blockquote::before]:[content:'„']">
+      <div class="mx-auto grid w-[calc(100%-var(--spacing)*8)] max-w-284.75 gap-10 lg:w-[calc(100%-var(--spacing)*16)] lg:grid-cols-[minmax(0,2.2fr)_minmax(0,1fr)] lg:items-center lg:gap-16 [&_blockquote]:relative [&_blockquote]:max-w-225 [&_blockquote]:pl-7 [&_blockquote]:text-2xl [&_blockquote]:leading-[1.35] [&_blockquote]:font-medium lg:[&_blockquote]:text-[2rem] [&_blockquote::after]:text-(--landing-accent) [&_blockquote::after]:content-['”'] [&_blockquote::before]:absolute [&_blockquote::before]:-top-4.5 [&_blockquote::before]:left-0 [&_blockquote::before]:text-[4rem] [&_blockquote::before]:leading-none [&_blockquote::before]:text-(--landing-accent) [&_blockquote::before]:content-['„']">
         <div>
           <blockquote>
             {gettext(
@@ -740,19 +740,19 @@ defmodule FirmowidWeb.Landing.Components.Sections do
             )}
           </blockquote>
           <div class="mt-8 flex items-center gap-3.5">
-            <span class="grid size-12 flex-none place-content-center rounded-full bg-[#8fa487] text-[15px] font-bold text-white">EG</span>
+            <span class="grid size-12 flex-none place-content-center rounded-full bg-[#8fa487] text-base font-bold text-white">EG</span>
             <div>
-              <p class="text-[15px] font-bold">
+              <p class="text-base font-bold">
                 {gettext("CEO of a television production company")}
               </p>
-              <p class="mt-1 text-[13px] text-darkGrey">
+              <p class="mt-1 text-sm text-darkGrey">
                 {gettext("beta program participant")}
               </p>
             </div>
           </div>
         </div>
 
-        <div class="grid content-start gap-8 text-[13px] text-darkGrey lg:bg-[url('/images/landing/decorations/testimonial-separator.svg')] lg:bg-size-[2px_77px] lg:bg-left lg:bg-no-repeat lg:pl-16 [&_strong]:mb-1.5 [&_strong]:block [&_strong]:text-3xl [&_strong]:leading-[1.1] [&_strong]:font-bold [&_strong]:text-(--landing-accent)">
+        <div class="grid content-start gap-8 text-sm text-darkGrey lg:bg-[url('/images/landing/decorations/testimonial-separator.svg')] lg:bg-size-[--spacing(0.5)_--spacing(19.25)] lg:bg-left lg:bg-no-repeat lg:pl-16 [&_strong]:mb-1.5 [&_strong]:block [&_strong]:text-3xl [&_strong]:leading-[1.1] [&_strong]:font-bold [&_strong]:text-(--landing-accent)">
           <p>
             <strong>{gettext("%{hours} h", hours: "−12")}</strong>{gettext(
               "less administrative work per week"
@@ -774,15 +774,15 @@ defmodule FirmowidWeb.Landing.Components.Sections do
 
     ~H"""
     <section id="jak-dziala" class="bg-grey-100 py-18 lg:py-26">
-      <div class="mx-auto w-[calc(100%-32px)] max-w-[1139px] lg:w-[calc(100%-64px)]">
-        <div class="landing-section-intro mx-auto max-w-180 text-center lg:max-w-[1139px] [&_>_p:not(.landing-eyebrow,.landing-assistants-soon,.landing-assistants-footnote)]:mt-6 [&_>_p:not(.landing-eyebrow,.landing-assistants-soon,.landing-assistants-footnote)]:text-h5 [&_>_p:not(.landing-eyebrow,.landing-assistants-soon,.landing-assistants-footnote)]:leading-[27px] [&_>_p:not(.landing-eyebrow,.landing-assistants-soon,.landing-assistants-footnote)]:text-darkGrey lg:[&_>_p:not(.landing-eyebrow,.landing-assistants-soon,.landing-assistants-footnote)]:max-w-115 lg:[&_>_p:not(.landing-eyebrow,.landing-assistants-soon,.landing-assistants-footnote)]:text-h5 [&_h2]:text-[36px] [&_h2]:leading-[1.1] [&_h2]:font-bold [&_h2]:tracking-[-0.03em] lg:[&_h2]:text-[48px] lg:[&_h2]:leading-[1.04] lg:[&.text-center]:mx-auto lg:[&.text-center]:max-w-140 lg:[&.text-center_>_p:not(.landing-eyebrow)]:mx-auto">
+      <div class="mx-auto w-[calc(100%-var(--spacing)*8)] max-w-284.75 lg:w-[calc(100%-var(--spacing)*16)]">
+        <div class="landing-section-intro mx-auto max-w-180 text-center lg:max-w-284.75 [&_>_p:not(.landing-eyebrow,.landing-assistants-soon,.landing-assistants-footnote)]:mt-6 [&_>_p:not(.landing-eyebrow,.landing-assistants-soon,.landing-assistants-footnote)]:text-h5/6.75 [&_>_p:not(.landing-eyebrow,.landing-assistants-soon,.landing-assistants-footnote)]:text-darkGrey lg:[&_>_p:not(.landing-eyebrow,.landing-assistants-soon,.landing-assistants-footnote)]:max-w-115 [&_h2]:text-[2.25rem] [&_h2]:leading-[1.1] [&_h2]:font-bold [&_h2]:tracking-[-0.03em] lg:[&_h2]:text-[3rem] lg:[&_h2]:leading-[1.04] lg:[&.text-center]:mx-auto lg:[&.text-center]:max-w-140 lg:[&.text-center_>_p:not(.landing-eyebrow)]:mx-auto">
           <p class="landing-eyebrow mb-4 text-xs font-bold tracking-[0.08em] text-(--landing-accent) uppercase">
             {gettext("How Firmowid works")}
           </p>
           <h2>{gettext("From zero to your first invoice in 15 minutes")}</h2>
         </div>
 
-        <div class="relative mt-16 grid gap-10 lg:mt-20 lg:grid-cols-3 lg:gap-12 [&_article]:relative [&_article]:grid [&_article]:grid-cols-[32px_minmax(0,1fr)] [&_article]:gap-[4px_20px] lg:[&_article]:block lg:[&_article]:text-center [&_article_>_p]:col-2 lg:[&_article_>_p]:col-auto [&_article_>_span]:row-[1/3] [&_article_>_span]:grid [&_article_>_span]:size-8 [&_article_>_span]:place-content-center [&_article_>_span]:rounded-full [&_article_>_span]:bg-white [&_article_>_span]:text-sm [&_article_>_span]:font-bold [&_article_>_span]:[border:2px_solid_var(--color-darkGrey)] lg:[&_article_>_span]:m-[0_auto_24px] lg:[&_article_>_span]:size-14 lg:[&_article_>_span]:text-[22px] [&_article:not(:last-child)::after]:absolute [&_article:not(:last-child)::after]:top-11 [&_article:not(:last-child)::after]:-bottom-10 [&_article:not(:last-child)::after]:left-[15px] [&_article:not(:last-child)::after]:[content:''] [&_article:not(:last-child)::after]:[border-left:2px_dashed_var(--color-grey-200)] lg:[&_article:not(:last-child)::after]:top-[27px] lg:[&_article:not(:last-child)::after]:bottom-auto lg:[&_article:not(:last-child)::after]:left-[50%] lg:[&_article:not(:last-child)::after]:w-[calc(100%+48px)] lg:[&_article:not(:last-child)::after]:[border-left:0] lg:[&_article:not(:last-child)::after]:[border-top:2px_dashed_var(--color-grey-200)] [&_article:nth-child(2)_>_span]:border-(--landing-accent) [&_article:nth-child(2)_>_span]:text-white [&_article:nth-child(2)_>_span]:[background:var(--landing-accent)] [&_h3]:mb-2 [&_h3]:text-lg [&_h3]:leading-[1.3] [&_h3]:font-semibold [&_h3]:tracking-[-0.01em] lg:[&_h3]:text-[22px] [&_p]:text-[15px] [&_p]:leading-[1.4]">
+        <div class="relative mt-16 grid gap-10 lg:mt-20 lg:grid-cols-3 lg:gap-12 [&_article]:relative [&_article]:grid [&_article]:grid-cols-[--spacing(8)_minmax(0,1fr)] [&_article]:gap-x-5 [&_article]:gap-y-1 lg:[&_article]:block lg:[&_article]:text-center [&_article_>_p]:col-2 lg:[&_article_>_p]:col-auto [&_article_>_span]:row-[1/3] [&_article_>_span]:grid [&_article_>_span]:size-8 [&_article_>_span]:place-content-center [&_article_>_span]:rounded-full [&_article_>_span]:border-2 [&_article_>_span]:border-darkGrey [&_article_>_span]:bg-white [&_article_>_span]:text-sm [&_article_>_span]:font-bold lg:[&_article_>_span]:mx-auto lg:[&_article_>_span]:mb-6 lg:[&_article_>_span]:size-14 lg:[&_article_>_span]:text-xl [&_article:not(:last-child)::after]:absolute [&_article:not(:last-child)::after]:top-11 [&_article:not(:last-child)::after]:-bottom-10 [&_article:not(:last-child)::after]:left-3.75 [&_article:not(:last-child)::after]:border-l-2 [&_article:not(:last-child)::after]:border-dashed [&_article:not(:last-child)::after]:border-grey-200 [&_article:not(:last-child)::after]:content-[''] lg:[&_article:not(:last-child)::after]:top-6.75 lg:[&_article:not(:last-child)::after]:bottom-auto lg:[&_article:not(:last-child)::after]:left-1/2 lg:[&_article:not(:last-child)::after]:w-[calc(100%+var(--spacing)*12)] lg:[&_article:not(:last-child)::after]:border-t-2 lg:[&_article:not(:last-child)::after]:border-l-0 [&_article:nth-child(2)_>_span]:border-(--landing-accent) [&_article:nth-child(2)_>_span]:bg-(--landing-accent) [&_article:nth-child(2)_>_span]:text-white [&_h3]:mb-2 [&_h3]:text-lg [&_h3]:leading-[1.3] [&_h3]:font-semibold [&_h3]:tracking-[-0.01em] lg:[&_h3]:text-xl [&_p]:text-base [&_p]:leading-[1.4]">
           <article :for={{step, index} <- Enum.with_index(@steps, 1)}>
             <span>{index}</span>
             <h3>{step.title}</h3>
@@ -807,8 +807,8 @@ defmodule FirmowidWeb.Landing.Components.Sections do
       data-landing-dark-surface
       class="bg-[#0f0f0f] py-18 text-white lg:py-26 [&_.landing-eyebrow]:text-[#d2936d] [&_.landing-section-intro_>_p:not(.landing-eyebrow)]:text-grey-300 [&_article_p]:text-grey-300"
     >
-      <div class="mx-auto grid w-[calc(100%-32px)] max-w-[1139px] gap-10 lg:w-[calc(100%-64px)] lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:gap-20 [&_article_p]:text-[15px] [&_article_p]:leading-[1.4] [&_h3]:mb-5 [&_h3]:text-[22px] [&_h3]:leading-[1.3] [&_h3]:font-semibold [&_h3]:tracking-[-0.01em]">
-        <div class="landing-section-intro max-w-180 lg:max-w-[1139px] [&_>_p:not(.landing-eyebrow,.landing-assistants-soon,.landing-assistants-footnote)]:mt-6 [&_>_p:not(.landing-eyebrow,.landing-assistants-soon,.landing-assistants-footnote)]:text-h5 [&_>_p:not(.landing-eyebrow,.landing-assistants-soon,.landing-assistants-footnote)]:leading-[27px] [&_>_p:not(.landing-eyebrow,.landing-assistants-soon,.landing-assistants-footnote)]:text-darkGrey lg:[&_>_p:not(.landing-eyebrow,.landing-assistants-soon,.landing-assistants-footnote)]:max-w-115 lg:[&_>_p:not(.landing-eyebrow,.landing-assistants-soon,.landing-assistants-footnote)]:text-h5 [&_h2]:text-[36px] [&_h2]:leading-[1.1] [&_h2]:font-bold [&_h2]:tracking-[-0.03em] lg:[&_h2]:text-[48px] lg:[&_h2]:leading-[1.04] lg:[&.text-center]:mx-auto lg:[&.text-center]:max-w-140 lg:[&.text-center_>_p:not(.landing-eyebrow)]:mx-auto">
+      <div class="mx-auto grid w-[calc(100%-var(--spacing)*8)] max-w-284.75 gap-10 lg:w-[calc(100%-var(--spacing)*16)] lg:grid-cols-2 lg:gap-20 [&_article_p]:text-base [&_article_p]:leading-[1.4] [&_h3]:mb-5 [&_h3]:text-xl [&_h3]:leading-[1.3] [&_h3]:font-semibold [&_h3]:tracking-[-0.01em]">
+        <div class="landing-section-intro max-w-180 lg:max-w-284.75 [&_>_p:not(.landing-eyebrow,.landing-assistants-soon,.landing-assistants-footnote)]:mt-6 [&_>_p:not(.landing-eyebrow,.landing-assistants-soon,.landing-assistants-footnote)]:text-h5/6.75 [&_>_p:not(.landing-eyebrow,.landing-assistants-soon,.landing-assistants-footnote)]:text-darkGrey lg:[&_>_p:not(.landing-eyebrow,.landing-assistants-soon,.landing-assistants-footnote)]:max-w-115 [&_h2]:text-[2.25rem] [&_h2]:leading-[1.1] [&_h2]:font-bold [&_h2]:tracking-[-0.03em] lg:[&_h2]:text-[3rem] lg:[&_h2]:leading-[1.04] lg:[&.text-center]:mx-auto lg:[&.text-center]:max-w-140 lg:[&.text-center_>_p:not(.landing-eyebrow)]:mx-auto">
           <p class="landing-eyebrow mb-4 text-xs font-bold tracking-[0.08em] text-(--landing-accent) uppercase">
             {gettext("Open source")}
           </p>
@@ -822,7 +822,7 @@ defmodule FirmowidWeb.Landing.Components.Sections do
               <img src={~p"/images/github-mark.svg"} alt="" width="24" height="24" />
             </.landing_button>
             <a
-              class="inline-flex min-h-[31px] min-w-[146px] items-center justify-center bg-[url('/images/landing/frames/license.svg')] bg-size-[100%_100%] bg-center bg-no-repeat p-[5px_14px] text-caps-sm font-bold tracking-[0.04em] uppercase"
+              class="inline-flex min-h-7.75 min-w-36.5 items-center justify-center bg-[url('/images/landing/frames/license.svg')] bg-size-[100%_100%] bg-center bg-no-repeat px-3.5 py-1.25 text-caps-sm font-bold tracking-[0.04em] uppercase"
               href={@repository}
             >
               {gettext("AGPL-3.0 license")}
@@ -830,7 +830,7 @@ defmodule FirmowidWeb.Landing.Components.Sections do
           </div>
         </div>
 
-        <div class="rounded-[16px] p-[8px_28px] [background:var(--color-grey-900)] [border:1px_solid_var(--color-grey-800)] lg:self-center [&_article]:py-6 [&_article_h3]:mb-2.5 [&_article+article]:[border-top:1px_solid_var(--color-grey-800)] [&_h3]:flex [&_h3]:items-center [&_h3]:gap-2.5 [&_h3]:text-[#f5f1ea] [&_h3::before]:h-[13px] [&_h3::before]:w-3 [&_h3::before]:flex-none [&_h3::before]:bg-[url('/images/landing/icons/check.svg')] [&_h3::before]:bg-contain [&_h3::before]:bg-center [&_h3::before]:bg-no-repeat [&_h3::before]:content-['']">
+        <div class="rounded-2xl border border-grey-800 bg-grey-900 px-7 py-2 lg:self-center [&_article]:py-6 [&_article_h3]:mb-2.5 [&_article+article]:border-t [&_article+article]:border-grey-800 [&_h3]:flex [&_h3]:items-center [&_h3]:gap-2.5 [&_h3]:text-[#f5f1ea] [&_h3::before]:h-3.25 [&_h3::before]:w-3 [&_h3::before]:flex-none [&_h3::before]:bg-[url('/images/landing/icons/check.svg')] [&_h3::before]:bg-contain [&_h3::before]:bg-center [&_h3::before]:bg-no-repeat [&_h3::before]:content-['']">
           <article>
             <h3>{gettext("No limits")}</h3>
             <p>{gettext("Invoices, bank accounts and users without plan limits.")}</p>
@@ -858,8 +858,8 @@ defmodule FirmowidWeb.Landing.Components.Sections do
 
     ~H"""
     <section id="zespol" class="py-18 lg:py-26">
-      <div class="mx-auto grid w-[calc(100%-32px)] max-w-[1139px] gap-10 lg:w-[calc(100%-64px)] lg:grid-cols-[minmax(0,1fr)_572px] lg:items-center lg:gap-7 lg:[&_.landing-section-intro.landing-section-intro_>_p]:max-w-none [&_h3]:mt-6 [&_h3]:mb-1.5 [&_h3]:text-lg [&_h3]:font-bold">
-        <div class="landing-section-intro max-w-180 lg:max-w-[1139px] [&_>_p:not(.landing-eyebrow,.landing-assistants-soon,.landing-assistants-footnote)]:mt-6 [&_>_p:not(.landing-eyebrow,.landing-assistants-soon,.landing-assistants-footnote)]:text-h5 [&_>_p:not(.landing-eyebrow,.landing-assistants-soon,.landing-assistants-footnote)]:leading-[27px] [&_>_p:not(.landing-eyebrow,.landing-assistants-soon,.landing-assistants-footnote)]:text-darkGrey lg:[&_>_p:not(.landing-eyebrow,.landing-assistants-soon,.landing-assistants-footnote)]:max-w-115 lg:[&_>_p:not(.landing-eyebrow,.landing-assistants-soon,.landing-assistants-footnote)]:text-h5 [&_h2]:text-[36px] [&_h2]:leading-[1.1] [&_h2]:font-bold [&_h2]:tracking-[-0.03em] lg:[&_h2]:text-[48px] lg:[&_h2]:leading-[1.04] lg:[&.text-center]:mx-auto lg:[&.text-center]:max-w-140 lg:[&.text-center_>_p:not(.landing-eyebrow)]:mx-auto">
+      <div class="mx-auto grid w-[calc(100%-var(--spacing)*8)] max-w-284.75 gap-10 lg:w-[calc(100%-var(--spacing)*16)] lg:grid-cols-[minmax(0,1fr)_--spacing(143)] lg:items-center lg:gap-7 lg:[&_.landing-section-intro.landing-section-intro_>_p]:max-w-none [&_h3]:mt-6 [&_h3]:mb-1.5 [&_h3]:text-lg [&_h3]:font-bold">
+        <div class="landing-section-intro max-w-180 lg:max-w-284.75 [&_>_p:not(.landing-eyebrow,.landing-assistants-soon,.landing-assistants-footnote)]:mt-6 [&_>_p:not(.landing-eyebrow,.landing-assistants-soon,.landing-assistants-footnote)]:text-h5/6.75 [&_>_p:not(.landing-eyebrow,.landing-assistants-soon,.landing-assistants-footnote)]:text-darkGrey lg:[&_>_p:not(.landing-eyebrow,.landing-assistants-soon,.landing-assistants-footnote)]:max-w-115 [&_h2]:text-[2.25rem] [&_h2]:leading-[1.1] [&_h2]:font-bold [&_h2]:tracking-[-0.03em] lg:[&_h2]:text-[3rem] lg:[&_h2]:leading-[1.04] lg:[&.text-center]:mx-auto lg:[&.text-center]:max-w-140 lg:[&.text-center_>_p:not(.landing-eyebrow)]:mx-auto">
           <p class="landing-eyebrow mb-4 text-xs font-bold tracking-[0.08em] text-(--landing-accent) uppercase">
             {gettext("Who is behind it")}
           </p>
@@ -871,9 +871,9 @@ defmodule FirmowidWeb.Landing.Components.Sections do
           </p>
         </div>
 
-        <div class="grid gap-5 md:grid-cols-2 lg:gap-4 [&_article]:rounded-[16px] [&_article]:p-5 [&_article]:[background:#fff_url('/images/landing/frames/team-card.svg')_center/100%_100%_no-repeat] lg:[&_article]:p-6 [&_article:nth-child(2)_.landing-team-portrait]:bg-turquoise-600 [&_article:nth-child(2)_.landing-team-portrait_img]:top-[-12%] [&_article:nth-child(2)_.landing-team-portrait_img]:left-[-26%] [&_article:nth-child(2)_.landing-team-portrait_img]:w-[153%]">
+        <div class="grid gap-5 md:grid-cols-2 lg:gap-4 [&_article]:rounded-2xl [&_article]:p-5 [&_article]:[background:#fff_url('/images/landing/frames/team-card.svg')_center/100%_100%_no-repeat] lg:[&_article]:p-6 [&_article:nth-child(2)_.landing-team-portrait]:bg-turquoise-600 [&_article:nth-child(2)_.landing-team-portrait_img]:top-[-12%] [&_article:nth-child(2)_.landing-team-portrait_img]:left-[-26%] [&_article:nth-child(2)_.landing-team-portrait_img]:w-[153%]">
           <article :for={person <- @team}>
-            <div class="landing-team-portrait relative aspect-[1] overflow-hidden rounded-[8px] bg-[#d2936d] [&_img]:absolute [&_img]:top-[-22.4%] [&_img]:left-[-6%] [&_img]:h-auto [&_img]:w-[113%] [&_img]:max-w-none">
+            <div class="landing-team-portrait relative aspect-square overflow-hidden rounded-lg bg-[#d2936d] [&_img]:absolute [&_img]:top-[-22.4%] [&_img]:left-[-6%] [&_img]:h-auto [&_img]:w-[113%] [&_img]:max-w-none">
               <img
                 src={person.image}
                 alt={gettext("Portrait of %{name}", name: person.name)}

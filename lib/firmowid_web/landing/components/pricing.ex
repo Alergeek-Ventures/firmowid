@@ -67,8 +67,8 @@ defmodule FirmowidWeb.Landing.Components.Pricing do
 
     ~H"""
     <section id="cennik" class="bg-white py-18 lg:py-26">
-      <div class="mx-auto w-[calc(100%-32px)] max-w-[1139px] lg:w-[calc(100%-64px)]">
-        <div class="landing-section-intro mx-auto max-w-180 text-center lg:max-w-225 [&_>_p:not(.landing-eyebrow,.landing-assistants-soon,.landing-assistants-footnote)]:mt-6 [&_>_p:not(.landing-eyebrow,.landing-assistants-soon,.landing-assistants-footnote)]:text-h5 [&_>_p:not(.landing-eyebrow,.landing-assistants-soon,.landing-assistants-footnote)]:leading-[27px] [&_>_p:not(.landing-eyebrow,.landing-assistants-soon,.landing-assistants-footnote)]:text-darkGrey lg:[&_>_p:not(.landing-eyebrow,.landing-assistants-soon,.landing-assistants-footnote)]:max-w-147 lg:[&_>_p:not(.landing-eyebrow,.landing-assistants-soon,.landing-assistants-footnote)]:text-h5 [&_h2]:text-[36px] [&_h2]:leading-[1.1] [&_h2]:font-bold [&_h2]:tracking-[-0.03em] lg:[&_h2]:text-[48px] lg:[&_h2]:leading-[1.04] lg:[&.text-center]:mx-auto lg:[&.text-center_>_p:not(.landing-eyebrow)]:mx-auto">
+      <div class="mx-auto w-[calc(100%-var(--spacing)*8)] max-w-284.75 lg:w-[calc(100%-var(--spacing)*16)]">
+        <div class="landing-section-intro mx-auto max-w-180 text-center lg:max-w-225 [&_>_p:not(.landing-eyebrow,.landing-assistants-soon,.landing-assistants-footnote)]:mt-6 [&_>_p:not(.landing-eyebrow,.landing-assistants-soon,.landing-assistants-footnote)]:text-h5/6.75 [&_>_p:not(.landing-eyebrow,.landing-assistants-soon,.landing-assistants-footnote)]:text-darkGrey lg:[&_>_p:not(.landing-eyebrow,.landing-assistants-soon,.landing-assistants-footnote)]:max-w-147 lg:[&_>_p:not(.landing-eyebrow,.landing-assistants-soon,.landing-assistants-footnote)]:text-h5 [&_h2]:text-[2.25rem] [&_h2]:leading-[1.1] [&_h2]:font-bold [&_h2]:tracking-[-0.03em] lg:[&_h2]:text-[3rem] lg:[&_h2]:leading-[1.04] lg:[&.text-center]:mx-auto lg:[&.text-center_>_p:not(.landing-eyebrow)]:mx-auto">
           <p class="landing-eyebrow mb-4 text-xs font-bold tracking-[0.08em] text-(--landing-accent) uppercase">
             {gettext("Pricing")}
           </p>
@@ -81,7 +81,7 @@ defmodule FirmowidWeb.Landing.Components.Pricing do
         </div>
 
         <div
-          class="landing-billing-period m-[36px_auto_48px] flex w-max max-w-full gap-1 rounded-full p-1.5 [background:var(--landing-beige)] [&_button]:min-h-10.5 [&_button]:min-w-29.25 [&_button]:cursor-pointer [&_button]:rounded-full [&_button]:p-[10px_20px] [&_button]:text-sm [&_button]:leading-[22px] [&_button_span]:text-(--landing-accent)"
+          class="landing-billing-period mx-auto mt-9 mb-12 flex w-max max-w-full gap-1 rounded-full bg-(--landing-beige) p-1.5 [&_button]:min-h-10.5 [&_button]:min-w-29.25 [&_button]:cursor-pointer [&_button]:rounded-full [&_button]:px-5 [&_button]:py-2.5 [&_button]:text-sm/5.5 [&_button_span]:text-(--landing-accent)"
           role="group"
           aria-label={gettext("Billing period")}
         >
@@ -90,7 +90,7 @@ defmodule FirmowidWeb.Landing.Components.Pricing do
             phx-click="set_billing_period"
             phx-value-period="monthly"
             aria-pressed={to_string(not @yearly?)}
-            class="aria-pressed:bg-white aria-pressed:bg-[url('/images/landing/frames/billing-active.svg')] aria-pressed:bg-size-[100%_100%] aria-pressed:bg-center aria-pressed:bg-no-repeat"
+            class="relative isolate before:pointer-events-none before:absolute before:top-1/2 before:left-1/2 before:-z-10 before:h-[44px] before:w-[119px] before:-translate-1/2 before:bg-auto before:bg-center before:bg-no-repeat aria-pressed:bg-white aria-pressed:before:bg-[url('/images/landing/frames/billing-active.svg')]"
           >
             {pgettext("billing period", "Monthly")}
           </button>
@@ -99,7 +99,7 @@ defmodule FirmowidWeb.Landing.Components.Pricing do
             phx-click="set_billing_period"
             phx-value-period="yearly"
             aria-pressed={to_string(@yearly?)}
-            class="aria-pressed:bg-white aria-pressed:bg-[url('/images/landing/frames/billing-active.svg')] aria-pressed:bg-size-[100%_100%] aria-pressed:bg-center aria-pressed:bg-no-repeat"
+            class="relative isolate before:pointer-events-none before:absolute before:top-1/2 before:left-1/2 before:-z-10 before:h-[44px] before:w-[119px] before:-translate-1/2 before:bg-auto before:bg-center before:bg-no-repeat aria-pressed:bg-white aria-pressed:before:bg-[url('/images/landing/frames/billing-active.svg')]"
           >
             {pgettext("billing period", "Yearly")}
             <span>−20%</span>
@@ -114,34 +114,34 @@ defmodule FirmowidWeb.Landing.Components.Pricing do
           <article
             :for={plan <- @plans}
             class={[
-              "landing-pricing-card relative flex flex-col rounded-[16px] p-[28px_24px] [background:var(--landing-beige)] lg:rounded-[16px] lg:p-[28px_24px] [&_.landing-button]:mt-10 [&_.landing-button]:text-base lg:[&_.landing-button]:mt-8 lg:[&.landing-pricing-featured]:rounded-[16px_16px_0_0]",
+              "landing-pricing-card relative flex flex-col rounded-2xl bg-(--landing-beige) px-6 py-7 [&_.landing-button]:mt-10 [&_.landing-button]:text-base lg:[&_.landing-button]:mt-8 lg:[&.landing-pricing-featured]:rounded-b-none",
               plan.featured &&
                 "landing-pricing-featured text-[#f5f1ea] [&_.landing-pricing-audience]:text-grey-300 [&_.landing-pricing-detail]:text-[#d2936d] [&_.landing-pricing-name]:text-[#d2936d] [&_.landing-pricing-price_span]:text-grey-300 [&.landing-pricing-featured]:bg-grey-900"
             ]}
           >
             <p
               :if={plan.featured}
-              class="absolute -top-3.5 left-[50%] w-max transform-[translateX(-50%)] rounded-full bg-[#d2936d] p-[6px_16px] text-caps-sm font-bold text-[#0f0f0f]"
+              class="absolute -top-3.5 left-1/2 w-max -translate-x-1/2 rounded-full bg-[#d2936d] px-4 py-1.5 text-caps-sm font-bold text-[#0f0f0f]"
             >
               {gettext("Most popular")}
             </p>
             <p class="landing-pricing-name mb-4.5 text-xs font-bold tracking-[0.08em] text-(--landing-accent) uppercase">
               {plan.name}
             </p>
-            <p class="landing-pricing-price mt-0 flex flex-wrap items-baseline gap-2 [&_span]:text-[13px] [&_span]:text-darkGrey [&_strong]:text-3xl [&_strong]:leading-none [&_strong]:font-bold [&_strong]:tracking-[-0.04em] lg:[&_strong]:text-3xl">
+            <p class="landing-pricing-price mt-0 flex flex-wrap items-baseline gap-2 [&_span]:text-sm [&_span]:text-darkGrey [&_strong]:text-3xl [&_strong]:leading-none [&_strong]:font-bold [&_strong]:tracking-[-0.04em] lg:[&_strong]:text-3xl">
               <strong>{pgettext("landing card price", "%{amount} PLN", amount: plan.price)}</strong>
               <span>{if plan.free?, do: gettext("forever"), else: gettext("/ month net")}</span>
             </p>
-            <p class="landing-pricing-detail my-[20px_12px] text-xs/normal text-(--landing-accent)">
+            <p class="landing-pricing-detail mt-5 mb-3 text-xs/normal text-(--landing-accent)">
               {plan.detail}
             </p>
-            <p class="landing-pricing-audience text-sm leading-[21px] text-darkGrey lg:min-h-11.5">
+            <p class="landing-pricing-audience text-sm/5.25 text-darkGrey lg:min-h-11.5">
               {plan.audience}
             </p>
             <.landing_button
               navigate={~p"/zarejestruj"}
               variant={if plan.featured, do: :orange, else: :outline}
-              class={plan.featured && "lg:px-3"}
+              class={[plan.featured && "lg:px-3"]}
               data-landing-cta="pricing_register"
               data-landing-plan={plan.key}
               data-landing-billing-period={@billing_period}
@@ -150,7 +150,7 @@ defmodule FirmowidWeb.Landing.Components.Pricing do
             </.landing_button>
           </article>
 
-          <div class="lg:col-1 lg:row-1 lg:self-end lg:pb-8 [&_h3]:mb-2 [&_h3]:text-lg [&_h3]:font-semibold [&_p]:text-[13px] [&_p]:text-darkGrey">
+          <div class="lg:col-1 lg:row-1 lg:self-end lg:pb-8 [&_h3]:mb-2 [&_h3]:text-lg [&_h3]:font-semibold [&_p]:text-sm [&_p]:text-darkGrey">
             <h3>{gettext("Compare plans")}</h3>
             <p>
               {if @yearly?,
@@ -159,7 +159,7 @@ defmodule FirmowidWeb.Landing.Components.Pricing do
             </p>
           </div>
 
-          <div class="landing-pricing-plans sticky top-(--landing-nav-height) z-20 grid grid-cols-3 rounded-[6px] [background:var(--landing-beige)] *:p-[12px_6px] *:text-center *:text-xs *:font-semibold lg:sticky lg:top-(--landing-nav-height) lg:z-20 lg:col-[2/5] lg:row-2 lg:rounded-[16px_16px_0_0] lg:*:flex lg:*:min-h-17 lg:*:flex-col lg:*:justify-center lg:*:bg-white lg:*:p-[10px_6px] lg:*:text-sm lg:*:text-transparent [&_.landing-pricing-featured]:bg-transparent [&_.landing-pricing-featured]:text-(--landing-accent) lg:[&_.landing-pricing-featured]:bg-grey-900 lg:[&_.landing-pricing-featured]:text-transparent [&_small]:hidden lg:[&.is-stuck_>_*]:text-[#0f0f0f] lg:[&.is-stuck_>_*]:[background:var(--landing-beige)] lg:[&.is-stuck_>_.landing-pricing-featured]:bg-grey-900 lg:[&.is-stuck_>_.landing-pricing-featured]:text-white lg:[&.is-stuck_small]:mt-1 lg:[&.is-stuck_small]:block">
+          <div class="landing-pricing-plans sticky top-(--landing-nav-height) z-20 grid grid-cols-3 rounded-md bg-(--landing-beige) *:px-1.5 *:py-3 *:text-center *:text-xs *:font-semibold lg:col-[2/5] lg:row-2 lg:rounded-t-2xl lg:rounded-b-none lg:*:flex lg:*:min-h-17 lg:*:flex-col lg:*:justify-center lg:*:bg-white lg:*:py-2.5 lg:*:text-sm lg:*:text-transparent [&_.landing-pricing-featured]:bg-transparent [&_.landing-pricing-featured]:text-(--landing-accent) lg:[&_.landing-pricing-featured]:bg-grey-900 lg:[&_.landing-pricing-featured]:text-transparent [&_small]:hidden lg:[&.is-stuck_>_*]:bg-(--landing-beige) lg:[&.is-stuck_>_*]:text-[#0f0f0f] lg:[&.is-stuck_>_.landing-pricing-featured]:bg-grey-900 lg:[&.is-stuck_>_.landing-pricing-featured]:text-white lg:[&.is-stuck_small]:mt-1 lg:[&.is-stuck_small]:block">
             <span
               :for={plan <- @plans}
               class={[plan.featured && "landing-pricing-featured"]}
@@ -175,7 +175,7 @@ defmodule FirmowidWeb.Landing.Components.Pricing do
           <dl class="lg:col-[1/5] lg:row-3">
             <div
               :for={{label, values} <- @rows}
-              class="grid grid-cols-3 text-xs [border-bottom:1px_solid_var(--landing-line)] lg:grid-cols-[1.45fr_repeat(3,minmax(0,1fr))] lg:text-sm [&_dd]:p-[8px_4px_18px] [&_dd]:text-center [&_dd]:font-semibold [&_dd]:text-[#0f0f0f] lg:[&_dd]:p-[16px_12px] [&_dd.landing-pricing-featured]:bg-transparent [&_dd.landing-pricing-featured]:text-[#0f0f0f] lg:[&_dd.landing-pricing-featured]:bg-grey-900 lg:[&_dd.landing-pricing-featured]:text-[#f5f1ea] lg:[&_dd.landing-pricing-featured[data-tick]]:text-[#d2936d] [&_dd[data-tick]]:text-lg [&_dd[data-tick]]:text-(--landing-accent) [&_dt]:col-span-full [&_dt]:p-[18px_0_8px] [&_dt]:font-normal lg:[&_dt]:col-auto lg:[&_dt]:p-[16px_24px_16px_0]"
+              class="grid grid-cols-3 border-b border-(--landing-line) text-xs lg:grid-cols-[1.45fr_repeat(3,minmax(0,1fr))] lg:text-sm [&_dd]:px-1 [&_dd]:pt-2 [&_dd]:pb-4.5 [&_dd]:text-center [&_dd]:font-semibold [&_dd]:text-[#0f0f0f] lg:[&_dd]:px-3 lg:[&_dd]:py-4 [&_dd.landing-pricing-featured]:bg-transparent [&_dd.landing-pricing-featured]:text-[#0f0f0f] lg:[&_dd.landing-pricing-featured]:bg-grey-900 lg:[&_dd.landing-pricing-featured]:text-[#f5f1ea] lg:[&_dd.landing-pricing-featured[data-tick]]:text-[#d2936d] [&_dd[data-tick]]:text-lg [&_dd[data-tick]]:text-(--landing-accent) [&_dt]:col-span-full [&_dt]:pt-4.5 [&_dt]:pb-2 [&_dt]:font-normal lg:[&_dt]:col-auto lg:[&_dt]:py-4 lg:[&_dt]:pr-6"
             >
               <dt>{label}</dt>
               <dd
@@ -205,10 +205,10 @@ defmodule FirmowidWeb.Landing.Components.Pricing do
           type="button"
           class="mx-auto mt-8 block min-h-[41px] w-[258px] max-w-full cursor-pointer bg-[url('/images/landing/frames/comparison.svg')] bg-size-[100%_100%] bg-center bg-no-repeat px-4 py-2.5 text-sm text-[#8b3f13] focus-visible:outline-2 focus-visible:outline-offset-4 [&:hover]:bg-[url('/images/landing/frames/comparison-hover.svg')] [&:hover]:text-oranger-800"
         >
-          {gettext("Show all 20 features")}
+          {ngettext("Show %{count} feature", "Show all %{count} features", 20)}
         </button>
 
-        <p class="mt-10 text-center text-[15px] font-medium">
+        <p class="mt-10 text-center text-base font-medium">
           {gettext("Paid features free until the end of next month. No card required.")}
         </p>
       </div>

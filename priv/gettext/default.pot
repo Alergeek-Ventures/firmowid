@@ -56,7 +56,7 @@ msgstr ""
 msgid ", which forms an integral part of these Terms of Service."
 msgstr ""
 
-#: lib/firmowid_web/landing/components/hero.ex:147
+#: lib/firmowid_web/landing/components/hero.ex:146
 #, elixir-autogen, elixir-format
 msgid "2 years"
 msgstr ""
@@ -121,7 +121,7 @@ msgstr ""
 msgid "Automatically matching invoices to bank transactions"
 msgstr ""
 
-#: lib/firmowid_web/landing/components/hero.ex:154
+#: lib/firmowid_web/landing/components/hero.ex:153
 #, elixir-autogen, elixir-format
 msgid "Average onboarding time"
 msgstr ""
@@ -131,17 +131,17 @@ msgstr ""
 msgid "Bank account data"
 msgstr ""
 
-#: lib/firmowid_web/landing/components/hero.ex:89
+#: lib/firmowid_web/landing/components/hero.ex:90
 #, elixir-autogen, elixir-format
 msgid "Bank integrations"
 msgstr ""
 
-#: lib/firmowid_web/landing/components/primitives.ex:216
+#: lib/firmowid_web/landing/components/primitives.ex:221
 #, elixir-autogen, elixir-format
 msgid "Book a 15-minute call"
 msgstr ""
 
-#: lib/firmowid_web/landing/components/primitives.ex:278
+#: lib/firmowid_web/landing/components/primitives.ex:283
 #, elixir-autogen, elixir-format
 msgid "Built by entrepreneurs for entrepreneurs."
 msgstr ""
@@ -167,7 +167,7 @@ msgstr ""
 #: lib/firmowid_web/analysis/components/category_selector.ex:276
 #: lib/firmowid_web/analysis/views/dashboard.ex:382
 #: lib/firmowid_web/landing/components/pricing.ex:34
-#: lib/firmowid_web/landing/components/primitives.ex:247
+#: lib/firmowid_web/landing/components/primitives.ex:252
 #, elixir-autogen, elixir-format
 msgid "Company"
 msgstr ""
@@ -177,7 +177,7 @@ msgstr ""
 msgid "Consent"
 msgstr ""
 
-#: lib/firmowid_web/landing/components/primitives.ex:255
+#: lib/firmowid_web/landing/components/primitives.ex:260
 #, elixir-autogen, elixir-format
 msgid "Contact"
 msgstr ""
@@ -247,7 +247,7 @@ msgstr ""
 msgid "Every transaction is automatically assigned to the right invoice. No more manually matching transfers at the end of the month."
 msgstr ""
 
-#: lib/firmowid_web/landing/components/primitives.ex:231
+#: lib/firmowid_web/landing/components/primitives.ex:236
 #, elixir-autogen, elixir-format
 msgid "Features"
 msgstr ""
@@ -337,7 +337,7 @@ msgstr ""
 msgid "Invoicing data"
 msgstr ""
 
-#: lib/firmowid_web/landing/components/primitives.ex:277
+#: lib/firmowid_web/landing/components/primitives.ex:282
 #, elixir-autogen, elixir-format
 msgid "Invoicing, banking, and working hours."
 msgstr ""
@@ -367,7 +367,7 @@ msgstr ""
 msgid "KSeF integration"
 msgstr ""
 
-#: lib/firmowid_web/landing/components/hero.ex:81
+#: lib/firmowid_web/landing/components/hero.ex:82
 #, elixir-autogen, elixir-format
 msgid "KSeF synchronization"
 msgstr ""
@@ -377,7 +377,7 @@ msgstr ""
 msgid "Labor costs visible in reports immediately"
 msgstr ""
 
-#: lib/firmowid_web/landing/components/hero.ex:70
+#: lib/firmowid_web/landing/components/hero.ex:71
 #: lib/firmowid_web/landing/components/primitives.ex:79
 #, elixir-autogen, elixir-format
 msgid "Log in"
@@ -444,7 +444,7 @@ msgid "Preference cookie (cookie_consent)"
 msgstr ""
 
 #: lib/firmowid_web/landing/components/pricing.ex:73
-#: lib/firmowid_web/landing/components/primitives.ex:235
+#: lib/firmowid_web/landing/components/primitives.ex:240
 #, elixir-autogen, elixir-format
 msgid "Pricing"
 msgstr ""
@@ -455,7 +455,7 @@ msgstr ""
 msgid "Privacy Policy"
 msgstr ""
 
-#: lib/firmowid_web/landing/components/primitives.ex:226
+#: lib/firmowid_web/landing/components/primitives.ex:231
 #, elixir-autogen, elixir-format
 msgid "Product"
 msgstr ""
@@ -515,7 +515,7 @@ msgstr ""
 msgid "Right to restriction of processing (Article 18 GDPR)"
 msgstr ""
 
-#: lib/firmowid_web/landing/components/primitives.ex:192
+#: lib/firmowid_web/landing/components/primitives.ex:197
 #, elixir-autogen, elixir-format
 msgid "Run your business"
 msgstr ""
@@ -525,12 +525,12 @@ msgstr ""
 msgid "Scattered tools"
 msgstr ""
 
-#: lib/firmowid_web/landing/components/hero.ex:85
+#: lib/firmowid_web/landing/components/hero.ex:86
 #, elixir-autogen, elixir-format
 msgid "Secure data storage"
 msgstr ""
 
-#: lib/firmowid_web/landing/components/primitives.ex:242
+#: lib/firmowid_web/landing/components/primitives.ex:247
 #, elixir-autogen, elixir-format
 msgid "Source code"
 msgstr ""
@@ -541,7 +541,7 @@ msgid "Start by connecting KSeF and your bank — we import data from the last t
 msgstr ""
 
 #: lib/firmowid_web/landing/components/hero.ex:63
-#: lib/firmowid_web/landing/components/primitives.ex:207
+#: lib/firmowid_web/landing/components/primitives.ex:212
 #, elixir-autogen, elixir-format
 msgid "Start for free"
 msgstr ""
@@ -556,7 +556,7 @@ msgstr ""
 msgid "Technical data"
 msgstr ""
 
-#: lib/firmowid_web/landing/components/primitives.ex:262
+#: lib/firmowid_web/landing/components/primitives.ex:267
 #: lib/firmowid_web/landing/views/terms_of_service.ex:19
 #: lib/firmowid_web/landing/views/terms_of_service.ex:33
 #, elixir-autogen, elixir-format
@@ -738,7 +738,7 @@ msgstr ""
 msgid "Working time records"
 msgstr ""
 
-#: lib/firmowid_web/landing/components/primitives.ex:189
+#: lib/firmowid_web/landing/components/primitives.ex:194
 #, elixir-autogen, elixir-format
 msgid "YOUR MOVE!"
 msgstr ""
@@ -834,7 +834,7 @@ msgstr ""
 msgid "together with the date of the latest update."
 msgstr ""
 
-#: lib/firmowid_web/landing/components/primitives.ex:193
+#: lib/firmowid_web/landing/components/primitives.ex:198
 #, elixir-autogen, elixir-format
 msgid "with a lighter mind."
 msgstr ""
@@ -1008,7 +1008,7 @@ msgctxt "cookie-policy-link"
 msgid "Privacy Policy"
 msgstr ""
 
-#: lib/firmowid_web/landing/components/primitives.ex:269
+#: lib/firmowid_web/landing/components/primitives.ex:274
 #, elixir-autogen, elixir-format
 msgctxt "footer-policy-link"
 msgid "Privacy Policy"
@@ -1762,12 +1762,12 @@ msgstr ""
 msgid "Everything in one place: invoices, banking, working hours, leave, and business trips."
 msgstr ""
 
-#: lib/firmowid_web/landing/components/hero.ex:77
+#: lib/firmowid_web/landing/components/hero.ex:78
 #, elixir-autogen, elixir-format
 msgid "Start with the free plan. No card required."
 msgstr ""
 
-#: lib/firmowid_web/landing/components/hero.ex:150
+#: lib/firmowid_web/landing/components/hero.ex:149
 #, elixir-autogen, elixir-format
 msgid "Supported banks and fintechs"
 msgstr ""
@@ -1852,7 +1852,7 @@ msgstr ""
 msgid "%{hours} h"
 msgstr ""
 
-#: lib/firmowid_web/landing/components/hero.ex:155
+#: lib/firmowid_web/landing/components/hero.ex:154
 #, elixir-autogen, elixir-format
 msgid "%{minutes} min"
 msgstr ""
@@ -1991,7 +1991,7 @@ msgstr ""
 msgid "Database maintenance"
 msgstr ""
 
-#: lib/firmowid_web/landing/components/hero.ex:131
+#: lib/firmowid_web/landing/components/hero.ex:132
 #, elixir-autogen, elixir-format
 msgid "Developed by %{company} for"
 msgstr ""
@@ -2042,12 +2042,12 @@ msgstr ""
 msgid "Firmowid - free KSeF invoices, banking and team time tracking"
 msgstr ""
 
-#: lib/firmowid_web/landing/components/primitives.ex:177
+#: lib/firmowid_web/landing/components/primitives.ex:182
 #, elixir-autogen, elixir-format
 msgid "Firmowid character holding a tablet"
 msgstr ""
 
-#: lib/firmowid_web/landing/components/hero.ex:101
+#: lib/firmowid_web/landing/components/hero.ex:102
 #, elixir-autogen, elixir-format
 msgid "Firmowid connects invoices and KSeF, banking, time tracking, and your team."
 msgstr ""
@@ -2353,7 +2353,7 @@ msgstr ""
 msgid "Start"
 msgstr ""
 
-#: lib/firmowid_web/landing/components/primitives.ex:196
+#: lib/firmowid_web/landing/components/primitives.ex:201
 #, elixir-autogen, elixir-format
 msgid "Start with the free plan. No card. No commitment. If the software is not for you, delete your account with one click."
 msgstr ""
@@ -2592,6 +2592,13 @@ msgstr ""
 #, elixir-autogen, elixir-format
 msgid "Clear month's categories?"
 msgstr ""
+
+#: lib/firmowid_web/landing/components/pricing.ex:208
+#, elixir-autogen, elixir-format
+msgid "Show %{count} feature"
+msgid_plural "Show all %{count} features"
+msgstr[0] ""
+msgstr[1] ""
 
 #: lib/firmowid_web/invoicing/components/dashboard_tiles.ex:538
 #, elixir-autogen, elixir-format

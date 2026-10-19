@@ -28,18 +28,18 @@ defmodule FirmowidWeb.Landing.Components.Primitives do
       id="landing-navbar"
       phx-hook="LandingNavbarTheme"
       class={[
-        "sticky top-0 z-50 h-(--landing-nav-height) p-[6px_8px] transition-none lg:p-[20px_32px_10px] lg:[&_.landing-button]:min-h-9 lg:[&_.landing-button]:p-[6px_12px] lg:[&_.landing-button]:text-[15px] lg:[&_.landing-button]:leading-[24px] [&.landing-nav--dark_.landing-button--navbar-outline]:text-[#f5f1ea] [&.landing-nav--dark_.landing-nav-brand]:text-[#f5f1ea] [&.landing-nav--dark_.landing-nav-panel]:border-[rgb(245_241_234/0.28)] [&.landing-nav--dark_.landing-nav-panel]:shadow-[0_10px_30px_rgb(0_0_0/0.18)] [&.landing-nav--dark_.landing-nav-panel]:[background:rgb(245_241_234/0.1)] [&.landing-nav--dark_.landing-nav-text]:text-[#f5f1ea] [&.landing-nav--dark_.landing-nav-text:hover]:text-[#d2936d]",
+        "sticky top-0 z-50 h-(--landing-nav-height) px-2 py-1.5 transition-none lg:px-8 lg:pt-5 lg:pb-2.5 lg:[&_.landing-button]:min-h-9 lg:[&_.landing-button]:px-3 lg:[&_.landing-button]:py-1.5 lg:[&_.landing-button]:text-base/6 [&.landing-nav--dark_.landing-button--navbar-outline]:text-[#f5f1ea] [&.landing-nav--dark_.landing-nav-brand]:text-[#f5f1ea] [&.landing-nav--dark_.landing-nav-panel]:border-[rgb(245_241_234/0.28)] [&.landing-nav--dark_.landing-nav-panel]:shadow-[0_0.625rem_1.875rem_rgb(0_0_0/0.18)] [&.landing-nav--dark_.landing-nav-panel]:[background:rgb(245_241_234/0.1)] [&.landing-nav--dark_.landing-nav-text]:text-[#f5f1ea] [&.landing-nav--dark_.landing-nav-text:hover]:text-[#d2936d]",
         @class
       ]}
     >
       <nav
-        class="landing-nav-panel mx-auto flex min-h-13 max-w-324 items-center justify-between rounded-[8px] p-[6px_16px] [backdrop-filter:blur(12px)] [background:rgb(203_203_203/0.6)] [border:1px_solid_rgb(255_255_255/0.5)] [transition:background-color_180ms_ease,border-color_180ms_ease,box-shadow_180ms_ease] lg:min-h-16.5 lg:p-[6px_24px]"
+        class="landing-nav-panel mx-auto flex h-13 max-w-324 items-center justify-between rounded-lg border border-white/50 bg-[rgb(203_203_203/0.6)] px-4 py-1.5 backdrop-blur-md transition-[background-color,border-color,box-shadow] duration-180 lg:h-16.5 lg:px-6"
         aria-label={gettext("Main navigation")}
       >
         <.link
           kind="unstyled"
           navigate={~p"/#top"}
-          class="landing-nav-brand text-lg leading-[1.2] font-bold text-[#0f0f0f] [transition:color_180ms_ease] lg:text-[28px]"
+          class="landing-nav-brand text-lg leading-[1.2] font-extrabold text-[#0f0f0f] transition-colors duration-180 lg:text-2xl"
         >
           Firmowid
         </.link>
@@ -47,13 +47,13 @@ defmodule FirmowidWeb.Landing.Components.Primitives do
         <div class="hidden items-center gap-3 lg:flex lg:gap-4">
           <a
             href={~p"/#zespol"}
-            class="landing-nav-text rounded-[5px] p-[15px_14px] text-base leading-[24px] font-medium text-[#0f0f0f] [transition:color_180ms_ease] lg:text-base [&:hover]:text-orange-600"
+            class="landing-nav-text min-w-21.5 rounded-sm p-3.5 text-center text-base/6 font-medium text-[#0f0f0f] transition-colors duration-180 hover:text-orange-600"
           >
             {gettext("About us")}
           </a>
           <a
             href="https://firmowid.pl/blog"
-            class="landing-nav-text rounded-[5px] p-[15px_14px] text-base leading-[24px] font-medium text-[#0f0f0f] [transition:color_180ms_ease] lg:text-base [&:hover]:text-orange-600"
+            class="landing-nav-text min-w-19 rounded-sm p-3.5 text-center text-base/6 font-medium text-[#0f0f0f] transition-colors duration-180 hover:text-orange-600"
           >
             {gettext("Blog")}
           </a>
@@ -61,7 +61,7 @@ defmodule FirmowidWeb.Landing.Components.Primitives do
             href={@repository}
             target="_blank"
             rel="noopener noreferrer"
-            class="landing-nav-text rounded-[5px] p-[15px_14px] text-base leading-[24px] font-medium text-[#0f0f0f] [transition:color_180ms_ease] lg:text-base [&:hover]:text-orange-600"
+            class="landing-nav-text min-w-24 rounded-sm p-3.5 text-center text-base/6 font-medium text-[#0f0f0f] transition-colors duration-180 hover:text-orange-600"
           >
             GitHub
           </a>
@@ -118,16 +118,16 @@ defmodule FirmowidWeb.Landing.Components.Primitives do
           "bg-[#d2936d] text-[#0f0f0f] [&:hover]:bg-[#e9c3ac]"
 
         :outline ->
-          "min-w-[151px] bg-[url('/images/landing/frames/button-login.svg')] bg-size-[100%_100%] bg-center bg-no-repeat text-[#0f0f0f] lg:w-[151px] lg:px-5 [.landing-pricing-card_&]:w-52 [.landing-pricing-card_&]:max-w-full [.landing-pricing-card_&]:min-w-0 [.landing-pricing-card_&]:self-center [.landing-pricing-card_&]:bg-[url('/images/landing/frames/button-pricing.svg')]"
+          "min-w-37.75 text-[#0f0f0f] before:h-[54px] before:w-[153px] before:bg-[url('/images/landing/frames/button-login.svg')] before:bg-auto before:bg-center before:bg-no-repeat lg:w-37.75 lg:px-5 [.landing-pricing-card_&]:w-52 [.landing-pricing-card_&]:max-w-full [.landing-pricing-card_&]:min-w-0 [.landing-pricing-card_&]:self-center [.landing-pricing-card_&]:before:w-[210px] [.landing-pricing-card_&]:before:bg-[url('/images/landing/frames/button-pricing.svg')]"
 
         :outline_light ->
-          "bg-[url('/images/landing/frames/button-light.svg')] bg-size-[100%_100%] bg-center bg-no-repeat text-[#f5f1ea] [&:hover]:bg-[url('/images/landing/frames/button-light-hover.svg')]"
+          "text-[#f5f1ea] before:h-[59px] before:w-[294px] before:bg-[url('/images/landing/frames/button-light.svg')] before:bg-auto before:bg-center before:bg-no-repeat hover:before:bg-[url('/images/landing/frames/button-light-hover.svg')]"
 
         :navbar_filled ->
-          "w-[109px] bg-[url('/images/landing/frames/nav-trial-light.svg')] bg-size-[100%_100%] bg-center bg-no-repeat text-[#0f0f0f] [.landing-nav--dark_&]:bg-[url('/images/landing/frames/nav-trial-dark.svg')]"
+          "h-9 min-h-9 w-27.25 bg-white text-[#0f0f0f] before:h-[38px] before:w-[110px] before:bg-grey-100 before:mask-[url('/images/landing/frames/nav-trial-dark.svg')] before:mask-size-auto before:mask-center before:mask-no-repeat"
 
         :navbar_outline ->
-          "landing-button--navbar-outline w-[119px] bg-[url('/images/landing/frames/nav-login.svg')] bg-size-[100%_100%] bg-center bg-no-repeat text-[#0f0f0f]"
+          "landing-button--navbar-outline h-9 min-h-9 w-29.75 text-[#0f0f0f] before:h-[38px] before:w-[120px] before:bg-white before:mask-[url('/images/landing/frames/nav-login.svg')] before:mask-size-auto before:mask-center before:mask-no-repeat"
       end
 
     assigns = assign(assigns, :variant_class, variant_class)
@@ -138,8 +138,13 @@ defmodule FirmowidWeb.Landing.Components.Primitives do
       navigate={@navigate}
       external={@external}
       class={[
-        "landing-button relative isolate inline-flex items-center justify-center gap-2.5 rounded-[4px] p-[14px_32px] text-center text-base leading-[24px] font-medium focus-visible:outline-2 focus-visible:outline-offset-4 disabled:pointer-events-none disabled:opacity-[0.45] aria-disabled:pointer-events-none aria-disabled:opacity-[0.45]",
-        if(@variant in [:navbar_filled, :navbar_outline], do: "min-h-9", else: "min-h-13"),
+        "landing-button relative isolate inline-flex items-center justify-center gap-2.5 px-8 py-3.5 text-center text-base/6 font-medium focus-visible:outline-2 focus-visible:outline-offset-4 disabled:pointer-events-none disabled:opacity-45 aria-disabled:pointer-events-none aria-disabled:opacity-45",
+        if(@variant == :navbar_filled, do: "rounded-md", else: "rounded-sm"),
+        if(@variant in [:outline, :outline_light, :navbar_filled, :navbar_outline],
+          do:
+            "before:pointer-events-none before:absolute before:top-1/2 before:left-1/2 before:-z-10 before:-translate-1/2"
+        ),
+        if(@variant not in [:navbar_filled, :navbar_outline], do: "min-h-13"),
         @variant_class,
         @class
       ]}
@@ -168,9 +173,9 @@ defmodule FirmowidWeb.Landing.Components.Primitives do
       data-landing-dark-surface
       class={["overflow-clip bg-grey-900 text-[#f5f1ea] lg:bg-[#0f0f0f]", @class]}
     >
-      <div class="mx-auto w-[calc(100%-32px)] max-w-[1139px] lg:w-[calc(100%-64px)]">
-        <div class="flex flex-col gap-12 py-[72px_96px] text-left lg:flex-row lg:items-start lg:gap-29.5 lg:py-[104px_72px]">
-          <div class="-order-1 mx-auto w-60 lg:order-0 lg:m-0 lg:w-85 lg:flex-[0_0_340px] lg:basis-85 [&_img]:block [&_img]:h-auto [&_img]:w-full lg:[&_img]:h-138 lg:[&_img]:w-full lg:[&_img]:object-cover lg:[&_img]:object-center">
+      <div class="mx-auto w-[calc(100%-var(--spacing)*8)] max-w-284.75 lg:w-[calc(100%-var(--spacing)*16)]">
+        <div class="flex flex-col gap-12 pt-18 pb-24 text-left lg:flex-row lg:items-start lg:gap-29.5 lg:pt-26 lg:pb-18">
+          <div class="-order-1 mx-auto w-60 lg:order-0 lg:m-0 lg:w-85 lg:shrink-0 lg:grow-0 lg:basis-85 [&_img]:block [&_img]:h-auto [&_img]:w-full lg:[&_img]:h-138 lg:[&_img]:w-full lg:[&_img]:object-cover lg:[&_img]:object-center">
             <img
               id="cta-footer-figurine"
               src={~p"/images/figurine.png"}
@@ -185,14 +190,14 @@ defmodule FirmowidWeb.Landing.Components.Primitives do
           </div>
 
           <div class="flex flex-col lg:flex-1 lg:pt-0 lg:[&_.landing-footer-heading]:order-0">
-            <p class="mb-5 font-['Nothing_You_Could_Do',cursive] text-3xl leading-none text-[#d2936d] lg:text-[32px]">
+            <p class="mb-5 font-['Nothing_You_Could_Do',cursive] text-3xl leading-none text-[#d2936d] lg:text-[2rem]">
               {gettext("YOUR MOVE!")}
             </p>
-            <h2 class="landing-footer-heading text-[48px] leading-[.96] font-bold tracking-[-0.03em] lg:max-w-160 lg:text-[64px] lg:leading-[.92]">
+            <h2 class="landing-footer-heading text-[3rem] leading-[.96] font-bold tracking-[-0.03em] lg:max-w-160 lg:text-[4rem] lg:leading-[.92]">
               {gettext("Run your business")}<br />
               {gettext("with a lighter mind.")}
             </h2>
-            <p class="mt-4 max-w-140 text-h5 leading-[27px] text-grey-300 lg:mt-5 lg:max-w-170 lg:text-h5 lg:leading-[27px]">
+            <p class="mt-4 max-w-140 text-h5/6.75 text-grey-300 lg:mt-5 lg:max-w-170 lg:text-h5">
               {gettext(
                 "Start with the free plan. No card. No commitment. If the software is not for you, delete your account with one click."
               )}
@@ -219,7 +224,7 @@ defmodule FirmowidWeb.Landing.Components.Primitives do
           </div>
         </div>
 
-        <div class="py-[40px_32px] [border-top:1px_solid_rgb(245_241_234/0.2)] lg:grid lg:grid-cols-[minmax(0,1fr)_auto] lg:items-start lg:gap-x-17 lg:py-[48px_40px]">
+        <div class="border-t border-[#f5f1ea]/20 pt-10 pb-8 lg:grid lg:grid-cols-[minmax(0,1fr)_auto] lg:items-start lg:gap-x-17 lg:pt-12 lg:pb-10">
           <div class="grid grid-cols-2 gap-6 lg:col-2 lg:row-1 lg:gap-17">
             <div>
               <p class="mb-4 text-xs font-bold tracking-[0.08em] uppercase">
@@ -227,17 +232,17 @@ defmodule FirmowidWeb.Landing.Components.Primitives do
               </p>
               <a
                 href={~p"/funkcje"}
-                class="block py-1 text-[15px] text-[rgb(245_241_234/0.75)] [&:hover]:text-white"
+                class="block py-1 text-base text-[rgb(245_241_234/0.75)] [&:hover]:text-white"
               >{gettext("Features")}</a>
               <a
                 href={~p"/cennik"}
-                class="block py-1 text-[15px] text-[rgb(245_241_234/0.75)] [&:hover]:text-white"
+                class="block py-1 text-base text-[rgb(245_241_234/0.75)] [&:hover]:text-white"
               >{gettext("Pricing")}</a>
               <a
                 href={@repository}
                 target="_blank"
                 rel="noopener noreferrer"
-                class="block py-1 text-[15px] text-[rgb(245_241_234/0.75)] [&:hover]:text-white"
+                class="block py-1 text-base text-[rgb(245_241_234/0.75)] [&:hover]:text-white"
               >
                 {gettext("Source code")}
               </a>
@@ -250,40 +255,40 @@ defmodule FirmowidWeb.Landing.Components.Primitives do
                 href="https://alergeek.ventures/contact-details"
                 target="_blank"
                 rel="noopener noreferrer"
-                class="block py-1 text-[15px] text-[rgb(245_241_234/0.75)] [&:hover]:text-white"
+                class="block py-1 text-base text-[rgb(245_241_234/0.75)] [&:hover]:text-white"
               >
                 {gettext("Contact")}
               </a>
               <.link
                 kind="unstyled"
                 navigate={~p"/regulamin#top"}
-                class="block py-1 text-[15px] text-[rgb(245_241_234/0.75)] [&:hover]:text-white"
+                class="block py-1 text-base text-[rgb(245_241_234/0.75)] [&:hover]:text-white"
               >
                 {gettext("Terms of Service")}
               </.link>
               <.link
                 kind="unstyled"
                 navigate={~p"/polityka-prywatnosci#top"}
-                class="block py-1 text-[15px] text-[rgb(245_241_234/0.75)] [&:hover]:text-white"
+                class="block py-1 text-base text-[rgb(245_241_234/0.75)] [&:hover]:text-white"
               >
                 {pgettext("footer-policy-link", "Privacy Policy")}
               </.link>
             </div>
           </div>
 
-          <div class="order-1 mt-10 pt-8 [border-top:1px_solid_rgb(245_241_234/0.2)] lg:order-0 lg:col-1 lg:row-1 lg:mt-0 lg:max-w-75 lg:pt-0 lg:[border-top:0]">
-            <p class="text-lg font-bold lg:text-[24px]">Firmowid</p>
-            <p class="mt-3 text-[13px] leading-normal text-[rgb(245_241_234/0.6)]">
+          <div class="order-1 mt-10 border-t border-[#f5f1ea]/20 pt-8 lg:order-0 lg:col-1 lg:row-1 lg:mt-0 lg:max-w-75 lg:border-t-0 lg:pt-0">
+            <p class="text-lg font-bold lg:text-xl">Firmowid</p>
+            <p class="mt-3 text-sm/normal text-[rgb(245_241_234/0.6)]">
               {gettext("Invoicing, banking, and working hours.")}
               <br />{gettext("Built by entrepreneurs for entrepreneurs.")}
             </p>
           </div>
 
-          <div class="mt-8 flex flex-col-reverse bg-[url('/images/landing/decorations/dark-separator.svg')] bg-size-[100%_2px] bg-top bg-no-repeat pt-7 text-caps-sm leading-[1.6] text-[rgb(245_241_234/0.6)] lg:col-span-full lg:row-2 lg:mt-8 lg:flex-row lg:items-center lg:justify-between lg:gap-8">
+          <div class="mt-8 flex flex-col-reverse bg-[url('/images/landing/decorations/dark-separator.svg')] bg-size-[100%_--spacing(0.5)] bg-top bg-no-repeat pt-7 text-caps-sm leading-[1.6] text-[rgb(245_241_234/0.6)] lg:col-span-full lg:row-2 lg:mt-8 lg:flex-row lg:items-center lg:justify-between lg:gap-8">
             <p>
               © {Date.utc_today().year} Firmowid · {@legal_entity.name}, {@legal_entity.address} · NIP {@legal_entity.nip} · KRS {@legal_entity.krs} · REGON {@legal_entity.regon}
             </p>
-            <div class="mt-5 flex gap-4.5 text-[13px] lg:mt-0">
+            <div class="mt-5 flex gap-4.5 text-sm lg:mt-0">
               <a href={@repository} target="_blank" rel="noopener noreferrer">GitHub</a>
               <a
                 href="https://pl.linkedin.com/showcase/firmowid/"
