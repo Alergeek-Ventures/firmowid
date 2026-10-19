@@ -5,6 +5,11 @@ defmodule Firmowid.ErrorKind do
 
   @doc "Returns a stable, non-sensitive category for an error-like value."
   @spec classify(term()) :: String.t()
+  def classify(%Ash.Error.Invalid{errors: [_ | _] = errors}) do
+    kinds = errors |> Enum.map(&classify/1) |> Enum.uniq() |> Enum.sort() |> Enum.join(",")
+    "Elixir.Ash.Error.Invalid:" <> kinds
+  end
+
   def classify(%{__struct__: module}) when is_atom(module), do: Atom.to_string(module)
 
   def classify({kind, nested}) when is_atom(kind), do: Atom.to_string(kind) <> ":" <> classify(nested)
