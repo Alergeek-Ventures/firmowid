@@ -32,7 +32,7 @@ defmodule FirmowidWeb.Landing.Components.Hero do
             href="https://github.com/Alergeek-Ventures/firmowid"
             target="_blank"
             rel="noopener noreferrer"
-            class="relative isolate inline-flex items-center gap-2 py-2.5 pr-4 pl-3 text-[13px] leading-[25px] font-medium [&::before]:absolute [&::before]:inset-0 [&::before]:-z-1 [&::before]:[content:''] [&::before]:[background:url('/images/landing/marker-pill.svg')_center/100%_100%_no-repeat]"
+            class="relative isolate inline-flex min-h-10 items-center gap-2 py-2 pr-4 pl-3 text-[13px] leading-[24px] font-medium [background:url('/images/landing/frames/open-source.svg')_center/100%_100%_no-repeat]"
           >
             <img src={~p"/images/github-mark.svg"} alt="" width="24" height="24" />
             <span>
@@ -47,7 +47,7 @@ defmodule FirmowidWeb.Landing.Components.Hero do
           <h1 class="mt-6 text-3xl leading-[1.14] font-bold tracking-[-0.035em] lg:mt-8.5 lg:text-[72px] lg:leading-[0.966]">
             {pgettext("landing hero headline", "KSeF invoices")}<br />
             {pgettext("landing hero headline", "without limits.")}<br />
-            <span class="relative isolate inline-block [&::after]:absolute [&::after]:-right-5 [&::after]:-bottom-2 [&::after]:-left-1 [&::after]:-z-1 [&::after]:h-5.5 [&::after]:[content:''] [&::after]:[background:url('/images/landing/marker-underline.svg')_center/100%_100%_no-repeat] lg:[&::after]:-right-7">
+            <span class="relative isolate inline-block [&::after]:absolute [&::after]:-right-5 [&::after]:-bottom-2 [&::after]:-left-1 [&::after]:-z-1 [&::after]:h-5 [&::after]:[content:''] [&::after]:[background:url('/images/landing/decorations/hero-underline.svg')_center/100%_100%_no-repeat] lg:[&::after]:-right-7">
               {pgettext("landing hero headline", "For PLN 0.")}
             </span>
           </h1>
@@ -71,21 +71,21 @@ defmodule FirmowidWeb.Landing.Components.Hero do
             </.landing_button>
           </div>
 
-          <ul class="mt-7 grid gap-4 text-[13px] leading-[18px] text-darkGrey lg:mt-8 lg:flex lg:flex-wrap lg:gap-[8px_16px] [&_li]:flex [&_li]:items-baseline [&_li]:gap-2 [&_li_>_span]:flex-none [&_li_>_span]:text-[22px] [&_li_>_span]:leading-[20px] [&_li_>_span]:text-green-600">
+          <ul class="mt-7 grid gap-4 text-[13px] leading-[18px] text-darkGrey lg:mt-8 lg:flex lg:flex-wrap lg:gap-[8px_16px] [&_img]:shrink-0 [&_li]:flex [&_li]:items-baseline [&_li]:gap-2">
             <li>
-              <span aria-hidden="true">✓</span>
+              <img src={~p"/images/landing/icons/check.svg"} alt="" width="12" height="13" />
               {gettext("Start with the free plan. No card required.")}
             </li>
             <li>
-              <span aria-hidden="true">✓</span>
+              <img src={~p"/images/landing/icons/check.svg"} alt="" width="12" height="13" />
               {gettext("KSeF synchronization")}
             </li>
             <li>
-              <span aria-hidden="true">✓</span>
+              <img src={~p"/images/landing/icons/check.svg"} alt="" width="12" height="13" />
               {gettext("Secure data storage")}
             </li>
             <li>
-              <span aria-hidden="true">✓</span>
+              <img src={~p"/images/landing/icons/check.svg"} alt="" width="12" height="13" />
               {gettext("Bank integrations")}
             </li>
           </ul>

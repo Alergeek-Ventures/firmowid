@@ -167,7 +167,7 @@ defmodule FirmowidWeb.Landing.Components.Sections do
           </p>
         </div>
 
-        <div class="mt-10 grid gap-9 pt-9 [border-top:1px_solid_var(--color-grey-800)] lg:mt-12 lg:grid-cols-3 lg:gap-10 lg:pt-10 [&_.landing-eyebrow]:mb-5 [&_h3]:mb-5 [&_h3]:text-[22px] [&_h3]:leading-[1.3] [&_h3]:font-semibold [&_h3]:tracking-[-0.01em] lg:[&_h3]:text-[24px] [&_p]:text-[15px] [&_p]:leading-[1.4]">
+        <div class="mt-10 grid gap-9 bg-[url('/images/landing/decorations/dark-separator.svg')] bg-size-[100%_2px] bg-top bg-no-repeat pt-9 lg:mt-12 lg:grid-cols-3 lg:gap-10 lg:pt-10 [&_.landing-eyebrow]:mb-5 [&_h3]:mb-5 [&_h3]:text-[22px] [&_h3]:leading-[1.3] [&_h3]:font-semibold [&_h3]:tracking-[-0.01em] lg:[&_h3]:text-[24px] [&_p]:text-[15px] [&_p]:leading-[1.4]">
           <article :for={{problem, index} <- Enum.with_index(@problems, 1)}>
             <p class="landing-eyebrow mb-4 text-xs font-bold tracking-[0.08em] text-(--landing-accent) uppercase">
               0{index}
@@ -208,7 +208,7 @@ defmodule FirmowidWeb.Landing.Components.Sections do
 
         <article
           :for={feature <- @features}
-          class="landing-feature mt-8 grid gap-6 rounded-[16px] bg-white p-6 [border:1px_solid_#e3b79b] lg:mt-20 lg:grid-cols-2 lg:items-center lg:gap-20 lg:bg-transparent lg:p-0 lg:[border:0] lg:last:pb-0 [&_h3]:mt-4 [&_h3]:mb-5 [&_h3]:text-lg [&_h3]:leading-[1.15] [&_h3]:font-bold [&_h3]:tracking-[-0.01em] lg:[&_h3]:mt-4 lg:[&_h3]:text-[36px] lg:[&_h3]:leading-[1.05] lg:[&_li]:flex lg:[&_li]:items-baseline lg:[&_li]:gap-3 lg:[&_li_>_span]:flex-none lg:[&_li_>_span]:text-h5 lg:[&_li_>_span]:text-(--landing-accent) [&_ul]:hidden lg:[&_ul]:mt-7 lg:[&_ul]:grid lg:[&_ul]:gap-3.5 lg:[&_ul]:text-base/normal lg:[&+.landing-feature]:mt-16 lg:[&+.landing-feature]:pt-16 lg:[&+.landing-feature]:[border-top:1px_solid_#ece1d8] lg:[&:nth-of-type(even)_>_:first-child]:order-2"
+          class="landing-feature mt-8 grid gap-6 rounded-[16px] bg-white p-6 [border:1px_solid_#e3b79b] lg:mt-20 lg:grid-cols-2 lg:items-center lg:gap-20 lg:bg-transparent lg:p-0 lg:[border:0] lg:last:pb-0 [&_h3]:mt-4 [&_h3]:mb-5 [&_h3]:text-lg [&_h3]:leading-[1.15] [&_h3]:font-bold [&_h3]:tracking-[-0.01em] lg:[&_h3]:mt-4 lg:[&_h3]:text-[36px] lg:[&_h3]:leading-[1.05] lg:[&_li]:flex lg:[&_li]:items-start lg:[&_li]:gap-3 [&_ul]:hidden lg:[&_ul]:mt-7 lg:[&_ul]:grid lg:[&_ul]:gap-3.5 lg:[&_ul]:text-base/normal lg:[&+.landing-feature]:mt-16 lg:[&+.landing-feature]:bg-[url('/images/landing/decorations/feature-separator.svg')] lg:[&+.landing-feature]:bg-size-[100%_2px] lg:[&+.landing-feature]:bg-top lg:[&+.landing-feature]:bg-no-repeat lg:[&+.landing-feature]:pt-16 lg:[&:nth-of-type(even)_>_:first-child]:order-2"
         >
           <div>
             <p class="flex flex-wrap gap-2.5 text-xs font-bold tracking-[0.06em] text-(--landing-accent) uppercase lg:flex [&_span]:inline-block [&_span]:p-0 [&_span]:text-[13px] [&_span]:font-semibold [&_span]:tracking-[0.08em] [&_span]:uppercase lg:[&_span]:rounded-full lg:[&_span]:bg-[#f7e0d3] lg:[&_span]:p-[4px_16px] lg:[&_span]:font-normal lg:[&_span]:tracking-normal lg:[&_span]:normal-case [&_span+span]:[border:0] [&_span+span::before]:mr-2.5 [&_span+span::before]:[content:'·'] lg:[&_span+span::before]:content-none">
@@ -220,7 +220,13 @@ defmodule FirmowidWeb.Landing.Components.Sections do
             </p>
             <ul>
               <li :for={bullet <- feature.bullets}>
-                <span aria-hidden="true">→</span>{bullet}
+                <img
+                  src={~p"/images/landing/icons/arrow.svg"}
+                  alt=""
+                  width="24"
+                  height="24"
+                  class="shrink-0"
+                />{bullet}
               </li>
             </ul>
           </div>
@@ -554,24 +560,46 @@ defmodule FirmowidWeb.Landing.Components.Sections do
 
           <ul class="mt-8 grid gap-4 text-[15px] leading-normal lg:text-base [&_li]:flex [&_li]:items-baseline [&_li]:gap-2.5 [&_li]:text-[#4e4e4e]">
             <li>
-              <span aria-hidden="true">✓</span>{gettext(
-                "Issuing invoices - with a preview and KSeF submission"
-              )}
+              <img
+                src={~p"/images/landing/icons/check.svg"}
+                alt=""
+                width="12"
+                height="13"
+                class="shrink-0"
+              />{gettext("Issuing invoices - with a preview and KSeF submission")}
             </li>
             <li>
-              <span aria-hidden="true">✓</span>{gettext(
-                "Corrections, e.g. “give a 10% discount on invoice BC/01/10/2026”"
-              )}
+              <img
+                src={~p"/images/landing/icons/check.svg"}
+                alt=""
+                width="12"
+                height="13"
+                class="shrink-0"
+              />{gettext("Corrections, e.g. “give a 10% discount on invoice BC/01/10/2026”")}
             </li>
-            <li><span aria-hidden="true">✓</span>{gettext("Reading sales and cost invoices")}</li>
+            <li>
+              <img
+                src={~p"/images/landing/icons/check.svg"}
+                alt=""
+                width="12"
+                height="13"
+                class="shrink-0"
+              />{gettext("Reading sales and cost invoices")}
+            </li>
           </ul>
-          <p class="landing-assistants-soon mt-6 text-[15px] leading-normal">
-            ◷ {gettext(
+          <p class="landing-assistants-soon mt-6 flex items-start gap-2.5 text-[15px] leading-normal">
+            <img
+              src={~p"/images/landing/icons/clock.svg"}
+              alt=""
+              width="14"
+              height="21"
+              class="shrink-0"
+            />{gettext(
               "Coming soon: financial analysis - invoices and real bank transactions in one place"
             )}
           </p>
 
-          <div class="mt-10 flex items-center gap-2 lg:mt-16 [&_img]:object-contain [&_img]:mix-blend-multiply [&>img]:h-12.5 [&>img]:w-8.5">
+          <div class="mt-10 flex items-center gap-2 lg:mt-16 [&>img]:h-12.5 [&>img]:w-8.5 [&>img]:object-contain">
             <img
               src={~p"/images/landing/character-head.png"}
               alt=""
@@ -579,17 +607,29 @@ defmodule FirmowidWeb.Landing.Components.Sections do
               height="103"
               loading="lazy"
             />
-            <svg
-              viewBox="0 0 250 160"
-              aria-hidden="true"
-              class="h-40 min-w-0 flex-1"
-            >
-              <path
-                d="M0 80C90 80 130 10 250 10M0 80H250M0 80C90 80 130 150 250 150"
-                fill="none"
-                stroke="currentColor"
+            <div aria-hidden="true" class="relative h-40 min-w-0 flex-1">
+              <img
+                src={~p"/images/landing/decorations/assistant-top.svg"}
+                alt=""
+                width="249"
+                height="62"
+                class="absolute right-0 bottom-1/2 h-[62px] w-full"
               />
-            </svg>
+              <img
+                src={~p"/images/landing/decorations/assistant-middle.svg"}
+                alt=""
+                width="251"
+                height="1"
+                class="absolute top-1/2 h-px w-full"
+              />
+              <img
+                src={~p"/images/landing/decorations/assistant-bottom.svg"}
+                alt=""
+                width="248"
+                height="63"
+                class="absolute top-1/2 right-0 h-[63px] w-full"
+              />
+            </div>
             <ul class="grid flex-[0_0_160px] gap-7 text-[13px] leading-[1.3] [&_img]:size-9.5 [&_li]:flex [&_li]:items-center [&_li]:gap-2 [&_li:nth-child(2)_img]:filter-[invert(61%)_sepia(65%)_saturate(555%)_hue-rotate(332deg)_brightness(90%)] [&_small]:block [&_small]:text-darkGrey [&_strong]:font-bold">
               <li>
                 <img src={~p"/images/landing/chatgpt.svg"} width="38" height="38" alt="" /><span><strong>ChatGPT</strong><small>{gettext(
@@ -712,7 +752,7 @@ defmodule FirmowidWeb.Landing.Components.Sections do
           </div>
         </div>
 
-        <div class="grid content-start gap-8 text-[13px] text-darkGrey lg:pl-16 lg:[border-left:1px_solid_var(--color-grey-200)] [&_strong]:mb-1.5 [&_strong]:block [&_strong]:text-3xl [&_strong]:leading-[1.1] [&_strong]:font-bold [&_strong]:text-(--landing-accent)">
+        <div class="grid content-start gap-8 text-[13px] text-darkGrey lg:bg-[url('/images/landing/decorations/testimonial-separator.svg')] lg:bg-size-[2px_77px] lg:bg-left lg:bg-no-repeat lg:pl-16 [&_strong]:mb-1.5 [&_strong]:block [&_strong]:text-3xl [&_strong]:leading-[1.1] [&_strong]:font-bold [&_strong]:text-(--landing-accent)">
           <p>
             <strong>{gettext("%{hours} h", hours: "−12")}</strong>{gettext(
               "less administrative work per week"
@@ -782,7 +822,7 @@ defmodule FirmowidWeb.Landing.Components.Sections do
               <img src={~p"/images/github-mark.svg"} alt="" width="24" height="24" />
             </.landing_button>
             <a
-              class="landing-pill inline-flex items-center rounded-full p-[5px_14px] text-caps-sm font-bold tracking-[0.04em] uppercase [border:1px_solid_currentColor]"
+              class="inline-flex min-h-[31px] min-w-[146px] items-center justify-center bg-[url('/images/landing/frames/license.svg')] bg-size-[100%_100%] bg-center bg-no-repeat p-[5px_14px] text-caps-sm font-bold tracking-[0.04em] uppercase"
               href={@repository}
             >
               {gettext("AGPL-3.0 license")}
@@ -790,7 +830,7 @@ defmodule FirmowidWeb.Landing.Components.Sections do
           </div>
         </div>
 
-        <div class="rounded-[16px] p-[8px_28px] [background:var(--color-grey-900)] [border:1px_solid_var(--color-grey-800)] lg:self-center [&_article]:py-6 [&_article_h3]:mb-2.5 [&_article+article]:[border-top:1px_solid_var(--color-grey-800)] [&_h3]:flex [&_h3]:items-center [&_h3]:gap-2.5 [&_h3]:text-[#f5f1ea] [&_h3::before]:text-[#d2936d] [&_h3::before]:[content:'✓']">
+        <div class="rounded-[16px] p-[8px_28px] [background:var(--color-grey-900)] [border:1px_solid_var(--color-grey-800)] lg:self-center [&_article]:py-6 [&_article_h3]:mb-2.5 [&_article+article]:[border-top:1px_solid_var(--color-grey-800)] [&_h3]:flex [&_h3]:items-center [&_h3]:gap-2.5 [&_h3]:text-[#f5f1ea] [&_h3::before]:h-[13px] [&_h3::before]:w-3 [&_h3::before]:flex-none [&_h3::before]:bg-[url('/images/landing/icons/check.svg')] [&_h3::before]:bg-contain [&_h3::before]:bg-center [&_h3::before]:bg-no-repeat [&_h3::before]:content-['']">
           <article>
             <h3>{gettext("No limits")}</h3>
             <p>{gettext("Invoices, bank accounts and users without plan limits.")}</p>
@@ -831,7 +871,7 @@ defmodule FirmowidWeb.Landing.Components.Sections do
           </p>
         </div>
 
-        <div class="grid gap-5 md:grid-cols-2 lg:gap-4 [&_article]:rounded-[16px] [&_article]:p-5 [&_article]:[background:#fff_url('/images/founder_card_chalk_border.svg')_center/100%_100%_no-repeat] lg:[&_article]:p-6 [&_article:nth-child(2)_.landing-team-portrait]:bg-turquoise-600 [&_article:nth-child(2)_.landing-team-portrait_img]:top-[-12%] [&_article:nth-child(2)_.landing-team-portrait_img]:left-[-26%] [&_article:nth-child(2)_.landing-team-portrait_img]:w-[153%]">
+        <div class="grid gap-5 md:grid-cols-2 lg:gap-4 [&_article]:rounded-[16px] [&_article]:p-5 [&_article]:[background:#fff_url('/images/landing/frames/team-card.svg')_center/100%_100%_no-repeat] lg:[&_article]:p-6 [&_article:nth-child(2)_.landing-team-portrait]:bg-turquoise-600 [&_article:nth-child(2)_.landing-team-portrait_img]:top-[-12%] [&_article:nth-child(2)_.landing-team-portrait_img]:left-[-26%] [&_article:nth-child(2)_.landing-team-portrait_img]:w-[153%]">
           <article :for={person <- @team}>
             <div class="landing-team-portrait relative aspect-[1] overflow-hidden rounded-[8px] bg-[#d2936d] [&_img]:absolute [&_img]:top-[-22.4%] [&_img]:left-[-6%] [&_img]:h-auto [&_img]:w-[113%] [&_img]:max-w-none">
               <img

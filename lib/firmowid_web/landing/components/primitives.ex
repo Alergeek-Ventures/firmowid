@@ -28,7 +28,7 @@ defmodule FirmowidWeb.Landing.Components.Primitives do
       id="landing-navbar"
       phx-hook="LandingNavbarTheme"
       class={[
-        "sticky top-0 z-50 h-(--landing-nav-height) p-[6px_8px] transition-none lg:p-[20px_32px_10px] lg:[&_.landing-button]:min-h-10.5 lg:[&_.landing-button]:p-[8px_18px] lg:[&_.landing-button]:text-[15px] lg:[&_.landing-button]:leading-[24px] [&.landing-nav--dark_.landing-button--navbar-filled]:bg-[#0f0f0f] [&.landing-nav--dark_.landing-button--navbar-filled]:text-[#f5f1ea] [&.landing-nav--dark_.landing-button--navbar-filled::before]:filter-[grayscale(1)_invert(1)] [&.landing-nav--dark_.landing-button--navbar-filled:hover]:[background:rgb(245_241_234/0.14)] [&.landing-nav--dark_.landing-button--navbar-outline]:text-[#f5f1ea] [&.landing-nav--dark_.landing-nav-brand]:text-[#f5f1ea] [&.landing-nav--dark_.landing-nav-panel]:border-[rgb(245_241_234/0.28)] [&.landing-nav--dark_.landing-nav-panel]:shadow-[0_10px_30px_rgb(0_0_0/0.18)] [&.landing-nav--dark_.landing-nav-panel]:[background:rgb(245_241_234/0.1)] [&.landing-nav--dark_.landing-nav-text]:text-[#f5f1ea] [&.landing-nav--dark_.landing-nav-text:hover]:text-[#d2936d]",
+        "sticky top-0 z-50 h-(--landing-nav-height) p-[6px_8px] transition-none lg:p-[20px_32px_10px] lg:[&_.landing-button]:min-h-9 lg:[&_.landing-button]:p-[6px_12px] lg:[&_.landing-button]:text-[15px] lg:[&_.landing-button]:leading-[24px] [&.landing-nav--dark_.landing-button--navbar-outline]:text-[#f5f1ea] [&.landing-nav--dark_.landing-nav-brand]:text-[#f5f1ea] [&.landing-nav--dark_.landing-nav-panel]:border-[rgb(245_241_234/0.28)] [&.landing-nav--dark_.landing-nav-panel]:shadow-[0_10px_30px_rgb(0_0_0/0.18)] [&.landing-nav--dark_.landing-nav-panel]:[background:rgb(245_241_234/0.1)] [&.landing-nav--dark_.landing-nav-text]:text-[#f5f1ea] [&.landing-nav--dark_.landing-nav-text:hover]:text-[#d2936d]",
         @class
       ]}
     >
@@ -118,16 +118,16 @@ defmodule FirmowidWeb.Landing.Components.Primitives do
           "bg-[#d2936d] text-[#0f0f0f] [&:hover]:bg-[#e9c3ac]"
 
         :outline ->
-          "text-[#0f0f0f] [&::before]:absolute [&::before]:-z-1 [&::before]:inset-0 [&::before]:[background:url('/images/landing/button-outline.png')_center_/_100%_100%_no-repeat] [&::before]:[content:''] [&::before]:brightness-0 [&:hover]:[background:rgb(15_15_15_/_0.04)]"
+          "min-w-[151px] bg-[url('/images/landing/frames/button-login.svg')] bg-size-[100%_100%] bg-center bg-no-repeat text-[#0f0f0f] lg:w-[151px] lg:px-5 [.landing-pricing-card_&]:w-52 [.landing-pricing-card_&]:max-w-full [.landing-pricing-card_&]:min-w-0 [.landing-pricing-card_&]:self-center [.landing-pricing-card_&]:bg-[url('/images/landing/frames/button-pricing.svg')]"
 
         :outline_light ->
-          "text-[#f5f1ea] [&::before]:absolute [&::before]:-z-1 [&::before]:inset-0 [&::before]:[background:url('/images/landing/button-outline.png')_center_/_100%_100%_no-repeat] [&::before]:[content:''] [&::before]:filter-none [&:hover]:[background:rgb(245_241_234_/_0.08)]"
+          "bg-[url('/images/landing/frames/button-light.svg')] bg-size-[100%_100%] bg-center bg-no-repeat text-[#f5f1ea] [&:hover]:bg-[url('/images/landing/frames/button-light-hover.svg')]"
 
         :navbar_filled ->
-          "landing-button--navbar-filled text-[#0f0f0f] [&::before]:absolute [&::before]:-z-1 [&::before]:inset-0 [&::before]:[background:url('/images/button_landing_navbar_filled.svg')_center_/_100%_100%_no-repeat] [&::before]:[content:''] [&:hover]:[background:rgb(255_255_255_/_0.55)]"
+          "w-[109px] bg-[url('/images/landing/frames/nav-trial-light.svg')] bg-size-[100%_100%] bg-center bg-no-repeat text-[#0f0f0f] [.landing-nav--dark_&]:bg-[url('/images/landing/frames/nav-trial-dark.svg')]"
 
         :navbar_outline ->
-          "landing-button--navbar-outline text-[#0f0f0f] [&::before]:absolute [&::before]:-z-1 [&::before]:inset-0 [&::before]:[background:url('/images/button_landing_navbar.svg')_center_/_100%_100%_no-repeat] [&::before]:[content:''] [&:hover]:[background:rgb(255_255_255_/_0.28)]"
+          "landing-button--navbar-outline w-[119px] bg-[url('/images/landing/frames/nav-login.svg')] bg-size-[100%_100%] bg-center bg-no-repeat text-[#0f0f0f]"
       end
 
     assigns = assign(assigns, :variant_class, variant_class)
@@ -138,7 +138,8 @@ defmodule FirmowidWeb.Landing.Components.Primitives do
       navigate={@navigate}
       external={@external}
       class={[
-        "landing-button relative isolate inline-flex min-h-13 items-center justify-center gap-2.5 rounded-[4px] p-[14px_32px] text-center text-base leading-[24px] font-medium [transition:background-color_150ms_ease,color_150ms_ease,transform_150ms_ease] active:transform-[translateY(1px)] disabled:pointer-events-none disabled:opacity-[0.45] aria-disabled:pointer-events-none aria-disabled:opacity-[0.45] motion-reduce:active:transform-none [&:hover]:transform-[translateY(-1px)] motion-reduce:[&:hover]:transform-none",
+        "landing-button relative isolate inline-flex items-center justify-center gap-2.5 rounded-[4px] p-[14px_32px] text-center text-base leading-[24px] font-medium focus-visible:outline-2 focus-visible:outline-offset-4 disabled:pointer-events-none disabled:opacity-[0.45] aria-disabled:pointer-events-none aria-disabled:opacity-[0.45]",
+        if(@variant in [:navbar_filled, :navbar_outline], do: "min-h-9", else: "min-h-13"),
         @variant_class,
         @class
       ]}
@@ -278,7 +279,7 @@ defmodule FirmowidWeb.Landing.Components.Primitives do
             </p>
           </div>
 
-          <div class="mt-8 flex flex-col-reverse text-caps-sm leading-[1.6] text-[rgb(245_241_234/0.6)] lg:col-span-full lg:row-2 lg:mt-8 lg:flex-row lg:items-center lg:justify-between lg:gap-8 lg:pt-7 lg:[border-top:1px_solid_rgb(245_241_234/0.2)]">
+          <div class="mt-8 flex flex-col-reverse bg-[url('/images/landing/decorations/dark-separator.svg')] bg-size-[100%_2px] bg-top bg-no-repeat pt-7 text-caps-sm leading-[1.6] text-[rgb(245_241_234/0.6)] lg:col-span-full lg:row-2 lg:mt-8 lg:flex-row lg:items-center lg:justify-between lg:gap-8">
             <p>
               © {Date.utc_today().year} Firmowid · {@legal_entity.name}, {@legal_entity.address} · NIP {@legal_entity.nip} · KRS {@legal_entity.krs} · REGON {@legal_entity.regon}
             </p>

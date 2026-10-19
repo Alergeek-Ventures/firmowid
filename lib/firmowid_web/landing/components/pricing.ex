@@ -81,7 +81,7 @@ defmodule FirmowidWeb.Landing.Components.Pricing do
         </div>
 
         <div
-          class="m-[36px_auto_48px] flex w-max max-w-full gap-1 rounded-full p-1.5 [background:var(--landing-beige)] [&_button]:cursor-pointer [&_button]:rounded-full [&_button]:p-[10px_20px] [&_button]:text-sm [&_button]:leading-[22px] [&_button]:[transition:background-color_300ms_ease] [&_button_span]:text-(--landing-accent) [&_button_span]:underline-offset-4 [&_button_span]:[text-decoration:underline_wavy] [&_button[aria-pressed='true']]:[background:#fff_url('/images/button_login.svg')_center/100%_100%_no-repeat]"
+          class="landing-billing-period m-[36px_auto_48px] flex w-max max-w-full gap-1 rounded-full p-1.5 [background:var(--landing-beige)] [&_button]:min-h-10.5 [&_button]:min-w-29.25 [&_button]:cursor-pointer [&_button]:rounded-full [&_button]:p-[10px_20px] [&_button]:text-sm [&_button]:leading-[22px] [&_button_span]:text-(--landing-accent)"
           role="group"
           aria-label={gettext("Billing period")}
         >
@@ -90,6 +90,7 @@ defmodule FirmowidWeb.Landing.Components.Pricing do
             phx-click="set_billing_period"
             phx-value-period="monthly"
             aria-pressed={to_string(not @yearly?)}
+            class="aria-pressed:bg-white aria-pressed:bg-[url('/images/landing/frames/billing-active.svg')] aria-pressed:bg-size-[100%_100%] aria-pressed:bg-center aria-pressed:bg-no-repeat"
           >
             {pgettext("billing period", "Monthly")}
           </button>
@@ -98,6 +99,7 @@ defmodule FirmowidWeb.Landing.Components.Pricing do
             phx-click="set_billing_period"
             phx-value-period="yearly"
             aria-pressed={to_string(@yearly?)}
+            class="aria-pressed:bg-white aria-pressed:bg-[url('/images/landing/frames/billing-active.svg')] aria-pressed:bg-size-[100%_100%] aria-pressed:bg-center aria-pressed:bg-no-repeat"
           >
             {pgettext("billing period", "Yearly")}
             <span>−20%</span>
@@ -112,7 +114,7 @@ defmodule FirmowidWeb.Landing.Components.Pricing do
           <article
             :for={plan <- @plans}
             class={[
-              "landing-pricing-card relative flex flex-col rounded-[16px] p-[28px_24px] [background:var(--landing-beige)] lg:rounded-[16px] lg:p-[28px_24px] [&_.landing-button]:mt-10 [&_.landing-button]:text-base lg:[&_.landing-button]:mt-8 lg:[&_.landing-button]:px-3 lg:[&.landing-pricing-featured]:rounded-[16px_16px_0_0]",
+              "landing-pricing-card relative flex flex-col rounded-[16px] p-[28px_24px] [background:var(--landing-beige)] lg:rounded-[16px] lg:p-[28px_24px] [&_.landing-button]:mt-10 [&_.landing-button]:text-base lg:[&_.landing-button]:mt-8 lg:[&.landing-pricing-featured]:rounded-[16px_16px_0_0]",
               plan.featured &&
                 "landing-pricing-featured text-[#f5f1ea] [&_.landing-pricing-audience]:text-grey-300 [&_.landing-pricing-detail]:text-[#d2936d] [&_.landing-pricing-name]:text-[#d2936d] [&_.landing-pricing-price_span]:text-grey-300 [&.landing-pricing-featured]:bg-grey-900"
             ]}
@@ -139,6 +141,7 @@ defmodule FirmowidWeb.Landing.Components.Pricing do
             <.landing_button
               navigate={~p"/zarejestruj"}
               variant={if plan.featured, do: :orange, else: :outline}
+              class={plan.featured && "lg:px-3"}
               data-landing-cta="pricing_register"
               data-landing-plan={plan.key}
               data-landing-billing-period={@billing_period}
@@ -181,7 +184,15 @@ defmodule FirmowidWeb.Landing.Components.Pricing do
                 data-tick={value == "✓"}
               >
                 <span class="sr-only">{Enum.at(@plans, index).name}: </span>
-                <span aria-hidden={if value in ["✓", "—"], do: "true"}>{value}</span>
+                <img
+                  :if={value == "✓"}
+                  src={~p"/images/landing/icons/check.svg"}
+                  alt=""
+                  width="12"
+                  height="13"
+                  class="mx-auto inline-block"
+                />
+                <span :if={value != "✓"} aria-hidden={if value == "—", do: "true"}>{value}</span>
                 <span :if={value in ["✓", "—"]} class="sr-only">
                   {if value == "✓", do: gettext("Included"), else: gettext("Not included")}
                 </span>
@@ -189,6 +200,13 @@ defmodule FirmowidWeb.Landing.Components.Pricing do
             </div>
           </dl>
         </div>
+
+        <button
+          type="button"
+          class="mx-auto mt-8 block min-h-[41px] w-[258px] max-w-full cursor-pointer bg-[url('/images/landing/frames/comparison.svg')] bg-size-[100%_100%] bg-center bg-no-repeat px-4 py-2.5 text-sm text-[#8b3f13] focus-visible:outline-2 focus-visible:outline-offset-4 [&:hover]:bg-[url('/images/landing/frames/comparison-hover.svg')] [&:hover]:text-oranger-800"
+        >
+          {gettext("Show all 20 features")}
+        </button>
 
         <p class="mt-10 text-center text-[15px] font-medium">
           {gettext("Paid features free until the end of next month. No card required.")}
