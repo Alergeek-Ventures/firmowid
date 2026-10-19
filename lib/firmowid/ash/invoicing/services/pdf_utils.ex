@@ -12,13 +12,25 @@ defmodule Firmowid.Ash.Invoicing.Services.PdfUtils do
   Transforms an XML document using an XSL stylesheet via `xsltproc`.
 
   Both arguments are binary strings (the file contents). Returns the
-  transformed output (typically HTML) or an error tuple.
+  transformed output (typically HTML) or an error tuple. Documents with a
+  DOCTYPE are rejected.
   """
   @spec xslt_transform(binary(), binary()) :: {:ok, binary()} | {:error, term()}
+  def xslt_transform(xml_content, xsl_content) do
+    # xsltproc substitutes external entities and has no option to disable it, so a
+    # DOCTYPE in an uploaded document could read local files into the output. FA(3)
+    # invoices never declare one.
+    if xml_content =~ ~r/<!DOCTYPE/i do
+      {:error, :doctype_not_allowed}
+    else
+      run_xsltproc(xml_content, xsl_content)
+    end
+  end
+
   # sobelow_skip ["Traversal.FileModule"]
   # These files are created in Briefly-managed temporary locations and are
   # never derived from user-controlled filesystem paths.
-  def xslt_transform(xml_content, xsl_content) do
+  defp run_xsltproc(xml_content, xsl_content) do
     xml_path = Briefly.create!(extname: ".xml")
     xsl_path = Briefly.create!(extname: ".xsl")
 
