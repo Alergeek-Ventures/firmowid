@@ -88,7 +88,7 @@ defmodule Firmowid.Ash.Timetracker.Project do
         where present(:ids)
       end
 
-      prepare {Firmowid.Ash.Preparations.ParadeDBSearch, columns: ~w(name), argument: :search}
+      prepare {Firmowid.Ash.Preparations.ParadeDBSearch, columns: ~w(name)a, argument: :search}
     end
 
     read :list_current_user do

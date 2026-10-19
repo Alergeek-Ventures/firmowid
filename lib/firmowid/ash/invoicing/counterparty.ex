@@ -80,7 +80,7 @@ defmodule Firmowid.Ash.Invoicing.Counterparty do
       end
 
       prepare {Firmowid.Ash.Preparations.ParadeDBSearch,
-               columns: ~w(display_name full_name given_name surname tax_id email),
+               columns: ~w(display_name full_name given_name surname tax_id email)a,
                operator: :disjunction,
                argument: :search}
 

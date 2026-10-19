@@ -7,9 +7,9 @@ defmodule Firmowid.Ash.Preparations.ParadeDBSearch do
 
   ## Options
 
-    * `:columns` (required) — list of raw SQL column name strings to search.
-      Raw strings are used because AshPostgres applies `::text` casts to Ash
-      field references, which breaks ParadeDB's `@@@`/`&&&`/`|||` operators.
+    * `:columns` (required) — list of attribute names to search. They are passed as
+      Ash references, so the generated SQL qualifies them with the table alias and
+      stays unambiguous when the query joins related resources.
 
     * `:operator` — `:conjunction` (default) uses `&&&` (all ngrams must match),
       `:disjunction` uses `|||` (any ngram may match).
@@ -23,7 +23,7 @@ defmodule Firmowid.Ash.Preparations.ParadeDBSearch do
         argument :query, :string
 
         prepare {Firmowid.Ash.Preparations.ParadeDBSearch,
-                 columns: ~w(name description), operator: :conjunction}
+                 columns: ~w(name description)a, operator: :conjunction}
       end
 
   Automatically enables `prepare: :unnamed` on the repo (required for ParadeDB
@@ -33,8 +33,6 @@ defmodule Firmowid.Ash.Preparations.ParadeDBSearch do
   use Ash.Resource.Preparation
 
   import Ash.Expr
-
-  alias Ash.Query.Call
 
   @impl true
   def prepare(query, opts, _context) do
@@ -52,39 +50,20 @@ defmodule Firmowid.Ash.Preparations.ParadeDBSearch do
       search_term ->
         Firmowid.Repo.put_paradedb_unnamed()
 
-        op_str = operator_string(operator)
-
         query
-        |> apply_column_filters(columns, op_str, search_term)
+        |> Ash.Query.filter(^search_filter(columns, operator, search_term))
         |> Ash.Query.sort({calc(fragment("pdb.score(?)", id), type: :float), :desc})
     end
   end
 
-  defp operator_string(:conjunction), do: "&&&"
-  defp operator_string(:disjunction), do: "|||"
-
-  # Builds an OR filter across all configured columns using raw SQL fragments.
-  # Each column is matched independently — a hit on ANY column is sufficient.
-  #
-  # Column names are hardcoded strings in SQL to avoid AshPostgres `::text`
-  # casts that break ParadeDB operators. We build `Ash.Query.Call` structs
-  # directly because `fragment/2` is a compile-time macro and column names
-  # are runtime configuration.
-  defp apply_column_filters(query, columns, operator, search_term) do
-    filter_expr =
-      columns
-      |> Enum.map(fn col ->
-        %Call{
-          name: :fragment,
-          args: ["#{col} #{operator} ?", search_term],
-          operator?: false,
-          relationship_path: []
-        }
-      end)
-      |> Enum.reduce(fn right, left ->
-        %Ash.Query.BooleanExpression{op: :or, left: left, right: right}
-      end)
-
-    Ash.Query.filter(query, ^filter_expr)
+  # A hit on ANY column is sufficient.
+  defp search_filter(columns, operator, search_term) do
+    columns
+    |> Enum.map(&column_filter(&1, operator, search_term))
+    |> Enum.reduce(&expr(^&2 or ^&1))
   end
+
+  defp column_filter(column, :conjunction, search_term), do: expr(fragment("? &&& ?", ^ref(column), ^search_term))
+
+  defp column_filter(column, :disjunction, search_term), do: expr(fragment("? ||| ?", ^ref(column), ^search_term))
 end

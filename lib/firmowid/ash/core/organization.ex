@@ -72,7 +72,7 @@ defmodule Firmowid.Ash.Core.Organization do
         where present(:billing_plan)
       end
 
-      prepare {Firmowid.Ash.Preparations.ParadeDBSearch, columns: ~w(name nip), argument: :search}
+      prepare {Firmowid.Ash.Preparations.ParadeDBSearch, columns: ~w(name nip)a, argument: :search}
     end
 
     # ── Create ──────────────────────────────────────────────────────
