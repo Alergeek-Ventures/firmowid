@@ -4,8 +4,8 @@ defmodule Firmowid.Ash.Timetracker.Checks.HoursRecordNotSubmitted do
   an hours record submitted by the session's user.
 
   For **create** actions the `start_datetime` comes from `changeset.attributes`.
-  For **update/destroy** actions it comes from `changeset.data` (the existing
-  record).
+  For **update/destroy** actions both the existing record's month and, when the
+  update moves the session, the new month must be unlocked.
 
   The `:stop` action is excluded at the policy level — stopping a running
   session is always allowed, matching the old Bodyguard behaviour where
@@ -22,27 +22,26 @@ defmodule Firmowid.Ash.Timetracker.Checks.HoursRecordNotSubmitted do
 
   @impl true
   def match?(actor, %{subject: %Ash.Changeset{} = changeset}, _opts) do
-    start_datetime = session_start_datetime(changeset)
+    # A missing start_datetime means the month is unknown — allow the action and
+    # let normal validation catch missing required fields.
+    locked? =
+      changeset
+      |> session_start_datetimes()
+      |> Enum.reject(&is_nil/1)
+      |> Enum.uniq_by(&{&1.year, &1.month})
+      |> Enum.any?(&hours_record_exists?(changeset, &1, actor))
 
-    case start_datetime do
-      nil ->
-        # No start_datetime means we can't determine the month — allow the
-        # action and let normal validation catch missing required fields.
-        {:ok, true}
-
-      %DateTime{} = dt ->
-        {:ok, not hours_record_exists?(changeset, dt, actor)}
-    end
+    {:ok, not locked?}
   end
 
   def match?(_, _, _), do: {:ok, true}
 
-  defp session_start_datetime(%Ash.Changeset{action_type: :create} = changeset) do
-    Ash.Changeset.get_attribute(changeset, :start_datetime)
+  defp session_start_datetimes(%Ash.Changeset{action_type: :create} = changeset) do
+    [Ash.Changeset.get_attribute(changeset, :start_datetime)]
   end
 
-  defp session_start_datetime(%Ash.Changeset{} = changeset) do
-    changeset.data.start_datetime
+  defp session_start_datetimes(%Ash.Changeset{} = changeset) do
+    [changeset.data.start_datetime, Ash.Changeset.get_attribute(changeset, :start_datetime)]
   end
 
   defp hours_record_exists?(changeset, %DateTime{} = dt, actor) do
