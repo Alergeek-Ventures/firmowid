@@ -790,12 +790,12 @@ defmodule Firmowid.Ash.Invoicing.InvoicingTest do
       %{si1: si1, si2: si2, si3: si3, user: user, organization_id: organization_id}
     end
 
-    test "filters by amount_gt and amount_lt", %{si2: si2, user: user} do
+    test "filters by amount_from and amount_to", %{si2: si2, user: user} do
       results =
         Invoicing.search_invoices(
           %{
-            amount_gt: Decimal.new("210.00"),
-            amount_lt: Decimal.new("250.00")
+            amount_from: Decimal.new("210.00"),
+            amount_to: Decimal.new("250.00")
           },
           scope_for(user)
         )
@@ -1116,8 +1116,8 @@ defmodule Firmowid.Ash.Invoicing.InvoicingTest do
             query: "Combined Search",
             currency: "EUR",
             only_unmatched: true,
-            amount_gt: Decimal.new("-250.00"),
-            amount_lt: Decimal.new("300.00"),
+            amount_from: Decimal.new("100.00"),
+            amount_to: Decimal.new("250.00"),
             date_from: ~D[2024-08-01],
             date_to: ~D[2024-08-31]
           },

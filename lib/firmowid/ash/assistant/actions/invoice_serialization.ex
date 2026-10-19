@@ -38,7 +38,7 @@ defmodule Firmowid.Ash.Assistant.Actions.InvoiceSerialization do
       issue_date: invoice.issue_date,
       sale_date: invoice.sale_date,
       due_date: invoice.due_date,
-      amount: serialize_money(invoice.amount),
+      amount: serialize_money(invoice.effective_amount),
       skip_invoicing: invoice.skip_invoicing
     }
   end

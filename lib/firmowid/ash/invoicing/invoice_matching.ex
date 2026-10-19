@@ -76,7 +76,7 @@ defmodule Firmowid.Ash.Invoicing.InvoiceMatching do
   defp pending_invoices_for_transaction(transaction, scope) do
     case Decimal.compare(Money.to_decimal(transaction.amount), Decimal.new(0)) do
       :lt ->
-        Invoicing.list_cost_invoices!(%{reconciliation: :pending, corrections: :exclude},
+        Invoicing.list_cost_invoices!(%{reconciliation: :pending, merge_corrections: true},
           load: [:effective_amount, :effective_seller_display_name],
           scope: scope
         )
@@ -103,7 +103,7 @@ defmodule Firmowid.Ash.Invoicing.InvoiceMatching do
       date_to: ~D[2100-01-01],
       date_field: :due_date,
       reconciliation: :pending,
-      corrections: :exclude
+      merge_corrections: true
     }
     |> Invoicing.list_cost_invoices!(scope: scope)
     |> match_invoices(list_pending_transactions(scope), fn %{id: id}, transactions ->

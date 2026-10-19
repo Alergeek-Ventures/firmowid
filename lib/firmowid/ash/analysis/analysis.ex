@@ -104,7 +104,7 @@ defmodule Firmowid.Ash.Analysis do
       |> Enum.filter(&analysis_relevant_invoice?(&1, own_account_ibans))
 
     cost_invoices =
-      %{date_from: date_from, date_to: date_to, date_field: :sale_date, corrections: :exclude}
+      %{date_from: date_from, date_to: date_to, date_field: :sale_date, merge_corrections: true}
       |> Invoicing.list_cost_invoices!(
         load: [
           :transactions,
@@ -165,7 +165,7 @@ defmodule Firmowid.Ash.Analysis do
       invoice_months(
         &Invoicing.list_cost_invoices!/2,
         :sale_date,
-        %{corrections: :exclude},
+        %{merge_corrections: true},
         opts,
         own_account_ibans
       )

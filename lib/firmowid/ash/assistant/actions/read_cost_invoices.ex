@@ -12,8 +12,8 @@ defmodule Firmowid.Ash.Assistant.Actions.ReadCostInvoices do
       date_to: [type: :string],
       date_field: [type: :string],
       currency: [type: :string],
-      amount_gt: [type: {:or, [:string, :integer, :float]}],
-      amount_lt: [type: {:or, [:string, :integer, :float]}],
+      amount_from: [type: {:or, [:string, :integer, :float]}],
+      amount_to: [type: {:or, [:string, :integer, :float]}],
       reconciliation: [type: :string],
       limit: [type: :integer, default: 20]
     ],
@@ -37,14 +37,14 @@ defmodule Firmowid.Ash.Assistant.Actions.ReadCostInvoices do
              :date_from,
              :date_to,
              :currency,
-             :amount_gt,
-             :amount_lt,
+             :amount_from,
+             :amount_to,
              :reconciliation
            ]),
          {:ok, date_from} <- SearchSupport.parse_date(params[:date_from]),
          {:ok, date_to} <- SearchSupport.parse_date(params[:date_to]),
-         {:ok, amount_gt} <- SearchSupport.parse_decimal(params[:amount_gt]),
-         {:ok, amount_lt} <- SearchSupport.parse_decimal(params[:amount_lt]),
+         {:ok, amount_from} <- SearchSupport.parse_decimal(params[:amount_from]),
+         {:ok, amount_to} <- SearchSupport.parse_decimal(params[:amount_to]),
          {:ok, date_field} <-
            SearchSupport.parse_enum(
              params[:date_field],
@@ -69,8 +69,9 @@ defmodule Firmowid.Ash.Assistant.Actions.ReadCostInvoices do
           date_to: date_to,
           date_field: date_field,
           currency: params[:currency],
-          amount_gt: amount_gt,
-          amount_lt: amount_lt,
+          amount_from: amount_from,
+          amount_to: amount_to,
+          merge_corrections: true,
           reconciliation: reconciliation,
           limit: SearchSupport.normalized_limit(params[:limit], @max_limit)
         })

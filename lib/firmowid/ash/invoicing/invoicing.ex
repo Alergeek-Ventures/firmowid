@@ -279,7 +279,7 @@ defmodule Firmowid.Ash.Invoicing do
     * `:query` — search term (BM25 full-text)
     * `:include_sales` — boolean, default `true`
     * `:include_cost` — boolean, default `true`
-    * `:currency`, `:amount_gt`, `:amount_lt` — value filters
+    * `:currency`, `:amount_from`, `:amount_to` — value filters (absolute amount, inclusive)
     * `:date_from`, `:date_to` — date range
     * `:only_unmatched` — only invoices without linked transactions
     * `:buyer_type`, `:is_cash`, `:is_reverse_charge` — sales-only filters
@@ -325,8 +325,8 @@ defmodule Firmowid.Ash.Invoicing do
     |> Map.take([
       :query,
       :currency,
-      :amount_gt,
-      :amount_lt,
+      :amount_from,
+      :amount_to,
       :date_from,
       :date_to,
       :limit,
@@ -341,8 +341,8 @@ defmodule Firmowid.Ash.Invoicing do
     |> Map.take([
       :query,
       :currency,
-      :amount_gt,
-      :amount_lt,
+      :amount_from,
+      :amount_to,
       :date_from,
       :date_to,
       :limit,
