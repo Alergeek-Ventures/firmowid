@@ -12,10 +12,11 @@ defmodule Firmowid.Ash.Analysis do
   orchestrate calls across both Ash resources (`CostInvoice`, `SalesInvoice`)
   and legacy Ecto contexts (`Finances`, `Currencies`) still being migrated.
   """
-  use Ash.Domain
+  use Ash.Domain, extensions: [AshAi]
 
   alias Firmowid.Ash.Analysis.CategoryTotals
   alias Firmowid.Ash.Analysis.EntityTag
+  alias Firmowid.Ash.Analysis.Entry
   alias Firmowid.Ash.Analysis.TagDefinition
   alias Firmowid.Ash.Currencies.Converter, as: Currencies
   alias Firmowid.Ash.Finances
@@ -27,10 +28,21 @@ defmodule Firmowid.Ash.Analysis do
   alias Firmowid.Ash.SystemActor
   alias Firmowid.Ash.Timetracker
 
+  tools do
+    tool :list_analysis_entries, Entry, :list do
+      description "List the entries behind the monthly income and expense analysis: sales invoices, cost invoices " <>
+                    "and standalone bank transactions with their full document amounts and categories. " <>
+                    "Categories are project tags (shared equally), company, or internal (excluded from totals); " <>
+                    "an entry without categories is unassigned. Results belong to the authenticated organization."
+    end
+  end
+
   resources do
     resource TagDefinition
 
     resource EntityTag
+
+    resource Entry
   end
 
   authorization do

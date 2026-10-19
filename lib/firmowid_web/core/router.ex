@@ -139,7 +139,8 @@ defmodule FirmowidWeb.Core.Router do
         :create_sales_invoice_draft,
         :update_sales_invoice_draft,
         :get_ksef_connection_status,
-        :show_ksef_connection
+        :show_ksef_connection,
+        :list_analysis_entries
       ],
       mcp_resources: [:ksef_connection, :issue_invoice, :issue_correction]
   end
