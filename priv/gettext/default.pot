@@ -2085,7 +2085,7 @@ msgstr ""
 msgid "The correction could not be sent and was removed. Prepare a new correction after fixing its details."
 msgstr ""
 
-#: lib/firmowid/ash/invoicing/changes/prepare_invoice_seller.ex:21
+#: lib/firmowid/ash/invoicing/changes/prepare_invoice_seller.ex:25
 #, elixir-autogen, elixir-format
 msgid "The current organization was not found."
 msgstr ""

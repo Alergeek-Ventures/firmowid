@@ -36,7 +36,9 @@ defmodule Firmowid.Ash.Core do
   tools do
     tool :update_profile, User, :update_current_profile,
       annotations: [read_only_hint: false, destructive_hint: true, open_world_hint: false],
-      description: "Update the authenticated user's profile information"
+      description:
+        "Update the authenticated user's own profile: name, phone, Slack URL, bank account number, birthday " <>
+          "and its visibility, residence and correspondence addresses. Pass only the fields to change."
 
     tool :get_shared_birthday, User, :get_shared_birthday,
       annotations: [read_only_hint: true, destructive_hint: false, open_world_hint: false],

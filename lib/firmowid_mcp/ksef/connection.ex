@@ -27,10 +27,10 @@ defmodule FirmowidMcp.Ksef.Connection do
   @spec resource_uri() :: String.t()
   def resource_uri, do: "ui://firmowid/ksef/connection.html"
 
-  @doc "Describes the widget to ChatGPT so it need not repeat the interface in chat."
+  @doc "Describes the widget to the host model so it need not repeat the interface in chat."
   @spec widget_description() :: String.t()
   def widget_description do
-    "Interactive KSeF connection setup inside ChatGPT. Shows connection status and lets an " <>
+    "Interactive KSeF connection setup inside the chat. Shows connection status and lets an " <>
       "authorized administrator connect using a trusted profile or certificate directly in this widget. " <>
       "The widget provides all setup instructions. After it opens successfully, do not add a status " <>
       "table, summary, explanation or follow-up beneath it. Wait for the user to act. An initial " <>

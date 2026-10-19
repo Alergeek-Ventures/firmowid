@@ -72,7 +72,7 @@ defmodule FirmowidWeb.Development.Controllers.Mcp do
           id: "draft",
           title: "Wystawienie zapisanego szkicu (#{draft.buyer_display_name})",
           app: IssueInvoice,
-          arguments: %{"input" => %{"input" => %{}, "invoice_id" => draft.id}}
+          arguments: %{"input" => %{"invoice" => %{}, "invoice_id" => draft.id}}
         }
     end
   end
@@ -86,7 +86,7 @@ defmodule FirmowidWeb.Development.Controllers.Mcp do
       app: IssueInvoice,
       arguments: %{
         "input" => %{
-          "input" => %{
+          "invoice" => %{
             "buyer_type" => "company",
             "buyer_id" => "9876543210",
             "buyer_full_name" => "Północny Kod spółka z ograniczoną odpowiedzialnością",
@@ -131,7 +131,7 @@ defmodule FirmowidWeb.Development.Controllers.Mcp do
           arguments: %{
             "input" => %{
               "original_invoice_id" => original.id,
-              "input" => %{
+              "invoice" => %{
                 "correction_reason" => "Rabat posprzedażowy",
                 "sales_invoice_items" => Enum.map(original.sales_invoice_items, &discounted_item/1)
               }

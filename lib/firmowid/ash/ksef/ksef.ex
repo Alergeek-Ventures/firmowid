@@ -43,7 +43,7 @@ defmodule Firmowid.Ash.Ksef do
     tool :show_ksef_connection, Credential, :connection_status do
       annotations read_only_hint: true, destructive_hint: false, open_world_hint: false
 
-      description "Open the interactive KSeF connection setup inside ChatGPT using a trusted profile or certificate; token registration is unavailable. After successfully opening the widget, stop: do not add a status table, summary, explanation or follow-up in chat. Let the user complete setup directly in the widget. This tool only reads status and makes no connection attempt, so an initial disconnected status is expected, not a failure. Only admins can connect or manage credentials. If can_connect is false, ask an organization admin to connect instead of opening the widget. Stored invoices remain readable while disconnected, and connected does not guarantee current data. Never request tokens, certificates, private keys or passwords in chat."
+      description "Open the interactive KSeF connection setup inside the chat using a trusted profile or certificate; token registration is unavailable. After successfully opening the widget, stop: do not add a status table, summary, explanation or follow-up in chat. Let the user complete setup directly in the widget. This tool only reads status and makes no connection attempt, so an initial disconnected status is expected, not a failure. Only admins can connect or manage credentials. If can_connect is false, ask an organization admin to connect instead of opening the widget. Stored invoices remain readable while disconnected, and connected does not guarantee current data. Never request tokens, certificates, private keys or passwords in chat."
     end
   end
 

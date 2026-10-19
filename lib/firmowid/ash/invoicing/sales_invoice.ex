@@ -192,43 +192,72 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
         max_page_size 100
       end
 
-      argument :date_from, :date
-      argument :date_to, :date
-      argument :query, :string, constraints: [max_length: 500]
-      argument :currency, :string
-      argument :amount_from, :decimal
-      argument :amount_to, :decimal
-      argument :merge_corrections, :boolean, default: false
+      argument :date_from, :date, description: "Inclusive start of the date_field range (YYYY-MM-DD)."
+
+      argument :date_to, :date, description: "Inclusive end of the date_field range (YYYY-MM-DD)."
+
+      argument :query, :string,
+        constraints: [max_length: 500],
+        description: "Full-text search over buyer names, tax ID, email and description, invoice number and item names."
+
+      argument :currency, :string,
+        description: "ISO currency code, e.g. PLN. Never add up amounts in different currencies."
+
+      argument :amount_from, :decimal, description: "Minimum gross amount, inclusive, compared as an absolute value."
+
+      argument :amount_to, :decimal, description: "Maximum gross amount, inclusive, compared as an absolute value."
+
+      argument :merge_corrections, :boolean,
+        default: false,
+        description:
+          "Hide corrections of an existing invoice and compare amounts after corrections. Use for totals and rankings."
 
       argument :date_field, :atom do
         constraints one_of: [:issue_date, :sale_date, :due_date, :any]
         default :issue_date
+
+        description "Date compared with date_from and date_to; any matches either issue_date or sale_date."
       end
 
       argument :kind, :atom do
         constraints one_of: [:vat, :kor]
+        description "KSeF document kind: vat for a regular invoice, kor for a correction."
       end
 
       argument :reconciliation, :atom do
         constraints one_of: [:pending, :matched, :skipped]
+
+        description "Payment matching with bank transactions: pending has no matched payment yet, " <>
+                      "matched is linked to a transaction, skipped is excluded from matching."
       end
 
       argument :submission, :atom do
         constraints one_of: [:draft, :confirmed]
+
+        description "draft returns unnumbered drafts; confirmed returns issued invoices with a number, " <>
+                      "whatever their KSeF status."
       end
 
-      argument :ids, {:array, :uuid_v7}
-      argument :inserted_from, :utc_datetime
-      argument :inserted_to, :utc_datetime
+      argument :ids, {:array, :uuid_v7}, description: "Return only invoices with these IDs."
+
+      argument :inserted_from, :utc_datetime,
+        description: "Inclusive lower bound of when the invoice was recorded in Firmowid, not its document date."
+
+      argument :inserted_to, :utc_datetime,
+        description: "Exclusive upper bound of when the invoice was recorded in Firmowid, not its document date."
+
       argument :buyer_type, :atom, constraints: [one_of: [:company, :individual]]
-      argument :is_cash, :boolean
-      argument :is_reverse_charge, :boolean
+      argument :is_cash, :boolean, description: "When true, return only invoices paid in cash."
+      argument :is_reverse_charge, :boolean, description: "Filter by reverse-charge VAT."
 
       argument :limit, :integer do
         constraints min: 1
+        description "Page size, at most 100."
       end
 
-      argument :listing_sort, :atom, constraints: [one_of: [:newest, :oldest]]
+      argument :listing_sort, :atom,
+        constraints: [one_of: [:newest, :oldest]],
+        description: "Order by issue date, newest or oldest first."
 
       validate compare(:date_to, greater_than_or_equal_to: :date_from),
         where: [present(:date_from), present(:date_to)],
@@ -921,15 +950,16 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
     action :preview_invoice, :struct do
       description "Validate and calculate an invoice without saving it."
       constraints instance_of: __MODULE__
-      argument :input, InvoiceInput, allow_nil?: false
-      argument :invoice_id, :uuid_v7
+      argument :invoice, InvoiceInput, allow_nil?: false
+
+      argument :invoice_id, :uuid_v7, description: "ID of a saved draft to issue; omit for a new invoice."
 
       run fn input, context ->
         opts = Ash.Context.to_opts(context)
 
         case input.arguments[:invoice_id] do
           nil ->
-            %{input: input.arguments.input}
+            %{input: input.arguments.invoice}
             |> __MODULE__.changeset_to_draft(opts)
             |> Preview.from_changeset(opts)
 
@@ -943,7 +973,7 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
                      )
                    ) do
               invoice
-              |> __MODULE__.changeset_to_revise(%{input: input.arguments.input}, opts)
+              |> __MODULE__.changeset_to_revise(%{input: input.arguments.invoice}, opts)
               |> Preview.from_changeset(opts)
             end
         end
@@ -953,13 +983,16 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
     action :preview_correction, :struct do
       description "Validate and calculate a correction without saving it."
       constraints instance_of: __MODULE__
-      argument :input, InvoiceInput, allow_nil?: false
+      argument :invoice, InvoiceInput, allow_nil?: false
       argument :original_invoice_id, :uuid_v7, allow_nil?: false
 
       run fn input, context ->
         opts = Ash.Context.to_opts(context)
 
-        input.arguments
+        %{
+          input: input.arguments.invoice,
+          original_invoice_id: input.arguments.original_invoice_id
+        }
         |> __MODULE__.changeset_to_correct(Keyword.put(opts, :private_arguments, %{preview?: true}))
         |> Preview.from_changeset(opts)
       end
