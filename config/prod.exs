@@ -68,7 +68,6 @@ config :sentry,
   environment_name: "production",
   in_app_otp_apps: [:firmowid],
   enable_source_code_context: false,
-  enable_logs: true,
   logs: [
     level: :info,
     metadata: safe_sentry_metadata ++ [:mfa],
