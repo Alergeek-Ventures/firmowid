@@ -1804,12 +1804,12 @@ msgstr ""
 msgid "Invoice number is required."
 msgstr ""
 
-#: lib/firmowid_web/invoicing/components/sales_invoice_details.ex:374
+#: lib/firmowid_web/invoicing/components/sales_invoice_details.ex:348
 #, elixir-autogen, elixir-format
 msgid "Draft"
 msgstr ""
 
-#: lib/firmowid_web/invoicing/components/sales_invoice_details.ex:373
+#: lib/firmowid_web/invoicing/components/sales_invoice_details.ex:347
 #, elixir-autogen, elixir-format
 msgid "Invoice status"
 msgstr ""
@@ -1839,23 +1839,23 @@ msgstr ""
 msgid "today"
 msgstr ""
 
-#: lib/firmowid_web/invoicing/transactions/components/show_components.ex:274
+#: lib/firmowid_web/invoicing/transactions/components/show_components.ex:246
 #, elixir-autogen, elixir-format
 msgid "Ask Firmowid for help with invoices"
 msgstr ""
 
 #: lib/firmowid_web/invoicing/transactions/components/salary_components.ex:54
-#: lib/firmowid_web/invoicing/transactions/components/show_components.ex:227
+#: lib/firmowid_web/invoicing/transactions/components/show_components.ex:199
 #, elixir-autogen, elixir-format
 msgid "Confirm"
 msgstr ""
 
-#: lib/firmowid_web/invoicing/transactions/views/show.ex:197
+#: lib/firmowid_web/invoicing/transactions/views/show.ex:175
 #, elixir-autogen, elixir-format
 msgid "Could not connect this transaction to a salary."
 msgstr ""
 
-#: lib/firmowid_web/invoicing/transactions/views/show.ex:211
+#: lib/firmowid_web/invoicing/transactions/views/show.ex:189
 #, elixir-autogen, elixir-format
 msgid "Could not disconnect this transaction from the salary."
 msgstr ""
@@ -1902,12 +1902,12 @@ msgid "The salary cannot be assigned to this transaction."
 msgstr ""
 
 #: lib/firmowid_web/invoicing/transactions/components/salary_components.ex:27
-#: lib/firmowid_web/invoicing/transactions/components/show_components.ex:205
+#: lib/firmowid_web/invoicing/transactions/components/show_components.ex:177
 #, elixir-autogen, elixir-format
 msgid "Amount"
 msgstr ""
 
-#: lib/firmowid_web/invoicing/transactions/components/show_components.ex:283
+#: lib/firmowid_web/invoicing/transactions/components/show_components.ex:255
 #, elixir-autogen, elixir-format
 msgid "Ask"
 msgstr ""
@@ -1940,17 +1940,17 @@ msgid "Month"
 msgstr ""
 
 #: lib/firmowid/ash/invoicing/changes/validate_transaction_availability.ex:27
-#: lib/firmowid_web/invoicing/transactions/views/show.ex:177
+#: lib/firmowid_web/invoicing/transactions/views/show.ex:158
 #, elixir-autogen, elixir-format
 msgid "Could not connect this transaction to the invoice."
 msgstr ""
 
-#: lib/firmowid_web/invoicing/transactions/components/show_components.ex:204
+#: lib/firmowid_web/invoicing/transactions/components/show_components.ex:176
 #, elixir-autogen, elixir-format
 msgid "Date"
 msgstr ""
 
-#: lib/firmowid_web/invoicing/transactions/components/show_components.ex:203
+#: lib/firmowid_web/invoicing/transactions/components/show_components.ex:175
 #, elixir-autogen, elixir-format
 msgid "Potential invoices for this transaction"
 msgstr ""

@@ -1,6 +1,6 @@
 defmodule FirmowidWeb.Invoicing.Transactions.Views.Show do
   @moduledoc """
-  Transaction details page with source account information and assistant access.
+  Transaction details page with source account information and invoice matching.
   """
 
   use FirmowidWeb, :live_view
@@ -12,7 +12,6 @@ defmodule FirmowidWeb.Invoicing.Transactions.Views.Show do
   alias Firmowid.Ash.Invoicing.InvoiceMatching
   alias Firmowid.Ash.Invoicing.SalesInvoice
   alias Firmowid.Ash.Payroll
-  alias FirmowidWeb.Invoicing.Assistant.Utilities.SessionCloser
   alias FirmowidWeb.Invoicing.Components.InvoiceDetails
   alias FirmowidWeb.Invoicing.Transactions.Components.SalaryComponents
   alias FirmowidWeb.Invoicing.Transactions.Components.ShowComponents
@@ -45,7 +44,6 @@ defmodule FirmowidWeb.Invoicing.Transactions.Views.Show do
   def mount(_params, _session, socket) do
     {:ok,
      socket
-     |> assign(:chat, false)
      |> assign(:no_padding, true)
      |> assign(:return_to, nil)
      |> assign(:salary_admin?, socket.assigns.current_user.role == :admin)}
@@ -59,7 +57,6 @@ defmodule FirmowidWeb.Invoicing.Transactions.Views.Show do
 
     {:noreply,
      socket
-     |> maybe_reset_chat(id)
      |> assign(:return_to, return_to)
      |> assign_transaction(transaction)}
   end
@@ -80,13 +77,6 @@ defmodule FirmowidWeb.Invoicing.Transactions.Views.Show do
                 transaction={@transaction}
                 expected_amount={@expected_salary_amount}
                 admin?={@salary_admin?}
-              />
-            <% @chat -> %>
-              <ShowComponents.assistant_state
-                transaction={@transaction}
-                current_user={@current_user}
-                scope={@ash_scope}
-                return_to={@return_to}
               />
             <% @transaction.reconciliation_status == :skipped -> %>
               <ShowComponents.transaction_skipped_view can_write={
@@ -112,15 +102,6 @@ defmodule FirmowidWeb.Invoicing.Transactions.Views.Show do
   end
 
   @impl true
-  def handle_event("show_chat", _params, socket) do
-    {:noreply, assign(socket, :chat, true)}
-  end
-
-  def handle_event("close_chat", params, socket) do
-    SessionCloser.close(params, socket.assigns.ash_scope)
-    {:noreply, assign(socket, :chat, false)}
-  end
-
   def handle_event("toggle-invoicing", _params, socket) do
     scope = socket.assigns.ash_scope
     transaction = socket.assigns.transaction
@@ -188,10 +169,7 @@ defmodule FirmowidWeb.Invoicing.Transactions.Views.Show do
 
     case result do
       {:ok, transaction} ->
-        {:noreply,
-         socket
-         |> assign(:chat, false)
-         |> assign_transaction(reload_transaction(transaction.id, socket.assigns.ash_scope))}
+        {:noreply, assign_transaction(socket, reload_transaction(transaction.id, socket.assigns.ash_scope))}
 
       {:error, _error} ->
         {:noreply, put_flash(socket, :error, gettext("Could not connect this transaction to a salary."))}
@@ -259,12 +237,5 @@ defmodule FirmowidWeb.Invoicing.Transactions.Views.Show do
       InvoiceMatching.get_potential_invoices_for_transaction(transaction, scope)
     )
     |> assign(:salary_suggestions, salary_suggestions)
-  end
-
-  defp maybe_reset_chat(socket, id) do
-    case socket.assigns[:transaction] do
-      %Transaction{id: ^id} -> socket
-      _ -> assign(socket, :chat, false)
-    end
   end
 end

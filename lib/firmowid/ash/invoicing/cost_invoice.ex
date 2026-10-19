@@ -43,7 +43,7 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
     domain: Firmowid.Ash.Invoicing,
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer],
-    extensions: [AshOban, AshEvents.Events, AshJido],
+    extensions: [AshOban, AshEvents.Events],
     notifiers: [Ash.Notifier.PubSub]
 
   alias AshMoney.Types.Money, as: MoneyType
@@ -122,26 +122,6 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
   events do
     event_log Firmowid.Ash.Events.Event
     only_actions [:connect_transactions, :disconnect_transactions, :disconnect_all_transactions]
-  end
-
-  jido do
-    action :list,
-      name: "list_cost_invoices",
-      description: "Listuje faktury kosztowe z bezpiecznymi filtrami Ash.",
-      category: "ash.invoicing.read",
-      tags: ["assistant", "cost_invoice"]
-
-    action :by_id,
-      name: "get_cost_invoice_by_id",
-      description: "Pobiera fakturę kosztową po identyfikatorze.",
-      category: "ash.invoicing.read",
-      tags: ["assistant", "cost_invoice"]
-
-    action :connect_transactions,
-      name: "connect_cost_invoice_transactions",
-      description: "Łączy fakturę kosztową z podanymi transakcjami.",
-      category: "ash.invoicing.write",
-      tags: ["assistant", "cost_invoice", "matching"]
   end
 
   code_interface do

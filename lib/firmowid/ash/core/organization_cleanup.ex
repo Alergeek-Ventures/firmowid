@@ -8,7 +8,6 @@ defmodule Firmowid.Ash.Core.OrganizationCleanup do
   """
 
   alias Firmowid.Ash.Analysis.TagDefinition
-  alias Firmowid.Ash.Assistant.Session, as: AssistantSession
   alias Firmowid.Ash.Billing.Snapshot
   alias Firmowid.Ash.Core
   alias Firmowid.Ash.Core.OauthAuthorizationCode
@@ -29,13 +28,7 @@ defmodule Firmowid.Ash.Core.OrganizationCleanup do
   @doc "Remove restrictive organization dependents, explicitly deleting children first."
   @spec remove_dependents(Scope.t()) :: :ok | {:error, term()}
   def remove_dependents(scope) do
-    with :ok <-
-           destroy_records(
-             AssistantSession.list(%{}, scope: scope),
-             &AssistantSession.destroy/2,
-             scope
-           ),
-         :ok <- destroy_records(Snapshot.list(%{}, scope: scope), &Snapshot.destroy/2, scope),
+    with :ok <- destroy_records(Snapshot.list(%{}, scope: scope), &Snapshot.destroy/2, scope),
          :ok <-
            destroy_records(
              KsefInvoiceDigestItem.read(%{}, scope: scope),

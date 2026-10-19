@@ -12,21 +12,13 @@ defmodule FirmowidWeb.Invoicing.Transactions.Components.ShowComponents do
   import FirmowidWeb.Invoicing.Components.StatusButton
   import Phoenix.Component, except: [link: 1]
 
-  alias Firmowid.Ash.Assistant.InvoiceMatching
   alias Firmowid.Ash.Finances.Transaction
   alias Firmowid.Ash.Invoicing.CostInvoice
   alias Firmowid.Ash.Invoicing.SalesInvoice
   alias Firmowid.Invoicing.RecommendationThresholds
-  alias FirmowidWeb.Invoicing.Components.InvoiceAssistant
   alias FirmowidWeb.Invoicing.Components.InvoiceDetails
   alias FirmowidWeb.Invoicing.Components.MatchingComponents
   alias FirmowidWeb.Invoicing.Utilities.Navigation
-
-  @transaction_suggested_messages [
-    "Ta transakcja opłaciła kilka faktur z poprzedniego miesiąca",
-    "To był przelew zbiorczy za kilka dokumentów",
-    "Na fakturach kontrahent może występować pod inną nazwą"
-  ]
 
   attr :transaction, Transaction, required: true
   attr :return_to, :string, default: nil
@@ -121,26 +113,6 @@ defmodule FirmowidWeb.Invoicing.Transactions.Components.ShowComponents do
   end
 
   attr :transaction, Transaction, required: true
-  attr :current_user, :map, required: true
-  attr :scope, :map, required: true
-  attr :return_to, :string, default: nil
-
-  def assistant_state(assigns) do
-    ~H"""
-    <.live_component
-      module={InvoiceAssistant}
-      id="invoice-assistant"
-      entry_context={InvoiceMatching.entry_context_for_transaction(@transaction)}
-      assistant_config={assistant_config(@transaction)}
-      current_user={@current_user}
-      scope={@scope}
-      return_path={assistant_return_path(@transaction, @return_to)}
-      close_target="#transaction-show"
-    />
-    """
-  end
-
-  attr :transaction, Transaction, required: true
   attr :return_to, :string, default: nil
 
   def linked_state(assigns) do
@@ -169,7 +141,7 @@ defmodule FirmowidWeb.Invoicing.Transactions.Components.ShowComponents do
             </p>
 
             <.button
-              phx-click="show_chat"
+              disabled
               class="w-full"
               variant="primary"
               accent={assistant_accent(@transaction)}
@@ -250,7 +222,7 @@ defmodule FirmowidWeb.Invoicing.Transactions.Components.ShowComponents do
         </div>
 
         <.button
-          phx-click="show_chat"
+          disabled
           class="mt-2"
           variant="primary"
           accent={assistant_accent(@transaction)}
@@ -274,7 +246,7 @@ defmodule FirmowidWeb.Invoicing.Transactions.Components.ShowComponents do
               {gettext("Ask Firmowid for help with invoices")}
             </p>
             <.button
-              phx-click="show_chat"
+              disabled
               variant="primary"
               accent={assistant_accent(@transaction)}
               size="small"
@@ -409,17 +381,6 @@ defmodule FirmowidWeb.Invoicing.Transactions.Components.ShowComponents do
 
   defp assistant_accent(transaction) do
     if incoming?(transaction), do: "turquoise", else: "orange"
-  end
-
-  defp assistant_config(%Transaction{} = transaction) do
-    %{
-      displayed_party_label: if(transaction.direction == :income, do: "Nadawca", else: "Odbiorca"),
-      suggested_messages: @transaction_suggested_messages
-    }
-  end
-
-  defp assistant_return_path(transaction, return_to) do
-    return_to || Navigation.transaction_show_path(transaction)
   end
 
   defp skip_transaction_copy(%Transaction{skip_invoicing: true}) do

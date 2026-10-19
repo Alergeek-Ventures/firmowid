@@ -9,37 +9,18 @@ defmodule FirmowidWeb.Invoicing.Components.CostInvoiceDetails do
   import FirmowidWeb.Invoicing.Components.StatusButton
   import Phoenix.Component, except: [link: 1]
 
-  alias Firmowid.Ash.Assistant.InvoiceMatching
-  alias Firmowid.Ash.Finances.Transaction
   alias Firmowid.Ash.Invoicing.CostInvoice
   alias Firmowid.Ash.Ksef
-  alias FirmowidWeb.Invoicing.Assistant.Utilities.SessionCloser
-  alias FirmowidWeb.Invoicing.Components.InvoiceAssistant
   alias FirmowidWeb.Invoicing.Components.InvoiceDetails
   alias FirmowidWeb.Invoicing.Components.InvoiceDownloadModal
   alias FirmowidWeb.Invoicing.Components.InvoiceTimeline
-  alias FirmowidWeb.Invoicing.Utilities.InvoiceDetailsAssistantSubject
   alias FirmowidWeb.Invoicing.Utilities.Navigation
   alias Phoenix.LiveView.JS
-
-  @invoice_suggested_messages [
-    "Ta faktura pokrywa wszystkie transakcje z poprzedniego miesiąca",
-    "Transakcja za tę fakturę ma inną nazwę kontrahenta",
-    "Opłata została wykonana znacznie później niż faktura została wystawiona"
-  ]
-
-  @transaction_suggested_messages [
-    "Ta transakcja opłaciła kilka faktur z poprzedniego miesiąca",
-    "To był przelew zbiorczy za kilka dokumentów",
-    "Na fakturach kontrahent może występować pod inną nazwą"
-  ]
 
   @impl true
   def mount(socket) do
     {:ok,
      assign(socket,
-       chat: false,
-       chat_subject: nil,
        show_timeline: false,
        is_cost_invoice: true
      )}
@@ -286,16 +267,6 @@ defmodule FirmowidWeb.Invoicing.Components.CostInvoiceDetails do
                 is_cost_invoice={@is_cost_invoice}
                 can_write={@can_write_invoicing?}
               />
-            <% @chat -> %>
-              <.live_component
-                module={InvoiceAssistant}
-                id="invoice-assistant"
-                entry_context={assistant_entry_context(@chat_subject || @invoice)}
-                assistant_config={assistant_config(@chat_subject || @invoice)}
-                current_user={@current_user}
-                scope={@scope}
-                return_path={@return_to || Navigation.cost_invoice_show_path(@invoice)}
-              />
             <% not Enum.empty?(@invoice.transactions) -> %>
               <InvoiceDetails.transaction_match
                 is_cost_invoice={@is_cost_invoice}
@@ -308,20 +279,6 @@ defmodule FirmowidWeb.Invoicing.Components.CostInvoiceDetails do
                     icon="hero-arrow-uturn-left-micro"
                   />
                 </:status_action>
-
-                <:assistant_action :let={transaction}>
-                  <.button
-                    phx-click="show_chat"
-                    phx-target={@myself}
-                    phx-value-assistant_subject_ref={InvoiceDetailsAssistantSubject.ref(transaction)}
-                    class="w-full"
-                    variant="primary"
-                    accent="orange"
-                    size="small"
-                  >
-                    Zapytaj
-                  </.button>
-                </:assistant_action>
               </InvoiceDetails.transaction_match>
             <% true -> %>
               <InvoiceDetails.potential_transactions
@@ -463,21 +420,6 @@ defmodule FirmowidWeb.Invoicing.Components.CostInvoiceDetails do
   defp downloadable_as_pdf?(_invoice), do: false
 
   @impl true
-  def handle_event("show_chat", params, socket) do
-    {:noreply,
-     socket
-     |> assign(:chat, true)
-     |> assign(
-       :chat_subject,
-       InvoiceDetailsAssistantSubject.resolve(socket.assigns.invoice, params)
-     )}
-  end
-
-  def handle_event("close_chat", params, socket) do
-    SessionCloser.close(params, socket.assigns.scope)
-    {:noreply, socket |> assign(:chat, false) |> assign(:chat_subject, nil)}
-  end
-
   def handle_event("show_timeline", _params, socket) do
     {:noreply, assign(socket, show_timeline: true)}
   end
@@ -505,28 +447,5 @@ defmodule FirmowidWeb.Invoicing.Components.CostInvoiceDetails do
       {:error, _error} ->
         {:noreply, put_flash(socket, :error, "Nie udało się zapisać komentarza")}
     end
-  end
-
-  defp assistant_entry_context(%Transaction{} = transaction),
-    do: InvoiceMatching.entry_context_for_transaction(transaction)
-
-  defp assistant_entry_context(%CostInvoice{} = invoice), do: InvoiceMatching.entry_context_for_invoice(invoice)
-
-  defp assistant_config(%Transaction{} = transaction) do
-    %{
-      displayed_party_label: transaction_displayed_party_label(transaction),
-      suggested_messages: @transaction_suggested_messages
-    }
-  end
-
-  defp assistant_config(%CostInvoice{}) do
-    %{
-      displayed_party_label: "Odbiorca",
-      suggested_messages: @invoice_suggested_messages
-    }
-  end
-
-  defp transaction_displayed_party_label(%Transaction{} = transaction) do
-    if Money.positive?(transaction.amount), do: "Nadawca", else: "Odbiorca"
   end
 end

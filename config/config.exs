@@ -151,7 +151,6 @@ config :firmowid,
   ecto_repos: [Firmowid.Repo],
   generators: [timestamp_type: :utc_datetime],
   ash_domains: [
-    Firmowid.Ash.Assistant,
     Firmowid.Ash.Analysis,
     Firmowid.Ash.Blobs,
     Firmowid.Ash.Billing,
@@ -166,13 +165,6 @@ config :firmowid,
     Firmowid.Ash.Ksef,
     FirmowidMcp
   ]
-
-config :jido_ai,
-  model_aliases: %{
-    fast: "openai:gpt-5-nano",
-    capable: "openai:gpt-5-mini",
-    reasoning: "openai:gpt-5"
-  }
 
 config :localize,
   otp_app: :firmowid,
