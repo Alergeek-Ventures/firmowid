@@ -7,8 +7,8 @@ defmodule Firmowid.Ash.Timetracker.Project do
   `archive`, `unarchive`, and `destroy` (with tag cleanup).
 
   Read actions: `:get` (single project by ID, loads users + counterparty) and
-  `:list` (flexible listing with optional filters — archive, user membership,
-  ParadeDB search, ID set, tag definition).
+  `:list` (flexible listing with optional filters — archive, activity period,
+  user membership, ParadeDB search, ID set, tag definition).
   """
   use Ash.Resource,
     domain: Firmowid.Ash.Timetracker,
@@ -68,6 +68,14 @@ defmodule Firmowid.Ash.Timetracker.Project do
 
       argument :ids, {:array, :uuid}
 
+      argument :active_from, :date do
+        description "Only projects not archived before this date."
+      end
+
+      argument :active_to, :date do
+        description "Only projects created or with logged work on or before this date."
+      end
+
       prepare build(filter: expr(exists(project_users, user_id == ^arg(:user_id)))) do
         where present(:user_id)
       end
@@ -86,6 +94,20 @@ defmodule Firmowid.Ash.Timetracker.Project do
 
       prepare build(filter: expr(id in ^arg(:ids))) do
         where present(:ids)
+      end
+
+      prepare build(filter: expr(is_nil(archived_at) or archived_at >= ^arg(:active_from))) do
+        where present(:active_from)
+      end
+
+      prepare build(
+                filter:
+                  expr(
+                    type(inserted_at, :date) <= ^arg(:active_to) or
+                      type(first_session_at, :date) <= ^arg(:active_to)
+                  )
+              ) do
+        where present(:active_to)
       end
 
       prepare {Firmowid.Ash.Preparations.ParadeDBSearch, columns: ~w(name)a, argument: :search}
@@ -233,6 +255,14 @@ defmodule Firmowid.Ash.Timetracker.Project do
       through ProjectUser
       source_attribute_on_join_resource :project_id
       destination_attribute_on_join_resource :user_id
+    end
+  end
+
+  aggregates do
+    min :first_session_at, :sessions, :start_datetime do
+      description "Start of the earliest logged session; work may predate the project record."
+      # Only the date leaves the aggregate, so employees' sessions stay private.
+      authorize? false
     end
   end
 

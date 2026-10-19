@@ -13,12 +13,13 @@ defmodule Firmowid.Ash.Analysis.EntityTag do
   """
   use Ash.Resource,
     domain: Firmowid.Ash.Analysis,
-    authorizers: [Ash.Policy.Authorizer],
-    fragments: [Firmowid.Ash.Analysis.EntityTag.Persistence]
+    fragments: [
+      Firmowid.Ash.Analysis.EntityTag.Persistence,
+      Firmowid.Ash.Analysis.EntityTag.Policies
+    ]
 
-  alias Firmowid.Ash.Checks.AtLeastRole
-  alias Firmowid.Ash.Checks.SystemActorRole
   alias Firmowid.Ash.Invoicing
+  alias Firmowid.Ash.Scope
 
   require Ash.Query
 
@@ -31,6 +32,7 @@ defmodule Firmowid.Ash.Analysis.EntityTag do
     define :set_entity_category
     define :set_entity_project_tags
     define :clear_entity_tags
+    define :clear_month
     define :tag_sales_invoice
     define :tag_cost_invoice
     define :tag_transaction
@@ -194,7 +196,7 @@ defmodule Firmowid.Ash.Analysis.EntityTag do
             table = table_for_entity_type(input.arguments.entity_type)
             scope = build_scope(context)
 
-            clear_tags_for_resource(table, input.arguments.resource_id, scope)
+            clear_tags_for_resources(table, [input.arguments.resource_id], scope)
 
             result =
               __MODULE__
@@ -236,7 +238,7 @@ defmodule Firmowid.Ash.Analysis.EntityTag do
             scope = build_scope(context)
             action = create_action_for_entity_type(input.arguments.entity_type)
 
-            clear_tags_for_resource(table, input.arguments.resource_id, scope)
+            clear_tags_for_resources(table, [input.arguments.resource_id], scope)
 
             tags =
               Enum.map(input.arguments.tag_definition_ids, fn tag_def_id ->
@@ -276,40 +278,17 @@ defmodule Firmowid.Ash.Analysis.EntityTag do
           fn ->
             table = table_for_entity_type(input.arguments.entity_type)
             scope = build_scope(context)
-            count = clear_tags_for_resource(table, input.arguments.resource_id, scope)
+            count = clear_tags_for_resources(table, [input.arguments.resource_id], scope)
             {:ok, count}
           end
         )
       end
     end
-  end
 
-  policies do
-    bypass actor_attribute_equals(:role, :admin) do
-      authorize_if always()
-    end
-
-    bypass {SystemActorRole, roles: [:invoice_matcher]} do
-      authorize_if action_type(:read)
-    end
-
-    policy Firmowid.Ash.Checks.IsSystemActor do
-      forbid_if always()
-    end
-
-    policy action_type(:read) do
-      authorize_if always()
-    end
-
-    policy [
-      action_type([:create, :update, :destroy]),
-      {AtLeastRole, role: :accountant}
-    ] do
-      authorize_if always()
-    end
-
-    policy [action_type(:action), {AtLeastRole, role: :accountant}] do
-      authorize_if always()
+    action :clear_month do
+      description "Removes all tags from a month's analysis entries."
+      argument :month, :date, allow_nil?: false
+      run Firmowid.Ash.Analysis.Actions.ClearMonth
     end
   end
 
@@ -325,13 +304,14 @@ defmodule Firmowid.Ash.Analysis.EntityTag do
     transaction: :tag_transaction
   }
 
-  @doc false
+  @doc "Returns the tag table backing an entity type."
+  @spec table_for_entity_type(atom()) :: String.t()
   def table_for_entity_type(entity_type), do: Map.fetch!(@entity_type_tables, entity_type)
 
   defp create_action_for_entity_type(entity_type), do: Map.fetch!(@entity_type_create_actions, entity_type)
 
   defp build_scope(context) do
-    %Firmowid.Ash.Scope{
+    %Scope{
       actor: context.actor,
       tenant: context.tenant
     }
@@ -372,11 +352,14 @@ defmodule Firmowid.Ash.Analysis.EntityTag do
     end
   end
 
-  defp clear_tags_for_resource(table, resource_id, scope) do
+  @doc "Deletes all tags of the given resources from one tag table."
+  @spec clear_tags_for_resources(String.t(), [Ecto.UUID.t()], Scope.t()) ::
+          non_neg_integer()
+  def clear_tags_for_resources(table, resource_ids, scope) do
     query =
       __MODULE__
       |> Ash.Query.set_context(%{data_layer: %{table: table}})
-      |> Ash.Query.filter(resource_id == ^resource_id)
+      |> Ash.Query.filter(resource_id in ^resource_ids)
 
     result =
       __MODULE__.destroy(query, %{},

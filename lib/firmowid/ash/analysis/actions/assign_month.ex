@@ -17,7 +17,7 @@ defmodule Firmowid.Ash.Analysis.Actions.AssignMonth do
     if scope.actor.organization_id == scope.tenant and is_nil(scope.actor.archived_at) and
          Map.get(Flags.evaluate_for_user(scope.actor), :analysis_dashboard, false) do
       projects =
-        %{status: :active}
+        %{active_from: month, active_to: Date.end_of_month(month)}
         |> Timetracker.list_projects!(scope: scope)
         |> Enum.reject(&is_nil(&1.tag_definition_id))
 

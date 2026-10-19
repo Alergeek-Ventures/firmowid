@@ -25,6 +25,7 @@ defmodule Firmowid.Ash.Analysis do
   alias Firmowid.Ash.Invoicing.SalesInvoice
   alias Firmowid.Ash.Scope
   alias Firmowid.Ash.SystemActor
+  alias Firmowid.Ash.Timetracker
 
   resources do
     resource TagDefinition
@@ -41,8 +42,13 @@ defmodule Firmowid.Ash.Analysis do
   Computes income, expenses, and net profit for a date range.
 
   Invoices are assigned to the month of sale (not issue). Only truly standalone
-  transactions (skipped AND not matched) are included to prevent double-counting.
-  Transfers between the organization's own bank accounts are excluded.
+  transactions (skipped AND not matched) and transfers pinned to a salary are
+  included to prevent double-counting. Transfers between the organization's own
+  bank accounts are excluded.
+
+  Pinned salaries carry derived, unsaved project tags for every project the
+  employee logged time on in the salary month, weighted by that time, or the
+  company tag without such work.
 
   Entities tagged as `:internal` remain editable in entry lists but are excluded from totals.
 
@@ -50,7 +56,7 @@ defmodule Firmowid.Ash.Analysis do
   and `:expense_categories`. Category rows contain `:key` (`{:project, id}`,
   `:company` or `:unassigned`), `:name` (nil for built-ins), `:color` and a positive
   Decimal PLN `:amount`. Each normalized entity amount is rounded to cents and
-   allocated equally between projects, with sorted IDs receiving leftover cents.
+   allocated between projects by tag weight (equally unless weighted).
    Totals and categories use the same allocated amounts.
 
   ## Options
@@ -116,13 +122,25 @@ defmodule Firmowid.Ash.Analysis do
       )
       |> Enum.filter(&analysis_relevant_invoice?(&1, own_account_ibans))
 
-    transactions =
+    skipped_transactions =
       %{date_from: date_from, date_to: date_to, reconciliation: :skipped}
       |> Finances.list_transactions!(scope: analysis_scope)
       |> Enum.reject(&own_account_transfer?(&1, own_account_ibans))
 
-    all_entities = build_entity_id_list(sales_invoices, cost_invoices, transactions)
-    entity_tags_map = load_entity_tags_map(all_entities, scope)
+    salary_transactions =
+      Finances.list_transactions!(
+        %{date_from: date_from, date_to: date_to, salary_assigned: true},
+        scope: analysis_scope
+      )
+
+    transactions = skipped_transactions ++ salary_transactions
+
+    all_entities = build_entity_id_list(sales_invoices, cost_invoices, skipped_transactions)
+
+    entity_tags_map =
+      all_entities
+      |> load_entity_tags_map(scope)
+      |> Map.merge(salary_tags_map(salary_transactions, analysis_scope, scope))
 
     %{
       transactions: filter_entities(transactions, :transaction, entity_tags_map, []),
@@ -134,7 +152,7 @@ defmodule Firmowid.Ash.Analysis do
   @doc """
   Returns a list of dates (first day of each month) that have analysis-relevant
   entries. Uses `sale_date` for invoices and `booking_date` for standalone
-  (skipped, unmatched) transactions.
+  (skipped, unmatched) and salary-pinned transactions.
 
   Only includes invoices that are matched to an external transaction or marked
   `skip_invoicing`.
@@ -150,6 +168,7 @@ defmodule Firmowid.Ash.Analysis do
       %{reconciliation: :skipped}
       |> Finances.list_transactions!(opts)
       |> Enum.reject(&own_account_transfer?(&1, own_account_ibans))
+      |> Enum.concat(Finances.list_transactions!(%{salary_assigned: true}, opts))
       |> Enum.map(&Date.beginning_of_month(&1.booking_date))
 
     si_months =
@@ -286,6 +305,57 @@ defmodule Firmowid.Ash.Analysis do
       |> Enum.map(&{entity_type, &1})
     end)
     |> Enum.group_by(fn {type, tag} -> {type, tag.resource_id} end, fn {_type, tag} -> tag end)
+  end
+
+  defp salary_tags_map([], _analysis_scope, _scope), do: %{}
+
+  defp salary_tags_map(transactions, analysis_scope, scope) do
+    seconds_by_salary =
+      transactions
+      |> Enum.map(& &1.salary_month)
+      |> Enum.uniq()
+      |> Enum.flat_map(fn month ->
+        Timetracker.list_sessions!(
+          %{month: month.month, year: month.year},
+          load: [:duration],
+          query: [filter: [user_id: [in: Enum.map(transactions, & &1.salary_user_id)]]],
+          scope: analysis_scope
+        )
+      end)
+      |> Enum.reject(&(is_nil(&1.project_id) or &1.duration <= 0))
+      |> Enum.group_by(&{&1.user_id, Date.beginning_of_month(DateTime.to_date(&1.start_datetime))})
+      |> Map.new(fn {salary, sessions} ->
+        {salary,
+         sessions
+         |> Enum.group_by(& &1.project_id, & &1.duration)
+         |> Map.new(fn {id, d} -> {id, Enum.sum(d)} end)}
+      end)
+
+    tag_definitions_by_project =
+      %{ids: seconds_by_salary |> Map.values() |> Enum.flat_map(&Map.keys/1) |> Enum.uniq()}
+      |> Timetracker.list_projects!(load: [:tag_definition], scope: scope)
+      |> Map.new(&{&1.id, &1.tag_definition})
+
+    Map.new(transactions, fn transaction ->
+      salary = {transaction.salary_user_id, transaction.salary_month}
+
+      tags =
+        for {project_id, seconds} <- Map.get(seconds_by_salary, salary, %{}),
+            definition = Map.get(tag_definitions_by_project, project_id),
+            definition != nil do
+          Ash.Resource.put_metadata(
+            %EntityTag{
+              kind: :project,
+              tag_definition_id: definition.id,
+              tag_definition: definition
+            },
+            :weight,
+            seconds
+          )
+        end
+
+      {{:transaction, transaction.id}, if(tags == [], do: [%EntityTag{kind: :company}], else: tags)}
+    end)
   end
 
   defp analysis_scope(%Scope{tenant: tenant}) do

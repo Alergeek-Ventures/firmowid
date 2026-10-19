@@ -22,8 +22,9 @@ defmodule Firmowid.Ash.Analysis.CategoryTotals do
   @doc """
   Aggregates `{normalized_amount, loaded_entity_tags}` pairs.
 
-   Rounds each signed PLN amount to cents and allocates equal project shares
-   with sorted IDs receiving leftover cents. Built-in categories
+   Rounds each signed PLN amount to cents and allocates project shares in
+   proportion to each tag's `:weight` metadata (1 when absent), giving leftover
+   cents to the largest remainders, then to sorted IDs. Built-in categories
   have nil names for caller-owned translation. Internal entities are excluded.
 
   Filters select shares with OR semantics (`{:project, id}` or `{:company}`),
@@ -82,7 +83,8 @@ defmodule Firmowid.Ash.Analysis.CategoryTotals do
         %{
           key: {:project, tag.tag_definition_id},
           name: tag.tag_definition.name,
-          color: tag.tag_definition.color
+          color: tag.tag_definition.color,
+          weight: Map.get(tag.__metadata__, :weight, 1)
         }
       end)
 
@@ -95,13 +97,31 @@ defmodule Firmowid.Ash.Analysis.CategoryTotals do
   defp allocate([], _cents), do: []
 
   defp allocate(categories, cents) do
-    count = length(categories)
+    total_weight = categories |> Enum.map(&Map.get(&1, :weight, 1)) |> Enum.sum()
 
-    categories
+    shares =
+      Enum.map(categories, fn category ->
+        product = cents * Map.get(category, :weight, 1)
+        {category, div(product, total_weight), rem(product, total_weight)}
+      end)
+
+    leftover = cents - (shares |> Enum.map(&elem(&1, 1)) |> Enum.sum())
+
+    extra =
+      shares
+      |> Enum.with_index()
+      |> Enum.sort_by(fn {{_category, _share, remainder}, index} -> {-remainder, index} end)
+      |> Enum.take(leftover)
+      |> MapSet.new(&elem(&1, 1))
+
+    shares
     |> Enum.with_index()
-    |> Enum.map(fn {category, index} ->
-      share = div(cents, count) + if(index < rem(cents, count), do: 1, else: 0)
-      Map.put(category, :amount, share |> Decimal.new() |> Decimal.div(100))
+    |> Enum.map(fn {{category, share, _remainder}, index} ->
+      share = share + if(MapSet.member?(extra, index), do: 1, else: 0)
+
+      category
+      |> Map.delete(:weight)
+      |> Map.put(:amount, share |> Decimal.new() |> Decimal.div(100))
     end)
   end
 

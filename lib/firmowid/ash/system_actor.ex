@@ -36,7 +36,8 @@ defmodule Firmowid.Ash.SystemActor do
     and upsert synced transactions.
 
   - `:analysis_reader` — performs organization-wide read-only financial analysis
-    across invoices and transactions.
+    across invoices and transactions, and lists sessions to split pinned salaries
+    between projects.
 
   - `:exchange_rate_cache` — persists exchange-rate cache entries for the Money
     exchange-rate backend.

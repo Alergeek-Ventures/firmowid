@@ -378,6 +378,11 @@ defmodule Firmowid.Ash.Timetracker.Session do
       authorize_if action(:auto_stop)
     end
 
+    # Pinned salaries are split between the projects the employee logged time on.
+    bypass [{SystemActorRole, roles: [:analysis_reader]}, action(:list)] do
+      authorize_if expr(not is_nil(^actor(:org_id)) and organization_id == ^actor(:org_id))
+    end
+
     policy Firmowid.Ash.Checks.IsSystemActor do
       forbid_if always()
     end
