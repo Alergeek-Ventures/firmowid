@@ -19,6 +19,7 @@ defmodule Firmowid.Ash.Core.User do
     extensions: [AshAuthentication],
     notifiers: [Ash.Notifier.PubSub]
 
+  alias Firmowid.Ash.Checks.OrganizationAdmin
   alias Firmowid.Ash.Checks.SystemActorRole
   alias Firmowid.Ash.Core.Calculations.AcceptedLeaveDaysForYear
   alias Firmowid.Ash.Core.Calculations.SharedBirthday
@@ -477,7 +478,7 @@ defmodule Firmowid.Ash.Core.User do
     # bypass so it short-circuits the deny catch-all below.
     bypass action(:read) do
       authorize_if expr(id == ^actor(:id))
-      authorize_if actor_attribute_equals(:role, :admin)
+      authorize_if OrganizationAdmin
       authorize_if actor_attribute_equals(:system_role, :superuser)
 
       authorize_if {SystemActorRole,
@@ -497,7 +498,7 @@ defmodule Firmowid.Ash.Core.User do
     # :list action — admin-only user listing, plus system actors that need
     # organization-wide factual user counts.
     bypass action(:list) do
-      authorize_if actor_attribute_equals(:role, :admin)
+      authorize_if OrganizationAdmin
       authorize_if actor_attribute_equals(:system_role, :superuser)
 
       authorize_if {SystemActorRole,
@@ -512,12 +513,12 @@ defmodule Firmowid.Ash.Core.User do
 
     # :get_org_user — admin-only, tenant-scoped user lookup
     bypass action(:get_org_user) do
-      authorize_if actor_attribute_equals(:role, :admin)
+      authorize_if OrganizationAdmin
       authorize_if actor_attribute_equals(:system_role, :superuser)
     end
 
     bypass action(:update_profile) do
-      authorize_if actor_attribute_equals(:role, :admin)
+      authorize_if OrganizationAdmin
       authorize_if expr(id == ^actor(:id))
       authorize_if {SystemActorRole, roles: [:document_blob_processor]}
     end
@@ -541,7 +542,7 @@ defmodule Firmowid.Ash.Core.User do
     policy action(:update_role) do
       forbid_if expr(organization.owner_id == id)
       forbid_if expr(id == ^actor(:id))
-      authorize_if actor_attribute_equals(:role, :admin)
+      authorize_if OrganizationAdmin
     end
 
     policy action(:archive) do
@@ -561,7 +562,7 @@ defmodule Firmowid.Ash.Core.User do
     end
 
     bypass action(:clear_organization) do
-      authorize_if actor_attribute_equals(:role, :admin)
+      authorize_if OrganizationAdmin
     end
 
     bypass action(:unlink_google) do
@@ -574,7 +575,7 @@ defmodule Firmowid.Ash.Core.User do
 
     bypass action_type(:destroy) do
       authorize_if expr(id == ^actor(:id))
-      authorize_if actor_attribute_equals(:role, :admin)
+      authorize_if OrganizationAdmin
     end
   end
 
