@@ -331,7 +331,6 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceDetails do
   attr :is_cost_invoice, :boolean, required: true
   attr :transactions, :list, required: true
   slot :status_action, required: true
-  slot :assistant_action, required: true
 
   def transaction_match(assigns) do
     transactions = assigns.transactions
@@ -426,7 +425,15 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceDetails do
               <% end %>
             </p>
 
-            {render_slot(@assistant_action, transaction)}
+            <.button
+              disabled
+              class="w-full"
+              variant="primary"
+              accent={if(@is_cost_invoice, do: "orange", else: "turquoise")}
+              size="small"
+            >
+              Zapytaj
+            </.button>
           </div>
         </div>
       </div>
@@ -500,8 +507,7 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceDetails do
         </p>
 
         <.button
-          phx-click="show_chat"
-          phx-target="#invoice-show"
+          disabled
           class="w-full"
           variant="primary"
           accent="turquoise"
@@ -556,8 +562,7 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceDetails do
           </div>
 
           <.button
-            phx-click="show_chat"
-            phx-target="#invoice-show"
+            disabled
             class="mt-2"
             variant="primary"
             accent={if(@is_cost_invoice, do: "orange", else: "turquoise")}

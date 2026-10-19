@@ -53,7 +53,7 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
     domain: Firmowid.Ash.Invoicing,
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer],
-    extensions: [AshEvents.Events, AshJido, AshOban],
+    extensions: [AshEvents.Events, AshOban],
     notifiers: [Ash.Notifier.PubSub]
 
   alias AshMoney.Types.Money
@@ -118,26 +118,6 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
   events do
     event_log Firmowid.Ash.Events.Event
     only_actions [:connect_transactions, :disconnect_transactions, :disconnect_all_transactions]
-  end
-
-  jido do
-    action :list,
-      name: "list_sales_invoices",
-      description: "Listuje faktury sprzedażowe z bezpiecznymi filtrami Ash.",
-      category: "ash.invoicing.read",
-      tags: ["assistant", "sales_invoice"]
-
-    action :by_id,
-      name: "get_sales_invoice_by_id",
-      description: "Pobiera fakturę sprzedażową po identyfikatorze.",
-      category: "ash.invoicing.read",
-      tags: ["assistant", "sales_invoice"]
-
-    action :connect_transactions,
-      name: "connect_sales_invoice_transactions",
-      description: "Łączy fakturę sprzedażową z podanymi transakcjami.",
-      category: "ash.invoicing.write",
-      tags: ["assistant", "sales_invoice", "matching"]
   end
 
   oban do

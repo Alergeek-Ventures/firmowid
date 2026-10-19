@@ -42,7 +42,6 @@ defmodule Firmowid.Sentry do
   @extra_keys [
     :callback,
     :view,
-    :assistant_type,
     :error_count,
     :error_kinds,
     :user_id,

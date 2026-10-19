@@ -6,7 +6,6 @@ defmodule Firmowid.Ash.Finances.Transaction do
     domain: Firmowid.Ash.Finances,
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer],
-    extensions: [AshJido],
     notifiers: [Ash.Notifier.PubSub]
 
   alias AshMoney.Types.Money
@@ -23,14 +22,6 @@ defmodule Firmowid.Ash.Finances.Transaction do
   postgres do
     table "transactions"
     repo Firmowid.Repo
-  end
-
-  jido do
-    action :list,
-      name: "list_transactions",
-      description: "Listuje transakcje z bezpiecznymi filtrami Ash.",
-      category: "ash.finances.read",
-      tags: ["assistant", "transactions"]
   end
 
   code_interface do

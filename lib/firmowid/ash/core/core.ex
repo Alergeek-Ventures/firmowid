@@ -13,7 +13,6 @@ defmodule Firmowid.Ash.Core do
 
   alias Ash.Error.Query.NotFound
   alias Firmowid.Ash.Analysis.TagDefinition
-  alias Firmowid.Ash.Assistant.Session, as: AssistantSession
   alias Firmowid.Ash.Billing.Snapshot
   alias Firmowid.Ash.Core.OauthAuthorizationCode
   alias Firmowid.Ash.Core.OauthConsent
@@ -107,7 +106,6 @@ defmodule Firmowid.Ash.Core do
   @transaction_resources [
     User,
     Organization,
-    AssistantSession,
     Session,
     Snapshot,
     KsefInvoiceDigestItem,
