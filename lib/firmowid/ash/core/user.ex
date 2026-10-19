@@ -19,6 +19,7 @@ defmodule Firmowid.Ash.Core.User do
     extensions: [AshAuthentication],
     notifiers: [Ash.Notifier.PubSub]
 
+  alias AshAuthentication.Strategy.Password.PasswordValidation
   alias Firmowid.Ash.Checks.OrganizationAdmin
   alias Firmowid.Ash.Checks.SystemActorRole
   alias Firmowid.Ash.Core.Calculations.AcceptedLeaveDaysForYear
@@ -324,6 +325,11 @@ defmodule Firmowid.Ash.Core.User do
       description "Request a change to the current user's email address."
       accept [:email]
       require_atomic? false
+      argument :current_password, :string, sensitive?: true
+
+      # A session alone must not move the account to an address its holder controls.
+      validate {PasswordValidation, strategy_name: :password, password_argument: :current_password},
+        where: [attribute_does_not_equal(:hashed_password, nil)]
     end
 
     action :update_current_profile, :struct do
@@ -419,8 +425,7 @@ defmodule Firmowid.Ash.Core.User do
 
       validate confirm(:password, :password_confirmation)
 
-      validate {AshAuthentication.Strategy.Password.PasswordValidation,
-                strategy_name: :password, password_argument: :current_password}
+      validate {PasswordValidation, strategy_name: :password, password_argument: :current_password}
 
       change {AshAuthentication.Strategy.Password.HashPasswordChange, strategy_name: :password}
     end

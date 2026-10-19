@@ -60,7 +60,7 @@ defmodule FirmowidWeb.Auth.Views.ConfirmEmailTest do
     drain_sent_emails()
 
     view
-    |> form("#email_form", user: %{email: new_email})
+    |> form("#email_form", user: %{email: new_email, current_password: valid_user_password()})
     |> render_submit()
 
     assert_email_sent(fn email ->
