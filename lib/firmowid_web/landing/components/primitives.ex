@@ -28,7 +28,7 @@ defmodule FirmowidWeb.Landing.Components.Primitives do
       id="landing-navbar"
       phx-hook="LandingNavbarTheme"
       class={[
-        "sticky top-0 z-50 h-(--landing-nav-height) px-2 py-1.5 transition-none lg:px-8 lg:pt-5 lg:pb-2.5 lg:[&_.landing-button]:min-h-9 lg:[&_.landing-button]:px-3 lg:[&_.landing-button]:py-1.5 lg:[&_.landing-button]:text-base/6 [&.landing-nav--dark_.landing-button--navbar-filled:hover]:bg-orange-500 [&.landing-nav--dark_.landing-button--navbar-filled:hover]:before:bg-orange-500 [&.landing-nav--dark_.landing-button--navbar-outline]:text-[#f5f1ea] [&.landing-nav--dark_.landing-button--navbar-outline]:before:bg-darkGrey [&.landing-nav--dark_.landing-button--navbar-outline:hover]:text-orange-500 [&.landing-nav--dark_.landing-nav-brand]:text-[#f5f1ea] [&.landing-nav--dark_.landing-nav-panel]:border-[rgb(245_241_234/0.28)] [&.landing-nav--dark_.landing-nav-panel]:shadow-[0_0.625rem_1.875rem_rgb(0_0_0/0.18)] [&.landing-nav--dark_.landing-nav-panel]:[background:rgb(245_241_234/0.1)] [&.landing-nav--dark_.landing-nav-text]:text-[#f5f1ea] [&.landing-nav--dark_.landing-nav-text:hover]:text-orange-500",
+        "sticky top-0 z-50 h-(--landing-nav-height) px-2 py-1.5 transition-none lg:px-8 lg:pt-5 lg:pb-2.5 lg:[&_.landing-button]:min-h-9 lg:[&_.landing-button]:px-3 lg:[&_.landing-button]:py-1.5 lg:[&_.landing-button]:text-base/6 [&.landing-nav--dark_.landing-button--navbar-filled:hover]:bg-orange-500-landing [&.landing-nav--dark_.landing-button--navbar-filled:hover]:before:bg-orange-500-landing [&.landing-nav--dark_.landing-button--navbar-outline]:text-[#f5f1ea] [&.landing-nav--dark_.landing-button--navbar-outline]:before:bg-darkGrey [&.landing-nav--dark_.landing-button--navbar-outline:hover]:text-orange-500-landing [&.landing-nav--dark_.landing-nav-brand]:text-[#f5f1ea] [&.landing-nav--dark_.landing-nav-panel]:border-[rgb(245_241_234/0.28)] [&.landing-nav--dark_.landing-nav-panel]:shadow-[0_0.625rem_1.875rem_rgb(0_0_0/0.18)] [&.landing-nav--dark_.landing-nav-panel]:[background:rgb(245_241_234/0.1)] [&.landing-nav--dark_.landing-nav-text]:text-[#f5f1ea] [&.landing-nav--dark_.landing-nav-text:hover]:text-orange-500-landing",
         @class
       ]}
     >
@@ -115,13 +115,13 @@ defmodule FirmowidWeb.Landing.Components.Primitives do
           "bg-[#0f0f0f] text-white [&:hover]:bg-orange-700"
 
         :orange ->
-          "bg-orange-500 text-[#0f0f0f] [&:hover]:bg-orange-300"
+          "bg-orange-500-landing text-[#0f0f0f] [&:hover]:bg-orange-300"
 
         :outline ->
           "min-w-37.75 text-[#0f0f0f] hover:text-orange-700 before:h-[54px] before:w-[153px] before:bg-[url('/images/landing/frames/button-login.svg')] before:bg-auto before:bg-center before:bg-no-repeat lg:w-37.75 lg:px-5 [.landing-pricing-card_&]:w-52 [.landing-pricing-card_&]:max-w-full [.landing-pricing-card_&]:min-w-0 [.landing-pricing-card_&]:self-center [.landing-pricing-card_&]:before:w-[210px] [.landing-pricing-card_&]:before:bg-[url('/images/landing/frames/button-pricing.svg')]"
 
         :outline_light ->
-          "text-[#f5f1ea] hover:text-orange-500 before:h-[59px] before:w-[294px] before:bg-[url('/images/landing/frames/button-light.svg')] before:bg-auto before:bg-center before:bg-no-repeat hover:before:bg-[url('/images/landing/frames/button-light-hover.svg')]"
+          "text-[#f5f1ea] hover:text-orange-500-landing before:h-[59px] before:w-[294px] before:bg-[url('/images/landing/frames/button-light.svg')] before:bg-auto before:bg-center before:bg-no-repeat hover:before:bg-[url('/images/landing/frames/button-light-hover.svg')]"
 
         :navbar_filled ->
           "landing-button--navbar-filled h-9 min-h-9 w-27.25 bg-white text-[#0f0f0f] hover:bg-orange-700 hover:text-white hover:before:bg-orange-700 before:h-[38px] before:w-[110px] before:bg-grey-100 before:mask-[url('/images/landing/frames/nav-trial-dark.svg')] before:mask-size-auto before:mask-center before:mask-no-repeat"
@@ -190,7 +190,7 @@ defmodule FirmowidWeb.Landing.Components.Primitives do
           </div>
 
           <div class="flex flex-col lg:flex-1 lg:pt-0 lg:[&_.landing-footer-heading]:order-0">
-            <p class="mb-5 font-['Nothing_You_Could_Do',cursive] text-3xl leading-none text-orange-500 lg:text-[2rem]">
+            <p class="mb-5 font-['Nothing_You_Could_Do',cursive] text-3xl leading-none text-orange-500-landing lg:text-[2rem]">
               {gettext("YOUR MOVE!")}
             </p>
             <h2 class="landing-footer-heading text-[3rem] leading-[.96] font-bold tracking-[-0.03em] lg:max-w-160 lg:text-[4rem] lg:leading-[.92]">
@@ -224,7 +224,7 @@ defmodule FirmowidWeb.Landing.Components.Primitives do
           </div>
         </div>
 
-        <div class="border-t border-[#f5f1ea]/20 pt-10 pb-8 lg:grid lg:grid-cols-[minmax(0,1fr)_auto] lg:items-start lg:gap-x-17 lg:pt-12 lg:pb-10">
+        <div class="relative pt-10 pb-8 before:absolute before:top-0 before:left-1/2 before:w-screen before:-translate-x-1/2 before:border-t before:border-[#f5f1ea]/20 lg:grid lg:grid-cols-[minmax(0,1fr)_auto] lg:items-start lg:gap-x-17 lg:pt-12 lg:pb-10">
           <div class="grid grid-cols-2 gap-6 lg:col-2 lg:row-1 lg:gap-17">
             <div>
               <p class="mb-4 text-xs font-bold tracking-[0.08em] uppercase">
@@ -276,7 +276,7 @@ defmodule FirmowidWeb.Landing.Components.Primitives do
             </div>
           </div>
 
-          <div class="order-1 mt-10 border-t border-[#f5f1ea]/20 pt-8 lg:order-0 lg:col-1 lg:row-1 lg:mt-0 lg:max-w-75 lg:border-t-0 lg:pt-0">
+          <div class="order-1 mt-10 border-t border-[#f5f1ea]/20 pt-8 lg:order-0 lg:col-1 lg:row-1 lg:mt-0 lg:border-t-0 lg:pt-0">
             <p class="text-lg font-bold lg:text-xl">Firmowid</p>
             <p class="mt-3 text-sm/normal text-[rgb(245_241_234/0.6)]">
               {gettext("Invoicing, banking, and working hours.")}

@@ -90,7 +90,7 @@ defmodule FirmowidWeb.Landing.Components.Pricing do
             phx-click="set_billing_period"
             phx-value-period="monthly"
             aria-pressed={to_string(not @yearly?)}
-            class="relative isolate transition-colors duration-200 before:pointer-events-none before:absolute before:top-1/2 before:left-1/2 before:-z-10 before:h-[44px] before:w-[119px] before:-translate-1/2 before:bg-[url('/images/landing/frames/billing-active.svg')] before:bg-auto before:bg-center before:bg-no-repeat before:opacity-0 before:transition-opacity before:duration-200 hover:text-orange-700 aria-pressed:bg-white aria-pressed:before:opacity-100"
+            class="relative isolate text-grey-700 transition-colors duration-200 before:pointer-events-none before:absolute before:top-1/2 before:left-1/2 before:-z-10 before:h-[44px] before:w-[119px] before:-translate-1/2 before:bg-[url('/images/landing/frames/billing-active.svg')] before:bg-auto before:bg-center before:bg-no-repeat before:opacity-0 before:transition-opacity before:duration-200 hover:text-orange-700 aria-pressed:bg-white aria-pressed:text-black aria-pressed:before:opacity-100"
           >
             {pgettext("billing period", "Monthly")}
           </button>
@@ -99,7 +99,7 @@ defmodule FirmowidWeb.Landing.Components.Pricing do
             phx-click="set_billing_period"
             phx-value-period="yearly"
             aria-pressed={to_string(@yearly?)}
-            class="relative isolate transition-colors duration-200 before:pointer-events-none before:absolute before:top-1/2 before:left-1/2 before:-z-10 before:h-[44px] before:w-[132px] before:-translate-1/2 before:bg-[url('/images/landing/frames/billing-yearly-active.svg')] before:bg-auto before:bg-center before:bg-no-repeat before:opacity-0 before:transition-opacity before:duration-200 hover:text-orange-700 aria-pressed:bg-white aria-pressed:before:opacity-100"
+            class="relative isolate text-grey-700 transition-colors duration-200 before:pointer-events-none before:absolute before:top-1/2 before:left-1/2 before:-z-10 before:h-[44px] before:w-[132px] before:-translate-1/2 before:bg-[url('/images/landing/frames/billing-yearly-active.svg')] before:bg-auto before:bg-center before:bg-no-repeat before:opacity-0 before:transition-opacity before:duration-200 hover:text-orange-700 aria-pressed:bg-white aria-pressed:text-black aria-pressed:before:opacity-100"
           >
             {pgettext("billing period", "Yearly")}
             <span>−20%</span>
@@ -116,20 +116,35 @@ defmodule FirmowidWeb.Landing.Components.Pricing do
             class={[
               "landing-pricing-card relative flex flex-col rounded-2xl bg-(--landing-beige) px-6 py-7 [&_.landing-button]:mt-10 [&_.landing-button]:text-base lg:[&_.landing-button]:mt-8 lg:[&.landing-pricing-featured]:rounded-b-none",
               plan.featured &&
-                "landing-pricing-featured text-[#f5f1ea] [&_.landing-pricing-audience]:text-grey-300 [&_.landing-pricing-detail]:text-orange-500 [&_.landing-pricing-name]:text-orange-500 [&_.landing-pricing-price_span]:text-grey-300 [&.landing-pricing-featured]:bg-grey-900"
+                "landing-pricing-featured text-[#f5f1ea] [&_.landing-pricing-audience]:text-grey-300 [&_.landing-pricing-detail]:text-orange-500-landing [&_.landing-pricing-name]:text-orange-500-landing [&_.landing-pricing-price_>_span]:text-grey-300 [&.landing-pricing-featured]:bg-grey-900"
             ]}
           >
             <p
               :if={plan.featured}
-              class="absolute -top-3.5 left-1/2 w-max -translate-x-1/2 rounded-full bg-orange-500 px-4 py-1.5 text-caps-sm font-bold text-[#0f0f0f]"
+              class="absolute -top-2.5 left-1/2 w-max -translate-x-1/2 rounded-full bg-orange-500-landing px-2 py-0.5 text-[10px] font-medium text-[#0f0f0f]"
             >
               {gettext("Most popular")}
             </p>
             <p class="landing-pricing-name mb-4.5 text-xs font-bold tracking-[0.08em] text-(--landing-accent) uppercase">
               {plan.name}
             </p>
-            <p class="landing-pricing-price mt-0 flex flex-wrap items-baseline gap-2 [&_span]:text-sm [&_span]:text-darkGrey [&_strong]:text-3xl [&_strong]:leading-none [&_strong]:font-bold [&_strong]:tracking-[-0.04em] lg:[&_strong]:text-3xl">
-              <strong>{pgettext("landing card price", "%{amount} PLN", amount: plan.price)}</strong>
+            <p class="landing-pricing-price mt-0 flex flex-wrap items-baseline gap-2 [&_>_span]:text-sm [&_>_span]:text-darkGrey [&_strong]:text-3xl [&_strong]:leading-none [&_strong]:font-bold [&_strong]:tracking-[-0.04em] lg:[&_strong]:text-3xl">
+              <strong
+                id={"pricing-price-#{plan.key}"}
+                class="t-digit-group"
+                data-value={plan.price_label}
+                phx-hook="NumberPopIn"
+                aria-hidden="true"
+              >
+                <span
+                  :for={{digit, index} <- Enum.with_index(String.graphemes(plan.price_label))}
+                  class="t-digit"
+                  style={"--digit-stagger-index: #{index};"}
+                >
+                  {digit}
+                </span>
+              </strong>
+              <span class="sr-only">{plan.price_label}</span>
               <span>{if plan.free?, do: gettext("forever"), else: gettext("/ month net")}</span>
             </p>
             <p class="landing-pricing-detail mt-5 mb-3 text-xs/normal text-(--landing-accent)">
@@ -175,7 +190,7 @@ defmodule FirmowidWeb.Landing.Components.Pricing do
           <dl class="lg:col-[1/5] lg:row-3">
             <div
               :for={{label, values} <- @rows}
-              class="grid grid-cols-3 border-b border-(--landing-line) text-xs lg:grid-cols-[1.45fr_repeat(3,minmax(0,1fr))] lg:text-sm [&_dd]:px-1 [&_dd]:pt-2 [&_dd]:pb-4.5 [&_dd]:text-center [&_dd]:font-semibold [&_dd]:text-[#0f0f0f] lg:[&_dd]:px-3 lg:[&_dd]:py-4 [&_dd.landing-pricing-featured]:bg-transparent [&_dd.landing-pricing-featured]:text-[#0f0f0f] lg:[&_dd.landing-pricing-featured]:bg-grey-900 lg:[&_dd.landing-pricing-featured]:text-[#f5f1ea] lg:[&_dd.landing-pricing-featured[data-tick]]:text-orange-500 [&_dd[data-tick]]:text-lg [&_dd[data-tick]]:text-(--landing-accent) [&_dt]:col-span-full [&_dt]:pt-4.5 [&_dt]:pb-2 [&_dt]:font-normal lg:[&_dt]:col-auto lg:[&_dt]:py-4 lg:[&_dt]:pr-6"
+              class="grid grid-cols-3 border-b border-(--landing-line) text-xs lg:grid-cols-[1.45fr_repeat(3,minmax(0,1fr))] lg:text-sm [&_dd]:px-1 [&_dd]:pt-2 [&_dd]:pb-4.5 [&_dd]:text-center [&_dd]:font-semibold [&_dd]:text-[#0f0f0f] lg:[&_dd]:px-3 lg:[&_dd]:py-4 [&_dd.landing-pricing-featured]:bg-transparent [&_dd.landing-pricing-featured]:text-[#0f0f0f] lg:[&_dd.landing-pricing-featured]:bg-grey-900 lg:[&_dd.landing-pricing-featured]:text-[#f5f1ea] lg:[&_dd.landing-pricing-featured[data-tick]]:text-orange-500-landing [&_dd[data-tick]]:text-lg [&_dd[data-tick]]:text-(--landing-accent) [&_dt]:col-span-full [&_dt]:pt-4.5 [&_dt]:pb-2 [&_dt]:font-normal lg:[&_dt]:col-auto lg:[&_dt]:py-4 lg:[&_dt]:pr-6"
             >
               <dt>{label}</dt>
               <dd
@@ -219,6 +234,7 @@ defmodule FirmowidWeb.Landing.Components.Pricing do
   defp localize_plans(plans, yearly?) do
     Enum.map(plans, fn plan ->
       free? = plan.monthly == 0
+      price = to_string(if yearly?, do: plan.yearly, else: plan.monthly)
 
       detail =
         cond do
@@ -234,7 +250,8 @@ defmodule FirmowidWeb.Landing.Components.Pricing do
         cta: Gettext.gettext(Firmowid.Gettext, plan.cta),
         featured: plan.key == "przedsiebiorca",
         free?: free?,
-        price: to_string(if yearly?, do: plan.yearly, else: plan.monthly),
+        price: price,
+        price_label: pgettext("landing card price", "%{amount} PLN", amount: price),
         detail: Gettext.gettext(Firmowid.Gettext, detail)
       }
     end)

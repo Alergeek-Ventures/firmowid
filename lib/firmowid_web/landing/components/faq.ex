@@ -28,7 +28,7 @@ defmodule FirmowidWeb.Landing.Components.Faq do
           <p class="landing-eyebrow mb-4 text-xs font-bold tracking-[0.08em] text-(--landing-accent) uppercase">
             {gettext("Questions and answers")}
           </p>
-          <h2>{gettext("Before you ask — we may have already answered.")}</h2>
+          <h2 class="text-balance">{gettext("Before you ask — we may have already answered.")}</h2>
           <p>
             {gettext("Didn't find your question?")}
             <a href="mailto:contact@alergeek.ventures" class="font-bold text-darkGrey underline">
