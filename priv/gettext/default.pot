@@ -2012,23 +2012,23 @@ msgstr ""
 msgid "Choose an issued VAT invoice to correct."
 msgstr ""
 
-#: lib/firmowid_mcp/invoicing/views/issue.ex:564
+#: lib/firmowid_mcp/invoicing/views/issue.ex:566
 #, elixir-autogen, elixir-format
 msgid "Confirm and send to KSeF"
 msgstr ""
 
-#: lib/firmowid_mcp/invoicing/views/issue.ex:610
+#: lib/firmowid_mcp/invoicing/views/issue.ex:613
 #, elixir-autogen, elixir-format
 msgid "Confirm invoice"
 msgstr ""
 
-#: lib/firmowid_mcp/invoicing/views/issue.ex:609
+#: lib/firmowid_mcp/invoicing/views/issue.ex:612
 #, elixir-autogen, elixir-format
 msgid "Confirm invoice correction"
 msgstr ""
 
 #: lib/firmowid_mcp/invoicing/views/issue.ex:277
-#: lib/firmowid_mcp/invoicing/views/issue.ex:502
+#: lib/firmowid_mcp/invoicing/views/issue.ex:504
 #, elixir-autogen, elixir-format
 msgid "Connect KSeF before issuing the invoice."
 msgstr ""
@@ -2054,12 +2054,12 @@ msgstr ""
 msgid "Invoice number"
 msgstr ""
 
-#: lib/firmowid_mcp/invoicing/views/issue.ex:556
+#: lib/firmowid_mcp/invoicing/views/issue.ex:558
 #, elixir-autogen, elixir-format
 msgid "Issuing…"
 msgstr ""
 
-#: lib/firmowid_mcp/invoicing/views/issue.ex:616
+#: lib/firmowid_mcp/invoicing/views/issue.ex:619
 #, elixir-autogen, elixir-format
 msgid "KSeF accepted the invoice."
 msgstr ""
@@ -2069,8 +2069,8 @@ msgstr ""
 msgid "Only an unnumbered invoice draft can be issued."
 msgstr ""
 
-#: lib/firmowid_mcp/invoicing/views/issue.ex:485
-#: lib/firmowid_mcp/invoicing/views/issue.ex:486
+#: lib/firmowid_mcp/invoicing/views/issue.ex:487
+#: lib/firmowid_mcp/invoicing/views/issue.ex:488
 #, elixir-autogen, elixir-format
 msgid "Refresh"
 msgstr ""
@@ -2080,7 +2080,7 @@ msgstr ""
 msgid "Save draft"
 msgstr ""
 
-#: lib/firmowid_mcp/invoicing/views/issue.ex:628
+#: lib/firmowid_mcp/invoicing/views/issue.ex:631
 #, elixir-autogen, elixir-format
 msgid "The correction could not be sent and was removed. Prepare a new correction after fixing its details."
 msgstr ""
@@ -2095,17 +2095,17 @@ msgstr ""
 msgid "The invoice data changed. Review the updated preview and confirm again."
 msgstr ""
 
-#: lib/firmowid_mcp/invoicing/views/issue.ex:617
+#: lib/firmowid_mcp/invoicing/views/issue.ex:620
 #, elixir-autogen, elixir-format
 msgid "The invoice is saved, but KSeF submission failed."
 msgstr ""
 
-#: lib/firmowid_mcp/invoicing/views/issue.ex:619
+#: lib/firmowid_mcp/invoicing/views/issue.ex:622
 #, elixir-autogen, elixir-format
 msgid "The invoice is saved, but KSeF submission has not started."
 msgstr ""
 
-#: lib/firmowid_mcp/invoicing/views/issue.ex:615
+#: lib/firmowid_mcp/invoicing/views/issue.ex:618
 #, elixir-autogen, elixir-format
 msgid "The invoice is saved. Sending to KSeF…"
 msgstr ""
@@ -2115,7 +2115,7 @@ msgstr ""
 msgid "This field is required."
 msgstr ""
 
-#: lib/firmowid_mcp/invoicing/views/issue.ex:493
+#: lib/firmowid_mcp/invoicing/views/issue.ex:495
 #: lib/firmowid_mcp/runtime.ex:115
 #: lib/firmowid_mcp/runtime.ex:116
 #: lib/firmowid_mcp/runtime.ex:120
@@ -2153,7 +2153,7 @@ msgstr ""
 msgid "Complete the company name in the organization settings."
 msgstr ""
 
-#: lib/firmowid_mcp/invoicing/views/issue.ex:623
+#: lib/firmowid_mcp/invoicing/views/issue.ex:626
 #, elixir-autogen, elixir-format
 msgid "KSeF did not accept the invoice, so it returned to a draft without a number. Correct its details and issue it again."
 msgstr ""
@@ -2209,8 +2209,8 @@ msgctxt "landing open-source badge"
 msgid "open source"
 msgstr ""
 
-#: lib/firmowid_mcp/invoicing/views/issue.ex:544
-#: lib/firmowid_mcp/invoicing/views/issue.ex:545
+#: lib/firmowid_mcp/invoicing/views/issue.ex:546
+#: lib/firmowid_mcp/invoicing/views/issue.ex:547
 #, elixir-autogen, elixir-format
 msgid "Preview the invoice in full screen"
 msgstr ""
@@ -2225,12 +2225,12 @@ msgstr ""
 msgid "Internal note, not shown on the invoice (only in Firmowid)"
 msgstr ""
 
-#: lib/firmowid_mcp/invoicing/views/issue.ex:612
+#: lib/firmowid_mcp/invoicing/views/issue.ex:615
 #, elixir-autogen, elixir-format
 msgid "Invoice sent to KSeF"
 msgstr ""
 
-#: lib/firmowid_mcp/invoicing/views/issue.ex:613
+#: lib/firmowid_mcp/invoicing/views/issue.ex:616
 #, elixir-autogen, elixir-format
 msgid "KSeF submission failed"
 msgstr ""
@@ -2240,7 +2240,7 @@ msgstr ""
 msgid "Note on the invoice"
 msgstr ""
 
-#: lib/firmowid_mcp/invoicing/views/issue.ex:611
+#: lib/firmowid_mcp/invoicing/views/issue.ex:614
 #, elixir-autogen, elixir-format
 msgid "The invoice is being sent"
 msgstr ""
