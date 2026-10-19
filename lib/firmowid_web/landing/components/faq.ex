@@ -46,6 +46,7 @@ defmodule FirmowidWeb.Landing.Components.Faq do
               phx-value-id={faq.id}
               aria-expanded={to_string(@open_faq == faq.id)}
               aria-controls={"faq-panel-#{faq.id}"}
+              class="transition-colors duration-200 hover:text-orange-700"
             >
               <span>{faq.question}</span>
               <span

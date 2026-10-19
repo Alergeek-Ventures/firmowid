@@ -135,12 +135,17 @@ defmodule FirmowidWeb.Landing.Components.Hero do
     assigns = assign(assigns, before_company: before_company, after_company: after_company)
 
     ~H"""
-    <section class="border-y border-(--landing-line) bg-orange-400 py-10 text-grey-700 lg:bg-grey-50 lg:py-8 [&_a]:font-semibold [&_a]:text-(--landing-accent) [&_a]:no-underline [&_a]:underline-offset-4 [&_a:hover]:underline [&_p]:flex [&_p]:flex-col-reverse [&_p]:items-center [&_p]:gap-2 [&_p]:text-center [&_p]:text-[13px]/5 lg:[&_p]:flex-row lg:[&_p]:items-baseline lg:[&_p]:text-left [&_strong]:text-[1.375rem] [&_strong]:leading-none [&_strong]:font-bold [&_strong]:whitespace-nowrap [&_strong]:text-black">
+    <section class="border-y border-(--landing-line) bg-orange-400 py-10 text-grey-700 lg:bg-grey-50 lg:py-8 [&_a]:font-semibold [&_a]:text-(--landing-accent) [&_a]:no-underline [&_p]:flex [&_p]:flex-col-reverse [&_p]:items-center [&_p]:gap-2 [&_p]:text-center [&_p]:text-[13px]/5 lg:[&_p]:flex-row lg:[&_p]:items-baseline lg:[&_p]:text-left [&_strong]:text-[1.375rem] [&_strong]:leading-none [&_strong]:font-bold [&_strong]:whitespace-nowrap [&_strong]:text-black">
       <div class="mx-auto flex w-[calc(100%-var(--spacing)*8)] max-w-284.75 flex-col gap-10 lg:mt-0.75 lg:w-[calc(100%-var(--spacing)*16)] lg:flex-row lg:justify-between lg:gap-6">
         <p class="order-1 lg:order-0">
           <span>
             {@before_company}
-            <a href="https://alergeek.ventures" target="_blank" rel="noopener noreferrer">Alergeek Ventures</a>
+            <a
+              href="https://alergeek.ventures"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="relative after:pointer-events-none after:absolute after:-bottom-0.5 after:left-0 after:h-px after:w-full after:bg-current after:opacity-0 after:transition-opacity after:duration-200 hover:after:opacity-100 focus-visible:after:opacity-100"
+            >Alergeek Ventures</a>
             {@after_company}
           </span>
           <strong>{gettext("2 years")}</strong>

@@ -28,7 +28,7 @@ defmodule FirmowidWeb.Landing.Components.Primitives do
       id="landing-navbar"
       phx-hook="LandingNavbarTheme"
       class={[
-        "sticky top-0 z-50 h-(--landing-nav-height) px-2 py-1.5 transition-none lg:px-8 lg:pt-5 lg:pb-2.5 lg:[&_.landing-button]:min-h-9 lg:[&_.landing-button]:px-3 lg:[&_.landing-button]:py-1.5 lg:[&_.landing-button]:text-base/6 [&.landing-nav--dark_.landing-button--navbar-outline]:text-[#f5f1ea] [&.landing-nav--dark_.landing-nav-brand]:text-[#f5f1ea] [&.landing-nav--dark_.landing-nav-panel]:border-[rgb(245_241_234/0.28)] [&.landing-nav--dark_.landing-nav-panel]:shadow-[0_0.625rem_1.875rem_rgb(0_0_0/0.18)] [&.landing-nav--dark_.landing-nav-panel]:[background:rgb(245_241_234/0.1)] [&.landing-nav--dark_.landing-nav-text]:text-[#f5f1ea] [&.landing-nav--dark_.landing-nav-text:hover]:text-[#d2936d]",
+        "sticky top-0 z-50 h-(--landing-nav-height) px-2 py-1.5 transition-none lg:px-8 lg:pt-5 lg:pb-2.5 lg:[&_.landing-button]:min-h-9 lg:[&_.landing-button]:px-3 lg:[&_.landing-button]:py-1.5 lg:[&_.landing-button]:text-base/6 [&.landing-nav--dark_.landing-button--navbar-filled:hover]:bg-orange-500 [&.landing-nav--dark_.landing-button--navbar-filled:hover]:before:bg-orange-500 [&.landing-nav--dark_.landing-button--navbar-outline]:text-[#f5f1ea] [&.landing-nav--dark_.landing-button--navbar-outline]:before:bg-darkGrey [&.landing-nav--dark_.landing-button--navbar-outline:hover]:text-orange-500 [&.landing-nav--dark_.landing-nav-brand]:text-[#f5f1ea] [&.landing-nav--dark_.landing-nav-panel]:border-[rgb(245_241_234/0.28)] [&.landing-nav--dark_.landing-nav-panel]:shadow-[0_0.625rem_1.875rem_rgb(0_0_0/0.18)] [&.landing-nav--dark_.landing-nav-panel]:[background:rgb(245_241_234/0.1)] [&.landing-nav--dark_.landing-nav-text]:text-[#f5f1ea] [&.landing-nav--dark_.landing-nav-text:hover]:text-orange-500",
         @class
       ]}
     >
@@ -112,22 +112,22 @@ defmodule FirmowidWeb.Landing.Components.Primitives do
     variant_class =
       case assigns.variant do
         :black ->
-          "bg-[#0f0f0f] text-white [&:hover]:[background:var(--color-grey-800)]"
+          "bg-[#0f0f0f] text-white [&:hover]:bg-orange-700"
 
         :orange ->
-          "bg-[#d2936d] text-[#0f0f0f] [&:hover]:bg-[#e9c3ac]"
+          "bg-orange-500 text-[#0f0f0f] [&:hover]:bg-orange-300"
 
         :outline ->
-          "min-w-37.75 text-[#0f0f0f] before:h-[54px] before:w-[153px] before:bg-[url('/images/landing/frames/button-login.svg')] before:bg-auto before:bg-center before:bg-no-repeat lg:w-37.75 lg:px-5 [.landing-pricing-card_&]:w-52 [.landing-pricing-card_&]:max-w-full [.landing-pricing-card_&]:min-w-0 [.landing-pricing-card_&]:self-center [.landing-pricing-card_&]:before:w-[210px] [.landing-pricing-card_&]:before:bg-[url('/images/landing/frames/button-pricing.svg')]"
+          "min-w-37.75 text-[#0f0f0f] hover:text-orange-700 before:h-[54px] before:w-[153px] before:bg-[url('/images/landing/frames/button-login.svg')] before:bg-auto before:bg-center before:bg-no-repeat lg:w-37.75 lg:px-5 [.landing-pricing-card_&]:w-52 [.landing-pricing-card_&]:max-w-full [.landing-pricing-card_&]:min-w-0 [.landing-pricing-card_&]:self-center [.landing-pricing-card_&]:before:w-[210px] [.landing-pricing-card_&]:before:bg-[url('/images/landing/frames/button-pricing.svg')]"
 
         :outline_light ->
-          "text-[#f5f1ea] before:h-[59px] before:w-[294px] before:bg-[url('/images/landing/frames/button-light.svg')] before:bg-auto before:bg-center before:bg-no-repeat hover:before:bg-[url('/images/landing/frames/button-light-hover.svg')]"
+          "text-[#f5f1ea] hover:text-orange-500 before:h-[59px] before:w-[294px] before:bg-[url('/images/landing/frames/button-light.svg')] before:bg-auto before:bg-center before:bg-no-repeat hover:before:bg-[url('/images/landing/frames/button-light-hover.svg')]"
 
         :navbar_filled ->
-          "h-9 min-h-9 w-27.25 bg-white text-[#0f0f0f] before:h-[38px] before:w-[110px] before:bg-grey-100 before:mask-[url('/images/landing/frames/nav-trial-dark.svg')] before:mask-size-auto before:mask-center before:mask-no-repeat"
+          "landing-button--navbar-filled h-9 min-h-9 w-27.25 bg-white text-[#0f0f0f] hover:bg-orange-700 hover:text-white hover:before:bg-orange-700 before:h-[38px] before:w-[110px] before:bg-grey-100 before:mask-[url('/images/landing/frames/nav-trial-dark.svg')] before:mask-size-auto before:mask-center before:mask-no-repeat"
 
         :navbar_outline ->
-          "landing-button--navbar-outline h-9 min-h-9 w-29.75 text-[#0f0f0f] before:h-[38px] before:w-[120px] before:bg-white before:mask-[url('/images/landing/frames/nav-login.svg')] before:mask-size-auto before:mask-center before:mask-no-repeat"
+          "landing-button--navbar-outline h-9 min-h-9 w-29.75 text-[#0f0f0f] hover:text-orange-700 before:h-[38px] before:w-[120px] before:bg-white before:mask-[url('/images/landing/frames/nav-login.svg')] before:mask-size-auto before:mask-center before:mask-no-repeat"
       end
 
     assigns = assign(assigns, :variant_class, variant_class)
@@ -138,11 +138,11 @@ defmodule FirmowidWeb.Landing.Components.Primitives do
       navigate={@navigate}
       external={@external}
       class={[
-        "landing-button relative isolate inline-flex items-center justify-center gap-2.5 px-8 py-3.5 text-center text-base/6 font-medium focus-visible:outline-2 focus-visible:outline-offset-4 disabled:pointer-events-none disabled:opacity-45 aria-disabled:pointer-events-none aria-disabled:opacity-45",
+        "landing-button relative isolate inline-flex items-center justify-center gap-2.5 px-8 py-3.5 text-center text-base/6 font-medium transition-colors duration-200 focus-visible:outline-2 focus-visible:outline-offset-4 disabled:pointer-events-none disabled:opacity-45 aria-disabled:pointer-events-none aria-disabled:opacity-45",
         if(@variant == :navbar_filled, do: "rounded-md", else: "rounded-sm"),
         if(@variant in [:outline, :outline_light, :navbar_filled, :navbar_outline],
           do:
-            "before:pointer-events-none before:absolute before:top-1/2 before:left-1/2 before:-z-10 before:-translate-1/2"
+            "before:pointer-events-none before:absolute before:top-1/2 before:left-1/2 before:-z-10 before:-translate-1/2 before:transition-colors before:duration-200"
         ),
         if(@variant not in [:navbar_filled, :navbar_outline], do: "min-h-13"),
         @variant_class,
@@ -190,7 +190,7 @@ defmodule FirmowidWeb.Landing.Components.Primitives do
           </div>
 
           <div class="flex flex-col lg:flex-1 lg:pt-0 lg:[&_.landing-footer-heading]:order-0">
-            <p class="mb-5 font-['Nothing_You_Could_Do',cursive] text-3xl leading-none text-[#d2936d] lg:text-[2rem]">
+            <p class="mb-5 font-['Nothing_You_Could_Do',cursive] text-3xl leading-none text-orange-500 lg:text-[2rem]">
               {gettext("YOUR MOVE!")}
             </p>
             <h2 class="landing-footer-heading text-[3rem] leading-[.96] font-bold tracking-[-0.03em] lg:max-w-160 lg:text-[4rem] lg:leading-[.92]">

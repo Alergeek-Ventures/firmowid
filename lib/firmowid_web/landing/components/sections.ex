@@ -149,7 +149,7 @@ defmodule FirmowidWeb.Landing.Components.Sections do
     <section
       id="dla-kogo"
       data-landing-dark-surface
-      class="bg-[#0f0f0f] py-18 text-white lg:py-26 [&_.landing-eyebrow]:text-[#d2936d] [&_.landing-section-intro_>_p:not(.landing-eyebrow)]:text-grey-300 [&_article_p]:text-grey-300"
+      class="bg-[#0f0f0f] py-18 text-white lg:py-26 [&_.landing-eyebrow]:text-orange-500 [&_.landing-section-intro_>_p:not(.landing-eyebrow)]:text-grey-300 [&_article_p]:text-grey-300"
     >
       <div class="mx-auto w-[calc(100%-var(--spacing)*8)] max-w-284.75 lg:w-[calc(100%-var(--spacing)*16)]">
         <div class="landing-section-intro max-w-180 lg:max-w-170 [&_>_p:not(.landing-eyebrow,.landing-assistants-soon,.landing-assistants-footnote)]:mt-6 [&_>_p:not(.landing-eyebrow,.landing-assistants-soon,.landing-assistants-footnote)]:text-h5/6.75 [&_>_p:not(.landing-eyebrow,.landing-assistants-soon,.landing-assistants-footnote)]:text-darkGrey lg:[&_>_p:not(.landing-eyebrow,.landing-assistants-soon,.landing-assistants-footnote)]:max-w-170 [&_h2]:text-[2.25rem] [&_h2]:leading-[1.1] [&_h2]:font-bold [&_h2]:tracking-[-0.03em] lg:[&_h2]:text-[3rem] lg:[&_h2]:leading-[1.04] lg:[&.text-center]:mx-auto lg:[&.text-center_>_p:not(.landing-eyebrow)]:mx-auto">
@@ -783,8 +783,8 @@ defmodule FirmowidWeb.Landing.Components.Sections do
         </div>
 
         <div class="relative mt-16 grid gap-10 lg:mt-20 lg:grid-cols-3 lg:gap-12 [&_article]:relative [&_article]:grid [&_article]:grid-cols-[--spacing(8)_minmax(0,1fr)] [&_article]:gap-x-5 [&_article]:gap-y-1 lg:[&_article]:block lg:[&_article]:text-center [&_article_>_p]:col-2 lg:[&_article_>_p]:col-auto [&_article_>_span]:row-[1/3] [&_article_>_span]:grid [&_article_>_span]:size-8 [&_article_>_span]:place-content-center [&_article_>_span]:rounded-full [&_article_>_span]:border-2 [&_article_>_span]:border-darkGrey [&_article_>_span]:bg-white [&_article_>_span]:text-sm [&_article_>_span]:font-bold lg:[&_article_>_span]:mx-auto lg:[&_article_>_span]:mb-6 lg:[&_article_>_span]:size-14 lg:[&_article_>_span]:text-xl [&_article:not(:last-child)::after]:absolute [&_article:not(:last-child)::after]:top-11 [&_article:not(:last-child)::after]:-bottom-10 [&_article:not(:last-child)::after]:left-3.75 [&_article:not(:last-child)::after]:border-l-2 [&_article:not(:last-child)::after]:border-dashed [&_article:not(:last-child)::after]:border-grey-200 [&_article:not(:last-child)::after]:content-[''] lg:[&_article:not(:last-child)::after]:top-6.75 lg:[&_article:not(:last-child)::after]:bottom-auto lg:[&_article:not(:last-child)::after]:left-1/2 lg:[&_article:not(:last-child)::after]:w-[calc(100%+var(--spacing)*12)] lg:[&_article:not(:last-child)::after]:border-t-2 lg:[&_article:not(:last-child)::after]:border-l-0 [&_article:nth-child(2)_>_span]:border-(--landing-accent) [&_article:nth-child(2)_>_span]:bg-(--landing-accent) [&_article:nth-child(2)_>_span]:text-white [&_h3]:mb-2 [&_h3]:text-lg [&_h3]:leading-[1.3] [&_h3]:font-semibold [&_h3]:tracking-[-0.01em] lg:[&_h3]:text-xl [&_p]:text-base [&_p]:leading-[1.4]">
-          <article :for={{step, index} <- Enum.with_index(@steps, 1)}>
-            <span>{index}</span>
+          <article :for={{step, index} <- Enum.with_index(@steps, 1)} class="after:z-0">
+            <span class="relative z-10">{index}</span>
             <h3>{step.title}</h3>
             <p>{step.description}</p>
           </article>
@@ -805,7 +805,7 @@ defmodule FirmowidWeb.Landing.Components.Sections do
     <section
       id="kod-zrodlowy"
       data-landing-dark-surface
-      class="bg-[#0f0f0f] py-18 text-white lg:py-26 [&_.landing-eyebrow]:text-[#d2936d] [&_.landing-section-intro_>_p:not(.landing-eyebrow)]:text-grey-300 [&_article_p]:text-grey-300"
+      class="bg-[#0f0f0f] py-18 text-white lg:py-26 [&_.landing-eyebrow]:text-orange-500 [&_.landing-section-intro_>_p:not(.landing-eyebrow)]:text-grey-300 [&_article_p]:text-grey-300"
     >
       <div class="mx-auto grid w-[calc(100%-var(--spacing)*8)] max-w-284.75 gap-10 lg:w-[calc(100%-var(--spacing)*16)] lg:grid-cols-2 lg:gap-20 [&_article_p]:text-base [&_article_p]:leading-[1.4] [&_h3]:mb-5 [&_h3]:text-xl [&_h3]:leading-[1.3] [&_h3]:font-semibold [&_h3]:tracking-[-0.01em]">
         <div class="landing-section-intro max-w-180 lg:max-w-284.75 [&_>_p:not(.landing-eyebrow,.landing-assistants-soon,.landing-assistants-footnote)]:mt-6 [&_>_p:not(.landing-eyebrow,.landing-assistants-soon,.landing-assistants-footnote)]:text-h5/6.75 [&_>_p:not(.landing-eyebrow,.landing-assistants-soon,.landing-assistants-footnote)]:text-darkGrey lg:[&_>_p:not(.landing-eyebrow,.landing-assistants-soon,.landing-assistants-footnote)]:max-w-115 [&_h2]:text-[2.25rem] [&_h2]:leading-[1.1] [&_h2]:font-bold [&_h2]:tracking-[-0.03em] lg:[&_h2]:text-[3rem] lg:[&_h2]:leading-[1.04] lg:[&.text-center]:mx-auto lg:[&.text-center]:max-w-140 lg:[&.text-center_>_p:not(.landing-eyebrow)]:mx-auto">
@@ -822,7 +822,7 @@ defmodule FirmowidWeb.Landing.Components.Sections do
               <img src={~p"/images/github-mark.svg"} alt="" width="24" height="24" />
             </.landing_button>
             <a
-              class="inline-flex min-h-7.75 min-w-36.5 items-center justify-center bg-[url('/images/landing/frames/license.svg')] bg-size-[100%_100%] bg-center bg-no-repeat px-3.5 py-1.25 text-caps-sm font-bold tracking-[0.04em] uppercase"
+              class="inline-flex min-h-7.75 min-w-36.5 items-center justify-center bg-[url('/images/landing/frames/license.svg')] bg-size-[100%_100%] bg-center bg-no-repeat px-3.5 py-1.25 text-caps-sm font-bold tracking-[0.04em]"
               href={@repository}
             >
               {gettext("AGPL-3.0 license")}
@@ -830,7 +830,7 @@ defmodule FirmowidWeb.Landing.Components.Sections do
           </div>
         </div>
 
-        <div class="rounded-2xl border border-grey-800 bg-grey-900 px-7 py-2 lg:self-center [&_article]:py-6 [&_article_h3]:mb-2.5 [&_article+article]:border-t [&_article+article]:border-grey-800 [&_h3]:flex [&_h3]:items-center [&_h3]:gap-2.5 [&_h3]:text-[#f5f1ea] [&_h3::before]:h-3.25 [&_h3::before]:w-3 [&_h3::before]:flex-none [&_h3::before]:bg-[url('/images/landing/icons/check.svg')] [&_h3::before]:bg-contain [&_h3::before]:bg-center [&_h3::before]:bg-no-repeat [&_h3::before]:content-['']">
+        <div class="rounded-2xl border border-grey-800 bg-grey-900 px-7 py-2 lg:self-center [&_article]:py-6 [&_article_h3]:mb-2.5 [&_article+article]:border-t [&_article+article]:border-grey-800 [&_h3]:flex [&_h3]:items-center [&_h3]:gap-2.5 [&_h3]:text-[#f5f1ea] [&_h3::before]:h-3.25 [&_h3::before]:w-3 [&_h3::before]:flex-none [&_h3::before]:bg-orange-500 [&_h3::before]:mask-[url('/images/landing/icons/check.svg')] [&_h3::before]:mask-contain [&_h3::before]:mask-center [&_h3::before]:mask-no-repeat [&_h3::before]:content-['']">
           <article>
             <h3>{gettext("No limits")}</h3>
             <p>{gettext("Invoices, bank accounts and users without plan limits.")}</p>
@@ -873,7 +873,7 @@ defmodule FirmowidWeb.Landing.Components.Sections do
 
         <div class="grid gap-5 md:grid-cols-2 lg:gap-4 [&_article]:rounded-2xl [&_article]:p-5 [&_article]:[background:#fff_url('/images/landing/frames/team-card.svg')_center/100%_100%_no-repeat] lg:[&_article]:p-6 [&_article:nth-child(2)_.landing-team-portrait]:bg-turquoise-600 [&_article:nth-child(2)_.landing-team-portrait_img]:top-[-12%] [&_article:nth-child(2)_.landing-team-portrait_img]:left-[-26%] [&_article:nth-child(2)_.landing-team-portrait_img]:w-[153%]">
           <article :for={person <- @team}>
-            <div class="landing-team-portrait relative aspect-square overflow-hidden rounded-lg bg-[#d2936d] [&_img]:absolute [&_img]:top-[-22.4%] [&_img]:left-[-6%] [&_img]:h-auto [&_img]:w-[113%] [&_img]:max-w-none">
+            <div class="landing-team-portrait relative aspect-square overflow-hidden rounded-lg bg-orange-500 [&_img]:absolute [&_img]:top-[-22.4%] [&_img]:left-[-6%] [&_img]:h-auto [&_img]:w-[113%] [&_img]:max-w-none">
               <img
                 src={person.image}
                 alt={gettext("Portrait of %{name}", name: person.name)}
