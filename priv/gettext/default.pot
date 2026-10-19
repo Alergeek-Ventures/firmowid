@@ -56,7 +56,7 @@ msgstr ""
 msgid ", which forms an integral part of these Terms of Service."
 msgstr ""
 
-#: lib/firmowid_web/landing/components/hero.ex:144
+#: lib/firmowid_web/landing/components/hero.ex:147
 #, elixir-autogen, elixir-format
 msgid "2 years"
 msgstr ""
@@ -66,7 +66,7 @@ msgstr ""
 msgid "A budget that is outdated the day it is created"
 msgstr ""
 
-#: lib/firmowid_web/landing/components/primitives.ex:39
+#: lib/firmowid_web/landing/components/primitives.ex:52
 #, elixir-autogen, elixir-format
 msgid "About us"
 msgstr ""
@@ -121,7 +121,7 @@ msgstr ""
 msgid "Automatically matching invoices to bank transactions"
 msgstr ""
 
-#: lib/firmowid_web/landing/components/hero.ex:151
+#: lib/firmowid_web/landing/components/hero.ex:154
 #, elixir-autogen, elixir-format
 msgid "Average onboarding time"
 msgstr ""
@@ -136,22 +136,22 @@ msgstr ""
 msgid "Bank integrations"
 msgstr ""
 
-#: lib/firmowid_web/landing/components/primitives.ex:173
+#: lib/firmowid_web/landing/components/primitives.ex:215
 #, elixir-autogen, elixir-format
 msgid "Book a 15-minute call"
 msgstr ""
 
-#: lib/firmowid_web/landing/components/primitives.ex:221
+#: lib/firmowid_web/landing/components/primitives.ex:277
 #, elixir-autogen, elixir-format
 msgid "Built by entrepreneurs for entrepreneurs."
 msgstr ""
 
-#: lib/firmowid_web/landing/components/sections.ex:644
+#: lib/firmowid_web/landing/components/sections.ex:706
 #, elixir-autogen, elixir-format
 msgid "CEO of a television production company"
 msgstr ""
 
-#: lib/firmowid_web/landing/components/faq.ex:100
+#: lib/firmowid_web/landing/components/faq.ex:105
 #, elixir-autogen, elixir-format
 msgid "Can I cancel at any time?"
 msgstr ""
@@ -167,7 +167,7 @@ msgstr ""
 #: lib/firmowid_web/analysis/components/category_selector.ex:276
 #: lib/firmowid_web/analysis/views/dashboard.ex:382
 #: lib/firmowid_web/landing/components/pricing.ex:34
-#: lib/firmowid_web/landing/components/primitives.ex:195
+#: lib/firmowid_web/landing/components/primitives.ex:246
 #, elixir-autogen, elixir-format
 msgid "Company"
 msgstr ""
@@ -177,7 +177,7 @@ msgstr ""
 msgid "Consent"
 msgstr ""
 
-#: lib/firmowid_web/landing/components/primitives.ex:202
+#: lib/firmowid_web/landing/components/primitives.ex:254
 #, elixir-autogen, elixir-format
 msgid "Contact"
 msgstr ""
@@ -217,7 +217,7 @@ msgstr ""
 msgid "Details are available in our"
 msgstr ""
 
-#: lib/firmowid_web/landing/components/faq.ex:31
+#: lib/firmowid_web/landing/components/faq.ex:33
 #, elixir-autogen, elixir-format
 msgid "Didn't find your question?"
 msgstr ""
@@ -247,7 +247,7 @@ msgstr ""
 msgid "Every transaction is automatically assigned to the right invoice. No more manually matching transfers at the end of the month."
 msgstr ""
 
-#: lib/firmowid_web/landing/components/primitives.ex:183
+#: lib/firmowid_web/landing/components/primitives.ex:230
 #, elixir-autogen, elixir-format
 msgid "Features"
 msgstr ""
@@ -257,7 +257,7 @@ msgstr ""
 msgid "Firmowid is a tool supporting the conduct of business activities."
 msgstr ""
 
-#: lib/firmowid_web/landing/components/sections.ex:751
+#: lib/firmowid_web/landing/components/sections.ex:828
 #, elixir-autogen, elixir-format
 msgid "Firmowid is not a product made by a hundred managers for a hundred processes. It is a tool made by people who run a company themselves and know what working with KSeF, payroll, and month-end closing really looks like."
 msgstr ""
@@ -282,17 +282,17 @@ msgstr ""
 msgid "For a decade, he has advised companies on software development, including startups from the Y Combinator ecosystem. He is obsessed with polished products and turning complex processes into simple tools."
 msgstr ""
 
-#: lib/firmowid_web/landing/components/sections.ex:636
+#: lib/firmowid_web/landing/components/sections.ex:698
 #, elixir-autogen, elixir-format
 msgid "For two years, we patched together three different programs with Excel. Now one person does what three people used to do — and reports are ready at the end of the month, not a week later."
 msgstr ""
 
-#: lib/firmowid_web/landing/components/sections.ex:189
+#: lib/firmowid_web/landing/components/sections.ex:199
 #, elixir-autogen, elixir-format
 msgid "Four things your business needs."
 msgstr ""
 
-#: lib/firmowid_web/landing/components/sections.ex:676
+#: lib/firmowid_web/landing/components/sections.ex:742
 #, elixir-autogen, elixir-format
 msgid "From zero to your first invoice in 15 minutes"
 msgstr ""
@@ -307,17 +307,17 @@ msgstr ""
 msgid "Hours that count themselves"
 msgstr ""
 
-#: lib/firmowid_web/landing/components/sections.ex:675
+#: lib/firmowid_web/landing/components/sections.ex:740
 #, elixir-autogen, elixir-format
 msgid "How Firmowid works"
 msgstr ""
 
-#: lib/firmowid_web/landing/components/faq.ex:84
+#: lib/firmowid_web/landing/components/faq.ex:89
 #, elixir-autogen, elixir-format
 msgid "How does migration from another program work?"
 msgstr ""
 
-#: lib/firmowid_web/landing/components/sections.ex:190
+#: lib/firmowid_web/landing/components/sections.ex:200
 #, elixir-autogen, elixir-format
 msgid "In one place."
 msgstr ""
@@ -337,17 +337,17 @@ msgstr ""
 msgid "Invoicing data"
 msgstr ""
 
-#: lib/firmowid_web/landing/components/primitives.ex:220
+#: lib/firmowid_web/landing/components/primitives.ex:276
 #, elixir-autogen, elixir-format
 msgid "Invoicing, banking, and working hours."
 msgstr ""
 
-#: lib/firmowid_web/landing/components/faq.ex:76
+#: lib/firmowid_web/landing/components/faq.ex:81
 #, elixir-autogen, elixir-format
 msgid "Is Firmowid compliant with KSeF?"
 msgstr ""
 
-#: lib/firmowid_web/landing/components/faq.ex:92
+#: lib/firmowid_web/landing/components/faq.ex:97
 #, elixir-autogen, elixir-format
 msgid "Is my data safe?"
 msgstr ""
@@ -357,7 +357,7 @@ msgstr ""
 msgid "Issuing, managing, and storing sales and purchase invoices"
 msgstr ""
 
-#: lib/firmowid_web/landing/components/sections.ex:657
+#: lib/firmowid_web/landing/components/sections.ex:721
 #, elixir-autogen, elixir-format
 msgid "KSeF errors since implementation"
 msgstr ""
@@ -378,7 +378,7 @@ msgid "Labor costs visible in reports immediately"
 msgstr ""
 
 #: lib/firmowid_web/landing/components/hero.ex:70
-#: lib/firmowid_web/landing/components/primitives.ex:64
+#: lib/firmowid_web/landing/components/primitives.ex:79
 #, elixir-autogen, elixir-format
 msgid "Log in"
 msgstr ""
@@ -423,7 +423,7 @@ msgstr ""
 msgid "Other functions related to conducting business, introduced as the Service develops"
 msgstr ""
 
-#: lib/firmowid_web/landing/components/pricing.ex:75
+#: lib/firmowid_web/landing/components/pricing.ex:77
 #, elixir-autogen, elixir-format
 msgid "Pay only for what you actually use. Choose the plan and billing cycle that suit you best."
 msgstr ""
@@ -443,8 +443,8 @@ msgstr ""
 msgid "Preference cookie (cookie_consent)"
 msgstr ""
 
-#: lib/firmowid_web/landing/components/pricing.ex:72
-#: lib/firmowid_web/landing/components/primitives.ex:184
+#: lib/firmowid_web/landing/components/pricing.ex:73
+#: lib/firmowid_web/landing/components/primitives.ex:234
 #, elixir-autogen, elixir-format
 msgid "Pricing"
 msgstr ""
@@ -455,12 +455,12 @@ msgstr ""
 msgid "Privacy Policy"
 msgstr ""
 
-#: lib/firmowid_web/landing/components/primitives.ex:182
+#: lib/firmowid_web/landing/components/primitives.ex:225
 #, elixir-autogen, elixir-format
 msgid "Product"
 msgstr ""
 
-#: lib/firmowid_web/landing/components/faq.ex:28
+#: lib/firmowid_web/landing/components/faq.ex:29
 #, elixir-autogen, elixir-format
 msgid "Questions and answers"
 msgstr ""
@@ -515,7 +515,7 @@ msgstr ""
 msgid "Right to restriction of processing (Article 18 GDPR)"
 msgstr ""
 
-#: lib/firmowid_web/landing/components/primitives.ex:149
+#: lib/firmowid_web/landing/components/primitives.ex:191
 #, elixir-autogen, elixir-format
 msgid "Run your business"
 msgstr ""
@@ -530,18 +530,18 @@ msgstr ""
 msgid "Secure data storage"
 msgstr ""
 
-#: lib/firmowid_web/landing/components/primitives.ex:191
+#: lib/firmowid_web/landing/components/primitives.ex:241
 #, elixir-autogen, elixir-format
 msgid "Source code"
 msgstr ""
 
-#: lib/firmowid_web/landing/components/faq.ex:86
+#: lib/firmowid_web/landing/components/faq.ex:91
 #, elixir-autogen, elixir-format
 msgid "Start by connecting KSeF and your bank — we import data from the last three months. You can immediately match transactions to invoices and analyze cash flow."
 msgstr ""
 
 #: lib/firmowid_web/landing/components/hero.ex:63
-#: lib/firmowid_web/landing/components/primitives.ex:164
+#: lib/firmowid_web/landing/components/primitives.ex:206
 #, elixir-autogen, elixir-format
 msgid "Start for free"
 msgstr ""
@@ -556,7 +556,7 @@ msgstr ""
 msgid "Technical data"
 msgstr ""
 
-#: lib/firmowid_web/landing/components/primitives.ex:205
+#: lib/firmowid_web/landing/components/primitives.ex:261
 #: lib/firmowid_web/landing/views/terms_of_service.ex:19
 #: lib/firmowid_web/landing/views/terms_of_service.ex:33
 #, elixir-autogen, elixir-format
@@ -673,7 +673,7 @@ msgstr ""
 msgid "Transactions matched to invoices"
 msgstr ""
 
-#: lib/firmowid_web/landing/components/sections.ex:749
+#: lib/firmowid_web/landing/components/sections.ex:826
 #, elixir-autogen, elixir-format
 msgid "Two people. One office in Krakow."
 msgstr ""
@@ -703,7 +703,7 @@ msgstr ""
 msgid "We will connect your bank account and KSeF. We will import contacts from a file or your previous system."
 msgstr ""
 
-#: lib/firmowid_web/landing/components/sections.ex:187
+#: lib/firmowid_web/landing/components/sections.ex:196
 #, elixir-autogen, elixir-format
 msgid "What Firmowid can do"
 msgstr ""
@@ -713,17 +713,17 @@ msgstr ""
 msgid "When using the Firmowid service, we process the following categories of personal data:"
 msgstr ""
 
-#: lib/firmowid_web/landing/components/faq.ex:105
+#: lib/firmowid_web/landing/components/faq.ex:110
 #, elixir-autogen, elixir-format
 msgid "Which banks do you support?"
 msgstr ""
 
-#: lib/firmowid_web/landing/components/sections.ex:748
+#: lib/firmowid_web/landing/components/sections.ex:824
 #, elixir-autogen, elixir-format
 msgid "Who is behind it"
 msgstr ""
 
-#: lib/firmowid_web/landing/components/sections.ex:152
+#: lib/firmowid_web/landing/components/sections.ex:157
 #, elixir-autogen, elixir-format
 msgid "Who it is for"
 msgstr ""
@@ -738,32 +738,32 @@ msgstr ""
 msgid "Working time records"
 msgstr ""
 
-#: lib/firmowid_web/landing/components/primitives.ex:147
+#: lib/firmowid_web/landing/components/primitives.ex:188
 #, elixir-autogen, elixir-format
 msgid "YOUR MOVE!"
 msgstr ""
 
-#: lib/firmowid_web/landing/components/faq.ex:94
+#: lib/firmowid_web/landing/components/faq.ex:99
 #, elixir-autogen, elixir-format
 msgid "Yes. Firmowid emphasizes secure data storage, and the entire flow is designed for handling company financial data."
 msgstr ""
 
-#: lib/firmowid_web/landing/components/faq.ex:78
+#: lib/firmowid_web/landing/components/faq.ex:83
 #, elixir-autogen, elixir-format
 msgid "Yes. Full KSeF compliance and automatic tracking of regulatory changes — our developers implement them immediately after announcements from the Ministry of Finance."
 msgstr ""
 
-#: lib/firmowid_web/landing/components/faq.ex:101
+#: lib/firmowid_web/landing/components/faq.ex:106
 #, elixir-autogen, elixir-format
 msgid "Yes. You can cancel at any time and delete your account without long-term commitments."
 msgstr ""
 
-#: lib/firmowid_web/landing/components/sections.ex:155
+#: lib/firmowid_web/landing/components/sections.ex:161
 #, elixir-autogen, elixir-format
 msgid "You do not want to manage spreadsheets."
 msgstr ""
 
-#: lib/firmowid_web/landing/components/sections.ex:154
+#: lib/firmowid_web/landing/components/sections.ex:160
 #, elixir-autogen, elixir-format
 msgid "You run a business."
 msgstr ""
@@ -783,7 +783,7 @@ msgstr ""
 msgid "bank accounts"
 msgstr ""
 
-#: lib/firmowid_web/landing/components/sections.ex:646
+#: lib/firmowid_web/landing/components/sections.ex:709
 #, elixir-autogen, elixir-format
 msgid "beta program participant"
 msgstr ""
@@ -814,7 +814,7 @@ msgstr ""
 msgid "is possible using an email address or a Google account (OAuth)."
 msgstr ""
 
-#: lib/firmowid_web/landing/components/sections.ex:653
+#: lib/firmowid_web/landing/components/sections.ex:717
 #, elixir-autogen, elixir-format
 msgid "less administrative work per week"
 msgstr ""
@@ -834,7 +834,7 @@ msgstr ""
 msgid "together with the date of the latest update."
 msgstr ""
 
-#: lib/firmowid_web/landing/components/primitives.ex:150
+#: lib/firmowid_web/landing/components/primitives.ex:192
 #, elixir-autogen, elixir-format
 msgid "with a lighter mind."
 msgstr ""
@@ -990,13 +990,13 @@ msgstr ""
 msgid "— working time entries and project assignments."
 msgstr ""
 
-#: lib/firmowid_web/landing/components/pricing.ex:88
+#: lib/firmowid_web/landing/components/pricing.ex:94
 #, elixir-autogen, elixir-format
 msgctxt "billing period"
 msgid "Monthly"
 msgstr ""
 
-#: lib/firmowid_web/landing/components/pricing.ex:96
+#: lib/firmowid_web/landing/components/pricing.ex:102
 #, elixir-autogen, elixir-format
 msgctxt "billing period"
 msgid "Yearly"
@@ -1008,7 +1008,7 @@ msgctxt "cookie-policy-link"
 msgid "Privacy Policy"
 msgstr ""
 
-#: lib/firmowid_web/landing/components/primitives.ex:212
+#: lib/firmowid_web/landing/components/primitives.ex:268
 #, elixir-autogen, elixir-format
 msgctxt "footer-policy-link"
 msgid "Privacy Policy"
@@ -1398,7 +1398,7 @@ msgid "Invoice number is required."
 msgstr ""
 
 #: lib/firmowid_web/invoicing/components/sales_invoice_details.ex:348
-#: lib/firmowid_web/landing/components/sections.ex:383
+#: lib/firmowid_web/landing/components/sections.ex:431
 #, elixir-autogen, elixir-format
 msgid "Draft"
 msgstr ""
@@ -1605,13 +1605,13 @@ msgid "Choose an issued VAT invoice to correct."
 msgstr ""
 
 #: lib/firmowid_mcp/invoicing/views/issue.ex:572
-#: lib/firmowid_web/landing/components/sections.ex:615
+#: lib/firmowid_web/landing/components/sections.ex:675
 #, elixir-autogen, elixir-format
 msgid "Confirm and send to KSeF"
 msgstr ""
 
 #: lib/firmowid_mcp/invoicing/views/issue.ex:619
-#: lib/firmowid_web/landing/components/sections.ex:581
+#: lib/firmowid_web/landing/components/sections.ex:637
 #, elixir-autogen, elixir-format
 msgid "Confirm invoice"
 msgstr ""
@@ -1767,7 +1767,7 @@ msgstr ""
 msgid "Start with the free plan. No card required."
 msgstr ""
 
-#: lib/firmowid_web/landing/components/hero.ex:147
+#: lib/firmowid_web/landing/components/hero.ex:150
 #, elixir-autogen, elixir-format
 msgid "Supported banks and fintechs"
 msgstr ""
@@ -1837,42 +1837,42 @@ msgstr ""
 msgid "Visible on the invoice and in KSeF (invoice footer)"
 msgstr ""
 
-#: lib/firmowid_web/landing/components/sections.ex:256
-#: lib/firmowid_web/landing/components/sections.ex:594
-#: lib/firmowid_web/landing/components/sections.ex:599
-#: lib/firmowid_web/landing/components/sections.ex:603
-#: lib/firmowid_web/landing/components/sections.ex:607
+#: lib/firmowid_web/landing/components/sections.ex:282
+#: lib/firmowid_web/landing/components/sections.ex:650
+#: lib/firmowid_web/landing/components/sections.ex:655
+#: lib/firmowid_web/landing/components/sections.ex:659
+#: lib/firmowid_web/landing/components/sections.ex:663
 #, elixir-autogen, elixir-format
 msgid "%{amount} PLN"
 msgstr ""
 
-#: lib/firmowid_web/landing/components/sections.ex:592
-#: lib/firmowid_web/landing/components/sections.ex:653
+#: lib/firmowid_web/landing/components/sections.ex:648
+#: lib/firmowid_web/landing/components/sections.ex:717
 #, elixir-autogen, elixir-format
 msgid "%{hours} h"
 msgstr ""
 
-#: lib/firmowid_web/landing/components/hero.ex:152
+#: lib/firmowid_web/landing/components/hero.ex:155
 #, elixir-autogen, elixir-format
 msgid "%{minutes} min"
 msgstr ""
 
-#: lib/firmowid_web/landing/components/sections.ex:559
+#: lib/firmowid_web/landing/components/sections.ex:613
 #, elixir-autogen, elixir-format
 msgid "*Already used by early adopters among our users. Gradually rolling out to everyone. Available in the Entrepreneur and Company plans."
 msgstr ""
 
-#: lib/firmowid_web/landing/components/pricing.ex:110
+#: lib/firmowid_web/landing/components/pricing.ex:131
 #, elixir-autogen, elixir-format
 msgid "/ month net"
 msgstr ""
 
-#: lib/firmowid_web/landing/components/sections.ex:317
+#: lib/firmowid_web/landing/components/sections.ex:356
 #, elixir-autogen, elixir-format
 msgid "16 hours 23 min"
 msgstr ""
 
-#: lib/firmowid_web/landing/components/sections.ex:713
+#: lib/firmowid_web/landing/components/sections.ex:788
 #, elixir-autogen, elixir-format
 msgid "AGPL-3.0 license"
 msgstr ""
@@ -1882,29 +1882,29 @@ msgstr ""
 msgid "Alerts for unpaid invoices"
 msgstr ""
 
-#: lib/firmowid_web/landing/components/sections.ex:498
+#: lib/firmowid_web/landing/components/sections.ex:548
 #, elixir-autogen, elixir-format
 msgid "An assistant to help you with your business"
 msgstr ""
 
-#: lib/firmowid_web/landing/components/sections.ex:326
-#: lib/firmowid_web/landing/components/sections.ex:459
-#: lib/firmowid_web/landing/components/sections.ex:477
+#: lib/firmowid_web/landing/components/sections.ex:367
+#: lib/firmowid_web/landing/components/sections.ex:507
+#: lib/firmowid_web/landing/components/sections.ex:525
 #, elixir-autogen, elixir-format
 msgid "Annual leave"
 msgstr ""
 
-#: lib/firmowid_web/landing/views/index.ex:95
+#: lib/firmowid_web/landing/views/index.ex:104
 #, elixir-autogen, elixir-format
 msgid "Answers about KSeF, bank integrations, data security, migration and Firmowid plans."
 msgstr ""
 
-#: lib/firmowid_web/landing/components/sections.ex:551
+#: lib/firmowid_web/landing/components/sections.ex:605
 #, elixir-autogen, elixir-format
 msgid "Any MCP-compatible tool"
 msgstr ""
 
-#: lib/firmowid_web/landing/components/sections.ex:331
+#: lib/firmowid_web/landing/components/sections.ex:372
 #, elixir-autogen, elixir-format
 msgid "Available:"
 msgstr ""
@@ -1914,17 +1914,17 @@ msgstr ""
 msgid "Bank accounts with transfer matching"
 msgstr ""
 
-#: lib/firmowid_web/landing/components/faq.ex:29
+#: lib/firmowid_web/landing/components/faq.ex:31
 #, elixir-autogen, elixir-format
 msgid "Before you ask — we may have already answered."
 msgstr ""
 
-#: lib/firmowid_web/landing/components/pricing.ex:81
+#: lib/firmowid_web/landing/components/pricing.ex:86
 #, elixir-autogen, elixir-format
 msgid "Billing period"
 msgstr ""
 
-#: lib/firmowid_web/landing/components/primitives.ex:42
+#: lib/firmowid_web/landing/components/primitives.ex:58
 #, elixir-autogen, elixir-format
 msgid "Blog"
 msgstr ""
@@ -1934,7 +1934,7 @@ msgstr ""
 msgid "Business trips"
 msgstr ""
 
-#: lib/firmowid_web/landing/components/sections.ex:588
+#: lib/firmowid_web/landing/components/sections.ex:644
 #, elixir-autogen, elixir-format
 msgid "Buyer"
 msgstr ""
@@ -1949,32 +1949,32 @@ msgstr ""
 msgid "COO · Alergeek Ventures"
 msgstr ""
 
-#: lib/firmowid_web/landing/components/faq.ex:121
+#: lib/firmowid_web/landing/components/faq.ex:126
 #, elixir-autogen, elixir-format
 msgid "Can I add invoices from outside KSeF?"
 msgstr ""
 
-#: lib/firmowid_web/landing/components/sections.ex:519
+#: lib/firmowid_web/landing/components/sections.ex:569
 #, elixir-autogen, elixir-format
 msgid "Coming soon: financial analysis - invoices and real bank transactions in one place"
 msgstr ""
 
-#: lib/firmowid_web/landing/components/pricing.ex:126
+#: lib/firmowid_web/landing/components/pricing.ex:151
 #, elixir-autogen, elixir-format
 msgid "Compare plans"
 msgstr ""
 
-#: lib/firmowid_web/landing/views/index.ex:81
+#: lib/firmowid_web/landing/views/index.ex:90
 #, elixir-autogen, elixir-format
 msgid "Compare the Free, Entrepreneur and Company plans. Monthly or annual billing, no hidden charges."
 msgstr ""
 
-#: lib/firmowid_web/landing/components/sections.ex:512
+#: lib/firmowid_web/landing/components/sections.ex:562
 #, elixir-autogen, elixir-format
 msgid "Corrections, e.g. “give a 10% discount on invoice BC/01/10/2026”"
 msgstr ""
 
-#: lib/firmowid_web/landing/components/sections.ex:239
+#: lib/firmowid_web/landing/components/sections.ex:257
 #, elixir-autogen, elixir-format
 msgid "Counterparty"
 msgstr ""
@@ -1984,19 +1984,19 @@ msgstr ""
 msgid "Create a free account"
 msgstr ""
 
-#: lib/firmowid_web/landing/components/sections.ex:449
-#: lib/firmowid_web/landing/components/sections.ex:450
-#: lib/firmowid_web/landing/components/sections.ex:452
+#: lib/firmowid_web/landing/components/sections.ex:497
+#: lib/firmowid_web/landing/components/sections.ex:498
+#: lib/firmowid_web/landing/components/sections.ex:500
 #, elixir-autogen, elixir-format
 msgid "Database maintenance"
 msgstr ""
 
-#: lib/firmowid_web/landing/components/hero.ex:128
+#: lib/firmowid_web/landing/components/hero.ex:131
 #, elixir-autogen, elixir-format
 msgid "Developed by %{company} for"
 msgstr ""
 
-#: lib/firmowid_web/landing/components/sections.ex:496
+#: lib/firmowid_web/landing/components/sections.ex:544
 #, elixir-autogen, elixir-format
 msgid "Early access"
 msgstr ""
@@ -2016,8 +2016,8 @@ msgstr ""
 msgid "Employees submit leave requests and settle business trips in Firmowid, and you approve them with one click. Records show how many hours everyone worked - ready for payroll."
 msgstr ""
 
-#: lib/firmowid_web/landing/components/sections.ex:314
-#: lib/firmowid_web/landing/components/sections.ex:451
+#: lib/firmowid_web/landing/components/sections.ex:352
+#: lib/firmowid_web/landing/components/sections.ex:499
 #, elixir-autogen, elixir-format
 msgid "Equipment testing"
 msgstr ""
@@ -2027,22 +2027,22 @@ msgstr ""
 msgid "Error notifications before documents reach the tax office"
 msgstr ""
 
-#: lib/firmowid_web/landing/components/sections.ex:568
+#: lib/firmowid_web/landing/components/sections.ex:622
 #, elixir-autogen, elixir-format
 msgid "Example conversation and invoice confirmation preview"
 msgstr ""
 
-#: lib/firmowid_web/landing/components/pricing.ex:73
+#: lib/firmowid_web/landing/components/pricing.ex:75
 #, elixir-autogen, elixir-format
 msgid "Fair pricing. No fine print."
 msgstr ""
 
-#: lib/firmowid_web/landing/views/index.ex:71
+#: lib/firmowid_web/landing/views/index.ex:80
 #, elixir-autogen, elixir-format
 msgid "Firmowid - free KSeF invoices, banking and team time tracking"
 msgstr ""
 
-#: lib/firmowid_web/landing/components/primitives.ex:136
+#: lib/firmowid_web/landing/components/primitives.ex:176
 #, elixir-autogen, elixir-format
 msgid "Firmowid character holding a tablet"
 msgstr ""
@@ -2052,12 +2052,12 @@ msgstr ""
 msgid "Firmowid connects invoices and KSeF, banking, time tracking, and your team."
 msgstr ""
 
-#: lib/firmowid_web/landing/components/faq.ex:107
+#: lib/firmowid_web/landing/components/faq.ex:112
 #, elixir-autogen, elixir-format
 msgid "Firmowid connects to your bank via Open Banking (partner: GoCardless). We support 29 banks and payment institutions. Polish banks: PKO Bank Polski (iPKO and iPKO Biznes), Inteligo, Bank Pekao, mBank (retail and Corporate), ING, Erste Bank Polska (retail and Corporate), Alior Bank, Bank Millennium, BNP Paribas (retail and Corporate), Nest Bank (Private and Corporate). Fintech and payments: Revolut, Wise, Stripe, PayPal, Paysera, N26, Airwallex, Finom, Vivid Money, Monese, Lunar, Swan, Soldo, Ebury, Skrill, Neteller. No bank of yours? Add an account manually with its IBAN."
 msgstr ""
 
-#: lib/firmowid_web/landing/views/index.ex:87
+#: lib/firmowid_web/landing/views/index.ex:96
 #, elixir-autogen, elixir-format
 msgid "Firmowid features — KSeF, banking and your team"
 msgstr ""
@@ -2067,7 +2067,7 @@ msgstr ""
 msgid "Firmowid in ChatGPT (panel beside the conversation)"
 msgstr ""
 
-#: lib/firmowid_web/landing/components/sections.ex:495
+#: lib/firmowid_web/landing/components/sections.ex:543
 #, elixir-autogen, elixir-format
 msgid "Firmowid in ChatGPT and Claude"
 msgstr ""
@@ -2077,23 +2077,23 @@ msgstr ""
 msgid "Firmowid is %{open_source}"
 msgstr ""
 
-#: lib/firmowid_web/landing/components/sections.ex:705
+#: lib/firmowid_web/landing/components/sections.ex:777
 #, elixir-autogen, elixir-format
 msgid "Firmowid is open source. Host it yourself, without limits or fees."
 msgstr ""
 
-#: lib/firmowid_web/landing/views/index.ex:79
+#: lib/firmowid_web/landing/views/index.ex:88
 #, elixir-autogen, elixir-format
 msgid "Firmowid pricing — choose your plan"
 msgstr ""
 
-#: lib/firmowid_web/landing/components/sections.ex:158
-#: lib/firmowid_web/landing/components/sections.ex:193
+#: lib/firmowid_web/landing/components/sections.ex:164
+#: lib/firmowid_web/landing/components/sections.ex:203
 #, elixir-autogen, elixir-format
 msgid "Firmowid was created for Polish SMEs that are tired of jumping from one program to another and recording everything in spreadsheets."
 msgstr ""
 
-#: lib/firmowid_web/landing/views/index.ex:94
+#: lib/firmowid_web/landing/views/index.ex:103
 #, elixir-autogen, elixir-format
 msgid "Firmowid — frequently asked questions"
 msgstr ""
@@ -2118,12 +2118,12 @@ msgstr ""
 msgid "Free"
 msgstr ""
 
-#: lib/firmowid_web/landing/views/index.ex:73
+#: lib/firmowid_web/landing/views/index.ex:82
 #, elixir-autogen, elixir-format
 msgid "Free KSeF invoicing, bank synchronization, time tracking, leave and business trips in one place."
 msgstr ""
 
-#: lib/firmowid_web/landing/components/sections.ex:728
+#: lib/firmowid_web/landing/components/sections.ex:803
 #, elixir-autogen, elixir-format
 msgid "Full control"
 msgstr ""
@@ -2133,27 +2133,27 @@ msgstr ""
 msgid "HR"
 msgstr ""
 
-#: lib/firmowid_web/landing/components/faq.ex:113
+#: lib/firmowid_web/landing/components/faq.ex:118
 #, elixir-autogen, elixir-format
 msgid "How do additional charges work?"
 msgstr ""
 
-#: lib/firmowid_web/landing/components/sections.ex:575
+#: lib/firmowid_web/landing/components/sections.ex:631
 #, elixir-autogen, elixir-format
 msgid "I prepared the invoice for Północny Kod sp. z o.o. for PLN 26,568.00 gross. Check the preview and confirm - only then does it reach KSeF."
 msgstr ""
 
-#: lib/firmowid_web/landing/components/sections.ex:234
+#: lib/firmowid_web/landing/components/sections.ex:252
 #, elixir-autogen, elixir-format
 msgid "Illustrative product preview"
 msgstr ""
 
-#: lib/firmowid_web/landing/components/pricing.ex:153
+#: lib/firmowid_web/landing/components/pricing.ex:186
 #, elixir-autogen, elixir-format
 msgid "Included"
 msgstr ""
 
-#: lib/firmowid_web/landing/components/sections.ex:725
+#: lib/firmowid_web/landing/components/sections.ex:800
 #, elixir-autogen, elixir-format
 msgid "Install on your own server and pay no subscription."
 msgstr ""
@@ -2178,32 +2178,32 @@ msgstr ""
 msgid "Invoices appear in KSeF and you do not even know"
 msgstr ""
 
-#: lib/firmowid_web/landing/components/sections.ex:721
+#: lib/firmowid_web/landing/components/sections.ex:796
 #, elixir-autogen, elixir-format
 msgid "Invoices, bank accounts and users without plan limits."
 msgstr ""
 
-#: lib/firmowid_web/landing/views/index.ex:88
+#: lib/firmowid_web/landing/views/index.ex:97
 #, elixir-autogen, elixir-format
 msgid "Invoices, transaction matching, time tracking, leave and business trips in one place."
 msgstr ""
 
-#: lib/firmowid_web/landing/components/sections.ex:571
+#: lib/firmowid_web/landing/components/sections.ex:625
 #, elixir-autogen, elixir-format
 msgid "Issue an invoice for Północny Kod: 120 h at PLN 180 net."
 msgstr ""
 
-#: lib/firmowid_web/landing/components/sections.ex:507
+#: lib/firmowid_web/landing/components/sections.ex:557
 #, elixir-autogen, elixir-format
 msgid "Issuing invoices - with a preview and KSeF submission"
 msgstr ""
 
-#: lib/firmowid_web/landing/components/pricing.ex:140
+#: lib/firmowid_web/landing/components/pricing.ex:169
 #, elixir-autogen, elixir-format
 msgid "Key differences"
 msgstr ""
 
-#: lib/firmowid_web/landing/components/sections.ex:323
+#: lib/firmowid_web/landing/components/sections.ex:364
 #, elixir-autogen, elixir-format
 msgid "Leave requests to approve"
 msgstr ""
@@ -2219,19 +2219,19 @@ msgstr ""
 msgid "Leave, business trips and team documents in one place."
 msgstr ""
 
-#: lib/firmowid_web/landing/components/primitives.ex:32
+#: lib/firmowid_web/landing/components/primitives.ex:37
 #, elixir-autogen, elixir-format
 msgid "Main navigation"
 msgstr ""
 
-#: lib/firmowid_web/landing/components/sections.ex:284
-#: lib/firmowid_web/landing/components/sections.ex:375
-#: lib/firmowid_web/landing/components/sections.ex:399
+#: lib/firmowid_web/landing/components/sections.ex:316
+#: lib/firmowid_web/landing/components/sections.ex:423
+#: lib/firmowid_web/landing/components/sections.ex:447
 #, elixir-autogen, elixir-format
 msgid "Matched"
 msgstr ""
 
-#: lib/firmowid_web/landing/components/sections.ex:471
+#: lib/firmowid_web/landing/components/sections.ex:519
 #, elixir-autogen, elixir-format
 msgid "Medical leave"
 msgstr ""
@@ -2242,22 +2242,22 @@ msgstr ""
 msgid "Monthly, no commitment"
 msgstr ""
 
-#: lib/firmowid_web/landing/components/pricing.ex:106
+#: lib/firmowid_web/landing/components/pricing.ex:124
 #, elixir-autogen, elixir-format
 msgid "Most popular"
 msgstr ""
 
-#: lib/firmowid_web/landing/components/pricing.ex:129
+#: lib/firmowid_web/landing/components/pricing.ex:154
 #, elixir-autogen, elixir-format
 msgid "Net prices with annual billing (−20%)."
 msgstr ""
 
-#: lib/firmowid_web/landing/components/pricing.ex:130
+#: lib/firmowid_web/landing/components/pricing.ex:155
 #, elixir-autogen, elixir-format
 msgid "Net prices. Save 20% with annual billing."
 msgstr ""
 
-#: lib/firmowid_web/landing/components/sections.ex:598
+#: lib/firmowid_web/landing/components/sections.ex:654
 #, elixir-autogen, elixir-format
 msgid "Net value"
 msgstr ""
@@ -2267,27 +2267,27 @@ msgstr ""
 msgid "No card, no trial period"
 msgstr ""
 
-#: lib/firmowid_web/landing/components/sections.ex:617
+#: lib/firmowid_web/landing/components/sections.ex:679
 #, elixir-autogen, elixir-format
 msgid "No document has been issued yet. Check the preview before confirming."
 msgstr ""
 
-#: lib/firmowid_web/landing/components/sections.ex:724
+#: lib/firmowid_web/landing/components/sections.ex:799
 #, elixir-autogen, elixir-format
 msgid "No fees"
 msgstr ""
 
-#: lib/firmowid_web/landing/components/sections.ex:720
+#: lib/firmowid_web/landing/components/sections.ex:795
 #, elixir-autogen, elixir-format
 msgid "No limits"
 msgstr ""
 
-#: lib/firmowid_web/landing/components/pricing.ex:153
+#: lib/firmowid_web/landing/components/pricing.ex:186
 #, elixir-autogen, elixir-format
 msgid "Not included"
 msgstr ""
 
-#: lib/firmowid_web/landing/components/sections.ex:702
+#: lib/firmowid_web/landing/components/sections.ex:773
 #, elixir-autogen, elixir-format
 msgid "Open source"
 msgstr ""
@@ -2302,73 +2302,73 @@ msgstr ""
 msgid "PLN 276 per year (save PLN 72)"
 msgstr ""
 
-#: lib/firmowid_web/landing/components/pricing.ex:161
+#: lib/firmowid_web/landing/components/pricing.ex:194
 #, elixir-autogen, elixir-format
 msgid "Paid features free until the end of next month. No card required."
 msgstr ""
 
-#: lib/firmowid_web/landing/components/sections.ex:611
+#: lib/firmowid_web/landing/components/sections.ex:668
 #, elixir-autogen, elixir-format
 msgid "Payment"
 msgstr ""
 
-#: lib/firmowid_web/landing/components/sections.ex:326
+#: lib/firmowid_web/landing/components/sections.ex:367
 #, elixir-autogen, elixir-format
 msgid "Pending"
 msgstr ""
 
-#: lib/firmowid_web/landing/components/sections.ex:762
+#: lib/firmowid_web/landing/components/sections.ex:839
 #, elixir-autogen, elixir-format
 msgid "Portrait of %{name}"
 msgstr ""
 
-#: lib/firmowid_web/landing/components/sections.ex:592
+#: lib/firmowid_web/landing/components/sections.ex:648
 #, elixir-autogen, elixir-format
 msgid "Programming services"
 msgstr ""
 
-#: lib/firmowid_web/landing/components/sections.ex:516
+#: lib/firmowid_web/landing/components/sections.ex:566
 #, elixir-autogen, elixir-format
 msgid "Reading sales and cost invoices"
 msgstr ""
 
-#: lib/firmowid_web/landing/components/sections.ex:280
-#: lib/firmowid_web/landing/components/sections.ex:296
+#: lib/firmowid_web/landing/components/sections.ex:311
+#: lib/firmowid_web/landing/components/sections.ex:331
 #, elixir-autogen, elixir-format
 msgid "See all"
 msgstr ""
 
-#: lib/firmowid_web/landing/components/sections.ex:587
+#: lib/firmowid_web/landing/components/sections.ex:643
 #, elixir-autogen, elixir-format
 msgid "Seller"
 msgstr ""
 
-#: lib/firmowid_web/landing/components/sections.ex:367
+#: lib/firmowid_web/landing/components/sections.ex:415
 #, elixir-autogen, elixir-format
 msgid "Sending"
 msgstr ""
 
-#: lib/firmowid_web/landing/components/sections.ex:319
+#: lib/firmowid_web/landing/components/sections.ex:358
 #, elixir-autogen, elixir-format
 msgid "Start"
 msgstr ""
 
-#: lib/firmowid_web/landing/components/primitives.ex:153
+#: lib/firmowid_web/landing/components/primitives.ex:195
 #, elixir-autogen, elixir-format
 msgid "Start with the free plan. No card. No commitment. If the software is not for you, delete your account with one click."
 msgstr ""
 
-#: lib/firmowid_web/landing/components/sections.ex:240
+#: lib/firmowid_web/landing/components/sections.ex:258
 #, elixir-autogen, elixir-format
 msgid "Status"
 msgstr ""
 
-#: lib/firmowid_web/landing/components/sections.ex:729
+#: lib/firmowid_web/landing/components/sections.ex:804
 #, elixir-autogen, elixir-format
 msgid "The code is public, your data stays with you. AGPL-3.0 license."
 msgstr ""
 
-#: lib/firmowid_web/landing/components/faq.ex:115
+#: lib/firmowid_web/landing/components/faq.ex:120
 #, elixir-autogen, elixir-format
 msgid "There are no additional charges for invoices or KSeF - in every plan, including Free, they are unlimited. Only the number of bank accounts (1 / 3 / unlimited) and users (2 / 5 / unlimited) depends on your plan. Need more? Move to a higher plan, with no per-account charges."
 msgstr ""
@@ -2383,12 +2383,12 @@ msgstr ""
 msgid "To find out about a new invoice, you have to log in to KSeF. Firmowid downloads documents continuously, and paid plans email you as soon as a new invoice arrives."
 msgstr ""
 
-#: lib/firmowid_web/landing/components/sections.ex:302
+#: lib/firmowid_web/landing/components/sections.ex:337
 #, elixir-autogen, elixir-format
 msgid "Today's sessions"
 msgstr ""
 
-#: lib/firmowid_web/landing/components/sections.ex:606
+#: lib/firmowid_web/landing/components/sections.ex:662
 #, elixir-autogen, elixir-format
 msgid "Total"
 msgstr ""
@@ -2398,7 +2398,7 @@ msgstr ""
 msgid "Tracked hours ready for payroll"
 msgstr ""
 
-#: lib/firmowid_web/landing/components/sections.ex:263
+#: lib/firmowid_web/landing/components/sections.ex:289
 #, elixir-autogen, elixir-format
 msgid "Transactions to match"
 msgstr ""
@@ -2409,23 +2409,23 @@ msgstr ""
 msgid "Try for free"
 msgstr ""
 
-#: lib/firmowid_web/landing/components/primitives.ex:57
+#: lib/firmowid_web/landing/components/primitives.ex:73
 #, elixir-autogen, elixir-format
 msgid "Try it"
 msgstr ""
 
-#: lib/firmowid_web/landing/components/sections.ex:359
-#: lib/firmowid_web/landing/components/sections.ex:391
+#: lib/firmowid_web/landing/components/sections.ex:407
+#: lib/firmowid_web/landing/components/sections.ex:439
 #, elixir-autogen, elixir-format
 msgid "Unmatched"
 msgstr ""
 
-#: lib/firmowid_web/landing/components/sections.ex:465
+#: lib/firmowid_web/landing/components/sections.ex:513
 #, elixir-autogen, elixir-format
 msgid "Unpaid leave"
 msgstr ""
 
-#: lib/firmowid_web/landing/components/sections.ex:331
+#: lib/firmowid_web/landing/components/sections.ex:372
 #, elixir-autogen, elixir-format
 msgid "Used this year:"
 msgstr ""
@@ -2435,87 +2435,87 @@ msgstr ""
 msgid "Users"
 msgstr ""
 
-#: lib/firmowid_web/landing/components/sections.ex:573
+#: lib/firmowid_web/landing/components/sections.ex:628
 #, elixir-autogen, elixir-format
 msgid "Using the Firmowid app"
 msgstr ""
 
-#: lib/firmowid_web/landing/components/sections.ex:602
+#: lib/firmowid_web/landing/components/sections.ex:658
 #, elixir-autogen, elixir-format
 msgid "VAT %{rate}%"
 msgstr ""
 
-#: lib/firmowid_web/landing/components/sections.ex:584
+#: lib/firmowid_web/landing/components/sections.ex:640
 #, elixir-autogen, elixir-format
 msgid "VAT invoice %{number}"
 msgstr ""
 
-#: lib/firmowid_web/landing/components/sections.ex:709
+#: lib/firmowid_web/landing/components/sections.ex:781
 #, elixir-autogen, elixir-format
 msgid "View on GitHub"
 msgstr ""
 
-#: lib/firmowid_web/landing/components/sections.ex:311
+#: lib/firmowid_web/landing/components/sections.ex:349
 #, elixir-autogen, elixir-format
 msgid "Wednesday"
 msgstr ""
 
-#: lib/firmowid_web/landing/components/sections.ex:316
+#: lib/firmowid_web/landing/components/sections.ex:355
 #, elixir-autogen, elixir-format
 msgid "Working from home"
 msgstr ""
 
-#: lib/firmowid_web/landing/components/sections.ex:344
+#: lib/firmowid_web/landing/components/sections.ex:392
 #, elixir-autogen, elixir-format
 msgid "Write on Slack"
 msgstr ""
 
-#: lib/firmowid_web/landing/components/faq.ex:33
+#: lib/firmowid_web/landing/components/faq.ex:35
 #, elixir-autogen, elixir-format
 msgid "Write to us."
 msgstr ""
 
-#: lib/firmowid_web/landing/components/sections.ex:500
+#: lib/firmowid_web/landing/components/sections.ex:550
 #, elixir-autogen, elixir-format
 msgid "Write what you need - Firmowid will issue an invoice, create a correction or find any document. Before anything reaches KSeF, you will see a preview and confirm it yourself."
 msgstr ""
 
-#: lib/firmowid_web/landing/components/faq.ex:123
+#: lib/firmowid_web/landing/components/faq.ex:128
 #, elixir-autogen, elixir-format
 msgid "Yes, in every plan, including Free. KSeF invoices arrive automatically, and you simply drag invoices from outside KSeF (e.g. foreign invoices) into Firmowid. We match them with transfers just like the rest."
 msgstr ""
 
-#: lib/firmowid_web/landing/components/sections.ex:703
+#: lib/firmowid_web/landing/components/sections.ex:775
 #, elixir-autogen, elixir-format
 msgid "Your data on your server."
 msgstr ""
 
-#: lib/firmowid_web/landing/components/sections.ex:541
+#: lib/firmowid_web/landing/components/sections.ex:595
 #, elixir-autogen, elixir-format
 msgid "app"
 msgstr ""
 
-#: lib/firmowid_web/landing/components/sections.ex:546
+#: lib/firmowid_web/landing/components/sections.ex:600
 #, elixir-autogen, elixir-format
 msgid "connector"
 msgstr ""
 
-#: lib/firmowid_web/landing/components/sections.ex:398
+#: lib/firmowid_web/landing/components/sections.ex:446
 #, elixir-autogen, elixir-format
 msgid "data protection"
 msgstr ""
 
-#: lib/firmowid_web/landing/components/pricing.ex:110
+#: lib/firmowid_web/landing/components/pricing.ex:131
 #, elixir-autogen, elixir-format
 msgid "forever"
 msgstr ""
 
-#: lib/firmowid_web/landing/components/sections.ex:390
+#: lib/firmowid_web/landing/components/sections.ex:438
 #, elixir-autogen, elixir-format
 msgid "hosting services"
 msgstr ""
 
-#: lib/firmowid_web/landing/components/sections.ex:318
+#: lib/firmowid_web/landing/components/sections.ex:357
 #, elixir-autogen, elixir-format
 msgid "in October"
 msgstr ""
@@ -2525,17 +2525,17 @@ msgstr ""
 msgid "leave and business trips"
 msgstr ""
 
-#: lib/firmowid_web/landing/components/sections.ex:358
+#: lib/firmowid_web/landing/components/sections.ex:406
 #, elixir-autogen, elixir-format
 msgid "programming services"
 msgstr ""
 
-#: lib/firmowid_web/landing/components/sections.ex:366
+#: lib/firmowid_web/landing/components/sections.ex:414
 #, elixir-autogen, elixir-format
 msgid "security audit"
 msgstr ""
 
-#: lib/firmowid_web/landing/components/sections.ex:382
+#: lib/firmowid_web/landing/components/sections.ex:430
 #, elixir-autogen, elixir-format
 msgid "software license"
 msgstr ""
@@ -2553,20 +2553,20 @@ msgstr ""
 msgid "up to 3 projects"
 msgstr ""
 
-#: lib/firmowid_web/landing/components/sections.ex:374
+#: lib/firmowid_web/landing/components/sections.ex:422
 #, elixir-autogen, elixir-format
 msgid "website project"
 msgstr ""
 
-#: lib/firmowid_web/landing/components/sections.ex:271
-#: lib/firmowid_web/landing/components/sections.ex:289
+#: lib/firmowid_web/landing/components/sections.ex:301
+#: lib/firmowid_web/landing/components/sections.ex:324
 #, elixir-autogen, elixir-format
 msgctxt "landing bank amount"
 msgid "%{amount} PLN"
 msgstr ""
 
-#: lib/firmowid_web/landing/components/pricing.ex:109
-#: lib/firmowid_web/landing/components/pricing.ex:136
+#: lib/firmowid_web/landing/components/pricing.ex:130
+#: lib/firmowid_web/landing/components/pricing.ex:164
 #, elixir-autogen, elixir-format
 msgctxt "landing card price"
 msgid "%{amount} PLN"
@@ -2641,9 +2641,9 @@ msgstr ""
 msgid "Worth your attention"
 msgstr ""
 
-#: lib/firmowid_web/landing/components/sections.ex:461
-#: lib/firmowid_web/landing/components/sections.ex:467
-#: lib/firmowid_web/landing/components/sections.ex:479
+#: lib/firmowid_web/landing/components/sections.ex:509
+#: lib/firmowid_web/landing/components/sections.ex:515
+#: lib/firmowid_web/landing/components/sections.ex:527
 #, elixir-autogen, elixir-format
 msgid "Approved"
 msgstr ""
@@ -2653,12 +2653,12 @@ msgstr ""
 msgid "Only business buyers with a tax ID are supported here. Use the Firmowid web app for invoices to private individuals."
 msgstr ""
 
-#: lib/firmowid_web/landing/components/sections.ex:473
+#: lib/firmowid_web/landing/components/sections.ex:521
 #, elixir-autogen, elixir-format
 msgid "Rejected"
 msgstr ""
 
-#: lib/firmowid_web/landing/components/sections.ex:311
+#: lib/firmowid_web/landing/components/sections.ex:349
 #, elixir-autogen, elixir-format
 msgid "Tuesday"
 msgstr ""

@@ -22,7 +22,10 @@ defmodule FirmowidWeb.Landing.Components.LegalPage do
 
   def legal_page(assigns) do
     ~H"""
-    <div id="top" class="landing-page flex min-h-screen flex-col bg-grey-100">
+    <div
+      id="top"
+      class="flex min-h-screen flex-col bg-grey-100 text-[#0f0f0f] [--landing-accent:#8b3f13] [--landing-beige:#f0eae6] [--landing-line:#e6d7ce] [--landing-nav-height:64px] [background:var(--color-grey-100)] motion-reduce:**:animate-none! motion-reduce:**:transition-none! lg:[--landing-nav-height:96px] motion-reduce:[&_*::after]:animate-none! motion-reduce:[&_*::after]:transition-none! motion-reduce:[&_*::before]:animate-none! motion-reduce:[&_*::before]:transition-none! [&_a:focus-visible]:[outline:2px_solid_var(--color-orange-600)] [&_a:focus-visible]:outline-offset-4 [&_button:focus-visible]:[outline:2px_solid_var(--color-orange-600)] [&_button:focus-visible]:outline-offset-4 **:[[id]]:scroll-mt-[calc(var(--landing-nav-height)+24px)]"
+    >
       <.landing_navbar />
 
       <article class={@class}>

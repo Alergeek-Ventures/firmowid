@@ -146,10 +146,16 @@ defmodule FirmowidWeb.Landing.Components.Sections do
     assigns = assign(assigns, :problems, localize(@problems, [:title, :description]))
 
     ~H"""
-    <section id="dla-kogo" data-landing-dark-surface class="landing-dark landing-section">
-      <div class="landing-container">
-        <div class="landing-section__intro">
-          <p class="landing-eyebrow">{gettext("Who it is for")}</p>
+    <section
+      id="dla-kogo"
+      data-landing-dark-surface
+      class="bg-[#0f0f0f] py-18 text-white lg:py-26 [&_.landing-eyebrow]:text-[#d2936d] [&_.landing-section-intro_>_p:not(.landing-eyebrow)]:text-grey-300 [&_article_p]:text-grey-300"
+    >
+      <div class="mx-auto w-[calc(100%-32px)] max-w-[1139px] lg:w-[calc(100%-64px)]">
+        <div class="landing-section-intro max-w-180 lg:max-w-170 [&_>_p:not(.landing-eyebrow,.landing-assistants-soon,.landing-assistants-footnote)]:mt-6 [&_>_p:not(.landing-eyebrow,.landing-assistants-soon,.landing-assistants-footnote)]:text-h5 [&_>_p:not(.landing-eyebrow,.landing-assistants-soon,.landing-assistants-footnote)]:leading-[27px] [&_>_p:not(.landing-eyebrow,.landing-assistants-soon,.landing-assistants-footnote)]:text-darkGrey lg:[&_>_p:not(.landing-eyebrow,.landing-assistants-soon,.landing-assistants-footnote)]:max-w-170 lg:[&_>_p:not(.landing-eyebrow,.landing-assistants-soon,.landing-assistants-footnote)]:text-h5 [&_h2]:text-[36px] [&_h2]:leading-[1.1] [&_h2]:font-bold [&_h2]:tracking-[-0.03em] lg:[&_h2]:text-[48px] lg:[&_h2]:leading-[1.04] lg:[&.text-center]:mx-auto lg:[&.text-center_>_p:not(.landing-eyebrow)]:mx-auto">
+          <p class="landing-eyebrow mb-4 text-xs font-bold tracking-[0.08em] text-(--landing-accent) uppercase">
+            {gettext("Who it is for")}
+          </p>
           <h2>
             {gettext("You run a business.")}<br class="hidden lg:block" />
             {gettext("You do not want to manage spreadsheets.")}
@@ -161,9 +167,11 @@ defmodule FirmowidWeb.Landing.Components.Sections do
           </p>
         </div>
 
-        <div class="landing-problems">
+        <div class="mt-10 grid gap-9 pt-9 [border-top:1px_solid_var(--color-grey-800)] lg:mt-12 lg:grid-cols-3 lg:gap-10 lg:pt-10 [&_.landing-eyebrow]:mb-5 [&_h3]:mb-5 [&_h3]:text-[22px] [&_h3]:leading-[1.3] [&_h3]:font-semibold [&_h3]:tracking-[-0.01em] lg:[&_h3]:text-[24px] [&_p]:text-[15px] [&_p]:leading-[1.4]">
           <article :for={{problem, index} <- Enum.with_index(@problems, 1)}>
-            <p class="landing-eyebrow">0{index}</p>
+            <p class="landing-eyebrow mb-4 text-xs font-bold tracking-[0.08em] text-(--landing-accent) uppercase">
+              0{index}
+            </p>
             <h3>{problem.title}</h3>
             <p>{problem.description}</p>
           </article>
@@ -181,10 +189,12 @@ defmodule FirmowidWeb.Landing.Components.Sections do
     assigns = assign(assigns, :features, localize_features(@features))
 
     ~H"""
-    <section id="funkcje" class="landing-section">
-      <div class="landing-container">
-        <div class="landing-section__intro">
-          <p class="landing-eyebrow">{gettext("What Firmowid can do")}</p>
+    <section id="funkcje" class="py-18 lg:py-26">
+      <div class="mx-auto w-[calc(100%-32px)] max-w-[1139px] lg:w-[calc(100%-64px)]">
+        <div class="landing-section-intro max-w-180 lg:max-w-[1139px] [&_>_p:not(.landing-eyebrow,.landing-assistants-soon,.landing-assistants-footnote)]:mt-6 [&_>_p:not(.landing-eyebrow,.landing-assistants-soon,.landing-assistants-footnote)]:text-h5 [&_>_p:not(.landing-eyebrow,.landing-assistants-soon,.landing-assistants-footnote)]:leading-[27px] [&_>_p:not(.landing-eyebrow,.landing-assistants-soon,.landing-assistants-footnote)]:text-darkGrey lg:[&_>_p:not(.landing-eyebrow,.landing-assistants-soon,.landing-assistants-footnote)]:max-w-115 lg:[&_>_p:not(.landing-eyebrow,.landing-assistants-soon,.landing-assistants-footnote)]:text-h5 [&_h2]:text-[36px] [&_h2]:leading-[1.1] [&_h2]:font-bold [&_h2]:tracking-[-0.03em] lg:[&_h2]:text-[48px] lg:[&_h2]:leading-[1.04] lg:[&.text-center]:mx-auto lg:[&.text-center]:max-w-140 lg:[&.text-center_>_p:not(.landing-eyebrow)]:mx-auto">
+          <p class="landing-eyebrow mb-4 text-xs font-bold tracking-[0.08em] text-(--landing-accent) uppercase">
+            {gettext("What Firmowid can do")}
+          </p>
           <h2>
             {gettext("Four things your business needs.")}
             {gettext("In one place.")}
@@ -196,13 +206,18 @@ defmodule FirmowidWeb.Landing.Components.Sections do
           </p>
         </div>
 
-        <article :for={feature <- @features} class="landing-feature">
+        <article
+          :for={feature <- @features}
+          class="landing-feature mt-8 grid gap-6 rounded-[16px] bg-white p-6 [border:1px_solid_#e3b79b] lg:mt-20 lg:grid-cols-2 lg:items-center lg:gap-20 lg:bg-transparent lg:p-0 lg:[border:0] lg:last:pb-0 [&_h3]:mt-4 [&_h3]:mb-5 [&_h3]:text-lg [&_h3]:leading-[1.15] [&_h3]:font-bold [&_h3]:tracking-[-0.01em] lg:[&_h3]:mt-4 lg:[&_h3]:text-[36px] lg:[&_h3]:leading-[1.05] lg:[&_li]:flex lg:[&_li]:items-baseline lg:[&_li]:gap-3 lg:[&_li_>_span]:flex-none lg:[&_li_>_span]:text-h5 lg:[&_li_>_span]:text-(--landing-accent) [&_ul]:hidden lg:[&_ul]:mt-7 lg:[&_ul]:grid lg:[&_ul]:gap-3.5 lg:[&_ul]:text-base/normal lg:[&+.landing-feature]:mt-16 lg:[&+.landing-feature]:pt-16 lg:[&+.landing-feature]:[border-top:1px_solid_#ece1d8] lg:[&:nth-of-type(even)_>_:first-child]:order-2"
+        >
           <div>
-            <p class="landing-feature__tags">
+            <p class="flex flex-wrap gap-2.5 text-xs font-bold tracking-[0.06em] text-(--landing-accent) uppercase lg:flex [&_span]:inline-block [&_span]:p-0 [&_span]:text-[13px] [&_span]:font-semibold [&_span]:tracking-[0.08em] [&_span]:uppercase lg:[&_span]:rounded-full lg:[&_span]:bg-[#f7e0d3] lg:[&_span]:p-[4px_16px] lg:[&_span]:font-normal lg:[&_span]:tracking-normal lg:[&_span]:normal-case [&_span+span]:[border:0] [&_span+span::before]:mr-2.5 [&_span+span::before]:[content:'·'] lg:[&_span+span::before]:content-none">
               <span :for={tag <- feature.tags}>{tag}</span>
             </p>
             <h3>{feature.title}</h3>
-            <p class="landing-feature__description">{feature.description}</p>
+            <p class="text-[17px] leading-[27px] text-darkGrey lg:text-h5">
+              {feature.description}
+            </p>
             <ul>
               <li :for={bullet <- feature.bullets}>
                 <span aria-hidden="true">→</span>{bullet}
@@ -224,50 +239,65 @@ defmodule FirmowidWeb.Landing.Components.Sections do
     ~H"""
     <div
       class={[
-        "landing-preview",
-        @visual == :invoices && "landing-preview--invoices",
-        @visual == :banking && "landing-preview--banking",
-        @visual == :time && "landing-preview--time",
-        @visual == :team && "landing-preview--team"
+        "@container relative min-w-0 rounded-[16px] bg-[#f5f5f5] text-caps-sm leading-[1.4] shadow-[0_14px_34px_rgb(80_50_30/8%)] [border:1px_solid_var(--landing-line)] lg:p-[26px_22px] lg:text-xs [&_h4]:mb-4.5 [&_h4]:text-sm [&_h4]:font-semibold lg:[&_h4]:text-[15px]",
+        @visual == :invoices &&
+          "p-4 [&_.landing-preview-amount]:size-full [&_.landing-preview-amount]:rounded-none [&_.landing-preview-amount]:p-[2.2cqw_1cqw] [&_.landing-preview-amount]:text-center [&_.landing-preview-amount]:text-[1.5cqw] [&_.landing-preview-amount]:text-(--landing-accent) [&_.landing-preview-amount--teal]:text-turquoise-700 [&_.landing-preview-head]:bg-transparent [&_.landing-preview-head]:p-3 [&_.landing-preview-head]:text-[1.4cqw] [&_.landing-preview-head]:font-normal [&_.landing-preview-row]:grid [&_.landing-preview-row]:grid-cols-[minmax(0,1fr)_18%_22%] [&_.landing-preview-row]:gap-0 [&_.landing-preview-row]:rounded-none [&_.landing-preview-row]:bg-white [&_.landing-preview-row]:p-0 [&_.landing-preview-row]:text-[1.5cqw] [&_.landing-preview-status]:mx-1 [&_.landing-preview-status]:bg-[#f5f5f5] [&_.landing-preview-status]:p-[3px] [&_.landing-preview-status]:text-center [&_.landing-preview-status]:text-[1.1cqw] [&_.landing-preview-status]:leading-none [&_.landing-preview-status]:whitespace-nowrap [&_.landing-preview-status]:[border:0] [&_.landing-preview-status.landing-preview-status--paid]:bg-green-100",
+        @visual == :banking && "p-4",
+        @visual == :time &&
+          "aspect-528/400 p-[24px_16px] [&_.landing-preview-caption]:mt-[8cqw] [&_.landing-preview-caption]:text-left [&_.landing-preview-caption]:text-[2.3cqw] [&_.landing-preview-caption]:text-grey-600 [&_.landing-preview-head]:mb-[4cqw] [&_.landing-preview-head]:bg-transparent [&_.landing-preview-head]:p-0 [&_.landing-preview-head]:text-[2.4cqw] [&_.landing-preview-head]:text-(--landing-accent) [&_.landing-preview-head_>_span:last-child]:bg-[#e6d7ce] [&_.landing-preview-head_>_span:last-child]:text-[3.5cqw] [&_.landing-preview-overlay]:right-[-4%] [&_.landing-preview-overlay]:bottom-[-7%] [&_.landing-preview-overlay]:left-auto [&_.landing-preview-overlay]:flex [&_.landing-preview-overlay]:w-[54%] [&_.landing-preview-overlay]:flex-col [&_.landing-preview-overlay]:items-stretch [&_.landing-preview-overlay]:gap-[1.5cqw] [&_.landing-preview-overlay]:p-[4cqw] [&_.landing-preview-overlay]:[background:#f5f5f5_url('/images/figurine_timeracker.png')_left_bottom/40%_auto_no-repeat] [&_.landing-preview-overlay_small]:text-center [&_.landing-preview-overlay_small]:text-[1.5cqw] [&_.landing-preview-overlay_small]:text-(--landing-accent) [&_.landing-preview-overlay_strong]:pt-[3cqw] [&_.landing-preview-overlay_strong]:text-center [&_.landing-preview-overlay_strong]:text-[2.7cqw] [&_.landing-preview-overlay_strong]:text-(--landing-accent) [&_.landing-preview-row]:rounded-none [&_.landing-preview-row]:bg-transparent [&_.landing-preview-row]:p-[1.8cqw_0] [&_.landing-preview-row]:text-[2.4cqw] [&_.landing-preview-row]:[border-bottom:1px_solid_#eee] [&_.landing-preview-row:nth-of-type(3)]:mt-[8cqw]",
+        @visual == :team &&
+          "aspect-528/400 p-[20px_16px_60px] [&_.landing-preview-avatar]:size-[10cqw] [&_.landing-preview-avatar]:text-[3cqw] [&_.landing-preview-caption]:m-0 [&_.landing-preview-caption]:bg-white [&_.landing-preview-caption]:p-[2cqw] [&_.landing-preview-caption]:text-left [&_.landing-preview-caption]:text-[1.5cqw] [&_.landing-preview-caption]:text-grey-600 [&_.landing-preview-head]:m-0 [&_.landing-preview-head]:rounded-[4px_4px_0_0] [&_.landing-preview-head]:bg-white [&_.landing-preview-head]:p-[2cqw] [&_.landing-preview-head]:text-[1.6cqw] [&_.landing-preview-overlay]:right-auto [&_.landing-preview-overlay]:bottom-[-6%] [&_.landing-preview-overlay]:left-[-4%] [&_.landing-preview-overlay]:w-[55%] [&_.landing-preview-overlay]:gap-[2cqw] [&_.landing-preview-overlay]:p-[2.5cqw] [&_.landing-preview-pending.landing-preview-row]:mb-[3cqw] [&_.landing-preview-pending.landing-preview-row]:pb-[3cqw] [&_.landing-preview-row]:m-0 [&_.landing-preview-row]:min-h-[5.6cqw] [&_.landing-preview-row]:rounded-none [&_.landing-preview-row]:bg-white [&_.landing-preview-row]:p-[1.3cqw_2cqw] [&_.landing-preview-row]:text-[1.7cqw] [&_.landing-preview-row_small]:text-[1.5cqw] [&_.landing-preview-row+.landing-preview-row]:mt-0 [&_.landing-preview-status]:rounded-full [&_.landing-preview-status]:p-[0.5cqw_2cqw] [&_.landing-preview-status]:text-[1.5cqw] [&_.landing-preview-status]:[border:0]"
       ]}
       role="img"
       aria-label={gettext("Illustrative product preview")}
     >
       <%= case @visual do %>
         <% :invoices -> %>
-          <div class="landing-preview__head">
+          <div class="landing-preview-head mb-1 flex items-center justify-between gap-2 rounded-[6px] bg-[#eadcd4] p-[8px_12px] font-semibold [&_span:last-child]:rounded-[4px] [&_span:last-child]:bg-white [&_span:last-child]:p-[2px_8px] [&_span:last-child]:text-[10px]">
             <span>{gettext("Counterparty")}</span>
             <span>{gettext("Status")}</span>
           </div>
-          <div :for={row <- contractor_invoices()} class="landing-preview__row">
-            <span class="landing-preview__contractor"><img
+          <div
+            :for={row <- contractor_invoices()}
+            class="landing-preview-row flex flex-wrap items-center gap-1.5 rounded-[8px] bg-[#faf7f5] p-3 text-[10px] lg:text-caps-sm [&_small]:text-[9px] [&_small]:font-normal [&_small]:text-darkGrey lg:[&_small]:text-[10px] [&+.landing-preview-row]:mt-1.5"
+          >
+            <span class="landing-preview-contractor flex items-center gap-[1cqw] overflow-hidden p-[1cqw] whitespace-nowrap [&_img]:size-[4cqw] [&_img]:shrink-0 [&_img]:object-contain [&_img]:[border:1px_solid_#ddd] [&_small]:overflow-hidden [&_small]:text-[1.4cqw] [&_small]:text-ellipsis [&_strong]:shrink-0 [&_strong]:font-semibold [&.landing-preview-contractor_small]:text-[1.4cqw] lg:[&.landing-preview-contractor_small]:text-[10px]"><img
               src={~p"/images/ksef.png"}
               alt=""
               width="24"
               height="24"
             /><strong>{row.name}</strong> <small>{row.note}</small></span>
-            <span class={["landing-preview__status", row.paid && "landing-preview__status--paid"]}>
+            <span class={[
+              "landing-preview-status ml-auto rounded-[4px] bg-white p-[3px_8px] text-[8px] uppercase [border:1px_solid_var(--landing-line)] lg:text-[10px]",
+              row.paid &&
+                "landing-preview-status--paid border-[#c6dcbf] [&.landing-preview-status--paid]:bg-[#dcecd8]"
+            ]}>
               {row.status}
             </span>
             <span class={[
-              "landing-preview__amount",
-              row.tone == :teal && "landing-preview__amount--teal"
+              "landing-preview-amount ml-auto rounded-[4px] bg-[#eadcd4] p-[8px_12px] font-semibold whitespace-nowrap",
+              row.tone == :teal &&
+                "landing-preview-amount--teal [&.landing-preview-amount--teal]:bg-[#cfe6e6]"
             ]}>
               {gettext("%{amount} PLN", amount: row.amount)}
             </span>
           </div>
         <% :banking -> %>
-          <div class="landing-preview__bank-columns">
+          <div class="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-[3cqw] [&_.landing-preview-caption]:mt-auto [&_.landing-preview-caption]:pt-[3cqw] [&_.landing-preview-caption]:pb-[1cqw] [&_.landing-preview-caption]:text-[2.3cqw] [&_.landing-preview-head]:gap-[3px] [&_.landing-preview-head]:p-[2cqw] [&_.landing-preview-head]:text-[2.2cqw] [&_.landing-preview-head_>_span:last-child]:p-[1cqw_2cqw] [&_.landing-preview-head_>_span:last-child]:text-[2cqw] [&_.landing-preview-match]:mt-0 [&_.landing-preview-match]:p-[1cqw] [&_.landing-preview-match]:text-[1.5cqw] [&_.landing-preview-row]:min-h-[10cqw] [&_.landing-preview-row]:gap-[1.2cqw] [&_.landing-preview-row]:bg-white [&_.landing-preview-row]:p-[1.6cqw] [&_.landing-preview-row]:text-[1.8cqw] [&_.landing-preview-row_>_span:first-child]:min-w-0 [&_.landing-preview-row_>_span:first-child]:flex-1 [&_.landing-preview-row_>_span:first-child]:truncate [&_.landing-preview-row_img]:ml-auto [&_.landing-preview-row_img]:h-[2.4cqw] [&_.landing-preview-row_img]:w-[4cqw] [&_.landing-preview-row_img]:object-contain [&_.landing-preview-row_small]:w-[65%] [&_.landing-preview-row_small]:text-[1.5cqw] [&_.landing-preview-row_small]:text-grey-500 [&_.landing-preview-row_strong]:text-[1.8cqw] [&_.landing-preview-row_strong]:font-semibold [&_>_div]:flex [&_>_div]:flex-col [&_>_div]:rounded-[4px] [&_>_div]:bg-[#f0eae6] [&_>_div]:p-[1.6cqw] [&_>_div+div]:bg-turquoise-100">
             <div>
-              <div class="landing-preview__head">
+              <div class="landing-preview-head mb-1 flex items-center justify-between gap-2 rounded-[6px] bg-[#eadcd4] p-[8px_12px] font-semibold [&_span:last-child]:rounded-[4px] [&_span:last-child]:bg-white [&_span:last-child]:p-[2px_8px] [&_span:last-child]:text-[10px]">
                 <span>{gettext("Transactions to match")}</span>
                 <span>6</span>
               </div>
-              <div :for={row <- unmatched_transactions()} class="landing-preview__row">
+              <div
+                :for={row <- unmatched_transactions()}
+                class="landing-preview-row flex flex-wrap items-center gap-1.5 rounded-[8px] bg-[#faf7f5] p-3 text-[10px] lg:text-caps-sm [&_small]:text-[9px] [&_small]:font-normal [&_small]:text-darkGrey lg:[&_small]:text-[10px] [&+.landing-preview-row]:mt-1.5"
+              >
                 <span>{row.name}</span>
                 <strong class={[
-                  "landing-preview__bank-amount",
-                  String.starts_with?(row.amount, "+") && "landing-preview__bank-amount--credit"
+                  "text-[#a22a2a]",
+                  String.starts_with?(row.amount, "+") &&
+                    "text-green-600"
                 ]}>{pgettext("landing bank amount", "%{amount} PLN", amount: row.amount)}</strong>
                 <small>{row.date}</small>
                 <img
@@ -277,69 +307,87 @@ defmodule FirmowidWeb.Landing.Components.Sections do
                   height="12"
                 />
               </div>
-              <p class="landing-preview__caption">{gettext("See all")}</p>
+              <p class="landing-preview-caption mt-4 text-center text-[10px] text-(--landing-accent)">
+                {gettext("See all")}
+              </p>
             </div>
             <div>
-              <div class="landing-preview__head landing-preview__head--matched">
+              <div class="landing-preview-head mb-1 flex items-center justify-between gap-2 rounded-[6px] bg-[#eadcd4] p-[8px_12px] font-semibold [background:var(--color-turquoise-200)] [&_span:last-child]:rounded-[4px] [&_span:last-child]:bg-white [&_span:last-child]:p-[2px_8px] [&_span:last-child]:text-[10px]">
                 <span>{gettext("Matched")}</span>
                 <span>36</span>
               </div>
-              <div :for={row <- matched_transactions()} class="landing-preview__row">
+              <div
+                :for={row <- matched_transactions()}
+                class="landing-preview-row flex flex-wrap items-center gap-1.5 rounded-[8px] bg-[#faf7f5] p-3 text-[10px] lg:text-caps-sm [&_small]:text-[9px] [&_small]:font-normal [&_small]:text-darkGrey lg:[&_small]:text-[10px] [&+.landing-preview-row]:mt-1.5"
+              >
                 <span>{row.name} <small>{row.reference}</small></span>
                 <strong>{pgettext("landing bank amount", "%{amount} PLN", amount: row.amount)}</strong>
-                <span class="landing-preview__match">
+                <span class="landing-preview-match mt-1.5 flex flex-[1_1_100%] items-center gap-1.5 rounded-[4px] bg-[#dcecd8] p-[4px_8px] text-[9px] text-greenText lg:text-[10px] [&_progress]:h-1 [&_progress]:flex-1 [&_progress]:accent-green-600">
                   {row.confidence}%
                   <progress value={row.confidence} max="100">{row.confidence}%</progress>
                 </span>
               </div>
-              <p class="landing-preview__caption">
+              <p class="landing-preview-caption mt-4 text-center text-[10px] text-(--landing-accent)">
                 {gettext("See all")}
               </p>
             </div>
           </div>
         <% :time -> %>
-          <div class="landing-preview__head">
+          <div class="landing-preview-head mb-1 flex items-center justify-between gap-2 rounded-[6px] bg-[#eadcd4] p-[8px_12px] font-semibold [&_span:last-child]:rounded-[4px] [&_span:last-child]:bg-white [&_span:last-child]:p-[2px_8px] [&_span:last-child]:text-[10px]">
             <span>{gettext("Today's sessions")}</span>
             <span>00:51</span>
           </div>
-          <div :for={row <- sessions()} class="landing-preview__row">
+          <div
+            :for={row <- sessions()}
+            class="landing-preview-row flex flex-wrap items-center gap-1.5 rounded-[8px] bg-[#faf7f5] p-3 text-[10px] lg:text-caps-sm [&_small]:text-[9px] [&_small]:font-normal [&_small]:text-darkGrey lg:[&_small]:text-[10px] [&+.landing-preview-row]:mt-1.5"
+          >
             <span>{row.name}</span>
             <span class="ml-auto">{row.project}</span>
             <span>{row.duration}</span>
           </div>
-          <p class="landing-preview__caption">
+          <p class="landing-preview-caption mt-4 text-center text-[10px] text-(--landing-accent)">
             {gettext("Tuesday")} · {gettext("Wednesday")}
           </p>
-          <div class="landing-preview__overlay">
-            <span class="landing-preview__timer-title">{gettext("Equipment testing")}</span>
-            <span class="landing-preview__timer-project">Qubiq <span aria-hidden="true">⌄</span></span>
-            <span class="landing-preview__timer-remote">◯ {gettext("Working from home")}</span>
+          <div class="landing-preview-overlay absolute right-[6%] -bottom-4.5 left-[14%] flex flex-wrap items-center gap-2.5 rounded-[12px] bg-white p-4 text-[10px] shadow-[0_12px_28px_rgb(0_0_0/12%)] [border:1px_solid_var(--landing-line)] [&_strong]:text-sm">
+            <span class="bg-[#ddd] p-[1.2cqw] text-[1.5cqw]">{gettext("Equipment testing")}</span>
+            <span class="flex justify-between bg-[#e6d7ce] p-[1.6cqw] text-[1.5cqw] text-(--landing-accent)">Qubiq
+            <span aria-hidden="true">⌄</span></span>
+            <span class="text-[1.5cqw]">◯ {gettext("Working from home")}</span>
             <strong>{gettext("16 hours 23 min")}</strong>
             <small>{gettext("in October")}</small>
-            <span class="landing-preview__timer-start">{gettext("Start")}</span>
+            <span class="self-center rounded-[3px] p-[1cqw_4cqw] text-[1.5cqw] text-white [background:var(--landing-accent)]">{gettext(
+              "Start"
+            )}</span>
           </div>
         <% :team -> %>
-          <div class="landing-preview__head">
+          <div class="landing-preview-head mb-1 flex items-center justify-between gap-2 rounded-[6px] bg-[#eadcd4] p-[8px_12px] font-semibold [&_span:last-child]:rounded-[4px] [&_span:last-child]:bg-white [&_span:last-child]:p-[2px_8px] [&_span:last-child]:text-[10px]">
             <span>{gettext("Leave requests to approve")}</span>
           </div>
-          <div class="landing-preview__pending landing-preview__row">
+          <div class="landing-preview-pending landing-preview-row flex flex-wrap items-center gap-1.5 rounded-[8px] bg-[#faf7f5] p-3 text-[10px] lg:text-caps-sm [&_>_span:last-child]:rounded-full [&_>_span:last-child]:bg-turquoise-100 [&_>_span:last-child]:p-[1cqw_3cqw] [&_>_span:last-child]:text-[1.5cqw] [&_>_span:last-child]:text-turquoise-700 [&_small]:text-[9px] [&_small]:font-normal [&_small]:text-darkGrey lg:[&_small]:text-[10px] [&+.landing-preview-row]:mt-1.5">
             <span>☼ {gettext("Annual leave")}</span><small>02–06.11.2026</small><span>{gettext(
               "Pending"
             )}</span>
           </div>
-          <p class="landing-preview__caption">
+          <p class="landing-preview-caption mt-4 text-center text-[10px] text-(--landing-accent)">
             {gettext("Used this year:")} 11 · {gettext("Available:")} 15
           </p>
-          <div :for={row <- leave_requests()} class="landing-preview__row">
+          <div
+            :for={row <- leave_requests()}
+            class="landing-preview-row flex flex-wrap items-center gap-1.5 rounded-[8px] bg-[#faf7f5] p-3 text-[10px] lg:text-caps-sm [&_small]:text-[9px] [&_small]:font-normal [&_small]:text-darkGrey lg:[&_small]:text-[10px] [&+.landing-preview-row]:mt-1.5"
+          >
             <span>{row.name}</span>
             <span class="ml-auto">{row.date}</span>
-            <span class={["landing-preview__status", row.approved && "landing-preview__status--paid"]}>
+            <span class={[
+              "landing-preview-status ml-auto rounded-[4px] bg-white p-[3px_8px] text-[8px] uppercase [border:1px_solid_var(--landing-line)] lg:text-[10px]",
+              row.approved &&
+                "landing-preview-status--paid border-[#c6dcbf] [&.landing-preview-status--paid]:bg-[#dcecd8]"
+            ]}>
               {row.status}
             </span>
           </div>
-          <div class="landing-preview__overlay">
-            <span class="landing-preview__avatar">KK</span>
-            <span class="landing-preview__contact">
+          <div class="landing-preview-overlay absolute right-[6%] -bottom-4.5 left-[14%] flex flex-wrap items-center gap-2.5 rounded-[12px] bg-white p-4 text-[10px] shadow-[0_12px_28px_rgb(0_0_0/12%)] [border:1px_solid_var(--landing-line)] [&_strong]:text-sm">
+            <span class="landing-preview-avatar grid size-8.5 place-content-center rounded-full text-xs font-bold text-white [background:var(--color-turquoise-400)]">KK</span>
+            <span class="landing-preview-contact flex min-w-0 flex-1 flex-col items-start gap-[1cqw] [&_img]:size-[3cqw] [&_small]:flex [&_small]:items-center [&_small]:gap-[1cqw] [&_small]:text-[1.7cqw] [&_strong]:whitespace-nowrap [&.landing-preview-contact_strong]:text-[2.7cqw]">
               <strong>Katarzyna Kowalska</strong>
               <small><img src={~p"/images/slack.png"} width="16" height="16" alt="Slack" />{gettext(
                 "Write on Slack"
@@ -488,12 +536,14 @@ defmodule FirmowidWeb.Landing.Components.Sections do
   @spec assistants_section(map()) :: Rendered.t()
   def assistants_section(assigns) do
     ~H"""
-    <section id="asystent" class="landing-section bg-turquoise-200">
-      <div class="landing-assistants landing-container">
-        <div class="landing-section__intro">
-          <p class="landing-eyebrow landing-eyebrow--pill">
+    <section id="asystent" class="bg-turquoise-200 py-18 lg:py-26">
+      <div class="mx-auto grid w-[calc(100%-32px)] max-w-[1139px] grid-cols-[minmax(0,1fr)] gap-10 *:min-w-0 lg:w-[calc(100%-64px)] lg:grid-cols-[minmax(0,1fr)_500px] lg:gap-20 [&_.landing-eyebrow]:text-turquoise-700 [&_.landing-pill]:bg-turquoise-700 [&_.landing-pill]:p-[3px_9px] [&_.landing-pill]:text-caps-sm [&_.landing-pill]:tracking-normal [&_.landing-pill]:text-white [&_.landing-pill]:[border:0] lg:[&_.landing-section-intro_h2]:max-w-130 lg:[&_.landing-section-intro.landing-section-intro_>_p]:max-w-none">
+        <div class="landing-section-intro max-w-180 lg:max-w-[1139px] [&_>_p:not(.landing-eyebrow,.landing-assistants-soon,.landing-assistants-footnote)]:mt-6 [&_>_p:not(.landing-eyebrow,.landing-assistants-soon,.landing-assistants-footnote)]:text-h5 [&_>_p:not(.landing-eyebrow,.landing-assistants-soon,.landing-assistants-footnote)]:leading-[27px] [&_>_p:not(.landing-eyebrow,.landing-assistants-soon,.landing-assistants-footnote)]:text-darkGrey lg:[&_>_p:not(.landing-eyebrow,.landing-assistants-soon,.landing-assistants-footnote)]:max-w-115 lg:[&_>_p:not(.landing-eyebrow,.landing-assistants-soon,.landing-assistants-footnote)]:text-h5 [&_h2]:text-[36px] [&_h2]:leading-[1.1] [&_h2]:font-bold [&_h2]:tracking-[-0.03em] lg:[&_h2]:text-[48px] lg:[&_h2]:leading-[1.04] lg:[&.text-center]:mx-auto lg:[&.text-center]:max-w-140 lg:[&.text-center_>_p:not(.landing-eyebrow)]:mx-auto">
+          <p class="landing-eyebrow mb-4 flex flex-wrap items-center gap-3 text-xs font-bold tracking-[0.08em] text-(--landing-accent) uppercase">
             {gettext("Firmowid in ChatGPT and Claude")}
-            <span class="landing-pill">{gettext("Early access")}</span>
+            <span class="landing-pill inline-flex items-center rounded-full p-[5px_14px] text-caps-sm font-bold tracking-[0.04em] uppercase [border:1px_solid_currentColor]">{gettext(
+              "Early access"
+            )}</span>
           </p>
           <h2>{gettext("An assistant to help you with your business")}</h2>
           <p>
@@ -502,7 +552,7 @@ defmodule FirmowidWeb.Landing.Components.Sections do
             )}
           </p>
 
-          <ul class="landing-assistants__benefits">
+          <ul class="mt-8 grid gap-4 text-[15px] leading-normal lg:text-base [&_li]:flex [&_li]:items-baseline [&_li]:gap-2.5 [&_li]:text-[#4e4e4e]">
             <li>
               <span aria-hidden="true">✓</span>{gettext(
                 "Issuing invoices - with a preview and KSeF submission"
@@ -515,13 +565,13 @@ defmodule FirmowidWeb.Landing.Components.Sections do
             </li>
             <li><span aria-hidden="true">✓</span>{gettext("Reading sales and cost invoices")}</li>
           </ul>
-          <p class="landing-assistants__soon">
+          <p class="landing-assistants-soon mt-6 text-[15px] leading-normal">
             ◷ {gettext(
               "Coming soon: financial analysis - invoices and real bank transactions in one place"
             )}
           </p>
 
-          <div class="landing-assistants__diagram">
+          <div class="mt-10 flex items-center gap-2 lg:mt-16 [&_img]:object-contain [&_img]:mix-blend-multiply [&>img]:h-12.5 [&>img]:w-8.5">
             <img
               src={~p"/images/landing/character-head.png"}
               alt=""
@@ -529,14 +579,18 @@ defmodule FirmowidWeb.Landing.Components.Sections do
               height="103"
               loading="lazy"
             />
-            <svg viewBox="0 0 250 160" aria-hidden="true" class="landing-assistants__connections">
+            <svg
+              viewBox="0 0 250 160"
+              aria-hidden="true"
+              class="h-40 min-w-0 flex-1"
+            >
               <path
                 d="M0 80C90 80 130 10 250 10M0 80H250M0 80C90 80 130 150 250 150"
                 fill="none"
                 stroke="currentColor"
               />
             </svg>
-            <ul class="landing-assistants__branches">
+            <ul class="grid flex-[0_0_160px] gap-7 text-[13px] leading-[1.3] [&_img]:size-9.5 [&_li]:flex [&_li]:items-center [&_li]:gap-2 [&_li:nth-child(2)_img]:filter-[invert(61%)_sepia(65%)_saturate(555%)_hue-rotate(332deg)_brightness(90%)] [&_small]:block [&_small]:text-darkGrey [&_strong]:font-bold">
               <li>
                 <img src={~p"/images/landing/chatgpt.svg"} width="38" height="38" alt="" /><span><strong>ChatGPT</strong><small>{gettext(
                   "app"
@@ -555,7 +609,7 @@ defmodule FirmowidWeb.Landing.Components.Sections do
             </ul>
           </div>
 
-          <p class="landing-assistants__footnote">
+          <p class="landing-assistants-footnote mt-14 text-sm/[20px] text-grey-500">
             {gettext(
               "*Already used by early adopters among our users. Gradually rolling out to everyone. Available in the Entrepreneur and Company plans."
             )}
@@ -563,32 +617,34 @@ defmodule FirmowidWeb.Landing.Components.Sections do
         </div>
 
         <div
-          class="landing-conversation"
+          class="self-center rounded-[16px] bg-white p-6 text-sm leading-[1.55] shadow-[0_18px_44px_rgb(47_67_67/10%)] lg:rounded-[20px] lg:p-5.5"
           role="img"
           aria-label={gettext("Example conversation and invoice confirmation preview")}
         >
-          <p class="landing-conversation__user">
+          <p class="ml-10 rounded-[14px_14px_0_14px] bg-[#dde4e4] p-[14px_18px]">
             {gettext("Issue an invoice for Północny Kod: 120 h at PLN 180 net.")}
           </p>
-          <p class="landing-conversation__author">{gettext("Using the Firmowid app")}</p>
+          <p class="mt-5 text-xs text-darkGrey">
+            {gettext("Using the Firmowid app")}
+          </p>
           <p class="mt-2">
             {gettext(
               "I prepared the invoice for Północny Kod sp. z o.o. for PLN 26,568.00 gross. Check the preview and confirm - only then does it reach KSeF."
             )}
           </p>
 
-          <div class="landing-conversation__invoice">
+          <div class="mt-4 rounded-[12px] bg-[#f5f5f5] p-5 [border:1px_solid_var(--landing-line)] [&_.landing-button]:mx-auto [&_.landing-button]:mt-4 [&_.landing-button]:flex [&_.landing-button]:min-h-9 [&_.landing-button]:w-max [&_.landing-button]:max-w-full [&_.landing-button]:bg-turquoise-700 [&_.landing-button]:p-[8px_14px] [&_.landing-button]:text-sm [&_h3]:mb-4 [&_h3]:text-lg [&_h3]:font-semibold">
             <h3>{gettext("Confirm invoice")}</h3>
-            <div class="landing-conversation__document">
-              <div class="landing-conversation__paper">
+            <div class="bg-[#ddd] p-3.5">
+              <div class="relative mx-auto aspect-210/297 w-[74%] bg-white p-[18px_12px] font-[Arial,sans-serif] text-[3.5px] leading-[1.6] shadow-[0_1px_4px_#ccc] lg:p-[22px_20px] lg:text-[4.5px] [&_>_strong]:text-[5px] lg:[&_>_strong]:text-[6px] [&_dl]:mt-2.5 [&_dl]:ml-auto [&_dl]:w-[50%] [&_dl_>_div]:flex [&_dl_>_div]:justify-between [&_dl_>_div:last-child]:mt-1.5 [&_dl_>_div:last-child]:font-bold">
                 <strong>{gettext("VAT invoice %{number}", number: "01/10/2026")}</strong>
                 <p>14.10.2026</p>
-                <div class="landing-conversation__parties">
+                <div class="mt-4.5 flex justify-between gap-2 pt-2.5 [border-top:1px_solid_#ddd] lg:mt-6 lg:pt-4">
                   <p>{gettext("Seller")}<br /><strong>Bytecraft Collective sp. z o.o.</strong></p><p>
                     {gettext("Buyer")}<br /><strong>Północny Kod sp. z o.o.</strong>
                   </p>
                 </div>
-                <div class="landing-conversation__line-item">
+                <div class="mt-4 flex justify-between py-2 [border-block:1px_solid_#ddd] lg:mt-6">
                   <span>{gettext("Programming services")}</span><span>{gettext("%{hours} h",
                     hours: 120
                   )}</span><span>{gettext("%{amount} PLN", amount: "180,00")}</span>
@@ -608,12 +664,18 @@ defmodule FirmowidWeb.Landing.Components.Sections do
                     </dd>
                   </div>
                 </dl>
-                <p class="landing-conversation__payment">{gettext("Payment")}<br />14.11.2026</p>
-                <p class="landing-conversation__paper-footer">Firmowid.pl</p>
+                <p class="mt-4.5">
+                  {gettext("Payment")}<br />14.11.2026
+                </p>
+                <p class="absolute bottom-3 font-bold">
+                  Firmowid.pl
+                </p>
               </div>
             </div>
-            <span class="landing-button landing-button--black">{gettext("Confirm and send to KSeF")}</span>
-            <p class="landing-conversation__hint">
+            <span class="landing-button relative isolate inline-flex min-h-13 items-center justify-center gap-2.5 rounded-[4px] bg-[#0f0f0f] p-[14px_32px] text-center text-base leading-[24px] font-medium text-white [transition:background-color_150ms_ease,color_150ms_ease,transform_150ms_ease] active:transform-[translateY(1px)] disabled:pointer-events-none disabled:opacity-[0.45] aria-disabled:pointer-events-none aria-disabled:opacity-[0.45] motion-reduce:active:transform-none [&:hover]:transform-[translateY(-1px)] [&:hover]:[background:var(--color-grey-800)] motion-reduce:[&:hover]:transform-none">{gettext(
+              "Confirm and send to KSeF"
+            )}</span>
+            <p class="mt-4 text-xs text-darkGrey">
               {gettext("No document has been issued yet. Check the preview before confirming.")}
             </p>
           </div>
@@ -629,26 +691,28 @@ defmodule FirmowidWeb.Landing.Components.Sections do
   @spec proof_section(map()) :: Rendered.t()
   def proof_section(assigns) do
     ~H"""
-    <section class="landing-section bg-white">
-      <div class="landing-container landing-proof">
+    <section class="bg-white py-18 lg:py-26">
+      <div class="mx-auto grid w-[calc(100%-32px)] max-w-[1139px] gap-10 lg:w-[calc(100%-64px)] lg:grid-cols-[minmax(0,2.2fr)_minmax(0,1fr)] lg:items-center lg:gap-16 [&_blockquote]:relative [&_blockquote]:max-w-225 [&_blockquote]:pl-7 [&_blockquote]:text-[26px] [&_blockquote]:leading-[1.35] [&_blockquote]:font-medium lg:[&_blockquote]:text-[32px] [&_blockquote::after]:text-(--landing-accent) [&_blockquote::after]:[content:'”'] [&_blockquote::before]:absolute [&_blockquote::before]:-top-4.5 [&_blockquote::before]:left-0 [&_blockquote::before]:text-[64px] [&_blockquote::before]:leading-none [&_blockquote::before]:text-(--landing-accent) [&_blockquote::before]:[content:'„']">
         <div>
           <blockquote>
             {gettext(
               "For two years, we patched together three different programs with Excel. Now one person does what three people used to do — and reports are ready at the end of the month, not a week later."
             )}
           </blockquote>
-          <div class="landing-proof__author">
-            <span class="landing-proof__avatar">EG</span>
+          <div class="mt-8 flex items-center gap-3.5">
+            <span class="grid size-12 flex-none place-content-center rounded-full bg-[#8fa487] text-[15px] font-bold text-white">EG</span>
             <div>
-              <p class="landing-proof__author-name">
+              <p class="text-[15px] font-bold">
                 {gettext("CEO of a television production company")}
               </p>
-              <p class="landing-proof__author-role">{gettext("beta program participant")}</p>
+              <p class="mt-1 text-[13px] text-darkGrey">
+                {gettext("beta program participant")}
+              </p>
             </div>
           </div>
         </div>
 
-        <div class="landing-proof__figures">
+        <div class="grid content-start gap-8 text-[13px] text-darkGrey lg:pl-16 lg:[border-left:1px_solid_var(--color-grey-200)] [&_strong]:mb-1.5 [&_strong]:block [&_strong]:text-3xl [&_strong]:leading-[1.1] [&_strong]:font-bold [&_strong]:text-(--landing-accent)">
           <p>
             <strong>{gettext("%{hours} h", hours: "−12")}</strong>{gettext(
               "less administrative work per week"
@@ -669,14 +733,16 @@ defmodule FirmowidWeb.Landing.Components.Sections do
     assigns = assign(assigns, :steps, localize(@steps, [:title, :description]))
 
     ~H"""
-    <section id="jak-dziala" class="landing-section bg-grey-100">
-      <div class="landing-container">
-        <div class="landing-section__intro mx-auto text-center">
-          <p class="landing-eyebrow">{gettext("How Firmowid works")}</p>
+    <section id="jak-dziala" class="bg-grey-100 py-18 lg:py-26">
+      <div class="mx-auto w-[calc(100%-32px)] max-w-[1139px] lg:w-[calc(100%-64px)]">
+        <div class="landing-section-intro mx-auto max-w-180 text-center lg:max-w-[1139px] [&_>_p:not(.landing-eyebrow,.landing-assistants-soon,.landing-assistants-footnote)]:mt-6 [&_>_p:not(.landing-eyebrow,.landing-assistants-soon,.landing-assistants-footnote)]:text-h5 [&_>_p:not(.landing-eyebrow,.landing-assistants-soon,.landing-assistants-footnote)]:leading-[27px] [&_>_p:not(.landing-eyebrow,.landing-assistants-soon,.landing-assistants-footnote)]:text-darkGrey lg:[&_>_p:not(.landing-eyebrow,.landing-assistants-soon,.landing-assistants-footnote)]:max-w-115 lg:[&_>_p:not(.landing-eyebrow,.landing-assistants-soon,.landing-assistants-footnote)]:text-h5 [&_h2]:text-[36px] [&_h2]:leading-[1.1] [&_h2]:font-bold [&_h2]:tracking-[-0.03em] lg:[&_h2]:text-[48px] lg:[&_h2]:leading-[1.04] lg:[&.text-center]:mx-auto lg:[&.text-center]:max-w-140 lg:[&.text-center_>_p:not(.landing-eyebrow)]:mx-auto">
+          <p class="landing-eyebrow mb-4 text-xs font-bold tracking-[0.08em] text-(--landing-accent) uppercase">
+            {gettext("How Firmowid works")}
+          </p>
           <h2>{gettext("From zero to your first invoice in 15 minutes")}</h2>
         </div>
 
-        <div class="landing-steps">
+        <div class="relative mt-16 grid gap-10 lg:mt-20 lg:grid-cols-3 lg:gap-12 [&_article]:relative [&_article]:grid [&_article]:grid-cols-[32px_minmax(0,1fr)] [&_article]:gap-[4px_20px] lg:[&_article]:block lg:[&_article]:text-center [&_article_>_p]:col-2 lg:[&_article_>_p]:col-auto [&_article_>_span]:row-[1/3] [&_article_>_span]:grid [&_article_>_span]:size-8 [&_article_>_span]:place-content-center [&_article_>_span]:rounded-full [&_article_>_span]:bg-white [&_article_>_span]:text-sm [&_article_>_span]:font-bold [&_article_>_span]:[border:2px_solid_var(--color-darkGrey)] lg:[&_article_>_span]:m-[0_auto_24px] lg:[&_article_>_span]:size-14 lg:[&_article_>_span]:text-[22px] [&_article:not(:last-child)::after]:absolute [&_article:not(:last-child)::after]:top-11 [&_article:not(:last-child)::after]:-bottom-10 [&_article:not(:last-child)::after]:left-[15px] [&_article:not(:last-child)::after]:[content:''] [&_article:not(:last-child)::after]:[border-left:2px_dashed_var(--color-grey-200)] lg:[&_article:not(:last-child)::after]:top-[27px] lg:[&_article:not(:last-child)::after]:bottom-auto lg:[&_article:not(:last-child)::after]:left-[50%] lg:[&_article:not(:last-child)::after]:w-[calc(100%+48px)] lg:[&_article:not(:last-child)::after]:[border-left:0] lg:[&_article:not(:last-child)::after]:[border-top:2px_dashed_var(--color-grey-200)] [&_article:nth-child(2)_>_span]:border-(--landing-accent) [&_article:nth-child(2)_>_span]:text-white [&_article:nth-child(2)_>_span]:[background:var(--landing-accent)] [&_h3]:mb-2 [&_h3]:text-lg [&_h3]:leading-[1.3] [&_h3]:font-semibold [&_h3]:tracking-[-0.01em] lg:[&_h3]:text-[22px] [&_p]:text-[15px] [&_p]:leading-[1.4]">
           <article :for={{step, index} <- Enum.with_index(@steps, 1)}>
             <span>{index}</span>
             <h3>{step.title}</h3>
@@ -696,26 +762,35 @@ defmodule FirmowidWeb.Landing.Components.Sections do
     assigns = assign(assigns, :repository, @repository)
 
     ~H"""
-    <section id="kod-zrodlowy" data-landing-dark-surface class="landing-dark landing-section">
-      <div class="landing-container landing-open-source">
-        <div class="landing-section__intro">
-          <p class="landing-eyebrow">{gettext("Open source")}</p>
+    <section
+      id="kod-zrodlowy"
+      data-landing-dark-surface
+      class="bg-[#0f0f0f] py-18 text-white lg:py-26 [&_.landing-eyebrow]:text-[#d2936d] [&_.landing-section-intro_>_p:not(.landing-eyebrow)]:text-grey-300 [&_article_p]:text-grey-300"
+    >
+      <div class="mx-auto grid w-[calc(100%-32px)] max-w-[1139px] gap-10 lg:w-[calc(100%-64px)] lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:gap-20 [&_article_p]:text-[15px] [&_article_p]:leading-[1.4] [&_h3]:mb-5 [&_h3]:text-[22px] [&_h3]:leading-[1.3] [&_h3]:font-semibold [&_h3]:tracking-[-0.01em]">
+        <div class="landing-section-intro max-w-180 lg:max-w-[1139px] [&_>_p:not(.landing-eyebrow,.landing-assistants-soon,.landing-assistants-footnote)]:mt-6 [&_>_p:not(.landing-eyebrow,.landing-assistants-soon,.landing-assistants-footnote)]:text-h5 [&_>_p:not(.landing-eyebrow,.landing-assistants-soon,.landing-assistants-footnote)]:leading-[27px] [&_>_p:not(.landing-eyebrow,.landing-assistants-soon,.landing-assistants-footnote)]:text-darkGrey lg:[&_>_p:not(.landing-eyebrow,.landing-assistants-soon,.landing-assistants-footnote)]:max-w-115 lg:[&_>_p:not(.landing-eyebrow,.landing-assistants-soon,.landing-assistants-footnote)]:text-h5 [&_h2]:text-[36px] [&_h2]:leading-[1.1] [&_h2]:font-bold [&_h2]:tracking-[-0.03em] lg:[&_h2]:text-[48px] lg:[&_h2]:leading-[1.04] lg:[&.text-center]:mx-auto lg:[&.text-center]:max-w-140 lg:[&.text-center_>_p:not(.landing-eyebrow)]:mx-auto">
+          <p class="landing-eyebrow mb-4 text-xs font-bold tracking-[0.08em] text-(--landing-accent) uppercase">
+            {gettext("Open source")}
+          </p>
           <h2>{gettext("Your data on your server.")}</h2>
           <p>
             {gettext("Firmowid is open source. Host it yourself, without limits or fees.")}
           </p>
-          <div class="landing-open-source__actions">
+          <div class="mt-10 flex flex-wrap items-center gap-5">
             <.landing_button external={@repository} variant={:orange}>
               {gettext("View on GitHub")}
               <img src={~p"/images/github-mark.svg"} alt="" width="24" height="24" />
             </.landing_button>
-            <a class="landing-pill" href={@repository}>
+            <a
+              class="landing-pill inline-flex items-center rounded-full p-[5px_14px] text-caps-sm font-bold tracking-[0.04em] uppercase [border:1px_solid_currentColor]"
+              href={@repository}
+            >
               {gettext("AGPL-3.0 license")}
             </a>
           </div>
         </div>
 
-        <div class="landing-open-source__benefits">
+        <div class="rounded-[16px] p-[8px_28px] [background:var(--color-grey-900)] [border:1px_solid_var(--color-grey-800)] lg:self-center [&_article]:py-6 [&_article_h3]:mb-2.5 [&_article+article]:[border-top:1px_solid_var(--color-grey-800)] [&_h3]:flex [&_h3]:items-center [&_h3]:gap-2.5 [&_h3]:text-[#f5f1ea] [&_h3::before]:text-[#d2936d] [&_h3::before]:[content:'✓']">
           <article>
             <h3>{gettext("No limits")}</h3>
             <p>{gettext("Invoices, bank accounts and users without plan limits.")}</p>
@@ -742,10 +817,12 @@ defmodule FirmowidWeb.Landing.Components.Sections do
     assigns = assign(assigns, :team, localize(@team, [:role, :bio]))
 
     ~H"""
-    <section id="zespol" class="landing-section">
-      <div class="landing-container landing-team">
-        <div class="landing-section__intro">
-          <p class="landing-eyebrow">{gettext("Who is behind it")}</p>
+    <section id="zespol" class="py-18 lg:py-26">
+      <div class="mx-auto grid w-[calc(100%-32px)] max-w-[1139px] gap-10 lg:w-[calc(100%-64px)] lg:grid-cols-[minmax(0,1fr)_572px] lg:items-center lg:gap-7 lg:[&_.landing-section-intro.landing-section-intro_>_p]:max-w-none [&_h3]:mt-6 [&_h3]:mb-1.5 [&_h3]:text-lg [&_h3]:font-bold">
+        <div class="landing-section-intro max-w-180 lg:max-w-[1139px] [&_>_p:not(.landing-eyebrow,.landing-assistants-soon,.landing-assistants-footnote)]:mt-6 [&_>_p:not(.landing-eyebrow,.landing-assistants-soon,.landing-assistants-footnote)]:text-h5 [&_>_p:not(.landing-eyebrow,.landing-assistants-soon,.landing-assistants-footnote)]:leading-[27px] [&_>_p:not(.landing-eyebrow,.landing-assistants-soon,.landing-assistants-footnote)]:text-darkGrey lg:[&_>_p:not(.landing-eyebrow,.landing-assistants-soon,.landing-assistants-footnote)]:max-w-115 lg:[&_>_p:not(.landing-eyebrow,.landing-assistants-soon,.landing-assistants-footnote)]:text-h5 [&_h2]:text-[36px] [&_h2]:leading-[1.1] [&_h2]:font-bold [&_h2]:tracking-[-0.03em] lg:[&_h2]:text-[48px] lg:[&_h2]:leading-[1.04] lg:[&.text-center]:mx-auto lg:[&.text-center]:max-w-140 lg:[&.text-center_>_p:not(.landing-eyebrow)]:mx-auto">
+          <p class="landing-eyebrow mb-4 text-xs font-bold tracking-[0.08em] text-(--landing-accent) uppercase">
+            {gettext("Who is behind it")}
+          </p>
           <h2>{gettext("Two people. One office in Krakow.")}</h2>
           <p>
             {gettext(
@@ -754,9 +831,9 @@ defmodule FirmowidWeb.Landing.Components.Sections do
           </p>
         </div>
 
-        <div class="landing-team__cards">
+        <div class="grid gap-5 md:grid-cols-2 lg:gap-4 [&_article]:rounded-[16px] [&_article]:p-5 [&_article]:[background:#fff_url('/images/founder_card_chalk_border.svg')_center/100%_100%_no-repeat] lg:[&_article]:p-6 [&_article:nth-child(2)_.landing-team-portrait]:bg-turquoise-600 [&_article:nth-child(2)_.landing-team-portrait_img]:top-[-12%] [&_article:nth-child(2)_.landing-team-portrait_img]:left-[-26%] [&_article:nth-child(2)_.landing-team-portrait_img]:w-[153%]">
           <article :for={person <- @team}>
-            <div class="landing-team__portrait">
+            <div class="landing-team-portrait relative aspect-[1] overflow-hidden rounded-[8px] bg-[#d2936d] [&_img]:absolute [&_img]:top-[-22.4%] [&_img]:left-[-6%] [&_img]:h-auto [&_img]:w-[113%] [&_img]:max-w-none">
               <img
                 src={person.image}
                 alt={gettext("Portrait of %{name}", name: person.name)}
@@ -767,8 +844,10 @@ defmodule FirmowidWeb.Landing.Components.Sections do
               />
             </div>
             <h3>{person.name}</h3>
-            <p class="landing-team__role">{person.role}</p>
-            <p class="landing-team__bio">{person.bio}</p>
+            <p class="mb-5 text-xs font-bold tracking-[0.08em] text-(--landing-accent) uppercase">
+              {person.role}
+            </p>
+            <p class="text-sm leading-[1.55] text-darkGrey">{person.bio}</p>
           </article>
         </div>
       </div>

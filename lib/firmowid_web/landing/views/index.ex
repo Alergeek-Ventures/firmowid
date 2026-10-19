@@ -43,11 +43,20 @@ defmodule FirmowidWeb.Landing.Views.Index do
   @spec render(map()) :: Phoenix.LiveView.Rendered.t()
   def render(assigns) do
     ~H"""
-    <div id="top" data-landing-page="true" class="landing-page">
+    <div
+      id="top"
+      data-landing-page="true"
+      class="min-h-screen text-[#0f0f0f] [--landing-accent:#8b3f13] [--landing-beige:#f0eae6] [--landing-line:#e6d7ce] [--landing-nav-height:64px] [background:var(--color-grey-100)] motion-reduce:**:animate-none! motion-reduce:**:transition-none! lg:[--landing-nav-height:96px] motion-reduce:[&_*::after]:animate-none! motion-reduce:[&_*::after]:transition-none! motion-reduce:[&_*::before]:animate-none! motion-reduce:[&_*::before]:transition-none! [&_a:focus-visible]:[outline:2px_solid_var(--color-orange-600)] [&_a:focus-visible]:outline-offset-4 [&_button:focus-visible]:[outline:2px_solid_var(--color-orange-600)] [&_button:focus-visible]:outline-offset-4 **:[[id]]:scroll-mt-[calc(var(--landing-nav-height)+24px)]"
+    >
       <.landing_navbar />
 
       <main>
-        <h1 :if={@live_action != :home} class="landing-public__title">{@page_title}</h1>
+        <h1
+          :if={@live_action != :home}
+          class="mx-auto w-[calc(100%-32px)] max-w-[1139px] py-[72px_0] text-3xl leading-[1.1] font-bold tracking-[-0.03em]"
+        >
+          {@page_title}
+        </h1>
         <.hero_section :if={@live_action == :home} />
         <.top_metrics_section :if={@live_action == :home} />
         <.audience_section :if={@live_action == :home} />

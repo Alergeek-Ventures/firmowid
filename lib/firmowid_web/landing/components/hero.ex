@@ -25,40 +25,40 @@ defmodule FirmowidWeb.Landing.Components.Hero do
       |> assign(badge_before: badge_before, badge_after: badge_after)
 
     ~H"""
-    <section class="landing-hero">
-      <div class="landing-container landing-hero__layout">
+    <section class="py-[24px_48px] lg:p-0">
+      <div class="mx-auto w-[calc(100%-32px)] max-w-[1139px] lg:grid lg:w-[calc(100%-64px)] lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:items-start lg:gap-8 lg:py-[77px_104px]">
         <div class="min-w-0">
           <a
             href="https://github.com/Alergeek-Ventures/firmowid"
             target="_blank"
             rel="noopener noreferrer"
-            class="landing-hero__badge"
+            class="relative isolate inline-flex items-center gap-2 py-2.5 pr-4 pl-3 text-[13px] leading-[25px] font-medium [&::before]:absolute [&::before]:inset-0 [&::before]:-z-1 [&::before]:[content:''] [&::before]:[background:url('/images/landing/marker-pill.svg')_center/100%_100%_no-repeat]"
           >
             <img src={~p"/images/github-mark.svg"} alt="" width="24" height="24" />
             <span>
               {@badge_before}
-              <span class="landing-hero__badge-accent">
+              <span class="text-(--landing-accent)">
                 {pgettext("landing open-source badge", "open source")}
               </span>
               {@badge_after}
             </span>
           </a>
 
-          <h1 class="landing-hero__heading">
+          <h1 class="mt-6 text-3xl leading-[1.14] font-bold tracking-[-0.035em] lg:mt-8.5 lg:text-[72px] lg:leading-[0.966]">
             {pgettext("landing hero headline", "KSeF invoices")}<br />
             {pgettext("landing hero headline", "without limits.")}<br />
-            <span class="landing-hero__price">
+            <span class="relative isolate inline-block [&::after]:absolute [&::after]:-right-5 [&::after]:-bottom-2 [&::after]:-left-1 [&::after]:-z-1 [&::after]:h-5.5 [&::after]:[content:''] [&::after]:[background:url('/images/landing/marker-underline.svg')_center/100%_100%_no-repeat] lg:[&::after]:-right-7">
               {pgettext("landing hero headline", "For PLN 0.")}
             </span>
           </h1>
 
-          <p class="landing-hero__description">
+          <p class="mt-6 max-w-107.5 text-h5 leading-[27px] text-darkGrey lg:mt-7.5 lg:text-lg lg:leading-[28px]">
             {gettext(
               "Everything in one place: invoices, banking, working hours, leave, and business trips."
             )}
           </p>
 
-          <div class="landing-hero__actions">
+          <div class="mt-6 flex flex-col gap-4 lg:mt-7.5 lg:flex-row lg:gap-7">
             <.landing_button navigate={~p"/zarejestruj"} data-landing-cta="hero_register">
               {gettext("Start for free")}
             </.landing_button>
@@ -71,7 +71,7 @@ defmodule FirmowidWeb.Landing.Components.Hero do
             </.landing_button>
           </div>
 
-          <ul class="landing-hero__benefits">
+          <ul class="mt-7 grid gap-4 text-[13px] leading-[18px] text-darkGrey lg:mt-8 lg:flex lg:flex-wrap lg:gap-[8px_16px] [&_li]:flex [&_li]:items-baseline [&_li]:gap-2 [&_li_>_span]:flex-none [&_li_>_span]:text-[22px] [&_li_>_span]:leading-[20px] [&_li_>_span]:text-green-600">
             <li>
               <span aria-hidden="true">✓</span>
               {gettext("Start with the free plan. No card required.")}
@@ -95,7 +95,7 @@ defmodule FirmowidWeb.Landing.Components.Hero do
           id="landing-compass"
           phx-hook="LandingHero"
           phx-update="ignore"
-          class="landing-compass"
+          class="relative mt-8 aspect-730/670 w-full lg:m-[-28px_0_0_-2.4%] lg:w-[116.5%]"
           role="img"
           aria-label={
             gettext("Firmowid connects invoices and KSeF, banking, time tracking, and your team.")
@@ -110,7 +110,10 @@ defmodule FirmowidWeb.Landing.Components.Hero do
             decoding="async"
             fetchpriority={if index == 0, do: "high", else: "auto"}
             data-state={index}
-            class={["landing-compass__state", index == 0 && "is-active"]}
+            class={[
+              "absolute inset-0 size-full opacity-[0] [transition:opacity_300ms_ease-in-out] [&.is-active]:opacity-[1]",
+              index == 0 && "is-active"
+            ]}
           />
         </div>
       </div>
@@ -131,9 +134,9 @@ defmodule FirmowidWeb.Landing.Components.Hero do
     assigns = assign(assigns, before_company: before_company, after_company: after_company)
 
     ~H"""
-    <section class="landing-metrics">
-      <div class="landing-container landing-metrics__layout">
-        <p class="landing-metrics__development">
+    <section class="py-10 [background:var(--color-orange-400)] [border-block:1px_solid_var(--landing-line)] lg:bg-grey-50 lg:py-8 [&_a]:text-(--landing-accent) [&_a]:underline-offset-[3px] [&_a]:[text-decoration:underline] [&_p]:flex [&_p]:flex-col-reverse [&_p]:items-center [&_p]:gap-2 [&_p]:text-center [&_p]:text-sm/[20px] lg:[&_p]:flex-row lg:[&_p]:gap-2 lg:[&_p]:text-left lg:[&_p]:text-[13px] [&_strong]:text-3xl [&_strong]:leading-[1.1] [&_strong]:font-bold lg:[&_strong]:text-[26px] lg:[&_strong]:whitespace-nowrap">
+      <div class="mx-auto flex w-[calc(100%-32px)] max-w-[1139px] flex-col gap-10 lg:w-[calc(100%-64px)] lg:flex-row lg:justify-between lg:gap-6">
+        <p class="order-1 lg:order-0">
           <span>
             {@before_company}
             <a href="https://alergeek.ventures" target="_blank" rel="noopener noreferrer">

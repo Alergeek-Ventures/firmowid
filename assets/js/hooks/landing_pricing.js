@@ -1,8 +1,8 @@
 export const LandingPricing = {
   mounted() {
     this.updateHeader = () => {
-      const header = this.el.querySelector(".landing-pricing__plans");
-      const cards = this.el.querySelectorAll(".landing-pricing__card");
+      const header = this.el.querySelector(".landing-pricing-plans");
+      const cards = this.el.querySelectorAll(".landing-pricing-card");
       const offset = parseFloat(getComputedStyle(header).top);
       header.classList.toggle(
         "is-stuck",

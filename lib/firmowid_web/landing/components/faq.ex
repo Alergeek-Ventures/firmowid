@@ -22,10 +22,12 @@ defmodule FirmowidWeb.Landing.Components.Faq do
     assigns = assign(assigns, faqs: faqs, schema: schema)
 
     ~H"""
-    <section id="faq" class="landing-section border-t border-orange-200 bg-grey-50">
-      <div class="landing-container landing-faq">
-        <div class="landing-section__intro">
-          <p class="landing-eyebrow">{gettext("Questions and answers")}</p>
+    <section id="faq" class="border-t border-orange-200 bg-grey-50 py-18 lg:py-26">
+      <div class="mx-auto grid w-[calc(100%-32px)] max-w-[1139px] gap-8 lg:w-[calc(100%-64px)] lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:gap-20 [&_article]:rounded-[8px] [&_article]:bg-white [&_article]:[border:1px_solid_var(--landing-line)] [&_button]:flex [&_button]:w-full [&_button]:cursor-pointer [&_button]:items-center [&_button]:justify-between [&_button]:gap-6 [&_button]:p-5 [&_button]:text-left [&_button]:text-base [&_button]:leading-[1.4] [&_button]:font-semibold **:[[role='region']]:p-[0_20px_20px] **:[[role='region']]:text-[15px] **:[[role='region']]:leading-[1.6] **:[[role='region']]:text-darkGrey">
+        <div class="landing-section-intro max-w-180 lg:max-w-[1139px] [&_>_p:not(.landing-eyebrow,.landing-assistants-soon,.landing-assistants-footnote)]:mt-6 [&_>_p:not(.landing-eyebrow,.landing-assistants-soon,.landing-assistants-footnote)]:text-h5 [&_>_p:not(.landing-eyebrow,.landing-assistants-soon,.landing-assistants-footnote)]:leading-[27px] [&_>_p:not(.landing-eyebrow,.landing-assistants-soon,.landing-assistants-footnote)]:text-darkGrey lg:[&_>_p:not(.landing-eyebrow,.landing-assistants-soon,.landing-assistants-footnote)]:max-w-115 lg:[&_>_p:not(.landing-eyebrow,.landing-assistants-soon,.landing-assistants-footnote)]:text-h5 [&_h2]:text-[36px] [&_h2]:leading-[1.1] [&_h2]:font-bold [&_h2]:tracking-[-0.03em] lg:[&_h2]:text-[48px] lg:[&_h2]:leading-[1.04] lg:[&.text-center]:mx-auto lg:[&.text-center]:max-w-140 lg:[&.text-center_>_p:not(.landing-eyebrow)]:mx-auto">
+          <p class="landing-eyebrow mb-4 text-xs font-bold tracking-[0.08em] text-(--landing-accent) uppercase">
+            {gettext("Questions and answers")}
+          </p>
           <h2>{gettext("Before you ask — we may have already answered.")}</h2>
           <p>
             {gettext("Didn't find your question?")}
@@ -35,7 +37,7 @@ defmodule FirmowidWeb.Landing.Components.Faq do
           </p>
         </div>
 
-        <div class="landing-faq__items">
+        <div class="grid content-start gap-2">
           <article :for={faq <- @faqs}>
             <button
               id={"faq-#{faq.id}"}
@@ -46,7 +48,10 @@ defmodule FirmowidWeb.Landing.Components.Faq do
               aria-controls={"faq-panel-#{faq.id}"}
             >
               <span>{faq.question}</span>
-              <span class="landing-faq__sign" aria-hidden="true">
+              <span
+                class="flex-none text-[22px] leading-none text-(--landing-accent)"
+                aria-hidden="true"
+              >
                 {if @open_faq == faq.id, do: "−", else: "+"}
               </span>
             </button>

@@ -4,7 +4,7 @@ export const LandingNavbarTheme = {
     this.updateTheme = () => {
       this.raf = null;
 
-      const nav = this.el.querySelector(".landing-nav__panel");
+      const nav = this.el.querySelector(".landing-nav-panel");
       const darkSurfaces = document.querySelectorAll("[data-landing-dark-surface]");
 
       if (!nav || darkSurfaces.length === 0) {
