@@ -49,6 +49,8 @@ defmodule Firmowid.Ash.Timetracker do
 
   tools do
     tool :list_sessions, Session, :list_user_sessions do
+      annotations read_only_hint: true, destructive_hint: false, open_world_hint: false
+
       description "Paginated work sessions for the authenticated user, newest first. Default limit is 25 - results are truncated. For whole-month or multi-month analysis paginate with limit+offset (e.g. offset 0, 25, 50) or increase limit. If the returned count equals your limit, fetch the next page with offset+limit. Optionally filter with after_date (UTC, sessions starting on or after that date). Use result_type count to get the total number of matching sessions."
       action_parameters [:sort, :limit, :offset, :filter, :result_type]
       load [:project]
@@ -60,17 +62,24 @@ defmodule Firmowid.Ash.Timetracker do
 
     tool :get_current_session, Session, :get_current,
       load: [:project],
+      annotations: [read_only_hint: true, destructive_hint: false, open_world_hint: false],
       description: "Get the user's currently running session, if any"
 
     tool :stop_current_session, Session, :stop_current,
+      annotations: [read_only_hint: false, destructive_hint: false, open_world_hint: false],
       description: "End the authenticated user's currently running work session"
 
-    tool :start_session, Session, :start, description: "Start a work session for the authenticated user"
+    tool :start_session, Session, :start,
+      annotations: [read_only_hint: false, destructive_hint: false, open_world_hint: false],
+      description: "Start a work session for the authenticated user"
 
     tool :edit_session, Session, :edit_current_user_session,
+      annotations: [read_only_hint: false, destructive_hint: true, open_world_hint: false],
       description: "Edit an unfrozen work session belonging to the authenticated user"
 
     tool :list_leave_requests, LeaveRequest, :list_current_user do
+      annotations read_only_hint: true, destructive_hint: false, open_world_hint: false
+
       description "Paginated leave and absence requests for the authenticated user, newest first. Default limit is 25 - results are truncated. Paginate with limit+offset (e.g. offset 0, 25, 50) or increase limit. If returned count equals your limit, fetch next page. Supports start_date (requests ending on/after) and end_date (starting on/before) filters. Use result_type count to get total matching requests."
       action_parameters [:sort, :limit, :offset, :filter, :result_type]
 
@@ -84,10 +93,13 @@ defmodule Firmowid.Ash.Timetracker do
     end
 
     tool :create_leave_request, LeaveRequest, :create,
+      annotations: [read_only_hint: false, destructive_hint: false, open_world_hint: false],
       description:
         "Submit an absence request for the authenticated user. Use reason indisposition, rest, or other; this action does not support sick, vacation, or unpaid leave. New requests always start with pending status."
 
     tool :list_projects, Project, :list_current_user do
+      annotations read_only_hint: true, destructive_hint: false, open_world_hint: false
+
       description "List all projects of the authenticated user"
     end
   end

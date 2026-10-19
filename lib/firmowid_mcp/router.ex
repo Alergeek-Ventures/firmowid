@@ -156,54 +156,25 @@ defmodule FirmowidMcp.Router do
     ]
   end
 
-  defp tool_metadata(%{"name" => name} = tool)
-       when name in ~w(list_sales_invoices list_cost_invoices get_sales_invoice) do
-    authorized_tool_metadata(tool, %{
-      "readOnlyHint" => true,
-      "destructiveHint" => false,
-      "openWorldHint" => false
-    })
-  end
+  defp tool_metadata(%{"name" => name} = tool) do
+    tool =
+      tool
+      |> Map.put("securitySchemes", @security_schemes)
+      |> update_in(["_meta"], &Map.put(&1 || %{}, "securitySchemes", @security_schemes))
 
-  defp tool_metadata(%{"name" => name} = tool) when name in ~w(create_sales_invoice_draft update_sales_invoice_draft) do
-    authorized_tool_metadata(tool, %{
-      "readOnlyHint" => false,
-      "destructiveHint" => false,
-      "openWorldHint" => false
-    })
-  end
-
-  defp tool_metadata(tool) do
-    case Enum.find(Widgets.all(), &(tool["name"] in [&1.tool_name(), &1.data_tool_name()])) do
+    case Widgets.for_tool(name) do
       nil ->
         tool
 
       app ->
-        presentation_meta =
-          if tool["name"] == app.tool_name() do
-            uri = Runtime.resource_uri(app)
+        uri = Runtime.resource_uri(app)
 
-            %{
-              "ui" => %{"resourceUri" => uri},
-              "openai/outputTemplate" => uri
-            }
-          else
-            %{}
-          end
-
-        tool
-        |> authorized_tool_metadata(app.annotations())
-        |> update_in(["_meta"], fn meta ->
-          Map.merge(meta, presentation_meta)
-        end)
+        update_in(
+          tool,
+          ["_meta"],
+          &Map.merge(&1, %{"ui" => %{"resourceUri" => uri}, "openai/outputTemplate" => uri})
+        )
     end
-  end
-
-  defp authorized_tool_metadata(tool, annotations) do
-    tool
-    |> Map.put("securitySchemes", @security_schemes)
-    |> Map.put("annotations", annotations)
-    |> update_in(["_meta"], &Map.put(&1 || %{}, "securitySchemes", @security_schemes))
   end
 
   defp resource_metadata(resource) do

@@ -36,9 +36,11 @@ defmodule Firmowid.Ash.Core do
 
   tools do
     tool :update_profile, User, :update_current_profile,
+      annotations: [read_only_hint: false, destructive_hint: true, open_world_hint: false],
       description: "Update the authenticated user's profile information"
 
     tool :get_shared_birthday, User, :get_shared_birthday,
+      annotations: [read_only_hint: true, destructive_hint: false, open_world_hint: false],
       description: "Returns the authenticated user's shared birthday (nil if not shared)"
   end
 

@@ -40,8 +40,4 @@ defmodule FirmowidMcp.Ksef.Connection do
   @doc "Returns the connection LiveView."
   @spec live_view() :: module()
   def live_view, do: FirmowidMcp.Ksef.Views.Connection
-
-  @doc "Describes opening the widget and reading status; connection changes require UI interaction."
-  @spec annotations() :: map()
-  def annotations, do: %{"readOnlyHint" => true, "destructiveHint" => false, "openWorldHint" => false}
 end
