@@ -72,8 +72,20 @@ defmodule Firmowid.Ash.Core.OrganizationInvite do
       accept []
       require_atomic? false
 
-      validate attribute_equals(:consumed_at, nil),
-        message: "invite has already been consumed"
+      # Lock the invite and check the stored row inside the transaction, so concurrent
+      # joins with the same code cannot both consume it.
+      change get_and_lock_for_update()
+
+      change before_action(fn changeset, _context ->
+               if changeset.data.consumed_at do
+                 Ash.Changeset.add_error(changeset,
+                   field: :consumed_at,
+                   message: "invite has already been consumed"
+                 )
+               else
+                 changeset
+               end
+             end)
 
       change fn changeset, context ->
         actor = Map.fetch!(context, :actor)
