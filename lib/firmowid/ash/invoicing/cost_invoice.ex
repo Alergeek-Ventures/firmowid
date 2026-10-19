@@ -7,8 +7,9 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
 
     * `:read` — basic primary read for framework and relationship reads
     * `:list` — application listing with optional filters: `date_from`, `date_to`, `date_field`,
-      `reconciliation` (`:pending`/`:matched`/`:skipped`), `ids`, `corrections`
-      (`:include` corrections only, `:exclude` corrections, `nil` for both),
+      `reconciliation` (`:pending`/`:matched`/`:skipped`), `ids`, `amount_from`/`amount_to`
+      (absolute value, inclusive), `merge_corrections` (each invoice once, with linked
+      corrections counted in its `effective_amount`),
       `source`, `is_ksef_imported` (true/false, omitted for both),
       `inserted_from` (inclusive), `inserted_to` (exclusive).
     * `:by_id` — single record by ID, preloads all relationships including blob URLs
@@ -178,8 +179,9 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
       argument :date_to, :date
       argument :query, :string, constraints: [max_length: 500]
       argument :currency, :string
-      argument :amount_gt, :decimal
-      argument :amount_lt, :decimal
+      argument :amount_from, :decimal
+      argument :amount_to, :decimal
+      argument :merge_corrections, :boolean, default: false
 
       argument :date_field, :atom do
         constraints one_of: [:issue_date, :sale_date, :due_date, :any]
@@ -234,12 +236,11 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
         where present(:currency)
       end
 
-      prepare build(filter: expr(amount[:amount] >= ^arg(:amount_gt))) do
-        where present(:amount_gt)
-      end
+      prepare {Firmowid.Ash.Invoicing.Preparations.FilterByAmount, []}
 
-      prepare build(filter: expr(amount[:amount] <= ^arg(:amount_lt))) do
-        where present(:amount_lt)
+      # A correction linked to its original is already counted in the original's effective_amount.
+      prepare build(filter: expr(is_nil(original_invoice_ksef_number) or is_nil(original_invoice.id))) do
+        where argument_equals(:merge_corrections, true)
       end
 
       # :pending — no linked transactions, not skipped
@@ -295,26 +296,6 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
       end
 
       prepare Firmowid.Ash.Invoicing.Preparations.SortInvoiceListing
-
-      argument :corrections, :atom do
-        constraints one_of: [:include, :exclude]
-      end
-
-      # :exclude — hide corrections that are linked to an existing original invoice
-      prepare build(filter: expr(is_nil(original_invoice_ksef_number) or is_nil(original_invoice.id))) do
-        where argument_equals(:corrections, :exclude)
-      end
-
-      # :include — show only corrections linked to an existing original invoice
-      prepare build(
-                filter:
-                  expr(
-                    not is_nil(original_invoice_ksef_number) and
-                      not is_nil(original_invoice.id)
-                  )
-              ) do
-        where argument_equals(:corrections, :include)
-      end
     end
 
     read :by_id do

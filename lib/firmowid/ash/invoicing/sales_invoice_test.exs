@@ -129,7 +129,11 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoiceTest do
 
       invoices =
         Invoicing.list_sales_invoices!(
-          %{currency: "EUR", amount_gt: Decimal.new("100.00"), amount_lt: Decimal.new("150.00")},
+          %{
+            currency: "EUR",
+            amount_from: Decimal.new("100.00"),
+            amount_to: Decimal.new("150.00")
+          },
           scope: scope
         )
 

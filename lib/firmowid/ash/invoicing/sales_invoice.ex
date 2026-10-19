@@ -11,8 +11,10 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
     * `:read` — basic primary read for framework and relationship reads
     * `:list` — application listing with optional filters: `date_from`, `date_to`,
       `date_field` (`:issue_date` | `:sale_date` | `:due_date` | `:any`),
-      `kind` (`:vat` | `:kor`), `status` (`:unmatched` | `:confirmed`), `ids`,
-      `inserted_from` (inclusive), `inserted_to` (exclusive)
+      `kind` (`:vat` | `:kor`), `reconciliation` (`:pending` | `:matched` | `:skipped`),
+      `submission` (`:draft` | `:confirmed`), `ids`, `amount_from`/`amount_to` (absolute value,
+      inclusive), `merge_corrections` (each invoice once, with its latest correction as its
+      `effective_amount`), `inserted_from` (inclusive), `inserted_to` (exclusive)
     * `:by_id` — single record by ID, preloads items, transactions, corrections, corrected_invoice
     * `:by_share_token` — find by share token (cross-tenant)
 
@@ -214,8 +216,9 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
       argument :date_to, :date
       argument :query, :string, constraints: [max_length: 500]
       argument :currency, :string
-      argument :amount_gt, :decimal
-      argument :amount_lt, :decimal
+      argument :amount_from, :decimal
+      argument :amount_to, :decimal
+      argument :merge_corrections, :boolean, default: false
 
       argument :date_field, :atom do
         constraints one_of: [:issue_date, :sale_date, :due_date, :any]
@@ -277,12 +280,11 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
         where present(:currency)
       end
 
-      prepare build(filter: expr(amount[:amount] >= ^arg(:amount_gt))) do
-        where present(:amount_gt)
-      end
+      prepare {Firmowid.Ash.Invoicing.Preparations.FilterByAmount, []}
 
-      prepare build(filter: expr(amount[:amount] <= ^arg(:amount_lt))) do
-        where present(:amount_lt)
+      # A correction of an invoice in Firmowid is already its original's effective_amount.
+      prepare build(filter: expr(ksef_invoice_kind != :kor or is_nil(corrected_invoice_id))) do
+        where argument_equals(:merge_corrections, true)
       end
 
       # :pending — no linked transactions, not skipped
