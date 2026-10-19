@@ -109,7 +109,7 @@ defmodule Firmowid.Ash.Finances.Transaction do
         where present(:reconciliation)
       end
 
-      prepare {ParadeDBSearch, columns: ~w(debtor_name creditor_name remittance_information_unstructured)}
+      prepare {ParadeDBSearch, columns: ~w(debtor_name creditor_name remittance_information_unstructured)a}
     end
 
     create :upsert_from_sync do

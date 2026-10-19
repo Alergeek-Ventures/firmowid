@@ -228,7 +228,7 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
       prepare {Firmowid.Ash.Invoicing.Preparations.FilterBySourceAndDigestState, []}
 
       prepare {Firmowid.Ash.Preparations.ParadeDBSearch,
-               columns: ~w(seller seller_display_name description invoice_identifier)}
+               columns: ~w(seller seller_display_name description invoice_identifier)a}
 
       prepare build(filter: expr(amount[:currency] == ^arg(:currency))) do
         where present(:currency)

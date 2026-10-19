@@ -266,7 +266,7 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
 
       prepare {Firmowid.Ash.Preparations.ParadeDBSearch,
                columns:
-                 ~w(buyer_full_name buyer_given_name buyer_surname invoice_number buyer_email buyer_description buyer_id item_names)}
+                 ~w(buyer_full_name buyer_given_name buyer_surname invoice_number buyer_email buyer_description buyer_id item_names)a}
 
       # Kind filter
       prepare build(filter: expr(ksef_invoice_kind == ^arg(:kind))) do
