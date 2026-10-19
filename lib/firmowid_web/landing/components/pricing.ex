@@ -42,12 +42,57 @@ defmodule FirmowidWeb.Landing.Components.Pricing do
   ]
 
   @rows [
-    {gettext_noop("Users"), ["2", "5", gettext_noop("unlimited")]},
-    {gettext_noop("Bank accounts with transfer matching"), ["1", "3", gettext_noop("unlimited")]},
+    {gettext_noop("Users"), [gettext_noop("2"), gettext_noop("5"), gettext_noop("unlimited")]},
+    {gettext_noop("Bank accounts with transfer matching"),
+     [gettext_noop("1"), gettext_noop("3"), gettext_noop("unlimited")]},
     {gettext_noop("Time tracking"),
      [gettext_noop("up to 3 projects"), gettext_noop("unlimited"), gettext_noop("unlimited")]},
-    {gettext_noop("Leave requests with approval"), ["—", "✓", "✓"]},
-    {gettext_noop("Firmowid in ChatGPT (panel beside the conversation)"), ["—", "✓", "✓"]}
+    {gettext_noop("Leave requests with approval"), [false, true, true]},
+    {gettext_noop("Firmowid in ChatGPT (panel beside the conversation)"), [false, true, true]}
+  ]
+
+  @sections [
+    {gettext_noop("Invoices and KSeF"),
+     [
+       {gettext_noop("Sales invoices"),
+        [gettext_noop("unlimited"), gettext_noop("unlimited"), gettext_noop("unlimited")]},
+       {gettext_noop("KSeF: sending invoices and downloading purchases"),
+        [gettext_noop("unlimited"), gettext_noop("unlimited"), gettext_noop("unlimited")]},
+       {gettext_noop("Clear invoice wizard"), [true, true, true]},
+       {gettext_noop("Customer database with cooperation statistics"), [true, true, true]},
+       {gettext_noop("Invoices in 33 currencies"), [true, true, true]},
+       {gettext_noop("Reverse charge for EU customers (automatic)"), [true, true, true]},
+       {gettext_noop("ZIP package for your accountant"), [true, true, true]},
+       {gettext_noop("Document OCR"),
+        [
+          gettext_noop("10 credits / month"),
+          gettext_noop("50 credits / month"),
+          gettext_noop("unlimited")
+        ]}
+     ]},
+    {gettext_noop("Banking and payments"), [{gettext_noop("Email notifications"), [false, true, true]}]},
+    {gettext_noop("Team and working time"),
+     [
+       {gettext_noop("Project cost"), [true, true, true]},
+       {gettext_noop("Employee and project management"), [false, true, true]},
+       {gettext_noop("PDF time tracking and payroll report"), [false, false, true]}
+     ]},
+    {gettext_noop("HR"),
+     [
+       {gettext_noop("Employee contracts and documents"), [false, true, true]},
+       {gettext_noop("Business trips"), [false, false, true]}
+     ]},
+    {gettext_noop("ChatGPT and integrations"), [{gettext_noop("MCP (Claude, Cursor and others)"), [false, true, true]}]},
+    {gettext_noop("Data and security"), [{gettext_noop("Self-host, open source (AGPL-3.0)"), [true, true, true]}]},
+    {gettext_noop("Trial period"),
+     [
+       {gettext_noop("Paid features for free"),
+        [
+          false,
+          gettext_noop("until the end of next month"),
+          gettext_noop("until the end of next month")
+        ]}
+     ]}
   ]
 
   @doc """
@@ -63,6 +108,12 @@ defmodule FirmowidWeb.Landing.Components.Pricing do
       assigns
       |> assign(:plans, localize_plans(@plans, yearly?))
       |> assign(:rows, localize_rows(@rows))
+      |> assign(
+        :sections,
+        Enum.map(@sections, fn {title, rows} ->
+          {Gettext.gettext(Firmowid.Gettext, title), localize_rows(rows)}
+        end)
+      )
       |> assign(:yearly?, yearly?)
 
     ~H"""
@@ -174,60 +225,133 @@ defmodule FirmowidWeb.Landing.Components.Pricing do
             </p>
           </div>
 
-          <div class="landing-pricing-plans sticky top-(--landing-nav-height) z-20 grid grid-cols-3 rounded-md bg-(--landing-beige) *:px-1.5 *:py-3 *:text-center *:text-xs *:font-semibold lg:col-[2/5] lg:row-2 lg:rounded-t-2xl lg:rounded-b-none lg:*:flex lg:*:min-h-17 lg:*:flex-col lg:*:justify-center lg:*:bg-white lg:*:py-2.5 lg:*:text-sm lg:*:text-transparent [&_.landing-pricing-featured]:bg-transparent [&_.landing-pricing-featured]:text-(--landing-accent) lg:[&_.landing-pricing-featured]:bg-grey-900 lg:[&_.landing-pricing-featured]:text-transparent [&_small]:hidden lg:[&.is-stuck_>_*]:bg-(--landing-beige) lg:[&.is-stuck_>_*]:text-[#0f0f0f] lg:[&.is-stuck_>_.landing-pricing-featured]:bg-grey-900 lg:[&.is-stuck_>_.landing-pricing-featured]:text-white lg:[&.is-stuck_small]:mt-1 lg:[&.is-stuck_small]:block">
+          <div class="group/pricing landing-pricing-plans sticky top-(--landing-nav-height) z-20 grid grid-cols-3 rounded-md bg-(--landing-beige) *:px-1.5 *:py-3 *:text-center *:text-xs *:font-semibold lg:col-[2/5] lg:row-2 lg:rounded-t-2xl lg:rounded-b-none lg:*:flex lg:*:min-h-17 lg:*:flex-col lg:*:justify-center lg:*:bg-white lg:*:py-2.5 lg:*:text-sm lg:*:text-[#0f0f0f] lg:*:transition-colors lg:*:duration-200 lg:motion-reduce:*:transition-none [&_.landing-pricing-featured]:bg-transparent [&_.landing-pricing-featured]:text-(--landing-accent) lg:[&_.landing-pricing-featured]:bg-grey-900 lg:[&_.landing-pricing-featured]:text-white lg:[&.is-stuck]:overflow-hidden lg:[&.is-stuck]:rounded-2xl lg:[&.is-stuck_>_*]:bg-(--landing-beige) lg:[&.is-stuck_>_.landing-pricing-featured]:bg-grey-900">
             <span
               :for={plan <- @plans}
               class={[plan.featured && "landing-pricing-featured"]}
             >
-              {plan.name}<small>{pgettext("landing card price", "%{amount} PLN", amount: plan.price)}</small>
+              <span class="lg:opacity-0 lg:transition-opacity lg:duration-200 lg:group-[.is-stuck]/pricing:opacity-100 lg:motion-reduce:transition-none">
+                {plan.name}<small class="hidden lg:mt-1 lg:block">{pgettext(
+                  "landing card price",
+                  "%{amount} PLN",
+                  amount: plan.price
+                )}</small>
+              </span>
             </span>
           </div>
 
-          <p class="text-xs font-bold tracking-[0.08em] text-(--landing-accent) uppercase lg:col-1 lg:row-2 lg:self-end lg:pb-7">
+          <p class="text-caps-sm font-bold tracking-[0.08em] text-orangeText uppercase lg:col-1 lg:row-2 lg:self-end lg:pb-7">
             {gettext("Key differences")}
           </p>
 
           <dl class="lg:col-[1/5] lg:row-3">
-            <div
+            <.comparison_row
               :for={{label, values} <- @rows}
-              class="grid grid-cols-3 border-b border-(--landing-line) text-xs lg:grid-cols-[1.45fr_repeat(3,minmax(0,1fr))] lg:text-sm [&_dd]:px-1 [&_dd]:pt-2 [&_dd]:pb-4.5 [&_dd]:text-center [&_dd]:font-semibold [&_dd]:text-[#0f0f0f] lg:[&_dd]:px-3 lg:[&_dd]:py-4 [&_dd.landing-pricing-featured]:bg-transparent [&_dd.landing-pricing-featured]:text-[#0f0f0f] lg:[&_dd.landing-pricing-featured]:bg-grey-900 lg:[&_dd.landing-pricing-featured]:text-[#f5f1ea] lg:[&_dd.landing-pricing-featured[data-tick]]:text-orange-500-landing [&_dd[data-tick]]:text-lg [&_dd[data-tick]]:text-(--landing-accent) [&_dt]:col-span-full [&_dt]:pt-4.5 [&_dt]:pb-2 [&_dt]:font-normal lg:[&_dt]:col-auto lg:[&_dt]:py-4 lg:[&_dt]:pr-6"
-            >
-              <dt>{label}</dt>
-              <dd
-                :for={{value, index} <- Enum.with_index(values)}
-                class={[index == 1 && "landing-pricing-featured"]}
-                data-tick={value == "✓"}
-              >
-                <span class="sr-only">{Enum.at(@plans, index).name}: </span>
-                <img
-                  :if={value == "✓"}
-                  src={~p"/images/landing/icons/check.svg"}
-                  alt=""
-                  width="12"
-                  height="13"
-                  class="mx-auto inline-block"
-                />
-                <span :if={value != "✓"} aria-hidden={if value == "—", do: "true"}>{value}</span>
-                <span :if={value in ["✓", "—"]} class="sr-only">
-                  {if value == "✓", do: gettext("Included"), else: gettext("Not included")}
-                </span>
-              </dd>
-            </div>
+              label={label}
+              values={values}
+              plans={@plans}
+            />
           </dl>
-        </div>
 
-        <button
-          type="button"
-          class="before:mask-size-auto relative isolate mx-auto mt-8 block min-h-10.25 w-64.5 max-w-full cursor-pointer rounded-full bg-orange-700 px-4 py-2.5 text-sm text-white transition-colors duration-200 before:pointer-events-none before:absolute before:top-1/2 before:left-1/2 before:-z-10 before:h-[43px] before:w-[260px] before:-translate-1/2 before:bg-orange-700 before:mask-[url('/images/landing/frames/comparison.svg')] before:mask-center before:mask-no-repeat before:transition-colors before:duration-200 hover:bg-orange-500 hover:before:bg-orange-500 focus-visible:outline-2 focus-visible:outline-offset-4"
-        >
-          {ngettext("Show %{count} feature", "Show all %{count} features", 20)}
-        </button>
+          <div
+            id="landing-pricing-features"
+            aria-hidden="true"
+            inert
+            data-expanded="false"
+            class="-mt-6 grid grid-rows-[0fr] self-start transition-[grid-template-rows] duration-500 ease-in-out data-[expanded=true]:grid-rows-[1fr] motion-reduce:transition-none lg:col-span-full lg:mt-0"
+          >
+            <div class="min-h-0 overflow-hidden">
+              <section :for={{title, rows} <- @sections}>
+                <h4 class="grid grid-cols-3 lg:grid-cols-[1.45fr_repeat(3,minmax(0,1fr))]">
+                  <span class="col-span-full pt-6 pb-2 text-caps-sm font-bold tracking-[0.08em] text-orangeText uppercase lg:col-span-1 lg:py-5">{title}</span>
+                  <span aria-hidden="true" class="hidden lg:col-3 lg:block lg:bg-grey-900"></span>
+                </h4>
+                <dl>
+                  <.comparison_row
+                    :for={{label, values} <- rows}
+                    label={label}
+                    values={values}
+                    plans={@plans}
+                  />
+                </dl>
+              </section>
+            </div>
+          </div>
+
+          <div
+            id="landing-pricing-tab-end"
+            aria-hidden="true"
+            class="hidden h-6 lg:col-span-full lg:grid lg:grid-cols-[1.45fr_repeat(3,minmax(0,1fr))]"
+          >
+            <span class="col-3 rounded-b-2xl bg-grey-900"></span>
+          </div>
+
+          <button
+            id="landing-pricing-toggle"
+            type="button"
+            aria-controls="landing-pricing-features"
+            aria-expanded="false"
+            class="before:mask-size-auto group relative isolate mx-auto mt-2 flex min-h-10.25 w-max max-w-full min-w-64.5 cursor-pointer items-center justify-center gap-2 rounded-full bg-orange-700 px-4 py-2.5 text-sm text-white transition-colors duration-200 before:pointer-events-none before:absolute before:top-1/2 before:left-1/2 before:-z-10 before:h-[43px] before:w-[260px] before:-translate-1/2 before:bg-orange-700 before:mask-[url('/images/landing/frames/comparison.svg')] before:mask-center before:mask-no-repeat before:transition-colors before:duration-200 hover:bg-orange-500 hover:before:bg-orange-500 focus-visible:outline-2 focus-visible:outline-offset-4 aria-expanded:bg-transparent aria-expanded:text-orangeText aria-expanded:outline-none aria-expanded:before:bg-transparent aria-expanded:hover:bg-transparent aria-expanded:hover:before:bg-transparent aria-expanded:focus-visible:underline lg:col-span-full lg:mt-8"
+          >
+            <span class="group-aria-expanded:hidden">{ngettext(
+              "Show %{count} feature",
+              "Show all %{count} features",
+              20
+            )}</span>
+            <span class="hidden group-aria-expanded:inline">{gettext("Collapse comparison")}</span>
+            <svg
+              aria-hidden="true"
+              viewBox="0 0 16 16"
+              fill="none"
+              class="size-4 shrink-0 transition-transform duration-500 group-aria-expanded:rotate-180 motion-reduce:transition-none"
+            >
+              <path
+                d="m3 6 5 5 5-5"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+          </button>
+        </div>
 
         <p class="mt-10 text-center text-base font-medium">
           {gettext("Paid features free until the end of next month. No card required.")}
         </p>
       </div>
     </section>
+    """
+  end
+
+  attr :label, :string, required: true
+  attr :values, :list, required: true
+  attr :plans, :list, required: true
+
+  defp comparison_row(assigns) do
+    ~H"""
+    <div class="grid grid-cols-3 border-b border-(--landing-line) text-xs lg:grid-cols-[1.45fr_repeat(3,minmax(0,1fr))] lg:text-sm [&_dd]:px-1 [&_dd]:pt-2 [&_dd]:pb-4.5 [&_dd]:text-center [&_dd]:font-semibold [&_dd]:text-[#0f0f0f] lg:[&_dd]:px-3 lg:[&_dd]:py-4 [&_dd.landing-pricing-featured]:bg-transparent lg:[&_dd.landing-pricing-featured]:bg-grey-900 lg:[&_dd.landing-pricing-featured]:text-[#f5f1ea] [&_dt]:col-span-full [&_dt]:pt-4.5 [&_dt]:pb-2 [&_dt]:font-normal lg:[&_dt]:col-auto lg:[&_dt]:py-4 lg:[&_dt]:pr-6">
+      <dt>{@label}</dt>
+      <dd
+        :for={{value, index} <- Enum.with_index(@values)}
+        class={[index == 1 && "landing-pricing-featured"]}
+      >
+        <span class="sr-only">{Enum.at(@plans, index).name}: </span>
+        <span
+          :if={value == true}
+          aria-hidden="true"
+          class={[
+            "mx-auto inline-block h-3.25 w-3 mask-[url('/images/landing/icons/check.svg')] mask-contain mask-center mask-no-repeat",
+            if(index == 1, do: "bg-orange-500-landing", else: "bg-orangeText")
+          ]}
+        ></span>
+        <span :if={value == false} aria-hidden="true" class="text-[#737373]">—</span>
+        <span :if={is_boolean(value)} class="sr-only">{if value,
+          do: gettext("Included"),
+          else: gettext("Not included")}</span>
+        <span :if={is_binary(value)}>{value}</span>
+      </dd>
+    </div>
     """
   end
 
@@ -259,7 +383,11 @@ defmodule FirmowidWeb.Landing.Components.Pricing do
 
   defp localize_rows(rows) do
     Enum.map(rows, fn {label, values} ->
-      {Gettext.gettext(Firmowid.Gettext, label), Enum.map(values, &Gettext.gettext(Firmowid.Gettext, &1))}
+      {Gettext.gettext(Firmowid.Gettext, label),
+       Enum.map(values, fn
+         value when is_boolean(value) -> value
+         value -> Gettext.gettext(Firmowid.Gettext, value)
+       end)}
     end)
   end
 end
