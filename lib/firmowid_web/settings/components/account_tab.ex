@@ -246,6 +246,21 @@ defmodule FirmowidWeb.Settings.Components.AccountTab do
           >
             <.input field={@email_form[:email]} type="email" new required />
           </Helpers.settings_field>
+          <Helpers.settings_field
+            :if={@current_user.hashed_password}
+            label="Twoje hasło"
+            class="w-full"
+            for="email_form_current_password"
+            layout={:row}
+          >
+            <.input
+              field={@email_form[:current_password]}
+              id="email_form_current_password"
+              type="password"
+              new
+              required
+            />
+          </Helpers.settings_field>
           <Helpers.settings_display_field
             label="Wyślemy link potwierdzający na nowy adres. Po jego otwarciu potwierdź zmianę przyciskiem na wyświetlonej stronie"
             label_class="order-2 text-start px-1"
