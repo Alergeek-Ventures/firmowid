@@ -71,11 +71,15 @@ defmodule Firmowid.Ash.Timetracker do
 
     tool :start_session, Session, :start,
       annotations: [read_only_hint: false, destructive_hint: false, open_world_hint: false],
-      description: "Start a work session for the authenticated user"
+      description:
+        "Start a work session for the authenticated user now. Optionally pass project_id from list_projects, " <>
+          "a title and is_remote. Check get_current_session first so a running session is not duplicated."
 
     tool :edit_session, Session, :edit_current_user_session,
       annotations: [read_only_hint: false, destructive_hint: true, open_world_hint: false],
-      description: "Edit an unfrozen work session belonging to the authenticated user"
+      description:
+        "Edit the title, start or end time, project or remote flag of one of the authenticated user's sessions by id. " <>
+          "Sessions locked by a submitted hours record cannot be changed."
 
     tool :list_leave_requests, LeaveRequest, :list_current_user do
       annotations read_only_hint: true, destructive_hint: false, open_world_hint: false

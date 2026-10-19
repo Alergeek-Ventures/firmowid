@@ -27,7 +27,7 @@ defmodule Firmowid.Ash.Invoicing do
       annotations read_only_hint: true, destructive_hint: false, open_world_hint: false
 
       description "List sales invoices as data for questions, summaries, analysis and tables in the conversation." <>
-                    " First check get_ksef_connection_status and propose connection if needed; stored invoices remain readable without it and may be out of date. Results belong to the authenticated organization. An absent invoice_number identifies a draft. Use after/before keyset cursors with the same filters to navigate pages."
+                    " First check get_ksef_connection_status and propose connection if needed; stored invoices remain readable without it and may be out of date. Results belong to the authenticated organization. An absent invoice_number identifies a draft. effective_amount is the gross amount after corrections; with merge_corrections sum it instead of gross_value. Use after/before keyset cursors with the same filters to navigate pages."
 
       action_parameters [:limit]
 
@@ -46,14 +46,14 @@ defmodule Firmowid.Ash.Invoicing do
         :corrected_invoice_id
       ]
 
-      load [:gross_value, :ksef_submission_status]
+      load [:gross_value, :effective_amount, :ksef_submission_status]
     end
 
     tool :list_cost_invoices, CostInvoice, :list do
       annotations read_only_hint: true, destructive_hint: false, open_world_hint: false
 
       description "List cost invoices as data for questions, summaries, analysis and tables in the conversation." <>
-                    " First check get_ksef_connection_status and propose connection if needed; stored invoices remain readable without it and may be out of date. Results belong to the authenticated organization and retain signed Money amounts. Use after/before keyset cursors with the same filters to navigate pages."
+                    " First check get_ksef_connection_status and propose connection if needed; stored invoices remain readable without it and may be out of date. Results belong to the authenticated organization and retain signed Money amounts. effective_amount includes correction deltas; with merge_corrections sum it instead of amount. Use after/before keyset cursors with the same filters to navigate pages."
 
       action_parameters [:limit]
 
@@ -68,6 +68,8 @@ defmodule Firmowid.Ash.Invoicing do
         :ksef_number,
         :invoice_type
       ]
+
+      load [:effective_amount]
     end
 
     tool :get_sales_invoice, SalesInvoice, :read do
@@ -97,7 +99,11 @@ defmodule Firmowid.Ash.Invoicing do
 
       description "Validate invoice data and open the mandatory user confirmation widget. " <>
                     "Creates nothing. The user selects a number and confirms issuance inside the widget; " <>
-                    "an active KSeF connection is required to issue. Pass invoice_id to resume a saved draft, retaining its ID."
+                    "an active KSeF connection is required to issue. Pass invoice_id to resume a saved draft, retaining its ID. " <>
+                    "Put the invoice fields in invoice. Required: buyer_type, buyer_full_name (or given name and surname), " <>
+                    "buyer_id (tax ID) for companies, buyer_address, sale_date, due_date and sales_invoice_items with name, " <>
+                    "quantity, unit, net unit_price and vat_rate such as \"23\". Seller details, issue date, PLN, " <>
+                    "Poland and payment by transfer to the organization's default account for the currency are filled in when omitted."
 
       load [
         :amount,
@@ -112,7 +118,8 @@ defmodule Firmowid.Ash.Invoicing do
       annotations read_only_hint: true, destructive_hint: false, open_world_hint: false
 
       description "Preview a correction to an issued invoice and open the mandatory confirmation widget. " <>
-                    "First read the source with get_sales_invoice. Supply original_invoice_id and the intended corrected items/fields. " <>
+                    "First read the source with get_sales_invoice. Supply original_invoice_id and put the full corrected " <>
+                    "invoice fields and items in invoice. " <>
                     "Preserves buyer tax identity and the effective correction chain. Creates nothing until the user confirms in the widget."
 
       load [
@@ -129,7 +136,8 @@ defmodule Firmowid.Ash.Invoicing do
       annotations read_only_hint: false, destructive_hint: false, open_world_hint: false
 
       description "Save a complete but unnumbered invoice only when the user explicitly asks to issue it later. " <>
-                    "A draft requires the same data as issuance except the number; keep partial data in the chat instead. " <>
+                    "A draft requires the same data as issuance except the number, as listed for preview_sales_invoice; " <>
+                    "keep partial data in the chat instead. " <>
                     "Prefer calling preview_sales_invoice directly. Saving is available without KSeF and neither issues nor submits."
 
       load [:amount, sales_invoice_items: [:net_value, :vat_value, :gross_value]]

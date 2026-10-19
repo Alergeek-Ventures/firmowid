@@ -321,7 +321,7 @@ defmodule FirmowidMcp.Invoicing.Views.Issue do
   end
 
   defp confirmed_input(socket) do
-    attrs = action_arguments(socket)["input"] || %{}
+    attrs = action_arguments(socket)["invoice"] || %{}
 
     attrs
     |> Map.put("invoice_number", socket.assigns.invoice_number)

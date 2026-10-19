@@ -43,7 +43,7 @@ defmodule Firmowid.Ash.Invoicing.Actions.IssueWizardState do
       attrs = invoice_attributes(state, input.arguments)
 
       if action_opts[:preview?] do
-        Invoicing.preview_sales_invoice(%{input: attrs}, opts)
+        Invoicing.preview_sales_invoice(%{invoice: attrs}, opts)
       else
         result =
           if input.arguments.draft do

@@ -155,33 +155,60 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
         max_page_size 100
       end
 
-      argument :date_from, :date
-      argument :date_to, :date
-      argument :query, :string, constraints: [max_length: 500]
-      argument :currency, :string
-      argument :amount_from, :decimal
-      argument :amount_to, :decimal
-      argument :merge_corrections, :boolean, default: false
+      argument :date_from, :date, description: "Inclusive start of the date_field range (YYYY-MM-DD)."
+
+      argument :date_to, :date, description: "Inclusive end of the date_field range (YYYY-MM-DD)."
+
+      argument :query, :string,
+        constraints: [max_length: 500],
+        description: "Full-text search over seller, description and invoice identifier."
+
+      argument :currency, :string,
+        description: "ISO currency code, e.g. PLN. Never add up amounts in different currencies."
+
+      argument :amount_from, :decimal,
+        description: "Minimum gross amount, inclusive, compared as an absolute value although costs are stored negative."
+
+      argument :amount_to, :decimal,
+        description: "Maximum gross amount, inclusive, compared as an absolute value although costs are stored negative."
+
+      argument :merge_corrections, :boolean,
+        default: false,
+        description:
+          "Hide corrections linked to an original and compare amounts after corrections. Use for totals and rankings."
 
       argument :date_field, :atom do
         constraints one_of: [:issue_date, :sale_date, :due_date, :any]
         default :issue_date
+
+        description "Date compared with date_from and date_to; any matches either issue_date or sale_date."
       end
 
       argument :reconciliation, :atom do
         constraints one_of: [:pending, :matched, :skipped]
+
+        description "Payment matching with bank transactions: pending has no matched payment yet, " <>
+                      "matched is linked to a transaction, skipped is excluded from matching."
       end
 
-      argument :ids, {:array, :uuid_v7}
-      argument :inserted_from, :utc_datetime
-      argument :inserted_to, :utc_datetime
-      argument :is_ksef_imported, :boolean
+      argument :ids, {:array, :uuid_v7}, description: "Return only invoices with these IDs."
+
+      argument :inserted_from, :utc_datetime,
+        description: "Inclusive lower bound of when the invoice was recorded in Firmowid, not its document date."
+
+      argument :inserted_to, :utc_datetime,
+        description: "Exclusive upper bound of when the invoice was recorded in Firmowid, not its document date."
+
+      argument :is_ksef_imported, :boolean, description: "Whether the invoice was imported from KSeF."
 
       argument :limit, :integer do
         constraints min: 1
+        description "Page size, at most 100."
       end
 
-      argument :listing_sort, :atom, constraints: [one_of: [:newest, :oldest]]
+      argument :listing_sort, :atom,
+        constraints: [one_of: [:newest, :oldest]],
+        description: "Order by issue date, newest or oldest first."
 
       validate compare(:date_to, greater_than_or_equal_to: :date_from),
         where: [present(:date_from), present(:date_to)],
@@ -199,10 +226,14 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
 
       argument :source, :atom do
         constraints one_of: [:manual_import, :ksef]
+
+        description "ksef for invoices imported from KSeF, manual_import for those added another way."
       end
 
       argument :in_digest, :atom do
         constraints one_of: [:yes, :no]
+
+        description "Whether the invoice was already included in a KSeF cost invoice notification digest."
       end
 
       # Date filtering — conditional on date_field

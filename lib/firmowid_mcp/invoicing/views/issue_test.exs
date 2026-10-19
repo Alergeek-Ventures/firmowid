@@ -21,7 +21,7 @@ defmodule FirmowidMcp.Invoicing.Views.IssueTest do
       |> Ash.PlugHelpers.set_actor(admin)
       |> Ash.PlugHelpers.set_tenant(admin.organization_id)
 
-    arguments = %{"input" => %{"input" => %{}, "invoice_id" => draft.id}}
+    arguments = %{"input" => %{"invoice" => %{}, "invoice_id" => draft.id}}
     token = FirmowidMcp.Session.issue(conn, IssueInvoice.resource_uri(), arguments)
 
     {:ok, view, html} =

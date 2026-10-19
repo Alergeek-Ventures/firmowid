@@ -725,12 +725,12 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
 
     result =
       if is_nil(invoice.invoice_number) do
-        Invoicing.preview_sales_invoice(%{input: input, invoice_id: invoice.id}, scope: scope)
+        Invoicing.preview_sales_invoice(%{invoice: input, invoice_id: invoice.id}, scope: scope)
       else
         original = invoice.corrected_invoice || invoice
 
         Invoicing.preview_sales_invoice_correction(
-          %{input: input, original_invoice_id: original.id},
+          %{invoice: input, original_invoice_id: original.id},
           scope: scope
         )
       end
