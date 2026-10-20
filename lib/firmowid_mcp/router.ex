@@ -5,6 +5,7 @@ defmodule FirmowidMcp.Router do
   import Plug.Conn
 
   alias AshAi.Mcp.Router, as: Transport
+  alias FirmowidMcp.Invoicing.Privacy
   alias FirmowidMcp.Runtime
   alias FirmowidMcp.Widgets
 
@@ -17,6 +18,7 @@ defmodule FirmowidMcp.Router do
     opts
     |> Keyword.put(:otp_app, :firmowid)
     |> Keyword.put(:instructions, FirmowidMcp.instructions())
+    |> Keyword.put(:tool_argument_transformer, &Privacy.validate_arguments/3)
     |> Transport.init()
   end
 
@@ -115,10 +117,12 @@ defmodule FirmowidMcp.Router do
   end
 
   defp decorate(
-         %{"result" => %{"isError" => false, "structuredContent" => _data}} = response,
+         %{"result" => %{"isError" => false}} = response,
          %{"method" => "tools/call", "params" => %{"name" => name} = params},
          conn
        ) do
+    response = update_in(response, ["result"], &Privacy.result/1)
+
     case Widgets.for_tool(name) do
       nil ->
         response
@@ -159,6 +163,10 @@ defmodule FirmowidMcp.Router do
   defp tool_metadata(%{"name" => name} = tool) do
     tool =
       tool
+      |> Map.new(fn
+        {key, schema} when key in ["inputSchema", "outputSchema"] -> {key, Privacy.schema(schema)}
+        pair -> pair
+      end)
       |> Map.put("securitySchemes", @security_schemes)
       |> update_in(["_meta"], &Map.put(&1 || %{}, "securitySchemes", @security_schemes))
 
