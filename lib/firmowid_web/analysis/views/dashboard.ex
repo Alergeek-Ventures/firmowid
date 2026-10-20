@@ -5,6 +5,10 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
   Displays monthly income and expense pie charts with project-based filtering.
   URL params control the active month (`?miesiac=YYYY-MM-DD`) and tag filters
   (`?tagi=firma,projekt:<id>`).
+
+  Without tag filters, the charts also show unrealized capital up to the end of
+  the month: invoices without a linked payment and payments without an invoice
+  or salary.
   """
   use FirmowidWeb, :live_view
 
@@ -257,13 +261,35 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
         scope
       )
 
+    unrealized = Analysis.get_unrealized_entries(date_range_to, scope)
+
     socket
-    |> assign(:income_categories, totals.income_categories)
-    |> assign(:expense_categories, totals.expense_categories)
+    |> assign(
+      :income_categories,
+      with_unrealized(totals.income_categories, unrealized.income, tag_filters)
+    )
+    |> assign(
+      :expense_categories,
+      with_unrealized(totals.expense_categories, unrealized.expenses, tag_filters)
+    )
+    |> assign(:unrealized, unrealized)
     |> assign(:transactions, totals.transactions)
     |> assign(:sales_invoices, totals.sales_invoices)
     |> assign(:cost_invoices, totals.cost_invoices)
   end
+
+  # Unrealized invoices have no categories, so project or company filters hide them.
+  defp with_unrealized(categories, amount, []) do
+    if Decimal.positive?(amount),
+      do: categories ++ [%{key: :unrealized, name: nil, amount: amount}],
+      else: categories
+  end
+
+  defp with_unrealized(categories, _amount, _tag_filters), do: categories
+
+  defp unrealized_for_section(%{expanded_section: :income, unrealized: unrealized}), do: unrealized.income_entries
+
+  defp unrealized_for_section(%{expanded_section: :expenses, unrealized: unrealized}), do: unrealized.expense_entries
 
   defp build_path(socket, overrides) do
     month = Keyword.get(overrides, :month, socket.assigns.params.month)
@@ -413,6 +439,29 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
             categories={@categories}
             colors={@category_colors}
             can_write={can_write?(assigns)}
+          />
+        </div>
+      </section>
+      <section
+        :if={@tag_filters == [] and unrealized_for_section(assigns) != []}
+        id="analysis-unrealized"
+        class="mt-8"
+      >
+        <h2 class="text-lg font-medium text-darkGrey">
+          {if @expanded_section == :income,
+            do: gettext("Unrealized income"),
+            else: gettext("Unrealized expenses")}
+        </h2>
+        <p class="mt-1 text-sm text-darkGrey">
+          {gettext(
+            "Invoices without a payment and payments without an invoice or salary, dated up to the end of this month. Link them or mark them as skipped to include them in the analysis."
+          )}
+        </p>
+        <div class="overflow-x-auto">
+          <FirmowidWeb.Analysis.Components.EntriesTable.table
+            entries={unrealized_for_section(assigns)}
+            colors={@category_colors}
+            unrealized
           />
         </div>
       </section>
