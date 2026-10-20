@@ -82,6 +82,10 @@ defmodule Firmowid.Ash.SystemActor do
   - `:avatar_cleanup` — cleans up unreferenced avatar blobs after a user or
     organization updates their avatar. Can read/write blobs and read related
     records as needed for blob cleanup.
+
+  - `:actor_member_loader` — loads the authenticated user's own member, which
+    policies read the user's role from. Can read only the member of `user_id`
+    in `org_id`.
   """
 
   @type role ::
@@ -107,6 +111,7 @@ defmodule Firmowid.Ash.SystemActor do
           | :session_auto_stopper
           | :anonymous
           | :avatar_cleanup
+          | :actor_member_loader
 
   @enforce_keys [:org_id, :role]
   defstruct [:org_id, :role, :blob_id, :user_id]

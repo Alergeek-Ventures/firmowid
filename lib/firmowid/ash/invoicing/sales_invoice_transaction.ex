@@ -12,6 +12,7 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoiceTransaction do
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer]
 
+  alias Firmowid.Ash.Checks.ActorRole
   alias Firmowid.Ash.Checks.AtLeastRole
   alias Firmowid.Ash.Checks.SystemActorRole
   alias Firmowid.Ash.Resource
@@ -34,7 +35,7 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoiceTransaction do
   end
 
   policies do
-    bypass actor_attribute_equals(:role, :admin) do
+    bypass {ActorRole, role: :admin} do
       authorize_if always()
     end
 

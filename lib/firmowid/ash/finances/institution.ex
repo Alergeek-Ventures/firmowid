@@ -9,6 +9,8 @@ defmodule Firmowid.Ash.Finances.Institution do
     domain: Firmowid.Ash.Finances,
     authorizers: [Ash.Policy.Authorizer]
 
+  alias Firmowid.Ash.Checks.ActorRole
+
   actions do
     read :for_country do
       description "List GoCardless institutions available for a given country code."
@@ -20,7 +22,7 @@ defmodule Firmowid.Ash.Finances.Institution do
 
   policies do
     policy action(:for_country) do
-      authorize_if actor_attribute_equals(:role, :admin)
+      authorize_if {ActorRole, role: :admin}
     end
   end
 

@@ -468,7 +468,7 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
             </div>
 
             <div class="flex items-center justify-end gap-2">
-              <span class={role_badge_styles(user.role)}>{UserRole.label(user.role)}</span>
+              <span class={role_badge_styles(user.member.role)}>{UserRole.label(user.member.role)}</span>
 
               <.dropdown :if={user.id != @current_user.id} id={"organization_user_#{user.id}"}>
                 <:trigger>
@@ -809,7 +809,7 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
   attr :user, :map, required: true
 
   defp update_role_modal(assigns) do
-    current_role = assigns.user.role
+    current_role = assigns.user.member.role
     other_roles = Enum.reject(UserRole.roles(), &(&1 == current_role))
 
     assigns =

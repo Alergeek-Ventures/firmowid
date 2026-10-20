@@ -9,6 +9,7 @@ defmodule Firmowid.Ash.Payroll.UserEmploymentContract do
 
   alias AshOban.Checks.AshObanInteraction
   alias Firmowid.Ash.Blobs
+  alias Firmowid.Ash.Checks.ActorRole
   alias Firmowid.Ash.Checks.SystemActorRole
   alias Firmowid.Ash.Payroll.Actions.NotifyAdminsAboutSignedContract
   alias Firmowid.Ash.Payroll.Changes.MaybeActivateContract
@@ -280,14 +281,14 @@ defmodule Firmowid.Ash.Payroll.UserEmploymentContract do
     end
 
     policy action_type(:read) do
-      authorize_if actor_attribute_equals(:role, :admin)
+      authorize_if {ActorRole, role: :admin}
       authorize_if expr(user_id == ^actor(:id))
 
       authorize_if {SystemActorRole, roles: [:document_blob_processor, :employment_contract_notifier]}
     end
 
     policy action(:update) do
-      authorize_if actor_attribute_equals(:role, :admin)
+      authorize_if {ActorRole, role: :admin}
     end
 
     policy action(:submit_signed) do
@@ -298,7 +299,7 @@ defmodule Firmowid.Ash.Payroll.UserEmploymentContract do
       authorize_if {AshObanInteraction, []}
       authorize_if {SystemActorRole, roles: [:document_blob_processor]}
       authorize_if expr(user_id == ^actor(:id))
-      authorize_if actor_attribute_equals(:role, :admin)
+      authorize_if {ActorRole, role: :admin}
       forbid_if always()
     end
 

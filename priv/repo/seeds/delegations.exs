@@ -5,7 +5,10 @@ defmodule Firmowid.Seeds.Delegations do
   alias Firmowid.Ash.Delegations.DelegationExpense
   alias Firmowid.Seeds.Helpers
 
-  @seed_actor %{id: "00000000-0000-0000-0000-000000000000", role: :admin}
+  @seed_actor %Firmowid.Ash.Core.User{
+    id: "00000000-0000-0000-0000-000000000000",
+    member: %Firmowid.Ash.Core.Member{role: :admin}
+  }
   @timezone "Europe/Warsaw"
 
   def seed!(%{users: %{kira: kira}, bytecraft: bytecraft}) do

@@ -96,7 +96,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
   def mount(_params, _session, socket) do
     current_user = socket.assigns.current_user
     current_org = socket.assigns.current_org
-    admin? = current_user.role == :admin
+    admin? = current_user.member.role == :admin
     scope = socket.assigns.ash_scope
     current_year = Date.utc_today().year
 
@@ -321,7 +321,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
 
   defp handle_progress(name, entry, socket) when name in [:organization_avatar, :user_avatar] do
     if name == :organization_avatar do
-      if socket.assigns.current_user.role != :admin do
+      if socket.assigns.current_user.member.role != :admin do
         raise Forbidden, message: "Tylko administrator może zmienić logo organizacji."
       end
     end
@@ -348,7 +348,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
   end
 
   defp list_organization_users(scope) do
-    Core.list_users!(%{status: :active}, load: [avatar_blob: [:url]], scope: scope)
+    Core.list_users!(%{status: :active}, load: [:member, avatar_blob: [:url]], scope: scope)
   end
 
   defp list_organization_invites(scope) do
@@ -450,7 +450,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
     current_user = socket.assigns.current_user
     scope = socket.assigns.ash_scope
 
-    if current_user.role != :admin do
+    if current_user.member.role != :admin do
       raise Forbidden, message: "Tylko administrator może aktualizować organizację."
     end
 
@@ -530,8 +530,8 @@ defmodule FirmowidWeb.Settings.Views.Index do
   def handle_event("update_user_role", %{"user_id" => user_id, "role" => role_param}, socket) do
     with {:ok, role} <- parse_role(role_param),
          {:ok, user} <- find_loaded_organization_user(socket.assigns.organization_users, user_id),
-         {:ok, _updated_user} <-
-           Core.update_role(user, %{role: role}, scope: socket.assigns.ash_scope) do
+         {:ok, _member} <-
+           Core.update_member_role(user.member, %{role: role}, scope: socket.assigns.ash_scope) do
       LiveToast.send_toast(:success, "Rola użytkownika została zmieniona.")
 
       {:noreply,
@@ -557,7 +557,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
   def handle_event("archive_organization_user", %{"user_id" => user_id}, socket) do
     current_user = socket.assigns.current_user
 
-    if current_user.role != :admin do
+    if current_user.member.role != :admin do
       raise Forbidden, message: "Tylko administrator może archiwizować użytkowników."
     end
 
@@ -691,7 +691,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
     current_user = socket.assigns.current_user
     current_org = socket.assigns.current_org
 
-    if current_user.role != :admin do
+    if current_user.member.role != :admin do
       raise Forbidden, message: "Tylko administrator może zmienić adres e-mail."
     end
 
@@ -725,7 +725,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
     current_user = socket.assigns.current_user
     current_org = socket.assigns.current_org
 
-    if current_user.role != :admin do
+    if current_user.member.role != :admin do
       raise Forbidden, message: "Tylko administrator może zarządzać listą dozwolonych adresów."
     end
 
@@ -752,7 +752,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
     current_user = socket.assigns.current_user
     current_org = socket.assigns.current_org
 
-    if current_user.role != :admin do
+    if current_user.member.role != :admin do
       raise Forbidden, message: "Tylko administrator może zarządzać listą dozwolonych adresów."
     end
 
@@ -1039,6 +1039,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
             current_user =
               Core.get_user!(socket.assigns.current_user.id,
                 scope: scope,
+                load: [:member],
                 actor: socket.assigns.current_user
               )
 

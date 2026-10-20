@@ -81,7 +81,6 @@ defmodule Firmowid.Ash.Core do
       define :change_email, action: :change_email
       define :update_current_profile, action: :update_current_profile
       define :get_shared_birthday, action: :get_shared_birthday
-      define :update_role, action: :update_role
       define :archive_user, action: :archive
       define :unarchive_user, action: :unarchive
       define :set_organization, action: :set_organization
@@ -90,7 +89,9 @@ defmodule Firmowid.Ash.Core do
       define :change_password, action: :change_password
     end
 
-    resource Member
+    resource Member do
+      define :update_member_role, action: :update_role
+    end
 
     resource Firmowid.Ash.Core.Token
 
@@ -137,6 +138,18 @@ defmodule Firmowid.Ash.Core do
     OauthConsent,
     OauthRefreshToken
   ]
+
+  @doc """
+  Loads the user's member in the organization, which policies read the actor's role from.
+
+  Authorizing the read as the user would need the role it loads, so a system actor
+  limited to this user's member in this organization reads it.
+  """
+  @spec load_member(User.t(), binary()) :: User.t()
+  def load_member(%User{} = user, tenant) when is_binary(tenant) do
+    actor = %SystemActor{org_id: tenant, role: :actor_member_loader, user_id: user.id}
+    Ash.load!(user, :member, actor: actor, tenant: tenant)
+  end
 
   @doc """
   Destroys a user inside a single explicit Ash transaction.

@@ -652,7 +652,7 @@ defmodule Firmowid.Seeds.MonthM1 do
     %Firmowid.Ash.Scope{
       actor: %Firmowid.Ash.Core.User{
         id: "00000000-0000-0000-0000-000000000000",
-        role: :admin,
+        member: %Firmowid.Ash.Core.Member{role: :admin},
         organization_id: bytecraft.id
       },
       tenant: bytecraft.id

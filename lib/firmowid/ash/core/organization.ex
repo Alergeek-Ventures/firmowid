@@ -13,6 +13,7 @@ defmodule Firmowid.Ash.Core.Organization do
 
   alias Firmowid.Ash.Billing.PlanCatalog
   alias Firmowid.Ash.Blobs.Blob
+  alias Firmowid.Ash.Checks.ActorRole
   alias Firmowid.Ash.Checks.SystemActorRole
   alias Firmowid.Ash.Core.Changes.CleanupOldAvatarBlob
   alias Firmowid.Ash.Core.Changes.ClearVatExemptionFields
@@ -237,7 +238,7 @@ defmodule Firmowid.Ash.Core.Organization do
         :remove_sender_email,
         :regenerate_nickname
       ]),
-      actor_attribute_equals(:role, :admin)
+      {ActorRole, role: :admin}
     ] do
       authorize_if expr(id == ^actor(:organization_id))
     end
@@ -246,7 +247,7 @@ defmodule Firmowid.Ash.Core.Organization do
       authorize_if actor_attribute_equals(:system_role, :superuser)
     end
 
-    policy [action_type(:destroy), actor_attribute_equals(:role, :admin)] do
+    policy [action_type(:destroy), {ActorRole, role: :admin}] do
       authorize_if expr(id == ^actor(:organization_id))
     end
   end

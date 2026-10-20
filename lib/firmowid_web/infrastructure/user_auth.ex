@@ -11,17 +11,20 @@ defmodule FirmowidWeb.Infrastructure.UserAuth do
   import Plug.Conn
 
   alias AshAuthentication.Phoenix.Controller, as: AuthController
+  alias Firmowid.Ash.Core
+  alias Firmowid.Ash.Core.User
   alias Firmowid.Ash.Scope
   alias FirmowidWeb.Organization.Utilities.Navigation, as: OrganizationNavigation
 
   @doc """
-  Builds a Scope, loads avatars for user and organization.
+  Builds a Scope, loads the user's member and avatars for user and organization.
 
   Shared by both the Plug pipeline (`require_authenticated_user_with_organization`)
   and the LiveView hook (`RequireOrganization.on_mount`).
   """
   @spec load_scope_and_avatars(map()) :: {map(), map(), Scope.t()}
   def load_scope_and_avatars(user) do
+    user = Core.load_member(user, user.organization_id)
     scope = Scope.new!(user, user.organization_id)
     user = Ash.load!(user, [:organization, avatar_blob: [:url]], scope: scope)
     org = Ash.load!(user.organization, [avatar_blob: [:url]], scope: scope)
@@ -159,11 +162,16 @@ defmodule FirmowidWeb.Infrastructure.UserAuth do
   @doc """
   Returns the default signed-in path for a user.
 
-  Users with invoicing permissions (`:invoicing`, `:accountant`, `:admin`) are
+  Members with invoicing permissions (`:invoicing`, `:accountant`, `:admin`) are
   redirected to invoicing hub, while other users land on time tracking.
   """
-  @spec signed_in_path_for_user(map() | nil) :: String.t()
-  def signed_in_path_for_user(%{role: role}) when role in [:invoicing, :accountant, :admin], do: ~p"/fakturowanie"
+  @spec signed_in_path_for_user(User.t() | nil) :: String.t()
+  def signed_in_path_for_user(%User{organization_id: tenant} = user) when is_binary(tenant) do
+    case Core.load_member(user, tenant).member do
+      %{role: role} when role in [:invoicing, :accountant, :admin] -> ~p"/fakturowanie"
+      _member -> ~p"/czasosledz"
+    end
+  end
 
   def signed_in_path_for_user(_user), do: ~p"/czasosledz"
 

@@ -9,6 +9,7 @@ defmodule Firmowid.Ash.Delegations do
   use Ash.Domain,
     extensions: [Ash.Policy.Authorizer]
 
+  alias Firmowid.Ash.Checks.ActorRole
   alias Firmowid.Ash.Delegations.Delegation
   alias Firmowid.Ash.Delegations.DelegationExpense
   alias Firmowid.Ash.Delegations.DelegationExpenseRelatedBlob
@@ -52,7 +53,7 @@ defmodule Firmowid.Ash.Delegations do
   end
 
   policies do
-    bypass actor_attribute_equals(:role, :admin) do
+    bypass {ActorRole, role: :admin} do
       authorize_if always()
     end
   end

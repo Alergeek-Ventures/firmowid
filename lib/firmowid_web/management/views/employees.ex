@@ -36,7 +36,7 @@ defmodule FirmowidWeb.Management.Views.Employees do
         :editable_months,
         [Date.beginning_of_month(Date.utc_today())]
       )
-      |> assign(:can_export_csv, socket.assigns.current_user.role == :admin)
+      |> assign(:can_export_csv, socket.assigns.current_user.member.role == :admin)
       |> assign_form()
 
     {:ok, socket}
@@ -73,7 +73,7 @@ defmodule FirmowidWeb.Management.Views.Employees do
   end
 
   defp assign_employees(%{assigns: %{selected_date: date, search: search, ash_scope: scope}} = socket) do
-    if socket.assigns.current_user.role == :admin do
+    if socket.assigns.current_user.member.role == :admin do
       # 1. Users (with optional search filter)
       list_filters =
         case socket.assigns.live_action do

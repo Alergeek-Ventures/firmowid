@@ -15,6 +15,7 @@ defmodule Firmowid.Ash.Analysis.TagDefinition do
     authorizers: [Ash.Policy.Authorizer]
 
   alias Firmowid.Ash.Analysis.Changes.PickTagColor
+  alias Firmowid.Ash.Checks.ActorRole
   alias Firmowid.Ash.Checks.SystemActorRole
   alias Firmowid.Ash.Resource
 
@@ -81,7 +82,7 @@ defmodule Firmowid.Ash.Analysis.TagDefinition do
       authorize_if expr(not is_nil(^actor(:org_id)) and organization_id == ^actor(:org_id))
     end
 
-    bypass actor_attribute_equals(:role, :admin) do
+    bypass {ActorRole, role: :admin} do
       authorize_if always()
     end
 

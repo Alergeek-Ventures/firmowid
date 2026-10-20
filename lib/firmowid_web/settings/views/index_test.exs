@@ -86,6 +86,27 @@ defmodule FirmowidWeb.Settings.Views.IndexTest do
     assert html =~ "po zakończeniu autoryzacji"
   end
 
+  test "admin changes an employee's role and the employee gains its permissions", %{conn: conn} do
+    admin = admin_fixture()
+    employee = user_in_org_fixture(admin.organization_id, %{role: :employee})
+    employee_conn = log_in_user(build_conn(), employee)
+
+    assert {:error, {:redirect, _redirect}} = live(employee_conn, ~p"/zarzadzanie/pracownicy")
+
+    {:ok, view, _html} = conn |> log_in_user(admin) |> live(~p"/ustawienia/firma")
+
+    view
+    |> element("button[phx-click='open_update_role_modal'][phx-value-user_id='#{employee.id}']")
+    |> render_click()
+
+    view
+    |> form("#update_role_form", %{"user_id" => employee.id, "role" => "admin"})
+    |> render_submit()
+
+    assert render(view) =~ "Rola użytkownika została zmieniona."
+    assert {:ok, _view, _html} = live(employee_conn, ~p"/zarzadzanie/pracownicy")
+  end
+
   test "account deletion modal warns organization owner about deleting the organization", %{
     conn: conn
   } do

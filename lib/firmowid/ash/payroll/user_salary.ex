@@ -14,6 +14,7 @@ defmodule Firmowid.Ash.Payroll.UserSalary do
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer]
 
+  alias Firmowid.Ash.Checks.ActorRole
   alias Firmowid.Ash.Checks.SystemActorRole
   alias Firmowid.Ash.Core.User
   alias Firmowid.Ash.Resource
@@ -109,7 +110,7 @@ defmodule Firmowid.Ash.Payroll.UserSalary do
       authorize_if expr(not is_nil(^actor(:org_id)) and organization_id == ^actor(:org_id))
     end
 
-    bypass actor_attribute_equals(:role, :admin) do
+    bypass {ActorRole, role: :admin} do
       authorize_if always()
     end
 

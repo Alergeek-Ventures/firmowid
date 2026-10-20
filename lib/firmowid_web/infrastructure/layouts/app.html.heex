@@ -44,7 +44,7 @@
           "border-b px-4 py-4.5",
         "flex items-center gap-16 border-darkGrey uppercase max-md:hidden"
       ]}>
-        <%= if @current_user.role != :employee do %>
+        <%= if @current_user.member.role != :employee do %>
           <.link
             kind="unstyled"
             navigate={~p"/fakturowanie"}
@@ -61,7 +61,7 @@
             )}
           </.link>
         <% end %>
-        <%= if @current_user.role == :admin do %>
+        <%= if @current_user.member.role == :admin do %>
           <.link
             kind="unstyled"
             navigate={~p"/zarzadzanie/pracownicy"}
@@ -175,7 +175,7 @@
             >
               {pgettext("avatar menu", "Settings")}
             </.link>
-            <%= if @current_user.role == :admin do %>
+            <%= if @current_user.member.role == :admin do %>
               <.link
                 kind="unstyled"
                 navigate={~p"/ustawienia/firma"}

@@ -11,7 +11,10 @@ defmodule FirmowidWeb.Settings.Utilities.Navigation do
   @type tab_id :: :account | :profile | :organization | :subscription | :invoices
   @type tab :: %{id: tab_id(), label: String.t(), path: String.t()}
   @type visibility_context :: %{
-          required(:current_user) => %{required(:id) => term(), required(:role) => role()},
+          required(:current_user) => %{
+            required(:id) => term(),
+            required(:member) => %{required(:role) => role()}
+          },
           required(:current_org) => %{required(:owner_id) => term()}
         }
 
@@ -97,7 +100,7 @@ defmodule FirmowidWeb.Settings.Utilities.Navigation do
 
   defp tab_definition(tab_id), do: Enum.find(@tabs, &(&1.id == tab_id))
 
-  defp visible_for_context?(%{roles: roles} = tab, %{current_user: %{role: role}} = context) do
+  defp visible_for_context?(%{roles: roles} = tab, %{current_user: %{member: %{role: role}}} = context) do
     role in roles and owner_requirement_met?(tab, context)
   end
 

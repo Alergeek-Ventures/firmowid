@@ -22,7 +22,10 @@ defmodule Firmowid.Seeds.Helpers do
 
   require Ash.Query
 
-  @seed_actor %{id: "00000000-0000-0000-0000-000000000000", role: :admin}
+  @seed_actor %Firmowid.Ash.Core.User{
+    id: "00000000-0000-0000-0000-000000000000",
+    member: %Firmowid.Ash.Core.Member{role: :admin}
+  }
 
   @string_key_to_atom %{
     "invoice_type" => :invoice_type,
@@ -108,12 +111,15 @@ defmodule Firmowid.Seeds.Helpers do
     }
   end
 
-  def seed_member!(user_id, org_id) do
+  def seed_member!(user_id, org_id, role) do
     query = Ash.Query.filter(CoreMember, user_id == ^user_id)
 
     case Ash.read_one!(query, authorize?: false, tenant: org_id) do
-      nil -> Ash.Seed.seed!(CoreMember, %{user_id: user_id, organization_id: org_id}, tenant: org_id)
-      member -> member
+      nil ->
+        Ash.Seed.seed!(CoreMember, %{user_id: user_id, organization_id: org_id, role: role}, tenant: org_id)
+
+      member ->
+        Ash.Seed.update!(member, %{role: role})
     end
   end
 

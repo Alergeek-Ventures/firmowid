@@ -10,6 +10,7 @@ defmodule Firmowid.Ash.Analysis.Workers.MonthWorker do
     ]
 
   alias Firmowid.Ash.Analysis.EntityTag
+  alias Firmowid.Ash.Core
   alias Firmowid.Ash.Core.User
   alias Firmowid.Ash.Scope
 
@@ -19,7 +20,10 @@ defmodule Firmowid.Ash.Analysis.Workers.MonthWorker do
 
     with {:ok, user} <- User.get(args["user_id"], scope: scope),
          {:ok, month} <- Date.from_iso8601(args["month"]),
-         {:ok, true} <- EntityTag.assign_month(%{month: month}, scope: %{scope | actor: user}) do
+         {:ok, true} <-
+           EntityTag.assign_month(%{month: month},
+             scope: %{scope | actor: Core.load_member(user, scope.tenant)}
+           ) do
       :ok
     else
       {:error, %Ash.Error.Forbidden{} = error} -> {:cancel, error}

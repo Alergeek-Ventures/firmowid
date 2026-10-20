@@ -82,7 +82,7 @@ defmodule FirmowidWeb.Settings.Components.SettingsPage do
 
         <div class="relative hidden lg:block">
           <form
-            :if={@current_user.role == :admin && @organization_avatar_upload}
+            :if={@current_user.member.role == :admin && @organization_avatar_upload}
             phx-submit="upload"
             phx-change="upload"
           >
@@ -106,7 +106,7 @@ defmodule FirmowidWeb.Settings.Components.SettingsPage do
           </.avatar>
 
           <.button
-            :if={@current_user.role == :admin && @organization_avatar_upload}
+            :if={@current_user.member.role == :admin && @organization_avatar_upload}
             as="label"
             id="settings-organization-avatar-upload-tooltip"
             for={@organization_avatar_upload.ref}

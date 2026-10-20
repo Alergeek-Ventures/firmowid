@@ -234,7 +234,7 @@ defmodule Firmowid.Ash.Invoicing.WizardState do
   end
 
   policies do
-    bypass actor_attribute_equals(:role, :admin) do
+    bypass {Firmowid.Ash.Checks.ActorRole, role: :admin} do
       authorize_if always()
     end
 

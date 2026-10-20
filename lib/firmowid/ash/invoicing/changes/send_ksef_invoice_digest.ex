@@ -33,6 +33,7 @@ defmodule Firmowid.Ash.Invoicing.Changes.SendKsefInvoiceDigest do
       admins =
         %{status: :active, role: :admin}
         |> Core.list_users!(
+          load: [:member],
           tenant: digest.organization_id,
           actor: actor
         )

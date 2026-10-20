@@ -47,6 +47,7 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
 
   alias AshMoney.Types.Money, as: MoneyType
   alias AshOban.Checks.AshObanInteraction
+  alias Firmowid.Ash.Checks.ActorRole
   alias Firmowid.Ash.Checks.AtLeastRole
   alias Firmowid.Ash.Checks.IsSystemActor
   alias Firmowid.Ash.Checks.SystemActorRole
@@ -560,7 +561,7 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
   end
 
   policies do
-    bypass actor_attribute_equals(:role, :admin) do
+    bypass {ActorRole, role: :admin} do
       authorize_if always()
     end
 

@@ -20,7 +20,10 @@ defmodule Firmowid.Seeds.Timetracker do
 
   require Ash.Query
 
-  @seed_actor %{id: "00000000-0000-0000-0000-000000000000", role: :admin}
+  @seed_actor %Firmowid.Ash.Core.User{
+    id: "00000000-0000-0000-0000-000000000000",
+    member: %Firmowid.Ash.Core.Member{role: :admin}
+  }
 
   # ---------------------------------------------------------------------------
   # Public API

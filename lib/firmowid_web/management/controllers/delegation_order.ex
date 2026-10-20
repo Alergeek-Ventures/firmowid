@@ -14,7 +14,7 @@ defmodule FirmowidWeb.Management.Controllers.DelegationOrder do
   def pdf(conn, %{"employee_id" => employee_id, "reference" => reference}) do
     scope = conn.assigns.ash_scope
 
-    with true <- conn.assigns.current_user.role == :admin,
+    with true <- conn.assigns.current_user.member.role == :admin,
          {:ok, employee} <- Core.get_org_user(%{id: employee_id}, scope: scope),
          {:ok, delegation} <- Delegations.get_delegation_by_reference(reference, scope: scope),
          {:ok, employment_contract} <- Payroll.load_current_contract(employee.id, scope: scope),

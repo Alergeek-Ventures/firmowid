@@ -46,7 +46,7 @@ defmodule FirmowidWeb.Invoicing.Transactions.Views.Show do
      socket
      |> assign(:no_padding, true)
      |> assign(:return_to, nil)
-     |> assign(:salary_admin?, socket.assigns.current_user.role == :admin)}
+     |> assign(:salary_admin?, socket.assigns.current_user.member.role == :admin)}
   end
 
   @impl true

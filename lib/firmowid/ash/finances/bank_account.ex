@@ -17,6 +17,7 @@ defmodule Firmowid.Ash.Finances.BankAccount do
     notifiers: [Ash.Notifier.PubSub]
 
   alias Elixir.Firmowid.Ash.Finances.BankAccount
+  alias Firmowid.Ash.Checks.ActorRole
   alias Firmowid.Ash.Checks.SystemActorRole
   alias Firmowid.Ash.Events.Event
   alias Firmowid.Ash.Resource
@@ -196,7 +197,7 @@ defmodule Firmowid.Ash.Finances.BankAccount do
       authorize_if always()
     end
 
-    bypass actor_attribute_equals(:role, :admin) do
+    bypass {ActorRole, role: :admin} do
       authorize_if always()
     end
 
@@ -226,7 +227,7 @@ defmodule Firmowid.Ash.Finances.BankAccount do
     # User-facing writes: admin only. Internal upserts run under the AshOban
     # interaction bypass above.
     policy action([:create_manual, :update, :clear_default, :destroy]) do
-      authorize_if actor_attribute_equals(:role, :admin)
+      authorize_if {ActorRole, role: :admin}
     end
 
     policy action(:sync_from_bank) do

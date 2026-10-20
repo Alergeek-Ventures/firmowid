@@ -31,7 +31,10 @@ defmodule Firmowid.Seeds.MonthM0 do
 
   require Ash.Query
 
-  @seed_actor %{id: "00000000-0000-0000-0000-000000000000", role: :admin}
+  @seed_actor %Firmowid.Ash.Core.User{
+    id: "00000000-0000-0000-0000-000000000000",
+    member: %Firmowid.Ash.Core.Member{role: :admin}
+  }
 
   def seed!(ctx) do
     %{bytecraft: bytecraft, bank_accounts: banks, projects: projects, counterparties: cps} = ctx
@@ -476,7 +479,7 @@ defmodule Firmowid.Seeds.MonthM0 do
     %Firmowid.Ash.Scope{
       actor: %Firmowid.Ash.Core.User{
         id: "00000000-0000-0000-0000-000000000000",
-        role: :admin,
+        member: %Firmowid.Ash.Core.Member{role: :admin},
         organization_id: bytecraft.id
       },
       tenant: bytecraft.id

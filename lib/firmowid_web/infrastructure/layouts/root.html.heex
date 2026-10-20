@@ -74,7 +74,10 @@
       }
       data-current-user-id={if assigns[:current_user], do: assigns.current_user.id, else: ""}
       data-current-user-role={
-        if assigns[:current_user], do: to_string(assigns.current_user.role), else: ""
+        case assigns[:current_user] do
+          %{member: %{role: role}} -> to_string(role)
+          _ -> ""
+        end
       }
       data-current-organization-id={
         if assigns[:current_user], do: assigns.current_user.organization_id || "", else: ""

@@ -4,8 +4,9 @@ defmodule Firmowid.Ash.Core.User do
   User resource — the sole owner of the `users` table.
 
   Handles authentication (password + Google OAuth), profile management,
-  role assignment, and organization membership. No multitenancy — users
-  sit above tenancy; `organization_id` is nullable (onboarding state).
+  and organization membership; the role lives on the organization `member`.
+  No multitenancy — users sit above tenancy; `organization_id` is nullable
+  (onboarding state).
 
   Authentication is managed by `ash_authentication`:
   - Password strategy with Argon2 hashing
@@ -159,7 +160,7 @@ defmodule Firmowid.Ash.Core.User do
         where argument_equals(:status, :archived)
       end
 
-      prepare build(filter: expr(role == ^arg(:role))) do
+      prepare build(filter: expr(member.role == ^arg(:role))) do
         where present(:role)
       end
     end
@@ -355,24 +356,24 @@ defmodule Firmowid.Ash.Core.User do
       end
     end
 
-    update :update_role do
-      description "Update a user's organization role."
-      accept [:role]
-
-      change Firmowid.Ash.Core.User.Changes.DisconnectLiveSessions
-    end
-
     update :set_organization do
       description "Assign a user to an organization."
       accept []
       require_atomic? false
       argument :organization_id, :uuid, allow_nil?: false
+
+      argument :role, :atom do
+        allow_nil? false
+        constraints one_of: UserRole.roles()
+      end
+
       change set_attribute(:organization_id, arg(:organization_id))
 
-      change after_action(fn _changeset, user, context ->
+      change after_action(fn changeset, user, context ->
                opts = Ash.Context.to_opts(context, tenant: user.organization_id)
+               role = Ash.Changeset.get_argument(changeset, :role)
 
-               with {:ok, _member} <- Member.create(%{user_id: user.id}, opts) do
+               with {:ok, _member} <- Member.create(%{user_id: user.id, role: role}, opts) do
                  {:ok, user}
                end
              end)
@@ -472,7 +473,7 @@ defmodule Firmowid.Ash.Core.User do
     end
 
     bypass {SystemActorRole, roles: [:organization_owner_setup]} do
-      authorize_if action([:set_organization, :update_role])
+      authorize_if action(:set_organization)
       authorize_if expr(id == ^actor(:user_id))
     end
 
@@ -541,12 +542,6 @@ defmodule Firmowid.Ash.Core.User do
       authorize_if expr(id == ^actor(:id))
     end
 
-    policy action(:update_role) do
-      forbid_if expr(organization.owner_id == id)
-      forbid_if expr(id == ^actor(:id))
-      authorize_if OrganizationAdmin
-    end
-
     policy action(:archive) do
       forbid_if expr(organization.owner_id == id)
       authorize_if OrganizationAdmin
@@ -606,11 +601,6 @@ defmodule Firmowid.Ash.Core.User do
     # ── Profile / HR fields ─────────────────────────────────────────
     attribute :name, :string, public?: true
 
-    attribute :role, :atom,
-      public?: true,
-      constraints: [one_of: UserRole.roles()],
-      default: :employee
-
     attribute :system_role, :atom,
       public?: true,
       constraints: [one_of: [:user, :superuser]],
@@ -647,6 +637,11 @@ defmodule Firmowid.Ash.Core.User do
       attribute_writable? true
       define_attribute? false
       source_attribute :avatar_blob_id
+    end
+
+    has_one :member, Member do
+      public? true
+      destination_attribute :user_id
     end
 
     has_many :leave_requests, Firmowid.Ash.Timetracker.LeaveRequest

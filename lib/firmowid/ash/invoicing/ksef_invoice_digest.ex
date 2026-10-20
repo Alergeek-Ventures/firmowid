@@ -9,6 +9,7 @@ defmodule Firmowid.Ash.Invoicing.KsefInvoiceDigest do
     extensions: [AshOban]
 
   alias AshOban.Checks.AshObanInteraction
+  alias Firmowid.Ash.Checks.ActorRole
   alias Firmowid.Ash.Checks.SystemActorRole
   alias Firmowid.Ash.Invoicing.Actions.CreateScheduledKsefInvoiceDigests
   alias Firmowid.Ash.Invoicing.Changes.SendKsefInvoiceDigest
@@ -137,7 +138,7 @@ defmodule Firmowid.Ash.Invoicing.KsefInvoiceDigest do
     end
 
     policy action_type(:read) do
-      authorize_if actor_attribute_equals(:role, :admin)
+      authorize_if {ActorRole, role: :admin}
       authorize_if {Firmowid.Ash.Checks.AtLeastRole, role: :accountant}
       authorize_if {SystemActorRole, roles: [:ksef_digest]}
     end
