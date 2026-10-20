@@ -11,8 +11,16 @@ defmodule Firmowid.Ash.Invoicing.Changes.ApplyInvoiceInput do
         changeset
 
       input ->
-        changeset =
-          Ash.Changeset.change_attributes(changeset, Map.take(input, changeset.action.accept))
+        # Clients may send null for fields they leave out; it must not replace a field's default.
+        attributes =
+          input
+          |> Map.take(changeset.action.accept)
+          |> Map.reject(fn {field, value} ->
+            is_nil(value) and
+              not is_nil(Ash.Resource.Info.attribute(changeset.resource, field).default)
+          end)
+
+        changeset = Ash.Changeset.change_attributes(changeset, attributes)
 
         case Map.fetch(input, :sales_invoice_items) do
           {:ok, items} -> Ash.Changeset.set_argument(changeset, :sales_invoice_items, items)
