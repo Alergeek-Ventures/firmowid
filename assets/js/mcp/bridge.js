@@ -2,12 +2,9 @@ import { App } from "@modelcontextprotocol/ext-apps";
 import { Socket } from "phoenix";
 import { LiveSocket } from "phoenix_live_view";
 import { createLiveToastHook } from "live_toast";
-import tippy from "tippy.js/esm/index.all.js";
+import tippy from "tippy.js";
 import { UIHooks } from "../ui/hooks";
 import { Tippy } from "../hooks/tippy";
-
-// The shared Tippy hook uses the global the web layout loads from a CDN; widgets bundle it.
-window.tippy = tippy;
 
 const root = document.getElementById("mcp-root");
 const status = document.getElementById("mcp-status");
@@ -114,7 +111,7 @@ const McpFullscreen = {
         .then(this.sync)
         .catch(() => {});
     });
-    tippy(this.el);
+    tippy(this.el, { arrow: false });
     displayModeListeners.add(this.sync);
     connection.then(this.sync, () => {});
   },

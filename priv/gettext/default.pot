@@ -225,7 +225,7 @@ msgstr ""
 msgid "Clear invoice creator"
 msgstr ""
 
-#: lib/firmowid_web/analysis/components/category_chart.ex:199
+#: lib/firmowid_web/analysis/components/category_chart.ex:201
 #: lib/firmowid_web/analysis/components/category_selector.ex:104
 #: lib/firmowid_web/analysis/components/category_selector.ex:112
 #: lib/firmowid_web/analysis/components/category_selector.ex:276
@@ -1578,7 +1578,7 @@ msgstr ""
 msgid "The list shows full document amounts; the charts show the selected projects' shares."
 msgstr ""
 
-#: lib/firmowid_web/analysis/components/category_chart.ex:200
+#: lib/firmowid_web/analysis/components/category_chart.ex:202
 #: lib/firmowid_web/analysis/components/category_selector.ex:220
 #, elixir-autogen, elixir-format
 msgid "Unassigned"
@@ -2321,7 +2321,7 @@ msgstr ""
 msgid "Invoices without a payment and payments without an invoice or salary, dated up to the end of this month. Link them or mark them as skipped to include them in the analysis."
 msgstr ""
 
-#: lib/firmowid_web/analysis/components/category_chart.ex:216
+#: lib/firmowid_web/analysis/components/category_chart.ex:218
 #, elixir-autogen, elixir-format
 msgid "Other"
 msgstr ""
@@ -2332,7 +2332,7 @@ msgstr ""
 msgid "Search categories"
 msgstr ""
 
-#: lib/firmowid_web/analysis/components/category_chart.ex:201
+#: lib/firmowid_web/analysis/components/category_chart.ex:203
 #, elixir-autogen, elixir-format
 msgid "Unrealized"
 msgstr ""

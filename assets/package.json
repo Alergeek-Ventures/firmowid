@@ -10,10 +10,9 @@
     "phoenix": "file:../deps/phoenix",
     "phoenix_html": "file:../deps/phoenix_html",
     "phoenix_live_view": "file:../deps/phoenix_live_view",
-    "popper.js": "1.16.1",
     "posthog-js": "1.438.13",
     "tailwindcss": "4.3.3",
-    "tippy.js": "4.3.5",
+    "tippy.js": "6.3.7",
     "topbar": "3.0.1",
     "zod": "4.6.7"
   },
