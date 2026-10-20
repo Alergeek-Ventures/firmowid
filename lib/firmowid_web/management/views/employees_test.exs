@@ -90,7 +90,7 @@ defmodule FirmowidWeb.Management.Views.EmployeesTest do
     admin = admin_fixture()
     employee = user_in_org_fixture(admin.organization_id, %{role: :employee})
 
-    Core.archive_user!(employee, %{}, scope: current_scope(admin))
+    Core.archive_member!(employee.member, scope: current_scope(admin))
 
     conn = log_in_user(conn, admin)
 
@@ -364,7 +364,7 @@ defmodule FirmowidWeb.Management.Views.EmployeesTest do
     admin = admin_fixture()
     employee = user_in_org_fixture(admin.organization_id, %{role: :employee, name: "Restore Me"})
 
-    Core.archive_user!(employee, %{}, scope: current_scope(admin))
+    Core.archive_member!(employee.member, scope: current_scope(admin))
 
     conn = log_in_user(conn, admin)
     {:ok, lv, html} = live(conn, ~p"/zarzadzanie/pracownicy/#{employee.id}")

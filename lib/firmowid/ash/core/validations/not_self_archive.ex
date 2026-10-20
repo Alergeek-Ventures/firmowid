@@ -1,6 +1,6 @@
 defmodule Firmowid.Ash.Core.Validations.NotSelfArchive do
   @moduledoc """
-  Validation preventing a user from archiving themselves.
+  Validation preventing a member from archiving themselves.
   """
   use Ash.Resource.Validation
 
@@ -9,7 +9,7 @@ defmodule Firmowid.Ash.Core.Validations.NotSelfArchive do
   @impl true
   def validate(changeset, _opts, context) do
     actor_id = context.actor && context.actor.id
-    user_id = changeset.data.id
+    user_id = changeset.data.user_id
 
     if actor_id && user_id && actor_id == user_id do
       {:error,
@@ -25,7 +25,7 @@ defmodule Firmowid.Ash.Core.Validations.NotSelfArchive do
   @impl true
   def atomic(changeset, _opts, context) do
     actor_id = context.actor && context.actor.id
-    user_id = changeset.data.id
+    user_id = changeset.data.user_id
 
     if actor_id && user_id && actor_id == user_id do
       {:error,

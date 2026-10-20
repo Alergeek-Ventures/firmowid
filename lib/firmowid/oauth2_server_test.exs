@@ -1,5 +1,5 @@
 defmodule Firmowid.Oauth2ServerTest do
-  @moduledoc "Checks OAuth issuance, exchange, and HTTP bearer authentication across user archival."
+  @moduledoc "Checks OAuth issuance, exchange, and HTTP bearer authentication across leaving the organization."
 
   use FirmowidWeb.ConnCase, async: true
 
@@ -26,7 +26,7 @@ defmodule Firmowid.Oauth2ServerTest do
 
     {:ok, client, _response} =
       Register.register(Oauth2Server, %{
-        "client_name" => "Archived user regression #{System.unique_integer([:positive])}",
+        "client_name" => "Archived member regression #{System.unique_integer([:positive])}",
         "redirect_uris" => [@redirect_uri],
         "grant_types" => ["authorization_code", "refresh_token"],
         "response_types" => ["code"],
@@ -67,10 +67,11 @@ defmodule Firmowid.Oauth2ServerTest do
     assert {:error, :revoked} = exchange_refresh(rotated.refresh_token, client)
   end
 
-  test "seeded archival rejects issuance and consent even with a stale active user", context do
+  test "an account without an organization gets no issuance or consent, even with a stale user",
+       context do
     %{user: user, client: client, validated: validated} = context
     consent = Authorize.grant_consent!(Oauth2Server, user, client, "mcp")
-    Ash.Seed.update!(user, %{archived_at: Date.utc_today()})
+    Ash.Seed.update!(user, %{organization_id: nil})
 
     assert_raise Invalid, fn ->
       Authorize.issue_code!(Oauth2Server, user, validated)
@@ -89,13 +90,13 @@ defmodule Firmowid.Oauth2ServerTest do
     assert [] = OauthRefreshToken.list!(%{user_id: user.id}, context: @auth_context)
   end
 
-  test "seeded archival denies code consumption and atomic refresh rotation without cleanup",
+  test "an account without an organization gets no code consumption or refresh rotation",
        context do
     %{user: user, client: client, validated: validated} = context
     code = Authorize.issue_code!(Oauth2Server, user, validated)
     exchanged_code = Authorize.issue_code!(Oauth2Server, user, validated)
     assert {:ok, tokens} = exchange_code(exchanged_code, context)
-    Ash.Seed.update!(user, %{archived_at: Date.utc_today()})
+    Ash.Seed.update!(user, %{organization_id: nil})
 
     assert {:error, _} = OauthAuthorizationCode.consume(code, context: @auth_context)
     assert {:error, :invalid_code} = exchange_code(code, context)
@@ -115,10 +116,11 @@ defmodule Firmowid.Oauth2ServerTest do
     assert {:error, _} =
              OauthRefreshToken.rotate(refresh, %{rotated_to_id: Ash.UUIDv7.generate()}, context: @auth_context)
 
-    assert_unauthenticated(tokens.access_token)
+    assert_without_organization(tokens.access_token)
   end
 
-  test "real archive invalidates outstanding grants without affecting another user", context do
+  test "archiving the member invalidates outstanding grants without affecting another user",
+       context do
     %{admin: admin, user: user, client: client, validated: validated} = context
     other = user_in_org_fixture(admin.organization_id)
     Authorize.grant_consent!(Oauth2Server, user, client, "mcp")
@@ -129,18 +131,18 @@ defmodule Firmowid.Oauth2ServerTest do
     assert {:ok, other_tokens} = exchange_code(other_code, context)
     assert_authenticated(tokens.access_token, user)
 
-    archived = Core.archive_user!(user, actor: admin, tenant: admin.organization_id)
+    archived = Core.archive_member!(user.member, actor: admin, tenant: admin.organization_id)
     assert archived.archived_at
-    assert Core.get_user!(user.id, actor: admin).archived_at == archived.archived_at
+    assert Core.get_user!(user.id, actor: admin).organization_id == nil
 
     assert {:error, :invalid_code} = exchange_code(code, context)
     assert {:error, :revoked} = exchange_refresh(tokens.refresh_token, client)
-    assert_unauthenticated(tokens.access_token)
+    assert_without_organization(tokens.access_token)
     assert_authenticated(other_tokens.access_token, other)
     assert {:ok, _tokens} = exchange_refresh(other_tokens.refresh_token, client)
     refute Authorize.consented?(Oauth2Server, user, client, "mcp")
 
-    Core.unarchive_user!(archived, actor: admin, tenant: admin.organization_id)
+    Core.unarchive_member!(archived, actor: admin, tenant: admin.organization_id)
     assert {:error, :invalid_code} = exchange_code(code, context)
     assert {:error, :revoked} = exchange_refresh(tokens.refresh_token, client)
   end
@@ -185,13 +187,11 @@ defmodule Firmowid.Oauth2ServerTest do
     assert conn.assigns.oauth_claims["scope"] == "mcp"
   end
 
-  defp assert_unauthenticated(token) do
+  defp assert_without_organization(token) do
     conn = mcp_request(token)
     assert conn.status == 401
     assert conn.halted
-    assert [challenge] = get_resp_header(conn, "www-authenticate")
-    assert challenge =~ "invalid_token"
-    assert is_nil(Ash.PlugHelpers.get_actor(conn))
+    assert %{"message" => "Organization required"} = json_response(conn, 401)
   end
 
   defp mcp_request(token) do

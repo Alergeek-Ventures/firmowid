@@ -2,17 +2,19 @@ defmodule Firmowid.Oauth2Server do
   @moduledoc """
   OAuth 2.1 authorization-server configuration.
 
-  Blocked accounts (archived, or in an organization without a billing plan; see the
-  User `:access_block` calculation) are rejected by the User authentication
-  preparation, which also covers bearer-token user loading. Archived users are also
-  rejected by OAuth grant actions, and archival revokes refresh tokens and removes
-  codes and consent in the archive transaction.
+  Blocked accounts (in an organization without a billing plan; see the User
+  `:access_block` calculation) are rejected by the User authentication
+  preparation, which also covers bearer-token user loading. Accounts without an
+  organization are rejected by OAuth grant actions and by the MCP authentication
+  plug. Leaving the organization (archiving the member) revokes refresh tokens
+  and removes codes and consent in the same transaction.
 
-  The installed OAuth library uses stateless access JWTs: restoring an account
-  can re-enable an unexpired pre-archive access token. Its multi-action exchange
-  also has no account-generation check across an archive/restore cycle. Permanent
-  OAuth revocation across restoration requires support at the exchange and JWT
-  verification boundaries; the current guards guarantee denial while archived.
+  The installed OAuth library uses stateless access JWTs: restoring a member can
+  re-enable an unexpired access token issued before the archive. Its multi-action
+  exchange also has no account-generation check across an archive/restore cycle.
+  Permanent OAuth revocation across restoration requires support at the exchange
+  and JWT verification boundaries; the current guards guarantee denial while the
+  account has no organization.
 
   See `AshAuthentication.Oauth2Server` for all options.
   """

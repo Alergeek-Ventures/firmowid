@@ -103,7 +103,7 @@ defmodule FirmowidWeb.Management.Components.ProjectsTab do
   def render(assigns) do
     ~H"""
     <div class="flex h-full min-h-0 flex-col gap-6">
-      <.card class="relative z-10" dimmed={@user.archived_at}>
+      <.card class="relative z-10" dimmed={@user.member.archived_at}>
         <.card_header>
           Dane do przelewu
           <:actions>

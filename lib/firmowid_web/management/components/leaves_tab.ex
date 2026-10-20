@@ -60,7 +60,10 @@ defmodule FirmowidWeb.Management.Components.LeavesTab do
   def render(assigns) do
     ~H"""
     <div class="flex h-full min-h-0 flex-col gap-6">
-      <.card class="flex max-h-48 shrink-0 flex-col overflow-hidden" dimmed={@employee.archived_at}>
+      <.card
+        class="flex max-h-48 shrink-0 flex-col overflow-hidden"
+        dimmed={@employee.member.archived_at}
+      >
         <div class="shrink-0">
           <.card_header>Wnioski do zatwierdzenia</.card_header>
         </div>
@@ -80,7 +83,7 @@ defmodule FirmowidWeb.Management.Components.LeavesTab do
         </div>
       </.card>
 
-      <.card class="relative z-10 flex min-h-0 flex-1 flex-col" dimmed={@employee.archived_at}>
+      <.card class="relative z-10 flex min-h-0 flex-1 flex-col" dimmed={@employee.member.archived_at}>
         <div class="flex items-center justify-between gap-3">
           <.card_header>Pozostałe wnioski</.card_header>
 

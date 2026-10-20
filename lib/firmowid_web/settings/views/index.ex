@@ -563,7 +563,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
 
     with {:ok, user} <- find_loaded_organization_user(socket.assigns.organization_users, user_id),
          :ok <- prevent_self_user_management(current_user, user),
-         {:ok, _archived_user} <- Core.archive_user(user, %{}, scope: socket.assigns.ash_scope) do
+         {:ok, _member} <- Core.archive_member(user.member, scope: socket.assigns.ash_scope) do
       LiveToast.send_toast(:info, "Użytkownik został zarchiwizowany.")
 
       {:noreply,

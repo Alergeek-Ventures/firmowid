@@ -5,34 +5,30 @@ defmodule Firmowid.Ash.Core.UserTest do
 
   alias Firmowid.Ash.Core
   alias Firmowid.Ash.Scope
-  alias Firmowid.Ash.SystemActor
 
-  describe "account archive authorization" do
-    test "identity eligibility inspection is restricted to its resolved user" do
-      user = user_fixture()
-      other = user_fixture()
-      archived = Ash.Seed.update!(user, %{archived_at: Date.utc_today()})
-      actor = %SystemActor{role: :authentication_identity_reader, org_id: nil, user_id: user.id}
-
-      assert Core.get_user!(user.id, actor: actor).archived_at == archived.archived_at
-      assert {:error, _} = Core.get_user(other.id, actor: actor)
-      assert {:error, _} = Core.unarchive_user(archived, actor: actor)
-    end
-
-    test "an admin cannot archive or restore another organization's user" do
+  describe "member archive authorization" do
+    test "an admin cannot archive or restore another organization's member" do
       admin = admin_fixture()
       outsider = user_fixture()
-      assert {:error, _} = Core.archive_user(outsider, actor: admin)
-      archived = Ash.Seed.update!(outsider, %{archived_at: Date.utc_today()})
-      assert {:error, _} = Core.unarchive_user(archived, actor: admin)
+      opts = [actor: admin, tenant: outsider.organization_id]
+
+      assert {:error, _} = Core.archive_member(outsider.member, opts)
+      archived = Ash.Seed.update!(outsider.member, %{archived_at: Date.utc_today()})
+      assert {:error, _} = Core.unarchive_member(archived, opts)
     end
 
     test "employees cannot archive colleagues and admins cannot archive themselves" do
       admin = admin_fixture()
       employee = user_in_org_fixture(admin.organization_id)
       colleague = user_in_org_fixture(admin.organization_id)
-      assert {:error, _} = Core.archive_user(colleague, actor: employee)
-      assert {:error, _} = Core.archive_user(admin, actor: admin)
+
+      assert {:error, _} =
+               Core.archive_member(colleague.member,
+                 scope: Scope.new!(employee, admin.organization_id)
+               )
+
+      assert {:error, _} =
+               Core.archive_member(admin.member, scope: Scope.new!(admin, admin.organization_id))
     end
   end
 

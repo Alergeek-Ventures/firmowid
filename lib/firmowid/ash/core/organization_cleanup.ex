@@ -90,20 +90,15 @@ defmodule Firmowid.Ash.Core.OrganizationCleanup do
     end
   end
 
-  defp detach_user(user, scope) do
+  # Archived members' accounts have already left the organization.
+  defp detach_user(%User{organization_id: tenant} = user, %Scope{tenant: tenant} = scope) do
     case User.detach_for_organization_cleanup(user, %{}, scope: scope) do
       {:ok, _user} -> :ok
       {:error, error} -> {:error, error}
     end
   end
 
-  @doc "Remove the deleted account's membership in its organization, if it has one."
-  @spec remove_account_membership(Scope.t()) :: :ok | {:error, term()}
-  def remove_account_membership(%Scope{tenant: nil}), do: :ok
-
-  def remove_account_membership(scope) do
-    destroy_records(Member.list(scope: scope), &Member.destroy/2, scope)
-  end
+  defp detach_user(_user, _scope), do: :ok
 
   @doc "Remove only the actual deleted account's OAuth dependents, even without an organization."
   @spec remove_account_oauth_dependents(Scope.t()) :: :ok | {:error, term()}

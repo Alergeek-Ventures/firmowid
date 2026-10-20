@@ -218,8 +218,8 @@
 
           <%= if @live_action == :archive do %>
             <p class="text-right text-black">
-              <%= if employee.user.archived_at do %>
-                {Calendar.strftime(employee.user.archived_at, "%d.%m.%Y")}
+              <%= if employee.user.member.archived_at do %>
+                {Calendar.strftime(employee.user.member.archived_at, "%d.%m.%Y")}
               <% end %>
             </p>
           <% end %>
@@ -260,10 +260,7 @@
 
           <div class="flex items-center justify-end gap-3">
             <.button
-              :if={
-                Ash.can?({Firmowid.Ash.Core.User, :unarchive}, @current_user) and
-                  @live_action == :archive
-              }
+              :if={@live_action == :archive}
               type="button"
               variant="secondary"
               size="small"
