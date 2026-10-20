@@ -93,14 +93,6 @@ defmodule Firmowid.Ash.Core.User do
 
         sender Firmowid.Ash.Core.Senders.ConfirmationSender
       end
-
-      log_out_everywhere do
-        # Its password-change hook never fires: the hash is set in a before_action
-        # hook, after its `changing(:hashed_password)` condition is evaluated.
-        # RevokeAuthenticationOnPasswordChange (in `changes` below) revokes sessions
-        # and OAuth grants instead.
-        apply_on_password_change? false
-      end
     end
   end
 
@@ -108,7 +100,6 @@ defmodule Firmowid.Ash.Core.User do
     define :get, action: :read, get_by: [:id]
     define :detach_for_organization_cleanup, action: :detach_for_organization_cleanup
     define :destroy, action: :destroy
-    define :log_out_everywhere, action: :log_out_everywhere
     define :confirm, action: :confirm
     define :sign_in_with_remember_me, action: :sign_in_with_remember_me
     define :password_reset_with_password, action: :password_reset_with_password
