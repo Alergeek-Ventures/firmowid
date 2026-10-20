@@ -26,7 +26,13 @@ defmodule FirmowidWeb.Invoicing.Components.DashboardTiles do
 
   def tile(assigns) do
     ~H"""
-    <div class="min-h-24 rounded-lg bg-lightGreyBg p-2.5 transition-shadow hover:shadow-sm">
+    <div class={[
+      "min-h-24 rounded-lg p-2.5",
+      if(@type == :suggestion and match?(%{type: :bank_connection_attention}, @entry),
+        do: "border border-red-200 bg-red-100",
+        else: "bg-lightGreyBg transition-shadow hover:shadow-sm"
+      )
+    ]}>
       <%= case @type do %>
         <% :unpaid_invoice -> %>
           <.unpaid_invoice_tile entry={@entry} return_to={@return_to} />
@@ -444,6 +450,51 @@ defmodule FirmowidWeb.Invoicing.Components.DashboardTiles do
       <div class={suggestion_action_styles()}>
         Zapłać
       </div>
+    </div>
+    """
+  end
+
+  defp suggestion_tile(%{entry: %{type: :bank_connection_attention}} = assigns) do
+    assigns =
+      assigns
+      |> assign(:account, assigns.entry.account)
+      |> assign(:expired?, match?(%{status: :expired}, assigns.entry.account.requisition))
+
+    ~H"""
+    <div
+      id={"bank-connection-alert-#{@account.id}"}
+      class="flex flex-col gap-2 text-red-800"
+      role="alert"
+    >
+      <div class="flex items-center gap-2">
+        <.icon name="hero-exclamation-triangle" class="size-5 shrink-0" />
+        <span class="text-sm font-semibold">
+          <%= if @expired? do %>
+            {gettext("Bank connection expired")}
+          <% else %>
+            {gettext("Transactions are not being updated.")}
+          <% end %>
+        </span>
+      </div>
+      <p class="text-sm font-medium wrap-anywhere">
+        {@account.name || @account.institution_name} · {@account.currency}
+      </p>
+      <p :if={@expired?} class="text-xs">{gettext("Transactions are not being updated.")}</p>
+      <p :if={@account.latest_successful_sync_at} class="text-xs">
+        {gettext("Last successful synchronization: %{date}",
+          date: format_date(@account.latest_successful_sync_at)
+        )}
+      </p>
+      <.link
+        :if={@entry.can_reconnect?}
+        navigate={~p"/ustawienia/firma#konto-bankowe-#{@account.id}"}
+        kind="button"
+        variant="secondary"
+        size="small"
+        class="mbs-1 w-full"
+      >
+        {gettext("Reconnect")}
+      </.link>
     </div>
     """
   end

@@ -13,7 +13,8 @@ defmodule Firmowid.Ash.Finances.BankAccount do
     domain: Firmowid.Ash.Finances,
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer],
-    extensions: [AshEvents.Events, AshOban]
+    extensions: [AshEvents.Events, AshOban],
+    notifiers: [Ash.Notifier.PubSub]
 
   alias Elixir.Firmowid.Ash.Finances.BankAccount
   alias Firmowid.Ash.Checks.SystemActorRole
@@ -49,7 +50,7 @@ defmodule Firmowid.Ash.Finances.BankAccount do
       trigger :sync_transactions do
         action :sync_from_gocardless
         read_action :read_global_for_sync
-        where expr(not is_nil(gocardless_id))
+        where expr(syncable?)
         scheduler_cron "0 12 */2 * *"
         max_attempts 5
         on_error :mark_sync_failed
@@ -156,7 +157,7 @@ defmodule Firmowid.Ash.Finances.BankAccount do
     read :read_global_for_sync do
       description "Cross-org read for background sync workers."
       multitenancy :allow_global
-      filter expr(not is_nil(gocardless_id))
+      filter expr(syncable?)
 
       pagination do
         required? false
@@ -233,6 +234,13 @@ defmodule Firmowid.Ash.Finances.BankAccount do
     end
   end
 
+  pub_sub do
+    module FirmowidWeb.Core.Endpoint
+    prefix "bank_account"
+    publish :sync_from_gocardless, ["synced", :_tenant]
+    publish :mark_sync_failed, ["sync_failed", :_tenant]
+  end
+
   multitenancy do
     strategy :attribute
     attribute :organization_id
@@ -269,6 +277,14 @@ defmodule Firmowid.Ash.Finances.BankAccount do
   end
 
   calculations do
+    calculate :syncable?,
+              :boolean,
+              expr(
+                not is_nil(gocardless_id) and
+                  (is_nil(requisition_id) or
+                     exists(requisition, status == :accepted and is_nil(remote_deleted_at)))
+              )
+
     calculate :broken?, :boolean, expr(latest_sync_action == :mark_sync_failed) do
       public? true
       description "True if the most recent sync failed permanently."

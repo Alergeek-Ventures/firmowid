@@ -1105,14 +1105,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
     # Refresh bank accounts list
     scope = socket.assigns.ash_scope
 
-    bank_accounts =
-      case Finances.list_bank_accounts(
-             scope: scope,
-             load: [:broken?, :has_successful_sync?, :latest_successful_sync_at, :requisition]
-           ) do
-        {:ok, accounts} -> accounts
-        {:error, _} -> []
-      end
+    bank_accounts = list_bank_accounts(scope)
 
     socket =
       socket
@@ -1363,10 +1356,16 @@ defmodule FirmowidWeb.Settings.Views.Index do
   defp list_bank_accounts(scope) do
     case Finances.list_bank_accounts(
            scope: scope,
-           load: [:broken?, :has_successful_sync?, :latest_successful_sync_at, :requisition]
+           load: [:broken?, :has_successful_sync?, :requisition]
          ) do
-      {:ok, accounts} -> Enum.sort_by(accounts, &bank_account_sort_key/1)
-      {:error, _} -> []
+      {:ok, accounts} ->
+        accounts
+        # Keep the latest outcome independent of the last-success aggregate's filter.
+        |> Ash.load!(:latest_successful_sync_at, scope: scope)
+        |> Enum.sort_by(&bank_account_sort_key/1)
+
+      {:error, _} ->
+        []
     end
   end
 

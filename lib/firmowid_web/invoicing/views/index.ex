@@ -17,6 +17,7 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
   alias Firmowid.Ash.Blobs
   alias Firmowid.Ash.Blobs.Blob
   alias Firmowid.Ash.Finances
+  alias Firmowid.Ash.Finances.BankAccount
   alias Firmowid.Ash.Finances.Requisition
   alias Firmowid.Ash.Finances.Transaction
   alias Firmowid.Ash.Invoicing
@@ -67,8 +68,11 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
       Endpoint.subscribe("sales_invoice:destroyed:#{organization_id}")
       # Ash PubSub — finances
       Endpoint.subscribe("transaction:updated:#{organization_id}")
+      Endpoint.subscribe("bank_account:synced:#{organization_id}")
+      Endpoint.subscribe("bank_account:sync_failed:#{organization_id}")
       Endpoint.subscribe("requisition:linked:#{organization_id}")
       Endpoint.subscribe("requisition:rejected:#{organization_id}")
+      Endpoint.subscribe("requisition:expired:#{organization_id}")
       Endpoint.subscribe("requisition:error:#{organization_id}")
       # KSeF status (separate system)
       Ksef.subscribe_ksef_status(organization_id)
@@ -630,6 +634,10 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
     {:noreply, refetch_invoicing_entries(socket)}
   end
 
+  def handle_info(%Broadcast{payload: %Notification{resource: BankAccount}}, socket) do
+    {:noreply, fetch_dashboard_data(socket)}
+  end
+
   # Handle Ash native PubSub broadcasts for requisition status changes
   def handle_info(
         %Broadcast{topic: "requisition:" <> _, payload: %Notification{resource: Requisition, action: action}},
@@ -652,7 +660,7 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
 
     LiveToast.send_toast(toast_type, message)
 
-    {:noreply, socket}
+    {:noreply, fetch_dashboard_data(socket)}
   end
 
   defp update_param(socket, key, value) do
@@ -983,6 +991,24 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
   end
 
   defp fetch_suggestions(scope) do
+    bank_alerts =
+      [scope: scope, load: [:requisition, :broken?]]
+      |> Finances.list_bank_accounts!()
+      # Keep the latest outcome independent of the last-success aggregate's filter.
+      |> Ash.load!(:latest_successful_sync_at, scope: scope)
+      |> Enum.filter(fn account ->
+        not is_nil(account.gocardless_id) and
+          (account.broken? == true or match?(%Requisition{status: :expired}, account.requisition) or
+             awaiting_bank_sync?(account))
+      end)
+      |> Enum.map(
+        &%{
+          type: :bank_connection_attention,
+          account: &1,
+          can_reconnect?: scope.actor.role == :admin
+        }
+      )
+
     suggestions = []
 
     # Check bank connection
@@ -992,7 +1018,7 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
       |> Enum.any?(&(&1.status == :accepted))
 
     suggestions =
-      if has_bank do
+      if has_bank or bank_alerts != [] do
         suggestions
       else
         [%{type: :connect_bank} | suggestions]
@@ -1008,8 +1034,16 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
         [%{type: :connect_ksef} | suggestions]
       end
 
+    suggestions = bank_alerts ++ suggestions
     %{entries: suggestions, total_count: length(suggestions)}
   end
+
+  defp awaiting_bank_sync?(%{requisition: %Requisition{status: :accepted, inserted_at: connected_at}} = account) do
+    is_nil(account.latest_successful_sync_at) or
+      DateTime.before?(account.latest_successful_sync_at, connected_at)
+  end
+
+  defp awaiting_bank_sync?(_account), do: false
 
   defp apply_action(socket, :index, _params) do
     assign(socket, :page_title, "Fakturowanie")
