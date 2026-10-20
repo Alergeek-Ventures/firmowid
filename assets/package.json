@@ -11,7 +11,7 @@
     "phoenix_html": "file:../deps/phoenix_html",
     "phoenix_live_view": "file:../deps/phoenix_live_view",
     "popper.js": "1.16.1",
-    "posthog-js": "1.438.12",
+    "posthog-js": "1.438.13",
     "tailwindcss": "4.3.3",
     "tippy.js": "4.3.5",
     "topbar": "3.0.1",
@@ -27,5 +27,13 @@
     "audit:check": "audit-ci --config audit-ci.jsonc",
     "licenses:check": "license-checker --production --excludePrivatePackages --summary --onlyAllow 'MIT;Apache-2.0;BSD-2-Clause;BSD-3-Clause;ISC;0BSD;CC0-1.0;Unlicense;BlueOak-1.0.0;MPL-2.0'",
     "sentry:sourcemaps:clean": "find ../priv/static/assets -type f \\( -name '*.map' -o -name '*.map.*' \\) -delete"
+  },
+  "overrides": {
+    "@tailwindcss/cli": {
+      "@parcel/watcher": "2.6.0"
+    },
+    "@tailwindcss/typography": {
+      "postcss-selector-parser": "7.1.7"
+    }
   }
 }
