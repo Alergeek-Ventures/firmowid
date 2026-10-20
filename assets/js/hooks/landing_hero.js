@@ -1,5 +1,5 @@
 const STATES = 4;
-const INTERVAL_MS = 2000;
+const INTERVAL_MS = 2200;
 
 export const LandingHero = {
   mounted() {

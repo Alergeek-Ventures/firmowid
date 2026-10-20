@@ -141,7 +141,7 @@ defmodule FirmowidWeb.Landing.Components.Pricing do
             phx-click="set_billing_period"
             phx-value-period="monthly"
             aria-pressed={to_string(not @yearly?)}
-            class="relative isolate text-grey-700 transition-colors duration-200 before:pointer-events-none before:absolute before:top-1/2 before:left-1/2 before:-z-10 before:h-[44px] before:w-[119px] before:-translate-1/2 before:bg-[url('/images/landing/frames/billing-active.svg')] before:bg-auto before:bg-center before:bg-no-repeat before:opacity-0 before:transition-opacity before:duration-200 hover:text-orange-700 aria-pressed:bg-white aria-pressed:text-black aria-pressed:before:opacity-100"
+            class="relative isolate text-grey-700 transition-colors duration-300 before:pointer-events-none before:absolute before:top-1/2 before:left-1/2 before:-z-10 before:h-[44px] before:w-[119px] before:-translate-1/2 before:bg-[url('/images/landing/frames/billing-active.svg')] before:bg-auto before:bg-center before:bg-no-repeat before:opacity-0 before:transition-opacity before:duration-300 hover:text-orange-700 aria-pressed:bg-white aria-pressed:text-black aria-pressed:before:opacity-100"
           >
             {pgettext("billing period", "Monthly")}
           </button>
@@ -150,7 +150,7 @@ defmodule FirmowidWeb.Landing.Components.Pricing do
             phx-click="set_billing_period"
             phx-value-period="yearly"
             aria-pressed={to_string(@yearly?)}
-            class="relative isolate text-grey-700 transition-colors duration-200 before:pointer-events-none before:absolute before:top-1/2 before:left-1/2 before:-z-10 before:h-[44px] before:w-[132px] before:-translate-1/2 before:bg-[url('/images/landing/frames/billing-yearly-active.svg')] before:bg-auto before:bg-center before:bg-no-repeat before:opacity-0 before:transition-opacity before:duration-200 hover:text-orange-700 aria-pressed:bg-white aria-pressed:text-black aria-pressed:before:opacity-100"
+            class="relative isolate text-grey-700 transition-colors duration-300 before:pointer-events-none before:absolute before:top-1/2 before:left-1/2 before:-z-10 before:h-[44px] before:w-[132px] before:-translate-1/2 before:bg-[url('/images/landing/frames/billing-yearly-active.svg')] before:bg-auto before:bg-center before:bg-no-repeat before:opacity-0 before:transition-opacity before:duration-300 hover:text-orange-700 aria-pressed:bg-white aria-pressed:text-black aria-pressed:before:opacity-100"
           >
             {pgettext("billing period", "Yearly")}
             <span>−20%</span>
@@ -258,7 +258,7 @@ defmodule FirmowidWeb.Landing.Components.Pricing do
             aria-hidden="true"
             inert
             data-expanded="false"
-            class="-mt-6 grid grid-rows-[0fr] self-start transition-[grid-template-rows] duration-500 ease-in-out data-[expanded=true]:grid-rows-[1fr] motion-reduce:transition-none lg:col-span-full lg:mt-0"
+            class="-mt-6 grid grid-rows-[0fr] self-start transition-[grid-template-rows] duration-600 ease-out data-[expanded=true]:grid-rows-[1fr] motion-reduce:transition-none lg:col-span-full lg:mt-0"
           >
             <div class="min-h-0 overflow-hidden">
               <section :for={{title, rows} <- @sections}>
