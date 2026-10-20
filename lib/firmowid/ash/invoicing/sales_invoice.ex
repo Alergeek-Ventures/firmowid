@@ -289,7 +289,7 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
         where present(:currency)
       end
 
-      prepare {Firmowid.Ash.Invoicing.Preparations.FilterByAmount, []}
+      prepare {Firmowid.Ash.Preparations.FilterByAmount, []}
 
       # A correction of an invoice in Firmowid is already its original's effective_amount.
       prepare build(filter: expr(ksef_invoice_kind != :kor or is_nil(corrected_invoice_id))) do
@@ -1126,6 +1126,7 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
     update :connect_transactions do
       description "Connect transactions to this sales invoice via the join table."
       require_atomic? false
+      change Changes.RecordManualMatch
       argument :transaction_ids, {:array, :uuid}, allow_nil?: false
 
       change Changes.RequireTransactionIds
@@ -1136,6 +1137,7 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
     update :disconnect_transactions do
       description "Disconnect the provided transactions from this sales invoice."
       require_atomic? false
+      change Changes.RecordManualMatch
       argument :transaction_ids, {:array, :uuid}, allow_nil?: false
 
       change Changes.RequireTransactionIds
@@ -1145,10 +1147,23 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
     update :disconnect_all_transactions do
       description "Disconnect all transactions from this sales invoice."
       require_atomic? false
+      change {Changes.RecordManualMatch, current_transactions?: true}
 
       change fn changeset, _context ->
         Ash.Changeset.manage_relationship(changeset, :transactions, [], on_missing: :unrelate)
       end
+    end
+
+    action :transaction_suggestions,
+           {:array, Firmowid.Ash.Invoicing.Types.TransactionSuggestion} do
+      description "List transactions connected to this invoice and score pending ones against it, best match first."
+
+      argument :invoice_id, :uuid,
+        allow_nil?: false,
+        description: "ID of an original invoice, not a correction."
+
+      run {Firmowid.Ash.Invoicing.Actions.TransactionSuggestions,
+           load: [:effective_amount, :buyer_display_name_label, :transactions]}
     end
 
     action :dispatch_ksef_confirmation do
@@ -1237,12 +1252,7 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
       end
 
       policy action_type([:create, :update, :destroy, :action]) do
-        authorize_if action([
-                       :connect_transactions,
-                       :disconnect_transactions,
-                       :disconnect_all_transactions
-                     ])
-
+        authorize_if action(:transaction_suggestions)
         authorize_if {AtLeastRole, role: :accountant}
       end
 

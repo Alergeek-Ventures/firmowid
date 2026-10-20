@@ -55,6 +55,7 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
   alias Firmowid.Ash.Invoicing.Changes.ComputeCostInvoiceSellerDisplayName
   alias Firmowid.Ash.Invoicing.Changes.EnqueueMissingCostInvoiceDescriptionRefresh
   alias Firmowid.Ash.Invoicing.Changes.EnqueueMissingCostInvoiceSellerDisplayNameRefresh
+  alias Firmowid.Ash.Invoicing.Changes.RecordManualMatch
   alias Firmowid.Ash.Invoicing.Changes.RequireTransactionIds
   alias Firmowid.Ash.Invoicing.CostInvoiceTransaction
   alias Firmowid.Ash.Invoicing.InvoiceMatching
@@ -246,7 +247,7 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
         where present(:currency)
       end
 
-      prepare {Firmowid.Ash.Invoicing.Preparations.FilterByAmount, []}
+      prepare {Firmowid.Ash.Preparations.FilterByAmount, []}
 
       # A correction linked to its original is already counted in the original's effective_amount.
       prepare build(filter: expr(is_nil(original_invoice_ksef_number) or is_nil(original_invoice.id))) do
@@ -495,6 +496,7 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
     update :connect_transactions do
       description "Connect transactions to this cost invoice via the join table."
       require_atomic? false
+      change RecordManualMatch
       argument :transaction_ids, {:array, :uuid}, allow_nil?: false
 
       change RequireTransactionIds
@@ -505,6 +507,7 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
     update :disconnect_transactions do
       description "Disconnect the provided transactions from this cost invoice."
       require_atomic? false
+      change RecordManualMatch
       argument :transaction_ids, {:array, :uuid}, allow_nil?: false
 
       change RequireTransactionIds
@@ -514,10 +517,22 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
     update :disconnect_all_transactions do
       description "Disconnect all transactions from this cost invoice."
       require_atomic? false
+      change {RecordManualMatch, current_transactions?: true}
 
       change fn changeset, _context ->
         Ash.Changeset.manage_relationship(changeset, :transactions, [], on_missing: :unrelate)
       end
+    end
+
+    action :transaction_suggestions,
+           {:array, Firmowid.Ash.Invoicing.Types.TransactionSuggestion} do
+      description "List transactions connected to this invoice and score pending ones against it, best match first."
+
+      argument :invoice_id, :uuid,
+        allow_nil?: false,
+        description: "ID of an original invoice, not a correction."
+
+      run {Firmowid.Ash.Invoicing.Actions.TransactionSuggestions, load: [:effective_amount, :transactions]}
     end
 
     action :match_transactions do
@@ -584,10 +599,7 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
                    ])
     end
 
-    policy [
-      action([:connect_transactions, :disconnect_transactions, :disconnect_all_transactions]),
-      {AtLeastRole, role: :invoicing}
-    ] do
+    policy [action(:transaction_suggestions), {AtLeastRole, role: :invoicing}] do
       authorize_if always()
     end
 

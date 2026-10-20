@@ -119,7 +119,7 @@ defmodule FirmowidWeb.Invoicing.Transactions.Views.Show do
     transaction = socket.assigns.transaction
     scope = socket.assigns.ash_scope
 
-    result = Invoicing.disconnect_transaction_from_all_invoices_manual(transaction, scope)
+    result = Invoicing.disconnect_transaction_from_all_invoices(transaction, scope)
 
     case result do
       {:ok, _transaction} ->
@@ -192,11 +192,11 @@ defmodule FirmowidWeb.Invoicing.Transactions.Views.Show do
   end
 
   defp connect_invoice_transaction(%CostInvoice{} = invoice, transaction_id, scope) do
-    Invoicing.connect_cost_invoice_transactions_manual(invoice, [transaction_id], scope)
+    Invoicing.connect_cost_invoice_transactions(invoice, [transaction_id], scope: scope)
   end
 
   defp connect_invoice_transaction(%SalesInvoice{} = invoice, transaction_id, scope) do
-    Invoicing.connect_sales_invoice_transactions_manual(invoice, [transaction_id], scope)
+    Invoicing.connect_sales_invoice_transactions(invoice, [transaction_id], scope: scope)
   end
 
   defp reload_transaction(id, scope) do

@@ -476,11 +476,7 @@ defmodule Firmowid.Ash.Invoicing.InvoicingTest do
       transaction = seed_sales_disconnect_transaction!(organization_id)
 
       {:ok, _invoice} =
-        Invoicing.connect_sales_invoice_transactions_manual(
-          sales_invoice,
-          [transaction.id],
-          scope
-        )
+        Invoicing.connect_sales_invoice_transactions(sales_invoice, [transaction.id], scope: scope)
 
       connected_invoice =
         Invoicing.get_sales_invoice!(sales_invoice.id, load: [:transactions], scope: scope)
@@ -502,7 +498,7 @@ defmodule Firmowid.Ash.Invoicing.InvoicingTest do
       assert Enum.map(still_connected_invoice.transactions, & &1.id) == [transaction.id]
     end
 
-    test "disconnect_all_sales_invoice_transactions_manual/2 removes all linked transactions" do
+    test "disconnect_all_sales_invoice_transactions/2 removes all linked transactions" do
       user = admin_fixture()
       scope = scope_for(user)
       organization_id = user.organization_id
@@ -511,11 +507,7 @@ defmodule Firmowid.Ash.Invoicing.InvoicingTest do
       transaction = seed_sales_disconnect_transaction!(organization_id)
 
       {:ok, _invoice} =
-        Invoicing.connect_sales_invoice_transactions_manual(
-          sales_invoice,
-          [transaction.id],
-          scope
-        )
+        Invoicing.connect_sales_invoice_transactions(sales_invoice, [transaction.id], scope: scope)
 
       connected_invoice =
         Invoicing.get_sales_invoice!(sales_invoice.id, load: [:transactions], scope: scope)
@@ -523,9 +515,8 @@ defmodule Firmowid.Ash.Invoicing.InvoicingTest do
       assert Enum.map(connected_invoice.transactions, & &1.id) == [transaction.id]
 
       assert {:ok, _invoice} =
-               Invoicing.disconnect_all_sales_invoice_transactions_manual(
-                 connected_invoice,
-                 scope
+               Invoicing.disconnect_all_sales_invoice_transactions(connected_invoice,
+                 scope: scope
                )
 
       disconnected_invoice =
@@ -543,7 +534,7 @@ defmodule Firmowid.Ash.Invoicing.InvoicingTest do
       transaction = seed_cost_disconnect_transaction!(organization_id)
 
       {:ok, _invoice} =
-        Invoicing.connect_cost_invoice_transactions_manual(cost_invoice, [transaction.id], scope)
+        Invoicing.connect_cost_invoice_transactions(cost_invoice, [transaction.id], scope: scope)
 
       connected_invoice =
         Invoicing.get_cost_invoice!(cost_invoice.id, load: [:transactions], scope: scope)
@@ -565,7 +556,7 @@ defmodule Firmowid.Ash.Invoicing.InvoicingTest do
       assert Enum.map(still_connected_invoice.transactions, & &1.id) == [transaction.id]
     end
 
-    test "disconnect_all_cost_invoice_transactions_manual/2 removes all linked transactions" do
+    test "disconnect_all_cost_invoice_transactions/2 removes all linked transactions" do
       user = admin_fixture()
       scope = scope_for(user)
       organization_id = user.organization_id
@@ -574,7 +565,7 @@ defmodule Firmowid.Ash.Invoicing.InvoicingTest do
       transaction = seed_cost_disconnect_transaction!(organization_id)
 
       {:ok, _invoice} =
-        Invoicing.connect_cost_invoice_transactions_manual(cost_invoice, [transaction.id], scope)
+        Invoicing.connect_cost_invoice_transactions(cost_invoice, [transaction.id], scope: scope)
 
       connected_invoice =
         Invoicing.get_cost_invoice!(cost_invoice.id, load: [:transactions], scope: scope)
@@ -582,7 +573,7 @@ defmodule Firmowid.Ash.Invoicing.InvoicingTest do
       assert Enum.map(connected_invoice.transactions, & &1.id) == [transaction.id]
 
       assert {:ok, _invoice} =
-               Invoicing.disconnect_all_cost_invoice_transactions_manual(connected_invoice, scope)
+               Invoicing.disconnect_all_cost_invoice_transactions(connected_invoice, scope: scope)
 
       disconnected_invoice =
         Invoicing.get_cost_invoice!(cost_invoice.id, load: [:transactions], scope: scope)
@@ -612,7 +603,7 @@ defmodule Firmowid.Ash.Invoicing.InvoicingTest do
       assert disconnected_invoice.transactions == []
     end
 
-    test "connect_sales_invoice_transactions_manual/3 allows transactions with a different currency" do
+    test "connect_sales_invoice_transactions/3 allows transactions with a different currency" do
       user = admin_fixture()
       scope = scope_for(user)
       organization_id = user.organization_id
@@ -625,11 +616,7 @@ defmodule Firmowid.Ash.Invoicing.InvoicingTest do
         })
 
       assert {:ok, _invoice} =
-               Invoicing.connect_sales_invoice_transactions_manual(
-                 sales_invoice,
-                 [transaction.id],
-                 scope
-               )
+               Invoicing.connect_sales_invoice_transactions(sales_invoice, [transaction.id], scope: scope)
 
       connected_invoice =
         Invoicing.get_sales_invoice!(sales_invoice.id, load: [:transactions], scope: scope)
@@ -637,7 +624,7 @@ defmodule Firmowid.Ash.Invoicing.InvoicingTest do
       assert Enum.map(connected_invoice.transactions, & &1.id) == [transaction.id]
     end
 
-    test "connect_cost_invoice_transactions_manual/3 allows transactions with a different currency" do
+    test "connect_cost_invoice_transactions/3 allows transactions with a different currency" do
       user = admin_fixture()
       scope = scope_for(user)
       organization_id = user.organization_id
@@ -650,11 +637,7 @@ defmodule Firmowid.Ash.Invoicing.InvoicingTest do
         })
 
       assert {:ok, _invoice} =
-               Invoicing.connect_cost_invoice_transactions_manual(
-                 cost_invoice,
-                 [transaction.id],
-                 scope
-               )
+               Invoicing.connect_cost_invoice_transactions(cost_invoice, [transaction.id], scope: scope)
 
       connected_invoice =
         Invoicing.get_cost_invoice!(cost_invoice.id, load: [:transactions], scope: scope)
@@ -662,7 +645,7 @@ defmodule Firmowid.Ash.Invoicing.InvoicingTest do
       assert Enum.map(connected_invoice.transactions, & &1.id) == [transaction.id]
     end
 
-    test "connect_sales_invoice_transactions_manual/3 rejects missing transactions" do
+    test "connect_sales_invoice_transactions/3 rejects missing transactions" do
       user = admin_fixture()
       scope = scope_for(user)
       organization_id = user.organization_id
@@ -670,11 +653,7 @@ defmodule Firmowid.Ash.Invoicing.InvoicingTest do
       sales_invoice = seed_sales_disconnect_invoice!(organization_id)
 
       assert {:error, error} =
-               Invoicing.connect_sales_invoice_transactions_manual(
-                 sales_invoice,
-                 [Ash.UUID.generate()],
-                 scope
-               )
+               Invoicing.connect_sales_invoice_transactions(sales_invoice, [Ash.UUID.generate()], scope: scope)
 
       assert Exception.message(error) =~ "transaction_ids"
 

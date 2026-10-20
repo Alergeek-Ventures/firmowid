@@ -102,11 +102,7 @@ defmodule FirmowidWeb.Invoicing.CostInvoices.Views.Show do
 
   @impl true
   def handle_event("connect", %{"transaction_id" => tx_id}, socket) do
-    case Invoicing.connect_cost_invoice_transactions_manual(
-           socket.assigns.invoice,
-           [tx_id],
-           socket.assigns.ash_scope
-         ) do
+    case Invoicing.connect_cost_invoice_transactions(socket.assigns.invoice, [tx_id], scope: socket.assigns.ash_scope) do
       {:ok, _connected_invoice} ->
         invoice =
           CostInvoice.by_id!(socket.assigns.invoice.id,
@@ -132,9 +128,8 @@ defmodule FirmowidWeb.Invoicing.CostInvoices.Views.Show do
 
   @impl true
   def handle_event("disconnect", _params, socket) do
-    case Invoicing.disconnect_all_cost_invoice_transactions_manual(
-           socket.assigns.invoice,
-           socket.assigns.ash_scope
+    case Invoicing.disconnect_all_cost_invoice_transactions(socket.assigns.invoice,
+           scope: socket.assigns.ash_scope
          ) do
       {:ok, _invoice} ->
         invoice =
