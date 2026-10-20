@@ -127,7 +127,7 @@ defmodule FirmowidWeb.Invoicing.Components.Dashboard do
           {"bg-grey-200/30 rounded-lg p-3", "bg-grey-200 rounded", "text-darkGrey", "bg-grey-200 text-darkGrey"}
 
         :red ->
-          {"bg-red-100 rounded-lg p-3", "bg-red-200 rounded", "text-red-800", "bg-red-100 text-red-800"}
+          {"bg-red-200/30 rounded-lg p-3", "bg-red-200 rounded", "text-redText", "bg-red-100 text-redText"}
       end
 
     assigns =
