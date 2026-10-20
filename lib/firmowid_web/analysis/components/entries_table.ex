@@ -14,17 +14,32 @@ defmodule FirmowidWeb.Analysis.Components.EntriesTable do
   attr :colors, :map, required: true
   attr :can_write, :boolean, default: false
 
+  attr :unrealized, :boolean,
+    default: false,
+    doc: "show overdue days with dashed borders instead of categories"
+
   @doc "Renders full document amounts and category controls for authorized users."
   @spec table(map()) :: Phoenix.LiveView.Rendered.t()
   def table(assigns) do
+    assigns =
+      assign(
+        assigns,
+        :show_overdue,
+        assigns.unrealized and Enum.any?(assigns.entries, &overdue_days/1)
+      )
+
     ~H"""
     <table class="w-full table-fixed border-separate border-spacing-y-2">
-      <col /><col class="w-32" /><col class="w-48" /><col class="w-36" />
+      <col /><col :if={@show_overdue} class="w-40" /><col class="w-32" />
+      <col :if={not @unrealized} class="w-48" /><col class="w-36" />
       <thead>
         <tr>
           <th class="py-2 pl-5 text-left text-xs font-normal text-darkGrey uppercase">Kontrahent</th>
-          <th class="py-2 text-left text-xs font-normal text-darkGrey uppercase">Data sprzedaży</th>
+          <th :if={@show_overdue}></th>
           <th class="py-2 text-left text-xs font-normal text-darkGrey uppercase">
+            {if @unrealized, do: "Data", else: "Data sprzedaży"}
+          </th>
+          <th :if={not @unrealized} class="py-2 text-left text-xs font-normal text-darkGrey uppercase">
             {gettext("Categories")}
           </th>
           <th class="py-2 text-left text-xs font-normal text-darkGrey uppercase">Kwota</th>
@@ -40,6 +55,8 @@ defmodule FirmowidWeb.Analysis.Components.EntriesTable do
           categories={@categories}
           colors={@colors}
           can_write={@can_write}
+          unrealized={@unrealized}
+          show_overdue={@show_overdue}
         />
       </tbody>
     </table>
@@ -98,7 +115,10 @@ defmodule FirmowidWeb.Analysis.Components.EntriesTable do
   defp entry_row(assigns) do
     ~H"""
     <tr>
-      <td class="rounded-l-md bg-white px-5 py-2">
+      <td class={[
+        "rounded-l-md bg-white px-5 py-2",
+        @unrealized && "border-y-2 border-l-2 border-dashed border-darkGrey/50"
+      ]}>
         <div class="truncate">
           <%= if @navigate do %>
             <.link kind="unstyled" navigate={@navigate} class="hover:underline">
@@ -109,8 +129,19 @@ defmodule FirmowidWeb.Analysis.Components.EntriesTable do
           <% end %>
         </div>
       </td>
-      <td class="bg-white py-2 font-light">{@date}</td>
-      <td class="bg-white py-2">
+      <td
+        :if={@unrealized and @show_overdue}
+        class="border-y-2 border-dashed border-darkGrey/50 bg-white py-2 text-redText"
+      >
+        <.overdue days={overdue_days(@entry)} />
+      </td>
+      <td class={[
+        "bg-white py-2 font-light",
+        @unrealized && "border-y-2 border-dashed border-darkGrey/50"
+      ]}>
+        {@date}
+      </td>
+      <td :if={not @unrealized} class="bg-white py-2">
         <FirmowidWeb.Analysis.Components.CategorySelector.cell
           entry={@entry}
           categories={@categories}
@@ -120,13 +151,29 @@ defmodule FirmowidWeb.Analysis.Components.EntriesTable do
       </td>
       <td class={[
         "rounded-r-md py-2",
-        if(@income, do: "bg-blueBg text-blueText", else: "bg-orangeBg text-orangeText")
+        if(@income, do: "bg-blueBg text-blueText", else: "bg-orangeBg text-orangeText"),
+        @unrealized && "border-y-2 border-r-2 border-dashed border-darkGrey/50"
       ]}>
         <div class="py-1 pr-5 text-right">{@amount}</div>
       </td>
     </tr>
     """
   end
+
+  defp overdue(%{days: nil} = assigns), do: ~H""
+
+  defp overdue(assigns) do
+    ~H"""
+    {ngettext("%{count} day overdue", "%{count} days overdue", @days)}
+    """
+  end
+
+  defp overdue_days(%{effective_due_date: %Date{} = due_date}) do
+    days = Date.diff(Date.utc_today(), due_date)
+    if days > 0, do: days
+  end
+
+  defp overdue_days(_entry), do: nil
 
   defp party_cell(assigns) do
     ~H"""

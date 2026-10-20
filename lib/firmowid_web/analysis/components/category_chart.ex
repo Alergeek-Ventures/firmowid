@@ -30,11 +30,17 @@ defmodule FirmowidWeb.Analysis.Components.CategoryChart do
       end)
 
     total = Enum.reduce(categories, Decimal.new(0), &Decimal.add(&1.amount, &2))
+    unrealized = Enum.find(categories, &(&1.key == :unrealized))
 
     assigns =
       assigns
       |> assign(:categories, categories)
       |> assign(:total, total)
+      |> assign(
+        :realized_total,
+        Decimal.sub(total, if(unrealized, do: unrealized.amount, else: 0))
+      )
+      |> assign(:unrealized, unrealized)
       |> assign(:gradient, gradient(categories, total))
       |> assign(:boundaries, boundaries(categories, total))
 
@@ -42,7 +48,10 @@ defmodule FirmowidWeb.Analysis.Components.CategoryChart do
     <section id={@id} class="rounded-xl border border-grey-200 bg-white p-6 sm:p-8">
       <h2 class="text-lg font-medium text-darkGrey">{@title}</h2>
       <p id={@id <> "-total"} class="mt-1 text-3xl font-semibold text-grey-900 tabular-nums">
-        {Money.new(:PLN, @total)}
+        {Money.new(:PLN, @realized_total)}
+      </p>
+      <p :if={@unrealized} id={@id <> "-unrealized"} class="mt-1 text-sm text-darkGrey tabular-nums">
+        {gettext("+ %{amount} unrealized", amount: Money.new(:PLN, @unrealized.amount))}
       </p>
       <div class="mt-8 flex flex-col items-center gap-8 xl:flex-row xl:items-start">
         <div
@@ -113,7 +122,7 @@ defmodule FirmowidWeb.Analysis.Components.CategoryChart do
   projects absent from one chart. Both charts share this map, so colors do not
   change with amounts, the selected month or category filters.
   """
-  @spec category_colors([map()]) :: %{CategoryTotals.category_key() => String.t()}
+  @spec category_colors([map()]) :: %{(CategoryTotals.category_key() | :unrealized) => String.t()}
   def category_colors(tag_definitions) do
     tag_definitions
     |> Enum.sort_by(& &1.id)
@@ -121,11 +130,12 @@ defmodule FirmowidWeb.Analysis.Components.CategoryChart do
     |> Map.new(fn {definition, index} ->
       {{:project, definition.id}, Enum.at(@palette, rem(index, length(@palette)))}
     end)
-    |> Map.merge(%{company: "#334155", unassigned: "#CBD5E1"})
+    |> Map.merge(%{company: "#334155", unassigned: "#CBD5E1", unrealized: "#F4A9A8"})
   end
 
   defp category_name(%{key: :company}), do: gettext("Company")
   defp category_name(%{key: :unassigned}), do: gettext("Unassigned")
+  defp category_name(%{key: :unrealized}), do: gettext("Unrealized")
   defp category_name(%{name: name}), do: name
 
   defp percentage(amount, total) do
