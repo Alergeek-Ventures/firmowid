@@ -70,7 +70,7 @@ defmodule FirmowidWeb.Analysis.Components.EntriesTable do
       |> assign(:description, invoice.description)
       |> assign(:date, invoice.effective_sale_date || invoice.sale_date)
       |> assign(:amount, invoice.effective_amount)
-      |> assign(:income, Money.negative?(invoice.effective_amount))
+      |> assign(:income, Money.positive?(invoice.effective_amount))
       |> assign(:navigate, ~p"/kosztowe/#{invoice.id}")
 
     ~H"<.entry_row {assigns} />"
