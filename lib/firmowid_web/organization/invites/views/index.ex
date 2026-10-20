@@ -6,8 +6,8 @@ defmodule FirmowidWeb.Organization.Invites.Views.Index do
   import FirmowidWeb.DesignSystem.Components.CoreComponents, except: [button: 1]
   import Phoenix.Component, except: [link: 1]
 
-  alias Ash.Error.Forbidden
   alias Firmowid.Ash.Core
+  alias FirmowidUI.Utilities.ForbiddenError
 
   @invite_load [issued_by: [:email], consumed_by: [:email]]
 
@@ -17,7 +17,7 @@ defmodule FirmowidWeb.Organization.Invites.Views.Index do
     scope = socket.assigns.ash_scope
 
     if current_user.member.role != :admin do
-      raise Forbidden, message: "Tylko administrator może przeglądać zaproszenia."
+      raise ForbiddenError, "Tylko administrator może przeglądać zaproszenia."
     end
 
     invites =
@@ -37,7 +37,7 @@ defmodule FirmowidWeb.Organization.Invites.Views.Index do
     scope = socket.assigns.ash_scope
 
     if current_user.member.role != :admin do
-      raise Forbidden, message: "Tylko administrator może tworzyć zaproszenia."
+      raise ForbiddenError, "Tylko administrator może tworzyć zaproszenia."
     end
 
     Core.create_invite!(%{issued_by_id: current_user.id}, scope: scope)
@@ -57,7 +57,7 @@ defmodule FirmowidWeb.Organization.Invites.Views.Index do
     scope = socket.assigns.ash_scope
 
     if current_user.member.role != :admin do
-      raise Forbidden, message: "Tylko administrator może usuwać zaproszenia."
+      raise ForbiddenError, "Tylko administrator może usuwać zaproszenia."
     end
 
     invite =
