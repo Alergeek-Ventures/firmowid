@@ -63,9 +63,10 @@ defmodule Firmowid.Ash.Analysis do
   included to prevent double-counting. Transfers between the organization's own
   bank accounts are excluded.
 
-  Pinned salaries carry derived, unsaved project tags for every project the
-  employee logged time on in the salary month, weighted by that time, or the
-  company tag without such work.
+  Transfers pinned to a salary are assigned to the salary month, not the
+  booking date. Pinned salaries carry derived, unsaved project tags for every
+  project the employee logged time on in the salary month, weighted by that
+  time, or the company tag without such work.
 
   Entities tagged as `:internal` remain editable in entry lists but are excluded from totals.
 
@@ -145,10 +146,9 @@ defmodule Firmowid.Ash.Analysis do
       |> Enum.reject(&own_account_transfer?(&1, own_account_ibans))
 
     salary_transactions =
-      Finances.list_transactions!(
-        %{date_from: date_from, date_to: date_to, salary_assigned: true},
-        scope: analysis_scope
-      )
+      %{salary_assigned: true}
+      |> Finances.list_transactions!(scope: analysis_scope)
+      |> Enum.filter(&(&1.salary_month in Date.range(date_from, date_to)))
 
     transactions = skipped_transactions ++ salary_transactions
 
@@ -168,8 +168,8 @@ defmodule Firmowid.Ash.Analysis do
 
   @doc """
   Returns a list of dates (first day of each month) that have analysis-relevant
-  entries. Uses `sale_date` for invoices and `booking_date` for standalone
-  (skipped, unmatched) and salary-pinned transactions.
+  entries. Uses `sale_date` for invoices, `booking_date` for standalone
+  (skipped, unmatched) transactions and `salary_month` for salary-pinned ones.
 
   Only includes invoices that are matched to an external transaction or marked
   `skip_invoicing`.
@@ -185,8 +185,12 @@ defmodule Firmowid.Ash.Analysis do
       %{reconciliation: :skipped}
       |> Finances.list_transactions!(opts)
       |> Enum.reject(&own_account_transfer?(&1, own_account_ibans))
-      |> Enum.concat(Finances.list_transactions!(%{salary_assigned: true}, opts))
       |> Enum.map(&Date.beginning_of_month(&1.booking_date))
+      |> Enum.concat(
+        %{salary_assigned: true}
+        |> Finances.list_transactions!(opts)
+        |> Enum.map(& &1.salary_month)
+      )
 
     si_months =
       invoice_months(
