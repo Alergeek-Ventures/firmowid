@@ -245,6 +245,18 @@ html {
   }
 }
 
+/* ── Chart tooltip ───────────────────────────────────────────────────── */
+.tippy-tooltip.chart-theme {
+  padding: 0;
+  overflow: visible;
+  background: transparent;
+  color: var(--color-grey-900);
+}
+
+.tippy-tooltip.chart-theme .tippy-backdrop {
+  display: none;
+}
+
 /* ── Air Datepicker ─────────────────────────────────────────────────── */
 .air-datepicker {
   --adp-background-color-selected-other-month-focused: #455e5e;

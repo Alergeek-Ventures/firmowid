@@ -34,85 +34,148 @@ defmodule FirmowidWeb.Analysis.Components.CategoryChart do
 
     assigns =
       assigns
-      |> assign(:categories, categories)
       |> assign(:total, total)
       |> assign(
         :realized_total,
         Decimal.sub(total, if(unrealized, do: unrealized.amount, else: 0))
       )
       |> assign(:unrealized, unrealized)
-      |> assign(:gradient, gradient(categories, total))
-      |> assign(:boundaries, boundaries(categories, total))
+      |> assign(:slices, slices(categories, total))
+      |> assign(:legend, legend(categories, total))
 
     ~H"""
-    <section id={@id} class="rounded-xl border border-grey-200 bg-white p-6 sm:p-8">
+    <section id={@id} class="flex flex-col rounded-xl border border-grey-200 bg-white p-6 sm:p-8">
       <h2 class="text-lg font-medium text-darkGrey">{@title}</h2>
       <p id={@id <> "-total"} class="mt-1 text-3xl font-semibold text-grey-900 tabular-nums">
         {Money.new(:PLN, @realized_total)}
       </p>
-      <p :if={@unrealized} id={@id <> "-unrealized"} class="mt-1 text-sm text-darkGrey tabular-nums">
-        {gettext("+ %{amount} unrealized", amount: Money.new(:PLN, @unrealized.amount))}
+      <p class="mt-1 h-5 text-sm text-darkGrey tabular-nums">
+        <span :if={@unrealized} id={@id <> "-unrealized"}>
+          {gettext("+ %{amount} unrealized", amount: Money.new(:PLN, @unrealized.amount))}
+        </span>
       </p>
-      <div class="mt-8 flex flex-col items-center gap-8 xl:flex-row xl:items-start">
-        <div
-          class="size-56 shrink-0 rounded-full bg-grey-100"
-          style={@gradient}
-          aria-hidden="true"
-        >
-          <svg
-            :if={length(@categories) > 1}
-            viewBox="0 0 200 200"
-            class="size-full rounded-full"
-          >
-            <line
-              :for={{x, y} <- @boundaries}
-              x1="100"
-              y1="100"
-              x2={x}
-              y2={y}
+      <div class="mt-8 flex flex-col items-center gap-8 xl:flex-row">
+        <svg viewBox="0 0 200 200" class="size-56 shrink-0" role="img" aria-label={@title}>
+          <circle :if={@slices == []} cx="100" cy="100" r="100" class="fill-grey-100" />
+          <%= for slice <- @slices do %>
+            <circle
+              :if={slice.full}
+              id={"#{@id}-slice-#{slice.index}"}
+              cx="100"
+              cy="100"
+              r="100"
+              fill={slice.color}
+              phx-hook=".ChartTooltip"
+              data-items={slice.tooltip}
+              class="transition-opacity hover:opacity-80"
+            />
+            <path
+              :if={not slice.full}
+              id={"#{@id}-slice-#{slice.index}"}
+              d={slice.path}
+              fill={slice.color}
               stroke="white"
               stroke-width="1.5"
+              stroke-linejoin="round"
+              phx-hook=".ChartTooltip"
+              data-items={slice.tooltip}
+              class="transition-opacity hover:opacity-80"
             />
-          </svg>
-        </div>
-        <%= if @categories == [] do %>
-          <p id={@id <> "-empty"} class="py-8 text-sm text-darkGrey">
+          <% end %>
+        </svg>
+        <%= if @legend == [] do %>
+          <p id={@id <> "-empty"} class="h-56 py-8 text-sm text-darkGrey">
             {gettext("No entries for this month")}
           </p>
         <% else %>
-          <ul id={@id <> "-legend"} class="w-full min-w-0 space-y-4">
-            <li :for={category <- @categories} class="flex items-start gap-3">
+          <ul id={@id <> "-legend"} class="flex h-56 w-full min-w-0 flex-col justify-center gap-5">
+            <li
+              :for={{row, index} <- Enum.with_index(@legend)}
+              id={"#{@id}-legend-#{index}"}
+              phx-hook=".ChartTooltip"
+              data-items={row[:details]}
+              class="flex items-center gap-3 text-sm"
+            >
               <span
-                class="mt-1 size-3 shrink-0 rounded-full"
-                style={"background-color: #{safe_color(category.color)}"}
+                class="size-3 shrink-0 rounded-full"
+                style={"background-color: #{safe_color(row.color)}"}
                 aria-hidden="true"
               />
-              <div class="min-w-0 flex-1">
-                <span class="block text-sm font-medium wrap-break-word text-darkGrey">
-                  {category_name(category)}
-                </span>
-                <div class="mt-1 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 text-sm tabular-nums">
-                  <span>{Money.new(:PLN, category.amount)}</span>
-                  <span class="text-grey-600">{percentage(category.amount, @total)}</span>
-                </div>
-              </div>
+              <span class="min-w-0 flex-1 truncate font-medium text-darkGrey">{row.name}</span>
+              <span class="w-10 text-right text-grey-600 tabular-nums">
+                {percentage(row.amount, @total)}
+              </span>
+              <span class="w-24 text-right tabular-nums">
+                {Money.to_string!(Money.new(:PLN, row.amount), fractional_digits: 0)}
+              </span>
             </li>
           </ul>
         <% end %>
       </div>
-      <FirmowidUI.Components.Button.button
-        id={@id <> "-entries"}
-        variant="secondary"
-        size="small"
-        type="button"
-        phx-click="select-section"
-        phx-value-section={@section}
-        aria-pressed={to_string(@active)}
-        class="mt-8"
-      >
-        {gettext("Show entries")}
-        <.icon name="hero-arrow-down-mini" class="size-4" />
-      </FirmowidUI.Components.Button.button>
+      <div class="mt-auto flex justify-end pt-8">
+        <FirmowidUI.Components.Button.button
+          id={@id <> "-entries"}
+          variant="secondary"
+          size="small"
+          type="button"
+          phx-click="select-section"
+          phx-value-section={@section}
+          aria-pressed={to_string(@active)}
+          class={[@active && "invisible"]}
+        >
+          {gettext("Show entries")}
+          <.icon name="hero-arrow-down-mini" class="size-4" />
+        </FirmowidUI.Components.Button.button>
+      </div>
+      <script :type={Phoenix.LiveView.ColocatedHook} name=".ChartTooltip">
+        const node = (tag, className, text) => {
+          const element = document.createElement(tag);
+          element.className = className;
+          if (text) element.textContent = text;
+          return element;
+        };
+
+        const bar = (color) => {
+          const element = node("span", "h-3.5 w-1 shrink-0 rounded-full");
+          element.style.backgroundColor = color;
+          return element;
+        };
+
+        const card = (className) =>
+          node("div", `rounded-md bg-white text-left shadow-lg ${className}`);
+
+        const single = ({name, color, amount, share}) => {
+          const root = card("flex w-56 items-center gap-3 border-l-6 px-3 py-2 text-sm text-grey-900");
+          root.style.borderLeftColor = color;
+          const label = node("div", "flex min-w-0 flex-1 flex-col gap-0.5");
+          label.append(node("span", "truncate", name), node("span", "tabular-nums", share));
+          root.append(label, node("span", "shrink-0 text-lg font-semibold tabular-nums", amount));
+          return root;
+        };
+
+        const list = (items) => {
+          const root = card("flex flex-col gap-1.5 px-3 py-2 text-xs text-grey-900");
+          items.forEach(({name, color, amount, share}) => {
+            const row = node("div", "flex items-center gap-2");
+            row.append(bar(color), node("span", "flex-1", name), node("span", "w-9 text-right tabular-nums", share), node("span", "min-w-16 text-right text-sm font-semibold tabular-nums", amount));
+            root.append(row);
+          });
+          return root;
+        };
+
+        export default {
+          mounted() { this.mount(); },
+          updated() { this.mount(); },
+          destroyed() { this.el._tippy?.destroy(); },
+          mount() {
+            this.el._tippy?.destroy();
+            if (!this.el.dataset.items) return;
+            const items = JSON.parse(this.el.dataset.items);
+            const one = items.length === 1;
+            window.tippy(this.el, {content: one ? single(items[0]) : list(items), placement: one ? "top" : "bottom", maxWidth: 320, theme: "chart"});
+          },
+        };
+      </script>
     </section>
     """
   end
@@ -141,44 +204,82 @@ defmodule FirmowidWeb.Analysis.Components.CategoryChart do
   defp percentage(amount, total) do
     amount
     |> Decimal.div(total)
-    |> Firmowid.Cldr.Number.to_string!(format: :percent, fractional_digits: 1)
+    |> Firmowid.Cldr.Number.to_string!(format: :percent, fractional_digits: 0)
   end
 
-  @spec gradient([CategoryTotals.category()], Decimal.t()) :: String.t() | nil
-  defp gradient([], _total), do: nil
+  # Up to four categories by name; more show the three largest and an "Other" row
+  # whose tooltip lists the grouped categories.
+  defp legend(categories, total) do
+    case Enum.split(categories, 3) do
+      {top, [_, _ | _] = rest} ->
+        other = %{
+          name: gettext("Other"),
+          color: "#94A3B8",
+          amount: Enum.reduce(rest, Decimal.new(0), &Decimal.add(&1.amount, &2)),
+          details: tooltip_items(rest, total)
+        }
 
-  defp gradient(categories, total) do
-    {stops, _amount} =
-      Enum.map_reduce(categories, Decimal.new(0), fn category, accumulated ->
+        Enum.map(top, &legend_row/1) ++ [other]
+
+      _four_or_fewer ->
+        Enum.map(categories, &legend_row/1)
+    end
+  end
+
+  defp legend_row(category), do: %{name: category_name(category), color: category.color, amount: category.amount}
+
+  defp slices(categories, total) do
+    {slices, _amount} =
+      categories
+      |> Enum.with_index()
+      |> Enum.map_reduce(Decimal.new(0), fn {category, index}, accumulated ->
         next = Decimal.add(accumulated, category.amount)
-        start = gradient_percentage(accumulated, total)
-        finish = gradient_percentage(next, total)
-        {"#{safe_color(category.color)} #{start}% #{finish}%", next}
+        start = fraction(accumulated, total)
+        finish = fraction(next, total)
+
+        slice = %{
+          index: index,
+          color: safe_color(category.color),
+          full: length(categories) == 1,
+          path: arc_path(start, finish),
+          tooltip: tooltip_items([category], total)
+        }
+
+        {slice, next}
       end)
 
-    "background-image: conic-gradient(#{Enum.join(stops, ", ")})"
+    slices
   end
 
-  defp gradient_percentage(amount, total) do
-    amount
-    |> Decimal.div(total)
-    |> Decimal.mult(100)
-    |> Decimal.round(6)
-    |> Decimal.to_string(:normal)
+  defp tooltip_items(categories, total) do
+    categories
+    |> Enum.map(fn category ->
+      %{
+        name: category_name(category),
+        color: safe_color(category.color),
+        amount: Money.to_string!(Money.new(:PLN, category.amount), fractional_digits: 0),
+        share: percentage(category.amount, total)
+      }
+    end)
+    |> Jason.encode!()
   end
 
-  defp boundaries([], _total), do: []
+  defp fraction(amount, total), do: amount |> Decimal.div(total) |> Decimal.to_float()
 
-  defp boundaries(categories, total) do
-    {points, _amount} =
-      Enum.map_reduce(categories, Decimal.new(0), fn category, accumulated ->
-        angle = Decimal.to_float(Decimal.div(accumulated, total)) * 2 * :math.pi()
-        point = {100 + 100 * :math.sin(angle), 100 - 100 * :math.cos(angle)}
-        {point, Decimal.add(accumulated, category.amount)}
-      end)
+  defp arc_path(start, finish) do
+    {x1, y1} = point(start)
+    {x2, y2} = point(finish)
+    large_arc = if finish - start > 0.5, do: 1, else: 0
 
-    points
+    "M100 100 L#{coordinate(x1)} #{coordinate(y1)} A100 100 0 #{large_arc} 1 #{coordinate(x2)} #{coordinate(y2)} Z"
   end
+
+  defp point(fraction) do
+    angle = fraction * 2 * :math.pi()
+    {100 + 100 * :math.sin(angle), 100 - 100 * :math.cos(angle)}
+  end
+
+  defp coordinate(value), do: :erlang.float_to_binary(value, decimals: 3)
 
   defp safe_color(color) do
     if is_binary(color) and Regex.match?(~r/\A#[0-9a-fA-F]{6}\z/, color),

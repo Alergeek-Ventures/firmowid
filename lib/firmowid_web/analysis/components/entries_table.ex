@@ -30,16 +30,16 @@ defmodule FirmowidWeb.Analysis.Components.EntriesTable do
 
     ~H"""
     <table class="w-full table-fixed border-separate border-spacing-y-2">
-      <col /><col :if={@show_overdue} class="w-40" /><col class="w-32" />
-      <col :if={not @unrealized} class="w-48" /><col class="w-36" />
+      <col /><col :if={@show_overdue} class="w-40" /><col :if={not @unrealized} class="w-96" />
+      <col class="w-36" />
       <thead>
         <tr>
           <th class="py-2 pl-5 text-left text-xs font-normal text-darkGrey uppercase">Kontrahent</th>
           <th :if={@show_overdue}></th>
-          <th class="py-2 text-left text-xs font-normal text-darkGrey uppercase">
-            {if @unrealized, do: "Data", else: "Data sprzedaży"}
-          </th>
-          <th :if={not @unrealized} class="py-2 text-left text-xs font-normal text-darkGrey uppercase">
+          <th
+            :if={not @unrealized}
+            class="py-2 pr-6 text-right text-xs font-normal text-darkGrey uppercase"
+          >
             {gettext("Categories")}
           </th>
           <th class="py-2 text-left text-xs font-normal text-darkGrey uppercase">Kwota</th>
@@ -68,7 +68,6 @@ defmodule FirmowidWeb.Analysis.Components.EntriesTable do
       assigns
       |> assign(:party, invoice.buyer_display_name_label || "")
       |> assign(:description, Enum.map_join(invoice.sales_invoice_items, ", ", & &1.name))
-      |> assign(:date, invoice.sale_date || invoice.issue_date)
       |> assign(:amount, invoice.effective_amount)
       |> assign(:income, Money.positive?(invoice.effective_amount))
       |> assign(:navigate, ~p"/sprzedazowe/#{invoice.id}")
@@ -85,7 +84,6 @@ defmodule FirmowidWeb.Analysis.Components.EntriesTable do
           ""
       )
       |> assign(:description, invoice.description)
-      |> assign(:date, invoice.effective_sale_date || invoice.sale_date)
       |> assign(:amount, invoice.effective_amount)
       |> assign(:income, Money.positive?(invoice.effective_amount))
       |> assign(:navigate, ~p"/kosztowe/#{invoice.id}")
@@ -104,7 +102,6 @@ defmodule FirmowidWeb.Analysis.Components.EntriesTable do
         ) || ""
       )
       |> assign(:description, transaction.remittance_information_unstructured)
-      |> assign(:date, transaction.booking_date)
       |> assign(:amount, transaction.amount)
       |> assign(:income, Money.positive?(transaction.amount))
       |> assign(:navigate, nil)
@@ -135,13 +132,7 @@ defmodule FirmowidWeb.Analysis.Components.EntriesTable do
       >
         <.overdue days={overdue_days(@entry)} />
       </td>
-      <td class={[
-        "bg-white py-2 font-light",
-        @unrealized && "border-y-2 border-dashed border-darkGrey/50"
-      ]}>
-        {@date}
-      </td>
-      <td :if={not @unrealized} class="bg-white py-2">
+      <td :if={not @unrealized} class="bg-white py-2 pr-4">
         <FirmowidWeb.Analysis.Components.CategorySelector.cell
           entry={@entry}
           categories={@categories}

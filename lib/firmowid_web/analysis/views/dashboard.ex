@@ -95,7 +95,7 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
     if can_write?(socket.assigns) and row != nil and category_editable?(row) do
       case change_category(event, params, row, socket) do
         {:ok, _} ->
-          {:noreply, load_data(socket)}
+          {:noreply, load_totals(socket)}
 
         {:error, _} ->
           {:noreply, put_flash(socket, :error, gettext("Could not update categories."))}
@@ -125,7 +125,7 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
              scope: socket.assigns.ash_scope
            ) do
         :ok ->
-          {:noreply, load_data(socket)}
+          {:noreply, load_totals(socket)}
 
         {:error, _reason} ->
           {:noreply, put_flash(socket, :error, gettext("Could not update categories."))}
@@ -177,7 +177,7 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
   end
 
   @impl true
-  def handle_info(:analysis_classification_updated, socket), do: {:noreply, load_data(socket)}
+  def handle_info(:analysis_classification_updated, socket), do: {:noreply, load_totals(socket)}
 
   defp entries_for_section(%{expanded_section: :income} = assigns) do
     omitted_last(assigns.sales_invoices ++ Enum.filter(assigns.transactions, &Money.positive?(&1.amount)))
@@ -246,22 +246,27 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
 
   defp change_category(_event, _params, _row, _socket), do: {:error, :invalid_category}
 
+  # Category changes do not affect unrealized entries, so they only reload totals.
   defp load_data(socket) do
+    month_end = Date.end_of_month(socket.assigns.params.month)
+
+    socket
+    |> assign(:unrealized, Analysis.get_unrealized_entries(month_end, socket.assigns.ash_scope))
+    |> load_totals()
+  end
+
+  defp load_totals(socket) do
     month = socket.assigns.params.month
-    date_range_from = Date.beginning_of_month(month)
-    date_range_to = Date.end_of_month(month)
     tag_filters = socket.assigns.tag_filters
-    scope = socket.assigns.ash_scope
+    unrealized = socket.assigns.unrealized
 
     totals =
       Analysis.get_organization_totals(
-        date_range_from,
-        date_range_to,
+        Date.beginning_of_month(month),
+        Date.end_of_month(month),
         [tag_filters: tag_filters],
-        scope
+        socket.assigns.ash_scope
       )
-
-    unrealized = Analysis.get_unrealized_entries(date_range_to, scope)
 
     socket
     |> assign(
@@ -272,7 +277,6 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
       :expense_categories,
       with_unrealized(totals.expense_categories, unrealized.expenses, tag_filters)
     )
-    |> assign(:unrealized, unrealized)
     |> assign(:transactions, totals.transactions)
     |> assign(:sales_invoices, totals.sales_invoices)
     |> assign(:cost_invoices, totals.cost_invoices)
@@ -419,16 +423,8 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
           active={@expanded_section == :expenses}
         />
       </div>
-      <p class="mt-4 text-sm text-darkGrey">
-        {gettext("Selected projects share the amount equally.")}
-      </p>
       <section id="analysis-entries" class="mt-8">
-        <h2 class="text-lg font-medium text-darkGrey">
-          {if @expanded_section == :income,
-            do: gettext("Income entries"),
-            else: gettext("Expense entries")}
-        </h2>
-        <p :if={@tag_filters != []} class="mt-1 text-sm text-darkGrey">
+        <p :if={@tag_filters != []} class="text-sm text-darkGrey">
           {gettext(
             "The list shows full document amounts; the charts show the selected projects' shares."
           )}
