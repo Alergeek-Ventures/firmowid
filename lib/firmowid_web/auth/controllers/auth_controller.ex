@@ -44,15 +44,26 @@ defmodule FirmowidWeb.Auth.Controllers.AuthController do
   defp sign_in(conn, activity, user, token) do
     return_to = get_session(conn, :return_to) || UserAuth.signed_in_path_for_user(user)
 
+    conn =
+      conn
+      |> renew_session()
+      |> delete_session(:return_to)
+      |> store_in_session(user)
+      |> set_live_socket_id(token)
+      |> Helpers.maybe_put_remember_me_cookies(conn.private[:ash_authentication])
+      |> assign(:current_user, user)
+      |> maybe_put_sign_in_toast(activity)
+      |> redirect(to: return_to)
+
+    case activity do
+      {method, _phase} when method in [:password, :google] ->
+        Analytics.capture_user_signed_in(user, method)
+
+      _ ->
+        :ok
+    end
+
     conn
-    |> renew_session()
-    |> delete_session(:return_to)
-    |> store_in_session(user)
-    |> set_live_socket_id(token)
-    |> Helpers.maybe_put_remember_me_cookies(conn.private[:ash_authentication])
-    |> assign(:current_user, user)
-    |> maybe_put_sign_in_toast(activity)
-    |> redirect(to: return_to)
   end
 
   defp maybe_put_sign_in_toast(conn, {:password, :reset}),

@@ -35,6 +35,7 @@ function posthogOptions() {
       return url;
     },
     defaults: "2026-01-30",
+    loaded: applyIdentifiedState,
     capture_pageview: "history_change",
     // Autocapture stays enabled; future data-ph-capture-attribute-* properties require privacy review.
     autocapture: { capture_copied_text: false },
@@ -52,27 +53,31 @@ function posthogOptions() {
   };
 }
 
-function applyIdentifiedState() {
+function applyIdentifiedState(instance = posthog) {
+  instance.register(telemetryContextProperties);
+
   if (!consentAccepted()) {
     return;
   }
 
-  posthog.opt_in_capturing();
-  posthog.set_config({ persistence: "localStorage+cookie" });
+  instance.set_config({ persistence: "localStorage+cookie" });
 
   if (telemetryConfig.currentUserId) {
-    posthog.identify(telemetryConfig.currentUserId, telemetryUserProperties);
+    instance.identify(telemetryConfig.currentUserId, telemetryUserProperties);
   }
 
   if (telemetryConfig.currentOrganizationId) {
     if (telemetryConfig.currentOrganizationPlan) {
-      posthog.group("organization", telemetryConfig.currentOrganizationId, {
+      instance.group("organization", telemetryConfig.currentOrganizationId, {
         plan: telemetryConfig.currentOrganizationPlan
       });
     } else {
-      posthog.group("organization", telemetryConfig.currentOrganizationId);
+      instance.group("organization", telemetryConfig.currentOrganizationId);
     }
   }
+
+  // Opt-in may capture the initial pageview immediately, so identify and group first.
+  instance.opt_in_capturing();
 }
 
 function telemetryResetForm(element) {
@@ -130,14 +135,15 @@ export function installLandingCtaTracking() {
   });
 }
 
+let posthogInitialized = false;
+
 export function bootPosthog() {
   if (!telemetryConfig.posthogEnabled || !telemetryConfig.posthogApiKey) {
     return;
   }
 
   posthog.init(telemetryConfig.posthogApiKey, posthogOptions());
-  posthog.register(telemetryContextProperties);
-  applyIdentifiedState();
+  posthogInitialized = true;
 }
 
 export function acceptPosthog() {
@@ -145,10 +151,15 @@ export function acceptPosthog() {
     return;
   }
 
-  applyIdentifiedState();
+  if (posthogInitialized) {
+    applyIdentifiedState();
+  } else {
+    bootPosthog();
+  }
 }
 
 export function optOutPosthog() {
+  if (!posthogInitialized) return;
   posthog.reset();
   posthog.opt_out_capturing();
 }
