@@ -2,7 +2,7 @@ defmodule Firmowid.Ash.Core do
   @moduledoc """
   Core domain — identity and authentication.
 
-  Owns the User, Organization, OrganizationInvite, Token, and UserIdentity resources.
+  Owns the User, Member, Organization, OrganizationInvite, Token, and UserIdentity resources.
   Authentication flows (password, Google OAuth, confirmation, password reset)
   are handled by `ash_authentication` on the User resource.
 
@@ -14,6 +14,7 @@ defmodule Firmowid.Ash.Core do
   alias Ash.Error.Query.NotFound
   alias Firmowid.Ash.Analysis.TagDefinition
   alias Firmowid.Ash.Billing.Snapshot
+  alias Firmowid.Ash.Core.Member
   alias Firmowid.Ash.Core.OauthAuthorizationCode
   alias Firmowid.Ash.Core.OauthConsent
   alias Firmowid.Ash.Core.OauthRefreshToken
@@ -84,11 +85,12 @@ defmodule Firmowid.Ash.Core do
       define :archive_user, action: :archive
       define :unarchive_user, action: :unarchive
       define :set_organization, action: :set_organization
-      define :clear_organization, action: :clear_organization
       define :update_user_avatar, action: :update_avatar
       define :unlink_google_account, action: :unlink_google
       define :change_password, action: :change_password
     end
+
+    resource Member
 
     resource Firmowid.Ash.Core.Token
 
@@ -119,6 +121,7 @@ defmodule Firmowid.Ash.Core do
 
   @transaction_resources [
     User,
+    Member,
     Organization,
     Session,
     Snapshot,
@@ -194,9 +197,12 @@ defmodule Firmowid.Ash.Core do
   def destroy_user_in_transaction(%User{} = user, opts \\ []) do
     opts = ensure_actor(opts, user)
 
+    cleanup_scope = account_cleanup_scope(user)
+
     with :ok <- authorize_destroy(user, opts),
          :ok <- maybe_destroy_owned_organization_in_transaction(user, opts),
-         :ok <- OrganizationCleanup.remove_account_oauth_dependents(account_cleanup_scope(user)) do
+         :ok <- OrganizationCleanup.remove_account_membership(cleanup_scope),
+         :ok <- OrganizationCleanup.remove_account_oauth_dependents(cleanup_scope) do
       User.destroy(user, opts)
     end
   end
