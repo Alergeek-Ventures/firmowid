@@ -19,35 +19,10 @@ defmodule FirmowidWeb.Auth.Controllers.AuthController do
 
   @doc """
   Success callback after authentication (password sign-in, Google OAuth, etc.)
+
+  A blocked account (see the User `:access_block` calculation) gets no session; it is
+  sent to the page explaining the block instead.
   """
-  def success(conn, {:password, :reset}, user, token) do
-    return_to = get_session(conn, :return_to) || UserAuth.signed_in_path_for_user(user)
-
-    conn
-    |> renew_session()
-    |> delete_session(:return_to)
-    |> store_in_session(user)
-    |> set_live_socket_id(token)
-    |> Helpers.maybe_put_remember_me_cookies(conn.private[:ash_authentication])
-    |> assign(:current_user, user)
-    |> LiveToast.put_toast(:success, "Hasło zmienione poprawnie")
-    |> redirect(to: return_to)
-  end
-
-  def success(conn, {:password, :register}, user, token) do
-    Analytics.capture_account_created(user, :password)
-    return_to = get_session(conn, :return_to) || UserAuth.signed_in_path_for_user(user)
-
-    conn
-    |> renew_session()
-    |> delete_session(:return_to)
-    |> store_in_session(user)
-    |> set_live_socket_id(token)
-    |> Helpers.maybe_put_remember_me_cookies(conn.private[:ash_authentication])
-    |> assign(:current_user, user)
-    |> redirect(to: return_to)
-  end
-
   def success(conn, {:password, :reset_request}, _user, _token) do
     conn
     |> delete_session(:return_to)
@@ -55,7 +30,18 @@ defmodule FirmowidWeb.Auth.Controllers.AuthController do
     |> redirect(to: ~p"/zaloguj")
   end
 
-  def success(conn, {:confirm, :confirm}, user, token) do
+  def success(conn, activity, user, token) do
+    if activity == {:password, :register}, do: Analytics.capture_account_created(user, :password)
+
+    user = Ash.load!(user, [:access_block, :organization], actor: user)
+
+    case user.access_block do
+      nil -> sign_in(conn, activity, user, token)
+      block -> deny_sign_in(conn, user, block)
+    end
+  end
+
+  defp sign_in(conn, activity, user, token) do
     return_to = get_session(conn, :return_to) || UserAuth.signed_in_path_for_user(user)
 
     conn
@@ -65,21 +51,28 @@ defmodule FirmowidWeb.Auth.Controllers.AuthController do
     |> set_live_socket_id(token)
     |> Helpers.maybe_put_remember_me_cookies(conn.private[:ash_authentication])
     |> assign(:current_user, user)
-    |> LiveToast.put_toast(:success, "Adres email został potwierdzony.")
+    |> maybe_put_sign_in_toast(activity)
     |> redirect(to: return_to)
   end
 
-  def success(conn, _activity, user, token) do
-    return_to = get_session(conn, :return_to) || UserAuth.signed_in_path_for_user(user)
+  defp maybe_put_sign_in_toast(conn, {:password, :reset}),
+    do: LiveToast.put_toast(conn, :success, "Hasło zmienione poprawnie")
 
+  defp maybe_put_sign_in_toast(conn, {:confirm, :confirm}),
+    do: LiveToast.put_toast(conn, :success, "Adres email został potwierdzony.")
+
+  defp maybe_put_sign_in_toast(conn, _activity), do: conn
+
+  defp deny_sign_in(conn, _user, :account_disabled) do
     conn
     |> renew_session()
-    |> delete_session(:return_to)
-    |> store_in_session(user)
-    |> set_live_socket_id(token)
-    |> Helpers.maybe_put_remember_me_cookies(conn.private[:ash_authentication])
-    |> assign(:current_user, user)
-    |> redirect(to: return_to)
+    |> redirect(to: ~p"/konto-wylaczone")
+  end
+
+  defp deny_sign_in(conn, user, :subscription_expired) do
+    conn
+    |> renew_session()
+    |> redirect(to: ~p"/abonament-wygasl?#{[organizacja: user.organization.name]}")
   end
 
   @doc """

@@ -676,6 +676,27 @@ defmodule Firmowid.Ash.Core.User do
     calculate :shared_birthday, :map, SharedBirthday do
       public? true
     end
+
+    # Why the account may not use the application: archived, or its organization has
+    # no billing plan. The owner is told to renew the subscription; members are not.
+    #
+    # Until subscription lifecycle moves into application data (it is managed outside
+    # the app before Stripe), `:no_plan` deliberately serves both as the zero-plan
+    # catalog entry and as the signal that organization access is blocked.
+    calculate :access_block,
+              :atom,
+              expr(
+                cond do
+                  not is_nil(archived_at) -> :account_disabled
+                  system_role == :superuser -> nil
+                  is_nil(organization_id) -> nil
+                  organization.billing_plan != :no_plan -> nil
+                  organization.owner_id == id -> :subscription_expired
+                  true -> :account_disabled
+                end
+              ) do
+      constraints one_of: [:account_disabled, :subscription_expired]
+    end
   end
 
   identities do

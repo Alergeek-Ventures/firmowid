@@ -4,44 +4,13 @@ defmodule FirmowidWeb.Auth.Views.DisabledAccount do
 
   alias FirmowidWeb.Infrastructure.UserAuth
 
+  # Shown after a sign-in attempt by an archived account or a member of an organization
+  # without a billing plan; such accounts never hold a session.
   @impl true
   def mount(_params, _session, socket) do
-    socket =
-      case socket.assigns[:current_user] do
-        nil ->
-          socket
-
-        user ->
-          if is_nil(user.organization_id) do
-            loaded_user =
-              Ash.load!(user, [avatar_blob: [:url]], actor: user, tenant: user.organization_id)
-
-            assign(socket, :current_user, loaded_user)
-          else
-            {loaded_user, org, _scope} = UserAuth.load_scope_and_avatars(user)
-
-            socket
-            |> assign(:current_user, loaded_user)
-            |> assign(:current_org, org)
-          end
-      end
-
-    socket = assign(socket, :page_title, "Konto wyłączone")
-
-    case UserAuth.blocked_page_action(
-           :disabled_account,
-           socket.assigns[:current_user],
-           socket.assigns[:current_org]
-         ) do
-      :ok ->
-        {:ok, socket}
-
-      {:redirect, target} ->
-        if connected?(socket) do
-          {:ok, push_navigate(socket, to: target)}
-        else
-          {:ok, Phoenix.LiveView.redirect(socket, to: target)}
-        end
+    case socket.assigns[:current_user] do
+      nil -> {:ok, assign(socket, :page_title, "Konto wyłączone")}
+      user -> {:ok, redirect(socket, to: UserAuth.signed_in_path_for_user(user))}
     end
   end
 
