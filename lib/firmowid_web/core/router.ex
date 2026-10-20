@@ -155,7 +155,10 @@ defmodule FirmowidWeb.Core.Router do
         :disconnect_transaction_salary,
         :get_ksef_connection_status,
         :show_ksef_connection,
-        :list_analysis_entries
+        :list_analysis_entries,
+        :list_analysis_tags,
+        :set_analysis_entry_category,
+        :set_analysis_entry_project_tags
       ],
       mcp_resources: [:ksef_connection, :issue_invoice, :issue_correction]
   end

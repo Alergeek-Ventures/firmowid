@@ -29,6 +29,19 @@ defmodule Firmowid.Ash.Analysis do
   alias Firmowid.Ash.Timetracker
 
   tools do
+    tool :list_analysis_tags, TagDefinition, :list_tag_definitions do
+      annotations title: "List analysis project tags",
+                  read_only_hint: true,
+                  destructive_hint: false,
+                  open_world_hint: false
+
+      description "List the authenticated organization's project tags with IDs and names. " <>
+                    "Use these IDs as tag_definition_ids in set_analysis_entry_project_tags. " <>
+                    "Company and internal are built-in categories, not project tags."
+
+      select [:id, :name, :color]
+    end
+
     tool :list_analysis_entries, Entry, :list do
       annotations title: "List analysis entries",
                   read_only_hint: true,
@@ -39,6 +52,33 @@ defmodule Firmowid.Ash.Analysis do
                     "and standalone bank transactions with their full document amounts and categories. " <>
                     "Categories are project tags (shared equally), company, or internal (excluded from totals); " <>
                     "an entry without categories is unassigned. Results belong to the authenticated organization."
+    end
+
+    tool :set_analysis_entry_category, EntityTag, :set_entity_category do
+      annotations title: "Set analysis entry category",
+                  read_only_hint: false,
+                  destructive_hint: true,
+                  idempotent_hint: true,
+                  open_world_hint: false
+
+      description "Replace all categories of an analysis entry with company (general company income or expense) " <>
+                    "or internal (excluded from analysis totals). Use entity_type and the entry's id as resource_id " <>
+                    "from list_analysis_entries. Requires at least the accountant role. " <>
+                    "Salary-pinned transfers have automatic categories derived from tracked time; do not tag them manually."
+    end
+
+    tool :set_analysis_entry_project_tags, EntityTag, :set_entity_project_tags do
+      annotations title: "Set analysis entry project tags",
+                  read_only_hint: false,
+                  destructive_hint: true,
+                  idempotent_hint: true,
+                  open_world_hint: false
+
+      description "Replace all categories of an analysis entry with the selected project tags, sharing its amount " <>
+                    "equally between them. Use entity_type and the entry's id as resource_id from list_analysis_entries, " <>
+                    "and tag_definition_ids from list_analysis_tags. An empty tag_definition_ids list removes all " <>
+                    "categories, leaving the entry unassigned. Requires at least the accountant role. " <>
+                    "Salary-pinned transfers have automatic categories derived from tracked time; do not tag them manually."
     end
   end
 
