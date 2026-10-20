@@ -50,8 +50,7 @@ defmodule Firmowid.Ash.Core.User.Changes.RevokeAuthentication do
   def atomic(changeset, opts, context), do: {:ok, change(changeset, opts, context)}
 
   defp revoke_sessions(user, keep_jti, opts) do
-    # The installed log_out_everywhere add-on does not enable bulk notifications.
-    # Use its native token action with notifications so LiveViews disconnect too.
+    # Notifications make AshAuthentication disconnect the revoked sessions' LiveViews.
     Token
     |> then(fn query ->
       if keep_jti, do: Ash.Query.filter(query, jti != ^keep_jti), else: query
