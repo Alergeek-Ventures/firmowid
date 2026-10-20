@@ -117,7 +117,10 @@ defmodule FirmowidWeb.Landing.Components.Pricing do
       |> assign(:yearly?, yearly?)
 
     ~H"""
-    <section id="cennik" class="bg-white py-18 lg:py-26">
+    <section
+      id="cennik"
+      class="bg-white py-18 lg:py-26 max-lg:[&_.landing-billing-period]:mb-6 max-lg:[&_.landing-pricing-card_.landing-button]:px-2 max-lg:[&_.landing-pricing-card.landing-pricing-featured]:rounded-b-none max-lg:[&_.landing-pricing-plans]:*:text-[13px] max-lg:[&_dd]:text-[13px] max-lg:[&_dt]:text-sm"
+    >
       <div class="mx-auto w-[calc(100%-var(--spacing)*8)] max-w-284.75 lg:w-[calc(100%-var(--spacing)*16)]">
         <div class="landing-section-intro mx-auto max-w-180 text-center lg:max-w-225 [&_>_p:not(.landing-eyebrow,.landing-assistants-soon,.landing-assistants-footnote)]:mt-6 [&_>_p:not(.landing-eyebrow,.landing-assistants-soon,.landing-assistants-footnote)]:text-h5/6.75 [&_>_p:not(.landing-eyebrow,.landing-assistants-soon,.landing-assistants-footnote)]:text-darkGrey lg:[&_>_p:not(.landing-eyebrow,.landing-assistants-soon,.landing-assistants-footnote)]:max-w-147 lg:[&_>_p:not(.landing-eyebrow,.landing-assistants-soon,.landing-assistants-footnote)]:text-h5 [&_h2]:text-[2.25rem] [&_h2]:leading-[1.1] [&_h2]:font-bold [&_h2]:tracking-[-0.03em] lg:[&_h2]:text-[3rem] lg:[&_h2]:leading-[1.04] lg:[&.text-center]:mx-auto lg:[&.text-center_>_p:not(.landing-eyebrow)]:mx-auto">
           <p class="landing-eyebrow mb-4 text-xs font-bold tracking-[0.08em] text-(--landing-accent) uppercase">
@@ -341,8 +344,8 @@ defmodule FirmowidWeb.Landing.Components.Pricing do
           :if={value == true}
           aria-hidden="true"
           class={[
-            "mx-auto inline-block h-3.25 w-3 mask-[url('/images/landing/icons/check.svg')] mask-contain mask-center mask-no-repeat",
-            if(index == 1, do: "bg-orange-500-landing", else: "bg-orangeText")
+            "mx-auto inline-block h-3.25 w-3 bg-orangeText mask-[url('/images/landing/icons/check.svg')] mask-contain mask-center mask-no-repeat",
+            index == 1 && "lg:bg-orange-500-landing"
           ]}
         ></span>
         <span :if={value == false} aria-hidden="true" class="text-[#737373]">—</span>

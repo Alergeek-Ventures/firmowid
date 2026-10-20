@@ -44,7 +44,7 @@ defmodule FirmowidWeb.Landing.Components.Hero do
             </span>
           </a>
 
-          <h1 class="mt-7.5 text-3xl leading-[1.14] font-bold tracking-[-0.125rem] lg:text-[4.5rem] lg:leading-[73.44px]">
+          <h1 class="mt-7.5 text-[42px] leading-[1.1] font-bold tracking-[-0.125rem] lg:text-[4.5rem] lg:leading-[73.44px]">
             {pgettext("landing hero headline", "KSeF invoices")}<br />
             {pgettext("landing hero headline", "without limits.")}<br />
             <span class="relative bottom-1 isolate inline-block after:absolute after:-right-6 after:-bottom-1 after:-left-1 after:-z-1 after:h-5 after:bg-[url('/images/landing/decorations/hero-underline.svg')] after:bg-size-[100%_100%] after:bg-center after:bg-no-repeat after:content-['']">
@@ -58,14 +58,14 @@ defmodule FirmowidWeb.Landing.Components.Hero do
             )}
           </p>
 
-          <div class="mt-6 flex flex-col gap-6.25 lg:mt-7.5 lg:flex-row lg:items-center">
+          <div class="mt-6 flex flex-col gap-4 lg:mt-7.5 lg:flex-row lg:items-center lg:gap-6.25">
             <.landing_button navigate={~p"/zarejestruj"} data-landing-cta="hero_register">
               {gettext("Start for free")}
             </.landing_button>
             <.landing_button
               navigate={~p"/zaloguj"}
               variant={:outline}
-              class="h-14 min-w-38.75 lg:w-38.75"
+              class="min-w-38.75 lg:h-14 lg:w-38.75"
               data-landing-cta="hero_login"
             >
               {gettext("Log in")}
@@ -135,7 +135,7 @@ defmodule FirmowidWeb.Landing.Components.Hero do
     assigns = assign(assigns, before_company: before_company, after_company: after_company)
 
     ~H"""
-    <section class="border-y border-(--landing-line) bg-orange-400 py-10 text-grey-700 lg:bg-grey-50 lg:py-8 [&_a]:font-semibold [&_a]:text-(--landing-accent) [&_a]:no-underline [&_p]:flex [&_p]:flex-col-reverse [&_p]:items-center [&_p]:gap-2 [&_p]:text-center [&_p]:text-[13px]/5 lg:[&_p]:flex-row lg:[&_p]:items-baseline lg:[&_p]:text-left [&_strong]:text-[1.375rem] [&_strong]:leading-none [&_strong]:font-bold [&_strong]:whitespace-nowrap [&_strong]:text-black">
+    <section class="border-y border-(--landing-line) bg-orange-400 py-10 text-grey-700 lg:bg-grey-50 lg:py-8 [&_a]:font-semibold [&_a]:text-(--landing-accent) [&_a]:no-underline max-lg:[&_a]:font-normal max-lg:[&_a]:text-grey-700 [&_p]:flex [&_p]:flex-col [&_p]:items-center [&_p]:gap-5 [&_p]:text-center [&_p]:text-sm/4 lg:[&_p]:flex-row lg:[&_p]:items-baseline lg:[&_p]:gap-2 lg:[&_p]:text-left lg:[&_p]:text-[13px]/5 [&_strong]:text-[44px] [&_strong]:leading-none [&_strong]:font-bold [&_strong]:whitespace-nowrap [&_strong]:text-black lg:[&_strong]:text-[1.375rem]">
       <div class="mx-auto flex w-[calc(100%-var(--spacing)*8)] max-w-284.75 flex-col gap-10 lg:mt-0.75 lg:w-[calc(100%-var(--spacing)*16)] lg:flex-row lg:justify-between lg:gap-6">
         <p class="order-1 lg:order-0">
           <span>

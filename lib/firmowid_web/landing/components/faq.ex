@@ -22,7 +22,10 @@ defmodule FirmowidWeb.Landing.Components.Faq do
     assigns = assign(assigns, faqs: faqs, schema: schema)
 
     ~H"""
-    <section id="faq" class="border-t border-orange-200 bg-grey-50 py-18 lg:py-26">
+    <section
+      id="faq"
+      class="border-t border-orange-200 bg-grey-50 py-18 lg:py-26 max-lg:[&_h2]:wrap-anywhere max-lg:[&>div>*]:min-w-0"
+    >
       <div class="mx-auto grid w-[calc(100%-var(--spacing)*8)] max-w-284.75 gap-8 lg:w-[calc(100%-var(--spacing)*16)] lg:grid-cols-2 lg:gap-20 [&_article]:rounded-lg [&_article]:border [&_article]:border-(--landing-line) [&_article]:bg-white [&_button]:flex [&_button]:w-full [&_button]:cursor-pointer [&_button]:items-center [&_button]:justify-between [&_button]:gap-6 [&_button]:p-5 [&_button]:text-left [&_button]:text-base [&_button]:leading-[1.4] [&_button]:font-semibold **:[[role='region']]:px-5 **:[[role='region']]:pb-5 **:[[role='region']]:text-base **:[[role='region']]:leading-[1.6] **:[[role='region']]:text-darkGrey">
         <div class="landing-section-intro max-w-180 lg:max-w-284.75 [&_>_p:not(.landing-eyebrow,.landing-assistants-soon,.landing-assistants-footnote)]:mt-6 [&_>_p:not(.landing-eyebrow,.landing-assistants-soon,.landing-assistants-footnote)]:text-h5/6.75 [&_>_p:not(.landing-eyebrow,.landing-assistants-soon,.landing-assistants-footnote)]:text-darkGrey lg:[&_>_p:not(.landing-eyebrow,.landing-assistants-soon,.landing-assistants-footnote)]:max-w-115 [&_h2]:text-[2.25rem] [&_h2]:leading-[1.1] [&_h2]:font-bold [&_h2]:tracking-[-0.03em] lg:[&_h2]:text-[3rem] lg:[&_h2]:leading-[1.04] lg:[&.text-center]:mx-auto lg:[&.text-center]:max-w-140 lg:[&.text-center_>_p:not(.landing-eyebrow)]:mx-auto">
           <p class="landing-eyebrow mb-4 text-xs font-bold tracking-[0.08em] text-(--landing-accent) uppercase">
@@ -31,7 +34,10 @@ defmodule FirmowidWeb.Landing.Components.Faq do
           <h2 class="text-balance">{gettext("Before you ask — we may have already answered.")}</h2>
           <p>
             {gettext("Didn't find your question?")}
-            <a href="mailto:contact@alergeek.ventures" class="font-bold text-darkGrey underline">
+            <a
+              href="mailto:contact@alergeek.ventures"
+              class="font-bold text-darkGrey underline max-lg:block max-lg:no-underline"
+            >
               {gettext("Write to us.")}
             </a>
           </p>

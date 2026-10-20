@@ -138,13 +138,16 @@ defmodule FirmowidWeb.Landing.Components.Primitives do
       navigate={@navigate}
       external={@external}
       class={[
-        "landing-button relative isolate inline-flex items-center justify-center gap-2.5 px-8 py-3.5 text-center text-base/6 font-medium transition-colors duration-200 focus-visible:outline-2 focus-visible:outline-offset-4 disabled:pointer-events-none disabled:opacity-45 aria-disabled:pointer-events-none aria-disabled:opacity-45",
+        "landing-button relative isolate inline-flex items-center justify-center gap-2.5 px-8 py-3.5 text-center text-base/6 font-medium transition-colors duration-200 focus-visible:outline-2 focus-visible:outline-offset-4 disabled:pointer-events-none disabled:opacity-45 aria-disabled:pointer-events-none aria-disabled:opacity-45 max-lg:in-[.landing-pricing-card]:w-full",
         if(@variant == :navbar_filled, do: "rounded-md", else: "rounded-sm"),
         if(@variant in [:outline, :outline_light, :navbar_filled, :navbar_outline],
           do:
             "before:pointer-events-none before:absolute before:top-1/2 before:left-1/2 before:-z-10 before:-translate-1/2 before:transition-colors before:duration-200"
         ),
         if(@variant not in [:navbar_filled, :navbar_outline], do: "min-h-13"),
+        if(@variant in [:outline, :outline_light],
+          do: "max-lg:before:w-[calc(100%+2px)] max-lg:before:bg-size-[100%_100%]"
+        ),
         @variant_class,
         @class
       ]}
@@ -175,7 +178,7 @@ defmodule FirmowidWeb.Landing.Components.Primitives do
     >
       <div class="mx-auto w-[calc(100%-var(--spacing)*8)] max-w-284.75 lg:w-[calc(100%-var(--spacing)*16)]">
         <div class="flex flex-col gap-12 pt-18 pb-24 text-left lg:flex-row lg:items-start lg:gap-29.5 lg:pt-26 lg:pb-18">
-          <div class="-order-1 mx-auto w-60 lg:order-0 lg:m-0 lg:w-85 lg:shrink-0 lg:grow-0 lg:basis-85 [&_img]:block [&_img]:h-auto [&_img]:w-full lg:[&_img]:h-138 lg:[&_img]:w-full lg:[&_img]:object-cover lg:[&_img]:object-center">
+          <div class="-order-1 ml-0 w-60 lg:order-0 lg:m-0 lg:w-85 lg:shrink-0 lg:grow-0 lg:basis-85 [&_img]:block [&_img]:h-auto [&_img]:w-full lg:[&_img]:h-138 lg:[&_img]:w-full lg:[&_img]:object-cover lg:[&_img]:object-center">
             <img
               id="cta-footer-figurine"
               src={~p"/images/figurine.png"}
@@ -276,7 +279,7 @@ defmodule FirmowidWeb.Landing.Components.Primitives do
             </div>
           </div>
 
-          <div class="order-1 mt-10 border-t border-[#f5f1ea]/20 pt-8 lg:order-0 lg:col-1 lg:row-1 lg:mt-0 lg:border-t-0 lg:pt-0">
+          <div class="order-1 mt-8 border-t border-[#f5f1ea]/20 pt-2 lg:order-0 lg:col-1 lg:row-1 lg:mt-0 lg:border-t-0 lg:pt-0">
             <p class="text-lg font-bold lg:text-xl">Firmowid</p>
             <p class="mt-3 text-sm/normal text-[rgb(245_241_234/0.6)]">
               {gettext("Invoicing, banking, and working hours.")}
@@ -284,11 +287,11 @@ defmodule FirmowidWeb.Landing.Components.Primitives do
             </p>
           </div>
 
-          <div class="mt-8 flex flex-col-reverse bg-[url('/images/landing/decorations/dark-separator.svg')] bg-size-[100%_--spacing(0.5)] bg-top bg-no-repeat pt-7 text-caps-sm leading-[1.6] text-[rgb(245_241_234/0.6)] lg:col-span-full lg:row-2 lg:mt-8 lg:flex-row lg:items-center lg:justify-between lg:gap-8">
+          <div class="mt-2 flex flex-col-reverse gap-2 text-caps-sm leading-[1.6] text-[rgb(245_241_234/0.6)] lg:col-span-full lg:row-2 lg:mt-8 lg:flex-row lg:items-center lg:justify-between lg:gap-8 lg:bg-[url('/images/landing/decorations/dark-separator.svg')] lg:bg-size-[100%_--spacing(0.5)] lg:bg-top lg:bg-no-repeat lg:pt-7">
             <p>
               © {Date.utc_today().year} Firmowid · {@legal_entity.name}, {@legal_entity.address} · NIP {@legal_entity.nip} · KRS {@legal_entity.krs} · REGON {@legal_entity.regon}
             </p>
-            <div class="mt-5 flex gap-4.5 text-sm lg:mt-0">
+            <div class="flex gap-4.5 text-sm">
               <a href={@repository} target="_blank" rel="noopener noreferrer">GitHub</a>
               <a
                 href="https://pl.linkedin.com/showcase/firmowid/"
