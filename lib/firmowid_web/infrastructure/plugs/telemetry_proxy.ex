@@ -22,7 +22,6 @@ defmodule FirmowidWeb.Infrastructure.Plugs.TelemetryProxy do
   @sentry_path "/_x/8e2f"
   @forwarded_headers ~w(accept content-type content-encoding)
   @response_headers ~w(content-type content-encoding)
-  @posthog_host "i.alergeek.workers.dev"
 
   @impl Plug
   @spec init(keyword()) :: keyword()
@@ -48,7 +47,7 @@ defmodule FirmowidWeb.Infrastructure.Plugs.TelemetryProxy do
       with {opaque, path} <- posthog_path(conn.request_path),
            true <- safe_suffix?(conn.request_path, opaque),
            {:ok, body, conn} <- maybe_read_body(conn, 1_000_000) do
-        request(conn, "https://#{@posthog_host}#{path}", body)
+        request(conn, posthog_url(path), body, posthog_headers(conn))
       else
         false -> reject(conn, :bad_request)
         {:error, :too_large} -> reject(conn, :request_entity_too_large)
@@ -69,7 +68,7 @@ defmodule FirmowidWeb.Infrastructure.Plugs.TelemetryProxy do
       true ->
         with {:ok, url} <- sentry_url(Application.get_env(:sentry, :dsn)),
              {:ok, body, conn} <- maybe_read_body(conn, 10_000_000) do
-          request(conn, url, body)
+          request(conn, url, body, forwarded_headers(conn.req_headers))
         else
           {:error, :too_large} -> reject(conn, :request_entity_too_large)
           _ -> reject(conn, :bad_gateway)
@@ -77,11 +76,11 @@ defmodule FirmowidWeb.Infrastructure.Plugs.TelemetryProxy do
     end
   end
 
-  defp request(conn, url, body) do
+  defp request(conn, url, body, headers) do
     options = [
       method: method(conn.method),
       url: url <> query(conn),
-      headers: forwarded_headers(conn.req_headers),
+      headers: headers,
       raw: true,
       decode_body: false,
       redirect: false,
@@ -116,6 +115,26 @@ defmodule FirmowidWeb.Infrastructure.Plugs.TelemetryProxy do
       if String.starts_with?(path, opaque),
         do: {opaque, original <> String.trim_leading(path, opaque)}
     end)
+  end
+
+  defp posthog_url(path) do
+    host =
+      if String.starts_with?(path, ["/static/", "/array/"]),
+        do: "eu-assets.i.posthog.com",
+        else: "eu.i.posthog.com"
+
+    "https://#{host}#{path}"
+  end
+
+  defp posthog_headers(conn) do
+    headers =
+      Enum.filter(conn.req_headers, fn {name, _} ->
+        name in ["user-agent", "x-forwarded-for" | @forwarded_headers]
+      end)
+
+    if List.keymember?(headers, "x-forwarded-for", 0),
+      do: headers,
+      else: [{"x-forwarded-for", conn.remote_ip |> :inet.ntoa() |> to_string()} | headers]
   end
 
   defp safe_suffix?(path, opaque) do

@@ -52,7 +52,9 @@ defmodule Firmowid.Analytics do
          {:ok, safe_properties} <- validate_properties(event, properties),
          true <- enabled?() do
       properties =
-        Map.put(safe_properties, "$groups", %{"organization" => to_string(organization_id)})
+        safe_properties
+        |> Map.merge(%{"surface" => "app", "auth_state" => "identified"})
+        |> Map.put("$groups", %{"organization" => to_string(organization_id)})
 
       PostHog.bare_capture(event_name, to_string(user_id), properties)
     end
@@ -67,18 +69,41 @@ defmodule Firmowid.Analytics do
   @doc "Captures a successful password or Google account registration, without requiring an organization."
   @spec capture_account_created(map(), :password | :google) :: :ok
   def capture_account_created(%{id: user_id}, method) when not is_nil(user_id) and method in [:password, :google] do
+    capture_account_event("account_created", user_id, method)
+  end
+
+  def capture_account_created(_user, _method), do: :ok
+
+  @doc "Captures a successful sign-in after account access has been granted."
+  @spec capture_user_signed_in(map(), :password | :google) :: :ok
+  def capture_user_signed_in(%{id: user_id} = user, method) when not is_nil(user_id) and method in [:password, :google] do
+    groups =
+      case Map.get(user, :organization_id) do
+        nil -> %{}
+        organization_id -> %{"$groups" => %{"organization" => to_string(organization_id)}}
+      end
+
+    capture_account_event("user_signed_in", user_id, method, groups)
+  end
+
+  def capture_user_signed_in(_user, _method), do: :ok
+
+  defp capture_account_event(event, user_id, method, properties \\ %{}) do
     if enabled?() do
-      PostHog.bare_capture("account_created", to_string(user_id), %{
-        "method" => Atom.to_string(method)
-      })
+      properties =
+        Map.merge(properties, %{
+          "method" => Atom.to_string(method),
+          "surface" => "app",
+          "auth_state" => "identified"
+        })
+
+      PostHog.bare_capture(event, to_string(user_id), properties)
     end
 
     :ok
   rescue
     _ -> :ok
   end
-
-  def capture_account_created(_user, _method), do: :ok
 
   defp enabled? do
     match?(%{enabled: true}, PostHog.config())
