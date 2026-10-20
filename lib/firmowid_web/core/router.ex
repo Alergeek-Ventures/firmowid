@@ -89,6 +89,10 @@ defmodule FirmowidWeb.Core.Router do
     get "/health", Infrastructure.Controllers.Health, :check
   end
 
+  scope "/", FirmowidWeb do
+    get "/.well-known/openai-apps-challenge", Infrastructure.Controllers.OpenaiChallenge, :show
+  end
+
   ## Authentication routes (Ash Authentication)
   # Consent must be registered before `forward "/oauth"` below. Phoenix
   # first-match-wins, and the protocol router would 404 `/oauth/authorize`.
