@@ -1,5 +1,6 @@
 @import "tailwindcss";
 @import "./theme.css";
+@import "tippy.js/dist/tippy.css";
 
 @font-face {
   font-family: "Lexend";
@@ -246,15 +247,22 @@ html {
 }
 
 /* ── Chart tooltip ───────────────────────────────────────────────────── */
-.tippy-tooltip.chart-theme {
-  padding: 0;
-  overflow: visible;
+.tippy-box[data-theme~="chart"] {
   background: transparent;
   color: var(--color-grey-900);
 }
 
-.tippy-tooltip.chart-theme .tippy-backdrop {
-  display: none;
+.tippy-box[data-theme~="chart"] > .tippy-content {
+  padding: 0;
+}
+
+/* ── Small tooltip ───────────────────────────────────────────────────── */
+.tippy-box[data-theme~="small"] {
+  font-size: 12px;
+}
+
+.tippy-box[data-theme~="small"] > .tippy-content {
+  padding: 3px 6px;
 }
 
 /* ── Air Datepicker ─────────────────────────────────────────────────── */

@@ -78,7 +78,7 @@ defmodule FirmowidWeb.Settings.Components.AccountTab do
           phx-hook="Tippy"
           data-tippy-content={@action_label || @title}
           data-tippy-delay="100"
-          data-tippy-size="small"
+          data-tippy-theme="small"
         >
           <.edit_button
             type="button"

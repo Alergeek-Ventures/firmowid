@@ -128,6 +128,8 @@ defmodule FirmowidWeb.Analysis.Components.CategoryChart do
         </FirmowidUI.Components.Button.button>
       </div>
       <script :type={Phoenix.LiveView.ColocatedHook} name=".ChartTooltip">
+        import tippy from "tippy.js";
+
         const node = (tag, className, text) => {
           const element = document.createElement(tag);
           element.className = className;
@@ -172,7 +174,7 @@ defmodule FirmowidWeb.Analysis.Components.CategoryChart do
             if (!this.el.dataset.items) return;
             const items = JSON.parse(this.el.dataset.items);
             const one = items.length === 1;
-            window.tippy(this.el, {content: one ? single(items[0]) : list(items), placement: one ? "top" : "bottom", maxWidth: 320, theme: "chart"});
+            tippy(this.el, {content: one ? single(items[0]) : list(items), placement: one ? "top" : "bottom", maxWidth: 320, theme: "chart", arrow: false});
           },
         };
       </script>

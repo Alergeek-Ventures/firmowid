@@ -1,3 +1,5 @@
+import tippy from "tippy.js";
+
 function truncateTarget(el) {
   const selector = el.dataset.tippyTruncateSelector;
 
@@ -15,7 +17,8 @@ function mountTippy(el, { onlyWhenTruncated = false } = {}) {
     return;
   }
 
-  tippy(el);
+  // focusin keeps tooltips on wrappers visible when a nested control gets keyboard focus.
+  tippy(el, { arrow: false, trigger: "mouseenter focusin" });
 }
 
 function truncatedHook() {
