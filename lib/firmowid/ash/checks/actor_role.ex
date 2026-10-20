@@ -29,9 +29,9 @@ defmodule Firmowid.Ash.Checks.ActorRole do
 
   @doc "Returns the role of the actor's organization member, or `nil` for actors without one."
   @spec role(term()) :: Firmowid.Ash.Core.UserRole.t() | nil
-  def role(%User{organization_id: nil}), do: nil
   def role(%User{member: %Member{role: role}}), do: role
   def role(%User{member: nil}), do: nil
+  def role(%User{organization_id: nil}), do: nil
 
   def role(%User{member: %Ash.NotLoaded{}} = user),
     do: raise(ArgumentError, "the actor's member is not loaded: user #{user.id}")
