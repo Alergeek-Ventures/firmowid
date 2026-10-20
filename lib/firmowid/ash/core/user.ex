@@ -22,6 +22,7 @@ defmodule Firmowid.Ash.Core.User do
 
   alias AshAuthentication.Strategy.Password.PasswordValidation
   alias Firmowid.Ash.Checks.OrganizationAdmin
+  alias Firmowid.Ash.Checks.OrganizationMemberAdmin
   alias Firmowid.Ash.Checks.SystemActorRole
   alias Firmowid.Ash.Core.Calculations.AcceptedLeaveDaysForYear
   alias Firmowid.Ash.Core.Calculations.SharedBirthday
@@ -35,6 +36,7 @@ defmodule Firmowid.Ash.Core.User do
   alias Firmowid.Ash.Core.Validations.ValidateIban
   alias Firmowid.Ash.Resource
 
+  require Ash.Query
   require Resource
 
   postgres do
@@ -139,7 +141,7 @@ defmodule Firmowid.Ash.Core.User do
 
       prepare fn query, _context ->
         tenant = query.tenant || raise "User :list action requires a tenant (organization_id)"
-        Ash.Query.do_filter(query, organization_id: tenant)
+        Ash.Query.filter(query, exists(member, organization_id == ^tenant))
       end
 
       prepare build(
@@ -173,7 +175,7 @@ defmodule Firmowid.Ash.Core.User do
         tenant =
           query.tenant || raise "User :get_org_user action requires a tenant (organization_id)"
 
-        Ash.Query.do_filter(query, organization_id: tenant)
+        Ash.Query.filter(query, exists(member, organization_id == ^tenant))
       end
     end
 
@@ -481,7 +483,7 @@ defmodule Firmowid.Ash.Core.User do
     # bypass so it short-circuits the deny catch-all below.
     bypass action(:read) do
       authorize_if expr(id == ^actor(:id))
-      authorize_if OrganizationAdmin
+      authorize_if OrganizationMemberAdmin
       authorize_if actor_attribute_equals(:system_role, :superuser)
 
       authorize_if {SystemActorRole,
@@ -501,7 +503,7 @@ defmodule Firmowid.Ash.Core.User do
     # :list action — admin-only user listing, plus system actors that need
     # organization-wide factual user counts.
     bypass action(:list) do
-      authorize_if OrganizationAdmin
+      authorize_if OrganizationMemberAdmin
       authorize_if actor_attribute_equals(:system_role, :superuser)
 
       authorize_if {SystemActorRole,
@@ -516,12 +518,12 @@ defmodule Firmowid.Ash.Core.User do
 
     # :get_org_user — admin-only, tenant-scoped user lookup
     bypass action(:get_org_user) do
-      authorize_if OrganizationAdmin
+      authorize_if OrganizationMemberAdmin
       authorize_if actor_attribute_equals(:system_role, :superuser)
     end
 
     bypass action(:update_profile) do
-      authorize_if OrganizationAdmin
+      authorize_if OrganizationMemberAdmin
       authorize_if expr(id == ^actor(:id))
       authorize_if {SystemActorRole, roles: [:document_blob_processor]}
     end

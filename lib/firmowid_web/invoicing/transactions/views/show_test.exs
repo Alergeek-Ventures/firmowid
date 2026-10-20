@@ -8,7 +8,6 @@ defmodule FirmowidWeb.Invoicing.Transactions.Views.ShowTest do
   import Phoenix.LiveViewTest
 
   alias Firmowid.Ash.Blobs.Blob
-  alias Firmowid.Ash.Core.User
   alias Firmowid.Ash.Finances
   alias Firmowid.Ash.Finances.Transaction
   alias Firmowid.Ash.Invoicing
@@ -135,13 +134,9 @@ defmodule FirmowidWeb.Invoicing.Transactions.Views.ShowTest do
     [partial, unrelated, unnamed] =
       for name <- ["Adam Żółć", "Adam Nowak", nil] do
         employee =
-          Ash.Seed.seed!(User, %{
-            name: name,
-            email: "salary-#{System.unique_integer([:positive])}@example.com",
-            organization_id: admin.organization_id,
-            hashed_password: admin.hashed_password,
-            role: :employee
-          })
+          admin.organization_id
+          |> user_in_org_fixture()
+          |> Ash.Seed.update!(%{name: name})
 
         seed_salary_months!(employee, project, [{~D[2025-12-01], 10}])
         employee
