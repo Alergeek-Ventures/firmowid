@@ -26,7 +26,7 @@ defmodule FirmowidWeb.Core.Endpoint do
 
   # sobelow_skip ["Config.CSWH"]
   # False positive: Sobelow cannot inspect the MFA callback's origin validation.
-  # It permits only the exact app origin or ChatGPT's HTTPS sandbox on port 443.
+  # It permits only the exact app origin or ChatGPT/Claude HTTPS sandboxes on port 443.
   # No browser cookies are loaded; mounts and events validate an OAuth-derived,
   # widget-bound capability and its current actor/tenant scope server-side.
   socket "/mcp/live", Socket,

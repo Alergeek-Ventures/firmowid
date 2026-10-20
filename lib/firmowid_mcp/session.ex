@@ -58,7 +58,7 @@ defmodule FirmowidMcp.Session do
   def authorize(_, _), do: {:error, :unauthorized}
 
   @doc """
-  Allows the application and ChatGPT sandbox HTTPS origins for the cookie-free socket.
+  Allows the application and ChatGPT/Claude sandbox HTTPS origins for the cookie-free socket.
 
   Development disables the endpoint's origin check (config/dev.exs), so the
   `/development/mcp` host also works on http://localhost:PORT.
@@ -71,6 +71,7 @@ defmodule FirmowidMcp.Session do
       {uri.scheme, uri.host, uri.port} == {own.scheme, own.host, own.port} or
       (uri.scheme == "https" and uri.port == 443 and is_binary(uri.host) and
          (uri.host == "web-sandbox.oaiusercontent.com" or
-            String.ends_with?(uri.host, ".web-sandbox.oaiusercontent.com")))
+            String.ends_with?(uri.host, ".web-sandbox.oaiusercontent.com") or
+            String.ends_with?(uri.host, ".claudemcpcontent.com")))
   end
 end
