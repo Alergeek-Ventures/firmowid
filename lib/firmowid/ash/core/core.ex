@@ -81,8 +81,8 @@ defmodule Firmowid.Ash.Core do
       define :change_email, action: :change_email
       define :update_current_profile, action: :update_current_profile
       define :get_shared_birthday, action: :get_shared_birthday
-      define :archive_user, action: :archive
-      define :unarchive_user, action: :unarchive
+      define :leave_organization, action: :leave_organization
+      define :return_to_organization, action: :return_to_organization
       define :set_organization, action: :set_organization
       define :update_user_avatar, action: :update_avatar
       define :unlink_google_account, action: :unlink_google
@@ -91,6 +91,8 @@ defmodule Firmowid.Ash.Core do
 
     resource Member do
       define :update_member_role, action: :update_role
+      define :archive_member, action: :archive
+      define :unarchive_member, action: :unarchive
     end
 
     resource Firmowid.Ash.Core.Token
@@ -214,7 +216,6 @@ defmodule Firmowid.Ash.Core do
 
     with :ok <- authorize_destroy(user, opts),
          :ok <- maybe_destroy_owned_organization_in_transaction(user, opts),
-         :ok <- OrganizationCleanup.remove_account_membership(cleanup_scope),
          :ok <- OrganizationCleanup.remove_account_oauth_dependents(cleanup_scope) do
       User.destroy(user, opts)
     end

@@ -1,5 +1,11 @@
 defmodule Firmowid.Ash.Core.User.Changes.RevokeAuthentication do
-  @moduledoc "Revokes browser sessions and OAuth grants in the authorized account archive transaction."
+  @moduledoc """
+  Revokes the account's OAuth grants when it leaves its organization.
+
+  The grants were issued for the account's organization. Browser sessions stay:
+  the account keeps signing in. `revoke/3` also revokes the sessions, for a
+  password reset.
+  """
 
   use Ash.Resource.Change
 
@@ -16,10 +22,12 @@ defmodule Firmowid.Ash.Core.User.Changes.RevokeAuthentication do
   @spec change(Ash.Changeset.t(), keyword(), Context.t()) :: Ash.Changeset.t()
   def change(changeset, _opts, context) do
     Ash.Changeset.after_action(changeset, fn _changeset, user ->
-      # Archive has already been authorized and has locked this user row. The
-      # authentication context grants access only to the credential resources;
-      # every operation below is constrained to the archived user's ID.
-      with :ok <- revoke(user, context) do
+      # Leaving the organization has already been authorized and has locked this
+      # user row. The authentication context grants access only to the credential
+      # resources; every operation below is constrained to this user's ID.
+      opts = authentication_opts(context)
+
+      with :ok <- revoke_oauth_grants(user.id, opts) do
         {:ok, user}
       end
     end)
@@ -34,12 +42,10 @@ defmodule Firmowid.Ash.Core.User.Changes.RevokeAuthentication do
   @spec revoke(Firmowid.Ash.Core.User.t(), Context.t(), String.t() | nil) ::
           :ok | {:error, term()}
   def revoke(user, context, keep_jti \\ nil) do
-    opts = Ash.Context.to_opts(context, context: %{private: %{ash_authentication?: true}})
+    opts = authentication_opts(context)
 
-    with :ok <- revoke_sessions(user, keep_jti, opts),
-         :ok <- revoke_refresh_tokens(user.id, opts),
-         :ok <- destroy_grants(OauthAuthorizationCode, user.id, opts) do
-      destroy_grants(OauthConsent, user.id, opts)
+    with :ok <- revoke_sessions(user, keep_jti, opts) do
+      revoke_oauth_grants(user.id, opts)
     end
   end
 
@@ -48,6 +54,15 @@ defmodule Firmowid.Ash.Core.User.Changes.RevokeAuthentication do
   @spec atomic(Ash.Changeset.t(), keyword(), Context.t()) ::
           {:ok, Ash.Changeset.t()}
   def atomic(changeset, opts, context), do: {:ok, change(changeset, opts, context)}
+
+  defp authentication_opts(context), do: Ash.Context.to_opts(context, context: %{private: %{ash_authentication?: true}})
+
+  defp revoke_oauth_grants(user_id, opts) do
+    with :ok <- revoke_refresh_tokens(user_id, opts),
+         :ok <- destroy_grants(OauthAuthorizationCode, user_id, opts) do
+      destroy_grants(OauthConsent, user_id, opts)
+    end
+  end
 
   defp revoke_sessions(user, keep_jti, opts) do
     # Notifications make AshAuthentication disconnect the revoked sessions' LiveViews.

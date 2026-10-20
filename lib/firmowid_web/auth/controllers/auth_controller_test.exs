@@ -66,13 +66,12 @@ defmodule FirmowidWeb.Auth.Controllers.AuthControllerTest do
     assert get_session(conn, :live_socket_id) == "users_sessions:#{jti}"
   end
 
-  test "archiving disconnects every browser session and restoring does not revive them", %{
-    conn: conn
-  } do
+  test "archiving keeps browser sessions, disconnects their LiveViews and sends them to onboarding",
+       %{
+         conn: conn
+       } do
     admin = admin_fixture()
     user = user_in_org_fixture(admin.organization_id)
-    other_user = user_in_org_fixture(admin.organization_id)
-    {:ok, other_token, _} = Jwt.token_for_user(other_user)
 
     connections =
       for _ <- 1..2 do
@@ -84,21 +83,18 @@ defmodule FirmowidWeb.Auth.Controllers.AuthControllerTest do
         {session, token, topic}
       end
 
-    archived = Core.archive_user!(user, actor: admin)
-    assert archived.archived_at
+    archived = Core.archive_member!(user.member, actor: admin, tenant: admin.organization_id)
 
     for {session, token, topic} <- connections do
-      assert TokenResource.token_revoked?(Token, token)
+      refute TokenResource.token_revoked?(Token, token)
       assert_receive %Broadcast{topic: ^topic, event: "disconnect"}
-      assert session |> get("/czasosledz") |> redirected_to() == "/zaloguj"
+      assert session |> get("/czasosledz") |> redirected_to() == "/organizacja"
     end
 
-    refute TokenResource.token_revoked?(Token, other_token)
-    Core.unarchive_user!(archived, actor: admin)
+    Core.unarchive_member!(archived, actor: admin, tenant: admin.organization_id)
 
-    for {session, token, _topic} <- connections do
-      assert TokenResource.token_revoked?(Token, token)
-      assert session |> get("/czasosledz") |> redirected_to() == "/zaloguj"
+    for {session, _token, _topic} <- connections do
+      assert session |> get("/czasosledz") |> html_response(200)
     end
   end
 end

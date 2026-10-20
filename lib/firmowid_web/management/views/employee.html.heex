@@ -81,7 +81,7 @@
         </:trigger>
         <div class="mt-2 flex flex-col rounded bg-offwhite p-2 shadow-md">
           <.button
-            disabled={@employee.archived_at}
+            disabled={@employee.member.archived_at}
             type="button"
             variant="ghost"
             size="small"
@@ -93,13 +93,14 @@
       </.dropdown>
     </div>
     <div
-      :if={@employee.archived_at}
+      :if={@employee.member.archived_at}
       class="flex flex-col items-center gap-4 rounded-lg bg-grey-200 p-4 text-grey-700 shadow-[0px_1px_6px_0px_rgba(0,0,0,0.1)]"
     >
       <p class="text-sm/snug text-balance">
-        Pracownik został zarchiwizowany {Firmowid.Cldr.Date.to_string!(@employee.archived_at,
+        Pracownik został zarchiwizowany {Firmowid.Cldr.Date.to_string!(
+          @employee.member.archived_at,
           format: :long
-        )}. Konto jest wyłączone do czasu przywrócenia przez administratora.
+        )}. Nie ma dostępu do organizacji do czasu przywrócenia przez administratora.
       </p>
 
       <.button
@@ -211,7 +212,7 @@
           user={@employee}
           scope={@ash_scope}
           variant={:management}
-          dimmed={@employee.archived_at != nil}
+          dimmed={@employee.member.archived_at != nil}
           current_contract_id={@current_contract && @current_contract.id}
         />
       <% :leaves -> %>

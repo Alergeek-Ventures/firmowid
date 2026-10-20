@@ -64,7 +64,7 @@ defmodule Firmowid.Ash.Core.OauthRefreshToken do
       argument :rotated_to_id, :uuid_v7, allow_nil?: false
       accept []
 
-      change filter(expr(exists(user, is_nil(archived_at))))
+      change filter(expr(exists(user, not is_nil(organization_id))))
       change AshAuthentication.Oauth2Server.Changes.RotateRefreshToken
     end
 

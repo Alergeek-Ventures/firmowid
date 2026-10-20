@@ -87,7 +87,7 @@ defmodule FirmowidWeb.Management.Views.Employees do
       users =
         input
         |> Core.list_users!(scope: scope)
-        |> Ash.load!([avatar_blob: [:url]], scope: scope)
+        |> Ash.load!([:member, avatar_blob: [:url]], scope: scope)
 
       # 2. Time worked per user this month
       sessions =
@@ -216,10 +216,14 @@ defmodule FirmowidWeb.Management.Views.Employees do
   def handle_event("unarchive_employee", %{"id" => id}, socket) do
     scope = socket.assigns.ash_scope
 
-    with {:ok, user} <- Core.get_org_user(%{id: id}, scope: scope, not_found_error?: false),
-         {:ok, _user} <- Core.unarchive_user(user, %{}, scope: scope) do
+    with {:ok, user} <-
+           Core.get_org_user(%{id: id}, scope: scope, load: [:member], not_found_error?: false),
+         {:ok, _member} <- Core.unarchive_member(user.member, scope: scope) do
       {:noreply, assign_employees(socket)}
     else
+      {:error, %Ash.Error.Invalid{errors: [%{message: message} | _]}} when is_binary(message) ->
+        {:noreply, put_flash(socket, :error, message)}
+
       _ ->
         {:noreply, put_flash(socket, :error, "Nie udało się przywrócić pracownika")}
     end

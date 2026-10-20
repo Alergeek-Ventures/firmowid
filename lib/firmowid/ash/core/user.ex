@@ -154,11 +154,11 @@ defmodule Firmowid.Ash.Core.User do
         where present(:search)
       end
 
-      prepare build(filter: expr(is_nil(archived_at))) do
+      prepare build(filter: expr(is_nil(member.archived_at))) do
         where argument_equals(:status, :active)
       end
 
-      prepare build(filter: expr(not is_nil(archived_at))) do
+      prepare build(filter: expr(not is_nil(member.archived_at))) do
         where argument_equals(:status, :archived)
       end
 
@@ -381,21 +381,22 @@ defmodule Firmowid.Ash.Core.User do
              end)
     end
 
-    update :archive do
-      description "Archive a user without deleting their record."
+    update :leave_organization do
+      description "Detach the account from its organization after its member is archived."
       accept []
 
-      validate {Firmowid.Ash.Core.Validations.NotSelfArchive, []}
-
-      change set_attribute(:archived_at, &Date.utc_today/0)
+      change set_attribute(:organization_id, nil)
       change Firmowid.Ash.Core.User.Changes.RevokeAuthentication
     end
 
-    update :unarchive do
-      description "Restore an archived user."
+    update :return_to_organization do
+      description "Reattach the account to the actor's organization after its member is restored."
       accept []
 
-      change set_attribute(:archived_at, nil)
+      validate attribute_equals(:organization_id, nil),
+        message: "Konto należy już do innej organizacji."
+
+      change set_attribute(:organization_id, actor(:organization_id))
     end
 
     update :update_avatar do
@@ -495,11 +496,6 @@ defmodule Firmowid.Ash.Core.User do
                     ]}
     end
 
-    bypass [action(:read), {SystemActorRole, roles: [:authentication_identity_reader]}] do
-      description "Authentication may inspect only the persisted owner of the resolved provider identity."
-      authorize_if expr(id == ^actor(:user_id))
-    end
-
     # :list action — admin-only user listing, plus system actors that need
     # organization-wide factual user counts.
     bypass action(:list) do
@@ -544,14 +540,12 @@ defmodule Firmowid.Ash.Core.User do
       authorize_if expr(id == ^actor(:id))
     end
 
-    policy action(:archive) do
-      forbid_if expr(organization.owner_id == id)
+    policy action(:leave_organization) do
       authorize_if OrganizationAdmin
     end
 
-    policy action(:unarchive) do
-      forbid_if expr(organization.owner_id == id)
-      authorize_if OrganizationAdmin
+    policy action(:return_to_organization) do
+      authorize_if OrganizationMemberAdmin
     end
 
     policy action(:set_organization) do
@@ -586,8 +580,6 @@ defmodule Firmowid.Ash.Core.User do
   end
 
   changes do
-    change Firmowid.Ash.Core.User.Changes.RequireActiveAccount, on: [:create, :update]
-
     change Firmowid.Ash.Core.User.Changes.RevokeAuthenticationOnPasswordChange, on: [:update]
   end
 
@@ -608,7 +600,6 @@ defmodule Firmowid.Ash.Core.User do
       constraints: [one_of: [:user, :superuser]],
       default: :user
 
-    attribute :archived_at, :date, public?: true
     attribute :avatar_blob_id, :uuid, public?: true
 
     attribute :phone, :string, public?: true
@@ -674,8 +665,8 @@ defmodule Firmowid.Ash.Core.User do
       public? true
     end
 
-    # Why the account may not use the application: archived, or its organization has
-    # no billing plan. The owner is told to renew the subscription; members are not.
+    # Why the account may not use the application: its organization has no
+    # billing plan. The owner is told to renew the subscription; members are not.
     #
     # Until subscription lifecycle moves into application data (it is managed outside
     # the app before Stripe), `:no_plan` deliberately serves both as the zero-plan
@@ -684,7 +675,6 @@ defmodule Firmowid.Ash.Core.User do
               :atom,
               expr(
                 cond do
-                  not is_nil(archived_at) -> :account_disabled
                   system_role == :superuser -> nil
                   is_nil(organization_id) -> nil
                   organization.billing_plan != :no_plan -> nil

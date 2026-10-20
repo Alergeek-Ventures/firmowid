@@ -25,6 +25,15 @@ defmodule FirmowidWeb.Management.Views.Employee do
   alias FirmowidWeb.Management.Utilities.Navigation
   alias Phoenix.Socket.Broadcast
 
+  @employee_load [
+    :display_name,
+    :member,
+    :projects,
+    :delegations,
+    :shared_birthday,
+    avatar_blob: [:url]
+  ]
+
   @impl true
   def mount(_params, _session, socket) do
     user = socket.assigns.current_user
@@ -58,7 +67,7 @@ defmodule FirmowidWeb.Management.Views.Employee do
           loaded_user ->
             Ash.load!(
               loaded_user,
-              [:display_name, :projects, :delegations, :shared_birthday, avatar_blob: [:url]],
+              @employee_load,
               scope: scope
             )
         end
@@ -113,61 +122,22 @@ defmodule FirmowidWeb.Management.Views.Employee do
   end
 
   def handle_event("archive_employee", _params, socket) do
-    scope = socket.assigns.ash_scope
-
-    with {:ok, user} <-
-           Core.get_org_user(%{id: socket.assigns.employee.id},
-             scope: scope,
-             not_found_error?: false
-           ),
-         {:ok, archived_user} <- Core.archive_user(user, %{}, scope: scope) do
-      loaded_user =
-        Ash.load!(
-          archived_user,
-          [:display_name, :projects, :delegations, :shared_birthday, avatar_blob: [:url]],
-          scope: scope
-        )
-
-      {:noreply,
-       socket
-       |> assign(:employee, loaded_user)
-       |> assign(:page_title, loaded_user.display_name)}
-    else
-      {:error, %Ash.Error.Forbidden{}}
-      when socket.assigns.current_user.id == socket.assigns.employee.id ->
-        {:noreply, put_flash(socket, :error, "Nie możesz zarchiwizować własnego konta.")}
+    case Core.archive_member(socket.assigns.employee.member, scope: socket.assigns.ash_scope) do
+      {:ok, _member} ->
+        {:noreply, assign_reloaded_employee(socket)}
 
       {:error, error} ->
         {:noreply, put_flash(socket, :error, humanize_ash_error(error))}
-
-      _ ->
-        {:noreply, put_flash(socket, :error, "Nie udało się zarchiwizować pracownika")}
     end
   end
 
   def handle_event("unarchive_employee", _params, socket) do
-    scope = socket.assigns.ash_scope
+    case Core.unarchive_member(socket.assigns.employee.member, scope: socket.assigns.ash_scope) do
+      {:ok, _member} ->
+        {:noreply, assign_reloaded_employee(socket)}
 
-    with {:ok, user} <-
-           Core.get_org_user(%{id: socket.assigns.employee.id},
-             scope: scope,
-             not_found_error?: false
-           ),
-         {:ok, unarchived_user} <- Core.unarchive_user(user, %{}, scope: scope) do
-      loaded_user =
-        Ash.load!(
-          unarchived_user,
-          [:display_name, :projects, :delegations, :shared_birthday, avatar_blob: [:url]],
-          scope: scope
-        )
-
-      {:noreply,
-       socket
-       |> assign(:employee, loaded_user)
-       |> assign(:page_title, loaded_user.display_name)}
-    else
-      _ ->
-        {:noreply, put_flash(socket, :error, "Nie udało się przywrócić pracownika")}
+      {:error, error} ->
+        {:noreply, put_flash(socket, :error, humanize_ash_error(error))}
     end
   end
 
@@ -185,9 +155,15 @@ defmodule FirmowidWeb.Management.Views.Employee do
      |> LiveToast.put_toast(:success, "Skopiowano adres e-mail")}
   end
 
-  defp humanize_ash_error(%Ash.Error.Invalid{errors: [first_error | _]}) do
-    Exception.message(first_error)
+  defp assign_reloaded_employee(socket) do
+    employee = Ash.load!(socket.assigns.employee, @employee_load, scope: socket.assigns.ash_scope)
+
+    socket
+    |> assign(:employee, employee)
+    |> assign(:page_title, employee.display_name)
   end
+
+  defp humanize_ash_error(%Ash.Error.Invalid{errors: [%{message: message} | _]}) when is_binary(message), do: message
 
   defp humanize_ash_error(error), do: Exception.message(error)
 
@@ -339,7 +315,7 @@ defmodule FirmowidWeb.Management.Views.Employee do
        :employee,
        Ash.load!(
          user,
-         [:display_name, :projects, :delegations, :shared_birthday, avatar_blob: [:url]],
+         @employee_load,
          scope: socket.assigns.ash_scope
        )
      )}
