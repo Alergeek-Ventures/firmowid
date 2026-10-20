@@ -6,7 +6,7 @@ defmodule FirmowidWeb.Invoicing.Components.Dashboard do
     - Nieopłacone faktury (unpaid invoices)
     - Transakcje do dopasowania (unmatched transactions)
     - Dopasowane (matched entities)
-    - Sugestie (connection suggestions: bank, KSeF)
+    - Items worth attention (warnings and connection suggestions)
   """
   use FirmowidWeb, :html
 
@@ -28,6 +28,9 @@ defmodule FirmowidWeb.Invoicing.Components.Dashboard do
   attr :return_to, :string, default: nil
 
   def dashboard(assigns) do
+    assigns =
+      assign(assigns, :warnings?, Enum.any?(assigns.suggestions, &Map.get(&1, :warning?, false)))
+
     ~H"""
     <div class="grid grid-cols-1 items-stretch gap-4 md:grid-cols-2 xl:grid-cols-4">
       <.column
@@ -84,7 +87,12 @@ defmodule FirmowidWeb.Invoicing.Components.Dashboard do
         <%!-- TODO: add activity log view and restore a dedicated CTA for matched entries. --%>
       </.column>
 
-      <.column title="Sugestie" count={@suggestions_count} variant={:grey}>
+      <.column
+        id="dashboard-attention"
+        title={gettext("Worth your attention")}
+        count={@suggestions_count}
+        variant={if @warnings?, do: :red, else: :grey}
+      >
         <%= for suggestion <- @suggestions do %>
           <DashboardTiles.tile entry={suggestion} type={:suggestion} />
         <% end %>
@@ -99,8 +107,9 @@ defmodule FirmowidWeb.Invoicing.Components.Dashboard do
   end
 
   attr :title, :string, required: true
+  attr :id, :string, default: nil
   attr :count, :integer, default: 0
-  attr :variant, :atom, values: [:orange, :turquoise, :grey], default: :orange
+  attr :variant, :atom, values: [:orange, :turquoise, :grey, :red], default: :orange
   attr :see_all_url, :string, default: nil
   slot :inner_block, required: true
 
@@ -116,6 +125,9 @@ defmodule FirmowidWeb.Invoicing.Components.Dashboard do
 
         :grey ->
           {"bg-grey-200/30 rounded-lg p-3", "bg-grey-200 rounded", "text-darkGrey", "bg-grey-200 text-darkGrey"}
+
+        :red ->
+          {"bg-red-100 rounded-lg p-3", "bg-red-200 rounded", "text-red-800", "bg-red-100 text-red-800"}
       end
 
     assigns =
@@ -126,10 +138,13 @@ defmodule FirmowidWeb.Invoicing.Components.Dashboard do
       |> assign(:count_classes, count_classes)
 
     ~H"""
-    <div class={[
-      "relative flex h-full min-h-0 flex-col",
-      @column_classes
-    ]}>
+    <div
+      id={@id}
+      class={[
+        "relative flex h-full min-h-0 flex-col",
+        @column_classes
+      ]}
+    >
       <div class={[
         "mb-3 flex items-center justify-between rounded px-3 py-2 text-base",
         @header_classes

@@ -12,6 +12,7 @@ defmodule FirmowidWeb.Invoicing.Components.DashboardTiles do
 
   import FirmowidUI.Components.Button
   import FirmowidUI.Components.Link
+  import FirmowidWeb.DesignSystem.Components.InvoicingBadges, only: [bank_badge: 1]
   import Phoenix.Component, except: [link: 1]
 
   alias Firmowid.Ash.Finances.Transaction
@@ -28,8 +29,8 @@ defmodule FirmowidWeb.Invoicing.Components.DashboardTiles do
     ~H"""
     <div class={[
       "min-h-24 rounded-lg p-2.5",
-      if(@type == :suggestion and match?(%{type: :bank_connection_attention}, @entry),
-        do: "border border-red-200 bg-red-100",
+      if(@type == :suggestion and Map.get(@entry, :warning?, false),
+        do: "border border-red-200 bg-white",
         else: "bg-lightGreyBg transition-shadow hover:shadow-sm"
       )
     ]}>
@@ -43,6 +44,35 @@ defmodule FirmowidWeb.Invoicing.Components.DashboardTiles do
         <% :suggestion -> %>
           <.suggestion_tile entry={@entry} />
       <% end %>
+    </div>
+    """
+  end
+
+  attr :invoice_labels, :list, required: true
+
+  @doc "Shows sales invoices awaiting a supported KSeF import, preserving the visibility signal."
+  @spec skipped_ksef_warning(map()) :: Phoenix.LiveView.Rendered.t()
+  def skipped_ksef_warning(assigns) do
+    ~H"""
+    <div
+      id="skipped-ksef-sales-invoices"
+      phx-hook="KsefSkippedInvoicesBanner"
+      role="alert"
+      class="grid grid-cols-[2.25rem_minmax(0,1fr)] items-start gap-3 text-red-800"
+    >
+      <div class="flex justify-center">
+        <Lucideicons.triangle_alert class="size-6" />
+      </div>
+      <div class="flex min-w-0 flex-col gap-2">
+        <p class="text-sm font-medium">
+          {gettext(
+            "These sales invoices from KSeF could not be imported into Firmowid yet. We are investigating and will import them as soon as the cause is fixed."
+          )}
+        </p>
+        <ul class="flex flex-col gap-2 text-xs wrap-anywhere">
+          <li :for={label <- @invoice_labels}>{label}</li>
+        </ul>
+      </div>
     </div>
     """
   end
@@ -463,11 +493,14 @@ defmodule FirmowidWeb.Invoicing.Components.DashboardTiles do
     ~H"""
     <div
       id={"bank-connection-alert-#{@account.id}"}
-      class="flex flex-col gap-2 text-red-800"
-      role="alert"
+      class={[
+        "grid grid-cols-[2.25rem_minmax(0,1fr)] items-start gap-3",
+        if(@entry.warning?, do: "text-red-800", else: "text-darkGrey")
+      ]}
+      role={if @entry.warning?, do: "alert"}
     >
-      <div class="flex items-center gap-2">
-        <.icon name="hero-exclamation-triangle" class="size-5 shrink-0" />
+      <.bank_badge institution={@account} size="mini" class="shrink-0" />
+      <div class="flex min-w-0 flex-col gap-2">
         <span class="text-sm font-semibold">
           <%= if @expired? do %>
             {gettext("Bank connection expired")}
@@ -475,27 +508,33 @@ defmodule FirmowidWeb.Invoicing.Components.DashboardTiles do
             {gettext("Transactions are not being updated.")}
           <% end %>
         </span>
+        <p class="text-sm font-medium wrap-anywhere">
+          {@account.name || @account.institution_name} · {@account.currency}
+        </p>
+        <p :if={@expired?} class="text-xs">{gettext("Transactions are not being updated.")}</p>
+        <p :if={@account.latest_successful_sync_at} class="text-xs">
+          {gettext("Last successful synchronization: %{date}",
+            date: format_date(@account.latest_successful_sync_at)
+          )}
+        </p>
+        <.link
+          :if={@entry.can_reconnect?}
+          navigate={~p"/ustawienia/firma#konto-bankowe-#{@account.id}"}
+          kind="button"
+          variant="secondary"
+          size="small"
+          class="mbs-1 w-full"
+        >
+          {gettext("Reconnect")}
+        </.link>
       </div>
-      <p class="text-sm font-medium wrap-anywhere">
-        {@account.name || @account.institution_name} · {@account.currency}
-      </p>
-      <p :if={@expired?} class="text-xs">{gettext("Transactions are not being updated.")}</p>
-      <p :if={@account.latest_successful_sync_at} class="text-xs">
-        {gettext("Last successful synchronization: %{date}",
-          date: format_date(@account.latest_successful_sync_at)
-        )}
-      </p>
-      <.link
-        :if={@entry.can_reconnect?}
-        navigate={~p"/ustawienia/firma#konto-bankowe-#{@account.id}"}
-        kind="button"
-        variant="secondary"
-        size="small"
-        class="mbs-1 w-full"
-      >
-        {gettext("Reconnect")}
-      </.link>
     </div>
+    """
+  end
+
+  defp suggestion_tile(%{entry: %{type: :skipped_ksef_sales_invoices}} = assigns) do
+    ~H"""
+    <.skipped_ksef_warning invoice_labels={@entry.invoice_labels} />
     """
   end
 
