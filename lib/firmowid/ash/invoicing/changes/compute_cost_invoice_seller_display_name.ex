@@ -4,7 +4,8 @@ defmodule Firmowid.Ash.Invoicing.Changes.ComputeCostInvoiceSellerDisplayName do
 
   The value is system-derived and recomputable.
 
-  Failed or blank generations leave the current value unchanged.
+  Failed or blank generations keep the current value, or fall back to the seller
+  when there is none.
   """
   use Ash.Resource.Change
 
@@ -33,19 +34,22 @@ defmodule Firmowid.Ash.Invoicing.Changes.ComputeCostInvoiceSellerDisplayName do
         Ash.Changeset.force_change_attribute(changeset, :seller_display_name, value)
 
       _ ->
-        maybe_fallback_to_seller(changeset, seller_display_name)
+        maybe_fallback_to_seller(changeset)
     end
   end
 
-  defp maybe_fallback_to_seller(changeset, seller_display_name) do
-    if is_binary(seller_display_name) and String.trim(seller_display_name) == "" do
-      Ash.Changeset.force_change_attribute(
-        changeset,
-        :seller_display_name,
-        value(changeset, :seller)
-      )
-    else
-      changeset
+  # The generator returns nil for both failed and blank generations.
+  defp maybe_fallback_to_seller(changeset) do
+    case value(changeset, :seller_display_name) do
+      current when is_binary(current) and current != "" ->
+        changeset
+
+      _ ->
+        Ash.Changeset.force_change_attribute(
+          changeset,
+          :seller_display_name,
+          value(changeset, :seller)
+        )
     end
   end
 

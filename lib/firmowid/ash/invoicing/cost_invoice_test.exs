@@ -11,6 +11,11 @@ defmodule Firmowid.Ash.Invoicing.CostInvoiceTest do
 
   require Ash.Query
 
+  defmodule FailingSellerDisplayNameGenerator do
+    @moduledoc false
+    def generate_display_name(_document, _opts), do: nil
+  end
+
   setup do
     original_openai_enrichment = Application.get_env(:firmowid, :openai_enrichment)
 
@@ -263,6 +268,41 @@ defmodule Firmowid.Ash.Invoicing.CostInvoiceTest do
                  invoice_identifier: "FV/2026/02/LATE-ORIGINAL",
                  ksef_number: "KSEF-LATE-ORIGINAL"
                })
+    end
+
+    test "falls back to the seller when the display name cannot be generated" do
+      user = admin_fixture()
+      scope = %Scope{actor: user, tenant: user.organization_id}
+      previous_generator = Application.get_env(:firmowid, :seller_display_name_enrichment_module)
+
+      Application.put_env(
+        :firmowid,
+        :seller_display_name_enrichment_module,
+        __MODULE__.FailingSellerDisplayNameGenerator
+      )
+
+      on_exit(fn -> restore_env(:seller_display_name_enrichment_module, previous_generator) end)
+
+      assert {:ok, invoice} =
+               CostInvoice.create(
+                 %{
+                   seller: "Supplier Sp. z o.o.",
+                   sale_date: ~D[2026-02-01],
+                   issue_date: ~D[2026-02-01],
+                   items_list: [],
+                   amount: Money.new!("PLN", "-123.45"),
+                   invoice_identifier: "FV/2026/02/NO-DISPLAY-NAME"
+                 },
+                 scope: scope
+               )
+
+      assert invoice.seller_display_name == "Supplier Sp. z o.o."
+
+      named_invoice =
+        insert_cost_invoice!(user.organization_id, %{seller_display_name: "Supplier"})
+
+      assert {:ok, %{seller_display_name: "Supplier"}} =
+               CostInvoice.refresh_seller_display_name(named_invoice, scope: scope)
     end
 
     test "rejects a positive non-correction amount" do
