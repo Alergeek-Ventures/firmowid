@@ -107,14 +107,18 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
 
   @impl true
   def handle_event("assign-unassigned", _params, socket) do
-    case EntityTag.classify_month(%{month: socket.assigns.params.month},
-           scope: socket.assigns.ash_scope
-         ) do
-      {:ok, _job} ->
-        {:noreply, put_flash(socket, :info, gettext("Assignment started in the background."))}
+    if can_write?(socket.assigns) do
+      case EntityTag.classify_month(%{month: socket.assigns.params.month},
+             scope: socket.assigns.ash_scope
+           ) do
+        {:ok, _job} ->
+          {:noreply, put_flash(socket, :info, gettext("Assignment started in the background."))}
 
-      {:error, _reason} ->
-        {:noreply, put_flash(socket, :error, gettext("Assignment is currently unavailable."))}
+        {:error, _reason} ->
+          {:noreply, put_flash(socket, :error, gettext("Assignment is currently unavailable."))}
+      end
+    else
+      {:noreply, socket}
     end
   end
 
