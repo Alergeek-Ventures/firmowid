@@ -175,6 +175,8 @@ defmodule Firmowid.Ash.Analysis.EntityTag do
     end
 
     action :set_entity_category, {:array, :struct} do
+      constraints items: [instance_of: __MODULE__]
+
       description """
       Sets a built-in category (:company or :internal) on an entity.
       Clears any existing tags first to maintain mutual exclusivity.
@@ -214,6 +216,8 @@ defmodule Firmowid.Ash.Analysis.EntityTag do
     end
 
     action :set_entity_project_tags, {:array, :struct} do
+      constraints items: [instance_of: __MODULE__]
+
       description """
       Sets project tags on an entity, replacing any existing tags.
       Pass an empty list of tag_definition_ids to remove all tags.
