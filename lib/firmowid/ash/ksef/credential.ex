@@ -21,6 +21,7 @@ defmodule Firmowid.Ash.Ksef.Credential do
 
   alias AshOban.Checks.AshObanInteraction
   alias Firmowid.Ash.Checks.AtLeastRole
+  alias Firmowid.Ash.Checks.OrganizationAdmin
   alias Firmowid.Ash.Checks.SystemActorRole
   alias Firmowid.Ash.Ksef.Actions.ConnectionStatus
   alias Firmowid.Ash.Ksef.Changes.RevokeSupersededCertificate
@@ -325,7 +326,7 @@ defmodule Firmowid.Ash.Ksef.Credential do
       authorize_if always()
     end
 
-    bypass actor_attribute_equals(:role, :admin) do
+    bypass OrganizationAdmin do
       authorize_if always()
     end
 
