@@ -700,6 +700,36 @@ defmodule Firmowid.Ash.Ksef.Services.InvoiceCorrectionTest do
       end
     end
 
+    test "treats missing buyer tax ID and seller name stored as nil or blank as unchanged", %{
+      org_id: org_id
+    } do
+      original =
+        [vat_rate: "23", org_id: org_id]
+        |> build_domestic_invoice()
+        |> Ash.Seed.update!(%{
+          buyer_type: :individual,
+          buyer_id: nil,
+          buyer_given_name: "Jan",
+          buyer_surname: "Kowalski"
+        })
+        |> submit()
+
+      kor1 = correct(original, unit_price: "150.00")
+
+      # Ash casts blank strings to nil, so legacy blank values can only be written directly.
+      for legacy_blank <- ["", "  "] do
+        Firmowid.Repo.query!(
+          "UPDATE sales_invoices SET buyer_id = $1, seller_name = $1 WHERE id = $2",
+          [
+            legacy_blank,
+            Ecto.UUID.dump!(original.id)
+          ]
+        )
+
+        assert render_xml(kor1) =~ "<BrakID>1</BrakID>"
+      end
+    end
+
     test "raises when seller data changes between correction and original", %{org_id: org_id} do
       original = submit(build_original(org_id: org_id))
       kor1 = correct(original, unit_price: "150.00")

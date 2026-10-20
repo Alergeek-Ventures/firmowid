@@ -364,14 +364,15 @@ defmodule Firmowid.Ash.Ksef.Services.InvoiceRenderer do
 
   @doc """
   Validates that buyer tax ID hasn't changed in correction invoice.
-  Raises if buyer_id differs between correction and corrected invoice.
+  Raises if buyer_id differs between correction and corrected invoice. A missing
+  tax ID stored as nil or a blank string counts as the same value.
 
   Per KSeF FA(3) schema: buyer NIP changes require zeroing out the invoice,
   not a simple correction.
   """
   @spec validate_correction_buyer_tax_id!(map()) :: map()
   def validate_correction_buyer_tax_id!(%{ksef_invoice_kind: :kor, corrected_invoice: corrected} = invoice) do
-    if invoice.buyer_id != corrected.buyer_id or
+    if blank_to_nil(invoice.buyer_id) != blank_to_nil(corrected.buyer_id) or
          invoice.buyer_id_type != corrected.buyer_id_type do
       raise ArgumentError,
             "Buyer tax ID cannot change in correction invoice. " <>
@@ -398,8 +399,9 @@ defmodule Firmowid.Ash.Ksef.Services.InvoiceRenderer do
   Validates that seller identity hasn't changed in a correction invoice.
 
   Raises if seller NIP, name, or address differ between the correction and the
-  corrected (original) invoice. VAT exemption type/basis may change on purpose
-  and are not checked here.
+  corrected (original) invoice. Missing values stored as nil or blank strings
+  count as the same. VAT exemption type/basis may change on purpose and are not
+  checked here.
   """
   @spec validate_correction_seller_data!(map()) :: map()
   def validate_correction_seller_data!(%{ksef_invoice_kind: :kor, corrected_invoice: corrected} = invoice) do
@@ -427,8 +429,15 @@ defmodule Firmowid.Ash.Ksef.Services.InvoiceRenderer do
   def validate_correction_seller_data!(invoice), do: invoice
 
   defp seller_attr_changed?(invoice, corrected, field) do
-    Map.get(invoice, field) != Map.get(corrected, field)
+    blank_to_nil(Map.get(invoice, field)) != blank_to_nil(Map.get(corrected, field))
   end
+
+  # Invoices stored before the Ash migration may hold blank strings where Ash now stores nil.
+  defp blank_to_nil(value) when is_binary(value) do
+    if String.trim(value) == "", do: nil, else: value
+  end
+
+  defp blank_to_nil(value), do: value
 
   @doc """
   Checks if buyer data changed between the current invoice and the reference invoice.
