@@ -38,7 +38,12 @@ defmodule FirmowidMcp.Widgets do
         {:error, :forbidden}
 
       tool ->
-        AshAi.Tools.execute(tool, arguments, %{actor: actor, tenant: tenant}, encode?: false)
+        AshAi.Tools.execute(
+          tool,
+          arguments,
+          %{actor: actor, tenant: tenant, context: FirmowidMcp.Invoicing.action_context()},
+          encode?: false
+        )
     end
   end
 end

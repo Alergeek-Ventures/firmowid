@@ -26,7 +26,17 @@ defmodule FirmowidMcp.Router do
   @doc "Preserves native protocol validation/envelopes and decorates successful presentations."
   @spec call(Plug.Conn.t(), keyword()) :: Plug.Conn.t()
   def call(conn, opts) do
+    context =
+      Map.merge(
+        Ash.PlugHelpers.get_context(conn) || %{},
+        FirmowidMcp.Invoicing.action_context(),
+        fn
+          :shared, existing, required -> Map.merge(existing, required)
+        end
+      )
+
     conn
+    |> Ash.PlugHelpers.set_context(context)
     |> put_resp_header("cache-control", "no-store")
     |> resolve_resource_request()
     |> register_before_send(&decorate_response/1)
@@ -164,8 +174,11 @@ defmodule FirmowidMcp.Router do
     tool =
       tool
       |> Map.new(fn
-        {key, schema} when key in ["inputSchema", "outputSchema"] -> {key, Privacy.schema(schema)}
-        pair -> pair
+        {key, schema} when key in ["inputSchema", "outputSchema"] ->
+          {key, Privacy.schema(schema, key == "inputSchema")}
+
+        pair ->
+          pair
       end)
       |> Map.put("securitySchemes", @security_schemes)
       |> update_in(["_meta"], &Map.put(&1 || %{}, "securitySchemes", @security_schemes))

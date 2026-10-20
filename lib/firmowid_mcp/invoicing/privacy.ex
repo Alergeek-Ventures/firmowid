@@ -13,19 +13,29 @@ defmodule FirmowidMcp.Invoicing.Privacy do
     end
   end
 
-  @doc "Removes PESEL properties and required-field references from generated JSON schemas."
-  @spec schema(term()) :: term()
-  def schema(value) when is_map(value) do
+  @doc "Removes PESEL from schemas and optionally restricts buyer input to companies."
+  @spec schema(term(), boolean()) :: term()
+  def schema(value, business_only?) when is_map(value) do
     value
     |> Map.drop(@fields)
     |> Map.new(fn
-      {"required", fields} -> {"required", fields -- @fields}
-      {key, value} -> {key, schema(value)}
+      {"required", fields} ->
+        {"required", fields -- @fields}
+
+      {"buyer_type", definition} when business_only? ->
+        {"buyer_type",
+         definition
+         |> Map.delete("anyOf")
+         |> Map.merge(%{"type" => "string", "enum" => ["company"]})}
+
+      {key, value} ->
+        {key, schema(value, business_only?)}
     end)
   end
 
-  def schema(value) when is_list(value), do: Enum.map(value, &schema/1)
-  def schema(value), do: value
+  def schema(value, business_only?) when is_list(value), do: Enum.map(value, &schema(&1, business_only?))
+
+  def schema(value, _business_only?), do: value
 
   @doc "Removes PESEL from structured results and their JSON text representation, including corrections."
   @spec result(map()) :: map()

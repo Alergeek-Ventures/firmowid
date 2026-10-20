@@ -35,7 +35,7 @@ defmodule Firmowid.Ash.Invoicing.Validations.CompleteInvoice do
         end
       end)
 
-    errors = errors ++ currency_errors(changeset)
+    errors = errors ++ currency_errors(changeset) ++ business_buyer_errors(changeset)
 
     errors =
       Enum.reduce(
@@ -89,6 +89,27 @@ defmodule Firmowid.Ash.Invoicing.Validations.CompleteInvoice do
       ]
     end
   end
+
+  defp business_buyer_errors(%{context: %{shared: %{business_buyers_only?: true}}} = changeset) do
+    company? = Ash.Changeset.get_attribute(changeset, :buyer_type) == :company
+    tax_id = Ash.Changeset.get_attribute(changeset, :buyer_id)
+
+    if company? and not blank?(tax_id) do
+      []
+    else
+      [
+        InvalidAttribute.exception(
+          field: if(company?, do: :buyer_id, else: :buyer_type),
+          message:
+            gettext(
+              "Only business buyers with a tax ID are supported here. Use the Firmowid web app for invoices to private individuals."
+            )
+        )
+      ]
+    end
+  end
+
+  defp business_buyer_errors(_changeset), do: []
 
   defp blank?(nil), do: true
   defp blank?(value) when is_binary(value), do: String.trim(value) == ""
