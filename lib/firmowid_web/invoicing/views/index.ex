@@ -246,25 +246,10 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
       :if={can_view_invoicing?(@current_user)}
       class="relative mt-2 flex flex-col gap-4 max-md:hidden"
     >
-      <div
-        :if={@skipped_ksef_sales_invoices != []}
-        id="skipped-ksef-sales-invoices"
-        phx-hook="KsefSkippedInvoicesBanner"
-        class="flex gap-3 rounded-md bg-orange-100 p-4 text-sm text-orange-800"
-      >
-        <Lucideicons.triangle_alert class="size-5 shrink-0 text-orange-600" />
-        <div class="flex flex-col gap-2">
-          <p class="font-medium">
-            Tych faktur sprzedażowych z KSeF nie udało się jeszcze pobrać do Firmowida.
-            Sprawdzamy przyczynę i pobierzemy je, gdy tylko ją naprawimy.
-          </p>
-          <ul class="flex flex-col gap-1">
-            <li :for={invoice <- @skipped_ksef_sales_invoices}>
-              {skipped_invoice_label(invoice)}
-            </li>
-          </ul>
-        </div>
-      </div>
+      <FirmowidWeb.Invoicing.Components.DashboardTiles.skipped_ksef_warning
+        :if={@params.view_mode != :dashboard and @skipped_ksef_sales_invoices != []}
+        invoice_labels={Enum.map(@skipped_ksef_sales_invoices, &skipped_invoice_label/1)}
+      />
       <%= cond do %>
         <% @params.view_mode == :dashboard -> %>
           <FirmowidWeb.Invoicing.Components.Dashboard.dashboard
@@ -914,7 +899,7 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
       unpaid_invoices = fetch_unpaid_invoices(date_range_from, date_range_to, scope)
       unmatched_transactions = fetch_unmatched_transactions(date_range_from, date_range_to, scope)
       matched_entries = fetch_matched_entries(date_range_from, date_range_to, scope)
-      suggestions = fetch_suggestions(scope)
+      suggestions = fetch_suggestions(scope, socket.assigns.skipped_ksef_sales_invoices)
 
       socket
       |> assign(:dashboard_unpaid_invoices, unpaid_invoices.entries)
@@ -990,24 +975,46 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
     )
   end
 
-  defp fetch_suggestions(scope) do
+  defp fetch_suggestions(scope, skipped_invoices) do
     bank_alerts =
       [scope: scope, load: [:requisition, :broken?]]
       |> Finances.list_bank_accounts!()
       # Keep the latest outcome independent of the last-success aggregate's filter.
       |> Ash.load!(:latest_successful_sync_at, scope: scope)
-      |> Enum.filter(fn account ->
-        not is_nil(account.gocardless_id) and
-          (account.broken? == true or match?(%Requisition{status: :expired}, account.requisition) or
-             awaiting_bank_sync?(account))
+      |> Enum.flat_map(fn account ->
+        warning? =
+          account.broken? == true or
+            match?(
+              %Requisition{status: status} when status in [:expired, :rejected],
+              account.requisition
+            )
+
+        if not is_nil(account.gocardless_id) and (warning? or awaiting_bank_sync?(account)) do
+          [
+            %{
+              type: :bank_connection_attention,
+              account: account,
+              warning?: warning?,
+              can_reconnect?: scope.actor.role == :admin
+            }
+          ]
+        else
+          []
+        end
       end)
-      |> Enum.map(
-        &%{
-          type: :bank_connection_attention,
-          account: &1,
-          can_reconnect?: scope.actor.role == :admin
-        }
-      )
+
+    ksef_warnings =
+      if skipped_invoices == [] do
+        []
+      else
+        [
+          %{
+            type: :skipped_ksef_sales_invoices,
+            warning?: true,
+            invoice_labels: Enum.map(skipped_invoices, &skipped_invoice_label/1)
+          }
+        ]
+      end
 
     suggestions = []
 
@@ -1034,7 +1041,7 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
         [%{type: :connect_ksef} | suggestions]
       end
 
-    suggestions = bank_alerts ++ suggestions
+    suggestions = ksef_warnings ++ bank_alerts ++ suggestions
     %{entries: suggestions, total_count: length(suggestions)}
   end
 

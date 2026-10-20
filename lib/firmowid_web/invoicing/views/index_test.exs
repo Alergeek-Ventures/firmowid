@@ -20,6 +20,7 @@ defmodule FirmowidWeb.Invoicing.Views.IndexTest do
   alias Firmowid.Ash.Finances.Transaction
   alias Firmowid.Ash.Invoicing
   alias Firmowid.Ash.Invoicing.CostInvoice
+  alias Firmowid.Ash.Invoicing.SkippedKsefSalesInvoice
   alias Firmowid.Ash.Scope
   alias Firmowid.InvoicingFixtures
   alias FirmowidWeb.Core.Endpoint
@@ -38,6 +39,7 @@ defmodule FirmowidWeb.Invoicing.Views.IndexTest do
         bank_account_fixture!(user, %{
           requisition_id: requisition.id,
           gocardless_id: "synthetic-bank-account",
+          institution_id: "ING_PL_INGBPLPW",
           institution_name: "Synthetic Bank"
         })
 
@@ -51,6 +53,8 @@ defmodule FirmowidWeb.Invoicing.Views.IndexTest do
         })
 
       {:ok, view, _html} = conn |> log_in_user(user) |> live(~p"/fakturowanie")
+      assert has_element?(view, "#dashboard-attention h2", "Warte uwagi")
+      refute has_element?(view, "#dashboard-attention.bg-red-100")
 
       assert has_element?(
                view,
@@ -72,6 +76,13 @@ defmodule FirmowidWeb.Invoicing.Views.IndexTest do
                view,
                "#bank-connection-alert-#{account.id}",
                "Połączenie z bankiem wygasło"
+             )
+
+      assert has_element?(view, "#dashboard-attention.bg-red-100")
+
+      assert has_element?(
+               view,
+               "#dashboard-attention #bank-connection-alert-#{account.id} [data-bank='ING']"
              )
 
       assert has_element?(
@@ -115,6 +126,48 @@ defmodule FirmowidWeb.Invoicing.Views.IndexTest do
                )
 
       refute has_element?(renewed_view, "#bank-connection-alert-#{account.id}")
+      refute has_element?(renewed_view, "#dashboard-attention.bg-red-100")
+    end
+
+    test "keeps skipped KSeF invoices inside the attention column and scoped to the organization",
+         %{conn: conn, user: user} do
+      other_user = admin_fixture()
+
+      for {owner, suffix} <- [{user, "own"}, {other_user, "other"}] do
+        Ash.Seed.seed!(
+          SkippedKsefSalesInvoice,
+          %{
+            ksef_number: "synthetic-skipped-#{suffix}",
+            invoice_number: "SYNTHETIC-#{suffix}",
+            issue_date: ~D[2026-10-01],
+            buyer_name: "Synthetic buyer",
+            gross_total: Decimal.new("123.00"),
+            currency: "PLN",
+            reason: "synthetic unsupported invoice",
+            ksef_permanent_storage_date: ~N[2026-10-01 10:00:00]
+          },
+          tenant: owner.organization_id
+        )
+      end
+
+      {:ok, view, _html} = conn |> log_in_user(user) |> live(~p"/fakturowanie")
+
+      assert has_element?(
+               view,
+               "#dashboard-attention.bg-red-100 #skipped-ksef-sales-invoices li",
+               "SYNTHETIC-own"
+             )
+
+      refute has_element?(view, "#skipped-ksef-sales-invoices li", "SYNTHETIC-other")
+
+      {:ok, list_view, _html} =
+        view
+        |> element("a", "Faktury")
+        |> render_click()
+        |> follow_redirect(log_in_user(conn, user))
+
+      refute has_element?(list_view, "#dashboard-attention")
+      assert has_element?(list_view, "#skipped-ksef-sales-invoices li", "SYNTHETIC-own")
     end
 
     setup do
