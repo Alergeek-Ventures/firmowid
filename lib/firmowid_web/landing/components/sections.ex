@@ -208,17 +208,23 @@ defmodule FirmowidWeb.Landing.Components.Sections do
 
         <article
           :for={feature <- @features}
-          class="landing-feature mt-8 grid gap-6 rounded-2xl border border-[#e3b79b] bg-white p-6 lg:mt-20 lg:grid-cols-2 lg:items-center lg:gap-20 lg:border-0 lg:bg-transparent lg:p-0 lg:last:pb-0 [&_h3]:mt-4 [&_h3]:mb-5 [&_h3]:text-lg [&_h3]:leading-[1.15] [&_h3]:font-bold [&_h3]:tracking-[-0.01em] lg:[&_h3]:text-[2.25rem] lg:[&_h3]:leading-[1.05] lg:[&_li]:flex lg:[&_li]:items-start lg:[&_li]:gap-3 [&_ul]:hidden lg:[&_ul]:mt-7 lg:[&_ul]:grid lg:[&_ul]:gap-3.5 lg:[&_ul]:text-base/normal lg:[&+.landing-feature]:mt-16 lg:[&+.landing-feature]:bg-[url('/images/landing/decorations/feature-separator.svg')] lg:[&+.landing-feature]:bg-size-[100%_--spacing(0.5)] lg:[&+.landing-feature]:bg-top lg:[&+.landing-feature]:bg-no-repeat lg:[&+.landing-feature]:pt-16 lg:[&:nth-of-type(even)_>_:first-child]:order-2"
+          class="landing-feature mt-8 grid gap-6 rounded-2xl border border-[#e3b79b] bg-white p-6 lg:mt-20 lg:grid-cols-2 lg:items-center lg:gap-20 lg:border-0 lg:bg-transparent lg:p-0 lg:last:pb-0 [&_h3]:my-4 [&_h3]:text-lg [&_h3]:leading-[1.15] [&_h3]:font-bold [&_h3]:tracking-[-0.03em] lg:[&_h3]:text-[2.25rem] lg:[&_h3]:leading-[1.05] lg:[&_li]:flex lg:[&_li]:items-start lg:[&_li]:gap-3 [&_ul]:hidden lg:[&_ul]:mt-7 lg:[&_ul]:grid lg:[&_ul]:gap-3 lg:[&_ul]:text-base/normal lg:[&+.landing-feature]:mt-16 lg:[&+.landing-feature]:bg-[url('/images/landing/decorations/feature-separator.svg')] lg:[&+.landing-feature]:bg-size-[100%_--spacing(0.5)] lg:[&+.landing-feature]:bg-top lg:[&+.landing-feature]:bg-no-repeat lg:[&+.landing-feature]:pt-16 lg:[&:nth-of-type(even)_>_:first-child]:order-2"
         >
           <div>
-            <p class="flex flex-wrap gap-2.5 text-xs font-bold tracking-[0.06em] text-(--landing-accent) uppercase lg:flex [&_span]:inline-block [&_span]:p-0 [&_span]:text-sm [&_span]:font-semibold [&_span]:tracking-[0.08em] [&_span]:uppercase lg:[&_span]:rounded-full lg:[&_span]:bg-[#f7e0d3] lg:[&_span]:px-4 lg:[&_span]:py-1 lg:[&_span]:font-normal lg:[&_span]:tracking-normal lg:[&_span]:normal-case [&_span+span]:border-0 [&_span+span::before]:mr-2.5 [&_span+span::before]:content-['·'] lg:[&_span+span::before]:content-none">
+            <p class="flex flex-wrap gap-2 text-xs font-bold tracking-[0.06em] text-(--landing-accent) uppercase lg:flex [&_span]:inline-block [&_span]:p-0 [&_span]:text-sm [&_span]:font-semibold [&_span]:tracking-[0.08em] [&_span]:uppercase lg:[&_span]:rounded-full lg:[&_span]:bg-[#f2dfd4] lg:[&_span]:px-4 lg:[&_span]:py-1 lg:[&_span]:font-normal lg:[&_span]:tracking-normal lg:[&_span]:normal-case [&_span+span]:border-0 [&_span+span::before]:mr-2.5 [&_span+span::before]:content-['·'] lg:[&_span+span::before]:content-none">
               <span :for={tag <- feature.tags}>{tag}</span>
             </p>
-            <h3>{feature.title}</h3>
+            <h3 class={[
+              "text-grey-900",
+              feature.visual == :banking && "lg:max-w-115",
+              feature.visual == :team && "text-balance lg:max-w-100"
+            ]}>
+              {feature.title}
+            </h3>
             <p class="text-base/6.75 text-darkGrey lg:text-h5">
               {feature.description}
             </p>
-            <ul>
+            <ul class="text-grey-700">
               <li :for={bullet <- feature.bullets}>
                 <img
                   src={~p"/images/landing/icons/arrow.svg"}
@@ -245,160 +251,329 @@ defmodule FirmowidWeb.Landing.Components.Sections do
     ~H"""
     <div
       class={[
-        "@container relative min-w-0 rounded-2xl border border-(--landing-line) bg-[#f5f5f5] text-caps-sm leading-[1.4] shadow-[0_0.875rem_2.125rem_rgb(80_50_30/8%)] lg:px-5.5 lg:py-6.5 lg:text-xs [&_h4]:mb-4.5 [&_h4]:text-sm [&_h4]:font-semibold lg:[&_h4]:text-base",
+        "@container relative min-w-0 rounded-2xl border border-(--landing-line) bg-[#f5f5f5] text-caps-sm leading-[1.4] shadow-[0_0.875rem_2.125rem_rgb(80_50_30/8%)] lg:text-xs [&_h4]:mb-4.5 [&_h4]:text-sm [&_h4]:font-semibold lg:[&_h4]:text-base",
         @visual == :invoices &&
-          "p-4 [&_.landing-preview-amount]:size-full [&_.landing-preview-amount]:rounded-none [&_.landing-preview-amount]:p-[2.2cqw_1cqw] [&_.landing-preview-amount]:text-center [&_.landing-preview-amount]:text-[1.5cqw] [&_.landing-preview-amount]:text-(--landing-accent) [&_.landing-preview-amount--teal]:text-turquoise-700 [&_.landing-preview-head]:bg-transparent [&_.landing-preview-head]:p-3 [&_.landing-preview-head]:text-[1.4cqw] [&_.landing-preview-head]:font-normal [&_.landing-preview-row]:grid [&_.landing-preview-row]:grid-cols-[minmax(0,1fr)_18%_22%] [&_.landing-preview-row]:gap-0 [&_.landing-preview-row]:rounded-none [&_.landing-preview-row]:bg-white [&_.landing-preview-row]:p-0 [&_.landing-preview-row]:text-[1.5cqw] [&_.landing-preview-status]:mx-1 [&_.landing-preview-status]:border-0 [&_.landing-preview-status]:bg-[#f5f5f5] [&_.landing-preview-status]:p-0.75 [&_.landing-preview-status]:text-center [&_.landing-preview-status]:text-[1.1cqw] [&_.landing-preview-status]:leading-none [&_.landing-preview-status]:whitespace-nowrap [&_.landing-preview-status.landing-preview-status--paid]:bg-green-100",
+          "p-4 lg:px-4 lg:pt-5 lg:pb-4",
         @visual == :banking && "p-4",
         @visual == :time &&
-          "aspect-528/400 px-4 py-6 [&_.landing-preview-caption]:mt-[8cqw] [&_.landing-preview-caption]:text-left [&_.landing-preview-caption]:text-[2.3cqw] [&_.landing-preview-caption]:text-grey-600 [&_.landing-preview-head]:mb-[4cqw] [&_.landing-preview-head]:bg-transparent [&_.landing-preview-head]:p-0 [&_.landing-preview-head]:text-[2.4cqw] [&_.landing-preview-head]:text-(--landing-accent) [&_.landing-preview-head_>_span:last-child]:bg-[#e6d7ce] [&_.landing-preview-head_>_span:last-child]:text-[3.5cqw] [&_.landing-preview-overlay]:right-[-4%] [&_.landing-preview-overlay]:bottom-[-7%] [&_.landing-preview-overlay]:left-auto [&_.landing-preview-overlay]:flex [&_.landing-preview-overlay]:w-[54%] [&_.landing-preview-overlay]:flex-col [&_.landing-preview-overlay]:items-stretch [&_.landing-preview-overlay]:gap-[1.5cqw] [&_.landing-preview-overlay]:p-[4cqw] [&_.landing-preview-overlay]:[background:#f5f5f5_url('/images/figurine_timeracker.png')_left_bottom/40%_auto_no-repeat] [&_.landing-preview-overlay_small]:text-center [&_.landing-preview-overlay_small]:text-[1.5cqw] [&_.landing-preview-overlay_small]:text-(--landing-accent) [&_.landing-preview-overlay_strong]:pt-[3cqw] [&_.landing-preview-overlay_strong]:text-center [&_.landing-preview-overlay_strong]:text-[2.7cqw] [&_.landing-preview-overlay_strong]:text-(--landing-accent) [&_.landing-preview-row]:rounded-none [&_.landing-preview-row]:border-b [&_.landing-preview-row]:border-[#eee] [&_.landing-preview-row]:bg-transparent [&_.landing-preview-row]:p-[1.8cqw_0] [&_.landing-preview-row]:text-[2.4cqw] [&_.landing-preview-row:nth-of-type(3)]:mt-[8cqw]",
+          "aspect-528/400 px-[4.5%] pt-[6.5%] text-grey-900",
         @visual == :team &&
-          "aspect-528/400 px-4 pt-5 pb-15 [&_.landing-preview-avatar]:size-[10cqw] [&_.landing-preview-avatar]:text-[3cqw] [&_.landing-preview-caption]:m-0 [&_.landing-preview-caption]:bg-white [&_.landing-preview-caption]:p-[2cqw] [&_.landing-preview-caption]:text-left [&_.landing-preview-caption]:text-[1.5cqw] [&_.landing-preview-caption]:text-grey-600 [&_.landing-preview-head]:m-0 [&_.landing-preview-head]:rounded-t-sm [&_.landing-preview-head]:rounded-b-none [&_.landing-preview-head]:bg-white [&_.landing-preview-head]:p-[2cqw] [&_.landing-preview-head]:text-[1.6cqw] [&_.landing-preview-overlay]:right-auto [&_.landing-preview-overlay]:bottom-[-6%] [&_.landing-preview-overlay]:left-[-4%] [&_.landing-preview-overlay]:w-[55%] [&_.landing-preview-overlay]:gap-[2cqw] [&_.landing-preview-overlay]:p-[2.5cqw] [&_.landing-preview-pending.landing-preview-row]:mb-[3cqw] [&_.landing-preview-pending.landing-preview-row]:pb-[3cqw] [&_.landing-preview-row]:m-0 [&_.landing-preview-row]:min-h-[5.6cqw] [&_.landing-preview-row]:rounded-none [&_.landing-preview-row]:bg-white [&_.landing-preview-row]:p-[1.3cqw_2cqw] [&_.landing-preview-row]:text-[1.7cqw] [&_.landing-preview-row_small]:text-[1.5cqw] [&_.landing-preview-row+.landing-preview-row]:mt-0 [&_.landing-preview-status]:rounded-full [&_.landing-preview-status]:border-0 [&_.landing-preview-status]:p-[0.5cqw_2cqw] [&_.landing-preview-status]:text-[1.5cqw]"
+          "aspect-528/400 px-[3%] pt-[4.8%] text-grey-900"
       ]}
       role="img"
       aria-label={gettext("Illustrative product preview")}
     >
       <%= case @visual do %>
         <% :invoices -> %>
-          <div class="landing-preview-head mb-1 flex items-center justify-between gap-2 rounded-md bg-[#eadcd4] px-3 py-2 font-semibold [&_span:last-child]:rounded-sm [&_span:last-child]:bg-white [&_span:last-child]:px-2 [&_span:last-child]:py-0.5 [&_span:last-child]:text-caps-sm">
-            <span>{gettext("Counterparty")}</span>
+          <div class="mb-[1.5cqw] grid grid-cols-[minmax(0,1fr)_20.5%_22.5%] items-center py-[1.1cqw] text-[1.8cqw] font-normal text-grey-700">
+            <span class="pl-[1cqw]">{gettext("Counterparty")}</span>
             <span>{gettext("Status")}</span>
           </div>
           <div
             :for={row <- contractor_invoices()}
-            class="landing-preview-row flex flex-wrap items-center gap-1.5 rounded-lg bg-[#faf7f5] p-3 text-caps-sm [&_small]:text-caps-sm [&_small]:font-normal [&_small]:text-darkGrey [&+.landing-preview-row]:mt-1.5"
+            class="grid min-h-[7.3cqw] grid-cols-[minmax(0,1fr)_20.5%_22.5%] items-center overflow-hidden rounded-[0.4cqw] bg-white text-[2cqw] leading-[1.4] [&+div]:mt-[1.5cqw]"
           >
-            <span class="landing-preview-contractor flex items-center gap-[1cqw] overflow-hidden p-[1cqw] whitespace-nowrap [&_img]:size-[4cqw] [&_img]:shrink-0 [&_img]:border [&_img]:border-grey-200 [&_img]:object-contain [&_small]:overflow-hidden [&_small]:text-[1.4cqw] [&_small]:text-ellipsis [&_strong]:shrink-0 [&_strong]:font-semibold [&.landing-preview-contractor_small]:text-[1.4cqw] lg:[&.landing-preview-contractor_small]:text-caps-sm"><img
-              src={~p"/images/ksef.png"}
-              alt=""
-              width="24"
-              height="24"
-            /><strong>{row.name}</strong> <small>{row.note}</small></span>
+            <span class="flex min-w-0 items-center gap-[1.8cqw] py-[1cqw] pr-[1cqw] pl-[1.8cqw] whitespace-nowrap">
+              <span class={[
+                "relative flex h-[5.2cqw] w-[4.6cqw] shrink-0 items-center justify-center overflow-hidden rounded-[0.4cqw] [clip-path:polygon(0_0,70%_0,100%_25%,100%_100%,0_100%)]",
+                row.tone == :warm && "border border-grey-200 bg-[#f5f5f5]",
+                row.tone == :teal && "bg-[#969696] text-white"
+              ]}>
+                <span
+                  :if={row.tone == :warm}
+                  class="text-[1.25cqw] font-bold text-[#14386a]"
+                >KSe<span class="text-[#c94040]">F</span></span>
+                <svg
+                  :if={row.tone == :teal}
+                  viewBox="0 0 16 16"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1"
+                  class="size-[2.5cqw]"
+                  aria-hidden="true"
+                >
+                  <circle cx="8" cy="8" r="6" />
+                  <ellipse cx="8" cy="8" rx="2.5" ry="6" />
+                  <path d="M2 8h12M3 4.5h10M3 11.5h10" />
+                </svg>
+              </span>
+              <span class="flex min-w-0 items-baseline gap-[0.6cqw]">
+                <strong class="shrink-0 font-medium">{row.name}</strong>
+                <small class="truncate text-[2cqw] font-normal text-[#969696]">{row.note}</small>
+              </span>
+            </span>
             <span class={[
-              "landing-preview-status ml-auto rounded-sm border border-(--landing-line) bg-white px-2 py-0.75 text-[0.5rem] uppercase lg:text-caps-sm",
-              row.paid &&
-                "landing-preview-status--paid border-[#c6dcbf] [&.landing-preview-status--paid]:bg-[#dcecd8]"
+              "mr-[3cqw] rounded-[0.4cqw] py-[0.5cqw] text-center text-[1.4cqw] leading-[1.4] font-medium whitespace-nowrap uppercase",
+              row.paid && "bg-green-100 text-green-700",
+              !row.paid && row.tone == :warm && "bg-[#f5f5f5] text-darkGrey",
+              row.status == gettext("Draft") && "border border-grey-200 text-darkGrey",
+              row.status == gettext("Sending") && "after:content-['...']"
             ]}>
               {row.status}
             </span>
             <span class={[
-              "landing-preview-amount ml-auto rounded-sm bg-[#eadcd4] px-3 py-2 font-semibold whitespace-nowrap",
-              row.tone == :teal &&
-                "landing-preview-amount--teal [&.landing-preview-amount--teal]:bg-[#cfe6e6]"
+              "flex h-full items-center justify-end pr-[2.6cqw] font-medium whitespace-nowrap",
+              row.tone == :warm && "bg-[#e6d7ce] text-(--landing-accent)",
+              row.tone == :teal && "bg-turquoise-200 text-turquoise-700"
             ]}>
               {gettext("%{amount} PLN", amount: row.amount)}
             </span>
           </div>
         <% :banking -> %>
-          <div class="grid grid-cols-2 gap-[3cqw] [&_.landing-preview-caption]:mt-auto [&_.landing-preview-caption]:pt-[3cqw] [&_.landing-preview-caption]:pb-[1cqw] [&_.landing-preview-caption]:text-[2.3cqw] [&_.landing-preview-head]:gap-0.75 [&_.landing-preview-head]:p-[2cqw] [&_.landing-preview-head]:text-[2.2cqw] [&_.landing-preview-head_>_span:last-child]:p-[1cqw_2cqw] [&_.landing-preview-head_>_span:last-child]:text-[2cqw] [&_.landing-preview-match]:mt-0 [&_.landing-preview-match]:p-[1cqw] [&_.landing-preview-match]:text-[1.5cqw] [&_.landing-preview-row]:min-h-[10cqw] [&_.landing-preview-row]:gap-[1.2cqw] [&_.landing-preview-row]:bg-white [&_.landing-preview-row]:p-[1.6cqw] [&_.landing-preview-row]:text-[1.8cqw] [&_.landing-preview-row_>_span:first-child]:min-w-0 [&_.landing-preview-row_>_span:first-child]:flex-1 [&_.landing-preview-row_>_span:first-child]:truncate [&_.landing-preview-row_img]:ml-auto [&_.landing-preview-row_img]:h-[2.4cqw] [&_.landing-preview-row_img]:w-[4cqw] [&_.landing-preview-row_img]:object-contain [&_.landing-preview-row_small]:w-[65%] [&_.landing-preview-row_small]:text-[1.5cqw] [&_.landing-preview-row_small]:text-grey-500 [&_.landing-preview-row_strong]:text-[1.8cqw] [&_.landing-preview-row_strong]:font-semibold [&_>_div]:flex [&_>_div]:flex-col [&_>_div]:rounded-sm [&_>_div]:bg-[#f0eae6] [&_>_div]:p-[1.6cqw] [&_>_div+div]:bg-turquoise-100">
-            <div>
-              <div class="landing-preview-head mb-1 flex items-center justify-between gap-2 rounded-md bg-[#eadcd4] px-3 py-2 font-semibold [&_span:last-child]:rounded-sm [&_span:last-child]:bg-white [&_span:last-child]:px-2 [&_span:last-child]:py-0.5 [&_span:last-child]:text-caps-sm">
+          <div class="grid grid-cols-2 gap-[3.6cqw] text-[2cqw] leading-[1.4] text-grey-900">
+            <div class="flex min-w-0 flex-col rounded-[1cqw] bg-[#f3f0ee] p-[1.8cqw]">
+              <div class="mb-[2.4cqw] flex items-center justify-between gap-[1cqw] rounded-[0.6cqw] bg-orange-200 p-[1.2cqw_1.8cqw] text-[2.4cqw] font-normal text-(--landing-accent)">
                 <span>{gettext("Transactions to match")}</span>
-                <span>6</span>
+                <span class="rounded-[0.4cqw] bg-white/70 px-[2.6cqw] py-[1.2cqw]">6</span>
               </div>
               <div
                 :for={row <- unmatched_transactions()}
-                class="landing-preview-row flex flex-wrap items-center gap-1.5 rounded-lg bg-[#faf7f5] p-3 text-caps-sm [&_small]:text-caps-sm [&_small]:font-normal [&_small]:text-darkGrey [&+.landing-preview-row]:mt-1.5"
+                class="rounded-[1cqw] bg-grey-50 p-[1.4cqw_1.8cqw] [&+div]:mt-[1.2cqw]"
               >
-                <span>{row.name}</span>
-                <strong class={[
-                  "text-[#a22a2a]",
-                  String.starts_with?(row.amount, "+") &&
-                    "text-green-600"
-                ]}>{pgettext("landing bank amount", "%{amount} PLN", amount: row.amount)}</strong>
-                <small>{row.date}</small>
-                <img
-                  src={~p"/images/invoicing_badges/mbk_wa_1.svg"}
-                  alt="mBank"
-                  width="22"
-                  height="12"
-                />
+                <div class="flex items-baseline justify-between gap-[1cqw] whitespace-nowrap">
+                  <span class="min-w-0 truncate">{row.name}</span>
+                  <strong class={[
+                    "shrink-0 font-medium",
+                    String.starts_with?(row.amount, "+") && "text-green-600",
+                    !String.starts_with?(row.amount, "+") && "text-[#e52b2b]"
+                  ]}>
+                    <span aria-hidden="true">{if String.starts_with?(row.amount, "+"),
+                      do: "↑",
+                      else: "↓"}</span>
+                    {pgettext("landing bank amount", "%{amount} PLN",
+                      amount:
+                        String.trim_leading(
+                          row.amount,
+                          if(String.starts_with?(row.amount, "+"), do: "+ ", else: "− ")
+                        )
+                    )}
+                  </strong>
+                </div>
+                <div class="mt-[1.2cqw] flex min-h-[1.8cqw] items-end justify-between">
+                  <small class="text-[1.6cqw] text-grey-500">{row.date}</small>
+                  <span
+                    :if={row.bank}
+                    class={[
+                      "flex h-[3.4cqw] w-[5.8cqw] items-center justify-between rounded-[0.3cqw] px-[0.6cqw]",
+                      row.bank == :credit_agricole && "bg-[#00848c]",
+                      row.bank == :santander && "bg-[#ec0000]"
+                    ]}
+                  >
+                    <img
+                      src={
+                        if row.bank == :credit_agricole,
+                          do: ~p"/images/invoicing_badges/frame4243.svg",
+                          else: ~p"/images/invoicing_badges/g11.svg"
+                      }
+                      alt=""
+                      class="size-[2.2cqw] object-contain"
+                    />
+                    <img
+                      src={~p"/images/invoicing_badges/vector.svg"}
+                      alt=""
+                      class="h-[1.2cqw] w-[2cqw]"
+                    />
+                  </span>
+                </div>
               </div>
-              <p class="landing-preview-caption mt-4 text-center text-caps-sm text-(--landing-accent)">
+              <p class="mt-auto pt-[4cqw] pb-[1.6cqw] text-center text-[2.4cqw] font-normal text-(--landing-accent)">
                 {gettext("See all")}
               </p>
             </div>
-            <div>
-              <div class="landing-preview-head mb-1 flex items-center justify-between gap-2 rounded-md bg-turquoise-200 px-3 py-2 font-semibold [&_span:last-child]:rounded-sm [&_span:last-child]:bg-white [&_span:last-child]:px-2 [&_span:last-child]:py-0.5 [&_span:last-child]:text-caps-sm">
+            <div class="flex min-w-0 flex-col rounded-[1cqw] bg-turquoise-100 p-[1.8cqw]">
+              <div class="mb-[2.4cqw] flex items-center justify-between gap-[1cqw] rounded-[0.6cqw] bg-turquoise-200 p-[1.2cqw_1.8cqw] text-[2.4cqw] font-normal text-turquoise-700">
                 <span>{gettext("Matched")}</span>
-                <span>36</span>
+                <span class="rounded-[0.4cqw] bg-white/70 px-[2cqw] py-[1.2cqw]">36</span>
               </div>
               <div
                 :for={row <- matched_transactions()}
-                class="landing-preview-row flex flex-wrap items-center gap-1.5 rounded-lg bg-[#faf7f5] p-3 text-caps-sm [&_small]:text-caps-sm [&_small]:font-normal [&_small]:text-darkGrey [&+.landing-preview-row]:mt-1.5"
+                class="rounded-[1cqw] bg-grey-50 p-[1.4cqw_1.8cqw] [&+div]:mt-[1.2cqw]"
               >
-                <span>{row.name} <small>{row.reference}</small></span>
-                <strong>{pgettext("landing bank amount", "%{amount} PLN", amount: row.amount)}</strong>
-                <span class="landing-preview-match mt-1.5 flex flex-[1_1_100%] items-center gap-1.5 rounded-sm bg-[#dcecd8] px-2 py-1 text-caps-sm text-greenText [&_progress]:h-1 [&_progress]:flex-1 [&_progress]:accent-green-600">
-                  {row.confidence}%
-                  <progress value={row.confidence} max="100">{row.confidence}%</progress>
+                <div class="flex items-baseline justify-between gap-[1cqw] whitespace-nowrap">
+                  <span class="min-w-0 truncate">{row.name}</span>
+                  <strong class="shrink-0 font-medium">{pgettext(
+                    "landing bank amount",
+                    "%{amount} PLN",
+                    amount: row.amount
+                  )}</strong>
+                </div>
+                <small class="block text-[1.7cqw] text-grey-700">{row.reference}</small>
+                <span class={[
+                  "mt-[1.6cqw] flex items-center gap-[1.2cqw] rounded-[0.4cqw] p-[1.2cqw] text-[1.6cqw]",
+                  row.confidence == 100 && "bg-green-100 text-green-600",
+                  row.confidence < 100 && "bg-grey-100 text-grey-700"
+                ]}>
+                  <span class={[
+                    "flex h-[2.4cqw] w-[4.2cqw] items-center justify-between rounded-[0.2cqw] px-[0.4cqw]",
+                    row.bank == :santander && "bg-[#ec0000]",
+                    row.bank == :other && "bg-grey-700"
+                  ]}>
+                    <img
+                      src={
+                        if row.bank == :santander,
+                          do: ~p"/images/invoicing_badges/g11.svg",
+                          else: ~p"/images/invoicing_badges/frame.svg"
+                      }
+                      alt=""
+                      class="size-[1.6cqw] object-contain"
+                    />
+                    <img
+                      src={~p"/images/invoicing_badges/vector.svg"}
+                      alt=""
+                      class="h-[0.8cqw] w-[1.4cqw]"
+                    />
+                  </span>
+                  {gettext("%{confidence}% confidence", confidence: row.confidence)}
+                  <span :if={row.confidence < 100} class="ml-auto text-[2cqw] font-medium">{gettext(
+                    "Check"
+                  )}</span>
                 </span>
               </div>
-              <p class="landing-preview-caption mt-4 text-center text-caps-sm text-(--landing-accent)">
+              <p class="mt-auto pt-[4cqw] pb-[1.6cqw] text-center text-[2.4cqw] font-normal text-turquoise-700">
                 {gettext("See all")}
               </p>
             </div>
           </div>
         <% :time -> %>
-          <div class="landing-preview-head mb-1 flex items-center justify-between gap-2 rounded-md bg-[#eadcd4] px-3 py-2 font-semibold [&_span:last-child]:rounded-sm [&_span:last-child]:bg-white [&_span:last-child]:px-2 [&_span:last-child]:py-0.5 [&_span:last-child]:text-caps-sm">
+          <div class="mb-[2.6cqw] flex items-center justify-between text-[2.9cqw] font-normal text-(--landing-accent)">
             <span>{gettext("Today's sessions")}</span>
-            <span>00:51</span>
+            <span class="rounded-[0.6cqw] bg-orange-200 px-[1.5cqw] py-[0.6cqw] text-[4.2cqw] font-semibold">00:51</span>
           </div>
-          <div
-            :for={row <- sessions()}
-            class="landing-preview-row flex flex-wrap items-center gap-1.5 rounded-lg bg-[#faf7f5] p-3 text-caps-sm [&_small]:text-caps-sm [&_small]:font-normal [&_small]:text-darkGrey [&+.landing-preview-row]:mt-1.5"
-          >
-            <span>{row.name}</span>
-            <span class="ml-auto">{row.project}</span>
-            <span>{row.duration}</span>
+          <div class="grid grid-cols-[minmax(0,1fr)_36%_15%] items-center px-[0.6cqw] py-[1.6cqw] text-[2.7cqw]">
+            <span>{gettext("Database maintenance")}</span>
+            <span class="text-[2.3cqw] text-grey-700">CODEXA</span>
+            <strong class="text-right">00:51</strong>
           </div>
-          <p class="landing-preview-caption mt-4 text-center text-caps-sm text-(--landing-accent)">
-            {gettext("Tuesday")} · {gettext("Wednesday")}
+          <p class="mt-[11cqw] mb-[1cqw] text-[2.5cqw] text-grey-600">
+            {gettext("Friday")} (09.10)
           </p>
-          <div class="landing-preview-overlay absolute right-[6%] -bottom-4.5 left-[14%] flex flex-wrap items-center gap-2.5 rounded-xl border border-(--landing-line) bg-white p-4 text-caps-sm shadow-[0_0.75rem_1.75rem_rgb(0_0_0/12%)] [&_strong]:text-sm">
-            <span class="bg-[#ddd] p-[1.2cqw] text-[1.5cqw]">{gettext("Equipment testing")}</span>
-            <span class="flex justify-between bg-[#e6d7ce] p-[1.6cqw] text-[1.5cqw] text-(--landing-accent)">Qubiq
-            <span aria-hidden="true">⌄</span></span>
-            <span class="text-[1.5cqw]">◯ {gettext("Working from home")}</span>
-            <strong>{gettext("16 hours 23 min")}</strong>
-            <small>{gettext("in October")}</small>
-            <span class="self-center rounded-sm bg-(--landing-accent) p-[1cqw_4cqw] text-[1.5cqw] text-white">{gettext(
+          <div
+            :for={{row, index} <- Enum.with_index(sessions())}
+            class={[
+              "grid grid-cols-[minmax(0,1fr)_36%_15%] items-center px-[0.6cqw] py-[1.3cqw] text-[2.7cqw]",
+              index < 2 && "border-b border-grey-200/60"
+            ]}
+          >
+            <span class="whitespace-nowrap">{row.name}<small
+              :if={index < 2}
+              class="ml-[1.4cqw] border-l border-grey-400 pl-[1.4cqw] text-[2.5cqw] text-grey-600"
+            >{ngettext("%{count} session", "%{count} sessions", index + 2)}</small></span>
+            <span class="text-[2.3cqw] text-grey-700">{row.project}</span>
+            <strong class="text-right">{row.duration}</strong>
+          </div>
+          <p class="mt-[7cqw] text-[2.5cqw] text-grey-600">
+            {gettext("Wednesday")} (07.10)
+          </p>
+          <div class="absolute right-[-4.5%] bottom-[-7%] flex w-[53%] flex-col rounded-xl border border-(--landing-line) bg-grey-100 bg-[url('/images/figurine_timeracker.png')] bg-size-[100%_auto] bg-position-[left_8cqw] bg-no-repeat p-[4.4cqw] pb-[6.5cqw] text-[1.5cqw] shadow-[0_0.75rem_1.75rem_rgb(80_50_30/16%)]">
+            <span class="rounded-[0.3cqw] bg-grey-200 px-[1.6cqw] py-[1.2cqw]">{gettext(
+              "Equipment testing"
+            )}</span>
+            <span class="mt-[1.6cqw] flex justify-between rounded-[0.3cqw] bg-orange-200 px-[1.6cqw] py-[1.2cqw] text-(--landing-accent)">
+              Qubiq <span aria-hidden="true">⌄</span>
+            </span>
+            <span class="mt-[2.5cqw] flex items-center gap-[1.4cqw]">
+              <span class="h-[2.5cqw] w-[5cqw] rounded-full bg-grey-200 p-[0.3cqw]"><span class="block size-[1.9cqw] rounded-full bg-white"></span></span>
+              {gettext("Working from home")}
+              <span
+                class="ml-auto rounded-[0.5cqw] bg-grey-200 px-[0.6cqw] text-[2cqw]"
+                aria-hidden="true"
+              >✎</span>
+            </span>
+            <strong class="mt-[3.4cqw] text-center text-[2.9cqw] font-medium text-(--landing-accent)">{gettext(
+              "16 hours 23 min"
+            )}</strong>
+            <small class="mt-[0.3cqw] text-center text-[1.5cqw] text-(--landing-accent)">{gettext(
+              "in October"
+            )}</small>
+            <span class="mt-[2cqw] self-center rounded-[0.6cqw] bg-(--landing-accent) px-[4cqw] py-[1.2cqw] text-white">{gettext(
               "Start"
             )}</span>
           </div>
         <% :team -> %>
-          <div class="landing-preview-head mb-1 flex items-center justify-between gap-2 rounded-md bg-[#eadcd4] px-3 py-2 font-semibold [&_span:last-child]:rounded-sm [&_span:last-child]:bg-white [&_span:last-child]:px-2 [&_span:last-child]:py-0.5 [&_span:last-child]:text-caps-sm">
-            <span>{gettext("Leave requests to approve")}</span>
+          <div class="rounded-[1cqw] bg-white p-[2.8cqw] text-[1.8cqw] shadow-[0_1px_2px_rgb(0_0_0/6%)]">
+            <p class="mb-[3.5cqw] font-medium">{gettext("Leave requests to approve")}</p>
+            <div class="grid grid-cols-[minmax(0,1fr)_auto_14%] items-center gap-[3cqw] pb-[1cqw]">
+              <span class="flex items-center gap-[1.5cqw] whitespace-nowrap"><span
+                class="bg-grey-100 px-[0.5cqw] text-[2.5cqw] text-grey-700"
+                aria-hidden="true"
+              >☼</span>{gettext("Annual leave")}<span class="ml-[-1cqw] size-[1.3cqw] self-start rounded-full bg-turquoise-500"></span></span>
+              <small class="text-[1.5cqw]">02–06.11.2026</small>
+              <span class="rounded-full bg-turquoise-100 py-[0.5cqw] text-center text-[1.5cqw] text-turquoise-700">{gettext(
+                "Pending"
+              )}</span>
+            </div>
           </div>
-          <div class="landing-preview-pending landing-preview-row flex flex-wrap items-center gap-1.5 rounded-lg bg-[#faf7f5] p-3 text-caps-sm [&_>_span:last-child]:rounded-full [&_>_span:last-child]:bg-turquoise-100 [&_>_span:last-child]:p-[1cqw_3cqw] [&_>_span:last-child]:text-[1.5cqw] [&_>_span:last-child]:text-turquoise-700 [&_small]:text-caps-sm [&_small]:font-normal [&_small]:text-darkGrey [&+.landing-preview-row]:mt-1.5">
-            <span>☼ {gettext("Annual leave")}</span><small>02–06.11.2026</small><span>{gettext(
-              "Pending"
-            )}</span>
+          <div class="mt-[2.8cqw] rounded-t-[1cqw] bg-white px-[2.8cqw] pt-[2.2cqw] pb-[1.6cqw] text-[1.8cqw]">
+            <div class="flex items-center justify-between">
+              <p class="font-medium">{gettext("Other requests")}</p>
+              <span class="flex items-center gap-[1.6cqw] text-[1.5cqw]">
+                <svg
+                  viewBox="0 0 16 16"
+                  fill="none"
+                  stroke="currentColor"
+                  class="size-[3.5cqw] rounded-[0.5cqw] border border-grey-200 p-[0.5cqw] text-grey-700"
+                  aria-hidden="true"
+                ><circle cx="6.5" cy="6.5" r="4" /><path d="m10 10 4 4" /></svg>
+                <span class="flex items-center gap-[1cqw] rounded-[0.5cqw] border border-grey-200 px-[1.2cqw] py-[0.6cqw]"><svg
+                  viewBox="0 0 16 16"
+                  fill="none"
+                  stroke="currentColor"
+                  class="size-[1.8cqw]"
+                  aria-hidden="true"
+                ><rect x="2" y="3" width="12" height="11" rx="1" /><path d="M2 7h12M5 1v4m6-4v4" /></svg>2026</span>
+              </span>
+            </div>
+            <div class="mt-[1cqw] mb-[2.8cqw] flex gap-[1.4cqw] text-[1.5cqw] text-grey-500">
+              <span class="bg-grey-50 px-[1.4cqw] py-[0.5cqw]">{gettext("Used this year:")}
+              <strong class="ml-[0.8cqw] font-normal text-grey-700">{ngettext(
+                "%{count} day",
+                "%{count} days",
+                11
+              )}</strong></span>
+              <span class="bg-grey-50 px-[1.4cqw] py-[0.5cqw]">{gettext("Available:")}
+              <strong class="ml-[0.8cqw] font-normal text-grey-700">{ngettext(
+                "%{count} day",
+                "%{count} days",
+                15
+              )}</strong></span>
+            </div>
+            <div
+              :for={row <- leave_requests()}
+              class="grid grid-cols-[minmax(0,1fr)_auto_14%] items-center gap-[3cqw] py-[1.2cqw]"
+            >
+              <span class="flex items-center gap-[1.5cqw]"><span
+                class="flex size-[3.2cqw] items-center justify-center bg-grey-100 text-[2.5cqw] text-grey-700"
+                aria-hidden="true"
+              >{row.icon}</span>{row.name}</span>
+              <span class="text-[1.5cqw]">{row.date}</span>
+              <span class={[
+                "rounded-full py-[0.5cqw] text-center text-[1.5cqw]",
+                row.approved && "bg-green-100 text-green-700",
+                !row.approved && "bg-grey-100 text-grey-700"
+              ]}>
+                {row.status}
+              </span>
+            </div>
           </div>
-          <p class="landing-preview-caption mt-4 text-center text-caps-sm text-(--landing-accent)">
-            {gettext("Used this year:")} 11 · {gettext("Available:")} 15
-          </p>
-          <div
-            :for={row <- leave_requests()}
-            class="landing-preview-row flex flex-wrap items-center gap-1.5 rounded-lg bg-[#faf7f5] p-3 text-caps-sm [&_small]:text-caps-sm [&_small]:font-normal [&_small]:text-darkGrey [&+.landing-preview-row]:mt-1.5"
-          >
-            <span>{row.name}</span>
-            <span class="ml-auto">{row.date}</span>
-            <span class={[
-              "landing-preview-status ml-auto rounded-sm border border-(--landing-line) bg-white px-2 py-0.75 text-[0.5rem] uppercase lg:text-caps-sm",
-              row.approved &&
-                "landing-preview-status--paid border-[#c6dcbf] [&.landing-preview-status--paid]:bg-[#dcecd8]"
-            ]}>
-              {row.status}
+          <div class="absolute bottom-[-7%] left-[-4%] flex w-[53%] items-center gap-[1.8cqw] rounded-xl border border-(--landing-line) bg-white p-[2.5cqw] shadow-[0_1.5rem_2rem_rgb(80_50_30/20%)]">
+            <img
+              src={~p"/images/landing/example-employee.png"}
+              alt=""
+              width="62"
+              height="62"
+              class="size-[12cqw] shrink-0 rounded-full object-cover"
+            />
+            <span class="min-w-0 flex-1 self-start pt-[0.4cqw]">
+              <strong class="block text-[2.8cqw] font-medium whitespace-nowrap">Katarzyna Kowalska</strong>
+              <small class="mt-[0.5cqw] flex items-center gap-[1.2cqw] text-[2cqw] text-grey-700"><img
+                src={~p"/images/slack.png"}
+                width="16"
+                height="16"
+                alt="Slack"
+                class="size-[3.8cqw]"
+              />{gettext("Write on Slack")}</small>
             </span>
-          </div>
-          <div class="landing-preview-overlay absolute right-[6%] -bottom-4.5 left-[14%] flex flex-wrap items-center gap-2.5 rounded-xl border border-(--landing-line) bg-white p-4 text-caps-sm shadow-[0_0.75rem_1.75rem_rgb(0_0_0/12%)] [&_strong]:text-sm">
-            <span class="landing-preview-avatar grid size-8.5 place-content-center rounded-full text-xs font-bold text-white [background:var(--color-turquoise-400)]">KK</span>
-            <span class="landing-preview-contact flex min-w-0 flex-1 flex-col items-start gap-[1cqw] [&_img]:size-[3cqw] [&_small]:flex [&_small]:items-center [&_small]:gap-[1cqw] [&_small]:text-[1.7cqw] [&_strong]:whitespace-nowrap [&.landing-preview-contact_strong]:text-[2.7cqw]">
-              <strong>Katarzyna Kowalska</strong>
-              <small><img src={~p"/images/slack.png"} width="16" height="16" alt="Slack" />{gettext(
-                "Write on Slack"
-              )}</small>
-            </span>
+            <span class="self-start text-[3cqw] text-grey-700" aria-hidden="true">⋮</span>
           </div>
       <% end %>
     </div>
@@ -460,12 +635,22 @@ defmodule FirmowidWeb.Landing.Components.Sections do
 
   defp unmatched_transactions do
     [
-      %{name: "Freshbus Sp. z o.o.", date: "05.10.2026", amount: "+ 2 304,50"},
-      %{name: "Tech Innovations Ltd.", date: "07.10.2026", amount: "− 1 500,00"},
-      %{name: "GreenTech Innovations", date: "08.10.2026", amount: "+ 5 500,00"},
-      %{name: "Freshbus Sp. z o.o.", date: "09.10.2026", amount: "− 2 304,50"},
-      %{name: "Tech Innovations Ltd.", date: "09.10.2026", amount: "− 1 500,00"},
-      %{name: "Green Solutions Inc.", date: "12.10.2026", amount: "− 3 875,00"}
+      %{
+        name: "Freshbus Sp. z o.o.",
+        date: "05.10.2026",
+        amount: "+ 2 304,50",
+        bank: :credit_agricole
+      },
+      %{name: "Tech Innovations Ltd.", date: "07.10.2026", amount: "− 1 500,00", bank: nil},
+      %{
+        name: "GreenTech Innovations",
+        date: "08.10.2026",
+        amount: "+ 5 500,00",
+        bank: :santander
+      },
+      %{name: "Freshbus Sp. z o.o.", date: "09.10.2026", amount: "− 2 304,50", bank: nil},
+      %{name: "Tech Innovations Ltd.", date: "09.10.2026", amount: "− 1 500,00", bank: nil},
+      %{name: "Green Solutions Inc.", date: "12.10.2026", amount: "− 3 875,00", bank: nil}
     ]
   end
 
@@ -475,32 +660,35 @@ defmodule FirmowidWeb.Landing.Components.Sections do
         name: "Freshbus Sp. z o.o.",
         reference: "FV/2026/10/43",
         amount: "2 304,50",
-        confidence: 100
+        confidence: 100,
+        bank: :other
       },
       %{
         name: "TechCorp Ltd.",
         reference: "INV/2026/10/56",
         amount: "1 850,00",
-        confidence: 100
+        confidence: 100,
+        bank: :other
       },
       %{
         name: "Green Energy Co.",
         reference: "BILL/2026/09/98",
         amount: "3 500,00",
-        confidence: 80
+        confidence: 80,
+        bank: :other
       },
       %{
         name: "Innovate Solutions Inc.",
         reference: "RCPT/2026/10/77",
         amount: "1 200,75",
-        confidence: 100
+        confidence: 100,
+        bank: :santander
       }
     ]
   end
 
   defp sessions do
     [
-      %{name: gettext("Database maintenance"), project: "CODEXA", duration: "00:51"},
       %{name: gettext("Database maintenance"), project: "CODEXA", duration: "00:51"},
       %{name: gettext("Equipment testing"), project: "QUBIQ", duration: "01:42"},
       %{name: gettext("Database maintenance"), project: "CODEXA", duration: "00:51"}
@@ -512,26 +700,30 @@ defmodule FirmowidWeb.Landing.Components.Sections do
       %{
         name: gettext("Annual leave"),
         date: "15.07 - 24.07.2026",
-        status: gettext("Approved"),
-        approved: true
+        status: pgettext("landing leave status", "Approved"),
+        approved: true,
+        icon: "☼"
       },
       %{
         name: gettext("Unpaid leave"),
         date: "10.04.2026",
-        status: gettext("Approved"),
-        approved: true
+        status: pgettext("landing leave status", "Approved"),
+        approved: true,
+        icon: "╱"
       },
       %{
         name: gettext("Medical leave"),
         date: "16.02 - 19.02.2026",
-        status: gettext("Rejected"),
-        approved: false
+        status: pgettext("landing leave status", "Rejected"),
+        approved: false,
+        icon: "✚"
       },
       %{
         name: gettext("Annual leave"),
         date: "02.01.2026",
-        status: gettext("Approved"),
-        approved: true
+        status: pgettext("landing leave status", "Approved"),
+        approved: true,
+        icon: "☼"
       }
     ]
   end
@@ -551,43 +743,36 @@ defmodule FirmowidWeb.Landing.Components.Sections do
               "Early access"
             )}</span>
           </p>
-          <h2>{gettext("An assistant to help you with your business")}</h2>
-          <p>
+          <h2 class="max-w-125! leading-[1.15]! tracking-normal! text-grey-900">
+            {gettext("An assistant to help you with your business")}
+          </h2>
+          <p class="mt-3.5!">
             {gettext(
               "Write what you need - Firmowid will issue an invoice, create a correction or find any document. Before anything reaches KSeF, you will see a preview and confirm it yourself."
             )}
           </p>
 
-          <ul class="mt-8 grid gap-4 text-base/normal [&_li]:flex [&_li]:items-baseline [&_li]:gap-2.5 [&_li]:text-[#4e4e4e]">
+          <ul class="mt-4 grid gap-3.5 text-base/6 text-grey-700 [&_li]:flex [&_li]:items-baseline [&_li]:gap-2.5">
             <li>
-              <img
-                src={~p"/images/landing/icons/check.svg"}
-                alt=""
-                width="12"
-                height="13"
-                class="shrink-0"
-              />{gettext("Issuing invoices - with a preview and KSeF submission")}
+              <span
+                class="h-3.25 w-3 shrink-0 bg-turquoise-700 mask-[url('/images/landing/icons/check.svg')] mask-contain mask-center mask-no-repeat"
+                aria-hidden="true"
+              ></span>{gettext("Issuing invoices - with a preview and KSeF submission")}
             </li>
             <li>
-              <img
-                src={~p"/images/landing/icons/check.svg"}
-                alt=""
-                width="12"
-                height="13"
-                class="shrink-0"
-              />{gettext("Corrections, e.g. “give a 10% discount on invoice BC/01/10/2026”")}
+              <span
+                class="h-3.25 w-3 shrink-0 bg-turquoise-700 mask-[url('/images/landing/icons/check.svg')] mask-contain mask-center mask-no-repeat"
+                aria-hidden="true"
+              ></span>{gettext("Corrections, e.g. “give a 10% discount on invoice BC/01/10/2026”")}
             </li>
             <li>
-              <img
-                src={~p"/images/landing/icons/check.svg"}
-                alt=""
-                width="12"
-                height="13"
-                class="shrink-0"
-              />{gettext("Reading sales and cost invoices")}
+              <span
+                class="h-3.25 w-3 shrink-0 bg-turquoise-700 mask-[url('/images/landing/icons/check.svg')] mask-contain mask-center mask-no-repeat"
+                aria-hidden="true"
+              ></span>{gettext("Reading sales and cost invoices")}
             </li>
           </ul>
-          <p class="landing-assistants-soon mt-6 flex items-start gap-2.5 text-base/normal">
+          <p class="landing-assistants-soon mt-3.5 flex items-start gap-2.5 text-base/6 text-grey-700">
             <img
               src={~p"/images/landing/icons/clock.svg"}
               alt=""
@@ -599,7 +784,7 @@ defmodule FirmowidWeb.Landing.Components.Sections do
             )}
           </p>
 
-          <div class="mt-10 flex items-center gap-2 lg:mt-16 [&>img]:h-12.5 [&>img]:w-8.5 [&>img]:object-contain">
+          <div class="mt-10 flex items-center gap-2 lg:mt-14 lg:pl-4 [&>img]:h-12.5 [&>img]:w-8.5 [&>img]:shrink-0 [&>img]:object-contain">
             <img
               src={~p"/images/landing/character-head.png"}
               alt=""
@@ -607,39 +792,40 @@ defmodule FirmowidWeb.Landing.Components.Sections do
               height="103"
               loading="lazy"
             />
-            <div aria-hidden="true" class="relative h-40 min-w-0 flex-1">
+            <div aria-hidden="true" class="relative h-45 min-w-0 flex-1 lg:w-60 lg:flex-none">
               <img
                 src={~p"/images/landing/decorations/assistant-top.svg"}
                 alt=""
                 width="249"
                 height="62"
-                class="absolute right-0 bottom-1/2 h-15.5 w-full"
+                class="absolute right-0 bottom-[calc(50%+8px)] h-15.5 w-full object-fill"
               />
               <img
                 src={~p"/images/landing/decorations/assistant-middle.svg"}
                 alt=""
                 width="251"
                 height="1"
-                class="absolute top-1/2 h-px w-full"
+                class="absolute top-1/2 h-px w-full object-fill"
               />
               <img
                 src={~p"/images/landing/decorations/assistant-bottom.svg"}
                 alt=""
                 width="248"
                 height="63"
-                class="absolute top-1/2 right-0 h-15.75 w-full"
+                class="absolute top-[calc(50%+8px)] right-0 h-15.75 w-full object-fill"
               />
             </div>
-            <ul class="grid shrink-0 grow-0 basis-40 gap-7 text-sm leading-[1.3] [&_img]:size-9.5 [&_li]:flex [&_li]:items-center [&_li]:gap-2 [&_li:nth-child(2)_img]:filter-[invert(61%)_sepia(65%)_saturate(555%)_hue-rotate(332deg)_brightness(90%)] [&_small]:block [&_small]:text-darkGrey [&_strong]:font-bold">
+            <ul class="grid shrink-0 grow-0 basis-48 gap-7.5 text-sm/5 text-grey-700 lg:ml-3 [&_img]:size-10 [&_img]:shrink-0 [&_li]:flex [&_li]:items-center [&_li]:gap-4 [&_small]:block [&_small]:text-sm/5 [&_strong]:font-medium [&_strong]:text-grey-900">
               <li>
                 <img src={~p"/images/landing/chatgpt.svg"} width="38" height="38" alt="" /><span><strong>ChatGPT</strong><small>{gettext(
                   "app"
                 )}</small></span>
               </li>
               <li>
-                <img src={~p"/images/landing/claude.svg"} width="38" height="38" alt="" /><span><strong>Claude</strong><small>{gettext(
-                  "connector"
-                )}</small></span>
+                <span
+                  class="size-10 shrink-0 bg-[#d97757] mask-[url('/images/landing/claude.svg')] mask-contain mask-center mask-no-repeat"
+                  aria-hidden="true"
+                ></span><span><strong>Claude</strong><small>{gettext("connector")}</small></span>
               </li>
               <li>
                 <img src={~p"/images/landing/mcp.svg"} width="38" height="38" alt="" /><span>{gettext(
@@ -649,7 +835,7 @@ defmodule FirmowidWeb.Landing.Components.Sections do
             </ul>
           </div>
 
-          <p class="landing-assistants-footnote mt-14 text-sm/5 text-grey-500">
+          <p class="landing-assistants-footnote mt-14 text-sm/5 text-grey-500 lg:mt-34">
             {gettext(
               "*Already used by early adopters among our users. Gradually rolling out to everyone. Available in the Entrepreneur and Company plans."
             )}
@@ -657,65 +843,124 @@ defmodule FirmowidWeb.Landing.Components.Sections do
         </div>
 
         <div
-          class="self-center rounded-2xl bg-white p-6 text-sm leading-[1.55] shadow-[0_1.125rem_2.75rem_rgb(47_67_67/10%)] lg:rounded-3xl lg:p-5.5"
+          class="@container self-center rounded-[1.25rem] border border-turquoise-300 bg-white p-5.5 text-sm leading-[1.35] text-grey-900 shadow-[0_1.125rem_2.75rem_rgb(47_67_67/10%)]"
           role="img"
           aria-label={gettext("Example conversation and invoice confirmation preview")}
         >
-          <p class="ml-10 rounded-2xl rounded-br-none bg-[#dde4e4] px-4.5 py-3.5">
+          <p class="ml-auto w-[64%] rounded-2xl bg-grey-100 px-[3cqw] py-[2.2cqw] text-right text-[3.1cqw]">
             {gettext("Issue an invoice for Północny Kod: 120 h at PLN 180 net.")}
           </p>
-          <p class="mt-5 text-xs text-darkGrey">
+          <p class="mt-[3.4cqw] flex items-center gap-[1.4cqw] text-[2.5cqw] text-grey-500">
+            <img
+              src={~p"/images/landing/character-head.png"}
+              alt=""
+              width="70"
+              height="103"
+              class="h-[3.5cqw] w-[2.5cqw] object-contain"
+            />
             {gettext("Using the Firmowid app")}
           </p>
-          <p class="mt-2">
+          <p class="mt-[2cqw] text-[3.1cqw]">
             {gettext(
               "I prepared the invoice for Północny Kod sp. z o.o. for PLN 26,568.00 gross. Check the preview and confirm - only then does it reach KSeF."
             )}
           </p>
 
-          <div class="mt-4 rounded-xl border border-(--landing-line) bg-[#f5f5f5] p-5 [&_.landing-button]:mx-auto [&_.landing-button]:mt-4 [&_.landing-button]:flex [&_.landing-button]:min-h-9 [&_.landing-button]:w-max [&_.landing-button]:max-w-full [&_.landing-button]:bg-turquoise-700 [&_.landing-button]:px-3.5 [&_.landing-button]:py-2 [&_.landing-button]:text-sm [&_h3]:mb-4 [&_h3]:text-lg [&_h3]:font-semibold">
-            <h3>{gettext("Confirm invoice")}</h3>
-            <div class="bg-[#ddd] p-3.5">
-              <div class="relative mx-auto aspect-210/297 w-[74%] bg-white px-3 py-4.5 font-[Arial,sans-serif] text-[0.21875rem] leading-[1.6] shadow-[0_0.0625rem_0.25rem_#ccc] lg:px-5 lg:py-5.5 lg:text-[0.28125rem] [&_>_strong]:text-[0.3125rem] lg:[&_>_strong]:text-[0.375rem] [&_dl]:mt-2.5 [&_dl]:ml-auto [&_dl]:w-1/2 [&_dl_>_div]:flex [&_dl_>_div]:justify-between [&_dl_>_div:last-child]:mt-1.5 [&_dl_>_div:last-child]:font-bold">
-                <strong>{gettext("VAT invoice %{number}", number: "01/10/2026")}</strong>
-                <p>14.10.2026</p>
-                <div class="mt-4.5 flex justify-between gap-2 border-t border-grey-200 pt-2.5 lg:mt-6 lg:pt-4">
-                  <p>{gettext("Seller")}<br /><strong>Bytecraft Collective sp. z o.o.</strong></p><p>
-                    {gettext("Buyer")}<br /><strong>Północny Kod sp. z o.o.</strong>
-                  </p>
-                </div>
-                <div class="mt-4 flex justify-between border-y border-grey-200 py-2 lg:mt-6">
-                  <span>{gettext("Programming services")}</span><span>{gettext("%{hours} h",
-                    hours: 120
-                  )}</span><span>{gettext("%{amount} PLN", amount: "180,00")}</span>
-                </div>
-                <dl>
-                  <div>
-                    <dt>{gettext("Net value")}</dt><dd>
-                      {gettext("%{amount} PLN", amount: "21 600,00")}
-                    </dd>
-                  </div><div>
-                    <dt>{gettext("VAT %{rate}%", rate: 23)}</dt><dd>
-                      {gettext("%{amount} PLN", amount: "4 968,00")}
-                    </dd>
-                  </div><div>
-                    <dt>{gettext("Total")}</dt><dd>
-                      {gettext("%{amount} PLN", amount: "26 568,00")}
-                    </dd>
-                  </div>
-                </dl>
-                <p class="mt-4.5">
-                  {gettext("Payment")}<br />14.11.2026
+          <div class="mt-[1.8cqw] rounded-[3cqw] border border-grey-200 bg-grey-100 p-[3cqw]">
+            <h3 class="mb-[2.5cqw] text-[3.5cqw] font-medium">{gettext("Confirm invoice")}</h3>
+            <div class="bg-grey-200 p-[3cqw]">
+              <div class="relative mx-auto aspect-210/297 w-[73%] bg-white px-[5cqw] py-[4.5cqw] text-[0.95cqw] leading-[1.6] shadow-[0_0.0625rem_0.25rem_#ccc]">
+                <p class="text-[1.55cqw] font-semibold uppercase">
+                  {gettext("VAT invoice %{number}", number: "01/10/2026")}
                 </p>
-                <p class="absolute bottom-3 font-bold">
-                  Firmowid.pl
+                <p class="text-[0.85cqw]">{gettext("Issue date:")} <strong>14.10.2026</strong></p>
+                <p class="text-[0.85cqw]">{gettext("Sale date:")} <strong>14.10.2026</strong></p>
+                <div class="mt-[1.8cqw] grid grid-cols-2 gap-[2.5cqw] border-y border-grey-200 py-[2cqw]">
+                  <div>
+                    <p class="mb-[0.8cqw] text-[0.85cqw] font-semibold text-grey-600 uppercase">
+                      {gettext("Seller")}
+                    </p>
+                    <p class="font-semibold">Bytecraft Collective sp. z o.o.</p>
+                    <p>ul. Marszałkowska 11/4, 00-624 Warszawa</p>
+                    <p>NIP: 6161525811</p>
+                  </div>
+                  <div>
+                    <p class="mb-[0.8cqw] text-[0.85cqw] font-semibold text-grey-600 uppercase">
+                      {gettext("Buyer")}
+                    </p>
+                    <p class="font-semibold">Północny Kod sp. z o.o.</p>
+                    <p>ul. Wiertnicza 18B, 80-817 Gdańsk</p>
+                    <p>NIP: 5842655890</p>
+                  </div>
+                </div>
+                <p class="mt-[2cqw] mb-[1cqw] text-[0.85cqw] font-semibold text-grey-600 uppercase">
+                  {gettext("Goods or services")}
+                </p>
+                <table class="w-full table-fixed text-left text-[0.95cqw] leading-[1.4]">
+                  <thead class="text-[0.8cqw] text-grey-600">
+                    <tr>
+                      <th class="w-[43%] font-normal">{gettext("Name")}</th>
+                      <th class="w-[8%] font-normal">{gettext("Quantity")}</th>
+                      <th class="w-[14%] text-right font-normal">{gettext("Net price")}</th>
+                      <th class="w-[7%] text-right font-normal">VAT</th>
+                      <th class="w-[14%] text-right font-normal">{gettext("Net value")}</th>
+                      <th class="w-[14%] text-right font-normal">{gettext("Gross value")}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td class="pt-[0.6cqw] pr-[1cqw] align-top">
+                        {gettext("Programming services")}
+                      </td>
+                      <td class="pt-[0.6cqw] align-top">120</td>
+                      <td class="pt-[0.6cqw] text-right align-top">180,00</td>
+                      <td class="pt-[0.6cqw] text-right align-top">23%</td>
+                      <td class="pt-[0.6cqw] text-right align-top">21 600,00</td>
+                      <td class="pt-[0.6cqw] text-right align-top">26 568,00</td>
+                    </tr>
+                  </tbody>
+                </table>
+                <div class="mt-[2cqw] ml-auto w-[45%] rounded-[0.8cqw] bg-grey-100 p-[1.5cqw] text-[0.8cqw]">
+                  <p class="mb-[0.8cqw] font-semibold text-grey-600 uppercase">
+                    {gettext("Summary")}
+                  </p>
+                  <dl class="grid gap-[0.6cqw] [&_>_div]:flex [&_>_div]:justify-between [&_>_div]:gap-[1cqw]">
+                    <div>
+                      <dt>{gettext("Net value")}</dt><dd>
+                        {gettext("%{amount} PLN", amount: "21 600,00")}
+                      </dd>
+                    </div><div>
+                      <dt>{gettext("VAT %{rate}%", rate: 23)}</dt><dd>
+                        {gettext("%{amount} PLN", amount: "4 968,00")}
+                      </dd>
+                    </div><div class="font-bold">
+                      <dt>{gettext("Total")}</dt><dd class="text-[1.1cqw]">
+                        {gettext("%{amount} PLN", amount: "26 568,00")}
+                      </dd>
+                    </div>
+                  </dl>
+                </div>
+                <p class="mt-[2cqw] border-t border-grey-200 pt-[2cqw] text-[0.85cqw] font-semibold text-grey-600 uppercase">
+                  {gettext("Payment")}
+                </p>
+                <p>{gettext("Payment method:")} {gettext("Transfer")}</p>
+                <p>{gettext("Payment deadline:")} <strong>28.10.2026</strong></p>
+                <p class="absolute bottom-[3.5cqw] left-[5cqw] flex items-end gap-[0.8cqw] text-[0.7cqw]">
+                  <img
+                    src={~p"/images/landing/character-head.png"}
+                    alt=""
+                    width="70"
+                    height="103"
+                    class="h-[2.5cqw] w-[1.5cqw] object-contain"
+                  />
+                  {gettext("Invoice generated with Firmowid")}
                 </p>
               </div>
             </div>
-            <span class="landing-button relative isolate inline-flex min-h-13 items-center justify-center gap-2.5 rounded-sm bg-[#0f0f0f] px-8 py-3.5 text-center text-base/6 font-medium text-white">{gettext(
+            <span class="mx-auto mt-[2.8cqw] flex w-max max-w-full items-center justify-center rounded-[1.2cqw] bg-turquoise-700 px-[3cqw] py-[2cqw] text-center text-[3.1cqw] font-medium text-white">{gettext(
               "Confirm and send to KSeF"
             )}</span>
-            <p class="mt-4 text-xs text-darkGrey">
+            <p class="mt-[3cqw] text-center text-[2.5cqw] text-grey-700">
               {gettext("No document has been issued yet. Check the preview before confirming.")}
             </p>
           </div>

@@ -32,7 +32,7 @@ defmodule FirmowidWeb.Landing.Components.Hero do
             href="https://github.com/Alergeek-Ventures/firmowid"
             target="_blank"
             rel="noopener noreferrer"
-            class="relative -left-1 isolate inline-flex min-h-10 items-center gap-2 bg-[url('/images/landing/frames/open-source.svg')] bg-size-[100%_100%] bg-center bg-no-repeat py-2 pr-4 pl-3 text-[13px]/6 font-medium"
+            class="relative -left-1 isolate inline-flex h-[36px] w-[221px] shrink-0 items-center justify-center gap-2 overflow-visible rounded-[25px] text-[13px]/6 font-medium transition-colors duration-300 ease-[ease] after:pointer-events-none after:absolute after:inset-[-2px] after:bg-[url('/images/landing/frames/open-source.svg')] after:bg-size-[100%_100%] after:bg-center after:bg-no-repeat after:content-[''] hover:bg-oranger-300"
           >
             <img src={~p"/images/github-mark.svg"} alt="" width="24" height="24" />
             <span>
