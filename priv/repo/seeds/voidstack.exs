@@ -26,8 +26,8 @@ defmodule Firmowid.Seeds.Voidstack do
   def seed! do
     dragan = seed_dragan()
     voidstack = seed_organization(dragan)
-    seed_org_membership(voidstack, dragan)
-    seed_project(dragan, voidstack)
+    member = seed_org_membership(voidstack, dragan)
+    seed_project(member, voidstack)
     blob = seed_blob(voidstack)
     seed_bank_and_transactions(voidstack)
     seed_cost_invoice(voidstack, blob)
@@ -71,7 +71,7 @@ defmodule Firmowid.Seeds.Voidstack do
     Helpers.seed_member!(dragan.id, voidstack.id, :admin)
   end
 
-  defp seed_project(dragan, voidstack) do
+  defp seed_project(member, voidstack) do
     tag_definition =
       Ash.Seed.upsert!(
         AshTagDefinition,
@@ -93,10 +93,10 @@ defmodule Firmowid.Seeds.Voidstack do
           project
       end
 
-    if is_nil(find_project_user(voidstack.id, project.id, dragan.id)) do
+    if is_nil(find_project_user(voidstack.id, project.id, member.id)) do
       Ash.Seed.seed!(
         AshProjectUser,
-        %{project_id: project.id, user_id: dragan.id, organization_id: voidstack.id},
+        %{project_id: project.id, member_id: member.id, organization_id: voidstack.id},
         tenant: voidstack.id
       )
     end
@@ -262,10 +262,10 @@ defmodule Firmowid.Seeds.Voidstack do
     end
   end
 
-  defp find_project_user(tenant, project_id, user_id) do
+  defp find_project_user(tenant, project_id, member_id) do
     query =
       AshProjectUser
-      |> Ash.Query.filter(organization_id == ^tenant and project_id == ^project_id and user_id == ^user_id)
+      |> Ash.Query.filter(organization_id == ^tenant and project_id == ^project_id and member_id == ^member_id)
       |> Ash.Query.limit(1)
 
     case Ash.read(query, tenant: tenant, actor: @seed_actor) do

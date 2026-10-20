@@ -245,18 +245,18 @@ defmodule Firmowid.Seeds.Bytecraft do
     taco = seed_project!(tenant, "TacoOverflow", counterparties.taco.id)
 
     project_users = %{
-      firmowid => [users.kira.id, users.tomek.id],
-      ghostpet => [users.tomek.id, users.maren.id],
-      flatmate => [users.kira.id, users.sable.id],
-      taco => [users.jules.id, users.maren.id, users.tomek.id]
+      firmowid => [users.kira.member.id, users.tomek.member.id],
+      ghostpet => [users.tomek.member.id, users.maren.member.id],
+      flatmate => [users.kira.member.id, users.sable.member.id],
+      taco => [users.jules.member.id, users.maren.member.id, users.tomek.member.id]
     }
 
-    for {project, user_ids} <- project_users do
-      Enum.each(user_ids, fn user_id ->
-        if is_nil(find_project_user(tenant, project.id, user_id)) do
+    for {project, member_ids} <- project_users do
+      Enum.each(member_ids, fn member_id ->
+        if is_nil(find_project_user(tenant, project.id, member_id)) do
           Ash.Seed.seed!(
             AshProjectUser,
-            %{project_id: project.id, user_id: user_id, organization_id: tenant},
+            %{project_id: project.id, member_id: member_id, organization_id: tenant},
             tenant: tenant
           )
         end
@@ -465,10 +465,10 @@ defmodule Firmowid.Seeds.Bytecraft do
     end
   end
 
-  defp find_project_user(tenant, project_id, user_id) do
+  defp find_project_user(tenant, project_id, member_id) do
     query =
       AshProjectUser
-      |> Ash.Query.filter(organization_id == ^tenant and project_id == ^project_id and user_id == ^user_id)
+      |> Ash.Query.filter(organization_id == ^tenant and project_id == ^project_id and member_id == ^member_id)
       |> Ash.Query.limit(1)
 
     case Ash.read(query, tenant: tenant, actor: @seed_actor) do

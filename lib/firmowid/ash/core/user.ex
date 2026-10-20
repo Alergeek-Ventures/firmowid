@@ -639,12 +639,6 @@ defmodule Firmowid.Ash.Core.User do
 
     has_many :leave_requests, Firmowid.Ash.Timetracker.LeaveRequest
     has_many :delegations, Firmowid.Ash.Delegations.Delegation
-
-    many_to_many :projects, Firmowid.Ash.Timetracker.Project do
-      through Firmowid.Ash.Timetracker.ProjectUser
-      source_attribute_on_join_resource :user_id
-      destination_attribute_on_join_resource :project_id
-    end
   end
 
   calculations do

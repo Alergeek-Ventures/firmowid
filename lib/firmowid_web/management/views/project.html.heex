@@ -141,7 +141,7 @@
 
           <.button
             :if={!@project.archived_at}
-            disabled={Enum.empty?(@project.users)}
+            disabled={Enum.empty?(@project.members)}
             type="button"
             variant="ghost"
             size="small"
@@ -159,7 +159,7 @@
           </.button>
         </div>
 
-        <%= if not Enum.empty?(@project.users) do %>
+        <%= if not Enum.empty?(@project.members) do %>
           <div class="grid grid-cols-[1fr_repeat(3,minmax(min-content,6rem))_min-content] items-center gap-x-4 gap-y-2">
             <div class="col-span-full grid grid-cols-subgrid px-2 py-1 text-sm text-grey-500">
               <p>Imię i nazwisko</p>
