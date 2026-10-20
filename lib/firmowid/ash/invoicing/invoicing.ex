@@ -168,6 +168,94 @@ defmodule Firmowid.Ash.Invoicing do
 
       load [:amount, sales_invoice_items: [:net_value, :vat_value, :gross_value]]
     end
+
+    tool :suggest_sales_invoice_transactions, SalesInvoice, :transaction_suggestions do
+      annotations title: "Suggest sales invoice payments",
+                  read_only_hint: true,
+                  destructive_hint: false,
+                  open_world_hint: false
+
+      description "Rank bank transactions that may pay a sales invoice, using the same model as automatic matching. " <>
+                    "Returns every transaction already connected (connected: true, unscored when outside the matching " <>
+                    "window) and pending transactions near the invoice's dates and amount, best score first. The score only ranks candidates; confirm the payer, amount " <>
+                    "and title before proposing a match. Pass an original invoice ID, not a correction. Changes nothing."
+    end
+
+    tool :suggest_cost_invoice_transactions, CostInvoice, :transaction_suggestions do
+      annotations title: "Suggest cost invoice payments",
+                  read_only_hint: true,
+                  destructive_hint: false,
+                  open_world_hint: false
+
+      description "Rank bank transactions that may pay a cost invoice, using the same model as automatic matching. " <>
+                    "Returns every transaction already connected (connected: true, unscored when outside the matching " <>
+                    "window) and pending transactions near the invoice's dates and amount, best score first. The score only ranks candidates; confirm the payee, amount " <>
+                    "and title before proposing a match. Pass an original invoice ID, not a correction. Changes nothing."
+    end
+
+    tool :connect_sales_invoice_transactions, SalesInvoice, :connect_transactions do
+      annotations title: "Connect sales invoice payments",
+                  read_only_hint: false,
+                  destructive_hint: false,
+                  idempotent_hint: true,
+                  open_world_hint: false
+
+      description "Mark a sales invoice as paid by connecting bank transactions to it, only after the user approves " <>
+                    "the specific match. Any combination is allowed: several transactions may pay one invoice " <>
+                    "(installments) and one transaction may pay several invoices (call once per invoice). " <>
+                    "A transaction assigned to a salary cannot be connected. Existing connections are kept. " <>
+                    "Requires an accountant or administrator."
+
+      select [:id, :invoice_number]
+      load [:transactions]
+    end
+
+    tool :connect_cost_invoice_transactions, CostInvoice, :connect_transactions do
+      annotations title: "Connect cost invoice payments",
+                  read_only_hint: false,
+                  destructive_hint: false,
+                  idempotent_hint: true,
+                  open_world_hint: false
+
+      description "Mark a cost invoice as paid by connecting bank transactions to it, only after the user approves " <>
+                    "the specific match. Any combination is allowed: several transactions may pay one invoice " <>
+                    "(installments) and one transaction may pay several invoices (call once per invoice). " <>
+                    "A transaction assigned to a salary cannot be connected. Existing connections are kept. " <>
+                    "Requires an accountant or administrator."
+
+      select [:id, :invoice_identifier]
+      load [:transactions]
+    end
+
+    tool :disconnect_sales_invoice_transactions, SalesInvoice, :disconnect_transactions do
+      annotations title: "Disconnect sales invoice payments",
+                  read_only_hint: false,
+                  destructive_hint: true,
+                  idempotent_hint: true,
+                  open_world_hint: false
+
+      description "Remove a wrong payment match from a sales invoice when the user asks. Only the connection is " <>
+                    "removed; the invoice and the bank transactions stay. Connected transactions appear in " <>
+                    "suggest_sales_invoice_transactions with connected: true. Requires an accountant or administrator."
+
+      select [:id, :invoice_number]
+      load [:transactions]
+    end
+
+    tool :disconnect_cost_invoice_transactions, CostInvoice, :disconnect_transactions do
+      annotations title: "Disconnect cost invoice payments",
+                  read_only_hint: false,
+                  destructive_hint: true,
+                  idempotent_hint: true,
+                  open_world_hint: false
+
+      description "Remove a wrong payment match from a cost invoice when the user asks. Only the connection is " <>
+                    "removed; the invoice and the bank transactions stay. Connected transactions appear in " <>
+                    "suggest_cost_invoice_transactions with connected: true. Requires an accountant or administrator."
+
+      select [:id, :invoice_identifier]
+      load [:transactions]
+    end
   end
 
   resources do
@@ -214,6 +302,10 @@ defmodule Firmowid.Ash.Invoicing do
 
       define :disconnect_all_cost_invoice_transactions,
         action: :disconnect_all_transactions
+
+      define :suggest_cost_invoice_transactions,
+        action: :transaction_suggestions,
+        args: [:invoice_id]
 
       define :get_cost_invoice_by_ksef_number,
         action: :read,
@@ -270,6 +362,10 @@ defmodule Firmowid.Ash.Invoicing do
 
       define :disconnect_all_sales_invoice_transactions,
         action: :disconnect_all_transactions
+
+      define :suggest_sales_invoice_transactions,
+        action: :transaction_suggestions,
+        args: [:invoice_id]
     end
 
     resource Firmowid.Ash.Invoicing.SalesInvoiceTransaction
@@ -431,107 +527,11 @@ defmodule Firmowid.Ash.Invoicing do
   end
 
   @doc """
-  Manually connects transactions to a cost invoice and records manual match metadata.
+  Disconnects a transaction from every linked sales and cost invoice atomically.
   """
-  @spec connect_cost_invoice_transactions_manual(
-          struct(),
-          [Ash.UUID.t()],
-          Scope.t()
-        ) ::
-          {:ok, struct()} | {:error, term()}
-  def connect_cost_invoice_transactions_manual(cost_invoice, transaction_ids, scope) do
-    connect_cost_invoice_transactions(cost_invoice, transaction_ids,
-      scope: scope,
-      context: manual_match_context(scope)
-    )
-  end
-
-  @doc """
-  Manually disconnects transactions from a cost invoice and records manual match metadata.
-  """
-  @spec disconnect_cost_invoice_transactions_manual(
-          struct(),
-          [Ash.UUID.t()],
-          Scope.t()
-        ) :: {:ok, struct()} | {:error, term()}
-  def disconnect_cost_invoice_transactions_manual(cost_invoice, transaction_ids, scope) do
-    disconnect_cost_invoice_transactions(
-      cost_invoice,
-      transaction_ids,
-      scope: scope,
-      context: manual_match_context(scope)
-    )
-  end
-
-  @doc """
-  Manually disconnects all transactions from a cost invoice and records manual match metadata.
-  """
-  @spec disconnect_all_cost_invoice_transactions_manual(struct(), Scope.t()) ::
-          {:ok, struct()} | {:error, term()}
-  def disconnect_all_cost_invoice_transactions_manual(cost_invoice, scope) do
-    with {:ok, transaction_ids} <- current_transaction_ids(cost_invoice, scope) do
-      disconnect_all_cost_invoice_transactions(
-        cost_invoice,
-        scope: scope,
-        context: manual_match_context(scope, %{transaction_ids: transaction_ids})
-      )
-    end
-  end
-
-  @doc """
-  Manually connects transactions to a sales invoice and records manual match metadata.
-  """
-  @spec connect_sales_invoice_transactions_manual(
-          struct(),
-          [Ash.UUID.t()],
-          Scope.t()
-        ) ::
-          {:ok, struct()} | {:error, term()}
-  def connect_sales_invoice_transactions_manual(sales_invoice, transaction_ids, scope) do
-    connect_sales_invoice_transactions(sales_invoice, transaction_ids,
-      scope: scope,
-      context: manual_match_context(scope)
-    )
-  end
-
-  @doc """
-  Manually disconnects transactions from a sales invoice and records manual match metadata.
-  """
-  @spec disconnect_sales_invoice_transactions_manual(
-          struct(),
-          [Ash.UUID.t()],
-          Scope.t()
-        ) :: {:ok, struct()} | {:error, term()}
-  def disconnect_sales_invoice_transactions_manual(sales_invoice, transaction_ids, scope) do
-    disconnect_sales_invoice_transactions(
-      sales_invoice,
-      transaction_ids,
-      scope: scope,
-      context: manual_match_context(scope)
-    )
-  end
-
-  @doc """
-  Manually disconnects all transactions from a sales invoice and records manual match metadata.
-  """
-  @spec disconnect_all_sales_invoice_transactions_manual(struct(), Scope.t()) ::
-          {:ok, struct()} | {:error, term()}
-  def disconnect_all_sales_invoice_transactions_manual(sales_invoice, scope) do
-    with {:ok, transaction_ids} <- current_transaction_ids(sales_invoice, scope) do
-      disconnect_all_sales_invoice_transactions(
-        sales_invoice,
-        scope: scope,
-        context: manual_match_context(scope, %{transaction_ids: transaction_ids})
-      )
-    end
-  end
-
-  @doc """
-  Manually disconnects a transaction from every linked sales and cost invoice atomically.
-  """
-  @spec disconnect_transaction_from_all_invoices_manual(Transaction.t(), Scope.t()) ::
+  @spec disconnect_transaction_from_all_invoices(Transaction.t(), Scope.t()) ::
           {:ok, Transaction.t()} | {:error, term()}
-  def disconnect_transaction_from_all_invoices_manual(%Transaction{id: transaction_id} = transaction, scope) do
+  def disconnect_transaction_from_all_invoices(%Transaction{id: transaction_id} = transaction, scope) do
     Ash.transact([Transaction, CostInvoice, SalesInvoice], fn ->
       with {:ok, loaded_transaction} <-
              load_transaction_with_linked_invoices(transaction_id, scope),
@@ -577,25 +577,9 @@ defmodule Firmowid.Ash.Invoicing do
     )
   end
 
-  defp manual_match_context(%Scope{} = scope, metadata \\ %{}) do
-    matched_by = actor_matcher_id(scope.actor)
-
-    %{
-      ash_events_metadata:
-        metadata
-        |> Map.put(:source, :manual)
-        |> Map.put(:matched_by, matched_by)
-    }
-  end
-
   defp auto_match_context(confidence_score) do
     %{ash_events_metadata: %{confidence_score: confidence_score, source: :auto_match}}
   end
-
-  defp actor_matcher_id(nil), do: nil
-  defp actor_matcher_id(%{id: id}) when is_binary(id), do: id
-  defp actor_matcher_id(%{user_id: user_id}) when is_binary(user_id), do: user_id
-  defp actor_matcher_id(_actor), do: nil
 
   defp load_transaction_with_linked_invoices(transaction_id, scope) do
     Finances.get_transaction(transaction_id,
@@ -606,13 +590,13 @@ defmodule Firmowid.Ash.Invoicing do
 
   defp disconnect_transaction_from_sales_invoices(transaction, scope) do
     reduce_invoices(transaction.sales_invoices, fn invoice ->
-      disconnect_sales_invoice_transactions_manual(invoice, [transaction.id], scope)
+      disconnect_sales_invoice_transactions(invoice, [transaction.id], scope: scope)
     end)
   end
 
   defp disconnect_transaction_from_cost_invoices(transaction, scope) do
     reduce_invoices(transaction.cost_invoices, fn invoice ->
-      disconnect_cost_invoice_transactions_manual(invoice, [transaction.id], scope)
+      disconnect_cost_invoice_transactions(invoice, [transaction.id], scope: scope)
     end)
   end
 
@@ -624,18 +608,6 @@ defmodule Firmowid.Ash.Invoicing do
       end
     end)
   end
-
-  defp current_transaction_ids(invoice, scope) do
-    with {:ok, invoice} <- ensure_transactions_loaded(invoice, scope) do
-      {:ok, Enum.map(invoice.transactions, & &1.id)}
-    end
-  end
-
-  defp ensure_transactions_loaded(%{transactions: %Ash.NotLoaded{}} = invoice, scope) do
-    Ash.load(invoice, [:transactions], scope: scope)
-  end
-
-  defp ensure_transactions_loaded(invoice, _scope), do: {:ok, invoice}
 
   # ── Cost invoice orchestration ──────────────────────────────────────
 

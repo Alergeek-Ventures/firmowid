@@ -9,6 +9,7 @@ defmodule FirmowidMcp do
   alias FirmowidMcp.Invoicing.IssueCorrection
   alias FirmowidMcp.Invoicing.IssueInvoice
   alias FirmowidMcp.Ksef.Connection
+  alias FirmowidMcp.Reconciliation
 
   mcp_resources do
     mcp_ui_resource :ksef_connection, Connection.resource_uri(),
@@ -35,7 +36,8 @@ defmodule FirmowidMcp do
 
   @doc "Composes the model instructions owned by the exposed MCP features."
   @spec instructions() :: String.t()
-  def instructions, do: Enum.join([Invoicing.instructions(), Connection.instructions()], "\n")
+  def instructions,
+    do: Enum.join([Invoicing.instructions(), Reconciliation.instructions(), Connection.instructions()], "\n")
 
   @doc "Returns the Phoenix endpoint hosting this interface."
   @spec endpoint() :: module()

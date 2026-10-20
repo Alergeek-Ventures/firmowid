@@ -5,15 +5,15 @@ defmodule Firmowid.Ash.Finances.Transaction do
   use Ash.Resource,
     domain: Firmowid.Ash.Finances,
     data_layer: AshPostgres.DataLayer,
-    authorizers: [Ash.Policy.Authorizer],
-    notifiers: [Ash.Notifier.PubSub]
+    notifiers: [Ash.Notifier.PubSub],
+    fragments: [Firmowid.Ash.Finances.Transaction.Policies]
 
   alias AshMoney.Types.Money
-  alias Firmowid.Ash.Checks.AtLeastRole
-  alias Firmowid.Ash.Checks.SystemActorRole
   alias Firmowid.Ash.Finances.Transaction.Calculations
+  alias Firmowid.Ash.Finances.Transaction.Types
   alias Firmowid.Ash.Invoicing.CostInvoiceTransaction
   alias Firmowid.Ash.Invoicing.SalesInvoiceTransaction
+  alias Firmowid.Ash.Preparations.FilterByAmount
   alias Firmowid.Ash.Preparations.ParadeDBSearch
   alias Firmowid.Ash.Resource
 
@@ -34,31 +34,48 @@ defmodule Firmowid.Ash.Finances.Transaction do
 
     read :list do
       description """
-      Lists transactions with optional filtering.
+      Lists bank transactions with optional filters.
 
-      All arguments are optional:
-      - `date_from`, `date_to` — date range on `booking_date`.
-      - `currency` — exact ISO currency code filter on `amount`.
-      - `reconciliation`:
-        - `:matched` (linked to an invoice or monthly salary)
-        - `:pending` (unmatched, not skipped)
-        - `:skipped` (unmatched, skipped)
-        - `nil` - omit for all transactions
-      - `query` — ParadeDB full-text search across debtor_name, creditor_name,
-        and remittance_information_unstructured. When provided,
-        results are sorted by relevance score.
-
-      Sorting and relationship loading are controlled at the callsite.
+      Sorting and relationship loading are controlled at the callsite. With a
+      `query`, results are sorted by ParadeDB relevance.
       """
 
-      argument :date_from, :date
-      argument :date_to, :date
-      argument :query, :string
-      argument :currency, :string
-      argument :ids, {:array, :uuid}
-      argument :salary_user_id, :uuid
-      argument :salary_month, :date
-      argument :salary_assigned, :boolean
+      pagination do
+        required? false
+        keyset? true
+        max_page_size 100
+      end
+
+      argument :date_from, :date, description: "Inclusive start of the booking date range (YYYY-MM-DD)."
+
+      argument :date_to, :date, description: "Inclusive end of the booking date range (YYYY-MM-DD)."
+
+      argument :query, :string,
+        constraints: [max_length: 500],
+        description: "Full-text search over the debtor, creditor and transfer title."
+
+      argument :currency, :string, description: "ISO currency code, e.g. PLN."
+
+      argument :amount_from, :decimal,
+        description: "Minimum amount, inclusive, compared as an absolute value although expenses are negative."
+
+      argument :amount_to, :decimal,
+        description: "Maximum amount, inclusive, compared as an absolute value although expenses are negative."
+
+      argument :ids, {:array, :uuid}, description: "Return only transactions with these IDs."
+
+      argument :salary_user_id, :uuid, description: "Only transfers assigned to this employee's salary."
+
+      argument :salary_month, :date, description: "Only transfers assigned to the salary of this month (first day)."
+
+      argument :salary_assigned, :boolean, description: "Whether the transfer is assigned to a monthly salary."
+
+      argument :reconciliation, :atom do
+        constraints one_of: [:matched, :skipped, :pending]
+
+        description "matched is linked to an invoice or a monthly salary, pending is unresolved, " <>
+                      "skipped is excluded from matching."
+      end
 
       prepare build(filter: expr(id in ^arg(:ids))) do
         where present(:ids)
@@ -80,10 +97,6 @@ defmodule Firmowid.Ash.Finances.Transaction do
         where argument_equals(:salary_assigned, false)
       end
 
-      argument :reconciliation, :atom do
-        constraints one_of: [:matched, :skipped, :pending]
-      end
-
       prepare build(filter: expr(booking_date >= ^arg(:date_from))) do
         where present(:date_from)
       end
@@ -95,6 +108,8 @@ defmodule Firmowid.Ash.Finances.Transaction do
       prepare build(filter: expr(amount[:currency] == ^arg(:currency))) do
         where present(:currency)
       end
+
+      prepare {FilterByAmount, []}
 
       prepare build(filter: expr(reconciliation_status == ^arg(:reconciliation))) do
         where present(:reconciliation)
@@ -148,9 +163,9 @@ defmodule Firmowid.Ash.Finances.Transaction do
     update :connect_salary do
       description "Manually assign an outgoing transaction to one employee's salary month."
       accept [:salary_user_id, :salary_month]
+      require_attributes [:salary_user_id, :salary_month]
       require_atomic? false
 
-      validate present([:salary_user_id, :salary_month])
       change Firmowid.Ash.Finances.Changes.ConnectSalary
 
       change filter(expr(reconciliation_status == :pending))
@@ -163,12 +178,26 @@ defmodule Firmowid.Ash.Finances.Transaction do
       change set_attribute(:salary_month, nil)
     end
 
-    action :salary_suggestions, {:array, :map} do
+    action :invoice_suggestions, {:array, Types.InvoiceSuggestion} do
+      description "Score unresolved invoices against a pending transaction, best match first."
+
+      argument :transaction_id, :uuid,
+        allow_nil?: false,
+        description: "ID of a pending transaction."
+
+      run Firmowid.Ash.Finances.Transaction.Actions.InvoiceSuggestions
+    end
+
+    action :salary_suggestions, {:array, Types.SalarySuggestion} do
       description "Find available salaries with submitted hours records; optional filters support manual assignment revalidation."
 
-      argument :transaction_id, :uuid, allow_nil?: false
-      argument :salary_user_id, :uuid
-      argument :salary_month, :date
+      argument :transaction_id, :uuid,
+        allow_nil?: false,
+        description: "ID of a pending outgoing PLN transfer."
+
+      argument :salary_user_id, :uuid, description: "Only suggest this employee's salaries."
+
+      argument :salary_month, :date, description: "Only suggest the salary of this month (first day)."
 
       argument :submitted_hours_only?, :boolean do
         allow_nil? false
@@ -177,44 +206,6 @@ defmodule Firmowid.Ash.Finances.Transaction do
       end
 
       run Firmowid.Ash.Finances.Transaction.Actions.SalarySuggestions
-    end
-  end
-
-  policies do
-    bypass actor_attribute_equals(:role, :admin) do
-      authorize_if always()
-    end
-
-    bypass [{SystemActorRole, roles: [:invoice_matcher]}, action_type(:read)] do
-      authorize_if always()
-    end
-
-    bypass {SystemActorRole, roles: [:bank_sync]} do
-      authorize_if action(:upsert_from_sync)
-      authorize_if action_type(:read)
-    end
-
-    bypass {SystemActorRole, roles: [:analysis_reader, :ksef_digest]} do
-      authorize_if action_type(:read)
-    end
-
-    # :invoicing and :accountant: read-only
-    policy [action_type(:read), {AtLeastRole, role: :invoicing}] do
-      authorize_if always()
-    end
-
-    # :accountant+: set_skip_invoicing (only user-facing update)
-    policy [action(:set_skip_invoicing), {AtLeastRole, role: :accountant}] do
-      authorize_if always()
-    end
-
-    policy action([:connect_salary, :disconnect_salary, :salary_suggestions]) do
-      authorize_if actor_attribute_equals(:role, :admin)
-    end
-
-    # Write actions (non-system, non-admin): admin only
-    policy action_type([:create, :destroy]) do
-      authorize_if actor_attribute_equals(:role, :admin)
     end
   end
 
@@ -250,7 +241,8 @@ defmodule Firmowid.Ash.Finances.Transaction do
 
     # Firmowid data
     attribute :skip_invoicing, :boolean, public?: true, default: false
-    attribute :salary_month, :date
+
+    attribute :salary_month, :date, description: "First day of the salary month this transfer pays."
 
     Resource.firmowid_timestamps()
   end

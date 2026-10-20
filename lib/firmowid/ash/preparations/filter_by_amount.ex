@@ -1,11 +1,11 @@
-defmodule Firmowid.Ash.Invoicing.Preparations.FilterByAmount do
+defmodule Firmowid.Ash.Preparations.FilterByAmount do
   @moduledoc """
-  Preparation that filters invoice listings by amount regardless of sign.
+  Preparation that filters invoice and transaction listings by amount regardless of sign.
 
-  Cost invoices are stored as negative amounts and corrections may change the sign,
-  so `amount_from` and `amount_to` compare the absolute value, both inclusive.
-  With `merge_corrections` the listing shows each invoice after its corrections,
-  so the filter compares `effective_amount`; otherwise each document's own `amount`.
+  Cost invoices and expenses are stored as negative amounts and corrections may change
+  the sign, so `amount_from` and `amount_to` compare the absolute value, both inclusive.
+  With `merge_corrections` an invoice listing shows each invoice after its corrections,
+  so the filter compares `effective_amount`; otherwise each record's own `amount`.
   """
   use Ash.Resource.Preparation
 
