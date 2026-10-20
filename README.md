@@ -422,9 +422,12 @@ wt remove feature-auth
 ### Jak to działa
 
 1. `wt switch --create` wywołuje hooki z `.config/wt.toml`:
-   - generuje `.env.worktree` z deterministycznymi portami (hash z nazwy brancha)
+   - generuje `.env.worktree` z deterministycznymi portami (hash z nazwy katalogu worktree, stałej po zmianie nazwy brancha)
    - `mix deps.get` / `mix setup` - instaluje zależności, migruje bazę
    - `mix dev.up` - uruchamia Compose + rejestruje route w Caddy
+
+   Hooki są idempotentne. Worktree utworzony bez `wt` (np. przez T3 Code)
+   konfiguruje się poleceniem `wt hook pre-start --yes`.
 
 2. Każdy worktree dostaje izolowane:
    - Postgres container z osobnym portem

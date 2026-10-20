@@ -1,7 +1,11 @@
 # Worktrunk Project Configuration
-# Enables isolated dev environments per worktree with deterministic ports
+# Enables isolated dev environments per worktree with deterministic ports.
+#
+# Every value is derived from the worktree directory name, which stays fixed when
+# the branch is renamed. The pre-start hooks are idempotent: `wt hook pre-start --yes`
+# sets up a worktree created without worktrunk and repairs an existing one.
 
-# Phase 1: Copy deps/_build/.env from main worktree
+# Phase 1: Copy deps/_build/.env from main worktree (existing files are kept)
 [[pre-start]]
 copy_ignored = "wt step copy-ignored"
 
@@ -19,7 +23,7 @@ deps-js = "npm ci --prefix assets"
 
 [[pre-start]]
 env = """
-{% if branch == 'main' %}
+{% if worktree_path == primary_worktree_path %}
 cat > .env.worktree << 'EOF'
 PORT=4000
 DB_PORT=5433
@@ -35,13 +39,13 @@ AWS_SECRET_ACCESS_KEY=test
 EOF
 {% else %}
 cat > .env.worktree << 'EOF'
-PORT={{ branch | hash_port }}
-DB_PORT={{ ('db-' ~ branch) | hash_port }}
-S3_PORT={{ ('s3-' ~ branch) | hash_port }}
-GOTENBERG_PORT={{ ('gotenberg-' ~ branch) | hash_port }}
-DEBUGGER_PORT={{ ('debugger-' ~ branch) | hash_port }}
-BRANCH={{ branch | sanitize }}
-DATABASE_URL=postgresql://postgres:postgres@localhost:{{ ('db-' ~ branch) | hash_port }}/firmowid
+PORT={{ worktree_name | hash_port }}
+DB_PORT={{ ('db-' ~ worktree_name) | hash_port }}
+S3_PORT={{ ('s3-' ~ worktree_name) | hash_port }}
+GOTENBERG_PORT={{ ('gotenberg-' ~ worktree_name) | hash_port }}
+DEBUGGER_PORT={{ ('debugger-' ~ worktree_name) | hash_port }}
+BRANCH={{ worktree_name | sanitize }}
+DATABASE_URL=postgresql://postgres:postgres@localhost:{{ ('db-' ~ worktree_name) | hash_port }}/firmowid
 
 # AWS credentials for SeaweedFs S3 (required by ex_aws)
 AWS_ACCESS_KEY_ID=test
@@ -51,7 +55,7 @@ EOF
 """
 
 [[pre-start]]
-opencode = "{% if branch == 'main' %}echo '4000'{% else %}echo '{{ branch | hash_port }}'{% endif %} > .server.port"
+opencode = "{% if worktree_path == primary_worktree_path %}echo '4000'{% else %}echo '{{ worktree_name | hash_port }}'{% endif %} > .server.port"
 
 # Phase 3: Start services (after everything else)
 [[pre-start]]
@@ -61,4 +65,4 @@ up = "mix dev.up"
 down = "mix dev.down"
 
 [list]
-url = "https://{% if branch == 'main' %}main{% else %}{{ branch | sanitize }}{% endif %}.firmowid.localhost"
+url = "https://{% if worktree_path == primary_worktree_path %}main{% else %}{{ worktree_name | sanitize }}{% endif %}.firmowid.localhost"
