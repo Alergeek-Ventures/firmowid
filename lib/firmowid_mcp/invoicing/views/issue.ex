@@ -513,7 +513,7 @@ defmodule FirmowidMcp.Invoicing.Views.Issue do
             >
               <%!-- mbs-7 is the number label's height, so the document starts level with the input. --%>
               <InvoicePreview.sales_invoice
-                sales_invoice={@invoice}
+                sales_invoice={Map.put(@invoice, :buyer_pesel, nil)}
                 currency_rate={@currency_rate}
                 show_vat={@show_vat}
                 reference_invoice={@invoice.reference_invoice}
