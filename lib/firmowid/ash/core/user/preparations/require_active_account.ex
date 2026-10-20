@@ -1,5 +1,13 @@
 defmodule Firmowid.Ash.Core.User.Preparations.RequireActiveAccount do
-  @moduledoc "Excludes archived accounts from authentication reads without hiding them from administrators."
+  @moduledoc """
+  Excludes blocked accounts (see the User `:access_block` calculation) from
+  authentication reads, so no session, bearer token or widget token can act for them,
+  without hiding them from administrators.
+
+  Sign-in actions exclude only archived accounts: a member of an organization without
+  a billing plan signs in successfully, and the sign-in callback explains the block
+  instead of issuing a session, so the reason is shown only after the password check.
+  """
 
   use Ash.Resource.Preparation
 
@@ -19,10 +27,10 @@ defmodule Firmowid.Ash.Core.User.Preparations.RequireActiveAccount do
     |> Query.filter(is_nil(archived_at))
   end
 
-  def prepare(query, _options, _context), do: filter_archived_accounts(query, authentication_read?(query))
+  def prepare(query, _options, _context), do: filter_blocked_accounts(query, authentication_read?(query))
 
-  defp filter_archived_accounts(query, true), do: Query.filter(query, is_nil(archived_at))
-  defp filter_archived_accounts(query, false), do: query
+  defp filter_blocked_accounts(query, true), do: Query.filter(query, is_nil(access_block))
+  defp filter_blocked_accounts(query, false), do: query
 
   defp authentication_read?(query) do
     get_in(query.context, [:private, :ash_authentication?]) == true or

@@ -26,7 +26,10 @@ defmodule FirmowidMcp.Session do
     })
   end
 
-  @doc "Revalidates expiry and current organization membership on mount and every interaction."
+  # An authentication read, so blocked accounts (see User `:access_block`) are not found.
+  @authentication_context %{private: %{ash_authentication?: true}}
+
+  @doc "Revalidates expiry, account access and organization membership on mount and every interaction."
   @spec authorize(String.t(), String.t()) :: {:ok, map()} | {:error, term()}
   def authorize(token, resource_uri) when is_binary(token) do
     with {:ok,
@@ -38,7 +41,7 @@ defmodule FirmowidMcp.Session do
           } = claims} <-
            Phoenix.Token.verify(FirmowidMcp.endpoint(), @salt, token, max_age: @lifetime),
          true <- claims.expires_at > System.system_time(:second),
-         {:ok, %User{archived_at: nil} = actor} <- Core.get_user(id, actor: %User{id: id}),
+         {:ok, %User{} = actor} <- Core.get_user(id, context: @authentication_context),
          {:ok, scope} <- Scope.new(actor, tenant) do
       {:ok,
        %{

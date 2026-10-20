@@ -34,20 +34,11 @@ defmodule FirmowidWeb.Infrastructure.Hooks.RequireOrganization do
       user ->
         {user, org, scope} = UserAuth.load_scope_and_avatars(user)
 
-        case UserAuth.blocked_access(user, org) do
-          %{path: nil} ->
-            {:cont,
-             socket
-             |> assign(:current_user, user)
-             |> assign(:current_org, org)
-             |> assign(:ash_scope, scope)}
-
-          %{path: path, message: message} ->
-            {:halt,
-             socket
-             |> LiveToast.put_toast(:error, message)
-             |> redirect(to: path)}
-        end
+        {:cont,
+         socket
+         |> assign(:current_user, user)
+         |> assign(:current_org, org)
+         |> assign(:ash_scope, scope)}
     end
   end
 end

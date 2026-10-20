@@ -9,40 +9,23 @@ defmodule FirmowidWeb.Auth.Views.ExpiredSubscription do
 
   @contact_email "contact@alergeek.ventures"
 
+  # Shown after the owner of an organization without a billing plan signs in; the
+  # account gets no session, so the sign-in callback passes the organization name.
   @impl true
-  def mount(_params, _session, socket) do
-    socket =
-      case socket.assigns[:current_user] do
-        %{organization_id: organization_id} = user when not is_nil(organization_id) ->
-          {loaded_user, org, _scope} = UserAuth.load_scope_and_avatars(user)
+  def mount(params, _session, socket) do
+    case socket.assigns[:current_user] do
+      nil ->
+        organization_name = params["organizacja"]
 
-          socket
-          |> assign(:current_user, loaded_user)
-          |> assign(:current_org, org)
-
-        _user ->
-          socket
-      end
-
-    socket = assign(socket, :page_title, "Abonament wygasł")
-
-    case UserAuth.blocked_page_action(
-           :expired_subscription,
-           socket.assigns[:current_user],
-           socket.assigns[:current_org]
-         ) do
-      :ok ->
         {:ok,
          socket
+         |> assign(:page_title, "Abonament wygasł")
+         |> assign(:organization_name, organization_name)
          |> assign(:contact_email, @contact_email)
-         |> assign(:contact_mailto, contact_mailto(socket.assigns.current_org.name))}
+         |> assign(:contact_mailto, contact_mailto(organization_name))}
 
-      {:redirect, target} ->
-        if connected?(socket) do
-          {:ok, push_navigate(socket, to: target)}
-        else
-          {:ok, Phoenix.LiveView.redirect(socket, to: target)}
-        end
+      user ->
+        {:ok, redirect(socket, to: UserAuth.signed_in_path_for_user(user))}
     end
   end
 
@@ -55,7 +38,9 @@ defmodule FirmowidWeb.Auth.Views.ExpiredSubscription do
           <Lucideicons.shield_alert class="size-6" />
         </div>
         <h1 class="mb-2 text-2xl/tight font-semibold">Abonament wygasł</h1>
-        <p class="mb-2 text-sm font-medium text-grey-900">{@current_org.name}</p>
+        <p :if={@organization_name} class="mb-2 text-sm font-medium text-grey-900">
+          {@organization_name}
+        </p>
         <p class="text-base/snug text-grey-700">
           Dostęp do organizacji został tymczasowo zablokowany z powodu wygaśnięcia abonamentu.
           Napisz do nas, aby odnowić dostęp.
@@ -78,5 +63,6 @@ defmodule FirmowidWeb.Auth.Views.ExpiredSubscription do
     """
   end
 
+  defp contact_mailto(nil), do: "#{@contact_email}?subject=Abonament wygasł"
   defp contact_mailto(org_name), do: "#{@contact_email}?subject=Abonament wygasł - #{org_name}"
 end
