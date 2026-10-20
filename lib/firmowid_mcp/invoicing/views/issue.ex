@@ -11,6 +11,7 @@ defmodule FirmowidMcp.Invoicing.Views.Issue do
   alias Firmowid.Ash.Invoicing.SalesInvoice
   alias Firmowid.Ash.Ksef
   alias Firmowid.Ash.Ksef.SubmissionInfo
+  alias FirmowidMcp.Invoicing, as: McpInvoicing
   alias FirmowidMcp.Invoicing.IssueCorrection
   alias FirmowidMcp.Invoicing.IssueInvoice
   alias FirmowidMcp.LiveSession
@@ -299,12 +300,16 @@ defmodule FirmowidMcp.Invoicing.Views.Issue do
       nil ->
         Invoicing.issue_sales_invoice(
           %{input: confirmed_input(socket), confirmation_id: socket.assigns.confirmation_id},
-          scope: scope
+          scope: scope,
+          context: McpInvoicing.action_context()
         )
 
       draft_id ->
         with {:ok, draft} <- Invoicing.get_sales_invoice(draft_id, scope: scope) do
-          Invoicing.finalize_sales_invoice_draft(draft, %{input: confirmed_input(socket)}, scope: scope)
+          Invoicing.finalize_sales_invoice_draft(draft, %{input: confirmed_input(socket)},
+            scope: scope,
+            context: McpInvoicing.action_context()
+          )
         end
     end
   end
@@ -316,7 +321,8 @@ defmodule FirmowidMcp.Invoicing.Views.Issue do
         original_invoice_id: action_arguments(socket)["original_invoice_id"],
         confirmation_id: socket.assigns.confirmation_id
       },
-      scope: socket.assigns.scope
+      scope: socket.assigns.scope,
+      context: McpInvoicing.action_context()
     )
   end
 

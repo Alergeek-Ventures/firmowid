@@ -1,6 +1,10 @@
 defmodule FirmowidMcp.Invoicing do
   @moduledoc "Model guidance for invoice reading, optional drafts and user-confirmed issuance."
 
+  @doc "Restricts invoice preparation and issuance to business buyers on the MCP interface."
+  @spec action_context() :: %{shared: %{business_buyers_only?: true}}
+  def action_context, do: %{shared: %{business_buyers_only?: true}}
+
   @doc "Returns the invoice workflow instructions advertised by the MCP server."
   @spec instructions() :: String.t()
   def instructions do
@@ -14,6 +18,11 @@ defmodule FirmowidMcp.Invoicing do
     Use list_sales_invoices and list_cost_invoices to read invoice data with filters and pagination.
     Use get_sales_invoice to read an invoice's items, effective correction chain and KSeF submission status.
 
+    Prepare, save, revise and issue invoices only for business buyers (sole traders and companies)
+    with a tax ID. Consumer invoices are not supported by these workflows, including existing drafts
+    and corrections. Existing invoices remain readable regardless of buyer type.
+    For a private buyer, do not relabel them as a company or ask for a PESEL. Direct the user to
+    the Firmowid web app: #{FirmowidMcp.endpoint().url()}#{FirmowidWeb.Invoicing.Utilities.Navigation.sales_invoice_creator_path()}.
     Collect invoice data in the conversation, then call preview_sales_invoice to open the confirmation widget.
     For corrections, first read the source invoice with get_sales_invoice, then call preview_sales_invoice_correction.
     The user must review the document, select its number and confirm issuance inside the widget.
