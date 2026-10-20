@@ -15,6 +15,7 @@ defmodule FirmowidWeb.Invoicing.Views.IndexTest do
 
   alias Firmowid.Ash.Blobs.Blob
   alias Firmowid.Ash.Finances
+  alias Firmowid.Ash.Finances.BankAccount
   alias Firmowid.Ash.Finances.Requisition
   alias Firmowid.Ash.Finances.Transaction
   alias Firmowid.Ash.Invoicing
@@ -25,6 +26,97 @@ defmodule FirmowidWeb.Invoicing.Views.IndexTest do
   alias Phoenix.Socket.Broadcast
 
   describe "requisition status PubSub notifications" do
+    test "shows an expired bank in suggestions and never exposes another organization's account",
+         %{conn: conn} do
+      user = admin_fixture()
+      other_user = admin_fixture()
+
+      requisition =
+        Ash.Seed.seed!(Requisition, %{id: Ecto.UUID.generate(), status: :accepted}, tenant: user.organization_id)
+
+      account =
+        bank_account_fixture!(user, %{
+          requisition_id: requisition.id,
+          gocardless_id: "synthetic-bank-account",
+          institution_name: "Synthetic Bank"
+        })
+
+      other_requisition =
+        Ash.Seed.seed!(Requisition, %{id: Ecto.UUID.generate(), status: :expired}, tenant: other_user.organization_id)
+
+      other_account =
+        bank_account_fixture!(other_user, %{
+          requisition_id: other_requisition.id,
+          gocardless_id: "synthetic-other-account"
+        })
+
+      {:ok, view, _html} = conn |> log_in_user(user) |> live(~p"/fakturowanie")
+
+      assert has_element?(
+               view,
+               "#bank-connection-alert-#{account.id}",
+               "Transakcje nie są aktualizowane."
+             )
+
+      assert {:ok, _} =
+               BankAccount.sync_from_gocardless(account,
+                 actor: user,
+                 tenant: user.organization_id
+               )
+
+      refute has_element?(view, "#bank-connection-alert-#{account.id}")
+
+      assert {:ok, _} = Requisition.expire(requisition, actor: user, tenant: user.organization_id)
+
+      assert has_element?(
+               view,
+               "#bank-connection-alert-#{account.id}",
+               "Połączenie z bankiem wygasło"
+             )
+
+      assert has_element?(
+               view,
+               "#bank-connection-alert-#{account.id} a[href='/ustawienia/firma#konto-bankowe-#{account.id}']",
+               "Połącz ponownie"
+             )
+
+      refute has_element?(view, "#bank-connection-alert-#{other_account.id}")
+
+      assert {:ok, _} =
+               BankAccount.mark_sync_failed(account, actor: user, tenant: user.organization_id)
+
+      renewed =
+        Ash.Seed.seed!(Requisition, %{id: Ecto.UUID.generate(), status: :accepted}, tenant: user.organization_id)
+
+      assert {:ok, reconnected} =
+               account
+               |> Map.take([:iban, :currency, :name, :institution_name])
+               |> Map.merge(%{
+                 gocardless_id: "synthetic-renewed-account",
+                 requisition_id: renewed.id
+               })
+               |> Finances.sync_bank_account(actor: user, tenant: user.organization_id)
+
+      assert reconnected.id == account.id
+
+      {:ok, renewed_view, _html} = conn |> log_in_user(user) |> live(~p"/fakturowanie")
+      assert has_element?(renewed_view, "#bank-connection-alert-#{account.id}")
+
+      refute has_element?(
+               renewed_view,
+               "#bank-connection-alert-#{account.id}",
+               "Połączenie z bankiem wygasło"
+             )
+
+      assert {:ok, _} =
+               BankAccount.sync_from_gocardless(reconnected,
+                 actor: user,
+                 tenant: user.organization_id
+               )
+
+      refute has_element?(renewed_view, "#bank-connection-alert-#{account.id}")
+    end
+
     setup do
       user = admin_fixture()
 

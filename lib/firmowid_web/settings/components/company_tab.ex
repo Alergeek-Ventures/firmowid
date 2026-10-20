@@ -527,7 +527,10 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
 
   defp bank_card(assigns) do
     ~H"""
-    <article class="relative flex flex-col gap-4 rounded-lg border border-grey-200 bg-white p-4">
+    <article
+      id={"konto-bankowe-#{@account.id}"}
+      class="relative flex flex-col gap-4 rounded-lg border border-grey-200 bg-white p-4"
+    >
       <div class="flex items-center justify-start gap-4">
         <.bank_badge institution={@account} />
         <div class="flex items-start gap-4 self-start">

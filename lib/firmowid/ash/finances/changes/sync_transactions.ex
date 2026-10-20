@@ -16,6 +16,7 @@ defmodule Firmowid.Ash.Finances.Changes.SyncTransactions do
 
   import Ash.Expr
 
+  alias AshOban.Errors.CancelJob
   alias Firmowid.Ash.Events
   alias Firmowid.Ash.Finances
   alias Firmowid.Ash.Finances.DuplicateTransactionMatcher
@@ -43,6 +44,9 @@ defmodule Firmowid.Ash.Finances.Changes.SyncTransactions do
       case perform_sync(bank_account, build_sync_scope(bank_account), sync_started_at) do
         {:ok, _} ->
           {:ok, bank_account}
+
+        {:error, %CancelJob{} = reason} ->
+          {:error, reason}
 
         {:error, reason} ->
           {:error, Ash.Changeset.add_error(changeset, "sync failed: #{ErrorKind.classify(reason)}")}
@@ -98,6 +102,10 @@ defmodule Firmowid.Ash.Finances.Changes.SyncTransactions do
   defp expire_parent_requisition_record({:ok, nil}, requisition_id, _scope) do
     Logger.warning("Cannot expire missing requisition #{requisition_id} during sync")
     :ok
+  end
+
+  defp expire_parent_requisition_record({:ok, %Requisition{status: :expired}}, _requisition_id, _scope) do
+    {:error, CancelJob.exception(reason: :bank_connection_expired)}
   end
 
   defp expire_parent_requisition_record({:ok, requisition}, requisition_id, scope) do

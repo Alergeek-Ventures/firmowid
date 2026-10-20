@@ -2269,3 +2269,24 @@ msgstr ""
 #, elixir-autogen, elixir-format
 msgid "Clear month's categories?"
 msgstr ""
+
+#: lib/firmowid_web/invoicing/components/dashboard_tiles.ex:473
+#, elixir-autogen, elixir-format
+msgid "Bank connection expired"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/components/dashboard_tiles.ex:484
+#, elixir-autogen, elixir-format
+msgid "Last successful synchronization: %{date}"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/components/dashboard_tiles.ex:496
+#, elixir-autogen, elixir-format
+msgid "Reconnect"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/components/dashboard_tiles.ex:475
+#: lib/firmowid_web/invoicing/components/dashboard_tiles.ex:482
+#, elixir-autogen, elixir-format
+msgid "Transactions are not being updated."
+msgstr ""

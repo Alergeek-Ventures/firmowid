@@ -4,6 +4,7 @@ defmodule Firmowid.Ash.Finances.Changes.SyncTransactionsTest do
 
   import Ash.Expr
   import Firmowid.AccountsFixtures
+  import Firmowid.FinancesFixtures, only: [bank_account_fixture!: 2]
 
   alias Firmowid.Ash.Events.Event
   alias Firmowid.Ash.Finances
@@ -220,6 +221,63 @@ defmodule Firmowid.Ash.Finances.Changes.SyncTransactionsTest do
   end
 
   describe "expired requisition handling" do
+    test "does not select expired connections or call the bank for an already queued job", ctx do
+      requisition = seed_requisition(ctx.org_id, :expired)
+      bank_account = seed_bank_account_with_requisition(ctx.org_id, requisition.id)
+
+      candidates =
+        for status <- [:accepted, :pending, :rejected] do
+          parent = seed_requisition(ctx.org_id, status)
+
+          {status,
+           bank_account_fixture!(ctx.user, %{
+             requisition_id: parent.id,
+             gocardless_id: "synthetic-#{status}",
+             institution_name: "Synthetic Bank"
+           })}
+        end
+
+      ids =
+        [actor: ctx.user, tenant: ctx.org_id]
+        |> Finances.list_bank_accounts_for_sync!()
+        |> Enum.map(& &1.id)
+
+      refute bank_account.id in ids
+      assert ctx.bank_account_1.id in ids
+
+      Enum.each(candidates, fn {status, account} ->
+        assert account.id in ids == (status == :accepted)
+      end)
+
+      Req.Test.stub(:bank_data_transactions, fn _conn ->
+        flunk("Expired connections must not call the bank")
+      end)
+
+      assert {:cancel, :trigger_no_longer_applies} =
+               BankAccount.Worker.SyncTransactions.perform(%Oban.Job{
+                 args: %{"primary_key" => %{"id" => bank_account.id}, "tenant" => ctx.org_id},
+                 attempt: 1,
+                 max_attempts: 5
+               })
+    end
+
+    @tag capture_log: true
+    test "cancels instead of expiring the same requisition again", ctx do
+      requisition = seed_requisition(ctx.org_id, :expired)
+      bank_account = seed_bank_account_with_requisition(ctx.org_id, requisition.id)
+      stub_expired_eua()
+
+      assert {:error, error} =
+               bank_account
+               |> Ash.Changeset.for_update(:sync_from_gocardless, %{},
+                 actor: ctx.user,
+                 tenant: ctx.org_id
+               )
+               |> Ash.update(actor: ctx.user, tenant: ctx.org_id)
+
+      assert {:cancel, :bank_connection_expired} = AshOban.check_for_oban_return(error)
+    end
+
     test "expires the parent requisition when GoCardless reports an expired EUA", ctx do
       requisition = seed_requisition(ctx.org_id, :accepted)
       bank_account = seed_bank_account_with_requisition(ctx.org_id, requisition.id)
