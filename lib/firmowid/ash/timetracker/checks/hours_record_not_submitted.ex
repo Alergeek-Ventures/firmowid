@@ -1,7 +1,7 @@
 defmodule Firmowid.Ash.Timetracker.Checks.HoursRecordNotSubmitted do
   @moduledoc """
   Policy check that denies write actions on sessions whose month already has
-  an hours record submitted by the session's user.
+  an hours record submitted by the session's member.
 
   For **create** actions the `start_datetime` comes from `changeset.attributes`.
   For **update/destroy** actions both the existing record's month and, when the
@@ -45,16 +45,16 @@ defmodule Firmowid.Ash.Timetracker.Checks.HoursRecordNotSubmitted do
   end
 
   defp hours_record_exists?(changeset, %DateTime{} = dt, actor) do
-    user_id = session_user_id(changeset)
+    member_id = session_member_id(changeset)
     org_id = changeset.tenant
 
-    if user_id && org_id do
+    if member_id && org_id do
       month = dt.month
       year = dt.year
 
       HoursRecord
       |> Ash.Query.filter(
-        user_id: user_id,
+        member_id: member_id,
         month: month,
         year: year,
         submission_status: :submitted
@@ -65,11 +65,11 @@ defmodule Firmowid.Ash.Timetracker.Checks.HoursRecordNotSubmitted do
     end
   end
 
-  defp session_user_id(%Ash.Changeset{action_type: :create} = changeset) do
-    Ash.Changeset.get_attribute(changeset, :user_id)
+  defp session_member_id(%Ash.Changeset{action_type: :create} = changeset) do
+    Ash.Changeset.get_attribute(changeset, :member_id)
   end
 
-  defp session_user_id(%Ash.Changeset{} = changeset) do
-    changeset.data.user_id
+  defp session_member_id(%Ash.Changeset{} = changeset) do
+    changeset.data.member_id
   end
 end

@@ -195,21 +195,21 @@ defmodule Firmowid.Ash.Timetracker do
     |> Enum.sort(:desc)
   end
 
-  def projects_duration_for_month(user_id, %Date{} = date, scope) do
+  def projects_duration_for_month(member_id, %Date{} = date, scope) do
     query =
-      %{user_id: user_id}
+      %{member_id: member_id}
       |> query_to_list_projects(scope: scope)
       |> Ash.Query.aggregate(:duration, :sum, :sessions,
         field: :duration,
         default: 0,
         query:
           query_to_list_sessions(
-            %{user_id: user_id, month: date.month, year: date.year},
+            %{member_id: member_id, month: date.month, year: date.year},
             scope: scope
           )
       )
 
-    %{user_id: user_id}
+    %{member_id: member_id}
     |> list_projects!(scope: scope, query: query)
     |> Enum.map(fn project ->
       %{id: project.id, name: project.name, duration: project.aggregates[:duration] || 0}

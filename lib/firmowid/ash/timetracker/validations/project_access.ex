@@ -1,8 +1,8 @@
 defmodule Firmowid.Ash.Timetracker.Validations.ProjectAccess do
   @moduledoc """
-  Validates that the actor (or explicit user_id) has access to the session's project.
+  Validates that the session's member has access to the session's project.
 
-  Access means: the user is in `projects_users` for that project, and the
+  Access means: the member is in `projects_users` for that project, and the
   project is not archived (`archived_at IS NULL`).
   """
   use Ash.Resource.Validation
@@ -18,26 +18,26 @@ defmodule Firmowid.Ash.Timetracker.Validations.ProjectAccess do
   @impl true
   def validate(changeset, _opts, context) do
     project_id = Ash.Changeset.get_attribute(changeset, :project_id)
-    user_id = Ash.Changeset.get_attribute(changeset, :user_id)
+    member_id = Ash.Changeset.get_attribute(changeset, :member_id)
 
     cond do
       is_nil(project_id) ->
         :ok
 
-      is_nil(user_id) ->
+      is_nil(member_id) ->
         :ok
 
       true ->
-        check_access(changeset, context, user_id, project_id)
+        check_access(changeset, context, member_id, project_id)
     end
   end
 
-  defp check_access(changeset, context, user_id, project_id) do
+  defp check_access(changeset, context, member_id, project_id) do
     has_access? =
       ProjectUser
       |> Ash.Query.filter(
         expr(
-          member.user_id == ^user_id and
+          member_id == ^member_id and
             project_id == ^project_id and
             exists(project, is_nil(archived_at))
         )

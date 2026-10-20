@@ -30,7 +30,7 @@ defmodule Firmowid.Ash.Timetracker.SessionTest do
           %{
             title: "Working on feature",
             project_id: project.id,
-            user_id: user.id,
+            member_id: user.member.id,
             start_datetime: ~U[2025-04-01 09:00:00Z]
           },
           scope: scope
@@ -38,7 +38,7 @@ defmodule Firmowid.Ash.Timetracker.SessionTest do
 
       assert session.title == "Working on feature"
       assert session.project_id == project.id
-      assert session.user_id == user.id
+      assert session.member_id == user.member.id
       assert is_nil(session.end_datetime)
     end
 
@@ -48,7 +48,7 @@ defmodule Firmowid.Ash.Timetracker.SessionTest do
           %{
             title: "Completed task",
             project_id: project.id,
-            user_id: user.id,
+            member_id: user.member.id,
             start_datetime: ~U[2025-04-01 09:00:00Z],
             end_datetime: ~U[2025-04-01 10:00:00Z]
           },
@@ -68,7 +68,7 @@ defmodule Firmowid.Ash.Timetracker.SessionTest do
           %{
             title: "Completed task",
             project_id: project.id,
-            user_id: user.id,
+            member_id: user.member.id,
             start_datetime: ~U[2025-04-01 09:00:42Z],
             end_datetime: ~U[2025-04-01 10:00:17Z]
           },
@@ -85,7 +85,7 @@ defmodule Firmowid.Ash.Timetracker.SessionTest do
                  %{
                    title: "Bad times",
                    project_id: project.id,
-                   user_id: user.id,
+                   member_id: user.member.id,
                    start_datetime: ~U[2025-04-01 10:00:00Z],
                    end_datetime: ~U[2025-04-01 09:00:00Z]
                  },
@@ -128,7 +128,7 @@ defmodule Firmowid.Ash.Timetracker.SessionTest do
           %{
             title: "Running",
             project_id: project.id,
-            user_id: user.id,
+            member_id: user.member.id,
             start_datetime: DateTime.utc_now()
           },
           scope: scope
@@ -355,7 +355,7 @@ defmodule Firmowid.Ash.Timetracker.SessionTest do
           %{
             title: "Overlap",
             project_id: project.id,
-            user_id: user.id,
+            member_id: user.member.id,
             start_datetime: ~U[2025-04-01 00:30:00Z],
             end_datetime: ~U[2025-04-01 01:30:00Z]
           },
@@ -378,7 +378,7 @@ defmodule Firmowid.Ash.Timetracker.SessionTest do
           %{
             title: "Overlap",
             project_id: project.id,
-            user_id: user.id,
+            member_id: user.member.id,
             start_datetime: ~U[2025-04-01 00:30:00Z]
           },
           scope: scope
@@ -415,7 +415,7 @@ defmodule Firmowid.Ash.Timetracker.SessionTest do
             %{
               title: "Running",
               project_id: project.id,
-              user_id: user.id,
+              member_id: user.member.id,
               start_datetime: start_datetime
             },
             scope: scope
@@ -446,7 +446,7 @@ defmodule Firmowid.Ash.Timetracker.SessionTest do
             %{
               title: "Running",
               project_id: project.id,
-              user_id: user.id,
+              member_id: user.member.id,
               start_datetime: ~U[2026-08-31 20:00:00Z]
             },
             scope: scope
@@ -494,7 +494,7 @@ defmodule Firmowid.Ash.Timetracker.SessionTest do
                  %{
                    title: "Month straddle",
                    project_id: project.id,
-                   user_id: user.id,
+                   member_id: user.member.id,
                    start_datetime: ~U[2026-08-31 23:00:00Z],
                    end_datetime: ~U[2026-09-01 01:00:00Z]
                  },
@@ -510,7 +510,7 @@ defmodule Firmowid.Ash.Timetracker.SessionTest do
                  %{
                    title: "Too long",
                    project_id: project.id,
-                   user_id: user.id,
+                   member_id: user.member.id,
                    start_datetime: ~U[2026-09-10 09:00:00Z],
                    end_datetime: ~U[2026-09-11 09:01:00Z]
                  },

@@ -40,7 +40,7 @@ defmodule FirmowidWeb.Timetracker.Utilities.SessionForm do
     }
   end
 
-  def create_attributes(changeset, user_id, timezone) do
+  def create_attributes(changeset, member_id, timezone) do
     changeset
     |> maybe_put(:date, timezone |> DateTime.now!() |> DateTime.to_date())
     |> maybe_put(:start_time, timezone |> DateTime.now!() |> DateTime.to_time())
@@ -52,7 +52,7 @@ defmodule FirmowidWeb.Timetracker.Utilities.SessionForm do
          |> Map.from_struct()
          |> Map.drop([:id, :__struct__])
          |> convert_times(timezone)
-         |> Map.put(:user_id, user_id)}
+         |> Map.put(:member_id, member_id)}
 
       other ->
         other

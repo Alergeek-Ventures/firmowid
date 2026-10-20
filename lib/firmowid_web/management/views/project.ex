@@ -65,7 +65,12 @@ defmodule FirmowidWeb.Management.Views.Project do
           user
           |> Map.put(:expanded, !user.expanded)
           |> Map.put_new_lazy(:sessions_with_duration, fn ->
-            %{user_id: user_id, project_id: project.id, month: date.month, year: date.year}
+            %{
+              member_id: user.member.id,
+              project_id: project.id,
+              month: date.month,
+              year: date.year
+            }
             |> Timetracker.query_to_list_sessions(scope: scope)
             |> Ash.Query.load(:duration)
             |> Ash.read!(scope: scope)
@@ -132,7 +137,7 @@ defmodule FirmowidWeb.Management.Views.Project do
     sessions =
       %{project_id: project.id}
       |> Timetracker.query_to_list_sessions(scope: scope)
-      |> Ash.Query.load(:duration)
+      |> Ash.Query.load([:duration, :member])
       |> Ash.read!(scope: scope)
 
     total_time_worked = sessions |> Enum.map(& &1.duration) |> Enum.sum()
@@ -168,7 +173,7 @@ defmodule FirmowidWeb.Management.Views.Project do
     current_sessions =
       %{project_id: project.id, month: date.month, year: date.year}
       |> Timetracker.query_to_list_sessions(scope: scope)
-      |> Ash.Query.load(:duration)
+      |> Ash.Query.load([:duration, :member])
       |> Ash.read!(scope: scope)
 
     current_total_time = current_sessions |> Enum.map(& &1.duration) |> Enum.sum()
@@ -177,7 +182,7 @@ defmodule FirmowidWeb.Management.Views.Project do
     prev_sessions =
       %{project_id: project.id, month: previous_month.month, year: previous_month.year}
       |> Timetracker.query_to_list_sessions(scope: scope)
-      |> Ash.Query.load(:duration)
+      |> Ash.Query.load([:duration, :member])
       |> Ash.read!(scope: scope)
 
     prev_total_time = prev_sessions |> Enum.map(& &1.duration) |> Enum.sum()
@@ -202,9 +207,12 @@ defmodule FirmowidWeb.Management.Views.Project do
 
     # Hours records for current month (for lockdown display)
     hours_records =
-      Timetracker.list_hours_records!(%{month: date.month, year: date.year}, scope: scope)
+      Timetracker.list_hours_records!(%{month: date.month, year: date.year},
+        load: [:member],
+        scope: scope
+      )
 
-    hr_by_user = Map.new(hours_records, &{&1.user_id, &1})
+    hr_by_user = Map.new(hours_records, &{&1.member.user_id, &1})
 
     # Current month cost
     current_total_cost = compute_total_cost(current_sessions, current_salary_by_user)
@@ -235,14 +243,14 @@ defmodule FirmowidWeb.Management.Views.Project do
   defp build_users_with_cost(project, sessions, salary_by_user, hr_by_user, scope) do
     time_by_user =
       sessions
-      |> Enum.group_by(& &1.user_id)
+      |> Enum.group_by(& &1.member.user_id)
       |> Map.new(fn {uid, ss} -> {uid, ss |> Enum.map(& &1.duration) |> Enum.sum()} end)
 
     member_ids = MapSet.new(project.members, & &1.user_id)
     session_user_ids = MapSet.new(Map.keys(time_by_user))
     all_user_ids = MapSet.union(member_ids, session_user_ids)
 
-    users_by_id = Map.new(project.members, &{&1.user_id, &1.user})
+    users_by_id = Map.new(project.members, &{&1.user_id, %{&1.user | member: &1}})
 
     all_user_ids
     |> Enum.map(fn uid ->
@@ -267,7 +275,7 @@ defmodule FirmowidWeb.Management.Views.Project do
 
   defp compute_total_cost(sessions, salary_by_user) do
     sessions
-    |> Enum.group_by(& &1.user_id)
+    |> Enum.group_by(& &1.member.user_id)
     |> Enum.map(fn {uid, ss} ->
       time = ss |> Enum.map(& &1.duration) |> Enum.sum()
       rate = Map.get(salary_by_user, uid)
@@ -354,7 +362,7 @@ defmodule FirmowidWeb.Management.Views.Project do
   # Resolve a user by ID: prefer already-loaded project members, fall back to Core.
   defp resolve_user(uid, users_by_id, scope) do
     case Map.get(users_by_id, uid) do
-      nil -> Core.get_org_user!(%{id: uid}, scope: scope)
+      nil -> Core.get_org_user!(%{id: uid}, scope: scope, load: [:member])
       u -> u
     end
   end

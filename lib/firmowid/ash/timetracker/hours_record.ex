@@ -3,7 +3,7 @@ defmodule Firmowid.Ash.Timetracker.HoursRecord do
   Ash resource wrapping the existing `hours_records` table.
 
   Attribute multitenancy via `organization_id`. Stores the number of hours
-  worked by a user in a given month/year, with an attached blob (uploaded
+  worked by a member in a given month/year, with an attached blob (uploaded
   hours record document).
   """
   use Ash.Resource,
@@ -13,6 +13,7 @@ defmodule Firmowid.Ash.Timetracker.HoursRecord do
 
   alias Firmowid.Ash.Blobs
   alias Firmowid.Ash.Checks.ActorRole
+  alias Firmowid.Ash.Checks.CreatingForActorMember
   alias Firmowid.Ash.Core.User
   alias Firmowid.Ash.Resource
   alias Firmowid.Ash.Timetracker.Actions.NotifyAdminsAboutHoursRecordChange
@@ -24,13 +25,21 @@ defmodule Firmowid.Ash.Timetracker.HoursRecord do
   postgres do
     table "hours_records"
     repo Firmowid.Repo
-    identity_wheres_to_sql unique_month_year_user: "submission_status = 'submitted'"
+    identity_wheres_to_sql unique_month_year_member: "submission_status = 'submitted'"
+
+    references do
+      reference :member, on_delete: :delete
+    end
+
+    custom_indexes do
+      index [:member_id]
+    end
   end
 
   code_interface do
     define :read, action: :read
     define :get, get_by: [:id]
-    define :by_month, args: [:user_id, :month, :year]
+    define :by_month, args: [:member_id, :month, :year]
     define :create
     define :request_change
     define :accept_change_request
@@ -44,29 +53,29 @@ defmodule Firmowid.Ash.Timetracker.HoursRecord do
     # ── Read actions ──────────────────────────────────────────────────
 
     read :get do
-      description "Get a single hours record by ID with user preloaded."
+      description "Get a single hours record by ID with its member's user preloaded."
       get? true
 
-      prepare build(load: [:user])
+      prepare build(load: [member: :user])
     end
 
     read :by_month do
-      description "Get the hours record for a user in a specific month/year."
+      description "Get the submitted hours record of a member in a specific month/year."
       get? true
 
-      argument :user_id, :uuid, allow_nil?: false
+      argument :member_id, :uuid, allow_nil?: false
       argument :month, :integer, allow_nil?: false
       argument :year, :integer, allow_nil?: false
 
       filter expr(
-               user_id == ^arg(:user_id) and month == ^arg(:month) and year == ^arg(:year) and
+               member_id == ^arg(:member_id) and month == ^arg(:month) and year == ^arg(:year) and
                  submission_status == :submitted
              )
     end
 
     read :list do
-      description "List monthly hour records with optional user and period filters."
-      argument :user_id, :uuid
+      description "List monthly hour records with optional member and period filters."
+      argument :member_id, :uuid
       argument :month, :integer
       argument :year, :integer
 
@@ -81,8 +90,8 @@ defmodule Firmowid.Ash.Timetracker.HoursRecord do
         where present(:submission_status)
       end
 
-      prepare build(filter: expr(user_id == ^arg(:user_id))) do
-        where present(:user_id)
+      prepare build(filter: expr(member_id == ^arg(:member_id))) do
+        where present(:member_id)
       end
 
       prepare build(filter: expr(month == ^arg(:month))) do
@@ -148,7 +157,7 @@ defmodule Firmowid.Ash.Timetracker.HoursRecord do
 
     create :create do
       description "Create an hours record with blob upload. The blob is created from the uploaded file."
-      accept [:month, :year, :number_of_hours, :user_id]
+      accept [:month, :year, :number_of_hours, :member_id]
 
       argument :upload_path, :string do
         allow_nil? false
@@ -197,15 +206,15 @@ defmodule Firmowid.Ash.Timetracker.HoursRecord do
     end
 
     policy action_type(:read) do
-      authorize_if relates_to_actor_via(:user)
+      authorize_if expr(member_id == ^actor([:member, :id]))
     end
 
     policy action_type(:create) do
-      authorize_if relating_to_actor(:user)
+      authorize_if CreatingForActorMember
     end
 
     policy action(:request_change) do
-      authorize_if relates_to_actor_via(:user)
+      authorize_if expr(member_id == ^actor([:member, :id]))
     end
 
     policy action([:accept_change_request, :reject_change_request]) do
@@ -276,7 +285,7 @@ defmodule Firmowid.Ash.Timetracker.HoursRecord do
   end
 
   relationships do
-    belongs_to :user, User do
+    belongs_to :member, Firmowid.Ash.Core.Member do
       allow_nil? false
       attribute_writable? true
     end
@@ -302,7 +311,7 @@ defmodule Firmowid.Ash.Timetracker.HoursRecord do
   end
 
   identities do
-    identity :unique_month_year_user, [:month, :year, :user_id, :organization_id] do
+    identity :unique_month_year_member, [:month, :year, :member_id, :organization_id] do
       where expr(submission_status == :submitted)
     end
   end

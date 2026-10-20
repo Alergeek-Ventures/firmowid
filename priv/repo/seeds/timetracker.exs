@@ -364,11 +364,11 @@ defmodule Firmowid.Seeds.Timetracker do
       ref_date = Helpers.months_ago(months_back)
 
       for user <- [users.kira, users.tomek, users.sable, users.jules, users.maren] do
-        hours = count_user_hours(user.id, bytecraft.id, ref_date.month, ref_date.year)
+        hours = count_member_hours(user.member.id, bytecraft.id, ref_date.month, ref_date.year)
 
         if hours > 0 do
           get_or_create_hours_record(
-            user.id,
+            user,
             bytecraft.id,
             ref_date.month,
             ref_date.year,
@@ -391,7 +391,7 @@ defmodule Firmowid.Seeds.Timetracker do
     end_dt = DateTime.new!(date, Time.new!(end_h, end_m, 0), "Etc/UTC")
 
     %{
-      user_id: user.id,
+      member_id: user.member.id,
       project_id: project.id,
       title: title,
       start_datetime: start_dt,
@@ -409,7 +409,7 @@ defmodule Firmowid.Seeds.Timetracker do
           start_datetime: attrs.start_datetime,
           end_datetime: attrs.end_datetime,
           is_remote: attrs.is_remote,
-          user_id: attrs.user_id,
+          member_id: attrs.member_id,
           project_id: attrs.project_id,
           organization_id: bytecraft.id
         },
@@ -418,7 +418,7 @@ defmodule Firmowid.Seeds.Timetracker do
     end
   end
 
-  defp count_user_hours(user_id, org_id, month, year) do
+  defp count_member_hours(member_id, org_id, month, year) do
     start_date = Date.new!(year, month, 1)
     end_date = Date.end_of_month(start_date)
 
@@ -428,7 +428,7 @@ defmodule Firmowid.Seeds.Timetracker do
     query =
       Ash.Query.filter(
         Session,
-        user_id == ^user_id and
+        member_id == ^member_id and
           organization_id == ^org_id and
           not is_nil(end_datetime) and
           start_datetime >= ^start_dt and
@@ -446,10 +446,10 @@ defmodule Firmowid.Seeds.Timetracker do
     (total_seconds / 3600) |> Float.ceil() |> trunc()
   end
 
-  defp get_or_create_hours_record(user_id, org_id, month, year, hours) do
+  defp get_or_create_hours_record(user, org_id, month, year, hours) do
     # Create a placeholder blob for the signed hours PDF
-    checksum = Base.encode16(:crypto.hash(:sha256, "hours-#{user_id}-#{month}-#{year}"), case: :lower)
-    blob_path = "hours-records/#{user_id}/#{year}-#{month}/ewidencja-#{month}-#{year}.pdf"
+    checksum = Base.encode16(:crypto.hash(:sha256, "hours-#{user.id}-#{month}-#{year}"), case: :lower)
+    blob_path = "hours-records/#{user.id}/#{year}-#{month}/ewidencja-#{month}-#{year}.pdf"
 
     blob =
       Helpers.seed_blob!(
@@ -468,10 +468,10 @@ defmodule Firmowid.Seeds.Timetracker do
         year: year,
         number_of_hours: hours,
         blob_id: blob.id,
-        user_id: user_id,
+        member_id: user.member.id,
         organization_id: org_id
       },
-      identity: :unique_month_year_user,
+      identity: :unique_month_year_member,
       tenant: org_id
     )
   end

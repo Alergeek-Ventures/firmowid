@@ -124,6 +124,7 @@ defmodule Firmowid.Ash.Core.Member do
 
       authorize_if {SystemActorRole,
                     roles: [
+                      :analysis_reader,
                       :ksef_digest,
                       :billing_snapshotter,
                       :leave_notifier,

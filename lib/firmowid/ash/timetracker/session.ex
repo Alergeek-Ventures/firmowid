@@ -35,6 +35,14 @@ defmodule Firmowid.Ash.Timetracker.Session do
     table "sessions"
     repo Firmowid.Repo
 
+    references do
+      reference :member, on_delete: :delete
+    end
+
+    custom_indexes do
+      index [:member_id]
+    end
+
     custom_statements do
       statement :normalize_session_boundaries_to_minutes do
         up """
@@ -60,6 +68,52 @@ defmodule Firmowid.Ash.Timetracker.Session do
 
         down "SELECT 1;"
       end
+
+      statement :prevent_member_session_overlap do
+        up """
+        CREATE OR REPLACE FUNCTION prevent_session_overlap()
+        RETURNS TRIGGER AS $$
+        DECLARE
+          new_start timestamp := NEW.start_datetime;
+          new_end timestamp := NEW.end_datetime;
+        BEGIN
+          IF EXISTS (
+            SELECT 1 FROM sessions
+            WHERE member_id = NEW.member_id
+              AND id <> COALESCE(NEW.id, '00000000-0000-0000-0000-000000000000')
+              AND (
+                start_datetime < COALESCE(new_end, 'infinity') AND COALESCE(end_datetime, 'infinity') > new_start
+              )
+          ) THEN
+            RAISE EXCEPTION 'Session for this member overlaps with an existing session.';
+          END IF;
+          RETURN NEW;
+        END;
+        $$ LANGUAGE plpgsql;
+        """
+
+        down """
+        CREATE OR REPLACE FUNCTION prevent_session_overlap()
+        RETURNS TRIGGER AS $$
+        DECLARE
+          new_start timestamp := NEW.start_datetime;
+          new_end timestamp := NEW.end_datetime;
+        BEGIN
+          IF EXISTS (
+            SELECT 1 FROM sessions
+            WHERE user_id = NEW.user_id
+              AND id <> COALESCE(NEW.id, '00000000-0000-0000-0000-000000000000')
+              AND (
+                start_datetime < COALESCE(new_end, 'infinity') AND COALESCE(end_datetime, 'infinity') > new_start
+              )
+          ) THEN
+            RAISE EXCEPTION 'Session for this user overlaps with an existing session.';
+          END IF;
+          RETURN NEW;
+        END;
+        $$ LANGUAGE plpgsql;
+        """
+      end
     end
   end
 
@@ -69,7 +123,7 @@ defmodule Firmowid.Ash.Timetracker.Session do
     define :get_current, not_found_error?: false
     define :current_session, args: [:id]
     define :most_recent
-    define :list_overlapping, args: [:user_id, :start_datetime]
+    define :list_overlapping, args: [:member_id, :start_datetime]
     define :start
     define :stop
     define :stop_current
@@ -94,7 +148,7 @@ defmodule Firmowid.Ash.Timetracker.Session do
       aggregation controlled at callsite.
       """
 
-      argument :user_id, :uuid
+      argument :member_id, :uuid
       argument :project_id, :uuid
       argument :month, :integer
       argument :year, :integer
@@ -103,8 +157,8 @@ defmodule Firmowid.Ash.Timetracker.Session do
       argument :started_from, :utc_datetime
       argument :started_to, :utc_datetime
 
-      prepare build(filter: expr(user_id == ^arg(:user_id))) do
-        where present(:user_id)
+      prepare build(filter: expr(member_id == ^arg(:member_id))) do
+        where present(:member_id)
       end
 
       prepare build(filter: expr(project_id == ^arg(:project_id))) do
@@ -139,7 +193,7 @@ defmodule Firmowid.Ash.Timetracker.Session do
     end
 
     read :list_user_sessions do
-      description "List a user's sessions, optionally filtered to those starting on or after a date."
+      description "List the acting member's sessions, optionally filtered to those starting on or after a date."
 
       argument :after_date, :date
 
@@ -150,7 +204,7 @@ defmodule Firmowid.Ash.Timetracker.Session do
                  required?: false
 
       prepare build(sort: [start_datetime: :desc], load: [:lockdown, :project])
-      filter expr(user_id == ^actor(:id))
+      filter expr(member_id == ^actor([:member, :id]))
 
       prepare fn query, _context ->
         case Ash.Query.get_argument(query, :after_date) do
@@ -165,48 +219,48 @@ defmodule Firmowid.Ash.Timetracker.Session do
     end
 
     read :get_current do
-      description "Get the currently running session (no end_datetime) for the acting user."
+      description "Get the currently running session (no end_datetime) for the acting member."
       get? true
 
       prepare build(load: [:project])
       filter expr(is_nil(end_datetime))
-      filter expr(user_id == ^actor(:id))
+      filter expr(member_id == ^actor([:member, :id]))
     end
 
     read :current_session do
-      description "Get a session by ID only when it belongs to the acting user."
+      description "Get a session by ID only when it belongs to the acting member."
       get? true
 
       argument :id, :uuid, allow_nil?: false
 
       filter expr(id == ^arg(:id))
-      filter expr(user_id == ^actor(:id))
+      filter expr(member_id == ^actor([:member, :id]))
     end
 
     read :most_recent do
-      description "Get the most recent session for a user."
+      description "Get the most recent session of the acting member."
       get? true
 
       prepare build(sort: [start_datetime: :desc], limit: 1)
-      filter expr(user_id == ^actor(:id))
+      filter expr(member_id == ^actor([:member, :id]))
     end
 
     read :list_overlapping do
       description """
-      Find sessions that overlap with a given time range for a user.
+      Find sessions that overlap with a given time range for a member.
 
       Used for pre-save conflict detection. See `Session.Overlap.filter/3` for the
       overlap predicate that mirrors the DB trigger.
       """
 
-      argument :user_id, :uuid, allow_nil?: false
+      argument :member_id, :uuid, allow_nil?: false
       argument :start_datetime, :utc_datetime, allow_nil?: false
       argument :end_datetime, :utc_datetime
       argument :exclude_id, :uuid
 
       prepare build(sort: [start_datetime: :asc], load: [:lockdown])
 
-      filter expr(user_id == ^arg(:user_id))
+      filter expr(member_id == ^arg(:member_id))
 
       prepare fn query, _context ->
         exclude_id = Ash.Query.get_argument(query, :exclude_id)
@@ -227,7 +281,7 @@ defmodule Firmowid.Ash.Timetracker.Session do
 
       change set_attribute(:start_datetime, &DateTime.utc_now/0)
       change NormalizeSessionBoundaries
-      change relate_actor(:user)
+      change set_attribute(:member_id, actor([:member, :id]))
 
       change after_action(fn _changeset, session, _context ->
                case StopSessionWorker.enqueue(session) do
@@ -246,7 +300,7 @@ defmodule Firmowid.Ash.Timetracker.Session do
 
     create :create do
       description "Create a session with explicit attributes (for import or admin use)."
-      accept [:title, :start_datetime, :end_datetime, :project_id, :is_remote, :user_id]
+      accept [:title, :start_datetime, :end_datetime, :project_id, :is_remote, :member_id]
       change NormalizeSessionBoundaries
     end
 
@@ -298,7 +352,7 @@ defmodule Firmowid.Ash.Timetracker.Session do
 
     action :stop_current, :struct do
       description """
-      Stop the acting user's currently running session, if any.
+      Stop the acting member's currently running session, if any.
 
       Used by MCP so clients never supply a session id. Returns nil when
       there is no active session.
@@ -324,7 +378,7 @@ defmodule Firmowid.Ash.Timetracker.Session do
     end
 
     action :edit_current_user_session, :struct do
-      description "Update one of the acting user's unfrozen sessions."
+      description "Update one of the acting member's unfrozen sessions."
       constraints instance_of: __MODULE__
       argument :id, :uuid, allow_nil?: false
       argument :title, :string
@@ -390,17 +444,17 @@ defmodule Firmowid.Ash.Timetracker.Session do
     policy action_type(:read) do
       description "Human superusers can read all sessions within the tenant; other users can read their own."
       authorize_if actor_attribute_equals(:system_role, :superuser)
-      authorize_if relates_to_actor_via(:user)
+      authorize_if expr(member_id == ^actor([:member, :id]))
     end
 
     policy action_type(:create) do
       forbid_unless HoursRecordNotSubmitted
-      authorize_if relating_to_actor(:user)
+      authorize_if Firmowid.Ash.Checks.CreatingForActorMember
     end
 
     policy action_type([:update, :destroy]) do
       forbid_unless HoursRecordNotSubmitted
-      authorize_if relates_to_actor_via(:user)
+      authorize_if expr(member_id == ^actor([:member, :id]))
     end
 
     policy action(:stop_current) do
@@ -444,7 +498,7 @@ defmodule Firmowid.Ash.Timetracker.Session do
   end
 
   relationships do
-    belongs_to :user, Firmowid.Ash.Core.User do
+    belongs_to :member, Firmowid.Ash.Core.Member do
       allow_nil? false
       attribute_writable? true
     end
@@ -464,10 +518,10 @@ defmodule Firmowid.Ash.Timetracker.Session do
     has_many :hours_records, HoursRecord do
       no_attributes? true
 
-      description "HoursRecords matching this session's user, month, year, and org — used for lockdown checks."
+      description "HoursRecords matching this session's member, month, year, and org — used for lockdown checks."
 
       filter expr(
-               submission_status == :submitted and user_id == parent(user_id) and
+               submission_status == :submitted and member_id == parent(member_id) and
                  organization_id == parent(organization_id) and
                  month == fragment("EXTRACT(MONTH FROM ?)::integer", parent(start_datetime)) and
                  year == fragment("EXTRACT(YEAR FROM ?)::integer", parent(start_datetime))
@@ -496,6 +550,6 @@ defmodule Firmowid.Ash.Timetracker.Session do
   end
 
   identities do
-    identity :current_session, [:id, :user_id]
+    identity :current_session, [:id, :member_id]
   end
 end

@@ -22,7 +22,7 @@ defmodule FirmowidWeb.HoursRecord.Views.Index do
     current_user = socket.assigns.current_user
 
     selected_date = Date.utc_today()
-    active_months = months_with_sessions(%{user_id: current_user.id}, scope)
+    active_months = months_with_sessions(%{member_id: current_user.member.id}, scope)
     {:ok, current_contract} = Payroll.load_current_contract(current_user.id, scope: scope)
 
     can_use_hours_records = current_user.name && not is_nil(current_contract)
@@ -111,19 +111,19 @@ defmodule FirmowidWeb.HoursRecord.Views.Index do
   def refetch_data(socket) do
     scope = socket.assigns.ash_scope
     selected_date = socket.assigns.selected_date
-    user_id = socket.assigns.current_user.id
+    member_id = socket.assigns.current_user.member.id
     month = selected_date.month
     year = selected_date.year
 
     # User's projects with month duration, sorted by time descending
     projects =
-      %{user_id: user_id}
+      %{member_id: member_id}
       |> Timetracker.query_to_list_projects(scope: scope)
       |> Ash.Query.aggregate(:duration, :sum, :sessions,
         field: :duration,
         default: 0,
         query:
-          Timetracker.query_to_list_sessions(%{user_id: user_id, month: month, year: year},
+          Timetracker.query_to_list_sessions(%{member_id: member_id, month: month, year: year},
             scope: scope
           )
       )
@@ -133,7 +133,7 @@ defmodule FirmowidWeb.HoursRecord.Views.Index do
 
         # Eagerly fetch sessions grouped by title for this user+project+month
         grouped_sessions =
-          %{user_id: user_id, project_id: project.id, month: month, year: year}
+          %{member_id: member_id, project_id: project.id, month: month, year: year}
           |> Timetracker.query_to_list_sessions(scope: scope)
           |> Ash.Query.load(:duration)
           |> Ash.read!(scope: scope)
@@ -152,7 +152,7 @@ defmodule FirmowidWeb.HoursRecord.Views.Index do
 
     # Total duration for this user this month
     total_query =
-      Timetracker.query_to_list_sessions(%{user_id: user_id, month: month, year: year},
+      Timetracker.query_to_list_sessions(%{member_id: member_id, month: month, year: year},
         scope: scope
       )
 
@@ -160,14 +160,14 @@ defmodule FirmowidWeb.HoursRecord.Views.Index do
       Ash.aggregate!(total_query, {:total, :sum, field: :duration, default: 0}, scope: scope)
 
     {:ok, current_month_hours_record} =
-      AshHoursRecord.by_month(user_id, month, year,
+      AshHoursRecord.by_month(member_id, month, year,
         scope: scope,
         not_found_error?: false
       )
 
     period_records =
       Timetracker.list_hours_records!(
-        %{user_id: user_id, month: month, year: year, submission_status: nil},
+        %{member_id: member_id, month: month, year: year, submission_status: nil},
         scope: scope
       )
 

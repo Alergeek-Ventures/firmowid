@@ -401,7 +401,7 @@ defmodule FirmowidWeb.Invoicing.Transactions.Views.ShowTest do
       start = DateTime.new!(month, ~T[08:00:00], "Etc/UTC")
 
       Ash.Seed.seed!(Session, %{
-        user_id: user.id,
+        member_id: user.member.id,
         organization_id: user.organization_id,
         project_id: project.id,
         title: "Salary matching hours",
@@ -426,7 +426,7 @@ defmodule FirmowidWeb.Invoicing.Transactions.Views.ShowTest do
 
     Ash.Seed.seed!(HoursRecord, %{
       organization_id: user.organization_id,
-      user_id: user.id,
+      member_id: user.member.id,
       blob_id: blob.id,
       month: month.month,
       year: month.year,

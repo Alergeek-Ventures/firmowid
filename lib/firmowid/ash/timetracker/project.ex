@@ -59,7 +59,7 @@ defmodule Firmowid.Ash.Timetracker.Project do
       Duration aggregation, counterparty loading, sorting at callsite.
       """
 
-      argument :user_id, :uuid
+      argument :member_id, :uuid
       argument :tag_definition_id, :uuid
       argument :search, :string
 
@@ -77,8 +77,8 @@ defmodule Firmowid.Ash.Timetracker.Project do
         description "Only projects created or with logged work on or before this date."
       end
 
-      prepare build(filter: expr(exists(project_users, member.user_id == ^arg(:user_id)))) do
-        where present(:user_id)
+      prepare build(filter: expr(exists(project_users, member_id == ^arg(:member_id)))) do
+        where present(:member_id)
       end
 
       prepare build(filter: expr(tag_definition_id == ^arg(:tag_definition_id))) do
