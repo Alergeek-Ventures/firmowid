@@ -252,7 +252,7 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoiceTest do
         tenant: nil
       }
 
-      assert {:ok, %SalesInvoice{id: invoice_id}} =
+      assert {:ok, %{invoice: %SalesInvoice{id: invoice_id}, show_vat: true, logo_url: nil}} =
                SalesInvoice.by_share_token(token, scope: anonymous_scope)
 
       assert invoice_id == invoice.id

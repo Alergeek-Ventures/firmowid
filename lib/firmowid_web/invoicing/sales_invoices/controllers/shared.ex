@@ -33,9 +33,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Controllers.Shared do
     {root_token, _correction_id} = split_pdf_token(token_string)
 
     case shared_invoice(root_token) do
-      {:ok, invoice} ->
-        scope = build_anonymous_scope(invoice)
-        {invoice, logo_url, org} = prepare_invoice_with_org_context(invoice, scope)
+      {:ok, %{invoice: invoice, logo_url: logo_url, show_vat: show_vat}} ->
         lang = resolve_lang(params, invoice)
 
         render(conn, :show,
@@ -45,7 +43,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Controllers.Shared do
           lang: lang,
           buyer_display_name: invoice.buyer_display_name_label || "",
           currency_rate: Invoicing.get_currency_rate(invoice),
-          show_vat: org.is_vat_payer
+          show_vat: show_vat
         )
 
       :not_found ->
@@ -60,13 +58,13 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Controllers.Shared do
   def pdf(conn, %{"token" => token_string}) do
     {root_token, correction_id} = split_pdf_token(token_string)
 
-    with {:ok, invoice} <- shared_invoice(root_token),
+    with {:ok, %{invoice: invoice, logo_url: logo_url, show_vat: show_vat}} <-
+           shared_invoice(root_token),
          scope = build_anonymous_scope(invoice),
-         {invoice, logo_url, org} = prepare_invoice_with_org_context(invoice, scope),
          {:ok, target_invoice} <- target_pdf_invoice(invoice, correction_id),
          {:ok, pdf_binary} <-
            SalesInvoicePdf.generate(target_invoice,
-             show_vat: org.is_vat_payer,
+             show_vat: show_vat,
              logo_url: logo_url,
              include_internal_note: false,
              scope: scope
@@ -86,7 +84,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Controllers.Shared do
   defp shared_invoice(root_token) do
     case SalesInvoice.by_share_token(root_token, scope: anonymous_lookup_scope()) do
       {:ok, nil} -> :not_found
-      {:ok, invoice} -> {:ok, invoice}
+      {:ok, projection} -> {:ok, projection}
       {:error, _reason} -> :not_found
     end
   end
@@ -118,13 +116,6 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Controllers.Shared do
 
   defp anonymous_lookup_scope do
     %Scope{actor: %SystemActor{org_id: nil, role: :anonymous}, tenant: nil}
-  end
-
-  defp prepare_invoice_with_org_context(invoice, scope) do
-    org = invoice.organization
-    logo_url = Invoicing.get_logo_url(invoice.organization_id, scope: scope)
-
-    {invoice, logo_url, org}
   end
 
   defp resolve_lang(%{"jezyk" => raw_language}, invoice),

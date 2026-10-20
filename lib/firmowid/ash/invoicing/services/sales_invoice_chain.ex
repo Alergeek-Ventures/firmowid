@@ -62,7 +62,6 @@ defmodule Firmowid.Ash.Invoicing.Services.SalesInvoiceChain do
     root_invoice_id
     |> SalesInvoice.query_to_public_shared_chain(root_share_token, opts)
     |> Ash.Query.load([
-      :organization,
       :net_value,
       :vat_value,
       :amount,
