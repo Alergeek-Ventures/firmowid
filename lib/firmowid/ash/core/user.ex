@@ -554,14 +554,12 @@ defmodule Firmowid.Ash.Core.User do
 
     policy action(:archive) do
       forbid_if expr(organization.owner_id == id)
-      forbid_unless expr(organization_id == ^actor(:organization_id))
-      authorize_if actor_attribute_equals(:role, :admin)
+      authorize_if OrganizationAdmin
     end
 
     policy action(:unarchive) do
       forbid_if expr(organization.owner_id == id)
-      forbid_unless expr(organization_id == ^actor(:organization_id))
-      authorize_if actor_attribute_equals(:role, :admin)
+      authorize_if OrganizationAdmin
     end
 
     policy action(:set_organization) do
