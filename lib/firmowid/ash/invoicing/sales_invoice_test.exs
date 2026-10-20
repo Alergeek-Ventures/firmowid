@@ -643,6 +643,21 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoiceTest do
       assert %{message: "Uzupełnij adres firmy w ustawieniach organizacji."} =
                Enum.find(errors, &match?(%{field: :seller_address}, &1))
     end
+
+    test "previews input whose omitted fields arrive as explicit nulls" do
+      user = invoicing_admin_fixture()
+
+      fields =
+        Keyword.keys(Firmowid.Ash.Invoicing.Types.InvoiceInput.subtype_constraints()[:fields])
+
+      invoice = Map.merge(Map.new(fields, &{&1, nil}), issue_input())
+
+      assert {:ok, preview} =
+               Invoicing.preview_sales_invoice(%{invoice: invoice}, scope: scope_for(user))
+
+      assert preview.is_reverse_charge == false
+      assert [%{vat_rate: "23"}] = preview.sales_invoice_items
+    end
   end
 
   defp invoicing_admin_fixture do
