@@ -54,13 +54,25 @@ function posthogOptions() {
 }
 
 function applyIdentifiedState(instance = posthog) {
+  if (consentAccepted()) {
+    instance.set_config({ persistence: "localStorage+cookie" });
+  }
+
+  const previousUserId = instance.get_property("$user_id");
+  if (previousUserId && previousUserId !== telemetryConfig.currentUserId) {
+    instance.reset();
+  }
+
+  const previousOrganizationId = instance.getGroups().organization;
+  if (previousOrganizationId && previousOrganizationId !== telemetryConfig.currentOrganizationId) {
+    instance.resetGroups();
+  }
+
   instance.register(telemetryContextProperties);
 
   if (!consentAccepted()) {
     return;
   }
-
-  instance.set_config({ persistence: "localStorage+cookie" });
 
   if (telemetryConfig.currentUserId) {
     instance.identify(telemetryConfig.currentUserId, telemetryUserProperties);
