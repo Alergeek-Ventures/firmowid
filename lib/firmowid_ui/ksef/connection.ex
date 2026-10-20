@@ -4,13 +4,13 @@ defmodule FirmowidUI.Ksef.Connection do
   import Phoenix.Component, only: [assign: 3]
   import Phoenix.LiveView
 
-  alias Ash.Error.Forbidden
   alias Ash.Error.Invalid
   alias Ash.Notifier.Notification
   alias Firmowid.Analytics
   alias Firmowid.Ash.Ksef
   alias Firmowid.Ash.Ksef.Credential
   alias Firmowid.Ash.Scope
+  alias FirmowidUI.Utilities.ForbiddenError
   alias Phoenix.LiveView.Socket
   alias Phoenix.Socket.Broadcast
 
@@ -303,6 +303,6 @@ defmodule FirmowidUI.Ksef.Connection do
        when is_binary(tenant), do: :ok
 
   defp authorize_admin!(_scope) do
-    raise Forbidden, message: "Tylko administrator może zarządzać KSeF."
+    raise ForbiddenError, "Tylko administrator może zarządzać KSeF."
   end
 end

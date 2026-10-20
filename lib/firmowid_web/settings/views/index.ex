@@ -21,7 +21,6 @@ defmodule FirmowidWeb.Settings.Views.Index do
   import FirmowidWeb.Settings.Components.SubscriptionTab
   import Phoenix.Component, except: [link: 1]
 
-  alias Ash.Error.Forbidden
   alias Ash.Notifier.Notification
   alias AshAuthentication.Argon2Provider
   alias Firmowid.Ash.Billing.Month
@@ -38,6 +37,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
   alias Firmowid.Ash.Timetracker
   alias Firmowid.ErrorKind
   alias FirmowidUI.Ksef.Connection
+  alias FirmowidUI.Utilities.ForbiddenError
   alias FirmowidWeb.Billing.Utilities.MonthContext
   alias FirmowidWeb.Core.Endpoint
   alias FirmowidWeb.Documents.Components.DocumentsSection
@@ -322,7 +322,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
   defp handle_progress(name, entry, socket) when name in [:organization_avatar, :user_avatar] do
     if name == :organization_avatar do
       if socket.assigns.current_user.member.role != :admin do
-        raise Forbidden, message: "Tylko administrator może zmienić logo organizacji."
+        raise ForbiddenError, "Tylko administrator może zmienić logo organizacji."
       end
     end
 
@@ -451,7 +451,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
     scope = socket.assigns.ash_scope
 
     if current_user.member.role != :admin do
-      raise Forbidden, message: "Tylko administrator może aktualizować organizację."
+      raise ForbiddenError, "Tylko administrator może aktualizować organizację."
     end
 
     case AshPhoenix.Form.submit(socket.assigns.company_form, params: org_params, scope: scope) do
@@ -558,7 +558,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
     current_user = socket.assigns.current_user
 
     if current_user.member.role != :admin do
-      raise Forbidden, message: "Tylko administrator może archiwizować użytkowników."
+      raise ForbiddenError, "Tylko administrator może archiwizować użytkowników."
     end
 
     with {:ok, user} <- find_loaded_organization_user(socket.assigns.organization_users, user_id),
@@ -692,7 +692,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
     current_org = socket.assigns.current_org
 
     if current_user.member.role != :admin do
-      raise Forbidden, message: "Tylko administrator może zmienić adres e-mail."
+      raise ForbiddenError, "Tylko administrator może zmienić adres e-mail."
     end
 
     case Core.regenerate_nickname(current_org, scope: socket.assigns.ash_scope) do
@@ -726,7 +726,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
     current_org = socket.assigns.current_org
 
     if current_user.member.role != :admin do
-      raise Forbidden, message: "Tylko administrator może zarządzać listą dozwolonych adresów."
+      raise ForbiddenError, "Tylko administrator może zarządzać listą dozwolonych adresów."
     end
 
     case Core.add_sender_email(current_org, %{email: String.trim(email)}, scope: socket.assigns.ash_scope) do
@@ -753,7 +753,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
     current_org = socket.assigns.current_org
 
     if current_user.member.role != :admin do
-      raise Forbidden, message: "Tylko administrator może zarządzać listą dozwolonych adresów."
+      raise ForbiddenError, "Tylko administrator może zarządzać listą dozwolonych adresów."
     end
 
     case Core.remove_sender_email(current_org, %{email: email}, scope: socket.assigns.ash_scope) do
