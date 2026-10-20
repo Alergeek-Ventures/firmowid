@@ -10,6 +10,7 @@ defmodule Firmowid.Ash.Core.OrganizationCleanup do
   alias Firmowid.Ash.Analysis.TagDefinition
   alias Firmowid.Ash.Billing.Snapshot
   alias Firmowid.Ash.Core
+  alias Firmowid.Ash.Core.Member
   alias Firmowid.Ash.Core.OauthAuthorizationCode
   alias Firmowid.Ash.Core.OauthConsent
   alias Firmowid.Ash.Core.OauthRefreshToken
@@ -79,21 +80,31 @@ defmodule Firmowid.Ash.Core.OrganizationCleanup do
     end
   end
 
-  @doc "Detach all organization accounts and avatar references without deleting the accounts."
+  @doc "Remove all memberships and detach the accounts and avatar references without deleting the accounts."
   @spec detach_users(Scope.t()) :: :ok | {:error, term()}
   def detach_users(scope) do
-    case Core.list_users(%{}, scope: scope) do
-      {:ok, users} ->
-        each(users, fn user ->
-          case User.detach_for_organization_cleanup(user, %{}, scope: scope) do
-            {:ok, _user} -> :ok
-            {:error, error} -> {:error, error}
-          end
-        end)
+    with :ok <- destroy_records(Member.list(scope: scope), &Member.destroy/2, scope) do
+      case Core.list_users(%{}, scope: scope) do
+        {:ok, users} ->
+          each(users, fn user ->
+            case User.detach_for_organization_cleanup(user, %{}, scope: scope) do
+              {:ok, _user} -> :ok
+              {:error, error} -> {:error, error}
+            end
+          end)
 
-      {:error, error} ->
-        {:error, error}
+        {:error, error} ->
+          {:error, error}
+      end
     end
+  end
+
+  @doc "Remove the deleted account's membership in its organization, if it has one."
+  @spec remove_account_membership(Scope.t()) :: :ok | {:error, term()}
+  def remove_account_membership(%Scope{tenant: nil}), do: :ok
+
+  def remove_account_membership(scope) do
+    destroy_records(Member.list(scope: scope), &Member.destroy/2, scope)
   end
 
   @doc "Remove only the actual deleted account's OAuth dependents, even without an organization."

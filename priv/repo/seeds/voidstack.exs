@@ -65,6 +65,8 @@ defmodule Firmowid.Seeds.Voidstack do
     if is_nil(dragan.organization_id) or dragan.organization_id != voidstack.id do
       Ash.Seed.update!(dragan, %{organization_id: voidstack.id})
     end
+
+    Helpers.seed_member!(dragan.id, voidstack.id)
   end
 
   defp seed_project(dragan, voidstack) do

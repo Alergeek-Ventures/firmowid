@@ -66,16 +66,14 @@ defmodule Firmowid.AccountsFixtures do
     user =
       case attrs[:organization_id] do
         nil ->
+          # Creating the organization assigns it to the owner; keep the registered
+          # struct, which carries the sign-in token metadata.
           org =
-            Core.create_organization!(
-              %{nip: unique_nip(), name: "Test Organization"},
+            Core.create_organization!(%{nip: unique_nip(), name: "Test Organization"},
               actor: user
             )
 
-          Core.set_organization!(user, %{organization_id: org.id},
-            actor: %SystemActor{org_id: org.id, role: :organization_owner_setup, user_id: user.id},
-            tenant: org.id
-          )
+          %{user | organization_id: org.id}
 
         org_id ->
           Core.set_organization!(user, %{organization_id: org_id},

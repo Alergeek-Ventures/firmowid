@@ -37,6 +37,8 @@ defmodule Firmowid.Seeds.SalaryMatching do
           identity: :unique_email
         )
 
+      Helpers.seed_member!(user.id, organization.id)
+
       Ash.Seed.upsert!(
         UserSalary,
         %{

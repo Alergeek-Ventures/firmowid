@@ -9,6 +9,7 @@ defmodule Firmowid.Seeds.Helpers do
   """
 
   alias Firmowid.Ash.Blobs.Blob, as: AshBlob
+  alias Firmowid.Ash.Core.Member, as: CoreMember
   alias Firmowid.Ash.Finances.BankAccount, as: AshBankAccount
   alias Firmowid.Ash.Finances.Requisition, as: AshRequisition
   alias Firmowid.Ash.Finances.Transaction, as: AshTransaction
@@ -105,6 +106,15 @@ defmodule Firmowid.Seeds.Helpers do
       "seller_nip" => "6161525811",
       "seller_account_number" => "PL61105000997603123456789012"
     }
+  end
+
+  def seed_member!(user_id, org_id) do
+    query = Ash.Query.filter(CoreMember, user_id == ^user_id)
+
+    case Ash.read_one!(query, authorize?: false, tenant: org_id) do
+      nil -> Ash.Seed.seed!(CoreMember, %{user_id: user_id, organization_id: org_id}, tenant: org_id)
+      member -> member
+    end
   end
 
   # ---------------------------------------------------------------------------

@@ -149,6 +149,7 @@ defmodule Firmowid.Seeds.Bytecraft do
           Ash.Seed.update!(user, %{organization_id: bytecraft.id})
         end
 
+      Helpers.seed_member!(user.id, bytecraft.id)
       {key, user}
     end)
   end

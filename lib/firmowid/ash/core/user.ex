@@ -25,6 +25,7 @@ defmodule Firmowid.Ash.Core.User do
   alias Firmowid.Ash.Core.Calculations.AcceptedLeaveDaysForYear
   alias Firmowid.Ash.Core.Calculations.SharedBirthday
   alias Firmowid.Ash.Core.Changes.CaptureGoogleRegistration
+  alias Firmowid.Ash.Core.Member
   alias Firmowid.Ash.Core.Secrets
   alias Firmowid.Ash.Core.Services.GoogleAvatarImporter
   alias Firmowid.Ash.Core.User.Actions.UpdateCurrentProfile
@@ -364,14 +365,17 @@ defmodule Firmowid.Ash.Core.User do
     update :set_organization do
       description "Assign a user to an organization."
       accept []
+      require_atomic? false
       argument :organization_id, :uuid, allow_nil?: false
       change set_attribute(:organization_id, arg(:organization_id))
-    end
 
-    update :clear_organization do
-      description "Remove a user from their current organization."
-      accept []
-      change set_attribute(:organization_id, nil)
+      change after_action(fn _changeset, user, context ->
+               opts = Ash.Context.to_opts(context, tenant: user.organization_id)
+
+               with {:ok, _member} <- Member.create(%{user_id: user.id}, opts) do
+                 {:ok, user}
+               end
+             end)
     end
 
     update :archive do
@@ -555,10 +559,6 @@ defmodule Firmowid.Ash.Core.User do
 
     policy action(:set_organization) do
       forbid_if always()
-    end
-
-    bypass action(:clear_organization) do
-      authorize_if OrganizationAdmin
     end
 
     bypass action(:unlink_google) do
