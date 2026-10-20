@@ -5,8 +5,6 @@ defmodule Firmowid.Ash.Invoicing do
   """
   use Ash.Domain, extensions: [AshAi]
 
-  import Ash.Expr, only: [expr: 1]
-
   alias Firmowid.Ash.Blobs
   alias Firmowid.Ash.Core
   alias Firmowid.Ash.Currencies.NbpApiClient
@@ -19,8 +17,6 @@ defmodule Firmowid.Ash.Invoicing do
   alias Firmowid.Ash.Scope
   alias Firmowid.Ash.SystemActor
   alias Firmowid.ErrorKind
-
-  require Ash.Query
 
   tools do
     tool :list_sales_invoices, SalesInvoice, :list do
@@ -219,7 +215,10 @@ defmodule Firmowid.Ash.Invoicing do
       define :disconnect_all_cost_invoice_transactions,
         action: :disconnect_all_transactions
 
-      define :create_cost_invoice_dedup, action: :create_dedup
+      define :get_cost_invoice_by_ksef_number,
+        action: :read,
+        get_by: [:ksef_number],
+        not_found_error?: false
     end
 
     resource Firmowid.Ash.Invoicing.KsefInvoiceDigest
@@ -694,101 +693,46 @@ defmodule Firmowid.Ash.Invoicing do
   defp ksef_import_role(SalesInvoice), do: :sales_invoice_processor
 
   @doc """
-  Creates a cost invoice from extracted metadata (AI or KSeF parser).
+  Creates a cost invoice from metadata extracted from an uploaded or e-mailed document.
+
+  A KSeF number read from the document is not trusted as the invoice's identity; it
+  only detects an invoice already imported from KSeF. That document is then skipped
+  with `{:error, {:duplicate_ksef_invoice, id}}` instead of duplicating the KSeF record.
 
   The `:create` action emits `cost_invoice_created`, which matches the invoice
   to bank transactions in a job committed together with the invoice.
   """
-  @spec create_cost_invoice(map()) :: {:ok, CostInvoice.t()} | {:error, term()}
-  def create_cost_invoice(extracted_metadata), do: create_cost_invoice(extracted_metadata, &CostInvoice.create/2)
-
-  @doc """
-  Creates a cost invoice from a KSeF import like `create_cost_invoice/1`, but
-  leaves the seller display name and description to background jobs.
-  """
-  @spec create_cost_invoice_from_ksef(map()) :: {:ok, CostInvoice.t()} | {:error, term()}
-  def create_cost_invoice_from_ksef(extracted_metadata),
-    do: create_cost_invoice(extracted_metadata, &CostInvoice.create_from_ksef/2)
-
-  defp create_cost_invoice(extracted_metadata, create) do
-    organization_id =
-      Map.get(extracted_metadata, "organization_id") ||
-        Map.get(extracted_metadata, :organization_id) ||
-        raise "organization_id is required in extracted_metadata"
-
-    sanitized_metadata =
-      Map.drop(extracted_metadata, [
-        "organization_id",
-        :organization_id
-      ])
-
-    actor = %SystemActor{org_id: organization_id, role: :cost_invoice_processor}
-    scope = %Scope{actor: actor, tenant: organization_id}
-
-    create.(sanitized_metadata, scope: scope)
-  end
-
-  @doc """
-  Creates a cost invoice with KSeF-number deduplication.
-
-  Uses an upsert action to atomically detect duplicate KSeF numbers.
-  Returns `{:error, {:duplicate_ksef_invoice, id}}` when a cost invoice
-  with the same KSeF number already exists.
-  """
-  @spec create_cost_invoice_with_ksef_dedup(map()) ::
+  @spec create_cost_invoice_from_document(map()) ::
           {:ok, CostInvoice.t()}
           | {:error, {:duplicate_ksef_invoice, Ash.UUID.t()}}
           | {:error, term()}
-  def create_cost_invoice_with_ksef_dedup(extracted_metadata) do
-    ksef_number =
-      Map.get(extracted_metadata, "ksef_number") ||
-        Map.get(extracted_metadata, :ksef_number)
+  def create_cost_invoice_from_document(extracted_metadata) do
+    {ksef_number, metadata} = Map.pop(extracted_metadata, "ksef_number")
+    {organization_id, metadata} = Map.pop!(metadata, "organization_id")
+    scope = cost_invoice_processor_scope(organization_id)
 
-    if is_binary(ksef_number) and ksef_number != "" do
-      do_create_cost_invoice_dedup(extracted_metadata)
-    else
-      create_cost_invoice(extracted_metadata)
+    case ksef_number && get_cost_invoice_by_ksef_number(ksef_number, scope: scope) do
+      {:ok, %CostInvoice{id: existing_id}} -> {:error, {:duplicate_ksef_invoice, existing_id}}
+      {:error, error} -> {:error, error}
+      _no_ksef_invoice -> CostInvoice.create(metadata, scope: scope)
     end
   end
 
-  defp do_create_cost_invoice_dedup(extracted_metadata) do
-    organization_id =
-      Map.get(extracted_metadata, "organization_id") ||
-        Map.get(extracted_metadata, :organization_id) ||
-        raise "organization_id is required in extracted_metadata"
-
-    ksef_number =
-      Map.get(extracted_metadata, "ksef_number") ||
-        Map.get(extracted_metadata, :ksef_number)
-
-    sanitized_metadata =
-      Map.drop(extracted_metadata, [
-        "organization_id",
-        :organization_id
-      ])
-
-    actor = %SystemActor{org_id: organization_id, role: :cost_invoice_processor}
-    scope = %Scope{actor: actor, tenant: organization_id}
-
-    case find_duplicate_ksef_invoice(ksef_number, scope) do
-      {:ok, %CostInvoice{id: existing_id}} ->
-        {:error, {:duplicate_ksef_invoice, existing_id}}
-
-      _ ->
-        __MODULE__.create_cost_invoice_dedup(sanitized_metadata, scope: scope)
-    end
+  @doc """
+  Creates a cost invoice from a KSeF import, leaving the seller display name and
+  description to background jobs.
+  """
+  @spec create_cost_invoice_from_ksef(map()) :: {:ok, CostInvoice.t()} | {:error, term()}
+  def create_cost_invoice_from_ksef(extracted_metadata) do
+    {organization_id, metadata} = Map.pop!(extracted_metadata, :organization_id)
+    CostInvoice.create_from_ksef(metadata, scope: cost_invoice_processor_scope(organization_id))
   end
 
-  defp find_duplicate_ksef_invoice(nil, _scope), do: nil
-  defp find_duplicate_ksef_invoice("", _scope), do: nil
-
-  defp find_duplicate_ksef_invoice(ksef_number, scope) do
-    CostInvoice
-    |> Ash.Query.new()
-    |> Ash.Query.filter(expr(ksef_number == ^ksef_number))
-    |> Ash.Query.select([:id])
-    |> Ash.Query.limit(1)
-    |> Ash.read_one(scope: scope)
+  defp cost_invoice_processor_scope(organization_id) do
+    %Scope{
+      actor: %SystemActor{org_id: organization_id, role: :cost_invoice_processor},
+      tenant: organization_id
+    }
   end
 
   @doc """
