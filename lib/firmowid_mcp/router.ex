@@ -16,6 +16,8 @@ defmodule FirmowidMcp.Router do
   def init(opts) do
     opts
     |> Keyword.put(:otp_app, :firmowid)
+    |> Keyword.put(:mcp_name, "Firmowid")
+    |> Keyword.put(:mcp_icons, fn _opts -> server_icons() end)
     |> Keyword.put(:instructions, FirmowidMcp.instructions())
     |> Transport.init()
   end
@@ -63,7 +65,7 @@ defmodule FirmowidMcp.Router do
   defp decorate_response(conn) do
     case Jason.decode(conn.resp_body || "") do
       {:ok, response} ->
-        response = response |> decorate(conn.body_params, conn) |> put_server_icons()
+        response = decorate(response, conn.body_params, conn)
         %{conn | resp_body: Jason.encode!(response)}
 
       _ ->
@@ -133,18 +135,6 @@ defmodule FirmowidMcp.Router do
   end
 
   defp decorate(response, _request, _conn), do: response
-
-  # AshAi has no serverInfo icons. Initialize-era results carry serverInfo in the result,
-  # 2026-07-28 results in `_meta`; clients that render icons get the app favicon.
-  defp put_server_icons(responses) when is_list(responses), do: Enum.map(responses, &put_server_icons/1)
-
-  defp put_server_icons(%{"result" => %{"serverInfo" => _info}} = response),
-    do: put_in(response, ["result", "serverInfo", "icons"], server_icons())
-
-  defp put_server_icons(%{"result" => %{"_meta" => %{"io.modelcontextprotocol/serverInfo" => _info}}} = response),
-    do: put_in(response, ["result", "_meta", "io.modelcontextprotocol/serverInfo", "icons"], server_icons())
-
-  defp put_server_icons(response), do: response
 
   defp server_icons do
     [
