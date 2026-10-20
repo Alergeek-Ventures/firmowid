@@ -37,7 +37,7 @@ defmodule Firmowid.Ash.Finances.Transaction do
       Lists bank transactions with optional filters.
 
       Sorting and relationship loading are controlled at the callsite. With a
-      `query`, results are sorted by ParadeDB relevance.
+      `query`, unpaginated results are sorted by ParadeDB relevance.
       """
 
       pagination do
