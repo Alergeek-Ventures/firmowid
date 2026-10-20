@@ -83,19 +83,17 @@ defmodule Firmowid.Ash.Core.OrganizationCleanup do
   @doc "Remove all memberships and detach the accounts and avatar references without deleting the accounts."
   @spec detach_users(Scope.t()) :: :ok | {:error, term()}
   def detach_users(scope) do
-    with :ok <- destroy_records(Member.list(scope: scope), &Member.destroy/2, scope) do
-      case Core.list_users(%{}, scope: scope) do
-        {:ok, users} ->
-          each(users, fn user ->
-            case User.detach_for_organization_cleanup(user, %{}, scope: scope) do
-              {:ok, _user} -> :ok
-              {:error, error} -> {:error, error}
-            end
-          end)
+    # Users are listed through their membership, so they are detached first.
+    with {:ok, users} <- Core.list_users(%{}, scope: scope),
+         :ok <- each(users, &detach_user(&1, scope)) do
+      destroy_records(Member.list(scope: scope), &Member.destroy/2, scope)
+    end
+  end
 
-        {:error, error} ->
-          {:error, error}
-      end
+  defp detach_user(user, scope) do
+    case User.detach_for_organization_cleanup(user, %{}, scope: scope) do
+      {:ok, _user} -> :ok
+      {:error, error} -> {:error, error}
     end
   end
 
