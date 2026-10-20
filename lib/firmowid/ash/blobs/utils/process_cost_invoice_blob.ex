@@ -120,11 +120,7 @@ defmodule Firmowid.Ash.Blobs.Utils.ProcessCostInvoiceBlob do
       |> Map.put("blob_id", blob.id)
       |> maybe_put_inbound_email_id(inbound_email_id)
 
-    case Invoicing.create_cost_invoice_with_ksef_dedup(attrs) do
-      {:ok, _cost_invoice} -> :ok
-      {:error, {:duplicate_ksef_invoice, _id} = dup} -> {:error, dup}
-      {:error, reason} -> {:error, reason}
-    end
+    with {:ok, _cost_invoice} <- Invoicing.create_cost_invoice_from_document(attrs), do: :ok
   end
 
   defp maybe_fallback(extracted_metadata) do

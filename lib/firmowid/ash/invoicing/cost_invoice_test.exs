@@ -253,18 +253,16 @@ defmodule Firmowid.Ash.Invoicing.CostInvoiceTest do
                )
 
       assert {:ok, _original} =
-               CostInvoice.create(
-                 %{
-                   seller: "Supplier Sp. z o.o.",
-                   sale_date: ~D[2026-02-01],
-                   issue_date: ~D[2026-02-01],
-                   items_list: [],
-                   amount: Money.new!("PLN", "-100.00"),
-                   invoice_identifier: "FV/2026/02/LATE-ORIGINAL",
-                   ksef_number: "KSEF-LATE-ORIGINAL"
-                 },
-                 scope: scope
-               )
+               Invoicing.create_cost_invoice_from_ksef(%{
+                 organization_id: user.organization_id,
+                 seller: "Supplier Sp. z o.o.",
+                 sale_date: ~D[2026-02-01],
+                 issue_date: ~D[2026-02-01],
+                 items_list: [],
+                 amount: Money.new!("PLN", "-100.00"),
+                 invoice_identifier: "FV/2026/02/LATE-ORIGINAL",
+                 ksef_number: "KSEF-LATE-ORIGINAL"
+               })
     end
 
     test "rejects a positive non-correction amount" do
