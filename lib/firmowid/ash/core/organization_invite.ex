@@ -72,31 +72,11 @@ defmodule Firmowid.Ash.Core.OrganizationInvite do
       accept []
       require_atomic? false
 
-      # Lock the invite and check the stored row inside the transaction, so concurrent
-      # joins with the same code cannot both consume it.
-      change get_and_lock_for_update()
-
-      change before_action(fn changeset, _context ->
-               if changeset.data.consumed_at do
-                 Ash.Changeset.add_error(changeset,
-                   field: :consumed_at,
-                   message: "invite has already been consumed"
-                 )
-               else
-                 changeset
-               end
-             end)
-
-      change fn changeset, context ->
-        actor = Map.fetch!(context, :actor)
-
-        changeset
-        |> Ash.Changeset.change_attribute(:consumed_by_id, actor.id)
-        |> Ash.Changeset.change_attribute(
-          :consumed_at,
-          DateTime.utc_now(:second)
-        )
-      end
+      # The update only matches an unconsumed row, so concurrent joins with the same
+      # code cannot both consume it; the loser gets a stale-record error.
+      change filter(expr(is_nil(consumed_at)))
+      change set_attribute(:consumed_by_id, actor(:id))
+      change set_attribute(:consumed_at, &DateTime.utc_now/0)
 
       change after_action(fn _changeset, invite, context ->
                user_id = invite.consumed_by_id
