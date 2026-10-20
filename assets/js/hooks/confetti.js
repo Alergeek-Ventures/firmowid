@@ -1,3 +1,5 @@
+import confetti from "canvas-confetti";
+
 export const Confetti = {
     beforeDestroy() {
         this.el.removeEventListener("click", this.listener);
