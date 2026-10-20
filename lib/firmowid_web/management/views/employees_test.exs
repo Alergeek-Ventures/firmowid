@@ -384,6 +384,53 @@ defmodule FirmowidWeb.Management.Views.EmployeesTest do
     assert active_html =~ to_string(employee.email)
   end
 
+  test "restoring an employee who joined another organization explains why and keeps them archived",
+       %{conn: conn} do
+    admin = admin_fixture()
+    employee = user_in_org_fixture(admin.organization_id, %{name: "Moved On"})
+    Core.archive_member!(employee.member, scope: current_scope(admin))
+
+    employee
+    |> Map.put(:organization_id, nil)
+    |> then(&Core.create_organization!(%{nip: unique_nip(), name: "Nowa firma"}, actor: &1))
+
+    conn = log_in_user(conn, admin)
+    {:ok, lv, _html} = live(conn, ~p"/zarzadzanie/pracownicy/#{employee.id}")
+
+    html =
+      lv
+      |> element("button[phx-click='unarchive_employee']")
+      |> render_click()
+
+    assert html =~ "Konto należy już do innej organizacji."
+    assert html =~ "Przywróć pracownika"
+  end
+
+  test "an archived employee rejoins with a new invite and gets its role", %{conn: conn} do
+    admin = admin_fixture()
+    employee = user_in_org_fixture(admin.organization_id)
+    Core.archive_member!(employee.member, scope: current_scope(admin))
+
+    invite =
+      Core.create_invite!(%{issued_by_id: admin.id, role: :invoicing},
+        tenant: admin.organization_id,
+        actor: admin
+      )
+
+    {:ok, lv, _html} = conn |> log_in_user(employee) |> live(~p"/organizacja")
+
+    lv
+    |> form("#join_form", %{"code" => invite.invite_code})
+    |> render_submit()
+
+    member = Core.load_member(employee, admin.organization_id).member
+    assert member.role == :invoicing
+    assert is_nil(member.archived_at)
+
+    {:ok, _lv, html} = conn |> log_in_user(admin) |> live(~p"/zarzadzanie/pracownicy")
+    assert html =~ to_string(employee.email)
+  end
+
   defp current_scope(admin) do
     %Scope{actor: admin, tenant: admin.organization_id}
   end

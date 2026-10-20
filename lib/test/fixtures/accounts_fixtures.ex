@@ -11,7 +11,9 @@ defmodule Firmowid.AccountsFixtures do
   def unique_user_email, do: "user#{System.unique_integer()}@example.com"
   def valid_user_password, do: "hello world!!"
 
-  defp unique_nip do
+  @doc "Returns a valid NIP that no other fixture organization uses."
+  @spec unique_nip() :: String.t()
+  def unique_nip do
     [:positive]
     |> System.unique_integer()
     |> Integer.to_string()
