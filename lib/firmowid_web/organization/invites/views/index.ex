@@ -16,7 +16,7 @@ defmodule FirmowidWeb.Organization.Invites.Views.Index do
     current_user = socket.assigns.current_user
     scope = socket.assigns.ash_scope
 
-    if current_user.role != :admin do
+    if current_user.member.role != :admin do
       raise Forbidden, message: "Tylko administrator może przeglądać zaproszenia."
     end
 
@@ -36,7 +36,7 @@ defmodule FirmowidWeb.Organization.Invites.Views.Index do
     current_user = socket.assigns.current_user
     scope = socket.assigns.ash_scope
 
-    if current_user.role != :admin do
+    if current_user.member.role != :admin do
       raise Forbidden, message: "Tylko administrator może tworzyć zaproszenia."
     end
 
@@ -56,7 +56,7 @@ defmodule FirmowidWeb.Organization.Invites.Views.Index do
     current_user = socket.assigns.current_user
     scope = socket.assigns.ash_scope
 
-    if current_user.role != :admin do
+    if current_user.member.role != :admin do
       raise Forbidden, message: "Tylko administrator może usuwać zaproszenia."
     end
 

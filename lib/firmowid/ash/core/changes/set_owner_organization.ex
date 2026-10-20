@@ -1,7 +1,7 @@
 defmodule Firmowid.Ash.Core.Changes.SetOwnerOrganization do
   @moduledoc """
-  After creating an organization, updates the owner user to belong to
-  the new organization and promotes them to `:admin` role.
+  After creating an organization, assigns the owner user to it as an
+  `:admin` member.
   """
   # TODO: extract bridge_opts tenant-extraction pattern into a shared helper
   # (duplicated in OrganizationInvite and other changes)
@@ -28,16 +28,11 @@ defmodule Firmowid.Ash.Core.Changes.SetOwnerOrganization do
 
       owner = Ash.get!(User, organization.owner_id, bridge_opts)
 
-      owner =
-        owner
-        |> Core.changeset_to_set_organization(
-          %{organization_id: organization.id},
-          bridge_opts
-        )
-        |> Ash.update!()
-
       owner
-      |> Core.changeset_to_update_role(%{role: :admin}, bridge_opts)
+      |> Core.changeset_to_set_organization(
+        %{organization_id: organization.id, role: :admin},
+        bridge_opts
+      )
       |> Ash.update!()
 
       {:ok, organization}

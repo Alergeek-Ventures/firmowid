@@ -19,7 +19,7 @@ defmodule FirmowidWeb.Settings.Components.InvoicesTab do
   def invoices_tab(assigns) do
     assigns =
       assigns
-      |> assign(:admin?, assigns.current_user.role == :admin)
+      |> assign(:admin?, assigns.current_user.member.role == :admin)
       |> assign(:inbound_email, inbound_email(assigns.current_org))
       |> assign(:allowed_sender_emails, assigns.current_org.allowed_sender_emails || [])
 

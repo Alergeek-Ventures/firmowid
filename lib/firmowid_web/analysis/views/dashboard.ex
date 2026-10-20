@@ -27,7 +27,7 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
     scope = socket.assigns.ash_scope
 
     # Employees cannot read the invoices and transactions the dashboard aggregates.
-    if flag_enabled?(:analysis_dashboard, socket.assigns) and scope.actor.role != :employee do
+    if flag_enabled?(:analysis_dashboard, socket.assigns) and scope.actor.member.role != :employee do
       if connected?(socket) do
         Phoenix.PubSub.subscribe(Firmowid.PubSub, "analysis-classification:#{scope.tenant}")
       end
@@ -191,7 +191,7 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
 
   defp can_write?(assigns) do
     flag_enabled?(:analysis_dashboard, assigns) and
-      assigns.ash_scope.actor.role in [:admin, :accountant]
+      assigns.ash_scope.actor.member.role in [:admin, :accountant]
   end
 
   defp category_entity_type(%SalesInvoice{}), do: :sales_invoice

@@ -54,7 +54,7 @@
       </p>
 
       <.button
-        :if={@current_user.role == :admin}
+        :if={@current_user.member.role == :admin}
         variant="tertiary"
         size="small"
         type="button"

@@ -10,6 +10,7 @@ defmodule Firmowid.Ash.Delegations.Delegation do
     authorizers: [Ash.Policy.Authorizer],
     extensions: [AshStateMachine]
 
+  alias Firmowid.Ash.Checks.ActorRole
   alias Firmowid.Ash.Core.User
   alias Firmowid.Ash.Delegations.Actions.NotifyAdminsAboutDelegation
   alias Firmowid.Ash.Delegations.Actions.NotifyEmployeeAboutApprovedDelegation
@@ -168,7 +169,7 @@ defmodule Firmowid.Ash.Delegations.Delegation do
   end
 
   policies do
-    bypass actor_attribute_equals(:role, :admin) do
+    bypass {ActorRole, role: :admin} do
       authorize_if always()
     end
 

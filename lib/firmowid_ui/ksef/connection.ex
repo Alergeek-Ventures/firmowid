@@ -299,8 +299,8 @@ defmodule FirmowidUI.Ksef.Connection do
     end
   end
 
-  defp authorize_admin!(%Scope{actor: %{role: :admin, organization_id: tenant}, tenant: tenant}) when is_binary(tenant),
-    do: :ok
+  defp authorize_admin!(%Scope{actor: %{member: %{role: :admin}, organization_id: tenant}, tenant: tenant})
+       when is_binary(tenant), do: :ok
 
   defp authorize_admin!(_scope) do
     raise Forbidden, message: "Tylko administrator może zarządzać KSeF."

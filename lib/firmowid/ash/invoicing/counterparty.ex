@@ -20,6 +20,7 @@ defmodule Firmowid.Ash.Invoicing.Counterparty do
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer]
 
+  alias Firmowid.Ash.Checks.ActorRole
   alias Firmowid.Ash.Checks.AtLeastRole
   alias Firmowid.Ash.Invoicing.Changes.ClearIrrelevantBuyerFields
   alias Firmowid.Ash.Invoicing.Changes.NormalizeBlankCounterpartyFields
@@ -206,7 +207,7 @@ defmodule Firmowid.Ash.Invoicing.Counterparty do
   end
 
   policies do
-    bypass actor_attribute_equals(:role, :admin) do
+    bypass {ActorRole, role: :admin} do
       authorize_if always()
     end
 

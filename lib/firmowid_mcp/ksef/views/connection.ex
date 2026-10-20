@@ -30,7 +30,8 @@ defmodule FirmowidMcp.Ksef.Views.Connection do
         {:noreply, socket}
 
       event, params, socket ->
-        if socket.assigns.connection_initialized? and socket.assigns.scope.actor.role == :admin do
+        if socket.assigns.connection_initialized? and
+             socket.assigns.scope.actor.member.role == :admin do
           {:noreply, updated} =
             ConnectionState.handle_event(event, params, socket, socket.assigns.scope)
 
@@ -44,7 +45,8 @@ defmodule FirmowidMcp.Ksef.Views.Connection do
   @impl true
   def handle_info(%Phoenix.Socket.Broadcast{topic: "credential:" <> _} = message, socket) do
     LiveSession.handle_info(message, socket, fn message, socket ->
-      if socket.assigns.connection_initialized? and socket.assigns.scope.actor.role == :admin do
+      if socket.assigns.connection_initialized? and
+           socket.assigns.scope.actor.member.role == :admin do
         {:noreply, updated} = ConnectionState.handle_info(message, socket, socket.assigns.scope)
         {:noreply, load_status(updated)}
       else

@@ -31,13 +31,12 @@ defmodule Firmowid.Seeds.SalaryMatching do
             name: name,
             hashed_password: Argon2.hash_pwd_salt("kolejka123456"),
             organization_id: organization.id,
-            role: :employee,
             system_role: :user
           },
           identity: :unique_email
         )
 
-      Helpers.seed_member!(user.id, organization.id)
+      Helpers.seed_member!(user.id, organization.id, :employee)
 
       Ash.Seed.upsert!(
         UserSalary,

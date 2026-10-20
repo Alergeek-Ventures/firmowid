@@ -10,6 +10,7 @@ defmodule Firmowid.Ash.Timetracker.ProjectUser do
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer]
 
+  alias Firmowid.Ash.Checks.ActorRole
   alias Firmowid.Ash.Resource
 
   require Resource
@@ -36,7 +37,7 @@ defmodule Firmowid.Ash.Timetracker.ProjectUser do
   end
 
   policies do
-    policy [action_type(:read), actor_attribute_equals(:role, :employee)] do
+    policy [action_type(:read), {ActorRole, role: :employee}] do
       authorize_if relates_to_actor_via(:user)
     end
   end

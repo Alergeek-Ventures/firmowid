@@ -18,7 +18,10 @@ defmodule Firmowid.Seeds.Voidstack do
 
   require Ash.Query
 
-  @seed_actor %{id: "00000000-0000-0000-0000-000000000000", role: :admin}
+  @seed_actor %Firmowid.Ash.Core.User{
+    id: "00000000-0000-0000-0000-000000000000",
+    member: %Firmowid.Ash.Core.Member{role: :admin}
+  }
 
   def seed! do
     dragan = seed_dragan()
@@ -41,7 +44,6 @@ defmodule Firmowid.Seeds.Voidstack do
 
     Ash.Seed.update!(dragan, %{
       system_role: :user,
-      role: :admin,
       name: "Dragan Krypt",
       phone: "+421 902 555 666"
     })
@@ -66,7 +68,7 @@ defmodule Firmowid.Seeds.Voidstack do
       Ash.Seed.update!(dragan, %{organization_id: voidstack.id})
     end
 
-    Helpers.seed_member!(dragan.id, voidstack.id)
+    Helpers.seed_member!(dragan.id, voidstack.id, :admin)
   end
 
   defp seed_project(dragan, voidstack) do

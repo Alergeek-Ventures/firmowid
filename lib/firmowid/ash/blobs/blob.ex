@@ -19,6 +19,7 @@ defmodule Firmowid.Ash.Blobs.Blob do
   alias Firmowid.Ash.Blobs.Changes.UploadToS3
   alias Firmowid.Ash.Blobs.Changes.ValidateProcessingStateTransition
   alias Firmowid.Ash.Checks.ActorBlobIdMatches
+  alias Firmowid.Ash.Checks.ActorRole
   alias Firmowid.Ash.Checks.SystemActorRole
   alias Firmowid.Ash.Resource
 
@@ -206,7 +207,7 @@ defmodule Firmowid.Ash.Blobs.Blob do
   end
 
   policies do
-    bypass actor_attribute_equals(:role, :admin) do
+    bypass {ActorRole, role: :admin} do
       authorize_if always()
     end
 

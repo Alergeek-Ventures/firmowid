@@ -39,7 +39,7 @@ defmodule FirmowidWeb.Management.Views.Project do
       |> assign(:selected_date, selected_date)
       |> assign(:active_months, active_months)
       |> assign(:project, AshProject.get!(project_id, scope: scope))
-      |> assign(:can_delete_project, socket.assigns.current_user.role == :admin)
+      |> assign(:can_delete_project, socket.assigns.current_user.member.role == :admin)
       |> assign_project_data()
 
     {:noreply, socket}

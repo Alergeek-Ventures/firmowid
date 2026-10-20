@@ -53,7 +53,7 @@ defmodule FirmowidWeb.Management.Controllers.EmploymentContract do
     end
   end
 
-  defp documents_return_path(%{role: :admin}) do
+  defp documents_return_path(%{member: %{role: :admin}}) do
     ~p"/zarzadzanie/pracownicy"
   end
 
@@ -61,11 +61,11 @@ defmodule FirmowidWeb.Management.Controllers.EmploymentContract do
     ~p"/ustawienia/profil"
   end
 
-  defp documents_return_path(%{role: :admin}, user_id) when is_binary(user_id) do
+  defp documents_return_path(%{member: %{role: :admin}}, user_id) when is_binary(user_id) do
     ~p"/zarzadzanie/pracownicy/#{user_id}/dokumenty"
   end
 
-  defp documents_return_path(%{role: :admin}, _user_id) do
+  defp documents_return_path(%{member: %{role: :admin}}, _user_id) do
     ~p"/zarzadzanie/pracownicy"
   end
 

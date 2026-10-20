@@ -15,6 +15,7 @@ defmodule Firmowid.Ash.Timetracker.Project do
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer]
 
+  alias Firmowid.Ash.Checks.ActorRole
   alias Firmowid.Ash.Checks.SystemActorRole
   alias Firmowid.Ash.Resource
   alias Firmowid.Ash.Timetracker.Changes.CleanupProjectTag
@@ -210,7 +211,7 @@ defmodule Firmowid.Ash.Timetracker.Project do
     end
 
     policy action_type([:create, :update, :destroy]) do
-      authorize_if actor_attribute_equals(:role, :admin)
+      authorize_if {ActorRole, role: :admin}
     end
   end
 

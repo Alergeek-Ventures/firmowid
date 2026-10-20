@@ -2,11 +2,12 @@ defmodule Firmowid.Ash.Finances.Transaction.Policies do
   @moduledoc "Authorization policies for bank transactions."
   use Spark.Dsl.Fragment, of: Ash.Resource, authorizers: [Ash.Policy.Authorizer]
 
+  alias Firmowid.Ash.Checks.ActorRole
   alias Firmowid.Ash.Checks.AtLeastRole
   alias Firmowid.Ash.Checks.SystemActorRole
 
   policies do
-    bypass actor_attribute_equals(:role, :admin) do
+    bypass {ActorRole, role: :admin} do
       authorize_if always()
     end
 
@@ -38,12 +39,12 @@ defmodule Firmowid.Ash.Finances.Transaction.Policies do
     end
 
     policy action([:connect_salary, :disconnect_salary, :salary_suggestions]) do
-      authorize_if actor_attribute_equals(:role, :admin)
+      authorize_if {ActorRole, role: :admin}
     end
 
     # Write actions (non-system, non-admin): admin only
     policy action_type([:create, :destroy]) do
-      authorize_if actor_attribute_equals(:role, :admin)
+      authorize_if {ActorRole, role: :admin}
     end
   end
 end

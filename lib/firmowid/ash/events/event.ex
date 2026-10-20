@@ -16,6 +16,8 @@ defmodule Firmowid.Ash.Events.Event do
     authorizers: [Ash.Policy.Authorizer],
     extensions: [AshEvents.EventLog]
 
+  alias Firmowid.Ash.Checks.ActorRole
+
   postgres do
     table "ash_events"
     repo Firmowid.Repo
@@ -59,7 +61,7 @@ defmodule Firmowid.Ash.Events.Event do
   end
 
   policies do
-    bypass actor_attribute_equals(:role, :admin) do
+    bypass {ActorRole, role: :admin} do
       authorize_if always()
     end
 
@@ -75,7 +77,7 @@ defmodule Firmowid.Ash.Events.Event do
 
     # Only admins can read events
     policy action_type(:read) do
-      authorize_if actor_attribute_equals(:role, :admin)
+      authorize_if {ActorRole, role: :admin}
     end
   end
 

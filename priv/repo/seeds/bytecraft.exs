@@ -16,7 +16,12 @@ defmodule Firmowid.Seeds.Bytecraft do
 
   require Ash.Query
 
-  @seed_actor %{id: "00000000-0000-0000-0000-000000000000", role: :admin}
+  @roles %{kira: :admin, tomek: :accountant, sable: :employee, jules: :invoicing, maren: :employee}
+
+  @seed_actor %Firmowid.Ash.Core.User{
+    id: "00000000-0000-0000-0000-000000000000",
+    member: %Firmowid.Ash.Core.Member{role: :admin}
+  }
 
   def seed! do
     users = seed_users()
@@ -60,7 +65,6 @@ defmodule Firmowid.Seeds.Bytecraft do
     kira =
       Ash.Seed.update!(kira, %{
         system_role: :superuser,
-        role: :admin,
         name: "Kira Voss",
         phone: "+48 501 200 300",
         slack_url: "https://example.slack.com/team/U_KIRA_001",
@@ -73,7 +77,6 @@ defmodule Firmowid.Seeds.Bytecraft do
     tomek =
       Ash.Seed.update!(tomek, %{
         system_role: :user,
-        role: :accountant,
         name: "Tomek Briar",
         phone: "+48 502 300 400",
         slack_url: "https://example.slack.com/team/U_TOMEK_002",
@@ -86,7 +89,6 @@ defmodule Firmowid.Seeds.Bytecraft do
     sable =
       Ash.Seed.update!(sable, %{
         system_role: :user,
-        role: :employee,
         name: "Sable Orin",
         phone: "+48 503 400 500",
         slack_url: "https://example.slack.com/team/U_SABLE_003",
@@ -98,7 +100,6 @@ defmodule Firmowid.Seeds.Bytecraft do
     jules =
       Ash.Seed.update!(jules, %{
         system_role: :user,
-        role: :invoicing,
         name: "Jules Kadar",
         phone: "+48 504 500 600",
         slack_url: "https://example.slack.com/team/U_JULES_004",
@@ -110,7 +111,6 @@ defmodule Firmowid.Seeds.Bytecraft do
     maren =
       Ash.Seed.update!(maren, %{
         system_role: :user,
-        role: :employee,
         name: "Maren Solke",
         phone: "+48 505 600 700",
         slack_url: "https://example.slack.com/team/U_MAREN_005",
@@ -149,8 +149,8 @@ defmodule Firmowid.Seeds.Bytecraft do
           Ash.Seed.update!(user, %{organization_id: bytecraft.id})
         end
 
-      Helpers.seed_member!(user.id, bytecraft.id)
-      {key, user}
+      member = Helpers.seed_member!(user.id, bytecraft.id, Map.fetch!(@roles, key))
+      {key, %{user | member: member}}
     end)
   end
 

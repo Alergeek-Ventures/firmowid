@@ -13,6 +13,7 @@ defmodule Firmowid.Ash.Core.OrganizationInvite do
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer]
 
+  alias Firmowid.Ash.Checks.ActorRole
   alias Firmowid.Ash.Core
   alias Firmowid.Ash.Core.Organization
   alias Firmowid.Ash.Core.User
@@ -107,11 +108,9 @@ defmodule Firmowid.Ash.Core.OrganizationInvite do
                user_id
                |> Core.get_user!(bridge_opts)
                |> Core.changeset_to_set_organization(
-                 %{organization_id: organization_id},
+                 %{organization_id: organization_id, role: invite.role},
                  bridge_opts
                )
-               |> Ash.update!()
-               |> Core.changeset_to_update_role(%{role: invite.role}, bridge_opts)
                |> Ash.update!()
 
                {:ok, invite}
@@ -126,7 +125,7 @@ defmodule Firmowid.Ash.Core.OrganizationInvite do
   policies do
     # Default read — admin only (listing invites in org settings)
     policy action(:read) do
-      authorize_if actor_attribute_equals(:role, :admin)
+      authorize_if {ActorRole, role: :admin}
     end
 
     # Invite acceptance flow — anyone with the code can look up an invite
@@ -135,7 +134,7 @@ defmodule Firmowid.Ash.Core.OrganizationInvite do
     end
 
     policy action_type(:create) do
-      authorize_if actor_attribute_equals(:role, :admin)
+      authorize_if {ActorRole, role: :admin}
     end
 
     # The invite code identifies an invitation, but only an authenticated user
@@ -145,7 +144,7 @@ defmodule Firmowid.Ash.Core.OrganizationInvite do
     end
 
     policy action_type(:destroy) do
-      authorize_if actor_attribute_equals(:role, :admin)
+      authorize_if {ActorRole, role: :admin}
     end
   end
 

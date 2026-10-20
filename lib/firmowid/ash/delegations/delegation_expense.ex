@@ -8,6 +8,7 @@ defmodule Firmowid.Ash.Delegations.DelegationExpense do
     authorizers: [Ash.Policy.Authorizer]
 
   alias Firmowid.Ash.Blobs.Blob
+  alias Firmowid.Ash.Checks.ActorRole
   alias Firmowid.Ash.Delegations.Changes.CreateExpenseBlob
   alias Firmowid.Ash.Delegations.Changes.UpdateDetectedDelegationDates
   alias Firmowid.Ash.Delegations.DelegationExpense.Details
@@ -154,7 +155,7 @@ defmodule Firmowid.Ash.Delegations.DelegationExpense do
   end
 
   policies do
-    bypass actor_attribute_equals(:role, :admin) do
+    bypass {ActorRole, role: :admin} do
       authorize_if always()
     end
 

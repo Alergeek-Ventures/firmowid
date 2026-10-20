@@ -12,6 +12,7 @@ defmodule Firmowid.Ash.Timetracker.HoursRecord do
     authorizers: [Ash.Policy.Authorizer]
 
   alias Firmowid.Ash.Blobs
+  alias Firmowid.Ash.Checks.ActorRole
   alias Firmowid.Ash.Core.User
   alias Firmowid.Ash.Resource
   alias Firmowid.Ash.Timetracker.Actions.NotifyAdminsAboutHoursRecordChange
@@ -208,7 +209,7 @@ defmodule Firmowid.Ash.Timetracker.HoursRecord do
     end
 
     policy action([:accept_change_request, :reject_change_request]) do
-      authorize_if actor_attribute_equals(:role, :admin)
+      authorize_if {ActorRole, role: :admin}
     end
 
     policy action(:notify_admins) do

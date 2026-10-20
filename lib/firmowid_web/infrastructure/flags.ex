@@ -113,7 +113,8 @@ defmodule FirmowidWeb.Infrastructure.Flags do
 
   defp person_properties(user) do
     user
-    |> Map.take([:email, :organization_id, :role])
+    |> Map.take([:email, :organization_id])
+    |> Map.put(:role, member_role(user))
     |> Map.new(fn
       {:email, email} -> {:email, email && to_string(email)}
       {:role, role} -> {:role, role && to_string(role)}
@@ -122,6 +123,9 @@ defmodule FirmowidWeb.Infrastructure.Flags do
     |> Enum.reject(fn {_key, value} -> is_nil(value) end)
     |> Map.new()
   end
+
+  defp member_role(%{member: %{role: role}}), do: role
+  defp member_role(_user), do: nil
 
   defp posthog_enabled? do
     Application.get_env(:posthog, :enable, false)

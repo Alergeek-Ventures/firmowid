@@ -1,7 +1,7 @@
 defmodule Firmowid.Ash.Checks.AtLeastRole do
   @moduledoc """
-  Policy check that returns true when the actor is a `User` with a role at least
-  as privileged as the specified minimum role.
+  Policy check that returns true when the actor is a `User` whose organization
+  member has a role at least as privileged as the specified minimum role.
 
   ## Role Hierarchy (lowest to highest)
 
@@ -25,7 +25,7 @@ defmodule Firmowid.Ash.Checks.AtLeastRole do
   """
   use Ash.Policy.SimpleCheck
 
-  alias Firmowid.Ash.Core.User
+  alias Firmowid.Ash.Checks.ActorRole
   alias Firmowid.Ash.Core.UserRole
 
   @impl true
@@ -35,24 +35,13 @@ defmodule Firmowid.Ash.Checks.AtLeastRole do
   end
 
   @impl true
-  def match?(%User{role: actor_role}, _context, opts) do
-    case Keyword.fetch(opts, :role) do
-      {:ok, minimum_role} ->
-        actor_index = role_index(actor_role)
-        minimum_index = role_index(minimum_role)
-
-        case {actor_index, minimum_index} do
-          {nil, _} -> {:ok, false}
-          {_, nil} -> {:ok, false}
-          {a, m} -> {:ok, a >= m}
-        end
-
-      :error ->
-        {:ok, false}
+  def match?(actor, _context, opts) do
+    case {role_index(ActorRole.role(actor)), role_index(Keyword.get(opts, :role))} do
+      {nil, _} -> {:ok, false}
+      {_, nil} -> {:ok, false}
+      {actor_index, minimum_index} -> {:ok, actor_index >= minimum_index}
     end
   end
-
-  def match?(_actor, _context, _opts), do: {:ok, false}
 
   defp role_index(role), do: Enum.find_index(UserRole.roles(), &(&1 == role))
 end

@@ -515,7 +515,7 @@ defmodule FirmowidWeb.Documents.Components.DocumentsSection do
     |> assign(:currently_uploading_count, currently_uploading_count)
   end
 
-  defp admin_actor?(%{actor: %{role: :admin}}), do: true
+  defp admin_actor?(%{actor: %{member: %{role: :admin}}}), do: true
   defp admin_actor?(_scope), do: false
 
   defp handle_progress(name, _params, socket) do

@@ -7,6 +7,7 @@ defmodule Firmowid.Ash.Invoicing.KsefInvoiceDigestItem do
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer]
 
+  alias Firmowid.Ash.Checks.ActorRole
   alias Firmowid.Ash.Checks.SystemActorRole
   alias Firmowid.Ash.Invoicing.Changes.SetOrganizationIdFromTenant
   alias Firmowid.Ash.Resource
@@ -48,7 +49,7 @@ defmodule Firmowid.Ash.Invoicing.KsefInvoiceDigestItem do
     end
 
     policy action_type(:read) do
-      authorize_if actor_attribute_equals(:role, :admin)
+      authorize_if {ActorRole, role: :admin}
       authorize_if {Firmowid.Ash.Checks.AtLeastRole, role: :accountant}
     end
 

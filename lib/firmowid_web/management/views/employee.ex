@@ -42,7 +42,7 @@ defmodule FirmowidWeb.Management.Views.Employee do
 
   @impl true
   def handle_params(%{"id" => id} = params, _uri, socket) do
-    if socket.assigns.current_user.role == :admin do
+    if socket.assigns.current_user.member.role == :admin do
       scope = socket.assigns.ash_scope
       params = Navigation.employee_params(params)
 

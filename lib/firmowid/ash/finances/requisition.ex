@@ -12,6 +12,7 @@ defmodule Firmowid.Ash.Finances.Requisition do
     notifiers: [Ash.Notifier.PubSub]
 
   alias AshOban.Checks.AshObanInteraction
+  alias Firmowid.Ash.Checks.ActorRole
   alias Firmowid.Ash.Checks.SystemActorRole
   alias Firmowid.Ash.Finances.Changes.DeleteRemoteRequisition
   alias Firmowid.Ash.Resource
@@ -218,7 +219,7 @@ defmodule Firmowid.Ash.Finances.Requisition do
       authorize_if always()
     end
 
-    bypass actor_attribute_equals(:role, :admin) do
+    bypass {ActorRole, role: :admin} do
       authorize_if always()
     end
 
@@ -239,7 +240,7 @@ defmodule Firmowid.Ash.Finances.Requisition do
     end
 
     policy action(:create_requisition) do
-      authorize_if actor_attribute_equals(:role, :admin)
+      authorize_if {ActorRole, role: :admin}
     end
 
     # Internal lifecycle actions run through the AshOban interaction bypass.

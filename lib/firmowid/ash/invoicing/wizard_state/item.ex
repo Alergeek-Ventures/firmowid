@@ -18,6 +18,7 @@ defmodule Firmowid.Ash.Invoicing.WizardState.Item do
     data_layer: Ash.DataLayer.Ets,
     authorizers: [Ash.Policy.Authorizer]
 
+  alias Firmowid.Ash.Checks.ActorRole
   alias Firmowid.Ash.Invoicing.Validations.ValidateVatRate
   alias Firmowid.Ash.Resource
 
@@ -55,7 +56,7 @@ defmodule Firmowid.Ash.Invoicing.WizardState.Item do
   end
 
   policies do
-    bypass actor_attribute_equals(:role, :admin) do
+    bypass {ActorRole, role: :admin} do
       authorize_if always()
     end
 

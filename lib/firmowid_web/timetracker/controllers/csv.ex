@@ -17,7 +17,7 @@ defmodule FirmowidWeb.Timetracker.Controllers.Csv do
   action_fallback FirmowidWeb.Infrastructure.Controllers.Fallback
 
   def salaries(conn, %{"miesiac" => month_str, "rok" => year_str}) do
-    case conn.assigns.current_user.role do
+    case conn.assigns.current_user.member.role do
       :admin ->
         case parse_export_period(%{"miesiac" => month_str, "rok" => year_str}) do
           {:ok, month, year} ->
@@ -50,7 +50,7 @@ defmodule FirmowidWeb.Timetracker.Controllers.Csv do
   def project(conn, %{"id" => project_id, "miesiac" => month_str, "rok" => year_str}) do
     scope = conn.assigns.ash_scope
 
-    with :admin <- conn.assigns.current_user.role,
+    with :admin <- conn.assigns.current_user.member.role,
          {:ok, month, year} <- parse_export_period(%{"miesiac" => month_str, "rok" => year_str}),
          {:ok, project} when not is_nil(project) <-
            AshProject.get(project_id, scope: scope, not_found_error?: false) do

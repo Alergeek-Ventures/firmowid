@@ -1004,7 +1004,10 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
         account: account,
         warning?: Enum.any?(accounts, &bank_connection_warning?/1),
         unsynced_since: unsynced_since,
-        navigate: if(scope.actor.role == :admin, do: ~p"/ustawienia/firma#konto-bankowe-#{account.id}")
+        navigate:
+          if(scope.actor.member.role == :admin,
+            do: ~p"/ustawienia/firma#konto-bankowe-#{account.id}"
+          )
       }
     end)
     |> Enum.sort_by(&{not &1.warning?, &1.account.institution_name || ""})

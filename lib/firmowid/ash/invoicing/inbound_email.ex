@@ -20,6 +20,7 @@ defmodule Firmowid.Ash.Invoicing.InboundEmail do
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer]
 
+  alias Firmowid.Ash.Checks.ActorRole
   alias Firmowid.Ash.Checks.SystemActorRole
   alias Firmowid.Ash.Resource
 
@@ -82,7 +83,7 @@ defmodule Firmowid.Ash.Invoicing.InboundEmail do
   end
 
   policies do
-    bypass actor_attribute_equals(:role, :admin) do
+    bypass {ActorRole, role: :admin} do
       authorize_if always()
     end
 

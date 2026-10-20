@@ -7,7 +7,7 @@ defmodule FirmowidWeb.Infrastructure.Hooks.RequireAdmin do
 
   import Phoenix.LiveView
 
-  def on_mount(:default, _params, _session, %{assigns: %{current_user: %{role: :admin}}} = socket) do
+  def on_mount(:default, _params, _session, %{assigns: %{current_user: %{member: %{role: :admin}}}} = socket) do
     {:cont, socket}
   end
 

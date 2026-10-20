@@ -9,6 +9,7 @@ defmodule Firmowid.Ash.Billing.Snapshot do
     authorizers: [Ash.Policy.Authorizer]
 
   alias Firmowid.Ash.Billing.PlanCatalog
+  alias Firmowid.Ash.Checks.ActorRole
   alias Firmowid.Ash.Checks.IsSystemActor
   alias Firmowid.Ash.Checks.SystemActorRole
   alias Firmowid.Ash.Resource
@@ -108,7 +109,7 @@ defmodule Firmowid.Ash.Billing.Snapshot do
     end
 
     policy action([:read, :list, :by_month]) do
-      authorize_if actor_attribute_equals(:role, :admin)
+      authorize_if {ActorRole, role: :admin}
     end
   end
 
