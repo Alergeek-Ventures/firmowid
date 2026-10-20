@@ -76,7 +76,7 @@ defmodule Firmowid.Ash.Timetracker.TrimPlan do
           end_datetime: s_end,
           project_id: session.project_id,
           is_remote: session.is_remote,
-          user_id: session.user_id
+          member_id: session.member_id
         }
 
         [{:split, session, new_start, remainder_attrs}]

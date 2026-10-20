@@ -166,7 +166,7 @@ defmodule FirmowidWeb.Management.Views.EmployeesTest do
       end_datetime: ~U[2026-04-03 12:00:00Z]
     })
 
-    seed_hours_record!(employee.id, admin.organization_id, 4, 2026, 3)
+    seed_hours_record!(employee.member.id, admin.organization_id, 4, 2026, 3)
 
     conn = log_in_user(conn, admin)
 
@@ -448,7 +448,7 @@ defmodule FirmowidWeb.Management.Views.EmployeesTest do
     }
   end
 
-  defp seed_hours_record!(user_id, organization_id, month, year, hours) do
+  defp seed_hours_record!(member_id, organization_id, month, year, hours) do
     blob =
       Ash.Seed.seed!(Blob, %{
         blob_path: "/test/path/hours_record_#{System.unique_integer([:positive])}.pdf",
@@ -460,7 +460,7 @@ defmodule FirmowidWeb.Management.Views.EmployeesTest do
     Repo.insert!(
       %AshHoursRecord{
         id: Ash.UUIDv7.generate(),
-        user_id: user_id,
+        member_id: member_id,
         blob_id: blob.id,
         month: month,
         year: year,

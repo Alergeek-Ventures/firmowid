@@ -41,14 +41,14 @@ defmodule Firmowid.Ash.Timetracker.Actions.NotifyAdminsAboutHoursRecordChange do
       body =
         gettext(
           "Employee: %{employee}\nPeriod: %{month}/%{year}\nRequest: %{kind}\nReason: %{reason}\n\nReview this request in Firmowid: %{url}\nThis email is a notification only. Accept or reject the request in the application.",
-          employee: record.user.name || to_string(record.user.email),
+          employee: record.member.user.name || to_string(record.member.user.email),
           month: record.month,
           year: record.year,
           kind: kind,
           reason: record.change_request_reason,
           url:
             FirmowidWeb.Core.Endpoint.url() <>
-              Navigation.employee_path(record.user_id, %{
+              Navigation.employee_path(record.member.user_id, %{
                 miesiac: Date.new!(record.year, record.month, 1)
               })
         )
@@ -56,7 +56,7 @@ defmodule Firmowid.Ash.Timetracker.Actions.NotifyAdminsAboutHoursRecordChange do
       Swoosh.Email.new()
       |> to(Enum.map(admins, &to_string(&1.email)))
       |> from({"Firmowid", "piotr@firmowid.pl"})
-      |> reply_to(to_string(record.user.email))
+      |> reply_to(to_string(record.member.user.email))
       |> subject(gettext("Hours record change request"))
       |> text_body(body)
       |> Mailer.deliver()

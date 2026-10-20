@@ -11,7 +11,7 @@ defmodule Firmowid.Ash.Timetracker.TrimPlanTest do
       end_datetime: end_dt,
       project_id: opts[:project_id] || "proj-1",
       is_remote: opts[:is_remote] || false,
-      user_id: opts[:user_id] || "user-1",
+      member_id: opts[:member_id] || "member-1",
       lockdown: opts[:lockdown] || false
     }
   end
@@ -90,7 +90,7 @@ defmodule Firmowid.Ash.Timetracker.TrimPlanTest do
       assert remainder.is_remote == true
       assert remainder.start_datetime == ~U[2026-01-01 12:00:00Z]
       assert remainder.end_datetime == ~U[2026-01-01 16:00:00Z]
-      assert remainder.user_id == "user-1"
+      assert remainder.member_id == "member-1"
     end
 
     test "splits running session — remainder inherits nil end" do

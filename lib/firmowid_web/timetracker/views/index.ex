@@ -70,7 +70,7 @@ defmodule FirmowidWeb.Timetracker.Views.Index do
     {:ok, last_session} = AshSession.most_recent(scope: scope, not_found_error?: false)
 
     active_projects =
-      Timetracker.list_projects!(%{user_id: user.id, status: :active}, scope: scope)
+      Timetracker.list_projects!(%{member_id: user.member.id, status: :active}, scope: scope)
 
     default_project_id =
       if last_session && Enum.any?(active_projects, &(&1.id == last_session.project_id)) do
@@ -89,11 +89,11 @@ defmodule FirmowidWeb.Timetracker.Views.Index do
 
   def assign_sessions(%{assigns: assigns} = socket) when not is_map_key(assigns, :sessions_after) do
     scope = socket.assigns.ash_scope
-    user_id = socket.assigns.current_user.id
+    member_id = socket.assigns.current_user.member.id
     timezone = socket.assigns.timezone
 
     weeks =
-      %{user_id: user_id}
+      %{member_id: member_id}
       |> Timetracker.query_to_list_sessions(scope: scope)
       |> Ash.Query.distinct(:week_start)
       |> Ash.Query.distinct_sort(week_start: :desc)
@@ -118,7 +118,7 @@ defmodule FirmowidWeb.Timetracker.Views.Index do
   def assign_sessions(%{assigns: %{sessions_after: %Date{} = after_date}} = socket) do
     scope = socket.assigns.ash_scope
     timezone = socket.assigns.timezone
-    user_id = socket.assigns.current_user.id
+    member_id = socket.assigns.current_user.member.id
 
     {:ok, sessions} =
       AshSession.list_user_sessions(%{after_date: after_date}, scope: scope)
@@ -136,7 +136,7 @@ defmodule FirmowidWeb.Timetracker.Views.Index do
     before_dt = DateTime.new!(after_date, ~T[00:00:00])
 
     next_weeks =
-      %{user_id: user_id}
+      %{member_id: member_id}
       |> Timetracker.query_to_list_sessions(scope: scope)
       |> Ash.Query.filter(start_datetime < ^before_dt)
       |> Ash.Query.distinct(:week_start)
@@ -298,14 +298,14 @@ defmodule FirmowidWeb.Timetracker.Views.Index do
   # it fires during execution, we catch the error and ask the user to retry.
   defp save_with_overlap_check(attrs, socket) do
     scope = socket.assigns.ash_scope
-    user_id = socket.assigns.current_user.id
+    member_id = socket.assigns.current_user.member.id
 
     attrs = normalize_session_attrs(attrs)
 
     # The overlap plan must use the exact boundaries persisted by Session.
     {new_start, new_end} = effective_time_range(attrs)
 
-    case AshSession.list_overlapping(user_id, new_start, %{end_datetime: new_end}, scope: scope) do
+    case AshSession.list_overlapping(member_id, new_start, %{end_datetime: new_end}, scope: scope) do
       {:ok, []} ->
         # No overlaps — save normally (original flow)
         save_session_directly(attrs, socket)
@@ -539,7 +539,10 @@ defmodule FirmowidWeb.Timetracker.Views.Index do
   def handle_event("save", %{"session_form" => session}, socket) do
     case session
          |> SessionForm.changeset()
-         |> SessionForm.create_attributes(socket.assigns.current_user.id, socket.assigns.timezone) do
+         |> SessionForm.create_attributes(
+           socket.assigns.current_user.member.id,
+           socket.assigns.timezone
+         ) do
       {:ok, attrs} ->
         save_with_overlap_check(attrs, socket)
 
@@ -728,7 +731,7 @@ defmodule FirmowidWeb.Timetracker.Views.Index do
 
     total_query =
       Timetracker.query_to_list_sessions(
-        %{month: now.month, year: now.year, user_id: socket.assigns.current_user.id},
+        %{month: now.month, year: now.year, member_id: socket.assigns.current_user.member.id},
         scope: scope
       )
 
@@ -744,7 +747,7 @@ defmodule FirmowidWeb.Timetracker.Views.Index do
     today = Date.utc_today()
 
     {:ok, hours_record} =
-      AshHoursRecord.by_month(socket.assigns.current_user.id, today.month, today.year,
+      AshHoursRecord.by_month(socket.assigns.current_user.member.id, today.month, today.year,
         scope: scope,
         not_found_error?: false
       )

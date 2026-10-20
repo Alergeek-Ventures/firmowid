@@ -76,8 +76,10 @@ defmodule FirmowidWeb.Timetracker.Controllers.Csv do
   # ── Private helpers ───────────────────────────────────────────────────
 
   defp build_salaries_csv(month, year, scope) do
-    hours_records = Timetracker.list_hours_records!(%{month: month, year: year}, scope: scope)
-    hr_by_user = Map.new(hours_records, &{&1.user_id, &1})
+    hours_records =
+      Timetracker.list_hours_records!(%{month: month, year: year}, load: [:member], scope: scope)
+
+    hr_by_user = Map.new(hours_records, &{&1.member.user_id, &1})
 
     users =
       [scope: scope]
@@ -124,12 +126,12 @@ defmodule FirmowidWeb.Timetracker.Controllers.Csv do
     %{project_id: project_id, month: month, year: year}
     |> Timetracker.query_to_list_sessions(scope: scope)
     |> Ash.Query.load(:duration)
-    |> Ash.Query.load(:user)
+    |> Ash.Query.load(member: :user)
     |> Ash.Query.sort(start_datetime: :asc)
     |> Ash.read!(scope: scope)
     |> Enum.map(fn session ->
       %{
-        user: session.user && (session.user.name || session.user.email),
+        user: session.member.user.name || session.member.user.email,
         date: session.start_datetime |> DateTime.to_date() |> Date.to_iso8601(),
         duration: TimeFormatter.format_duration(session.duration || 0),
         title: session.title

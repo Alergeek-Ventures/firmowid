@@ -382,7 +382,7 @@ defmodule FirmowidWeb.Documents.Components.DocumentsSection do
 
   defp refetch_documents(socket) do
     documents =
-      socket.assigns.user.id
+      socket.assigns.user
       |> build_documents(
         socket.assigns.scope,
         %{
@@ -412,12 +412,12 @@ defmodule FirmowidWeb.Documents.Components.DocumentsSection do
     end)
   end
 
-  defp build_documents(user_id, scope, %{search: search, type_filter: type_filter}) do
+  defp build_documents(user, scope, %{search: search, type_filter: type_filter}) do
     parsed = parse_search(search)
 
     hours_record_docs =
       if type_filter in [nil, "hours_record"] do
-        %{user_id: user_id}
+        %{member_id: user.member.id}
         |> maybe_add_month(parsed.month)
         |> maybe_add_year(parsed.year)
         |> Timetracker.query_to_list_hours_records(scope: scope)
@@ -439,7 +439,7 @@ defmodule FirmowidWeb.Documents.Components.DocumentsSection do
 
     employment_contract_docs =
       if type_filter in [nil, "employment_contract"] do
-        %{user_id: user_id}
+        %{user_id: user.id}
         |> maybe_add_month(parsed.month)
         |> maybe_add_year(parsed.year)
         |> Payroll.list_employment_contracts!(scope: scope, load: [:blob])

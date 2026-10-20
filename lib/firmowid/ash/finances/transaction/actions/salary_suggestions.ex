@@ -3,6 +3,7 @@ defmodule Firmowid.Ash.Finances.Transaction.Actions.SalarySuggestions do
 
   use Ash.Resource.Actions.Implementation
 
+  alias Firmowid.Ash.Core.Member
   alias Firmowid.Ash.Finances
   alias Firmowid.Ash.Payroll
   alias Firmowid.Ash.Scope
@@ -40,20 +41,21 @@ defmodule Firmowid.Ash.Finances.Transaction.Actions.SalarySuggestions do
     amount = transaction.amount |> Money.to_decimal() |> Decimal.abs()
     expected_month = expected_salary_month(transaction.booking_date)
     recipient_parts = name_parts(transaction.creditor_name)
+    member_id = member_id(arguments[:salary_user_id], scope)
 
     transaction
-    |> candidate_months(arguments[:salary_month], arguments[:salary_user_id], scope)
+    |> candidate_months(arguments[:salary_month], member_id, scope)
     |> Enum.flat_map(fn month ->
       submitted_users =
         if arguments.submitted_hours_only? do
           %{
             month: month.month,
             year: month.year,
-            user_id: arguments[:salary_user_id],
+            member_id: member_id,
             submission_status: :submitted
           }
-          |> Timetracker.list_hours_records!(scope: scope)
-          |> MapSet.new(& &1.user_id)
+          |> Timetracker.list_hours_records!(load: [:member], scope: scope)
+          |> MapSet.new(& &1.member.user_id)
         else
           :all
         end
@@ -87,7 +89,7 @@ defmodule Firmowid.Ash.Finances.Transaction.Actions.SalarySuggestions do
     |> Enum.map(fn {_name_rank, suggestion} -> suggestion end)
   end
 
-  defp candidate_months(transaction, nil, user_id, scope) do
+  defp candidate_months(transaction, nil, member_id, scope) do
     next_month = transaction.booking_date |> Date.beginning_of_month() |> Date.shift(month: 1)
 
     first_month =
@@ -98,13 +100,13 @@ defmodule Firmowid.Ash.Finances.Transaction.Actions.SalarySuggestions do
     %{
       started_from: DateTime.new!(first_month, ~T[00:00:00], "Etc/UTC"),
       started_to: DateTime.new!(next_month, ~T[00:00:00], "Etc/UTC"),
-      user_id: user_id
+      member_id: member_id
     }
     |> Timetracker.months_with_sessions(scope)
     |> Enum.map(&NaiveDateTime.to_date/1)
   end
 
-  defp candidate_months(transaction, %Date{day: 1} = month, _user_id, _scope) do
+  defp candidate_months(transaction, %Date{day: 1} = month, _member_id, _scope) do
     first_month =
       transaction.booking_date
       |> Date.beginning_of_month()
@@ -115,7 +117,15 @@ defmodule Firmowid.Ash.Finances.Transaction.Actions.SalarySuggestions do
       else: [month]
   end
 
-  defp candidate_months(_transaction, _month, _user_id, _scope), do: []
+  defp candidate_months(_transaction, _month, _member_id, _scope), do: []
+
+  # Sessions and hours records belong to the member, salaries still to the user.
+  defp member_id(nil, _scope), do: nil
+
+  defp member_id(user_id, scope) do
+    [member] = Member.list!(query: [filter: [user_id: user_id]], scope: scope)
+    member.id
+  end
 
   defp expected_salary_month(%Date{day: day} = date) when day <= 14 do
     date |> Date.beginning_of_month() |> Date.shift(month: -1)

@@ -93,12 +93,12 @@ defmodule FirmowidWeb.Management.Views.Employees do
       sessions =
         %{month: date.month, year: date.year}
         |> Timetracker.query_to_list_sessions(scope: scope)
-        |> Ash.Query.load(:duration)
+        |> Ash.Query.load([:duration, :member])
         |> Ash.read!(scope: scope)
 
       time_by_user =
         sessions
-        |> Enum.group_by(& &1.user_id)
+        |> Enum.group_by(& &1.member.user_id)
         |> Map.new(fn {uid, ss} -> {uid, ss |> Enum.map(& &1.duration) |> Enum.sum()} end)
 
       # 3. Salaries as of this month]
@@ -109,9 +109,12 @@ defmodule FirmowidWeb.Management.Views.Employees do
 
       # 4. Hours records for this month
       hours_records =
-        Timetracker.list_hours_records!(%{month: date.month, year: date.year}, scope: scope)
+        Timetracker.list_hours_records!(%{month: date.month, year: date.year},
+          load: [:member],
+          scope: scope
+        )
 
-      hr_by_user = Map.new(hours_records, &{&1.user_id, &1})
+      hr_by_user = Map.new(hours_records, &{&1.member.user_id, &1})
 
       # 5. Compose
       employees =

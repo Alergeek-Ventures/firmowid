@@ -34,7 +34,7 @@ defmodule Firmowid.Ash.Timetracker.HoursRecordTest do
       Repo.insert!(
         %AshHoursRecord{
           id: Ash.UUIDv7.generate(),
-          user_id: user.id,
+          member_id: user.member.id,
           blob_id: blob.id,
           month: 3,
           year: 2025,
@@ -44,14 +44,14 @@ defmodule Firmowid.Ash.Timetracker.HoursRecordTest do
         skip_organization_id: true
       )
 
-      {:ok, record} = AshHoursRecord.by_month(user.id, 3, 2025, scope: scope)
+      {:ok, record} = AshHoursRecord.by_month(user.member.id, 3, 2025, scope: scope)
       assert record.month == 3
       assert record.year == 2025
     end
 
     test "returns nil when no record exists", %{user: user, scope: scope} do
       {:ok, result} =
-        AshHoursRecord.by_month(user.id, 6, 2025,
+        AshHoursRecord.by_month(user.member.id, 6, 2025,
           scope: scope,
           not_found_error?: false
         )
@@ -67,7 +67,7 @@ defmodule Firmowid.Ash.Timetracker.HoursRecordTest do
       Repo.insert!(
         %AshHoursRecord{
           id: Ash.UUIDv7.generate(),
-          user_id: user.id,
+          member_id: user.member.id,
           blob_id: blob.id,
           month: 2,
           year: 2025,
@@ -77,7 +77,7 @@ defmodule Firmowid.Ash.Timetracker.HoursRecordTest do
         skip_organization_id: true
       )
 
-      {:ok, record} = AshHoursRecord.by_month(user.id, 2, 2025, scope: scope)
+      {:ok, record} = AshHoursRecord.by_month(user.member.id, 2, 2025, scope: scope)
       assert record.month == 2
       assert record.year == 2025
     end

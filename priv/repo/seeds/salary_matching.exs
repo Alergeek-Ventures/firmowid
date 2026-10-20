@@ -50,7 +50,7 @@ defmodule Firmowid.Seeds.SalaryMatching do
         tenant: organization.id
       )
 
-      user_projects = Timetracker.list_projects!(%{user_id: user.id}, scope: scope)
+      user_projects = Timetracker.list_projects!(%{member_id: member.id}, scope: scope)
 
       for project <- [projects.firmowid, projects.flatmate],
           not Enum.any?(user_projects, &(&1.id == project.id)) do
@@ -61,7 +61,7 @@ defmodule Firmowid.Seeds.SalaryMatching do
         )
       end
 
-      if Timetracker.list_sessions!(%{user_id: user.id, month: month.month, year: month.year},
+      if Timetracker.list_sessions!(%{member_id: member.id, month: month.month, year: month.year},
            scope: scope
          ) == [] do
         1..hours
@@ -74,7 +74,7 @@ defmodule Firmowid.Seeds.SalaryMatching do
           Ash.Seed.seed!(
             Session,
             %{
-              user_id: user.id,
+              member_id: member.id,
               project_id: project.id,
               organization_id: organization.id,
               title: "Praca do demonstracji przypisywania wynagrodzeń",

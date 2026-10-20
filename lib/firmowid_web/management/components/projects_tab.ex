@@ -23,13 +23,13 @@ defmodule FirmowidWeb.Management.Components.ProjectsTab do
   @impl true
   def update(assigns, socket) do
     user = assigns.user
-    user_id = user.id
+    member_id = user.member.id
     date = assigns.date
     scope = assigns.scope
 
     # 1. Sessions for this user+month, grouped by project+title
     sessions =
-      %{user_id: user_id, month: date.month, year: date.year}
+      %{member_id: member_id, month: date.month, year: date.year}
       |> Timetracker.query_to_list_sessions(scope: scope)
       |> Ash.Query.load(:duration)
       |> Ash.read!(scope: scope)
@@ -52,7 +52,7 @@ defmodule FirmowidWeb.Management.Components.ProjectsTab do
 
     # 3. Projects this user belongs to, sorted by duration, with grouped sessions attached
     projects =
-      %{user_id: user_id}
+      %{member_id: member_id}
       |> Timetracker.list_projects!(scope: scope)
       |> Enum.map(fn project ->
         Map.put(project, :sessions, Map.get(sessions_by_project, project.id, []))
@@ -294,7 +294,7 @@ defmodule FirmowidWeb.Management.Components.ProjectsTab do
     scope = socket.assigns.scope
 
     with {:ok, record} <- HoursRecord.get(id, scope: scope),
-         true <- record.user_id == socket.assigns.user.id,
+         true <- record.member_id == socket.assigns.user.member.id,
          {:ok, _record} <- review_request(record, decision, scope) do
       {:noreply,
        socket
@@ -341,7 +341,7 @@ defmodule FirmowidWeb.Management.Components.ProjectsTab do
     records =
       Timetracker.list_hours_records!(
         %{
-          user_id: socket.assigns.user.id,
+          member_id: socket.assigns.user.member.id,
           month: date.month,
           year: date.year,
           submission_status: nil

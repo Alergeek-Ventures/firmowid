@@ -89,7 +89,7 @@ defmodule FirmowidWeb.HoursRecord.Views.IndexTest do
     assert render(lv) =~ "WYSŁANO"
 
     scope = %Scope{actor: employee, tenant: employee.organization_id}
-    {:ok, submitted_record} = AshHoursRecord.by_month(employee.id, 4, 2026, scope: scope)
+    {:ok, submitted_record} = AshHoursRecord.by_month(employee.member.id, 4, 2026, scope: scope)
     assert submitted_record.number_of_hours == 3
   end
 

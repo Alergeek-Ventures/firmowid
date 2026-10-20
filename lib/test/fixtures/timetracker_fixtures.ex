@@ -31,14 +31,16 @@ defmodule Firmowid.TimetrackerFixtures do
     project_id = attrs[:project_id] || project_fixture(%{organization_id: tenant}).id
     opts = admin_opts(tenant)
 
-    if user_id = attrs[:user_id] do
-      ensure_project_user!(user_id, project_id, opts)
+    member_id = attrs[:user_id] && member_id(attrs[:user_id], tenant)
+
+    if member_id do
+      ensure_project_member!(member_id, project_id, opts)
     end
 
     params = %{
       title: attrs[:title] || "Test Session",
       project_id: project_id,
-      user_id: attrs[:user_id],
+      member_id: member_id,
       start_datetime: attrs[:start_datetime] || DateTime.utc_now(),
       is_remote: attrs[:is_remote] || false
     }
@@ -86,9 +88,7 @@ defmodule Firmowid.TimetrackerFixtures do
     [tenant: tenant, actor: AccountsFixtures.admin_fixture(%{organization_id: tenant})]
   end
 
-  defp ensure_project_user!(user_id, project_id, opts) do
-    member_id = member_id(user_id, opts[:tenant])
-
+  defp ensure_project_member!(member_id, project_id, opts) do
     exists? =
       AshProjectUser
       |> Ash.Query.filter(member_id: member_id, project_id: project_id)

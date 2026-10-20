@@ -77,7 +77,7 @@ defmodule FirmowidWeb.Management.Views.Employee do
             to: Navigation.employees_path(:index, %{miesiac: Navigation.current_month()})
           )
         else
-          active_months = months_with_sessions(%{user_id: id}, scope)
+          active_months = months_with_sessions(%{member_id: user.member.id}, scope)
           {:ok, current_contract} = Payroll.load_current_contract(id, scope: scope)
 
           socket

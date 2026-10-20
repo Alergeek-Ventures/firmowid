@@ -456,13 +456,13 @@ defmodule Firmowid.Ash.Analysis do
       |> Enum.flat_map(fn month ->
         Timetracker.list_sessions!(
           %{month: month.month, year: month.year},
-          load: [:duration],
-          query: [filter: [user_id: [in: Enum.map(transactions, & &1.salary_user_id)]]],
+          load: [:duration, :member],
+          query: [filter: [member: [user_id: [in: Enum.map(transactions, & &1.salary_user_id)]]]],
           scope: analysis_scope
         )
       end)
       |> Enum.reject(&(is_nil(&1.project_id) or &1.duration <= 0))
-      |> Enum.group_by(&{&1.user_id, Date.beginning_of_month(DateTime.to_date(&1.start_datetime))})
+      |> Enum.group_by(&{&1.member.user_id, Date.beginning_of_month(DateTime.to_date(&1.start_datetime))})
       |> Map.new(fn {salary, sessions} ->
         {salary,
          sessions

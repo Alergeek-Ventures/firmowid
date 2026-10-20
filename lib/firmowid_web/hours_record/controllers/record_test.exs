@@ -25,7 +25,7 @@ defmodule FirmowidWeb.HoursRecord.Controllers.RecordTest do
       Repo.insert!(
         %AshHoursRecord{
           id: Ash.UUIDv7.generate(),
-          user_id: employee_b.id,
+          member_id: employee_b.member.id,
           blob_id: blob.id,
           month: 4,
           year: 2026,

@@ -176,7 +176,7 @@ defmodule FirmowidWeb.HoursRecord.Components.UploadForm do
       result =
         AshHoursRecord.create(
           %{
-            user_id: socket.assigns.current_user.id,
+            member_id: socket.assigns.current_user.member.id,
             number_of_hours: Timetracker.seconds_to_hours(socket.assigns.total_duration),
             month: socket.assigns.selected_date.month,
             year: socket.assigns.selected_date.year,

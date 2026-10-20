@@ -53,19 +53,19 @@ defmodule Firmowid.Ash.Policies.TimetrackerPayrollPoliciesTest do
       })
 
     {:ok, id_bin} = Ecto.UUID.dump(id)
-    {:ok, uid_bin} = Ecto.UUID.dump(user.id)
+    {:ok, mid_bin} = Ecto.UUID.dump(user.member.id)
     {:ok, oid_bin} = Ecto.UUID.dump(user.organization_id)
     {:ok, bid_bin} = Ecto.UUID.dump(blob.id)
 
     Repo.query!(
       """
-      INSERT INTO hours_records (id, month, year, number_of_hours, blob_id, user_id, organization_id, inserted_at, updated_at)
+      INSERT INTO hours_records (id, month, year, number_of_hours, blob_id, member_id, organization_id, inserted_at, updated_at)
       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
       """,
-      [id_bin, month, year, 160, bid_bin, uid_bin, oid_bin, now, now]
+      [id_bin, month, year, 160, bid_bin, mid_bin, oid_bin, now, now]
     )
 
-    %{id: id, user_id: user.id, month: month, year: year}
+    %{id: id, month: month, year: year}
   end
 
   # ── UserSalary policies ─────────────────────────────────────────────
@@ -150,7 +150,7 @@ defmodule Firmowid.Ash.Policies.TimetrackerPayrollPoliciesTest do
 
       # by_month is a get? action — returns NotFound when policy filters out the record
       assert {:error, %Invalid{}} =
-               AshHoursRecord.by_month(employee_b.id, now.month, now.year, scope: scope)
+               AshHoursRecord.by_month(employee_b.member.id, now.month, now.year, scope: scope)
     end
   end
 

@@ -40,7 +40,7 @@ defmodule FirmowidWeb.HoursRecord.Controllers.Record do
         %{
           month: date_parsed.month,
           year: date_parsed.year,
-          user_id: conn.assigns.current_user.id
+          member_id: conn.assigns.current_user.member.id
         },
         scope: scope
       )
@@ -87,7 +87,7 @@ defmodule FirmowidWeb.HoursRecord.Controllers.Record do
 
     session_query =
       Timetracker.query_to_list_sessions(
-        %{month: date.month, year: date.year, user_id: conn.assigns.current_user.id},
+        %{month: date.month, year: date.year, member_id: conn.assigns.current_user.member.id},
         scope: scope
       )
 
@@ -122,7 +122,7 @@ defmodule FirmowidWeb.HoursRecord.Controllers.Record do
 
     case AshHoursRecord.get(id,
            scope: scope,
-           load: [:user, blob: [:url]],
+           load: [member: :user, blob: [:url]],
            not_found_error?: false
          ) do
       {:ok, nil} ->
@@ -137,7 +137,7 @@ defmodule FirmowidWeb.HoursRecord.Controllers.Record do
         conn
         |> put_resp_header(
           "content-disposition",
-          "attachment; filename=\"Ewidencja_#{record.year}_#{record.month}_#{record.user.name}.pdf\""
+          "attachment; filename=\"Ewidencja_#{record.year}_#{record.month}_#{record.member.user.name}.pdf\""
         )
         |> send_resp(200, file.body)
 

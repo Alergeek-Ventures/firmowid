@@ -18,11 +18,11 @@ defmodule Firmowid.Ash.Payroll.UserSalary.Calculations.MonthlyAmount do
     seconds_by_user =
       %{month: month.month, year: month.year}
       |> Timetracker.list_sessions!(
-        load: [:duration],
-        query: [filter: [user_id: [in: user_ids]]],
+        load: [:duration, :member],
+        query: [filter: [member: [user_id: [in: user_ids]]]],
         scope: scope
       )
-      |> Enum.group_by(& &1.user_id, & &1.duration)
+      |> Enum.group_by(& &1.member.user_id, & &1.duration)
       |> Map.new(fn {user_id, durations} -> {user_id, Enum.sum(durations)} end)
 
     Enum.map(records, fn salary ->
