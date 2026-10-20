@@ -126,8 +126,27 @@ defmodule Mix.Tasks.Dev.Shared do
         Map.merge(defaults(), parse_env(content))
 
       {:error, :enoent} ->
+        ensure_main_checkout!()
         Mix.shell().info("No .env.worktree found, using defaults (main branch setup)")
         defaults()
+    end
+  end
+
+  @doc """
+  Raises in a linked worktree without .env.worktree, where the main checkout's
+  defaults would start, stop or remove the main checkout's services.
+  """
+  @spec ensure_main_checkout!() :: :ok
+  def ensure_main_checkout! do
+    {git_dir, 0} = System.cmd("git", ["rev-parse", "--path-format=absolute", "--git-dir"])
+
+    {common_dir, 0} =
+      System.cmd("git", ["rev-parse", "--path-format=absolute", "--git-common-dir"])
+
+    if git_dir == common_dir do
+      :ok
+    else
+      Mix.raise("No .env.worktree in this linked worktree. Generate it with: wt hook pre-start --yes")
     end
   end
 

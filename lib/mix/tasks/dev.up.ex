@@ -74,6 +74,7 @@ defmodule Mix.Tasks.Dev.Up do
         parse_env(content)
 
       {:error, :enoent} ->
+        Shared.ensure_main_checkout!()
         Mix.shell().info("No .env.worktree found, using defaults (main branch setup)")
         generate_env_files(@defaults)
         @defaults

@@ -28,8 +28,6 @@ alias Firmowid.Seeds.Voidstack
 
 require Ash.Query
 
-seed_actor = %{id: "00000000-0000-0000-0000-000000000000", role: :admin}
-
 seeds_dir = Path.join(__DIR__, "seeds")
 
 for file <-
@@ -38,10 +36,9 @@ for file <-
 end
 
 already_seeded? =
-  case Ash.read(Ash.Query.filter(CoreOrganization, nip == ^"6161525811"), actor: seed_actor) do
-    {:ok, [_ | _]} -> true
-    _ -> false
-  end
+  CoreOrganization
+  |> Ash.Query.filter(nip == ^"6161525811")
+  |> Ash.exists?(authorize?: false)
 
 if already_seeded? do
   IO.puts("[seeds] Database already seeded — skipping")
