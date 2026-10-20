@@ -27,8 +27,9 @@ defmodule Firmowid.Ash.Preparations.ParadeDBSearch do
       end
 
   Automatically enables `prepare: :unnamed` on the repo (required for ParadeDB
-  operators) and sorts results by `pdb.score()` relevance when a search term
-  is active.
+  operators) and sorts unpaginated results by `pdb.score()` relevance when a
+  search term is active. Paginated reads keep their own sort: keyset cursors
+  compare sort values in the WHERE clause, which ParadeDB rejects for the score.
   """
   use Ash.Resource.Preparation
 
@@ -52,7 +53,16 @@ defmodule Firmowid.Ash.Preparations.ParadeDBSearch do
 
         query
         |> Ash.Query.filter(^search_filter(columns, operator, search_term))
-        |> Ash.Query.sort({calc(fragment("pdb.score(?)", id), type: :float), :desc})
+        |> Ash.Query.before_action(&sort_by_relevance/1)
+    end
+  end
+
+  # The page is known only once the read runs, after preparations.
+  defp sort_by_relevance(query) do
+    if is_list(query.page) and is_integer(query.page[:limit]) do
+      query
+    else
+      Ash.Query.sort(query, {calc(fragment("pdb.score(?)", id), type: :float), :desc})
     end
   end
 
