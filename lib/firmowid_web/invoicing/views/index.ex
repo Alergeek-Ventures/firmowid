@@ -249,6 +249,7 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
       <FirmowidWeb.Invoicing.Components.DashboardTiles.skipped_ksef_warning
         :if={@params.view_mode != :dashboard and @skipped_ksef_sales_invoices != []}
         invoice_labels={Enum.map(@skipped_ksef_sales_invoices, &skipped_invoice_label/1)}
+        class="rounded-lg border-2 border-red-300 bg-white p-2.5"
       />
       <%= cond do %>
         <% @params.view_mode == :dashboard -> %>
@@ -899,7 +900,7 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
       unpaid_invoices = fetch_unpaid_invoices(date_range_from, date_range_to, scope)
       unmatched_transactions = fetch_unmatched_transactions(date_range_from, date_range_to, scope)
       matched_entries = fetch_matched_entries(date_range_from, date_range_to, scope)
-      suggestions = fetch_suggestions(scope, socket.assigns.skipped_ksef_sales_invoices)
+      suggestions = fetch_suggestions(scope, socket.assigns.skipped_ksef_sales_invoices, month)
 
       socket
       |> assign(:dashboard_unpaid_invoices, unpaid_invoices.entries)
@@ -975,33 +976,42 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
     )
   end
 
-  defp fetch_suggestions(scope, skipped_invoices) do
-    bank_alerts =
-      [scope: scope, load: [:requisition, :broken?]]
-      |> Finances.list_bank_accounts!()
-      # Keep the latest outcome independent of the last-success aggregate's filter.
-      |> Ash.load!(:latest_successful_sync_at, scope: scope)
-      |> Enum.flat_map(fn account ->
-        warning? =
-          account.broken? == true or
-            match?(
-              %Requisition{status: status} when status in [:expired, :rejected],
-              account.requisition
-            )
+  defp bank_attention_entries(scope) do
+    [scope: scope, load: [:requisition, :broken?]]
+    |> Finances.list_bank_accounts!()
+    # Keep the latest outcome independent of the last-success aggregate's filter.
+    |> Ash.load!(:latest_successful_sync_at, scope: scope)
+    |> Enum.filter(fn account ->
+      not is_nil(account.gocardless_id) and
+        (bank_connection_warning?(account) or awaiting_bank_sync?(account))
+    end)
+    |> Enum.group_by(&(&1.institution_id || &1.institution_name || &1.id))
+    |> Enum.map(fn {_institution, accounts} ->
+      account =
+        Enum.find(accounts, &match?(%Requisition{status: :expired}, &1.requisition)) ||
+          Enum.find(accounts, &bank_connection_warning?/1) || hd(accounts)
 
-        if not is_nil(account.gocardless_id) and (warning? or awaiting_bank_sync?(account)) do
-          [
-            %{
-              type: :bank_connection_attention,
-              account: account,
-              warning?: warning?,
-              can_reconnect?: scope.actor.role == :admin
-            }
-          ]
-        else
-          []
-        end
-      end)
+      # Show the oldest known gap among this bank's affected accounts.
+      unsynced_since =
+        accounts
+        |> Enum.map(& &1.latest_successful_sync_at)
+        |> Enum.reject(&is_nil/1)
+        |> Enum.sort(DateTime)
+        |> List.first()
+
+      %{
+        type: :bank_connection_attention,
+        account: account,
+        warning?: Enum.any?(accounts, &bank_connection_warning?/1),
+        unsynced_since: unsynced_since,
+        navigate: if(scope.actor.role == :admin, do: ~p"/ustawienia/firma#konto-bankowe-#{account.id}")
+      }
+    end)
+    |> Enum.sort_by(&{not &1.warning?, &1.account.institution_name || ""})
+  end
+
+  defp fetch_suggestions(scope, skipped_invoices, month) do
+    bank_alerts = bank_attention_entries(scope)
 
     ksef_warnings =
       if skipped_invoices == [] do
@@ -1011,7 +1021,14 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
           %{
             type: :skipped_ksef_sales_invoices,
             warning?: true,
-            invoice_labels: Enum.map(skipped_invoices, &skipped_invoice_label/1)
+            invoice_numbers: Enum.map(skipped_invoices, & &1.invoice_number),
+            navigate:
+              Navigation.invoicing_index_path(%{
+                month: month,
+                filter: :invoices,
+                subfilter: nil,
+                view_mode: :list
+              }) <> "#skipped-ksef-sales-invoices"
           }
         ]
       end
@@ -1043,6 +1060,14 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
 
     suggestions = ksef_warnings ++ bank_alerts ++ suggestions
     %{entries: suggestions, total_count: length(suggestions)}
+  end
+
+  defp bank_connection_warning?(account) do
+    account.broken? == true or
+      match?(
+        %Requisition{status: status} when status in [:expired, :rejected],
+        account.requisition
+      )
   end
 
   defp awaiting_bank_sync?(%{requisition: %Requisition{status: :accepted, inserted_at: connected_at}} = account) do

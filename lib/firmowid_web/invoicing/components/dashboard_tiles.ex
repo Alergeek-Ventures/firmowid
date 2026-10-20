@@ -26,14 +26,41 @@ defmodule FirmowidWeb.Invoicing.Components.DashboardTiles do
   attr :return_to, :string, default: nil
 
   def tile(assigns) do
-    ~H"""
-    <div class={[
-      "min-h-24 rounded-lg p-2.5",
-      if(@type == :suggestion and Map.get(@entry, :warning?, false),
-        do: "border border-red-200 bg-white",
-        else: "bg-lightGreyBg transition-shadow hover:shadow-sm"
+    assigns =
+      assign(
+        assigns,
+        :tile_navigate,
+        if(assigns.type == :suggestion, do: Map.get(assigns.entry, :navigate))
       )
-    ]}>
+
+    labelledby =
+      case {assigns.type, assigns.entry} do
+        {:suggestion, %{type: :bank_connection_attention, account: account}} ->
+          "bank-connection-title-#{account.id}"
+
+        {:suggestion, %{type: :skipped_ksef_sales_invoices}} ->
+          "skipped-ksef-warning-title"
+
+        _ ->
+          nil
+      end
+
+    assigns = assign(assigns, :tile_labelledby, labelledby)
+
+    ~H"""
+    <.maybe_link
+      navigate={@tile_navigate}
+      labelledby={@tile_labelledby}
+      class={[
+        "block min-h-24 rounded-lg p-2.5",
+        @tile_navigate &&
+          "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-600 active:bg-red-100",
+        if(@type == :suggestion and Map.get(@entry, :warning?, false),
+          do: "border-2 border-red-300 bg-white",
+          else: "bg-lightGreyBg transition-shadow hover:shadow-sm"
+        )
+      ]}
+    >
       <%= case @type do %>
         <% :unpaid_invoice -> %>
           <.unpaid_invoice_tile entry={@entry} return_to={@return_to} />
@@ -44,11 +71,12 @@ defmodule FirmowidWeb.Invoicing.Components.DashboardTiles do
         <% :suggestion -> %>
           <.suggestion_tile entry={@entry} />
       <% end %>
-    </div>
+    </.maybe_link>
     """
   end
 
   attr :invoice_labels, :list, required: true
+  attr :class, :any, default: nil
 
   @doc "Shows sales invoices awaiting a supported KSeF import, preserving the visibility signal."
   @spec skipped_ksef_warning(map()) :: Phoenix.LiveView.Rendered.t()
@@ -58,7 +86,10 @@ defmodule FirmowidWeb.Invoicing.Components.DashboardTiles do
       id="skipped-ksef-sales-invoices"
       phx-hook="KsefSkippedInvoicesBanner"
       role="alert"
-      class="grid grid-cols-[2.25rem_minmax(0,1fr)] items-start gap-3 text-red-800"
+      class={[
+        "grid grid-cols-[2.25rem_minmax(0,1fr)] items-start gap-3 text-black",
+        @class
+      ]}
     >
       <div class="flex justify-center">
         <Lucideicons.triangle_alert class="size-6" />
@@ -493,48 +524,70 @@ defmodule FirmowidWeb.Invoicing.Components.DashboardTiles do
     ~H"""
     <div
       id={"bank-connection-alert-#{@account.id}"}
-      class={[
-        "grid grid-cols-[2.25rem_minmax(0,1fr)] items-start gap-3",
-        if(@entry.warning?, do: "text-red-800", else: "text-darkGrey")
-      ]}
+      class="flex min-h-full flex-col gap-2 text-black"
       role={if @entry.warning?, do: "alert"}
     >
-      <.bank_badge institution={@account} size="mini" class="shrink-0" />
-      <div class="flex min-w-0 flex-col gap-2">
-        <span class="text-sm font-semibold">
-          <%= if @expired? do %>
-            {gettext("Bank connection expired")}
-          <% else %>
-            {gettext("Transactions are not being updated.")}
+      <div class="flex items-center justify-between gap-2">
+        <span id={"bank-connection-title-#{@account.id}"} class="min-w-0 text-sm font-medium">
+          <%= cond do %>
+            <% @expired? and not is_nil(@account.institution_name) -> %>
+              {gettext("Connection to %{institution} has expired",
+                institution: @account.institution_name
+              )}
+            <% @expired? -> %>
+              {gettext("Bank connection expired")}
+            <% true -> %>
+              {@account.institution_name || gettext("Transactions are not being updated.")}
           <% end %>
         </span>
-        <p class="text-sm font-medium wrap-anywhere">
-          {@account.name || @account.institution_name} · {@account.currency}
-        </p>
-        <p :if={@expired?} class="text-xs">{gettext("Transactions are not being updated.")}</p>
-        <p :if={@account.latest_successful_sync_at} class="text-xs">
-          {gettext("Last successful synchronization: %{date}",
-            date: format_date(@account.latest_successful_sync_at)
-          )}
-        </p>
-        <.link
-          :if={@entry.can_reconnect?}
-          navigate={~p"/ustawienia/firma#konto-bankowe-#{@account.id}"}
-          kind="button"
-          variant="secondary"
-          size="small"
-          class="mbs-1 w-full"
-        >
-          {gettext("Reconnect")}
-        </.link>
+        <.bank_badge institution={@account} size="mini" class="shrink-0" />
       </div>
+      <p class="text-xs text-darkGrey">
+        <%= if @entry.unsynced_since do %>
+          {gettext("Transactions have not been synchronized since %{date}",
+            date: format_date(@entry.unsynced_since)
+          )}
+        <% else %>
+          {gettext("Transactions are not being updated.")}
+        <% end %>
+      </p>
     </div>
     """
   end
 
   defp suggestion_tile(%{entry: %{type: :skipped_ksef_sales_invoices}} = assigns) do
     ~H"""
-    <.skipped_ksef_warning invoice_labels={@entry.invoice_labels} />
+    <div
+      id="skipped-ksef-sales-invoices"
+      phx-hook="KsefSkippedInvoicesBanner"
+      role="alert"
+      class="flex min-h-full flex-col gap-2 text-black"
+    >
+      <div class="flex items-center justify-between gap-2">
+        <span id="skipped-ksef-warning-title" class="min-w-0 text-sm font-medium">{gettext(
+          "Missing invoices from KSeF"
+        )}</span>
+        <Lucideicons.file_warning class="size-6 shrink-0 text-redText" aria-hidden="true" />
+      </div>
+      <ul
+        :if={length(@entry.invoice_numbers) <= 2}
+        class="flex flex-col gap-1 text-xs wrap-anywhere text-darkGrey"
+      >
+        <li :for={number <- @entry.invoice_numbers}>{number}</li>
+      </ul>
+      <p :if={length(@entry.invoice_numbers) > 2} class="text-xs text-darkGrey">
+        {ngettext(
+          "Could not synchronize %{count} invoice.",
+          "Could not synchronize %{count} invoices.",
+          length(@entry.invoice_numbers)
+        )}
+      </p>
+      <p class="text-xs text-darkGrey">
+        {gettext(
+          "We detected an import issue. Our team is working to resolve it as quickly as possible."
+        )}
+      </p>
+    </div>
     """
   end
 
@@ -610,12 +663,19 @@ defmodule FirmowidWeb.Invoicing.Components.DashboardTiles do
   # ── Shared helpers ────────────────────────────────────────────────
 
   attr :navigate, :string, default: nil
-  attr :class, :string, default: nil
+  attr :labelledby, :string, default: nil
+  attr :class, :any, default: nil
   slot :inner_block, required: true
 
   defp maybe_link(assigns) do
     ~H"""
-    <.link :if={@navigate} kind="unstyled" navigate={@navigate} class={@class}>
+    <.link
+      :if={@navigate}
+      kind="unstyled"
+      navigate={@navigate}
+      aria-labelledby={@labelledby}
+      class={@class}
+    >
       {render_slot(@inner_block)}
     </.link>
 

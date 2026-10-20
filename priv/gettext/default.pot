@@ -2270,28 +2270,18 @@ msgstr ""
 msgid "Clear month's categories?"
 msgstr ""
 
-#: lib/firmowid_web/invoicing/components/dashboard_tiles.ex:506
+#: lib/firmowid_web/invoicing/components/dashboard_tiles.ex:538
 #, elixir-autogen, elixir-format
 msgid "Bank connection expired"
 msgstr ""
 
-#: lib/firmowid_web/invoicing/components/dashboard_tiles.ex:516
-#, elixir-autogen, elixir-format
-msgid "Last successful synchronization: %{date}"
-msgstr ""
-
-#: lib/firmowid_web/invoicing/components/dashboard_tiles.ex:528
-#, elixir-autogen, elixir-format
-msgid "Reconnect"
-msgstr ""
-
-#: lib/firmowid_web/invoicing/components/dashboard_tiles.ex:508
-#: lib/firmowid_web/invoicing/components/dashboard_tiles.ex:514
+#: lib/firmowid_web/invoicing/components/dashboard_tiles.ex:540
+#: lib/firmowid_web/invoicing/components/dashboard_tiles.ex:551
 #, elixir-autogen, elixir-format
 msgid "Transactions are not being updated."
 msgstr ""
 
-#: lib/firmowid_web/invoicing/components/dashboard_tiles.ex:68
+#: lib/firmowid_web/invoicing/components/dashboard_tiles.ex:99
 #, elixir-autogen, elixir-format
 msgid "These sales invoices from KSeF could not be imported into Firmowid yet. We are investigating and will import them as soon as the cause is fixed."
 msgstr ""
@@ -2299,4 +2289,31 @@ msgstr ""
 #: lib/firmowid_web/invoicing/components/dashboard.ex:92
 #, elixir-autogen, elixir-format
 msgid "Worth your attention"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/components/dashboard_tiles.ex:534
+#, elixir-autogen, elixir-format
+msgid "Connection to %{institution} has expired"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/components/dashboard_tiles.ex:547
+#, elixir-autogen, elixir-format
+msgid "Transactions have not been synchronized since %{date}"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/components/dashboard_tiles.ex:567
+#, elixir-autogen, elixir-format
+msgid "Missing invoices from KSeF"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/components/dashboard_tiles.ex:579
+#, elixir-autogen, elixir-format
+msgid "Could not synchronize %{count} invoice."
+msgid_plural "Could not synchronize %{count} invoices."
+msgstr[0] ""
+msgstr[1] ""
+
+#: lib/firmowid_web/invoicing/components/dashboard_tiles.ex:586
+#, elixir-autogen, elixir-format
+msgid "We detected an import issue. Our team is working to resolve it as quickly as possible."
 msgstr ""
