@@ -8,28 +8,23 @@ defmodule Firmowid.Ash.Analysis.Actions.ListEntries do
   alias Firmowid.Ash.Invoicing.CostInvoice
   alias Firmowid.Ash.Invoicing.SalesInvoice
   alias Firmowid.Ash.Scope
-  alias FirmowidWeb.Infrastructure.Flags
 
   @impl true
   def run(input, _opts, %{actor: %User{organization_id: tenant} = actor, tenant: tenant}) when is_binary(tenant) do
-    if Map.get(Flags.evaluate_for_user(actor), :analysis_dashboard, false) do
-      month = Date.beginning_of_month(input.arguments.month)
+    month = Date.beginning_of_month(input.arguments.month)
 
-      entries =
-        Analysis.get_organization_entries(month, Date.end_of_month(month), %Scope{
-          actor: actor,
-          tenant: tenant
-        })
+    entries =
+      Analysis.get_organization_entries(month, Date.end_of_month(month), %Scope{
+        actor: actor,
+        tenant: tenant
+      })
 
-      rows =
-        (entries.sales_invoices ++ entries.cost_invoices ++ entries.transactions)
-        |> Enum.map(&entry/1)
-        |> Enum.sort_by(& &1.date, Date)
+    rows =
+      (entries.sales_invoices ++ entries.cost_invoices ++ entries.transactions)
+      |> Enum.map(&entry/1)
+      |> Enum.sort_by(& &1.date, Date)
 
-      {:ok, %{month: month, entries: rows}}
-    else
-      {:error, :analysis_unavailable}
-    end
+    {:ok, %{month: month, entries: rows}}
   end
 
   # This must also reject mismatched tenants for admins, whose policy bypass is global.

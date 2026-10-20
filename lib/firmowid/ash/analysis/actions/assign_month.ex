@@ -7,15 +7,13 @@ defmodule Firmowid.Ash.Analysis.Actions.AssignMonth do
   alias Firmowid.Ash.Analysis.Services.Jev
   alias Firmowid.Ash.Scope
   alias Firmowid.Ash.Timetracker
-  alias FirmowidWeb.Infrastructure.Flags
 
   @impl true
   def run(input, _opts, context) do
     scope = %Scope{actor: context.actor, tenant: context.tenant}
     month = Date.beginning_of_month(input.arguments.month)
 
-    if scope.actor.organization_id == scope.tenant and
-         Map.get(Flags.evaluate_for_user(scope.actor), :analysis_dashboard, false) do
+    if scope.actor.organization_id == scope.tenant do
       projects =
         %{active_from: month, active_to: Date.end_of_month(month)}
         |> Timetracker.list_projects!(scope: scope)
