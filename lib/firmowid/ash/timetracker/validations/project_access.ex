@@ -37,7 +37,7 @@ defmodule Firmowid.Ash.Timetracker.Validations.ProjectAccess do
       ProjectUser
       |> Ash.Query.filter(
         expr(
-          user_id == ^user_id and
+          member.user_id == ^user_id and
             project_id == ^project_id and
             exists(project, is_nil(archived_at))
         )

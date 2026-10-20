@@ -20,16 +20,17 @@ defmodule Firmowid.Ash.Timetracker.ProjectTest do
       assert is_nil(project.archived_at)
     end
 
-    test "creates a project with assigned users", %{user: user, org_id: org_id, scope: scope} do
+    test "creates a project with assigned members", %{user: user, org_id: org_id, scope: scope} do
       user2 = user_in_org_fixture(org_id)
 
       {:ok, project} =
-        AshProject.create(%{name: "Assigned Project", user_ids: [user.id, user2.id]},
+        AshProject.create(
+          %{name: "Assigned Project", member_ids: [user.member.id, user2.member.id]},
           scope: scope
         )
 
-      project = Ash.load!(project, [:users], scope: scope)
-      active_ids = project.users |> Enum.map(& &1.id) |> Enum.sort()
+      project = Ash.load!(project, [:members], scope: scope)
+      active_ids = project.members |> Enum.map(& &1.user_id) |> Enum.sort()
 
       assert active_ids == Enum.sort([user.id, user2.id])
     end
@@ -108,18 +109,18 @@ defmodule Firmowid.Ash.Timetracker.ProjectTest do
   end
 
   describe "update/3" do
-    test "replaces assigned users", %{user: user, org_id: org_id, scope: scope} do
+    test "replaces assigned members", %{user: user, org_id: org_id, scope: scope} do
       project = project_fixture(%{organization_id: org_id})
       user2 = user_in_org_fixture(org_id)
       user3 = user_in_org_fixture(org_id)
 
       {:ok, _} =
-        AshProject.update(project, %{user_ids: [user.id, user2.id]}, scope: scope)
+        AshProject.update(project, %{member_ids: [user.member.id, user2.member.id]}, scope: scope)
 
-      {:ok, _} = AshProject.update(project, %{user_ids: [user3.id]}, scope: scope)
+      {:ok, _} = AshProject.update(project, %{member_ids: [user3.member.id]}, scope: scope)
 
-      project_with_users = AshProject.get!(project.id, scope: scope)
-      active_ids = project_with_users.users |> Enum.map(& &1.id) |> Enum.sort()
+      project_with_members = AshProject.get!(project.id, scope: scope)
+      active_ids = project_with_members.members |> Enum.map(& &1.user_id) |> Enum.sort()
 
       assert active_ids == [user3.id]
     end

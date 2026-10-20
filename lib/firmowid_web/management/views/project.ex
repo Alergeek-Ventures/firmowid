@@ -230,7 +230,7 @@ defmodule FirmowidWeb.Management.Views.Project do
   # lookups, removed-from-project flag) that were previously covered by the
   # now-deleted ProjectCosts generic action tests.
 
-  # Build per-user cost maps. `project.users` gives current members; sessions
+  # Build per-user cost maps. `project.members` gives current members; sessions
   # may include users no longer in the project.
   defp build_users_with_cost(project, sessions, salary_by_user, hr_by_user, scope) do
     time_by_user =
@@ -238,11 +238,11 @@ defmodule FirmowidWeb.Management.Views.Project do
       |> Enum.group_by(& &1.user_id)
       |> Map.new(fn {uid, ss} -> {uid, ss |> Enum.map(& &1.duration) |> Enum.sum()} end)
 
-    member_ids = MapSet.new(project.users, & &1.id)
+    member_ids = MapSet.new(project.members, & &1.user_id)
     session_user_ids = MapSet.new(Map.keys(time_by_user))
     all_user_ids = MapSet.union(member_ids, session_user_ids)
 
-    users_by_id = Map.new(project.users, &{&1.id, &1})
+    users_by_id = Map.new(project.members, &{&1.user_id, &1.user})
 
     all_user_ids
     |> Enum.map(fn uid ->

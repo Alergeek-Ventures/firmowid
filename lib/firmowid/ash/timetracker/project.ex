@@ -47,10 +47,10 @@ defmodule Firmowid.Ash.Timetracker.Project do
     defaults [:read]
 
     read :get do
-      description "Get a single project by ID with users and counterparty preloaded."
+      description "Get a single project by ID with members and counterparty preloaded."
       get? true
 
-      prepare build(load: [:users, counterparty: [:display_label]])
+      prepare build(load: [members: :user, counterparty: [:display_label]])
     end
 
     read :list do
@@ -77,7 +77,7 @@ defmodule Firmowid.Ash.Timetracker.Project do
         description "Only projects created or with logged work on or before this date."
       end
 
-      prepare build(filter: expr(exists(project_users, user_id == ^arg(:user_id)))) do
+      prepare build(filter: expr(exists(project_users, member.user_id == ^arg(:user_id)))) do
         where present(:user_id)
       end
 
@@ -122,7 +122,7 @@ defmodule Firmowid.Ash.Timetracker.Project do
         constraints one_of: [:active, :archived]
       end
 
-      prepare build(filter: expr(exists(project_users, user_id == ^actor(:id))))
+      prepare build(filter: expr(exists(project_users, member_id == ^actor([:member, :id]))))
 
       prepare build(filter: expr(is_nil(archived_at))) do
         where argument_equals(:status, :active)
@@ -137,9 +137,9 @@ defmodule Firmowid.Ash.Timetracker.Project do
       description "Create a project with automatic TagDefinition creation for analysis tagging."
 
       accept [:name, :counterparty_id]
-      argument :user_ids, {:array, :uuid}, allow_nil?: true
+      argument :member_ids, {:array, :uuid}, allow_nil?: true
 
-      change manage_relationship(:user_ids, :users, type: :append_and_remove)
+      change manage_relationship(:member_ids, :members, type: :append_and_remove)
       change CreateProjectTag
     end
 
@@ -147,10 +147,10 @@ defmodule Firmowid.Ash.Timetracker.Project do
       description "Update project attributes and sync the associated tag definition name."
       primary? true
       accept [:name, :counterparty_id]
-      argument :user_ids, {:array, :uuid}, allow_nil?: true
+      argument :member_ids, {:array, :uuid}, allow_nil?: true
       require_atomic? false
 
-      change manage_relationship(:user_ids, :users, type: :append_and_remove)
+      change manage_relationship(:member_ids, :members, type: :append_and_remove)
       change SyncProjectTagName, where: [changing(:name)]
     end
 
@@ -206,7 +206,7 @@ defmodule Firmowid.Ash.Timetracker.Project do
 
     policy action_type(:read) do
       authorize_if {Firmowid.Ash.Checks.AtLeastRole, role: :invoicing}
-      authorize_if relates_to_actor_via([:project_users, :user])
+      authorize_if expr(exists(project_users, member_id == ^actor([:member, :id])))
       authorize_if accessing_from(Session, :project)
     end
 
@@ -252,10 +252,10 @@ defmodule Firmowid.Ash.Timetracker.Project do
     has_many :sessions, Session
     has_many :project_users, ProjectUser
 
-    many_to_many :users, Firmowid.Ash.Core.User do
+    many_to_many :members, Firmowid.Ash.Core.Member do
       through ProjectUser
       source_attribute_on_join_resource :project_id
-      destination_attribute_on_join_resource :user_id
+      destination_attribute_on_join_resource :member_id
     end
   end
 

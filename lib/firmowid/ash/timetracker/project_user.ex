@@ -1,6 +1,7 @@
 defmodule Firmowid.Ash.Timetracker.ProjectUser do
   @moduledoc """
-  Ash resource wrapping the existing `projects_users` join table.
+  Ash resource wrapping the existing `projects_users` join table: an organization
+  member assigned to a project.
 
   Attribute multitenancy via `organization_id`. Managed as a relationship
   on `Project` — typically not interacted with directly.
@@ -18,6 +19,10 @@ defmodule Firmowid.Ash.Timetracker.ProjectUser do
   postgres do
     table "projects_users"
     repo Firmowid.Repo
+
+    references do
+      reference :member, on_delete: :delete
+    end
   end
 
   code_interface do
@@ -30,15 +35,15 @@ defmodule Firmowid.Ash.Timetracker.ProjectUser do
     defaults [:read, :destroy]
 
     create :create do
-      description "Create a project membership linking a user to a project."
+      description "Assign an organization member to a project."
       primary? true
-      accept [:project_id, :user_id]
+      accept [:project_id, :member_id]
     end
   end
 
   policies do
     policy [action_type(:read), {ActorRole, role: :employee}] do
-      authorize_if relates_to_actor_via(:user)
+      authorize_if expr(member_id == ^actor([:member, :id]))
     end
   end
 
@@ -60,7 +65,7 @@ defmodule Firmowid.Ash.Timetracker.ProjectUser do
       attribute_writable? true
     end
 
-    belongs_to :user, Firmowid.Ash.Core.User do
+    belongs_to :member, Firmowid.Ash.Core.Member do
       public? true
       allow_nil? false
       attribute_writable? true
@@ -72,6 +77,6 @@ defmodule Firmowid.Ash.Timetracker.ProjectUser do
   end
 
   identities do
-    identity :unique_project_user, [:project_id, :user_id]
+    identity :unique_project_member, [:project_id, :member_id]
   end
 end

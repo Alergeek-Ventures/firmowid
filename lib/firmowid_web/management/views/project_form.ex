@@ -110,7 +110,7 @@ defmodule FirmowidWeb.Management.Views.ProjectForm do
 
         project ->
           # Current members from the loaded relationship
-          member_ids = MapSet.new(project.users, & &1.id)
+          member_ids = MapSet.new(project.members, & &1.user_id)
 
           # Users with sessions for this project (may include removed members)
           session_user_ids =
@@ -121,7 +121,7 @@ defmodule FirmowidWeb.Management.Views.ProjectForm do
 
           all_ids = MapSet.union(member_ids, session_user_ids)
 
-          users_by_id = Map.new(project.users, &{&1.id, &1})
+          users_by_id = Map.new(project.members, &{&1.user_id, %{&1.user | member: &1}})
 
           all_ids
           |> Enum.map(fn uid ->
@@ -161,24 +161,24 @@ defmodule FirmowidWeb.Management.Views.ProjectForm do
   end
 
   defp project_params(params, project_users) do
-    user_ids =
+    member_ids =
       project_users
       |> Enum.reject(& &1.removed_from_project)
-      |> Enum.map(& &1.user.id)
+      |> Enum.map(& &1.user.member.id)
 
-    Map.put(params, "user_ids", user_ids)
+    Map.put(params, "member_ids", member_ids)
   end
 
   # Resolve a user by ID: prefer already-loaded project members, fall back to Core.
   defp resolve_user(uid, users_by_id, scope) do
     case Map.get(users_by_id, uid) do
-      nil -> Core.get_org_user!(%{id: uid}, scope: scope)
+      nil -> Core.get_org_user!(%{id: uid}, scope: scope, load: [:member])
       u -> u
     end
   end
 
   # User-centric query using Ash Core domain
   defp list_users_with_projects(scope) do
-    Core.list_users!(%{status: :active}, scope: scope)
+    Core.list_users!(%{status: :active}, scope: scope, load: [:member])
   end
 end

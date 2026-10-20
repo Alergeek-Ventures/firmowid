@@ -36,7 +36,7 @@ defmodule Firmowid.Seeds.SalaryMatching do
           identity: :unique_email
         )
 
-      Helpers.seed_member!(user.id, organization.id, :employee)
+      member = Helpers.seed_member!(user.id, organization.id, :employee)
 
       Ash.Seed.upsert!(
         UserSalary,
@@ -56,7 +56,7 @@ defmodule Firmowid.Seeds.SalaryMatching do
           not Enum.any?(user_projects, &(&1.id == project.id)) do
         Ash.Seed.seed!(
           ProjectUser,
-          %{user_id: user.id, project_id: project.id, organization_id: organization.id},
+          %{member_id: member.id, project_id: project.id, organization_id: organization.id},
           tenant: organization.id
         )
       end

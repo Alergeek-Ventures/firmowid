@@ -174,6 +174,12 @@ defmodule Firmowid.Ash.Core.Member do
     belongs_to :organization, Firmowid.Ash.Core.Organization do
       allow_nil? false
     end
+
+    many_to_many :projects, Firmowid.Ash.Timetracker.Project do
+      through Firmowid.Ash.Timetracker.ProjectUser
+      source_attribute_on_join_resource :member_id
+      destination_attribute_on_join_resource :project_id
+    end
   end
 
   identities do

@@ -7,6 +7,7 @@ defmodule Firmowid.TimetrackerFixtures do
   """
 
   alias Firmowid.AccountsFixtures
+  alias Firmowid.Ash.Core.Member
   alias Firmowid.Ash.Payroll
   alias Firmowid.Ash.Timetracker.Project, as: AshProject
   alias Firmowid.Ash.Timetracker.ProjectUser, as: AshProjectUser
@@ -56,7 +57,11 @@ defmodule Firmowid.TimetrackerFixtures do
     tenant = organization_id
     opts = admin_opts(tenant)
 
-    {:ok, pu} = AshProjectUser.create(%{user_id: user_id, project_id: project_id}, opts)
+    {:ok, pu} =
+      AshProjectUser.create(
+        %{member_id: member_id(user_id, tenant), project_id: project_id},
+        opts
+      )
 
     pu
   end
@@ -82,16 +87,25 @@ defmodule Firmowid.TimetrackerFixtures do
   end
 
   defp ensure_project_user!(user_id, project_id, opts) do
+    member_id = member_id(user_id, opts[:tenant])
+
     exists? =
       AshProjectUser
-      |> Ash.Query.filter(user_id: user_id, project_id: project_id)
+      |> Ash.Query.filter(member_id: member_id, project_id: project_id)
       |> Ash.exists?(opts)
 
     if !exists? do
       {:ok, _project_user} =
-        AshProjectUser.create(%{user_id: user_id, project_id: project_id}, opts)
+        AshProjectUser.create(%{member_id: member_id, project_id: project_id}, opts)
     end
 
     :ok
+  end
+
+  defp member_id(user_id, tenant) do
+    Member
+    |> Ash.Query.filter(user_id == ^user_id)
+    |> Ash.read_one!(tenant: tenant, authorize?: false)
+    |> Map.fetch!(:id)
   end
 end

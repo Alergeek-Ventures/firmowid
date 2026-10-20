@@ -144,10 +144,10 @@
       </.button>
     </.user_card_info>
 
-    <.user_card_info :if={not Enum.empty?(@employee.projects)} label="Projekty">
+    <.user_card_info :if={not Enum.empty?(@employee.member.projects)} label="Projekty">
       <div class="mt-2 flex max-w-sm flex-wrap gap-2 text-sm/tight">
         <.link
-          :for={project <- @employee.projects}
+          :for={project <- @employee.member.projects}
           kind="unstyled"
           navigate={Navigation.project_path(project.id, %{miesiac: @projects_filter_date})}
           class="rounded-full bg-turquoise-200 px-4 py-1 text-sm/snug text-turquoise-700 transition hover:bg-turquoise-300 hover:text-turquoise-800"
