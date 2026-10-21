@@ -44,7 +44,7 @@ defmodule Firmowid.Ash.Payroll.Workers.EmploymentContractEmailWorker do
 
     case Payroll.get_employment_contract(contract_id,
            scope: scope,
-           load: [:user],
+           load: [member: :user],
            not_found_error?: false
          ) do
       {:ok, nil} ->
@@ -78,7 +78,7 @@ defmodule Firmowid.Ash.Payroll.Workers.EmploymentContractEmailWorker do
 
       :ok
     else
-      EmploymentContractEmails.deliver_pending_signature(contract.user, contract)
+      EmploymentContractEmails.deliver_pending_signature(contract.member.user, contract)
     end
   end
 

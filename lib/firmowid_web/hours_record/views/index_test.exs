@@ -106,7 +106,7 @@ defmodule FirmowidWeb.HoursRecord.Views.IndexTest do
       %{
         starts_at: ~D[2023-01-10],
         salary: Money.new(:PLN, "100"),
-        user_id: employee.id,
+        member_id: employee.member.id,
         blob_id: blob.id,
         position: "Software Developer"
       },

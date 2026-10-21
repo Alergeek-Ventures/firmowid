@@ -37,8 +37,8 @@ defmodule FirmowidWeb.Management.Views.Delegation do
 
       employee ->
         employee = Ash.load!(employee, [:member, avatar_blob: [:url]], scope: scope)
-        {:ok, employment_contract} = Payroll.load_current_contract(employee.id, scope: scope)
         member_id = employee.member.id
+        {:ok, employment_contract} = Payroll.load_current_contract(member_id, scope: scope)
 
         delegation =
           case Delegations.get_delegation_by_reference(reference,

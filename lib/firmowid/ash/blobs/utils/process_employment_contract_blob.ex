@@ -102,7 +102,7 @@ defmodule Firmowid.Ash.Blobs.Utils.ProcessEmploymentContractBlob do
           )
         )
         |> Map.put("blob_id", blob.id)
-        |> Map.put("user_id", blob.processing_metadata["user_id"])
+        |> Map.put("member_id", blob.processing_metadata["member_id"])
         |> Map.put("bank_account_number", extracted_metadata["bank_account_number"])
 
       case Payroll.create_employment_contract(attrs, opts) do

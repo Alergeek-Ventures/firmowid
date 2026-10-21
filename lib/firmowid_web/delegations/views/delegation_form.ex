@@ -20,7 +20,7 @@ defmodule FirmowidWeb.Delegations.Views.DelegationForm do
     form = delegation_form(socket.assigns.ash_scope, default_month)
 
     {:ok, employment_contract} =
-      Payroll.load_current_contract(user.id, scope: socket.assigns.ash_scope)
+      Payroll.load_current_contract(user.member.id, scope: socket.assigns.ash_scope)
 
     months = billing_months(employment_contract && employment_contract.starts_at, today)
 

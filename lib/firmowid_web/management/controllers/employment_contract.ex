@@ -13,7 +13,7 @@ defmodule FirmowidWeb.Management.Controllers.EmploymentContract do
 
     case Payroll.get_employment_contract(id,
            scope: scope,
-           load: [:user, blob: [:url]]
+           load: [member: :user, blob: [:url]]
          ) do
       {:ok, nil} ->
         conn
@@ -26,7 +26,7 @@ defmodule FirmowidWeb.Management.Controllers.EmploymentContract do
         case Req.get(url) do
           {:ok, %{status: 200, body: body}} ->
             safe_filename =
-              sanitize_filename("Umowa_#{record.user.name || "pracownik"}_#{record.starts_at}.pdf")
+              sanitize_filename("Umowa_#{record.member.user.name || "pracownik"}_#{record.starts_at}.pdf")
 
             conn
             |> put_resp_header(
@@ -38,12 +38,12 @@ defmodule FirmowidWeb.Management.Controllers.EmploymentContract do
           {:ok, %{status: status}} ->
             conn
             |> LiveToast.put_toast(:error, "Nie udało się pobrać pliku (status: #{status}).")
-            |> redirect(to: documents_return_path(current_user, record.user_id))
+            |> redirect(to: documents_return_path(current_user, record.member.user_id))
 
           {:error, _reason} ->
             conn
             |> LiveToast.put_toast(:error, "Nie udało się pobrać pliku.")
-            |> redirect(to: documents_return_path(current_user, record.user_id))
+            |> redirect(to: documents_return_path(current_user, record.member.user_id))
         end
 
       {:error, _error} ->
