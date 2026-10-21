@@ -391,7 +391,7 @@ defmodule FirmowidWeb.Invoicing.Transactions.Views.ShowTest do
 
   defp seed_salary_months!(user, project, month_hours, submit_hours? \\ true) do
     Ash.Seed.seed!(UserSalary, %{
-      user_id: user.id,
+      member_id: user.member.id,
       organization_id: user.organization_id,
       hourly_rate: Decimal.new(100),
       starts_at: ~U[2025-01-01 00:00:00Z]

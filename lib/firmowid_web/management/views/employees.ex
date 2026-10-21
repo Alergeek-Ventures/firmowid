@@ -105,7 +105,7 @@ defmodule FirmowidWeb.Management.Views.Employees do
       salaries =
         Payroll.list_salaries!(%{active_at: Date.end_of_month(date)}, scope: scope)
 
-      salary_by_user = Map.new(salaries, &{&1.user_id, &1.hourly_rate})
+      salary_by_member = Map.new(salaries, &{&1.member_id, &1.hourly_rate})
 
       # 4. Hours records for this month
       hours_records =
@@ -123,7 +123,7 @@ defmodule FirmowidWeb.Management.Views.Employees do
           %{
             user: user,
             time_worked: Map.get(time_by_user, user.id, 0),
-            hourly_rate: Map.get(salary_by_user, user.id),
+            hourly_rate: Map.get(salary_by_member, user.member.id),
             hours_record: Map.get(hr_by_user, user.id)
           }
         end)
@@ -178,7 +178,7 @@ defmodule FirmowidWeb.Management.Views.Employees do
         if employee.hourly_rate != nil and Decimal.equal?(employee.hourly_rate, hourly_rate) do
           []
         else
-          [%{user_id: employee.user.id, hourly_rate: hourly_rate}]
+          [%{member_id: employee.user.member.id, hourly_rate: hourly_rate}]
         end
       end)
 

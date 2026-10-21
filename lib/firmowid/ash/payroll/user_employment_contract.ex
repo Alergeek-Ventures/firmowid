@@ -11,6 +11,7 @@ defmodule Firmowid.Ash.Payroll.UserEmploymentContract do
   alias Firmowid.Ash.Blobs
   alias Firmowid.Ash.Checks.ActorRole
   alias Firmowid.Ash.Checks.SystemActorRole
+  alias Firmowid.Ash.Core.Member
   alias Firmowid.Ash.Payroll.Actions.NotifyAdminsAboutSignedContract
   alias Firmowid.Ash.Payroll.Changes.MaybeActivateContract
   alias Firmowid.Ash.Payroll.Changes.SyncUserBankAccount
@@ -19,6 +20,7 @@ defmodule Firmowid.Ash.Payroll.UserEmploymentContract do
   alias Firmowid.Ash.Payroll.Workers.EmploymentContractEmailWorker
   alias Firmowid.Ash.Resource
 
+  require Ash.Query
   require Resource
 
   postgres do
@@ -163,14 +165,19 @@ defmodule Firmowid.Ash.Payroll.UserEmploymentContract do
       argument :user_salary, :map
       argument :bank_account_number, :string
 
-      change fn changeset, _context ->
+      change fn changeset, context ->
         salary = Ash.Changeset.get_attribute(changeset, :salary)
         user_id = Ash.Changeset.get_attribute(changeset, :user_id)
         starts_at = Ash.Changeset.get_attribute(changeset, :starts_at)
 
+        member =
+          Member
+          |> Ash.Query.filter(user_id == ^user_id)
+          |> Ash.read_one!(Ash.Context.to_opts(context))
+
         Ash.Changeset.set_argument(changeset, :user_salary, %{
           hourly_rate: Money.to_decimal(salary),
-          user_id: user_id,
+          member_id: member.id,
           starts_at: starts_at
         })
       end

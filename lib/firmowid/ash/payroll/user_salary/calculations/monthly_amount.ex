@@ -7,26 +7,26 @@ defmodule Firmowid.Ash.Payroll.UserSalary.Calculations.MonthlyAmount do
   alias Firmowid.Ash.Timetracker
 
   @impl true
-  def load(_query, _opts, _context), do: [:user_id, :hourly_rate]
+  def load(_query, _opts, _context), do: [:hourly_rate, :member_id]
 
   @impl true
   def calculate(records, _opts, context) do
     month = context.arguments.month
     scope = Scope.new!(context.actor, context.tenant)
-    user_ids = Enum.map(records, & &1.user_id)
+    member_ids = Enum.map(records, & &1.member_id)
 
-    seconds_by_user =
+    seconds_by_member =
       %{month: month.month, year: month.year}
       |> Timetracker.list_sessions!(
-        load: [:duration, :member],
-        query: [filter: [member: [user_id: [in: user_ids]]]],
+        load: [:duration],
+        query: [filter: [member_id: [in: member_ids]]],
         scope: scope
       )
-      |> Enum.group_by(& &1.member.user_id, & &1.duration)
-      |> Map.new(fn {user_id, durations} -> {user_id, Enum.sum(durations)} end)
+      |> Enum.group_by(& &1.member_id, & &1.duration)
+      |> Map.new(fn {member_id, durations} -> {member_id, Enum.sum(durations)} end)
 
     Enum.map(records, fn salary ->
-      hours = seconds_by_user |> Map.get(salary.user_id, 0) |> Timetracker.seconds_to_hours()
+      hours = seconds_by_member |> Map.get(salary.member_id, 0) |> Timetracker.seconds_to_hours()
       Money.new!(:PLN, Decimal.mult(salary.hourly_rate, Decimal.new(hours)))
     end)
   end

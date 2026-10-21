@@ -143,8 +143,10 @@ defmodule FirmowidWeb.Management.Views.Project do
     total_time_worked = sessions |> Enum.map(& &1.duration) |> Enum.sum()
 
     # All salaries for cost computation — use most recent salary per user (as_of today)
-    salaries = Payroll.list_salaries!(%{active_at: Date.utc_today()}, scope: scope)
-    salary_by_user = Map.new(salaries, &{&1.user_id, &1.hourly_rate})
+    salaries =
+      Payroll.list_salaries!(%{active_at: Date.utc_today()}, scope: scope, load: [:member])
+
+    salary_by_user = Map.new(salaries, &{&1.member.user_id, &1.hourly_rate})
 
     users = build_users_with_cost(project, sessions, salary_by_user, %{}, scope)
 
@@ -194,16 +196,18 @@ defmodule FirmowidWeb.Management.Views.Project do
 
     current_salaries =
       Payroll.list_salaries!(%{active_at: current_date},
-        scope: scope
+        scope: scope,
+        load: [:member]
       )
 
     prev_salaries =
       Payroll.list_salaries!(%{active_at: previous_date},
-        scope: scope
+        scope: scope,
+        load: [:member]
       )
 
-    prev_salary_by_user = Map.new(prev_salaries, &{&1.user_id, &1.hourly_rate})
-    current_salary_by_user = Map.new(current_salaries, &{&1.user_id, &1.hourly_rate})
+    prev_salary_by_user = Map.new(prev_salaries, &{&1.member.user_id, &1.hourly_rate})
+    current_salary_by_user = Map.new(current_salaries, &{&1.member.user_id, &1.hourly_rate})
 
     # Hours records for current month (for lockdown display)
     hours_records =
