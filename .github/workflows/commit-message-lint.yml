@@ -36,7 +36,7 @@ jobs:
       - name: Validate current commit message with commitlint
         if: github.event_name == 'push'
         run: |
-          npx --yes --package @commitlint/cli --package @commitlint/config-conventional \
+          npx --yes --package @commitlint/cli@21.2.4 --package @commitlint/config-conventional@21.2.4 \
             commitlint --extends @commitlint/config-conventional --last --verbose
 
       - name: Validate PR commit messages with commitlint
@@ -45,7 +45,7 @@ jobs:
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: |
-          npx --yes --package @commitlint/cli --package @commitlint/config-conventional \
+          npx --yes --package @commitlint/cli@21.2.4 --package @commitlint/config-conventional@21.2.4 \
             commitlint --extends @commitlint/config-conventional --from "$BASE_SHA" --to "$HEAD_SHA" --verbose
 
       - name: Ensure no merge commits are present in PR
