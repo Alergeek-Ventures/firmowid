@@ -13,7 +13,7 @@ defmodule Firmowid.Ash.Timetracker.LeaveRequest do
   alias Firmowid.Ash.Blobs
   alias Firmowid.Ash.Checks.ActorRole
   alias Firmowid.Ash.Checks.SystemActorRole
-  alias Firmowid.Ash.Core.User
+  alias Firmowid.Ash.Core.Member
   alias Firmowid.Ash.Resource
   alias Firmowid.Ash.Timetracker.Actions.NotifyAdminsAboutLeaveRequest
   alias Firmowid.Ash.Timetracker.Signals
@@ -23,6 +23,10 @@ defmodule Firmowid.Ash.Timetracker.LeaveRequest do
   postgres do
     table "leave_requests"
     repo Firmowid.Repo
+
+    references do
+      reference :member, on_delete: :delete
+    end
 
     exclusion_constraint_names [
       {:starts_on, "no_overlapping_leave_requests", "nachodzi na inny wniosek urlopowy"}
@@ -34,7 +38,7 @@ defmodule Firmowid.Ash.Timetracker.LeaveRequest do
         ALTER TABLE leave_requests
         ADD CONSTRAINT no_overlapping_leave_requests
         EXCLUDE USING gist (
-          user_id WITH =,
+          member_id WITH =,
           daterange(starts_on, ends_on, '[]') WITH &&
         )
         WHERE (status IN ('accepted', 'pending'));
@@ -75,8 +79,8 @@ defmodule Firmowid.Ash.Timetracker.LeaveRequest do
     end
 
     read :list do
-      description "List leave requests with optional user, overlapping date range and status filters."
-      argument :user_id, :uuid
+      description "List leave requests with optional member, overlapping date range and status filters."
+      argument :member_id, :uuid
       argument :start_date, :date
       argument :end_date, :date
 
@@ -84,8 +88,8 @@ defmodule Firmowid.Ash.Timetracker.LeaveRequest do
         constraints one_of: [:pending, :accepted, :declined]
       end
 
-      prepare build(filter: expr(user_id == ^arg(:user_id))) do
-        where present(:user_id)
+      prepare build(filter: expr(member_id == ^arg(:member_id))) do
+        where present(:member_id)
       end
 
       prepare build(filter: expr(ends_on >= ^arg(:start_date))) do
@@ -101,13 +105,13 @@ defmodule Firmowid.Ash.Timetracker.LeaveRequest do
       end
     end
 
-    read :list_for_user do
-      description "Leave requests for a given user."
-      argument :user_id, :uuid, allow_nil?: false
+    read :list_for_member do
+      description "Leave requests of a given organization member."
+      argument :member_id, :uuid, allow_nil?: false
       argument :start_date, :date, allow_nil?: true
       argument :end_date, :date, allow_nil?: true
 
-      prepare build(filter: expr(user_id == ^arg(:user_id)), sort: [inserted_at: :desc])
+      prepare build(filter: expr(member_id == ^arg(:member_id)), sort: [inserted_at: :desc])
 
       prepare build(filter: expr(ends_on >= ^arg(:start_date))) do
         where present(:start_date)
@@ -130,7 +134,7 @@ defmodule Firmowid.Ash.Timetracker.LeaveRequest do
                  max_page_size: 100,
                  required?: false
 
-      prepare build(filter: expr(user_id == ^actor(:id)), sort: [inserted_at: :desc])
+      prepare build(filter: expr(member_id == ^actor([:member, :id])), sort: [inserted_at: :desc])
 
       prepare build(filter: expr(ends_on >= ^arg(:start_date))) do
         where present(:start_date)
@@ -153,7 +157,7 @@ defmodule Firmowid.Ash.Timetracker.LeaveRequest do
         description "Request reason: indisposition, rest, or other. This action only creates absence requests."
       end
 
-      change set_attribute(:user_id, actor(:id))
+      change set_attribute(:member_id, actor([:member, :id]))
       change set_attribute(:reason, arg(:reason))
 
       # TODO: Determine category based on employment contract
@@ -198,7 +202,7 @@ defmodule Firmowid.Ash.Timetracker.LeaveRequest do
         description "Original filename of the uploaded attachment."
       end
 
-      change set_attribute(:user_id, actor(:id))
+      change set_attribute(:member_id, actor([:member, :id]))
       change set_attribute(:reason, arg(:reason))
 
       change fn changeset, context ->
@@ -291,7 +295,7 @@ defmodule Firmowid.Ash.Timetracker.LeaveRequest do
     end
 
     policy action_type(:read) do
-      authorize_if expr(user_id == ^actor(:id))
+      authorize_if expr(member_id == ^actor([:member, :id]))
     end
 
     policy action([:accept, :decline]) do
@@ -342,7 +346,7 @@ defmodule Firmowid.Ash.Timetracker.LeaveRequest do
   end
 
   relationships do
-    belongs_to :user, User do
+    belongs_to :member, Member do
       allow_nil? false
       attribute_writable? true
     end

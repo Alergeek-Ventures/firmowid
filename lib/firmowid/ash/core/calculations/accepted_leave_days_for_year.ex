@@ -1,6 +1,6 @@
 defmodule Firmowid.Ash.Core.Calculations.AcceptedLeaveDaysForYear do
   @moduledoc """
-  Sums accepted leave/absence days for a user that fall within a given calendar year.
+  Sums accepted leave/absence days for an organization member that fall within a given calendar year.
 
   Requests that span year boundaries only contribute the days that lie inside
   `[year-01-01, year-12-31]` — not the full request length.
@@ -18,8 +18,8 @@ defmodule Firmowid.Ash.Core.Calculations.AcceptedLeaveDaysForYear do
     year_end = Date.new!(year, 12, 31)
     opts = Ash.Context.to_opts(context)
 
-    Enum.map(records, fn user ->
-      %{user_id: user.id, status: :accepted}
+    Enum.map(records, fn member ->
+      %{member_id: member.id, status: :accepted}
       |> LeaveRequest.list!(Keyword.put(opts, :load, clamped_days_in_year: %{year_start: year_start, year_end: year_end}))
       |> Enum.reduce(0, fn request, acc -> acc + (request.clamped_days_in_year || 0) end)
     end)

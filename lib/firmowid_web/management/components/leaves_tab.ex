@@ -31,11 +31,11 @@ defmodule FirmowidWeb.Management.Components.LeavesTab do
     scope = socket.assigns.scope
     year = socket.assigns.year
 
-    active_years = Timetracker.years_with_leave_requests(socket.assigns.employee.id, scope)
+    active_years = Timetracker.years_with_leave_requests(socket.assigns.employee.member.id, scope)
 
     requests =
-      Timetracker.list_leave_requests_for_user!(
-        socket.assigns.employee.id,
+      Timetracker.list_leave_requests_for_member!(
+        socket.assigns.employee.member.id,
         %{start_date: Date.new!(year, 1, 1), end_date: Date.new!(year, 12, 31)},
         scope: scope
       )
@@ -45,7 +45,7 @@ defmodule FirmowidWeb.Management.Components.LeavesTab do
     others = LeavePresentation.filter_by_search(others, socket.assigns.search)
 
     leave_days =
-      socket.assigns.employee
+      socket.assigns.employee.member
       |> Ash.load!([accepted_leave_days_for_year: %{year: year}], scope: scope)
       |> Map.get(:accepted_leave_days_for_year, 0)
 
