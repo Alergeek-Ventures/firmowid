@@ -23,6 +23,8 @@
  *       - RightSpine... (Symmetric)
  */
 
+import { domToCanvas } from "modern-screenshot";
+
 const FOLD_CORNER_DURATION = 330;
 const FOLD_SPINE_DURATION = 330;
 const FOLD_WINGS_DURATION = 330;
@@ -614,9 +616,8 @@ export const PaperPlane = {
   },
 
   async _snapshot() {
-    if (typeof modernScreenshot === "undefined") return null;
     try {
-      return await modernScreenshot.domToCanvas(this.el, {
+      return await domToCanvas(this.el, {
         scale: 2,
         backgroundColor: "#ffffff",
       });
