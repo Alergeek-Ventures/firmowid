@@ -89,11 +89,4 @@
     {@inner_content}
     <FirmowidWeb.Landing.Components.CookieConsent.cookie_consent_banner />
   </body>
-  <%= if load_full_browser_assets?(assigns) do %>
-    <script
-      type="module"
-      src="https://cdn.jsdelivr.net/npm/pdfjs-dist@4.7.76/build/pdf.min.mjs"
-    >
-    </script>
-  <% end %>
 </html>

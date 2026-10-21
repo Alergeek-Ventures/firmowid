@@ -51,6 +51,12 @@ config :esbuild,
     args: ~w(js/mcp/dev_host.js --bundle --target=es2022 --format=iife --outfile=../priv/static/assets/mcp_dev_host.js),
     cd: Path.expand("../assets", __DIR__)
   ],
+  # Copies the PDF.js legacy build and its image decoders, which the PDF viewer loads on demand.
+  pdfjs: [
+    args:
+      ~w(node_modules/pdfjs-dist/legacy/build/pdf.min.mjs node_modules/pdfjs-dist/legacy/build/pdf.worker.min.mjs node_modules/pdfjs-dist/wasm/jbig2.wasm node_modules/pdfjs-dist/wasm/openjpeg.wasm --loader:.mjs=copy --loader:.wasm=copy --entry-names=[name] --outdir=../priv/static/assets/pdfjs),
+    cd: Path.expand("../assets", __DIR__)
+  ],
   firmowid: [
     args:
       ~w(js/app.js --bundle --target=es2022 --outdir=../priv/static/assets --external:/fonts/* --external:/images/* --alias:@=.),

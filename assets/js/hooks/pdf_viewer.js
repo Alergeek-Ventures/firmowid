@@ -1,3 +1,5 @@
+import { version as pdfjsVersion } from "pdfjs-dist/package.json";
+
 export const PDFViewer = {
   mounted() {
     this.loadPdf();
@@ -7,7 +9,7 @@ export const PDFViewer = {
     this.loadPdf();
   },
 
-  loadPdf() {
+  async loadPdf() {
     if (this.loaded === true) {
       return;
     }
@@ -15,10 +17,12 @@ export const PDFViewer = {
     const container = this.el;
     const pdfPath = this.el.getAttribute("data-pdf-url");
 
-    pdfjsLib.GlobalWorkerOptions.workerSrc =
-      "https://cdn.jsdelivr.net/npm/pdfjs-dist@4.7.76/build/pdf.worker.min.mjs";
+    // The `esbuild pdfjs` profile serves PDF.js separately, so only the viewer downloads it.
+    // The version query stops browsers from reusing a module or worker cached from another release.
+    const pdfjsLib = await import(`/assets/pdfjs/pdf.min.mjs?v=${pdfjsVersion}`);
+    pdfjsLib.GlobalWorkerOptions.workerSrc = `/assets/pdfjs/pdf.worker.min.mjs?v=${pdfjsVersion}`;
 
-    const loadingTask = pdfjsLib.getDocument(pdfPath);
+    const loadingTask = pdfjsLib.getDocument({ url: pdfPath, wasmUrl: "/assets/pdfjs/" });
     loadingTask.promise
       .then((pdfDocument) => {
         const renderPage = (pageNum) => {

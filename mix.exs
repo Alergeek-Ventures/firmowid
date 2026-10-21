@@ -224,17 +224,19 @@ defmodule Firmowid.MixProject do
       # Test drops need no confirmation; AshPostgres forwards --force to compilation.
       test: ["ash_postgres.drop --force-drop --quiet", "ash.setup --quiet", "test"],
       "assets.setup": ["cmd npm ci --prefix assets"],
-      "assets.build": ["tailwind firmowid", "esbuild firmowid", "assets.mcp"],
+      "assets.build": ["tailwind firmowid", "esbuild firmowid", "esbuild pdfjs", "assets.mcp"],
       "assets.mcp": ["esbuild mcp --minify"],
       "assets.deploy": [
         "tailwind firmowid --minify",
         "esbuild firmowid --minify",
+        "esbuild pdfjs",
         "assets.mcp",
         "phx.digest"
       ],
       "assets.sentry.deploy": [
         "tailwind firmowid --minify",
         "esbuild firmowid --minify --sourcemap=external",
+        "esbuild pdfjs",
         "assets.mcp",
         "phx.digest"
       ],
