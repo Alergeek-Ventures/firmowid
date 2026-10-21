@@ -42,7 +42,9 @@ defmodule Firmowid.Ash.Payroll.UserEmploymentContractTest do
       assert listed_contract.id == own_contract.id
 
       assert {:ok, []} =
-               Payroll.list_employment_contracts(%{user_id: admin.id}, scope: employee_scope)
+               Payroll.list_employment_contracts(%{member_id: admin.member.id},
+                 scope: employee_scope
+               )
 
       assert {:ok, fetched_contract} =
                Payroll.get_employment_contract(own_contract.id, scope: employee_scope)
@@ -245,7 +247,7 @@ defmodule Firmowid.Ash.Payroll.UserEmploymentContractTest do
     blob = blob_fixture!(employee.organization_id)
 
     defaults = %{
-      user_id: employee.id,
+      member_id: employee.member.id,
       starts_at: Date.utc_today(),
       salary: Money.new!(:PLN, Decimal.new("100")),
       blob_id: blob.id,

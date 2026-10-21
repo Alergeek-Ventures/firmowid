@@ -17,7 +17,8 @@ defmodule FirmowidWeb.Management.Controllers.DelegationOrder do
     with true <- conn.assigns.current_user.member.role == :admin,
          {:ok, employee} <- Core.get_org_user(%{id: employee_id}, scope: scope, load: [:member]),
          {:ok, delegation} <- Delegations.get_delegation_by_reference(reference, scope: scope),
-         {:ok, employment_contract} <- Payroll.load_current_contract(employee.id, scope: scope),
+         {:ok, employment_contract} <-
+           Payroll.load_current_contract(employee.member.id, scope: scope),
          true <- delegation.member_id == employee.member.id,
          {:ok, pdf} <- render_pdf(employee, employment_contract, delegation) do
       conn

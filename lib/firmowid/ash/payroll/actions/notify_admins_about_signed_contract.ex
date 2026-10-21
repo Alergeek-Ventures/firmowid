@@ -27,7 +27,7 @@ defmodule Firmowid.Ash.Payroll.Actions.NotifyAdminsAboutSignedContract do
 
     case Payroll.get_employment_contract(contract_id,
            scope: scope,
-           load: [:user],
+           load: [member: :user],
            not_found_error?: false
          ) do
       {:ok, nil} ->
@@ -53,7 +53,7 @@ defmodule Firmowid.Ash.Payroll.Actions.NotifyAdminsAboutSignedContract do
              EmploymentContractEmails.deliver_signed_submitted_to_admins(
                admins,
                contract,
-               contract.user
+               contract.member.user
              ),
            do: :ok
     end
@@ -62,7 +62,7 @@ defmodule Firmowid.Ash.Payroll.Actions.NotifyAdminsAboutSignedContract do
   defp list_admins(contract, scope) do
     Core.list_users!(
       %{status: :active, role: :admin},
-      query: [filter: [id: [not_eq: contract.user_id]]],
+      query: [filter: [id: [not_eq: contract.member.user_id]]],
       scope: scope
     )
   end

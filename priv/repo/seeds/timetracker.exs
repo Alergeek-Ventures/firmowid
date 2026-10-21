@@ -123,7 +123,7 @@ defmodule Firmowid.Seeds.Timetracker do
     Ash.Seed.upsert!(
       UserEmploymentContract,
       %{
-        user_id: user.id,
+        member_id: user.member.id,
         organization_id: org_id,
         starts_at: starts_at,
         salary: contract_salary!(spec.hourly_rate),
@@ -133,7 +133,7 @@ defmodule Firmowid.Seeds.Timetracker do
         status: spec.status,
         signed_at: signed_at
       },
-      identity: :unique_contract_per_user_org,
+      identity: :unique_contract_per_member_org,
       tenant: org_id
     )
   end

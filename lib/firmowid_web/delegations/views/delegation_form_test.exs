@@ -135,7 +135,7 @@ defmodule FirmowidWeb.Delegations.Views.DelegationFormTest do
       %{
         starts_at: ~D[2026-01-01],
         salary: Money.new(:PLN, "10000"),
-        user_id: employee.id,
+        member_id: employee.member.id,
         blob_id: blob.id,
         position: "Software Developer"
       },

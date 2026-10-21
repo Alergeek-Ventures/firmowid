@@ -20,12 +20,15 @@ defmodule Firmowid.Ash.Payroll.UserEmploymentContract do
   alias Firmowid.Ash.Payroll.Workers.EmploymentContractEmailWorker
   alias Firmowid.Ash.Resource
 
-  require Ash.Query
   require Resource
 
   postgres do
     table "user_employment_contracts"
     repo Firmowid.Repo
+
+    references do
+      reference :member, on_delete: :delete
+    end
   end
 
   state_machine do
@@ -69,13 +72,13 @@ defmodule Firmowid.Ash.Payroll.UserEmploymentContract do
 
     define :load_pending_contract,
       action: :load_pending_contract,
-      args: [:user_id],
+      args: [:member_id],
       get?: true,
       not_found_error?: false
 
     define :load_current_contract,
       action: :load_current_contract,
-      args: [:user_id],
+      args: [:member_id],
       get?: true,
       not_found_error?: false
   end
@@ -94,14 +97,14 @@ defmodule Firmowid.Ash.Payroll.UserEmploymentContract do
     end
 
     read :list do
-      description "Returns all employment contracts given user_id."
+      description "Returns all employment contracts given member_id."
 
-      argument :user_id, :uuid
+      argument :member_id, :uuid
       argument :month, :integer
       argument :year, :integer
 
-      prepare build(filter: expr(user_id == ^arg(:user_id))) do
-        where present(:user_id)
+      prepare build(filter: expr(member_id == ^arg(:member_id))) do
+        where present(:member_id)
       end
 
       prepare build(filter: expr(fragment("extract(month from ?) = ?", starts_at, ^arg(:month)))) do
@@ -120,25 +123,25 @@ defmodule Firmowid.Ash.Payroll.UserEmploymentContract do
     end
 
     read :load_pending_contract do
-      description "Returns pending_signature contract for a user or nil."
-      argument :user_id, :uuid, allow_nil?: false
+      description "Returns pending_signature contract for a member or nil."
+      argument :member_id, :uuid, allow_nil?: false
       get? true
 
-      prepare build(filter: expr(user_id == ^arg(:user_id) and status == :pending_signature))
+      prepare build(filter: expr(member_id == ^arg(:member_id) and status == :pending_signature))
     end
 
     read :load_current_contract do
       description """
-      Returns the contract currently in effect for a user, or nil.
+      Returns the contract currently in effect for a member, or nil.
       """
 
-      argument :user_id, :uuid, allow_nil?: false
+      argument :member_id, :uuid, allow_nil?: false
       get? true
 
       prepare build(
                 filter:
                   expr(
-                    user_id == ^arg(:user_id) and
+                    member_id == ^arg(:member_id) and
                       status in [:pending_signature, :signed, :active] and
                       starts_at <= today()
                   ),
@@ -148,13 +151,13 @@ defmodule Firmowid.Ash.Payroll.UserEmploymentContract do
     end
 
     create :create do
-      description "Create an employment contract record for a user."
+      description "Create an employment contract record for a member."
       primary? true
 
       accept [
         :starts_at,
         :salary,
-        :user_id,
+        :member_id,
         :blob_id,
         :contract_type,
         :position,
@@ -165,19 +168,14 @@ defmodule Firmowid.Ash.Payroll.UserEmploymentContract do
       argument :user_salary, :map
       argument :bank_account_number, :string
 
-      change fn changeset, context ->
+      change fn changeset, _context ->
         salary = Ash.Changeset.get_attribute(changeset, :salary)
-        user_id = Ash.Changeset.get_attribute(changeset, :user_id)
+        member_id = Ash.Changeset.get_attribute(changeset, :member_id)
         starts_at = Ash.Changeset.get_attribute(changeset, :starts_at)
-
-        member =
-          Member
-          |> Ash.Query.filter(user_id == ^user_id)
-          |> Ash.read_one!(Ash.Context.to_opts(context))
 
         Ash.Changeset.set_argument(changeset, :user_salary, %{
           hourly_rate: Money.to_decimal(salary),
-          member_id: member.id,
+          member_id: member_id,
           starts_at: starts_at
         })
       end
@@ -289,7 +287,7 @@ defmodule Firmowid.Ash.Payroll.UserEmploymentContract do
 
     policy action_type(:read) do
       authorize_if {ActorRole, role: :admin}
-      authorize_if expr(user_id == ^actor(:id))
+      authorize_if expr(member_id == ^actor([:member, :id]))
 
       authorize_if {SystemActorRole, roles: [:document_blob_processor, :employment_contract_notifier]}
     end
@@ -299,13 +297,13 @@ defmodule Firmowid.Ash.Payroll.UserEmploymentContract do
     end
 
     policy action(:submit_signed) do
-      authorize_if expr(user_id == ^actor(:id) and status == :pending_signature)
+      authorize_if expr(member_id == ^actor([:member, :id]) and status == :pending_signature)
     end
 
     policy action(:activate) do
       authorize_if {AshObanInteraction, []}
       authorize_if {SystemActorRole, roles: [:document_blob_processor]}
-      authorize_if expr(user_id == ^actor(:id))
+      authorize_if expr(member_id == ^actor([:member, :id]))
       authorize_if {ActorRole, role: :admin}
       forbid_if always()
     end
@@ -347,7 +345,7 @@ defmodule Firmowid.Ash.Payroll.UserEmploymentContract do
   end
 
   relationships do
-    belongs_to :user, Firmowid.Ash.Core.User do
+    belongs_to :member, Member do
       allow_nil? false
       attribute_writable? true
     end
@@ -373,7 +371,7 @@ defmodule Firmowid.Ash.Payroll.UserEmploymentContract do
   end
 
   identities do
-    identity :unique_contract_per_user_org, [:user_id, :organization_id, :starts_at] do
+    identity :unique_contract_per_member_org, [:member_id, :organization_id, :starts_at] do
       message "User already has an employment contract with the same start date"
     end
 

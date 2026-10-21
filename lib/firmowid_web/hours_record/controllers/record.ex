@@ -16,7 +16,9 @@ defmodule FirmowidWeb.HoursRecord.Controllers.Record do
   def pdf(conn, %{"date" => date}) do
     scope = conn.assigns.ash_scope
 
-    {:ok, contract} = Payroll.load_current_contract(conn.assigns.current_user.id, scope: scope)
+    {:ok, contract} =
+      Payroll.load_current_contract(conn.assigns.current_user.member.id, scope: scope)
+
     contract_date = contract && (contract.signed_at || contract.starts_at)
 
     # Get avatar URL and convert to data URI
@@ -78,7 +80,9 @@ defmodule FirmowidWeb.HoursRecord.Controllers.Record do
   def preview(conn, %{"date" => date}) do
     scope = conn.assigns.ash_scope
 
-    {:ok, contract} = Payroll.load_current_contract(conn.assigns.current_user.id, scope: scope)
+    {:ok, contract} =
+      Payroll.load_current_contract(conn.assigns.current_user.member.id, scope: scope)
+
     contract_date = contract && (contract.signed_at || contract.starts_at)
 
     date = Date.from_iso8601!(date)

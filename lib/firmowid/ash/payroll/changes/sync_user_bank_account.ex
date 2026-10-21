@@ -33,7 +33,7 @@ defmodule Firmowid.Ash.Payroll.Changes.SyncUserBankAccount do
   defp write_bank_account(contract, bank_account_number, context) do
     opts = update_opts(context, contract)
 
-    with {:ok, user} <- Core.get_user(contract.user_id, opts),
+    with {:ok, %{member: %{user: user}}} <- Ash.load(contract, [member: :user], opts),
          {:ok, _user} <-
            Core.update_profile(user, %{bank_account_number: bank_account_number}, opts) do
       contract

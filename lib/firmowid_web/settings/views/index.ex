@@ -166,8 +166,8 @@ defmodule FirmowidWeb.Settings.Views.Index do
 
     google_connected? = google_identities != []
 
-    {:ok, pending_contract} = Payroll.load_pending_contract(current_user.id, scope: scope)
-    {:ok, current_contract} = Payroll.load_current_contract(current_user.id, scope: scope)
+    {:ok, pending_contract} = Payroll.load_pending_contract(current_user.member.id, scope: scope)
+    {:ok, current_contract} = Payroll.load_current_contract(current_user.member.id, scope: scope)
 
     {:ok,
      socket
@@ -293,7 +293,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
 
   defp handle_progress(:document_upload, entry, socket) do
     scope = socket.assigns.ash_scope
-    user_id = socket.assigns.current_user.id
+    member_id = socket.assigns.current_user.member.id
 
     case consume_uploaded_entry(socket, entry, fn %{path: path} ->
            {:ok,
@@ -302,7 +302,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
               entry.client_type,
               entry.client_name,
               :employment_contract,
-              %{user_id: user_id},
+              %{member_id: member_id},
               scope: scope
             )}
          end) do
@@ -1499,8 +1499,8 @@ defmodule FirmowidWeb.Settings.Views.Index do
     scope = socket.assigns.ash_scope
     current_user = Ash.load!(user, [avatar_blob: [:url]], scope: scope)
 
-    {:ok, pending_contract} = Payroll.load_pending_contract(current_user.id, scope: scope)
-    {:ok, current_contract} = Payroll.load_current_contract(current_user.id, scope: scope)
+    {:ok, pending_contract} = Payroll.load_pending_contract(current_user.member.id, scope: scope)
+    {:ok, current_contract} = Payroll.load_current_contract(current_user.member.id, scope: scope)
 
     socket
     |> assign(:current_user, current_user)

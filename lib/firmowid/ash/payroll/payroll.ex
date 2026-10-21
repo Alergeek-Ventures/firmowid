@@ -25,13 +25,13 @@ defmodule Firmowid.Ash.Payroll do
 
       define :load_pending_contract,
         action: :load_pending_contract,
-        args: [:user_id],
+        args: [:member_id],
         get?: true,
         not_found_error?: false
 
       define :load_current_contract,
         action: :load_current_contract,
-        args: [:user_id],
+        args: [:member_id],
         get?: true,
         not_found_error?: false
 

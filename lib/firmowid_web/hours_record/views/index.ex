@@ -23,7 +23,7 @@ defmodule FirmowidWeb.HoursRecord.Views.Index do
 
     selected_date = Date.utc_today()
     active_months = months_with_sessions(%{member_id: current_user.member.id}, scope)
-    {:ok, current_contract} = Payroll.load_current_contract(current_user.id, scope: scope)
+    {:ok, current_contract} = Payroll.load_current_contract(current_user.member.id, scope: scope)
 
     can_use_hours_records = current_user.name && not is_nil(current_contract)
 
