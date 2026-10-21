@@ -22,7 +22,7 @@ defmodule Firmowid.Ash.Timetracker.Actions.NotifyAdminsAboutLeaveRequest do
 
     case Timetracker.get_leave_request(leave_request_id,
            scope: scope,
-           load: [:user, blob: [:url]],
+           load: [member: :user, blob: [:url]],
            not_found_error?: false
          ) do
       {:ok, nil} ->
@@ -48,7 +48,7 @@ defmodule Firmowid.Ash.Timetracker.Actions.NotifyAdminsAboutLeaveRequest do
   defp notify_admins(leave_request, attachment, scope) do
     admins =
       Core.list_users!(%{status: :active, role: :admin},
-        query: [filter: [id: [not_eq: leave_request.user_id]]],
+        query: [filter: [id: [not_eq: leave_request.member.user_id]]],
         scope: scope
       )
 
@@ -61,7 +61,7 @@ defmodule Firmowid.Ash.Timetracker.Actions.NotifyAdminsAboutLeaveRequest do
                admins,
                leave_request,
                attachment,
-               leave_request.user
+               leave_request.member.user
              ),
            do: :ok
     end

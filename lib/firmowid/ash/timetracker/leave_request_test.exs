@@ -53,12 +53,16 @@ defmodule Firmowid.Ash.Timetracker.LeaveRequestTest do
       assert read_request.id == own_request.id
 
       assert {:ok, [listed_request]} =
-               Timetracker.list_leave_requests(%{user_id: user.id}, scope: employee_scope)
+               Timetracker.list_leave_requests(%{member_id: user.member.id},
+                 scope: employee_scope
+               )
 
       assert listed_request.id == own_request.id
 
       assert {:ok, []} =
-               Timetracker.list_leave_requests(%{user_id: admin.id}, scope: employee_scope)
+               Timetracker.list_leave_requests(%{member_id: admin.member.id},
+                 scope: employee_scope
+               )
     end
   end
 
@@ -139,7 +143,7 @@ defmodule Firmowid.Ash.Timetracker.LeaveRequestTest do
       declined =
         Ash.Seed.seed!(LeaveRequest, %{
           id: Ash.UUIDv7.generate(),
-          user_id: user.id,
+          member_id: user.member.id,
           organization_id: user.organization_id,
           starts_on: days_from_today(20),
           ends_on: days_from_today(25),
@@ -225,7 +229,7 @@ defmodule Firmowid.Ash.Timetracker.LeaveRequestTest do
       # Seed across year boundary - bypass create validations (starts_on >= today).
       Ash.Seed.seed!(LeaveRequest, %{
         id: Ash.UUIDv7.generate(),
-        user_id: user.id,
+        member_id: user.member.id,
         organization_id: user.organization_id,
         starts_on: prev_year_end,
         ends_on: Date.add(year_start, 2),
@@ -235,7 +239,7 @@ defmodule Firmowid.Ash.Timetracker.LeaveRequestTest do
       })
 
       loaded =
-        Ash.load!(user, [accepted_leave_days_for_year: %{year: year}], scope: admin_scope)
+        Ash.load!(user.member, [accepted_leave_days_for_year: %{year: year}], scope: admin_scope)
 
       # Jan 1..Jan 3 inclusive = 2 days in the selected year (exclude weekends)
       assert loaded.accepted_leave_days_for_year == 2
@@ -251,7 +255,7 @@ defmodule Firmowid.Ash.Timetracker.LeaveRequestTest do
       request = create_request!(employee_scope, %{})
       assert {:ok, _} = Timetracker.accept_leave_request(request.id, scope: admin_scope)
 
-      assert Timetracker.years_with_leave_requests(user.id, admin_scope) == [today().year]
+      assert Timetracker.years_with_leave_requests(user.member.id, admin_scope) == [today().year]
     end
   end
 

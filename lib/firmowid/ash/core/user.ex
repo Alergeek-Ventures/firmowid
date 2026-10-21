@@ -24,7 +24,6 @@ defmodule Firmowid.Ash.Core.User do
   alias Firmowid.Ash.Checks.OrganizationAdmin
   alias Firmowid.Ash.Checks.OrganizationMemberAdmin
   alias Firmowid.Ash.Checks.SystemActorRole
-  alias Firmowid.Ash.Core.Calculations.AcceptedLeaveDaysForYear
   alias Firmowid.Ash.Core.Calculations.SharedBirthday
   alias Firmowid.Ash.Core.Changes.CaptureGoogleRegistration
   alias Firmowid.Ash.Core.Member
@@ -637,7 +636,6 @@ defmodule Firmowid.Ash.Core.User do
       destination_attribute :user_id
     end
 
-    has_many :leave_requests, Firmowid.Ash.Timetracker.LeaveRequest
     has_many :delegations, Firmowid.Ash.Delegations.Delegation
   end
 
@@ -646,13 +644,6 @@ defmodule Firmowid.Ash.Core.User do
               :string,
               expr(if(is_nil(name) or name == "", do: email, else: name)) do
       public? true
-    end
-
-    calculate :accepted_leave_days_for_year,
-              :integer,
-              {AcceptedLeaveDaysForYear, []} do
-      public? true
-      argument :year, :integer, allow_nil?: false
     end
 
     calculate :shared_birthday, :map, SharedBirthday do

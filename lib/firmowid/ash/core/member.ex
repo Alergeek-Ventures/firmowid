@@ -20,6 +20,7 @@ defmodule Firmowid.Ash.Core.Member do
   alias Firmowid.Ash.Checks.OrganizationAdmin
   alias Firmowid.Ash.Checks.SystemActorRole
   alias Firmowid.Ash.Core
+  alias Firmowid.Ash.Core.Calculations.AcceptedLeaveDaysForYear
   alias Firmowid.Ash.Core.Member.Changes.DisconnectLiveSessions
   alias Firmowid.Ash.Core.UserRole
   alias Firmowid.Ash.Resource
@@ -180,6 +181,17 @@ defmodule Firmowid.Ash.Core.Member do
       through Firmowid.Ash.Timetracker.ProjectUser
       source_attribute_on_join_resource :member_id
       destination_attribute_on_join_resource :project_id
+    end
+
+    has_many :leave_requests, Firmowid.Ash.Timetracker.LeaveRequest
+  end
+
+  calculations do
+    calculate :accepted_leave_days_for_year,
+              :integer,
+              {AcceptedLeaveDaysForYear, []} do
+      public? true
+      argument :year, :integer, allow_nil?: false
     end
   end
 

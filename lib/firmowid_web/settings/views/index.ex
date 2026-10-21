@@ -109,11 +109,13 @@ defmodule FirmowidWeb.Settings.Views.Index do
     bank_institutions =
       if(admin?, do: list_bank_institutions(current_user, bank_accounts), else: %{})
 
-    leave_requests = Timetracker.list_leave_requests_for_user!(current_user.id, scope: scope)
+    leave_requests =
+      Timetracker.list_leave_requests_for_member!(current_user.member.id, scope: scope)
+
     delegations = Delegations.list_delegations_for_user!(current_user.id, scope: scope)
 
     leave_days =
-      current_user
+      current_user.member
       |> Ash.load!([accepted_leave_days_for_year: %{year: current_year}], scope: scope)
       |> Map.fetch!(:accepted_leave_days_for_year)
 
@@ -980,8 +982,8 @@ defmodule FirmowidWeb.Settings.Views.Index do
     case result do
       {:ok, _request} ->
         leave_requests =
-          Timetracker.list_leave_requests_for_user!(
-            socket.assigns.current_user.id,
+          Timetracker.list_leave_requests_for_member!(
+            socket.assigns.current_user.member.id,
             scope: scope
           )
 
