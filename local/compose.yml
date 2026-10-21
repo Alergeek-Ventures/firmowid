@@ -15,6 +15,12 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: firmowid
+      # The local database is disposable (`mix dev.up` recreates and seeds it), so
+      # durability is traded for speed: flushing to disk took most of the startup.
+      POSTGRES_INITDB_ARGS: --no-sync
+      # Keep stock memory settings instead of 25% of host RAM per worktree.
+      PDB_TUNE: "false"
+    command: ["postgres", "-c", "fsync=off", "-c", "synchronous_commit=off", "-c", "full_page_writes=off"]
     ports:
       - "${DB_PORT:-5433}:5432"
     volumes:

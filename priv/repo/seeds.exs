@@ -28,6 +28,9 @@ alias Firmowid.Seeds.Voidstack
 
 require Ash.Query
 
+# Printing every seed query more than doubles the seeding time.
+Logger.configure(level: :info)
+
 seeds_dir = Path.join(__DIR__, "seeds")
 
 for file <-

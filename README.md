@@ -422,9 +422,21 @@ wt remove feature-auth
 ### Jak to działa
 
 1. `wt switch --create` wywołuje hooki z `.config/wt.toml`:
+   - kopiuje (reflinkiem) `deps`, `_build`, `assets/node_modules` i pobrane
+     locale ze wspólnego cache w `.git/firmowid-build-cache`, a gdy cache jest
+     pusty - z głównego checkoutu
    - generuje `.env.worktree` z deterministycznymi portami (hash z nazwy katalogu worktree, stałej po zmianie nazwy brancha)
-   - `mix deps.get` / `mix setup` - instaluje zależności, migruje bazę
-   - `mix dev.up` - uruchamia Compose + rejestruje route w Caddy
+   - instaluje zależności (`mix deps.get` tylko przy zmianach) i pobiera
+     tłumaczenia przed pierwszą kompilacją
+   - `mix dev.up` - uruchamia Compose, kompiluje, migruje i seeduje bazę (`mix dev.setup`), rejestruje route w Caddy
+   - publikuje świeże zależności i buildy zależności do cache dla kolejnego
+     worktree (tylko z historii `origin/main`; build samej aplikacji jest
+     pomijany, bo Elixir i tak kompiluje projekt od nowa po zmianie katalogu)
+
+   `mix dev.up` nie pobiera zależności ani tłumaczeń; po zmianie `mix.lock`,
+   `package-lock.json` lub tłumaczeń uruchom `mix setup` albo
+   `mix translations.fetch`. Lokalny Postgres działa bez `fsync`, bo baza jest
+   jednorazowa.
 
    Hooki są idempotentne. Worktree utworzony bez `wt` (np. przez T3 Code)
    konfiguruje się poleceniem `wt hook pre-start --yes`.

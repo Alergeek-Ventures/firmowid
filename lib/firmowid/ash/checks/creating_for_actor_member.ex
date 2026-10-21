@@ -14,9 +14,12 @@ defmodule Firmowid.Ash.Checks.CreatingForActorMember do
   @impl true
   def describe(_opts), do: "record is created for the actor's member"
 
+  # `is_struct/2` instead of `%User{}` in the head keeps this compile-time
+  # dependency of resources free of a runtime dependency on `User`.
   @impl true
-  def match?(%User{member: %Member{id: member_id}}, %{subject: %Ash.Changeset{} = changeset}, _opts) do
-    {:ok, Ash.Changeset.get_attribute(changeset, :member_id) == member_id}
+  def match?(%{member: member} = actor, %{subject: %Ash.Changeset{} = changeset}, _opts)
+      when is_struct(actor, User) and is_struct(member, Member) do
+    {:ok, Ash.Changeset.get_attribute(changeset, :member_id) == member.id}
   end
 
   def match?(_actor, _context, _opts), do: {:ok, false}
