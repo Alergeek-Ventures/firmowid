@@ -15,10 +15,10 @@ defmodule FirmowidWeb.Management.Controllers.DelegationOrder do
     scope = conn.assigns.ash_scope
 
     with true <- conn.assigns.current_user.member.role == :admin,
-         {:ok, employee} <- Core.get_org_user(%{id: employee_id}, scope: scope),
+         {:ok, employee} <- Core.get_org_user(%{id: employee_id}, scope: scope, load: [:member]),
          {:ok, delegation} <- Delegations.get_delegation_by_reference(reference, scope: scope),
          {:ok, employment_contract} <- Payroll.load_current_contract(employee.id, scope: scope),
-         true <- delegation.user_id == employee.id,
+         true <- delegation.member_id == employee.member.id,
          {:ok, pdf} <- render_pdf(employee, employment_contract, delegation) do
       conn
       |> put_resp_header(

@@ -184,6 +184,7 @@ defmodule Firmowid.Ash.Core.Member do
     end
 
     has_many :leave_requests, Firmowid.Ash.Timetracker.LeaveRequest
+    has_many :delegations, Firmowid.Ash.Delegations.Delegation
   end
 
   calculations do

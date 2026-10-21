@@ -11,7 +11,7 @@ defmodule Firmowid.Ash.Delegations.Delegation do
     extensions: [AshStateMachine]
 
   alias Firmowid.Ash.Checks.ActorRole
-  alias Firmowid.Ash.Core.User
+  alias Firmowid.Ash.Core.Member
   alias Firmowid.Ash.Delegations.Actions.NotifyAdminsAboutDelegation
   alias Firmowid.Ash.Delegations.Actions.NotifyEmployeeAboutApprovedDelegation
   alias Firmowid.Ash.Delegations.Changes.AssignReference
@@ -27,6 +27,10 @@ defmodule Firmowid.Ash.Delegations.Delegation do
   postgres do
     table "delegations"
     repo Firmowid.Repo
+
+    references do
+      reference :member, on_delete: :delete
+    end
   end
 
   state_machine do
@@ -51,10 +55,10 @@ defmodule Firmowid.Ash.Delegations.Delegation do
       filter expr(reference == ^arg(:reference))
     end
 
-    read :list_for_user do
-      description "Delegations submitted by a given employee."
-      argument :user_id, :uuid, allow_nil?: false
-      prepare build(filter: expr(user_id == ^arg(:user_id)), sort: [inserted_at: :desc])
+    read :list_for_member do
+      description "Delegations submitted by a given organization member."
+      argument :member_id, :uuid, allow_nil?: false
+      prepare build(filter: expr(member_id == ^arg(:member_id)), sort: [inserted_at: :desc])
     end
 
     create :create do
@@ -72,7 +76,7 @@ defmodule Firmowid.Ash.Delegations.Delegation do
         :end_date
       ]
 
-      change set_attribute(:user_id, actor(:id))
+      change set_attribute(:member_id, actor([:member, :id]))
       change set_attribute(:reference, "pending")
       change AssignReference
 
@@ -190,7 +194,7 @@ defmodule Firmowid.Ash.Delegations.Delegation do
     end
 
     policy action_type(:read) do
-      authorize_if expr(user_id == ^actor(:id))
+      authorize_if expr(member_id == ^actor([:member, :id]))
     end
 
     policy action(:approve) do
@@ -202,11 +206,11 @@ defmodule Firmowid.Ash.Delegations.Delegation do
     end
 
     policy action(:complete) do
-      authorize_if expr(status == :in_progress and user_id == ^actor(:id))
+      authorize_if expr(status == :in_progress and member_id == ^actor([:member, :id]))
     end
 
     policy action(:detect_dates) do
-      authorize_if expr(status == :in_progress and user_id == ^actor(:id))
+      authorize_if expr(status == :in_progress and member_id == ^actor([:member, :id]))
     end
   end
 
@@ -256,7 +260,7 @@ defmodule Firmowid.Ash.Delegations.Delegation do
   end
 
   relationships do
-    belongs_to :user, User do
+    belongs_to :member, Member do
       allow_nil? false
       attribute_writable? true
     end

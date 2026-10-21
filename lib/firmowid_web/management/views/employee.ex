@@ -27,9 +27,8 @@ defmodule FirmowidWeb.Management.Views.Employee do
 
   @employee_load [
     :display_name,
-    :delegations,
     :shared_birthday,
-    member: [:projects],
+    member: [:projects, :delegations],
     avatar_blob: [:url]
   ]
 

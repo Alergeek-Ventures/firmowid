@@ -112,7 +112,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
     leave_requests =
       Timetracker.list_leave_requests_for_member!(current_user.member.id, scope: scope)
 
-    delegations = Delegations.list_delegations_for_user!(current_user.id, scope: scope)
+    delegations = Delegations.list_delegations_for_member!(current_user.member.id, scope: scope)
 
     leave_days =
       current_user.member

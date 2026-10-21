@@ -21,7 +21,7 @@ defmodule FirmowidWeb.Delegations.Views.DelegationTest do
         Delegation,
         %{
           organization_id: user.organization_id,
-          user_id: user.id,
+          member_id: user.member.id,
           title: "Wyjazd służbowy",
           billing_month: ~D[2026-08-01],
           destination: "Kraków",
@@ -54,7 +54,7 @@ defmodule FirmowidWeb.Delegations.Views.DelegationTest do
       Ash.Seed.seed!(Delegation, %{
         id: Ash.UUIDv7.generate(),
         organization_id: employee.organization_id,
-        user_id: employee.id,
+        member_id: employee.member.id,
         title: "Zakończony wyjazd służbowy",
         billing_month: ~D[2026-08-01],
         destination: "Kraków",
