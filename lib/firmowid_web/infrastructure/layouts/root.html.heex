@@ -25,12 +25,6 @@
       href={~p"/fonts/lexend-latin-ext.woff2"}
       crossorigin
     />
-    <%= if load_full_browser_assets?(assigns) do %>
-      <link
-        rel="stylesheet"
-        href="https://cdn.jsdelivr.net/npm/air-datepicker@3.5.3/air-datepicker.min.css"
-      />
-    <% end %>
     <link phx-track-static rel="stylesheet" href={~p"/assets/app.css"} />
     <script
       defer
@@ -96,8 +90,6 @@
     <FirmowidWeb.Landing.Components.CookieConsent.cookie_consent_banner />
   </body>
   <%= if load_full_browser_assets?(assigns) do %>
-    <script src="https://cdn.jsdelivr.net/npm/air-datepicker@3.5.3/air-datepicker.min.js">
-    </script>
     <script
       type="module"
       src="https://cdn.jsdelivr.net/npm/pdfjs-dist@4.7.76/build/pdf.min.mjs"
