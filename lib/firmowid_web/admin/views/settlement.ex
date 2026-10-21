@@ -34,7 +34,8 @@ defmodule FirmowidWeb.Admin.Views.Settlement do
   def handle_params(%{"org_id" => org_id} = params, _uri, socket) do
     case Core.get_organization(org_id,
            actor: socket.assigns.current_user,
-           load: [:on_trial?, owner: []]
+           tenant: org_id,
+           load: [:on_trial?, owner: :member]
          ) do
       {:ok, selected_org} ->
         case load_page(socket, selected_org, params) do
@@ -149,7 +150,8 @@ defmodule FirmowidWeb.Admin.Views.Settlement do
       reloaded_org =
         Core.get_organization!(selected_org.id,
           actor: socket.assigns.current_user,
-          load: [:on_trial?, owner: []]
+          tenant: selected_org.id,
+          load: [:on_trial?, owner: :member]
         )
 
       {:ok, reloaded_socket} =

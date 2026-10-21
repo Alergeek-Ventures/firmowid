@@ -59,13 +59,13 @@
       <div>
         <h2 class="text-lg font-medium">{@employee.display_name}</h2>
         <div
-          :if={@employee.slack_url not in [nil, ""]}
+          :if={@employee.member.slack_url not in [nil, ""]}
           class="flex items-center gap-2 text-sm text-darkGrey"
         >
           <img src="/images/slack.png" alt="slack logo" width={24} height={24} />
           <.link
             kind="unstyled"
-            external={@employee.slack_url}
+            external={@employee.member.slack_url}
             target="_blank"
             class="border-b border-transparent transition-colors hover:border-darkGrey"
           >
@@ -112,8 +112,8 @@
         Przywróć pracownika
       </.button>
     </div>
-    <.user_card_info :if={@employee.phone} label="Numer telefonu">
-      {@employee.phone}
+    <.user_card_info :if={@employee.member.phone} label="Numer telefonu">
+      {@employee.member.phone}
     </.user_card_info>
     <.user_card_info label="Adres e-mail">
       <span>{@employee.email}</span>
@@ -129,13 +129,16 @@
         <.icon name="hero-document-duplicate" class="size-5" />
       </.button>
     </.user_card_info>
-    <.user_card_info :if={@employee.bank_account_number != nil} label="Numer konta bankowego">
-      <span>{@employee.bank_account_number}</span>
+    <.user_card_info
+      :if={@employee.member.bank_account_number != nil}
+      label="Numer konta bankowego"
+    >
+      <span>{@employee.member.bank_account_number}</span>
       <.button
         id="copy-bank-account-number"
         phx-hook="CopyToClipboard"
         phx-click="copy-bank-account-number"
-        phx-value-number={@employee.bank_account_number}
+        phx-value-number={@employee.member.bank_account_number}
         type="button"
         variant="icon"
         class="h-6 w-7 duration-300"
@@ -158,10 +161,10 @@
     </.user_card_info>
 
     <span
-      :if={@employee.shared_birthday != nil}
+      :if={@employee.member.shared_birthday != nil}
       class="mt-auto inline-flex items-center gap-2 text-sm/snug text-grey-700"
     >
-      {format_shared_birthday(@employee.shared_birthday)}
+      {format_shared_birthday(@employee.member.shared_birthday)}
       <.icon name="hero-cake" class="size-5" />
     </span>
   </.card>

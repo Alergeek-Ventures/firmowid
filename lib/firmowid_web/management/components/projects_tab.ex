@@ -94,7 +94,7 @@ defmodule FirmowidWeb.Management.Components.ProjectsTab do
       |> assign(:time_worked, total_time)
       |> assign(:salary_history, salary_history)
       |> assign(:editing_payout, false)
-      |> assign(:payout_form, payout_form(hourly_rate, user.bank_account_number))
+      |> assign(:payout_form, payout_form(hourly_rate, user.member.bank_account_number))
 
     {:ok, socket}
   end
@@ -132,7 +132,7 @@ defmodule FirmowidWeb.Management.Components.ProjectsTab do
                   class="w-full"
                 />
               <% else %>
-                {@user.bank_account_number || "Brak danych"}
+                {@user.member.bank_account_number || "Brak danych"}
               <% end %>
             </.user_card_info>
             <div class="flex items-end justify-between gap-4">
@@ -378,8 +378,9 @@ defmodule FirmowidWeb.Management.Components.ProjectsTab do
   end
 
   defp save_bank_account(socket, %{bank_account_number: bank_account_number, user: user}, scope) do
-    case Core.update_profile(user, %{bank_account_number: bank_account_number}, scope: scope) do
-      {:ok, updated_user} ->
+    case Core.update_member_profile(user.member, %{bank_account_number: bank_account_number}, scope: scope) do
+      {:ok, member} ->
+        updated_user = %{user | member: member}
         send(self(), {:employee_updated, updated_user})
         assign(socket, :user, updated_user)
 
@@ -389,7 +390,7 @@ defmodule FirmowidWeb.Management.Components.ProjectsTab do
   end
 
   defp payout_form(socket) do
-    payout_form(socket.assigns.hourly_rate, socket.assigns.user.bank_account_number)
+    payout_form(socket.assigns.hourly_rate, socket.assigns.user.member.bank_account_number)
   end
 
   defp payout_form(hourly_rate, bank_account_number) do

@@ -111,15 +111,16 @@ defmodule Firmowid.Seeds.Helpers do
     }
   end
 
-  def seed_member!(user_id, org_id, role) do
+  def seed_member!(user_id, org_id, role, attrs \\ %{}) do
     query = Ash.Query.filter(CoreMember, user_id == ^user_id)
+    attrs = Map.put(attrs, :role, role)
 
     case Ash.read_one!(query, authorize?: false, tenant: org_id) do
       nil ->
-        Ash.Seed.seed!(CoreMember, %{user_id: user_id, organization_id: org_id, role: role}, tenant: org_id)
+        Ash.Seed.seed!(CoreMember, Map.merge(attrs, %{user_id: user_id, organization_id: org_id}), tenant: org_id)
 
       member ->
-        Ash.Seed.update!(member, %{role: role})
+        Ash.Seed.update!(member, attrs)
     end
   end
 

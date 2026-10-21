@@ -25,7 +25,7 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
   @spec profile_tab(map()) :: Rendered.t()
   attr :current_user, :map, required: true
   attr :ash_scope, :map, required: true
-  attr :user_form, :map, required: true
+  attr :member_form, :map, required: true
   attr :contract_form, :map, default: nil
   attr :editing_profile_employment, :boolean, required: true
   attr :editing_profile_finance, :boolean, required: true
@@ -64,12 +64,12 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
         />
         <.finance_section
           current_user={@current_user}
-          user_form={@user_form}
+          member_form={@member_form}
           editing_profile_finance={@editing_profile_finance}
         />
         <.contact_section
           current_user={@current_user}
-          user_form={@user_form}
+          member_form={@member_form}
           editing_profile_contact={@editing_profile_contact}
         />
       </div>
@@ -468,7 +468,7 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
   end
 
   attr :current_user, :map, required: true
-  attr :user_form, :map, required: true
+  attr :member_form, :map, required: true
   attr :editing_profile_finance, :boolean, required: true
 
   defp finance_section(assigns) do
@@ -479,10 +479,10 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
       action_label="Edytuj finanse"
     >
       <%= if @editing_profile_finance do %>
-        <.form for={@user_form} phx-submit="save_profile_finance" class="space-y-4">
+        <.form for={@member_form} phx-submit="save_profile_finance" class="space-y-4">
           <div class="space-y-2">
             <.row_input
-              field={@user_form[:bank_account_number]}
+              field={@member_form[:bank_account_number]}
               label="Nr konta"
               label_class="self-baseline mt-2"
               type="text"
@@ -504,7 +504,7 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
       <% else %>
         <div class="w-full space-y-2">
           <.detail_row label="Nr konta">
-            <p class="text-nowrap">{present(@current_user.bank_account_number)}</p>
+            <p class="text-nowrap">{present(@current_user.member.bank_account_number)}</p>
           </.detail_row>
         </div>
       <% end %>
@@ -513,7 +513,7 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
   end
 
   attr :current_user, :map, required: true
-  attr :user_form, :map, required: true
+  attr :member_form, :map, required: true
   attr :editing_profile_contact, :boolean, required: true
 
   defp contact_section(assigns) do
@@ -525,16 +525,16 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
     >
       <%= if @editing_profile_contact do %>
         <.form
-          for={@user_form}
+          for={@member_form}
           phx-submit="save_profile_contact"
           phx-change="validate_profile_contact"
           class="space-y-4"
         >
           <div class="space-y-2">
-            <.row_input field={@user_form[:phone]} label="Numer telefonu" type="tel" />
-            <.row_input field={@user_form[:slack_url]} label="Slack" type="url" />
+            <.row_input field={@member_form[:phone]} label="Numer telefonu" type="tel" />
+            <.row_input field={@member_form[:slack_url]} label="Slack" type="url" />
             <.row_input
-              field={@user_form[:residence_address]}
+              field={@member_form[:residence_address]}
               label="Adres zamieszkania"
               type="textarea"
               label_class="pt-1.5 self-start"
@@ -545,18 +545,18 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
               label="Adres korespondencyjny jest taki sam jak adres zamieszkania"
               layout={:row}
               block_class="flex items-center"
-              for={@user_form[:is_same_correspondence_address].id}
+              for={@member_form[:is_same_correspondence_address].id}
             >
               <.switch
-                field={@user_form[:is_same_correspondence_address]}
+                field={@member_form[:is_same_correspondence_address]}
                 class="w-12"
                 color="turquoise"
               />
             </Helpers.settings_field>
 
-            <%= if not Phoenix.HTML.Form.normalize_value("switch", @user_form[:is_same_correspondence_address].value) do %>
+            <%= if not Phoenix.HTML.Form.normalize_value("switch", @member_form[:is_same_correspondence_address].value) do %>
               <.row_input
-                field={@user_form[:correspondence_address]}
+                field={@member_form[:correspondence_address]}
                 label="Adres korespondencyjny"
                 type="textarea"
                 label_class="pt-1.5 self-start"
@@ -578,19 +578,19 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
         </.form>
       <% else %>
         <div class="w-full space-y-2">
-          <.detail_row label="Numer telefonu">{present(@current_user.phone)}</.detail_row>
+          <.detail_row label="Numer telefonu">{present(@current_user.member.phone)}</.detail_row>
           <.detail_row label="Slack">
-            <span :if={slack_present?(@current_user)}>{present_slack(@current_user)}</span>
-            <span :if={!slack_present?(@current_user)}>—</span>
+            <span :if={slack_present?(@current_user.member)}>{present_slack(@current_user.member)}</span>
+            <span :if={!slack_present?(@current_user.member)}>—</span>
           </.detail_row>
           <.detail_row label="Adres zamieszkania">
-            {present(@current_user.residence_address)}
+            {present(@current_user.member.residence_address)}
           </.detail_row>
           <.detail_row
-            :if={@current_user.correspondence_address not in [nil, ""]}
+            :if={@current_user.member.correspondence_address not in [nil, ""]}
             label="Adres korespondencyjny"
           >
-            {present(@current_user.correspondence_address)}
+            {present(@current_user.member.correspondence_address)}
           </.detail_row>
         </div>
       <% end %>

@@ -5,6 +5,7 @@ defmodule FirmowidWeb.Settings.Views.IndexTest do
   import Firmowid.AccountsFixtures
   import Phoenix.LiveViewTest
 
+  alias Firmowid.Ash.Core
   alias Firmowid.Ash.Finances
   alias Firmowid.Ash.Finances.Requisition
   alias Firmowid.Ash.Ksef.Credential
@@ -105,6 +106,70 @@ defmodule FirmowidWeb.Settings.Views.IndexTest do
 
     assert render(view) =~ "Rola użytkownika została zmieniona."
     assert {:ok, _view, _html} = live(employee_conn, ~p"/zarzadzanie/pracownicy")
+  end
+
+  test "an employee saves their contact details on their organization member", %{conn: conn} do
+    admin = admin_fixture()
+    employee = user_in_org_fixture(admin.organization_id, %{role: :employee})
+
+    Core.update_member_profile!(
+      employee.member,
+      %{correspondence_address: "skr. poczt. 7, 30-001 Kraków"},
+      scope: %Scope{actor: employee, tenant: admin.organization_id}
+    )
+
+    {:ok, lv, html} = live(log_in_user(conn, employee), ~p"/ustawienia/profil")
+    assert html =~ "skr. poczt. 7, 30-001 Kraków"
+    render_click(lv, "toggle_editing_profile_contact")
+
+    lv
+    |> form("form[phx-submit=save_profile_contact]", %{
+      "user" => %{
+        "phone" => "+48 600 100 200",
+        "residence_address" => "ul. Grodzka 5, 31-006 Kraków",
+        "is_same_correspondence_address" => "true"
+      }
+    })
+    |> render_submit()
+
+    member = Core.load_member(employee, admin.organization_id).member
+    assert member.phone == "+48 600 100 200"
+    assert member.residence_address == "ul. Grodzka 5, 31-006 Kraków"
+    assert member.correspondence_address == nil
+    assert Core.load_member(admin, admin.organization_id).member.phone == nil
+  end
+
+  test "personal data are saved together or not at all, with the error on the rejected field", %{
+    conn: conn
+  } do
+    user = user_fixture()
+
+    user =
+      Core.update_profile!(user, %{name: "Ada Lovelace"},
+        actor: user,
+        tenant: user.organization_id
+      )
+
+    {:ok, lv, _html} = live(log_in_user(conn, user), ~p"/ustawienia/konto")
+    render_click(lv, "toggle_editing_account_name")
+
+    render_submit(lv, "save", %{
+      "user" => %{"first_name" => "Grace", "last_name" => "Hopper", "birthday" => "1990-13-45"}
+    })
+
+    assert has_element?(lv, "#user_birthday[aria-invalid=true]")
+    refute has_element?(lv, "#user_first_name[aria-invalid=true]")
+
+    render_submit(lv, "save", %{
+      "user" => %{"first_name" => "", "last_name" => "", "birthday" => "1990-05-01"}
+    })
+
+    assert has_element?(lv, "#user_first_name[aria-invalid=true]")
+    refute has_element?(lv, "#user_birthday[aria-invalid=true]")
+
+    user = Core.load_member(Core.get_user!(user.id, actor: user), user.organization_id)
+    assert user.name == "Ada Lovelace"
+    assert user.member.birthday == nil
   end
 
   test "account deletion modal warns organization owner about deleting the organization", %{

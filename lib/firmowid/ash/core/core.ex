@@ -36,6 +36,7 @@ defmodule Firmowid.Ash.Core do
 
   tools do
     tool :update_profile, User, :update_current_profile,
+      load: [:member],
       annotations: [
         title: "Update profile",
         read_only_hint: false,
@@ -91,6 +92,7 @@ defmodule Firmowid.Ash.Core do
 
     resource Member do
       define :update_member_role, action: :update_role
+      define :update_member_profile, action: :update_profile
       define :archive_member, action: :archive
       define :unarchive_member, action: :unarchive
     end

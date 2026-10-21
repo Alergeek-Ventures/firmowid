@@ -48,22 +48,22 @@ defmodule FirmowidWeb.Management.Components.ProfileTab do
         <div class="grid grid-cols-2 gap-5">
           <div class="flex flex-col gap-5">
             <.user_card_info label="Numer telefonu">
-              {present(@user.phone)}
+              {present(@user.member.phone)}
             </.user_card_info>
             <.user_card_info label="Adres e-mail">
               {present(@user.email)}
             </.user_card_info>
             <.user_card_info label="Slack">
-              {present(@user.slack_url) |> String.replace_prefix("https://", "")}
+              {present(@user.member.slack_url) |> String.replace_prefix("https://", "")}
             </.user_card_info>
           </div>
           <div class="flex flex-col gap-5">
             <.user_card_info label="Adres zamieszkania">
-              {present(@user.residence_address)}
+              {present(@user.member.residence_address)}
             </.user_card_info>
 
-            <.user_card_info :if={@user.correspondence_address} label="Adres korespondencyjny">
-              {@user.correspondence_address}
+            <.user_card_info :if={@user.member.correspondence_address} label="Adres korespondencyjny">
+              {@user.member.correspondence_address}
             </.user_card_info>
           </div>
         </div>

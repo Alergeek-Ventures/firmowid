@@ -60,14 +60,20 @@ defmodule FirmowidWeb.Settings.Views.Index do
     |> to_form()
   end
 
-  def form_user_form(user, scope) do
+  def form_name_form(user, scope) do
     user
+    |> AshPhoenix.Form.for_update(:update_profile, scope: scope, domain: Core, as: "user")
+    |> to_form()
+  end
+
+  def form_member_form(member, scope) do
+    member
     |> AshPhoenix.Form.for_update(:update_profile,
       scope: scope,
       domain: Core,
       as: "user",
       params: %{
-        "is_same_correspondence_address" => to_string(user.correspondence_address in [nil, ""])
+        "is_same_correspondence_address" => to_string(member.correspondence_address in [nil, ""])
       }
     )
     |> to_form()
@@ -151,7 +157,11 @@ defmodule FirmowidWeb.Settings.Views.Index do
         socket
       end
 
-    socket = assign(socket, :user_form, form_user_form(current_user, scope))
+    socket =
+      socket
+      |> assign(:name_form, form_name_form(current_user, scope))
+      |> assign(:name_form, form_name_form(current_user, scope))
+      |> assign(:member_form, form_member_form(current_user.member, scope))
 
     # Load avatars using Ash.load!
     org_with_avatar =
@@ -475,24 +485,51 @@ defmodule FirmowidWeb.Settings.Views.Index do
   end
 
   def handle_event("save", %{"user" => user_params}, socket) do
-    save_user_form(socket, user_params, :editing_account_name)
+    {name_params, member_params} = user_params |> merge_user_name_params() |> Map.split(["name"])
+    name_form = AshPhoenix.Form.validate(socket.assigns.name_form, name_params)
+
+    member_form =
+      AshPhoenix.Form.validate(socket.assigns.member_form, member_params)
+
+    if name_form.source.valid? and member_form.source.valid? do
+      current_user = socket.assigns.current_user
+      scope = socket.assigns.ash_scope
+
+      # The name lives on the account and the rest on the member; save both or neither.
+      {:ok, user} =
+        Ash.transact([Core.User, Core.Member], fn ->
+          user = Core.update_profile!(current_user, name_params, scope: scope)
+          member = Core.update_member_profile!(current_user.member, member_params, scope: scope)
+          %{user | member: member}
+        end)
+
+      {:noreply,
+       socket
+       |> assign(:editing_account_name, false)
+       |> refresh_profile_assigns(user)}
+    else
+      {:noreply,
+       socket
+       |> assign(:name_form, name_form)
+       |> assign(:member_form, member_form)}
+    end
   end
 
   def handle_event("save_profile_contact", %{"user" => user_params}, socket) do
-    save_user_form(socket, user_params, :editing_profile_contact)
+    save_member_form(socket, user_params, :editing_profile_contact)
   end
 
   def handle_event("save_profile_" <> section, %{"user" => user_params}, socket) do
-    save_user_form(socket, user_params, profile_section_assign(section))
+    save_member_form(socket, user_params, profile_section_assign(section))
   end
 
   def handle_event("validate_profile_contact", %{"user" => user_params}, socket) do
     form =
-      socket.assigns.user_form
+      socket.assigns.member_form
       |> AshPhoenix.Form.validate(user_params)
       |> to_form()
 
-    {:noreply, assign(socket, :user_form, form)}
+    {:noreply, assign(socket, :member_form, form)}
   end
 
   def handle_event("change_email", %{"user" => user_params}, socket) do
@@ -1295,6 +1332,8 @@ defmodule FirmowidWeb.Settings.Views.Index do
             current_org={@current_org}
             delete_account_form={@delete_account_form}
             editing_account_name={@editing_account_name}
+            name_form={@name_form}
+            member_form={@member_form}
             editing_credentials={@editing_credentials}
             email_form={@email_form}
             google_connected?={@google_connected?}
@@ -1305,7 +1344,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
           <.profile_tab
             current_user={@current_user}
             ash_scope={@ash_scope}
-            user_form={@user_form}
+            member_form={@member_form}
             contract_form={@contract_form}
             editing_profile_employment={@editing_profile_employment}
             editing_profile_finance={@editing_profile_finance}
@@ -1479,19 +1518,16 @@ defmodule FirmowidWeb.Settings.Views.Index do
     end
   end
 
-  defp save_user_form(socket, user_params, section_assign) do
-    user_params = merge_user_name_params(user_params)
-    form = socket.assigns.user_form
-
-    case AshPhoenix.Form.submit(form, params: user_params) do
-      {:ok, updated_user} ->
+  defp save_member_form(socket, member_params, section_assign) do
+    case AshPhoenix.Form.submit(socket.assigns.member_form, params: member_params) do
+      {:ok, member} ->
         {:noreply,
          socket
          |> assign(section_assign, false)
-         |> refresh_profile_assigns(updated_user)}
+         |> refresh_profile_assigns(%{socket.assigns.current_user | member: member})}
 
       {:error, form} ->
-        {:noreply, assign(socket, :user_form, form)}
+        {:noreply, assign(socket, :member_form, form)}
     end
   end
 
@@ -1504,7 +1540,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
 
     socket
     |> assign(:current_user, current_user)
-    |> assign(:user_form, form_user_form(current_user, scope))
+    |> assign(:member_form, form_member_form(current_user.member, scope))
     |> assign(:pending_contract, pending_contract)
     |> assign(:current_contract, current_contract)
     |> assign(:contract_form, form_contract_form(current_contract, scope))

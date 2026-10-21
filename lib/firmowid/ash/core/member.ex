@@ -3,7 +3,8 @@ defmodule Firmowid.Ash.Core.Member do
   A user's membership in an organization.
 
   The account (`User`) authenticates; the member is that person inside one
-  organization and carries their role there. Created when the user creates or
+  organization and carries their role and profile details (contact, bank
+  account, birthday, addresses) there. Created when the user creates or
   joins the organization and removed together with the account (by the
   database) or the organization.
 
@@ -21,8 +22,10 @@ defmodule Firmowid.Ash.Core.Member do
   alias Firmowid.Ash.Checks.SystemActorRole
   alias Firmowid.Ash.Core
   alias Firmowid.Ash.Core.Calculations.AcceptedLeaveDaysForYear
+  alias Firmowid.Ash.Core.Calculations.SharedBirthday
   alias Firmowid.Ash.Core.Member.Changes.DisconnectLiveSessions
   alias Firmowid.Ash.Core.UserRole
+  alias Firmowid.Ash.Core.Validations.ValidateIban
   alias Firmowid.Ash.Resource
 
   require Resource
@@ -33,6 +36,44 @@ defmodule Firmowid.Ash.Core.Member do
 
     references do
       reference :user, on_delete: :delete
+    end
+  end
+
+  # The profile details carry the readers they had on the account: the person, an
+  # organization admin, a superuser and the system actors that read accounts. Other
+  # member readers (e.g. analysis) see only the membership itself.
+  field_policies do
+    private_fields :include
+
+    field_policy [
+      :phone,
+      :slack_url,
+      :bank_account_number,
+      :birthday,
+      :birthday_visibility,
+      :correspondence_address,
+      :residence_address,
+      :shared_birthday
+    ] do
+      authorize_if expr(user_id == ^actor(:id))
+      authorize_if OrganizationAdmin
+      authorize_if actor_attribute_equals(:system_role, :superuser)
+
+      authorize_if {SystemActorRole,
+                    roles: [
+                      :actor_member_loader,
+                      :organization_cleanup,
+                      :ksef_digest,
+                      :billing_snapshotter,
+                      :leave_notifier,
+                      :hours_record_change_notifier,
+                      :document_blob_processor,
+                      :employment_contract_notifier
+                    ]}
+    end
+
+    field_policy :* do
+      authorize_if always()
     end
   end
 
@@ -60,6 +101,40 @@ defmodule Firmowid.Ash.Core.Member do
       accept [:role]
 
       change DisconnectLiveSessions
+    end
+
+    update :update_profile do
+      description "Update the member's profile details."
+      require_atomic? false
+
+      accept [
+        :phone,
+        :slack_url,
+        :bank_account_number,
+        :birthday,
+        :birthday_visibility,
+        :correspondence_address,
+        :residence_address
+      ]
+
+      argument :is_same_correspondence_address, :boolean
+
+      change update_change(:bank_account_number, fn
+               nil ->
+                 nil
+
+               value ->
+                 case String.trim(value) do
+                   "" -> nil
+                   trimmed -> trimmed
+                 end
+             end),
+             where: [changing(:bank_account_number)]
+
+      validate ValidateIban, where: [changing(:bank_account_number)]
+
+      change set_attribute(:correspondence_address, nil),
+        where: [argument_equals(:is_same_correspondence_address, true)]
     end
 
     update :archive do
@@ -141,6 +216,12 @@ defmodule Firmowid.Ash.Core.Member do
       authorize_if OrganizationAdmin
     end
 
+    policy action(:update_profile) do
+      authorize_if expr(id == ^actor([:member, :id]))
+      authorize_if OrganizationAdmin
+      authorize_if {SystemActorRole, roles: [:document_blob_processor]}
+    end
+
     policy action([:archive, :unarchive]) do
       forbid_if expr(organization.owner_id == user_id)
       authorize_if OrganizationAdmin
@@ -162,6 +243,20 @@ defmodule Firmowid.Ash.Core.Member do
       default: :employee
 
     attribute :archived_at, :date, public?: true
+
+    attribute :phone, :string, public?: true
+    attribute :slack_url, :string, public?: true
+    attribute :bank_account_number, :string, public?: true
+    attribute :birthday, :date, public?: false
+
+    attribute :birthday_visibility, :atom,
+      public?: true,
+      allow_nil?: false,
+      default: :not_shared,
+      constraints: [one_of: [:not_shared, :day_with_month, :full_date]]
+
+    attribute :correspondence_address, :string, public?: true
+    attribute :residence_address, :string, public?: true
 
     Resource.firmowid_timestamps()
   end
@@ -193,6 +288,10 @@ defmodule Firmowid.Ash.Core.Member do
               {AcceptedLeaveDaysForYear, []} do
       public? true
       argument :year, :integer, allow_nil?: false
+    end
+
+    calculate :shared_birthday, :map, SharedBirthday do
+      public? true
     end
   end
 

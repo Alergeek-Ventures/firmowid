@@ -128,22 +128,44 @@ defmodule FirmowidWeb.Management.Views.EmployeesTest do
     assert archive_html =~ to_string(second_admin.email)
   end
 
+  test "an admin's bank account edit lands on the employee's member", %{conn: conn} do
+    admin = admin_fixture()
+    employee = user_in_org_fixture(admin.organization_id, %{role: :employee})
+
+    {:ok, lv, _html} = live(log_in_user(conn, admin), ~p"/zarzadzanie/pracownicy/#{employee.id}")
+
+    lv |> element("[phx-click=toggle_payout_editor]") |> render_click()
+
+    lv
+    |> form("#payout-form", %{
+      "hourly_rate" => "100",
+      "bank_account_number" => "PL23 1140 2004 0000 3002 0135 5362"
+    })
+    |> render_submit()
+
+    assert Core.load_member(employee, admin.organization_id).member.bank_account_number ==
+             "PL23 1140 2004 0000 3002 0135 5362"
+
+    assert Core.load_member(admin, admin.organization_id).member.bank_account_number == nil
+  end
+
   test "employee detail page shows payroll and project summary for selected month", %{conn: conn} do
     admin = admin_fixture()
 
     employee = user_in_org_fixture(admin.organization_id, %{role: :employee})
 
     employee =
-      Core.update_profile!(
-        employee,
-        %{
-          name: "Jan Kowalski",
-          phone: "+48 600 700 800",
-          bank_account_number: "PL23 1140 2004 0000 3002 0135 5362"
-        },
+      Core.update_profile!(employee, %{name: "Jan Kowalski"},
         actor: employee,
         tenant: admin.organization_id
       )
+
+    Core.update_member_profile!(
+      employee.member,
+      %{phone: "+48 600 700 800", bank_account_number: "PL23 1140 2004 0000 3002 0135 5362"},
+      actor: employee,
+      tenant: admin.organization_id
+    )
 
     project = project_fixture(%{organization_id: admin.organization_id, name: "Payroll Project"})
     user_project_fixture(employee.id, project.id, admin.organization_id)

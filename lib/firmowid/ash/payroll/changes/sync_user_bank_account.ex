@@ -1,7 +1,7 @@
 defmodule Firmowid.Ash.Payroll.Changes.SyncUserBankAccount do
   @moduledoc """
   After creating an employment contract, syncs the employee bank account number
-  extracted from the document onto the user profile.
+  extracted from the document onto the member profile.
   """
 
   use Ash.Resource.Change
@@ -33,9 +33,9 @@ defmodule Firmowid.Ash.Payroll.Changes.SyncUserBankAccount do
   defp write_bank_account(contract, bank_account_number, context) do
     opts = update_opts(context, contract)
 
-    with {:ok, %{member: %{user: user}}} <- Ash.load(contract, [member: :user], opts),
-         {:ok, _user} <-
-           Core.update_profile(user, %{bank_account_number: bank_account_number}, opts) do
+    with {:ok, %{member: member}} <- Ash.load(contract, :member, opts),
+         {:ok, _member} <-
+           Core.update_member_profile(member, %{bank_account_number: bank_account_number}, opts) do
       contract
     else
       {:error, reason} ->
