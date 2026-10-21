@@ -5,23 +5,41 @@
 # the branch is renamed. The pre-start hooks are idempotent: `wt hook pre-start --yes`
 # sets up a worktree created without worktrunk and repairs an existing one.
 
-# Phase 1: Copy deps/_build/.env from main worktree (existing files are kept)
+# Phase 1: Copy deps, build caches and .env (existing paths are kept). The
+# shared build cache published in the last phase is fresher than the main
+# checkout's artifacts; without it, they are copied from the main worktree.
 [[pre-start]]
-copy_ignored = "wt step copy-ignored"
+copy = """
+cache="$(git rev-parse --path-format=absolute --git-common-dir)/firmowid-build-cache/current"
+if [ -d "$cache" ]; then
+  cache="$(cd "$cache" && pwd -P)"
+  for path in deps _build assets/node_modules priv/localize; do
+    if [ ! -e "$path" ] && [ -e "$cache/$path" ]; then
+      mkdir -p "$(dirname "$path")"
+      rm -rf "$path.copy"
+      if cp --version >/dev/null 2>&1; then
+        cp -a --reflink=auto "$cache/$path" "$path.copy"
+      else
+        cp -Rpc "$cache/$path" "$path.copy"
+      fi
+      mv "$path.copy" "$path"
+    fi
+  done
+  if [ ! -e .env ] && [ -e "{{ primary_worktree_path }}/.env" ]; then
+    cp -p "{{ primary_worktree_path }}/.env" .env
+  fi
+else
+  wt step copy-ignored
+fi
+"""
 
-# Phase 2: Everything else in parallel
-# [[pre-start]]
-# remove_build = """
-# if [[ "$OSTYPE" != "darwin"* ]]; then
-#   rm -rf _build
-# fi
-# """
-
+# Phase 2: Install dependencies and translations, write the env files. The
+# translations change compiled modules, so they are fetched before the first
+# compilation; Hex resolution is skipped when the copied deps already match.
 [[pre-start]]
-deps = "mix deps.get"
+deps = "(mix deps.loadpaths --no-compile && MIX_ENV=test mix deps.loadpaths --no-compile) >/dev/null 2>&1 || mix deps.get"
 deps-js = "npm ci --prefix assets"
-
-[[pre-start]]
+translations = "elixir scripts/accent.exs export --version \"$(git rev-parse HEAD)\" --fallback-version \"$(git rev-parse origin/main)\""
 env = """
 {% if worktree_path == primary_worktree_path %}
 cat > .env.worktree << 'EOF'
@@ -54,12 +72,40 @@ EOF
 {% endif %}
 """
 
-[[pre-start]]
 opencode = "{% if worktree_path == primary_worktree_path %}echo '4000'{% else %}echo '{{ worktree_name | hash_port }}'{% endif %} > .server.port"
 
-# Phase 3: Start services (after everything else)
+# Phase 3: Start services
 [[pre-start]]
 up = "mix dev.up"
+
+# Phase 4: Publish deps and build caches for the next worktree. Only worktrees on
+# origin/main history at least as new as the cached commit publish. Unused deps
+# and the app's own build (Elixir fully recompiles a project moved elsewhere, and
+# stale modules would linger) are left out.
+[[pre-start]]
+publish = """
+root="$(git rev-parse --path-format=absolute --git-common-dir)/firmowid-build-cache"
+cached="$(cat "$root/current/.commit" 2>/dev/null || true)"
+if git merge-base --is-ancestor HEAD origin/main &&
+  { [ -z "$cached" ] || git merge-base --is-ancestor "$cached" HEAD; } &&
+  MIX_ENV=test mix deps.loadpaths && mix deps.clean --unused; then
+  entry="$(date +%s)-$$"
+  mkdir -p "$root/$entry/assets" "$root/$entry/priv"
+  for path in deps _build assets/node_modules priv/localize; do
+    if [ -e "$path" ]; then
+      if cp --version >/dev/null 2>&1; then
+        cp -a --reflink=auto "$path" "$root/$entry/$path"
+      else
+        cp -Rpc "$path" "$root/$entry/$path"
+      fi
+    fi
+  done
+  rm -rf "$root/$entry"/_build/*/lib/firmowid
+  git rev-parse HEAD > "$root/$entry/.commit"
+  ln -sfn "$entry" "$root/current"
+  find "$root" -mindepth 1 -maxdepth 1 -type d -mmin +60 ! -name "$entry" -exec rm -rf {} +
+fi
+"""
 
 [pre-remove]
 down = "mix dev.down"

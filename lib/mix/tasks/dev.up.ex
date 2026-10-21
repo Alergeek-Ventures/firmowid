@@ -6,7 +6,9 @@ defmodule Mix.Tasks.Dev.Up do
 
   1. Loads configuration from .env.worktree (or uses defaults)
   2. Starts Podman Compose services via local/compose.yml (Postgres, SeaweedFS S3, Gotenberg)
-  3. Runs mix setup (Ash setup/migrations, assets)
+  3. Runs mix dev.setup (locales, Ash setup/migrations, seeds, usage rules, assets build);
+     Elixir and npm deps and translations are installed beforehand by `mix setup` or the
+     worktree hooks
   4. Registers the app on the wave.exposed dashboard (`wave dashboard add`) when the
      `wave` CLI is available, otherwise a local Caddy route for `{branch}.firmowid.localhost`,
      and stores the app's URL as `PHX_URL` in .env.worktree
@@ -57,8 +59,6 @@ defmodule Mix.Tasks.Dev.Up do
     start_services(branch, port, db_port, s3_port, gotenberg_port)
 
     run_setup()
-
-    sync_usage_rules()
 
     env = Shared.put_phx_url(env, register_route(branch, port))
 
@@ -156,28 +156,15 @@ defmodule Mix.Tasks.Dev.Up do
   end
 
   defp run_setup do
-    Mix.shell().info("Running mix setup...")
+    Mix.shell().info("Running mix dev.setup...")
 
     # Shell out to avoid Hex version conflicts when running in a fresh worktree
-    case System.cmd("mix", ["setup"], stderr_to_stdout: true, into: IO.stream(:stdio, :line)) do
+    case System.cmd("mix", ["dev.setup"], stderr_to_stdout: true, into: IO.stream(:stdio, :line)) do
       {_, 0} ->
         Mix.shell().info("Setup complete")
 
       {_, code} ->
-        Mix.raise("mix setup failed with exit code #{code}")
-    end
-  end
-
-  defp sync_usage_rules do
-    Mix.shell().info("Syncing usage rules into AGENTS.md...")
-
-    case System.cmd("mix", ["usage_rules.sync", "--yes"], stderr_to_stdout: true) do
-      {_, 0} ->
-        Mix.shell().info("Usage rules synced")
-
-      {output, _code} ->
-        Mix.shell().error("Warning: usage_rules.sync failed (non-critical)")
-        Mix.shell().error(output)
+        Mix.raise("mix dev.setup failed with exit code #{code}")
     end
   end
 

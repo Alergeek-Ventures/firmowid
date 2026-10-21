@@ -210,15 +210,9 @@ defmodule Firmowid.MixProject do
   defp aliases do
     [
       "localize.setup": ["localize.download_locales pl"],
-      setup: [
-        &fetch_translations/1,
-        "deps.get",
-        "localize.setup",
-        "db.setup",
-        "usage_rules.sync --yes",
-        "assets.setup",
-        "assets.build"
-      ],
+      setup: [&fetch_translations/1, "deps.get", "assets.setup", "dev.setup"],
+      # `mix dev.up` runs this part; worktree hooks install deps and translations before compiling.
+      "dev.setup": ["localize.setup", "db.setup", "usage_rules.sync --yes", "assets.build"],
       "db.setup": ["ash.setup", "run priv/repo/seeds.exs"],
       "ecto.reset": ["ash_postgres.drop --force --force-drop", "db.setup"],
       # Test drops need no confirmation; AshPostgres forwards --force to compilation.
