@@ -114,6 +114,8 @@
     </div>
 
     <script :type={Phoenix.LiveView.ColocatedHook} name=".Autocomplete">
+      import autoComplete from "@tarekraafat/autocomplete.js";
+
       export default {
         mounted() {
           this.data = JSON.parse(this.el.dataset.autocompleteData);
@@ -122,7 +124,8 @@
             selector: "#user_search",
             wrapper: false,
             data: {
-              src: () => this.data,
+              // The 10.2.10 build awaits src with .then, so it must return a promise.
+              src: async () => this.data,
               keys: ["search_name"],
               cache: false,
             },
