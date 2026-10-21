@@ -653,6 +653,8 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
     </div>
 
     <script :type={Phoenix.LiveView.ColocatedHook} name=".Sortable">
+      import Sortable from "sortablejs";
+
       export default {
       mounted() {
         new Sortable(this.el, {
