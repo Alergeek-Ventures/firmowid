@@ -49,8 +49,4 @@ defmodule FirmowidWeb.Infrastructure.Layouts do
   defp meta_description(assigns) do
     assigns[:meta_description] || @default_meta_description
   end
-
-  defp load_full_browser_assets?(assigns) do
-    assigns[:public_marketing?] != true
-  end
 end
