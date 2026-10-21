@@ -158,18 +158,18 @@ defmodule Firmowid.Seeds.Timetracker do
     ]
 
     for {user, rate} <- salary_data do
-      get_or_create_salary(user.id, bytecraft.id, rate, Map.get(contracts_by_user_id, user.id))
+      get_or_create_salary(user.member.id, bytecraft.id, rate, Map.get(contracts_by_user_id, user.id))
     end
 
     # Historical salary for Kira — she got a raise from 120 to 150
-    create_historical_salary(users.kira.id, bytecraft.id, Decimal.new("120.00"))
+    create_historical_salary(users.kira.member.id, bytecraft.id, Decimal.new("120.00"))
   end
 
-  defp get_or_create_salary(user_id, org_id, hourly_rate, employment_contract_id \\ nil) do
+  defp get_or_create_salary(member_id, org_id, hourly_rate, employment_contract_id \\ nil) do
     attrs =
       %{
         hourly_rate: hourly_rate,
-        user_id: user_id,
+        member_id: member_id,
         organization_id: org_id,
         starts_at: DateTime.utc_now()
       }
@@ -188,7 +188,7 @@ defmodule Firmowid.Seeds.Timetracker do
     Map.put(attrs, :employment_contract_id, employment_contract_id)
   end
 
-  defp create_historical_salary(user_id, org_id, hourly_rate) do
+  defp create_historical_salary(member_id, org_id, hourly_rate) do
     three_months_ago = Helpers.months_ago(3)
     one_month_ago = Helpers.months_ago(1)
 
@@ -200,7 +200,7 @@ defmodule Firmowid.Seeds.Timetracker do
       %{
         hourly_rate: hourly_rate,
         starts_at: Date.beginning_of_month(one_month_ago),
-        user_id: user_id,
+        member_id: member_id,
         organization_id: org_id,
         inserted_at: started,
         updated_at: ended

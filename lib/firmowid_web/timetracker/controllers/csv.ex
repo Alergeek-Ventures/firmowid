@@ -94,9 +94,9 @@ defmodule FirmowidWeb.Timetracker.Controllers.Csv do
     date = Date.end_of_month(Date.new!(year, month, 1))
 
     salaries =
-      Payroll.list_salaries!(%{active_at: date}, scope: scope)
+      Payroll.list_salaries!(%{active_at: date}, scope: scope, load: [:member])
 
-    salary_by_user = Map.new(salaries, &{&1.user_id, &1.hourly_rate})
+    salary_by_user = Map.new(salaries, &{&1.member.user_id, &1.hourly_rate})
 
     users
     |> Enum.sort_by(& &1.name)

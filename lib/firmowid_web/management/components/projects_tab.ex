@@ -362,7 +362,9 @@ defmodule FirmowidWeb.Management.Components.ProjectsTab do
   end
 
   defp save_wage(socket, %{hourly_rate: hourly_rate, user: user}, scope) do
-    case Payroll.create_salary(%{hourly_rate: hourly_rate, user_id: user.id}, scope: scope) do
+    case Payroll.create_salary(%{hourly_rate: hourly_rate, member_id: user.member.id},
+           scope: scope
+         ) do
       {:ok, salary} ->
         history = Payroll.list_salaries!(%{user_id: user.id}, scope: scope, load: [:ends_at])
 

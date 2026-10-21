@@ -41,12 +41,12 @@ defmodule Firmowid.Seeds.SalaryMatching do
       Ash.Seed.upsert!(
         UserSalary,
         %{
-          user_id: user.id,
+          member_id: member.id,
           organization_id: organization.id,
           hourly_rate: Decimal.new(100),
           starts_at: DateTime.new!(month, ~T[00:00:00], "Etc/UTC")
         },
-        identity: :unique_starts_at_per_user,
+        identity: :unique_starts_at_per_member,
         tenant: organization.id
       )
 

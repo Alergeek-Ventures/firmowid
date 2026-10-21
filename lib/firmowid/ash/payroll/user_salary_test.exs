@@ -27,12 +27,12 @@ defmodule Firmowid.Ash.Payroll.UserSalaryTest do
     test "creates a salary record", %{user: user, scope: scope} do
       {:ok, salary} =
         Payroll.create_salary(
-          %{user_id: user.id, hourly_rate: Decimal.new("100.00")},
+          %{member_id: user.member.id, hourly_rate: Decimal.new("100.00")},
           scope: scope
         )
 
       assert Decimal.equal?(salary.hourly_rate, Decimal.new("100.00"))
-      assert salary.user_id == user.id
+      assert salary.member_id == user.member.id
       assert DateTime.compare(salary.starts_at, DateTime.utc_now()) in [:lt, :eq]
     end
   end
@@ -40,8 +40,8 @@ defmodule Firmowid.Ash.Payroll.UserSalaryTest do
   describe "bulk_create/2" do
     test "creates multiple salary records", %{user: user, other_user: other_user, scope: scope} do
       entries = [
-        %{user_id: user.id, hourly_rate: Decimal.new("80.00")},
-        %{user_id: other_user.id, hourly_rate: Decimal.new("120.00")}
+        %{member_id: user.member.id, hourly_rate: Decimal.new("80.00")},
+        %{member_id: other_user.member.id, hourly_rate: Decimal.new("120.00")}
       ]
 
       {:ok, salaries} = Payroll.bulk_create_salaries(entries, scope: scope)
@@ -61,7 +61,7 @@ defmodule Firmowid.Ash.Payroll.UserSalaryTest do
       Repo.insert!(
         %AshUserSalary{
           id: Ash.UUIDv7.generate(),
-          user_id: user.id,
+          member_id: user.member.id,
           organization_id: org_id,
           hourly_rate: Decimal.new("60.00"),
           starts_at: ~U[2024-12-10 00:00:00Z],
@@ -74,7 +74,7 @@ defmodule Firmowid.Ash.Payroll.UserSalaryTest do
       Repo.insert!(
         %AshUserSalary{
           id: Ash.UUIDv7.generate(),
-          user_id: user.id,
+          member_id: user.member.id,
           organization_id: org_id,
           hourly_rate: Decimal.new("90.00"),
           starts_at: ~U[2025-02-15 00:00:00Z],
@@ -87,7 +87,7 @@ defmodule Firmowid.Ash.Payroll.UserSalaryTest do
       Repo.insert!(
         %AshUserSalary{
           id: Ash.UUIDv7.generate(),
-          user_id: other_user.id,
+          member_id: other_user.member.id,
           organization_id: org_id,
           hourly_rate: Decimal.new("35.00"),
           starts_at: ~U[2024-12-30 00:00:00Z],
@@ -144,12 +144,13 @@ defmodule Firmowid.Ash.Payroll.UserSalaryTest do
 
       assert Enum.any?(
                salaries,
-               &(&1.user_id == user.id and Decimal.equal?(&1.hourly_rate, Decimal.new("90.00")))
+               &(&1.member_id == user.member.id and
+                   Decimal.equal?(&1.hourly_rate, Decimal.new("90.00")))
              )
 
       assert Enum.any?(
                salaries,
-               &(&1.user_id == other_user.id and
+               &(&1.member_id == other_user.member.id and
                    Decimal.equal?(&1.hourly_rate, Decimal.new("35.00")))
              )
     end
@@ -163,7 +164,7 @@ defmodule Firmowid.Ash.Payroll.UserSalaryTest do
         Payroll.list_salaries(%{user_id: user.id}, scope: scope)
 
       assert length(salaries) == 2
-      assert Enum.all?(salaries, fn s -> s.user_id == user.id end)
+      assert Enum.all?(salaries, fn s -> s.member_id == user.member.id end)
       assert Enum.any?(salaries, fn s -> Decimal.equal?(s.hourly_rate, Decimal.new("60.00")) end)
       assert Enum.any?(salaries, fn s -> Decimal.equal?(s.hourly_rate, Decimal.new("90.00")) end)
     end
@@ -181,17 +182,19 @@ defmodule Firmowid.Ash.Payroll.UserSalaryTest do
 
       assert Enum.any?(
                salaries,
-               &(&1.user_id == user.id and Decimal.equal?(&1.hourly_rate, Decimal.new("60.00")))
+               &(&1.member_id == user.member.id and
+                   Decimal.equal?(&1.hourly_rate, Decimal.new("60.00")))
              )
 
       assert Enum.any?(
                salaries,
-               &(&1.user_id == user.id and Decimal.equal?(&1.hourly_rate, Decimal.new("90.00")))
+               &(&1.member_id == user.member.id and
+                   Decimal.equal?(&1.hourly_rate, Decimal.new("90.00")))
              )
 
       assert Enum.any?(
                salaries,
-               &(&1.user_id == other_user.id and
+               &(&1.member_id == other_user.member.id and
                    Decimal.equal?(&1.hourly_rate, Decimal.new("35.00")))
              )
     end

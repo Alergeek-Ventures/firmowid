@@ -77,12 +77,11 @@ defmodule FirmowidWeb.Management.Views.EmployeesTest do
     })
     |> render_submit()
 
-    salary =
-      %{active_at: Date.utc_today()}
-      |> Payroll.list_salaries!(scope: current_scope(admin))
-      |> Enum.find(&(&1.user_id == invited_user.id))
+    [salary] =
+      Payroll.list_salaries!(%{user_id: invited_user.id, active_at: Date.utc_today()},
+        scope: current_scope(admin)
+      )
 
-    assert salary
     assert Decimal.eq?(salary.hourly_rate, Decimal.new("123.45"))
   end
 

@@ -6,8 +6,7 @@ defmodule Firmowid.Ash.Payroll.UserSalary do
 
   - `bulk_create_salaries` — admin-only action creating new salaries for multiple employees atomically
 
-  The partial unique index `user_salaries_active_unique_index` ensures only one
-  active (non-retired) salary per user per organization.
+  Each salary belongs to an organization member.
   """
   use Ash.Resource,
     domain: Firmowid.Ash.Payroll,
@@ -16,7 +15,6 @@ defmodule Firmowid.Ash.Payroll.UserSalary do
 
   alias Firmowid.Ash.Checks.ActorRole
   alias Firmowid.Ash.Checks.SystemActorRole
-  alias Firmowid.Ash.Core.User
   alias Firmowid.Ash.Resource
 
   require Resource
@@ -24,6 +22,10 @@ defmodule Firmowid.Ash.Payroll.UserSalary do
   postgres do
     table "user_salaries"
     repo Firmowid.Repo
+
+    references do
+      reference :member, on_delete: :delete
+    end
   end
 
   code_interface do
@@ -36,9 +38,9 @@ defmodule Firmowid.Ash.Payroll.UserSalary do
     defaults [:read, :destroy]
 
     create :create do
-      description "Create a salary record for a user."
+      description "Create a salary record for an organization member."
       primary? true
-      accept [:hourly_rate, :user_id, :starts_at]
+      accept [:hourly_rate, :member_id, :starts_at]
       change {Firmowid.Ash.Payroll.Changes.SkipUnchangedRate, []}
     end
 
@@ -53,7 +55,7 @@ defmodule Firmowid.Ash.Payroll.UserSalary do
 
       prepare build(sort: [starts_at: :desc])
 
-      prepare build(filter: expr(user == ^arg(:user_id))) do
+      prepare build(filter: expr(member.user_id == ^arg(:user_id))) do
         where present(:user_id)
       end
 
@@ -148,7 +150,7 @@ defmodule Firmowid.Ash.Payroll.UserSalary do
   end
 
   relationships do
-    belongs_to :user, User do
+    belongs_to :member, Firmowid.Ash.Core.Member do
       allow_nil? false
       attribute_writable? true
     end
@@ -176,9 +178,9 @@ defmodule Firmowid.Ash.Payroll.UserSalary do
   end
 
   identities do
-    identity :unique_starts_at_per_user, [:user_id, :organization_id, :starts_at] do
+    identity :unique_starts_at_per_member, [:member_id, :organization_id, :starts_at] do
       nils_distinct? false
-      message "User already has salary record with the same start date"
+      message "Member already has salary record with the same start date"
     end
   end
 end

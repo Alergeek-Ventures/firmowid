@@ -62,13 +62,13 @@ defmodule Firmowid.Ash.Finances.Transaction.Actions.SalarySuggestions do
 
       %{active_at: Date.end_of_month(month), user_id: arguments[:salary_user_id]}
       |> Payroll.list_salaries!(
-        load: [:user, monthly_amount: [month: month]],
-        query: [filter: [user: [organization_id: scope.tenant]]],
+        load: [member: :user, monthly_amount: [month: month]],
+        query: [filter: [member: [user: [organization_id: scope.tenant]]]],
         scope: scope
       )
       |> Enum.filter(fn salary ->
-        not MapSet.member?(assigned, {salary.user_id, month}) and
-          (submitted_users == :all or MapSet.member?(submitted_users, salary.user_id))
+        not MapSet.member?(assigned, {salary.member.user_id, month}) and
+          (submitted_users == :all or MapSet.member?(submitted_users, salary.member.user_id))
       end)
       |> Enum.flat_map(&suggestion(&1, month, amount, recipient_parts))
     end)
@@ -133,19 +133,19 @@ defmodule Firmowid.Ash.Finances.Transaction.Actions.SalarySuggestions do
 
   defp expected_salary_month(date), do: Date.beginning_of_month(date)
 
-  defp suggestion(%{user: nil}, _month, _amount, _recipient_parts), do: []
+  defp suggestion(%{member: %{user: nil}}, _month, _amount, _recipient_parts), do: []
 
-  defp suggestion(salary, month, amount, recipient_parts) do
+  defp suggestion(%{member: %{user: user}} = salary, month, amount, recipient_parts) do
     expected = Money.to_decimal(salary.monthly_amount)
     difference = Decimal.abs(Decimal.sub(amount, expected))
     tolerance = Decimal.max(@minimum_tolerance, Decimal.mult(expected, @relative_tolerance))
 
     if Decimal.compare(expected, 0) == :gt and Decimal.compare(difference, tolerance) != :gt do
       [
-        {name_match_rank(salary.user.name, recipient_parts),
+        {name_match_rank(user.name, recipient_parts),
          %{
-           user_id: salary.user_id,
-           name: salary.user.name || to_string(salary.user.email),
+           user_id: user.id,
+           name: user.name || to_string(user.email),
            month: month,
            expected_amount: salary.monthly_amount,
            difference: Money.new!(:PLN, difference)

@@ -69,13 +69,15 @@ defmodule Firmowid.TimetrackerFixtures do
   end
 
   def user_salary_fixture(attrs \\ %{}) do
-    params = %{
-      hourly_rate: attrs[:hourly_rate] || Decimal.new("50.00"),
-      user_id: attrs[:user_id] || raise("user_id is required for user_salary_fixture")
-    }
+    user_id = attrs[:user_id] || raise("user_id is required for user_salary_fixture")
 
     tenant =
       attrs[:organization_id] || raise "organization_id is required for user_salary_fixture"
+
+    params = %{
+      hourly_rate: attrs[:hourly_rate] || Decimal.new("50.00"),
+      member_id: member_id(user_id, tenant)
+    }
 
     opts = admin_opts(tenant)
 
