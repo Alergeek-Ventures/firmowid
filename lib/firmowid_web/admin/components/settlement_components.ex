@@ -78,7 +78,7 @@ defmodule FirmowidWeb.Admin.Components.SettlementComponents do
 
           <div class="space-y-1">
             <p class="text-grey-700">Telefon właściciela</p>
-            <p class="break-all text-black">{present_text(@selected_org.owner.phone)}</p>
+            <p class="break-all text-black">{present_text(@selected_org.owner.member.phone)}</p>
           </div>
         </div>
 

@@ -18,6 +18,46 @@ defmodule Firmowid.Seeds.Bytecraft do
 
   @roles %{kira: :admin, tomek: :accountant, sable: :employee, jules: :invoicing, maren: :employee}
 
+  @profiles %{
+    kira: %{
+      phone: "+48 501 200 300",
+      slack_url: "https://example.slack.com/team/U_KIRA_001",
+      bank_account_number: "PL61 1050 0099 7603 1234 5678 9012",
+      birthday: ~D[1991-11-07],
+      correspondence_address: "ul. Marszałkowska 11/4, 00-624 Warszawa",
+      residence_address: "ul. Marszałkowska 11/4, 00-624 Warszawa"
+    },
+    tomek: %{
+      phone: "+48 502 300 400",
+      slack_url: "https://example.slack.com/team/U_TOMEK_002",
+      bank_account_number: "PL27 1140 2004 0000 3002 0135 5387",
+      birthday: ~D[1994-04-22],
+      correspondence_address: "ul. Świdnicka 36/8, 50-068 Wrocław",
+      residence_address: "ul. Świdnicka 36/8, 50-068 Wrocław"
+    },
+    sable: %{
+      phone: "+48 503 400 500",
+      slack_url: "https://example.slack.com/team/U_SABLE_003",
+      birthday: ~D[1996-08-14],
+      correspondence_address: "ul. Floriańska 22/10, 31-021 Kraków",
+      residence_address: "ul. Floriańska 22/10, 31-021 Kraków"
+    },
+    jules: %{
+      phone: "+48 504 500 600",
+      slack_url: "https://example.slack.com/team/U_JULES_004",
+      birthday: ~D[1989-12-03],
+      correspondence_address: "ul. Piotrkowska 80/15, 90-265 Łódź",
+      residence_address: "ul. Piotrkowska 80/15, 90-265 Łódź"
+    },
+    maren: %{
+      phone: "+48 505 600 700",
+      slack_url: "https://example.slack.com/team/U_MAREN_005",
+      birthday: ~D[1997-02-28],
+      correspondence_address: "ul. Długa 45/2, 80-831 Gdańsk",
+      residence_address: "ul. Długa 45/2, 80-831 Gdańsk"
+    }
+  }
+
   @seed_actor %Firmowid.Ash.Core.User{
     id: "00000000-0000-0000-0000-000000000000",
     member: %Firmowid.Ash.Core.Member{role: :admin}
@@ -65,58 +105,31 @@ defmodule Firmowid.Seeds.Bytecraft do
     kira =
       Ash.Seed.update!(kira, %{
         system_role: :superuser,
-        name: "Kira Voss",
-        phone: "+48 501 200 300",
-        slack_url: "https://example.slack.com/team/U_KIRA_001",
-        bank_account_number: "PL61 1050 0099 7603 1234 5678 9012",
-        birthday: ~D[1991-11-07],
-        correspondence_address: "ul. Marszałkowska 11/4, 00-624 Warszawa",
-        residence_address: "ul. Marszałkowska 11/4, 00-624 Warszawa"
+        name: "Kira Voss"
       })
 
     tomek =
       Ash.Seed.update!(tomek, %{
         system_role: :user,
-        name: "Tomek Briar",
-        phone: "+48 502 300 400",
-        slack_url: "https://example.slack.com/team/U_TOMEK_002",
-        bank_account_number: "PL27 1140 2004 0000 3002 0135 5387",
-        birthday: ~D[1994-04-22],
-        correspondence_address: "ul. Świdnicka 36/8, 50-068 Wrocław",
-        residence_address: "ul. Świdnicka 36/8, 50-068 Wrocław"
+        name: "Tomek Briar"
       })
 
     sable =
       Ash.Seed.update!(sable, %{
         system_role: :user,
-        name: "Sable Orin",
-        phone: "+48 503 400 500",
-        slack_url: "https://example.slack.com/team/U_SABLE_003",
-        birthday: ~D[1996-08-14],
-        correspondence_address: "ul. Floriańska 22/10, 31-021 Kraków",
-        residence_address: "ul. Floriańska 22/10, 31-021 Kraków"
+        name: "Sable Orin"
       })
 
     jules =
       Ash.Seed.update!(jules, %{
         system_role: :user,
-        name: "Jules Kadar",
-        phone: "+48 504 500 600",
-        slack_url: "https://example.slack.com/team/U_JULES_004",
-        birthday: ~D[1989-12-03],
-        correspondence_address: "ul. Piotrkowska 80/15, 90-265 Łódź",
-        residence_address: "ul. Piotrkowska 80/15, 90-265 Łódź"
+        name: "Jules Kadar"
       })
 
     maren =
       Ash.Seed.update!(maren, %{
         system_role: :user,
-        name: "Maren Solke",
-        phone: "+48 505 600 700",
-        slack_url: "https://example.slack.com/team/U_MAREN_005",
-        birthday: ~D[1997-02-28],
-        correspondence_address: "ul. Długa 45/2, 80-831 Gdańsk",
-        residence_address: "ul. Długa 45/2, 80-831 Gdańsk"
+        name: "Maren Solke"
       })
 
     %{kira: kira, tomek: tomek, sable: sable, jules: jules, maren: maren}
@@ -149,7 +162,7 @@ defmodule Firmowid.Seeds.Bytecraft do
           Ash.Seed.update!(user, %{organization_id: bytecraft.id})
         end
 
-      member = Helpers.seed_member!(user.id, bytecraft.id, Map.fetch!(@roles, key))
+      member = Helpers.seed_member!(user.id, bytecraft.id, Map.fetch!(@roles, key), Map.fetch!(@profiles, key))
       {key, %{user | member: member}}
     end)
   end

@@ -1,6 +1,6 @@
 defmodule Firmowid.Ash.Core.Calculations.SharedBirthday do
   @moduledoc """
-  Provides shared birthday information for a user, based on their birthday and birthday_visibility fields.
+  Provides shared birthday information for a member, based on their birthday and birthday_visibility fields.
   """
   use Ash.Resource.Calculation
 

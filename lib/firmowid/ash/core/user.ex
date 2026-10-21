@@ -24,7 +24,6 @@ defmodule Firmowid.Ash.Core.User do
   alias Firmowid.Ash.Checks.OrganizationAdmin
   alias Firmowid.Ash.Checks.OrganizationMemberAdmin
   alias Firmowid.Ash.Checks.SystemActorRole
-  alias Firmowid.Ash.Core.Calculations.SharedBirthday
   alias Firmowid.Ash.Core.Changes.CaptureGoogleRegistration
   alias Firmowid.Ash.Core.Member
   alias Firmowid.Ash.Core.Secrets
@@ -32,7 +31,6 @@ defmodule Firmowid.Ash.Core.User do
   alias Firmowid.Ash.Core.User.Actions.UpdateCurrentProfile
   alias Firmowid.Ash.Core.UserIdentity
   alias Firmowid.Ash.Core.UserRole
-  alias Firmowid.Ash.Core.Validations.ValidateIban
   alias Firmowid.Ash.Resource
 
   require Ash.Query
@@ -278,41 +276,12 @@ defmodule Firmowid.Ash.Core.User do
 
     # ── Profile management ──────────────────────────────────────────
     update :update_profile do
-      description "Update the current user's profile fields."
+      description "Update the current user's name."
       primary? true
-      require_atomic? false
 
-      accept [
-        :name,
-        :phone,
-        :slack_url,
-        :bank_account_number,
-        :birthday,
-        :birthday_visibility,
-        :correspondence_address,
-        :residence_address
-      ]
-
-      argument :is_same_correspondence_address, :boolean
+      accept [:name]
 
       validate present(:name), where: [changing(:name)]
-
-      change update_change(:bank_account_number, fn
-               nil ->
-                 nil
-
-               value ->
-                 case String.trim(value) do
-                   "" -> nil
-                   trimmed -> trimmed
-                 end
-             end),
-             where: [changing(:bank_account_number)]
-
-      validate ValidateIban, where: [changing(:bank_account_number)]
-
-      change set_attribute(:correspondence_address, nil),
-        where: [argument_equals(:is_same_correspondence_address, true)]
     end
 
     update :change_email do
@@ -327,7 +296,8 @@ defmodule Firmowid.Ash.Core.User do
     end
 
     action :update_current_profile, :struct do
-      description "Update profile fields for the acting user."
+      description "Update the acting user's name and their member's profile details."
+      transaction? true
 
       constraints instance_of: __MODULE__
 
@@ -352,8 +322,8 @@ defmodule Firmowid.Ash.Core.User do
       description "Returns the authenticated user's shared birthday (nil if not shared)."
 
       run fn _input, context ->
-        user = Ash.load!(context.actor, :shared_birthday, actor: context.actor)
-        {:ok, user.shared_birthday}
+        member = Ash.load!(context.actor.member, :shared_birthday, Ash.Context.to_opts(context))
+        {:ok, member.shared_birthday}
       end
     end
 
@@ -520,7 +490,6 @@ defmodule Firmowid.Ash.Core.User do
     bypass action(:update_profile) do
       authorize_if OrganizationMemberAdmin
       authorize_if expr(id == ^actor(:id))
-      authorize_if {SystemActorRole, roles: [:document_blob_processor]}
     end
 
     bypass action(:change_email) do
@@ -591,7 +560,7 @@ defmodule Firmowid.Ash.Core.User do
 
     attribute :confirmed_at, :utc_datetime, public?: true
 
-    # ── Profile / HR fields ─────────────────────────────────────────
+    # ── Profile fields ──────────────────────────────────────────────
     attribute :name, :string, public?: true
 
     attribute :system_role, :atom,
@@ -600,20 +569,6 @@ defmodule Firmowid.Ash.Core.User do
       default: :user
 
     attribute :avatar_blob_id, :uuid, public?: true
-
-    attribute :phone, :string, public?: true
-    attribute :slack_url, :string, public?: true
-    attribute :bank_account_number, :string, public?: true
-    attribute :birthday, :date, public?: false
-
-    attribute :birthday_visibility, :atom,
-      public?: true,
-      allow_nil?: false,
-      default: :not_shared,
-      constraints: [one_of: [:not_shared, :day_with_month, :full_date]]
-
-    attribute :correspondence_address, :string, public?: true
-    attribute :residence_address, :string, public?: true
 
     Resource.firmowid_timestamps()
   end
@@ -641,10 +596,6 @@ defmodule Firmowid.Ash.Core.User do
     calculate :display_name,
               :string,
               expr(if(is_nil(name) or name == "", do: email, else: name)) do
-      public? true
-    end
-
-    calculate :shared_birthday, :map, SharedBirthday do
       public? true
     end
 

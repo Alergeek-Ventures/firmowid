@@ -9,6 +9,7 @@ defmodule FirmowidWeb.Settings.Components.AccountTab do
   import FirmowidWeb.DesignSystem.Components.CoreComponents, except: [button: 1]
   import FirmowidWeb.Settings.Components.EditButton
 
+  alias FirmowidUI.Components.Inputs
   alias FirmowidWeb.Infrastructure.Utilities.TimeFormatter
   alias FirmowidWeb.Settings.Components.Helpers
   alias Phoenix.LiveView.Rendered
@@ -21,6 +22,8 @@ defmodule FirmowidWeb.Settings.Components.AccountTab do
   attr :current_org, :map, required: true
   attr :delete_account_form, :map, required: true
   attr :editing_account_name, :boolean, required: true
+  attr :name_form, :map, required: true
+  attr :member_form, :map, required: true
   attr :editing_credentials, :boolean, required: true
   attr :email_form, :map, required: true
   attr :google_connected?, :boolean, required: true
@@ -34,6 +37,8 @@ defmodule FirmowidWeb.Settings.Components.AccountTab do
         <.name_section
           current_user={@current_user}
           editing_account_name={@editing_account_name}
+          name_form={@name_form}
+          member_form={@member_form}
         />
 
         <.credentials_section
@@ -112,6 +117,8 @@ defmodule FirmowidWeb.Settings.Components.AccountTab do
 
   attr :current_user, :map, required: true
   attr :editing_account_name, :boolean, required: true
+  attr :name_form, :map, required: true
+  attr :member_form, :map, required: true
 
   defp name_section(assigns) do
     ~H"""
@@ -122,7 +129,7 @@ defmodule FirmowidWeb.Settings.Components.AccountTab do
     >
       <%= if @editing_account_name do %>
         <form phx-submit="save" class="space-y-4">
-          <input type="hidden" name="user[name]" value={@current_user.name || ""} />
+          <input type="hidden" name="user[name]" value={@name_form[:name].value || ""} />
 
           <div class="space-y-2">
             <Helpers.settings_field label="Imię" layout={:row} for="user_first_name">
@@ -130,7 +137,8 @@ defmodule FirmowidWeb.Settings.Components.AccountTab do
                 type="text"
                 name="user[first_name]"
                 id="user_first_name"
-                value={first_name(@current_user.name)}
+                value={name_input_value(first_name(@name_form[:name].value))}
+                errors={Inputs.translate_errors(@name_form.errors, :name)}
                 new
                 input_class="w-full"
               />
@@ -141,7 +149,7 @@ defmodule FirmowidWeb.Settings.Components.AccountTab do
                 type="text"
                 name="user[last_name]"
                 id="user_last_name"
-                value={last_name(@current_user.name)}
+                value={name_input_value(last_name(@name_form[:name].value))}
                 new
                 input_class="w-full"
               />
@@ -152,7 +160,8 @@ defmodule FirmowidWeb.Settings.Components.AccountTab do
                 type="date"
                 name="user[birthday]"
                 id="user_birthday"
-                value={birthday_input_value(@current_user.birthday)}
+                value={birthday_input_value(@member_form[:birthday].value)}
+                errors={Inputs.translate_errors(@member_form.errors, :birthday)}
                 new
                 input_class="w-full"
               />
@@ -167,7 +176,7 @@ defmodule FirmowidWeb.Settings.Components.AccountTab do
                 type="select"
                 name="user[birthday_visibility]"
                 id="user_birthday_visibility"
-                value={to_string(@current_user.birthday_visibility || :not_shared)}
+                value={to_string(@member_form[:birthday_visibility].value || :not_shared)}
                 options={[
                   {"Nie udostępniam", "not_shared"},
                   {"Dzień i miesiąc", "day_with_month"},
@@ -207,7 +216,9 @@ defmodule FirmowidWeb.Settings.Components.AccountTab do
         <div class="space-y-2">
           <.detail_row label="Imię">{first_name(@current_user.name)}</.detail_row>
           <.detail_row label="Nazwisko">{last_name(@current_user.name)}</.detail_row>
-          <.detail_row label="Data urodzenia">{format_birthday(@current_user.birthday)}</.detail_row>
+          <.detail_row label="Data urodzenia">
+            {format_birthday(@current_user.member.birthday)}
+          </.detail_row>
         </div>
       <% end %>
     </.account_section>
@@ -520,6 +531,10 @@ defmodule FirmowidWeb.Settings.Components.AccountTab do
       _ -> "—"
     end
   end
+
+  # The dash marks a missing part in the read-only view; inputs start empty instead.
+  defp name_input_value("—"), do: ""
+  defp name_input_value(value), do: value
 
   defp default_dash(nil), do: "—"
   defp default_dash(""), do: "—"

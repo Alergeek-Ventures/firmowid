@@ -415,6 +415,7 @@ defmodule FirmowidUI.Components.Inputs do
   end
 
   defp localize_common_error("is required", _opts), do: "jest wymagane"
+  defp localize_common_error("must be present", _opts), do: "jest wymagane"
   defp localize_common_error("can't be blank", _opts), do: "nie może być puste"
   defp localize_common_error("is invalid", _opts), do: "jest nieprawidłowe"
   defp localize_common_error("has invalid format", _opts), do: "ma nieprawidłowy format"
