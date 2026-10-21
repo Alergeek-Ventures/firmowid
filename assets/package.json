@@ -6,6 +6,7 @@
     "@tailwindcss/forms": "0.5.11",
     "@tailwindcss/typography": "0.5.20",
     "@tarekraafat/autocomplete.js": "10.2.10",
+    "air-datepicker": "3.6.0",
     "canvas-confetti": "1.9.4",
     "heroicons": "2.2.0",
     "live_toast": "file:../deps/live_toast",

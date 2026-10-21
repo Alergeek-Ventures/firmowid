@@ -1,3 +1,5 @@
+import Datepicker from "air-datepicker";
+
 export const AirDatepicker = {
   mounted() {
     this.picker = this.mountDatepicker();
@@ -43,7 +45,7 @@ export const AirDatepicker = {
   mountDatepicker() {
     const mode = this.el.dataset.mode || "months";
 
-    return new window.AirDatepicker(this.el, {
+    return new Datepicker(this.el, {
       position: this.el.dataset.position || "bottom left",
       selectedDates: [this.el.dataset.initialDate],
       toggleSelected: false,
