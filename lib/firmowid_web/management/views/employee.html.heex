@@ -33,7 +33,7 @@
         Urlopy
       </.tab>
       <.tab
-        :if={@employee.delegations != []}
+        :if={@employee.member.delegations != []}
         patch={~p"/zarzadzanie/pracownicy/#{@employee.id}/delegacje"}
         active={@live_action == :delegations}
       >
@@ -226,7 +226,7 @@
         <.card>
           <FirmowidWeb.Management.Components.DelegationsTab.delegations_tab
             employee_id={@employee.id}
-            delegations={@employee.delegations}
+            delegations={@employee.member.delegations}
           />
         </.card>
     <% end %>

@@ -43,13 +43,13 @@ defmodule Firmowid.Ash.Delegations.DelegationExpenseRelatedBlob do
     end
 
     policy action_type(:read) do
-      authorize_if relates_to_actor_via([:delegation_expense, :delegation, :user])
+      authorize_if expr(delegation_expense.delegation.member_id == ^actor([:member, :id]))
     end
 
     policy action_type([:create, :destroy]) do
       authorize_if expr(
                      delegation_expense.delegation.status == :in_progress and
-                       delegation_expense.delegation.user_id == ^actor(:id)
+                       delegation_expense.delegation.member_id == ^actor([:member, :id])
                    )
     end
   end

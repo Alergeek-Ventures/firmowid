@@ -18,7 +18,7 @@ defmodule Firmowid.Ash.Delegations.Actions.DelegationNotificationsTest do
       Ash.Seed.seed!(Delegation, %{
         id: Ash.UUIDv7.generate(),
         organization_id: employee.organization_id,
-        user_id: employee.id,
+        member_id: employee.member.id,
         reference: "TEST-2026-08-1",
         title: "Spotkanie z klientem",
         billing_month: ~D[2026-08-01],
@@ -52,7 +52,7 @@ defmodule Firmowid.Ash.Delegations.Actions.DelegationNotificationsTest do
       Ash.Seed.seed!(Delegation, %{
         id: Ash.UUIDv7.generate(),
         organization_id: employee.organization_id,
-        user_id: employee.id,
+        member_id: employee.member.id,
         reference: "TEST-2026-08-1",
         title: "Spotkanie z klientem",
         billing_month: ~D[2026-08-01],

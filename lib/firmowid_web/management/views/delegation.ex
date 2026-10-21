@@ -36,15 +36,16 @@ defmodule FirmowidWeb.Management.Views.Delegation do
         {:noreply, push_navigate(socket, to: Navigation.employees_path(:index))}
 
       employee ->
-        employee = Ash.load!(employee, [avatar_blob: [:url]], scope: scope)
+        employee = Ash.load!(employee, [:member, avatar_blob: [:url]], scope: scope)
         {:ok, employment_contract} = Payroll.load_current_contract(employee.id, scope: scope)
+        member_id = employee.member.id
 
         delegation =
           case Delegations.get_delegation_by_reference(reference,
                  scope: scope,
                  not_found_error?: false
                ) do
-            {:ok, %{user_id: ^employee_id} = delegation} -> delegation
+            {:ok, %{member_id: ^member_id} = delegation} -> delegation
             _ -> nil
           end
 

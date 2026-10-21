@@ -160,7 +160,7 @@ defmodule Firmowid.Ash.Delegations.DelegationExpense do
     end
 
     policy action_type(:read) do
-      authorize_if relates_to_actor_via([:delegation, :user])
+      authorize_if expr(delegation.member_id == ^actor([:member, :id]))
     end
 
     policy action([
@@ -172,11 +172,17 @@ defmodule Firmowid.Ash.Delegations.DelegationExpense do
              :remove_related_document,
              :destroy
            ]) do
-      authorize_if expr(delegation.status == :in_progress and delegation.user_id == ^actor(:id))
+      authorize_if expr(
+                     delegation.status == :in_progress and
+                       delegation.member_id == ^actor([:member, :id])
+                   )
     end
 
     policy action(:complete) do
-      authorize_if expr(delegation.status == :in_progress and delegation.user_id == ^actor(:id))
+      authorize_if expr(
+                     delegation.status == :in_progress and
+                       delegation.member_id == ^actor([:member, :id])
+                   )
     end
   end
 

@@ -21,10 +21,10 @@ defmodule Firmowid.Ash.Delegations.Actions.NotifyAdminsAboutDelegation do
     }
 
     with {:ok, delegation} <-
-           Delegations.get_delegation(signal.delegation_id, scope: scope, load: [:user]),
+           Delegations.get_delegation(signal.delegation_id, scope: scope, load: [member: :user]),
          admins = Core.list_users!(%{status: :active, role: :admin}, scope: scope),
          {:ok, _email} <-
-           DelegationEmails.deliver_new_delegation(admins, delegation, delegation.user) do
+           DelegationEmails.deliver_new_delegation(admins, delegation, delegation.member.user) do
       :ok
     end
   end

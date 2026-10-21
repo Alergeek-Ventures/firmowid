@@ -26,7 +26,7 @@ defmodule Firmowid.Seeds.Delegations do
         monday,
         thursday,
         "1200.00",
-        kira.id,
+        kira.member.id,
         bytecraft.id
       )
 
@@ -43,7 +43,7 @@ defmodule Firmowid.Seeds.Delegations do
         friday,
         sunday,
         "3000.00",
-        kira.id,
+        kira.member.id,
         bytecraft.id
       )
 
@@ -60,11 +60,11 @@ defmodule Firmowid.Seeds.Delegations do
          start_date,
          end_date,
          expected_cost,
-         user_id,
+         member_id,
          organization_id
         ) do
     reference =
-      "DEMO-#{String.slice(user_id, 0, 8)}-#{Calendar.strftime(Date.beginning_of_month(start_date), "%Y-%m")}-#{start_date.day}"
+      "DEMO-#{String.slice(member_id, 0, 8)}-#{Calendar.strftime(Date.beginning_of_month(start_date), "%Y-%m")}-#{start_date.day}"
 
     Ash.Seed.seed!(
       Delegation,
@@ -80,7 +80,7 @@ defmodule Firmowid.Seeds.Delegations do
         advance_amount: Helpers.money!(:PLN, expected_cost),
         status: :in_progress,
         reference: reference,
-        user_id: user_id,
+        member_id: member_id,
         organization_id: organization_id
       },
       tenant: organization_id

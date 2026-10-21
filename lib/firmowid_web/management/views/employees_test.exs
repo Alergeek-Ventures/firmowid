@@ -192,7 +192,7 @@ defmodule FirmowidWeb.Management.Views.EmployeesTest do
       Ash.Seed.seed!(Delegation, %{
         id: Ash.UUIDv7.generate(),
         organization_id: admin.organization_id,
-        user_id: employee.id,
+        member_id: employee.member.id,
         title: "Delegacja wymagająca podpisu",
         billing_month: ~D[2026-08-01],
         destination: "Kraków",
@@ -208,7 +208,7 @@ defmodule FirmowidWeb.Management.Views.EmployeesTest do
     Ash.Seed.seed!(Delegation, %{
       id: Ash.UUIDv7.generate(),
       organization_id: admin.organization_id,
-      user_id: employee.id,
+      member_id: employee.member.id,
       title: "Delegacja w trakcie",
       billing_month: ~D[2026-08-01],
       destination: "Kraków",
@@ -224,7 +224,7 @@ defmodule FirmowidWeb.Management.Views.EmployeesTest do
     Ash.Seed.seed!(Delegation, %{
       id: Ash.UUIDv7.generate(),
       organization_id: admin.organization_id,
-      user_id: employee.id,
+      member_id: employee.member.id,
       title: "Zakończony wyjazd służbowy",
       billing_month: ~D[2026-08-01],
       destination: "Kraków",
@@ -268,7 +268,7 @@ defmodule FirmowidWeb.Management.Views.EmployeesTest do
       Ash.Seed.seed!(Delegation, %{
         id: Ash.UUIDv7.generate(),
         organization_id: admin.organization_id,
-        user_id: employee.id,
+        member_id: employee.member.id,
         title: "Wyjazd do klienta",
         billing_month: ~D[2026-08-01],
         purpose: "Spotkanie z klientem",

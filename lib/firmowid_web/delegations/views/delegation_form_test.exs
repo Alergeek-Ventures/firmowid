@@ -51,7 +51,7 @@ defmodule FirmowidWeb.Delegations.Views.DelegationFormTest do
 
       assert_redirect(view, ~p"/ustawienia/profil")
 
-      [delegation] = Delegations.list_delegations_for_user!(employee.id, scope: scope)
+      [delegation] = Delegations.list_delegations_for_member!(employee.member.id, scope: scope)
       assert delegation.transport_types == [String.to_existing_atom(unquote(transport_type))]
       assert delegation.purpose == "Spotkanie z klientem"
       assert delegation.destination == "Kraków"

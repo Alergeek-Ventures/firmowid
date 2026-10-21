@@ -635,8 +635,6 @@ defmodule Firmowid.Ash.Core.User do
       public? true
       destination_attribute :user_id
     end
-
-    has_many :delegations, Firmowid.Ash.Delegations.Delegation
   end
 
   calculations do
