@@ -151,7 +151,7 @@ msgstr ""
 msgid "CEO of a television production company"
 msgstr ""
 
-#: lib/firmowid_web/landing/components/faq.ex:114
+#: lib/firmowid_web/landing/components/faq.ex:129
 #, elixir-autogen, elixir-format
 msgid "Can I cancel at any time?"
 msgstr ""
@@ -312,7 +312,7 @@ msgstr ""
 msgid "How Firmowid works"
 msgstr ""
 
-#: lib/firmowid_web/landing/components/faq.ex:98
+#: lib/firmowid_web/landing/components/faq.ex:111
 #, elixir-autogen, elixir-format
 msgid "How does migration from another program work?"
 msgstr ""
@@ -342,12 +342,12 @@ msgstr ""
 msgid "Invoicing, banking, and working hours."
 msgstr ""
 
-#: lib/firmowid_web/landing/components/faq.ex:90
+#: lib/firmowid_web/landing/components/faq.ex:102
 #, elixir-autogen, elixir-format
 msgid "Is Firmowid compliant with KSeF?"
 msgstr ""
 
-#: lib/firmowid_web/landing/components/faq.ex:106
+#: lib/firmowid_web/landing/components/faq.ex:120
 #, elixir-autogen, elixir-format
 msgid "Is my data safe?"
 msgstr ""
@@ -535,7 +535,7 @@ msgstr ""
 msgid "Source code"
 msgstr ""
 
-#: lib/firmowid_web/landing/components/faq.ex:100
+#: lib/firmowid_web/landing/components/faq.ex:113
 #, elixir-autogen, elixir-format
 msgid "Start by connecting KSeF and your bank — we import data from the last three months. You can immediately match transactions to invoices and analyze cash flow."
 msgstr ""
@@ -713,7 +713,7 @@ msgstr ""
 msgid "When using the Firmowid service, we process the following categories of personal data:"
 msgstr ""
 
-#: lib/firmowid_web/landing/components/faq.ex:119
+#: lib/firmowid_web/landing/components/faq.ex:136
 #, elixir-autogen, elixir-format
 msgid "Which banks do you support?"
 msgstr ""
@@ -743,17 +743,17 @@ msgstr ""
 msgid "YOUR MOVE!"
 msgstr ""
 
-#: lib/firmowid_web/landing/components/faq.ex:108
+#: lib/firmowid_web/landing/components/faq.ex:122
 #, elixir-autogen, elixir-format
 msgid "Yes. Firmowid emphasizes secure data storage, and the entire flow is designed for handling company financial data."
 msgstr ""
 
-#: lib/firmowid_web/landing/components/faq.ex:92
+#: lib/firmowid_web/landing/components/faq.ex:104
 #, elixir-autogen, elixir-format
 msgid "Yes. Full KSeF compliance and automatic tracking of regulatory changes — our developers implement them immediately after announcements from the Ministry of Finance."
 msgstr ""
 
-#: lib/firmowid_web/landing/components/faq.ex:115
+#: lib/firmowid_web/landing/components/faq.ex:131
 #, elixir-autogen, elixir-format
 msgid "Yes. You can cancel at any time and delete your account without long-term commitments."
 msgstr ""
@@ -1952,7 +1952,7 @@ msgstr ""
 msgid "COO · Alergeek Ventures"
 msgstr ""
 
-#: lib/firmowid_web/landing/components/faq.ex:135
+#: lib/firmowid_web/landing/components/faq.ex:164
 #, elixir-autogen, elixir-format
 msgid "Can I add invoices from outside KSeF?"
 msgstr ""
@@ -2056,11 +2056,6 @@ msgstr ""
 msgid "Firmowid connects invoices and KSeF, banking, time tracking, and your team."
 msgstr ""
 
-#: lib/firmowid_web/landing/components/faq.ex:121
-#, elixir-autogen, elixir-format
-msgid "Firmowid connects to your bank via Open Banking (partner: GoCardless). We support 29 banks and payment institutions. Polish banks: PKO Bank Polski (iPKO and iPKO Biznes), Inteligo, Bank Pekao, mBank (retail and Corporate), ING, Erste Bank Polska (retail and Corporate), Alior Bank, Bank Millennium, BNP Paribas (retail and Corporate), Nest Bank (Private and Corporate). Fintech and payments: Revolut, Wise, Stripe, PayPal, Paysera, N26, Airwallex, Finom, Vivid Money, Monese, Lunar, Swan, Soldo, Ebury, Skrill, Neteller. No bank of yours? Add an account manually with its IBAN."
-msgstr ""
-
 #: lib/firmowid_web/landing/views/index.ex:96
 #, elixir-autogen, elixir-format
 msgid "Firmowid features — KSeF, banking and your team"
@@ -2138,7 +2133,7 @@ msgstr ""
 msgid "HR"
 msgstr ""
 
-#: lib/firmowid_web/landing/components/faq.ex:127
+#: lib/firmowid_web/landing/components/faq.ex:155
 #, elixir-autogen, elixir-format
 msgid "How do additional charges work?"
 msgstr ""
@@ -2375,7 +2370,7 @@ msgstr ""
 msgid "The code is public, your data stays with you. AGPL-3.0 license."
 msgstr ""
 
-#: lib/firmowid_web/landing/components/faq.ex:129
+#: lib/firmowid_web/landing/components/faq.ex:157
 #, elixir-autogen, elixir-format
 msgid "There are no additional charges for invoices or KSeF - in every plan, including Free, they are unlimited. Only the number of bank accounts (1 / 3 / unlimited) and users (2 / 5 / unlimited) depends on your plan. Need more? Move to a higher plan, with no per-account charges."
 msgstr ""
@@ -2487,7 +2482,7 @@ msgstr ""
 msgid "Write what you need - Firmowid will issue an invoice, create a correction or find any document. Before anything reaches KSeF, you will see a preview and confirm it yourself."
 msgstr ""
 
-#: lib/firmowid_web/landing/components/faq.ex:137
+#: lib/firmowid_web/landing/components/faq.ex:166
 #, elixir-autogen, elixir-format
 msgid "Yes, in every plan, including Free. KSeF invoices arrive automatically, and you simply drag invoices from outside KSeF (e.g. foreign invoices) into Firmowid. We match them with transfers just like the rest."
 msgstr ""
@@ -2955,6 +2950,31 @@ msgstr ""
 #: lib/firmowid_web/analysis/views/dashboard.ex:463
 #, elixir-autogen, elixir-format
 msgid "Unrealized income"
+msgstr ""
+
+#: lib/firmowid_web/landing/components/faq.ex:148
+#, elixir-autogen, elixir-format
+msgid "Don't see your bank? Add an account manually by entering its IBAN. You can issue invoices with this account, just without automatically importing transfers."
+msgstr ""
+
+#: lib/firmowid_web/landing/components/faq.ex:144
+#, elixir-autogen, elixir-format
+msgid "Fintech and payments: Revolut, Wise, Stripe, PayPal, Paysera, N26, Airwallex, Finom, Vivid Money, Monese, Lunar, Swan, Soldo, Ebury, Skrill, Neteller."
+msgstr ""
+
+#: lib/firmowid_web/landing/components/faq.ex:138
+#, elixir-autogen, elixir-format
+msgid "Firmowid connects to your bank via Open Banking (partner: GoCardless). We support 29 banks and payment institutions:"
+msgstr ""
+
+#: lib/firmowid_web/landing/components/faq.ex:147
+#, elixir-autogen, elixir-format
+msgid "Foreign banks: HSBCnet, Aion Bank, Ikano Bank."
+msgstr ""
+
+#: lib/firmowid_web/landing/components/faq.ex:141
+#, elixir-autogen, elixir-format
+msgid "Polish banks: PKO Bank Polski (iPKO and iPKO Biznes), Inteligo, Bank Pekao, mBank (retail and Corporate), ING, Erste Bank Polska (retail and Corporate), Alior Bank, Bank Millennium, BNP Paribas (retail and Corporate), Nest Bank (Private and Corporate)."
 msgstr ""
 
 #: lib/firmowid/ash/finances/changes/connect_salary.ex:78
