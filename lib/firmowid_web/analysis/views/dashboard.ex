@@ -412,7 +412,12 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
               </div>
             </.popover>
           </div>
-          <.month_picker id="month" active_months={@active_months} selected_date={@params.month} />
+          <.month_picker
+            id="month"
+            active_months={@active_months}
+            selected_date={@params.month}
+            data-position="bottom right"
+          />
         </div>
       </div>
       <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
