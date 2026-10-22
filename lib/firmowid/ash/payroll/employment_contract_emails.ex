@@ -15,6 +15,7 @@ defmodule Firmowid.Ash.Payroll.EmploymentContractEmails do
   import Firmowid.Mailer.Components
   import Swoosh.Email
 
+  alias Firmowid.Ash.Core.Member
   alias Firmowid.Ash.Core.User
   alias Firmowid.Ash.Payroll.UserEmploymentContract
   alias Firmowid.Mailer
@@ -22,13 +23,13 @@ defmodule Firmowid.Ash.Payroll.EmploymentContractEmails do
   @doc """
   Notifies the employee that a new pending_signature contract awaits signing.
   """
-  @spec deliver_pending_signature(User.t() | map(), UserEmploymentContract.t()) ::
+  @spec deliver_pending_signature(Member.t() | map(), UserEmploymentContract.t()) ::
           {:ok, Swoosh.Email.t()} | {:error, term()}
-  def deliver_pending_signature(user, contract) do
-    recipient = to_string(user.email)
+  def deliver_pending_signature(member, contract) do
+    recipient = to_string(member.user.email)
     url = profile_url()
-    html = render_pending_signature_html(user, contract, url)
-    text = render_pending_signature_text(user, contract, url)
+    html = render_pending_signature_html(member, contract, url)
+    text = render_pending_signature_text(member, contract, url)
 
     email =
       new()
@@ -49,12 +50,12 @@ defmodule Firmowid.Ash.Payroll.EmploymentContractEmails do
   @spec deliver_signed_submitted_to_admins(
           [User.t() | map()],
           UserEmploymentContract.t(),
-          User.t() | map()
+          Member.t() | map()
         ) ::
           {:ok, Swoosh.Email.t()} | {:error, term()}
   def deliver_signed_submitted_to_admins(admins, contract, employee) do
     employee_name = user_name(employee)
-    url = employee_profile_url(employee.id)
+    url = employee_profile_url(employee.user_id)
     recipients = Enum.map(admins, &to_string(&1.email))
 
     html = render_admin_signed_html(employee_name, contract, url)
@@ -73,9 +74,9 @@ defmodule Firmowid.Ash.Payroll.EmploymentContractEmails do
     end
   end
 
-  defp render_pending_signature_html(user, contract, url) do
+  defp render_pending_signature_html(member, contract, url) do
     assigns = %{
-      user_name: user_name(user),
+      user_name: user_name(member),
       signed_at: format_date(contract.signed_at),
       starts_at: format_date(contract.starts_at),
       contract_type: contract_type_label(contract.contract_type),
@@ -102,10 +103,10 @@ defmodule Firmowid.Ash.Payroll.EmploymentContractEmails do
     """)
   end
 
-  defp render_pending_signature_text(user, contract, url) do
+  defp render_pending_signature_text(member, contract, url) do
     """
     Nowa umowa do podpisu
-    Pracownik: #{user_name(user)}
+    Pracownik: #{user_name(member)}
     Data podpisania: #{format_date(contract.signed_at)}
     Data rozpoczęcia: #{format_date(contract.starts_at)}
     Rodzaj umowy: #{contract_type_label(contract.contract_type)}
@@ -158,7 +159,7 @@ defmodule Firmowid.Ash.Payroll.EmploymentContractEmails do
   end
 
   defp user_name(%{name: name}) when is_binary(name) and name != "", do: name
-  defp user_name(%{email: email}), do: to_string(email)
+  defp user_name(%{user: %{email: email}}), do: to_string(email)
 
   defp profile_url do
     url(~p"/ustawienia/profil")

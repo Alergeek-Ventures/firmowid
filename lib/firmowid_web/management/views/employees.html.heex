@@ -189,12 +189,12 @@
           <div class="flex items-center gap-4">
             <.avatar class="size-8 shrink-0 ring-1 ring-greyButtonBg/50">
               <.avatar_image
-                :if={Map.get(employee.user.avatar_blob || %{}, :url)}
-                src={Map.get(employee.user.avatar_blob || %{}, :url)}
+                :if={Map.get(employee.user.member.avatar_blob || %{}, :url)}
+                src={Map.get(employee.user.member.avatar_blob || %{}, :url)}
                 alt="Avatar"
               />
               <.avatar_fallback class="bg-blueBg text-blueText">
-                {to_string(employee.user.name || employee.user.email || "")
+                {to_string(employee.user.member.name || employee.user.email || "")
                 |> String.slice(0, 1)
                 |> String.upcase()}
               </.avatar_fallback>
@@ -205,10 +205,10 @@
                 navigate={Navigation.employee_path(employee.user.id, %{miesiac: @selected_date})}
                 class="hover:underline"
               >
-                {employee.user.name || employee.user.email}
+                {employee.user.member.name || employee.user.email}
               </.link>
             <% else %>
-              <span>{employee.user.name || employee.user.email}</span>
+              <span>{employee.user.member.name || employee.user.email}</span>
             <% end %>
           </div>
 

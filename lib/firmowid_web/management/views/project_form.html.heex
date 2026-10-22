@@ -94,14 +94,14 @@
               |> Enum.map(fn user ->
                 %{
                   id: user.id,
-                  name: user.name || user.email,
+                  name: user.member.name || user.email,
                   # autoComplete.js renders the matched key with innerHTML.
                   search_name:
-                    Phoenix.HTML.html_escape(user.name || user.email)
+                    Phoenix.HTML.html_escape(user.member.name || user.email)
                     |> Phoenix.HTML.safe_to_string(),
-                  avatar_url: Map.get(user.avatar_blob || %{}, :url),
+                  avatar_url: Map.get(user.member.avatar_blob || %{}, :url),
                   initials:
-                    to_string(user.name || user.email || "")
+                    to_string(user.member.name || user.email || "")
                     |> String.slice(0, 1)
                     |> String.upcase()
                 }
@@ -220,19 +220,19 @@
         >
           <.avatar class={["size-[50px]", entry.removed_from_project && "opacity-50"]}>
             <.avatar_image
-              :if={Map.get(entry.user.avatar_blob || %{}, :url)}
-              src={Map.get(entry.user.avatar_blob || %{}, :url)}
+              :if={Map.get(entry.user.member.avatar_blob || %{}, :url)}
+              src={Map.get(entry.user.member.avatar_blob || %{}, :url)}
               alt="Avatar"
             />
             <.avatar_fallback bg_color="blueBg" class="text-blueText">
-              {to_string(entry.user.name || entry.user.email || "")
+              {to_string(entry.user.member.name || entry.user.email || "")
               |> String.slice(0, 1)
               |> String.upcase()}
             </.avatar_fallback>
           </.avatar>
 
           <p class={[entry.removed_from_project && "text-grey-500"]}>
-            {entry.user.name || entry.user.email}
+            {entry.user.member.name || entry.user.email}
           </p>
 
           <%= if entry.removed_from_project do %>

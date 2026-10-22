@@ -42,10 +42,7 @@ defmodule Firmowid.Seeds.Voidstack do
         identity: :unique_email
       )
 
-    Ash.Seed.update!(dragan, %{
-      system_role: :user,
-      name: "Dragan Krypt"
-    })
+    Ash.Seed.update!(dragan, %{system_role: :user})
   end
 
   defp seed_organization(dragan) do
@@ -67,7 +64,7 @@ defmodule Firmowid.Seeds.Voidstack do
       Ash.Seed.update!(dragan, %{organization_id: voidstack.id})
     end
 
-    Helpers.seed_member!(dragan.id, voidstack.id, :admin, %{phone: "+421 902 555 666"})
+    Helpers.seed_member!(dragan.id, voidstack.id, :admin, %{name: "Dragan Krypt", phone: "+421 902 555 666"})
   end
 
   defp seed_project(member, voidstack) do

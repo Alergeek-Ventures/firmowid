@@ -17,7 +17,7 @@ defmodule FirmowidWeb.Infrastructure.UserAuth do
   alias FirmowidWeb.Organization.Utilities.Navigation, as: OrganizationNavigation
 
   @doc """
-  Builds a Scope, loads the user's member and avatars for user and organization.
+  Builds a Scope, loads the user's member and avatars for member and organization.
 
   Shared by both the Plug pipeline (`require_authenticated_user_with_organization`)
   and the LiveView hook (`RequireOrganization.on_mount`).
@@ -26,7 +26,7 @@ defmodule FirmowidWeb.Infrastructure.UserAuth do
   def load_scope_and_avatars(user) do
     user = Core.load_member(user, user.organization_id)
     scope = Scope.new!(user, user.organization_id)
-    user = Ash.load!(user, [:organization, avatar_blob: [:url]], scope: scope)
+    user = Ash.load!(user, [:organization, member: [avatar_blob: [:url]]], scope: scope)
     org = Ash.load!(user.organization, [avatar_blob: [:url]], scope: scope)
     {user, org, scope}
   end

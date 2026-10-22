@@ -81,9 +81,30 @@ defmodule FirmowidWeb.Auth.Views.RegistrationTest do
 
       assert organization_html =~ "Czas na przypisanie organizacji do Twojego konta"
 
+      blank_name_html =
+        organization_lv
+        |> form("#organization_form", %{
+          "organization" => %{
+            "owner_name" => "   ",
+            "nip" => "5261040828",
+            "name" => "Nowa Organizacja"
+          },
+          "address" => %{
+            "street" => "Prosta",
+            "number" => "1",
+            "postal_code" => "00-001",
+            "city" => "Warszawa"
+          }
+        })
+        |> render_submit()
+
+      assert blank_name_html =~ "jest wymagane"
+      assert is_nil(Core.get_user_by_email!(email, authorize?: false).organization_id)
+
       organization_lv
       |> form("#organization_form", %{
         "organization" => %{
+          "owner_name" => "Ada Lovelace",
           "nip" => "5261040828",
           "name" => "Nowa Organizacja"
         },
@@ -104,6 +125,7 @@ defmodule FirmowidWeb.Auth.Views.RegistrationTest do
 
       assert organization.name == "Nowa Organizacja"
       assert organization.owner_id == created_user.id
+      assert Core.load_member(created_user, organization.id).member.name == "Ada Lovelace"
 
       {:ok, _dashboard_lv, dashboard_html} = live(conn, ~p"/fakturowanie")
 
@@ -146,13 +168,22 @@ defmodule FirmowidWeb.Auth.Views.RegistrationTest do
 
       assert organization_html =~ "Czas na przypisanie organizacji do Twojego konta"
 
+      blank_name_html =
+        organization_lv
+        |> form("#join_form", %{"name" => "   ", "code" => invite_code})
+        |> render_submit()
+
+      assert blank_name_html =~ "jest wymagane"
+      assert is_nil(Core.get_user_by_email!(email, authorize?: false).organization_id)
+
       organization_lv
-      |> form("#join_form", %{"code" => invite_code})
+      |> form("#join_form", %{"name" => "Grace Hopper", "code" => invite_code})
       |> render_submit()
 
       joined_user = Core.get_user_by_email!(email, authorize?: false)
 
       assert joined_user.organization_id == admin.organization_id
+      assert Core.load_member(joined_user, admin.organization_id).member.name == "Grace Hopper"
     end
   end
 

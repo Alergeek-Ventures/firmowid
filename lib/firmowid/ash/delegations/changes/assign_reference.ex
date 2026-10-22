@@ -31,7 +31,7 @@ defmodule Firmowid.Ash.Delegations.Changes.AssignReference do
     end)
   end
 
-  defp initials(%{name: name, id: id}) do
+  defp initials(%{member: %{name: name}, id: id}) do
     case name
          |> to_string()
          |> String.split()

@@ -52,6 +52,8 @@ defmodule Firmowid.AccountsFixtures do
     - `:email` — defaults to a unique email
     - `:password` — defaults to `valid_user_password/0`
     - `:role` — defaults to `:employee`
+    - `:name` — the member's name; defaults to the email for an organization owner
+      (creating an organization requires it) and to none otherwise
     - `:organization_id` — when provided, joins that org instead of creating a new one
   """
   @spec user_fixture(map()) :: User.t()
@@ -73,14 +75,15 @@ defmodule Firmowid.AccountsFixtures do
           # Creating the organization assigns it to the owner as an admin; keep the
           # registered struct, which carries the sign-in token metadata.
           org =
-            Core.create_organization!(%{nip: unique_nip(), name: "Test Organization"},
+            Core.create_organization!(
+              %{nip: unique_nip(), name: "Test Organization", owner_name: attrs[:name] || email},
               actor: user
             )
 
           %{user | organization_id: org.id}
 
         org_id ->
-          Core.set_organization!(user, %{organization_id: org_id, role: role},
+          Core.set_organization!(user, %{organization_id: org_id, role: role, name: attrs[:name]},
             actor: %SystemActor{org_id: org_id, role: :organization_owner_setup, user_id: user.id},
             tenant: org_id
           )

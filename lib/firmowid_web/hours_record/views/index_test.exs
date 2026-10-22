@@ -15,14 +15,8 @@ defmodule FirmowidWeb.HoursRecord.Views.IndexTest do
 
   setup %{conn: conn} do
     admin = admin_fixture()
-    employee = user_in_org_fixture(admin.organization_id, %{role: :employee})
-
-    # Required by hours-record flow guard in LiveView.
-    employee =
-      Core.update_profile!(employee, %{name: "Sable Orin"},
-        actor: employee,
-        tenant: employee.organization_id
-      )
+    # The name is required by hours-record flow guard in LiveView.
+    employee = user_in_org_fixture(admin.organization_id, %{role: :employee, name: "Sable Orin"})
 
     create_employment_contract(employee)
 

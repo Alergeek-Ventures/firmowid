@@ -53,7 +53,7 @@ defmodule Firmowid.Ash.Payroll.Actions.NotifyAdminsAboutSignedContract do
              EmploymentContractEmails.deliver_signed_submitted_to_admins(
                admins,
                contract,
-               contract.member.user
+               contract.member
              ),
            do: :ok
     end

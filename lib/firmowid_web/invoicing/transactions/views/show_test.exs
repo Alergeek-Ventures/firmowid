@@ -125,18 +125,14 @@ defmodule FirmowidWeb.Invoicing.Transactions.Views.ShowTest do
   test "full recipient name outranks month and amount without excluding unnamed candidates", %{
     conn: conn
   } do
-    admin = admin_fixture()
-    admin = Ash.Seed.update!(admin, %{name: "Łukasz Żółć"})
+    admin = admin_fixture(%{name: "Łukasz Żółć"})
 
     project =
       Ash.Seed.seed!(Project, %{name: "Salary names", organization_id: admin.organization_id})
 
     [partial, unrelated, unnamed] =
       for name <- ["Adam Żółć", "Adam Nowak", nil] do
-        employee =
-          admin.organization_id
-          |> user_in_org_fixture()
-          |> Ash.Seed.update!(%{name: name})
+        employee = user_in_org_fixture(admin.organization_id, %{name: name})
 
         seed_salary_months!(employee, project, [{~D[2025-12-01], 10}])
         employee

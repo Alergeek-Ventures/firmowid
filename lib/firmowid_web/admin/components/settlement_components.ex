@@ -415,7 +415,7 @@ defmodule FirmowidWeb.Admin.Components.SettlementComponents do
 
   defp counter_bar_fill_styles(_row), do: "h-full rounded-full bg-turquoise-700"
 
-  defp owner_display_name(%{name: name}) when is_binary(name) and name != "", do: name
+  defp owner_display_name(%{member: %{name: name}}) when is_binary(name) and name != "", do: name
   defp owner_display_name(%{email: email}), do: present_text(email)
   defp owner_display_name(_owner), do: "—"
 

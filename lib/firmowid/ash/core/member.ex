@@ -3,10 +3,10 @@ defmodule Firmowid.Ash.Core.Member do
   A user's membership in an organization.
 
   The account (`User`) authenticates; the member is that person inside one
-  organization and carries their role and profile details (contact, bank
-  account, birthday, addresses) there. Created when the user creates or
-  joins the organization and removed together with the account (by the
-  database) or the organization.
+  organization and carries their name, avatar, role and profile details
+  (contact, bank account, birthday, addresses) there. Created when the user
+  creates or joins the organization and removed together with the account (by
+  the database) or the organization.
 
   Archiving a member detaches the account from the organization: it keeps
   signing in, but no longer reaches the organization until it is restored.
@@ -36,16 +36,20 @@ defmodule Firmowid.Ash.Core.Member do
 
     references do
       reference :user, on_delete: :delete
+      reference :avatar_blob, on_delete: :nilify
     end
   end
 
-  # The profile details carry the readers they had on the account: the person, an
-  # organization admin, a superuser and the system actors that read accounts. Other
-  # member readers (e.g. analysis) see only the membership itself.
+  # The name, avatar and profile details carry the readers they had on the account:
+  # the person, an organization admin, a superuser and the system actors that read
+  # accounts. Other member readers (e.g. analysis) see only the membership itself.
   field_policies do
     private_fields :include
 
     field_policy [
+      :name,
+      :display_name,
+      :avatar_blob_id,
       :phone,
       :slack_url,
       :bank_account_number,
@@ -79,6 +83,7 @@ defmodule Firmowid.Ash.Core.Member do
 
   code_interface do
     define :create, action: :create
+    define :update_avatar, action: :update_avatar
     define :list, action: :read
     define :destroy, action: :destroy
   end
@@ -88,7 +93,7 @@ defmodule Firmowid.Ash.Core.Member do
 
     create :create do
       description "Add a user to the organization, restoring their archived membership."
-      accept [:user_id, :role]
+      accept [:user_id, :role, :name]
       upsert? true
       upsert_identity :unique_user
       upsert_fields [:role, :archived_at]
@@ -108,6 +113,7 @@ defmodule Firmowid.Ash.Core.Member do
       require_atomic? false
 
       accept [
+        :name,
         :phone,
         :slack_url,
         :bank_account_number,
@@ -118,6 +124,8 @@ defmodule Firmowid.Ash.Core.Member do
       ]
 
       argument :is_same_correspondence_address, :boolean
+
+      validate present(:name), where: [changing(:name)]
 
       change update_change(:bank_account_number, fn
                nil ->
@@ -135,6 +143,16 @@ defmodule Firmowid.Ash.Core.Member do
 
       change set_attribute(:correspondence_address, nil),
         where: [argument_equals(:is_same_correspondence_address, true)]
+    end
+
+    update :update_avatar do
+      description "Replace the member's avatar blob and clean up the previous one."
+      accept [:avatar_blob_id]
+      require_atomic? false
+
+      validate Firmowid.Ash.Core.Validations.AvatarBlobInOrganization
+
+      change Firmowid.Ash.Core.Changes.CleanupOldAvatarBlob
     end
 
     update :archive do
@@ -222,6 +240,10 @@ defmodule Firmowid.Ash.Core.Member do
       authorize_if {SystemActorRole, roles: [:document_blob_processor]}
     end
 
+    policy action(:update_avatar) do
+      authorize_if expr(id == ^actor([:member, :id]))
+    end
+
     policy action([:archive, :unarchive]) do
       forbid_if expr(organization.owner_id == user_id)
       authorize_if OrganizationAdmin
@@ -243,6 +265,9 @@ defmodule Firmowid.Ash.Core.Member do
       default: :employee
 
     attribute :archived_at, :date, public?: true
+
+    attribute :name, :string, public?: true
+    attribute :avatar_blob_id, :uuid, public?: true
 
     attribute :phone, :string, public?: true
     attribute :slack_url, :string, public?: true
@@ -272,6 +297,13 @@ defmodule Firmowid.Ash.Core.Member do
       allow_nil? false
     end
 
+    belongs_to :avatar_blob, Firmowid.Ash.Blobs.Blob do
+      allow_nil? true
+      attribute_writable? true
+      define_attribute? false
+      source_attribute :avatar_blob_id
+    end
+
     many_to_many :projects, Firmowid.Ash.Timetracker.Project do
       through Firmowid.Ash.Timetracker.ProjectUser
       source_attribute_on_join_resource :member_id
@@ -283,6 +315,12 @@ defmodule Firmowid.Ash.Core.Member do
   end
 
   calculations do
+    calculate :display_name,
+              :string,
+              expr(if(is_nil(name) or name == "", do: user.email, else: name)) do
+      public? true
+    end
+
     calculate :accepted_leave_days_for_year,
               :integer,
               {AcceptedLeaveDaysForYear, []} do

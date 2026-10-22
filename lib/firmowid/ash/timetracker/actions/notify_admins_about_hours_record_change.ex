@@ -41,7 +41,7 @@ defmodule Firmowid.Ash.Timetracker.Actions.NotifyAdminsAboutHoursRecordChange do
       body =
         gettext(
           "Employee: %{employee}\nPeriod: %{month}/%{year}\nRequest: %{kind}\nReason: %{reason}\n\nReview this request in Firmowid: %{url}\nThis email is a notification only. Accept or reject the request in the application.",
-          employee: record.member.user.name || to_string(record.member.user.email),
+          employee: record.member.name || to_string(record.member.user.email),
           month: record.month,
           year: record.year,
           kind: kind,

@@ -70,7 +70,6 @@ defmodule FirmowidWeb.Auth.Views.ConfirmEmailTest do
     drain_sent_emails()
     user = Core.register_with_password!(valid_user_attributes(), authorize?: false, actor: %{})
     token = extract_token_from_email!("/potwierdz-email/")
-    user = Ash.Seed.update!(user, %{avatar_blob_id: blob.id})
     assert is_nil(user.organization_id)
     authenticated_conn = log_in_user(conn, user)
 
@@ -87,7 +86,6 @@ defmodule FirmowidWeb.Auth.Views.ConfirmEmailTest do
     confirmed_user = Core.get_user!(user.id, actor: user)
     assert confirmed_user.confirmed_at
     assert is_nil(confirmed_user.organization_id)
-    assert confirmed_user.avatar_blob_id == blob.id
   end
 
   test "user confirms an email change from account settings", %{conn: conn} do
@@ -155,7 +153,7 @@ defmodule FirmowidWeb.Auth.Views.ConfirmEmailTest do
           original_filename: "confirmation-avatar.png"
         })
 
-      Ash.Seed.update!(user, %{avatar_blob_id: blob.id})
+      Ash.Seed.update!(user.member, %{avatar_blob_id: blob.id})
       authenticated_conn = log_in_user(conn, user)
 
       assert {:ok, view, _html} = live(authenticated_conn, ~p"/potwierdz-email/#{token}")

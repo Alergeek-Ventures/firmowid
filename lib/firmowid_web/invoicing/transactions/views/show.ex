@@ -200,7 +200,10 @@ defmodule FirmowidWeb.Invoicing.Transactions.Views.Show do
   end
 
   defp reload_transaction(id, scope) do
-    Finances.get_transaction!(id, load: [:salary_user | @transaction_loads], scope: scope)
+    Finances.get_transaction!(id,
+      load: [{:salary_user, :member} | @transaction_loads],
+      scope: scope
+    )
   end
 
   defp assign_transaction(socket, transaction) do

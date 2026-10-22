@@ -129,11 +129,11 @@ defmodule FirmowidWeb.Management.Views.ProjectForm do
             user = resolve_user(uid, users_by_id, scope)
 
             user_with_avatar =
-              Ash.load!(user, [avatar_blob: [:url]], scope: scope)
+              Ash.load!(user, [member: [avatar_blob: [:url]]], scope: scope)
 
             %{user: user_with_avatar, removed_from_project: not MapSet.member?(member_ids, uid)}
           end)
-          |> Enum.sort_by(&{&1.removed_from_project, &1.user.name, &1.user.email})
+          |> Enum.sort_by(&{&1.removed_from_project, &1.user.member.name, &1.user.email})
       end
 
     socket
@@ -149,12 +149,12 @@ defmodule FirmowidWeb.Management.Views.ProjectForm do
       scope
       |> list_users_with_projects()
       |> Enum.map(fn user ->
-        Ash.load!(user, [avatar_blob: [:url]], scope: scope)
+        Ash.load!(user, [member: [avatar_blob: [:url]]], scope: scope)
       end)
       |> Enum.reject(fn user ->
         Enum.any?(project_users, fn %{user: project_user} -> project_user.id == user.id end)
       end)
-      |> Enum.sort_by(&{&1.name, &1.email})
+      |> Enum.sort_by(&{&1.member.name, &1.email})
 
     socket
     |> assign(:project_users, project_users)

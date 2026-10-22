@@ -78,7 +78,7 @@ defmodule Firmowid.Ash.Payroll.Workers.EmploymentContractEmailWorker do
 
       :ok
     else
-      EmploymentContractEmails.deliver_pending_signature(contract.member.user, contract)
+      EmploymentContractEmails.deliver_pending_signature(contract.member, contract)
     end
   end
 

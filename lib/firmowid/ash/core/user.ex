@@ -3,8 +3,9 @@ defmodule Firmowid.Ash.Core.User do
   @moduledoc """
   User resource — the sole owner of the `users` table.
 
-  Handles authentication (password + Google OAuth), profile management,
-  and organization membership; the role lives on the organization `member`.
+  Handles authentication (password + Google OAuth) and organization
+  membership; the person's name, avatar, role and profile details live on the
+  organization `member`.
   No multitenancy — users sit above tenancy; `organization_id` is nullable
   (onboarding state).
 
@@ -116,12 +117,9 @@ defmodule Firmowid.Ash.Core.User do
     defaults [:read]
 
     update :detach_for_organization_cleanup do
-      description "Detach a preserved account and its avatar during organization deletion."
+      description "Detach a preserved account during organization deletion."
       accept []
-      # Remote objects are cleaned up once, before the transaction. Do not run
-      # the regular avatar replacement callback and attempt duplicate S3 cleanup.
       change set_attribute(:organization_id, nil)
-      change set_attribute(:avatar_blob_id, nil)
     end
 
     read :list do
@@ -144,7 +142,7 @@ defmodule Firmowid.Ash.Core.User do
       prepare build(
                 filter:
                   expr(
-                    contains(name, ^arg(:search)) or
+                    contains(member.name, ^arg(:search)) or
                       contains(email, ^arg(:search))
                   )
               ) do
@@ -257,7 +255,7 @@ defmodule Firmowid.Ash.Core.User do
             )
 
           true ->
-            Ash.Changeset.change_attributes(changeset, Map.take(user_info, ["email", "name"]))
+            Ash.Changeset.change_attributes(changeset, Map.take(user_info, ["email"]))
         end
       end
 
@@ -275,17 +273,9 @@ defmodule Firmowid.Ash.Core.User do
     end
 
     # ── Profile management ──────────────────────────────────────────
-    update :update_profile do
-      description "Update the current user's name."
-      primary? true
-
-      accept [:name]
-
-      validate present(:name), where: [changing(:name)]
-    end
-
     update :change_email do
       description "Request a change to the current user's email address."
+      primary? true
       accept [:email]
       require_atomic? false
       argument :current_password, :string, sensitive?: true
@@ -296,7 +286,7 @@ defmodule Firmowid.Ash.Core.User do
     end
 
     action :update_current_profile, :struct do
-      description "Update the acting user's name and their member's profile details."
+      description "Update the acting user's member: name and profile details."
       transaction? true
 
       constraints instance_of: __MODULE__
@@ -338,13 +328,25 @@ defmodule Firmowid.Ash.Core.User do
         constraints one_of: UserRole.roles()
       end
 
+      argument :name, :string
+
       change set_attribute(:organization_id, arg(:organization_id))
 
       change after_action(fn changeset, user, context ->
                opts = Ash.Context.to_opts(context, tenant: user.organization_id)
-               role = Ash.Changeset.get_argument(changeset, :role)
 
-               with {:ok, _member} <- Member.create(%{user_id: user.id, role: role}, opts) do
+               attributes = %{
+                 user_id: user.id,
+                 role: Ash.Changeset.get_argument(changeset, :role),
+                 name: Ash.Changeset.get_argument(changeset, :name)
+               }
+
+               # Restoring an archived membership keeps its name unless a new one is given.
+               upsert_fields =
+                 if attributes.name, do: [:role, :name, :archived_at], else: [:role, :archived_at]
+
+               with {:ok, _member} <-
+                      Member.create(attributes, Keyword.put(opts, :upsert_fields, upsert_fields)) do
                  {:ok, user}
                end
              end)
@@ -366,14 +368,6 @@ defmodule Firmowid.Ash.Core.User do
         message: "Konto należy już do innej organizacji."
 
       change set_attribute(:organization_id, actor(:organization_id))
-    end
-
-    update :update_avatar do
-      description "Replace the user's avatar blob and clean up the previous one."
-      accept [:avatar_blob_id]
-      require_atomic? false
-
-      change Firmowid.Ash.Core.Changes.CleanupOldAvatarBlob
     end
 
     destroy :destroy do
@@ -487,11 +481,6 @@ defmodule Firmowid.Ash.Core.User do
       authorize_if actor_attribute_equals(:system_role, :superuser)
     end
 
-    bypass action(:update_profile) do
-      authorize_if OrganizationMemberAdmin
-      authorize_if expr(id == ^actor(:id))
-    end
-
     bypass action(:change_email) do
       authorize_if expr(id == ^actor(:id))
     end
@@ -502,10 +491,6 @@ defmodule Firmowid.Ash.Core.User do
 
     policy action(:get_shared_birthday) do
       authorize_if actor_present()
-    end
-
-    bypass action(:update_avatar) do
-      authorize_if expr(id == ^actor(:id))
     end
 
     policy action(:leave_organization) do
@@ -560,15 +545,10 @@ defmodule Firmowid.Ash.Core.User do
 
     attribute :confirmed_at, :utc_datetime, public?: true
 
-    # ── Profile fields ──────────────────────────────────────────────
-    attribute :name, :string, public?: true
-
     attribute :system_role, :atom,
       public?: true,
       constraints: [one_of: [:user, :superuser]],
       default: :user
-
-    attribute :avatar_blob_id, :uuid, public?: true
 
     Resource.firmowid_timestamps()
   end
@@ -579,13 +559,6 @@ defmodule Firmowid.Ash.Core.User do
       attribute_writable? true
     end
 
-    belongs_to :avatar_blob, Firmowid.Ash.Blobs.Blob do
-      allow_nil? true
-      attribute_writable? true
-      define_attribute? false
-      source_attribute :avatar_blob_id
-    end
-
     has_one :member, Member do
       public? true
       destination_attribute :user_id
@@ -593,12 +566,6 @@ defmodule Firmowid.Ash.Core.User do
   end
 
   calculations do
-    calculate :display_name,
-              :string,
-              expr(if(is_nil(name) or name == "", do: email, else: name)) do
-      public? true
-    end
-
     # Why the account may not use the application: its organization has no
     # billing plan. The owner is told to renew the subscription; members are not.
     #

@@ -51,6 +51,7 @@ test('Bytecraft invoices a new company that signs up and receives it from KSeF',
   await screen.getByRole('button', 'Stwórz konto').tap();
 
   await expect(browser).toHaveURL('/organizacja');
+  await screen.getByPlaceholder('Twoje imię i nazwisko').fill('Nowa Właścicielka');
   await screen.getByPlaceholder('Identyfikator (NIP)').fill(newCompany.nip);
   await screen.getByPlaceholder('Nazwa organizacji').fill(newCompany.name);
   await screen.getByPlaceholder('Ulica').fill('Warmińska');

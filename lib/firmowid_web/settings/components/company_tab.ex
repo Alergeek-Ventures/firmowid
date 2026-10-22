@@ -452,17 +452,19 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
             <div class="flex min-w-0 items-center gap-4 sm:max-w-sm sm:flex-1">
               <.avatar class="size-12 rounded-full bg-grey-100">
                 <.avatar_image
-                  :if={user.avatar_blob && user.avatar_blob.url}
-                  src={user.avatar_blob.url}
-                  alt={user.name || user.email}
+                  :if={user.member.avatar_blob && user.member.avatar_blob.url}
+                  src={user.member.avatar_blob.url}
+                  alt={user.member.name || user.email}
                 />
                 <.avatar_fallback class="text-sm font-medium text-grey-700">
-                  {initial(user.name || user.email)}
+                  {initial(user.member.name || user.email)}
                 </.avatar_fallback>
               </.avatar>
 
               <div class="flex min-w-0 flex-col gap-0.5">
-                <p class="truncate text-base leading-[1.35] text-grey-900">{present(user.name)}</p>
+                <p class="truncate text-base leading-[1.35] text-grey-900">
+                  {present(user.member.name)}
+                </p>
                 <p class="truncate text-sm leading-[1.35] text-grey-700">{user.email}</p>
               </div>
             </div>
@@ -827,7 +829,7 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
       <div class="space-y-8">
         <h3 class="text-xl font-medium">Zmiana roli</h3>
         <p>
-          Zmieniasz rolę użytkownikowi {present(@user.name || to_string(@user.email))}. Jego dotychczasowa rola to:
+          Zmieniasz rolę użytkownikowi {present(@user.member.name || to_string(@user.email))}. Jego dotychczasowa rola to:
         </p>
 
         <.form

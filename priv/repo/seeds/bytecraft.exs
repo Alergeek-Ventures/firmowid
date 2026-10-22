@@ -20,6 +20,7 @@ defmodule Firmowid.Seeds.Bytecraft do
 
   @profiles %{
     kira: %{
+      name: "Kira Voss",
       phone: "+48 501 200 300",
       slack_url: "https://example.slack.com/team/U_KIRA_001",
       bank_account_number: "PL61 1050 0099 7603 1234 5678 9012",
@@ -28,6 +29,7 @@ defmodule Firmowid.Seeds.Bytecraft do
       residence_address: "ul. Marszałkowska 11/4, 00-624 Warszawa"
     },
     tomek: %{
+      name: "Tomek Briar",
       phone: "+48 502 300 400",
       slack_url: "https://example.slack.com/team/U_TOMEK_002",
       bank_account_number: "PL27 1140 2004 0000 3002 0135 5387",
@@ -36,6 +38,7 @@ defmodule Firmowid.Seeds.Bytecraft do
       residence_address: "ul. Świdnicka 36/8, 50-068 Wrocław"
     },
     sable: %{
+      name: "Sable Orin",
       phone: "+48 503 400 500",
       slack_url: "https://example.slack.com/team/U_SABLE_003",
       birthday: ~D[1996-08-14],
@@ -43,6 +46,7 @@ defmodule Firmowid.Seeds.Bytecraft do
       residence_address: "ul. Floriańska 22/10, 31-021 Kraków"
     },
     jules: %{
+      name: "Jules Kadar",
       phone: "+48 504 500 600",
       slack_url: "https://example.slack.com/team/U_JULES_004",
       birthday: ~D[1989-12-03],
@@ -50,6 +54,7 @@ defmodule Firmowid.Seeds.Bytecraft do
       residence_address: "ul. Piotrkowska 80/15, 90-265 Łódź"
     },
     maren: %{
+      name: "Maren Solke",
       phone: "+48 505 600 700",
       slack_url: "https://example.slack.com/team/U_MAREN_005",
       birthday: ~D[1997-02-28],
@@ -102,35 +107,15 @@ defmodule Firmowid.Seeds.Bytecraft do
     jules = register.("jules@bytecraft.collective")
     maren = register.("maren@bytecraft.collective")
 
-    kira =
-      Ash.Seed.update!(kira, %{
-        system_role: :superuser,
-        name: "Kira Voss"
-      })
+    kira = Ash.Seed.update!(kira, %{system_role: :superuser})
 
-    tomek =
-      Ash.Seed.update!(tomek, %{
-        system_role: :user,
-        name: "Tomek Briar"
-      })
+    tomek = Ash.Seed.update!(tomek, %{system_role: :user})
 
-    sable =
-      Ash.Seed.update!(sable, %{
-        system_role: :user,
-        name: "Sable Orin"
-      })
+    sable = Ash.Seed.update!(sable, %{system_role: :user})
 
-    jules =
-      Ash.Seed.update!(jules, %{
-        system_role: :user,
-        name: "Jules Kadar"
-      })
+    jules = Ash.Seed.update!(jules, %{system_role: :user})
 
-    maren =
-      Ash.Seed.update!(maren, %{
-        system_role: :user,
-        name: "Maren Solke"
-      })
+    maren = Ash.Seed.update!(maren, %{system_role: :user})
 
     %{kira: kira, tomek: tomek, sable: sable, jules: jules, maren: maren}
   end

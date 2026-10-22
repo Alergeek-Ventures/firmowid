@@ -12,6 +12,7 @@ defmodule Firmowid.Ash.Timetracker.LeaveRequestEmails do
   import Firmowid.Mailer.Components
   import Swoosh.Email
 
+  alias Firmowid.Ash.Core.Member
   alias Firmowid.Ash.Core.User
   alias Firmowid.Ash.Timetracker.LeaveRequest
   alias Firmowid.Mailer
@@ -24,12 +25,12 @@ defmodule Firmowid.Ash.Timetracker.LeaveRequestEmails do
           [User.t() | map()],
           LeaveRequest.t(),
           Swoosh.Attachment.t() | nil,
-          User.t() | map()
+          Member.t() | map()
         ) ::
           {:ok, Swoosh.Email.t()} | {:error, term()}
   def deliver_new_leave_request(admins, leave_request, attachment, employee) do
     employee_name = employee_name(employee)
-    url = leave_tab_url(employee.id)
+    url = leave_tab_url(employee.user_id)
     recipients = Enum.map(admins, &to_string(&1.email))
 
     html = render_html(employee_name, leave_request, url)
@@ -96,7 +97,7 @@ defmodule Firmowid.Ash.Timetracker.LeaveRequestEmails do
   end
 
   defp employee_name(%{name: name}) when is_binary(name) and name != "", do: name
-  defp employee_name(%{email: email}), do: to_string(email)
+  defp employee_name(%{user: %{email: email}}), do: to_string(email)
 
   defp leave_tab_url(employee_id) do
     url(~p"/zarzadzanie/pracownicy/#{employee_id}/urlopy")

@@ -53,7 +53,7 @@ defmodule FirmowidWeb.Management.Controllers.DelegationOrder do
 
   defp filename(employee) do
     initials =
-      (employee.name || employee.email)
+      (employee.member.name || employee.email)
       |> String.split()
       |> Enum.map_join(&String.first/1)
       |> String.upcase()

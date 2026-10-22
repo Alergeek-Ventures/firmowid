@@ -78,14 +78,12 @@ defmodule Firmowid.Ash.Core do
       define :get_user_by_email, action: :read, get_by: [:email]
       define :list_users, action: :list
       define :get_org_user, action: :get_org_user
-      define :update_profile, action: :update_profile
       define :change_email, action: :change_email
       define :update_current_profile, action: :update_current_profile
       define :get_shared_birthday, action: :get_shared_birthday
       define :leave_organization, action: :leave_organization
       define :return_to_organization, action: :return_to_organization
       define :set_organization, action: :set_organization
-      define :update_user_avatar, action: :update_avatar
       define :unlink_google_account, action: :unlink_google
       define :change_password, action: :change_password
     end
@@ -93,6 +91,7 @@ defmodule Firmowid.Ash.Core do
     resource Member do
       define :update_member_role, action: :update_role
       define :update_member_profile, action: :update_profile
+      define :update_member_avatar, action: :update_avatar
       define :archive_member, action: :archive
       define :unarchive_member, action: :unarchive
     end

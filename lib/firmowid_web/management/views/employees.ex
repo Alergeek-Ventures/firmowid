@@ -87,7 +87,7 @@ defmodule FirmowidWeb.Management.Views.Employees do
       users =
         input
         |> Core.list_users!(scope: scope)
-        |> Ash.load!([:member, avatar_blob: [:url]], scope: scope)
+        |> Ash.load!([member: [avatar_blob: [:url]]], scope: scope)
 
       # 2. Time worked per user this month
       sessions =
@@ -130,7 +130,7 @@ defmodule FirmowidWeb.Management.Views.Employees do
         |> Enum.sort_by(fn employee ->
           {
             employee.time_worked == 0,
-            employee.user.name || employee.user.email ||
+            employee.user.member.name || employee.user.email ||
               ""
               |> to_string()
               |> String.downcase()

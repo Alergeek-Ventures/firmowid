@@ -142,13 +142,7 @@ defmodule FirmowidWeb.Settings.Views.IndexTest do
   test "personal data are saved together or not at all, with the error on the rejected field", %{
     conn: conn
   } do
-    user = user_fixture()
-
-    user =
-      Core.update_profile!(user, %{name: "Ada Lovelace"},
-        actor: user,
-        tenant: user.organization_id
-      )
+    user = user_fixture(%{name: "Ada Lovelace"})
 
     {:ok, lv, _html} = live(log_in_user(conn, user), ~p"/ustawienia/konto")
     render_click(lv, "toggle_editing_account_name")
@@ -167,9 +161,26 @@ defmodule FirmowidWeb.Settings.Views.IndexTest do
     assert has_element?(lv, "#user_first_name[aria-invalid=true]")
     refute has_element?(lv, "#user_birthday[aria-invalid=true]")
 
-    user = Core.load_member(Core.get_user!(user.id, actor: user), user.organization_id)
-    assert user.name == "Ada Lovelace"
-    assert user.member.birthday == nil
+    member = Core.load_member(user, user.organization_id).member
+    assert member.name == "Ada Lovelace"
+    assert member.birthday == nil
+  end
+
+  test "an employee's name edit lands on their member", %{conn: conn} do
+    admin = admin_fixture()
+    employee = user_in_org_fixture(admin.organization_id, %{name: "Ada Lovelace"})
+
+    {:ok, lv, _html} = live(log_in_user(conn, employee), ~p"/ustawienia/konto")
+    render_click(lv, "toggle_editing_account_name")
+
+    html =
+      render_submit(lv, "save", %{
+        "user" => %{"first_name" => "Grace", "last_name" => "Hopper", "birthday" => ""}
+      })
+
+    assert html =~ "Cześć, <span class=\"font-bold\">Grace Hopper</span>!"
+    assert Core.load_member(employee, admin.organization_id).member.name == "Grace Hopper"
+    assert Core.load_member(admin, admin.organization_id).member.name != "Grace Hopper"
   end
 
   test "account deletion modal warns organization owner about deleting the organization", %{

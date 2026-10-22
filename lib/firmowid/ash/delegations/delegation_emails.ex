@@ -7,16 +7,17 @@ defmodule Firmowid.Ash.Delegations.DelegationEmails do
   import Firmowid.Mailer.Components
   import Swoosh.Email
 
+  alias Firmowid.Ash.Core.Member
   alias Firmowid.Ash.Core.User
   alias Firmowid.Ash.Delegations.Delegation
   alias Firmowid.Mailer
   alias FirmowidWeb.Infrastructure.Utilities.TimeFormatter
 
-  @spec deliver_new_delegation([User.t() | map()], Delegation.t(), User.t() | map()) ::
+  @spec deliver_new_delegation([User.t() | map()], Delegation.t(), Member.t() | map()) ::
           {:ok, Swoosh.Email.t()} | {:error, term()}
   def deliver_new_delegation(admins, delegation, employee) do
     name = employee_name(employee)
-    url = url(~p"/zarzadzanie/pracownicy/#{employee.id}/delegacje")
+    url = url(~p"/zarzadzanie/pracownicy/#{employee.user_id}/delegacje")
     assigns = %{name: name, delegation: delegation, url: url}
 
     email =
@@ -31,7 +32,7 @@ defmodule Firmowid.Ash.Delegations.DelegationEmails do
   end
 
   @doc "Delivers a confirmation to the employee whose delegation was approved."
-  @spec deliver_approved_delegation(Delegation.t(), User.t() | map()) ::
+  @spec deliver_approved_delegation(Delegation.t(), Member.t() | map()) ::
           {:ok, Swoosh.Email.t()} | {:error, term()}
   def deliver_approved_delegation(delegation, employee) do
     name = employee_name(employee)
@@ -39,7 +40,7 @@ defmodule Firmowid.Ash.Delegations.DelegationEmails do
 
     email =
       new()
-      |> to(to_string(employee.email))
+      |> to(to_string(employee.user.email))
       |> from({"Firmowid", "piotr@firmowid.pl"})
       |> subject("Delegacja została zatwierdzona")
       |> html_body(to_html(approval_html(assigns)))
@@ -111,7 +112,7 @@ defmodule Firmowid.Ash.Delegations.DelegationEmails do
   end
 
   defp employee_name(%{name: name}) when is_binary(name) and name != "", do: name
-  defp employee_name(%{email: email}), do: to_string(email)
+  defp employee_name(%{user: %{email: email}}), do: to_string(email)
 
   defp date_range(%{start_date: start_date, end_date: end_date}) do
     TimeFormatter.format_date_range(start_date, end_date)

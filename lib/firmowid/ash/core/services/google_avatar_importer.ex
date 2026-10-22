@@ -1,6 +1,7 @@
 defmodule Firmowid.Ash.Core.Services.GoogleAvatarImporter do
   @moduledoc """
-  Imports a Google profile picture into the local avatar blob storage.
+  Imports a Google profile picture into the local avatar blob storage as the
+  avatar of the user's organization member.
 
   The importer is best-effort: if the avatar cannot be fetched or persisted,
   the user can still authenticate successfully.
@@ -18,8 +19,8 @@ defmodule Firmowid.Ash.Core.Services.GoogleAvatarImporter do
   @request_opts [connect_options: [timeout: 3_000], receive_timeout: 5_000]
 
   @doc """
-  Imports the Google avatar for a user who belongs to an organization and does
-  not yet have a local avatar.
+  Imports the Google avatar for a user who belongs to an organization and whose
+  member does not yet have a local avatar.
 
   Returns `{:ok, user}` in all non-fatal cases to avoid breaking login.
   """
@@ -29,14 +30,17 @@ defmodule Firmowid.Ash.Core.Services.GoogleAvatarImporter do
       is_nil(user.organization_id) ->
         {:ok, user}
 
-      not is_nil(user.avatar_blob_id) ->
-        {:ok, user}
-
       not is_binary(picture_url(user_info)) ->
         {:ok, user}
 
       true ->
-        import_avatar(user, picture_url(user_info))
+        user = Core.load_member(user, user.organization_id)
+
+        if is_nil(user.member.avatar_blob_id) do
+          import_avatar(user, picture_url(user_info))
+        else
+          {:ok, user}
+        end
     end
   end
 
@@ -51,9 +55,9 @@ defmodule Firmowid.Ash.Core.Services.GoogleAvatarImporter do
       try do
         with {:ok, blob} <-
                Blobs.create_blob(path, content_type, original_filename(content_type), scope: scope),
-             {:ok, updated_user} <-
-               Core.update_user_avatar(user, %{avatar_blob_id: blob.id}, scope: scope) do
-          {:ok, updated_user}
+             {:ok, member} <-
+               Core.update_member_avatar(user.member, %{avatar_blob_id: blob.id}, scope: scope) do
+          {:ok, %{user | member: member}}
         else
           {:error, reason} ->
             Logger.warning("Skipping Google avatar import",

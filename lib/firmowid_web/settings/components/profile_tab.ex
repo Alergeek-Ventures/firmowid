@@ -191,7 +191,7 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
         >
           <Lucideicons.file_text class="size-4 shrink-0" />
           <span class="flex min-w-0">
-            <span class="min-w-0 truncate font-medium">Umowa_{@current_user.name || "pracownik"}</span>
+            <span class="min-w-0 truncate font-medium">Umowa_{@current_user.member.name || "pracownik"}</span>
             <span class="shrink-0 font-medium">_{@current_contract.starts_at}.pdf</span>
           </span>
         </.link>
