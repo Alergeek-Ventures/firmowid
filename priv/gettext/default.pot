@@ -1548,12 +1548,12 @@ msgstr ""
 msgid "Clear filters"
 msgstr ""
 
-#: lib/firmowid_web/analysis/views/dashboard.ex:429
+#: lib/firmowid_web/analysis/views/dashboard.ex:434
 #, elixir-autogen, elixir-format
 msgid "Expenses"
 msgstr ""
 
-#: lib/firmowid_web/analysis/views/dashboard.ex:421
+#: lib/firmowid_web/analysis/views/dashboard.ex:426
 #, elixir-autogen, elixir-format
 msgid "Income"
 msgstr ""
@@ -1573,7 +1573,7 @@ msgstr ""
 msgid "Show entries"
 msgstr ""
 
-#: lib/firmowid_web/analysis/views/dashboard.ex:438
+#: lib/firmowid_web/analysis/views/dashboard.ex:443
 #, elixir-autogen, elixir-format
 msgid "The list shows full document amounts; the charts show the selected projects' shares."
 msgstr ""
@@ -1628,15 +1628,15 @@ msgstr ""
 msgid "Omitted"
 msgstr ""
 
-#: lib/firmowid_web/analysis/views/dashboard.ex:488
-#: lib/firmowid_web/hours_record/views/index.html.heex:165
+#: lib/firmowid_web/analysis/views/dashboard.ex:493
+#: lib/firmowid_web/hours_record/views/index.html.heex:166
 #, elixir-autogen, elixir-format
 msgid "Cancel"
 msgstr ""
 
 #: lib/firmowid/ash/timetracker/actions/notify_admins_about_hours_record_change.ex:38
 #: lib/firmowid_web/hours_record/components/change_request.ex:99
-#: lib/firmowid_web/hours_record/views/index.html.heex:147
+#: lib/firmowid_web/hours_record/views/index.html.heex:148
 #, elixir-autogen, elixir-format
 msgid "Cancellation"
 msgstr ""
@@ -1663,7 +1663,7 @@ msgstr ""
 
 #: lib/firmowid/ash/timetracker/actions/notify_admins_about_hours_record_change.ex:37
 #: lib/firmowid_web/hours_record/components/change_request.ex:98
-#: lib/firmowid_web/hours_record/views/index.html.heex:146
+#: lib/firmowid_web/hours_record/views/index.html.heex:147
 #, elixir-autogen, elixir-format
 msgid "Correction"
 msgstr ""
@@ -1683,18 +1683,18 @@ msgstr ""
 msgid "Hours record change request"
 msgstr ""
 
-#: lib/firmowid_web/hours_record/views/index.html.heex:154
+#: lib/firmowid_web/hours_record/views/index.html.heex:155
 #, elixir-autogen, elixir-format
 msgid "Reason"
 msgstr ""
 
-#: lib/firmowid_web/hours_record/views/index.html.heex:109
-#: lib/firmowid_web/hours_record/views/index.html.heex:134
+#: lib/firmowid_web/hours_record/views/index.html.heex:110
+#: lib/firmowid_web/hours_record/views/index.html.heex:135
 #, elixir-autogen, elixir-format
 msgid "Request correction or cancellation"
 msgstr ""
 
-#: lib/firmowid_web/hours_record/views/index.html.heex:144
+#: lib/firmowid_web/hours_record/views/index.html.heex:145
 #, elixir-autogen, elixir-format
 msgid "Request type"
 msgstr ""
@@ -1704,17 +1704,17 @@ msgstr ""
 msgid "Sign hours record"
 msgstr ""
 
-#: lib/firmowid_web/hours_record/views/index.html.heex:168
+#: lib/firmowid_web/hours_record/views/index.html.heex:169
 #, elixir-autogen, elixir-format
 msgid "Submit request"
 msgstr ""
 
-#: lib/firmowid_web/hours_record/views/index.html.heex:167
+#: lib/firmowid_web/hours_record/views/index.html.heex:168
 #, elixir-autogen, elixir-format
 msgid "Submitting..."
 msgstr ""
 
-#: lib/firmowid_web/hours_record/views/index.html.heex:137
+#: lib/firmowid_web/hours_record/views/index.html.heex:138
 #, elixir-autogen, elixir-format
 msgid "Your request will be saved and emailed to your organization administrators. It does not cancel the signature or unlock hours automatically."
 msgstr ""
@@ -2230,13 +2230,13 @@ msgstr ""
 msgid "Visible on the invoice and in KSeF (invoice footer)"
 msgstr ""
 
-#: lib/firmowid_web/analysis/views/dashboard.ex:478
+#: lib/firmowid_web/analysis/views/dashboard.ex:483
 #, elixir-autogen, elixir-format
 msgid "All categories assigned to this month's entries will be removed, including manual ones. This cannot be undone."
 msgstr ""
 
 #: lib/firmowid_web/analysis/components/category_selector.ex:152
-#: lib/firmowid_web/analysis/views/dashboard.ex:495
+#: lib/firmowid_web/analysis/views/dashboard.ex:500
 #, elixir-autogen, elixir-format
 msgid "Clear categories"
 msgstr ""
@@ -2246,7 +2246,7 @@ msgstr ""
 msgid "Clear month's categories"
 msgstr ""
 
-#: lib/firmowid_web/analysis/views/dashboard.ex:476
+#: lib/firmowid_web/analysis/views/dashboard.ex:481
 #, elixir-autogen, elixir-format
 msgid "Clear month's categories?"
 msgstr ""
@@ -2316,7 +2316,7 @@ msgstr[1] ""
 msgid "+ %{amount} unrealized"
 msgstr ""
 
-#: lib/firmowid_web/analysis/views/dashboard.ex:462
+#: lib/firmowid_web/analysis/views/dashboard.ex:467
 #, elixir-autogen, elixir-format
 msgid "Invoices without a payment and payments without an invoice or salary, dated this month. Link them or mark them as skipped to include them in the analysis."
 msgstr ""
@@ -2337,12 +2337,12 @@ msgstr ""
 msgid "Unrealized"
 msgstr ""
 
-#: lib/firmowid_web/analysis/views/dashboard.ex:459
+#: lib/firmowid_web/analysis/views/dashboard.ex:464
 #, elixir-autogen, elixir-format
 msgid "Unrealized expenses"
 msgstr ""
 
-#: lib/firmowid_web/analysis/views/dashboard.ex:458
+#: lib/firmowid_web/analysis/views/dashboard.ex:463
 #, elixir-autogen, elixir-format
 msgid "Unrealized income"
 msgstr ""
