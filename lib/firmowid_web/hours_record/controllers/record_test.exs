@@ -21,15 +21,15 @@ defmodule FirmowidWeb.HoursRecord.Controllers.RecordTest do
 
   test "employee cannot download another employee's submitted hours record", %{conn: conn} do
     admin = admin_fixture()
-    employee_a = user_in_org_fixture(admin.organization_id, %{role: :employee})
-    employee_b = user_in_org_fixture(admin.organization_id, %{role: :employee})
+    employee_a = user_in_org_fixture(admin.member.organization_id, %{role: :employee})
+    employee_b = user_in_org_fixture(admin.member.organization_id, %{role: :employee})
 
     blob =
       Ash.Seed.seed!(Blob, %{
         blob_path: "/test/path/hr_record.pdf",
         blob_checksum: "hr-record-checksum-#{System.unique_integer([:positive])}",
         original_filename: "hr_record.pdf",
-        organization_id: admin.organization_id
+        organization_id: admin.member.organization_id
       })
 
     record =
@@ -41,7 +41,7 @@ defmodule FirmowidWeb.HoursRecord.Controllers.RecordTest do
           month: 4,
           year: 2026,
           number_of_hours: 8,
-          organization_id: admin.organization_id
+          organization_id: admin.member.organization_id
         },
         skip_organization_id: true
       )

@@ -17,7 +17,7 @@ defmodule Firmowid.Ash.Invoicing.Services.RecentMatchedEntriesTest do
 
   test "returns the root invoice when a correction is matched" do
     user = admin_fixture()
-    scope = %Scope{actor: user, tenant: user.organization_id}
+    scope = %Scope{actor: user, tenant: user.member.organization_id}
     today = Date.utc_today()
 
     root =
@@ -31,7 +31,7 @@ defmodule Firmowid.Ash.Invoicing.Services.RecentMatchedEntriesTest do
         payment_method: :transfer,
         currency: "PLN",
         buyer_type: :company,
-        organization_id: user.organization_id,
+        organization_id: user.member.organization_id,
         ksef_invoice_kind: :vat
       })
 
@@ -46,14 +46,14 @@ defmodule Firmowid.Ash.Invoicing.Services.RecentMatchedEntriesTest do
         payment_method: :transfer,
         currency: "PLN",
         buyer_type: :company,
-        organization_id: user.organization_id,
+        organization_id: user.member.organization_id,
         ksef_invoice_kind: :kor,
         corrected_invoice_id: root.id
       })
 
     Ash.Seed.seed!(SalesInvoiceItem, %{
       sales_invoice_id: correction.id,
-      organization_id: user.organization_id,
+      organization_id: user.member.organization_id,
       index: 0,
       name: "Corrected service",
       quantity: Decimal.new("1"),
@@ -77,7 +77,7 @@ defmodule Firmowid.Ash.Invoicing.Services.RecentMatchedEntriesTest do
         value_date: today,
         remittance_information_unstructured: "Correction payment",
         bank_account_id: bank_account.id,
-        organization_id: user.organization_id
+        organization_id: user.member.organization_id
       })
 
     Invoicing.connect_sales_invoice_transactions!(correction, [transaction.id], scope: scope)

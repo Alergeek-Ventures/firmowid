@@ -21,7 +21,7 @@ defmodule Firmowid.Oauth2ServerTest do
 
   setup do
     admin = admin_fixture()
-    user = user_in_org_fixture(admin.organization_id)
+    user = user_in_org_fixture(admin.member.organization_id)
     verifier = Base.url_encode64(:crypto.strong_rand_bytes(32), padding: false)
 
     {:ok, client, _response} =
@@ -71,7 +71,7 @@ defmodule Firmowid.Oauth2ServerTest do
        context do
     %{user: user, client: client, validated: validated} = context
     consent = Authorize.grant_consent!(Oauth2Server, user, client, "mcp")
-    Ash.Seed.update!(user, %{organization_id: nil})
+    Ash.Seed.update!(user.member, %{archived_at: Date.utc_today()})
 
     assert_raise Invalid, fn ->
       Authorize.issue_code!(Oauth2Server, user, validated)
@@ -96,7 +96,7 @@ defmodule Firmowid.Oauth2ServerTest do
     code = Authorize.issue_code!(Oauth2Server, user, validated)
     exchanged_code = Authorize.issue_code!(Oauth2Server, user, validated)
     assert {:ok, tokens} = exchange_code(exchanged_code, context)
-    Ash.Seed.update!(user, %{organization_id: nil})
+    Ash.Seed.update!(user.member, %{archived_at: Date.utc_today()})
 
     assert {:error, _} = OauthAuthorizationCode.consume(code, context: @auth_context)
     assert {:error, :invalid_code} = exchange_code(code, context)
@@ -122,7 +122,7 @@ defmodule Firmowid.Oauth2ServerTest do
   test "archiving the member invalidates outstanding grants without affecting another user",
        context do
     %{admin: admin, user: user, client: client, validated: validated} = context
-    other = user_in_org_fixture(admin.organization_id)
+    other = user_in_org_fixture(admin.member.organization_id)
     Authorize.grant_consent!(Oauth2Server, user, client, "mcp")
     code = Authorize.issue_code!(Oauth2Server, user, validated)
     exchanged_code = Authorize.issue_code!(Oauth2Server, user, validated)
@@ -131,9 +131,11 @@ defmodule Firmowid.Oauth2ServerTest do
     assert {:ok, other_tokens} = exchange_code(other_code, context)
     assert_authenticated(tokens.access_token, user)
 
-    archived = Core.archive_member!(user.member, actor: admin, tenant: admin.organization_id)
+    archived =
+      Core.archive_member!(user.member, actor: admin, tenant: admin.member.organization_id)
+
     assert archived.archived_at
-    assert Core.get_user!(user.id, actor: admin).organization_id == nil
+    assert Core.load_member(user).member == nil
 
     assert {:error, :invalid_code} = exchange_code(code, context)
     assert {:error, :revoked} = exchange_refresh(tokens.refresh_token, client)
@@ -142,9 +144,32 @@ defmodule Firmowid.Oauth2ServerTest do
     assert {:ok, _tokens} = exchange_refresh(other_tokens.refresh_token, client)
     refute Authorize.consented?(Oauth2Server, user, client, "mcp")
 
-    Core.unarchive_member!(archived, actor: admin, tenant: admin.organization_id)
+    Core.unarchive_member!(archived, actor: admin, tenant: admin.member.organization_id)
     assert {:error, :invalid_code} = exchange_code(code, context)
     assert {:error, :revoked} = exchange_refresh(tokens.refresh_token, client)
+  end
+
+  test "re-archiving an old membership keeps the grants of the organization the account works in now",
+       context do
+    %{admin: admin, user: user, client: client, validated: validated} = context
+    opts = [actor: admin, tenant: admin.member.organization_id]
+    archived = Core.archive_member!(user.member, opts)
+
+    Core.set_organization!(
+      user,
+      %{organization_id: admin_fixture().member.organization_id, role: :employee},
+      authorize?: false
+    )
+
+    user = Core.load_member(user)
+    code = Authorize.issue_code!(Oauth2Server, user, validated)
+    assert {:ok, tokens} = exchange_code(code, context)
+
+    # A stale view of the old membership still showing it as active.
+    assert {:error, %Invalid{}} = Core.archive_member(%{archived | archived_at: nil}, opts)
+
+    assert_authenticated(tokens.access_token, user)
+    assert {:ok, _tokens} = exchange_refresh(tokens.refresh_token, client)
   end
 
   defp exchange_code(code, context) do
@@ -183,7 +208,7 @@ defmodule Firmowid.Oauth2ServerTest do
     assert conn.status == 200
     assert %{"result" => %{"protocolVersion" => "2025-03-26"}} = json_response(conn, 200)
     assert Ash.PlugHelpers.get_actor(conn).id == user.id
-    assert Ash.PlugHelpers.get_tenant(conn) == user.organization_id
+    assert Ash.PlugHelpers.get_tenant(conn) == user.member.organization_id
     assert conn.assigns.oauth_claims["scope"] == "mcp"
   end
 

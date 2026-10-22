@@ -14,11 +14,11 @@ defmodule Firmowid.Ash.Delegations.DelegationTest do
 
   setup do
     employee = user_fixture(%{name: "Kira Voss"})
-    admin = admin_fixture(%{organization_id: employee.organization_id})
+    admin = admin_fixture(%{organization_id: employee.member.organization_id})
 
     %{
-      employee_scope: %Scope{actor: employee, tenant: employee.organization_id},
-      admin_scope: %Scope{actor: admin, tenant: employee.organization_id}
+      employee_scope: %Scope{actor: employee, tenant: employee.member.organization_id},
+      admin_scope: %Scope{actor: admin, tenant: employee.member.organization_id}
     }
   end
 
@@ -45,9 +45,9 @@ defmodule Firmowid.Ash.Delegations.DelegationTest do
   } do
     employee = employee_scope.actor
 
-    second_employee = user_in_org_fixture(employee.organization_id, %{name: "Kamil Voss"})
+    second_employee = user_in_org_fixture(employee.member.organization_id, %{name: "Kamil Voss"})
 
-    second_scope = %Scope{actor: second_employee, tenant: employee.organization_id}
+    second_scope = %Scope{actor: second_employee, tenant: employee.member.organization_id}
 
     first =
       Delegations.create_delegation!(delegation_attrs(%{billing_month: ~D[2026-09-01]}),
@@ -68,7 +68,7 @@ defmodule Firmowid.Ash.Delegations.DelegationTest do
   } do
     other_employee = user_fixture(%{name: "Kira Voss"})
 
-    other_scope = %Scope{actor: other_employee, tenant: other_employee.organization_id}
+    other_scope = %Scope{actor: other_employee, tenant: other_employee.member.organization_id}
 
     first = Delegations.create_delegation!(delegation_attrs(), scope: employee_scope)
     second = Delegations.create_delegation!(delegation_attrs(), scope: other_scope)
@@ -82,7 +82,7 @@ defmodule Firmowid.Ash.Delegations.DelegationTest do
   } do
     actor = employee_scope.actor
     employee = %{actor | member: %{actor.member | name: "   "}}
-    scope = %Scope{actor: employee, tenant: employee.organization_id}
+    scope = %Scope{actor: employee, tenant: employee.member.organization_id}
 
     delegation = Delegations.create_delegation!(delegation_attrs(), scope: scope)
 
@@ -152,7 +152,7 @@ defmodule Firmowid.Ash.Delegations.DelegationTest do
     _expense =
       Ash.Seed.seed!(DelegationExpense, %{
         delegation_id: delegation.id,
-        organization_id: employee_scope.actor.organization_id,
+        organization_id: employee_scope.actor.member.organization_id,
         blob_id: seed_blob(employee_scope.actor).id,
         kind: :other,
         original_filename: "rachunek.pdf",
@@ -393,12 +393,12 @@ defmodule Firmowid.Ash.Delegations.DelegationTest do
         blob_path: "/test/delegations/#{System.unique_integer([:positive])}.pdf",
         blob_checksum: "delegation-#{System.unique_integer([:positive])}",
         original_filename: "rachunek.pdf",
-        organization_id: user.organization_id
+        organization_id: user.member.organization_id
       })
 
     Ash.Seed.seed!(DelegationExpense, %{
       delegation_id: delegation.id,
-      organization_id: user.organization_id,
+      organization_id: user.member.organization_id,
       blob_id: blob.id,
       kind: :accommodation,
       original_filename: "rachunek.pdf",
@@ -414,12 +414,12 @@ defmodule Firmowid.Ash.Delegations.DelegationTest do
         blob_path: "/test/delegations/statement-#{System.unique_integer([:positive])}.pdf",
         blob_checksum: "statement-#{System.unique_integer([:positive])}",
         original_filename: "wyciag.pdf",
-        organization_id: user.organization_id
+        organization_id: user.member.organization_id
       })
 
     Ash.Seed.seed!(DelegationExpense, %{
       delegation_id: delegation.id,
-      organization_id: user.organization_id,
+      organization_id: user.member.organization_id,
       blob_id: statement_blob.id,
       statement_blob_id: statement_blob.id,
       kind: :other,
@@ -435,7 +435,7 @@ defmodule Firmowid.Ash.Delegations.DelegationTest do
       blob_path: "/test/delegations/#{System.unique_integer([:positive])}.pdf",
       blob_checksum: "delegation-#{System.unique_integer([:positive])}",
       original_filename: "rachunek.pdf",
-      organization_id: user.organization_id
+      organization_id: user.member.organization_id
     })
   end
 

@@ -30,13 +30,16 @@ defmodule FirmowidWeb.Timetracker.Views.IndexTest do
   describe "session management" do
     setup %{conn: conn} do
       user = user_fixture()
-      project = project_fixture(%{name: "Test Project", organization_id: user.organization_id})
-      user_project_fixture(user.id, project.id, user.organization_id)
+
+      project =
+        project_fixture(%{name: "Test Project", organization_id: user.member.organization_id})
+
+      user_project_fixture(user.id, project.id, user.member.organization_id)
 
       %{
         conn: log_in_user(conn, user),
         user: user,
-        scope: %Scope{actor: user, tenant: user.organization_id},
+        scope: %Scope{actor: user, tenant: user.member.organization_id},
         project: project
       }
     end
@@ -127,7 +130,7 @@ defmodule FirmowidWeb.Timetracker.Views.IndexTest do
           project_id: project.id,
           title: "Test Session",
           start_datetime: DateTime.utc_now(),
-          organization_id: user.organization_id
+          organization_id: user.member.organization_id
         })
 
       {:ok, lv, _html} = live(conn, ~p"/czasosledz")
@@ -153,7 +156,7 @@ defmodule FirmowidWeb.Timetracker.Views.IndexTest do
           project_id: project.id,
           title: "Legacy active session",
           start_datetime: ~U[2025-04-01 09:00:00Z],
-          organization_id: user.organization_id
+          organization_id: user.member.organization_id
         })
 
       Repo.query!(
@@ -185,7 +188,7 @@ defmodule FirmowidWeb.Timetracker.Views.IndexTest do
           project_id: project.id,
           title: "Test Session",
           start_datetime: DateTime.utc_now(),
-          organization_id: user.organization_id
+          organization_id: user.member.organization_id
         })
 
       {:ok, lv, _html} = live(conn, ~p"/czasosledz")
@@ -214,7 +217,7 @@ defmodule FirmowidWeb.Timetracker.Views.IndexTest do
         session_fixture(%{
           user_id: user.id,
           project_id: project.id,
-          organization_id: user.organization_id
+          organization_id: user.member.organization_id
         })
 
       {:ok, lv, _html} = live(conn, ~p"/czasosledz")
@@ -232,7 +235,7 @@ defmodule FirmowidWeb.Timetracker.Views.IndexTest do
           user_id: user.id,
           project_id: project.id,
           title: "Old Title",
-          organization_id: user.organization_id
+          organization_id: user.member.organization_id
         })
 
       {:ok, lv, html} = live(conn, ~p"/czasosledz")
@@ -273,7 +276,7 @@ defmodule FirmowidWeb.Timetracker.Views.IndexTest do
         title: "First session",
         start_datetime: DateTime.new!(date, ~T[09:00:42], "Etc/UTC"),
         end_datetime: DateTime.new!(date, ~T[10:00:17], "Etc/UTC"),
-        organization_id: user.organization_id
+        organization_id: user.member.organization_id
       })
 
       session =
@@ -283,7 +286,7 @@ defmodule FirmowidWeb.Timetracker.Views.IndexTest do
           title: "Second session",
           start_datetime: DateTime.new!(date, ~T[10:00:00], "Etc/UTC"),
           end_datetime: DateTime.new!(date, ~T[11:00:00], "Etc/UTC"),
-          organization_id: user.organization_id
+          organization_id: user.member.organization_id
         })
 
       {:ok, lv, _html} = live(conn, ~p"/czasosledz")
@@ -325,7 +328,7 @@ defmodule FirmowidWeb.Timetracker.Views.IndexTest do
         project_id: project.id,
         title: "Test Session",
         start_datetime: DateTime.utc_now(),
-        organization_id: user.organization_id
+        organization_id: user.member.organization_id
       })
 
       {:ok, _lv, html} = live(conn, ~p"/czasosledz")

@@ -10,8 +10,8 @@ defmodule Firmowid.Repo.Migrations.NormalizeSessionBoundariesToMinutesTest do
 
   test "normalizes only August 2026 sessions" do
     user = user_fixture()
-    project = project_fixture(%{organization_id: user.organization_id})
-    user_project_fixture(user.id, project.id, user.organization_id)
+    project = project_fixture(%{organization_id: user.member.organization_id})
+    user_project_fixture(user.id, project.id, user.member.organization_id)
 
     july_session =
       session_fixture(%{
@@ -19,7 +19,7 @@ defmodule Firmowid.Repo.Migrations.NormalizeSessionBoundariesToMinutesTest do
         project_id: project.id,
         start_datetime: ~U[2026-07-31 09:00:42Z],
         end_datetime: ~U[2026-07-31 10:00:17Z],
-        organization_id: user.organization_id
+        organization_id: user.member.organization_id
       })
 
     august_session =
@@ -28,7 +28,7 @@ defmodule Firmowid.Repo.Migrations.NormalizeSessionBoundariesToMinutesTest do
         project_id: project.id,
         start_datetime: ~U[2026-08-01 09:00:42Z],
         end_datetime: ~U[2026-08-01 10:00:17Z],
-        organization_id: user.organization_id
+        organization_id: user.member.organization_id
       })
 
     september_session =
@@ -37,7 +37,7 @@ defmodule Firmowid.Repo.Migrations.NormalizeSessionBoundariesToMinutesTest do
         project_id: project.id,
         start_datetime: ~U[2026-09-01 09:00:42Z],
         end_datetime: ~U[2026-09-01 10:00:17Z],
-        organization_id: user.organization_id
+        organization_id: user.member.organization_id
       })
 
     for {session, start_datetime, end_datetime} <- [

@@ -8,9 +8,10 @@ defmodule Firmowid.FinancesFixtures do
   @doc """
   Creates a bank account fixture for the user's organization.
   """
-  @spec bank_account_fixture!(%{organization_id: Ecto.UUID.t()}, map()) :: BankAccount.t()
+  @spec bank_account_fixture!(%{member: %{organization_id: Ecto.UUID.t()}}, map()) ::
+          BankAccount.t()
   def bank_account_fixture!(user, attrs \\ %{}) do
-    bank_account_fixture_for_organization!(user.organization_id, attrs)
+    bank_account_fixture_for_organization!(user.member.organization_id, attrs)
   end
 
   @doc """

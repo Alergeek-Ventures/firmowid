@@ -82,7 +82,6 @@ defmodule Firmowid.Ash.Core do
       define :update_current_profile, action: :update_current_profile
       define :get_shared_birthday, action: :get_shared_birthday
       define :leave_organization, action: :leave_organization
-      define :return_to_organization, action: :return_to_organization
       define :set_organization, action: :set_organization
       define :unlink_google_account, action: :unlink_google
       define :change_password, action: :change_password
@@ -143,15 +142,16 @@ defmodule Firmowid.Ash.Core do
   ]
 
   @doc """
-  Loads the user's member in the organization, which policies read the actor's role from.
+  Loads the user's active member, whose organization the user works in and which
+  policies read the actor's role from. A user without one gets `nil`.
 
   Authorizing the read as the user would need the role it loads, so a system actor
-  limited to this user's member in this organization reads it.
+  limited to this user's member reads it.
   """
-  @spec load_member(User.t(), binary()) :: User.t()
-  def load_member(%User{} = user, tenant) when is_binary(tenant) do
-    actor = %SystemActor{org_id: tenant, role: :actor_member_loader, user_id: user.id}
-    Ash.load!(user, :member, actor: actor, tenant: tenant)
+  @spec load_member(User.t()) :: User.t()
+  def load_member(%User{} = user) do
+    actor = %SystemActor{org_id: nil, role: :actor_member_loader, user_id: user.id}
+    %{user | member: Member.get_active!(user.id, actor: actor, not_found_error?: false)}
   end
 
   @doc """
@@ -263,11 +263,8 @@ defmodule Firmowid.Ash.Core do
     %Scope{actor: %SystemActor{org_id: id, role: :organization_cleanup}, tenant: id}
   end
 
-  defp account_cleanup_scope(%User{id: id, organization_id: organization_id}) do
-    %Scope{
-      actor: %SystemActor{org_id: organization_id, user_id: id, role: :account_cleanup},
-      tenant: organization_id
-    }
+  defp account_cleanup_scope(%User{id: id}) do
+    %Scope{actor: %SystemActor{org_id: nil, user_id: id, role: :account_cleanup}}
   end
 
   defp authorize_destroy(record, opts) do
@@ -286,16 +283,20 @@ defmodule Firmowid.Ash.Core do
   end
 
   defp organization_id_for(%Organization{id: id}), do: id
-  defp organization_id_for(%User{organization_id: id}), do: id
+  defp organization_id_for(%User{}), do: nil
 
-  defp owned_organization(%User{organization_id: nil}, _opts), do: {:ok, nil}
+  defp owned_organization(%User{id: id} = user, opts) do
+    case load_member(user).member do
+      nil ->
+        {:ok, nil}
 
-  defp owned_organization(%User{id: id, organization_id: organization_id}, opts) do
-    case get_organization(organization_id, opts) do
-      {:ok, %Organization{owner_id: ^id} = organization} -> {:ok, organization}
-      {:ok, _} -> {:ok, nil}
-      {:error, %NotFound{}} -> {:ok, nil}
-      {:error, error} -> {:error, error}
+      %Member{organization_id: organization_id} ->
+        case get_organization(organization_id, opts) do
+          {:ok, %Organization{owner_id: ^id} = organization} -> {:ok, organization}
+          {:ok, _} -> {:ok, nil}
+          {:error, %NotFound{}} -> {:ok, nil}
+          {:error, error} -> {:error, error}
+        end
     end
   end
 

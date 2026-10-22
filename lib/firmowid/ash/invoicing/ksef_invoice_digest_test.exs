@@ -16,7 +16,7 @@ defmodule Firmowid.Ash.Invoicing.KsefInvoiceDigestTest do
 
   test "send_digest marks persisted digest as delivered when active admins exist" do
     admin = admin_fixture()
-    organization_id = admin.organization_id
+    organization_id = admin.member.organization_id
 
     drain_swoosh_email_messages()
 
@@ -44,7 +44,7 @@ defmodule Firmowid.Ash.Invoicing.KsefInvoiceDigestTest do
 
   test "send_digest fails when there are no active admin recipients" do
     employee = user_fixture()
-    organization_id = employee.organization_id
+    organization_id = employee.member.organization_id
 
     drain_swoosh_email_messages()
 
@@ -70,7 +70,7 @@ defmodule Firmowid.Ash.Invoicing.KsefInvoiceDigestTest do
 
   test "send_digest fails when there are no persisted invoices" do
     admin = admin_fixture()
-    organization_id = admin.organization_id
+    organization_id = admin.member.organization_id
 
     drain_swoosh_email_messages()
 
@@ -87,7 +87,7 @@ defmodule Firmowid.Ash.Invoicing.KsefInvoiceDigestTest do
 
   test "selects only undigested KSeF invoices before run cutoff" do
     user = user_fixture()
-    organization_id = user.organization_id
+    organization_id = user.member.organization_id
 
     seed_ksef_credential!(organization_id)
 
@@ -145,7 +145,7 @@ defmodule Firmowid.Ash.Invoicing.KsefInvoiceDigestTest do
 
   test "excludes previously digested invoices on subsequent scheduled runs" do
     user = user_fixture()
-    organization_id = user.organization_id
+    organization_id = user.member.organization_id
 
     seed_ksef_credential!(organization_id)
 
@@ -205,7 +205,7 @@ defmodule Firmowid.Ash.Invoicing.KsefInvoiceDigestTest do
 
   test "prevents reusing already digested invoices across digest creation attempts" do
     user = user_fixture()
-    organization_id = user.organization_id
+    organization_id = user.member.organization_id
 
     seed_ksef_credential!(organization_id)
 
@@ -240,12 +240,12 @@ defmodule Firmowid.Ash.Invoicing.KsefInvoiceDigestTest do
     no_credentials_user = user_fixture()
     with_credentials_user = user_fixture()
 
-    seed_ksef_credential!(with_credentials_user.organization_id)
+    seed_ksef_credential!(with_credentials_user.member.organization_id)
 
     now = DateTime.utc_now()
 
-    with_credentials_org_id = with_credentials_user.organization_id
-    without_credentials_org_id = no_credentials_user.organization_id
+    with_credentials_org_id = with_credentials_user.member.organization_id
+    without_credentials_org_id = no_credentials_user.member.organization_id
 
     with_credentials_invoice =
       insert_cost_invoice!(with_credentials_org_id, %{
@@ -287,7 +287,7 @@ defmodule Firmowid.Ash.Invoicing.KsefInvoiceDigestTest do
 
     now = DateTime.utc_now()
 
-    without_credentials_org_id = no_credentials_user.organization_id
+    without_credentials_org_id = no_credentials_user.member.organization_id
 
     insert_cost_invoice!(without_credentials_org_id, %{
       invoice_identifier: "CI-KSEF-NO-CRED-ONLY",
@@ -309,7 +309,7 @@ defmodule Firmowid.Ash.Invoicing.KsefInvoiceDigestTest do
 
   test "dedicated send worker delivers a persisted digest after creation" do
     admin = admin_fixture()
-    organization_id = admin.organization_id
+    organization_id = admin.member.organization_id
 
     seed_ksef_credential!(organization_id)
     drain_swoosh_email_messages()

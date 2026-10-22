@@ -78,9 +78,12 @@ defmodule Firmowid.Analytics do
   @spec capture_user_signed_in(map(), :password | :google) :: :ok
   def capture_user_signed_in(%{id: user_id} = user, method) when not is_nil(user_id) and method in [:password, :google] do
     groups =
-      case Map.get(user, :organization_id) do
-        nil -> %{}
-        organization_id -> %{"$groups" => %{"organization" => to_string(organization_id)}}
+      case user do
+        %{member: %{organization_id: organization_id}} ->
+          %{"$groups" => %{"organization" => to_string(organization_id)}}
+
+        _user ->
+          %{}
       end
 
     capture_account_event("user_signed_in", user_id, method, groups)

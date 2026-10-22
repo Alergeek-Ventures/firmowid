@@ -22,7 +22,7 @@ defmodule Firmowid.Ash.Finances.BankAccountTest do
   describe "bank account identity" do
     test "sync action creates distinct accounts for the same IBAN in distinct currencies" do
       admin = admin_fixture()
-      scope = %Scope{actor: admin, tenant: admin.organization_id}
+      scope = %Scope{actor: admin, tenant: admin.member.organization_id}
       iban = "PL44 1140 2004 0000 3002 0135 5361"
 
       assert {:ok, first} =
@@ -46,7 +46,7 @@ defmodule Firmowid.Ash.Finances.BankAccountTest do
 
     test "reconnect upserts provider metadata without replacing the local account" do
       admin = admin_fixture()
-      scope = %Scope{actor: admin, tenant: admin.organization_id}
+      scope = %Scope{actor: admin, tenant: admin.member.organization_id}
       iban = "PL44 1140 2004 0000 3002 0135 5362"
 
       assert {:ok, account} =
@@ -80,7 +80,7 @@ defmodule Firmowid.Ash.Finances.BankAccountTest do
 
     test "normalizes IBAN and currency on manual creation" do
       admin = admin_fixture()
-      scope = %Scope{actor: admin, tenant: admin.organization_id}
+      scope = %Scope{actor: admin, tenant: admin.member.organization_id}
 
       assert {:ok, account} =
                Finances.create_manual_bank_account(
@@ -94,7 +94,7 @@ defmodule Firmowid.Ash.Finances.BankAccountTest do
 
     test "rejects missing and empty currency and IBAN" do
       admin = admin_fixture()
-      scope = %Scope{actor: admin, tenant: admin.organization_id}
+      scope = %Scope{actor: admin, tenant: admin.member.organization_id}
 
       assert {:error, %Invalid{errors: errors}} =
                Finances.create_manual_bank_account(%{iban: "PL123", currency: ""}, scope: scope)

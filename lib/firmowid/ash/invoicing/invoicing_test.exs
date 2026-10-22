@@ -15,13 +15,13 @@ defmodule Firmowid.Ash.Invoicing.InvoicingTest do
   alias Firmowid.Ash.Scope
 
   defp scope_for(user) do
-    %Scope{actor: user, tenant: user.organization_id}
+    %Scope{actor: user, tenant: user.member.organization_id}
   end
 
   describe "search_invoices/2" do
     test "returns matching invoices using BM25 search" do
       user = admin_fixture()
-      organization_id = user.organization_id
+      organization_id = user.member.organization_id
 
       sales_invoice1 =
         Ash.Seed.seed!(SalesInvoice, %{
@@ -105,7 +105,7 @@ defmodule Firmowid.Ash.Invoicing.InvoicingTest do
 
     test "returns empty list when no matches found" do
       user = admin_fixture()
-      organization_id = user.organization_id
+      organization_id = user.member.organization_id
 
       _ =
         Ash.Seed.seed!(SalesInvoice, %{
@@ -146,7 +146,7 @@ defmodule Firmowid.Ash.Invoicing.InvoicingTest do
     test "does not find invoices across organizations" do
       # Create user and invoices in org1
       user1 = admin_fixture()
-      org1_id = user1.organization_id
+      org1_id = user1.member.organization_id
 
       si1 =
         Ash.Seed.seed!(SalesInvoice, %{
@@ -181,7 +181,7 @@ defmodule Firmowid.Ash.Invoicing.InvoicingTest do
 
       # Create user and invoices in org2
       user2 = admin_fixture()
-      org2_id = user2.organization_id
+      org2_id = user2.member.organization_id
 
       si2 =
         Ash.Seed.seed!(SalesInvoice, %{
@@ -237,7 +237,7 @@ defmodule Firmowid.Ash.Invoicing.InvoicingTest do
 
     test "filters by only_unmatched" do
       user = admin_fixture()
-      organization_id = user.organization_id
+      organization_id = user.member.organization_id
       scope = scope_for(user)
       bank_account_id = bank_account_fixture!(user).id
 
@@ -378,7 +378,7 @@ defmodule Firmowid.Ash.Invoicing.InvoicingTest do
 
     test "filters sales invoices by buyer_type" do
       user = admin_fixture()
-      organization_id = user.organization_id
+      organization_id = user.member.organization_id
 
       sales_invoice_company =
         Ash.Seed.seed!(SalesInvoice, %{
@@ -448,7 +448,7 @@ defmodule Firmowid.Ash.Invoicing.InvoicingTest do
     test "connect_sales_invoice_transactions/3 rejects an empty transaction list" do
       user = admin_fixture()
       scope = scope_for(user)
-      organization_id = user.organization_id
+      organization_id = user.member.organization_id
 
       sales_invoice = seed_sales_disconnect_invoice!(organization_id)
 
@@ -470,7 +470,7 @@ defmodule Firmowid.Ash.Invoicing.InvoicingTest do
     test "disconnect_sales_invoice_transactions/3 rejects an empty transaction list" do
       user = admin_fixture()
       scope = scope_for(user)
-      organization_id = user.organization_id
+      organization_id = user.member.organization_id
 
       sales_invoice = seed_sales_disconnect_invoice!(organization_id)
       transaction = seed_sales_disconnect_transaction!(organization_id)
@@ -501,7 +501,7 @@ defmodule Firmowid.Ash.Invoicing.InvoicingTest do
     test "disconnect_all_sales_invoice_transactions/2 removes all linked transactions" do
       user = admin_fixture()
       scope = scope_for(user)
-      organization_id = user.organization_id
+      organization_id = user.member.organization_id
 
       sales_invoice = seed_sales_disconnect_invoice!(organization_id)
       transaction = seed_sales_disconnect_transaction!(organization_id)
@@ -528,7 +528,7 @@ defmodule Firmowid.Ash.Invoicing.InvoicingTest do
     test "disconnect_cost_invoice_transactions/3 rejects an empty transaction list" do
       user = admin_fixture()
       scope = scope_for(user)
-      organization_id = user.organization_id
+      organization_id = user.member.organization_id
 
       cost_invoice = seed_cost_disconnect_invoice!(organization_id)
       transaction = seed_cost_disconnect_transaction!(organization_id)
@@ -559,7 +559,7 @@ defmodule Firmowid.Ash.Invoicing.InvoicingTest do
     test "disconnect_all_cost_invoice_transactions/2 removes all linked transactions" do
       user = admin_fixture()
       scope = scope_for(user)
-      organization_id = user.organization_id
+      organization_id = user.member.organization_id
 
       cost_invoice = seed_cost_disconnect_invoice!(organization_id)
       transaction = seed_cost_disconnect_transaction!(organization_id)
@@ -584,7 +584,7 @@ defmodule Firmowid.Ash.Invoicing.InvoicingTest do
     test "connect_cost_invoice_transactions/3 rejects an empty transaction list" do
       user = admin_fixture()
       scope = scope_for(user)
-      organization_id = user.organization_id
+      organization_id = user.member.organization_id
 
       cost_invoice = seed_cost_disconnect_invoice!(organization_id)
 
@@ -606,7 +606,7 @@ defmodule Firmowid.Ash.Invoicing.InvoicingTest do
     test "connect_sales_invoice_transactions/3 allows transactions with a different currency" do
       user = admin_fixture()
       scope = scope_for(user)
-      organization_id = user.organization_id
+      organization_id = user.member.organization_id
 
       sales_invoice = seed_sales_disconnect_invoice!(organization_id)
 
@@ -627,7 +627,7 @@ defmodule Firmowid.Ash.Invoicing.InvoicingTest do
     test "connect_cost_invoice_transactions/3 allows transactions with a different currency" do
       user = admin_fixture()
       scope = scope_for(user)
-      organization_id = user.organization_id
+      organization_id = user.member.organization_id
 
       cost_invoice = seed_cost_disconnect_invoice!(organization_id)
 
@@ -648,7 +648,7 @@ defmodule Firmowid.Ash.Invoicing.InvoicingTest do
     test "connect_sales_invoice_transactions/3 rejects missing transactions" do
       user = admin_fixture()
       scope = scope_for(user)
-      organization_id = user.organization_id
+      organization_id = user.member.organization_id
 
       sales_invoice = seed_sales_disconnect_invoice!(organization_id)
 
@@ -667,7 +667,7 @@ defmodule Firmowid.Ash.Invoicing.InvoicingTest do
   describe "search_invoices/2 with amount and date filters" do
     setup do
       user = admin_fixture()
-      organization_id = user.organization_id
+      organization_id = user.member.organization_id
 
       si1 =
         Ash.Seed.seed!(SalesInvoice, %{
@@ -812,7 +812,7 @@ defmodule Firmowid.Ash.Invoicing.InvoicingTest do
 
     test "filters by include_sales and include_cost" do
       user = admin_fixture()
-      organization_id = user.organization_id
+      organization_id = user.member.organization_id
 
       sales_invoice =
         Ash.Seed.seed!(SalesInvoice, %{
@@ -890,7 +890,7 @@ defmodule Firmowid.Ash.Invoicing.InvoicingTest do
 
     test "searches in sales invoice item_names" do
       user = admin_fixture()
-      organization_id = user.organization_id
+      organization_id = user.member.organization_id
 
       sales_invoice_with_items =
         Ash.Seed.seed!(SalesInvoice, %{
@@ -948,7 +948,7 @@ defmodule Firmowid.Ash.Invoicing.InvoicingTest do
 
     test "uses all common search parameters simultaneously" do
       user = admin_fixture()
-      organization_id = user.organization_id
+      organization_id = user.member.organization_id
       scope = scope_for(user)
       bank_account_id = bank_account_fixture!(user).id
 
@@ -1117,14 +1117,14 @@ defmodule Firmowid.Ash.Invoicing.InvoicingTest do
   describe "get_logo_url/2" do
     test "returns nil when organization has no avatar blob" do
       user = admin_fixture()
-      organization_id = user.organization_id
+      organization_id = user.member.organization_id
 
       assert Invoicing.get_logo_url(organization_id, scope: scope_for(user)) == nil
     end
 
     test "returns url when organization avatar blob is present" do
       user = admin_fixture()
-      organization_id = user.organization_id
+      organization_id = user.member.organization_id
       scope = scope_for(user)
 
       blob = seed_blob!(organization_id, "org-logo.png", "org-logo-checksum")

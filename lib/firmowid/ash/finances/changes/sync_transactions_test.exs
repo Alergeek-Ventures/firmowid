@@ -21,7 +21,7 @@ defmodule Firmowid.Ash.Finances.Changes.SyncTransactionsTest do
 
   setup do
     user = admin_fixture()
-    org_id = user.organization_id
+    org_id = user.member.organization_id
 
     bank_account_1 =
       Ash.Seed.seed!(

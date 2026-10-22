@@ -12,7 +12,7 @@ defmodule FirmowidWeb.Organization.Views.Index do
   @impl true
   def render(assigns) do
     ~H"""
-    <%= if @current_user.organization_id == nil do %>
+    <%= if is_nil(@current_user.member) do %>
       <div class="relative flex min-h-screen w-screen items-center justify-center">
         <img
           src="/images/figurine.png"
@@ -228,11 +228,10 @@ defmodule FirmowidWeb.Organization.Views.Index do
   @impl true
   def mount(_params, _session, socket) do
     user = socket.assigns.current_user
-    organization_id = user.organization_id
 
     socket = assign(socket, :no_padding, true)
 
-    if is_nil(organization_id) do
+    if is_nil(user.member) do
       organization_form =
         Organization
         |> AshPhoenix.Form.for_create(:create,

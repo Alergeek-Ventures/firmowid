@@ -44,7 +44,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Summary do
 
     # Subscribe to KSeF status updates if submission is in progress
     if SubmissionInfo.submitting?(submission_info) do
-      Ksef.subscribe_ksef_status(current_user.organization_id)
+      Ksef.subscribe_ksef_status(current_user.member.organization_id)
     end
 
     currency_rate = Invoicing.get_currency_rate(invoice)

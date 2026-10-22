@@ -71,7 +71,7 @@ defmodule FirmowidWeb.Auth.Controllers.AuthControllerTest do
          conn: conn
        } do
     admin = admin_fixture()
-    user = user_in_org_fixture(admin.organization_id)
+    user = user_in_org_fixture(admin.member.organization_id)
 
     connections =
       for _ <- 1..2 do
@@ -83,7 +83,8 @@ defmodule FirmowidWeb.Auth.Controllers.AuthControllerTest do
         {session, token, topic}
       end
 
-    archived = Core.archive_member!(user.member, actor: admin, tenant: admin.organization_id)
+    archived =
+      Core.archive_member!(user.member, actor: admin, tenant: admin.member.organization_id)
 
     for {session, token, topic} <- connections do
       refute TokenResource.token_revoked?(Token, token)
@@ -91,7 +92,7 @@ defmodule FirmowidWeb.Auth.Controllers.AuthControllerTest do
       assert session |> get("/czasosledz") |> redirected_to() == "/organizacja"
     end
 
-    Core.unarchive_member!(archived, actor: admin, tenant: admin.organization_id)
+    Core.unarchive_member!(archived, actor: admin, tenant: admin.member.organization_id)
 
     for {session, _token, _topic} <- connections do
       assert session |> get("/czasosledz") |> html_response(200)

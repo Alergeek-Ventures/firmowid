@@ -41,16 +41,16 @@ defmodule FirmowidWeb.BankSync.Views.CreateTest do
       {:ok, _requisition} =
         %{id: requisition_id}
         |> Requisition.changeset_to_persist(
-          tenant: user.organization_id,
+          tenant: user.member.organization_id,
           actor: user,
           authorize?: false
         )
-        |> Ash.create(tenant: user.organization_id, actor: user, authorize?: false)
+        |> Ash.create(tenant: user.member.organization_id, actor: user, authorize?: false)
 
       # Verify requisition exists with pending status
       assert {:ok, requisition} =
                Finances.get_requisition(requisition_id,
-                 tenant: user.organization_id,
+                 tenant: user.member.organization_id,
                  actor: user
                )
 
@@ -124,7 +124,7 @@ defmodule FirmowidWeb.BankSync.Views.CreateTest do
 
       assert {:ok, requisition} =
                Finances.get_requisition(requisition_id,
-                 tenant: user.organization_id,
+                 tenant: user.member.organization_id,
                  actor: user
                )
 

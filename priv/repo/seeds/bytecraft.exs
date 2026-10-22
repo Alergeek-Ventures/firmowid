@@ -140,13 +140,6 @@ defmodule Firmowid.Seeds.Bytecraft do
 
   defp seed_org_membership(bytecraft, users) do
     Map.new(users, fn {key, user} ->
-      user =
-        if user.organization_id == bytecraft.id do
-          user
-        else
-          Ash.Seed.update!(user, %{organization_id: bytecraft.id})
-        end
-
       member = Helpers.seed_member!(user.id, bytecraft.id, Map.fetch!(@roles, key), Map.fetch!(@profiles, key))
       {key, %{user | member: member}}
     end)

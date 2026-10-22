@@ -15,7 +15,7 @@ defmodule Firmowid.Ash.Core.User.AuthenticationTest do
 
   setup do
     admin = admin_fixture()
-    user = user_in_org_fixture(admin.organization_id)
+    user = user_in_org_fixture(admin.member.organization_id)
     user = Ash.Seed.update!(user, %{confirmed_at: DateTime.utc_now()})
     {:ok, password_strategy} = Info.strategy(User, :password)
 
@@ -27,20 +27,25 @@ defmodule Firmowid.Ash.Core.User.AuthenticationTest do
     user: user,
     password_strategy: strategy
   } do
-    {:ok, _member} = Core.archive_member(user.member, actor: admin, tenant: user.organization_id)
+    {:ok, _member} =
+      Core.archive_member(user.member, actor: admin, tenant: user.member.organization_id)
 
     params = %{email: to_string(user.email), password: valid_user_password()}
     assert {:ok, signed_in} = Strategy.action(strategy, :sign_in, params, [])
     assert signed_in.id == user.id
-    assert signed_in.organization_id == nil
+    assert Core.load_member(signed_in).member == nil
     assert is_binary(signed_in.__metadata__.token)
   end
 
   test "an admin still lists the archived member", %{admin: admin, user: user} do
-    {:ok, _member} = Core.archive_member(user.member, actor: admin, tenant: user.organization_id)
+    {:ok, _member} =
+      Core.archive_member(user.member, actor: admin, tenant: user.member.organization_id)
 
     assert [archived] =
-             Core.list_users!(%{status: :archived}, actor: admin, tenant: admin.organization_id)
+             Core.list_users!(%{status: :archived},
+               actor: admin,
+               tenant: admin.member.organization_id
+             )
 
     assert archived.id == user.id
   end

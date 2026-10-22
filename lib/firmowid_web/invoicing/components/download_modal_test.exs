@@ -13,7 +13,7 @@ defmodule FirmowidWeb.Invoicing.Components.DownloadModalTest do
   } do
     admin = admin_fixture()
     current_month = Date.beginning_of_month(Date.utc_today())
-    seed_cost_invoice!(admin.organization_id, current_month)
+    seed_cost_invoice!(admin.member.organization_id, current_month)
 
     {:ok, lv, html} = conn |> log_in_user(admin) |> live(~p"/fakturowanie")
 

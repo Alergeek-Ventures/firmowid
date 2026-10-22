@@ -13,7 +13,7 @@ defmodule Firmowid.Ash.Invoicing.Services.MonthDownloadEntriesTest do
 
   test "build/3 selects invoices from selected month using :any date field" do
     admin = admin_fixture()
-    org_id = admin.organization_id
+    org_id = admin.member.organization_id
     scope = %Scope{actor: admin, tenant: org_id}
 
     # Included by sale_date in March, despite issue_date in April
@@ -101,7 +101,7 @@ defmodule Firmowid.Ash.Invoicing.Services.MonthDownloadEntriesTest do
 
   test "build/3 respects file-type filters for cost invoices" do
     admin = admin_fixture()
-    org_id = admin.organization_id
+    org_id = admin.member.organization_id
     scope = %Scope{actor: admin, tenant: org_id}
 
     blob_pdf = seed_blob!(org_id, "type-filter.pdf", "service-type-filter-pdf")

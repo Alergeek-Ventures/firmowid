@@ -12,7 +12,7 @@ defmodule FirmowidWeb.Billing.Utilities.MonthContextTest do
   describe "load/4" do
     test "builds a live preview for the current month" do
       admin = admin_fixture()
-      organization = Core.get_organization!(admin.organization_id, authorize?: false)
+      organization = Core.get_organization!(admin.member.organization_id, authorize?: false)
       current_month = ~D[2026-04-01]
 
       context =
@@ -27,7 +27,7 @@ defmodule FirmowidWeb.Billing.Utilities.MonthContextTest do
 
     test "uses a persisted snapshot for historical months" do
       admin = admin_fixture()
-      organization = Core.get_organization!(admin.organization_id, authorize?: false)
+      organization = Core.get_organization!(admin.member.organization_id, authorize?: false)
       current_month = ~D[2026-04-01]
       snapshot_month = ~D[2026-03-01]
 

@@ -11,7 +11,7 @@ defmodule Firmowid.Ash.Timetracker.HoursRecordTest do
 
     scope = %Firmowid.Ash.Scope{
       actor: user,
-      tenant: user.organization_id
+      tenant: user.member.organization_id
     }
 
     %{user: user, scope: scope}
@@ -28,7 +28,7 @@ defmodule Firmowid.Ash.Timetracker.HoursRecordTest do
 
   describe "by_month/4" do
     test "returns record for a given user and month", %{user: user, scope: scope} do
-      blob = seed_blob!(user.organization_id)
+      blob = seed_blob!(user.member.organization_id)
 
       # Insert directly — the create action requires blob upload infrastructure
       Repo.insert!(
@@ -39,7 +39,7 @@ defmodule Firmowid.Ash.Timetracker.HoursRecordTest do
           month: 3,
           year: 2025,
           number_of_hours: 160,
-          organization_id: user.organization_id
+          organization_id: user.member.organization_id
         },
         skip_organization_id: true
       )
@@ -62,7 +62,7 @@ defmodule Firmowid.Ash.Timetracker.HoursRecordTest do
 
   describe "submitted check" do
     test "by_month returns the record when submitted", %{user: user, scope: scope} do
-      blob = seed_blob!(user.organization_id)
+      blob = seed_blob!(user.member.organization_id)
 
       Repo.insert!(
         %AshHoursRecord{
@@ -72,7 +72,7 @@ defmodule Firmowid.Ash.Timetracker.HoursRecordTest do
           month: 2,
           year: 2025,
           number_of_hours: 160,
-          organization_id: user.organization_id
+          organization_id: user.member.organization_id
         },
         skip_organization_id: true
       )

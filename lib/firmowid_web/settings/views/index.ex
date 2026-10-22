@@ -627,7 +627,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
     if is_nil(bank_account.institution_id) do
       {:noreply, push_navigate(socket, to: ~p"/ustawienia/bank/dodaj")}
     else
-      organization_id = socket.assigns.current_user.organization_id
+      organization_id = socket.assigns.ash_scope.tenant
       redirect_url = Endpoint.url() <> "/ustawienia/bank/dodaj"
 
       # Determine the correct transaction horizon for this institution (as in /dodaj)

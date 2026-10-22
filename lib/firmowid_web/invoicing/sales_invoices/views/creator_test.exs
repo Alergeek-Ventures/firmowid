@@ -119,7 +119,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.CreatorTest do
   test "items step gross price display uses unit price in net mode", %{conn: conn} do
     admin = admin_fixture()
     draft = items_step_draft!(admin)
-    scope = [tenant: admin.organization_id, actor: admin]
+    scope = [tenant: admin.member.organization_id, actor: admin]
 
     {:ok, draft} =
       WizardState.update_items(
@@ -334,9 +334,9 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.CreatorTest do
   test "counterparty step derives invoice defaults in wizard action", %{conn: conn} do
     admin = admin_fixture()
     conn = log_in_user(conn, admin)
-    scope = [tenant: admin.organization_id, actor: admin, authorize?: false]
+    scope = [tenant: admin.member.organization_id, actor: admin, authorize?: false]
 
-    {:ok, draft} = WizardState.create(%{organization_id: admin.organization_id}, scope)
+    {:ok, draft} = WizardState.create(%{organization_id: admin.member.organization_id}, scope)
 
     {:ok, updated_draft} =
       WizardState.update_counterparty(
@@ -516,7 +516,9 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.CreatorTest do
         ]
       })
 
-    {:ok, draft} = WizardState.create(%{organization_id: admin.organization_id}, scope: scope)
+    {:ok, draft} =
+      WizardState.create(%{organization_id: admin.member.organization_id}, scope: scope)
+
     conn = log_in_user(conn, admin)
 
     {:ok, view, _html} =
@@ -615,7 +617,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.CreatorTest do
       )
 
     should_send_emails = false
-    InvoicingFixtures.accept_ksef_submissions!(admin.organization_id)
+    InvoicingFixtures.accept_ksef_submissions!(admin.member.organization_id)
 
     {:ok, copied_invoice} =
       WizardState.issue(
@@ -646,7 +648,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.CreatorTest do
     assert copied_invoice.invoice_number != source_invoice.invoice_number
   end
 
-  defp scope_for(user), do: %Scope{actor: user, tenant: user.organization_id}
+  defp scope_for(user), do: %Scope{actor: user, tenant: user.member.organization_id}
 
   defp copied_draft!(admin) do
     scope = scope_for(admin)
@@ -658,7 +660,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.CreatorTest do
   end
 
   defp sales_invoice_fixture!(admin, overrides) do
-    admin.organization_id
+    admin.member.organization_id
     |> Firmowid.Ash.Core.get_organization!(scope: scope_for(admin))
     |> Ash.Seed.update!(%{address: "ul. Organizacyjna 1, Warszawa"})
 
@@ -709,12 +711,12 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.CreatorTest do
         buyer_full_name: "Legacy Buyer GmbH",
         buyer_address: "Legacy Strasse 1",
         buyer_country: "DE",
-        organization_id: admin.organization_id,
+        organization_id: admin.member.organization_id,
         ksef_invoice_kind: :vat
       })
 
     Ash.Seed.seed!(Firmowid.Ash.Invoicing.SalesInvoiceItem, %{
-      organization_id: admin.organization_id,
+      organization_id: admin.member.organization_id,
       sales_invoice_id: invoice.id,
       index: 0,
       name: "Legacy item",
@@ -728,9 +730,9 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.CreatorTest do
   end
 
   defp payment_step_draft!(admin) do
-    scope = [tenant: admin.organization_id, actor: admin]
+    scope = [tenant: admin.member.organization_id, actor: admin]
 
-    {:ok, draft} = WizardState.create(%{organization_id: admin.organization_id}, scope)
+    {:ok, draft} = WizardState.create(%{organization_id: admin.member.organization_id}, scope)
 
     {:ok, draft} =
       WizardState.update_items(
@@ -755,9 +757,9 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.CreatorTest do
   end
 
   defp items_step_draft!(admin) do
-    scope = [tenant: admin.organization_id, actor: admin]
+    scope = [tenant: admin.member.organization_id, actor: admin]
 
-    {:ok, draft} = WizardState.create(%{organization_id: admin.organization_id}, scope)
+    {:ok, draft} = WizardState.create(%{organization_id: admin.member.organization_id}, scope)
 
     {:ok, draft} =
       WizardState.update_counterparty(

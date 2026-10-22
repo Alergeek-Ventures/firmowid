@@ -35,7 +35,7 @@ defmodule FirmowidWeb.Auth.Views.ConfirmEmailTest do
     assert html =~ "Potwierdź założenie konta"
     assert html =~ "Zaloguj się"
 
-    assert is_nil(user.organization_id)
+    assert is_nil(Core.load_member(user).member)
     authenticated_conn = recycle(registration_conn)
 
     assert {:ok, confirm_lv, _html} =
@@ -57,7 +57,7 @@ defmodule FirmowidWeb.Auth.Views.ConfirmEmailTest do
   test "user without an organization confirms email without loading another tenant's avatar", %{
     conn: conn
   } do
-    organization_id = user_fixture().organization_id
+    organization_id = user_fixture().member.organization_id
 
     blob =
       Ash.Seed.seed!(Blob, %{
@@ -70,7 +70,7 @@ defmodule FirmowidWeb.Auth.Views.ConfirmEmailTest do
     drain_sent_emails()
     user = Core.register_with_password!(valid_user_attributes(), authorize?: false, actor: %{})
     token = extract_token_from_email!("/potwierdz-email/")
-    assert is_nil(user.organization_id)
+    assert is_nil(Core.load_member(user).member)
     authenticated_conn = log_in_user(conn, user)
 
     assert {:ok, view, _html} = live(authenticated_conn, ~p"/potwierdz-email/#{token}")
@@ -83,9 +83,9 @@ defmodule FirmowidWeb.Auth.Views.ConfirmEmailTest do
       |> submit_form(authenticated_conn)
 
     assert redirected_to(confirmed_conn) == ~p"/czasosledz"
-    confirmed_user = Core.get_user!(user.id, actor: user)
+    confirmed_user = Core.get_user!(user.id, actor: Core.load_member(user))
     assert confirmed_user.confirmed_at
-    assert is_nil(confirmed_user.organization_id)
+    assert is_nil(Core.load_member(confirmed_user).member)
   end
 
   test "user confirms an email change from account settings", %{conn: conn} do
@@ -141,8 +141,8 @@ defmodule FirmowidWeb.Auth.Views.ConfirmEmailTest do
 
       organization_id =
         case @avatar_tenant do
-          :own -> user.organization_id
-          :foreign -> user_fixture().organization_id
+          :own -> user.member.organization_id
+          :foreign -> user_fixture().member.organization_id
         end
 
       blob =

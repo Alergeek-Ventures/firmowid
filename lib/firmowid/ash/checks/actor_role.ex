@@ -3,8 +3,8 @@ defmodule Firmowid.Ash.Checks.ActorRole do
   Policy check that returns true when the actor is a `User` whose organization
   member has exactly the specified role.
 
-  A `User` actor in an organization must have its `member` loaded (see
-  `FirmowidWeb.Infrastructure.UserAuth`); a user without an organization has no role.
+  A `User` actor must have its active `member` loaded (see `Firmowid.Ash.Core.load_member/1`);
+  a user without one has no role.
 
   ## Options
 
@@ -36,7 +36,6 @@ defmodule Firmowid.Ash.Checks.ActorRole do
   def role(%{member: member} = user) when is_struct(user, User) and is_struct(member, Member), do: member.role
 
   def role(%{member: nil} = user) when is_struct(user, User), do: nil
-  def role(%{organization_id: nil} = user) when is_struct(user, User), do: nil
 
   def role(%{member: %Ash.NotLoaded{}} = user) when is_struct(user, User),
     do: raise(ArgumentError, "the actor's member is not loaded: user #{user.id}")

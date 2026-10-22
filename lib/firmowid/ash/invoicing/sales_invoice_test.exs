@@ -38,7 +38,7 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoiceTest do
 
     test "rejects issuing a draft with a number already used in the organization" do
       user = invoicing_admin_fixture()
-      InvoicingFixtures.connect_ksef!(user.organization_id)
+      InvoicingFixtures.connect_ksef!(user.member.organization_id)
       attrs = Map.put(base_invoice_attrs(), :sales_invoice_items, [base_item_attrs(%{})])
       issued = create_sales_invoice!(user, attrs)
       draft = create_sales_invoice!(user, %{attrs | invoice_number: nil})
@@ -166,7 +166,7 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoiceTest do
           Map.put(base_invoice_attrs(), :sales_invoice_items, [base_item_attrs(%{})])
         )
 
-      InvoicingFixtures.connect_ksef!(user.organization_id)
+      InvoicingFixtures.connect_ksef!(user.member.organization_id)
 
       assert {:ok, _correction} =
                Oban.Testing.with_testing_mode(:manual, fn ->
@@ -245,7 +245,7 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoiceTest do
       user = admin_fixture()
       token = "shared-#{System.unique_integer([:positive])}"
 
-      invoice = locked_sales_invoice_fixture(user.organization_id, token)
+      invoice = locked_sales_invoice_fixture(user.member.organization_id, token)
 
       anonymous_scope = %Scope{
         actor: %SystemActor{org_id: nil, role: :anonymous},
@@ -371,7 +371,7 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoiceTest do
   describe "toggle_skip_invoicing/1" do
     test "allows toggling skip_invoicing on locked invoices" do
       user = admin_fixture()
-      invoice = locked_sales_invoice_fixture(user.organization_id)
+      invoice = locked_sales_invoice_fixture(user.member.organization_id)
       scope = scope_for(user)
 
       assert invoice.skip_invoicing == false
@@ -567,7 +567,7 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoiceTest do
   describe "issuance" do
     test "issues a draft saved on an earlier day with today's issue date and queues KSeF" do
       user = invoicing_admin_fixture()
-      InvoicingFixtures.connect_ksef!(user.organization_id)
+      InvoicingFixtures.connect_ksef!(user.member.organization_id)
 
       draft =
         create_sales_invoice!(
@@ -609,7 +609,7 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoiceTest do
 
     test "issues each confirmation only once" do
       user = invoicing_admin_fixture()
-      InvoicingFixtures.connect_ksef!(user.organization_id)
+      InvoicingFixtures.connect_ksef!(user.member.organization_id)
       confirmation_id = Ash.UUIDv7.generate()
 
       attrs = %{
@@ -663,8 +663,8 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoiceTest do
   defp invoicing_admin_fixture do
     user = admin_fixture()
 
-    user.organization_id
-    |> Firmowid.Ash.Core.get_organization!(actor: user, tenant: user.organization_id)
+    user.member.organization_id
+    |> Firmowid.Ash.Core.get_organization!(actor: user, tenant: user.member.organization_id)
     |> Ash.Seed.update!(%{address: "ul. Testowa 1, 00-001 Warszawa"})
 
     user
@@ -705,7 +705,7 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoiceTest do
     |> Map.put(:sales_invoice_items, [base_item_attrs(%{})])
   end
 
-  defp scope_for(user), do: %Scope{actor: user, tenant: user.organization_id}
+  defp scope_for(user), do: %Scope{actor: user, tenant: user.member.organization_id}
 
   defp issued_invoice_xml(invoice, scope) do
     # The renderer generates a fresh timestamp on each call; compare the issued content.
@@ -787,6 +787,6 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoiceTest do
         overrides
       )
 
-    Ash.Seed.seed!(Counterparty, Map.put(attrs, :organization_id, user.organization_id))
+    Ash.Seed.seed!(Counterparty, Map.put(attrs, :organization_id, user.member.organization_id))
   end
 end

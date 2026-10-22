@@ -20,7 +20,7 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoiceEmailFlowTest do
     test "KSeF-confirmed invoice flow sends a basic email to a valid counterparty" do
       Oban.Testing.with_testing_mode(:manual, fn ->
         admin = admin_fixture()
-        processor_scope = processor_scope(admin.organization_id)
+        processor_scope = processor_scope(admin.member.organization_id)
         counterparty = valid_counterparty_fixture!(admin)
 
         invoice =
@@ -55,7 +55,7 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoiceEmailFlowTest do
     test "KSeF-confirmed invoice flow does not send an email when sending is disabled" do
       Oban.Testing.with_testing_mode(:manual, fn ->
         admin = admin_fixture()
-        processor_scope = processor_scope(admin.organization_id)
+        processor_scope = processor_scope(admin.member.organization_id)
         counterparty = valid_counterparty_fixture!(admin)
 
         drain_swoosh_email_messages()
@@ -82,7 +82,7 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoiceEmailFlowTest do
     test "email enabled initially and enabled on correction flow sends basic then correction emails" do
       Oban.Testing.with_testing_mode(:manual, fn ->
         admin = admin_fixture()
-        processor_scope = processor_scope(admin.organization_id)
+        processor_scope = processor_scope(admin.member.organization_id)
         counterparty = valid_counterparty_fixture!(admin)
 
         original =
@@ -128,7 +128,7 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoiceEmailFlowTest do
     test "email enabled initially but disabled on correction flow sends only initial basic email" do
       Oban.Testing.with_testing_mode(:manual, fn ->
         admin = admin_fixture()
-        processor_scope = processor_scope(admin.organization_id)
+        processor_scope = processor_scope(admin.member.organization_id)
         counterparty = valid_counterparty_fixture!(admin)
 
         original =
@@ -157,7 +157,7 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoiceEmailFlowTest do
     test "email disabled initially but enabled on correction flow sends only correction email" do
       Oban.Testing.with_testing_mode(:manual, fn ->
         admin = admin_fixture()
-        processor_scope = processor_scope(admin.organization_id)
+        processor_scope = processor_scope(admin.member.organization_id)
         counterparty = valid_counterparty_fixture!(admin)
 
         original =
@@ -197,7 +197,7 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoiceEmailFlowTest do
     test "email disabled initially and disabled on correction flow sends no emails" do
       Oban.Testing.with_testing_mode(:manual, fn ->
         admin = admin_fixture()
-        processor_scope = processor_scope(admin.organization_id)
+        processor_scope = processor_scope(admin.member.organization_id)
         counterparty = valid_counterparty_fixture!(admin)
 
         original =
@@ -225,7 +225,7 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoiceEmailFlowTest do
     end
   end
 
-  defp scope_for(user), do: %Scope{actor: user, tenant: user.organization_id}
+  defp scope_for(user), do: %Scope{actor: user, tenant: user.member.organization_id}
 
   defp processor_scope(organization_id) do
     %Scope{
@@ -255,7 +255,7 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoiceEmailFlowTest do
         attrs
       )
 
-    InvoicingFixtures.connect_ksef!(user.organization_id)
+    InvoicingFixtures.connect_ksef!(user.member.organization_id)
     invoice = Invoicing.correct_sales_invoice!(attrs, scope: scope_for(user))
     Ash.load!(invoice, [:sales_invoice_items], scope: scope_for(user))
   end

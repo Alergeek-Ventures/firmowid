@@ -26,12 +26,12 @@ defmodule FirmowidWeb.Invoicing.Transactions.Views.ShowTest do
     conn: conn
   } do
     admin = admin_fixture()
-    scope = Scope.new!(admin, admin.organization_id)
+    scope = Scope.new!(admin, admin.member.organization_id)
 
     project =
       Ash.Seed.seed!(Project, %{
         name: "Submitted salary hours",
-        organization_id: admin.organization_id
+        organization_id: admin.member.organization_id
       })
 
     seed_salary_months!(
@@ -81,7 +81,10 @@ defmodule FirmowidWeb.Invoicing.Transactions.Views.ShowTest do
     admin = admin_fixture()
 
     project =
-      Ash.Seed.seed!(Project, %{name: "Salary matching", organization_id: admin.organization_id})
+      Ash.Seed.seed!(Project, %{
+        name: "Salary matching",
+        organization_id: admin.member.organization_id
+      })
 
     month_hours =
       for offset <- -7..1 do
@@ -128,11 +131,14 @@ defmodule FirmowidWeb.Invoicing.Transactions.Views.ShowTest do
     admin = admin_fixture(%{name: "Łukasz Żółć"})
 
     project =
-      Ash.Seed.seed!(Project, %{name: "Salary names", organization_id: admin.organization_id})
+      Ash.Seed.seed!(Project, %{
+        name: "Salary names",
+        organization_id: admin.member.organization_id
+      })
 
     [partial, unrelated, unnamed] =
       for name <- ["Adam Żółć", "Adam Nowak", nil] do
-        employee = user_in_org_fixture(admin.organization_id, %{name: name})
+        employee = user_in_org_fixture(admin.member.organization_id, %{name: name})
 
         seed_salary_months!(employee, project, [{~D[2025-12-01], 10}])
         employee
@@ -254,7 +260,7 @@ defmodule FirmowidWeb.Invoicing.Transactions.Views.ShowTest do
   test "suggests tenant-owned cost invoices and confirms and undoes a match from the transaction",
        %{conn: conn} do
     admin = admin_fixture()
-    scope = Scope.new!(admin, admin.organization_id)
+    scope = Scope.new!(admin, admin.member.organization_id)
     transaction = transaction_fixture!(admin, %{})
     invoice = cost_invoice_fixture!(admin)
     skipped = cost_invoice_fixture!(admin, %{skip_invoicing: true})
@@ -289,7 +295,7 @@ defmodule FirmowidWeb.Invoicing.Transactions.Views.ShowTest do
     conn: conn
   } do
     admin = admin_fixture()
-    scope = Scope.new!(admin, admin.organization_id)
+    scope = Scope.new!(admin, admin.member.organization_id)
 
     transaction =
       transaction_fixture!(admin, %{
@@ -388,7 +394,7 @@ defmodule FirmowidWeb.Invoicing.Transactions.Views.ShowTest do
   defp seed_salary_months!(user, project, month_hours, submit_hours? \\ true) do
     Ash.Seed.seed!(UserSalary, %{
       member_id: user.member.id,
-      organization_id: user.organization_id,
+      organization_id: user.member.organization_id,
       hourly_rate: Decimal.new(100),
       starts_at: ~U[2025-01-01 00:00:00Z]
     })
@@ -398,7 +404,7 @@ defmodule FirmowidWeb.Invoicing.Transactions.Views.ShowTest do
 
       Ash.Seed.seed!(Session, %{
         member_id: user.member.id,
-        organization_id: user.organization_id,
+        organization_id: user.member.organization_id,
         project_id: project.id,
         title: "Salary matching hours",
         start_datetime: start,
@@ -414,14 +420,14 @@ defmodule FirmowidWeb.Invoicing.Transactions.Views.ShowTest do
 
     blob =
       Ash.Seed.seed!(Blob, %{
-        organization_id: user.organization_id,
+        organization_id: user.member.organization_id,
         blob_path: "salary-hours-#{unique}.pdf",
         blob_checksum: "salary-hours-#{unique}",
         original_filename: "hours.pdf"
       })
 
     Ash.Seed.seed!(HoursRecord, %{
-      organization_id: user.organization_id,
+      organization_id: user.member.organization_id,
       member_id: user.member.id,
       blob_id: blob.id,
       month: month.month,
@@ -447,7 +453,7 @@ defmodule FirmowidWeb.Invoicing.Transactions.Views.ShowTest do
       remittance_information_unstructured: "Payment January",
       bank_account_id: bank_account_fixture!(admin).id,
       skip_invoicing: false,
-      organization_id: admin.organization_id
+      organization_id: admin.member.organization_id
     }
 
     Ash.Seed.seed!(Transaction, Map.merge(defaults, attrs))
@@ -464,7 +470,7 @@ defmodule FirmowidWeb.Invoicing.Transactions.Views.ShowTest do
       due_date: ~D[2026-01-24],
       amount: Money.new!("PLN", Decimal.new("-100.00")),
       skip_invoicing: false,
-      organization_id: admin.organization_id
+      organization_id: admin.member.organization_id
     }
 
     Ash.Seed.seed!(CostInvoice, Map.merge(defaults, attrs))
@@ -483,7 +489,7 @@ defmodule FirmowidWeb.Invoicing.Transactions.Views.ShowTest do
             currency: "PLN",
             buyer_full_name: "Example customer",
             seller_account_number: "PL61109010140000071219812874",
-            organization_id: admin.organization_id
+            organization_id: admin.member.organization_id
           },
           attrs
         )
@@ -491,7 +497,7 @@ defmodule FirmowidWeb.Invoicing.Transactions.Views.ShowTest do
 
     Ash.Seed.seed!(SalesInvoiceItem, %{
       sales_invoice_id: invoice.id,
-      organization_id: admin.organization_id,
+      organization_id: admin.member.organization_id,
       index: 0,
       name: "Programming service",
       quantity: Decimal.new(1),
@@ -507,7 +513,7 @@ defmodule FirmowidWeb.Invoicing.Transactions.Views.ShowTest do
     Ash.Seed.seed!(CostInvoiceTransaction, %{
       cost_invoice_id: invoice.id,
       transaction_id: transaction.id,
-      organization_id: admin.organization_id
+      organization_id: admin.member.organization_id
     })
   end
 end

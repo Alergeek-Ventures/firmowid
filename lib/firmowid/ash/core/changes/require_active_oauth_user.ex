@@ -3,10 +3,9 @@ defmodule Firmowid.Ash.Core.Changes.RequireActiveOauthUser do
 
   use Ash.Resource.Change
 
+  alias Ash.Error.Query.NotFound
   alias Firmowid.Ash.Core
   alias Firmowid.Ash.Core.User
-
-  require Ash.Query
 
   @doc false
   @impl true
@@ -15,20 +14,29 @@ defmodule Firmowid.Ash.Core.Changes.RequireActiveOauthUser do
     Ash.Changeset.before_action(changeset, fn changeset ->
       # The lock stays held until the issuing action commits, so leaving the
       # organization cannot revoke grants before a concurrent code, consent, or
-      # refresh token is saved.
-      query =
-        User
-        |> Ash.Query.filter(not is_nil(organization_id))
-        |> Ash.Query.lock(:for_update)
+      # refresh token is saved. The membership is checked by a separate query
+      # once the lock is held: a statement that waited for the lock still reads
+      # the rows from before the archival committed.
+      query = Ash.Query.lock(User, :for_update)
 
-      case Core.get_user(Ash.Changeset.get_attribute(changeset, :user_id),
-             query: query,
-             actor: context.actor,
-             tenant: context.tenant,
-             context: %{private: %{ash_authentication?: true}}
-           ) do
-        {:ok, %User{}} -> changeset
-        {:error, error} -> Ash.Changeset.add_error(changeset, error)
+      with {:ok, %User{} = user} <-
+             Core.get_user(Ash.Changeset.get_attribute(changeset, :user_id),
+               query: query,
+               actor: context.actor,
+               tenant: context.tenant,
+               context: %{private: %{ash_authentication?: true}}
+             ),
+           %User{member: %{}} <- Core.load_member(user) do
+        changeset
+      else
+        %User{member: nil} = user ->
+          Ash.Changeset.add_error(
+            changeset,
+            NotFound.exception(resource: User, primary_key: user.id)
+          )
+
+        {:error, error} ->
+          Ash.Changeset.add_error(changeset, error)
       end
     end)
   end

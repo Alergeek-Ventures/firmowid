@@ -22,7 +22,7 @@ defmodule Firmowid.Ash.Analysis.Workers.MonthWorker do
          {:ok, month} <- Date.from_iso8601(args["month"]),
          {:ok, true} <-
            EntityTag.assign_month(%{month: month},
-             scope: %{scope | actor: Core.load_member(user, scope.tenant)}
+             scope: %{scope | actor: Core.load_member(user)}
            ) do
       :ok
     else

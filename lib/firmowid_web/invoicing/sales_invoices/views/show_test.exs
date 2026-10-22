@@ -159,7 +159,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.ShowTest do
     {:ok, _job} =
       %{
         "action" => "submit",
-        "organization_id" => admin.organization_id,
+        "organization_id" => admin.member.organization_id,
         "sales_invoice_id" => invoice.id
       }
       |> SubmissionWorker.new(scheduled_at: DateTime.shift(DateTime.utc_now(), hour: 1))
@@ -236,13 +236,13 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.ShowTest do
         invoice_note: "Corrected invoice note",
         internal_note: "Corrected internal note",
         corrected_invoice_id: original_invoice.id,
-        organization_id: admin.organization_id,
+        organization_id: admin.member.organization_id,
         is_reverse_charge: false,
         ksef_invoice_kind: :kor
       })
 
     Ash.Seed.seed!(SalesInvoiceItem, %{
-      organization_id: admin.organization_id,
+      organization_id: admin.member.organization_id,
       sales_invoice_id: correction.id,
       index: 0,
       name: "Corrected line",
@@ -306,7 +306,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.ShowTest do
 
     test "submits the cancellation correction and navigates to its summary", %{conn: conn} do
       admin = admin_fixture()
-      seed_ksef_submission_state!(admin.organization_id)
+      seed_ksef_submission_state!(admin.member.organization_id)
       invoice = sales_invoice_fixture!(admin)
 
       Ash.Seed.update!(invoice, %{
@@ -396,7 +396,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.ShowTest do
             }
           ]
         },
-        tenant: admin.organization_id,
+        tenant: admin.member.organization_id,
         actor: admin
       )
 
@@ -419,12 +419,12 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.ShowTest do
       value_date: invoice.issue_date,
       remittance_information_unstructured: "Payment January",
       bank_account_id: bank_account_fixture!(admin).id,
-      organization_id: admin.organization_id
+      organization_id: admin.member.organization_id
     })
   end
 
   defp scope_for(user) do
-    %Scope{actor: user, tenant: user.organization_id}
+    %Scope{actor: user, tenant: user.member.organization_id}
   end
 
   defp seed_ksef_submission_state!(organization_id) do

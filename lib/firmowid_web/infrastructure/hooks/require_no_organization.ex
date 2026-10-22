@@ -7,18 +7,21 @@ defmodule FirmowidWeb.Infrastructure.Hooks.RequireNoOrganization do
 
   use FirmowidWeb, :verified_routes
 
+  import Phoenix.Component
   import Phoenix.LiveView
 
+  alias Firmowid.Ash.Core
+
   def on_mount(:default, _params, _session, socket) do
-    case socket.assigns[:current_user] do
+    case socket.assigns[:current_user] && Core.load_member(socket.assigns.current_user) do
       nil ->
         {:halt,
          socket
          |> LiveToast.put_toast(:notice, "Musisz się zalogować.")
          |> redirect(to: ~p"/zaloguj")}
 
-      %{organization_id: nil} ->
-        {:cont, socket}
+      %{member: nil} = user ->
+        {:cont, assign(socket, :current_user, user)}
 
       _user ->
         {:halt, redirect(socket, to: ~p"/")}

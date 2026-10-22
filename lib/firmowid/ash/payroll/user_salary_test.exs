@@ -12,8 +12,8 @@ defmodule Firmowid.Ash.Payroll.UserSalaryTest do
 
   setup do
     admin = admin_fixture()
-    user = user_in_org_fixture(admin.organization_id)
-    org_id = admin.organization_id
+    user = user_in_org_fixture(admin.member.organization_id)
+    org_id = admin.member.organization_id
 
     scope = %Firmowid.Ash.Scope{
       actor: admin,

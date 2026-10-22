@@ -26,16 +26,16 @@ defmodule Firmowid.Ash.Core.Services.GoogleAvatarImporter do
   """
   @spec maybe_import(User.t(), map()) :: {:ok, User.t()}
   def maybe_import(%User{} = user, user_info) when is_map(user_info) do
+    user = Core.load_member(user)
+
     cond do
-      is_nil(user.organization_id) ->
+      is_nil(user.member) ->
         {:ok, user}
 
       not is_binary(picture_url(user_info)) ->
         {:ok, user}
 
       true ->
-        user = Core.load_member(user, user.organization_id)
-
         if is_nil(user.member.avatar_blob_id) do
           import_avatar(user, picture_url(user_info))
         else
@@ -47,7 +47,7 @@ defmodule Firmowid.Ash.Core.Services.GoogleAvatarImporter do
   def maybe_import(%User{} = user, _user_info), do: {:ok, user}
 
   defp import_avatar(%User{} = user, picture_url) do
-    scope = %Scope{actor: user, tenant: user.organization_id}
+    scope = Scope.new!(user, user.member.organization_id)
 
     with {:ok, response} <- fetch_avatar(picture_url),
          {:ok, content_type} <- image_content_type(response),

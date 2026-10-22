@@ -62,7 +62,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Show do
       logo_url = Invoicing.get_logo_url(sales_invoice.organization_id, scope: scope)
 
       # Subscribe to KSeF status updates for live feedback
-      Ksef.subscribe_ksef_status(current_user.organization_id)
+      Ksef.subscribe_ksef_status(current_user.member.organization_id)
 
       socket =
         socket

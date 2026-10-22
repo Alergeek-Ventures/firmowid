@@ -9,7 +9,7 @@ defmodule Firmowid.Ash.Ksef.Actions.ConnectionStatus do
   alias Firmowid.Ash.SystemActor
 
   @impl true
-  def run(_input, _opts, %{actor: %User{organization_id: tenant, member: %{role: role}}, tenant: tenant})
+  def run(_input, _opts, %{actor: %User{member: %{organization_id: tenant, role: role}}, tenant: tenant})
       when is_binary(tenant) do
     scope = %Scope{actor: %SystemActor{org_id: tenant, role: :ksef_session}, tenant: tenant}
 

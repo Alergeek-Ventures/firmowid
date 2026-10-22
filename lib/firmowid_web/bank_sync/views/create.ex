@@ -167,7 +167,7 @@ defmodule FirmowidWeb.BankSync.Views.Create do
         socket
       ) do
     user = socket.assigns.current_user
-    organization_id = user.organization_id
+    organization_id = user.member.organization_id
 
     # it comes as as string
     transaction_total_days = String.to_integer(transaction_total_days)

@@ -15,16 +15,16 @@ defmodule FirmowidWeb.Admin.Views.SettlementTest do
 
     Core.update_member_profile!(owner.member, %{phone: "+48 600 700 800"},
       actor: owner,
-      tenant: owner.organization_id
+      tenant: owner.member.organization_id
     )
 
     superuser = Ash.Seed.update!(admin_fixture(), %{system_role: :superuser})
-    superuser = Core.load_member(superuser, superuser.organization_id)
+    superuser = Core.load_member(superuser)
 
     {:ok, lv, html} =
       live(
         log_in_user(conn, superuser),
-        ~p"/admin/rozliczenia/#{owner.organization_id}?miesiac=2026-10-01"
+        ~p"/admin/rozliczenia/#{owner.member.organization_id}?miesiac=2026-10-01"
       )
 
     assert html =~ "+48 600 700 800"
@@ -32,6 +32,7 @@ defmodule FirmowidWeb.Admin.Views.SettlementTest do
     assert render_hook(lv, "save-current-plan", %{"plan" => %{"billing_plan" => "firma"}}) =~
              "+48 600 700 800"
 
-    assert Core.get_organization!(owner.organization_id, authorize?: false).billing_plan == :firma
+    assert Core.get_organization!(owner.member.organization_id, authorize?: false).billing_plan ==
+             :firma
   end
 end

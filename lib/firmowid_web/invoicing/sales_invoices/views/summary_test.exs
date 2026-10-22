@@ -47,7 +47,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.SummaryTest do
 
     test "updates summary after failed status broadcast", %{conn: conn} do
       admin = admin_fixture()
-      InvoicingFixtures.connect_ksef!(admin.organization_id)
+      InvoicingFixtures.connect_ksef!(admin.member.organization_id)
       invoice = sales_invoice_fixture!(admin)
       conn = log_in_user(conn, admin)
 
@@ -98,7 +98,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.SummaryTest do
   end
 
   defp scope_for(user) do
-    %Firmowid.Ash.Scope{actor: user, tenant: user.organization_id}
+    %Firmowid.Ash.Scope{actor: user, tenant: user.member.organization_id}
   end
 
   defp sales_invoice_fixture!(admin) do
@@ -133,7 +133,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.SummaryTest do
             }
           ]
         },
-        tenant: admin.organization_id,
+        tenant: admin.member.organization_id,
         actor: admin
       )
 

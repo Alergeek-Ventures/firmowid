@@ -93,7 +93,7 @@ defmodule Firmowid.Test.Support.SalesInvoiceEmailTestHelpers do
       address: "Counterpartystrasse 1, 10115 Berlin",
       country: "DE",
       email: "billing-#{System.unique_integer([:positive])}@example.com",
-      organization_id: user.organization_id
+      organization_id: user.member.organization_id
     }
 
     Ash.Seed.seed!(Counterparty, Map.merge(base_attrs, attrs))

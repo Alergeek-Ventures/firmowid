@@ -10,7 +10,7 @@ defmodule Firmowid.Ash.Timetracker.Validations.PendingHoursRecordChange do
   def validate(%{data: record}, _opts, context) do
     if record.submission_status == :submitted and not is_nil(record.change_requested_at) and
          is_nil(record.change_request_decision) and
-         record.organization_id == context.actor.organization_id do
+         record.organization_id == context.actor.member.organization_id do
       :ok
     else
       {:error, InvalidChanges.exception(message: "The request is not awaiting a decision.")}
@@ -22,7 +22,8 @@ defmodule Firmowid.Ash.Timetracker.Validations.PendingHoursRecordChange do
     {:atomic, [:submission_status, :change_requested_at, :change_request_decision],
      expr(
        submission_status != :submitted or is_nil(change_requested_at) or
-         not is_nil(change_request_decision) or organization_id != ^context.actor.organization_id
+         not is_nil(change_request_decision) or
+         organization_id != ^context.actor.member.organization_id
      ), expr(error(^InvalidChanges, %{message: "The request is not awaiting a decision."}))}
   end
 end

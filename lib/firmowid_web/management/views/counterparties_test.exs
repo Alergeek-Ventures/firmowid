@@ -160,7 +160,7 @@ defmodule FirmowidWeb.Management.Views.CounterpartiesTest do
   end
 
   defp current_scope(admin) do
-    %Scope{actor: admin, tenant: admin.organization_id}
+    %Scope{actor: admin, tenant: admin.member.organization_id}
   end
 
   defp get_counterparty_by_email!(admin, email) do

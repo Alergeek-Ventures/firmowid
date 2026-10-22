@@ -13,6 +13,7 @@ defmodule FirmowidWeb.Auth.Controllers.AuthController do
   alias AshAuthentication.Errors.AuthenticationFailed
   alias AshAuthentication.Strategy.RememberMe.Plug.Helpers
   alias Firmowid.Analytics
+  alias Firmowid.Ash.Core
   alias FirmowidWeb.Infrastructure.UserAuth
 
   require Logger
@@ -33,7 +34,7 @@ defmodule FirmowidWeb.Auth.Controllers.AuthController do
   def success(conn, activity, user, token) do
     if activity == {:password, :register}, do: Analytics.capture_account_created(user, :password)
 
-    user = Ash.load!(user, [:access_block, :organization], actor: user)
+    user = user |> Core.load_member() |> Ash.load!(:access_block, actor: user)
 
     case user.access_block do
       nil -> sign_in(conn, activity, user, token)
@@ -81,9 +82,11 @@ defmodule FirmowidWeb.Auth.Controllers.AuthController do
   end
 
   defp deny_sign_in(conn, user, :subscription_expired) do
+    organization = Core.get_organization!(user.member.organization_id, actor: user)
+
     conn
     |> renew_session()
-    |> redirect(to: ~p"/abonament-wygasl?#{[organizacja: user.organization.name]}")
+    |> redirect(to: ~p"/abonament-wygasl?#{[organizacja: organization.name]}")
   end
 
   @doc """

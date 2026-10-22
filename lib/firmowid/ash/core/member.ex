@@ -8,8 +8,11 @@ defmodule Firmowid.Ash.Core.Member do
   creates or joins the organization and removed together with the account (by
   the database) or the organization.
 
-  Archiving a member detaches the account from the organization: it keeps
-  signing in, but no longer reaches the organization until it is restored.
+  The account's non-archived member is its active one: it decides which
+  organization the account works in. An account has at most one: joining and
+  restoring check it (see `RequireNoActiveMember`). Archiving a member detaches the account
+  from the organization: it keeps signing in, but no longer reaches the
+  organization until it is restored.
 
   Scoped by `organization_id` (attribute multitenancy).
   """
@@ -23,6 +26,7 @@ defmodule Firmowid.Ash.Core.Member do
   alias Firmowid.Ash.Core
   alias Firmowid.Ash.Core.Calculations.AcceptedLeaveDaysForYear
   alias Firmowid.Ash.Core.Calculations.SharedBirthday
+  alias Firmowid.Ash.Core.Changes.RequireNoActiveMember
   alias Firmowid.Ash.Core.Member.Changes.DisconnectLiveSessions
   alias Firmowid.Ash.Core.UserRole
   alias Firmowid.Ash.Core.Validations.ValidateIban
@@ -83,6 +87,7 @@ defmodule Firmowid.Ash.Core.Member do
 
   code_interface do
     define :create, action: :create
+    define :get_active, action: :active, args: [:user_id], get?: true
     define :update_avatar, action: :update_avatar
     define :list, action: :read
     define :destroy, action: :destroy
@@ -98,6 +103,21 @@ defmodule Firmowid.Ash.Core.Member do
       upsert_identity :unique_user
       upsert_fields [:role, :archived_at]
       change set_attribute(:archived_at, nil)
+    end
+
+    read :active do
+      description "Read the account's active member, in whichever organization it is."
+      get? true
+      multitenancy :bypass
+
+      argument :user_id, :uuid, allow_nil?: false
+
+      filter expr(user_id == ^arg(:user_id) and is_nil(archived_at))
+
+      # Accounts that joined two organizations before joining checked for an active
+      # member keep the most recently updated one (the drop_user_organization
+      # migration touches the one that was the account's organization).
+      prepare build(sort: [updated_at: :desc, id: :desc], limit: 1)
     end
 
     update :update_role do
@@ -156,11 +176,16 @@ defmodule Firmowid.Ash.Core.Member do
     end
 
     update :archive do
-      description "Archive the member and detach their account from the organization."
+      description "Archive the member and cut their account's sessions."
       accept []
       require_atomic? false
 
       validate Firmowid.Ash.Core.Validations.NotSelfArchive
+
+      # Only an active member is archived: the stored row must still be active, so
+      # re-archiving an old membership cannot cut the sessions the account has in
+      # the organization it works in now.
+      change filter(expr(is_nil(archived_at)))
       change set_attribute(:archived_at, &Date.utc_today/0)
 
       change after_action(fn _changeset, member, context ->
@@ -176,20 +201,13 @@ defmodule Firmowid.Ash.Core.Member do
     end
 
     update :unarchive do
-      description "Restore an archived member and reattach their account to the organization."
+      description "Restore an archived member, making it their account's active member."
       accept []
       require_atomic? false
 
+      change filter(expr(not is_nil(archived_at)))
+      change {RequireNoActiveMember, user_id: :user_id}
       change set_attribute(:archived_at, nil)
-
-      change after_action(fn _changeset, member, context ->
-               opts = Ash.Context.to_opts(context)
-
-               with {:ok, user} <- Core.get_user(member.user_id, opts),
-                    {:ok, _user} <- Core.return_to_organization(user, opts) do
-                 {:ok, member}
-               end
-             end)
 
       change DisconnectLiveSessions
     end
@@ -200,11 +218,8 @@ defmodule Firmowid.Ash.Core.Member do
       authorize_if action(:create)
     end
 
-    bypass [{SystemActorRole, roles: [:actor_member_loader]}, action(:read)] do
-      authorize_if expr(
-                     not is_nil(^actor(:org_id)) and organization_id == ^actor(:org_id) and
-                       user_id == ^actor(:user_id)
-                   )
+    bypass [{SystemActorRole, roles: [:actor_member_loader]}, action(:active)] do
+      authorize_if expr(user_id == ^actor(:user_id))
     end
 
     bypass [{SystemActorRole, roles: [:organization_cleanup]}, action([:read, :destroy])] do

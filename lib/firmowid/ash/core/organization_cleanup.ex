@@ -9,12 +9,10 @@ defmodule Firmowid.Ash.Core.OrganizationCleanup do
 
   alias Firmowid.Ash.Analysis.TagDefinition
   alias Firmowid.Ash.Billing.Snapshot
-  alias Firmowid.Ash.Core
   alias Firmowid.Ash.Core.Member
   alias Firmowid.Ash.Core.OauthAuthorizationCode
   alias Firmowid.Ash.Core.OauthConsent
   alias Firmowid.Ash.Core.OauthRefreshToken
-  alias Firmowid.Ash.Core.User
   alias Firmowid.Ash.Invoicing.KsefInvoiceDigest
   alias Firmowid.Ash.Invoicing.KsefInvoiceDigestItem
   alias Firmowid.Ash.Invoicing.SalesInvoiceEmailDelivery
@@ -80,25 +78,11 @@ defmodule Firmowid.Ash.Core.OrganizationCleanup do
     end
   end
 
-  @doc "Remove all memberships and detach the accounts without deleting them."
+  @doc "Remove all memberships, which detaches the accounts without deleting them."
   @spec detach_users(Scope.t()) :: :ok | {:error, term()}
   def detach_users(scope) do
-    # Users are listed through their membership, so they are detached first.
-    with {:ok, users} <- Core.list_users(%{}, scope: scope),
-         :ok <- each(users, &detach_user(&1, scope)) do
-      destroy_records(Member.list(scope: scope), &Member.destroy/2, scope)
-    end
+    destroy_records(Member.list(scope: scope), &Member.destroy/2, scope)
   end
-
-  # Archived members' accounts have already left the organization.
-  defp detach_user(%User{organization_id: tenant} = user, %Scope{tenant: tenant} = scope) do
-    case User.detach_for_organization_cleanup(user, %{}, scope: scope) do
-      {:ok, _user} -> :ok
-      {:error, error} -> {:error, error}
-    end
-  end
-
-  defp detach_user(_user, _scope), do: :ok
 
   @doc "Remove only the actual deleted account's OAuth dependents, even without an organization."
   @spec remove_account_oauth_dependents(Scope.t()) :: :ok | {:error, term()}

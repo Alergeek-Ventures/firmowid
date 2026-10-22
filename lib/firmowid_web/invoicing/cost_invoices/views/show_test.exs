@@ -150,7 +150,7 @@ defmodule FirmowidWeb.Invoicing.CostInvoices.Views.ShowTest do
       due_date: ~D[2026-01-24],
       amount: Money.new!("PLN", Decimal.new("-100.00")),
       skip_invoicing: false,
-      organization_id: admin.organization_id
+      organization_id: admin.member.organization_id
     })
   end
 
@@ -167,11 +167,11 @@ defmodule FirmowidWeb.Invoicing.CostInvoices.Views.ShowTest do
       value_date: invoice.issue_date,
       remittance_information_unstructured: "Supplier payment January",
       bank_account_id: bank_account_fixture!(admin).id,
-      organization_id: admin.organization_id
+      organization_id: admin.member.organization_id
     })
   end
 
   defp scope_for(user) do
-    %Scope{actor: user, tenant: user.organization_id}
+    %Scope{actor: user, tenant: user.member.organization_id}
   end
 end

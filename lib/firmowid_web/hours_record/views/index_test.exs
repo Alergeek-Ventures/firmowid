@@ -16,12 +16,15 @@ defmodule FirmowidWeb.HoursRecord.Views.IndexTest do
   setup %{conn: conn} do
     admin = admin_fixture()
     # The name is required by hours-record flow guard in LiveView.
-    employee = user_in_org_fixture(admin.organization_id, %{role: :employee, name: "Sable Orin"})
+    employee =
+      user_in_org_fixture(admin.member.organization_id, %{role: :employee, name: "Sable Orin"})
 
     create_employment_contract(employee)
 
-    project = project_fixture(%{organization_id: admin.organization_id, name: "Hours Project"})
-    user_project_fixture(employee.id, project.id, admin.organization_id)
+    project =
+      project_fixture(%{organization_id: admin.member.organization_id, name: "Hours Project"})
+
+    user_project_fixture(employee.id, project.id, admin.member.organization_id)
 
     %{
       conn: log_in_user(conn, employee),
@@ -36,7 +39,7 @@ defmodule FirmowidWeb.HoursRecord.Views.IndexTest do
     project: project
   } do
     session_fixture(%{
-      organization_id: employee.organization_id,
+      organization_id: employee.member.organization_id,
       project_id: project.id,
       user_id: employee.id,
       title: "S22 Session",
@@ -82,7 +85,7 @@ defmodule FirmowidWeb.HoursRecord.Views.IndexTest do
 
     assert render(lv) =~ "WYSŁANO"
 
-    scope = %Scope{actor: employee, tenant: employee.organization_id}
+    scope = %Scope{actor: employee, tenant: employee.member.organization_id}
     {:ok, submitted_record} = AshHoursRecord.by_month(employee.member.id, 4, 2026, scope: scope)
     assert submitted_record.number_of_hours == 3
   end
@@ -93,7 +96,7 @@ defmodule FirmowidWeb.HoursRecord.Views.IndexTest do
         blob_path: "/test/contracts/#{System.unique_integer([:positive])}.pdf",
         blob_checksum: "contract-#{System.unique_integer([:positive])}",
         original_filename: "contract.pdf",
-        organization_id: employee.organization_id
+        organization_id: employee.member.organization_id
       })
 
     Payroll.create_employment_contract!(
@@ -105,8 +108,11 @@ defmodule FirmowidWeb.HoursRecord.Views.IndexTest do
         position: "Software Developer"
       },
       scope: %Scope{
-        actor: %SystemActor{org_id: employee.organization_id, role: :document_blob_processor},
-        tenant: employee.organization_id
+        actor: %SystemActor{
+          org_id: employee.member.organization_id,
+          role: :document_blob_processor
+        },
+        tenant: employee.member.organization_id
       }
     )
   end

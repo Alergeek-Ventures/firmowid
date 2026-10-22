@@ -13,7 +13,7 @@ defmodule Firmowid.Ash.Core.OrganizationCleanupTest do
 
   test "account cleanup lists and deletes only its user's OAuth records" do
     owner = user_fixture()
-    other = user_in_org_fixture(owner.organization_id)
+    other = user_in_org_fixture(owner.member.organization_id)
     own_records = seed_oauth_records(owner.id)
     other_records = seed_oauth_records(other.id)
     scope = cleanup_scope(owner.id)

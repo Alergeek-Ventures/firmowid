@@ -3,7 +3,7 @@ defmodule Firmowid.Ash.Core.Organization do
   Ash resource for the `organizations` table.
 
   No multitenancy — organizations are the identity layer.
-  Owns users, invites, and configuration like allowed sender emails
+  Owns members, invites, and configuration like allowed sender emails
   and inbound email nickname.
   """
   use Ash.Resource,
@@ -224,12 +224,12 @@ defmodule Firmowid.Ash.Core.Organization do
     end
 
     policy action_type(:read) do
-      authorize_if expr(id == ^actor(:organization_id))
+      authorize_if expr(id == ^actor([:member, :organization_id]))
     end
 
     # Organization onboarding is available only to an authenticated user who has
-    # not joined an organization yet. The owner is always the acting user.
-    policy [action_type(:create), actor_attribute_equals(:organization_id, nil)] do
+    # no active member yet. The owner is always the acting user.
+    policy [action_type(:create), actor_attribute_equals(:member, nil)] do
       authorize_if always()
     end
 
@@ -244,7 +244,7 @@ defmodule Firmowid.Ash.Core.Organization do
       ]),
       {ActorRole, role: :admin}
     ] do
-      authorize_if expr(id == ^actor(:organization_id))
+      authorize_if expr(id == ^actor([:member, :organization_id]))
     end
 
     policy action(:update_billing_plan) do
@@ -252,7 +252,7 @@ defmodule Firmowid.Ash.Core.Organization do
     end
 
     policy [action_type(:destroy), {ActorRole, role: :admin}] do
-      authorize_if expr(id == ^actor(:organization_id))
+      authorize_if expr(id == ^actor([:member, :organization_id]))
     end
   end
 
@@ -306,8 +306,6 @@ defmodule Firmowid.Ash.Core.Organization do
       define_attribute? false
       source_attribute :avatar_blob_id
     end
-
-    has_many :users, User
   end
 
   calculations do

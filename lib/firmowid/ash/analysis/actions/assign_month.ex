@@ -13,7 +13,7 @@ defmodule Firmowid.Ash.Analysis.Actions.AssignMonth do
     scope = %Scope{actor: context.actor, tenant: context.tenant}
     month = Date.beginning_of_month(input.arguments.month)
 
-    if scope.actor.organization_id == scope.tenant do
+    if scope.actor.member.organization_id == scope.tenant do
       projects =
         %{active_from: month, active_to: Date.end_of_month(month)}
         |> Timetracker.list_projects!(scope: scope)
