@@ -15,7 +15,7 @@ defmodule Firmowid.Ash.Finances.FinancesTest do
   setup do
     # Admin user required — transactions are not accessible to :employee role
     user = admin_fixture()
-    org_id = user.organization_id
+    org_id = user.member.organization_id
     seed_opts = [tenant: org_id]
     bank_account = bank_account_fixture!(user)
     bank_account_id = bank_account.id
@@ -171,7 +171,7 @@ defmodule Firmowid.Ash.Finances.FinancesTest do
 
     test "does not find transactions across organizations", ctx do
       user2 = user_fixture()
-      org2_id = user2.organization_id
+      org2_id = user2.member.organization_id
       other_org_bank_account_id = bank_account_fixture!(user2).id
 
       Ash.Seed.seed!(
@@ -310,5 +310,5 @@ defmodule Firmowid.Ash.Finances.FinancesTest do
     end
   end
 
-  defp scope_for(user), do: %Scope{actor: user, tenant: user.organization_id}
+  defp scope_for(user), do: %Scope{actor: user, tenant: user.member.organization_id}
 end

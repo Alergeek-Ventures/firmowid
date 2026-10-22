@@ -32,7 +32,7 @@ defmodule FirmowidWeb.Management.Views.Employee do
   @impl true
   def mount(_params, _session, socket) do
     user = socket.assigns.current_user
-    organization_id = user.organization_id
+    organization_id = user.member.organization_id
 
     if connected?(socket) do
       # Ash PubSub — blobs

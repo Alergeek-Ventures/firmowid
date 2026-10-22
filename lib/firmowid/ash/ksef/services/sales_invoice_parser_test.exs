@@ -8,7 +8,7 @@ defmodule Firmowid.Ash.Ksef.Services.SalesInvoiceParserTest do
   alias Firmowid.Ash.Ksef.Services.SalesInvoiceParser
 
   setup do
-    %{org_id: Firmowid.AccountsFixtures.user_fixture().organization_id}
+    %{org_id: Firmowid.AccountsFixtures.user_fixture().member.organization_id}
   end
 
   # Invoices rendered by Firmowid stand in for any FA(3) issuer: parsing must give back what was rendered.

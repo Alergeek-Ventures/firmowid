@@ -11,7 +11,7 @@ defmodule Firmowid.Ash.Core.OrganizationPoliciesTest do
   describe "update_billing_plan policy" do
     test "organization admin cannot update the billing plan" do
       admin = admin_fixture()
-      organization = Core.get_organization!(admin.organization_id, authorize?: false)
+      organization = Core.get_organization!(admin.member.organization_id, authorize?: false)
 
       assert {:error, %Forbidden{}} =
                Core.update_organization_billing_plan(
@@ -23,7 +23,7 @@ defmodule Firmowid.Ash.Core.OrganizationPoliciesTest do
 
     test "superuser can update the billing plan" do
       admin = admin_fixture()
-      organization = Core.get_organization!(admin.organization_id, authorize?: false)
+      organization = Core.get_organization!(admin.member.organization_id, authorize?: false)
 
       assert {:ok, updated_organization} =
                Core.update_organization_billing_plan(
@@ -40,7 +40,9 @@ defmodule Firmowid.Ash.Core.OrganizationPoliciesTest do
     test "an admin cannot read or update another organization" do
       admin = admin_fixture()
       other_admin = admin_fixture()
-      other_organization = Core.get_organization!(other_admin.organization_id, authorize?: false)
+
+      other_organization =
+        Core.get_organization!(other_admin.member.organization_id, authorize?: false)
 
       assert {:error, _} = Core.get_organization(other_organization.id, scope: admin_scope(admin))
 
@@ -49,9 +51,9 @@ defmodule Firmowid.Ash.Core.OrganizationPoliciesTest do
     end
   end
 
-  defp admin_scope(admin), do: %Scope{actor: admin, tenant: admin.organization_id}
+  defp admin_scope(admin), do: %Scope{actor: admin, tenant: admin.member.organization_id}
 
   defp superuser_scope(admin) do
-    %Scope{actor: %{admin | system_role: :superuser}, tenant: admin.organization_id}
+    %Scope{actor: %{admin | system_role: :superuser}, tenant: admin.member.organization_id}
   end
 end

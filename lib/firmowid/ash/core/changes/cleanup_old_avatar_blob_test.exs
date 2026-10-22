@@ -12,7 +12,7 @@ defmodule Firmowid.Ash.Core.Changes.CleanupOldAvatarBlobTest do
     test "non-admin replace avatar and destroys the previous unreferenced blob" do
       # Explicit non-admin: admins bypass Blob.destroy and would not catch this.
       user = user_fixture(%{role: :employee})
-      scope = %Scope{actor: user, tenant: user.organization_id}
+      scope = %Scope{actor: user, tenant: user.member.organization_id}
 
       first_blob = create_blob!(scope, "first avatar", "avatar-1.txt")
 

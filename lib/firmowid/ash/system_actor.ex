@@ -79,9 +79,9 @@ defmodule Firmowid.Ash.SystemActor do
     organization updates their avatar. Can read/write blobs and read related
     records as needed for blob cleanup.
 
-  - `:actor_member_loader` — loads the authenticated user's own member, which
-    policies read the user's role from. Can read only the member of `user_id`
-    in `org_id`.
+  - `:actor_member_loader` — loads the authenticated user's active member, which
+    decides the user's organization and which policies read the user's role from.
+    Can read only the active member of `user_id`, in any organization.
   """
 
   @type role ::

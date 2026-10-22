@@ -16,7 +16,7 @@ defmodule Firmowid.Ash.Ksef.Workers.CertificateEnrollmentWorkerTest do
 
   setup do
     admin = admin_fixture()
-    organization_id = admin.organization_id
+    organization_id = admin.member.organization_id
     original_config = Application.fetch_env!(:firmowid, :ksef)
 
     Application.put_env(

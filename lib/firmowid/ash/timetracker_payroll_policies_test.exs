@@ -23,16 +23,16 @@ defmodule Firmowid.Ash.Policies.TimetrackerPayrollPoliciesTest do
   # ── Helpers ──────────────────────────────────────────────────────────
 
   defp admin_scope(admin) do
-    %Scope{actor: admin, tenant: admin.organization_id}
+    %Scope{actor: admin, tenant: admin.member.organization_id}
   end
 
   defp employee_scope(employee) do
-    %Scope{actor: employee, tenant: employee.organization_id}
+    %Scope{actor: employee, tenant: employee.member.organization_id}
   end
 
   defp setup_org(_context) do
     admin = admin_fixture()
-    org_id = admin.organization_id
+    org_id = admin.member.organization_id
 
     employee_a = user_in_org_fixture(org_id, %{role: :employee})
     employee_b = user_in_org_fixture(org_id, %{role: :employee})
@@ -49,12 +49,12 @@ defmodule Firmowid.Ash.Policies.TimetrackerPayrollPoliciesTest do
         blob_path: "/test/path/hr_#{System.unique_integer([:positive])}.pdf",
         blob_checksum: "hr-policy-#{System.unique_integer([:positive])}",
         original_filename: "hours_record.pdf",
-        organization_id: user.organization_id
+        organization_id: user.member.organization_id
       })
 
     {:ok, id_bin} = Ecto.UUID.dump(id)
     {:ok, mid_bin} = Ecto.UUID.dump(user.member.id)
-    {:ok, oid_bin} = Ecto.UUID.dump(user.organization_id)
+    {:ok, oid_bin} = Ecto.UUID.dump(user.member.organization_id)
     {:ok, bid_bin} = Ecto.UUID.dump(blob.id)
 
     Repo.query!(

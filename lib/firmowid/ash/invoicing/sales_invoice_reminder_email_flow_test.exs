@@ -22,7 +22,7 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoiceReminderEmailFlowTest do
     test "overdue unpaid latest invoice flow sends the first reminder" do
       Oban.Testing.with_testing_mode(:manual, fn ->
         admin = admin_fixture()
-        processor_scope = processor_scope(admin.organization_id)
+        processor_scope = processor_scope(admin.member.organization_id)
         counterparty = valid_counterparty_fixture!(admin)
 
         invoice =
@@ -49,7 +49,7 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoiceReminderEmailFlowTest do
     test "invoice due today or later flow does not send a reminder" do
       Oban.Testing.with_testing_mode(:manual, fn ->
         admin = admin_fixture()
-        processor_scope = processor_scope(admin.organization_id)
+        processor_scope = processor_scope(admin.member.organization_id)
         counterparty = valid_counterparty_fixture!(admin)
 
         due_today =
@@ -77,7 +77,7 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoiceReminderEmailFlowTest do
     test "sent reminder cadence flow waits seven days before sending another reminder" do
       Oban.Testing.with_testing_mode(:manual, fn ->
         admin = admin_fixture()
-        processor_scope = processor_scope(admin.organization_id)
+        processor_scope = processor_scope(admin.member.organization_id)
         counterparty = valid_counterparty_fixture!(admin)
 
         recent_invoice =
@@ -110,7 +110,7 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoiceReminderEmailFlowTest do
     test "paid invoice flow does not send a reminder" do
       Oban.Testing.with_testing_mode(:manual, fn ->
         admin = admin_fixture()
-        processor_scope = processor_scope(admin.organization_id)
+        processor_scope = processor_scope(admin.member.organization_id)
         counterparty = valid_counterparty_fixture!(admin)
 
         invoice =
@@ -131,7 +131,7 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoiceReminderEmailFlowTest do
     test "invoice without KSeF number flow does not send a reminder" do
       Oban.Testing.with_testing_mode(:manual, fn ->
         admin = admin_fixture()
-        processor_scope = processor_scope(admin.organization_id)
+        processor_scope = processor_scope(admin.member.organization_id)
         counterparty = valid_counterparty_fixture!(admin)
 
         invoice =
@@ -150,7 +150,7 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoiceReminderEmailFlowTest do
     test "skipped invoice flow does not send a reminder" do
       Oban.Testing.with_testing_mode(:manual, fn ->
         admin = admin_fixture()
-        processor_scope = processor_scope(admin.organization_id)
+        processor_scope = processor_scope(admin.member.organization_id)
         counterparty = valid_counterparty_fixture!(admin)
 
         invoice =
@@ -170,7 +170,7 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoiceReminderEmailFlowTest do
     test "correction chain flow sends reminder only for latest invoice" do
       Oban.Testing.with_testing_mode(:manual, fn ->
         admin = admin_fixture()
-        processor_scope = processor_scope(admin.organization_id)
+        processor_scope = processor_scope(admin.member.organization_id)
         counterparty = valid_counterparty_fixture!(admin)
 
         original =
@@ -201,7 +201,7 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoiceReminderEmailFlowTest do
     test "zero-value correction flow does not send a reminder" do
       Oban.Testing.with_testing_mode(:manual, fn ->
         admin = admin_fixture()
-        processor_scope = processor_scope(admin.organization_id)
+        processor_scope = processor_scope(admin.member.organization_id)
         counterparty = valid_counterparty_fixture!(admin)
 
         original =
@@ -231,7 +231,7 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoiceReminderEmailFlowTest do
     test "correction flow resets reminder cadence from the original invoice" do
       Oban.Testing.with_testing_mode(:manual, fn ->
         admin = admin_fixture()
-        processor_scope = processor_scope(admin.organization_id)
+        processor_scope = processor_scope(admin.member.organization_id)
         counterparty = valid_counterparty_fixture!(admin)
 
         original =
@@ -264,7 +264,7 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoiceReminderEmailFlowTest do
     test "latest failed delivery flow blocks reminder email" do
       Oban.Testing.with_testing_mode(:manual, fn ->
         admin = admin_fixture()
-        processor_scope = processor_scope(admin.organization_id)
+        processor_scope = processor_scope(admin.member.organization_id)
         counterparty = valid_counterparty_fixture!(admin)
 
         invoice =
@@ -289,7 +289,7 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoiceReminderEmailFlowTest do
     end
   end
 
-  defp scope_for(user), do: %Scope{actor: user, tenant: user.organization_id}
+  defp scope_for(user), do: %Scope{actor: user, tenant: user.member.organization_id}
 
   defp processor_scope(organization_id) do
     %Scope{
@@ -324,7 +324,7 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoiceReminderEmailFlowTest do
         attrs
       )
 
-    InvoicingFixtures.connect_ksef!(user.organization_id)
+    InvoicingFixtures.connect_ksef!(user.member.organization_id)
     Invoicing.correct_sales_invoice!(attrs, scope: scope_for(user))
   end
 
@@ -361,7 +361,7 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoiceReminderEmailFlowTest do
   defp paid_transaction_fixture!(user, invoice) do
     bank_account =
       Ash.Seed.seed!(BankAccount, %{
-        organization_id: user.organization_id,
+        organization_id: user.member.organization_id,
         iban: "PL#{[:positive] |> System.unique_integer() |> Integer.to_string() |> String.pad_leading(26, "0")}",
         institution_name: "Manual",
         owner_name: "Test Owner",
@@ -372,7 +372,7 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoiceReminderEmailFlowTest do
 
     transaction =
       Ash.Seed.seed!(Transaction, %{
-        organization_id: user.organization_id,
+        organization_id: user.member.organization_id,
         bank_account_id: bank_account.id,
         transaction_id: "tx-#{System.unique_integer([:positive])}",
         internal_transaction_id: "internal-tx-#{System.unique_integer([:positive])}",
@@ -388,7 +388,7 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoiceReminderEmailFlowTest do
       })
 
     Ash.Seed.seed!(SalesInvoiceTransaction, %{
-      organization_id: user.organization_id,
+      organization_id: user.member.organization_id,
       sales_invoice_id: invoice.id,
       transaction_id: transaction.id
     })

@@ -60,10 +60,6 @@ defmodule Firmowid.Seeds.Voidstack do
   end
 
   defp seed_org_membership(voidstack, dragan) do
-    if is_nil(dragan.organization_id) or dragan.organization_id != voidstack.id do
-      Ash.Seed.update!(dragan, %{organization_id: voidstack.id})
-    end
-
     Helpers.seed_member!(dragan.id, voidstack.id, :admin, %{name: "Dragan Krypt", phone: "+421 902 555 666"})
   end
 

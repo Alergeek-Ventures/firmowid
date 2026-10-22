@@ -10,6 +10,7 @@ defmodule FirmowidMcp.Utilities.Authenticate do
   import Plug.Conn
 
   alias Firmowid.Ash.Core
+  alias Firmowid.Ash.Core.User
 
   @impl Plug
   def init(opts), do: opts
@@ -17,13 +18,16 @@ defmodule FirmowidMcp.Utilities.Authenticate do
   @impl Plug
   def call(conn, _opts) do
     case get_actor(conn) do
-      %{organization_id: org_id} = actor when not is_nil(org_id) ->
-        conn
-        |> set_actor(Core.load_member(actor, org_id))
-        |> set_tenant(org_id)
+      %User{} = actor ->
+        case Core.load_member(actor) do
+          %{member: nil} ->
+            unauthorized(conn, "Organization required")
 
-      %{organization_id: nil} ->
-        unauthorized(conn, "Organization required")
+          %{member: member} = actor ->
+            conn
+            |> set_actor(actor)
+            |> set_tenant(member.organization_id)
+        end
 
       _ ->
         unauthorized(conn, "Authentication required")

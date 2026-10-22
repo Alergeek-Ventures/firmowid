@@ -20,11 +20,13 @@ defmodule Firmowid.Ash.Scope do
   @doc """
   Builds a scope only when its tenant is owned by the actor.
 
-  Human actors must use their `organization_id`; system actors are bound to
-  their `org_id`. This constructor is the required boundary for request code.
+  Human actors must use the organization of their loaded, non-archived member;
+  system actors are bound to their `org_id`. This constructor is the required
+  boundary for request code.
   """
   @spec new(map(), binary() | nil) :: {:ok, t()} | {:error, :actor_tenant_mismatch}
-  def new(%{organization_id: tenant} = actor, tenant), do: {:ok, %__MODULE__{actor: actor, tenant: tenant}}
+  def new(%{member: %{organization_id: tenant, archived_at: nil}} = actor, tenant) when is_binary(tenant),
+    do: {:ok, %__MODULE__{actor: actor, tenant: tenant}}
 
   def new(%{org_id: tenant} = actor, tenant), do: {:ok, %__MODULE__{actor: actor, tenant: tenant}}
   def new(_actor, _tenant), do: {:error, :actor_tenant_mismatch}

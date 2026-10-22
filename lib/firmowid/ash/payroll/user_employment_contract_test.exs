@@ -13,8 +13,8 @@ defmodule Firmowid.Ash.Payroll.UserEmploymentContractTest do
 
   setup do
     admin = admin_fixture()
-    employee = user_in_org_fixture(admin.organization_id)
-    org_id = admin.organization_id
+    employee = user_in_org_fixture(admin.member.organization_id)
+    org_id = admin.member.organization_id
 
     %{
       admin: admin,
@@ -233,7 +233,7 @@ defmodule Firmowid.Ash.Payroll.UserEmploymentContractTest do
   end
 
   defp scope(actor) do
-    %Scope{actor: actor, tenant: actor.organization_id}
+    %Scope{actor: actor, tenant: actor.member.organization_id}
   end
 
   defp processor_scope(org_id) do
@@ -244,7 +244,7 @@ defmodule Firmowid.Ash.Payroll.UserEmploymentContractTest do
   end
 
   defp contract_fixture!(employee, processor_scope, attrs) do
-    blob = blob_fixture!(employee.organization_id)
+    blob = blob_fixture!(employee.member.organization_id)
 
     defaults = %{
       member_id: employee.member.id,

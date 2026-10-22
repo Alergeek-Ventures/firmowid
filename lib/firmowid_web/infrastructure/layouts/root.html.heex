@@ -74,7 +74,10 @@
         end
       }
       data-current-organization-id={
-        if assigns[:current_user], do: assigns.current_user.organization_id || "", else: ""
+        case assigns[:current_user] do
+          %{member: %{organization_id: organization_id}} -> organization_id
+          _ -> ""
+        end
       }
       data-current-organization-plan={
         case assigns[:current_org] do

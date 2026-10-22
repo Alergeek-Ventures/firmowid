@@ -21,7 +21,7 @@ defmodule FirmowidWeb.Management.Views.EmployeesTest do
 
     invite =
       Core.create_invite!(%{issued_by_id: admin.id},
-        tenant: admin.organization_id,
+        tenant: admin.member.organization_id,
         actor: admin
       )
 
@@ -33,10 +33,10 @@ defmodule FirmowidWeb.Management.Views.EmployeesTest do
     invited_user =
       create_unassigned_employee!(email)
 
-    invite = Core.get_invite!(invite.id, tenant: admin.organization_id, actor: admin)
+    invite = Core.get_invite!(invite.id, tenant: admin.member.organization_id, actor: admin)
 
     Core.consume_invite!(invite, %{name: "Nowy Pracownik"},
-      tenant: admin.organization_id,
+      tenant: admin.member.organization_id,
       actor: invited_user
     )
 
@@ -49,17 +49,17 @@ defmodule FirmowidWeb.Management.Views.EmployeesTest do
 
     invite =
       Core.create_invite!(%{issued_by_id: admin.id},
-        tenant: admin.organization_id,
+        tenant: admin.member.organization_id,
         actor: admin
       )
 
     invited_user =
       create_unassigned_employee!(email)
 
-    invite = Core.get_invite!(invite.id, tenant: admin.organization_id, actor: admin)
+    invite = Core.get_invite!(invite.id, tenant: admin.member.organization_id, actor: admin)
 
     Core.consume_invite!(invite, %{name: "Nowy Pracownik"},
-      tenant: admin.organization_id,
+      tenant: admin.member.organization_id,
       actor: invited_user
     )
 
@@ -93,7 +93,7 @@ defmodule FirmowidWeb.Management.Views.EmployeesTest do
 
   test "archived employee is hidden from active list and visible in archive", %{conn: conn} do
     admin = admin_fixture()
-    employee = user_in_org_fixture(admin.organization_id, %{role: :employee})
+    employee = user_in_org_fixture(admin.member.organization_id, %{role: :employee})
 
     Core.archive_member!(employee.member, scope: current_scope(admin))
 
@@ -108,12 +108,12 @@ defmodule FirmowidWeb.Management.Views.EmployeesTest do
 
   test "an admin sees employees' names and avatars from their members", %{conn: conn} do
     admin = admin_fixture()
-    employee = user_in_org_fixture(admin.organization_id, %{name: "Jan Kowalski"})
+    employee = user_in_org_fixture(admin.member.organization_id, %{name: "Jan Kowalski"})
 
     blob =
       Ash.Seed.seed!(Blob, %{
-        organization_id: admin.organization_id,
-        blob_path: "#{admin.organization_id}/employee-avatar.png",
+        organization_id: admin.member.organization_id,
+        blob_path: "#{admin.member.organization_id}/employee-avatar.png",
         blob_checksum: "employee-avatar",
         original_filename: "employee-avatar.png"
       })
@@ -141,7 +141,7 @@ defmodule FirmowidWeb.Management.Views.EmployeesTest do
 
   test "admin can archive another admin", %{conn: conn} do
     admin = admin_fixture()
-    second_admin = user_in_org_fixture(admin.organization_id, %{role: :admin})
+    second_admin = user_in_org_fixture(admin.member.organization_id, %{role: :admin})
 
     conn = log_in_user(conn, admin)
     {:ok, lv, _html} = live(conn, ~p"/zarzadzanie/pracownicy/#{second_admin.id}")
@@ -156,7 +156,7 @@ defmodule FirmowidWeb.Management.Views.EmployeesTest do
 
   test "an admin's bank account edit lands on the employee's member", %{conn: conn} do
     admin = admin_fixture()
-    employee = user_in_org_fixture(admin.organization_id, %{role: :employee})
+    employee = user_in_org_fixture(admin.member.organization_id, %{role: :employee})
 
     {:ok, lv, _html} = live(log_in_user(conn, admin), ~p"/zarzadzanie/pracownicy/#{employee.id}")
 
@@ -169,38 +169,40 @@ defmodule FirmowidWeb.Management.Views.EmployeesTest do
     })
     |> render_submit()
 
-    assert Core.load_member(employee, admin.organization_id).member.bank_account_number ==
+    assert Core.load_member(employee).member.bank_account_number ==
              "PL23 1140 2004 0000 3002 0135 5362"
 
-    assert Core.load_member(admin, admin.organization_id).member.bank_account_number == nil
+    assert Core.load_member(admin).member.bank_account_number == nil
   end
 
   test "employee detail page shows payroll and project summary for selected month", %{conn: conn} do
     admin = admin_fixture()
 
     employee =
-      user_in_org_fixture(admin.organization_id, %{role: :employee, name: "Jan Kowalski"})
+      user_in_org_fixture(admin.member.organization_id, %{role: :employee, name: "Jan Kowalski"})
 
     Core.update_member_profile!(
       employee.member,
       %{phone: "+48 600 700 800", bank_account_number: "PL23 1140 2004 0000 3002 0135 5362"},
       actor: employee,
-      tenant: admin.organization_id
+      tenant: admin.member.organization_id
     )
 
-    project = project_fixture(%{organization_id: admin.organization_id, name: "Payroll Project"})
-    user_project_fixture(employee.id, project.id, admin.organization_id)
+    project =
+      project_fixture(%{organization_id: admin.member.organization_id, name: "Payroll Project"})
+
+    user_project_fixture(employee.id, project.id, admin.member.organization_id)
 
     Delegations.create_delegation!(delegation_attrs(), scope: current_scope(employee))
 
     user_salary_fixture(%{
-      organization_id: admin.organization_id,
+      organization_id: admin.member.organization_id,
       user_id: employee.id,
       hourly_rate: Decimal.new("100.00")
     })
 
     session_fixture(%{
-      organization_id: admin.organization_id,
+      organization_id: admin.member.organization_id,
       project_id: project.id,
       user_id: employee.id,
       title: "April Session",
@@ -208,7 +210,7 @@ defmodule FirmowidWeb.Management.Views.EmployeesTest do
       end_datetime: ~U[2026-04-03 12:00:00Z]
     })
 
-    seed_hours_record!(employee.member.id, admin.organization_id, 4, 2026, 3)
+    seed_hours_record!(employee.member.id, admin.member.organization_id, 4, 2026, 3)
 
     conn = log_in_user(conn, admin)
 
@@ -229,12 +231,12 @@ defmodule FirmowidWeb.Management.Views.EmployeesTest do
   test "management delegations are grouped by status and pending entries link to the command page",
        %{conn: conn} do
     admin = admin_fixture()
-    employee = user_in_org_fixture(admin.organization_id, %{role: :employee})
+    employee = user_in_org_fixture(admin.member.organization_id, %{role: :employee})
 
     pending_delegation =
       Ash.Seed.seed!(Delegation, %{
         id: Ash.UUIDv7.generate(),
-        organization_id: admin.organization_id,
+        organization_id: admin.member.organization_id,
         member_id: employee.member.id,
         title: "Delegacja wymagająca podpisu",
         billing_month: ~D[2026-08-01],
@@ -250,7 +252,7 @@ defmodule FirmowidWeb.Management.Views.EmployeesTest do
 
     Ash.Seed.seed!(Delegation, %{
       id: Ash.UUIDv7.generate(),
-      organization_id: admin.organization_id,
+      organization_id: admin.member.organization_id,
       member_id: employee.member.id,
       title: "Delegacja w trakcie",
       billing_month: ~D[2026-08-01],
@@ -266,7 +268,7 @@ defmodule FirmowidWeb.Management.Views.EmployeesTest do
 
     Ash.Seed.seed!(Delegation, %{
       id: Ash.UUIDv7.generate(),
-      organization_id: admin.organization_id,
+      organization_id: admin.member.organization_id,
       member_id: employee.member.id,
       title: "Zakończony wyjazd służbowy",
       billing_month: ~D[2026-08-01],
@@ -300,12 +302,12 @@ defmodule FirmowidWeb.Management.Views.EmployeesTest do
     admin = admin_fixture()
 
     employee =
-      user_in_org_fixture(admin.organization_id, %{role: :employee, name: "Jan Kowalski"})
+      user_in_org_fixture(admin.member.organization_id, %{role: :employee, name: "Jan Kowalski"})
 
     delegation =
       Ash.Seed.seed!(Delegation, %{
         id: Ash.UUIDv7.generate(),
-        organization_id: admin.organization_id,
+        organization_id: admin.member.organization_id,
         member_id: employee.member.id,
         title: "Wyjazd do klienta",
         billing_month: ~D[2026-08-01],
@@ -399,7 +401,9 @@ defmodule FirmowidWeb.Management.Views.EmployeesTest do
 
   test "admin can restore archived employee from employee detail page", %{conn: conn} do
     admin = admin_fixture()
-    employee = user_in_org_fixture(admin.organization_id, %{role: :employee, name: "Restore Me"})
+
+    employee =
+      user_in_org_fixture(admin.member.organization_id, %{role: :employee, name: "Restore Me"})
 
     Core.archive_member!(employee.member, scope: current_scope(admin))
 
@@ -424,11 +428,11 @@ defmodule FirmowidWeb.Management.Views.EmployeesTest do
   test "restoring an employee who joined another organization explains why and keeps them archived",
        %{conn: conn} do
     admin = admin_fixture()
-    employee = user_in_org_fixture(admin.organization_id, %{name: "Moved On"})
+    employee = user_in_org_fixture(admin.member.organization_id, %{name: "Moved On"})
     Core.archive_member!(employee.member, scope: current_scope(admin))
 
     employee
-    |> Map.put(:organization_id, nil)
+    |> Core.load_member()
     |> then(
       &Core.create_organization!(%{nip: unique_nip(), name: "Nowa firma", owner_name: "Moved On"},
         actor: &1
@@ -449,12 +453,12 @@ defmodule FirmowidWeb.Management.Views.EmployeesTest do
 
   test "an archived employee rejoins with a new invite and gets its role", %{conn: conn} do
     admin = admin_fixture()
-    employee = user_in_org_fixture(admin.organization_id)
+    employee = user_in_org_fixture(admin.member.organization_id)
     Core.archive_member!(employee.member, scope: current_scope(admin))
 
     invite =
       Core.create_invite!(%{issued_by_id: admin.id, role: :invoicing},
-        tenant: admin.organization_id,
+        tenant: admin.member.organization_id,
         actor: admin
       )
 
@@ -464,7 +468,7 @@ defmodule FirmowidWeb.Management.Views.EmployeesTest do
     |> form("#join_form", %{"name" => "Ada Lovelace", "code" => invite.invite_code})
     |> render_submit()
 
-    member = Core.load_member(employee, admin.organization_id).member
+    member = Core.load_member(employee).member
     assert member.role == :invoicing
     assert is_nil(member.archived_at)
 
@@ -473,7 +477,7 @@ defmodule FirmowidWeb.Management.Views.EmployeesTest do
   end
 
   defp current_scope(admin) do
-    %Scope{actor: admin, tenant: admin.organization_id}
+    %Scope{actor: admin, tenant: admin.member.organization_id}
   end
 
   defp delegation_attrs do
@@ -526,9 +530,8 @@ defmodule FirmowidWeb.Management.Views.EmployeesTest do
   end
 
   defp create_unassigned_employee!(email) do
-    Core.register_with_password!(%{email: email, password: valid_user_password()},
-      authorize?: false,
-      actor: %{}
-    )
+    %{email: email, password: valid_user_password()}
+    |> Core.register_with_password!(authorize?: false, actor: %{})
+    |> Core.load_member()
   end
 end

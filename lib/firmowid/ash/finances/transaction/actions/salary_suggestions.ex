@@ -63,7 +63,7 @@ defmodule Firmowid.Ash.Finances.Transaction.Actions.SalarySuggestions do
       %{active_at: Date.end_of_month(month), user_id: arguments[:salary_user_id]}
       |> Payroll.list_salaries!(
         load: [member: :user, monthly_amount: [month: month]],
-        query: [filter: [member: [user: [organization_id: scope.tenant]]]],
+        query: [filter: [member: [archived_at: [is_nil: true]]]],
         scope: scope
       )
       |> Enum.filter(fn salary ->

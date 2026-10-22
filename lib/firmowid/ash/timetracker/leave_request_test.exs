@@ -9,10 +9,10 @@ defmodule Firmowid.Ash.Timetracker.LeaveRequestTest do
 
   setup do
     user = user_fixture()
-    admin = admin_fixture(%{organization_id: user.organization_id})
+    admin = admin_fixture(%{organization_id: user.member.organization_id})
 
-    employee_scope = %Scope{actor: user, tenant: user.organization_id}
-    admin_scope = %Scope{actor: admin, tenant: user.organization_id}
+    employee_scope = %Scope{actor: user, tenant: user.member.organization_id}
+    admin_scope = %Scope{actor: admin, tenant: user.member.organization_id}
 
     %{
       user: user,
@@ -144,7 +144,7 @@ defmodule Firmowid.Ash.Timetracker.LeaveRequestTest do
         Ash.Seed.seed!(LeaveRequest, %{
           id: Ash.UUIDv7.generate(),
           member_id: user.member.id,
-          organization_id: user.organization_id,
+          organization_id: user.member.organization_id,
           starts_on: days_from_today(20),
           ends_on: days_from_today(25),
           category: :leave,
@@ -230,7 +230,7 @@ defmodule Firmowid.Ash.Timetracker.LeaveRequestTest do
       Ash.Seed.seed!(LeaveRequest, %{
         id: Ash.UUIDv7.generate(),
         member_id: user.member.id,
-        organization_id: user.organization_id,
+        organization_id: user.member.organization_id,
         starts_on: prev_year_end,
         ends_on: Date.add(year_start, 2),
         category: :absence,
@@ -262,8 +262,8 @@ defmodule Firmowid.Ash.Timetracker.LeaveRequestTest do
   describe "list_current_user/1" do
     test "only returns the acting user's requests", %{user: user, employee_scope: employee_scope} do
       own_request = create_request!(employee_scope, %{})
-      other_user = user_in_org_fixture(user.organization_id)
-      other_scope = %Scope{actor: other_user, tenant: user.organization_id}
+      other_user = user_in_org_fixture(user.member.organization_id)
+      other_scope = %Scope{actor: other_user, tenant: user.member.organization_id}
 
       _other_request =
         create_request!(other_scope, %{

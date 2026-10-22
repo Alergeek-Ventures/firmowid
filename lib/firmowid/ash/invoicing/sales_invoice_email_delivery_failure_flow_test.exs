@@ -18,7 +18,7 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoiceEmailDeliveryFailureFlowTest do
   describe "email delivery failure flow" do
     test "email job failure flow before final retry does not persist failed delivery" do
       admin = admin_fixture()
-      processor_scope = processor_scope(admin.organization_id)
+      processor_scope = processor_scope(admin.member.organization_id)
       counterparty = invalid_email_counterparty_fixture!(admin)
 
       invoice =
@@ -35,7 +35,7 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoiceEmailDeliveryFailureFlowTest do
 
     test "final email job failure flow persists a complete failed delivery" do
       admin = admin_fixture()
-      processor_scope = processor_scope(admin.organization_id)
+      processor_scope = processor_scope(admin.member.organization_id)
       counterparty = invalid_email_counterparty_fixture!(admin)
 
       invoice =
@@ -59,7 +59,7 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoiceEmailDeliveryFailureFlowTest do
     test "failed delivery flow does not block non-reminder invoice emails" do
       Oban.Testing.with_testing_mode(:manual, fn ->
         admin = admin_fixture()
-        processor_scope = processor_scope(admin.organization_id)
+        processor_scope = processor_scope(admin.member.organization_id)
         counterparty = valid_counterparty_fixture!(admin)
 
         invoice =
@@ -104,7 +104,7 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoiceEmailDeliveryFailureFlowTest do
     end
   end
 
-  defp scope_for(user), do: %Scope{actor: user, tenant: user.organization_id}
+  defp scope_for(user), do: %Scope{actor: user, tenant: user.member.organization_id}
 
   defp processor_scope(organization_id) do
     %Scope{

@@ -74,7 +74,7 @@ defmodule FirmowidWeb.Invoicing.Views.IndexTest do
       other_user = admin_fixture()
 
       requisition =
-        Ash.Seed.seed!(Requisition, %{id: Ecto.UUID.generate(), status: :accepted}, tenant: user.organization_id)
+        Ash.Seed.seed!(Requisition, %{id: Ecto.UUID.generate(), status: :accepted}, tenant: user.member.organization_id)
 
       account =
         bank_account_fixture!(user, %{
@@ -85,7 +85,9 @@ defmodule FirmowidWeb.Invoicing.Views.IndexTest do
         })
 
       other_requisition =
-        Ash.Seed.seed!(Requisition, %{id: Ecto.UUID.generate(), status: :expired}, tenant: other_user.organization_id)
+        Ash.Seed.seed!(Requisition, %{id: Ecto.UUID.generate(), status: :expired},
+          tenant: other_user.member.organization_id
+        )
 
       other_account =
         bank_account_fixture!(other_user, %{
@@ -106,12 +108,13 @@ defmodule FirmowidWeb.Invoicing.Views.IndexTest do
       assert {:ok, _} =
                BankAccount.sync_from_gocardless(account,
                  actor: user,
-                 tenant: user.organization_id
+                 tenant: user.member.organization_id
                )
 
       refute has_element?(view, "#bank-connection-alert-#{account.id}")
 
-      assert {:ok, _} = Requisition.expire(requisition, actor: user, tenant: user.organization_id)
+      assert {:ok, _} =
+               Requisition.expire(requisition, actor: user, tenant: user.member.organization_id)
 
       assert has_element?(
                view,
@@ -135,10 +138,13 @@ defmodule FirmowidWeb.Invoicing.Views.IndexTest do
       refute has_element?(view, "#bank-connection-alert-#{other_account.id}")
 
       assert {:ok, _} =
-               BankAccount.mark_sync_failed(account, actor: user, tenant: user.organization_id)
+               BankAccount.mark_sync_failed(account,
+                 actor: user,
+                 tenant: user.member.organization_id
+               )
 
       renewed =
-        Ash.Seed.seed!(Requisition, %{id: Ecto.UUID.generate(), status: :accepted}, tenant: user.organization_id)
+        Ash.Seed.seed!(Requisition, %{id: Ecto.UUID.generate(), status: :accepted}, tenant: user.member.organization_id)
 
       assert {:ok, reconnected} =
                account
@@ -147,7 +153,7 @@ defmodule FirmowidWeb.Invoicing.Views.IndexTest do
                  gocardless_id: "synthetic-renewed-account",
                  requisition_id: renewed.id
                })
-               |> Finances.sync_bank_account(actor: user, tenant: user.organization_id)
+               |> Finances.sync_bank_account(actor: user, tenant: user.member.organization_id)
 
       assert reconnected.id == account.id
 
@@ -163,7 +169,7 @@ defmodule FirmowidWeb.Invoicing.Views.IndexTest do
       assert {:ok, _} =
                BankAccount.sync_from_gocardless(reconnected,
                  actor: user,
-                 tenant: user.organization_id
+                 tenant: user.member.organization_id
                )
 
       refute has_element?(renewed_view, "#bank-connection-alert-#{account.id}")
@@ -175,7 +181,7 @@ defmodule FirmowidWeb.Invoicing.Views.IndexTest do
       user: user
     } do
       requisition =
-        Ash.Seed.seed!(Requisition, %{id: Ecto.UUID.generate(), status: :expired}, tenant: user.organization_id)
+        Ash.Seed.seed!(Requisition, %{id: Ecto.UUID.generate(), status: :expired}, tenant: user.member.organization_id)
 
       for {currency, synced_at} <- [
             {"PLN", ~U[2026-01-12 10:00:00Z]},
@@ -193,7 +199,7 @@ defmodule FirmowidWeb.Invoicing.Views.IndexTest do
         Ash.Seed.seed!(
           Firmowid.Ash.Events.Event,
           %{
-            organization_id: user.organization_id,
+            organization_id: user.member.organization_id,
             record_id: account.id,
             resource: BankAccount,
             action: :sync_from_gocardless,
@@ -204,7 +210,7 @@ defmodule FirmowidWeb.Invoicing.Views.IndexTest do
             changed_attributes: %{},
             version: 1
           },
-          tenant: user.organization_id
+          tenant: user.member.organization_id
         )
       end
 
@@ -234,7 +240,7 @@ defmodule FirmowidWeb.Invoicing.Views.IndexTest do
             ksef_number: "synthetic-skipped-#{suffix}",
             invoice_number: "SYNTHETIC-#{suffix}"
           }),
-          tenant: owner.organization_id
+          tenant: owner.member.organization_id
         )
       end
 
@@ -255,7 +261,7 @@ defmodule FirmowidWeb.Invoicing.Views.IndexTest do
           ksef_number: "synthetic-skipped-third",
           invoice_number: "SYNTHETIC-third"
         }),
-        tenant: user.organization_id
+        tenant: user.member.organization_id
       )
 
       {:ok, summary_view, _html} = conn |> log_in_user(user) |> live(~p"/fakturowanie")
@@ -336,10 +342,10 @@ defmodule FirmowidWeb.Invoicing.Views.IndexTest do
       {:ok, _accepted} =
         requisition
         |> Ash.Changeset.for_update(:accept, %{},
-          tenant: user.organization_id,
+          tenant: user.member.organization_id,
           actor: user
         )
-        |> Ash.update(tenant: user.organization_id, actor: user)
+        |> Ash.update(tenant: user.member.organization_id, actor: user)
 
       # Give PubSub a moment to deliver
       Process.sleep(50)
@@ -360,10 +366,10 @@ defmodule FirmowidWeb.Invoicing.Views.IndexTest do
       {:ok, _rejected} =
         requisition
         |> Ash.Changeset.for_update(:reject, %{},
-          tenant: user.organization_id,
+          tenant: user.member.organization_id,
           actor: user
         )
-        |> Ash.update(tenant: user.organization_id, actor: user)
+        |> Ash.update(tenant: user.member.organization_id, actor: user)
 
       # Give PubSub a moment to deliver
       Process.sleep(50)
@@ -707,11 +713,11 @@ defmodule FirmowidWeb.Invoicing.Views.IndexTest do
   defp create_requisition(user, requisition_id) do
     %{id: requisition_id}
     |> Requisition.changeset_to_persist(
-      tenant: user.organization_id,
+      tenant: user.member.organization_id,
       actor: user,
       authorize?: false
     )
-    |> Ash.create(tenant: user.organization_id, actor: user, authorize?: false)
+    |> Ash.create(tenant: user.member.organization_id, actor: user, authorize?: false)
   end
 
   defp sales_invoice_fixture!(user, invoice_number) do
@@ -746,7 +752,7 @@ defmodule FirmowidWeb.Invoicing.Views.IndexTest do
             }
           ]
         },
-        tenant: user.organization_id,
+        tenant: user.member.organization_id,
         actor: user
       )
 
@@ -766,7 +772,7 @@ defmodule FirmowidWeb.Invoicing.Views.IndexTest do
       value_date: booking_date,
       remittance_information_unstructured: "#{suffix}",
       bank_account_id: bank_account_fixture!(user).id,
-      organization_id: user.organization_id,
+      organization_id: user.member.organization_id,
       skip_invoicing: false
     })
   end
@@ -784,13 +790,13 @@ defmodule FirmowidWeb.Invoicing.Views.IndexTest do
       value_date: booking_date,
       remittance_information_unstructured: "#{suffix}",
       bank_account_id: bank_account_fixture!(user).id,
-      organization_id: user.organization_id,
+      organization_id: user.member.organization_id,
       skip_invoicing: false
     })
   end
 
   defp scope_for(user) do
-    %Scope{actor: user, tenant: user.organization_id}
+    %Scope{actor: user, tenant: user.member.organization_id}
   end
 
   defp upload_invoice(view, filename) do
@@ -815,8 +821,8 @@ defmodule FirmowidWeb.Invoicing.Views.IndexTest do
   end
 
   defp subscribe_to_upload_notifications(user) do
-    Endpoint.subscribe("blob:updated:#{user.organization_id}")
-    Endpoint.subscribe("cost_invoice:created:#{user.organization_id}")
+    Endpoint.subscribe("blob:updated:#{user.member.organization_id}")
+    Endpoint.subscribe("cost_invoice:created:#{user.member.organization_id}")
   end
 
   defp assert_cost_invoice_created(user) do
@@ -826,7 +832,7 @@ defmodule FirmowidWeb.Invoicing.Views.IndexTest do
                    },
                    5_000
 
-    assert organization_id == user.organization_id
+    assert organization_id == user.member.organization_id
   end
 
   defp assert_cost_invoice_blob_failed(user) do
@@ -836,7 +842,7 @@ defmodule FirmowidWeb.Invoicing.Views.IndexTest do
                    },
                    5_000
 
-    assert organization_id == user.organization_id
+    assert organization_id == user.member.organization_id
   end
 
   defp cost_invoice_document do

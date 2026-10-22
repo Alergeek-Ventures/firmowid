@@ -25,7 +25,7 @@ defmodule Firmowid.Ash.Ksef.Services.InvoiceCorrectionTest do
 
   setup do
     user = Firmowid.AccountsFixtures.user_fixture()
-    %{org_id: user.organization_id}
+    %{org_id: user.member.organization_id}
   end
 
   # ---------------------------------------------------------------------------

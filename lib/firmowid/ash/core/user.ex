@@ -6,8 +6,9 @@ defmodule Firmowid.Ash.Core.User do
   Handles authentication (password + Google OAuth) and organization
   membership; the person's name, avatar, role and profile details live on the
   organization `member`.
-  No multitenancy — users sit above tenancy; `organization_id` is nullable
-  (onboarding state).
+  No multitenancy — users sit above tenancy; the organization the account
+  works in is that of its active (non-archived) member, and an account
+  without one is in onboarding.
 
   Authentication is managed by `ash_authentication`:
   - Password strategy with Argon2 hashing
@@ -22,10 +23,10 @@ defmodule Firmowid.Ash.Core.User do
     notifiers: [Ash.Notifier.PubSub]
 
   alias AshAuthentication.Strategy.Password.PasswordValidation
-  alias Firmowid.Ash.Checks.OrganizationAdmin
   alias Firmowid.Ash.Checks.OrganizationMemberAdmin
   alias Firmowid.Ash.Checks.SystemActorRole
   alias Firmowid.Ash.Core.Changes.CaptureGoogleRegistration
+  alias Firmowid.Ash.Core.Changes.RequireNoActiveMember
   alias Firmowid.Ash.Core.Member
   alias Firmowid.Ash.Core.Secrets
   alias Firmowid.Ash.Core.Services.GoogleAvatarImporter
@@ -100,7 +101,6 @@ defmodule Firmowid.Ash.Core.User do
 
   code_interface do
     define :get, action: :read, get_by: [:id]
-    define :detach_for_organization_cleanup, action: :detach_for_organization_cleanup
     define :destroy, action: :destroy
     define :confirm, action: :confirm
     define :sign_in_with_remember_me, action: :sign_in_with_remember_me
@@ -115,12 +115,6 @@ defmodule Firmowid.Ash.Core.User do
 
   actions do
     defaults [:read]
-
-    update :detach_for_organization_cleanup do
-      description "Detach a preserved account during organization deletion."
-      accept []
-      change set_attribute(:organization_id, nil)
-    end
 
     read :list do
       description "List organization users with search, status, and role filters."
@@ -330,10 +324,19 @@ defmodule Firmowid.Ash.Core.User do
 
       argument :name, :string
 
-      change set_attribute(:organization_id, arg(:organization_id))
+      change {RequireNoActiveMember, user_id: :id}
+
+      # The organization becomes the changeset's tenant, which the `joined_org`
+      # topic is published under.
+      change fn changeset, _context ->
+        Ash.Changeset.set_tenant(
+          changeset,
+          Ash.Changeset.get_argument(changeset, :organization_id)
+        )
+      end
 
       change after_action(fn changeset, user, context ->
-               opts = Ash.Context.to_opts(context, tenant: user.organization_id)
+               opts = Ash.Context.to_opts(context, tenant: changeset.to_tenant)
 
                attributes = %{
                  user_id: user.id,
@@ -353,21 +356,14 @@ defmodule Firmowid.Ash.Core.User do
     end
 
     update :leave_organization do
-      description "Detach the account from its organization after its member is archived."
+      description "Cut the account's sessions after its member is archived."
       accept []
+      require_atomic? false
 
-      change set_attribute(:organization_id, nil)
+      # Serializes with OAuth issuance, which locks the account row (see
+      # `RequireActiveOauthUser`), so no grant outlives the archival.
+      change get_and_lock_for_update()
       change Firmowid.Ash.Core.User.Changes.RevokeAuthentication
-    end
-
-    update :return_to_organization do
-      description "Reattach the account to the actor's organization after its member is restored."
-      accept []
-
-      validate attribute_equals(:organization_id, nil),
-        message: "Konto należy już do innej organizacji."
-
-      change set_attribute(:organization_id, actor(:organization_id))
     end
 
     destroy :destroy do
@@ -427,13 +423,6 @@ defmodule Firmowid.Ash.Core.User do
   end
 
   policies do
-    bypass [
-      {SystemActorRole, roles: [:organization_cleanup]},
-      action([:list, :detach_for_organization_cleanup])
-    ] do
-      authorize_if expr(not is_nil(^actor(:org_id)) and organization_id == ^actor(:org_id))
-    end
-
     bypass AshAuthentication.Checks.AshAuthenticationInteraction do
       authorize_if always()
     end
@@ -493,11 +482,8 @@ defmodule Firmowid.Ash.Core.User do
       authorize_if actor_present()
     end
 
+    # Runs after the member is archived, so the account is matched by its membership.
     policy action(:leave_organization) do
-      authorize_if OrganizationAdmin
-    end
-
-    policy action(:return_to_organization) do
       authorize_if OrganizationMemberAdmin
     end
 
@@ -515,7 +501,7 @@ defmodule Firmowid.Ash.Core.User do
 
     bypass action_type(:destroy) do
       authorize_if expr(id == ^actor(:id))
-      authorize_if OrganizationAdmin
+      authorize_if {OrganizationMemberAdmin, active: true}
     end
   end
 
@@ -525,7 +511,7 @@ defmodule Firmowid.Ash.Core.User do
 
     # Used by admin employee list LiveView to refresh immediately after
     # invite consumption assigns a user to an organization.
-    publish :set_organization, ["joined_org", :organization_id]
+    publish :set_organization, ["joined_org", :_tenant]
   end
 
   preparations do
@@ -554,11 +540,6 @@ defmodule Firmowid.Ash.Core.User do
   end
 
   relationships do
-    belongs_to :organization, Firmowid.Ash.Core.Organization do
-      allow_nil? true
-      attribute_writable? true
-    end
-
     has_one :member, Member do
       public? true
       destination_attribute :user_id
@@ -566,8 +547,9 @@ defmodule Firmowid.Ash.Core.User do
   end
 
   calculations do
-    # Why the account may not use the application: its organization has no
-    # billing plan. The owner is told to renew the subscription; members are not.
+    # Why the account may not use the application: the organization of its active
+    # member has no billing plan. The owner is told to renew the subscription;
+    # members are not.
     #
     # Until subscription lifecycle moves into application data (it is managed outside
     # the app before Stripe), `:no_plan` deliberately serves both as the zero-plan
@@ -576,11 +558,20 @@ defmodule Firmowid.Ash.Core.User do
               :atom,
               expr(
                 cond do
-                  system_role == :superuser -> nil
-                  is_nil(organization_id) -> nil
-                  organization.billing_plan != :no_plan -> nil
-                  organization.owner_id == id -> :subscription_expired
-                  true -> :account_disabled
+                  system_role == :superuser ->
+                    nil
+
+                  not exists(
+                    member,
+                    is_nil(archived_at) and organization.billing_plan == :no_plan
+                  ) ->
+                    nil
+
+                  exists(member, is_nil(archived_at) and organization.owner_id == parent(id)) ->
+                    :subscription_expired
+
+                  true ->
+                    :account_disabled
                 end
               ) do
       constraints one_of: [:account_disabled, :subscription_expired]

@@ -10,7 +10,8 @@ defmodule Firmowid.Ash.Analysis.Actions.ListEntries do
   alias Firmowid.Ash.Scope
 
   @impl true
-  def run(input, _opts, %{actor: %User{organization_id: tenant} = actor, tenant: tenant}) when is_binary(tenant) do
+  def run(input, _opts, %{actor: %User{member: %{organization_id: tenant}} = actor, tenant: tenant})
+      when is_binary(tenant) do
     month = Date.beginning_of_month(input.arguments.month)
 
     entries =

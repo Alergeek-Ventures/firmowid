@@ -18,7 +18,7 @@ defmodule Firmowid.Ash.Ksef.Workers.FetchWorkerTest do
 
   setup do
     admin = admin_fixture()
-    organization_id = admin.organization_id
+    organization_id = admin.member.organization_id
 
     Cachex.put(:ksef, {:access_token, organization_id}, "test-access-token", expire: to_timeout(minute: 5))
 

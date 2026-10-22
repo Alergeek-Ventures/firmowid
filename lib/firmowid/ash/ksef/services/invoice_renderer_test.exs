@@ -30,7 +30,7 @@ defmodule Firmowid.Ash.Ksef.Services.InvoiceRendererTest do
 
   setup do
     user = Firmowid.AccountsFixtures.user_fixture()
-    %{org_id: user.organization_id}
+    %{org_id: user.member.organization_id}
   end
 
   # ---------------------------------------------------------------------------
@@ -276,10 +276,10 @@ defmodule Firmowid.Ash.Ksef.Services.InvoiceRendererTest do
     test "cancellation correction (zeroed items) passes XSD validation", %{model: model} do
       # Cancelling issues a correction to KSeF, which needs an accountant and a KSeF connection.
       admin = Firmowid.AccountsFixtures.admin_fixture()
-      Firmowid.InvoicingFixtures.connect_ksef!(admin.organization_id)
+      Firmowid.InvoicingFixtures.connect_ksef!(admin.member.organization_id)
 
       original =
-        simulate_ksef_submission(build_domestic_invoice(org_id: admin.organization_id),
+        simulate_ksef_submission(build_domestic_invoice(org_id: admin.member.organization_id),
           with_ksef_number: true
         )
 
@@ -289,7 +289,7 @@ defmodule Firmowid.Ash.Ksef.Services.InvoiceRendererTest do
         :manual
         |> Oban.Testing.with_testing_mode(fn ->
           SalesInvoice.cancel!(original.id,
-            scope: %Firmowid.Ash.Scope{actor: admin, tenant: admin.organization_id}
+            scope: %Firmowid.Ash.Scope{actor: admin, tenant: admin.member.organization_id}
           )
         end)
         |> Ash.load!([:sales_invoice_items, corrected_invoice: :sales_invoice_items], opts)

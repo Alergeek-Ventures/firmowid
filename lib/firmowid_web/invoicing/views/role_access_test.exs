@@ -9,7 +9,7 @@ defmodule FirmowidWeb.Invoicing.Views.RoleAccessTest do
     conn: conn
   } do
     admin = admin_fixture()
-    invoicing_user = user_in_org_fixture(admin.organization_id, %{role: :invoicing})
+    invoicing_user = user_in_org_fixture(admin.member.organization_id, %{role: :invoicing})
 
     conn = log_in_user(conn, invoicing_user)
 
@@ -22,7 +22,7 @@ defmodule FirmowidWeb.Invoicing.Views.RoleAccessTest do
 
   test "invoicing role can access timetracker", %{conn: conn} do
     admin = admin_fixture()
-    invoicing_user = user_in_org_fixture(admin.organization_id, %{role: :invoicing})
+    invoicing_user = user_in_org_fixture(admin.member.organization_id, %{role: :invoicing})
 
     conn = log_in_user(conn, invoicing_user)
 

@@ -3,6 +3,7 @@ defmodule Firmowid.Ash.Core.UserTest do
 
   import Firmowid.AccountsFixtures
 
+  alias Ash.Error.Invalid
   alias Firmowid.Ash.Blobs.Blob
   alias Firmowid.Ash.Core
   alias Firmowid.Ash.Core.Member
@@ -13,7 +14,7 @@ defmodule Firmowid.Ash.Core.UserTest do
     test "an admin cannot archive or restore another organization's member" do
       admin = admin_fixture()
       outsider = user_fixture()
-      opts = [actor: admin, tenant: outsider.organization_id]
+      opts = [actor: admin, tenant: outsider.member.organization_id]
 
       assert {:error, _} = Core.archive_member(outsider.member, opts)
       archived = Ash.Seed.update!(outsider.member, %{archived_at: Date.utc_today()})
@@ -22,25 +23,43 @@ defmodule Firmowid.Ash.Core.UserTest do
 
     test "employees cannot archive colleagues and admins cannot archive themselves" do
       admin = admin_fixture()
-      employee = user_in_org_fixture(admin.organization_id)
-      colleague = user_in_org_fixture(admin.organization_id)
+      employee = user_in_org_fixture(admin.member.organization_id)
+      colleague = user_in_org_fixture(admin.member.organization_id)
 
       assert {:error, _} =
                Core.archive_member(colleague.member,
-                 scope: Scope.new!(employee, admin.organization_id)
+                 scope: Scope.new!(employee, admin.member.organization_id)
                )
 
       assert {:error, _} =
-               Core.archive_member(admin.member, scope: Scope.new!(admin, admin.organization_id))
+               Core.archive_member(admin.member,
+                 scope: Scope.new!(admin, admin.member.organization_id)
+               )
+    end
+  end
+
+  describe "one active member per account" do
+    test "an account active in one organization cannot join another" do
+      user = user_fixture()
+      other_organization_id = admin_fixture().member.organization_id
+
+      assert {:error, %Invalid{}} =
+               Core.set_organization(
+                 user,
+                 %{organization_id: other_organization_id, role: :employee},
+                 authorize?: false
+               )
+
+      assert Core.load_member(user).member.id == user.member.id
     end
   end
 
   describe "member profile authorization" do
     test "an employee updates their own profile details but not a colleague's" do
       admin = admin_fixture()
-      employee = user_in_org_fixture(admin.organization_id)
-      colleague = user_in_org_fixture(admin.organization_id)
-      scope = Scope.new!(employee, admin.organization_id)
+      employee = user_in_org_fixture(admin.member.organization_id)
+      colleague = user_in_org_fixture(admin.member.organization_id)
+      scope = Scope.new!(employee, admin.member.organization_id)
 
       assert {:ok, %{phone: "+48 600 100 200"}} =
                Core.update_member_profile(employee.member, %{phone: "+48 600 100 200"}, scope: scope)
@@ -48,15 +67,15 @@ defmodule Firmowid.Ash.Core.UserTest do
       assert {:error, _} =
                Core.update_member_profile(colleague.member, %{phone: "+48 600 100 200"}, scope: scope)
 
-      assert Core.load_member(colleague, admin.organization_id).member.phone == nil
+      assert Core.load_member(colleague).member.phone == nil
     end
 
     test "only the member, their admin and account readers see profile details" do
       admin = admin_fixture()
-      employee = user_in_org_fixture(admin.organization_id)
-      coworker = user_in_org_fixture(admin.organization_id)
+      employee = user_in_org_fixture(admin.member.organization_id)
+      coworker = user_in_org_fixture(admin.member.organization_id)
       outsider = admin_fixture()
-      tenant = admin.organization_id
+      tenant = admin.member.organization_id
 
       Core.update_member_profile!(
         employee.member,
@@ -96,16 +115,16 @@ defmodule Firmowid.Ash.Core.UserTest do
       assert {:error, _} =
                Core.update_member_profile(employee.member, %{phone: "+48 600 100 200"},
                  actor: outsider,
-                 tenant: employee.organization_id
+                 tenant: employee.member.organization_id
                )
 
-      assert Core.load_member(employee, employee.organization_id).member.phone == nil
+      assert Core.load_member(employee).member.phone == nil
     end
 
     test "another organization's admin cannot read or change a member's name and avatar" do
       employee = user_fixture()
       outsider = admin_fixture()
-      tenant = employee.organization_id
+      tenant = employee.member.organization_id
       opts = [actor: outsider, tenant: tenant]
 
       blob =
@@ -127,12 +146,12 @@ defmodule Firmowid.Ash.Core.UserTest do
                Core.update_member_avatar(employee.member, %{avatar_blob_id: blob.id}, opts)
 
       assert %{name: "Ada Lovelace", avatar_blob_id: nil} =
-               Core.load_member(employee, tenant).member
+               Core.load_member(employee).member
     end
 
     test "a member cannot use another organization's blob as their avatar" do
       employee = user_fixture()
-      other_organization_id = admin_fixture().organization_id
+      other_organization_id = admin_fixture().member.organization_id
 
       blob =
         Ash.Seed.seed!(Blob, %{
@@ -142,20 +161,20 @@ defmodule Firmowid.Ash.Core.UserTest do
           original_filename: "avatar.png"
         })
 
-      assert {:error, %Ash.Error.Invalid{}} =
+      assert {:error, %Invalid{}} =
                Core.update_member_avatar(employee.member, %{avatar_blob_id: blob.id},
-                 scope: Scope.new!(employee, employee.organization_id)
+                 scope: Scope.new!(employee, employee.member.organization_id)
                )
 
-      assert Core.load_member(employee, employee.organization_id).member.avatar_blob_id == nil
+      assert Core.load_member(employee).member.avatar_blob_id == nil
     end
   end
 
   describe "display_name" do
     test "uses the member's name when present and otherwise falls back to the email" do
       named_user = user_fixture()
-      unnamed_user = user_in_org_fixture(named_user.organization_id)
-      named_scope = %Scope{actor: named_user, tenant: named_user.organization_id}
+      unnamed_user = user_in_org_fixture(named_user.member.organization_id)
+      named_scope = %Scope{actor: named_user, tenant: named_user.member.organization_id}
 
       named_member =
         named_user.member
@@ -164,7 +183,7 @@ defmodule Firmowid.Ash.Core.UserTest do
 
       unnamed_member =
         Ash.load!(unnamed_user.member, :display_name,
-          scope: %Scope{actor: unnamed_user, tenant: unnamed_user.organization_id}
+          scope: %Scope{actor: unnamed_user, tenant: unnamed_user.member.organization_id}
         )
 
       assert named_member.display_name == "Ada Lovelace"
@@ -175,8 +194,8 @@ defmodule Firmowid.Ash.Core.UserTest do
   describe "update_current_profile/2" do
     test "updates only the acting user's profile" do
       admin = admin_fixture()
-      employee = user_in_org_fixture(admin.organization_id)
-      scope = %Scope{actor: admin, tenant: admin.organization_id}
+      employee = user_in_org_fixture(admin.member.organization_id)
+      scope = %Scope{actor: admin, tenant: admin.member.organization_id}
 
       assert {:ok, updated} =
                Core.update_current_profile(
@@ -188,12 +207,12 @@ defmodule Firmowid.Ash.Core.UserTest do
       assert updated.member.name == "Ada Lovelace"
       assert updated.member.phone == "+48123456789"
 
-      assert Core.load_member(employee, admin.organization_id).member.name != "Ada Lovelace"
+      assert Core.load_member(employee).member.name != "Ada Lovelace"
     end
 
     test "keeps the name when the profile details are invalid" do
       user = user_fixture()
-      scope = %Scope{actor: user, tenant: user.organization_id}
+      scope = %Scope{actor: user, tenant: user.member.organization_id}
       member = Core.update_member_profile!(user.member, %{name: "Ada Lovelace"}, scope: scope)
       scope = %{scope | actor: %{user | member: member}}
 
@@ -203,7 +222,7 @@ defmodule Firmowid.Ash.Core.UserTest do
                  scope: scope
                )
 
-      assert Core.load_member(user, user.organization_id).member.name == "Ada Lovelace"
+      assert Core.load_member(user).member.name == "Ada Lovelace"
     end
   end
 
@@ -216,8 +235,8 @@ defmodule Firmowid.Ash.Core.UserTest do
     other_user = user_fixture()
 
     assert {:error, _} =
-             Core.set_organization(user, %{organization_id: other_user.organization_id},
-               scope: %Scope{actor: user, tenant: user.organization_id}
+             Core.set_organization(user, %{organization_id: other_user.member.organization_id},
+               scope: %Scope{actor: user, tenant: user.member.organization_id}
              )
   end
 end

@@ -12,12 +12,12 @@ defmodule Firmowid.Ash.Timetracker.SessionTest do
 
   setup do
     user = user_fixture()
-    project = project_fixture(%{organization_id: user.organization_id})
-    user_project_fixture(user.id, project.id, user.organization_id)
+    project = project_fixture(%{organization_id: user.member.organization_id})
+    user_project_fixture(user.id, project.id, user.member.organization_id)
 
     scope = %Scope{
       actor: user,
-      tenant: user.organization_id
+      tenant: user.member.organization_id
     }
 
     %{user: user, project: project, scope: scope}
@@ -156,7 +156,7 @@ defmodule Firmowid.Ash.Timetracker.SessionTest do
         session_fixture(%{
           user_id: user.id,
           project_id: project.id,
-          organization_id: user.organization_id,
+          organization_id: user.member.organization_id,
           start_datetime: ~U[2025-04-01 09:00:00Z],
           end_datetime: ~U[2025-04-01 10:00:00Z]
         })
@@ -165,7 +165,7 @@ defmodule Firmowid.Ash.Timetracker.SessionTest do
         session_fixture(%{
           user_id: user.id,
           project_id: project.id,
-          organization_id: user.organization_id
+          organization_id: user.member.organization_id
         })
 
       assert [listed_current, listed_completed] = AshSession.list_user_sessions!(scope: scope)
@@ -190,7 +190,7 @@ defmodule Firmowid.Ash.Timetracker.SessionTest do
           user_id: user.id,
           project_id: project.id,
           title: "Old Title",
-          organization_id: user.organization_id
+          organization_id: user.member.organization_id
         })
 
       {:ok, updated} = AshSession.update(session, %{title: "New Title"}, scope: scope)
@@ -207,7 +207,7 @@ defmodule Firmowid.Ash.Timetracker.SessionTest do
         session_fixture(%{
           user_id: user.id,
           project_id: project.id,
-          organization_id: user.organization_id
+          organization_id: user.member.organization_id
         })
 
       Repo.query!(
@@ -239,7 +239,7 @@ defmodule Firmowid.Ash.Timetracker.SessionTest do
           title: "First",
           start_datetime: ~U[2025-04-01 09:00:42Z],
           end_datetime: ~U[2025-04-01 10:00:17Z],
-          organization_id: user.organization_id
+          organization_id: user.member.organization_id
         })
 
       second_session =
@@ -249,7 +249,7 @@ defmodule Firmowid.Ash.Timetracker.SessionTest do
           title: "Second",
           start_datetime: ~U[2025-04-01 10:00:00Z],
           end_datetime: ~U[2025-04-01 11:00:00Z],
-          organization_id: user.organization_id
+          organization_id: user.member.organization_id
         })
 
       {:ok, updated} =
@@ -278,7 +278,7 @@ defmodule Firmowid.Ash.Timetracker.SessionTest do
         session_fixture(%{
           user_id: user.id,
           project_id: project.id,
-          organization_id: user.organization_id
+          organization_id: user.member.organization_id
         })
 
       assert {:ok, updated} =
@@ -296,11 +296,11 @@ defmodule Firmowid.Ash.Timetracker.SessionTest do
         session_fixture(%{
           user_id: user.id,
           project_id: project.id,
-          organization_id: user.organization_id
+          organization_id: user.member.organization_id
         })
 
-      admin = admin_fixture(%{organization_id: user.organization_id})
-      admin_scope = %Scope{actor: admin, tenant: user.organization_id}
+      admin = admin_fixture(%{organization_id: user.member.organization_id})
+      admin_scope = %Scope{actor: admin, tenant: user.member.organization_id}
 
       assert {:error, _} =
                AshSession.edit_current_user_session(%{id: session.id, title: "Unauthorized"},
@@ -308,7 +308,7 @@ defmodule Firmowid.Ash.Timetracker.SessionTest do
                )
 
       assert Timetracker.get_session_by_id!(session.id,
-               scope: %Scope{actor: user, tenant: user.organization_id}
+               scope: %Scope{actor: user, tenant: user.member.organization_id}
              ).title == "Test Session"
     end
   end
@@ -328,7 +328,7 @@ defmodule Firmowid.Ash.Timetracker.SessionTest do
         session_fixture(%{
           user_id: user.id,
           project_id: project.id,
-          organization_id: user.organization_id
+          organization_id: user.member.organization_id
         })
 
       assert :ok = AshSession.destroy(session, scope: scope)
@@ -347,7 +347,7 @@ defmodule Firmowid.Ash.Timetracker.SessionTest do
         project_id: project.id,
         start_datetime: ~U[2025-04-01 00:00:00Z],
         end_datetime: ~U[2025-04-01 01:00:00Z],
-        organization_id: user.organization_id
+        organization_id: user.member.organization_id
       })
 
       result =
@@ -370,7 +370,7 @@ defmodule Firmowid.Ash.Timetracker.SessionTest do
         user_id: user.id,
         project_id: project.id,
         start_datetime: ~U[2025-04-01 00:00:00Z],
-        organization_id: user.organization_id
+        organization_id: user.member.organization_id
       })
 
       result =

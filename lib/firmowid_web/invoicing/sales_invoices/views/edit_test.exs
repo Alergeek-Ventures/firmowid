@@ -11,9 +11,9 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.EditTest do
 
   test "draft review preserves edits and issues the selected custom number to KSeF", %{conn: conn} do
     admin = admin_fixture()
-    scope = %{tenant: admin.organization_id, actor: admin}
+    scope = %{tenant: admin.member.organization_id, actor: admin}
     invoice = draft_fixture!(admin)
-    InvoicingFixtures.accept_ksef_submissions!(admin.organization_id)
+    InvoicingFixtures.accept_ksef_submissions!(admin.member.organization_id)
 
     conn = log_in_user(conn, admin)
     {:ok, view, _html} = live(conn, ~p"/sprzedazowe/#{invoice.id}/edytuj")
@@ -58,7 +58,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.EditTest do
 
   test "saving from draft review keeps the invoice unnumbered", %{conn: conn} do
     admin = admin_fixture()
-    scope = %{tenant: admin.organization_id, actor: admin}
+    scope = %{tenant: admin.member.organization_id, actor: admin}
     invoice = draft_fixture!(admin)
     conn = log_in_user(conn, admin)
     {:ok, view, _html} = live(conn, ~p"/sprzedazowe/#{invoice.id}/edytuj")
@@ -118,18 +118,18 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.EditTest do
           }
         ]
       },
-      tenant: admin.organization_id,
+      tenant: admin.member.organization_id,
       actor: admin
     )
   end
 
   defp draft_fixture!(admin) do
-    admin.organization_id
-    |> Firmowid.Ash.Core.get_organization!(actor: admin, tenant: admin.organization_id)
+    admin.member.organization_id
+    |> Firmowid.Ash.Core.get_organization!(actor: admin, tenant: admin.member.organization_id)
     |> Ash.Seed.update!(%{address: "Seller address"})
 
     Ash.Seed.seed!(SalesInvoice, %{
-      organization_id: admin.organization_id,
+      organization_id: admin.member.organization_id,
       issue_date: Date.utc_today(),
       sale_date: Date.utc_today(),
       due_date: Date.add(Date.utc_today(), 7),
@@ -142,7 +142,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.EditTest do
       buyer_address: "Buyer address",
       sales_invoice_items: [
         %{
-          organization_id: admin.organization_id,
+          organization_id: admin.member.organization_id,
           index: 0,
           name: "Consulting",
           quantity: Decimal.new(1),
@@ -158,7 +158,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.EditTest do
     conn: conn
   } do
     admin = admin_fixture()
-    scope = %{tenant: admin.organization_id, actor: admin}
+    scope = %{tenant: admin.member.organization_id, actor: admin}
     iban = "DE02120300000000202020202020"
 
     {:ok, pln_account} =
@@ -204,7 +204,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.EditTest do
             }
           ]
         },
-        tenant: admin.organization_id,
+        tenant: admin.member.organization_id,
         actor: admin
       )
 
@@ -261,7 +261,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.EditTest do
             }
           ]
         },
-        tenant: admin.organization_id,
+        tenant: admin.member.organization_id,
         actor: admin
       )
 
@@ -310,7 +310,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.EditTest do
             }
           ]
         },
-        tenant: admin.organization_id,
+        tenant: admin.member.organization_id,
         actor: admin
       )
 

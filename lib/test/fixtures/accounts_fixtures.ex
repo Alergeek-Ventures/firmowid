@@ -74,13 +74,12 @@ defmodule Firmowid.AccountsFixtures do
         nil ->
           # Creating the organization assigns it to the owner as an admin; keep the
           # registered struct, which carries the sign-in token metadata.
-          org =
-            Core.create_organization!(
-              %{nip: unique_nip(), name: "Test Organization", owner_name: attrs[:name] || email},
-              actor: user
-            )
+          Core.create_organization!(
+            %{nip: unique_nip(), name: "Test Organization", owner_name: attrs[:name] || email},
+            actor: Core.load_member(user)
+          )
 
-          %{user | organization_id: org.id}
+          user
 
         org_id ->
           Core.set_organization!(user, %{organization_id: org_id, role: role, name: attrs[:name]},
@@ -89,7 +88,7 @@ defmodule Firmowid.AccountsFixtures do
           )
       end
 
-    user = Core.load_member(user, user.organization_id)
+    user = Core.load_member(user)
 
     if user.member.role == role do
       user
@@ -97,7 +96,7 @@ defmodule Firmowid.AccountsFixtures do
       member =
         Core.update_member_role!(user.member, %{role: role},
           authorize?: false,
-          tenant: user.organization_id
+          tenant: user.member.organization_id
         )
 
       %{user | member: member}

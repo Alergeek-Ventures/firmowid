@@ -33,9 +33,9 @@ defmodule Firmowid.Ash.Invoicing.CostInvoiceTest do
   describe "delete_cost_invoice/1" do
     test "returns error for KSeF-imported invoice and does not delete it" do
       user = admin_fixture()
-      invoice = insert_ksef_cost_invoice!(user.organization_id)
+      invoice = insert_ksef_cost_invoice!(user.member.organization_id)
 
-      scope = %Scope{actor: user, tenant: user.organization_id}
+      scope = %Scope{actor: user, tenant: user.member.organization_id}
 
       assert_raise RuntimeError,
                    ~r/Cost invoice #{invoice.id} is imported from KSeF and cannot be deleted/,
@@ -50,19 +50,19 @@ defmodule Firmowid.Ash.Invoicing.CostInvoiceTest do
   describe "cost invoice lists" do
     test "hides only corrections whose original invoice exists in list_for_month" do
       user = admin_fixture()
-      scope = %Scope{actor: user, tenant: user.organization_id}
+      scope = %Scope{actor: user, tenant: user.member.organization_id}
 
       visible_invoice =
-        insert_cost_invoice!(user.organization_id, %{invoice_identifier: "VISIBLE-REGULAR"})
+        insert_cost_invoice!(user.member.organization_id, %{invoice_identifier: "VISIBLE-REGULAR"})
 
       original_invoice =
-        insert_cost_invoice!(user.organization_id, %{
+        insert_cost_invoice!(user.member.organization_id, %{
           invoice_identifier: "ORIGINAL-INVOICE",
           ksef_number: "KSEF-ORIGINAL-123"
         })
 
       visible_correction =
-        insert_cost_invoice!(user.organization_id, %{
+        insert_cost_invoice!(user.member.organization_id, %{
           invoice_identifier: "VISIBLE-CORRECTION",
           invoice_type: :kor,
           original_invoice_ksef_number: nil,
@@ -70,7 +70,7 @@ defmodule Firmowid.Ash.Invoicing.CostInvoiceTest do
         })
 
       _hidden_correction =
-        insert_cost_invoice!(user.organization_id, %{
+        insert_cost_invoice!(user.member.organization_id, %{
           invoice_identifier: "HIDDEN-CORRECTION",
           invoice_type: :kor,
           original_invoice_ksef_number: "KSEF-ORIGINAL-123",
@@ -78,7 +78,7 @@ defmodule Firmowid.Ash.Invoicing.CostInvoiceTest do
         })
 
       orphaned_correction =
-        insert_cost_invoice!(user.organization_id, %{
+        insert_cost_invoice!(user.member.organization_id, %{
           invoice_identifier: "ORPHANED-CORRECTION",
           invoice_type: :kor,
           original_invoice_ksef_number: "KSEF-MISSING-ORIGINAL-123",
@@ -107,19 +107,21 @@ defmodule Firmowid.Ash.Invoicing.CostInvoiceTest do
 
     test "hides only corrections whose original invoice exists from list_unmatched" do
       user = admin_fixture()
-      scope = %Scope{actor: user, tenant: user.organization_id}
+      scope = %Scope{actor: user, tenant: user.member.organization_id}
 
       visible_invoice =
-        insert_cost_invoice!(user.organization_id, %{invoice_identifier: "VISIBLE-UNMATCHED"})
+        insert_cost_invoice!(user.member.organization_id, %{
+          invoice_identifier: "VISIBLE-UNMATCHED"
+        })
 
       original_invoice =
-        insert_cost_invoice!(user.organization_id, %{
+        insert_cost_invoice!(user.member.organization_id, %{
           invoice_identifier: "ORIGINAL-UNMATCHED-INVOICE",
           ksef_number: "KSEF-ORIGINAL-456"
         })
 
       visible_correction =
-        insert_cost_invoice!(user.organization_id, %{
+        insert_cost_invoice!(user.member.organization_id, %{
           invoice_identifier: "VISIBLE-UNMATCHED-CORRECTION",
           invoice_type: :kor,
           original_invoice_ksef_number: nil,
@@ -127,7 +129,7 @@ defmodule Firmowid.Ash.Invoicing.CostInvoiceTest do
         })
 
       _hidden_correction =
-        insert_cost_invoice!(user.organization_id, %{
+        insert_cost_invoice!(user.member.organization_id, %{
           invoice_identifier: "HIDDEN-UNMATCHED-CORRECTION",
           invoice_type: :kor,
           original_invoice_ksef_number: "KSEF-ORIGINAL-456",
@@ -135,7 +137,7 @@ defmodule Firmowid.Ash.Invoicing.CostInvoiceTest do
         })
 
       orphaned_correction =
-        insert_cost_invoice!(user.organization_id, %{
+        insert_cost_invoice!(user.member.organization_id, %{
           invoice_identifier: "ORPHANED-UNMATCHED-CORRECTION",
           invoice_type: :kor,
           original_invoice_ksef_number: "KSEF-MISSING-ORIGINAL-456",
@@ -167,7 +169,7 @@ defmodule Firmowid.Ash.Invoicing.CostInvoiceTest do
   describe "create" do
     test "persists a Money amount" do
       user = admin_fixture()
-      scope = %Scope{actor: user, tenant: user.organization_id}
+      scope = %Scope{actor: user, tenant: user.member.organization_id}
 
       assert {:ok, invoice} =
                CostInvoice.create(
@@ -188,10 +190,10 @@ defmodule Firmowid.Ash.Invoicing.CostInvoiceTest do
 
     test "keeps the original amount when the latest correction changes currency" do
       user = admin_fixture()
-      scope = %Scope{actor: user, tenant: user.organization_id}
+      scope = %Scope{actor: user, tenant: user.member.organization_id}
 
       original =
-        insert_cost_invoice!(user.organization_id, %{
+        insert_cost_invoice!(user.member.organization_id, %{
           ksef_number: "KSEF-ORIGINAL-CURRENCY"
         })
 
@@ -218,7 +220,7 @@ defmodule Firmowid.Ash.Invoicing.CostInvoiceTest do
 
     test "allows an orphan correction" do
       user = admin_fixture()
-      scope = %Scope{actor: user, tenant: user.organization_id}
+      scope = %Scope{actor: user, tenant: user.member.organization_id}
 
       assert {:ok, invoice} =
                CostInvoice.create(
@@ -240,7 +242,7 @@ defmodule Firmowid.Ash.Invoicing.CostInvoiceTest do
 
     test "allows an original after an orphan correction with a different currency" do
       user = admin_fixture()
-      scope = %Scope{actor: user, tenant: user.organization_id}
+      scope = %Scope{actor: user, tenant: user.member.organization_id}
 
       assert {:ok, _orphan} =
                CostInvoice.create(
@@ -259,7 +261,7 @@ defmodule Firmowid.Ash.Invoicing.CostInvoiceTest do
 
       assert {:ok, _original} =
                Invoicing.create_cost_invoice_from_ksef(%{
-                 organization_id: user.organization_id,
+                 organization_id: user.member.organization_id,
                  seller: "Supplier Sp. z o.o.",
                  sale_date: ~D[2026-02-01],
                  issue_date: ~D[2026-02-01],
@@ -272,7 +274,7 @@ defmodule Firmowid.Ash.Invoicing.CostInvoiceTest do
 
     test "falls back to the seller when the display name cannot be generated" do
       user = admin_fixture()
-      scope = %Scope{actor: user, tenant: user.organization_id}
+      scope = %Scope{actor: user, tenant: user.member.organization_id}
       previous_generator = Application.get_env(:firmowid, :seller_display_name_enrichment_module)
 
       Application.put_env(
@@ -299,7 +301,7 @@ defmodule Firmowid.Ash.Invoicing.CostInvoiceTest do
       assert invoice.seller_display_name == "Supplier Sp. z o.o."
 
       named_invoice =
-        insert_cost_invoice!(user.organization_id, %{seller_display_name: "Supplier"})
+        insert_cost_invoice!(user.member.organization_id, %{seller_display_name: "Supplier"})
 
       assert {:ok, %{seller_display_name: "Supplier"}} =
                CostInvoice.refresh_seller_display_name(named_invoice, scope: scope)
@@ -307,7 +309,7 @@ defmodule Firmowid.Ash.Invoicing.CostInvoiceTest do
 
     test "rejects a positive non-correction amount" do
       user = admin_fixture()
-      scope = %Scope{actor: user, tenant: user.organization_id}
+      scope = %Scope{actor: user, tenant: user.member.organization_id}
 
       assert {:error, error} =
                CostInvoice.create(
@@ -329,21 +331,21 @@ defmodule Firmowid.Ash.Invoicing.CostInvoiceTest do
   describe "effective amount" do
     test "sums same-currency correction deltas as Money" do
       user = admin_fixture()
-      scope = %Scope{actor: user, tenant: user.organization_id}
+      scope = %Scope{actor: user, tenant: user.member.organization_id}
 
       original =
-        insert_cost_invoice!(user.organization_id, %{
+        insert_cost_invoice!(user.member.organization_id, %{
           ksef_number: "KSEF-EFFECTIVE-AMOUNT",
           amount: Money.new!("PLN", "-100.00")
         })
 
-      insert_cost_invoice!(user.organization_id, %{
+      insert_cost_invoice!(user.member.organization_id, %{
         invoice_type: :kor,
         original_invoice_ksef_number: original.ksef_number,
         amount: Money.new!("PLN", "20.00")
       })
 
-      insert_cost_invoice!(user.organization_id, %{
+      insert_cost_invoice!(user.member.organization_id, %{
         invoice_type: :kor,
         original_invoice_ksef_number: original.ksef_number,
         amount: Money.new!("PLN", "-5.00")
@@ -358,22 +360,22 @@ defmodule Firmowid.Ash.Invoicing.CostInvoiceTest do
 
     test "excludes a historical correction in another currency" do
       user = admin_fixture()
-      scope = %Scope{actor: user, tenant: user.organization_id}
+      scope = %Scope{actor: user, tenant: user.member.organization_id}
 
       original =
-        insert_cost_invoice!(user.organization_id, %{
+        insert_cost_invoice!(user.member.organization_id, %{
           ksef_number: "KSEF-EFFECTIVE-MULTI-CURRENCY",
           amount: Money.new!("PLN", "-100.00")
         })
 
-      insert_cost_invoice!(user.organization_id, %{
+      insert_cost_invoice!(user.member.organization_id, %{
         invoice_type: :kor,
         original_invoice_ksef_number: original.ksef_number,
         amount: Money.new!("EUR", "10.00"),
         ksef_permanent_storage_date: ~N[2026-02-01 12:00:00]
       })
 
-      insert_cost_invoice!(user.organization_id, %{
+      insert_cost_invoice!(user.member.organization_id, %{
         invoice_type: :kor,
         original_invoice_ksef_number: original.ksef_number,
         amount: Money.new!("PLN", "5.00"),
@@ -389,12 +391,12 @@ defmodule Firmowid.Ash.Invoicing.CostInvoiceTest do
 
     test "keeps an orphan correction out of an invoice effective amount" do
       user = admin_fixture()
-      scope = %Scope{actor: user, tenant: user.organization_id}
+      scope = %Scope{actor: user, tenant: user.member.organization_id}
 
       original =
-        insert_cost_invoice!(user.organization_id, %{amount: Money.new!("PLN", "-100.00")})
+        insert_cost_invoice!(user.member.organization_id, %{amount: Money.new!("PLN", "-100.00")})
 
-      insert_cost_invoice!(user.organization_id, %{
+      insert_cost_invoice!(user.member.organization_id, %{
         invoice_type: :kor,
         original_invoice_ksef_number: "KSEF-NOT-PRESENT",
         amount: Money.new!("PLN", "20.00")
@@ -407,27 +409,27 @@ defmodule Firmowid.Ash.Invoicing.CostInvoiceTest do
 
     test "filters and sorts effective amounts in PostgreSQL" do
       user = admin_fixture()
-      scope = %Scope{actor: user, tenant: user.organization_id}
+      scope = %Scope{actor: user, tenant: user.member.organization_id}
 
       first_invoice =
-        insert_cost_invoice!(user.organization_id, %{
+        insert_cost_invoice!(user.member.organization_id, %{
           ksef_number: "KSEF-EFFECTIVE-QUERY-FIRST",
           amount: Money.new!("PLN", "-100.00")
         })
 
       second_invoice =
-        insert_cost_invoice!(user.organization_id, %{
+        insert_cost_invoice!(user.member.organization_id, %{
           ksef_number: "KSEF-EFFECTIVE-QUERY-SECOND",
           amount: Money.new!("PLN", "-100.00")
         })
 
-      insert_cost_invoice!(user.organization_id, %{
+      insert_cost_invoice!(user.member.organization_id, %{
         invoice_type: :kor,
         original_invoice_ksef_number: first_invoice.ksef_number,
         amount: Money.new!("PLN", "15.00")
       })
 
-      insert_cost_invoice!(user.organization_id, %{
+      insert_cost_invoice!(user.member.organization_id, %{
         invoice_type: :kor,
         original_invoice_ksef_number: second_invoice.ksef_number,
         amount: Money.new!("PLN", "25.00")

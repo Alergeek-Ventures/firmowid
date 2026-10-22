@@ -12,7 +12,7 @@ defmodule FirmowidWeb.Management.Views.ProjectsTest do
 
   test "renders active projects list when project has no counterparty", %{conn: conn} do
     admin = admin_fixture()
-    project_fixture(%{organization_id: admin.organization_id, name: "No Counterparty"})
+    project_fixture(%{organization_id: admin.member.organization_id, name: "No Counterparty"})
 
     conn = log_in_user(conn, admin)
 
@@ -24,11 +24,14 @@ defmodule FirmowidWeb.Management.Views.ProjectsTest do
     admin = admin_fixture()
 
     project =
-      project_fixture(%{organization_id: admin.organization_id, name: "Archived No Counterparty"})
+      project_fixture(%{
+        organization_id: admin.member.organization_id,
+        name: "Archived No Counterparty"
+      })
 
     {:ok, _archived} =
       Project.archive(project,
-        tenant: admin.organization_id,
+        tenant: admin.member.organization_id,
         actor: admin
       )
 
@@ -100,7 +103,7 @@ defmodule FirmowidWeb.Management.Views.ProjectsTest do
   end
 
   defp current_scope(admin) do
-    %Scope{actor: admin, tenant: admin.organization_id}
+    %Scope{actor: admin, tenant: admin.member.organization_id}
   end
 
   defp get_project_by_name!(admin, name) do

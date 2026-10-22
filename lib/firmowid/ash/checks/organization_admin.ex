@@ -16,7 +16,10 @@ defmodule Firmowid.Ash.Checks.OrganizationAdmin do
   @impl true
   def filter(actor, _context, _opts) do
     if ActorRole.role(actor) == :admin do
-      expr(not is_nil(^actor(:organization_id)) and organization_id == ^actor(:organization_id))
+      expr(
+        not is_nil(^actor([:member, :organization_id])) and
+          organization_id == ^actor([:member, :organization_id])
+      )
     else
       false
     end

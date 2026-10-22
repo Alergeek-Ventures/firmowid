@@ -13,7 +13,7 @@ defmodule FirmowidWeb.Settings.Views.IndexTest do
 
   test "bank accounts are sorted by IBAN and keep order after rename", %{conn: conn} do
     admin = admin_fixture()
-    scope = %Scope{actor: admin, tenant: admin.organization_id}
+    scope = %Scope{actor: admin, tenant: admin.member.organization_id}
 
     {:ok, account_3} =
       Finances.create_manual_bank_account(
@@ -72,11 +72,11 @@ defmodule FirmowidWeb.Settings.Views.IndexTest do
     {:ok, _requisition} =
       %{id: Ecto.UUID.generate()}
       |> Requisition.changeset_to_persist(
-        tenant: admin.organization_id,
+        tenant: admin.member.organization_id,
         actor: admin,
         authorize?: false
       )
-      |> Ash.create(tenant: admin.organization_id, actor: admin, authorize?: false)
+      |> Ash.create(tenant: admin.member.organization_id, actor: admin, authorize?: false)
 
     conn = log_in_user(conn, admin)
 
@@ -89,7 +89,7 @@ defmodule FirmowidWeb.Settings.Views.IndexTest do
 
   test "admin changes an employee's role and the employee gains its permissions", %{conn: conn} do
     admin = admin_fixture()
-    employee = user_in_org_fixture(admin.organization_id, %{role: :employee})
+    employee = user_in_org_fixture(admin.member.organization_id, %{role: :employee})
     employee_conn = log_in_user(build_conn(), employee)
 
     assert {:error, {:redirect, _redirect}} = live(employee_conn, ~p"/zarzadzanie/pracownicy")
@@ -110,12 +110,12 @@ defmodule FirmowidWeb.Settings.Views.IndexTest do
 
   test "an employee saves their contact details on their organization member", %{conn: conn} do
     admin = admin_fixture()
-    employee = user_in_org_fixture(admin.organization_id, %{role: :employee})
+    employee = user_in_org_fixture(admin.member.organization_id, %{role: :employee})
 
     Core.update_member_profile!(
       employee.member,
       %{correspondence_address: "skr. poczt. 7, 30-001 Kraków"},
-      scope: %Scope{actor: employee, tenant: admin.organization_id}
+      scope: %Scope{actor: employee, tenant: admin.member.organization_id}
     )
 
     {:ok, lv, html} = live(log_in_user(conn, employee), ~p"/ustawienia/profil")
@@ -132,11 +132,11 @@ defmodule FirmowidWeb.Settings.Views.IndexTest do
     })
     |> render_submit()
 
-    member = Core.load_member(employee, admin.organization_id).member
+    member = Core.load_member(employee).member
     assert member.phone == "+48 600 100 200"
     assert member.residence_address == "ul. Grodzka 5, 31-006 Kraków"
     assert member.correspondence_address == nil
-    assert Core.load_member(admin, admin.organization_id).member.phone == nil
+    assert Core.load_member(admin).member.phone == nil
   end
 
   test "personal data are saved together or not at all, with the error on the rejected field", %{
@@ -161,14 +161,14 @@ defmodule FirmowidWeb.Settings.Views.IndexTest do
     assert has_element?(lv, "#user_first_name[aria-invalid=true]")
     refute has_element?(lv, "#user_birthday[aria-invalid=true]")
 
-    member = Core.load_member(user, user.organization_id).member
+    member = Core.load_member(user).member
     assert member.name == "Ada Lovelace"
     assert member.birthday == nil
   end
 
   test "an employee's name edit lands on their member", %{conn: conn} do
     admin = admin_fixture()
-    employee = user_in_org_fixture(admin.organization_id, %{name: "Ada Lovelace"})
+    employee = user_in_org_fixture(admin.member.organization_id, %{name: "Ada Lovelace"})
 
     {:ok, lv, _html} = live(log_in_user(conn, employee), ~p"/ustawienia/konto")
     render_click(lv, "toggle_editing_account_name")
@@ -179,8 +179,8 @@ defmodule FirmowidWeb.Settings.Views.IndexTest do
       })
 
     assert html =~ "Cześć, <span class=\"font-bold\">Grace Hopper</span>!"
-    assert Core.load_member(employee, admin.organization_id).member.name == "Grace Hopper"
-    assert Core.load_member(admin, admin.organization_id).member.name != "Grace Hopper"
+    assert Core.load_member(employee).member.name == "Grace Hopper"
+    assert Core.load_member(admin).member.name != "Grace Hopper"
   end
 
   test "account deletion modal warns organization owner about deleting the organization", %{
@@ -200,7 +200,7 @@ defmodule FirmowidWeb.Settings.Views.IndexTest do
     conn: conn
   } do
     admin = admin_fixture()
-    employee = user_in_org_fixture(admin.organization_id)
+    employee = user_in_org_fixture(admin.member.organization_id)
 
     conn = log_in_user(conn, employee)
 
@@ -214,7 +214,7 @@ defmodule FirmowidWeb.Settings.Views.IndexTest do
     admin = admin_fixture()
 
     Ash.Seed.seed!(Credential, %{
-      organization_id: admin.organization_id,
+      organization_id: admin.member.organization_id,
       status: :refreshing,
       auth_type: :generated_certificate,
       expires_on: Date.add(Date.utc_today(), 7)

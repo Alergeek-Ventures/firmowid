@@ -11,7 +11,7 @@ defmodule FirmowidWeb.Auth.Views.BlockedPagesTest do
     conn: conn
   } do
     admin = admin_fixture()
-    expire_subscription!(admin.organization_id)
+    expire_subscription!(admin.member.organization_id)
 
     conn = sign_in(conn, admin)
 
@@ -28,8 +28,8 @@ defmodule FirmowidWeb.Auth.Views.BlockedPagesTest do
     conn: conn
   } do
     admin = admin_fixture()
-    member = user_in_org_fixture(admin.organization_id)
-    expire_subscription!(admin.organization_id)
+    member = user_in_org_fixture(admin.member.organization_id)
+    expire_subscription!(admin.member.organization_id)
 
     conn = sign_in(conn, member)
 
@@ -40,7 +40,7 @@ defmodule FirmowidWeb.Auth.Views.BlockedPagesTest do
   test "an existing session stops authenticating once the organization has no plan", %{conn: conn} do
     admin = admin_fixture()
     conn = log_in_user(conn, admin)
-    expire_subscription!(admin.organization_id)
+    expire_subscription!(admin.member.organization_id)
 
     assert {:error, {:redirect, %{to: to}}} = live(conn, ~p"/czasosledz")
     assert to == ~p"/zaloguj"

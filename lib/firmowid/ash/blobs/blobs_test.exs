@@ -10,7 +10,7 @@ defmodule Firmowid.Ash.Blobs.BlobsTest do
 
   setup do
     user = admin_fixture()
-    scope = %Firmowid.Ash.Scope{actor: user, tenant: user.organization_id}
+    scope = %Firmowid.Ash.Scope{actor: user, tenant: user.member.organization_id}
     %{user: user, scope: scope}
   end
 
@@ -22,7 +22,7 @@ defmodule Firmowid.Ash.Blobs.BlobsTest do
       assert {:ok, blob} = Blobs.create_blob(path, "text/plain", "test.txt", scope: scope)
 
       assert blob.original_filename == "test.txt"
-      assert blob.blob_path =~ ~r"^#{user.organization_id}/.+\.txt$"
+      assert blob.blob_path =~ ~r"^#{user.member.organization_id}/.+\.txt$"
       assert blob.blob_checksum
     end
 
@@ -154,7 +154,7 @@ defmodule Firmowid.Ash.Blobs.BlobsTest do
           description: "Imported KSeF invoice",
           invoice_identifier: "KSEF/2026/001",
           skip_invoicing: false,
-          organization_id: user.organization_id,
+          organization_id: user.member.organization_id,
           ksef_number: ksef_number,
           ksef_permanent_storage_date: ~N[2026-08-01 08:00:00],
           ksef_downloaded_at: DateTime.utc_now()

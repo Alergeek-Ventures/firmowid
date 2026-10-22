@@ -21,14 +21,14 @@ defmodule Firmowid.Ash.Finances.RequisitionTest do
       assert {:ok, _} =
                requisition
                |> Ash.Changeset.for_update(:check_status, %{},
-                 tenant: user.organization_id,
+                 tenant: user.member.organization_id,
                  actor: user
                )
-               |> Ash.update(tenant: user.organization_id, actor: user)
+               |> Ash.update(tenant: user.member.organization_id, actor: user)
 
       assert {:ok, refreshed} =
                Firmowid.Ash.Finances.get_requisition(requisition.id,
-                 tenant: user.organization_id,
+                 tenant: user.member.organization_id,
                  actor: user
                )
 
@@ -46,10 +46,10 @@ defmodule Firmowid.Ash.Finances.RequisitionTest do
       assert {:ok, rejected} =
                requisition
                |> Ash.Changeset.for_update(:auto_reject, %{},
-                 tenant: user.organization_id,
+                 tenant: user.member.organization_id,
                  actor: user
                )
-               |> Ash.update(tenant: user.organization_id, actor: user)
+               |> Ash.update(tenant: user.member.organization_id, actor: user)
 
       assert rejected.status == :rejected
     end
@@ -58,7 +58,7 @@ defmodule Firmowid.Ash.Finances.RequisitionTest do
   describe "expire" do
     test "allows the bank sync system actor to expire an accepted requisition" do
       user = admin_fixture()
-      actor = %SystemActor{org_id: user.organization_id, role: :bank_sync}
+      actor = %SystemActor{org_id: user.member.organization_id, role: :bank_sync}
 
       requisition =
         Ash.Seed.seed!(
@@ -67,13 +67,13 @@ defmodule Firmowid.Ash.Finances.RequisitionTest do
             id: Ecto.UUID.generate(),
             status: :accepted
           },
-          tenant: user.organization_id
+          tenant: user.member.organization_id
         )
 
       assert {:ok, expired} =
                Requisition.expire(requisition,
                  actor: actor,
-                 tenant: user.organization_id
+                 tenant: user.member.organization_id
                )
 
       assert expired.status == :expired
@@ -99,10 +99,10 @@ defmodule Firmowid.Ash.Finances.RequisitionTest do
   defp create_requisition(user) do
     %{id: Ecto.UUID.generate()}
     |> Requisition.changeset_to_persist(
-      tenant: user.organization_id,
+      tenant: user.member.organization_id,
       actor: user,
       authorize?: false
     )
-    |> Ash.create(tenant: user.organization_id, actor: user, authorize?: false)
+    |> Ash.create(tenant: user.member.organization_id, actor: user, authorize?: false)
   end
 end

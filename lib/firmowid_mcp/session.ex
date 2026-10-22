@@ -42,9 +42,7 @@ defmodule FirmowidMcp.Session do
            Phoenix.Token.verify(FirmowidMcp.endpoint(), @salt, token, max_age: @lifetime),
          true <- claims.expires_at > System.system_time(:second),
          {:ok, %User{} = user} <- Core.get_user(id, context: @authentication_context),
-         {:ok, scope} <- Scope.new(user, tenant) do
-      scope = %{scope | actor: Core.load_member(user, tenant)}
-
+         {:ok, scope} <- Scope.new(Core.load_member(user), tenant) do
       {:ok,
        %{
          scope: scope,

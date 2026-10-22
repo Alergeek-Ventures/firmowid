@@ -146,8 +146,8 @@ defmodule Firmowid.Ash.Core.OrganizationInvite do
     end
 
     # The invite code identifies an invitation, but only an authenticated user
-    # who has not joined an organization may redeem it for themselves.
-    policy [action(:consume), actor_attribute_equals(:organization_id, nil)] do
+    # without an active member may redeem it for themselves.
+    policy [action(:consume), actor_attribute_equals(:member, nil)] do
       authorize_if always()
     end
 

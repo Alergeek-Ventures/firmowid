@@ -128,7 +128,8 @@ defmodule Firmowid.Ash.Timetracker.HoursRecord do
       change filter(
                expr(
                  submission_status == :submitted and not is_nil(change_requested_at) and
-                   is_nil(change_request_decision) and organization_id == ^actor(:organization_id)
+                   is_nil(change_request_decision) and
+                   organization_id == ^actor([:member, :organization_id])
                )
              )
 
@@ -146,7 +147,8 @@ defmodule Firmowid.Ash.Timetracker.HoursRecord do
       change filter(
                expr(
                  submission_status == :submitted and not is_nil(change_requested_at) and
-                   is_nil(change_request_decision) and organization_id == ^actor(:organization_id)
+                   is_nil(change_request_decision) and
+                   organization_id == ^actor([:member, :organization_id])
                )
              )
 

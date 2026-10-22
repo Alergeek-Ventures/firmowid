@@ -14,7 +14,7 @@ defmodule Firmowid.Ash.Ksef.CertificateAuthTest do
 
   setup do
     admin = admin_fixture()
-    scope = %Scope{actor: admin, tenant: admin.organization_id}
+    scope = %Scope{actor: admin, tenant: admin.member.organization_id}
     credentials = certificate_credentials()
     access_token = jwt(3_600)
     refresh_token = jwt(7 * 86_400)
@@ -44,7 +44,7 @@ defmodule Firmowid.Ash.Ksef.CertificateAuthTest do
 
     on_exit(fn ->
       Application.put_env(:firmowid, :ksef, original_config)
-      Cachex.del(:ksef, {:access_token, admin.organization_id})
+      Cachex.del(:ksef, {:access_token, admin.member.organization_id})
       Cachex.del(:ksef, {:public_key, "SymmetricKeyEncryption"})
     end)
 
@@ -85,12 +85,12 @@ defmodule Firmowid.Ash.Ksef.CertificateAuthTest do
     assert password == credentials.password
     assert credential.expires_on == certificate_expiration_date(credentials.certificate)
 
-    raw_credentials = raw_credentials(admin.organization_id)
+    raw_credentials = raw_credentials(admin.member.organization_id)
     refute raw_credentials =~ credentials.certificate
     refute raw_credentials =~ credentials.private_key
     refute raw_credentials =~ credentials.password
 
-    assert {:ok, nil} = Cachex.get(:ksef, {:access_token, admin.organization_id})
+    assert {:ok, nil} = Cachex.get(:ksef, {:access_token, admin.member.organization_id})
   end
 
   test "session worker authenticates stored certificate credentials and marks them working", %{
@@ -111,10 +111,10 @@ defmodule Firmowid.Ash.Ksef.CertificateAuthTest do
 
     assert :ok =
              Oban.Testing.with_testing_mode(:manual, fn ->
-               perform_job(SessionWorker, %{"organization_id" => admin.organization_id})
+               perform_job(SessionWorker, %{"organization_id" => admin.member.organization_id})
              end)
 
-    assert {:ok, access_token} = Cachex.get(:ksef, {:access_token, admin.organization_id})
+    assert {:ok, access_token} = Cachex.get(:ksef, {:access_token, admin.member.organization_id})
     assert access_token == expected_access_token
     assert %Credential{status: :working} = Ksef.get_credential!(scope: scope)
   end

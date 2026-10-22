@@ -1,4 +1,4 @@
-<%= if @current_user && !is_nil(@current_user.organization_id) do %>
+<%= if match?(%{member: %{organization_id: _}}, @current_user) do %>
   <%!-- simulates the navbar height, so the content does not jump when the navbar collapses --%>
   <%= if String.starts_with?(@current_uri.path, "/zarzadzanie") do %>
     <div class={[

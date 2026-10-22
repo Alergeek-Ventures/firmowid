@@ -8,7 +8,7 @@ defmodule Firmowid.Ash.Analysis.Actions.ClassifyMonth do
   def run(input, _opts, context) do
     key = Application.get_env(:firmowid, :typesafe_api_key)
 
-    if context.actor.organization_id == context.tenant and
+    if context.actor.member.organization_id == context.tenant and
          is_binary(key) and byte_size(key) > 0 do
       %{
         organization_id: context.tenant,

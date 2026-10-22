@@ -99,7 +99,7 @@ defmodule FirmowidWeb.Auth.Views.RegistrationTest do
         |> render_submit()
 
       assert blank_name_html =~ "jest wymagane"
-      assert is_nil(Core.get_user_by_email!(email, authorize?: false).organization_id)
+      assert is_nil(Core.load_member(Core.get_user_by_email!(email, authorize?: false)).member)
 
       organization_lv
       |> form("#organization_form", %{
@@ -117,15 +117,16 @@ defmodule FirmowidWeb.Auth.Views.RegistrationTest do
       })
       |> render_submit()
 
-      created_user = Core.get_user_by_email!(email, authorize?: false)
+      created_user = email |> Core.get_user_by_email!(authorize?: false) |> Core.load_member()
 
-      assert created_user.organization_id
+      assert created_user.member.organization_id
 
-      organization = Core.get_organization!(created_user.organization_id, authorize?: false)
+      organization =
+        Core.get_organization!(created_user.member.organization_id, authorize?: false)
 
       assert organization.name == "Nowa Organizacja"
       assert organization.owner_id == created_user.id
-      assert Core.load_member(created_user, organization.id).member.name == "Ada Lovelace"
+      assert created_user.member.name == "Ada Lovelace"
 
       {:ok, _dashboard_lv, dashboard_html} = live(conn, ~p"/fakturowanie")
 
@@ -174,16 +175,16 @@ defmodule FirmowidWeb.Auth.Views.RegistrationTest do
         |> render_submit()
 
       assert blank_name_html =~ "jest wymagane"
-      assert is_nil(Core.get_user_by_email!(email, authorize?: false).organization_id)
+      assert is_nil(Core.load_member(Core.get_user_by_email!(email, authorize?: false)).member)
 
       organization_lv
       |> form("#join_form", %{"name" => "Grace Hopper", "code" => invite_code})
       |> render_submit()
 
-      joined_user = Core.get_user_by_email!(email, authorize?: false)
+      joined_user = email |> Core.get_user_by_email!(authorize?: false) |> Core.load_member()
 
-      assert joined_user.organization_id == admin.organization_id
-      assert Core.load_member(joined_user, admin.organization_id).member.name == "Grace Hopper"
+      assert joined_user.member.organization_id == admin.member.organization_id
+      assert joined_user.member.name == "Grace Hopper"
     end
   end
 

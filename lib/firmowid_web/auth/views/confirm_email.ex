@@ -8,6 +8,7 @@ defmodule FirmowidWeb.Auth.Views.ConfirmEmail do
   import Phoenix.Component, except: [link: 1]
 
   alias AshAuthentication.AddOn.Confirmation.Actions
+  alias Firmowid.Ash.Core
   alias FirmowidWeb.Infrastructure.UserAuth
 
   def render(assigns) do
@@ -81,11 +82,11 @@ defmodule FirmowidWeb.Auth.Views.ConfirmEmail do
   defp confirmation_button_label(false), do: "Potwierdź założenie konta"
 
   defp load_current_user(socket) do
-    case socket.assigns[:current_user] do
+    case socket.assigns[:current_user] && Core.load_member(socket.assigns.current_user) do
       nil ->
         socket
 
-      user when is_nil(user.organization_id) ->
+      %{member: nil} = user ->
         assign(socket, :current_user, %{user | member: nil})
 
       user ->

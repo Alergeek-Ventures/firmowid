@@ -12,22 +12,23 @@ defmodule FirmowidWeb.Infrastructure.UserAuth do
 
   alias AshAuthentication.Phoenix.Controller, as: AuthController
   alias Firmowid.Ash.Core
+  alias Firmowid.Ash.Core.Member
   alias Firmowid.Ash.Core.User
   alias Firmowid.Ash.Scope
   alias FirmowidWeb.Organization.Utilities.Navigation, as: OrganizationNavigation
 
   @doc """
-  Builds a Scope, loads the user's member and avatars for member and organization.
+  Builds a Scope in the organization of the user's loaded active member and loads
+  avatars for member and organization.
 
   Shared by both the Plug pipeline (`require_authenticated_user_with_organization`)
   and the LiveView hook (`RequireOrganization.on_mount`).
   """
-  @spec load_scope_and_avatars(map()) :: {map(), map(), Scope.t()}
-  def load_scope_and_avatars(user) do
-    user = Core.load_member(user, user.organization_id)
-    scope = Scope.new!(user, user.organization_id)
-    user = Ash.load!(user, [:organization, member: [avatar_blob: [:url]]], scope: scope)
-    org = Ash.load!(user.organization, [avatar_blob: [:url]], scope: scope)
+  @spec load_scope_and_avatars(User.t()) :: {User.t(), map(), Scope.t()}
+  def load_scope_and_avatars(%User{member: %Member{organization_id: tenant} = member} = user) do
+    scope = Scope.new!(user, tenant)
+    user = %{user | member: Ash.load!(member, [avatar_blob: [:url]], scope: scope)}
+    org = Core.get_organization!(tenant, scope: scope, load: [avatar_blob: [:url]])
     {user, org, scope}
   end
 
@@ -58,15 +59,17 @@ defmodule FirmowidWeb.Infrastructure.UserAuth do
   Plug: Requires authenticated user with organization (browser).
   """
   def require_authenticated_user_with_organization(conn, _opts) do
+    user = conn.assigns[:current_user] && Core.load_member(conn.assigns[:current_user])
+
     cond do
-      is_nil(conn.assigns[:current_user]) ->
+      is_nil(user) ->
         conn
         |> maybe_store_return_to()
         |> LiveToast.put_toast(:notice, "Musisz się zalogować.")
         |> redirect(to: ~p"/zaloguj")
         |> halt()
 
-      is_nil(conn.assigns[:current_user].organization_id) ->
+      is_nil(user.member) ->
         conn
         |> maybe_store_return_to()
         |> LiveToast.put_toast(:notice, "Aby przejść dalej, przypisz sobie organizację.")
@@ -74,7 +77,7 @@ defmodule FirmowidWeb.Infrastructure.UserAuth do
         |> halt()
 
       true ->
-        {user, org, ash_scope} = load_scope_and_avatars(conn.assigns[:current_user])
+        {user, org, ash_scope} = load_scope_and_avatars(user)
 
         conn
         |> assign(:current_user, user)
@@ -87,7 +90,7 @@ defmodule FirmowidWeb.Infrastructure.UserAuth do
   Plug: Requires authenticated user without organization (onboarding).
   """
   def require_authenticated_user_without_organization(conn, _opts) do
-    user = conn.assigns[:current_user]
+    user = conn.assigns[:current_user] && Core.load_member(conn.assigns[:current_user])
 
     cond do
       is_nil(user) ->
@@ -97,8 +100,8 @@ defmodule FirmowidWeb.Infrastructure.UserAuth do
         |> redirect(to: ~p"/zaloguj")
         |> halt()
 
-      is_nil(user.organization_id) ->
-        conn
+      is_nil(user.member) ->
+        assign(conn, :current_user, user)
 
       true ->
         conn
@@ -129,18 +132,20 @@ defmodule FirmowidWeb.Infrastructure.UserAuth do
   Plug: Redirects authenticated users away from guest pages.
   """
   def redirect_if_user_is_authenticated(conn, _opts) do
-    if conn.assigns[:current_user] do
-      conn
-      |> redirect(
-        to:
-          if(is_nil(conn.assigns[:current_user].organization_id),
-            do: OrganizationNavigation.onboarding_path(),
-            else: signed_in_path(conn)
-          )
-      )
-      |> halt()
-    else
-      conn
+    case conn.assigns[:current_user] do
+      nil ->
+        conn
+
+      user ->
+        conn
+        |> redirect(
+          to:
+            if(is_nil(Core.load_member(user).member),
+              do: OrganizationNavigation.onboarding_path(),
+              else: signed_in_path(conn)
+            )
+        )
+        |> halt()
     end
   end
 
@@ -166,8 +171,8 @@ defmodule FirmowidWeb.Infrastructure.UserAuth do
   redirected to invoicing hub, while other users land on time tracking.
   """
   @spec signed_in_path_for_user(User.t() | nil) :: String.t()
-  def signed_in_path_for_user(%User{organization_id: tenant} = user) when is_binary(tenant) do
-    case Core.load_member(user, tenant).member do
+  def signed_in_path_for_user(%User{} = user) do
+    case Core.load_member(user).member do
       %{role: role} when role in [:invoicing, :accountant, :admin] -> ~p"/fakturowanie"
       _member -> ~p"/czasosledz"
     end

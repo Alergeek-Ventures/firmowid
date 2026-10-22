@@ -40,7 +40,7 @@ defmodule FirmowidWeb.Delegations.Views.DelegationFormTest do
   for transport_type <- ["railway", "airplane", "bus", "public_transport", "other"] do
     test "submits a delegation with #{transport_type}", %{conn: conn} do
       employee = user_fixture()
-      scope = %Scope{actor: employee, tenant: employee.organization_id}
+      scope = %Scope{actor: employee, tenant: employee.member.organization_id}
       {:ok, view, _html} = conn |> log_in_user(employee) |> live(~p"/delegacje/dodaj")
 
       view
@@ -128,7 +128,7 @@ defmodule FirmowidWeb.Delegations.Views.DelegationFormTest do
         blob_path: "/test/contracts/#{System.unique_integer([:positive])}.pdf",
         blob_checksum: "contract-#{System.unique_integer([:positive])}",
         original_filename: "contract.pdf",
-        organization_id: employee.organization_id
+        organization_id: employee.member.organization_id
       })
 
     Payroll.create_employment_contract!(
@@ -140,8 +140,11 @@ defmodule FirmowidWeb.Delegations.Views.DelegationFormTest do
         position: "Software Developer"
       },
       scope: %Scope{
-        actor: %SystemActor{org_id: employee.organization_id, role: :document_blob_processor},
-        tenant: employee.organization_id
+        actor: %SystemActor{
+          org_id: employee.member.organization_id,
+          role: :document_blob_processor
+        },
+        tenant: employee.member.organization_id
       }
     )
   end

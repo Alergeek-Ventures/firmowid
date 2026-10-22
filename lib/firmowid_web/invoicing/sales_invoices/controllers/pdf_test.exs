@@ -9,7 +9,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Controllers.PdfTest do
 
   test "renders a correction preview with its reference invoice amount", %{conn: conn} do
     admin = admin_fixture()
-    scope = %Scope{actor: admin, tenant: admin.organization_id}
+    scope = %Scope{actor: admin, tenant: admin.member.organization_id}
     original = sales_invoice_fixture!(admin)
 
     correction =
@@ -79,7 +79,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Controllers.PdfTest do
             }
           ]
         },
-        tenant: admin.organization_id,
+        tenant: admin.member.organization_id,
         actor: admin
       )
 

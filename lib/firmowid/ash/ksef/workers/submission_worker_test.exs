@@ -17,7 +17,7 @@ defmodule Firmowid.Ash.Ksef.Workers.SubmissionWorkerTest do
     admin = admin_fixture()
     invoice = submitted_invoice!(admin, %{ksef_invoice_kind: :vat})
 
-    reject_verification!(admin.organization_id)
+    reject_verification!(admin.member.organization_id)
     verify!(invoice)
 
     withdrawn = SalesInvoice.by_id!(invoice.id, scope: scope_for(admin))
@@ -39,7 +39,7 @@ defmodule Firmowid.Ash.Ksef.Workers.SubmissionWorkerTest do
     correction =
       submitted_invoice!(admin, %{ksef_invoice_kind: :kor, corrected_invoice_id: original.id})
 
-    reject_verification!(admin.organization_id)
+    reject_verification!(admin.member.organization_id)
     verify!(correction)
 
     assert {:ok, nil} =
@@ -50,7 +50,7 @@ defmodule Firmowid.Ash.Ksef.Workers.SubmissionWorkerTest do
     admin = admin_fixture()
     invoice = submitted_invoice!(admin, %{ksef_invoice_kind: :vat})
 
-    InvoicingFixtures.accept_ksef_submissions!(admin.organization_id)
+    InvoicingFixtures.accept_ksef_submissions!(admin.member.organization_id)
 
     Req.Test.stub(:ksef_api, fn conn ->
       Req.Test.json(conn, %{"status" => %{"code" => 150, "description" => "Processing"}})
@@ -112,5 +112,5 @@ defmodule Firmowid.Ash.Ksef.Workers.SubmissionWorkerTest do
     )
   end
 
-  defp scope_for(user), do: %Scope{actor: user, tenant: user.organization_id}
+  defp scope_for(user), do: %Scope{actor: user, tenant: user.member.organization_id}
 end

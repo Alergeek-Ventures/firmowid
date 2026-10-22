@@ -9,12 +9,13 @@ defmodule FirmowidWeb.Landing.Views.Index do
   import FirmowidWeb.Landing.Components.Primitives
   import FirmowidWeb.Landing.Components.Sections
 
+  alias Firmowid.Ash.Core
   alias FirmowidWeb.Infrastructure.UserAuth
 
   @impl true
   def mount(_params, _session, socket) do
     # Redirect authenticated users with organization to role-based landing.
-    if socket.assigns[:current_user] && socket.assigns.current_user.organization_id do
+    if socket.assigns[:current_user] && Core.load_member(socket.assigns.current_user).member do
       {:ok, push_navigate(socket, to: UserAuth.signed_in_path_for_user(socket.assigns.current_user))}
     else
       {:ok,

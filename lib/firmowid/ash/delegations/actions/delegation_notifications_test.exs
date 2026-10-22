@@ -11,13 +11,13 @@ defmodule Firmowid.Ash.Delegations.Actions.DelegationNotificationsTest do
 
   test "delivers a delegation notification to organization admins" do
     employee = user_fixture()
-    admin = admin_fixture(%{organization_id: employee.organization_id})
+    admin = admin_fixture(%{organization_id: employee.member.organization_id})
     AuthEmailHelpers.drain_sent_emails()
 
     delegation =
       Ash.Seed.seed!(Delegation, %{
         id: Ash.UUIDv7.generate(),
-        organization_id: employee.organization_id,
+        organization_id: employee.member.organization_id,
         member_id: employee.member.id,
         reference: "TEST-2026-08-1",
         title: "Spotkanie z klientem",
@@ -35,10 +35,10 @@ defmodule Firmowid.Ash.Delegations.Actions.DelegationNotificationsTest do
              react_to_signal(
                Signals,
                :delegation_submitted,
-               %{delegation_id: delegation.id, organization_id: employee.organization_id},
+               %{delegation_id: delegation.id, organization_id: employee.member.organization_id},
                only: Delegation,
                inline?: true,
-               tenant: employee.organization_id
+               tenant: employee.member.organization_id
              )
 
     assert_email_sent(subject: "Nowe zgłoszenie delegacji", to: [to_string(admin.email)])
@@ -51,7 +51,7 @@ defmodule Firmowid.Ash.Delegations.Actions.DelegationNotificationsTest do
     delegation =
       Ash.Seed.seed!(Delegation, %{
         id: Ash.UUIDv7.generate(),
-        organization_id: employee.organization_id,
+        organization_id: employee.member.organization_id,
         member_id: employee.member.id,
         reference: "TEST-2026-08-1",
         title: "Spotkanie z klientem",
@@ -69,10 +69,10 @@ defmodule Firmowid.Ash.Delegations.Actions.DelegationNotificationsTest do
              react_to_signal(
                Signals,
                :delegation_approved,
-               %{delegation_id: delegation.id, organization_id: employee.organization_id},
+               %{delegation_id: delegation.id, organization_id: employee.member.organization_id},
                only: Delegation,
                inline?: true,
-               tenant: employee.organization_id
+               tenant: employee.member.organization_id
              )
 
     assert_email_sent(subject: "Delegacja została zatwierdzona", to: [to_string(employee.email)])

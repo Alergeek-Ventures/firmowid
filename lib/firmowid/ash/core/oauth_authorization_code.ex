@@ -59,7 +59,7 @@ defmodule Firmowid.Ash.Core.OauthAuthorizationCode do
       description "Mark an authorization code as used after a successful token exchange."
       accept []
 
-      change filter(expr(exists(user, not is_nil(organization_id))))
+      change filter(expr(exists(user.member, is_nil(archived_at))))
 
       validate absent(:consumed_at) do
         message "code already used"

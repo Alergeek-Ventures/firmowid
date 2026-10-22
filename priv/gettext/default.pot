@@ -375,12 +375,12 @@ msgstr ""
 msgid "Features"
 msgstr ""
 
-#: lib/firmowid_web/landing/views/index.ex:22
+#: lib/firmowid_web/landing/views/index.ex:23
 #, elixir-autogen, elixir-format
 msgid "Firmowid"
 msgstr ""
 
-#: lib/firmowid_web/landing/views/index.ex:25
+#: lib/firmowid_web/landing/views/index.ex:26
 #, elixir-autogen, elixir-format
 msgid "Firmowid is KSeF-compliant invoicing, bank synchronization, working-time tracking, and team payroll for Polish companies."
 msgstr ""

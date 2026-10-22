@@ -7,12 +7,14 @@ defmodule FirmowidWeb.Timetracker.Controllers.CsvTest do
 
   test "project csv exports session rows with expected columns", %{conn: conn} do
     admin = admin_fixture()
-    project = project_fixture(%{organization_id: admin.organization_id, name: "CSV Project"})
 
-    user_project_fixture(admin.id, project.id, admin.organization_id)
+    project =
+      project_fixture(%{organization_id: admin.member.organization_id, name: "CSV Project"})
+
+    user_project_fixture(admin.id, project.id, admin.member.organization_id)
 
     session_fixture(%{
-      organization_id: admin.organization_id,
+      organization_id: admin.member.organization_id,
       project_id: project.id,
       user_id: admin.id,
       title: "Session title",

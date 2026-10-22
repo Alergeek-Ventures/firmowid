@@ -13,13 +13,13 @@ defmodule FirmowidMcp.Invoicing.Views.IssueTest do
     admin = admin_fixture()
     saved_on = Date.add(Date.utc_today(), -40)
     draft = draft_fixture!(admin, saved_on)
-    Firmowid.InvoicingFixtures.accept_ksef_submissions!(admin.organization_id)
+    Firmowid.InvoicingFixtures.accept_ksef_submissions!(admin.member.organization_id)
 
     conn =
       conn
       |> Plug.Conn.assign(:oauth_claims, %{"exp" => System.system_time(:second) + 600})
       |> Ash.PlugHelpers.set_actor(admin)
-      |> Ash.PlugHelpers.set_tenant(admin.organization_id)
+      |> Ash.PlugHelpers.set_tenant(admin.member.organization_id)
 
     arguments = %{"input" => %{"invoice" => %{}, "invoice_id" => draft.id}}
     token = FirmowidMcp.Session.issue(conn, IssueInvoice.resource_uri(), arguments)
@@ -42,19 +42,20 @@ defmodule FirmowidMcp.Invoicing.Views.IssueTest do
 
     view |> element("#confirm-invoice-issuance") |> render_click()
 
-    issued = SalesInvoice.get!(draft.id, scope: %{tenant: admin.organization_id, actor: admin})
+    issued =
+      SalesInvoice.get!(draft.id, scope: %{tenant: admin.member.organization_id, actor: admin})
 
     assert {issued.invoice_number, issued.invoice_note, issued.internal_note} ==
              {"FV/NOTES/1", "Visible note", "Private comment"}
   end
 
   defp draft_fixture!(admin, saved_on) do
-    admin.organization_id
-    |> Firmowid.Ash.Core.get_organization!(actor: admin, tenant: admin.organization_id)
+    admin.member.organization_id
+    |> Firmowid.Ash.Core.get_organization!(actor: admin, tenant: admin.member.organization_id)
     |> Ash.Seed.update!(%{address: "Seller address"})
 
     Ash.Seed.seed!(SalesInvoice, %{
-      organization_id: admin.organization_id,
+      organization_id: admin.member.organization_id,
       issue_date: saved_on,
       sale_date: Date.utc_today(),
       due_date: Date.add(Date.utc_today(), 7),
@@ -67,7 +68,7 @@ defmodule FirmowidMcp.Invoicing.Views.IssueTest do
       buyer_address: "Buyer address",
       sales_invoice_items: [
         %{
-          organization_id: admin.organization_id,
+          organization_id: admin.member.organization_id,
           index: 0,
           name: "Consulting",
           quantity: Decimal.new(1),

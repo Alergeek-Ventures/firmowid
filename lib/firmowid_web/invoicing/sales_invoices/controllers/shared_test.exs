@@ -13,7 +13,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Controllers.SharedTest do
   setup do
     user = admin_fixture()
     token = "shared-#{System.unique_integer([:positive])}"
-    invoice = invoice_fixture(user.organization_id, token)
+    invoice = invoice_fixture(user.member.organization_id, token)
     %{user: user, token: token, invoice: invoice}
   end
 
@@ -22,8 +22,8 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Controllers.SharedTest do
   end
 
   test "renders only the shared organization's logo", %{conn: conn, user: user, token: token} do
-    logo = logo_fixture(user.organization_id)
-    organization = Core.get_organization!(user.organization_id, scope: scope_for(user))
+    logo = logo_fixture(user.member.organization_id)
+    organization = Core.get_organization!(user.member.organization_id, scope: scope_for(user))
     Ash.Seed.update!(organization, %{avatar_blob_id: logo.id})
 
     html = conn |> get(~p"/faktura/#{token}") |> html_response(200)
@@ -36,8 +36,8 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Controllers.SharedTest do
     token: token
   } do
     other_user = admin_fixture()
-    logo = logo_fixture(other_user.organization_id)
-    organization = Core.get_organization!(user.organization_id, scope: scope_for(user))
+    logo = logo_fixture(other_user.member.organization_id)
+    organization = Core.get_organization!(user.member.organization_id, scope: scope_for(user))
     Ash.Seed.update!(organization, %{avatar_blob_id: logo.id})
 
     html = conn |> get(~p"/faktura/#{token}") |> html_response(200)
@@ -54,7 +54,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Controllers.SharedTest do
     token: token
   } do
     other_user = admin_fixture()
-    other_invoice = invoice_fixture(other_user.organization_id, "other-token")
+    other_invoice = invoice_fixture(other_user.member.organization_id, "other-token")
     pdf_token = "#{token}.#{other_invoice.id}"
 
     assert conn |> get(~p"/faktura/#{pdf_token}/pdf") |> html_response(404)
@@ -62,11 +62,12 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Controllers.SharedTest do
 
   test "public access does not grant a general organization read", %{user: user} do
     anonymous_scope = %Scope{
-      actor: %SystemActor{org_id: user.organization_id, role: :anonymous},
-      tenant: user.organization_id
+      actor: %SystemActor{org_id: user.member.organization_id, role: :anonymous},
+      tenant: user.member.organization_id
     }
 
-    assert {:error, _} = Core.get_organization(user.organization_id, scope: anonymous_scope)
+    assert {:error, _} =
+             Core.get_organization(user.member.organization_id, scope: anonymous_scope)
   end
 
   test "a shared chain remains bound to its token and tenant", %{
@@ -75,11 +76,11 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Controllers.SharedTest do
     token: token
   } do
     other_user = admin_fixture()
-    other_invoice = invoice_fixture(other_user.organization_id, "foreign-token")
+    other_invoice = invoice_fixture(other_user.member.organization_id, "foreign-token")
 
     scope = %Scope{
-      actor: %SystemActor{org_id: user.organization_id, role: :anonymous},
-      tenant: user.organization_id
+      actor: %SystemActor{org_id: user.member.organization_id, role: :anonymous},
+      tenant: user.member.organization_id
     }
 
     assert SalesInvoice.public_shared_chain!(invoice.id, "invalid-token", scope: scope) == []
@@ -132,5 +133,5 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Controllers.SharedTest do
     })
   end
 
-  defp scope_for(user), do: %Scope{actor: user, tenant: user.organization_id}
+  defp scope_for(user), do: %Scope{actor: user, tenant: user.member.organization_id}
 end

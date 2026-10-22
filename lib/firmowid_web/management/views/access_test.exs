@@ -9,7 +9,7 @@ defmodule FirmowidWeb.Management.Views.AccessTest do
 
   test "non-admin is redirected away from management routes", %{conn: conn} do
     admin = admin_fixture()
-    invoicing_user = user_in_org_fixture(admin.organization_id, %{role: :invoicing})
+    invoicing_user = user_in_org_fixture(admin.member.organization_id, %{role: :invoicing})
 
     conn = log_in_user(conn, invoicing_user)
 
@@ -22,7 +22,7 @@ defmodule FirmowidWeb.Management.Views.AccessTest do
 
   test "an admin opens employees and invites, an employee cannot", %{conn: conn} do
     admin = admin_fixture()
-    employee = user_in_org_fixture(admin.organization_id, %{role: :employee})
+    employee = user_in_org_fixture(admin.member.organization_id, %{role: :employee})
 
     admin_conn = log_in_user(conn, admin)
     assert {:ok, _view, _html} = live(admin_conn, ~p"/zarzadzanie/pracownicy")

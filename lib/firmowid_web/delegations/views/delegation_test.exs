@@ -20,7 +20,7 @@ defmodule FirmowidWeb.Delegations.Views.DelegationTest do
       Ash.Seed.seed!(
         Delegation,
         %{
-          organization_id: user.organization_id,
+          organization_id: user.member.organization_id,
           member_id: user.member.id,
           title: "Wyjazd służbowy",
           billing_month: ~D[2026-08-01],
@@ -34,7 +34,7 @@ defmodule FirmowidWeb.Delegations.Views.DelegationTest do
           status: :in_progress,
           reference: "UK-2026-08-1"
         },
-        tenant: user.organization_id
+        tenant: user.member.organization_id
       )
 
     {:ok, _view, html} = conn |> log_in_user(user) |> live(~p"/delegacje/#{delegation.reference}")
@@ -48,12 +48,12 @@ defmodule FirmowidWeb.Delegations.Views.DelegationTest do
     conn: conn
   } do
     employee = user_fixture()
-    admin = admin_fixture(%{organization_id: employee.organization_id})
+    admin = admin_fixture(%{organization_id: employee.member.organization_id})
 
     delegation =
       Ash.Seed.seed!(Delegation, %{
         id: Ash.UUIDv7.generate(),
-        organization_id: employee.organization_id,
+        organization_id: employee.member.organization_id,
         member_id: employee.member.id,
         title: "Zakończony wyjazd służbowy",
         billing_month: ~D[2026-08-01],
@@ -80,8 +80,8 @@ defmodule FirmowidWeb.Delegations.Views.DelegationTest do
 
   test "renders an in-progress delegation with union-backed expense details", %{conn: conn} do
     user = user_fixture()
-    admin = admin_fixture(%{organization_id: user.organization_id})
-    scope = %Scope{actor: user, tenant: user.organization_id}
+    admin = admin_fixture(%{organization_id: user.member.organization_id})
+    scope = %Scope{actor: user, tenant: user.member.organization_id}
     signed_command_path = Briefly.create!(extname: ".pdf")
     File.write!(signed_command_path, "%PDF-1.4 signed command")
 
@@ -109,7 +109,7 @@ defmodule FirmowidWeb.Delegations.Views.DelegationTest do
           upload_path: signed_command_path,
           content_type: "application/pdf"
         },
-        scope: %Scope{actor: admin, tenant: user.organization_id}
+        scope: %Scope{actor: admin, tenant: user.member.organization_id}
       )
 
     for {kind, details} <- [
@@ -135,7 +135,7 @@ defmodule FirmowidWeb.Delegations.Views.DelegationTest do
         DelegationExpense,
         %{
           delegation_id: delegation.id,
-          organization_id: user.organization_id,
+          organization_id: user.member.organization_id,
           blob_id: seed_blob(user).id,
           kind: kind,
           original_filename: "rachunek.pdf",
@@ -143,7 +143,7 @@ defmodule FirmowidWeb.Delegations.Views.DelegationTest do
           expense_amount: Money.new(:PLN, 100),
           details: details
         },
-        tenant: user.organization_id
+        tenant: user.member.organization_id
       )
     end
 
@@ -217,7 +217,7 @@ defmodule FirmowidWeb.Delegations.Views.DelegationTest do
 
     assert {:ok, completed_delegation} =
              Delegations.get_delegation(delegation.id,
-               scope: %Scope{actor: user, tenant: user.organization_id}
+               scope: %Scope{actor: user, tenant: user.member.organization_id}
              )
 
     assert completed_delegation.date_change_reason == "Zmiana biletu"
@@ -375,7 +375,7 @@ defmodule FirmowidWeb.Delegations.Views.DelegationTest do
 
     assert {:ok, completed_delegation} =
              Delegations.get_delegation(delegation.id,
-               scope: %Scope{actor: user, tenant: user.organization_id},
+               scope: %Scope{actor: user, tenant: user.member.organization_id},
                load: [:expenses]
              )
 
@@ -457,8 +457,8 @@ defmodule FirmowidWeb.Delegations.Views.DelegationTest do
 
   defp approved_delegation do
     user = user_fixture()
-    admin = admin_fixture(%{organization_id: user.organization_id})
-    scope = %Scope{actor: user, tenant: user.organization_id}
+    admin = admin_fixture(%{organization_id: user.member.organization_id})
+    scope = %Scope{actor: user, tenant: user.member.organization_id}
     signed_command_path = Briefly.create!(extname: ".pdf")
     File.write!(signed_command_path, "%PDF-1.4 signed command")
 
@@ -485,7 +485,7 @@ defmodule FirmowidWeb.Delegations.Views.DelegationTest do
           upload_path: signed_command_path,
           content_type: "application/pdf"
         },
-        scope: %Scope{actor: admin, tenant: user.organization_id}
+        scope: %Scope{actor: admin, tenant: user.member.organization_id}
       )
 
     {user, delegation}
@@ -496,7 +496,7 @@ defmodule FirmowidWeb.Delegations.Views.DelegationTest do
       DelegationExpense,
       %{
         delegation_id: delegation.id,
-        organization_id: user.organization_id,
+        organization_id: user.member.organization_id,
         blob_id: seed_blob(user).id,
         kind: :accommodation,
         original_filename: "rezerwacja.pdf",
@@ -509,7 +509,7 @@ defmodule FirmowidWeb.Delegations.Views.DelegationTest do
           departure_date: ~D[2026-08-11]
         }
       },
-      tenant: user.organization_id
+      tenant: user.member.organization_id
     )
   end
 
@@ -518,7 +518,7 @@ defmodule FirmowidWeb.Delegations.Views.DelegationTest do
       DelegationExpense,
       %{
         delegation_id: delegation.id,
-        organization_id: user.organization_id,
+        organization_id: user.member.organization_id,
         blob_id: seed_blob(user).id,
         kind: :transport,
         original_filename: "bilet.pdf",
@@ -537,7 +537,7 @@ defmodule FirmowidWeb.Delegations.Views.DelegationTest do
           ]
         }
       },
-      tenant: user.organization_id
+      tenant: user.member.organization_id
     )
   end
 
@@ -549,7 +549,7 @@ defmodule FirmowidWeb.Delegations.Views.DelegationTest do
       blob_path: "/test/delegations/#{System.unique_integer([:positive])}.pdf",
       blob_checksum: "delegation-#{System.unique_integer([:positive])}",
       original_filename: "rachunek.pdf",
-      organization_id: user.organization_id
+      organization_id: user.member.organization_id
     })
   end
 end

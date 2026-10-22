@@ -128,7 +128,7 @@ defmodule Firmowid.Ash.Timetracker.ProjectTest do
 
   defp setup_scope(_) do
     admin = admin_fixture()
-    org_id = admin.organization_id
+    org_id = admin.member.organization_id
 
     scope = %Firmowid.Ash.Scope{
       actor: admin,
