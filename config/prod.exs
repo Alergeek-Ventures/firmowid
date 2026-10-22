@@ -1,6 +1,16 @@
 import Config
 
 safe_sentry_metadata = [
+  :view,
+  :live_action,
+  :callback,
+  :message_kind,
+  :message_tag,
+  :message_arity,
+  :resource,
+  :action,
+  :action_type,
+  :processing_target,
   :request_id,
   :user_id,
   :organization_id,
@@ -72,6 +82,7 @@ config :sentry,
     level: :info,
     metadata: safe_sentry_metadata ++ [:mfa],
     capture_metadata: safe_sentry_metadata ++ [:sentry_live_view_captured],
+    tags_from_metadata: [:organization_id, :view, :live_action, :callback],
     capture_excluded_domains: [:cowboy, :bandit],
     excluded_domains: [:otp, :sasl]
   ],
