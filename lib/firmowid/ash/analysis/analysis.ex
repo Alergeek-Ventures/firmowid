@@ -207,23 +207,25 @@ defmodule Firmowid.Ash.Analysis do
   end
 
   @doc """
-  Lists unrealized entries up to `date_to`, which are missing from the totals:
+  Lists unrealized entries between `date_from` and `date_to`, which are missing
+  from the totals:
   issued invoices (by sale date) without a linked transaction and transactions
   (by booking date) without an invoice or salary, neither skipped. Transfers
   between own accounts are excluded. Entries are split by direction and sorted
   by date; `:income` and `:expenses` are their positive PLN sums.
   """
-  @spec get_unrealized_entries(Date.t(), Scope.t()) :: %{
+  @spec get_unrealized_entries(Date.t(), Date.t(), Scope.t()) :: %{
           income_entries: [SalesInvoice.t() | Transaction.t()],
           expense_entries: [CostInvoice.t() | Transaction.t()],
           income: Decimal.t(),
           expenses: Decimal.t()
         }
-  def get_unrealized_entries(date_to, scope) do
+  def get_unrealized_entries(date_from, date_to, scope) do
     analysis_scope = analysis_scope(scope)
     own_account_ibans = own_account_ibans(scope)
 
     args = %{
+      date_from: date_from,
       date_to: date_to,
       date_field: :sale_date,
       merge_corrections: true,
@@ -255,7 +257,7 @@ defmodule Firmowid.Ash.Analysis do
       )
 
     {incoming, outgoing} =
-      %{date_to: date_to, reconciliation: :pending}
+      %{date_from: date_from, date_to: date_to, reconciliation: :pending}
       |> Finances.list_transactions!(scope: analysis_scope)
       |> Enum.reject(&own_account_transfer?(&1, own_account_ibans))
       |> Enum.split_with(&Money.positive?(&1.amount))
