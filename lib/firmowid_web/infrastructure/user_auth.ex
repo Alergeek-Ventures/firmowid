@@ -13,9 +13,46 @@ defmodule FirmowidWeb.Infrastructure.UserAuth do
   alias AshAuthentication.Phoenix.Controller, as: AuthController
   alias Firmowid.Ash.Core
   alias Firmowid.Ash.Core.Member
+  alias Firmowid.Ash.Core.Organization
   alias Firmowid.Ash.Core.User
   alias Firmowid.Ash.Scope
   alias FirmowidWeb.Organization.Utilities.Navigation, as: OrganizationNavigation
+
+  @doc """
+  Session key of the organization the user selected (see `Firmowid.Ash.Core.load_member/2`).
+
+  It is only a preference: the user works in it only while they have a usable member
+  there, otherwise in their default one (the most recently updated membership).
+  """
+  @spec organization_session_key() :: String.t()
+  def organization_session_key, do: "organization_id"
+
+  @doc """
+  Loads the user's usable members and selects the one of the organization chosen
+  in `session`, returning the user with it as `member` and the organizations the
+  user can switch between.
+  """
+  @spec load_member(User.t(), map()) :: {User.t(), [Organization.t()]}
+  def load_member(%User{} = user, session) do
+    members = Core.list_usable_members(user)
+
+    {Core.select_member(user, members, session[organization_session_key()]), Enum.map(members, & &1.organization)}
+  end
+
+  @doc """
+  Stores the organization of the user's loaded member in the session, so the
+  default organization is chosen once per session rather than on every request
+  (it is the most recently updated membership, which other organizations' admins
+  can change).
+  """
+  @spec put_organization(Plug.Conn.t(), User.t()) :: Plug.Conn.t()
+  def put_organization(conn, %User{member: %Member{organization_id: organization_id}}) do
+    if get_session(conn, organization_session_key()) == organization_id,
+      do: conn,
+      else: put_session(conn, organization_session_key(), organization_id)
+  end
+
+  def put_organization(conn, %User{}), do: conn
 
   @doc """
   Builds a Scope in the organization of the user's loaded active member and loads
@@ -59,7 +96,11 @@ defmodule FirmowidWeb.Infrastructure.UserAuth do
   Plug: Requires authenticated user with organization (browser).
   """
   def require_authenticated_user_with_organization(conn, _opts) do
-    user = conn.assigns[:current_user] && Core.load_member(conn.assigns[:current_user])
+    {user, organizations} =
+      case conn.assigns[:current_user] do
+        nil -> {nil, []}
+        user -> load_member(user, get_session(conn))
+      end
 
     cond do
       is_nil(user) ->
@@ -80,38 +121,29 @@ defmodule FirmowidWeb.Infrastructure.UserAuth do
         {user, org, ash_scope} = load_scope_and_avatars(user)
 
         conn
+        |> put_organization(user)
         |> assign(:current_user, user)
         |> assign(:current_org, org)
+        |> assign(:organizations, organizations)
         |> assign(:ash_scope, ash_scope)
     end
   end
 
   @doc """
-  Plug: Requires authenticated user without organization (onboarding).
+  Plug: Requires an authenticated user, who creates or joins an organization
+  (onboarding), also next to the ones they already belong to.
   """
-  def require_authenticated_user_without_organization(conn, _opts) do
-    user = conn.assigns[:current_user] && Core.load_member(conn.assigns[:current_user])
-
-    cond do
-      is_nil(user) ->
+  def require_authenticated_user_for_onboarding(conn, _opts) do
+    case conn.assigns[:current_user] do
+      nil ->
         conn
         |> maybe_store_return_to()
         |> LiveToast.put_toast(:notice, "Musisz się zalogować, żeby wejść na tę stronę.")
         |> redirect(to: ~p"/zaloguj")
         |> halt()
 
-      is_nil(user.member) ->
-        assign(conn, :current_user, user)
-
-      true ->
+      _user ->
         conn
-        |> maybe_store_return_to()
-        |> LiveToast.put_toast(
-          :notice,
-          "Ta strona jest dostępna tylko przed wyborem organizacji."
-        )
-        |> redirect(to: signed_in_path(conn))
-        |> halt()
     end
   end
 
@@ -162,23 +194,27 @@ defmodule FirmowidWeb.Infrastructure.UserAuth do
   Returns the default signed-in path.
   """
   @spec signed_in_path(Plug.Conn.t()) :: String.t()
-  def signed_in_path(conn), do: signed_in_path_for_user(conn.assigns[:current_user])
+  def signed_in_path(conn),
+    do: signed_in_path_for_user(conn.assigns[:current_user], get_session(conn, organization_session_key()))
 
   @doc """
-  Returns the default signed-in path for a user.
+  Returns the default signed-in path for a user in the organization selected in
+  their session (see `Firmowid.Ash.Core.load_member/2`).
 
   Members with invoicing permissions (`:invoicing`, `:accountant`, `:admin`) are
   redirected to invoicing hub, while other users land on time tracking.
   """
-  @spec signed_in_path_for_user(User.t() | nil) :: String.t()
-  def signed_in_path_for_user(%User{} = user) do
-    case Core.load_member(user).member do
+  @spec signed_in_path_for_user(User.t() | nil, binary() | nil) :: String.t()
+  def signed_in_path_for_user(user, organization_id \\ nil)
+
+  def signed_in_path_for_user(%User{} = user, organization_id) do
+    case Core.load_member(user, organization_id).member do
       %{role: role} when role in [:invoicing, :accountant, :admin] -> ~p"/fakturowanie"
       _member -> ~p"/czasosledz"
     end
   end
 
-  def signed_in_path_for_user(_user), do: ~p"/czasosledz"
+  def signed_in_path_for_user(_user, _organization_id), do: ~p"/czasosledz"
 
   @spec superuser?(map()) :: boolean()
   def superuser?(%{system_role: :superuser}), do: true

@@ -49,6 +49,7 @@ defmodule FirmowidWeb.Auth.Controllers.AuthController do
       conn
       |> renew_session()
       |> delete_session(:return_to)
+      |> UserAuth.put_organization(user)
       |> store_in_session(user)
       |> set_live_socket_id(token)
       |> Helpers.maybe_put_remember_me_cookies(conn.private[:ash_authentication])
@@ -82,7 +83,10 @@ defmodule FirmowidWeb.Auth.Controllers.AuthController do
   end
 
   defp deny_sign_in(conn, user, :subscription_expired) do
-    organization = Core.get_organization!(user.member.organization_id, actor: user)
+    %{organization: organization} =
+      user
+      |> Core.list_active_members()
+      |> Enum.find(&(&1.organization.owner_id == user.id and &1.organization.billing_plan == :no_plan))
 
     conn
     |> renew_session()

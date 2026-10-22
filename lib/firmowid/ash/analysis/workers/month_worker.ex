@@ -16,16 +16,16 @@ defmodule Firmowid.Ash.Analysis.Workers.MonthWorker do
 
   @impl Oban.Worker
   def perform(%Oban.Job{args: args}) do
-    scope = %Scope{actor: %User{id: args["user_id"]}, tenant: args["organization_id"]}
+    tenant = args["organization_id"]
+    scope = %Scope{actor: %User{id: args["user_id"]}, tenant: tenant}
 
     with {:ok, user} <- User.get(args["user_id"], scope: scope),
          {:ok, month} <- Date.from_iso8601(args["month"]),
-         {:ok, true} <-
-           EntityTag.assign_month(%{month: month},
-             scope: %{scope | actor: Core.load_member(user)}
-           ) do
+         {:ok, scope} <- Scope.new(Core.load_member(user, tenant), tenant),
+         {:ok, true} <- EntityTag.assign_month(%{month: month}, scope: scope) do
       :ok
     else
+      {:error, :actor_tenant_mismatch} -> {:cancel, :actor_tenant_mismatch}
       {:error, %Ash.Error.Forbidden{} = error} -> {:cancel, error}
       {:error, reason} -> {:error, reason}
     end

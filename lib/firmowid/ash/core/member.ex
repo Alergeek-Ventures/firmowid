@@ -8,11 +8,11 @@ defmodule Firmowid.Ash.Core.Member do
   creates or joins the organization and removed together with the account (by
   the database) or the organization.
 
-  The account's non-archived member is its active one: it decides which
-  organization the account works in. An account has at most one: joining and
-  restoring check it (see `RequireNoActiveMember`). Archiving a member detaches the account
-  from the organization: it keeps signing in, but no longer reaches the
-  organization until it is restored.
+  The account's non-archived members are its active ones: the account may work
+  in each of their organizations and the session selects which one (see
+  `Firmowid.Ash.Core.load_member/2`). Archiving a member detaches the account
+  from that organization only: it keeps signing in and using its other
+  organizations, but no longer reaches this one until it is restored.
 
   Scoped by `organization_id` (attribute multitenancy).
   """
@@ -26,7 +26,6 @@ defmodule Firmowid.Ash.Core.Member do
   alias Firmowid.Ash.Core
   alias Firmowid.Ash.Core.Calculations.AcceptedLeaveDaysForYear
   alias Firmowid.Ash.Core.Calculations.SharedBirthday
-  alias Firmowid.Ash.Core.Changes.RequireNoActiveMember
   alias Firmowid.Ash.Core.Member.Changes.DisconnectLiveSessions
   alias Firmowid.Ash.Core.UserRole
   alias Firmowid.Ash.Core.Validations.ValidateIban
@@ -87,7 +86,7 @@ defmodule Firmowid.Ash.Core.Member do
 
   code_interface do
     define :create, action: :create
-    define :get_active, action: :active, args: [:user_id], get?: true
+    define :list_active, action: :active, args: [:user_id]
     define :update_avatar, action: :update_avatar
     define :list, action: :read
     define :destroy, action: :destroy
@@ -106,18 +105,16 @@ defmodule Firmowid.Ash.Core.Member do
     end
 
     read :active do
-      description "Read the account's active member, in whichever organization it is."
-      get? true
+      description "List the account's active members across organizations, most recently updated first."
       multitenancy :bypass
 
       argument :user_id, :uuid, allow_nil?: false
 
       filter expr(user_id == ^arg(:user_id) and is_nil(archived_at))
 
-      # Accounts that joined two organizations before joining checked for an active
-      # member keep the most recently updated one (the drop_user_organization
-      # migration touches the one that was the account's organization).
-      prepare build(sort: [updated_at: :desc, id: :desc], limit: 1)
+      # The most recently updated first: it is the default organization (the
+      # drop_user_organization migration touched the one an account worked in).
+      prepare build(sort: [updated_at: :desc, id: :desc])
     end
 
     update :update_role do
@@ -201,12 +198,11 @@ defmodule Firmowid.Ash.Core.Member do
     end
 
     update :unarchive do
-      description "Restore an archived member, making it their account's active member."
+      description "Restore an archived member, making it one of their account's active members."
       accept []
       require_atomic? false
 
       change filter(expr(not is_nil(archived_at)))
-      change {RequireNoActiveMember, user_id: :user_id}
       change set_attribute(:archived_at, nil)
 
       change DisconnectLiveSessions

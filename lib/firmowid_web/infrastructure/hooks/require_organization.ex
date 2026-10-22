@@ -4,9 +4,10 @@ defmodule FirmowidWeb.Infrastructure.Hooks.RequireOrganization do
 
   After ash_authentication_live_session populates `current_user`, this hook:
   1. Redirects to /zaloguj if no user
-  2. Loads the user's active member; redirects to /organizacja if there is none
+  2. Loads the member of the organization selected in the session (see
+     `UserAuth.load_member/2`); redirects to /organizacja if there is none
   3. Loads avatar on user and organization via shared `UserAuth.load_scope_and_avatars/1`
-  4. Assigns current_user, current_org, ash_scope
+  4. Assigns current_user, current_org, organizations (to switch between), ash_scope
   """
 
   use FirmowidWeb, :verified_routes
@@ -14,31 +15,32 @@ defmodule FirmowidWeb.Infrastructure.Hooks.RequireOrganization do
   import Phoenix.Component
   import Phoenix.LiveView
 
-  alias Firmowid.Ash.Core
   alias FirmowidWeb.Infrastructure.UserAuth
   alias FirmowidWeb.Organization.Utilities.Navigation, as: OrganizationNavigation
 
-  def on_mount(:default, _params, _session, socket) do
-    case socket.assigns[:current_user] && Core.load_member(socket.assigns.current_user) do
+  def on_mount(:default, _params, session, socket) do
+    case socket.assigns[:current_user] &&
+           UserAuth.load_member(socket.assigns.current_user, session) do
       nil ->
         {:halt,
          socket
          |> LiveToast.put_toast(:notice, "Musisz się zalogować.")
          |> redirect(to: ~p"/zaloguj")}
 
-      %{member: nil} ->
+      {%{member: nil}, _organizations} ->
         {:halt,
          socket
          |> LiveToast.put_toast(:notice, "Aby przejść dalej, przypisz sobie organizację.")
          |> redirect(to: OrganizationNavigation.onboarding_path())}
 
-      user ->
+      {user, organizations} ->
         {user, org, scope} = UserAuth.load_scope_and_avatars(user)
 
         {:cont,
          socket
          |> assign(:current_user, user)
          |> assign(:current_org, org)
+         |> assign(:organizations, organizations)
          |> assign(:ash_scope, scope)}
     end
   end

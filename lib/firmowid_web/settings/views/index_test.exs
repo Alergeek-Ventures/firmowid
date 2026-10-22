@@ -193,7 +193,28 @@ defmodule FirmowidWeb.Settings.Views.IndexTest do
     assert {:ok, _view, html} = live(conn, ~p"/ustawienia/konto")
 
     assert html =~ "Usuniemy Twoje konto i wszystkie przypisane do niego dane."
-    assert html =~ "Usuniemy też całą organizację i wszystkie jej dane."
+    assert html =~ "Usuniemy też organizacje, których jesteś właścicielem"
+  end
+
+  test "account deletion modal names an owned organization other than the current one", %{
+    conn: conn
+  } do
+    admin = admin_fixture()
+    employee = user_in_org_fixture(admin.member.organization_id)
+
+    Core.create_organization!(%{nip: unique_nip(), name: "Firma Pracownika", owner_name: "Ewa"},
+      actor: employee
+    )
+
+    conn =
+      conn
+      |> log_in_user(employee)
+      |> Plug.Test.init_test_session(%{"organization_id" => admin.member.organization_id})
+
+    assert {:ok, _view, html} = live(conn, ~p"/ustawienia/konto")
+
+    assert html =~ "Usuniemy też organizacje, których jesteś właścicielem"
+    assert html =~ "Firma Pracownika"
   end
 
   test "account deletion modal does not warn non-owner about deleting the organization", %{
@@ -207,7 +228,7 @@ defmodule FirmowidWeb.Settings.Views.IndexTest do
     assert {:ok, _view, html} = live(conn, ~p"/ustawienia/konto")
 
     assert html =~ "Usuniemy Twoje konto i wszystkie przypisane do niego dane."
-    refute html =~ "Usuniemy też całą organizację i wszystkie jej dane."
+    refute html =~ "Usuniemy też organizacje"
   end
 
   test "company settings shows when a connected KSeF certificate is being renewed", %{conn: conn} do

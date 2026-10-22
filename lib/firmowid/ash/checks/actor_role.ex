@@ -3,7 +3,7 @@ defmodule Firmowid.Ash.Checks.ActorRole do
   Policy check that returns true when the actor is a `User` whose organization
   member has exactly the specified role.
 
-  A `User` actor must have its active `member` loaded (see `Firmowid.Ash.Core.load_member/1`);
+  A `User` actor must have its active `member` loaded (see `Firmowid.Ash.Core.load_member/2`);
   a user without one has no role.
 
   ## Options

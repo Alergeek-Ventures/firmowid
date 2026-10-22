@@ -1080,25 +1080,25 @@ msgstr ""
 msgid "Feedback"
 msgstr ""
 
-#: lib/firmowid_web/infrastructure/layouts/app.html.heex:187
+#: lib/firmowid_web/infrastructure/layouts/app.html.heex:225
 #, elixir-autogen, elixir-format
 msgctxt "avatar menu"
 msgid "Bank accounts"
 msgstr ""
 
-#: lib/firmowid_web/infrastructure/layouts/app.html.heex:196
+#: lib/firmowid_web/infrastructure/layouts/app.html.heex:234
 #, elixir-autogen, elixir-format
 msgctxt "avatar menu"
 msgid "Billing"
 msgstr ""
 
-#: lib/firmowid_web/infrastructure/layouts/app.html.heex:213
+#: lib/firmowid_web/infrastructure/layouts/app.html.heex:251
 #, elixir-autogen, elixir-format
 msgctxt "avatar menu"
 msgid "Log out"
 msgstr ""
 
-#: lib/firmowid_web/infrastructure/layouts/app.html.heex:179
+#: lib/firmowid_web/infrastructure/layouts/app.html.heex:217
 #, elixir-autogen, elixir-format
 msgctxt "avatar menu"
 msgid "Settings"
@@ -1130,19 +1130,19 @@ msgctxt "main navigation"
 msgid "Time tracking"
 msgstr ""
 
-#: lib/firmowid_web/infrastructure/layouts/app.html.heex:262
+#: lib/firmowid_web/infrastructure/layouts/app.html.heex:300
 #, elixir-autogen, elixir-format
 msgctxt "management navigation"
 msgid "Counterparties"
 msgstr ""
 
-#: lib/firmowid_web/infrastructure/layouts/app.html.heex:241
+#: lib/firmowid_web/infrastructure/layouts/app.html.heex:279
 #, elixir-autogen, elixir-format
 msgctxt "management navigation"
 msgid "Employees"
 msgstr ""
 
-#: lib/firmowid_web/infrastructure/layouts/app.html.heex:251
+#: lib/firmowid_web/infrastructure/layouts/app.html.heex:289
 #, elixir-autogen, elixir-format
 msgctxt "management navigation"
 msgid "Projects"
@@ -1896,7 +1896,7 @@ msgstr ""
 msgid "Annual leave"
 msgstr ""
 
-#: lib/firmowid_web/landing/views/index.ex:104
+#: lib/firmowid_web/landing/views/index.ex:111
 #, elixir-autogen, elixir-format
 msgid "Answers about KSeF, bank integrations, data security, migration and Firmowid plans."
 msgstr ""
@@ -1967,7 +1967,7 @@ msgstr ""
 msgid "Compare plans"
 msgstr ""
 
-#: lib/firmowid_web/landing/views/index.ex:90
+#: lib/firmowid_web/landing/views/index.ex:97
 #, elixir-autogen, elixir-format
 msgid "Compare the Free, Entrepreneur and Company plans. Monthly or annual billing, no hidden charges."
 msgstr ""
@@ -2041,7 +2041,7 @@ msgstr ""
 msgid "Fair pricing. No fine print."
 msgstr ""
 
-#: lib/firmowid_web/landing/views/index.ex:80
+#: lib/firmowid_web/landing/views/index.ex:87
 #, elixir-autogen, elixir-format
 msgid "Firmowid - free KSeF invoices, banking and team time tracking"
 msgstr ""
@@ -2056,7 +2056,7 @@ msgstr ""
 msgid "Firmowid connects invoices and KSeF, banking, time tracking, and your team."
 msgstr ""
 
-#: lib/firmowid_web/landing/views/index.ex:96
+#: lib/firmowid_web/landing/views/index.ex:103
 #, elixir-autogen, elixir-format
 msgid "Firmowid features — KSeF, banking and your team"
 msgstr ""
@@ -2081,7 +2081,7 @@ msgstr ""
 msgid "Firmowid is open source. Host it yourself, without limits or fees."
 msgstr ""
 
-#: lib/firmowid_web/landing/views/index.ex:88
+#: lib/firmowid_web/landing/views/index.ex:95
 #, elixir-autogen, elixir-format
 msgid "Firmowid pricing — choose your plan"
 msgstr ""
@@ -2092,7 +2092,7 @@ msgstr ""
 msgid "Firmowid was created for Polish SMEs that are tired of jumping from one program to another and recording everything in spreadsheets."
 msgstr ""
 
-#: lib/firmowid_web/landing/views/index.ex:103
+#: lib/firmowid_web/landing/views/index.ex:110
 #, elixir-autogen, elixir-format
 msgid "Firmowid — frequently asked questions"
 msgstr ""
@@ -2117,7 +2117,7 @@ msgstr ""
 msgid "Free"
 msgstr ""
 
-#: lib/firmowid_web/landing/views/index.ex:82
+#: lib/firmowid_web/landing/views/index.ex:89
 #, elixir-autogen, elixir-format
 msgid "Free KSeF invoicing, bank synchronization, time tracking, leave and business trips in one place."
 msgstr ""
@@ -2183,7 +2183,7 @@ msgstr ""
 msgid "Invoices, bank accounts and users without plan limits."
 msgstr ""
 
-#: lib/firmowid_web/landing/views/index.ex:97
+#: lib/firmowid_web/landing/views/index.ex:104
 #, elixir-autogen, elixir-format
 msgid "Invoices, transaction matching, time tracking, leave and business trips in one place."
 msgstr ""
@@ -3016,4 +3016,16 @@ msgstr ""
 #: lib/firmowid/ash/finances/changes/connect_salary.ex:90
 #, elixir-autogen, elixir-format
 msgid "The transfer amount differs from the expected salary by more than 20% (at least 300 PLN)."
+msgstr ""
+
+#: lib/firmowid_web/infrastructure/layouts/app.html.heex:208
+#, elixir-autogen, elixir-format
+msgctxt "avatar menu"
+msgid "Add organization"
+msgstr ""
+
+#: lib/firmowid_web/infrastructure/layouts/app.html.heex:179
+#, elixir-autogen, elixir-format
+msgctxt "avatar menu"
+msgid "Organization"
 msgstr ""

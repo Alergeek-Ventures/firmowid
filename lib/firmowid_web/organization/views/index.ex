@@ -6,145 +6,155 @@ defmodule FirmowidWeb.Organization.Views.Index do
   import FirmowidWeb.DesignSystem.Components.CoreComponents, except: [button: 1]
   import Phoenix.Component, except: [link: 1]
 
+  alias Ash.Error.Invalid
   alias Firmowid.Ash.Core
   alias Firmowid.Ash.Core.Organization
 
   @impl true
   def render(assigns) do
     ~H"""
-    <%= if is_nil(@current_user.member) do %>
-      <div class="relative flex min-h-screen w-screen items-center justify-center">
-        <img
-          src="/images/figurine.png"
-          class="fixed -top-20 left-1/2 h-[135vh] overflow-clip opacity-10"
-        />
-        <div class="z-10 max-w-3xl grow">
-          <h1 class="mb-16 text-lg font-bold">Czas na przypisanie organizacji do Twojego konta</h1>
-          <div class="flex justify-between md:flex-row">
-            <div class="flex max-w-[400px] flex-col justify-between gap-4">
+    <div class="relative flex min-h-screen w-screen items-center justify-center">
+      <img
+        src="/images/figurine.png"
+        class="fixed -top-20 left-1/2 h-[135vh] overflow-clip opacity-10"
+      />
+      <div class="z-10 max-w-3xl grow">
+        <h1 class="mb-16 text-lg font-bold">
+          <%= if @current_user.member do %>
+            Utwórz kolejną organizację lub dołącz do innej kodem
+          <% else %>
+            Czas na przypisanie organizacji do Twojego konta
+          <% end %>
+        </h1>
+        <div class="flex justify-between md:flex-row">
+          <div class="flex max-w-[400px] flex-col justify-between gap-4">
+            <p>
+              Jesteś <span class="font-bold">właścicielem przedsiębiorstwa</span>?
+              Wypełnij formularz, aby utworzyć organizację wewnątrz Firmowida.
+            </p>
+            <.simple_form
+              for={@organization_form}
+              id="organization_form"
+              phx-submit="create"
+              phx-change="validate"
+            >
+              <.error :if={@check_errors}>
+                Popraw błędy w formularzu.
+              </.error>
+
+              <.input
+                field={@organization_form[:owner_name]}
+                type="text"
+                placeholder="Twoje imię i nazwisko"
+                required
+              />
+              <.input
+                field={@organization_form[:nip]}
+                type="text"
+                placeholder="Identyfikator (NIP)"
+                required
+              />
+              <.input
+                field={@organization_form[:name]}
+                type="text"
+                placeholder="Nazwa organizacji"
+                required
+              />
+              <p class="m-0">Adres przedsiębiorstwa</p>
+              <div class="flex flex-row gap-2">
+                <.input
+                  class="w-3/4!"
+                  name="address[street]"
+                  value={@address_form["street"]}
+                  placeholder="Ulica"
+                  type="text"
+                  required
+                />
+                <.input
+                  class="w-1/4!"
+                  name="address[number]"
+                  value={@address_form["number"]}
+                  placeholder="/"
+                  type="text"
+                  required
+                />
+              </div>
+              <.input
+                name="address[postal_code]"
+                value={@address_form["postal_code"]}
+                placeholder="Kod pocztowy"
+                type="text"
+                required
+              />
+              <.input
+                name="address[city]"
+                value={@address_form["city"]}
+                placeholder="Miasto"
+                type="text"
+                required
+              />
+
+              <:actions>
+                <.button
+                  variant="special"
+                  class="w-full"
+                  phx-disable-with="Tworzenie organizacji..."
+                >
+                  Utwórz organizację
+                </.button>
+              </:actions>
+            </.simple_form>
+          </div>
+
+          <div class="flex max-w-[250px] flex-col justify-between">
+            <div>
               <p>
-                Jesteś <span class="font-bold">właścicielem przedsiębiorstwa</span>?
-                Wypełnij formularz, aby utworzyć organizację wewnątrz Firmowida.
+                Jesteś <span class="font-bold">współpracownikiem</span> i posiadasz kod (zaproszenie)?
               </p>
-              <.simple_form
-                for={@organization_form}
-                id="organization_form"
-                phx-submit="create"
-                phx-change="validate"
-              >
-                <.error :if={@check_errors}>
-                  Popraw błędy w formularzu.
-                </.error>
-
-                <.input
-                  field={@organization_form[:owner_name]}
-                  type="text"
-                  placeholder="Twoje imię i nazwisko"
-                  required
-                />
-                <.input
-                  field={@organization_form[:nip]}
-                  type="text"
-                  placeholder="Identyfikator (NIP)"
-                  required
-                />
-                <.input
-                  field={@organization_form[:name]}
-                  type="text"
-                  placeholder="Nazwa organizacji"
-                  required
-                />
-                <p class="m-0">Adres przedsiębiorstwa</p>
-                <div class="flex flex-row gap-2">
-                  <.input
-                    class="w-3/4!"
-                    name="address[street]"
-                    value={@address_form["street"]}
-                    placeholder="Ulica"
-                    type="text"
-                    required
-                  />
-                  <.input
-                    class="w-1/4!"
-                    name="address[number]"
-                    value={@address_form["number"]}
-                    placeholder="/"
-                    type="text"
-                    required
-                  />
-                </div>
-                <.input
-                  name="address[postal_code]"
-                  value={@address_form["postal_code"]}
-                  placeholder="Kod pocztowy"
-                  type="text"
-                  required
-                />
-                <.input
-                  name="address[city]"
-                  value={@address_form["city"]}
-                  placeholder="Miasto"
-                  type="text"
-                  required
-                />
-
+              <.simple_form for={@join_form} id="join_form" phx-submit="join">
+                <.input field={@join_form[:name]} type="text" label="Imię i nazwisko" required />
+                <.input field={@join_form[:code]} type="text" label="Kod zaproszenia" required />
                 <:actions>
-                  <.button
-                    variant="special"
-                    class="w-full"
-                    phx-disable-with="Tworzenie organizacji..."
-                  >
-                    Utwórz organizację
+                  <.button variant="special" class="w-full" phx-disable-with="Dołączanie...">
+                    Dołącz do organizacji
                   </.button>
                 </:actions>
               </.simple_form>
             </div>
-
-            <div class="flex max-w-[250px] flex-col justify-between">
-              <div>
-                <p>
-                  Jesteś <span class="font-bold">współpracownikiem</span>
-                  i posiadasz kod (zaproszenie)?
-                </p>
-                <.simple_form for={@join_form} id="join_form" phx-submit="join">
-                  <.input field={@join_form[:name]} type="text" label="Imię i nazwisko" required />
-                  <.input field={@join_form[:code]} type="text" label="Kod zaproszenia" required />
-                  <:actions>
-                    <.button variant="special" class="w-full" phx-disable-with="Dołączanie...">
-                      Dołącz do organizacji
-                    </.button>
-                  </:actions>
-                </.simple_form>
-              </div>
-              <div class="mt-8 mb-2.5 text-center">
-                <p>
-                  Nie to konto?
-                  <.form
-                    for={%{}}
-                    id="organization-logout-form"
-                    action={~p"/wyloguj"}
-                    method="delete"
-                    class="inline"
-                    data-posthog-reset-on-submit="true"
+            <div class="mt-8 mb-2.5 text-center">
+              <p>
+                Nie to konto?
+                <.form
+                  for={%{}}
+                  id="organization-logout-form"
+                  action={~p"/wyloguj"}
+                  method="delete"
+                  class="inline"
+                  data-posthog-reset-on-submit="true"
+                >
+                  <.button
+                    type="submit"
+                    variant="ghost"
+                    size="small"
+                    class="h-auto border-none p-0 underline hover:bg-transparent active:bg-transparent"
                   >
-                    <.button
-                      type="submit"
-                      variant="ghost"
-                      size="small"
-                      class="h-auto border-none p-0 underline hover:bg-transparent active:bg-transparent"
-                    >
-                      Wyloguj
-                    </.button>
-                  </.form>
-                </p>
-              </div>
+                    Wyloguj
+                  </.button>
+                </.form>
+              </p>
             </div>
           </div>
         </div>
       </div>
-    <% else %>
-      <h1>Do tego konta jest juz przypisana organizacja</h1>
-    <% end %>
+    </div>
+    <.form
+      for={%{}}
+      id="switch-organization-form"
+      action={~p"/organizacja/przelacz"}
+      phx-trigger-action={not is_nil(@switch_to)}
+    >
+      <input type="hidden" name="organizacja" value={@switch_to} />
+    </.form>
     """
   end
 
@@ -171,11 +181,11 @@ defmodule FirmowidWeb.Organization.Views.Index do
     case AshPhoenix.Form.submit(socket.assigns.organization_form.source,
            params: params
          ) do
-      {:ok, _created_org} ->
+      {:ok, created_org} ->
         socket =
           socket
           |> LiveToast.put_toast(:success, "Pomyślnie utworzono organizację")
-          |> redirect(to: "/")
+          |> assign(:switch_to, created_org.id)
 
         {:noreply, socket}
 
@@ -211,10 +221,19 @@ defmodule FirmowidWeb.Organization.Views.Index do
 
     # Consume the invite (scoped to the invite's organization)
     case Core.consume_invite(invite, %{name: name}, tenant: invite.organization_id, actor: user) do
-      {:ok, _invite} ->
-        {:noreply, redirect(socket, to: "/")}
+      {:ok, invite} ->
+        {:noreply, assign(socket, :switch_to, invite.organization_id)}
 
-      {:error, %Ash.Error.Invalid{errors: [%Ash.Error.Changes.Required{field: :name}]}} ->
+      {:error,
+       %Invalid{
+         errors: [%Ash.Error.Changes.InvalidChanges{fields: [:organization_id], message: message}]
+       }} ->
+        join_form =
+          to_form(%{"name" => name, "code" => invite_code}, errors: [code: {message, []}])
+
+        {:noreply, assign(socket, :join_form, join_form)}
+
+      {:error, %Invalid{errors: [%Ash.Error.Changes.Required{field: :name}]}} ->
         join_form =
           to_form(%{"name" => name, "code" => invite_code}, errors: [name: {"is required", []}])
 
@@ -229,41 +248,42 @@ defmodule FirmowidWeb.Organization.Views.Index do
   def mount(_params, _session, socket) do
     user = socket.assigns.current_user
 
-    socket = assign(socket, :no_padding, true)
+    # A user joining or creating another organization is prefilled with the name
+    # they use in the current one.
+    name = if user.member, do: user.member.name, else: ""
 
-    if is_nil(user.member) do
-      organization_form =
-        Organization
-        |> AshPhoenix.Form.for_create(:create,
-          domain: Core,
-          actor: user,
-          as: "organization"
-        )
-        |> to_form()
+    socket = assign(socket, no_padding: true, switch_to: nil)
 
-      socket =
-        socket
-        |> assign(:organization_form, organization_form)
-        |> assign(:address_form, %{
-          "street" => "",
-          "number" => "",
-          "postal_code" => "",
-          "city" => ""
+    organization_form =
+      Organization
+      |> AshPhoenix.Form.for_create(:create,
+        domain: Core,
+        actor: user,
+        as: "organization",
+        params: %{"owner_name" => name}
+      )
+      |> to_form()
+
+    socket =
+      socket
+      |> assign(:organization_form, organization_form)
+      |> assign(:address_form, %{
+        "street" => "",
+        "number" => "",
+        "postal_code" => "",
+        "city" => ""
+      })
+      |> assign(:check_errors, false)
+      |> assign(
+        :join_form,
+        to_form(%{
+          "name" => name,
+          "code" => ""
         })
-        |> assign(:check_errors, false)
-        |> assign(
-          :join_form,
-          to_form(%{
-            "name" => "",
-            "code" => ""
-          })
-        )
-        |> assign(:page_title, "Wybierz lub utwórz organizację")
+      )
+      |> assign(:page_title, "Wybierz lub utwórz organizację")
 
-      {:ok, socket}
-    else
-      {:ok, redirect(socket, to: "/")}
-    end
+    {:ok, socket}
   end
 
   defp add_address(params, %{"street" => street, "number" => number, "postal_code" => postal_code, "city" => city}) do

@@ -2,6 +2,9 @@ defmodule FirmowidMcp.Utilities.Authenticate do
   @moduledoc """
   After Oauth2Server BearerPlug, require an organization, set the Ash tenant and
   load the actor's member.
+
+  An account with several organizations works in its default one: the most
+  recently updated usable membership (see `Firmowid.Ash.Core.load_member/2` without a selection).
   """
 
   @behaviour Plug
