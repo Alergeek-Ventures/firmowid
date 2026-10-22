@@ -150,6 +150,8 @@ defmodule FirmowidWeb.Core.Router do
         :disconnect_cost_invoice_transactions,
         :list_transactions,
         :suggest_transaction_invoices,
+        :restore_transaction_for_matching,
+        :list_monthly_salaries,
         :suggest_transaction_salaries,
         :connect_transaction_salary,
         :disconnect_transaction_salary,

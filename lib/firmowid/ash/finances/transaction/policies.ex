@@ -33,12 +33,15 @@ defmodule Firmowid.Ash.Finances.Transaction.Policies do
       authorize_if always()
     end
 
-    # :accountant+: set_skip_invoicing (only user-facing update)
-    policy [action(:set_skip_invoicing), {AtLeastRole, role: :accountant}] do
+    # :accountant+: skipping and restoring transactions for matching
+    policy [
+      action([:set_skip_invoicing, :restore_for_matching]),
+      {AtLeastRole, role: :accountant}
+    ] do
       authorize_if always()
     end
 
-    policy action([:connect_salary, :disconnect_salary, :salary_suggestions]) do
+    policy action([:connect_salary, :disconnect_salary, :salary_suggestions, :monthly_salaries]) do
       authorize_if {ActorRole, role: :admin}
     end
 

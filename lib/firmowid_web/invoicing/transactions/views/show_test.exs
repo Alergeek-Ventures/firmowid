@@ -75,6 +75,58 @@ defmodule FirmowidWeb.Invoicing.Transactions.Views.ShowTest do
     assert assigned.salary_user_id == admin.id
   end
 
+  test "restores a skipped transfer and assigns a salary once, repeatably, without overwriting" do
+    admin = admin_fixture()
+    scope = Scope.new!(admin, admin.member.organization_id)
+
+    project =
+      Ash.Seed.seed!(Project, %{
+        name: "Salary hours",
+        organization_id: admin.member.organization_id
+      })
+
+    seed_salary_months!(admin, project, [{~D[2025-12-01], 10}])
+
+    skipped =
+      transaction_fixture!(admin, %{amount: Money.new!(:PLN, -1000), skip_invoicing: true})
+
+    other = transaction_fixture!(admin, %{amount: Money.new!(:PLN, -1000)})
+    december = %{salary_user_id: admin.id, salary_month: ~D[2025-12-01]}
+
+    assert %{suggestions: [%{user_id: user_id, month: ~D[2025-12-01]}], reason: nil} =
+             Finances.suggest_transaction_salaries!(skipped.id, scope: scope)
+
+    assert user_id == admin.id
+    assert {:error, _} = Finances.connect_transaction_salary(skipped, december, scope: scope)
+
+    restored = Finances.restore_transaction_for_matching!(skipped, scope: scope)
+
+    assert Finances.restore_transaction_for_matching!(restored, scope: scope).skip_invoicing ==
+             false
+
+    assigned = Finances.connect_transaction_salary!(restored, december, scope: scope)
+
+    assert Finances.connect_transaction_salary!(assigned, december, scope: scope).salary_month ==
+             ~D[2025-12-01]
+
+    assert {:error, _} = Finances.restore_transaction_for_matching(assigned, scope: scope)
+
+    assert {:error, error} = Finances.connect_transaction_salary(other, december, scope: scope)
+    assert Exception.message(error) =~ skipped.id
+
+    assert %{suggestions: [], reason: :salaries_already_paid} =
+             Finances.suggest_transaction_salaries!(other.id, scope: scope)
+
+    assert [
+             %{connected_transaction_id: connected_id, hours_submission_status: :submitted} =
+               salary
+           ] =
+             Finances.list_monthly_salaries!(~D[2025-12-15], scope: scope)
+
+    assert connected_id == skipped.id
+    assert salary.expected_amount == Money.new!(:PLN, 1000)
+  end
+
   test "prioritizes the payroll month and shows all candidates up to six months back", %{
     conn: conn
   } do

@@ -1493,7 +1493,7 @@ msgstr ""
 msgid "Unavailable"
 msgstr ""
 
-#: lib/firmowid/ash/finances/changes/connect_salary.ex:22
+#: lib/firmowid/ash/finances/changes/connect_salary.ex:66
 #, elixir-autogen, elixir-format
 msgid "The salary cannot be assigned to this transaction."
 msgstr ""
@@ -2955,4 +2955,45 @@ msgstr ""
 #: lib/firmowid_web/analysis/views/dashboard.ex:463
 #, elixir-autogen, elixir-format
 msgid "Unrealized income"
+msgstr ""
+
+#: lib/firmowid/ash/finances/changes/connect_salary.ex:78
+#, elixir-autogen, elixir-format
+msgid "Only an outgoing PLN transfer can pay a salary."
+msgstr ""
+
+#: lib/firmowid/ash/finances/changes/connect_salary.ex:87
+#, elixir-autogen, elixir-format
+msgid "The employee has no salary rate in this month."
+msgstr ""
+
+#: lib/firmowid/ash/finances/changes/connect_salary.ex:74
+#, elixir-autogen, elixir-format
+msgid "The salary is already paid by transaction %{id}."
+msgstr ""
+
+#: lib/firmowid/ash/finances/changes/connect_salary.ex:84
+#, elixir-autogen, elixir-format
+msgid "The salary month must fall within six months before the transfer."
+msgstr ""
+
+#: lib/firmowid/ash/finances/changes/connect_salary.ex:48
+#, elixir-autogen, elixir-format
+msgid "The transaction already pays the salary of %{month}. Disconnect it first."
+msgstr ""
+
+#: lib/firmowid/ash/finances/changes/connect_salary.ex:81
+#: lib/firmowid/ash/finances/transaction/validations/not_matched.ex:16
+#, elixir-autogen, elixir-format
+msgid "The transaction is already connected to an invoice or a salary. Disconnect it first."
+msgstr ""
+
+#: lib/firmowid/ash/finances/changes/connect_salary.ex:53
+#, elixir-autogen, elixir-format
+msgid "The transaction is skipped. Restore it for matching first."
+msgstr ""
+
+#: lib/firmowid/ash/finances/changes/connect_salary.ex:90
+#, elixir-autogen, elixir-format
+msgid "The transfer amount differs from the expected salary by more than 20% (at least 300 PLN)."
 msgstr ""

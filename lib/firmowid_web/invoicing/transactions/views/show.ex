@@ -227,7 +227,7 @@ defmodule FirmowidWeb.Invoicing.Transactions.Views.Show do
 
     salary_suggestions =
       if socket.assigns.salary_admin? do
-        Finances.suggest_transaction_salaries!(transaction.id, scope: scope)
+        Finances.suggest_transaction_salaries!(transaction.id, scope: scope).suggestions
       else
         []
       end

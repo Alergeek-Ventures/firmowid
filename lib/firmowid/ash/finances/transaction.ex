@@ -160,6 +160,15 @@ defmodule Firmowid.Ash.Finances.Transaction do
       change filter(expr(invoice_matchable?))
     end
 
+    update :restore_for_matching do
+      description "Return a skipped transaction to pending matching; a pending one stays unchanged."
+      accept []
+      require_atomic? false
+      validate Firmowid.Ash.Finances.Transaction.Validations.NotMatched
+      change set_attribute(:skip_invoicing, false)
+      change filter(expr(reconciliation_status != :matched))
+    end
+
     update :connect_salary do
       description "Manually assign an outgoing transaction to one employee's salary month."
       accept [:salary_user_id, :salary_month]
@@ -167,8 +176,6 @@ defmodule Firmowid.Ash.Finances.Transaction do
       require_atomic? false
 
       change Firmowid.Ash.Finances.Changes.ConnectSalary
-
-      change filter(expr(reconciliation_status == :pending))
     end
 
     update :disconnect_salary do
@@ -188,12 +195,12 @@ defmodule Firmowid.Ash.Finances.Transaction do
       run Firmowid.Ash.Finances.Transaction.Actions.InvoiceSuggestions
     end
 
-    action :salary_suggestions, {:array, Types.SalarySuggestion} do
+    action :salary_suggestions, Types.SalarySuggestions do
       description "Find available salaries with submitted hours records; optional filters support manual assignment revalidation."
 
       argument :transaction_id, :uuid,
         allow_nil?: false,
-        description: "ID of a pending outgoing PLN transfer."
+        description: "ID of a pending or skipped outgoing PLN transfer."
 
       argument :salary_user_id, :uuid, description: "Only suggest this employee's salaries."
 
@@ -207,6 +214,22 @@ defmodule Firmowid.Ash.Finances.Transaction do
 
       run Firmowid.Ash.Finances.Transaction.Actions.SalarySuggestions
     end
+
+    action :monthly_salaries, {:array, Types.MonthlySalary} do
+      description "List every employee salary of one month with its hours record state and paying transfer."
+
+      argument :month, :date,
+        allow_nil?: false,
+        description: "Any day of the salary month, e.g. 2026-01-01."
+
+      argument :user_id, :uuid, description: "Only this employee's salary."
+
+      argument :query, :string,
+        constraints: [max_length: 200],
+        description: "Case- and diacritic-insensitive part of the employee's name or email."
+
+      run Firmowid.Ash.Finances.Transaction.Actions.MonthlySalaries
+    end
   end
 
   pub_sub do
@@ -215,6 +238,7 @@ defmodule Firmowid.Ash.Finances.Transaction do
 
     publish :upsert_from_sync, ["updated", :_tenant]
     publish :set_skip_invoicing, ["updated", :_tenant]
+    publish :restore_for_matching, ["updated", :_tenant]
     publish :connect_salary, ["updated", :_tenant]
     publish :disconnect_salary, ["updated", :_tenant]
   end

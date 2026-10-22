@@ -1,5 +1,5 @@
 defmodule Firmowid.Ash.Finances.Transaction.Actions.SalarySuggestions do
-  @moduledoc "Finds recent unassigned salaries within the transfer's amount window, prioritizing the recipient's name, payroll month and amount."
+  @moduledoc "Finds recent unassigned salaries within the transfer's amount window, prioritizing the recipient's name, payroll month and amount, and explains an empty result."
 
   use Ash.Resource.Actions.Implementation
 
@@ -23,55 +23,106 @@ defmodule Firmowid.Ash.Finances.Transaction.Actions.SalarySuggestions do
              load: [:direction, :reconciliation_status],
              scope: scope
            ) do
-      if transaction.direction == :expense and Money.to_currency_code(transaction.amount) == :PLN and
-           transaction.reconciliation_status == :pending do
-        {:ok, suggestions(transaction, input.arguments, scope)}
-      else
-        {:ok, []}
+      cond do
+        transaction.direction != :expense or Money.to_currency_code(transaction.amount) != :PLN ->
+          {:ok, %{suggestions: [], reason: :not_outgoing_pln}}
+
+        transaction.reconciliation_status == :matched ->
+          {:ok, %{suggestions: [], reason: :transaction_matched}}
+
+        true ->
+          {:ok, suggestions(transaction, input.arguments, scope)}
       end
     end
   end
 
+  # Each step narrows the candidates; the first step that leaves none explains the empty result.
   defp suggestions(transaction, arguments, scope) do
-    assigned =
-      %{salary_assigned: true}
-      |> Finances.list_transactions!(scope: scope)
-      |> MapSet.new(&{&1.salary_user_id, &1.salary_month})
-
     amount = transaction.amount |> Money.to_decimal() |> Decimal.abs()
-    expected_month = expected_salary_month(transaction.booking_date)
     recipient_parts = name_parts(transaction.creditor_name)
     member_id = member_id(arguments[:salary_user_id], scope)
+    no_months_reason = if arguments[:salary_month], do: :month_out_of_range, else: :no_logged_time
 
-    transaction
-    |> candidate_months(arguments[:salary_month], member_id, scope)
-    |> Enum.flat_map(fn month ->
-      submitted_users =
-        if arguments.submitted_hours_only? do
-          %{
-            month: month.month,
-            year: month.year,
-            member_id: member_id,
-            submission_status: :submitted
-          }
-          |> Timetracker.list_hours_records!(load: [:member], scope: scope)
-          |> MapSet.new(& &1.member.user_id)
-        else
-          :all
-        end
+    with {:ok, months} <-
+           present(
+             candidate_months(transaction, arguments[:salary_month], member_id, scope),
+             no_months_reason
+           ),
+         {:ok, candidates} <-
+           present(salaries(months, arguments[:salary_user_id], scope), :no_salaries),
+         {:ok, unpaid} <- present(reject_assigned(candidates, scope), :salaries_already_paid),
+         {:ok, submitted} <-
+           present(
+             submitted(unpaid, months, member_id, arguments.submitted_hours_only?, scope),
+             :hours_not_submitted
+           ),
+         {:ok, suggestions} <-
+           present(
+             Enum.flat_map(submitted, fn {salary, month} ->
+               suggestion(salary, month, amount, recipient_parts)
+             end),
+             :amount_out_of_range
+           ) do
+      %{
+        suggestions: sort(suggestions, expected_salary_month(transaction.booking_date)),
+        reason: nil
+      }
+    else
+      {:none, reason} -> %{suggestions: [], reason: reason}
+    end
+  end
 
-      %{active_at: Date.end_of_month(month), user_id: arguments[:salary_user_id]}
+  defp present([], reason), do: {:none, reason}
+  defp present(list, _reason), do: {:ok, list}
+
+  defp salaries(months, user_id, scope) do
+    Enum.flat_map(months, fn month ->
+      %{active_at: Date.end_of_month(month), user_id: user_id}
       |> Payroll.list_salaries!(
         load: [member: :user, monthly_amount: [month: month]],
         query: [filter: [member: [archived_at: [is_nil: true]]]],
         scope: scope
       )
-      |> Enum.filter(fn salary ->
-        not MapSet.member?(assigned, {salary.member.user_id, month}) and
-          (submitted_users == :all or MapSet.member?(submitted_users, salary.member.user_id))
-      end)
-      |> Enum.flat_map(&suggestion(&1, month, amount, recipient_parts))
+      |> Enum.reject(&is_nil(&1.member.user))
+      |> Enum.map(&{&1, month})
     end)
+  end
+
+  defp reject_assigned(candidates, scope) do
+    assigned =
+      %{salary_assigned: true}
+      |> Finances.list_transactions!(scope: scope)
+      |> MapSet.new(&{&1.salary_user_id, &1.salary_month})
+
+    Enum.reject(candidates, fn {salary, month} ->
+      MapSet.member?(assigned, {salary.member.user_id, month})
+    end)
+  end
+
+  defp submitted(candidates, _months, _member_id, false, _scope), do: candidates
+
+  defp submitted(candidates, months, member_id, true, scope) do
+    submitted =
+      months
+      |> Enum.flat_map(fn month ->
+        %{
+          month: month.month,
+          year: month.year,
+          member_id: member_id,
+          submission_status: :submitted
+        }
+        |> Timetracker.list_hours_records!(load: [:member], scope: scope)
+        |> Enum.map(&{&1.member.user_id, month})
+      end)
+      |> MapSet.new()
+
+    Enum.filter(candidates, fn {salary, month} ->
+      MapSet.member?(submitted, {salary.member.user_id, month})
+    end)
+  end
+
+  defp sort(suggestions, expected_month) do
+    suggestions
     |> Enum.sort(fn {a_name_rank, a}, {b_name_rank, b} ->
       a_priority = {a_name_rank, a.month == expected_month}
       b_priority = {b_name_rank, b.month == expected_month}
@@ -132,8 +183,6 @@ defmodule Firmowid.Ash.Finances.Transaction.Actions.SalarySuggestions do
   end
 
   defp expected_salary_month(date), do: Date.beginning_of_month(date)
-
-  defp suggestion(%{member: %{user: nil}}, _month, _amount, _recipient_parts), do: []
 
   defp suggestion(%{member: %{user: user}} = salary, month, amount, recipient_parts) do
     expected = Money.to_decimal(salary.monthly_amount)

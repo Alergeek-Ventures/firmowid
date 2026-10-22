@@ -54,29 +54,60 @@ defmodule Firmowid.Ash.Finances do
                     "the counterparty, amount and title before proposing a match. Changes nothing."
     end
 
+    tool :restore_transaction_for_matching, Transaction, :restore_for_matching do
+      annotations title: "Restore skipped transaction",
+                  read_only_hint: false,
+                  destructive_hint: false,
+                  idempotent_hint: true,
+                  open_world_hint: false
+
+      description "Return a skipped transaction to pending so it can be connected to an invoice or a salary. " <>
+                    "A pending transaction stays unchanged; a matched one returns an error naming the conflict. " <>
+                    "Requires an accountant or administrator."
+
+      select [:id, :booking_date, :amount, :salary_user_id, :salary_month]
+      load [:reconciliation_status]
+    end
+
+    tool :list_monthly_salaries, Transaction, :monthly_salaries do
+      annotations title: "List salaries of a month",
+                  read_only_hint: true,
+                  destructive_hint: false,
+                  open_world_hint: false
+
+      description "List every employee salary of one month, including already paid ones and months without " <>
+                    "submitted hours, with no amount or date window. expected_amount is the hourly rate multiplied " <>
+                    "by the logged hours rounded up, not a recorded payout. connected_transaction_id is the transfer " <>
+                    "assigned to that salary. Use it to find the right salary when suggestions miss it. Requires an " <>
+                    "administrator. Changes nothing."
+    end
+
     tool :suggest_transaction_salaries, Transaction, :salary_suggestions do
       annotations title: "Suggest salaries for a transfer",
                   read_only_hint: true,
                   destructive_hint: false,
                   open_world_hint: false
 
-      description "Suggest which employee's monthly salary a pending outgoing PLN transfer pays. Considers months " <>
-                    "with logged time up to six months back whose salary is not yet assigned and whose amount is " <>
-                    "within 20% (at least 300 PLN) of the transfer, ranked by the recipient's name, the expected " <>
-                    "month and the amount difference. By default only salaries with a submitted hours record count. " <>
-                    "Requires an administrator. Changes nothing."
+      description "Suggest which employee's monthly salary a pending or skipped outgoing PLN transfer pays. " <>
+                    "Considers months with logged time up to six months back whose salary is not yet assigned and " <>
+                    "whose amount is within 20% (at least 300 PLN) of the transfer, ranked by the recipient's name, " <>
+                    "the expected month and the amount difference. By default only salaries with a submitted hours " <>
+                    "record count. An empty result has a reason. Requires an administrator. Changes nothing."
     end
 
     tool :connect_transaction_salary, Transaction, :connect_salary do
       annotations title: "Assign transfer to salary",
                   read_only_hint: false,
                   destructive_hint: false,
+                  idempotent_hint: true,
                   open_world_hint: false
 
       description "Settle one employee's monthly salary with a pending outgoing transfer, only after the user " <>
-                    "approves the specific match. Pass salary_user_id and salary_month (first day of the month) " <>
-                    "from suggest_transaction_salaries. A salary month can be paid by one transfer only, and a " <>
-                    "transfer connected to an invoice cannot be assigned. Requires an administrator."
+                    "approves the specific match. Pass the transaction id, salary_user_id and salary_month (first " <>
+                    "day of the month). Repeating an existing assignment succeeds without changes. Restore a skipped " <>
+                    "transfer first. A salary month can be paid by one transfer only; conflicts with another " <>
+                    "transfer, salary or invoice return an error naming them and change nothing. Requires an " <>
+                    "administrator."
 
       select [:id, :booking_date, :amount, :salary_user_id, :salary_month]
       load [:reconciliation_status]
@@ -127,6 +158,8 @@ defmodule Firmowid.Ash.Finances do
       define :list_transactions, action: :list
       define :upsert_transaction_from_sync, action: :upsert_from_sync
       define :set_transaction_skip_invoicing, action: :set_skip_invoicing
+      define :restore_transaction_for_matching, action: :restore_for_matching
+      define :list_monthly_salaries, action: :monthly_salaries, args: [:month]
       define :connect_transaction_salary, action: :connect_salary
       define :disconnect_transaction_salary, action: :disconnect_salary
       define :suggest_transaction_salaries, action: :salary_suggestions, args: [:transaction_id]
