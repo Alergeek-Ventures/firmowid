@@ -3,18 +3,48 @@ defmodule FirmowidWeb.Auth.Components.McpConsent do
   Firmowid-styled consent screen for MCP OAuth authorization.
 
   Renders a standalone HTML document that
-  loads app CSS and mirrors the login page layout.
+  loads app CSS and mirrors the login page layout. The approval names the
+  organization the client will work in (see
+  `FirmowidMcp.Utilities.ConsentOrganization`): a choice when the account has
+  several.
   """
 
   use FirmowidWeb, :html
 
   import FirmowidUI.Components.Button
 
+  alias Firmowid.Ash.Core.Member
+  alias Firmowid.Ash.Core.Organization
+
+  @organizations_key {__MODULE__, :organizations}
+
+  @doc """
+  Stores the account's organizations and the preselected one for the consent
+  screen rendered later in this request.
+
+  ConsentRouter renders the view with its own assigns only, without the conn.
+  """
+  @spec put_organizations([Organization.t()], Member.t() | nil) :: :ok
+  def put_organizations(organizations, selected) do
+    Process.put(@organizations_key, {organizations, selected && selected.organization_id})
+    :ok
+  end
+
+  @doc "Forgets the organizations when the request ends without rendering the screen."
+  @spec delete_organizations() :: :ok
+  def delete_organizations do
+    Process.delete(@organizations_key)
+    :ok
+  end
+
   @doc """
   Render the consent screen as HTML iodata for ConsentRouter.
   """
   @spec render(:consent, map()) :: iodata()
   def render(:consent, assigns) do
+    {organizations, selected_id} = Process.delete(@organizations_key) || {[], nil}
+    assigns = Map.merge(assigns, %{organizations: organizations, selected_id: selected_id})
+
     Phoenix.HTML.Safe.to_iodata(~H"""
     <!DOCTYPE html>
     <html class="h-full" lang="pl">
@@ -73,6 +103,32 @@ defmodule FirmowidWeb.Auth.Components.McpConsent do
             <form method="POST" action={@action_path} class="mt-6 space-y-3">
               <input type="hidden" name="_csrf_token" value={@csrf_token} />
               <input type="hidden" name="consent_request" value={@consent_request} />
+              <input
+                :for={organization <- @organizations}
+                :if={length(@organizations) == 1}
+                type="hidden"
+                name="organization_id"
+                value={organization.id}
+              />
+              <fieldset :if={length(@organizations) > 1} class="space-y-3 pb-3">
+                <legend class="text-sm font-medium text-grey-900">Organizacja</legend>
+                <p class="text-sm text-grey-600">
+                  Aplikacja będzie działać w wybranej organizacji.
+                </p>
+                <label
+                  :for={organization <- @organizations}
+                  class="flex cursor-pointer items-center gap-2 rounded-xl bg-lightGreyBg p-3 text-sm text-grey-900"
+                >
+                  <input
+                    type="radio"
+                    name="organization_id"
+                    value={organization.id}
+                    checked={organization.id == @selected_id}
+                    class="size-5 shrink-0 appearance-none rounded-full border-2 border-grey-300 bg-white checked:bg-turquoise-700 focus:outline-none"
+                  />
+                  <span class="font-medium">{organization.name}</span>
+                </label>
+              </fieldset>
               <.button variant="special" type="submit" name="action" value="approve" class="w-full">
                 Zezwól
               </.button>

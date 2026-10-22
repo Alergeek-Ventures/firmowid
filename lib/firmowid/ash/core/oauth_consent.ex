@@ -15,6 +15,10 @@ defmodule Firmowid.Ash.Core.OauthConsent do
   postgres do
     table "oauth_consents"
     repo Firmowid.Repo
+
+    references do
+      reference :organization, on_delete: :delete
+    end
   end
 
   code_interface do
@@ -56,6 +60,13 @@ defmodule Firmowid.Ash.Core.OauthConsent do
     end
   end
 
+  multitenancy do
+    strategy :attribute
+    attribute :organization_id
+    # Grants issued before the organization was chosen on the consent screen have none.
+    global? true
+  end
+
   attributes do
     uuid_v7_primary_key :id
 
@@ -82,6 +93,11 @@ defmodule Firmowid.Ash.Core.OauthConsent do
       allow_nil? false
       attribute_public? true
       attribute_writable? true
+    end
+
+    belongs_to :organization, Firmowid.Ash.Core.Organization do
+      allow_nil? true
+      public? true
     end
   end
 

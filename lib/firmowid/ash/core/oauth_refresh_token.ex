@@ -16,6 +16,10 @@ defmodule Firmowid.Ash.Core.OauthRefreshToken do
   postgres do
     table "oauth_refresh_tokens"
     repo Firmowid.Repo
+
+    references do
+      reference :organization, on_delete: :delete
+    end
   end
 
   code_interface do
@@ -64,7 +68,19 @@ defmodule Firmowid.Ash.Core.OauthRefreshToken do
       argument :rotated_to_id, :uuid_v7, allow_nil?: false
       accept []
 
-      change filter(expr(exists(user.member, is_nil(archived_at))))
+      change filter(
+               expr(
+                 exists(
+                   user.member,
+                   is_nil(archived_at) and
+                     (is_nil(parent(organization_id)) or
+                        organization_id == parent(organization_id))
+                 )
+               )
+             )
+
+      change Firmowid.Ash.Core.Changes.RequireGrantTenant
+
       change AshAuthentication.Oauth2Server.Changes.RotateRefreshToken
     end
 
@@ -83,6 +99,13 @@ defmodule Firmowid.Ash.Core.OauthRefreshToken do
     policy action([:read, :list, :destroy]) do
       authorize_if AccountCleanup
     end
+  end
+
+  multitenancy do
+    strategy :attribute
+    attribute :organization_id
+    # Grants issued before the organization was chosen on the consent screen have none.
+    global? true
   end
 
   attributes do
@@ -151,9 +174,14 @@ defmodule Firmowid.Ash.Core.OauthRefreshToken do
       attribute_public? true
       attribute_writable? true
     end
+
+    belongs_to :organization, Firmowid.Ash.Core.Organization do
+      allow_nil? true
+      public? true
+    end
   end
 
   identities do
-    identity :by_token_hash, [:token_hash]
+    identity :by_token_hash, [:token_hash], all_tenants?: true
   end
 end

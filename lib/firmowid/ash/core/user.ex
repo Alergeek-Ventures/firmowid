@@ -353,9 +353,10 @@ defmodule Firmowid.Ash.Core.User do
     end
 
     update :leave_organization do
-      description "Cut the account's sessions after its member is archived."
+      description "Revoke the account's OAuth grants for the organization its member was archived from."
       accept []
       require_atomic? false
+      argument :organization_id, :uuid, allow_nil?: false
 
       # Serializes with OAuth issuance, which locks the account row (see
       # `RequireActiveOauthUser`), so no grant outlives the archival.

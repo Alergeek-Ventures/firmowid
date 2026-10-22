@@ -6,8 +6,11 @@ defmodule Firmowid.Oauth2Server do
   `:access_block` calculation) are rejected by the User authentication
   preparation, which also covers bearer-token user loading. Accounts without an
   organization are rejected by OAuth grant actions and by the MCP authentication
-  plug. Leaving the organization (archiving the member) revokes refresh tokens
-  and removes codes and consent in the same transaction.
+  plug. Grants are bound to the organization chosen on the consent screen (the
+  Ash tenant, see `FirmowidMcp.Utilities.ConsentOrganization` and
+  `FirmowidMcp.Utilities.TokenOrganization`). Leaving an organization (archiving
+  the member) revokes its refresh tokens and removes its codes and consent in the
+  same transaction.
 
   The installed OAuth library uses stateless access JWTs: restoring a member can
   re-enable an unexpired access token issued before the archive. Its multi-action
