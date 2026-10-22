@@ -9,21 +9,33 @@ defmodule FirmowidMcp.Invoicing do
   @spec instructions() :: String.t()
   def instructions do
     """
-    Before working with invoices, call get_ksef_connection_status for the authenticated organization.
+    Before preparing, saving, revising, correcting or issuing an invoice, check whether the buyer
+    is purchasing as a business. Business buyers include sole traders and companies with a tax ID.
+    If the buyer is a private individual not purchasing as a business, do not call Firmowid tools for
+    that request, including get_ksef_connection_status, show_ksef_connection or invoice previews.
+    Give a short explanation that this MCP workflow supports business buyers only and direct the user
+    to issue the consumer invoice in the Firmowid web app:
+    #{FirmowidMcp.endpoint().url()}#{FirmowidWeb.Invoicing.Utilities.Navigation.sales_invoice_creator_path()}.
+    Then stop. Do not present an invoice table or totals, collect more invoice data, ask for PESEL,
+    invent a tax ID, relabel the buyer as a company, suggest retrying, or say the integration needs
+    consumer support added. Connecting KSeF does not enable consumer invoice workflows through MCP.
+    If the buyer's business/private status is unclear, clarify it before calling Firmowid tools.
+    This restriction does not prevent reading existing consumer invoices.
+
+    For invoice reads and supported business-buyer workflows, call get_ksef_connection_status
+    for the authenticated organization.
     If disconnected or expired, propose connecting KSeF using show_ksef_connection when can_connect is true;
     otherwise explain that an organization administrator must connect it.
+    A missing KSeF connection prevents issuance, not read-only previews or saving complete drafts.
     Stored invoice data remains available without a KSeF connection: continue reading it if the user wants,
     and explain that it may be out of date. A connected status does not guarantee synchronization freshness;
     the server does not currently track the time of the last successful synchronization.
     Use list_sales_invoices and list_cost_invoices to read invoice data with filters and pagination.
     Use get_sales_invoice to read an invoice's items, effective correction chain and KSeF submission status.
 
-    Prepare, save, revise and issue invoices only for business buyers (sole traders and companies)
-    with a tax ID. Consumer invoices are not supported by these workflows, including existing drafts
-    and corrections. Existing invoices remain readable regardless of buyer type.
-    For a private buyer, do not relabel them as a company or ask for a PESEL. Direct the user to
-    the Firmowid web app: #{FirmowidMcp.endpoint().url()}#{FirmowidWeb.Invoicing.Utilities.Navigation.sales_invoice_creator_path()}.
-    Collect invoice data in the conversation, then call preview_sales_invoice to open the confirmation widget.
+    For a supported business buyer, collect invoice data in the conversation, then call
+    preview_sales_invoice to open the confirmation widget. The business-only restriction also applies
+    to resuming saved drafts and preparing corrections.
     For corrections, first read the source invoice with get_sales_invoice, then call preview_sales_invoice_correction.
     The user must review the document, select its number and confirm issuance inside the widget.
     Never issue an invoice or correction just because the user approved it in chat. Opening a preview is read-only;
