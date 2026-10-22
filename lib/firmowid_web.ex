@@ -59,6 +59,8 @@ defmodule FirmowidWeb do
         layout: {FirmowidWeb.Infrastructure.Layouts, :app},
         container: {:div, class: "min-h-full flex flex-col"}
 
+      on_mount FirmowidWeb.Infrastructure.Hooks.SentryContext
+
       unquote(html_helpers())
     end
   end

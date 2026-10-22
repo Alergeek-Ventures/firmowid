@@ -25,6 +25,8 @@ defmodule Firmowid.Sentry do
   @tag_keys [
     :source,
     :callback,
+    :view,
+    :live_action,
     :resource,
     :action,
     :stage,
@@ -59,6 +61,16 @@ defmodule Firmowid.Sentry do
     :service
   ]
   @log_keys [
+    :view,
+    :live_action,
+    :callback,
+    :message_kind,
+    :message_tag,
+    :message_arity,
+    :resource,
+    :action,
+    :action_type,
+    :processing_target,
     :subject_type,
     :oban_job_id,
     :oban_worker,
@@ -346,7 +358,19 @@ defmodule Firmowid.Sentry do
   defp scrub_tags(nil), do: nil
   defp scrub_tags(tags) when is_map(tags), do: scalar_map(tags, @tag_keys)
   defp scrub_tags(_tags), do: %{}
-  defp scrub_extra(extra) when is_map(extra), do: scalar_map_or_lists(extra, @extra_keys)
+
+  defp scrub_extra(extra) when is_map(extra) do
+    scrubbed = scalar_map_or_lists(extra, @extra_keys)
+
+    case extra[:logger_metadata] do
+      metadata when is_map(metadata) ->
+        Map.put(scrubbed, :logger_metadata, scalar_map(metadata, @log_keys -- [:mfa]))
+
+      _ ->
+        scrubbed
+    end
+  end
+
   defp scrub_extra(_extra), do: %{}
 
   defp scalar_map_or_lists(map, keys) do
