@@ -16,6 +16,10 @@ defmodule Firmowid.Ash.Core.OauthAuthorizationCode do
   postgres do
     table "oauth_authorization_codes"
     repo Firmowid.Repo
+
+    references do
+      reference :organization, on_delete: :delete
+    end
   end
 
   code_interface do
@@ -59,7 +63,18 @@ defmodule Firmowid.Ash.Core.OauthAuthorizationCode do
       description "Mark an authorization code as used after a successful token exchange."
       accept []
 
-      change filter(expr(exists(user.member, is_nil(archived_at))))
+      change filter(
+               expr(
+                 exists(
+                   user.member,
+                   is_nil(archived_at) and
+                     (is_nil(parent(organization_id)) or
+                        organization_id == parent(organization_id))
+                 )
+               )
+             )
+
+      change Firmowid.Ash.Core.Changes.RequireGrantTenant
 
       validate absent(:consumed_at) do
         message "code already used"
@@ -77,6 +92,13 @@ defmodule Firmowid.Ash.Core.OauthAuthorizationCode do
     policy action([:read, :list, :destroy]) do
       authorize_if AccountCleanup
     end
+  end
+
+  multitenancy do
+    strategy :attribute
+    attribute :organization_id
+    # Grants issued before the organization was chosen on the consent screen have none.
+    global? true
   end
 
   attributes do
@@ -124,6 +146,11 @@ defmodule Firmowid.Ash.Core.OauthAuthorizationCode do
       allow_nil? false
       attribute_public? true
       attribute_writable? true
+    end
+
+    belongs_to :organization, Firmowid.Ash.Core.Organization do
+      allow_nil? true
+      public? true
     end
   end
 end

@@ -189,7 +189,7 @@ defmodule Firmowid.Ash.Core.Member do
                opts = Ash.Context.to_opts(context)
 
                with {:ok, user} <- Core.get_user(member.user_id, opts),
-                    {:ok, _user} <- Core.leave_organization(user, opts) do
+                    {:ok, _user} <- Core.leave_organization(user, member.organization_id, opts) do
                  {:ok, member}
                end
              end)

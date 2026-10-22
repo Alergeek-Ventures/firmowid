@@ -80,7 +80,7 @@ defmodule Firmowid.Ash.Core do
       define :change_email, action: :change_email
       define :update_current_profile, action: :update_current_profile
       define :get_shared_birthday, action: :get_shared_birthday
-      define :leave_organization, action: :leave_organization
+      define :leave_organization, action: :leave_organization, args: [:organization_id]
       define :set_organization, action: :set_organization
       define :unlink_google_account, action: :unlink_google
       define :change_password, action: :change_password
@@ -112,8 +112,15 @@ defmodule Firmowid.Ash.Core do
     end
 
     resource Firmowid.Ash.Core.OauthClient
-    resource OauthAuthorizationCode
-    resource OauthRefreshToken
+
+    resource OauthAuthorizationCode do
+      define :get_oauth_authorization_code, action: :read, get_by: [:id]
+    end
+
+    resource OauthRefreshToken do
+      define :get_oauth_refresh_token_by_hash, action: :read, get_by: [:token_hash]
+    end
+
     resource OauthConsent
   end
 

@@ -1,5 +1,11 @@
 defmodule Firmowid.Ash.Core.Changes.RequireActiveOauthUser do
-  @moduledoc "Serializes OAuth issuance with leaving the organization by locking the user's row."
+  @moduledoc """
+  Serializes OAuth issuance with leaving the organization by locking the user's row.
+
+  A grant for an organization (the tenant) requires the user's usable member there;
+  one without an organization (issued before it was chosen on the consent screen)
+  requires any.
+  """
 
   use Ash.Resource.Change
 
@@ -26,10 +32,14 @@ defmodule Firmowid.Ash.Core.Changes.RequireActiveOauthUser do
                tenant: context.tenant,
                context: %{private: %{ash_authentication?: true}}
              ),
-           %User{member: %{}} <- Core.load_member(user) do
+           grant_organization_id =
+             Ash.Changeset.get_attribute(changeset, :organization_id) || changeset.tenant,
+           %User{member: %{organization_id: organization_id}}
+           when is_nil(grant_organization_id) or organization_id == grant_organization_id <-
+             Core.load_member(user, grant_organization_id) do
         changeset
       else
-        %User{member: nil} = user ->
+        %User{} = user ->
           Ash.Changeset.add_error(
             changeset,
             NotFound.exception(resource: User, primary_key: user.id)

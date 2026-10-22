@@ -54,11 +54,16 @@ defmodule FirmowidWeb.Core.Router do
   pipeline :oauth_api do
     plug :accepts, ["json"]
     plug FirmowidMcp.Utilities.PublicClientAuthentication
+    plug FirmowidMcp.Utilities.TokenOrganization
   end
 
   pipeline :oauth_request_normalization do
     plug FirmowidMcp.Utilities.RewriteLoopbackRedirectUri
     plug FirmowidMcp.Utilities.DefaultAuthorizationScope
+  end
+
+  pipeline :oauth_consent do
+    plug FirmowidMcp.Utilities.ConsentOrganization
   end
 
   pipeline :webhook do
@@ -105,7 +110,7 @@ defmodule FirmowidWeb.Core.Router do
   end
 
   scope "/", FirmowidWeb do
-    pipe_through [:browser, :oauth_request_normalization]
+    pipe_through [:browser, :oauth_request_normalization, :oauth_consent]
 
     oauth2_server_consent_routes(
       oauth2_server: Firmowid.Oauth2Server,
