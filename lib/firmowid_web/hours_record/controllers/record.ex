@@ -58,7 +58,7 @@ defmodule FirmowidWeb.HoursRecord.Controllers.Record do
         FirmowidWeb.HoursRecord.Components.PdfTemplate,
         :hours_record,
         layout: false,
-        name: conn.assigns.current_user.name,
+        name: conn.assigns.current_user.member.name,
         contract_date: contract_date,
         start_date: start_date,
         end_date: end_date,
@@ -102,7 +102,7 @@ defmodule FirmowidWeb.HoursRecord.Controllers.Record do
 
     render(conn, :preview,
       layout: false,
-      name: conn.assigns.current_user.name,
+      name: conn.assigns.current_user.member.name,
       contract_date: contract_date,
       start_date: start_date,
       end_date: end_date,
@@ -126,7 +126,7 @@ defmodule FirmowidWeb.HoursRecord.Controllers.Record do
 
     case AshHoursRecord.get(id,
            scope: scope,
-           load: [member: :user, blob: [:url]],
+           load: [:member, blob: [:url]],
            not_found_error?: false
          ) do
       {:ok, nil} ->
@@ -141,7 +141,7 @@ defmodule FirmowidWeb.HoursRecord.Controllers.Record do
         conn
         |> put_resp_header(
           "content-disposition",
-          "attachment; filename=\"Ewidencja_#{record.year}_#{record.month}_#{record.member.user.name}.pdf\""
+          "attachment; filename=\"Ewidencja_#{record.year}_#{record.month}_#{record.member.name}.pdf\""
         )
         |> send_resp(200, file.body)
 

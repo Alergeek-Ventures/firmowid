@@ -8,14 +8,12 @@ defmodule Firmowid.Ash.Delegations.DelegationTest do
   alias Ash.Error.Forbidden
   alias Ecto.Adapters.SQL.Sandbox
   alias Firmowid.Ash.Blobs.Blob
-  alias Firmowid.Ash.Core
   alias Firmowid.Ash.Delegations
   alias Firmowid.Ash.Delegations.DelegationExpense
   alias Firmowid.Ash.Scope
 
   setup do
-    employee = user_fixture()
-    employee = Core.update_profile!(employee, %{name: "Kira Voss"}, actor: employee)
+    employee = user_fixture(%{name: "Kira Voss"})
     admin = admin_fixture(%{organization_id: employee.organization_id})
 
     %{
@@ -47,10 +45,7 @@ defmodule Firmowid.Ash.Delegations.DelegationTest do
   } do
     employee = employee_scope.actor
 
-    second_employee = user_in_org_fixture(employee.organization_id)
-
-    second_employee =
-      Core.update_profile!(second_employee, %{name: "Kamil Voss"}, actor: second_employee)
+    second_employee = user_in_org_fixture(employee.organization_id, %{name: "Kamil Voss"})
 
     second_scope = %Scope{actor: second_employee, tenant: employee.organization_id}
 
@@ -71,10 +66,7 @@ defmodule Firmowid.Ash.Delegations.DelegationTest do
   test "uses the same reference namespace independently in each organization", %{
     employee_scope: employee_scope
   } do
-    other_employee = user_fixture()
-
-    other_employee =
-      Core.update_profile!(other_employee, %{name: "Kira Voss"}, actor: other_employee)
+    other_employee = user_fixture(%{name: "Kira Voss"})
 
     other_scope = %Scope{actor: other_employee, tenant: other_employee.organization_id}
 
@@ -88,7 +80,8 @@ defmodule Firmowid.Ash.Delegations.DelegationTest do
   test "uses a stable fallback prefix for a blank employee name", %{
     employee_scope: employee_scope
   } do
-    employee = %{employee_scope.actor | name: "   "}
+    actor = employee_scope.actor
+    employee = %{actor | member: %{actor.member | name: "   "}}
     scope = %Scope{actor: employee, tenant: employee.organization_id}
 
     delegation = Delegations.create_delegation!(delegation_attrs(), scope: scope)

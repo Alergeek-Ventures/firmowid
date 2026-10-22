@@ -87,6 +87,10 @@ defmodule Firmowid.Ash.Core.Organization do
         :is_vat_payer
       ]
 
+      argument :owner_name, :string,
+        allow_nil?: false,
+        description: "The owner's name, stored on their member."
+
       change set_attribute(:owner_id, actor(:id))
       change GenerateNickname
       change SetOwnerOrganization

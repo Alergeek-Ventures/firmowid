@@ -22,7 +22,7 @@ defmodule Firmowid.Ash.Delegations.Actions.NotifyEmployeeAboutApprovedDelegation
     with {:ok, delegation} <-
            Delegations.get_delegation(signal.delegation_id, scope: scope, load: [member: :user]),
          {:ok, _email} <-
-           DelegationEmails.deliver_approved_delegation(delegation, delegation.member.user) do
+           DelegationEmails.deliver_approved_delegation(delegation, delegation.member) do
       :ok
     end
   end

@@ -46,12 +46,12 @@ defmodule FirmowidWeb.Settings.Components.SettingsPage do
 
             <.avatar class="hidden size-32 rounded-full border border-grey-100 bg-grey-100 lg:block">
               <.avatar_image
-                :if={Map.get(@current_user.avatar_blob || %{}, :url)}
-                src={Map.get(@current_user.avatar_blob || %{}, :url)}
-                alt={@current_user.name || @current_user.email}
+                :if={Map.get(@current_user.member.avatar_blob || %{}, :url)}
+                src={Map.get(@current_user.member.avatar_blob || %{}, :url)}
+                alt={@current_user.member.name || @current_user.email}
               />
               <.avatar_fallback class="text-2xl font-medium text-grey-700">
-                {initial(@current_user.name || @current_user.email)}
+                {initial(@current_user.member.name || @current_user.email)}
               </.avatar_fallback>
             </.avatar>
 
@@ -74,7 +74,7 @@ defmodule FirmowidWeb.Settings.Components.SettingsPage do
 
           <div class="flex flex-col gap-2">
             <h1 class="text-2xl font-medium text-grey-900">
-              Cześć, <span class="font-bold">{@current_user.name || "użytkowniku"}</span>!
+              Cześć, <span class="font-bold">{@current_user.member.name || "użytkowniku"}</span>!
             </h1>
             <p class="text-grey-700">{@current_user.email}</p>
           </div>

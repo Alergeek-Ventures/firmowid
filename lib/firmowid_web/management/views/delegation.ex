@@ -36,7 +36,7 @@ defmodule FirmowidWeb.Management.Views.Delegation do
         {:noreply, push_navigate(socket, to: Navigation.employees_path(:index))}
 
       employee ->
-        employee = Ash.load!(employee, [:member, avatar_blob: [:url]], scope: scope)
+        employee = Ash.load!(employee, [member: [avatar_blob: [:url]]], scope: scope)
         member_id = employee.member.id
         {:ok, employment_contract} = Payroll.load_current_contract(member_id, scope: scope)
 
@@ -185,15 +185,15 @@ defmodule FirmowidWeb.Management.Views.Delegation do
                   class="size-6 rounded-full border border-grey-200 bg-grey-100"
                 >
                   <.avatar_image
-                    :if={@employee.avatar_blob && @employee.avatar_blob.url}
-                    src={@employee.avatar_blob.url}
-                    alt={@employee.name || @employee.email}
+                    :if={@employee.member.avatar_blob && @employee.member.avatar_blob.url}
+                    src={@employee.member.avatar_blob.url}
+                    alt={@employee.member.name || @employee.email}
                   />
                   <.avatar_fallback class="text-[10px] font-medium text-grey-700">
-                    {initial(@employee.name || @employee.email)}
+                    {initial(@employee.member.name || @employee.email)}
                   </.avatar_fallback>
                 </.avatar>
-                {@employee.name || @employee.email}
+                {@employee.member.name || @employee.email}
               </span>
             </.detail_row>
             <.detail_row label="Stanowisko">
@@ -425,7 +425,7 @@ defmodule FirmowidWeb.Management.Views.Delegation do
 
   defp command_filename(employee) do
     initials =
-      (employee.name || employee.email)
+      (employee.member.name || employee.email)
       |> String.split()
       |> Enum.map_join(&String.first/1)
       |> String.upcase()

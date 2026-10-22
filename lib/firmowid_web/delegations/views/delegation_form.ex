@@ -14,7 +14,13 @@ defmodule FirmowidWeb.Delegations.Views.DelegationForm do
 
   @impl true
   def mount(_params, _session, socket) do
-    user = Ash.load!(socket.assigns.current_user, :display_name, scope: socket.assigns.ash_scope)
+    user = socket.assigns.current_user
+
+    user = %{
+      user
+      | member: Ash.load!(user.member, :display_name, scope: socket.assigns.ash_scope)
+    }
+
     today = Date.utc_today()
     default_month = Date.beginning_of_month(today)
     form = delegation_form(socket.assigns.ash_scope, default_month)
@@ -79,7 +85,7 @@ defmodule FirmowidWeb.Delegations.Views.DelegationForm do
               </.form_row>
               <dl class="contents">
                 <.detail_row dd_class="sm:mt-8" dt_class="sm:mt-8" label="Imię i nazwisko">
-                  {@current_user.display_name}
+                  {@current_user.member.display_name}
                 </.detail_row>
                 <.detail_row label="Stanowisko">
                   {(@employment_contract && @employment_contract.position) || "—"}

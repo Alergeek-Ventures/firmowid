@@ -26,9 +26,7 @@ defmodule FirmowidWeb.Management.Views.Employee do
   alias Phoenix.Socket.Broadcast
 
   @employee_load [
-    :display_name,
-    member: [:projects, :delegations, :shared_birthday],
-    avatar_blob: [:url]
+    member: [:display_name, :projects, :delegations, :shared_birthday, avatar_blob: [:url]]
   ]
 
   @impl true
@@ -83,7 +81,7 @@ defmodule FirmowidWeb.Management.Views.Employee do
           |> assign(:active_months, active_months)
           |> assign(:current_contract, current_contract)
           |> assign(:projects_filter_date, selected_date)
-          |> assign(:page_title, user.display_name)
+          |> assign(:page_title, user.member.display_name)
         end
 
       {:noreply, socket}
@@ -157,7 +155,7 @@ defmodule FirmowidWeb.Management.Views.Employee do
 
     socket
     |> assign(:employee, employee)
-    |> assign(:page_title, employee.display_name)
+    |> assign(:page_title, employee.member.display_name)
   end
 
   defp humanize_ash_error(%Ash.Error.Invalid{errors: [%{message: message} | _]}) when is_binary(message), do: message

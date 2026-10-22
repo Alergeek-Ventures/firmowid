@@ -28,7 +28,6 @@ defmodule Firmowid.Seeds.SalaryMatching do
           User,
           %{
             email: "pensja.#{key}@bytecraft.collective",
-            name: name,
             hashed_password: Argon2.hash_pwd_salt("kolejka123456"),
             organization_id: organization.id,
             system_role: :user
@@ -36,7 +35,7 @@ defmodule Firmowid.Seeds.SalaryMatching do
           identity: :unique_email
         )
 
-      member = Helpers.seed_member!(user.id, organization.id, :employee)
+      member = Helpers.seed_member!(user.id, organization.id, :employee, %{name: name})
 
       Ash.Seed.upsert!(
         UserSalary,

@@ -142,10 +142,10 @@ defmodule Firmowid.Ash.Finances.Transaction.Actions.SalarySuggestions do
 
     if Decimal.compare(expected, 0) == :gt and Decimal.compare(difference, tolerance) != :gt do
       [
-        {name_match_rank(user.name, recipient_parts),
+        {name_match_rank(salary.member.name, recipient_parts),
          %{
            user_id: user.id,
-           name: user.name || to_string(user.email),
+           name: salary.member.name || to_string(user.email),
            month: month,
            expected_amount: salary.monthly_amount,
            difference: Money.new!(:PLN, difference)

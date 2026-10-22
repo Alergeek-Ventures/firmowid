@@ -82,7 +82,7 @@ defmodule FirmowidWeb.Timetracker.Controllers.Csv do
     hr_by_user = Map.new(hours_records, &{&1.member.user_id, &1})
 
     users =
-      [scope: scope]
+      [load: [:member], scope: scope]
       |> Core.list_users!()
       |> Enum.filter(fn user ->
         case Map.get(hr_by_user, user.id) do
@@ -99,13 +99,13 @@ defmodule FirmowidWeb.Timetracker.Controllers.Csv do
     salary_by_user = Map.new(salaries, &{&1.member.user_id, &1.hourly_rate})
 
     users
-    |> Enum.sort_by(& &1.name)
+    |> Enum.sort_by(& &1.member.name)
     |> Enum.map(fn user ->
       hr = hr_by_user[user.id]
       rate = salary_by_user[user.id]
 
       %{
-        name: user.name,
+        name: user.member.name,
         hourly_rate: rate,
         number_of_hours: hr.number_of_hours,
         salary: salary_amount(rate, hr.number_of_hours)
@@ -131,7 +131,7 @@ defmodule FirmowidWeb.Timetracker.Controllers.Csv do
     |> Ash.read!(scope: scope)
     |> Enum.map(fn session ->
       %{
-        user: session.member.user.name || session.member.user.email,
+        user: session.member.name || session.member.user.email,
         date: session.start_datetime |> DateTime.to_date() |> Date.to_iso8601(),
         duration: TimeFormatter.format_duration(session.duration || 0),
         title: session.title

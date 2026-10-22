@@ -84,7 +84,7 @@ defmodule FirmowidWeb.Invoicing.Transactions.Components.SalaryComponents do
         amount_label={gettext("Transferred amount")}
       >
         <:detail :if={is_struct(@transaction.salary_user, User)} label={gettext("Employee")}>
-          {@transaction.salary_user.name || to_string(@transaction.salary_user.email)}
+          {@transaction.salary_user.member.name || to_string(@transaction.salary_user.email)}
         </:detail>
         <:detail label={gettext("Salary month")}>{month_label(@transaction.salary_month)}</:detail>
         <:detail :if={@admin?} label={gettext("Expected salary")}>

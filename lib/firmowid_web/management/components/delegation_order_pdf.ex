@@ -28,7 +28,9 @@ defmodule FirmowidWeb.Management.Components.DelegationOrderPdf do
       </header>
 
       <.section title="Dane pracownika" separated={false}>
-        <.row label="Imię i nazwisko:"><strong>{@employee.name || @employee.email}</strong></.row>
+        <.row label="Imię i nazwisko:">
+          <strong>{@employee.member.name || @employee.email}</strong>
+        </.row>
         <.row label="Stanowisko:">
           {(@employment_contract && @employment_contract.position) || "—"}
         </.row>

@@ -61,7 +61,7 @@ defmodule Firmowid.Ash.Timetracker.Actions.NotifyAdminsAboutLeaveRequest do
                admins,
                leave_request,
                attachment,
-               leave_request.member.user
+               leave_request.member
              ),
            do: :ok
     end

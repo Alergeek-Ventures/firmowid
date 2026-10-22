@@ -80,7 +80,7 @@ defmodule Firmowid.Ash.Core.OrganizationCleanup do
     end
   end
 
-  @doc "Remove all memberships and detach the accounts and avatar references without deleting the accounts."
+  @doc "Remove all memberships and detach the accounts without deleting them."
   @spec detach_users(Scope.t()) :: :ok | {:error, term()}
   def detach_users(scope) do
     # Users are listed through their membership, so they are detached first.

@@ -35,9 +35,12 @@ defmodule FirmowidWeb.Management.Views.EmployeesTest do
 
     invite = Core.get_invite!(invite.id, tenant: admin.organization_id, actor: admin)
 
-    Core.consume_invite!(invite, %{}, tenant: admin.organization_id, actor: invited_user)
+    Core.consume_invite!(invite, %{name: "Nowy Pracownik"},
+      tenant: admin.organization_id,
+      actor: invited_user
+    )
 
-    assert_eventually(fn -> render(lv) =~ email end)
+    assert_eventually(fn -> render(lv) =~ "Nowy Pracownik" end)
   end
 
   test "admin can set hourly rate for newly joined employee", %{conn: conn} do
@@ -55,7 +58,10 @@ defmodule FirmowidWeb.Management.Views.EmployeesTest do
 
     invite = Core.get_invite!(invite.id, tenant: admin.organization_id, actor: admin)
 
-    Core.consume_invite!(invite, %{}, tenant: admin.organization_id, actor: invited_user)
+    Core.consume_invite!(invite, %{name: "Nowy Pracownik"},
+      tenant: admin.organization_id,
+      actor: invited_user
+    )
 
     conn = log_in_user(conn, admin)
     {:ok, lv, _html} = live(conn, ~p"/zarzadzanie/pracownicy")
@@ -98,6 +104,26 @@ defmodule FirmowidWeb.Management.Views.EmployeesTest do
 
     assert {:ok, _lv, archived_html} = live(conn, ~p"/zarzadzanie/pracownicy/archiwum")
     assert archived_html =~ to_string(employee.email)
+  end
+
+  test "an admin sees employees' names and avatars from their members", %{conn: conn} do
+    admin = admin_fixture()
+    employee = user_in_org_fixture(admin.organization_id, %{name: "Jan Kowalski"})
+
+    blob =
+      Ash.Seed.seed!(Blob, %{
+        organization_id: admin.organization_id,
+        blob_path: "#{admin.organization_id}/employee-avatar.png",
+        blob_checksum: "employee-avatar",
+        original_filename: "employee-avatar.png"
+      })
+
+    Ash.Seed.update!(employee.member, %{avatar_blob_id: blob.id})
+
+    {:ok, lv, _html} = live(log_in_user(conn, admin), ~p"/zarzadzanie/pracownicy")
+
+    assert has_element?(lv, "a[href*='#{employee.id}']", "Jan Kowalski")
+    assert has_element?(lv, "img[src*='#{blob.blob_path}']")
   end
 
   test "admin cannot archive themselves", %{conn: conn} do
@@ -152,13 +178,8 @@ defmodule FirmowidWeb.Management.Views.EmployeesTest do
   test "employee detail page shows payroll and project summary for selected month", %{conn: conn} do
     admin = admin_fixture()
 
-    employee = user_in_org_fixture(admin.organization_id, %{role: :employee})
-
     employee =
-      Core.update_profile!(employee, %{name: "Jan Kowalski"},
-        actor: employee,
-        tenant: admin.organization_id
-      )
+      user_in_org_fixture(admin.organization_id, %{role: :employee, name: "Jan Kowalski"})
 
     Core.update_member_profile!(
       employee.member,
@@ -278,13 +299,8 @@ defmodule FirmowidWeb.Management.Views.EmployeesTest do
   test "admin can open a pending delegation command page", %{conn: conn} do
     admin = admin_fixture()
 
-    employee = user_in_org_fixture(admin.organization_id, %{role: :employee})
-
     employee =
-      Core.update_profile!(employee, %{name: "Jan Kowalski"},
-        actor: employee,
-        tenant: admin.organization_id
-      )
+      user_in_org_fixture(admin.organization_id, %{role: :employee, name: "Jan Kowalski"})
 
     delegation =
       Ash.Seed.seed!(Delegation, %{
@@ -402,7 +418,7 @@ defmodule FirmowidWeb.Management.Views.EmployeesTest do
     assert updated_html =~ "Archiwizuj"
 
     assert {:ok, _active_lv, active_html} = live(conn, ~p"/zarzadzanie/pracownicy")
-    assert active_html =~ to_string(employee.email)
+    assert active_html =~ "Restore Me"
   end
 
   test "restoring an employee who joined another organization explains why and keeps them archived",
@@ -413,7 +429,11 @@ defmodule FirmowidWeb.Management.Views.EmployeesTest do
 
     employee
     |> Map.put(:organization_id, nil)
-    |> then(&Core.create_organization!(%{nip: unique_nip(), name: "Nowa firma"}, actor: &1))
+    |> then(
+      &Core.create_organization!(%{nip: unique_nip(), name: "Nowa firma", owner_name: "Moved On"},
+        actor: &1
+      )
+    )
 
     conn = log_in_user(conn, admin)
     {:ok, lv, _html} = live(conn, ~p"/zarzadzanie/pracownicy/#{employee.id}")
@@ -441,7 +461,7 @@ defmodule FirmowidWeb.Management.Views.EmployeesTest do
     {:ok, lv, _html} = conn |> log_in_user(employee) |> live(~p"/organizacja")
 
     lv
-    |> form("#join_form", %{"code" => invite.invite_code})
+    |> form("#join_form", %{"name" => "Ada Lovelace", "code" => invite.invite_code})
     |> render_submit()
 
     member = Core.load_member(employee, admin.organization_id).member
@@ -449,7 +469,7 @@ defmodule FirmowidWeb.Management.Views.EmployeesTest do
     assert is_nil(member.archived_at)
 
     {:ok, _lv, html} = conn |> log_in_user(admin) |> live(~p"/zarzadzanie/pracownicy")
-    assert html =~ to_string(employee.email)
+    assert html =~ "Ada Lovelace"
   end
 
   defp current_scope(admin) do

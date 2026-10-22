@@ -73,13 +73,17 @@ defmodule Firmowid.Ash.Core.OrganizationInvite do
       accept []
       require_atomic? false
 
+      argument :name, :string,
+        allow_nil?: false,
+        description: "The joining person's name, stored on their member."
+
       # The update only matches an unconsumed row, so concurrent joins with the same
       # code cannot both consume it; the loser gets a stale-record error.
       change filter(expr(is_nil(consumed_at)))
       change set_attribute(:consumed_by_id, actor(:id))
       change set_attribute(:consumed_at, &DateTime.utc_now/0)
 
-      change after_action(fn _changeset, invite, context ->
+      change after_action(fn changeset, invite, context ->
                user_id = invite.consumed_by_id
                organization_id = invite.organization_id
 
@@ -108,7 +112,11 @@ defmodule Firmowid.Ash.Core.OrganizationInvite do
                user_id
                |> Core.get_user!(bridge_opts)
                |> Core.changeset_to_set_organization(
-                 %{organization_id: organization_id, role: invite.role},
+                 %{
+                   organization_id: organization_id,
+                   role: invite.role,
+                   name: Ash.Changeset.get_argument(changeset, :name)
+                 },
                  bridge_opts
                )
                |> Ash.update!()

@@ -12,7 +12,12 @@ defmodule Firmowid.Ash.Timetracker.LeaveRequestEmailsTest do
       note: "Pilne <sprawdź>\ndruga linia"
     }
 
-    employee = %{id: Ash.UUID.generate(), name: "Jan Kowalski", email: "jan@example.com"}
+    employee = %{
+      user_id: Ash.UUID.generate(),
+      name: "Jan Kowalski",
+      user: %{email: "jan@example.com"}
+    }
+
     admin = %{email: "admin@example.com"}
 
     assert {:ok, email} =

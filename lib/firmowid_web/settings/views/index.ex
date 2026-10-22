@@ -60,12 +60,6 @@ defmodule FirmowidWeb.Settings.Views.Index do
     |> to_form()
   end
 
-  def form_name_form(user, scope) do
-    user
-    |> AshPhoenix.Form.for_update(:update_profile, scope: scope, domain: Core, as: "user")
-    |> to_form()
-  end
-
   def form_member_form(member, scope) do
     member
     |> AshPhoenix.Form.for_update(:update_profile,
@@ -157,11 +151,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
         socket
       end
 
-    socket =
-      socket
-      |> assign(:name_form, form_name_form(current_user, scope))
-      |> assign(:name_form, form_name_form(current_user, scope))
-      |> assign(:member_form, form_member_form(current_user.member, scope))
+    socket = assign(socket, :member_form, form_member_form(current_user.member, scope))
 
     # Load avatars using Ash.load!
     org_with_avatar =
@@ -268,7 +258,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
     current_user = socket.assigns.current_user
 
     {:ok, updated} =
-      Core.update_user_avatar(current_user, %{avatar_blob_id: blob_id}, scope: socket.assigns.ash_scope)
+      Core.update_member_avatar(current_user.member, %{avatar_blob_id: blob_id}, scope: socket.assigns.ash_scope)
 
     # Load avatar using Ash.load!
     updated_with_avatar =
@@ -276,7 +266,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
 
     LiveToast.send_toast(:info, "Zdjęcie zostało zaktualizowane.")
 
-    {:noreply, assign(socket, :current_user, updated_with_avatar)}
+    {:noreply, assign(socket, :current_user, %{current_user | member: updated_with_avatar})}
   end
 
   def handle_avatar_upload(:organization_avatar, blob_id, socket) do
@@ -360,7 +350,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
   end
 
   defp list_organization_users(scope) do
-    Core.list_users!(%{status: :active}, load: [:member, avatar_blob: [:url]], scope: scope)
+    Core.list_users!(%{status: :active}, load: [member: [avatar_blob: [:url]]], scope: scope)
   end
 
   defp list_organization_invites(scope) do
@@ -485,34 +475,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
   end
 
   def handle_event("save", %{"user" => user_params}, socket) do
-    {name_params, member_params} = user_params |> merge_user_name_params() |> Map.split(["name"])
-    name_form = AshPhoenix.Form.validate(socket.assigns.name_form, name_params)
-
-    member_form =
-      AshPhoenix.Form.validate(socket.assigns.member_form, member_params)
-
-    if name_form.source.valid? and member_form.source.valid? do
-      current_user = socket.assigns.current_user
-      scope = socket.assigns.ash_scope
-
-      # The name lives on the account and the rest on the member; save both or neither.
-      {:ok, user} =
-        Ash.transact([Core.User, Core.Member], fn ->
-          user = Core.update_profile!(current_user, name_params, scope: scope)
-          member = Core.update_member_profile!(current_user.member, member_params, scope: scope)
-          %{user | member: member}
-        end)
-
-      {:noreply,
-       socket
-       |> assign(:editing_account_name, false)
-       |> refresh_profile_assigns(user)}
-    else
-      {:noreply,
-       socket
-       |> assign(:name_form, name_form)
-       |> assign(:member_form, member_form)}
-    end
+    save_member_form(socket, merge_user_name_params(user_params), :editing_account_name)
   end
 
   def handle_event("save_profile_contact", %{"user" => user_params}, socket) do
@@ -1332,7 +1295,6 @@ defmodule FirmowidWeb.Settings.Views.Index do
             current_org={@current_org}
             delete_account_form={@delete_account_form}
             editing_account_name={@editing_account_name}
-            name_form={@name_form}
             member_form={@member_form}
             editing_credentials={@editing_credentials}
             email_form={@email_form}
@@ -1533,7 +1495,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
 
   defp refresh_profile_assigns(socket, user) do
     scope = socket.assigns.ash_scope
-    current_user = Ash.load!(user, [avatar_blob: [:url]], scope: scope)
+    current_user = %{user | member: Ash.load!(user.member, [avatar_blob: [:url]], scope: scope)}
 
     {:ok, pending_contract} = Payroll.load_pending_contract(current_user.member.id, scope: scope)
     {:ok, current_contract} = Payroll.load_current_contract(current_user.member.id, scope: scope)

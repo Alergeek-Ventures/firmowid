@@ -22,7 +22,6 @@ defmodule FirmowidWeb.Settings.Components.AccountTab do
   attr :current_org, :map, required: true
   attr :delete_account_form, :map, required: true
   attr :editing_account_name, :boolean, required: true
-  attr :name_form, :map, required: true
   attr :member_form, :map, required: true
   attr :editing_credentials, :boolean, required: true
   attr :email_form, :map, required: true
@@ -37,7 +36,6 @@ defmodule FirmowidWeb.Settings.Components.AccountTab do
         <.name_section
           current_user={@current_user}
           editing_account_name={@editing_account_name}
-          name_form={@name_form}
           member_form={@member_form}
         />
 
@@ -117,7 +115,6 @@ defmodule FirmowidWeb.Settings.Components.AccountTab do
 
   attr :current_user, :map, required: true
   attr :editing_account_name, :boolean, required: true
-  attr :name_form, :map, required: true
   attr :member_form, :map, required: true
 
   defp name_section(assigns) do
@@ -129,7 +126,7 @@ defmodule FirmowidWeb.Settings.Components.AccountTab do
     >
       <%= if @editing_account_name do %>
         <form phx-submit="save" class="space-y-4">
-          <input type="hidden" name="user[name]" value={@name_form[:name].value || ""} />
+          <input type="hidden" name="user[name]" value={@member_form[:name].value || ""} />
 
           <div class="space-y-2">
             <Helpers.settings_field label="Imię" layout={:row} for="user_first_name">
@@ -137,8 +134,8 @@ defmodule FirmowidWeb.Settings.Components.AccountTab do
                 type="text"
                 name="user[first_name]"
                 id="user_first_name"
-                value={name_input_value(first_name(@name_form[:name].value))}
-                errors={Inputs.translate_errors(@name_form.errors, :name)}
+                value={name_input_value(first_name(@member_form[:name].value))}
+                errors={Inputs.translate_errors(@member_form.errors, :name)}
                 new
                 input_class="w-full"
               />
@@ -149,7 +146,7 @@ defmodule FirmowidWeb.Settings.Components.AccountTab do
                 type="text"
                 name="user[last_name]"
                 id="user_last_name"
-                value={name_input_value(last_name(@name_form[:name].value))}
+                value={name_input_value(last_name(@member_form[:name].value))}
                 new
                 input_class="w-full"
               />
@@ -214,8 +211,8 @@ defmodule FirmowidWeb.Settings.Components.AccountTab do
         </form>
       <% else %>
         <div class="space-y-2">
-          <.detail_row label="Imię">{first_name(@current_user.name)}</.detail_row>
-          <.detail_row label="Nazwisko">{last_name(@current_user.name)}</.detail_row>
+          <.detail_row label="Imię">{first_name(@current_user.member.name)}</.detail_row>
+          <.detail_row label="Nazwisko">{last_name(@current_user.member.name)}</.detail_row>
           <.detail_row label="Data urodzenia">
             {format_birthday(@current_user.member.birthday)}
           </.detail_row>

@@ -16,17 +16,17 @@ defmodule Firmowid.Ash.Core.Changes.CleanupOldAvatarBlobTest do
 
       first_blob = create_blob!(scope, "first avatar", "avatar-1.txt")
 
-      assert {:ok, user} =
-               Core.update_user_avatar(user, %{avatar_blob_id: first_blob.id}, scope: scope)
+      assert {:ok, member} =
+               Core.update_member_avatar(user.member, %{avatar_blob_id: first_blob.id}, scope: scope)
 
-      assert user.avatar_blob_id == first_blob.id
+      assert member.avatar_blob_id == first_blob.id
 
       second_blob = create_blob!(scope, "second avatar", "avatar-2.txt")
 
-      assert {:ok, updated_user} =
-               Core.update_user_avatar(user, %{avatar_blob_id: second_blob.id}, scope: scope)
+      assert {:ok, updated_member} =
+               Core.update_member_avatar(member, %{avatar_blob_id: second_blob.id}, scope: scope)
 
-      assert updated_user.avatar_blob_id == second_blob.id
+      assert updated_member.avatar_blob_id == second_blob.id
 
       assert_raise Ash.Error.Invalid, fn ->
         Blobs.get_blob!(first_blob.id, scope: scope)

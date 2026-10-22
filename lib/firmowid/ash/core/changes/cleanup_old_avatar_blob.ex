@@ -6,8 +6,8 @@ defmodule Firmowid.Ash.Core.Changes.CleanupOldAvatarBlob do
   use Ash.Resource.Change
 
   alias Firmowid.Ash.Blobs
+  alias Firmowid.Ash.Core.Member
   alias Firmowid.Ash.Core.Organization
-  alias Firmowid.Ash.Core.User
   alias Firmowid.Ash.Scope
   alias Firmowid.Ash.SystemActor
 
@@ -22,7 +22,7 @@ defmodule Firmowid.Ash.Core.Changes.CleanupOldAvatarBlob do
            avatar_blob_unreferenced?(old_blob_id, record, context) do
         tenant = Map.get(record, :organization_id, record.id)
 
-        # Used SystemActor to bypass authorization checks for blob deletion, since the blob is no longer referenced by any user or organization
+        # Used SystemActor to bypass authorization checks for blob deletion, since the blob is no longer referenced by any member or organization
         # and user lacks permission to delete it.
         scope = %Scope{
           actor: %SystemActor{org_id: tenant, role: :avatar_cleanup},
@@ -41,11 +41,12 @@ defmodule Firmowid.Ash.Core.Changes.CleanupOldAvatarBlob do
   defp avatar_blob_unreferenced?(blob_id, record, context) do
     opts = [tenant: Map.get(record, :organization_id, record.id), actor: context.actor]
 
-    not user_references_blob?(blob_id, opts) and not organization_references_blob?(blob_id, opts)
+    not member_references_blob?(blob_id, opts) and
+      not organization_references_blob?(blob_id, opts)
   end
 
-  defp user_references_blob?(blob_id, opts) do
-    User
+  defp member_references_blob?(blob_id, opts) do
+    Member
     |> Ash.Query.filter(avatar_blob_id == ^blob_id)
     |> Ash.Query.for_read(:read, %{}, opts)
     |> Ash.exists?(opts)

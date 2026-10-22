@@ -9,7 +9,7 @@ defmodule FirmowidWeb.Management.Components.DelegationOrderPdfTest do
   test "renders public transport in a delegation order" do
     html =
       render_component(&DelegationOrderPdf.order/1,
-        employee: %{name: "Jan Kowalski", email: "jan@example.com"},
+        employee: %{member: %{name: "Jan Kowalski"}, email: "jan@example.com"},
         employment_contract: %{position: "Programista"},
         delegation: %{
           reference: "JK-2026-09-1",

@@ -86,7 +86,7 @@ defmodule FirmowidWeb.Auth.Views.ConfirmEmail do
         socket
 
       user when is_nil(user.organization_id) ->
-        assign(socket, :current_user, %{user | avatar_blob: nil})
+        assign(socket, :current_user, %{user | member: nil})
 
       user ->
         {loaded_user, _org, _scope} = UserAuth.load_scope_and_avatars(user)

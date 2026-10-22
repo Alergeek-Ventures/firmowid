@@ -260,7 +260,7 @@ defmodule FirmowidWeb.Management.Views.Project do
     |> Enum.map(fn uid ->
       user = resolve_user(uid, users_by_id, scope)
 
-      user = Ash.load!(user, [avatar_blob: [:url]], scope: scope)
+      user = Ash.load!(user, [member: [avatar_blob: [:url]]], scope: scope)
       time = Map.get(time_by_user, uid, 0)
       rate = Map.get(salary_by_user, uid)
       hours = Timetracker.seconds_to_hours(time)
@@ -274,7 +274,7 @@ defmodule FirmowidWeb.Management.Views.Project do
       |> Map.put(:removed_from_project, not MapSet.member?(member_ids, uid))
       |> Map.put(:expanded, false)
     end)
-    |> Enum.sort_by(&{&1.removed_from_project, &1.name, &1.email})
+    |> Enum.sort_by(&{&1.removed_from_project, &1.member.name, &1.email})
   end
 
   defp compute_total_cost(sessions, salary_by_user) do

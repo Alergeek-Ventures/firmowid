@@ -1,7 +1,7 @@
 defmodule Firmowid.Ash.Core.Changes.SetOwnerOrganization do
   @moduledoc """
   After creating an organization, assigns the owner user to it as an
-  `:admin` member.
+  `:admin` member named by the `owner_name` argument.
   """
   # TODO: extract bridge_opts tenant-extraction pattern into a shared helper
   # (duplicated in OrganizationInvite and other changes)
@@ -13,7 +13,7 @@ defmodule Firmowid.Ash.Core.Changes.SetOwnerOrganization do
 
   @impl true
   def change(changeset, _opts, context) do
-    Ash.Changeset.after_action(changeset, fn _changeset, organization ->
+    Ash.Changeset.after_action(changeset, fn changeset, organization ->
       actor = %SystemActor{
         org_id: organization.id,
         role: :organization_owner_setup,
@@ -30,7 +30,11 @@ defmodule Firmowid.Ash.Core.Changes.SetOwnerOrganization do
 
       owner
       |> Core.changeset_to_set_organization(
-        %{organization_id: organization.id, role: :admin},
+        %{
+          organization_id: organization.id,
+          role: :admin,
+          name: Ash.Changeset.get_argument(changeset, :owner_name)
+        },
         bridge_opts
       )
       |> Ash.update!()

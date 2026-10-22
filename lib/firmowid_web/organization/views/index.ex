@@ -37,6 +37,12 @@ defmodule FirmowidWeb.Organization.Views.Index do
                 </.error>
 
                 <.input
+                  field={@organization_form[:owner_name]}
+                  type="text"
+                  placeholder="Twoje imię i nazwisko"
+                  required
+                />
+                <.input
                   field={@organization_form[:nip]}
                   type="text"
                   placeholder="Identyfikator (NIP)"
@@ -101,6 +107,7 @@ defmodule FirmowidWeb.Organization.Views.Index do
                   i posiadasz kod (zaproszenie)?
                 </p>
                 <.simple_form for={@join_form} id="join_form" phx-submit="join">
+                  <.input field={@join_form[:name]} type="text" label="Imię i nazwisko" required />
                   <.input field={@join_form[:code]} type="text" label="Kod zaproszenia" required />
                   <:actions>
                     <.button variant="special" class="w-full" phx-disable-with="Dołączanie...">
@@ -184,7 +191,7 @@ defmodule FirmowidWeb.Organization.Views.Index do
   end
 
   @impl true
-  def handle_event("join", %{"code" => invite_code}, socket) do
+  def handle_event("join", %{"code" => invite_code, "name" => name}, socket) do
     user = socket.assigns.current_user
 
     trimmed_code = String.trim(invite_code)
@@ -203,9 +210,19 @@ defmodule FirmowidWeb.Organization.Views.Index do
     )
 
     # Consume the invite (scoped to the invite's organization)
-    Core.consume_invite!(invite, %{}, tenant: invite.organization_id, actor: user)
+    case Core.consume_invite(invite, %{name: name}, tenant: invite.organization_id, actor: user) do
+      {:ok, _invite} ->
+        {:noreply, redirect(socket, to: "/")}
 
-    {:noreply, redirect(socket, to: "/")}
+      {:error, %Ash.Error.Invalid{errors: [%Ash.Error.Changes.Required{field: :name}]}} ->
+        join_form =
+          to_form(%{"name" => name, "code" => invite_code}, errors: [name: {"is required", []}])
+
+        {:noreply, assign(socket, :join_form, join_form)}
+
+      {:error, error} ->
+        raise error
+    end
   end
 
   @impl true
@@ -238,6 +255,7 @@ defmodule FirmowidWeb.Organization.Views.Index do
         |> assign(
           :join_form,
           to_form(%{
+            "name" => "",
             "code" => ""
           })
         )

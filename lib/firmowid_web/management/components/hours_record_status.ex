@@ -53,7 +53,7 @@ defmodule FirmowidWeb.Management.Components.HoursRecordStatus do
         <.link
           kind="unstyled"
           navigate={~p"/czasosledz/ewidencja/#{@hours_record.id}"}
-          download={"Ewidencja_#{@hours_record.year}_#{@hours_record.month}_#{@user.name || @user.email}.pdf"}
+          download={"Ewidencja_#{@hours_record.year}_#{@hours_record.month}_#{@user.member.name || @user.email}.pdf"}
           class="inline-flex shrink-0 items-center justify-center rounded-md p-0.5 transition hover:bg-greyButtonBg"
         >
           <.icon name="hero-arrow-down-tray-mini" class="shrink-0 text-grey-400" />

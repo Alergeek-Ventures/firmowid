@@ -46,18 +46,18 @@
     <div class="flex gap-3">
       <.avatar class="size-20 shrink-0 ring-1 ring-greyButtonBg/50">
         <.avatar_image
-          :if={Map.get(@employee.avatar_blob || %{}, :url)}
-          src={Map.get(@employee.avatar_blob || %{}, :url)}
+          :if={Map.get(@employee.member.avatar_blob || %{}, :url)}
+          src={Map.get(@employee.member.avatar_blob || %{}, :url)}
           alt="Avatar"
         />
         <.avatar_fallback class="bg-blueBg text-2xl text-blueText">
-          {to_string(@employee.display_name || "")
+          {to_string(@employee.member.display_name || "")
           |> String.slice(0, 1)
           |> String.upcase()}
         </.avatar_fallback>
       </.avatar>
       <div>
-        <h2 class="text-lg font-medium">{@employee.display_name}</h2>
+        <h2 class="text-lg font-medium">{@employee.member.display_name}</h2>
         <div
           :if={@employee.member.slack_url not in [nil, ""]}
           class="flex items-center gap-2 text-sm text-darkGrey"
