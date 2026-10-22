@@ -227,7 +227,7 @@ defmodule Firmowid.Sentry do
         request: scrub_request(event.request),
         transaction: scrub_url_string(event.transaction),
         extra: scrub_extra(event.extra),
-        tags: scrub_tags(event.tags),
+        tags: scrub_tags(Map.merge(logger_tags(event.extra), event.tags || %{})),
         contexts: scrub_contexts(event.contexts),
         fingerprint: scrub_fingerprint(event.fingerprint),
         breadcrumbs: scrub_breadcrumbs(event.breadcrumbs),
@@ -354,6 +354,11 @@ defmodule Firmowid.Sentry do
       end
     end)
   end
+
+  defp logger_tags(%{logger_metadata: metadata}) when is_map(metadata),
+    do: scalar_map(metadata, [:organization_id, :view, :live_action, :callback])
+
+  defp logger_tags(_extra), do: %{}
 
   defp scrub_tags(nil), do: nil
   defp scrub_tags(tags) when is_map(tags), do: scalar_map(tags, @tag_keys)
