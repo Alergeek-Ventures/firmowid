@@ -6,9 +6,8 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
   URL params control the active month (`?miesiac=YYYY-MM-DD`) and tag filters
   (`?tagi=firma,projekt:<id>`).
 
-  Without tag filters, the charts also show unrealized capital up to the end of
-  the month: invoices without a linked payment and payments without an invoice
-  or salary.
+  Without tag filters, the charts also show unrealized capital from the month:
+  invoices without a linked payment and payments without an invoice or salary.
   """
   use FirmowidWeb, :live_view
 
@@ -252,10 +251,17 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
 
   # Category changes do not affect unrealized entries, so they only reload totals.
   defp load_data(socket) do
-    month_end = Date.end_of_month(socket.assigns.params.month)
+    month = socket.assigns.params.month
+
+    unrealized =
+      Analysis.get_unrealized_entries(
+        Date.beginning_of_month(month),
+        Date.end_of_month(month),
+        socket.assigns.ash_scope
+      )
 
     socket
-    |> assign(:unrealized, Analysis.get_unrealized_entries(month_end, socket.assigns.ash_scope))
+    |> assign(:unrealized, unrealized)
     |> load_totals()
   end
 
@@ -454,7 +460,7 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
         </h2>
         <p class="mt-1 text-sm text-darkGrey">
           {gettext(
-            "Invoices without a payment and payments without an invoice or salary, dated up to the end of this month. Link them or mark them as skipped to include them in the analysis."
+            "Invoices without a payment and payments without an invoice or salary, dated this month. Link them or mark them as skipped to include them in the analysis."
           )}
         </p>
         <div class="overflow-x-auto">
