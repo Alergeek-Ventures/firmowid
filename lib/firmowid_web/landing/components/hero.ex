@@ -111,10 +111,8 @@ defmodule FirmowidWeb.Landing.Components.Hero do
             decoding="async"
             fetchpriority={if index == 0, do: "high", else: "auto"}
             data-state={index}
-            class={[
-              "absolute inset-0 size-full opacity-0 transition-opacity duration-300 ease-in-out [&.is-active]:opacity-100",
-              index == 0 && "is-active"
-            ]}
+            data-active={to_string(index == 0)}
+            class="absolute inset-0 size-full opacity-0 transition-opacity duration-300 ease-in-out data-[active=true]:opacity-100"
           />
         </div>
       </div>

@@ -9,11 +9,10 @@ export const LandingPricing = {
       .querySelector("#landing-pricing-toggle")
       .addEventListener("click", this.toggleFeatures);
     this.updateHeader = () => {
-      const header = this.el.querySelector(".landing-pricing-plans");
-      const cards = this.el.querySelectorAll(".landing-pricing-card");
+      const header = this.el.querySelector("#landing-pricing-plans");
+      const cards = this.el.querySelectorAll("[data-pricing-card]");
       const offset = parseFloat(getComputedStyle(header).top);
-      header.classList.toggle(
-        "is-stuck",
+      header.dataset.stuck = String(
         cards[cards.length - 1].getBoundingClientRect().bottom <= offset,
       );
     };

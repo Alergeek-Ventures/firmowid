@@ -4,11 +4,11 @@ export const LandingNavbarTheme = {
     this.updateTheme = () => {
       this.raf = null;
 
-      const nav = this.el.querySelector(".landing-nav-panel");
+      const nav = this.el.querySelector("nav");
       const darkSurfaces = document.querySelectorAll("[data-landing-dark-surface]");
 
       if (!nav || darkSurfaces.length === 0) {
-        this.el.classList.remove("landing-nav--dark");
+        this.el.dataset.theme = "light";
         return;
       }
 
@@ -21,7 +21,7 @@ export const LandingNavbarTheme = {
         return sampleY >= surfaceRect.top && sampleY <= surfaceRect.bottom;
       });
 
-      this.el.classList.toggle("landing-nav--dark", overlapsDarkSurface);
+      this.el.dataset.theme = overlapsDarkSurface ? "dark" : "light";
     };
 
     this.scheduleUpdate = () => {

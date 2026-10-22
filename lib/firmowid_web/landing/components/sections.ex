@@ -149,31 +149,31 @@ defmodule FirmowidWeb.Landing.Components.Sections do
     <section
       id="dla-kogo"
       data-landing-dark-surface
-      class="bg-[#0f0f0f] py-18 text-white lg:py-26 [&_.landing-eyebrow]:text-orange-500-landing [&_.landing-section-intro_>_p:not(.landing-eyebrow)]:text-grey-300 [&_article_p]:text-grey-300"
+      class="bg-[#0f0f0f] py-18 text-white lg:py-26"
     >
       <div class="mx-auto w-[calc(100%-var(--spacing)*8)] max-w-284.75 lg:w-[calc(100%-var(--spacing)*16)]">
-        <div class="landing-section-intro max-w-180 lg:max-w-170 [&_>_p:not(.landing-eyebrow,.landing-assistants-soon,.landing-assistants-footnote)]:mt-6 [&_>_p:not(.landing-eyebrow,.landing-assistants-soon,.landing-assistants-footnote)]:text-h5/6.75 [&_>_p:not(.landing-eyebrow,.landing-assistants-soon,.landing-assistants-footnote)]:text-darkGrey lg:[&_>_p:not(.landing-eyebrow,.landing-assistants-soon,.landing-assistants-footnote)]:max-w-170 [&_h2]:text-[2.25rem] [&_h2]:leading-[1.1] [&_h2]:font-bold [&_h2]:tracking-[-0.03em] lg:[&_h2]:text-[3rem] lg:[&_h2]:leading-[1.04] lg:[&.text-center]:mx-auto lg:[&.text-center_>_p:not(.landing-eyebrow)]:mx-auto">
-          <p class="landing-eyebrow mb-4 text-xs font-bold tracking-[0.08em] text-(--landing-accent) uppercase">
+        <div class="max-w-180 lg:max-w-170">
+          <p class="mb-4 text-xs font-bold tracking-[0.08em] text-orange-500-landing uppercase">
             {gettext("Who it is for")}
           </p>
-          <h2>
+          <h2 class="lg:text-5xl text-[38px] leading-[1.1] font-bold tracking-[-0.03em] lg:leading-[1.04]">
             {gettext("You run a business.")}<br class="hidden lg:block" />
             {gettext("You do not want to manage spreadsheets.")}
           </h2>
-          <p>
+          <p class="mt-6 text-h5/6.75 text-grey-300 lg:max-w-170">
             {gettext(
               "Firmowid was created for Polish SMEs that are tired of jumping from one program to another and recording everything in spreadsheets."
             )}
           </p>
         </div>
 
-        <div class="mt-10 grid gap-9 bg-[url('/images/landing/decorations/dark-separator.svg')] bg-size-[100%_--spacing(0.5)] bg-top bg-no-repeat pt-9 lg:mt-12 lg:grid-cols-3 lg:gap-10 lg:pt-10 [&_.landing-eyebrow]:mb-5 [&_h3]:mb-5 [&_h3]:text-xl [&_h3]:leading-[1.3] [&_h3]:font-semibold [&_h3]:tracking-[-0.01em] [&_p]:text-base [&_p]:leading-[1.4]">
+        <div class="mt-10 grid gap-9 bg-[url('/images/landing/decorations/dark-separator.svg')] bg-size-[100%_--spacing(0.5)] bg-top bg-no-repeat pt-9 lg:mt-12 lg:grid-cols-3 lg:gap-10 lg:pt-10 [&_h3]:mb-5 [&_h3]:text-xl [&_h3]:leading-[1.3] [&_h3]:font-semibold [&_h3]:tracking-[-0.01em] [&_p]:text-base [&_p]:leading-[1.4]">
           <article :for={{problem, index} <- Enum.with_index(@problems, 1)}>
-            <p class="landing-eyebrow mb-4 text-xs font-bold tracking-[0.08em] text-(--landing-accent) uppercase">
+            <p class="mb-5 text-xs font-bold tracking-[0.08em] text-orange-500-landing uppercase">
               0{index}
             </p>
             <h3>{problem.title}</h3>
-            <p>{problem.description}</p>
+            <p class="text-grey-300">{problem.description}</p>
           </article>
         </div>
       </div>
@@ -191,15 +191,15 @@ defmodule FirmowidWeb.Landing.Components.Sections do
     ~H"""
     <section id="funkcje" class="py-18 lg:py-26">
       <div class="mx-auto w-[calc(100%-var(--spacing)*8)] max-w-284.75 lg:w-[calc(100%-var(--spacing)*16)]">
-        <div class="landing-section-intro max-w-180 lg:max-w-284.75 [&_>_p:not(.landing-eyebrow,.landing-assistants-soon,.landing-assistants-footnote)]:mt-6 [&_>_p:not(.landing-eyebrow,.landing-assistants-soon,.landing-assistants-footnote)]:text-h5/6.75 [&_>_p:not(.landing-eyebrow,.landing-assistants-soon,.landing-assistants-footnote)]:text-darkGrey lg:[&_>_p:not(.landing-eyebrow,.landing-assistants-soon,.landing-assistants-footnote)]:max-w-115 [&_h2]:text-[2.25rem] [&_h2]:leading-[1.1] [&_h2]:font-bold [&_h2]:tracking-[-0.03em] lg:[&_h2]:text-[3rem] lg:[&_h2]:leading-[1.04] lg:[&.text-center]:mx-auto lg:[&.text-center]:max-w-140 lg:[&.text-center_>_p:not(.landing-eyebrow)]:mx-auto">
-          <p class="landing-eyebrow mb-4 text-xs font-bold tracking-[0.08em] text-(--landing-accent) uppercase">
+        <div class="max-w-180 lg:max-w-284.75">
+          <p class="mb-4 text-xs font-bold tracking-[0.08em] text-(--landing-accent) uppercase">
             {gettext("What Firmowid can do")}
           </p>
-          <h2>
+          <h2 class="lg:text-5xl text-[38px] leading-[1.1] font-bold tracking-[-0.03em] lg:leading-[1.04]">
             {gettext("Four things your business needs.")}
             {gettext("In one place.")}
           </h2>
-          <p class="lg:hidden">
+          <p class="mt-6 text-h5/6.75 text-darkGrey lg:hidden lg:max-w-115">
             {gettext(
               "Firmowid was created for Polish SMEs that are tired of jumping from one program to another and recording everything in spreadsheets."
             )}
@@ -208,14 +208,14 @@ defmodule FirmowidWeb.Landing.Components.Sections do
 
         <article
           :for={feature <- @features}
-          class="landing-feature mt-8 grid gap-6 rounded-2xl border border-[#e3b79b] bg-white p-6 lg:mt-20 lg:grid-cols-2 lg:items-center lg:gap-20 lg:border-0 lg:bg-transparent lg:p-0 lg:last:pb-0 [&_h3]:my-4 [&_h3]:text-lg [&_h3]:leading-[1.15] [&_h3]:font-bold [&_h3]:tracking-[-0.03em] lg:[&_h3]:text-[2.25rem] lg:[&_h3]:leading-[1.05] lg:[&_li]:flex lg:[&_li]:items-start lg:[&_li]:gap-3 [&_ul]:hidden lg:[&_ul]:mt-7 lg:[&_ul]:grid lg:[&_ul]:gap-3 lg:[&_ul]:text-base/normal lg:[&+.landing-feature]:mt-16 lg:[&+.landing-feature]:bg-[url('/images/landing/decorations/feature-separator.svg')] lg:[&+.landing-feature]:bg-size-[100%_--spacing(0.5)] lg:[&+.landing-feature]:bg-top lg:[&+.landing-feature]:bg-no-repeat lg:[&+.landing-feature]:pt-16 lg:[&:nth-of-type(even)_>_:first-child]:order-2"
+          class="mt-8 grid gap-6 rounded-2xl border border-[#e3b79b] bg-white p-6 lg:mt-16 lg:grid-cols-2 lg:items-center lg:gap-20 lg:border-0 lg:bg-transparent lg:p-0 lg:last:pb-0 lg:[&+article]:bg-[url('/images/landing/decorations/feature-separator.svg')] lg:[&+article]:bg-size-[100%_--spacing(0.5)] lg:[&+article]:bg-top lg:[&+article]:bg-no-repeat lg:[&+article]:pt-16 lg:[&:nth-of-type(even)_>_:first-child]:order-2"
         >
-          <div>
+          <div class="font-normal">
             <p class="flex flex-wrap gap-2 text-xs font-bold tracking-[0.06em] text-(--landing-accent) uppercase lg:flex [&_span]:inline-block [&_span]:p-0 [&_span]:text-sm [&_span]:font-semibold [&_span]:tracking-[0.08em] [&_span]:uppercase max-lg:[&_span]:text-xs lg:[&_span]:rounded-full lg:[&_span]:bg-[#f2dfd4] lg:[&_span]:px-4 lg:[&_span]:py-1 lg:[&_span]:font-normal lg:[&_span]:tracking-normal lg:[&_span]:normal-case [&_span+span]:border-0 [&_span+span::before]:mr-2.5 [&_span+span::before]:content-['·'] lg:[&_span+span::before]:content-none">
               <span :for={tag <- feature.tags}>{tag}</span>
             </p>
             <h3 class={[
-              "text-grey-900",
+              "my-4 text-lg leading-[1.15] font-bold tracking-[-0.03em] text-grey-900 lg:text-[2.25rem] lg:leading-[1.05]",
               feature.visual == :banking && "lg:max-w-115",
               feature.visual == :team && "text-balance lg:max-w-100"
             ]}>
@@ -224,8 +224,8 @@ defmodule FirmowidWeb.Landing.Components.Sections do
             <p class="text-base/6.75 text-darkGrey lg:text-h5">
               {feature.description}
             </p>
-            <ul class="text-grey-700">
-              <li :for={bullet <- feature.bullets}>
+            <ul class="hidden text-grey-700 lg:mt-7 lg:grid lg:gap-3 lg:text-base/normal">
+              <li :for={bullet <- feature.bullets} class="flex items-start gap-3">
                 <img
                   src={~p"/images/landing/icons/arrow.svg"}
                   alt=""
@@ -735,18 +735,18 @@ defmodule FirmowidWeb.Landing.Components.Sections do
   def assistants_section(assigns) do
     ~H"""
     <section id="asystent" class="bg-turquoise-200 py-18 lg:py-26">
-      <div class="mx-auto grid w-[calc(100%-var(--spacing)*8)] max-w-284.75 grid-cols-1 gap-10 *:min-w-0 lg:w-[calc(100%-var(--spacing)*16)] lg:grid-cols-[minmax(0,1fr)_--spacing(125)] lg:gap-20 [&_.landing-eyebrow]:text-turquoise-700 [&_.landing-pill]:border-0 [&_.landing-pill]:bg-turquoise-700 [&_.landing-pill]:px-2.25 [&_.landing-pill]:py-0.75 [&_.landing-pill]:text-caps-sm [&_.landing-pill]:tracking-normal [&_.landing-pill]:text-white lg:[&_.landing-section-intro_h2]:max-w-130 lg:[&_.landing-section-intro.landing-section-intro_>_p]:max-w-none">
-        <div class="landing-section-intro max-w-180 lg:max-w-284.75 [&_>_p:not(.landing-eyebrow,.landing-assistants-soon,.landing-assistants-footnote)]:mt-6 [&_>_p:not(.landing-eyebrow,.landing-assistants-soon,.landing-assistants-footnote)]:text-h5/6.75 [&_>_p:not(.landing-eyebrow,.landing-assistants-soon,.landing-assistants-footnote)]:text-darkGrey lg:[&_>_p:not(.landing-eyebrow,.landing-assistants-soon,.landing-assistants-footnote)]:max-w-115 [&_h2]:text-[2.25rem] [&_h2]:leading-[1.1] [&_h2]:font-bold [&_h2]:tracking-[-0.03em] lg:[&_h2]:text-[3rem] lg:[&_h2]:leading-[1.04] lg:[&.text-center]:mx-auto lg:[&.text-center]:max-w-140 lg:[&.text-center_>_p:not(.landing-eyebrow)]:mx-auto">
-          <p class="landing-eyebrow mb-4 flex flex-wrap items-center gap-3 text-xs font-bold tracking-[0.08em] text-(--landing-accent) uppercase">
+      <div class="mx-auto grid w-[calc(100%-var(--spacing)*8)] max-w-284.75 grid-cols-1 gap-10 *:min-w-0 lg:w-[calc(100%-var(--spacing)*16)] lg:grid-cols-[minmax(0,1fr)_--spacing(125)] lg:gap-20">
+        <div class="max-w-180 lg:max-w-284.75">
+          <p class="mb-4 flex flex-wrap items-center gap-3 text-xs font-bold tracking-[0.08em] text-turquoise-700 uppercase">
             {gettext("Firmowid in ChatGPT and Claude")}
-            <span class="landing-pill inline-flex items-center rounded-full border border-current px-3.5 py-1.25 text-caps-sm font-bold tracking-[0.04em] uppercase">{gettext(
+            <span class="inline-flex items-center rounded-full bg-turquoise-700 px-2.25 py-0.75 text-caps-sm font-bold tracking-normal text-white uppercase">{gettext(
               "Early access"
             )}</span>
           </p>
-          <h2 class="max-w-125! leading-[1.15]! tracking-normal! text-grey-900">
+          <h2 class="lg:text-5xl max-w-125 text-[30px] leading-[1.15] font-bold tracking-normal text-grey-900 lg:leading-[1.15]">
             {gettext("An assistant to help you with your business")}
           </h2>
-          <p class="mt-3.5!">
+          <p class="mt-3.5 text-h5/6.75 text-darkGrey">
             {gettext(
               "Write what you need - Firmowid will issue an invoice, create a correction or find any document. Before anything reaches KSeF, you will see a preview and confirm it yourself."
             )}
@@ -772,7 +772,7 @@ defmodule FirmowidWeb.Landing.Components.Sections do
               ></span>{gettext("Reading sales and cost invoices")}
             </li>
           </ul>
-          <p class="landing-assistants-soon mt-3.5 flex items-start gap-2.5 text-base/6 text-grey-700">
+          <p class="mt-3.5 flex items-start gap-2.5 text-base/6 text-grey-700">
             <img
               src={~p"/images/landing/icons/clock.svg"}
               alt=""
@@ -835,7 +835,7 @@ defmodule FirmowidWeb.Landing.Components.Sections do
             </ul>
           </div>
 
-          <p class="landing-assistants-footnote mt-14 hidden text-sm/5 text-grey-500 lg:mt-34 lg:block">
+          <p class="mt-14 hidden text-sm/5 text-grey-500 lg:mt-34 lg:block">
             {gettext(
               "*Already used by early adopters among our users. Gradually rolling out to everyone. Available in the Entrepreneur and Company plans."
             )}
@@ -965,7 +965,7 @@ defmodule FirmowidWeb.Landing.Components.Sections do
             </p>
           </div>
         </div>
-        <p class="landing-assistants-footnote px-5 text-sm/5 text-grey-500 lg:hidden">
+        <p class="px-5 text-sm/5 text-grey-500 lg:hidden">
           {gettext(
             "*Already used by early adopters among our users. Gradually rolling out to everyone. Available in the Entrepreneur and Company plans."
           )}
@@ -1023,11 +1023,13 @@ defmodule FirmowidWeb.Landing.Components.Sections do
     ~H"""
     <section id="jak-dziala" class="bg-grey-100 py-18 lg:py-26">
       <div class="mx-auto w-[calc(100%-var(--spacing)*8)] max-w-284.75 lg:w-[calc(100%-var(--spacing)*16)]">
-        <div class="landing-section-intro mx-auto max-w-180 text-center lg:max-w-284.75 [&_>_p:not(.landing-eyebrow,.landing-assistants-soon,.landing-assistants-footnote)]:mt-6 [&_>_p:not(.landing-eyebrow,.landing-assistants-soon,.landing-assistants-footnote)]:text-h5/6.75 [&_>_p:not(.landing-eyebrow,.landing-assistants-soon,.landing-assistants-footnote)]:text-darkGrey lg:[&_>_p:not(.landing-eyebrow,.landing-assistants-soon,.landing-assistants-footnote)]:max-w-115 [&_h2]:text-[2.25rem] [&_h2]:leading-[1.1] [&_h2]:font-bold [&_h2]:tracking-[-0.03em] lg:[&_h2]:text-[3rem] lg:[&_h2]:leading-[1.04] lg:[&.text-center]:mx-auto lg:[&.text-center]:max-w-140 lg:[&.text-center_>_p:not(.landing-eyebrow)]:mx-auto">
-          <p class="landing-eyebrow mb-4 text-xs font-bold tracking-[0.08em] text-(--landing-accent) uppercase">
+        <div class="mx-auto max-w-180 text-center lg:max-w-140">
+          <p class="mb-4 text-xs font-bold tracking-[0.08em] text-(--landing-accent) uppercase">
             {gettext("How Firmowid works")}
           </p>
-          <h2>{gettext("From zero to your first invoice in 15 minutes")}</h2>
+          <h2 class="lg:text-5xl text-[38px] leading-[1.1] font-bold tracking-[-0.03em] lg:leading-[1.04]">
+            {gettext("From zero to your first invoice in 15 minutes")}
+          </h2>
         </div>
 
         <div class="relative mt-16 grid gap-10 lg:mt-20 lg:grid-cols-3 lg:gap-12 [&_article]:relative [&_article]:grid [&_article]:grid-cols-[--spacing(8)_minmax(0,1fr)] [&_article]:gap-x-5 [&_article]:gap-y-1 lg:[&_article]:block lg:[&_article]:text-center [&_article_>_p]:col-2 lg:[&_article_>_p]:col-auto [&_article_>_span]:row-[1/3] [&_article_>_span]:grid [&_article_>_span]:size-8 [&_article_>_span]:place-content-center [&_article_>_span]:rounded-full [&_article_>_span]:border-2 [&_article_>_span]:border-darkGrey [&_article_>_span]:bg-white [&_article_>_span]:text-sm [&_article_>_span]:font-bold lg:[&_article_>_span]:mx-auto lg:[&_article_>_span]:mb-6 lg:[&_article_>_span]:size-14 lg:[&_article_>_span]:text-xl [&_article:not(:last-child)::after]:absolute [&_article:not(:last-child)::after]:top-11 [&_article:not(:last-child)::after]:-bottom-10 [&_article:not(:last-child)::after]:left-3.75 [&_article:not(:last-child)::after]:border-l-2 [&_article:not(:last-child)::after]:border-dashed [&_article:not(:last-child)::after]:border-grey-200 [&_article:not(:last-child)::after]:content-[''] lg:[&_article:not(:last-child)::after]:top-6.75 lg:[&_article:not(:last-child)::after]:bottom-auto lg:[&_article:not(:last-child)::after]:left-1/2 lg:[&_article:not(:last-child)::after]:w-[calc(100%+var(--spacing)*12)] lg:[&_article:not(:last-child)::after]:border-t-2 lg:[&_article:not(:last-child)::after]:border-l-0 [&_article:nth-child(2)_>_span]:border-(--landing-accent) [&_article:nth-child(2)_>_span]:bg-(--landing-accent) [&_article:nth-child(2)_>_span]:text-white [&_h3]:mb-2 [&_h3]:text-lg [&_h3]:leading-[1.3] [&_h3]:font-semibold [&_h3]:tracking-[-0.01em] lg:[&_h3]:text-xl [&_p]:text-[15px] [&_p]:leading-[1.4] [&_p]:text-grey-700">
@@ -1053,15 +1055,17 @@ defmodule FirmowidWeb.Landing.Components.Sections do
     <section
       id="kod-zrodlowy"
       data-landing-dark-surface
-      class="bg-[#0f0f0f] py-18 text-white lg:py-26 [&_.landing-eyebrow]:text-orange-500-landing [&_.landing-section-intro_>_p:not(.landing-eyebrow)]:text-grey-300 [&_article_p]:text-grey-300"
+      class="bg-[#0f0f0f] py-18 text-white lg:py-26 [&_article_p]:text-grey-300"
     >
       <div class="mx-auto grid w-[calc(100%-var(--spacing)*8)] max-w-284.75 gap-10 lg:w-[calc(100%-var(--spacing)*16)] lg:grid-cols-2 lg:gap-20 [&_article_p]:text-base [&_article_p]:leading-[1.4] [&_h3]:mb-5 [&_h3]:text-xl [&_h3]:leading-[1.3] [&_h3]:font-semibold [&_h3]:tracking-[-0.01em]">
-        <div class="landing-section-intro max-w-180 lg:max-w-284.75 [&_>_p:not(.landing-eyebrow,.landing-assistants-soon,.landing-assistants-footnote)]:mt-6 [&_>_p:not(.landing-eyebrow,.landing-assistants-soon,.landing-assistants-footnote)]:text-h5/6.75 [&_>_p:not(.landing-eyebrow,.landing-assistants-soon,.landing-assistants-footnote)]:text-darkGrey lg:[&_>_p:not(.landing-eyebrow,.landing-assistants-soon,.landing-assistants-footnote)]:max-w-115 [&_h2]:text-[2.25rem] [&_h2]:leading-[1.1] [&_h2]:font-bold [&_h2]:tracking-[-0.03em] lg:[&_h2]:text-[3rem] lg:[&_h2]:leading-[1.04] lg:[&.text-center]:mx-auto lg:[&.text-center]:max-w-140 lg:[&.text-center_>_p:not(.landing-eyebrow)]:mx-auto">
-          <p class="landing-eyebrow mb-4 text-xs font-bold tracking-[0.08em] text-(--landing-accent) uppercase">
+        <div class="max-w-180 max-lg:relative lg:max-w-284.75">
+          <p class="mb-4 text-xs font-bold tracking-[0.08em] text-orange-500-landing uppercase">
             {gettext("Open source")}
           </p>
-          <h2 class="max-lg:mt-10">{gettext("Your data on your server.")}</h2>
-          <p>
+          <h2 class="lg:text-5xl text-[32px] leading-[1.1] font-bold tracking-[-0.03em] max-lg:mt-10 lg:leading-[1.04]">
+            {gettext("Your data on your server.")}
+          </h2>
+          <p class="mt-6 text-h5/6.75 text-grey-300 lg:max-w-115">
             {gettext("Firmowid is open source. Host it yourself, without limits or fees.")}
           </p>
           <div class="mt-10 flex flex-wrap items-center gap-5 max-lg:mt-5">
@@ -1106,25 +1110,30 @@ defmodule FirmowidWeb.Landing.Components.Sections do
 
     ~H"""
     <section id="zespol" class="py-18 lg:py-26">
-      <div class="mx-auto grid w-[calc(100%-var(--spacing)*8)] max-w-284.75 gap-10 lg:w-[calc(100%-var(--spacing)*16)] lg:grid-cols-[minmax(0,1fr)_--spacing(143)] lg:items-center lg:gap-7 lg:[&_.landing-section-intro.landing-section-intro_>_p]:max-w-none [&_h3]:mt-6 [&_h3]:mb-1.5 [&_h3]:text-lg [&_h3]:font-bold">
-        <div class="landing-section-intro max-w-180 lg:max-w-284.75 [&_>_p:not(.landing-eyebrow,.landing-assistants-soon,.landing-assistants-footnote)]:mt-6 [&_>_p:not(.landing-eyebrow,.landing-assistants-soon,.landing-assistants-footnote)]:text-h5/6.75 [&_>_p:not(.landing-eyebrow,.landing-assistants-soon,.landing-assistants-footnote)]:text-darkGrey lg:[&_>_p:not(.landing-eyebrow,.landing-assistants-soon,.landing-assistants-footnote)]:max-w-115 [&_h2]:text-[2.25rem] [&_h2]:leading-[1.1] [&_h2]:font-bold [&_h2]:tracking-[-0.03em] lg:[&_h2]:text-[3rem] lg:[&_h2]:leading-[1.04] lg:[&.text-center]:mx-auto lg:[&.text-center]:max-w-140 lg:[&.text-center_>_p:not(.landing-eyebrow)]:mx-auto">
-          <p class="landing-eyebrow mb-4 text-xs font-bold tracking-[0.08em] text-(--landing-accent) uppercase">
+      <div class="mx-auto grid w-[calc(100%-var(--spacing)*8)] max-w-284.75 gap-10 lg:w-[calc(100%-var(--spacing)*16)] lg:grid-cols-[minmax(0,1fr)_--spacing(143)] lg:items-center lg:gap-7 [&_h3]:mt-6 [&_h3]:mb-1.5 [&_h3]:text-lg [&_h3]:font-bold">
+        <div class="max-w-180 lg:max-w-284.75">
+          <p class="mb-4 text-xs font-bold tracking-[0.08em] text-(--landing-accent) uppercase">
             {gettext("Who is behind it")}
           </p>
-          <h2>{gettext("Two people. One office in Krakow.")}</h2>
-          <p>
+          <h2 class="lg:text-5xl text-[38px] leading-[1.1] font-bold tracking-[-0.03em] lg:leading-[1.04]">
+            {gettext("Two people. One office in Krakow.")}
+          </h2>
+          <p class="mt-6 text-h5/6.75 text-darkGrey">
             {gettext(
               "Firmowid is not a product made by a hundred managers for a hundred processes. It is a tool made by people who run a company themselves and know what working with KSeF, payroll, and month-end closing really looks like."
             )}
           </p>
         </div>
 
-        <div class="grid gap-5 md:grid-cols-2 lg:gap-4 [&_article]:rounded-2xl [&_article]:bg-white [&_article]:p-5 lg:[&_article]:p-6 [&_article:nth-child(2)_.landing-team-portrait]:bg-turquoise-600 [&_article:nth-child(2)_.landing-team-portrait_img]:top-[-12%] [&_article:nth-child(2)_.landing-team-portrait_img]:left-[-26%] [&_article:nth-child(2)_.landing-team-portrait_img]:w-[153%]">
+        <div class="grid gap-5 md:grid-cols-2 lg:gap-4 [&_article]:rounded-2xl [&_article]:bg-white [&_article]:p-5 lg:[&_article]:p-6">
           <article
-            :for={person <- @team}
+            :for={{person, index} <- Enum.with_index(@team)}
             class="max-lg:grid max-lg:grid-cols-[88px_minmax(0,1fr)] max-lg:gap-x-4 max-lg:rounded-2xl max-lg:border max-lg:border-[#e3b79b] lg:relative lg:h-[556px] lg:w-[276px] lg:overflow-visible lg:after:pointer-events-none lg:after:absolute lg:after:top-1/2 lg:after:left-1/2 lg:after:z-10 lg:after:h-[556px] lg:after:w-[276px] lg:after:-translate-1/2 lg:after:bg-[url('/images/landing/frames/team-card.svg')] lg:after:bg-size-[100%_100%] lg:after:bg-center lg:after:bg-no-repeat lg:after:content-[''] max-lg:[&>h3]:mt-0 max-lg:[&>h3]:self-end max-lg:[&>p:last-child]:col-span-full max-lg:[&>p:last-child]:mt-5"
           >
-            <div class="landing-team-portrait relative aspect-square overflow-hidden rounded-lg bg-orange-500 max-lg:row-span-2 [&_img]:absolute [&_img]:top-[-22.4%] [&_img]:left-[-6%] [&_img]:h-auto [&_img]:w-[113%] [&_img]:max-w-none">
+            <div class={[
+              "relative aspect-square overflow-hidden rounded-lg max-lg:row-span-2",
+              if(index == 1, do: "bg-turquoise-600", else: "bg-orange-500")
+            ]}>
               <img
                 src={person.image}
                 alt={gettext("Portrait of %{name}", name: person.name)}
@@ -1132,6 +1141,13 @@ defmodule FirmowidWeb.Landing.Components.Sections do
                 height="1248"
                 loading="lazy"
                 decoding="async"
+                class={[
+                  "absolute h-auto max-w-none",
+                  if(index == 1,
+                    do: "top-[-12%] left-[-26%] w-[153%]",
+                    else: "top-[-22.4%] left-[-6%] w-[113%]"
+                  )
+                ]}
               />
             </div>
             <h3>{person.name}</h3>

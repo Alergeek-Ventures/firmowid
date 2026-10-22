@@ -119,15 +119,17 @@ defmodule FirmowidWeb.Landing.Components.Pricing do
     ~H"""
     <section
       id="cennik"
-      class="bg-white py-18 lg:py-26 max-lg:[&_.landing-billing-period]:mb-6 max-lg:[&_.landing-pricing-card_.landing-button]:px-2 max-lg:[&_.landing-pricing-card.landing-pricing-featured]:rounded-b-none max-lg:[&_.landing-pricing-plans]:*:text-[13px] max-lg:[&_dd]:text-[13px] max-lg:[&_dt]:text-sm"
+      class="bg-white py-18 lg:py-26 max-lg:[&_dd]:text-[13px] max-lg:[&_dt]:text-sm"
     >
       <div class="mx-auto w-[calc(100%-var(--spacing)*8)] max-w-284.75 lg:w-[calc(100%-var(--spacing)*16)]">
-        <div class="landing-section-intro mx-auto max-w-180 text-center lg:max-w-225 [&_>_p:not(.landing-eyebrow,.landing-assistants-soon,.landing-assistants-footnote)]:mt-6 [&_>_p:not(.landing-eyebrow,.landing-assistants-soon,.landing-assistants-footnote)]:text-h5/6.75 [&_>_p:not(.landing-eyebrow,.landing-assistants-soon,.landing-assistants-footnote)]:text-darkGrey lg:[&_>_p:not(.landing-eyebrow,.landing-assistants-soon,.landing-assistants-footnote)]:max-w-147 lg:[&_>_p:not(.landing-eyebrow,.landing-assistants-soon,.landing-assistants-footnote)]:text-h5 [&_h2]:text-[2.25rem] [&_h2]:leading-[1.1] [&_h2]:font-bold [&_h2]:tracking-[-0.03em] lg:[&_h2]:text-[3rem] lg:[&_h2]:leading-[1.04] lg:[&.text-center]:mx-auto lg:[&.text-center_>_p:not(.landing-eyebrow)]:mx-auto">
-          <p class="landing-eyebrow mb-4 text-xs font-bold tracking-[0.08em] text-(--landing-accent) uppercase">
+        <div class="mx-auto max-w-180 text-center lg:max-w-225">
+          <p class="mb-4 text-xs font-bold tracking-[0.08em] text-(--landing-accent) uppercase">
             {gettext("Pricing")}
           </p>
-          <h2>{gettext("Fair pricing. No fine print.")}</h2>
-          <p>
+          <h2 class="lg:text-5xl text-[38px] leading-[1.1] font-bold tracking-[-0.03em] lg:leading-[1.04]">
+            {gettext("Fair pricing. No fine print.")}
+          </h2>
+          <p class="mx-auto mt-6 text-h5/6.75 text-darkGrey lg:max-w-147 lg:text-h5">
             {gettext(
               "Pay only for what you actually use. Choose the plan and billing cycle that suit you best."
             )}
@@ -135,7 +137,7 @@ defmodule FirmowidWeb.Landing.Components.Pricing do
         </div>
 
         <div
-          class="landing-billing-period mx-auto mt-9 mb-12 flex w-max max-w-full gap-1 rounded-full bg-(--landing-beige) p-1.5 [&_button]:min-h-10.5 [&_button]:min-w-29.25 [&_button]:cursor-pointer [&_button]:rounded-full [&_button]:px-5 [&_button]:py-2.5 [&_button]:text-sm/5.5 [&_button_span]:text-(--landing-accent)"
+          class="mx-auto mt-9 mb-6 flex w-max max-w-full gap-1 rounded-full bg-(--landing-beige) p-1.5 lg:mb-12 [&_button]:min-h-10.5 [&_button]:min-w-29.25 [&_button]:cursor-pointer [&_button]:rounded-full [&_button]:px-5 [&_button]:py-2.5 [&_button]:text-sm/5.5 [&_button_span]:text-(--landing-accent)"
           role="group"
           aria-label={gettext("Billing period")}
         >
@@ -167,10 +169,13 @@ defmodule FirmowidWeb.Landing.Components.Pricing do
         >
           <article
             :for={plan <- @plans}
+            data-pricing-card
             class={[
-              "landing-pricing-card relative flex flex-col rounded-2xl bg-(--landing-beige) px-6 py-7 [&_.landing-button]:mt-10 [&_.landing-button]:text-base lg:[&_.landing-button]:mt-8 lg:[&.landing-pricing-featured]:rounded-b-none",
-              plan.featured &&
-                "landing-pricing-featured text-[#f5f1ea] [&_.landing-pricing-audience]:text-grey-300 [&_.landing-pricing-detail]:text-orange-500-landing [&_.landing-pricing-name]:text-orange-500-landing [&_.landing-pricing-price_>_span]:text-grey-300 [&.landing-pricing-featured]:bg-grey-900"
+              "relative flex flex-col rounded-2xl px-6 py-7",
+              if(plan.featured,
+                do: "rounded-b-none bg-grey-900 text-[#f5f1ea]",
+                else: "bg-(--landing-beige)"
+              )
             ]}
           >
             <p
@@ -179,20 +184,26 @@ defmodule FirmowidWeb.Landing.Components.Pricing do
             >
               {gettext("Most popular")}
             </p>
-            <p class="landing-pricing-name mb-4.5 text-xs font-bold tracking-[0.08em] text-(--landing-accent) uppercase">
+            <p class={[
+              "mb-4.5 text-xs font-bold tracking-[0.08em] uppercase",
+              if(plan.featured, do: "text-orange-500-landing", else: "text-(--landing-accent)")
+            ]}>
               {plan.name}
             </p>
-            <p class="landing-pricing-price mt-0 flex flex-wrap items-baseline gap-2 [&_>_span]:text-sm [&_>_span]:text-darkGrey [&_strong]:text-3xl [&_strong]:leading-none [&_strong]:font-bold [&_strong]:tracking-[-0.04em] lg:[&_strong]:text-3xl">
+            <p class={[
+              "mt-0 flex flex-wrap items-baseline gap-2 [&_>_span]:text-sm [&_strong]:text-3xl [&_strong]:leading-none [&_strong]:font-bold [&_strong]:tracking-[-0.04em] lg:[&_strong]:text-3xl",
+              if(plan.featured, do: "[&_>_span]:text-grey-300", else: "[&_>_span]:text-darkGrey")
+            ]}>
               <strong
                 id={"pricing-price-#{plan.key}"}
-                class="t-digit-group"
+                class="group/digits inline-flex items-baseline whitespace-nowrap tabular-nums"
                 data-value={plan.price_label}
                 phx-hook="NumberPopIn"
                 aria-hidden="true"
               >
                 <span
                   :for={{digit, index} <- Enum.with_index(String.graphemes(plan.price_label))}
-                  class="t-digit"
+                  class="inline-block will-change-[transform,opacity,filter] group-data-animating/digits:animate-[t-digit-pop-in_var(--digit-dur)_var(--digit-ease)_both] group-data-animating/digits:[animation-delay:calc(var(--digit-stagger)*var(--digit-stagger-index,0))] motion-reduce:animate-none!"
                   style={"--digit-stagger-index: #{index};"}
                 >
                   {digit}
@@ -201,16 +212,25 @@ defmodule FirmowidWeb.Landing.Components.Pricing do
               <span class="sr-only">{plan.price_label}</span>
               <span>{if plan.free?, do: gettext("forever"), else: gettext("/ month net")}</span>
             </p>
-            <p class="landing-pricing-detail mt-5 mb-3 text-xs/normal text-(--landing-accent)">
+            <p class={[
+              "mt-5 mb-3 text-xs/normal",
+              if(plan.featured, do: "text-orange-500-landing", else: "text-(--landing-accent)")
+            ]}>
               {plan.detail}
             </p>
-            <p class="landing-pricing-audience text-sm/5.25 text-darkGrey lg:min-h-11.5">
+            <p class={[
+              "text-sm/5.25 lg:min-h-11.5",
+              if(plan.featured, do: "text-grey-300", else: "text-darkGrey")
+            ]}>
               {plan.audience}
             </p>
             <.landing_button
               navigate={~p"/zarejestruj"}
-              variant={if plan.featured, do: :orange, else: :outline}
-              class={["whitespace-nowrap", plan.featured && "lg:px-3"]}
+              variant={if plan.featured, do: :orange, else: :pricing_outline}
+              class={[
+                "mt-10 whitespace-nowrap max-lg:w-full max-lg:px-2 lg:mt-8",
+                plan.featured && "lg:px-3"
+              ]}
               data-landing-cta="pricing_register"
               data-landing-plan={plan.key}
               data-landing-billing-period={@billing_period}
@@ -228,12 +248,21 @@ defmodule FirmowidWeb.Landing.Components.Pricing do
             </p>
           </div>
 
-          <div class="group/pricing landing-pricing-plans sticky top-(--landing-nav-height) z-20 grid grid-cols-3 rounded-md bg-(--landing-beige) *:px-1.5 *:py-3 *:text-center *:text-xs *:font-semibold lg:col-[2/5] lg:row-2 lg:rounded-t-2xl lg:rounded-b-none lg:*:flex lg:*:min-h-17 lg:*:flex-col lg:*:justify-center lg:*:bg-white lg:*:py-2.5 lg:*:text-sm lg:*:text-[#0f0f0f] lg:*:transition-colors lg:*:duration-200 lg:motion-reduce:*:transition-none [&_.landing-pricing-featured]:bg-transparent [&_.landing-pricing-featured]:text-(--landing-accent) lg:[&_.landing-pricing-featured]:bg-grey-900 lg:[&_.landing-pricing-featured]:text-white lg:[&.is-stuck]:overflow-hidden lg:[&.is-stuck]:rounded-2xl lg:[&.is-stuck_>_*]:bg-(--landing-beige) lg:[&.is-stuck_>_.landing-pricing-featured]:bg-grey-900">
+          <div
+            id="landing-pricing-plans"
+            class="group/pricing sticky top-(--landing-nav-height) z-20 grid grid-cols-3 rounded-md bg-(--landing-beige) *:px-1.5 *:py-3 *:text-center *:text-[13px] *:font-semibold lg:col-[2/5] lg:row-2 lg:rounded-t-2xl lg:rounded-b-none lg:*:flex lg:*:min-h-17 lg:*:flex-col lg:*:justify-center lg:*:py-2.5 lg:*:text-sm lg:*:transition-colors lg:*:duration-200 lg:data-[stuck=true]:overflow-hidden lg:data-[stuck=true]:rounded-2xl lg:motion-reduce:*:transition-none"
+          >
             <span
               :for={plan <- @plans}
-              class={[plan.featured && "landing-pricing-featured"]}
+              class={[
+                if(plan.featured,
+                  do: "bg-transparent text-(--landing-accent) lg:bg-grey-900 lg:text-white",
+                  else:
+                    "lg:bg-white lg:text-[#0f0f0f] lg:group-data-[stuck=true]/pricing:bg-(--landing-beige)"
+                )
+              ]}
             >
-              <span class="lg:opacity-0 lg:transition-opacity lg:duration-200 lg:group-[.is-stuck]/pricing:opacity-100 lg:motion-reduce:transition-none">
+              <span class="lg:opacity-0 lg:transition-opacity lg:duration-200 lg:group-data-[stuck=true]/pricing:opacity-100 lg:motion-reduce:transition-none">
                 {plan.name}<small class="hidden lg:mt-1 lg:block">{pgettext(
                   "landing card price",
                   "%{amount} PLN",
@@ -333,11 +362,14 @@ defmodule FirmowidWeb.Landing.Components.Pricing do
 
   defp comparison_row(assigns) do
     ~H"""
-    <div class="grid grid-cols-3 border-b border-(--landing-line) text-xs lg:grid-cols-[1.45fr_repeat(3,minmax(0,1fr))] lg:text-sm [&_dd]:px-1 [&_dd]:pt-2 [&_dd]:pb-4.5 [&_dd]:text-center [&_dd]:font-semibold [&_dd]:text-[#0f0f0f] lg:[&_dd]:px-3 lg:[&_dd]:py-4 [&_dd.landing-pricing-featured]:bg-transparent lg:[&_dd.landing-pricing-featured]:bg-grey-900 lg:[&_dd.landing-pricing-featured]:text-[#f5f1ea] [&_dt]:col-span-full [&_dt]:pt-4.5 [&_dt]:pb-2 [&_dt]:font-normal lg:[&_dt]:col-auto lg:[&_dt]:py-4 lg:[&_dt]:pr-6">
+    <div class="grid grid-cols-3 border-b border-(--landing-line) text-xs lg:grid-cols-[1.45fr_repeat(3,minmax(0,1fr))] lg:text-sm [&_dt]:col-span-full [&_dt]:pt-4.5 [&_dt]:pb-2 [&_dt]:font-normal lg:[&_dt]:col-auto lg:[&_dt]:py-4 lg:[&_dt]:pr-6">
       <dt>{@label}</dt>
       <dd
         :for={{value, index} <- Enum.with_index(@values)}
-        class={[index == 1 && "landing-pricing-featured"]}
+        class={[
+          "px-1 pt-2 pb-4.5 text-center font-semibold text-[#0f0f0f] lg:px-3 lg:py-4",
+          index == 1 && "bg-transparent lg:bg-grey-900 lg:text-[#f5f1ea]"
+        ]}
       >
         <span class="sr-only">{Enum.at(@plans, index).name}: </span>
         <span

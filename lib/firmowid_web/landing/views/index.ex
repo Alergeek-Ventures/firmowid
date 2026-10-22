@@ -50,7 +50,7 @@ defmodule FirmowidWeb.Landing.Views.Index do
     >
       <.landing_navbar />
 
-      <main class="max-lg:[&_#asystent_h2]:text-[30px] max-lg:[&_#kod-zrodlowy_.landing-section-intro]:relative max-lg:[&_#kod-zrodlowy_h2]:text-[32px] max-lg:[&_.landing-section-intro_h2]:text-[38px]">
+      <main>
         <h1
           :if={@live_action != :home}
           class="mx-auto w-[calc(100%-var(--spacing)*8)] max-w-284.75 pt-18 text-3xl leading-[1.1] font-bold tracking-[-0.03em]"

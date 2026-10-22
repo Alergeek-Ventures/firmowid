@@ -8,8 +8,7 @@ export const LandingHero = {
 
     this.show = () => {
       this.el.querySelectorAll("[data-state]").forEach((element) => {
-        element.classList.toggle(
-          "is-active",
+        element.dataset.active = String(
           Number(element.dataset.state) === this.state,
         );
       });

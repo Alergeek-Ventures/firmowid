@@ -190,29 +190,6 @@ html {
   }
 }
 
-.t-digit-group {
-  display: inline-flex;
-  align-items: baseline;
-  font-variant-numeric: tabular-nums;
-  white-space: nowrap;
-}
-
-.t-digit {
-  display: inline-block;
-  will-change: transform, opacity, filter;
-}
-
-.t-digit-group.is-animating .t-digit {
-  animation: t-digit-pop-in var(--digit-dur) var(--digit-ease) both;
-  animation-delay: calc(var(--digit-stagger) * var(--digit-stagger-index, 0));
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .t-digit-group .t-digit {
-    animation: none !important;
-  }
-}
-
 /* ── Chart tooltip ───────────────────────────────────────────────────── */
 .tippy-box[data-theme~="chart"] {
   background: transparent;

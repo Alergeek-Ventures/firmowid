@@ -1,4 +1,3 @@
-const ANIMATING_CLASS = "is-animating";
 const REDUCED_MOTION_QUERY = "(prefers-reduced-motion: reduce)";
 
 const prefersReducedMotion = () =>
@@ -7,9 +6,9 @@ const prefersReducedMotion = () =>
 const replayAnimation = (el) => {
   if (prefersReducedMotion()) return;
 
-  el.classList.remove(ANIMATING_CLASS);
+  delete el.dataset.animating;
   void el.offsetWidth;
-  el.classList.add(ANIMATING_CLASS);
+  el.dataset.animating = "";
 };
 
 export const NumberPopIn = {
