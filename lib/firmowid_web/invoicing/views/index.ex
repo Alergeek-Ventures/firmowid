@@ -53,6 +53,14 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
 
   @impl true
   def mount(_params, _session, socket) do
+    if can_view_invoicing?(socket.assigns.current_user) do
+      mount_invoicing(socket)
+    else
+      {:ok, redirect(socket, to: ~p"/czasosledz")}
+    end
+  end
+
+  defp mount_invoicing(socket) do
     user = socket.assigns.current_user
     organization_id = user.organization_id
 
