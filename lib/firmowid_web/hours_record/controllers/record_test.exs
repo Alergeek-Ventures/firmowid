@@ -8,6 +8,17 @@ defmodule FirmowidWeb.HoursRecord.Controllers.RecordTest do
   alias Firmowid.Ash.Timetracker.HoursRecord, as: AshHoursRecord
   alias Firmowid.Repo
 
+  test "an employee's hours record preview renders with their name", %{conn: conn} do
+    employee = user_fixture(%{name: "Sable Orin"})
+
+    conn =
+      conn
+      |> log_in_user(employee)
+      |> get(~p"/czasosledz/ewidencja/2026-09-01/podglad")
+
+    assert html_response(conn, 200) =~ "Sable Orin"
+  end
+
   test "employee cannot download another employee's submitted hours record", %{conn: conn} do
     admin = admin_fixture()
     employee_a = user_in_org_fixture(admin.organization_id, %{role: :employee})
