@@ -223,14 +223,19 @@ defmodule Firmowid.Ash.Core.Organization do
       authorize_if action_type(:read)
     end
 
+    # Names the organizations the account can switch between.
+    bypass [{SystemActorRole, roles: [:actor_member_loader]}, action_type(:read)] do
+      authorize_if expr(exists(members, user_id == ^actor(:user_id) and is_nil(archived_at)))
+    end
+
     policy action_type(:read) do
       authorize_if expr(id == ^actor([:member, :organization_id]))
     end
 
-    # Organization onboarding is available only to an authenticated user who has
-    # no active member yet. The owner is always the acting user.
-    policy [action_type(:create), actor_attribute_equals(:member, nil)] do
-      authorize_if always()
+    # Any authenticated user may create an organization, also next to the ones
+    # they already belong to. The owner is always the acting user.
+    policy action_type(:create) do
+      authorize_if actor_present()
     end
 
     policy [
@@ -306,6 +311,8 @@ defmodule Firmowid.Ash.Core.Organization do
       define_attribute? false
       source_attribute :avatar_blob_id
     end
+
+    has_many :members, Firmowid.Ash.Core.Member
   end
 
   calculations do

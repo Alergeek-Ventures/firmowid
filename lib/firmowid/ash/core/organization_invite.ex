@@ -80,6 +80,7 @@ defmodule Firmowid.Ash.Core.OrganizationInvite do
       # The update only matches an unconsumed row, so concurrent joins with the same
       # code cannot both consume it; the loser gets a stale-record error.
       change filter(expr(is_nil(consumed_at)))
+      change Firmowid.Ash.Core.Changes.RequireNotActiveInOrganization
       change set_attribute(:consumed_by_id, actor(:id))
       change set_attribute(:consumed_at, &DateTime.utc_now/0)
 
@@ -145,10 +146,11 @@ defmodule Firmowid.Ash.Core.OrganizationInvite do
       authorize_if {ActorRole, role: :admin}
     end
 
-    # The invite code identifies an invitation, but only an authenticated user
-    # without an active member may redeem it for themselves.
-    policy [action(:consume), actor_attribute_equals(:member, nil)] do
-      authorize_if always()
+    # The invite code identifies an invitation, which any authenticated user may
+    # redeem for themselves (see `RequireNotActiveInOrganization` for an
+    # organization they are already active in).
+    policy action(:consume) do
+      authorize_if actor_present()
     end
 
     policy action_type(:destroy) do

@@ -9,20 +9,20 @@ defmodule FirmowidWeb.Infrastructure.Hooks.RedirectAuthenticated do
 
   import Phoenix.LiveView
 
-  alias Firmowid.Ash.Core
   alias FirmowidWeb.Infrastructure.UserAuth
   alias FirmowidWeb.Organization.Utilities.Navigation, as: OrganizationNavigation
 
-  def on_mount(:default, _params, _session, socket) do
-    case socket.assigns[:current_user] && Core.load_member(socket.assigns.current_user) do
+  def on_mount(:default, _params, session, socket) do
+    case socket.assigns[:current_user] &&
+           UserAuth.load_member(socket.assigns.current_user, session) do
       nil ->
         {:cont, socket}
 
-      %{member: nil} ->
+      {%{member: nil}, _organizations} ->
         {:halt, redirect(socket, to: OrganizationNavigation.onboarding_path())}
 
-      user ->
-        {:halt, redirect(socket, to: UserAuth.signed_in_path_for_user(user))}
+      {user, _organizations} ->
+        {:halt, redirect(socket, to: UserAuth.signed_in_path_for_user(user, user.member.organization_id))}
     end
   end
 end

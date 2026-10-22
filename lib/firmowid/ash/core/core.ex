@@ -11,7 +11,6 @@ defmodule Firmowid.Ash.Core do
   """
   use Ash.Domain, extensions: [AshPhoenix, AshAi]
 
-  alias Ash.Error.Query.NotFound
   alias Firmowid.Ash.Analysis.TagDefinition
   alias Firmowid.Ash.Billing.Snapshot
   alias Firmowid.Ash.Core.Member
@@ -142,22 +141,57 @@ defmodule Firmowid.Ash.Core do
   ]
 
   @doc """
-  Loads the user's active member, whose organization the user works in and which
-  policies read the actor's role from. A user without one gets `nil`.
+  Lists the user's active members, most recently updated first, with their
+  organizations.
 
   Authorizing the read as the user would need the role it loads, so a system actor
-  limited to this user's member reads it.
+  limited to this user's members reads them.
   """
-  @spec load_member(User.t()) :: User.t()
-  def load_member(%User{} = user) do
-    actor = %SystemActor{org_id: nil, role: :actor_member_loader, user_id: user.id}
-    %{user | member: Member.get_active!(user.id, actor: actor, not_found_error?: false)}
+  @spec list_active_members(User.t()) :: [Member.t()]
+  def list_active_members(%User{id: id}) do
+    actor = %SystemActor{org_id: nil, role: :actor_member_loader, user_id: id}
+    Member.list_active!(id, actor: actor, load: [:organization])
+  end
+
+  @doc """
+  Lists the active members the user can work as: those of organizations with a
+  billing plan (see the User `:access_block` calculation), or all for a superuser.
+  """
+  @spec list_usable_members(User.t()) :: [Member.t()]
+  def list_usable_members(%User{} = user) do
+    user
+    |> list_active_members()
+    |> Enum.reject(&(user.system_role != :superuser and &1.organization.billing_plan == :no_plan))
+  end
+
+  @doc """
+  Loads the member the user works as, whose organization is the tenant and which
+  policies read the actor's role from.
+
+  It is the user's usable member in `organization_id` (the organization selected
+  in the session) or, when there is none, the most recently updated usable
+  member (see `list_usable_members/1`). A user without one gets `nil`.
+  """
+  @spec load_member(User.t(), binary() | nil) :: User.t()
+  def load_member(%User{} = user, organization_id \\ nil),
+    do: select_member(user, list_usable_members(user), organization_id)
+
+  @doc """
+  Puts on the user the member from `members` (see `list_usable_members/1`) that
+  `load_member/2` would load.
+  """
+  @spec select_member(User.t(), [Member.t()], binary() | nil) :: User.t()
+  def select_member(%User{} = user, members, organization_id) do
+    %{
+      user
+      | member: Enum.find(members, List.first(members), &(&1.organization_id == organization_id))
+    }
   end
 
   @doc """
   Destroys a user inside a single explicit Ash transaction.
 
-  If the user owns an organization, best-effort remote cleanup happens after
+  For each organization the user owns, best-effort remote cleanup happens after
   authorization and before the local transaction. Organization cleanup and the
   final user destroy share that transaction. Local failures roll it back and
   are reported for manual follow-up when remote cleanup was attempted.
@@ -165,12 +199,19 @@ defmodule Firmowid.Ash.Core do
   @spec destroy_user(User.t(), Keyword.t()) :: :ok | {:error, term()}
   def destroy_user(%User{} = user, opts \\ []) do
     opts = ensure_actor(opts, user)
+    owned = owned_organizations(user, opts)
 
     with :ok <- authorize_destroy(user, opts),
-         {:ok, organization} <- owned_organization(user, opts),
-         :ok <- maybe_prepare_organization_deletion(organization, opts) do
+         :ok <-
+           each_ok(owned, fn {organization, owner_opts} ->
+             prepare_organization_deletion(organization, owner_opts)
+           end) do
       result = transact(fn -> destroy_user_in_transaction(user, opts) end)
-      report_local_failure(result, organization, "owner_account_delete")
+
+      Enum.each(owned, fn {organization, _opts} ->
+        report_local_failure(result, organization, "owner_account_delete")
+      end)
+
       result
     end
   end
@@ -216,7 +257,10 @@ defmodule Firmowid.Ash.Core do
     cleanup_scope = account_cleanup_scope(user)
 
     with :ok <- authorize_destroy(user, opts),
-         :ok <- maybe_destroy_owned_organization_in_transaction(user, opts),
+         :ok <-
+           each_ok(owned_organizations(user, opts), fn {organization, owner_opts} ->
+             destroy_organization_in_transaction(organization, owner_opts)
+           end),
          :ok <- OrganizationCleanup.remove_account_oauth_dependents(cleanup_scope) do
       User.destroy(user, opts)
     end
@@ -246,17 +290,13 @@ defmodule Firmowid.Ash.Core do
     end
   end
 
-  defp maybe_destroy_owned_organization_in_transaction(user, opts) do
-    case owned_organization(user, opts) do
-      {:ok, %Organization{} = organization} ->
-        destroy_organization_in_transaction(organization, opts)
-
-      {:ok, nil} ->
-        :ok
-
-      {:error, error} ->
-        {:error, error}
-    end
+  defp each_ok(items, fun) do
+    Enum.reduce_while(items, :ok, fn item, :ok ->
+      case fun.(item) do
+        :ok -> {:cont, :ok}
+        error -> {:halt, error}
+      end
+    end)
   end
 
   defp organization_cleanup_scope(%Organization{id: id}) do
@@ -285,24 +325,31 @@ defmodule Firmowid.Ash.Core do
   defp organization_id_for(%Organization{id: id}), do: id
   defp organization_id_for(%User{}), do: nil
 
-  defp owned_organization(%User{id: id} = user, opts) do
-    case load_member(user).member do
-      nil ->
-        {:ok, nil}
+  @doc """
+  Lists the organizations the user owns, which closing the account deletes.
+  """
+  @spec list_owned_organizations(User.t()) :: [Organization.t()]
+  def list_owned_organizations(%User{} = user), do: Enum.map(owned_members(user), & &1.organization)
 
-      %Member{organization_id: organization_id} ->
-        case get_organization(organization_id, opts) do
-          {:ok, %Organization{owner_id: ^id} = organization} -> {:ok, organization}
-          {:ok, _} -> {:ok, nil}
-          {:error, %NotFound{}} -> {:ok, nil}
-          {:error, error} -> {:error, error}
-        end
-    end
+  # Each organization the user owns, with the options its deletion is authorized
+  # with: the user acts as their member there.
+  defp owned_organizations(%User{} = user, opts) do
+    for member <- owned_members(user), do: {member.organization, owner_opts(opts, member)}
   end
 
-  defp maybe_prepare_organization_deletion(nil, _opts), do: :ok
+  defp owned_members(%User{id: id} = user) do
+    Enum.filter(list_active_members(user), &(&1.organization.owner_id == id))
+  end
 
-  defp maybe_prepare_organization_deletion(organization, opts), do: prepare_organization_deletion(organization, opts)
+  defp owner_opts(opts, %Member{user_id: user_id} = member) do
+    case actor_from_opts(opts) do
+      %User{id: ^user_id} = actor ->
+        opts |> Keyword.delete(:scope) |> Keyword.put(:actor, %{actor | member: member})
+
+      _actor ->
+        opts
+    end
+  end
 
   defp prepare_organization_deletion(organization, opts) do
     case authorize_destroy(organization, opts) do

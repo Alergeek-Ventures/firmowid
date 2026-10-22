@@ -19,7 +19,7 @@ defmodule FirmowidWeb.Settings.Components.AccountTab do
   """
   @spec account_tab(map()) :: Rendered.t()
   attr :current_user, :map, required: true
-  attr :current_org, :map, required: true
+  attr :owned_organizations, :list, required: true
   attr :delete_account_form, :map, required: true
   attr :editing_account_name, :boolean, required: true
   attr :member_form, :map, required: true
@@ -54,7 +54,7 @@ defmodule FirmowidWeb.Settings.Components.AccountTab do
 
         <.account_closure_section
           current_user={@current_user}
-          current_org={@current_org}
+          owned_organizations={@owned_organizations}
           delete_account_form={@delete_account_form}
         />
       </div>
@@ -438,7 +438,7 @@ defmodule FirmowidWeb.Settings.Components.AccountTab do
   end
 
   attr :current_user, :map, required: true
-  attr :current_org, :map, required: true
+  attr :owned_organizations, :list, required: true
   attr :delete_account_form, :map, required: true
 
   defp account_closure_section(assigns) do
@@ -466,8 +466,8 @@ defmodule FirmowidWeb.Settings.Components.AccountTab do
 
         <p class="mt-3 text-sm text-grey-700">
           Usuniemy Twoje konto i wszystkie przypisane do niego dane.
-          <%= if @current_org.owner_id == @current_user.id do %>
-            Usuniemy też całą organizację i wszystkie jej dane.
+          <%= if @owned_organizations != [] do %>
+            Usuniemy też organizacje, których jesteś właścicielem, i wszystkie ich dane: <b>{Enum.map_join(@owned_organizations, ", ", & &1.name)}</b>.
           <% end %>
         </p>
 

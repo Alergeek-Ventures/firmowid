@@ -15,10 +15,17 @@ defmodule FirmowidWeb.Landing.Views.Index do
   alias FirmowidWeb.Infrastructure.UserAuth
 
   @impl true
-  def mount(_params, _session, socket) do
+  def mount(_params, session, socket) do
     if socket.assigns.live_action == :home && socket.assigns[:current_user] &&
          Core.load_member(socket.assigns.current_user).member do
-      {:ok, push_navigate(socket, to: UserAuth.signed_in_path_for_user(socket.assigns.current_user))}
+      {:ok,
+       push_navigate(socket,
+         to:
+           UserAuth.signed_in_path_for_user(
+             socket.assigns.current_user,
+             session[UserAuth.organization_session_key()]
+           )
+       )}
     else
       {:ok,
        socket

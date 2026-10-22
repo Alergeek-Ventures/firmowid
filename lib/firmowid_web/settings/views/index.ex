@@ -183,6 +183,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
      |> assign(:subscription_worksheet, nil)
      |> assign(:trigger_submit, false)
      |> assign(:delete_account_form, to_form(%{"current_password" => ""}, as: "user"))
+     |> assign(:owned_organizations, Core.list_owned_organizations(current_user))
      |> assign(:current_password, nil)
      |> assign(:password_form, form_password_form(current_user))
      |> assign(:email_form, form_email_form(current_user, scope))
@@ -1292,7 +1293,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
         <% :account -> %>
           <.account_tab
             current_user={@current_user}
-            current_org={@current_org}
+            owned_organizations={@owned_organizations}
             delete_account_form={@delete_account_form}
             editing_account_name={@editing_account_name}
             member_form={@member_form}

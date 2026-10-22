@@ -6,9 +6,9 @@ defmodule Firmowid.Ash.Core.User do
   Handles authentication (password + Google OAuth) and organization
   membership; the person's name, avatar, role and profile details live on the
   organization `member`.
-  No multitenancy — users sit above tenancy; the organization the account
-  works in is that of its active (non-archived) member, and an account
-  without one is in onboarding.
+  No multitenancy — users sit above tenancy; the account may work in the
+  organization of each of its active (non-archived) members, the session
+  selects which one, and an account without one is in onboarding.
 
   Authentication is managed by `ash_authentication`:
   - Password strategy with Argon2 hashing
@@ -26,7 +26,6 @@ defmodule Firmowid.Ash.Core.User do
   alias Firmowid.Ash.Checks.OrganizationMemberAdmin
   alias Firmowid.Ash.Checks.SystemActorRole
   alias Firmowid.Ash.Core.Changes.CaptureGoogleRegistration
-  alias Firmowid.Ash.Core.Changes.RequireNoActiveMember
   alias Firmowid.Ash.Core.Member
   alias Firmowid.Ash.Core.Secrets
   alias Firmowid.Ash.Core.Services.GoogleAvatarImporter
@@ -324,8 +323,6 @@ defmodule Firmowid.Ash.Core.User do
 
       argument :name, :string
 
-      change {RequireNoActiveMember, user_id: :id}
-
       # The organization becomes the changeset's tenant, which the `joined_org`
       # topic is published under.
       change fn changeset, _context ->
@@ -547,9 +544,9 @@ defmodule Firmowid.Ash.Core.User do
   end
 
   calculations do
-    # Why the account may not use the application: the organization of its active
-    # member has no billing plan. The owner is told to renew the subscription;
-    # members are not.
+    # Why the account may not use the application: none of the organizations of its
+    # active members has a billing plan. The owner of one is told to renew the
+    # subscription; members are not.
     #
     # Until subscription lifecycle moves into application data (it is managed outside
     # the app before Stripe), `:no_plan` deliberately serves both as the zero-plan
@@ -561,10 +558,10 @@ defmodule Firmowid.Ash.Core.User do
                   system_role == :superuser ->
                     nil
 
-                  not exists(
-                    member,
-                    is_nil(archived_at) and organization.billing_plan == :no_plan
-                  ) ->
+                  not exists(member, is_nil(archived_at)) ->
+                    nil
+
+                  exists(member, is_nil(archived_at) and organization.billing_plan != :no_plan) ->
                     nil
 
                   exists(member, is_nil(archived_at) and organization.owner_id == parent(id)) ->

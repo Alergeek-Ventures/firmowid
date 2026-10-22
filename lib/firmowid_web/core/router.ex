@@ -15,9 +15,9 @@ defmodule FirmowidWeb.Core.Router do
   alias FirmowidWeb.Infrastructure.Hooks.FeatureFlags
   alias FirmowidWeb.Infrastructure.Hooks.RedirectAuthenticated
   alias FirmowidWeb.Infrastructure.Hooks.RequireAdmin
-  alias FirmowidWeb.Infrastructure.Hooks.RequireNoOrganization
   alias FirmowidWeb.Infrastructure.Hooks.RequireOrganization
   alias FirmowidWeb.Infrastructure.Hooks.RequireSuperuser
+  alias FirmowidWeb.Infrastructure.Hooks.RequireUser
   alias FirmowidWeb.Infrastructure.Hooks.Timezone
   alias Invoicing.CostInvoices.Controllers.Pdf, as: CostInvoicePdf
   alias Invoicing.SalesInvoices.Controllers.Pdf
@@ -222,13 +222,17 @@ defmodule FirmowidWeb.Core.Router do
   # TODO: Make this auto-link policy opt-in per organization.
   # TODO: Add explicit UX flow for linking different-email Google and password accounts.
 
-  ## Organization onboarding (authenticated, no org)
+  ## Organization onboarding (authenticated, with or without an organization)
 
   scope "/", FirmowidWeb do
-    pipe_through [:browser, :require_authenticated_user_without_organization]
+    pipe_through [:browser, :require_authenticated_user_for_onboarding]
 
-    ash_authentication_live_session :without_org,
-      on_mount: [{RequireNoOrganization, :default}, {FeatureFlags, :default}] do
+    ash_authentication_live_session :onboarding,
+      on_mount: [
+        {RequireUser, :default},
+        {FeatureFlags, :default},
+        {CurrentPath, :save_request_uri}
+      ] do
       live "/organizacja", Organization.Views.Index, :index
     end
   end
@@ -239,6 +243,7 @@ defmodule FirmowidWeb.Core.Router do
       :require_authenticated_user_with_organization
     ]
 
+    post "/organizacja/przelacz", Organization.Controllers.Switch, :switch
     get "/kosztowe/:id/pobierz", CostInvoicePdf, :pdf
     get "/sprzedazowe/:id/pdf", Pdf, :index
     get "/sprzedazowe/:id/pobierz", Pdf, :pdf

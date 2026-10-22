@@ -62,13 +62,15 @@ defmodule FirmowidWeb.Infrastructure.Hooks.RequireOrganizationTest do
     other_admin = admin_fixture()
     invite = Core.create_invite!(%{issued_by_id: other_admin.id}, scope: scope_for(other_admin))
 
-    {:ok, lv, _html} =
-      conn |> log_in_user(employee) |> live(OrganizationNavigation.onboarding_path())
+    conn = log_in_user(conn, employee)
+    {:ok, lv, _html} = live(conn, OrganizationNavigation.onboarding_path())
 
-    assert {:error, {:redirect, %{to: "/"}}} =
-             lv
-             |> form("#join_form", %{code: invite.invite_code, name: "Sable Orin"})
-             |> render_submit()
+    lv
+    |> form("#join_form", %{code: invite.invite_code, name: "Sable Orin"})
+    |> render_submit()
+
+    assert redirected_to(follow_trigger_action(form(lv, "#switch-organization-form"), conn)) ==
+             ~p"/czasosledz"
 
     assert Core.load_member(employee).member.organization_id == other_admin.member.organization_id
     assert {:ok, _lv, _html} = conn |> log_in_user(employee) |> live(~p"/czasosledz")

@@ -8,7 +8,6 @@ defmodule FirmowidWeb.Auth.Views.ConfirmEmail do
   import Phoenix.Component, except: [link: 1]
 
   alias AshAuthentication.AddOn.Confirmation.Actions
-  alias Firmowid.Ash.Core
   alias FirmowidWeb.Infrastructure.UserAuth
 
   def render(assigns) do
@@ -44,8 +43,8 @@ defmodule FirmowidWeb.Auth.Views.ConfirmEmail do
     """
   end
 
-  def mount(%{"token" => token}, _session, socket) do
-    socket = load_current_user(socket)
+  def mount(%{"token" => token}, session, socket) do
+    socket = load_current_user(socket, session)
 
     case confirmation_details(token) do
       {:ok, %{email_change?: email_change?}} ->
@@ -81,17 +80,18 @@ defmodule FirmowidWeb.Auth.Views.ConfirmEmail do
   defp confirmation_button_label(true), do: "Potwierdź zmianę adresu email"
   defp confirmation_button_label(false), do: "Potwierdź założenie konta"
 
-  defp load_current_user(socket) do
-    case socket.assigns[:current_user] && Core.load_member(socket.assigns.current_user) do
+  defp load_current_user(socket, session) do
+    case socket.assigns[:current_user] &&
+           UserAuth.load_member(socket.assigns.current_user, session) do
       nil ->
         socket
 
-      %{member: nil} = user ->
-        assign(socket, :current_user, %{user | member: nil})
+      {%{member: nil} = user, _organizations} ->
+        assign(socket, :current_user, user)
 
-      user ->
-        {loaded_user, _org, _scope} = UserAuth.load_scope_and_avatars(user)
-        assign(socket, :current_user, loaded_user)
+      {user, organizations} ->
+        {loaded_user, org, _scope} = UserAuth.load_scope_and_avatars(user)
+        assign(socket, current_user: loaded_user, current_org: org, organizations: organizations)
     end
   end
 end

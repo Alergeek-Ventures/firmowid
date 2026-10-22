@@ -425,7 +425,7 @@ defmodule FirmowidWeb.Management.Views.EmployeesTest do
     assert active_html =~ "Restore Me"
   end
 
-  test "restoring an employee who joined another organization explains why and keeps them archived",
+  test "restoring an employee who joined another organization keeps them in both",
        %{conn: conn} do
     admin = admin_fixture()
     employee = user_in_org_fixture(admin.member.organization_id, %{name: "Moved On"})
@@ -447,8 +447,9 @@ defmodule FirmowidWeb.Management.Views.EmployeesTest do
       |> element("button[phx-click='unarchive_employee']")
       |> render_click()
 
-    assert html =~ "Konto należy już do innej organizacji."
-    assert html =~ "Przywróć pracownika"
+    refute html =~ "zarchiwizowany"
+    assert html =~ "Archiwizuj"
+    assert length(Core.list_active_members(employee)) == 2
   end
 
   test "an archived employee rejoins with a new invite and gets its role", %{conn: conn} do

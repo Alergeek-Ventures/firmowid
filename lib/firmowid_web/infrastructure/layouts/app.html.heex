@@ -171,6 +171,44 @@
             <div class="truncate border-b border-darkGrey/50 p-2 pb-4 text-xs text-white/50 lowercase">
               {@current_user.email}
             </div>
+            <div
+              id="organization-switcher"
+              class="flex flex-col gap-2 border-b border-darkGrey/50 pb-2"
+            >
+              <div class="truncate p-2 pb-0 text-xs text-white/50">
+                {pgettext("avatar menu", "Organization")}
+              </div>
+              <div class="flex items-center justify-between gap-2 p-2" title={@current_org.name}>
+                <span class="truncate">{@current_org.name}</span>
+                <.icon name="hero-check" class="size-4 shrink-0" />
+              </div>
+              <.form
+                :for={organization <- @organizations}
+                :if={organization.id != @current_org.id}
+                for={%{}}
+                id={"switch-organization-#{organization.id}"}
+                action={~p"/organizacja/przelacz"}
+                class="w-full"
+              >
+                <input type="hidden" name="organizacja" value={organization.id} />
+                <FirmowidUI.Components.Button.button
+                  type="submit"
+                  variant="unstyled"
+                  class="block w-full cursor-pointer rounded-md text-left text-white hover:bg-darkGrey/50 hover:text-white active:bg-darkGrey/70"
+                  title={organization.name}
+                >
+                  <span class="block truncate p-2">{organization.name}</span>
+                </FirmowidUI.Components.Button.button>
+              </.form>
+              <.link
+                kind="unstyled"
+                navigate={~p"/organizacja"}
+                class="flex items-center justify-between rounded-md p-2 hover:bg-darkGrey/50"
+              >
+                {pgettext("avatar menu", "Add organization")}
+                <.icon name="hero-plus" class="size-4" />
+              </.link>
+            </div>
             <.link
               kind="unstyled"
               navigate={~p"/ustawienia"}

@@ -38,22 +38,6 @@ defmodule Firmowid.Ash.Core.UserTest do
     end
   end
 
-  describe "one active member per account" do
-    test "an account active in one organization cannot join another" do
-      user = user_fixture()
-      other_organization_id = admin_fixture().member.organization_id
-
-      assert {:error, %Invalid{}} =
-               Core.set_organization(
-                 user,
-                 %{organization_id: other_organization_id, role: :employee},
-                 authorize?: false
-               )
-
-      assert Core.load_member(user).member.id == user.member.id
-    end
-  end
-
   describe "member profile authorization" do
     test "an employee updates their own profile details but not a colleague's" do
       admin = admin_fixture()

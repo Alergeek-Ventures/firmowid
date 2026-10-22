@@ -61,4 +61,22 @@ defmodule FirmowidMcp.Utilities.AuthenticateTest do
     assert Ash.PlugHelpers.get_tenant(conn) == other_organization_id
     assert Ash.PlugHelpers.get_actor(conn).member.organization_id == other_organization_id
   end
+
+  test "authenticates a user with several organizations in the default one", %{conn: conn} do
+    user = user_fixture()
+
+    organization =
+      Core.create_organization!(%{nip: unique_nip(), name: "Druga firma", owner_name: "Druga"},
+        actor: user
+      )
+
+    conn =
+      conn
+      |> Ash.PlugHelpers.set_actor(user)
+      |> Authenticate.call([])
+
+    refute conn.halted
+    assert Ash.PlugHelpers.get_tenant(conn) == organization.id
+    assert Ash.PlugHelpers.get_actor(conn).member.organization_id == organization.id
+  end
 end
