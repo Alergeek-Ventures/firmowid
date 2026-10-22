@@ -8,9 +8,10 @@ defmodule Firmowid.Ash.Finances.Changes.SyncTransactions do
 
   ## Requisition Expiration Detection
 
-  When GoCardless returns `:expired_eua`, this change expires the parent
-  requisition via `Requisition.expire/2` — the reactive path for detecting
-  expired connections.
+  When GoCardless returns `:expired_eua`, this change cancels the sync and
+  expires the parent requisition after the sync transaction rolls back,
+  so expiration persists without recording a successful sync. Sync must run
+  outside an existing transaction so the expiration can commit independently.
   """
   use Ash.Resource.Change
 
@@ -40,7 +41,15 @@ defmodule Firmowid.Ash.Finances.Changes.SyncTransactions do
   def change(changeset, _opts, _context) do
     sync_started_at = DateTime.utc_now()
 
-    Ash.Changeset.after_action(changeset, fn changeset, bank_account ->
+    changeset
+    |> Ash.Changeset.before_transaction(fn changeset ->
+      if Ash.DataLayer.in_transaction?(changeset.resource) do
+        Ash.Changeset.add_error(changeset, "Bank sync must run outside an existing transaction")
+      else
+        changeset
+      end
+    end)
+    |> Ash.Changeset.after_action(fn changeset, bank_account ->
       case perform_sync(bank_account, build_sync_scope(bank_account), sync_started_at) do
         {:ok, _} ->
           {:ok, bank_account}
@@ -52,7 +61,24 @@ defmodule Firmowid.Ash.Finances.Changes.SyncTransactions do
           {:error, Ash.Changeset.add_error(changeset, "sync failed: #{ErrorKind.classify(reason)}")}
       end
     end)
+    |> Ash.Changeset.after_transaction(&after_sync_transaction/2)
   end
+
+  defp after_sync_transaction(changeset, {:error, error} = result) do
+    case AshOban.check_for_oban_return(error) do
+      {:cancel, :bank_connection_expired} ->
+        bank_account = changeset.data
+
+        with :ok <- expire_parent_requisition(bank_account, build_sync_scope(bank_account)) do
+          result
+        end
+
+      _ ->
+        result
+    end
+  end
+
+  defp after_sync_transaction(_changeset, result), do: result
 
   defp perform_sync(bank_account, scope, sync_started_at) do
     with {:ok, previous_successful_sync_at} <-
@@ -62,9 +88,7 @@ defmodule Firmowid.Ash.Finances.Changes.SyncTransactions do
       {:ok, bank_account}
     else
       {:error, :expired_eua} ->
-        with :ok <- expire_parent_requisition(bank_account, scope) do
-          {:ok, bank_account}
-        end
+        {:error, CancelJob.exception(reason: :bank_connection_expired)}
 
       error ->
         error
@@ -105,7 +129,7 @@ defmodule Firmowid.Ash.Finances.Changes.SyncTransactions do
   end
 
   defp expire_parent_requisition_record({:ok, %Requisition{status: :expired}}, _requisition_id, _scope) do
-    {:error, CancelJob.exception(reason: :bank_connection_expired)}
+    :ok
   end
 
   defp expire_parent_requisition_record({:ok, requisition}, requisition_id, scope) do
