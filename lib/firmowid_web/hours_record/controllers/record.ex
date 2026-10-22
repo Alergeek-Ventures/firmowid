@@ -10,6 +10,8 @@ defmodule FirmowidWeb.HoursRecord.Controllers.Record do
 
   @dialyzer {:no_return, pdf: 2}
 
+  plug :put_view, html: FirmowidWeb.HoursRecord.Components.RecordHtml
+
   # sobelow_skip ["XSS.SendResp"]
   # This is safe because pdf_binary is a generated PDF served as a download,
   # not user-controlled HTML executed by the browser.
