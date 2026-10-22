@@ -54,6 +54,42 @@ defmodule FirmowidWeb.Auth.Views.ConfirmEmailTest do
     assert confirmed_user.confirmed_at
   end
 
+  test "user without an organization confirms email without loading another tenant's avatar", %{
+    conn: conn
+  } do
+    organization_id = user_fixture().organization_id
+
+    blob =
+      Ash.Seed.seed!(Blob, %{
+        organization_id: organization_id,
+        blob_path: "#{organization_id}/confirmation-avatar.png",
+        blob_checksum: "confirmation-avatar",
+        original_filename: "confirmation-avatar.png"
+      })
+
+    drain_sent_emails()
+    user = Core.register_with_password!(valid_user_attributes(), authorize?: false, actor: %{})
+    token = extract_token_from_email!("/potwierdz-email/")
+    user = Ash.Seed.update!(user, %{avatar_blob_id: blob.id})
+    assert is_nil(user.organization_id)
+    authenticated_conn = log_in_user(conn, user)
+
+    assert {:ok, view, _html} = live(authenticated_conn, ~p"/potwierdz-email/#{token}")
+    assert has_element?(view, "#confirm_email_form button", "Potwierdź założenie konta")
+    refute has_element?(view, "img[src*='#{blob.blob_path}']")
+
+    confirmed_conn =
+      view
+      |> form("#confirm_email_form", user: %{"confirm" => token})
+      |> submit_form(authenticated_conn)
+
+    assert redirected_to(confirmed_conn) == ~p"/czasosledz"
+    confirmed_user = Core.get_user!(user.id, actor: user)
+    assert confirmed_user.confirmed_at
+    assert is_nil(confirmed_user.organization_id)
+    assert confirmed_user.avatar_blob_id == blob.id
+  end
+
   test "user confirms an email change from account settings", %{conn: conn} do
     user = user_fixture()
     new_email = unique_user_email()
