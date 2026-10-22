@@ -26,6 +26,47 @@ defmodule FirmowidWeb.Invoicing.Views.IndexTest do
   alias FirmowidWeb.Core.Endpoint
   alias Phoenix.Socket.Broadcast
 
+  describe "invoicing access" do
+    test "redirects employees to time tracking", %{conn: conn} do
+      user = user_fixture(%{role: :employee})
+
+      assert {:error, {:redirect, %{to: "/czasosledz"}}} =
+               conn |> log_in_user(user) |> live(~p"/fakturowanie")
+    end
+
+    for role <- [:invoicing, :accountant, :admin] do
+      @role role
+
+      test "#{role} can view only their organization's invoices", %{conn: conn} do
+        user = user_fixture(%{role: @role})
+        other_user = admin_fixture()
+        invoice = sales_invoice_fixture!(user, "SYNTHETIC-OWN")
+        other_invoice = sales_invoice_fixture!(other_user, "SYNTHETIC-OTHER")
+
+        {:ok, view, _html} =
+          conn
+          |> log_in_user(user)
+          |> live(~p"/fakturowanie?miesiac=2026-01-01&filtr=faktury&widok=lista")
+
+        assert has_element?(
+                 view,
+                 "#invoicing-entries tr[id='#{invoice.id}-row']",
+                 "Buyer Company"
+               )
+
+        refute has_element?(view, "#invoicing-entries tr[id='#{other_invoice.id}-row']")
+
+        if @role == :invoicing do
+          refute has_element?(view, "#upload-form")
+          refute has_element?(view, "#sales-invoice-link")
+        else
+          assert has_element?(view, "#upload-form")
+          assert has_element?(view, "#sales-invoice-link")
+        end
+      end
+    end
+  end
+
   describe "requisition status PubSub notifications" do
     test "shows an expired bank in suggestions and never exposes another organization's account",
          %{conn: conn} do
