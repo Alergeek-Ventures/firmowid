@@ -423,6 +423,17 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
         </InvoiceDetails.aside>
 
         <InvoiceDetails.main>
+          <.live_component
+            :if={
+              flag_enabled?(:analysis_dashboard, assigns) and
+                (@invoice.skip_invoicing or @invoice.transactions != [])
+            }
+            module={FirmowidWeb.Analysis.Components.EntryCategories}
+            id="invoice-categories"
+            entry={@invoice}
+            scope={@scope}
+            feature_flags={@feature_flags}
+          />
           <%= cond do %>
             <% @invoice.skip_invoicing -> %>
               <InvoiceDetails.invoice_skipped_view
@@ -450,17 +461,6 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
                 can_write={@can_write_invoicing?}
               />
           <% end %>
-          <.live_component
-            :if={
-              flag_enabled?(:analysis_dashboard, assigns) and
-                (@invoice.skip_invoicing or @invoice.transactions != [])
-            }
-            module={FirmowidWeb.Analysis.Components.EntryCategories}
-            id="invoice-categories"
-            entry={@invoice}
-            scope={@scope}
-            feature_flags={@feature_flags}
-          />
         </InvoiceDetails.main>
       </div>
     </div>

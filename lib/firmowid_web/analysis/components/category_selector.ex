@@ -14,7 +14,6 @@ defmodule FirmowidWeb.Analysis.Components.CategorySelector do
   attr :colors, :map, required: true
   attr :can_write, :boolean, default: false
   attr :target, :any, default: nil
-  attr :class, :any, default: nil
 
   @doc "Renders historical tags and an active-project-only category selector."
   @spec cell(map()) :: Rendered.t()
@@ -34,7 +33,7 @@ defmodule FirmowidWeb.Analysis.Components.CategorySelector do
       )
 
     ~H"""
-    <div class={["relative flex justify-end", @class]}>
+    <div class="relative flex justify-end">
       <%= if @can_write and @editable do %>
         <FirmowidUI.Components.Button.button
           id={"#{@popover_id}-trigger"}
