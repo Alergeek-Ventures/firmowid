@@ -5,7 +5,7 @@ ARG RUNNER_IMAGE="alpine:3.22@sha256:55ae5d250caebc548793f321534bc6a8ef1d116f334
 
 FROM ${BUILDER_IMAGE} AS builder
 
-RUN apk add --no-cache build-base git nodejs npm
+RUN apk add --no-cache build-base git nodejs npm curl
 
 WORKDIR /app
 
@@ -22,6 +22,25 @@ RUN mix deps.get --only $MIX_ENV
 RUN mkdir config
 
 COPY config/config.exs config/${MIX_ENV}.exs config/
+
+# GitHub's release redirect headers exceed the 10 KB :httpc limit, so
+# rustler_precompiled and elixir_make cannot download precompiled NIFs. Fetch
+# them with curl into their caches, where the package checksums still apply.
+ENV RUSTLER_PRECOMPILED_GLOBAL_CACHE_PATH="/root/.cache/rustler_precompiled" \
+    ELIXIR_MAKE_CACHE_DIR="/root/.cache/elixir_make"
+RUN fetch() { mkdir -p "$1" && curl -fsSL --retry 3 -o "$1/$3" "$2/$3"; } && \
+    latest() { grep -o "$1" "$2" | sort -V | tail -n 1; } && \
+    arch=$(uname -m) && \
+    mdex=$(latest "libmdex_native_nif-v[0-9.]*-nif-2.15-${arch}-unknown-linux-musl.so.tar.gz" \
+      deps/mdex_native/checksum-Elixir.MDExNative.Native.exs) && \
+    vix=$(latest "vix-nif-[0-9.]*-${arch}-linux-musl-[0-9.]*.tar.gz" deps/vix/checksum.exs) && \
+    lazy_html=$(latest "lazy_html-nif-[0-9.]*-${arch}-linux-musl-[0-9.]*.tar.gz" deps/lazy_html/checksum.exs) && \
+    fetch "$RUSTLER_PRECOMPILED_GLOBAL_CACHE_PATH" \
+      "https://github.com/leandrocp/mdex_native/releases/download/v$(echo "$mdex" | cut -d- -f2 | cut -c2-)" "$mdex" && \
+    fetch "$ELIXIR_MAKE_CACHE_DIR" \
+      "https://github.com/akash-akya/vix/releases/download/v$(basename "${vix##*-}" .tar.gz)" "$vix" && \
+    fetch "$ELIXIR_MAKE_CACHE_DIR" \
+      "https://github.com/dashbitco/lazy_html/releases/download/v$(basename "${lazy_html##*-}" .tar.gz)" "$lazy_html"
 
 # Keep expensive dependency compilation independent of npm and asset changes.
 RUN export HALF_CORES=$(($(nproc) / 2)) && \
