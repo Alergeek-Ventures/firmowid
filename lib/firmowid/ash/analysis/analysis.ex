@@ -37,7 +37,7 @@ defmodule Firmowid.Ash.Analysis do
 
       description "List the authenticated organization's project tags with IDs and names. " <>
                     "Use these IDs as tag_definition_ids in set_analysis_entry_project_tags. " <>
-                    "Company and internal are built-in categories, not project tags."
+                    "Tags include custom categories and project tags. Company, taxes and internal are built-in categories."
 
       select [:id, :name, :color]
     end
@@ -50,7 +50,7 @@ defmodule Firmowid.Ash.Analysis do
 
       description "List the entries behind the monthly income and expense analysis: sales invoices, cost invoices " <>
                     "and standalone bank transactions with their full document amounts and categories. " <>
-                    "Categories are project tags (shared equally), company, or internal (excluded from totals); " <>
+                    "Categories are custom or project tags (shared equally), company, taxes, or internal (excluded from totals); " <>
                     "an entry without categories is unassigned. Results belong to the authenticated organization."
     end
 
@@ -61,8 +61,8 @@ defmodule Firmowid.Ash.Analysis do
                   idempotent_hint: true,
                   open_world_hint: false
 
-      description "Replace all categories of an analysis entry with company (general company income or expense) " <>
-                    "or internal (excluded from analysis totals). Use entity_type and the entry's id as resource_id " <>
+      description "Replace all categories of an analysis entry with company (general company income or expense), " <>
+                    "taxes, or internal (excluded from analysis totals). Use entity_type and the entry's id as resource_id " <>
                     "from list_analysis_entries. Requires at least the accountant role. " <>
                     "Salary-pinned transfers have automatic categories derived from tracked time; do not tag them manually."
     end
@@ -95,6 +95,19 @@ defmodule Firmowid.Ash.Analysis do
     require_actor? true
   end
 
+  @doc "Lists custom categories and tags of projects active in the selected month."
+  @spec list_available_categories(Date.t(), Scope.t()) :: [TagDefinition.t()]
+  def list_available_categories(month, scope) do
+    active_ids =
+      %{active_from: Date.beginning_of_month(month), active_to: Date.end_of_month(month)}
+      |> Timetracker.list_projects!(scope: scope)
+      |> MapSet.new(& &1.tag_definition_id)
+
+    [load: :projects, scope: scope]
+    |> TagDefinition.list_tag_definitions!()
+    |> Enum.filter(&(&1.projects == [] or MapSet.member?(active_ids, &1.id)))
+  end
+
   @doc """
   Computes income, expenses, and net profit for a date range.
 
@@ -112,7 +125,7 @@ defmodule Firmowid.Ash.Analysis do
 
   Returns the existing signed totals and entity lists, plus `:income_categories`
   and `:expense_categories`. Category rows contain `:key` (`{:project, id}`,
-  `:company` or `:unassigned`), `:name` (nil for built-ins), `:color` and a positive
+  `:company`, `:taxes` or `:unassigned`), `:name` (nil for built-ins), `:color` and a positive
   Decimal PLN `:amount`. Each normalized entity amount is rounded to cents and
    allocated between projects by tag weight (equally unless weighted).
    Totals and categories use the same allocated amounts.
@@ -124,6 +137,7 @@ defmodule Firmowid.Ash.Analysis do
       semantics). Entry lists retain whole matching entities for editing.
       Supported tuples:
       * `{:company}` — entities tagged as company
+      * `{:taxes}` — entities tagged as taxes
       * `{:project, tag_definition_id}` — entities tagged with a specific project tag
   """
   @spec get_organization_totals(Date.t(), Date.t(), keyword(), Scope.t()) :: map()
@@ -529,6 +543,9 @@ defmodule Firmowid.Ash.Analysis do
     Enum.any?(filters, fn
       {:company} ->
         Enum.any?(tags, &(&1.kind == :company))
+
+      {:taxes} ->
+        Enum.any?(tags, &(&1.kind == :taxes))
 
       {:project, tag_def_id} ->
         Enum.any?(tags, &(&1.kind == :project and &1.tag_definition_id == tag_def_id))

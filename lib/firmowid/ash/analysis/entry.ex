@@ -52,7 +52,9 @@ defmodule Firmowid.Ash.Analysis.Entry do
                                     kind: [
                                       type: :atom,
                                       allow_nil?: false,
-                                      constraints: [one_of: [:project, :company, :internal]]
+                                      constraints: [
+                                        one_of: [:project, :company, :taxes, :internal]
+                                      ]
                                     ],
                                     name: [type: :string]
                                   ]

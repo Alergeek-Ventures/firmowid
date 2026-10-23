@@ -3,7 +3,7 @@ defmodule Firmowid.Ash.Analysis.Validations.KindTagDefinitionConsistency do
   Validates that `kind` and `tag_definition_id` are consistent on an `EntityTag`:
 
     * `:project` kind requires a non-nil `tag_definition_id`
-    * `:company` and `:internal` kinds require a nil `tag_definition_id`
+    * `:company`, `:taxes` and `:internal` kinds require a nil `tag_definition_id`
 
   This mirrors the database CHECK constraint
   `(kind = 'project' AND tag_definition_id IS NOT NULL) OR (kind != 'project' AND tag_definition_id IS NULL)`.

@@ -7,9 +7,9 @@ defmodule Firmowid.Ash.Analysis.EntityTag do
   `sales_invoice_entity_tags`, `cost_invoice_entity_tags`, or `transaction_entity_tags`.
 
   A tag's `kind` is `:project` (requires a `TagDefinition`), `:company` (the built-in
-  "firma" category), or `:internal` (excluded from calculations). Per-table database
+  "firma" category), `:taxes`, or `:internal` (excluded from calculations). Per-table database
   triggers enforce mutually exclusive categories: one or more project tags,
-  company, or internal. `assignment_source` separates human examples from Jev assignments.
+  company, taxes, or internal. `assignment_source` separates human examples from Jev assignments.
   """
   use Ash.Resource,
     domain: Firmowid.Ash.Analysis,
@@ -178,7 +178,7 @@ defmodule Firmowid.Ash.Analysis.EntityTag do
       constraints items: [instance_of: __MODULE__]
 
       description """
-      Sets a built-in category (:company or :internal) on an entity.
+      Sets a built-in category (:company, :taxes or :internal) on an entity.
       Clears any existing tags first to maintain mutual exclusivity.
       """
 
@@ -187,7 +187,10 @@ defmodule Firmowid.Ash.Analysis.EntityTag do
         constraints: [one_of: [:sales_invoice, :cost_invoice, :transaction]]
 
       argument :resource_id, :uuid, allow_nil?: false
-      argument :kind, :atom, allow_nil?: false, constraints: [one_of: [:company, :internal]]
+
+      argument :kind, :atom,
+        allow_nil?: false,
+        constraints: [one_of: [:company, :taxes, :internal]]
 
       run fn input, context ->
         transaction(
