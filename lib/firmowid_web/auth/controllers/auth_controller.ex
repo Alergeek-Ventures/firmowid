@@ -14,6 +14,7 @@ defmodule FirmowidWeb.Auth.Controllers.AuthController do
   alias AshAuthentication.Strategy.RememberMe.Plug.Helpers
   alias Firmowid.Analytics
   alias Firmowid.Ash.Core
+  alias Firmowid.Ash.Core.Member
   alias FirmowidWeb.Infrastructure.UserAuth
 
   require Logger
@@ -34,7 +35,10 @@ defmodule FirmowidWeb.Auth.Controllers.AuthController do
   def success(conn, activity, user, token) do
     if activity == {:password, :register}, do: Analytics.capture_account_created(user, :password)
 
-    user = user |> Core.load_member() |> Ash.load!(:access_block, actor: user)
+    user =
+      user
+      |> Core.load_member(selected_organization_id(user))
+      |> Ash.load!(:access_block, actor: user)
 
     case user.access_block do
       nil -> sign_in(conn, activity, user, token)
@@ -42,8 +46,17 @@ defmodule FirmowidWeb.Auth.Controllers.AuthController do
     end
   end
 
+  # Keeps the member the sign-in action selected: Google sign-in imports the avatar
+  # into the other members too, which makes the most recently updated one (the
+  # default) a different organization.
+  defp selected_organization_id(%{member: %Member{organization_id: organization_id}}), do: organization_id
+
+  defp selected_organization_id(_user), do: nil
+
   defp sign_in(conn, activity, user, token) do
-    return_to = get_session(conn, :return_to) || UserAuth.signed_in_path_for_user(user)
+    return_to =
+      get_session(conn, :return_to) ||
+        UserAuth.signed_in_path_for_user(user, selected_organization_id(user))
 
     conn =
       conn
