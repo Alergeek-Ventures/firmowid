@@ -17,7 +17,8 @@ defmodule Firmowid.Ash.Analysis.Workers.MonthWorker do
   @impl Oban.Worker
   def perform(%Oban.Job{args: args}) do
     tenant = args["organization_id"]
-    scope = %Scope{actor: %User{id: args["user_id"]}, tenant: tenant}
+    actor = Core.load_member(%User{id: args["user_id"]}, tenant)
+    scope = %Scope{actor: actor, tenant: tenant}
 
     with {:ok, user} <- User.get(args["user_id"], scope: scope),
          {:ok, month} <- Date.from_iso8601(args["month"]),
