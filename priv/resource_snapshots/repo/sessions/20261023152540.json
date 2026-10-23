@@ -219,7 +219,7 @@
       "down": "ALTER TABLE sessions DROP CONSTRAINT no_overlapping_member_sessions;\n",
       "global?": false,
       "name": "exclude_overlapping_member_sessions",
-      "up": "ALTER TABLE sessions\nADD CONSTRAINT no_overlapping_member_sessions\nEXCLUDE USING gist (\n  member_id WITH =,\n  tsrange(start_datetime, end_datetime, '[)') WITH &&\n);\n"
+      "up": "ALTER TABLE sessions\nADD CONSTRAINT no_overlapping_member_sessions\nEXCLUDE USING gist (\n  member_id WITH =,\n  tsrange(start_datetime, end_datetime, '[)') WITH &&\n)\nWHERE (inserted_at >= TIMESTAMP '2025-07-09 00:00:00');\n"
     },
     {
       "after_tables": [],

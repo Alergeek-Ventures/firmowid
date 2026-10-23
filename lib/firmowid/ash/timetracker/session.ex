@@ -44,6 +44,8 @@ defmodule Firmowid.Ash.Timetracker.Session do
     end
 
     custom_statements do
+      # Sessions inserted before 2025-07-09 keep historical overlaps and one
+      # reversed range unchanged; the trigger still checks every write.
       statement :exclude_overlapping_member_sessions do
         up """
         ALTER TABLE sessions
@@ -51,7 +53,8 @@ defmodule Firmowid.Ash.Timetracker.Session do
         EXCLUDE USING gist (
           member_id WITH =,
           tsrange(start_datetime, end_datetime, '[)') WITH &&
-        );
+        )
+        WHERE (inserted_at >= TIMESTAMP '2025-07-09 00:00:00');
         """
 
         down """

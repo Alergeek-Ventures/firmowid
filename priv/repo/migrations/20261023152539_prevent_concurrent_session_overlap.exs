@@ -14,7 +14,8 @@ defmodule Firmowid.Repo.Migrations.PreventConcurrentSessionOverlap do
     EXCLUDE USING gist (
       member_id WITH =,
       tsrange(start_datetime, end_datetime, '[)') WITH &&
-    );
+    )
+    WHERE (inserted_at >= TIMESTAMP '2025-07-09 00:00:00');
     """)
   end
 
