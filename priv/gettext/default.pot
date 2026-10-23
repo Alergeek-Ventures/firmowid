@@ -162,9 +162,9 @@ msgid "Choose a contact, click “create”. Firmowid will handle the rest — i
 msgstr ""
 
 #: lib/firmowid_web/analysis/components/category_chart.ex:201
-#: lib/firmowid_web/analysis/components/category_selector.ex:104
-#: lib/firmowid_web/analysis/components/category_selector.ex:112
-#: lib/firmowid_web/analysis/components/category_selector.ex:276
+#: lib/firmowid_web/analysis/components/category_selector.ex:107
+#: lib/firmowid_web/analysis/components/category_selector.ex:116
+#: lib/firmowid_web/analysis/components/category_selector.ex:286
 #: lib/firmowid_web/analysis/views/dashboard.ex:382
 #: lib/firmowid_web/landing/components/pricing.ex:34
 #: lib/firmowid_web/landing/components/primitives.ex:262
@@ -1149,6 +1149,7 @@ msgid "Projects"
 msgstr ""
 
 #: lib/firmowid_web/analysis/components/entries_table.ex:43
+#: lib/firmowid_web/analysis/components/entry_categories.ex:31
 #: lib/firmowid_web/analysis/views/dashboard.ex:359
 #, elixir-autogen, elixir-format
 msgid "Categories"
@@ -1190,7 +1191,7 @@ msgid "The list shows full document amounts; the charts show the selected projec
 msgstr ""
 
 #: lib/firmowid_web/analysis/components/category_chart.ex:202
-#: lib/firmowid_web/analysis/components/category_selector.ex:220
+#: lib/firmowid_web/analysis/components/category_selector.ex:226
 #, elixir-autogen, elixir-format
 msgid "Unassigned"
 msgstr ""
@@ -1211,18 +1212,19 @@ msgstr ""
 msgid "Assignment started in the background."
 msgstr ""
 
+#: lib/firmowid_web/analysis/components/entry_categories.ex:56
 #: lib/firmowid_web/analysis/views/dashboard.ex:100
 #: lib/firmowid_web/analysis/views/dashboard.ex:134
 #, elixir-autogen, elixir-format
 msgid "Could not update categories."
 msgstr ""
 
-#: lib/firmowid_web/analysis/components/category_selector.ex:42
+#: lib/firmowid_web/analysis/components/category_selector.ex:44
 #, elixir-autogen, elixir-format
 msgid "Edit categories"
 msgstr ""
 
-#: lib/firmowid_web/analysis/components/category_selector.ex:279
+#: lib/firmowid_web/analysis/components/category_selector.ex:289
 #, elixir-autogen, elixir-format
 msgid "Project"
 msgstr ""
@@ -1232,9 +1234,9 @@ msgstr ""
 msgid "This feature is still in progress! Your feedback will help us make it even better."
 msgstr ""
 
-#: lib/firmowid_web/analysis/components/category_selector.ex:123
-#: lib/firmowid_web/analysis/components/category_selector.ex:131
-#: lib/firmowid_web/analysis/components/category_selector.ex:277
+#: lib/firmowid_web/analysis/components/category_selector.ex:127
+#: lib/firmowid_web/analysis/components/category_selector.ex:136
+#: lib/firmowid_web/analysis/components/category_selector.ex:287
 #, elixir-autogen, elixir-format
 msgid "Omitted"
 msgstr ""
@@ -1397,14 +1399,14 @@ msgstr ""
 msgid "Invoice number is required."
 msgstr ""
 
-#: lib/firmowid_web/invoicing/components/sales_invoice_details.ex:348
+#: lib/firmowid_web/invoicing/components/sales_invoice_details.ex:349
 #: lib/firmowid_web/landing/components/sections.ex:309
 #: lib/firmowid_web/landing/components/sections.ex:612
 #, elixir-autogen, elixir-format
 msgid "Draft"
 msgstr ""
 
-#: lib/firmowid_web/invoicing/components/sales_invoice_details.ex:347
+#: lib/firmowid_web/invoicing/components/sales_invoice_details.ex:348
 #, elixir-autogen, elixir-format
 msgid "Invoice status"
 msgstr ""
@@ -1436,23 +1438,23 @@ msgstr ""
 msgid "today"
 msgstr ""
 
-#: lib/firmowid_web/invoicing/transactions/components/show_components.ex:246
+#: lib/firmowid_web/invoicing/transactions/components/show_components.ex:251
 #, elixir-autogen, elixir-format
 msgid "Ask Firmowid for help with invoices"
 msgstr ""
 
 #: lib/firmowid_web/invoicing/transactions/components/salary_components.ex:54
-#: lib/firmowid_web/invoicing/transactions/components/show_components.ex:199
+#: lib/firmowid_web/invoicing/transactions/components/show_components.ex:204
 #, elixir-autogen, elixir-format
 msgid "Confirm"
 msgstr ""
 
-#: lib/firmowid_web/invoicing/transactions/views/show.ex:175
+#: lib/firmowid_web/invoicing/transactions/views/show.ex:199
 #, elixir-autogen, elixir-format
 msgid "Could not connect this transaction to a salary."
 msgstr ""
 
-#: lib/firmowid_web/invoicing/transactions/views/show.ex:189
+#: lib/firmowid_web/invoicing/transactions/views/show.ex:213
 #, elixir-autogen, elixir-format
 msgid "Could not disconnect this transaction from the salary."
 msgstr ""
@@ -1499,12 +1501,12 @@ msgid "The salary cannot be assigned to this transaction."
 msgstr ""
 
 #: lib/firmowid_web/invoicing/transactions/components/salary_components.ex:27
-#: lib/firmowid_web/invoicing/transactions/components/show_components.ex:177
+#: lib/firmowid_web/invoicing/transactions/components/show_components.ex:182
 #, elixir-autogen, elixir-format
 msgid "Amount"
 msgstr ""
 
-#: lib/firmowid_web/invoicing/transactions/components/show_components.ex:255
+#: lib/firmowid_web/invoicing/transactions/components/show_components.ex:260
 #, elixir-autogen, elixir-format
 msgid "Ask"
 msgstr ""
@@ -1537,17 +1539,17 @@ msgid "Month"
 msgstr ""
 
 #: lib/firmowid/ash/invoicing/changes/validate_transaction_availability.ex:27
-#: lib/firmowid_web/invoicing/transactions/views/show.ex:158
+#: lib/firmowid_web/invoicing/transactions/views/show.ex:182
 #, elixir-autogen, elixir-format
 msgid "Could not connect this transaction to the invoice."
 msgstr ""
 
-#: lib/firmowid_web/invoicing/transactions/components/show_components.ex:176
+#: lib/firmowid_web/invoicing/transactions/components/show_components.ex:181
 #, elixir-autogen, elixir-format
 msgid "Date"
 msgstr ""
 
-#: lib/firmowid_web/invoicing/transactions/components/show_components.ex:175
+#: lib/firmowid_web/invoicing/transactions/components/show_components.ex:180
 #, elixir-autogen, elixir-format
 msgid "Potential invoices for this transaction"
 msgstr ""
@@ -1806,6 +1808,7 @@ msgid "Preview the invoice in full screen"
 msgstr ""
 
 #: lib/firmowid_ui/invoicing/components/invoice_notes.ex:28
+#: lib/firmowid_web/invoicing/components/invoice_details.ex:189
 #, elixir-autogen, elixir-format
 msgid "Comment"
 msgstr ""
@@ -2586,7 +2589,7 @@ msgstr ""
 msgid "All categories assigned to this month's entries will be removed, including manual ones. This cannot be undone."
 msgstr ""
 
-#: lib/firmowid_web/analysis/components/category_selector.ex:152
+#: lib/firmowid_web/analysis/components/category_selector.ex:158
 #: lib/firmowid_web/analysis/views/dashboard.ex:500
 #, elixir-autogen, elixir-format
 msgid "Clear categories"
@@ -2931,8 +2934,8 @@ msgstr ""
 msgid "Other"
 msgstr ""
 
-#: lib/firmowid_web/analysis/components/category_selector.ex:62
-#: lib/firmowid_web/analysis/components/category_selector.ex:63
+#: lib/firmowid_web/analysis/components/category_selector.ex:64
+#: lib/firmowid_web/analysis/components/category_selector.ex:65
 #, elixir-autogen, elixir-format
 msgid "Search categories"
 msgstr ""

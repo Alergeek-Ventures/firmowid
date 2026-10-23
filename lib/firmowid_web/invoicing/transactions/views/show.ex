@@ -5,6 +5,8 @@ defmodule FirmowidWeb.Invoicing.Transactions.Views.Show do
 
   use FirmowidWeb, :live_view
 
+  import FirmowidWeb.Infrastructure.Flags, only: [flag_enabled?: 2]
+
   alias Firmowid.Ash.Finances
   alias Firmowid.Ash.Finances.Transaction
   alias Firmowid.Ash.Invoicing
@@ -68,7 +70,10 @@ defmodule FirmowidWeb.Invoicing.Transactions.Views.Show do
       <ShowComponents.header transaction={@transaction} return_to={@return_to} />
 
       <div class="flex min-w-0 flex-col bg-white lg:flex-row">
-        <ShowComponents.details_sidebar transaction={@transaction} />
+        <ShowComponents.details_sidebar
+          transaction={@transaction}
+          can_write={Ash.can?({Transaction, :update_internal_note}, @current_user)}
+        />
 
         <InvoiceDetails.main>
           <%= cond do %>
@@ -95,6 +100,14 @@ defmodule FirmowidWeb.Invoicing.Transactions.Views.Show do
                 />
               </div>
           <% end %>
+          <.live_component
+            :if={flag_enabled?(:analysis_dashboard, assigns) and not @transaction.has_salary?}
+            module={FirmowidWeb.Analysis.Components.EntryCategories}
+            id="transaction-categories"
+            entry={@transaction}
+            scope={@ash_scope}
+            feature_flags={@feature_flags}
+          />
         </InvoiceDetails.main>
       </div>
     </div>
@@ -102,6 +115,17 @@ defmodule FirmowidWeb.Invoicing.Transactions.Views.Show do
   end
 
   @impl true
+  def handle_event("save_internal_note", %{"internal_note" => note}, socket) do
+    transaction =
+      Transaction.update_internal_note!(socket.assigns.transaction, note, scope: socket.assigns.ash_scope)
+
+    {:noreply,
+     assign(socket, :transaction, %{
+       socket.assigns.transaction
+       | internal_note: transaction.internal_note
+     })}
+  end
+
   def handle_event("toggle-invoicing", _params, socket) do
     scope = socket.assigns.ash_scope
     transaction = socket.assigns.transaction

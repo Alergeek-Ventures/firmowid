@@ -13,6 +13,8 @@ defmodule FirmowidWeb.Analysis.Components.CategorySelector do
   attr :categories, :list, default: []
   attr :colors, :map, required: true
   attr :can_write, :boolean, default: false
+  attr :target, :any, default: nil
+  attr :allow_pending, :boolean, default: false
 
   @doc "Renders historical tags and an active-project-only category selector."
   @spec cell(map()) :: Rendered.t()
@@ -23,7 +25,7 @@ defmodule FirmowidWeb.Analysis.Components.CategorySelector do
       assigns
       |> assign(:tags, tags)
       |> assign(:type, entity_type(assigns.entry))
-      |> assign(:editable, editable?(assigns.entry))
+      |> assign(:editable, editable?(assigns.entry, assigns.allow_pending))
       |> assign(:selected_kind, if(tags == [], do: :unassigned, else: hd(tags).kind))
       |> assign(:popover_id, "category-select-#{entity_type(assigns.entry)}-#{assigns.entry.id}")
       |> assign(
@@ -79,6 +81,7 @@ defmodule FirmowidWeb.Analysis.Components.CategorySelector do
                 aria-selected={to_string(category.id in @project_ids)}
                 data-combobox-option={category.name}
                 phx-click={JS.push("toggle-project-tag", loading: "##{@popover_id}-combobox")}
+                phx-target={@target}
                 phx-value-entity_type={@type}
                 phx-value-entity_id={@entry.id}
                 phx-value-tag_definition_id={category.id}
@@ -103,6 +106,7 @@ defmodule FirmowidWeb.Analysis.Components.CategorySelector do
                 aria-selected={to_string(@selected_kind == :company)}
                 data-combobox-option={gettext("Company")}
                 phx-click={JS.push("set-entity-category", loading: "##{@popover_id}-combobox")}
+                phx-target={@target}
                 phx-value-entity_type={@type}
                 phx-value-entity_id={@entry.id}
                 phx-value-kind="company"
@@ -122,6 +126,7 @@ defmodule FirmowidWeb.Analysis.Components.CategorySelector do
                 aria-selected={to_string(@selected_kind == :internal)}
                 data-combobox-option={gettext("Omitted")}
                 phx-click={JS.push("set-entity-category", loading: "##{@popover_id}-combobox")}
+                phx-target={@target}
                 phx-value-entity_type={@type}
                 phx-value-entity_id={@entry.id}
                 phx-value-kind="internal"
@@ -145,6 +150,7 @@ defmodule FirmowidWeb.Analysis.Components.CategorySelector do
                 variant="unstyled"
                 disabled={@selected_kind == :unassigned}
                 phx-click={JS.push("clear-entity-tags", loading: "##{@popover_id}-combobox")}
+                phx-target={@target}
                 phx-value-entity_type={@type}
                 phx-value-entity_id={@entry.id}
                 class="shrink-0 cursor-pointer underline hover:text-grey-900 disabled:cursor-default disabled:text-grey-400 disabled:no-underline"
@@ -269,9 +275,13 @@ defmodule FirmowidWeb.Analysis.Components.CategorySelector do
   defp entity_type(%CostInvoice{}), do: :cost_invoice
   defp entity_type(%Transaction{}), do: :transaction
 
-  defp editable?(%Transaction{} = row), do: row.skip_invoicing
+  defp editable?(%Transaction{salary_user_id: id}, _allow_pending) when not is_nil(id), do: false
 
-  defp editable?(row), do: row.skip_invoicing or row.transactions != []
+  defp editable?(%Transaction{} = row, false), do: row.skip_invoicing
+
+  defp editable?(%Transaction{} = row, true), do: row.cost_invoices == [] and row.sales_invoices == []
+
+  defp editable?(row, allow_pending), do: allow_pending or row.skip_invoicing or row.transactions != []
 
   defp tag_label(%{kind: :company}), do: gettext("Company")
   defp tag_label(%{kind: :internal}), do: gettext("Omitted")

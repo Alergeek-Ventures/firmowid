@@ -50,6 +50,7 @@ defmodule FirmowidWeb.Invoicing.Transactions.Components.ShowComponents do
   end
 
   attr :transaction, Transaction, required: true
+  attr :can_write, :boolean, default: false
 
   def details_sidebar(assigns) do
     {incoming, amount} = transaction_presentation(assigns.transaction)
@@ -107,6 +108,10 @@ defmodule FirmowidWeb.Invoicing.Transactions.Components.ShowComponents do
             amount={@amount}
           />
         </div>
+        <InvoiceDetails.internal_note_form
+          internal_note={@transaction.internal_note}
+          can_write={@can_write}
+        />
       </div>
     </InvoiceDetails.aside>
     """

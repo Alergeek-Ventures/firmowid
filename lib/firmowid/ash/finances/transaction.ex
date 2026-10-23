@@ -1,15 +1,15 @@
 defmodule Firmowid.Ash.Finances.Transaction do
-  @moduledoc """
-  Bank transaction synced from GoCardless.
-  """
+  @moduledoc "Bank transaction synced from GoCardless, with internal notes and invoice matching."
   use Ash.Resource,
     domain: Firmowid.Ash.Finances,
     data_layer: AshPostgres.DataLayer,
     notifiers: [Ash.Notifier.PubSub],
-    fragments: [Firmowid.Ash.Finances.Transaction.Policies]
+    fragments: [
+      Firmowid.Ash.Finances.Transaction.Policies,
+      Firmowid.Ash.Finances.Transaction.Calculations
+    ]
 
   alias AshMoney.Types.Money
-  alias Firmowid.Ash.Finances.Transaction.Calculations
   alias Firmowid.Ash.Finances.Transaction.Types
   alias Firmowid.Ash.Invoicing.CostInvoiceTransaction
   alias Firmowid.Ash.Invoicing.SalesInvoiceTransaction
@@ -22,11 +22,24 @@ defmodule Firmowid.Ash.Finances.Transaction do
   postgres do
     table "transactions"
     repo Firmowid.Repo
+
+    custom_statements do
+      statement :allow_pending_transaction_entity_tags do
+        up "DROP TRIGGER transaction_entity_tag_taggable_trigger ON transaction_entity_tags;"
+
+        down """
+        CREATE TRIGGER transaction_entity_tag_taggable_trigger
+        BEFORE INSERT ON transaction_entity_tags
+        FOR EACH ROW EXECUTE FUNCTION check_transaction_entity_tag_taggable();
+        """
+      end
+    end
   end
 
   code_interface do
     define :read, action: :read
     define :list, action: :list
+    define :update_internal_note, args: [:internal_note], action: :update_internal_note
   end
 
   actions do
@@ -153,6 +166,11 @@ defmodule Firmowid.Ash.Finances.Transaction do
       ]
     end
 
+    update :update_internal_note do
+      description "Replace the internal note without changing bank data or reconciliation."
+      accept [:internal_note]
+    end
+
     update :set_skip_invoicing do
       description "Set whether this transaction should be skipped during matching and invoicing."
       primary? true
@@ -238,6 +256,7 @@ defmodule Firmowid.Ash.Finances.Transaction do
 
     publish :upsert_from_sync, ["updated", :_tenant]
     publish :set_skip_invoicing, ["updated", :_tenant]
+    publish :update_internal_note, ["updated", :_tenant]
     publish :restore_for_matching, ["updated", :_tenant]
     publish :connect_salary, ["updated", :_tenant]
     publish :disconnect_salary, ["updated", :_tenant]
@@ -265,6 +284,7 @@ defmodule Firmowid.Ash.Finances.Transaction do
 
     # Firmowid data
     attribute :skip_invoicing, :boolean, public?: true, default: false
+    attribute :internal_note, :string, constraints: [max_length: 10_000]
 
     attribute :salary_month, :date, description: "First day of the salary month this transfer pays."
 
@@ -303,72 +323,6 @@ defmodule Firmowid.Ash.Finances.Transaction do
       through SalesInvoiceTransaction
       source_attribute_on_join_resource :transaction_id
       destination_attribute_on_join_resource :sales_invoice_id
-    end
-  end
-
-  calculations do
-    calculate :reconciliation_status,
-              :atom,
-              expr(
-                cond do
-                  exists(cost_invoices, true) or exists(sales_invoices, true) or has_salary? ->
-                    :matched
-
-                  skip_invoicing == true ->
-                    :skipped
-
-                  true ->
-                    :pending
-                end
-              ) do
-      public? true
-      constraints one_of: [:pending, :matched, :skipped]
-
-      description "Transaction reconciliation state derived from invoice or salary links and the skip flag."
-    end
-
-    calculate :invoice_matchable?,
-              :boolean,
-              expr(
-                reconciliation_status != :matched or
-                  exists(cost_invoices, true) or exists(sales_invoices, true)
-              ) do
-      description "Allows manual invoice matching of unresolved transactions and existing multi-invoice payments."
-    end
-
-    calculate :has_salary?, :boolean, expr(not is_nil(salary_user_id)) do
-      public? true
-
-      description "Whether the transaction is settled by a monthly salary assignment."
-    end
-
-    calculate :date, :date, expr(booking_date)
-
-    calculate :direction, :atom, Calculations.Direction do
-      public? true
-      constraints one_of: [:income, :expense]
-
-      description "Canonical transaction direction, preferring connected account ownership over amount sign."
-    end
-
-    calculate :signed_amount, Money, Calculations.SignedAmount do
-      public? true
-      description "Transaction amount signed according to its canonical direction."
-    end
-
-    calculate :counterparty_name, :string, Calculations.CounterpartyName do
-      public? true
-      description "Raw counterparty name selected according to transaction direction."
-    end
-
-    calculate :counterparty_display_name, :string, Calculations.CounterpartyDisplayName do
-      public? true
-      description "Useful counterparty name, with a Polish fallback when unavailable."
-    end
-
-    calculate :groupable?, :boolean, Calculations.Groupable do
-      public? true
-      description "Whether the transaction can be grouped for invoicing."
     end
   end
 
