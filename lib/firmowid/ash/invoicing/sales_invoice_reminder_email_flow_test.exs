@@ -18,6 +18,8 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoiceReminderEmailFlowTest do
     configure_test_adapters()
   end
 
+  @moduletag :capture_log
+
   describe "sales invoice reminder email flow" do
     test "overdue unpaid latest invoice flow sends the first reminder" do
       Oban.Testing.with_testing_mode(:manual, fn ->
@@ -196,6 +198,49 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoiceReminderEmailFlowTest do
         assert [] == delivery_types_for(original, processor_scope)
         assert [:reminder] == delivery_types_for(correction, processor_scope)
       end)
+    end
+
+    for paid_document <- [:original, :previous_correction] do
+      test "correction flow does not send a reminder when #{paid_document} is paid" do
+        Oban.Testing.with_testing_mode(:manual, fn ->
+          admin = admin_fixture()
+          processor_scope = processor_scope(admin.member.organization_id)
+          counterparty = valid_counterparty_fixture!(admin)
+
+          original =
+            confirmed_sales_invoice_fixture!(admin, processor_scope, %{
+              counterparty_id: counterparty.id,
+              should_send_emails: true,
+              due_date: Date.add(Date.utc_today(), -10)
+            })
+
+          paid_invoice =
+            case unquote(paid_document) do
+              :original ->
+                original
+
+              :previous_correction ->
+                admin
+                |> sales_invoice_correction_fixture!(original, %{should_send_emails: true})
+                |> confirm_invoice_in_ksef!(processor_scope, correction_locked_at())
+            end
+
+          paid_transaction_fixture!(admin, paid_invoice)
+
+          correction =
+            admin
+            |> sales_invoice_correction_fixture!(original, %{should_send_emails: true})
+            |> confirm_invoice_in_ksef!(
+              processor_scope,
+              DateTime.shift(correction_locked_at(), second: 10)
+            )
+
+          assert 0 == run_reminder_scan!(processor_scope)
+          refute_enqueued_email_job(original, :reminder)
+          refute_enqueued_email_job(correction, :reminder)
+          assert [] == email_deliveries_for(correction, processor_scope)
+        end)
+      end
     end
 
     test "zero-value correction flow does not send a reminder" do
