@@ -1,9 +1,26 @@
 export const LandingPricing = {
   mounted() {
     this.expanded = false;
+    this.followCollapse = () => {
+      const button = this.el.querySelector("#landing-pricing-toggle");
+      const features = this.el.querySelector("#landing-pricing-features");
+      button.scrollIntoView({ block: "end", behavior: "instant" });
+
+      if (features.getAnimations().length > 0) {
+        this.collapseFrame = requestAnimationFrame(this.followCollapse);
+      } else {
+        const cutoff = this.el.querySelector("#landing-pricing-cutoff");
+        cutoff.focus({ preventScroll: true });
+        cutoff.scrollIntoView({ block: "end", behavior: "instant" });
+      }
+    };
     this.toggleFeatures = () => {
+      cancelAnimationFrame(this.collapseFrame);
       this.expanded = !this.expanded;
       this.updateFeatures();
+      if (!this.expanded) {
+        this.collapseFrame = requestAnimationFrame(this.followCollapse);
+      }
     };
     this.el
       .querySelector("#landing-pricing-toggle")
@@ -34,6 +51,7 @@ export const LandingPricing = {
     this.updateHeader();
   },
   destroyed() {
+    cancelAnimationFrame(this.collapseFrame);
     this.el
       .querySelector("#landing-pricing-toggle")
       .removeEventListener("click", this.toggleFeatures);
