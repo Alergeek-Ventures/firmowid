@@ -164,7 +164,7 @@ msgstr ""
 #: lib/firmowid_web/analysis/components/category_chart.ex:201
 #: lib/firmowid_web/analysis/components/category_selector.ex:107
 #: lib/firmowid_web/analysis/components/category_selector.ex:116
-#: lib/firmowid_web/analysis/components/category_selector.ex:286
+#: lib/firmowid_web/analysis/components/category_selector.ex:282
 #: lib/firmowid_web/analysis/views/dashboard.ex:382
 #: lib/firmowid_web/landing/components/pricing.ex:34
 #: lib/firmowid_web/landing/components/primitives.ex:262
@@ -1149,7 +1149,6 @@ msgid "Projects"
 msgstr ""
 
 #: lib/firmowid_web/analysis/components/entries_table.ex:43
-#: lib/firmowid_web/analysis/components/entry_categories.ex:31
 #: lib/firmowid_web/analysis/views/dashboard.ex:359
 #, elixir-autogen, elixir-format
 msgid "Categories"
@@ -1212,7 +1211,7 @@ msgstr ""
 msgid "Assignment started in the background."
 msgstr ""
 
-#: lib/firmowid_web/analysis/components/entry_categories.ex:56
+#: lib/firmowid_web/analysis/components/entry_categories.ex:76
 #: lib/firmowid_web/analysis/views/dashboard.ex:100
 #: lib/firmowid_web/analysis/views/dashboard.ex:134
 #, elixir-autogen, elixir-format
@@ -1224,7 +1223,7 @@ msgstr ""
 msgid "Edit categories"
 msgstr ""
 
-#: lib/firmowid_web/analysis/components/category_selector.ex:289
+#: lib/firmowid_web/analysis/components/category_selector.ex:285
 #, elixir-autogen, elixir-format
 msgid "Project"
 msgstr ""
@@ -1236,7 +1235,7 @@ msgstr ""
 
 #: lib/firmowid_web/analysis/components/category_selector.ex:127
 #: lib/firmowid_web/analysis/components/category_selector.ex:136
-#: lib/firmowid_web/analysis/components/category_selector.ex:287
+#: lib/firmowid_web/analysis/components/category_selector.ex:283
 #, elixir-autogen, elixir-format
 msgid "Omitted"
 msgstr ""
@@ -1438,23 +1437,23 @@ msgstr ""
 msgid "today"
 msgstr ""
 
-#: lib/firmowid_web/invoicing/transactions/components/show_components.ex:251
+#: lib/firmowid_web/invoicing/transactions/components/show_components.ex:247
 #, elixir-autogen, elixir-format
 msgid "Ask Firmowid for help with invoices"
 msgstr ""
 
 #: lib/firmowid_web/invoicing/transactions/components/salary_components.ex:54
-#: lib/firmowid_web/invoicing/transactions/components/show_components.ex:204
+#: lib/firmowid_web/invoicing/transactions/components/show_components.ex:202
 #, elixir-autogen, elixir-format
 msgid "Confirm"
 msgstr ""
 
-#: lib/firmowid_web/invoicing/transactions/views/show.ex:199
+#: lib/firmowid_web/invoicing/transactions/views/show.ex:202
 #, elixir-autogen, elixir-format
 msgid "Could not connect this transaction to a salary."
 msgstr ""
 
-#: lib/firmowid_web/invoicing/transactions/views/show.ex:213
+#: lib/firmowid_web/invoicing/transactions/views/show.ex:216
 #, elixir-autogen, elixir-format
 msgid "Could not disconnect this transaction from the salary."
 msgstr ""
@@ -1470,7 +1469,7 @@ msgstr ""
 msgid "Expected salary"
 msgstr ""
 
-#: lib/firmowid_web/invoicing/components/matching_components.ex:29
+#: lib/firmowid_web/invoicing/components/matching_components.ex:59
 #, elixir-autogen, elixir-format
 msgid "Information"
 msgstr ""
@@ -1501,18 +1500,18 @@ msgid "The salary cannot be assigned to this transaction."
 msgstr ""
 
 #: lib/firmowid_web/invoicing/transactions/components/salary_components.ex:27
-#: lib/firmowid_web/invoicing/transactions/components/show_components.ex:182
+#: lib/firmowid_web/invoicing/transactions/components/show_components.ex:180
 #, elixir-autogen, elixir-format
 msgid "Amount"
 msgstr ""
 
-#: lib/firmowid_web/invoicing/transactions/components/show_components.ex:260
+#: lib/firmowid_web/invoicing/transactions/components/show_components.ex:254
 #, elixir-autogen, elixir-format
 msgid "Ask"
 msgstr ""
 
 #: lib/firmowid_web/invoicing/components/entries_table.ex:419
-#: lib/firmowid_web/invoicing/components/matching_components.ex:105
+#: lib/firmowid_web/invoicing/components/matching_components.ex:135
 #, elixir-autogen, elixir-format
 msgid "Complete"
 msgstr ""
@@ -1528,7 +1527,7 @@ msgstr ""
 msgid "Employee"
 msgstr ""
 
-#: lib/firmowid_web/invoicing/components/matching_components.ex:102
+#: lib/firmowid_web/invoicing/components/matching_components.ex:132
 #, elixir-autogen, elixir-format
 msgid "Matching"
 msgstr ""
@@ -1539,17 +1538,17 @@ msgid "Month"
 msgstr ""
 
 #: lib/firmowid/ash/invoicing/changes/validate_transaction_availability.ex:27
-#: lib/firmowid_web/invoicing/transactions/views/show.ex:182
+#: lib/firmowid_web/invoicing/transactions/views/show.ex:185
 #, elixir-autogen, elixir-format
 msgid "Could not connect this transaction to the invoice."
 msgstr ""
 
-#: lib/firmowid_web/invoicing/transactions/components/show_components.ex:181
+#: lib/firmowid_web/invoicing/transactions/components/show_components.ex:179
 #, elixir-autogen, elixir-format
 msgid "Date"
 msgstr ""
 
-#: lib/firmowid_web/invoicing/transactions/components/show_components.ex:180
+#: lib/firmowid_web/invoicing/transactions/components/show_components.ex:178
 #, elixir-autogen, elixir-format
 msgid "Potential invoices for this transaction"
 msgstr ""
@@ -2758,45 +2757,40 @@ msgstr ""
 msgid "Collapse comparison"
 msgstr ""
 
-#: lib/firmowid_web/invoicing/components/dashboard_tiles.ex:538
+#: lib/firmowid_web/invoicing/components/dashboard_tiles.ex:505
 #, elixir-autogen, elixir-format
 msgid "Bank connection expired"
 msgstr ""
 
-#: lib/firmowid_web/invoicing/components/dashboard_tiles.ex:534
+#: lib/firmowid_web/invoicing/components/dashboard_tiles.ex:501
 #, elixir-autogen, elixir-format
 msgid "Connection to %{institution} has expired"
 msgstr ""
 
-#: lib/firmowid_web/invoicing/components/dashboard_tiles.ex:579
+#: lib/firmowid_web/invoicing/components/dashboard_tiles.ex:546
 #, elixir-autogen, elixir-format
 msgid "Could not synchronize %{count} invoice."
 msgid_plural "Could not synchronize %{count} invoices."
 msgstr[0] ""
 msgstr[1] ""
 
-#: lib/firmowid_web/invoicing/components/dashboard_tiles.ex:567
+#: lib/firmowid_web/invoicing/components/dashboard_tiles.ex:534
 #, elixir-autogen, elixir-format
 msgid "Missing invoices from KSeF"
 msgstr ""
 
-#: lib/firmowid_web/invoicing/components/dashboard_tiles.ex:99
-#, elixir-autogen, elixir-format
-msgid "These sales invoices from KSeF could not be imported into Firmowid yet. We are investigating and will import them as soon as the cause is fixed."
-msgstr ""
-
-#: lib/firmowid_web/invoicing/components/dashboard_tiles.ex:540
-#: lib/firmowid_web/invoicing/components/dashboard_tiles.ex:551
+#: lib/firmowid_web/invoicing/components/dashboard_tiles.ex:507
+#: lib/firmowid_web/invoicing/components/dashboard_tiles.ex:518
 #, elixir-autogen, elixir-format
 msgid "Transactions are not being updated."
 msgstr ""
 
-#: lib/firmowid_web/invoicing/components/dashboard_tiles.ex:547
+#: lib/firmowid_web/invoicing/components/dashboard_tiles.ex:514
 #, elixir-autogen, elixir-format
 msgid "Transactions have not been synchronized since %{date}"
 msgstr ""
 
-#: lib/firmowid_web/invoicing/components/dashboard_tiles.ex:586
+#: lib/firmowid_web/invoicing/components/dashboard_tiles.ex:553
 #, elixir-autogen, elixir-format
 msgid "We detected an import issue. Our team is working to resolve it as quickly as possible."
 msgstr ""
@@ -3031,4 +3025,34 @@ msgstr ""
 #, elixir-autogen, elixir-format
 msgctxt "avatar menu"
 msgid "Organization"
+msgstr ""
+
+#: lib/firmowid_web/analysis/components/entry_categories.ex:135
+#, elixir-autogen, elixir-format
+msgid "Categories help you understand how this expense affects your budget."
+msgstr ""
+
+#: lib/firmowid_web/analysis/components/entry_categories.ex:133
+#, elixir-autogen, elixir-format
+msgid "Categories help you understand how this income affects your budget."
+msgstr ""
+
+#: lib/firmowid_web/analysis/components/entry_categories.ex:129
+#, elixir-autogen, elixir-format
+msgid "Invoice categories"
+msgstr ""
+
+#: lib/firmowid_web/analysis/components/entry_categories.ex:48
+#, elixir-autogen, elixir-format
+msgid "See in analysis"
+msgstr ""
+
+#: lib/firmowid_web/analysis/components/entry_categories.ex:128
+#, elixir-autogen, elixir-format
+msgid "Transaction categories"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/components/matching_components.ex:20
+#, elixir-autogen, elixir-format
+msgid "The assistant is temporarily unavailable"
 msgstr ""

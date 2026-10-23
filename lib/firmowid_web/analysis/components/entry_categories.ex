@@ -2,7 +2,9 @@ defmodule FirmowidWeb.Analysis.Components.EntryCategories do
   @moduledoc "Category editing below the matching controls on invoice and transaction details."
   use FirmowidWeb, :live_component
 
+  import FirmowidUI.Components.Link
   import FirmowidWeb.Infrastructure.Flags, only: [flag_enabled?: 2]
+  import Phoenix.Component, except: [link: 1]
 
   alias Firmowid.Ash.Analysis.EntityTag
   alias Firmowid.Ash.Analysis.TagDefinition
@@ -11,6 +13,7 @@ defmodule FirmowidWeb.Analysis.Components.EntryCategories do
   alias Firmowid.Ash.Invoicing.SalesInvoice
   alias FirmowidWeb.Analysis.Components.CategoryChart
   alias FirmowidWeb.Analysis.Components.CategorySelector
+  alias FirmowidWeb.Analysis.Utilities.Navigation
 
   @impl true
   def update(assigns, socket) do
@@ -26,20 +29,37 @@ defmodule FirmowidWeb.Analysis.Components.EntryCategories do
 
   @impl true
   def render(assigns) do
+    assigns =
+      assigns
+      |> assign(:title, category_title(assigns.entry))
+      |> assign(:explanation, category_explanation(assigns.entry))
+      |> assign(
+        :analysis_path,
+        Navigation.dashboard_path(Date.beginning_of_month(entry_date(assigns.entry)))
+      )
+
     ~H"""
-    <section id={@id} class="flex flex-col gap-3 pbs-8">
-      <h2 class="font-medium">{gettext("Categories")}</h2>
-      <CategorySelector.cell
-        entry={@entry}
-        categories={@categories}
-        colors={@colors}
-        can_write={
-          flag_enabled?(:analysis_dashboard, assigns) and
-            @scope.actor.member.role in [:admin, :accountant]
-        }
-        target={@myself}
-        allow_pending
-      />
+    <section id={@id} class="flex flex-col gap-4 pbs-18">
+      <h2 class="text-lg/tight font-medium">{@title}</h2>
+      <div class="flex flex-wrap items-start gap-6">
+        <p class="min-w-0 flex-[2_1_20rem] text-sm/snug text-grey-700">
+          {@explanation}
+          <.link kind="text" size="small" navigate={@analysis_path}>
+            {gettext("See in analysis")}
+          </.link>
+        </p>
+        <CategorySelector.cell
+          entry={@entry}
+          categories={@categories}
+          colors={@colors}
+          can_write={
+            flag_enabled?(:analysis_dashboard, assigns) and
+              @scope.actor.member.role in [:admin, :accountant]
+          }
+          class="min-w-0 flex-[1_1_16rem]"
+          target={@myself}
+        />
+      </div>
     </section>
     """
   end
@@ -104,6 +124,23 @@ defmodule FirmowidWeb.Analysis.Components.EntryCategories do
 
   defp entity_arguments(%CostInvoice{id: id}), do: %{entity_type: :cost_invoice, resource_id: id}
   defp entity_arguments(%Transaction{id: id}), do: %{entity_type: :transaction, resource_id: id}
+
+  defp category_title(%Transaction{}), do: gettext("Transaction categories")
+  defp category_title(_invoice), do: gettext("Invoice categories")
+
+  defp category_explanation(entry) do
+    if Money.positive?(entry_amount(entry)) do
+      gettext("Categories help you understand how this income affects your budget.")
+    else
+      gettext("Categories help you understand how this expense affects your budget.")
+    end
+  end
+
+  defp entry_amount(%Transaction{amount: amount}), do: amount
+  defp entry_amount(invoice), do: invoice.effective_amount
+
+  defp entry_date(%Transaction{booking_date: date}), do: date
+  defp entry_date(invoice), do: invoice.effective_sale_date
 
   defp editable?(%Transaction{} = transaction) do
     is_nil(transaction.salary_user_id) and transaction.cost_invoices == [] and

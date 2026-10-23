@@ -75,39 +75,6 @@ defmodule FirmowidWeb.Invoicing.Components.DashboardTiles do
     """
   end
 
-  attr :invoice_labels, :list, required: true
-  attr :class, :any, default: nil
-
-  @doc "Shows sales invoices awaiting a supported KSeF import, preserving the visibility signal."
-  @spec skipped_ksef_warning(map()) :: Phoenix.LiveView.Rendered.t()
-  def skipped_ksef_warning(assigns) do
-    ~H"""
-    <div
-      id="skipped-ksef-sales-invoices"
-      phx-hook="KsefSkippedInvoicesBanner"
-      role="alert"
-      class={[
-        "grid grid-cols-[2.25rem_minmax(0,1fr)] items-start gap-3 text-black",
-        @class
-      ]}
-    >
-      <div class="flex justify-center">
-        <Lucideicons.triangle_alert class="size-6" />
-      </div>
-      <div class="flex min-w-0 flex-col gap-2">
-        <p class="text-sm font-medium">
-          {gettext(
-            "These sales invoices from KSeF could not be imported into Firmowid yet. We are investigating and will import them as soon as the cause is fixed."
-          )}
-        </p>
-        <ul class="flex flex-col gap-2 text-xs wrap-anywhere">
-          <li :for={label <- @invoice_labels}>{label}</li>
-        </ul>
-      </div>
-    </div>
-    """
-  end
-
   # ── Unpaid Invoice Tile ────────────────────────────────────────────
 
   defp unpaid_invoice_tile(assigns) do

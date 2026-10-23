@@ -5,6 +5,36 @@ defmodule FirmowidWeb.Invoicing.Components.MatchingComponents do
 
   alias Phoenix.LiveView.Rendered
 
+  attr :id, :string, required: true
+  attr :accent, :string, required: true
+  attr :class, :any, default: nil
+  slot :inner_block, required: true
+
+  @doc "Explains why the assistant button is disabled, on hover and keyboard focus."
+  @spec assistant_button(map()) :: Rendered.t()
+  def assistant_button(assigns) do
+    ~H"""
+    <span
+      id={@id}
+      phx-hook="Tippy"
+      data-tippy-content={gettext("The assistant is temporarily unavailable")}
+      tabindex="0"
+      class={["inline-flex rounded-md focus-visible:outline-2 focus-visible:outline-offset-2", @class]}
+    >
+      <FirmowidUI.Components.Button.button
+        type="button"
+        disabled
+        class="pointer-events-none w-full"
+        variant="primary"
+        accent={@accent}
+        size="small"
+      >
+        {render_slot(@inner_block)}
+      </FirmowidUI.Components.Button.button>
+    </span>
+    """
+  end
+
   attr :title, :string, required: true
   attr :date_label, :string, required: true
   attr :amount_label, :string, required: true

@@ -254,11 +254,6 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
       :if={can_view_invoicing?(@current_user)}
       class="relative mt-2 flex flex-col gap-4 max-md:hidden"
     >
-      <FirmowidWeb.Invoicing.Components.DashboardTiles.skipped_ksef_warning
-        :if={@params.view_mode != :dashboard and @skipped_ksef_sales_invoices != []}
-        invoice_labels={Enum.map(@skipped_ksef_sales_invoices, &skipped_invoice_label/1)}
-        class="rounded-lg border-2 border-red-300 bg-white p-2.5"
-      />
       <%= cond do %>
         <% @params.view_mode == :dashboard -> %>
           <FirmowidWeb.Invoicing.Components.Dashboard.dashboard
@@ -908,7 +903,7 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
       unpaid_invoices = fetch_unpaid_invoices(date_range_from, date_range_to, scope)
       unmatched_transactions = fetch_unmatched_transactions(date_range_from, date_range_to, scope)
       matched_entries = fetch_matched_entries(date_range_from, date_range_to, scope)
-      suggestions = fetch_suggestions(scope, socket.assigns.skipped_ksef_sales_invoices, month)
+      suggestions = fetch_suggestions(scope, socket.assigns.skipped_ksef_sales_invoices)
 
       socket
       |> assign(:dashboard_unpaid_invoices, unpaid_invoices.entries)
@@ -1021,7 +1016,7 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
     |> Enum.sort_by(&{not &1.warning?, &1.account.institution_name || ""})
   end
 
-  defp fetch_suggestions(scope, skipped_invoices, month) do
+  defp fetch_suggestions(scope, skipped_invoices) do
     bank_alerts = bank_attention_entries(scope)
 
     ksef_warnings =
@@ -1032,14 +1027,7 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
           %{
             type: :skipped_ksef_sales_invoices,
             warning?: true,
-            invoice_numbers: Enum.map(skipped_invoices, & &1.invoice_number),
-            navigate:
-              Navigation.invoicing_index_path(%{
-                month: month,
-                filter: :invoices,
-                subfilter: nil,
-                view_mode: :list
-              }) <> "#skipped-ksef-sales-invoices"
+            invoice_numbers: Enum.map(skipped_invoices, & &1.invoice_number)
           }
         ]
       end
@@ -1386,16 +1374,6 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
 
   defp can_write_invoicing?(user) do
     Ash.can_do_all?([{SalesInvoice, :draft}, {CostInvoice, :create}], user)
-  end
-
-  defp skipped_invoice_label(invoice) do
-    [
-      "#{invoice.invoice_number} z #{Calendar.strftime(invoice.issue_date, "%d.%m.%Y")}",
-      invoice.buyer_name,
-      to_string(Money.new(invoice.currency, invoice.gross_total))
-    ]
-    |> Enum.reject(&is_nil/1)
-    |> Enum.join(", ")
   end
 
   defp can_view_invoicing?(user) do

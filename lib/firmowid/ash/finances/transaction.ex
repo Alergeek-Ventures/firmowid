@@ -22,18 +22,6 @@ defmodule Firmowid.Ash.Finances.Transaction do
   postgres do
     table "transactions"
     repo Firmowid.Repo
-
-    custom_statements do
-      statement :allow_pending_transaction_entity_tags do
-        up "DROP TRIGGER transaction_entity_tag_taggable_trigger ON transaction_entity_tags;"
-
-        down """
-        CREATE TRIGGER transaction_entity_tag_taggable_trigger
-        BEFORE INSERT ON transaction_entity_tags
-        FOR EACH ROW EXECUTE FUNCTION check_transaction_entity_tag_taggable();
-        """
-      end
-    end
   end
 
   code_interface do

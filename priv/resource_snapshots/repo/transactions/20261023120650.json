@@ -296,16 +296,7 @@
   "check_constraints": [],
   "create_table_options": null,
   "custom_indexes": [],
-  "custom_statements": [
-    {
-      "after_tables": [],
-      "code?": false,
-      "down": "CREATE TRIGGER transaction_entity_tag_taggable_trigger\nBEFORE INSERT ON transaction_entity_tags\nFOR EACH ROW EXECUTE FUNCTION check_transaction_entity_tag_taggable();\n",
-      "global?": false,
-      "name": "allow_pending_transaction_entity_tags",
-      "up": "DROP TRIGGER transaction_entity_tag_taggable_trigger ON transaction_entity_tags;"
-    }
-  ],
+  "custom_statements": [],
   "has_create_action": true,
   "hash": "D4C14F1DF44981E8F753114708269C329E03ED7F76DEAB89BB567D312AE29CCA",
   "identities": [

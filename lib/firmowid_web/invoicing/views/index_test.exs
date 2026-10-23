@@ -281,13 +281,12 @@ defmodule FirmowidWeb.Invoicing.Views.IndexTest do
              )
 
       {:ok, list_view, _html} =
-        summary_view
-        |> element("a", "Brakujące faktury z KSeF")
-        |> render_click()
-        |> follow_redirect(log_in_user(conn, user))
+        conn
+        |> log_in_user(user)
+        |> live(~p"/fakturowanie?filtr=nieprzypisane&widok=lista")
 
       refute has_element?(list_view, "#dashboard-attention")
-      assert has_element?(list_view, "#skipped-ksef-sales-invoices li", "SYNTHETIC-own")
+      refute has_element?(list_view, "#skipped-ksef-sales-invoices")
     end
 
     setup do

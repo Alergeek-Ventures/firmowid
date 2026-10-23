@@ -456,15 +456,13 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceDetails do
               <% end %>
             </p>
 
-            <.button
-              disabled
+            <MatchingComponents.assistant_button
+              id={"matched-invoice-assistant-#{transaction.id}"}
               class="w-full"
-              variant="primary"
               accent={if(@is_cost_invoice, do: "orange", else: "turquoise")}
-              size="small"
             >
               Zapytaj
-            </.button>
+            </MatchingComponents.assistant_button>
           </div>
         </div>
       </div>
@@ -537,15 +535,13 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceDetails do
           Poproś Firmowida o pomoc w znalezieniu transakcji.
         </p>
 
-        <.button
-          disabled
+        <MatchingComponents.assistant_button
+          id="invoice-assistant"
           class="w-full"
-          variant="primary"
           accent="turquoise"
-          size="small"
         >
           Zapytaj
-        </.button>
+        </MatchingComponents.assistant_button>
       </div>
 
       <div :if={@can_write} class="col-span-full grid grid-cols-subgrid items-center">
@@ -592,15 +588,13 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceDetails do
             </p>
           </div>
 
-          <.button
-            disabled
-            class="mt-2"
-            variant="primary"
+          <MatchingComponents.assistant_button
+            id="invoice-assistant-empty"
+            class="mbs-2"
             accent={if(@is_cost_invoice, do: "orange", else: "turquoise")}
-            size="small"
           >
             Poproś Firmowida o pomoc
-          </.button>
+          </MatchingComponents.assistant_button>
         </div>
       <% else %>
         <.potential_transactions_list

@@ -145,15 +145,13 @@ defmodule FirmowidWeb.Invoicing.Transactions.Components.ShowComponents do
               Poproś Firmowida o pomoc w znalezieniu kolejnych faktur dla tej transakcji.
             </p>
 
-            <.button
-              disabled
+            <MatchingComponents.assistant_button
+              id="transaction-assistant"
               class="w-full"
-              variant="primary"
               accent={assistant_accent(@transaction)}
-              size="small"
             >
               Zapytaj
-            </.button>
+            </MatchingComponents.assistant_button>
           </div>
         </div>
       </div>
@@ -226,15 +224,13 @@ defmodule FirmowidWeb.Invoicing.Transactions.Components.ShowComponents do
           </p>
         </div>
 
-        <.button
-          disabled
-          class="mt-2"
-          variant="primary"
+        <MatchingComponents.assistant_button
+          id="transaction-assistant-empty"
+          class="mbs-2"
           accent={assistant_accent(@transaction)}
-          size="small"
         >
           Poproś Firmowida o pomoc
-        </.button>
+        </MatchingComponents.assistant_button>
       </div>
 
       <div class="space-y-6">
@@ -250,15 +246,13 @@ defmodule FirmowidWeb.Invoicing.Transactions.Components.ShowComponents do
             <p class="text-sm/snug text-balance text-grey-700">
               {gettext("Ask Firmowid for help with invoices")}
             </p>
-            <.button
-              disabled
-              variant="primary"
+            <MatchingComponents.assistant_button
+              id="transaction-assistant"
               accent={assistant_accent(@transaction)}
-              size="small"
               class="w-full"
             >
               {gettext("Ask")}
-            </.button>
+            </MatchingComponents.assistant_button>
           </div>
           <div :if={@can_write} class="col-span-full grid grid-cols-subgrid items-center">
             <p class="text-sm/snug text-balance text-grey-700">
