@@ -201,7 +201,8 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
         constraints one_of: [:pending, :matched, :skipped]
 
         description "Payment matching with bank transactions: pending has no matched payment yet, " <>
-                      "matched is linked to a transaction, skipped is excluded from matching."
+                      "matched is linked to a transaction, skipped is excluded from matching. " <>
+                      "Linked corrections use the original invoice's reconciliation and are never listed separately."
       end
 
       argument :ids, {:array, :uuid_v7}, description: "Return only invoices with these IDs."
@@ -262,9 +263,9 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
 
       prepare {Firmowid.Ash.Preparations.FilterByAmount, []}
 
-      # A correction linked to its original is already counted in the original's effective_amount.
+      # Linked corrections affect the original's amount and have no separate reconciliation state.
       prepare build(filter: expr(is_nil(original_invoice_ksef_number) or is_nil(original_invoice.id))) do
-        where argument_equals(:merge_corrections, true)
+        where any([argument_equals(:merge_corrections, true), present(:reconciliation)])
       end
 
       # :pending — no linked transactions, not skipped
@@ -468,6 +469,7 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
     update :toggle_skip do
       description "Toggle whether this cost invoice is skipped during invoicing workflows."
       require_atomic? false
+      change filter(expr(not exists(original_invoice, true)))
 
       change fn changeset, _context ->
         current = Ash.Changeset.get_attribute(changeset, :skip_invoicing)
