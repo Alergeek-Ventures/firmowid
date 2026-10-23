@@ -8,44 +8,14 @@ defmodule Firmowid.Repo.Migrations.AddTransactionInternalNote do
   use Ecto.Migration
 
   def up do
-    execute("""
-    DROP TRIGGER cost_invoice_entity_tag_taggable_trigger ON cost_invoice_entity_tags;
-    """)
-
     alter table(:transactions) do
       add :internal_note, :text
     end
-
-    execute("""
-    DROP TRIGGER transaction_entity_tag_taggable_trigger ON transaction_entity_tags;
-    """)
-
-    execute("""
-    DROP TRIGGER sales_invoice_entity_tag_taggable_trigger ON sales_invoice_entity_tags;
-    """)
   end
 
   def down do
-    execute("""
-    CREATE TRIGGER sales_invoice_entity_tag_taggable_trigger
-    BEFORE INSERT ON sales_invoice_entity_tags
-    FOR EACH ROW EXECUTE FUNCTION check_sales_invoice_entity_tag_taggable();
-    """)
-
-    execute("""
-    CREATE TRIGGER transaction_entity_tag_taggable_trigger
-    BEFORE INSERT ON transaction_entity_tags
-    FOR EACH ROW EXECUTE FUNCTION check_transaction_entity_tag_taggable();
-    """)
-
     alter table(:transactions) do
       remove :internal_note
     end
-
-    execute("""
-    CREATE TRIGGER cost_invoice_entity_tag_taggable_trigger
-    BEFORE INSERT ON cost_invoice_entity_tags
-    FOR EACH ROW EXECUTE FUNCTION check_cost_invoice_entity_tag_taggable();
-    """)
   end
 end

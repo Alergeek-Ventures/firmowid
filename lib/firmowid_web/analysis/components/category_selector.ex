@@ -14,7 +14,7 @@ defmodule FirmowidWeb.Analysis.Components.CategorySelector do
   attr :colors, :map, required: true
   attr :can_write, :boolean, default: false
   attr :target, :any, default: nil
-  attr :allow_pending, :boolean, default: false
+  attr :class, :any, default: nil
 
   @doc "Renders historical tags and an active-project-only category selector."
   @spec cell(map()) :: Rendered.t()
@@ -25,7 +25,7 @@ defmodule FirmowidWeb.Analysis.Components.CategorySelector do
       assigns
       |> assign(:tags, tags)
       |> assign(:type, entity_type(assigns.entry))
-      |> assign(:editable, editable?(assigns.entry, assigns.allow_pending))
+      |> assign(:editable, editable?(assigns.entry))
       |> assign(:selected_kind, if(tags == [], do: :unassigned, else: hd(tags).kind))
       |> assign(:popover_id, "category-select-#{entity_type(assigns.entry)}-#{assigns.entry.id}")
       |> assign(
@@ -34,7 +34,7 @@ defmodule FirmowidWeb.Analysis.Components.CategorySelector do
       )
 
     ~H"""
-    <div class="relative flex justify-end">
+    <div class={["relative flex justify-end", @class]}>
       <%= if @can_write and @editable do %>
         <FirmowidUI.Components.Button.button
           id={"#{@popover_id}-trigger"}
@@ -275,13 +275,9 @@ defmodule FirmowidWeb.Analysis.Components.CategorySelector do
   defp entity_type(%CostInvoice{}), do: :cost_invoice
   defp entity_type(%Transaction{}), do: :transaction
 
-  defp editable?(%Transaction{salary_user_id: id}, _allow_pending) when not is_nil(id), do: false
+  defp editable?(%Transaction{} = row), do: row.skip_invoicing
 
-  defp editable?(%Transaction{} = row, false), do: row.skip_invoicing
-
-  defp editable?(%Transaction{} = row, true), do: row.cost_invoices == [] and row.sales_invoices == []
-
-  defp editable?(row, allow_pending), do: allow_pending or row.skip_invoicing or row.transactions != []
+  defp editable?(row), do: row.skip_invoicing or row.transactions != []
 
   defp tag_label(%{kind: :company}), do: gettext("Company")
   defp tag_label(%{kind: :internal}), do: gettext("Omitted")

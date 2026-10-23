@@ -116,18 +116,6 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
   postgres do
     table "sales_invoices"
     repo Firmowid.Repo
-
-    custom_statements do
-      statement :allow_pending_sales_invoice_entity_tags do
-        up "DROP TRIGGER sales_invoice_entity_tag_taggable_trigger ON sales_invoice_entity_tags;"
-
-        down """
-        CREATE TRIGGER sales_invoice_entity_tag_taggable_trigger
-        BEFORE INSERT ON sales_invoice_entity_tags
-        FOR EACH ROW EXECUTE FUNCTION check_sales_invoice_entity_tag_taggable();
-        """
-      end
-    end
   end
 
   events do

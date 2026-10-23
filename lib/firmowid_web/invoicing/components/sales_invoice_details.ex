@@ -451,7 +451,10 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
               />
           <% end %>
           <.live_component
-            :if={flag_enabled?(:analysis_dashboard, assigns)}
+            :if={
+              flag_enabled?(:analysis_dashboard, assigns) and
+                (@invoice.skip_invoicing or @invoice.transactions != [])
+            }
             module={FirmowidWeb.Analysis.Components.EntryCategories}
             id="invoice-categories"
             entry={@invoice}

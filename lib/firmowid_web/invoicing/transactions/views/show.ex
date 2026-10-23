@@ -101,7 +101,10 @@ defmodule FirmowidWeb.Invoicing.Transactions.Views.Show do
               </div>
           <% end %>
           <.live_component
-            :if={flag_enabled?(:analysis_dashboard, assigns) and not @transaction.has_salary?}
+            :if={
+              flag_enabled?(:analysis_dashboard, assigns) and not @transaction.has_salary? and
+                @transaction.reconciliation_status in [:matched, :skipped]
+            }
             module={FirmowidWeb.Analysis.Components.EntryCategories}
             id="transaction-categories"
             entry={@transaction}
