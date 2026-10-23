@@ -71,6 +71,18 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
     table "cost_invoices"
     repo Firmowid.Repo
 
+    custom_statements do
+      statement :allow_pending_cost_invoice_entity_tags do
+        up "DROP TRIGGER cost_invoice_entity_tag_taggable_trigger ON cost_invoice_entity_tags;"
+
+        down """
+        CREATE TRIGGER cost_invoice_entity_tag_taggable_trigger
+        BEFORE INSERT ON cost_invoice_entity_tags
+        FOR EACH ROW EXECUTE FUNCTION check_cost_invoice_entity_tag_taggable();
+        """
+      end
+    end
+
     check_constraints do
       check_constraint :amount,
                        "cost_invoices_non_correction_amount_non_positive",
