@@ -1,13 +1,14 @@
 defmodule Firmowid.Ash.Core.Services.GoogleAvatarImporter do
   @moduledoc """
   Imports a Google profile picture into the local avatar blob storage as the
-  avatar of the user's organization member.
+  avatar of each of the user's organization members that has none.
 
   The importer is best-effort: if the avatar cannot be fetched or persisted,
   the user can still authenticate successfully.
   """
   alias Firmowid.Ash.Blobs
   alias Firmowid.Ash.Core
+  alias Firmowid.Ash.Core.Member
   alias Firmowid.Ash.Core.User
   alias Firmowid.Ash.Scope
   alias Firmowid.ErrorKind
@@ -19,66 +20,65 @@ defmodule Firmowid.Ash.Core.Services.GoogleAvatarImporter do
   @request_opts [connect_options: [timeout: 3_000], receive_timeout: 5_000]
 
   @doc """
-  Imports the Google avatar for a user who belongs to an organization and whose
-  member does not yet have a local avatar.
+  Imports the Google avatar for the user's usable members (see
+  `Core.list_usable_members/1`) without a local avatar, and returns the user with
+  the default member loaded.
 
   Returns `{:ok, user}` in all non-fatal cases to avoid breaking login.
   """
   @spec maybe_import(User.t(), map()) :: {:ok, User.t()}
   def maybe_import(%User{} = user, user_info) when is_map(user_info) do
-    user = Core.load_member(user)
+    members = Core.list_usable_members(user)
+    picture_url = picture_url(user_info)
 
-    cond do
-      is_nil(user.member) ->
-        {:ok, user}
+    members =
+      if is_binary(picture_url) and Enum.any?(members, &is_nil(&1.avatar_blob_id)),
+        do: import_avatar(user, members, picture_url),
+        else: members
 
-      not is_binary(picture_url(user_info)) ->
-        {:ok, user}
-
-      true ->
-        if is_nil(user.member.avatar_blob_id) do
-          import_avatar(user, picture_url(user_info))
-        else
-          {:ok, user}
-        end
-    end
+    {:ok, Core.select_member(user, members, nil)}
   end
 
   def maybe_import(%User{} = user, _user_info), do: {:ok, user}
 
-  defp import_avatar(%User{} = user, picture_url) do
-    scope = Scope.new!(user, user.member.organization_id)
-
+  defp import_avatar(%User{} = user, members, picture_url) do
     with {:ok, response} <- fetch_avatar(picture_url),
          {:ok, content_type} <- image_content_type(response),
          {:ok, path} <- write_avatar_to_temp_file(response.body, content_type) do
       try do
-        with {:ok, blob} <-
-               Blobs.create_blob(path, content_type, original_filename(content_type), scope: scope),
-             {:ok, member} <-
-               Core.update_member_avatar(user.member, %{avatar_blob_id: blob.id}, scope: scope) do
-          {:ok, %{user | member: member}}
-        else
-          {:error, reason} ->
-            Logger.warning("Skipping Google avatar import",
-              user_id: user.id,
-              error_kind: ErrorKind.classify(reason)
-            )
-
-            {:ok, user}
-        end
+        Enum.map(members, &put_avatar(user, &1, path, content_type))
       after
         cleanup_temp_file(path)
       end
     else
       {:error, reason} ->
-        Logger.warning("Skipping Google avatar import",
-          user_id: user.id,
-          error_kind: ErrorKind.classify(reason)
-        )
-
-        {:ok, user}
+        log_skip(user, reason)
+        members
     end
+  end
+
+  defp put_avatar(%User{} = user, %Member{avatar_blob_id: nil} = member, path, content_type) do
+    scope = Scope.new!(%{user | member: member}, member.organization_id)
+
+    with {:ok, blob} <-
+           Blobs.create_blob(path, content_type, original_filename(content_type), scope: scope),
+         {:ok, member} <-
+           Core.update_member_avatar(member, %{avatar_blob_id: blob.id}, scope: scope) do
+      member
+    else
+      {:error, reason} ->
+        log_skip(user, reason)
+        member
+    end
+  end
+
+  defp put_avatar(_user, member, _path, _content_type), do: member
+
+  defp log_skip(%User{} = user, reason) do
+    Logger.warning("Skipping Google avatar import",
+      user_id: user.id,
+      error_kind: ErrorKind.classify(reason)
+    )
   end
 
   defp fetch_avatar(url) do

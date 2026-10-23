@@ -78,6 +78,22 @@ defmodule FirmowidWeb.Organization.Controllers.SwitchTest do
     refute html =~ "Bob Drugi"
   end
 
+  test "an organization without a billing plan is listed as unavailable and cannot be selected",
+       %{conn: conn, sable: sable, first_id: first_id} do
+    organization = Core.get_organization!(first_id, authorize?: false)
+
+    Core.update_organization_billing_plan!(organization, %{billing_plan: :no_plan}, authorize?: false)
+
+    conn = log_in_user(conn, sable)
+
+    {:ok, lv, _html} = live(conn, ~p"/zarzadzanie/pracownicy")
+    assert has_element?(lv, "#unavailable-organization-#{first_id}")
+    refute has_element?(lv, "#switch-organization-#{first_id}")
+
+    conn = post(conn, ~p"/organizacja/przelacz", %{"organizacja" => first_id})
+    assert get_session(conn, "organization_id") != first_id
+  end
+
   test "an existing account joins another organization with an invitation code", %{conn: conn} do
     user = admin_fixture()
     other_admin = admin_fixture()
