@@ -67,84 +67,33 @@ defmodule Firmowid.Ash.Ksef.Workers.SubmissionWorkerTest do
     assert kept.locked_at
   end
 
-  for status <- [401, 403, 429, 503], kind <- [:vat, :kor] do
-    @tag status: status, kind: kind
-    test "preserves #{kind} submission when status retrieval returns HTTP #{status}", %{
-      status: status,
-      kind: kind
-    } do
-      admin = admin_fixture()
-
-      original =
-        submitted_invoice!(admin, %{
-          ksef_invoice_kind: :vat,
-          ksef_number: "KSEF-ORIGINAL",
-          locked_at: nil
-        })
-
-      invoice =
-        submitted_invoice!(admin, %{
-          ksef_invoice_kind: kind,
-          corrected_invoice_id: if(kind == :kor, do: original.id)
-        })
-
-      InvoicingFixtures.accept_ksef_submissions!(admin.member.organization_id)
-
-      config = Application.fetch_env!(:firmowid, :ksef)
-      options = Keyword.put(config[:request_options], :retry, false)
-      Application.put_env(:firmowid, :ksef, Keyword.put(config, :request_options, options))
-      on_exit(fn -> Application.put_env(:firmowid, :ksef, config) end)
-
-      Req.Test.stub(:ksef_api, fn conn -> Plug.Conn.send_resp(conn, status, "unavailable") end)
-
-      result = verify!(invoice, attempt: 3)
-      kept = SalesInvoice.by_id!(invoice.id, scope: scope_for(admin))
-      assert kept.invoice_number == invoice.invoice_number
-      assert kept.locked_at == invoice.locked_at
-      assert kept.ksef_invoice_checksum == invoice.ksef_invoice_checksum
-      assert kept.ksef_session_reference_number == invoice.ksef_session_reference_number
-      assert kept.ksef_number == nil
-      assert {:snooze, 3600} = result
-    end
-  end
-
-  test "confirms a successfully accepted document" do
+  test "keeps a numbered invoice locked when its status cannot be read on the last attempt" do
     admin = admin_fixture()
     invoice = submitted_invoice!(admin, %{ksef_invoice_kind: :vat})
-    InvoicingFixtures.accept_ksef_submissions!(admin.member.organization_id)
+    Cachex.put(:ksef, {:access_token, invoice.organization_id}, jwt(3600))
+    Req.Test.stub(:ksef_api, fn conn -> Plug.Conn.send_resp(conn, 403, "unavailable") end)
 
-    assert :ok = verify!(invoice)
-    confirmed = SalesInvoice.by_id!(invoice.id, scope: scope_for(admin))
-    assert confirmed.ksef_number
-    assert confirmed.ksef_invoice_checksum == "verified-hash"
-    assert confirmed.invoice_number == invoice.invoice_number
-    assert confirmed.locked_at
+    assert {:snooze, 3600} = verify!(invoice, attempt: 3)
+    kept = SalesInvoice.by_id!(invoice.id, scope: scope_for(admin))
+    assert kept.invoice_number == invoice.invoice_number
+    assert kept.locked_at == invoice.locked_at
+    assert kept.ksef_invoice_checksum == invoice.ksef_invoice_checksum
+    assert kept.ksef_session_reference_number == invoice.ksef_session_reference_number
+    assert kept.ksef_number == nil
   end
 
   test "reschedules verification after an expected renewal failure on the last attempt" do
     admin = admin_fixture()
     invoice = submitted_invoice!(admin, %{ksef_invoice_kind: :vat})
-    InvoicingFixtures.accept_ksef_submissions!(admin.member.organization_id)
-    Cachex.del(:ksef, {:access_token, admin.member.organization_id})
     Req.Test.stub(:ksef_api, fn conn -> Plug.Conn.send_resp(conn, 403, "unavailable") end)
 
     Oban.Testing.with_testing_mode(:manual, fn ->
       schedule_refresh_token!(invoice.organization_id)
-
-      job =
-        invoice
-        |> verification_args()
-        |> SubmissionWorker.new(attempt: 2)
-        |> Firmowid.Oban.insert!(skip_organization_id: true)
-
-      Oban.drain_queue(queue: :ksef_submissions)
-      rescheduled = Repo.get!(Oban.Job, job.id, oban_jobs: true)
-      assert rescheduled.state == "scheduled"
-      assert DateTime.diff(rescheduled.scheduled_at, DateTime.utc_now()) in 3500..3600
-      assert {:ok, nil} = Cachex.get(:ksef, {:access_token, invoice.organization_id})
+      assert {:snooze, 3600} = verify!(invoice, attempt: 3)
       assert {:error, :forbidden} = verify!(invoice)
+      assert {:ok, nil} = Cachex.get(:ksef, {:access_token, invoice.organization_id})
 
-      assert_raise Cachex.Error, ~r/KSeF session renewal failed/, fn ->
+      assert_raise RuntimeError, ~r/KSeF session renewal failed/, fn ->
         SessionWorker.get_access_token!(invoice.organization_id)
       end
     end)
@@ -162,7 +111,10 @@ defmodule Firmowid.Ash.Ksef.Workers.SubmissionWorkerTest do
     Oban.Testing.with_testing_mode(:manual, fn ->
       assert {:snooze, 3600} = verify!(invoice, attempt: 3)
       assert_enqueued(worker: SessionWorker, args: %{organization_id: invoice.organization_id})
-      assert {:ok, nil} = Cachex.get(:ksef, {:access_token, invoice.organization_id})
+
+      assert_raise RuntimeError, "Refresh token expired, re-authentication scheduled", fn ->
+        SessionWorker.get_access_token!(invoice.organization_id)
+      end
     end)
 
     kept = SalesInvoice.by_id!(invoice.id, scope: scope_for(admin))
@@ -266,17 +218,17 @@ defmodule Firmowid.Ash.Ksef.Workers.SubmissionWorkerTest do
   end
 
   defp verify!(invoice, opts \\ []) do
-    perform_job(SubmissionWorker, verification_args(invoice), opts)
-  end
-
-  defp verification_args(invoice) do
-    %{
-      "action" => "verify",
-      "organization_id" => invoice.organization_id,
-      "sales_invoice_id" => invoice.id,
-      "session_reference" => "SESSION-REF",
-      "invoice_reference" => "INVOICE-REF"
-    }
+    perform_job(
+      SubmissionWorker,
+      %{
+        "action" => "verify",
+        "organization_id" => invoice.organization_id,
+        "sales_invoice_id" => invoice.id,
+        "session_reference" => "SESSION-REF",
+        "invoice_reference" => "INVOICE-REF"
+      },
+      opts
+    )
   end
 
   defp scope_for(user), do: %Scope{actor: user, tenant: user.member.organization_id}

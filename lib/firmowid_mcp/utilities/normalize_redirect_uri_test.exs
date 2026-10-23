@@ -1,8 +1,8 @@
-defmodule FirmowidMcp.Utilities.RewriteLoopbackRedirectUriTest do
+defmodule FirmowidMcp.Utilities.NormalizeRedirectUriTest do
   @moduledoc false
   use ExUnit.Case, async: true
 
-  alias FirmowidMcp.Utilities.RewriteLoopbackRedirectUri
+  alias FirmowidMcp.Utilities.NormalizeRedirectUri
 
   test "never rewrites incoming resource parameters" do
     params = %{
@@ -10,7 +10,7 @@ defmodule FirmowidMcp.Utilities.RewriteLoopbackRedirectUriTest do
       "redirect_uri" => "http://localhost:54321/callback"
     }
 
-    conn = :post |> Plug.Test.conn("/oauth/token", params) |> RewriteLoopbackRedirectUri.call([])
+    conn = :post |> Plug.Test.conn("/oauth/token", params) |> NormalizeRedirectUri.call([])
     assert conn.params["resource"] == params["resource"]
     assert conn.body_params["resource"] == params["resource"]
   end
@@ -22,7 +22,7 @@ defmodule FirmowidMcp.Utilities.RewriteLoopbackRedirectUriTest do
       :get
       |> Plug.Test.conn("/oauth/authorize?redirect_uri=#{URI.encode_www_form(redirect_uri)}")
       |> Plug.Conn.fetch_query_params()
-      |> RewriteLoopbackRedirectUri.call([])
+      |> NormalizeRedirectUri.call([])
 
     assert conn.params["redirect_uri"] == "http://127.0.0.1:54321/callback"
     assert conn.query_params["redirect_uri"] == "http://127.0.0.1:54321/callback"
@@ -32,7 +32,7 @@ defmodule FirmowidMcp.Utilities.RewriteLoopbackRedirectUriTest do
     conn =
       :post
       |> Plug.Test.conn("/oauth/token", %{"redirect_uri" => "http://localhost:54321/callback"})
-      |> RewriteLoopbackRedirectUri.call([])
+      |> NormalizeRedirectUri.call([])
 
     assert conn.params["redirect_uri"] == "http://127.0.0.1:54321/callback"
     assert conn.body_params["redirect_uri"] == "http://127.0.0.1:54321/callback"
@@ -45,7 +45,7 @@ defmodule FirmowidMcp.Utilities.RewriteLoopbackRedirectUriTest do
       :get
       |> Plug.Test.conn("/oauth/authorize?redirect_uri=#{URI.encode_www_form(redirect_uri)}")
       |> Plug.Conn.fetch_query_params()
-      |> RewriteLoopbackRedirectUri.call([])
+      |> NormalizeRedirectUri.call([])
 
     assert conn.params["redirect_uri"] == redirect_uri
     assert conn.query_params["redirect_uri"] == redirect_uri
@@ -70,7 +70,7 @@ defmodule FirmowidMcp.Utilities.RewriteLoopbackRedirectUriTest do
             Plug.Test.conn(:post, "/oauth/token", %{"redirect_uri" => uri})
         end
 
-      conn = RewriteLoopbackRedirectUri.call(conn, [])
+      conn = NormalizeRedirectUri.call(conn, [])
       assert conn.status == 400
       assert conn.halted
       assert Jason.decode!(conn.resp_body) == %{"error" => "invalid_request"}

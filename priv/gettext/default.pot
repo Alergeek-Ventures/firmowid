@@ -1676,7 +1676,7 @@ msgstr ""
 msgid "The current organization was not found."
 msgstr ""
 
-#: lib/firmowid/ash/invoicing/changes/verify_invoice_review.ex:32
+#: lib/firmowid/ash/invoicing/changes/verify_invoice_review.ex:27
 #: lib/firmowid_mcp/invoicing/views/issue.ex:248
 #, elixir-autogen, elixir-format
 msgid "The invoice data changed. Review the updated preview and confirm again."

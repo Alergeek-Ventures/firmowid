@@ -198,6 +198,11 @@ defmodule Firmowid.Ash.Ksef.Credential do
       change set_attribute(:auth_type, :generated_certificate)
       change transition_state(:working)
       change {RevokeSupersededCertificate, []}
+
+      # KSeF calls may outlive a refresh: finish only the one this credential is still in.
+      change fn changeset, _context ->
+        Ash.Changeset.filter(changeset, updated_at: changeset.data.updated_at)
+      end
     end
 
     update :recover_certificate_refresh do
@@ -205,6 +210,11 @@ defmodule Firmowid.Ash.Ksef.Credential do
       require_atomic? false
       public? false
       change transition_state(:working)
+
+      # KSeF calls may outlive a refresh: finish only the one this credential is still in.
+      change fn changeset, _context ->
+        Ash.Changeset.filter(changeset, updated_at: changeset.data.updated_at)
+      end
 
       # maybe send a email?
       # refresh can fail if KSeF limit of certificates is reached
@@ -379,15 +389,6 @@ defmodule Firmowid.Ash.Ksef.Credential do
 
   changes do
     change {SetCredentialExpiration, []}
-
-    change fn changeset, _context ->
-      if changeset.action.name in [:supersede_certificate, :recover_certificate_refresh] do
-        # Recheck the generation in the database: KSeF calls may outlive a refresh.
-        Ash.Changeset.filter(changeset, updated_at: changeset.data.updated_at)
-      else
-        changeset
-      end
-    end
   end
 
   attributes do

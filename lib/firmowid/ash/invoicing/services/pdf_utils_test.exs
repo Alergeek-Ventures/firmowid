@@ -17,20 +17,16 @@ defmodule Firmowid.Ash.Invoicing.Services.PdfUtilsTest do
     marker_path = Briefly.create!()
     File.write!(marker_path, "dummy-xml-marker")
 
-    results =
-      for encoding <- @encodings do
-        xml = """
-        <?xml version="1.0"?>
-        <!DOCTYPE root [<!ENTITY marker SYSTEM "file://#{marker_path}">]>
-        <root>&marker;</root>
-        """
+    for encoding <- @encodings do
+      xml = """
+      <?xml version="1.0"?>
+      <!DOCTYPE root [<!ENTITY marker SYSTEM "file://#{marker_path}">]>
+      <root>&marker;</root>
+      """
 
-        {encoding, PdfUtils.xslt_transform(encode(xml, encoding), @xsl)}
-      end
-
-    assert Enum.all?(results, fn {_encoding, result} ->
-             result == {:error, :doctype_not_allowed}
-           end)
+      assert {:error, :doctype_not_allowed} =
+               PdfUtils.xslt_transform(encode(xml, encoding), @xsl)
+    end
   end
 
   test "rejects a DOCTYPE even without entity declarations" do

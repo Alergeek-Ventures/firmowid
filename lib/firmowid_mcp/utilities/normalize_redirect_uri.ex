@@ -1,16 +1,10 @@
-defmodule FirmowidMcp.Utilities.RewriteLoopbackRedirectUri do
+defmodule FirmowidMcp.Utilities.NormalizeRedirectUri do
   @moduledoc """
-  Validates redirect URIs and rewrites `localhost` to `127.0.0.1` before
-  they reach `ash_authentication_oauth2_server`.
+  Validates OAuth redirect URIs and normalizes `localhost` to `127.0.0.1` for
+  ephemeral loopback ports. Rejects ambiguous authorities before the library's
+  loopback comparison, which ignores userinfo and fragments.
 
-  Rejects userinfo, fragments and ambiguous URL separators before the library's
-  loopback port-wildcard comparison. Keeps the existing localhost normalization
-  for native/CLI clients using ephemeral callback ports (RFC 8252 §7.3).
-
-  Must run after `Plug.Parsers` (see `FirmowidWeb.Core.Endpoint`) so
-  `conn.params` / `conn.query_params` / `conn.body_params` are already
-  populated — both `/oauth/authorize` (query) and `/oauth/token` (body)
-  carry `redirect_uri` this way.
+  Runs after `Plug.Parsers` to normalize both authorization queries and token bodies.
   """
 
   @behaviour Plug
@@ -20,10 +14,14 @@ defmodule FirmowidMcp.Utilities.RewriteLoopbackRedirectUri do
   @parameter_keys [:params, :query_params, :body_params]
   @loopback_hosts ["localhost", "127.0.0.1", "::1"]
 
+  @doc false
   @impl Plug
+  @spec init(keyword()) :: keyword()
   def init(opts), do: opts
 
+  @doc "Rejects invalid redirect URIs and normalizes localhost in parsed parameters."
   @impl Plug
+  @spec call(Plug.Conn.t(), keyword()) :: Plug.Conn.t()
   def call(conn, _opts) do
     if Enum.any?(@parameter_keys, &invalid_redirect?(Map.get(conn, &1))) do
       Errors.send_oauth_error(conn, 400, "invalid_request")
@@ -32,8 +30,6 @@ defmodule FirmowidMcp.Utilities.RewriteLoopbackRedirectUri do
     end
   end
 
-  # The library's loopback comparison ignores userinfo and fragments. Reject
-  # those and browser URL separators before parsing can normalize the authority.
   defp invalid_redirect?(%{"redirect_uri" => uri}) when is_binary(uri) and uri != "" do
     uri =~ ~r/[\\\x00-\x20\x7F]/ or
       case URI.new(uri) do

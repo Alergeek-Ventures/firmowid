@@ -1,9 +1,7 @@
 defmodule Firmowid.Ash.Core.Member.Notifiers.DisconnectLiveSessions do
   @moduledoc """
-  Disconnects the member's open LiveViews after the authority transaction commits.
-
-  LiveViews keep the actor loaded at mount. Disconnecting them makes the browser
-  reconnect and mount again with the current role, without signing the user out.
+  Disconnects LiveViews after membership changes commit, so reconnecting reloads
+  the actor's permissions while preserving browser sessions.
   """
 
   use Ash.Notifier
@@ -21,7 +19,7 @@ defmodule Firmowid.Ash.Core.Member.Notifiers.DisconnectLiveSessions do
   @spec load(Ash.Resource.t(), Ash.Resource.Actions.action()) :: [atom()]
   def load(_resource, _action), do: [:user_id]
 
-  @doc "Invalidates cached actors only after Ash delivers the committed membership notification."
+  @doc "Disconnects active browser sessions affected by a committed membership change."
   @impl true
   @spec notify(Notification.t()) :: :ok
   def notify(%Notification{action: %{name: action}, data: member})

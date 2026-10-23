@@ -46,15 +46,9 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice.Preview do
   @doc "Projects the reviewed document and delivery choice for confirmation and finalization."
   @spec review_snapshot(struct()) :: map()
   def review_snapshot(invoice) do
-    items =
-      Enum.map(
-        invoice.sales_invoice_items,
-        &Map.take(&1, [:index, :name, :quantity, :unit, :unit_price, :vat_rate, :gtu])
-      )
-
     invoice
     |> Map.take(@review_fields)
-    |> Map.put(:items, items)
+    |> Map.put(:items, items_snapshot(invoice))
     |> Map.put(:reference_invoice, reference_snapshot(invoice.reference_invoice))
   end
 
@@ -91,12 +85,13 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice.Preview do
   defp reference_snapshot(invoice) when is_map(invoice) do
     invoice
     |> Map.take([:id, :invoice_number, :ksef_number, :amount])
-    |> Map.put(
-      :sales_invoice_items,
-      Enum.map(
-        invoice.sales_invoice_items,
-        &Map.take(&1, [:index, :name, :quantity, :unit, :unit_price, :vat_rate, :gtu])
-      )
+    |> Map.put(:sales_invoice_items, items_snapshot(invoice))
+  end
+
+  defp items_snapshot(invoice) do
+    Enum.map(
+      invoice.sales_invoice_items,
+      &Map.take(&1, [:index, :name, :quantity, :unit, :unit_price, :vat_rate, :gtu])
     )
   end
 

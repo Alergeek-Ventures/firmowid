@@ -1,14 +1,8 @@
 defmodule Firmowid.Ash.Core.User.Preparations.RequireActiveAccount do
   @moduledoc """
-  Excludes blocked accounts (see the User `:access_block` calculation) from
-  authentication reads, so no session, bearer token or widget token can act for them,
-  without hiding them from administrators.
-
-  Sign-in actions are not filtered: a member of an organization without a billing
-  plan signs in successfully, and the sign-in callback explains the block instead of
-  issuing a session, so the reason is shown only after the password check.
-
-  Sign-ins lock the user through token issuance to serialize with password changes.
+  Filters blocked accounts from authentication reads and locks sign-ins through
+  token issuance to serialize with password changes. Sign-in callbacks explain
+  access blocks after checking credentials; administrative reads remain unfiltered.
   """
 
   use Ash.Resource.Preparation
@@ -45,10 +39,9 @@ defmodule Firmowid.Ash.Core.User.Preparations.RequireActiveAccount do
   def prepare(%{action: %{name: action}} = query, _options, _context) when action in @sign_in_actions,
     do: Query.lock(query, :for_update)
 
-  def prepare(query, _options, _context), do: filter_blocked_accounts(query, authentication_read?(query))
-
-  defp filter_blocked_accounts(query, true), do: Query.filter(query, is_nil(access_block))
-  defp filter_blocked_accounts(query, false), do: query
+  def prepare(query, _options, _context) do
+    if authentication_read?(query), do: Query.filter(query, is_nil(access_block)), else: query
+  end
 
   defp authentication_read?(query) do
     get_in(query.context, [:private, :ash_authentication?]) == true or

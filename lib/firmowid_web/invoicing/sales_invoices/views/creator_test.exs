@@ -38,7 +38,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.CreatorTest do
         )
 
       conn = log_in_user(conn, accountant)
-      {:ok, view, html} = live(conn, ~p"/sprzedazowe?szkic_kreatora=#{first.id}&krok=1")
+      {:ok, _view, html} = live(conn, ~p"/sprzedazowe?szkic_kreatora=#{first.id}&krok=1")
       refute html =~ marker
       # LiveViewTest runs the channel without the browser's socket transport.
       # Observe the real transport-disconnect topic rather than expecting the proxy to close itself.
@@ -61,15 +61,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.CreatorTest do
 
       assert :ok = result
 
-      receive do
-        %Phoenix.Socket.Broadcast{topic: ^topic, event: "disconnect"} ->
-          :ok
-      after
-        1_000 ->
-          html = render_patch(view, ~p"/sprzedazowe?szkic_kreatora=#{second.id}&krok=1")
-          refute html =~ marker
-          flunk("The deleted membership must disconnect its existing LiveView")
-      end
+      assert_receive %Phoenix.Socket.Broadcast{topic: ^topic, event: "disconnect"}, 1_000
 
       case @deletion do
         :organization ->

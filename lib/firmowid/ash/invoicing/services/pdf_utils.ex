@@ -1,5 +1,5 @@
 defmodule Firmowid.Ash.Invoicing.Services.PdfUtils do
-  @moduledoc false
+  @moduledoc "PDF rendering, XML transformation and page insertion."
 
   alias Firmowid.Ash.Invoicing.Services.GotenbergClient
 
@@ -17,8 +17,6 @@ defmodule Firmowid.Ash.Invoicing.Services.PdfUtils do
   """
   @spec xslt_transform(binary(), binary()) :: {:ok, binary()} | {:error, term()}
   def xslt_transform(xml_content, xsl_content) do
-    # Decode XML before checking for a DTD: xsltproc can expand local external
-    # entities, including in UTF-16 documents that evade an ASCII byte scan.
     case :xmerl_sax_parser.stream(xml_content, [
            :disallow_entities,
            {:external_entities, :none},
@@ -26,16 +24,7 @@ defmodule Firmowid.Ash.Invoicing.Services.PdfUtils do
            {:event_state, :ok}
          ]) do
       {:ok, :ok, _rest} ->
-        # OTP's SAX parser omits startDTD for a bare <!DOCTYPE root>. Keep the
-        # existing lexical prohibition too, after native encoding detection.
-        {_source, _encoding, characters} =
-          :xmerl_lib.detect_charset(:binary.bin_to_list(xml_content))
-
-        if List.to_string(characters) =~ ~r/<!DOCTYPE/i do
-          {:error, :doctype_not_allowed}
-        else
-          run_xsltproc(xml_content, xsl_content)
-        end
+        run_xsltproc(xml_content, xsl_content)
 
       {:doctype_not_allowed, _location, _reason, _end_tags, :ok} ->
         {:error, :doctype_not_allowed}
@@ -46,6 +35,11 @@ defmodule Firmowid.Ash.Invoicing.Services.PdfUtils do
   end
 
   defp reject_doctype({:startDTD, _name, _public_id, _system_id}, _location, :ok) do
+    throw({:doctype_not_allowed, ~c"DOCTYPE is not allowed"})
+  end
+
+  # SAX emits only endDTD for a bare DOCTYPE without an external or internal subset.
+  defp reject_doctype(:endDTD, _location, :ok) do
     throw({:doctype_not_allowed, ~c"DOCTYPE is not allowed"})
   end
 

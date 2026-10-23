@@ -58,7 +58,7 @@ defmodule FirmowidWeb.Core.Router do
   end
 
   pipeline :oauth_request_normalization do
-    plug FirmowidMcp.Utilities.RewriteLoopbackRedirectUri
+    plug FirmowidMcp.Utilities.NormalizeRedirectUri
     plug FirmowidMcp.Utilities.DefaultAuthorizationScope
   end
 
