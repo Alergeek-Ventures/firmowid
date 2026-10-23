@@ -12,6 +12,7 @@ defmodule FirmowidWeb.Invoicing.Transactions.Components.SalaryComponents do
   alias Firmowid.Ash.Finances.Transaction
   alias FirmowidWeb.Invoicing.Components.MatchingComponents
   alias FirmowidWeb.Management.Utilities.Navigation
+  alias FirmowidWeb.Payroll.Components.PayoutEstimates
   alias Phoenix.LiveView.Rendered
 
   attr :suggestions, :list, required: true
@@ -31,7 +32,18 @@ defmodule FirmowidWeb.Invoicing.Transactions.Components.SalaryComponents do
           id={"salary-suggestion-#{suggestion.user_id}-#{suggestion.month}"}
           name={suggestion.name}
           description={
-            gettext("Difference from transfer: %{amount}", amount: to_string(suggestion.difference))
+            Enum.join(
+              [
+                if(suggestion.payout_variant,
+                  do: PayoutEstimates.variant_label(suggestion.payout_variant)
+                ),
+                gettext("Difference from transfer: %{amount}",
+                  amount: to_string(suggestion.difference)
+                )
+              ]
+              |> Enum.reject(&is_nil/1),
+              " · "
+            )
           }
           date={month_label(suggestion.month)}
           amount={suggestion.expected_amount}
@@ -61,6 +73,7 @@ defmodule FirmowidWeb.Invoicing.Transactions.Components.SalaryComponents do
 
   attr :transaction, Transaction, required: true
   attr :expected_amount, Money, default: nil
+  attr :payout_variant, :atom, default: nil
   attr :admin?, :boolean, required: true
 
   @doc "Renders the salary assignment, with expected pay and payroll controls restricted to administrators."
@@ -87,8 +100,16 @@ defmodule FirmowidWeb.Invoicing.Transactions.Components.SalaryComponents do
           {@transaction.salary_user.member.name || to_string(@transaction.salary_user.email)}
         </:detail>
         <:detail label={gettext("Salary month")}>{month_label(@transaction.salary_month)}</:detail>
-        <:detail :if={@admin?} label={gettext("Expected salary")}>
-          {@expected_amount || gettext("Unavailable")}
+        <:detail
+          :if={@admin?}
+          label={if @payout_variant, do: gettext("Net forecast"), else: gettext("Gross")}
+        >
+          <div class="flex flex-col gap-1">
+            <span>{@expected_amount || gettext("Unavailable")}</span>
+            <span :if={@payout_variant} class="text-sm/snug text-grey-700">
+              {PayoutEstimates.variant_label(@payout_variant)}
+            </span>
+          </div>
         </:detail>
       </MatchingComponents.confirmed_card>
       <.link

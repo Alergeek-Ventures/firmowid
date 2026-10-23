@@ -10,7 +10,14 @@ defmodule Firmowid.Ash.Finances.Transaction.Types.SalarySuggestion do
         expected_amount: [
           type: AshMoney.Types.Money,
           allow_nil?: false,
-          description: "Salary due for that month."
+          description: "Closest estimated payout, or gross pay when the contract type is unknown."
+        ],
+        payout_variant: [
+          type: :atom,
+          constraints: [
+            one_of: [:uop, :uz_social, :uz_health, :uz_student, :uod_20, :uod_50, :b2b]
+          ],
+          description: "Hypothetical payout variant; does not confirm the employee's insurance or tax status."
         ],
         difference: [
           type: AshMoney.Types.Money,

@@ -92,9 +92,9 @@
       @view == :standard && @live_action == :archive &&
         "grid-cols-[1fr_min-content_min-content_min-content_min-content]",
       @view != :standard && @live_action == :index &&
-        "grid-cols-[2fr_1fr_1fr_1fr_min-content_min-content]",
+        "grid-cols-[minmax(10rem,2fr)_max-content_repeat(3,minmax(6rem,1fr))_min-content_min-content]",
       @view != :standard && @live_action == :archive &&
-        "grid-cols-[2fr_1fr_1fr_1fr_1fr_min-content_min-content]"
+        "grid-cols-[minmax(10rem,2fr)_max-content_max-content_repeat(3,minmax(6rem,1fr))_min-content_min-content]"
     ]}
   >
     <div
@@ -105,7 +105,7 @@
       data-scroll-offset="90"
     >
       <p>Pracownik</p>
-      <p class="text-right text-nowrap">Przepracowane godziny</p>
+      <p class="text-end text-nowrap">{gettext("Hours")}</p>
 
       <%= if @live_action == :archive do %>
         <p class="text-right text-nowrap">Data archiwizacji</p>
@@ -154,8 +154,11 @@
             </div>
         <% end %>
 
-        <p class="text-right">Wynagrodzenie</p>
+        <p class="text-end text-nowrap">{gettext("Gross")}</p>
+        <p class="text-end text-nowrap">{gettext("Net forecast")}</p>
       <% end %>
+      <span />
+      <p class="text-end text-nowrap">{gettext("Timesheet")}</p>
     </div>
 
     <%= if Enum.empty?(@employees) do %>
@@ -182,11 +185,11 @@
           cond do
             @view == :standard and @live_action == :index -> "col-span-3"
             @view == :standard and @live_action == :archive -> "col-span-4"
-            @view != :standard and @live_action == :index -> "col-span-5"
-            true -> "col-span-6"
+            @view != :standard and @live_action == :index -> "col-span-6"
+            true -> "col-span-7"
           end
         ]}>
-          <div class="flex items-center gap-4">
+          <div class="flex min-w-0 items-center gap-3">
             <.avatar class="size-8 shrink-0 ring-1 ring-greyButtonBg/50">
               <.avatar_image
                 :if={Map.get(employee.user.member.avatar_blob || %{}, :url)}
@@ -203,13 +206,20 @@
               <.link
                 kind="unstyled"
                 navigate={Navigation.employee_path(employee.user.id, %{miesiac: @selected_date})}
-                class="hover:underline"
+                class="min-w-0 truncate hover:underline"
+                title={employee.user.member.name || to_string(employee.user.email)}
               >
                 {employee.user.member.name || employee.user.email}
               </.link>
             <% else %>
               <span>{employee.user.member.name || employee.user.email}</span>
             <% end %>
+            <span
+              :if={@view != :standard and employee.payout_estimate}
+              class="shrink-0 rounded-sm bg-grey-100 px-1.5 py-0.5 text-xs/snug text-grey-700"
+            >
+              {PayoutEstimates.contract_label(employee.payout_estimate.variant)}
+            </span>
           </div>
 
           <p class="text-right">
@@ -246,15 +256,18 @@
                 </div>
             <% end %>
 
-            <p class="text-right font-medium">
-              {:PLN
-              |> Money.new(
-                employee.time_worked
-                |> Timetracker.seconds_to_hours()
-                |> Decimal.new()
-                |> Decimal.mult(employee.hourly_rate || 0)
-              )
-              |> Money.to_string!(fractional_digits: 0, currency_symbol: "PLN")}
+            <p class="text-end text-nowrap text-grey-700 tabular-nums">
+              {employee.monthly_gross}
+            </p>
+            <p
+              class="text-end font-medium text-nowrap text-turquoise-700 tabular-nums"
+              title={
+                if employee.payout_estimate,
+                  do: PayoutEstimates.variant_label(employee.payout_estimate.variant),
+                  else: gettext("Unknown contract type — only gross pay is shown")
+              }
+            >
+              {if employee.payout_estimate, do: employee.payout_estimate.amount, else: "—"}
             </p>
           <% end %>
 

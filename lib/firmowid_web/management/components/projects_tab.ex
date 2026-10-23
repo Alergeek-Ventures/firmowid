@@ -14,6 +14,7 @@ defmodule FirmowidWeb.Management.Components.ProjectsTab do
   alias Firmowid.Ash.Timetracker
   alias Firmowid.Ash.Timetracker.HoursRecord
   alias FirmowidWeb.Infrastructure.Utilities.TimeFormatter
+  alias FirmowidWeb.Payroll.Components.PayoutEstimates
 
   @impl true
   def mount(socket) do
@@ -70,7 +71,13 @@ defmodule FirmowidWeb.Management.Components.ProjectsTab do
     # 4. Salary as of this month
     before_date = Date.end_of_month(date)
 
-    salaries = Payroll.list_salaries!(%{user_id: user.id, active_at: before_date}, scope: scope)
+    salaries =
+      Payroll.list_salaries!(%{user_id: user.id, active_at: before_date},
+        load: [monthly_amount: [month: date], payout_estimates: [month: date]],
+        scope: scope
+      )
+
+    salary = List.first(salaries)
 
     salary_history = Payroll.list_salaries!(%{user_id: user.id}, scope: scope, load: [:ends_at])
 
@@ -82,16 +89,14 @@ defmodule FirmowidWeb.Management.Components.ProjectsTab do
         salary -> salary.hourly_rate
       end
 
-    # 6. Total time worked
-    total_time = sessions |> Enum.map(& &1.duration) |> Enum.sum()
-
     socket =
       socket
       |> assign(assigns)
       |> assign(:projects, projects)
       |> assign(:hourly_rate, hourly_rate)
+      |> assign(:monthly_gross, if(salary, do: salary.monthly_amount, else: Money.new!(:PLN, 0)))
+      |> assign(:payout_estimates, if(salary, do: salary.payout_estimates, else: []))
       |> assign_hours_records()
-      |> assign(:time_worked, total_time)
       |> assign(:salary_history, salary_history)
       |> assign(:editing_payout, false)
       |> assign(:payout_form, payout_form(hourly_rate, user.member.bank_account_number))
@@ -202,33 +207,8 @@ defmodule FirmowidWeb.Management.Components.ProjectsTab do
           </div>
         </.card>
 
-        <div class="flex h-full min-h-0 shrink-0 flex-col gap-4">
-          <.card>
-            <.card_header>
-              Podsumowanie miesiąca
-            </.card_header>
-            <div class="flex flex-col gap-4">
-              <.user_card_info label="Przepracowano">
-                <span class="font-medium text-turquoise-700">
-                  {Timetracker.seconds_to_hours(@time_worked)} godz.
-                </span>
-              </.user_card_info>
-              <.user_card_info label="Wynagrodzenie">
-                <span class="font-medium text-turquoise-700">
-                  {:PLN
-                  |> Money.new(
-                    Decimal.mult(
-                      @hourly_rate,
-                      Decimal.new(Timetracker.seconds_to_hours(@time_worked))
-                    )
-                  )
-                  |> Money.to_string!(no_fraction_if_integer: true, currency_symbol: "PLN")}
-                </span>
-              </.user_card_info>
-            </div>
-          </.card>
-
-          <.card gap_size="4">
+        <div class="flex min-h-0 shrink-0 flex-col gap-4 overflow-y-auto">
+          <.card :if={@hours_record} gap_size="4" class="shrink-0">
             <.card_header>
               Ewidencja
             </.card_header>
@@ -240,26 +220,27 @@ defmodule FirmowidWeb.Management.Components.ProjectsTab do
               />
             </div>
           </.card>
-          <div
-            :if={@hours_record_requests != [] || @previous_hours_records != []}
-            id="employee-hours-record-requests"
-            class="flex scrollbar-card min-h-0 flex-1 flex-col gap-4 overflow-y-auto contain-[size]"
+          <.card
+            :for={record <- @hours_record_requests}
+            gap_size="4"
+            class="shrink-0 border border-orange-700 contain-[inline-size]"
           >
-            <.card
-              :for={record <- @hours_record_requests}
-              gap_size="4"
-              class="min-h-0 flex-1 border border-orange-700"
-            >
-              <.change_request
-                record={record}
-                reviewable={@scope.actor.member.role == :admin}
-                target={@myself}
-              />
-            </.card>
-            <.card :if={@previous_hours_records != []} gap_size="4" class="shrink-0">
-              <.submission_history records={@previous_hours_records} user={@user} />
-            </.card>
-          </div>
+            <.change_request
+              record={record}
+              reviewable={@scope.actor.member.role == :admin}
+              target={@myself}
+            />
+          </.card>
+          <.card class="shrink-0">
+            <PayoutEstimates.summary
+              estimates={@payout_estimates}
+              gross_amount={@monthly_gross}
+              subtitle={TimeFormatter.format_date(@date, "LLLL yyyy")}
+            />
+          </.card>
+          <.card :if={@previous_hours_records != []} gap_size="4" class="shrink-0">
+            <.submission_history records={@previous_hours_records} user={@user} />
+          </.card>
         </div>
       </div>
 
@@ -368,9 +349,25 @@ defmodule FirmowidWeb.Management.Components.ProjectsTab do
       {:ok, salary} ->
         history = Payroll.list_salaries!(%{user_id: user.id}, scope: scope, load: [:ends_at])
 
+        active =
+          %{user_id: user.id, active_at: Date.end_of_month(socket.assigns.date)}
+          |> Payroll.list_salaries!(
+            load: [
+              monthly_amount: [month: socket.assigns.date],
+              payout_estimates: [month: socket.assigns.date]
+            ],
+            scope: scope
+          )
+          |> List.first()
+
         socket
         |> assign(:hourly_rate, salary.hourly_rate)
         |> assign(:salary_history, history)
+        |> assign(
+          :monthly_gross,
+          if(active, do: active.monthly_amount, else: Money.new!(:PLN, 0))
+        )
+        |> assign(:payout_estimates, if(active, do: active.payout_estimates, else: []))
 
       {:error, _} ->
         put_flash(socket, :error, "Nie udało się zapisać stawki. Spróbuj ponownie.")

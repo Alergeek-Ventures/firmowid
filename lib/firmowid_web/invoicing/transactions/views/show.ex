@@ -92,6 +92,7 @@ defmodule FirmowidWeb.Invoicing.Transactions.Views.Show do
               <SalaryComponents.confirmation
                 transaction={@transaction}
                 expected_amount={@expected_salary_amount}
+                payout_variant={@salary_payout_variant}
                 admin?={@salary_admin?}
               />
             <% @transaction.reconciliation_status == :skipped -> %>
@@ -236,7 +237,7 @@ defmodule FirmowidWeb.Invoicing.Transactions.Views.Show do
   defp assign_transaction(socket, transaction) do
     scope = socket.assigns.ash_scope
 
-    expected_amount =
+    estimate =
       if socket.assigns.salary_admin? and transaction.has_salary? do
         salary =
           %{
@@ -244,12 +245,21 @@ defmodule FirmowidWeb.Invoicing.Transactions.Views.Show do
             active_at: Date.end_of_month(transaction.salary_month)
           }
           |> Payroll.list_salaries!(
-            load: [monthly_amount: [month: transaction.salary_month]],
+            load: [
+              monthly_amount: [month: transaction.salary_month],
+              payout_estimates: [month: transaction.salary_month]
+            ],
             scope: scope
           )
           |> List.first()
 
-        if salary, do: salary.monthly_amount
+        if salary do
+          Firmowid.Ash.Payroll.UserSalary.Calculations.PayoutEstimates.closest(
+            salary.payout_estimates,
+            transaction.amount
+          ) ||
+            %{amount: salary.monthly_amount, variant: nil}
+        end
       end
 
     salary_suggestions =
@@ -261,7 +271,8 @@ defmodule FirmowidWeb.Invoicing.Transactions.Views.Show do
 
     socket
     |> assign(:transaction, transaction)
-    |> assign(:expected_salary_amount, expected_amount)
+    |> assign(:expected_salary_amount, if(estimate, do: estimate.amount))
+    |> assign(:salary_payout_variant, if(estimate, do: estimate.variant))
     |> assign(
       :invoice_suggestions,
       InvoiceMatching.get_potential_invoices_for_transaction(transaction, scope)

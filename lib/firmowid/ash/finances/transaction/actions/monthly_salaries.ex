@@ -27,7 +27,7 @@ defmodule Firmowid.Ash.Finances.Transaction.Actions.MonthlySalaries do
     {:ok,
      %{active_at: Date.end_of_month(month), user_id: input.arguments[:user_id]}
      |> Payroll.list_salaries!(
-       load: [member: :user, monthly_amount: [month: month]],
+       load: [member: :user, monthly_amount: [month: month], payout_estimates: [month: month]],
        query: [filter: [member: [archived_at: [is_nil: true]]]],
        scope: scope
      )
@@ -39,6 +39,7 @@ defmodule Firmowid.Ash.Finances.Transaction.Actions.MonthlySalaries do
          month: month,
          hourly_rate: salary.hourly_rate,
          expected_amount: salary.monthly_amount,
+         payout_estimates: salary.payout_estimates,
          hours_submission_status: hours_status(Map.get(hours_statuses, user.id, [])),
          connected_transaction_id: Map.get(transaction_ids, user.id)
        }

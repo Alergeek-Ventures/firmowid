@@ -6,10 +6,11 @@ defmodule Firmowid.Ash.Finances.Transaction.Actions.SalarySuggestions do
   alias Firmowid.Ash.Core.Member
   alias Firmowid.Ash.Finances
   alias Firmowid.Ash.Payroll
+  alias Firmowid.Ash.Payroll.UserSalary.Calculations.PayoutEstimates
   alias Firmowid.Ash.Scope
   alias Firmowid.Ash.Timetracker
 
-  @minimum_tolerance Decimal.new(300)
+  @minimum_tolerance Decimal.new(1000)
   @relative_tolerance Decimal.new("0.20")
   @lookback_months 6
   @partial_name_similarity 0.9
@@ -79,7 +80,7 @@ defmodule Firmowid.Ash.Finances.Transaction.Actions.SalarySuggestions do
     Enum.flat_map(months, fn month ->
       %{active_at: Date.end_of_month(month), user_id: user_id}
       |> Payroll.list_salaries!(
-        load: [member: :user, monthly_amount: [month: month]],
+        load: [member: :user, monthly_amount: [month: month], payout_estimates: [month: month]],
         query: [filter: [member: [archived_at: [is_nil: true]]]],
         scope: scope
       )
@@ -126,6 +127,9 @@ defmodule Firmowid.Ash.Finances.Transaction.Actions.SalarySuggestions do
     |> Enum.sort(fn {a_name_rank, a}, {b_name_rank, b} ->
       a_priority = {a_name_rank, a.month == expected_month}
       b_priority = {b_name_rank, b.month == expected_month}
+
+      # Recipient identity is an absolute priority, not a small score bonus:
+      # neither an exact amount nor the preferred month can outrank a full name.
 
       if a_priority == b_priority do
         case Decimal.compare(Money.to_decimal(a.difference), Money.to_decimal(b.difference)) do
@@ -185,7 +189,9 @@ defmodule Firmowid.Ash.Finances.Transaction.Actions.SalarySuggestions do
   defp expected_salary_month(date), do: Date.beginning_of_month(date)
 
   defp suggestion(%{member: %{user: user}} = salary, month, amount, recipient_parts) do
-    expected = Money.to_decimal(salary.monthly_amount)
+    estimate = PayoutEstimates.closest(salary.payout_estimates, Money.new!(:PLN, amount))
+    expected_amount = if estimate, do: estimate.amount, else: salary.monthly_amount
+    expected = Money.to_decimal(expected_amount)
     difference = Decimal.abs(Decimal.sub(amount, expected))
     tolerance = Decimal.max(@minimum_tolerance, Decimal.mult(expected, @relative_tolerance))
 
@@ -196,7 +202,8 @@ defmodule Firmowid.Ash.Finances.Transaction.Actions.SalarySuggestions do
            user_id: user.id,
            name: salary.member.name || to_string(user.email),
            month: month,
-           expected_amount: salary.monthly_amount,
+           expected_amount: expected_amount,
+           payout_variant: if(estimate, do: estimate.variant),
            difference: Money.new!(:PLN, difference)
          }}
       ]
