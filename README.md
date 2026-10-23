@@ -75,18 +75,14 @@ nie względem nazwy artefaktu. Katalog jest kompilowany podczas builda; aplikacj
 nie wywołuje Accent w runtime.
 
 PR-y wymagają tylko sekretu `ACCENT_API_KEY` z uprawnieniami odczytu/eksportu.
-Należy skonfigurować istniejący token projektu tylko do odczytu zarówno w
-GitHub Actions, jak i osobno w Dependabot secrets tego repozytorium. Workflowy
-uruchamiane przez Dependabota nie otrzymują sekretów Actions, również po ręcznym
-ponowieniu. `ACCENT_SNAPSHOT_API_KEY` (odczyt/eksport/`create_version`, bez edycji
-tłumaczeń) jest używany wyłącznie na `main` i nie jest udostępniany Dependabotowi.
-Stare PR-y wymagające tego sekretu trzeba zaktualizować do nowych workflowów;
-nie przywracamy im klucza zapisu.
+GitHub Actions i Dependabot mają osobne tokeny projektu. Workflowy uruchamiane
+przez Dependabota nie otrzymują sekretów Actions, również po ręcznym ponowieniu.
+`ACCENT_SNAPSHOT_API_KEY` (odczyt/eksport/`create_version`, bez edycji tłumaczeń)
+jest używany wyłącznie na `main` i nie jest udostępniany Dependabotowi. Stare PR-y
+wymagające tego sekretu trzeba zaktualizować do nowych workflowów; nie przywracamy
+im klucza zapisu.
 
-Istniejący Infisical `/app` `ACCENT_API_KEY` jest tylko do odczytu. Klucz
-`ACCENT_API_KEY` z folderu `/dev` w środowisku Infisical `dev` służy do pracy
-deweloperskiej/administracji Accent i nie może być kopiowany do CI. Bot nie
-otrzymuje sekretów wdrożeniowych ani klucza administracyjnego.
+Sekrety CI utrzymujemy w Infisicalu.
 
 ## CI: cache obrazów Dockera
 
