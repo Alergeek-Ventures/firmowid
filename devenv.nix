@@ -94,6 +94,7 @@ in
     pkg-config
     vips
     qpdf
+    libxslt
     cacert
 
     # For dev.up.
