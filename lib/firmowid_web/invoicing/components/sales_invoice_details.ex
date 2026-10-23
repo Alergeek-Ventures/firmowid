@@ -6,6 +6,7 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
   import FirmowidUI.Components.Link
   import FirmowidWeb.DesignSystem.Components.CoreComponents, except: [button: 1]
   import FirmowidWeb.DesignSystem.Components.InvoicingBadges
+  import FirmowidWeb.Infrastructure.Flags, only: [flag_enabled?: 2]
   import FirmowidWeb.Invoicing.Components.StatusButton
   import Phoenix.Component, except: [link: 1]
 
@@ -88,7 +89,7 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
       |> Map.get(:name, "")
 
     internal_notes =
-      [invoice | invoice.corrections]
+      invoice.corrections
       |> Enum.map(& &1.internal_note)
       |> Enum.reject(&is_nil/1)
 
@@ -388,6 +389,12 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
             />
           <% end %>
 
+          <InvoiceDetails.internal_note_form
+            internal_note={@invoice.internal_note}
+            can_write={@can_write_invoicing?}
+            target={@myself}
+          />
+
           <%= if @internal_notes != [] do %>
             <InvoiceDetails.invoice_notes internal_notes={@internal_notes} />
           <% end %>
@@ -443,6 +450,14 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
                 can_write={@can_write_invoicing?}
               />
           <% end %>
+          <.live_component
+            :if={flag_enabled?(:analysis_dashboard, assigns)}
+            module={FirmowidWeb.Analysis.Components.EntryCategories}
+            id="invoice-categories"
+            entry={@invoice}
+            scope={@scope}
+            feature_flags={@feature_flags}
+          />
         </InvoiceDetails.main>
       </div>
     </div>
@@ -456,6 +471,19 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
 
   def handle_event("hide_timeline", _params, socket) do
     {:noreply, assign(socket, show_timeline: false)}
+  end
+
+  def handle_event("save_internal_note", %{"internal_note" => note}, socket) do
+    updated_invoice =
+      SalesInvoice.update_internal_note!(socket.assigns.invoice, note, scope: socket.assigns.scope)
+
+    invoice = %{socket.assigns.invoice | internal_note: updated_invoice.internal_note}
+
+    {:noreply,
+     assign(socket,
+       invoice: invoice,
+       invoices_for_preview: Enum.reverse([invoice | invoice.corrections])
+     )}
   end
 
   defp show_timeline_button?(submission_info), do: SubmissionInfo.attempted?(submission_info)

@@ -67,6 +67,7 @@ defmodule FirmowidWeb.Invoicing.CostInvoices.Views.Show do
       current_user={@current_user}
       return_to={@return_to}
       scope={@ash_scope}
+      feature_flags={@feature_flags}
     />
     """
   end

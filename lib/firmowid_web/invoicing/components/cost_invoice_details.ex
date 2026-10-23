@@ -6,6 +6,7 @@ defmodule FirmowidWeb.Invoicing.Components.CostInvoiceDetails do
   import FirmowidUI.Components.Link
   import FirmowidWeb.DesignSystem.Components.CoreComponents, except: [button: 1]
   import FirmowidWeb.DesignSystem.Components.InvoicingBadges
+  import FirmowidWeb.Infrastructure.Flags, only: [flag_enabled?: 2]
   import FirmowidWeb.Invoicing.Components.StatusButton
   import Phoenix.Component, except: [link: 1]
 
@@ -214,39 +215,11 @@ defmodule FirmowidWeb.Invoicing.Components.CostInvoiceDetails do
                 amount={@invoice.effective_amount}
               />
 
-              <div class="group flex flex-col gap-2 py-2 pl-1">
-                <label
-                  class="text-sm/snug text-nowrap text-darkGrey"
-                  for="internal-note-input"
-                >
-                  Komentarz
-                </label>
-
-                <.form
-                  id="internal-note-form"
-                  for={%{}}
-                  phx-target={@myself}
-                  as={:invoice_internal_note}
-                  phx-change="save_internal_note"
-                >
-                  <.hidden_input>
-                    <:input>
-                      <textarea
-                        id="internal-note-input"
-                        name="internal_note"
-                        class={text_like_input_styles(["w-full", "resize-none", "leading-snug"])}
-                        style="field-sizing: content; min-height: 1.5rem;"
-                        placeholder="Komentarz do faktury widoczny tylko dla Twojej firmy"
-                        phx-focus={JS.remove_attribute("readonly")}
-                        phx-click={JS.remove_attribute("readonly")}
-                        phx-blur={JS.set_attribute({"readonly", true})}
-                        phx-debounce="300"
-                        readonly
-                      ><%= @invoice.internal_note %></textarea>
-                    </:input>
-                  </.hidden_input>
-                </.form>
-              </div>
+              <InvoiceDetails.internal_note_form
+                internal_note={@invoice.internal_note}
+                can_write={@can_write_invoicing?}
+                target={@myself}
+              />
             <% end %>
           </div>
 
@@ -288,6 +261,14 @@ defmodule FirmowidWeb.Invoicing.Components.CostInvoiceDetails do
                 can_write={@can_write_invoicing?}
               />
           <% end %>
+          <.live_component
+            :if={flag_enabled?(:analysis_dashboard, assigns)}
+            module={FirmowidWeb.Analysis.Components.EntryCategories}
+            id="invoice-categories"
+            entry={@invoice}
+            scope={@scope}
+            feature_flags={@feature_flags}
+          />
         </InvoiceDetails.main>
       </div>
     </div>

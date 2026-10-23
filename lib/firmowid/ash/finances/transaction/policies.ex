@@ -33,9 +33,9 @@ defmodule Firmowid.Ash.Finances.Transaction.Policies do
       authorize_if always()
     end
 
-    # :accountant+: skipping and restoring transactions for matching
+    # :accountant+: internal notes, skipping and restoring transactions for matching
     policy [
-      action([:set_skip_invoicing, :restore_for_matching]),
+      action([:set_skip_invoicing, :restore_for_matching, :update_internal_note]),
       {AtLeastRole, role: :accountant}
     ] do
       authorize_if always()

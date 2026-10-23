@@ -35,11 +35,26 @@ defmodule Firmowid.Ash.Finances do
         :creditor_name,
         :debtor_name,
         :remittance_information_unstructured,
+        :internal_note,
         :salary_user_id,
         :salary_month
       ]
 
       load [:direction, :counterparty_display_name, :reconciliation_status]
+    end
+
+    tool :update_transaction_internal_note, Transaction, :update_internal_note do
+      annotations title: "Update bank transaction internal note",
+                  read_only_hint: false,
+                  destructive_hint: true,
+                  idempotent_hint: true,
+                  open_world_hint: false
+
+      description "Replace the bank transaction's internal note only when the user asks. Pass null to clear it. " <>
+                    "Maximum 10000 characters. Does not change bank data, the transfer title or invoice/salary matches. " <>
+                    "Requires an accountant or administrator."
+
+      select [:id, :internal_note]
     end
 
     tool :suggest_transaction_invoices, Transaction, :invoice_suggestions do
@@ -158,6 +173,11 @@ defmodule Firmowid.Ash.Finances do
       define :list_transactions, action: :list
       define :upsert_transaction_from_sync, action: :upsert_from_sync
       define :set_transaction_skip_invoicing, action: :set_skip_invoicing
+
+      define :update_transaction_internal_note,
+        action: :update_internal_note,
+        args: [:internal_note]
+
       define :restore_transaction_for_matching, action: :restore_for_matching
       define :list_monthly_salaries, action: :monthly_salaries, args: [:month]
       define :connect_transaction_salary, action: :connect_salary

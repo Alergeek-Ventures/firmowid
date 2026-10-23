@@ -170,6 +170,37 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceDetails do
 
   defp refund?(_assigns), do: false
 
+  attr :internal_note, :string, default: nil
+  attr :can_write, :boolean, default: false
+  attr :target, :any, default: nil
+
+  @doc "Renders an autosaving company-only comment, read-only without write permission."
+  @spec internal_note_form(map()) :: Phoenix.LiveView.Rendered.t()
+  def internal_note_form(assigns) do
+    ~H"""
+    <.form
+      id="internal-note-form"
+      for={%{}}
+      phx-target={@target}
+      phx-change="save_internal_note"
+      class="flex flex-col gap-2 py-2"
+    >
+      <label for="internal-note-input" class="text-sm/snug text-darkGrey">
+        {gettext("Comment")}
+      </label>
+      <textarea
+        id="internal-note-input"
+        name="internal_note"
+        rows="3"
+        maxlength="10000"
+        readonly={not @can_write}
+        phx-debounce="300"
+        class="w-full resize-y rounded-lg border border-grey-200 px-3 py-2 text-sm text-darkGrey focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-turquoise-500"
+      >{@internal_note || ""}</textarea>
+    </.form>
+    """
+  end
+
   attr :internal_notes, :list, required: true
 
   def invoice_notes(assigns) do

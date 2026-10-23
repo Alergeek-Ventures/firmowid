@@ -116,6 +116,18 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
   postgres do
     table "sales_invoices"
     repo Firmowid.Repo
+
+    custom_statements do
+      statement :allow_pending_sales_invoice_entity_tags do
+        up "DROP TRIGGER sales_invoice_entity_tag_taggable_trigger ON sales_invoice_entity_tags;"
+
+        down """
+        CREATE TRIGGER sales_invoice_entity_tag_taggable_trigger
+        BEFORE INSERT ON sales_invoice_entity_tags
+        FOR EACH ROW EXECUTE FUNCTION check_sales_invoice_entity_tag_taggable();
+        """
+      end
+    end
   end
 
   events do
@@ -165,6 +177,7 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
     define :destroy, action: :destroy
     define :cancel, args: [:invoice_id], action: :cancel
     define :toggle_skip, action: :toggle_skip
+    define :update_internal_note, args: [:internal_note], action: :update_internal_note
     define :generate_share_token, action: :generate_share_token
     define :match_pending_invoices, args: [:signal]
     define :dispatch_ksef_confirmation, args: [:signal]
@@ -799,6 +812,15 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
       end
     end
 
+    update :update_internal_note do
+      description "Update the internal note without changing the invoice or its KSeF submission."
+      accept [:internal_note]
+
+      validate string_length(:internal_note, max: 10_000) do
+        where present(:internal_note)
+      end
+    end
+
     update :toggle_skip do
       description "Toggle whether this sales invoice is skipped during matching workflows."
       require_atomic? false
@@ -1293,6 +1315,7 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
     publish :return_to_draft, ["updated", :_tenant]
     publish :destroy, ["destroyed", :_tenant]
     publish :toggle_skip, ["updated", :_tenant]
+    publish :update_internal_note, ["updated", :_tenant]
     publish :generate_share_token, ["updated", :_tenant]
     publish :attach_suggested_counterparty, ["updated", :_tenant]
     publish :connect_transactions, ["updated", :_tenant]

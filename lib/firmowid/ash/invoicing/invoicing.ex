@@ -40,6 +40,7 @@ defmodule Firmowid.Ash.Invoicing do
         :buyer_surname,
         :buyer_display_name,
         :currency,
+        :internal_note,
         :ksef_number,
         :ksef_invoice_kind,
         :corrected_invoice_id
@@ -67,6 +68,7 @@ defmodule Firmowid.Ash.Invoicing do
         :seller,
         :seller_display_name,
         :amount,
+        :internal_note,
         :ksef_number,
         :invoice_type
       ]
@@ -87,6 +89,7 @@ defmodule Firmowid.Ash.Invoicing do
       action_parameters []
 
       load [
+        :internal_note,
         :amount,
         :net_value,
         :vat_value,
@@ -167,6 +170,33 @@ defmodule Firmowid.Ash.Invoicing do
                     "To issue a draft, call preview_sales_invoice with its invoice_id instead."
 
       load [:amount, sales_invoice_items: [:net_value, :vat_value, :gross_value]]
+    end
+
+    tool :update_sales_invoice_internal_note, SalesInvoice, :update_internal_note do
+      annotations title: "Update sales invoice internal note",
+                  read_only_hint: false,
+                  destructive_hint: true,
+                  idempotent_hint: true,
+                  open_world_hint: false
+
+      description "Replace the sales invoice's internal note only when the user asks. Pass null to clear it. " <>
+                    "Maximum 10000 characters. Available for drafts and KSeF-submitted invoices; does not change " <>
+                    "the issued document or send the note to KSeF or the buyer. Requires an accountant or administrator."
+
+      select [:id, :internal_note]
+    end
+
+    tool :update_cost_invoice_internal_note, CostInvoice, :update_internal_note do
+      annotations title: "Update cost invoice internal note",
+                  read_only_hint: false,
+                  destructive_hint: true,
+                  idempotent_hint: true,
+                  open_world_hint: false
+
+      description "Replace the cost invoice's internal note only when the user asks. Pass null to clear it. " <>
+                    "Maximum 10000 characters. Does not change the source document. Requires an accountant or administrator."
+
+      select [:id, :internal_note]
     end
 
     tool :suggest_sales_invoice_transactions, SalesInvoice, :transaction_suggestions do
@@ -336,6 +366,11 @@ defmodule Firmowid.Ash.Invoicing do
       define :destroy_sales_invoice, action: :destroy
       define :cancel_sales_invoice, action: :cancel, args: [:invoice_id]
       define :toggle_sales_invoice_skip, action: :toggle_skip
+
+      define :update_sales_invoice_internal_note,
+        action: :update_internal_note,
+        args: [:internal_note]
+
       define :generate_sales_invoice_share_token, action: :generate_share_token
       define :start_sales_invoice_ksef_submission, action: :start_ksef_submission
       define :record_sales_invoice_ksef_submission, action: :record_ksef_submission
