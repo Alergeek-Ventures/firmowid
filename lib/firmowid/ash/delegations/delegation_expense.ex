@@ -9,6 +9,7 @@ defmodule Firmowid.Ash.Delegations.DelegationExpense do
 
   alias Firmowid.Ash.Blobs.Blob
   alias Firmowid.Ash.Checks.ActorRole
+  alias Firmowid.Ash.Checks.SystemActorRole
   alias Firmowid.Ash.Delegations.Changes.CreateExpenseBlob
   alias Firmowid.Ash.Delegations.Changes.UpdateDetectedDelegationDates
   alias Firmowid.Ash.Delegations.DelegationExpense.Details
@@ -155,6 +156,10 @@ defmodule Firmowid.Ash.Delegations.DelegationExpense do
   end
 
   policies do
+    bypass [{SystemActorRole, roles: [:avatar_cleanup]}, action(:read)] do
+      authorize_if expr(blob_id == ^actor(:blob_id) or statement_blob_id == ^actor(:blob_id))
+    end
+
     bypass {ActorRole, role: :admin} do
       authorize_if always()
     end

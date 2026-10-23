@@ -56,6 +56,13 @@ defmodule Firmowid.Ash.Invoicing.WizardState.Item do
   end
 
   policies do
+    bypass [
+      {Firmowid.Ash.Checks.SystemActorRole, roles: [:organization_cleanup]},
+      action([:read, :destroy])
+    ] do
+      authorize_if expr(not is_nil(^actor(:org_id)) and organization_id == ^actor(:org_id))
+    end
+
     bypass {ActorRole, role: :admin} do
       authorize_if always()
     end

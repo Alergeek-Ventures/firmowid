@@ -47,12 +47,30 @@ defmodule FirmowidMcp.Invoicing.Privacy do
     end)
   end
 
+  # AshAi coerces lists into sort strings; enforce the declared selector type.
   defp contains_pesel?(value) when is_map(value) do
-    Enum.any?(value, fn {key, value} -> key in @fields or contains_pesel?(value) end)
+    Enum.any?(value, fn
+      {"field", field} when is_binary(field) -> pesel_selector?(field)
+      {"field", _field} -> true
+      {key, value} -> key in @fields or contains_pesel?(value)
+    end)
   end
 
   defp contains_pesel?(value) when is_list(value), do: Enum.any?(value, &contains_pesel?/1)
   defp contains_pesel?(_value), do: false
+
+  defp pesel_selector?(field) do
+    field
+    |> String.split(",")
+    |> Enum.any?(fn component ->
+      component
+      |> String.trim_leading("+")
+      |> String.trim_leading("-")
+      |> String.split(".", trim: true)
+      |> List.last()
+      |> Kernel.in(@fields)
+    end)
+  end
 
   defp redact(value) when is_map(value) do
     value |> Map.drop(@fields) |> Map.new(fn {key, value} -> {key, redact(value)} end)

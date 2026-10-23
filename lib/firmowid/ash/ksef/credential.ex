@@ -379,6 +379,15 @@ defmodule Firmowid.Ash.Ksef.Credential do
 
   changes do
     change {SetCredentialExpiration, []}
+
+    change fn changeset, _context ->
+      if changeset.action.name in [:supersede_certificate, :recover_certificate_refresh] do
+        # Recheck the generation in the database: KSeF calls may outlive a refresh.
+        Ash.Changeset.filter(changeset, updated_at: changeset.data.updated_at)
+      else
+        changeset
+      end
+    end
   end
 
   attributes do

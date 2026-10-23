@@ -282,8 +282,8 @@ defmodule Firmowid.Ash.Timetracker.LeaveRequest do
       authorize_if always()
     end
 
-    bypass {SystemActorRole, roles: [:leave_notifier]} do
-      authorize_if action_type(:read)
+    bypass [{SystemActorRole, roles: [:leave_notifier, :avatar_cleanup]}, action_type(:read)] do
+      authorize_if expr(^actor(:role) == :leave_notifier or blob_id == ^actor(:blob_id))
     end
 
     policy action(:create) do

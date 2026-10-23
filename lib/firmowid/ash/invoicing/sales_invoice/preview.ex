@@ -11,6 +11,52 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice.Preview do
     :is_draft,
     :is_confirmed
   ]
+  @review_fields [
+    :invoice_type,
+    :invoice_number,
+    :issue_date,
+    :sale_date,
+    :due_date,
+    :currency,
+    :payment_method,
+    :should_send_emails,
+    :counterparty_id,
+    :seller_nip,
+    :seller_display_name,
+    :seller_address,
+    :seller_account_number,
+    :buyer_type,
+    :buyer_id,
+    :buyer_full_name,
+    :buyer_given_name,
+    :buyer_surname,
+    :buyer_pesel,
+    :buyer_display_name,
+    :buyer_address,
+    :buyer_country,
+    :is_reverse_charge,
+    :vat_exemption_type,
+    :vat_exemption_basis,
+    :invoice_note,
+    :internal_note,
+    :correction_reason,
+    :correction_type
+  ]
+
+  @doc "Projects the reviewed document and delivery choice for confirmation and finalization."
+  @spec review_snapshot(struct()) :: map()
+  def review_snapshot(invoice) do
+    items =
+      Enum.map(
+        invoice.sales_invoice_items,
+        &Map.take(&1, [:index, :name, :quantity, :unit, :unit_price, :vat_rate, :gtu])
+      )
+
+    invoice
+    |> Map.take(@review_fields)
+    |> Map.put(:items, items)
+    |> Map.put(:reference_invoice, reference_snapshot(invoice.reference_invoice))
+  end
 
   @doc "Materializes prepared attributes and items without executing persistence or submission hooks."
   @spec from_changeset(Ash.Changeset.t(), keyword()) :: {:ok, struct()} | {:error, term()}
@@ -37,6 +83,21 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice.Preview do
       |> Enum.reduce(invoice, &Ash.Resource.unload(&2, &1))
       |> Ash.load(@invoice_calculations, Keyword.put(opts, :reuse_values?, true))
     end
+  end
+
+  defp reference_snapshot(nil), do: nil
+  defp reference_snapshot(%Ash.NotLoaded{}), do: nil
+
+  defp reference_snapshot(invoice) when is_map(invoice) do
+    invoice
+    |> Map.take([:id, :invoice_number, :ksef_number, :amount])
+    |> Map.put(
+      :sales_invoice_items,
+      Enum.map(
+        invoice.sales_invoice_items,
+        &Map.take(&1, [:index, :name, :quantity, :unit, :unit_price, :vat_rate, :gtu])
+      )
+    )
   end
 
   defp items(changeset, invoice, opts) do

@@ -67,6 +67,47 @@ defmodule Firmowid.Oauth2ServerTest do
     assert {:error, :revoked} = exchange_refresh(rotated.refresh_token, client)
   end
 
+  test "authorization rejects ambiguous loopback redirect authorities", %{client: client} do
+    Ash.Seed.update!(client, %{redirect_uris: ["http://127.0.0.1/callback"]})
+
+    for redirect_uri <- [
+          "http://attacker.invalid\\@127.0.0.1/callback",
+          "http://attacker.invalid\\@localhost/callback",
+          "http://127.0.0.1/callback#fragment"
+        ] do
+      params = %{
+        "client_id" => client.id,
+        "redirect_uri" => redirect_uri,
+        "response_type" => "unsupported"
+      }
+
+      conn = get(build_conn(), "/oauth/authorize?" <> URI.encode_query(params))
+      assert conn.status == 400
+      assert get_resp_header(conn, "location") == []
+    end
+  end
+
+  test "authorization still allows ephemeral loopback ports", %{client: client} do
+    Ash.Seed.update!(client, %{
+      redirect_uris: ["http://127.0.0.1/callback", "http://[::1]/callback"]
+    })
+
+    for host <- ["127.0.0.1", "localhost", "[::1]"] do
+      params = %{
+        "client_id" => client.id,
+        "redirect_uri" => "http://#{host}:54321/callback",
+        "response_type" => "unsupported"
+      }
+
+      conn = get(build_conn(), "/oauth/authorize?" <> URI.encode_query(params))
+      assert conn.status == 302
+      [location] = get_resp_header(conn, "location")
+
+      assert location =~
+               "http://#{if host == "localhost", do: "127.0.0.1", else: host}:54321/callback?"
+    end
+  end
+
   test "an account without an organization gets no issuance or consent, even with a stale user",
        context do
     %{user: user, client: client, validated: validated} = context

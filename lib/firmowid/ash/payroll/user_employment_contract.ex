@@ -273,6 +273,10 @@ defmodule Firmowid.Ash.Payroll.UserEmploymentContract do
   end
 
   policies do
+    bypass [{SystemActorRole, roles: [:avatar_cleanup]}, action(:read)] do
+      authorize_if expr(blob_id == ^actor(:blob_id))
+    end
+
     bypass [
       {SystemActorRole, roles: [:organization_cleanup]},
       action([:list, :destroy])

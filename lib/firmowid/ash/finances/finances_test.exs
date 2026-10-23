@@ -5,10 +5,12 @@ defmodule Firmowid.Ash.Finances.FinancesTest do
   import Firmowid.AccountsFixtures
   import Firmowid.FinancesFixtures
 
+  alias Ecto.Adapters.SQL.Sandbox
   alias Firmowid.Ash.Finances
   alias Firmowid.Ash.Finances.Transaction
   alias Firmowid.Ash.Invoicing.CostInvoice
   alias Firmowid.Ash.Invoicing.CostInvoiceTransaction
+  alias Firmowid.Ash.Invoicing.SalesInvoice
   alias Firmowid.Ash.Scope
   alias Firmowid.Ash.SystemActor
 
@@ -101,6 +103,154 @@ defmodule Firmowid.Ash.Finances.FinancesTest do
       skipped_tx: skipped_tx,
       matched_tx: matched_tx
     }
+  end
+
+  for invoice_resource <- [CostInvoice, SalesInvoice] do
+    @tag capture_log: true
+    test "does not reconcile a salary transfer twice while connecting #{inspect(invoice_resource)}" do
+      resource = unquote(invoice_resource)
+      parent = self()
+
+      Sandbox.unboxed_run(Repo, fn ->
+        admin = admin_fixture()
+        scope = Scope.new!(admin, admin.member.organization_id)
+        accountant = user_fixture(%{organization_id: scope.tenant, role: :accountant})
+        accountant_scope = Scope.new!(accountant, scope.tenant)
+        bank_account = bank_account_fixture!(admin)
+
+        on_exit(fn ->
+          Sandbox.unboxed_run(Repo, fn ->
+            assert {:ok, :ok} =
+                     Repo.transaction(fn ->
+                       :ok = Firmowid.Ash.Core.destroy_user_in_transaction(admin, actor: admin)
+                       Firmowid.Ash.Core.User.destroy!(accountant, authorize?: false)
+                     end)
+          end)
+        end)
+
+        Ash.Seed.seed!(Firmowid.Ash.Payroll.UserSalary, %{
+          organization_id: scope.tenant,
+          member_id: admin.member.id,
+          hourly_rate: Decimal.new(100),
+          starts_at: ~U[2025-01-01 00:00:00Z]
+        })
+
+        project =
+          Ash.Seed.seed!(Firmowid.Ash.Timetracker.Project, %{
+            name: "Salary hours",
+            organization_id: scope.tenant
+          })
+
+        Ash.Seed.seed!(Firmowid.Ash.Timetracker.Session, %{
+          organization_id: scope.tenant,
+          member_id: admin.member.id,
+          project_id: project.id,
+          title: "Salary hours",
+          start_datetime: ~U[2025-12-01 09:00:00Z],
+          end_datetime: ~U[2025-12-01 10:00:00Z]
+        })
+
+        transaction =
+          Ash.Seed.seed!(Transaction, %{
+            organization_id: scope.tenant,
+            bank_account_id: bank_account.id,
+            debtor_account: bank_account.iban,
+            creditor_account: "PL999",
+            amount: Money.new!(:PLN, -100),
+            booking_date: ~D[2026-01-10],
+            value_date: ~D[2026-01-10]
+          })
+
+        invoice_attrs = %{
+          organization_id: scope.tenant,
+          issue_date: ~D[2026-01-01],
+          sale_date: ~D[2026-01-01],
+          due_date: ~D[2026-01-20]
+        }
+
+        invoice = Ash.Seed.seed!(resource, concurrency_invoice_attrs(resource, invoice_attrs))
+
+        connecting =
+          Task.async(fn ->
+            Sandbox.unboxed_run(Repo, fn ->
+              invoice
+              |> Ash.Changeset.for_update(
+                :connect_transactions,
+                %{transaction_ids: [transaction.id]},
+                scope: accountant_scope
+              )
+              |> Ash.Changeset.before_action(fn changeset ->
+                %{rows: [[backend_pid]]} = Repo.query!("SELECT pg_backend_pid()")
+                send(parent, {:invoice_eligible, self(), backend_pid})
+
+                receive do
+                  :continue -> changeset
+                after
+                  10_000 -> raise "invoice connection barrier timed out"
+                end
+              end)
+              |> Ash.update(scope: accountant_scope)
+            end)
+          end)
+
+        assert_receive {:invoice_eligible, connecting_pid, invoice_backend}, 10_000
+
+        salary =
+          Task.async(fn ->
+            Sandbox.unboxed_run(Repo, fn ->
+              %{rows: [[backend_pid]]} = Repo.query!("SELECT pg_backend_pid()")
+              send(parent, {:salary_backend, backend_pid})
+
+              Finances.connect_transaction_salary(
+                transaction,
+                %{salary_user_id: admin.id, salary_month: ~D[2025-12-01]},
+                scope: scope
+              )
+            end)
+          end)
+
+        assert_receive {:salary_backend, backend_pid}, 10_000
+        refute backend_pid == invoice_backend
+        salary_state = await_salary_assignment(salary, backend_pid, 2_000)
+        send(connecting_pid, :continue)
+        assert {:ok, _invoice} = Task.await(connecting, 10_000)
+
+        salary_result =
+          case salary_state do
+            :blocked -> Task.await(salary, 10_000)
+            {:completed, result} -> result
+          end
+
+        persisted =
+          Finances.get_transaction!(transaction.id,
+            load: [:cost_invoices, :sales_invoices],
+            scope: scope
+          )
+
+        assert length(persisted.cost_invoices) + length(persisted.sales_invoices) == 1
+        assert is_nil(persisted.salary_user_id)
+        assert {:error, _} = salary_result
+      end)
+    end
+  end
+
+  defp concurrency_invoice_attrs(CostInvoice, attrs), do: Map.put(attrs, :amount, Money.new!(:PLN, -100))
+
+  defp concurrency_invoice_attrs(SalesInvoice, attrs), do: attrs
+
+  defp await_salary_assignment(_task, _backend_pid, 0), do: flunk("salary assignment did not complete or reach its lock")
+
+  defp await_salary_assignment(task, backend_pid, attempts) do
+    case Task.yield(task, 0) do
+      {:ok, result} ->
+        {:completed, result}
+
+      nil ->
+        %{rows: [[blocked]]} =
+          Repo.query!("SELECT cardinality(pg_blocking_pids($1)) > 0", [backend_pid])
+
+        if blocked, do: :blocked, else: await_salary_assignment(task, backend_pid, attempts - 1)
+    end
   end
 
   describe "reconciliation filtering" do

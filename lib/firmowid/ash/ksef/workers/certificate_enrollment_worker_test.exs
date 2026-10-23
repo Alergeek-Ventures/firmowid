@@ -7,12 +7,15 @@ defmodule Firmowid.Ash.Ksef.Workers.CertificateEnrollmentWorkerTest do
   import Firmowid.AccountsFixtures
   import Firmowid.Ash.Ksef.KsefTestHelpers, only: [jwt: 1]
 
+  alias Firmowid.Ash.Ksef
   alias Firmowid.Ash.Ksef.Credential
   alias Firmowid.Ash.Ksef.CredentialMetadata
   alias Firmowid.Ash.Ksef.Workers.CertificateEnrollmentWorker
   alias Firmowid.Ash.Scope
   alias Firmowid.Ash.SystemActor
   alias Firmowid.Repo
+
+  @moduletag capture_log: true
 
   setup do
     admin = admin_fixture()
@@ -35,7 +38,7 @@ defmodule Firmowid.Ash.Ksef.Workers.CertificateEnrollmentWorkerTest do
       Cachex.del(:ksef, {:access_token, organization_id})
     end)
 
-    %{organization_id: organization_id, scope: ksef_scope(organization_id)}
+    %{organization_id: organization_id, scope: ksef_scope(organization_id), admin: admin}
   end
 
   test "replaces and revokes a generated certificate after KSeF issues its successor", %{
@@ -71,6 +74,8 @@ defmodule Firmowid.Ash.Ksef.Workers.CertificateEnrollmentWorkerTest do
              end)
 
     poll_args = queued_poll_args(organization_id)
+    assert poll_args["credential_id"] == credential.id
+    assert poll_args["refresh_started_at"]
 
     assert :ok = perform_job(CertificateEnrollmentWorker, poll_args)
 
@@ -91,6 +96,29 @@ defmodule Firmowid.Ash.Ksef.Workers.CertificateEnrollmentWorkerTest do
   } do
     assert {:cancel, :no_credentials} =
              perform_job(CertificateEnrollmentWorker, refresh_args(organization_id))
+  end
+
+  test "does not revoke an uploaded certificate after rollover", %{
+    organization_id: organization_id,
+    scope: scope
+  } do
+    {certificate, key} = certificate_material("Uploaded certificate")
+    {successor, _key} = certificate_material("Successor")
+    credential = seed_working_credential(organization_id, certificate, key, :certificate)
+    serial = CredentialMetadata.certificate_serial_number(credential)
+
+    Req.Test.stub(:ksef_certificate_refresh_api, fn conn ->
+      refute String.ends_with?(conn.request_path, "/revoke")
+      successful_refresh_response(conn, successor, serial)
+    end)
+
+    Oban.Testing.with_testing_mode(:manual, fn ->
+      Credential.refresh_certificate!(credential, scope: scope)
+      assert %{success: 1} = Oban.drain_queue(queue: :ksef_sessions)
+      assert %{success: 1} = Oban.drain_queue(queue: :ksef_sessions)
+      assert Credential.get_internal!(scope: scope).auth_type == :generated_certificate
+      assert Credential.get_internal!(scope: scope).status == :working
+    end)
   end
 
   test "keeps the current certificate connected when renewal reaches KSeF limits", %{
@@ -122,6 +150,178 @@ defmodule Firmowid.Ash.Ksef.Workers.CertificateEnrollmentWorkerTest do
              Credential.get_internal!(scope: scope)
 
     assert credentials == credential.credentials
+  end
+
+  test "disconnect cancels a real retryable certificate poll", %{
+    organization_id: organization_id,
+    scope: scope,
+    admin: admin
+  } do
+    {certificate, key} = certificate_material("Current certificate")
+
+    credential =
+      seed_working_credential(organization_id, certificate, key, :generated_certificate)
+
+    serial = CredentialMetadata.certificate_serial_number(credential)
+    revoke_path = "/certificates/#{serial}/revoke"
+
+    Req.Test.stub(:ksef_certificate_refresh_api, fn conn ->
+      case conn.request_path do
+        "/certificates/enrollments/refresh-reference" ->
+          Plug.Conn.send_resp(conn, 403, "unavailable")
+
+        "/auth/sessions/current" ->
+          Plug.Conn.send_resp(conn, 204, "")
+
+        ^revoke_path ->
+          assert %{"revocationReason" => "Unspecified"} = conn.body_params
+          Plug.Conn.send_resp(conn, 204, "")
+
+        _ ->
+          successful_refresh_response(conn, certificate, serial)
+      end
+    end)
+
+    Oban.Testing.with_testing_mode(:manual, fn ->
+      Credential.refresh_certificate!(credential, scope: scope)
+      assert %{success: 1} = Oban.drain_queue(queue: :ksef_sessions)
+      assert %{failure: 1} = Oban.drain_queue(queue: :ksef_sessions)
+      poll = queued_poll_job(organization_id)
+      assert poll.state == "retryable"
+      assert DateTime.after?(poll.scheduled_at, DateTime.utc_now())
+
+      assert {:ok, :disconnected} =
+               Ksef.unauthenticate(%Scope{actor: admin, tenant: organization_id})
+
+      assert Repo.get!(Oban.Job, poll.id, oban_jobs: true).state == "cancelled"
+      assert Credential.get_internal!(scope: scope) == nil
+    end)
+  end
+
+  for legacy? <- [false, true] do
+    @tag legacy?: legacy?
+    test "rejects a stale #{if legacy?, do: "legacy", else: "bound"} poll from an earlier refresh",
+         %{
+           organization_id: organization_id,
+           scope: scope,
+           legacy?: legacy?
+         } do
+      {certificate, key} = certificate_material("Current certificate")
+
+      credential =
+        seed_working_credential(organization_id, certificate, key, :generated_certificate)
+
+      serial = CredentialMetadata.certificate_serial_number(credential)
+
+      Req.Test.stub(
+        :ksef_certificate_refresh_api,
+        &successful_refresh_response(&1, certificate, serial)
+      )
+
+      Oban.Testing.with_testing_mode(:manual, fn ->
+        refreshing = Credential.refresh_certificate!(credential, scope: scope)
+        assert %{success: 1} = Oban.drain_queue(queue: :ksef_sessions)
+        poll = queued_poll_job(organization_id)
+        working = Credential.recover_certificate_refresh!(refreshing, scope: scope)
+        current = Credential.refresh_certificate!(working, scope: scope)
+
+        args =
+          if legacy?,
+            do: Map.drop(poll.args, ["credential_id", "refresh_started_at"]),
+            else: poll.args
+
+        Req.Test.stub(:ksef_certificate_refresh_api, fn _ -> flunk("stale poll reached KSeF") end)
+
+        expected_reason =
+          if legacy?, do: :unbound_certificate_refresh_restarted, else: :stale_certificate_refresh
+
+        assert {:cancel, ^expected_reason} =
+                 perform_job(CertificateEnrollmentWorker, args, inserted_at: poll.inserted_at)
+
+        assert Credential.get_internal!(scope: scope).credentials == current.credentials
+        assert Credential.get_internal!(scope: scope).status == :refreshing
+      end)
+    end
+  end
+
+  test "restarts an already queued legacy poll without stranding the current refresh", %{
+    organization_id: organization_id,
+    scope: scope
+  } do
+    {certificate, key} = certificate_material("Current certificate")
+    {successor, _key} = certificate_material("Successor")
+
+    credential =
+      seed_working_credential(organization_id, certificate, key, :generated_certificate)
+
+    serial = CredentialMetadata.certificate_serial_number(credential)
+
+    Req.Test.stub(
+      :ksef_certificate_refresh_api,
+      &successful_refresh_response(&1, successor, serial)
+    )
+
+    Oban.Testing.with_testing_mode(:manual, fn ->
+      Credential.refresh_certificate!(credential, scope: scope)
+      assert %{success: 1} = Oban.drain_queue(queue: :ksef_sessions)
+      poll = queued_poll_job(organization_id)
+      args = Map.drop(poll.args, ["credential_id", "refresh_started_at"])
+
+      assert {:cancel, :unbound_certificate_refresh_restarted} =
+               perform_job(CertificateEnrollmentWorker, args, inserted_at: poll.inserted_at)
+
+      assert Credential.get_internal!(scope: scope).status == :refreshing
+
+      [restart] =
+        all_enqueued(worker: CertificateEnrollmentWorker, args: %{action: "refresh_certificate"})
+
+      assert :ok = perform_job(CertificateEnrollmentWorker, restart.args)
+
+      [new_poll | _] =
+        all_enqueued(
+          worker: CertificateEnrollmentWorker,
+          args: %{action: "poll_certificate_refresh"}
+        )
+
+      assert :ok = perform_job(CertificateEnrollmentWorker, new_poll.args)
+      assert Credential.get_internal!(scope: scope).status == :working
+    end)
+  end
+
+  test "does not replace or revoke a certificate when its refresh changes during retrieval", %{
+    organization_id: organization_id,
+    scope: scope
+  } do
+    {certificate, key} = certificate_material("Current certificate")
+    {successor, _key} = certificate_material("Successor")
+
+    credential =
+      seed_working_credential(organization_id, certificate, key, :generated_certificate)
+
+    serial = CredentialMetadata.certificate_serial_number(credential)
+
+    Req.Test.stub(:ksef_certificate_refresh_api, fn conn ->
+      if conn.request_path == "/certificates/retrieve" do
+        current = Credential.get_internal!(scope: scope)
+        working = Credential.recover_certificate_refresh!(current, scope: scope)
+        Credential.refresh_certificate!(working, scope: scope)
+      end
+
+      refute String.ends_with?(conn.request_path, "/revoke")
+      successful_refresh_response(conn, successor, serial)
+    end)
+
+    Oban.Testing.with_testing_mode(:manual, fn ->
+      Credential.refresh_certificate!(credential, scope: scope)
+      assert %{success: 1} = Oban.drain_queue(queue: :ksef_sessions)
+
+      assert {:error, _stale_record} =
+               perform_job(CertificateEnrollmentWorker, queued_poll_args(organization_id))
+
+      current = Credential.get_internal!(scope: scope)
+      assert current.credentials == credential.credentials
+      assert current.status == :refreshing
+    end)
   end
 
   defp ksef_scope(organization_id) do
@@ -161,13 +361,16 @@ defmodule Firmowid.Ash.Ksef.Workers.CertificateEnrollmentWorkerTest do
   end
 
   defp queued_poll_args(organization_id) do
+    queued_poll_job(organization_id).args
+  end
+
+  defp queued_poll_job(organization_id) do
     query =
       from job in Oban.Job,
         where:
           job.worker == "Firmowid.Ash.Ksef.Workers.CertificateEnrollmentWorker" and
             fragment("?->>'action'", job.args) == "poll_certificate_refresh" and
-            fragment("?->>'organization_id'", job.args) == ^organization_id,
-        select: job.args
+            fragment("?->>'organization_id'", job.args) == ^organization_id
 
     Repo.one!(query, oban_jobs: true)
   end

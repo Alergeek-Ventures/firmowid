@@ -17,15 +17,39 @@ defmodule Firmowid.Ash.Invoicing.Services.PdfUtils do
   """
   @spec xslt_transform(binary(), binary()) :: {:ok, binary()} | {:error, term()}
   def xslt_transform(xml_content, xsl_content) do
-    # xsltproc substitutes external entities and has no option to disable it, so a
-    # DOCTYPE in an uploaded document could read local files into the output. FA(3)
-    # invoices never declare one.
-    if xml_content =~ ~r/<!DOCTYPE/i do
-      {:error, :doctype_not_allowed}
-    else
-      run_xsltproc(xml_content, xsl_content)
+    # Decode XML before checking for a DTD: xsltproc can expand local external
+    # entities, including in UTF-16 documents that evade an ASCII byte scan.
+    case :xmerl_sax_parser.stream(xml_content, [
+           :disallow_entities,
+           {:external_entities, :none},
+           {:event_fun, &reject_doctype/3},
+           {:event_state, :ok}
+         ]) do
+      {:ok, :ok, _rest} ->
+        # OTP's SAX parser omits startDTD for a bare <!DOCTYPE root>. Keep the
+        # existing lexical prohibition too, after native encoding detection.
+        {_source, _encoding, characters} =
+          :xmerl_lib.detect_charset(:binary.bin_to_list(xml_content))
+
+        if List.to_string(characters) =~ ~r/<!DOCTYPE/i do
+          {:error, :doctype_not_allowed}
+        else
+          run_xsltproc(xml_content, xsl_content)
+        end
+
+      {:doctype_not_allowed, _location, _reason, _end_tags, :ok} ->
+        {:error, :doctype_not_allowed}
+
+      {:fatal_error, location, reason, _end_tags, :ok} ->
+        {:error, {:invalid_xml, location, reason}}
     end
   end
+
+  defp reject_doctype({:startDTD, _name, _public_id, _system_id}, _location, :ok) do
+    throw({:doctype_not_allowed, ~c"DOCTYPE is not allowed"})
+  end
+
+  defp reject_doctype(_event, _location, :ok), do: :ok
 
   # sobelow_skip ["Traversal.FileModule"]
   # These files are created in Briefly-managed temporary locations and are

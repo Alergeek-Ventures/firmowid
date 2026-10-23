@@ -347,13 +347,19 @@ defmodule Firmowid.Ash.Finances.Changes.SyncTransactions do
   defp dedupe_against_existing_transactions([], _bank_account, _scope), do: []
 
   defp dedupe_against_existing_transactions(transactions, bank_account, scope) do
+    snapshot_ids = MapSet.new(transactions, & &1.internal_transaction_id)
+
     existing_transactions =
       load_existing_transactions_for_dedupe(bank_account, transactions, scope)
+
+    existing_ids = MapSet.new(existing_transactions, & &1.internal_transaction_id)
 
     connected_account_iban = bank_account.iban
 
     candidate_map =
-      build_candidate_transaction_buckets(existing_transactions, connected_account_iban)
+      existing_transactions
+      |> Enum.reject(&MapSet.member?(snapshot_ids, &1.internal_transaction_id))
+      |> build_candidate_transaction_buckets(connected_account_iban)
 
     matcher_opts = [
       institution_id: bank_account.institution_id,
@@ -363,7 +369,11 @@ defmodule Firmowid.Ash.Finances.Changes.SyncTransactions do
 
     Enum.map(transactions, fn transaction ->
       candidates =
-        Map.get(candidate_map, transaction_match_key(transaction, connected_account_iban), [])
+        if MapSet.member?(existing_ids, transaction.internal_transaction_id) do
+          []
+        else
+          Map.get(candidate_map, transaction_match_key(transaction, connected_account_iban), [])
+        end
 
       case DuplicateTransactionMatcher.unique_match(
              transaction,
@@ -420,26 +430,28 @@ defmodule Firmowid.Ash.Finances.Changes.SyncTransactions do
 
   defp load_existing_transactions_for_dedupe(bank_account, transactions, scope) do
     {oldest_date, newest_date} = replay_date_bounds(transactions)
+    internal_ids = Enum.map(transactions, & &1.internal_transaction_id)
 
     query =
       Transaction
       |> Ash.Query.filter(expr(bank_account_id == ^bank_account.id))
-      |> apply_replay_date_filter(oldest_date, newest_date)
+      |> apply_replay_date_filter(oldest_date, newest_date, internal_ids)
       |> Ash.Query.sort(inserted_at: :desc)
 
     Transaction.list!(%{}, query: query, scope: scope)
   end
 
-  defp apply_replay_date_filter(query, nil, nil), do: query
+  defp apply_replay_date_filter(query, nil, nil, _internal_ids), do: query
 
-  defp apply_replay_date_filter(query, oldest_date, newest_date) do
+  defp apply_replay_date_filter(query, oldest_date, newest_date, internal_ids) do
     lower_bound = Date.add(oldest_date, -@sync_candidate_date_tolerance_days)
     upper_bound = Date.add(newest_date, @sync_candidate_date_tolerance_days)
 
     Ash.Query.filter(
       query,
       expr(
-        (is_nil(booking_date) and is_nil(value_date)) or
+        internal_transaction_id in ^internal_ids or
+          (is_nil(booking_date) and is_nil(value_date)) or
           (booking_date >= ^lower_bound and booking_date <= ^upper_bound) or
           (value_date >= ^lower_bound and value_date <= ^upper_bound)
       )

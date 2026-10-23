@@ -188,26 +188,48 @@ defmodule Firmowid.Ash.Ksef.Workers.SessionWorker do
   @doc "Returns a valid KSeF access token for the given organization. Refreshes or re-authenticates as needed."
   @spec get_access_token!(String.t()) :: String.t()
   def get_access_token!(organization_id) do
-    Cachex.fetch!(:ksef, {:access_token, organization_id}, fn _key ->
-      refresh_token = get_refresh_token(organization_id)
+    case get_access_token(organization_id) do
+      {:ok, access_token} ->
+        access_token
 
-      case ApiClient.refresh_session(refresh_token) do
-        {:ok, access_token} ->
-          {:commit, access_token, expire: access_token_ttl(access_token)}
+      {:error, :refresh_token_expired} ->
+        raise Cachex.Error, message: "Refresh token expired, re-authentication scheduled"
 
-        {:error, :refresh_token_expired} ->
-          Logger.info("Refresh token expired, re-authenticating")
+      {:error, reason} ->
+        raise Cachex.Error,
+          message: "KSeF session renewal failed (error_kind=#{ErrorKind.classify(reason)})"
+    end
+  end
 
-          {:ok, _job} = enqueue(organization_id)
+  @doc "Returns a valid token or an expected renewal error. Cache and unexpected failures still raise."
+  @spec get_access_token(String.t()) :: {:ok, String.t()} | {:error, term()}
+  def get_access_token(organization_id) do
+    result =
+      Cachex.fetch!(:ksef, {:access_token, organization_id}, fn _key ->
+        refresh_token = get_refresh_token(organization_id)
 
-          raise RuntimeError, "Refresh token expired, re-authentication scheduled"
+        case ApiClient.refresh_session(refresh_token) do
+          {:ok, access_token} ->
+            {:commit, access_token, expire: access_token_ttl(access_token)}
 
-        {:error, reason} ->
-          error_kind = ErrorKind.classify(reason)
-          Logger.error("Session renewal failed", error_kind: error_kind)
-          raise RuntimeError, "KSeF session renewal failed (error_kind=#{error_kind})"
-      end
-    end)
+          {:error, _reason} = error ->
+            {:ignore, error}
+        end
+      end)
+
+    case result do
+      {:error, :refresh_token_expired} = error ->
+        Logger.info("Refresh token expired, re-authenticating")
+        {:ok, _job} = enqueue(organization_id)
+        error
+
+      {:error, reason} = error ->
+        Logger.error("Session renewal failed", error_kind: ErrorKind.classify(reason))
+        error
+
+      access_token when is_binary(access_token) ->
+        {:ok, access_token}
+    end
   end
 
   defp put_access_token!(organization_id, access_token) do

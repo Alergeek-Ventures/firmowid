@@ -280,19 +280,16 @@ defmodule Firmowid.Ash.Ksef.Workers.SubmissionWorker do
 
     opts = [scope: scope]
     sales_invoice = SalesInvoice.by_id!(sales_invoice_id, opts)
-    access_token = SessionWorker.get_access_token!(scope.tenant)
 
-    access_token
-    |> ApiClient.get_invoice_status(session_reference, invoice_reference)
-    |> handle_verification_result(sales_invoice, job, scope, %{
+    result =
+      with {:ok, access_token} <- SessionWorker.get_access_token(scope.tenant) do
+        ApiClient.get_invoice_status(access_token, session_reference, invoice_reference)
+      end
+
+    handle_verification_result(result, sales_invoice, job, scope, %{
       requested_session_reference: session_reference,
       requested_invoice_reference: invoice_reference
     })
-  rescue
-    e ->
-      if final_attempt?(job), do: withdraw_failed_submission(sales_invoice_id, scope)
-
-      reraise e, __STACKTRACE__
   end
 
   defp handle_verification_result(
@@ -370,30 +367,15 @@ defmodule Firmowid.Ash.Ksef.Workers.SubmissionWorker do
     fail_invoice(invoice, error, scope)
   end
 
-  defp handle_verification_result(
-         {:error, {:unexpected_status, _, _} = error},
-         invoice,
-         _job,
-         scope,
-         _verification_context
-       ) do
-    fail_invoice(invoice, error, scope)
-  end
-
-  defp handle_verification_result({:error, error}, invoice, _job, scope, _verification_context)
-       when error in [:unauthorized, :forbidden, :rate_limited] do
-    fail_invoice(invoice, error, scope)
-  end
-
-  defp handle_verification_result({:error, reason} = error, invoice, job, scope, _verification_context) do
+  defp handle_verification_result({:error, reason} = error, invoice, job, _scope, _verification_context) do
     Logger.error("Failed to verify invoice",
       invoice_id: invoice.id,
       error_kind: ErrorKind.classify(reason)
     )
 
-    if final_attempt?(job), do: fail_invoice_status(invoice, scope)
-
-    error
+    # Failure to read the status is not proof of rejection. Keep the document
+    # immutable and continue reconciliation after the normal retry budget.
+    if final_attempt?(job), do: {:snooze, @recheck_after_seconds}, else: error
   end
 
   defp fail_invoice(invoice, error, scope) do

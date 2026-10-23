@@ -30,6 +30,7 @@ defmodule Firmowid.Ash.Core.User do
   alias Firmowid.Ash.Core.Secrets
   alias Firmowid.Ash.Core.Services.GoogleAvatarImporter
   alias Firmowid.Ash.Core.User.Actions.UpdateCurrentProfile
+  alias Firmowid.Ash.Core.User.Changes.RevokeAuthentication
   alias Firmowid.Ash.Core.UserIdentity
   alias Firmowid.Ash.Core.UserRole
   alias Firmowid.Ash.Resource
@@ -361,7 +362,7 @@ defmodule Firmowid.Ash.Core.User do
       # Serializes with OAuth issuance, which locks the account row (see
       # `RequireActiveOauthUser`), so no grant outlives the archival.
       change get_and_lock_for_update()
-      change Firmowid.Ash.Core.User.Changes.RevokeAuthentication
+      change RevokeAuthentication
     end
 
     destroy :destroy do
@@ -369,6 +370,17 @@ defmodule Firmowid.Ash.Core.User do
       # Password verification is handled at the callsite (domain function)
       # before invoking this action, matching the existing pattern.
       require_atomic? false
+
+      change get_and_lock_for_update()
+
+      change fn changeset, context ->
+        Ash.Changeset.before_action(changeset, fn changeset ->
+          case RevokeAuthentication.revoke(changeset.data, context) do
+            :ok -> changeset
+            {:error, error} -> Ash.Changeset.add_error(changeset, error)
+          end
+        end)
+      end
     end
 
     update :change_password do

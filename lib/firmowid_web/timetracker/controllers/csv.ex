@@ -112,6 +112,7 @@ defmodule FirmowidWeb.Timetracker.Controllers.Csv do
       }
     end)
     |> CSV.encode(
+      escape_formulas: true,
       headers: [
         name: "Imie i Nazwisko",
         hourly_rate: "Stawka godzinowa",
@@ -137,7 +138,10 @@ defmodule FirmowidWeb.Timetracker.Controllers.Csv do
         title: session.title
       }
     end)
-    |> CSV.encode(headers: [user: "Użytkownik", date: "Data", duration: "Czas trwania", title: "Tytuł"])
+    |> CSV.encode(
+      escape_formulas: true,
+      headers: [user: "Użytkownik", date: "Data", duration: "Czas trwania", title: "Tytuł"]
+    )
     |> Enum.join()
   end
 

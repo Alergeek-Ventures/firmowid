@@ -120,7 +120,12 @@ defmodule FirmowidWeb.Core.Router do
 
   scope "/" do
     pipe_through [:oauth_api, :oauth_request_normalization]
-    oauth2_server_protocol_routes(oauth2_server: Firmowid.Oauth2Server)
+
+    forward "/oauth", FirmowidMcp.Utilities.RefreshTokenTransaction, oauth2_server: Firmowid.Oauth2Server
+
+    forward "/.well-known", AshAuthentication.Phoenix.Oauth2Server.ProtocolRouter,
+      oauth2_server: Firmowid.Oauth2Server,
+      well_known?: true
   end
 
   ## MCP resource server

@@ -16,7 +16,11 @@ defmodule Firmowid.Ash.Invoicing.Changes.ValidateTransactionAvailability do
 
       available_ids =
         %{ids: ids}
-        |> Finances.list_transactions!(load: [:invoice_matchable?], scope: scope)
+        |> Finances.list_transactions!(
+          query: [lock: :for_update, sort: [id: :asc]],
+          load: [:invoice_matchable?],
+          scope: scope
+        )
         |> Enum.filter(& &1.invoice_matchable?)
         |> MapSet.new(& &1.id)
 

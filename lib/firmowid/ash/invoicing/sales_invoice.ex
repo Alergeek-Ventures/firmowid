@@ -708,6 +708,10 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
       accept [:invoice_number | @draft_fields -- [:skip_invoicing]]
       argument :input, InvoiceInput
       argument :sales_invoice_items, {:array, :map}
+      argument :expected_review, :map, public?: false
+
+      change get_and_lock_for_update()
+      change Changes.VerifyInvoiceReview
 
       change Changes.ApplyInvoiceInput
       change filter(expr(is_nil(invoice_number) and ksef_invoice_kind == :vat))

@@ -444,6 +444,143 @@ defmodule FirmowidWeb.Delegations.Views.DelegationTest do
     refute has_element?(view, "a", "potwierdzenie.png")
   end
 
+  test "does not persist client-supplied NBP values without a server calculation", %{conn: conn} do
+    {user, delegation} = approved_delegation()
+    expense = seed_expense(delegation, user)
+    scope = %Scope{actor: user, tenant: user.member.organization_id}
+    {:ok, view, _html} = conn |> log_in_user(user) |> live(~p"/delegacje/#{delegation.reference}")
+
+    params = %{
+      "delegation" => %{
+        "expenses" => %{
+          "0" => %{
+            "_form_type" => "update",
+            "id" => expense.id,
+            "document_number" => "REZ/1",
+            "expense_amount" => "10",
+            "settlement_method" => "nbp",
+            "settlement_amount" => "999",
+            "settlement_currency" => "PLN",
+            "nbp_rate" => "99.9",
+            "nbp_rate_date" => "2026-08-10",
+            "details" => %{
+              "_union_type" => "accommodation",
+              "locality" => "Kraków",
+              "arrival_date" => "2026-08-10",
+              "departure_date" => "2026-08-11"
+            }
+          }
+        }
+      },
+      "expense_currencies" => %{expense.id => "EUR"}
+    }
+
+    render_submit(view, "submit", params)
+
+    persisted = Delegations.get_delegation!(delegation.id, scope: scope, load: [:expenses])
+    assert persisted.status == :in_progress
+    assert [%{settlement_amount: nil, nbp_rate: nil, nbp_rate_date: nil}] = persisted.expenses
+
+    previous_options = Application.get_env(:firmowid, :nbp_api_request_options)
+    cache_key = {:nbp_rate, "EUR", Date.add(Date.utc_today(), -1)}
+    Cachex.del(:currencies, cache_key)
+    Application.put_env(:firmowid, :nbp_api_request_options, plug: {Req.Test, __MODULE__})
+
+    on_exit(fn ->
+      restore_env(:nbp_api_request_options, previous_options)
+      Cachex.del(:currencies, cache_key)
+    end)
+
+    Req.Test.stub(__MODULE__, fn conn ->
+      Req.Test.json(conn, %{
+        "rates" => [%{"effectiveDate" => "2026-08-10", "mid" => 4.0, "no" => "test-rate"}]
+      })
+    end)
+
+    render_change(view, "validate", params)
+    view |> element("button", "Przelicz wg kursu NBP") |> render_click()
+    render_submit(view, "submit", params)
+
+    completed = Delegations.get_delegation!(delegation.id, scope: scope, load: [:expenses])
+    assert completed.status == :complete
+    assert [settled] = completed.expenses
+    assert Money.equal?(settled.settlement_amount, Money.new!(:PLN, 40))
+    assert Decimal.eq?(settled.nbp_rate, Decimal.new(4))
+  end
+
+  test "binds an NBP calculation to the submitted amount and source currency", %{conn: conn} do
+    previous_options = Application.get_env(:firmowid, :nbp_api_request_options)
+    cache_key = {:nbp_rate, "EUR", Date.add(Date.utc_today(), -1)}
+    Cachex.del(:currencies, cache_key)
+    Application.put_env(:firmowid, :nbp_api_request_options, plug: {Req.Test, __MODULE__})
+
+    on_exit(fn ->
+      restore_env(:nbp_api_request_options, previous_options)
+      Cachex.del(:currencies, cache_key)
+    end)
+
+    Req.Test.stub(__MODULE__, fn conn ->
+      Req.Test.json(conn, %{
+        "rates" => [%{"effectiveDate" => "2026-08-10", "mid" => 4.0, "no" => "test-rate"}]
+      })
+    end)
+
+    results =
+      for submitted_currency <- ["EUR", "USD"] do
+        {user, delegation} = approved_delegation()
+        expense = seed_expense(delegation, user)
+        scope = %Scope{actor: user, tenant: user.member.organization_id}
+
+        {:ok, view, _html} =
+          conn |> log_in_user(user) |> live(~p"/delegacje/#{delegation.reference}")
+
+        params = %{
+          "delegation" => %{
+            "expenses" => %{
+              "0" => %{
+                "_form_type" => "update",
+                "id" => expense.id,
+                "document_number" => "REZ/1",
+                "expense_amount" => "100",
+                "details" => %{
+                  "_union_type" => "accommodation",
+                  "locality" => "Kraków",
+                  "arrival_date" => "2026-08-10",
+                  "departure_date" => "2026-08-11"
+                }
+              }
+            }
+          },
+          "expense_currencies" => %{expense.id => "EUR"}
+        }
+
+        view |> form("#delegation-complete-form", params) |> render_change()
+        view |> element("button", "Przelicz wg kursu NBP") |> render_click()
+
+        submitted =
+          params
+          |> put_in(["delegation", "expenses", "0", "expense_amount"], "10")
+          |> put_in(["expense_currencies", expense.id], submitted_currency)
+
+        view |> form("#delegation-complete-form", submitted) |> render_submit()
+
+        persisted = Delegations.get_delegation!(delegation.id, scope: scope, load: [:expenses])
+        [expense] = persisted.expenses
+
+        amount =
+          if expense.settlement_amount do
+            expense.settlement_amount
+            |> Money.to_decimal()
+            |> Decimal.normalize()
+            |> Decimal.to_string(:normal)
+          end
+
+        {persisted.status, amount}
+      end
+
+    assert results == [{:complete, "40"}, {:in_progress, nil}]
+  end
+
   test "completes a seeded valid settlement", %{conn: conn} do
     {user, delegation} = approved_delegation()
     seed_expense(delegation, user)

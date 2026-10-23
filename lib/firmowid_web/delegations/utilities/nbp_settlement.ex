@@ -19,6 +19,7 @@ defmodule FirmowidWeb.Delegations.Utilities.NbpSettlement do
       {:ok,
        %{
          amount: Money.new(target_currency, Decimal.mult(Money.to_decimal(amount), rate)),
+         source_currency: source_currency,
          rate: rate,
          date: date
        }}

@@ -124,6 +124,100 @@ defmodule Firmowid.Ash.Finances.Changes.SyncTransactionsTest do
   end
 
   describe "sync replay window" do
+    @tag capture_log: true
+    test "preserves two independent payments when the original is still in the snapshot", ctx do
+      today = Date.utc_today()
+
+      for account <- [ctx.bank_account_1, ctx.bank_account_2] do
+        account.id
+        |> transaction_attrs("payment-1")
+        |> Map.merge(%{
+          transaction_id: "provider-payment-1",
+          booking_date: today,
+          value_date: today
+        })
+        |> Finances.upsert_transaction_from_sync!(actor: ctx.actor, tenant: ctx.org_id)
+      end
+
+      stub_booked_transactions([
+        api_transaction("payment-1", today),
+        api_transaction("payment-2", today)
+      ])
+
+      assert {:ok, _account} =
+               ctx.bank_account_1
+               |> Ash.Changeset.for_update(:sync_from_gocardless, %{},
+                 actor: ctx.user,
+                 tenant: ctx.org_id
+               )
+               |> Ash.update(actor: ctx.user, tenant: ctx.org_id)
+
+      persisted = Finances.list_transactions!(%{}, actor: ctx.actor, tenant: ctx.org_id)
+      payments = Enum.filter(persisted, &(&1.bank_account_id == ctx.bank_account_1.id))
+
+      assert Enum.sort(Enum.map(payments, & &1.internal_transaction_id)) == [
+               "payment-1",
+               "payment-2"
+             ]
+
+      assert Enum.reduce(payments, Decimal.new(0), &Decimal.add(Money.to_decimal(&1.amount), &2)) ==
+               Decimal.new("200.00")
+
+      assert [%{internal_transaction_id: "payment-1"}] =
+               Enum.filter(persisted, &(&1.bank_account_id == ctx.bank_account_2.id))
+
+      stub_booked_transactions([api_transaction("payment-1", Date.add(today, 1))])
+
+      assert {:ok, _account} =
+               ctx.bank_account_1
+               |> Ash.Changeset.for_update(:sync_from_gocardless, %{},
+                 actor: ctx.user,
+                 tenant: ctx.org_id
+               )
+               |> Ash.update(actor: ctx.user, tenant: ctx.org_id)
+
+      dates =
+        %{}
+        |> Finances.list_transactions!(actor: ctx.actor, tenant: ctx.org_id)
+        |> Enum.filter(&(&1.bank_account_id == ctx.bank_account_1.id))
+        |> Map.new(&{&1.internal_transaction_id, &1.booking_date})
+
+      assert dates == %{"payment-1" => Date.add(today, 1), "payment-2" => today}
+    end
+
+    @tag capture_log: true
+    test "preserves a known identity when correcting dates outside the heuristic window", ctx do
+      today = Date.utc_today()
+
+      for {id, date} <- [{"payment-1", Date.add(today, -5)}, {"payment-2", today}] do
+        ctx.bank_account_1.id
+        |> transaction_attrs(id)
+        |> Map.merge(%{transaction_id: "provider-#{id}", booking_date: date, value_date: date})
+        |> Finances.upsert_transaction_from_sync!(actor: ctx.actor, tenant: ctx.org_id)
+      end
+
+      stub_booked_transactions([api_transaction("payment-1", today)])
+
+      assert {:ok, _account} =
+               ctx.bank_account_1
+               |> Ash.Changeset.for_update(:sync_from_gocardless, %{},
+                 actor: ctx.user,
+                 tenant: ctx.org_id
+               )
+               |> Ash.update(actor: ctx.user, tenant: ctx.org_id)
+
+      dates =
+        %{}
+        |> Finances.list_transactions!(actor: ctx.actor, tenant: ctx.org_id)
+        |> Enum.filter(&(&1.bank_account_id == ctx.bank_account_1.id))
+        |> Map.new(&{&1.internal_transaction_id, {&1.transaction_id, &1.booking_date}})
+
+      assert dates == %{
+               "payment-1" => {"provider-payment-1", today},
+               "payment-2" => {"provider-payment-2", today}
+             }
+    end
+
     test "canonicalizes a sparse Revolut TOPUP transaction", ctx do
       today = Date.utc_today()
 
