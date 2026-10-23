@@ -1,5 +1,5 @@
 defmodule FirmowidWeb.Analysis.Components.EntryCategories do
-  @moduledoc "Category editing below the matching controls on invoice and transaction details."
+  @moduledoc "Category editing above matching controls, including invoices linked to a transaction."
   use FirmowidWeb, :live_component
 
   import FirmowidUI.Components.Link
@@ -33,32 +33,45 @@ defmodule FirmowidWeb.Analysis.Components.EntryCategories do
       assigns
       |> assign(:title, category_title(assigns.entry))
       |> assign(:explanation, category_explanation(assigns.entry))
+      |> assign(:category_entries, category_entries(assigns.entry))
       |> assign(
         :analysis_path,
         Navigation.dashboard_path(Date.beginning_of_month(entry_date(assigns.entry)))
       )
 
     ~H"""
-    <section id={@id} class="flex flex-col gap-4 pbs-18">
+    <section id={@id} class="flex flex-col gap-4 pbe-18">
       <h2 class="text-lg/tight font-medium">{@title}</h2>
-      <div class="flex flex-wrap items-start gap-6">
-        <p class="min-w-0 flex-[2_1_20rem] text-sm/snug text-grey-700">
-          {@explanation}
-          <.link kind="text" size="small" navigate={@analysis_path}>
-            {gettext("See in analysis")}
+      <div class="flex flex-wrap items-center gap-6">
+        <div class="flex min-w-0 flex-[2_1_20rem] flex-col items-start gap-1 text-sm/snug text-grey-700">
+          <p>{@explanation}</p>
+          <.link
+            kind="text"
+            size="small"
+            navigate={@analysis_path}
+            class="inline-flex items-center gap-1 underline underline-offset-2"
+          >
+            {gettext("See in analysis.")}
+            <Lucideicons.link class="size-3.5" aria-hidden="true" />
           </.link>
-        </p>
-        <CategorySelector.cell
-          entry={@entry}
-          categories={@categories}
-          colors={@colors}
-          can_write={
-            flag_enabled?(:analysis_dashboard, assigns) and
-              @scope.actor.member.role in [:admin, :accountant]
-          }
-          class="min-w-0 flex-[1_1_16rem]"
-          target={@myself}
-        />
+        </div>
+        <div class="flex min-w-0 flex-[1_1_16rem] flex-col gap-3">
+          <div :for={entry <- @category_entries} class="flex min-w-0 flex-col gap-1">
+            <p :if={length(@category_entries) > 1} class="text-xs text-grey-700">
+              {invoice_number(entry)}
+            </p>
+            <CategorySelector.cell
+              entry={entry}
+              categories={@categories}
+              colors={@colors}
+              can_write={
+                flag_enabled?(:analysis_dashboard, assigns) and
+                  @scope.actor.member.role in [:admin, :accountant]
+              }
+              target={@myself}
+            />
+          </div>
+        </div>
       </div>
     </section>
     """
@@ -67,8 +80,16 @@ defmodule FirmowidWeb.Analysis.Components.EntryCategories do
   @impl true
   def handle_event(event, params, socket)
       when event in ["set-entity-category", "clear-entity-tags", "toggle-project-tag"] do
-    if flag_enabled?(:analysis_dashboard, socket.assigns) and editable?(socket.assigns.entry) do
-      case change_category(event, params, socket.assigns) do
+    entry =
+      socket.assigns.entry
+      |> category_entries()
+      |> Enum.find(fn entry ->
+        %{entity_type: type, resource_id: id} = entity_arguments(entry)
+        id == params["entity_id"] and Atom.to_string(type) == params["entity_type"]
+      end)
+
+    if flag_enabled?(:analysis_dashboard, socket.assigns) and entry != nil and editable?(entry) do
+      case change_category(event, params, %{socket.assigns | entry: entry}) do
         {:ok, _} ->
           {:noreply, load_entry(socket)}
 
@@ -90,11 +111,23 @@ defmodule FirmowidWeb.Analysis.Components.EntryCategories do
   defp category_loads(%Transaction{}),
     do: [
       entity_tags: :tag_definition,
-      cost_invoices: [entity_tags: :tag_definition],
-      sales_invoices: [entity_tags: :tag_definition]
+      cost_invoices: [:transactions, entity_tags: :tag_definition],
+      sales_invoices: [:transactions, entity_tags: :tag_definition]
     ]
 
   defp category_loads(_invoice), do: [entity_tags: :tag_definition]
+
+  defp category_entries(%Transaction{cost_invoices: costs, sales_invoices: sales} = transaction) do
+    case costs ++ sales do
+      [] -> [transaction]
+      invoices -> invoices
+    end
+  end
+
+  defp category_entries(invoice), do: [invoice]
+
+  defp invoice_number(%SalesInvoice{invoice_number: number}), do: number
+  defp invoice_number(%CostInvoice{invoice_identifier: number}), do: number
 
   defp change_category("clear-entity-tags", _params, assigns) do
     EntityTag.clear_entity_tags(entity_arguments(assigns.entry), scope: assigns.scope)
@@ -147,5 +180,5 @@ defmodule FirmowidWeb.Analysis.Components.EntryCategories do
       transaction.sales_invoices == []
   end
 
-  defp editable?(_invoice), do: true
+  defp editable?(invoice), do: invoice.skip_invoicing or invoice.transactions != []
 end

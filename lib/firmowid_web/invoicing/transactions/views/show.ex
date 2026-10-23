@@ -76,6 +76,17 @@ defmodule FirmowidWeb.Invoicing.Transactions.Views.Show do
         />
 
         <InvoiceDetails.main>
+          <.live_component
+            :if={
+              flag_enabled?(:analysis_dashboard, assigns) and not @transaction.has_salary? and
+                @transaction.reconciliation_status in [:matched, :skipped]
+            }
+            module={FirmowidWeb.Analysis.Components.EntryCategories}
+            id="transaction-categories"
+            entry={@transaction}
+            scope={@ash_scope}
+            feature_flags={@feature_flags}
+          />
           <%= cond do %>
             <% @transaction.has_salary? -> %>
               <SalaryComponents.confirmation
@@ -100,17 +111,6 @@ defmodule FirmowidWeb.Invoicing.Transactions.Views.Show do
                 />
               </div>
           <% end %>
-          <.live_component
-            :if={
-              flag_enabled?(:analysis_dashboard, assigns) and not @transaction.has_salary? and
-                @transaction.reconciliation_status in [:matched, :skipped]
-            }
-            module={FirmowidWeb.Analysis.Components.EntryCategories}
-            id="transaction-categories"
-            entry={@transaction}
-            scope={@ash_scope}
-            feature_flags={@feature_flags}
-          />
         </InvoiceDetails.main>
       </div>
     </div>
