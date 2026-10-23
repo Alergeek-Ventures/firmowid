@@ -17,6 +17,7 @@ defmodule Firmowid.Ash.Core.OrganizationCleanup do
   alias Firmowid.Ash.Invoicing.KsefInvoiceDigestItem
   alias Firmowid.Ash.Invoicing.SalesInvoiceEmailDelivery
   alias Firmowid.Ash.Invoicing.SkippedKsefSalesInvoice
+  alias Firmowid.Ash.Invoicing.WizardState
   alias Firmowid.Ash.Payroll.UserEmploymentContract
   alias Firmowid.Ash.Payroll.UserSalary
   alias Firmowid.Ash.Scope
@@ -82,6 +83,23 @@ defmodule Firmowid.Ash.Core.OrganizationCleanup do
   @spec detach_users(Scope.t()) :: :ok | {:error, term()}
   def detach_users(scope) do
     destroy_records(Member.list(scope: scope), &Member.destroy/2, scope)
+  end
+
+  @doc "Removes ephemeral wizard data only after the organization's database deletion succeeds."
+  @spec remove_wizard_states(Scope.t()) :: :ok | {:error, term()}
+  def remove_wizard_states(scope) do
+    with :ok <-
+           destroy_records(
+             WizardState.Item.read(scope: scope),
+             &WizardState.Item.destroy/2,
+             scope
+           ) do
+      destroy_records(
+        Firmowid.Ash.Invoicing.list_wizard_states(scope: scope),
+        &WizardState.destroy/2,
+        scope
+      )
+    end
   end
 
   @doc "Remove only the actual deleted account's OAuth dependents, even without an organization."

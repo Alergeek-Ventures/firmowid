@@ -575,6 +575,10 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
   end
 
   policies do
+    bypass [{SystemActorRole, roles: [:avatar_cleanup]}, action(:read)] do
+      authorize_if expr(blob_id == ^actor(:blob_id))
+    end
+
     bypass {ActorRole, role: :admin} do
       authorize_if always()
     end

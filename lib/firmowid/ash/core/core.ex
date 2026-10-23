@@ -221,7 +221,16 @@ defmodule Firmowid.Ash.Core do
            each_ok(owned, fn {organization, owner_opts} ->
              prepare_organization_deletion(organization, owner_opts)
            end) do
-      result = transact(fn -> destroy_user_in_transaction(user, opts) end)
+      result =
+        case transact(fn -> destroy_user_in_transaction(user, opts) end) do
+          :ok ->
+            each_ok(owned, fn {organization, _opts} ->
+              OrganizationCleanup.remove_wizard_states(organization_cleanup_scope(organization))
+            end)
+
+          {:error, error} ->
+            {:error, error}
+        end
 
       Enum.each(owned, fn {organization, _opts} ->
         report_local_failure(result, organization, "owner_account_delete")
@@ -240,7 +249,15 @@ defmodule Firmowid.Ash.Core do
   @spec destroy_organization(Organization.t(), Keyword.t()) :: :ok | {:error, term()}
   def destroy_organization(%Organization{} = organization, opts \\ []) do
     with :ok <- prepare_organization_deletion(organization, opts) do
-      result = transact(fn -> destroy_organization_in_transaction(organization, opts) end)
+      result =
+        case transact(fn -> destroy_organization_in_transaction(organization, opts) end) do
+          :ok ->
+            OrganizationCleanup.remove_wizard_states(organization_cleanup_scope(organization))
+
+          {:error, error} ->
+            {:error, error}
+        end
+
       report_local_failure(result, organization, "organization_delete")
       result
     end
@@ -286,6 +303,7 @@ defmodule Firmowid.Ash.Core do
 
   It deletes dependent projects and tag definitions, clears organization
   assignment for users, and then destroys the organization.
+  The public wrapper removes ephemeral wizard state after the database transaction succeeds.
   Prefer `destroy_organization/2` in regular application code.
   """
   @spec destroy_organization_in_transaction(Organization.t(), Keyword.t()) ::

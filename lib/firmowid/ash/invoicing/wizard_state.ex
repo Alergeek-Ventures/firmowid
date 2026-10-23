@@ -4,16 +4,7 @@
 defmodule Firmowid.Ash.Invoicing.WizardState do
   @moduledoc """
   Ephemeral browser invoice wizard state backed by ETS, distinct from saved invoice drafts.
-
-  ## Actions
-
-    * `:create` — start a new browser wizard
-    * `:update_counterparty` — step 1: counterparty data, advances to :items
-    * `:update_items` — step 2: line items, advances to :payment
-    * `:update_payment` — step 3: payment data, advances to :preview
-    * `:populate_from_invoice` — populate from an existing invoice (copy flow)
-    * `:read` — default read
-    * `:destroy` — discard wizard state (cascades items)
+  Each action's `description` documents its wizard step.
 
   ## ETS scoping
 
@@ -234,6 +225,13 @@ defmodule Firmowid.Ash.Invoicing.WizardState do
   end
 
   policies do
+    bypass [
+      {Firmowid.Ash.Checks.SystemActorRole, roles: [:organization_cleanup]},
+      action([:read, :destroy])
+    ] do
+      authorize_if expr(not is_nil(^actor(:org_id)) and organization_id == ^actor(:org_id))
+    end
+
     bypass {Firmowid.Ash.Checks.ActorRole, role: :admin} do
       authorize_if always()
     end

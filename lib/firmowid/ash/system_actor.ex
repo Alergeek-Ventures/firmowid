@@ -75,9 +75,9 @@ defmodule Firmowid.Ash.SystemActor do
   - `:anonymous` — unauthenticated share-token access. Can only read the specific
     invoice identified by the share token.
 
-  - `:avatar_cleanup` — cleans up unreferenced avatar blobs after a user or
-    organization updates their avatar. Can read/write blobs and read related
-    records as needed for blob cleanup.
+  - `:avatar_cleanup` — cleans up an unreferenced avatar blob after a member or
+    organization replaces their avatar. `blob_id` names the old blob: the actor
+    can read and destroy only that blob and read only records referencing it.
 
   - `:actor_member_loader` — loads the authenticated user's active member, which
     decides the user's organization and which policies read the user's role from.

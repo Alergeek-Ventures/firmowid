@@ -215,6 +215,10 @@ defmodule Firmowid.Ash.Core.Organization do
   end
 
   policies do
+    bypass [{SystemActorRole, roles: [:avatar_cleanup]}, action(:read)] do
+      authorize_if expr(id == ^actor(:org_id) and avatar_blob_id == ^actor(:blob_id))
+    end
+
     bypass actor_attribute_equals(:system_role, :superuser) do
       authorize_if always()
     end

@@ -9,6 +9,7 @@ defmodule FirmowidMcp.Invoicing.Views.Issue do
   alias Firmowid.Ash.Core
   alias Firmowid.Ash.Invoicing
   alias Firmowid.Ash.Invoicing.SalesInvoice
+  alias Firmowid.Ash.Invoicing.SalesInvoice.Preview
   alias Firmowid.Ash.Ksef
   alias Firmowid.Ash.Ksef.SubmissionInfo
   alias FirmowidMcp.Invoicing, as: McpInvoicing
@@ -38,33 +39,6 @@ defmodule FirmowidMcp.Invoicing.Views.Issue do
          sales_invoice_items: [:net_value, :vat_value, :gross_value]
        ]},
     sales_invoice_items: [:net_value, :vat_value, :gross_value]
-  ]
-  @review_fields [
-    :invoice_type,
-    :issue_date,
-    :sale_date,
-    :due_date,
-    :currency,
-    :payment_method,
-    :seller_nip,
-    :seller_display_name,
-    :seller_address,
-    :seller_account_number,
-    :buyer_type,
-    :buyer_id,
-    :buyer_full_name,
-    :buyer_given_name,
-    :buyer_surname,
-    :buyer_pesel,
-    :buyer_display_name,
-    :buyer_address,
-    :buyer_country,
-    :is_reverse_charge,
-    :vat_exemption_type,
-    :vat_exemption_basis,
-    :invoice_note,
-    :correction_reason,
-    :correction_type
   ]
 
   @impl true
@@ -258,11 +232,14 @@ defmodule FirmowidMcp.Invoicing.Views.Issue do
          {:ok, _result, current} <-
            Widgets.execute(socket.assigns.widget, socket.assigns.arguments, socket.assigns.scope) do
       socket = assign(socket, :connection, connection)
-      # Notes are edited in the widget, so only the tool's own data can have changed.
+      # The number and notes are edited in the widget, independently of the saved draft.
       current =
-        Map.merge(current, Map.take(socket.assigns.invoice, [:invoice_note, :internal_note]))
+        Map.merge(
+          current,
+          Map.take(socket.assigns.invoice, [:invoice_number, :invoice_note, :internal_note])
+        )
 
-      if review_snapshot(current) == review_snapshot(socket.assigns.invoice) do
+      if Preview.review_snapshot(current) == Preview.review_snapshot(socket.assigns.invoice) do
         issue(socket)
       else
         socket
@@ -308,6 +285,7 @@ defmodule FirmowidMcp.Invoicing.Views.Issue do
         with {:ok, draft} <- Invoicing.get_sales_invoice(draft_id, scope: scope) do
           Invoicing.finalize_sales_invoice_draft(draft, %{input: confirmed_input(socket)},
             scope: scope,
+            private_arguments: %{expected_review: Preview.review_snapshot(socket.assigns.invoice)},
             context: McpInvoicing.action_context()
           )
         end
@@ -404,34 +382,6 @@ defmodule FirmowidMcp.Invoicing.Views.Issue do
         requires_confirmation: socket.assigns.phase == :review
       }
     })
-  end
-
-  defp review_snapshot(invoice) do
-    items =
-      Enum.map(
-        invoice.sales_invoice_items,
-        &Map.take(&1, [:index, :name, :quantity, :unit, :unit_price, :vat_rate])
-      )
-
-    invoice
-    |> Map.take(@review_fields)
-    |> Map.put(:items, items)
-    |> Map.put(:reference_invoice, reference_snapshot(invoice.reference_invoice))
-  end
-
-  defp reference_snapshot(nil), do: nil
-  defp reference_snapshot(%Ash.NotLoaded{}), do: nil
-
-  defp reference_snapshot(invoice) when is_map(invoice) do
-    invoice
-    |> Map.take([:id, :invoice_number, :ksef_number, :amount])
-    |> Map.put(
-      :sales_invoice_items,
-      Enum.map(
-        invoice.sales_invoice_items,
-        &Map.take(&1, [:index, :name, :quantity, :unit, :unit_price, :vat_rate])
-      )
-    )
   end
 
   defp error_messages(%{errors: errors}) do

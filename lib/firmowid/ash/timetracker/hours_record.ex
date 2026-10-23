@@ -14,6 +14,7 @@ defmodule Firmowid.Ash.Timetracker.HoursRecord do
   alias Firmowid.Ash.Blobs
   alias Firmowid.Ash.Checks.ActorRole
   alias Firmowid.Ash.Checks.CreatingForActorMember
+  alias Firmowid.Ash.Checks.SystemActorRole
   alias Firmowid.Ash.Core.User
   alias Firmowid.Ash.Resource
   alias Firmowid.Ash.Timetracker.Actions.NotifyAdminsAboutHoursRecordChange
@@ -199,7 +200,11 @@ defmodule Firmowid.Ash.Timetracker.HoursRecord do
   end
 
   policies do
-    bypass {Firmowid.Ash.Checks.SystemActorRole, roles: [:hours_record_change_notifier]} do
+    bypass [{SystemActorRole, roles: [:avatar_cleanup]}, action(:read)] do
+      authorize_if expr(blob_id == ^actor(:blob_id))
+    end
+
+    bypass {SystemActorRole, roles: [:hours_record_change_notifier]} do
       authorize_if action_type(:read)
     end
 

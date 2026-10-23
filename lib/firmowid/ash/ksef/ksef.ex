@@ -154,7 +154,7 @@ defmodule Firmowid.Ash.Ksef do
                     "Firmowid.Ash.Ksef.Workers.SubmissionWorker"
                   ],
                 where: fragment("?->>'organization_id' = ?", j.args, ^org_id),
-                where: j.state in ["available", "scheduled", "executing"]
+                where: j.state in ["available", "scheduled", "executing", "retryable"]
               )
             )
 

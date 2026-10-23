@@ -50,4 +50,30 @@ defmodule FirmowidMcp.Utilities.RewriteLoopbackRedirectUriTest do
     assert conn.params["redirect_uri"] == redirect_uri
     assert conn.query_params["redirect_uri"] == redirect_uri
   end
+
+  test "rejects ambiguous redirect URIs in query and token form parameters" do
+    for uri <- [
+          "http://attacker.invalid\\@127.0.0.1/callback",
+          "http://user@localhost/callback",
+          "http://127.0.0.1/callback#fragment",
+          "http://127.0.0.1/\tcallback"
+        ],
+        method <- [:get, :post] do
+      conn =
+        case method do
+          :get ->
+            :get
+            |> Plug.Test.conn("/oauth/authorize?" <> URI.encode_query(%{"redirect_uri" => uri}))
+            |> Plug.Conn.fetch_query_params()
+
+          :post ->
+            Plug.Test.conn(:post, "/oauth/token", %{"redirect_uri" => uri})
+        end
+
+      conn = RewriteLoopbackRedirectUri.call(conn, [])
+      assert conn.status == 400
+      assert conn.halted
+      assert Jason.decode!(conn.resp_body) == %{"error" => "invalid_request"}
+    end
+  end
 end

@@ -271,8 +271,8 @@ defmodule Firmowid.Ash.Blobs.Blob do
       authorize_if action(:list_processing)
     end
 
-    bypass {SystemActorRole, roles: [:avatar_cleanup]} do
-      authorize_if action([:read, :destroy])
+    bypass [{SystemActorRole, roles: [:avatar_cleanup]}, action([:read, :destroy])] do
+      authorize_if expr(id == ^actor(:blob_id))
     end
 
     policy action(:read_global) do

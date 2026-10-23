@@ -193,6 +193,7 @@ defmodule Firmowid.Ash.Finances.Transaction do
       require_attributes [:salary_user_id, :salary_month]
       require_atomic? false
 
+      change get_and_lock_for_update()
       change Firmowid.Ash.Finances.Changes.ConnectSalary
     end
 

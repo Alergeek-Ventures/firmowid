@@ -7,12 +7,16 @@ defmodule Firmowid.Ash.Core.User.Preparations.RequireActiveAccount do
   Sign-in actions are not filtered: a member of an organization without a billing
   plan signs in successfully, and the sign-in callback explains the block instead of
   issuing a session, so the reason is shown only after the password check.
+
+  Sign-ins lock the user through token issuance to serialize with password changes.
   """
 
   use Ash.Resource.Preparation
 
   alias Ash.Query
+  alias AshAuthentication.Errors.AuthenticationFailed
   alias AshAuthentication.Info
+  alias AshAuthentication.Jwt
 
   require Query
 
@@ -21,7 +25,25 @@ defmodule Firmowid.Ash.Core.User.Preparations.RequireActiveAccount do
   @doc false
   @impl true
   @spec prepare(Query.t(), keyword(), Ash.Resource.Preparation.Context.t()) :: Query.t()
-  def prepare(%{action: %{name: action}} = query, _options, _context) when action in @sign_in_actions, do: query
+  def prepare(%{action: %{name: :sign_in_with_remember_me}} = query, _options, context) do
+    query
+    |> Query.lock(:for_update)
+    |> Query.after_action(fn query, users ->
+      # The strategy verifies the remember token before reading/locking the user.
+      # A password change may revoke it while that read waits for the row lock.
+      case Jwt.verify(
+             Query.get_argument(query, :token),
+             query.resource,
+             Ash.Context.to_opts(context)
+           ) do
+        {:ok, _claims, _resource} -> {:ok, users}
+        _ -> {:error, AuthenticationFailed.exception()}
+      end
+    end)
+  end
+
+  def prepare(%{action: %{name: action}} = query, _options, _context) when action in @sign_in_actions,
+    do: Query.lock(query, :for_update)
 
   def prepare(query, _options, _context), do: filter_blocked_accounts(query, authentication_read?(query))
 

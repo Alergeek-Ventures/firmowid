@@ -5,6 +5,7 @@ defmodule Firmowid.Ash.Timetracker.SessionTest do
   import Firmowid.TimetrackerFixtures
 
   alias Ash.Error.Invalid
+  alias Ecto.Adapters.SQL.Sandbox
   alias Firmowid.Ash.Scope
   alias Firmowid.Ash.Timetracker
   alias Firmowid.Ash.Timetracker.Session, as: AshSession
@@ -337,6 +338,106 @@ defmodule Firmowid.Ash.Timetracker.SessionTest do
   end
 
   describe "overlap prevention" do
+    @tag capture_log: true
+    test "does not double hourly salary through independently committed overlapping sessions" do
+      parent = self()
+
+      {owner, user, scope, project, salary} =
+        fn ->
+          Sandbox.unboxed_run(Repo, fn ->
+            owner = admin_fixture()
+            user = user_fixture(%{organization_id: owner.member.organization_id})
+            scope = Scope.new!(user, user.member.organization_id)
+
+            project =
+              Ash.Seed.seed!(Firmowid.Ash.Timetracker.Project, %{
+                name: "Concurrent hours",
+                organization_id: scope.tenant
+              })
+
+            Ash.Seed.seed!(Firmowid.Ash.Timetracker.ProjectUser, %{
+              project_id: project.id,
+              member_id: user.member.id,
+              organization_id: scope.tenant
+            })
+
+            salary =
+              Ash.Seed.seed!(Firmowid.Ash.Payroll.UserSalary, %{
+                organization_id: scope.tenant,
+                member_id: user.member.id,
+                hourly_rate: Decimal.new(100),
+                starts_at: ~U[2025-01-01 00:00:00Z]
+              })
+
+            {owner, user, scope, project, salary}
+          end)
+        end
+        |> Task.async()
+        |> Task.await(10_000)
+
+      on_exit(fn ->
+        Sandbox.unboxed_run(Repo, fn ->
+          assert {:ok, :ok} =
+                   Repo.transaction(fn ->
+                     :ok = Firmowid.Ash.Core.destroy_user_in_transaction(owner, actor: owner)
+                     Firmowid.Ash.Core.User.destroy!(user, authorize?: false)
+                   end)
+        end)
+      end)
+
+      attrs = %{
+        title: "Concurrent hourly work",
+        project_id: project.id,
+        member_id: user.member.id,
+        start_datetime: ~U[2025-04-01 09:00:00Z],
+        end_datetime: ~U[2025-04-01 10:00:00Z]
+      }
+
+      first =
+        Task.async(fn ->
+          Sandbox.unboxed_run(Repo, fn ->
+            Repo.transaction(fn ->
+              session = AshSession.create!(attrs, scope: scope)
+              %{rows: [[backend_pid]]} = Repo.query!("SELECT pg_backend_pid()")
+              send(parent, {:session_inserted, self(), backend_pid})
+
+              receive do
+                :commit -> session
+              after
+                10_000 -> raise "session commit barrier timed out"
+              end
+            end)
+          end)
+        end)
+
+      assert_receive {:session_inserted, first_pid, first_backend}, 10_000
+
+      second =
+        Task.async(fn ->
+          Sandbox.unboxed_run(Repo, fn ->
+            %{rows: [[backend_pid]]} = Repo.query!("SELECT pg_backend_pid()")
+            send(parent, {:session_backend, backend_pid})
+            AshSession.create(attrs, scope: scope)
+          end)
+        end)
+
+      assert_receive {:session_backend, backend_pid}, 10_000
+      refute backend_pid == first_backend
+      second_state = await_session_insert(second, backend_pid, 2_000)
+      send(first_pid, :commit)
+      assert {:ok, _session} = Task.await(first, 10_000)
+
+      second_result =
+        case second_state do
+          :blocked -> Task.await(second, 10_000)
+          {:completed, result} -> result
+        end
+
+      persisted = Ash.load!(salary, [monthly_amount: [month: ~D[2025-04-01]]], scope: scope)
+      assert persisted.monthly_amount == Money.new!(:PLN, 100)
+      assert {:error, _} = second_result
+    end
+
     test "prevents overlapping sessions for the same user", %{
       user: user,
       project: project,
@@ -385,6 +486,21 @@ defmodule Firmowid.Ash.Timetracker.SessionTest do
         )
 
       assert {:error, _} = result
+    end
+  end
+
+  defp await_session_insert(_task, _backend_pid, 0), do: flunk("session insert did not complete or reach its lock")
+
+  defp await_session_insert(task, backend_pid, attempts) do
+    case Task.yield(task, 0) do
+      {:ok, result} ->
+        {:completed, result}
+
+      nil ->
+        %{rows: [[blocked]]} =
+          Repo.query!("SELECT cardinality(pg_blocking_pids($1)) > 0", [backend_pid])
+
+        if blocked, do: :blocked, else: await_session_insert(task, backend_pid, attempts - 1)
     end
   end
 

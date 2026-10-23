@@ -4,12 +4,47 @@ defmodule Firmowid.Ash.Core.OrganizationCleanupTest do
 
   import Firmowid.AccountsFixtures
 
+  alias Firmowid.Ash.Core
+  alias Firmowid.Ash.Core.Member
   alias Firmowid.Ash.Core.OauthAuthorizationCode
   alias Firmowid.Ash.Core.OauthConsent
   alias Firmowid.Ash.Core.OauthRefreshToken
   alias Firmowid.Ash.Core.OrganizationCleanup
   alias Firmowid.Ash.Scope
   alias Firmowid.Ash.SystemActor
+  alias Phoenix.Socket.Broadcast
+
+  test "membership disconnect is delivered after its surrounding Ash transaction" do
+    owner = admin_fixture()
+    user = user_in_org_fixture(owner.member.organization_id, %{role: :accountant})
+    {:ok, %{"jti" => jti}} = AshAuthentication.Jwt.peek(user.__metadata__.token)
+    topic = "users_sessions:#{jti}"
+    :ok = FirmowidWeb.Core.Endpoint.subscribe(topic)
+    scope = %Scope{actor: owner, tenant: owner.member.organization_id}
+
+    ExUnit.CaptureLog.capture_log(fn ->
+      assert {:ok, :ok} =
+               Ash.transact([Member], fn ->
+                 assert {:ok, _member} =
+                          Core.update_member_role(user.member, %{role: :employee}, scope: scope)
+
+                 refute_received %Broadcast{topic: ^topic, event: "disconnect"}
+                 :ok
+               end)
+    end)
+
+    assert_received %Broadcast{topic: ^topic, event: "disconnect"}
+
+    assert {:error, rollback_error} =
+             Ash.transact([Member], fn ->
+               Core.update_member_role!(user.member, %{role: :admin}, scope: scope)
+               refute_received %Broadcast{topic: ^topic, event: "disconnect"}
+               {:error, :rollback}
+             end)
+
+    assert Exception.message(rollback_error) =~ "rollback"
+    refute_received %Broadcast{topic: ^topic, event: "disconnect"}
+  end
 
   test "account cleanup lists and deletes only its user's OAuth records" do
     owner = user_fixture()

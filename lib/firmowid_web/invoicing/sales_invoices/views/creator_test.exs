@@ -5,6 +5,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.CreatorTest do
   import Firmowid.AccountsFixtures
   import Phoenix.LiveViewTest
 
+  alias Firmowid.Ash.Core
   alias Firmowid.Ash.Finances
   alias Firmowid.Ash.Invoicing
   alias Firmowid.Ash.Invoicing.SalesInvoice
@@ -12,6 +13,75 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.CreatorTest do
   alias Firmowid.Ash.Scope
   alias Firmowid.InvoicingFixtures
   alias Firmowid.Test.Support.InvoicingCopyAssertions
+
+  for deletion <- [:organization, :account] do
+    @deletion deletion
+    test "deleting #{@deletion} disconnects the creator before another wizard read", %{conn: conn} do
+      owner = admin_fixture()
+      accountant = user_in_org_fixture(owner.member.organization_id, %{role: :accountant})
+      scope = scope_for(accountant)
+      first = WizardState.create!(%{organization_id: owner.member.organization_id}, scope: scope)
+      second = WizardState.create!(%{organization_id: owner.member.organization_id}, scope: scope)
+      marker = "previously-unread-wizard-address"
+
+      second =
+        WizardState.populate_from_invoice!(
+          second,
+          %{
+            buyer_type: :company,
+            buyer_country: "PL",
+            buyer_full_name: "Buyer",
+            buyer_address: marker,
+            items: [base_item_attrs(%{index: 0, name: "Unread item"})]
+          },
+          scope: scope
+        )
+
+      conn = log_in_user(conn, accountant)
+      {:ok, view, html} = live(conn, ~p"/sprzedazowe?szkic_kreatora=#{first.id}&krok=1")
+      refute html =~ marker
+      # LiveViewTest runs the channel without the browser's socket transport.
+      # Observe the real transport-disconnect topic rather than expecting the proxy to close itself.
+      {:ok, %{"jti" => jti}} = AshAuthentication.Jwt.peek(accountant.__metadata__.token)
+      topic = "users_sessions:#{jti}"
+      :ok = FirmowidWeb.Core.Endpoint.subscribe(topic)
+      owner_scope = scope_for(owner)
+
+      result =
+        case @deletion do
+          :organization ->
+            organization =
+              Core.get_organization!(owner.member.organization_id, scope: owner_scope)
+
+            Core.destroy_organization(organization, scope: owner_scope)
+
+          :account ->
+            Core.destroy_user(accountant, scope: scope)
+        end
+
+      assert :ok = result
+
+      receive do
+        %Phoenix.Socket.Broadcast{topic: ^topic, event: "disconnect"} ->
+          :ok
+      after
+        1_000 ->
+          html = render_patch(view, ~p"/sprzedazowe?szkic_kreatora=#{second.id}&krok=1")
+          refute html =~ marker
+          flunk("The deleted membership must disconnect its existing LiveView")
+      end
+
+      case @deletion do
+        :organization ->
+          assert {:error, _error} = Invoicing.get_wizard_state(second.id, scope: scope)
+          assert [] = WizardState.Item.read!(scope: scope)
+
+        :account ->
+          assert Invoicing.get_wizard_state!(second.id, scope: owner_scope).buyer_address ==
+                   marker
+      end
+    end
+  end
 
   test "payment step restores the bank account matching the draft currency", %{conn: conn} do
     admin = admin_fixture()
@@ -661,7 +731,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.CreatorTest do
 
   defp sales_invoice_fixture!(admin, overrides) do
     admin.member.organization_id
-    |> Firmowid.Ash.Core.get_organization!(scope: scope_for(admin))
+    |> Core.get_organization!(scope: scope_for(admin))
     |> Ash.Seed.update!(%{address: "ul. Organizacyjna 1, Warszawa"})
 
     default_attrs = %{

@@ -19,14 +19,14 @@ defmodule Firmowid.Ash.Core.Member do
   use Ash.Resource,
     domain: Firmowid.Ash.Core,
     data_layer: AshPostgres.DataLayer,
-    authorizers: [Ash.Policy.Authorizer]
+    authorizers: [Ash.Policy.Authorizer],
+    simple_notifiers: [Firmowid.Ash.Core.Member.Notifiers.DisconnectLiveSessions]
 
   alias Firmowid.Ash.Checks.OrganizationAdmin
   alias Firmowid.Ash.Checks.SystemActorRole
   alias Firmowid.Ash.Core
   alias Firmowid.Ash.Core.Calculations.AcceptedLeaveDaysForYear
   alias Firmowid.Ash.Core.Calculations.SharedBirthday
-  alias Firmowid.Ash.Core.Member.Changes.DisconnectLiveSessions
   alias Firmowid.Ash.Core.UserRole
   alias Firmowid.Ash.Core.Validations.ValidateIban
   alias Firmowid.Ash.Resource
@@ -93,7 +93,12 @@ defmodule Firmowid.Ash.Core.Member do
   end
 
   actions do
-    defaults [:read, :destroy]
+    defaults [:read]
+
+    destroy :destroy do
+      description "Remove the membership and disconnect its cached LiveView actors."
+      require_atomic? false
+    end
 
     create :create do
       description "Add a user to the organization, restoring their archived membership."
@@ -121,8 +126,6 @@ defmodule Firmowid.Ash.Core.Member do
       description "Update the member's organization role."
       primary? true
       accept [:role]
-
-      change DisconnectLiveSessions
     end
 
     update :update_profile do
@@ -193,8 +196,6 @@ defmodule Firmowid.Ash.Core.Member do
                  {:ok, member}
                end
              end)
-
-      change DisconnectLiveSessions
     end
 
     update :unarchive do
@@ -204,12 +205,14 @@ defmodule Firmowid.Ash.Core.Member do
 
       change filter(expr(not is_nil(archived_at)))
       change set_attribute(:archived_at, nil)
-
-      change DisconnectLiveSessions
     end
   end
 
   policies do
+    bypass [{SystemActorRole, roles: [:avatar_cleanup]}, action(:read)] do
+      authorize_if expr(avatar_blob_id == ^actor(:blob_id))
+    end
+
     bypass {SystemActorRole, roles: [:organization_owner_setup]} do
       authorize_if action(:create)
     end

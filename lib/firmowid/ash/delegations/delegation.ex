@@ -11,6 +11,7 @@ defmodule Firmowid.Ash.Delegations.Delegation do
     extensions: [AshStateMachine]
 
   alias Firmowid.Ash.Checks.ActorRole
+  alias Firmowid.Ash.Checks.SystemActorRole
   alias Firmowid.Ash.Core.Member
   alias Firmowid.Ash.Delegations.Actions.NotifyAdminsAboutDelegation
   alias Firmowid.Ash.Delegations.Actions.NotifyEmployeeAboutApprovedDelegation
@@ -173,11 +174,15 @@ defmodule Firmowid.Ash.Delegations.Delegation do
   end
 
   policies do
+    bypass [{SystemActorRole, roles: [:avatar_cleanup]}, action(:read)] do
+      authorize_if expr(signed_command_blob_id == ^actor(:blob_id))
+    end
+
     bypass {ActorRole, role: :admin} do
       authorize_if always()
     end
 
-    bypass {Firmowid.Ash.Checks.SystemActorRole, roles: [:leave_notifier]} do
+    bypass {SystemActorRole, roles: [:leave_notifier]} do
       authorize_if action_type(:read)
     end
 

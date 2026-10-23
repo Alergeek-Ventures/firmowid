@@ -3,6 +3,7 @@ defmodule FirmowidWeb.Delegations.Utilities.SettlementForm do
 
   import Phoenix.Component, only: [to_form: 1]
 
+  alias AshMoney.Types.Money, as: MoneyType
   alias AshPhoenix.Form.Auto
   alias Phoenix.HTML.Form
 
@@ -84,6 +85,8 @@ defmodule FirmowidWeb.Delegations.Utilities.SettlementForm do
   def merge_foreign_currency_settlements(params, modes, nbp_settlements) do
     Map.update(params, "expenses", %{}, fn expenses ->
       Map.new(expenses, fn {index, expense} ->
+        expense = Map.drop(expense, ["settlement_method", "nbp_rate", "nbp_rate_date"])
+
         expense =
           case Map.get(modes, expense["id"]) do
             :statement ->
@@ -95,7 +98,7 @@ defmodule FirmowidWeb.Delegations.Utilities.SettlementForm do
               put_nbp_settlement(expense, Map.get(nbp_settlements, expense["id"]))
 
             _ ->
-              expense
+              Map.drop(expense, ["settlement_amount", "settlement_currency"])
           end
 
         {index, expense}
@@ -177,16 +180,26 @@ defmodule FirmowidWeb.Delegations.Utilities.SettlementForm do
     end)
   end
 
-  defp put_nbp_settlement(expense, %{amount: amount, rate: rate, date: date}) do
-    expense
-    |> Map.put("settlement_method", "nbp")
-    |> Map.put("settlement_amount", Decimal.to_string(Money.to_decimal(amount), :normal))
-    |> Map.put("settlement_currency", "PLN")
-    |> Map.put("nbp_rate", Decimal.to_string(rate, :normal))
-    |> Map.put("nbp_rate_date", Date.to_iso8601(date))
+  defp put_nbp_settlement(expense, %{source_currency: source_currency, rate: rate, date: date}) do
+    amount_params = normalize_expense_amount(expense)["expense_amount"]
+
+    with {:ok, %Money{} = amount} <- Ash.Type.cast_input(MoneyType, amount_params),
+         true <- Atom.to_string(Money.to_currency_code(amount)) == source_currency do
+      expense
+      |> Map.put("settlement_method", "nbp")
+      |> Map.put(
+        "settlement_amount",
+        Decimal.to_string(Decimal.mult(Money.to_decimal(amount), rate), :normal)
+      )
+      |> Map.put("settlement_currency", "PLN")
+      |> Map.put("nbp_rate", Decimal.to_string(rate, :normal))
+      |> Map.put("nbp_rate_date", Date.to_iso8601(date))
+    else
+      _ -> Map.drop(expense, ["settlement_amount", "settlement_currency"])
+    end
   end
 
-  defp put_nbp_settlement(expense, nil), do: expense
+  defp put_nbp_settlement(expense, nil), do: Map.drop(expense, ["settlement_amount", "settlement_currency"])
 
   defp nested_forms(%Form{source: source}, field),
     do: source.forms |> Map.get(field, []) |> List.wrap() |> Enum.map(&to_form/1)

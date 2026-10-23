@@ -1,20 +1,11 @@
 defmodule FirmowidMcp.Utilities.RewriteLoopbackRedirectUri do
   @moduledoc """
-  Rewrites a `localhost` `redirect_uri` to its `127.0.0.1` equivalent
-  before it reaches `ash_authentication_oauth2_server`.
+  Validates redirect URIs and rewrites `localhost` to `127.0.0.1` before
+  they reach `ash_authentication_oauth2_server`.
 
-  RFC 8252 §7.3's loopback port-wildcard exception (a native/CLI client
-  may bind an ephemeral port at authorization time without
-  pre-registering it) applies only to IP literals in
-  `ash_authentication_oauth2_server` — `localhost` is deliberately
-  excluded there, since a hostname's resolution isn't guaranteed to stay
-  loopback. In practice several real OAuth clients (Claude Code among
-  them) hardcode `localhost` and never fall back to the IP literal, even
-  when their own client metadata advertises support for both — so
-  strict enforcement just breaks them. We rewrite the host here instead
-  of loosening the check in the dependency, accepting the same
-  theoretical, local-machine-only risk that the IP-literal exception
-  already accepts.
+  Rejects userinfo, fragments and ambiguous URL separators before the library's
+  loopback port-wildcard comparison. Keeps the existing localhost normalization
+  for native/CLI clients using ephemeral callback ports (RFC 8252 §7.3).
 
   Must run after `Plug.Parsers` (see `FirmowidWeb.Core.Endpoint`) so
   `conn.params` / `conn.query_params` / `conn.body_params` are already
@@ -24,16 +15,42 @@ defmodule FirmowidMcp.Utilities.RewriteLoopbackRedirectUri do
 
   @behaviour Plug
 
+  alias AshAuthentication.Phoenix.Oauth2Server.Errors
+
+  @parameter_keys [:params, :query_params, :body_params]
+  @loopback_hosts ["localhost", "127.0.0.1", "::1"]
+
   @impl Plug
   def init(opts), do: opts
 
   @impl Plug
   def call(conn, _opts) do
-    conn
-    |> rewrite(:params)
-    |> rewrite(:query_params)
-    |> rewrite(:body_params)
+    if Enum.any?(@parameter_keys, &invalid_redirect?(Map.get(conn, &1))) do
+      Errors.send_oauth_error(conn, 400, "invalid_request")
+    else
+      Enum.reduce(@parameter_keys, conn, &rewrite(&2, &1))
+    end
   end
+
+  # The library's loopback comparison ignores userinfo and fragments. Reject
+  # those and browser URL separators before parsing can normalize the authority.
+  defp invalid_redirect?(%{"redirect_uri" => uri}) when is_binary(uri) and uri != "" do
+    uri =~ ~r/[\\\x00-\x20\x7F]/ or
+      case URI.new(uri) do
+        {:ok, %URI{scheme: "https", host: host, userinfo: nil, fragment: nil}}
+        when is_binary(host) and host != "" ->
+          false
+
+        {:ok, %URI{scheme: "http", host: host, userinfo: nil, fragment: nil}}
+        when host in @loopback_hosts ->
+          false
+
+        _ ->
+          true
+      end
+  end
+
+  defp invalid_redirect?(_params), do: false
 
   defp rewrite(conn, key) do
     with %{"redirect_uri" => uri} = params when is_binary(uri) <- Map.get(conn, key),
