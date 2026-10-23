@@ -108,7 +108,7 @@ defmodule FirmowidWeb.Landing.Components.Hero do
           id="landing-compass"
           phx-hook="LandingHero"
           phx-update="ignore"
-          class="@container relative mt-8 aspect-730/670 w-full [--compass-unit:calc(100cqw/730)] lg:-mt-7 lg:ml-[-2.4%] lg:w-[116.5%]"
+          class="@container relative mt-8 aspect-730/670 w-full [--compass-unit:calc(100cqw/730)] lg:-mt-7 lg:-ml-3 lg:w-[calc(50vw-64px)]"
           role="img"
           aria-label={
             gettext("Firmowid connects invoices and KSeF, banking, time tracking, and your team.")
