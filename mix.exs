@@ -143,7 +143,7 @@ defmodule Firmowid.MixProject do
       {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},
       {:excoveralls, "~> 0.18", only: :test},
       {:openai_ex, "~> 0.10.0"},
-      {:req_llm, "~> 1.28.0"},
+      {:req_llm, "~> 1.29.0"},
       {:live_debugger, "~> 1.0", only: [:dev], runtime: Mix.env() == :dev},
       {:oban_web, "~> 2.11"},
       {:igniter, "~> 0.5", only: [:dev]},
