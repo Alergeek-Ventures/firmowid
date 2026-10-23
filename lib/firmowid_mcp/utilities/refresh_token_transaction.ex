@@ -30,54 +30,53 @@ defmodule FirmowidMcp.Utilities.RefreshTokenTransaction do
     with raw when is_binary(raw) and raw != "" <- refresh_token(conn),
          hash = :sha256 |> :crypto.hash(raw) |> Base.encode16(case: :lower),
          {:ok, token} <- Core.get_oauth_refresh_token_by_hash(hash, ash_opts) do
-      # The native router sends from inside the transaction. Its response is
-      # captured by the first before_send callback, before the adapter or any
-      # other callback runs, so tokens and revocation results leave only after the
-      # commit and a slow client cannot hold the locks.
-      ref = make_ref()
-      defer = fn conn -> throw({ref, conn}) end
-
-      fn ->
-        # The stored opaque-token hash fixes the user; request user IDs are never
-        # consulted and no selected fields escape. This is only a lock, not an
-        # authentication read: blocked or concurrently deleted users must still
-        # receive the native protocol response rather than a lookup exception.
-        User
-        |> Ash.Query.filter(id == ^token.user_id)
-        |> Ash.Query.select([:id])
-        |> Ash.Query.lock(:for_update)
-        # credo:disable-for-next-line AshCredo.Check.Warning.AuthorizeFalse
-        |> Ash.read_one!(action: :read, authorize?: false)
-
-        # The library commits rotation, successor insertion and chain revocation
-        # separately. Hold the same user-first lock as password/archive through
-        # all of them, and commit reuse revocation even for an invalid_grant response.
-        # Native reuse revokes before checking client binding, so known tokens
-        # must serialize even when a different client is presented.
-        try do
-          conn |> Plug.Conn.register_before_send(defer) |> ProtocolRouter.call(opts)
-        catch
-          {^ref, response} -> response
-        end
-      end
-      |> Repo.transaction()
-      |> case do
-        {:ok, response} ->
-          response.private[:before_send]
-          |> update_in(&List.delete(&1, defer))
-          |> Plug.Conn.send_resp()
-          |> Plug.Conn.halt()
-
-        # A successor that cannot be issued (the account was blocked after the
-        # rotation) rolls the rotation back with it before the native router
-        # answers, so answer as it does when the issuance fails.
-        {:error, %Ash.Changeset{action: %{name: :issue}}} ->
-          {status, code, description} = Errors.describe_token_error(:server_error)
-          Errors.send_oauth_error(conn, status, code, description)
-      end
+      transact(conn, opts, token.user_id)
     else
       _ -> ProtocolRouter.call(conn, opts)
     end
+  end
+
+  defp transact(conn, opts, user_id) do
+    ref = make_ref()
+    defer = fn conn -> throw({ref, conn}) end
+
+    # Rotation, successor issuance and reuse revocation must share the user lock
+    # held by password changes and membership archival, including error responses.
+    fn ->
+      lock_user(user_id)
+
+      # ProtocolRouter sends immediately and has no transaction hook. Capture its
+      # response before other callbacks or the adapter run, then send after commit.
+      try do
+        conn |> Plug.Conn.register_before_send(defer) |> ProtocolRouter.call(opts)
+      catch
+        {^ref, response} -> response
+      end
+    end
+    |> Repo.transaction()
+    |> case do
+      {:ok, response} ->
+        response.private[:before_send]
+        |> update_in(&List.delete(&1, defer))
+        |> Plug.Conn.send_resp()
+        |> Plug.Conn.halt()
+
+      # Ash rolls back the outer transaction if successor issuance fails.
+      {:error, %Ash.Changeset{action: %{name: :issue}}} ->
+        {status, code, description} = Errors.describe_token_error(:server_error)
+        Errors.send_oauth_error(conn, status, code, description)
+    end
+  end
+
+  defp lock_user(user_id) do
+    # Lock by the stored token's owner, even if blocked or concurrently deleted.
+    # Authentication filtering here would bypass the native protocol response.
+    User
+    |> Ash.Query.filter(id == ^user_id)
+    |> Ash.Query.select([:id])
+    |> Ash.Query.lock(:for_update)
+    # credo:disable-for-next-line AshCredo.Check.Warning.AuthorizeFalse
+    |> Ash.read_one!(action: :read, authorize?: false)
   end
 
   defp refresh_token(%{method: "POST", path_info: path, params: params}) do

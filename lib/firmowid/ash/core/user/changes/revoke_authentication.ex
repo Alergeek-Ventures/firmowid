@@ -1,12 +1,9 @@
 defmodule Firmowid.Ash.Core.User.Changes.RevokeAuthentication do
   @moduledoc """
-  Revokes the account's OAuth grants when it leaves an organization.
+  Revokes organization OAuth grants on departure and all authentication before deletion.
 
-  Only the grants for that organization go, with those issued before the
-  organization was chosen on the consent screen, which work in the default one.
-  Grants for the account's other organizations and browser sessions stay: the
-  account keeps signing in. `revoke/3` revokes all grants and the sessions, for
-  a password reset.
+  Departure includes grants without an organization, but keeps other organizations'
+  grants and browser sessions. Password changes use `revoke/3` to revoke everything.
   """
 
   use Ash.Resource.Change
@@ -22,11 +19,20 @@ defmodule Firmowid.Ash.Core.User.Changes.RevokeAuthentication do
   @doc false
   @impl true
   @spec change(Ash.Changeset.t(), keyword(), Context.t()) :: Ash.Changeset.t()
+  def change(%{action_type: :destroy} = changeset, _opts, context) do
+    Ash.Changeset.before_action(changeset, fn changeset ->
+      case revoke(changeset.data, context) do
+        :ok -> changeset
+        {:error, error} -> Ash.Changeset.add_error(changeset, error)
+      end
+    end)
+  end
+
   def change(changeset, _opts, context) do
     Ash.Changeset.after_action(changeset, fn changeset, user ->
-      # Leaving the organization has already been authorized and has locked this
-      # user row. The authentication context grants access only to the credential
-      # resources; every operation below is constrained to this user's ID.
+      # The action has authorized the departure and locked this user row. The
+      # authentication context reaches only credential resources, each filtered
+      # by this user's ID.
       opts = authentication_opts(context)
       organization_id = Ash.Changeset.get_argument(changeset, :organization_id)
 

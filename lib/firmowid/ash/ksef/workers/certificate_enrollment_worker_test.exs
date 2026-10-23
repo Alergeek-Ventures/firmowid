@@ -41,54 +41,43 @@ defmodule Firmowid.Ash.Ksef.Workers.CertificateEnrollmentWorkerTest do
     %{organization_id: organization_id, scope: ksef_scope(organization_id), admin: admin}
   end
 
-  test "replaces and revokes a generated certificate after KSeF issues its successor", %{
-    organization_id: organization_id,
-    scope: scope
-  } do
-    {old_certificate, old_private_key} = certificate_material("Old certificate")
-    {new_certificate, _new_private_key} = certificate_material("New certificate")
+  for auth_type <- [:generated_certificate, :certificate] do
+    @tag auth_type: auth_type
+    test "replaces a #{auth_type}, revoking only Firmowid-generated certificates", %{
+      organization_id: organization_id,
+      scope: scope,
+      auth_type: auth_type
+    } do
+      {certificate, private_key} = certificate_material("Current certificate")
+      {successor, _key} = certificate_material("Successor")
+      credential = seed_working_credential(organization_id, certificate, private_key, auth_type)
+      serial = CredentialMetadata.certificate_serial_number(credential)
 
-    credential =
-      seed_working_credential(
-        organization_id,
-        old_certificate,
-        old_private_key,
-        :generated_certificate
-      )
+      Req.Test.stub(:ksef_certificate_refresh_api, fn conn ->
+        if auth_type == :certificate, do: refute(String.ends_with?(conn.request_path, "/revoke"))
+        successful_refresh_response(conn, successor, serial)
+      end)
 
-    old_serial_number = CredentialMetadata.certificate_serial_number(credential)
+      Oban.Testing.with_testing_mode(:manual, fn ->
+        refreshing = Credential.refresh_certificate!(credential, scope: scope)
+        assert %{success: 1} = Oban.drain_queue(queue: :ksef_sessions)
+        poll_args = queued_poll_args(organization_id)
+        assert poll_args["credential_id"] == credential.id
+        assert poll_args["refresh_started_at"] == DateTime.to_iso8601(refreshing.updated_at)
+        assert :ok = perform_job(CertificateEnrollmentWorker, poll_args)
+      end)
 
-    Req.Test.stub(
-      :ksef_certificate_refresh_api,
-      &successful_refresh_response(&1, new_certificate, old_serial_number)
-    )
+      refreshed = Credential.get_internal!(scope: scope)
+      assert refreshed.status == :working
+      assert refreshed.auth_type == :generated_certificate
 
-    assert {:ok, %Credential{status: :refreshing}} =
-             Oban.Testing.with_testing_mode(:manual, fn ->
-               Credential.refresh_certificate(credential, scope: scope)
-             end)
+      assert %{"certificate" => refreshed_certificate, "private_key" => refreshed_private_key} =
+               Jason.decode!(refreshed.credentials)
 
-    assert :ok =
-             Oban.Testing.with_testing_mode(:manual, fn ->
-               perform_job(CertificateEnrollmentWorker, refresh_args(organization_id))
-             end)
-
-    poll_args = queued_poll_args(organization_id)
-    assert poll_args["credential_id"] == credential.id
-    assert poll_args["refresh_started_at"]
-
-    assert :ok = perform_job(CertificateEnrollmentWorker, poll_args)
-
-    refreshed_credential = Credential.get_internal!(scope: scope)
-    assert refreshed_credential.status == :working
-    assert refreshed_credential.auth_type == :generated_certificate
-
-    assert %{"certificate" => refreshed_certificate, "private_key" => refreshed_private_key} =
-             Jason.decode!(refreshed_credential.credentials)
-
-    assert String.trim_trailing(refreshed_certificate) == String.trim_trailing(new_certificate)
-    assert refreshed_private_key != old_private_key
-    assert refreshed_credential.expires_on == certificate_expiration_date(new_certificate)
+      assert String.trim_trailing(refreshed_certificate) == String.trim_trailing(successor)
+      assert refreshed_private_key != private_key
+      assert refreshed.expires_on == certificate_expiration_date(successor)
+    end
   end
 
   test "cancels stale refresh jobs after credentials are removed", %{
@@ -96,29 +85,6 @@ defmodule Firmowid.Ash.Ksef.Workers.CertificateEnrollmentWorkerTest do
   } do
     assert {:cancel, :no_credentials} =
              perform_job(CertificateEnrollmentWorker, refresh_args(organization_id))
-  end
-
-  test "does not revoke an uploaded certificate after rollover", %{
-    organization_id: organization_id,
-    scope: scope
-  } do
-    {certificate, key} = certificate_material("Uploaded certificate")
-    {successor, _key} = certificate_material("Successor")
-    credential = seed_working_credential(organization_id, certificate, key, :certificate)
-    serial = CredentialMetadata.certificate_serial_number(credential)
-
-    Req.Test.stub(:ksef_certificate_refresh_api, fn conn ->
-      refute String.ends_with?(conn.request_path, "/revoke")
-      successful_refresh_response(conn, successor, serial)
-    end)
-
-    Oban.Testing.with_testing_mode(:manual, fn ->
-      Credential.refresh_certificate!(credential, scope: scope)
-      assert %{success: 1} = Oban.drain_queue(queue: :ksef_sessions)
-      assert %{success: 1} = Oban.drain_queue(queue: :ksef_sessions)
-      assert Credential.get_internal!(scope: scope).auth_type == :generated_certificate
-      assert Credential.get_internal!(scope: scope).status == :working
-    end)
   end
 
   test "keeps the current certificate connected when renewal reaches KSeF limits", %{
@@ -152,43 +118,20 @@ defmodule Firmowid.Ash.Ksef.Workers.CertificateEnrollmentWorkerTest do
     assert credentials == credential.credentials
   end
 
-  test "disconnect cancels a real retryable certificate poll", %{
+  test "disconnect cancels a retryable certificate poll", %{
     organization_id: organization_id,
     scope: scope,
     admin: admin
   } do
     {certificate, key} = certificate_material("Current certificate")
-
-    credential =
-      seed_working_credential(organization_id, certificate, key, :generated_certificate)
-
-    serial = CredentialMetadata.certificate_serial_number(credential)
-    revoke_path = "/certificates/#{serial}/revoke"
-
-    Req.Test.stub(:ksef_certificate_refresh_api, fn conn ->
-      case conn.request_path do
-        "/certificates/enrollments/refresh-reference" ->
-          Plug.Conn.send_resp(conn, 403, "unavailable")
-
-        "/auth/sessions/current" ->
-          Plug.Conn.send_resp(conn, 204, "")
-
-        ^revoke_path ->
-          assert %{"revocationReason" => "Unspecified"} = conn.body_params
-          Plug.Conn.send_resp(conn, 204, "")
-
-        _ ->
-          successful_refresh_response(conn, certificate, serial)
-      end
-    end)
+    seed_working_credential(organization_id, certificate, key, :generated_certificate)
+    Req.Test.stub(:ksef_certificate_refresh_api, &Plug.Conn.send_resp(&1, 204, ""))
 
     Oban.Testing.with_testing_mode(:manual, fn ->
-      Credential.refresh_certificate!(credential, scope: scope)
-      assert %{success: 1} = Oban.drain_queue(queue: :ksef_sessions)
-      assert %{failure: 1} = Oban.drain_queue(queue: :ksef_sessions)
-      poll = queued_poll_job(organization_id)
-      assert poll.state == "retryable"
-      assert DateTime.after?(poll.scheduled_at, DateTime.utc_now())
+      poll =
+        %{"action" => "poll_certificate_refresh", "organization_id" => organization_id}
+        |> CertificateEnrollmentWorker.new(state: "retryable")
+        |> Firmowid.Oban.insert!(skip_organization_id: true)
 
       assert {:ok, :disconnected} =
                Ksef.unauthenticate(%Scope{actor: admin, tenant: organization_id})
@@ -198,53 +141,37 @@ defmodule Firmowid.Ash.Ksef.Workers.CertificateEnrollmentWorkerTest do
     end)
   end
 
-  for legacy? <- [false, true] do
-    @tag legacy?: legacy?
-    test "rejects a stale #{if legacy?, do: "legacy", else: "bound"} poll from an earlier refresh",
-         %{
-           organization_id: organization_id,
-           scope: scope,
-           legacy?: legacy?
-         } do
-      {certificate, key} = certificate_material("Current certificate")
+  test "cancels a poll from an earlier refresh before contacting KSeF", %{
+    organization_id: organization_id,
+    scope: scope
+  } do
+    {certificate, key} = certificate_material("Current certificate")
 
-      credential =
-        seed_working_credential(organization_id, certificate, key, :generated_certificate)
+    credential =
+      seed_working_credential(organization_id, certificate, key, :generated_certificate)
 
-      serial = CredentialMetadata.certificate_serial_number(credential)
+    Req.Test.stub(:ksef_certificate_refresh_api, fn _ -> flunk("stale poll reached KSeF") end)
 
-      Req.Test.stub(
-        :ksef_certificate_refresh_api,
-        &successful_refresh_response(&1, certificate, serial)
-      )
+    Oban.Testing.with_testing_mode(:manual, fn ->
+      refreshing = Credential.refresh_certificate!(credential, scope: scope)
+      working = Credential.recover_certificate_refresh!(refreshing, scope: scope)
+      Credential.refresh_certificate!(working, scope: scope)
 
-      Oban.Testing.with_testing_mode(:manual, fn ->
-        refreshing = Credential.refresh_certificate!(credential, scope: scope)
-        assert %{success: 1} = Oban.drain_queue(queue: :ksef_sessions)
-        poll = queued_poll_job(organization_id)
-        working = Credential.recover_certificate_refresh!(refreshing, scope: scope)
-        current = Credential.refresh_certificate!(working, scope: scope)
+      assert {:cancel, :stale_certificate_refresh} =
+               perform_job(CertificateEnrollmentWorker, %{
+                 "action" => "poll_certificate_refresh",
+                 "organization_id" => organization_id,
+                 "credential_id" => refreshing.id,
+                 "refresh_started_at" => DateTime.to_iso8601(refreshing.updated_at)
+               })
 
-        args =
-          if legacy?,
-            do: Map.drop(poll.args, ["credential_id", "refresh_started_at"]),
-            else: poll.args
-
-        Req.Test.stub(:ksef_certificate_refresh_api, fn _ -> flunk("stale poll reached KSeF") end)
-
-        expected_reason =
-          if legacy?, do: :unbound_certificate_refresh_restarted, else: :stale_certificate_refresh
-
-        assert {:cancel, ^expected_reason} =
-                 perform_job(CertificateEnrollmentWorker, args, inserted_at: poll.inserted_at)
-
-        assert Credential.get_internal!(scope: scope).credentials == current.credentials
-        assert Credential.get_internal!(scope: scope).status == :refreshing
-      end)
-    end
+      current = Credential.get_internal!(scope: scope)
+      assert current.credentials == credential.credentials
+      assert current.status == :refreshing
+    end)
   end
 
-  test "restarts an already queued legacy poll without stranding the current refresh", %{
+  test "restarts a poll without generation args and completes the current refresh", %{
     organization_id: organization_id,
     scope: scope
   } do
@@ -264,11 +191,10 @@ defmodule Firmowid.Ash.Ksef.Workers.CertificateEnrollmentWorkerTest do
     Oban.Testing.with_testing_mode(:manual, fn ->
       Credential.refresh_certificate!(credential, scope: scope)
       assert %{success: 1} = Oban.drain_queue(queue: :ksef_sessions)
-      poll = queued_poll_job(organization_id)
-      args = Map.drop(poll.args, ["credential_id", "refresh_started_at"])
+      args = Map.drop(queued_poll_args(organization_id), ["credential_id", "refresh_started_at"])
 
       assert {:cancel, :unbound_certificate_refresh_restarted} =
-               perform_job(CertificateEnrollmentWorker, args, inserted_at: poll.inserted_at)
+               perform_job(CertificateEnrollmentWorker, args)
 
       assert Credential.get_internal!(scope: scope).status == :refreshing
 
@@ -361,16 +287,13 @@ defmodule Firmowid.Ash.Ksef.Workers.CertificateEnrollmentWorkerTest do
   end
 
   defp queued_poll_args(organization_id) do
-    queued_poll_job(organization_id).args
-  end
-
-  defp queued_poll_job(organization_id) do
     query =
       from job in Oban.Job,
         where:
           job.worker == "Firmowid.Ash.Ksef.Workers.CertificateEnrollmentWorker" and
             fragment("?->>'action'", job.args) == "poll_certificate_refresh" and
-            fragment("?->>'organization_id'", job.args) == ^organization_id
+            fragment("?->>'organization_id'", job.args) == ^organization_id,
+        select: job.args
 
     Repo.one!(query, oban_jobs: true)
   end

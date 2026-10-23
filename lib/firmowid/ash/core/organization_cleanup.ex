@@ -3,8 +3,9 @@ defmodule Firmowid.Ash.Core.OrganizationCleanup do
   Local cleanup through authorized Ash resource interfaces.
 
   The caller must authorize parent deletion before constructing a cleanup scope.
-  Run these operations inside the parent's transaction. Each resource restricts
-  the cleanup role to named actions and records matching its organization/user.
+  Database cleanup runs inside the parent's transaction; ETS wizard cleanup runs
+  after it commits. Each resource restricts the cleanup role to named actions and
+  records matching its organization/user.
   """
 
   alias Firmowid.Ash.Analysis.TagDefinition
@@ -88,6 +89,7 @@ defmodule Firmowid.Ash.Core.OrganizationCleanup do
   @doc "Removes ephemeral wizard data only after the organization's database deletion succeeds."
   @spec remove_wizard_states(Scope.t()) :: :ok | {:error, term()}
   def remove_wizard_states(scope) do
+    # Include orphaned items; destroying each wizard also cascades to its items.
     with :ok <-
            destroy_records(
              WizardState.Item.read(scope: scope),

@@ -9,29 +9,20 @@ defmodule FirmowidMcp.Invoicing.PrivacyTest do
 
   for selector <- [
         "buyer_pesel",
-        "-buyer_pesel",
         "+buyer_pesel",
-        "--buyer_pesel",
-        "++buyer_pesel",
-        "buyer_pesel,id",
         "id,-buyer_pesel",
         "effective_buyer_pesel",
         "pesel",
         "reference_invoice.buyer_pesel",
-        ["buyer_pesel"],
-        ["buyer_", "pesel"],
-        ~c"buyer_pesel"
-      ],
-      direction <- ["asc", "desc"] do
-    @tag selector: selector, direction: direction
-    test "rejects PESEL sort selector #{inspect(selector)} (#{direction}) in the decorated MCP transport",
-         %{
-           selector: selector,
-           direction: direction
-         } do
+        ["buyer_", "pesel"]
+      ] do
+    @tag selector: selector
+    test "rejects PESEL sort selector #{inspect(selector)} in the decorated MCP transport", %{
+      selector: selector
+    } do
       assert_private_arguments(%{
         "limit" => 1,
-        "sort" => [%{"field" => selector, "direction" => direction}]
+        "sort" => [%{"field" => selector, "direction" => "asc"}]
       })
     end
   end

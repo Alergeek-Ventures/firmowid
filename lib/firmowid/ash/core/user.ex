@@ -367,20 +367,11 @@ defmodule Firmowid.Ash.Core.User do
 
     destroy :destroy do
       description "Delete a user record after callsite-level verification."
-      # Password verification is handled at the callsite (domain function)
-      # before invoking this action, matching the existing pattern.
+      # The domain function verifies the password before invoking this action.
       require_atomic? false
 
       change get_and_lock_for_update()
-
-      change fn changeset, context ->
-        Ash.Changeset.before_action(changeset, fn changeset ->
-          case RevokeAuthentication.revoke(changeset.data, context) do
-            :ok -> changeset
-            {:error, error} -> Ash.Changeset.add_error(changeset, error)
-          end
-        end)
-      end
+      change RevokeAuthentication
     end
 
     update :change_password do

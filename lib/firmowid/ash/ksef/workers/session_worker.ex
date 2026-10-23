@@ -185,7 +185,7 @@ defmodule Firmowid.Ash.Ksef.Workers.SessionWorker do
     end
   end
 
-  @doc "Returns a valid KSeF access token for the given organization. Refreshes or re-authenticates as needed."
+  @doc "Returns a valid KSeF access token, raising on renewal errors and scheduling reauthentication after expiry."
   @spec get_access_token!(String.t()) :: String.t()
   def get_access_token!(organization_id) do
     case get_access_token(organization_id) do
@@ -193,11 +193,10 @@ defmodule Firmowid.Ash.Ksef.Workers.SessionWorker do
         access_token
 
       {:error, :refresh_token_expired} ->
-        raise Cachex.Error, message: "Refresh token expired, re-authentication scheduled"
+        raise "Refresh token expired, re-authentication scheduled"
 
       {:error, reason} ->
-        raise Cachex.Error,
-          message: "KSeF session renewal failed (error_kind=#{ErrorKind.classify(reason)})"
+        raise "KSeF session renewal failed (error_kind=#{ErrorKind.classify(reason)})"
     end
   end
 
@@ -223,8 +222,7 @@ defmodule Firmowid.Ash.Ksef.Workers.SessionWorker do
         {:ok, _job} = enqueue(organization_id)
         error
 
-      {:error, reason} = error ->
-        Logger.error("Session renewal failed", error_kind: ErrorKind.classify(reason))
+      {:error, _reason} = error ->
         error
 
       access_token when is_binary(access_token) ->

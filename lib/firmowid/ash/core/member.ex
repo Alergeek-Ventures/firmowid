@@ -97,7 +97,6 @@ defmodule Firmowid.Ash.Core.Member do
 
     destroy :destroy do
       description "Remove the membership and disconnect its cached LiveView actors."
-      require_atomic? false
     end
 
     create :create do

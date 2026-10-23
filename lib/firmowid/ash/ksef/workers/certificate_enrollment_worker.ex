@@ -44,17 +44,10 @@ defmodule Firmowid.Ash.Ksef.Workers.CertificateEnrollmentWorker do
     |> Firmowid.Oban.insert(skip_organization_id: true)
   end
 
-  @doc "Enqueues automatic rollover for an existing working KSeF certificate credential."
+  @doc "Enqueues certificate rollover bound to the credential's current refresh."
   @spec enqueue_refresh(Credential.t()) :: {:ok, Oban.Job.t()} | {:error, term()}
   def enqueue_refresh(%Credential{organization_id: organization_id} = credential) do
-    credential
-    |> refresh_generation()
-    |> Map.merge(%{
-      "action" => "refresh_certificate",
-      "organization_id" => organization_id
-    })
-    |> new()
-    |> Firmowid.Oban.insert(skip_organization_id: true)
+    enqueue_stage("refresh_certificate", organization_id, refresh_generation(credential))
   end
 
   @impl Oban.Worker
@@ -195,13 +188,13 @@ defmodule Firmowid.Ash.Ksef.Workers.CertificateEnrollmentWorker do
 
   defp perform_action("poll_certificate_refresh", args, scope, _job)
        when not is_map_key(args, "credential_id") or not is_map_key(args, "refresh_started_at") do
-    # Old queued polls have no trustworthy generation. Restart the current
-    # refresh with bound jobs rather than install an old result or strand it.
+    # A poll without a refresh generation cannot prove its certificate is current,
+    # so restart the refresh with bound jobs. Remove once no such jobs remain
+    # (generations were introduced on 2026-10-23).
     case refreshing_credential(scope, args) do
       {:ok, credential} ->
-        case enqueue_refresh(credential) do
-          {:ok, _job} -> {:cancel, :unbound_certificate_refresh_restarted}
-          {:error, _reason} = error -> error
+        with {:ok, _job} <- enqueue_refresh(credential) do
+          {:cancel, :unbound_certificate_refresh_restarted}
         end
 
       {:error, reason} ->
@@ -374,13 +367,12 @@ defmodule Firmowid.Ash.Ksef.Workers.CertificateEnrollmentWorker do
     end
   end
 
-  defp current_refresh?(credential, %{"credential_id" => _, "refresh_started_at" => _} = args) do
-    Map.take(args, ["credential_id", "refresh_started_at"]) == refresh_generation(credential)
+  defp current_refresh?(credential, %{"credential_id" => id, "refresh_started_at" => started_at}) do
+    credential.id == id and DateTime.to_iso8601(credential.updated_at) == started_at
   end
 
-  # A legacy initial stage can safely start a fresh request for the current
-  # credential; unlike a poll, it carries no certificate from an older request.
-  defp current_refresh?(_credential, _legacy_args), do: true
+  # An unbound initial stage only starts a fresh request for the current credential.
+  defp current_refresh?(_credential, _args), do: true
 
   defp handle_refresh_failure(credential, scope, reason, job) do
     if retrying?(job) do

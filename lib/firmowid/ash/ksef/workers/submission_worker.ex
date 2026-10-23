@@ -111,7 +111,7 @@ defmodule Firmowid.Ash.Ksef.Workers.SubmissionWorker do
     )
 
     if final_attempt?(job) do
-      finalize_failed_submission(sales_invoice_id, scope)
+      withdraw_failed_submission(sales_invoice_id, scope)
       {:cancel, e}
     else
       reraise e, stacktrace
@@ -127,7 +127,7 @@ defmodule Firmowid.Ash.Ksef.Workers.SubmissionWorker do
     )
 
     if final_attempt?(job) do
-      finalize_failed_submission(sales_invoice_id, scope)
+      withdraw_failed_submission(sales_invoice_id, scope)
       {:cancel, reason}
     else
       error
@@ -286,19 +286,10 @@ defmodule Firmowid.Ash.Ksef.Workers.SubmissionWorker do
         ApiClient.get_invoice_status(access_token, session_reference, invoice_reference)
       end
 
-    handle_verification_result(result, sales_invoice, job, scope, %{
-      requested_session_reference: session_reference,
-      requested_invoice_reference: invoice_reference
-    })
+    handle_verification_result(result, sales_invoice, job, scope)
   end
 
-  defp handle_verification_result(
-         {:ok, %{ksef_number: ksef_number, invoice_hash: hash}},
-         invoice,
-         _job,
-         scope,
-         _verification_context
-       ) do
+  defp handle_verification_result({:ok, %{ksef_number: ksef_number, invoice_hash: hash}}, invoice, _job, scope) do
     opts = [scope: scope]
 
     SalesInvoice.confirm_in_ksef!(
@@ -318,7 +309,7 @@ defmodule Firmowid.Ash.Ksef.Workers.SubmissionWorker do
     Ksef.broadcast_ksef_status(scope.tenant, invoice.id, :submitted)
   end
 
-  defp handle_verification_result(:pending, invoice, job, _scope, _verification_context) do
+  defp handle_verification_result(:pending, invoice, job, _scope) do
     # A snooze does not use up an attempt; Oban counts snoozes in the job's meta.
     snooze_count = Map.get(job.meta, "snoozed", 0)
 
@@ -331,7 +322,7 @@ defmodule Firmowid.Ash.Ksef.Workers.SubmissionWorker do
     end
   end
 
-  defp handle_verification_result(:retry, invoice, _job, scope, _verification_context) do
+  defp handle_verification_result(:retry, invoice, _job, scope) do
     Logger.warning("KSeF asked to resubmit the invoice; withdrawing it for reissue",
       invoice_id: invoice.id,
       operation: "verification"
@@ -341,40 +332,27 @@ defmodule Firmowid.Ash.Ksef.Workers.SubmissionWorker do
     :ok
   end
 
-  defp handle_verification_result(
-         {:error, {:invoice_duplicate, ksef_number, session_ref}},
-         invoice,
-         _job,
-         scope,
-         _verification_context
-       ) do
+  defp handle_verification_result({:error, {:invoice_duplicate, ksef_number, session_ref}}, invoice, _job, scope) do
     Logger.warning("Invoice matched existing KSeF document; rejecting submission",
       invoice_id: invoice.id,
       operation: "verification"
     )
 
-    fail_invoice_status(invoice, scope)
+    withdraw_failed_submission(invoice.id, scope)
     {:cancel, {:invoice_duplicate, ksef_number, session_ref}}
   end
 
-  defp handle_verification_result(
-         {:error, {:invoice_processing_failed, _, _} = error},
-         invoice,
-         _job,
-         scope,
-         _verification_context
-       ) do
+  defp handle_verification_result({:error, {:invoice_processing_failed, _, _} = error}, invoice, _job, scope) do
     fail_invoice(invoice, error, scope)
   end
 
-  defp handle_verification_result({:error, reason} = error, invoice, job, _scope, _verification_context) do
+  defp handle_verification_result({:error, reason} = error, invoice, job, _scope) do
     Logger.error("Failed to verify invoice",
       invoice_id: invoice.id,
       error_kind: ErrorKind.classify(reason)
     )
 
-    # Failure to read the status is not proof of rejection. Keep the document
-    # immutable and continue reconciliation after the normal retry budget.
+    # An unreadable status is not a rejection; keep the invoice locked and retry.
     if final_attempt?(job), do: {:snooze, @recheck_after_seconds}, else: error
   end
 
@@ -384,13 +362,9 @@ defmodule Firmowid.Ash.Ksef.Workers.SubmissionWorker do
       error_kind: ErrorKind.classify(error)
     )
 
-    fail_invoice_status(invoice, scope)
+    withdraw_failed_submission(invoice.id, scope)
     {:cancel, error}
   end
-
-  defp fail_invoice_status(invoice, scope), do: withdraw_failed_submission(invoice.id, scope)
-
-  defp finalize_failed_submission(sales_invoice_id, scope), do: withdraw_failed_submission(sales_invoice_id, scope)
 
   # Terminal failure: a numbered document must not stay outside KSeF.
   defp withdraw_failed_submission(sales_invoice_id, scope) do

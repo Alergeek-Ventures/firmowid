@@ -98,7 +98,7 @@ defmodule FirmowidWeb.Delegations.Utilities.SettlementForm do
               put_nbp_settlement(expense, Map.get(nbp_settlements, expense["id"]))
 
             _ ->
-              Map.drop(expense, ["settlement_amount", "settlement_currency"])
+              drop_settlement_amount(expense)
           end
 
         {index, expense}
@@ -180,10 +180,13 @@ defmodule FirmowidWeb.Delegations.Utilities.SettlementForm do
     end)
   end
 
-  defp put_nbp_settlement(expense, %{source_currency: source_currency, rate: rate, date: date}) do
+  # Applies the server-calculated rate to the submitted amount, and only while it
+  # is still in the currency the rate was fetched for.
+  defp put_nbp_settlement(expense, settlement) do
     amount_params = normalize_expense_amount(expense)["expense_amount"]
 
-    with {:ok, %Money{} = amount} <- Ash.Type.cast_input(MoneyType, amount_params),
+    with %{source_currency: source_currency, rate: rate, date: date} <- settlement,
+         {:ok, %Money{} = amount} <- Ash.Type.cast_input(MoneyType, amount_params),
          true <- Atom.to_string(Money.to_currency_code(amount)) == source_currency do
       expense
       |> Map.put("settlement_method", "nbp")
@@ -195,11 +198,11 @@ defmodule FirmowidWeb.Delegations.Utilities.SettlementForm do
       |> Map.put("nbp_rate", Decimal.to_string(rate, :normal))
       |> Map.put("nbp_rate_date", Date.to_iso8601(date))
     else
-      _ -> Map.drop(expense, ["settlement_amount", "settlement_currency"])
+      _ -> drop_settlement_amount(expense)
     end
   end
 
-  defp put_nbp_settlement(expense, nil), do: Map.drop(expense, ["settlement_amount", "settlement_currency"])
+  defp drop_settlement_amount(expense), do: Map.drop(expense, ["settlement_amount", "settlement_currency"])
 
   defp nested_forms(%Form{source: source}, field),
     do: source.forms |> Map.get(field, []) |> List.wrap() |> Enum.map(&to_form/1)

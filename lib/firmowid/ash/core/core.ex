@@ -222,14 +222,8 @@ defmodule Firmowid.Ash.Core do
              prepare_organization_deletion(organization, owner_opts)
            end) do
       result =
-        case transact(fn -> destroy_user_in_transaction(user, opts) end) do
-          :ok ->
-            each_ok(owned, fn {organization, _opts} ->
-              OrganizationCleanup.remove_wizard_states(organization_cleanup_scope(organization))
-            end)
-
-          {:error, error} ->
-            {:error, error}
+        with :ok <- transact(fn -> destroy_user_in_transaction(user, opts) end) do
+          each_ok(owned, fn {organization, _opts} -> remove_wizard_states(organization) end)
         end
 
       Enum.each(owned, fn {organization, _opts} ->
@@ -250,18 +244,18 @@ defmodule Firmowid.Ash.Core do
   def destroy_organization(%Organization{} = organization, opts \\ []) do
     with :ok <- prepare_organization_deletion(organization, opts) do
       result =
-        case transact(fn -> destroy_organization_in_transaction(organization, opts) end) do
-          :ok ->
-            OrganizationCleanup.remove_wizard_states(organization_cleanup_scope(organization))
-
-          {:error, error} ->
-            {:error, error}
+        with :ok <- transact(fn -> destroy_organization_in_transaction(organization, opts) end) do
+          remove_wizard_states(organization)
         end
 
       report_local_failure(result, organization, "organization_delete")
       result
     end
   end
+
+  # Wizard state lives in ETS, outside the database transaction.
+  defp remove_wizard_states(organization),
+    do: OrganizationCleanup.remove_wizard_states(organization_cleanup_scope(organization))
 
   defp report_local_failure({:error, reason}, %Organization{id: id}, step),
     do: OrganizationExternalCleanup.report_local_failure(id, step, reason)

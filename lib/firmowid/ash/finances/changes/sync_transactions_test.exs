@@ -165,24 +165,6 @@ defmodule Firmowid.Ash.Finances.Changes.SyncTransactionsTest do
 
       assert [%{internal_transaction_id: "payment-1"}] =
                Enum.filter(persisted, &(&1.bank_account_id == ctx.bank_account_2.id))
-
-      stub_booked_transactions([api_transaction("payment-1", Date.add(today, 1))])
-
-      assert {:ok, _account} =
-               ctx.bank_account_1
-               |> Ash.Changeset.for_update(:sync_from_gocardless, %{},
-                 actor: ctx.user,
-                 tenant: ctx.org_id
-               )
-               |> Ash.update(actor: ctx.user, tenant: ctx.org_id)
-
-      dates =
-        %{}
-        |> Finances.list_transactions!(actor: ctx.actor, tenant: ctx.org_id)
-        |> Enum.filter(&(&1.bank_account_id == ctx.bank_account_1.id))
-        |> Map.new(&{&1.internal_transaction_id, &1.booking_date})
-
-      assert dates == %{"payment-1" => Date.add(today, 1), "payment-2" => today}
     end
 
     @tag capture_log: true

@@ -711,7 +711,10 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
       argument :expected_review, :map, public?: false
 
       change get_and_lock_for_update()
-      change Changes.VerifyInvoiceReview
+
+      change Changes.VerifyInvoiceReview do
+        where present(:expected_review)
+      end
 
       change Changes.ApplyInvoiceInput
       change filter(expr(is_nil(invoice_number) and ksef_invoice_kind == :vat))

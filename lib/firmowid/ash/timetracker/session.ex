@@ -6,8 +6,9 @@ defmodule Firmowid.Ash.Timetracker.Session do
   Attribute multitenancy via `organization_id`. Write actions include `start`
   (begins a new session), `stop` (ends a running session), `stop_current`
   (ends the actor's running session without a client-supplied id), `create`
-  (full attrs), `update`, and `destroy`. Overlap is enforced by a DB trigger and
-  exclusion constraint — the resulting Postgrex error is surfaced as-is by AshPostgres.
+  (full attrs), `update`, and `destroy`. A DB trigger rejects overlapping sessions;
+  an exclusion constraint also protects concurrent writes. Database errors are
+  surfaced by AshPostgres.
   """
   use Ash.Resource,
     domain: Firmowid.Ash.Timetracker,
