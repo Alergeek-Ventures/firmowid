@@ -36,6 +36,14 @@ defmodule Firmowid.Ash.Ksef.Services.InvoiceParser do
         sale_date: tns_xpath(~x"/Faktura/Fa/P_6/text()"os),
         invoice_identifier: tns_xpath(~x"/Faktura/Fa/P_2/text()"s),
         total_amount: tns_xpath(~x"/Faktura/Fa/P_15/text()"s),
+        charges: [
+          tns_xpath(~x"/Faktura/Fa/Rozliczenie/Obciazenia"l),
+          amount: tns_xpath(~x"./Kwota/text()"s)
+        ],
+        deductions: [
+          tns_xpath(~x"/Faktura/Fa/Rozliczenie/Odliczenia"l),
+          amount: tns_xpath(~x"./Kwota/text()"s)
+        ],
         invoice_type: tns_xpath(~x"/Faktura/Fa/RodzajFaktury/text()"s),
         original_invoice_ksef_number: tns_xpath(~x"/Faktura/Fa/DaneFaKorygowanej/NrKSeFFaKorygowanej/text()"os),
         due_date: tns_xpath(~x"/Faktura/Fa/Platnosc/TerminPlatnosci/Termin/text()"os),
@@ -83,12 +91,19 @@ defmodule Firmowid.Ash.Ksef.Services.InvoiceParser do
   defp parse_decimal(nil), do: nil
   defp parse_decimal(amount), do: Decimal.new(amount)
 
+  # The amount due is P_15 plus charges (such as a bottle deposit) and minus deductions (Rozliczenie).
   defp put_amount(%{currency: currency, total_amount: total_amount} = attrs) do
+    amount_due =
+      total_amount
+      |> Decimal.add(sum_amounts(attrs.charges))
+      |> Decimal.sub(sum_amounts(attrs.deductions))
+
     attrs
-    |> Map.delete(:currency)
-    |> Map.delete(:total_amount)
-    |> Map.put(:amount, Money.new!(currency, total_amount))
+    |> Map.drop([:currency, :total_amount, :charges, :deductions])
+    |> Map.put(:amount, Money.new!(currency, amount_due))
   end
+
+  defp sum_amounts(entries), do: Enum.reduce(entries, Decimal.new(0), &Decimal.add(Decimal.new(&1.amount), &2))
 
   defp parse_invoice_type("VAT"), do: :vat
   defp parse_invoice_type("KOR"), do: :kor

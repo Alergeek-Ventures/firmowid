@@ -62,7 +62,9 @@ defmodule Firmowid.Ash.Ksef.Workers.FetchWorkerTest do
     storage_date = "2026-03-06T12:34:56Z"
     encryption_data = Encryption.generate_encryption_data()
 
-    xml = invoice_xml(invoice_identifier: "FETCH/2026/001", total_amount: "123.45")
+    # The amount due includes a bottle deposit, which FA(3) adds to P_15 as a charge (Rozliczenie).
+    xml =
+      invoice_xml(invoice_identifier: "FETCH/2026/001", total_amount: "123.45", deposit: "5.50")
 
     {zip_binary, encrypted_package} =
       build_encrypted_package(
@@ -98,7 +100,7 @@ defmodule Firmowid.Ash.Ksef.Workers.FetchWorkerTest do
 
     assert invoice.ksef_number == ksef_number
     assert invoice.invoice_identifier == "FETCH/2026/001"
-    assert Decimal.equal?(Money.to_decimal(invoice.amount), Decimal.new("-123.45"))
+    assert Decimal.equal?(Money.to_decimal(invoice.amount), Decimal.new("-128.95"))
     assert {:ok, permanent_storage_date, 0} = DateTime.from_iso8601(storage_date)
     assert invoice.ksef_permanent_storage_date == DateTime.to_naive(permanent_storage_date)
     assert %DateTime{} = invoice.ksef_downloaded_at
@@ -494,6 +496,7 @@ defmodule Firmowid.Ash.Ksef.Workers.FetchWorkerTest do
           <P_8B>1</P_8B>
           <P_9A>#{total_amount}</P_9A>
         </FaWiersz>
+        #{if deposit = opts[:deposit], do: "<Rozliczenie><Obciazenia><Kwota>#{deposit}</Kwota><Powod>Kaucja</Powod></Obciazenia></Rozliczenie>"}
       </Fa>
     </Faktura>
     """

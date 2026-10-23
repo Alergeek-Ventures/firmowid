@@ -16,7 +16,8 @@ defmodule Firmowid.Ash.Blobs.Utils.ProcessCostInvoiceBlob do
   - For Polish invoices: "Sprzedawca" = seller, "Data wystawienia" = issue date, "Data sprzedaży/dostawy" = sale date
   - If the invoice includes a KSeF number, extract it exactly as printed
   - If present, extract the seller tax identifier (for Polish invoices usually NIP)
-  - Total amount should be the gross/brutto amount (including VAT/tax)
+  - Total amount should be the amount due ("Do zapłaty"): the gross/brutto amount (including VAT/tax)
+    plus charges outside it, such as a bottle deposit ("kaucja"), minus deductions
   - If the document is not an invoice, receipt, or bill (e.g., it's a contract, report, or unrelated document), set document_type to "invalid"
   """
 
