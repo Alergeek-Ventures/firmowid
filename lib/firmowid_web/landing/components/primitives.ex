@@ -240,7 +240,7 @@ defmodule FirmowidWeb.Landing.Components.Primitives do
     >
       <div class="mx-auto w-[calc(100%-var(--spacing)*8)] max-w-284.75 lg:w-[calc(100%-var(--spacing)*16)]">
         <div class="flex flex-col gap-12 pt-18 pb-24 text-left lg:flex-row lg:items-start lg:gap-12 lg:pt-26 lg:pb-18 xl:gap-29.5">
-          <div class="-order-1 ml-0 w-60 lg:order-0 lg:m-0 lg:w-85 lg:shrink-0 lg:grow-0 lg:basis-85 [&_img]:block [&_img]:h-auto [&_img]:w-full lg:[&_img]:h-138 lg:[&_img]:w-full lg:[&_img]:object-cover lg:[&_img]:object-center">
+          <div class="order-1 mx-auto w-60 lg:order-0 lg:m-0 lg:w-85 lg:shrink-0 lg:grow-0 lg:basis-85 [&_img]:block [&_img]:h-auto [&_img]:w-full lg:[&_img]:h-138 lg:[&_img]:w-full lg:[&_img]:object-cover lg:[&_img]:object-center">
             <img
               id="cta-footer-figurine"
               src={~p"/images/figurine.png"}
@@ -268,7 +268,7 @@ defmodule FirmowidWeb.Landing.Components.Primitives do
               )}
             </p>
 
-            <div class="mt-10 flex flex-col gap-4 *:min-h-14.5 lg:max-w-155 lg:flex-row lg:gap-6 lg:*:min-w-0 lg:*:flex-1 lg:*:px-3">
+            <div class="mt-10 flex flex-col gap-4 *:min-h-14.5 *:text-lg lg:max-w-155 lg:flex-row lg:gap-6 lg:*:min-w-0 lg:*:flex-1 lg:*:px-3">
               <.landing_button
                 navigate={~p"/zarejestruj"}
                 variant={:rust}

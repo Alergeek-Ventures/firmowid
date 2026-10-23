@@ -55,7 +55,9 @@ defmodule FirmowidWeb.Landing.Components.Hero do
           </a>
 
           <h1 class="mt-7.5 text-[42px] leading-[1.1] font-bold tracking-[-0.125rem] lg:text-[4.5rem] lg:leading-[73.44px]">
-            {pgettext("landing hero headline", "KSeF invoices")}<br />
+            {String.replace(pgettext("landing hero headline", "KSeF invoices"), " ", "\u00A0",
+              global: false
+            )}<br />
             {pgettext("landing hero headline", "without limits.")}<br />
             <span class="relative bottom-1 isolate inline-block after:absolute after:-right-6 after:-bottom-1 after:-left-1 after:-z-1 after:h-5 after:bg-[url('/images/landing/decorations/hero-underline.svg')] after:bg-size-[100%_100%] after:bg-center after:bg-no-repeat after:content-['']">
               {pgettext("landing hero headline", "For PLN 0.")}

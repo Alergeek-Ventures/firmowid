@@ -4740,14 +4740,14 @@ msgstr ""
 msgid "Time (HH:MM)"
 msgstr ""
 
-#: lib/firmowid_web/landing/components/pricing.ex
-#, elixir-autogen, elixir-format
-msgid "Time tracking"
-msgstr ""
-
 #: lib/firmowid_web/infrastructure/layouts.ex
 #, elixir-autogen, elixir-format
 msgctxt "main navigation"
+msgid "Time tracking"
+msgstr ""
+
+#: lib/firmowid_web/landing/components/pricing.ex
+#, elixir-autogen, elixir-format
 msgid "Time tracking"
 msgstr ""
 
