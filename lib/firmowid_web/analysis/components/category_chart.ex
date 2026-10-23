@@ -195,10 +195,16 @@ defmodule FirmowidWeb.Analysis.Components.CategoryChart do
     |> Map.new(fn {definition, index} ->
       {{:project, definition.id}, Enum.at(@palette, rem(index, length(@palette)))}
     end)
-    |> Map.merge(%{company: "#334155", unassigned: "#CBD5E1", unrealized: "#F4A9A8"})
+    |> Map.merge(%{
+      company: "#334155",
+      taxes: "#111827",
+      unassigned: "#CBD5E1",
+      unrealized: "#F4A9A8"
+    })
   end
 
   defp category_name(%{key: :company}), do: gettext("Company")
+  defp category_name(%{key: :taxes}), do: gettext("Taxes")
   defp category_name(%{key: :unassigned}), do: gettext("Unassigned")
   defp category_name(%{key: :unrealized}), do: gettext("Unrealized")
   defp category_name(%{name: name}), do: name

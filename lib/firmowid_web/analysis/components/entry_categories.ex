@@ -17,13 +17,10 @@ defmodule FirmowidWeb.Analysis.Components.EntryCategories do
 
   @impl true
   def update(assigns, socket) do
-    definitions = TagDefinition.list_tag_definitions!(scope: assigns.scope)
-
     {:ok,
      socket
      |> assign(assigns)
-     |> assign(:categories, definitions)
-     |> assign(:colors, CategoryChart.category_colors(definitions))
+     |> load_categories()
      |> load_entry()}
   end
 
@@ -79,7 +76,7 @@ defmodule FirmowidWeb.Analysis.Components.EntryCategories do
 
   @impl true
   def handle_event(event, params, socket)
-      when event in ["set-entity-category", "clear-entity-tags", "toggle-project-tag"] do
+      when event in ["set-entity-category", "clear-entity-tags", "toggle-project-tag", "create-category"] do
     entry =
       socket.assigns.entry
       |> category_entries()
@@ -90,6 +87,9 @@ defmodule FirmowidWeb.Analysis.Components.EntryCategories do
 
     if flag_enabled?(:analysis_dashboard, socket.assigns) and entry != nil and editable?(entry) do
       case change_category(event, params, %{socket.assigns | entry: entry}) do
+        {:ok, _} when event == "create-category" ->
+          {:noreply, socket |> load_categories() |> load_entry()}
+
         {:ok, _} ->
           {:noreply, load_entry(socket)}
 
@@ -99,6 +99,14 @@ defmodule FirmowidWeb.Analysis.Components.EntryCategories do
     else
       {:noreply, socket}
     end
+  end
+
+  defp load_categories(socket) do
+    definitions = TagDefinition.list_tag_definitions!(scope: socket.assigns.scope)
+
+    socket
+    |> assign(:categories, definitions)
+    |> assign(:colors, CategoryChart.category_colors(definitions))
   end
 
   defp load_entry(socket) do
@@ -129,11 +137,16 @@ defmodule FirmowidWeb.Analysis.Components.EntryCategories do
   defp invoice_number(%SalesInvoice{invoice_number: number}), do: number
   defp invoice_number(%CostInvoice{invoice_identifier: number}), do: number
 
+  defp change_category("create-category", %{"name" => name}, assigns) do
+    arguments = Map.put(entity_arguments(assigns.entry), :name, name)
+    TagDefinition.create_for_entry(arguments, scope: assigns.scope)
+  end
+
   defp change_category("clear-entity-tags", _params, assigns) do
     EntityTag.clear_entity_tags(entity_arguments(assigns.entry), scope: assigns.scope)
   end
 
-  defp change_category("set-entity-category", %{"kind" => kind}, assigns) when kind in ["company", "internal"] do
+  defp change_category("set-entity-category", %{"kind" => kind}, assigns) when kind in ["company", "taxes", "internal"] do
     arguments = Map.put(entity_arguments(assigns.entry), :kind, kind)
     EntityTag.set_entity_category(arguments, scope: assigns.scope)
   end
