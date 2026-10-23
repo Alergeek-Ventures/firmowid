@@ -50,8 +50,8 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice.Scanners.OverdueReminders do
     if invoices == [] do
       totals
     else
-      latest_invoice_ids = latest_invoice_ids_for_batch(invoices, scope)
-      batch_totals = process_batch(invoices, latest_invoice_ids, scope)
+      latest_unpaid_invoice_ids = latest_unpaid_invoice_ids_for_batch(invoices, scope)
+      batch_totals = process_batch(invoices, latest_unpaid_invoice_ids, scope)
       last_invoice = List.last(invoices)
 
       totals = %{
@@ -93,13 +93,18 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice.Scanners.OverdueReminders do
     )
   end
 
-  defp latest_invoice_ids_for_batch(invoices, scope) do
+  defp latest_unpaid_invoice_ids_for_batch(invoices, scope) do
     root_ids = Enum.uniq(Enum.map(invoices, &(&1.corrected_invoice_id || &1.id)))
 
     SalesInvoice
     |> Ash.Query.filter(id in ^root_ids or corrected_invoice_id in ^root_ids)
+    |> Ash.Query.load(:reconciliation_status)
     |> then(&SalesInvoice.list!(query: &1, scope: scope))
     |> Enum.group_by(&(&1.corrected_invoice_id || &1.id))
+    # Payment can remain linked to the original invoice or an earlier correction.
+    |> Enum.reject(fn {_root_id, chain} ->
+      Enum.any?(chain, &(&1.reconciliation_status == :matched))
+    end)
     |> Map.new(fn {root_id, chain} ->
       latest_invoice =
         chain
@@ -112,12 +117,12 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice.Scanners.OverdueReminders do
     |> MapSet.new()
   end
 
-  defp process_batch(invoices, latest_invoice_ids, scope) do
+  defp process_batch(invoices, latest_unpaid_invoice_ids, scope) do
     Enum.reduce(
       invoices,
       %{events_created: 0, invoices_skipped: 0, invoices_failed: 0},
       fn invoice, totals ->
-        if MapSet.member?(latest_invoice_ids, invoice.id) do
+        if MapSet.member?(latest_unpaid_invoice_ids, invoice.id) do
           case Communication.dispatch(invoice, :overdue_reminder, scope) do
             {:ok, :dispatched} -> %{totals | events_created: totals.events_created + 1}
             {:ok, :skipped} -> %{totals | invoices_skipped: totals.invoices_skipped + 1}
