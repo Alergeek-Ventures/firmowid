@@ -1128,7 +1128,7 @@ defmodule FirmowidWeb.Landing.Components.Sections do
         <div class="grid gap-5 md:grid-cols-2 lg:gap-4 [&_article]:rounded-2xl [&_article]:bg-white [&_article]:p-5 lg:[&_article]:p-6">
           <article
             :for={{person, index} <- Enum.with_index(@team)}
-            class="max-lg:grid max-lg:grid-cols-[88px_minmax(0,1fr)] max-lg:gap-x-4 max-lg:rounded-2xl max-lg:border max-lg:border-[#e3b79b] lg:relative lg:min-h-[556px] lg:w-[276px] lg:overflow-visible lg:after:pointer-events-none lg:after:absolute lg:after:top-1/2 lg:after:left-1/2 lg:after:z-10 lg:after:h-full lg:after:w-[276px] lg:after:-translate-1/2 lg:after:bg-[url('/images/landing/frames/team-card.svg')] lg:after:bg-size-[100%_100%] lg:after:bg-center lg:after:bg-no-repeat lg:after:content-[''] max-lg:[&>h3]:mt-0 max-lg:[&>h3]:self-end"
+            class="max-lg:grid max-lg:grid-cols-[88px_minmax(0,1fr)] max-lg:gap-x-4 max-lg:rounded-2xl max-lg:border max-lg:border-[#e3b79b] lg:relative lg:h-[557px] lg:w-[276px] lg:overflow-visible lg:after:pointer-events-none lg:after:absolute lg:after:top-1/2 lg:after:left-1/2 lg:after:z-10 lg:after:h-[559px] lg:after:w-[278px] lg:after:-translate-1/2 lg:after:bg-[url('/images/landing/frames/team-card.svg')] lg:after:bg-auto lg:after:bg-center lg:after:bg-no-repeat lg:after:content-[''] max-lg:[&>h3]:mt-0 max-lg:[&>h3]:self-end"
           >
             <div class={[
               "relative aspect-square overflow-hidden rounded-lg max-lg:row-span-2",
@@ -1157,7 +1157,7 @@ defmodule FirmowidWeb.Landing.Components.Sections do
             <div class="text-sm leading-[1.55] text-darkGrey max-lg:col-span-full max-lg:mt-5 lg:leading-[140%]">
               <p
                 :for={paragraph <- String.split(person.bio, ~r/(?<=\.)\s+(?=\p{Lu})/u)}
-                class="mt-4 first:mt-0"
+                class="mt-2 first:mt-0"
               >
                 {paragraph}
               </p>
