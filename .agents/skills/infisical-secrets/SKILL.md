@@ -61,17 +61,11 @@ This skill is for day-to-day usage, not migration. For migration, use
 - Personal long-term overrides should usually live in Infisical personal
   overrides, not in project files.
 
-## Development Namespace
+## Folders
 
-- `/app` holds application runtime secrets and configuration.
-- `/dev/<tool>` holds shared development-tool credentials and configuration,
-  separate from app runtime.
-- The environment `dev` and folder `/dev` are different concepts; select the
-  appropriate environment and folder independently.
-- Keep local, non-secret worktree configuration only in untracked
-  `.env.worktree`, not in shared folders.
-- Do not move, rename, or duplicate existing secrets as part of using this
-  convention.
+- `/app` — application secrets and configuration.
+- `/dev` — development-tool credentials and configuration; tools may use subfolders.
+- `/ci` — CI and deployment credentials.
 
 ## One-Off Secret Access
 
