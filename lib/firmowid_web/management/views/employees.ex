@@ -15,6 +15,7 @@ defmodule FirmowidWeb.Management.Views.Employees do
   alias FirmowidWeb.Core.Endpoint
   alias FirmowidWeb.Infrastructure.Utilities.PosthogBusinessEvents
   alias FirmowidWeb.Management.Utilities.Navigation
+  alias FirmowidWeb.Payroll.Components.PayoutEstimates
   alias FirmowidWeb.Timetracker.Utilities.Navigation, as: TimetrackerNavigation
   alias Phoenix.Socket.Broadcast
 
@@ -103,9 +104,14 @@ defmodule FirmowidWeb.Management.Views.Employees do
 
       # 3. Salaries as of this month]
       salaries =
-        Payroll.list_salaries!(%{active_at: Date.end_of_month(date)}, scope: scope)
+        Payroll.list_salaries!(%{active_at: Date.end_of_month(date)},
+          load: [monthly_amount: [month: date], payout_estimates: [month: date]],
+          scope: scope
+        )
 
       salary_by_member = Map.new(salaries, &{&1.member_id, &1.hourly_rate})
+      estimate_by_member = Map.new(salaries, &{&1.member_id, List.first(&1.payout_estimates)})
+      gross_by_member = Map.new(salaries, &{&1.member_id, &1.monthly_amount})
 
       # 4. Hours records for this month
       hours_records =
@@ -124,6 +130,8 @@ defmodule FirmowidWeb.Management.Views.Employees do
             user: user,
             time_worked: Map.get(time_by_user, user.id, 0),
             hourly_rate: Map.get(salary_by_member, user.member.id),
+            payout_estimate: Map.get(estimate_by_member, user.member.id),
+            monthly_gross: Map.get(gross_by_member, user.member.id, Money.new!(:PLN, 0)),
             hours_record: Map.get(hr_by_user, user.id)
           }
         end)

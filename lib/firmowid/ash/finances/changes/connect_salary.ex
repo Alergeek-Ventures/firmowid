@@ -87,5 +87,5 @@ defmodule Firmowid.Ash.Finances.Changes.ConnectSalary do
     do: gettext("The employee has no salary rate in this month.")
 
   defp reason_message(%{reason: :amount_out_of_range}, _user_id, _month, _scope),
-    do: gettext("The transfer amount differs from the expected salary by more than 20% (at least 300 PLN).")
+    do: gettext("The transfer amount differs from the expected salary by more than 20% (at least 1000 PLN).")
 end

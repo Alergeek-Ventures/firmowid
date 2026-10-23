@@ -25,6 +25,11 @@ defmodule Firmowid.Ash.Finances.Transaction.Types.MonthlySalary do
           constraints: [one_of: [:submitted, :withdrawn, :missing]],
           description: "State of the employee's hours record for the month."
         ],
+        payout_estimates: [
+          type: {:array, Firmowid.Ash.Payroll.UserSalary.Types.PayoutEstimate},
+          allow_nil?: false,
+          description: "Indicative payout alternatives for matching; empty when the contract type is unknown."
+        ],
         connected_transaction_id: [
           type: :uuid,
           description: "Transfer assigned to this salary, null when unpaid."

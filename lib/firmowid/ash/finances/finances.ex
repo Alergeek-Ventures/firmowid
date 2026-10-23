@@ -92,7 +92,8 @@ defmodule Firmowid.Ash.Finances do
 
       description "List every employee salary of one month, including already paid ones and months without " <>
                     "submitted hours, with no amount or date window. expected_amount is the hourly rate multiplied " <>
-                    "by the logged hours rounded up, not a recorded payout. connected_transaction_id is the transfer " <>
+                    "by the logged hours rounded up, not a recorded payout. payout_estimates contains hypothetical " <>
+                    "net payout alternatives. connected_transaction_id is the transfer " <>
                     "assigned to that salary. Use it to find the right salary when suggestions miss it. Requires an " <>
                     "administrator. Changes nothing."
     end
@@ -105,8 +106,10 @@ defmodule Firmowid.Ash.Finances do
 
       description "Suggest which employee's monthly salary a pending or skipped outgoing PLN transfer pays. " <>
                     "Considers months with logged time up to six months back whose salary is not yet assigned and " <>
-                    "whose amount is within 20% (at least 300 PLN) of the transfer, ranked by the recipient's name, " <>
-                    "the expected month and the amount difference. By default only salaries with a submitted hours " <>
+                    "whose closest estimated payout is within 20% (at least 1000 PLN) of the transfer. Uses gross pay " <>
+                    "only if the contract type is unknown. A full recipient name strictly outranks a partial name, " <>
+                    "the expected month and the amount difference. A payout variant is a hypothesis, not confirmed " <>
+                    "insurance or tax status. By default only salaries with a submitted hours " <>
                     "record count. An empty result has a reason. Requires an administrator. Changes nothing."
     end
 

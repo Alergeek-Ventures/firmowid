@@ -169,6 +169,13 @@ defmodule Firmowid.Ash.Payroll.UserSalary do
   calculations do
     calculate :ends_at, :date, Firmowid.Ash.Payroll.Calculations.EndsAt
 
+    calculate :payout_estimates,
+              {:array, Firmowid.Ash.Payroll.UserSalary.Types.PayoutEstimate},
+              Firmowid.Ash.Payroll.UserSalary.Calculations.PayoutEstimates do
+      description "First is the default estimate: UZ assumes a student below 26, health-only otherwise. Alternatives do not confirm insurance status."
+      argument :month, :date, allow_nil?: false
+    end
+
     calculate :monthly_amount,
               AshMoney.Types.Money,
               Firmowid.Ash.Payroll.UserSalary.Calculations.MonthlyAmount do

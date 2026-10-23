@@ -15,12 +15,54 @@ defmodule FirmowidWeb.Invoicing.Transactions.Views.ShowTest do
   alias Firmowid.Ash.Invoicing.CostInvoiceTransaction
   alias Firmowid.Ash.Invoicing.SalesInvoice
   alias Firmowid.Ash.Invoicing.SalesInvoiceItem
+  alias Firmowid.Ash.Payroll.UserEmploymentContract
   alias Firmowid.Ash.Payroll.UserSalary
   alias Firmowid.Ash.Scope
   alias Firmowid.Ash.Timetracker.HoursRecord
   alias Firmowid.Ash.Timetracker.Project
   alias Firmowid.Ash.Timetracker.Session
   alias FirmowidWeb.Invoicing.Utilities.Navigation
+
+  test "matches a net payout alternative using the contract from the salary month", %{conn: conn} do
+    admin = admin_fixture()
+    scope = Scope.new!(admin, admin.member.organization_id)
+
+    project =
+      Ash.Seed.seed!(Project, %{name: "Net salary", organization_id: scope.tenant})
+
+    seed_salary_months!(admin, project, [{~D[2025-12-01], 100}])
+
+    seed_salary_contract!(admin, :uz, ~D[2025-01-01])
+    seed_salary_contract!(admin, :uop, ~D[2026-01-01])
+
+    # 7,223.34 is outside the former 20% window around 10,000 gross.
+    transaction = transaction_fixture!(admin, %{amount: Money.new!(:PLN, "-7223.34")})
+
+    assert %{suggestions: [%{payout_variant: :uz_social, difference: difference}]} =
+             Finances.suggest_transaction_salaries!(transaction.id, scope: scope)
+
+    assert Money.zero?(difference)
+
+    # The health-only alternative is preferred when its amount is closer.
+    alternative = transaction_fixture!(admin, %{amount: Money.new!(:PLN, -8140)})
+
+    assert %{suggestions: [%{payout_variant: :uz_health, difference: difference}]} =
+             Finances.suggest_transaction_salaries!(alternative.id, scope: scope)
+
+    assert Money.zero?(difference)
+
+    {:ok, view, _html} = conn |> log_in_user(admin) |> live(~p"/transakcje/#{alternative.id}")
+    candidate = "#salary-suggestion-#{admin.id}-2025-12-01"
+    assert has_element?(view, candidate, "Zlecenie — tylko zdrowotna")
+    view |> element("#{candidate} button", "Zatwierdź") |> render_click()
+    assert has_element?(view, "#salary-confirmation", "Zlecenie — tylko zdrowotna")
+
+    assert [%{expected_amount: gross, payout_estimates: estimates}] =
+             Finances.list_monthly_salaries!(~D[2025-12-01], scope: scope)
+
+    assert gross == Money.new!(:PLN, 10_000)
+    assert Enum.map(estimates, & &1.variant) == [:uz_health, :uz_social]
+  end
 
   test "only proposes submitted unassigned salary months while preserving manual assignment", %{
     conn: conn
@@ -196,7 +238,7 @@ defmodule FirmowidWeb.Invoicing.Transactions.Views.ShowTest do
         employee
       end
 
-    seed_salary_months!(admin, project, [{~D[2025-12-01], 9}, {~D[2025-10-01], 10}])
+    seed_salary_months!(admin, project, [{~D[2025-12-01], 1}, {~D[2025-10-01], 10}])
     conn = log_in_user(conn, admin)
 
     for recipient <- ["ZOLC LUKASZ", "  ŁUKASZ, ŻÓŁĆ  ul. Testowa 12 "] do
@@ -237,6 +279,24 @@ defmodule FirmowidWeb.Invoicing.Transactions.Views.ShowTest do
       assert hd(ids) != "salary-suggestion-#{admin.id}-2025-12-01"
       assert "salary-suggestion-#{admin.id}-2025-10-01" in ids
     end
+  end
+
+  test "accepts a difference of 1000 PLN but rejects amounts beyond the window" do
+    admin = admin_fixture()
+    scope = Scope.new!(admin, admin.member.organization_id)
+    project = Ash.Seed.seed!(Project, %{name: "Payout tolerance", organization_id: scope.tenant})
+    seed_salary_months!(admin, project, [{~D[2025-12-01], 10}])
+
+    boundary = transaction_fixture!(admin, %{amount: Money.new!(:PLN, -2000)})
+    outside = transaction_fixture!(admin, %{amount: Money.new!(:PLN, "-2000.01")})
+
+    assert %{suggestions: [%{difference: difference}]} =
+             Finances.suggest_transaction_salaries!(boundary.id, scope: scope)
+
+    assert Money.equal?(difference, Money.new!(:PLN, 1000))
+
+    assert %{suggestions: [], reason: :amount_out_of_range} =
+             Finances.suggest_transaction_salaries!(outside.id, scope: scope)
   end
 
   test "shows zero state for an unmatched transaction", %{conn: conn} do
@@ -441,6 +501,28 @@ defmodule FirmowidWeb.Invoicing.Transactions.Views.ShowTest do
     |> LazyHTML.from_fragment()
     |> LazyHTML.query("#salary-suggestions [id^='salary-suggestion-']")
     |> LazyHTML.attribute("id")
+  end
+
+  defp seed_salary_contract!(user, type, starts_at) do
+    unique = System.unique_integer([:positive])
+
+    blob =
+      Ash.Seed.seed!(Blob, %{
+        organization_id: user.member.organization_id,
+        blob_path: "salary-contract-#{unique}.pdf",
+        blob_checksum: "salary-contract-#{unique}",
+        original_filename: "contract.pdf"
+      })
+
+    Ash.Seed.seed!(UserEmploymentContract, %{
+      organization_id: user.member.organization_id,
+      member_id: user.member.id,
+      blob_id: blob.id,
+      starts_at: starts_at,
+      contract_type: type,
+      salary: Money.new!(:PLN, 100),
+      status: :active
+    })
   end
 
   defp seed_salary_months!(user, project, month_hours, submit_hours? \\ true) do

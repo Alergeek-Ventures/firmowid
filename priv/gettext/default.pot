@@ -1334,7 +1334,7 @@ msgstr ""
 msgid "Change request rejected"
 msgstr ""
 
-#: lib/firmowid_web/management/components/projects_tab.ex:310
+#: lib/firmowid_web/management/components/projects_tab.ex:291
 #, elixir-autogen, elixir-format
 msgid "Could not save the decision. The request may already have been reviewed."
 msgstr ""
@@ -1365,7 +1365,7 @@ msgstr ""
 msgid "Saving..."
 msgstr ""
 
-#: lib/firmowid_web/management/components/projects_tab.ex:302
+#: lib/firmowid_web/management/components/projects_tab.ex:283
 #, elixir-autogen, elixir-format
 msgid "The request decision has been saved."
 msgstr ""
@@ -1435,31 +1435,26 @@ msgstr ""
 msgid "Ask Firmowid for help with invoices"
 msgstr ""
 
-#: lib/firmowid_web/invoicing/transactions/components/salary_components.ex:54
+#: lib/firmowid_web/invoicing/transactions/components/salary_components.ex:66
 #: lib/firmowid_web/invoicing/transactions/components/show_components.ex:202
 #, elixir-autogen, elixir-format
 msgid "Confirm"
 msgstr ""
 
-#: lib/firmowid_web/invoicing/transactions/views/show.ex:202
+#: lib/firmowid_web/invoicing/transactions/views/show.ex:203
 #, elixir-autogen, elixir-format
 msgid "Could not connect this transaction to a salary."
 msgstr ""
 
-#: lib/firmowid_web/invoicing/transactions/views/show.ex:216
+#: lib/firmowid_web/invoicing/transactions/views/show.ex:217
 #, elixir-autogen, elixir-format
 msgid "Could not disconnect this transaction from the salary."
 msgstr ""
 
-#: lib/firmowid_web/invoicing/transactions/components/salary_components.ex:77
-#: lib/firmowid_web/invoicing/transactions/components/salary_components.ex:78
+#: lib/firmowid_web/invoicing/transactions/components/salary_components.ex:90
+#: lib/firmowid_web/invoicing/transactions/components/salary_components.ex:91
 #, elixir-autogen, elixir-format
 msgid "Disconnect salary"
-msgstr ""
-
-#: lib/firmowid_web/invoicing/transactions/components/salary_components.ex:90
-#, elixir-autogen, elixir-format
-msgid "Expected salary"
 msgstr ""
 
 #: lib/firmowid_web/invoicing/components/matching_components.ex:59
@@ -1467,22 +1462,22 @@ msgstr ""
 msgid "Information"
 msgstr ""
 
-#: lib/firmowid_web/invoicing/transactions/components/salary_components.ex:25
+#: lib/firmowid_web/invoicing/transactions/components/salary_components.ex:26
 #, elixir-autogen, elixir-format
 msgid "Potential salaries for this transaction"
 msgstr ""
 
-#: lib/firmowid_web/invoicing/transactions/components/salary_components.ex:89
+#: lib/firmowid_web/invoicing/transactions/components/salary_components.ex:102
 #, elixir-autogen, elixir-format
 msgid "Salary month"
 msgstr ""
 
-#: lib/firmowid_web/invoicing/transactions/components/salary_components.ex:84
+#: lib/firmowid_web/invoicing/transactions/components/salary_components.ex:97
 #, elixir-autogen, elixir-format
 msgid "Transferred amount"
 msgstr ""
 
-#: lib/firmowid_web/invoicing/transactions/components/salary_components.ex:91
+#: lib/firmowid_web/invoicing/transactions/components/salary_components.ex:108
 #, elixir-autogen, elixir-format
 msgid "Unavailable"
 msgstr ""
@@ -1492,7 +1487,7 @@ msgstr ""
 msgid "The salary cannot be assigned to this transaction."
 msgstr ""
 
-#: lib/firmowid_web/invoicing/transactions/components/salary_components.ex:27
+#: lib/firmowid_web/invoicing/transactions/components/salary_components.ex:28
 #: lib/firmowid_web/invoicing/transactions/components/show_components.ex:180
 #, elixir-autogen, elixir-format
 msgid "Amount"
@@ -1509,13 +1504,13 @@ msgstr ""
 msgid "Complete"
 msgstr ""
 
-#: lib/firmowid_web/invoicing/transactions/components/salary_components.ex:34
-#: lib/firmowid_web/invoicing/transactions/components/salary_components.ex:43
+#: lib/firmowid_web/invoicing/transactions/components/salary_components.ex:40
+#: lib/firmowid_web/invoicing/transactions/components/salary_components.ex:55
 #, elixir-autogen, elixir-format
 msgid "Difference from transfer: %{amount}"
 msgstr ""
 
-#: lib/firmowid_web/invoicing/transactions/components/salary_components.ex:86
+#: lib/firmowid_web/invoicing/transactions/components/salary_components.ex:99
 #, elixir-autogen, elixir-format
 msgid "Employee"
 msgstr ""
@@ -1525,13 +1520,13 @@ msgstr ""
 msgid "Matching"
 msgstr ""
 
-#: lib/firmowid_web/invoicing/transactions/components/salary_components.ex:26
+#: lib/firmowid_web/invoicing/transactions/components/salary_components.ex:27
 #, elixir-autogen, elixir-format
 msgid "Month"
 msgstr ""
 
 #: lib/firmowid/ash/invoicing/changes/validate_transaction_availability.ex:29
-#: lib/firmowid_web/invoicing/transactions/views/show.ex:185
+#: lib/firmowid_web/invoicing/transactions/views/show.ex:186
 #, elixir-autogen, elixir-format
 msgid "Could not connect this transaction to the invoice."
 msgstr ""
@@ -1546,7 +1541,7 @@ msgstr ""
 msgid "Potential invoices for this transaction"
 msgstr ""
 
-#: lib/firmowid_web/invoicing/transactions/components/salary_components.ex:104
+#: lib/firmowid_web/invoicing/transactions/components/salary_components.ex:125
 #, elixir-autogen, elixir-format
 msgid "View timesheet"
 msgstr ""
@@ -3003,11 +2998,6 @@ msgstr ""
 msgid "The transaction is skipped. Restore it for matching first."
 msgstr ""
 
-#: lib/firmowid/ash/finances/changes/connect_salary.ex:90
-#, elixir-autogen, elixir-format
-msgid "The transfer amount differs from the expected salary by more than 20% (at least 300 PLN)."
-msgstr ""
-
 #: lib/firmowid_web/infrastructure/layouts/app.html.heex:219
 #, elixir-autogen, elixir-format
 msgctxt "avatar menu"
@@ -3072,4 +3062,161 @@ msgstr ""
 #: lib/firmowid_web/analysis/views/dashboard.ex:378
 #, elixir-autogen, elixir-format
 msgid "Clear filters"
+msgstr ""
+
+#: lib/firmowid_web/payroll/components/payout_estimates.ex:93
+#, elixir-autogen, elixir-format
+msgid "B2B — gross amount"
+msgstr ""
+
+#: lib/firmowid_web/payroll/components/payout_estimates.ex:97
+#, elixir-autogen, elixir-format
+msgid "Employment"
+msgstr ""
+
+#: lib/firmowid_web/payroll/components/payout_estimates.ex:87
+#, elixir-autogen, elixir-format
+msgid "Employment contract"
+msgstr ""
+
+#: lib/firmowid_web/payroll/components/payout_estimates.ex:121
+#, elixir-autogen, elixir-format
+msgid "First income tax bracket, 20% tax-deductible costs, no PIT-2 reduction."
+msgstr ""
+
+#: lib/firmowid_web/payroll/components/payout_estimates.ex:119
+#, elixir-autogen, elixir-format
+msgid "First income tax bracket, standard costs, PLN 300 PIT-2 reduction, no PPK."
+msgstr ""
+
+#: lib/firmowid_web/payroll/components/payout_estimates.ex:74
+#, elixir-autogen, elixir-format
+msgid "Forecast based on available data and assumptions. It does not replace payroll calculation and is not financial or tax advice."
+msgstr ""
+
+#: lib/firmowid_web/invoicing/transactions/components/salary_components.ex:105
+#: lib/firmowid_web/management/views/employees.html.heex:157
+#: lib/firmowid_web/payroll/components/payout_estimates.ex:46
+#, elixir-autogen, elixir-format
+msgid "Gross"
+msgstr ""
+
+#: lib/firmowid_web/payroll/components/payout_estimates.ex:123
+#, elixir-autogen, elixir-format
+msgid "Gross amount under the contract."
+msgstr ""
+
+#: lib/firmowid_web/payroll/components/payout_estimates.ex:51
+#, elixir-autogen, elixir-format
+msgid "Health insurance"
+msgstr ""
+
+#: lib/firmowid_web/payroll/components/payout_estimates.ex:117
+#, elixir-autogen, elixir-format
+msgid "Health insurance only, first income tax bracket, no PIT-2 reduction."
+msgstr ""
+
+#: lib/firmowid_web/management/views/employees.html.heex:108
+#, elixir-autogen, elixir-format
+msgid "Hours"
+msgstr ""
+
+#: lib/firmowid_web/payroll/components/payout_estimates.ex:26
+#: lib/firmowid_web/payroll/components/payout_estimates.ex:27
+#: lib/firmowid_web/payroll/components/payout_estimates.ex:41
+#, elixir-autogen, elixir-format
+msgid "How is this calculated?"
+msgstr ""
+
+#: lib/firmowid_web/payroll/components/payout_estimates.ex:113
+#, elixir-autogen, elixir-format
+msgid "If 50% tax-deductible costs apply: %{amount}."
+msgstr ""
+
+#: lib/firmowid_web/payroll/components/payout_estimates.ex:53
+#, elixir-autogen, elixir-format
+msgid "Income tax advance"
+msgstr ""
+
+#: lib/firmowid_web/payroll/components/payout_estimates.ex:99
+#, elixir-autogen, elixir-format
+msgid "Mandate"
+msgstr ""
+
+#: lib/firmowid_web/payroll/components/payout_estimates.ex:89
+#, elixir-autogen, elixir-format
+msgid "Mandate — health insurance only"
+msgstr ""
+
+#: lib/firmowid_web/payroll/components/payout_estimates.ex:88
+#, elixir-autogen, elixir-format
+msgid "Mandate — social and health insurance"
+msgstr ""
+
+#: lib/firmowid_web/payroll/components/payout_estimates.ex:90
+#, elixir-autogen, elixir-format
+msgid "Mandate — student under 26"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/transactions/components/salary_components.ex:105
+#: lib/firmowid_web/management/views/employees.html.heex:158
+#: lib/firmowid_web/payroll/components/payout_estimates.ex:20
+#: lib/firmowid_web/payroll/components/payout_estimates.ex:58
+#, elixir-autogen, elixir-format
+msgid "Net forecast"
+msgstr ""
+
+#: lib/firmowid_web/payroll/components/payout_estimates.ex:49
+#, elixir-autogen, elixir-format
+msgid "Social insurance"
+msgstr ""
+
+#: lib/firmowid_web/payroll/components/payout_estimates.ex:101
+#, elixir-autogen, elixir-format
+msgid "Specific-task"
+msgstr ""
+
+#: lib/firmowid_web/payroll/components/payout_estimates.ex:91
+#, elixir-autogen, elixir-format
+msgid "Specific-task contract — 20% costs"
+msgstr ""
+
+#: lib/firmowid_web/payroll/components/payout_estimates.ex:92
+#, elixir-autogen, elixir-format
+msgid "Specific-task contract — 50% costs"
+msgstr ""
+
+#: lib/firmowid_web/payroll/components/payout_estimates.ex:115
+#, elixir-autogen, elixir-format
+msgid "Student status is assumed from age, with unused youth relief."
+msgstr ""
+
+#: lib/firmowid/ash/finances/changes/connect_salary.ex:90
+#, elixir-autogen, elixir-format
+msgid "The transfer amount differs from the expected salary by more than 20% (at least 1000 PLN)."
+msgstr ""
+
+#: lib/firmowid_web/management/views/employees.html.heex:161
+#, elixir-autogen, elixir-format
+msgid "Timesheet"
+msgstr ""
+
+#: lib/firmowid_web/management/views/employees.html.heex:267
+#, elixir-autogen, elixir-format
+msgid "Unknown contract type — only gross pay is shown"
+msgstr ""
+
+#: lib/firmowid_web/payroll/components/payout_estimates.ex:110
+#, elixir-autogen, elixir-format
+msgid "With health insurance only: %{amount}."
+msgstr ""
+
+#: lib/firmowid_web/payroll/components/payout_estimates.ex:107
+#, elixir-autogen, elixir-format
+msgid "With social insurance contributions: %{amount}."
+msgstr ""
+
+#: lib/firmowid_web/payroll/components/payout_estimates.ex:70
+#, elixir-autogen, elixir-format
+msgid "Youth tax relief"
 msgstr ""
