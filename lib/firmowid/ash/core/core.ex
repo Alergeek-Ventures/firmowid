@@ -168,8 +168,16 @@ defmodule Firmowid.Ash.Core do
   def list_usable_members(%User{} = user) do
     user
     |> list_active_members()
-    |> Enum.reject(&(user.system_role != :superuser and &1.organization.billing_plan == :no_plan))
+    |> Enum.filter(&usable_organization?(user, &1.organization))
   end
+
+  @doc """
+  Whether the user can work in the organization they are an active member of: it
+  has a billing plan or the user is a superuser.
+  """
+  @spec usable_organization?(User.t(), Organization.t()) :: boolean()
+  def usable_organization?(%User{} = user, %Organization{} = organization),
+    do: user.system_role == :superuser or organization.billing_plan != :no_plan
 
   @doc """
   Loads the member the user works as, whose organization is the tenant and which

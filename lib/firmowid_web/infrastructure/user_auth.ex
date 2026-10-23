@@ -28,15 +28,17 @@ defmodule FirmowidWeb.Infrastructure.UserAuth do
   def organization_session_key, do: "organization_id"
 
   @doc """
-  Loads the user's usable members and selects the one of the organization chosen
-  in `session`, returning the user with it as `member` and the organizations the
-  user can switch between.
+  Selects the user's usable member (see `Core.list_usable_members/1`) of the
+  organization chosen in `session`, returning the user with it as `member` and
+  the organizations of all the user's active members, for the switcher to list
+  (those without a billing plan as unavailable).
   """
   @spec load_member(User.t(), map()) :: {User.t(), [Organization.t()]}
   def load_member(%User{} = user, session) do
-    members = Core.list_usable_members(user)
+    members = Core.list_active_members(user)
+    usable = Enum.filter(members, &Core.usable_organization?(user, &1.organization))
 
-    {Core.select_member(user, members, session[organization_session_key()]), Enum.map(members, & &1.organization)}
+    {Core.select_member(user, usable, session[organization_session_key()]), Enum.map(members, & &1.organization)}
   end
 
   @doc """

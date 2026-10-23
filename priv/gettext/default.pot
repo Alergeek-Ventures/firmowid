@@ -1080,25 +1080,25 @@ msgstr ""
 msgid "Feedback"
 msgstr ""
 
-#: lib/firmowid_web/infrastructure/layouts/app.html.heex:225
+#: lib/firmowid_web/infrastructure/layouts/app.html.heex:236
 #, elixir-autogen, elixir-format
 msgctxt "avatar menu"
 msgid "Bank accounts"
 msgstr ""
 
-#: lib/firmowid_web/infrastructure/layouts/app.html.heex:234
+#: lib/firmowid_web/infrastructure/layouts/app.html.heex:245
 #, elixir-autogen, elixir-format
 msgctxt "avatar menu"
 msgid "Billing"
 msgstr ""
 
-#: lib/firmowid_web/infrastructure/layouts/app.html.heex:251
+#: lib/firmowid_web/infrastructure/layouts/app.html.heex:262
 #, elixir-autogen, elixir-format
 msgctxt "avatar menu"
 msgid "Log out"
 msgstr ""
 
-#: lib/firmowid_web/infrastructure/layouts/app.html.heex:217
+#: lib/firmowid_web/infrastructure/layouts/app.html.heex:228
 #, elixir-autogen, elixir-format
 msgctxt "avatar menu"
 msgid "Settings"
@@ -1130,19 +1130,19 @@ msgctxt "main navigation"
 msgid "Time tracking"
 msgstr ""
 
-#: lib/firmowid_web/infrastructure/layouts/app.html.heex:300
+#: lib/firmowid_web/infrastructure/layouts/app.html.heex:311
 #, elixir-autogen, elixir-format
 msgctxt "management navigation"
 msgid "Counterparties"
 msgstr ""
 
-#: lib/firmowid_web/infrastructure/layouts/app.html.heex:279
+#: lib/firmowid_web/infrastructure/layouts/app.html.heex:290
 #, elixir-autogen, elixir-format
 msgctxt "management navigation"
 msgid "Employees"
 msgstr ""
 
-#: lib/firmowid_web/infrastructure/layouts/app.html.heex:289
+#: lib/firmowid_web/infrastructure/layouts/app.html.heex:300
 #, elixir-autogen, elixir-format
 msgctxt "management navigation"
 msgid "Projects"
@@ -3015,7 +3015,7 @@ msgstr ""
 msgid "The transfer amount differs from the expected salary by more than 20% (at least 300 PLN)."
 msgstr ""
 
-#: lib/firmowid_web/infrastructure/layouts/app.html.heex:208
+#: lib/firmowid_web/infrastructure/layouts/app.html.heex:219
 #, elixir-autogen, elixir-format
 msgctxt "avatar menu"
 msgid "Add organization"
@@ -3055,4 +3055,10 @@ msgstr ""
 #: lib/firmowid_web/analysis/components/entry_categories.ex:54
 #, elixir-autogen, elixir-format
 msgid "See in analysis."
+msgstr ""
+
+#: lib/firmowid_web/infrastructure/layouts/app.html.heex:210
+#, elixir-autogen, elixir-format
+msgctxt "avatar menu"
+msgid "No plan"
 msgstr ""

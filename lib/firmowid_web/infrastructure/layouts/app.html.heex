@@ -182,24 +182,35 @@
                 <span class="truncate">{@current_org.name}</span>
                 <.icon name="hero-check" class="size-4 shrink-0" />
               </div>
-              <.form
-                :for={organization <- @organizations}
-                :if={organization.id != @current_org.id}
-                for={%{}}
-                id={"switch-organization-#{organization.id}"}
-                action={~p"/organizacja/przelacz"}
-                class="w-full"
-              >
-                <input type="hidden" name="organizacja" value={organization.id} />
-                <FirmowidUI.Components.Button.button
-                  type="submit"
-                  variant="unstyled"
-                  class="block w-full cursor-pointer rounded-md text-left text-white hover:bg-darkGrey/50 hover:text-white active:bg-darkGrey/70"
-                  title={organization.name}
-                >
-                  <span class="block truncate p-2">{organization.name}</span>
-                </FirmowidUI.Components.Button.button>
-              </.form>
+              <%= for organization <- @organizations, organization.id != @current_org.id do %>
+                <%= if Firmowid.Ash.Core.usable_organization?(@current_user, organization) do %>
+                  <.form
+                    for={%{}}
+                    id={"switch-organization-#{organization.id}"}
+                    action={~p"/organizacja/przelacz"}
+                    class="w-full"
+                  >
+                    <input type="hidden" name="organizacja" value={organization.id} />
+                    <FirmowidUI.Components.Button.button
+                      type="submit"
+                      variant="unstyled"
+                      class="block w-full cursor-pointer rounded-md text-left text-white hover:bg-darkGrey/50 hover:text-white active:bg-darkGrey/70"
+                      title={organization.name}
+                    >
+                      <span class="block truncate p-2">{organization.name}</span>
+                    </FirmowidUI.Components.Button.button>
+                  </.form>
+                <% else %>
+                  <div
+                    id={"unavailable-organization-#{organization.id}"}
+                    class="flex items-center justify-between gap-2 p-2 text-white/50"
+                    title={organization.name}
+                  >
+                    <span class="truncate">{organization.name}</span>
+                    <span class="shrink-0 text-xs">{pgettext("avatar menu", "No plan")}</span>
+                  </div>
+                <% end %>
+              <% end %>
               <.link
                 kind="unstyled"
                 navigate={~p"/organizacja"}
