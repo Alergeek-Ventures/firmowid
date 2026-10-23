@@ -278,6 +278,7 @@ defmodule Firmowid.Ash.Ksef do
              | :invoice_not_found
              | :invoice_is_draft
              | :invoice_already_locked
+             | Ash.Error.t()
              | {:invalid_for_ksef, list()}}
   def submit_sales_invoice(sales_invoice_id, scope) do
     with :ok <- validate_ksef_authenticated(scope),
@@ -293,9 +294,10 @@ defmodule Firmowid.Ash.Ksef do
   end
 
   defp validate_ksef_authenticated(scope) do
-    case get_credential!(scope: scope) do
-      nil -> {:error, :not_authenticated}
-      _credential -> :ok
+    case connection_status(scope: scope) do
+      {:ok, %{status: :connected}} -> :ok
+      {:ok, _status} -> {:error, :not_authenticated}
+      {:error, _error} = error -> error
     end
   end
 
@@ -303,9 +305,27 @@ defmodule Firmowid.Ash.Ksef do
     opts = [scope: scope]
 
     case SalesInvoice.by_id(sales_invoice_id, opts) do
-      {:ok, nil} -> {:error, :invoice_not_found}
-      {:ok, invoice} -> validate_invoice_state(invoice)
-      {:error, _} -> {:error, :invoice_not_found}
+      {:ok, nil} ->
+        {:error, :invoice_not_found}
+
+      {:ok, invoice} ->
+        with :ok <- authorize_invoice_submission(invoice, scope) do
+          validate_invoice_state(invoice)
+        end
+
+      {:error, _error} = error ->
+        error
+    end
+  end
+
+  defp authorize_invoice_submission(invoice, scope) do
+    case Ash.can({invoice, :start_ksef_submission}, scope,
+           maybe_is: false,
+           return_forbidden_error?: true
+         ) do
+      {:ok, true} -> :ok
+      {:ok, false, error} -> {:error, Ash.Error.to_error_class(error)}
+      {:error, error} -> {:error, error}
     end
   end
 

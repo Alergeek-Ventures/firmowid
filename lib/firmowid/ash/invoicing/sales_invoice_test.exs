@@ -4,10 +4,12 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoiceTest do
 
   import Firmowid.AccountsFixtures
 
+  alias Ash.Error.Forbidden
   alias Ash.Error.Invalid
   alias Firmowid.Ash.Invoicing
   alias Firmowid.Ash.Invoicing.Counterparty
   alias Firmowid.Ash.Invoicing.SalesInvoice
+  alias Firmowid.Ash.Ksef
   alias Firmowid.Ash.Ksef.Services.InvoiceRenderer
   alias Firmowid.Ash.Ksef.Workers.SubmissionWorker
   alias Firmowid.Ash.Scope
@@ -565,34 +567,141 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoiceTest do
   end
 
   describe "issuance" do
-    test "issues a draft saved on an earlier day with today's issue date and queues KSeF" do
-      user = invoicing_admin_fixture()
-      InvoicingFixtures.connect_ksef!(user.member.organization_id)
+    for role <- [:admin, :accountant] do
+      @role role
+      test "#{role} issues an earlier draft with today's date and queues KSeF using connection metadata" do
+        admin = invoicing_admin_fixture()
+        user = user_in_org_fixture(admin.member.organization_id, %{role: @role})
+        scope = scope_for(user)
+        InvoicingFixtures.connect_ksef!(scope.tenant)
 
-      draft =
-        create_sales_invoice!(
-          user,
-          Map.merge(base_invoice_attrs(), %{
-            invoice_number: nil,
-            issue_date: Date.add(Date.utc_today(), -30),
-            sales_invoice_items: [base_item_attrs(%{})]
-          })
+        draft =
+          create_sales_invoice!(
+            user,
+            Map.merge(base_invoice_attrs(), %{
+              invoice_number: nil,
+              issue_date: Date.add(Date.utc_today(), -30),
+              sales_invoice_items: [base_item_attrs(%{})]
+            })
+          )
+
+        # Manual mode keeps the queued KSeF job from running against the API.
+        assert {:ok, issued} =
+                 Oban.Testing.with_testing_mode(:manual, fn ->
+                   Invoicing.finalize_sales_invoice_draft(
+                     draft,
+                     %{invoice_number: "FV/#{System.unique_integer([:positive])}"},
+                     scope: scope
+                   )
+                 end)
+
+        assert issued.id == draft.id
+        assert issued.issue_date == Date.utc_today()
+        assert issued.ksef_submission_status == :submitting
+
+        assert Invoicing.get_sales_invoice!(draft.id, scope: scope).invoice_number ==
+                 issued.invoice_number
+
+        assert_enqueued(
+          worker: SubmissionWorker,
+          args: %{
+            "action" => "submit",
+            "organization_id" => scope.tenant,
+            "sales_invoice_id" => issued.id
+          }
         )
 
-      # Manual mode keeps the queued KSeF job from running against the API.
-      assert {:ok, issued} =
-               Oban.Testing.with_testing_mode(:manual, fn ->
-                 Invoicing.finalize_sales_invoice_draft(
-                   draft,
-                   %{invoice_number: "FV/#{System.unique_integer([:positive])}"},
-                   scope: scope_for(user)
-                 )
-               end)
+        if @role == :accountant do
+          assert {:error, %Forbidden{}} = Ksef.get_credential(scope: scope)
+        end
+      end
+    end
 
-      assert issued.id == draft.id
-      assert issued.issue_date == Date.utc_today()
-      assert issued.ksef_submission_status == :submitting
-      assert_enqueued(worker: SubmissionWorker, args: %{"sales_invoice_id" => issued.id})
+    for role <- [:invoicing, :employee] do
+      @role role
+      test "#{role} cannot issue a draft or enqueue a standalone submission" do
+        admin = invoicing_admin_fixture()
+        InvoicingFixtures.connect_ksef!(admin.member.organization_id)
+        user = user_in_org_fixture(admin.member.organization_id, %{role: @role})
+        draft = create_draft!(admin, %{input: issue_input()})
+        numbered = create_sales_invoice!(admin, base_invoice_attrs())
+
+        Oban.Testing.with_testing_mode(:manual, fn ->
+          assert {:error, _error} =
+                   Invoicing.finalize_sales_invoice_draft(draft, %{invoice_number: "FV/1/2026"}, scope: scope_for(user))
+
+          assert {:error, %Forbidden{}} =
+                   Ksef.submit_sales_invoice(numbered.id, scope_for(user))
+        end)
+
+        assert Invoicing.get_sales_invoice!(draft.id, scope: scope_for(admin)).invoice_number ==
+                 nil
+
+        refute_enqueued(worker: SubmissionWorker)
+      end
+    end
+
+    test "rejects foreign invoices and a tenant that does not belong to the actor" do
+      owner = invoicing_admin_fixture()
+      foreign = invoicing_admin_fixture()
+      user = user_in_org_fixture(owner.member.organization_id, %{role: :accountant})
+      InvoicingFixtures.connect_ksef!(owner.member.organization_id)
+      InvoicingFixtures.connect_ksef!(foreign.member.organization_id)
+      draft = create_draft!(foreign, %{input: issue_input()})
+      numbered = create_sales_invoice!(foreign, base_invoice_attrs())
+
+      Oban.Testing.with_testing_mode(:manual, fn ->
+        for actor <- [user, owner],
+            tenant <- [owner.member.organization_id, foreign.member.organization_id] do
+          scope = %Scope{actor: actor, tenant: tenant}
+
+          assert {:error, _error} =
+                   Invoicing.finalize_sales_invoice_draft(draft, %{invoice_number: "FV/1/2026"}, scope: scope)
+
+          assert {:error, _error} = Ksef.submit_sales_invoice(numbered.id, scope)
+        end
+      end)
+
+      assert Invoicing.get_sales_invoice!(draft.id, scope: scope_for(foreign)).invoice_number ==
+               nil
+
+      refute_enqueued(worker: SubmissionWorker)
+    end
+
+    for connection <- [:missing, :connecting, :expired] do
+      @connection connection
+      test "accountant cannot issue or enqueue with a #{@connection} KSeF connection" do
+        admin = invoicing_admin_fixture()
+        user = user_in_org_fixture(admin.member.organization_id, %{role: :accountant})
+
+        if @connection != :missing do
+          InvoicingFixtures.connect_ksef!(admin.member.organization_id)
+
+          [scope: scope_for(admin)]
+          |> Ksef.get_credential!()
+          |> Ash.Seed.update!(
+            if @connection == :expired,
+              do: %{expires_on: Date.add(Date.utc_today(), -1)},
+              else: %{status: :authenticating}
+          )
+        end
+
+        draft = create_draft!(admin, %{input: issue_input()})
+        numbered = create_sales_invoice!(admin, base_invoice_attrs())
+
+        Oban.Testing.with_testing_mode(:manual, fn ->
+          assert {:error, %Invalid{}} =
+                   Invoicing.finalize_sales_invoice_draft(draft, %{invoice_number: "FV/1/2026"}, scope: scope_for(user))
+
+          assert {:error, :not_authenticated} =
+                   Ksef.submit_sales_invoice(numbered.id, scope_for(user))
+        end)
+
+        assert Invoicing.get_sales_invoice!(draft.id, scope: scope_for(admin)).invoice_number ==
+                 nil
+
+        refute_enqueued(worker: SubmissionWorker)
+      end
     end
 
     test "issues nothing without a KSeF connection" do
