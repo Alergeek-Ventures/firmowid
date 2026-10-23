@@ -21,7 +21,6 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
   alias Firmowid.Ash.Finances.Transaction
   alias Firmowid.Ash.Invoicing.CostInvoice
   alias Firmowid.Ash.Invoicing.SalesInvoice
-  alias Firmowid.Ash.Timetracker.Project
   alias FirmowidWeb.Analysis.Utilities.Navigation
   alias FirmowidWeb.Infrastructure.Utilities.QueryParams
 
@@ -60,12 +59,7 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
 
     tag_filters = Navigation.parse_tag_filters(params, socket.assigns.tag_definitions)
 
-    categories =
-      %{active_from: month, active_to: Date.end_of_month(month)}
-      |> Project.list!(load: [:tag_definition], scope: socket.assigns.ash_scope)
-      |> Enum.map(& &1.tag_definition)
-      |> Enum.reject(&is_nil/1)
-      |> Enum.sort_by(& &1.name)
+    categories = Analysis.list_available_categories(month, socket.assigns.ash_scope)
 
     socket =
       socket
@@ -80,7 +74,7 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
 
   @impl true
   def handle_event(event, params, socket)
-      when event in ["set-entity-category", "clear-entity-tags", "toggle-project-tag"] do
+      when event in ["set-entity-category", "clear-entity-tags", "toggle-project-tag", "create-category"] do
     row =
       Enum.find(
         socket.assigns.sales_invoices ++
@@ -93,6 +87,9 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
 
     if can_write?(socket.assigns) and row != nil and category_editable?(row) do
       case change_category(event, params, row, socket) do
+        {:ok, _} when event == "create-category" ->
+          {:noreply, socket |> load_categories() |> load_totals()}
+
         {:ok, _} ->
           {:noreply, load_totals(socket)}
 
@@ -154,27 +151,6 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
   end
 
   @impl true
-  def handle_event("toggle-tag", %{"tag" => tag_key}, socket) do
-    current = socket.assigns.tag_filters
-    filter = Navigation.parse_tag_filter(tag_key)
-
-    case filter do
-      :invalid ->
-        {:noreply, socket}
-
-      _valid_filter ->
-        updated =
-          if filter in current do
-            List.delete(current, filter)
-          else
-            [filter | current]
-          end
-
-        {:noreply, push_patch(socket, to: build_path(socket, tag_filters: updated))}
-    end
-  end
-
-  @impl true
   def handle_event("clear-tag-filters", _params, socket) do
     {:noreply, push_patch(socket, to: build_path(socket, tag_filters: []))}
   end
@@ -209,6 +185,13 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
 
   defp category_editable?(row), do: row.skip_invoicing or row.transactions != []
 
+  defp change_category("create-category", %{"name" => name}, row, socket) do
+    TagDefinition.create_for_entry(
+      %{name: name, entity_type: category_entity_type(row), resource_id: row.id},
+      scope: socket.assigns.ash_scope
+    )
+  end
+
   defp change_category("clear-entity-tags", _params, row, socket) do
     EntityTag.clear_entity_tags(
       %{entity_type: category_entity_type(row), resource_id: row.id},
@@ -216,12 +199,13 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
     )
   end
 
-  defp change_category("set-entity-category", %{"kind" => kind}, row, socket) when kind in ["company", "internal"] do
+  defp change_category("set-entity-category", %{"kind" => kind}, row, socket)
+       when kind in ["company", "taxes", "internal"] do
     EntityTag.set_entity_category(
       %{
         entity_type: category_entity_type(row),
         resource_id: row.id,
-        kind: if(kind == "company", do: :company, else: :internal)
+        kind: kind
       },
       scope: socket.assigns.ash_scope
     )
@@ -248,6 +232,16 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
   end
 
   defp change_category(_event, _params, _row, _socket), do: {:error, :invalid_category}
+
+  defp load_categories(socket) do
+    scope = socket.assigns.ash_scope
+    definitions = TagDefinition.list_tag_definitions!(scope: scope)
+
+    socket
+    |> assign(:tag_definitions, definitions)
+    |> assign(:category_colors, category_colors(definitions))
+    |> assign(:categories, Analysis.list_available_categories(socket.assigns.params.month, scope))
+  end
 
   # Category changes do not affect unrealized entries, so they only reload totals.
   defp load_data(socket) do
@@ -312,11 +306,6 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
     Navigation.dashboard_path(month, tag_filters)
   end
 
-  @doc false
-  def tag_filter_active?(tag_filters, filter) do
-    filter in tag_filters
-  end
-
   @impl true
   def render(assigns) do
     ~H"""
@@ -328,7 +317,7 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
           </h1>
           <p class="mt-2 text-sm text-darkGrey">{gettext("Income and expenses by project")}</p>
         </div>
-        <div class="flex items-center gap-3">
+        <div class="flex flex-wrap items-center gap-3">
           <FirmowidUI.Components.Button.button
             :if={can_write?(assigns)}
             id="clear-month-tags"
@@ -348,70 +337,6 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
           >
             {gettext("Assign unassigned")}
           </FirmowidUI.Components.Button.button>
-          <div class="relative">
-            <FirmowidUI.Components.Button.button
-              id="tag-filter-trigger"
-              variant="secondary"
-              type="button"
-              phx-click={show_popover("tag-filter-popover")}
-            >
-              <Lucideicons.tag />
-              {gettext("Categories")}
-              <span :if={@tag_filters != []}>({length(@tag_filters)})</span>
-            </FirmowidUI.Components.Button.button>
-            <.popover
-              id="tag-filter-popover"
-              reference_id="tag-filter-trigger"
-              placement="bottom-end"
-              class="w-64 rounded-lg border border-grey-200 bg-grey-50"
-            >
-              <div class="max-h-80 overflow-y-auto p-1">
-                <label class="flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-sm hover:bg-orange-100">
-                  <input
-                    type="checkbox"
-                    checked={tag_filter_active?(@tag_filters, {:company})}
-                    phx-click="toggle-tag"
-                    phx-value-tag="firma"
-                    class="size-4 rounded-[3px] border border-darkGrey"
-                  />
-                  <span
-                    class="size-2.5 shrink-0 rounded-full"
-                    style={"background-color: #{@category_colors.company}"}
-                    aria-hidden="true"
-                  />
-                  {gettext("Company")}
-                </label>
-                <label
-                  :for={tag_def <- @tag_definitions}
-                  class="flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-sm hover:bg-orange-100"
-                >
-                  <input
-                    type="checkbox"
-                    checked={tag_filter_active?(@tag_filters, {:project, tag_def.id})}
-                    phx-click="toggle-tag"
-                    phx-value-tag={"projekt:#{tag_def.id}"}
-                    class="size-4 rounded-[3px] border border-darkGrey"
-                  />
-                  <span
-                    class="size-2.5 shrink-0 rounded-full"
-                    style={"background-color: #{Map.fetch!(@category_colors, {:project, tag_def.id})}"}
-                    aria-hidden="true"
-                  />
-                  <span class="truncate text-darkGrey">{tag_def.name}</span>
-                </label>
-                <FirmowidUI.Components.Button.button
-                  :if={@tag_filters != []}
-                  id="clear-tag-filters"
-                  type="button"
-                  variant="unstyled"
-                  phx-click="clear-tag-filters"
-                  class="mt-1 w-full border-t p-2 text-sm text-darkGrey"
-                >
-                  {gettext("Clear filters")}
-                </FirmowidUI.Components.Button.button>
-              </div>
-            </.popover>
-          </div>
           <.month_picker
             id="month"
             active_months={@active_months}
@@ -443,6 +368,15 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
           {gettext(
             "The list shows full document amounts; the charts show the selected projects' shares."
           )}
+          <FirmowidUI.Components.Button.button
+            id="clear-tag-filters"
+            type="button"
+            variant="unstyled"
+            phx-click="clear-tag-filters"
+            class="cursor-pointer underline active:text-grey-900"
+          >
+            {gettext("Clear filters")}
+          </FirmowidUI.Components.Button.button>
         </p>
         <div class="overflow-x-auto">
           <FirmowidWeb.Analysis.Components.EntriesTable.table

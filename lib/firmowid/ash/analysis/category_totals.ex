@@ -1,10 +1,10 @@
 defmodule Firmowid.Ash.Analysis.CategoryTotals do
   @moduledoc """
-  Pure aggregation of normalized PLN amounts into company, project and
+  Pure aggregation of normalized PLN amounts into company, taxes, project and
   unassigned shares. Allocation conserves each entity's rounded cent amount.
   """
 
-  @type category_key :: {:project, String.t()} | :company | :unassigned
+  @type category_key :: {:project, String.t()} | :company | :taxes | :unassigned
   @type category :: %{
           key: category_key(),
           name: String.t() | nil,
@@ -27,7 +27,7 @@ defmodule Firmowid.Ash.Analysis.CategoryTotals do
    cents to the largest remainders, then to sorted IDs. Built-in categories
   have nil names for caller-owned translation. Internal entities are excluded.
 
-  Filters select shares with OR semantics (`{:project, id}` or `{:company}`),
+  Filters select shares with OR semantics (`{:project, id}`, `{:company}` or `{:taxes}`),
   after allocation. Category amounts are positive; expense totals stay negative.
   Zero shares are omitted. Rows are deterministically ordered by category key.
   """
@@ -69,6 +69,7 @@ defmodule Firmowid.Ash.Analysis.CategoryTotals do
     cond do
       Enum.any?(tags, &(&1.kind == :internal)) -> []
       Enum.any?(tags, &(&1.kind == :company)) -> [%{key: :company, name: nil, color: "#354E4E"}]
+      Enum.any?(tags, &(&1.kind == :taxes)) -> [%{key: :taxes, name: nil, color: "#111827"}]
       true -> project_categories(tags)
     end
   end
@@ -127,6 +128,7 @@ defmodule Firmowid.Ash.Analysis.CategoryTotals do
 
   defp selected?(_key, []), do: true
   defp selected?(:company, filters), do: {:company} in filters
+  defp selected?(:taxes, filters), do: {:taxes} in filters
   defp selected?({:project, id}, filters), do: {:project, id} in filters
   defp selected?(:unassigned, _filters), do: false
 

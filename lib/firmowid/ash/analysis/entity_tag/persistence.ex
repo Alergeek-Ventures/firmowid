@@ -29,7 +29,7 @@ defmodule Firmowid.Ash.Analysis.EntityTag.Persistence do
       public?: true,
       allow_nil?: false,
       default: :project,
-      constraints: [one_of: [:project, :company, :internal]]
+      constraints: [one_of: [:project, :company, :taxes, :internal]]
 
     attribute :resource_id, :uuid, public?: true, allow_nil?: false
 

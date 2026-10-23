@@ -1,6 +1,6 @@
 defmodule Firmowid.Ash.Analysis.TagDefinition do
   @moduledoc """
-  User-created project tag with a name and color.
+  Custom category or project tag with a name and color.
 
   Full CRUD Ash resource backed by the `tag_definitions` table. Replaces
   both the legacy Ecto schema (`Firmowid.Analysis.TagDefinition`) and the
@@ -15,15 +15,25 @@ defmodule Firmowid.Ash.Analysis.TagDefinition do
     authorizers: [Ash.Policy.Authorizer]
 
   alias Firmowid.Ash.Analysis.Changes.PickTagColor
+  alias Firmowid.Ash.Analysis.EntityTag
   alias Firmowid.Ash.Checks.ActorRole
   alias Firmowid.Ash.Checks.SystemActorRole
   alias Firmowid.Ash.Resource
+  alias Firmowid.Ash.Scope
 
   require Resource
 
   postgres do
     table "tag_definitions"
     repo Firmowid.Repo
+
+    custom_statements do
+      statement :analysis_taxes_category do
+        up "ALTER TYPE entity_tag_kind ADD VALUE IF NOT EXISTS 'taxes';"
+        # PostgreSQL cannot remove an enum value; older code simply cannot assign it.
+        down "SELECT 1;"
+      end
+    end
   end
 
   code_interface do
@@ -34,6 +44,7 @@ defmodule Firmowid.Ash.Analysis.TagDefinition do
     define :list_tag_definitions
     define :get_tag_definition, action: :read, get_by: [:id]
     define :create_for_project, args: [:name]
+    define :create_for_entry
   end
 
   actions do
@@ -65,6 +76,44 @@ defmodule Firmowid.Ash.Analysis.TagDefinition do
       description "Creates a tag definition for a project with an auto-assigned color."
       accept [:name]
       change PickTagColor
+    end
+
+    create :create_for_entry do
+      description "Creates a custom category and assigns it to an entry in one transaction."
+      accept [:name]
+      touches_resources [EntityTag]
+
+      argument :entity_type, :atom,
+        allow_nil?: false,
+        constraints: [one_of: [:sales_invoice, :cost_invoice, :transaction]]
+
+      argument :resource_id, :uuid, allow_nil?: false
+
+      change fn changeset, context ->
+        Ash.Changeset.after_action(changeset, fn changeset, category ->
+          scope = %Scope{actor: context.actor, tenant: context.tenant}
+          type = Ash.Changeset.get_argument(changeset, :entity_type)
+          id = Ash.Changeset.get_argument(changeset, :resource_id)
+
+          current_ids =
+            %{entity_type: type, resource_ids: [id]}
+            |> EntityTag.list!(scope: scope)
+            |> Enum.filter(&(&1.kind == :project))
+            |> Enum.map(& &1.tag_definition_id)
+
+          with {:ok, _tags} <-
+                 EntityTag.set_entity_project_tags(
+                   %{
+                     entity_type: type,
+                     resource_id: id,
+                     tag_definition_ids: current_ids ++ [category.id]
+                   },
+                   scope: scope
+                 ) do
+            {:ok, category}
+          end
+        end)
+      end
     end
 
     update :update_tag_definition do
@@ -130,6 +179,10 @@ defmodule Firmowid.Ash.Analysis.TagDefinition do
   end
 
   relationships do
+    has_many :projects, Firmowid.Ash.Timetracker.Project do
+      destination_attribute :tag_definition_id
+    end
+
     belongs_to :organization, Firmowid.Ash.Core.Organization do
       allow_nil? false
     end

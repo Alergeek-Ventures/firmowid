@@ -5,7 +5,7 @@ defmodule FirmowidWeb.Analysis.Utilities.Navigation do
 
   use FirmowidWeb, :verified_routes
 
-  @type tag_filter :: {:company} | {:project, String.t()}
+  @type tag_filter :: {:company} | {:taxes} | {:project, String.t()}
 
   @doc """
   Builds the canonical analysis dashboard path.
@@ -28,6 +28,7 @@ defmodule FirmowidWeb.Analysis.Utilities.Navigation do
   """
   @spec parse_tag_filter(String.t() | nil) :: tag_filter() | :invalid
   def parse_tag_filter("firma"), do: {:company}
+  def parse_tag_filter("podatki"), do: {:taxes}
   def parse_tag_filter("projekt:" <> id), do: {:project, id}
   def parse_tag_filter(_raw_tag_filter), do: :invalid
 
@@ -45,6 +46,7 @@ defmodule FirmowidWeb.Analysis.Utilities.Navigation do
     |> Enum.reject(&(&1 == :invalid))
     |> Enum.filter(fn
       {:company} -> true
+      {:taxes} -> true
       {:project, id} -> MapSet.member?(valid_project_ids, id)
     end)
   end
@@ -52,5 +54,6 @@ defmodule FirmowidWeb.Analysis.Utilities.Navigation do
   def parse_tag_filters(_params, _tag_definitions), do: []
 
   defp encode_tag_key({:company}), do: "firma"
+  defp encode_tag_key({:taxes}), do: "podatki"
   defp encode_tag_key({:project, id}), do: "projekt:#{id}"
 end

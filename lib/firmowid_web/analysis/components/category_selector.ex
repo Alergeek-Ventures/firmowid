@@ -1,6 +1,6 @@
 defmodule FirmowidWeb.Analysis.Components.CategorySelector do
   @moduledoc """
-  Pure category badges and active-project selector for document tables.
+  Pure category badges and category selector for document tables.
   """
   use FirmowidWeb, :html
 
@@ -15,7 +15,7 @@ defmodule FirmowidWeb.Analysis.Components.CategorySelector do
   attr :can_write, :boolean, default: false
   attr :target, :any, default: nil
 
-  @doc "Renders historical tags and an active-project-only category selector."
+  @doc "Renders historical tags and a selector for built-in, custom and project categories."
   @spec cell(map()) :: Rendered.t()
   def cell(assigns) do
     tags = displayed_tags(assigns.entry)
@@ -96,6 +96,7 @@ defmodule FirmowidWeb.Analysis.Components.CategorySelector do
               <div
                 :if={@categories != []}
                 role="separator"
+                data-combobox-separator
                 class="mx-2 my-1 border-t border-grey-100"
               />
               <FirmowidUI.Components.Button.button
@@ -138,6 +139,43 @@ defmodule FirmowidWeb.Analysis.Components.CategorySelector do
                   class="invisible size-4 shrink-0 group-aria-selected:visible"
                 />
               </FirmowidUI.Components.Button.button>
+              <FirmowidUI.Components.Button.button
+                type="button"
+                variant="unstyled"
+                role="option"
+                aria-selected={to_string(@selected_kind == :taxes)}
+                data-combobox-option={gettext("Taxes")}
+                phx-click={JS.push("set-entity-category", loading: "##{@popover_id}-combobox")}
+                phx-target={@target}
+                phx-value-entity_type={@type}
+                phx-value-entity_id={@entry.id}
+                phx-value-kind="taxes"
+                class={option_styles()}
+              >
+                <.color_dot color={Map.fetch!(@colors, :taxes)} />
+                <span class="flex-1">{gettext("Taxes")}</span>
+                <.icon
+                  name="hero-check-mini"
+                  class="invisible size-4 shrink-0 group-aria-selected:visible"
+                />
+              </FirmowidUI.Components.Button.button>
+              <FirmowidUI.Components.Button.button
+                type="button"
+                variant="unstyled"
+                role="option"
+                aria-selected="false"
+                hidden
+                data-combobox-create
+                phx-click={JS.push("create-category", loading: "##{@popover_id}-combobox")}
+                phx-target={@target}
+                phx-value-entity_type={@type}
+                phx-value-entity_id={@entry.id}
+                class={option_styles()}
+              >
+                <.icon name="hero-plus-mini" class="size-4 shrink-0" />
+                <span class="shrink-0">{gettext("New category")}</span>
+                <span class="min-w-0 truncate font-medium" data-combobox-create-name />
+              </FirmowidUI.Components.Button.button>
             </div>
             <div class="flex items-center justify-between gap-2 border-t border-grey-200 px-3 py-2 text-xs text-darkGrey">
               <.icon
@@ -168,18 +206,28 @@ defmodule FirmowidWeb.Analysis.Components.CategorySelector do
             this.input = this.el.querySelector("[data-combobox-input]");
             this.input.addEventListener("input", () => this.filter());
             this.el.addEventListener("keydown", (event) => this.onKeydown(event));
+            this.filter();
           },
           updated() {
             this.filter();
           },
           options() {
-            return [...this.el.querySelectorAll("[data-combobox-option]")].filter((option) => !option.hidden);
+            return [...this.el.querySelectorAll("[data-combobox-option], [data-combobox-create]")].filter((option) => !option.hidden);
           },
           filter() {
-            const query = this.input.value.trim().toLocaleLowerCase();
+            const name = this.input.value.trim();
+            const query = name.toLocaleLowerCase();
+            let matches = 0;
             this.el.querySelectorAll("[data-combobox-option]").forEach((option) => {
               option.hidden = !option.dataset.comboboxOption.toLocaleLowerCase().includes(query);
+              if (!option.hidden) matches += 1;
             });
+            const create = this.el.querySelector("[data-combobox-create]");
+            const separator = this.el.querySelector("[data-combobox-separator]");
+            if (separator) separator.hidden = query !== "";
+            create.hidden = name === "" || matches > 0;
+            create.setAttribute("phx-value-name", name);
+            create.querySelector("[data-combobox-create-name]").textContent = name;
           },
           onKeydown(event) {
             const options = this.options();
@@ -265,6 +313,7 @@ defmodule FirmowidWeb.Analysis.Components.CategorySelector do
   end
 
   defp tag_color(%{kind: :company}, colors), do: Map.fetch!(colors, :company)
+  defp tag_color(%{kind: :taxes}, colors), do: Map.fetch!(colors, :taxes)
 
   defp tag_color(%{kind: :project, tag_definition_id: id}, colors), do: Map.fetch!(colors, {:project, id})
 
@@ -279,6 +328,7 @@ defmodule FirmowidWeb.Analysis.Components.CategorySelector do
   defp editable?(row), do: row.skip_invoicing or row.transactions != []
 
   defp tag_label(%{kind: :company}), do: gettext("Company")
+  defp tag_label(%{kind: :taxes}), do: gettext("Taxes")
   defp tag_label(%{kind: :internal}), do: gettext("Omitted")
   defp tag_label(%{kind: :project, tag_definition: %{name: name}}), do: name
   defp tag_label(_), do: gettext("Project")
