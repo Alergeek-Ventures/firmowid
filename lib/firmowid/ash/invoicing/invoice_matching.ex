@@ -122,15 +122,16 @@ defmodule Firmowid.Ash.Invoicing.InvoiceMatching do
   """
   @spec match_cost_invoice(String.t(), Scope.t()) :: :ok
   def match_cost_invoice(cost_invoice_id, scope) do
-    cost_invoice_id
-    |> Invoicing.get_cost_invoice!(load: [:effective_amount], scope: scope)
-    |> match_invoice(
-      list_pending_transactions(scope),
-      &Invoicing.connect_cost_invoice_transactions_auto_match!/4,
-      scope
-    )
-
-    :ok
+    %{ids: [cost_invoice_id], reconciliation: :pending}
+    |> Invoicing.list_cost_invoices!(load: [:effective_amount], scope: scope)
+    |> match_invoices(list_pending_transactions(scope), fn invoice, transactions ->
+      match_invoice(
+        invoice,
+        transactions,
+        &Invoicing.connect_cost_invoice_transactions_auto_match!/4,
+        scope
+      )
+    end)
   end
 
   @doc """

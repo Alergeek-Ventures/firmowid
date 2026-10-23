@@ -26,6 +26,49 @@ defmodule FirmowidWeb.Invoicing.Views.IndexTest do
   alias FirmowidWeb.Core.Endpoint
   alias Phoenix.Socket.Broadcast
 
+  test "payment and skipping a corrected cost invoice use only the original", %{conn: conn} do
+    user = admin_fixture()
+    scope = scope_for(user)
+    conn = log_in_user(conn, user)
+    invoice = corrected_cost_invoice_fixture!(user)
+
+    {:ok, dashboard, _html} = live(conn, ~p"/fakturowanie?miesiac=2026-01-01")
+
+    assert has_element?(
+             dashboard,
+             "a[href='/kosztowe/#{invoice.id}']",
+             invoice.invoice_identifier
+           )
+
+    refute has_element?(dashboard, "a", "KOR-PAYMENT-METHOD")
+
+    first_payment =
+      transaction_fixture!(user, invoice.seller, invoice.issue_date, "FIRST-INSTALLMENT")
+
+    second_payment =
+      transaction_fixture!(user, invoice.seller, invoice.issue_date, "SECOND-INSTALLMENT")
+
+    Invoicing.connect_cost_invoice_transactions!(invoice, [first_payment.id, second_payment.id], scope: scope)
+
+    paid = Invoicing.get_cost_invoice!(invoice.id, load: [:transactions], scope: scope)
+
+    assert MapSet.new(paid.transactions, & &1.id) ==
+             MapSet.new([first_payment.id, second_payment.id])
+
+    {:ok, paid_dashboard, _html} = live(conn, ~p"/fakturowanie?miesiac=2026-01-01")
+    assert has_element?(paid_dashboard, "p", "Brak nieopłaconych faktur.")
+
+    {:ok, details, _html} = live(conn, ~p"/kosztowe/#{invoice.id}")
+    details |> element("#invoice-show button[phx-click='disconnect']") |> render_click()
+    details |> element("button", "Pomiń") |> render_click()
+    assert has_element?(details, "div", "Transakcja pominięta")
+
+    assert Invoicing.get_cost_invoice!(invoice.id, scope: scope).skip_invoicing
+
+    {:ok, skipped_dashboard, _html} = live(conn, ~p"/fakturowanie?miesiac=2026-01-01")
+    assert has_element?(skipped_dashboard, "p", "Brak nieopłaconych faktur.")
+  end
+
   describe "invoicing access" do
     test "redirects employees to time tracking", %{conn: conn} do
       user = user_fixture(%{role: :employee})
@@ -774,6 +817,53 @@ defmodule FirmowidWeb.Invoicing.Views.IndexTest do
       organization_id: user.member.organization_id,
       skip_invoicing: false
     })
+  end
+
+  defp corrected_cost_invoice_fixture!(user) do
+    blob =
+      Ash.Seed.seed!(Blob, %{
+        blob_path: "correction-regression/original.pdf",
+        blob_checksum: String.duplicate("a", 64),
+        original_filename: "original.pdf",
+        organization_id: user.member.organization_id
+      })
+
+    attributes = %{
+      seller: "Corrected Supplier",
+      seller_display_name: "Corrected Supplier",
+      sale_date: ~D[2026-01-10],
+      issue_date: ~D[2026-01-10],
+      due_date: ~D[2026-01-24],
+      amount: Money.new!("EUR", "-100.00"),
+      description: "Payment method correction",
+      payment_method: :bank_transfer,
+      organization_id: user.member.organization_id
+    }
+
+    invoice =
+      Ash.Seed.seed!(
+        CostInvoice,
+        Map.merge(attributes, %{
+          invoice_identifier: "ROOT-PAYMENT-METHOD",
+          blob_id: blob.id,
+          ksef_number: "KSEF-ROOT-PAYMENT-METHOD"
+        })
+      )
+
+    Ash.Seed.seed!(
+      CostInvoice,
+      Map.merge(attributes, %{
+        invoice_identifier: "KOR-PAYMENT-METHOD",
+        invoice_type: :kor,
+        ksef_number: "KSEF-KOR-PAYMENT-METHOD",
+        original_invoice_ksef_number: invoice.ksef_number,
+        ksef_permanent_storage_date: ~N[2026-01-11 12:00:00],
+        amount: Money.new!("EUR", "0"),
+        payment_method: :cash
+      })
+    )
+
+    invoice
   end
 
   defp income_transaction_fixture!(user, debtor_name, booking_date, suffix) do

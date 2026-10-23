@@ -1,10 +1,11 @@
 defmodule Firmowid.Ash.Invoicing.Changes.ValidateTransactionAvailability do
-  @moduledoc "Checks invoice connection eligibility owned by the transaction resource."
+  @moduledoc "Checks transaction eligibility and keeps cost invoice payments on the original."
 
   use Ash.Resource.Change
   use Gettext, backend: Firmowid.Gettext
 
   alias Firmowid.Ash.Finances
+  alias Firmowid.Ash.Invoicing.CostInvoice
   alias Firmowid.Ash.Scope
 
   @impl true
@@ -19,7 +20,8 @@ defmodule Firmowid.Ash.Invoicing.Changes.ValidateTransactionAvailability do
         |> Enum.filter(& &1.invoice_matchable?)
         |> MapSet.new(& &1.id)
 
-      if Enum.all?(ids, &MapSet.member?(available_ids, &1)) do
+      if original_invoice?(changeset.data, scope) and
+           Enum.all?(ids, &MapSet.member?(available_ids, &1)) do
         changeset
       else
         Ash.Changeset.add_error(changeset,
@@ -29,4 +31,11 @@ defmodule Firmowid.Ash.Invoicing.Changes.ValidateTransactionAvailability do
       end
     end)
   end
+
+  defp original_invoice?(%CostInvoice{} = invoice, scope) do
+    invoice = Ash.load!(invoice, :original_invoice, scope: scope)
+    is_nil(invoice.original_invoice)
+  end
+
+  defp original_invoice?(_invoice, _scope), do: true
 end

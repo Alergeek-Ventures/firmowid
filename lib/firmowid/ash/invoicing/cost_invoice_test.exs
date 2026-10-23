@@ -3,8 +3,11 @@ defmodule Firmowid.Ash.Invoicing.CostInvoiceTest do
   use Firmowid.DataCase, async: false
 
   import Firmowid.AccountsFixtures
+  import Firmowid.FinancesFixtures
   import Firmowid.Test.Support.OpenAIEnrichmentTestHelpers
 
+  alias Ash.Error.Invalid
+  alias Firmowid.Ash.Finances.Transaction
   alias Firmowid.Ash.Invoicing
   alias Firmowid.Ash.Invoicing.CostInvoice
   alias Firmowid.Ash.Scope
@@ -48,6 +51,42 @@ defmodule Firmowid.Ash.Invoicing.CostInvoiceTest do
   end
 
   describe "cost invoice lists" do
+    test "linked corrections cannot be skipped or connected to payments" do
+      user = admin_fixture()
+      scope = %Scope{actor: user, tenant: user.member.organization_id}
+      original = insert_ksef_cost_invoice!(scope.tenant)
+
+      correction =
+        insert_cost_invoice!(scope.tenant, %{
+          invoice_type: :kor,
+          original_invoice_ksef_number: original.ksef_number,
+          amount: Money.new!("PLN", "0")
+        })
+
+      payment =
+        Ash.Seed.seed!(Transaction, %{
+          transaction_id: "TX-CORRECTION-#{System.unique_integer([:positive])}",
+          internal_transaction_id: "INT-CORRECTION-#{System.unique_integer([:positive])}",
+          amount: original.amount,
+          booking_date: original.issue_date,
+          value_date: original.issue_date,
+          bank_account_id: bank_account_fixture!(user).id,
+          organization_id: scope.tenant
+        })
+
+      assert {:error, %Invalid{}} = Invoicing.toggle_cost_invoice_skip(correction, scope: scope)
+
+      assert {:error,
+              %Invalid{
+                errors: [%Ash.Error.Changes.InvalidAttribute{field: :transaction_ids}]
+              }} =
+               Invoicing.connect_cost_invoice_transactions(correction, [payment.id], scope: scope)
+
+      correction = Invoicing.get_cost_invoice!(correction.id, load: [:transactions], scope: scope)
+      refute correction.skip_invoicing
+      assert correction.transactions == []
+    end
+
     test "hides only corrections whose original invoice exists in list_for_month" do
       user = admin_fixture()
       scope = %Scope{actor: user, tenant: user.member.organization_id}

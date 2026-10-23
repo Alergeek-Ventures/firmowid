@@ -1537,7 +1537,7 @@ msgstr ""
 msgid "Month"
 msgstr ""
 
-#: lib/firmowid/ash/invoicing/changes/validate_transaction_availability.ex:27
+#: lib/firmowid/ash/invoicing/changes/validate_transaction_availability.ex:29
 #: lib/firmowid_web/invoicing/transactions/views/show.ex:185
 #, elixir-autogen, elixir-format
 msgid "Could not connect this transaction to the invoice."
