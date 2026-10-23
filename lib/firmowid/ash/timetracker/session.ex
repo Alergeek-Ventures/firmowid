@@ -44,8 +44,98 @@ defmodule Firmowid.Ash.Timetracker.Session do
     end
 
     custom_statements do
-      # Sessions inserted before 2025-07-09 keep historical overlaps and one
-      # reversed range unchanged; the trigger still checks every write.
+      # Legacy sessions from 2025-02 to 2025-07 had 24 overlapping pairs and one
+      # reversed range. Shift them apart and fold the reversed range into the
+      # same member's multi-day session, keeping every member's monthly sum of
+      # session seconds, which submitted hours records and payroll rely on.
+      statement :repair_legacy_session_overlaps do
+        up """
+        DO $$
+        DECLARE
+          changed integer;
+        BEGIN
+          CREATE TEMP TABLE session_sums_before ON COMMIT DROP AS
+          SELECT member_id, date_trunc('month', start_datetime) AS month,
+                 sum(extract(epoch FROM end_datetime - start_datetime)) AS seconds
+          FROM sessions GROUP BY 1, 2;
+
+          ALTER TABLE sessions DISABLE TRIGGER no_session_overlap_trigger;
+
+          DELETE FROM sessions
+          WHERE id = '01961c41-4f83-7077-9d12-cf43165ce9eb'
+            AND start_datetime = TIMESTAMP '2025-03-11 07:32:00'
+            AND end_datetime = TIMESTAMP '2025-03-10 16:03:00';
+
+          UPDATE sessions s
+          SET start_datetime = v.new_start, end_datetime = v.new_end
+          FROM (VALUES
+            ('019686b6-6cad-7b80-829b-90a12a710858'::uuid, TIMESTAMP '2025-04-30 12:40:24', TIMESTAMP '2025-04-30 15:14:55', TIMESTAMP '2025-04-30 14:00:00', TIMESTAMP '2025-04-30 16:34:31'),
+            ('0196af86-e05a-7781-b166-bbe1e7a122dc', '2025-05-08 10:52:00', '2025-05-08 13:00:00', '2025-05-08 10:52:44', '2025-05-08 13:00:44'),
+            ('019720a5-27c3-7e8d-a2ac-5b3da4386e04', '2025-05-30 10:03:03', '2025-05-30 10:20:54', '2025-05-30 13:00:00', '2025-05-30 13:17:51'),
+            ('019720eb-9eda-76fe-9fb1-4dcbef45968e', '2025-05-30 11:20:01', '2025-05-30 14:36:02', '2025-05-30 13:17:51', '2025-05-30 16:33:52'),
+            ('0197cbad-a1f5-7b53-9e9f-30a5ad69d3d4', '2025-07-02 15:07:00', '2025-07-02 16:32:00', '2025-07-02 15:07:11', '2025-07-02 16:32:11'),
+            ('0197ea8a-32f0-7203-8e17-ca791e1e78ab', '2025-07-08 14:56:00', '2025-07-08 16:30:00', '2025-07-08 14:56:04', '2025-07-08 16:30:04'),
+            ('0196ab9d-013e-711a-b22c-57111ff5fc9d', '2025-05-05 09:00:00', '2025-05-05 15:40:00', '2025-05-05 09:10:00', '2025-05-05 15:50:00'),
+            ('0195ff94-f792-7d3b-9d1d-1559b750811e', '2025-03-24 09:00:00', '2025-03-24 10:30:00', '2025-03-24 12:00:00', '2025-03-24 13:30:00'),
+            ('0196ce7f-189e-7a3b-b74f-c70f2ec19558', '2025-04-30 04:00:00', '2025-04-30 11:00:00', '2025-04-29 23:00:00', '2025-04-30 06:00:00'),
+            ('01961c3e-adfe-7688-904b-38041b1eed9b', '2025-03-05 09:29:00', '2025-03-08 17:02:00', '2025-03-05 09:29:00', '2025-03-08 01:33:00'),
+            ('01961c3f-5a55-730b-8014-0630f8edc3ab', '2025-03-06 08:30:00', '2025-03-06 17:30:00', '2025-03-08 01:33:00', '2025-03-08 10:33:00'),
+            ('01961c3f-ed73-7c87-8ea5-0644e22c30e6', '2025-03-07 07:30:00', '2025-03-07 14:09:00', '2025-03-08 10:33:00', '2025-03-08 17:12:00'),
+            ('01957678-1fd7-7ac2-9508-4f317362b7fa', '2025-03-08 13:55:00', '2025-03-08 15:45:00', '2025-03-08 17:12:00', '2025-03-08 19:02:00'),
+            ('01978878-ab23-7e4e-a851-b1afbb5ca140', '2025-06-10 13:54:00', '2025-06-10 18:55:00', '2025-06-10 18:55:00', '2025-06-10 23:56:00'),
+            ('01978876-d40b-79d9-b323-387d9ebc602e', '2025-06-12 06:52:00', '2025-06-12 18:55:00', '2025-06-12 18:55:00', '2025-06-13 06:58:00'),
+            ('0194fa66-b8e5-71dd-85a7-7033c2e88276', '2025-02-12 13:43:00', '2025-02-12 15:53:00', '2025-02-12 13:43:37', '2025-02-12 15:53:37'),
+            ('01951d3c-5609-709c-a17d-07fa69d26025', '2025-02-19 08:00:00', '2025-02-19 08:12:22', '2025-02-19 08:00:10', '2025-02-19 08:12:32'),
+            ('01951d43-f589-7a12-ae76-20b2f4fedd39', '2025-02-19 08:12:27', '2025-02-19 08:47:55', '2025-02-19 08:12:32', '2025-02-19 08:48:00'),
+            ('019527e8-26be-7bb4-b85c-22d723a0044a', '2025-02-21 09:44:00', '2025-02-21 12:29:00', '2025-02-21 09:44:50', '2025-02-21 12:29:50'),
+            ('01952a4c-9d72-71ba-bb03-0c677e2e5536', '2025-02-21 20:56:00', '2025-02-21 23:19:00', '2025-02-21 20:56:51', '2025-02-21 23:19:51'),
+            ('01953786-0ec8-74bd-b15c-53c78413f90f', '2025-02-24 10:34:00', '2025-02-24 14:12:45', '2025-02-24 10:34:40', '2025-02-24 14:13:25'),
+            ('0195474b-1747-78a5-a071-4135ea31545e', '2025-02-27 11:50:00', '2025-02-27 13:40:00', '2025-02-27 12:03:56', '2025-02-27 13:53:56'),
+            ('0195894a-c9d6-770f-86f1-4d854df20d13', '2025-03-12 07:38:00', '2025-03-12 14:25:00', '2025-03-12 07:38:41', '2025-03-12 14:25:41'),
+            ('0195c03a-532a-74b8-89c7-8952a4e33e6c', '2025-03-21 11:00:00', '2025-03-21 14:00:00', '2025-03-21 12:30:00', '2025-03-21 15:30:00'),
+            ('0195d26f-211c-7a19-a61d-61238373abd0', '2025-03-26 12:25:00', '2025-03-26 14:02:57', '2025-03-26 12:30:40', '2025-03-26 14:08:37'),
+            ('0195d2d8-0568-781f-b977-7abf35a4fcd4', '2025-03-26 14:00:00', '2025-03-26 14:39:45', '2025-03-26 14:08:37', '2025-03-26 14:48:22')
+          ) AS v(id, old_start, old_end, new_start, new_end)
+          WHERE s.id = v.id AND s.start_datetime = v.old_start AND s.end_datetime = v.old_end;
+          GET DIAGNOSTICS changed = ROW_COUNT;
+
+          ALTER TABLE sessions ENABLE TRIGGER no_session_overlap_trigger;
+
+          IF changed NOT IN (0, 26) THEN
+            RAISE EXCEPTION 'Expected 0 or 26 legacy sessions to repair, found %', changed;
+          END IF;
+
+          IF EXISTS (SELECT 1 FROM sessions WHERE end_datetime < start_datetime) THEN
+            RAISE EXCEPTION 'A session with a reversed range remains';
+          END IF;
+
+          IF EXISTS (
+            SELECT 1 FROM sessions a
+            JOIN sessions b ON a.member_id = b.member_id AND a.id < b.id
+            WHERE tsrange(a.start_datetime, a.end_datetime, '[)') && tsrange(b.start_datetime, b.end_datetime, '[)')
+          ) THEN
+            RAISE EXCEPTION 'Overlapping sessions remain';
+          END IF;
+
+          IF EXISTS (
+            SELECT 1 FROM session_sums_before b
+            FULL JOIN (
+              SELECT member_id, date_trunc('month', start_datetime) AS month,
+                     sum(extract(epoch FROM end_datetime - start_datetime)) AS seconds
+              FROM sessions GROUP BY 1, 2
+            ) a USING (member_id, month)
+            WHERE a.seconds IS DISTINCT FROM b.seconds
+          ) THEN
+            RAISE EXCEPTION 'Legacy session repair changed a monthly session sum';
+          END IF;
+        END $$;
+        """
+
+        down "SELECT 1;"
+      end
+
+      # Legacy sessions stay outside the exclusion constraint: rebuilding it in
+      # the repair transaction fails on the deleted reversed row version.
       statement :exclude_overlapping_member_sessions do
         up """
         ALTER TABLE sessions
