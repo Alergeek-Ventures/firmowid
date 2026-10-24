@@ -1,0 +1,558 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-24T14:27:22.342723+00:00",
+  "title": "Design System: Firmowid",
+  "extensions": {
+    "colorMeta": {
+      "orange-700": {
+        "role": "primary",
+        "displayName": "Burnt Rust",
+        "tonalRamp": [
+          "#4E2005",
+          "#662905",
+          "#8B3F13",
+          "#9C5D39",
+          "#D28F67",
+          "#DEA785",
+          "#E6D7CE",
+          "#F0EAE6"
+        ]
+      },
+      "orange-800": {
+        "role": "primary",
+        "displayName": "Rust Deep",
+        "tonalRamp": [
+          "#4E2005",
+          "#662905",
+          "#8B3F13",
+          "#9C5D39",
+          "#D28F67",
+          "#DEA785",
+          "#E6D7CE",
+          "#F0EAE6"
+        ]
+      },
+      "orange-900": {
+        "role": "primary",
+        "displayName": "Rust Deepest",
+        "tonalRamp": [
+          "#4E2005",
+          "#662905",
+          "#8B3F13",
+          "#9C5D39",
+          "#D28F67",
+          "#DEA785",
+          "#E6D7CE",
+          "#F0EAE6"
+        ]
+      },
+      "orange-200": {
+        "role": "primary",
+        "displayName": "Rust Tint",
+        "tonalRamp": [
+          "#4E2005",
+          "#662905",
+          "#8B3F13",
+          "#9C5D39",
+          "#D28F67",
+          "#DEA785",
+          "#E6D7CE",
+          "#F0EAE6"
+        ]
+      },
+      "orange-100": {
+        "role": "primary",
+        "displayName": "Rust Wash",
+        "tonalRamp": [
+          "#4E2005",
+          "#662905",
+          "#8B3F13",
+          "#9C5D39",
+          "#D28F67",
+          "#DEA785",
+          "#E6D7CE",
+          "#F0EAE6"
+        ]
+      },
+      "turquoise-700": {
+        "role": "secondary",
+        "displayName": "Deep Sea Teal",
+        "tonalRamp": [
+          "#1D3232",
+          "#2F4343",
+          "#455E5E",
+          "#578383",
+          "#6AAAAA",
+          "#8BC9C9",
+          "#CEE6E6",
+          "#EDF5F5"
+        ]
+      },
+      "turquoise-800": {
+        "role": "secondary",
+        "displayName": "Sea Teal Deep",
+        "tonalRamp": [
+          "#1D3232",
+          "#2F4343",
+          "#455E5E",
+          "#578383",
+          "#6AAAAA",
+          "#8BC9C9",
+          "#CEE6E6",
+          "#EDF5F5"
+        ]
+      },
+      "turquoise-900": {
+        "role": "secondary",
+        "displayName": "Sea Teal Deepest",
+        "tonalRamp": [
+          "#1D3232",
+          "#2F4343",
+          "#455E5E",
+          "#578383",
+          "#6AAAAA",
+          "#8BC9C9",
+          "#CEE6E6",
+          "#EDF5F5"
+        ]
+      },
+      "turquoise-200": {
+        "role": "secondary",
+        "displayName": "Sea Teal Tint",
+        "tonalRamp": [
+          "#1D3232",
+          "#2F4343",
+          "#455E5E",
+          "#578383",
+          "#6AAAAA",
+          "#8BC9C9",
+          "#CEE6E6",
+          "#EDF5F5"
+        ]
+      },
+      "turquoise-100": {
+        "role": "secondary",
+        "displayName": "Sea Teal Wash",
+        "tonalRamp": [
+          "#1D3232",
+          "#2F4343",
+          "#455E5E",
+          "#578383",
+          "#6AAAAA",
+          "#8BC9C9",
+          "#CEE6E6",
+          "#EDF5F5"
+        ]
+      },
+      "black": {
+        "role": "neutral",
+        "displayName": "Ink",
+        "tonalRamp": [
+          "#1A1A1A",
+          "#303030",
+          "#4E4E4E",
+          "#707070",
+          "#949494",
+          "#CCCCCC",
+          "#DDDDDD",
+          "#FAFAFA"
+        ]
+      },
+      "grey-900": {
+        "role": "neutral",
+        "displayName": "Charcoal",
+        "tonalRamp": [
+          "#1A1A1A",
+          "#303030",
+          "#4E4E4E",
+          "#707070",
+          "#949494",
+          "#CCCCCC",
+          "#DDDDDD",
+          "#FAFAFA"
+        ]
+      },
+      "grey-700": {
+        "role": "neutral",
+        "displayName": "Graphite",
+        "tonalRamp": [
+          "#1A1A1A",
+          "#303030",
+          "#4E4E4E",
+          "#707070",
+          "#949494",
+          "#CCCCCC",
+          "#DDDDDD",
+          "#FAFAFA"
+        ]
+      },
+      "grey-500": {
+        "role": "neutral",
+        "displayName": "Pebble",
+        "tonalRamp": [
+          "#1A1A1A",
+          "#303030",
+          "#4E4E4E",
+          "#707070",
+          "#949494",
+          "#CCCCCC",
+          "#DDDDDD",
+          "#FAFAFA"
+        ]
+      },
+      "grey-200": {
+        "role": "neutral",
+        "displayName": "Stone Line",
+        "tonalRamp": [
+          "#1A1A1A",
+          "#303030",
+          "#4E4E4E",
+          "#707070",
+          "#949494",
+          "#CCCCCC",
+          "#DDDDDD",
+          "#FAFAFA"
+        ]
+      },
+      "grey-50": {
+        "role": "neutral",
+        "displayName": "Field Paper",
+        "tonalRamp": [
+          "#1A1A1A",
+          "#303030",
+          "#4E4E4E",
+          "#707070",
+          "#949494",
+          "#CCCCCC",
+          "#DDDDDD",
+          "#FAFAFA"
+        ]
+      },
+      "grey-100": {
+        "role": "neutral",
+        "displayName": "Canvas",
+        "tonalRamp": [
+          "#1A1A1A",
+          "#303030",
+          "#4E4E4E",
+          "#707070",
+          "#949494",
+          "#CCCCCC",
+          "#DDDDDD",
+          "#FAFAFA"
+        ]
+      },
+      "white": {
+        "role": "neutral",
+        "displayName": "Surface",
+        "tonalRamp": [
+          "#1A1A1A",
+          "#303030",
+          "#4E4E4E",
+          "#707070",
+          "#949494",
+          "#CCCCCC",
+          "#DDDDDD",
+          "#FAFAFA"
+        ]
+      },
+      "green-700": {
+        "role": "tertiary",
+        "displayName": "Moss",
+        "tonalRamp": [
+          "#142113",
+          "#2D432B",
+          "#475E45",
+          "#699166",
+          "#89BD85",
+          "#B9DDB5",
+          "#D0E6CE",
+          "#ECF5EB"
+        ]
+      },
+      "green-200": {
+        "role": "tertiary",
+        "displayName": "Moss Tint",
+        "tonalRamp": [
+          "#142113",
+          "#2D432B",
+          "#475E45",
+          "#699166",
+          "#89BD85",
+          "#B9DDB5",
+          "#D0E6CE",
+          "#ECF5EB"
+        ]
+      },
+      "red-700": {
+        "role": "tertiary",
+        "displayName": "Brick",
+        "tonalRamp": [
+          "#610404",
+          "#891515",
+          "#A22A2A",
+          "#BB4A4A",
+          "#C96E6E",
+          "#D69F9F",
+          "#E6CECE",
+          "#FBF4F4"
+        ]
+      },
+      "red-200": {
+        "role": "tertiary",
+        "displayName": "Brick Tint",
+        "tonalRamp": [
+          "#610404",
+          "#891515",
+          "#A22A2A",
+          "#BB4A4A",
+          "#C96E6E",
+          "#D69F9F",
+          "#E6CECE",
+          "#FBF4F4"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "Page and section titles, sparingly."
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "Card, panel and modal titles."
+      },
+      "subtitle": {
+        "displayName": "Subtitle",
+        "purpose": "Sub-panel and invoice section headers."
+      },
+      "body-lg": {
+        "displayName": "Body Large",
+        "purpose": "Form controls and big buttons."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "App-wide default: tables, lists, small buttons."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Meta text, annotations, tooltips."
+      },
+      "caps": {
+        "displayName": "Caps",
+        "purpose": "Uppercase micro-labels, table headers, navigation."
+      }
+    },
+    "shadows": [
+      {
+        "name": "ambient-card",
+        "value": "0px 1px 6px 0px rgba(0,0,0,0.1)",
+        "purpose": "Standard lift for white cards on the canvas."
+      },
+      {
+        "name": "hairline-lift",
+        "value": "0 1px 2px 0 rgb(0 0 0 / 0.05)",
+        "purpose": "Bordered cards and small floating controls (shadow-sm)."
+      },
+      {
+        "name": "overlay",
+        "value": "0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)",
+        "purpose": "Modals and popovers (shadow-lg) with a 1px graphite/10 ring."
+      },
+      {
+        "name": "error-tooltip",
+        "value": "0 2px 8px rgba(0,0,0,0.15)",
+        "purpose": "Field-level error bubbles."
+      }
+    ],
+    "motion": [
+      {
+        "name": "control-transition",
+        "value": "100ms ease-out",
+        "purpose": "Button colour transitions."
+      },
+      {
+        "name": "fade-in",
+        "value": "appear 150ms ease-out",
+        "purpose": "Quick appearance of overlays and elements."
+      },
+      {
+        "name": "slide-from-center",
+        "value": "300ms ease-out",
+        "purpose": "Entering content sliding 30px horizontally."
+      },
+      {
+        "name": "switch",
+        "value": "200ms ease-out",
+        "purpose": "Toggle track and thumb."
+      },
+      {
+        "name": "digit-pop",
+        "value": "500ms cubic-bezier(0.34, 1.45, 0.64, 1), 70ms stagger",
+        "purpose": "Animated number changes."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "sm",
+        "value": "640px"
+      },
+      {
+        "name": "md",
+        "value": "768px"
+      },
+      {
+        "name": "lg",
+        "value": "1024px"
+      },
+      {
+        "name": "xl",
+        "value": "1280px"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button (cost)",
+      "kind": "button",
+      "refersTo": "button-primary-cost",
+      "description": "Solid rust primary action for cost/purchase context.",
+      "html": "<button class=\"ds-btn-cost\">Dodaj koszt</button>",
+      "css": ".ds-btn-cost { font-family: Lexend, ui-sans-serif, system-ui, sans-serif; display: inline-flex; align-items: center; justify-content: center; gap: 10px; height: 44px; padding: 8px 11px; border-radius: 8px; border: 1px solid transparent; font-size: 16px; line-height: 1.25; font-weight: 400; cursor: pointer; transition: background-color 100ms ease-out, color 100ms ease-out; background: #8B3F13; color: #FFFFFF; } .ds-btn-cost:hover { background: #662905; } .ds-btn-cost:active { background: #4E2005; } .ds-btn-cost:focus-visible { outline: 2px solid #4E4E4E; outline-offset: 2px; }"
+    },
+    {
+      "name": "Primary Button (sales)",
+      "kind": "button",
+      "refersTo": "button-primary-sales",
+      "description": "Solid teal primary action for sales/revenue context.",
+      "html": "<button class=\"ds-btn-sales\">Wystaw fakturę</button>",
+      "css": ".ds-btn-sales { font-family: Lexend, ui-sans-serif, system-ui, sans-serif; display: inline-flex; align-items: center; justify-content: center; gap: 10px; height: 44px; padding: 8px 11px; border-radius: 8px; border: 1px solid transparent; font-size: 16px; line-height: 1.25; font-weight: 400; cursor: pointer; transition: background-color 100ms ease-out, color 100ms ease-out; background: #455E5E; color: #FFFFFF; } .ds-btn-sales:hover { background: #2F4343; } .ds-btn-sales:active { background: #1D3232; } .ds-btn-sales:focus-visible { outline: 2px solid #4E4E4E; outline-offset: 2px; }"
+    },
+    {
+      "name": "Secondary Button (cost)",
+      "kind": "button",
+      "refersTo": "button-secondary-cost",
+      "description": "Pastel rust tint with deep text; secondary cost action.",
+      "html": "<button class=\"ds-btn-cost-soft\">Pobierz PDF</button>",
+      "css": ".ds-btn-cost-soft { font-family: Lexend, ui-sans-serif, system-ui, sans-serif; display: inline-flex; align-items: center; justify-content: center; gap: 10px; height: 44px; padding: 8px 11px; border-radius: 8px; border: 1px solid transparent; font-size: 16px; line-height: 1.25; font-weight: 400; cursor: pointer; transition: background-color 100ms ease-out, color 100ms ease-out; background: #E6D7CE; color: #4E2005; } .ds-btn-cost-soft:hover { background: #E9C3AC; } .ds-btn-cost-soft:active { background: #DEA785; } .ds-btn-cost-soft:focus-visible { outline: 2px solid #4E4E4E; outline-offset: 2px; }"
+    },
+    {
+      "name": "Special Button (neutral)",
+      "kind": "button",
+      "refersTo": "button-neutral-special",
+      "description": "Black fill for actions that belong to neither ledger side.",
+      "html": "<button class=\"ds-btn-special\">Zapisz</button>",
+      "css": ".ds-btn-special { font-family: Lexend, ui-sans-serif, system-ui, sans-serif; display: inline-flex; align-items: center; justify-content: center; gap: 10px; height: 44px; padding: 8px 11px; border-radius: 8px; border: 1px solid transparent; font-size: 16px; line-height: 1.25; font-weight: 400; cursor: pointer; transition: background-color 100ms ease-out, color 100ms ease-out; background: #000000; color: #FFFFFF; } .ds-btn-special:hover { background: #4E4E4E; } .ds-btn-special:active { background: #303030; } .ds-btn-special:focus-visible { outline: 2px solid #4E4E4E; outline-offset: 2px; }"
+    },
+    {
+      "name": "Outline Button",
+      "kind": "button",
+      "refersTo": "button-outline",
+      "description": "Stone-line border, charcoal text; low-emphasis action.",
+      "html": "<button class=\"ds-btn-outline\">Anuluj</button>",
+      "css": ".ds-btn-outline { font-family: Lexend, ui-sans-serif, system-ui, sans-serif; display: inline-flex; align-items: center; justify-content: center; gap: 10px; height: 44px; padding: 8px 11px; border-radius: 8px; border: 1px solid transparent; font-size: 16px; line-height: 1.25; font-weight: 400; cursor: pointer; transition: background-color 100ms ease-out, color 100ms ease-out; background: #FFFFFF; color: #1A1A1A; border-color: #DDDDDD; } .ds-btn-outline:hover { background: #DDDDDD; } .ds-btn-outline:active { background: #CCCCCC; } .ds-btn-outline:focus-visible { outline: 2px solid #4E4E4E; outline-offset: 2px; }"
+    },
+    {
+      "name": "Filter Chip",
+      "kind": "chip",
+      "refersTo": "filter-chip",
+      "description": "Pill filter; active state inverts to graphite.",
+      "html": "<div class=\"ds-chips\"><button class=\"ds-chip\" data-active>Wszystkie</button><button class=\"ds-chip\">Nieopłacone</button></div>",
+      "css": ".ds-chips { display: flex; gap: 8px; } .ds-chip { font-family: Lexend, ui-sans-serif, system-ui, sans-serif; display: inline-flex; align-items: center; gap: 8px; padding: 4px 8px; border-radius: 9999px; border: 1px solid #DDDDDD; background: #F5F5F5; color: #4E4E4E; font-size: 14px; line-height: 1.25; font-weight: 500; cursor: pointer; transition: background-color 150ms; } .ds-chip:hover { background: #DDDDDD; } .ds-chip[data-active] { background: #4E4E4E; border-color: #4E4E4E; color: #FFFFFF; } .ds-chip:focus-visible { outline: 2px solid #4E4E4E; outline-offset: 2px; }"
+    },
+    {
+      "name": "Input Field",
+      "kind": "input",
+      "refersTo": "input-field",
+      "description": "Field-paper background, grey-200 border, 8px radius.",
+      "html": "<label class=\"ds-field\"><span>Kontrahent</span><input class=\"ds-input\" placeholder=\"Nazwa lub NIP\"></label>",
+      "css": ".ds-field { font-family: Lexend, ui-sans-serif, system-ui, sans-serif; display: flex; flex-direction: column; gap: 8px; font-size: 14px; color: #1A1A1A; } .ds-input { font-family: Lexend, ui-sans-serif, system-ui, sans-serif; border: 1px solid #DDDDDD; background: #FAFAFA; border-radius: 8px; padding: 6px 12px; font-size: 16px; line-height: 1.25; color: #1A1A1A; } .ds-input::placeholder { color: #CCCCCC; } .ds-input:focus { outline: none; border-color: #B5B5B5; } .ds-input:focus-visible { box-shadow: 0 0 0 2px #6AAAAA; border-color: transparent; }"
+    },
+    {
+      "name": "Invoice Source Badge",
+      "kind": "custom",
+      "refersTo": "invoice-source-badge",
+      "description": "Signature tile: fill names the ledger side, icon names the source.",
+      "html": "<div class=\"ds-badges\"><span class=\"ds-badge ds-badge-cost\">KSeF</span><span class=\"ds-badge ds-badge-sales\">KSeF</span></div>",
+      "css": ".ds-badges { display: flex; gap: 8px; } .ds-badge { font-family: Lexend, ui-sans-serif, system-ui, sans-serif; display: inline-flex; align-items: center; justify-content: center; width: 48px; height: 32px; border-radius: 3px; font-size: 11px; font-weight: 600; } .ds-badge-cost { background: #E6D7CE; color: #8B3F13; } .ds-badge-sales { background: #CEE6E6; color: #354E4E; }"
+    },
+    {
+      "name": "Card",
+      "kind": "card",
+      "refersTo": "card",
+      "description": "Flat-by-default exception: the Management Card (rounded-md, white, p-6, shadow) for one self-contained record.",
+      "html": "<div class=\"ds-canvas\"><div class=\"ds-card\"><h3>Do zapłaty</h3><p>12 450,00 zł</p></div></div>",
+      "css": ".ds-canvas { background: #F5F5F5; padding: 24px; } .ds-card { font-family: Lexend, ui-sans-serif, system-ui, sans-serif; background: #FFFFFF; border-radius: 8px; padding: 24px; box-shadow: 0px 1px 6px 0px rgba(0,0,0,0.1); color: #4E4E4E; } .ds-card h3 { margin: 0 0 8px; font-size: 20px; font-weight: 600; color: #1A1A1A; } .ds-card p { margin: 0; font-size: 27px; font-weight: 700; color: #000000; }"
+    },
+    {
+      "name": "Navbar",
+      "kind": "nav",
+      "refersTo": "navbar",
+      "description": "Black ledger-spine bar; uppercase links at 50% opacity, active 90%.",
+      "html": "<nav class=\"ds-nav\"><span class=\"ds-nav-logo\">Firmowid</span><div class=\"ds-nav-links\"><a href=\"#\" class=\"ds-nav-link ds-active\">Fakturowanie</a><a href=\"#\" class=\"ds-nav-link\">Zarządzanie</a><a href=\"#\" class=\"ds-nav-link\">Czasośledź</a></div></nav>",
+      "css": ".ds-nav { font-family: Lexend, ui-sans-serif, system-ui, sans-serif; display: flex; align-items: center; justify-content: space-between; height: 66px; padding: 0 32px; background: #000000; color: #FFFFFF; } .ds-nav-logo { font-size: 23px; font-weight: 800; letter-spacing: 0.025em; color: #F0F0F0; } .ds-nav-links { display: flex; gap: 64px; text-transform: uppercase; font-size: 14px; } .ds-nav-link { color: #FFFFFF; text-decoration: none; opacity: 0.5; transition: opacity 150ms; } .ds-nav-link.ds-active { opacity: 0.9; } .ds-nav-link:hover, .ds-nav-link:focus-visible { opacity: 1; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Craftsman's Ledger",
+    "overview": "**Creative North Star: \"The Craftsman's Ledger\"**\n\nFirmowid is a well-kept account book on a craftsman's workbench. It is orderly\nand dependable, but made by people for people. Surfaces are warm rather than\nclinical. Neutrals are true greys on a soft paper-grey canvas, and colour is\nreserved for the two sides of the ledger: rust for money going out (costs and\npurchases) and deep sea teal for money coming in (sales and revenue). When you\nsee colour, it tells you which side of the book you are looking at.\n\nComponents are warm and tactile. Secondary actions and status pills use\npastel tonal fills instead of hard outlines. Corners are gently rounded\n(8px on most controls). The page is flat by default: white surfaces sit on the\ngrey canvas through tonal contrast, and a shadowed card is used only in the\nfew places that group a self-contained record. A heavy black navigation bar\nframes the workspace like the spine of a ledger. The typeface is Lexend\nthroughout, a wide, highly legible sans that keeps dense financial tables\nreadable and friendly.\n\nThis document covers the application UI only. The marketing landing page is\nan expressive surface with its own hand-drawn vocabulary and is deliberately\nout of scope here.\n\nThe frontmatter is the source of truth for colours, the text size scale and\nradii. Its keys are the Tailwind token names (`orange-700` is `bg-orange-700`,\n`sm` under typography is `text-sm`). After editing it, run `mix design.tokens`\nto regenerate `assets/css/design-tokens.css`; `mix check` fails while that\nfile is out of date. Fonts, spacing and animations live in\n`assets/css/theme.css`.",
+    "keyCharacteristics": [
+      "Colour has a fixed meaning: rust means costs, teal means sales. Neutral work uses black and graphite.",
+      "Warm, tactile components with pastel tonal fills (secondary buttons, pills, badges).",
+      "Flat by default: white surfaces on the `grey-100` canvas separated by tone or a 1px `grey-200` line. Cards with a shadow are the exception.",
+      "Lexend everywhere. Dense, 14px-led body text with medium weight for emphasis.",
+      "Gentle 8px corners on controls, 6px on small controls and cards, full pills for filters and toggles."
+    ],
+    "rules": [
+      {
+        "name": "The Two Sides of the Ledger Rule",
+        "body": "Rust appears only where the subject is a cost or purchase, and teal only where it is a sale or revenue. On an invoice-related screen, the accent follows the invoice's side (`accent={if(@is_cost_invoice, do: \"orange\", else: \"turquoise\")}`). Never use rust or teal decoratively.",
+        "section": "colors"
+      },
+      {
+        "name": "The Neutral Action Rule",
+        "body": "Actions that belong to neither side (saving settings, inviting an employee, adding a project) use the black `special` or graphite `tertiary` button, not rust. Note that `<.button variant=\"primary\">` still defaults to the rust accent in code. New neutral actions must pick `special` or `tertiary` explicitly.",
+        "section": "colors"
+      },
+      {
+        "name": "The Pastel Before Solid Rule",
+        "body": "Status and secondary emphasis use the tint plus deep-text pair (for example, `orange-200` with `orange-900`). Solid accent fills are reserved for the one primary action in a view.",
+        "section": "colors"
+      },
+      {
+        "name": "The Weight Carries Hierarchy Rule",
+        "body": "Emphasis comes from medium (500) and semibold (600) Lexend, not from colour or a second typeface. Bold (700) is for figures that must jump out, such as totals and big numbers.",
+        "section": "typography"
+      },
+      {
+        "name": "The Flat by Default Rule",
+        "body": "A surface at rest has no shadow. Lists, tables, forms, toolbars and page sections sit flat on the canvas or on white, separated by tone or a `grey-200` line. Reach for a card only when the content is one self-contained record, and never nest cards.",
+        "section": "elevation"
+      },
+      {
+        "name": "The Paper on Canvas Rule",
+        "body": "A surface rises by being whiter than what is under it. Reach for `shadow-lg` only for things that float: modals, popovers, dropdowns and toasts.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "Do colour by ledger side: rust (`orange-*` scale) for costs and purchases, teal (`turquoise-*` scale) for sales and revenue, everywhere from badges to switches.",
+      "Do use the black `special` or graphite `tertiary` button for actions that are neither cost nor sale.",
+      "Do prefer pastel tint plus deep-text pairs for secondary actions, pills and statuses.",
+      "Do keep surfaces flat: white on the `grey-100` canvas, separated by tone or a `grey-200` line.",
+      "Do keep body text at 14px Lexend in graphite, and lift emphasis with weight, not colour.",
+      "Do use the 8px radius for controls, 6px for small controls and cards, and pills only for filters, toggles and avatars.",
+      "Do change colours and text sizes in the DESIGN.md frontmatter and run `mix design.tokens`.",
+      "Do go through `FirmowidUI.Components.Button` and its variants instead of hand-rolled button classes."
+    ],
+    "donts": [
+      "Don't use rust or teal decoratively or for neutral actions. Their meaning is the ledger side.",
+      "Don't rely on the default `variant=\"primary\"` for neutral actions; it renders rust.",
+      "Don't introduce new zinc, gray or rose Tailwind palettes. Legacy fields still use them; new work uses the grey, red and green scales from this file's frontmatter.",
+      "Don't wrap lists, tables or forms in shadowed cards, and never nest cards. `shadow-lg` belongs to floating overlays.",
+      "Don't edit `assets/css/design-tokens.css` by hand.",
+      "Don't add a second typeface to the app UI. Josefin Sans and the handwriting face belong to the landing page.",
+      "Don't use solid red or green blocks for destructive or success buttons. Use the tint fills."
+    ]
+  }
+}
