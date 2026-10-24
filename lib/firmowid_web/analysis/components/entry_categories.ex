@@ -11,8 +11,8 @@ defmodule FirmowidWeb.Analysis.Components.EntryCategories do
   alias Firmowid.Ash.Finances.Transaction
   alias Firmowid.Ash.Invoicing.CostInvoice
   alias Firmowid.Ash.Invoicing.SalesInvoice
-  alias FirmowidWeb.Analysis.Components.CategoryChart
   alias FirmowidWeb.Analysis.Components.CategorySelector
+  alias FirmowidWeb.Analysis.Utilities.CategoryColors
   alias FirmowidWeb.Analysis.Utilities.Navigation
 
   @impl true
@@ -106,7 +106,7 @@ defmodule FirmowidWeb.Analysis.Components.EntryCategories do
 
     socket
     |> assign(:categories, definitions)
-    |> assign(:colors, CategoryChart.category_colors(definitions))
+    |> assign(:colors, CategoryColors.for_definitions(definitions))
   end
 
   defp load_entry(socket) do

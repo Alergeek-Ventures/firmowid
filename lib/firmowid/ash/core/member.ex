@@ -49,6 +49,12 @@ defmodule Firmowid.Ash.Core.Member do
   field_policies do
     private_fields :include
 
+    field_policy :tax_profile do
+      authorize_if expr(user_id == ^actor(:id))
+      authorize_if OrganizationAdmin
+      authorize_if {SystemActorRole, roles: [:document_blob_processor]}
+    end
+
     field_policy [
       :name,
       :display_name,
@@ -88,6 +94,7 @@ defmodule Firmowid.Ash.Core.Member do
     define :create, action: :create
     define :list_active, action: :active, args: [:user_id]
     define :update_avatar, action: :update_avatar
+    define :update_tax_profile, action: :update_tax_profile
     define :list, action: :read
     define :destroy, action: :destroy
   end
@@ -162,6 +169,11 @@ defmodule Firmowid.Ash.Core.Member do
 
       change set_attribute(:correspondence_address, nil),
         where: [argument_equals(:is_same_correspondence_address, true)]
+    end
+
+    update :update_tax_profile do
+      description "Replace current payout forecast assumptions; missing fields remain unconfirmed."
+      accept [:tax_profile]
     end
 
     update :update_avatar do
@@ -253,6 +265,11 @@ defmodule Firmowid.Ash.Core.Member do
       authorize_if {SystemActorRole, roles: [:document_blob_processor]}
     end
 
+    policy action(:update_tax_profile) do
+      authorize_if expr(id == ^actor([:member, :id]))
+      authorize_if OrganizationAdmin
+    end
+
     policy action(:update_avatar) do
       authorize_if expr(id == ^actor([:member, :id]))
     end
@@ -286,6 +303,7 @@ defmodule Firmowid.Ash.Core.Member do
     attribute :slack_url, :string, public?: true
     attribute :bank_account_number, :string, public?: true
     attribute :birthday, :date, public?: false
+    attribute :tax_profile, Firmowid.Ash.Core.Member.Types.TaxProfile, public?: true
 
     attribute :birthday_visibility, :atom,
       public?: true,

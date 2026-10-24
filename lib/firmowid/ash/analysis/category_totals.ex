@@ -1,7 +1,8 @@
 defmodule Firmowid.Ash.Analysis.CategoryTotals do
   @moduledoc """
-  Pure aggregation of normalized PLN amounts into company, taxes, project and
-  unassigned shares. Allocation conserves each entity's rounded cent amount.
+  Pure aggregation of single-currency amounts into company, taxes, project and
+  unassigned shares. Callers must normalize or separate currencies before aggregation.
+  Allocation conserves each entity's rounded cent amount.
   """
 
   @type category_key :: {:project, String.t()} | :company | :taxes | :unassigned
@@ -20,11 +21,11 @@ defmodule Firmowid.Ash.Analysis.CategoryTotals do
         }
 
   @doc """
-  Aggregates `{normalized_amount, loaded_entity_tags}` pairs.
+  Aggregates `{single_currency_amount, loaded_entity_tags}` pairs.
 
-   Rounds each signed PLN amount to cents and allocates project shares in
-   proportion to each tag's `:weight` metadata (1 when absent), giving leftover
-   cents to the largest remainders, then to sorted IDs. Built-in categories
+  Rounds each signed amount to cents and allocates project shares in
+  proportion to each tag's `:weight` metadata (1 when absent), giving leftover
+  cents to the largest remainders, then to sorted IDs. Built-in categories
   have nil names for caller-owned translation. Internal entities are excluded.
 
   Filters select shares with OR semantics (`{:project, id}`, `{:company}` or `{:taxes}`),
@@ -51,8 +52,19 @@ defmodule Firmowid.Ash.Analysis.CategoryTotals do
         end)
       end)
 
-    income = category_list(categories.income)
-    expenses = category_list(categories.expenses)
+    build_totals(category_list(categories.income), category_list(categories.expenses))
+  end
+
+  @doc "Combines already allocated totals in one currency without reallocating or rerounding shares."
+  @spec combine([totals()]) :: totals()
+  def combine(totals) do
+    build_totals(
+      combined_categories(totals, :income_categories),
+      combined_categories(totals, :expense_categories)
+    )
+  end
+
+  defp build_totals(income, expenses) do
     total_income = sum(income)
     total_expenses = expenses |> sum() |> Decimal.negate()
 
@@ -63,6 +75,15 @@ defmodule Firmowid.Ash.Analysis.CategoryTotals do
       income_categories: income,
       expense_categories: expenses
     }
+  end
+
+  defp combined_categories(totals, field) do
+    totals
+    |> Enum.flat_map(&Map.fetch!(&1, field))
+    |> Enum.reduce(%{}, fn row, rows ->
+      Map.update(rows, row.key, row, &%{&1 | amount: Decimal.add(&1.amount, row.amount)})
+    end)
+    |> category_list()
   end
 
   defp categories_for_tags(tags) do

@@ -1,16 +1,11 @@
 defmodule Firmowid.Ash.Analysis do
   @moduledoc """
-  Ash domain for financial analysis: tag management, entity tagging, and
-  organization-level totals calculation.
+  Ash domain for financial analysis: categories, entity tagging, monthly and
+  annual totals, and invoice-based tax planning.
 
-  Replaces the legacy `Firmowid.Analysis` Ecto context. Tag CRUD and entity
-  tagging go through Ash actions with policy-based authorization and attribute
-  multitenancy via `organization_id`.
-
-  Cross-domain aggregation functions (`get_organization_totals/4`,
-  `get_months_with_entries/1`) live here as regular functions because they
-  orchestrate calls across both Ash resources (`CostInvoice`, `SalesInvoice`)
-  and legacy Ecto contexts (`Finances`, `Currencies`) still being migrated.
+  Tag management uses policy-authorized, organization-scoped Ash actions.
+  Aggregation functions combine invoices, bank transactions and salary project
+  shares using the same category allocation and currency conversion rules.
   """
   use Ash.Domain, extensions: [AshAi]
 
@@ -18,6 +13,8 @@ defmodule Firmowid.Ash.Analysis do
   alias Firmowid.Ash.Analysis.EntityTag
   alias Firmowid.Ash.Analysis.Entry
   alias Firmowid.Ash.Analysis.TagDefinition
+  alias Firmowid.Ash.Analysis.TaxForecast
+  alias Firmowid.Ash.Analysis.YearSummary
   alias Firmowid.Ash.Currencies.Converter, as: Currencies
   alias Firmowid.Ash.Finances
   alias Firmowid.Ash.Finances.Transaction
@@ -88,6 +85,10 @@ defmodule Firmowid.Ash.Analysis do
     resource EntityTag
 
     resource Entry
+
+    resource YearSummary
+
+    resource TaxForecast
   end
 
   authorization do
@@ -123,12 +124,12 @@ defmodule Firmowid.Ash.Analysis do
 
   Entities tagged as `:internal` remain editable in entry lists but are excluded from totals.
 
-  Returns the existing signed totals and entity lists, plus `:income_categories`
+  Returns signed totals and entity lists, plus `:income_categories`
   and `:expense_categories`. Category rows contain `:key` (`{:project, id}`,
   `:company`, `:taxes` or `:unassigned`), `:name` (nil for built-ins), `:color` and a positive
   Decimal PLN `:amount`. Each normalized entity amount is rounded to cents and
-   allocated between projects by tag weight (equally unless weighted).
-   Totals and categories use the same allocated amounts.
+  allocated between projects by tag weight (equally unless weighted).
+  Totals and categories use the same allocated amounts.
 
   ## Options
 
@@ -165,6 +166,77 @@ defmodule Firmowid.Ash.Analysis do
       sales_invoices: sales_invoices,
       cost_invoices: cost_invoices
     })
+  end
+
+  @doc """
+  Returns twelve chronological monthly totals and their annual summary.
+
+  Uses exactly the entries, tag-share filters and PLN conversion of
+  `get_organization_totals/4`. Each month contains `:month`, `:totals` (PLN)
+  and `:totals_by_currency` (original currency codes, without conversion).
+  The annual result contains the same two totals fields, `:year` and `:months`.
+  Both total shapes are `CategoryTotals.totals/0`; expenses remain negative.
+
+  Every original currency present in the selected year's entries has a row in
+  every month, with zero totals in missing months. An empty year has twelve
+  zero PLN months and empty original-currency maps. No original currencies
+  are added together. Entities without an effective amount remain omitted.
+
+  This orchestration expects an authorized scope, like the monthly helper.
+  Request callers must use `YearSummary.get/3` for authorization and input validation.
+  """
+  @spec get_organization_yearly_totals(integer(), keyword(), Scope.t()) :: map()
+  def get_organization_yearly_totals(year, opts \\ [], scope) do
+    months =
+      Enum.map(1..12, fn number ->
+        month = Date.new!(year, number, 1)
+        totals = get_organization_totals(month, Date.end_of_month(month), opts, scope)
+
+        %{
+          month: month,
+          totals: Map.drop(totals, [:sales_invoices, :cost_invoices, :transactions]),
+          totals_by_currency: original_currency_totals(totals, Keyword.get(opts, :tag_filters, []))
+        }
+      end)
+
+    currencies = months |> Enum.flat_map(&Map.keys(&1.totals_by_currency)) |> Enum.uniq()
+    empty = Map.new(currencies, &{&1, CategoryTotals.aggregate([])})
+
+    months =
+      Enum.map(months, &%{&1 | totals_by_currency: Map.merge(empty, &1.totals_by_currency)})
+
+    %{
+      year: year,
+      currency: "PLN",
+      months: months,
+      totals: months |> Enum.map(& &1.totals) |> CategoryTotals.combine(),
+      totals_by_currency:
+        Map.new(currencies, fn currency ->
+          {currency,
+           months
+           |> Enum.map(&Map.fetch!(&1.totals_by_currency, currency))
+           |> CategoryTotals.combine()}
+        end)
+    }
+  end
+
+  defp original_currency_totals(entries, filters) do
+    (entries.sales_invoices ++ entries.cost_invoices ++ entries.transactions)
+    |> Enum.flat_map(fn entity ->
+      case get_amount_and_currency(entity) do
+        {:ok, amount} ->
+          [
+            {Atom.to_string(Money.to_currency_code(amount)), {Money.to_decimal(amount), entity.entity_tags}}
+          ]
+
+        :skip ->
+          []
+      end
+    end)
+    |> Enum.group_by(&elem(&1, 0), &elem(&1, 1))
+    |> Map.new(fn {currency, entities} ->
+      {currency, CategoryTotals.aggregate(entities, filters)}
+    end)
   end
 
   @doc "Lists the same analysis-relevant entries as the totals, without currency conversion or UI filters."
@@ -214,9 +286,9 @@ defmodule Firmowid.Ash.Analysis do
       |> Map.merge(salary_tags_map(salary_transactions, analysis_scope, scope))
 
     %{
-      transactions: filter_entities(transactions, :transaction, entity_tags_map, []),
-      sales_invoices: filter_entities(sales_invoices, :sales_invoice, entity_tags_map, []),
-      cost_invoices: filter_entities(cost_invoices, :cost_invoice, entity_tags_map, [])
+      transactions: attach_entity_tags(transactions, :transaction, entity_tags_map),
+      sales_invoices: attach_entity_tags(sales_invoices, :sales_invoice, entity_tags_map),
+      cost_invoices: attach_entity_tags(cost_invoices, :cost_invoice, entity_tags_map)
     }
   end
 
@@ -517,20 +589,11 @@ defmodule Firmowid.Ash.Analysis do
     %Scope{actor: %SystemActor{org_id: tenant, role: :analysis_reader}, tenant: tenant}
   end
 
-  defp entity_id(%SalesInvoice{id: id}), do: id
-  defp entity_id(%CostInvoice{id: id}), do: id
-  defp entity_id(%Transaction{id: id}), do: id
-
-  defp filter_entities(entities, entity_type, entity_tags_map, tag_filters) do
-    entities
-    |> Enum.map(fn entity ->
-      tags = Map.get(entity_tags_map, {entity_type, entity_id(entity)}, [])
-      {Map.put(entity, :entity_tags, tags), tags}
+  defp attach_entity_tags(entities, entity_type, entity_tags_map) do
+    Enum.map(entities, fn entity ->
+      tags = Map.get(entity_tags_map, {entity_type, entity.id}, [])
+      Map.put(entity, :entity_tags, tags)
     end)
-    |> Enum.filter(fn {_entity, tags} ->
-      visible_entry?(tags, tag_filters)
-    end)
-    |> Enum.map(&elem(&1, 0))
   end
 
   defp internal?(tags), do: Enum.any?(tags, &(&1.kind == :internal))

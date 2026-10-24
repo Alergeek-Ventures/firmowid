@@ -149,6 +149,7 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
     define :create_from_ksef, action: :create_from_ksef
     define :toggle_skip, action: :toggle_skip
     define :update_internal_note, args: [:internal_note], action: :update_internal_note
+    define :update_tax_forecast_vat, action: :update_tax_forecast_vat
     define :update_blob_id, args: [:blob_id], action: :update_blob_id
     define :refresh_seller_display_name, action: :refresh_seller_display_name
     define :refresh_description, action: :refresh_description
@@ -372,6 +373,7 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
         :due_date,
         :items_list,
         :amount,
+        :deductible_vat_amount,
         :invoice_identifier,
         :skip_invoicing,
         :seller_nip,
@@ -425,6 +427,7 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
         :due_date,
         :items_list,
         :amount,
+        :deductible_vat_amount,
         :invoice_identifier,
         :skip_invoicing,
         :ksef_number,
@@ -481,6 +484,11 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
       description "Attach or replace the source blob for this cost invoice."
       accept [:blob_id]
       require_atomic? false
+    end
+
+    update :update_tax_forecast_vat do
+      description "Record explicitly qualified deductible VAT for planning; nil means unknown, not zero."
+      accept [:deductible_vat_amount]
     end
 
     update :update_internal_note do
@@ -678,6 +686,12 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
     attribute :due_date, :date, public?: true
 
     attribute :amount, MoneyType, public?: true, allow_nil?: false
+
+    attribute :deductible_vat_amount, MoneyType do
+      public? true
+
+      description "Explicitly qualified input VAT for planning, in PLN or the document currency. Positive deductions on ordinary invoices; signed VAT delta on corrections. Nil means unknown. Never inferred from gross/payment amount or a default rate."
+    end
 
     attribute :description, :string,
       public?: true,

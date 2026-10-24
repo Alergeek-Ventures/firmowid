@@ -42,6 +42,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
   alias FirmowidWeb.Core.Endpoint
   alias FirmowidWeb.Documents.Components.DocumentsSection
   alias FirmowidWeb.Infrastructure.Components.BlobProcessingToasts
+  alias FirmowidWeb.Payroll.Components.TaxProfileForm
   alias FirmowidWeb.Settings.Utilities.Navigation
   alias Phoenix.Socket.Broadcast
 
@@ -174,6 +175,8 @@ defmodule FirmowidWeb.Settings.Views.Index do
      |> assign(:editing_basic_info, false)
      |> assign(:editing_account_name, false)
      |> assign(:editing_profile_employment, false)
+     |> assign(:editing_tax_profile, false)
+     |> assign(:tax_profile_form, form_tax_profile_form(current_user.member, scope))
      |> assign(:editing_profile_finance, false)
      |> assign(:editing_profile_contact, false)
      |> assign(:editing_credentials, false)
@@ -805,6 +808,38 @@ defmodule FirmowidWeb.Settings.Views.Index do
     {:noreply, assign(socket, :editing_profile_employment, !socket.assigns.editing_profile_employment)}
   end
 
+  def handle_event("toggle_editing_tax_profile", _params, socket) do
+    {:noreply,
+     socket
+     |> assign(:editing_tax_profile, !socket.assigns.editing_tax_profile)
+     |> assign(
+       :tax_profile_form,
+       TaxProfileForm.form(socket.assigns.tax_profile_form.data, socket.assigns.ash_scope)
+     )}
+  end
+
+  def handle_event("validate_tax_profile", %{"member" => params}, socket) do
+    form =
+      socket.assigns.tax_profile_form
+      |> AshPhoenix.Form.validate(params)
+      |> to_form()
+
+    {:noreply, assign(socket, :tax_profile_form, form)}
+  end
+
+  def handle_event("save_tax_profile", %{"member" => params}, socket) do
+    case AshPhoenix.Form.submit(socket.assigns.tax_profile_form, params: params) do
+      {:ok, member} ->
+        {:noreply,
+         socket
+         |> assign(:editing_tax_profile, false)
+         |> assign(:tax_profile_form, TaxProfileForm.form(member, socket.assigns.ash_scope))}
+
+      {:error, form} ->
+        {:noreply, assign(socket, :tax_profile_form, form)}
+    end
+  end
+
   def handle_event("toggle_editing_profile_finance", _params, socket) do
     {:noreply, assign(socket, :editing_profile_finance, !socket.assigns.editing_profile_finance)}
   end
@@ -1309,7 +1344,9 @@ defmodule FirmowidWeb.Settings.Views.Index do
             ash_scope={@ash_scope}
             member_form={@member_form}
             contract_form={@contract_form}
+            tax_profile_form={@tax_profile_form}
             editing_profile_employment={@editing_profile_employment}
+            editing_tax_profile={@editing_tax_profile}
             editing_profile_finance={@editing_profile_finance}
             editing_profile_contact={@editing_profile_contact}
             leave_requests={@leave_requests}
@@ -1556,6 +1593,9 @@ defmodule FirmowidWeb.Settings.Views.Index do
 
     {projects, total, date}
   end
+
+  # The session member is read by a system actor that may not read the tax profile.
+  defp form_tax_profile_form(member, scope), do: member |> Ash.reload!(scope: scope) |> TaxProfileForm.form(scope)
 
   defp form_contract_form(nil, _scope), do: nil
 
