@@ -1335,7 +1335,7 @@ msgstr ""
 msgid "Change request rejected"
 msgstr ""
 
-#: lib/firmowid_web/management/components/projects_tab.ex:291
+#: lib/firmowid_web/management/components/projects_tab.ex:292
 #, elixir-autogen, elixir-format
 msgid "Could not save the decision. The request may already have been reviewed."
 msgstr ""
@@ -1366,7 +1366,7 @@ msgstr ""
 msgid "Saving..."
 msgstr ""
 
-#: lib/firmowid_web/management/components/projects_tab.ex:283
+#: lib/firmowid_web/management/components/projects_tab.ex:284
 #, elixir-autogen, elixir-format
 msgid "The request decision has been saved."
 msgstr ""
