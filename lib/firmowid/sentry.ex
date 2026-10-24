@@ -42,6 +42,8 @@ defmodule Firmowid.Sentry do
     :service
   ]
   @extra_keys [
+    :resource,
+    :action,
     :callback,
     :view,
     :error_count,
@@ -118,6 +120,57 @@ defmodule Firmowid.Sentry do
     trace: [:trace_id, :span_id, :parent_span_id, :op, :status, :origin, :sampled]
   }
   @default_fingerprint "{{ default }}"
+  @password_login_fields [
+    :session_cookie_present,
+    :csrf_header_present,
+    :csrf_form_present,
+    :origin_matches_app,
+    :referrer_matches_app
+  ]
+
+  @doc "Clears password-login diagnostics before a new request can fail during parsing."
+  @spec clear_password_login_context() :: :ok
+  def clear_password_login_context, do: SentrySDK.Context.set_extra_context(%{password_login: nil})
+
+  @doc "Sets request-owned password-login presence flags without retaining input values."
+  @spec put_password_login_context(Plug.Conn.t(), String.t(), String.t()) :: Plug.Conn.t()
+  def put_password_login_context(conn, app_url, session_cookie_key) do
+    diagnostics =
+      if conn.method == "POST" and conn.request_path == "/auth/user/password/sign_in" do
+        cookies = Plug.Conn.fetch_cookies(conn).req_cookies
+        app_uri = URI.new!(app_url)
+
+        %{
+          session_cookie_present: Map.has_key?(cookies, session_cookie_key),
+          csrf_header_present: Plug.Conn.get_req_header(conn, "x-csrf-token") != [],
+          csrf_form_present: Map.has_key?(conn.body_params, "_csrf_token"),
+          origin_matches_app: header_matches_app?(conn, "origin", app_uri),
+          referrer_matches_app: header_matches_app?(conn, "referer", app_uri)
+        }
+      end
+
+    # Context setters merge: replace the whole namespace even on a later request.
+    SentrySDK.Context.set_extra_context(%{password_login: diagnostics})
+    conn
+  end
+
+  defp header_matches_app?(conn, name, app_uri) do
+    case Plug.Conn.get_req_header(conn, name) do
+      [value] ->
+        case URI.new(value) do
+          {:ok, uri} ->
+            is_nil(uri.userinfo) and uri.scheme == app_uri.scheme and
+              uri.host == app_uri.host and uri.port == app_uri.port
+
+          {:error, _} ->
+            false
+        end
+
+      _ ->
+        false
+    end
+  end
+
   @doc "Attaches the LiveView telemetry exception handler once at application startup."
   @spec setup() :: :ok | {:error, :already_exists}
   def setup, do: :telemetry.attach_many(@handler_id, @events, &__MODULE__.handle_event/4, :no_config)
@@ -366,6 +419,7 @@ defmodule Firmowid.Sentry do
 
   defp scrub_extra(extra) when is_map(extra) do
     scrubbed = scalar_map_or_lists(extra, @extra_keys)
+    scrubbed = scrub_password_login(scrubbed, extra[:password_login])
 
     case extra[:logger_metadata] do
       metadata when is_map(metadata) ->
@@ -377,6 +431,18 @@ defmodule Firmowid.Sentry do
   end
 
   defp scrub_extra(_extra), do: %{}
+
+  defp scrub_password_login(extra, diagnostics) when is_map(diagnostics) do
+    fields =
+      for key <- @password_login_fields,
+          is_boolean(diagnostics[key]),
+          into: %{},
+          do: {key, diagnostics[key]}
+
+    Map.put(extra, :password_login, fields)
+  end
+
+  defp scrub_password_login(extra, _diagnostics), do: extra
 
   defp scalar_map_or_lists(map, keys) do
     Enum.reduce(keys, %{}, fn key, acc ->

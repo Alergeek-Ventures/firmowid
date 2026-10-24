@@ -84,6 +84,10 @@ defmodule FirmowidWeb.Core.Endpoint do
     body_reader: {FirmowidWeb.Core.CacheBodyReader, :read_body, []},
     json_decoder: Phoenix.json_library()
 
+  # Parsed form and cookie presence must be observed before CSRF rejects login.
+  # Keep request logging before Telemetry and reuse the existing capture boundary.
+  plug :password_login_diagnostics
+
   plug SentrySDK.PlugContext,
     body_scrubber: {Sentry, :scrub_body},
     header_scrubber: {Sentry, :scrub_headers},
@@ -94,4 +98,6 @@ defmodule FirmowidWeb.Core.Endpoint do
   plug Plug.Head
   plug Plug.Session, @session_options
   plug FirmowidWeb.Core.Router
+
+  defp password_login_diagnostics(conn, _opts), do: Sentry.put_password_login_context(conn, url(), @session_options[:key])
 end
