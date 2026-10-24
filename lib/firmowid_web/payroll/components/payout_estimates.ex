@@ -38,7 +38,11 @@ defmodule FirmowidWeb.Payroll.Components.PayoutEstimates do
           else: "—"}
       </p>
       <p :if={@basis_label} class="text-xs/snug text-grey-600">{@basis_label}</p>
-      <Link.link :if={@calculation_path} kind="text" navigate={@calculation_path}>
+      <Link.link
+        :if={@calculation_path && (is_nil(@primary) or @primary.variant != :b2b)}
+        kind="text"
+        navigate={@calculation_path}
+      >
         {gettext("Calculate using employee declarations")}
       </Link.link>
       <%= if @primary do %>
