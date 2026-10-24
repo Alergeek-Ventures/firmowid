@@ -29,6 +29,7 @@
     "license-checker": "25.0.1"
   },
   "scripts": {
+    "postinstall": "cd .. && (git apply --reverse --check assets/patches/live_toast.patch 2>/dev/null || git apply assets/patches/live_toast.patch)",
     "audit:check": "audit-ci --config audit-ci.jsonc",
     "licenses:check": "license-checker --production --excludePrivatePackages --summary --onlyAllow 'MIT;Apache-2.0;BSD-2-Clause;BSD-3-Clause;ISC;0BSD;CC0-1.0;Unlicense;BlueOak-1.0.0;MPL-2.0'",
     "sentry:sourcemaps:clean": "find ../priv/static/assets -type f \\( -name '*.map' -o -name '*.map.*' \\) -delete"

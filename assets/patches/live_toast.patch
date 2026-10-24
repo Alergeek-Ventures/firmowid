@@ -1,0 +1,134 @@
+LiveToast 0.11.0: let LiveView own server-event listeners and keep flash-leave
+on its element, so destroyed hooks leave no global listeners behind.
+Patch source and all shipped JS entrypoints. Drop stale upstream source-map
+references so asset builds map the patched JS rather than the original source.
+Remove this patch when an upstream release includes the lifecycle fix.
+
+diff --git a/deps/live_toast/assets/js/live_toast/live_toast.ts b/deps/live_toast/assets/js/live_toast/live_toast.ts
+--- a/deps/live_toast/assets/js/live_toast/live_toast.ts
++++ b/deps/live_toast/assets/js/live_toast/live_toast.ts
+@@ -446,13 +446,13 @@
+         }
+       }
+
+-      window.addEventListener('phx:clear-flash', e => {
++      this.handleEvent('clear-flash', (detail: { key: string }) => {
+         this.pushEvent('lv:clear-flash', {
+-          key: (e as CustomEvent<{ key: string }>).detail.key
++          key: detail.key
+         })
+       })
+
+-      window.addEventListener('flash-leave', async event => {
++      this.el.addEventListener('flash-leave', async event => {
+         if (event.target === this.el) {
+           // animate this flash sliding out
+           doAnimations.bind(this, duration, maxItems, this.el)()
+@@ -466,9 +466,7 @@
+         await dismissToast.bind(this)(duration, maxItems)
+       })
+
+-      window.addEventListener(`phx:${dismissEvent}`, async event => {
+-        const detail = (event as CustomEvent<{ id?: string; uuid?: string }>)
+-          .detail
++      this.handleEvent(dismissEvent, async (detail: { id?: string; uuid?: string }) => {
+         const id = detail.id || `toast-${detail.uuid}`
+
+         if (id === this.el.id) {
+diff --git a/deps/live_toast/priv/static/live_toast.esm.js b/deps/live_toast/priv/static/live_toast.esm.js
+--- a/deps/live_toast/priv/static/live_toast.esm.js
++++ b/deps/live_toast/priv/static/live_toast.esm.js
+@@ -1008,12 +1008,12 @@
+           return;
+         }
+       }
+-      window.addEventListener("phx:clear-flash", (e) => {
++      this.handleEvent("clear-flash", (detail) => {
+         this.pushEvent("lv:clear-flash", {
+-          key: e.detail.key
++          key: detail.key
+         });
+       });
+-      window.addEventListener("flash-leave", async (event) => {
++      this.el.addEventListener("flash-leave", async (event) => {
+         if (event.target === this.el) {
+           doAnimations.bind(this, duration, maxItems, this.el)();
+           await animateOut.bind(this)();
+@@ -1023,8 +1023,7 @@
+         event.stopPropagation();
+         await dismissToast.bind(this)(duration, maxItems);
+       });
+-      window.addEventListener(`phx:${dismissEvent}`, async (event) => {
+-        const detail = event.detail;
++      this.handleEvent(dismissEvent, async (detail) => {
+         const id = detail.id || `toast-${detail.uuid}`;
+         if (id === this.el.id) {
+           await dismissToast.bind(this)(duration, maxItems);
+@@ -1059,4 +1058,3 @@
+   addToast,
+   createLiveToastHook
+ };
+-//# sourceMappingURL=live_toast.esm.js.map
+diff --git a/deps/live_toast/priv/static/live_toast.cjs.js b/deps/live_toast/priv/static/live_toast.cjs.js
+--- a/deps/live_toast/priv/static/live_toast.cjs.js
++++ b/deps/live_toast/priv/static/live_toast.cjs.js
+@@ -1022,12 +1022,12 @@
+           return;
+         }
+       }
+-      window.addEventListener("phx:clear-flash", (e) => {
++      this.handleEvent("clear-flash", (detail) => {
+         this.pushEvent("lv:clear-flash", {
+-          key: e.detail.key
++          key: detail.key
+         });
+       });
+-      window.addEventListener("flash-leave", async (event) => {
++      this.el.addEventListener("flash-leave", async (event) => {
+         if (event.target === this.el) {
+           doAnimations.bind(this, duration, maxItems, this.el)();
+           await animateOut.bind(this)();
+@@ -1037,8 +1037,7 @@
+         event.stopPropagation();
+         await dismissToast.bind(this)(duration, maxItems);
+       });
+-      window.addEventListener(`phx:${dismissEvent}`, async (event) => {
+-        const detail = event.detail;
++      this.handleEvent(dismissEvent, async (detail) => {
+         const id = detail.id || `toast-${detail.uuid}`;
+         if (id === this.el.id) {
+           await dismissToast.bind(this)(duration, maxItems);
+@@ -1069,4 +1068,3 @@
+     }
+   };
+ }
+-//# sourceMappingURL=live_toast.cjs.js.map
+diff --git a/deps/live_toast/priv/static/live_toast.js b/deps/live_toast/priv/static/live_toast.js
+--- a/deps/live_toast/priv/static/live_toast.js
++++ b/deps/live_toast/priv/static/live_toast.js
+@@ -1051,12 +1051,12 @@
+             return;
+           }
+         }
+-        window.addEventListener("phx:clear-flash", (e) => {
++        this.handleEvent("clear-flash", (detail) => {
+           this.pushEvent("lv:clear-flash", {
+-            key: e.detail.key
++            key: detail.key
+           });
+         });
+-        window.addEventListener("flash-leave", (event) => __async(this, null, function* () {
++        this.el.addEventListener("flash-leave", (event) => __async(this, null, function* () {
+           if (event.target === this.el) {
+             doAnimations.bind(this, duration, maxItems, this.el)();
+             yield animateOut.bind(this)();
+@@ -1066,8 +1066,7 @@
+           event.stopPropagation();
+           yield dismissToast.bind(this)(duration, maxItems);
+         }));
+-        window.addEventListener(`phx:${dismissEvent}`, (event) => __async(this, null, function* () {
+-          const detail = event.detail;
++        this.handleEvent(dismissEvent, (detail) => __async(this, null, function* () {
+           const id = detail.id || `toast-${detail.uuid}`;
+           if (id === this.el.id) {
+             yield dismissToast.bind(this)(duration, maxItems);
