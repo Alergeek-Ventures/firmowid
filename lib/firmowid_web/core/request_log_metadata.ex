@@ -23,6 +23,7 @@ defmodule FirmowidWeb.Core.RequestLogMetadata do
   """
   @spec call(Plug.Conn.t(), term()) :: Plug.Conn.t()
   def call(conn, _opts) do
+    Firmowid.Sentry.clear_password_login_context()
     Logger.metadata(health_check: conn.request_path == @health_path)
     conn
   end

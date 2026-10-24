@@ -45,7 +45,6 @@ const FRAME_FIELDS = [
   "platform",
   "instruction_addr",
   "addr_mode",
-  "debug_id",
 ];
 const BREADCRUMB_DATA_FIELDS = ["method", "status_code", "url", "from", "to"];
 
@@ -137,7 +136,38 @@ function sanitizeFrame(frame) {
   for (const name of ["filename", "abs_path"]) {
     if (typeof frame[name] === "string" && applicationPath(frame[name])) result[name] = frame[name];
   }
+  if ((result.filename || result.abs_path) && DEBUG_ID.test(frame.debug_id)) result.debug_id = frame.debug_id;
   return result;
+}
+
+function scriptProvenance(filename) {
+  if (typeof filename !== "string") return "unknown";
+  if (applicationPath(filename)) return "app_asset";
+  if (/^(?:chrome|moz|safari|safari-web)-extension:/i.test(filename)) return "extension";
+  try {
+    const url = new URL(filename, window.location.origin);
+    if (!["http:", "https:"].includes(url.protocol) || url.username || url.password) return "unknown";
+    if (url.origin !== window.location.origin) return "external";
+    if (url.pathname === window.location.pathname) return "inline";
+  } catch (_error) {
+    return "unknown";
+  }
+  return "unknown";
+}
+
+function errorDiagnostics(event) {
+  const origins = new Set();
+  for (const exception of (event.exception?.values || []).slice(0, 8)) {
+    for (const frame of (exception.stacktrace?.frames || []).slice(-50)) {
+      origins.add(scriptProvenance(frame.filename || frame.abs_path));
+    }
+  }
+  const diagnostics = { script_provenance: origins.size ? [...origins].sort() : ["unknown"] };
+  if (typeof navigator.onLine === "boolean") diagnostics.online = navigator.onLine;
+  if (["visible", "hidden"].includes(document.visibilityState)) diagnostics.visibility = document.visibilityState;
+  const navigationType = performance.getEntriesByType("navigation")[0]?.type;
+  if (["navigate", "reload", "back_forward"].includes(navigationType)) diagnostics.navigation_type = navigationType;
+  return diagnostics;
 }
 
 function applicationPath(value) {
@@ -239,6 +269,7 @@ function sanitizeEvent(event) {
   if (object(event.contexts)) result.contexts = sanitizeContexts(event.contexts);
   if (Array.isArray(event.breadcrumbs)) result.breadcrumbs = event.breadcrumbs.map(sanitizeBreadcrumb).filter(Boolean);
   if (object(event.exception)) result.exception = sanitizeException(event.exception);
+  if (object(event.exception)) result.extra = { diagnostics: errorDiagnostics(event) };
   if (object(event.threads)) result.threads = sanitizeThreads(event.threads);
   if (Array.isArray(event.fingerprint) && event.fingerprint.includes(DEFAULT_FINGERPRINT)) result.fingerprint = [DEFAULT_FINGERPRINT];
   if (object(event.sdk)) result.sdk = sanitizeSdk(event.sdk);

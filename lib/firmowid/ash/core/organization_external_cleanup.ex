@@ -6,6 +6,10 @@ defmodule Firmowid.Ash.Core.OrganizationExternalCleanup do
   never sends remote responses, object keys or credential material to Sentry.
   """
 
+  alias Ash.Error.Forbidden
+  alias Ash.Error.Framework
+  alias Ash.Error.Invalid
+  alias Ash.Error.Unknown
   alias Firmowid.Ash.Finances.GoCardless.ApiClient
   alias Firmowid.Ash.Ksef
   alias Firmowid.Ash.Ksef.CredentialMetadata
@@ -88,10 +92,14 @@ defmodule Firmowid.Ash.Core.OrganizationExternalCleanup do
       %{}
   end
 
-  @doc "Log the actual local exception to stdout and send a sanitized failure report to Sentry."
+  @doc "Log safe failure categories and send a sanitized failure report to Sentry."
   @spec report_local_failure(String.t(), String.t(), term()) :: :ok
   def report_local_failure(organization_id, step, reason) do
-    Logger.error("Organization #{organization_id} deletion failed at #{step}: #{Exception.format(:error, reason)}")
+    Logger.error("Organization deletion failed",
+      organization_id: organization_id,
+      stage: step,
+      error_kind: ErrorKind.classify(reason)
+    )
 
     report(organization_id, "database", step, %{}, reason)
   end
@@ -128,17 +136,18 @@ defmodule Firmowid.Ash.Core.OrganizationExternalCleanup do
 
   defp report(organization_id, service, step, identifiers, reason) do
     extra =
-      Map.merge(
-        %{
-          organization_id: organization_id,
-          service: service,
-          step: step,
-          error_kind: ErrorKind.classify(reason)
-        },
-        identifiers
-      )
+      reason
+      |> failure_context()
+      |> Map.merge(%{
+        organization_id: organization_id,
+        service: service,
+        step: step,
+        error_kind: ErrorKind.classify(reason)
+      })
+      |> Map.merge(identifiers)
 
     case Sentry.capture_exception(RuntimeError.exception("Organization deletion cleanup failed"),
+           stacktrace: failure_stacktrace(reason),
            tags: %{source: "organization_deletion", service: service},
            extra: extra
          ) do
@@ -150,6 +159,34 @@ defmodule Firmowid.Ash.Core.OrganizationExternalCleanup do
   catch
     _kind, _reason -> warn_capture_failed(organization_id, service, step, identifiers)
   end
+
+  defp failure_context(%module{} = reason) when module in [Invalid, Unknown, Forbidden, Framework] do
+    operation_context(reason.changeset || reason.query || reason.action_input)
+  end
+
+  defp failure_context(_reason), do: %{}
+
+  defp failure_stacktrace(%module{errors: errors} = reason) when module in [Invalid, Unknown, Forbidden, Framework] do
+    Enum.find_value(errors, error_stacktrace(reason) || [], &error_stacktrace/1)
+  end
+
+  defp failure_stacktrace(reason), do: error_stacktrace(reason) || []
+
+  defp error_stacktrace(%{stacktrace: %Splode.Stacktrace{stacktrace: [_ | _] = stacktrace}}), do: stacktrace
+
+  defp error_stacktrace(_reason), do: nil
+
+  defp operation_context(%module{resource: resource, action: action})
+       when module in [Ash.Changeset, Ash.Query, Ash.ActionInput] do
+    Map.reject(
+      %{resource: Atom.to_string(resource), action: action && Atom.to_string(action.name)},
+      fn {_key, value} ->
+        is_nil(value)
+      end
+    )
+  end
+
+  defp operation_context(_operation), do: %{}
 
   defp warn_capture_failed(organization_id, service, step, identifiers) do
     metadata =
