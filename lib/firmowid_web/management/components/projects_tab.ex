@@ -53,13 +53,14 @@ defmodule FirmowidWeb.Management.Components.ProjectsTab do
 
     # 3. Projects this user belongs to, sorted by duration, with grouped sessions attached
     projects =
-      %{member_id: member_id}
+      %{
+        member_id: member_id,
+        active_from: Date.beginning_of_month(date),
+        active_to: Date.end_of_month(date)
+      }
       |> Timetracker.list_projects!(scope: scope)
       |> Enum.map(fn project ->
         Map.put(project, :sessions, Map.get(sessions_by_project, project.id, []))
-      end)
-      |> Enum.filter(fn project ->
-        is_nil(project.archived_at) or Date.after?(project.archived_at, date)
       end)
       |> Enum.sort_by(
         fn project ->
