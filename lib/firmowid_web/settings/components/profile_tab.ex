@@ -240,8 +240,8 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
       data-expanded="false"
       class="group space-y-4"
     >
-      <div class="flex-col gap-2 rounded-lg border border-turquoise-200 p-4 group-data-[expanded=false]:flex group-data-[expanded=true]:hidden">
-        <h3 class="flex items-center gap-1 text-sm font-medium text-turquoise-700">
+      <div class="flex-col gap-2 rounded-lg border border-teal-200 p-4 group-data-[expanded=false]:flex group-data-[expanded=true]:hidden">
+        <h3 class="flex items-center gap-1 text-sm font-medium text-teal-700">
           <Lucideicons.file_text class="size-4" /> Nowa umowa
         </h3>
         <p class="text-sm text-grey-700">
@@ -254,7 +254,7 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
           <.button
             type="button"
             variant="primary"
-            accent="turquoise"
+            accent="teal"
             size="small"
             phx-click={
               JS.toggle_attribute({"data-expanded", "true", "false"},
@@ -267,9 +267,9 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
         </div>
       </div>
 
-      <div class="flex flex-col gap-3 rounded-lg border border-turquoise-200 p-4 group-data-[expanded=false]:hidden group-data-[expanded=true]:flex">
+      <div class="flex flex-col gap-3 rounded-lg border border-teal-200 p-4 group-data-[expanded=false]:hidden group-data-[expanded=true]:flex">
         <div class="flex items-center justify-between">
-          <h3 class="flex items-center gap-1 text-sm font-medium text-turquoise-700">
+          <h3 class="flex items-center gap-1 text-sm font-medium text-teal-700">
             <Lucideicons.file_text class="size-4" /> Nowa umowa
           </h3>
           <p class="text-sm text-grey-500">
@@ -296,7 +296,7 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
               kind="button"
               size="small"
               variant="plain"
-              class="pl-0 text-turquoise-700"
+              class="pl-0 text-teal-700"
               external="https://podpis.gov.pl/podpisz-dokument-elektronicznie/"
               target="_blank"
             >
@@ -313,10 +313,10 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
                 phx-hook="FileUploadDragState"
                 data-dragging="false"
                 class={[
-                  "group mt-4 flex w-full flex-col items-center justify-center gap-2 rounded-md border-dashed border-turquoise-200 py-6 transition-colors data-[dragging=true]:border-turquoise-400 data-[dragging=true]:bg-turquoise-100",
+                  "group mt-4 flex w-full flex-col items-center justify-center gap-2 rounded-md border-dashed border-teal-200 py-6 transition-colors data-[dragging=true]:border-teal-400 data-[dragging=true]:bg-teal-100",
                   if(Enum.empty?(@signed_contract_upload.entries),
                     do: "cursor-pointer border-2 border-dashed px-10",
-                    else: "bg-turquoise-100 px-8"
+                    else: "bg-teal-100 px-8"
                   )
                 ]}
               >
@@ -324,11 +324,11 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
                   :if={Enum.empty?(@signed_contract_upload.entries)}
                   class="flex items-center gap-1 text-sm font-medium text-grey-700 group-data-[dragging=true]:hidden"
                 >
-                  Przeciągnij PDF lub <span class="text-turquoise-700">Wybierz plik</span>
+                  Przeciągnij PDF lub <span class="text-teal-700">Wybierz plik</span>
                 </span>
                 <span
                   :if={Enum.empty?(@signed_contract_upload.entries)}
-                  class="hidden text-turquoise-700 group-data-[dragging=true]:flex"
+                  class="hidden text-teal-700 group-data-[dragging=true]:flex"
                 >
                   Upuść plik
                 </span>
@@ -336,7 +336,7 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
 
                 <div
                   :for={entry <- @signed_contract_upload.entries}
-                  class="z-10 w-full text-sm text-turquoise-700"
+                  class="z-10 w-full text-sm text-teal-700"
                 >
                   <div class="flex items-center justify-between">
                     <span class="flex min-w-0 items-center gap-1 truncate font-medium"><Lucideicons.file_text class="size-4" /> {entry.client_name}</span>
@@ -356,7 +356,7 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
             </form>
             <p
               :for={error <- upload_errors(@signed_contract_upload)}
-              class="mt-2 text-sm text-red-600"
+              class="mt-2 text-sm text-brick-600"
             >
               {upload_error_to_string(error)}
             </p>
@@ -377,7 +377,7 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
           </.button>
           <.button
             type="button"
-            accent="turquoise"
+            accent="teal"
             size="small"
             phx-click="submit_signed_contract"
             phx-disable-with="Przesyłanie..."
@@ -621,7 +621,7 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
               <.switch
                 field={@member_form[:is_same_correspondence_address]}
                 class="w-12"
-                color="turquoise"
+                color="teal"
               />
             </Helpers.settings_field>
 
@@ -692,7 +692,7 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
             <div
               id="profile-leave-search-container"
               data-expanded={to_string(@leave_search != "")}
-              class="group flex items-center justify-center rounded-lg transition-shadow data-[expanded=true]:bg-greyButtonBg data-[expanded=true]:focus-within:ring-2"
+              class="group flex items-center justify-center rounded-lg transition-shadow data-[expanded=true]:bg-grey-200 data-[expanded=true]:focus-within:ring-2"
             >
               <.input
                 type="text"
@@ -791,7 +791,7 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
                 phx-click="select_leave_reason"
                 data-active={to_string(@leave_request_form[:reason].value) == to_string(reason)}
                 phx-value-reason={reason}
-                class="inline-flex items-center gap-2 rounded-2xl! border-grey-100 bg-grey-100 px-4 py-1 text-sm text-grey-700 transition data-active:border-orange-200 data-active:bg-orange-200 data-active:text-orange-700"
+                class="inline-flex items-center gap-2 rounded-2xl! border-grey-100 bg-grey-100 px-4 py-1 text-sm text-grey-700 transition data-active:border-rust-200 data-active:bg-rust-200 data-active:text-rust-700"
               >
                 {String.downcase(LeavePresentation.reason_label(reason, :short))}
                 <.reason_icon reason={reason} />
@@ -867,14 +867,14 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
               </div>
               <p
                 :for={error <- upload_errors(@leave_request_upload, entry)}
-                class="text-sm text-red-600"
+                class="text-sm text-brick-600"
               >
                 {leave_upload_error_to_string(error)}
               </p>
             </div>
             <p
               :for={error <- upload_errors(@leave_request_upload)}
-              class="mt-2 text-sm text-red-600"
+              class="mt-2 text-sm text-brick-600"
             >
               {leave_upload_error_to_string(error)}
             </p>
@@ -918,7 +918,7 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
 
         <ul :if={@projects != []} class="space-y-3">
           <li :for={project <- @projects} class="flex items-center justify-between gap-3">
-            <span class="rounded-full bg-turquoise-200 px-3 py-1 text-sm/snug font-medium text-turquoise-700">
+            <span class="rounded-full bg-teal-200 px-3 py-1 text-sm/snug font-medium text-teal-700">
               {project.name}
             </span>
             <span class="shrink-0 text-sm text-grey-500 tabular-nums">

@@ -27,7 +27,7 @@ defmodule FirmowidWeb.Payroll.Components.PayoutEstimates do
           :if={@primary}
           type="button"
           variant="icon"
-          class="relative size-7 shrink-0 cursor-pointer outline-offset-2 after:absolute after:inset-[-8px] after:content-[''] focus-visible:outline-2 focus-visible:outline-turquoise-700"
+          class="relative size-7 shrink-0 cursor-pointer outline-offset-2 after:absolute after:inset-[-8px] after:content-[''] focus-visible:outline-2 focus-visible:outline-teal-700"
           aria-label={gettext("How is this calculated?")}
           title={gettext("How is this calculated?")}
           phx-click={show_modal("payout-estimates-modal")}
@@ -35,7 +35,7 @@ defmodule FirmowidWeb.Payroll.Components.PayoutEstimates do
           <Lucideicons.info class="size-4" aria-hidden="true" />
         </Button.button>
       </div>
-      <p class="text-start text-xl/snug font-semibold text-turquoise-700 tabular-nums">
+      <p class="text-start text-xl/snug font-semibold text-teal-700 tabular-nums">
         {if @primary, do: @primary.amount, else: "—"}
       </p>
       <p :if={@basis_label} class="text-xs/snug text-grey-600">{@basis_label}</p>
@@ -62,7 +62,7 @@ defmodule FirmowidWeb.Payroll.Components.PayoutEstimates do
             </dl>
             <div class="flex items-center justify-between gap-4 border-bs border-grey-200 pbs-4">
               <span class="text-sm/snug">{gettext("Net forecast")}</span>
-              <strong class="text-xl/snug font-medium text-turquoise-700 tabular-nums">
+              <strong class="text-xl/snug font-medium text-teal-700 tabular-nums">
                 {@primary.amount}
               </strong>
             </div>

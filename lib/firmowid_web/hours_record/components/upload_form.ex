@@ -30,9 +30,9 @@ defmodule FirmowidWeb.HoursRecord.Components.UploadForm do
     <div class="flex w-full flex-col gap-6">
       <div class="relative w-full">
         <div class="absolute inset-x-[20px] top-3">
-          <div class="absolute h-0.5 w-full -translate-y-1/2 bg-greyButtonBg" />
+          <div class="absolute h-0.5 w-full -translate-y-1/2 bg-grey-200" />
           <div
-            class="absolute h-0.5 w-full origin-left -translate-y-1/2 bg-orangeText transition"
+            class="absolute h-0.5 w-full origin-left -translate-y-1/2 bg-rust-700 transition"
             style={"transform: scaleX(#{stage_order(@state) / 3})"}
           />
         </div>
@@ -216,9 +216,9 @@ defmodule FirmowidWeb.HoursRecord.Components.UploadForm do
     <div class={[
       "mx-auto size-6 rounded-full transition",
       cond do
-        stage_order(@state) > stage_order(@stage) -> "bg-orangeText"
-        stage_order(@state) == stage_order(@stage) -> "border-2 border-orangeText bg-orangeBg"
-        stage_order(@state) < stage_order(@stage) -> "bg-greyButtonBg"
+        stage_order(@state) > stage_order(@stage) -> "bg-rust-700"
+        stage_order(@state) == stage_order(@stage) -> "border-2 border-rust-700 bg-rust-200"
+        stage_order(@state) < stage_order(@stage) -> "bg-grey-200"
       end
     ]} />
     """

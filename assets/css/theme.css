@@ -18,14 +18,14 @@
   /* Keyframes */
   @keyframes error-pulse {
     0%, 100% {
-      background-color: var(--color-redText);
+      background-color: var(--color-brick-700);
       color: var(--color-white);
     }
     30% {
       background-color: var(--color-white);
     }
     50% {
-      color: var(--color-redText);
+      color: var(--color-brick-700);
     }
   }
 

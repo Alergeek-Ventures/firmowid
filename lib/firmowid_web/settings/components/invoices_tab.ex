@@ -38,7 +38,7 @@ defmodule FirmowidWeb.Settings.Components.InvoicesTab do
             Import e-mail faktur kosztowych
           </h2>
 
-          <span class="rounded-full bg-orange-100 px-3 py-1 text-sm/tight text-orange-700">
+          <span class="rounded-full bg-rust-100 px-3 py-1 text-sm/tight text-rust-700">
             aktywny
           </span>
         </div>
@@ -48,7 +48,7 @@ defmodule FirmowidWeb.Settings.Components.InvoicesTab do
             <.button
               type="button"
               variant="secondary"
-              accent="orange"
+              accent="rust"
               size="small"
               phx-click="copy_inbound_email"
               phx-value-email={@inbound_email}
@@ -109,7 +109,7 @@ defmodule FirmowidWeb.Settings.Components.InvoicesTab do
 
           <div
             :for={email <- @allowed_sender_emails}
-            class="flex min-h-11 items-center justify-between gap-3 rounded-lg bg-turquoise-100 px-3 py-2 text-sm leading-[1.35] text-turquoise-800 sm:min-h-10"
+            class="flex min-h-11 items-center justify-between gap-3 rounded-lg bg-teal-100 px-3 py-2 text-sm leading-[1.35] text-teal-800 sm:min-h-10"
           >
             <span class="min-w-0 truncate">{email}</span>
             <.button
@@ -119,7 +119,7 @@ defmodule FirmowidWeb.Settings.Components.InvoicesTab do
               size="small"
               phx-click="remove_allowed_email"
               phx-value-email={email}
-              class="size-10 shrink-0 p-0 text-turquoise-800 hover:bg-turquoise-200 hover:text-grey-900"
+              class="size-10 shrink-0 p-0 text-teal-800 hover:bg-teal-200 hover:text-grey-900"
               aria-label={"Usuń #{email}"}
             >
               <.icon name="hero-x-mark" class="size-4" />

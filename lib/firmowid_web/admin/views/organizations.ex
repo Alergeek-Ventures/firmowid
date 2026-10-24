@@ -133,10 +133,10 @@ defmodule FirmowidWeb.Admin.Views.Organizations do
   def render(assigns) do
     ~H"""
     <div class="mx-auto flex w-full max-w-7xl flex-col gap-3 pb-4">
-      <div class="sticky top-navbar z-10 flex flex-col gap-6 bg-lightGreyBg py-4">
+      <div class="sticky top-navbar z-10 flex flex-col gap-6 bg-grey-100 py-4">
         <div class="flex items-center justify-between gap-4">
           <form class="flex gap-4" phx-submit="search">
-            <div class="flex h-11 w-90 items-center gap-2 rounded-lg border border-greyButtonBg bg-lightGreyBg p-1 focus-within:ring-2">
+            <div class="flex h-11 w-90 items-center gap-2 rounded-lg border border-grey-200 bg-grey-100 p-1 focus-within:ring-2">
               <Lucideicons.search class="size-6 shrink-0 text-grey-500" />
               <.input
                 type="text"
@@ -155,7 +155,7 @@ defmodule FirmowidWeb.Admin.Views.Organizations do
         <div class="flex flex-wrap items-center justify-between gap-4">
           <div class="flex flex-wrap items-center gap-6">
             <div class="flex items-center gap-3">
-              <span class="text-sm font-normal text-darkGrey/70">Filtry:</span>
+              <span class="text-sm font-normal text-grey-700/70">Filtry:</span>
 
               <div class="flex flex-wrap items-center gap-2">
                 <.button
@@ -323,7 +323,7 @@ defmodule FirmowidWeb.Admin.Views.Organizations do
   defp to_date(%DateTime{} = datetime), do: DateTime.to_date(datetime)
   defp to_date(%NaiveDateTime{} = datetime), do: NaiveDateTime.to_date(datetime)
 
-  defp usage_value_styles(%{over_limit: over_limit}) when over_limit > 0, do: "font-medium text-orange-700"
+  defp usage_value_styles(%{over_limit: over_limit}) when over_limit > 0, do: "font-medium text-rust-700"
 
   defp usage_value_styles(_usage), do: "font-medium"
 

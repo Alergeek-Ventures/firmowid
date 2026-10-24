@@ -1,6 +1,6 @@
 <div class="mx-auto flex w-full max-w-7xl flex-col gap-3 pb-4">
   <% # top -> collapsed navbar height (56px) / TODO: refactor %>
-  <div class="sticky top-10.5 z-10 flex flex-col gap-6 bg-lightGreyBg py-4">
+  <div class="sticky top-10.5 z-10 flex flex-col gap-6 bg-grey-100 py-4">
     <div class="flex items-center justify-between">
       <form class="flex gap-4" phx-submit="search">
         <.month_picker
@@ -12,7 +12,7 @@
         <div
           id="search-container"
           data-expanded={to_string(@search != "")}
-          class="group flex min-w-10 items-center justify-center rounded-lg bg-greyButtonBg transition-shadow data-[expanded=true]:focus-within:ring-2"
+          class="group flex min-w-10 items-center justify-center rounded-lg bg-grey-200 transition-shadow data-[expanded=true]:focus-within:ring-2"
         >
           <.input
             type="text"
@@ -99,9 +99,9 @@
   >
     <div
       id="employees-list-header"
-      class="sticky top-41 z-1 col-span-full grid h-11 grid-cols-subgrid items-center bg-lightGreyBg px-4 text-sm/snug text-grey-700 transition-all duration-75"
+      class="sticky top-41 z-1 col-span-full grid h-11 grid-cols-subgrid items-center bg-grey-100 px-4 text-sm/snug text-grey-700 transition-all duration-75"
       phx-hook="ScrollStyle"
-      data-classes="border-b-4 border-solid border-darkGrey/40 pt-3"
+      data-classes="border-b-4 border-solid border-grey-700/40 pt-3"
       data-scroll-offset="90"
     >
       <p>Pracownik</p>
@@ -144,7 +144,7 @@
               </.button>
               <.button
                 variant="secondary"
-                accent="orange"
+                accent="rust"
                 size="small"
                 class="w-22 text-caps-sm/tight font-medium uppercase"
                 type="submit"
@@ -162,7 +162,7 @@
     </div>
 
     <%= if Enum.empty?(@employees) do %>
-      <div class="col-span-full py-10 text-center text-darkGrey">
+      <div class="col-span-full py-10 text-center text-grey-700">
         <%= if @search != "" do %>
           Brak wyników. Spróbuj zmienić kryteria wyszukiwania.
         <% else %>
@@ -190,13 +190,13 @@
           end
         ]}>
           <div class="flex min-w-0 items-center gap-3">
-            <.avatar class="size-8 shrink-0 ring-1 ring-greyButtonBg/50">
+            <.avatar class="size-8 shrink-0 ring-1 ring-grey-200/50">
               <.avatar_image
                 :if={Map.get(employee.user.member.avatar_blob || %{}, :url)}
                 src={Map.get(employee.user.member.avatar_blob || %{}, :url)}
                 alt="Avatar"
               />
-              <.avatar_fallback class="bg-blueBg text-blueText">
+              <.avatar_fallback class="bg-teal-200 text-teal-800">
                 {to_string(employee.user.member.name || employee.user.email || "")
                 |> String.slice(0, 1)
                 |> String.upcase()}
@@ -260,7 +260,7 @@
               {employee.monthly_gross}
             </p>
             <p
-              class="text-end font-medium text-nowrap text-turquoise-700 tabular-nums"
+              class="text-end font-medium text-nowrap text-teal-700 tabular-nums"
               title={
                 if employee.payout_estimate,
                   do: PayoutEstimates.variant_label(employee.payout_estimate.variant),

@@ -24,9 +24,9 @@ defmodule FirmowidWeb.Landing.Components.Faq do
     ~H"""
     <section
       id="faq"
-      class="border-t border-orange-200 bg-grey-50 py-18 lg:py-26 max-lg:[&_h2]:wrap-anywhere max-lg:[&>div>*]:min-w-0"
+      class="border-t border-rust-200 bg-grey-50 py-18 lg:py-26 max-lg:[&_h2]:wrap-anywhere max-lg:[&>div>*]:min-w-0"
     >
-      <div class="mx-auto grid w-[calc(100%-var(--spacing)*8)] max-w-284.75 gap-8 lg:w-[calc(100%-var(--spacing)*16)] lg:grid-cols-[minmax(0,1fr)_571px] lg:gap-12 [&_article]:rounded-lg [&_article]:border-2 [&_article]:border-orange-200 [&_article]:bg-white [&_button]:flex [&_button]:w-full [&_button]:cursor-pointer [&_button]:items-center [&_button]:justify-between [&_button]:gap-6 [&_button]:p-5 [&_button]:text-left [&_button]:text-base [&_button]:leading-[1.4] [&_button]:font-semibold **:[[role='region']]:text-[15px] **:[[role='region']]:leading-[1.6] **:[[role='region']]:text-darkGrey">
+      <div class="mx-auto grid w-[calc(100%-var(--spacing)*8)] max-w-284.75 gap-8 lg:w-[calc(100%-var(--spacing)*16)] lg:grid-cols-[minmax(0,1fr)_571px] lg:gap-12 [&_article]:rounded-lg [&_article]:border-2 [&_article]:border-rust-200 [&_article]:bg-white [&_button]:flex [&_button]:w-full [&_button]:cursor-pointer [&_button]:items-center [&_button]:justify-between [&_button]:gap-6 [&_button]:p-5 [&_button]:text-left [&_button]:text-base [&_button]:leading-[1.4] [&_button]:font-semibold **:[[role='region']]:text-[15px] **:[[role='region']]:leading-[1.6] **:[[role='region']]:text-grey-700">
         <div class="max-w-180 lg:max-w-284.75">
           <p class="mb-4 text-xs font-bold tracking-[0.08em] text-(--landing-accent) uppercase">
             {gettext("Questions and answers")}
@@ -34,11 +34,11 @@ defmodule FirmowidWeb.Landing.Components.Faq do
           <h2 class="text-[38px] leading-[1.1] font-bold tracking-[-0.03em] text-balance lg:text-[48px] lg:leading-[50px] lg:tracking-[-1px]">
             {gettext("Before you ask — we may have already answered.")}
           </h2>
-          <p class="mt-6 text-h5/6.75 text-darkGrey lg:max-w-115">
+          <p class="mt-6 text-h5/6.75 text-grey-700 lg:max-w-115">
             {gettext("Didn't find your question?")}
             <a
               href="mailto:contact@alergeek.ventures"
-              class="font-bold text-darkGrey no-underline transition-colors duration-300 hover:text-orange-700 max-lg:block"
+              class="font-bold text-grey-700 no-underline transition-colors duration-300 hover:text-rust-700 max-lg:block"
             >
               {gettext("Write to us.")}
             </a>
@@ -54,7 +54,7 @@ defmodule FirmowidWeb.Landing.Components.Faq do
               phx-value-id={faq.id}
               aria-expanded={to_string(@open_faq == faq.id)}
               aria-controls={"faq-panel-#{faq.id}"}
-              class="transition-colors duration-200 hover:text-orange-700"
+              class="transition-colors duration-200 hover:text-rust-700"
             >
               <span>{faq.question}</span>
               <span

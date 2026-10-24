@@ -85,7 +85,7 @@ defmodule FirmowidWeb.Auth.Components.McpConsent do
               prosi o dostęp do Twojego konta Firmowid w zakresie MCP.
             </p>
 
-            <dl class="mt-6 space-y-3 rounded-xl bg-lightGreyBg p-4 text-sm text-grey-700">
+            <dl class="mt-6 space-y-3 rounded-xl bg-grey-100 p-4 text-sm text-grey-700">
               <div>
                 <dt class="font-medium text-grey-900">Zakres</dt>
                 <dd class="mt-0.5 font-mono text-xs break-all text-grey-600">{@scope}</dd>
@@ -117,14 +117,14 @@ defmodule FirmowidWeb.Auth.Components.McpConsent do
                 </p>
                 <label
                   :for={organization <- @organizations}
-                  class="flex cursor-pointer items-center gap-2 rounded-xl bg-lightGreyBg p-3 text-sm text-grey-900"
+                  class="flex cursor-pointer items-center gap-2 rounded-xl bg-grey-100 p-3 text-sm text-grey-900"
                 >
                   <input
                     type="radio"
                     name="organization_id"
                     value={organization.id}
                     checked={organization.id == @selected_id}
-                    class="size-5 shrink-0 appearance-none rounded-full border-2 border-grey-300 bg-white checked:bg-turquoise-700 focus:outline-none"
+                    class="size-5 shrink-0 appearance-none rounded-full border-2 border-grey-300 bg-white checked:bg-teal-700 focus:outline-none"
                   />
                   <span class="font-medium">{organization.name}</span>
                 </label>

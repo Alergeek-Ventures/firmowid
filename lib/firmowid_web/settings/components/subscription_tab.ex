@@ -71,7 +71,7 @@ defmodule FirmowidWeb.Settings.Components.SubscriptionTab do
 
           <div
             :if={@worksheet.suggestion_rows != []}
-            class="space-y-3 rounded-lg bg-orange-100 p-4"
+            class="space-y-3 rounded-lg bg-rust-100 p-4"
           >
             <h3 class="text-sm leading-none font-medium text-grey-900">Aktualne nadwyżki</h3>
 
@@ -119,7 +119,7 @@ defmodule FirmowidWeb.Settings.Components.SubscriptionTab do
 
                     <div class="shrink-0 text-right">
                       <p class="font-medium text-grey-900">{row.total_text}</p>
-                      <p :if={row.over_limit > 0} class="text-orange-700">
+                      <p :if={row.over_limit > 0} class="text-rust-700">
                         +{row.over_limit} ponad limit
                       </p>
                     </div>
@@ -167,10 +167,10 @@ defmodule FirmowidWeb.Settings.Components.SubscriptionTab do
   defp plan_badge_styles(:no_plan), do: "rounded-full bg-grey-200 px-3 py-1 text-sm/tight text-grey-700"
 
   defp plan_badge_styles(_plan) do
-    "rounded-full bg-orange-100 px-3 py-1 text-sm/tight text-orange-700"
+    "rounded-full bg-rust-100 px-3 py-1 text-sm/tight text-rust-700"
   end
 
-  defp counter_bar_fill_styles(%{over_limit: over_limit}) when over_limit > 0, do: "h-full rounded-full bg-orange-500"
+  defp counter_bar_fill_styles(%{over_limit: over_limit}) when over_limit > 0, do: "h-full rounded-full bg-rust-500"
 
-  defp counter_bar_fill_styles(_row), do: "h-full rounded-full bg-turquoise-700"
+  defp counter_bar_fill_styles(_row), do: "h-full rounded-full bg-teal-700"
 end

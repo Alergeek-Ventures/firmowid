@@ -83,7 +83,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Summary do
         <% SubmissionInfo.submitted?(@submission_info) -> %>
           <h1 class="text-2xl/tight font-medium">Faktura wysłana do KSeF</h1>
         <% SubmissionInfo.failed?(@submission_info) -> %>
-          <h1 class="text-2xl/tight font-medium text-red-600">
+          <h1 class="text-2xl/tight font-medium text-brick-600">
             Wysyłka do KSeF nie powiodła się
           </h1>
         <% true -> %>
@@ -149,15 +149,15 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Summary do
             navigate={Navigation.sales_invoice_creator_path()}
             kind="button"
             variant="primary"
-            accent="turquoise"
+            accent="teal"
           >
             Wystaw kolejną
           </.link>
         </div>
       </div>
       <%= if SubmissionInfo.failed?(@submission_info) do %>
-        <div class="flex flex-col items-center justify-center gap-4 rounded-md bg-redBg p-8 text-center text-redText">
-          <Lucideicons.triangle_alert class="size-10 text-red-600" />
+        <div class="flex flex-col items-center justify-center gap-4 rounded-md bg-brick-200 p-8 text-center text-brick-700">
+          <Lucideicons.triangle_alert class="size-10 text-brick-600" />
           <h2 class="text-xl">Wysyłka do KSeF nie powiodła się.</h2>
           <p :if={@submission_info.error} class="max-w-lg text-sm">
             {@submission_info.error}
@@ -169,7 +169,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Summary do
             navigate={Navigation.sales_invoice_edit_path(@invoice, @return_to)}
             kind="button"
             variant="primary"
-            accent="turquoise"
+            accent="teal"
             class="mt-4"
           >
             <Lucideicons.pencil class="size-4" /> Popraw i wystaw ponownie
@@ -217,7 +217,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Summary do
             class="absolute inset-0 z-0 flex items-center justify-center"
           >
             <div class="text-center">
-              <Lucideicons.circle_check class="mx-auto size-24 text-greenText" />
+              <Lucideicons.circle_check class="mx-auto size-24 text-moss-700" />
               <p class="mt-4 text-xl font-medium text-grey-700">Wysłano do KSeF!</p>
             </div>
           </div>

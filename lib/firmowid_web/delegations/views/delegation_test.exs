@@ -242,7 +242,7 @@ defmodule FirmowidWeb.Delegations.Views.DelegationTest do
     |> render_change()
 
     assert has_element?(view, "#foreign-currency-notice-#{expense.id}", "Wykryto obcą walutę")
-    assert has_element?(view, "#expense-currency-#{expense.id}.bg-turquoise-100")
+    assert has_element?(view, "#expense-currency-#{expense.id}.bg-teal-100")
     assert has_element?(view, "button", "Mam kwotę z wyciągu")
     assert has_element?(view, "button", "Przelicz wg kursu NBP")
 

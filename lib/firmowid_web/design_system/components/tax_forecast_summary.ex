@@ -44,7 +44,7 @@ defmodule FirmowidWeb.DesignSystem.Components.TaxForecastSummary do
     >
       <div class="flex flex-col gap-1">
         <div class="flex flex-wrap items-center justify-between gap-3">
-          <h2 id={@id <> "-title"} class="text-lg font-medium text-darkGrey">
+          <h2 id={@id <> "-title"} class="text-lg font-medium text-grey-700">
             {gettext("Planned tax reserve")}
           </h2>
           <.status_badge status={@forecast.status} />
@@ -67,7 +67,7 @@ defmodule FirmowidWeb.DesignSystem.Components.TaxForecastSummary do
       </div>
 
       <details id={@id <> "-assumptions"} class="text-sm text-grey-700">
-        <summary class="w-fit cursor-pointer font-medium focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-turquoise-500 active:text-grey-900">
+        <summary class="w-fit cursor-pointer font-medium focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-500 active:text-grey-900">
           {gettext("Assumptions")}
         </summary>
         <ul class="flex list-disc flex-col gap-1 ps-5 pbs-2">
@@ -105,7 +105,7 @@ defmodule FirmowidWeb.DesignSystem.Components.TaxForecastSummary do
       <ul
         :if={@tax.missing_inputs != []}
         id={@id <> "-missing"}
-        class="flex list-disc flex-col gap-1 ps-5 text-sm text-orange-700"
+        class="flex list-disc flex-col gap-1 ps-5 text-sm text-rust-700"
       >
         <li :for={{input, count} <- missing_input_counts(@tax.missing_inputs)}>
           {missing_input_text(input, count)}
@@ -234,8 +234,8 @@ defmodule FirmowidWeb.DesignSystem.Components.TaxForecastSummary do
     ~H"""
     <span class={[
       "rounded-full px-3 py-1 text-sm/tight",
-      @status == :complete && "bg-turquoise-100 text-turquoise-700",
-      @status == :partial && "bg-orange-100 text-orange-700",
+      @status == :complete && "bg-teal-100 text-teal-700",
+      @status == :partial && "bg-rust-100 text-rust-700",
       @status in [:unavailable, :not_applicable] && "bg-grey-100 text-grey-700"
     ]}>
       {status_text(@status)}

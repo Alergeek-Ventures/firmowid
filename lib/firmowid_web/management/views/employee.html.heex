@@ -44,13 +44,13 @@
 
   <.card class="row-start-2 w-full">
     <div class="flex gap-3">
-      <.avatar class="size-20 shrink-0 ring-1 ring-greyButtonBg/50">
+      <.avatar class="size-20 shrink-0 ring-1 ring-grey-200/50">
         <.avatar_image
           :if={Map.get(@employee.member.avatar_blob || %{}, :url)}
           src={Map.get(@employee.member.avatar_blob || %{}, :url)}
           alt="Avatar"
         />
-        <.avatar_fallback class="bg-blueBg text-2xl text-blueText">
+        <.avatar_fallback class="bg-teal-200 text-2xl text-teal-800">
           {to_string(@employee.member.display_name || "")
           |> String.slice(0, 1)
           |> String.upcase()}
@@ -60,14 +60,14 @@
         <h2 class="text-lg font-medium">{@employee.member.display_name}</h2>
         <div
           :if={@employee.member.slack_url not in [nil, ""]}
-          class="flex items-center gap-2 text-sm text-darkGrey"
+          class="flex items-center gap-2 text-sm text-grey-700"
         >
           <img src="/images/slack.png" alt="slack logo" width={24} height={24} />
           <.link
             kind="unstyled"
             external={@employee.member.slack_url}
             target="_blank"
-            class="border-b border-transparent transition-colors hover:border-darkGrey"
+            class="border-b border-transparent transition-colors hover:border-grey-700"
           >
             napisz na Slacku
           </.link>
@@ -75,11 +75,11 @@
       </div>
       <.dropdown id="employee-dropdown" class="ml-auto">
         <:trigger>
-          <span class="cursor-pointer rounded-full text-darkGrey transition-colors hover:bg-grey-100">
+          <span class="cursor-pointer rounded-full text-grey-700 transition-colors hover:bg-grey-100">
             <.icon name="hero-ellipsis-vertical" />
           </span>
         </:trigger>
-        <div class="mt-2 flex flex-col rounded bg-offwhite p-2 shadow-md">
+        <div class="mt-2 flex flex-col rounded bg-grey-100 p-2 shadow-md">
           <.button
             disabled={@employee.member.archived_at}
             type="button"
@@ -153,7 +153,7 @@
           :for={project <- @employee.member.projects}
           kind="unstyled"
           navigate={Navigation.project_path(project.id, %{miesiac: @projects_filter_date})}
-          class="rounded-full bg-turquoise-200 px-4 py-1 text-sm/snug text-turquoise-700 transition hover:bg-turquoise-300 hover:text-turquoise-800"
+          class="rounded-full bg-teal-200 px-4 py-1 text-sm/snug text-teal-700 transition hover:bg-teal-300 hover:text-teal-800"
         >
           {project.name}
         </.link>
@@ -180,7 +180,7 @@
       kind="unstyled"
       navigate={path}
       class={[
-        "rounded-t-md p-3 font-medium text-darkGrey transition-all phx-click-loading:opacity-50",
+        "rounded-t-md p-3 font-medium text-grey-700 transition-all phx-click-loading:opacity-50",
         "shadow shadow-transparent hover:bg-white hover:text-black hover:shadow-black/10",
         @live_action == action &&
           "bg-grey-50 text-black shadow-black/10"

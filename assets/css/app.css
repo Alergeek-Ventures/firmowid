@@ -112,7 +112,7 @@
 /* ── Custom Scrollbar (used inside cards) ──────────────────────────────── */
 @utility scrollbar-card {
   scrollbar-width: thin;
-  scrollbar-color: var(--color-lightGreyBg, #d3d3d3) transparent;
+  scrollbar-color: var(--color-grey-100, #d3d3d3) transparent;
 
   &::-webkit-scrollbar {
     width: 6px;
@@ -125,7 +125,7 @@
   }
 
   &::-webkit-scrollbar-thumb {
-    background-color: var(--color-lightGreyBg, #d3d3d3);
+    background-color: var(--color-grey-100, #d3d3d3);
     border-radius: 0.25rem;
   }
 }
@@ -161,17 +161,6 @@ html {
 :root {
   /* Keyboard focus outline; dark surfaces override it with [--focus-ring:var(--color-white)]. */
   --focus-ring: var(--color-grey-900);
-  --color-orange-text: var(--color-orangeText);
-  --color-orange-bg: var(--color-orangeBg);
-  --color-green-text: var(--color-greenText);
-  --color-green-bg: var(--color-greenBg);
-  --color-red-text: var(--color-redText);
-  --color-red-bg: var(--color-redBg);
-  --color-blue-text: var(--color-blueText);
-  --color-blue-bg: var(--color-blueBg);
-  --color-grey-button-bg: var(--color-greyButtonBg);
-  --color-dark-grey: var(--color-darkGrey);
-  --color-light-grey-bg: var(--color-lightGreyBg);
   --navbar-height: 66px;
   --navbar-height-management: 108px;
   --digit-dur: 500ms;

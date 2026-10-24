@@ -147,7 +147,7 @@ defmodule FirmowidWeb.Delegations.Components.Settlement.Expense do
                 <.button
                   type="button"
                   variant="unstyled"
-                  class="cursor-pointer justify-start rounded px-3 py-2 text-left text-sm font-medium text-red-700 hover:bg-red-100"
+                  class="cursor-pointer justify-start rounded px-3 py-2 text-left text-sm font-medium text-brick-700 hover:bg-brick-100"
                   phx-click="delete"
                   phx-value-kind={@kind}
                   phx-value-id={expense.id}

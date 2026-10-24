@@ -297,7 +297,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
           <.switch
             :if={@invoice.buyer_country != "PL"}
             field={@items_form[:is_reverse_charge]}
-            color="turquoise"
+            color="teal"
             class="flex-row-reverse gap-2 text-sm text-grey-700"
           >
             <:label_slot>
@@ -316,14 +316,14 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
               :if={false}
               field={@items_form[:is_reverse_charge]}
               label="Rabat"
-              color="turquoise"
+              color="teal"
               class="flex-row-reverse gap-2 text-sm text-grey-700"
             />
             <.switch
               :if={false}
               field={@items_form[:is_reverse_charge]}
               label="PKWiU"
-              color="turquoise"
+              color="teal"
               class="flex-row-reverse gap-2 text-sm text-grey-700"
             />
           </div>
@@ -450,7 +450,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
             placeholder="Wprowadź nazwę"
             phx-debounce
             class="w-full"
-            input_class={[if(invalid_field?(item[:name]), do: "border-redText")]}
+            input_class={[if(invalid_field?(item[:name]), do: "border-brick-700")]}
             new={true}
             show_error={false}
           />
@@ -462,7 +462,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
             step=".000001"
             min="0"
             class="w-16"
-            input_class={["text-center", if(invalid_field?(item[:quantity]), do: "border-redText")]}
+            input_class={["text-center", if(invalid_field?(item[:quantity]), do: "border-brick-700")]}
             new={true}
             show_error={false}
           />
@@ -504,7 +504,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
                   class="w-30"
                   input_class={[
                     "text-center",
-                    if(invalid_field?(item[:unit_price]), do: "border-redText")
+                    if(invalid_field?(item[:unit_price]), do: "border-brick-700")
                   ]}
                   new={true}
                   show_error={false}
@@ -566,7 +566,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
                     class="w-28"
                     input_class={[
                       "text-right",
-                      if(invalid_field?(item[:unit_price]), do: "border-redText")
+                      if(invalid_field?(item[:unit_price]), do: "border-brick-700")
                     ]}
                     new={true}
                     show_error={false}

@@ -30,7 +30,7 @@ defmodule FirmowidWeb.Delegations.Components.DelegationsList do
           :if={@management? && delegation.status == :pending}
           type="button"
           variant="primary"
-          accent="turquoise"
+          accent="teal"
           size="small"
           phx-click="approve_delegation"
           phx-value-id={delegation.id}

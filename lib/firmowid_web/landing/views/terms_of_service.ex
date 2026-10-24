@@ -31,7 +31,7 @@ defmodule FirmowidWeb.Landing.Views.TermsOfService do
     ~H"""
     <.legal_page>
       <h1 class="text-4xl font-bold">{gettext("Terms of Service")}</h1>
-      <p class="text-neutral-500 text-sm">
+      <p class="text-sm text-grey-600">
         {gettext("Last updated: September 30, 2026")}
       </p>
 
@@ -42,7 +42,7 @@ defmodule FirmowidWeb.Landing.Views.TermsOfService do
         )} <FirmowidUI.Components.Link.link
           kind="unstyled"
           external="https://firmowid.pl"
-          class="text-orange-700 hover:underline"
+          class="text-rust-700 hover:underline"
         >firmowid.pl</FirmowidUI.Components.Link.link>.
       </p>
       <p>
@@ -141,7 +141,7 @@ defmodule FirmowidWeb.Landing.Views.TermsOfService do
         {gettext("The rules for processing personal data are set out in")} <FirmowidUI.Components.Link.link
           kind="unstyled"
           redirect={~p"/polityka-prywatnosci"}
-          class="text-orange-700 hover:underline"
+          class="text-rust-700 hover:underline"
         >
             {gettext("the Privacy Policy")}</FirmowidUI.Components.Link.link>{gettext(
           ", which forms an integral part of these Terms of Service."
@@ -197,7 +197,7 @@ defmodule FirmowidWeb.Landing.Views.TermsOfService do
         <FirmowidUI.Components.Link.link
           kind="unstyled"
           mailto="contact@alergeek.ventures"
-          class="text-orange-700 hover:underline"
+          class="text-rust-700 hover:underline"
         >
           contact@alergeek.ventures
         </FirmowidUI.Components.Link.link>

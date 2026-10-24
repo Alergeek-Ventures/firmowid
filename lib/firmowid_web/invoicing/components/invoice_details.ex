@@ -31,8 +31,8 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceDetails do
     ~H"""
     <header class={[
       "flex flex-row items-center gap-4 px-4 py-7 lg:gap-8 lg:px-8",
-      @is_cost_invoice && "bg-orange-200",
-      !@is_cost_invoice && "bg-turquoise-200"
+      @is_cost_invoice && "bg-rust-200",
+      !@is_cost_invoice && "bg-teal-200"
     ]}>
       <.back
         navigate={@return_to || default_return_path(@issue_date)}
@@ -40,10 +40,10 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceDetails do
       />
       <div class="flex flex-col gap-2">
         <h1 class="text-lg/tight font-medium lg:text-2xl">{@party_display_name}</h1>
-        <h2 class="text-darkGrey">{@description}</h2>
+        <h2 class="text-grey-700">{@description}</h2>
       </div>
       <div class="ml-auto flex flex-row items-center gap-4">
-        <h2 class="text-darkGrey">{invoice_source_badge_label(@variant)}</h2>
+        <h2 class="text-grey-700">{invoice_source_badge_label(@variant)}</h2>
         <.invoice_source_badge variant={@variant} size="big" />
       </div>
     </header>
@@ -145,8 +145,8 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceDetails do
         id="total-amount"
         class={[
           "rounded bg-[#DEDEDE4C] px-4 py-2 text-lg/tight",
-          @is_cost_invoice && "text-orange-700",
-          !@is_cost_invoice && "text-turquoise-700"
+          @is_cost_invoice && "text-rust-700",
+          !@is_cost_invoice && "text-teal-700"
         ]}
       >
         {@amount}
@@ -185,7 +185,7 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceDetails do
       phx-change="save_internal_note"
       class="flex flex-col gap-2 py-2"
     >
-      <label for="internal-note-input" class="text-sm/snug text-darkGrey">
+      <label for="internal-note-input" class="text-sm/snug text-grey-700">
         {gettext("Comment")}
       </label>
       <textarea
@@ -195,7 +195,7 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceDetails do
         maxlength="10000"
         readonly={not @can_write}
         phx-debounce="300"
-        class="w-full resize-y rounded-lg border border-grey-200 px-3 py-2 text-sm text-darkGrey focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-turquoise-500"
+        class="w-full resize-y rounded-lg border border-grey-200 px-3 py-2 text-sm text-grey-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-500"
       >{@internal_note || ""}</textarea>
     </.form>
     """
@@ -206,7 +206,7 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceDetails do
   def invoice_notes(assigns) do
     ~H"""
     <div class="flex flex-col gap-2 py-2 pl-1">
-      <label class="pb-1 text-sm/snug text-nowrap text-darkGrey">
+      <label class="pb-1 text-sm/snug text-nowrap text-grey-700">
         Komentarze
       </label>
       <ol class="list-inside list-disc">
@@ -313,11 +313,11 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceDetails do
 
   def invoice_metadata_piece(assigns) do
     ~H"""
-    <div class="col-span-2 grid grid-cols-subgrid rounded px-1 py-0.5 odd:bg-greyButtonBg/30">
+    <div class="col-span-2 grid grid-cols-subgrid rounded px-1 py-0.5 odd:bg-grey-200/30">
       <label
         for={@piece_id}
         class={[
-          "text-sm/snug text-nowrap text-darkGrey",
+          "text-sm/snug text-nowrap text-grey-700",
           !@multiline && "self-center"
         ]}
       >
@@ -434,7 +434,7 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceDetails do
         >
           <p class="text-sm text-grey-700">Suma</p>
 
-          <p class="text-lg/tight text-green-700">
+          <p class="text-lg/tight text-moss-700">
             {if @is_cost_invoice, do: "-", else: ""}{Money.new(@currency, @total)}
           </p>
         </div>
@@ -459,7 +459,7 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceDetails do
             <MatchingComponents.assistant_button
               id={"matched-invoice-assistant-#{transaction.id}"}
               class="w-full"
-              accent={if(@is_cost_invoice, do: "orange", else: "turquoise")}
+              accent={if(@is_cost_invoice, do: "rust", else: "teal")}
             >
               Zapytaj
             </MatchingComponents.assistant_button>
@@ -479,7 +479,7 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceDetails do
       <div class="flex flex-row items-center justify-between">
         <p class="text-lg/tight font-medium">Transakcja pominięta</p>
         <div :if={@can_write} class="flex w-32 flex-row gap-1">
-          <div class="flex flex-1 items-center justify-center rounded-md bg-green-200 px-2 text-green-700">
+          <div class="flex flex-1 items-center justify-center rounded-md bg-moss-200 px-2 text-moss-700">
             <.icon name="hero-document-text-micro" class="size-4" />
           </div>
           <.status_button
@@ -498,7 +498,7 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceDetails do
             <.input id="temp" name="test" value="" class="flex-1" new={true} />
             <.button
               variant="primary"
-              accent={if(@is_cost_invoice, do: "orange", else: "turquoise")}
+              accent={if(@is_cost_invoice, do: "rust", else: "teal")}
               size="small"
             >
               Zatwierdź
@@ -538,7 +538,7 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceDetails do
         <MatchingComponents.assistant_button
           id="invoice-assistant"
           class="w-full"
-          accent="turquoise"
+          accent="teal"
         >
           Zapytaj
         </MatchingComponents.assistant_button>
@@ -591,7 +591,7 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceDetails do
           <MatchingComponents.assistant_button
             id="invoice-assistant-empty"
             class="mbs-2"
-            accent={if(@is_cost_invoice, do: "orange", else: "turquoise")}
+            accent={if(@is_cost_invoice, do: "rust", else: "teal")}
           >
             Poproś Firmowida o pomoc
           </MatchingComponents.assistant_button>

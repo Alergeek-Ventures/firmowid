@@ -35,13 +35,13 @@ defmodule FirmowidWeb.Invoicing.Transactions.Components.ShowComponents do
         <h1 class="truncate text-lg/tight font-medium lg:text-2xl">
           {counterparty_name(@transaction)}
         </h1>
-        <h2 class="line-clamp-2 text-darkGrey">{transaction_summary(@transaction)}</h2>
+        <h2 class="line-clamp-2 text-grey-700">{transaction_summary(@transaction)}</h2>
       </div>
 
       <div class="ml-auto flex shrink-0 items-center gap-4">
         <div class="text-right">
-          <p class="text-sm/snug text-darkGrey">{header_account_label(@transaction)}</p>
-          <p class="text-sm/snug text-darkGrey">{bank_name(@transaction)}</p>
+          <p class="text-sm/snug text-grey-700">{header_account_label(@transaction)}</p>
+          <p class="text-sm/snug text-grey-700">{bank_name(@transaction)}</p>
         </div>
         <.bank_badge institution={Map.get(@transaction, :bank_account)} size="full" />
       </div>
@@ -315,7 +315,7 @@ defmodule FirmowidWeb.Invoicing.Transactions.Components.ShowComponents do
       <div class="flex flex-row items-center justify-between">
         <p class="text-lg/tight font-medium">Transakcja pominięta</p>
         <div :if={@can_write} class="flex w-32 flex-row gap-2">
-          <div class="flex flex-1 items-center justify-center rounded-md bg-green-200 px-2 text-green-700">
+          <div class="flex flex-1 items-center justify-center rounded-md bg-moss-200 px-2 text-moss-700">
             <.icon name="hero-document-text-micro" class="size-4" />
           </div>
           <.status_button
@@ -346,8 +346,8 @@ defmodule FirmowidWeb.Invoicing.Transactions.Components.ShowComponents do
         id="transaction-amount"
         class={[
           "rounded bg-[#DEDEDE4C] px-4 py-2 text-lg/tight",
-          @incoming && "text-turquoise-700",
-          !@incoming && "text-orange-700"
+          @incoming && "text-teal-700",
+          !@incoming && "text-rust-700"
         ]}
       >
         {@amount}
@@ -359,7 +359,7 @@ defmodule FirmowidWeb.Invoicing.Transactions.Components.ShowComponents do
   defp header_styles(transaction) do
     [
       "flex flex-row items-center gap-4 px-4 py-7 lg:gap-8 lg:px-8",
-      if(incoming?(transaction), do: "bg-turquoise-200", else: "bg-orange-200")
+      if(incoming?(transaction), do: "bg-teal-200", else: "bg-rust-200")
     ]
   end
 
@@ -379,7 +379,7 @@ defmodule FirmowidWeb.Invoicing.Transactions.Components.ShowComponents do
   end
 
   defp assistant_accent(transaction) do
-    if incoming?(transaction), do: "turquoise", else: "orange"
+    if incoming?(transaction), do: "teal", else: "rust"
   end
 
   defp skip_transaction_copy(%Transaction{skip_invoicing: true}) do

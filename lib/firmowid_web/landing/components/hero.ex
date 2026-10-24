@@ -32,7 +32,7 @@ defmodule FirmowidWeb.Landing.Components.Hero do
             href="https://github.com/Alergeek-Ventures/firmowid"
             target="_blank"
             rel="noopener noreferrer"
-            class="relative -left-1 isolate inline-flex h-[36px] w-[221px] shrink-0 items-center justify-center gap-2 overflow-visible rounded-[25px] text-[13px]/6 font-medium transition-colors duration-300 ease-[ease] after:pointer-events-none after:absolute after:inset-[-2px] after:bg-[url('/images/landing/frames/open-source.svg')] after:bg-size-[100%_100%] after:bg-center after:bg-no-repeat after:content-[''] hover:bg-oranger-300"
+            class="relative -left-1 isolate inline-flex h-[36px] w-[221px] shrink-0 items-center justify-center gap-2 overflow-visible rounded-[25px] text-[13px]/6 font-medium transition-colors duration-300 ease-[ease] after:pointer-events-none after:absolute after:inset-[-2px] after:bg-[url('/images/landing/frames/open-source.svg')] after:bg-size-[100%_100%] after:bg-center after:bg-no-repeat after:content-[''] hover:bg-rust-300"
           >
             <img src={~p"/images/github-mark.svg"} alt="" width="24" height="24" />
             <span>
@@ -52,7 +52,7 @@ defmodule FirmowidWeb.Landing.Components.Hero do
             </span>
           </h1>
 
-          <p class="mt-6 max-w-107.5 text-h5/6.75 text-darkGrey lg:mt-5.25 lg:text-lg/7">
+          <p class="mt-6 max-w-107.5 text-h5/6.75 text-grey-700 lg:mt-5.25 lg:text-lg/7">
             {gettext(
               "Everything in one place: invoices, banking, working hours, leave, and business trips."
             )}
@@ -133,7 +133,7 @@ defmodule FirmowidWeb.Landing.Components.Hero do
     assigns = assign(assigns, before_company: before_company, after_company: after_company)
 
     ~H"""
-    <section class="border-y border-(--landing-line) bg-orange-400 py-10 text-grey-700 lg:bg-grey-50 lg:py-8 [&_a]:font-semibold [&_a]:text-(--landing-accent) [&_a]:no-underline max-lg:[&_a]:font-normal max-lg:[&_a]:text-grey-700 [&_p]:flex [&_p]:flex-col [&_p]:items-center [&_p]:gap-5 [&_p]:text-center [&_p]:text-sm/4 lg:[&_p]:flex-row lg:[&_p]:items-baseline lg:[&_p]:gap-2 lg:[&_p]:text-left lg:[&_p]:text-[13px]/5 [&_strong]:text-[44px] [&_strong]:leading-none [&_strong]:font-bold [&_strong]:whitespace-nowrap [&_strong]:text-black lg:[&_strong]:text-[1.375rem]">
+    <section class="border-y border-(--landing-line) bg-rust-400 py-10 text-grey-700 lg:bg-grey-50 lg:py-8 [&_a]:font-semibold [&_a]:text-(--landing-accent) [&_a]:no-underline max-lg:[&_a]:font-normal max-lg:[&_a]:text-grey-700 [&_p]:flex [&_p]:flex-col [&_p]:items-center [&_p]:gap-5 [&_p]:text-center [&_p]:text-sm/4 lg:[&_p]:flex-row lg:[&_p]:items-baseline lg:[&_p]:gap-2 lg:[&_p]:text-left lg:[&_p]:text-[13px]/5 [&_strong]:text-[44px] [&_strong]:leading-none [&_strong]:font-bold [&_strong]:whitespace-nowrap [&_strong]:text-black lg:[&_strong]:text-[1.375rem]">
       <div class="mx-auto flex w-[calc(100%-var(--spacing)*8)] max-w-284.75 flex-col gap-10 lg:mt-0.75 lg:w-[calc(100%-var(--spacing)*16)] lg:flex-row lg:justify-between lg:gap-6">
         <p class="order-1 lg:order-0">
           <span>

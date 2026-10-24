@@ -54,10 +54,10 @@ defmodule FirmowidWeb.Invoicing.Components.DashboardTiles do
       class={[
         "block min-h-24 rounded-lg p-2.5",
         @tile_navigate &&
-          "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-600 active:bg-red-100",
+          "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brick-600 active:bg-brick-100",
         if(@type == :suggestion and Map.get(@entry, :warning?, false),
-          do: "border-2 border-red-300 bg-white",
-          else: "bg-lightGreyBg transition-shadow hover:shadow-sm"
+          do: "border-2 border-brick-300 bg-white",
+          else: "bg-grey-100 transition-shadow hover:shadow-sm"
         )
       ]}
     >
@@ -107,7 +107,7 @@ defmodule FirmowidWeb.Invoicing.Components.DashboardTiles do
           </span>
         </div>
 
-        <div class="text-xs text-darkGrey">{@invoice_number}</div>
+        <div class="text-xs text-grey-700">{@invoice_number}</div>
 
         <div class="mt-auto flex items-center justify-between gap-2 text-xs">
           <span class="text-grey-500">{format_date(@issue_date)}</span>
@@ -116,7 +116,7 @@ defmodule FirmowidWeb.Invoicing.Components.DashboardTiles do
             :if={@overdue_label}
             class={[
               "flex items-center gap-1 font-medium",
-              @is_overdue && "text-redText",
+              @is_overdue && "text-brick-700",
               not @is_overdue && "text-grey-600"
             ]}
           >
@@ -220,7 +220,7 @@ defmodule FirmowidWeb.Invoicing.Components.DashboardTiles do
           </span>
         </div>
 
-        <div :if={@description} class="truncate text-xs text-darkGrey">
+        <div :if={@description} class="truncate text-xs text-grey-700">
           {@description}
         </div>
 
@@ -324,9 +324,9 @@ defmodule FirmowidWeb.Invoicing.Components.DashboardTiles do
           </span>
         </div>
 
-        <div :if={@invoice_number} class="mt-1 text-xs text-darkGrey">{@invoice_number}</div>
+        <div :if={@invoice_number} class="mt-1 text-xs text-grey-700">{@invoice_number}</div>
 
-        <div :if={@description} class="mt-1 truncate text-xs text-darkGrey">{@description}</div>
+        <div :if={@description} class="mt-1 truncate text-xs text-grey-700">{@description}</div>
 
         <div :if={@badge_type} class="mt-auto">
           <.confidence_chip badge_type={@badge_type} confidence_percent={@confidence_percent} />
@@ -354,7 +354,7 @@ defmodule FirmowidWeb.Invoicing.Components.DashboardTiles do
 
     ~H"""
     <div class="mt-2 flex items-center justify-start gap-2">
-      <span class="inline-flex items-center gap-1 rounded-full bg-greenBg px-2 py-1 text-caps-sm font-medium text-greenText">
+      <span class="inline-flex items-center gap-1 rounded-full bg-moss-200 px-2 py-1 text-caps-sm font-medium text-moss-700">
         <.icon name="hero-credit-card" class="size-3" />
         {@label}
       </span>
@@ -367,7 +367,7 @@ defmodule FirmowidWeb.Invoicing.Components.DashboardTiles do
 
     ~H"""
     <div class="mt-2 flex items-center justify-start gap-2">
-      <span class="inline-flex items-center gap-1 rounded-full bg-greenBg px-2 py-1 text-caps-sm font-medium text-greenText">
+      <span class="inline-flex items-center gap-1 rounded-full bg-moss-200 px-2 py-1 text-caps-sm font-medium text-moss-700">
         <.icon name="hero-credit-card" class="size-3" />
         {@label}
       </span>
@@ -380,7 +380,7 @@ defmodule FirmowidWeb.Invoicing.Components.DashboardTiles do
 
     ~H"""
     <div class="mt-2 flex items-center justify-start gap-2">
-      <span class="inline-flex items-center gap-1 rounded-full bg-orange-100 px-2 py-1 text-caps-sm font-medium text-orange-600">
+      <span class="inline-flex items-center gap-1 rounded-full bg-rust-100 px-2 py-1 text-caps-sm font-medium text-rust-600">
         <.icon name="hero-credit-card" class="size-3" />
         {@label}
       </span>
@@ -393,7 +393,7 @@ defmodule FirmowidWeb.Invoicing.Components.DashboardTiles do
 
     ~H"""
     <div class="mt-2 flex items-center justify-between gap-2">
-      <span class="inline-flex items-center gap-1 rounded-full bg-redBg px-2 py-1 text-caps-sm font-medium text-redText">
+      <span class="inline-flex items-center gap-1 rounded-full bg-brick-200 px-2 py-1 text-caps-sm font-medium text-brick-700">
         <.icon name="hero-credit-card" class="size-3" />
         {@label}
       </span>
@@ -411,7 +411,7 @@ defmodule FirmowidWeb.Invoicing.Components.DashboardTiles do
 
     ~H"""
     <div class="mt-2 flex items-center justify-start gap-2">
-      <span class="inline-flex items-center gap-1 rounded-full bg-grey-200 px-2 py-1 text-caps-sm font-medium text-darkGrey">
+      <span class="inline-flex items-center gap-1 rounded-full bg-grey-200 px-2 py-1 text-caps-sm font-medium text-grey-700">
         <.icon name="hero-credit-card" class="size-3" />
         {@label}
       </span>
@@ -509,7 +509,7 @@ defmodule FirmowidWeb.Invoicing.Components.DashboardTiles do
         </span>
         <.bank_badge institution={@account} size="mini" class="shrink-0" />
       </div>
-      <p class="text-xs text-darkGrey">
+      <p class="text-xs text-grey-700">
         <%= if @entry.unsynced_since do %>
           {gettext("Transactions have not been synchronized since %{date}",
             date: format_date(@entry.unsynced_since)
@@ -534,22 +534,22 @@ defmodule FirmowidWeb.Invoicing.Components.DashboardTiles do
         <span id="skipped-ksef-warning-title" class="min-w-0 text-sm font-medium">{gettext(
           "Missing invoices from KSeF"
         )}</span>
-        <Lucideicons.file_warning class="size-6 shrink-0 text-redText" aria-hidden="true" />
+        <Lucideicons.file_warning class="size-6 shrink-0 text-brick-700" aria-hidden="true" />
       </div>
       <ul
         :if={length(@entry.invoice_numbers) <= 2}
-        class="flex flex-col gap-1 text-xs wrap-anywhere text-darkGrey"
+        class="flex flex-col gap-1 text-xs wrap-anywhere text-grey-700"
       >
         <li :for={number <- @entry.invoice_numbers}>{number}</li>
       </ul>
-      <p :if={length(@entry.invoice_numbers) > 2} class="text-xs text-darkGrey">
+      <p :if={length(@entry.invoice_numbers) > 2} class="text-xs text-grey-700">
         {ngettext(
           "Could not synchronize %{count} invoice.",
           "Could not synchronize %{count} invoices.",
           length(@entry.invoice_numbers)
         )}
       </p>
-      <p class="text-xs text-darkGrey">
+      <p class="text-xs text-grey-700">
         {gettext(
           "We detected an import issue. Our team is working to resolve it as quickly as possible."
         )}
@@ -562,8 +562,8 @@ defmodule FirmowidWeb.Invoicing.Components.DashboardTiles do
     ~H"""
     <div class="flex flex-col gap-2">
       <div class="flex items-center gap-2">
-        <div class="flex size-6 items-center justify-center rounded bg-blueBg">
-          <.icon name="hero-building-library" class="size-4 text-blueText" />
+        <div class="flex size-6 items-center justify-center rounded bg-teal-200">
+          <.icon name="hero-building-library" class="size-4 text-teal-800" />
         </div>
         <span class="text-sm font-medium">Podepnij konto bankowe</span>
       </div>
@@ -587,8 +587,8 @@ defmodule FirmowidWeb.Invoicing.Components.DashboardTiles do
     ~H"""
     <div class="flex flex-col gap-2">
       <div class="flex items-center gap-2">
-        <div class="flex size-6 items-center justify-center rounded bg-greenBg">
-          <.icon name="hero-document-arrow-up-solid" class="size-4 text-greenText" />
+        <div class="flex size-6 items-center justify-center rounded bg-moss-200">
+          <.icon name="hero-document-arrow-up-solid" class="size-4 text-moss-700" />
         </div>
         <span class="text-sm font-medium">Połącz z KSeF</span>
       </div>
@@ -677,6 +677,6 @@ defmodule FirmowidWeb.Invoicing.Components.DashboardTiles do
   defp format_date(date), do: Calendar.strftime(date, "%d.%m.%Y")
 
   defp suggestion_action_styles do
-    "bg-greyButtonBg text-darkGrey mt-1 block w-full rounded-md px-3 py-2 text-center text-xs font-medium transition-colors hover:bg-grey-300"
+    "bg-grey-200 text-grey-700 mt-1 block w-full rounded-md px-3 py-2 text-center text-xs font-medium transition-colors hover:bg-grey-300"
   end
 end

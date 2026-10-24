@@ -31,7 +31,7 @@ defmodule FirmowidMcp.Runtime do
           #mcp-root:has(#mcp-invoice-issuance) { inline-size: min(100%, 72rem); }
         </style>
       </head>
-      <body class="bg-lightGreyBg text-grey-900">
+      <body class="bg-grey-100 text-grey-900">
         <p id="mcp-status" role="status" aria-live="polite" class="p-4" hidden></p>
         <div id="mcp-root"></div>
         <script id="mcp-messages" type="application/json">

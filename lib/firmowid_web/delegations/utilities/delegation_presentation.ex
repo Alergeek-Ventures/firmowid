@@ -9,8 +9,8 @@ defmodule FirmowidWeb.Delegations.Utilities.DelegationPresentation do
   def status_label(:complete), do: "zakończono"
 
   @spec status_badge_styles(atom()) :: list(String.t())
-  def status_badge_styles(:pending), do: ["bg-turquoise-100 text-turquoise-700"]
-  def status_badge_styles(:in_progress), do: ["bg-green-200/80 text-green-700"]
+  def status_badge_styles(:pending), do: ["bg-teal-100 text-teal-700"]
+  def status_badge_styles(:in_progress), do: ["bg-moss-200/80 text-moss-700"]
   def status_badge_styles(:complete), do: ["bg-grey-100 text-grey-700"]
 
   @spec format_range(Date.t(), Date.t()) :: String.t()

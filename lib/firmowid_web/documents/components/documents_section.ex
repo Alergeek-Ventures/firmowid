@@ -152,7 +152,7 @@ defmodule FirmowidWeb.Documents.Components.DocumentsSection do
         <div
           id={"#{@id}-search-container"}
           data-expanded={to_string(@search != "")}
-          class="group flex items-center justify-center rounded-lg transition-shadow data-[expanded=true]:bg-greyButtonBg data-[expanded=true]:focus-within:ring-2"
+          class="group flex items-center justify-center rounded-lg transition-shadow data-[expanded=true]:bg-grey-200 data-[expanded=true]:focus-within:ring-2"
         >
           <.input
             type="text"
@@ -221,7 +221,7 @@ defmodule FirmowidWeb.Documents.Components.DocumentsSection do
   defp filters(assigns) do
     ~H"""
     <div class={["flex items-center gap-3", @class]}>
-      <span class="text-sm font-normal text-darkGrey/70">Filtry:</span>
+      <span class="text-sm font-normal text-grey-700/70">Filtry:</span>
 
       <div class="flex flex-wrap items-center gap-2">
         <.button
@@ -331,11 +331,11 @@ defmodule FirmowidWeb.Documents.Components.DocumentsSection do
         <div class="flex size-7 items-center justify-center rounded-md bg-grey-100">
           <%= case @document.type do %>
             <% :hours_record -> %>
-              <.icon name="hero-clock" class="size-5 text-darkGrey" />
+              <.icon name="hero-clock" class="size-5 text-grey-700" />
             <% :employment_contract -> %>
-              <.icon name="hero-document" class="size-5 text-darkGrey" />
+              <.icon name="hero-document" class="size-5 text-grey-700" />
             <% _ -> %>
-              <.icon name="hero-ellipsis-horizontal" class="size-5 text-darkGrey" />
+              <.icon name="hero-ellipsis-horizontal" class="size-5 text-grey-700" />
           <% end %>
         </div>
         <div class="group-hover:underline">
@@ -343,7 +343,7 @@ defmodule FirmowidWeb.Documents.Components.DocumentsSection do
         </div>
       </div>
 
-      <div class="flex items-center gap-4 text-sm text-darkGrey">
+      <div class="flex items-center gap-4 text-sm text-grey-700">
         {contract_status_badge(@document)}
         {TimeFormatter.format_date(@document.date)}
       </div>
@@ -579,10 +579,10 @@ defmodule FirmowidWeb.Documents.Components.DocumentsSection do
       id={"#{@id}-upload-count-indicator"}
       phx-hook="Tippy"
       data-tippy-content="Pliki są przetwarzane i za kilka chwil będą dostępne w Firmowidzie"
-      class="absolute -top-3.5 -right-3.5 flex size-7 items-center justify-center overflow-hidden rounded-full bg-lightGreyBg"
+      class="absolute -top-3.5 -right-3.5 flex size-7 items-center justify-center overflow-hidden rounded-full bg-grey-100"
     >
-      <span class="absolute block size-full animate-pulse bg-orange-600" />
-      <span class="z-10 flex size-5 items-center justify-center rounded-full bg-lightGreyBg">
+      <span class="absolute block size-full animate-pulse bg-rust-600" />
+      <span class="z-10 flex size-5 items-center justify-center rounded-full bg-grey-100">
         <.upload_indicator_icon
           currently_uploading_count={@currently_uploading_count}
           processing_blobs_count={@processing_blobs_count}
@@ -594,7 +594,7 @@ defmodule FirmowidWeb.Documents.Components.DocumentsSection do
 
   defp upload_indicator_icon(%{currently_uploading_count: count} = assigns) when count > 0 do
     ~H"""
-    <Lucideicons.arrow_up class="size-4 leading-none text-orange-900" />
+    <Lucideicons.arrow_up class="size-4 leading-none text-rust-900" />
     """
   end
 
@@ -619,7 +619,7 @@ defmodule FirmowidWeb.Documents.Components.DocumentsSection do
 
   defp contract_status_badge(%{status: :pending_signature} = assigns) do
     ~H"""
-    <span class="rounded-2xl bg-turquoise-100 px-4 py-1 text-sm text-turquoise-700">
+    <span class="rounded-2xl bg-teal-100 px-4 py-1 text-sm text-teal-700">
       oczekiwanie
     </span>
     """
@@ -627,7 +627,7 @@ defmodule FirmowidWeb.Documents.Components.DocumentsSection do
 
   defp contract_status_badge(%{status: :signed} = assigns) do
     ~H"""
-    <span class="rounded-2xl bg-turquoise-100 px-4 py-1 text-sm text-turquoise-700">
+    <span class="rounded-2xl bg-teal-100 px-4 py-1 text-sm text-teal-700">
       podpisana
     </span>
     """
@@ -635,7 +635,7 @@ defmodule FirmowidWeb.Documents.Components.DocumentsSection do
 
   defp contract_status_badge(%{status: :active} = assigns) do
     ~H"""
-    <span class="rounded-2xl bg-green-100 px-4 py-1 text-sm text-green-700">
+    <span class="rounded-2xl bg-moss-100 px-4 py-1 text-sm text-moss-700">
       obowiązująca umowa
     </span>
     """

@@ -166,7 +166,7 @@ defmodule FirmowidWeb.Delegations.Views.DelegationForm do
                       variant="unstyled"
                       phx-click="remove_transport_type"
                       phx-value-index={index}
-                      class="inline-flex size-8 items-center justify-center text-grey-500 transition-colors hover:text-red-700"
+                      class="inline-flex size-8 items-center justify-center text-grey-500 transition-colors hover:text-brick-700"
                       aria-label="Usuń środek lokomocji"
                     >
                       <Lucideicons.x class="size-4" />
@@ -218,7 +218,7 @@ defmodule FirmowidWeb.Delegations.Views.DelegationForm do
           <.button
             type="submit"
             variant="primary"
-            accent="turquoise"
+            accent="teal"
             class="mt-20 w-full sm:float-end sm:mr-4 sm:w-42"
           >Zaplanuj</.button>
         </.form>

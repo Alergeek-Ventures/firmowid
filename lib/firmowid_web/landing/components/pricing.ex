@@ -129,7 +129,7 @@ defmodule FirmowidWeb.Landing.Components.Pricing do
           <h2 class="lg:text-5xl text-[38px] leading-[1.1] font-bold tracking-[-0.03em] lg:leading-[1.04]">
             {gettext("Fair pricing. No fine print.")}
           </h2>
-          <p class="mx-auto mt-6 text-h5/6.75 text-darkGrey lg:max-w-147 lg:text-h5">
+          <p class="mx-auto mt-6 text-h5/6.75 text-grey-700 lg:max-w-147 lg:text-h5">
             {gettext(
               "Pay only for what you actually use. Choose the plan and billing cycle that suit you best."
             )}
@@ -146,7 +146,7 @@ defmodule FirmowidWeb.Landing.Components.Pricing do
             phx-click="set_billing_period"
             phx-value-period="monthly"
             aria-pressed={to_string(not @yearly?)}
-            class="relative isolate text-grey-700 transition-colors duration-300 before:pointer-events-none before:absolute before:top-1/2 before:left-1/2 before:-z-10 before:h-[44px] before:w-[119px] before:-translate-1/2 before:bg-[url('/images/landing/frames/billing-active.svg')] before:bg-auto before:bg-center before:bg-no-repeat before:opacity-0 before:transition-opacity before:duration-300 hover:text-orange-700 aria-pressed:bg-white aria-pressed:text-black aria-pressed:before:opacity-100"
+            class="relative isolate text-grey-700 transition-colors duration-300 before:pointer-events-none before:absolute before:top-1/2 before:left-1/2 before:-z-10 before:h-[44px] before:w-[119px] before:-translate-1/2 before:bg-[url('/images/landing/frames/billing-active.svg')] before:bg-auto before:bg-center before:bg-no-repeat before:opacity-0 before:transition-opacity before:duration-300 hover:text-rust-700 aria-pressed:bg-white aria-pressed:text-black aria-pressed:before:opacity-100"
           >
             {pgettext("billing period", "Monthly")}
           </button>
@@ -155,7 +155,7 @@ defmodule FirmowidWeb.Landing.Components.Pricing do
             phx-click="set_billing_period"
             phx-value-period="yearly"
             aria-pressed={to_string(@yearly?)}
-            class="relative isolate text-grey-700 transition-colors duration-300 before:pointer-events-none before:absolute before:top-1/2 before:left-1/2 before:-z-10 before:h-[44px] before:w-[132px] before:-translate-1/2 before:bg-[url('/images/landing/frames/billing-yearly-active.svg')] before:bg-auto before:bg-center before:bg-no-repeat before:opacity-0 before:transition-opacity before:duration-300 hover:text-orange-700 aria-pressed:bg-white aria-pressed:text-black aria-pressed:before:opacity-100"
+            class="relative isolate text-grey-700 transition-colors duration-300 before:pointer-events-none before:absolute before:top-1/2 before:left-1/2 before:-z-10 before:h-[44px] before:w-[132px] before:-translate-1/2 before:bg-[url('/images/landing/frames/billing-yearly-active.svg')] before:bg-auto before:bg-center before:bg-no-repeat before:opacity-0 before:transition-opacity before:duration-300 hover:text-rust-700 aria-pressed:bg-white aria-pressed:text-black aria-pressed:before:opacity-100"
           >
             {pgettext("billing period", "Yearly")}
             <span>−20%</span>
@@ -180,19 +180,19 @@ defmodule FirmowidWeb.Landing.Components.Pricing do
           >
             <p
               :if={plan.featured}
-              class="absolute -top-2.5 left-1/2 w-max -translate-x-1/2 rounded-full bg-orange-500-landing px-2 py-0.5 text-[10px] font-medium text-[#0f0f0f]"
+              class="absolute -top-2.5 left-1/2 w-max -translate-x-1/2 rounded-full bg-rust-500 px-2 py-0.5 text-[10px] font-medium text-[#0f0f0f]"
             >
               {gettext("Most popular")}
             </p>
             <p class={[
               "mb-4.5 text-xs font-bold tracking-[0.08em] uppercase",
-              if(plan.featured, do: "text-orange-500-landing", else: "text-(--landing-accent)")
+              if(plan.featured, do: "text-rust-500", else: "text-(--landing-accent)")
             ]}>
               {plan.name}
             </p>
             <p class={[
               "mt-0 flex flex-wrap items-baseline gap-2 [&_>_span]:text-sm [&_strong]:text-3xl [&_strong]:leading-none [&_strong]:font-bold [&_strong]:tracking-[-0.04em] lg:[&_strong]:text-3xl",
-              if(plan.featured, do: "[&_>_span]:text-grey-300", else: "[&_>_span]:text-darkGrey")
+              if(plan.featured, do: "[&_>_span]:text-grey-300", else: "[&_>_span]:text-grey-700")
             ]}>
               <strong
                 id={"pricing-price-#{plan.key}"}
@@ -214,19 +214,19 @@ defmodule FirmowidWeb.Landing.Components.Pricing do
             </p>
             <p class={[
               "mt-5 mb-3 text-xs/normal",
-              if(plan.featured, do: "text-orange-500-landing", else: "text-(--landing-accent)")
+              if(plan.featured, do: "text-rust-500", else: "text-(--landing-accent)")
             ]}>
               {plan.detail}
             </p>
             <p class={[
               "text-sm/5.25 lg:min-h-11.5",
-              if(plan.featured, do: "text-grey-300", else: "text-darkGrey")
+              if(plan.featured, do: "text-grey-300", else: "text-grey-700")
             ]}>
               {plan.audience}
             </p>
             <.landing_button
               navigate={~p"/zarejestruj"}
-              variant={if plan.featured, do: :orange, else: :pricing_outline}
+              variant={if plan.featured, do: :rust, else: :pricing_outline}
               class={[
                 "mt-10 whitespace-nowrap max-lg:w-full max-lg:px-2 lg:mt-8",
                 plan.featured && "lg:px-3"
@@ -239,7 +239,7 @@ defmodule FirmowidWeb.Landing.Components.Pricing do
             </.landing_button>
           </article>
 
-          <div class="lg:col-1 lg:row-1 lg:self-end lg:pb-8 [&_h3]:mb-2 [&_h3]:text-lg [&_h3]:font-semibold [&_p]:text-sm [&_p]:text-darkGrey">
+          <div class="lg:col-1 lg:row-1 lg:self-end lg:pb-8 [&_h3]:mb-2 [&_h3]:text-lg [&_h3]:font-semibold [&_p]:text-sm [&_p]:text-grey-700">
             <h3>{gettext("Compare plans")}</h3>
             <p>
               {if @yearly?,
@@ -272,7 +272,7 @@ defmodule FirmowidWeb.Landing.Components.Pricing do
             </span>
           </div>
 
-          <p class="text-caps-sm font-bold tracking-[0.08em] text-orangeText uppercase lg:col-1 lg:row-2 lg:self-end lg:pb-7">
+          <p class="text-caps-sm font-bold tracking-[0.08em] text-rust-700 uppercase lg:col-1 lg:row-2 lg:self-end lg:pb-7">
             {gettext("Key differences")}
           </p>
 
@@ -295,7 +295,7 @@ defmodule FirmowidWeb.Landing.Components.Pricing do
             <div class="min-h-0 overflow-hidden">
               <section :for={{title, rows} <- @sections}>
                 <h4 class="grid grid-cols-3 lg:grid-cols-[1.45fr_repeat(3,minmax(0,1fr))]">
-                  <span class="col-span-full pt-6 pb-2 text-caps-sm font-bold tracking-[0.08em] text-orangeText uppercase lg:col-span-1 lg:py-5">{title}</span>
+                  <span class="col-span-full pt-6 pb-2 text-caps-sm font-bold tracking-[0.08em] text-rust-700 uppercase lg:col-span-1 lg:py-5">{title}</span>
                   <span aria-hidden="true" class="hidden lg:col-3 lg:block lg:bg-grey-900"></span>
                 </h4>
                 <dl>
@@ -323,7 +323,7 @@ defmodule FirmowidWeb.Landing.Components.Pricing do
             type="button"
             aria-controls="landing-pricing-features"
             aria-expanded="false"
-            class="before:mask-size-auto group relative isolate mx-auto mt-2 flex min-h-10.25 w-max max-w-full min-w-64.5 cursor-pointer items-center justify-center gap-2 rounded-full bg-orange-700 px-4 py-2.5 text-sm text-white transition-colors duration-200 before:pointer-events-none before:absolute before:top-1/2 before:left-1/2 before:-z-10 before:h-[43px] before:w-[260px] before:-translate-1/2 before:bg-orange-700 before:mask-[url('/images/landing/frames/comparison.svg')] before:mask-center before:mask-no-repeat before:transition-colors before:duration-200 hover:bg-orange-500 hover:before:bg-orange-500 focus-visible:outline-2 focus-visible:outline-offset-4 aria-expanded:bg-transparent aria-expanded:text-orangeText aria-expanded:outline-none aria-expanded:before:bg-transparent aria-expanded:hover:bg-transparent aria-expanded:hover:before:bg-transparent aria-expanded:focus-visible:underline lg:col-span-full lg:mt-8"
+            class="before:mask-size-auto group relative isolate mx-auto mt-2 flex min-h-10.25 w-max max-w-full min-w-64.5 cursor-pointer items-center justify-center gap-2 rounded-full bg-rust-700 px-4 py-2.5 text-sm text-white transition-colors duration-200 before:pointer-events-none before:absolute before:top-1/2 before:left-1/2 before:-z-10 before:h-[43px] before:w-[260px] before:-translate-1/2 before:bg-rust-700 before:mask-[url('/images/landing/frames/comparison.svg')] before:mask-center before:mask-no-repeat before:transition-colors before:duration-200 hover:bg-rust-500 hover:before:bg-rust-500 focus-visible:outline-2 focus-visible:outline-offset-4 aria-expanded:bg-transparent aria-expanded:text-rust-700 aria-expanded:outline-none aria-expanded:before:bg-transparent aria-expanded:hover:bg-transparent aria-expanded:hover:before:bg-transparent aria-expanded:focus-visible:underline lg:col-span-full lg:mt-8"
           >
             <span class="group-aria-expanded:hidden">{ngettext(
               "Show %{count} feature",
@@ -376,8 +376,8 @@ defmodule FirmowidWeb.Landing.Components.Pricing do
           :if={value == true}
           aria-hidden="true"
           class={[
-            "mx-auto inline-block h-3.25 w-3 bg-orangeText mask-[url('/images/landing/icons/check.svg')] mask-contain mask-center mask-no-repeat",
-            index == 1 && "lg:bg-orange-500-landing"
+            "mx-auto inline-block h-3.25 w-3 bg-rust-700 mask-[url('/images/landing/icons/check.svg')] mask-contain mask-center mask-no-repeat",
+            index == 1 && "lg:bg-rust-500"
           ]}
         ></span>
         <span :if={value == false} aria-hidden="true" class="text-[#737373]">—</span>

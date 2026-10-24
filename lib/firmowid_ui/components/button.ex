@@ -18,7 +18,7 @@ defmodule FirmowidUI.Components.Button do
 
       <.button variant="primary">Save</.button>
       <.button variant="outline" size="small" type="button">Cancel</.button>
-      <.button variant="primary" accent="turquoise">Continue</.button>
+      <.button variant="primary" accent="teal">Continue</.button>
       <.button as="label" for="upload-input" variant="secondary">Upload</.button>
       <.button variant="unstyled" type="button" class="w-full text-left">Open row</.button>
   """
@@ -34,7 +34,7 @@ defmodule FirmowidUI.Components.Button do
 
   attr :accent, :any,
     default: nil,
-    doc: ~s(Accent used by variants that support multiple colorways. Expected values: "orange" or "turquoise".)
+    doc: ~s(Accent used by variants that support multiple colorways. Expected values: "rust" or "teal".)
 
   attr :size, :string,
     default: "big",
@@ -93,7 +93,7 @@ defmodule FirmowidUI.Components.Button do
     """
   end
 
-  defp resolved_accent(%{accent: nil, variant: "primary"}), do: "orange"
+  defp resolved_accent(%{accent: nil, variant: "primary"}), do: "rust"
   defp resolved_accent(%{accent: accent}), do: accent
 
   defp button_classes(%{variant: "unstyled", class: class}), do: class

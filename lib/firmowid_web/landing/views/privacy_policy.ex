@@ -29,7 +29,7 @@ defmodule FirmowidWeb.Landing.Views.PrivacyPolicy do
     ~H"""
     <.legal_page>
       <h1 class="text-4xl font-bold">{gettext("Privacy Policy")}</h1>
-      <p class="text-neutral-500 text-sm">
+      <p class="text-sm text-grey-600">
         {gettext("Last updated: September 30, 2026")}
       </p>
 
@@ -47,7 +47,7 @@ defmodule FirmowidWeb.Landing.Views.PrivacyPolicy do
         <FirmowidUI.Components.Link.link
           kind="unstyled"
           mailto="contact@alergeek.ventures"
-          class="text-orange-700 hover:underline"
+          class="text-rust-700 hover:underline"
         >
           contact@alergeek.ventures
         </FirmowidUI.Components.Link.link>
@@ -206,7 +206,7 @@ defmodule FirmowidWeb.Landing.Views.PrivacyPolicy do
         <FirmowidUI.Components.Link.link
           kind="unstyled"
           mailto="contact@alergeek.ventures"
-          class="text-orange-700 hover:underline"
+          class="text-rust-700 hover:underline"
         >
           contact@alergeek.ventures
         </FirmowidUI.Components.Link.link>
@@ -245,7 +245,7 @@ defmodule FirmowidWeb.Landing.Views.PrivacyPolicy do
         <FirmowidUI.Components.Link.link
           kind="unstyled"
           redirect={~p"/polityka-prywatnosci"}
-          class="text-orange-700 hover:underline"
+          class="text-rust-700 hover:underline"
         >
           firmowid.pl/polityka-prywatnosci
         </FirmowidUI.Components.Link.link>

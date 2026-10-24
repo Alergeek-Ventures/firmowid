@@ -217,7 +217,7 @@ defmodule FirmowidWeb.Management.Views.Delegation do
           >
             <dl class="grid grid-cols-1 items-start gap-x-8 gap-y-5 lg:grid-cols-[minmax(10rem,auto)_1fr]">
               <dt class="text-base text-grey-700">Zaliczka</dt>
-              <dd><.switch field={@command_form[:advance]} color="turquoise" /></dd>
+              <dd><.switch field={@command_form[:advance]} color="teal" /></dd>
 
               <dt class="text-base text-grey-500">Na kwotę</dt>
               <dd>
@@ -237,7 +237,7 @@ defmodule FirmowidWeb.Management.Views.Delegation do
                   <.button
                     type="submit"
                     variant="primary"
-                    accent="turquoise"
+                    accent="teal"
                     size="small"
                     class="col-span-2 w-full"
                     disabled={
@@ -280,7 +280,7 @@ defmodule FirmowidWeb.Management.Views.Delegation do
           <% else %>
             <div class="mt-8 min-h-96 rounded-md border border-grey-200 p-8 shadow-sm">
               <div class="flex items-center justify-between gap-4">
-                <h2 class="text-base font-medium text-turquoise-700">Polecenie wyjazdu służbowego</h2>
+                <h2 class="text-base font-medium text-teal-700">Polecenie wyjazdu służbowego</h2>
                 <p class="text-base text-grey-400">
                   {if Money.equal?(@delegation.advance_amount, Money.new(:PLN, 0)),
                     do: "Bez zaliczki",
@@ -311,7 +311,7 @@ defmodule FirmowidWeb.Management.Views.Delegation do
                     kind="unstyled"
                     external={ElectronicSignature.trusted_profile_url()}
                     target="_blank"
-                    class="inline-flex items-center gap-1 font-medium whitespace-nowrap text-turquoise-700"
+                    class="inline-flex items-center gap-1 font-medium whitespace-nowrap text-teal-700"
                   >
                     Profilem Zaufanym <Lucideicons.external_link class="size-4" />
                   </.link>
@@ -329,11 +329,11 @@ defmodule FirmowidWeb.Management.Views.Delegation do
                   :if={@uploads.signed_command.entries == []}
                   for={@uploads.signed_command.ref}
                   phx-drop-target={@uploads.signed_command.ref}
-                  class="flex min-h-28 cursor-pointer items-center justify-center rounded-[5px] border border-dashed border-turquoise-200 px-4 text-center"
+                  class="flex min-h-28 cursor-pointer items-center justify-center rounded-[5px] border border-dashed border-teal-200 px-4 text-center"
                 >
-                  <span class="text-turquoise-700 sm:hidden">Wybierz plik</span>
+                  <span class="text-teal-700 sm:hidden">Wybierz plik</span>
                   <span class="hidden sm:inline">Przeciągnij plik tutaj lub
-                  <span class="text-turquoise-700">wybierz z komputera</span></span>
+                  <span class="text-teal-700">wybierz z komputera</span></span>
                 </label>
                 <.file_display
                   :for={entry <- @uploads.signed_command.entries}
@@ -342,7 +342,7 @@ defmodule FirmowidWeb.Management.Views.Delegation do
                 />
                 <p
                   :for={error <- upload_errors(@uploads.signed_command)}
-                  class="mt-2 text-sm text-red-600"
+                  class="mt-2 text-sm text-brick-600"
                 >
                   {upload_error(error)}
                 </p>
@@ -351,7 +351,7 @@ defmodule FirmowidWeb.Management.Views.Delegation do
                   <.button
                     type="submit"
                     variant="primary"
-                    accent="turquoise"
+                    accent="teal"
                     disabled={@uploads.signed_command.entries == []}
                     class="w-[170px]"
                   >
@@ -400,7 +400,7 @@ defmodule FirmowidWeb.Management.Views.Delegation do
     ~H"""
     <div
       phx-drop-target={@upload.ref}
-      class="flex min-h-28 items-center justify-between rounded-[5px] bg-turquoise-100 px-4"
+      class="flex min-h-28 items-center justify-between rounded-[5px] bg-teal-100 px-4"
     >
       <span class="flex min-w-0 items-center gap-2 text-sm">
         <Lucideicons.file_text class="size-5 shrink-0" />
@@ -411,13 +411,13 @@ defmodule FirmowidWeb.Management.Views.Delegation do
         variant="unstyled"
         phx-click="cancel-upload"
         phx-value-ref={@entry.ref}
-        class="ml-3 flex size-8 shrink-0 items-center justify-center text-turquoise-500 transition hover:text-turquoise-700"
+        class="ml-3 flex size-8 shrink-0 items-center justify-center text-teal-500 transition hover:text-teal-700"
         aria-label="Usuń podpisane polecenie"
       >
         <Lucideicons.x class="size-5" />
       </.button>
     </div>
-    <p :for={error <- upload_errors(@upload, @entry)} class="mt-2 text-sm text-red-600">
+    <p :for={error <- upload_errors(@upload, @entry)} class="mt-2 text-sm text-brick-600">
       {upload_error(error)}
     </p>
     """

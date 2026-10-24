@@ -36,11 +36,11 @@ defmodule FirmowidUI.Components.InvoiceSourceBadge do
         "relative inline-flex shrink-0 items-center justify-center",
         @size == "small" && "h-6 w-9 rounded-[2.286px]",
         @size == "big" && "h-8 w-12 rounded-[3px]",
-        @variant == "cost_external" && "bg-orangeBg",
-        @variant == "cost_ksef" && "bg-orangeBg",
-        @variant == "sales" && "bg-blueBg",
-        @variant == "sales_draft" && "bg-blueBg",
-        @variant == "sales_ksef" && "bg-turquoise-200",
+        @variant == "cost_external" && "bg-rust-200",
+        @variant == "cost_ksef" && "bg-rust-200",
+        @variant == "sales" && "bg-teal-200",
+        @variant == "sales_draft" && "bg-teal-200",
+        @variant == "sales_ksef" && "bg-teal-200",
         @class
       ]}
       data-size={@size}
@@ -58,11 +58,11 @@ defmodule FirmowidUI.Components.InvoiceSourceBadge do
       </span>
       <Lucideicons.file_input
         :if={@variant == "cost_external"}
-        class={[if(@size == "small", do: "size-4 text-orangeText", else: "size-5 text-orangeText")]}
+        class={[if(@size == "small", do: "size-4 text-rust-700", else: "size-5 text-rust-700")]}
       />
       <Lucideicons.file_pen_line
         :if={@variant in ["sales", "sales_draft"]}
-        class={[if(@size == "small", do: "size-4 text-blueText", else: "size-5 text-blueText")]}
+        class={[if(@size == "small", do: "size-4 text-teal-800", else: "size-5 text-teal-800")]}
       />
       <span
         :if={@variant in ["cost_ksef", "sales_ksef"]}

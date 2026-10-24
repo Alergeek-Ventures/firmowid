@@ -1,6 +1,6 @@
 <div :if={not @zero_state?} class="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-6 pb-4">
   <% # top -> collapsed navbar height (56px) / TODO: refactor %>
-  <div class="sticky top-10.5 z-10 flex flex-col gap-6 bg-lightGreyBg py-4">
+  <div class="sticky top-10.5 z-10 flex flex-col gap-6 bg-grey-100 py-4">
     <div class="flex flex-row justify-between">
       <form class="flex gap-4">
         <.month_picker
@@ -12,7 +12,7 @@
         <div
           id="search-container"
           data-expanded={to_string(@params["szukaj"] != nil and @params["szukaj"] != "")}
-          class="group flex min-w-10 items-center justify-center rounded-lg bg-greyButtonBg transition-shadow data-[expanded=true]:focus-within:ring-2"
+          class="group flex min-w-10 items-center justify-center rounded-lg bg-grey-200 transition-shadow data-[expanded=true]:focus-within:ring-2"
         >
           <.input
             name="szukaj"
@@ -89,9 +89,9 @@
       >
         <div
           id="projects-list-header-active"
-          class="sticky top-41 z-1 col-span-full grid grid-cols-subgrid bg-lightGreyBg px-4 pb-3 text-sm/snug text-grey-700 transition-all duration-75"
+          class="sticky top-41 z-1 col-span-full grid grid-cols-subgrid bg-grey-100 px-4 pb-3 text-sm/snug text-grey-700 transition-all duration-75"
           phx-hook="ScrollStyle"
-          data-classes="border-b-4 border-solid border-darkGrey/40 pt-3"
+          data-classes="border-b-4 border-solid border-grey-700/40 pt-3"
           data-scroll-offset="90"
         >
           <p>Projekt</p>
@@ -140,9 +140,9 @@
       >
         <div
           id="projects-list-header-archive"
-          class="sticky top-41 z-1 -order-1 col-span-full grid grid-cols-subgrid bg-lightGreyBg px-4 pb-3 text-sm/snug transition-all duration-75"
+          class="sticky top-41 z-1 -order-1 col-span-full grid grid-cols-subgrid bg-grey-100 px-4 pb-3 text-sm/snug transition-all duration-75"
           phx-hook="ScrollStyle"
-          data-classes="border-b-4 border-solid border-darkGrey/40 pt-3"
+          data-classes="border-b-4 border-solid border-grey-700/40 pt-3"
           data-scroll-offset="90"
         >
           <p>Projekt</p>

@@ -101,7 +101,7 @@ defmodule FirmowidWeb.Delegations.Components.Settlement.Trips do
                     variant="unstyled"
                     class={[
                       "block w-full cursor-pointer text-left text-sm font-normal whitespace-nowrap sm:w-24",
-                      description_visible? && "text-red-700"
+                      description_visible? && "text-brick-700"
                     ]}
                     phx-click={
                       if description_visible?, do: "hide-description", else: "show-description"

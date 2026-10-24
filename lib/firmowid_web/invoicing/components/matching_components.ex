@@ -97,26 +97,26 @@ defmodule FirmowidWeb.Invoicing.Components.MatchingComponents do
       role="img"
       class={[
         "flex size-8 shrink-0 flex-col justify-between rounded-md p-2",
-        @level == :high && "bg-green-200",
-        @level == :mid && "bg-orange-200",
-        @level == :low && "bg-red-200"
+        @level == :high && "bg-moss-200",
+        @level == :mid && "bg-rust-200",
+        @level == :low && "bg-brick-200"
       ]}
     >
       <div class={[
         "h-0.5 w-full rounded-md",
-        if(@level == :high, do: "bg-green-700", else: "bg-white")
+        if(@level == :high, do: "bg-moss-700", else: "bg-white")
       ]} />
       <div class={[
         "h-0.5 w-[70%] rounded-md",
-        @level == :high && "bg-green-700",
-        @level == :mid && "bg-orange-700",
+        @level == :high && "bg-moss-700",
+        @level == :mid && "bg-rust-700",
         @level == :low && "bg-white"
       ]} />
       <div class={[
         "h-0.5 w-[40%] rounded-md",
-        @level == :high && "bg-green-700",
-        @level == :mid && "bg-orange-700",
-        @level == :low && "bg-red-700"
+        @level == :high && "bg-moss-700",
+        @level == :mid && "bg-rust-700",
+        @level == :low && "bg-brick-700"
       ]} />
     </div>
     """
@@ -131,8 +131,8 @@ defmodule FirmowidWeb.Invoicing.Components.MatchingComponents do
     <div class="flex flex-wrap items-center justify-between gap-4">
       <h2 class="text-lg/tight font-medium">{gettext("Matching")}</h2>
       <div class="flex items-center gap-2">
-        <div class="flex items-center self-stretch rounded-md bg-green-200 px-[14.5px]">
-          <p class="text-sm/tight font-medium text-green-700">{gettext("Complete")}</p>
+        <div class="flex items-center self-stretch rounded-md bg-moss-200 px-[14.5px]">
+          <p class="text-sm/tight font-medium text-moss-700">{gettext("Complete")}</p>
         </div>
         {render_slot(@action)}
       </div>
@@ -154,7 +154,7 @@ defmodule FirmowidWeb.Invoicing.Components.MatchingComponents do
   @spec confirmed_card(map()) :: Rendered.t()
   def confirmed_card(assigns) do
     ~H"""
-    <div class="flex flex-col gap-4 rounded-md bg-green-200/40 p-4">
+    <div class="flex flex-col gap-4 rounded-md bg-moss-200/40 p-4">
       {render_slot(@heading)}
       <div class="grid grid-flow-col grid-cols-[2fr_1fr_1fr] grid-rows-2 gap-x-4 gap-y-6">
         <div :for={detail <- @detail} class="flex min-w-0 flex-col gap-1">
@@ -163,7 +163,7 @@ defmodule FirmowidWeb.Invoicing.Components.MatchingComponents do
         </div>
         <div class="row-span-2 flex flex-col items-end justify-end gap-1 text-end">
           <p :if={@amount_label} class="text-sm/snug text-grey-700">{@amount_label}</p>
-          <p class={["leading-snug text-green-700", @large_amount? && "text-lg"]}>{@amount}</p>
+          <p class={["leading-snug text-moss-700", @large_amount? && "text-lg"]}>{@amount}</p>
         </div>
       </div>
     </div>

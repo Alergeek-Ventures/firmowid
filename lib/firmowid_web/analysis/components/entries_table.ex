@@ -34,20 +34,20 @@ defmodule FirmowidWeb.Analysis.Components.EntriesTable do
       <col class="w-36" />
       <thead>
         <tr>
-          <th class="py-2 pl-5 text-left text-xs font-normal text-darkGrey uppercase">Kontrahent</th>
+          <th class="py-2 pl-5 text-left text-xs font-normal text-grey-700 uppercase">Kontrahent</th>
           <th :if={@show_overdue}></th>
           <th
             :if={not @unrealized}
-            class="py-2 pr-6 text-right text-xs font-normal text-darkGrey uppercase"
+            class="py-2 pr-6 text-right text-xs font-normal text-grey-700 uppercase"
           >
             {gettext("Categories")}
           </th>
-          <th class="py-2 text-left text-xs font-normal text-darkGrey uppercase">Kwota</th>
+          <th class="py-2 text-left text-xs font-normal text-grey-700 uppercase">Kwota</th>
         </tr>
       </thead>
       <tbody>
         <tr :if={@entries == []}>
-          <td colspan="4" class="py-8 text-center text-darkGrey">Brak wpisów</td>
+          <td colspan="4" class="py-8 text-center text-grey-700">Brak wpisów</td>
         </tr>
         <.row
           :for={entry <- @entries}
@@ -114,7 +114,7 @@ defmodule FirmowidWeb.Analysis.Components.EntriesTable do
     <tr>
       <td class={[
         "rounded-l-md bg-white px-5 py-2",
-        @unrealized && "border-y-2 border-l-2 border-dashed border-darkGrey/50"
+        @unrealized && "border-y-2 border-l-2 border-dashed border-grey-700/50"
       ]}>
         <div class="truncate">
           <%= if @navigate do %>
@@ -128,7 +128,7 @@ defmodule FirmowidWeb.Analysis.Components.EntriesTable do
       </td>
       <td
         :if={@unrealized and @show_overdue}
-        class="border-y-2 border-dashed border-darkGrey/50 bg-white py-2 text-redText"
+        class="border-y-2 border-dashed border-grey-700/50 bg-white py-2 text-brick-700"
       >
         <.overdue days={overdue_days(@entry)} />
       </td>
@@ -142,8 +142,8 @@ defmodule FirmowidWeb.Analysis.Components.EntriesTable do
       </td>
       <td class={[
         "rounded-r-md py-2",
-        if(@income, do: "bg-blueBg text-blueText", else: "bg-orangeBg text-orangeText"),
-        @unrealized && "border-y-2 border-r-2 border-dashed border-darkGrey/50"
+        if(@income, do: "bg-teal-200 text-teal-800", else: "bg-rust-200 text-rust-700"),
+        @unrealized && "border-y-2 border-r-2 border-dashed border-grey-700/50"
       ]}>
         <div class="py-1 pr-5 text-right">{@amount}</div>
       </td>
@@ -169,7 +169,7 @@ defmodule FirmowidWeb.Analysis.Components.EntriesTable do
   defp party_cell(assigns) do
     ~H"""
     {@party}
-    <span :if={@description not in [nil, ""]} class="text-sm text-darkGrey opacity-50">{@description}</span>
+    <span :if={@description not in [nil, ""]} class="text-sm text-grey-700 opacity-50">{@description}</span>
     """
   end
 end

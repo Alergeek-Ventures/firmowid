@@ -382,7 +382,7 @@ defmodule FirmowidWeb.Settings.Components.AccountTab do
           <%= if @google_connected? do %>
             <div class="flex items-center gap-2">
               <span>{@current_user.email}</span>
-              <span class="text-green-700">
+              <span class="text-moss-700">
                 <.icon name="hero-check-circle-solid" class="size-5" />
               </span>
             </div>

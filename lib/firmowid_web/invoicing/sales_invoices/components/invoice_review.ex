@@ -65,7 +65,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceReview do
                   value="true"
                   checked={@should_send_emails}
                   disabled={!@counterparty_check.valid}
-                  class="size-4 rounded border-grey-300 text-turquoise-600 focus:ring-turquoise-500 disabled:cursor-not-allowed disabled:opacity-60"
+                  class="size-4 rounded border-grey-300 text-teal-600 focus:ring-teal-500 disabled:cursor-not-allowed disabled:opacity-60"
                 />
                 <span>Wyślij fakturę e-mailem do kontrahenta po otrzymaniu numeru KSeF</span>
               </label>
@@ -89,7 +89,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceReview do
                 class="h-11 w-full"
                 disabled={not @ksef_connected? or String.trim(@invoice_number) == ""}
                 variant="primary"
-                accent="turquoise"
+                accent="teal"
               >
                 Zapisz i wyślij do KSeF
               </.button>
