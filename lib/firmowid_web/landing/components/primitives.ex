@@ -38,7 +38,7 @@ defmodule FirmowidWeb.Landing.Components.Primitives do
       >
         <.link
           kind="unstyled"
-          navigate={~p"/#top"}
+          redirect={~p"/#top"}
           class="text-lg leading-[1.2] font-extrabold text-[#0f0f0f] transition-colors duration-180 group-data-[theme=dark]/navbar:text-[#f5f1ea] lg:text-2xl"
         >
           Firmowid
@@ -50,12 +50,6 @@ defmodule FirmowidWeb.Landing.Components.Primitives do
             class="min-w-21.5 rounded-sm p-3.5 text-center text-base/6 font-medium text-[#0f0f0f] transition-colors duration-180 group-data-[theme=dark]/navbar:text-[#f5f1ea] hover:text-orange-600 group-data-[theme=dark]/navbar:hover:text-orange-500-landing"
           >
             {gettext("About us")}
-          </a>
-          <a
-            href="https://firmowid.pl/blog"
-            class="min-w-19 rounded-sm p-3.5 text-center text-base/6 font-medium text-[#0f0f0f] transition-colors duration-180 group-data-[theme=dark]/navbar:text-[#f5f1ea] hover:text-orange-600 group-data-[theme=dark]/navbar:hover:text-orange-500-landing"
-          >
-            {gettext("Blog")}
           </a>
           <a
             href={@repository}
@@ -249,6 +243,10 @@ defmodule FirmowidWeb.Landing.Components.Primitives do
                 class="block py-1 text-base text-[rgb(245_241_234/0.75)] [&:hover]:text-white"
               >{gettext("Pricing")}</a>
               <a
+                href={~p"/faq"}
+                class="block py-1 text-base text-[rgb(245_241_234/0.75)] [&:hover]:text-white"
+              >{gettext("Questions and answers")}</a>
+              <a
                 href={@repository}
                 target="_blank"
                 rel="noopener noreferrer"
@@ -271,14 +269,14 @@ defmodule FirmowidWeb.Landing.Components.Primitives do
               </a>
               <.link
                 kind="unstyled"
-                navigate={~p"/regulamin#top"}
+                redirect={~p"/regulamin#top"}
                 class="block py-1 text-base text-[rgb(245_241_234/0.75)] [&:hover]:text-white"
               >
                 {gettext("Terms of Service")}
               </.link>
               <.link
                 kind="unstyled"
-                navigate={~p"/polityka-prywatnosci#top"}
+                redirect={~p"/polityka-prywatnosci#top"}
                 class="block py-1 text-base text-[rgb(245_241_234/0.75)] [&:hover]:text-white"
               >
                 {pgettext("footer-policy-link", "Privacy Policy")}
