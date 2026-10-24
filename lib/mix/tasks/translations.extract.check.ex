@@ -66,9 +66,23 @@ defmodule Mix.Tasks.Translations.Extract.Check do
     }
   end
 
+  # A separate VM matches native `mix gettext.extract`. This VM has already loaded
+  # consolidated protocols, so gettext's forced recompile here would record an
+  # "already consolidated" warning per defimpl and fail the next strict compile.
   defp check_extraction! do
-    Mix.Task.reenable("gettext.extract")
-    Mix.Task.run("gettext.extract", ["--check-up-to-date"])
+    # credo:disable-for-next-line Credo.Check.Warning.MixEnv
+    env = [{"MIX_ENV", Atom.to_string(Mix.env())}]
+
+    {_output, status} =
+      System.cmd(
+        System.find_executable("mix") || "mix",
+        ["gettext.extract", "--check-up-to-date"],
+        env: env,
+        into: IO.stream(:stdio, :line),
+        stderr_to_stdout: true
+      )
+
+    if status != 0, do: Mix.raise("mix gettext.extract --check-up-to-date failed")
     :ok
   end
 end
