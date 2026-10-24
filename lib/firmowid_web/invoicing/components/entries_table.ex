@@ -7,6 +7,7 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
   import FirmowidWeb.Invoicing.Components.StatusButton
   import Phoenix.Component, except: [link: 1]
 
+  alias Firmowid.Finances.ExpectedTransaction
   alias Firmowid.Finances.Transaction
   alias Firmowid.Invoicing.CostInvoice
   alias Firmowid.Invoicing.SalesInvoice
@@ -520,6 +521,7 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
         :amount,
         case assigns.invoicing_entry do
           %Transaction{} -> Money.to_decimal(assigns.invoicing_entry.amount)
+          %ExpectedTransaction{} -> Money.to_decimal(assigns.invoicing_entry.amount)
           %CostInvoice{} -> Money.to_decimal(assigns.invoicing_entry.effective_amount)
           %SalesInvoice{} -> Money.to_decimal(assigns.invoicing_entry.effective_amount)
         end
@@ -528,6 +530,7 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
         :is_draft,
         case assigns.invoicing_entry do
           %SalesInvoice{} = invoice -> is_nil(invoice.invoice_number)
+          %ExpectedTransaction{} -> true
           _ -> false
         end
       )
@@ -552,7 +555,9 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
               do: [
                 "border-y border-dashed border-grey-300 max-md:bg-white",
                 column == "party" && "border-l",
-                column == "amount" && "border-r bg-grey-200/25 text-teal-600"
+                column == "amount" && "border-r bg-grey-200/25",
+                # Expected transactions are drafts on either side, so the amount keeps its direction.
+                column == "amount" && if(@is_income, do: "text-teal-600", else: "text-rust-600")
               ],
               else: [
                 "bg-white",
@@ -613,6 +618,9 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
 
   defp mobile_cell_styles(_status_or_second_date), do: "max-md:hidden"
 
+  # An expectation has no projects of its own; its linked transaction carries them.
+  defp render_cell(%{column: "project", invoicing_entry: %ExpectedTransaction{}} = assigns), do: ~H""
+
   defp render_cell(%{column: "project"} = assigns) do
     ~H"""
     <.live_component
@@ -629,6 +637,47 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
   end
 
   # amount is differently rendered (has a background color that fills the cell)
+  defp render_cell(%{column: "amount", invoicing_entry: %ExpectedTransaction{}} = assigns) do
+    ~H"""
+    <div class="relative py-2 pr-5 text-right">
+      {@invoicing_entry.amount}
+    </div>
+    """
+  end
+
+  defp render_cell(%{column: "party", invoicing_entry: %ExpectedTransaction{}} = assigns) do
+    ~H"""
+    <.party_cell_content
+      party={@invoicing_entry.counterparty_name}
+      description={@invoicing_entry.description}
+      expected_transaction={if(income_for_entry(@invoicing_entry), do: :income, else: :expense)}
+    />
+    """
+  end
+
+  defp render_cell(%{column: "status", invoicing_entry: %ExpectedTransaction{}} = assigns) do
+    ~H"""
+    <div
+      id={"status-#{@invoicing_entry.id}"}
+      phx-hook="Tippy"
+      data-tippy-delay="1000"
+      data-tippy-content={gettext("Expected transaction — not included in the bank balance.")}
+      class="flex w-32 flex-row gap-2 overflow-hidden"
+    >
+      <div class="flex h-6 w-full items-center justify-center rounded-md bg-grey-200 px-2 text-caps-sm font-medium whitespace-nowrap text-grey-700 uppercase">
+        {gettext("Draft")}
+      </div>
+    </div>
+    """
+  end
+
+  defp render_cell(%{column: column, invoicing_entry: %ExpectedTransaction{}} = assigns)
+       when column in ["issue_or_value_date", "due_or_booking_date", "value_date", "booking_date"] do
+    ~H"""
+    <.date_value date={@invoicing_entry.date} />
+    """
+  end
+
   defp render_cell(%{column: "amount", invoicing_entry: %Transaction{} = transaction} = assigns) do
     amount = transaction.signed_amount
 
@@ -1340,6 +1389,7 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
   attr :description, :string, default: nil
   attr :bank_badge, :any, default: nil
   attr :invoice_source_badge_variant, :string, default: nil
+  attr :expected_transaction, :atom, default: nil, values: [nil, :income, :expense]
 
   defp party_cell_content(assigns) do
     ~H"""
@@ -1349,6 +1399,11 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
         :if={@invoice_source_badge_variant}
         variant={@invoice_source_badge_variant}
         size="small"
+        class="shrink-0"
+      />
+      <.expected_transaction_badge
+        :if={@expected_transaction}
+        income={@expected_transaction == :income}
         class="shrink-0"
       />
       <%!-- From xl one line, cut as a whole, which lets the column size to its full text, and

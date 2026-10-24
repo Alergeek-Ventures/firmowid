@@ -4569,6 +4569,7 @@ msgstr ""
 msgid "Downloading…"
 msgstr ""
 
+#: lib/firmowid_web/invoicing/components/entries_table.ex
 #: lib/firmowid_web/invoicing/components/sales_invoice_details.ex
 #: lib/firmowid_web/landing/components/sections.ex
 #, elixir-autogen, elixir-format
@@ -5194,6 +5195,16 @@ msgstr ""
 #: lib/firmowid_web/management/views/counterparty_suggestions.ex
 #, elixir-autogen, elixir-format
 msgid "Existing counterparty"
+msgstr ""
+
+#: lib/firmowid_web/design_system/components/invoicing_badges.ex
+#, elixir-autogen, elixir-format
+msgid "Expected transaction"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/components/entries_table.ex
+#, elixir-autogen, elixir-format
+msgid "Expected transaction — not included in the bank balance."
 msgstr ""
 
 #: lib/firmowid_web/analysis/components/financial_overview.ex

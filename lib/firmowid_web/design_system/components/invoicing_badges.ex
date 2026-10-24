@@ -101,6 +101,27 @@ defmodule FirmowidWeb.DesignSystem.Components.InvoicingBadges do
   def invoice_source_badge(assigns), do: InvoiceSourceBadge.invoice_source_badge(assigns)
 
   @doc """
+  Renders the badge of an expected transaction, shaped like the small invoice source badge
+  and coloured by the side of the books it lands on.
+  """
+  @spec expected_transaction_badge(map()) :: Rendered.t()
+  attr :income, :boolean, required: true, doc: "Whether the expected money comes in."
+  attr :class, :any, default: nil, doc: "Additional classes merged into the badge root."
+
+  def expected_transaction_badge(assigns) do
+    ~H"""
+    <div class={[
+      "relative inline-flex h-6 w-9 shrink-0 items-center justify-center rounded-[2.286px]",
+      if(@income, do: "bg-teal-200 text-teal-800", else: "bg-rust-200 text-rust-700"),
+      @class
+    ]}>
+      <span class="sr-only">{gettext("Expected transaction")}</span>
+      <Lucideicons.radar class="size-4" aria-hidden="true" />
+    </div>
+    """
+  end
+
+  @doc """
   Resolves the invoice badge variant for a cost or sales invoice.
   """
   @spec invoice_source_badge_variant(CostInvoice.t() | SalesInvoice.t()) :: String.t()
