@@ -10,6 +10,28 @@ defmodule Firmowid.Ash.Payroll.MemberTaxDeclaration do
 
   require Resource
 
+  @declaration_fields [
+    :member_id,
+    :received_on,
+    :applies_from,
+    :tax_residency,
+    :pit2,
+    :employee_costs,
+    :youth_relief,
+    :pit0,
+    :tax_mode,
+    :request_year,
+    :preferential,
+    :student,
+    :student_until,
+    :other_employment,
+    :own_employer,
+    :sickness,
+    :copyright_costs,
+    :ppk,
+    :ppk_employee_rate
+  ]
+
   postgres do
     table "member_tax_declarations"
     repo Firmowid.Repo
@@ -22,6 +44,7 @@ defmodule Firmowid.Ash.Payroll.MemberTaxDeclaration do
 
   code_interface do
     define :read, action: :read
+    define :create_tax_declaration, action: :create_version
     define :list_tax_declarations, action: :list
     define :save_tax_declaration, action: :save_tax_declaration
   end
@@ -42,49 +65,18 @@ defmodule Firmowid.Ash.Payroll.MemberTaxDeclaration do
       end
     end
 
+    create :create_version do
+      description "Create a declaration version without replacing a version with the same effective date."
+      accept @declaration_fields
+    end
+
     create :save_tax_declaration do
       description "Save a daily declaration version, retaining versions with other effective dates."
       primary? true
       upsert? true
       upsert_identity :unique_member_effective_date
 
-      accept [
-        :member_id,
-        :received_on,
-        :applies_from,
-        :tax_residency,
-        :pit2,
-        :employee_costs,
-        :youth_relief,
-        :pit0,
-        :tax_mode,
-        :request_year,
-        :preferential,
-        :student,
-        :student_until,
-        :other_employment,
-        :own_employer,
-        :sickness,
-        :copyright_costs,
-        :ppk,
-        :ppk_employee_rate
-      ]
-
-      validate compare(:received_on, less_than_or_equal_to: :applies_from), message: "is invalid"
-
-      validate present(:request_year),
-        where: [attribute_equals(:tax_mode, :no_advance)],
-        message: "can't be blank"
-
-      validate present(:request_year),
-        where: [present(:preferential), attribute_does_not_equal(:preferential, :none)],
-        message: "can't be blank"
-
-      validate present(:ppk_employee_rate),
-        where: [attribute_equals(:ppk, :participant)],
-        message: "can't be blank"
-
-      validate Firmowid.Ash.Payroll.Validations.TaxDeclarationMemberInOrganization
+      accept @declaration_fields
     end
   end
 
@@ -97,6 +89,31 @@ defmodule Firmowid.Ash.Payroll.MemberTaxDeclaration do
     policy action_type(:create) do
       authorize_if {ActorRole, role: :admin}
     end
+  end
+
+  validations do
+    validate compare(:received_on, less_than_or_equal_to: :applies_from),
+      on: [:create],
+      message: "is invalid"
+
+    validate present(:request_year),
+      on: [:create],
+      where: [attribute_equals(:tax_mode, :no_advance)],
+      message: "can't be blank"
+
+    validate present(:request_year),
+      on: [:create],
+      where: [present(:preferential), attribute_does_not_equal(:preferential, :none)],
+      message: "can't be blank"
+
+    validate present(:ppk_employee_rate),
+      on: [:create],
+      where: [attribute_equals(:ppk, :participant)],
+      message: "can't be blank"
+
+    validate Firmowid.Ash.Payroll.Validations.TaxDeclarationMemberInOrganization,
+      on: [:create],
+      where: [present(:member_id)]
   end
 
   multitenancy do

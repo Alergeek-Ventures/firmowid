@@ -13,6 +13,7 @@ defmodule Firmowid.Ash.Payroll do
 
   resources do
     resource Firmowid.Ash.Payroll.MemberTaxDeclaration do
+      define :create_tax_declaration, action: :create_version
       define :list_tax_declarations, action: :list
       define :save_tax_declaration, action: :save_tax_declaration
     end

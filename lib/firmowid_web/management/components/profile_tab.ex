@@ -69,8 +69,8 @@ defmodule FirmowidWeb.Management.Components.ProfileTab do
         </div>
       </.card>
 
-      <div class="flex h-fit flex-1 gap-6">
-        <.card class="flex h-fit w-1/2 grow flex-col">
+      <div class="grid grid-cols-[repeat(auto-fit,minmax(min(100%,20rem),1fr))] items-start gap-6">
+        <.card class="min-w-0">
           <.card_header>
             Informacje o zatrudnieniu
             <:actions>
@@ -153,21 +153,15 @@ defmodule FirmowidWeb.Management.Components.ProfileTab do
           </.form>
         </.card>
 
-        <.card class="flex h-fit w-1/2 shrink-0 flex-col">
-          <.card_header>
-            Kalendarz
-          </.card_header>
-          <p class="text-sm text-grey-500">Wkrótce</p>
-        </.card>
+        <.live_component
+          module={FirmowidWeb.Management.Components.EmployeeTaxDetails}
+          id={"employee-tax-details-#{@user.member.id}"}
+          member_id={@user.member.id}
+          scope={@scope}
+          contract_type={@employment_contract && @employment_contract.contract_type}
+          archived={not is_nil(@user.member.archived_at)}
+        />
       </div>
-      <.live_component
-        module={FirmowidWeb.Management.Components.EmployeeTaxDetails}
-        id={"employee-tax-details-#{@user.member.id}"}
-        member_id={@user.member.id}
-        scope={@scope}
-        contract_type={@employment_contract && @employment_contract.contract_type}
-        archived={not is_nil(@user.member.archived_at)}
-      />
     </div>
     """
   end
