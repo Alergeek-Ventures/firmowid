@@ -147,6 +147,13 @@ defmodule Firmowid.Ash.Finances do
   end
 
   resources do
+    resource Firmowid.Ash.Finances.ExpectedTransaction do
+      define :get_expected_transaction, action: :read, get_by: [:id]
+      define :list_expected_transactions, action: :list
+      define :create_expected_transaction, action: :create
+      define :connect_expected_transaction, action: :connect_transaction, args: [:transaction_id]
+    end
+
     resource BankAccount do
       define :get_bank_account, action: :read, get_by: [:id]
       define :list_bank_accounts, action: :read

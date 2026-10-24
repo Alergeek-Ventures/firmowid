@@ -7,6 +7,7 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
   import FirmowidWeb.Invoicing.Components.StatusButton
   import Phoenix.Component, except: [link: 1]
 
+  alias Firmowid.Ash.Finances.ExpectedTransaction
   alias Firmowid.Ash.Finances.Transaction
   alias Firmowid.Ash.Invoicing.CostInvoice
   alias Firmowid.Ash.Invoicing.SalesInvoice
@@ -186,6 +187,7 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
         :amount,
         case assigns.invoicing_entry do
           %Transaction{} -> Money.to_decimal(assigns.invoicing_entry.amount)
+          %ExpectedTransaction{} -> Money.to_decimal(assigns.invoicing_entry.amount)
           %CostInvoice{} -> Money.to_decimal(assigns.invoicing_entry.effective_amount)
           %SalesInvoice{} -> Money.to_decimal(assigns.invoicing_entry.effective_amount)
         end
@@ -194,6 +196,7 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
         :is_draft,
         case assigns.invoicing_entry do
           %SalesInvoice{} = invoice -> is_nil(invoice.invoice_number)
+          %ExpectedTransaction{} -> true
           _ -> false
         end
       )
@@ -211,7 +214,7 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
             column == "amount" && "rounded-r-md",
             column == "amount" && @is_income && "bg-blueBg! text-blueText",
             column == "amount" && !@is_income && "bg-orangeBg! text-orangeText",
-            # Draft invoices get a dotted border
+            # Draft entries share the invoice draft border.
             @is_draft && column == "party" && "border-y-2 border-l-2 border-dashed border-darkGrey/50",
             @is_draft && column == "amount" &&
               "border-y-2 border-r-2 border-dashed border-darkGrey/50",
@@ -241,6 +244,44 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
   end
 
   # amount is differently rendered (has a background color that fills the cell)
+  defp render_cell(%{column: "amount", invoicing_entry: %ExpectedTransaction{}} = assigns) do
+    ~H"""
+    <div class="relative py-2 pe-5 text-end">
+      {@invoicing_entry.amount}
+    </div>
+    """
+  end
+
+  defp render_cell(%{column: "party", invoicing_entry: %ExpectedTransaction{}} = assigns) do
+    ~H"""
+    <.party_cell_content
+      party={@invoicing_entry.counterparty_name}
+      description={@invoicing_entry.description}
+    />
+    """
+  end
+
+  defp render_cell(%{column: "status", invoicing_entry: %ExpectedTransaction{}} = assigns) do
+    ~H"""
+    <div
+      id={"status-#{@invoicing_entry.id}"}
+      phx-hook="Tippy"
+      data-tippy-content={gettext("Expected transaction — not included in the bank balance.")}
+      class="flex h-6 w-32 items-center justify-between rounded-md border-2 border-greyButtonBg bg-white p-2 text-xs text-darkGrey uppercase"
+    >
+      <p>{gettext("Draft")}</p>
+      <.icon name="hero-pencil-square-solid" class="size-4" />
+    </div>
+    """
+  end
+
+  defp render_cell(%{column: column, invoicing_entry: %ExpectedTransaction{}} = assigns)
+       when column in ["issue_or_value_date", "due_or_booking_date", "value_date", "booking_date"] do
+    ~H"""
+    {@invoicing_entry.date}
+    """
+  end
+
   defp render_cell(%{column: "amount", invoicing_entry: %Transaction{} = transaction} = assigns) do
     amount = transaction.signed_amount
 

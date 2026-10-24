@@ -18,6 +18,7 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
   alias Firmowid.Ash.Blobs.Blob
   alias Firmowid.Ash.Finances
   alias Firmowid.Ash.Finances.BankAccount
+  alias Firmowid.Ash.Finances.ExpectedTransaction
   alias Firmowid.Ash.Finances.Requisition
   alias Firmowid.Ash.Finances.Transaction
   alias Firmowid.Ash.Invoicing
@@ -76,6 +77,7 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
       Endpoint.subscribe("sales_invoice:destroyed:#{organization_id}")
       # Ash PubSub — finances
       Endpoint.subscribe("transaction:updated:#{organization_id}")
+      Endpoint.subscribe("expected_transaction:updated:#{organization_id}")
       Endpoint.subscribe("bank_account:synced:#{organization_id}")
       Endpoint.subscribe("bank_account:sync_failed:#{organization_id}")
       Endpoint.subscribe("requisition:linked:#{organization_id}")
@@ -441,6 +443,13 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
   @impl true
   def handle_info(%Broadcast{payload: %Notification{resource: Transaction}}, socket) do
     {:noreply, debounce_refetch(socket, :invoicing_entries, 10_000)}
+  end
+
+  def handle_info(%Broadcast{payload: %Notification{resource: ExpectedTransaction}}, socket) do
+    active_months =
+      get_active_months(socket.assigns.ash_scope) ++ [Date.beginning_of_month(Date.utc_today())]
+
+    {:noreply, socket |> assign(:active_months, active_months) |> refetch_invoicing_entries()}
   end
 
   @impl true
@@ -1181,7 +1190,8 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
         [
           list_cost_invoices(from, to, %{date_field: :issue_date}, scope),
           list_sales_invoices(from, to, %{date_field: :issue_date, kind: :vat}, scope),
-          list_transactions(from, to, %{}, scope)
+          list_transactions(from, to, %{}, scope),
+          list_expected_transactions(from, to, scope)
         ]
         |> Enum.concat()
         |> order_entries_for_display()
@@ -1257,9 +1267,7 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
         |> order_entries_for_display()
 
       {:transactions, _} ->
-        from
-        |> list_transactions(to, %{}, scope)
-        |> order_entries_for_display()
+        order_entries_for_display(list_transactions(from, to, %{}, scope) ++ list_expected_transactions(from, to, scope))
     end
   end
 
@@ -1296,6 +1304,12 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
     )
   end
 
+  defp list_expected_transactions(from, to, scope) do
+    Finances.list_expected_transactions!(%{date_from: from, date_to: to, fulfilled: false},
+      scope: scope
+    )
+  end
+
   defp get_active_months(scope) do
     scope_opts = [scope: scope]
 
@@ -1318,7 +1332,12 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
       |> then(&Finances.list_transactions!(Keyword.put(scope_opts, :query, &1)))
       |> Enum.map(& &1.booking_date)
 
-    (sales_months ++ cost_months ++ tx_months)
+    expected_months =
+      %{fulfilled: false}
+      |> Finances.list_expected_transactions!(scope: scope, query: [select: [:date]])
+      |> Enum.map(& &1.date)
+
+    (sales_months ++ cost_months ++ tx_months ++ expected_months)
     |> Enum.map(&Date.beginning_of_month/1)
     |> Enum.uniq()
     |> Enum.sort(Date)
@@ -1328,7 +1347,7 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
   defp order_entries_for_display(entries) do
     Enum.sort(entries, fn a, b ->
       cond do
-        # Draft invoices first (only SalesInvoice)
+        # Draft invoices and expected transactions first.
         entry_draft?(a) != entry_draft?(b) ->
           entry_draft?(a)
 
@@ -1353,6 +1372,7 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
   defp entry_date(%SalesInvoice{issue_date: date}), do: date
   defp entry_date(%CostInvoice{issue_date: date}), do: date
   defp entry_date(%Transaction{booking_date: date}), do: date
+  defp entry_date(%ExpectedTransaction{date: date}), do: date
   defp entry_date(%TransactionGroup{date: date}), do: date
 
   defp entry_matched?(%SalesInvoice{} = inv), do: Enum.any?(inv.transactions) or Map.get(inv, :skip_invoicing, false)
@@ -1365,8 +1385,9 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
   defp entry_matched?(%TransactionGroup{}), do: false
   defp entry_matched?(_), do: false
 
-  # Draft = no invoice number assigned (only SalesInvoice)
+  # Expectations remain drafts until their linked transaction replaces them in the list.
   defp entry_draft?(%SalesInvoice{invoice_number: num}), do: is_nil(num)
+  defp entry_draft?(%ExpectedTransaction{}), do: true
   defp entry_draft?(_), do: false
 
   defp entry_invoice_number(%SalesInvoice{invoice_number: num}), do: num

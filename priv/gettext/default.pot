@@ -1392,6 +1392,7 @@ msgstr ""
 msgid "Invoice number is required."
 msgstr ""
 
+#: lib/firmowid_web/invoicing/components/entries_table.ex:272
 #: lib/firmowid_web/invoicing/components/sales_invoice_details.ex:349
 #: lib/firmowid_web/landing/components/sections.ex:309
 #: lib/firmowid_web/landing/components/sections.ex:612
@@ -1499,7 +1500,7 @@ msgstr ""
 msgid "Ask"
 msgstr ""
 
-#: lib/firmowid_web/invoicing/components/entries_table.ex:419
+#: lib/firmowid_web/invoicing/components/entries_table.ex:460
 #: lib/firmowid_web/invoicing/components/matching_components.ex:135
 #, elixir-autogen, elixir-format
 msgid "Complete"
@@ -3218,4 +3219,9 @@ msgstr ""
 #: lib/firmowid_web/payroll/components/payout_estimates.ex:70
 #, elixir-autogen, elixir-format
 msgid "Youth tax relief"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/components/entries_table.ex:269
+#, elixir-autogen, elixir-format
+msgid "Expected transaction — not included in the bank balance."
 msgstr ""
