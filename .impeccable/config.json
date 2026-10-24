@@ -1,0 +1,16 @@
+{
+  "telemetry": false,
+  "updateCheck": false,
+  "detector": {
+    "extensions": [
+      {
+        "ext": ".html.heex",
+        "engine": "html"
+      },
+      {
+        "ext": ".ex",
+        "engine": "text"
+      }
+    ]
+  }
+}
