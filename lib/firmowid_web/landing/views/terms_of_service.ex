@@ -16,7 +16,7 @@ defmodule FirmowidWeb.Landing.Views.TermsOfService do
   def mount(_params, _session, socket) do
     {:ok,
      assign(socket,
-       page_title: gettext("Terms of Service"),
+       page_title: gettext("Terms of Service") <> " · Firmowid",
        meta_description:
          gettext(
            "Firmowid's Terms of Service define the rules for using its invoicing, KSeF, banking, and work-tracking service."
@@ -140,7 +140,7 @@ defmodule FirmowidWeb.Landing.Views.TermsOfService do
       <p>
         {gettext("The rules for processing personal data are set out in")} <FirmowidUI.Components.Link.link
           kind="unstyled"
-          navigate={~p"/polityka-prywatnosci"}
+          redirect={~p"/polityka-prywatnosci"}
           class="text-orange-700 hover:underline"
         >
             {gettext("the Privacy Policy")}</FirmowidUI.Components.Link.link>{gettext(

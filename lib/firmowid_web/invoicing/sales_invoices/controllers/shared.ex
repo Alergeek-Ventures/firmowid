@@ -26,6 +26,11 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Controllers.Shared do
   # These pages render their own full HTML document via shared_page/1,
   # so we skip the application root layout to avoid nested <html> tags.
   plug :put_root_layout, html: false
+  plug :prevent_indexing
+
+  defp prevent_indexing(conn, _opts) do
+    put_resp_header(conn, "x-robots-tag", "noindex, nofollow, noarchive")
+  end
 
   def show(conn, %{"token" => token_string} = params) do
     # we dont need correction_id - this view uses root token to show all invoices including related corrections

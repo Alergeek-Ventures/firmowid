@@ -16,7 +16,7 @@ defmodule FirmowidWeb.Landing.Views.PrivacyPolicy do
   def mount(_params, _session, socket) do
     {:ok,
      assign(socket,
-       page_title: gettext("Privacy Policy"),
+       page_title: gettext("Privacy Policy") <> " · Firmowid",
        meta_description:
          gettext("Firmowid's Privacy Policy describes the processing of data, cookies, and users' rights."),
        public_marketing?: true,
@@ -244,7 +244,7 @@ defmodule FirmowidWeb.Landing.Views.PrivacyPolicy do
         )}
         <FirmowidUI.Components.Link.link
           kind="unstyled"
-          navigate={~p"/polityka-prywatnosci"}
+          redirect={~p"/polityka-prywatnosci"}
           class="text-orange-700 hover:underline"
         >
           firmowid.pl/polityka-prywatnosci

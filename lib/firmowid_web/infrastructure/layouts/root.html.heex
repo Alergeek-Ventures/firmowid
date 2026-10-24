@@ -3,14 +3,62 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#f0eae6" />
     <meta name="description" content={meta_description(assigns)} />
+    <meta
+      name="robots"
+      content={
+        if assigns[:public_marketing?],
+          do: "index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1",
+          else: "noindex, nofollow"
+      }
+    />
     <meta name="csrf-token" content={get_csrf_token()} />
     <.live_title suffix={if assigns[:public_marketing?], do: "", else: " · Firmowid"}>
-      {assigns[:page_title] || "Firmowid"}
+      {if assigns[:public_marketing?],
+        do: meta_title(assigns),
+        else: assigns[:page_title] || "Firmowid"}
     </.live_title>
     <link rel="canonical" href={canonical_url(assigns)} />
+    <meta :if={assigns[:public_marketing?]} property="og:type" content="website" />
+    <meta :if={assigns[:public_marketing?]} property="og:site_name" content="Firmowid" />
+    <meta :if={assigns[:public_marketing?]} property="og:locale" content="pl_PL" />
+    <meta :if={assigns[:public_marketing?]} property="og:title" content={meta_title(assigns)} />
+    <meta
+      :if={assigns[:public_marketing?]}
+      property="og:description"
+      content={meta_description(assigns)}
+    />
+    <meta :if={assigns[:public_marketing?]} property="og:url" content={canonical_url(assigns)} />
+    <meta :if={assigns[:public_marketing?]} property="og:image" content={social_image_url()} />
+    <meta :if={assigns[:public_marketing?]} property="og:image:type" content="image/png" />
+    <meta :if={assigns[:public_marketing?]} property="og:image:width" content="1200" />
+    <meta :if={assigns[:public_marketing?]} property="og:image:height" content="630" />
+    <meta
+      :if={assigns[:public_marketing?]}
+      property="og:image:alt"
+      content={gettext("Firmowid - free KSeF invoices, banking and team time tracking")}
+    />
+    <meta :if={assigns[:public_marketing?]} name="twitter:card" content="summary_large_image" />
+    <meta :if={assigns[:public_marketing?]} name="twitter:site" content="@firmowid" />
+    <meta :if={assigns[:public_marketing?]} name="twitter:title" content={meta_title(assigns)} />
+    <meta
+      :if={assigns[:public_marketing?]}
+      name="twitter:description"
+      content={meta_description(assigns)}
+    />
+    <meta :if={assigns[:public_marketing?]} name="twitter:image" content={social_image_url()} />
+    <meta
+      :if={assigns[:public_marketing?]}
+      name="twitter:image:alt"
+      content={gettext("Firmowid - free KSeF invoices, banking and team time tracking")}
+    />
+    <script :if={assigns[:public_marketing?]} type="application/ld+json">
+      <%= structured_data(assigns) %>
+    </script>
     {Application.get_env(:live_debugger, :live_debugger_tags)}
     <link rel="icon" type="image/png" href={~p"/images/favicon.png"} />
+    <link rel="apple-touch-icon" href={~p"/images/favicon.png"} />
     <link
       rel="preload"
       as="font"

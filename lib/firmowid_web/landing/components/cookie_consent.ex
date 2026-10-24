@@ -40,7 +40,7 @@ defmodule FirmowidWeb.Landing.Components.CookieConsent do
                 )}
                 {gettext("Details are available in our")} <.link
                   kind="unstyled"
-                  navigate={~p"/polityka-prywatnosci"}
+                  redirect={~p"/polityka-prywatnosci"}
                   class="font-semibold text-white underline hover:text-orange-300"
                 >
                    {pgettext("cookie-policy-link", "Privacy Policy")}</.link>.
