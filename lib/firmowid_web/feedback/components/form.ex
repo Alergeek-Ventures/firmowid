@@ -44,7 +44,7 @@ defmodule FirmowidWeb.Feedback.Components.Form do
                 rows="5"
                 required
                 placeholder="Opisz swój pomysł, sugestię lub zgłoś problem"
-                class="border-grey/30 min-h-[120px] w-full resize-y rounded-md border px-3 py-2 text-sm focus:border-orangeText focus:ring-orangeText"
+                class="min-h-[120px] w-full resize-y rounded-md border border-grey-200 px-3 py-2 text-sm focus:border-orangeText focus:ring-orangeText"
               ><%= @content %></textarea>
             </div>
             <div class="flex justify-end gap-3">
@@ -58,7 +58,7 @@ defmodule FirmowidWeb.Feedback.Components.Form do
           </form>
         </div>
         <div :if={@submitted} class="p-4 text-center">
-          <div class="text-4xl mb-4">&#127881;</div>
+          <div class="mb-4 text-3xl">&#127881;</div>
           <h2 class="mb-2 text-xl font-semibold">Dziękujemy za feedback!</h2>
           <p class="mb-6 text-sm text-darkGrey">
             Twoja opinia jest dla nas bardzo ważna i pomoże nam ulepszyć

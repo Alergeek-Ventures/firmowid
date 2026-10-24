@@ -408,10 +408,10 @@ defmodule FirmowidWeb.DesignSystem.Components.CoreComponents do
     ~H"""
     <header class={[@actions != [] && "flex items-center justify-between gap-6", @class]}>
       <div>
-        <h1 class="text-zinc-800 text-lg/8 font-semibold">
+        <h1 class="text-lg/8 font-semibold text-grey-900">
           {render_slot(@inner_block)}
         </h1>
-        <p :if={@subtitle != []} class="text-zinc-600 mt-2 text-sm/6">
+        <p :if={@subtitle != []} class="mt-2 text-sm/6 text-grey-700">
           {render_slot(@subtitle)}
         </p>
       </div>
@@ -454,7 +454,7 @@ defmodule FirmowidWeb.DesignSystem.Components.CoreComponents do
 
     ~H"""
     <table class={[@class]}>
-      <thead class="text-zinc-500 text-left text-sm/6">
+      <thead class="text-left text-sm/6 text-grey-600">
         <tr>
           <th :for={col <- @col} class="p-0 pr-2 font-normal text-darkGrey uppercase">
             {col[:label]}
@@ -467,7 +467,7 @@ defmodule FirmowidWeb.DesignSystem.Components.CoreComponents do
       <tbody
         id={@id}
         phx-update={match?(%Phoenix.LiveView.LiveStream{}, @rows) && "stream"}
-        class="text-zinc-700 relative divide-y divide-lightGreyBg border-t border-lightGreyBg text-sm/6"
+        class="relative divide-y divide-lightGreyBg border-t border-lightGreyBg text-sm/6 text-grey-700"
       >
         <tr
           :for={row <- @rows}
@@ -505,10 +505,10 @@ defmodule FirmowidWeb.DesignSystem.Components.CoreComponents do
   def list(assigns) do
     ~H"""
     <div class="mt-14">
-      <dl class="divide-zinc-100 -my-4 divide-y">
+      <dl class="-my-4 divide-y divide-grey-100">
         <div :for={item <- @item} class="flex gap-4 py-4 text-sm/6 sm:gap-8">
-          <dt class="text-zinc-500 w-1/4 flex-none">{item.title}</dt>
-          <dd class="text-zinc-700">{render_slot(item)}</dd>
+          <dt class="w-1/4 flex-none text-grey-600">{item.title}</dt>
+          <dd class="text-grey-700">{render_slot(item)}</dd>
         </div>
       </dl>
     </div>
@@ -724,7 +724,13 @@ defmodule FirmowidWeb.DesignSystem.Components.CoreComponents do
 
   def navbar(assigns) do
     ~H"""
-    <nav class={["bg-black px-4 text-white select-none sm:px-6 lg:px-8", @class]} {@rest}>
+    <nav
+      class={[
+        "bg-black px-4 text-white select-none [--focus-ring:var(--color-white)] sm:px-6 lg:px-8",
+        @class
+      ]}
+      {@rest}
+    >
       {render_slot(@inner_block)}
     </nav>
     """

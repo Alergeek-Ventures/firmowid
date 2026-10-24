@@ -467,7 +467,7 @@ defmodule FirmowidUI.Components.KsefConnection do
       class={[
         "mbs-4 flex items-start gap-2 rounded-lg border px-3 py-2.5 text-sm",
         if(@status == :failed,
-          do: "bg-red-50 border-red-200 text-red-900",
+          do: "border-red-200 bg-red-100 text-red-900",
           else: "border-grey-200 bg-grey-50 text-grey-700"
         )
       ]}

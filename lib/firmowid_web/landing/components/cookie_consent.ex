@@ -31,7 +31,7 @@ defmodule FirmowidWeb.Landing.Components.CookieConsent do
       class="fixed inset-x-0 bottom-0 z-100 hidden"
     >
       <div class="mx-auto max-w-4xl p-4">
-        <div class="rounded-xl border border-white/10 bg-black/95 px-6 py-5 shadow-2xl backdrop-blur-sm">
+        <div class="rounded-xl border border-white/10 bg-black/95 px-6 py-5 shadow-2xl backdrop-blur-sm [--focus-ring:var(--color-white)]">
           <div class="flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div class="flex-1 text-sm text-white/80">
               <p>

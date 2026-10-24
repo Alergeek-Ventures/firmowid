@@ -15,7 +15,7 @@ defmodule FirmowidWeb.Management.Components.DelegationOrderPdf do
 
   def order(assigns) do
     ~H"""
-    <div class="font-lexend relative mx-auto box-content h-[calc(297mm-4rem)] w-182.5 bg-white p-8 text-[10px]">
+    <div class="relative mx-auto box-content h-[calc(297mm-4rem)] w-182.5 bg-white p-8 font-sans text-[10px]">
       <header class="flex items-start justify-between">
         <div>
           <h1 class="text-sm font-medium">

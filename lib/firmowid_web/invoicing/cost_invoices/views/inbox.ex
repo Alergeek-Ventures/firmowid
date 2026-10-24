@@ -150,7 +150,7 @@ defmodule FirmowidWeb.Invoicing.CostInvoices.Views.Inbox do
                 :for={invoice <- @email.cost_invoices}
                 kind="unstyled"
                 navigate={~p"/kosztowe/#{invoice.id}"}
-                class="hover:bg-zinc-100 text-zinc-700 block px-4 py-2 text-sm"
+                class="block px-4 py-2 text-sm text-grey-700 hover:bg-grey-100"
               >
                 {invoice.seller_display_name || invoice.seller} - {Money.abs(invoice.amount)}
               </FirmowidUI.Components.Link.link>

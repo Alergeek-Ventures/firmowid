@@ -11,7 +11,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.SharedPage do
 
   attr :title, :string, required: true
   attr :lang, :string, default: "pl"
-  attr :body_class, :string, default: "bg-grey-100 min-h-full font-[Lexend]"
+  attr :body_class, :string, default: "bg-grey-100 min-h-full font-sans"
   slot :inner_block, required: true
 
   def shared_page(assigns) do

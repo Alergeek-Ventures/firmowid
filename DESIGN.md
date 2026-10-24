@@ -289,6 +289,8 @@ field, plus moss and brick for outcomes.
 **Character:** One wide, open, highly legible sans for everything. Lexend's
 generous letterforms keep amounts, NIP numbers and dense tables calm, while
 weight (medium and semibold) carries hierarchy instead of a second family.
+The mono stack (`font-mono`, system monospace) is only for raw identifiers a
+user may compare character by character: IBANs, NIPs, OAuth scopes and URIs.
 
 ### Hierarchy
 The frontmatter `typography` keys are the Tailwind text sizes; only `fontSize`
@@ -333,7 +335,7 @@ must read as one object, such as the panels on management detail pages
 Shadows belong to those cards and to overlays that float above the page.
 
 ### Shadow Vocabulary
-- **Card** (`shadow` on `Card`, `shadow-[0px_1px_6px_0px_rgba(0,0,0,0.1)]` on admin panels): only on the cards described above.
+- **Card** (`shadow-card`, a token in `assets/css/theme.css`): only on the cards described above.
 - **Overlay** (`shadow-lg` plus a 1px graphite/10 ring): modals, popovers, dropdowns and toasts.
 - **Error tooltip** (`box-shadow: 0 2px 8px rgba(0,0,0,0.15)`): field-level error bubbles.
 
@@ -341,6 +343,24 @@ Shadows belong to those cards and to overlays that float above the page.
 **The Flat by Default Rule.** A surface at rest has no shadow. Lists, tables, forms, toolbars and page sections sit flat on the canvas or on white, separated by tone or a `grey-200` line. Reach for a card only when the content is one self-contained record, and never nest cards.
 
 **The Paper on Canvas Rule.** A surface rises by being whiter than what is under it. Reach for `shadow-lg` only for things that float: modals, popovers, dropdowns and toasts.
+
+## Focus
+
+Every focusable element shows the same keyboard focus: a 2px solid outline,
+offset 2px, in `--focus-ring` (`grey-900`). This is one base rule in
+`assets/css/app.css`; components do not add their own focus colours. Dark
+surfaces (the navbar, the account menu, the cookie banner) set
+`[--focus-ring:var(--color-white)]` so the outline stays visible. Text fields
+signal focus with their border (`grey-700`) instead of an outline.
+
+**The One Focus Rule.** Never remove focus (`outline-none`, `focus:ring-0`) without the replacement above, and never colour it by ledger side.
+
+## Control Sizes
+
+- **Big** (44px, `h-11`): the default button size and page-level actions.
+- **Small** (32px, `h-8`): toolbar, table and card actions.
+- **Chip** (24px, `h-6`): status chips and compact toggles.
+- Text fields are about 34px tall today; when a field sits in a row with buttons, match the button size explicitly.
 
 ## Shapes
 
@@ -357,7 +377,7 @@ placeholders.
 
 ### Buttons
 Warm and tactile: flat fills, no gradients, quick 100ms colour transitions.
-- **Shape:** gently rounded. Big buttons are 44px tall with an 8px radius; small buttons use a 6px radius at 14px text. Icons are 20px (big) or 16px (small).
+- **Shape:** gently rounded. Big buttons are 44px tall with an 8px radius; small buttons are 32px tall with a 6px radius at 14px text. Icons are 20px (big) or 16px (small).
 - **Primary (directional):** a solid rust fill for cost-side actions and a solid teal fill for sales-side actions, with white text. Hover and active step to the deeper shades.
 - **Secondary (directional):** a pastel tint with deepest-shade text (rust or teal), or a grey tint for neutral.
 - **Special / Tertiary (neutral):** a black fill (hover graphite) or a graphite fill (hover charcoal) with white text. Use these for actions that belong to neither ledger side.
@@ -383,7 +403,7 @@ expression of the Two Sides of the Ledger Rule.
 
 ### Inputs / Fields
 - **Style:** 1px grey-200 border, grey-50 background, 8px radius, 16px text set tight, 6px by 12px padding. Placeholders and empty selects use pale grey text.
-- **Focus:** the border deepens to a mid grey. Some search fields use a 2px teal focus ring.
+- **Focus:** the border deepens to `grey-700` (see Focus).
 - **Error:** the border turns red and a brick error bubble with an exclamation icon appears.
 - **Checkbox / Radio:** 16px squares with a 3px radius and graphite stroke.
 - **Switch:** a 38×24 pill. The grey track fills rust or teal when on, depending on the side it controls.

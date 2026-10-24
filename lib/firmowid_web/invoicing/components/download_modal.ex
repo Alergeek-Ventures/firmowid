@@ -109,8 +109,8 @@ defmodule FirmowidWeb.Invoicing.Components.DownloadModal do
             class={[
               "rounded-md py-2 text-center transition-colors",
               if(@any_selected,
-                do: "hover:bg-gray-800 cursor-pointer bg-black text-white",
-                else: "bg-gray-300 text-gray-500 pointer-events-none"
+                do: "cursor-pointer bg-black text-white hover:bg-grey-700",
+                else: "pointer-events-none bg-grey-200 text-grey-600"
               )
             ]}
             aria-disabled={if(!@any_selected, do: "true")}

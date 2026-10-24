@@ -226,9 +226,9 @@ defmodule FirmowidWeb.Delegations.Components.SettlementPage do
   defp saved_notice(assigns) do
     ~H"""
     <div class={@class}>
-      <span class="font-lexend inline-flex items-center gap-1 text-caps-sm font-medium text-grey-500 uppercase group-[.phx-change-loading]:hidden">Zmiany zostały zapisane
+      <span class="inline-flex items-center gap-1 text-caps-sm font-medium text-grey-500 uppercase group-[.phx-change-loading]:hidden">Zmiany zostały zapisane
       <.save_check_icon class="size-3" /></span>
-      <span class="font-lexend hidden items-center gap-1 text-caps-sm font-medium text-grey-500 uppercase group-[.phx-change-loading]:inline-flex">Zapisywanie zmian
+      <span class="hidden items-center gap-1 text-caps-sm font-medium text-grey-500 uppercase group-[.phx-change-loading]:inline-flex">Zapisywanie zmian
       <Lucideicons.refresh_ccw class="size-3 animate-spin [animation-direction:reverse]" /></span>
     </div>
     """

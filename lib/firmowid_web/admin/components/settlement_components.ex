@@ -36,7 +36,7 @@ defmodule FirmowidWeb.Admin.Components.SettlementComponents do
 
   def organization_panel(assigns) do
     ~H"""
-    <section class="rounded-lg bg-white p-6 shadow-[0px_1px_6px_0px_rgba(0,0,0,0.1)]">
+    <section class="rounded-lg bg-white p-6 shadow-card">
       <div class="flex items-start justify-between">
         <.link
           kind="unstyled"
@@ -123,7 +123,7 @@ defmodule FirmowidWeb.Admin.Components.SettlementComponents do
 
   def activity_panel(assigns) do
     ~H"""
-    <section class="rounded-lg bg-white p-6 shadow-[0px_1px_6px_0px_rgba(0,0,0,0.1)]">
+    <section class="rounded-lg bg-white p-6 shadow-card">
       <h2 class="text-lg/tight font-medium text-grey-900">Aktywność organizacji</h2>
       <p class="mt-1 text-sm/snug text-grey-700">
         Utrwalone zdarzenia w organizacji, niezależne od wybranego miesiąca rozliczenia.
@@ -163,7 +163,7 @@ defmodule FirmowidWeb.Admin.Components.SettlementComponents do
     ~H"""
     <section
       id="organization-deletion"
-      class="rounded-lg border border-red-200 bg-white p-6 shadow-[0px_1px_6px_0px_rgba(0,0,0,0.1)]"
+      class="rounded-lg border border-red-200 bg-white p-6 shadow-card"
     >
       <h2 class="text-lg/tight font-medium text-grey-900">Usunięcie organizacji</h2>
       <p class="mt-2 text-sm/snug text-grey-700">
@@ -235,7 +235,7 @@ defmodule FirmowidWeb.Admin.Components.SettlementComponents do
 
   def worksheet_panel(assigns) do
     ~H"""
-    <section class="rounded-lg bg-white p-6 shadow-[0px_1px_6px_0px_rgba(0,0,0,0.1)]">
+    <section class="rounded-lg bg-white p-6 shadow-card">
       <div class="space-y-1">
         <h2 class="text-lg/tight font-medium text-grey-900">Arkusz rozliczenia</h2>
         <p class="text-sm/snug text-grey-700">{worksheet_intro(@selected_month, @status)}</p>
@@ -347,7 +347,7 @@ defmodule FirmowidWeb.Admin.Components.SettlementComponents do
 
   def empty_state(assigns) do
     ~H"""
-    <section class="rounded-lg bg-white p-6 text-sm/snug text-grey-700 shadow-[0px_1px_6px_0px_rgba(0,0,0,0.1)]">
+    <section class="rounded-lg bg-white p-6 text-sm/snug text-grey-700 shadow-card">
       Brak organizacji do rozliczenia.
     </section>
     """
