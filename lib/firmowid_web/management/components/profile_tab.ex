@@ -40,7 +40,7 @@ defmodule FirmowidWeb.Management.Components.ProfileTab do
   @impl true
   def render(assigns) do
     ~H"""
-    <div class="flex h-full min-h-0 flex-col gap-6">
+    <div class="flex h-full min-h-0 flex-col gap-6 overflow-y-auto overscroll-contain">
       <.card dimmed={@user.member.archived_at} class="pb-9">
         <.card_header>
           Dane korespondencyjne
@@ -160,6 +160,14 @@ defmodule FirmowidWeb.Management.Components.ProfileTab do
           <p class="text-sm text-grey-500">Wkrótce</p>
         </.card>
       </div>
+      <.live_component
+        module={FirmowidWeb.Management.Components.EmployeeTaxDetails}
+        id={"employee-tax-details-#{@user.member.id}"}
+        member_id={@user.member.id}
+        scope={@scope}
+        contract_type={@employment_contract && @employment_contract.contract_type}
+        archived={not is_nil(@user.member.archived_at)}
+      />
     </div>
     """
   end

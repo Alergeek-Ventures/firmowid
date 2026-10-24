@@ -263,11 +263,19 @@
               class="text-end font-medium text-nowrap text-turquoise-700 tabular-nums"
               title={
                 if employee.payout_estimate,
-                  do: PayoutEstimates.variant_label(employee.payout_estimate.variant),
+                  do:
+                    gettext(
+                      "Hypothetical forecast, without employee declarations or annual balances."
+                    ),
                   else: gettext("Unknown contract type — only gross pay is shown")
               }
             >
-              {if employee.payout_estimate, do: employee.payout_estimate.amount, else: "—"}
+              <span
+                :if={employee.payout_estimate && employee.payout_estimate.variant != :b2b}
+                aria-hidden="true"
+              >≈ </span>{if employee.payout_estimate,
+                do: employee.payout_estimate.amount,
+                else: "—"}
             </p>
           <% end %>
 

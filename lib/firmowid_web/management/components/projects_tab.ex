@@ -236,6 +236,9 @@ defmodule FirmowidWeb.Management.Components.ProjectsTab do
               estimates={@payout_estimates}
               gross_amount={@monthly_gross}
               subtitle={TimeFormatter.format_date(@date, "LLLL yyyy")}
+              calculation_path={
+                ~p"/zarzadzanie/pracownicy/#{@user.id}/profil#employee-payout-calculator"
+              }
             />
           </.card>
           <.card :if={@previous_hours_records != []} gap_size="4" class="shrink-0">

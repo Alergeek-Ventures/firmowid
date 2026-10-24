@@ -87,6 +87,7 @@ defmodule Firmowid.Ash.Core do
     end
 
     resource Member do
+      define :get_member, action: :read, get_by: [:id]
       define :update_member_role, action: :update_role
       define :update_member_profile, action: :update_profile
       define :update_member_avatar, action: :update_avatar

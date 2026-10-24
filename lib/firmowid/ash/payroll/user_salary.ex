@@ -29,6 +29,7 @@ defmodule Firmowid.Ash.Payroll.UserSalary do
   end
 
   code_interface do
+    define :calculate_payout, action: :calculate_payout
     define :read, action: :read
     define :list, action: :list
     define :destroy, action: :destroy
@@ -36,6 +37,31 @@ defmodule Firmowid.Ash.Payroll.UserSalary do
 
   actions do
     defaults [:read, :destroy]
+
+    action :calculate_payout, :map do
+      description "Calculates a single ordinary monthly payout only when its declarations and required balances are supplied."
+      argument :member_id, :uuid, allow_nil?: false
+      argument :contract_type, :atom, constraints: [one_of: [:uop, :uz, :uod, :b2b]]
+      argument :payout_date, :date
+      argument :employer_ppk_date, :date
+
+      for field <- [
+            :gross,
+            :prior_taxable_income,
+            :prior_social_base,
+            :prior_exempt_income,
+            :employer_ppk_income
+          ] do
+        argument field, :decimal, constraints: [min: 0, scale: 2]
+      end
+
+      argument :employment_active, :boolean
+      argument :single_payment, :boolean
+      argument :standard_pay, :boolean
+      argument :insurance_unchanged, :boolean
+
+      run Firmowid.Ash.Payroll.Actions.CalculatePayout
+    end
 
     create :create do
       description "Create a salary record for an organization member."
