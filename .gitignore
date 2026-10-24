@@ -76,7 +76,7 @@ priv/static/.DS_Store
 /e2e/screenshots/
 /playwright-*.log
 
-# Impeccable runtime data. Skills, .impeccable/config.json and the engine symlinks stay tracked.
+# Impeccable runtime data. Skills and .impeccable/config.json stay tracked.
 .impeccable/live/*
 !.impeccable/live/config.json
 .impeccable/history/
@@ -87,3 +87,5 @@ priv/static/.DS_Store
 **/.impeccable/hook.cache.json
 **/.impeccable/hook.pending.json
 **/skills/impeccable/scripts/config.json
+# The launcher downloads the pinned engine into ~/.impeccable (upstream layout).
+**/skills/impeccable/scripts/bin/

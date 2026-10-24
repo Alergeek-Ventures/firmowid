@@ -148,12 +148,11 @@ zaleca jego instalator: osobny build na narzędzie w
 `.claude/skills/impeccable` (+ subagenty w `.claude/agents/impeccable-*.md`),
 `.agents/skills/impeccable` (Codex) i `.opencode/skills/impeccable`
 (+ `.opencode/commands/impeccable.md`). Buildy różnią się instrukcjami pod dane
-narzędzie, więc nie linkujemy ich między sobą. Silnik pochodzi z przypiętej
-paczki npm `impeccable` w `assets/` (`mix assets.setup`);
-`scripts/bin/<os>-<arch>/impeccable` to symlinki do
-`assets/node_modules/@impeccable/cli-<os>-<arch>`, więc nic nie trafia do
-`~/.impeccable`. Telemetria i sprawdzanie aktualizacji są wyłączone w
-`.impeccable/config.json`.
+narzędzie, więc nie linkujemy ich między sobą. Wersję przypina paczka npm
+`impeccable` w `assets/`. Launcher skilla przy pierwszym użyciu pobiera
+pasujący silnik do `~/.impeccable/bin/<wersja>/` i weryfikuje jego sumę
+SHA-256; katalogi `scripts/bin/` są w `.gitignore`, tak jak u twórców.
+Telemetria i sprawdzanie aktualizacji są wyłączone w `.impeccable/config.json`.
 
 - Skan statyczny: `.agents/skills/impeccable/scripts/impeccable detect lib/firmowid_web/<feature>`
   (pliki `.ex` sprawdza tylko regexami).
@@ -163,8 +162,9 @@ paczki npm `impeccable` w `assets/` (`mix assets.setup`);
 - Aktualizacja: podnieś wersję w `assets/package.json`, uruchom
   `npm install --prefix assets`, potem
   `assets/node_modules/.bin/impeccable install --providers=claude,codex,opencode --scope=project --no-hooks -y --force`.
-  Instalator kopiuje silnik do skilli, więc na koniec przywróć symlinki:
-  `git checkout -- .claude/skills/impeccable/scripts/bin .agents/skills/impeccable/scripts/bin .opencode/skills/impeccable/scripts/bin`.
+  Instalator kopiuje silnik do `scripts/bin/` każdego skilla; usuń te kopie
+  (`rm -rf .claude/skills/impeccable/scripts/bin .agents/skills/impeccable/scripts/bin .opencode/skills/impeccable/scripts/bin`),
+  bo `mix usage_rules.sync` wczytuje wszystkie pliki z `.claude/skills`.
 
 
 ## Polityka migracji (Ash/AshPostgres)
