@@ -34,14 +34,14 @@ defmodule FirmowidUI.Invoicing.Components.Print do
     ~H"""
     <.a4_page class="mt-4 print:static">
       <div class="flex h-full flex-col">
-        <div class="text-neutral-900 mt-6 flex-1 text-sm/6 whitespace-pre-wrap">{@internal_note}</div>
+        <div class="mt-6 flex-1 text-sm/6 whitespace-pre-wrap text-grey-900">{@internal_note}</div>
 
         <div class="flex w-full flex-col items-center justify-center print:absolute print:inset-x-0 print:bottom-0">
           <%= if @footer_logo_data_uri do %>
             <img src={@footer_logo_data_uri} class="mb-2 size-8 object-contain" />
           <% end %>
 
-          <p class="text-neutral-700 text-sm">firmowid.pl</p>
+          <p class="text-sm text-grey-700">firmowid.pl</p>
         </div>
       </div>
     </.a4_page>

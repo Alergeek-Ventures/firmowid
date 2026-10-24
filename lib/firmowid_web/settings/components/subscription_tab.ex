@@ -71,7 +71,7 @@ defmodule FirmowidWeb.Settings.Components.SubscriptionTab do
 
           <div
             :if={@worksheet.suggestion_rows != []}
-            class="bg-orange-50 space-y-3 rounded-lg p-4"
+            class="space-y-3 rounded-lg bg-orange-100 p-4"
           >
             <h3 class="text-sm leading-none font-medium text-grey-900">Aktualne nadwyżki</h3>
 

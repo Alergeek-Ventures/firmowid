@@ -44,7 +44,7 @@ defmodule FirmowidWeb.Auth.Views.Login do
           <.link
             kind="unstyled"
             navigate={~p"/zarejestruj"}
-            class="text-brand font-semibold hover:underline"
+            class="font-semibold text-orange-700 hover:underline"
           >
             Zarejestruj się
           </.link>
@@ -55,7 +55,7 @@ defmodule FirmowidWeb.Auth.Views.Login do
           redirect={~p"/auth/user/google"}
           kind="button"
           variant="outline"
-          class="border-gray-300 hover:bg-gray-50 hover:text-gray-900 text-gray-700 mt-8 w-full gap-3 bg-white text-sm font-medium shadow-sm"
+          class="mt-8 w-full gap-3 bg-white text-sm font-medium shadow-sm"
         >
           <svg class="size-4" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
             <path

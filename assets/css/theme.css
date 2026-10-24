@@ -6,6 +6,10 @@
   --font-*: initial;
   --font-sans: "Lexend", ui-sans-serif, system-ui, sans-serif;
   --font-logo: "Josefin Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+  /* Elevation: resting cards; floating overlays use shadow-lg */
+  --shadow-card: 0 1px 6px 0 rgb(0 0 0 / 0.1);
 
   /* Extended spacing */
   --spacing-navbar: var(--navbar-height);

@@ -152,7 +152,7 @@ defmodule FirmowidUI.Components.Inputs do
           phx-disable-with=""
           checked={@checked}
           disabled={@rest[:disabled]}
-          class="size-4 rounded-[3px] border border-darkGrey text-darkGrey focus:ring-0"
+          class="size-4 rounded-[3px] border border-darkGrey text-darkGrey focus:ring-0 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--focus-ring)"
           {@rest}
         />
         <span class="ml-1 text-sm text-darkGrey">{@label}</span>
@@ -221,7 +221,7 @@ defmodule FirmowidUI.Components.Inputs do
         id={@id}
         name={@name}
         class={[
-          "border-gray-300 focus:border-zinc-400 block w-full rounded border bg-white focus:ring-0 sm:text-sm",
+          "block w-full rounded border border-grey-200 bg-white focus:border-grey-700 focus:ring-0 sm:text-sm",
           @color && legacy_input_color(@color),
           @size && legacy_input_size(@size),
           @rest[:class]
@@ -247,7 +247,7 @@ defmodule FirmowidUI.Components.Inputs do
         id={@id}
         name={@name}
         class={[
-          "aria-invalid:border-rose-400 min-h-12 w-full resize-none rounded-lg border border-grey-200 bg-white px-3 py-1.5 leading-tight text-grey-900 placeholder:text-grey-500 focus:border-grey-400"
+          "min-h-12 w-full resize-none rounded-lg border border-grey-200 bg-white px-3 py-1.5 leading-tight text-grey-900 placeholder:text-grey-500 focus:border-grey-700 aria-invalid:border-red-700"
         ]}
         aria-invalid={to_string(not Enum.empty?(@errors))}
         {@rest}
@@ -267,9 +267,9 @@ defmodule FirmowidUI.Components.Inputs do
         id={@id}
         name={@name}
         class={[
-          "text-zinc-900 mt-2 block min-h-24 w-full rounded focus:ring-0 sm:text-sm/6",
-          @errors == [] && "border-zinc-300 focus:border-zinc-400",
-          @errors != [] && "border-rose-400 focus:border-rose-400",
+          "mt-2 block min-h-24 w-full rounded text-grey-900 focus:ring-0 sm:text-sm/6",
+          @errors == [] && "border-grey-200 focus:border-grey-700",
+          @errors != [] && "border-red-700 focus:border-red-700",
           @rest[:class]
         ]}
         {@rest}
@@ -293,7 +293,7 @@ defmodule FirmowidUI.Components.Inputs do
         value={Form.normalize_value(@type, @value)}
         aria-invalid={to_string(not Enum.empty?(@errors))}
         class={[
-          "w-full rounded-lg border border-grey-200 bg-white px-3 py-1.5 leading-tight text-grey-900 placeholder:text-grey-500 focus:border-grey-400 aria-invalid:border-red-700",
+          "w-full rounded-lg border border-grey-200 bg-white px-3 py-1.5 leading-tight text-grey-900 placeholder:text-grey-500 focus:border-grey-700 aria-invalid:border-red-700",
           @type == "number" &&
             "[appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none",
           @input_class
@@ -318,9 +318,9 @@ defmodule FirmowidUI.Components.Inputs do
         size={@input_size}
         value={Form.normalize_value(@type, @value)}
         class={[
-          "read-only:bg-gray-100 text-zinc-900 block w-full rounded read-only:cursor-default focus:ring-0 sm:text-sm/6",
-          @errors == [] && "border-zinc-300 focus:border-zinc-400",
-          @errors != [] && "border-rose-400 focus:border-rose-400",
+          "block w-full rounded text-grey-900 read-only:cursor-default read-only:bg-grey-100 focus:ring-0 sm:text-sm/6",
+          @errors == [] && "border-grey-200 focus:border-grey-700",
+          @errors != [] && "border-red-700 focus:border-red-700",
           @input_class
         ]}
         {@rest}
@@ -346,7 +346,7 @@ defmodule FirmowidUI.Components.Inputs do
 
   def label(assigns) do
     ~H"""
-    <label for={@for} class={["text-zinc-800 block text-sm/6", @class]}>
+    <label for={@for} class={["block text-sm/6 text-grey-900", @class]}>
       {render_slot(@inner_block)}
     </label>
     """

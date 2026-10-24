@@ -533,6 +533,11 @@
         "name": "The Paper on Canvas Rule",
         "body": "A surface rises by being whiter than what is under it. Reach for `shadow-lg` only for things that float: modals, popovers, dropdowns and toasts.",
         "section": "elevation"
+      },
+      {
+        "name": "The One Focus Rule",
+        "body": "Never remove focus (`outline-none`, `focus:ring-0`) without the replacement above, and never colour it by ledger side.",
+        "section": "focus"
       }
     ],
     "dos": [

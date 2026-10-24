@@ -572,7 +572,7 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
         ~H"""
         <.link
           kind="unstyled"
-          class="text-bold text-sm underline"
+          class="text-sm font-bold underline"
           navigate={@cost_invoice_path}
         >
           Wyświetl <.icon name="hero-arrow-right-solid" class="size-3" />
@@ -608,7 +608,7 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
         ~H"""
         <.link
           kind="unstyled"
-          class="text-bold text-sm underline"
+          class="text-sm font-bold underline"
           navigate={
             Navigation.invoicing_index_path(%{
               month: @issue_date,
@@ -732,7 +732,7 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
         ~H"""
         <.link
           kind="unstyled"
-          class="text-bold text-sm underline"
+          class="text-sm font-bold underline"
           navigate={Navigation.cost_invoice_show_path(@cost_invoice_id)}
         >
           Wyświetl <.icon name="hero-arrow-right-solid" class="size-3" />

@@ -17,7 +17,7 @@ defmodule FirmowidWeb.Infrastructure.Components.ErrorHtml do
       </.navbar>
       <main class="flex flex-1 items-center justify-center p-8">
         <div class="max-w-md text-center">
-          <p class="text-6xl mb-2 font-extrabold text-black/20">404</p>
+          <p class="mb-2 text-3xl font-extrabold text-black/20">404</p>
           <h1 class="mb-2 text-xl font-bold">Nie znaleziono strony</h1>
           <p class="mb-6 text-sm text-black/50">
             Strona, której szukasz, nie istnieje lub została przeniesiona.
@@ -39,7 +39,7 @@ defmodule FirmowidWeb.Infrastructure.Components.ErrorHtml do
       </.navbar>
       <main class="flex flex-1 items-center justify-center p-8">
         <div class="max-w-md text-center">
-          <p class="text-6xl mb-2 font-extrabold text-black/20">500</p>
+          <p class="mb-2 text-3xl font-extrabold text-black/20">500</p>
           <h1 class="mb-2 text-xl font-bold">Wystąpił błąd serwera</h1>
           <p class="mb-6 text-sm text-black/50">
             Błąd został automatycznie zgłoszony — nasz zespół zajmie się nim jak najszybciej.

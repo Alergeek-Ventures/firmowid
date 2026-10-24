@@ -88,15 +88,15 @@ defmodule FirmowidWeb.Auth.Components.McpConsent do
             <dl class="mt-6 space-y-3 rounded-xl bg-lightGreyBg p-4 text-sm text-grey-700">
               <div>
                 <dt class="font-medium text-grey-900">Zakres</dt>
-                <dd class="font-mono mt-0.5 text-xs break-all text-grey-600">{@scope}</dd>
+                <dd class="mt-0.5 font-mono text-xs break-all text-grey-600">{@scope}</dd>
               </div>
               <div>
                 <dt class="font-medium text-grey-900">Zasób</dt>
-                <dd class="font-mono mt-0.5 text-xs break-all text-grey-600">{@resource}</dd>
+                <dd class="mt-0.5 font-mono text-xs break-all text-grey-600">{@resource}</dd>
               </div>
               <div>
                 <dt class="font-medium text-grey-900">Przekierowanie</dt>
-                <dd class="font-mono mt-0.5 text-xs break-all text-grey-600">{@redirect_uri}</dd>
+                <dd class="mt-0.5 font-mono text-xs break-all text-grey-600">{@redirect_uri}</dd>
               </div>
             </dl>
 

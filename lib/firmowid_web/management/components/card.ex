@@ -26,7 +26,7 @@ defmodule FirmowidWeb.Management.Components.Card do
   def card(assigns) do
     ~H"""
     <section class={[
-      "relative flex flex-col rounded-md bg-white p-6 text-black shadow",
+      "relative flex flex-col rounded-md bg-white p-6 text-black shadow-card",
       @gap_size && "gap-y-#{@gap_size}",
       @class
     ]}>

@@ -204,7 +204,7 @@ defmodule FirmowidWeb.Management.Views.Counterparty do
     <div
       :if={@counterparty.archived_at}
       class={[
-        "flex items-center gap-4 rounded-lg bg-grey-200 p-4 text-grey-700 shadow-[0px_1px_6px_0px_rgba(0,0,0,0.1)]",
+        "flex items-center gap-4 rounded-lg bg-grey-200 p-4 text-grey-700 shadow-card",
         @class
       ]}
     >
@@ -237,7 +237,7 @@ defmodule FirmowidWeb.Management.Views.Counterparty do
     ~H"""
     <div class={["grid grid-cols-[1.5fr_0.95fr] gap-5", @class]}>
       <div class="space-y-5">
-        <section class="rounded-lg bg-white p-6 shadow-[0px_1px_6px_0px_rgba(0,0,0,0.1)]">
+        <section class="rounded-lg bg-white p-6 shadow-card">
           <div class="grid grid-cols-[minmax(0,265px)_minmax(0,322px)] gap-x-12 gap-y-6">
             <div class="space-y-6">
               <div class="space-y-1">
@@ -300,13 +300,13 @@ defmodule FirmowidWeb.Management.Views.Counterparty do
           </div>
         </section>
 
-        <section class="rounded-lg bg-white p-6 shadow-[0px_1px_6px_0px_rgba(0,0,0,0.1)]">
+        <section class="rounded-lg bg-white p-6 shadow-card">
           <p class="mb-2 text-sm/snug text-grey-700">Notatki</p>
           <p class="text-base/snug whitespace-pre-line text-black" phx-no-format>{@counterparty.description || "—"}</p>
         </section>
       </div>
 
-      <section class="flex min-h-[318px] flex-col justify-between rounded-lg bg-white p-6 shadow-[0px_1px_6px_0px_rgba(0,0,0,0.1)]">
+      <section class="flex min-h-[318px] flex-col justify-between rounded-lg bg-white p-6 shadow-card">
         <div class="space-y-6">
           <h3 class="text-base/tight font-medium text-grey-900">Statystyki</h3>
 
@@ -357,7 +357,7 @@ defmodule FirmowidWeb.Management.Views.Counterparty do
   defp invoices_section(assigns) do
     ~H"""
     <section class={[
-      "flex flex-col rounded-lg bg-white p-6 shadow-[0px_1px_6px_0px_rgba(0,0,0,0.1)]",
+      "flex flex-col rounded-lg bg-white p-6 shadow-card",
       @class
     ]}>
       <div class="mb-4 flex items-center justify-between gap-4">
@@ -457,7 +457,7 @@ defmodule FirmowidWeb.Management.Views.Counterparty do
 
   defp suggested_invoices_section(assigns) do
     ~H"""
-    <section class={["rounded-lg bg-white p-6 shadow-[0px_1px_6px_0px_rgba(0,0,0,0.1)]", @class]}>
+    <section class={["rounded-lg bg-white p-6 shadow-card", @class]}>
       <div class="mb-4 flex items-start justify-between gap-4">
         <div class="space-y-1">
           <h3 class="text-lg font-medium text-grey-700">Sugerowane faktury do połączenia</h3>

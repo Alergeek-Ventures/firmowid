@@ -60,9 +60,9 @@ defmodule FirmowidUI.Invoicing.Components.InvoiceNumber do
         </.button>
       </div>
       <div :if={@warnings != []} class="space-y-3">
-        <div :for={warning <- @warnings} class="bg-amber-50 rounded-lg bg-orangeBg p-3 text-sm">
+        <div :for={warning <- @warnings} class="rounded-lg bg-orangeBg p-3 text-sm">
           <div class="flex items-start gap-2 text-orangeText">
-            <Lucideicons.alert_triangle class="text-amber-500 mbs-0.5 size-4 shrink-0" />
+            <Lucideicons.alert_triangle class="mbs-0.5 size-4 shrink-0" />
             <span>
               <%= case warning do %>
                 <% {:invalid_format, _} -> %>

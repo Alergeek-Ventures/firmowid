@@ -145,12 +145,22 @@ th,
   -webkit-user-select: none;
 }
 
+/* ── Keyboard focus ─────────────────────────────────────────────────── */
+@layer base {
+  :focus-visible {
+    outline: 2px solid var(--focus-ring);
+    outline-offset: 2px;
+  }
+}
+
 /* ── Custom properties ──────────────────────────────────────────────── */
 html {
   scroll-behavior: smooth;
 }
 
 :root {
+  /* Keyboard focus outline; dark surfaces override it with [--focus-ring:var(--color-white)]. */
+  --focus-ring: var(--color-grey-900);
   --color-orange-text: var(--color-orangeText);
   --color-orange-bg: var(--color-orangeBg);
   --color-green-text: var(--color-greenText);
