@@ -33,10 +33,10 @@ defmodule FirmowidUI.Invoicing.Components.InvoiceNumber do
           disabled={@disabled}
           required
           aria-invalid={@errors != []}
-          class="rounded-lg border border-grey-200 px-3 py-2 text-sm text-grey-700 inline-full placeholder:text-grey-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-turquoise-500 disabled:opacity-60"
+          class="rounded-lg border border-grey-200 px-3 py-2 text-sm text-grey-700 inline-full placeholder:text-grey-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-500 disabled:opacity-60"
         />
       </form>
-      <p :for={error <- @errors} class="text-sm text-red-600" role="alert">
+      <p :for={error <- @errors} class="text-sm text-brick-600" role="alert">
         {error_message(error)}
       </p>
       <div :if={@warnings == [] and @next_numbers_by_series != %{}} class="flex flex-wrap gap-2">
@@ -47,11 +47,11 @@ defmodule FirmowidUI.Invoicing.Components.InvoiceNumber do
           phx-value-number={next_number}
           disabled={@disabled}
           variant={if(@invoice_number == next_number, do: "secondary", else: "outline")}
-          accent="turquoise"
+          accent="teal"
           size="small"
           class={[
             if(@invoice_number == next_number,
-              do: "border-turquoise-500 text-turquoise-700",
+              do: "border-teal-500 text-teal-700",
               else: "text-grey-600"
             )
           ]}
@@ -60,8 +60,8 @@ defmodule FirmowidUI.Invoicing.Components.InvoiceNumber do
         </.button>
       </div>
       <div :if={@warnings != []} class="space-y-3">
-        <div :for={warning <- @warnings} class="rounded-lg bg-orangeBg p-3 text-sm">
-          <div class="flex items-start gap-2 text-orangeText">
+        <div :for={warning <- @warnings} class="rounded-lg bg-rust-200 p-3 text-sm">
+          <div class="flex items-start gap-2 text-rust-700">
             <Lucideicons.alert_triangle class="mbs-0.5 size-4 shrink-0" />
             <span>
               <%= case warning do %>
@@ -82,7 +82,7 @@ defmodule FirmowidUI.Invoicing.Components.InvoiceNumber do
               phx-value-number={suggestion}
               disabled={@disabled}
               variant="secondary"
-              accent="turquoise"
+              accent="teal"
               size="small"
               class="text-xs"
             >

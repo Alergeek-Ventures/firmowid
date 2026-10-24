@@ -162,7 +162,7 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
               block_class="flex items-center my-1"
               for={@company_form[:is_vat_payer].id}
             >
-              <.switch field={@company_form[:is_vat_payer]} color="turquoise" />
+              <.switch field={@company_form[:is_vat_payer]} color="teal" />
             </Helpers.settings_field>
             <%= if @company_form[:is_vat_payer].value not in [true, "true"] do %>
               <Helpers.settings_field
@@ -218,7 +218,7 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
               <.switch
                 field={@company_form[:is_same_correspondence_address]}
                 class="w-12"
-                color="turquoise"
+                color="teal"
               />
             </Helpers.settings_field>
 
@@ -332,7 +332,7 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
     ~H"""
     <section class="rounded-lg border border-grey-200 bg-white px-6 py-5 shadow-sm">
       <div class="flex items-start gap-4">
-        <span class="inline-flex size-10 items-center justify-center rounded-full bg-blueBg text-blueText">
+        <span class="inline-flex size-10 items-center justify-center rounded-full bg-teal-200 text-teal-800">
           <.icon name="hero-arrow-path" class="size-5 animate-spin" />
         </span>
 
@@ -371,7 +371,7 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
             role="switch"
             size="small"
             aria-checked={to_string(@show_active_invites)}
-            class="inline-flex h-11 items-center justify-between gap-3 rounded-lg bg-white px-3 text-sm font-medium text-grey-700 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-700"
+            class="inline-flex h-11 items-center justify-between gap-3 rounded-lg bg-white px-3 text-sm font-medium text-grey-700 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-rust-700"
           >
             <span>Aktywne zaproszenia</span>
             <span class={invite_toggle_track_styles(@show_active_invites)}>
@@ -415,7 +415,7 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
               type="button"
               variant="unstyled"
               size="small"
-              class="flex w-full max-w-80 cursor-pointer items-center justify-between gap-5 rounded bg-turquoise-100 p-1 py-2 pl-3 text-sm text-turquoise-700"
+              class="flex w-full max-w-80 cursor-pointer items-center justify-between gap-5 rounded bg-teal-100 p-1 py-2 pl-3 text-sm text-teal-700"
               phx-click="copy_organization_invite"
               phx-value-code={invite.invite_code}
             >
@@ -433,7 +433,7 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
                 phx-value-id={invite.id}
                 aria-label="Usuń zaproszenie"
               >
-                <Lucideicons.trash_2 class="text-grey-500 transition-all hover:text-darkGrey" />
+                <Lucideicons.trash_2 class="text-grey-500 transition-all hover:text-grey-700" />
               </.button>
             </div>
           </div>
@@ -504,7 +504,7 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
                     variant="unstyled"
                     phx-click="archive_organization_user"
                     phx-value-user_id={user.id}
-                    class={["text-red-800 hover:bg-red-100", menu_item_styles()]}
+                    class={["text-brick-800 hover:bg-brick-100", menu_item_styles()]}
                   >
                     Archiwizuj
                   </.button>
@@ -539,7 +539,7 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
           <div class="flex flex-wrap gap-2.5">
             <span
               :if={@account.is_default}
-              class="rounded-full bg-green-100 px-4 py-1 text-sm text-green-700"
+              class="rounded-full bg-moss-100 px-4 py-1 text-sm text-moss-700"
             >
               Domyślne <span class="font-semibold">{present(@account.currency)}</span>
             </span>
@@ -597,7 +597,7 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
                 type="button"
                 variant="unstyled"
                 phx-click={show_modal("confirm_delete_bank_account_#{@account.id}")}
-                class={["text-red-700 hover:bg-red-100", menu_item_styles()]}
+                class={["text-brick-700 hover:bg-brick-100", menu_item_styles()]}
               >
                 Usuń
               </.button>
@@ -616,7 +616,7 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
         </.bank_detail_row>
         <.bank_detail_row :if={@status} label="Status">
           <span :if={@status in [:broken, :disconnected]} class="inline-flex items-center gap-1.5">
-            <span class="font-medium text-red-800">Konto rozłączone</span>
+            <span class="font-medium text-brick-800">Konto rozłączone</span>
           </span>
 
           <span :if={@status not in [:broken, :disconnected]} class="inline-flex items-center gap-2">
@@ -795,7 +795,7 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
             <.button
               type="submit"
               variant="primary"
-              accent="turquoise"
+              accent="teal"
               size="small"
               phx-click={hide_modal("organization_invite_modal")}
             >
@@ -856,7 +856,7 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
             <.button
               type="submit"
               variant="primary"
-              accent="turquoise"
+              accent="teal"
               size="small"
             >
               Zmień rolę
@@ -904,7 +904,7 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
         type="radio"
         value={UserRole.param(@role)}
         checked={@checked}
-        class="size-5 shrink-0 appearance-none rounded-full border-2 border-grey-300 bg-white text-turquoise-700 checked:bg-turquoise-700 focus:outline-none"
+        class="size-5 shrink-0 appearance-none rounded-full border-2 border-grey-300 bg-white text-teal-700 checked:bg-teal-700 focus:outline-none"
       />
       <div>
         <span class="font-medium capitalize">{UserRole.label(@role)}</span>
@@ -914,7 +914,7 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
     """
   end
 
-  defp invite_toggle_track_styles(true), do: "bg-turquoise-700 relative inline-flex h-[24px] w-[44px] rounded-full"
+  defp invite_toggle_track_styles(true), do: "bg-teal-700 relative inline-flex h-[24px] w-[44px] rounded-full"
 
   defp invite_toggle_track_styles(false), do: "bg-grey-200 relative inline-flex h-[24px] w-[44px] rounded-full"
 
@@ -940,7 +940,7 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
   defp invite_issuer(_invite), do: "administrator"
 
   defp menu_item_styles do
-    "hover:text-turquoise-800 hover:bg-turquoise-100 w-full justify-start rounded-none px-3 py-2 text-left text-sm transition cursor-pointer"
+    "hover:text-teal-800 hover:bg-teal-100 w-full justify-start rounded-none px-3 py-2 text-left text-sm transition cursor-pointer"
   end
 
   defp format_last_sync_info(:manual, _datetime), do: "konto dodane ręcznie"
@@ -992,15 +992,15 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
   end
 
   defp role_badge_styles(:admin) do
-    "bg-turquoise-200 text-turquoise-700 inline-flex w-28 items-center justify-center rounded-sm px-3 py-1 text-sm leading-[1.35]"
+    "bg-teal-200 text-teal-700 inline-flex w-28 items-center justify-center rounded-sm px-3 py-1 text-sm leading-[1.35]"
   end
 
   defp role_badge_styles(:accountant) do
-    "bg-green-200 text-green-700 inline-flex w-28 items-center justify-center rounded-sm px-3 py-1 text-sm leading-[1.35]"
+    "bg-moss-200 text-moss-700 inline-flex w-28 items-center justify-center rounded-sm px-3 py-1 text-sm leading-[1.35]"
   end
 
   defp role_badge_styles(:invoicing) do
-    "bg-orange-200 text-orange-700 inline-flex w-28 items-center justify-center rounded-sm px-3 py-1 text-sm leading-[1.35]"
+    "bg-rust-200 text-rust-700 inline-flex w-28 items-center justify-center rounded-sm px-3 py-1 text-sm leading-[1.35]"
   end
 
   defp role_badge_styles(_role) do

@@ -11,7 +11,7 @@ defmodule FirmowidWeb.Infrastructure.Components.ErrorHtml do
 
   def render("404.html", assigns) do
     ~H"""
-    <div class="flex h-full flex-col bg-lightGreyBg">
+    <div class="flex h-full flex-col bg-grey-100">
       <.navbar class="sticky inset-x-0 top-0 z-50 py-4">
         <.navbar_logo navigate={~p"/"} />
       </.navbar>
@@ -33,7 +33,7 @@ defmodule FirmowidWeb.Infrastructure.Components.ErrorHtml do
 
   def render("500.html", assigns) do
     ~H"""
-    <div class="flex h-full flex-col bg-lightGreyBg">
+    <div class="flex h-full flex-col bg-grey-100">
       <.navbar class="sticky inset-x-0 top-0 z-50 py-4">
         <.navbar_logo navigate={~p"/"} />
       </.navbar>

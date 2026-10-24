@@ -63,14 +63,14 @@ defmodule FirmowidWeb.Invoicing.Components.BankTransferModal do
             <% end %>
           </div>
           <div class="flex flex-row gap-6">
-            <div class="flex grow items-center justify-center rounded-lg bg-orange-200 px-4 py-2">
-              <h4 class="text-orange-700">
+            <div class="flex grow items-center justify-center rounded-lg bg-rust-200 px-4 py-2">
+              <h4 class="text-rust-700">
                 Zawsze weryfikuj kopiowane dane z fakturą!
               </h4>
             </div>
             <.button
               variant="primary"
-              accent="orange"
+              accent="rust"
               phx-click={hide_modal("bank-transfer-modal")}
             >
               Gotowe

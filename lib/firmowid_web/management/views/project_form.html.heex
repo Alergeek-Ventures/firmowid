@@ -161,7 +161,7 @@
                   row.appendChild(img);
                 } else {
                   const badge = document.createElement("span");
-                  badge.className = "flex size-8 items-center justify-center rounded-full bg-blueBg text-xs font-medium text-blueText";
+                  badge.className = "flex size-8 items-center justify-center rounded-full bg-teal-200 text-xs font-medium text-teal-800";
                   badge.textContent = initials;
                   row.appendChild(badge);
                 }
@@ -224,7 +224,7 @@
               src={Map.get(entry.user.member.avatar_blob || %{}, :url)}
               alt="Avatar"
             />
-            <.avatar_fallback bg_color="blueBg" class="text-blueText">
+            <.avatar_fallback bg_color="teal-200" class="text-teal-800">
               {to_string(entry.user.member.name || entry.user.email || "")
               |> String.slice(0, 1)
               |> String.upcase()}

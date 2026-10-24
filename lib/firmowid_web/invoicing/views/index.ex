@@ -154,7 +154,7 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
       </div>
     </div>
 
-    <div class="sticky top-navbar z-10 flex justify-between bg-lightGreyBg py-3 max-md:justify-center">
+    <div class="sticky top-navbar z-10 flex justify-between bg-grey-100 py-3 max-md:justify-center">
       <div class="flex items-center gap-4">
         <.month_picker
           id="month"
@@ -199,7 +199,7 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
             as="label"
             for={@uploads.file.ref}
             variant="secondary"
-            accent="orange"
+            accent="rust"
             class="relative"
           >
             <%= if @currently_uploading_count > 0 or @processing_blobs_count > 0 do %>
@@ -207,13 +207,13 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
                 id="upload-count-indicator"
                 phx-hook="Tippy"
                 data-tippy-content="Pliki są przetwarzane i za kilka chwil będą dostępne w Firmowidzie"
-                class="absolute -top-3 -right-3 flex size-7 items-center justify-center overflow-hidden rounded-full bg-lightGreyBg"
+                class="absolute -top-3 -right-3 flex size-7 items-center justify-center overflow-hidden rounded-full bg-grey-100"
               >
-                <span class="absolute block size-full animate-pulse bg-orange-600" />
-                <span class="z-10 flex size-5 items-center justify-center rounded-full bg-lightGreyBg">
+                <span class="absolute block size-full animate-pulse bg-rust-600" />
+                <span class="z-10 flex size-5 items-center justify-center rounded-full bg-grey-100">
                   <Lucideicons.arrow_up
                     :if={@currently_uploading_count > 0 or @processing_blobs_count == 1}
-                    class="size-4 leading-none text-orange-900"
+                    class="size-4 leading-none text-rust-900"
                   />
                   <span :if={@currently_uploading_count == 0 and @processing_blobs_count > 1}>
                     {@processing_blobs_count}
@@ -239,7 +239,7 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
           navigate={Navigation.sales_invoice_creator_path()}
           kind="button"
           variant="secondary"
-          accent="turquoise"
+          accent="teal"
           id="sales-invoice-link"
           class="max-md:hidden"
         >
@@ -307,17 +307,17 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
       <div
         :if={can_write_invoicing?(@current_user)}
         id="file-drop-overlay"
-        class="absolute -inset-3 z-20 hidden rounded-lg border-2 border-turquoise-200 bg-[#EDF5F599] opacity-60 transition-opacity"
+        class="absolute -inset-3 z-20 hidden rounded-lg border-2 border-teal-200 bg-[#EDF5F599] opacity-60 transition-opacity"
         phx-hook="FileUploadDragNDrop"
         phx-drop-target={can_write_invoicing?(@current_user) && @uploads.file.ref}
       >
         <div class="sticky top-0 flex size-full max-h-dvh items-center justify-center">
-          <div class="flex w-fit flex-col items-center gap-6 rounded-4xl bg-turquoise-200 px-10 pt-6 pb-8 text-turquoise-700">
+          <div class="flex w-fit flex-col items-center gap-6 rounded-4xl bg-teal-200 px-10 pt-6 pb-8 text-teal-700">
             <.icon name="hero-cloud-arrow-up" class="size-16" />
             <p class="text-center text-xl font-medium">
               Przeciągnij faktury, aby<br /> załadować je do Firmowida.
             </p>
-            <p class="max-w-sm text-center text-sm text-turquoise-600">
+            <p class="max-w-sm text-center text-sm text-teal-600">
               (max 50 plików, PDF, JPG oraz PNG)
             </p>
           </div>

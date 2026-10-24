@@ -441,7 +441,7 @@ defmodule FirmowidUI.Components.Link do
     [
       "inline-flex items-center justify-center gap-1 whitespace-nowrap select-none transition duration-100 ease-out",
       "text-base/tight font-normal text-grey-700",
-      "hover:text-grey-900 active:text-orange-700",
+      "hover:text-grey-900 active:text-rust-700",
       "[&>svg]:size-4"
     ]
   end
@@ -450,7 +450,7 @@ defmodule FirmowidUI.Components.Link do
     [
       "inline-flex items-center justify-center gap-1 whitespace-nowrap select-none transition duration-100 ease-out",
       "text-sm/tight font-normal text-grey-700",
-      "hover:text-grey-900 active:text-orange-700",
+      "hover:text-grey-900 active:text-rust-700",
       "[&>svg]:size-4"
     ]
   end
@@ -463,7 +463,7 @@ defmodule FirmowidUI.Components.Link do
     ]
   end
 
-  defp resolved_accent(%{accent: nil, variant: nil}), do: "orange"
-  defp resolved_accent(%{accent: nil, variant: "primary"}), do: "orange"
+  defp resolved_accent(%{accent: nil, variant: nil}), do: "rust"
+  defp resolved_accent(%{accent: nil, variant: "primary"}), do: "rust"
   defp resolved_accent(%{accent: accent}), do: accent
 end

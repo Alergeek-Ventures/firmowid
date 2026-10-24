@@ -424,7 +424,7 @@ defmodule FirmowidMcp.Invoicing.Views.Issue do
         <div class="flex items-start justify-between gap-2">
           <h1 class={[
             "flex items-baseline gap-1 text-xl/tight font-medium",
-            @phase not in [:review, :submitting, :submitted] && "text-red-600"
+            @phase not in [:review, :submitting, :submitted] && "text-brick-600"
           ]}>
             {heading(@phase, @widget)}
             <span :if={@phase == :submitting} class="inline-flex gap-1" aria-hidden="true">
@@ -450,7 +450,7 @@ defmodule FirmowidMcp.Invoicing.Views.Issue do
         <p :if={@status == :expired} role="status" class="text-sm text-grey-600">
           {gettext("This view is unavailable.")}
         </p>
-        <p :for={error <- @errors} role="alert" class="text-sm text-red-600">{error}</p>
+        <p :for={error <- @errors} role="alert" class="text-sm text-brick-600">{error}</p>
         <%= if @status == :ready do %>
           <p
             :if={(@phase == :review and @connection) && @connection.status != :connected}
@@ -509,7 +509,7 @@ defmodule FirmowidMcp.Invoicing.Views.Issue do
                   id="confirm-invoice-issuance"
                   type="button"
                   variant="primary"
-                  accent="turquoise"
+                  accent="teal"
                   phx-click="confirm_issuance"
                   phx-disable-with={gettext("Issuing…")}
                   disabled={
@@ -532,7 +532,7 @@ defmodule FirmowidMcp.Invoicing.Views.Issue do
             >
               <Lucideicons.circle_check
                 :if={@phase == :submitted}
-                class="size-16 text-greenText"
+                class="size-16 text-moss-700"
                 aria-hidden="true"
               />
               <p class="text-sm text-grey-600">{status_message(@phase)}</p>
@@ -547,9 +547,9 @@ defmodule FirmowidMcp.Invoicing.Views.Issue do
               :if={@phase in [:failed, :not_submitted, :returned_to_draft, :deleted]}
               id="invoice-submission-status"
               role="alert"
-              class="grid justify-items-center gap-3 rounded-md bg-redBg p-6 text-center text-redText @min-[58rem]:mbs-7"
+              class="grid justify-items-center gap-3 rounded-md bg-brick-200 p-6 text-center text-brick-700 @min-[58rem]:mbs-7"
             >
-              <Lucideicons.triangle_alert class="size-10 text-red-600" aria-hidden="true" />
+              <Lucideicons.triangle_alert class="size-10 text-brick-600" aria-hidden="true" />
               <p class="text-sm">{status_message(@phase)}</p>
               <p
                 :if={(@phase == :failed and @submission_info) && @submission_info.error}

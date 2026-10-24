@@ -19,8 +19,8 @@ defmodule FirmowidWeb.Analysis.Components.ProjectMatrix do
   alias FirmowidWeb.Analysis.Utilities.Navigation
 
   @shades %{
-    loss: ~w(bg-red-100 bg-red-200 bg-red-300 bg-red-400),
-    profit: ~w(bg-turquoise-100 bg-turquoise-200 bg-turquoise-300 bg-turquoise-400)
+    loss: ~w(bg-brick-100 bg-brick-200 bg-brick-300 bg-brick-400),
+    profit: ~w(bg-teal-100 bg-teal-200 bg-teal-300 bg-teal-400)
   }
 
   attr :profitability, :map,
@@ -69,23 +69,23 @@ defmodule FirmowidWeb.Analysis.Components.ProjectMatrix do
             <h2 id="analysis-project-matrix-title" class="text-h5 font-medium text-grey-900">
               {gettext("Project results by month")}
             </h2>
-            <p :if={not @empty?} id="analysis-project-matrix-unit" class="text-sm text-darkGrey">
+            <p :if={not @empty?} id="analysis-project-matrix-unit" class="text-sm text-grey-700">
               {metric_caption(@params.metric)}
             </p>
           </div>
-          <p :if={@empty?} id="analysis-project-matrix-empty" class="text-sm text-darkGrey">
+          <p :if={@empty?} id="analysis-project-matrix-empty" class="text-sm text-grey-700">
             {gettext("No income or expenses in %{year}.", year: @params.year)}
           </p>
           <p
             :if={not @empty? and not Enum.any?(@rows, &(&1.kind == :project))}
             id="analysis-project-matrix-no-projects"
-            class="text-sm text-darkGrey"
+            class="text-sm text-grey-700"
           >
             {if @project_filter?,
               do: gettext("The selected projects have no entries in %{year}.", year: @params.year),
               else: gettext("No project has entries in %{year}.", year: @params.year)}
           </p>
-          <p :if={not @empty? and @project_filter?} class="text-sm text-darkGrey">
+          <p :if={not @empty? and @project_filter?} class="text-sm text-grey-700">
             {gettext(
               "Only the selected projects are listed; Outside projects and Whole company cover all entries."
             )}
@@ -100,7 +100,7 @@ defmodule FirmowidWeb.Analysis.Components.ProjectMatrix do
                 <tr>
                   <th
                     scope="col"
-                    class="sticky inset-s-0 z-10 bg-white pe-3 pbe-1 text-start text-xs font-normal text-darkGrey"
+                    class="sticky inset-s-0 z-10 bg-white pe-3 pbe-1 text-start text-xs font-normal text-grey-700"
                   >
                     {gettext("Project")}
                   </th>
@@ -214,14 +214,14 @@ defmodule FirmowidWeb.Analysis.Components.ProjectMatrix do
           <ul
             :if={not @empty?}
             id="analysis-project-matrix-legend"
-            class="flex flex-wrap gap-x-5 gap-y-2 text-xs text-darkGrey"
+            class="flex flex-wrap gap-x-5 gap-y-2 text-xs text-grey-700"
           >
             <li class="inline-flex items-center gap-2">
-              <span class="relative h-3 w-5 rounded-xs bg-red-200 before:absolute before:inset-s-0 before:inset-bs-0 before:size-1.5 before:bg-redText before:[clip-path:polygon(0_0,100%_0,0_100%)]" />
+              <span class="relative h-3 w-5 rounded-xs bg-brick-200 before:absolute before:inset-s-0 before:inset-bs-0 before:size-1.5 before:bg-brick-700 before:[clip-path:polygon(0_0,100%_0,0_100%)]" />
               {pgettext("analysis result", "Loss")}
             </li>
             <li class="inline-flex items-center gap-2">
-              <span class="h-3 w-5 rounded-xs bg-turquoise-300" />
+              <span class="h-3 w-5 rounded-xs bg-teal-300" />
               {pgettext("analysis result", "Profit")}
             </li>
             <li class="inline-flex items-center gap-2">
@@ -250,7 +250,7 @@ defmodule FirmowidWeb.Analysis.Components.ProjectMatrix do
     ~H"""
     <span class={["block", @class]}>
       <span class={["block", row_name_styles(@row.key == @selection.key)]}>{@row.name}</span>
-      <span :if={@row.loss_months > 0} class="block text-xs text-redText">
+      <span :if={@row.loss_months > 0} class="block text-xs text-brick-700">
         {ngettext("%{count} month at a loss", "%{count} months at a loss", @row.loss_months)}
       </span>
     </span>
@@ -309,11 +309,11 @@ defmodule FirmowidWeb.Analysis.Components.ProjectMatrix do
         >
           {@selection.name}
         </h3>
-        <p class="text-sm text-darkGrey">{period_name(@selection)}</p>
+        <p class="text-sm text-grey-700">{period_name(@selection)}</p>
       </div>
       <%= if @breakdown do %>
         <div class="flex flex-col gap-1">
-          <p class="text-sm text-darkGrey">{metric_name(@metric)}</p>
+          <p class="text-sm text-grey-700">{metric_name(@metric)}</p>
           <p class="flex flex-wrap items-center gap-x-3 gap-y-1">
             <span class={[
               "text-2xl font-semibold whitespace-nowrap tabular-nums",
@@ -323,14 +323,14 @@ defmodule FirmowidWeb.Analysis.Components.ProjectMatrix do
             </span>
             <span
               :if={Decimal.negative?(metric_value(@breakdown, @metric))}
-              class="rounded-sm bg-redBg px-2 py-0.5 text-xs font-medium text-redText"
+              class="rounded-sm bg-brick-200 px-2 py-0.5 text-xs font-medium text-brick-700"
             >
               {pgettext("analysis result", "Loss")}
             </span>
           </p>
         </div>
       <% else %>
-        <p id="analysis-matrix-detail-empty" class="text-sm text-darkGrey">
+        <p id="analysis-matrix-detail-empty" class="text-sm text-grey-700">
           {gettext("No entries in this period.")}
         </p>
       <% end %>
@@ -342,7 +342,7 @@ defmodule FirmowidWeb.Analysis.Components.ProjectMatrix do
           </dd>
         </div>
       </dl>
-      <p :if={@breakdown && @selection.kind == :project} class="text-xs text-darkGrey">
+      <p :if={@breakdown && @selection.kind == :project} class="text-xs text-grey-700">
         {allocation_note(@allocation)}
       </p>
       <.link
@@ -541,7 +541,7 @@ defmodule FirmowidWeb.Analysis.Components.ProjectMatrix do
 
   defp cost(amount), do: if(Decimal.eq?(amount, 0), do: amount, else: Decimal.negate(amount))
 
-  defp line_styles(:item), do: "text-darkGrey"
+  defp line_styles(:item), do: "text-grey-700"
   defp line_styles(:subtotal), do: "border-bs border-grey-200 font-medium text-grey-900"
   defp line_styles(:total), do: "border-bs border-grey-900 font-semibold text-grey-900"
 
@@ -575,7 +575,7 @@ defmodule FirmowidWeb.Analysis.Components.ProjectMatrix do
   defp cell_styles(cell, selected?, compact?) do
     [
       if(compact?, do: "min-w-11 px-1", else: "min-w-12 px-1.5"),
-      "relative block min-h-11 w-full cursor-pointer rounded-md text-center whitespace-nowrap tabular-nums focus-visible:outline-3 focus-visible:outline-offset-1 focus-visible:outline-turquoise-700 active:brightness-95 pointer-fine:hover:brightness-95",
+      "relative block min-h-11 w-full cursor-pointer rounded-md text-center whitespace-nowrap tabular-nums focus-visible:outline-3 focus-visible:outline-offset-1 focus-visible:outline-teal-700 active:brightness-95 pointer-fine:hover:brightness-95",
       cell_fill(cell),
       cell_text(cell),
       if(selected?,
@@ -583,7 +583,7 @@ defmodule FirmowidWeb.Analysis.Components.ProjectMatrix do
         else: cell.shade == nil && "inset-ring inset-ring-grey-200"
       ),
       cell.value && Decimal.negative?(cell.value) &&
-        "before:absolute before:inset-bs-0 before:inset-s-0 before:size-2.5 before:rounded-ss-md before:bg-redText before:[clip-path:polygon(0_0,100%_0,0_100%)]"
+        "before:absolute before:inset-bs-0 before:inset-s-0 before:size-2.5 before:rounded-ss-md before:bg-brick-700 before:[clip-path:polygon(0_0,100%_0,0_100%)]"
     ]
   end
 
@@ -594,7 +594,7 @@ defmodule FirmowidWeb.Analysis.Components.ProjectMatrix do
 
   defp cell_text(cell) do
     cond do
-      Decimal.negative?(cell.value) and cell.shade == nil -> "font-semibold text-redText"
+      Decimal.negative?(cell.value) and cell.shade == nil -> "font-semibold text-brick-700"
       Decimal.negative?(cell.value) -> "font-semibold text-grey-900"
       cell.kind == :company or cell.month == nil -> "font-semibold text-grey-900"
       true -> "text-grey-900"
@@ -604,13 +604,13 @@ defmodule FirmowidWeb.Analysis.Components.ProjectMatrix do
   defp column_styles(true, _year?), do: "font-semibold text-grey-900 underline decoration-2 underline-offset-4"
 
   defp column_styles(false, true), do: "font-medium text-grey-900"
-  defp column_styles(false, false), do: "text-darkGrey"
+  defp column_styles(false, false), do: "text-grey-700"
 
   defp row_name_styles(true), do: "font-semibold text-grey-900 underline decoration-2 underline-offset-4"
 
   defp row_name_styles(false), do: "font-medium text-grey-900"
 
-  defp result_styles(amount), do: if(Decimal.negative?(amount), do: "text-redText", else: "text-grey-900")
+  defp result_styles(amount), do: if(Decimal.negative?(amount), do: "text-brick-700", else: "text-grey-900")
 
   defp period_label(nil), do: gettext("Year")
   defp period_label(month), do: month_name(month, "LLL")

@@ -140,7 +140,7 @@ defmodule FirmowidWeb.Invoicing.Views.IndexTest do
 
       {:ok, view, _html} = conn |> log_in_user(user) |> live(~p"/fakturowanie")
       assert has_element?(view, "#dashboard-attention h2", "Warte uwagi")
-      refute has_element?(view, "#dashboard-attention .bg-red-200")
+      refute has_element?(view, "#dashboard-attention .bg-brick-200")
 
       assert has_element?(
                view,
@@ -165,7 +165,7 @@ defmodule FirmowidWeb.Invoicing.Views.IndexTest do
                "Połączenie z Synthetic Bank wygasło"
              )
 
-      assert has_element?(view, "#dashboard-attention .bg-red-200")
+      assert has_element?(view, "#dashboard-attention .bg-brick-200")
 
       assert has_element?(
                view,
@@ -216,7 +216,7 @@ defmodule FirmowidWeb.Invoicing.Views.IndexTest do
                )
 
       refute has_element?(renewed_view, "#bank-connection-alert-#{account.id}")
-      refute has_element?(renewed_view, "#dashboard-attention .bg-red-200")
+      refute has_element?(renewed_view, "#dashboard-attention .bg-brick-200")
     end
 
     test "shows one concise warning per bank using the earliest known synchronization gap", %{

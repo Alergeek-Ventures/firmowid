@@ -184,14 +184,14 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoicePayment do
                 @selected_bank_account.is_default and
                   @selected_bank_account.currency == @invoice.currency
               }
-              class="h-min rounded-full bg-green-200 px-4 py-1 text-sm/snug text-green-700"
+              class="h-min rounded-full bg-moss-200 px-4 py-1 text-sm/snug text-moss-700"
             >
               domyślny <strong>{@selected_bank_account.currency}</strong>
             </p>
 
             <p
               :if={@selected_bank_account.currency != @invoice.currency}
-              class="h-min rounded-full bg-redBg px-4 py-1 text-sm/snug text-redText"
+              class="h-min rounded-full bg-brick-200 px-4 py-1 text-sm/snug text-brick-700"
             >
               waluta konta: <strong>{@selected_bank_account.currency}</strong>
             </p>
@@ -251,7 +251,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoicePayment do
 
                 <p
                   :if={account.is_default and account.currency == @invoice.currency}
-                  class="mx-4 rounded-full bg-green-200 px-3 py-1 text-sm/snug whitespace-nowrap text-green-700"
+                  class="mx-4 rounded-full bg-moss-200 px-3 py-1 text-sm/snug whitespace-nowrap text-moss-700"
                 >
                   domyślny <strong>{account.currency}</strong>
                 </p>
@@ -285,7 +285,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoicePayment do
             <.button
               type="button"
               variant="primary"
-              accent="turquoise"
+              accent="teal"
               phx-click={hide_modal("bank_account_selector_modal")}
             >
               Dalej

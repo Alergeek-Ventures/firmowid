@@ -146,7 +146,7 @@ defmodule FirmowidWeb.Delegations.Components.SettlementPage do
             <.button
               type="submit"
               variant="primary"
-              accent="turquoise"
+              accent="teal"
               size="big"
               class="mt-6 w-full"
               disabled={@uploading?}
@@ -310,7 +310,7 @@ defmodule FirmowidWeb.Delegations.Components.SettlementPage do
     ~H"""
     <section
       id="delegation-date-change"
-      class="mt-6 w-full rounded-lg border border-grey-200 bg-turquoise-100 p-6 text-turquoise-700"
+      class="mt-6 w-full rounded-lg border border-grey-200 bg-teal-100 p-6 text-teal-700"
     >
       <div class="flex flex-wrap items-center justify-between gap-3">
         <h2 class="flex items-center gap-2 font-medium">

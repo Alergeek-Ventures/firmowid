@@ -31,7 +31,7 @@ defmodule FirmowidWeb.Invoicing.Components.DeductibleVat do
     ~H"""
     <section id={@id} class="flex flex-col gap-3 py-2">
       <div class="flex flex-col gap-1">
-        <h3 class="text-sm/snug font-medium text-darkGrey">
+        <h3 class="text-sm/snug font-medium text-grey-700">
           {gettext("Deductible VAT for the tax reserve")}
         </h3>
         <p class="text-xs text-grey-600">
@@ -91,7 +91,7 @@ defmodule FirmowidWeb.Invoicing.Components.DeductibleVat do
             currency: document.amount.currency
           )}
         </p>
-        <p :if={@errors[document.id]} class="text-xs text-red-700">{@errors[document.id]}</p>
+        <p :if={@errors[document.id]} class="text-xs text-brick-700">{@errors[document.id]}</p>
       </.form>
     </section>
     """

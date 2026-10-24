@@ -20,31 +20,31 @@ defmodule FirmowidUI.Components.Inputs do
   end
 
   defp legacy_input_color("none") do
-    "hover:border-transparent border border-transparent text-darkGrey"
+    "hover:border-transparent border border-transparent text-grey-700"
   end
 
   defp legacy_input_color("light_orange") do
-    "bg-orangeBg text-orangeText border-none hover:bg-[#f0e0d8] focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-orangeText"
+    "bg-rust-200 text-rust-700 border-none hover:bg-[#f0e0d8] focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-rust-700"
   end
 
   defp legacy_input_color("grey") do
-    "text-white border-darkGrey bg-darkGrey disabled:cursor-default disabled:text-white hover:opacity-60 disabled:bg-darkGrey"
+    "text-white border-grey-700 bg-grey-700 disabled:cursor-default disabled:text-white hover:opacity-60 disabled:bg-grey-700"
   end
 
   defp legacy_input_color("green") do
-    "bg-blueText text-white hover:text-black hover:bg-greyButtonBg disabled:bg-blueText disabled:text-white disabled:cursor-default"
+    "bg-teal-800 text-white hover:text-black hover:bg-grey-200 disabled:bg-teal-800 disabled:text-white disabled:cursor-default"
   end
 
   defp legacy_input_color("black") do
-    "text-white bg-black hover:bg-greyButtonBg hover:text-black disabled:cursor-default disabled:bg-black disabled:text-white"
+    "text-white bg-black hover:bg-grey-200 hover:text-black disabled:cursor-default disabled:bg-black disabled:text-white"
   end
 
   defp legacy_input_color("orange") do
-    "text-white border-none bg-orangeText hover:bg-orangeBg hover:text-orangeText disabled:cursor-default disabled:bg-orangeText disabled:text-white phx-click-loading:bg-orangeText phx-click-loading:text-white"
+    "text-white border-none bg-rust-700 hover:bg-rust-200 hover:text-rust-700 disabled:cursor-default disabled:bg-rust-700 disabled:text-white phx-click-loading:bg-rust-700 phx-click-loading:text-white"
   end
 
   defp legacy_input_color("light_grey") do
-    "bg-greyButtonBg hover:border-transparent Grey border border-transparent text-darkGrey"
+    "bg-grey-200 hover:border-transparent Grey border border-transparent text-grey-700"
   end
 
   defp legacy_input_color(_), do: legacy_input_color("black")
@@ -139,7 +139,7 @@ defmodule FirmowidUI.Components.Inputs do
       <label
         phx-disable-with=""
         class={[
-          "relative flex cursor-pointer items-center font-normal text-darkGrey has-disabled:cursor-default has-disabled:opacity-50",
+          "relative flex cursor-pointer items-center font-normal text-grey-700 has-disabled:cursor-default has-disabled:opacity-50",
           @rest[:class]
         ]}
       >
@@ -152,10 +152,10 @@ defmodule FirmowidUI.Components.Inputs do
           phx-disable-with=""
           checked={@checked}
           disabled={@rest[:disabled]}
-          class="size-4 rounded-[3px] border border-darkGrey text-darkGrey focus:ring-0 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--focus-ring)"
+          class="size-4 rounded-[3px] border border-grey-700 text-grey-700 focus:ring-0 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--focus-ring)"
           {@rest}
         />
-        <span class="ml-1 text-sm text-darkGrey">{@label}</span>
+        <span class="ml-1 text-sm text-grey-700">{@label}</span>
       </label>
       <.error :for={msg <- @errors} :if={@show_error}>{msg}</.error>
     </div>
@@ -247,7 +247,7 @@ defmodule FirmowidUI.Components.Inputs do
         id={@id}
         name={@name}
         class={[
-          "min-h-12 w-full resize-none rounded-lg border border-grey-200 bg-white px-3 py-1.5 leading-tight text-grey-900 placeholder:text-grey-500 focus:border-grey-700 aria-invalid:border-red-700"
+          "min-h-12 w-full resize-none rounded-lg border border-grey-200 bg-white px-3 py-1.5 leading-tight text-grey-900 placeholder:text-grey-500 focus:border-grey-700 aria-invalid:border-brick-700"
         ]}
         aria-invalid={to_string(not Enum.empty?(@errors))}
         {@rest}
@@ -269,7 +269,7 @@ defmodule FirmowidUI.Components.Inputs do
         class={[
           "mt-2 block min-h-24 w-full rounded text-grey-900 focus:ring-0 sm:text-sm/6",
           @errors == [] && "border-grey-200 focus:border-grey-700",
-          @errors != [] && "border-red-700 focus:border-red-700",
+          @errors != [] && "border-brick-700 focus:border-brick-700",
           @rest[:class]
         ]}
         {@rest}
@@ -293,7 +293,7 @@ defmodule FirmowidUI.Components.Inputs do
         value={Form.normalize_value(@type, @value)}
         aria-invalid={to_string(not Enum.empty?(@errors))}
         class={[
-          "w-full rounded-lg border border-grey-200 bg-white px-3 py-1.5 leading-tight text-grey-900 placeholder:text-grey-500 focus:border-grey-700 aria-invalid:border-red-700",
+          "w-full rounded-lg border border-grey-200 bg-white px-3 py-1.5 leading-tight text-grey-900 placeholder:text-grey-500 focus:border-grey-700 aria-invalid:border-brick-700",
           @type == "number" &&
             "[appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none",
           @input_class
@@ -320,7 +320,7 @@ defmodule FirmowidUI.Components.Inputs do
         class={[
           "block w-full rounded text-grey-900 read-only:cursor-default read-only:bg-grey-100 focus:ring-0 sm:text-sm/6",
           @errors == [] && "border-grey-200 focus:border-grey-700",
-          @errors != [] && "border-red-700 focus:border-red-700",
+          @errors != [] && "border-brick-700 focus:border-brick-700",
           @input_class
         ]}
         {@rest}
@@ -365,7 +365,7 @@ defmodule FirmowidUI.Components.Inputs do
       id={"error_msg_#{@target}"}
       phx-hook="FloatingUIError"
       data-for={@target}
-      class="absolute top-0 left-0 z-10 flex items-center justify-center rounded bg-red-700 px-4 py-3 text-sm font-normal text-red-100 shadow-[0_2px_8px_rgba(0,0,0,0.15)]"
+      class="absolute top-0 left-0 z-10 flex items-center justify-center rounded bg-brick-700 px-4 py-3 text-sm font-normal text-brick-100 shadow-[0_2px_8px_rgba(0,0,0,0.15)]"
     >
       <div class="flex items-center gap-2">
         <.icon name="hero-information-circle" class="mt-0.5 size-5 flex-none" />
@@ -374,7 +374,7 @@ defmodule FirmowidUI.Components.Inputs do
 
       <div
         id={"arrow_#{@target}"}
-        class="absolute bottom-[-5px] left-1/2 size-2.5 -translate-x-1/2 rotate-45 bg-red-700"
+        class="absolute bottom-[-5px] left-1/2 size-2.5 -translate-x-1/2 rotate-45 bg-brick-700"
       >
       </div>
     </div>
@@ -383,7 +383,7 @@ defmodule FirmowidUI.Components.Inputs do
 
   def error(assigns) do
     ~H"""
-    <p class="mt-3 flex gap-3 text-sm/6 text-red-600">
+    <p class="mt-3 flex gap-3 text-sm/6 text-brick-600">
       <.icon name="hero-exclamation-circle-mini" class="mt-0.5 size-5 flex-none" />
       {render_slot(@inner_block)}
     </p>

@@ -35,9 +35,9 @@ defmodule FirmowidWeb.Timetracker.Utilities.LeavePresentation do
   def status_label(:declined), do: "odrzucony"
 
   @spec status_badge_styles(status()) :: String.t()
-  def status_badge_styles(:pending), do: "bg-turquoise-100 text-turquoise-700"
-  def status_badge_styles(:accepted), do: "bg-green-100 text-green-700"
-  def status_badge_styles(:declined), do: "bg-red-100 text-red-700"
+  def status_badge_styles(:pending), do: "bg-teal-100 text-teal-700"
+  def status_badge_styles(:accepted), do: "bg-moss-100 text-moss-700"
+  def status_badge_styles(:declined), do: "bg-brick-100 text-brick-700"
 
   @spec format_range(Date.t(), Date.t()) :: String.t()
   def format_range(%Date{} = from, %Date{} = to) when from == to do

@@ -39,8 +39,8 @@ defmodule FirmowidWeb.Management.Components.HoursRecordStatus do
           class={[
             "flex w-[166.5px] min-w-0 items-center justify-between gap-2.5 rounded-sm px-2 py-1 text-caps-sm/tight font-medium uppercase",
             if(@hours_record.submission_status == :withdrawn,
-              do: "bg-orange-200 text-orange-700",
-              else: "bg-green-200 text-green-700"
+              do: "bg-rust-200 text-rust-700",
+              else: "bg-moss-200 text-moss-700"
             )
           ]}
         >
@@ -54,7 +54,7 @@ defmodule FirmowidWeb.Management.Components.HoursRecordStatus do
           kind="unstyled"
           navigate={~p"/czasosledz/ewidencja/#{@hours_record.id}"}
           download={"Ewidencja_#{@hours_record.year}_#{@hours_record.month}_#{@user.member.name || @user.email}.pdf"}
-          class="inline-flex shrink-0 items-center justify-center rounded-md p-0.5 transition hover:bg-greyButtonBg"
+          class="inline-flex shrink-0 items-center justify-center rounded-md p-0.5 transition hover:bg-grey-200"
         >
           <.icon name="hero-arrow-down-tray-mini" class="shrink-0 text-grey-400" />
         </.link>

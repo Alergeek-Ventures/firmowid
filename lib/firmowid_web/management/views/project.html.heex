@@ -90,8 +90,8 @@
               <p class={[
                 "text-sm/snug",
                 case @hours_delta.direction do
-                  :increase -> "text-green-600"
-                  :decrease -> "text-red-700"
+                  :increase -> "text-moss-600"
+                  :decrease -> "text-brick-700"
                   :same -> "text-grey-500"
                 end
               ]}>
@@ -122,8 +122,8 @@
               <p class={[
                 "text-sm/snug",
                 case @cost_delta.direction do
-                  :increase -> "text-red-700"
-                  :decrease -> "text-green-600"
+                  :increase -> "text-brick-700"
+                  :decrease -> "text-moss-600"
                   :same -> "text-grey-500"
                 end
               ]}>
@@ -176,13 +176,13 @@
                 class="col-span-full grid grid-cols-subgrid items-center border-grey-100 py-3 pr-4 pl-2 first:border-t-2 last:border-b-2"
               >
                 <div class="flex flex-row items-center gap-4">
-                  <.avatar class="size-8 ring-1 ring-greyButtonBg/50">
+                  <.avatar class="size-8 ring-1 ring-grey-200/50">
                     <.avatar_image
                       :if={Map.get(user.member.avatar_blob || %{}, :url)}
                       src={Map.get(user.member.avatar_blob || %{}, :url)}
                       alt="Avatar"
                     />
-                    <.avatar_fallback class="bg-blueBg text-blueText">
+                    <.avatar_fallback class="bg-teal-200 text-teal-800">
                       {to_string(user.member.name || user.email || "")
                       |> String.slice(0, 1)
                       |> String.upcase()}

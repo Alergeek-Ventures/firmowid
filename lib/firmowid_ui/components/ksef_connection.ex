@@ -36,7 +36,7 @@ defmodule FirmowidUI.Components.KsefConnection do
             <% else %>
               <span class="inline-flex items-center gap-2">
                 <span>Połączono z KSeF</span>
-                <.icon name="hero-check-circle-solid" class="size-5 text-green-700" />
+                <.icon name="hero-check-circle-solid" class="size-5 text-moss-700" />
               </span>
             <% end %>
           </.detail_row>
@@ -79,7 +79,7 @@ defmodule FirmowidUI.Components.KsefConnection do
         <.detail_row label="Status">
           <span class="inline-flex items-center gap-2">
             <span>Niepołączono z KSeF</span>
-            <.icon name="hero-x-circle-solid" class="size-5 text-red-700" />
+            <.icon name="hero-x-circle-solid" class="size-5 text-brick-700" />
           </span>
         </.detail_row>
 
@@ -124,12 +124,12 @@ defmodule FirmowidUI.Components.KsefConnection do
           aria-labelledby="ksef-auth-tab-token"
           class="w-full max-w-lg space-y-5"
         >
-          <div class="flex gap-3 rounded-lg border border-orange-700 bg-orange-200 p-4 text-sm text-grey-900">
+          <div class="flex gap-3 rounded-lg border border-rust-700 bg-rust-200 p-4 text-sm text-grey-900">
             <.icon
               name="hero-exclamation-triangle-solid"
-              class="mbs-0.5 size-5 shrink-0 text-orange-800"
+              class="mbs-0.5 size-5 shrink-0 text-rust-800"
             />
-            <div class="text-orange-800">
+            <div class="text-rust-800">
               <p class="font-semibold">Metoda wygaszana</p>
               <p class="mbs-1">
                 Tokeny KSeF będą obsługiwane tylko do 1 stycznia 2027 roku. Zalecamy
@@ -149,7 +149,7 @@ defmodule FirmowidUI.Components.KsefConnection do
                   external="https://ap.ksef.mf.gov.pl/web/"
                   target="_blank"
                   rel="noopener noreferrer"
-                  class="inline-flex items-center gap-1 text-sm text-orangeText underline underline-offset-4"
+                  class="inline-flex items-center gap-1 text-sm text-rust-700 underline underline-offset-4"
                 >
                   KSeF
                 </.link>, zaloguj się i wygeneruj token z uprawnieniami do wystawiania i przeglądania faktur.
@@ -218,7 +218,7 @@ defmodule FirmowidUI.Components.KsefConnection do
                   external="https://podpis.gov.pl/podpisz-dokument-elektronicznie/"
                   target="_blank"
                   rel="noopener noreferrer"
-                  class="inline-flex items-center gap-1 text-sm text-orangeText underline underline-offset-4"
+                  class="inline-flex items-center gap-1 text-sm text-rust-700 underline underline-offset-4"
                 >
                   Profilem Zaufanym
                 </.link>
@@ -275,7 +275,7 @@ defmodule FirmowidUI.Components.KsefConnection do
                   external="https://ap.ksef.mf.gov.pl/web/"
                   target="_blank"
                   rel="noopener noreferrer"
-                  class="inline-flex items-center gap-1 text-sm text-orangeText underline underline-offset-4"
+                  class="inline-flex items-center gap-1 text-sm text-rust-700 underline underline-offset-4"
                 >
                   KSeF
                 </.link>, zaloguj się i wygeneruj certyfikat o przeznaczeniu <span class="font-medium">„Uwierzytelnienie w systemie KSeF”</span>.
@@ -386,10 +386,10 @@ defmodule FirmowidUI.Components.KsefConnection do
   defp file_upload(assigns) do
     ~H"""
     <label
-      class="flex w-full cursor-pointer justify-center rounded-md border-2 border-dashed border-orangeText px-6 py-8 focus-within:outline-2 focus-within:outline-orange-700 active:opacity-80"
+      class="flex w-full cursor-pointer justify-center rounded-md border-2 border-dashed border-rust-700 px-6 py-8 focus-within:outline-2 focus-within:outline-rust-700 active:opacity-80"
       phx-drop-target={@upload.ref}
     >
-      <div class="text-center text-sm text-orangeText">
+      <div class="text-center text-sm text-rust-700">
         <div :if={Enum.empty?(@upload.entries)} class={@prompt_class}>{@prompt}</div>
         <.live_file_input upload={@upload} class="sr-only" />
         <div :for={entry <- @upload.entries}>
@@ -415,7 +415,7 @@ defmodule FirmowidUI.Components.KsefConnection do
   defp ksef_step(assigns) do
     ~H"""
     <li class={["grid grid-cols-[min-content_minmax(0,1fr)] items-center gap-x-3", @class]}>
-      <span class="flex size-7 shrink-0 items-center justify-center rounded-full bg-orangeText text-sm font-semibold text-white">{@number}</span>
+      <span class="flex size-7 shrink-0 items-center justify-center rounded-full bg-rust-700 text-sm font-semibold text-white">{@number}</span>
       <div class="text-sm font-semibold text-grey-900">{render_slot(@title)}</div>
       <div :for={content <- @content} class={["col-start-2 text-sm text-grey-600", @content_class]}>
         {render_slot(content)}
@@ -441,7 +441,7 @@ defmodule FirmowidUI.Components.KsefConnection do
       size="small"
       phx-click="select_ksef_auth_method"
       phx-value-method={@method}
-      class="w-full focus-visible:outline-2 focus-visible:outline-orange-700 active:opacity-80"
+      class="w-full focus-visible:outline-2 focus-visible:outline-rust-700 active:opacity-80"
     >
       {@label}
     </.button>
@@ -467,7 +467,7 @@ defmodule FirmowidUI.Components.KsefConnection do
       class={[
         "mbs-4 flex items-start gap-2 rounded-lg border px-3 py-2.5 text-sm",
         if(@status == :failed,
-          do: "border-red-200 bg-red-100 text-red-900",
+          do: "border-brick-200 bg-brick-100 text-brick-900",
           else: "border-grey-200 bg-grey-50 text-grey-700"
         )
       ]}
@@ -475,7 +475,7 @@ defmodule FirmowidUI.Components.KsefConnection do
       <.icon
         :if={@status == :failed}
         name="hero-x-circle-solid"
-        class="mbs-0.5 size-5 shrink-0 text-red-700"
+        class="mbs-0.5 size-5 shrink-0 text-brick-700"
       />
       <.icon
         :if={@status != :failed}

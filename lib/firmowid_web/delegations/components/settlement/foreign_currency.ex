@@ -67,7 +67,7 @@ defmodule FirmowidWeb.Delegations.Components.Settlement.ForeignCurrency do
         type="select"
         new
         options={currency_options()}
-        input_class={["w-24 shrink-0", @foreign_currency? && "bg-turquoise-100"]}
+        input_class={["w-24 shrink-0", @foreign_currency? && "bg-teal-100"]}
         aria-label="Waluta"
       />
     </div>
@@ -98,14 +98,14 @@ defmodule FirmowidWeb.Delegations.Components.Settlement.ForeignCurrency do
     ~H"""
     <section
       id={"foreign-currency-notice-#{@expense.id}"}
-      class="mt-1 flex w-full flex-wrap items-center justify-between gap-3 rounded-lg border border-grey-200 bg-turquoise-100 p-6 text-turquoise-700 sm:col-span-2 lg:col-span-3"
+      class="mt-1 flex w-full flex-wrap items-center justify-between gap-3 rounded-lg border border-grey-200 bg-teal-100 p-6 text-teal-700 sm:col-span-2 lg:col-span-3"
     >
       <p>Wykryto obcą walutę</p>
       <div class="flex gap-2">
         <.button
           type="button"
           variant="primary"
-          accent="turquoise"
+          accent="teal"
           size="small"
           phx-click="foreign-currency-action"
           phx-value-action="statement"
@@ -114,7 +114,7 @@ defmodule FirmowidWeb.Delegations.Components.Settlement.ForeignCurrency do
         <.button
           type="button"
           variant="primary"
-          accent="turquoise"
+          accent="teal"
           size="small"
           phx-click="foreign-currency-action"
           phx-value-action="nbp"
@@ -142,7 +142,7 @@ defmodule FirmowidWeb.Delegations.Components.Settlement.ForeignCurrency do
         <.button
           type="button"
           variant="unstyled"
-          class="inline-flex cursor-pointer items-center gap-1 text-sm/6 font-medium text-turquoise-700"
+          class="inline-flex cursor-pointer items-center gap-1 text-sm/6 font-medium text-teal-700"
           phx-click="foreign-currency-action"
           phx-value-action="notice"
           phx-value-expense-id={@expense.id}

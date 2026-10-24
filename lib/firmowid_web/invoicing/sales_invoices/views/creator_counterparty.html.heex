@@ -37,7 +37,7 @@
           :if={@can_manage_counterparties}
           kind="button"
           variant="secondary"
-          accent="turquoise"
+          accent="teal"
           navigate={counterparty_management_new_path(assigns)}
         >
           Dodaj kontrahenta
@@ -169,7 +169,7 @@
             variant="unstyled"
             phx-click="select_counterparty"
             phx-value-counterparty_id={counterparty.id}
-            class="-ring-offset-1 group col-span-full grid cursor-pointer grid-cols-subgrid items-center rounded-md bg-white px-4 py-3 text-left text-sm ring-turquoise-300 transition duration-200 ease-out hover:ring-2 phx-click-loading:opacity-70"
+            class="-ring-offset-1 group col-span-full grid cursor-pointer grid-cols-subgrid items-center rounded-md bg-white px-4 py-3 text-left text-sm ring-teal-300 transition duration-200 ease-out hover:ring-2 phx-click-loading:opacity-70"
           >
             <p class="flex flex-row items-center gap-2 text-black">
               <span class="inline-flex items-center gap-2">
@@ -462,7 +462,7 @@
       <.button
         type="submit"
         variant="primary"
-        accent="turquoise"
+        accent="teal"
         phx-disable-with="Zapisywanie..."
       >
         Kontynuuj

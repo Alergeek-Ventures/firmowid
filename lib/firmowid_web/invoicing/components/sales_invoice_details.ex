@@ -248,7 +248,7 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
                 class={[
                   "ml-auto",
                   SubmissionInfo.failed?(@submission_info) &&
-                    "text-redText hover:bg-redText hover:text-redBg hover:ring-redText"
+                    "text-brick-700 hover:bg-brick-700 hover:text-brick-200 hover:ring-brick-700"
                 ]}
                 variant="secondary"
                 size="small"
@@ -258,7 +258,7 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
                 Historia faktury
                 <span
                   :if={SubmissionInfo.failed?(@submission_info)}
-                  class="absolute -top-2.5 -right-2.5 flex size-5 items-center justify-center rounded-full border-2 border-redBg bg-redText p-1 text-xs font-bold text-redBg"
+                  class="absolute -top-2.5 -right-2.5 flex size-5 items-center justify-center rounded-full border-2 border-brick-200 bg-brick-700 p-1 text-xs font-bold text-brick-200"
                 >
                   !
                 </span>
@@ -333,7 +333,7 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
                   id="share-invoice-button"
                   phx-hook="CopyToClipboard"
                   variant={if @invoice.share_token, do: "primary", else: "secondary"}
-                  accent="turquoise"
+                  accent="teal"
                   size="small"
                   phx-click="create_share_link"
                 >

@@ -53,7 +53,7 @@ defmodule FirmowidWeb.Invoicing.Components.DownloadModal do
           <h3 class="text-lg font-semibold text-balance">Pobierz faktury</h3>
           <p class="text-pretty">
             W pliku
-            <span class="inline-flex items-center gap-1 rounded border border-black bg-lightGreyBg px-2 py-1">
+            <span class="inline-flex items-center gap-1 rounded border border-black bg-grey-100 px-2 py-1">
               <span aria-hidden="true"><.icon name="hero-document-solid" class="size-4" /></span>
               {@month |> Calendar.strftime("%Y-%m")}-dokumenty.zip
             </span>
@@ -88,7 +88,7 @@ defmodule FirmowidWeb.Invoicing.Components.DownloadModal do
             />
           </div>
 
-          <div class="border-t border-lightGreyBg pt-4">
+          <div class="border-t border-grey-100 pt-4">
             <.form
               for={@switch_form}
               id="download-modal-note-filter-form"

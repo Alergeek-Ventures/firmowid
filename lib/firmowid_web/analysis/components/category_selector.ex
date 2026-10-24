@@ -44,7 +44,7 @@ defmodule FirmowidWeb.Analysis.Components.CategorySelector do
           aria-haspopup="listbox"
           aria-controls={"#{@popover_id}-listbox"}
           phx-click={show_popover(@popover_id)}
-          class="flex min-h-9 w-full cursor-pointer items-center justify-end gap-2 rounded-md px-2 py-1 text-left text-darkGrey transition hover:bg-grey-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-grey-600"
+          class="flex min-h-9 w-full cursor-pointer items-center justify-end gap-2 rounded-md px-2 py-1 text-left text-grey-700 transition hover:bg-grey-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-grey-600"
         >
           <.badges tags={@tags} colors={@colors} />
           <.icon name="hero-chevron-up-down-mini" class="size-4 shrink-0 text-grey-500" />
@@ -64,7 +64,7 @@ defmodule FirmowidWeb.Analysis.Components.CategorySelector do
               aria-label={gettext("Search categories")}
               aria-controls={"#{@popover_id}-listbox"}
               data-combobox-input
-              class="w-full border-0 border-b border-grey-200 px-3 py-2 text-sm text-darkGrey placeholder:text-grey-500 focus:ring-0 focus:outline-none"
+              class="w-full border-0 border-b border-grey-200 px-3 py-2 text-sm text-grey-700 placeholder:text-grey-500 focus:ring-0 focus:outline-none"
             />
             <div
               id={"#{@popover_id}-listbox"}
@@ -177,7 +177,7 @@ defmodule FirmowidWeb.Analysis.Components.CategorySelector do
                 <span class="min-w-0 truncate font-medium" data-combobox-create-name />
               </FirmowidUI.Components.Button.button>
             </div>
-            <div class="flex items-center justify-between gap-2 border-t border-grey-200 px-3 py-2 text-xs text-darkGrey">
+            <div class="flex items-center justify-between gap-2 border-t border-grey-200 px-3 py-2 text-xs text-grey-700">
               <.icon
                 name="hero-arrow-path-mini"
                 class="invisible size-4 shrink-0 animate-spin phx-click-loading:visible"
@@ -274,7 +274,7 @@ defmodule FirmowidWeb.Analysis.Components.CategorySelector do
       </span>
       <span
         :for={tag <- Enum.take(@tags, 3)}
-        class="inline-flex min-w-0 items-center gap-1.5 rounded-full bg-grey-100 px-2 py-0.5 text-xs text-darkGrey"
+        class="inline-flex min-w-0 items-center gap-1.5 rounded-full bg-grey-100 px-2 py-0.5 text-xs text-grey-700"
       >
         <.omitted_dot :if={tag.kind == :internal} />
         <.color_dot :if={tag.kind != :internal} color={tag_color(tag, @colors)} />
@@ -282,7 +282,7 @@ defmodule FirmowidWeb.Analysis.Components.CategorySelector do
       </span>
       <span
         :if={length(@tags) > 3}
-        class="shrink-0 rounded-full bg-grey-100 px-1.5 py-0.5 text-xs text-darkGrey"
+        class="shrink-0 rounded-full bg-grey-100 px-1.5 py-0.5 text-xs text-grey-700"
       >
         +{length(@tags) - 3}
       </span>
@@ -309,7 +309,7 @@ defmodule FirmowidWeb.Analysis.Components.CategorySelector do
   end
 
   defp option_styles do
-    "group flex min-h-9 w-full cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm text-darkGrey transition hover:bg-grey-100 focus-visible:bg-grey-100 focus-visible:outline-none"
+    "group flex min-h-9 w-full cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm text-grey-700 transition hover:bg-grey-100 focus-visible:bg-grey-100 focus-visible:outline-none"
   end
 
   defp tag_color(%{kind: :company}, colors), do: Map.fetch!(colors, :company)

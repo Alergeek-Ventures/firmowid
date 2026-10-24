@@ -290,7 +290,7 @@ defmodule FirmowidUI.Invoicing.Components.SalesInvoice do
         end}
       </h2>
       <table class="mt-1 w-full">
-        <thead class="text-[8px] text-darkGrey/70">
+        <thead class="text-[8px] text-grey-700/70">
           <%= if @sales_invoice.invoice_type == :poland  do %>
             <tr class="py-2">
               <th class="text-left">Lp.</th>
@@ -455,14 +455,14 @@ defmodule FirmowidUI.Invoicing.Components.SalesInvoice do
 
     ~H"""
     <div class="mb-4">
-      <h2 class="mb-4 text-[8px] font-bold text-darkGrey/70">
+      <h2 class="mb-4 text-[8px] font-bold text-grey-700/70">
         {case @sales_invoice.invoice_type do
           :poland -> "TOWARY LUB USŁUGI"
           :foreign -> "TOWARY LUB USŁUGI / GOODS OR SERVICES"
         end}
       </h2>
       <table class="mt-1 w-full">
-        <thead class="text-[8px]/[11px] text-darkGrey/70">
+        <thead class="text-[8px]/[11px] text-grey-700/70">
           <%= if @sales_invoice.invoice_type == :poland do %>
             <tr class="*:pb-1">
               <th class="text-left">Lp.</th>
@@ -605,7 +605,7 @@ defmodule FirmowidUI.Invoicing.Components.SalesInvoice do
       |> assign(:delta_vat, delta_vat)
 
     ~H"""
-    <div class="pdf-keep-together rounded-md bg-greyButtonBg/30 px-4 py-2 text-[10px]/[14px]">
+    <div class="pdf-keep-together rounded-md bg-grey-200/30 px-4 py-2 text-[10px]/[14px]">
       <table class="w-full">
         <thead class="text-[8px] text-grey-600">
           <%= if @sales_invoice.invoice_type == :poland do %>
@@ -736,7 +736,7 @@ defmodule FirmowidUI.Invoicing.Components.SalesInvoice do
 
   defp payment_details(assigns) do
     ~H"""
-    <h2 class="mb-2 text-[8px] font-bold text-darkGrey/70 uppercase">
+    <h2 class="mb-2 text-[8px] font-bold text-grey-700/70 uppercase">
       {case @sales_invoice.invoice_type do
         :poland -> "Płatność"
         :foreign -> "Płatność / Payment"
@@ -919,9 +919,9 @@ defmodule FirmowidUI.Invoicing.Components.SalesInvoice do
         logo_url={@logo_url}
       />
       <.invoice_header_details :if={not @body_chrome} sales_invoice={@sales_invoice} />
-      <hr class="my-6 border-greyButtonBg" />
+      <hr class="my-6 border-grey-200" />
       <.seller_buyer_section sales_invoice={@sales_invoice} />
-      <hr class="my-6 border-greyButtonBg" />
+      <hr class="my-6 border-grey-200" />
       <%= if @sales_invoice.ksef_invoice_kind == :kor do %>
         <% items_changed? =
           correction_items_table_changed?(@sales_invoice, @reference_invoice, @show_vat) %>
@@ -942,10 +942,10 @@ defmodule FirmowidUI.Invoicing.Components.SalesInvoice do
         <.summary sales_invoice={@sales_invoice} show_vat={@show_vat} />
       <% end %>
 
-      <hr class="my-6 border-greyButtonBg" />
+      <hr class="my-6 border-grey-200" />
       <%= if @sales_invoice.currency != "PLN" do %>
         <div class="pdf-keep-together mb-3">
-          <h2 class="mb-2 text-[8px] font-bold text-darkGrey/70 uppercase">
+          <h2 class="mb-2 text-[8px] font-bold text-grey-700/70 uppercase">
             {case @sales_invoice.invoice_type do
               :poland -> "Przewalutowanie"
               :foreign -> "Przewalutowanie / Currency conversion"
@@ -970,7 +970,7 @@ defmodule FirmowidUI.Invoicing.Components.SalesInvoice do
       <% end %>
       <%= if InvoiceRenderer.has_exempt_items?(@sales_invoice) do %>
         <div class="pdf-keep-together mb-3">
-          <h3 class="mb-2 text-[8px] font-bold text-darkGrey/70 uppercase">Zwolnienie z VAT</h3>
+          <h3 class="mb-2 text-[8px] font-bold text-grey-700/70 uppercase">Zwolnienie z VAT</h3>
           <div class="text-[10px]/[14px]">
             Podstawa zwolnienia z VAT:
             <span class="font-bold">
@@ -985,7 +985,7 @@ defmodule FirmowidUI.Invoicing.Components.SalesInvoice do
       <.payment_details sales_invoice={@sales_invoice} />
       <%= if @sales_invoice.invoice_note && @sales_invoice.invoice_note != "" do %>
         <div class="pdf-keep-together mt-4 text-[10px]/[14px]">
-          <h3 class="mb-2 text-[8px] font-bold text-darkGrey/70 uppercase">Uwagi / Notes</h3>
+          <h3 class="mb-2 text-[8px] font-bold text-grey-700/70 uppercase">Uwagi / Notes</h3>
           <div>{@sales_invoice.invoice_note}</div>
         </div>
       <% end %>

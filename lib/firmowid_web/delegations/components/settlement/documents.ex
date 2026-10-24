@@ -156,7 +156,7 @@ defmodule FirmowidWeb.Delegations.Components.Settlement.Documents do
 
   defp document_emphasis(assigns) do
     ~H"""
-    <span class="font-medium text-turquoise-700 underline">{render_slot(@inner_block)}</span>
+    <span class="font-medium text-teal-700 underline">{render_slot(@inner_block)}</span>
     """
   end
 end

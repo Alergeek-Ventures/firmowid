@@ -2,7 +2,7 @@
   <%!-- simulates the navbar height, so the content does not jump when the navbar collapses --%>
   <%= if String.starts_with?(@current_uri.path, "/zarzadzanie") do %>
     <div class={[
-      "w-full bg-lightGreyBg",
+      "w-full bg-grey-100",
       cond do
         String.starts_with?(@current_uri.path, "/zarzadzanie/pracownicy/") and
             not String.starts_with?(@current_uri.path, "/zarzadzanie/pracownicy/archiwum") ->
@@ -42,7 +42,7 @@
       <div class={[
         String.starts_with?(@current_uri.path, "/zarzadzanie") &&
           "border-b px-4 py-4.5",
-        "flex items-center gap-16 border-darkGrey uppercase max-md:hidden"
+        "flex items-center gap-16 border-grey-700 uppercase max-md:hidden"
       ]}>
         <%= if @current_user.member.role != :employee do %>
           <.link
@@ -154,7 +154,7 @@
                     src={@current_user.member.avatar_blob.url}
                     alt={@current_user.email}
                   />
-                  <.avatar_fallback bg_color="darkGrey" class="text-white">
+                  <.avatar_fallback bg_color="grey-700" class="text-white">
                     <.icon name="hero-user" class="size-5" />
                   </.avatar_fallback>
                 </.avatar>
@@ -168,12 +168,12 @@
             style="display: none"
             class="absolute top-[50px] right-0 z-50 w-full min-w-[250px] flex-col gap-2 rounded-md bg-black p-3 text-left font-semibold [--focus-ring:var(--color-white)] max-lg:w-auto"
           >
-            <div class="truncate border-b border-darkGrey/50 p-2 pb-4 text-xs text-white/50 lowercase">
+            <div class="truncate border-b border-grey-700/50 p-2 pb-4 text-xs text-white/50 lowercase">
               {@current_user.email}
             </div>
             <div
               id="organization-switcher"
-              class="flex flex-col gap-2 border-b border-darkGrey/50 pb-2"
+              class="flex flex-col gap-2 border-b border-grey-700/50 pb-2"
             >
               <div class="truncate p-2 pb-0 text-xs text-white/50">
                 {pgettext("avatar menu", "Organization")}
@@ -194,7 +194,7 @@
                     <FirmowidUI.Components.Button.button
                       type="submit"
                       variant="unstyled"
-                      class="block w-full cursor-pointer rounded-md text-left text-white hover:bg-darkGrey/50 hover:text-white active:bg-darkGrey/70"
+                      class="block w-full cursor-pointer rounded-md text-left text-white hover:bg-grey-700/50 hover:text-white active:bg-grey-700/70"
                       title={organization.name}
                     >
                       <span class="block truncate p-2">{organization.name}</span>
@@ -214,7 +214,7 @@
               <.link
                 kind="unstyled"
                 navigate={~p"/organizacja"}
-                class="flex items-center justify-between rounded-md p-2 hover:bg-darkGrey/50"
+                class="flex items-center justify-between rounded-md p-2 hover:bg-grey-700/50"
               >
                 {pgettext("avatar menu", "Add organization")}
                 <.icon name="hero-plus" class="size-4" />
@@ -223,7 +223,7 @@
             <.link
               kind="unstyled"
               navigate={~p"/ustawienia"}
-              class="rounded-md p-2 hover:bg-darkGrey/50"
+              class="rounded-md p-2 hover:bg-grey-700/50"
             >
               {pgettext("avatar menu", "Settings")}
             </.link>
@@ -231,7 +231,7 @@
               <.link
                 kind="unstyled"
                 navigate={~p"/ustawienia/firma"}
-                class="rounded-md p-2 hover:bg-darkGrey/50"
+                class="rounded-md p-2 hover:bg-grey-700/50"
               >
                 {pgettext("avatar menu", "Bank accounts")}
               </.link>
@@ -240,7 +240,7 @@
               <.link
                 kind="unstyled"
                 navigate={~p"/admin/rozliczenia"}
-                class="rounded-md p-2 hover:bg-darkGrey/50"
+                class="rounded-md p-2 hover:bg-grey-700/50"
               >
                 {pgettext("avatar menu", "Billing")}
               </.link>
@@ -256,7 +256,7 @@
               <FirmowidUI.Components.Button.button
                 type="submit"
                 variant="unstyled"
-                class="block w-full cursor-pointer rounded-md text-white hover:bg-darkGrey/50 hover:text-white active:bg-darkGrey/70"
+                class="block w-full cursor-pointer rounded-md text-white hover:bg-grey-700/50 hover:text-white active:bg-grey-700/70"
               >
                 <span class="flex w-full items-center justify-between p-2">
                   {pgettext("avatar menu", "Log out")}
@@ -341,7 +341,7 @@
 <main class={[
   is_nil(assigns[:no_padding]) &&
     "p-4 sm:px-6 lg:px-8",
-  "flex flex-1 flex-col bg-lightGreyBg",
+  "flex flex-1 flex-col bg-grey-100",
   assigns[:main_class]
 ]}>
   <div class="mx-auto flex size-full flex-1 flex-col">

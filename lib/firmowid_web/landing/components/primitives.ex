@@ -47,7 +47,7 @@ defmodule FirmowidWeb.Landing.Components.Primitives do
         <div class="hidden items-center gap-3 lg:flex lg:gap-4">
           <a
             href={~p"/#zespol"}
-            class="min-w-21.5 rounded-sm p-3.5 text-center text-base/6 font-medium text-[#0f0f0f] transition-colors duration-180 group-data-[theme=dark]/navbar:text-[#f5f1ea] hover:text-orange-600 group-data-[theme=dark]/navbar:hover:text-orange-500-landing"
+            class="min-w-21.5 rounded-sm p-3.5 text-center text-base/6 font-medium text-[#0f0f0f] transition-colors duration-180 group-data-[theme=dark]/navbar:text-[#f5f1ea] hover:text-rust-600 group-data-[theme=dark]/navbar:hover:text-rust-500"
           >
             {gettext("About us")}
           </a>
@@ -55,7 +55,7 @@ defmodule FirmowidWeb.Landing.Components.Primitives do
             href={@repository}
             target="_blank"
             rel="noopener noreferrer"
-            class="min-w-24 rounded-sm p-3.5 text-center text-base/6 font-medium text-[#0f0f0f] transition-colors duration-180 group-data-[theme=dark]/navbar:text-[#f5f1ea] hover:text-orange-600 group-data-[theme=dark]/navbar:hover:text-orange-500-landing"
+            class="min-w-24 rounded-sm p-3.5 text-center text-base/6 font-medium text-[#0f0f0f] transition-colors duration-180 group-data-[theme=dark]/navbar:text-[#f5f1ea] hover:text-rust-600 group-data-[theme=dark]/navbar:hover:text-rust-500"
           >
             GitHub
           </a>
@@ -88,7 +88,7 @@ defmodule FirmowidWeb.Landing.Components.Primitives do
   attr :variant, :atom,
     values: [
       :black,
-      :orange,
+      :rust,
       :outline,
       :pricing_outline,
       :outline_light,
@@ -107,25 +107,25 @@ defmodule FirmowidWeb.Landing.Components.Primitives do
     variant_class =
       case assigns.variant do
         :black ->
-          "bg-[#0f0f0f] text-white [&:hover]:bg-orange-700"
+          "bg-[#0f0f0f] text-white [&:hover]:bg-rust-700"
 
-        :orange ->
-          "bg-orange-500-landing text-[#0f0f0f] [&:hover]:bg-orange-300"
+        :rust ->
+          "bg-rust-500 text-[#0f0f0f] [&:hover]:bg-rust-300"
 
         :outline ->
-          "min-w-37.75 text-[#0f0f0f] hover:text-orange-700 before:h-[54px] before:w-[153px] before:bg-[url('/images/landing/frames/button-login.svg')] before:bg-auto before:bg-center before:bg-no-repeat lg:w-37.75 lg:px-5"
+          "min-w-37.75 text-[#0f0f0f] hover:text-rust-700 before:h-[54px] before:w-[153px] before:bg-[url('/images/landing/frames/button-login.svg')] before:bg-auto before:bg-center before:bg-no-repeat lg:w-37.75 lg:px-5"
 
         :pricing_outline ->
-          "w-52 max-w-full min-w-0 self-center text-[#0f0f0f] hover:text-orange-700 before:h-[54px] before:w-[210px] before:bg-[url('/images/landing/frames/button-pricing.svg')] before:bg-auto before:bg-center before:bg-no-repeat lg:px-5"
+          "w-52 max-w-full min-w-0 self-center text-[#0f0f0f] hover:text-rust-700 before:h-[54px] before:w-[210px] before:bg-[url('/images/landing/frames/button-pricing.svg')] before:bg-auto before:bg-center before:bg-no-repeat lg:px-5"
 
         :outline_light ->
-          "text-[#f5f1ea] hover:text-orange-500-landing before:h-[59px] before:w-[294px] before:bg-[url('/images/landing/frames/button-light.svg')] before:bg-auto before:bg-center before:bg-no-repeat hover:before:bg-[url('/images/landing/frames/button-light-hover.svg')]"
+          "text-[#f5f1ea] hover:text-rust-500 before:h-[59px] before:w-[294px] before:bg-[url('/images/landing/frames/button-light.svg')] before:bg-auto before:bg-center before:bg-no-repeat hover:before:bg-[url('/images/landing/frames/button-light-hover.svg')]"
 
         :navbar_filled ->
-          "h-9 min-h-9 w-27.25 bg-white text-[#0f0f0f] hover:bg-orange-700 hover:text-white hover:before:bg-orange-700 before:h-[38px] before:w-[110px] before:bg-grey-100 before:mask-[url('/images/landing/frames/nav-trial-dark.svg')] before:mask-size-auto before:mask-center before:mask-no-repeat group-data-[theme=dark]/navbar:hover:bg-orange-500-landing group-data-[theme=dark]/navbar:hover:before:bg-orange-500-landing"
+          "h-9 min-h-9 w-27.25 bg-white text-[#0f0f0f] hover:bg-rust-700 hover:text-white hover:before:bg-rust-700 before:h-[38px] before:w-[110px] before:bg-grey-100 before:mask-[url('/images/landing/frames/nav-trial-dark.svg')] before:mask-size-auto before:mask-center before:mask-no-repeat group-data-[theme=dark]/navbar:hover:bg-rust-500 group-data-[theme=dark]/navbar:hover:before:bg-rust-500"
 
         :navbar_outline ->
-          "h-9 min-h-9 w-29.75 text-[#0f0f0f] hover:text-orange-700 before:h-[38px] before:w-[120px] before:bg-white before:mask-[url('/images/landing/frames/nav-login.svg')] before:mask-size-auto before:mask-center before:mask-no-repeat group-data-[theme=dark]/navbar:text-[#f5f1ea] group-data-[theme=dark]/navbar:before:bg-darkGrey group-data-[theme=dark]/navbar:hover:text-orange-500-landing"
+          "h-9 min-h-9 w-29.75 text-[#0f0f0f] hover:text-rust-700 before:h-[38px] before:w-[120px] before:bg-white before:mask-[url('/images/landing/frames/nav-login.svg')] before:mask-size-auto before:mask-center before:mask-no-repeat group-data-[theme=dark]/navbar:text-[#f5f1ea] group-data-[theme=dark]/navbar:before:bg-grey-700 group-data-[theme=dark]/navbar:hover:text-rust-500"
       end
 
     assigns = assign(assigns, :variant_class, variant_class)
@@ -194,7 +194,7 @@ defmodule FirmowidWeb.Landing.Components.Primitives do
           </div>
 
           <div class="flex flex-col lg:flex-1 lg:pt-0">
-            <p class="mb-5 font-['Nothing_You_Could_Do',cursive] text-3xl leading-none text-orange-500-landing lg:text-[2rem]">
+            <p class="mb-5 font-['Nothing_You_Could_Do',cursive] text-3xl leading-none text-rust-500 lg:text-[2rem]">
               {gettext("YOUR MOVE!")}
             </p>
             <h2 class="text-[3rem] leading-[.96] font-bold tracking-[-0.03em] lg:order-0 lg:max-w-160 lg:text-[4rem] lg:leading-[.92]">
@@ -210,7 +210,7 @@ defmodule FirmowidWeb.Landing.Components.Primitives do
             <div class="mt-10 flex flex-col gap-4 *:min-h-14.5 lg:max-w-155 lg:flex-row lg:gap-6 lg:*:min-w-0 lg:*:flex-1 lg:*:px-3">
               <.landing_button
                 navigate={~p"/zarejestruj"}
-                variant={:orange}
+                variant={:rust}
                 data-landing-cta="footer_register"
               >
                 {gettext("Start for free")}

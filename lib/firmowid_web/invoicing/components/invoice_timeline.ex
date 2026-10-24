@@ -78,7 +78,7 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceTimeline do
         <div class="flex flex-row items-baseline gap-2">
           <span class={[
             "text-sm/snug font-bold uppercase",
-            @event.event in [:failed, :correction_failed] && "text-redText"
+            @event.event in [:failed, :correction_failed] && "text-brick-700"
           ]}>
             {render_slot(@label)}
           </span>
@@ -104,8 +104,7 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceTimeline do
         Utworzenie dokumentu
       </:label>
       <:content>
-        numer dokumentu:
-        <span class="font-bold text-turquoise-700">{@event.metadata.invoice_number}</span>
+        numer dokumentu: <span class="font-bold text-teal-700">{@event.metadata.invoice_number}</span>
       </:content>
     </.timeline_item>
     """
@@ -128,8 +127,7 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceTimeline do
         Potwierdzono przez KSeF
       </:label>
       <:content>
-        nadano numer KSeF:
-        <span class="font-bold text-turquoise-700">{@event.metadata.ksef_number}</span>
+        nadano numer KSeF: <span class="font-bold text-teal-700">{@event.metadata.ksef_number}</span>
       </:content>
     </.timeline_item>
     """
@@ -240,8 +238,7 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceTimeline do
         Pobrano z KSeF
       </:label>
       <:content>
-        nadano numer KSeF:
-        <span class="font-bold text-turquoise-700">{@event.metadata.ksef_number}</span>
+        nadano numer KSeF: <span class="font-bold text-teal-700">{@event.metadata.ksef_number}</span>
       </:content>
     </.timeline_item>
     """
@@ -254,8 +251,7 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceTimeline do
         Pobrano fakturę korygującą {@event.metadata.invoice_identifier} z KSeF
       </:label>
       <:content>
-        nadano numer KSeF:
-        <span class="font-bold text-turquoise-700">{@event.metadata.ksef_number}</span>
+        nadano numer KSeF: <span class="font-bold text-teal-700">{@event.metadata.ksef_number}</span>
       </:content>
     </.timeline_item>
     """
@@ -268,8 +264,7 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceTimeline do
         Utworzenie faktury korygującej
       </:label>
       <:content>
-        numer dokumentu:
-        <span class="font-bold text-turquoise-700">{@event.metadata.invoice_number}</span>
+        numer dokumentu: <span class="font-bold text-teal-700">{@event.metadata.invoice_number}</span>
       </:content>
     </.timeline_item>
     """
@@ -305,8 +300,7 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceTimeline do
         Korekta potwierdzona przez KSeF
       </:label>
       <:content>
-        nadano numer KSeF:
-        <span class="font-bold text-turquoise-700">{@event.metadata.ksef_number}</span>
+        nadano numer KSeF: <span class="font-bold text-teal-700">{@event.metadata.ksef_number}</span>
       </:content>
     </.timeline_item>
     """
@@ -337,26 +331,26 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceTimeline do
     ~H"""
     <%= if @email do %>
       <span>
-        Adres docelowy: <span class="font-bold text-turquoise-700">{@email}</span>
+        Adres docelowy: <span class="font-bold text-teal-700">{@email}</span>
       </span>
     <% end %>
     """
   end
 
-  defp event_dot_styles(:confirmed), do: "bg-greenText"
-  defp event_dot_styles(:failed), do: "bg-redText"
-  defp event_dot_styles(:submitted), do: "bg-blueText"
-  defp event_dot_styles(:downloaded), do: "bg-greenText"
-  defp event_dot_styles(:correction_downloaded), do: "bg-greenText"
-  defp event_dot_styles(:correction_confirmed), do: "bg-greenText"
-  defp event_dot_styles(:correction_failed), do: "bg-redText"
-  defp event_dot_styles(:correction_submitted), do: "bg-blueText"
-  defp event_dot_styles(:email_sent), do: "bg-blueText"
-  defp event_dot_styles(:email_failed), do: "bg-redText"
-  defp event_dot_styles(:reminder_sent), do: "bg-blueText"
-  defp event_dot_styles(:reminder_failed), do: "bg-redText"
-  defp event_dot_styles(:correction_email_sent), do: "bg-blueText"
-  defp event_dot_styles(:correction_email_failed), do: "bg-redText"
+  defp event_dot_styles(:confirmed), do: "bg-moss-700"
+  defp event_dot_styles(:failed), do: "bg-brick-700"
+  defp event_dot_styles(:submitted), do: "bg-teal-800"
+  defp event_dot_styles(:downloaded), do: "bg-moss-700"
+  defp event_dot_styles(:correction_downloaded), do: "bg-moss-700"
+  defp event_dot_styles(:correction_confirmed), do: "bg-moss-700"
+  defp event_dot_styles(:correction_failed), do: "bg-brick-700"
+  defp event_dot_styles(:correction_submitted), do: "bg-teal-800"
+  defp event_dot_styles(:email_sent), do: "bg-teal-800"
+  defp event_dot_styles(:email_failed), do: "bg-brick-700"
+  defp event_dot_styles(:reminder_sent), do: "bg-teal-800"
+  defp event_dot_styles(:reminder_failed), do: "bg-brick-700"
+  defp event_dot_styles(:correction_email_sent), do: "bg-teal-800"
+  defp event_dot_styles(:correction_email_failed), do: "bg-brick-700"
   defp event_dot_styles(_), do: "bg-grey-200"
 
   defp format_datetime(nil), do: ""

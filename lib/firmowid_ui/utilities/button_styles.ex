@@ -32,45 +32,45 @@ defmodule FirmowidUI.Utilities.ButtonStyles do
   def variant_classes("icon", _accent) do
     [
       "border border-transparent",
-      "bg-transparent text-darkGrey",
+      "bg-transparent text-grey-700",
       "inline-flex items-center justify-center rounded-[3px] transition-colors",
-      "hover:border-darkGrey active:text-lightGreyBg active:bg-darkGrey"
+      "hover:border-grey-700 active:text-grey-100 active:bg-grey-700"
     ]
   end
 
-  def variant_classes("primary", "orange") do
+  def variant_classes("primary", "rust") do
     [
       "border-transparent",
-      "bg-orange-700 text-white",
-      "hover:bg-orange-800 active:bg-orange-900",
-      "disabled:bg-orange-400"
+      "bg-rust-700 text-white",
+      "hover:bg-rust-800 active:bg-rust-900",
+      "disabled:bg-rust-400"
     ]
   end
 
-  def variant_classes("primary", "turquoise") do
+  def variant_classes("primary", "teal") do
     [
       "border-transparent",
-      "bg-turquoise-700 text-white",
-      "hover:bg-turquoise-800 active:bg-turquoise-900",
-      "disabled:bg-turquoise-400"
+      "bg-teal-700 text-white",
+      "hover:bg-teal-800 active:bg-teal-900",
+      "disabled:bg-teal-400"
     ]
   end
 
-  def variant_classes("secondary", "turquoise") do
+  def variant_classes("secondary", "teal") do
     [
       "border-transparent",
-      "bg-turquoise-200 text-turquoise-900",
-      "hover:bg-turquoise-300 active:bg-turquoise-400",
-      "disabled:bg-turquoise-100 disabled:text-turquoise-600"
+      "bg-teal-200 text-teal-900",
+      "hover:bg-teal-300 active:bg-teal-400",
+      "disabled:bg-teal-100 disabled:text-teal-600"
     ]
   end
 
-  def variant_classes("secondary", "orange") do
+  def variant_classes("secondary", "rust") do
     [
       "border-transparent",
-      "bg-orange-200 text-orange-900",
-      "hover:bg-orange-300 active:bg-orange-400",
-      "disabled:bg-orange-100 disabled:text-orange-600"
+      "bg-rust-200 text-rust-900",
+      "hover:bg-rust-300 active:bg-rust-400",
+      "disabled:bg-rust-100 disabled:text-rust-600"
     ]
   end
 
@@ -86,10 +86,10 @@ defmodule FirmowidUI.Utilities.ButtonStyles do
   def variant_classes("filter", _accent) do
     [
       "h-fit",
-      "bg-lightGreyBg border-greyButtonBg text-darkGrey inline-flex
+      "bg-grey-100 border-grey-200 text-grey-700 inline-flex
       items-center justify-center gap-2 rounded-full border px-2 py-1 text-sm/tight font-medium transition-colors",
-      "data-active:bg-darkGrey data-active:border-darkGrey data-active:text-white",
-      "data-active:hover:bg-darkGrey hover:bg-greyButtonBg"
+      "data-active:bg-grey-700 data-active:border-grey-700 data-active:text-white",
+      "data-active:hover:bg-grey-700 hover:bg-grey-200"
     ]
   end
 
@@ -121,18 +121,18 @@ defmodule FirmowidUI.Utilities.ButtonStyles do
   def variant_classes("destructive", _accent) do
     [
       "border-transparent",
-      "bg-red-200 text-red-800",
-      "hover:bg-red-300 active:bg-red-400",
-      "disabled:text-red-500"
+      "bg-brick-200 text-brick-800",
+      "hover:bg-brick-300 active:bg-brick-400",
+      "disabled:text-brick-500"
     ]
   end
 
   def variant_classes("success", _accent) do
     [
       "border-transparent",
-      "bg-green-200 text-green-800",
-      "hover:bg-green-300 active:bg-green-400",
-      "disabled:text-green-500"
+      "bg-moss-200 text-moss-800",
+      "hover:bg-moss-300 active:bg-moss-400",
+      "disabled:text-moss-500"
     ]
   end
 end

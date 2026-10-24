@@ -36,7 +36,7 @@ defmodule FirmowidWeb.Invoicing.Components.Dashboard do
       <.column
         title="Nieopłacone faktury"
         count={@unpaid_invoices_count}
-        variant={:orange}
+        variant={:rust}
         see_all_url={
           Navigation.invoicing_index_path(%{
             month: @month,
@@ -55,7 +55,7 @@ defmodule FirmowidWeb.Invoicing.Components.Dashboard do
       <.column
         title="Transakcje do dopasowania"
         count={@unmatched_transactions_count}
-        variant={:orange}
+        variant={:rust}
         see_all_url={
           Navigation.invoicing_index_path(%{
             month: @month,
@@ -78,7 +78,7 @@ defmodule FirmowidWeb.Invoicing.Components.Dashboard do
       <.column
         title="Dopasowane"
         count={@matched_entries_count}
-        variant={:turquoise}
+        variant={:teal}
       >
         <%= for entry <- @matched_entries do %>
           <DashboardTiles.tile entry={entry} type={:matched} return_to={@return_to} />
@@ -91,13 +91,13 @@ defmodule FirmowidWeb.Invoicing.Components.Dashboard do
         id="dashboard-attention"
         title={gettext("Worth your attention")}
         count={@suggestions_count}
-        variant={if @warnings?, do: :red, else: :grey}
+        variant={if @warnings?, do: :brick, else: :grey}
       >
         <%= for suggestion <- @suggestions do %>
           <DashboardTiles.tile entry={suggestion} type={:suggestion} />
         <% end %>
         <%= if @suggestions == [] do %>
-          <p class="px-4 py-3 text-sm text-darkGrey">
+          <p class="px-4 py-3 text-sm text-grey-700">
             Na ten moment Firmowid nie ma żadnych sugestii.
           </p>
         <% end %>
@@ -109,25 +109,24 @@ defmodule FirmowidWeb.Invoicing.Components.Dashboard do
   attr :title, :string, required: true
   attr :id, :string, default: nil
   attr :count, :integer, default: 0
-  attr :variant, :atom, values: [:orange, :turquoise, :grey, :red], default: :orange
+  attr :variant, :atom, values: [:rust, :teal, :grey, :brick], default: :rust
   attr :see_all_url, :string, default: nil
   slot :inner_block, required: true
 
   defp column(assigns) do
     {column_classes, header_classes, title_text_class, count_classes} =
       case assigns.variant do
-        :orange ->
-          {"bg-orange-100 rounded-lg p-3", "bg-orange-200 rounded", "text-orangeText", "bg-orange-100 text-orangeText"}
+        :rust ->
+          {"bg-rust-100 rounded-lg p-3", "bg-rust-200 rounded", "text-rust-700", "bg-rust-100 text-rust-700"}
 
-        :turquoise ->
-          {"bg-[#EBF0F0] rounded-lg p-3", "bg-turquoise-200 rounded", "text-turquoise-700",
-           "bg-turquoise-100 text-turquoise-700"}
+        :teal ->
+          {"bg-[#EBF0F0] rounded-lg p-3", "bg-teal-200 rounded", "text-teal-700", "bg-teal-100 text-teal-700"}
 
         :grey ->
-          {"bg-grey-200/30 rounded-lg p-3", "bg-grey-200 rounded", "text-darkGrey", "bg-grey-200 text-darkGrey"}
+          {"bg-grey-200/30 rounded-lg p-3", "bg-grey-200 rounded", "text-grey-700", "bg-grey-200 text-grey-700"}
 
-        :red ->
-          {"bg-red-200/30 rounded-lg p-3", "bg-red-200 rounded", "text-redText", "bg-red-100 text-redText"}
+        :brick ->
+          {"bg-brick-200/30 rounded-lg p-3", "bg-brick-200 rounded", "text-brick-700", "bg-brick-100 text-brick-700"}
       end
 
     assigns =
@@ -184,7 +183,7 @@ defmodule FirmowidWeb.Invoicing.Components.Dashboard do
 
   defp zero_state(assigns) do
     ~H"""
-    <p class="px-4 py-3 text-sm text-darkGrey">
+    <p class="px-4 py-3 text-sm text-grey-700">
       {@message}
     </p>
     """

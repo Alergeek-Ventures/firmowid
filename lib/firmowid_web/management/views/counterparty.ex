@@ -312,7 +312,7 @@ defmodule FirmowidWeb.Management.Views.Counterparty do
 
           <div class="space-y-1">
             <p class="text-sm/snug text-grey-700">Wartość współpracy</p>
-            <p class="text-xl/tight font-medium text-turquoise-700">
+            <p class="text-xl/tight font-medium text-teal-700">
               {money_to_string(@stats.cooperation_value, @stats.currency)}
             </p>
           </div>
@@ -583,17 +583,16 @@ defmodule FirmowidWeb.Management.Views.Counterparty do
 
   defp invoice_label(_invoice), do: "Szkic bez numeru"
 
-  defp invoice_status(:pending), do: {"nieopłacona", "bg-orange-100 text-orange-700"}
+  defp invoice_status(:pending), do: {"nieopłacona", "bg-rust-100 text-rust-700"}
   defp invoice_status(:skipped), do: {"pominięta", "bg-grey-200 text-grey-700"}
-  defp invoice_status(:matched), do: {"opłacona", "bg-turquoise-100 text-turquoise-700"}
-  defp invoice_status(_), do: {"opłacona", "bg-turquoise-100 text-turquoise-700"}
+  defp invoice_status(:matched), do: {"opłacona", "bg-teal-100 text-teal-700"}
+  defp invoice_status(_), do: {"opłacona", "bg-teal-100 text-teal-700"}
 
   defp invoice_filter_class_names(:all), do: "bg-grey-200 text-grey-700 border-transparent"
 
-  defp invoice_filter_class_names(:unpaid), do: "bg-orange-200 text-orange-700 border-transparent hover:bg-orange-200"
+  defp invoice_filter_class_names(:unpaid), do: "bg-rust-200 text-rust-700 border-transparent hover:bg-rust-200"
 
-  defp invoice_filter_class_names(:paid),
-    do: "bg-turquoise-200 text-turquoise-700 border-transparent hover:bg-turquoise-200"
+  defp invoice_filter_class_names(:paid), do: "bg-teal-200 text-teal-700 border-transparent hover:bg-teal-200"
 
   defp money_to_string(nil), do: "—"
   defp money_to_string(%Money{} = amount), do: Money.to_string!(amount)

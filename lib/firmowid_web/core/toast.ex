@@ -15,10 +15,10 @@ defmodule FirmowidWeb.Core.Toast do
       # used to hide the disconnected flashes
       if(assigns[:rest][:hidden] == true, do: "hidden", else: "flex"),
       # override styles per severity
-      assigns[:kind] == :success && "bg-greenBg text-greenText",
-      assigns[:kind] == :notice && "bg-blueBg text-blueText",
-      assigns[:kind] == :info && "bg-lightGreyBg text-black",
-      assigns[:kind] == :error && "!text-redText !bg-redBg"
+      assigns[:kind] == :success && "bg-moss-200 text-moss-700",
+      assigns[:kind] == :notice && "bg-teal-200 text-teal-800",
+      assigns[:kind] == :info && "bg-grey-100 text-black",
+      assigns[:kind] == :error && "!text-brick-700 !bg-brick-200"
     ]
   end
 end

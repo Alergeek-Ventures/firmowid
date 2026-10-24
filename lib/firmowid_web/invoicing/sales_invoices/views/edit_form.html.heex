@@ -179,7 +179,7 @@
             value="true"
             checked={@form[:should_send_emails].value in [true, "true"]}
             disabled={!@counterparty_check.valid}
-            class="size-4 rounded border-grey-300 text-turquoise-600 focus:ring-turquoise-500 disabled:cursor-not-allowed disabled:opacity-60"
+            class="size-4 rounded border-grey-300 text-teal-600 focus:ring-teal-500 disabled:cursor-not-allowed disabled:opacity-60"
           />
           <span>Wyślij fakturę e-mailem do kontrahenta po otrzymaniu numeru KSeF</span>
         </label>
@@ -261,7 +261,7 @@
       <.button
         type="submit"
         variant="primary"
-        accent="turquoise"
+        accent="teal"
       >
         {if @invoice.invoice_number,
           do: "Wystaw fakturę korygującą",
@@ -397,7 +397,7 @@
           <.button
             type="button"
             variant="primary"
-            accent="turquoise"
+            accent="teal"
             phx-click={hide_modal("buyer-edit-modal")}
           >
             Zamknij

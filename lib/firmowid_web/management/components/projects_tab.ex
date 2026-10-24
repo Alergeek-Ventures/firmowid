@@ -198,9 +198,9 @@ defmodule FirmowidWeb.Management.Components.ProjectsTab do
           </div>
 
           <div class="relative w-full flex-1">
-            <div class="absolute inset-0 scrollbar-card divide-y divide-lightGreyBg overflow-y-auto pr-4">
+            <div class="absolute inset-0 scrollbar-card divide-y divide-grey-100 overflow-y-auto pr-4">
               <%= if Enum.empty?(@projects) do %>
-                <div class="mt-4 text-sm text-darkGrey">Brak projektów</div>
+                <div class="mt-4 text-sm text-grey-700">Brak projektów</div>
               <% else %>
                 <.project_accordion :for={project <- @projects} project={project} />
               <% end %>
@@ -224,7 +224,7 @@ defmodule FirmowidWeb.Management.Components.ProjectsTab do
           <.card
             :for={record <- @hours_record_requests}
             gap_size="4"
-            class="shrink-0 border border-orange-700 contain-[inline-size]"
+            class="shrink-0 border border-rust-700 contain-[inline-size]"
           >
             <.change_request
               record={record}
@@ -247,7 +247,7 @@ defmodule FirmowidWeb.Management.Components.ProjectsTab do
 
       <.modal id="salary-history-modal">
         <h2 class="mb-4 text-xl font-medium">Historia stawek</h2>
-        <div class="flex scrollbar-card max-h-[400px] flex-col gap-2 divide-lightGreyBg overflow-y-auto">
+        <div class="flex scrollbar-card max-h-[400px] flex-col gap-2 divide-grey-100 overflow-y-auto">
           <%= if Enum.empty?(@salary_history) do %>
             <p class="text-grey-700">Brak danych</p>
           <% else %>

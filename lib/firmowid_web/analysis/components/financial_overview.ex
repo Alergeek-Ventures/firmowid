@@ -31,7 +31,7 @@ defmodule FirmowidWeb.Analysis.Components.FinancialOverview do
     >
       <dl class="grid grid-cols-[repeat(auto-fit,minmax(min(100%,9rem),1fr))] gap-x-4 gap-y-3 border-be border-grey-200 p-4 @xl:grid-cols-[repeat(auto-fit,minmax(10rem,1fr))] @xl:gap-x-6 @xl:gap-y-4 @3xl:p-6">
         <div :for={kpi <- @kpis} id={kpi.id} class="flex min-w-0 flex-col gap-0.5 @xl:gap-1">
-          <dt class="text-sm text-darkGrey">{kpi.label}</dt>
+          <dt class="text-sm text-grey-700">{kpi.label}</dt>
           <dd class={[
             "text-base font-semibold whitespace-nowrap tabular-nums @xs:text-lg @xl:text-xl",
             result_styles(kpi.amount)
@@ -44,7 +44,7 @@ defmodule FirmowidWeb.Analysis.Components.FinancialOverview do
         <h2 id="analysis-month-results-title" class="text-h5 font-medium text-grey-900">
           {gettext("Net result by month")}
         </h2>
-        <p :if={@chart == :empty} id="analysis-month-results-empty" class="text-sm text-darkGrey">
+        <p :if={@chart == :empty} id="analysis-month-results-empty" class="text-sm text-grey-700">
           {if @tag_filters == [],
             do: gettext("No income or expenses in %{year}.", year: @summary.year),
             else: gettext("The selected categories have no entries in %{year}.", year: @summary.year)}
@@ -66,8 +66,8 @@ defmodule FirmowidWeb.Analysis.Components.FinancialOverview do
               aria-label={bar.description}
               title={bar.description}
               class={[
-                "grid size-full min-w-0 cursor-pointer grid-rows-[minmax(0,1fr)_auto] gap-1 rounded-md px-0.5 py-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-turquoise-700 active:bg-grey-200 @2xl:px-1 pointer-fine:hover:bg-grey-100",
-                bar.month == @selected_month && "bg-turquoise-100"
+                "grid size-full min-w-0 cursor-pointer grid-rows-[minmax(0,1fr)_auto] gap-1 rounded-md px-0.5 py-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-700 active:bg-grey-200 @2xl:px-1 pointer-fine:hover:bg-grey-100",
+                bar.month == @selected_month && "bg-teal-100"
               ]}
             >
               <span class="flex h-full flex-col-reverse" aria-hidden="true">
@@ -75,14 +75,14 @@ defmodule FirmowidWeb.Analysis.Components.FinancialOverview do
                   <span
                     :if={bar.side == :loss}
                     style={"--bar: #{bar.length}%"}
-                    class="block h-(--bar) min-h-0.5 w-full max-w-14 self-center rounded-xs bg-redText"
+                    class="block h-(--bar) min-h-0.5 w-full max-w-14 self-center rounded-xs bg-brick-700"
                   />
                 </span>
                 <span class="flex shrink-0 grow-0 basis-(--profit-share) flex-col justify-end border-be border-grey-500">
                   <span
                     :if={bar.side == :profit}
                     style={"--bar: #{bar.length}%"}
-                    class="block h-(--bar) min-h-0.5 w-full max-w-14 self-center rounded-xs bg-turquoise-600"
+                    class="block h-(--bar) min-h-0.5 w-full max-w-14 self-center rounded-xs bg-teal-600"
                   />
                 </span>
               </span>
@@ -96,14 +96,14 @@ defmodule FirmowidWeb.Analysis.Components.FinancialOverview do
           </li>
         </ol>
         <details :if={@chart != :empty} id="analysis-month-amounts" class="group">
-          <summary class="inline-flex min-h-11 cursor-pointer items-center gap-2 text-sm font-medium text-grey-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-turquoise-700">
+          <summary class="inline-flex min-h-11 cursor-pointer items-center gap-2 text-sm font-medium text-grey-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-700">
             <.icon name="hero-chevron-right-mini" class="size-4 group-open:rotate-90" />
             {gettext("Monthly amounts")}
           </summary>
           <div class="overflow-x-auto">
             <table class="w-full text-sm">
               <thead>
-                <tr class="border-be border-grey-200 text-darkGrey">
+                <tr class="border-be border-grey-200 text-grey-700">
                   <th scope="col" class="py-2 pe-4 text-start font-normal">{gettext("Month")}</th>
                   <th scope="col" class="py-2 ps-4 text-end font-normal">{gettext("Income")}</th>
                   <th scope="col" class="py-2 ps-4 text-end font-normal">{gettext("Expenses")}</th>
@@ -116,7 +116,7 @@ defmodule FirmowidWeb.Analysis.Components.FinancialOverview do
                   id={"analysis-month-amounts-#{month.month.month}"}
                   class={[
                     "border-be border-grey-100",
-                    month.month == @selected_month && "bg-turquoise-100 font-medium"
+                    month.month == @selected_month && "bg-teal-100 font-medium"
                   ]}
                 >
                   <th scope="row" class="py-2 pe-4 text-start font-normal">
@@ -243,11 +243,11 @@ defmodule FirmowidWeb.Analysis.Components.FinancialOverview do
     cond do
       bar.month == selected_month -> "font-semibold text-grey-900"
       bar.empty? -> "text-grey-600"
-      true -> "text-darkGrey"
+      true -> "text-grey-700"
     end
   end
 
-  defp result_styles(amount), do: if(Decimal.negative?(amount), do: "text-redText", else: "text-grey-900")
+  defp result_styles(amount), do: if(Decimal.negative?(amount), do: "text-brick-700", else: "text-grey-900")
 
   defp money(currency, amount), do: Money.to_string!(Money.new(currency, amount))
 

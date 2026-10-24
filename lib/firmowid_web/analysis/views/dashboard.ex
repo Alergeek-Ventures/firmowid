@@ -446,11 +446,11 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
   end
 
   defp tab_styles(true) do
-    "inline-flex min-block-11 items-center rounded-md bg-turquoise-700 px-4 text-sm font-medium text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-turquoise-700 active:opacity-90"
+    "inline-flex min-block-11 items-center rounded-md bg-teal-700 px-4 text-sm font-medium text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-700 active:opacity-90"
   end
 
   defp tab_styles(false) do
-    "inline-flex min-block-11 items-center rounded-md px-4 text-sm font-medium text-grey-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-turquoise-700 active:bg-grey-200"
+    "inline-flex min-block-11 items-center rounded-md px-4 text-sm font-medium text-grey-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-700 active:bg-grey-200"
   end
 
   @impl true
@@ -546,7 +546,7 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
           <select
             id="analysis-project"
             name="project"
-            class="rounded-md border border-grey-400 bg-white px-3 text-sm max-inline-full min-block-11 focus-visible:outline-2 focus-visible:outline-turquoise-700"
+            class="rounded-md border border-grey-400 bg-white px-3 text-sm max-inline-full min-block-11 focus-visible:outline-2 focus-visible:outline-teal-700"
           >
             <option value="all" selected={selected_project(@tag_filters) == "all"}>
               {gettext("All projects")}
@@ -677,7 +677,7 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
           settings_path={@tax_forecast_settings_path}
         />
         <section id="analysis-entries">
-          <p :if={@tag_filters != []} class="text-sm text-darkGrey">
+          <p :if={@tag_filters != []} class="text-sm text-grey-700">
             {gettext("Entry amounts are shown in full; project filters select matching documents.")}
           </p>
           <div class="overflow-x-auto">
@@ -694,12 +694,12 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
           id="analysis-unrealized"
           class="flex flex-col gap-3"
         >
-          <h2 class="text-lg font-medium text-darkGrey">
+          <h2 class="text-lg font-medium text-grey-700">
             {if @expanded_section == :income,
               do: gettext("Unrealized income"),
               else: gettext("Unrealized expenses")}
           </h2>
-          <p class="mt-1 text-sm text-darkGrey">
+          <p class="mt-1 text-sm text-grey-700">
             {gettext(
               "Invoices without a payment and payments without an invoice or salary, dated this month. Link them or mark them as skipped to include them in the analysis."
             )}

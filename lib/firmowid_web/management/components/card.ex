@@ -69,7 +69,7 @@ defmodule FirmowidWeb.Management.Components.Card do
         type="submit"
         variant="secondary"
         size="small"
-        accent="orange"
+        accent="rust"
         class="ml-2"
       >
         Zapisz

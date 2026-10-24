@@ -44,7 +44,7 @@ defmodule FirmowidWeb.Auth.Views.Login do
           <.link
             kind="unstyled"
             navigate={~p"/zarejestruj"}
-            class="font-semibold text-orange-700 hover:underline"
+            class="font-semibold text-rust-700 hover:underline"
           >
             Zarejestruj się
           </.link>

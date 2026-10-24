@@ -92,7 +92,7 @@ defmodule FirmowidWeb.Management.Components.LeavesTab do
               <div
                 id="leaves-search-container"
                 data-expanded={to_string(@search != "")}
-                class="group flex items-center justify-center rounded-lg transition-shadow data-[expanded=true]:bg-greyButtonBg data-[expanded=true]:focus-within:ring-2"
+                class="group flex items-center justify-center rounded-lg transition-shadow data-[expanded=true]:bg-grey-200 data-[expanded=true]:focus-within:ring-2"
               >
                 <.input
                   type="text"
@@ -217,7 +217,7 @@ defmodule FirmowidWeb.Management.Components.LeavesTab do
               <.button
                 type="button"
                 variant="primary"
-                accent="turquoise"
+                accent="teal"
                 size="small"
                 phx-click="accept_leave_request"
                 phx-target={@myself}
@@ -358,7 +358,7 @@ defmodule FirmowidWeb.Management.Components.LeavesTab do
         {LeavePresentation.reason_label(@request.reason)}
         <span
           :if={@show_pending_dot?}
-          class="size-3 shrink-0 rounded-full bg-turquoise-500"
+          class="size-3 shrink-0 rounded-full bg-teal-500"
         />
       </span>
 

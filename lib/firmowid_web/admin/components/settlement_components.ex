@@ -163,7 +163,7 @@ defmodule FirmowidWeb.Admin.Components.SettlementComponents do
     ~H"""
     <section
       id="organization-deletion"
-      class="rounded-lg border border-red-200 bg-white p-6 shadow-card"
+      class="rounded-lg border border-brick-200 bg-white p-6 shadow-card"
     >
       <h2 class="text-lg/tight font-medium text-grey-900">Usunięcie organizacji</h2>
       <p class="mt-2 text-sm/snug text-grey-700">
@@ -322,7 +322,7 @@ defmodule FirmowidWeb.Admin.Components.SettlementComponents do
 
                   <div class="shrink-0 text-right">
                     <p class="font-medium text-grey-900">{row.total_text}</p>
-                    <p :if={row.over_limit > 0} class="text-orange-700">
+                    <p :if={row.over_limit > 0} class="text-rust-700">
                       +{row.over_limit} ponad limit
                     </p>
                   </div>
@@ -372,7 +372,7 @@ defmodule FirmowidWeb.Admin.Components.SettlementComponents do
   defp billing_status_badge_label(:trial), do: "okres próbny"
 
   defp billing_status_badge_styles(:trial) do
-    "inline-flex items-center rounded-full bg-orange-100 px-3 py-1 text-sm/tight text-orange-700"
+    "inline-flex items-center rounded-full bg-rust-100 px-3 py-1 text-sm/tight text-rust-700"
   end
 
   defp status_chip_label(%{kind: :live_preview}), do: "Na żywo"
@@ -383,7 +383,7 @@ defmodule FirmowidWeb.Admin.Components.SettlementComponents do
   end
 
   defp status_chip_styles(%{kind: :snapshot}) do
-    "inline-flex items-center rounded-full px-3 py-1 text-sm/snug font-medium bg-orange-100 text-orange-700 text-center"
+    "inline-flex items-center rounded-full px-3 py-1 text-sm/snug font-medium bg-rust-100 text-rust-700 text-center"
   end
 
   defp status_description(%{kind: :live_preview}) do
@@ -411,9 +411,9 @@ defmodule FirmowidWeb.Admin.Components.SettlementComponents do
     "Dokumenty dodane ręcznie w bieżącym miesiącu rozliczeniowym."
   end
 
-  defp counter_bar_fill_styles(%{over_limit: over_limit}) when over_limit > 0, do: "h-full rounded-full bg-orange-500"
+  defp counter_bar_fill_styles(%{over_limit: over_limit}) when over_limit > 0, do: "h-full rounded-full bg-rust-500"
 
-  defp counter_bar_fill_styles(_row), do: "h-full rounded-full bg-turquoise-700"
+  defp counter_bar_fill_styles(_row), do: "h-full rounded-full bg-teal-700"
 
   defp owner_display_name(%{member: %{name: name}}) when is_binary(name) and name != "", do: name
   defp owner_display_name(%{email: email}), do: present_text(email)

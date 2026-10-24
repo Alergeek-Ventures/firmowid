@@ -21,7 +21,7 @@ defmodule FirmowidUI.Invoicing.Components.InvoiceNotes do
           name="invoice_note"
           rows="3"
           placeholder={gettext("Visible on the invoice and in KSeF (invoice footer)")}
-          class="resize-none rounded-lg border border-grey-200 px-3 py-2 text-sm text-grey-700 inline-full placeholder:text-grey-400 focus:border-transparent focus:ring-2 focus:ring-turquoise-500"
+          class="resize-none rounded-lg border border-grey-200 px-3 py-2 text-sm text-grey-700 inline-full placeholder:text-grey-400 focus:border-transparent focus:ring-2 focus:ring-teal-500"
         >{@invoice_note || ""}</textarea>
       </label>
       <label class="grid gap-2 text-sm text-grey-500">
@@ -31,7 +31,7 @@ defmodule FirmowidUI.Invoicing.Components.InvoiceNotes do
           name="internal_note"
           rows="3"
           placeholder={gettext("Internal note, not shown on the invoice (only in Firmowid)")}
-          class="resize-none rounded-lg border border-grey-200 px-3 py-2 text-sm text-grey-700 inline-full placeholder:text-grey-400 focus:border-transparent focus:ring-2 focus:ring-turquoise-500"
+          class="resize-none rounded-lg border border-grey-200 px-3 py-2 text-sm text-grey-700 inline-full placeholder:text-grey-400 focus:border-transparent focus:ring-2 focus:ring-teal-500"
         >{@internal_note || ""}</textarea>
       </label>
     </form>

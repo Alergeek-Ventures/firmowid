@@ -57,7 +57,7 @@ defmodule FirmowidWeb.Invoicing.Components.FilterBar do
             data-confetti-enabled={if @is_month_closed, do: "true", else: "false"}
           >
             <%= if @pending_count != 0 do %>
-              <span class="pointer-events-none absolute -top-3 left-full flex -translate-x-3 items-center justify-center overflow-hidden rounded-full border-2 border-lightGreyBg bg-orangeBg px-2 text-orangeText">
+              <span class="pointer-events-none absolute -top-3 left-full flex -translate-x-3 items-center justify-center overflow-hidden rounded-full border-2 border-grey-100 bg-rust-200 px-2 text-rust-700">
                 {@pending_count}
               </span>
             <% end %>
@@ -73,7 +73,7 @@ defmodule FirmowidWeb.Invoicing.Components.FilterBar do
           :if={@params.view_mode == :list && @params.filter in [:invoices, :transactions]}
           class="flex items-center gap-6"
         >
-          <div class="mx-2 h-7 w-px bg-greyButtonBg"></div>
+          <div class="mx-2 h-7 w-px bg-grey-200"></div>
           <.sub_filters params={@params} />
         </div>
       </div>
@@ -86,7 +86,7 @@ defmodule FirmowidWeb.Invoicing.Components.FilterBar do
   defp sub_filters(%{params: %{filter: :invoices}} = assigns) do
     ~H"""
     <div class="flex items-center gap-3">
-      <span class="text-sm font-normal text-darkGrey/70">Filtry:</span>
+      <span class="text-sm font-normal text-grey-700/70">Filtry:</span>
       <div class="flex items-center gap-2">
         <.link
           kind="unstyled"
@@ -110,7 +110,7 @@ defmodule FirmowidWeb.Invoicing.Components.FilterBar do
   defp sub_filters(%{params: %{filter: :transactions}} = assigns) do
     ~H"""
     <div class="flex items-center gap-3">
-      <span class="text-sm font-normal text-darkGrey/70">Filtry:</span>
+      <span class="text-sm font-normal text-grey-700/70">Filtry:</span>
       <div class="flex items-center gap-2">
         <.link
           kind="unstyled"
@@ -160,26 +160,26 @@ defmodule FirmowidWeb.Invoicing.Components.FilterBar do
 
   defp top_level_filter_styles(active?) do
     [
-      "bg-lightGreyBg text-darkGrey relative inline-flex items-center justify-center rounded-lg px-3 py-1 text-center text-sm/6 font-normal uppercase transition-colors hover:bg-greyButtonBg",
-      active? && "bg-darkGrey! text-white!"
+      "bg-grey-100 text-grey-700 relative inline-flex items-center justify-center rounded-lg px-3 py-1 text-center text-sm/6 font-normal uppercase transition-colors hover:bg-grey-200",
+      active? && "bg-grey-700! text-white!"
     ]
   end
 
   defp unmatched_filter_styles(params, is_month_closed) do
     [
-      "bg-lightGreyBg text-darkGrey relative inline-flex items-center justify-center rounded-lg px-3 py-1 text-center text-sm/6 font-normal uppercase transition-colors hover:bg-greyButtonBg",
-      params.view_mode == :list && params.filter == :unmatched && "bg-darkGrey! text-white!",
-      is_month_closed && params.filter != :unmatched && "text-lightGreyBg!",
+      "bg-grey-100 text-grey-700 relative inline-flex items-center justify-center rounded-lg px-3 py-1 text-center text-sm/6 font-normal uppercase transition-colors hover:bg-grey-200",
+      params.view_mode == :list && params.filter == :unmatched && "bg-grey-700! text-white!",
+      is_month_closed && params.filter != :unmatched && "text-grey-100!",
       params.filter == :unmatched && is_month_closed &&
-        "bg-greenBg! border-greenText! text-black!"
+        "bg-moss-200! border-moss-700! text-black!"
     ]
   end
 
   defp subfilter_styles(active?) do
     [
-      "bg-lightGreyBg border-greyButtonBg text-darkGrey inline-flex h-8 items-center justify-center rounded-full border px-4 py-1.5 text-sm leading-none font-medium transition-colors",
-      active? && "bg-darkGrey! border-darkGrey text-white!",
-      not active? && "hover:bg-greyButtonBg"
+      "bg-grey-100 border-grey-200 text-grey-700 inline-flex h-8 items-center justify-center rounded-full border px-4 py-1.5 text-sm leading-none font-medium transition-colors",
+      active? && "bg-grey-700! border-grey-700 text-white!",
+      not active? && "hover:bg-grey-200"
     ]
   end
 end

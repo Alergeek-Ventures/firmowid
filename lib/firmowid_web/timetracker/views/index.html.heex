@@ -5,7 +5,7 @@
     class="pointer-events-none fixed top-[20%] left-0 z-0 hidden h-[135vh] lg:block"
   />
 
-  <div class="sticky top-navbar z-40 -mt-4 flex items-center justify-between gap-4 bg-lightGreyBg pt-12 pb-9">
+  <div class="sticky top-navbar z-40 -mt-4 flex items-center justify-between gap-4 bg-grey-100 pt-12 pb-9">
     <div class="flex shrink-0 gap-2">
       <Lucideicons.calendar_1 />
       <p class="line-clamp-1 text-grey-900">{format_current_day_header(Date.utc_today())}</p>
@@ -23,7 +23,7 @@
   <div class="relative z-30 flex w-full flex-col justify-between gap-10 md:flex-row lg:gap-20">
     <div class="mx-auto w-full max-w-md md:mx-0">
       <%= if Enum.empty?(@active_projects) do %>
-        <div class="w-full py-8 text-center text-darkGrey">
+        <div class="w-full py-8 text-center text-grey-700">
           <p class="text-lg font-semibold">Nie masz przypisanych projektów</p>
           <%= if @current_user.member.role == :admin do %>
             <p class="mt-2 text-sm">
@@ -32,7 +32,7 @@
             <.link
               kind="unstyled"
               navigate={~p"/zarzadzanie/projekty"}
-              class="mt-4 inline-block text-orangeText hover:underline"
+              class="mt-4 inline-block text-rust-700 hover:underline"
             >
               Przejdź do zarządzania projektami
             </.link>
@@ -59,7 +59,7 @@
                   do: "Nad czym dzisiaj pracujesz?",
                   else: "Nie możesz dodać sesji, po wysłaniu ewidencji godzin"
               }
-              input_class="h-11 border-none hover:!bg-grey-300 focus:!outline-[2px] focus:!outline-offset-0 focus:!outline-grey-300 bg-greyButtonBg text-black"
+              input_class="h-11 border-none hover:!bg-grey-300 focus:!outline-[2px] focus:!outline-offset-0 focus:!outline-grey-300 bg-grey-200 text-black"
               phx-hook="FocusOnMount"
               phx-debounce="300"
               autofocus
@@ -68,7 +68,7 @@
             <.input
               type="select"
               disabled={is_hours_record_submitted}
-              class="h-11 cursor-pointer appearance-none border-none bg-orangeBg! px-4 py-2 text-orangeText transition-colors hover:bg-[#f0e0d8] focus:ring-1 focus:ring-orangeText focus:outline-hidden"
+              class="h-11 cursor-pointer appearance-none border-none bg-rust-200! px-4 py-2 text-rust-700 transition-colors hover:bg-[#f0e0d8] focus:ring-1 focus:ring-rust-700 focus:outline-hidden"
               field={@form[:project_id]}
               options={@active_projects |> Enum.map(&{&1.name, &1.id})}
             />
@@ -151,7 +151,7 @@
               <% @current_session -> %>
                 <div class="mt-14.5 flex w-full min-w-0 flex-col items-center gap-5">
                   <p
-                    class="text-center text-2xl/tight font-semibold tracking-normal text-orangeText"
+                    class="text-center text-2xl/tight font-semibold tracking-normal text-rust-700"
                     id="timetracker-timer"
                     data-start_time={@current_session.start_datetime}
                     phx-hook="Timer"
@@ -171,10 +171,10 @@
               <% true -> %>
                 <div class="mt-8 flex w-full flex-col items-center gap-5">
                   <div class="h-[60px]">
-                    <p class="text-center text-2xl/tight font-semibold text-orangeText">
+                    <p class="text-center text-2xl/tight font-semibold text-rust-700">
                       {@month_stats.hours} godz. {@month_stats.minutes} min
                     </p>
-                    <p class="text-center text-orangeText">w {@month_stats.month}</p>
+                    <p class="text-center text-rust-700">w {@month_stats.month}</p>
                   </div>
                   <.button
                     variant="primary"
@@ -192,7 +192,7 @@
     <div class="mb-16 w-full min-w-0 space-y-16">
       <div
         :if={Enum.empty?(@grouped_sessions) and Enum.empty?(@today_sessions)}
-        class="py-8 text-center text-darkGrey"
+        class="py-8 text-center text-grey-700"
       >
         <p class="text-lg font-semibold">Brak zarejestrowanych sesji</p>
         <p class="mt-2 text-sm">Rozpocznij swoją pierwszą sesję używając formularza po lewej</p>
@@ -200,10 +200,10 @@
 
       <div :if={not Enum.empty?(@today_sessions)}>
         <div class="flex items-center justify-between pb-3">
-          <p class="font-semibold text-orangeText">Twoje dzisiejsze sesje</p>
+          <p class="font-semibold text-rust-700">Twoje dzisiejsze sesje</p>
           <% today_time = @today_sessions |> List.flatten() |> calculate_total_duration() %>
           <p
-            class="rounded-md bg-orangeBg px-2 py-1 text-xl/tight font-bold text-orangeText"
+            class="rounded-md bg-rust-200 px-2 py-1 text-xl/tight font-bold text-rust-700"
             id="today-timer"
             phx-hook="Timer"
             data-start_time={DateTime.utc_now() |> DateTime.add(-today_time, :second)}
@@ -237,7 +237,7 @@
               :key={day}
               class="flex flex-col gap-2"
             >
-              <p class="sticky top-[190px] flex bg-lightGreyBg text-sm font-semibold text-darkGrey">
+              <p class="sticky top-[190px] flex bg-grey-100 text-sm font-semibold text-grey-700">
                 {format_day_header(day)}
               </p>
               <div class="divide-y divide-grey-200">
@@ -275,7 +275,7 @@
   <div class="space-y-6">
     <div>
       <h3 class="text-lg font-bold text-grey-900">Nakładające się sesje</h3>
-      <p class="mt-1 text-sm text-darkGrey">
+      <p class="mt-1 text-sm text-grey-700">
         Nowa sesja nachodzi na istniejące. Zapisanie wymaga poniższych zmian:
       </p>
     </div>
@@ -291,7 +291,7 @@
 
     <%!-- Affected sessions --%>
     <div class="space-y-3">
-      <p class="text-sm font-medium text-darkGrey">Zmiany w istniejących sesjach:</p>
+      <p class="text-sm font-medium text-grey-700">Zmiany w istniejących sesjach:</p>
 
       <FirmowidWeb.Timetracker.Components.Overlap.trim_action_card
         :for={action <- @trim_plan.actions}

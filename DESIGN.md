@@ -4,75 +4,62 @@ description: Application UI for running a small Polish company's invoices, money
 colors:
   white: "#FFFFFF"
   black: "#000000"
-  orangeText: "#8B3F13"
-  orangeBg: "#E6D7CE"
-  greyButtonBg: "#DDDDDD"
-  darkGrey: "#4E4E4E"
-  lightGreyBg: "#F5F5F5"
   transparent: "transparent"
-  offwhite: "#F0F0F0"
   grey-50: "#FAFAFA"
-  grey-100: "#F5F5F5"
-  grey-200: "#DDDDDD"
-  grey-300: "#CCCCCC"
-  grey-400: "#B5B5B5"
-  grey-500: "#949494"
-  grey-600: "#707070"
+  grey-100: "#F3F3F3"
+  grey-200: "#E3E3E3"
+  grey-300: "#CFCFCF"
+  grey-400: "#B6B6B6"
+  grey-500: "#989898"
+  grey-600: "#777777"
   grey-700: "#4E4E4E"
-  grey-800: "#303030"
-  grey-900: "#1A1A1A"
-  orange-100: "#F0EAE6"
-  orange-200: "#E6D7CE"
-  orange-300: "#E9C3AC"
-  orange-400: "#DEA785"
-  orange-500: "#D28F67"
-  orange-500-landing: "#D2936D"
-  orange-600: "#9C5D39"
-  orange-700: "#8B3F13"
-  orange-800: "#662905"
-  orange-900: "#4E2005"
-  greenText: "#475E45"
-  greenBg: "#D0E6CE"
-  redText: "#A22A2A"
-  redBg: "#E6CECE"
-  blueText: "#354E4E"
-  blueBg: "#CEE6E6"
-  green-100: "#ECF5EB"
-  green-200: "#D0E6CE"
-  green-300: "#B9DDB5"
-  green-400: "#9ECD9B"
-  green-500: "#89BD85"
-  green-600: "#699166"
-  green-700: "#475E45"
-  green-800: "#2D432B"
-  green-900: "#142113"
-  red-100: "#FBF4F4"
-  red-200: "#E6CECE"
-  red-300: "#E5BDBD"
-  red-400: "#D69F9F"
-  red-500: "#C96E6E"
-  red-600: "#BB4A4A"
-  red-700: "#A22A2A"
-  red-800: "#891515"
-  red-900: "#610404"
-  oranger-100: "#F0EAE6"
-  oranger-200: "#E6D7CE"
-  oranger-300: "#E9C3AC"
-  oranger-400: "#EAAA84"
-  oranger-500: "#E28B58"
-  oranger-600: "#A5582B"
-  oranger-700: "#8B3F13"
-  oranger-800: "#77330C"
-  oranger-900: "#4E2005"
-  turquoise-100: "#EDF5F5"
-  turquoise-200: "#CEE6E6"
-  turquoise-300: "#AEDEDE"
-  turquoise-400: "#8BC9C9"
-  turquoise-500: "#6AAAAA"
-  turquoise-600: "#578383"
-  turquoise-700: "#455E5E"
-  turquoise-800: "#2F4343"
-  turquoise-900: "#1D3232"
+  grey-800: "#3D3D3D"
+  grey-900: "#242424"
+  grey-950: "#121212"
+  rust-50: "#FEF9F7"
+  rust-100: "#FAF2EE"
+  rust-200: "#F1DED6"
+  rust-300: "#EEC6B3"
+  rust-400: "#E1A78B"
+  rust-500: "#C98665"
+  rust-600: "#A76342"
+  rust-700: "#8B3F13"
+  rust-800: "#652803"
+  rust-900: "#3F1600"
+  rust-950: "#220900"
+  teal-50: "#F6FBFB"
+  teal-100: "#ECF6F6"
+  teal-200: "#D0E9E9"
+  teal-300: "#ACDADA"
+  teal-400: "#87C2C3"
+  teal-500: "#69A5A5"
+  teal-600: "#558181"
+  teal-700: "#455E5E"
+  teal-800: "#2D4242"
+  teal-900: "#142828"
+  teal-950: "#051515"
+  moss-50: "#F6FCF5"
+  moss-100: "#ECF7EB"
+  moss-200: "#D4EAD2"
+  moss-300: "#B7DBB4"
+  moss-400: "#97C493"
+  moss-500: "#77A773"
+  moss-600: "#5D835A"
+  moss-700: "#475E45"
+  moss-800: "#2F432D"
+  moss-900: "#1A2819"
+  moss-950: "#0A1509"
+  brick-50: "#FEF9F8"
+  brick-100: "#FAF1F0"
+  brick-200: "#F5DDDA"
+  brick-300: "#ECC4C0"
+  brick-400: "#E0A59F"
+  brick-500: "#D57C74"
+  brick-600: "#BD4F4A"
+  brick-700: "#A22A2A"
+  brick-800: "#78000D"
+  brick-900: "#4B0005"
+  brick-950: "#2A0002"
 typography:
   caps-sm:
     fontFamily: "Lexend, ui-sans-serif, system-ui, sans-serif"
@@ -123,30 +110,30 @@ rounded:
   2xl: "1rem"
 components:
   button-primary-cost:
-    backgroundColor: "{colors.orange-700}"
+    backgroundColor: "{colors.rust-700}"
     textColor: "{colors.white}"
     rounded: "{rounded.lg}"
     padding: "8px 11px"
     height: "44px"
   button-primary-cost-hover:
-    backgroundColor: "{colors.orange-800}"
+    backgroundColor: "{colors.rust-800}"
   button-primary-sales:
-    backgroundColor: "{colors.turquoise-700}"
+    backgroundColor: "{colors.teal-700}"
     textColor: "{colors.white}"
     rounded: "{rounded.lg}"
     padding: "8px 11px"
     height: "44px"
   button-primary-sales-hover:
-    backgroundColor: "{colors.turquoise-800}"
+    backgroundColor: "{colors.teal-800}"
   button-secondary-cost:
-    backgroundColor: "{colors.orange-200}"
-    textColor: "{colors.orange-900}"
+    backgroundColor: "{colors.rust-200}"
+    textColor: "{colors.rust-900}"
     rounded: "{rounded.lg}"
     padding: "8px 11px"
     height: "44px"
   button-secondary-sales:
-    backgroundColor: "{colors.turquoise-200}"
-    textColor: "{colors.turquoise-900}"
+    backgroundColor: "{colors.teal-200}"
+    textColor: "{colors.teal-900}"
     rounded: "{rounded.lg}"
     padding: "8px 11px"
     height: "44px"
@@ -173,8 +160,8 @@ components:
   button-outline-hover:
     backgroundColor: "{colors.grey-200}"
   button-destructive:
-    backgroundColor: "{colors.red-200}"
-    textColor: "{colors.red-700}"
+    backgroundColor: "{colors.brick-200}"
+    textColor: "{colors.brick-700}"
     rounded: "{rounded.lg}"
     padding: "8px 11px"
     height: "44px"
@@ -234,7 +221,7 @@ an expressive surface with its own hand-drawn vocabulary and is deliberately
 out of scope here.
 
 The frontmatter is the source of truth for colours, the text size scale and
-radii. Its keys are the Tailwind token names (`orange-700` is `bg-orange-700`,
+radii. Its keys are the Tailwind token names (`rust-700` is `bg-rust-700`,
 `sm` under typography is `text-sm`). After editing it, run `mix design.tokens`
 to regenerate `assets/css/design-tokens.css`; `mix check` fails while that
 file is out of date. Fonts, spacing and animations live in
@@ -252,17 +239,24 @@ file is out of date. Fonts, spacing and animations live in
 A warm, earthy ledger palette: two directional accents on a neutral grey
 field, plus moss and brick for outcomes.
 
+Five palettes (`grey`, `rust`, `teal`, `moss`, `brick`) share one scale: steps
+50–950 sit on a common OKLCH lightness ladder, so the same step has comparable
+contrast in every palette (600 is about 4.5:1 on white, 500 about 3:1). Step
+700 is the brand anchor of each palette and stays fixed; the other steps keep
+the palette's own chroma. Use 50–300 for tints and washes, 600–950 for text
+and hover/active states.
+
 ### Primary
-- **Burnt Rust** (`orange-700`): the colour of costs and purchases. Cost-invoice headers and accents, cost amounts in entry tables, cost-side primary buttons, and cost search results. Darker steps (`orange-800`, `orange-900`) serve hover, active and the text on rust tints.
-- **Rust Tint / Rust Wash** (`orange-200`, `orange-100`): pastel backgrounds for cost-side secondary buttons, cost invoice source badges, cost amount cells and cost invoice detail headers.
+- **Burnt Rust** (`rust-700`): the colour of costs and purchases. Cost-invoice headers and accents, cost amounts in entry tables, cost-side primary buttons, and cost search results. Darker steps (`rust-800`, `rust-900`) serve hover, active and the text on rust tints.
+- **Rust Tint / Rust Wash** (`rust-200`, `rust-100`): pastel backgrounds for cost-side secondary buttons, cost invoice source badges, cost amount cells and cost invoice detail headers.
 
 ### Secondary
-- **Deep Sea Teal** (`turquoise-700`): the colour of sales and revenue. Sales-invoice accents, income rows, sales-side primary buttons, and date-picker selection. Deeper steps handle hover, active and text on teal tints.
-- **Sea Teal Tint / Wash** (`turquoise-200`, `turquoise-100`): pastel backgrounds for sales-side secondary buttons, sales and KSeF source badges, and income cells.
+- **Deep Sea Teal** (`teal-700`): the colour of sales and revenue. Sales-invoice accents, income rows, sales-side primary buttons, and date-picker selection. Deeper steps handle hover, active and text on teal tints.
+- **Sea Teal Tint / Wash** (`teal-200`, `teal-100`): pastel backgrounds for sales-side secondary buttons, sales and KSeF source badges, and income cells.
 
 ### Tertiary
-- **Moss** (`green-700` on `green-200`): positive outcomes such as matched transactions and success states and buttons.
-- **Brick** (`red-700` on `red-200`): errors, destructive actions and validation. Destructive buttons are a brick-tint fill with brick text, never a solid red block.
+- **Moss** (`moss-700` on `moss-200`): positive outcomes such as matched transactions and success states and buttons.
+- **Brick** (`brick-700` on `brick-200`): errors, destructive actions and validation. Destructive buttons are a brick-tint fill with brick text, never a solid red block.
 
 ### Neutral
 - **Ink** (`black`): the navigation bar, the neutral "special" button and the back-link disc.
@@ -275,11 +269,11 @@ field, plus moss and brick for outcomes.
 - **Surface** (`white`): cards, modals, popovers and tables.
 
 ### Named Rules
-**The Two Sides of the Ledger Rule.** Rust appears only where the subject is a cost or purchase, and teal only where it is a sale or revenue. On an invoice-related screen, the accent follows the invoice's side (`accent={if(@is_cost_invoice, do: "orange", else: "turquoise")}`). Never use rust or teal decoratively.
+**The Two Sides of the Ledger Rule.** Rust appears only where the subject is a cost or purchase, and teal only where it is a sale or revenue. On an invoice-related screen, the accent follows the invoice's side (`accent={if(@is_cost_invoice, do: "rust", else: "teal")}`). Never use rust or teal decoratively.
 
 **The Neutral Action Rule.** Actions that belong to neither side (saving settings, inviting an employee, adding a project) use the black `special` or graphite `tertiary` button, not rust. Note that `<.button variant="primary">` still defaults to the rust accent in code. New neutral actions must pick `special` or `tertiary` explicitly.
 
-**The Pastel Before Solid Rule.** Status and secondary emphasis use the tint plus deep-text pair (for example, `orange-200` with `orange-900`). Solid accent fills are reserved for the one primary action in a view.
+**The Pastel Before Solid Rule.** Status and secondary emphasis use the tint plus deep-text pair (for example, `rust-200` with `rust-900`). Solid accent fills are reserved for the one primary action in a view.
 
 ## Typography
 
@@ -420,7 +414,7 @@ a faint ring, over a black/60 scrim. A low-contrast close "×" sits top right.
 ## Do's and Don'ts
 
 ### Do:
-- **Do** colour by ledger side: rust (`orange-*` scale) for costs and purchases, teal (`turquoise-*` scale) for sales and revenue, everywhere from badges to switches.
+- **Do** colour by ledger side: rust (`rust-*` scale) for costs and purchases, teal (`teal-*` scale) for sales and revenue, everywhere from badges to switches.
 - **Do** use the black `special` or graphite `tertiary` button for actions that are neither cost nor sale.
 - **Do** prefer pastel tint plus deep-text pairs for secondary actions, pills and statuses.
 - **Do** keep surfaces flat: white on the `grey-100` canvas, separated by tone or a `grey-200` line.

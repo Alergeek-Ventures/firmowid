@@ -48,11 +48,11 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
   def table(%{invoicing_entries: []} = assigns) do
     ~H"""
     <div class="flex min-h-[300px] flex-col items-center justify-center gap-4">
-      <.icon name="hero-cloud-arrow-up" class="size-16 text-greenText" />
+      <.icon name="hero-cloud-arrow-up" class="size-16 text-moss-700" />
       <p class="text-center text-black">
         Brak transakcji i dokumentów dla wybranej daty
       </p>
-      <p class="text-center text-darkGrey">
+      <p class="text-center text-grey-700">
         Przeciągnij pliki, aby je wgrać
       </p>
     </div>
@@ -97,16 +97,16 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
           end
         ]}
       />
-      <thead class="sticky top-[130px] z-1 bg-lightGreyBg">
+      <thead class="sticky top-[130px] z-1 bg-grey-100">
         <tr>
           <th
             :for={column <- @columns}
             id={"header-#{column}"}
             phx-hook="ScrollStyle"
-            data-classes="border-b-4 border-solid border-darkGrey/40"
+            data-classes="border-b-4 border-solid border-grey-700/40"
             data-scroll-offset="90"
             class={[
-              "h-[60px] py-2 text-left align-bottom text-xs font-normal text-darkGrey uppercase",
+              "h-[60px] py-2 text-left align-bottom text-xs font-normal text-grey-700 uppercase",
               column == "party" && "pl-5"
             ]}
           >
@@ -209,14 +209,14 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
             column == "party" && "rounded-l-md px-5 text-ellipsis max-xl:max-w-72",
             String.ends_with?(column, "date") && "font-light",
             column == "amount" && "rounded-r-md",
-            column == "amount" && @is_income && "bg-blueBg! text-blueText",
-            column == "amount" && !@is_income && "bg-orangeBg! text-orangeText",
+            column == "amount" && @is_income && "bg-teal-200! text-teal-800",
+            column == "amount" && !@is_income && "bg-rust-200! text-rust-700",
             # Draft invoices get a dotted border
-            @is_draft && column == "party" && "border-y-2 border-l-2 border-dashed border-darkGrey/50",
+            @is_draft && column == "party" && "border-y-2 border-l-2 border-dashed border-grey-700/50",
             @is_draft && column == "amount" &&
-              "border-y-2 border-r-2 border-dashed border-darkGrey/50",
+              "border-y-2 border-r-2 border-dashed border-grey-700/50",
             @is_draft && column not in ["party", "amount"] &&
-              "border-y-2 border-dashed border-darkGrey/50"
+              "border-y-2 border-dashed border-grey-700/50"
           ]
         }
       >
@@ -292,8 +292,8 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
           data-tippy-content="Ten dokument właśnie został dodany!"
           class="absolute top-[-10px] right-[-4px] flex size-3"
         >
-          <span class="absolute inline-flex size-full animate-ping rounded-full bg-blueText opacity-75"></span>
-          <span class="relative inline-flex size-3 rounded-full bg-blueText"></span>
+          <span class="absolute inline-flex size-full animate-ping rounded-full bg-teal-800 opacity-75"></span>
+          <span class="relative inline-flex size-3 rounded-full bg-teal-800"></span>
         </span>
       <% end %>
     </div>
@@ -321,7 +321,7 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
       <div
         id={"#{@invoicing_entry.id}-label"}
         class={[
-          "flex h-6 flex-row items-center justify-center rounded-md bg-greenBg p-2 text-xs text-greenText transition-all duration-500",
+          "flex h-6 flex-row items-center justify-center rounded-md bg-moss-200 p-2 text-xs text-moss-700 transition-all duration-500",
           @can_write_invoicing && "w-20",
           !@can_write_invoicing && "w-full"
         ]}
@@ -367,7 +367,7 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
       data-tippy-content="Faktura jest wysyłana do KSeF. Proszę czekać na potwierdzenie."
       class="flex w-32 flex-row gap-2 overflow-hidden"
     >
-      <div class="flex h-6 w-full flex-row items-center justify-center rounded-md p-2 text-xs text-darkGrey">
+      <div class="flex h-6 w-full flex-row items-center justify-center rounded-md p-2 text-xs text-grey-700">
         <div class="font-normal uppercase">Wysyłanie...</div>
         <.icon name="hero-arrow-path" class="size-4 animate-spin" />
       </div>
@@ -414,7 +414,7 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
       class="flex w-32 flex-row gap-2 overflow-hidden"
     >
       <div class={[
-        "flex h-6 w-full flex-row items-center justify-between rounded-md bg-greenBg p-2 text-xs text-greenText transition-all duration-500"
+        "flex h-6 w-full flex-row items-center justify-between rounded-md bg-moss-200 p-2 text-xs text-moss-700 transition-all duration-500"
       ]}>
         <div class="font-normal uppercase">{gettext("Complete")}</div>
         <.icon name="hero-check-micro" class="size-5" />
@@ -432,7 +432,7 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
       data-tippy-content="To szkic faktury — dokument nie został jeszcze wystawiony."
       class="flex w-32 flex-row gap-2 overflow-hidden"
     >
-      <div class="flex h-6 w-full flex-row items-center justify-between rounded-md border-2 border-greyButtonBg bg-white p-2 text-xs text-darkGrey uppercase transition-all duration-500">
+      <div class="flex h-6 w-full flex-row items-center justify-between rounded-md border-2 border-grey-200 bg-white p-2 text-xs text-grey-700 uppercase transition-all duration-500">
         <p>Szkic</p>
         <.icon name="hero-pencil-square-solid" class="size-4" />
       </div>
@@ -468,8 +468,8 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
           @can_write_invoicing && "w-10",
           !@can_write_invoicing && "w-full",
           case @invoicing_entry do
-            %Transaction{} -> "bg-redBg text-redText"
-            _ -> "bg-greyButtonBg text-darkGrey"
+            %Transaction{} -> "bg-brick-200 text-brick-700"
+            _ -> "bg-grey-200 text-grey-700"
           end
         ]}
       >
@@ -522,7 +522,7 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
 
   defp render_cell(%{column: "SKIPPED"} = assigns) do
     ~H"""
-    <span class="text-darkGrey opacity-50">
+    <span class="text-grey-700 opacity-50">
       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;-
     </span>
     """
@@ -742,8 +742,8 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
           column == "party" && "rounded-l-md px-5 text-ellipsis max-xl:max-w-72",
           String.ends_with?(column, "date") && "font-light",
           column == "amount" && "rounded-r-md",
-          column == "amount" && Decimal.gte?(@group.total, 0) && "bg-blueBg! text-blueText",
-          column == "amount" && Decimal.lt?(@group.total, 0) && "bg-orangeBg! text-orangeText"
+          column == "amount" && Decimal.gte?(@group.total, 0) && "bg-teal-200! text-teal-800",
+          column == "amount" && Decimal.lt?(@group.total, 0) && "bg-rust-200! text-rust-700"
         ]}
       >
         <div class={[
@@ -761,7 +761,7 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
                 >
                   <.icon name="hero-chevron-right" class="size-3" />
                 </span>
-                <span class="text-sm text-darkGrey opacity-50">
+                <span class="text-sm text-grey-700 opacity-50">
                   {pluralize_transaction_count(@group.count)}
                 </span>
               </span>
@@ -788,9 +788,9 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
             String.ends_with?(column, "date") && "font-light",
             column == "amount" && "rounded-r-md",
             column == "amount" && transaction.direction == :income &&
-              "bg-blueBg! text-blueText",
+              "bg-teal-200! text-teal-800",
             column == "amount" && transaction.direction != :income &&
-              "bg-orangeBg! text-orangeText"
+              "bg-rust-200! text-rust-700"
           ]}
         >
           <div class={[
@@ -799,7 +799,7 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
           ]}>
             <%= if column == "party" do %>
               <div class="flex items-center gap-2">
-                <.icon name="hero-arrow-turn-down-right" class="size-3 text-darkGrey opacity-50" />
+                <.icon name="hero-arrow-turn-down-right" class="size-3 text-grey-700 opacity-50" />
                 <.render_cell
                   column={column}
                   invoicing_entry={transaction}
@@ -857,7 +857,7 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
           <div
             id={"#{@group.id}-label"}
             class={[
-              "flex h-6 flex-row items-center justify-center rounded-md bg-greenBg p-2 text-xs text-greenText transition-all duration-500",
+              "flex h-6 flex-row items-center justify-center rounded-md bg-moss-200 p-2 text-xs text-moss-700 transition-all duration-500",
               @can_write_invoicing && "w-20",
               !@can_write_invoicing && "w-full"
             ]}
@@ -878,7 +878,7 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
         </div>
       <% true -> %>
         <div class="flex w-32 flex-row gap-2 overflow-hidden">
-          <div class="flex h-6 w-10 flex-row items-center justify-center rounded-md bg-redBg p-2 text-xs text-redText transition-all duration-500">
+          <div class="flex h-6 w-10 flex-row items-center justify-center rounded-md bg-brick-200 p-2 text-xs text-brick-700 transition-all duration-500">
             <.icon name="hero-credit-card-mini" class="size-4" />
           </div>
           <.status_button
@@ -919,7 +919,7 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
       />
       <span class="min-w-0 truncate">
         {@party}
-        <span :if={@description not in [nil, ""]} class="text-sm text-darkGrey opacity-50">
+        <span :if={@description not in [nil, ""]} class="text-sm text-grey-700 opacity-50">
           {@description}
         </span>
       </span>

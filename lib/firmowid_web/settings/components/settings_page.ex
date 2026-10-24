@@ -148,12 +148,12 @@ defmodule FirmowidWeb.Settings.Components.SettingsPage do
   defp active_tab?(tab_id, current_tab), do: tab_id == current_tab
 
   defp tab_styles(true) do
-    "inline-flex min-h-11 items-center border-b-2 border-orange-700 px-3 text-sm font-medium leading-tight text-orange-700 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-700"
+    "inline-flex min-h-11 items-center border-b-2 border-rust-700 px-3 text-sm font-medium leading-tight text-rust-700 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-rust-700"
   end
 
   defp tab_styles(false),
     do:
-      "inline-flex min-h-11 items-center border-b-2 border-transparent px-3 text-sm font-medium leading-tight text-grey-700 transition hover:border-orange-200 hover:text-grey-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-700"
+      "inline-flex min-h-11 items-center border-b-2 border-transparent px-3 text-sm font-medium leading-tight text-grey-700 transition hover:border-rust-200 hover:text-grey-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-rust-700"
 
   defp initial(email) do
     email

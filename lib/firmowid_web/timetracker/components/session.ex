@@ -71,7 +71,7 @@ defmodule FirmowidWeb.Timetracker.Components.Session do
         phx-click={show_popover(select_id)}
         disabled={parent_session.lockdown}
         variant="unstyled"
-        class="ml-auto min-w-0 cursor-pointer rounded border-none bg-transparent px-2 py-1 text-sm text-darkGrey uppercase transition hover:bg-grey-200 focus:ring-0 disabled:pointer-events-none"
+        class="ml-auto min-w-0 cursor-pointer rounded border-none bg-transparent px-2 py-1 text-sm text-grey-700 uppercase transition hover:bg-grey-200 focus:ring-0 disabled:pointer-events-none"
       >
         {case Enum.find(@active_projects, &(&1.id == parent_session.project_id)) do
           nil -> "Select"
@@ -88,7 +88,7 @@ defmodule FirmowidWeb.Timetracker.Components.Session do
         <ul class="flex flex-col gap-1 overflow-auto p-1">
           <li
             :for={project <- @active_projects}
-            class="cursor-pointer rounded px-2 py-1.5 text-sm transition hover:bg-orange-100 hover:text-orange-800"
+            class="cursor-pointer rounded px-2 py-1.5 text-sm transition hover:bg-rust-100 hover:text-rust-800"
             phx-click={
               JS.set_attribute(
                 {"value", project.id},
@@ -206,7 +206,7 @@ defmodule FirmowidWeb.Timetracker.Components.Session do
                     data-confirm="Skrócić sesję nocną do jednego dnia? Czas po północy zostanie usunięty, bez możliwości przywrócenia."
                     variant="unstyled"
                   >
-                    <Lucideicons.trash_2 class="text-grey-500 transition-all hover:text-darkGrey" />
+                    <Lucideicons.trash_2 class="text-grey-500 transition-all hover:text-grey-700" />
                   </.button>
                 </div>
               <% else %>
@@ -241,7 +241,7 @@ defmodule FirmowidWeb.Timetracker.Components.Session do
                   phx-value-id={session[:id].value}
                   variant="unstyled"
                 >
-                  <Lucideicons.trash_2 class="text-grey-500 transition-all hover:text-darkGrey" />
+                  <Lucideicons.trash_2 class="text-grey-500 transition-all hover:text-grey-700" />
                 </.button>
               <% end %>
             </.inputs_for>

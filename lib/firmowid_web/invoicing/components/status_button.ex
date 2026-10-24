@@ -20,7 +20,7 @@ defmodule FirmowidWeb.Invoicing.Components.StatusButton do
       type={@type}
       variant="unstyled"
       class={[
-        "inline-flex h-6 w-20 cursor-pointer items-center justify-center rounded-md bg-greyButtonBg px-2 text-xs text-darkGrey uppercase transition-all duration-500 phx-click-loading:cursor-default phx-click-loading:opacity-75 phx-submit-loading:opacity-75",
+        "inline-flex h-6 w-20 cursor-pointer items-center justify-center rounded-md bg-grey-200 px-2 text-xs text-grey-700 uppercase transition-all duration-500 phx-click-loading:cursor-default phx-click-loading:opacity-75 phx-submit-loading:opacity-75",
         not is_nil(@label) && "gap-1",
         @class
       ]}
