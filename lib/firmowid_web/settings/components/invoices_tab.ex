@@ -1,12 +1,14 @@
 defmodule FirmowidWeb.Settings.Components.InvoicesTab do
   @moduledoc """
-  Function components for invoice e-mail import settings.
+  Function components for invoice e-mail import settings and planned tax reserve assumptions.
   """
 
   use FirmowidWeb, :html
 
   import FirmowidUI.Components.Button
 
+  alias Firmowid.Ash.Analysis.TaxForecast
+  alias FirmowidWeb.Settings.Components.TaxForecastSettings
   alias Phoenix.LiveView.Rendered
 
   @doc """
@@ -22,6 +24,7 @@ defmodule FirmowidWeb.Settings.Components.InvoicesTab do
       |> assign(:admin?, assigns.current_user.member.role == :admin)
       |> assign(:inbound_email, inbound_email(assigns.current_org))
       |> assign(:allowed_sender_emails, assigns.current_org.allowed_sender_emails || [])
+      |> assign(:tax_forecast?, Ash.can?({TaxForecast, :get}, assigns.current_user))
 
     ~H"""
     <div
@@ -153,6 +156,14 @@ defmodule FirmowidWeb.Settings.Components.InvoicesTab do
           Tylko administrator może zmieniać adres odbiorczy i listę dozwolonych nadawców.
         </div>
       </section>
+
+      <div :if={@tax_forecast?} class="border-bs border-grey-200 pbs-8 lg:col-span-2">
+        <.live_component
+          module={TaxForecastSettings}
+          id="tax-forecast-settings"
+          current_user={@current_user}
+        />
+      </div>
     </div>
     """
   end

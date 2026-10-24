@@ -15,9 +15,18 @@ defmodule Firmowid.Ash.Finances.Transaction.Types.SalarySuggestion do
         payout_variant: [
           type: :atom,
           constraints: [
-            one_of: [:uop, :uz_social, :uz_health, :uz_student, :uod_20, :uod_50, :b2b]
+            one_of: [
+              :uop,
+              :uz_social,
+              :uz_social_with_sickness,
+              :uz_health,
+              :uz_student,
+              :uod_20,
+              :uod_50,
+              :b2b
+            ]
           ],
-          description: "Hypothetical payout variant; does not confirm the employee's insurance or tax status."
+          description: "Estimated payout variant, selected from a complete current profile or hypothetical assumptions."
         ],
         difference: [
           type: AshMoney.Types.Money,

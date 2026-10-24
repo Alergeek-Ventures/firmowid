@@ -19,6 +19,7 @@ defmodule Firmowid.Ash.Core.Organization do
   alias Firmowid.Ash.Core.Changes.ClearVatExemptionFields
   alias Firmowid.Ash.Core.Changes.GenerateNickname
   alias Firmowid.Ash.Core.Changes.SetOwnerOrganization
+  alias Firmowid.Ash.Core.Organization.Types.TaxForecastSettings
   alias Firmowid.Ash.Core.User
   alias Firmowid.Ash.Core.Validations.ValidateNip
   alias Firmowid.Ash.Invoicing.VatExemption
@@ -53,6 +54,7 @@ defmodule Firmowid.Ash.Core.Organization do
 
   code_interface do
     define :destroy, action: :destroy
+    define :update_tax_forecast_settings, action: :update_tax_forecast_settings
   end
 
   actions do
@@ -146,6 +148,11 @@ defmodule Firmowid.Ash.Core.Organization do
 
       validate match(:nip, ~r/^[0-9]{10}$/)
       validate {ValidateNip, field: :nip}
+    end
+
+    update :update_tax_forecast_settings do
+      description "Set the explicit organization-wide income reserve rate and invoice planning cost assumption."
+      accept [:tax_forecast_settings]
     end
 
     update :update_billing_plan do
@@ -246,6 +253,7 @@ defmodule Firmowid.Ash.Core.Organization do
       action([
         :update,
         :update_basic_info,
+        :update_tax_forecast_settings,
         :update_avatar,
         :add_sender_email,
         :remove_sender_email,
@@ -280,6 +288,7 @@ defmodule Firmowid.Ash.Core.Organization do
     attribute :address, :string, public?: true
     attribute :correspondence_address, :string, public?: true
     attribute :is_vat_payer, :boolean, public?: true, default: true
+    attribute :tax_forecast_settings, TaxForecastSettings, public?: true
     attribute :allowed_sender_emails, {:array, :string}, public?: true, default: []
     attribute :inbound_email_nickname, :string, public?: true, allow_nil?: false
     attribute :avatar_blob_id, :uuid, public?: true

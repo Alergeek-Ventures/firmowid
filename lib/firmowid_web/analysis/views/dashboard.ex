@@ -1,28 +1,29 @@
 defmodule FirmowidWeb.Analysis.Views.Dashboard do
   @moduledoc """
-  LiveView for the financial analysis dashboard.
+  Financial overview, project profitability matrix and monthly entry classification.
 
-  Displays monthly income and expense pie charts with project-based filtering.
-  URL params control the active month (`?miesiac=YYYY-MM-DD`) and tag filters
-  (`?tagi=firma,projekt:<id>`).
-
-  Without tag filters, the charts also show unrealized capital from the month:
-  invoices without a linked payment and payments without an invoice or salary.
+  Read-only views share the authorized year summary. Matrix allocation always uses
+  the whole company before selecting projects. Only tagging allows category changes;
+  unrealized entries and tax estimates stay separate from realized financial totals.
   """
   use FirmowidWeb, :live_view
 
-  import FirmowidWeb.Analysis.Components.CategoryChart
   import FirmowidWeb.DesignSystem.Components.MonthPicker
+  import FirmowidWeb.DesignSystem.Components.YearPicker
   import FirmowidWeb.Infrastructure.Flags, only: [flag_enabled?: 2]
 
   alias Firmowid.Ash.Analysis
   alias Firmowid.Ash.Analysis.EntityTag
+  alias Firmowid.Ash.Analysis.ProjectProfitability
   alias Firmowid.Ash.Analysis.TagDefinition
+  alias Firmowid.Ash.Analysis.TaxForecast
+  alias Firmowid.Ash.Analysis.YearSummary
   alias Firmowid.Ash.Finances.Transaction
   alias Firmowid.Ash.Invoicing.CostInvoice
   alias Firmowid.Ash.Invoicing.SalesInvoice
+  alias FirmowidWeb.Analysis.Utilities.CategoryColors
   alias FirmowidWeb.Analysis.Utilities.Navigation
-  alias FirmowidWeb.Infrastructure.Utilities.QueryParams
+  alias FirmowidWeb.Settings.Utilities.Navigation, as: SettingsNavigation
 
   @impl true
   def mount(_params, _session, socket) do
@@ -44,8 +45,12 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
         socket
         |> assign(:active_months, active_months)
         |> assign(:tag_definitions, tag_definitions)
-        |> assign(:category_colors, category_colors(tag_definitions))
+        |> assign(:category_colors, CategoryColors.for_definitions(tag_definitions))
         |> assign(:expanded_section, :income)
+        |> assign(
+          :tax_forecast_settings_path,
+          tax_forecast_settings_path(socket.assigns.current_org, scope)
+        )
 
       {:ok, assign(socket, page_title: pgettext("main navigation", "Analysis"))}
     else
@@ -55,19 +60,14 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
 
   @impl true
   def handle_params(params, _uri, socket) do
-    month = QueryParams.parse_date(params, "miesiac", Date.beginning_of_month(Date.utc_today()))
-
-    tag_filters = Navigation.parse_tag_filters(params, socket.assigns.tag_definitions)
-
-    categories = Analysis.list_available_categories(month, socket.assigns.ash_scope)
-
     socket =
       socket
-      |> assign(:params, %{month: month})
-      |> assign(:categories, categories)
-      |> assign(:tag_filters, tag_filters)
-      |> assign(:expanded_section, :income)
-      |> load_data()
+      |> assign(:params, Navigation.parse_view(params))
+      |> assign(
+        :tag_filters,
+        Navigation.parse_tag_filters(params, socket.assigns.tag_definitions)
+      )
+      |> load_view()
 
     {:noreply, socket}
   end
@@ -75,17 +75,20 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
   @impl true
   def handle_event(event, params, socket)
       when event in ["set-entity-category", "clear-entity-tags", "toggle-project-tag", "create-category"] do
+    # Read-only views need not load entries, so authorization comes before looking them up.
     row =
-      Enum.find(
-        socket.assigns.sales_invoices ++
-          socket.assigns.cost_invoices ++ socket.assigns.transactions,
-        fn row ->
-          row.id == params["entity_id"] and
-            Atom.to_string(category_entity_type(row)) == params["entity_type"]
-        end
-      )
+      if can_write?(socket.assigns) do
+        Enum.find(
+          socket.assigns.sales_invoices ++
+            socket.assigns.cost_invoices ++ socket.assigns.transactions,
+          fn row ->
+            row.id == params["entity_id"] and
+              Atom.to_string(category_entity_type(row)) == params["entity_type"]
+          end
+        )
+      end
 
-    if can_write?(socket.assigns) and row != nil and category_editable?(row) do
+    if row != nil and category_editable?(row) do
       case change_category(event, params, row, socket) do
         {:ok, _} when event == "create-category" ->
           {:noreply, socket |> load_categories() |> load_totals()}
@@ -142,6 +145,60 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
   end
 
   @impl true
+  def handle_event("change-year", %{"year" => year}, socket) do
+    case Integer.parse(year) do
+      {year, ""} when year in 1..9999 ->
+        {:noreply, push_patch(socket, to: build_path(socket, year: year, month: nil))}
+
+      _ ->
+        {:noreply, socket}
+    end
+  end
+
+  def handle_event("select-month", %{"month" => month}, %{assigns: %{params: %{view: :dashboard}}} = socket) do
+    case Date.from_iso8601(month) do
+      {:ok, %Date{year: year} = month} when year == socket.assigns.params.year ->
+        month = if socket.assigns.params.month == month, do: nil, else: month
+        {:noreply, push_patch(socket, to: build_path(socket, month: month))}
+
+      _ ->
+        {:noreply, socket}
+    end
+  end
+
+  def handle_event(
+        "select-cell",
+        %{"month" => month, "project" => project},
+        %{assigns: %{params: %{view: :matrix}}} = socket
+      ) do
+    allowed =
+      Enum.map(socket.assigns.profitability.annual.projects, fn %{key: {:project, id}} -> id end)
+
+    with {:ok, selection} <-
+           Navigation.parse_matrix_selection(socket.assigns.params.year, month, project),
+         true <- selection.project in [:company, :residual | allowed] do
+      {:noreply,
+       push_patch(socket,
+         to: build_path(socket, month: selection.month, project: selection.project)
+       )}
+    else
+      _invalid ->
+        {:noreply, socket}
+    end
+  end
+
+  def handle_event("filter-project", %{"project" => project}, socket) do
+    valid_ids = Enum.map(socket.assigns.tag_definitions, & &1.id)
+
+    if project == "all" or project in valid_ids do
+      filters = if project == "all", do: [], else: [{:project, project}]
+      {:noreply, push_patch(socket, to: build_path(socket, tag_filters: filters))}
+    else
+      {:noreply, socket}
+    end
+  end
+
+  @impl true
   def handle_event("select-section", %{"section" => "income"}, socket) do
     {:noreply, assign(socket, :expanded_section, :income)}
   end
@@ -156,7 +213,10 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
   end
 
   @impl true
-  def handle_info(:analysis_classification_updated, socket), do: {:noreply, load_totals(socket)}
+  def handle_info(:analysis_classification_updated, %{assigns: %{params: %{view: :tagging}}} = socket),
+    do: {:noreply, load_totals(socket)}
+
+  def handle_info(:analysis_classification_updated, socket), do: {:noreply, load_view(socket)}
 
   defp entries_for_section(%{expanded_section: :income} = assigns) do
     omitted_last(assigns.sales_invoices ++ Enum.filter(assigns.transactions, &Money.positive?(&1.amount)))
@@ -166,16 +226,17 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
     omitted_last(assigns.cost_invoices ++ Enum.filter(assigns.transactions, &Money.negative?(&1.amount)))
   end
 
-  defp entries_for_section(_assigns), do: []
-
   defp omitted_last(entries) do
     Enum.sort_by(entries, fn entry -> Enum.any?(entry.entity_tags, &(&1.kind == :internal)) end)
   end
 
-  defp can_write?(assigns) do
+  defp can_tag?(assigns) do
     flag_enabled?(:analysis_dashboard, assigns) and
       assigns.ash_scope.actor.member.role in [:admin, :accountant]
   end
+
+  # Category changes are confined to tagging, including forged read-only events.
+  defp can_write?(assigns), do: assigns.params.view == :tagging and can_tag?(assigns)
 
   defp category_entity_type(%SalesInvoice{}), do: :sales_invoice
   defp category_entity_type(%CostInvoice{}), do: :cost_invoice
@@ -239,8 +300,64 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
 
     socket
     |> assign(:tag_definitions, definitions)
-    |> assign(:category_colors, category_colors(definitions))
+    |> assign(:category_colors, CategoryColors.for_definitions(definitions))
     |> assign(:categories, Analysis.list_available_categories(socket.assigns.params.month, scope))
+  end
+
+  defp load_view(%{assigns: %{params: %{view: :tagging}}} = socket), do: load_month(socket)
+
+  defp load_view(socket) do
+    socket = load_year(socket)
+
+    if socket.assigns.params.view == :dashboard and socket.assigns.params.month != nil,
+      do: load_month(socket),
+      else: assign(socket, :tax_forecast, nil)
+  end
+
+  defp load_month(socket) do
+    socket
+    |> assign(
+      :categories,
+      Analysis.list_available_categories(socket.assigns.params.month, socket.assigns.ash_scope)
+    )
+    |> assign(:expanded_section, :income)
+    |> load_tax_forecast()
+    |> load_data()
+  end
+
+  defp load_tax_forecast(%{assigns: %{params: %{view: :dashboard, month: month}, tag_filters: []}} = socket) do
+    assign(
+      socket,
+      :tax_forecast,
+      TaxForecast.get!(%{month: month}, scope: socket.assigns.ash_scope)
+    )
+  end
+
+  defp load_tax_forecast(socket), do: assign(socket, :tax_forecast, nil)
+
+  # Only viewers who may change the reserve assumptions get a link to them.
+  defp tax_forecast_settings_path(organization, scope) do
+    if Ash.can?({organization, :update_tax_forecast_settings}, scope),
+      do: SettingsNavigation.canonical_path(:invoices) <> "#rezerwa-podatkowa"
+  end
+
+  defp load_year(%{assigns: %{params: %{view: :matrix} = params}} = socket) do
+    summary = YearSummary.get!(params.year, %{tag_filters: []}, scope: socket.assigns.ash_scope)
+
+    assign(
+      socket,
+      :profitability,
+      ProjectProfitability.from_year_summary(summary, params.allocation)
+    )
+  end
+
+  defp load_year(socket) do
+    summary =
+      YearSummary.get!(socket.assigns.params.year, %{tag_filters: socket.assigns.tag_filters},
+        scope: socket.assigns.ash_scope
+      )
+
+    assign(socket, :year_summary, summary)
   end
 
   # Category changes do not affect unrealized entries, so they only reload totals.
@@ -262,7 +379,6 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
   defp load_totals(socket) do
     month = socket.assigns.params.month
     tag_filters = socket.assigns.tag_filters
-    unrealized = socket.assigns.unrealized
 
     totals =
       Analysis.get_organization_totals(
@@ -273,50 +389,78 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
       )
 
     socket
-    |> assign(
-      :income_categories,
-      with_unrealized(totals.income_categories, unrealized.income, tag_filters)
-    )
-    |> assign(
-      :expense_categories,
-      with_unrealized(totals.expense_categories, unrealized.expenses, tag_filters)
-    )
+    |> assign(:monthly_totals, Map.drop(totals, [:transactions, :sales_invoices, :cost_invoices]))
     |> assign(:transactions, totals.transactions)
     |> assign(:sales_invoices, totals.sales_invoices)
     |> assign(:cost_invoices, totals.cost_invoices)
   end
-
-  # Unrealized invoices have no categories, so project or company filters hide them.
-  defp with_unrealized(categories, amount, []) do
-    if Decimal.positive?(amount),
-      do: categories ++ [%{key: :unrealized, name: nil, amount: amount}],
-      else: categories
-  end
-
-  defp with_unrealized(categories, _amount, _tag_filters), do: categories
 
   defp unrealized_for_section(%{expanded_section: :income, unrealized: unrealized}), do: unrealized.income_entries
 
   defp unrealized_for_section(%{expanded_section: :expenses, unrealized: unrealized}), do: unrealized.expense_entries
 
   defp build_path(socket, overrides) do
-    month = Keyword.get(overrides, :month, socket.assigns.params.month)
-    tag_filters = Keyword.get(overrides, :tag_filters, socket.assigns.tag_filters)
+    {tag_filters, overrides} = Keyword.pop(overrides, :tag_filters, socket.assigns.tag_filters)
 
-    Navigation.dashboard_path(month, tag_filters)
+    socket.assigns.params
+    |> Map.merge(Map.new(overrides))
+    |> Navigation.view_path(tag_filters)
+  end
+
+  defp view_for(params, :tagging), do: %{view: :tagging, month: selected_month(params)}
+
+  defp view_for(params, :dashboard), do: %{view: :dashboard, year: selected_month(params).year, month: nil}
+
+  defp view_for(%{view: :matrix} = params, :matrix), do: params
+
+  defp view_for(params, :matrix) do
+    %{
+      view: :matrix,
+      year: selected_month(params).year,
+      allocation: :income,
+      metric: :net,
+      month: nil,
+      project: nil
+    }
+  end
+
+  defp selected_month(%{month: %Date{} = month}), do: month
+
+  defp selected_month(%{year: year}) do
+    today = Date.utc_today()
+    if year == today.year, do: Date.beginning_of_month(today), else: Date.new!(year, 1, 1)
+  end
+
+  defp selected_project([{:project, id}]), do: id
+  defp selected_project(_filters), do: "all"
+
+  defp allocation_bases do
+    [
+      {:income, pgettext("allocation basis", "By income"), gettext("Income")},
+      {:direct_expenses, pgettext("allocation basis", "By direct expenses"), gettext("Expenses")}
+    ]
+  end
+
+  defp result_metrics do
+    [net: gettext("After overhead"), direct: gettext("Before overhead")]
+  end
+
+  defp tab_styles(true) do
+    "inline-flex min-block-11 items-center rounded-md bg-turquoise-700 px-4 text-sm font-medium text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-turquoise-700 active:opacity-90"
+  end
+
+  defp tab_styles(false) do
+    "inline-flex min-block-11 items-center rounded-md px-4 text-sm font-medium text-grey-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-turquoise-700 active:bg-grey-200"
   end
 
   @impl true
   def render(assigns) do
     ~H"""
-    <div id="analysis-dashboard" class="mx-auto w-full max-w-7xl py-4">
-      <div class="mb-8 flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <h1 class="text-3xl font-semibold text-grey-900">
-            {pgettext("main navigation", "Analysis")}
-          </h1>
-          <p class="mt-2 text-sm text-darkGrey">{gettext("Income and expenses by project")}</p>
-        </div>
+    <div id="analysis-dashboard" class="mx-auto flex w-full max-w-7xl flex-col gap-6 py-4">
+      <div class="flex flex-wrap items-center justify-between gap-4">
+        <h1 class="text-xl font-semibold text-grey-900">
+          {pgettext("main navigation", "Analysis")}
+        </h1>
         <div class="flex flex-wrap items-center gap-3">
           <FirmowidUI.Components.Button.button
             :if={can_write?(assigns)}
@@ -338,36 +482,118 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
             {gettext("Assign unassigned")}
           </FirmowidUI.Components.Button.button>
           <.month_picker
+            :if={@params.view == :tagging}
             id="month"
             active_months={@active_months}
             selected_date={@params.month}
             data-position="bottom right"
           />
+          <.year_picker
+            :if={@params.view != :tagging}
+            id="year"
+            selected_year={@params.year}
+            active_years={@active_months |> Enum.map(& &1.year) |> Enum.uniq()}
+            variant="secondary"
+            data-position="bottom right"
+          />
         </div>
       </div>
-      <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <.chart
-          id="income-chart"
-          title={gettext("Income")}
-          categories={@income_categories}
-          colors={@category_colors}
-          section="income"
-          active={@expanded_section == :income}
-        />
-        <.chart
-          id="expense-chart"
-          title={gettext("Expenses")}
-          categories={@expense_categories}
-          colors={@category_colors}
-          section="expenses"
-          active={@expanded_section == :expenses}
-        />
-      </div>
-      <section id="analysis-entries" class="mt-8">
-        <p :if={@tag_filters != []} class="text-sm text-darkGrey">
-          {gettext(
-            "The list shows full document amounts; the charts show the selected projects' shares."
-          )}
+      <nav
+        id="analysis-modes"
+        aria-label={gettext("Analysis views")}
+        class="flex flex-wrap items-center gap-1"
+      >
+        <FirmowidUI.Components.Link.link
+          id="analysis-overview"
+          kind="unstyled"
+          patch={Navigation.view_path(view_for(@params, :dashboard), @tag_filters)}
+          aria-current={if @params.view == :dashboard, do: "page"}
+          class={tab_styles(@params.view == :dashboard)}
+        >
+          {pgettext("analysis view", "Dashboard")}
+        </FirmowidUI.Components.Link.link>
+        <FirmowidUI.Components.Link.link
+          id="analysis-matrix"
+          kind="unstyled"
+          patch={Navigation.view_path(view_for(@params, :matrix), @tag_filters)}
+          aria-current={if @params.view == :matrix, do: "page"}
+          class={tab_styles(@params.view == :matrix)}
+        >
+          {gettext("Project matrix")}
+        </FirmowidUI.Components.Link.link>
+        <FirmowidUI.Components.Link.link
+          :if={can_tag?(assigns)}
+          id="analysis-tagging"
+          kind="unstyled"
+          patch={Navigation.view_path(view_for(@params, :tagging), @tag_filters)}
+          aria-current={if @params.view == :tagging, do: "page"}
+          class={tab_styles(@params.view == :tagging)}
+        >
+          {pgettext("analysis mode", "Tagging")}
+        </FirmowidUI.Components.Link.link>
+      </nav>
+      <div
+        :if={@params.view != :tagging or @tag_filters != []}
+        class="@container flex flex-wrap items-end gap-x-3 gap-y-2 @lg:gap-4"
+      >
+        <form
+          :if={@params.view != :tagging}
+          id="analysis-project-filter"
+          phx-change="filter-project"
+          class="flex flex-col gap-1 min-inline-0"
+        >
+          <label for="analysis-project" class="text-xs font-medium text-grey-700">{gettext("Project")}</label>
+          <select
+            id="analysis-project"
+            name="project"
+            class="rounded-md border border-grey-400 bg-white px-3 text-sm max-inline-full min-block-11 focus-visible:outline-2 focus-visible:outline-turquoise-700"
+          >
+            <option value="all" selected={selected_project(@tag_filters) == "all"}>
+              {gettext("All projects")}
+            </option>
+            <option
+              :for={definition <- @tag_definitions}
+              value={definition.id}
+              selected={selected_project(@tag_filters) == definition.id}
+            >
+              {definition.name}
+            </option>
+          </select>
+        </form>
+        <div :if={@params.view == :matrix} class="contents">
+          <div role="group" aria-label={gettext("Allocation basis")} class="flex flex-wrap gap-1">
+            <FirmowidUI.Components.Button.button
+              :for={{basis, label, short_label} <- allocation_bases()}
+              id={"analysis-allocation-#{basis}"}
+              type="button"
+              variant="unstyled"
+              class={tab_styles(@params.allocation == basis)}
+              aria-pressed={to_string(@params.allocation == basis)}
+              aria-label={label}
+              title={label}
+              phx-click={
+                JS.patch(Navigation.view_path(Map.put(@params, :allocation, basis), @tag_filters))
+              }
+            >
+              <span class="@lg:hidden">{short_label}</span>
+              <span class="hidden @lg:inline">{label}</span>
+            </FirmowidUI.Components.Button.button>
+          </div>
+          <div role="group" aria-label={gettext("Result measure")} class="flex flex-wrap gap-1">
+            <FirmowidUI.Components.Button.button
+              :for={{metric, label} <- result_metrics()}
+              id={"analysis-metric-#{metric}"}
+              type="button"
+              variant="unstyled"
+              class={tab_styles(@params.metric == metric)}
+              aria-pressed={to_string(@params.metric == metric)}
+              phx-click={
+                JS.patch(Navigation.view_path(Map.put(@params, :metric, metric), @tag_filters))
+              }
+            >{label}</FirmowidUI.Components.Button.button>
+          </div>
+        </div>
+        <div :if={@tag_filters != []} class="text-sm text-grey-700">
           <FirmowidUI.Components.Button.button
             id="clear-tag-filters"
             type="button"
@@ -377,65 +603,142 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
           >
             {gettext("Clear filters")}
           </FirmowidUI.Components.Button.button>
-        </p>
-        <div class="overflow-x-auto">
-          <FirmowidWeb.Analysis.Components.EntriesTable.table
-            entries={entries_for_section(assigns)}
-            categories={@categories}
-            colors={@category_colors}
-            can_write={can_write?(assigns)}
-          />
         </div>
-      </section>
-      <section
-        :if={@tag_filters == [] and unrealized_for_section(assigns) != []}
-        id="analysis-unrealized"
-        class="mt-8"
-      >
-        <h2 class="text-lg font-medium text-darkGrey">
-          {if @expanded_section == :income,
-            do: gettext("Unrealized income"),
-            else: gettext("Unrealized expenses")}
-        </h2>
-        <p class="mt-1 text-sm text-darkGrey">
-          {gettext(
-            "Invoices without a payment and payments without an invoice or salary, dated this month. Link them or mark them as skipped to include them in the analysis."
-          )}
-        </p>
-        <div class="overflow-x-auto">
-          <FirmowidWeb.Analysis.Components.EntriesTable.table
-            entries={unrealized_for_section(assigns)}
-            colors={@category_colors}
-            unrealized
-          />
-        </div>
-      </section>
-      <.modal :if={can_write?(assigns)} id="clear-month-tags-modal">
-        <div class="flex flex-col gap-6">
-          <h2 class="font-bold">{gettext("Clear month's categories?")}</h2>
-          <p>
-            {gettext(
-              "All categories assigned to this month's entries will be removed, including manual ones. This cannot be undone."
-            )}
-          </p>
-          <div class="flex flex-wrap justify-end gap-3">
+      </div>
+      <%= if @params.view == :dashboard do %>
+        <FirmowidWeb.Analysis.Components.FinancialOverview.overview
+          summary={@year_summary}
+          tag_filters={@tag_filters}
+          selected_month={@params.month}
+        />
+      <% end %>
+      <%= if @params.view == :matrix do %>
+        <FirmowidWeb.Analysis.Components.ProjectMatrix.matrix
+          profitability={@profitability}
+          params={@params}
+          tag_filters={@tag_filters}
+        />
+      <% end %>
+      <%= if @params.view == :tagging or (@params.view == :dashboard and @params.month != nil) do %>
+        <section id="analysis-month" class="flex flex-col gap-4">
+          <div
+            :if={@params.view == :dashboard}
+            class="flex flex-wrap items-center justify-between gap-3"
+          >
+            <h2 class="text-lg font-semibold text-grey-900">
+              {gettext("Entries for %{month}",
+                month: Firmowid.Cldr.Date.to_string!(@params.month, format: "LLLL y")
+              )}
+            </h2>
+            <FirmowidUI.Components.Link.link
+              :if={can_tag?(assigns)}
+              id="analysis-month-tagging"
+              kind="button"
+              variant="outline"
+              patch={Navigation.view_path(view_for(@params, :tagging), @tag_filters)}
+            >
+              {pgettext("analysis mode", "Tagging")}
+            </FirmowidUI.Components.Link.link>
+          </div>
+          <div role="group" aria-label={gettext("Entry direction")} class="flex flex-wrap gap-1">
             <FirmowidUI.Components.Button.button
               type="button"
-              variant="outline"
-              phx-click={hide_modal("clear-month-tags-modal")}
+              variant="unstyled"
+              id="analysis-income"
+              phx-click="select-section"
+              phx-value-section="income"
+              aria-pressed={to_string(@expanded_section == :income)}
+              class={tab_styles(@expanded_section == :income)}
             >
-              {gettext("Cancel")}
+              {gettext("Income")}
+              <span class="ps-2 tabular-nums">{Money.new(:PLN, @monthly_totals.total_income)}</span>
             </FirmowidUI.Components.Button.button>
             <FirmowidUI.Components.Button.button
-              id="confirm-clear-month-tags"
               type="button"
-              phx-click={JS.push("clear-month-tags") |> hide_modal("clear-month-tags-modal")}
+              variant="unstyled"
+              id="analysis-expenses"
+              phx-click="select-section"
+              phx-value-section="expenses"
+              aria-pressed={to_string(@expanded_section == :expenses)}
+              class={tab_styles(@expanded_section == :expenses)}
             >
-              {gettext("Clear categories")}
+              {gettext("Expenses")}
+              <span class="ps-2 tabular-nums">{Money.new(
+                :PLN,
+                Decimal.abs(@monthly_totals.total_expenses)
+              )}</span>
             </FirmowidUI.Components.Button.button>
           </div>
-        </div>
-      </.modal>
+        </section>
+        <FirmowidWeb.DesignSystem.Components.TaxForecastSummary.tax_forecast_summary
+          :if={@tax_forecast}
+          id="analysis-tax-forecast"
+          forecast={@tax_forecast}
+          settings_path={@tax_forecast_settings_path}
+        />
+        <section id="analysis-entries">
+          <p :if={@tag_filters != []} class="text-sm text-darkGrey">
+            {gettext("Entry amounts are shown in full; project filters select matching documents.")}
+          </p>
+          <div class="overflow-x-auto">
+            <FirmowidWeb.Analysis.Components.EntriesTable.table
+              entries={entries_for_section(assigns)}
+              categories={@categories}
+              colors={@category_colors}
+              can_write={can_write?(assigns)}
+            />
+          </div>
+        </section>
+        <section
+          :if={@tag_filters == [] and unrealized_for_section(assigns) != []}
+          id="analysis-unrealized"
+          class="flex flex-col gap-3"
+        >
+          <h2 class="text-lg font-medium text-darkGrey">
+            {if @expanded_section == :income,
+              do: gettext("Unrealized income"),
+              else: gettext("Unrealized expenses")}
+          </h2>
+          <p class="mt-1 text-sm text-darkGrey">
+            {gettext(
+              "Invoices without a payment and payments without an invoice or salary, dated this month. Link them or mark them as skipped to include them in the analysis."
+            )}
+          </p>
+          <div class="overflow-x-auto">
+            <FirmowidWeb.Analysis.Components.EntriesTable.table
+              entries={unrealized_for_section(assigns)}
+              colors={@category_colors}
+              unrealized
+            />
+          </div>
+        </section>
+        <.modal :if={can_write?(assigns)} id="clear-month-tags-modal">
+          <div class="flex flex-col gap-6">
+            <h2 class="font-bold">{gettext("Clear month's categories?")}</h2>
+            <p>
+              {gettext(
+                "All categories assigned to this month's entries will be removed, including manual ones. This cannot be undone."
+              )}
+            </p>
+            <div class="flex flex-wrap justify-end gap-3">
+              <FirmowidUI.Components.Button.button
+                type="button"
+                variant="outline"
+                phx-click={hide_modal("clear-month-tags-modal")}
+              >
+                {gettext("Cancel")}
+              </FirmowidUI.Components.Button.button>
+              <FirmowidUI.Components.Button.button
+                id="confirm-clear-month-tags"
+                type="button"
+                phx-click={JS.push("clear-month-tags") |> hide_modal("clear-month-tags-modal")}
+              >
+                {gettext("Clear categories")}
+              </FirmowidUI.Components.Button.button>
+            </div>
+          </div>
+        </.modal>
+      <% end %>
     </div>
     """
   end

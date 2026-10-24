@@ -172,7 +172,7 @@ defmodule Firmowid.Ash.Payroll.UserSalary do
     calculate :payout_estimates,
               {:array, Firmowid.Ash.Payroll.UserSalary.Types.PayoutEstimate},
               Firmowid.Ash.Payroll.UserSalary.Calculations.PayoutEstimates do
-      description "First is the default estimate: UZ assumes a student below 26, health-only otherwise. Alternatives do not confirm insurance status."
+      description "A complete current tax profile selects one estimate. Otherwise returns legacy hypothetical variants. No annual limits, progressive PIT or PPK are tracked."
       argument :month, :date, allow_nil?: false
     end
 

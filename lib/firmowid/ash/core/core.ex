@@ -89,6 +89,7 @@ defmodule Firmowid.Ash.Core do
     resource Member do
       define :update_member_role, action: :update_role
       define :update_member_profile, action: :update_profile
+      define :update_member_tax_profile, action: :update_tax_profile
       define :update_member_avatar, action: :update_avatar
       define :archive_member, action: :archive
       define :unarchive_member, action: :unarchive

@@ -14,6 +14,7 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
   import Phoenix.Component, except: [link: 1]
 
   alias Ash.Notifier.Notification
+  alias Firmowid.Ash.Analysis.TaxForecast
   alias Firmowid.Ash.Blobs
   alias Firmowid.Ash.Blobs.Blob
   alias Firmowid.Ash.Finances
@@ -26,6 +27,7 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
   alias Firmowid.Ash.Invoicing.TransactionGroup
   alias Firmowid.Ash.Ksef
   alias FirmowidWeb.Core.Endpoint
+  alias FirmowidWeb.DesignSystem.Components.TaxForecastSummary
   alias FirmowidWeb.Infrastructure.Components.BlobProcessingToasts
   alias FirmowidWeb.Infrastructure.Utilities.PosthogBusinessEvents
   alias FirmowidWeb.Invoicing.Utilities.Navigation
@@ -104,6 +106,19 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
       |> Enum.count(&(&1.status == :accepted))
 
     socket = assign(socket, :has_connected_bank_account, connected_bank_accounts > 0)
+
+    socket =
+      assign(
+        socket,
+        :tax_forecast_settings_path,
+        if(
+          Ash.can?(
+            {socket.assigns.current_org, :update_tax_forecast_settings},
+            socket.assigns.ash_scope
+          ),
+          do: ~p"/ustawienia/fakturowanie#rezerwa-podatkowa"
+        )
+      )
 
     active_months =
       get_active_months(socket.assigns.ash_scope) ++
@@ -282,6 +297,12 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
             can_write_invoicing={can_write_invoicing?(@current_user)}
           />
       <% end %>
+
+      <TaxForecastSummary.tax_forecast_summary
+        id="invoicing-tax-forecast"
+        forecast={@tax_forecast}
+        settings_path={@tax_forecast_settings_path}
+      />
 
       <div
         :if={can_write_invoicing?(@current_user)}
@@ -867,6 +888,8 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
       |> assign(:is_month_touched, is_month_touched)
       |> assign(:is_month_closed, is_month_touched and has_month_ended and raw_pending_count == 0)
       |> assign(:pending_invoicing_entries_count, pending_invoicing_entries_count)
+      # Planned reserves stay a separate assign: they are not entries and never enter their totals.
+      |> assign(:tax_forecast, TaxForecast.get!(%{month: month}, scope: scope))
       |> refetch_upload_counts()
 
     # Also fetch dashboard data (used when view_mode is :dashboard)
