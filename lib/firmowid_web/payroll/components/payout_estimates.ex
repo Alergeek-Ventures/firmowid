@@ -2,11 +2,13 @@ defmodule FirmowidWeb.Payroll.Components.PayoutEstimates do
   @moduledoc "Shared labels and disclosure of indicative payouts in payroll and bank matching."
   use FirmowidWeb, :html
 
+  alias FirmowidUI.Components.Link
   alias Phoenix.LiveView.Rendered
 
   attr :estimates, :list, required: true
   attr :gross_amount, Money, required: true
   attr :subtitle, :string, default: nil
+  attr :calculation_path, :string, default: nil
 
   @doc "Shows only the expected payout and its basis, with the calculation and assumptions in a modal."
   @spec summary(map()) :: Rendered.t()
@@ -31,9 +33,14 @@ defmodule FirmowidWeb.Payroll.Components.PayoutEstimates do
         </.icon_button>
       </div>
       <p class="text-start text-xl/snug font-semibold text-teal-700 tabular-nums">
-        {if @primary, do: @primary.amount, else: "—"}
+        <span :if={@primary && @primary.variant != :b2b} aria-hidden="true">≈ </span>{if @primary,
+          do: @primary.amount,
+          else: "—"}
       </p>
       <p :if={@basis_label} class="text-xs/snug text-grey-600">{@basis_label}</p>
+      <Link.link :if={@calculation_path} kind="text" navigate={@calculation_path}>
+        {gettext("Calculate using employee declarations")}
+      </Link.link>
       <%= if @primary do %>
         <.modal id="payout-estimates-modal" class="max-w-xl!">
           <div class="flex flex-col gap-6">
