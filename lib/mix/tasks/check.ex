@@ -27,6 +27,7 @@ defmodule Mix.Tasks.Check do
   @cheap_checks [
     {"Format", ["format", "--check-formatted"]},
     {"Translations", ["translations.check"]},
+    {"Design tokens", ["design.tokens", "--check"]},
     {"Unused Deps", ["deps.unlock", "--check-unused"]},
     {"Hex audit", ["hex.audit"]},
     {"Depscheck", ["depscheck"]},

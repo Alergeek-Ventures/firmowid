@@ -130,6 +130,10 @@ samego SHA; nie stanowią gwarancji czasu kolejnych buildów.
 - Zachowujemy kierunkowe zależności: moduły dzieci mogą zależeć od wspólnych
   modułów rodzica, unikamy zależności między rodzeństwem funkcjonalnym.
 - Każdą większą zmianę struktury kończymy pełną walidacją: `mix check`.
+- Kolory, rozmiary tekstu i promienie zaokrągleń zmieniamy we frontmatterze
+  `DESIGN.md`, potem `mix design.tokens` generuje
+  `assets/css/design-tokens.css` (`mix check` pilnuje zgodności). Fonty,
+  odstępy i animacje są w `assets/css/theme.css`.
 
 ## Skille agentów
 

@@ -100,6 +100,7 @@ defmodule Firmowid.MixProject do
       {:phoenix_live_dashboard, "~> 0.9.0"},
       {:esbuild, "~> 0.10", runtime: Mix.env() == :dev},
       {:tailwind, "~> 0.4", runtime: Mix.env() == :dev},
+      {:yaml_elixir, "~> 2.12"},
       {:tz, "~> 0.28"},
       {:swoosh, "~> 1.6"},
       {:telemetry_metrics, "~> 1.0"},
