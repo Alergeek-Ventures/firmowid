@@ -126,6 +126,11 @@ defmodule Firmowid.Translations.ExtractionCache do
       {:error, :enoent} ->
         {:ok, :missing}
 
+      # Tracked symlinks (agent skills shared between harnesses) contribute their target;
+      # the target files are tracked and hashed on their own.
+      {:ok, %File.Stat{type: :symlink}} ->
+        with {:ok, target} <- File.read_link(path), do: {:ok, {:symlink, target}}
+
       {:ok, _stat} ->
         {:error, :unsupported_file_type}
 
