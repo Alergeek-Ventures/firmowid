@@ -75,3 +75,15 @@ priv/static/.DS_Store
 # E2E test artifacts
 /e2e/screenshots/
 /playwright-*.log
+
+# Impeccable runtime data. Skills, .impeccable/config.json and the engine symlinks stay tracked.
+.impeccable/live/*
+!.impeccable/live/config.json
+.impeccable/history/
+.impeccable/questions/
+.impeccable/critique/*
+!.impeccable/critique/ignore.md
+.impeccable/config.local.json
+**/.impeccable/hook.cache.json
+**/.impeccable/hook.pending.json
+**/skills/impeccable/scripts/config.json
