@@ -90,7 +90,7 @@ defmodule FirmowidWeb.Management.Components.EmployeePayoutCalculator do
           <section id={"#{@id}-result"} tabindex="-1" aria-live="polite" class="flex flex-col gap-3">
             <div class="flex flex-col gap-1">
               <h3 class="text-sm/snug text-grey-700">{gettext("Net payout")}</h3>
-              <p class="text-turquoise-700 text-3xl/snug font-semibold tabular-nums">
+              <p class="text-3xl/snug font-semibold text-teal-700 tabular-nums">
                 {if @calculation && @calculation.status == :calculated,
                   do: @calculation.result.amount,
                   else: "—"}
@@ -126,7 +126,7 @@ defmodule FirmowidWeb.Management.Components.EmployeePayoutCalculator do
                     type="button"
                     variant="unstyled"
                     phx-click={JS.focus(to: "##{@id}-#{target}")}
-                    class="active:text-darkGrey focus-visible:outline-turquoise-700 text-turquoise-700 min-h-8 cursor-pointer text-start underline decoration-dotted underline-offset-4 outline-offset-2 focus-visible:outline-2"
+                    class="min-h-8 cursor-pointer text-start text-teal-700 underline decoration-dotted underline-offset-4 outline-offset-2 focus-visible:outline-2 focus-visible:outline-teal-700 active:text-grey-900"
                   >
                     {label}
                   </.button>
@@ -425,7 +425,7 @@ defmodule FirmowidWeb.Management.Components.EmployeePayoutCalculator do
   end
 
   defp disclosure_styles do
-    "cursor-pointer text-sm/snug font-medium outline-offset-4 focus-visible:outline-2 focus-visible:outline-turquoise-700 active:text-turquoise-700"
+    "cursor-pointer text-sm/snug font-medium outline-offset-4 focus-visible:outline-2 focus-visible:outline-teal-700 active:text-teal-700"
   end
 
   defp deductions(result) do

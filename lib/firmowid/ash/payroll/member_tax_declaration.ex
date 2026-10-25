@@ -11,9 +11,7 @@ defmodule Firmowid.Ash.Payroll.MemberTaxDeclaration do
   require Resource
 
   @declaration_fields [
-    :member_id,
     :received_on,
-    :applies_from,
     :tax_residency,
     :pit2,
     :employee_costs,
@@ -44,9 +42,9 @@ defmodule Firmowid.Ash.Payroll.MemberTaxDeclaration do
 
   code_interface do
     define :read, action: :read
-    define :create_tax_declaration, action: :create_version
+    define :create_tax_declaration, action: :create
     define :list_tax_declarations, action: :list
-    define :save_tax_declaration, action: :save_tax_declaration
+    define :correct_tax_declaration, action: :correct
   end
 
   actions do
@@ -65,17 +63,14 @@ defmodule Firmowid.Ash.Payroll.MemberTaxDeclaration do
       end
     end
 
-    create :create_version do
+    create :create do
       description "Create a declaration version without replacing a version with the same effective date."
-      accept @declaration_fields
+      primary? true
+      accept [:member_id, :applies_from | @declaration_fields]
     end
 
-    create :save_tax_declaration do
-      description "Save a daily declaration version, retaining versions with other effective dates."
-      primary? true
-      upsert? true
-      upsert_identity :unique_member_effective_date
-
+    update :correct do
+      description "Correct an existing declaration without changing its member or effective date."
       accept @declaration_fields
     end
   end
@@ -86,28 +81,28 @@ defmodule Firmowid.Ash.Payroll.MemberTaxDeclaration do
       authorize_if expr(member_id == ^actor([:member, :id]))
     end
 
-    policy action_type(:create) do
+    policy action_type([:create, :update]) do
       authorize_if {ActorRole, role: :admin}
     end
   end
 
   validations do
     validate compare(:received_on, less_than_or_equal_to: :applies_from),
-      on: [:create],
+      on: [:create, :update],
       message: "is invalid"
 
     validate present(:request_year),
-      on: [:create],
+      on: [:create, :update],
       where: [attribute_equals(:tax_mode, :no_advance)],
       message: "can't be blank"
 
     validate present(:request_year),
-      on: [:create],
+      on: [:create, :update],
       where: [present(:preferential), attribute_does_not_equal(:preferential, :none)],
       message: "can't be blank"
 
     validate present(:ppk_employee_rate),
-      on: [:create],
+      on: [:create, :update],
       where: [attribute_equals(:ppk, :participant)],
       message: "can't be blank"
 
@@ -165,6 +160,6 @@ defmodule Firmowid.Ash.Payroll.MemberTaxDeclaration do
   end
 
   identities do
-    identity :unique_member_effective_date, [:member_id, :organization_id, :applies_from]
+    identity :unique_member_effective_date, [:member_id, :organization_id, :applies_from], field_names: [:applies_from]
   end
 end

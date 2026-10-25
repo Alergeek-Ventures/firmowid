@@ -145,7 +145,7 @@ defmodule FirmowidWeb.Management.Components.EmployeeTaxDetails do
 
           <%= if @dialog == :history do %>
             <details :for={declaration <- @declarations} class="border-bs border-grey-200 pbs-4">
-              <summary class="focus-visible:outline-turquoise-700 flex min-h-11 cursor-pointer items-center justify-between gap-3 rounded-sm text-sm/snug outline-offset-4 focus-visible:outline-2 active:bg-grey-100">
+              <summary class="flex min-h-11 cursor-pointer items-center justify-between gap-3 rounded-sm text-sm/snug outline-offset-4 focus-visible:outline-2 focus-visible:outline-teal-700 active:bg-grey-100">
                 <span class="font-medium">{format_date(declaration.applies_from)}</span>
                 <span class="text-xs/snug text-grey-600">{version_status(declaration, @current)}</span>
               </summary>
@@ -233,7 +233,7 @@ defmodule FirmowidWeb.Management.Components.EmployeeTaxDetails do
               />
             </div>
             <details :if={not @no_additional} id="additional-tax-declarations" class="text-sm/snug">
-              <summary class="focus-visible:outline-turquoise-700 min-h-11 cursor-pointer rounded-sm font-medium outline-offset-4 focus-visible:outline-2 active:bg-grey-100">
+              <summary class="min-h-11 cursor-pointer rounded-sm font-medium outline-offset-4 focus-visible:outline-2 focus-visible:outline-teal-700 active:bg-grey-100">
                 {gettext("Other declarations (record only)")}
               </summary>
               <div class="flex flex-col gap-5 pbs-3">
@@ -317,30 +317,34 @@ defmodule FirmowidWeb.Management.Components.EmployeeTaxDetails do
 
   defp open_editor(socket, dialog) do
     record = editor_record(dialog, socket.assigns.declarations)
-    params = record_params(record)
-
-    params =
-      if dialog == :new, do: Map.drop(params, ["received_on", "applies_from"]), else: params
-
-    params = Map.put(params, "member_id", socket.assigns.member_id)
-
-    action = if dialog == :new, do: :create_version, else: :save_tax_declaration
-
-    form =
-      MemberTaxDeclaration
-      |> AshPhoenix.Form.for_create(action,
-        scope: socket.assigns.scope,
-        as: "declaration",
-        params: params,
-        post_process_errors: &declaration_form_error/3
-      )
-      |> to_form()
 
     assign(socket,
       dialog: dialog,
-      form: form,
+      form: declaration_form(dialog, record, socket.assigns),
       no_additional: not is_nil(record) and no_additional?(record)
     )
+  end
+
+  defp declaration_form(:new, record, assigns) do
+    params =
+      record
+      |> record_params()
+      |> Map.drop(["received_on", "applies_from"])
+      |> Map.put("member_id", assigns.member_id)
+
+    MemberTaxDeclaration
+    |> AshPhoenix.Form.for_create(:create,
+      scope: assigns.scope,
+      as: "declaration",
+      params: params
+    )
+    |> to_form()
+  end
+
+  defp declaration_form({:correction, _id}, record, assigns) do
+    record
+    |> AshPhoenix.Form.for_update(:correct, scope: assigns.scope, as: "declaration")
+    |> to_form()
   end
 
   defp declaration_params(params, no_additional, socket) do
@@ -370,22 +374,11 @@ defmodule FirmowidWeb.Management.Components.EmployeeTaxDetails do
           params
       end
 
-    params =
-      if match?({:correction, _}, socket.assigns.dialog) do
-        Map.put(params, "applies_from", record.applies_from)
-      else
-        params
-      end
-
-    Map.put(params, "member_id", socket.assigns.member_id)
+    case socket.assigns.dialog do
+      :new -> Map.put(params, "member_id", socket.assigns.member_id)
+      {:correction, _id} -> Map.drop(params, ["member_id", "applies_from"])
+    end
   end
-
-  # Ash attaches the compound member/date uniqueness error to member_id, which
-  # is server-owned and has no editable input. The effective date is the conflict.
-  defp declaration_form_error(_form, _path, {:member_id, "has already been taken", vars}),
-    do: {:applies_from, "has already been taken", vars}
-
-  defp declaration_form_error(_form, _path, error), do: error
 
   defp record_params(nil), do: %{}
 
