@@ -6,7 +6,6 @@ defmodule FirmowidWeb.Management.Components.LeavesTab do
   import FirmowidUI.Components.Link
   import FirmowidWeb.DesignSystem.Components.CoreComponents, except: [button: 1]
   import FirmowidWeb.DesignSystem.Components.YearPicker
-  import FirmowidWeb.Management.Components.Card
   import Phoenix.Component, except: [link: 1]
 
   alias Firmowid.Ash.Timetracker

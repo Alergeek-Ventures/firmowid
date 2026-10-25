@@ -1,5 +1,5 @@
 defmodule FirmowidWeb.Management.Components.Card do
-  @moduledoc "Shared card components for the management section."
+  @moduledoc "Management-specific card content: labelled user fields and inline edit actions."
   use FirmowidWeb, :html
 
   import FirmowidUI.Components.Button
@@ -14,44 +14,6 @@ defmodule FirmowidWeb.Management.Components.Card do
     <div class={["space-y-1", @class]}>
       <label for={@for} class="block text-sm/snug text-grey-700">{@label}</label>
       <div class="flex items-center gap-2 text-base/snug">{render_slot(@inner_block)}</div>
-    </div>
-    """
-  end
-
-  attr :class, :any, default: ""
-  attr :gap_size, :string, default: "6"
-  attr :dimmed, :boolean, default: false
-  slot :inner_block, required: true
-
-  def card(assigns) do
-    ~H"""
-    <section class={[
-      "relative flex flex-col rounded-md bg-white p-6 text-black shadow-card",
-      @gap_size && "gap-y-#{@gap_size}",
-      @class
-    ]}>
-      <div
-        :if={@dimmed}
-        class="absolute inset-0 z-10 rounded-md bg-white/60"
-      >
-      </div>
-      {render_slot(@inner_block)}
-    </section>
-    """
-  end
-
-  slot :inner_block, required: true
-  slot :actions
-
-  def card_header(assigns) do
-    ~H"""
-    <div class="flex min-h-8.5 flex-row items-center gap-2">
-      <h3 class="text-base/tight font-medium text-grey-900">
-        {render_slot(@inner_block)}
-      </h3>
-      <div :if={Enum.any?(@actions)} class="flex items-center gap-2">
-        {render_slot(@actions)}
-      </div>
     </div>
     """
   end

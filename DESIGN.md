@@ -369,6 +369,25 @@ placeholders.
 
 ## Components
 
+Every primitive below is imported in all web views and shown with its variants
+on `/development/design-system` (development only). Reach for these before
+writing markup by hand; a hand-rolled copy of one of them is drift.
+
+| Need | Primitive | Notes |
+|---|---|---|
+| Action | `FirmowidUI.Components.Button.button` / `Link.link kind="button"` | Variants and sizes below. |
+| Icon-only action | `icon_button` | `label` is required (accessible name and tooltip); small 32px, big 44px. |
+| Row or record actions | `menu` + `menu_item` | Kebab trigger by default; `tone="danger"` for destructive items. |
+| Status | `badge` | 24px pill; tones `neutral`, `success`, `danger`, `cost`, `sales`. |
+| Inline notice | `alert` | Tones `neutral`, `success`, `danger`; `danger` uses `role="alert"`. Toasts stay for transient feedback. |
+| Nothing to show | `empty_state` | Dashed placeholder: icon, title, one sentence, the action that fills it. |
+| Sibling views of a page | `tabs` | Underline links; the selected view lives in the URL. |
+| Scope of a list | `segmented_control` | Pills, one active (for example active and archived). |
+| Label with value or control | `field_row` | `stacked` for forms, `inline` for detail and settings panels. |
+| Search | `search_field` | Leading magnifier; small 32px or big 44px. |
+| Supplementary hint | `tooltip` | Tippy with one delay; never the only place for essential information. |
+| One self-contained record | `card` + `card_header` | The flat-by-default exception; never nested. |
+
 ### Buttons
 Warm and tactile: flat fills, no gradients, quick 100ms colour transitions.
 - **Shape:** gently rounded. Big buttons are 44px tall with an 8px radius; small buttons are 32px tall with a 6px radius at 14px text. Icons are 20px (big) or 16px (small).

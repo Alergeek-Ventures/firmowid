@@ -294,6 +294,7 @@ defmodule FirmowidWeb.Core.Router do
 
       if Mix.env() == :dev do
         live "/development", Development.Views.Index, :index
+        live "/development/design-system", Development.Views.DesignSystem, :index
       end
     end
 

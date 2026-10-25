@@ -91,7 +91,16 @@ defmodule FirmowidWeb do
       use Gettext, backend: Firmowid.Gettext
 
       import FirmowidUI.Components.Inputs
+      import FirmowidWeb.DesignSystem.Components.Alert
+      import FirmowidWeb.DesignSystem.Components.Badge
+      import FirmowidWeb.DesignSystem.Components.Card
       import FirmowidWeb.DesignSystem.Components.CoreComponents
+      import FirmowidWeb.DesignSystem.Components.EmptyState
+      import FirmowidWeb.DesignSystem.Components.Fields
+      import FirmowidWeb.DesignSystem.Components.IconButton
+      import FirmowidWeb.DesignSystem.Components.Menu
+      import FirmowidWeb.DesignSystem.Components.Tabs
+      import FirmowidWeb.DesignSystem.Components.Tooltip
       # HTML escaping functionality
       import Phoenix.HTML
 
