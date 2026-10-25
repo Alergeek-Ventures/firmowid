@@ -1324,7 +1324,7 @@ msgstr ""
 msgid "Change request rejected"
 msgstr ""
 
-#: lib/firmowid_web/management/components/projects_tab.ex:291
+#: lib/firmowid_web/management/components/projects_tab.ex:294
 #, elixir-autogen, elixir-format
 msgid "Could not save the decision. The request may already have been reviewed."
 msgstr ""
@@ -1357,7 +1357,7 @@ msgstr ""
 msgid "Saving..."
 msgstr ""
 
-#: lib/firmowid_web/management/components/projects_tab.ex:283
+#: lib/firmowid_web/management/components/projects_tab.ex:286
 #, elixir-autogen, elixir-format
 msgid "The request decision has been saved."
 msgstr ""
@@ -3051,7 +3051,7 @@ msgstr ""
 msgid "Employment"
 msgstr ""
 
-#: lib/firmowid_web/management/components/employee_payout_calculator.ex:408
+#: lib/firmowid_web/management/components/employee_payout_calculator.ex:404
 #: lib/firmowid_web/payroll/components/payout_estimates.ex:115
 #, elixir-autogen, elixir-format
 msgid "Employment contract"
@@ -3085,7 +3085,7 @@ msgstr ""
 msgid "Gross amount under the contract."
 msgstr ""
 
-#: lib/firmowid_web/management/components/employee_payout_calculator.ex:434
+#: lib/firmowid_web/management/components/employee_payout_calculator.ex:430
 #: lib/firmowid_web/payroll/components/payout_estimates.ex:63
 #, elixir-autogen, elixir-format
 msgid "Health insurance"
@@ -3112,7 +3112,7 @@ msgstr ""
 msgid "If 50% tax-deductible costs apply: %{amount}."
 msgstr ""
 
-#: lib/firmowid_web/management/components/employee_payout_calculator.ex:435
+#: lib/firmowid_web/management/components/employee_payout_calculator.ex:431
 #: lib/firmowid_web/payroll/components/payout_estimates.ex:65
 #, elixir-autogen, elixir-format
 msgid "Income tax advance"
@@ -3146,7 +3146,7 @@ msgstr ""
 msgid "Net forecast"
 msgstr ""
 
-#: lib/firmowid_web/management/components/employee_payout_calculator.ex:433
+#: lib/firmowid_web/management/components/employee_payout_calculator.ex:429
 #: lib/firmowid_web/payroll/components/payout_estimates.ex:61
 #, elixir-autogen, elixir-format
 msgid "Social insurance"
@@ -3182,7 +3182,7 @@ msgstr ""
 msgid "Timesheet"
 msgstr ""
 
-#: lib/firmowid_web/management/views/employees.html.heex:238
+#: lib/firmowid_web/management/views/employees.html.heex:241
 #, elixir-autogen, elixir-format
 msgid "Unknown contract type — only gross pay is shown"
 msgstr ""
@@ -3197,8 +3197,8 @@ msgstr ""
 msgid "With social insurance contributions: %{amount}."
 msgstr ""
 
-#: lib/firmowid_web/management/components/employee_payout_calculator.ex:493
-#: lib/firmowid_web/management/components/employee_tax_details.ex:520
+#: lib/firmowid_web/management/components/employee_payout_calculator.ex:489
+#: lib/firmowid_web/management/components/employee_tax_details.ex:519
 #: lib/firmowid_web/payroll/components/payout_estimates.ex:93
 #: lib/firmowid_web/payroll/components/tax_profile_form.ex:47
 #, elixir-autogen, elixir-format
@@ -3402,7 +3402,7 @@ msgstr ""
 msgid "Each cost invoice counts with its payment amount less the deductible VAT recorded on it, including non-deductible VAT and settlement charges. These are not statutory tax-deductible costs. Bank costs without an invoice, payroll and tax adjustments are not included."
 msgstr ""
 
-#: lib/firmowid_web/management/components/profile_tab.ex:173
+#: lib/firmowid_web/management/components/profile_tab.ex:174
 #: lib/firmowid_web/settings/components/profile_tab.ex:473
 #, elixir-autogen, elixir-format
 msgid "Edit net forecast assumptions"
@@ -3513,7 +3513,7 @@ msgstr ""
 msgid "Monthly tax reduction"
 msgstr ""
 
-#: lib/firmowid_web/management/components/profile_tab.ex:166
+#: lib/firmowid_web/management/components/profile_tab.ex:167
 #: lib/firmowid_web/settings/components/profile_tab.ex:471
 #, elixir-autogen, elixir-format
 msgid "Net forecast assumptions"
@@ -3713,7 +3713,7 @@ msgid "Tax payments already made are not deducted, so this is not a balance to p
 msgstr ""
 
 #: lib/firmowid_web/management/components/employee_payout_calculator.ex:111
-#: lib/firmowid_web/management/components/employee_tax_details.ex:515
+#: lib/firmowid_web/management/components/employee_tax_details.ex:514
 #: lib/firmowid_web/payroll/components/tax_profile_form.ex:44
 #, elixir-autogen, elixir-format
 msgid "Tax-deductible costs"
@@ -4077,7 +4077,7 @@ msgid "Copy %{field}"
 msgstr ""
 
 #: lib/firmowid_web/management/views/employee.html.heex:128
-#: lib/firmowid_web/management/views/employees.html.heex:286
+#: lib/firmowid_web/management/views/employees.html.heex:294
 #, elixir-autogen, elixir-format
 msgid "Copy bank account number"
 msgstr ""
@@ -4118,7 +4118,7 @@ msgstr ""
 msgid "Edit %{section}"
 msgstr ""
 
-#: lib/firmowid_web/management/components/profile_tab.ex:86
+#: lib/firmowid_web/management/components/profile_tab.ex:87
 #, elixir-autogen, elixir-format
 msgid "Edit employment details"
 msgstr ""
@@ -4225,7 +4225,7 @@ msgstr ""
 msgid "Show companies only"
 msgstr ""
 
-#: lib/firmowid_web/management/views/employees.html.heex:262
+#: lib/firmowid_web/management/views/employees.html.heex:270
 #, elixir-autogen, elixir-format
 msgid "Show details of employee %{name}"
 msgstr ""
@@ -4262,17 +4262,17 @@ msgstr ""
 msgid "%{rate}%"
 msgstr ""
 
-#: lib/firmowid_web/management/components/employee_payout_calculator.ex:535
+#: lib/firmowid_web/management/components/employee_payout_calculator.ex:531
 #, elixir-autogen, elixir-format
 msgid "A civil contract with or for the employee's employer must be combined with employment payroll."
 msgstr ""
 
-#: lib/firmowid_web/management/components/employee_payout_calculator.ex:560
+#: lib/firmowid_web/management/components/employee_payout_calculator.ex:556
 #, elixir-autogen, elixir-format
 msgid "A health contribution reduction under the 2021 rules may apply; this case is not calculated."
 msgstr ""
 
-#: lib/firmowid_web/management/components/employee_payout_calculator.ex:255
+#: lib/firmowid_web/management/components/employee_payout_calculator.ex:253
 #, elixir-autogen, elixir-format
 msgid "Actually transferred by payout, not accrued; enter zero if none."
 msgstr ""
@@ -4282,62 +4282,62 @@ msgstr ""
 msgid "Add declarations"
 msgstr ""
 
-#: lib/firmowid_web/management/components/employee_payout_calculator.ex:462
+#: lib/firmowid_web/management/components/employee_payout_calculator.ex:458
 #, elixir-autogen, elixir-format
 msgid "Add declarations covering the payout date in the employee profile."
 msgstr ""
 
-#: lib/firmowid_web/management/components/employee_payout_calculator.ex:459
+#: lib/firmowid_web/management/components/employee_payout_calculator.ex:455
 #, elixir-autogen, elixir-format
 msgid "Add the date of birth in the employee profile."
 msgstr ""
 
-#: lib/firmowid_web/management/components/employee_payout_calculator.ex:248
+#: lib/firmowid_web/management/components/employee_payout_calculator.ex:246
 #, elixir-autogen, elixir-format
 msgid "All payers this year; confirm zero separately."
 msgstr ""
 
-#: lib/firmowid_web/management/components/employee_payout_calculator.ex:490
-#: lib/firmowid_web/management/components/employee_tax_details.ex:557
+#: lib/firmowid_web/management/components/employee_payout_calculator.ex:486
+#: lib/firmowid_web/management/components/employee_tax_details.ex:556
 #, elixir-autogen, elixir-format
 msgid "Apply 50% copyright costs"
 msgstr ""
 
-#: lib/firmowid_web/management/components/employee_payout_calculator.ex:482
-#: lib/firmowid_web/management/components/employee_tax_details.ex:504
+#: lib/firmowid_web/management/components/employee_payout_calculator.ex:478
+#: lib/firmowid_web/management/components/employee_tax_details.ex:503
 #, elixir-autogen, elixir-format
 msgid "Apply from"
 msgstr ""
 
-#: lib/firmowid_web/management/components/employee_tax_details.ex:521
+#: lib/firmowid_web/management/components/employee_tax_details.ex:520
 #, elixir-autogen, elixir-format
 msgid "Apply when eligible"
 msgstr ""
 
-#: lib/firmowid_web/management/components/employee_payout_calculator.ex:230
+#: lib/firmowid_web/management/components/employee_payout_calculator.ex:228
 #, elixir-autogen, elixir-format
 msgid "At this employer this year, before this payout."
 msgstr ""
 
-#: lib/firmowid_web/management/components/employee_payout_calculator.ex:504
+#: lib/firmowid_web/management/components/employee_payout_calculator.ex:500
 #: lib/firmowid_web/management/components/employee_tax_details.ex:63
 #, elixir-autogen, elixir-format
 msgid "B2B contractor taxes are not employee payroll deductions."
 msgstr ""
 
-#: lib/firmowid_web/management/components/employee_payout_calculator.ex:273
+#: lib/firmowid_web/management/components/employee_payout_calculator.ex:270
 #, elixir-autogen, elixir-format
 msgid "Based on supplied data; does not verify declarations or replace payroll records."
 msgstr ""
 
-#: lib/firmowid_web/management/components/employee_payout_calculator.ex:517
+#: lib/firmowid_web/management/components/employee_payout_calculator.ex:513
 #, elixir-autogen, elixir-format
 msgid "Benefits, sick pay and other deductions require a full payroll calculation."
 msgstr ""
 
 #: lib/firmowid_web/management/components/employee_payout_calculator.ex:67
 #: lib/firmowid_web/management/components/employee_payout_calculator.ex:79
-#: lib/firmowid_web/management/components/employee_payout_calculator.ex:269
+#: lib/firmowid_web/management/components/employee_payout_calculator.ex:266
 #, elixir-autogen, elixir-format
 msgid "Calculate payout"
 msgstr ""
@@ -4347,7 +4347,7 @@ msgstr ""
 msgid "Calculate using employee declarations"
 msgstr ""
 
-#: lib/firmowid_web/management/components/employee_payout_calculator.ex:268
+#: lib/firmowid_web/management/components/employee_payout_calculator.ex:265
 #, elixir-autogen, elixir-format
 msgid "Calculating..."
 msgstr ""
@@ -4363,12 +4363,12 @@ msgstr ""
 msgid "Change declarations"
 msgstr ""
 
-#: lib/firmowid_web/management/components/employee_payout_calculator.ex:566
+#: lib/firmowid_web/management/components/employee_payout_calculator.ex:562
 #, elixir-autogen, elixir-format
 msgid "Changes in mandate insurance status require separate calculations for each work period."
 msgstr ""
 
-#: lib/firmowid_web/management/components/employee_payout_calculator.ex:417
+#: lib/firmowid_web/management/components/employee_payout_calculator.ex:413
 #, elixir-autogen, elixir-format
 msgid "Choose a payout date"
 msgstr ""
@@ -4378,47 +4378,47 @@ msgstr ""
 msgid "Choose when the changes take effect. Previous versions are kept."
 msgstr ""
 
-#: lib/firmowid_web/management/components/employee_payout_calculator.ex:498
+#: lib/firmowid_web/management/components/employee_payout_calculator.ex:494
 #, elixir-autogen, elixir-format
 msgid "Civil contract with or for own employer"
 msgstr ""
 
-#: lib/firmowid_web/management/components/employee_payout_calculator.ex:470
+#: lib/firmowid_web/management/components/employee_payout_calculator.ex:466
 #, elixir-autogen, elixir-format
 msgid "Complete declarations: %{field}"
 msgstr ""
 
-#: lib/firmowid_web/management/components/employee_payout_calculator.ex:450
+#: lib/firmowid_web/management/components/employee_payout_calculator.ex:446
 #, elixir-autogen, elixir-format
 msgid "Confirm the three payout conditions"
 msgstr ""
 
-#: lib/firmowid_web/management/components/employee_payout_calculator.ex:174
+#: lib/firmowid_web/management/components/employee_payout_calculator.ex:172
 #, elixir-autogen, elixir-format
 msgid "Confirm this payout"
 msgstr ""
 
-#: lib/firmowid_web/management/components/employee_payout_calculator.ex:454
+#: lib/firmowid_web/management/components/employee_payout_calculator.ex:450
 #, elixir-autogen, elixir-format
 msgid "Confirm unchanged insurance status"
 msgstr ""
 
-#: lib/firmowid_web/management/components/employee_payout_calculator.ex:494
+#: lib/firmowid_web/management/components/employee_payout_calculator.ex:490
 #, elixir-autogen, elixir-format
 msgid "Confirmed pupil or student status"
 msgstr ""
 
-#: lib/firmowid_web/management/components/employee_payout_calculator.ex:187
+#: lib/firmowid_web/management/components/employee_payout_calculator.ex:185
 #, elixir-autogen, elixir-format
 msgid "Contract active on the payout date"
 msgstr ""
 
-#: lib/firmowid_web/management/components/employee_tax_details.ex:537
+#: lib/firmowid_web/management/components/employee_tax_details.ex:536
 #, elixir-autogen, elixir-format
 msgid "Contract with own employer"
 msgstr ""
 
-#: lib/firmowid_web/management/components/employee_payout_calculator.ex:529
+#: lib/firmowid_web/management/components/employee_payout_calculator.ex:525
 #, elixir-autogen, elixir-format
 msgid "Copyright remuneration requires separate eligibility and cost allocation."
 msgstr ""
@@ -4438,24 +4438,24 @@ msgstr ""
 msgid "Declaration history"
 msgstr ""
 
-#: lib/firmowid_web/management/components/employee_payout_calculator.ex:481
-#: lib/firmowid_web/management/components/employee_tax_details.ex:503
+#: lib/firmowid_web/management/components/employee_payout_calculator.ex:477
+#: lib/firmowid_web/management/components/employee_tax_details.ex:502
 #, elixir-autogen, elixir-format
 msgid "Declaration received on"
 msgstr ""
 
-#: lib/firmowid_web/management/components/employee_payout_calculator.ex:422
+#: lib/firmowid_web/management/components/employee_payout_calculator.ex:418
 #, elixir-autogen, elixir-format
 msgid "Declarations from %{date}"
 msgstr ""
 
-#: lib/firmowid_web/management/components/employee_payout_calculator.ex:563
+#: lib/firmowid_web/management/components/employee_payout_calculator.ex:559
 #, elixir-autogen, elixir-format
 msgid "Deductions exceed the payout. Tax collection requires an individual payroll calculation."
 msgstr ""
 
-#: lib/firmowid_web/management/components/employee_tax_details.ex:516
-#: lib/firmowid_web/management/components/employee_tax_details.ex:522
+#: lib/firmowid_web/management/components/employee_tax_details.ex:515
+#: lib/firmowid_web/management/components/employee_tax_details.ex:521
 #, elixir-autogen, elixir-format
 msgid "Do not apply"
 msgstr ""
@@ -4470,54 +4470,54 @@ msgstr ""
 msgid "Effective today"
 msgstr ""
 
-#: lib/firmowid_web/management/components/employee_tax_details.ex:518
+#: lib/firmowid_web/management/components/employee_tax_details.ex:517
 #, elixir-autogen, elixir-format
 msgid "Elevated — PLN 300"
 msgstr ""
 
-#: lib/firmowid_web/management/components/employee_payout_calculator.ex:436
+#: lib/firmowid_web/management/components/employee_payout_calculator.ex:432
 #, elixir-autogen, elixir-format
 msgid "Employee PPK contribution"
 msgstr ""
 
-#: lib/firmowid_web/management/components/employee_tax_details.ex:543
+#: lib/firmowid_web/management/components/employee_tax_details.ex:542
 #, elixir-autogen, elixir-format
 msgid "Employee PPK rate (%)"
 msgstr ""
 
-#: lib/firmowid_web/management/components/employee_payout_calculator.ex:254
-#: lib/firmowid_web/management/components/employee_payout_calculator.ex:478
+#: lib/firmowid_web/management/components/employee_payout_calculator.ex:252
+#: lib/firmowid_web/management/components/employee_payout_calculator.ex:474
 #, elixir-autogen, elixir-format
 msgid "Employer PPK paid this month (PLN)"
 msgstr ""
 
-#: lib/firmowid_web/management/components/employee_payout_calculator.ex:261
-#: lib/firmowid_web/management/components/employee_payout_calculator.ex:479
+#: lib/firmowid_web/management/components/employee_payout_calculator.ex:259
+#: lib/firmowid_web/management/components/employee_payout_calculator.ex:475
 #, elixir-autogen, elixir-format
 msgid "Employer PPK transfer date"
 msgstr ""
 
-#: lib/firmowid_web/management/components/employee_payout_calculator.ex:492
+#: lib/firmowid_web/management/components/employee_payout_calculator.ex:488
 #, elixir-autogen, elixir-format
 msgid "Employment tax-deductible costs"
 msgstr ""
 
-#: lib/firmowid_web/management/components/employee_payout_calculator.ex:239
+#: lib/firmowid_web/management/components/employee_payout_calculator.ex:237
 #, elixir-autogen, elixir-format
 msgid "Exempt income at this employer this year, before this payout."
 msgstr ""
 
-#: lib/firmowid_web/management/components/employee_tax_details.ex:547
+#: lib/firmowid_web/management/components/employee_tax_details.ex:546
 #, elixir-autogen, elixir-format
 msgid "Families with four or more children"
 msgstr ""
 
-#: lib/firmowid_web/management/components/employee_payout_calculator.ex:542
+#: lib/firmowid_web/management/components/employee_payout_calculator.ex:538
 #, elixir-autogen, elixir-format
 msgid "For civil-contract payments up to PLN 200, the total contractual amount is needed to determine the tax regime."
 msgstr ""
 
-#: lib/firmowid_web/management/components/employee_payout_calculator.ex:522
+#: lib/firmowid_web/management/components/employee_payout_calculator.ex:518
 #, elixir-autogen, elixir-format
 msgid "Foreign tax residency requires individual tax and insurance assessment."
 msgstr ""
@@ -4527,13 +4527,13 @@ msgstr ""
 msgid "General rules"
 msgstr ""
 
-#: lib/firmowid_web/management/components/employee_payout_calculator.ex:166
-#: lib/firmowid_web/management/components/employee_payout_calculator.ex:474
+#: lib/firmowid_web/management/components/employee_payout_calculator.ex:165
+#: lib/firmowid_web/management/components/employee_payout_calculator.ex:470
 #, elixir-autogen, elixir-format
 msgid "Gross pay (PLN)"
 msgstr ""
 
-#: lib/firmowid_web/management/components/employee_tax_details.ex:526
+#: lib/firmowid_web/management/components/employee_tax_details.ex:525
 #, elixir-autogen, elixir-format
 msgid "Higher rate — 32%"
 msgstr ""
@@ -4554,27 +4554,27 @@ msgstr ""
 msgid "Hypothetical variant: %{variant}"
 msgstr ""
 
-#: lib/firmowid_web/management/components/employee_payout_calculator.ex:181
+#: lib/firmowid_web/management/components/employee_payout_calculator.ex:179
 #, elixir-autogen, elixir-format
 msgid "I confirm all three conditions:"
 msgstr ""
 
-#: lib/firmowid_web/management/components/employee_payout_calculator.ex:486
+#: lib/firmowid_web/management/components/employee_payout_calculator.ex:482
 #, elixir-autogen, elixir-format
 msgid "Income tax advance request"
 msgstr ""
 
-#: lib/firmowid_web/management/components/employee_payout_calculator.ex:197
+#: lib/firmowid_web/management/components/employee_payout_calculator.ex:195
 #, elixir-autogen, elixir-format
 msgid "Insurance status unchanged from work period through payout"
 msgstr ""
 
-#: lib/firmowid_web/management/components/employee_tax_details.ex:553
+#: lib/firmowid_web/management/components/employee_tax_details.ex:552
 #, elixir-autogen, elixir-format
 msgid "Joint — own income above PLN 120,000"
 msgstr ""
 
-#: lib/firmowid_web/management/components/employee_tax_details.ex:552
+#: lib/firmowid_web/management/components/employee_tax_details.ex:551
 #, elixir-autogen, elixir-format
 msgid "Joint — own income up to PLN 120,000"
 msgstr ""
@@ -4584,18 +4584,18 @@ msgstr ""
 msgid "Leave unconfirmed information blank."
 msgstr ""
 
-#: lib/firmowid_web/management/components/employee_payout_calculator.ex:409
+#: lib/firmowid_web/management/components/employee_payout_calculator.ex:405
 #, elixir-autogen, elixir-format
 msgid "Mandate contract"
 msgstr ""
 
-#: lib/firmowid_web/management/components/employee_payout_calculator.ex:484
-#: lib/firmowid_web/management/components/employee_tax_details.ex:509
+#: lib/firmowid_web/management/components/employee_payout_calculator.ex:480
+#: lib/firmowid_web/management/components/employee_tax_details.ex:508
 #, elixir-autogen, elixir-format
 msgid "Monthly PIT-2 reduction"
 msgstr ""
 
-#: lib/firmowid_web/management/components/employee_payout_calculator.ex:514
+#: lib/firmowid_web/management/components/employee_payout_calculator.ex:510
 #, elixir-autogen, elixir-format
 msgid "Multiple payouts in one month require shared monthly tax costs and reductions."
 msgstr ""
@@ -4610,22 +4610,22 @@ msgstr ""
 msgid "New declaration"
 msgstr ""
 
-#: lib/firmowid_web/management/components/employee_tax_details.ex:499
+#: lib/firmowid_web/management/components/employee_tax_details.ex:498
 #, elixir-autogen, elixir-format
 msgid "No"
 msgstr ""
 
-#: lib/firmowid_web/management/components/employee_tax_details.ex:527
+#: lib/firmowid_web/management/components/employee_tax_details.ex:526
 #, elixir-autogen, elixir-format
 msgid "No advances (record only)"
 msgstr ""
 
-#: lib/firmowid_web/management/components/employee_payout_calculator.ex:189
+#: lib/firmowid_web/management/components/employee_payout_calculator.ex:187
 #, elixir-autogen, elixir-format
 msgid "No benefits, sick pay or additional deductions"
 msgstr ""
 
-#: lib/firmowid_web/management/components/employee_payout_calculator.ex:412
+#: lib/firmowid_web/management/components/employee_payout_calculator.ex:408
 #, elixir-autogen, elixir-format
 msgid "No contract in profile"
 msgstr ""
@@ -4635,12 +4635,12 @@ msgstr ""
 msgid "No declarations are effective today."
 msgstr ""
 
-#: lib/firmowid_web/management/components/employee_payout_calculator.ex:416
+#: lib/firmowid_web/management/components/employee_payout_calculator.ex:412
 #, elixir-autogen, elixir-format
 msgid "No declarations for this payout date"
 msgstr ""
 
-#: lib/firmowid_web/management/components/employee_payout_calculator.ex:221
+#: lib/firmowid_web/management/components/employee_payout_calculator.ex:219
 #, elixir-autogen, elixir-format
 msgid "No earlier payments from us this year"
 msgstr ""
@@ -4650,18 +4650,18 @@ msgstr ""
 msgid "No other tax preferences or copyright costs"
 msgstr ""
 
-#: lib/firmowid_web/management/components/employee_tax_details.ex:532
+#: lib/firmowid_web/management/components/employee_tax_details.ex:531
 #, elixir-autogen, elixir-format
 msgid "No other title"
 msgstr ""
 
-#: lib/firmowid_web/management/components/employee_tax_details.ex:510
+#: lib/firmowid_web/management/components/employee_tax_details.ex:509
 #, elixir-autogen, elixir-format
 msgid "No reduction"
 msgstr ""
 
-#: lib/firmowid_web/management/components/employee_tax_details.ex:545
-#: lib/firmowid_web/management/components/employee_tax_details.ex:551
+#: lib/firmowid_web/management/components/employee_tax_details.ex:544
+#: lib/firmowid_web/management/components/employee_tax_details.ex:550
 #, elixir-autogen, elixir-format
 msgid "None"
 msgstr ""
@@ -4683,22 +4683,22 @@ msgstr ""
 msgid "Not established"
 msgstr ""
 
-#: lib/firmowid_web/management/components/employee_tax_details.ex:540
+#: lib/firmowid_web/management/components/employee_tax_details.ex:539
 #, elixir-autogen, elixir-format
 msgid "Not participating"
 msgstr ""
 
-#: lib/firmowid_web/management/components/employee_payout_calculator.ex:188
+#: lib/firmowid_web/management/components/employee_payout_calculator.ex:186
 #, elixir-autogen, elixir-format
 msgid "One payout from us this month"
 msgstr ""
 
-#: lib/firmowid_web/management/components/employee_payout_calculator.ex:572
+#: lib/firmowid_web/management/components/employee_payout_calculator.ex:568
 #, elixir-autogen, elixir-format
 msgid "Only employer PPK transfers made in the payout month on or before payout can be included. Other transfers require separate tax collection."
 msgstr ""
 
-#: lib/firmowid_web/management/components/employee_payout_calculator.ex:508
+#: lib/firmowid_web/management/components/employee_payout_calculator.ex:504
 #, elixir-autogen, elixir-format
 msgid "Only payouts in 2026 are supported. Rates for other years are not assumed."
 msgstr ""
@@ -4708,13 +4708,13 @@ msgstr ""
 msgid "Open a version to review its recorded information."
 msgstr ""
 
-#: lib/firmowid_web/management/components/employee_payout_calculator.ex:485
-#: lib/firmowid_web/management/components/employee_tax_details.ex:544
+#: lib/firmowid_web/management/components/employee_payout_calculator.ex:481
+#: lib/firmowid_web/management/components/employee_tax_details.ex:543
 #, elixir-autogen, elixir-format
 msgid "Other PIT-0 exemption declaration"
 msgstr ""
 
-#: lib/firmowid_web/management/components/employee_tax_details.ex:507
+#: lib/firmowid_web/management/components/employee_tax_details.ex:506
 #, elixir-autogen, elixir-format
 msgid "Other country"
 msgstr ""
@@ -4724,23 +4724,23 @@ msgstr ""
 msgid "Other declarations (record only)"
 msgstr ""
 
-#: lib/firmowid_web/management/components/employee_tax_details.ex:534
+#: lib/firmowid_web/management/components/employee_tax_details.ex:533
 #, elixir-autogen, elixir-format
 msgid "Other employment at least minimum wage"
 msgstr ""
 
-#: lib/firmowid_web/management/components/employee_tax_details.ex:533
+#: lib/firmowid_web/management/components/employee_tax_details.ex:532
 #, elixir-autogen, elixir-format
 msgid "Other employment below minimum wage"
 msgstr ""
 
-#: lib/firmowid_web/management/components/employee_payout_calculator.ex:496
-#: lib/firmowid_web/management/components/employee_tax_details.ex:531
+#: lib/firmowid_web/management/components/employee_payout_calculator.ex:492
+#: lib/firmowid_web/management/components/employee_tax_details.ex:530
 #, elixir-autogen, elixir-format
 msgid "Other insurance title"
 msgstr ""
 
-#: lib/firmowid_web/management/components/employee_tax_details.ex:535
+#: lib/firmowid_web/management/components/employee_tax_details.ex:534
 #, elixir-autogen, elixir-format
 msgid "Other situation requiring individual assessment"
 msgstr ""
@@ -4750,83 +4750,83 @@ msgstr ""
 msgid "Other tax preferences need review before calculation."
 msgstr ""
 
-#: lib/firmowid_web/management/components/employee_payout_calculator.ex:238
-#: lib/firmowid_web/management/components/employee_payout_calculator.ex:477
+#: lib/firmowid_web/management/components/employee_payout_calculator.ex:236
+#: lib/firmowid_web/management/components/employee_payout_calculator.ex:473
 #, elixir-autogen, elixir-format
 msgid "Our PIT-0 exempt income to date (PLN)"
 msgstr ""
 
-#: lib/firmowid_web/management/components/employee_payout_calculator.ex:229
-#: lib/firmowid_web/management/components/employee_payout_calculator.ex:475
+#: lib/firmowid_web/management/components/employee_payout_calculator.ex:227
+#: lib/firmowid_web/management/components/employee_payout_calculator.ex:471
 #, elixir-autogen, elixir-format
 msgid "Our taxable income to date (PLN)"
 msgstr ""
 
-#: lib/firmowid_web/management/components/employee_payout_calculator.ex:524
+#: lib/firmowid_web/management/components/employee_payout_calculator.ex:520
 #, elixir-autogen, elixir-format
 msgid "PIT-0 exemptions other than youth relief are recorded but not calculated."
 msgstr ""
 
-#: lib/firmowid_web/management/components/employee_payout_calculator.ex:491
-#: lib/firmowid_web/management/components/employee_tax_details.ex:539
+#: lib/firmowid_web/management/components/employee_payout_calculator.ex:487
+#: lib/firmowid_web/management/components/employee_tax_details.ex:538
 #, elixir-autogen, elixir-format
 msgid "PPK participation"
 msgstr ""
 
-#: lib/firmowid_web/management/components/employee_payout_calculator.ex:549
+#: lib/firmowid_web/management/components/employee_payout_calculator.ex:545
 #, elixir-autogen, elixir-format
 msgid "PPK participation or employer PPK income is inconsistent with this contract's insurance status."
 msgstr ""
 
-#: lib/firmowid_web/management/components/employee_payout_calculator.ex:554
+#: lib/firmowid_web/management/components/employee_payout_calculator.ex:550
 #, elixir-autogen, elixir-format
 msgid "PPK rates below 2% require monthly earnings from all sources; reduced rates are not calculated."
 msgstr ""
 
-#: lib/firmowid_web/management/components/employee_payout_calculator.ex:557
+#: lib/firmowid_web/management/components/employee_payout_calculator.ex:553
 #, elixir-autogen, elixir-format
 msgid "Partial youth relief combined with PPK or contribution limits requires more detailed income allocation."
 msgstr ""
 
-#: lib/firmowid_web/management/components/employee_tax_details.ex:541
+#: lib/firmowid_web/management/components/employee_tax_details.ex:540
 #, elixir-autogen, elixir-format
 msgid "Participating"
 msgstr ""
 
-#: lib/firmowid_web/management/components/employee_payout_calculator.ex:519
+#: lib/firmowid_web/management/components/employee_payout_calculator.ex:515
 #, elixir-autogen, elixir-format
 msgid "Pay and prior balances cannot be negative."
 msgstr ""
 
 #: lib/firmowid_web/management/components/employee_payout_calculator.ex:159
-#: lib/firmowid_web/management/components/employee_payout_calculator.ex:473
+#: lib/firmowid_web/management/components/employee_payout_calculator.ex:469
 #, elixir-autogen, elixir-format
 msgid "Payout date"
 msgstr ""
 
-#: lib/firmowid_web/management/components/employee_payout_calculator.ex:511
+#: lib/firmowid_web/management/components/employee_payout_calculator.ex:507
 #, elixir-autogen, elixir-format
 msgid "Payouts after the contract ends require separate declaration rules."
 msgstr ""
 
-#: lib/firmowid_web/management/components/employee_payout_calculator.ex:247
-#: lib/firmowid_web/management/components/employee_payout_calculator.ex:476
+#: lib/firmowid_web/management/components/employee_payout_calculator.ex:245
+#: lib/firmowid_web/management/components/employee_payout_calculator.ex:472
 #, elixir-autogen, elixir-format
 msgid "Pension contribution base to date (PLN)"
 msgstr ""
 
-#: lib/firmowid_web/management/components/employee_tax_details.ex:506
+#: lib/firmowid_web/management/components/employee_tax_details.ex:505
 #, elixir-autogen, elixir-format
 msgid "Poland"
 msgstr ""
 
-#: lib/firmowid_web/management/components/employee_payout_calculator.ex:488
-#: lib/firmowid_web/management/components/employee_tax_details.ex:550
+#: lib/firmowid_web/management/components/employee_payout_calculator.ex:484
+#: lib/firmowid_web/management/components/employee_tax_details.ex:549
 #, elixir-autogen, elixir-format
 msgid "Preferential advance calculation declaration"
 msgstr ""
 
-#: lib/firmowid_web/management/components/employee_payout_calculator.ex:526
+#: lib/firmowid_web/management/components/employee_payout_calculator.ex:522
 #, elixir-autogen, elixir-format
 msgid "Preferential advance declarations are recorded but not calculated."
 msgstr ""
@@ -4836,7 +4836,7 @@ msgstr ""
 msgid "Previous version"
 msgstr ""
 
-#: lib/firmowid_web/management/components/employee_tax_details.ex:529
+#: lib/firmowid_web/management/components/employee_tax_details.ex:528
 #, elixir-autogen, elixir-format
 msgid "Pupil or student"
 msgstr ""
@@ -4851,7 +4851,7 @@ msgstr ""
 msgid "Requires a separate payroll calculation"
 msgstr ""
 
-#: lib/firmowid_web/management/components/employee_tax_details.ex:546
+#: lib/firmowid_web/management/components/employee_tax_details.ex:545
 #, elixir-autogen, elixir-format
 msgid "Return to Poland"
 msgstr ""
@@ -4872,33 +4872,33 @@ msgid "Scheduled"
 msgstr ""
 
 #: lib/firmowid_web/management/components/employee_payout_calculator.ex:84
-#: lib/firmowid_web/management/components/employee_payout_calculator.ex:457
+#: lib/firmowid_web/management/components/employee_payout_calculator.ex:453
 #: lib/firmowid_web/management/components/employee_tax_details.ex:67
 #, elixir-autogen, elixir-format
 msgid "Set the contract in the employee profile."
 msgstr ""
 
-#: lib/firmowid_web/management/components/employee_tax_details.ex:555
+#: lib/firmowid_web/management/components/employee_tax_details.ex:554
 #, elixir-autogen, elixir-format
 msgid "Single parent — own income above PLN 120,000"
 msgstr ""
 
-#: lib/firmowid_web/management/components/employee_tax_details.ex:554
+#: lib/firmowid_web/management/components/employee_tax_details.ex:553
 #, elixir-autogen, elixir-format
 msgid "Single parent — own income up to PLN 120,000"
 msgstr ""
 
-#: lib/firmowid_web/management/components/employee_payout_calculator.ex:410
+#: lib/firmowid_web/management/components/employee_payout_calculator.ex:406
 #, elixir-autogen, elixir-format
 msgid "Specific-task contract"
 msgstr ""
 
-#: lib/firmowid_web/management/components/employee_tax_details.ex:525
+#: lib/firmowid_web/management/components/employee_tax_details.ex:524
 #, elixir-autogen, elixir-format
 msgid "Standard withholding"
 msgstr ""
 
-#: lib/firmowid_web/management/components/employee_tax_details.ex:517
+#: lib/firmowid_web/management/components/employee_tax_details.ex:516
 #, elixir-autogen, elixir-format
 msgid "Standard — PLN 250"
 msgstr ""
@@ -4908,13 +4908,13 @@ msgstr ""
 msgid "Still needed"
 msgstr ""
 
-#: lib/firmowid_web/management/components/employee_payout_calculator.ex:495
-#: lib/firmowid_web/management/components/employee_tax_details.ex:530
+#: lib/firmowid_web/management/components/employee_payout_calculator.ex:491
+#: lib/firmowid_web/management/components/employee_tax_details.ex:529
 #, elixir-autogen, elixir-format
 msgid "Student status confirmed through"
 msgstr ""
 
-#: lib/firmowid_web/management/components/employee_tax_details.ex:524
+#: lib/firmowid_web/management/components/employee_tax_details.ex:523
 #, elixir-autogen, elixir-format
 msgid "Tax advances"
 msgstr ""
@@ -4924,14 +4924,14 @@ msgstr ""
 msgid "Tax costs"
 msgstr ""
 
-#: lib/firmowid_web/management/components/employee_payout_calculator.ex:483
-#: lib/firmowid_web/management/components/employee_tax_details.ex:505
+#: lib/firmowid_web/management/components/employee_payout_calculator.ex:479
+#: lib/firmowid_web/management/components/employee_tax_details.ex:504
 #, elixir-autogen, elixir-format
 msgid "Tax residency"
 msgstr ""
 
-#: lib/firmowid_web/management/components/employee_payout_calculator.ex:502
-#: lib/firmowid_web/management/components/employee_tax_details.ex:558
+#: lib/firmowid_web/management/components/employee_payout_calculator.ex:498
+#: lib/firmowid_web/management/components/employee_tax_details.ex:557
 #, elixir-autogen, elixir-format
 msgid "Tax year of the annual request"
 msgstr ""
@@ -4946,22 +4946,22 @@ msgstr ""
 msgid "Taxes and insurance"
 msgstr ""
 
-#: lib/firmowid_web/management/components/employee_payout_calculator.ex:532
+#: lib/firmowid_web/management/components/employee_payout_calculator.ex:528
 #, elixir-autogen, elixir-format
 msgid "The annual request not to withhold advances is recorded but not calculated."
 msgstr ""
 
-#: lib/firmowid_web/management/components/employee_payout_calculator.ex:551
+#: lib/firmowid_web/management/components/employee_payout_calculator.ex:547
 #, elixir-autogen, elixir-format
 msgid "The employee PPK contribution rate is outside the supported range."
 msgstr ""
 
-#: lib/firmowid_web/management/components/employee_payout_calculator.ex:568
+#: lib/firmowid_web/management/components/employee_payout_calculator.ex:564
 #, elixir-autogen, elixir-format
 msgid "The employee's date of birth must not be after the payout date."
 msgstr ""
 
-#: lib/firmowid_web/management/components/employee_payout_calculator.ex:506
+#: lib/firmowid_web/management/components/employee_payout_calculator.ex:502
 #, elixir-autogen, elixir-format
 msgid "This contract type is not supported."
 msgstr ""
@@ -4971,27 +4971,27 @@ msgstr ""
 msgid "This corrects the stored version. Its effective date stays unchanged."
 msgstr ""
 
-#: lib/firmowid_web/management/components/employee_payout_calculator.ex:538
+#: lib/firmowid_web/management/components/employee_payout_calculator.ex:534
 #, elixir-autogen, elixir-format
 msgid "This insurance title requires an individual contribution assessment."
 msgstr ""
 
-#: lib/firmowid_web/management/components/employee_payout_calculator.ex:501
+#: lib/firmowid_web/management/components/employee_payout_calculator.ex:497
 #, elixir-autogen, elixir-format
 msgid "Total employee PPK rate (%)"
 msgstr ""
 
-#: lib/firmowid_web/management/components/employee_payout_calculator.ex:211
+#: lib/firmowid_web/management/components/employee_payout_calculator.ex:209
 #, elixir-autogen, elixir-format
 msgid "Use previous payroll totals; exclude the amounts entered for this payout."
 msgstr ""
 
-#: lib/firmowid_web/management/components/employee_tax_details.ex:538
+#: lib/firmowid_web/management/components/employee_tax_details.ex:537
 #, elixir-autogen, elixir-format
 msgid "Voluntary sickness insurance"
 msgstr ""
 
-#: lib/firmowid_web/management/components/employee_payout_calculator.ex:500
+#: lib/firmowid_web/management/components/employee_payout_calculator.ex:496
 #, elixir-autogen, elixir-format
 msgid "Voluntary sickness insurance requested"
 msgstr ""
@@ -5001,17 +5001,17 @@ msgstr ""
 msgid "When eligible"
 msgstr ""
 
-#: lib/firmowid_web/management/components/employee_tax_details.ex:548
+#: lib/firmowid_web/management/components/employee_tax_details.ex:547
 #, elixir-autogen, elixir-format
 msgid "Working seniors"
 msgstr ""
 
-#: lib/firmowid_web/management/components/employee_payout_calculator.ex:207
+#: lib/firmowid_web/management/components/employee_payout_calculator.ex:205
 #, elixir-autogen, elixir-format
 msgid "Year-to-date balances and PPK"
 msgstr ""
 
-#: lib/firmowid_web/management/components/employee_tax_details.ex:499
+#: lib/firmowid_web/management/components/employee_tax_details.ex:498
 #, elixir-autogen, elixir-format
 msgid "Yes"
 msgstr ""

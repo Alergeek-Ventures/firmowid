@@ -158,7 +158,6 @@ defmodule FirmowidWeb.Management.Components.EmployeePayoutCalculator do
                 id={"#{@id}-payout_date"}
                 label={gettext("Payout date")}
                 type="date"
-                new
               />
               <.input
                 field={@form[:gross]}
@@ -167,7 +166,6 @@ defmodule FirmowidWeb.Management.Components.EmployeePayoutCalculator do
                 type="number"
                 min="0"
                 step="0.01"
-                new
               />
             </div>
             <fieldset class="flex min-w-0 flex-col gap-2">
@@ -260,7 +258,6 @@ defmodule FirmowidWeb.Management.Components.EmployeePayoutCalculator do
                     id={"#{@id}-employer_ppk_date"}
                     label={gettext("Employer PPK transfer date")}
                     type="date"
-                    new
                   />
                 </div>
               </div>
@@ -328,7 +325,6 @@ defmodule FirmowidWeb.Management.Components.EmployeePayoutCalculator do
         step="0.01"
         readonly={@readonly}
         aria-describedby={"#{@root_id}-#{@field}-help"}
-        new
       />
       <p id={"#{@root_id}-#{@field}-help"} class="text-xs/snug text-grey-600">{@help}</p>
     </div>

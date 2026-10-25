@@ -74,89 +74,90 @@ defmodule FirmowidWeb.Management.Components.ProfileTab do
 
       <div class="grid grid-cols-[repeat(auto-fit,minmax(min(100%,20rem),1fr))] items-start gap-6">
         <div class="flex min-w-0 flex-col gap-6">
-        <.card class="min-w-0">
-          <.card_header>
-            Informacje o zatrudnieniu
-            <:actions>
-              <.card_edit_actions
-                :if={@employment_contract}
-                editing={@editing_contract}
-                form="contract-form"
-                toggle_event="toggle_contract_editor"
-                target={@myself}
-                edit_label={gettext("Edit employment details")}
-              />
-            </:actions>
-          </.card_header>
-          <.form
-            id="contract-form"
-            for={@contract_form}
-            phx-target={@myself}
-            phx-submit="save_contract_employment"
-          >
-            <div class="flex flex-col gap-4">
-              <%= if @editing_contract do %>
-                <.field_row label="Status" for={@contract_form[:status].id}>
-                  <.input
-                    field={@contract_form[:status]}
-                    container_class="w-full"
-                    type="select"
-                    options={[
-                      {"Oczekuje na podpis", :pending_signature},
-                      {"Podpisana", :signed},
-                      {"Obowiązująca", :active}
-                    ]}
-                  />
-                </.field_row>
-                <.field_row label="Rodzaj umowy" for={@contract_form[:contract_type].id}>
-                  <.input
-                    field={@contract_form[:contract_type]}
-                    container_class="w-full"
-                    type="select"
-                    options={[
-                      {"Umowa o pracę", :uop},
-                      {"B2B", :b2b},
-                      {"Umowa zlecenie", :uz},
-                      {"Umowa o dzieło", :uod}
-                    ]}
-                  />
-                </.field_row>
-                <.field_row label="Stanowisko" for={@contract_form[:position].id}>
-                  <.input field={@contract_form[:position]} class="w-full" />
-                </.field_row>
-                <.field_row label="Data podpisania umowy" for={@contract_form[:signed_at].id}>
-                  <.input field={@contract_form[:signed_at]} type="date" class="w-full" />
-                </.field_row>
-              <% else %>
-                <.field_row label="Status umowy">
-                  {format_contract_status(@employment_contract && @employment_contract.status)}
-                </.field_row>
-                <.field_row label="Rodzaj umowy">
-                  {format_contract_type(@employment_contract && @employment_contract.contract_type)}
-                </.field_row>
-                <.field_row label="Stanowisko">
-                  {present(@employment_contract && @employment_contract.position)}
-                </.field_row>
-                <.field_row label="Data podpisania umowy">
-                  <div class="flex items-center gap-2">
-                    {present_date(@employment_contract && @employment_contract.signed_at)}
-                    <.link
-                      :if={@employment_contract}
-                      kind="button"
-                      variant="outline"
-                      size="small"
-                      class="ml-auto"
-                      redirect={~p"/zarzadzanie/umowy/#{@employment_contract.id}"}
-                      download
-                    >
-                      <Lucideicons.file_text class="size-4" /> <span class="font-medium">Umowa</span>
-                    </.link>
-                  </div>
-                </.field_row>
-              <% end %>
-            </div>
-          </.form>
-        </.card>
+          <.card class="min-w-0">
+            <.card_header>
+              Informacje o zatrudnieniu
+              <:actions>
+                <.card_edit_actions
+                  :if={@employment_contract}
+                  editing={@editing_contract}
+                  form="contract-form"
+                  toggle_event="toggle_contract_editor"
+                  target={@myself}
+                  edit_label={gettext("Edit employment details")}
+                />
+              </:actions>
+            </.card_header>
+            <.form
+              id="contract-form"
+              for={@contract_form}
+              phx-target={@myself}
+              phx-submit="save_contract_employment"
+            >
+              <div class="flex flex-col gap-4">
+                <%= if @editing_contract do %>
+                  <.field_row label="Status" for={@contract_form[:status].id}>
+                    <.input
+                      field={@contract_form[:status]}
+                      container_class="w-full"
+                      type="select"
+                      options={[
+                        {"Oczekuje na podpis", :pending_signature},
+                        {"Podpisana", :signed},
+                        {"Obowiązująca", :active}
+                      ]}
+                    />
+                  </.field_row>
+                  <.field_row label="Rodzaj umowy" for={@contract_form[:contract_type].id}>
+                    <.input
+                      field={@contract_form[:contract_type]}
+                      container_class="w-full"
+                      type="select"
+                      options={[
+                        {"Umowa o pracę", :uop},
+                        {"B2B", :b2b},
+                        {"Umowa zlecenie", :uz},
+                        {"Umowa o dzieło", :uod}
+                      ]}
+                    />
+                  </.field_row>
+                  <.field_row label="Stanowisko" for={@contract_form[:position].id}>
+                    <.input field={@contract_form[:position]} class="w-full" />
+                  </.field_row>
+                  <.field_row label="Data podpisania umowy" for={@contract_form[:signed_at].id}>
+                    <.input field={@contract_form[:signed_at]} type="date" class="w-full" />
+                  </.field_row>
+                <% else %>
+                  <.field_row label="Status umowy">
+                    {format_contract_status(@employment_contract && @employment_contract.status)}
+                  </.field_row>
+                  <.field_row label="Rodzaj umowy">
+                    {format_contract_type(@employment_contract && @employment_contract.contract_type)}
+                  </.field_row>
+                  <.field_row label="Stanowisko">
+                    {present(@employment_contract && @employment_contract.position)}
+                  </.field_row>
+                  <.field_row label="Data podpisania umowy">
+                    <div class="flex items-center gap-2">
+                      {present_date(@employment_contract && @employment_contract.signed_at)}
+                      <.link
+                        :if={@employment_contract}
+                        kind="button"
+                        variant="outline"
+                        size="small"
+                        class="ml-auto"
+                        redirect={~p"/zarzadzanie/umowy/#{@employment_contract.id}"}
+                        download
+                      >
+                        <Lucideicons.file_text class="size-4" />
+                        <span class="font-medium">Umowa</span>
+                      </.link>
+                    </div>
+                  </.field_row>
+                <% end %>
+              </div>
+            </.form>
+          </.card>
 
           <.card
             :if={@tax_profile_fields != [] and flag_enabled?(:tax_prognosis, assigns)}

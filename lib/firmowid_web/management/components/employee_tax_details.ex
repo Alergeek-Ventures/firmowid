@@ -487,7 +487,6 @@ defmodule FirmowidWeb.Management.Components.EmployeeTaxDetails do
       max={if @field.key == :request_year, do: "2100", else: if(@field.type == "number", do: "4")}
       step={if @field.key == :request_year, do: "1", else: if(@field.type == "number", do: "0.01")}
       container_class="min-w-0"
-      new
     />
     """
   end
