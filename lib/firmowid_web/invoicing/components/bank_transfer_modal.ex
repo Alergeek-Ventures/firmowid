@@ -57,6 +57,7 @@ defmodule FirmowidWeb.Invoicing.Components.BankTransferModal do
                 class="size-6"
                 variant="secondary"
                 size="small"
+                aria-label={gettext("Copy %{field}", field: label)}
               >
                 <.icon name="hero-clipboard-document-solid" class="size-4 shrink-0" />
               </.button>

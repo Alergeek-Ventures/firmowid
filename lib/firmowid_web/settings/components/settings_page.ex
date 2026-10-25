@@ -122,7 +122,7 @@ defmodule FirmowidWeb.Settings.Components.SettingsPage do
         </div>
       </div>
 
-      <.tabs label="Ustawienia" class="flex-wrap">
+      <.tabs label={pgettext("settings navigation", "Settings")} class="flex-wrap">
         <:tab :for={tab <- @tabs} patch={tab.path} active={active_tab?(tab.id, @current_tab)}>
           {tab.label}
         </:tab>

@@ -305,6 +305,7 @@ defmodule FirmowidWeb.Invoicing.Components.CostInvoiceDetails do
           kind="unstyled"
           external={@preview_url}
           target="_blank"
+          aria-label={gettext("Open invoice preview in a new tab")}
         >
           <div
             id={"invoice-preview-#{@id}"}
@@ -386,9 +387,10 @@ defmodule FirmowidWeb.Invoicing.Components.CostInvoiceDetails do
           kind="unstyled"
           external={@preview_url}
           target="_blank"
+          aria-label={gettext("Open invoice preview in a new tab")}
         >
           <div class="size-full max-h-[80vh] overflow-x-hidden bg-black">
-            <img src={@preview_url} class="size-full object-contain" />
+            <img src={@preview_url} alt="" class="size-full object-contain" />
           </div>
         </.link>
         """

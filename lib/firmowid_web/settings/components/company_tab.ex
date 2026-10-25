@@ -96,7 +96,11 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
       <div class="flex min-h-8 items-center gap-1">
         <h2 class="text-base leading-none font-medium text-grey-900">{@title}</h2>
 
-        <.icon_button :if={@action} label={@action_label || "Edytuj #{@title}"} phx-click={@action}>
+        <.icon_button
+          :if={@action}
+          label={@action_label || gettext("Edit %{section}", section: @title)}
+          phx-click={@action}
+        >
           <Lucideicons.square_pen />
         </.icon_button>
       </div>
@@ -405,7 +409,7 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
               <.badge class="w-28 justify-center">{UserRole.label(invite.role)}</.badge>
 
               <.icon_button
-                label="Usuń zaproszenie"
+                label={gettext("Delete invitation")}
                 phx-click="delete_organization_invite"
                 phx-value-id={invite.id}
               >
@@ -525,7 +529,11 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
         <div class="flex flex-1 justify-end">
           <.menu
             id={"bank_account_#{@account.id}"}
-            label={"Opcje konta #{bank_account_menu_label(@account)}"}
+            label={
+              gettext("Account options for %{account}",
+                account: bank_account_menu_label(@account)
+              )
+            }
           >
             <.menu_item phx-click={show_modal("rename_bank_account_#{@account.id}")}>
               Zmień nazwę

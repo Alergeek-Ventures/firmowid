@@ -144,7 +144,11 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
       <div class="flex min-h-8 items-center gap-1">
         <h2 class="text-base leading-none font-medium text-grey-900">{@title}</h2>
 
-        <.icon_button :if={@action} label={@action_label || "Edytuj #{@title}"} phx-click={@action}>
+        <.icon_button
+          :if={@action}
+          label={@action_label || gettext("Edit %{section}", section: @title)}
+          phx-click={@action}
+        >
           <Lucideicons.square_pen />
         </.icon_button>
       </div>
@@ -320,6 +324,7 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
                       class="shrink-0 text-grey-500 hover:text-grey-700"
                       phx-click="cancel_signed_contract"
                       phx-value-ref={entry.ref}
+                      aria-label={gettext("Remove selected file")}
                     >
                       <Lucideicons.x class="size-4" />
                     </.button>

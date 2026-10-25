@@ -247,6 +247,11 @@ defmodule FirmowidWeb.Admin.Views.Organizations do
               kind="unstyled"
               navigate={Navigation.settlement_path(row.org.id, %{"miesiac" => @current_month})}
               class="justify-self-end text-grey-500 hover:text-grey-700"
+              aria-label={
+                gettext("Open settlement for %{organization}",
+                  organization: short_org_name(row.org.name)
+                )
+              }
             >
               <Lucideicons.chevron_right class="size-4" />
             </.link>

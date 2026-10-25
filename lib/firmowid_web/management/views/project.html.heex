@@ -214,6 +214,10 @@
                   variant="unstyled"
                   phx-value-id={user.id}
                   disabled={user.time_worked == 0}
+                  aria-label={
+                    if user.expanded, do: gettext("Hide sessions"), else: gettext("Show sessions")
+                  }
+                  aria-expanded={to_string(user.expanded)}
                   class="inline-flex items-center justify-center disabled:opacity-50"
                 >
                   <%= if user.expanded do %>

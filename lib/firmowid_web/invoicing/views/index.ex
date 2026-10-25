@@ -162,7 +162,7 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
         />
 
         <.icon_button
-          label="Szukaj faktur"
+          label={gettext("Search invoices")}
           variant="secondary"
           size="big"
           id="open-search"
