@@ -5,6 +5,8 @@ defmodule FirmowidWeb.Settings.Components.SubscriptionTab do
 
   use FirmowidWeb, :html
 
+  alias FirmowidWeb.Settings.Components.Helpers
+
   @doc """
   Renders the owner-only subscription tab.
   """
@@ -28,23 +30,23 @@ defmodule FirmowidWeb.Settings.Components.SubscriptionTab do
           </div>
 
           <div class="grid gap-4 sm:grid-cols-2">
-            <.field_row label="Plan" layout="inline">
+            <Helpers.settings_display_field label="Plan">
               <div class="flex flex-wrap items-center gap-2">
                 <span>{@worksheet.selected_plan_label}</span>
 
-                <.badge tone={plan_badge_tone(@worksheet.selected_plan)}>
+                <span class={plan_badge_styles(@worksheet.selected_plan)}>
                   {plan_badge_label(@worksheet.selected_plan)}
-                </.badge>
+                </span>
               </div>
-            </.field_row>
+            </Helpers.settings_display_field>
 
-            <.field_row label="Miesięczna opłata bazowa" layout="inline">
+            <Helpers.settings_display_field label="Miesięczna opłata bazowa">
               <%= if @worksheet.base_fee_line do %>
                 {@worksheet.base_fee_line.amount}
               <% else %>
                 Brak opłaty bazowej
               <% end %>
-            </.field_row>
+            </Helpers.settings_display_field>
           </div>
 
           <div class="space-y-3 rounded-lg bg-grey-50 p-4">
@@ -60,9 +62,19 @@ defmodule FirmowidWeb.Settings.Components.SubscriptionTab do
             </div>
           </div>
 
-          <.alert :if={@worksheet.no_plan_note}>{@worksheet.no_plan_note}</.alert>
+          <div
+            :if={@worksheet.no_plan_note}
+            class="rounded-lg bg-grey-50 p-4 text-sm leading-[1.35] text-grey-700"
+          >
+            {@worksheet.no_plan_note}
+          </div>
 
-          <.alert :if={@worksheet.suggestion_rows != []} title="Aktualne nadwyżki">
+          <div
+            :if={@worksheet.suggestion_rows != []}
+            class="space-y-3 rounded-lg bg-rust-100 p-4"
+          >
+            <h3 class="text-sm leading-none font-medium text-grey-900">Aktualne nadwyżki</h3>
+
             <div class="space-y-3">
               <%= for row <- @worksheet.suggestion_rows do %>
                 <div class="flex items-start justify-between gap-4 text-sm/snug">
@@ -77,11 +89,14 @@ defmodule FirmowidWeb.Settings.Components.SubscriptionTab do
                 </div>
               <% end %>
             </div>
-          </.alert>
+          </div>
 
-          <.alert :if={@worksheet.suggestion_rows == []}>
+          <div
+            :if={@worksheet.suggestion_rows == []}
+            class="rounded-lg bg-grey-50 p-4 text-sm leading-[1.35] text-grey-700"
+          >
             Brak dodatkowych nadwyżek względem planu w bieżącym miesiącu.
-          </.alert>
+          </div>
         </section>
 
         <section class="space-y-4">
@@ -129,7 +144,9 @@ defmodule FirmowidWeb.Settings.Components.SubscriptionTab do
         </section>
       </div>
     <% else %>
-      <.alert>Ten podgląd jest dostępny tylko dla właściciela organizacji.</.alert>
+      <div class="rounded-lg bg-grey-50 p-4 text-sm leading-[1.35] text-grey-700">
+        Ten podgląd jest dostępny tylko dla właściciela organizacji.
+      </div>
     <% end %>
     """
   end
@@ -147,8 +164,11 @@ defmodule FirmowidWeb.Settings.Components.SubscriptionTab do
   defp plan_badge_label(:no_plan), do: "brak planu"
   defp plan_badge_label(_plan), do: "aktywny"
 
-  defp plan_badge_tone(:no_plan), do: "neutral"
-  defp plan_badge_tone(_plan), do: "success"
+  defp plan_badge_styles(:no_plan), do: "rounded-full bg-grey-200 px-3 py-1 text-sm/tight text-grey-700"
+
+  defp plan_badge_styles(_plan) do
+    "rounded-full bg-rust-100 px-3 py-1 text-sm/tight text-rust-700"
+  end
 
   defp counter_bar_fill_styles(%{over_limit: over_limit}) when over_limit > 0, do: "h-full rounded-full bg-rust-500"
 

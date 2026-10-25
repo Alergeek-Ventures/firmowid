@@ -98,12 +98,10 @@ defmodule FirmowidWeb.Management.Components.DelegationsTab do
   attr :label, :string, required: true
 
   defp status_badge(assigns) do
+    assigns = assign(assigns, :styles, DelegationPresentation.status_badge_styles(assigns.status))
+
     ~H"""
-    <.badge tone={delegation_status_tone(@status)}>{@label}</.badge>
+    <span class={["shrink-0 rounded-full px-3 py-1 text-center text-sm", @styles]}>{@label}</span>
     """
   end
-
-  defp delegation_status_tone(:pending), do: "neutral"
-  defp delegation_status_tone(:in_progress), do: "success"
-  defp delegation_status_tone(:complete), do: "neutral"
 end

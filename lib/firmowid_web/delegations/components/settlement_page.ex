@@ -308,13 +308,21 @@ defmodule FirmowidWeb.Delegations.Components.SettlementPage do
       |> assign(:detected_end_date, detected_end_date)
 
     ~H"""
-    <.alert id="delegation-date-change" title="Zmiana terminu delegacji" class="mt-6 w-full">
-      <div class="flex items-center gap-2 font-medium tabular-nums">
-        <span class="text-grey-500 line-through"><.date_range
-          start_date={@delegation.start_date}
-          end_date={@delegation.end_date}
-        /></span>
-        <.date_range start_date={@detected_start_date} end_date={@detected_end_date} />
+    <section
+      id="delegation-date-change"
+      class="mt-6 w-full rounded-lg border border-grey-200 bg-teal-100 p-6 text-teal-700"
+    >
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        <h2 class="flex items-center gap-2 font-medium">
+          <Lucideicons.calendar_1 class="size-5" /> Zmiana terminu delegacji
+        </h2>
+        <div class="flex items-center gap-2 font-medium tabular-nums">
+          <span class="text-grey-500 line-through"><.date_range
+            start_date={@delegation.start_date}
+            end_date={@delegation.end_date}
+          /></span>
+          <.date_range start_date={@detected_start_date} end_date={@detected_end_date} />
+        </div>
       </div>
       <p class="mt-4">
         Terminy różnią się od tych podanych w zgłoszeniu. Jeśli jest to zmiana celowa, podaj jej powód. Jeśli nie, sprawdź poprawność powyższych danych.
@@ -329,7 +337,7 @@ defmodule FirmowidWeb.Delegations.Components.SettlementPage do
         disabled={!@editable?}
         class="mt-4"
       />
-    </.alert>
+    </section>
     """
   end
 

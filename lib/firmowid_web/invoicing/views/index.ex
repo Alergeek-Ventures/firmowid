@@ -7,6 +7,7 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
   # to domain actions/calculations — LiveView should only handle presentation
   use FirmowidWeb, :live_view
 
+  import FirmowidUI.Components.Button
   import FirmowidUI.Components.Link
   import FirmowidWeb.Core.PubSubDebounce
   import FirmowidWeb.DesignSystem.Components.MonthPicker
@@ -162,15 +163,18 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
           selected_date={@params.month}
         />
 
-        <.icon_button
-          label={gettext("Search invoices")}
+        <.button
+          type="button"
           variant="secondary"
           size="big"
           id="open-search"
           phx-click="open-search"
+          aria-label={gettext("Search invoices")}
+          phx-hook="Tippy"
+          data-tippy-content="Szukaj faktur"
         >
           <Lucideicons.search />
-        </.icon_button>
+        </.button>
       </div>
 
       <div

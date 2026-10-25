@@ -94,12 +94,12 @@ defmodule FirmowidWeb.Delegations.Components.Settlement.ForeignCurrency do
 
   defp foreign_currency_settlement(%{mode: :notice} = assigns) do
     ~H"""
-    <.alert
+    <section
       id={"foreign-currency-notice-#{@expense.id}"}
-      class="mt-1 w-full sm:col-span-2 lg:col-span-3"
+      class="mt-1 flex w-full flex-wrap items-center justify-between gap-3 rounded-lg border border-grey-200 bg-teal-100 p-6 text-teal-700 sm:col-span-2 lg:col-span-3"
     >
-      Wykryto obcą walutę
-      <:actions>
+      <p>Wykryto obcą walutę</p>
+      <div class="flex gap-2">
         <.button
           type="button"
           variant="primary"
@@ -118,8 +118,8 @@ defmodule FirmowidWeb.Delegations.Components.Settlement.ForeignCurrency do
           phx-value-action="nbp"
           phx-value-expense-id={@expense.id}
         >Przelicz wg kursu NBP</.button>
-      </:actions>
-    </.alert>
+      </div>
+    </section>
     """
   end
 

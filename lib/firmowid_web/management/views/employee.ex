@@ -7,6 +7,8 @@ defmodule FirmowidWeb.Management.Views.Employee do
 
   import FirmowidUI.Components.Button
   import FirmowidUI.Components.Link
+  import FirmowidWeb.Management.Components.Card
+  import FirmowidWeb.Management.Components.Tab
   import Phoenix.Component, except: [link: 1]
 
   alias Ash.Notifier.Notification

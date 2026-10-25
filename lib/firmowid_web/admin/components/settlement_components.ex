@@ -36,7 +36,7 @@ defmodule FirmowidWeb.Admin.Components.SettlementComponents do
 
   def organization_panel(assigns) do
     ~H"""
-    <.card gap_size="0">
+    <section class="rounded-lg bg-white p-6 shadow-card">
       <div class="flex items-start justify-between">
         <.link
           kind="unstyled"
@@ -45,9 +45,9 @@ defmodule FirmowidWeb.Admin.Components.SettlementComponents do
         >
           ← Wróć do listy organizacji
         </.link>
-        <.badge tone={status_chip_tone(@status)}>
+        <span class={status_chip_styles(@status)}>
           {status_chip_label(@status)}
-        </.badge>
+        </span>
       </div>
       <div class="mt-4 space-y-1">
         <h2 class="text-xl/tight font-medium text-grey-900">{@selected_org.name}</h2>
@@ -114,7 +114,7 @@ defmodule FirmowidWeb.Admin.Components.SettlementComponents do
           </p>
         </div>
       </div>
-    </.card>
+    </section>
     """
   end
 
@@ -122,7 +122,7 @@ defmodule FirmowidWeb.Admin.Components.SettlementComponents do
 
   def activity_panel(assigns) do
     ~H"""
-    <.card gap_size="0">
+    <section class="rounded-lg bg-white p-6 shadow-card">
       <h2 class="text-lg/tight font-medium text-grey-900">Aktywność organizacji</h2>
       <p class="mt-1 text-sm/snug text-grey-700">
         Utrwalone zdarzenia w organizacji, niezależne od wybranego miesiąca rozliczenia.
@@ -140,7 +140,7 @@ defmodule FirmowidWeb.Admin.Components.SettlementComponents do
         </div>
       </div>
       <p class="mt-3 text-sm/snug text-grey-700">Ostatnie logowanie: niedostępne.</p>
-    </.card>
+    </section>
     """
   end
 
@@ -232,7 +232,7 @@ defmodule FirmowidWeb.Admin.Components.SettlementComponents do
 
   def worksheet_panel(assigns) do
     ~H"""
-    <.card gap_size="0">
+    <section class="rounded-lg bg-white p-6 shadow-card">
       <div class="space-y-1">
         <h2 class="text-lg/tight font-medium text-grey-900">Arkusz rozliczenia</h2>
         <p class="text-sm/snug text-grey-700">{worksheet_intro(@selected_month, @status)}</p>
@@ -338,7 +338,15 @@ defmodule FirmowidWeb.Admin.Components.SettlementComponents do
           </div>
         </div>
       </div>
-    </.card>
+    </section>
+    """
+  end
+
+  def empty_state(assigns) do
+    ~H"""
+    <section class="rounded-lg bg-white p-6 text-sm/snug text-grey-700 shadow-card">
+      Brak organizacji do rozliczenia.
+    </section>
     """
   end
 
@@ -346,9 +354,9 @@ defmodule FirmowidWeb.Admin.Components.SettlementComponents do
 
   def billing_status_badge(assigns) do
     ~H"""
-    <.badge tone={billing_status_badge_tone(@status)}>
+    <span class={billing_status_badge_styles(@status)}>
       {billing_status_badge_label(@status)}
-    </.badge>
+    </span>
     """
   end
 
@@ -360,13 +368,20 @@ defmodule FirmowidWeb.Admin.Components.SettlementComponents do
 
   defp billing_status_badge_label(:trial), do: "okres próbny"
 
-  defp billing_status_badge_tone(:trial), do: "neutral"
+  defp billing_status_badge_styles(:trial) do
+    "inline-flex items-center rounded-full bg-rust-100 px-3 py-1 text-sm/tight text-rust-700"
+  end
 
   defp status_chip_label(%{kind: :live_preview}), do: "Na żywo"
   defp status_chip_label(%{kind: :snapshot}), do: "Snapshot historyczny"
 
-  defp status_chip_tone(%{kind: :live_preview}), do: "neutral"
-  defp status_chip_tone(%{kind: :snapshot}), do: "success"
+  defp status_chip_styles(%{kind: :live_preview}) do
+    "inline-flex items-center rounded-full px-3 py-1 text-sm/snug font-medium bg-grey-200 text-grey-900 text-center"
+  end
+
+  defp status_chip_styles(%{kind: :snapshot}) do
+    "inline-flex items-center rounded-full px-3 py-1 text-sm/snug font-medium bg-rust-100 text-rust-700 text-center"
+  end
 
   defp status_description(%{kind: :live_preview}) do
     "To orientacyjny podgląd bieżącego miesiąca. Ostateczne rozliczenie opiera się wyłącznie na utrwalonym snapshotcie."

@@ -397,7 +397,9 @@ defmodule FirmowidWeb.Invoicing.Components.CostInvoiceDetails do
 
       :none ->
         ~H"""
-        <.empty_state title="Brak podglądu" class="w-full" />
+        <div class="flex w-full items-center justify-center p-8 font-bold">
+          Brak podglądu
+        </div>
         """
     end
   end

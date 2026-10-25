@@ -50,24 +50,24 @@ defmodule FirmowidWeb.Management.Components.ProfileTab do
         </.card_header>
         <div class="grid grid-cols-2 gap-5">
           <div class="flex flex-col gap-5">
-            <.field_row label="Numer telefonu">
+            <.user_card_info label="Numer telefonu">
               {present(@user.member.phone)}
-            </.field_row>
-            <.field_row label="Adres e-mail">
+            </.user_card_info>
+            <.user_card_info label="Adres e-mail">
               {present(@user.email)}
-            </.field_row>
-            <.field_row label="Slack">
+            </.user_card_info>
+            <.user_card_info label="Slack">
               {present(@user.member.slack_url) |> String.replace_prefix("https://", "")}
-            </.field_row>
+            </.user_card_info>
           </div>
           <div class="flex flex-col gap-5">
-            <.field_row label="Adres zamieszkania">
+            <.user_card_info label="Adres zamieszkania">
               {present(@user.member.residence_address)}
-            </.field_row>
+            </.user_card_info>
 
-            <.field_row :if={@user.member.correspondence_address} label="Adres korespondencyjny">
+            <.user_card_info :if={@user.member.correspondence_address} label="Adres korespondencyjny">
               {@user.member.correspondence_address}
-            </.field_row>
+            </.user_card_info>
           </div>
         </div>
       </.card>
@@ -95,7 +95,7 @@ defmodule FirmowidWeb.Management.Components.ProfileTab do
           >
             <div class="flex flex-col gap-4">
               <%= if @editing_contract do %>
-                <.field_row label="Status" for={@contract_form[:status].id}>
+                <.user_card_info label="Status" for={@contract_form[:status].id}>
                   <.input
                     field={@contract_form[:status]}
                     container_class="w-full"
@@ -106,8 +106,8 @@ defmodule FirmowidWeb.Management.Components.ProfileTab do
                       {"Obowiązująca", :active}
                     ]}
                   />
-                </.field_row>
-                <.field_row label="Rodzaj umowy" for={@contract_form[:contract_type].id}>
+                </.user_card_info>
+                <.user_card_info label="Rodzaj umowy" for={@contract_form[:contract_type].id}>
                   <.input
                     field={@contract_form[:contract_type]}
                     container_class="w-full"
@@ -119,39 +119,37 @@ defmodule FirmowidWeb.Management.Components.ProfileTab do
                       {"Umowa o dzieło", :uod}
                     ]}
                   />
-                </.field_row>
-                <.field_row label="Stanowisko" for={@contract_form[:position].id}>
+                </.user_card_info>
+                <.user_card_info label="Stanowisko" for={@contract_form[:position].id}>
                   <.input field={@contract_form[:position]} class="w-full" />
-                </.field_row>
-                <.field_row label="Data podpisania umowy" for={@contract_form[:signed_at].id}>
+                </.user_card_info>
+                <.user_card_info label="Data podpisania umowy" for={@contract_form[:signed_at].id}>
                   <.input field={@contract_form[:signed_at]} type="date" class="w-full" />
-                </.field_row>
+                </.user_card_info>
               <% else %>
-                <.field_row label="Status umowy">
+                <.user_card_info label="Status umowy">
                   {format_contract_status(@employment_contract && @employment_contract.status)}
-                </.field_row>
-                <.field_row label="Rodzaj umowy">
+                </.user_card_info>
+                <.user_card_info label="Rodzaj umowy">
                   {format_contract_type(@employment_contract && @employment_contract.contract_type)}
-                </.field_row>
-                <.field_row label="Stanowisko">
+                </.user_card_info>
+                <.user_card_info label="Stanowisko">
                   {present(@employment_contract && @employment_contract.position)}
-                </.field_row>
-                <.field_row label="Data podpisania umowy">
-                  <div class="flex items-center gap-2">
-                    {present_date(@employment_contract && @employment_contract.signed_at)}
-                    <.link
-                      :if={@employment_contract}
-                      kind="button"
-                      variant="outline"
-                      size="small"
-                      class="ml-auto"
-                      redirect={~p"/zarzadzanie/umowy/#{@employment_contract.id}"}
-                      download
-                    >
-                      <Lucideicons.file_text class="size-4" /> <span class="font-medium">Umowa</span>
-                    </.link>
-                  </div>
-                </.field_row>
+                </.user_card_info>
+                <.user_card_info label="Data podpisania umowy">
+                  {present_date(@employment_contract && @employment_contract.signed_at)}
+                  <.link
+                    :if={@employment_contract}
+                    kind="button"
+                    variant="outline"
+                    size="small"
+                    class="ml-auto"
+                    redirect={~p"/zarzadzanie/umowy/#{@employment_contract.id}"}
+                    download
+                  >
+                    <Lucideicons.file_text class="size-4" /> <span class="font-medium">Umowa</span>
+                  </.link>
+                </.user_card_info>
               <% end %>
             </div>
           </.form>
@@ -183,20 +181,20 @@ defmodule FirmowidWeb.Management.Components.ProfileTab do
             >
               <div class="flex flex-col gap-4">
                 <%= if @editing_tax_profile do %>
-                  <.field_row
+                  <.user_card_info
                     :for={field <- @tax_profile_fields}
                     label={TaxProfileForm.field_label(field)}
                     for={TaxProfileForm.input_id(@tax_profile_form, field)}
                   >
                     <TaxProfileForm.select form={@tax_profile_form} field={field} />
-                  </.field_row>
+                  </.user_card_info>
                 <% else %>
-                  <.field_row
+                  <.user_card_info
                     :for={field <- @tax_profile_fields}
                     label={TaxProfileForm.field_label(field)}
                   >
                     <TaxProfileForm.saved_value form={@tax_profile_form} field={field} />
-                  </.field_row>
+                  </.user_card_info>
                 <% end %>
               </div>
             </.form>

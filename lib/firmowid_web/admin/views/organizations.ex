@@ -136,14 +136,19 @@ defmodule FirmowidWeb.Admin.Views.Organizations do
       <div class="sticky top-navbar z-10 flex flex-col gap-6 bg-grey-100 py-4">
         <div class="flex items-center justify-between gap-4">
           <form class="flex gap-4" phx-submit="search">
-            <.search_field
-              name="szukaj"
-              value={@search}
-              placeholder="Szukaj organizacji"
-              phx-change="search"
-              phx-debounce="300"
-              class="w-90"
-            />
+            <div class="flex h-11 w-90 items-center gap-2 rounded-lg border border-grey-200 bg-grey-100 p-1 focus-within:ring-2">
+              <Lucideicons.search class="size-6 shrink-0 text-grey-500" />
+              <.input
+                type="text"
+                name="szukaj"
+                value={@search}
+                placeholder="Szukaj organizacji"
+                phx-change="search"
+                phx-debounce="300"
+                input_class="h-full bg-transparent border-none py-0 px-1 text-sm"
+                class="w-full border-transparent focus:border-none focus:ring-0 focus:outline-hidden"
+              />
+            </div>
           </form>
         </div>
 
@@ -176,11 +181,13 @@ defmodule FirmowidWeb.Admin.Views.Organizations do
       </div>
 
       <%= if Enum.empty?(@rows) do %>
-        <.empty_state title={
-          if @search != "" or not is_nil(@plan_filter) or @only_over_limit?,
-            do: "Nie znaleziono organizacji dla wybranych filtrów.",
-            else: "Brak organizacji do wyświetlenia."
-        } />
+        <p class="text-sm/snug text-grey-700">
+          <%= if @search != "" or not is_nil(@plan_filter) or @only_over_limit? do %>
+            Nie znaleziono organizacji dla wybranych filtrów.
+          <% else %>
+            Brak organizacji do wyświetlenia.
+          <% end %>
+        </p>
       <% else %>
         <div class="hidden gap-x-6 px-4 text-sm/snug text-grey-700 lg:grid lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.4fr)_auto]">
           <p>Organizacja</p>

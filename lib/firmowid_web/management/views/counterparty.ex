@@ -169,9 +169,12 @@ defmodule FirmowidWeb.Management.Views.Counterparty do
     <div class={["flex min-h-12 items-center justify-between gap-4", @class]}>
       <p class="flex items-center gap-4 text-2xl/tight font-medium">
         {@counterparty.display_label}
-        <.badge :if={@counterparty.archived_at}>
-          <Lucideicons.archive /> zarchiwizowany
-        </.badge>
+        <span
+          :if={@counterparty.archived_at}
+          class="inline-flex items-center gap-2 rounded-full bg-grey-200 px-4 py-2 text-sm/snug font-normal text-grey-700"
+        >
+          <Lucideicons.archive class="size-4" /> zarchiwizowany
+        </span>
       </p>
 
       <div class="flex gap-4">
@@ -198,22 +201,31 @@ defmodule FirmowidWeb.Management.Views.Counterparty do
 
   defp archive_notice(assigns) do
     ~H"""
-    <.alert :if={@counterparty.archived_at} class={@class}>
-      Kontrahent został zarchiwizowany {Firmowid.Cldr.Date.to_string!(@counterparty.archived_at,
-        format: :long
-      )}.
-      Dane pozostają dostępne historycznie, ale kontrahent nie pojawi się w nowych wyborach.
-      <:actions>
-        <.button
-          variant="tertiary"
-          size="small"
-          type="button"
-          phx-click="unarchive_counterparty"
-        >
-          Przywróć kontrahenta
-        </.button>
-      </:actions>
-    </.alert>
+    <div
+      :if={@counterparty.archived_at}
+      class={[
+        "flex items-center gap-4 rounded-lg bg-grey-200 p-4 text-grey-700 shadow-card",
+        @class
+      ]}
+    >
+      <Lucideicons.info class="size-4" />
+      <p class="text-sm/snug text-balance">
+        Kontrahent został zarchiwizowany {Firmowid.Cldr.Date.to_string!(@counterparty.archived_at,
+          format: :long
+        )}.
+        Dane pozostają dostępne historycznie, ale kontrahent nie pojawi się w nowych wyborach.
+      </p>
+
+      <.button
+        variant="tertiary"
+        size="small"
+        type="button"
+        phx-click="unarchive_counterparty"
+        class="ml-auto"
+      >
+        Przywróć kontrahenta
+      </.button>
+    </div>
     """
   end
 
@@ -225,7 +237,7 @@ defmodule FirmowidWeb.Management.Views.Counterparty do
     ~H"""
     <div class={["grid grid-cols-[1.5fr_0.95fr] gap-5", @class]}>
       <div class="space-y-5">
-        <.card>
+        <section class="rounded-lg bg-white p-6 shadow-card">
           <div class="grid grid-cols-[minmax(0,265px)_minmax(0,322px)] gap-x-12 gap-y-6">
             <div class="space-y-6">
               <div class="space-y-1">
@@ -287,15 +299,15 @@ defmodule FirmowidWeb.Management.Views.Counterparty do
               </div>
             </div>
           </div>
-        </.card>
+        </section>
 
-        <.card gap_size="2">
-          <p class="text-sm/snug text-grey-700">Notatki</p>
+        <section class="rounded-lg bg-white p-6 shadow-card">
+          <p class="mb-2 text-sm/snug text-grey-700">Notatki</p>
           <p class="text-base/snug whitespace-pre-line text-black" phx-no-format>{@counterparty.description || "—"}</p>
-        </.card>
+        </section>
       </div>
 
-      <.card gap_size="0" class="min-h-[318px] justify-between">
+      <section class="flex min-h-[318px] flex-col justify-between rounded-lg bg-white p-6 shadow-card">
         <div class="space-y-6">
           <h3 class="text-base/tight font-medium text-grey-900">Statystyki</h3>
 
@@ -331,7 +343,7 @@ defmodule FirmowidWeb.Management.Views.Counterparty do
             <.icon name="hero-document-text-solid" class="size-6 text-grey-700" />
           </div>
         </div>
-      </.card>
+      </section>
     </div>
     """
   end
@@ -352,8 +364,8 @@ defmodule FirmowidWeb.Management.Views.Counterparty do
       <div class="mb-4 flex items-center justify-between gap-4">
         <h3 class="text-lg font-medium text-grey-700">Faktury</h3>
 
-        <.segmented_control label={gettext("List scope")}>
-          <:option
+        <div class="flex gap-2">
+          <.link
             :for={
               {value, label} <- [{:all, "Wszystkie"}, {:unpaid, "Nieopłacone"}, {:paid, "Opłacone"}]
             }
@@ -363,15 +375,23 @@ defmodule FirmowidWeb.Management.Views.Counterparty do
                 powrot_do: @params["powrot_do"]
               })
             }
-            active={@invoice_filter == value}
+            kind="button"
+            variant="outline"
+            size="small"
+            class={[
+              "rounded-2xl! bg-grey-100 px-4",
+              if(@invoice_filter == value, do: invoice_filter_class_names(value))
+            ]}
           >
             {label}
-          </:option>
-        </.segmented_control>
+          </.link>
+        </div>
       </div>
 
       <%= if @invoices == [] do %>
-        <.empty_state title="Brak faktur dla wybranego filtra." />
+        <div class="py-6 text-center text-sm/snug text-grey-700">
+          Brak faktur dla wybranego filtra.
+        </div>
       <% else %>
         <div class="grid grid-cols-[220px_1fr_140px_123px_min-content] gap-x-6 gap-y-2">
           <div class="col-span-full grid grid-cols-subgrid px-2 py-1 text-sm/snug text-grey-500">
@@ -565,10 +585,16 @@ defmodule FirmowidWeb.Management.Views.Counterparty do
 
   defp invoice_label(_invoice), do: "Szkic bez numeru"
 
-  defp invoice_status(:pending), do: {"nieopłacona", "neutral"}
-  defp invoice_status(:skipped), do: {"pominięta", "neutral"}
-  defp invoice_status(:matched), do: {"opłacona", "success"}
-  defp invoice_status(_), do: {"opłacona", "success"}
+  defp invoice_status(:pending), do: {"nieopłacona", "bg-rust-100 text-rust-700"}
+  defp invoice_status(:skipped), do: {"pominięta", "bg-grey-200 text-grey-700"}
+  defp invoice_status(:matched), do: {"opłacona", "bg-teal-100 text-teal-700"}
+  defp invoice_status(_), do: {"opłacona", "bg-teal-100 text-teal-700"}
+
+  defp invoice_filter_class_names(:all), do: "bg-grey-200 text-grey-700 border-transparent"
+
+  defp invoice_filter_class_names(:unpaid), do: "bg-rust-200 text-rust-700 border-transparent hover:bg-rust-200"
+
+  defp invoice_filter_class_names(:paid), do: "bg-teal-200 text-teal-700 border-transparent hover:bg-teal-200"
 
   defp money_to_string(nil), do: "—"
   defp money_to_string(%Money{} = amount), do: Money.to_string!(amount)
@@ -632,11 +658,17 @@ defmodule FirmowidWeb.Management.Views.Counterparty do
   attr :invoice, :map, required: true
 
   def invoice_status_badge(assigns) do
-    {label, tone} = invoice_status(assigns.invoice.reconciliation_status)
-    assigns = assign(assigns, label: label, tone: tone)
+    {label, class_name} = invoice_status(assigns.invoice.reconciliation_status)
+    assigns = assign(assigns, :label, label)
+    assigns = assign(assigns, :class_name, class_name)
 
     ~H"""
-    <.badge tone={@tone}>{@label}</.badge>
+    <span class={[
+      "inline-flex min-w-[123px] items-center justify-center rounded-full px-4 py-1 text-sm/snug",
+      @class_name
+    ]}>
+      {@label}
+    </span>
     """
   end
 end

@@ -3,7 +3,7 @@
     Navigation.sales_invoice_creator_path(%{szkic_kreatora: @creator_draft_id, krok: 3})
   } />
   <.render_header invoice={@invoice} step={@step_number} title="Podgląd faktury" />
-  <.alert tone="danger">{@preview_error}</.alert>
+  <p role="alert" class="text-sm text-brick-600">{@preview_error}</p>
   <.button type="button" phx-click="save_as_draft" variant="secondary">
     {gettext("Save draft")}
   </.button>

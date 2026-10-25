@@ -156,22 +156,25 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Summary do
         </div>
       </div>
       <%= if SubmissionInfo.failed?(@submission_info) do %>
-        <.alert tone="danger" title="Wysyłka do KSeF nie powiodła się.">
-          <p :if={@submission_info.error}>{@submission_info.error}</p>
-          <p id="returned-to-draft-notice" class="mt-1">
+        <div class="flex flex-col items-center justify-center gap-4 rounded-md bg-brick-200 p-8 text-center text-brick-700">
+          <Lucideicons.triangle_alert class="size-10 text-brick-600" />
+          <h2 class="text-xl">Wysyłka do KSeF nie powiodła się.</h2>
+          <p :if={@submission_info.error} class="max-w-lg text-sm">
+            {@submission_info.error}
+          </p>
+          <p id="returned-to-draft-notice" class="mt-2 text-sm text-grey-600">
             Faktura wróciła do wersji roboczej bez numeru. Popraw dane i wystaw ją ponownie.
           </p>
-          <:actions>
-            <.link
-              navigate={Navigation.sales_invoice_edit_path(@invoice, @return_to)}
-              kind="button"
-              variant="primary"
-              accent="teal"
-            >
-              <Lucideicons.pencil class="size-4" /> Popraw i wystaw ponownie
-            </.link>
-          </:actions>
-        </.alert>
+          <.link
+            navigate={Navigation.sales_invoice_edit_path(@invoice, @return_to)}
+            kind="button"
+            variant="primary"
+            accent="teal"
+            class="mt-4"
+          >
+            <Lucideicons.pencil class="size-4" /> Popraw i wystaw ponownie
+          </.link>
+        </div>
       <% end %>
 
       <div class="invisible h-8" />

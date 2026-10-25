@@ -47,7 +47,7 @@ defmodule FirmowidWeb.Analysis.Components.EntriesTable do
       </thead>
       <tbody>
         <tr :if={@entries == []}>
-          <td colspan="4"><.empty_state title="Brak wpisów" /></td>
+          <td colspan="4" class="py-8 text-center text-grey-700">Brak wpisów</td>
         </tr>
         <.row
           :for={entry <- @entries}

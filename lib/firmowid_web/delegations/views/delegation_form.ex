@@ -156,14 +156,17 @@ defmodule FirmowidWeb.Delegations.Views.DelegationForm do
                       selected_labels={%{"bus" => "Autobus"}}
                       container_class="w-full sm:w-56"
                     />
-                    <.icon_button
+                    <.button
                       :if={index < length(@transport_types) - 1}
-                      label="Usuń środek lokomocji"
+                      type="button"
+                      variant="unstyled"
                       phx-click="remove_transport_type"
                       phx-value-index={index}
+                      class="inline-flex size-8 items-center justify-center text-grey-500 transition-colors hover:text-brick-700"
+                      aria-label="Usuń środek lokomocji"
                     >
-                      <Lucideicons.x />
-                    </.icon_button>
+                      <Lucideicons.x class="size-4" />
+                    </.button>
                     <.button
                       :if={index == length(@transport_types) - 1}
                       type="button"

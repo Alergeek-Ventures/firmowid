@@ -201,7 +201,7 @@ defmodule FirmowidWeb.Admin.Views.Settlement do
           selected_org={@selected_org}
         />
       <% else %>
-        <.empty_state title="Brak organizacji do rozliczenia." />
+        <SettlementComponents.empty_state />
       <% end %>
     </div>
     """

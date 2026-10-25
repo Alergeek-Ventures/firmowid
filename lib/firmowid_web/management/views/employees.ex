@@ -249,11 +249,4 @@ defmodule FirmowidWeb.Management.Views.Employees do
 
   # Distinct months (as naive_datetime) that have sessions, newest first.
   defp months_with_sessions(filters, scope), do: Timetracker.months_with_sessions(filters, scope)
-
-  defp empty_employees_title(search, _live_action) when search != "",
-    do: "Brak wyników. Spróbuj zmienić kryteria wyszukiwania."
-
-  defp empty_employees_title(_search, :index), do: "Brak aktywnych pracowników do wyświetlenia."
-
-  defp empty_employees_title(_search, :archive), do: "Brak zarchiwizowanych pracowników do wyświetlenia."
 end

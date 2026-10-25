@@ -73,14 +73,19 @@ defmodule FirmowidWeb.Invoicing.CostInvoices.Views.Inbox do
             </td>
             <td class="bg-white py-4 transition-all duration-500">
               <%= if is_nil(email.processed_at) do %>
-                <.badge>Przetwarzanie</.badge>
+                <div class="flex h-6 w-32 flex-row items-center justify-center rounded-md bg-grey-200 p-2 text-xs text-grey-700">
+                  <div class="font-normal uppercase">Przetwarzanie</div>
+                </div>
               <% else %>
                 <%= if is_nil(email.failure_reason) do %>
-                  <.badge tone="success">
-                    Sukces <.icon name="hero-check-micro" class="size-4" />
-                  </.badge>
+                  <div class="flex h-6 w-32 flex-row items-center justify-center rounded-md bg-moss-200 p-2 text-xs text-moss-700">
+                    <div class="font-normal uppercase">Sukces</div>
+                    <.icon name="hero-check-micro" class="ml-1 size-4" />
+                  </div>
                 <% else %>
-                  <.badge tone="danger">Błąd</.badge>
+                  <div class="flex h-6 w-32 flex-row items-center justify-center rounded-md bg-brick-200 p-2 text-xs text-brick-700">
+                    <div class="font-normal uppercase">Błąd</div>
+                  </div>
                 <% end %>
               <% end %>
             </td>

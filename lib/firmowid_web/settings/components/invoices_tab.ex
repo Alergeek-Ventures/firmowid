@@ -45,10 +45,12 @@ defmodule FirmowidWeb.Settings.Components.InvoicesTab do
             Import e-mail faktur kosztowych
           </h2>
 
-          <.badge tone="success">aktywny</.badge>
+          <span class="rounded-full bg-rust-100 px-3 py-1 text-sm/tight text-rust-700">
+            aktywny
+          </span>
         </div>
 
-        <.field_row label="Adres odbiorczy">
+        <.settings_row label="Adres odbiorczy">
           <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
             <.button
               type="button"
@@ -63,10 +65,12 @@ defmodule FirmowidWeb.Settings.Components.InvoicesTab do
               <.icon name="hero-envelope" class="size-4 shrink-0" />
             </.button>
 
-            <.tooltip
+            <span
               :if={@admin?}
               id="settings-regenerate-inbound-email-tooltip"
-              text="Wygeneruje nowy adres importu. Zaktualizuj reguły przekazywania poczty po zmianie."
+              phx-hook="Tippy"
+              data-tippy-content="Wygeneruje nowy adres importu. Zaktualizuj reguły przekazywania poczty po zmianie."
+              data-tippy-delay="100"
             >
               <.button
                 type="button"
@@ -77,14 +81,19 @@ defmodule FirmowidWeb.Settings.Components.InvoicesTab do
               >
                 Wygeneruj nowy adres
               </.button>
-            </.tooltip>
+            </span>
           </div>
-        </.field_row>
+        </.settings_row>
 
-        <.alert>
-          Wysyłaj faktury kosztowe na ten adres. Firmowid zaimportuje je automatycznie,
-          ale przyjmie tylko wiadomości z adresów dodanych do listy dozwolonych nadawców.
-        </.alert>
+        <div class="rounded-lg bg-grey-50 p-4 text-base leading-[1.4] text-grey-700">
+          <div class="flex gap-4">
+            <.icon name="hero-information-circle" class="mt-0.5 size-5 shrink-0 text-grey-600" />
+            <p>
+              Wysyłaj faktury kosztowe na ten adres. Firmowid zaimportuje je automatycznie,
+              ale przyjmie tylko wiadomości z adresów dodanych do listy dozwolonych nadawców.
+            </p>
+          </div>
+        </div>
       </section>
 
       <section class="space-y-4">
@@ -98,32 +107,35 @@ defmodule FirmowidWeb.Settings.Components.InvoicesTab do
         </div>
 
         <div class="space-y-3">
-          <.empty_state
+          <p
             :if={Enum.empty?(@allowed_sender_emails)}
-            title="Nie dodano jeszcze żadnych adresów."
+            class="rounded-lg bg-grey-50 px-4 py-3 text-sm leading-[1.35] text-grey-700"
           >
-            <:icon><Lucideicons.mail /></:icon>
-            Import zadziała dopiero po dodaniu pierwszego nadawcy.
-          </.empty_state>
+            Nie dodano jeszcze żadnych adresów. Import zadziała dopiero po dodaniu pierwszego nadawcy.
+          </p>
 
           <div
             :for={email <- @allowed_sender_emails}
             class="flex min-h-11 items-center justify-between gap-3 rounded-lg bg-teal-100 px-3 py-2 text-sm/snug text-teal-800 sm:min-h-10"
           >
             <span class="min-w-0 truncate">{email}</span>
-            <.icon_button
+            <.button
               :if={@admin?}
-              label={gettext("Remove %{email}", email: email)}
+              type="button"
+              variant="ghost"
+              size="small"
               phx-click="remove_allowed_email"
               phx-value-email={email}
+              class="size-10 shrink-0 p-0 text-teal-800 hover:bg-teal-200 hover:text-grey-900"
+              aria-label={gettext("Remove %{email}", email: email)}
             >
               <.icon name="hero-x-mark" class="size-4" />
-            </.icon_button>
+            </.button>
           </div>
         </div>
 
         <form :if={@admin?} phx-submit="add_allowed_email" class="space-y-3">
-          <.field_row label="Dodaj nowy adres" for="allowed_sender_email">
+          <.settings_row label="Dodaj nowy adres" for="allowed_sender_email">
             <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
               <.input
                 type="email"
@@ -140,12 +152,15 @@ defmodule FirmowidWeb.Settings.Components.InvoicesTab do
                 Dodaj adres
               </.button>
             </div>
-          </.field_row>
+          </.settings_row>
         </form>
 
-        <.alert :if={!@admin?}>
+        <div
+          :if={!@admin?}
+          class="rounded-lg bg-grey-50 px-4 py-3 text-sm leading-[1.35] text-grey-700"
+        >
           Tylko administrator może zmieniać adres odbiorczy i listę dozwolonych nadawców.
-        </.alert>
+        </div>
       </section>
 
       <div :if={@tax_forecast?} class="border-bs border-grey-200 pbs-8 lg:col-span-2">
@@ -155,6 +170,19 @@ defmodule FirmowidWeb.Settings.Components.InvoicesTab do
           current_user={@current_user}
         />
       </div>
+    </div>
+    """
+  end
+
+  attr :label, :string, required: true
+  attr :for, :any, default: nil
+  slot :inner_block, required: true
+
+  defp settings_row(assigns) do
+    ~H"""
+    <div class="flex flex-col gap-1">
+      <label for={@for} class="text-sm leading-[1.35] text-grey-700">{@label}</label>
+      <div class="min-w-0">{render_slot(@inner_block)}</div>
     </div>
     """
   end
