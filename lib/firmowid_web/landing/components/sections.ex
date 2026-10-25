@@ -251,7 +251,7 @@ defmodule FirmowidWeb.Landing.Components.Sections do
     ~H"""
     <div
       class={[
-        "@container relative min-w-0 rounded-2xl border border-(--landing-line) bg-[#f5f5f5] text-caps-sm leading-[1.4] shadow-[0_0.875rem_2.125rem_rgb(80_50_30/8%)] lg:text-xs [&_h4]:mb-4.5 [&_h4]:text-sm [&_h4]:font-semibold lg:[&_h4]:text-base",
+        "@container relative min-w-0 rounded-2xl border border-(--landing-line) bg-grey-100 text-caps-sm leading-[1.4] shadow-[0_0.875rem_2.125rem_rgb(80_50_30/8%)] lg:text-xs [&_h4]:mb-4.5 [&_h4]:text-sm [&_h4]:font-semibold lg:[&_h4]:text-base",
         @visual == :invoices &&
           "p-2.5 lg:px-4 lg:pt-5 lg:pb-4",
         @visual == :banking && "p-2.5 lg:p-4",
@@ -276,7 +276,7 @@ defmodule FirmowidWeb.Landing.Components.Sections do
             <span class="flex min-w-0 items-center gap-[1.8cqw] py-[1cqw] pr-[1cqw] pl-[1.8cqw] whitespace-nowrap">
               <span class={[
                 "relative flex h-[5.2cqw] w-[4.6cqw] shrink-0 items-center justify-center overflow-hidden rounded-[0.4cqw] [clip-path:polygon(0_0,70%_0,100%_25%,100%_100%,0_100%)]",
-                row.tone == :warm && "border border-grey-200 bg-[#f5f5f5]",
+                row.tone == :warm && "border border-grey-200 bg-grey-100",
                 row.tone == :teal && "bg-[#969696] text-white"
               ]}>
                 <span
@@ -305,7 +305,7 @@ defmodule FirmowidWeb.Landing.Components.Sections do
             <span class={[
               "mr-[3cqw] rounded-[0.4cqw] py-[0.5cqw] text-center text-[1.4cqw] leading-[1.4] font-medium whitespace-nowrap uppercase",
               row.paid && "bg-moss-100 text-moss-700",
-              !row.paid && row.tone == :warm && "bg-[#f5f5f5] text-grey-700",
+              !row.paid && row.tone == :warm && "bg-grey-100 text-grey-700",
               row.status == gettext("Draft") && "border border-grey-200 text-grey-700",
               row.status == gettext("Sending") && "after:content-['...']"
             ]}>
@@ -313,7 +313,7 @@ defmodule FirmowidWeb.Landing.Components.Sections do
             </span>
             <span class={[
               "flex h-full items-center justify-end pr-[2.6cqw] font-medium whitespace-nowrap",
-              row.tone == :warm && "bg-[#e6d7ce] text-(--landing-accent)",
+              row.tone == :warm && "bg-rust-200 text-(--landing-accent)",
               row.tone == :teal && "bg-teal-200 text-teal-700"
             ]}>
               {gettext("%{amount} PLN", amount: row.amount)}

@@ -96,7 +96,8 @@ defmodule FirmowidWeb.Management.Components.LeavesTab do
                 phx-change="search"
                 phx-debounce="300"
                 phx-target={@myself}
-                class="w-64"
+                id="leaves-search"
+                collapsible
               />
             </form>
             <.year_picker
