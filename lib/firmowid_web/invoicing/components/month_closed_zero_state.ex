@@ -13,12 +13,13 @@ defmodule FirmowidWeb.Invoicing.Components.MonthClosedZeroState do
         </p>
         <p class="max-w-[400px]">
           To
-          <.tooltip
+          <span
             id="month-closed-annotation"
-            text="Wciąż możesz dodać faktury opłacone z innego konta lub gotówką."
+            phx-hook="Tippy"
+            data-tippy-content="Wciąż możesz dodać faktury opłacone z innego konta lub gotówką."
           >
             najprawdopodobniej*
-          </.tooltip>
+          </span>
           oznacza, że miesiąc można uznać za
           zamknięty.
         </p>

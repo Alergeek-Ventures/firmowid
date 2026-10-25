@@ -354,10 +354,10 @@ defmodule FirmowidWeb.Invoicing.Components.DashboardTiles do
 
     ~H"""
     <div class="mt-2 flex items-center justify-start gap-2">
-      <.badge tone="success">
+      <span class="inline-flex items-center gap-1 rounded-full bg-moss-200 px-2 py-1 text-caps-sm font-medium text-moss-700">
         <.icon name="hero-credit-card" class="size-3" />
         {@label}
-      </.badge>
+      </span>
     </div>
     """
   end
@@ -367,10 +367,10 @@ defmodule FirmowidWeb.Invoicing.Components.DashboardTiles do
 
     ~H"""
     <div class="mt-2 flex items-center justify-start gap-2">
-      <.badge tone="success">
+      <span class="inline-flex items-center gap-1 rounded-full bg-moss-200 px-2 py-1 text-caps-sm font-medium text-moss-700">
         <.icon name="hero-credit-card" class="size-3" />
         {@label}
-      </.badge>
+      </span>
     </div>
     """
   end
@@ -393,10 +393,10 @@ defmodule FirmowidWeb.Invoicing.Components.DashboardTiles do
 
     ~H"""
     <div class="mt-2 flex items-center justify-between gap-2">
-      <.badge tone="danger">
+      <span class="inline-flex items-center gap-1 rounded-full bg-brick-200 px-2 py-1 text-caps-sm font-medium text-brick-700">
         <.icon name="hero-credit-card" class="size-3" />
         {@label}
-      </.badge>
+      </span>
 
       <.button type="button" variant="secondary" size="small" class="text-caps-sm">
         Sprawdź
@@ -411,10 +411,10 @@ defmodule FirmowidWeb.Invoicing.Components.DashboardTiles do
 
     ~H"""
     <div class="mt-2 flex items-center justify-start gap-2">
-      <.badge tone="neutral">
+      <span class="inline-flex items-center gap-1 rounded-full bg-grey-200 px-2 py-1 text-caps-sm font-medium text-grey-700">
         <.icon name="hero-credit-card" class="size-3" />
         {@label}
-      </.badge>
+      </span>
     </div>
     """
   end

@@ -25,23 +25,24 @@
     </div>
 
     <div class="flex flex-1 flex-col-reverse items-center gap-5 md:flex-row md:items-start">
-      <.empty_state
+      <div
         :if={@counterparties_zero_state?}
-        title="Nie wprowadziłeś jeszcze żadnego kontrahenta."
-        class="w-full justify-center self-stretch"
+        class="flex w-full flex-col items-center justify-center gap-6 self-stretch rounded-lg border border-grey-200 p-10"
       >
-        Wprowadź go, klikając poniżej, aby wystawić fakturę.
-        <:action :if={@can_manage_counterparties}>
-          <.link
-            kind="button"
-            variant="secondary"
-            accent="teal"
-            navigate={counterparty_management_new_path(assigns)}
-          >
-            Dodaj kontrahenta
-          </.link>
-        </:action>
-      </.empty_state>
+        <p class="text-center text-sm/snug text-balance text-grey-700">
+          Nie wprowadziłeś jeszcze żadnego kontrahenta.
+          Wprowadź go, klikając poniżej, aby wystawić fakturę.
+        </p>
+        <.link
+          :if={@can_manage_counterparties}
+          kind="button"
+          variant="secondary"
+          accent="teal"
+          navigate={counterparty_management_new_path(assigns)}
+        >
+          Dodaj kontrahenta
+        </.link>
+      </div>
 
       <div
         :if={not @counterparties_zero_state?}
@@ -53,13 +54,16 @@
           phx-submit={JS.push("search_counterparties", loading: "#counterparties")}
           class="col-span-full mb-2 flex flex-row items-center gap-4"
         >
-          <.search_field
-            name={@params[:szukaj].name}
-            value={@params[:szukaj].value}
-            placeholder="Wyszukaj kontrahenta"
-            class="w-full max-w-lg min-w-[250px] flex-1"
-            phx-debounce
-          />
+          <div class="relative w-full max-w-lg flex-1">
+            <Lucideicons.search class="absolute inset-y-0 top-0.5 left-3 my-auto size-4 text-grey-900" />
+
+            <.input
+              field={@params[:szukaj]}
+              placeholder="Wyszukaj kontrahenta"
+              input_class="pl-9 bg-grey-100 border min-w-[250px]"
+              phx-debounce
+            />
+          </div>
 
           <div class="space-x-2">
             <.input type="hidden" field={@params[:typ]} />
@@ -200,22 +204,30 @@
         </div>
       </div>
 
-      <div :if={@last_counterparties != [] or @last_invoices != []} class="w-full max-w-md">
-        <.tabs label={gettext("Choose counterparty")} class="mb-4">
-          <:tab
+      <div
+        :if={@last_counterparties != [] or @last_invoices != []}
+        class="w-full max-w-md"
+        style="filter: drop-shadow(0px 1px 3px rgba(0, 0, 0, 0.1));"
+      >
+        <div id="tabs" class="flex flex-row justify-around px-2 leading-tight font-medium">
+          <.link
             :for={tab_option <- counterparty_tabs(assigns)}
+            id={"tab_#{tab_option.tab}"}
+            kind="unstyled"
             patch={tab_option.patch}
-            active={tab_option.tab == @tab}
+            class={[
+              "rounded-t-lg px-4 py-3 text-grey-700 transition-colors",
+              tab_option.tab == @tab && "pointer-events-none bg-grey-50 text-grey-900"
+            ]}
           >
             {tab_option.label}
-          </:tab>
-        </.tabs>
+          </.link>
+        </div>
 
         <div
           :if={@last_counterparties != [] or @last_invoices != []}
           id="tab_content"
           class="space-y-2 rounded-lg bg-grey-50 p-6 leading-snug"
-          style="filter: drop-shadow(0px 1px 3px rgba(0, 0, 0, 0.1));"
         >
           <%= case @tab do %>
             <% :last_counterparties -> %>

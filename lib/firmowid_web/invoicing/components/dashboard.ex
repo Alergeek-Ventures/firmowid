@@ -49,7 +49,7 @@ defmodule FirmowidWeb.Invoicing.Components.Dashboard do
         <%= for invoice <- @unpaid_invoices do %>
           <DashboardTiles.tile entry={invoice} type={:unpaid_invoice} />
         <% end %>
-        <.empty_state :if={@unpaid_invoices == []} title="Brak nieopłaconych faktur." />
+        <.zero_state :if={@unpaid_invoices == []} message="Brak nieopłaconych faktur." />
       </.column>
 
       <.column
@@ -72,10 +72,7 @@ defmodule FirmowidWeb.Invoicing.Components.Dashboard do
             return_to={@return_to}
           />
         <% end %>
-        <.empty_state
-          :if={@unmatched_transactions == []}
-          title="Brak transakcji bez dokumentu."
-        />
+        <.zero_state :if={@unmatched_transactions == []} message="Brak transakcji bez dokumentu." />
       </.column>
 
       <.column
@@ -86,7 +83,7 @@ defmodule FirmowidWeb.Invoicing.Components.Dashboard do
         <%= for entry <- @matched_entries do %>
           <DashboardTiles.tile entry={entry} type={:matched} return_to={@return_to} />
         <% end %>
-        <.empty_state :if={@matched_entries == []} title="Brak dopasowanych pozycji." />
+        <.zero_state :if={@matched_entries == []} message="Brak dopasowanych pozycji." />
         <%!-- TODO: add activity log view and restore a dedicated CTA for matched entries. --%>
       </.column>
 
@@ -99,10 +96,11 @@ defmodule FirmowidWeb.Invoicing.Components.Dashboard do
         <%= for suggestion <- @suggestions do %>
           <DashboardTiles.tile entry={suggestion} type={:suggestion} />
         <% end %>
-        <.empty_state
-          :if={@suggestions == []}
-          title="Na ten moment Firmowid nie ma żadnych sugestii."
-        />
+        <%= if @suggestions == [] do %>
+          <p class="px-4 py-3 text-sm text-grey-700">
+            Na ten moment Firmowid nie ma żadnych sugestii.
+          </p>
+        <% end %>
       </.column>
     </div>
     """
@@ -178,6 +176,16 @@ defmodule FirmowidWeb.Invoicing.Components.Dashboard do
         Zobacz wszystkie
       </.link>
     </div>
+    """
+  end
+
+  attr :message, :string, required: true
+
+  defp zero_state(assigns) do
+    ~H"""
+    <p class="px-4 py-3 text-sm text-grey-700">
+      {@message}
+    </p>
     """
   end
 end

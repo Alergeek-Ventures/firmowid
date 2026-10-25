@@ -40,15 +40,19 @@ defmodule FirmowidWeb.Delegations.Components.Delegation do
   attr :class, :any, default: nil
 
   def status_badge(assigns) do
+    assigns =
+      assign(assigns, :status_styles, DelegationPresentation.status_badge_styles(assigns.status))
+
     ~H"""
-    <.badge tone={status_tone(@status)} class={@class}>
+    <span class={[
+      "shrink-0 rounded-full px-3 py-1 text-center text-sm",
+      @status_styles,
+      @class
+    ]}>
       {DelegationPresentation.status_label(@status)}
-    </.badge>
+    </span>
     """
   end
-
-  defp status_tone(:in_progress), do: "success"
-  defp status_tone(_status), do: "neutral"
 
   @doc "Renders a delegation's dates using semantic time elements."
   @spec date_range(map()) :: Rendered.t()

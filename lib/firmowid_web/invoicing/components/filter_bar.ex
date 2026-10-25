@@ -87,20 +87,22 @@ defmodule FirmowidWeb.Invoicing.Components.FilterBar do
     ~H"""
     <div class="flex items-center gap-3">
       <span class="text-sm font-normal text-grey-700/70">Filtry:</span>
-      <.segmented_control label={gettext("Filters")}>
-        <:option
+      <div class="flex items-center gap-2">
+        <.link
+          kind="unstyled"
           navigate={subfilter_url(@params, :oplacone)}
-          active={@params.subfilter == :oplacone}
+          class={subfilter_styles(@params.subfilter == :oplacone)}
         >
           Opłacone
-        </:option>
-        <:option
+        </.link>
+        <.link
+          kind="unstyled"
           navigate={subfilter_url(@params, :nieoplacone)}
-          active={@params.subfilter == :nieoplacone}
+          class={subfilter_styles(@params.subfilter == :nieoplacone)}
         >
           Nieopłacone
-        </:option>
-      </.segmented_control>
+        </.link>
+      </div>
     </div>
     """
   end
@@ -109,20 +111,22 @@ defmodule FirmowidWeb.Invoicing.Components.FilterBar do
     ~H"""
     <div class="flex items-center gap-3">
       <span class="text-sm font-normal text-grey-700/70">Filtry:</span>
-      <.segmented_control label={gettext("Filters")}>
-        <:option
+      <div class="flex items-center gap-2">
+        <.link
+          kind="unstyled"
           navigate={subfilter_url(@params, :dopasowane)}
-          active={@params.subfilter == :dopasowane}
+          class={subfilter_styles(@params.subfilter == :dopasowane)}
         >
           Dopasowane
-        </:option>
-        <:option
+        </.link>
+        <.link
+          kind="unstyled"
           navigate={subfilter_url(@params, :bez_dokumentu)}
-          active={@params.subfilter == :bez_dokumentu}
+          class={subfilter_styles(@params.subfilter == :bez_dokumentu)}
         >
           Bez dokumentu
-        </:option>
-      </.segmented_control>
+        </.link>
+      </div>
     </div>
     """
   end
@@ -168,6 +172,14 @@ defmodule FirmowidWeb.Invoicing.Components.FilterBar do
       is_month_closed && params.filter != :unmatched && "text-grey-100!",
       params.filter == :unmatched && is_month_closed &&
         "bg-moss-200! border-moss-700! text-black!"
+    ]
+  end
+
+  defp subfilter_styles(active?) do
+    [
+      "bg-grey-100 border-grey-200 text-grey-700 inline-flex h-8 items-center justify-center rounded-full border px-4 py-1.5 text-sm leading-none font-medium transition-colors",
+      active? && "bg-grey-700! border-grey-700 text-white!",
+      not active? && "hover:bg-grey-200"
     ]
   end
 end

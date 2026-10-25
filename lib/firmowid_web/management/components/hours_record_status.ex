@@ -16,9 +16,9 @@ defmodule FirmowidWeb.Management.Components.HoursRecordStatus do
   def hours_record_status(%{hours_record: nil} = assigns) do
     ~H"""
     <div class="flex min-w-0 flex-1 items-center gap-3">
-      <.badge class="w-[166.5px] justify-between">
+      <span class="flex w-[166.5px] min-w-0 items-center justify-between gap-2.5 rounded-sm bg-grey-200 px-2 py-1 text-caps-sm/tight font-medium text-grey-700 uppercase">
         Brak <.icon name="hero-x-mark-micro" class="size-4" />
-      </.badge>
+      </span>
       <Lucideicons.file_x class="shrink-0 text-grey-400" />
     </div>
     """
@@ -28,8 +28,7 @@ defmodule FirmowidWeb.Management.Components.HoursRecordStatus do
     ~H"""
     <div class="flex min-w-0 flex-1 flex-col gap-2">
       <div class="flex items-center gap-3">
-        <.badge
-          tone={hours_record_tone(@hours_record.submission_status)}
+        <span
           title={
             if @hours_record.submission_status == :withdrawn do
               gettext("Document submitted on %{date}",
@@ -37,14 +36,20 @@ defmodule FirmowidWeb.Management.Components.HoursRecordStatus do
               )
             end
           }
-          class="w-[166.5px] justify-between"
+          class={[
+            "flex w-[166.5px] min-w-0 items-center justify-between gap-2.5 rounded-sm px-2 py-1 text-caps-sm/tight font-medium uppercase",
+            if(@hours_record.submission_status == :withdrawn,
+              do: "bg-rust-200 text-rust-700",
+              else: "bg-moss-200 text-moss-700"
+            )
+          ]}
         >
           <%= if @hours_record.submission_status == :withdrawn do %>
             {gettext("Withdrawn")} <.icon name="hero-x-mark-micro" />
           <% else %>
             EWIDENCJA <.icon name="hero-check-micro" />
           <% end %>
-        </.badge>
+        </span>
         <.link
           kind="unstyled"
           navigate={~p"/czasosledz/ewidencja/#{@hours_record.id}"}
@@ -75,7 +80,4 @@ defmodule FirmowidWeb.Management.Components.HoursRecordStatus do
     </div>
     """
   end
-
-  defp hours_record_tone(:withdrawn), do: "neutral"
-  defp hours_record_tone(_submitted), do: "success"
 end

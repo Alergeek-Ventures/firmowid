@@ -105,7 +105,7 @@ defmodule FirmowidWeb.Invoicing.Transactions.Views.Show do
               <div class="flex flex-col gap-18">
                 <ShowComponents.invoice_suggestions suggestions={@invoice_suggestions} />
                 <SalaryComponents.suggestions suggestions={@salary_suggestions} />
-                <ShowComponents.unmatched_state
+                <ShowComponents.empty_state
                   transaction={@transaction}
                   can_write={Ash.can?({Transaction, :set_skip_invoicing}, @current_user)}
                   show_no_recommendations={@invoice_suggestions == [] and @salary_suggestions == []}

@@ -564,18 +564,24 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceDetails do
     ~H"""
     <div class="flex flex-col gap-18">
       <%= if @not_found do %>
-        <.empty_state title="Brak rekomendacji">
-          <:icon><Lucideicons.file_question_mark /></:icon>
-          Firmowid nie znalazl zadnych transakcji, ktore potencjalnie pasowałyby do tej faktury.
-          <:action>
-            <MatchingComponents.assistant_button
-              id="invoice-assistant-empty"
-              accent={if(@is_cost_invoice, do: "rust", else: "teal")}
-            >
-              Poproś Firmowida o pomoc
-            </MatchingComponents.assistant_button>
-          </:action>
-        </.empty_state>
+        <div class="flex flex-col items-center gap-4 px-4 pt-8 pb-6">
+          <Lucideicons.file_question_mark class="size-12" />
+
+          <div class="space-y-2 text-center">
+            <h3 class="text-lg/tight font-medium">Brak rekomendacji</h3>
+            <p class="max-w-96 text-balance">
+              Firmowid nie znalazl zadnych transakcji, ktore potencjalnie pasowałyby do tej faktury.
+            </p>
+          </div>
+
+          <MatchingComponents.assistant_button
+            id="invoice-assistant-empty"
+            class="mbs-2"
+            accent={if(@is_cost_invoice, do: "rust", else: "teal")}
+          >
+            Poproś Firmowida o pomoc
+          </MatchingComponents.assistant_button>
+        </div>
       <% else %>
         <.potential_transactions_list
           potential_transactions={@potential_transactions}

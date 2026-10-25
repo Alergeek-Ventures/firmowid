@@ -47,13 +47,15 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
 
   def table(%{invoicing_entries: []} = assigns) do
     ~H"""
-    <.empty_state
-      title="Brak transakcji i dokumentów dla wybranej daty"
-      class="min-h-[300px] justify-center"
-    >
-      <:icon><Lucideicons.cloud_upload /></:icon>
-      Przeciągnij pliki, aby je wgrać
-    </.empty_state>
+    <div class="flex min-h-[300px] flex-col items-center justify-center gap-4">
+      <.icon name="hero-cloud-arrow-up" class="size-16 text-moss-700" />
+      <p class="text-center text-black">
+        Brak transakcji i dokumentów dla wybranej daty
+      </p>
+      <p class="text-center text-grey-700">
+        Przeciągnij pliki, aby je wgrać
+      </p>
+    </div>
     """
   end
 
@@ -153,9 +155,11 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
 
     if is_special_column do
       ~H"""
-      <.tooltip
+      <span
         id={"header-#{@column}-label"}
-        text={
+        class="inline-block"
+        phx-hook="Tippy"
+        data-tippy-content={
           case @column do
             "issue_or_value_date" ->
               "W przypadku faktur będzie to data wystawienia, w przypadku transakcji to data wykonania"
@@ -166,7 +170,7 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
         }
       >
         {@label}
-      </.tooltip>
+      </span>
       """
     else
       ~H"""
@@ -281,14 +285,16 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
       {@amount}
 
       <%= if @is_fresh do %>
-        <.tooltip
+        <span
           id={"amount-fresh-#{@invoicing_entry.id}"}
-          text="Ten dokument właśnie został dodany!"
-          class="absolute top-[-10px] right-[-4px] size-3"
+          phx-hook="Tippy"
+          data-tippy-delay="10"
+          data-tippy-content="Ten dokument właśnie został dodany!"
+          class="absolute top-[-10px] right-[-4px] flex size-3"
         >
           <span class="absolute inline-flex size-full animate-ping rounded-full bg-teal-800 opacity-75"></span>
           <span class="relative inline-flex size-3 rounded-full bg-teal-800"></span>
-        </.tooltip>
+        </span>
       <% end %>
     </div>
     """

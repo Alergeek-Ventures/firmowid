@@ -23,22 +23,23 @@
   <div class="relative z-30 flex w-full flex-col justify-between gap-10 md:flex-row lg:gap-20">
     <div class="mx-auto w-full max-w-md md:mx-0">
       <%= if Enum.empty?(@active_projects) do %>
-        <.empty_state title="Nie masz przypisanych projektów">
+        <div class="w-full py-8 text-center text-grey-700">
+          <p class="text-lg font-semibold">Nie masz przypisanych projektów</p>
           <%= if @current_user.member.role == :admin do %>
-            Dodaj swój pierwszy projekt i przypisz się do niego, aby rozpocząć śledzenie czasu
-          <% else %>
-            Poproś administratora o przypisanie Cię do projektu
-          <% end %>
-          <:action :if={@current_user.member.role == :admin}>
+            <p class="mt-2 text-sm">
+              Dodaj swój pierwszy projekt i przypisz się do niego, aby rozpocząć śledzenie czasu
+            </p>
             <.link
               kind="unstyled"
               navigate={~p"/zarzadzanie/projekty"}
-              class="inline-block text-rust-700 hover:underline"
+              class="mt-4 inline-block text-rust-700 hover:underline"
             >
               Przejdź do zarządzania projektami
             </.link>
-          </:action>
-        </.empty_state>
+          <% else %>
+            <p class="mt-2 text-sm">Poproś administratora o przypisanie Cię do projektu</p>
+          <% end %>
+        </div>
       <% else %>
         <.form
           id="session_form"
@@ -191,12 +192,13 @@
       <% end %>
     </div>
     <div class="mb-16 w-full min-w-0 space-y-16">
-      <.empty_state
+      <div
         :if={Enum.empty?(@grouped_sessions) and Enum.empty?(@today_sessions)}
-        title="Brak zarejestrowanych sesji"
+        class="py-8 text-center text-grey-700"
       >
-        Rozpocznij swoją pierwszą sesję używając formularza po lewej
-      </.empty_state>
+        <p class="text-lg font-semibold">Brak zarejestrowanych sesji</p>
+        <p class="mt-2 text-sm">Rozpocznij swoją pierwszą sesję używając formularza po lewej</p>
+      </div>
 
       <div :if={not Enum.empty?(@today_sessions)}>
         <div class="flex items-center justify-between pb-3">

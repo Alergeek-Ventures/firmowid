@@ -9,16 +9,31 @@
           active_months={@active_months}
         />
 
-        <.search_field
-          name="szukaj"
-          value={@params["szukaj"] || ""}
-          placeholder="Szukaj projektu"
-          size="big"
-          phx-change={JS.push("search", loading: "#projects-list")}
-          phx-debounce="300"
-          id="projects-search"
-          collapsible
-        />
+        <div
+          id="search-container"
+          data-expanded={to_string(@params["szukaj"] != nil and @params["szukaj"] != "")}
+          class="group flex min-w-10 items-center justify-center rounded-lg bg-grey-200 transition-shadow data-[expanded=true]:focus-within:ring-2"
+        >
+          <.input
+            name="szukaj"
+            value={@params["szukaj"] || ""}
+            placeholder="Szukaj projektu"
+            phx-change={JS.push("search", loading: "#projects-list")}
+            phx-debounce="300"
+            input_class="py-0 px-1 bg-transparent border-none"
+            class="w-0 border-transparent px-0 opacity-0 transition-[width,opacity,padding] duration-200 ease-in-out group-data-[expanded=true]:w-64 group-data-[expanded=true]:px-2 group-data-[expanded=true]:py-1 group-data-[expanded=true]:opacity-100 focus:border-none focus:ring-0 focus:outline-hidden"
+          />
+          <.button
+            type="button"
+            phx-click={
+              JS.toggle_attribute({"data-expanded", "true", "false"}, to: "#search-container")
+              |> JS.focus(to: "#search-container input")
+            }
+            variant="secondary"
+          >
+            <Lucideicons.search />
+          </.button>
+        </div>
       </form>
 
       <.link
@@ -30,41 +45,43 @@
       </.link>
     </div>
 
-    <.segmented_control label={gettext("List scope")}>
-      <:option patch={Navigation.projects_path(:index, @params)} active={@live_action == :index}>
-        Aktywne
-      </:option>
-      <:option
-        patch={Navigation.projects_path(:archive, @params)}
-        active={@live_action == :archive}
+    <div class="flex gap-4">
+      <.link
+        :for={
+          {path, live_action, label} <- [
+            {Navigation.projects_path(:index, @params), :index, "Aktywne"},
+            {Navigation.projects_path(:archive, @params), :archive, "Zarchiwizowane"}
+          ]
+        }
+        patch={path}
+        kind="button"
+        variant="ghost"
+        size="small"
+        class={if(@live_action == live_action, do: "bg-grey-700 text-white hover:text-grey-900")}
       >
-        Zarchiwizowane
-      </:option>
-    </.segmented_control>
+        {label}
+      </.link>
+    </div>
   </div>
 
   <%= cond do %>
     <% Enum.empty?(@projects) -> %>
-      <%= if @params["szukaj"] do %>
-        <.empty_state
-          title="Nie znaleźliśmy szukanego przez Ciebie projektu."
-          class="flex-1 justify-center"
-        >
-          <:icon><Lucideicons.file_x /></:icon>
-        </.empty_state>
-      <% else %>
-        <.empty_state
-          title={
-            case @live_action do
+      <div class="flex flex-1 flex-col items-center justify-center gap-4 rounded-lg border border-grey-200 p-6">
+        <%= if @params["szukaj"] do %>
+          <Lucideicons.file_x class="size-26 text-grey-300" />
+          <p class="text-sm/snug text-grey-700">
+            Nie znaleźliśmy szukanego przez Ciebie projektu.
+          </p>
+        <% else %>
+          <Lucideicons.presentation class="size-26 text-grey-300" />
+          <p class="text-sm/snug text-grey-700">
+            {case @live_action do
               :index -> "Nie masz aktywnych projektów do wyświetlenia."
               :archive -> "Nie masz zarchiwizowanych projektów do wyświetlenia."
-            end
-          }
-          class="flex-1 justify-center"
-        >
-          <:icon><Lucideicons.presentation /></:icon>
-        </.empty_state>
-      <% end %>
+            end}
+          </p>
+        <% end %>
+      </div>
     <% @live_action == :index -> %>
       <div
         id="projects-list"
@@ -192,16 +209,22 @@
   <% end %>
 </div>
 
-<.empty_state
+<div
   :if={@zero_state?}
-  title="Nie masz aktywnych projektów do wyświetlenia."
-  class="mx-auto size-full max-w-7xl flex-1 justify-center"
+  class="mx-auto flex size-full max-w-7xl flex-1 flex-col items-center justify-center rounded-lg border border-grey-200 p-8"
 >
-  <:icon><Lucideicons.presentation /></:icon>
-  Dodaj nowy klikając poniżej.
-  <:action>
-    <.link navigate={~p"/zarzadzanie/projekty/dodaj"} kind="button" variant="secondary">
-      <Lucideicons.plus /> Dodaj projekt
-    </.link>
-  </:action>
-</.empty_state>
+  <Lucideicons.presentation class="size-26 text-grey-300" size={48} />
+
+  <p class="mt-4 text-center text-sm/snug text-balance text-grey-700">
+    Nie masz aktywnych projektów do wyświetlenia. Dodaj nowy klikając poniżej.
+  </p>
+
+  <.link
+    navigate={~p"/zarzadzanie/projekty/dodaj"}
+    kind="button"
+    variant="secondary"
+    class="mt-6"
+  >
+    <Lucideicons.plus /> Dodaj projekt
+  </.link>
+</div>

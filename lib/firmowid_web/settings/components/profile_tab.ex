@@ -10,6 +10,7 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
   import FirmowidWeb.Delegations.Components.DelegationsList
   import FirmowidWeb.DesignSystem.Components.CoreComponents
   import FirmowidWeb.Infrastructure.Flags, only: [flag_enabled?: 2]
+  import FirmowidWeb.Settings.Components.EditButton
   import Phoenix.Component, except: [link: 1]
 
   alias FirmowidWeb.Infrastructure.Utilities.TimeFormatter
@@ -150,17 +151,39 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
       <div class="flex min-h-8 items-center gap-1">
         <h2 class="text-base leading-none font-medium text-grey-900">{@title}</h2>
 
-        <.icon_button
+        <span
           :if={@action}
-          label={@action_label || gettext("Edit %{section}", section: @title)}
-          phx-click={@action}
+          id={"settings-#{@action}-tooltip"}
+          phx-hook="Tippy"
+          data-tippy-content={@action_label || gettext("Edit %{section}", section: @title)}
+          data-tippy-delay="100"
+          data-tippy-theme="small"
         >
-          <Lucideicons.square_pen />
-        </.icon_button>
+          <.edit_button
+            type="button"
+            phx-click={@action}
+            aria-label={@action_label || gettext("Edit %{section}", section: @title)}
+          />
+        </span>
       </div>
 
       {render_slot(@inner_block)}
     </section>
+    """
+  end
+
+  attr :label, :string, required: true
+  slot :inner_block, required: true
+
+  defp detail_row(assigns) do
+    ~H"""
+    <Helpers.settings_display_field
+      label={@label}
+      class="justify-center"
+      value_class="break-words"
+    >
+      {render_slot(@inner_block)}
+    </Helpers.settings_display_field>
     """
   end
 
@@ -170,7 +193,7 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
 
   defp contract_document_row(assigns) do
     ~H"""
-    <.field_row label="Umowa" layout="inline" class="wrap-break-word">
+    <.detail_row label="Umowa">
       <div class="flex w-full min-w-0 items-center gap-2">
         <.link
           kind="button"
@@ -202,7 +225,7 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
           </.button>
         </form>
       </div>
-    </.field_row>
+    </.detail_row>
     """
   end
 
@@ -443,15 +466,15 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
             current_user={@current_user}
             document_upload={@document_upload}
           />
-          <.field_row label="Stanowisko" layout="inline" class="wrap-break-word">
+          <.detail_row label="Stanowisko">
             {present(@current_contract && @current_contract.position)}
-          </.field_row>
-          <.field_row label="Rodzaj umowy" layout="inline" class="wrap-break-word">
+          </.detail_row>
+          <.detail_row label="Rodzaj umowy">
             {format_contract_type(@current_contract && @current_contract.contract_type)}
-          </.field_row>
-          <.field_row label="Obowiązuje od" layout="inline" class="wrap-break-word">
+          </.detail_row>
+          <.detail_row label="Obowiązuje od">
             {present_date(@current_contract && @current_contract.starts_at)}
-          </.field_row>
+          </.detail_row>
         </div>
       <% end %>
     </.profile_section>
@@ -505,19 +528,17 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
         </.form>
       <% else %>
         <div class="space-y-2">
-          <.field_row
-            :for={field <- @fields}
-            label={TaxProfileForm.field_label(field)}
-            layout="inline"
-            class="wrap-break-word"
-          >
+          <.detail_row :for={field <- @fields} label={TaxProfileForm.field_label(field)}>
             <TaxProfileForm.saved_value form={@form} field={field} />
-          </.field_row>
+          </.detail_row>
         </div>
       <% end %>
 
       <Helpers.settings_display_field>
-        <.alert>{TaxProfileForm.notice()}</.alert>
+        <div class="flex items-start gap-4 rounded-lg bg-grey-50 p-4 text-sm text-grey-700">
+          <span class="shrink-0"><.icon name="hero-information-circle" class="size-5" /></span>
+          <p>{TaxProfileForm.notice()}</p>
+        </div>
       </Helpers.settings_display_field>
     </.profile_section>
     """
@@ -559,9 +580,9 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
         </.form>
       <% else %>
         <div class="w-full space-y-2">
-          <.field_row label="Nr konta" layout="inline" class="wrap-break-word">
+          <.detail_row label="Nr konta">
             <p class="text-nowrap">{present(@current_user.member.bank_account_number)}</p>
-          </.field_row>
+          </.detail_row>
         </div>
       <% end %>
     </.profile_section>
@@ -634,24 +655,20 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
         </.form>
       <% else %>
         <div class="w-full space-y-2">
-          <.field_row label="Numer telefonu" layout="inline" class="wrap-break-word">
-            {present(@current_user.member.phone)}
-          </.field_row>
-          <.field_row label="Slack" layout="inline" class="wrap-break-word">
+          <.detail_row label="Numer telefonu">{present(@current_user.member.phone)}</.detail_row>
+          <.detail_row label="Slack">
             <span :if={slack_present?(@current_user.member)}>{present_slack(@current_user.member)}</span>
             <span :if={!slack_present?(@current_user.member)}>—</span>
-          </.field_row>
-          <.field_row label="Adres zamieszkania" layout="inline" class="wrap-break-word">
+          </.detail_row>
+          <.detail_row label="Adres zamieszkania">
             {present(@current_user.member.residence_address)}
-          </.field_row>
-          <.field_row
+          </.detail_row>
+          <.detail_row
             :if={@current_user.member.correspondence_address not in [nil, ""]}
             label="Adres korespondencyjny"
-            layout="inline"
-            class="wrap-break-word"
           >
             {present(@current_user.member.correspondence_address)}
-          </.field_row>
+          </.detail_row>
         </div>
       <% end %>
     </.profile_section>
@@ -677,17 +694,37 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
       <div class="flex items-start justify-between gap-3">
         <h2 class="text-base leading-none font-medium text-grey-900">Nieobecności</h2>
         <div class="flex items-center gap-3">
-          <form phx-submit="search_leave_requests">
-            <.search_field
-              name="szukaj"
-              value={@leave_search}
-              placeholder="Szukaj wniosku"
-              size="small"
-              phx-change="search_leave_requests"
-              phx-debounce="300"
-              id="profile-leave-search"
-              collapsible
-            />
+          <form class="flex gap-4" phx-submit="search_leave_requests">
+            <div
+              id="profile-leave-search-container"
+              data-expanded={to_string(@leave_search != "")}
+              class="group flex items-center justify-center rounded-lg transition-shadow data-[expanded=true]:bg-grey-200 data-[expanded=true]:focus-within:ring-2"
+            >
+              <.input
+                type="text"
+                name="szukaj"
+                value={@leave_search}
+                placeholder="Szukaj wniosku"
+                phx-change="search_leave_requests"
+                phx-debounce="300"
+                input_class="py-0 px-1 bg-transparent border-none"
+                class="group w-0 border-transparent px-0 opacity-0 transition-[width,opacity,padding] duration-200 ease-in-out group-data-[expanded=true]:w-42 group-data-[expanded=true]:px-2 group-data-[expanded=true]:opacity-100 focus:border-none focus:ring-0 focus:outline-hidden lg:group-data-[expanded=true]:w-56"
+              />
+              <.button
+                type="button"
+                size="small"
+                variant="outline"
+                class="py-2 group-data-[expanded=true]:rounded-r-lg"
+                phx-click={
+                  JS.toggle_attribute({"data-expanded", "true", "false"},
+                    to: "#profile-leave-search-container"
+                  )
+                  |> JS.focus(to: "#profile-leave-search-container input")
+                }
+              >
+                <Lucideicons.search />
+              </.button>
+            </div>
           </form>
           <.button
             type="button"
@@ -721,18 +758,19 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
             <span class="shrink-0 tabular-nums">
               {LeavePresentation.format_range(request.starts_on, request.ends_on)}
             </span>
-            <.badge tone={leave_status_tone(request.status)} class="w-31 justify-center">
+            <span class={leave_status_badge_styles(request.status)}>
               {LeavePresentation.status_label(request.status)}
-            </.badge>
+            </span>
           </li>
         </ul>
-        <.empty_state
+        <div
           :if={Enum.empty?(@filtered_leave_requests)}
-          title="Brak wniosków o nieobecności."
-          class="h-full justify-center"
+          class="flex size-full items-center justify-center rounded-lg bg-grey-50 text-sm text-grey-700"
         >
-          <:icon><Lucideicons.calendar_x /></:icon>
-        </.empty_state>
+          <p>
+            Brak wniosków o nieobecności.
+          </p>
+        </div>
       </div>
 
       <.modal id="leave-request-modal" class="max-w-xl">
@@ -892,9 +930,9 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
           </li>
         </ul>
 
-        <.empty_state :if={@projects == []} title="Brak przepracowanego czasu w tym miesiącu.">
-          <:icon><Lucideicons.clock /></:icon>
-        </.empty_state>
+        <p :if={@projects == []} class="text-sm text-grey-500">
+          Brak przepracowanego czasu w tym miesiącu.
+        </p>
       </section>
       <.link
         kind="unstyled"
@@ -931,9 +969,12 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
     """
   end
 
-  defp leave_status_tone(:accepted), do: "success"
-  defp leave_status_tone(:declined), do: "danger"
-  defp leave_status_tone(:pending), do: "neutral"
+  defp leave_status_badge_styles(status) do
+    [
+      "w-31 shrink-0 rounded-full px-3 py-1 text-center text-sm",
+      LeavePresentation.status_badge_styles(status)
+    ]
+  end
 
   attr :field, :map, required: true
   attr :label, :string, required: true

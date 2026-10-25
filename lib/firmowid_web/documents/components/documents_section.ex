@@ -84,6 +84,7 @@ defmodule FirmowidWeb.Documents.Components.DocumentsSection do
     assigns =
       assigns
       |> assign(:profile?, assigns.variant == :profile)
+      |> assign(:search_input_styles, search_input_styles(assigns.variant))
       |> assign(:document_upload, document_upload)
 
     ~H"""
@@ -101,6 +102,7 @@ defmodule FirmowidWeb.Documents.Components.DocumentsSection do
                 id={@id}
                 myself={@myself}
                 search={@search}
+                search_input_styles={@search_input_styles}
                 can_upload?={@can_upload?}
                 document_upload={@document_upload}
                 currently_uploading_count={@currently_uploading_count}
@@ -115,6 +117,7 @@ defmodule FirmowidWeb.Documents.Components.DocumentsSection do
                   id={@id}
                   myself={@myself}
                   search={@search}
+                  search_input_styles={@search_input_styles}
                   can_upload?={@can_upload?}
                   document_upload={@document_upload}
                   currently_uploading_count={@currently_uploading_count}
@@ -136,6 +139,7 @@ defmodule FirmowidWeb.Documents.Components.DocumentsSection do
   attr :id, :string, required: true
   attr :myself, :any, required: true
   attr :search, :string, required: true
+  attr :search_input_styles, :string, required: true
   attr :can_upload?, :boolean, required: true
   attr :document_upload, :map, default: nil
   attr :currently_uploading_count, :integer, required: true
@@ -145,17 +149,37 @@ defmodule FirmowidWeb.Documents.Components.DocumentsSection do
     ~H"""
     <div class="flex items-center gap-4">
       <form class="flex gap-3" phx-submit="search" phx-target={@myself}>
-        <.search_field
-          name="szukaj"
-          value={@search}
-          placeholder="Szukaj dokumentu"
-          size="small"
-          phx-change="search"
-          phx-debounce="300"
-          phx-target={@myself}
-          id={"#{@id}-search"}
-          collapsible
-        />
+        <div
+          id={"#{@id}-search-container"}
+          data-expanded={to_string(@search != "")}
+          class="group flex items-center justify-center rounded-lg transition-shadow data-[expanded=true]:bg-grey-200 data-[expanded=true]:focus-within:ring-2"
+        >
+          <.input
+            type="text"
+            name="szukaj"
+            value={@search}
+            placeholder="Szukaj dokumentu"
+            phx-change="search"
+            phx-debounce="300"
+            phx-target={@myself}
+            input_class="py-0 px-1 bg-transparent border-none z-10 font-normal"
+            class={@search_input_styles}
+          />
+          <.button
+            type="button"
+            size="small"
+            phx-click={
+              JS.toggle_attribute({"data-expanded", "true", "false"},
+                to: "##{@id}-search-container"
+              )
+              |> JS.focus(to: "##{@id}-search-container input")
+            }
+            variant="outline"
+            class="py-2 group-data-[expanded=true]:rounded-r-lg"
+          >
+            <Lucideicons.search />
+          </.button>
+        </div>
       </form>
       <form
         :if={@can_upload? && @document_upload}
@@ -247,7 +271,9 @@ defmodule FirmowidWeb.Documents.Components.DocumentsSection do
     ~H"""
     <div class="scrollbar-card h-100 max-h-100 space-y-2 overflow-y-auto">
       <%= if Enum.empty?(@documents) do %>
-        <.empty_state title="Brak dokumentów" class="size-full justify-center" />
+        <div class="flex size-full items-center justify-center rounded-lg bg-grey-50 text-sm text-grey-700">
+          <p>Brak dokumentów</p>
+        </div>
       <% else %>
         <.document_element :for={document <- @documents} document={document} />
       <% end %>
@@ -260,7 +286,9 @@ defmodule FirmowidWeb.Documents.Components.DocumentsSection do
     <div class="relative w-full flex-1">
       <div class="absolute inset-0 scrollbar-card space-y-2 overflow-y-auto pr-2">
         <%= if Enum.empty?(@documents) do %>
-          <.empty_state title="Brak dokumentów" class="size-full justify-center" />
+          <div class="flex size-full items-center justify-center rounded-lg bg-grey-50 text-sm text-grey-700">
+            <p>Brak dokumentów</p>
+          </div>
         <% else %>
           <.document_element :for={document <- @documents} document={document} />
         <% end %>
@@ -281,6 +309,14 @@ defmodule FirmowidWeb.Documents.Components.DocumentsSection do
 
   defp filters_styles(:profile), do: ""
   defp filters_styles(_), do: "pt-6"
+
+  defp search_input_styles(:profile) do
+    "group w-0 border-transparent px-0 opacity-0 transition-[width,opacity,padding] duration-200 ease-in-out group-data-[expanded=true]:w-42 group-data-[expanded=true]:px-2 group-data-[expanded=true]:opacity-100 focus:border-none focus:ring-0 focus:outline-hidden lg:group-data-[expanded=true]:w-56"
+  end
+
+  defp search_input_styles(_) do
+    "w-0 border-transparent px-0 opacity-0 transition-[width,opacity,padding] duration-200 ease-in-out group-data-[expanded=true]:w-64 group-data-[expanded=true]:px-2 group-data-[expanded=true]:py-1 group-data-[expanded=true]:opacity-100 focus:border-none focus:ring-0 focus:outline-hidden"
+  end
 
   @doc false
   def document_element(assigns) do
@@ -308,7 +344,7 @@ defmodule FirmowidWeb.Documents.Components.DocumentsSection do
       </div>
 
       <div class="flex items-center gap-4 text-sm text-grey-700">
-        <.contract_status_badge status={@document[:status]} />
+        {contract_status_badge(@document)}
         {TimeFormatter.format_date(@document.date)}
       </div>
     </.link>
@@ -539,10 +575,11 @@ defmodule FirmowidWeb.Documents.Components.DocumentsSection do
 
   defp upload_indicator(assigns) do
     ~H"""
-    <.tooltip
+    <span
       id={"#{@id}-upload-count-indicator"}
-      text="Pliki są przetwarzane i za kilka chwil będą dostępne w Firmowidzie"
-      class="absolute -top-3.5 -right-3.5 size-7 items-center justify-center overflow-hidden rounded-full bg-grey-100"
+      phx-hook="Tippy"
+      data-tippy-content="Pliki są przetwarzane i za kilka chwil będą dostępne w Firmowidzie"
+      class="absolute -top-3.5 -right-3.5 flex size-7 items-center justify-center overflow-hidden rounded-full bg-grey-100"
     >
       <span class="absolute block size-full animate-pulse bg-rust-600" />
       <span class="z-10 flex size-5 items-center justify-center rounded-full bg-grey-100">
@@ -551,7 +588,7 @@ defmodule FirmowidWeb.Documents.Components.DocumentsSection do
           processing_blobs_count={@processing_blobs_count}
         />
       </span>
-    </.tooltip>
+    </span>
     """
   end
 
@@ -578,23 +615,34 @@ defmodule FirmowidWeb.Documents.Components.DocumentsSection do
     """
   end
 
-  attr :status, :atom, default: nil
+  attr :status, :atom, required: true
 
-  defp contract_status_badge(%{status: nil} = assigns) do
+  defp contract_status_badge(%{status: :pending_signature} = assigns) do
     ~H"""
+    <span class="rounded-2xl bg-teal-100 px-4 py-1 text-sm text-teal-700">
+      oczekiwanie
+    </span>
+    """
+  end
+
+  defp contract_status_badge(%{status: :signed} = assigns) do
+    ~H"""
+    <span class="rounded-2xl bg-teal-100 px-4 py-1 text-sm text-teal-700">
+      podpisana
+    </span>
+    """
+  end
+
+  defp contract_status_badge(%{status: :active} = assigns) do
+    ~H"""
+    <span class="rounded-2xl bg-moss-100 px-4 py-1 text-sm text-moss-700">
+      obowiązująca umowa
+    </span>
     """
   end
 
   defp contract_status_badge(assigns) do
     ~H"""
-    <.badge tone={contract_status_tone(@status)}>{contract_status_label(@status)}</.badge>
     """
   end
-
-  defp contract_status_label(:pending_signature), do: "oczekiwanie"
-  defp contract_status_label(:signed), do: "podpisana"
-  defp contract_status_label(:active), do: "obowiązująca umowa"
-
-  defp contract_status_tone(:active), do: "success"
-  defp contract_status_tone(_status), do: "neutral"
 end

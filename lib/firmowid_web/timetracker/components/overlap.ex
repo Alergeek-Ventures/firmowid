@@ -20,7 +20,9 @@ defmodule FirmowidWeb.Timetracker.Components.Overlap do
     ~H"""
     <div class="rounded-lg border border-moss-200 bg-moss-100 p-4">
       <div class="mb-1 flex items-center gap-2">
-        <.badge tone="success">Nowa sesja</.badge>
+        <span class="inline-flex items-center rounded-full bg-moss-200 px-2 py-0.5 text-xs font-medium text-moss-700">
+          Nowa sesja
+        </span>
         <span class="text-sm font-medium text-grey-900">
           {@title}
         </span>
@@ -49,9 +51,12 @@ defmodule FirmowidWeb.Timetracker.Components.Overlap do
     <div class="rounded-lg border border-grey-200 bg-grey-50 p-4">
       <div class="mb-2 flex items-center justify-between gap-2">
         <div class="flex min-w-0 items-center gap-2">
-          <.badge tone={trim_action_tone(@action)}>
+          <span class={[
+            "inline-flex shrink-0 items-center rounded-full px-2 py-0.5 text-xs font-medium",
+            trim_action_badge_styles(@action)
+          ]}>
             {trim_action_label(@action)}
-          </.badge>
+          </span>
           <span class="truncate text-sm font-medium text-grey-900">
             {@session.title}
           </span>
@@ -163,8 +168,14 @@ defmodule FirmowidWeb.Timetracker.Components.Overlap do
     end
   end
 
-  defp trim_action_tone({:delete, _}), do: "danger"
-  defp trim_action_tone(_action), do: "neutral"
+  defp trim_action_badge_styles(action) do
+    case action do
+      {:trim_end, _, _} -> "bg-rust-200 text-rust-700"
+      {:trim_start, _, _} -> "bg-rust-200 text-rust-700"
+      {:delete, _} -> "bg-brick-200 text-brick-700"
+      {:split, _, _, _} -> "bg-teal-200 text-teal-800"
+    end
+  end
 
   defp format_datetime_local(nil, _timezone), do: "teraz (trwa)"
 

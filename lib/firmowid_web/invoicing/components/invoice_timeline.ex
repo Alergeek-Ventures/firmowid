@@ -44,7 +44,9 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceTimeline do
       </div>
 
       <%= if Enum.empty?(@events) do %>
-        <.empty_state title="Brak historii dla tego dokumentu." />
+        <p class="py-4 text-grey-700">
+          Brak historii dla tego dokumentu.
+        </p>
       <% else %>
         <div class="relative">
           <div class="absolute top-4 bottom-7 left-[5px] w-0.5 bg-grey-200"></div>

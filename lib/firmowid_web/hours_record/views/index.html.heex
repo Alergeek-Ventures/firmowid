@@ -66,9 +66,13 @@
           <span class="font-bold">Ewidencja godzin</span>
 
           <%= if @current_hours_record do %>
-            <.badge tone="success">WYSŁANO <.icon name="hero-check-micro" /></.badge>
+            <span class="flex items-center justify-center gap-1 rounded-md bg-moss-200 py-[5px] pr-1 pl-2 text-xs font-semibold text-moss-700 uppercase">
+              WYSŁANO <.icon name="hero-check-micro" />
+            </span>
           <% else %>
-            <.badge>BRAK <.icon name="hero-x-mark-micro" /></.badge>
+            <span class="flex items-center justify-center gap-1 rounded-md bg-grey-200 py-[5px] pr-1 pl-2 text-xs font-semibold text-grey-700 uppercase">
+              BRAK <.icon name="hero-x-mark-micro" />
+            </span>
           <% end %>
         </div>
         <p :if={!@can_use_hours_records} class="mt-2 text-sm">
