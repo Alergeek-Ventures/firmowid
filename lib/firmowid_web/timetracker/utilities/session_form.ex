@@ -5,6 +5,7 @@ defmodule FirmowidWeb.Timetracker.Utilities.SessionForm do
   import Ecto.Changeset
 
   alias Firmowid.Ash.Timetracker.Session
+  alias FirmowidWeb.Infrastructure.Utilities.LocalTime
 
   embedded_schema do
     field :title, :string
@@ -116,6 +117,5 @@ defmodule FirmowidWeb.Timetracker.Utilities.SessionForm do
 
   defp date_to_datetime(_, nil, _), do: nil
 
-  defp date_to_datetime(date, time, timezone),
-    do: date |> DateTime.new!(time, timezone) |> DateTime.shift_zone!("Etc/UTC")
+  defp date_to_datetime(date, time, timezone), do: LocalTime.to_utc(date, time, timezone)
 end

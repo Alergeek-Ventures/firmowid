@@ -5,6 +5,7 @@ defmodule FirmowidWeb.Delegations.Utilities.SettlementForm do
 
   alias AshMoney.Types.Money, as: MoneyType
   alias AshPhoenix.Form.Auto
+  alias FirmowidWeb.Infrastructure.Utilities.LocalTime
   alias Phoenix.HTML.Form
 
   @doc "Builds the complete form for a delegation settlement."
@@ -213,9 +214,8 @@ defmodule FirmowidWeb.Delegations.Utilities.SettlementForm do
     with date when is_binary(date) <- params["#{prefix}_date"],
          time when is_binary(time) <- params["#{prefix}_time"],
          {:ok, date} <- Date.from_iso8601(date),
-         {:ok, time} <- Time.from_iso8601(time <> ":00"),
-         {:ok, datetime} <- DateTime.new(date, time, timezone) do
-      datetime = DateTime.shift_zone!(datetime, "Etc/UTC")
+         {:ok, time} <- Time.from_iso8601(time <> ":00") do
+      datetime = LocalTime.to_utc(date, time, timezone)
       Map.put(params, "#{prefix}_datetime", DateTime.to_iso8601(datetime))
     else
       _ -> params
