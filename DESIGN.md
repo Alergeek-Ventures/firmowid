@@ -227,6 +227,12 @@ to regenerate `assets/css/design-tokens.css`; `mix check` fails while that
 file is out of date. Fonts, spacing and animations live in
 `assets/css/theme.css`.
 
+The structure of this system (foundations first, then a catalog of primitives
+with their variants and states, rendered live) follows the
+[Intent design system](https://intentapp.dev/design-system) as a reference.
+Only the structure is borrowed: every value, colour and component here is
+Firmowid's own.
+
 **Key Characteristics:**
 - Colour has a fixed meaning: rust means costs, teal means sales. Neutral work uses black and graphite.
 - Warm, tactile components with pastel tonal fills (secondary buttons, pills, badges).
@@ -299,6 +305,10 @@ becomes a CSS token. Weight and line height describe how each role is set.
 - **Caps** (`text-caps-sm`, 11px, 500): uppercase micro-labels, table column headers and navigation items. Table headers and main navigation are set in uppercase.
 - `text-xl` (23px) and `text-3xl` (40px) are larger steps for headings and big figures.
 
+Line heights come from the Tailwind scale through the size shorthand
+(`text-sm/snug`, `text-base/tight`). Dense copy and labels use `snug` (1.375);
+the landing's 1.35 from the original Figma was folded into it.
+
 ### Named Rules
 **The Weight Carries Hierarchy Rule.** Emphasis comes from medium (500) and semibold (600) Lexend, not from colour or a second typeface. Bold (700) is for figures that must jump out, such as totals and big numbers.
 
@@ -314,9 +324,11 @@ Spacing follows a 4px rhythm. 8px and 16px gaps dominate, with 12px and 24px
 as secondary steps, and 32px or more only between major sections. Card
 interiors use 24px padding (16px on compact cards).
 
-Below 768px the main navigation links and account cluster hide, and a
-hamburger menu takes over. Employee-facing flows (time tracking, leave,
-delegations) must remain fully usable at phone widths.
+There is no mobile navigation yet: below 768px the main navigation links and
+the account cluster are hidden and nothing replaces them (the only menu button
+re-expands the collapsed Management bar). A mobile layout is planned work.
+Employee-facing flows (time tracking, leave, delegations) must become fully
+usable at phone widths; do not assume a mobile menu exists when designing them.
 
 ## Elevation & Depth
 
@@ -367,11 +379,44 @@ Gentle, consistent curvature:
 Borders are 1px `grey-200`. Dashed borders mark drop zones and empty
 placeholders.
 
+## Icons
+
+New code uses [Lucide](https://lucide.dev) through the `lucide_icons` package
+(`<Lucideicons.search />`). Heroicons (`<.icon name="hero-…" />`) are the older
+set and remain only in existing code until it is touched; do not add new ones,
+and do not mix both libraries inside one component. Icons are 20px next to big
+controls and 16px next to small ones; an icon that is the only content of a
+control needs an accessible label (`icon_button` requires one).
+
 ## Components
 
 Every primitive below is imported in all web views and shown with its variants
 on `/development/design-system` (development only). Reach for these before
 writing markup by hand; a hand-rolled copy of one of them is drift.
+
+### Where components live
+
+- **Web only:** `FirmowidWeb.DesignSystem.Components.*`
+  (`lib/firmowid_web/design_system/components/`). Modules start with
+  `use FirmowidUI, :html` (the web `:html` entrypoint imports them, which would
+  be circular) and are imported for all views in `FirmowidWeb.html_helpers/0`.
+- **Web and MCP:** when a feature is shown both in the browser and in an MCP
+  widget, its shared UI is the common denominator and lives in
+  `FirmowidUI.Components.*` (`lib/firmowid_ui/`), like `Button`, `Link` and
+  `Inputs`. `FirmowidUI` never depends on `FirmowidWeb` or `FirmowidMcp`; move a
+  web primitive there when its first MCP consumer appears.
+- **Feature-specific UI** stays in the feature (`components/` next to its
+  views) until a second feature needs the same thing.
+
+### Adding a primitive
+
+1. Extract only what repeats with the same intent (three or more hand-written
+   copies), and only the variants those copies actually use.
+2. Keep the class format Credo enforces: one literal first, then `*_styles`
+   helpers, conditionals and assigns. Accessible names and visible text come
+   from attributes the caller fills with `gettext`; primitives contain no copy.
+3. Add it to the catalog view (`FirmowidWeb.Development.Views.DesignSystem`) and
+   to the table below, then migrate the existing copies.
 
 | Need | Primitive | Notes |
 |---|---|---|
@@ -415,7 +460,7 @@ expression of the Two Sides of the Ledger Rule.
 - **Internal Padding:** 24px standard, 16px compact.
 
 ### Inputs / Fields
-- **Style:** 1px grey-200 border, grey-50 background, 8px radius, 16px text set tight, 6px by 12px padding. Placeholders and empty selects use pale grey text.
+- **Style:** one style for every field (`FirmowidUI.Components.Inputs.input/1`): 1px grey-200 border, white background (grey-50 for selects), 8px radius, 16px text set tight, 6px by 12px padding, about 34px tall. Placeholders and selects showing their prompt use pale grey text.
 - **Focus:** the border deepens to `grey-700` (see Focus).
 - **Error:** the border turns red and a brick error bubble with an exclamation icon appears.
 - **Checkbox / Radio:** 16px squares with a 3px radius and graphite stroke.
@@ -424,7 +469,7 @@ expression of the Two Sides of the Ledger Rule.
 ### Navigation
 - **Style:** a full-width black bar with off-white bold "Firmowid" wordmark on the left and centred uppercase 14px links with icons. Inactive links sit at 50% opacity, the active one at 90%, and hover reaches full opacity.
 - **Account cluster:** on the right, opening a black dropdown whose items highlight with graphite/50.
-- **Mobile:** below 768px the links collapse into a hamburger menu.
+- **Mobile:** not designed yet; below 768px the links and account cluster are hidden (see Layout).
 
 ### Modals
 A white surface with a 6px radius, generous 40px padding, overlay shadow plus
@@ -448,5 +493,5 @@ a faint ring, over a black/60 scrim. A low-contrast close "×" sits top right.
 - **Don't** introduce new zinc, gray or rose Tailwind palettes. Legacy fields still use them; new work uses the grey, red and green scales from this file's frontmatter.
 - **Don't** wrap lists, tables or forms in shadowed cards, and never nest cards. `shadow-lg` belongs to floating overlays.
 - **Don't** edit `assets/css/design-tokens.css` by hand.
-- **Don't** add a second typeface to the app UI. Josefin Sans and the handwriting face belong to the landing page.
+- **Don't** add a second typeface to the app UI. The handwriting face belongs to the landing page only.
 - **Don't** use solid red or green blocks for destructive or success buttons. Use the tint fills.

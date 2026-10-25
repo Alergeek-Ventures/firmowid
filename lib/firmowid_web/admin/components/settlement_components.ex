@@ -311,7 +311,7 @@ defmodule FirmowidWeb.Admin.Components.SettlementComponents do
           <div class="rounded-lg bg-grey-50 p-4">
             <div class="divide-y divide-grey-200">
               <div :for={row <- @worksheet.usage_rows} class="space-y-2 py-4 first:pt-0 last:pb-0">
-                <div class="flex items-start justify-between gap-4 text-sm leading-[1.35]">
+                <div class="flex items-start justify-between gap-4 text-sm/snug">
                   <div class="min-w-0">
                     <p class="text-grey-900">{row.label}</p>
                     <p class="text-grey-700">{counter_context(row.key)}</p>
@@ -329,7 +329,7 @@ defmodule FirmowidWeb.Admin.Components.SettlementComponents do
                   <div class={counter_bar_fill_styles(row)} style={"width: #{row.bar_width}%"}></div>
                 </div>
 
-                <div class="flex items-center justify-between gap-4 text-xs leading-[1.35] text-grey-700">
+                <div class="flex items-center justify-between gap-4 text-xs/snug text-grey-700">
                   <span>W cenie: {row.included_units}</span>
                   <span>{row.usage_text}</span>
                 </div>

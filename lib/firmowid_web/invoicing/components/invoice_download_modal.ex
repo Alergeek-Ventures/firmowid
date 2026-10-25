@@ -32,7 +32,7 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceDownloadModal do
         phx-click={show_modal(@modal_id)}
       >
         <Lucideicons.download />
-        <span class="hidden xl:inline">{@button_label}</span>
+        <span class="max-xl:sr-only">{@button_label}</span>
       </FirmowidUI.Components.Button.button>
 
       <.modal id={@modal_id} on_cancel={hide_modal(@modal_id)}>
