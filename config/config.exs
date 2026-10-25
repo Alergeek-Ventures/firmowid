@@ -112,6 +112,7 @@ config :firmowid, Oban,
   engine: Oban.Engines.Basic,
   shutdown_grace_period: to_timeout(second: 25),
   queues: [
+    assistant: 2,
     bank_data: 1,
     requisition_checks: 1,
     invoicing: 1,
@@ -142,6 +143,13 @@ config :firmowid, Oban,
 
 # Packmatic URL source - increase connect timeout for batch downloads
 config :firmowid, Packmatic.Source.URL, timeout: 30_000
+
+config :firmowid, :assistant_model, %{
+  provider: :openai,
+  id: "gpt-6-luna",
+  extra: %{wire: %{protocol: "openai_responses"}, temperature: false}
+}
+
 config :firmowid, :environment, config_env()
 config :firmowid, :gotenberg, base_url: "http://localhost:3000"
 
@@ -159,6 +167,7 @@ config :firmowid,
   ecto_repos: [Firmowid.Repo],
   generators: [timestamp_type: :utc_datetime],
   ash_domains: [
+    Firmowid.Ash.Assistant,
     Firmowid.Ash.Analysis,
     Firmowid.Ash.Blobs,
     Firmowid.Ash.Billing,

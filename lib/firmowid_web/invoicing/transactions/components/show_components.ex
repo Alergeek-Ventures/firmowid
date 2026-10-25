@@ -147,6 +147,7 @@ defmodule FirmowidWeb.Invoicing.Transactions.Components.ShowComponents do
 
             <MatchingComponents.assistant_button
               id="transaction-assistant"
+              prompt={MatchingComponents.transaction_prompt(@transaction)}
               class="w-full"
               accent={assistant_accent(@transaction)}
             >
@@ -226,6 +227,7 @@ defmodule FirmowidWeb.Invoicing.Transactions.Components.ShowComponents do
 
         <MatchingComponents.assistant_button
           id="transaction-assistant-empty"
+          prompt={MatchingComponents.transaction_prompt(@transaction)}
           class="mbs-2"
           accent={assistant_accent(@transaction)}
         >
@@ -248,6 +250,7 @@ defmodule FirmowidWeb.Invoicing.Transactions.Components.ShowComponents do
             </p>
             <MatchingComponents.assistant_button
               id="transaction-assistant"
+              prompt={MatchingComponents.transaction_prompt(@transaction)}
               accent={assistant_accent(@transaction)}
               class="w-full"
             >

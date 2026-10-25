@@ -393,7 +393,7 @@ msgid "All projects"
 msgstr ""
 
 #: lib/firmowid_web/invoicing/transactions/components/salary_components.ex:28
-#: lib/firmowid_web/invoicing/transactions/components/show_components.ex:180
+#: lib/firmowid_web/invoicing/transactions/components/show_components.ex:181
 #, elixir-autogen, elixir-format
 msgid "Amount"
 msgstr ""
@@ -458,12 +458,12 @@ msgstr ""
 msgid "Apply when eligible"
 msgstr ""
 
-#: lib/firmowid_web/invoicing/transactions/components/show_components.ex:254
+#: lib/firmowid_web/invoicing/transactions/components/show_components.ex:257
 #, elixir-autogen, elixir-format
 msgid "Ask"
 msgstr ""
 
-#: lib/firmowid_web/invoicing/transactions/components/show_components.ex:247
+#: lib/firmowid_web/invoicing/transactions/components/show_components.ex:249
 #, elixir-autogen, elixir-format
 msgid "Ask Firmowid for help with invoices"
 msgstr ""
@@ -801,7 +801,7 @@ msgid "Compare the Free, Entrepreneur and Company plans. Monthly or annual billi
 msgstr ""
 
 #: lib/firmowid_web/invoicing/components/entries_table.ex:442
-#: lib/firmowid_web/invoicing/components/matching_components.ex:135
+#: lib/firmowid_web/invoicing/components/matching_components.ex:149
 #, elixir-autogen, elixir-format
 msgid "Complete"
 msgstr ""
@@ -827,7 +827,7 @@ msgid "Complete the company name in the organization settings."
 msgstr ""
 
 #: lib/firmowid_web/invoicing/transactions/components/salary_components.ex:69
-#: lib/firmowid_web/invoicing/transactions/components/show_components.ex:202
+#: lib/firmowid_web/invoicing/transactions/components/show_components.ex:203
 #, elixir-autogen, elixir-format
 msgid "Confirm"
 msgstr ""
@@ -1073,7 +1073,7 @@ msgstr ""
 msgid "Database maintenance"
 msgstr ""
 
-#: lib/firmowid_web/invoicing/transactions/components/show_components.ex:179
+#: lib/firmowid_web/invoicing/transactions/components/show_components.ex:180
 #, elixir-autogen, elixir-format
 msgid "Date"
 msgstr ""
@@ -1782,7 +1782,7 @@ msgstr ""
 msgid "Income tax reserve"
 msgstr ""
 
-#: lib/firmowid_web/invoicing/components/matching_components.ex:59
+#: lib/firmowid_web/invoicing/components/matching_components.ex:73
 #, elixir-autogen, elixir-format
 msgid "Information"
 msgstr ""
@@ -2118,7 +2118,7 @@ msgstr ""
 msgid "Matched"
 msgstr ""
 
-#: lib/firmowid_web/invoicing/components/matching_components.ex:132
+#: lib/firmowid_web/invoicing/components/matching_components.ex:146
 #, elixir-autogen, elixir-format
 msgid "Matching"
 msgstr ""
@@ -2660,7 +2660,7 @@ msgstr ""
 msgid "Portrait of %{name}"
 msgstr ""
 
-#: lib/firmowid_web/invoicing/transactions/components/show_components.ex:178
+#: lib/firmowid_web/invoicing/transactions/components/show_components.ex:179
 #, elixir-autogen, elixir-format
 msgid "Potential invoices for this transaction"
 msgstr ""
@@ -2798,6 +2798,7 @@ msgstr ""
 msgid "Refresh"
 msgstr ""
 
+#: lib/firmowid_web/assistant/views/floating.ex:339
 #: lib/firmowid_web/landing/components/cookie_consent.ex:57
 #, elixir-autogen, elixir-format
 msgid "Reject"
@@ -3232,6 +3233,7 @@ msgstr ""
 msgid "Team and working time"
 msgstr ""
 
+#: lib/firmowid_web/assistant/views/floating.ex:321
 #: lib/firmowid_web/landing/views/privacy_policy.ex:94
 #, elixir-autogen, elixir-format
 msgid "Technical data"
@@ -3312,11 +3314,6 @@ msgstr ""
 #: lib/firmowid_web/payroll/components/monthly_payout.ex:151
 #, elixir-autogen, elixir-format
 msgid "The annual request not to withhold advances is recorded but not calculated."
-msgstr ""
-
-#: lib/firmowid_web/invoicing/components/matching_components.ex:20
-#, elixir-autogen, elixir-format
-msgid "The assistant is temporarily unavailable"
 msgstr ""
 
 #: lib/firmowid_web/landing/components/sections.ex:1096
@@ -4899,4 +4896,309 @@ msgstr ""
 #: lib/firmowid_web/analysis/components/category_review.ex:194
 #, elixir-autogen, elixir-format
 msgid "Updating suggestions with your choices…"
+msgstr ""
+
+#: lib/firmowid_web/assistant/utilities/presentation.ex:213
+#, elixir-autogen, elixir-format
+msgid "%{count} result"
+msgid_plural "%{count} results"
+msgstr[0] ""
+msgstr[1] ""
+
+#: lib/firmowid_web/assistant/views/floating.ex:120
+#, elixir-autogen, elixir-format
+msgid "%{count} step"
+msgid_plural "%{count} steps"
+msgstr[0] ""
+msgstr[1] ""
+
+#: lib/firmowid_web/assistant/views/floating.ex:473
+#, elixir-autogen, elixir-format
+msgid "A plan is ready for your decision."
+msgstr ""
+
+#: lib/firmowid_web/assistant/views/floating.ex:196
+#, elixir-autogen, elixir-format
+msgid "Ask about a transaction or invoice…"
+msgstr ""
+
+#: lib/firmowid_web/assistant/views/floating.ex:468
+#, elixir-autogen, elixir-format
+msgid "Assistant"
+msgstr ""
+
+#: lib/firmowid_web/assistant/views/floating.ex:475
+#, elixir-autogen, elixir-format
+msgid "Assistant is ready."
+msgstr ""
+
+#: lib/firmowid_web/assistant/views/floating.ex:472
+#, elixir-autogen, elixir-format
+msgid "Assistant is working on your request."
+msgstr ""
+
+#: lib/firmowid_web/assistant/views/floating.ex:466
+#, elixir-autogen, elixir-format
+msgid "Assistant is working…"
+msgstr ""
+
+#: lib/firmowid_web/assistant/utilities/presentation.ex:179
+#: lib/firmowid_web/assistant/utilities/presentation.ex:185
+#, elixir-autogen, elixir-format
+msgid "Bank transaction"
+msgstr ""
+
+#: lib/firmowid_web/assistant/views/floating.ex:462
+#, elixir-autogen, elixir-format
+msgid "Check already matched payments"
+msgstr ""
+
+#: lib/firmowid_web/assistant/views/floating.ex:480
+#, elixir-autogen, elixir-format
+msgid "Check the result"
+msgstr ""
+
+#: lib/firmowid_web/assistant/views/floating.ex:65
+#, elixir-autogen, elixir-format
+msgid "Close assistant"
+msgstr ""
+
+#: lib/firmowid_web/assistant/views/floating.ex:476
+#, elixir-autogen, elixir-format
+msgid "Completed"
+msgstr ""
+
+#: lib/firmowid_web/assistant/views/floating.ex:187
+#, elixir-autogen, elixir-format
+msgid "Confirm or reject the plan before sending another message."
+msgstr ""
+
+#: lib/firmowid_web/assistant/views/floating.ex:349
+#, elixir-autogen, elixir-format
+msgid "Confirm plan"
+msgstr ""
+
+#: lib/firmowid_web/assistant/views/floating.ex:348
+#, elixir-autogen, elixir-format
+msgid "Confirming…"
+msgstr ""
+
+#: lib/firmowid_web/assistant/utilities/presentation.ex:228
+#: lib/firmowid_web/assistant/utilities/presentation.ex:229
+#, elixir-autogen, elixir-format
+msgid "Connect invoice payments"
+msgstr ""
+
+#: lib/firmowid_web/assistant/views/floating.ex:74
+#, elixir-autogen, elixir-format
+msgid "Conversation"
+msgstr ""
+
+#: lib/firmowid_web/assistant/utilities/presentation.ex:167
+#: lib/firmowid_web/assistant/utilities/presentation.ex:173
+#, elixir-autogen, elixir-format
+msgid "Cost invoice"
+msgstr ""
+
+#: lib/firmowid_web/assistant/utilities/presentation.ex:230
+#: lib/firmowid_web/assistant/utilities/presentation.ex:231
+#, elixir-autogen, elixir-format
+msgid "Disconnect invoice payments"
+msgstr ""
+
+#: lib/firmowid_web/assistant/utilities/presentation.ex:155
+#, elixir-autogen, elixir-format
+msgid "Draft invoice"
+msgstr ""
+
+#: lib/firmowid_web/assistant/views/floating.ex:213
+#, elixir-autogen, elixir-format
+msgid "Enter to send · Shift+Enter for a new line"
+msgstr ""
+
+#: lib/firmowid_web/assistant/views/floating.ex:481
+#, elixir-autogen, elixir-format
+msgid "Error"
+msgstr ""
+
+#: lib/firmowid_web/assistant/utilities/presentation.ex:234
+#, elixir-autogen, elixir-format
+msgid "Find a matching salary"
+msgstr ""
+
+#: lib/firmowid_web/assistant/utilities/presentation.ex:226
+#: lib/firmowid_web/assistant/utilities/presentation.ex:227
+#, elixir-autogen, elixir-format
+msgid "Find invoice payments"
+msgstr ""
+
+#: lib/firmowid_web/assistant/utilities/presentation.ex:225
+#, elixir-autogen, elixir-format
+msgid "Find matching invoices"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/components/matching_components.ex:37
+#, elixir-autogen, elixir-format
+msgid "Find matching invoices for transaction %{title} (%{id})."
+msgstr ""
+
+#: lib/firmowid_web/invoicing/components/matching_components.ex:46
+#, elixir-autogen, elixir-format
+msgid "Find payments for invoice %{number} (%{id})."
+msgstr ""
+
+#: lib/firmowid_web/assistant/views/floating.ex:86
+#, elixir-autogen, elixir-format
+msgid "Find payments, check matches and prepare changes. You decide what gets saved."
+msgstr ""
+
+#: lib/firmowid_web/assistant/views/floating.ex:460
+#, elixir-autogen, elixir-format
+msgid "Find transactions without an invoice"
+msgstr ""
+
+#: lib/firmowid_web/assistant/views/floating.ex:42
+#: lib/firmowid_web/assistant/views/floating.ex:55
+#, elixir-autogen, elixir-format
+msgid "Firmowid assistant"
+msgstr ""
+
+#: lib/firmowid_web/assistant/views/floating.ex:83
+#, elixir-autogen, elixir-format
+msgid "Let's put your transactions in order"
+msgstr ""
+
+#: lib/firmowid_web/assistant/views/floating.ex:197
+#, elixir-autogen, elixir-format
+msgid "Message to the assistant"
+msgstr ""
+
+#: lib/firmowid_web/assistant/views/floating.ex:179
+#, elixir-autogen, elixir-format
+msgid "New messages"
+msgstr ""
+
+#: lib/firmowid_web/assistant/views/floating.ex:479
+#, elixir-autogen, elixir-format
+msgid "Not performed"
+msgstr ""
+
+#: lib/firmowid_web/assistant/views/floating.ex:329
+#, elixir-autogen, elixir-format
+msgid "Only the changes listed above will be applied."
+msgstr ""
+
+#: lib/firmowid_web/assistant/views/floating.ex:287
+#, elixir-autogen, elixir-format
+msgid "Proposed changes"
+msgstr ""
+
+#: lib/firmowid_web/assistant/views/floating.ex:338
+#, elixir-autogen, elixir-format
+msgid "Rejecting…"
+msgstr ""
+
+#: lib/firmowid_web/assistant/utilities/presentation.ex:232
+#, elixir-autogen, elixir-format
+msgid "Restore a skipped transaction"
+msgstr ""
+
+#: lib/firmowid_web/assistant/views/floating.ex:467
+#, elixir-autogen, elixir-format
+msgid "Review changes"
+msgstr ""
+
+#: lib/firmowid_web/assistant/views/floating.ex:291
+#, elixir-autogen, elixir-format
+msgid "Review the changes before confirming"
+msgstr ""
+
+#: lib/firmowid_web/assistant/utilities/presentation.ex:161
+#, elixir-autogen, elixir-format
+msgid "Sales invoice"
+msgstr ""
+
+#: lib/firmowid_web/assistant/utilities/presentation.ex:224
+#, elixir-autogen, elixir-format
+msgid "Search cost invoices"
+msgstr ""
+
+#: lib/firmowid_web/assistant/utilities/presentation.ex:233
+#, elixir-autogen, elixir-format
+msgid "Search monthly salaries"
+msgstr ""
+
+#: lib/firmowid_web/assistant/utilities/presentation.ex:223
+#, elixir-autogen, elixir-format
+msgid "Search sales invoices"
+msgstr ""
+
+#: lib/firmowid_web/assistant/utilities/presentation.ex:222
+#, elixir-autogen, elixir-format
+msgid "Search transactions"
+msgstr ""
+
+#: lib/firmowid_web/assistant/views/floating.ex:207
+#, elixir-autogen, elixir-format
+msgid "Send message"
+msgstr ""
+
+#: lib/firmowid_web/assistant/views/floating.ex:461
+#, elixir-autogen, elixir-format
+msgid "Show skipped transactions"
+msgstr ""
+
+#: lib/firmowid_web/assistant/views/floating.ex:487
+#, elixir-autogen, elixir-format
+msgid "Some changes may already have been saved. Ask me to check the current state before proposing a new plan."
+msgstr ""
+
+#: lib/firmowid_web/assistant/views/floating.ex:326
+#, elixir-autogen, elixir-format
+msgid "Some records could not be read. Reject this plan and ask for a new one."
+msgstr ""
+
+#: lib/firmowid_web/assistant/views/floating.ex:446
+#, elixir-autogen, elixir-format
+msgid "The conversation changed. Review its current state before continuing."
+msgstr ""
+
+#: lib/firmowid_web/assistant/views/floating.ex:163
+#, elixir-autogen, elixir-format
+msgid "The response was interrupted"
+msgstr ""
+
+#: lib/firmowid_web/assistant/views/floating.ex:474
+#, elixir-autogen, elixir-format
+msgid "The response was interrupted."
+msgstr ""
+
+#: lib/firmowid_web/assistant/views/floating.ex:317
+#, elixir-autogen, elixir-format
+msgid "This record is no longer available."
+msgstr ""
+
+#: lib/firmowid_web/assistant/utilities/presentation.ex:235
+#, elixir-autogen, elixir-format
+msgid "Unknown operation"
+msgstr ""
+
+#: lib/firmowid_web/assistant/views/floating.ex:478
+#, elixir-autogen, elixir-format
+msgid "Waiting"
+msgstr ""
+
+#: lib/firmowid_web/assistant/views/floating.ex:141
+#, elixir-autogen, elixir-format
+msgid "Working on your request"
+msgstr ""
+
+#: lib/firmowid_web/assistant/views/floating.ex:411
+#, elixir-autogen, elixir-format
+msgid "Write a message first."
+msgstr ""
+
+#: lib/firmowid_web/assistant/views/floating.ex:483
+#, elixir-autogen, elixir-format
+msgid "Your access changed. Refresh the page before continuing."
 msgstr ""
