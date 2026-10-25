@@ -8,31 +8,45 @@ defmodule FirmowidWeb.Invoicing.Components.MatchingComponents do
   attr :id, :string, required: true
   attr :accent, :string, required: true
   attr :class, :any, default: nil
+  attr :prompt, :string, default: nil
   slot :inner_block, required: true
 
-  @doc "Explains why the assistant button is disabled, on hover and keyboard focus."
+  @doc "Opens the global assistant without leaving the current invoice or transaction."
   @spec assistant_button(map()) :: Rendered.t()
   def assistant_button(assigns) do
     ~H"""
-    <span
+    <FirmowidUI.Components.Button.button
       id={@id}
-      phx-hook="Tippy"
-      data-tippy-content={gettext("The assistant is temporarily unavailable")}
-      tabindex="0"
-      class={["inline-flex rounded-md focus-visible:outline-2 focus-visible:outline-offset-2", @class]}
+      type="button"
+      phx-click={
+        Phoenix.LiveView.JS.push("open", target: "#firmowid-assistant", value: %{prompt: @prompt})
+      }
+      class={@class}
+      variant="primary"
+      accent={@accent}
+      size="small"
     >
-      <FirmowidUI.Components.Button.button
-        type="button"
-        disabled
-        class="pointer-events-none w-full"
-        variant="primary"
-        accent={@accent}
-        size="small"
-      >
-        {render_slot(@inner_block)}
-      </FirmowidUI.Components.Button.button>
-    </span>
+      {render_slot(@inner_block)}
+    </FirmowidUI.Components.Button.button>
     """
+  end
+
+  @doc "Prefills a read-only request with the exact transaction behind the current page."
+  @spec transaction_prompt(map()) :: String.t()
+  def transaction_prompt(transaction) do
+    gettext("Find matching invoices for transaction %{title} (%{id}).",
+      title: transaction.remittance_information_unstructured,
+      id: transaction.id
+    )
+  end
+
+  @doc "Prefills a payment search for the exact sales or cost invoice behind the current page."
+  @spec invoice_prompt(map()) :: String.t()
+  def invoice_prompt(invoice) do
+    gettext("Find payments for invoice %{number} (%{id}).",
+      number: Map.get(invoice, :invoice_number) || Map.get(invoice, :invoice_identifier),
+      id: invoice.id
+    )
   end
 
   attr :title, :string, required: true

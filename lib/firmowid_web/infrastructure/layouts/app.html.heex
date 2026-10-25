@@ -324,3 +324,14 @@
     {@inner_content}
   </div>
 </main>
+
+<%= if match?(%{member: %{role: role}} when role != :employee, @current_user) do %>
+  {Phoenix.Component.live_render(
+    assigns[:socket] || assigns[:conn],
+    FirmowidWeb.Assistant.Views.Floating,
+    id: "floating-assistant-#{@current_user.member.organization_id}",
+    sticky: true,
+    container: {:div, []},
+    session: %{"organization_id" => @current_user.member.organization_id}
+  )}
+<% end %>

@@ -19,7 +19,7 @@ defmodule FirmowidWeb.Infrastructure.Hooks.SentryContext do
   @doc "Attaches diagnostic hooks without intercepting callbacks or handling their errors."
   @spec on_mount(:default, map() | :not_mounted_at_router, map(), Socket.t()) ::
           {:cont, Socket.t()}
-  def on_mount(:default, _params, _session, socket) do
+  def on_mount(:default, params, _session, socket) do
     put_metadata(socket, "mount")
 
     socket =
@@ -29,16 +29,23 @@ defmodule FirmowidWeb.Infrastructure.Hooks.SentryContext do
         put_metadata(socket, "handle_event")
         {:cont, socket}
       end)
-      |> LiveView.attach_hook(__MODULE__, :handle_params, fn _params, _uri, socket ->
-        put_metadata(socket, "handle_params")
-        {:cont, socket}
-      end)
+      |> attach_params_hook(params)
       |> LiveView.attach_hook(__MODULE__, :handle_async, fn _name, _result, socket ->
         put_metadata(socket, "handle_async")
         {:cont, socket}
       end)
 
     {:cont, socket}
+  end
+
+  # A child's static socket inherits the parent's router, but has no URL callbacks.
+  defp attach_params_hook(socket, :not_mounted_at_router), do: socket
+
+  defp attach_params_hook(socket, _params) do
+    LiveView.attach_hook(socket, __MODULE__, :handle_params, fn _params, _uri, socket ->
+      put_metadata(socket, "handle_params")
+      {:cont, socket}
+    end)
   end
 
   defp handle_info(message, socket) do

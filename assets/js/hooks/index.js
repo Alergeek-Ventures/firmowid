@@ -21,9 +21,11 @@ import { LandingPricing } from "./landing_pricing";
 import { NumberPopIn } from "./number_pop_in";
 import { ImageLoadReveal } from "./image_load_reveal";
 import { KsefSkippedInvoicesBanner } from "./ksef_skipped_invoices_banner";
+import { AssistantChat } from "./assistant";
 
 export const Hooks = {
   ...UIHooks,
+  AssistantChat,
   Confetti,
   ScrollStyle,
   FileUploadDragNDrop,

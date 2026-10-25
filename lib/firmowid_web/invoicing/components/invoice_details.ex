@@ -458,6 +458,7 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceDetails do
 
             <MatchingComponents.assistant_button
               id={"matched-invoice-assistant-#{transaction.id}"}
+              prompt={MatchingComponents.transaction_prompt(transaction)}
               class="w-full"
               accent={if(@is_cost_invoice, do: "rust", else: "teal")}
             >
@@ -523,6 +524,7 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceDetails do
 
         <MatchingComponents.assistant_button
           id="invoice-assistant"
+          prompt={MatchingComponents.invoice_prompt(@invoice)}
           class="w-full"
           accent="teal"
         >
@@ -576,6 +578,7 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceDetails do
 
           <MatchingComponents.assistant_button
             id="invoice-assistant-empty"
+            prompt={MatchingComponents.invoice_prompt(@invoice)}
             class="mbs-2"
             accent={if(@is_cost_invoice, do: "rust", else: "teal")}
           >
