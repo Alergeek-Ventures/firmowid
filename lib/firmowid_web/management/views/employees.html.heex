@@ -42,7 +42,7 @@
     </div>
 
     <div class="flex gap-4">
-      <.segmented_control label="Zakres listy">
+      <.segmented_control label={gettext("List scope")}>
         <:option
           patch={Navigation.employees_path(:index, @params)}
           active={@live_action == :index}
@@ -121,6 +121,7 @@
                 data-confirm-leave
                 data-unsaved={true}
                 type="button"
+                aria-label={gettext("Cancel editing rates")}
               >
                 <.icon name="hero-arrow-uturn-left-micro" class="size-4" />
               </.button>
@@ -257,6 +258,11 @@
                 kind="unstyled"
                 navigate={Navigation.employee_path(employee.user.id, %{miesiac: @selected_date})}
                 class="flex items-center"
+                aria-label={
+                  gettext("Show details of employee %{name}",
+                    name: employee.user.member.name || employee.user.email
+                  )
+                }
               >
                 <Lucideicons.chevron_right class="size-4 shrink-0 text-grey-700" />
               </.link>
@@ -277,6 +283,7 @@
             disabled={is_nil(employee.user.member.bank_account_number)}
             phx-click="copy-bank-number"
             phx-value-number={employee.user.member.bank_account_number}
+            aria-label={gettext("Copy bank account number")}
             class="inline-flex items-center justify-center text-grey-700 transition hover:text-grey-800 active:scale-95 active:text-grey-900 disabled:text-grey-400"
           >
             <.icon name="hero-credit-card-micro" class="size-6 shrink-0" />

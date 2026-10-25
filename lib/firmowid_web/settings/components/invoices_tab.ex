@@ -106,7 +106,7 @@ defmodule FirmowidWeb.Settings.Components.InvoicesTab do
             <span class="min-w-0 truncate">{email}</span>
             <.icon_button
               :if={@admin?}
-              label={"Usuń #{email}"}
+              label={gettext("Remove %{email}", email: email)}
               phx-click="remove_allowed_email"
               phx-value-email={email}
             >

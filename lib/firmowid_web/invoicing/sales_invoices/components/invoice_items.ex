@@ -566,6 +566,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
             phx-click={JS.dispatch("change")}
             disabled={@single_item?}
             variant="unstyled"
+            aria-label={gettext("Remove item")}
             class="ml-1 cursor-pointer text-grey-300 transition-colors duration-200 ease-out hover:text-grey-700 disabled:cursor-default disabled:text-transparent"
           >
             <Lucideicons.x class="size-4" />

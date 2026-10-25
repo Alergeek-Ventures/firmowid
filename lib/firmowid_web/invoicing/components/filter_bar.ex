@@ -87,7 +87,7 @@ defmodule FirmowidWeb.Invoicing.Components.FilterBar do
     ~H"""
     <div class="flex items-center gap-3">
       <span class="text-sm font-normal text-grey-700/70">Filtry:</span>
-      <.segmented_control label="Filtry">
+      <.segmented_control label={gettext("Filters")}>
         <:option
           navigate={subfilter_url(@params, :oplacone)}
           active={@params.subfilter == :oplacone}
@@ -109,7 +109,7 @@ defmodule FirmowidWeb.Invoicing.Components.FilterBar do
     ~H"""
     <div class="flex items-center gap-3">
       <span class="text-sm font-normal text-grey-700/70">Filtry:</span>
-      <.segmented_control label="Filtry">
+      <.segmented_control label={gettext("Filters")}>
         <:option
           navigate={subfilter_url(@params, :dopasowane)}
           active={@params.subfilter == :dopasowane}

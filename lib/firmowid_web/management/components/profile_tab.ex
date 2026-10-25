@@ -82,6 +82,7 @@ defmodule FirmowidWeb.Management.Components.ProfileTab do
                 form="contract-form"
                 toggle_event="toggle_contract_editor"
                 target={@myself}
+                edit_label={gettext("Edit employment details")}
               />
             </:actions>
           </.card_header>
@@ -165,6 +166,7 @@ defmodule FirmowidWeb.Management.Components.ProfileTab do
                   form="tax-profile-form"
                   toggle_event="toggle_tax_profile_editor"
                   target={@myself}
+                  edit_label={gettext("Edit net forecast assumptions")}
                 />
               </:actions>
             </.card_header>

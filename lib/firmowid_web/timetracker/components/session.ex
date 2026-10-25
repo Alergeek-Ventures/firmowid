@@ -187,6 +187,7 @@ defmodule FirmowidWeb.Timetracker.Components.Session do
                     phx-value-id={session[:id].value}
                     data-confirm="Skrócić sesję nocną do jednego dnia? Czas po północy zostanie usunięty, bez możliwości przywrócenia."
                     variant="unstyled"
+                    aria-label={gettext("Shorten session to one day")}
                   >
                     <Lucideicons.trash_2 class="text-grey-500 transition-all hover:text-grey-700" />
                   </.button>
@@ -216,6 +217,7 @@ defmodule FirmowidWeb.Timetracker.Components.Session do
                   phx-click="delete_session"
                   phx-value-id={session[:id].value}
                   variant="unstyled"
+                  aria-label={gettext("Delete session")}
                 >
                   <Lucideicons.trash_2 class="text-grey-500 transition-all hover:text-grey-700" />
                 </.button>

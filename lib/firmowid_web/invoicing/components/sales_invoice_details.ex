@@ -334,6 +334,7 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
                   accent="teal"
                   size="small"
                   phx-click="create_share_link"
+                  aria-label={gettext("Copy invoice link")}
                 >
                   <Lucideicons.share_2 />
                 </.button>

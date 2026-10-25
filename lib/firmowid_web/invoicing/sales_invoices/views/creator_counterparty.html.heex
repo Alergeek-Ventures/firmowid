@@ -80,6 +80,10 @@
                 @params[:typ].value == QueryCodec.encode_counterparty_type(:company) &&
                   "bg-grey-200"
               ]}
+              aria-label={gettext("Show companies only")}
+              aria-pressed={
+                to_string(@params[:typ].value == QueryCodec.encode_counterparty_type(:company))
+              }
             >
               <Lucideicons.building_2 />
             </.button>
@@ -99,6 +103,10 @@
                 @params[:typ].value == QueryCodec.encode_counterparty_type(:individual) &&
                   "bg-grey-200"
               ]}
+              aria-label={gettext("Show individuals only")}
+              aria-pressed={
+                to_string(@params[:typ].value == QueryCodec.encode_counterparty_type(:individual))
+              }
             >
               <Lucideicons.user />
             </.button>
@@ -117,6 +125,7 @@
             }
             size="small"
             variant="ghost"
+            aria-label={gettext("Change sort order")}
           >
             <%= if @params[:kolejnosc].value == "malejaco" do %>
               <Lucideicons.arrow_down_a_z />
@@ -192,7 +201,7 @@
       </div>
 
       <div :if={@last_counterparties != [] or @last_invoices != []} class="w-full max-w-md">
-        <.tabs label="Wybierz kontrahenta" class="mb-4">
+        <.tabs label={gettext("Choose counterparty")} class="mb-4">
           <:tab
             :for={tab_option <- counterparty_tabs(assigns)}
             patch={tab_option.patch}
@@ -279,6 +288,9 @@
                       kind="button"
                       variant="outline"
                       size="small"
+                      aria-label={
+                        gettext("View invoice %{number}", number: invoice.invoice_number)
+                      }
                     >
                       <Lucideicons.eye />
                     </.link>

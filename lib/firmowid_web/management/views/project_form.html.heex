@@ -237,6 +237,11 @@
               class="ml-auto"
               phx-click="remove_user"
               phx-value-user_id={entry.user.id}
+              aria-label={
+                gettext("Remove %{name} from project",
+                  name: entry.user.member.name || entry.user.email
+                )
+              }
             >
               <Lucideicons.trash_2 />
             </.button>

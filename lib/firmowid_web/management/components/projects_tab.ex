@@ -118,6 +118,7 @@ defmodule FirmowidWeb.Management.Components.ProjectsTab do
               form="payout-form"
               toggle_event="toggle_payout_editor"
               target={@myself}
+              edit_label={gettext("Edit transfer details")}
             />
           </:actions>
         </.card_header>

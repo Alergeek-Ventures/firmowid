@@ -88,6 +88,8 @@
                 phx-click="toggle_extended_form"
                 data-active={@is_form_extended}
                 disabled={is_hours_record_submitted}
+                aria-label={gettext("Enter time manually")}
+                aria-pressed={to_string(@is_form_extended)}
               >
                 <Lucideicons.square_pen />
               </.button>

@@ -240,6 +240,7 @@ defmodule FirmowidWeb.Management.Views.Counterparty do
                     variant="icon"
                     phx-click="copy_identifier"
                     phx-value-value={CounterpartyHelpers.identifier(@counterparty)}
+                    aria-label={gettext("Copy identifier")}
                     class="h-6 w-7 duration-300"
                   >
                     <.icon name="hero-document-duplicate" class="size-5" />
@@ -351,7 +352,7 @@ defmodule FirmowidWeb.Management.Views.Counterparty do
       <div class="mb-4 flex items-center justify-between gap-4">
         <h3 class="text-lg font-medium text-grey-700">Faktury</h3>
 
-        <.segmented_control label="Zakres listy">
+        <.segmented_control label={gettext("List scope")}>
           <:option
             :for={
               {value, label} <- [{:all, "Wszystkie"}, {:unpaid, "Nieopłacone"}, {:paid, "Opłacone"}]
@@ -410,6 +411,7 @@ defmodule FirmowidWeb.Management.Views.Counterparty do
                   )
                 }
                 class="text-grey-500 hover:text-grey-700"
+                aria-label={gettext("Open invoice %{number}", number: invoice.invoice_number)}
               >
                 <Lucideicons.chevron_right class="size-4" />
               </.link>

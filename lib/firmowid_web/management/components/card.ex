@@ -8,6 +8,7 @@ defmodule FirmowidWeb.Management.Components.Card do
   attr :form, :string, default: nil
   attr :toggle_event, :string, required: true
   attr :target, :any, default: nil
+  attr :edit_label, :string, required: true
 
   def card_edit_actions(assigns) do
     ~H"""
@@ -28,6 +29,7 @@ defmodule FirmowidWeb.Management.Components.Card do
         size="small"
         phx-click={@toggle_event}
         phx-target={@target}
+        aria-label={gettext("Cancel editing")}
       >
         <.icon name="hero-arrow-uturn-left-micro" class="size-4" />
       </.button>
@@ -38,6 +40,7 @@ defmodule FirmowidWeb.Management.Components.Card do
         size="small"
         phx-click={@toggle_event}
         phx-target={@target}
+        aria-label={@edit_label}
       >
         <.icon name="hero-pencil-square" class="size-5" />
       </.button>

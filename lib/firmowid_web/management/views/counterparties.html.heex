@@ -28,7 +28,7 @@
 
     <div class="flex flex-wrap items-center justify-between gap-4">
       <div class="flex flex-wrap items-center gap-6">
-        <.segmented_control label="Zakres listy">
+        <.segmented_control label={gettext("List scope")}>
           <:option
             patch={Navigation.counterparties_path(:index, @params)}
             active={@live_action == :index}
@@ -168,6 +168,7 @@
                 })
               }
               class="text-grey-500 hover:text-grey-700"
+              aria-label={gettext("Open counterparty %{name}", name: counterparty.display_label)}
             >
               <Lucideicons.chevron_right class="size-4" />
             </.link>
@@ -252,6 +253,9 @@
                   })
                 }
                 class="text-grey-500 hover:text-grey-700"
+                aria-label={
+                  gettext("Open counterparty %{name}", name: counterparty.display_label)
+                }
               >
                 <Lucideicons.chevron_right class="size-4" />
               </.link>
