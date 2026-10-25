@@ -11,12 +11,9 @@
         </p>
         <p class="flex flex-row items-center gap-4 text-2xl/tight font-medium">
           {@project.name}
-          <span
-            :if={@project.archived_at}
-            class="inline-flex items-center gap-2 rounded-full bg-grey-200 px-4 py-1 text-sm/snug font-normal text-grey-700"
-          >
-            <Lucideicons.archive class="size-4" /> zarchiwizowany
-          </span>
+          <.badge :if={@project.archived_at}>
+            <Lucideicons.archive /> zarchiwizowany
+          </.badge>
         </p>
       </div>
 
@@ -41,37 +38,31 @@
       </div>
     </div>
 
-    <div
-      :if={@project.archived_at}
-      class="flex flex-row items-center gap-4 rounded-lg bg-grey-200 p-4 text-grey-700 shadow-card"
-    >
-      <Lucideicons.info class="size-4" />
-
-      <p class="text-sm/snug text-balance">
-        Projekt został zarchiwizowany {Firmowid.Cldr.Date.to_string!(@project.archived_at,
-          format: :long
-        )}. Dane są dostępne tylko do odczytu. Aby edytować projekt lub rejestrować czas, przywróć go do aktywnych.
-      </p>
-
-      <.button
-        :if={@current_user.member.role == :admin}
-        variant="tertiary"
-        size="small"
-        type="button"
-        phx-click="unarchive_project"
-      >
-        Przywróć projekt
-      </.button>
-      <.button
-        :if={@can_delete_project}
-        variant="destructive"
-        size="small"
-        type="button"
-        phx-click={show_modal("delete_project_modal")}
-      >
-        Usuń projekt
-      </.button>
-    </div>
+    <.alert :if={@project.archived_at}>
+      Projekt został zarchiwizowany {Firmowid.Cldr.Date.to_string!(@project.archived_at,
+        format: :long
+      )}. Dane są dostępne tylko do odczytu. Aby edytować projekt lub rejestrować czas, przywróć go do aktywnych.
+      <:actions :if={@current_user.member.role == :admin or @can_delete_project}>
+        <.button
+          :if={@current_user.member.role == :admin}
+          variant="tertiary"
+          size="small"
+          type="button"
+          phx-click="unarchive_project"
+        >
+          Przywróć projekt
+        </.button>
+        <.button
+          :if={@can_delete_project}
+          variant="destructive"
+          size="small"
+          type="button"
+          phx-click={show_modal("delete_project_modal")}
+        >
+          Usuń projekt
+        </.button>
+      </:actions>
+    </.alert>
 
     <div class="flex flex-col gap-8">
       <div class="grid grid-cols-4 gap-4">
@@ -273,19 +264,19 @@
             </div>
           </div>
         <% else %>
-          <div class="flex flex-col items-center justify-center gap-4 py-8">
-            <p class="text-center text-sm text-grey-700">
-              Żaden pracownik nie jest przypisany do projektu. <br />Dodaj członków zespołu.
-            </p>
-            <.link
-              navigate={~p"/zarzadzanie/projekty/#{@project.id}/edycja"}
-              kind="button"
-              size="small"
-              variant="tertiary"
-            >
-              Dodaj pracowników
-            </.link>
-          </div>
+          <.empty_state title="Żaden pracownik nie jest przypisany do projektu.">
+            Dodaj członków zespołu.
+            <:action>
+              <.link
+                navigate={~p"/zarzadzanie/projekty/#{@project.id}/edycja"}
+                kind="button"
+                size="small"
+                variant="tertiary"
+              >
+                Dodaj pracowników
+              </.link>
+            </:action>
+          </.empty_state>
         <% end %>
       </div>
     </div>

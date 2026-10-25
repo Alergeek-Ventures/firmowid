@@ -7,7 +7,6 @@ defmodule FirmowidWeb.Settings.Components.AccountTab do
 
   import FirmowidUI.Components.Button
   import FirmowidWeb.DesignSystem.Components.CoreComponents, except: [button: 1]
-  import FirmowidWeb.Settings.Components.EditButton
 
   alias FirmowidUI.Components.Inputs
   alias FirmowidWeb.Infrastructure.Utilities.TimeFormatter
@@ -75,41 +74,13 @@ defmodule FirmowidWeb.Settings.Components.AccountTab do
       <div class="flex min-h-8 items-center gap-1">
         <h2 class="text-base leading-none font-medium text-grey-900">{@title}</h2>
 
-        <span
-          :if={@action}
-          id={"settings-#{@action}-tooltip"}
-          phx-hook="Tippy"
-          data-tippy-content={@action_label || @title}
-          data-tippy-delay="100"
-          data-tippy-theme="small"
-        >
-          <.edit_button
-            type="button"
-            class="size-8!"
-            phx-click={@action}
-            aria-label={@action_label || @title}
-          />
-        </span>
+        <.icon_button :if={@action} label={@action_label || @title} phx-click={@action}>
+          <Lucideicons.square_pen />
+        </.icon_button>
       </div>
 
       {render_slot(@inner_block)}
     </section>
-    """
-  end
-
-  attr :label, :string, required: true
-  attr :value_class, :string, default: nil
-  slot :inner_block, required: true
-
-  defp detail_row(assigns) do
-    ~H"""
-    <Helpers.settings_display_field
-      label={@label}
-      class="justfy-center"
-      value_class={["break-words", @value_class]}
-    >
-      {render_slot(@inner_block)}
-    </Helpers.settings_display_field>
     """
   end
 
@@ -185,12 +156,9 @@ defmodule FirmowidWeb.Settings.Components.AccountTab do
             </Helpers.settings_field>
 
             <Helpers.settings_display_field>
-              <div class="flex items-start gap-4 rounded-lg bg-grey-50 p-4 text-sm text-grey-700">
-                <span class="shrink-0"><.icon name="hero-information-circle" class="size-5" /></span>
-                <p>
-                  Jeżeli wyrażasz zgodę na udostępnienie swojej daty urodzenia wybierz odpowiednią opcję z listy.
-                </p>
-              </div>
+              <.alert>
+                Jeżeli wyrażasz zgodę na udostępnienie swojej daty urodzenia wybierz odpowiednią opcję z listy.
+              </.alert>
             </Helpers.settings_display_field>
           </div>
 
@@ -211,11 +179,15 @@ defmodule FirmowidWeb.Settings.Components.AccountTab do
         </form>
       <% else %>
         <div class="space-y-2">
-          <.detail_row label="Imię">{first_name(@current_user.member.name)}</.detail_row>
-          <.detail_row label="Nazwisko">{last_name(@current_user.member.name)}</.detail_row>
-          <.detail_row label="Data urodzenia">
+          <.field_row label="Imię" layout="inline" class="wrap-break-word">
+            {first_name(@current_user.member.name)}
+          </.field_row>
+          <.field_row label="Nazwisko" layout="inline" class="wrap-break-word">
+            {last_name(@current_user.member.name)}
+          </.field_row>
+          <.field_row label="Data urodzenia" layout="inline" class="wrap-break-word">
             {format_birthday(@current_user.member.birthday)}
-          </.detail_row>
+          </.field_row>
         </div>
       <% end %>
     </.account_section>
@@ -364,8 +336,12 @@ defmodule FirmowidWeb.Settings.Components.AccountTab do
       </.form>
 
       <div :if={!@editing_credentials} class="space-y-2">
-        <.detail_row label="E-mail">{@current_user.email}</.detail_row>
-        <.detail_row label="Hasło">****************</.detail_row>
+        <.field_row label="E-mail" layout="inline" class="wrap-break-word">
+          {@current_user.email}
+        </.field_row>
+        <.field_row label="Hasło" layout="inline" class="wrap-break-word">
+          ****************
+        </.field_row>
       </div>
     </.account_section>
     """
@@ -378,7 +354,7 @@ defmodule FirmowidWeb.Settings.Components.AccountTab do
     ~H"""
     <.account_section title="Logowanie przez Google">
       <div class="flex flex-col gap-4">
-        <Helpers.settings_display_field label="Powiązane konto" class="w-full">
+        <.field_row label="Powiązane konto" layout="inline" class="w-full">
           <%= if @google_connected? do %>
             <div class="flex items-center gap-2">
               <span>{@current_user.email}</span>
@@ -389,7 +365,7 @@ defmodule FirmowidWeb.Settings.Components.AccountTab do
           <% else %>
             Brak
           <% end %>
-        </Helpers.settings_display_field>
+        </.field_row>
 
         <Helpers.settings_display_field>
           <div class="flex items-center gap-5">
@@ -445,7 +421,9 @@ defmodule FirmowidWeb.Settings.Components.AccountTab do
     ~H"""
     <.account_section title="Zamykanie konta">
       <div class="flex flex-col gap-4">
-        <.detail_row label="Nazwa konta">{@current_user.email}</.detail_row>
+        <.field_row label="Nazwa konta" layout="inline" class="wrap-break-word">
+          {@current_user.email}
+        </.field_row>
         <Helpers.settings_display_field>
           <.button
             class="max-w-[200px]"

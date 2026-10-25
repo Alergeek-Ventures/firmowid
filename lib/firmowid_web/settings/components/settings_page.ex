@@ -6,8 +6,6 @@ defmodule FirmowidWeb.Settings.Components.SettingsPage do
   use FirmowidWeb, :html
 
   import FirmowidUI.Components.Button
-  import FirmowidUI.Components.Link
-  import Phoenix.Component, except: [link: 1]
 
   alias FirmowidWeb.Settings.Utilities.Navigation
 
@@ -124,21 +122,11 @@ defmodule FirmowidWeb.Settings.Components.SettingsPage do
         </div>
       </div>
 
-      <nav
-        aria-label="Ustawienia"
-        class="flex flex-wrap gap-2 border-b border-grey-200"
-      >
-        <%= for tab <- @tabs do %>
-          <.link
-            kind="unstyled"
-            patch={tab.path}
-            aria-current={if active_tab?(tab.id, @current_tab), do: "page"}
-            class={tab_styles(active_tab?(tab.id, @current_tab))}
-          >
-            {tab.label}
-          </.link>
-        <% end %>
-      </nav>
+      <.tabs label="Ustawienia" class="flex-wrap">
+        <:tab :for={tab <- @tabs} patch={tab.path} active={active_tab?(tab.id, @current_tab)}>
+          {tab.label}
+        </:tab>
+      </.tabs>
 
       {render_slot(@inner_block)}
     </section>
@@ -146,14 +134,6 @@ defmodule FirmowidWeb.Settings.Components.SettingsPage do
   end
 
   defp active_tab?(tab_id, current_tab), do: tab_id == current_tab
-
-  defp tab_styles(true) do
-    "inline-flex min-h-11 items-center border-b-2 border-rust-700 px-3 text-sm font-medium leading-tight text-rust-700 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-rust-700"
-  end
-
-  defp tab_styles(false),
-    do:
-      "inline-flex min-h-11 items-center border-b-2 border-transparent px-3 text-sm font-medium leading-tight text-grey-700 transition hover:border-rust-200 hover:text-grey-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-rust-700"
 
   defp initial(email) do
     email

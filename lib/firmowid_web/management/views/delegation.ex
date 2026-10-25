@@ -274,9 +274,10 @@ defmodule FirmowidWeb.Management.Views.Delegation do
           </div>
 
           <%= if is_nil(@generated_advance_amount) do %>
-            <div class="mt-8 flex min-h-96 items-center justify-center rounded-md border border-grey-200 p-8 text-center shadow-sm">
-              <p class="text-base text-grey-700">Wygeneruj polecenie, aby móc je podpisać.</p>
-            </div>
+            <.empty_state
+              title="Wygeneruj polecenie, aby móc je podpisać."
+              class="mt-8 min-h-96 justify-center"
+            />
           <% else %>
             <div class="mt-8 min-h-96 rounded-md border border-grey-200 p-8 shadow-sm">
               <div class="flex items-center justify-between gap-4">
@@ -406,16 +407,14 @@ defmodule FirmowidWeb.Management.Views.Delegation do
         <Lucideicons.file_text class="size-5 shrink-0" />
         <span class="truncate">{@entry.client_name}</span>
       </span>
-      <.button
-        type="button"
-        variant="unstyled"
+      <.icon_button
+        label="Usuń podpisane polecenie"
         phx-click="cancel-upload"
         phx-value-ref={@entry.ref}
-        class="ml-3 flex size-8 shrink-0 items-center justify-center text-teal-500 transition hover:text-teal-700"
-        aria-label="Usuń podpisane polecenie"
+        class="ml-3"
       >
-        <Lucideicons.x class="size-5" />
-      </.button>
+        <Lucideicons.x />
+      </.icon_button>
     </div>
     <p :for={error <- upload_errors(@upload, @entry)} class="mt-2 text-sm text-brick-600">
       {upload_error(error)}

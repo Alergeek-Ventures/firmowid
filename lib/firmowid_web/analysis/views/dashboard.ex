@@ -498,40 +498,27 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
           />
         </div>
       </div>
-      <nav
-        id="analysis-modes"
-        aria-label={gettext("Analysis views")}
-        class="flex flex-wrap items-center gap-1"
-      >
-        <FirmowidUI.Components.Link.link
-          id="analysis-overview"
-          kind="unstyled"
+      <.tabs label={gettext("Analysis views")}>
+        <:tab
           patch={Navigation.view_path(view_for(@params, :dashboard), @tag_filters)}
-          aria-current={if @params.view == :dashboard, do: "page"}
-          class={tab_styles(@params.view == :dashboard)}
+          active={@params.view == :dashboard}
         >
           {pgettext("analysis view", "Dashboard")}
-        </FirmowidUI.Components.Link.link>
-        <FirmowidUI.Components.Link.link
-          id="analysis-matrix"
-          kind="unstyled"
+        </:tab>
+        <:tab
           patch={Navigation.view_path(view_for(@params, :matrix), @tag_filters)}
-          aria-current={if @params.view == :matrix, do: "page"}
-          class={tab_styles(@params.view == :matrix)}
+          active={@params.view == :matrix}
         >
           {gettext("Project matrix")}
-        </FirmowidUI.Components.Link.link>
-        <FirmowidUI.Components.Link.link
+        </:tab>
+        <:tab
           :if={can_tag?(assigns)}
-          id="analysis-tagging"
-          kind="unstyled"
           patch={Navigation.view_path(view_for(@params, :tagging), @tag_filters)}
-          aria-current={if @params.view == :tagging, do: "page"}
-          class={tab_styles(@params.view == :tagging)}
+          active={@params.view == :tagging}
         >
           {pgettext("analysis mode", "Tagging")}
-        </FirmowidUI.Components.Link.link>
-      </nav>
+        </:tab>
+      </.tabs>
       <div
         :if={@params.view != :tagging or @tag_filters != []}
         class="@container flex flex-wrap items-end gap-x-3 gap-y-2 @lg:gap-4"

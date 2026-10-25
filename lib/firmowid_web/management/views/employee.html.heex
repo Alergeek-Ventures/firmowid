@@ -5,41 +5,39 @@
   />
 
   <div class="col-start-2 flex items-end justify-between gap-4">
-    <div class="-mb-2 flex gap-6 px-6">
-      <.tab
+    <.tabs label="Sekcje pracownika" class="w-full px-6">
+      <:tab
         patch={~p"/zarzadzanie/pracownicy/#{@employee.id}"}
         active={@live_action == :projects}
       >
         Projekty i ewidencja
-      </.tab>
-
-      <.tab
+      </:tab>
+      <:tab
         patch={~p"/zarzadzanie/pracownicy/#{@employee.id}/profil"}
         active={@live_action == :profile}
       >
         Profil pracownika
-      </.tab>
-
-      <.tab
+      </:tab>
+      <:tab
         patch={~p"/zarzadzanie/pracownicy/#{@employee.id}/dokumenty"}
         active={@live_action == :documents}
       >
         Dokumenty
-      </.tab>
-      <.tab
+      </:tab>
+      <:tab
         patch={~p"/zarzadzanie/pracownicy/#{@employee.id}/urlopy"}
         active={@live_action == :leaves}
       >
         Urlopy
-      </.tab>
-      <.tab
+      </:tab>
+      <:tab
         :if={@employee.member.delegations != []}
         patch={~p"/zarzadzanie/pracownicy/#{@employee.id}/delegacje"}
         active={@live_action == :delegations}
       >
         Delegacje
-      </.tab>
-    </div>
+      </:tab>
+    </.tabs>
   </div>
 
   <.card class="row-start-2 w-full">
@@ -73,81 +71,68 @@
           </.link>
         </div>
       </div>
-      <.dropdown id="employee-dropdown" class="ml-auto">
-        <:trigger>
-          <span class="cursor-pointer rounded-full text-grey-700 transition-colors hover:bg-grey-100">
-            <.icon name="hero-ellipsis-vertical" />
-          </span>
-        </:trigger>
-        <div class="mt-2 flex flex-col rounded bg-grey-100 p-2 shadow-md">
-          <.button
-            disabled={@employee.member.archived_at}
-            type="button"
-            variant="ghost"
-            size="small"
-            phx-click="archive_employee"
-          >
-            <.icon name="hero-archive-box-mini" class="size-5" /> Archiwizuj
-          </.button>
-        </div>
-      </.dropdown>
+      <.menu id="employee-dropdown" label="Więcej akcji" class="ml-auto">
+        <.menu_item disabled={@employee.member.archived_at != nil} phx-click="archive_employee">
+          <.icon name="hero-archive-box-mini" class="size-5" /> Archiwizuj
+        </.menu_item>
+      </.menu>
     </div>
-    <div
-      :if={@employee.member.archived_at}
-      class="flex flex-col items-center gap-4 rounded-lg bg-grey-200 p-4 text-grey-700 shadow-card"
-    >
-      <p class="text-sm/snug text-balance">
-        Pracownik został zarchiwizowany {Firmowid.Cldr.Date.to_string!(
-          @employee.member.archived_at,
-          format: :long
-        )}. Nie ma dostępu do organizacji do czasu przywrócenia przez administratora.
-      </p>
-
-      <.button
-        type="button"
-        variant="tertiary"
-        size="small"
-        phx-click="unarchive_employee"
-      >
-        Przywróć pracownika
-      </.button>
-    </div>
-    <.user_card_info :if={@employee.member.phone} label="Numer telefonu">
+    <.alert :if={@employee.member.archived_at}>
+      Pracownik został zarchiwizowany {Firmowid.Cldr.Date.to_string!(
+        @employee.member.archived_at,
+        format: :long
+      )}. Nie ma dostępu do organizacji do czasu przywrócenia przez administratora.
+      <:actions>
+        <.button
+          type="button"
+          variant="tertiary"
+          size="small"
+          phx-click="unarchive_employee"
+        >
+          Przywróć pracownika
+        </.button>
+      </:actions>
+    </.alert>
+    <.field_row :if={@employee.member.phone} label="Numer telefonu">
       {@employee.member.phone}
-    </.user_card_info>
-    <.user_card_info label="Adres e-mail">
-      <span>{@employee.email}</span>
-      <.button
-        id="copy-email"
-        phx-hook="CopyToClipboard"
-        phx-click="copy-email"
-        phx-value-email={@employee.email}
-        type="button"
-        variant="icon"
-        class="h-6 w-7 duration-300"
-      >
-        <.icon name="hero-document-duplicate" class="size-5" />
-      </.button>
-    </.user_card_info>
-    <.user_card_info
+    </.field_row>
+    <.field_row label="Adres e-mail">
+      <div class="flex items-center gap-2">
+        <span>{@employee.email}</span>
+        <.button
+          id="copy-email"
+          phx-hook="CopyToClipboard"
+          phx-click="copy-email"
+          phx-value-email={@employee.email}
+          type="button"
+          variant="icon"
+          class="h-6 w-7 duration-300"
+        >
+          <.icon name="hero-document-duplicate" class="size-5" />
+        </.button>
+      </div>
+    </.field_row>
+    <.field_row
       :if={@employee.member.bank_account_number != nil}
       label="Numer konta bankowego"
     >
-      <span>{@employee.member.bank_account_number}</span>
-      <.button
-        id="copy-bank-account-number"
-        phx-hook="CopyToClipboard"
-        phx-click="copy-bank-account-number"
-        phx-value-number={@employee.member.bank_account_number}
-        type="button"
-        variant="icon"
-        class="h-6 w-7 duration-300"
-      >
-        <.icon name="hero-document-duplicate" class="size-5" />
-      </.button>
-    </.user_card_info>
+      <div class="flex items-center gap-2">
+        <span>{@employee.member.bank_account_number}</span>
+        <.button
+          id="copy-bank-account-number"
+          phx-hook="CopyToClipboard"
+          phx-click="copy-bank-account-number"
+          phx-value-number={@employee.member.bank_account_number}
+          type="button"
+          variant="icon"
+          class="h-6 w-7 duration-300"
+        >
+          <.icon name="hero-document-duplicate" class="size-5" />
+        </.button>
+      </div>
+    </.field_row>
 
-    <.user_card_info :if={not Enum.empty?(@employee.member.projects)} label="Projekty">
+    <.field_row :if={not Enum.empty?(@employee.member.projects)} label="Projekty">
       <div class="mt-2 flex max-w-sm flex-wrap gap-2 text-sm/tight">
         <.link
           :for={project <- @employee.member.projects}
@@ -158,7 +143,7 @@
           {project.name}
         </.link>
       </div>
-    </.user_card_info>
+    </.field_row>
 
     <span
       :if={@employee.member.shared_birthday != nil}

@@ -73,9 +73,11 @@ defmodule FirmowidWeb.Analysis.Components.ProjectMatrix do
               {metric_caption(@params.metric)}
             </p>
           </div>
-          <p :if={@empty?} id="analysis-project-matrix-empty" class="text-sm text-grey-700">
-            {gettext("No income or expenses in %{year}.", year: @params.year)}
-          </p>
+          <.empty_state
+            :if={@empty?}
+            id="analysis-project-matrix-empty"
+            title={gettext("No income or expenses in %{year}.", year: @params.year)}
+          />
           <p
             :if={not @empty? and not Enum.any?(@rows, &(&1.kind == :project))}
             id="analysis-project-matrix-no-projects"

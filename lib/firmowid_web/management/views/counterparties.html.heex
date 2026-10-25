@@ -2,19 +2,15 @@
   <div class="sticky top-10.5 z-10 flex flex-col gap-6 bg-grey-100 py-4">
     <div class="flex items-center justify-between gap-4">
       <form class="flex gap-4" phx-submit="search">
-        <div class="flex h-11 w-[360px] items-center gap-2 rounded-lg border border-grey-200 bg-grey-100 p-1 focus-within:ring-2">
-          <Lucideicons.search class="size-6 shrink-0 text-grey-500" />
-          <.input
-            type="text"
-            name="szukaj"
-            value={@search}
-            placeholder="Wyszukaj kontrahenta"
-            phx-change="search"
-            phx-debounce="300"
-            input_class="h-full bg-transparent border-none py-0 px-1 text-sm"
-            class="w-full border-transparent focus:border-none focus:ring-0 focus:outline-hidden"
-          />
-        </div>
+        <.search_field
+          name="szukaj"
+          value={@search}
+          placeholder="Wyszukaj kontrahenta"
+          size="big"
+          phx-change="search"
+          phx-debounce="300"
+          class="w-[360px]"
+        />
       </form>
 
       <.link
@@ -32,25 +28,20 @@
 
     <div class="flex flex-wrap items-center justify-between gap-4">
       <div class="flex flex-wrap items-center gap-6">
-        <div class="flex items-center gap-4">
-          <.link
-            :for={
-              {path, live_action, label} <- [
-                {Navigation.counterparties_path(:index, @params), :index, "Aktywni"},
-                {Navigation.counterparties_path(:archive, @params), :archive, "Zarchiwizowani"}
-              ]
-            }
-            patch={path}
-            kind="button"
-            variant="ghost"
-            size="small"
-            class={
-              if(@live_action == live_action, do: "bg-grey-700 text-white hover:text-grey-900")
-            }
+        <.segmented_control label="Zakres listy">
+          <:option
+            patch={Navigation.counterparties_path(:index, @params)}
+            active={@live_action == :index}
           >
-            {label}
-          </.link>
-        </div>
+            Aktywni
+          </:option>
+          <:option
+            patch={Navigation.counterparties_path(:archive, @params)}
+            active={@live_action == :archive}
+          >
+            Zarchiwizowani
+          </:option>
+        </.segmented_control>
 
         <div class="mx-2 h-6 w-px bg-grey-200"></div>
 
@@ -91,20 +82,26 @@
 
   <%= cond do %>
     <% @counterparties_empty? -> %>
-      <div class="flex flex-1 flex-col items-center justify-center gap-4 rounded-lg border border-grey-200 p-6">
-        <%= if @search != "" or not is_nil(@type_filter) do %>
-          <Lucideicons.file_x class="size-26 text-grey-300" />
-          <p class="text-sm/snug text-grey-700">Nie znaleźliśmy szukanego kontrahenta.</p>
-        <% else %>
-          <Lucideicons.building_2 class="size-26 text-grey-300" />
-          <p class="text-sm/snug text-grey-700">
-            {case @live_action do
+      <%= if @search != "" or not is_nil(@type_filter) do %>
+        <.empty_state
+          title="Nie znaleźliśmy szukanego kontrahenta."
+          class="flex-1 justify-center"
+        >
+          <:icon><Lucideicons.file_x /></:icon>
+        </.empty_state>
+      <% else %>
+        <.empty_state
+          title={
+            case @live_action do
               :index -> "Nie masz aktywnych kontrahentów do wyświetlenia."
               :archive -> "Nie masz zarchiwizowanych kontrahentów do wyświetlenia."
-            end}
-          </p>
-        <% end %>
-      </div>
+            end
+          }
+          class="flex-1 justify-center"
+        >
+          <:icon><Lucideicons.building_2 /></:icon>
+        </.empty_state>
+      <% end %>
     <% @live_action == :index -> %>
       <div
         id="counterparties-list"
@@ -265,26 +262,24 @@
   <% end %>
 </div>
 
-<div
+<.empty_state
   :if={@zero_state?}
-  class="mx-auto flex size-full max-w-7xl flex-1 flex-col items-center justify-center rounded-lg border border-grey-200 p-8"
+  title="Nie masz jeszcze żadnych kontrahentów."
+  class="mx-auto size-full max-w-7xl flex-1 justify-center"
 >
-  <Lucideicons.building_2 class="size-26 text-grey-300" size={48} />
-
-  <p class="mt-4 text-center text-sm/snug text-balance text-grey-700">
-    Nie masz jeszcze żadnych kontrahentów. Dodaj pierwszego, klikając poniżej.
-  </p>
-
-  <.link
-    navigate={
-      Navigation.counterparty_new_path(%{
-        powrot_do: Navigation.counterparties_path(@live_action, @params)
-      })
-    }
-    kind="button"
-    variant="secondary"
-    class="mt-6"
-  >
-    <Lucideicons.plus /> Dodaj kontrahenta
-  </.link>
-</div>
+  <:icon><Lucideicons.building_2 /></:icon>
+  Dodaj pierwszego, klikając poniżej.
+  <:action>
+    <.link
+      navigate={
+        Navigation.counterparty_new_path(%{
+          powrot_do: Navigation.counterparties_path(@live_action, @params)
+        })
+      }
+      kind="button"
+      variant="secondary"
+    >
+      <Lucideicons.plus /> Dodaj kontrahenta
+    </.link>
+  </:action>
+</.empty_state>

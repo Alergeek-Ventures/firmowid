@@ -88,37 +88,16 @@ defmodule FirmowidWeb.Management.Components.LeavesTab do
 
           <div class="flex items-center gap-2">
             <form class="flex gap-4" phx-submit="search" phx-target={@myself}>
-              <div
-                id="leaves-search-container"
-                data-expanded={to_string(@search != "")}
-                class="group flex items-center justify-center rounded-lg transition-shadow data-[expanded=true]:bg-grey-200 data-[expanded=true]:focus-within:ring-2"
-              >
-                <.input
-                  type="text"
-                  name="szukaj"
-                  value={@search}
-                  placeholder="Szukaj wniosku"
-                  phx-change="search"
-                  phx-debounce="300"
-                  phx-target={@myself}
-                  input_class="py-0 px-1 bg-transparent border-none"
-                  class="w-0 border-transparent px-0 opacity-0 transition-[width,opacity,padding] duration-200 ease-in-out group-data-[expanded=true]:w-64 group-data-[expanded=true]:px-2 group-data-[expanded=true]:opacity-100 focus:border-none focus:ring-0 focus:outline-hidden"
-                />
-                <.button
-                  type="button"
-                  size="small"
-                  variant="outline"
-                  class="py-1.5"
-                  phx-click={
-                    JS.toggle_attribute({"data-expanded", "true", "false"},
-                      to: "#leaves-search-container"
-                    )
-                    |> JS.focus(to: "#leaves-search-container input")
-                  }
-                >
-                  <Lucideicons.search />
-                </.button>
-              </div>
+              <.search_field
+                name="szukaj"
+                value={@search}
+                placeholder="Szukaj wniosku"
+                size="small"
+                phx-change="search"
+                phx-debounce="300"
+                phx-target={@myself}
+                class="w-64"
+              />
             </form>
             <.year_picker
               id="leaves-year-picker"
@@ -149,14 +128,11 @@ defmodule FirmowidWeb.Management.Components.LeavesTab do
                 myself={@myself}
               />
             </ul>
-            <div
+            <.empty_state
               :if={Enum.empty?(@other_requests)}
-              class="flex size-full items-center justify-center rounded-lg bg-grey-50 text-sm text-grey-700"
-            >
-              <p>
-                Brak pozostałych wniosków.
-              </p>
-            </div>
+              title="Brak pozostałych wniosków."
+              class="size-full justify-center"
+            />
           </div>
         </div>
       </.card>
@@ -373,19 +349,16 @@ defmodule FirmowidWeb.Management.Components.LeavesTab do
         {LeavePresentation.format_range(@request.starts_on, @request.ends_on)}
       </span>
 
-      <span class={leave_status_badge_styles(@request.status)}>
+      <.badge tone={leave_status_tone(@request.status)} class="w-31 justify-center">
         {LeavePresentation.status_label(@request.status)}
-      </span>
+      </.badge>
     </li>
     """
   end
 
-  defp leave_status_badge_styles(status) do
-    [
-      "w-31 shrink-0 rounded-2xl px-4 py-1 text-center text-sm",
-      LeavePresentation.status_badge_styles(status)
-    ]
-  end
+  defp leave_status_tone(:pending), do: "neutral"
+  defp leave_status_tone(:accepted), do: "success"
+  defp leave_status_tone(:declined), do: "danger"
 
   defp attachment_url(%{blob: %{url: url}}) when is_binary(url), do: url
   defp attachment_url(_), do: nil
