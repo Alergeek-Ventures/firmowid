@@ -62,7 +62,6 @@ defmodule FirmowidWeb.Invoicing.Components.DeductibleVat do
             step="0.01"
             errors={List.wrap(@errors[document.id])}
             show_error={false}
-            new
             class="w-36"
           />
           <%= if document.amount.currency == :PLN and currency_value(document, @saved) == :PLN do %>
@@ -77,7 +76,6 @@ defmodule FirmowidWeb.Invoicing.Components.DeductibleVat do
               options={currencies(document)}
               prompt={recorded_currency(document, @saved)}
               required
-              new
               input_class="w-24 shrink-0"
               aria-label={gettext("Currency")}
             />

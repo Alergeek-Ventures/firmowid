@@ -58,7 +58,7 @@
                   do: "Nad czym dzisiaj pracujesz?",
                   else: "Nie możesz dodać sesji, po wysłaniu ewidencji godzin"
               }
-              input_class="h-11 border-none hover:!bg-grey-300 focus:!outline-[2px] focus:!outline-offset-0 focus:!outline-grey-300 bg-grey-200 text-black"
+              input_class="h-11 border-none hover:!bg-grey-300 focus:!outline-[2px] focus:!outline-offset-0 focus:!outline-grey-300 bg-grey-200! text-black"
               phx-hook="FocusOnMount"
               phx-debounce="300"
               autofocus
@@ -103,7 +103,7 @@
                     <.input
                       type="date"
                       class="min-w-0 flex-1"
-                      input_class="w-full h-8 border-none bg-grey-200"
+                      input_class="w-full h-8 border-none bg-grey-200!"
                       field={@form[:date]}
                     />
 
@@ -112,7 +112,7 @@
                       label="od"
                       type="time"
                       class="flex min-w-0 flex-1 items-baseline justify-center gap-4"
-                      input_class="w-full h-8 border-none bg-grey-200"
+                      input_class="w-full h-8 border-none bg-grey-200!"
                       field={@form[:start_time]}
                       value={format_time(@form[:start_time].value)}
                     />
@@ -122,7 +122,7 @@
                       type="time"
                       label="do"
                       class="flex min-w-0 flex-1 items-baseline justify-center gap-4"
-                      input_class="w-full h-8 border-none bg-grey-200"
+                      input_class="w-full h-8 border-none bg-grey-200!"
                       field={@form[:end_time]}
                       value={format_time(@form[:end_time].value)}
                     />

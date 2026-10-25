@@ -6,7 +6,7 @@ defmodule FirmowidWeb.Delegations.Components.SettlementPage do
   import FirmowidUI.Components.Button
   import FirmowidWeb.Delegations.Components.Delegation
   import FirmowidWeb.Delegations.Components.Settlement.Expense
-  import FirmowidWeb.DesignSystem.Components.CoreComponents, except: [button: 1]
+  import FirmowidWeb.DesignSystem.Components.CoreComponents
   import Phoenix.Component, except: [link: 1]
 
   alias FirmowidWeb.Delegations.Utilities.SettlementPresentation
@@ -325,7 +325,6 @@ defmodule FirmowidWeb.Delegations.Components.SettlementPage do
         type="textarea"
         value={@form[:date_change_reason].value}
         errors={if blank?(@form[:date_change_reason].value), do: ["To pole jest wymagane"], else: []}
-        new
         placeholder="Podaj powód zmiany terminu delegacji..."
         disabled={!@editable?}
         class="mt-4"

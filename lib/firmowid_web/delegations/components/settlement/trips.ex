@@ -56,7 +56,6 @@ defmodule FirmowidWeb.Delegations.Components.Settlement.Trips do
                     id={"trip-departure-city-#{trip.id}"}
                     field={trip_form[:departure_city]}
                     type="text"
-                    new
                     aria-label="Miejscowość wyjazdu"
                     input_class="w-full sm:w-36"
                   />
@@ -71,7 +70,6 @@ defmodule FirmowidWeb.Delegations.Components.Settlement.Trips do
                     }
                     errors={translated_errors(trip_form[:departure_datetime])}
                     type="date"
-                    new
                     aria-label="Data wyjazdu"
                     input_class="w-full sm:w-34"
                   />
@@ -86,7 +84,6 @@ defmodule FirmowidWeb.Delegations.Components.Settlement.Trips do
                     }
                     errors={translated_errors(trip_form[:departure_datetime])}
                     type="time"
-                    new
                     aria-label="Godzina wyjazdu"
                     input_class="w-full sm:w-24"
                   />
@@ -119,7 +116,6 @@ defmodule FirmowidWeb.Delegations.Components.Settlement.Trips do
                     id={"trip-arrival-city-#{trip.id}"}
                     field={trip_form[:arrival_city]}
                     type="text"
-                    new
                     aria-label="Miejscowość przyjazdu"
                     input_class="w-full sm:w-36"
                   />
@@ -134,7 +130,6 @@ defmodule FirmowidWeb.Delegations.Components.Settlement.Trips do
                     }
                     errors={translated_errors(trip_form[:arrival_datetime])}
                     type="date"
-                    new
                     aria-label="Data przyjazdu"
                     input_class="w-full sm:w-34"
                   />
@@ -149,7 +144,6 @@ defmodule FirmowidWeb.Delegations.Components.Settlement.Trips do
                     }
                     errors={translated_errors(trip_form[:arrival_datetime])}
                     type="time"
-                    new
                     aria-label="Godzina przyjazdu"
                     input_class="w-full sm:w-24"
                   />
@@ -173,7 +167,6 @@ defmodule FirmowidWeb.Delegations.Components.Settlement.Trips do
                     id={"trip-description-#{trip.id}"}
                     field={trip_form[:description]}
                     type="textarea"
-                    new
                     aria-label="Opis"
                   />
                 </td>

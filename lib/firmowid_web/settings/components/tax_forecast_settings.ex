@@ -58,7 +58,6 @@ defmodule FirmowidWeb.Settings.Components.TaxForecastSettings do
             min="0"
             max="100"
             step="0.01"
-            new
             class="w-32"
           />
           <p class="text-sm leading-[1.35] text-grey-600">

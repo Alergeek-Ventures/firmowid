@@ -3,7 +3,7 @@ defmodule FirmowidWeb.Management.Components.ProjectsTab do
   use FirmowidWeb, :live_component
 
   import FirmowidUI.Components.Button
-  import FirmowidWeb.DesignSystem.Components.CoreComponents, except: [button: 1]
+  import FirmowidWeb.DesignSystem.Components.CoreComponents
   import FirmowidWeb.DesignSystem.Components.MonthPicker
   import FirmowidWeb.HoursRecord.Components.ChangeRequest
   import FirmowidWeb.Management.Components.Card
@@ -134,7 +134,6 @@ defmodule FirmowidWeb.Management.Components.ProjectsTab do
                 <.input
                   field={@payout_form[:bank_account_number]}
                   type="text"
-                  new={true}
                   class="w-full"
                 />
               <% else %>
@@ -154,7 +153,6 @@ defmodule FirmowidWeb.Management.Components.ProjectsTab do
                       type="number"
                       step="0.01"
                       min="0"
-                      new={true}
                       input_class="max-w-20 text-right"
                     />
                     <p>zł/godz.</p>

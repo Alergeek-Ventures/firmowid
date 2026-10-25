@@ -8,7 +8,7 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
   import FirmowidUI.Components.Button
   import FirmowidUI.Components.Link
   import FirmowidWeb.Delegations.Components.DelegationsList
-  import FirmowidWeb.DesignSystem.Components.CoreComponents, except: [button: 1]
+  import FirmowidWeb.DesignSystem.Components.CoreComponents
   import FirmowidWeb.Infrastructure.Flags, only: [flag_enabled?: 2]
   import Phoenix.Component, except: [link: 1]
 
@@ -403,7 +403,6 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
                     {"Umowa o dzieło", :uod}
                   ]}
                   container_class="w-full"
-                  new
                 />
               </Helpers.settings_field>
               <.row_input field={@contract_form[:starts_at]} label="Obowiązuje od" type="date" />
@@ -767,7 +766,6 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
             >
               Od:
               <.input
-                new={true}
                 field={@leave_request_form[:starts_on]}
                 is_tooltip={true}
                 type="date"
@@ -777,8 +775,7 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
               for={@leave_request_form[:ends_on].id}
               class="flex items-center gap-2 text-sm text-grey-700"
             >
-              Do:
-              <.input new={true} field={@leave_request_form[:ends_on]} is_tooltip={true} type="date" />
+              Do: <.input field={@leave_request_form[:ends_on]} is_tooltip={true} type="date" />
             </.label>
           </div>
           <div>
@@ -790,7 +787,6 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
               <.input
                 field={@leave_request_form[:note]}
                 type="textarea"
-                new={true}
                 rows="8"
                 class="mb-4"
               />
@@ -940,7 +936,7 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
       for={@field.id}
       label_class={@label_class}
     >
-      <.input field={@field} type={@type} new input_class="w-full" />
+      <.input field={@field} type={@type} input_class="w-full" />
     </Helpers.settings_field>
     """
   end

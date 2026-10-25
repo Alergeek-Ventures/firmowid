@@ -353,7 +353,6 @@
           type="text"
           placeholder={id_placeholder}
           required={id_required?}
-          new={true}
         />
 
         <.input
@@ -361,7 +360,6 @@
           field={@counterparty_form[:buyer_full_name]}
           type="text"
           placeholder="Nazwa firmy"
-          new={true}
         />
 
         <div
@@ -372,13 +370,11 @@
             field={@counterparty_form[:buyer_given_name]}
             type="text"
             placeholder="Imię"
-            new={true}
           />
           <.input
             field={@counterparty_form[:buyer_surname]}
             type="text"
             placeholder="Nazwisko"
-            new={true}
           />
         </div>
 
@@ -387,7 +383,6 @@
           field={@counterparty_form[:buyer_pesel]}
           type="text"
           placeholder="PESEL (opcjonalnie)"
-          new={true}
         />
       </div>
 
@@ -406,7 +401,6 @@
           type="select"
           options={CountryCodes.country_options()}
           prompt="Wybierz kraj"
-          new={true}
         />
       </div>
     </div>
@@ -419,13 +413,11 @@
           field={@counterparty_form[:buyer_email]}
           type="email"
           placeholder="E-mail"
-          new={true}
         />
         <.input
           field={@counterparty_form[:buyer_phone]}
           type="tel"
           placeholder="Telefon"
-          new={true}
         />
       </div>
 

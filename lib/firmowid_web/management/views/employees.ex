@@ -4,7 +4,7 @@ defmodule FirmowidWeb.Management.Views.Employees do
 
   import FirmowidUI.Components.Button
   import FirmowidUI.Components.Link
-  import FirmowidWeb.DesignSystem.Components.CoreComponents, except: [button: 1]
+  import FirmowidWeb.DesignSystem.Components.CoreComponents
   import FirmowidWeb.DesignSystem.Components.MonthPicker
   import FirmowidWeb.Management.Components.HoursRecordStatus, only: [hours_record_status: 1]
   import Phoenix.Component, except: [link: 1]

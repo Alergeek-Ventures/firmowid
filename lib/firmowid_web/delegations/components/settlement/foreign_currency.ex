@@ -34,7 +34,7 @@ defmodule FirmowidWeb.Delegations.Components.Settlement.ForeignCurrency do
       |> assign(:foreign_currency?, currency != @company_currency)
 
     ~H"""
-    <.input id={"document-number-#{@expense.id}"} field={@form[:document_number]} type="text" new>
+    <.input id={"document-number-#{@expense.id}"} field={@form[:document_number]} type="text">
       <:label_slot>
         <span class="inline-flex items-center gap-1">
           <Lucideicons.sparkles class="size-4" aria-hidden="true" /> Nr dokumentu
@@ -48,7 +48,6 @@ defmodule FirmowidWeb.Delegations.Components.Settlement.ForeignCurrency do
           field={@form[:expense_amount]}
           value={expense_amount_value(@form[:expense_amount].value)}
           type="number"
-          new
           min="0"
           step="0.01"
           input_class="w-25"
@@ -65,7 +64,6 @@ defmodule FirmowidWeb.Delegations.Components.Settlement.ForeignCurrency do
         name={"expense_currencies[#{@expense.id}]"}
         value={@currency}
         type="select"
-        new
         options={currency_options()}
         input_class={["w-24 shrink-0", @foreign_currency? && "bg-teal-100"]}
         aria-label="Waluta"
@@ -219,7 +217,6 @@ defmodule FirmowidWeb.Delegations.Components.Settlement.ForeignCurrency do
           id={"settlement-amount-#{@expense_id}"}
           field={@form[:settlement_amount]}
           type="number"
-          new
           label={"Kwota w #{@currency}"}
           min="0"
           step="0.01"

@@ -10,7 +10,7 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceDetails do
   use FirmowidWeb, :html
 
   import FirmowidUI.Components.Button
-  import FirmowidWeb.DesignSystem.Components.CoreComponents, except: [button: 1]
+  import FirmowidWeb.DesignSystem.Components.CoreComponents
   import FirmowidWeb.DesignSystem.Components.InvoicingBadges
   import FirmowidWeb.Invoicing.Components.StatusButton
   import Phoenix.Component, except: [link: 1]
@@ -491,20 +491,6 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceDetails do
       </div>
       <div class="flex flex-col gap-6 rounded bg-grey-100 p-6">
         <p class="text-base/snug">Transakcja została pominięta dla dokumentu</p>
-        <div :if={false} class="space-y-2">
-          <label class="text-sm/snug text-grey-700" for="temp">Powód pominięcia</label>
-
-          <div class="flex flex-row items-center gap-2">
-            <.input id="temp" name="test" value="" class="flex-1" new={true} />
-            <.button
-              variant="primary"
-              accent={if(@is_cost_invoice, do: "rust", else: "teal")}
-              size="small"
-            >
-              Zatwierdź
-            </.button>
-          </div>
-        </div>
       </div>
     </div>
     """

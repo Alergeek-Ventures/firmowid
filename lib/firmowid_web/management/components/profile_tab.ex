@@ -103,7 +103,6 @@ defmodule FirmowidWeb.Management.Components.ProfileTab do
                       {"Podpisana", :signed},
                       {"Obowiązująca", :active}
                     ]}
-                    new
                   />
                 </.field_row>
                 <.field_row label="Rodzaj umowy" for={@contract_form[:contract_type].id}>
@@ -117,14 +116,13 @@ defmodule FirmowidWeb.Management.Components.ProfileTab do
                       {"Umowa zlecenie", :uz},
                       {"Umowa o dzieło", :uod}
                     ]}
-                    new
                   />
                 </.field_row>
                 <.field_row label="Stanowisko" for={@contract_form[:position].id}>
-                  <.input field={@contract_form[:position]} class="w-full" new />
+                  <.input field={@contract_form[:position]} class="w-full" />
                 </.field_row>
                 <.field_row label="Data podpisania umowy" for={@contract_form[:signed_at].id}>
-                  <.input field={@contract_form[:signed_at]} type="date" class="w-full" new />
+                  <.input field={@contract_form[:signed_at]} type="date" class="w-full" />
                 </.field_row>
               <% else %>
                 <.field_row label="Status umowy">

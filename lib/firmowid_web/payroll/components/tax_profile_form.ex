@@ -89,7 +89,6 @@ defmodule FirmowidWeb.Payroll.Components.TaxProfileForm do
         value={@value}
         options={options(@field)}
         input_class={[@value == "" && "text-grey-600!"]}
-        new
       />
       <p :if={hint(@field)} class="text-xs/snug text-grey-600">{hint(@field)}</p>
     </div>

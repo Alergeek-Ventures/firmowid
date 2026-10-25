@@ -229,7 +229,7 @@ defmodule FirmowidWeb.Development.Views.DesignSystem do
           <.search_field name="szukaj" placeholder="Szukaj kontrahenta" />
           <.search_field name="szukaj_maly" placeholder="Szukaj (mały)" size="small" />
           <.field_row label="Nazwa projektu" for="catalog-name">
-            <.input id="catalog-name" name="nazwa" value="" new placeholder="np. Firmowid" />
+            <.input id="catalog-name" name="nazwa" value="" placeholder="np. Firmowid" />
           </.field_row>
           <.field_row label="NIP" layout="inline">
             <span class="font-mono">6161525811</span>

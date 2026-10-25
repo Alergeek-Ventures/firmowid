@@ -8,7 +8,7 @@ defmodule FirmowidWeb.Delegations.Components.Settlement.Expense do
   import FirmowidWeb.Delegations.Components.Settlement.Documents
   import FirmowidWeb.Delegations.Components.Settlement.ForeignCurrency
   import FirmowidWeb.Delegations.Components.Settlement.Trips
-  import FirmowidWeb.DesignSystem.Components.CoreComponents, except: [button: 1]
+  import FirmowidWeb.DesignSystem.Components.CoreComponents
   import Phoenix.Component, except: [link: 1]
 
   alias FirmowidWeb.Delegations.Utilities.SettlementPresentation
@@ -163,7 +163,6 @@ defmodule FirmowidWeb.Delegations.Components.Settlement.Expense do
               id={"#{@kind}-transport-type-#{expense.id}"}
               field={forms.details[:transport_type]}
               type="select"
-              new
               label="Środek lokomocji"
               options={SettlementPresentation.transport_options()}
             />
@@ -172,7 +171,6 @@ defmodule FirmowidWeb.Delegations.Components.Settlement.Expense do
               id={"#{@kind}-locality-#{expense.id}"}
               field={forms.details[:locality]}
               type="text"
-              new
               label="Miejscowość"
             />
             <.document_fields
@@ -190,7 +188,6 @@ defmodule FirmowidWeb.Delegations.Components.Settlement.Expense do
               id={"#{@kind}-arrival-date-#{expense.id}"}
               field={forms.details[:arrival_date]}
               type="date"
-              new
               label="Zameldowanie"
             />
             <.input
@@ -198,7 +195,6 @@ defmodule FirmowidWeb.Delegations.Components.Settlement.Expense do
               id={"#{@kind}-departure-date-#{expense.id}"}
               field={forms.details[:departure_date]}
               type="date"
-              new
               label="Wymeldowanie"
             />
             <.expense_description
@@ -213,7 +209,6 @@ defmodule FirmowidWeb.Delegations.Components.Settlement.Expense do
               id={"#{@kind}-description-#{expense.id}"}
               field={forms.details[:description]}
               type="textarea"
-              new
               label="Opis"
               class="col-span-full"
             />
@@ -452,7 +447,6 @@ defmodule FirmowidWeb.Delegations.Components.Settlement.Expense do
         id={"#{@kind}-description-#{@expense.id}"}
         field={@form[:description]}
         type="textarea"
-        new
         label="Opis"
         class="w-full"
       />

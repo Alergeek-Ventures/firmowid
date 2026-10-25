@@ -8,7 +8,7 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
   import FirmowidUI.Components.Button
   import FirmowidUI.Components.KsefConnection
   import FirmowidUI.Components.Link
-  import FirmowidWeb.DesignSystem.Components.CoreComponents, except: [button: 1]
+  import FirmowidWeb.DesignSystem.Components.CoreComponents
   import FirmowidWeb.DesignSystem.Components.InvoicingBadges
   import Phoenix.Component, except: [link: 1]
 
@@ -148,7 +148,6 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
                   field={@company_form[:vat_exemption_type]}
                   options={VatExemption.options()}
                   input_class="w-full"
-                  new
                 />
               </Helpers.settings_field>
 
@@ -161,7 +160,6 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
                   <.input
                     type="text"
                     field={@company_form[:vat_exemption_basis]}
-                    new
                     required
                     show_error={false}
                     input_class="w-full"
@@ -841,7 +839,7 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
   defp row_input(assigns) do
     ~H"""
     <Helpers.settings_field label={@label} layout={:row} for={@field.id} label_class={@label_class}>
-      <.input field={@field} type={@type} new input_class="w-full" />
+      <.input field={@field} type={@type} input_class="w-full" />
     </Helpers.settings_field>
     """
   end

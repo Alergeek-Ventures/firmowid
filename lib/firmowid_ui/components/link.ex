@@ -25,8 +25,8 @@ defmodule FirmowidUI.Components.Link do
 
   alias FirmowidUI.Utilities.ButtonStyles
 
-  @button_variants ~w(special primary secondary tertiary outline ghost destructive success)
-  @accents ~w(orange turquoise)
+  @button_variants ~w(special primary secondary tertiary outline ghost destructive success plain)
+  @accents ~w(rust teal)
   @kinds ~w(unstyled text button)
   @sizes ~w(big small)
 

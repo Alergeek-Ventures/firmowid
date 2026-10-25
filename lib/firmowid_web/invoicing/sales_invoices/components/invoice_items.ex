@@ -8,7 +8,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
   use FirmowidWeb, :html
 
   import FirmowidUI.Components.Button
-  import FirmowidWeb.DesignSystem.Components.CoreComponents, except: [button: 1]
+  import FirmowidWeb.DesignSystem.Components.CoreComponents
 
   alias Firmowid.Ash.Currencies.NbpApiClient
   alias Firmowid.Ash.Ksef.VatRate
@@ -289,7 +289,6 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
             type="select"
             options={currency_options()}
             disabled={@invoice.buyer_id_type == :nip}
-            new={true}
           />
         </label>
 
@@ -311,23 +310,6 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
               </.tooltip>
             </:label_slot>
           </.switch>
-
-          <div class="flex flex-row items-center gap-3">
-            <.switch
-              :if={false}
-              field={@items_form[:is_reverse_charge]}
-              label="Rabat"
-              color="teal"
-              class="flex-row-reverse gap-2 text-sm text-grey-700"
-            />
-            <.switch
-              :if={false}
-              field={@items_form[:is_reverse_charge]}
-              label="PKWiU"
-              color="teal"
-              class="flex-row-reverse gap-2 text-sm text-grey-700"
-            />
-          </div>
         </div>
       </div>
 
@@ -345,7 +327,6 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
             field={@items_form[:vat_exemption_type]}
             label="Podstawa zwolnienia"
             options={VatExemption.options()}
-            new
             input_class="w-full"
           />
 
@@ -354,7 +335,6 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
               type="text"
               field={@items_form[:vat_exemption_basis]}
               label="Podstawa prawna zwolnienia z VAT"
-              new
               input_class="w-full"
               class="text-grey-700"
             />
@@ -368,13 +348,6 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
         <p class="mr-auto text-grey-700">
           <strong>{if @show_exemption?, do: "3.", else: "2."}</strong> Pozycje na fakturze
         </p>
-
-        <.button :if={false} type="button" size="small" variant="secondary">
-          <Lucideicons.copy /> Skopiuj poprzednie pozycje
-        </.button>
-        <.button :if={false} type="button" size="small" variant="secondary">
-          <Lucideicons.clock /> Zaciągnij godziny
-        </.button>
       </div>
     </div>
     <div class="col-start-2 col-end-9 mb-1 grid grid-cols-subgrid py-1 pl-2 text-sm/snug text-grey-700">
@@ -452,7 +425,6 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
             phx-debounce
             class="w-full"
             input_class={[if(invalid_field?(item[:name]), do: "border-brick-700")]}
-            new={true}
             show_error={false}
           />
           <.input
@@ -464,7 +436,6 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
             min="0"
             class="w-16"
             input_class={["text-center", if(invalid_field?(item[:quantity]), do: "border-brick-700")]}
-            new={true}
             show_error={false}
           />
           <.hidden_input show={@show_vat} field={item[:vat_rate]} value="zw">
@@ -475,7 +446,6 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
                 options={@vat_options}
                 phx-debounce
                 container_class="w-24"
-                new={true}
                 readonly={@vat_disabled?}
               />
             </:input>
@@ -487,7 +457,6 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
             phx-debounce
             container_class="w-24"
             options={["szt.", "godz."]}
-            new={true}
           />
           <% price_input_mode = price_input_mode(@item_price_input_modes, item) %>
           <.hidden_input show={price_input_mode == :net} field={item[:unit_price]}>
@@ -507,7 +476,6 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
                     "text-center",
                     if(invalid_field?(item[:unit_price]), do: "border-brick-700")
                   ]}
-                  new={true}
                   show_error={false}
                 />
                 <p class="text-sm text-grey-500">{@items_form[:currency].value}</p>
@@ -569,7 +537,6 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
                       "text-right",
                       if(invalid_field?(item[:unit_price]), do: "border-brick-700")
                     ]}
-                    new={true}
                     show_error={false}
                   />
                 </div>

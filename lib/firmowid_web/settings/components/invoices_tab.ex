@@ -125,7 +125,6 @@ defmodule FirmowidWeb.Settings.Components.InvoicesTab do
                 value=""
                 required
                 placeholder="np. faktury@dostawca.pl"
-                new
                 class="w-full max-w-sm"
                 input_class="w-full"
               />
