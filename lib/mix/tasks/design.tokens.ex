@@ -4,7 +4,8 @@ defmodule Mix.Tasks.Design.Tokens do
   Generates `assets/css/design-tokens.css` from the YAML frontmatter of `DESIGN.md`.
 
   `DESIGN.md` is the source of truth for colours (`colors`), the text size scale
-  (`typography`, only `fontSize` is emitted) and radii (`rounded`). Fonts, spacing and
+  (`typography`, only `fontSize` is emitted) and radii (`rounded`). The block is `@theme static`
+  so every token exists as a CSS variable even before a utility uses it. Fonts, spacing and
   animations stay hand-written in `assets/css/theme.css`.
 
   ## Usage
@@ -53,7 +54,7 @@ defmodule Mix.Tasks.Design.Tokens do
 
     """
     /* Generated from DESIGN.md by `mix design.tokens`. Do not edit by hand. */
-    @theme {
+    @theme static {
     #{Enum.map_join(declarations, "\n", &"  #{&1}")}
     }
     """

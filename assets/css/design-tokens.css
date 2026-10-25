@@ -1,5 +1,5 @@
 /* Generated from DESIGN.md by `mix design.tokens`. Do not edit by hand. */
-@theme {
+@theme static {
   --color-*: initial;
   --text-*: initial;
   --color-white: #FFFFFF;
