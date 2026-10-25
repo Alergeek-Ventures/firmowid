@@ -535,7 +535,7 @@ defmodule FirmowidWeb.Invoicing.Views.IndexTest do
       html = render(view)
 
       group_row_ids =
-        ~r/<tr id="(group-[^"]+)-row" class="cursor-pointer duration-200"/
+        ~r/<tr id="(group-[^"]+)-row" class="cursor-pointer duration-200/
         |> Regex.scan(html,
           capture: :all_but_first
         )

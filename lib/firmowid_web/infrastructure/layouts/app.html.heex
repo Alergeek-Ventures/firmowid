@@ -44,79 +44,19 @@
           "border-b px-4 py-4.5",
         "flex items-center gap-16 border-grey-700 uppercase max-md:hidden"
       ]}>
-        <%= if @current_user.member.role != :employee do %>
-          <.link
-            kind="unstyled"
-            navigate={~p"/fakturowanie"}
-            class={[
-              !String.starts_with?(@current_uri.path, "/analiza") &&
-                !String.starts_with?(@current_uri.path, "/czasosledz") &&
-                !String.starts_with?(@current_uri.path, "/zarzadzanie") && "opacity-90",
-              "flex items-center gap-1 opacity-50 transition-all hover:opacity-100"
-            ]}
-          >
-            <.icon name="hero-clipboard-document-list" class="size-5" />{pgettext(
-              "main navigation",
-              "Invoicing"
-            )}
-          </.link>
-        <% end %>
-        <%= if @current_user.member.role == :admin do %>
-          <.link
-            kind="unstyled"
-            navigate={~p"/zarzadzanie/pracownicy"}
-            class={[
-              String.starts_with?(@current_uri.path, "/zarzadzanie") && "opacity-90",
-              "flex items-center gap-1 opacity-50 transition-all hover:opacity-100"
-            ]}
-          >
-            <.icon name="hero-presentation-chart-line" class="size-5" />{pgettext(
-              "main navigation",
-              "Management"
-            )}
-          </.link>
-          <.link
-            :if={flag_enabled?(:analysis_dashboard, assigns)}
-            kind="unstyled"
-            navigate={~p"/analiza"}
-            class={[
-              String.starts_with?(@current_uri.path, "/analiza") && "opacity-90",
-              "flex items-center gap-1 opacity-50 transition-all hover:opacity-100"
-            ]}
-          >
-            <.icon name="hero-scale" class="size-5" />{pgettext("main navigation", "Analysis")}
-            <span
-              id="analiza-beta"
-              class="ml-1 rounded bg-white/20 px-1.5 py-0.5 text-xs"
-              phx-hook="Tippy"
-              data-tippy-content={
-                gettext(
-                  "This feature is still in progress! Your feedback will help us make it even better."
-                )
-              }
-            >
-              BETA
-            </span>
-          </.link>
-        <% end %>
-        <.link
-          kind="unstyled"
-          navigate={~p"/czasosledz"}
-          class={[
-            String.starts_with?(@current_uri.path, "/czasosledz") && "opacity-90",
-            "flex items-center gap-1 opacity-50 transition-all hover:opacity-100"
-          ]}
-        >
-          <.icon name="hero-clock" class="size-5" />{pgettext("main navigation", "Time tracking")}
-        </.link>
+        <.main_navigation_links
+          current_user={@current_user}
+          current_uri={@current_uri}
+          analysis_enabled={flag_enabled?(:analysis_dashboard, assigns)}
+        />
       </div>
 
-      <div class="relative flex flex-1 items-center justify-end gap-3 text-right max-md:hidden">
+      <div class="relative flex flex-1 items-center justify-end gap-3 text-right">
         <FirmowidUI.Components.Button.button
           type="button"
           phx-click={show_modal("feedback-modal")}
           variant="unstyled"
-          class="inline-flex items-center justify-center text-white transition-colors hover:text-white/80 active:text-white/70"
+          class="inline-flex items-center justify-center text-white transition-colors hover:text-white/80 active:text-white/70 max-md:hidden"
         >
           <span class="flex items-center gap-1.5">
             <.icon name="hero-chat-bubble-left-ellipsis" class="size-5" />{gettext("Feedback")}
@@ -147,7 +87,11 @@
             style="border-radius: 9999px"
             title={@current_user.email}
           >
-            <span class="flex items-center p-1 px-2">
+            <span class="flex items-center p-1 md:hidden">
+              <.icon name="hero-bars-3" class="size-6" />
+              <span class="sr-only">{pgettext("main navigation", "Navigation menu")}</span>
+            </span>
+            <span class="flex items-center p-1 px-2 max-md:hidden">
               <%= if @current_user.member && @current_user.member.avatar_blob && @current_user.member.avatar_blob.url do %>
                 <.avatar class="size-9 rounded-full border-2 border-white/20">
                   <.avatar_image
@@ -166,8 +110,24 @@
           <div
             id="dropdown_content"
             style="display: none"
-            class="absolute top-[50px] right-0 z-50 w-full min-w-[250px] flex-col gap-2 rounded-md bg-black p-3 text-left font-semibold [--focus-ring:var(--color-white)] max-lg:w-auto"
+            class="absolute top-[50px] right-0 z-50 w-full min-w-[250px] flex-col gap-2 rounded-md bg-black p-3 text-left font-semibold [--focus-ring:var(--color-white)] max-lg:w-auto max-md:fixed max-md:inset-x-0 max-md:top-navbar max-md:max-h-[calc(100dvh-var(--spacing-navbar))] max-md:overflow-y-auto max-md:rounded-none max-md:px-4 max-md:pt-1 max-md:pb-4"
           >
+            <div class="flex flex-col gap-2 border-b border-grey-700/50 pb-2 md:hidden">
+              <.main_navigation_links
+                current_user={@current_user}
+                current_uri={@current_uri}
+                analysis_enabled={flag_enabled?(:analysis_dashboard, assigns)}
+                variant={:menu}
+              />
+              <FirmowidUI.Components.Button.button
+                type="button"
+                phx-click={hide("#dropdown_content") |> show_modal("feedback-modal")}
+                variant="unstyled"
+                class="flex w-full cursor-pointer items-center gap-2 rounded-md p-2 text-white uppercase hover:bg-grey-700/50 hover:text-white active:bg-grey-700/70"
+              >
+                <.icon name="hero-chat-bubble-left-ellipsis" class="size-5" />{gettext("Feedback")}
+              </FirmowidUI.Components.Button.button>
+            </div>
             <div class="truncate border-b border-grey-700/50 p-2 pb-4 text-xs text-white/50 lowercase">
               {@current_user.email}
             </div>
@@ -269,15 +229,15 @@
       </div>
     </div>
     <%= if String.starts_with?(@current_uri.path, "/zarzadzanie") do %>
-      <div class="grid h-10.5 w-full grid-cols-3 items-center gap-4 text-white/50">
+      <div class="grid h-10.5 w-full grid-cols-3 items-center gap-4 text-white/50 max-md:flex">
         <.navbar_logo
           navigate={~p"/"}
-          class="invisible mt-0.5 mr-auto opacity-0 transition-opacity"
+          class="invisible mt-0.5 mr-auto opacity-0 transition-opacity max-md:hidden"
           id="firmowid-logo-management"
           phx-hook="CollapsibleNavbar"
           data-classes="opacity-100"
         />
-        <div class="flex justify-center gap-14 text-sm uppercase">
+        <div class="flex justify-center gap-14 text-sm uppercase max-md:flex-1 max-md:justify-start max-md:gap-6">
           <.link
             kind="unstyled"
             navigate={~p"/zarzadzanie/pracownicy"}

@@ -26,7 +26,7 @@ defmodule FirmowidWeb.Timetracker.Components.Session do
       phx-submit="validate_and_update_list_onsubmit"
       phx-change="validate_and_update_list_onchange"
       phx-auto-recover="ignore"
-      class="flex w-full min-w-0 flex-row items-center py-1 pl-1"
+      class="flex w-full min-w-0 flex-row items-center py-1 pl-1 max-md:flex-wrap"
     >
       <input :for={s <- @sessions} type="hidden" name="sessions_form[ids][]" value={s.id} />
       <input
@@ -36,7 +36,7 @@ defmodule FirmowidWeb.Timetracker.Components.Session do
         value={sessions_form[:project_id].value}
       />
 
-      <div class="group mr-4 flex min-w-0 flex-1 flex-row items-center gap-1">
+      <div class="group mr-4 flex min-w-0 flex-1 flex-row items-center gap-1 max-md:mr-0 max-md:basis-full">
         <.hidden_input>
           <:input>
             <input
@@ -71,7 +71,7 @@ defmodule FirmowidWeb.Timetracker.Components.Session do
         phx-click={show_popover(select_id)}
         disabled={parent_session.lockdown}
         variant="unstyled"
-        class="ml-auto min-w-0 cursor-pointer rounded border-none bg-transparent px-2 py-1 text-sm text-grey-700 uppercase transition hover:bg-grey-200 focus:ring-0 disabled:pointer-events-none"
+        class="ml-auto min-w-0 cursor-pointer rounded border-none bg-transparent px-2 py-1 text-sm text-grey-700 uppercase transition hover:bg-grey-200 focus:ring-0 disabled:pointer-events-none max-md:ml-0"
       >
         {case Enum.find(@active_projects, &(&1.id == parent_session.project_id)) do
           nil -> "Select"
@@ -106,7 +106,7 @@ defmodule FirmowidWeb.Timetracker.Components.Session do
       <% popover_id = "edit-sessions-popover-#{parent_session.id}" %>
       <% total_duration = @sessions |> Index.calculate_total_duration() %>
       <.button
-        class="ml-4 w-14 shrink-0 rounded-md py-1 text-center font-bold transition hover:bg-grey-200 lg:ml-8"
+        class="ml-4 w-14 shrink-0 rounded-md py-1 text-center font-bold transition hover:bg-grey-200 max-md:ml-auto lg:ml-8"
         id={"session-timer-#{parent_session.id}"}
         type="button"
         phx-click={show_popover(popover_id)}

@@ -325,7 +325,7 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceDetails do
       </label>
       <p
         id={@piece_id}
-        class={["leading-snug", @multiline && "mb-8"]}
+        class={["leading-snug max-md:wrap-anywhere", @multiline && "mb-8"]}
       >
         {@value}
       </p>

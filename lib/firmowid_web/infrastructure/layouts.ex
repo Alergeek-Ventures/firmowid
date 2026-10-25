@@ -22,6 +22,98 @@ defmodule FirmowidWeb.Infrastructure.Layouts do
 
   embed_templates "layouts/*"
 
+  attr :current_user, :map, required: true
+  attr :current_uri, URI, required: true
+  attr :analysis_enabled, :boolean, required: true
+
+  attr :variant, :atom,
+    default: :bar,
+    values: [:bar, :menu],
+    doc: "`:bar` for the desktop navbar row, `:menu` for the mobile menu list"
+
+  defp main_navigation_links(assigns) do
+    path = assigns.current_uri.path
+
+    assigns =
+      assign(assigns,
+        invoicing?:
+          not Enum.any?(
+            ["/analiza", "/czasosledz", "/zarzadzanie"],
+            &String.starts_with?(path, &1)
+          ),
+        management?: String.starts_with?(path, "/zarzadzanie"),
+        analysis?: String.starts_with?(path, "/analiza"),
+        time_tracking?: String.starts_with?(path, "/czasosledz")
+      )
+
+    ~H"""
+    <.link
+      :if={@current_user.member.role != :employee}
+      kind="unstyled"
+      navigate={~p"/fakturowanie"}
+      class={navigation_link_styles(@variant, @invoicing?)}
+    >
+      <.icon name="hero-clipboard-document-list" class="size-5" />{pgettext(
+        "main navigation",
+        "Invoicing"
+      )}
+    </.link>
+    <%= if @current_user.member.role == :admin do %>
+      <.link
+        kind="unstyled"
+        navigate={~p"/zarzadzanie/pracownicy"}
+        class={navigation_link_styles(@variant, @management?)}
+      >
+        <.icon name="hero-presentation-chart-line" class="size-5" />{pgettext(
+          "main navigation",
+          "Management"
+        )}
+      </.link>
+      <.link
+        :if={@analysis_enabled}
+        kind="unstyled"
+        navigate={~p"/analiza"}
+        class={navigation_link_styles(@variant, @analysis?)}
+      >
+        <.icon name="hero-scale" class="size-5" />{pgettext("main navigation", "Analysis")}
+        <span
+          id={"analiza-beta-#{@variant}"}
+          class="ml-1 rounded bg-white/20 px-1.5 py-0.5 text-xs"
+          phx-hook="Tippy"
+          data-tippy-content={
+            gettext(
+              "This feature is still in progress! Your feedback will help us make it even better."
+            )
+          }
+        >
+          BETA
+        </span>
+      </.link>
+    <% end %>
+    <.link
+      kind="unstyled"
+      navigate={~p"/czasosledz"}
+      class={navigation_link_styles(@variant, @time_tracking?)}
+    >
+      <.icon name="hero-clock" class="size-5" />{pgettext("main navigation", "Time tracking")}
+    </.link>
+    """
+  end
+
+  defp navigation_link_styles(:bar, active?) do
+    [
+      active? && "opacity-90",
+      "flex items-center gap-1 opacity-50 transition-all hover:opacity-100"
+    ]
+  end
+
+  defp navigation_link_styles(:menu, active?) do
+    [
+      active? && "bg-grey-700/50",
+      "flex items-center gap-2 rounded-md p-2 uppercase hover:bg-grey-700/50"
+    ]
+  end
+
   @doc """
   Builds canonical URL for the currently rendered page.
   """

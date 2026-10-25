@@ -54,8 +54,8 @@ defmodule FirmowidWeb.Invoicing.Components.MatchingComponents do
     <div class="@container flex flex-col gap-4">
       <h2 class="text-lg/tight font-medium">{@title}</h2>
 
-      <div class="grid grid-cols-[minmax(0,1fr)_repeat(2,minmax(min-content,clamp(4rem,12cqi,7.5rem)))_max-content] gap-x-[clamp(1.5rem,3cqi,2rem)] gap-y-4">
-        <div class="col-span-full grid grid-cols-subgrid text-sm/snug text-grey-700">
+      <div class="grid grid-cols-[minmax(0,1fr)_repeat(2,minmax(min-content,clamp(4rem,12cqi,7.5rem)))_max-content] gap-x-[clamp(1.5rem,3cqi,2rem)] gap-y-4 max-md:grid-cols-[repeat(2,max-content)_1fr] max-md:gap-y-6">
+        <div class="col-span-full grid grid-cols-subgrid text-sm/snug text-grey-700 max-md:hidden">
           <span>{gettext("Information")}</span>
           <span class="text-end">{@date_label}</span>
           <span class="text-end">{@amount_label}</span>
@@ -64,9 +64,9 @@ defmodule FirmowidWeb.Invoicing.Components.MatchingComponents do
         <div
           :for={candidate <- @candidate}
           id={candidate.id}
-          class="col-span-full grid grid-cols-subgrid items-center"
+          class="col-span-full grid grid-cols-subgrid items-center max-md:gap-y-2"
         >
-          <div class="flex min-w-0 flex-col gap-1">
+          <div class="flex min-w-0 flex-col gap-1 max-md:col-span-full">
             <p class="line-clamp-1 font-semibold wrap-anywhere">{candidate.name}</p>
             <p class="line-clamp-2 text-sm/snug wrap-anywhere text-grey-600">
               {candidate.description}
@@ -74,7 +74,7 @@ defmodule FirmowidWeb.Invoicing.Components.MatchingComponents do
           </div>
           <div class="text-end text-nowrap">{candidate.date}</div>
           <div class="text-end text-nowrap tabular-nums">{candidate.amount}</div>
-          <div class="flex items-center gap-2">{render_slot(candidate)}</div>
+          <div class="flex items-center gap-2 max-md:justify-end">{render_slot(candidate)}</div>
         </div>
       </div>
     </div>

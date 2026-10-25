@@ -1,11 +1,11 @@
-<div class="mx-auto my-4 grid size-full max-h-240 min-h-0 max-w-7xl flex-1 grid-cols-[minmax(min-content,373px)_minmax(0,1fr)] grid-rows-[min-content_1fr] gap-x-10">
+<div class="mx-auto my-4 grid size-full max-h-240 min-h-0 max-w-7xl flex-1 grid-cols-[minmax(min-content,373px)_minmax(0,1fr)] grid-rows-[min-content_1fr] gap-x-10 max-md:h-auto max-md:max-h-none max-md:flex-none max-md:grid-cols-1 max-md:grid-rows-none">
   <.back
     navigate={Navigation.employees_path(:index, %{miesiac: @projects_filter_date})}
     class="mb-8 justify-self-start"
   />
 
-  <div class="col-start-2 flex items-end justify-between gap-4">
-    <div class="-mb-2 flex gap-6 px-6">
+  <div class="col-start-2 flex items-end justify-between gap-4 max-md:order-1 max-md:col-start-1">
+    <div class="-mb-2 flex gap-6 px-6 max-md:min-w-0 max-md:overflow-x-auto">
       <.tab
         patch={~p"/zarzadzanie/pracownicy/#{@employee.id}"}
         active={@live_action == :projects}
@@ -42,7 +42,7 @@
     </div>
   </div>
 
-  <.card class="row-start-2 w-full">
+  <.card class="row-start-2 w-full max-md:row-start-auto max-md:mb-6">
     <div class="flex gap-3">
       <.avatar class="size-20 shrink-0 ring-1 ring-grey-200/50">
         <.avatar_image
@@ -170,7 +170,7 @@
     </span>
   </.card>
 
-  <div class="relative z-10 col-start-2 row-start-2 size-full space-y-6">
+  <div class="relative z-10 col-start-2 row-start-2 size-full space-y-6 max-md:order-1 max-md:col-start-1 max-md:row-start-auto max-md:h-auto">
     <%= case @live_action do %>
       <% :projects -> %>
         <.live_component

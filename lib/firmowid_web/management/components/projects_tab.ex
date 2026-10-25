@@ -181,7 +181,7 @@ defmodule FirmowidWeb.Management.Components.ProjectsTab do
         </.form>
       </.card>
 
-      <div class="flex min-h-0 flex-1 gap-6">
+      <div class="flex min-h-0 flex-1 gap-6 max-md:flex-col">
         <.card class="flex min-h-0 grow flex-col">
           <div class="flex shrink-0 items-center justify-between">
             <.card_header>
@@ -197,7 +197,7 @@ defmodule FirmowidWeb.Management.Components.ProjectsTab do
           </div>
 
           <div class="relative w-full flex-1">
-            <div class="absolute inset-0 scrollbar-card divide-y divide-grey-100 overflow-y-auto pr-4">
+            <div class="absolute inset-0 scrollbar-card divide-y divide-grey-100 overflow-y-auto pr-4 max-md:static">
               <%= if Enum.empty?(@projects) do %>
                 <div class="mt-4 text-sm text-grey-700">Brak projektów</div>
               <% else %>
