@@ -33,7 +33,7 @@ defmodule FirmowidWeb.Settings.Components.TaxForecastSettings do
         <h2 class="text-base leading-none font-semibold text-grey-900">
           {gettext("Income tax reserve")}
         </h2>
-        <p class="max-w-prose text-sm leading-[1.35] text-grey-700">
+        <p class="max-w-prose text-sm/snug text-grey-700">
           {gettext(
             "Firmowid does not know how your company is taxed, so it does not choose a rate for you. The reserve is a planning assumption, not a PIT or CIT rate, an advance payment or a tax return."
           )}
@@ -49,7 +49,7 @@ defmodule FirmowidWeb.Settings.Components.TaxForecastSettings do
         class="max-w-prose space-y-4"
       >
         <div class="flex flex-col gap-1">
-          <label for={@form[:income_reserve_rate].id} class="text-sm leading-[1.35] text-grey-700">
+          <label for={@form[:income_reserve_rate].id} class="text-sm/snug text-grey-700">
             {gettext("Reserve rate (%)")}
           </label>
           <.input
@@ -60,7 +60,7 @@ defmodule FirmowidWeb.Settings.Components.TaxForecastSettings do
             step="0.01"
             class="w-32"
           />
-          <p class="text-sm leading-[1.35] text-grey-600">
+          <p class="text-sm/snug text-grey-600">
             {gettext("Leave it empty to keep the income tax reserve unset.")}
           </p>
         </div>
@@ -71,7 +71,7 @@ defmodule FirmowidWeb.Settings.Components.TaxForecastSettings do
             type="checkbox"
             label={gettext("Use recorded cost invoices as reserve costs")}
           />
-          <p class="text-sm leading-[1.35] text-grey-600">
+          <p class="text-sm/snug text-grey-600">
             {gettext(
               "Each cost invoice counts with its payment amount less the deductible VAT recorded on it, including non-deductible VAT and settlement charges. These are not statutory tax-deductible costs. Bank costs without an invoice, payroll and tax adjustments are not included."
             )}
@@ -88,7 +88,7 @@ defmodule FirmowidWeb.Settings.Components.TaxForecastSettings do
         </.button>
       </.form>
 
-      <div :if={!@editable?} class="space-y-3 text-sm leading-[1.35] text-grey-700">
+      <div :if={!@editable?} class="space-y-3 text-sm/snug text-grey-700">
         <dl class="grid grid-cols-[auto_1fr] gap-x-5 gap-y-2">
           <dt>{gettext("Reserve rate")}</dt>
           <dd class="text-grey-900">{rate_text(@settings[:income_reserve_rate])}</dd>

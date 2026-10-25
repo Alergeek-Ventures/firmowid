@@ -345,7 +345,7 @@ defmodule FirmowidWeb.Management.Views.Counterparty do
   defp invoices_section(assigns) do
     ~H"""
     <section class={[
-      "flex flex-col rounded-lg bg-white p-6 shadow-card",
+      "flex flex-col rounded-lg bg-white p-6",
       @class
     ]}>
       <div class="mb-4 flex items-center justify-between gap-4">
@@ -437,7 +437,7 @@ defmodule FirmowidWeb.Management.Views.Counterparty do
 
   defp suggested_invoices_section(assigns) do
     ~H"""
-    <section class={["rounded-lg bg-white p-6 shadow-card", @class]}>
+    <section class={["rounded-lg bg-white p-6", @class]}>
       <div class="mb-4 flex items-start justify-between gap-4">
         <div class="space-y-1">
           <h3 class="text-lg font-medium text-grey-700">Sugerowane faktury do połączenia</h3>

@@ -43,7 +43,7 @@ defmodule FirmowidWeb.Invoicing.Components.DownloadModal do
         class="relative max-md:hidden"
       >
         <Lucideicons.file_down />
-        <span class="max-xl:hidden">
+        <span class="max-xl:sr-only">
           Pobierz
         </span>
       </FirmowidUI.Components.Button.button>

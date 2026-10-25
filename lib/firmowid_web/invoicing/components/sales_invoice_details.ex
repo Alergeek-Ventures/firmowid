@@ -154,7 +154,7 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
                   variant="secondary"
                   size="small"
                 >
-                  <Lucideicons.copy /><span class="hidden xl:inline">Kopiuj</span>
+                  <Lucideicons.copy /><span class="max-xl:sr-only">Kopiuj</span>
                 </.link>
 
                 <%= if @can_write_invoicing? do %>
@@ -179,7 +179,7 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
                         aria-describedby="edit-invoice-button-description"
                       >
                         <.icon name="hero-pencil-square" class="size-4" />
-                        <span class="hidden xl:inline">Edytuj</span>
+                        <span class="max-xl:sr-only">Edytuj</span>
                       </.button>
                     </span>
                     <span id="edit-invoice-button-description" class="sr-only">
@@ -203,7 +203,7 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
                       size="small"
                     >
                       <.icon name="hero-pencil-square" class="size-4" />
-                      <span class="hidden xl:inline">Edytuj</span>
+                      <span class="max-xl:sr-only">Edytuj</span>
                     </.link>
                   <% end %>
                 <% end %>
@@ -215,7 +215,7 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
                   size="small"
                 >
                   <.icon name="hero-trash-solid" class="size-4" />
-                  <span class="hidden xl:inline">
+                  <span class="max-xl:sr-only">
                     Usuń
                   </span>
                 </.button>
@@ -227,7 +227,7 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
                   size="small"
                 >
                   <.icon name="hero-trash-solid" class="size-4" />
-                  <span class="hidden xl:inline">
+                  <span class="max-xl:sr-only">
                     Anuluj
                   </span>
                 </.button>

@@ -438,10 +438,10 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
               </.avatar>
 
               <div class="flex min-w-0 flex-col gap-0.5">
-                <p class="truncate text-base leading-[1.35] text-grey-900">
+                <p class="truncate text-base/snug text-grey-900">
                   {present(user.member.name)}
                 </p>
-                <p class="truncate text-sm leading-[1.35] text-grey-700">{user.email}</p>
+                <p class="truncate text-sm/snug text-grey-700">{user.email}</p>
               </div>
             </div>
 
@@ -825,7 +825,7 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
   defp bank_detail_row(assigns) do
     ~H"""
     <label class="text-sm text-grey-700">{@label}</label>
-    <div class="text-base leading-[1.35]">
+    <div class="text-base/snug">
       {render_slot(@inner_block)}
     </div>
     """

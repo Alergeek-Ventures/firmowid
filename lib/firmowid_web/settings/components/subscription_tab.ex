@@ -22,7 +22,7 @@ defmodule FirmowidWeb.Settings.Components.SubscriptionTab do
               Aktualny plan
             </h2>
 
-            <p class="max-w-prose text-sm leading-[1.35] text-grey-700">
+            <p class="max-w-prose text-sm/snug text-grey-700">
               Plan przypisany do Twojej organizacji oraz limity, które obejmuje miesięczny snapshot rozliczeniowy.
             </p>
           </div>
@@ -52,7 +52,7 @@ defmodule FirmowidWeb.Settings.Components.SubscriptionTab do
 
             <div class="space-y-3">
               <%= for row <- @worksheet.usage_rows do %>
-                <div class="flex items-start justify-between gap-4 text-sm leading-[1.35]">
+                <div class="flex items-start justify-between gap-4 text-sm/snug">
                   <p class="min-w-0 text-grey-900">{row.label}</p>
                   <p class="shrink-0 text-right text-grey-700">W cenie: {row.included_units}</p>
                 </div>
@@ -65,7 +65,7 @@ defmodule FirmowidWeb.Settings.Components.SubscriptionTab do
           <.alert :if={@worksheet.suggestion_rows != []} title="Aktualne nadwyżki">
             <div class="space-y-3">
               <%= for row <- @worksheet.suggestion_rows do %>
-                <div class="flex items-start justify-between gap-4 text-sm leading-[1.35]">
+                <div class="flex items-start justify-between gap-4 text-sm/snug">
                   <div class="min-w-0">
                     <p class="font-medium text-grey-900">{row.label}</p>
                     <p :if={row.detail} class="text-grey-700">{row.detail}</p>
@@ -87,7 +87,7 @@ defmodule FirmowidWeb.Settings.Components.SubscriptionTab do
         <section class="space-y-4">
           <div class="space-y-2">
             <h2 class="text-base leading-none font-semibold text-grey-900">Bieżące liczniki</h2>
-            <p class="max-w-prose text-sm leading-[1.35] text-grey-700">
+            <p class="max-w-prose text-sm/snug text-grey-700">
               Orientacyjny podgląd na żywo dla {month_label(@month)}. Dane liczymy według tej samej logiki miesiąca rozliczeniowego, z której powstaje snapshot, ale ostateczne rozliczenie opiera się wyłącznie na utrwalonym snapshotcie.
             </p>
           </div>
@@ -96,7 +96,7 @@ defmodule FirmowidWeb.Settings.Components.SubscriptionTab do
             <div class="divide-y divide-grey-200">
               <%= for row <- @worksheet.usage_rows do %>
                 <div class="space-y-2 py-4 first:pt-0 last:pb-0">
-                  <div class="flex items-start justify-between gap-4 text-sm leading-[1.35]">
+                  <div class="flex items-start justify-between gap-4 text-sm/snug">
                     <div class="min-w-0">
                       <p class="text-grey-900">{row.label}</p>
                       <p class="text-grey-700">{counter_context(row.key)}</p>
@@ -118,7 +118,7 @@ defmodule FirmowidWeb.Settings.Components.SubscriptionTab do
                     </div>
                   </div>
 
-                  <div class="flex items-center justify-between gap-4 text-xs leading-[1.35] text-grey-700">
+                  <div class="flex items-center justify-between gap-4 text-xs/snug text-grey-700">
                     <span>W cenie: {row.included_units}</span>
                     <span>{row.usage_text}</span>
                   </div>

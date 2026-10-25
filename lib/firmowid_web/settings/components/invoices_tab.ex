@@ -85,7 +85,7 @@ defmodule FirmowidWeb.Settings.Components.InvoicesTab do
           <h2 class="text-base leading-none font-semibold text-grey-900">
             Dozwoleni nadawcy
           </h2>
-          <p class="max-w-prose text-sm leading-[1.35] text-grey-700">
+          <p class="max-w-prose text-sm/snug text-grey-700">
             Dodaj adresy, z których dostawcy lub zespół mogą przesyłać faktury do Firmowida.
           </p>
         </div>
@@ -101,7 +101,7 @@ defmodule FirmowidWeb.Settings.Components.InvoicesTab do
 
           <div
             :for={email <- @allowed_sender_emails}
-            class="flex min-h-11 items-center justify-between gap-3 rounded-lg bg-teal-100 px-3 py-2 text-sm leading-[1.35] text-teal-800 sm:min-h-10"
+            class="flex min-h-11 items-center justify-between gap-3 rounded-lg bg-teal-100 px-3 py-2 text-sm/snug text-teal-800 sm:min-h-10"
           >
             <span class="min-w-0 truncate">{email}</span>
             <.icon_button

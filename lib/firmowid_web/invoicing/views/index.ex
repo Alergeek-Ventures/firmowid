@@ -226,7 +226,7 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
               />
             <% end %>
             <Lucideicons.file_input />
-            <span class="block sm:grow sm:text-center md:hidden lg:block">
+            <span class="block sm:grow sm:text-center md:max-lg:sr-only">
               Faktura spoza KSeF
             </span>
           </FirmowidUI.Components.Button.button>
@@ -241,7 +241,7 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
           class="max-md:hidden"
         >
           <Lucideicons.file_pen_line class="size-5" />
-          <span class="max-xl:hidden">
+          <span class="max-xl:sr-only">
             Wystaw fakturę
           </span>
         </.link>

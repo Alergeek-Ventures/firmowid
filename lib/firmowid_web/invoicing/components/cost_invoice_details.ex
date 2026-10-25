@@ -103,7 +103,7 @@ defmodule FirmowidWeb.Invoicing.Components.CostInvoiceDetails do
                   external={@invoice.blob && @invoice.blob.url}
                   download
                 >
-                  <Lucideicons.download /><span class="hidden xl:inline">Pobierz</span>
+                  <Lucideicons.download /><span class="max-xl:sr-only">Pobierz</span>
                 </.link>
 
                 <.button
@@ -113,7 +113,7 @@ defmodule FirmowidWeb.Invoicing.Components.CostInvoiceDetails do
                   size="small"
                 >
                   <.icon name="hero-trash-solid" class="size-4" />
-                  <span class="hidden xl:inline">
+                  <span class="max-xl:sr-only">
                     Usuń
                   </span>
                 </.button>
@@ -157,7 +157,7 @@ defmodule FirmowidWeb.Invoicing.Components.CostInvoiceDetails do
                   variant="secondary"
                   size="small"
                 >
-                  <Lucideicons.database /><span class="hidden xl:inline">Otwórz w KSeF</span>
+                  <Lucideicons.database /><span class="max-xl:sr-only">Otwórz w KSeF</span>
                 </.link>
 
                 <.button

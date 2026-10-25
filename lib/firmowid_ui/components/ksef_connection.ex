@@ -296,7 +296,7 @@ defmodule FirmowidUI.Components.KsefConnection do
                     prompt_class="font-medium"
                   />
                   <label for="private_key_password" class="flex w-full flex-col gap-1">
-                    <span class="text-sm leading-[1.35] text-grey-700">Hasło do klucza prywatnego</span>
+                    <span class="text-sm/snug text-grey-700">Hasło do klucza prywatnego</span>
                     <.input
                       type="password"
                       name="private_key_password"
@@ -368,8 +368,8 @@ defmodule FirmowidUI.Components.KsefConnection do
   defp detail_row(assigns) do
     ~H"""
     <div class={["grid grid-cols-2 items-baseline gap-x-5", @class]}>
-      <div class="text-end text-sm leading-[1.35] text-grey-700">{@label}</div>
-      <div class="min-w-0 text-base leading-[1.35] wrap-break-word text-grey-900">
+      <div class="text-end text-sm/snug text-grey-700">{@label}</div>
+      <div class="min-w-0 text-base/snug wrap-break-word text-grey-900">
         {render_slot(@inner_block)}
       </div>
     </div>
