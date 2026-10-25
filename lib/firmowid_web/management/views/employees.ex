@@ -6,15 +6,19 @@ defmodule FirmowidWeb.Management.Views.Employees do
   import FirmowidUI.Components.Link
   import FirmowidWeb.DesignSystem.Components.CoreComponents
   import FirmowidWeb.DesignSystem.Components.MonthPicker
+  import FirmowidWeb.Infrastructure.Flags, only: [flag_enabled?: 2]
   import FirmowidWeb.Management.Components.HoursRecordStatus, only: [hours_record_status: 1]
   import Phoenix.Component, except: [link: 1]
 
+  alias Ash.Notifier.Notification
+  alias Firmowid.Ash.Blobs.Blob
   alias Firmowid.Ash.Core
   alias Firmowid.Ash.Payroll
   alias Firmowid.Ash.Timetracker
   alias FirmowidWeb.Core.Endpoint
   alias FirmowidWeb.Infrastructure.Utilities.PosthogBusinessEvents
   alias FirmowidWeb.Management.Utilities.Navigation
+  alias FirmowidWeb.Payroll.Components.MonthlyPayout
   alias FirmowidWeb.Payroll.Components.PayoutEstimates
   alias FirmowidWeb.Timetracker.Utilities.Navigation, as: TimetrackerNavigation
   alias Phoenix.Socket.Broadcast
@@ -26,6 +30,7 @@ defmodule FirmowidWeb.Management.Views.Employees do
 
     if connected?(socket) do
       Endpoint.subscribe("user:joined_org:#{scope.tenant}")
+      Endpoint.subscribe("blob:updated:#{scope.tenant}")
     end
 
     socket =
@@ -47,6 +52,20 @@ defmodule FirmowidWeb.Management.Views.Employees do
   def handle_info(%Broadcast{topic: "user:joined_org:" <> _tenant}, socket) do
     {:noreply, assign_employees(socket)}
   end
+
+  def handle_info(
+        %Broadcast{
+          payload: %Notification{
+            resource: Blob,
+            data: %{processing_target: :employment_contract, processing_state: :succeeded}
+          }
+        },
+        socket
+      ) do
+    {:noreply, assign_employees(socket)}
+  end
+
+  def handle_info(%Broadcast{topic: "blob:updated:" <> _tenant}, socket), do: {:noreply, socket}
 
   @impl true
   def handle_params(params, _uri, socket) do
@@ -105,12 +124,12 @@ defmodule FirmowidWeb.Management.Views.Employees do
       # 3. Salaries as of this month]
       salaries =
         Payroll.list_salaries!(%{active_at: Date.end_of_month(date)},
-          load: [monthly_amount: [month: date], payout_estimates: [month: date]],
+          load: [monthly_amount: [month: date], monthly_payout: [month: date]],
           scope: scope
         )
 
       salary_by_member = Map.new(salaries, &{&1.member_id, &1.hourly_rate})
-      estimate_by_member = Map.new(salaries, &{&1.member_id, List.first(&1.payout_estimates)})
+      payout_by_member = Map.new(salaries, &{&1.member_id, &1.monthly_payout})
       gross_by_member = Map.new(salaries, &{&1.member_id, &1.monthly_amount})
 
       # 4. Hours records for this month
@@ -130,8 +149,8 @@ defmodule FirmowidWeb.Management.Views.Employees do
             user: user,
             time_worked: Map.get(time_by_user, user.id, 0),
             hourly_rate: Map.get(salary_by_member, user.member.id),
-            payout_estimate: Map.get(estimate_by_member, user.member.id),
             monthly_gross: Map.get(gross_by_member, user.member.id, Money.new!(:PLN, 0)),
+            monthly_payout: Map.get(payout_by_member, user.member.id),
             hours_record: Map.get(hr_by_user, user.id)
           }
         end)

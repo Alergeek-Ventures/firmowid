@@ -6,6 +6,7 @@ defmodule FirmowidWeb.Management.Components.ProjectsTab do
   import FirmowidWeb.DesignSystem.Components.CoreComponents
   import FirmowidWeb.DesignSystem.Components.MonthPicker
   import FirmowidWeb.HoursRecord.Components.ChangeRequest
+  import FirmowidWeb.Infrastructure.Flags, only: [flag_enabled?: 2]
   import FirmowidWeb.Management.Components.Card
   import FirmowidWeb.Management.Components.HoursRecordStatus, only: [hours_record_status: 1]
 
@@ -14,7 +15,7 @@ defmodule FirmowidWeb.Management.Components.ProjectsTab do
   alias Firmowid.Ash.Timetracker
   alias Firmowid.Ash.Timetracker.HoursRecord
   alias FirmowidWeb.Infrastructure.Utilities.TimeFormatter
-  alias FirmowidWeb.Payroll.Components.PayoutEstimates
+  alias FirmowidWeb.Payroll.Components.MonthlyPayout
 
   @impl true
   def mount(socket) do
@@ -23,10 +24,11 @@ defmodule FirmowidWeb.Management.Components.ProjectsTab do
 
   @impl true
   def update(assigns, socket) do
-    user = assigns.user
+    socket = assign(socket, Map.delete(assigns, :refetch))
+    user = socket.assigns.user
     member_id = user.member.id
-    date = assigns.date
-    scope = assigns.scope
+    date = socket.assigns.date
+    scope = socket.assigns.scope
 
     # 1. Sessions for this user+month, grouped by project+title
     sessions =
@@ -74,7 +76,7 @@ defmodule FirmowidWeb.Management.Components.ProjectsTab do
 
     salaries =
       Payroll.list_salaries!(%{user_id: user.id, active_at: before_date},
-        load: [monthly_amount: [month: date], payout_estimates: [month: date]],
+        load: [monthly_payout: [month: date]],
         scope: scope
       )
 
@@ -92,11 +94,9 @@ defmodule FirmowidWeb.Management.Components.ProjectsTab do
 
     socket =
       socket
-      |> assign(assigns)
       |> assign(:projects, projects)
       |> assign(:hourly_rate, hourly_rate)
-      |> assign(:monthly_gross, if(salary, do: salary.monthly_amount, else: Money.new!(:PLN, 0)))
-      |> assign(:payout_estimates, if(salary, do: salary.payout_estimates, else: []))
+      |> assign(:monthly_payout, if(salary, do: salary.monthly_payout))
       |> assign_hours_records()
       |> assign(:salary_history, salary_history)
       |> assign(:editing_payout, false)
@@ -207,7 +207,7 @@ defmodule FirmowidWeb.Management.Components.ProjectsTab do
           </div>
         </.card>
 
-        <div class="flex min-h-0 shrink-0 flex-col gap-4 overflow-y-auto">
+        <div class="flex min-h-0 w-80 max-w-full shrink-0 flex-col gap-4 overflow-y-auto max-md:w-full">
           <.card :if={@hours_record} gap_size="4" class="shrink-0">
             <.card_header>
               Ewidencja
@@ -231,11 +231,10 @@ defmodule FirmowidWeb.Management.Components.ProjectsTab do
               target={@myself}
             />
           </.card>
-          <.card class="shrink-0">
-            <PayoutEstimates.summary
-              estimates={@payout_estimates}
-              gross_amount={@monthly_gross}
-              subtitle={TimeFormatter.format_date(@date, "LLLL yyyy")}
+          <.card :if={flag_enabled?(:accurate_salary_calculation, assigns)} class="shrink-0">
+            <MonthlyPayout.summary
+              calculation={@monthly_payout}
+              month={@date}
             />
           </.card>
           <.card :if={@previous_hours_records != []} gap_size="4" class="shrink-0">

@@ -9,7 +9,6 @@ defmodule FirmowidWeb.Management.Components.ProfileTab do
 
   alias Firmowid.Ash.Payroll
   alias FirmowidWeb.Infrastructure.Utilities.TimeFormatter
-  alias FirmowidWeb.Payroll.Components.TaxProfileForm
 
   @impl true
   def mount(socket) do
@@ -25,16 +24,9 @@ defmodule FirmowidWeb.Management.Components.ProfileTab do
 
     {:ok, employment_contract} = Payroll.load_current_contract(user.member.id, scope: scope)
 
-    {:ok, salaries} =
-      Payroll.list_salaries(%{user_id: user.id, active_at: Date.utc_today()}, scope: scope)
-
-    salary = List.first(salaries)
-
     socket =
       socket
       |> assign_new(:editing_contract, fn -> false end)
-      |> assign(:salary, salary)
-      |> assign_new(:editing_tax_profile, fn -> false end)
       |> assign_contract(employment_contract)
 
     {:ok, socket}
@@ -43,7 +35,7 @@ defmodule FirmowidWeb.Management.Components.ProfileTab do
   @impl true
   def render(assigns) do
     ~H"""
-    <div class="flex h-full min-h-0 flex-col gap-6">
+    <div class="flex h-full min-h-0 flex-col gap-6 overflow-y-auto overscroll-contain">
       <.card dimmed={@user.member.archived_at} class="pb-9">
         <.card_header>
           Dane korespondencyjne
@@ -72,8 +64,8 @@ defmodule FirmowidWeb.Management.Components.ProfileTab do
         </div>
       </.card>
 
-      <div class="flex h-fit flex-1 gap-6 max-md:flex-col">
-        <.card class="flex h-fit w-1/2 grow flex-col max-md:w-full">
+      <div class="grid grid-cols-[repeat(auto-fit,minmax(min(100%,20rem),1fr))] items-start gap-6">
+        <.card class="min-w-0">
           <.card_header>
             Informacje o zatrudnieniu
             <:actions>
@@ -126,6 +118,28 @@ defmodule FirmowidWeb.Management.Components.ProfileTab do
                 <.user_card_info label="Data podpisania umowy" for={@contract_form[:signed_at].id}>
                   <.input field={@contract_form[:signed_at]} type="date" class="w-full" />
                 </.user_card_info>
+                <.user_card_info
+                  :if={flag_enabled?(:accurate_salary_calculation, assigns)}
+                  label={gettext("Payment day")}
+                  for={@contract_form[:payout_day].id}
+                >
+                  <.input field={@contract_form[:payout_day]} type="number" min="1" max="31" step="1" />
+                </.user_card_info>
+                <.user_card_info
+                  :if={flag_enabled?(:accurate_salary_calculation, assigns)}
+                  label={gettext("Payment month")}
+                  for={@contract_form[:payout_month_offset].id}
+                >
+                  <.input
+                    field={@contract_form[:payout_month_offset]}
+                    type="select"
+                    options={[
+                      {gettext("No information yet"), ""},
+                      {gettext("Same month"), 0},
+                      {gettext("Following month"), 1}
+                    ]}
+                  />
+                </.user_card_info>
               <% else %>
                 <.user_card_info label="Status umowy">
                   {format_contract_status(@employment_contract && @employment_contract.status)}
@@ -150,64 +164,26 @@ defmodule FirmowidWeb.Management.Components.ProfileTab do
                     <Lucideicons.file_text class="size-4" /> <span class="font-medium">Umowa</span>
                   </.link>
                 </.user_card_info>
+                <.user_card_info
+                  :if={flag_enabled?(:accurate_salary_calculation, assigns)}
+                  label={gettext("Payment schedule")}
+                >
+                  {payout_schedule(@employment_contract)}
+                </.user_card_info>
               <% end %>
             </div>
           </.form>
         </.card>
 
-        <div class="flex w-1/2 shrink-0 flex-col gap-6 max-md:w-full">
-          <.card
-            :if={@tax_profile_fields != [] and flag_enabled?(:tax_prognosis, assigns)}
-            class="flex h-fit flex-col"
-          >
-            <.card_header>
-              {gettext("Net forecast assumptions")}
-              <:actions>
-                <.card_edit_actions
-                  editing={@editing_tax_profile}
-                  form="tax-profile-form"
-                  toggle_event="toggle_tax_profile_editor"
-                  target={@myself}
-                  edit_label={gettext("Edit net forecast assumptions")}
-                />
-              </:actions>
-            </.card_header>
-            <.form
-              id="tax-profile-form"
-              for={@tax_profile_form}
-              phx-target={@myself}
-              phx-change="validate_tax_profile"
-              phx-submit="save_tax_profile"
-            >
-              <div class="flex flex-col gap-4">
-                <%= if @editing_tax_profile do %>
-                  <.user_card_info
-                    :for={field <- @tax_profile_fields}
-                    label={TaxProfileForm.field_label(field)}
-                    for={TaxProfileForm.input_id(@tax_profile_form, field)}
-                  >
-                    <TaxProfileForm.select form={@tax_profile_form} field={field} />
-                  </.user_card_info>
-                <% else %>
-                  <.user_card_info
-                    :for={field <- @tax_profile_fields}
-                    label={TaxProfileForm.field_label(field)}
-                  >
-                    <TaxProfileForm.saved_value form={@tax_profile_form} field={field} />
-                  </.user_card_info>
-                <% end %>
-              </div>
-            </.form>
-            <p class="text-xs/snug text-grey-600">{TaxProfileForm.notice()}</p>
-          </.card>
-
-          <.card class="flex h-fit flex-col">
-            <.card_header>
-              Kalendarz
-            </.card_header>
-            <p class="text-sm text-grey-500">Wkrótce</p>
-          </.card>
-        </div>
+        <.live_component
+          :if={flag_enabled?(:accurate_salary_calculation, assigns)}
+          module={FirmowidWeb.Management.Components.EmployeeTaxDetails}
+          id={"employee-tax-details-#{@user.member.id}"}
+          member_id={@user.member.id}
+          scope={@scope}
+          contract_type={@employment_contract && @employment_contract.contract_type}
+          archived={not is_nil(@user.member.archived_at)}
+        />
       </div>
     </div>
     """
@@ -225,6 +201,11 @@ defmodule FirmowidWeb.Management.Components.ProfileTab do
   end
 
   def handle_event("save_contract_employment", %{"contract" => params}, socket) do
+    params =
+      if flag_enabled?(:accurate_salary_calculation, socket.assigns),
+        do: params,
+        else: Map.drop(params, ["payout_day", "payout_month_offset"])
+
     case AshPhoenix.Form.submit(socket.assigns.contract_form,
            params: params,
            scope: socket.assigns.scope
@@ -237,43 +218,6 @@ defmodule FirmowidWeb.Management.Components.ProfileTab do
 
       {:error, form} ->
         {:noreply, assign(socket, :contract_form, form)}
-    end
-  end
-
-  def handle_event("toggle_tax_profile_editor", _params, socket) do
-    {:noreply,
-     socket
-     |> update(:editing_tax_profile, &(!&1))
-     |> assign(
-       :tax_profile_form,
-       TaxProfileForm.form(socket.assigns.user.member, socket.assigns.scope)
-     )}
-  end
-
-  def handle_event("validate_tax_profile", %{"member" => params}, socket) do
-    form =
-      socket.assigns.tax_profile_form
-      |> AshPhoenix.Form.validate(params)
-      |> to_form()
-
-    {:noreply, assign(socket, :tax_profile_form, form)}
-  end
-
-  def handle_event("save_tax_profile", %{"member" => params}, socket) do
-    case AshPhoenix.Form.submit(socket.assigns.tax_profile_form, params: params) do
-      {:ok, member} ->
-        user = %{socket.assigns.user | member: member}
-        # The employee view passes its user to every tab, so it must not keep the old profile.
-        send(self(), {:employee_updated, user})
-
-        {:noreply,
-         socket
-         |> assign(:user, user)
-         |> assign(:editing_tax_profile, false)
-         |> assign(:tax_profile_form, TaxProfileForm.form(member, socket.assigns.scope))}
-
-      {:error, form} ->
-        {:noreply, assign(socket, :tax_profile_form, form)}
     end
   end
 
@@ -297,16 +241,18 @@ defmodule FirmowidWeb.Management.Components.ProfileTab do
   defp present_date(%Date{} = date), do: TimeFormatter.format_date(date)
   defp present_date(date), do: to_string(date)
 
-  # The assumptions shown depend on the contract type, so their form is rebuilt
-  # from the saved profile with the contract, dropping unsaved assumption edits.
-  defp assign_contract(socket, contract) do
-    %{user: user, scope: scope} = socket.assigns
+  defp payout_schedule(%{payout_day: day, payout_month_offset: 0}) when is_integer(day),
+    do: gettext("Day %{day} of the same month", day: day)
 
+  defp payout_schedule(%{payout_day: day, payout_month_offset: 1}) when is_integer(day),
+    do: gettext("Day %{day} of the following month", day: day)
+
+  defp payout_schedule(_contract), do: gettext("No information yet")
+
+  defp assign_contract(socket, contract) do
     socket
     |> assign(:employment_contract, contract)
-    |> assign(:contract_form, contract_form(contract, scope))
-    |> assign(:tax_profile_fields, TaxProfileForm.fields(contract && contract.contract_type))
-    |> assign(:tax_profile_form, TaxProfileForm.form(user.member, scope))
+    |> assign(:contract_form, contract_form(contract, socket.assigns.scope))
   end
 
   defp contract_form(nil, _scope), do: nil

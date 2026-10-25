@@ -12,6 +12,16 @@ defmodule Firmowid.Ash.Payroll do
   alias Firmowid.Ash.Payroll.UserEmploymentContract
 
   resources do
+    resource Firmowid.Ash.Payroll.MemberPayrollInput do
+      define :list_payroll_inputs, action: :list
+    end
+
+    resource Firmowid.Ash.Payroll.MemberTaxDeclaration do
+      define :create_tax_declaration, action: :create
+      define :list_tax_declarations, action: :list
+      define :correct_tax_declaration, action: :correct
+    end
+
     resource Firmowid.Ash.Payroll.UserSalary do
       define :create_salary, action: :create
       define :bulk_create_salaries, action: :bulk_create_salaries, args: [:entries]

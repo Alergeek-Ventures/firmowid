@@ -180,6 +180,7 @@
           date={@projects_filter_date}
           active_months={@active_months}
           scope={@ash_scope}
+          feature_flags={@feature_flags}
         />
       <% :profile -> %>
         <.live_component
@@ -195,6 +196,7 @@
           id="documents-tab"
           user={@employee}
           scope={@ash_scope}
+          feature_flags={@feature_flags}
           variant={:management}
           dimmed={@employee.member.archived_at != nil}
           current_contract_id={@current_contract && @current_contract.id}

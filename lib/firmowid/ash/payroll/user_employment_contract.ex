@@ -22,6 +22,16 @@ defmodule Firmowid.Ash.Payroll.UserEmploymentContract do
 
   require Resource
 
+  @contract_details_fields [
+    :starts_at,
+    :contract_type,
+    :position,
+    :status,
+    :signed_at,
+    :payout_day,
+    :payout_month_offset
+  ]
+
   postgres do
     table "user_employment_contracts"
     repo Firmowid.Repo
@@ -154,16 +164,7 @@ defmodule Firmowid.Ash.Payroll.UserEmploymentContract do
       description "Create an employment contract record for a member."
       primary? true
 
-      accept [
-        :starts_at,
-        :salary,
-        :member_id,
-        :blob_id,
-        :contract_type,
-        :position,
-        :status,
-        :signed_at
-      ]
+      accept [:salary, :member_id, :blob_id, :hourly_rate_confirmed | @contract_details_fields]
 
       argument :user_salary, :map
       argument :bank_account_number, :string
@@ -214,7 +215,9 @@ defmodule Firmowid.Ash.Payroll.UserEmploymentContract do
     update :update do
       description "Update employment contract details."
       primary? true
-      accept [:contract_type, :status, :signed_at, :position, :starts_at]
+
+      accept @contract_details_fields
+
       require_atomic? false
 
       change MaybeActivateContract
@@ -333,6 +336,9 @@ defmodule Firmowid.Ash.Payroll.UserEmploymentContract do
     attribute :salary, AshMoney.Types.Money, allow_nil?: false
     attribute :starts_at, :date, allow_nil?: false
     attribute :signed_at, :date, allow_nil?: true
+    attribute :hourly_rate_confirmed, :boolean
+    attribute :payout_day, :integer, constraints: [min: 1, max: 31]
+    attribute :payout_month_offset, :integer, constraints: [min: 0, max: 1]
 
     attribute :contract_type, :atom,
       constraints: [one_of: [:uop, :b2b, :uz, :uod]],
