@@ -2,13 +2,15 @@
   <%!-- todo: css background image --%>
   <img
     src="/images/figurine_timeracker.png"
-    class="pointer-events-none fixed top-[20%] left-0 z-0 hidden h-[135vh] lg:block"
+    class="pointer-events-none fixed top-[20%] left-0 z-0 hidden h-[135vh] max-md:block max-md:h-auto max-md:w-full max-md:opacity-60 lg:block"
   />
 
   <div class="sticky top-navbar z-40 -mt-4 flex items-center justify-between gap-4 bg-grey-100 pt-12 pb-9">
-    <div class="flex shrink-0 gap-2">
+    <div class="flex shrink-0 gap-2 max-md:min-w-0 max-md:shrink">
       <Lucideicons.calendar_1 />
-      <p class="line-clamp-1 text-grey-900">{format_current_day_header(Date.utc_today())}</p>
+      <p class="line-clamp-1 text-grey-900 max-md:line-clamp-2 max-md:leading-5">
+        {format_current_day_header(Date.utc_today())}
+      </p>
     </div>
 
     <.link

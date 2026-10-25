@@ -1074,30 +1074,31 @@ msgstr ""
 msgid "— operates continuously to ensure the security and reliability of the Service. With consent, we may additionally enable session recording in the browser, which helps reproduce the steps leading to an error."
 msgstr ""
 
-#: lib/firmowid_web/infrastructure/layouts/app.html.heex:122
+#: lib/firmowid_web/infrastructure/layouts/app.html.heex:62
+#: lib/firmowid_web/infrastructure/layouts/app.html.heex:128
 #, elixir-autogen, elixir-format
 msgid "Feedback"
 msgstr ""
 
-#: lib/firmowid_web/infrastructure/layouts/app.html.heex:236
+#: lib/firmowid_web/infrastructure/layouts/app.html.heex:196
 #, elixir-autogen, elixir-format
 msgctxt "avatar menu"
 msgid "Bank accounts"
 msgstr ""
 
-#: lib/firmowid_web/infrastructure/layouts/app.html.heex:245
+#: lib/firmowid_web/infrastructure/layouts/app.html.heex:205
 #, elixir-autogen, elixir-format
 msgctxt "avatar menu"
 msgid "Billing"
 msgstr ""
 
-#: lib/firmowid_web/infrastructure/layouts/app.html.heex:262
+#: lib/firmowid_web/infrastructure/layouts/app.html.heex:222
 #, elixir-autogen, elixir-format
 msgctxt "avatar menu"
 msgid "Log out"
 msgstr ""
 
-#: lib/firmowid_web/infrastructure/layouts/app.html.heex:228
+#: lib/firmowid_web/infrastructure/layouts/app.html.heex:188
 #, elixir-autogen, elixir-format
 msgctxt "avatar menu"
 msgid "Settings"
@@ -1105,43 +1106,43 @@ msgstr ""
 
 #: lib/firmowid_web/analysis/views/dashboard.ex:55
 #: lib/firmowid_web/analysis/views/dashboard.ex:462
-#: lib/firmowid_web/infrastructure/layouts/app.html.heex:87
+#: lib/firmowid_web/infrastructure/layouts.ex:78
 #, elixir-autogen, elixir-format
 msgctxt "main navigation"
 msgid "Analysis"
 msgstr ""
 
-#: lib/firmowid_web/infrastructure/layouts/app.html.heex:58
+#: lib/firmowid_web/infrastructure/layouts.ex:56
 #, elixir-autogen, elixir-format
 msgctxt "main navigation"
 msgid "Invoicing"
 msgstr ""
 
-#: lib/firmowid_web/infrastructure/layouts/app.html.heex:73
+#: lib/firmowid_web/infrastructure/layouts.ex:67
 #, elixir-autogen, elixir-format
 msgctxt "main navigation"
 msgid "Management"
 msgstr ""
 
-#: lib/firmowid_web/infrastructure/layouts/app.html.heex:110
+#: lib/firmowid_web/infrastructure/layouts.ex:98
 #, elixir-autogen, elixir-format
 msgctxt "main navigation"
 msgid "Time tracking"
 msgstr ""
 
-#: lib/firmowid_web/infrastructure/layouts/app.html.heex:311
+#: lib/firmowid_web/infrastructure/layouts/app.html.heex:271
 #, elixir-autogen, elixir-format
 msgctxt "management navigation"
 msgid "Counterparties"
 msgstr ""
 
-#: lib/firmowid_web/infrastructure/layouts/app.html.heex:290
+#: lib/firmowid_web/infrastructure/layouts/app.html.heex:250
 #, elixir-autogen, elixir-format
 msgctxt "management navigation"
 msgid "Employees"
 msgstr ""
 
-#: lib/firmowid_web/infrastructure/layouts/app.html.heex:300
+#: lib/firmowid_web/infrastructure/layouts/app.html.heex:260
 #, elixir-autogen, elixir-format
 msgctxt "management navigation"
 msgid "Projects"
@@ -1209,7 +1210,7 @@ msgstr ""
 msgid "Project"
 msgstr ""
 
-#: lib/firmowid_web/infrastructure/layouts/app.html.heex:93
+#: lib/firmowid_web/infrastructure/layouts.ex:84
 #, elixir-autogen, elixir-format
 msgid "This feature is still in progress! Your feedback will help us make it even better."
 msgstr ""
@@ -1488,7 +1489,7 @@ msgstr ""
 msgid "Ask"
 msgstr ""
 
-#: lib/firmowid_web/invoicing/components/entries_table.ex:419
+#: lib/firmowid_web/invoicing/components/entries_table.ex:442
 #: lib/firmowid_web/invoicing/components/matching_components.ex:135
 #, elixir-autogen, elixir-format
 msgid "Complete"
@@ -2973,13 +2974,13 @@ msgstr ""
 msgid "The transaction is skipped. Restore it for matching first."
 msgstr ""
 
-#: lib/firmowid_web/infrastructure/layouts/app.html.heex:219
+#: lib/firmowid_web/infrastructure/layouts/app.html.heex:179
 #, elixir-autogen, elixir-format
 msgctxt "avatar menu"
 msgid "Add organization"
 msgstr ""
 
-#: lib/firmowid_web/infrastructure/layouts/app.html.heex:179
+#: lib/firmowid_web/infrastructure/layouts/app.html.heex:139
 #, elixir-autogen, elixir-format
 msgctxt "avatar menu"
 msgid "Organization"
@@ -3015,7 +3016,7 @@ msgstr ""
 msgid "See in analysis."
 msgstr ""
 
-#: lib/firmowid_web/infrastructure/layouts/app.html.heex:210
+#: lib/firmowid_web/infrastructure/layouts/app.html.heex:170
 #, elixir-autogen, elixir-format
 msgctxt "avatar menu"
 msgid "No plan"
@@ -3070,7 +3071,7 @@ msgid "Forecast based on available data and assumptions. It does not replace pay
 msgstr ""
 
 #: lib/firmowid_web/invoicing/transactions/components/salary_components.ex:105
-#: lib/firmowid_web/management/views/employees.html.heex:158
+#: lib/firmowid_web/management/views/employees.html.heex:165
 #: lib/firmowid_web/payroll/components/payout_estimates.ex:52
 #, elixir-autogen, elixir-format
 msgid "Gross"
@@ -3091,7 +3092,7 @@ msgstr ""
 msgid "Health insurance only, first income tax bracket, no PIT-2 reduction."
 msgstr ""
 
-#: lib/firmowid_web/management/views/employees.html.heex:108
+#: lib/firmowid_web/management/views/employees.html.heex:115
 #, elixir-autogen, elixir-format
 msgid "Hours"
 msgstr ""
@@ -3134,7 +3135,7 @@ msgid "Mandate — student under 26"
 msgstr ""
 
 #: lib/firmowid_web/invoicing/transactions/components/salary_components.ex:105
-#: lib/firmowid_web/management/views/employees.html.heex:159
+#: lib/firmowid_web/management/views/employees.html.heex:166
 #: lib/firmowid_web/payroll/components/payout_estimates.ex:25
 #: lib/firmowid_web/payroll/components/payout_estimates.ex:64
 #, elixir-autogen, elixir-format
@@ -3171,12 +3172,12 @@ msgstr ""
 msgid "The transfer amount differs from the expected salary by more than 20% (at least 1000 PLN)."
 msgstr ""
 
-#: lib/firmowid_web/management/views/employees.html.heex:162
+#: lib/firmowid_web/management/views/employees.html.heex:169
 #, elixir-autogen, elixir-format
 msgid "Timesheet"
 msgstr ""
 
-#: lib/firmowid_web/management/views/employees.html.heex:267
+#: lib/firmowid_web/management/views/employees.html.heex:274
 #, elixir-autogen, elixir-format
 msgid "Unknown contract type — only gross pay is shown"
 msgstr ""
@@ -4046,7 +4047,7 @@ msgstr ""
 msgid "Cancel editing"
 msgstr ""
 
-#: lib/firmowid_web/management/views/employees.html.heex:142
+#: lib/firmowid_web/management/views/employees.html.heex:149
 #, elixir-autogen, elixir-format
 msgid "Cancel editing rates"
 msgstr ""
@@ -4061,7 +4062,7 @@ msgstr ""
 msgid "Copy %{field}"
 msgstr ""
 
-#: lib/firmowid_web/management/views/employees.html.heex:315
+#: lib/firmowid_web/management/views/employees.html.heex:322
 #, elixir-autogen, elixir-format
 msgid "Copy bank account number"
 msgstr ""
@@ -4114,7 +4115,7 @@ msgstr ""
 msgid "Edit transfer details"
 msgstr ""
 
-#: lib/firmowid_web/timetracker/views/index.html.heex:92
+#: lib/firmowid_web/timetracker/views/index.html.heex:94
 #, elixir-autogen, elixir-format
 msgid "Enter time manually"
 msgstr ""
@@ -4124,8 +4125,8 @@ msgstr ""
 msgid "Hide sessions"
 msgstr ""
 
-#: lib/firmowid_web/management/views/counterparties.html.heex:174
-#: lib/firmowid_web/management/views/counterparties.html.heex:260
+#: lib/firmowid_web/management/views/counterparties.html.heex:178
+#: lib/firmowid_web/management/views/counterparties.html.heex:264
 #, elixir-autogen, elixir-format
 msgid "Open counterparty %{name}"
 msgstr ""
@@ -4172,7 +4173,7 @@ msgstr ""
 msgid "Remove selected file"
 msgstr ""
 
-#: lib/firmowid_web/invoicing/views/index.ex:172
+#: lib/firmowid_web/invoicing/views/index.ex:167
 #, elixir-autogen, elixir-format
 msgid "Search invoices"
 msgstr ""
@@ -4187,7 +4188,7 @@ msgstr ""
 msgid "Show companies only"
 msgstr ""
 
-#: lib/firmowid_web/management/views/employees.html.heex:291
+#: lib/firmowid_web/management/views/employees.html.heex:298
 #, elixir-autogen, elixir-format
 msgid "Show details of employee %{name}"
 msgstr ""
@@ -4207,7 +4208,8 @@ msgstr ""
 msgid "View invoice %{number}"
 msgstr ""
 
-#: lib/firmowid_web/infrastructure/layouts/app.html.heex:322
+#: lib/firmowid_web/infrastructure/layouts/app.html.heex:92
+#: lib/firmowid_web/infrastructure/layouts/app.html.heex:282
 #, elixir-autogen, elixir-format
 msgctxt "main navigation"
 msgid "Navigation menu"

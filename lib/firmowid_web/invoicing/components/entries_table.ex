@@ -79,7 +79,7 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
     ~H"""
     <table
       id="invoicing-entries"
-      class="-mt-8 table-fixed border-separate border-spacing-y-3"
+      class="-mt-8 table-fixed border-separate border-spacing-y-3 max-md:mt-0 max-md:block"
     >
       <col
         :for={column <- @columns}
@@ -97,7 +97,7 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
           end
         ]}
       />
-      <thead class="sticky top-[130px] z-1 bg-grey-100">
+      <thead class="sticky top-[130px] z-1 bg-grey-100 max-md:hidden">
         <tr>
           <th
             :for={column <- @columns}
@@ -114,7 +114,7 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
           </th>
         </tr>
       </thead>
-      <tbody>
+      <tbody class="max-md:flex max-md:flex-col max-md:gap-3">
         <%= for entry <- @invoicing_entries do %>
           <%= case entry do %>
             <% %TransactionGroup{} = group -> %>
@@ -200,12 +200,13 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
       |> assign(:is_income, income_for_entry(assigns.invoicing_entry))
 
     ~H"""
-    <tr id={"#{@invoicing_entry.id}-row"}>
+    <tr id={"#{@invoicing_entry.id}-row"} class={mobile_row_styles(@is_draft)}>
       <td
         :for={column <- @columns}
         class={
           [
             "bg-white py-2 transition-all duration-500",
+            mobile_cell_styles(column),
             column == "party" && "rounded-l-md px-5 text-ellipsis max-xl:max-w-72",
             String.ends_with?(column, "date") && "font-light",
             column == "amount" && "rounded-r-md",
@@ -223,7 +224,7 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
         <div class={
           [
             # this column has no defined width, so we limit the worst offenders "manually"
-            column == "party" && "max-w-[50vw]",
+            column == "party" && "max-w-[50vw] max-md:max-w-none",
             # required to display the "dot freshness" indicator that is rendered outside of the cell
             column != "amount" && "w-full truncate"
           ]
@@ -239,6 +240,28 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
     </tr>
     """
   end
+
+  # Below md each row becomes a tile: party and amount on top, the first date
+  # underneath. Statuses and skip actions are left to the detail pages.
+  defp mobile_row_styles(draft?) do
+    [
+      "max-md:grid max-md:grid-cols-[minmax(0,1fr)_auto] max-md:overflow-hidden max-md:rounded-lg",
+      draft? && "max-md:border-2 max-md:border-dashed max-md:border-grey-700/50"
+    ]
+  end
+
+  defp mobile_cell_styles("party"),
+    do: "max-md:col-start-1 max-md:row-start-1 max-md:rounded-none max-md:border-0 max-md:pt-4 max-md:pb-1"
+
+  defp mobile_cell_styles(column) when column in ["issue_date", "value_date", "issue_or_value_date"],
+    do:
+      "max-md:col-span-2 max-md:row-start-2 max-md:border-0 max-md:px-5 max-md:pt-0 max-md:pb-4 max-md:text-sm max-md:text-grey-700"
+
+  defp mobile_cell_styles("amount"),
+    do:
+      "max-md:col-start-2 max-md:row-start-1 max-md:rounded-none max-md:border-0 max-md:bg-white! max-md:pt-2 max-md:pb-0 max-md:pl-3 max-md:font-semibold"
+
+  defp mobile_cell_styles(_status_or_second_date), do: "max-md:hidden"
 
   # amount is differently rendered (has a background color that fills the cell)
   defp render_cell(%{column: "amount", invoicing_entry: %Transaction{} = transaction} = assigns) do
@@ -724,7 +747,7 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
     ~H"""
     <tr
       id={"#{@group.id}-row"}
-      class="cursor-pointer duration-200"
+      class={["cursor-pointer duration-200", mobile_row_styles(false)]}
       phx-click={
         JS.toggle_class("rotate-90", to: "#chevron-#{@group.id}")
         |> JS.toggle_class("opacity-50", to: "##{@group.id}-row")
@@ -739,6 +762,7 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
         :for={column <- @columns}
         class={[
           "bg-white py-2 transition-all duration-500",
+          mobile_cell_styles(column),
           column == "party" && "rounded-l-md px-5 text-ellipsis max-xl:max-w-72",
           String.ends_with?(column, "date") && "font-light",
           column == "amount" && "rounded-r-md",
@@ -747,7 +771,7 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
         ]}
       >
         <div class={[
-          column == "party" && "max-w-[50vw]",
+          column == "party" && "max-w-[50vw] max-md:max-w-none",
           column != "amount" && "w-full truncate"
         ]}>
           <%= if column == "party" do %>
@@ -779,11 +803,15 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
     </tr>
     <!-- Group transaction rows (hidden by default) -->
     <%= for transaction <- @group.transactions do %>
-      <tr data-group-transactions={@group.id} class="hidden">
+      <tr
+        data-group-transactions={@group.id}
+        class={["hidden max-md:[[style*='block']]:grid!", mobile_row_styles(false)]}
+      >
         <td
           :for={column <- @columns}
           class={[
             "bg-white py-2 transition-all duration-500",
+            mobile_cell_styles(column),
             column == "party" && "rounded-l-md px-5 text-ellipsis max-xl:max-w-72",
             String.ends_with?(column, "date") && "font-light",
             column == "amount" && "rounded-r-md",
@@ -794,7 +822,7 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
           ]}
         >
           <div class={[
-            column == "party" && "max-w-[50vw]",
+            column == "party" && "max-w-[50vw] max-md:max-w-none",
             column != "amount" && "w-full truncate"
           ]}>
             <%= if column == "party" do %>

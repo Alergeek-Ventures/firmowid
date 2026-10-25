@@ -1,12 +1,14 @@
 <div class="mx-auto flex w-full max-w-7xl flex-col gap-3 pb-4">
   <% # top -> collapsed navbar height (56px) / TODO: refactor %>
   <div class="sticky top-10.5 z-10 flex flex-col gap-6 bg-grey-100 py-4">
-    <div class="flex items-center justify-between">
-      <form class="flex gap-4" phx-submit="search">
+    <div class="flex items-center justify-between max-md:flex-col max-md:items-stretch max-md:gap-3">
+      <form class="flex gap-4 max-md:gap-3" phx-submit="search">
         <.month_picker
           id="month"
+          show_on_mobile
           selected_date={@selected_date}
           active_months={@active_months}
+          class="max-md:flex-1"
         />
 
         <div
@@ -22,7 +24,7 @@
             phx-change="search"
             phx-debounce="300"
             input_class="py-0 px-1 bg-transparent border-none"
-            class="w-0 border-transparent px-0 opacity-0 transition-[width,opacity,padding] duration-200 ease-in-out group-data-[expanded=true]:w-64 group-data-[expanded=true]:px-2 group-data-[expanded=true]:py-1 group-data-[expanded=true]:opacity-100 focus:border-none focus:ring-0 focus:outline-hidden"
+            class="w-0 border-transparent px-0 opacity-0 transition-[width,opacity,padding] duration-200 ease-in-out group-data-[expanded=true]:w-64 group-data-[expanded=true]:px-2 group-data-[expanded=true]:py-1 group-data-[expanded=true]:opacity-100 focus:border-none focus:ring-0 focus:outline-hidden max-md:group-data-[expanded=true]:w-36"
           />
           <.button
             type="button"
@@ -45,6 +47,7 @@
           size="big"
           download
           redirect={TimetrackerNavigation.salaries_csv_path(@selected_date)}
+          class="max-md:hidden"
         >
           <Lucideicons.file_text /> Raport wypłat
         </.link>
@@ -52,6 +55,7 @@
           navigate={~p"/zaproszenia"}
           kind="button"
           variant="special"
+          class="max-md:w-full max-md:justify-center"
         >
           <.icon name="hero-plus-mini" class="size-6" /> Dodaj pracownika
         </.link>
@@ -70,12 +74,15 @@
         kind="button"
         variant="ghost"
         size="small"
-        class={if(@live_action == live_action, do: "bg-grey-700 text-white hover:text-grey-900")}
+        class={[
+          "max-md:flex-1",
+          @live_action == live_action && "bg-grey-700 text-white hover:text-grey-900"
+        ]}
       >
         {label}
       </.link>
       <.switch
-        class="ml-auto flex-row-reverse gap-4"
+        class="ml-auto flex-row-reverse gap-4 max-md:hidden"
         label="Widok wypłat"
         field={@form[:viewing_wages]}
         phx-click="toggle_wages_view"
@@ -88,9 +95,9 @@
     class={[
       "grid gap-x-6 gap-y-2",
       @view == :standard && @live_action == :index &&
-        "grid-cols-[1fr_min-content_min-content_min-content]",
+        "grid-cols-[1fr_min-content_min-content_min-content] max-md:grid-cols-[1fr_min-content_min-content]",
       @view == :standard && @live_action == :archive &&
-        "grid-cols-[1fr_min-content_min-content_min-content_min-content]",
+        "grid-cols-[1fr_min-content_min-content_min-content_min-content] max-md:grid-cols-[1fr_min-content_min-content_min-content]",
       @view != :standard && @live_action == :index &&
         "grid-cols-[minmax(10rem,2fr)_max-content_repeat(3,minmax(6rem,1fr))_min-content_min-content]",
       @view != :standard && @live_action == :archive &&
@@ -159,7 +166,7 @@
         <p class="text-end text-nowrap">{gettext("Net forecast")}</p>
       <% end %>
       <span />
-      <p class="text-end text-nowrap">{gettext("Timesheet")}</p>
+      <p class="text-end text-nowrap max-md:hidden">{gettext("Timesheet")}</p>
     </div>
 
     <%= if Enum.empty?(@employees) do %>
@@ -301,7 +308,7 @@
           </div>
         </div>
 
-        <div class="ml-2 flex items-center gap-4 rounded-sm bg-white p-4">
+        <div class="ml-2 flex items-center gap-4 rounded-sm bg-white p-4 max-md:hidden">
           <.hours_record_status hours_record={employee.hours_record} user={employee.user} />
 
           <.button

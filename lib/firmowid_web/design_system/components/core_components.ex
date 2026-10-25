@@ -612,7 +612,7 @@ defmodule FirmowidWeb.DesignSystem.Components.CoreComponents do
         {@rest}
       />
       <div class={[
-        "relative h-[24px] w-[38px] rounded-full bg-grey-200 p-[4px] transition-colors duration-200 ease-out after:absolute after:size-[16px] after:rounded-full after:bg-white after:transition-transform after:duration-200 after:ease-out after:content-[''] peer-checked:after:translate-x-[14px] disabled:opacity-50",
+        "relative h-[24px] w-[38px] shrink-0 rounded-full bg-grey-200 p-[4px] transition-colors duration-200 ease-out after:absolute after:size-[16px] after:rounded-full after:bg-white after:transition-transform after:duration-200 after:ease-out after:content-[''] peer-checked:after:translate-x-[14px] disabled:opacity-50",
         @color == "rust" && "peer-checked:bg-rust-700",
         @color == "teal" && "peer-checked:bg-teal-700"
       ]}>

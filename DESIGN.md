@@ -323,11 +323,14 @@ Spacing follows a 4px rhythm. 8px and 16px gaps dominate, with 12px and 24px
 as secondary steps, and 32px or more only between major sections. Card
 interiors use 24px padding (16px on compact cards).
 
-There is no mobile navigation yet: below 768px the main navigation links and
-the account cluster are hidden and nothing replaces them (the only menu button
-re-expands the collapsed Management bar). A mobile layout is planned work.
-Employee-facing flows (time tracking, leave, delegations) must become fully
-usable at phone widths; do not assume a mobile menu exists when designing them.
+Below 768px the centred navigation links and the feedback button are hidden
+and the account button becomes a menu (hamburger) button. It opens the account
+dropdown as a full-width black panel under the navbar, with the main
+navigation links and feedback listed above the account items. The Management
+sub-navigation stays as a left-aligned row. Page content must fit 390px
+without horizontal scrolling, because any overflow widens the layout viewport
+and pushes the menu button off-screen. Employee-facing flows (time tracking,
+leave, delegations) must be fully usable at phone widths.
 
 ## Elevation & Depth
 
@@ -468,7 +471,7 @@ expression of the Two Sides of the Ledger Rule.
 ### Navigation
 - **Style:** a full-width black bar with off-white bold "Firmowid" wordmark on the left and centred uppercase 14px links with icons. Inactive links sit at 50% opacity, the active one at 90%, and hover reaches full opacity.
 - **Account cluster:** on the right, opening a black dropdown whose items highlight with graphite/50.
-- **Mobile:** not designed yet; below 768px the links and account cluster are hidden (see Layout).
+- **Mobile:** below 768px a hamburger button opens one full-width black menu with the main links, feedback and account items (see Layout).
 
 ### Modals
 A white surface with a 6px radius, generous 40px padding, overlay shadow plus

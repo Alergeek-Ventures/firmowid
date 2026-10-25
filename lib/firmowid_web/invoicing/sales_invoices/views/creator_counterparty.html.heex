@@ -1,6 +1,6 @@
 <div class="mx-auto my-4 flex w-full max-w-7xl flex-1 flex-col">
   <div class="flex flex-1 flex-col space-y-10 px-9">
-    <div class="flex flex-row items-start justify-between">
+    <div class="flex flex-row items-start justify-between max-md:flex-wrap max-md:gap-4">
       <.render_header step={@step_number} title="Wybierz kontrahenta" />
 
       <div class="flex flex-row gap-2">
@@ -46,15 +46,15 @@
 
       <div
         :if={not @counterparties_zero_state?}
-        class="grid flex-1 grid-cols-[1fr_max-content_max-content_max-content] gap-x-6 gap-y-2"
+        class="grid flex-1 grid-cols-[1fr_max-content_max-content_max-content] gap-x-6 gap-y-2 max-md:w-full max-md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]"
       >
         <.form
           for={@params}
           phx-change={JS.push("search_counterparties", loading: "#counterparties")}
           phx-submit={JS.push("search_counterparties", loading: "#counterparties")}
-          class="col-span-full mb-2 flex flex-row items-center gap-4"
+          class="col-span-full mb-2 flex flex-row items-center gap-4 max-md:flex-wrap"
         >
-          <div class="relative w-full max-w-lg flex-1">
+          <div class="relative w-full max-w-lg flex-1 max-md:basis-full">
             <Lucideicons.search class="absolute inset-y-0 top-0.5 left-3 my-auto size-4 text-grey-900" />
 
             <.input
@@ -144,8 +144,8 @@
           data-empty={@counterparties_empty?}
           class="col-span-full grid grid-cols-subgrid items-center px-4 py-1 text-sm/snug text-grey-700 data-empty:hidden"
         >
-          <p>Kontrahent</p>
-          <p>Identyfikator</p>
+          <p class="max-md:col-span-2">Kontrahent</p>
+          <p class="max-md:col-start-1">Identyfikator</p>
           <p>Kraj</p>
         </div>
 
@@ -179,7 +179,7 @@
             phx-value-counterparty_id={counterparty.id}
             class="-ring-offset-1 group col-span-full grid cursor-pointer grid-cols-subgrid items-center rounded-md bg-white px-4 py-3 text-left text-sm ring-teal-300 transition duration-200 ease-out hover:ring-2 phx-click-loading:opacity-70"
           >
-            <p class="flex flex-row items-center gap-2 text-black">
+            <p class="flex flex-row items-center gap-2 text-black max-md:col-span-2">
               <span class="inline-flex items-center gap-2">
                 <%= case counterparty.type do %>
                   <% :company -> %>
@@ -199,7 +199,7 @@
               {CountryCodes.country_name(counterparty.country)}
             </p>
 
-            <Lucideicons.chevron_right class="justify-self-end text-grey-500 transition duration-200 ease-out group-hover:text-grey-900" />
+            <Lucideicons.chevron_right class="justify-self-end text-grey-500 transition duration-200 ease-out group-hover:text-grey-900 max-md:col-start-3 max-md:row-span-2 max-md:row-start-1" />
           </.button>
         </div>
       </div>
@@ -233,7 +233,7 @@
             <% :last_counterparties -> %>
               <div
                 :for={counterparty <- @last_counterparties}
-                class="flex flex-row justify-between gap-4 rounded-md border border-grey-200 px-4 py-3.5 transition-opacity phx-click-loading:opacity-50"
+                class="flex flex-row justify-between gap-4 rounded-md border border-grey-200 px-4 py-3.5 transition-opacity max-md:flex-col phx-click-loading:opacity-50"
               >
                 <div class="grid min-w-0 grid-cols-[max-content_minmax(0,1fr)] gap-x-5 gap-y-2 text-sm">
                   <p class="text-grey-700">Nazwa</p>
@@ -253,7 +253,7 @@
                   </p>
                 </div>
 
-                <div class="flex flex-col items-end justify-between text-right">
+                <div class="flex flex-col items-end justify-between text-right max-md:flex-row max-md:items-center">
                   <%= case counterparty.type do %>
                     <% :company -> %>
                       <Lucideicons.building_2 class="size-4 text-grey-500" />
@@ -276,7 +276,7 @@
             <% :last_invoices -> %>
               <div
                 :for={invoice <- @last_invoices}
-                class="flex flex-row justify-between gap-4 rounded-md border border-grey-200 px-4 py-3.5 transition-opacity phx-click-loading:opacity-50"
+                class="flex flex-row justify-between gap-4 rounded-md border border-grey-200 px-4 py-3.5 transition-opacity max-md:flex-col phx-click-loading:opacity-50"
               >
                 <div class="grid min-w-0 grid-cols-[max-content_minmax(0,1fr)] gap-x-5 gap-y-2 text-sm">
                   <p class="text-grey-700">Kontrahent</p>
@@ -291,7 +291,7 @@
                   </p>
                 </div>
 
-                <div class="flex flex-col items-end justify-between text-right">
+                <div class="flex flex-col items-end justify-between text-right max-md:flex-row max-md:items-center">
                   <p class="text-sm text-grey-500">{invoice.issue_date}</p>
 
                   <div class="flex flex-row gap-2.5">

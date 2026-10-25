@@ -147,20 +147,14 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
   @impl true
   def render(assigns) do
     ~H"""
-    <div class="my-16 flex flex-col items-center justify-center gap-16 text-center md:hidden">
-      <.icon name="hero-document-magnifying-glass-solid" class="size-16" />
-      <div class="flex flex-col gap-4">
-        <p class="font-bold">Podgląd dokumentów nie jest aktualnie dostępny na urządzeniu mobilnym</p>
-        <p>Zeskanuj dokument naciskając przycisk poniżej, a będzie on dostępny na komputerze.</p>
-      </div>
-    </div>
-
-    <div class="sticky top-navbar z-10 flex justify-between bg-grey-100 py-3 max-md:justify-center">
-      <div class="flex items-center gap-4">
+    <div class="sticky top-navbar z-10 flex justify-between bg-grey-100 py-3 max-md:static max-md:flex-col max-md:gap-3">
+      <div class="flex items-center gap-4 max-md:gap-3">
         <.month_picker
           id="month"
+          show_on_mobile
           active_months={@active_months}
           selected_date={@params.month}
+          class="max-md:h-12 max-md:flex-1"
         />
 
         <.button
@@ -168,6 +162,7 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
           variant="secondary"
           size="big"
           id="open-search"
+          class="max-md:size-12 max-md:justify-center"
           phx-click="open-search"
           aria-label={gettext("Search invoices")}
           phx-hook="Tippy"
@@ -179,7 +174,7 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
 
       <div
         phx-drop-target={can_write_invoicing?(@current_user) && @uploads.file.ref}
-        class="flex flex-row gap-4"
+        class="flex flex-row gap-4 max-md:flex-col max-md:gap-3"
       >
         <%= if @invoicing_entries != [] do %>
           <.live_component
@@ -193,6 +188,7 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
           id="upload-form"
           phx-change="upload"
           phx-submit="upload"
+          class="max-md:flex"
         >
           <div class="hidden">
             <.live_file_input upload={@uploads.file} />
@@ -202,7 +198,7 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
             for={@uploads.file.ref}
             variant="secondary"
             accent="rust"
-            class="relative"
+            class="relative max-md:h-12 max-md:w-full max-md:justify-center"
           >
             <%= if @currently_uploading_count > 0 or @processing_blobs_count > 0 do %>
               <span
@@ -243,10 +239,10 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
           variant="secondary"
           accent="teal"
           id="sales-invoice-link"
-          class="max-md:hidden"
+          class="max-md:h-12 max-md:justify-center"
         >
           <Lucideicons.file_pen_line class="size-5" />
-          <span class="max-xl:sr-only">
+          <span class="max-xl:sr-only max-md:not-sr-only">
             Wystaw fakturę
           </span>
         </.link>
@@ -269,7 +265,7 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
 
     <div
       :if={can_view_invoicing?(@current_user)}
-      class="relative mt-2 flex flex-col gap-4 max-md:hidden"
+      class="relative mt-2 flex flex-col gap-4"
     >
       <%= cond do %>
         <% @params.view_mode == :dashboard -> %>

@@ -32,7 +32,7 @@ defmodule FirmowidWeb.Invoicing.Components.DownloadModal do
     assigns = assign(assigns, :switch_form, switch_form)
 
     ~H"""
-    <div>
+    <div class="max-md:hidden">
       <FirmowidUI.Components.Button.button
         id="download-button"
         type="button"
@@ -40,7 +40,7 @@ defmodule FirmowidWeb.Invoicing.Components.DownloadModal do
         phx-click={show_modal("download-modal")}
         data-tippy-content="Pobierz wszystkie faktury wystawione lub z datą sprzedaży w tym miesiącu"
         phx-hook="Tippy"
-        class="relative max-md:hidden"
+        class="relative"
       >
         <Lucideicons.file_down />
         <span class="max-xl:sr-only">

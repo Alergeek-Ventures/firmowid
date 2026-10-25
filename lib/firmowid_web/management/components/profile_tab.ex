@@ -48,7 +48,7 @@ defmodule FirmowidWeb.Management.Components.ProfileTab do
         <.card_header>
           Dane korespondencyjne
         </.card_header>
-        <div class="grid grid-cols-2 gap-5">
+        <div class="grid grid-cols-2 gap-5 max-md:grid-cols-1">
           <div class="flex flex-col gap-5">
             <.user_card_info label="Numer telefonu">
               {present(@user.member.phone)}
@@ -72,8 +72,8 @@ defmodule FirmowidWeb.Management.Components.ProfileTab do
         </div>
       </.card>
 
-      <div class="flex h-fit flex-1 gap-6">
-        <.card class="flex h-fit w-1/2 grow flex-col">
+      <div class="flex h-fit flex-1 gap-6 max-md:flex-col">
+        <.card class="flex h-fit w-1/2 grow flex-col max-md:w-full">
           <.card_header>
             Informacje o zatrudnieniu
             <:actions>
@@ -155,7 +155,7 @@ defmodule FirmowidWeb.Management.Components.ProfileTab do
           </.form>
         </.card>
 
-        <div class="flex w-1/2 shrink-0 flex-col gap-6">
+        <div class="flex w-1/2 shrink-0 flex-col gap-6 max-md:w-full">
           <.card
             :if={@tax_profile_fields != [] and flag_enabled?(:tax_prognosis, assigns)}
             class="flex h-fit flex-col"
