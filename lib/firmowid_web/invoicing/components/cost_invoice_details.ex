@@ -221,7 +221,7 @@ defmodule FirmowidWeb.Invoicing.Components.CostInvoiceDetails do
               />
 
               <.live_component
-                :if={@can_record_deductible_vat?}
+                :if={@can_record_deductible_vat? and flag_enabled?(:tax_prognosis, assigns)}
                 module={DeductibleVat}
                 id="deductible-vat"
                 invoice={@invoice}

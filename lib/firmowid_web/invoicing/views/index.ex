@@ -10,6 +10,7 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
   import FirmowidUI.Components.Link
   import FirmowidWeb.Core.PubSubDebounce
   import FirmowidWeb.DesignSystem.Components.MonthPicker
+  import FirmowidWeb.Infrastructure.Flags, only: [flag_enabled?: 2]
   import Phoenix.Component, except: [link: 1]
 
   alias Ash.Notifier.Notification
@@ -296,6 +297,7 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
       <% end %>
 
       <TaxForecastSummary.tax_forecast_summary
+        :if={flag_enabled?(:tax_prognosis, assigns)}
         id="invoicing-tax-forecast"
         forecast={@tax_forecast}
         settings_path={@tax_forecast_settings_path}

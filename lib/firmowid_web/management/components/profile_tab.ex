@@ -3,6 +3,7 @@ defmodule FirmowidWeb.Management.Components.ProfileTab do
   use FirmowidWeb, :live_component
 
   import FirmowidUI.Components.Link
+  import FirmowidWeb.Infrastructure.Flags, only: [flag_enabled?: 2]
   import FirmowidWeb.Management.Components.Card
   import Phoenix.Component, except: [link: 1]
 
@@ -157,7 +158,10 @@ defmodule FirmowidWeb.Management.Components.ProfileTab do
         </.card>
 
         <div class="flex w-1/2 shrink-0 flex-col gap-6">
-          <.card :if={@tax_profile_fields != []} class="flex h-fit flex-col">
+          <.card
+            :if={@tax_profile_fields != [] and flag_enabled?(:tax_prognosis, assigns)}
+            class="flex h-fit flex-col"
+          >
             <.card_header>
               {gettext("Net forecast assumptions")}
               <:actions>

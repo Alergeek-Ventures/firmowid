@@ -13,6 +13,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
   """
   use FirmowidWeb, :live_view
 
+  import FirmowidWeb.Infrastructure.Flags, only: [flag_enabled?: 2]
   import FirmowidWeb.Settings.Components.AccountTab
   import FirmowidWeb.Settings.Components.CompanyTab
   import FirmowidWeb.Settings.Components.InvoicesTab
@@ -1322,7 +1323,11 @@ defmodule FirmowidWeb.Settings.Views.Index do
             uploads={@uploads}
           />
         <% :invoices -> %>
-          <.invoices_tab current_org={@current_org} current_user={@current_user} />
+          <.invoices_tab
+            current_org={@current_org}
+            current_user={@current_user}
+            tax_prognosis?={flag_enabled?(:tax_prognosis, assigns)}
+          />
         <% :subscription -> %>
           <.subscription_tab month={@subscription_month} worksheet={@subscription_worksheet} />
         <% :account -> %>
@@ -1345,6 +1350,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
             member_form={@member_form}
             contract_form={@contract_form}
             tax_profile_form={@tax_profile_form}
+            tax_prognosis?={flag_enabled?(:tax_prognosis, assigns)}
             editing_profile_employment={@editing_profile_employment}
             editing_tax_profile={@editing_tax_profile}
             editing_profile_finance={@editing_profile_finance}

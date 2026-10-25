@@ -1223,7 +1223,7 @@ msgstr ""
 
 #: lib/firmowid_web/analysis/views/dashboard.ex:716
 #: lib/firmowid_web/hours_record/views/index.html.heex:162
-#: lib/firmowid_web/settings/components/profile_tab.ex:495
+#: lib/firmowid_web/settings/components/profile_tab.ex:501
 #, elixir-autogen, elixir-format
 msgid "Cancel"
 msgstr ""
@@ -3393,8 +3393,8 @@ msgstr ""
 msgid "Each cost invoice counts with its payment amount less the deductible VAT recorded on it, including non-deductible VAT and settlement charges. These are not statutory tax-deductible costs. Bank costs without an invoice, payroll and tax adjustments are not included."
 msgstr ""
 
-#: lib/firmowid_web/management/components/profile_tab.ex:169
-#: lib/firmowid_web/settings/components/profile_tab.ex:467
+#: lib/firmowid_web/management/components/profile_tab.ex:173
+#: lib/firmowid_web/settings/components/profile_tab.ex:473
 #, elixir-autogen, elixir-format
 msgid "Edit net forecast assumptions"
 msgstr ""
@@ -3504,8 +3504,8 @@ msgstr ""
 msgid "Monthly tax reduction"
 msgstr ""
 
-#: lib/firmowid_web/management/components/profile_tab.ex:162
-#: lib/firmowid_web/settings/components/profile_tab.ex:465
+#: lib/firmowid_web/management/components/profile_tab.ex:166
+#: lib/firmowid_web/settings/components/profile_tab.ex:471
 #, elixir-autogen, elixir-format
 msgid "Net forecast assumptions"
 msgstr ""
@@ -3662,7 +3662,7 @@ msgid "Sales invoices included"
 msgstr ""
 
 #: lib/firmowid_web/invoicing/components/deductible_vat.ex:83
-#: lib/firmowid_web/settings/components/profile_tab.ex:497
+#: lib/firmowid_web/settings/components/profile_tab.ex:503
 #: lib/firmowid_web/settings/components/tax_forecast_settings.ex:87
 #, elixir-autogen, elixir-format
 msgid "Save"
@@ -4102,12 +4102,12 @@ msgid "Download hours record"
 msgstr ""
 
 #: lib/firmowid_web/settings/components/company_tab.ex:101
-#: lib/firmowid_web/settings/components/profile_tab.ex:149
+#: lib/firmowid_web/settings/components/profile_tab.ex:155
 #, elixir-autogen, elixir-format
 msgid "Edit %{section}"
 msgstr ""
 
-#: lib/firmowid_web/management/components/profile_tab.ex:85
+#: lib/firmowid_web/management/components/profile_tab.ex:86
 #, elixir-autogen, elixir-format
 msgid "Edit employment details"
 msgstr ""
@@ -4179,7 +4179,7 @@ msgstr ""
 msgid "Open settlement for %{organization}"
 msgstr ""
 
-#: lib/firmowid_web/settings/components/invoices_tab.ex:109
+#: lib/firmowid_web/settings/components/invoices_tab.ex:116
 #, elixir-autogen, elixir-format
 msgid "Remove %{email}"
 msgstr ""
@@ -4194,12 +4194,12 @@ msgstr ""
 msgid "Remove item"
 msgstr ""
 
-#: lib/firmowid_web/settings/components/profile_tab.ex:327
+#: lib/firmowid_web/settings/components/profile_tab.ex:333
 #, elixir-autogen, elixir-format
 msgid "Remove selected file"
 msgstr ""
 
-#: lib/firmowid_web/invoicing/views/index.ex:165
+#: lib/firmowid_web/invoicing/views/index.ex:166
 #, elixir-autogen, elixir-format
 msgid "Search invoices"
 msgstr ""
