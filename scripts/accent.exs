@@ -111,8 +111,8 @@ defmodule Firmowid.Translations.Accent do
       {:ok, status} ->
         raise RuntimeError, "Accent snapshot export failed (HTTP #{status})"
 
-      {:error, :network_failure} ->
-        raise RuntimeError, "Accent snapshot export failed (network or timeout)"
+      {:error, kind} ->
+        raise RuntimeError, "Accent snapshot export failed (transport: #{kind})"
     end
   end
 
@@ -197,8 +197,8 @@ defmodule Firmowid.Translations.Accent do
       {:ok, %Req.Response{status: status}} ->
         raise RuntimeError, "Accent snapshot lookup failed (HTTP #{status})"
 
-      {:error, _reason} ->
-        raise RuntimeError, "Accent snapshot lookup failed (network or timeout)"
+      {:error, reason} ->
+        raise RuntimeError, "Accent snapshot lookup failed (transport: #{error_kind(reason)})"
     end
   end
 
@@ -317,8 +317,8 @@ defmodule Firmowid.Translations.Accent do
       {:ok, status} ->
         raise RuntimeError, "Accent request failed (HTTP #{status})"
 
-      {:error, :network_failure} ->
-        raise RuntimeError, "Accent request failed (network or timeout)"
+      {:error, kind} ->
+        raise RuntimeError, "Accent request failed (transport: #{kind})"
     end
   end
 
@@ -352,17 +352,30 @@ defmodule Firmowid.Translations.Accent do
       {:ok, status} ->
         raise RuntimeError, "Accent version creation failed (HTTP #{status})"
 
-      {:error, :network_failure} ->
-        raise RuntimeError, "Accent version creation failed"
+      {:error, kind} ->
+        raise RuntimeError, "Accent version creation failed (transport: #{kind})"
     end
   end
 
   defp request_status(client, options) do
     case Req.request(client, options) do
       {:ok, %Req.Response{status: status}} -> {:ok, status}
-      {:error, _reason} -> {:error, :network_failure}
+      {:error, reason} -> {:error, error_kind(reason)}
     end
   end
+
+  defp error_kind(%Req.TransportError{reason: reason}), do: transport_kind(reason)
+  defp error_kind(_error), do: "other"
+
+  # Keep the transport allowlist aligned with Firmowid.ErrorKind without loading
+  # its Ash/Ecto dependencies into this standalone script. Never stringify reasons.
+  defp transport_kind(reason) when reason in [:timeout, :etimedout], do: "timeout"
+  defp transport_kind(reason) when reason in [:nxdomain, :eai_again], do: "dns"
+  defp transport_kind(reason) when reason in [:closed, :econnreset], do: "closed"
+  defp transport_kind(:econnrefused), do: "refused"
+  defp transport_kind(:protocol_not_negotiated), do: "tls"
+  defp transport_kind({tag, _}) when tag in [:tls_alert, :bad_alpn_protocol, :bad_cert], do: "tls"
+  defp transport_kind(_reason), do: "other"
 
   defp with_temp_directory(callback) do
     temporary_directory =
