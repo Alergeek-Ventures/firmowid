@@ -169,6 +169,15 @@ defmodule Firmowid.Ash.Payroll.UserSalary do
   calculations do
     calculate :ends_at, :date, Firmowid.Ash.Payroll.Calculations.EndsAt
 
+    calculate :monthly_payout, :map, Firmowid.Ash.Payroll.UserSalary.Calculations.MonthlyPayout do
+      description """
+      Calculates one month's net pay from its declarations and sourced payroll
+      facts, without inventing missing history.
+      """
+
+      argument :month, :date, allow_nil?: false
+    end
+
     calculate :payout_estimates,
               {:array, Firmowid.Ash.Payroll.UserSalary.Types.PayoutEstimate},
               Firmowid.Ash.Payroll.UserSalary.Calculations.PayoutEstimates do

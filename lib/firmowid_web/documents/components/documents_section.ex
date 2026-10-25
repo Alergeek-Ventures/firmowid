@@ -4,6 +4,7 @@ defmodule FirmowidWeb.Documents.Components.DocumentsSection do
 
   import FirmowidUI.Components.Button
   import FirmowidUI.Components.Link
+  import FirmowidWeb.Infrastructure.Flags, only: [flag_enabled?: 2]
   import Phoenix.Component, except: [link: 1]
 
   alias Firmowid.Ash.Blobs
@@ -43,6 +44,7 @@ defmodule FirmowidWeb.Documents.Components.DocumentsSection do
       |> assign_new(:dimmed, fn -> false end)
       |> assign_new(:variant, fn -> :management end)
       |> assign_new(:current_contract_id, fn -> nil end)
+      |> assign_new(:feature_flags, fn -> %{} end)
       |> assign(:can_upload?, can_upload?)
       |> maybe_allow_document_upload(can_upload?)
       |> refetch_documents()
@@ -86,6 +88,12 @@ defmodule FirmowidWeb.Documents.Components.DocumentsSection do
       |> assign(:profile?, assigns.variant == :profile)
       |> assign(:search_input_styles, search_input_styles(assigns.variant))
       |> assign(:document_upload, document_upload)
+      |> assign(
+        :documents,
+        Enum.reject(assigns.documents, fn document ->
+          document.type == :other and not flag_enabled?(:accurate_salary_calculation, assigns)
+        end)
+      )
 
     ~H"""
     <div class={outer_styles(@variant)}>
@@ -104,6 +112,7 @@ defmodule FirmowidWeb.Documents.Components.DocumentsSection do
                 search={@search}
                 search_input_styles={@search_input_styles}
                 can_upload?={@can_upload?}
+                feature_flags={@feature_flags}
                 document_upload={@document_upload}
                 currently_uploading_count={@currently_uploading_count}
                 processing_blobs_count={@processing_blobs_count}
@@ -119,6 +128,7 @@ defmodule FirmowidWeb.Documents.Components.DocumentsSection do
                   search={@search}
                   search_input_styles={@search_input_styles}
                   can_upload?={@can_upload?}
+                  feature_flags={@feature_flags}
                   document_upload={@document_upload}
                   currently_uploading_count={@currently_uploading_count}
                   processing_blobs_count={@processing_blobs_count}
@@ -141,6 +151,7 @@ defmodule FirmowidWeb.Documents.Components.DocumentsSection do
   attr :search, :string, required: true
   attr :search_input_styles, :string, required: true
   attr :can_upload?, :boolean, required: true
+  attr :feature_flags, :map, required: true
   attr :document_upload, :map, default: nil
   attr :currently_uploading_count, :integer, required: true
   attr :processing_blobs_count, :integer, required: true
@@ -207,7 +218,12 @@ defmodule FirmowidWeb.Documents.Components.DocumentsSection do
             currently_uploading_count={@currently_uploading_count}
             processing_blobs_count={@processing_blobs_count}
           />
-          <.icon name="hero-plus" class="size-4" /> Dodaj umowę
+          <.icon name="hero-plus" class="size-4" />
+          <%= if flag_enabled?(:accurate_salary_calculation, assigns) do %>
+            {gettext("Add employee document")}
+          <% else %>
+            {gettext("Add contract")}
+          <% end %>
         </.button>
       </form>
     </div>
@@ -323,7 +339,7 @@ defmodule FirmowidWeb.Documents.Components.DocumentsSection do
     ~H"""
     <.link
       kind="unstyled"
-      navigate={@document.url}
+      redirect={@document.url}
       download={@document.file_name}
       class="group flex items-center justify-between gap-4 rounded-md px-2 py-2.5 transition"
     >
@@ -415,6 +431,12 @@ defmodule FirmowidWeb.Documents.Components.DocumentsSection do
   defp build_documents(user, scope, %{search: search, type_filter: type_filter}) do
     parsed = parse_search(search)
 
+    contracts =
+      Payroll.list_employment_contracts!(%{member_id: user.member.id},
+        scope: scope,
+        load: [:blob]
+      )
+
     hours_record_docs =
       if type_filter in [nil, "hours_record"] do
         %{member_id: user.member.id}
@@ -439,10 +461,8 @@ defmodule FirmowidWeb.Documents.Components.DocumentsSection do
 
     employment_contract_docs =
       if type_filter in [nil, "employment_contract"] do
-        %{member_id: user.member.id}
-        |> maybe_add_month(parsed.month)
-        |> maybe_add_year(parsed.year)
-        |> Payroll.list_employment_contracts!(scope: scope, load: [:blob])
+        contracts
+        |> Enum.filter(&matches_date?(&1.starts_at, parsed))
         |> Enum.map(fn doc ->
           %{
             id: doc.id,
@@ -458,7 +478,34 @@ defmodule FirmowidWeb.Documents.Components.DocumentsSection do
         []
       end
 
-    other_docs = []
+    other_docs =
+      if type_filter in [nil, "other"] do
+        contract_blob_ids = MapSet.new(contracts, & &1.blob_id)
+
+        %{member_id: user.member.id, processing_target: :employment_contract}
+        |> Blobs.list_blobs!(scope: scope, load: [:url])
+        |> Enum.filter(fn blob ->
+          blob.processing_state == :succeeded and
+            not MapSet.member?(contract_blob_ids, blob.id) and
+            matches_date?(DateTime.to_date(blob.inserted_at), parsed) and
+            String.contains?(
+              String.downcase(blob.original_filename),
+              String.downcase(parsed.text)
+            )
+        end)
+        |> Enum.map(fn blob ->
+          %{
+            id: blob.id,
+            type: :other,
+            name: blob.original_filename,
+            date: DateTime.to_date(blob.inserted_at),
+            url: blob.url,
+            file_name: blob.original_filename
+          }
+        end)
+      else
+        []
+      end
 
     Enum.sort_by(
       hours_record_docs ++ employment_contract_docs ++ other_docs,
@@ -466,6 +513,9 @@ defmodule FirmowidWeb.Documents.Components.DocumentsSection do
       {:desc, Date}
     )
   end
+
+  defp matches_date?(date, parsed),
+    do: (is_nil(parsed.month) or date.month == parsed.month) and (is_nil(parsed.year) or date.year == parsed.year)
 
   defp parse_search(search) do
     tokens = search |> String.trim() |> String.split(~r/[\s.]+/, trim: true)

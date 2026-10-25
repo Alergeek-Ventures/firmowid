@@ -99,9 +99,19 @@
       @view == :standard && @live_action == :archive &&
         "grid-cols-[1fr_min-content_min-content_min-content_min-content] max-md:grid-cols-[1fr_min-content_min-content_min-content]",
       @view != :standard && @live_action == :index &&
-        "grid-cols-[minmax(10rem,2fr)_max-content_repeat(3,minmax(6rem,1fr))_min-content_min-content]",
+        if(flag_enabled?(:accurate_salary_calculation, assigns),
+          do:
+            "grid-cols-[minmax(10rem,2fr)_max-content_repeat(3,minmax(6rem,1fr))_min-content_min-content]",
+          else:
+            "grid-cols-[minmax(10rem,2fr)_max-content_repeat(2,minmax(6rem,1fr))_min-content_min-content]"
+        ),
       @view != :standard && @live_action == :archive &&
-        "grid-cols-[minmax(10rem,2fr)_max-content_max-content_repeat(3,minmax(6rem,1fr))_min-content_min-content]"
+        if(flag_enabled?(:accurate_salary_calculation, assigns),
+          do:
+            "grid-cols-[minmax(10rem,2fr)_max-content_max-content_repeat(3,minmax(6rem,1fr))_min-content_min-content]",
+          else:
+            "grid-cols-[minmax(10rem,2fr)_max-content_max-content_repeat(2,minmax(6rem,1fr))_min-content_min-content]"
+        )
     ]}
   >
     <div
@@ -163,7 +173,12 @@
         <% end %>
 
         <p class="text-end text-nowrap">{gettext("Gross")}</p>
-        <p class="text-end text-nowrap">{gettext("Net forecast")}</p>
+        <p
+          :if={flag_enabled?(:accurate_salary_calculation, assigns)}
+          class="text-end text-nowrap"
+        >
+          {gettext("Amount to pay")}
+        </p>
       <% end %>
       <span />
       <p class="text-end text-nowrap max-md:hidden">{gettext("Timesheet")}</p>
@@ -191,10 +206,21 @@
         <div class={[
           "grid grid-cols-subgrid items-center rounded-sm bg-white px-4",
           cond do
-            @view == :standard and @live_action == :index -> "col-span-3"
-            @view == :standard and @live_action == :archive -> "col-span-4"
-            @view != :standard and @live_action == :index -> "col-span-6"
-            true -> "col-span-7"
+            @view == :standard and @live_action == :index ->
+              "col-span-3"
+
+            @view == :standard and @live_action == :archive ->
+              "col-span-4"
+
+            @live_action == :index ->
+              if flag_enabled?(:accurate_salary_calculation, assigns),
+                do: "col-span-6",
+                else: "col-span-5"
+
+            true ->
+              if flag_enabled?(:accurate_salary_calculation, assigns),
+                do: "col-span-7",
+                else: "col-span-6"
           end
         ]}>
           <div class="flex min-w-0 items-center gap-3">
@@ -223,10 +249,13 @@
               <span>{employee.user.member.name || employee.user.email}</span>
             <% end %>
             <span
-              :if={@view != :standard and employee.payout_estimate}
+              :if={
+                flag_enabled?(:accurate_salary_calculation, assigns) and @view != :standard and
+                  MonthlyPayout.amount(employee.monthly_payout)
+              }
               class="shrink-0 rounded-sm bg-grey-100 px-1.5 py-0.5 text-xs/snug text-grey-700"
             >
-              {PayoutEstimates.contract_label(employee.payout_estimate.variant)}
+              {PayoutEstimates.contract_label(employee.monthly_payout.result.variant)}
             </span>
           </div>
 
@@ -264,17 +293,16 @@
             <% end %>
 
             <p class="text-end text-nowrap text-grey-700 tabular-nums">
-              {employee.monthly_gross}
+              {if flag_enabled?(:accurate_salary_calculation, assigns),
+                do: (employee.monthly_payout && employee.monthly_payout.gross) || "—",
+                else: employee.monthly_gross}
             </p>
             <p
-              class="text-end font-medium text-nowrap text-teal-700 tabular-nums"
-              title={
-                if employee.payout_estimate,
-                  do: PayoutEstimates.variant_label(employee.payout_estimate.variant),
-                  else: gettext("Unknown contract type — only gross pay is shown")
-              }
+              :if={flag_enabled?(:accurate_salary_calculation, assigns)}
+              class="text-end font-medium text-nowrap text-grey-900 tabular-nums"
+              title={MonthlyPayout.status_label(employee.monthly_payout)}
             >
-              {if employee.payout_estimate, do: employee.payout_estimate.amount, else: "—"}
+              {MonthlyPayout.amount(employee.monthly_payout) || "—"}
             </p>
           <% end %>
 

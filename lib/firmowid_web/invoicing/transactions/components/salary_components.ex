@@ -35,7 +35,10 @@ defmodule FirmowidWeb.Invoicing.Transactions.Components.SalaryComponents do
             Enum.join(
               [
                 if(suggestion.payout_variant,
-                  do: PayoutEstimates.variant_label(suggestion.payout_variant)
+                  do:
+                    gettext("Example: %{variant}",
+                      variant: PayoutEstimates.variant_label(suggestion.payout_variant)
+                    )
                 ),
                 gettext("Difference from transfer: %{amount}",
                   amount: to_string(suggestion.difference)
@@ -102,12 +105,18 @@ defmodule FirmowidWeb.Invoicing.Transactions.Components.SalaryComponents do
         <:detail label={gettext("Salary month")}>{month_label(@transaction.salary_month)}</:detail>
         <:detail
           :if={@admin?}
-          label={if @payout_variant, do: gettext("Net forecast"), else: gettext("Gross")}
+          label={if @payout_variant, do: gettext("Estimated take-home pay"), else: gettext("Gross")}
         >
           <div class="flex flex-col gap-1">
-            <span>{@expected_amount || gettext("Unavailable")}</span>
+            <span><span :if={@payout_variant && @payout_variant != :b2b} aria-hidden="true">≈ </span>{@expected_amount ||
+              gettext("Unavailable")}</span>
             <span :if={@payout_variant} class="text-sm/snug text-grey-700">
               {PayoutEstimates.variant_label(@payout_variant)}
+            </span>
+            <span :if={@payout_variant && @payout_variant != :b2b} class="text-xs/snug text-grey-600">
+              {gettext(
+                "Estimate only — excludes employee declarations and earlier payments this year."
+              )}
             </span>
           </div>
         </:detail>

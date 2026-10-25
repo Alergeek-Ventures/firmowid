@@ -1,6 +1,6 @@
 defmodule FirmowidWeb.Management.Views.EmployeesTest do
   @moduledoc false
-  use FirmowidWeb.ConnCase, async: true
+  use FirmowidWeb.ConnCase, async: false
 
   import Firmowid.AccountsFixtures
   import Firmowid.TimetrackerFixtures
@@ -11,6 +11,10 @@ defmodule FirmowidWeb.Management.Views.EmployeesTest do
   alias Firmowid.Ash.Delegations
   alias Firmowid.Ash.Delegations.Delegation
   alias Firmowid.Ash.Payroll
+  alias Firmowid.Ash.Payroll.MemberPayrollInput
+  alias Firmowid.Ash.Payroll.MemberTaxDeclaration
+  alias Firmowid.Ash.Payroll.UserEmploymentContract
+  alias Firmowid.Ash.Payroll.UserSalary
   alias Firmowid.Ash.Scope
   alias Firmowid.Ash.Timetracker.HoursRecord, as: AshHoursRecord
   alias Firmowid.Repo
@@ -175,7 +179,9 @@ defmodule FirmowidWeb.Management.Views.EmployeesTest do
     assert Core.load_member(admin).member.bank_account_number == nil
   end
 
-  test "employee detail page shows payroll and project summary for selected month", %{conn: conn} do
+  test "employee detail page shows projects and hours without the accurate payout feature", %{
+    conn: conn
+  } do
     admin = admin_fixture()
 
     employee =
@@ -222,10 +228,91 @@ defmodule FirmowidWeb.Management.Views.EmployeesTest do
     assert html =~ "PL23 1140 2004 0000 3002 0135 5362"
     assert html =~ "Payroll Project"
     assert html =~ "3 h"
-    assert html =~ "Prognoza netto"
+    refute html =~ "Kwota do wypłaty"
     assert html =~ "EWIDENCJA"
     assert html =~ "April Session"
     assert html =~ "Delegacje"
+  end
+
+  test "opening a month shows its saved-data payout without a calculator", %{conn: conn} do
+    environment = Application.fetch_env!(:firmowid, :environment)
+    on_exit(fn -> Application.put_env(:firmowid, :environment, environment) end)
+    Application.put_env(:firmowid, :environment, :dev)
+
+    admin = admin_fixture()
+    employee = user_in_org_fixture(admin.member.organization_id)
+    identity = %{member_id: employee.member.id, organization_id: admin.member.organization_id}
+
+    blob =
+      Ash.Seed.seed!(Blob, %{
+        organization_id: admin.member.organization_id,
+        blob_path: "payroll-contract.pdf",
+        blob_checksum: "payroll-contract-#{employee.member.id}",
+        original_filename: "umowa.pdf"
+      })
+
+    Ash.Seed.seed!(
+      UserEmploymentContract,
+      Map.merge(identity, %{
+        blob_id: blob.id,
+        salary: Money.new!(:PLN, 100),
+        starts_at: ~D[2026-01-01],
+        contract_type: :uop,
+        status: :active
+      })
+    )
+
+    Ash.Seed.seed!(
+      UserSalary,
+      Map.merge(identity, %{hourly_rate: Decimal.new(100), starts_at: ~U[2026-01-01 00:00:00Z]})
+    )
+
+    Ash.Seed.seed!(
+      MemberTaxDeclaration,
+      Map.merge(identity, %{
+        received_on: ~D[2026-01-01],
+        applies_from: ~D[2026-01-01],
+        tax_residency: :poland,
+        pit2: :one_twelfth,
+        employee_costs: :standard,
+        youth_relief: :waived,
+        tax_mode: :standard,
+        pit0: :none,
+        preferential: :none,
+        copyright_costs: false,
+        ppk: :none
+      })
+    )
+
+    Ash.Seed.seed!(
+      MemberPayrollInput,
+      Map.merge(identity, %{
+        salary_month: ~D[2026-04-01],
+        payout_date: ~D[2026-04-30],
+        payout_date_basis: :planned,
+        gross: Decimal.new(6000),
+        prior_taxable_income: Decimal.new(0),
+        prior_social_base: Decimal.new(0),
+        employer_ppk_income: Decimal.new(0),
+        single_payment: true,
+        standard_pay: true
+      })
+    )
+
+    conn = log_in_user(conn, admin)
+    {:ok, view, _html} = live(conn, ~p"/zarzadzanie/pracownicy/#{employee.id}?miesiac=2026-04-01")
+    expected = to_string(Money.new!(:PLN, "4420.43"))
+
+    assert has_element?(view, "#monthly-payout", expected)
+    assert has_element?(view, "#monthly-payout", "Kwota do wypłaty")
+    refute has_element?(view, "button", "Oblicz")
+    refute has_element?(view, "#employee-payout-calculator-form")
+
+    {:ok, next_month, _html} =
+      live(conn, ~p"/zarzadzanie/pracownicy/#{employee.id}?miesiac=2026-05-01")
+
+    refute has_element?(next_month, "#monthly-payout", expected)
+    assert has_element?(next_month, "#monthly-payout", "Uzupełnij dane pracownika")
   end
 
   test "management delegations are grouped by status and pending entries link to the command page",

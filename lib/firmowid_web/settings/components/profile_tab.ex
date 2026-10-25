@@ -14,7 +14,6 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
   import Phoenix.Component, except: [link: 1]
 
   alias FirmowidWeb.Infrastructure.Utilities.TimeFormatter
-  alias FirmowidWeb.Payroll.Components.TaxProfileForm
   alias FirmowidWeb.Settings.Components.Helpers
   alias FirmowidWeb.Timetracker.Utilities.LeavePresentation
   alias FirmowidWeb.Timetracker.Utilities.Navigation
@@ -28,14 +27,8 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
   attr :ash_scope, :map, required: true
   attr :member_form, :map, required: true
   attr :contract_form, :map, default: nil
-  attr :tax_profile_form, :map, required: true
-
-  attr :tax_prognosis?, :boolean,
-    default: false,
-    doc: "Whether the `tax_prognosis` feature flag is enabled."
 
   attr :editing_profile_employment, :boolean, required: true
-  attr :editing_tax_profile, :boolean, required: true
   attr :editing_profile_finance, :boolean, required: true
   attr :editing_profile_contact, :boolean, required: true
   attr :leave_requests, :list, required: true
@@ -70,12 +63,6 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
           document_upload={@document_upload}
           ash_scope={@ash_scope}
         />
-        <.tax_profile_section
-          :if={@tax_prognosis?}
-          contract_type={@current_contract && @current_contract.contract_type}
-          form={@tax_profile_form}
-          editing={@editing_tax_profile}
-        />
         <.finance_section
           current_user={@current_user}
           member_form={@member_form}
@@ -100,6 +87,7 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
           id="profile-documents"
           user={@current_user}
           scope={@ash_scope}
+          feature_flags={@feature_flags}
           variant={:profile}
           current_contract_id={@current_contract && @current_contract.id}
         />
@@ -477,69 +465,6 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
           </.detail_row>
         </div>
       <% end %>
-    </.profile_section>
-    """
-  end
-
-  attr :contract_type, :atom, default: nil
-  attr :form, :map, required: true
-  attr :editing, :boolean, required: true
-
-  defp tax_profile_section(assigns) do
-    assigns = assign(assigns, :fields, TaxProfileForm.fields(assigns.contract_type))
-
-    ~H"""
-    <.profile_section
-      :if={@fields != []}
-      title={gettext("Net forecast assumptions")}
-      action={if(!@editing, do: "toggle_editing_tax_profile")}
-      action_label={gettext("Edit net forecast assumptions")}
-    >
-      <%= if @editing do %>
-        <.form
-          id="settings-tax-profile-form"
-          for={@form}
-          phx-change="validate_tax_profile"
-          phx-submit="save_tax_profile"
-          class="space-y-4"
-        >
-          <div class="space-y-2">
-            <Helpers.settings_field
-              :for={field <- @fields}
-              label={TaxProfileForm.field_label(field)}
-              layout={:row}
-              for={TaxProfileForm.input_id(@form, field)}
-            >
-              <TaxProfileForm.select form={@form} field={field} />
-            </Helpers.settings_field>
-          </div>
-
-          <div class="flex w-full justify-end gap-3">
-            <.button
-              type="button"
-              variant="ghost"
-              size="small"
-              phx-click="toggle_editing_tax_profile"
-            >
-              {gettext("Cancel")}
-            </.button>
-            <.button type="submit" variant="success" size="small">{gettext("Save")}</.button>
-          </div>
-        </.form>
-      <% else %>
-        <div class="space-y-2">
-          <.detail_row :for={field <- @fields} label={TaxProfileForm.field_label(field)}>
-            <TaxProfileForm.saved_value form={@form} field={field} />
-          </.detail_row>
-        </div>
-      <% end %>
-
-      <Helpers.settings_display_field>
-        <div class="flex items-start gap-4 rounded-lg bg-grey-50 p-4 text-sm text-grey-700">
-          <span class="shrink-0"><.icon name="hero-information-circle" class="size-5" /></span>
-          <p>{TaxProfileForm.notice()}</p>
-        </div>
-      </Helpers.settings_display_field>
     </.profile_section>
     """
   end

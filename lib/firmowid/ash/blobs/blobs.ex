@@ -21,6 +21,7 @@ defmodule Firmowid.Ash.Blobs do
 
   resources do
     resource Blob do
+      define :list_blobs, action: :list
       define :get_blob, action: :read, get_by: [:id]
 
       define :create_blob, args: [:upload_path, :content_type, :original_filename]
