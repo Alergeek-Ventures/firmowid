@@ -685,7 +685,8 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
               size="small"
               phx-change="search_leave_requests"
               phx-debounce="300"
-              class="w-42 lg:w-56"
+              id="profile-leave-search"
+              collapsible
             />
           </form>
           <.button

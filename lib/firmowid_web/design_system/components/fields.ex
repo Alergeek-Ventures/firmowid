@@ -32,14 +32,60 @@ defmodule FirmowidWeb.DesignSystem.Components.Fields do
   @doc """
   Renders a search input with a leading magnifier icon in the small (32px) or big (44px) size.
   The placeholder doubles as the accessible name.
+
+  `collapsible` shows only a magnifier button that expands the field (it starts expanded
+  when there is a value); it needs an `id`. Use it in toolbars where search is secondary.
   """
   @spec search_field(map()) :: Rendered.t()
+  attr :id, :string, default: nil
+  attr :collapsible, :boolean, default: false
   attr :name, :string, required: true
   attr :value, :string, default: ""
   attr :placeholder, :string, required: true
   attr :size, :string, values: ~w(small big), default: "big"
   attr :class, :any, default: nil
   attr :rest, :global, include: ~w(form autofocus)
+
+  def search_field(%{collapsible: true} = assigns) do
+    ~H"""
+    <div
+      id={@id}
+      data-expanded={to_string(@value not in [nil, ""])}
+      class={[
+        "group flex items-center rounded-lg bg-grey-200 data-[expanded=true]:focus-within:ring-2 data-[expanded=true]:focus-within:ring-grey-700",
+        @class
+      ]}
+    >
+      <input
+        type="search"
+        name={@name}
+        value={@value}
+        placeholder={@placeholder}
+        aria-label={@placeholder}
+        class={[
+          "w-0 border-none bg-transparent px-0 text-sm text-grey-900 opacity-0 transition-[width,opacity,padding] duration-200 ease-out group-data-[expanded=true]:w-56 group-data-[expanded=true]:px-3 group-data-[expanded=true]:opacity-100 placeholder:text-grey-500 focus:ring-0",
+          search_field_size_styles(@size)
+        ]}
+        {@rest}
+      />
+      <button
+        type="button"
+        aria-label={@placeholder}
+        title={@placeholder}
+        phx-click={
+          JS.toggle_attribute({"data-expanded", "true", "false"}, to: "##{@id}")
+          |> JS.focus(to: "##{@id} input")
+        }
+        class={[
+          "inline-flex shrink-0 cursor-pointer items-center justify-center text-grey-900 transition-colors hover:bg-grey-300",
+          search_toggle_size_styles(@size)
+        ]}
+      >
+        <Lucideicons.search />
+      </button>
+    </div>
+    """
+  end
 
   def search_field(assigns) do
     ~H"""
@@ -69,4 +115,7 @@ defmodule FirmowidWeb.DesignSystem.Components.Fields do
 
   defp search_field_size_styles("small"), do: "h-8"
   defp search_field_size_styles("big"), do: "h-11"
+
+  defp search_toggle_size_styles("small"), do: "size-8 rounded-md [&>svg]:size-4"
+  defp search_toggle_size_styles("big"), do: "size-11 rounded-lg [&>svg]:size-5"
 end

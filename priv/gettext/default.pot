@@ -3070,7 +3070,7 @@ msgid "Forecast based on available data and assumptions. It does not replace pay
 msgstr ""
 
 #: lib/firmowid_web/invoicing/transactions/components/salary_components.ex:105
-#: lib/firmowid_web/management/views/employees.html.heex:140
+#: lib/firmowid_web/management/views/employees.html.heex:141
 #: lib/firmowid_web/payroll/components/payout_estimates.ex:47
 #, elixir-autogen, elixir-format
 msgid "Gross"
@@ -3091,7 +3091,7 @@ msgstr ""
 msgid "Health insurance only, first income tax bracket, no PIT-2 reduction."
 msgstr ""
 
-#: lib/firmowid_web/management/views/employees.html.heex:90
+#: lib/firmowid_web/management/views/employees.html.heex:91
 #, elixir-autogen, elixir-format
 msgid "Hours"
 msgstr ""
@@ -3133,7 +3133,7 @@ msgid "Mandate — student under 26"
 msgstr ""
 
 #: lib/firmowid_web/invoicing/transactions/components/salary_components.ex:105
-#: lib/firmowid_web/management/views/employees.html.heex:141
+#: lib/firmowid_web/management/views/employees.html.heex:142
 #: lib/firmowid_web/payroll/components/payout_estimates.ex:24
 #: lib/firmowid_web/payroll/components/payout_estimates.ex:59
 #, elixir-autogen, elixir-format
@@ -3170,12 +3170,12 @@ msgstr ""
 msgid "The transfer amount differs from the expected salary by more than 20% (at least 1000 PLN)."
 msgstr ""
 
-#: lib/firmowid_web/management/views/employees.html.heex:144
+#: lib/firmowid_web/management/views/employees.html.heex:145
 #, elixir-autogen, elixir-format
 msgid "Timesheet"
 msgstr ""
 
-#: lib/firmowid_web/management/views/employees.html.heex:238
+#: lib/firmowid_web/management/views/employees.html.heex:239
 #, elixir-autogen, elixir-format
 msgid "Unknown contract type — only gross pay is shown"
 msgstr ""
@@ -4045,7 +4045,7 @@ msgstr ""
 msgid "Cancel editing"
 msgstr ""
 
-#: lib/firmowid_web/management/views/employees.html.heex:124
+#: lib/firmowid_web/management/views/employees.html.heex:125
 #, elixir-autogen, elixir-format
 msgid "Cancel editing rates"
 msgstr ""
@@ -4066,7 +4066,7 @@ msgid "Copy %{field}"
 msgstr ""
 
 #: lib/firmowid_web/management/views/employee.html.heex:128
-#: lib/firmowid_web/management/views/employees.html.heex:286
+#: lib/firmowid_web/management/views/employees.html.heex:287
 #, elixir-autogen, elixir-format
 msgid "Copy bank account number"
 msgstr ""
@@ -4140,8 +4140,8 @@ msgstr ""
 
 #: lib/firmowid_web/management/views/counterparties.html.heex:31
 #: lib/firmowid_web/management/views/counterparty.ex:355
-#: lib/firmowid_web/management/views/employees.html.heex:45
-#: lib/firmowid_web/management/views/projects.html.heex:32
+#: lib/firmowid_web/management/views/employees.html.heex:46
+#: lib/firmowid_web/management/views/projects.html.heex:33
 #, elixir-autogen, elixir-format
 msgid "List scope"
 msgstr ""
@@ -4168,8 +4168,8 @@ msgstr ""
 msgid "Open invoice preview in a new tab"
 msgstr ""
 
-#: lib/firmowid_web/management/views/projects.html.heex:112
-#: lib/firmowid_web/management/views/projects.html.heex:183
+#: lib/firmowid_web/management/views/projects.html.heex:113
+#: lib/firmowid_web/management/views/projects.html.heex:184
 #, elixir-autogen, elixir-format
 msgid "Open project %{name}"
 msgstr ""
@@ -4214,7 +4214,7 @@ msgstr ""
 msgid "Show companies only"
 msgstr ""
 
-#: lib/firmowid_web/management/views/employees.html.heex:262
+#: lib/firmowid_web/management/views/employees.html.heex:263
 #, elixir-autogen, elixir-format
 msgid "Show details of employee %{name}"
 msgstr ""

@@ -1,6 +1,6 @@
 defmodule FirmowidWeb.DesignSystem.Components.Badge do
   @moduledoc """
-  Status badge: a 24px pill with a pastel tint and deep text, one tone per meaning.
+  Status badge: a 24px tag with a pastel tint and deep text, one tone per meaning.
   """
 
   use FirmowidUI, :html
@@ -21,7 +21,7 @@ defmodule FirmowidWeb.DesignSystem.Components.Badge do
     ~H"""
     <span
       class={[
-        "inline-flex h-6 shrink-0 items-center gap-1 rounded-full px-2.5 text-xs font-medium whitespace-nowrap [&>svg]:size-3.5",
+        "inline-flex h-6 shrink-0 items-center gap-1 rounded-md px-2 text-xs font-medium whitespace-nowrap [&>svg]:size-3.5",
         badge_tone_styles(@tone),
         @class
       ]}

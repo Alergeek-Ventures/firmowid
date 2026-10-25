@@ -84,7 +84,6 @@ defmodule FirmowidWeb.Documents.Components.DocumentsSection do
     assigns =
       assigns
       |> assign(:profile?, assigns.variant == :profile)
-      |> assign(:search_input_styles, search_input_styles(assigns.variant))
       |> assign(:document_upload, document_upload)
 
     ~H"""
@@ -102,7 +101,6 @@ defmodule FirmowidWeb.Documents.Components.DocumentsSection do
                 id={@id}
                 myself={@myself}
                 search={@search}
-                search_input_styles={@search_input_styles}
                 can_upload?={@can_upload?}
                 document_upload={@document_upload}
                 currently_uploading_count={@currently_uploading_count}
@@ -117,7 +115,6 @@ defmodule FirmowidWeb.Documents.Components.DocumentsSection do
                   id={@id}
                   myself={@myself}
                   search={@search}
-                  search_input_styles={@search_input_styles}
                   can_upload?={@can_upload?}
                   document_upload={@document_upload}
                   currently_uploading_count={@currently_uploading_count}
@@ -139,7 +136,6 @@ defmodule FirmowidWeb.Documents.Components.DocumentsSection do
   attr :id, :string, required: true
   attr :myself, :any, required: true
   attr :search, :string, required: true
-  attr :search_input_styles, :string, required: true
   attr :can_upload?, :boolean, required: true
   attr :document_upload, :map, default: nil
   attr :currently_uploading_count, :integer, required: true
@@ -157,7 +153,8 @@ defmodule FirmowidWeb.Documents.Components.DocumentsSection do
           phx-change="search"
           phx-debounce="300"
           phx-target={@myself}
-          class={@search_input_styles}
+          id={"#{@id}-search"}
+          collapsible
         />
       </form>
       <form
@@ -284,9 +281,6 @@ defmodule FirmowidWeb.Documents.Components.DocumentsSection do
 
   defp filters_styles(:profile), do: ""
   defp filters_styles(_), do: "pt-6"
-
-  defp search_input_styles(:profile), do: "w-42 lg:w-56"
-  defp search_input_styles(_), do: "w-64"
 
   @doc false
   def document_element(assigns) do
