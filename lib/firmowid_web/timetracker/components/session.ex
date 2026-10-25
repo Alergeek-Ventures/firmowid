@@ -3,7 +3,7 @@ defmodule FirmowidWeb.Timetracker.Components.Session do
   use FirmowidWeb, :html
 
   import FirmowidUI.Components.Button
-  import FirmowidWeb.DesignSystem.Components.CoreComponents, except: [button: 1]
+  import FirmowidWeb.DesignSystem.Components.CoreComponents
   import Phoenix.Component, except: [link: 1]
 
   alias FirmowidWeb.Infrastructure.Utilities.TimeFormatter
@@ -141,30 +141,21 @@ defmodule FirmowidWeb.Timetracker.Components.Session do
                   </p>
                   <.input
                     type="date"
-                    size="small"
                     field={session[:date]}
-                    input_class="border-grey-200 rounded-lg"
-                    new
                   />
                   <.input
                     type="time"
-                    size="small"
                     step="60"
                     field={session[:start_time]}
                     value={format_time(session[:start_time].value)}
-                    new
-                    input_class="border-grey-200 rounded-lg"
                   />
 
                   <.input
                     type="time"
                     name="time_placeholder"
                     value=""
-                    size="small"
                     readonly
                     disabled
-                    new
-                    input_class="border-grey-200 rounded-lg"
                   />
 
                   <div />
@@ -172,31 +163,22 @@ defmodule FirmowidWeb.Timetracker.Components.Session do
 
                   <.input
                     type="date"
-                    size="small"
                     field={session[:end_date]}
-                    new
-                    input_class="border-grey-200 rounded-lg"
                   />
 
                   <.input
                     type="time"
                     name="time_placeholder"
                     value=""
-                    size="small"
                     readonly
                     disabled
-                    new
-                    input_class="border-grey-200 rounded-lg"
                   />
 
                   <.input
                     type="time"
-                    size="small"
                     step="60"
                     field={session[:end_time]}
                     value={format_time(session[:end_time].value)}
-                    new
-                    input_class="border-grey-200 rounded-lg"
                   />
 
                   <.button
@@ -216,24 +198,18 @@ defmodule FirmowidWeb.Timetracker.Components.Session do
                 <.input
                   type="date"
                   field={session[:date]}
-                  new
-                  input_class="border-grey-200 rounded-lg"
                 />
                 <.input
                   type="time"
                   step="60"
                   field={session[:start_time]}
                   value={format_time(session[:start_time].value)}
-                  new
-                  input_class="border-grey-200 rounded-lg"
                 />
                 <.input
                   type="time"
                   step="60"
                   field={session[:end_time]}
                   value={format_time(session[:end_time].value)}
-                  new
-                  input_class="border-grey-200 rounded-lg"
                 />
                 <.button
                   type="button"

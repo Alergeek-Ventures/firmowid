@@ -138,7 +138,6 @@
           class="min-h-20"
           field={@form[:correction_reason]}
           type="textarea"
-          new={true}
           label="Przyczyna korekty"
           placeholder="np. korekta ceny, zmiana danych nabywcy..."
           maxlength="256"
@@ -152,7 +151,6 @@
         <.input
           field={@form[:invoice_note]}
           type="textarea"
-          new={true}
           label="Notatka na fakturze"
           placeholder="Widoczna na fakturze i w KSeF (stopka faktury)"
           class="min-h-24!"
@@ -160,7 +158,6 @@
         <.input
           field={@form[:internal_note]}
           type="textarea"
-          new={true}
           label="Komentarz"
           placeholder="Notatka wewnętrzna (niewidoczna na fakturze - tylko wewnątrz Firmowida)"
           class="min-h-24"
@@ -301,7 +298,6 @@
               field={@form[:buyer_full_name]}
               type="text"
               placeholder="Nazwa firmy"
-              new={true}
             />
 
             <div
@@ -322,13 +318,11 @@
                 field={@form[:buyer_given_name]}
                 type="text"
                 placeholder="Imię"
-                new={true}
               />
               <.input
                 field={@form[:buyer_surname]}
                 type="text"
                 placeholder="Nazwisko"
-                new={true}
               />
             </div>
 
@@ -336,7 +330,6 @@
               field={@form[:buyer_display_name]}
               type="text"
               placeholder="Nazwa wyświetlana (opcjonalnie)"
-              new={true}
             />
           </div>
 
@@ -361,7 +354,6 @@
                 type="select"
                 options={Firmowid.Ash.Invoicing.CountryCodes.country_options()}
                 prompt="Wybierz kraj"
-                new={true}
               />
             <% end %>
           </div>
@@ -375,13 +367,11 @@
               field={@form[:buyer_email]}
               type="email"
               placeholder="E-mail"
-              new={true}
             />
             <.input
               field={@form[:buyer_phone]}
               type="tel"
               placeholder="Telefon"
-              new={true}
             />
           </div>
 

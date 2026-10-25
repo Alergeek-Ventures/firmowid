@@ -5,7 +5,7 @@ defmodule FirmowidWeb.Delegations.Views.DelegationForm do
 
   import FirmowidUI.Components.Button
   import FirmowidWeb.Delegations.Components.Delegation
-  import FirmowidWeb.DesignSystem.Components.CoreComponents, except: [button: 1]
+  import FirmowidWeb.DesignSystem.Components.CoreComponents
   import FirmowidWeb.DesignSystem.Components.MonthPicker
   import Phoenix.Component, except: [link: 1]
 
@@ -99,7 +99,6 @@ defmodule FirmowidWeb.Delegations.Views.DelegationForm do
                       field={@form[:start_date]}
                       id="delegation_start_date"
                       type="date"
-                      new
                       required
                       placeholder="__.__.____"
                       pattern="[0-9]{2}\.[0-9]{2}\.[0-9]{4}"
@@ -114,7 +113,6 @@ defmodule FirmowidWeb.Delegations.Views.DelegationForm do
                       field={@form[:end_date]}
                       id="delegation_end_date"
                       type="date"
-                      new
                       required
                       placeholder="__.__.____"
                       pattern="[0-9]{2}\.[0-9]{2}\.[0-9]{4}"
@@ -133,7 +131,6 @@ defmodule FirmowidWeb.Delegations.Views.DelegationForm do
                   field={@form[:destination]}
                   id="delegation_destination"
                   type="text"
-                  new
                   required
                   input_class="w-full sm:max-w-125"
                 />
@@ -153,7 +150,6 @@ defmodule FirmowidWeb.Delegations.Views.DelegationForm do
                       name={@form[:transport_types].name <> "[]"}
                       value={transport_type}
                       type="select"
-                      new
                       required
                       prompt="Wybierz z listy"
                       options={transport_options()}
@@ -185,7 +181,6 @@ defmodule FirmowidWeb.Delegations.Views.DelegationForm do
                   field={@form[:purpose]}
                   id="delegation_purpose"
                   type="text"
-                  new
                   required
                   placeholder="np. Wyjazd na Elixir Conf"
                   input_class="placeholder:text-grey-300 w-full sm:max-w-125"
@@ -198,7 +193,6 @@ defmodule FirmowidWeb.Delegations.Views.DelegationForm do
                       field={@form[:expected_cost]}
                       id="delegation_amount"
                       type="number"
-                      new
                       min="0"
                       step="0.01"
                       required

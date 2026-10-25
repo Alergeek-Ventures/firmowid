@@ -5,7 +5,7 @@ defmodule FirmowidWeb.Delegations.Components.Settlement.Documents do
 
   import FirmowidUI.Components.Button
   import FirmowidUI.Components.Link
-  import FirmowidWeb.DesignSystem.Components.CoreComponents, except: [button: 1]
+  import FirmowidWeb.DesignSystem.Components.CoreComponents
   import Phoenix.Component, except: [link: 1]
 
   alias Phoenix.LiveView.Rendered

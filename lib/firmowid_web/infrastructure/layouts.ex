@@ -12,7 +12,7 @@ defmodule FirmowidWeb.Infrastructure.Layouts do
 
   import FirmowidUI.Components.Button
   import FirmowidUI.Components.Link
-  import FirmowidWeb.DesignSystem.Components.CoreComponents, except: [button: 1]
+  import FirmowidWeb.DesignSystem.Components.CoreComponents
   import FirmowidWeb.Infrastructure.Flags
   import Phoenix.Component, except: [link: 1]
 

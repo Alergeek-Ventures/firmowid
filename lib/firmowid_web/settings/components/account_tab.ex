@@ -6,7 +6,7 @@ defmodule FirmowidWeb.Settings.Components.AccountTab do
   use FirmowidWeb, :html
 
   import FirmowidUI.Components.Button
-  import FirmowidWeb.DesignSystem.Components.CoreComponents, except: [button: 1]
+  import FirmowidWeb.DesignSystem.Components.CoreComponents
 
   alias FirmowidUI.Components.Inputs
   alias FirmowidWeb.Infrastructure.Utilities.TimeFormatter
@@ -107,7 +107,6 @@ defmodule FirmowidWeb.Settings.Components.AccountTab do
                 id="user_first_name"
                 value={name_input_value(first_name(@member_form[:name].value))}
                 errors={Inputs.translate_errors(@member_form.errors, :name)}
-                new
                 input_class="w-full"
               />
             </Helpers.settings_field>
@@ -118,7 +117,6 @@ defmodule FirmowidWeb.Settings.Components.AccountTab do
                 name="user[last_name]"
                 id="user_last_name"
                 value={name_input_value(last_name(@member_form[:name].value))}
-                new
                 input_class="w-full"
               />
             </Helpers.settings_field>
@@ -130,7 +128,6 @@ defmodule FirmowidWeb.Settings.Components.AccountTab do
                 id="user_birthday"
                 value={birthday_input_value(@member_form[:birthday].value)}
                 errors={Inputs.translate_errors(@member_form.errors, :birthday)}
-                new
                 input_class="w-full"
               />
             </Helpers.settings_field>
@@ -150,7 +147,6 @@ defmodule FirmowidWeb.Settings.Components.AccountTab do
                   {"Dzień i miesiąc", "day_with_month"},
                   {"Pełna data", "full_date"}
                 ]}
-                new
                 input_class="w-full"
               />
             </Helpers.settings_field>
@@ -224,7 +220,7 @@ defmodule FirmowidWeb.Settings.Components.AccountTab do
             for={@email_form[:email].id}
             layout={:row}
           >
-            <.input field={@email_form[:email]} type="email" new required />
+            <.input field={@email_form[:email]} type="email" required />
           </Helpers.settings_field>
           <Helpers.settings_field
             :if={@current_user.hashed_password}
@@ -237,7 +233,6 @@ defmodule FirmowidWeb.Settings.Components.AccountTab do
               field={@email_form[:current_password]}
               id="email_form_current_password"
               type="password"
-              new
               required
             />
           </Helpers.settings_field>
@@ -279,7 +274,6 @@ defmodule FirmowidWeb.Settings.Components.AccountTab do
               id="current_password_for_password"
               value={@current_password}
               required
-              new
               input_class="w-full"
             />
           </Helpers.settings_field>
@@ -289,7 +283,6 @@ defmodule FirmowidWeb.Settings.Components.AccountTab do
               field={@password_form[:password]}
               type="password"
               required
-              new
               input_class="w-full"
             />
           </Helpers.settings_field>
@@ -303,7 +296,6 @@ defmodule FirmowidWeb.Settings.Components.AccountTab do
               field={@password_form[:password_confirmation]}
               type="password"
               required
-              new
               input_class="w-full"
             />
           </Helpers.settings_field>
@@ -454,7 +446,6 @@ defmodule FirmowidWeb.Settings.Components.AccountTab do
             field={@delete_account_form[:current_password]}
             type="password"
             required
-            new
             input_class="w-full mb-0"
             class="flex items-center gap-5 text-sm text-grey-700 [&>label]:mb-0"
             label="Hasło"

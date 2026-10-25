@@ -96,7 +96,6 @@ defmodule FirmowidWeb.Admin.Components.SettlementComponents do
               type="select"
               label="Aktualny plan"
               options={plan_options()}
-              new
             />
 
             <FirmowidUI.Components.Button.button
@@ -187,13 +186,11 @@ defmodule FirmowidWeb.Admin.Components.SettlementComponents do
             label={"Wpisz dokładną nazwę organizacji: #{@selected_org.name}"}
             autocomplete="off"
             required
-            new
           />
           <.input
             field={form[:testowa_lub_porzucona]}
             type="checkbox"
             label="Potwierdzam, że organizacja jest testowa lub porzucona"
-            new
           />
           <div class="flex flex-wrap gap-3">
             <FirmowidUI.Components.Button.button

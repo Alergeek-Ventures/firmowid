@@ -7,7 +7,7 @@ defmodule FirmowidWeb.Admin.Views.Organizations do
 
   import FirmowidUI.Components.Button
   import FirmowidUI.Components.Link
-  import FirmowidWeb.DesignSystem.Components.CoreComponents, except: [button: 1]
+  import FirmowidWeb.DesignSystem.Components.CoreComponents
   import Phoenix.Component, except: [link: 1]
 
   alias Firmowid.Ash.Billing.Month

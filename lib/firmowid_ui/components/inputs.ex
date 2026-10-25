@@ -7,48 +7,6 @@ defmodule FirmowidUI.Components.Inputs do
   alias Phoenix.HTML.FormField
   alias Phoenix.LiveView.Rendered
 
-  defp legacy_input_size("medium") do
-    "text-base py-2 px-3"
-  end
-
-  defp legacy_input_size("small") do
-    "text-sm px-2 py-1"
-  end
-
-  defp legacy_input_size(_) do
-    legacy_input_size("medium")
-  end
-
-  defp legacy_input_color("none") do
-    "hover:border-transparent border border-transparent text-grey-700"
-  end
-
-  defp legacy_input_color("light_orange") do
-    "bg-rust-200 text-rust-700 border-none hover:bg-[#f0e0d8] focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-rust-700"
-  end
-
-  defp legacy_input_color("grey") do
-    "text-white border-grey-700 bg-grey-700 disabled:cursor-default disabled:text-white hover:opacity-60 disabled:bg-grey-700"
-  end
-
-  defp legacy_input_color("green") do
-    "bg-teal-800 text-white hover:text-black hover:bg-grey-200 disabled:bg-teal-800 disabled:text-white disabled:cursor-default"
-  end
-
-  defp legacy_input_color("black") do
-    "text-white bg-black hover:bg-grey-200 hover:text-black disabled:cursor-default disabled:bg-black disabled:text-white"
-  end
-
-  defp legacy_input_color("orange") do
-    "text-white border-none bg-rust-700 hover:bg-rust-200 hover:text-rust-700 disabled:cursor-default disabled:bg-rust-700 disabled:text-white phx-click-loading:bg-rust-700 phx-click-loading:text-white"
-  end
-
-  defp legacy_input_color("light_grey") do
-    "bg-grey-200 hover:border-transparent Grey border border-transparent text-grey-700"
-  end
-
-  defp legacy_input_color(_), do: legacy_input_color("black")
-
   @doc "Renders an input with label and error messages, optionally from a form field."
   @spec input(map()) :: Rendered.t()
   attr :id, :any, default: nil
@@ -68,30 +26,12 @@ defmodule FirmowidUI.Components.Inputs do
   attr :prompt, :string, default: nil, doc: "the prompt for select inputs"
   attr :options, :list, doc: "the options to pass to Form.options_for_select/2"
 
-  attr :selected_label, :string,
-    default: nil,
-    doc: "an alternate label to display for the selected select option"
-
   attr :selected_labels, :map,
     default: %{},
     doc: "alternate labels keyed by select option value"
 
-  attr :multiple, :boolean, default: false, doc: "the multiple flag for select inputs"
-
   attr :input_class, :any, default: nil, doc: "the class to apply to the input tag"
   attr :container_class, :string, default: nil, doc: "the class to apply to the container div"
-
-  attr :color, :string,
-    default: nil,
-    values: [nil, "black", "green", "red", "orange", "light_grey", "light_orange"]
-
-  attr :size, :string,
-    default: nil,
-    values: [nil, "medium", "small"]
-
-  attr :input_size, :integer, default: nil
-
-  attr :new, :boolean, default: false, doc: "new redesigned input"
 
   attr :is_tooltip, :boolean, default: false
 
@@ -111,7 +51,7 @@ defmodule FirmowidUI.Components.Inputs do
     assigns
     |> assign(field: nil, id: assigns.id || field.id)
     |> assign(:errors, Enum.map(errors, &translate_error(&1)))
-    |> assign_new(:name, fn -> if assigns.multiple, do: field.name <> "[]", else: field.name end)
+    |> assign_new(:name, fn -> field.name end)
     |> assign_new(:value, fn -> field.value end)
     |> input()
   end
@@ -162,7 +102,7 @@ defmodule FirmowidUI.Components.Inputs do
     """
   end
 
-  def input(%{type: "select", new: true} = assigns) do
+  def input(%{type: "select"} = assigns) do
     ~H"""
     <div class={@container_class}>
       <.label :if={@label} for={@id} class="mb-2">{@label}</.label>
@@ -174,15 +114,14 @@ defmodule FirmowidUI.Components.Inputs do
           data-prompt={@prompt}
           data-selected-labels={Jason.encode!(@selected_labels)}
           class={[
-            "peer w-full rounded-lg border border-grey-200 bg-grey-50 bg-none px-3 py-1.5 pr-10 text-base/tight",
+            "peer w-full rounded-lg border border-grey-200 bg-grey-50 bg-none px-3 py-1.5 pr-10 text-base/tight focus:border-grey-700 focus:ring-0",
             if(@selected_labels != %{},
               do: "text-transparent",
-              else: if(@value in [nil, ""], do: "text-grey-300", else: "text-grey-900")
+              else: if(@prompt && @value in [nil, ""], do: "text-grey-300", else: "text-grey-900")
             ),
             @input_class,
             @rest[:class]
           ]}
-          multiple={@multiple}
           {@rest}
         >
           <option :if={@prompt} value="" disabled selected={@value in [nil, ""]} hidden>
@@ -213,93 +152,20 @@ defmodule FirmowidUI.Components.Inputs do
     """
   end
 
-  def input(%{type: "select"} = assigns) do
-    ~H"""
-    <div class={@container_class}>
-      <.label :if={@label} for={@id} class="mb-2">{@label}</.label>
-      <select
-        id={@id}
-        name={@name}
-        class={[
-          "block w-full rounded border border-grey-200 bg-white focus:border-grey-700 focus:ring-0 sm:text-sm",
-          @color && legacy_input_color(@color),
-          @size && legacy_input_size(@size),
-          @rest[:class]
-        ]}
-        multiple={@multiple}
-        {@rest}
-      >
-        <option :if={@prompt} value="" disabled selected={@value in [nil, ""]} hidden>
-          {@prompt}
-        </option>
-        {Form.options_for_select(@options, @value)}
-      </select>
-      <.error :for={msg <- @errors} :if={@show_error}>{msg}</.error>
-    </div>
-    """
-  end
-
-  def input(%{type: "textarea", new: true} = assigns) do
-    ~H"""
-    <div class={@rest[:class]}>
-      <.label :if={@label} for={@id} class="mb-2">{@label}</.label>
-      <textarea
-        id={@id}
-        name={@name}
-        class={[
-          "min-h-12 w-full resize-none rounded-lg border border-grey-200 bg-white px-3 py-1.5 leading-tight text-grey-900 placeholder:text-grey-500 focus:border-grey-700 aria-invalid:border-brick-700"
-        ]}
-        aria-invalid={to_string(not Enum.empty?(@errors))}
-        {@rest}
-      ><%= Form.normalize_value("textarea", @value) %></textarea>
-      <.error :for={msg <- @errors} :if={@show_error} is_tooltip={@is_tooltip} target={@id}>
-        {msg}
-      </.error>
-    </div>
-    """
-  end
-
   def input(%{type: "textarea"} = assigns) do
     ~H"""
-    <div>
-      <.label for={@id}>{@label}</.label>
+    <div class={@rest[:class]}>
+      <.label :if={@label} for={@id} class="mb-2">{@label}</.label>
       <textarea
         id={@id}
         name={@name}
         class={[
-          "mt-2 block min-h-24 w-full rounded text-grey-900 focus:ring-0 sm:text-sm/6",
-          @errors == [] && "border-grey-200 focus:border-grey-700",
-          @errors != [] && "border-brick-700 focus:border-brick-700",
-          @rest[:class]
-        ]}
-        {@rest}
-      ><%= Form.normalize_value("textarea", @value) %></textarea>
-      <.error :for={msg <- @errors} :if={@show_error}>{msg}</.error>
-    </div>
-    """
-  end
-
-  def input(%{new: true} = assigns) do
-    ~H"""
-    <div class={@rest[:class]}>
-      <.label :if={@label || Enum.any?(@label_slot)} for={@id} class={["mb-2", @rest[:class]]}>
-        {if Enum.any?(@label_slot), do: render_slot(@label_slot), else: @label}
-      </.label>
-      <input
-        type={@type}
-        name={@name}
-        id={@id}
-        size={@input_size}
-        value={Form.normalize_value(@type, @value)}
-        aria-invalid={to_string(not Enum.empty?(@errors))}
-        class={[
-          "w-full rounded-lg border border-grey-200 bg-white px-3 py-1.5 leading-tight text-grey-900 placeholder:text-grey-500 focus:border-grey-700 aria-invalid:border-brick-700",
-          @type == "number" &&
-            "[appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none",
+          "min-h-12 w-full resize-none rounded-lg border border-grey-200 bg-white px-3 py-1.5 leading-tight text-grey-900 placeholder:text-grey-500 focus:border-grey-700 focus:ring-0 aria-invalid:border-brick-700",
           @input_class
         ]}
+        aria-invalid={to_string(not Enum.empty?(@errors))}
         {@rest}
-      />
+      ><%= Form.normalize_value("textarea", @value) %></textarea>
       <.error :for={msg <- @errors} :if={@show_error} is_tooltip={@is_tooltip} target={@id}>
         {msg}
       </.error>
@@ -310,22 +176,26 @@ defmodule FirmowidUI.Components.Inputs do
   def input(assigns) do
     ~H"""
     <div class={@rest[:class]}>
-      <.label :if={@label} for={@id} class={["mb-2", @rest[:class]]}>{@label}</.label>
+      <.label :if={@label || Enum.any?(@label_slot)} for={@id} class={["mb-2", @rest[:class]]}>
+        {if Enum.any?(@label_slot), do: render_slot(@label_slot), else: @label}
+      </.label>
       <input
         type={@type}
         name={@name}
         id={@id}
-        size={@input_size}
         value={Form.normalize_value(@type, @value)}
+        aria-invalid={to_string(not Enum.empty?(@errors))}
         class={[
-          "block w-full rounded text-grey-900 read-only:cursor-default read-only:bg-grey-100 focus:ring-0 sm:text-sm/6",
-          @errors == [] && "border-grey-200 focus:border-grey-700",
-          @errors != [] && "border-brick-700 focus:border-brick-700",
+          "w-full rounded-lg border border-grey-200 bg-white px-3 py-1.5 leading-tight text-grey-900 placeholder:text-grey-500 focus:border-grey-700 focus:ring-0 aria-invalid:border-brick-700",
+          @type == "number" &&
+            "[appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none",
           @input_class
         ]}
         {@rest}
       />
-      <.error :for={msg <- @errors} :if={@show_error}>{msg}</.error>
+      <.error :for={msg <- @errors} :if={@show_error} is_tooltip={@is_tooltip} target={@id}>
+        {msg}
+      </.error>
     </div>
     """
   end

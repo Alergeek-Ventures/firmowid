@@ -50,20 +50,7 @@
           <label class="pt-1.5 text-sm text-nowrap text-grey-700" for={@form[:name].id}>
             Nazwa projektu
           </label>
-          <.input field={@form[:name]} class="max-w-90" new={true} />
-
-          <%= if false do %>
-            <label class="text-sm text-nowrap text-grey-700" for={@form[:counterparty_id].id}>
-              Kontrahent
-            </label>
-            <.input
-              field={@form[:counterparty_id]}
-              type="select"
-              prompt="Wybierz kontrahenta"
-              container_class="max-w-90"
-              new={true}
-            />
-          <% end %>
+          <.input field={@form[:name]} class="max-w-90" />
         </div>
       </div>
     </div>
@@ -87,7 +74,6 @@
             placeholder="Wyszukaj pracownika, aby dodać"
             input_class="pl-9 !bg-transparent placeholder:text-grey-400 border max-w-sm w-full"
             autocomplete="off"
-            new={true}
             phx-hook=".Autocomplete"
             data-autocomplete-data={
               @available_users

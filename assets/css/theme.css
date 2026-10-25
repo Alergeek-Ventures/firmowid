@@ -5,7 +5,6 @@
 @theme {
   --font-*: initial;
   --font-sans: "Lexend", ui-sans-serif, system-ui, sans-serif;
-  --font-logo: "Josefin Sans", ui-sans-serif, system-ui, sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 
   /* Elevation: resting cards; floating overlays use shadow-lg */
@@ -29,17 +28,6 @@
     }
   }
 
-  @keyframes slide-from-center {
-    0% {
-      opacity: 0;
-      transform: translateX(-30px);
-    }
-    100% {
-      opacity: 1;
-      transform: translateX(0);
-    }
-  }
-
   @keyframes appear {
     0% {
       opacity: 0;
@@ -50,8 +38,6 @@
   }
 
   /* Animations */
-  --animate-slide-from-center: slide-from-center 300ms ease-out forwards;
-  --animate-appear: appear 700ms ease-out forwards;
   --animate-fade-in: appear 150ms ease-out forwards;
   --animate-error-pulse: error-pulse 2s ease-in-out infinite;
 }

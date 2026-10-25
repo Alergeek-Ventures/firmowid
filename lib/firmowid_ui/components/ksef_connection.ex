@@ -166,7 +166,6 @@ defmodule FirmowidUI.Components.KsefConnection do
                     name="ksef_token"
                     value=""
                     required
-                    new
                     input_class="w-full"
                   />
                   <div class="flex justify-end">
@@ -304,7 +303,6 @@ defmodule FirmowidUI.Components.KsefConnection do
                       id="private_key_password"
                       value=""
                       required
-                      new
                       input_class="w-full"
                     />
                   </label>

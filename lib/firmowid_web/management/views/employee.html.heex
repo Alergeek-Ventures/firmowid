@@ -154,27 +154,6 @@
     </span>
   </.card>
 
-  <div :if={false} class="col-start-2 flex gap-10 self-end px-6">
-    <.link
-      :for={
-        {path, label, action} <-
-          [
-            {~p"/zarzadzanie/pracownicy/#{@employee.id}", "Projekty i ewidencja", :projects}
-          ]
-      }
-      kind="unstyled"
-      navigate={path}
-      class={[
-        "rounded-t-md p-3 font-medium text-grey-700 transition-all phx-click-loading:opacity-50",
-        "shadow shadow-transparent hover:bg-white hover:text-black hover:shadow-black/10",
-        @live_action == action &&
-          "bg-grey-50 text-black shadow-black/10"
-      ]}
-    >
-      {label}
-    </.link>
-  </div>
-
   <div class="relative z-10 col-start-2 row-start-2 size-full space-y-6">
     <%= case @live_action do %>
       <% :projects -> %>

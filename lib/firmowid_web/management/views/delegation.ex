@@ -6,7 +6,7 @@ defmodule FirmowidWeb.Management.Views.Delegation do
   import FirmowidUI.Components.Button
   import FirmowidUI.Components.Link
   import FirmowidWeb.Delegations.Components.Delegation, only: [detail_row: 1]
-  import FirmowidWeb.DesignSystem.Components.CoreComponents, except: [button: 1]
+  import FirmowidWeb.DesignSystem.Components.CoreComponents
   import FirmowidWeb.DesignSystem.Components.MonthPicker
   import Phoenix.Component, except: [link: 1]
 
@@ -225,7 +225,6 @@ defmodule FirmowidWeb.Management.Views.Delegation do
                   <.input
                     field={@command_form[:amount]}
                     type="number"
-                    new
                     min="0"
                     step="0.01"
                     placeholder="0.00"

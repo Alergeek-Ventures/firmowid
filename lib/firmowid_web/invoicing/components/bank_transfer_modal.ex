@@ -3,7 +3,7 @@ defmodule FirmowidWeb.Invoicing.Components.BankTransferModal do
   use FirmowidWeb, :live_component
 
   import FirmowidUI.Components.Button
-  import FirmowidWeb.DesignSystem.Components.CoreComponents, except: [button: 1]
+  import FirmowidWeb.DesignSystem.Components.CoreComponents
 
   attr :invoice, :map, required: true
 

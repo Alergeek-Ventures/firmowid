@@ -48,7 +48,6 @@
             <div class="flex gap-3">
               <.input
                 field={@form[:tax_id]}
-                new={true}
                 autocomplete="off"
                 class="flex-1"
               />
@@ -69,34 +68,33 @@
               field={@form[:type]}
               type="select"
               options={[{"Firma", :company}, {"Osoba fizyczna", :individual}]}
-              new={true}
             />
 
             <label class="pt-1.5 text-sm text-nowrap text-grey-700" for={@form[:display_name].id}>
               Nazwa wyświetlana
             </label>
-            <.input field={@form[:display_name]} new={true} />
+            <.input field={@form[:display_name]} />
 
             <%= if to_string(@form[:type].value) == "company" do %>
               <label class="pt-1.5 text-sm text-nowrap text-grey-700" for={@form[:full_name].id}>
                 Pełna nazwa*
               </label>
-              <.input field={@form[:full_name]} new={true} />
+              <.input field={@form[:full_name]} />
             <% else %>
               <label class="pt-1.5 text-sm text-nowrap text-grey-700" for={@form[:given_name].id}>
                 Imię*
               </label>
               <div>
-                <.input field={@form[:given_name]} new={true} />
+                <.input field={@form[:given_name]} />
               </div>
 
               <label class="pt-1.5 text-sm text-nowrap text-grey-700" for={@form[:surname].id}>
                 Nazwisko*
               </label>
-              <.input field={@form[:surname]} new={true} />
+              <.input field={@form[:surname]} />
 
               <label class="pt-1.5 text-sm text-nowrap text-grey-700" for={@form[:pesel].id}>PESEL</label>
-              <.input field={@form[:pesel]} new={true} />
+              <.input field={@form[:pesel]} />
             <% end %>
           </div>
         </div>
@@ -109,7 +107,6 @@
             <.input
               field={@form[:description]}
               type="textarea"
-              new={true}
               is_tooltip={true}
               class="h-24"
             />
@@ -124,10 +121,10 @@
           </h2>
           <div class="grid grid-cols-[min-content_1fr] items-start gap-x-5 gap-y-3">
             <label class="pt-1.5 text-sm text-nowrap text-grey-700" for={@form[:email].id}>Email</label>
-            <.input field={@form[:email]} new={true} is_tooltip={true} />
+            <.input field={@form[:email]} is_tooltip={true} />
 
             <label class="pt-1.5 text-sm text-nowrap text-grey-700" for={@form[:phone].id}>Telefon</label>
-            <.input field={@form[:phone]} new={true} is_tooltip={true} />
+            <.input field={@form[:phone]} is_tooltip={true} />
 
             <label class="pt-1.5 text-sm text-nowrap text-grey-700" for={@form[:address].id}>
               Adres
@@ -135,7 +132,6 @@
             <.input
               field={@form[:address]}
               type="textarea"
-              new={true}
               is_tooltip={true}
               placeholder="Ulica, nr budynku i/lub mieszkania, kod pocztowy, miasto"
             />
@@ -147,7 +143,6 @@
               options={@country_options}
               prompt="Wybierz kraj"
               required
-              new={true}
             />
 
             <label class="text-sm text-grey-700" for={@form[:is_different_mail_address].id}>Inny adres korespondencyjny</label>
@@ -164,7 +159,6 @@
               <.input
                 field={@form[:mail_address]}
                 type="textarea"
-                new={true}
                 is_tooltip={true}
               />
               <label class="text-sm text-grey-700" for={@form[:mail_country].id}>
@@ -175,7 +169,6 @@
                 type="select"
                 options={@country_options}
                 prompt="Wybierz kraj"
-                new={true}
               />
             <% end %>
           </div>

@@ -9,7 +9,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoicePayment do
 
   import FirmowidUI.Components.Button
   import FirmowidUI.Components.Link
-  import FirmowidWeb.DesignSystem.Components.CoreComponents, except: [button: 1]
+  import FirmowidWeb.DesignSystem.Components.CoreComponents
   import Phoenix.Component, except: [link: 1]
 
   alias Firmowid.Ash.Finances.BankAccount
@@ -55,7 +55,6 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoicePayment do
         type="date"
         phx-debounce
         class="h-8 w-43"
-        new={true}
       />
       <div class="flex flex-wrap items-center gap-2">
         <.button
@@ -80,7 +79,6 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoicePayment do
         type="date"
         phx-debounce
         class="h-8 w-43"
-        new={true}
       />
       <div class="flex flex-wrap items-center gap-2">
         <.button
@@ -109,7 +107,6 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoicePayment do
           {"Karta", :card}
         ]}
         container_class="w-fit"
-        new={true}
       />
       <div></div>
 
@@ -169,7 +166,6 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoicePayment do
             type="text"
             placeholder="np. PL61109010140000071219812874"
             class="w-full"
-            new={true}
           />
         <% end %>
 
