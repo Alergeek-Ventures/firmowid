@@ -658,7 +658,7 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
           </div>
         </section>
         <FirmowidWeb.DesignSystem.Components.TaxForecastSummary.tax_forecast_summary
-          :if={@tax_forecast}
+          :if={@tax_forecast && flag_enabled?(:tax_prognosis, assigns)}
           id="analysis-tax-forecast"
           forecast={@tax_forecast}
           settings_path={@tax_forecast_settings_path}

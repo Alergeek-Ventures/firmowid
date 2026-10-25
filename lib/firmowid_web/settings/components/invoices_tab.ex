@@ -18,13 +18,20 @@ defmodule FirmowidWeb.Settings.Components.InvoicesTab do
   attr :current_org, :map, required: true
   attr :current_user, :map, required: true
 
+  attr :tax_prognosis?, :boolean,
+    default: false,
+    doc: "Whether the `tax_prognosis` feature flag is enabled."
+
   def invoices_tab(assigns) do
     assigns =
       assigns
       |> assign(:admin?, assigns.current_user.member.role == :admin)
       |> assign(:inbound_email, inbound_email(assigns.current_org))
       |> assign(:allowed_sender_emails, assigns.current_org.allowed_sender_emails || [])
-      |> assign(:tax_forecast?, Ash.can?({TaxForecast, :get}, assigns.current_user))
+      |> assign(
+        :tax_forecast?,
+        assigns.tax_prognosis? and Ash.can?({TaxForecast, :get}, assigns.current_user)
+      )
 
     ~H"""
     <div

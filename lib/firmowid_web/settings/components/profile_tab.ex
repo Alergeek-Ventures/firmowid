@@ -28,6 +28,11 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
   attr :member_form, :map, required: true
   attr :contract_form, :map, default: nil
   attr :tax_profile_form, :map, required: true
+
+  attr :tax_prognosis?, :boolean,
+    default: false,
+    doc: "Whether the `tax_prognosis` feature flag is enabled."
+
   attr :editing_profile_employment, :boolean, required: true
   attr :editing_tax_profile, :boolean, required: true
   attr :editing_profile_finance, :boolean, required: true
@@ -65,6 +70,7 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
           ash_scope={@ash_scope}
         />
         <.tax_profile_section
+          :if={@tax_prognosis?}
           contract_type={@current_contract && @current_contract.contract_type}
           form={@tax_profile_form}
           editing={@editing_tax_profile}

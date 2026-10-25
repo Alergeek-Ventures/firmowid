@@ -26,7 +26,8 @@ defmodule FirmowidWeb.Infrastructure.Flags do
 
   @flag_keys %{
     analysis_dashboard: "analysis_dashboard",
-    delegations: "delegations"
+    delegations: "delegations",
+    tax_prognosis: "tax_prognosis"
   }
 
   @doc """
