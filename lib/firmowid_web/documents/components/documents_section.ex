@@ -186,7 +186,7 @@ defmodule FirmowidWeb.Documents.Components.DocumentsSection do
             currently_uploading_count={@currently_uploading_count}
             processing_blobs_count={@processing_blobs_count}
           />
-          <.icon name="hero-plus" class="size-4" /> Dodaj umowę
+          <.icon name="hero-plus" class="size-4" /> {gettext("Add employee document")}
         </.button>
       </form>
     </div>
@@ -293,7 +293,7 @@ defmodule FirmowidWeb.Documents.Components.DocumentsSection do
     ~H"""
     <.link
       kind="unstyled"
-      navigate={@document.url}
+      redirect={@document.url}
       download={@document.file_name}
       class="group flex items-center justify-between gap-4 rounded-md px-2 py-2.5 transition"
     >
@@ -385,6 +385,12 @@ defmodule FirmowidWeb.Documents.Components.DocumentsSection do
   defp build_documents(user, scope, %{search: search, type_filter: type_filter}) do
     parsed = parse_search(search)
 
+    contracts =
+      Payroll.list_employment_contracts!(%{member_id: user.member.id},
+        scope: scope,
+        load: [:blob]
+      )
+
     hours_record_docs =
       if type_filter in [nil, "hours_record"] do
         %{member_id: user.member.id}
@@ -409,10 +415,8 @@ defmodule FirmowidWeb.Documents.Components.DocumentsSection do
 
     employment_contract_docs =
       if type_filter in [nil, "employment_contract"] do
-        %{member_id: user.member.id}
-        |> maybe_add_month(parsed.month)
-        |> maybe_add_year(parsed.year)
-        |> Payroll.list_employment_contracts!(scope: scope, load: [:blob])
+        contracts
+        |> Enum.filter(&matches_date?(&1.starts_at, parsed))
         |> Enum.map(fn doc ->
           %{
             id: doc.id,
@@ -428,7 +432,34 @@ defmodule FirmowidWeb.Documents.Components.DocumentsSection do
         []
       end
 
-    other_docs = []
+    other_docs =
+      if type_filter in [nil, "other"] do
+        contract_blob_ids = MapSet.new(contracts, & &1.blob_id)
+
+        %{member_id: user.member.id, processing_target: :employment_contract}
+        |> Blobs.list_blobs!(scope: scope, load: [:url])
+        |> Enum.filter(fn blob ->
+          blob.processing_state == :succeeded and
+            not MapSet.member?(contract_blob_ids, blob.id) and
+            matches_date?(DateTime.to_date(blob.inserted_at), parsed) and
+            String.contains?(
+              String.downcase(blob.original_filename),
+              String.downcase(parsed.text)
+            )
+        end)
+        |> Enum.map(fn blob ->
+          %{
+            id: blob.id,
+            type: :other,
+            name: blob.original_filename,
+            date: DateTime.to_date(blob.inserted_at),
+            url: blob.url,
+            file_name: blob.original_filename
+          }
+        end)
+      else
+        []
+      end
 
     Enum.sort_by(
       hours_record_docs ++ employment_contract_docs ++ other_docs,
@@ -436,6 +467,9 @@ defmodule FirmowidWeb.Documents.Components.DocumentsSection do
       {:desc, Date}
     )
   end
+
+  defp matches_date?(date, parsed),
+    do: (is_nil(parsed.month) or date.month == parsed.month) and (is_nil(parsed.year) or date.year == parsed.year)
 
   defp parse_search(search) do
     tokens = search |> String.trim() |> String.split(~r/[\s.]+/, trim: true)

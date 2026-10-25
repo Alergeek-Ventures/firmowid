@@ -1,6 +1,7 @@
 defmodule Firmowid.Ash.Blobs.Changes.ProcessDocumentBlob do
   @moduledoc false
   use Ash.Resource.Change
+  use Gettext, backend: Firmowid.Gettext
 
   alias Firmowid.Ash.Blobs.Blob
   alias Firmowid.Ash.Scope
@@ -77,7 +78,8 @@ defmodule Firmowid.Ash.Blobs.Changes.ProcessDocumentBlob do
 
   defp invalid_document_error_message(:cost_invoice), do: "Plik nie zawiera danych wymaganych dla faktury kosztowej."
 
-  defp invalid_document_error_message(:employment_contract), do: "Plik nie zawiera danych wymaganych dla umowy o pracę."
+  defp invalid_document_error_message(:employment_contract),
+    do: gettext("Upload a contract, an employee declaration or a payroll document.")
 
   defp ensure_processing(blob, opts) do
     blob

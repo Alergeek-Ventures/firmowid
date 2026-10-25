@@ -21,19 +21,7 @@
       "references": null,
       "scale": null,
       "size": null,
-      "source": "received_on",
-      "type": "date"
-    },
-    {
-      "allow_nil?": false,
-      "default": "nil",
-      "generated?": false,
-      "precision": null,
-      "primary_key?": false,
-      "references": null,
-      "scale": null,
-      "size": null,
-      "source": "applies_from",
+      "source": "salary_month",
       "type": "date"
     },
     {
@@ -45,115 +33,7 @@
       "references": null,
       "scale": null,
       "size": null,
-      "source": "tax_residency",
-      "type": "text"
-    },
-    {
-      "allow_nil?": true,
-      "default": "nil",
-      "generated?": false,
-      "precision": null,
-      "primary_key?": false,
-      "references": null,
-      "scale": null,
-      "size": null,
-      "source": "pit2",
-      "type": "text"
-    },
-    {
-      "allow_nil?": true,
-      "default": "nil",
-      "generated?": false,
-      "precision": null,
-      "primary_key?": false,
-      "references": null,
-      "scale": null,
-      "size": null,
-      "source": "employee_costs",
-      "type": "text"
-    },
-    {
-      "allow_nil?": true,
-      "default": "nil",
-      "generated?": false,
-      "precision": null,
-      "primary_key?": false,
-      "references": null,
-      "scale": null,
-      "size": null,
-      "source": "youth_relief",
-      "type": "text"
-    },
-    {
-      "allow_nil?": true,
-      "default": "nil",
-      "generated?": false,
-      "precision": null,
-      "primary_key?": false,
-      "references": null,
-      "scale": null,
-      "size": null,
-      "source": "pit0",
-      "type": "text"
-    },
-    {
-      "allow_nil?": true,
-      "default": "nil",
-      "generated?": false,
-      "precision": null,
-      "primary_key?": false,
-      "references": null,
-      "scale": null,
-      "size": null,
-      "source": "tax_mode",
-      "type": "text"
-    },
-    {
-      "allow_nil?": true,
-      "default": "nil",
-      "generated?": false,
-      "precision": null,
-      "primary_key?": false,
-      "references": null,
-      "scale": null,
-      "size": null,
-      "source": "request_year",
-      "type": "bigint"
-    },
-    {
-      "allow_nil?": true,
-      "default": "nil",
-      "generated?": false,
-      "precision": null,
-      "primary_key?": false,
-      "references": null,
-      "scale": null,
-      "size": null,
-      "source": "preferential",
-      "type": "text"
-    },
-    {
-      "allow_nil?": true,
-      "default": "nil",
-      "generated?": false,
-      "precision": null,
-      "primary_key?": false,
-      "references": null,
-      "scale": null,
-      "size": null,
-      "source": "student",
-      "type": "boolean"
-    },
-    {
-      "allow_nil?": true,
-      "default": "nil",
-      "generated?": false,
-      "precision": null,
-      "primary_key?": false,
-      "references": null,
-      "scale": null,
-      "size": null,
-      "source": "student_until",
+      "source": "payout_date",
       "type": "date"
     },
     {
@@ -165,68 +45,116 @@
       "references": null,
       "scale": null,
       "size": null,
-      "source": "other_employment",
+      "source": "payout_date_basis",
       "type": "text"
     },
     {
       "allow_nil?": true,
       "default": "nil",
       "generated?": false,
-      "precision": null,
+      "precision": 20,
       "primary_key?": false,
       "references": null,
-      "scale": null,
+      "scale": 2,
       "size": null,
-      "source": "own_employer",
-      "type": "boolean"
-    },
-    {
-      "allow_nil?": true,
-      "default": "nil",
-      "generated?": false,
-      "precision": null,
-      "primary_key?": false,
-      "references": null,
-      "scale": null,
-      "size": null,
-      "source": "sickness",
-      "type": "boolean"
-    },
-    {
-      "allow_nil?": true,
-      "default": "nil",
-      "generated?": false,
-      "precision": null,
-      "primary_key?": false,
-      "references": null,
-      "scale": null,
-      "size": null,
-      "source": "copyright_costs",
-      "type": "boolean"
-    },
-    {
-      "allow_nil?": true,
-      "default": "nil",
-      "generated?": false,
-      "precision": null,
-      "primary_key?": false,
-      "references": null,
-      "scale": null,
-      "size": null,
-      "source": "ppk",
-      "type": "text"
-    },
-    {
-      "allow_nil?": true,
-      "default": "nil",
-      "generated?": false,
-      "precision": null,
-      "primary_key?": false,
-      "references": null,
-      "scale": null,
-      "size": null,
-      "source": "ppk_employee_rate",
+      "source": "gross",
       "type": "decimal"
+    },
+    {
+      "allow_nil?": true,
+      "default": "nil",
+      "generated?": false,
+      "precision": 20,
+      "primary_key?": false,
+      "references": null,
+      "scale": 2,
+      "size": null,
+      "source": "prior_taxable_income",
+      "type": "decimal"
+    },
+    {
+      "allow_nil?": true,
+      "default": "nil",
+      "generated?": false,
+      "precision": 20,
+      "primary_key?": false,
+      "references": null,
+      "scale": 2,
+      "size": null,
+      "source": "prior_social_base",
+      "type": "decimal"
+    },
+    {
+      "allow_nil?": true,
+      "default": "nil",
+      "generated?": false,
+      "precision": 20,
+      "primary_key?": false,
+      "references": null,
+      "scale": 2,
+      "size": null,
+      "source": "prior_exempt_income",
+      "type": "decimal"
+    },
+    {
+      "allow_nil?": true,
+      "default": "nil",
+      "generated?": false,
+      "precision": 20,
+      "primary_key?": false,
+      "references": null,
+      "scale": 2,
+      "size": null,
+      "source": "employer_ppk_income",
+      "type": "decimal"
+    },
+    {
+      "allow_nil?": true,
+      "default": "nil",
+      "generated?": false,
+      "precision": null,
+      "primary_key?": false,
+      "references": null,
+      "scale": null,
+      "size": null,
+      "source": "employer_ppk_date",
+      "type": "date"
+    },
+    {
+      "allow_nil?": true,
+      "default": "nil",
+      "generated?": false,
+      "precision": null,
+      "primary_key?": false,
+      "references": null,
+      "scale": null,
+      "size": null,
+      "source": "single_payment",
+      "type": "boolean"
+    },
+    {
+      "allow_nil?": true,
+      "default": "nil",
+      "generated?": false,
+      "precision": null,
+      "primary_key?": false,
+      "references": null,
+      "scale": null,
+      "size": null,
+      "source": "standard_pay",
+      "type": "boolean"
+    },
+    {
+      "allow_nil?": true,
+      "default": "nil",
+      "generated?": false,
+      "precision": null,
+      "primary_key?": false,
+      "references": null,
+      "scale": null,
+      "size": null,
+      "source": "insurance_unchanged",
+      "type": "boolean"
     },
     {
       "allow_nil?": false,
@@ -273,7 +201,7 @@
           "global": false,
           "strategy": "attribute"
         },
-        "name": "member_tax_declarations_member_id_fkey",
+        "name": "member_payroll_inputs_member_id_fkey",
         "on_delete": "delete",
         "on_update": null,
         "primary_key?": true,
@@ -306,7 +234,7 @@
           "global": null,
           "strategy": null
         },
-        "name": "member_tax_declarations_organization_id_fkey",
+        "name": "member_payroll_inputs_organization_id_fkey",
         "on_delete": "delete",
         "on_update": null,
         "primary_key?": true,
@@ -317,6 +245,39 @@
       "size": null,
       "source": "organization_id",
       "type": "uuid"
+    },
+    {
+      "allow_nil?": true,
+      "default": "nil",
+      "generated?": false,
+      "precision": null,
+      "primary_key?": false,
+      "references": {
+        "deferrable": false,
+        "destination_attribute": "id",
+        "destination_attribute_default": null,
+        "destination_attribute_generated": null,
+        "index?": false,
+        "index_where": null,
+        "match_tenant?": false,
+        "match_type": null,
+        "match_with": null,
+        "multitenancy": {
+          "attribute": "organization_id",
+          "global": false,
+          "strategy": "attribute"
+        },
+        "name": "member_payroll_inputs_source_blob_id_fkey",
+        "on_delete": "nilify",
+        "on_update": null,
+        "primary_key?": true,
+        "schema": "public",
+        "table": "blobs"
+      },
+      "scale": null,
+      "size": null,
+      "source": "source_blob_id",
+      "type": "uuid"
     }
   ],
   "base_filter": null,
@@ -325,27 +286,27 @@
   "custom_indexes": [],
   "custom_statements": [],
   "has_create_action": true,
-  "hash": "FACC257BF01E3622201BC4950679F7C47A879CE4EB1BB9A41840B9C97B4D0EB5",
+  "hash": "EFE178A66D5907865718FCA2C64DD34CEC34F7A98D7CA5CCB2823C4FBD89616D",
   "identities": [
     {
       "all_tenants?": false,
       "base_filter": null,
-      "index_name": "member_tax_declarations_unique_member_effective_date_index",
+      "index_name": "member_payroll_inputs_unique_member_salary_month_index",
       "keys": [
-        {
-          "type": "atom",
-          "value": "member_id"
-        },
         {
           "type": "atom",
           "value": "organization_id"
         },
         {
           "type": "atom",
-          "value": "applies_from"
+          "value": "member_id"
+        },
+        {
+          "type": "atom",
+          "value": "salary_month"
         }
       ],
-      "name": "unique_member_effective_date",
+      "name": "unique_member_salary_month",
       "nils_distinct?": true,
       "where": null
     }
@@ -357,6 +318,6 @@
   },
   "repo": "Elixir.Firmowid.Repo",
   "schema": null,
-  "table": "member_tax_declarations",
+  "table": "member_payroll_inputs",
   "temporal": null
 }

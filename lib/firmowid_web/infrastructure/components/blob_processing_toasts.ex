@@ -67,7 +67,10 @@ defmodule FirmowidWeb.Infrastructure.Components.BlobProcessingToasts do
   def show_success_toast(blob, type \\ nil)
 
   def show_success_toast(%Blob{}, :employment_contract) do
-    LiveToast.send_toast(:success, "Umowa została pomyślnie dodana.")
+    LiveToast.send_toast(
+      :success,
+      gettext("Employee document added.")
+    )
   end
 
   def show_success_toast(%Blob{}, _) do

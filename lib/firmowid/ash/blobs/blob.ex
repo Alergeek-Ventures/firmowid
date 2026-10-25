@@ -64,6 +64,7 @@ defmodule Firmowid.Ash.Blobs.Blob do
   end
 
   code_interface do
+    define :list, action: :list
     define :read_global, action: :read_global
     define :list_processing, action: :list_processing, args: [:processing_target]
     define :mark_processing, action: :mark_processing
@@ -80,6 +81,24 @@ defmodule Firmowid.Ash.Blobs.Blob do
 
   actions do
     defaults [:read]
+
+    read :list do
+      description "List stored files, optionally by processing target and employee."
+
+      argument :processing_target, :atom, constraints: [one_of: [:none, :cost_invoice, :employment_contract]]
+
+      argument :member_id, :uuid
+
+      prepare build(filter: expr(processing_target == ^arg(:processing_target))) do
+        where present(:processing_target)
+      end
+
+      prepare build(filter: expr(fragment("?->>'member_id' = ?::text", processing_metadata, ^arg(:member_id)))) do
+        where present(:member_id)
+      end
+
+      prepare build(sort: [inserted_at: :desc])
+    end
 
     read :read_global do
       description "Unscoped read for AshOban schedulers — reads across all organizations."
@@ -142,12 +161,22 @@ defmodule Firmowid.Ash.Blobs.Blob do
     end
 
     update :mark_processing_succeeded do
-      description "Mark a blob as successfully processed and clear processing metadata."
+      description "Mark a blob as processed, retaining employee document ownership."
       require_atomic? false
       accept []
       change {ValidateProcessingStateTransition, to: :succeeded}
       change set_attribute(:processing_state, :succeeded)
-      change set_attribute(:processing_metadata, %{})
+
+      change fn changeset, _context ->
+        metadata =
+          if changeset.data.processing_target == :employment_contract do
+            Map.take(changeset.data.processing_metadata, ["member_id"])
+          else
+            %{}
+          end
+
+        Ash.Changeset.force_change_attribute(changeset, :processing_metadata, metadata)
+      end
     end
 
     update :mark_processing_failed do
@@ -289,6 +318,16 @@ defmodule Firmowid.Ash.Blobs.Blob do
     end
 
     # all employees: read and create_blob for hours records, uploading avatar, documents, etc.
+    policy action(:list) do
+      authorize_if expr(
+                     fragment(
+                       "?->>'member_id' = ?::text",
+                       processing_metadata,
+                       ^actor([:member, :id])
+                     )
+                   )
+    end
+
     policy [action([:read, :create_blob]), {Firmowid.Ash.Checks.AtLeastRole, role: :employee}] do
       authorize_if always()
     end

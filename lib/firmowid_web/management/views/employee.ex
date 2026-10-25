@@ -20,6 +20,7 @@ defmodule FirmowidWeb.Management.Views.Employee do
   alias FirmowidWeb.Infrastructure.Utilities.TimeFormatter
   alias FirmowidWeb.Management.Components.LeavesTab
   alias FirmowidWeb.Management.Components.ProfileTab
+  alias FirmowidWeb.Management.Components.ProjectsTab
   alias FirmowidWeb.Management.Utilities.Navigation
   alias Phoenix.Socket.Broadcast
 
@@ -216,6 +217,11 @@ defmodule FirmowidWeb.Management.Views.Employee do
       refetch: true
     )
 
+    send_update(ProjectsTab,
+      id: "projects-tab",
+      refetch: true
+    )
+
     {:noreply, socket}
   end
 
@@ -259,7 +265,9 @@ defmodule FirmowidWeb.Management.Views.Employee do
       ) do
     LiveToast.send_toast(
       :error,
-      "Plik #{notification.data.original_filename} nie zawiera wymaganych danych. Upewnij się, że wgrywasz umowę.",
+      gettext("The file %{filename} is not a contract, employee declaration or payroll document.",
+        filename: notification.data.original_filename
+      ),
       title: "Nieprawidłowy dokument"
     )
 

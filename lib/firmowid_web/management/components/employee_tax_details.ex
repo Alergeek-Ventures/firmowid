@@ -3,10 +3,13 @@ defmodule FirmowidWeb.Management.Components.EmployeeTaxDetails do
   use FirmowidWeb, :live_component
 
   import FirmowidUI.Components.Button
+  import FirmowidUI.Components.Link
+  import Phoenix.Component, except: [link: 1]
 
   alias Firmowid.Ash.Payroll
   alias Firmowid.Ash.Payroll.MemberTaxDeclaration
   alias FirmowidWeb.Infrastructure.Utilities.TimeFormatter
+  alias FirmowidWeb.Management.Utilities.Navigation
   alias Phoenix.LiveView.JS
 
   @additional_fields [:pit0, :preferential, :copyright_costs]
@@ -16,9 +19,10 @@ defmodule FirmowidWeb.Management.Components.EmployeeTaxDetails do
     {:ok,
      socket
      |> assign(assigns)
-     |> assign_new(:declarations, fn ->
+     |> assign(
+       :declarations,
        Payroll.list_tax_declarations!(%{member_id: assigns.member_id}, scope: assigns.scope)
-     end)
+     )
      |> assign_new(:dialog, fn -> nil end)
      |> assign_new(:form, fn -> nil end)
      |> assign_new(:no_additional, fn -> false end)}
@@ -33,6 +37,14 @@ defmodule FirmowidWeb.Management.Components.EmployeeTaxDetails do
       |> assign(:current, current)
       |> assign(:summary_fields, summary_fields(assigns.contract_type))
       |> assign(:additional_fields, @additional_fields)
+      |> assign(
+        :effective_date_locked?,
+        effective_date_locked?(assigns.dialog, assigns.declarations)
+      )
+      |> assign(
+        :incomplete_declaration,
+        Enum.find(assigns.declarations, &(is_nil(&1.applies_from) or is_nil(&1.received_on)))
+      )
       |> assign(:editing?, assigns.dialog == :new or match?({:correction, _}, assigns.dialog))
 
     ~H"""
@@ -56,6 +68,20 @@ defmodule FirmowidWeb.Management.Components.EmployeeTaxDetails do
             </.button>
           </:actions>
         </.card_header>
+
+        <div :if={@incomplete_declaration} class="flex flex-col items-start gap-2">
+          <p class="text-sm/snug text-grey-700">
+            {gettext("A document is missing dates. Complete them to use its details.")}
+          </p>
+          <.button
+            type="button"
+            variant="outline"
+            size="small"
+            phx-click="correct-declaration"
+            phx-value-id={@incomplete_declaration.id}
+            phx-target={@myself}
+          >{gettext("Complete imported details")}</.button>
+        </div>
 
         <%= cond do %>
           <% @contract_type == :b2b -> %>
@@ -82,7 +108,7 @@ defmodule FirmowidWeb.Management.Components.EmployeeTaxDetails do
               <% end %>
             </dl>
             <p :if={not no_additional?(@current)} class="text-xs/snug text-grey-600">
-              {gettext("Other tax preferences need review before calculation.")}
+              {gettext("Check the other declarations before calculating pay.")}
             </p>
           <% true -> %>
             <div class="flex flex-col gap-3">
@@ -113,16 +139,9 @@ defmodule FirmowidWeb.Management.Components.EmployeeTaxDetails do
           >
             {gettext("History (%{count})", count: length(@declarations))}
           </.button>
-          <.live_component
-            :if={@contract_type != :b2b}
-            module={FirmowidWeb.Management.Components.EmployeePayoutCalculator}
-            id="employee-payout-calculator"
-            member_id={@member_id}
-            scope={@scope}
-            contract_type={@contract_type}
-            declarations={@declarations}
-            archived={@archived}
-          />
+          <.link kind="text" navigate={Navigation.employee_documents_path(@employee_id)}>
+            {gettext("Add employee documents")}
+          </.link>
         </div>
       </.card>
 
@@ -136,16 +155,21 @@ defmodule FirmowidWeb.Management.Components.EmployeeTaxDetails do
         <div class="flex flex-col gap-6">
           <header class="flex flex-col gap-2 pe-5">
             <h2 id={"#{@id}-dialog-title"} class="text-lg/snug font-medium">
-              {dialog_title(@dialog)}
+              {if match?({:correction, _}, @dialog) and not @effective_date_locked?,
+                do: gettext("Complete imported details"),
+                else: dialog_title(@dialog)}
             </h2>
             <p id={"#{@id}-dialog-description"} class="text-sm/snug text-grey-600">
-              {dialog_description(@dialog)}
+              {if match?({:correction, _}, @dialog) and not @effective_date_locked?,
+                do:
+                  gettext("Add the missing dates. These details will apply from the date you choose."),
+                else: dialog_description(@dialog)}
             </p>
           </header>
 
           <%= if @dialog == :history do %>
             <details :for={declaration <- @declarations} class="border-bs border-grey-200 pbs-4">
-              <summary class="flex min-h-11 cursor-pointer items-center justify-between gap-3 rounded-sm text-sm/snug outline-offset-4 focus-visible:outline-2 focus-visible:outline-teal-700 active:bg-grey-100">
+              <summary class="flex min-h-11 cursor-pointer items-center justify-between gap-3 rounded-sm text-sm/snug active:bg-grey-100">
                 <span class="font-medium">{format_date(declaration.applies_from)}</span>
                 <span class="text-xs/snug text-grey-600">{version_status(declaration, @current)}</span>
               </summary>
@@ -191,7 +215,7 @@ defmodule FirmowidWeb.Management.Components.EmployeeTaxDetails do
               <.declaration_field
                 form={@form}
                 field={definition(:applies_from)}
-                readonly={match?({:correction, _}, @dialog)}
+                readonly={@effective_date_locked?}
               />
             </div>
             <p class="text-xs/snug text-grey-600">
@@ -233,7 +257,7 @@ defmodule FirmowidWeb.Management.Components.EmployeeTaxDetails do
               />
             </div>
             <details :if={not @no_additional} id="additional-tax-declarations" class="text-sm/snug">
-              <summary class="min-h-11 cursor-pointer rounded-sm font-medium outline-offset-4 focus-visible:outline-2 focus-visible:outline-teal-700 active:bg-grey-100">
+              <summary class="min-h-11 cursor-pointer rounded-sm font-medium active:bg-grey-100">
                 {gettext("Other declarations (record only)")}
               </summary>
               <div class="flex flex-col gap-5 pbs-3">
@@ -258,7 +282,7 @@ defmodule FirmowidWeb.Management.Components.EmployeeTaxDetails do
                 phx-click="close-tax-dialog"
                 phx-target={@myself}
               >{gettext("Cancel")}</.button>
-              <.button size="small" phx-disable-with={gettext("Saving...")}>
+              <.button variant="special" size="small" phx-disable-with={gettext("Saving...")}>
                 {if @dialog == :new,
                   do: gettext("Save new declaration"),
                   else: gettext("Save correction")}
@@ -375,8 +399,13 @@ defmodule FirmowidWeb.Management.Components.EmployeeTaxDetails do
       end
 
     case socket.assigns.dialog do
-      :new -> Map.put(params, "member_id", socket.assigns.member_id)
-      {:correction, _id} -> Map.drop(params, ["member_id", "applies_from"])
+      :new ->
+        Map.put(params, "member_id", socket.assigns.member_id)
+
+      {:correction, _id} ->
+        if is_nil(record.applies_from) or is_nil(record.received_on),
+          do: Map.delete(params, "member_id"),
+          else: Map.drop(params, ["member_id", "applies_from"])
     end
   end
 
@@ -392,7 +421,18 @@ defmodule FirmowidWeb.Management.Components.EmployeeTaxDetails do
   defp editor_record({:correction, id}, declarations), do: Enum.find(declarations, &(&1.id == id))
 
   defp current_declaration(declarations),
-    do: Enum.find(declarations, &(Date.compare(&1.applies_from, Date.utc_today()) != :gt))
+    do:
+      Enum.find(declarations, fn declaration ->
+        declaration.applies_from && declaration.received_on &&
+          Date.compare(declaration.applies_from, Date.utc_today()) != :gt
+      end)
+
+  defp effective_date_locked?({:correction, id}, declarations) do
+    record = Enum.find(declarations, &(&1.id == id))
+    not is_nil(record.applies_from) and not is_nil(record.received_on)
+  end
+
+  defp effective_date_locked?(_dialog, _declarations), do: false
 
   defp no_additional?(record),
     do: record.pit0 == :none and record.preferential == :none and record.copyright_costs == false
@@ -427,7 +467,7 @@ defmodule FirmowidWeb.Management.Components.EmployeeTaxDetails do
   defp summary_label(:employee_costs), do: gettext("Tax costs")
   defp summary_label(key), do: definition(key).label
 
-  defp display_value(_key, nil), do: gettext("Not established")
+  defp display_value(_key, nil), do: gettext("No information yet")
   defp display_value(_key, %Date{} = value), do: format_date(value)
   defp display_value(:pit2, :one_twelfth), do: Money.new!(:PLN, 300)
   defp display_value(:pit2, :one_twenty_fourth), do: Money.new!(:PLN, 150)
@@ -450,7 +490,11 @@ defmodule FirmowidWeb.Management.Components.EmployeeTaxDetails do
     label
   end
 
+  defp format_date(nil), do: gettext("Date missing")
   defp format_date(date), do: TimeFormatter.format_date(date)
+
+  defp version_status(%{applies_from: nil}, _current), do: gettext("Needs details")
+  defp version_status(%{received_on: nil}, _current), do: gettext("Needs details")
 
   defp version_status(declaration, %{id: id}) when declaration.id == id, do: gettext("Effective today")
 
@@ -464,12 +508,13 @@ defmodule FirmowidWeb.Management.Components.EmployeeTaxDetails do
   defp dialog_title(:new), do: gettext("New declaration")
   defp dialog_title({:correction, _id}), do: gettext("Correct declaration")
 
-  defp dialog_description(:history), do: gettext("Open a version to review its recorded information.")
+  defp dialog_description(:history), do: gettext("Choose a date to see the employee's declarations.")
 
-  defp dialog_description(:new), do: gettext("Choose when the changes take effect. Previous versions are kept.")
+  defp dialog_description(:new),
+    do: gettext("Enter when these declarations apply. Earlier declarations stay in the history.")
 
   defp dialog_description({:correction, _id}),
-    do: gettext("This corrects the stored version. Its effective date stays unchanged.")
+    do: gettext("You are correcting an earlier declaration. Its date stays the same.")
 
   attr :form, :any, required: true
   attr :field, :map, required: true
@@ -481,7 +526,7 @@ defmodule FirmowidWeb.Management.Components.EmployeeTaxDetails do
       field={@form[@field.key]}
       label={@field.label}
       type={@field.type}
-      options={[{gettext("Not established"), ""} | @field.options]}
+      options={[{gettext("No information yet"), ""} | @field.options]}
       readonly={@readonly}
       min={if @field.key == :request_year, do: "2022", else: if(@field.type == "number", do: "0.5")}
       max={if @field.key == :request_year, do: "2100", else: if(@field.type == "number", do: "4")}

@@ -1,11 +1,14 @@
 defmodule Firmowid.Ash.Payroll.MemberTaxDeclaration do
-  @moduledoc "Daily versions of an organization member's tax and insurance declarations."
+  @moduledoc "Effective-dated declarations and non-effective document-import drafts for organization members."
   use Ash.Resource,
     domain: Firmowid.Ash.Payroll,
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer]
 
   alias Firmowid.Ash.Checks.ActorRole
+  alias Firmowid.Ash.Checks.SystemActorRole
+  alias Firmowid.Ash.Payroll.Actions.ImportMemberTaxDeclaration
+  alias Firmowid.Ash.Payroll.Validations.ImmutableAppliesFrom
   alias Firmowid.Ash.Resource
 
   require Resource
@@ -37,6 +40,7 @@ defmodule Firmowid.Ash.Payroll.MemberTaxDeclaration do
     references do
       reference :member, on_delete: :delete
       reference :organization, on_delete: :delete
+      reference :source_blob, on_delete: :nilify
     end
   end
 
@@ -45,20 +49,31 @@ defmodule Firmowid.Ash.Payroll.MemberTaxDeclaration do
     define :create_tax_declaration, action: :create
     define :list_tax_declarations, action: :list
     define :correct_tax_declaration, action: :correct
+    define :create_imported_tax_declaration, action: :import_create
+    define :update_imported_tax_declaration, action: :import_update
+    define :import_from_document, action: :import_from_document, args: [:attrs_map]
   end
 
   actions do
     defaults [:read]
 
     read :list do
-      description "List a member's declarations, optionally effective on or before a date."
-      argument :member_id, :uuid, allow_nil?: false
+      description "List declarations, optionally by member, source document or effective date."
+      argument :member_id, :uuid
+      argument :source_blob_id, :uuid
       argument :as_of, :date
 
-      filter expr(member_id == ^arg(:member_id))
-      prepare build(sort: [applies_from: :desc])
+      prepare build(sort: [applies_from: :desc_nils_last])
 
-      prepare build(filter: expr(applies_from <= ^arg(:as_of))) do
+      prepare build(filter: expr(member_id == ^arg(:member_id))) do
+        where present(:member_id)
+      end
+
+      prepare build(filter: expr(source_blob_id == ^arg(:source_blob_id))) do
+        where present(:source_blob_id)
+      end
+
+      prepare build(filter: expr(not is_nil(received_on) and applies_from <= ^arg(:as_of))) do
         where present(:as_of)
       end
     end
@@ -70,8 +85,32 @@ defmodule Firmowid.Ash.Payroll.MemberTaxDeclaration do
     end
 
     update :correct do
-      description "Correct an existing declaration without changing its member or effective date."
-      accept @declaration_fields
+      description "Complete an imported draft or correct a declaration without moving its established effective date."
+      primary? true
+      accept [:applies_from | @declaration_fields]
+      require_atomic? false
+
+      change {Firmowid.Ash.Payroll.Changes.CompleteImportedDeclaration, fields: @declaration_fields -- [:received_on]}
+
+      validate {ImmutableAppliesFrom, []}
+    end
+
+    create :import_create do
+      description "Create a partial declaration imported from a document."
+      accept [:member_id, :source_blob_id, :applies_from | @declaration_fields]
+    end
+
+    update :import_update do
+      description "Merge explicit facts from a document into an imported declaration."
+      accept [:source_blob_id, :applies_from | @declaration_fields]
+      require_atomic? false
+      validate {ImmutableAppliesFrom, []}
+    end
+
+    action :import_from_document, :struct do
+      description "Import explicit declaration facts from an employee document."
+      argument :attrs_map, :map, allow_nil?: false
+      run ImportMemberTaxDeclaration
     end
   end
 
@@ -79,36 +118,61 @@ defmodule Firmowid.Ash.Payroll.MemberTaxDeclaration do
     policy action_type(:read) do
       authorize_if {ActorRole, role: :admin}
       authorize_if expr(member_id == ^actor([:member, :id]))
+      authorize_if {SystemActorRole, roles: [:document_blob_processor]}
     end
 
-    policy action_type([:create, :update]) do
+    policy action([:create, :correct]) do
       authorize_if {ActorRole, role: :admin}
+    end
+
+    policy action([:import_from_document, :import_create, :import_update]) do
+      authorize_if {ActorRole, role: :admin}
+      authorize_if {SystemActorRole, roles: [:document_blob_processor]}
     end
   end
 
   validations do
     validate compare(:received_on, less_than_or_equal_to: :applies_from),
       on: [:create, :update],
+      where: [present(:received_on), present(:applies_from)],
       message: "is invalid"
 
-    validate present(:request_year),
+    validate present(:received_on),
       on: [:create, :update],
-      where: [attribute_equals(:tax_mode, :no_advance)],
+      where: [action_is([:create, :correct])],
+      message: "can't be blank"
+
+    validate present(:applies_from),
+      on: [:create, :update],
+      where: [action_is([:create, :correct])],
       message: "can't be blank"
 
     validate present(:request_year),
       on: [:create, :update],
-      where: [present(:preferential), attribute_does_not_equal(:preferential, :none)],
+      where: [action_is([:create, :correct]), attribute_equals(:tax_mode, :no_advance)],
+      message: "can't be blank"
+
+    validate present(:request_year),
+      on: [:create, :update],
+      where: [
+        action_is([:create, :correct]),
+        present(:preferential),
+        attribute_does_not_equal(:preferential, :none)
+      ],
       message: "can't be blank"
 
     validate present(:ppk_employee_rate),
       on: [:create, :update],
-      where: [attribute_equals(:ppk, :participant)],
+      where: [action_is([:create, :correct]), attribute_equals(:ppk, :participant)],
       message: "can't be blank"
 
-    validate Firmowid.Ash.Payroll.Validations.TaxDeclarationMemberInOrganization,
+    validate Firmowid.Ash.Payroll.Validations.MemberInOrganization,
       on: [:create],
       where: [present(:member_id)]
+
+    validate Firmowid.Ash.Payroll.Validations.SourceBlobInOrganization,
+      on: [:create, :update],
+      where: [present(:source_blob_id)]
   end
 
   multitenancy do
@@ -119,8 +183,8 @@ defmodule Firmowid.Ash.Payroll.MemberTaxDeclaration do
   attributes do
     uuid_v7_primary_key :id
 
-    attribute :received_on, :date, allow_nil?: false
-    attribute :applies_from, :date, allow_nil?: false
+    attribute :received_on, :date
+    attribute :applies_from, :date
     attribute :tax_residency, :atom, constraints: [one_of: [:poland, :other]]
 
     attribute :pit2, :atom, constraints: [one_of: [:none, :one_twelfth, :one_twenty_fourth, :one_thirty_sixth]]
@@ -157,9 +221,16 @@ defmodule Firmowid.Ash.Payroll.MemberTaxDeclaration do
     belongs_to :organization, Firmowid.Ash.Core.Organization do
       allow_nil? false
     end
+
+    belongs_to :source_blob, Firmowid.Ash.Blobs.Blob do
+      allow_nil? true
+      attribute_writable? true
+    end
   end
 
   identities do
     identity :unique_member_effective_date, [:member_id, :organization_id, :applies_from], field_names: [:applies_from]
+
+    identity :unique_source_blob, [:source_blob_id]
   end
 end

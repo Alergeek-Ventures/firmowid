@@ -36,7 +36,7 @@ defmodule FirmowidWeb.Invoicing.Transactions.Components.SalaryComponents do
               [
                 if(suggestion.payout_variant,
                   do:
-                    gettext("Hypothetical variant: %{variant}",
+                    gettext("Example: %{variant}",
                       variant: PayoutEstimates.variant_label(suggestion.payout_variant)
                     )
                 ),
@@ -105,7 +105,7 @@ defmodule FirmowidWeb.Invoicing.Transactions.Components.SalaryComponents do
         <:detail label={gettext("Salary month")}>{month_label(@transaction.salary_month)}</:detail>
         <:detail
           :if={@admin?}
-          label={if @payout_variant, do: gettext("Net forecast"), else: gettext("Gross")}
+          label={if @payout_variant, do: gettext("Estimated take-home pay"), else: gettext("Gross")}
         >
           <div class="flex flex-col gap-1">
             <span><span :if={@payout_variant && @payout_variant != :b2b} aria-hidden="true">≈ </span>{@expected_amount ||
@@ -114,7 +114,9 @@ defmodule FirmowidWeb.Invoicing.Transactions.Components.SalaryComponents do
               {PayoutEstimates.variant_label(@payout_variant)}
             </span>
             <span :if={@payout_variant && @payout_variant != :b2b} class="text-xs/snug text-grey-600">
-              {gettext("Hypothetical forecast, without employee declarations or annual balances.")}
+              {gettext(
+                "Estimate only — excludes employee declarations and earlier payments this year."
+              )}
             </span>
           </div>
         </:detail>

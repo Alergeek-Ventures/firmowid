@@ -1,5 +1,5 @@
-defmodule Firmowid.Ash.Payroll.Validations.TaxDeclarationMemberInOrganization do
-  @moduledoc "Validates that a tax declaration references a member of its organization."
+defmodule Firmowid.Ash.Payroll.Validations.MemberInOrganization do
+  @moduledoc "Validates that payroll data references a member of its organization."
   use Ash.Resource.Validation
 
   alias Firmowid.Ash.Core.Member
