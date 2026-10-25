@@ -1152,19 +1152,19 @@ msgstr ""
 msgid "Categories"
 msgstr ""
 
-#: lib/firmowid_web/analysis/components/financial_overview.ex:109
-#: lib/firmowid_web/analysis/components/financial_overview.ex:169
+#: lib/firmowid_web/analysis/components/financial_overview.ex:114
+#: lib/firmowid_web/analysis/components/financial_overview.ex:174
 #: lib/firmowid_web/analysis/views/dashboard.ex:440
-#: lib/firmowid_web/analysis/views/dashboard.ex:665
+#: lib/firmowid_web/analysis/views/dashboard.ex:652
 #, elixir-autogen, elixir-format
 msgid "Expenses"
 msgstr ""
 
-#: lib/firmowid_web/analysis/components/financial_overview.ex:108
-#: lib/firmowid_web/analysis/components/financial_overview.ex:166
-#: lib/firmowid_web/analysis/components/project_matrix.ex:528
+#: lib/firmowid_web/analysis/components/financial_overview.ex:113
+#: lib/firmowid_web/analysis/components/financial_overview.ex:171
+#: lib/firmowid_web/analysis/components/project_matrix.ex:530
 #: lib/firmowid_web/analysis/views/dashboard.ex:439
-#: lib/firmowid_web/analysis/views/dashboard.ex:653
+#: lib/firmowid_web/analysis/views/dashboard.ex:640
 #, elixir-autogen, elixir-format
 msgid "Income"
 msgstr ""
@@ -1203,8 +1203,8 @@ msgid "Edit categories"
 msgstr ""
 
 #: lib/firmowid_web/analysis/components/category_selector.ex:334
-#: lib/firmowid_web/analysis/components/project_matrix.ex:105
-#: lib/firmowid_web/analysis/views/dashboard.ex:545
+#: lib/firmowid_web/analysis/components/project_matrix.ex:107
+#: lib/firmowid_web/analysis/views/dashboard.ex:532
 #, elixir-autogen, elixir-format
 msgid "Project"
 msgstr ""
@@ -1221,21 +1221,21 @@ msgstr ""
 msgid "Omitted"
 msgstr ""
 
-#: lib/firmowid_web/analysis/views/dashboard.ex:729
-#: lib/firmowid_web/hours_record/views/index.html.heex:166
-#: lib/firmowid_web/settings/components/profile_tab.ex:518
+#: lib/firmowid_web/analysis/views/dashboard.ex:716
+#: lib/firmowid_web/hours_record/views/index.html.heex:162
+#: lib/firmowid_web/settings/components/profile_tab.ex:491
 #, elixir-autogen, elixir-format
 msgid "Cancel"
 msgstr ""
 
 #: lib/firmowid/ash/timetracker/actions/notify_admins_about_hours_record_change.ex:38
 #: lib/firmowid_web/hours_record/components/change_request.ex:99
-#: lib/firmowid_web/hours_record/views/index.html.heex:148
+#: lib/firmowid_web/hours_record/views/index.html.heex:144
 #, elixir-autogen, elixir-format
 msgid "Cancellation"
 msgstr ""
 
-#: lib/firmowid_web/management/components/hours_record_status.ex:76
+#: lib/firmowid_web/management/components/hours_record_status.ex:71
 #, elixir-autogen, elixir-format
 msgid "Change requested"
 msgstr ""
@@ -1257,7 +1257,7 @@ msgstr ""
 
 #: lib/firmowid/ash/timetracker/actions/notify_admins_about_hours_record_change.ex:37
 #: lib/firmowid_web/hours_record/components/change_request.ex:98
-#: lib/firmowid_web/hours_record/views/index.html.heex:147
+#: lib/firmowid_web/hours_record/views/index.html.heex:143
 #, elixir-autogen, elixir-format
 msgid "Correction"
 msgstr ""
@@ -1277,18 +1277,18 @@ msgstr ""
 msgid "Hours record change request"
 msgstr ""
 
-#: lib/firmowid_web/hours_record/views/index.html.heex:155
+#: lib/firmowid_web/hours_record/views/index.html.heex:151
 #, elixir-autogen, elixir-format
 msgid "Reason"
 msgstr ""
 
-#: lib/firmowid_web/hours_record/views/index.html.heex:110
-#: lib/firmowid_web/hours_record/views/index.html.heex:135
+#: lib/firmowid_web/hours_record/views/index.html.heex:106
+#: lib/firmowid_web/hours_record/views/index.html.heex:131
 #, elixir-autogen, elixir-format
 msgid "Request correction or cancellation"
 msgstr ""
 
-#: lib/firmowid_web/hours_record/views/index.html.heex:145
+#: lib/firmowid_web/hours_record/views/index.html.heex:141
 #, elixir-autogen, elixir-format
 msgid "Request type"
 msgstr ""
@@ -1298,17 +1298,17 @@ msgstr ""
 msgid "Sign hours record"
 msgstr ""
 
-#: lib/firmowid_web/hours_record/views/index.html.heex:169
+#: lib/firmowid_web/hours_record/views/index.html.heex:165
 #, elixir-autogen, elixir-format
 msgid "Submit request"
 msgstr ""
 
-#: lib/firmowid_web/hours_record/views/index.html.heex:168
+#: lib/firmowid_web/hours_record/views/index.html.heex:164
 #, elixir-autogen, elixir-format
 msgid "Submitting..."
 msgstr ""
 
-#: lib/firmowid_web/hours_record/views/index.html.heex:138
+#: lib/firmowid_web/hours_record/views/index.html.heex:134
 #, elixir-autogen, elixir-format
 msgid "Your request will be saved and emailed to your organization administrators. It does not cancel the signature or unlock hours automatically."
 msgstr ""
@@ -1318,7 +1318,7 @@ msgstr ""
 msgid "Accept request"
 msgstr ""
 
-#: lib/firmowid_web/management/components/hours_record_status.ex:74
+#: lib/firmowid_web/management/components/hours_record_status.ex:69
 #, elixir-autogen, elixir-format
 msgid "Change request rejected"
 msgstr ""
@@ -1328,7 +1328,7 @@ msgstr ""
 msgid "Could not save the decision. The request may already have been reviewed."
 msgstr ""
 
-#: lib/firmowid_web/management/components/hours_record_status.ex:34
+#: lib/firmowid_web/management/components/hours_record_status.ex:35
 #, elixir-autogen, elixir-format
 msgid "Document submitted on %{date}"
 msgstr ""
@@ -1365,7 +1365,7 @@ msgstr ""
 msgid "The request was rejected. The submitted document remains current and the month's hours stay locked."
 msgstr ""
 
-#: lib/firmowid_web/management/components/hours_record_status.ex:48
+#: lib/firmowid_web/management/components/hours_record_status.ex:43
 #, elixir-autogen, elixir-format
 msgid "Withdrawn"
 msgstr ""
@@ -1381,14 +1381,14 @@ msgstr ""
 msgid "Invoice number is required."
 msgstr ""
 
-#: lib/firmowid_web/invoicing/components/sales_invoice_details.ex:349
+#: lib/firmowid_web/invoicing/components/sales_invoice_details.ex:347
 #: lib/firmowid_web/landing/components/sections.ex:309
 #: lib/firmowid_web/landing/components/sections.ex:612
 #, elixir-autogen, elixir-format
 msgid "Draft"
 msgstr ""
 
-#: lib/firmowid_web/invoicing/components/sales_invoice_details.ex:348
+#: lib/firmowid_web/invoicing/components/sales_invoice_details.ex:346
 #, elixir-autogen, elixir-format
 msgid "Invoice status"
 msgstr ""
@@ -1420,13 +1420,13 @@ msgstr ""
 msgid "today"
 msgstr ""
 
-#: lib/firmowid_web/invoicing/transactions/components/show_components.ex:247
+#: lib/firmowid_web/invoicing/transactions/components/show_components.ex:244
 #, elixir-autogen, elixir-format
 msgid "Ask Firmowid for help with invoices"
 msgstr ""
 
 #: lib/firmowid_web/invoicing/transactions/components/salary_components.ex:66
-#: lib/firmowid_web/invoicing/transactions/components/show_components.ex:202
+#: lib/firmowid_web/invoicing/transactions/components/show_components.ex:203
 #, elixir-autogen, elixir-format
 msgid "Confirm"
 msgstr ""
@@ -1478,17 +1478,17 @@ msgid "The salary cannot be assigned to this transaction."
 msgstr ""
 
 #: lib/firmowid_web/invoicing/transactions/components/salary_components.ex:28
-#: lib/firmowid_web/invoicing/transactions/components/show_components.ex:180
+#: lib/firmowid_web/invoicing/transactions/components/show_components.ex:181
 #, elixir-autogen, elixir-format
 msgid "Amount"
 msgstr ""
 
-#: lib/firmowid_web/invoicing/transactions/components/show_components.ex:254
+#: lib/firmowid_web/invoicing/transactions/components/show_components.ex:251
 #, elixir-autogen, elixir-format
 msgid "Ask"
 msgstr ""
 
-#: lib/firmowid_web/invoicing/components/entries_table.ex:419
+#: lib/firmowid_web/invoicing/components/entries_table.ex:413
 #: lib/firmowid_web/invoicing/components/matching_components.ex:135
 #, elixir-autogen, elixir-format
 msgid "Complete"
@@ -1510,8 +1510,8 @@ msgstr ""
 msgid "Matching"
 msgstr ""
 
-#: lib/firmowid_web/analysis/components/financial_overview.ex:107
-#: lib/firmowid_web/analysis/components/project_matrix.ex:161
+#: lib/firmowid_web/analysis/components/financial_overview.ex:112
+#: lib/firmowid_web/analysis/components/project_matrix.ex:163
 #: lib/firmowid_web/invoicing/transactions/components/salary_components.ex:27
 #, elixir-autogen, elixir-format
 msgid "Month"
@@ -1523,12 +1523,12 @@ msgstr ""
 msgid "Could not connect this transaction to the invoice."
 msgstr ""
 
-#: lib/firmowid_web/invoicing/transactions/components/show_components.ex:179
+#: lib/firmowid_web/invoicing/transactions/components/show_components.ex:180
 #, elixir-autogen, elixir-format
 msgid "Date"
 msgstr ""
 
-#: lib/firmowid_web/invoicing/transactions/components/show_components.ex:178
+#: lib/firmowid_web/invoicing/transactions/components/show_components.ex:179
 #, elixir-autogen, elixir-format
 msgid "Potential invoices for this transaction"
 msgstr ""
@@ -2561,13 +2561,13 @@ msgctxt "landing card price"
 msgid "%{amount} PLN"
 msgstr ""
 
-#: lib/firmowid_web/analysis/views/dashboard.ex:719
+#: lib/firmowid_web/analysis/views/dashboard.ex:706
 #, elixir-autogen, elixir-format
 msgid "All categories assigned to this month's entries will be removed, including manual ones. This cannot be undone."
 msgstr ""
 
 #: lib/firmowid_web/analysis/components/category_selector.ex:195
-#: lib/firmowid_web/analysis/views/dashboard.ex:736
+#: lib/firmowid_web/analysis/views/dashboard.ex:723
 #, elixir-autogen, elixir-format
 msgid "Clear categories"
 msgstr ""
@@ -2577,7 +2577,7 @@ msgstr ""
 msgid "Clear month's categories"
 msgstr ""
 
-#: lib/firmowid_web/analysis/views/dashboard.ex:717
+#: lib/firmowid_web/analysis/views/dashboard.ex:704
 #, elixir-autogen, elixir-format
 msgid "Clear month's categories?"
 msgstr ""
@@ -2773,7 +2773,7 @@ msgstr ""
 msgid "We detected an import issue. Our team is working to resolve it as quickly as possible."
 msgstr ""
 
-#: lib/firmowid_web/invoicing/components/dashboard.ex:92
+#: lib/firmowid_web/invoicing/components/dashboard.ex:95
 #, elixir-autogen, elixir-format
 msgid "Worth your attention"
 msgstr ""
@@ -2891,7 +2891,7 @@ msgid_plural "%{count} days overdue"
 msgstr[0] ""
 msgstr[1] ""
 
-#: lib/firmowid_web/analysis/views/dashboard.ex:703
+#: lib/firmowid_web/analysis/views/dashboard.ex:690
 #, elixir-autogen, elixir-format
 msgid "Invoices without a payment and payments without an invoice or salary, dated this month. Link them or mark them as skipped to include them in the analysis."
 msgstr ""
@@ -2902,12 +2902,12 @@ msgstr ""
 msgid "Search categories"
 msgstr ""
 
-#: lib/firmowid_web/analysis/views/dashboard.ex:700
+#: lib/firmowid_web/analysis/views/dashboard.ex:687
 #, elixir-autogen, elixir-format
 msgid "Unrealized expenses"
 msgstr ""
 
-#: lib/firmowid_web/analysis/views/dashboard.ex:699
+#: lib/firmowid_web/analysis/views/dashboard.ex:686
 #, elixir-autogen, elixir-format
 msgid "Unrealized income"
 msgstr ""
@@ -3024,7 +3024,7 @@ msgstr ""
 #: lib/firmowid_web/analysis/components/category_selector.ex:147
 #: lib/firmowid_web/analysis/components/category_selector.ex:156
 #: lib/firmowid_web/analysis/components/category_selector.ex:331
-#: lib/firmowid_web/analysis/components/project_matrix.ex:532
+#: lib/firmowid_web/analysis/components/project_matrix.ex:534
 #, elixir-autogen, elixir-format
 msgid "Taxes"
 msgstr ""
@@ -3034,134 +3034,133 @@ msgstr ""
 msgid "New category"
 msgstr ""
 
-#: lib/firmowid_web/analysis/views/dashboard.ex:604
+#: lib/firmowid_web/analysis/views/dashboard.ex:591
 #, elixir-autogen, elixir-format
 msgid "Clear filters"
 msgstr ""
 
-#: lib/firmowid_web/payroll/components/payout_estimates.ex:118
+#: lib/firmowid_web/payroll/components/payout_estimates.ex:113
 #, elixir-autogen, elixir-format
 msgid "B2B — gross amount"
 msgstr ""
 
-#: lib/firmowid_web/payroll/components/payout_estimates.ex:122
+#: lib/firmowid_web/payroll/components/payout_estimates.ex:117
 #, elixir-autogen, elixir-format
 msgid "Employment"
 msgstr ""
 
-#: lib/firmowid_web/payroll/components/payout_estimates.ex:109
+#: lib/firmowid_web/payroll/components/payout_estimates.ex:104
 #, elixir-autogen, elixir-format
 msgid "Employment contract"
 msgstr ""
 
-#: lib/firmowid_web/payroll/components/payout_estimates.ex:162
+#: lib/firmowid_web/payroll/components/payout_estimates.ex:157
 #, elixir-autogen, elixir-format
 msgid "First income tax bracket, 20% tax-deductible costs, no PIT-2 reduction."
 msgstr ""
 
-#: lib/firmowid_web/payroll/components/payout_estimates.ex:159
+#: lib/firmowid_web/payroll/components/payout_estimates.ex:154
 #, elixir-autogen, elixir-format
 msgid "First income tax bracket, standard costs, PLN 300 PIT-2 reduction, no PPK."
 msgstr ""
 
-#: lib/firmowid_web/payroll/components/payout_estimates.ex:96
+#: lib/firmowid_web/payroll/components/payout_estimates.ex:91
 #, elixir-autogen, elixir-format
 msgid "Forecast based on available data and assumptions. It does not replace payroll calculation and is not financial or tax advice."
 msgstr ""
 
 #: lib/firmowid_web/invoicing/transactions/components/salary_components.ex:105
-#: lib/firmowid_web/management/views/employees.html.heex:157
-#: lib/firmowid_web/payroll/components/payout_estimates.ex:52
+#: lib/firmowid_web/management/views/employees.html.heex:139
+#: lib/firmowid_web/payroll/components/payout_estimates.ex:47
 #, elixir-autogen, elixir-format
 msgid "Gross"
 msgstr ""
 
-#: lib/firmowid_web/payroll/components/payout_estimates.ex:164
+#: lib/firmowid_web/payroll/components/payout_estimates.ex:159
 #, elixir-autogen, elixir-format
 msgid "Gross amount under the contract."
 msgstr ""
 
-#: lib/firmowid_web/payroll/components/payout_estimates.ex:57
+#: lib/firmowid_web/payroll/components/payout_estimates.ex:52
 #, elixir-autogen, elixir-format
 msgid "Health insurance"
 msgstr ""
 
-#: lib/firmowid_web/payroll/components/payout_estimates.ex:156
+#: lib/firmowid_web/payroll/components/payout_estimates.ex:151
 #, elixir-autogen, elixir-format
 msgid "Health insurance only, first income tax bracket, no PIT-2 reduction."
 msgstr ""
 
-#: lib/firmowid_web/management/views/employees.html.heex:108
+#: lib/firmowid_web/management/views/employees.html.heex:90
 #, elixir-autogen, elixir-format
 msgid "Hours"
 msgstr ""
 
-#: lib/firmowid_web/payroll/components/payout_estimates.ex:31
-#: lib/firmowid_web/payroll/components/payout_estimates.ex:32
-#: lib/firmowid_web/payroll/components/payout_estimates.ex:47
+#: lib/firmowid_web/payroll/components/payout_estimates.ex:27
+#: lib/firmowid_web/payroll/components/payout_estimates.ex:42
 #, elixir-autogen, elixir-format
 msgid "How is this calculated?"
 msgstr ""
 
-#: lib/firmowid_web/payroll/components/payout_estimates.ex:139
+#: lib/firmowid_web/payroll/components/payout_estimates.ex:134
 #, elixir-autogen, elixir-format
 msgid "If 50% tax-deductible costs apply: %{amount}."
 msgstr ""
 
-#: lib/firmowid_web/payroll/components/payout_estimates.ex:59
+#: lib/firmowid_web/payroll/components/payout_estimates.ex:54
 #, elixir-autogen, elixir-format
 msgid "Income tax advance"
 msgstr ""
 
-#: lib/firmowid_web/payroll/components/payout_estimates.ex:125
+#: lib/firmowid_web/payroll/components/payout_estimates.ex:120
 #, elixir-autogen, elixir-format
 msgid "Mandate"
 msgstr ""
 
-#: lib/firmowid_web/payroll/components/payout_estimates.ex:114
+#: lib/firmowid_web/payroll/components/payout_estimates.ex:109
 #, elixir-autogen, elixir-format
 msgid "Mandate — health insurance only"
 msgstr ""
 
-#: lib/firmowid_web/payroll/components/payout_estimates.ex:110
+#: lib/firmowid_web/payroll/components/payout_estimates.ex:105
 #, elixir-autogen, elixir-format
 msgid "Mandate — social and health insurance"
 msgstr ""
 
-#: lib/firmowid_web/payroll/components/payout_estimates.ex:115
+#: lib/firmowid_web/payroll/components/payout_estimates.ex:110
 #, elixir-autogen, elixir-format
 msgid "Mandate — student under 26"
 msgstr ""
 
 #: lib/firmowid_web/invoicing/transactions/components/salary_components.ex:105
-#: lib/firmowid_web/management/views/employees.html.heex:158
-#: lib/firmowid_web/payroll/components/payout_estimates.ex:25
-#: lib/firmowid_web/payroll/components/payout_estimates.ex:64
+#: lib/firmowid_web/management/views/employees.html.heex:140
+#: lib/firmowid_web/payroll/components/payout_estimates.ex:24
+#: lib/firmowid_web/payroll/components/payout_estimates.ex:59
 #, elixir-autogen, elixir-format
 msgid "Net forecast"
 msgstr ""
 
-#: lib/firmowid_web/payroll/components/payout_estimates.ex:55
+#: lib/firmowid_web/payroll/components/payout_estimates.ex:50
 #, elixir-autogen, elixir-format
 msgid "Social insurance"
 msgstr ""
 
-#: lib/firmowid_web/payroll/components/payout_estimates.ex:127
+#: lib/firmowid_web/payroll/components/payout_estimates.ex:122
 #, elixir-autogen, elixir-format
 msgid "Specific-task"
 msgstr ""
 
-#: lib/firmowid_web/payroll/components/payout_estimates.ex:116
+#: lib/firmowid_web/payroll/components/payout_estimates.ex:111
 #, elixir-autogen, elixir-format
 msgid "Specific-task contract — 20% costs"
 msgstr ""
 
-#: lib/firmowid_web/payroll/components/payout_estimates.ex:117
+#: lib/firmowid_web/payroll/components/payout_estimates.ex:112
 #, elixir-autogen, elixir-format
 msgid "Specific-task contract — 50% costs"
 msgstr ""
 
-#: lib/firmowid_web/payroll/components/payout_estimates.ex:153
+#: lib/firmowid_web/payroll/components/payout_estimates.ex:148
 #, elixir-autogen, elixir-format
 msgid "Student status is assumed from age, with unused youth relief."
 msgstr ""
@@ -3171,27 +3170,27 @@ msgstr ""
 msgid "The transfer amount differs from the expected salary by more than 20% (at least 1000 PLN)."
 msgstr ""
 
-#: lib/firmowid_web/management/views/employees.html.heex:161
+#: lib/firmowid_web/management/views/employees.html.heex:143
 #, elixir-autogen, elixir-format
 msgid "Timesheet"
 msgstr ""
 
-#: lib/firmowid_web/management/views/employees.html.heex:267
+#: lib/firmowid_web/management/views/employees.html.heex:238
 #, elixir-autogen, elixir-format
 msgid "Unknown contract type — only gross pay is shown"
 msgstr ""
 
-#: lib/firmowid_web/payroll/components/payout_estimates.ex:136
+#: lib/firmowid_web/payroll/components/payout_estimates.ex:131
 #, elixir-autogen, elixir-format
 msgid "With health insurance only: %{amount}."
 msgstr ""
 
-#: lib/firmowid_web/payroll/components/payout_estimates.ex:133
+#: lib/firmowid_web/payroll/components/payout_estimates.ex:128
 #, elixir-autogen, elixir-format
 msgid "With social insurance contributions: %{amount}."
 msgstr ""
 
-#: lib/firmowid_web/payroll/components/payout_estimates.ex:87
+#: lib/firmowid_web/payroll/components/payout_estimates.ex:82
 #: lib/firmowid_web/payroll/components/tax_profile_form.ex:47
 #, elixir-autogen, elixir-format
 msgid "Youth tax relief"
@@ -3328,17 +3327,17 @@ msgstr ""
 msgid "Base: net sales less invoice costs"
 msgstr ""
 
-#: lib/firmowid_web/payroll/components/payout_estimates.ex:141
+#: lib/firmowid_web/payroll/components/payout_estimates.ex:136
 #, elixir-autogen, elixir-format
 msgid "Based on saved assumptions"
 msgstr ""
 
-#: lib/firmowid_web/payroll/components/payout_estimates.ex:148
+#: lib/firmowid_web/payroll/components/payout_estimates.ex:143
 #, elixir-autogen, elixir-format
 msgid "Based on the saved assumptions, which are not verified: first income tax bracket, no PPK and unused annual limits."
 msgstr ""
 
-#: lib/firmowid_web/payroll/components/payout_estimates.ex:79
+#: lib/firmowid_web/payroll/components/payout_estimates.ex:74
 #, elixir-autogen, elixir-format
 msgid "Confirm the net forecast assumptions in the employee profile to show one variant."
 msgstr ""
@@ -3384,7 +3383,7 @@ msgstr ""
 msgid "Deductible VAT saved."
 msgstr ""
 
-#: lib/firmowid_web/analysis/components/project_matrix.ex:529
+#: lib/firmowid_web/analysis/components/project_matrix.ex:531
 #, elixir-autogen, elixir-format
 msgid "Direct expenses"
 msgstr ""
@@ -3394,7 +3393,7 @@ msgstr ""
 msgid "Each cost invoice counts with its payment amount less the deductible VAT recorded on it, including non-deductible VAT and settlement charges. These are not statutory tax-deductible costs. Bank costs without an invoice, payroll and tax adjustments are not included."
 msgstr ""
 
-#: lib/firmowid_web/settings/components/profile_tab.ex:490
+#: lib/firmowid_web/settings/components/profile_tab.ex:463
 #, elixir-autogen, elixir-format
 msgid "Edit net forecast assumptions"
 msgstr ""
@@ -3434,7 +3433,7 @@ msgstr ""
 msgid "Firmowid does not know how your company is taxed, so it does not choose a rate for you. The reserve is a planning assumption, not a PIT or CIT rate, an advance payment or a tax return."
 msgstr ""
 
-#: lib/firmowid_web/payroll/components/payout_estimates.ex:93
+#: lib/firmowid_web/payroll/components/payout_estimates.ex:88
 #, elixir-autogen, elixir-format
 msgid "Health insurance is capped under the 2021 rules, approximated from the current PIT-2 reduction, which may affect small salaries."
 msgstr ""
@@ -3444,7 +3443,7 @@ msgstr ""
 msgid "Health insurance only"
 msgstr ""
 
-#: lib/firmowid_web/payroll/components/payout_estimates.ex:143
+#: lib/firmowid_web/payroll/components/payout_estimates.ex:138
 #, elixir-autogen, elixir-format
 msgid "Hypothetical variant"
 msgstr ""
@@ -3494,7 +3493,7 @@ msgstr ""
 msgid "Leave it empty to keep the income tax reserve unset."
 msgstr ""
 
-#: lib/firmowid_web/payroll/components/payout_estimates.ex:112
+#: lib/firmowid_web/payroll/components/payout_estimates.ex:107
 #, elixir-autogen, elixir-format
 msgid "Mandate — social, sickness and health insurance"
 msgstr ""
@@ -3504,16 +3503,16 @@ msgstr ""
 msgid "Monthly tax reduction"
 msgstr ""
 
-#: lib/firmowid_web/management/components/profile_tab.ex:161
-#: lib/firmowid_web/settings/components/profile_tab.ex:488
+#: lib/firmowid_web/management/components/profile_tab.ex:163
+#: lib/firmowid_web/settings/components/profile_tab.ex:461
 #, elixir-autogen, elixir-format
 msgid "Net forecast assumptions"
 msgstr ""
 
-#: lib/firmowid_web/analysis/components/financial_overview.ex:110
-#: lib/firmowid_web/analysis/components/financial_overview.ex:172
-#: lib/firmowid_web/analysis/components/project_matrix.ex:533
-#: lib/firmowid_web/analysis/components/project_matrix.ex:551
+#: lib/firmowid_web/analysis/components/financial_overview.ex:115
+#: lib/firmowid_web/analysis/components/financial_overview.ex:177
+#: lib/firmowid_web/analysis/components/project_matrix.ex:535
+#: lib/firmowid_web/analysis/components/project_matrix.ex:553
 #, elixir-autogen, elixir-format
 msgid "Net result"
 msgstr ""
@@ -3579,8 +3578,8 @@ msgstr ""
 msgid "Opted out"
 msgstr ""
 
-#: lib/firmowid_web/analysis/components/project_matrix.ex:391
-#: lib/firmowid_web/analysis/components/project_matrix.ex:465
+#: lib/firmowid_web/analysis/components/project_matrix.ex:393
+#: lib/firmowid_web/analysis/components/project_matrix.ex:467
 #, elixir-autogen, elixir-format
 msgid "Outside projects"
 msgstr ""
@@ -3662,7 +3661,7 @@ msgid "Sales invoices included"
 msgstr ""
 
 #: lib/firmowid_web/invoicing/components/deductible_vat.ex:85
-#: lib/firmowid_web/settings/components/profile_tab.ex:520
+#: lib/firmowid_web/settings/components/profile_tab.ex:493
 #: lib/firmowid_web/settings/components/tax_forecast_settings.ex:88
 #, elixir-autogen, elixir-format
 msgid "Save"
@@ -3770,8 +3769,8 @@ msgctxt "allocation basis"
 msgid "By income"
 msgstr ""
 
-#: lib/firmowid_web/analysis/views/dashboard.ex:532
-#: lib/firmowid_web/analysis/views/dashboard.ex:640
+#: lib/firmowid_web/analysis/views/dashboard.ex:519
+#: lib/firmowid_web/analysis/views/dashboard.ex:627
 #, elixir-autogen, elixir-format
 msgctxt "analysis mode"
 msgid "Tagging"
@@ -3825,34 +3824,34 @@ msgctxt "tax reserve status"
 msgid "Unavailable"
 msgstr ""
 
-#: lib/firmowid_web/analysis/components/project_matrix.ex:254
+#: lib/firmowid_web/analysis/components/project_matrix.ex:256
 #, elixir-autogen, elixir-format
 msgid "%{count} month at a loss"
 msgid_plural "%{count} months at a loss"
 msgstr[0] ""
 msgstr[1] ""
 
-#: lib/firmowid_web/analysis/components/financial_overview.ex:229
+#: lib/firmowid_web/analysis/components/financial_overview.ex:234
 #, elixir-autogen, elixir-format
 msgid "%{month}: net result %{amount}"
 msgstr ""
 
-#: lib/firmowid_web/analysis/components/financial_overview.ex:227
+#: lib/firmowid_web/analysis/components/financial_overview.ex:232
 #, elixir-autogen, elixir-format
 msgid "%{month}: no entries"
 msgstr ""
 
-#: lib/firmowid_web/analysis/components/project_matrix.ex:567
+#: lib/firmowid_web/analysis/components/project_matrix.ex:569
 #, elixir-autogen, elixir-format
 msgid "%{name}, %{period}: %{amount}"
 msgstr ""
 
-#: lib/firmowid_web/analysis/components/project_matrix.ex:572
+#: lib/firmowid_web/analysis/components/project_matrix.ex:574
 #, elixir-autogen, elixir-format
 msgid "%{name}, %{period}: no entries"
 msgstr ""
 
-#: lib/firmowid_web/analysis/components/project_matrix.ex:231
+#: lib/firmowid_web/analysis/components/project_matrix.ex:233
 #, elixir-autogen, elixir-format
 msgid "A darker shade means a larger amount."
 msgstr ""
@@ -3862,17 +3861,17 @@ msgstr ""
 msgid "After overhead"
 msgstr ""
 
-#: lib/firmowid_web/analysis/views/dashboard.ex:552
+#: lib/firmowid_web/analysis/views/dashboard.ex:539
 #, elixir-autogen, elixir-format
 msgid "All projects"
 msgstr ""
 
-#: lib/firmowid_web/analysis/views/dashboard.ex:564
+#: lib/firmowid_web/analysis/views/dashboard.ex:551
 #, elixir-autogen, elixir-format
 msgid "Allocation basis"
 msgstr ""
 
-#: lib/firmowid_web/analysis/views/dashboard.ex:503
+#: lib/firmowid_web/analysis/views/dashboard.ex:501
 #, elixir-autogen, elixir-format
 msgid "Analysis views"
 msgstr ""
@@ -3882,53 +3881,53 @@ msgstr ""
 msgid "Before overhead"
 msgstr ""
 
-#: lib/firmowid_web/analysis/components/project_matrix.ex:531
+#: lib/firmowid_web/analysis/components/project_matrix.ex:533
 #, elixir-autogen, elixir-format
 msgid "Company costs"
 msgstr ""
 
-#: lib/firmowid_web/analysis/components/project_matrix.ex:560
+#: lib/firmowid_web/analysis/components/project_matrix.ex:562
 #, elixir-autogen, elixir-format
 msgid "Company costs and taxes are split by project direct expenses."
 msgstr ""
 
-#: lib/firmowid_web/analysis/components/project_matrix.ex:558
+#: lib/firmowid_web/analysis/components/project_matrix.ex:560
 #, elixir-autogen, elixir-format
 msgid "Company costs and taxes are split by project income."
 msgstr ""
 
-#: lib/firmowid_web/analysis/components/project_matrix.ex:530
-#: lib/firmowid_web/analysis/components/project_matrix.ex:552
+#: lib/firmowid_web/analysis/components/project_matrix.ex:532
+#: lib/firmowid_web/analysis/components/project_matrix.ex:554
 #, elixir-autogen, elixir-format
 msgid "Direct result"
 msgstr ""
 
-#: lib/firmowid_web/analysis/components/project_matrix.ex:556
+#: lib/firmowid_web/analysis/components/project_matrix.ex:558
 #, elixir-autogen, elixir-format
 msgid "Direct result before company costs and taxes, in thousands of PLN"
 msgstr ""
 
-#: lib/firmowid_web/analysis/views/dashboard.ex:629
+#: lib/firmowid_web/analysis/views/dashboard.ex:616
 #, elixir-autogen, elixir-format
 msgid "Entries for %{month}"
 msgstr ""
 
-#: lib/firmowid_web/analysis/views/dashboard.ex:681
+#: lib/firmowid_web/analysis/views/dashboard.ex:668
 #, elixir-autogen, elixir-format
 msgid "Entry amounts are shown in full; project filters select matching documents."
 msgstr ""
 
-#: lib/firmowid_web/analysis/views/dashboard.ex:643
+#: lib/firmowid_web/analysis/views/dashboard.ex:630
 #, elixir-autogen, elixir-format
 msgid "Entry direction"
 msgstr ""
 
-#: lib/firmowid_web/analysis/components/financial_overview.ex:153
+#: lib/firmowid_web/analysis/components/financial_overview.ex:158
 #, elixir-autogen, elixir-format
 msgid "Margin"
 msgstr ""
 
-#: lib/firmowid_web/analysis/components/financial_overview.ex:101
+#: lib/firmowid_web/analysis/components/financial_overview.ex:106
 #, elixir-autogen, elixir-format
 msgid "Monthly amounts"
 msgstr ""
@@ -3938,33 +3937,33 @@ msgstr ""
 msgid "Net result by month"
 msgstr ""
 
-#: lib/firmowid_web/analysis/components/project_matrix.ex:334
+#: lib/firmowid_web/analysis/components/project_matrix.ex:336
 #, elixir-autogen, elixir-format
 msgid "No entries in this period."
 msgstr ""
 
-#: lib/firmowid_web/analysis/components/financial_overview.ex:49
-#: lib/firmowid_web/analysis/components/project_matrix.ex:77
+#: lib/firmowid_web/analysis/components/financial_overview.ex:52
+#: lib/firmowid_web/analysis/components/project_matrix.ex:79
 #, elixir-autogen, elixir-format
 msgid "No income or expenses in %{year}."
 msgstr ""
 
-#: lib/firmowid_web/analysis/components/project_matrix.ex:86
+#: lib/firmowid_web/analysis/components/project_matrix.ex:88
 #, elixir-autogen, elixir-format
 msgid "No project has entries in %{year}."
 msgstr ""
 
-#: lib/firmowid_web/analysis/components/project_matrix.ex:89
+#: lib/firmowid_web/analysis/components/project_matrix.ex:91
 #, elixir-autogen, elixir-format
 msgid "Only the selected projects are listed; Outside projects and Whole company cover all entries."
 msgstr ""
 
-#: lib/firmowid_web/analysis/components/project_matrix.ex:355
+#: lib/firmowid_web/analysis/components/project_matrix.ex:357
 #, elixir-autogen, elixir-format
 msgid "Open in tagging"
 msgstr ""
 
-#: lib/firmowid_web/analysis/views/dashboard.ex:522
+#: lib/firmowid_web/analysis/views/dashboard.ex:512
 #, elixir-autogen, elixir-format
 msgid "Project matrix"
 msgstr ""
@@ -3974,62 +3973,62 @@ msgstr ""
 msgid "Project results by month"
 msgstr ""
 
-#: lib/firmowid_web/analysis/components/project_matrix.ex:554
+#: lib/firmowid_web/analysis/components/project_matrix.ex:556
 #, elixir-autogen, elixir-format
 msgid "Result after company costs and taxes, in thousands of PLN"
 msgstr ""
 
-#: lib/firmowid_web/analysis/views/dashboard.ex:582
+#: lib/firmowid_web/analysis/views/dashboard.ex:569
 #, elixir-autogen, elixir-format
 msgid "Result measure"
 msgstr ""
 
-#: lib/firmowid_web/analysis/components/financial_overview.ex:50
+#: lib/firmowid_web/analysis/components/financial_overview.ex:54
 #, elixir-autogen, elixir-format
 msgid "The selected categories have no entries in %{year}."
 msgstr ""
 
-#: lib/firmowid_web/analysis/components/project_matrix.ex:85
+#: lib/firmowid_web/analysis/components/project_matrix.ex:87
 #, elixir-autogen, elixir-format
 msgid "The selected projects have no entries in %{year}."
 msgstr ""
 
-#: lib/firmowid_web/analysis/components/project_matrix.ex:229
+#: lib/firmowid_web/analysis/components/project_matrix.ex:231
 #, elixir-autogen, elixir-format
 msgid "Totals, not shaded"
 msgstr ""
 
-#: lib/firmowid_web/analysis/components/project_matrix.ex:398
-#: lib/firmowid_web/analysis/components/project_matrix.ex:466
+#: lib/firmowid_web/analysis/components/project_matrix.ex:400
+#: lib/firmowid_web/analysis/components/project_matrix.ex:468
 #, elixir-autogen, elixir-format
 msgid "Whole company"
 msgstr ""
 
-#: lib/firmowid_web/analysis/components/project_matrix.ex:563
-#: lib/firmowid_web/analysis/components/project_matrix.ex:615
+#: lib/firmowid_web/analysis/components/project_matrix.ex:565
+#: lib/firmowid_web/analysis/components/project_matrix.ex:617
 #, elixir-autogen, elixir-format
 msgid "Year"
 msgstr ""
 
-#: lib/firmowid_web/analysis/components/project_matrix.ex:621
+#: lib/firmowid_web/analysis/components/project_matrix.ex:623
 #, elixir-autogen, elixir-format
 msgid "Year %{year}"
 msgstr ""
 
-#: lib/firmowid_web/analysis/components/project_matrix.ex:221
-#: lib/firmowid_web/analysis/components/project_matrix.ex:328
+#: lib/firmowid_web/analysis/components/project_matrix.ex:223
+#: lib/firmowid_web/analysis/components/project_matrix.ex:330
 #, elixir-autogen, elixir-format
 msgctxt "analysis result"
 msgid "Loss"
 msgstr ""
 
-#: lib/firmowid_web/analysis/components/project_matrix.ex:225
+#: lib/firmowid_web/analysis/components/project_matrix.ex:227
 #, elixir-autogen, elixir-format
 msgctxt "analysis result"
 msgid "Profit"
 msgstr ""
 
-#: lib/firmowid_web/analysis/views/dashboard.ex:513
+#: lib/firmowid_web/analysis/views/dashboard.ex:506
 #, elixir-autogen, elixir-format
 msgctxt "analysis view"
 msgid "Dashboard"
