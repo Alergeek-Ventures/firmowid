@@ -129,7 +129,7 @@ defmodule FirmowidWeb.Management.Components.ProjectsTab do
           phx-submit="save_payout"
         >
           <div class="grid grid-cols-[minmax(min-content,2fr)_minmax(min-content,1fr)] gap-4">
-            <.user_card_info label="Numer konta bankowego" for={@payout_form[:bank_account_number].id}>
+            <.field_row label="Numer konta bankowego" for={@payout_form[:bank_account_number].id}>
               <%= if @editing_payout do %>
                 <.input
                   field={@payout_form[:bank_account_number]}
@@ -140,10 +140,10 @@ defmodule FirmowidWeb.Management.Components.ProjectsTab do
               <% else %>
                 {@user.member.bank_account_number || "Brak danych"}
               <% end %>
-            </.user_card_info>
+            </.field_row>
             <div class="flex items-end justify-between gap-4">
               <%= if @editing_payout do %>
-                <.user_card_info
+                <.field_row
                   label="Nowa stawka"
                   for={@payout_form[:hourly_rate].id}
                   class="text-nowrap"
@@ -159,13 +159,13 @@ defmodule FirmowidWeb.Management.Components.ProjectsTab do
                     />
                     <p>zł/godz.</p>
                   </div>
-                </.user_card_info>
+                </.field_row>
               <% else %>
-                <.user_card_info label="Stawka" class="text-nowrap">
+                <.field_row label="Stawka" class="text-nowrap">
                   <div class="min-h-8.5">
                     {Money.new(:PLN, @hourly_rate) |> Money.to_string!(no_fraction_if_integer: true)}/godz.
                   </div>
-                </.user_card_info>
+                </.field_row>
                 <.button
                   type="button"
                   variant="outline"

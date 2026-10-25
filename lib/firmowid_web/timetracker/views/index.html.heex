@@ -23,23 +23,22 @@
   <div class="relative z-30 flex w-full flex-col justify-between gap-10 md:flex-row lg:gap-20">
     <div class="mx-auto w-full max-w-md md:mx-0">
       <%= if Enum.empty?(@active_projects) do %>
-        <div class="w-full py-8 text-center text-grey-700">
-          <p class="text-lg font-semibold">Nie masz przypisanych projektów</p>
+        <.empty_state title="Nie masz przypisanych projektów">
           <%= if @current_user.member.role == :admin do %>
-            <p class="mt-2 text-sm">
-              Dodaj swój pierwszy projekt i przypisz się do niego, aby rozpocząć śledzenie czasu
-            </p>
+            Dodaj swój pierwszy projekt i przypisz się do niego, aby rozpocząć śledzenie czasu
+          <% else %>
+            Poproś administratora o przypisanie Cię do projektu
+          <% end %>
+          <:action :if={@current_user.member.role == :admin}>
             <.link
               kind="unstyled"
               navigate={~p"/zarzadzanie/projekty"}
-              class="mt-4 inline-block text-rust-700 hover:underline"
+              class="inline-block text-rust-700 hover:underline"
             >
               Przejdź do zarządzania projektami
             </.link>
-          <% else %>
-            <p class="mt-2 text-sm">Poproś administratora o przypisanie Cię do projektu</p>
-          <% end %>
-        </div>
+          </:action>
+        </.empty_state>
       <% else %>
         <.form
           id="session_form"
@@ -190,13 +189,12 @@
       <% end %>
     </div>
     <div class="mb-16 w-full min-w-0 space-y-16">
-      <div
+      <.empty_state
         :if={Enum.empty?(@grouped_sessions) and Enum.empty?(@today_sessions)}
-        class="py-8 text-center text-grey-700"
+        title="Brak zarejestrowanych sesji"
       >
-        <p class="text-lg font-semibold">Brak zarejestrowanych sesji</p>
-        <p class="mt-2 text-sm">Rozpocznij swoją pierwszą sesję używając formularza po lewej</p>
-      </div>
+        Rozpocznij swoją pierwszą sesję używając formularza po lewej
+      </.empty_state>
 
       <div :if={not Enum.empty?(@today_sessions)}>
         <div class="flex items-center justify-between pb-3">

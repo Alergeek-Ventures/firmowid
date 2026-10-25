@@ -10,7 +10,6 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
   import FirmowidUI.Components.Link
   import FirmowidWeb.DesignSystem.Components.CoreComponents, except: [button: 1]
   import FirmowidWeb.DesignSystem.Components.InvoicingBadges
-  import FirmowidWeb.Settings.Components.EditButton
   import Phoenix.Component, except: [link: 1]
 
   alias Firmowid.Ash.Core.UserRole
@@ -97,40 +96,13 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
       <div class="flex min-h-8 items-center gap-1">
         <h2 class="text-base leading-none font-medium text-grey-900">{@title}</h2>
 
-        <span
-          :if={@action}
-          id={"settings-#{@action}-tooltip"}
-          phx-hook="Tippy"
-          data-tippy-content={@action_label || "Edytuj #{@title}"}
-          data-tippy-delay="100"
-          data-tippy-theme="small"
-        >
-          <.edit_button
-            type="button"
-            phx-click={@action}
-            aria-label={@action_label || "Edytuj #{@title}"}
-          />
-        </span>
+        <.icon_button :if={@action} label={@action_label || "Edytuj #{@title}"} phx-click={@action}>
+          <Lucideicons.square_pen />
+        </.icon_button>
       </div>
 
       {render_slot(@inner_block)}
     </section>
-    """
-  end
-
-  attr :label, :string, required: true
-  attr :wide, :boolean, default: false
-  slot :inner_block, required: true
-
-  defp detail_row(assigns) do
-    ~H"""
-    <Helpers.settings_display_field
-      label={@label}
-      class="justify-center"
-      value_class="break-words"
-    >
-      {render_slot(@inner_block)}
-    </Helpers.settings_display_field>
     """
   end
 
@@ -249,24 +221,34 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
         </.form>
       <% else %>
         <div class="space-y-2">
-          <.detail_row label="Nazwa" wide>{present(@current_org.name)}</.detail_row>
-          <.detail_row label="NIP" wide>{present(@current_org.nip)}</.detail_row>
-          <.detail_row label="Płatnik VAT" wide>{yes_no(@current_org.is_vat_payer)}</.detail_row>
-          <.detail_row
+          <.field_row label="Nazwa" layout="inline" class="wrap-break-word">
+            {present(@current_org.name)}
+          </.field_row>
+          <.field_row label="NIP" layout="inline" class="wrap-break-word">
+            {present(@current_org.nip)}
+          </.field_row>
+          <.field_row label="Płatnik VAT" layout="inline" class="wrap-break-word">
+            {yes_no(@current_org.is_vat_payer)}
+          </.field_row>
+          <.field_row
             :if={exemption = present_vat_exemption(@current_org)}
             label="Zwolnienie z VAT"
-            wide
+            layout="inline"
+            class="wrap-break-word"
           >
             {exemption}
-          </.detail_row>
-          <.detail_row label="Adres" wide>{multiline_address(@current_org.address)}</.detail_row>
-          <.detail_row
+          </.field_row>
+          <.field_row label="Adres" layout="inline" class="wrap-break-word">
+            {multiline_address(@current_org.address)}
+          </.field_row>
+          <.field_row
             :if={@current_org.correspondence_address not in [nil, ""]}
             label="Adres korespondencyjny"
-            wide
+            layout="inline"
+            class="wrap-break-word"
           >
             {multiline_address(@current_org.correspondence_address)}
-          </.detail_row>
+          </.field_row>
         </div>
       <% end %>
     </.company_section>
@@ -307,9 +289,12 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
         </div>
       </div>
 
-      <div :if={Enum.empty?(@bank_accounts)} class="text-sm leading-[1.35] text-grey-700">
-        Nie dodano jeszcze żadnych kont bankowych.
-      </div>
+      <.empty_state
+        :if={Enum.empty?(@bank_accounts)}
+        title="Nie dodano jeszcze żadnych kont bankowych."
+      >
+        <:icon><Lucideicons.landmark /></:icon>
+      </.empty_state>
 
       <div
         :if={!Enum.empty?(@bank_accounts)}
@@ -330,18 +315,12 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
 
   defp pending_requisition_banner(assigns) do
     ~H"""
-    <section class="rounded-lg border border-grey-200 bg-white px-6 py-5 shadow-sm">
-      <div class="flex items-start gap-4">
-        <span class="inline-flex size-10 items-center justify-center rounded-full bg-teal-200 text-teal-800">
-          <.icon name="hero-arrow-path" class="size-5 animate-spin" />
-        </span>
-
-        <div class="space-y-1 text-sm leading-[1.35] text-grey-900">
-          <p class="font-medium">Trwa konfiguracja połączenia bankowego.</p>
-          <p>Konto pojawi się na liście po zakończeniu autoryzacji i pierwszej synchronizacji.</p>
-        </div>
-      </div>
-    </section>
+    <.alert title="Trwa konfiguracja połączenia bankowego.">
+      <span class="inline-flex items-start gap-2">
+        <.icon name="hero-arrow-path" class="mt-0.5 size-4 shrink-0 animate-spin" />
+        Konto pojawi się na liście po zakończeniu autoryzacji i pierwszej synchronizacji.
+      </span>
+    </.alert>
     """
   end
 
@@ -393,12 +372,13 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
         :if={@show_active_invites}
         class="scrollbar-card h-151 overflow-y-auto rounded-lg border border-grey-200 bg-white p-6 shadow-sm"
       >
-        <div
+        <.empty_state
           :if={@active_invites == []}
-          class="flex min-h-96 items-center justify-center text-sm leading-[1.35] text-grey-700"
+          title="Brak aktywnych zaproszeń."
+          class="min-h-96 justify-center"
         >
-          Brak aktywnych zaproszeń.
-        </div>
+          <:icon><Lucideicons.mail /></:icon>
+        </.empty_state>
 
         <div :if={@active_invites != []} class="space-y-6">
           <div
@@ -424,17 +404,15 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
             </.button>
 
             <div class="flex items-center gap-4">
-              <span class={role_badge_styles(invite.role)}>{UserRole.label(invite.role)}</span>
+              <.badge class="w-28 justify-center">{UserRole.label(invite.role)}</.badge>
 
-              <.button
-                type="button"
-                variant="unstyled"
+              <.icon_button
+                label="Usuń zaproszenie"
                 phx-click="delete_organization_invite"
                 phx-value-id={invite.id}
-                aria-label="Usuń zaproszenie"
               >
-                <Lucideicons.trash_2 class="text-grey-500 transition-all hover:text-grey-700" />
-              </.button>
+                <Lucideicons.trash_2 />
+              </.icon_button>
             </div>
           </div>
         </div>
@@ -470,7 +448,7 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
             </div>
 
             <div class="flex items-center justify-end gap-2">
-              <span class={role_badge_styles(user.member.role)}>{UserRole.label(user.member.role)}</span>
+              <.badge class="w-28 justify-center">{UserRole.label(user.member.role)}</.badge>
 
               <.dropdown :if={user.id != @current_user.id} id={"organization_user_#{user.id}"}>
                 <:trigger>
@@ -537,72 +515,47 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
         <.bank_badge institution={@account} />
         <div class="flex items-start gap-4 self-start">
           <div class="flex flex-wrap gap-2.5">
-            <span
-              :if={@account.is_default}
-              class="rounded-full bg-moss-100 px-4 py-1 text-sm text-moss-700"
-            >
+            <.badge :if={@account.is_default} tone="success">
               Domyślne <span class="font-semibold">{present(@account.currency)}</span>
-            </span>
-            <span
-              :if={!@account.is_default}
-              class="rounded-full bg-grey-100 px-4 py-1 font-semibold text-grey-700"
-            >
-              {present(@account.currency)}
-            </span>
+            </.badge>
+            <.badge :if={!@account.is_default}>
+              <span class="font-semibold">{present(@account.currency)}</span>
+            </.badge>
           </div>
         </div>
 
         <div class="flex flex-1 justify-end">
-          <.dropdown id={"bank_account_#{@account.id}"}>
-            <:trigger>
-              <span class="inline-flex size-8 items-center justify-center rounded-lg text-grey-700 transition hover:bg-grey-100">
-                <span class="sr-only">Opcje konta {bank_account_menu_label(@account)}</span>
-                <.icon name="hero-ellipsis-horizontal" class="size-5" />
-              </span>
-            </:trigger>
+          <.menu
+            id={"bank_account_#{@account.id}"}
+            label={"Opcje konta #{bank_account_menu_label(@account)}"}
+          >
+            <.menu_item phx-click={show_modal("rename_bank_account_#{@account.id}")}>
+              Zmień nazwę
+            </.menu_item>
 
-            <div class="flex w-48 flex-col overflow-hidden rounded-lg border border-grey-200 bg-white py-1 text-sm font-medium text-grey-700 shadow-lg">
-              <.button
-                type="button"
-                variant="unstyled"
-                phx-click={show_modal("rename_bank_account_#{@account.id}")}
-                class={menu_item_styles()}
-              >
-                Zmień nazwę
-              </.button>
+            <.menu_item
+              :if={!is_nil(@account.institution_id)}
+              phx-click="reconnect_bank_account"
+              phx-value-account_id={@account.id}
+            >
+              Połącz ponownie
+            </.menu_item>
 
-              <.button
-                :if={!is_nil(@account.institution_id)}
-                type="button"
-                variant="unstyled"
-                phx-click="reconnect_bank_account"
-                phx-value-account_id={@account.id}
-                class={menu_item_styles()}
-              >
-                Połącz ponownie
-              </.button>
+            <.menu_item
+              :if={!@account.is_default}
+              phx-click="make_default_account"
+              phx-value-account_id={@account.id}
+            >
+              Domyślne dla {present(@account.currency)}
+            </.menu_item>
 
-              <.button
-                :if={!@account.is_default}
-                type="button"
-                variant="unstyled"
-                phx-click="make_default_account"
-                phx-value-account_id={@account.id}
-                class={menu_item_styles()}
-              >
-                Domyślne dla {present(@account.currency)}
-              </.button>
-
-              <.button
-                type="button"
-                variant="unstyled"
-                phx-click={show_modal("confirm_delete_bank_account_#{@account.id}")}
-                class={["text-brick-700 hover:bg-brick-100", menu_item_styles()]}
-              >
-                Usuń
-              </.button>
-            </div>
-          </.dropdown>
+            <.menu_item
+              tone="danger"
+              phx-click={show_modal("confirm_delete_bank_account_#{@account.id}")}
+            >
+              Usuń
+            </.menu_item>
+          </.menu>
         </div>
       </div>
 
@@ -989,22 +942,6 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
 
   defp role_desc(:accountant) do
     "Pełny dostęp do fakturowania (przeglądanie, dodawanie i edycja), z wyjątkiem dodawania faktur spoza KSeF."
-  end
-
-  defp role_badge_styles(:admin) do
-    "bg-teal-200 text-teal-700 inline-flex w-28 items-center justify-center rounded-sm px-3 py-1 text-sm leading-[1.35]"
-  end
-
-  defp role_badge_styles(:accountant) do
-    "bg-moss-200 text-moss-700 inline-flex w-28 items-center justify-center rounded-sm px-3 py-1 text-sm leading-[1.35]"
-  end
-
-  defp role_badge_styles(:invoicing) do
-    "bg-rust-200 text-rust-700 inline-flex w-28 items-center justify-center rounded-sm px-3 py-1 text-sm leading-[1.35]"
-  end
-
-  defp role_badge_styles(_role) do
-    "bg-grey-200 text-grey-700 inline-flex w-28 items-center justify-center rounded-sm px-3 py-1 text-sm leading-[1.35]"
   end
 
   defp multiline_address(nil), do: "—"

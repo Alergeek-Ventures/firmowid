@@ -9,32 +9,15 @@
           active_months={@active_months}
         />
 
-        <div
-          id="search-container"
-          data-expanded={to_string(@search != "")}
-          class="group flex min-w-10 items-center justify-center rounded-lg bg-grey-200 transition-shadow data-[expanded=true]:focus-within:ring-2"
-        >
-          <.input
-            type="text"
-            name="szukaj"
-            value={@search}
-            placeholder="Szukaj pracownika"
-            phx-change="search"
-            phx-debounce="300"
-            input_class="py-0 px-1 bg-transparent border-none"
-            class="w-0 border-transparent px-0 opacity-0 transition-[width,opacity,padding] duration-200 ease-in-out group-data-[expanded=true]:w-64 group-data-[expanded=true]:px-2 group-data-[expanded=true]:py-1 group-data-[expanded=true]:opacity-100 focus:border-none focus:ring-0 focus:outline-hidden"
-          />
-          <.button
-            type="button"
-            phx-click={
-              JS.toggle_attribute({"data-expanded", "true", "false"}, to: "#search-container")
-              |> JS.focus(to: "#search-container input")
-            }
-            variant="secondary"
-          >
-            <Lucideicons.search />
-          </.button>
-        </div>
+        <.search_field
+          name="szukaj"
+          value={@search}
+          placeholder="Szukaj pracownika"
+          size="big"
+          phx-change="search"
+          phx-debounce="300"
+          class="w-64"
+        />
       </form>
 
       <div class="flex gap-4">
@@ -59,21 +42,20 @@
     </div>
 
     <div class="flex gap-4">
-      <.link
-        :for={
-          {path, live_action, label} <- [
-            {Navigation.employees_path(:index, @params), :index, "Aktywni"},
-            {Navigation.employees_path(:archive, @params), :archive, "Zarchiwizowani"}
-          ]
-        }
-        patch={path}
-        kind="button"
-        variant="ghost"
-        size="small"
-        class={if(@live_action == live_action, do: "bg-grey-700 text-white hover:text-grey-900")}
-      >
-        {label}
-      </.link>
+      <.segmented_control label="Zakres listy">
+        <:option
+          patch={Navigation.employees_path(:index, @params)}
+          active={@live_action == :index}
+        >
+          Aktywni
+        </:option>
+        <:option
+          patch={Navigation.employees_path(:archive, @params)}
+          active={@live_action == :archive}
+        >
+          Zarchiwizowani
+        </:option>
+      </.segmented_control>
       <.switch
         class="ml-auto flex-row-reverse gap-4"
         label="Widok wypłat"
@@ -162,18 +144,10 @@
     </div>
 
     <%= if Enum.empty?(@employees) do %>
-      <div class="col-span-full py-10 text-center text-grey-700">
-        <%= if @search != "" do %>
-          Brak wyników. Spróbuj zmienić kryteria wyszukiwania.
-        <% else %>
-          <%= case @live_action do %>
-            <% :index -> %>
-              Brak aktywnych pracowników do wyświetlenia.
-            <% :archive -> %>
-              Brak zarchiwizowanych pracowników do wyświetlenia.
-          <% end %>
-        <% end %>
-      </div>
+      <.empty_state
+        title={empty_employees_title(@search, @live_action)}
+        class="col-span-full"
+      />
     <% else %>
       <div
         :for={employee <- @employees}
@@ -214,12 +188,9 @@
             <% else %>
               <span>{employee.user.member.name || employee.user.email}</span>
             <% end %>
-            <span
-              :if={@view != :standard and employee.payout_estimate}
-              class="shrink-0 rounded-sm bg-grey-100 px-1.5 py-0.5 text-xs/snug text-grey-700"
-            >
+            <.badge :if={@view != :standard and employee.payout_estimate}>
               {PayoutEstimates.contract_label(employee.payout_estimate.variant)}
-            </span>
+            </.badge>
           </div>
 
           <p class="text-right">

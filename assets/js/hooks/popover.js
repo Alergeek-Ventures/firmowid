@@ -4,6 +4,22 @@ export default {
   mounted() {
     this.el.addEventListener("showPopover", this.showPopover.bind(this));
     this.el.addEventListener("hidePopover", this.hidePopover.bind(this));
+    // Choosing a menu item closes the menu. Deferred so LiveView first handles the
+    // item's own phx-click; focus returns to the trigger unless something else
+    // (for example a modal opened by the item) has taken it.
+    this.el.addEventListener("click", (event) => {
+      if (!event.target.closest('[role="menuitem"]')) return;
+
+      setTimeout(() => {
+        this.el.style.display = "none";
+        this.hidePopover();
+
+        const active = document.activeElement;
+        if (!active || active === document.body || this.el.contains(active)) {
+          document.getElementById(this.el.dataset.reference)?.focus();
+        }
+      });
+    });
   },
 
   showPopover() {

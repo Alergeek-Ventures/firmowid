@@ -19,6 +19,7 @@ defmodule FirmowidWeb.Invoicing.Transactions.Components.ShowComponents do
   alias FirmowidWeb.Invoicing.Components.InvoiceDetails
   alias FirmowidWeb.Invoicing.Components.MatchingComponents
   alias FirmowidWeb.Invoicing.Utilities.Navigation
+  alias Phoenix.LiveView.Rendered
 
   attr :transaction, Transaction, required: true
   attr :return_to, :string, default: nil
@@ -162,7 +163,7 @@ defmodule FirmowidWeb.Invoicing.Transactions.Components.ShowComponents do
   attr :suggestions, :list, required: true
 
   @doc "Renders invoice recommendations for a transaction with explicit manual confirmation."
-  @spec invoice_suggestions(map()) :: Phoenix.LiveView.Rendered.t()
+  @spec invoice_suggestions(map()) :: Rendered.t()
   def invoice_suggestions(assigns) do
     assigns =
       assigns
@@ -211,27 +212,23 @@ defmodule FirmowidWeb.Invoicing.Transactions.Components.ShowComponents do
   attr :can_write, :boolean, default: true
   attr :show_no_recommendations, :boolean, default: true
 
-  def empty_state(assigns) do
+  @doc "Renders the unmatched transaction state with its remaining actions."
+  @spec unmatched_state(map()) :: Rendered.t()
+  def unmatched_state(assigns) do
     ~H"""
     <div class="flex flex-col gap-18">
-      <div :if={@show_no_recommendations} class="flex flex-col items-center gap-4 px-4 pt-8 pb-6">
-        <Lucideicons.file_question_mark class="size-12" />
-
-        <div class="space-y-2 text-center">
-          <h3 class="text-lg/tight font-medium">Brak rekomendacji</h3>
-          <p class="max-w-96 text-balance">
-            Firmowid nie znalazł jeszcze żadnych faktur, które potencjalnie pasowałyby do tej transakcji.
-          </p>
-        </div>
-
-        <MatchingComponents.assistant_button
-          id="transaction-assistant-empty"
-          class="mbs-2"
-          accent={assistant_accent(@transaction)}
-        >
-          Poproś Firmowida o pomoc
-        </MatchingComponents.assistant_button>
-      </div>
+      <.empty_state :if={@show_no_recommendations} title="Brak rekomendacji">
+        <:icon><Lucideicons.file_question_mark /></:icon>
+        Firmowid nie znalazł jeszcze żadnych faktur, które potencjalnie pasowałyby do tej transakcji.
+        <:action>
+          <MatchingComponents.assistant_button
+            id="transaction-assistant-empty"
+            accent={assistant_accent(@transaction)}
+          >
+            Poproś Firmowida o pomoc
+          </MatchingComponents.assistant_button>
+        </:action>
+      </.empty_state>
 
       <div class="space-y-6">
         <h3 :if={@can_write and @show_no_recommendations} class="leading-tight font-medium">

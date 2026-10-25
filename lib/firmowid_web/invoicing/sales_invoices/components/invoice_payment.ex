@@ -179,22 +179,19 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoicePayment do
           </div>
 
           <div class="flex flex-row items-center gap-2">
-            <p
+            <.badge
               :if={
                 @selected_bank_account.is_default and
                   @selected_bank_account.currency == @invoice.currency
               }
-              class="h-min rounded-full bg-moss-200 px-4 py-1 text-sm/snug text-moss-700"
+              tone="success"
             >
               domyślny <strong>{@selected_bank_account.currency}</strong>
-            </p>
+            </.badge>
 
-            <p
-              :if={@selected_bank_account.currency != @invoice.currency}
-              class="h-min rounded-full bg-brick-200 px-4 py-1 text-sm/snug text-brick-700"
-            >
+            <.badge :if={@selected_bank_account.currency != @invoice.currency} tone="danger">
               waluta konta: <strong>{@selected_bank_account.currency}</strong>
-            </p>
+            </.badge>
 
             <.button
               type="button"
@@ -249,12 +246,13 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoicePayment do
                   <span class="block text-grey-700">{account.currency}</span>
                 </div>
 
-                <p
+                <.badge
                   :if={account.is_default and account.currency == @invoice.currency}
-                  class="mx-4 rounded-full bg-moss-200 px-3 py-1 text-sm/snug whitespace-nowrap text-moss-700"
+                  tone="success"
+                  class="mx-4"
                 >
                   domyślny <strong>{account.currency}</strong>
-                </p>
+                </.badge>
 
                 <%= if @selected_bank_account && @selected_bank_account.id == account.id do %>
                   <.button

@@ -67,17 +67,21 @@ defmodule FirmowidWeb.BankSync.Views.Create do
             phx-submit="institution_selected"
             phx-value-institution-id="SANDBOXFINANCE_SFIN0000"
             phx-value-institution-transaction-total-days={90}
-            phx-hook="Tippy"
-            data-tippy-content="Kliknij aby dodać konto bankowe przygotowane przez nas, które zawiera kilkanaście transakcji i pozwala przetestować system."
           >
-            <.institution_button>
-              <div class="flex h-10 items-center justify-center">
-                <Lucideicons.flask_conical class="size-7" />
-              </div>
-              <p>
-                Konto Sandbox
-              </p>
-            </.institution_button>
+            <.tooltip
+              id="institution-sandbox-tooltip"
+              text="Kliknij aby dodać konto bankowe przygotowane przez nas, które zawiera kilkanaście transakcji i pozwala przetestować system."
+              class="w-full"
+            >
+              <.institution_button>
+                <div class="flex h-10 items-center justify-center">
+                  <Lucideicons.flask_conical class="size-7" />
+                </div>
+                <p>
+                  Konto Sandbox
+                </p>
+              </.institution_button>
+            </.tooltip>
           </form>
         </div>
       <% else %>

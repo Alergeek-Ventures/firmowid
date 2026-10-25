@@ -75,13 +75,11 @@ defmodule FirmowidWeb.Delegations.Components.Settlement.Expense do
         >Jakie dokumenty załączyć?</.button>
       </header>
       <div class="space-y-3">
-        <div
+        <.empty_state
           :if={!@editable? && @expenses == []}
           id={"#{@kind}-empty-state"}
-          class="px-4 py-5 text-sm text-grey-500"
-        >
-          Nie dodano żadnych wydatków w tej kategorii.
-        </div>
+          title="Nie dodano żadnych wydatków w tej kategorii."
+        />
         <article
           :for={expense <- @expenses}
           class={["rounded-lg border border-grey-200 p-4", !@editable? && "bg-white"]}

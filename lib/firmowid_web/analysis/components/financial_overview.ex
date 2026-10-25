@@ -44,11 +44,16 @@ defmodule FirmowidWeb.Analysis.Components.FinancialOverview do
         <h2 id="analysis-month-results-title" class="text-h5 font-medium text-grey-900">
           {gettext("Net result by month")}
         </h2>
-        <p :if={@chart == :empty} id="analysis-month-results-empty" class="text-sm text-grey-700">
-          {if @tag_filters == [],
-            do: gettext("No income or expenses in %{year}.", year: @summary.year),
-            else: gettext("The selected categories have no entries in %{year}.", year: @summary.year)}
-        </p>
+        <.empty_state
+          :if={@chart == :empty}
+          id="analysis-month-results-empty"
+          title={
+            if @tag_filters == [],
+              do: gettext("No income or expenses in %{year}.", year: @summary.year),
+              else:
+                gettext("The selected categories have no entries in %{year}.", year: @summary.year)
+          }
+        />
         <ol
           :if={@chart != :empty}
           id="analysis-month-results"

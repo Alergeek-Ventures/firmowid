@@ -322,12 +322,10 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
                 </.modal>
               </div>
 
-              <span
+              <.tooltip
                 :if={@invoice.invoice_number}
                 id="share-invoice-button-container"
-                phx-hook="Tippy"
-                data-tippy-content="Skopiuj link do faktury"
-                data-tippy-delay="100"
+                text="Skopiuj link do faktury"
               >
                 <.button
                   id="share-invoice-button"
@@ -339,7 +337,7 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
                 >
                   <Lucideicons.share_2 />
                 </.button>
-              </span>
+              </.tooltip>
             </div>
 
             <InvoiceDetails.invoice_metadata>

@@ -200,14 +200,11 @@
     </script>
 
     <%= if Enum.empty?(@project_users) do %>
-      <div
+      <.empty_state
         id="project_users_list"
-        class="flex flex-1 items-center justify-center rounded-lg border border-grey-200 p-6"
-      >
-        <p class="max-w-sm text-center text-sm/snug text-balance text-grey-700">
-          Aby dodać pracownika do tego projektu, wpisz jego imię lub nazwisko, a następnie kliknij wybraną osobę na liście wyników.
-        </p>
-      </div>
+        title="Aby dodać pracownika do tego projektu, wpisz jego imię lub nazwisko, a następnie kliknij wybraną osobę na liście wyników."
+        class="flex-1 justify-center"
+      />
     <% else %>
       <div
         id="project_users_list"

@@ -39,7 +39,7 @@ defmodule FirmowidWeb.Delegations.Components.DelegationsList do
         </.button>
       </li>
     </ul>
-    <p :if={@delegations == []} class="text-sm text-grey-500">Brak delegacji.</p>
+    <.empty_state :if={@delegations == []} title="Brak delegacji." />
     """
   end
 

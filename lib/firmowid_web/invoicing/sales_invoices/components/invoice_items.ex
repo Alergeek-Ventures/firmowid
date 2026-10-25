@@ -302,12 +302,13 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
           >
             <:label_slot>
               Reverse charge
-              <Lucideicons.info
+              <.tooltip
                 id="reverse-charge-tooltip"
-                phx-hook="Tippy"
-                data-tippy-content="Reverse charge (odwrotne obciążenie) to mechanizm, w którym obowiązek rozliczenia podatku VAT spoczywa na nabywcy usługi; dotyczy m.in. importu usług z Unii Europejskiej."
-                class="ml-0.5 size-4"
-              />
+                text="Reverse charge (odwrotne obciążenie) to mechanizm, w którym obowiązek rozliczenia podatku VAT spoczywa na nabywcy usługi; dotyczy m.in. importu usług z Unii Europejskiej."
+                class="ml-0.5"
+              >
+                <Lucideicons.info class="size-4" />
+              </.tooltip>
             </:label_slot>
           </.switch>
 

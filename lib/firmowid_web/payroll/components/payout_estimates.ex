@@ -2,7 +2,6 @@ defmodule FirmowidWeb.Payroll.Components.PayoutEstimates do
   @moduledoc "Shared labels and disclosure of indicative payouts in payroll and bank matching."
   use FirmowidWeb, :html
 
-  alias FirmowidUI.Components.Button
   alias Phoenix.LiveView.Rendered
 
   attr :estimates, :list, required: true
@@ -23,17 +22,13 @@ defmodule FirmowidWeb.Payroll.Components.PayoutEstimates do
     <section id="payout-estimates" class="flex flex-col gap-2">
       <div class="flex items-center justify-between gap-2">
         <h3 class="text-sm/snug font-normal text-nowrap text-grey-700">{gettext("Net forecast")}</h3>
-        <Button.button
+        <.icon_button
           :if={@primary}
-          type="button"
-          variant="icon"
-          class="relative size-7 shrink-0 cursor-pointer outline-offset-2 after:absolute after:inset-[-8px] after:content-[''] focus-visible:outline-2 focus-visible:outline-teal-700"
-          aria-label={gettext("How is this calculated?")}
-          title={gettext("How is this calculated?")}
+          label={gettext("How is this calculated?")}
           phx-click={show_modal("payout-estimates-modal")}
         >
-          <Lucideicons.info class="size-4" aria-hidden="true" />
-        </Button.button>
+          <Lucideicons.info aria-hidden="true" />
+        </.icon_button>
       </div>
       <p class="text-start text-xl/snug font-semibold text-teal-700 tabular-nums">
         {if @primary, do: @primary.amount, else: "—"}
