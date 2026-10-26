@@ -6,7 +6,7 @@
       cond do
         String.starts_with?(@current_uri.path, "/zarzadzanie/pracownicy/") and
             not String.starts_with?(@current_uri.path, "/zarzadzanie/pracownicy/archiwum") ->
-          "h-10.5"
+          "h-10.5 max-md:h-navbar-management"
 
         true ->
           "h-navbar-management"
@@ -18,19 +18,23 @@
     "group inset-x-0 top-0 z-50"
   ]}>
     <div
-      class={[
-        cond do
-          String.starts_with?(@current_uri.path, "/zarzadzanie/pracownicy/") and
-              not String.starts_with?(@current_uri.path, "/zarzadzanie/pracownicy/archiwum") ->
-            "h-0 overflow-hidden py-0 opacity-0 group-hover:h-navbar group-hover:py-4 group-hover:opacity-100"
+      class={
+        [
+          cond do
+            String.starts_with?(@current_uri.path, "/zarzadzanie/pracownicy/") and
+                not String.starts_with?(@current_uri.path, "/zarzadzanie/pracownicy/archiwum") ->
+              "h-0 overflow-hidden py-0 opacity-0 group-hover:h-navbar group-hover:py-4 group-hover:opacity-100"
 
-          true ->
-            "flex h-navbar py-4 opacity-100"
-        end,
-        "flex text-white",
-        "items-center justify-between",
-        "text-sm transition-all duration-150"
-      ]}
+            true ->
+              "flex h-navbar py-4 opacity-100"
+          end,
+          "flex text-white",
+          "items-center justify-between",
+          "text-sm transition-all duration-150",
+          # phones have no hover to re-expand a collapsed row, so the menu row always stays visible
+          "max-md:h-navbar! max-md:overflow-visible max-md:py-4! max-md:opacity-100"
+        ]
+      }
       id="navbar-main"
       phx-hook="CollapsibleNavbar"
       data-classes={
@@ -274,7 +278,7 @@
         <.button
           type="button"
           variant="unstyled"
-          class="relative ml-auto inline-flex size-6 cursor-pointer items-center justify-center text-white opacity-0 transition-opacity"
+          class="relative ml-auto inline-flex size-6 cursor-pointer items-center justify-center text-white opacity-0 transition-opacity max-md:hidden"
           id="navbar-burger-button"
           phx-hook="CollapsibleNavbar"
           data-classes="opacity-100"
