@@ -108,22 +108,20 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
 
   @impl true
   def handle_event("confirm-category", %{"key" => key, "side" => side} = params, socket) do
-    group =
-      Enum.find(
-        review_groups(socket.assigns),
-        &(&1.key == key and Atom.to_string(&1.side) == side)
-      )
-
-    category =
-      group &&
-        Enum.find(
-          IndustryTemplate.all_categories(group.side),
-          &(Atom.to_string(&1) == params["category"])
-        )
-
-    if category,
-      do: confirm_categories(socket, [{group, category}]),
-      else: {:noreply, socket}
+    with %{} = group <-
+           Enum.find(
+             review_groups(socket.assigns),
+             &(&1.key == key and Atom.to_string(&1.side) == side)
+           ),
+         category when category != nil <-
+           Enum.find(
+             IndustryTemplate.all_categories(group.side),
+             &(Atom.to_string(&1) == params["category"])
+           ) do
+      confirm_categories(socket, [{group, category}])
+    else
+      nil -> {:noreply, socket}
+    end
   end
 
   def handle_event("confirm-suggestions", _params, socket) do
