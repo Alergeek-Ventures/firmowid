@@ -140,7 +140,8 @@ defmodule FirmowidWeb.Analysis.Components.FinancialOverview do
   attr :mark, :map, required: true
 
   # Settled bars are filled; the result with unpaid invoices is a dashed outline drawn
-  # over them, so it stays visible even when it is shorter than the settled bar.
+  # over them. The part of a settled bar that unpaid invoices would cancel is lighter,
+  # so a shorter outline inside it stays visible.
   defp bar_mark(assigns) do
     ~H"""
     <span
@@ -156,6 +157,8 @@ defmodule FirmowidWeb.Analysis.Components.FinancialOverview do
 
   defp mark_styles(%{kind: :settled, side: :profit}), do: "bg-teal-600"
   defp mark_styles(%{kind: :settled, side: :loss}), do: "bg-brick-700"
+  defp mark_styles(%{kind: :cancelled, side: :profit}), do: "bg-teal-600/30"
+  defp mark_styles(%{kind: :cancelled, side: :loss}), do: "bg-brick-700/30"
 
   defp mark_styles(%{kind: :unpaid, side: :profit}), do: "border-[1.5px] border-dashed border-teal-800 bg-teal-600/15"
 
@@ -254,6 +257,10 @@ defmodule FirmowidWeb.Analysis.Components.FinancialOverview do
 
   defp legend_mark_styles(:unpaid), do: legend_mark_styles(:unpaid, Decimal.new(1))
 
+  defp legend_mark_styles(:cancelled),
+    do:
+      "h-2.5 w-3 rounded-xs bg-[linear-gradient(90deg,--alpha(var(--color-teal-600)/30%)_50%,--alpha(var(--color-brick-700)/30%)_50%)]"
+
   defp legend_mark_styles(:in_progress), do: "w-3 self-end border-be-2 border-dotted border-teal-600"
 
   # Tooltip keys take the color of the result they caption, like the bar they describe.
@@ -266,6 +273,7 @@ defmodule FirmowidWeb.Analysis.Components.FinancialOverview do
 
   defp legend_label(:settled), do: gettext("Settled")
   defp legend_label(:unpaid), do: gettext("With unpaid invoices")
+  defp legend_label(:cancelled), do: gettext("Offset by unpaid invoices")
   defp legend_label(:in_progress), do: gettext("Month in progress")
 
   # Losses grow below and profits above one shared zero line; the arms are sized
@@ -299,6 +307,10 @@ defmodule FirmowidWeb.Analysis.Components.FinancialOverview do
         legend:
           [:settled] ++
             if(Enum.any?(bars, & &1.unpaid), do: [:unpaid], else: []) ++
+            if(Enum.any?(bars, fn bar -> Enum.any?(bar.marks, &(&1.kind == :cancelled)) end),
+              do: [:cancelled],
+              else: []
+            ) ++
             if(Enum.any?(bars, & &1.in_progress?), do: [:in_progress], else: [])
       }
     end
@@ -320,15 +332,23 @@ defmodule FirmowidWeb.Analysis.Components.FinancialOverview do
       unpaid: unpaid,
       accrual: accrual(month),
       marks:
-        Enum.reject(
-          [
-            mark(:settled, result, max_profit, max_loss),
-            unpaid && mark(:unpaid, accrual(month), max_profit, max_loss)
-          ],
-          &is_nil/1
+        marks(
+          mark(:settled, result, max_profit, max_loss),
+          unpaid && mark(:unpaid, accrual(month), max_profit, max_loss)
         )
     }
   end
+
+  # Unpaid invoices cancel the whole settled bar when the result changes sides,
+  # otherwise only the part beyond the result with unpaid invoices.
+  defp marks(nil, accrual), do: List.wrap(accrual)
+  defp marks(settled, nil), do: [settled]
+
+  defp marks(%{side: side} = settled, %{side: side} = accrual) when accrual.length < settled.length,
+    do: [%{settled | kind: :cancelled}, %{settled | length: accrual.length}, accrual]
+
+  defp marks(%{side: side} = settled, %{side: side} = accrual), do: [settled, accrual]
+  defp marks(settled, accrual), do: [%{settled | kind: :cancelled}, accrual]
 
   defp mark(kind, amount, max_profit, max_loss) do
     cond do
