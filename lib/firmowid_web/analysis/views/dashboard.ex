@@ -144,6 +144,19 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
       else: {:noreply, socket}
   end
 
+  def handle_event("confirm-group", %{"side" => side, "category" => category}, socket) do
+    confirm_categories(
+      socket,
+      for(
+        group <- review_groups(socket.assigns),
+        Atom.to_string(group.side) == side,
+        group.status != :confirmed,
+        Atom.to_string(group.suggestion || :none) == category,
+        do: {group, group.suggestion}
+      )
+    )
+  end
+
   def handle_event("confirm-suggestions", _params, socket) do
     confirm_categories(
       socket,
