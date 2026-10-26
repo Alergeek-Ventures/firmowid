@@ -41,7 +41,7 @@ defmodule FirmowidWeb.DesignSystem.Components.PageActions do
       data-page-actions
       phx-click-away={length(@action) > 1 && close(@id)}
       class={[
-        "group flex items-center gap-4 max-md:fixed max-md:right-4 max-md:bottom-[calc(1rem+env(safe-area-inset-bottom))] max-md:z-50 max-md:flex-col max-md:items-end max-md:gap-3 max-md:**:data-fab:h-14 max-md:**:data-fab:rounded-full max-md:**:data-fab:shadow-lg",
+        "group flex items-center gap-4 max-md:pointer-events-none max-md:fixed max-md:right-4 max-md:bottom-[calc(1rem+env(safe-area-inset-bottom))] max-md:z-50 max-md:flex-col max-md:items-end max-md:gap-3 max-md:*:pointer-events-auto max-md:**:data-fab:h-14 max-md:**:data-fab:rounded-full max-md:**:data-fab:shadow-lg",
         if(length(@action) > 1,
           do: "max-md:**:data-fab:px-5",
           else: "max-md:**:data-fab:w-14 max-md:**:data-fab:px-0 max-md:[&_[data-fab]_svg]:size-6"

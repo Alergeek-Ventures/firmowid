@@ -10,7 +10,8 @@ defmodule Firmowid.Repo.Migrations.AddAssistantConversations do
   def up do
     create table(:assistant_conversations, primary_key: false) do
       add :id, :uuid, null: false, default: fragment("uuid_generate_v7()"), primary_key: true
-      add :transcript, {:array, :map}, null: false, default: []
+      add :subject, :map
+      add :title, :text
       add :status, :text, null: false, default: "idle"
       add :version, :bigint, null: false, default: 1
       add :error, :text
@@ -46,19 +47,55 @@ defmodule Firmowid.Repo.Migrations.AddAssistantConversations do
           null: false
     end
 
-    create unique_index(:assistant_conversations, [:organization_id, :user_id],
-             name: "assistant_conversations_owner_index"
-           )
+    create index(:assistant_conversations, [:organization_id, :user_id, :inserted_at, :id])
+
+    create table(:assistant_messages, primary_key: false) do
+      add :id, :uuid, null: false, default: fragment("uuid_generate_v7()"), primary_key: true
+      add :role, :text, null: false
+      add :parts, {:array, :map}, null: false
+
+      add :inserted_at, :utc_datetime_usec,
+        null: false,
+        default: fragment("(now() AT TIME ZONE 'utc')")
+
+      add :conversation_id,
+          references(:assistant_conversations,
+            column: :id,
+            name: "assistant_messages_conversation_id_fkey",
+            type: :uuid,
+            prefix: "public",
+            on_delete: :delete_all
+          ),
+          null: false
+
+      add :organization_id,
+          references(:organizations,
+            column: :id,
+            name: "assistant_messages_organization_id_fkey",
+            type: :uuid,
+            prefix: "public",
+            on_delete: :delete_all
+          ),
+          null: false
+    end
+
+    create index(:assistant_messages, [:organization_id, :conversation_id, :id])
   end
 
   def down do
+    drop_if_exists index(:assistant_messages, [:organization_id, :conversation_id, :id])
+
+    drop constraint(:assistant_messages, "assistant_messages_organization_id_fkey")
+
+    drop constraint(:assistant_messages, "assistant_messages_conversation_id_fkey")
+
+    drop table(:assistant_messages)
+
+    drop_if_exists index(:assistant_conversations, [:organization_id, :user_id, :inserted_at, :id])
+
     drop constraint(:assistant_conversations, "assistant_conversations_organization_id_fkey")
 
     drop constraint(:assistant_conversations, "assistant_conversations_user_id_fkey")
-
-    drop_if_exists unique_index(:assistant_conversations, [:organization_id, :user_id],
-                     name: "assistant_conversations_owner_index"
-                   )
 
     drop table(:assistant_conversations)
   end

@@ -1,13 +1,17 @@
 defmodule Firmowid.Ash.Assistant.Conversation do
-  @moduledoc "One canonical assistant transcript per user and organization."
+  @moduledoc "Assistant sessions, context and lifecycle owned by a user within an organization."
   use Ash.Resource,
     domain: Firmowid.Ash.Assistant,
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer],
-    extensions: [AshOban],
-    notifiers: [Firmowid.Ash.Assistant.Notifier]
+    extensions: [AshOban, AshStateMachine],
+    notifiers: [Ash.Notifier.PubSub]
 
-  alias Firmowid.Ash.Assistant.Changes.StartTurn
+  alias Firmowid.Ash.Assistant
+  alias Firmowid.Ash.Assistant.Changes.AppendMessage
+  alias Firmowid.Ash.Assistant.Changes.RecordApproval
+  alias Firmowid.Ash.Assistant.Changes.SetSubject
+  alias Firmowid.Ash.Assistant.Transcript
   alias Firmowid.Ash.Checks.AtLeastRole
 
   postgres do
@@ -17,6 +21,10 @@ defmodule Firmowid.Ash.Assistant.Conversation do
     references do
       reference :user, on_delete: :delete
       reference :organization, on_delete: :delete
+    end
+
+    custom_indexes do
+      index [:organization_id, :user_id, :inserted_at, :id]
     end
   end
 
@@ -30,8 +38,12 @@ defmodule Firmowid.Ash.Assistant.Conversation do
         queue :assistant
         actor_persister :none
         default_actor %{assistant_worker?: true}
-        # A rescued job gets one cleanup attempt, NEVER a second execution.
-        max_attempts 2
+        read_metadata fn record -> %{run_id: record.run_id} end
+        where expr(status == :running)
+        worker_read_action :read_for_job
+        on_error :fail
+        on_error_fails_job? true
+        max_attempts 1
         timeout to_timeout(minute: 10)
         lock_for_update? false
         worker_module_name Firmowid.Ash.Assistant.Conversation.Worker.Respond
@@ -40,28 +52,77 @@ defmodule Firmowid.Ash.Assistant.Conversation do
     end
   end
 
+  state_machine do
+    state_attribute :status
+    initial_states [:idle, :running]
+    default_initial_state :idle
+
+    transitions do
+      transition :send_message, from: [:idle, :failed], to: :running
+      transition :respond_to_plan, from: :awaiting_approval, to: :running
+      transition :append_response, from: :running, to: :running
+      transition :await_approval, from: :running, to: :awaiting_approval
+      transition :complete, from: :running, to: :idle
+      transition :fail, from: :running, to: :failed
+    end
+  end
+
   code_interface do
-    define :respond, action: :respond
-    define :save_progress, action: :save_progress
-    define :read_for_job, action: :read_for_job, get_by: [:id]
+    define :respond
+    define :append_response
+    define :await_approval
+    define :complete
+    define :fail
+    define :read_for_job, get_by: [:id]
   end
 
   actions do
     defaults [:read]
 
-    read :read_for_job do
-      description "Reads a tenant-scoped conversation for its assistant job."
+    read :list do
+      description "Lists the actor's conversations, newest first."
+      prepare build(sort: [inserted_at: :desc, id: :desc])
+
+      pagination do
+        required? false
+        keyset? true
+        default_limit 20
+        max_page_size 100
+      end
     end
 
-    create :get_or_create do
-      description "Creates the actor's conversation or returns the existing one without modifying it."
+    read :read_for_job do
+      description "Reads only the running conversation belonging to this job's run."
+
+      filter expr(
+               status == :running and
+                 run_id == ^context([:ash_oban, :job, :args, "metadata", "run_id"])
+             )
+    end
+
+    create :start do
+      description "Starts an independent conversation and enqueues its first response."
+      primary? true
       accept []
-      upsert? true
-      upsert_identity :owner
-      upsert_fields []
-      upsert_condition expr(false)
-      return_skipped_upsert? true
+      argument :text, :string, allow_nil?: false, constraints: [min_length: 1, max_length: 20_000]
       change relate_actor(:user)
+      change transition_state(:running)
+      change AppendMessage, only_when_valid?: true
+      change set_attribute(:run_id, &Ash.UUID.generate/0)
+      change run_oban_trigger(:respond)
+    end
+
+    create :for_subject do
+      description "Starts an idle conversation with an authorized subject, awaiting the user's question."
+      accept []
+
+      argument :subject_type, :atom,
+        allow_nil?: false,
+        constraints: [one_of: [:transaction, :sales_invoice, :cost_invoice, :employee, :project]]
+
+      argument :subject_id, :uuid, allow_nil?: false
+      change relate_actor(:user)
+      change SetSubject, only_when_valid?: true
     end
 
     update :send_message do
@@ -71,8 +132,15 @@ defmodule Firmowid.Ash.Assistant.Conversation do
       require_atomic? false
       argument :text, :string, allow_nil?: false, constraints: [min_length: 1, max_length: 20_000]
       argument :expected_version, :integer, allow_nil?: false
-      change {StartTurn, mode: :message}
+      # Check the rendered version before optimistic_lock increments the row version.
+      validate compare(:expected_version, is_equal: :version), message: "stale_conversation"
+      change transition_state(:running)
+      change AppendMessage, only_when_valid?: true
+      change set_attribute(:approvals, %{})
+      change set_attribute(:error, nil)
+      change set_attribute(:run_id, &Ash.UUID.generate/0)
       change optimistic_lock(:version)
+      change run_oban_trigger(:respond)
     end
 
     update :respond_to_plan do
@@ -81,21 +149,92 @@ defmodule Firmowid.Ash.Assistant.Conversation do
       require_atomic? false
       argument :decision, :atom, allow_nil?: false, constraints: [one_of: [:approve, :deny]]
       argument :expected_version, :integer, allow_nil?: false
-      change {StartTurn, mode: :approval}
+      validate compare(:expected_version, is_equal: :version), message: "stale_conversation"
+      change transition_state(:running)
+      change RecordApproval, only_when_valid?: true
+      change set_attribute(:error, nil)
+      change set_attribute(:run_id, &Ash.UUID.generate/0)
+      change optimistic_lock(:version)
+      change run_oban_trigger(:respond)
+    end
+
+    update :respond do
+      description "Executes one assistant run without replaying financial operations."
+      transaction? false
+      require_atomic? false
+      accept []
+      manual Firmowid.Ash.Assistant.Actions.Respond
+    end
+
+    update :append_response do
+      description "Stores one completed assistant or tool message in the running session."
+      accept []
+      require_atomic? false
+      argument :role, :atom, allow_nil?: false, constraints: [one_of: [:assistant, :tool]]
+      argument :parts, {:array, :map}, allow_nil?: false, constraints: [min_length: 1]
+      change transition_state(:running)
+
+      change fn changeset, _context ->
+               Ash.Changeset.manage_relationship(
+                 changeset,
+                 :messages,
+                 %{
+                   role: Ash.Changeset.get_argument(changeset, :role),
+                   parts: Ash.Changeset.get_argument(changeset, :parts)
+                 },
+                 type: :create
+               )
+             end,
+             only_when_valid?: true
+
       change optimistic_lock(:version)
     end
 
-    action :respond do
-      description "Executes one assistant run or marks an interrupted run as failed without replaying it."
-      argument :primary_key, :map, allow_nil?: false
-      argument :run_id, :uuid, allow_nil?: false
-      run Firmowid.Ash.Assistant.Actions.Respond
+    update :await_approval do
+      description "Pauses the running turn for a version-bound user decision."
+      accept []
+      require_atomic? false
+      change transition_state(:awaiting_approval)
+      change set_attribute(:approvals, %{})
+      change optimistic_lock(:version)
     end
 
-    update :save_progress do
-      description "Persists completed assistant/tool messages and lifecycle state from its job."
-      accept [:transcript, :status, :error, :approvals]
+    update :complete do
+      description "Completes the running turn."
+      accept []
       require_atomic? false
+      change transition_state(:idle)
+      change set_attribute(:approvals, %{})
+      change optimistic_lock(:version)
+    end
+
+    update :fail do
+      description "Closes unanswered calls as unknown without replaying financial operations."
+      accept []
+      require_atomic? false
+      argument :reason, :string, allow_nil?: false, default: "response_failed"
+      change transition_state(:failed)
+      change set_attribute(:error, arg(:reason))
+      change set_attribute(:approvals, %{})
+
+      change fn changeset, context ->
+               messages =
+                 Assistant.list_messages!(%{conversation_id: changeset.data.id},
+                   actor: context.actor,
+                   tenant: context.tenant,
+                   context: context.source_context,
+                   page: false
+                 )
+
+               Ash.Changeset.manage_relationship(
+                 changeset,
+                 :messages,
+                 Transcript.unknown_results(messages),
+                 type: :create
+               )
+             end,
+             only_when_valid?: true
+
       change optimistic_lock(:version)
     end
   end
@@ -103,21 +242,30 @@ defmodule Firmowid.Ash.Assistant.Conversation do
   policies do
     # Only the assistant's storage/lifecycle actions accept AshOban's context.
     # This context is deliberately NOT passed to any financial tool.
-    policy action([:read_for_job, :respond, :save_progress]) do
+    policy action([:read_for_job, :respond, :append_response, :await_approval, :complete, :fail]) do
       authorize_if AshOban.Checks.AshObanInteraction
     end
 
-    policy action(:get_or_create) do
+    policy action([:start, :for_subject]) do
       authorize_if relating_to_actor(:user)
     end
 
-    policy action([:read, :send_message, :respond_to_plan]) do
+    policy action([:read, :list, :send_message, :respond_to_plan]) do
       authorize_if relates_to_actor_via(:user)
     end
 
-    policy action([:get_or_create, :read, :send_message, :respond_to_plan]) do
+    policy action([:start, :for_subject, :read, :list, :send_message, :respond_to_plan]) do
       authorize_if {AtLeastRole, role: :employee}
     end
+  end
+
+  pub_sub do
+    module Phoenix.PubSub
+    name Firmowid.PubSub
+    prefix "assistant:conversation"
+    transform fn notification -> {:assistant_updated, notification.data.id} end
+    publish_all :create, [:id]
+    publish_all :update, [:id], except: [:respond]
   end
 
   multitenancy do
@@ -127,7 +275,8 @@ defmodule Firmowid.Ash.Assistant.Conversation do
 
   attributes do
     uuid_v7_primary_key :id
-    attribute :transcript, {:array, :map}, allow_nil?: false, default: []
+    attribute :subject, :map
+    attribute :title, :string
 
     attribute :status, :atom,
       allow_nil?: false,
@@ -144,9 +293,6 @@ defmodule Firmowid.Ash.Assistant.Conversation do
   relationships do
     belongs_to :user, Firmowid.Ash.Core.User, allow_nil?: false
     belongs_to :organization, Firmowid.Ash.Core.Organization, allow_nil?: false
-  end
-
-  identities do
-    identity :owner, [:user_id, :organization_id]
+    has_many :messages, Firmowid.Ash.Assistant.Message, sort: [id: :asc]
   end
 end

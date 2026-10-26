@@ -13,19 +13,28 @@
       "type": "uuid"
     },
     {
-      "allow_nil?": false,
-      "default": "[]",
+      "allow_nil?": true,
+      "default": "nil",
       "generated?": false,
       "precision": null,
       "primary_key?": false,
       "references": null,
       "scale": null,
       "size": null,
-      "source": "transcript",
-      "type": [
-        "array",
-        "map"
-      ]
+      "source": "subject",
+      "type": "map"
+    },
+    {
+      "allow_nil?": true,
+      "default": "nil",
+      "generated?": false,
+      "precision": null,
+      "primary_key?": false,
+      "references": null,
+      "scale": null,
+      "size": null,
+      "source": "title",
+      "type": "text"
     },
     {
       "allow_nil?": false,
@@ -181,30 +190,50 @@
   "base_filter": null,
   "check_constraints": [],
   "create_table_options": null,
-  "custom_indexes": [],
-  "custom_statements": [],
-  "has_create_action": true,
-  "hash": "3AAD30C0E55CE00584F7A7441A9C650709AC4B3D7CEF9B7F611FA0949D5BD6F8",
-  "identities": [
+  "custom_indexes": [
     {
       "all_tenants?": false,
-      "base_filter": null,
-      "index_name": "assistant_conversations_owner_index",
-      "keys": [
+      "concurrently": false,
+      "error_fields": [
+        "organization_id",
+        "user_id",
+        "inserted_at",
+        "id"
+      ],
+      "fields": [
+        {
+          "type": "atom",
+          "value": "organization_id"
+        },
         {
           "type": "atom",
           "value": "user_id"
         },
         {
           "type": "atom",
-          "value": "organization_id"
+          "value": "inserted_at"
+        },
+        {
+          "type": "atom",
+          "value": "id"
         }
       ],
-      "name": "owner",
-      "nils_distinct?": true,
+      "include": null,
+      "include_base_filter?": true,
+      "message": null,
+      "name": null,
+      "nulls_distinct": true,
+      "prefix": null,
+      "table": null,
+      "unique": false,
+      "using": null,
       "where": null
     }
   ],
+  "custom_statements": [],
+  "has_create_action": true,
+  "hash": "7C3C2AF8DC1FACA2189C737064918C21CBFA1526699E4F090AC5D5233B0812C9",
+  "identities": [],
   "multitenancy": {
     "attribute": "organization_id",
     "global": false,

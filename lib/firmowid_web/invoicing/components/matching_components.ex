@@ -3,24 +3,25 @@ defmodule FirmowidWeb.Invoicing.Components.MatchingComponents do
 
   use FirmowidWeb, :html
 
+  alias Firmowid.Ash.Finances.Transaction
+  alias Firmowid.Ash.Invoicing.CostInvoice
+  alias Firmowid.Ash.Invoicing.SalesInvoice
   alias Phoenix.LiveView.Rendered
 
   attr :id, :string, required: true
   attr :accent, :string, required: true
   attr :class, :any, default: nil
-  attr :prompt, :string, default: nil
+  attr :subject, :map, required: true
   slot :inner_block, required: true
 
-  @doc "Opens the global assistant without leaving the current invoice or transaction."
+  @doc "Starts a new assistant conversation about the current invoice or transaction."
   @spec assistant_button(map()) :: Rendered.t()
   def assistant_button(assigns) do
     ~H"""
     <FirmowidUI.Components.Button.button
       id={@id}
       type="button"
-      phx-click={
-        Phoenix.LiveView.JS.push("open", target: "#firmowid-assistant", value: %{prompt: @prompt})
-      }
+      phx-click={Phoenix.LiveView.JS.push("ask", target: "#firmowid-assistant", value: @subject)}
       class={@class}
       variant="primary"
       accent={@accent}
@@ -31,23 +32,11 @@ defmodule FirmowidWeb.Invoicing.Components.MatchingComponents do
     """
   end
 
-  @doc "Prefills a read-only request with the exact transaction behind the current page."
-  @spec transaction_prompt(map()) :: String.t()
-  def transaction_prompt(transaction) do
-    gettext("Find matching invoices for transaction %{title} (%{id}).",
-      title: transaction.remittance_information_unstructured,
-      id: transaction.id
-    )
-  end
-
-  @doc "Prefills a payment search for the exact sales or cost invoice behind the current page."
-  @spec invoice_prompt(map()) :: String.t()
-  def invoice_prompt(invoice) do
-    gettext("Find payments for invoice %{number} (%{id}).",
-      number: Map.get(invoice, :invoice_number) || Map.get(invoice, :invoice_identifier),
-      id: invoice.id
-    )
-  end
+  @doc "Identifies the selected record without putting its internal ID into a chat message."
+  @spec subject(Transaction.t() | SalesInvoice.t() | CostInvoice.t()) :: map()
+  def subject(%Transaction{id: id}), do: %{subject_type: "transaction", subject_id: id}
+  def subject(%SalesInvoice{id: id}), do: %{subject_type: "sales_invoice", subject_id: id}
+  def subject(%CostInvoice{id: id}), do: %{subject_type: "cost_invoice", subject_id: id}
 
   attr :title, :string, required: true
   attr :date_label, :string, required: true

@@ -2,9 +2,14 @@ defmodule FirmowidWeb.Assistant.Views.Floating do
   @moduledoc "A nonmodal LiveView assistant that keeps its conversation across product navigation."
   use FirmowidWeb, :live_view
 
+  alias Ash.Error.Forbidden
+  alias Ash.Error.Invalid
   alias Firmowid.Ash.Assistant
-  alias FirmowidUI.Components.Button
-  alias FirmowidUI.Components.Link
+  alias FirmowidWeb.Assistant.Components.Controls
+  alias FirmowidWeb.Assistant.Components.History
+  alias FirmowidWeb.Assistant.Components.Records
+  alias FirmowidWeb.Assistant.Components.Transcript
+  alias FirmowidWeb.Assistant.Utilities.PageContext
   alias FirmowidWeb.Assistant.Utilities.Presentation
   alias FirmowidWeb.Infrastructure.Hooks.RequireOrganization
 
@@ -15,15 +20,19 @@ defmodule FirmowidWeb.Assistant.Views.Floating do
 
     case RequireOrganization.on_mount(:default, %{}, session, socket) do
       {:cont, socket} ->
-        conversation = Assistant.get_or_create_conversation!(scope: socket.assigns.ash_scope)
+        socket =
+          socket |> assign(open: false, form_error: nil, history_open?: false) |> load_history()
 
-        if connected?(socket),
-          do: Phoenix.PubSub.subscribe(Firmowid.PubSub, Assistant.topic(conversation.id))
+        conversation =
+          case socket.assigns.history do
+            [latest | _] ->
+              Assistant.get_conversation!(latest.id, scope: socket.assigns.ash_scope)
 
-        {:ok,
-         socket
-         |> assign(open: false, form_error: nil)
-         |> assign_conversation(conversation), layout: false}
+            [] ->
+              nil
+          end
+
+        {:ok, select_conversation(socket, conversation), layout: false}
 
       {:halt, socket} ->
         {:ok, socket, layout: false}
@@ -32,349 +41,161 @@ defmodule FirmowidWeb.Assistant.Views.Floating do
 
   @impl true
   def render(assigns) do
+    assigns =
+      assign(assigns,
+        conversation_id: client_conversation_id(assigns.conversation),
+        conversation_status: if(assigns.conversation, do: assigns.conversation.status, else: :idle),
+        conversation_error: assigns.conversation && assigns.conversation.error
+      )
+
     ~H"""
     <aside
       id="firmowid-assistant"
-      class="assistant-shell"
+      class="fixed inset-e-(--assistant-inset) inset-be-[calc(var(--assistant-inset)+var(--assistant-bottom-obstruction,0px))] z-40 text-sm/normal text-grey-900 [--assistant-inset:clamp(.5rem,2vw,1.5rem)] max-md:data-[open=false]:inset-be-[calc(5.5rem+env(safe-area-inset-bottom)+var(--assistant-bottom-obstruction,0px))]"
       phx-hook="AssistantChat"
       data-storage-key={"assistant:#{@current_user.id}:#{@current_org.id}"}
       data-open={to_string(@open)}
+      data-conversation-id={@conversation_id}
+      data-history-open={to_string(@history_open?)}
       aria-label={gettext("Firmowid assistant")}
     >
       <section
         id="assistant-panel"
-        class="assistant-panel"
+        class="flex flex-col overflow-clip rounded-lg border border-grey-200 bg-white shadow-lg block-160 inline-104 max-block-[calc(100dvh-var(--navbar-height)-2*var(--assistant-inset)-var(--assistant-bottom-obstruction,0px))] max-inline-[calc(100vw-2*var(--assistant-inset))]"
         role="dialog"
-        aria-labelledby="assistant-heading"
+        aria-label={gettext("Firmowid assistant")}
         hidden={!@open}
       >
-        <header class="assistant-header">
-          <span class="assistant-mark"><Lucideicons.sparkles class="size-5" aria-hidden="true" /></span>
-          <div class="flex-1 min-inline-0">
-            <h2 id="assistant-heading" class="text-base/tight font-medium">
-              {gettext("Firmowid assistant")}
-            </h2>
-            <p class="mbs-1 truncate text-xs/snug text-grey-700">{@current_org.name}</p>
-          </div>
-          <Button.button
-            type="button"
-            variant="ghost"
-            size="small"
-            class="assistant-icon-button"
-            phx-click="close"
-            aria-label={gettext("Close assistant")}
-          ><Lucideicons.x class="size-5" aria-hidden="true" /></Button.button>
-        </header>
+        <Controls.header history_open?={@history_open?} />
 
-        <div
-          id="assistant-messages"
-          class="assistant-messages"
-          role="log"
-          aria-live="off"
-          aria-label={gettext("Conversation")}
-          tabindex="0"
+        <section
+          :if={@subject && !@history_open?}
+          class="flex-none border-be border-grey-200 bg-grey-100 px-4 py-3"
+          aria-label={gettext("Conversation about")}
         >
-          <div id="assistant-content" class="assistant-content">
-            <div :if={@turns == []} class="assistant-empty">
-              <div class="assistant-empty-mark">
-                <Lucideicons.list_checks class="size-6" aria-hidden="true" />
-              </div>
-              <h3 class="text-lg/tight font-medium">
-                {gettext("Let's put your transactions in order")}
-              </h3>
-              <p class="text-sm/5 text-grey-700">
-                {gettext(
-                  "Find payments, check matches and prepare changes. You decide what gets saved."
-                )}
-              </p>
-              <div class="assistant-suggestions">
-                <Button.button
-                  :for={{key, label} <- suggestions()}
-                  type="button"
-                  variant="outline"
-                  phx-click="suggestion"
-                  phx-value-key={key}
-                  class="assistant-suggestion"
-                >
-                  <Lucideicons.search class="size-4 shrink-0" aria-hidden="true" /><span>{label}</span>
-                  <Lucideicons.arrow_up_right class="size-4 shrink-0" aria-hidden="true" />
-                </Button.button>
-              </div>
-            </div>
+          <Records.preview record={@subject.record} />
+        </section>
 
-            <article
-              :for={turn <- @turns}
-              id={turn.id}
-              class={["assistant-turn", turn.role == :user && "assistant-turn-user"]}
-            >
-              <%= if turn.role == :user do %>
-                <p class="assistant-user-text">{turn.text}</p>
-              <% else %>
-                <details
-                  :if={turn.tools != []}
-                  id={"#{turn.id}-tools"}
-                  class="assistant-tools"
-                  phx-mounted={JS.ignore_attributes("open")}
-                >
-                  <summary>
-                    <Lucideicons.list_checks class="size-4" aria-hidden="true" /><span>{ngettext(
-                      "%{count} step",
-                      "%{count} steps",
-                      length(turn.tools)
-                    )}</span><Lucideicons.chevron_down class="size-4" aria-hidden="true" />
-                  </summary>
-                  <div class="assistant-tool-list">
-                    <.tool_step :for={tool <- turn.tools} tool={tool} />
-                  </div>
-                </details>
-                <div :if={turn.text != ""} class="assistant-markdown">{turn.html}</div>
-              <% end %>
-            </article>
-
-            <div
-              :if={@conversation.status == :running}
-              id="assistant-working"
-              class="assistant-working"
-              aria-busy="true"
-            >
-              <div class="flex items-center gap-2 text-xs/snug text-grey-700">
-                <Lucideicons.loader_circle class="assistant-spinner size-4" aria-hidden="true" />{gettext(
-                  "Working on your request"
-                )}
-              </div>
-              <div
-                id="assistant-live-text"
-                phx-update="ignore"
-                class="assistant-live-text"
-                aria-hidden="true"
-              >
-              </div>
-            </div>
-
-            <.approval_plan
-              :if={@plan.calls != []}
-              plan={@plan}
-              version={@conversation.version}
-            />
-
-            <div :if={@conversation.error} class="assistant-error" role="alert">
-              <Lucideicons.circle_alert class="size-5 shrink-0" aria-hidden="true" />
-              <div>
-                <strong class="text-sm/5">{gettext("The response was interrupted")}</strong><p class="mbs-1 text-sm/5">
-                  {failure_message(@conversation.error)}
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <Button.button
-          id="assistant-new-messages"
-          type="button"
-          variant="outline"
-          size="small"
-          class="assistant-new-messages"
-          hidden
+        <History.history
+          conversations={@history}
+          conversation_id={@conversation_id}
+          open={@history_open?}
+          more?={@history_more?}
+        />
+        <Transcript.transcript
+          turns={@turns}
+          subject={@subject}
+          conversation_id={@conversation_id}
+          status={@conversation_status}
+          error={@conversation_error}
+          history_open?={@history_open?}
         >
-          <Lucideicons.arrow_down class="size-4" aria-hidden="true" />{gettext("New messages")}
-        </Button.button>
-
-        <form id="assistant-form" phx-submit="send" class="assistant-composer">
-          <p :if={@form_error} class="mbs-1 mbe-2 text-sm/5 text-red-700" role="alert">
-            {@form_error}
-          </p>
-          <p :if={@conversation.status == :awaiting_approval} class="mbe-2 text-xs/5 text-grey-700">
-            {gettext("Confirm or reject the plan before sending another message.")}
-          </p>
-          <div class="assistant-input-row">
-            <textarea
-              id="assistant-input"
-              name="message"
-              rows="2"
-              maxlength="20000"
-              required
-              placeholder={gettext("Ask about a transaction or invoice…")}
-              aria-label={gettext("Message to the assistant")}
-              aria-describedby="assistant-input-hint"
-              phx-update="ignore"
-            ></textarea>
-            <Button.button
-              type="submit"
-              variant="primary"
-              accent="orange"
-              class="assistant-icon-button"
-              disabled={@conversation.status in [:running, :awaiting_approval]}
-              aria-label={gettext("Send message")}
-            >
-              <Lucideicons.arrow_up class="size-5" aria-hidden="true" />
-            </Button.button>
-          </div>
-          <p id="assistant-input-hint" class="assistant-input-hint">
-            {gettext("Enter to send · Shift+Enter for a new line")}
-          </p>
-        </form>
+          <Records.approval_plan
+            :if={@plan.calls != []}
+            plan={@plan}
+            version={@conversation.version}
+            conversation_id={@conversation_id}
+          />
+        </Transcript.transcript>
+        <Controls.composer
+          conversation_id={@conversation_id}
+          status={@conversation_status}
+          form_error={@form_error}
+          history_open?={@history_open?}
+        />
       </section>
 
-      <Button.button
-        id="assistant-launcher"
-        type="button"
-        variant="special"
-        class="assistant-launcher"
-        phx-click="open"
-        hidden={@open}
-        aria-expanded={to_string(@open)}
-        aria-controls="assistant-panel"
-      >
-        <Lucideicons.sparkles class="size-5" aria-hidden="true" />
-        <span>{launcher_label(@conversation.status)}</span>
-        <span
-          :if={@conversation.status == :awaiting_approval}
-          class="assistant-unread"
-          aria-hidden="true"
-        ></span>
-      </Button.button>
-      <span class="sr-only" role="status">{status_label(@conversation.status)}</span>
+      <Controls.launcher open={@open} status={@conversation_status} />
     </aside>
     """
   end
 
-  attr :tool, :map, required: true
-
-  defp tool_step(assigns) do
-    ~H"""
-    <details
-      id={"assistant-step-#{@tool.id}"}
-      class="assistant-tool-step"
-      phx-mounted={JS.ignore_attributes("open")}
-    >
-      <summary>
-        <Lucideicons.circle_check
-          :if={@tool.status == :done}
-          class="size-4 text-green-700"
-          aria-hidden="true"
-        />
-        <Lucideicons.circle_alert
-          :if={@tool.status in [:error, :unknown]}
-          class="size-4 text-red-700"
-          aria-hidden="true"
-        />
-        <Lucideicons.circle_minus
-          :if={@tool.status == :denied}
-          class="size-4 text-grey-600"
-          aria-hidden="true"
-        />
-        <Lucideicons.circle
-          :if={@tool.status == :pending}
-          class="size-4 text-grey-600"
-          aria-hidden="true"
-        />
-        <span class="flex-1 min-inline-0">{@tool.label}</span>
-        <span class="text-xs/snug text-grey-700">{tool_status_label(@tool.status, @tool.summary)}</span>
-      </summary>
-      <pre>{@tool.details}</pre>
-    </details>
-    """
-  end
-
-  attr :plan, :map, required: true
-  attr :version, :integer, required: true
-
-  defp approval_plan(assigns) do
-    ~H"""
-    <section
-      id={"assistant-plan-#{@version}"}
-      class="assistant-plan"
-      aria-label={gettext("Proposed changes")}
-    >
-      <div class="flex items-start gap-2">
-        <Lucideicons.list_checks class="size-5 shrink-0 text-orange-700" aria-hidden="true" />
-        <h3 class="text-sm/5 font-medium">{gettext("Review the changes before confirming")}</h3>
-      </div>
-      <div class="assistant-plan-operations">
-        <div :for={call <- @plan.calls} class="assistant-plan-operation">
-          <h4 class="text-sm/5 font-medium">{call.label}</h4>
-          <div :for={record <- call.records} class="assistant-record">
-            <%= if record do %>
-              <div class="flex-1 min-inline-0">
-                <p class="text-xs/snug text-grey-700">
-                  {record.kind}<span :if={record.date}> · {Calendar.strftime(record.date, "%d.%m.%Y")}</span>
-                </p>
-                <Link.link
-                  kind="text"
-                  size="small"
-                  navigate={record.path}
-                  class="assistant-record-link"
-                >
-                  <span class="min-inline-0">{record.label}</span><Lucideicons.arrow_up_right
-                    class="shrink-0"
-                    aria-hidden="true"
-                  />
-                </Link.link>
-                <p class="line-clamp-2 text-xs/5 text-grey-700">{record.description}</p>
-              </div>
-              <span class={amount_styles(record.amount_tone)}>{record.amount}</span>
-            <% else %>
-              <p class="text-sm/5 text-red-700">{gettext("This record is no longer available.")}</p>
-            <% end %>
-          </div>
-          <details>
-            <summary class="text-xs/5 text-grey-700">{gettext("Technical data")}</summary><pre>{call.details}</pre>
-          </details>
-        </div>
-      </div>
-      <p :if={!@plan.available?} class="text-sm/5 text-red-700">
-        {gettext("Some records could not be read. Reject this plan and ask for a new one.")}
-      </p>
-      <p class="text-xs/5 text-grey-700">
-        {gettext("Only the changes listed above will be applied.")}
-      </p>
-      <div class="assistant-plan-actions">
-        <Button.button
-          type="button"
-          variant="secondary"
-          size="small"
-          phx-click="deny"
-          phx-value-version={@version}
-          phx-disable-with={gettext("Rejecting…")}
-        >{gettext("Reject")}</Button.button>
-        <Button.button
-          type="button"
-          variant="primary"
-          accent="orange"
-          size="small"
-          disabled={!@plan.available?}
-          phx-click="approve"
-          phx-value-version={@version}
-          phx-disable-with={gettext("Confirming…")}
-        >{gettext("Confirm plan")}</Button.button>
-      </div>
-    </section>
-    """
-  end
-
   @impl true
-  def handle_event("restore", %{"open" => opened}, socket), do: {:noreply, assign(socket, :open, opened == true)}
+  def handle_event("restore", %{"open" => opened, "conversation_id" => id}, socket) do
+    socket = assign(socket, :open, opened == true)
 
-  def handle_event("open", params, socket) do
+    case id do
+      nil -> {:noreply, socket}
+      "new" -> {:noreply, select_conversation(socket, nil)}
+      id -> {:noreply, restore_conversation(socket, id)}
+    end
+  end
+
+  def handle_event("open", _params, socket) do
     {:noreply,
      socket
      |> assign(:open, true)
-     |> push_event("assistant-focus", %{open: true, prompt: params["prompt"]})}
+     |> push_event("assistant-focus", %{open: true})}
+  end
+
+  def handle_event("new_conversation", %{"path" => path}, socket) do
+    case PageContext.subject(path) do
+      nil ->
+        {:noreply,
+         socket
+         |> select_conversation(nil)
+         |> assign(:open, true)
+         |> push_event("assistant-clear-draft", %{})
+         |> push_event("assistant-focus", %{open: true})}
+
+      subject ->
+        start_subject_conversation(socket, subject)
+    end
+  end
+
+  def handle_event("ask", %{"subject_type" => type, "subject_id" => id}, socket) do
+    start_subject_conversation(socket, %{subject_type: type, subject_id: id})
+  end
+
+  def handle_event("history", _params, socket) do
+    socket = if socket.assigns.history_open?, do: socket, else: load_history(socket)
+    {:noreply, assign(socket, :history_open?, !socket.assigns.history_open?)}
+  end
+
+  def handle_event("older_conversations", _params, socket) do
+    {:noreply, load_history(socket, socket.assigns.history_cursor)}
+  end
+
+  def handle_event("select_conversation", %{"id" => id}, socket) do
+    case Assistant.get_conversation(id, scope: socket.assigns.ash_scope) do
+      {:ok, conversation} ->
+        {:noreply,
+         socket
+         |> select_conversation(conversation)
+         |> push_event("assistant-focus", %{open: true})}
+
+      {:error, error} ->
+        operation_error(error, socket)
+    end
   end
 
   def handle_event("close", _params, socket) do
     {:noreply, socket |> assign(:open, false) |> push_event("assistant-focus", %{open: false})}
   end
 
-  def handle_event("suggestion", %{"key" => key}, socket) do
-    message = suggestions() |> Map.new() |> Map.fetch!(key)
-    send_message(message, socket)
+  def handle_event("suggestion", %{"key" => key, "conversation-id" => id}, socket) do
+    if id == client_conversation_id(socket.assigns.conversation) do
+      message =
+        socket.assigns.subject |> Presentation.suggestions() |> Map.new() |> Map.fetch!(key)
+
+      send_message(message, socket)
+    else
+      {:noreply, changed_conversation(socket)}
+    end
   end
 
-  def handle_event("send", %{"message" => message}, socket), do: send_message(String.trim(message), socket)
+  def handle_event("send", %{"message" => message, "conversation_id" => id}, socket) do
+    if id == client_conversation_id(socket.assigns.conversation) do
+      send_message(String.trim(message), socket)
+    else
+      {:noreply, changed_conversation(socket)}
+    end
+  end
 
-  def handle_event(decision, %{"version" => version}, socket) when decision in ["approve", "deny"] do
-    with {expected, ""} <- Integer.parse(version),
+  def handle_event(decision, %{"version" => version, "conversation-id" => id}, socket)
+      when decision in ["approve", "deny"] do
+    with true <- id == client_conversation_id(socket.assigns.conversation) and id != "new",
+         {expected, ""} <- Integer.parse(version),
          {:ok, conversation} <-
            Assistant.respond_to_plan(
              socket.assigns.conversation,
@@ -391,6 +212,7 @@ defmodule FirmowidWeb.Assistant.Views.Floating do
        |> push_event("assistant-focus", %{open: true})}
     else
       {:error, error} -> operation_error(error, socket)
+      false -> {:noreply, changed_conversation(socket)}
       :error -> {:noreply, changed_conversation(socket)}
       {_expected, _suffix} -> {:noreply, changed_conversation(socket)}
     end
@@ -407,37 +229,68 @@ defmodule FirmowidWeb.Assistant.Views.Floating do
     {:noreply, push_event(socket, "assistant-token", %{text: text})}
   end
 
+  # Messages already in the mailbox can outlive the previous subscription.
+  def handle_info({:assistant_updated, _id}, socket), do: {:noreply, socket}
+  def handle_info({:assistant_delta, _id, _text}, socket), do: {:noreply, socket}
+
   defp send_message("", socket) do
     {:noreply, assign(socket, :form_error, gettext("Write a message first."))}
+  end
+
+  defp send_message(message, %{assigns: %{conversation: nil}} = socket) do
+    case Assistant.start_conversation(%{text: message}, scope: socket.assigns.ash_scope) do
+      {:ok, conversation} -> message_sent(socket, conversation)
+      {:error, error} -> operation_error(error, socket)
+    end
   end
 
   defp send_message(message, socket) do
     params = %{text: message, expected_version: socket.assigns.conversation.version}
 
     case Assistant.send_message(socket.assigns.conversation, params, scope: socket.assigns.ash_scope) do
+      {:ok, conversation} -> message_sent(socket, conversation)
+      {:error, error} -> operation_error(error, socket)
+    end
+  end
+
+  defp start_subject_conversation(socket, subject) do
+    case Assistant.start_subject_conversation(subject, scope: socket.assigns.ash_scope) do
       {:ok, conversation} ->
         {:noreply,
          socket
-         |> assign(:form_error, nil)
-         |> assign_conversation(conversation)
-         |> push_event("assistant-sent", %{})}
+         |> select_conversation(conversation)
+         |> assign(:open, true)
+         |> push_event("assistant-focus", %{open: true})}
 
       {:error, error} ->
         operation_error(error, socket)
     end
   end
 
-  defp operation_error(%Ash.Error.Invalid{}, socket), do: {:noreply, changed_conversation(socket)}
+  defp message_sent(socket, conversation) do
+    source_id = client_conversation_id(socket.assigns.conversation)
 
-  defp operation_error(%Ash.Error.Forbidden{}, socket) do
-    {:noreply, assign(socket, :form_error, failure_message("access_revoked"))}
+    {:noreply,
+     socket
+     |> select_conversation(conversation)
+     |> push_event("assistant-sent", %{conversation_id: conversation.id, source_id: source_id})}
+  end
+
+  defp operation_error(%Invalid{}, socket), do: {:noreply, changed_conversation(socket)}
+
+  defp operation_error(%Forbidden{}, socket) do
+    {:noreply, assign(socket, :form_error, Presentation.failure_message("access_revoked"))}
   end
 
   defp operation_error(error, _socket), do: raise(Ash.Error.to_error_class(error))
 
   defp changed_conversation(socket) do
     conversation =
-      Assistant.get_conversation!(socket.assigns.conversation.id, scope: socket.assigns.ash_scope)
+      if socket.assigns.conversation,
+        do:
+          Assistant.get_conversation!(socket.assigns.conversation.id,
+            scope: socket.assigns.ash_scope
+          )
 
     socket
     |> assign_conversation(conversation)
@@ -447,42 +300,75 @@ defmodule FirmowidWeb.Assistant.Views.Floating do
     )
   end
 
+  defp restore_conversation(socket, id) do
+    case Assistant.get_conversation(id, scope: socket.assigns.ash_scope) do
+      {:ok, conversation} -> select_conversation(socket, conversation)
+      {:error, %Invalid{}} -> select_conversation(socket, nil)
+      {:error, %Forbidden{}} -> select_conversation(socket, nil)
+      {:error, error} -> raise Ash.Error.to_error_class(error)
+    end
+  end
+
+  defp select_conversation(socket, conversation) do
+    previous = socket.assigns[:conversation]
+
+    if connected?(socket) and
+         client_conversation_id(previous) != client_conversation_id(conversation) do
+      if previous, do: Phoenix.PubSub.unsubscribe(Firmowid.PubSub, Assistant.topic(previous.id))
+
+      if conversation,
+        do: Phoenix.PubSub.subscribe(Firmowid.PubSub, Assistant.topic(conversation.id))
+    end
+
+    socket |> assign(history_open?: false, form_error: nil) |> assign_conversation(conversation)
+  end
+
+  defp assign_conversation(socket, nil) do
+    assign(socket,
+      conversation: nil,
+      subject: nil,
+      turns: [],
+      plan: %{available?: true, calls: []}
+    )
+  end
+
   defp assign_conversation(socket, conversation) do
+    messages =
+      Assistant.list_messages!(%{conversation_id: conversation.id},
+        scope: socket.assigns.ash_scope,
+        page: false
+      )
+
+    conversation = %{conversation | messages: messages}
+
     assign(socket,
       conversation: conversation,
+      subject: Presentation.subject(conversation, socket.assigns.ash_scope),
       turns: Presentation.turns(conversation),
       plan: Presentation.plan(conversation, socket.assigns.ash_scope)
     )
   end
 
-  defp suggestions do
-    [
-      {"unmatched", gettext("Find transactions without an invoice")},
-      {"skipped", gettext("Show skipped transactions")},
-      {"matched", gettext("Check already matched payments")}
-    ]
+  defp client_conversation_id(nil), do: "new"
+  defp client_conversation_id(conversation), do: conversation.id
+
+  defp load_history(socket, cursor \\ nil) do
+    pagination = if cursor, do: [limit: 20, after: cursor], else: [limit: 20]
+
+    page =
+      Assistant.list_conversations!(
+        scope: socket.assigns.ash_scope,
+        query: [select: [:id, :title, :status, :inserted_at, :updated_at]],
+        page: pagination
+      )
+
+    history = if cursor, do: socket.assigns.history ++ page.results, else: page.results
+    last = List.last(page.results)
+
+    assign(socket,
+      history: history,
+      history_more?: page.more?,
+      history_cursor: if(last, do: last.__metadata__.keyset)
+    )
   end
-
-  defp launcher_label(:running), do: gettext("Assistant is working…")
-  defp launcher_label(:awaiting_approval), do: gettext("Review changes")
-  defp launcher_label(_status), do: gettext("Assistant")
-  defp amount_styles(:income), do: "text-sm/5 text-nowrap tabular-nums text-turquoise-700"
-  defp amount_styles(:expense), do: "text-sm/5 text-nowrap tabular-nums text-orange-700"
-  defp amount_styles(_tone), do: "text-sm/5 text-nowrap tabular-nums"
-  defp status_label(:running), do: gettext("Assistant is working on your request.")
-  defp status_label(:awaiting_approval), do: gettext("A plan is ready for your decision.")
-  defp status_label(:failed), do: gettext("The response was interrupted.")
-  defp status_label(:idle), do: gettext("Assistant is ready.")
-  defp tool_status_label(:done, nil), do: gettext("Completed")
-  defp tool_status_label(:done, summary), do: summary
-  defp tool_status_label(:pending, _summary), do: gettext("Waiting")
-  defp tool_status_label(:denied, _summary), do: gettext("Not performed")
-  defp tool_status_label(:unknown, _summary), do: gettext("Check the result")
-  defp tool_status_label(:error, _summary), do: gettext("Error")
-
-  defp failure_message("access_revoked"), do: gettext("Your access changed. Refresh the page before continuing.")
-
-  defp failure_message(_code),
-    do:
-      gettext("Some changes may already have been saved. Ask me to check the current state before proposing a new plan.")
 end

@@ -10,6 +10,7 @@ defmodule FirmowidWeb.Assistant.Views.FloatingTest do
   alias Firmowid.Ash.Assistant
   alias Firmowid.Ash.Assistant.Conversation
   alias Firmowid.Ash.Assistant.Conversation.Worker.Respond
+  alias Firmowid.Ash.Assistant.Message
   alias Firmowid.Ash.Finances
   alias Firmowid.Ash.Finances.Transaction
   alias Firmowid.Ash.Invoicing
@@ -62,15 +63,10 @@ defmodule FirmowidWeb.Assistant.Views.FloatingTest do
       }
 
       conversation =
-        Ash.Seed.seed!(Conversation, %{
-          organization_id: scope.tenant,
-          user_id: owner.id,
-          status: :awaiting_approval,
-          transcript: [
-            %{"role" => "user", "text" => "Sprawdź dopasowanie płatności."},
-            %{"role" => "assistant", "parts" => [%{"type" => "step"}, original_call]}
-          ]
-        })
+        seed_conversation(scope, owner, :awaiting_approval, [
+          {:user, [%{"type" => "text", "text" => "Sprawdź dopasowanie płatności."}]},
+          {:assistant, [%{"type" => "step"}, original_call]}
+        ])
 
       {:ok, dashboard, _html} = conn |> log_in_user(owner) |> live(~p"/fakturowanie")
       assistant = find_live_child(dashboard, "floating-assistant-#{scope.tenant}")
@@ -102,19 +98,15 @@ defmodule FirmowidWeb.Assistant.Views.FloatingTest do
           "name" => "disconnect_cost_invoice_transactions"
       }
 
+      running = Ash.Seed.update!(conversation, %{status: :running})
+
       current =
-        Conversation.save_progress!(
-          conversation,
-          %{
-            transcript: [
-              %{"role" => "user", "text" => "Zamiast tego przygotuj odłączenie płatności."},
-              %{"role" => "assistant", "parts" => [%{"type" => "step"}, replacement_call]}
-            ]
-          },
-          actor: %{assistant_worker?: true},
-          tenant: scope.tenant,
-          context: AshOban.build_context(nil)
+        running
+        |> Conversation.append_response!(
+          %{role: :assistant, parts: [%{"type" => "step"}, replacement_call]},
+          worker_opts(scope)
         )
+        |> Conversation.await_approval!(%{}, worker_opts(scope))
 
       assert has_element?(
                assistant,
@@ -124,8 +116,11 @@ defmodule FirmowidWeb.Assistant.Views.FloatingTest do
       refute has_element?(assistant, "#assistant-plan-#{rendered_version}")
 
       # Reproduce an already queued browser click: keep the version actually
-      # rendered earlier, even though PubSub has delivered the replacement plan.
-      render_click(assistant, "approve", %{"version" => rendered_version})
+      # rendered earlier, even though the real resource notifier delivered the new plan.
+      render_click(assistant, "approve", %{
+        "version" => rendered_version,
+        "conversation-id" => conversation.id
+      })
 
       assert has_element?(assistant, "#assistant-form [role='alert']")
       assert has_element?(assistant, "#assistant-plan-#{current.version}")
@@ -135,8 +130,72 @@ defmodule FirmowidWeb.Assistant.Views.FloatingTest do
       persisted = Assistant.get_conversation!(conversation.id, scope: scope)
       assert persisted.status == :awaiting_approval
       assert persisted.version == current.version
-      assert persisted.transcript == current.transcript
       assert persisted.approvals == %{}
+
+      other =
+        seed_conversation(
+          scope,
+          owner,
+          :awaiting_approval,
+          [
+            {:user, [%{"type" => "text", "text" => "Osobna rozmowa o płatności."}]},
+            {:assistant, [%{"type" => "step"}, replacement_call]}
+          ],
+          current.version
+        )
+
+      assistant |> element("#assistant-history-toggle") |> render_click()
+
+      assert has_element?(
+               assistant,
+               "#assistant-history-#{current.id}",
+               "Sprawdź dopasowanie płatności."
+             )
+
+      assistant |> element("#assistant-history-#{other.id}") |> render_click()
+      assert has_element?(assistant, "#firmowid-assistant[data-conversation-id='#{other.id}']")
+
+      # Equal revisions in different conversations do not make consent transferable.
+      for decision <- ["approve", "deny"] do
+        render_click(assistant, decision, %{
+          "version" => to_string(current.version),
+          "conversation-id" => current.id
+        })
+      end
+
+      assert [] == all_enqueued(worker: Respond)
+      assert Assistant.get_conversation!(other.id, scope: scope).status == :awaiting_approval
+      assert Assistant.get_conversation!(other.id, scope: scope).approvals == %{}
+
+      # The browser hook supplies the current page even after sticky LiveView navigation.
+      render_click(assistant, "new_conversation", %{"path" => "/fakturowanie"})
+      assert has_element?(assistant, "#firmowid-assistant[data-conversation-id='new']")
+      refute has_element?(assistant, "#assistant-plan-#{current.version}")
+
+      render_submit(assistant, "send", %{
+        "message" => "Queued message",
+        "conversation_id" => other.id
+      })
+
+      assert [] == all_enqueued(worker: Respond)
+      assert has_element?(assistant, "#assistant-form [role='alert']")
+
+      render_click(assistant, "new_conversation", %{"path" => "/kosztowe/#{invoice.id}"})
+
+      assert has_element?(
+               assistant,
+               "#assistant-panel a[href='/kosztowe/#{invoice.id}']",
+               "PLAN-INVOICE"
+             )
+
+      refute has_element?(assistant, "#firmowid-assistant[data-conversation-id='new']")
+      refute has_element?(assistant, "#assistant-working")
+      assert [] == all_enqueued(worker: Respond)
+
+      assistant |> element("#assistant-history-toggle") |> render_click()
+      assistant |> element("#assistant-history-#{current.id}") |> render_click()
+      assert has_element?(assistant, "#assistant-plan-#{current.version}")
+      assert Assistant.get_conversation!(current.id, scope: scope).status == :awaiting_approval
 
       assert [%{id: invoice_id}] =
                Finances.get_transaction!(transaction.id, scope: scope, load: [:cost_invoices]).cost_invoices
@@ -151,8 +210,7 @@ defmodule FirmowidWeb.Assistant.Views.FloatingTest do
       owner = admin_fixture()
       scope = Scope.new!(owner, owner.member.organization_id)
 
-      # AshAI asks for approval before validating the tool name and arguments,
-      # so the persisted transcript may contain any of these shapes.
+      # AshAI may ask for approval before validating tool names and arguments.
       malformed_calls = [
         %{
           "type" => "tool_call",
@@ -179,15 +237,10 @@ defmodule FirmowidWeb.Assistant.Views.FloatingTest do
       ]
 
       conversation =
-        Ash.Seed.seed!(Conversation, %{
-          organization_id: scope.tenant,
-          user_id: owner.id,
-          status: :awaiting_approval,
-          transcript: [
-            %{"role" => "user", "text" => "Przygotuj zmianę."},
-            %{"role" => "assistant", "parts" => [%{"type" => "step"} | malformed_calls]}
-          ]
-        })
+        seed_conversation(scope, owner, :awaiting_approval, [
+          {:user, [%{"type" => "text", "text" => "Przygotuj zmianę."}]},
+          {:assistant, [%{"type" => "step"} | malformed_calls]}
+        ])
 
       {:ok, dashboard, _html} = conn |> log_in_user(owner) |> live(~p"/fakturowanie")
       assistant = find_live_child(dashboard, "floating-assistant-#{scope.tenant}")
@@ -216,7 +269,39 @@ defmodule FirmowidWeb.Assistant.Views.FloatingTest do
 
       assert denied.status == :running
       assert [%{args: args}] = all_enqueued(worker: Respond)
-      assert args["action_arguments"] == %{"run_id" => denied.run_id}
+      assert args["metadata"] == %{"run_id" => denied.run_id}
     end)
+  end
+
+  defp seed_conversation(scope, owner, status, messages, version \\ 1) do
+    [{:user, [%{"type" => "text", "text" => title} | _]} | _] = messages
+
+    conversation =
+      Ash.Seed.seed!(Conversation, %{
+        organization_id: scope.tenant,
+        user_id: owner.id,
+        status: status,
+        title: title,
+        version: version
+      })
+
+    Enum.each(messages, fn {role, parts} ->
+      Ash.Seed.seed!(Message, %{
+        conversation_id: conversation.id,
+        organization_id: scope.tenant,
+        role: role,
+        parts: parts
+      })
+    end)
+
+    conversation
+  end
+
+  defp worker_opts(scope) do
+    [
+      actor: %{assistant_worker?: true},
+      tenant: scope.tenant,
+      context: %{private: %{ash_oban?: true}}
+    ]
   end
 end

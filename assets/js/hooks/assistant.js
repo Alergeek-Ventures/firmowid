@@ -1,20 +1,23 @@
 export const AssistantChat = {
   mounted() {
-    this.key = this.el.dataset.storageKey;
-    this.pinned = true;
-    this.log = this.el.querySelector("#assistant-messages");
+    this.storageKey = this.el.dataset.storageKey;
+    this.conversationId = this.el.dataset.conversationId;
+    this.followingLatest = true;
+    this.messageList = this.el.querySelector("#assistant-messages");
     this.input = this.el.querySelector("#assistant-input");
     this.newMessages = this.el.querySelector("#assistant-new-messages");
-    this.input.value = sessionStorage.getItem(`${this.key}:draft`) || "";
+    this.input.value = sessionStorage.getItem(this.draftKey(this.conversationId)) || "";
 
-    this.onInput = () => sessionStorage.setItem(`${this.key}:draft`, this.input.value);
+    this.storeDraft = () => sessionStorage.setItem(this.draftKey(this.conversationId), this.input.value);
+    this.onRestart = () => this.pushEvent("new_conversation", { path: window.location.pathname });
     this.onScroll = () => {
-      this.pinned = this.log.scrollHeight - this.log.scrollTop - this.log.clientHeight < 48;
-      if (this.pinned) this.newMessages.hidden = true;
+      const distanceFromBottom = this.messageList.scrollHeight - this.messageList.scrollTop - this.messageList.clientHeight;
+      this.followingLatest = distanceFromBottom < 48;
+      if (this.followingLatest) this.newMessages.hidden = true;
     };
-    this.toLatest = () => {
-      this.pinned = true;
-      this.follow();
+    this.scrollToLatest = () => {
+      this.followingLatest = true;
+      this.followLatest();
       this.newMessages.hidden = true;
     };
     this.onKey = (event) => {
@@ -23,7 +26,13 @@ export const AssistantChat = {
         event.stopPropagation();
         this.pushEvent("close", {});
       }
-      if (event.target === this.input && event.key === "Enter" && !event.shiftKey && !event.isComposing && matchMedia("(pointer: fine)").matches) {
+      if (
+        event.target === this.input &&
+        event.key === "Enter" &&
+        !event.shiftKey &&
+        !event.isComposing &&
+        matchMedia("(pointer: fine)").matches
+      ) {
         event.preventDefault();
         if (!this.input.form.querySelector('[type="submit"]').disabled) this.input.form.requestSubmit();
       }
@@ -35,12 +44,13 @@ export const AssistantChat = {
       this.el.style.setProperty("--assistant-bottom-obstruction", `${Math.max(keyboard, consent?.offsetHeight || 0)}px`);
     };
 
-    this.input.addEventListener("input", this.onInput);
-    this.log.addEventListener("scroll", this.onScroll, { passive: true });
+    this.input.addEventListener("input", this.storeDraft);
+    this.messageList.addEventListener("scroll", this.onScroll, { passive: true });
     this.el.addEventListener("keydown", this.onKey);
-    this.newMessages.addEventListener("click", this.toLatest);
+    this.el.addEventListener("assistant-restart", this.onRestart);
+    this.newMessages.addEventListener("click", this.scrollToLatest);
     window.visualViewport?.addEventListener("resize", this.updateViewportInset);
-    this.contentObserver = new ResizeObserver(() => this.follow());
+    this.contentObserver = new ResizeObserver(() => this.followLatest());
     this.contentObserver.observe(this.el.querySelector("#assistant-content"));
     this.consentObserver = new ResizeObserver(this.updateViewportInset);
     const consent = document.getElementById("cookie-consent-banner");
@@ -49,45 +59,74 @@ export const AssistantChat = {
     this.handleEvent("assistant-token", ({ text }) => {
       const target = this.el.querySelector("#assistant-live-text");
       if (target) target.append(document.createTextNode(text));
-      this.follow();
+      this.followLatest();
     });
     this.handleEvent("assistant-reset-stream", () => {
       const target = this.el.querySelector("#assistant-live-text");
       if (target) target.textContent = "";
-      this.follow();
+      this.followLatest();
     });
-    this.handleEvent("assistant-sent", () => {
+    this.handleEvent("assistant-clear-draft", () => {
+      this.syncConversation();
       this.input.value = "";
-      sessionStorage.removeItem(`${this.key}:draft`);
-      this.toLatest();
+      sessionStorage.removeItem(this.draftKey(this.conversationId));
+    });
+    this.handleEvent("assistant-sent", ({ conversation_id, source_id }) => {
+      this.syncConversation();
+      sessionStorage.removeItem(this.draftKey(source_id));
+      sessionStorage.removeItem(this.draftKey(conversation_id));
+      this.input.value = "";
+      this.scrollToLatest();
       this.input.focus({ preventScroll: true });
     });
-    this.handleEvent("assistant-focus", ({ open, prompt }) => {
-      if (prompt && this.input.value.trim() === "") {
-        this.input.value = prompt;
-        this.onInput();
-      }
+    this.handleEvent("assistant-focus", ({ open }) => {
       requestAnimationFrame(() => {
-        const target = open ? this.input : this.el.querySelector("#assistant-launcher");
+        let target = this.input;
+        if (!open) target = this.el.querySelector("#assistant-launcher");
+        else if (this.el.dataset.historyOpen === "true") target = this.el.querySelector("#assistant-history-toggle");
         target.focus({ preventScroll: true });
       });
     });
     this.updateViewportInset();
-    this.pushEvent("restore", { open: sessionStorage.getItem(`${this.key}:open`) === "true" });
+    this.pushEvent("restore", {
+      open: sessionStorage.getItem(`${this.storageKey}:open`) === "true",
+      conversation_id: sessionStorage.getItem(`${this.storageKey}:conversation`),
+    });
   },
   updated() {
-    sessionStorage.setItem(`${this.key}:open`, this.el.dataset.open);
-    this.follow();
+    this.syncConversation();
+    sessionStorage.setItem(`${this.storageKey}:open`, this.el.dataset.open);
+    sessionStorage.setItem(`${this.storageKey}:conversation`, this.conversationId);
+    this.followLatest();
   },
-  follow() {
-    if (this.pinned) this.log.scrollTop = this.log.scrollHeight;
+  draftKey(id) {
+    return `${this.storageKey}:${id}:draft`;
+  },
+  syncConversation() {
+    const nextId = this.el.dataset.conversationId;
+    if (nextId === this.conversationId) return;
+    this.storeDraft();
+    this.conversationId = nextId;
+    this.input.value = sessionStorage.getItem(this.draftKey(nextId)) || "";
+    this.followingLatest = true;
+    this.newMessages.hidden = true;
+    const liveText = this.el.querySelector("#assistant-live-text");
+    if (liveText) liveText.textContent = "";
+  },
+  followLatest() {
+    if (this.el.dataset.historyOpen === "true") {
+      this.newMessages.hidden = true;
+      return;
+    }
+    if (this.followingLatest) this.messageList.scrollTop = this.messageList.scrollHeight;
     else if (this.el.dataset.open === "true") this.newMessages.hidden = false;
   },
   destroyed() {
-    this.input.removeEventListener("input", this.onInput);
-    this.log.removeEventListener("scroll", this.onScroll);
+    this.input.removeEventListener("input", this.storeDraft);
+    this.messageList.removeEventListener("scroll", this.onScroll);
     this.el.removeEventListener("keydown", this.onKey);
-    this.newMessages.removeEventListener("click", this.toLatest);
+    this.el.removeEventListener("assistant-restart", this.onRestart);
+    this.newMessages.removeEventListener("click", this.scrollToLatest);
     window.visualViewport?.removeEventListener("resize", this.updateViewportInset);
     this.contentObserver.disconnect();
     this.consentObserver.disconnect();
