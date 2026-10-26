@@ -2,10 +2,13 @@ defmodule FirmowidWeb.Invoicing.CostInvoices.Views.Show do
   @moduledoc false
   use FirmowidWeb, :live_view
 
+  alias Ash.Notifier.Notification
   alias Firmowid.Ash.Invoicing
   alias Firmowid.Ash.Invoicing.CostInvoice
   alias Firmowid.Ash.Invoicing.InvoiceMatching
+  alias FirmowidWeb.Core.Endpoint
   alias FirmowidWeb.Invoicing.Utilities.Navigation
+  alias Phoenix.Socket.Broadcast
 
   @detail_loads [
     :invoice_source,
@@ -34,6 +37,9 @@ defmodule FirmowidWeb.Invoicing.CostInvoices.Views.Show do
     cost_invoice = CostInvoice.by_id!(id, load: @detail_loads, scope: scope)
 
     if is_nil(cost_invoice.original_invoice) do
+      if connected?(socket),
+        do: Endpoint.subscribe("cost_invoice:updated:#{current_user.member.organization_id}")
+
       cost_invoice = Invoicing.hydrate_invoice_with_fa3_blob(cost_invoice)
 
       potential_transactions =
@@ -156,6 +162,19 @@ defmodule FirmowidWeb.Invoicing.CostInvoices.Views.Show do
   end
 
   @impl true
+  def handle_info(
+        %Broadcast{payload: %Notification{resource: CostInvoice, data: %{id: id}, action: %{name: action}}},
+        %{assigns: %{invoice: %{id: id}}} = socket
+      )
+      when action in [:connect_transactions, :disconnect_transactions, :disconnect_all_transactions] do
+    invoice = CostInvoice.by_id!(id, load: @detail_loads, scope: socket.assigns.ash_scope)
+
+    potential_transactions =
+      InvoiceMatching.get_potential_transactions_for_invoice(invoice, socket.assigns.ash_scope)
+
+    {:noreply, assign(socket, invoice: invoice, potential_transactions: potential_transactions)}
+  end
+
   def handle_info(event, socket) do
     _ = event
     {:noreply, socket}

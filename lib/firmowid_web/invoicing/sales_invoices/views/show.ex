@@ -2,12 +2,15 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Show do
   @moduledoc false
   use FirmowidWeb, :live_view
 
+  alias Ash.Notifier.Notification
   alias Firmowid.Ash.Invoicing
   alias Firmowid.Ash.Invoicing.InvoiceMatching
   alias Firmowid.Ash.Invoicing.SalesInvoice
   alias Firmowid.Ash.Invoicing.Services.SalesInvoiceSharing
   alias Firmowid.Ash.Ksef
+  alias FirmowidWeb.Core.Endpoint
   alias FirmowidWeb.Invoicing.Utilities.Navigation
+  alias Phoenix.Socket.Broadcast
 
   @item_calcs [:net_value, :vat_value, :gross_value]
   @detail_loads [
@@ -63,6 +66,9 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Show do
 
       # Subscribe to KSeF status updates for live feedback
       Ksef.subscribe_ksef_status(current_user.member.organization_id)
+
+      if connected?(socket),
+        do: Endpoint.subscribe("sales_invoice:updated:#{current_user.member.organization_id}")
 
       socket =
         socket
@@ -217,6 +223,19 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Show do
   end
 
   @impl true
+  def handle_info(
+        %Broadcast{payload: %Notification{resource: SalesInvoice, data: %{id: id}, action: %{name: action}}},
+        %{assigns: %{invoice: %{id: id}}} = socket
+      )
+      when action in [:connect_transactions, :disconnect_transactions, :disconnect_all_transactions] do
+    invoice = refresh_invoice(id, socket.assigns.ash_scope)
+
+    potential_transactions =
+      InvoiceMatching.get_potential_transactions_for_invoice(invoice, socket.assigns.ash_scope)
+
+    {:noreply, assign(socket, invoice: invoice, potential_transactions: potential_transactions)}
+  end
+
   def handle_info({:ksef_invoice_status, %{invoice_id: invoice_id, status: status}}, socket) do
     # Handle KSeF submission status updates
     if socket.assigns.invoice.id == invoice_id do

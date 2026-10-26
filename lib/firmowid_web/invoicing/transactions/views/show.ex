@@ -7,6 +7,7 @@ defmodule FirmowidWeb.Invoicing.Transactions.Views.Show do
 
   import FirmowidWeb.Infrastructure.Flags, only: [flag_enabled?: 2]
 
+  alias Ash.Notifier.Notification
   alias Firmowid.Ash.Finances
   alias Firmowid.Ash.Finances.Transaction
   alias Firmowid.Ash.Invoicing
@@ -14,10 +15,12 @@ defmodule FirmowidWeb.Invoicing.Transactions.Views.Show do
   alias Firmowid.Ash.Invoicing.InvoiceMatching
   alias Firmowid.Ash.Invoicing.SalesInvoice
   alias Firmowid.Ash.Payroll
+  alias FirmowidWeb.Core.Endpoint
   alias FirmowidWeb.Invoicing.Components.InvoiceDetails
   alias FirmowidWeb.Invoicing.Transactions.Components.SalaryComponents
   alias FirmowidWeb.Invoicing.Transactions.Components.ShowComponents
   alias FirmowidWeb.Invoicing.Utilities.Navigation
+  alias Phoenix.Socket.Broadcast
 
   @transaction_loads [
     :bank_account,
@@ -44,6 +47,13 @@ defmodule FirmowidWeb.Invoicing.Transactions.Views.Show do
 
   @impl true
   def mount(_params, _session, socket) do
+    if connected?(socket) do
+      organization_id = socket.assigns.current_org.id
+      Endpoint.subscribe("transaction:updated:#{organization_id}")
+      Endpoint.subscribe("sales_invoice:updated:#{organization_id}")
+      Endpoint.subscribe("cost_invoice:updated:#{organization_id}")
+    end
+
     {:ok,
      socket
      |> assign(:no_padding, true)
@@ -218,6 +228,26 @@ defmodule FirmowidWeb.Invoicing.Transactions.Views.Show do
          )}
     end
   end
+
+  @impl true
+  def handle_info(
+        %Broadcast{payload: %Notification{resource: Transaction, data: %{id: id}}},
+        %{assigns: %{transaction: %{id: id}}} = socket
+      ) do
+    {:noreply, assign_transaction(socket, reload_transaction(id, socket.assigns.ash_scope))}
+  end
+
+  def handle_info(%Broadcast{payload: %Notification{resource: resource, action: %{name: action}}}, socket)
+      when resource in [SalesInvoice, CostInvoice] and
+             action in [:connect_transactions, :disconnect_transactions, :disconnect_all_transactions] do
+    {:noreply,
+     assign_transaction(
+       socket,
+       reload_transaction(socket.assigns.transaction.id, socket.assigns.ash_scope)
+     )}
+  end
+
+  def handle_info(%Broadcast{}, socket), do: {:noreply, socket}
 
   defp connect_invoice_transaction(%CostInvoice{} = invoice, transaction_id, scope) do
     Invoicing.connect_cost_invoice_transactions(invoice, [transaction_id], scope: scope)

@@ -143,13 +143,6 @@ config :firmowid, Oban,
 
 # Packmatic URL source - increase connect timeout for batch downloads
 config :firmowid, Packmatic.Source.URL, timeout: 30_000
-
-config :firmowid, :assistant_model, %{
-  provider: :openai,
-  id: "gpt-6-luna",
-  extra: %{wire: %{protocol: "openai_responses"}, temperature: false}
-}
-
 config :firmowid, :environment, config_env()
 config :firmowid, :gotenberg, base_url: "http://localhost:3000"
 

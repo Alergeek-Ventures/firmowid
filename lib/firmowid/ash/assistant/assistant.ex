@@ -4,10 +4,16 @@ defmodule Firmowid.Ash.Assistant do
 
   resources do
     resource Firmowid.Ash.Assistant.Conversation do
-      define :get_or_create_conversation, action: :get_or_create
+      define :start_conversation, action: :start
+      define :start_subject_conversation, action: :for_subject
       define :get_conversation, action: :read, get_by: [:id]
+      define :list_conversations, action: :list
       define :send_message, action: :send_message
       define :respond_to_plan, action: :respond_to_plan
+    end
+
+    resource Firmowid.Ash.Assistant.Message do
+      define :list_messages, action: :list
     end
   end
 
@@ -16,13 +22,11 @@ defmodule Firmowid.Ash.Assistant do
     require_actor? true
   end
 
-  @doc "Returns the unanswered calls from the canonical pending assistant turn."
+  @doc "Returns unanswered calls from an awaiting session with its ordered messages loaded."
   @spec pending_calls(map()) :: [map()]
-  def pending_calls(%{status: :awaiting_approval, transcript: transcript}) do
-    transcript
-    |> List.last()
-    |> Map.fetch!("parts")
-    |> AshAi.Transcript.pending_tool_calls()
+  def pending_calls(%{status: :awaiting_approval, messages: messages}) do
+    messages
+    |> Firmowid.Ash.Assistant.Transcript.pending_calls()
     |> Enum.map(&Map.take(&1, ["id", "name", "arguments"]))
   end
 
