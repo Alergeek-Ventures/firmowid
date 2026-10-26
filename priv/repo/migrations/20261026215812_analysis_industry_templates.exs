@@ -39,17 +39,9 @@ defmodule Firmowid.Repo.Migrations.AnalysisIndustryTemplates do
              [:organization_id, :side, :counterparty_key],
              name: "analysis_counterparty_categories_unique_counterparty_index"
            )
-
-    alter table(:organizations) do
-      add :analysis_industry, :text
-    end
   end
 
   def down do
-    alter table(:organizations) do
-      remove :analysis_industry
-    end
-
     drop constraint(
            :analysis_counterparty_categories,
            "analysis_counterparty_categories_organization_id_fkey"

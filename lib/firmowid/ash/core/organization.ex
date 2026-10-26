@@ -14,7 +14,6 @@ defmodule Firmowid.Ash.Core.Organization do
   alias Firmowid.Ash.Billing.PlanCatalog
   alias Firmowid.Ash.Blobs.Blob
   alias Firmowid.Ash.Checks.ActorRole
-  alias Firmowid.Ash.Checks.AtLeastRole
   alias Firmowid.Ash.Checks.SystemActorRole
   alias Firmowid.Ash.Core.Changes.CleanupOldAvatarBlob
   alias Firmowid.Ash.Core.Changes.ClearVatExemptionFields
@@ -56,7 +55,6 @@ defmodule Firmowid.Ash.Core.Organization do
   code_interface do
     define :destroy, action: :destroy
     define :update_tax_forecast_settings, action: :update_tax_forecast_settings
-    define :update_analysis_industry, args: [:analysis_industry]
   end
 
   actions do
@@ -155,11 +153,6 @@ defmodule Firmowid.Ash.Core.Organization do
     update :update_tax_forecast_settings do
       description "Set the explicit organization-wide income reserve rate and invoice planning cost assumption."
       accept [:tax_forecast_settings]
-    end
-
-    update :update_analysis_industry do
-      description "Set the industry whose template shapes the financial analysis."
-      accept [:analysis_industry]
     end
 
     update :update_billing_plan do
@@ -271,10 +264,6 @@ defmodule Firmowid.Ash.Core.Organization do
       authorize_if expr(id == ^actor([:member, :organization_id]))
     end
 
-    policy [action(:update_analysis_industry), {AtLeastRole, role: :accountant}] do
-      authorize_if expr(id == ^actor([:member, :organization_id]))
-    end
-
     policy action(:update_billing_plan) do
       authorize_if actor_attribute_equals(:system_role, :superuser)
     end
@@ -300,11 +289,6 @@ defmodule Firmowid.Ash.Core.Organization do
     attribute :correspondence_address, :string, public?: true
     attribute :is_vat_payer, :boolean, public?: true, default: true
     attribute :tax_forecast_settings, TaxForecastSettings, public?: true
-
-    attribute :analysis_industry, :atom,
-      public?: true,
-      constraints: [one_of: Firmowid.Ash.Analysis.IndustryTemplate.industries()]
-
     attribute :allowed_sender_emails, {:array, :string}, public?: true, default: []
     attribute :inbound_email_nickname, :string, public?: true, allow_nil?: false
     attribute :avatar_blob_id, :uuid, public?: true

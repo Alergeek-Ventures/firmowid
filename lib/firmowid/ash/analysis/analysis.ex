@@ -240,13 +240,12 @@ defmodule Firmowid.Ash.Analysis do
   Classifies a year's analysis entries into the categories of an industry template.
 
   Uses the same entries and PLN amounts as the totals, without internal ones,
-  together with the owner's confirmed counterparty categories. Without an
-  `industry` it is inferred from the counterparties; the result's `:industry`
-  is the one used and `:inferred?` tells whether it was inferred.
+  together with the owner's confirmed counterparty categories. The industry is
+  inferred from the counterparties and returned as `:industry`.
   See `CategoryReview.build/3` for the rest of the result.
   """
-  @spec get_category_review(integer(), IndustryTemplate.industry() | nil, Scope.t()) :: map()
-  def get_category_review(year, industry, scope) do
+  @spec get_category_review(integer(), Scope.t()) :: map()
+  def get_category_review(year, scope) do
     entries = get_organization_entries(Date.new!(year, 1, 1), Date.new!(year, 12, 31), scope)
     today = Date.utc_today()
 
@@ -267,14 +266,11 @@ defmodule Firmowid.Ash.Analysis do
         end
       end)
 
-    inferred? = industry == nil
-
-    industry =
-      industry || IndustryTemplate.infer(Enum.map(rows, &{&1.side, &1.name, &1.amount}))
+    industry = IndustryTemplate.infer(Enum.map(rows, &{&1.side, &1.name, &1.amount}))
 
     rows
     |> CategoryReview.build(CounterpartyCategory.list!(scope: scope), industry)
-    |> Map.merge(%{industry: industry, inferred?: inferred?})
+    |> Map.put(:industry, industry)
   end
 
   defp counterparty_name(%CostInvoice{} = invoice), do: invoice.effective_seller_display_name || "?"
