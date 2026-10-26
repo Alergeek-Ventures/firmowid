@@ -182,11 +182,19 @@ defmodule Firmowid.Ash.Analysis do
   zero PLN months and empty original-currency maps. No original currencies
   are added together. Entities without an effective amount remain omitted.
 
+  Without tag filters each month also has `:unpaid`: positive PLN sums of the
+  month's unpaid invoices (`:income` from confirmed sales invoices, `:expenses`
+  from cost invoices, by sale date), which the totals omit. Unpaid invoices
+  carry no categories, so with tag filters `:unpaid` is `nil`.
+
   This orchestration expects an authorized scope, like the monthly helper.
   Request callers must use `YearSummary.get/3` for authorization and input validation.
   """
   @spec get_organization_yearly_totals(integer(), keyword(), Scope.t()) :: map()
   def get_organization_yearly_totals(year, opts \\ [], scope) do
+    tag_filters = Keyword.get(opts, :tag_filters, [])
+    unpaid = if tag_filters == [], do: unpaid_invoices_by_month(year, scope)
+
     months =
       Enum.map(1..12, fn number ->
         month = Date.new!(year, number, 1)
@@ -195,7 +203,10 @@ defmodule Firmowid.Ash.Analysis do
         %{
           month: month,
           totals: Map.drop(totals, [:sales_invoices, :cost_invoices, :transactions]),
-          totals_by_currency: original_currency_totals(totals, Keyword.get(opts, :tag_filters, []))
+          totals_by_currency: original_currency_totals(totals, tag_filters),
+          unpaid:
+            unpaid &&
+              Map.new(unpaid, fn {side, sums} -> {side, Map.get(sums, month, Decimal.new(0))} end)
         }
       end)
 
@@ -218,6 +229,22 @@ defmodule Firmowid.Ash.Analysis do
            |> CategoryTotals.combine()}
         end)
     }
+  end
+
+  defp unpaid_invoices_by_month(year, scope) do
+    unrealized = get_unrealized_entries(Date.new!(year, 1, 1), Date.new!(year, 12, 31), scope)
+
+    %{
+      income: unpaid_invoice_sums(unrealized.income_entries),
+      expenses: unpaid_invoice_sums(unrealized.expense_entries)
+    }
+  end
+
+  defp unpaid_invoice_sums(entries) do
+    entries
+    |> Enum.reject(&match?(%Transaction{}, &1))
+    |> Enum.group_by(&Date.beginning_of_month(&1.sale_date))
+    |> Map.new(fn {month, invoices} -> {month, unrealized_sum(invoices)} end)
   end
 
   defp original_currency_totals(entries, filters) do
