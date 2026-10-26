@@ -2,12 +2,11 @@ defmodule FirmowidWeb.Analysis.Components.CategoryReview do
   @moduledoc """
   Owner session classifying a year's counterparties into industry template categories.
 
-  A toolbar states how many counterparties are confirmed and accepts every
-  suggestion at once. Costs and income are two ledger panels split into
-  categories; each counterparty row can be confirmed or moved to another
-  category from its menu. Sends `set-industry`, `confirm-suggestions`,
-  `confirm-group` (with `side` and `category`) and `confirm-category` (with
-  `side`, `key` and `category`).
+  Costs and income are two columns of categories, each listing its
+  counterparties. A counterparty row opens the categories to confirm or move
+  it to; one button accepts every remaining suggestion. The industry is
+  inferred, never chosen here. Sends `confirm-suggestions` and
+  `confirm-category` (with `side`, `key` and `category`).
   """
   use FirmowidWeb, :html
 
@@ -17,7 +16,7 @@ defmodule FirmowidWeb.Analysis.Components.CategoryReview do
   attr :review, :map, required: true, doc: "`Firmowid.Ash.Analysis.get_category_review/3` result"
   attr :year, :integer, required: true
 
-  @doc "Renders the session toolbar and the cost and income ledgers."
+  @doc "Renders the bulk confirmation and the cost and income columns."
   @spec review(map()) :: Phoenix.LiveView.Rendered.t()
   def review(assigns) do
     groups = assigns.review.groups
@@ -34,53 +33,12 @@ defmodule FirmowidWeb.Analysis.Components.CategoryReview do
       |> assign(:income, ledger(groups, :income))
 
     ~H"""
-    <div id="analysis-category-review" class="@container flex flex-col gap-6">
-      <div class="flex flex-wrap items-end justify-between gap-4">
-        <div class="flex max-w-md flex-col gap-1 text-sm text-grey-700">
-          <p id="analysis-category-status" class="font-medium text-grey-900">
-            {gettext("%{confirmed} of %{total} counterparties confirmed",
-              confirmed: @confirmed,
-              total: @total
-            )}
+    <div id="analysis-category-review" class="@container flex flex-col gap-10">
+      <div class="flex flex-wrap items-center justify-end gap-4">
+        <div class="flex flex-wrap items-center gap-4">
+          <p id="analysis-category-status" class="text-sm text-grey-700">
+            {gettext("%{confirmed} of %{total} confirmed", confirmed: @confirmed, total: @total)}
           </p>
-          <p :if={@suggested > 0}>
-            {gettext(
-              "The rest have suggestions from invoice lines, transfer titles and known names. Confirm them all or correct single rows."
-            )}
-          </p>
-          <p :if={@review.accuracy.total > 0} id="analysis-category-accuracy">
-            {gettext("%{accepted} of %{total} suggestions accepted unchanged.",
-              accepted: @review.accuracy.accepted,
-              total: @review.accuracy.total
-            )}
-          </p>
-        </div>
-        <div class="flex flex-wrap items-end gap-3">
-          <form id="analysis-industry" phx-change="set-industry" class="flex flex-col gap-1">
-            <label for="analysis-industry-select" class="text-xs font-medium text-grey-700">
-              {gettext("Industry")}
-              <span
-                :if={@review.inferred?}
-                id="analysis-industry-inferred"
-                class="font-normal text-grey-600"
-              >
-                · {gettext("recognized from counterparties")}
-              </span>
-            </label>
-            <select
-              id="analysis-industry-select"
-              name="industry"
-              class="h-11 rounded-lg border border-grey-200 bg-grey-50 ps-3 pe-9 text-sm text-grey-900"
-            >
-              <option
-                :for={industry <- IndustryTemplate.industries()}
-                value={industry}
-                selected={industry == @review.industry}
-              >
-                {industry_label(industry)}
-              </option>
-            </select>
-          </form>
           <FirmowidUI.Components.Button.button
             :if={@suggested > 0}
             id="analysis-confirm-suggestions"
@@ -89,11 +47,11 @@ defmodule FirmowidWeb.Analysis.Components.CategoryReview do
             phx-click="confirm-suggestions"
             phx-disable-with={gettext("Saving…")}
           >
-            {gettext("Accept all suggestions (%{count})", count: @suggested)}
+            {gettext("Accept suggestions")}
           </FirmowidUI.Components.Button.button>
         </div>
       </div>
-      <div class="grid grid-cols-[minmax(0,1fr)] gap-6 @5xl:grid-cols-2">
+      <div class="grid grid-cols-[minmax(0,1fr)] gap-x-16 gap-y-12 @5xl:grid-cols-2">
         <.ledger
           id="analysis-expense-categories"
           title={gettext("Costs")}
@@ -129,59 +87,34 @@ defmodule FirmowidWeb.Analysis.Components.CategoryReview do
       :if={@ledger.categories != []}
       id={@id}
       aria-labelledby={"#{@id}-title"}
-      class="flex min-w-0 flex-col self-start rounded-md border border-grey-200 bg-white"
+      class="flex min-w-0 flex-col gap-8"
     >
-      <header class="flex items-baseline justify-between gap-3 border-be border-grey-200 px-4 py-3">
-        <h2 id={"#{@id}-title"} class="text-lg font-semibold text-grey-900">{@title}</h2>
-        <span class="text-lg font-semibold text-grey-900 tabular-nums">{money(@ledger.total)}</span>
+      <header class="flex items-baseline justify-between gap-3">
+        <h2 id={"#{@id}-title"} class="text-2xl font-semibold text-grey-900">{@title}</h2>
+        <span class="text-2xl font-semibold text-grey-900 tabular-nums">{whole_money(@ledger.total)}</span>
       </header>
       <div
         :for={category <- @ledger.categories}
         id={"#{@id}-#{category.key || "unassigned"}"}
-        class="flex flex-col gap-2 border-be border-grey-200 py-3 last:border-be-0"
+        class="flex flex-col gap-1"
       >
-        <div class="flex items-baseline justify-between gap-3 px-4">
+        <div class="flex items-baseline justify-between gap-3">
           <h3 class="min-w-0 truncate text-sm font-semibold text-grey-900">
             {if category.key, do: category_label(category.key), else: gettext("Needs your choice")}
           </h3>
-          <span class="shrink-0 text-sm font-semibold text-grey-900 tabular-nums">
-            {money(category.amount)}
-            <span class="ps-1 text-xs font-medium text-grey-600">
-              {share_caption(category.amount, @ledger.total, @revenue)}
-            </span>
+          <span class="shrink-0 text-sm text-grey-700 tabular-nums">
+            {share_caption(category.amount, @ledger.total, @revenue)}
           </span>
         </div>
-        <div class="mx-4 h-1 rounded-full bg-grey-100" aria-hidden="true">
+        <div class="mb-1 h-1 rounded-full bg-grey-200" aria-hidden="true">
           <div
             class={bar_styles(@ledger.side)}
             style={"inline-size: #{share_percent(category.amount, @ledger.total)}%"}
           />
         </div>
-        <ul class="flex flex-col px-2">
-          <.counterparty
-            :for={group <- category.groups}
-            group={group}
-            industry={@industry}
-          />
+        <ul class="-mx-2 flex flex-col">
+          <.counterparty :for={group <- category.groups} group={group} industry={@industry} />
         </ul>
-        <div :if={category.key && category.to_confirm > 0} class="px-4">
-          <FirmowidUI.Components.Button.button
-            id={"analysis-confirm-group-#{@ledger.side}-#{category.key}"}
-            type="button"
-            variant="secondary"
-            size="small"
-            accent={accent(@ledger.side)}
-            phx-click="confirm-group"
-            phx-value-side={@ledger.side}
-            phx-value-category={category.key}
-          >
-            {ngettext(
-              "Confirm %{count} suggestion",
-              "Confirm %{count} suggestions",
-              category.to_confirm
-            )}
-          </FirmowidUI.Components.Button.button>
-        </div>
       </div>
     </section>
     """
@@ -190,6 +123,7 @@ defmodule FirmowidWeb.Analysis.Components.CategoryReview do
   attr :group, :map, required: true
   attr :industry, :atom, required: true
 
+  # The whole row opens the categories; the chosen one is confirmed right away.
   defp counterparty(assigns) do
     assigns =
       assign(
@@ -199,56 +133,55 @@ defmodule FirmowidWeb.Analysis.Components.CategoryReview do
       )
 
     ~H"""
-    <li
-      id={@id}
-      class="flex items-center gap-2 rounded-md px-2 py-1 min-block-11 pointer-fine:hover:bg-grey-50"
-    >
-      <div class="flex min-w-0 flex-1 flex-col">
-        <span class="truncate text-sm text-grey-900">{@group.name}</span>
-        <span class="truncate text-xs text-grey-600">{reason(@group)}</span>
-      </div>
-      <span class="shrink-0 text-sm text-grey-700 tabular-nums">{whole_money(@group.amount)}</span>
-      <span class="flex size-8 shrink-0 items-center justify-center">
+    <li>
+      <FirmowidUI.Components.Button.button
+        id={"#{@id}-trigger"}
+        type="button"
+        variant="unstyled"
+        aria-haspopup="dialog"
+        phx-click={show_popover("#{@id}-menu")}
+        class="flex w-full cursor-pointer items-center gap-2 rounded-md px-2 text-start text-sm min-block-9 active:bg-grey-200 pointer-fine:hover:bg-white"
+      >
+        <span class={name_styles(@group.status)}>{@group.name}</span>
         <Lucideicons.check
           :if={@group.status == :confirmed}
-          class="size-4 text-moss-700"
+          class="size-4 shrink-0 text-moss-700"
           aria-label={gettext("Confirmed")}
         />
-        <.icon_button
-          :if={@group.status != :confirmed and @group.suggestion != nil}
-          id={"#{@id}-confirm"}
-          variant="outline"
-          label={gettext("Confirm %{category}", category: category_label(@group.suggestion))}
-          phx-click="confirm-category"
-          phx-value-side={@group.side}
-          phx-value-key={@group.key}
-          phx-value-category={@group.suggestion}
-        >
-          <Lucideicons.check />
-        </.icon_button>
-      </span>
-      <.menu id={"#{@id}-menu"} label={gettext("Move %{name} to another category", name: @group.name)}>
-        <.menu_item
-          :for={category <- category_options(@industry, @group)}
-          phx-click="confirm-category"
-          phx-value-side={@group.side}
-          phx-value-key={@group.key}
-          phx-value-category={category}
-          aria-current={to_string(category == @group.category)}
-        >
-          <span class="flex-1">{category_label(category)}</span>
-          <Lucideicons.check :if={category == @group.category} class="size-4" />
-        </.menu_item>
-      </.menu>
+        <span class="ms-auto shrink-0 text-grey-700 tabular-nums">{whole_money(@group.amount)}</span>
+      </FirmowidUI.Components.Button.button>
+      <.popover id={"#{@id}-menu"} reference_id={"#{@id}-trigger"} placement="bottom-end">
+        <div class="flex w-72 flex-col gap-1 rounded-lg bg-white p-1 shadow-lg ring-1 ring-grey-700/10">
+          <p class="px-3 pt-2 pb-1 text-xs text-grey-600">{reason(@group)}</p>
+          <FirmowidUI.Components.Button.button
+            :for={category <- category_options(@industry, @group)}
+            type="button"
+            variant="unstyled"
+            phx-click={
+              JS.push("confirm-category",
+                value: %{side: @group.side, key: @group.key, category: category}
+              )
+              |> hide_popover("#{@id}-menu")
+            }
+            class="flex cursor-pointer items-center justify-between gap-2 rounded-md px-3 text-start text-sm text-grey-900 min-block-9 active:bg-grey-200 pointer-fine:hover:bg-grey-100"
+          >
+            {category_label(category)}
+            <Lucideicons.check
+              :if={category == (@group.category || @group.suggestion)}
+              class="size-4"
+            />
+          </FirmowidUI.Components.Button.button>
+        </div>
+      </.popover>
     </li>
     """
   end
 
+  defp name_styles(:confirmed), do: "min-w-0 truncate text-grey-900"
+  defp name_styles(_status), do: "min-w-0 truncate text-grey-700"
+
   defp bar_styles(:expenses), do: "h-full rounded-full bg-rust-500"
   defp bar_styles(:income), do: "h-full rounded-full bg-teal-500"
-
-  defp accent(:expenses), do: "rust"
-  defp accent(:income), do: "teal"
 
   # Counterparties sit under their confirmed category, else under the suggestion.
   defp ledger(groups, side) do
@@ -258,32 +191,27 @@ defmodule FirmowidWeb.Analysis.Components.CategoryReview do
     categories =
       placed
       |> Enum.group_by(&(&1.category || &1.suggestion))
-      |> Enum.map(fn {key, groups} -> category(key, groups) end)
+      |> Enum.map(fn {key, groups} -> %{key: key, groups: groups, amount: sum(groups)} end)
       |> Enum.sort_by(& &1.amount, {:desc, Decimal})
 
-    %{
-      side: side,
-      total: sum(groups),
-      categories: if(unplaced == [], do: categories, else: [category(nil, unplaced) | categories])
-    }
-  end
+    unassigned =
+      if unplaced == [], do: [], else: [%{key: nil, groups: unplaced, amount: sum(unplaced)}]
 
-  defp category(key, groups) do
-    %{
-      key: key,
-      groups: groups,
-      amount: sum(groups),
-      to_confirm: Enum.count(groups, &(&1.status != :confirmed))
-    }
+    %{side: side, total: sum(groups), categories: unassigned ++ categories}
   end
 
   defp share_caption(amount, _total, revenue) when revenue != nil do
     if Decimal.positive?(revenue),
-      do: gettext("%{share} of income", share: ratio(amount, revenue)),
-      else: ""
+      do:
+        gettext("%{amount} · %{share} of income",
+          amount: whole_money(amount),
+          share: ratio(amount, revenue)
+        ),
+      else: whole_money(amount)
   end
 
-  defp share_caption(amount, total, nil), do: ratio(amount, total)
+  defp share_caption(amount, total, nil),
+    do: gettext("%{amount} · %{share}", amount: whole_money(amount), share: ratio(amount, total))
 
   defp reason(%{status: :confirmed}), do: gettext("Your choice")
 
@@ -306,8 +234,6 @@ defmodule FirmowidWeb.Analysis.Components.CategoryReview do
 
   defp sum(rows), do: Enum.reduce(rows, Decimal.new(0), &Decimal.add(&1.amount, &2))
 
-  defp money(amount), do: Money.new(:PLN, Decimal.round(amount, 2))
-
   defp whole_money(amount), do: Number.to_string!(amount, currency: :PLN, fractional_digits: 0)
 
   defp share_percent(amount, total) do
@@ -326,10 +252,6 @@ defmodule FirmowidWeb.Analysis.Components.CategoryReview do
       do: amount |> Decimal.div(total) |> Number.to_string!(format: :percent),
       else: ""
   end
-
-  defp industry_label(:services), do: gettext("Services (e.g. software house, agency)")
-  defp industry_label(:gastronomy), do: gettext("Food service (e.g. café, restaurant)")
-  defp industry_label(:retail), do: gettext("Retail (e.g. shop, florist)")
 
   defp category_label(:goods), do: gettext("Goods and supplies")
   defp category_label(:subcontractors), do: gettext("Subcontractors")

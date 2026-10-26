@@ -20,7 +20,6 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
   alias Firmowid.Ash.Analysis.TagDefinition
   alias Firmowid.Ash.Analysis.TaxForecast
   alias Firmowid.Ash.Analysis.YearSummary
-  alias Firmowid.Ash.Core.Organization
   alias Firmowid.Ash.Finances.Transaction
   alias Firmowid.Ash.Invoicing.CostInvoice
   alias Firmowid.Ash.Invoicing.SalesInvoice
@@ -50,7 +49,6 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
         |> assign(:tag_definitions, tag_definitions)
         |> assign(:category_colors, CategoryColors.for_definitions(tag_definitions))
         |> assign(:expanded_section, :income)
-        |> assign(:industry, socket.assigns.current_org.analysis_industry)
         |> assign(
           :tax_forecast_settings_path,
           tax_forecast_settings_path(socket.assigns.current_org, scope)
@@ -109,22 +107,6 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
   end
 
   @impl true
-  def handle_event("set-industry", %{"industry" => industry}, socket) do
-    industry = Enum.find(IndustryTemplate.industries(), &(Atom.to_string(&1) == industry))
-
-    with true <- can_categorize?(socket.assigns) and industry != nil,
-         {:ok, org} <-
-           Organization.update_analysis_industry(socket.assigns.current_org, industry, scope: socket.assigns.ash_scope) do
-      {:noreply,
-       socket
-       |> assign(:current_org, org)
-       |> assign(:industry, org.analysis_industry)
-       |> load_review()}
-    else
-      _ -> {:noreply, put_flash(socket, :error, gettext("Could not update categories."))}
-    end
-  end
-
   def handle_event("confirm-category", %{"key" => key, "side" => side} = params, socket) do
     group =
       Enum.find(
@@ -142,19 +124,6 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
     if category,
       do: confirm_categories(socket, [{group, category}]),
       else: {:noreply, socket}
-  end
-
-  def handle_event("confirm-group", %{"side" => side, "category" => category}, socket) do
-    confirm_categories(
-      socket,
-      for(
-        group <- review_groups(socket.assigns),
-        Atom.to_string(group.side) == side,
-        group.status != :confirmed,
-        Atom.to_string(group.suggestion || :none) == category,
-        do: {group, group.suggestion}
-      )
-    )
   end
 
   def handle_event("confirm-suggestions", _params, socket) do
@@ -423,11 +392,7 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
     assign(
       socket,
       :review,
-      Analysis.get_category_review(
-        socket.assigns.params.year,
-        socket.assigns.industry,
-        socket.assigns.ash_scope
-      )
+      Analysis.get_category_review(socket.assigns.params.year, socket.assigns.ash_scope)
     )
   end
 
