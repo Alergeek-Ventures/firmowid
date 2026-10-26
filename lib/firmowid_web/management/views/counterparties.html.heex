@@ -1,5 +1,5 @@
 <div :if={not @zero_state?} class="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-6 pb-4">
-  <div class="sticky top-10.5 z-10 flex flex-col gap-6 bg-grey-100 py-4">
+  <div class="sticky top-10.5 z-10 flex flex-col gap-6 bg-grey-100 py-4 max-md:static">
     <div class="flex items-center justify-between gap-4 max-md:flex-wrap">
       <form class="flex gap-4 max-md:w-full" phx-submit="search">
         <div class="flex h-11 w-[360px] items-center gap-2 rounded-lg border border-grey-200 bg-grey-100 p-1 focus-within:ring-2 max-md:w-full">
@@ -123,7 +123,7 @@
       >
         <div
           id="counterparties-list-header-active"
-          class="sticky top-41 z-1 col-span-full grid grid-cols-subgrid bg-grey-100 px-4 pb-3 text-sm/snug text-grey-700 transition-all duration-75"
+          class="sticky top-41 z-1 col-span-full grid grid-cols-subgrid bg-grey-100 px-4 pb-3 text-sm/snug text-grey-700 transition-all duration-75 max-md:static"
           phx-hook="ScrollStyle"
           data-classes="border-b-4 border-solid border-grey-700/40 pt-3"
           data-scroll-offset="90"
@@ -196,7 +196,7 @@
       >
         <div
           id="counterparties-list-header-archive"
-          class="sticky top-41 z-1 col-span-full grid grid-cols-subgrid bg-grey-100 px-4 pb-3 text-sm/snug text-grey-700 transition-all duration-75"
+          class="sticky top-41 z-1 col-span-full grid grid-cols-subgrid bg-grey-100 px-4 pb-3 text-sm/snug text-grey-700 transition-all duration-75 max-md:static"
           phx-hook="ScrollStyle"
           data-classes="border-b-4 border-solid border-grey-700/40 pt-3"
           data-scroll-offset="90"
