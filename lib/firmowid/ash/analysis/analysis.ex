@@ -9,9 +9,12 @@ defmodule Firmowid.Ash.Analysis do
   """
   use Ash.Domain, extensions: [AshAi]
 
+  alias Firmowid.Ash.Analysis.CategoryReview
   alias Firmowid.Ash.Analysis.CategoryTotals
+  alias Firmowid.Ash.Analysis.CounterpartyCategory
   alias Firmowid.Ash.Analysis.EntityTag
   alias Firmowid.Ash.Analysis.Entry
+  alias Firmowid.Ash.Analysis.IndustryTemplate
   alias Firmowid.Ash.Analysis.TagDefinition
   alias Firmowid.Ash.Analysis.TaxForecast
   alias Firmowid.Ash.Analysis.YearSummary
@@ -81,6 +84,8 @@ defmodule Firmowid.Ash.Analysis do
 
   resources do
     resource TagDefinition
+
+    resource CounterpartyCategory
 
     resource EntityTag
 
@@ -229,6 +234,82 @@ defmodule Firmowid.Ash.Analysis do
            |> CategoryTotals.combine()}
         end)
     }
+  end
+
+  @doc """
+  Classifies a year's analysis entries into the categories of an industry template.
+
+  Uses the same entries and PLN amounts as the totals, without internal ones,
+  together with the owner's confirmed counterparty categories. Without an
+  `industry` it is inferred from the counterparties; the result's `:industry`
+  is the one used and `:inferred?` tells whether it was inferred.
+  See `CategoryReview.build/3` for the rest of the result.
+  """
+  @spec get_category_review(integer(), IndustryTemplate.industry() | nil, Scope.t()) :: map()
+  def get_category_review(year, industry, scope) do
+    entries = get_organization_entries(Date.new!(year, 1, 1), Date.new!(year, 12, 31), scope)
+    today = Date.utc_today()
+
+    rows =
+      (entries.sales_invoices ++ entries.cost_invoices ++ entries.transactions)
+      |> Enum.reject(&internal?(&1.entity_tags))
+      |> Enum.flat_map(fn entity ->
+        for {amount, tags} <- normalized_entity(entity, today), not Decimal.eq?(amount, 0) do
+          absolute = amount |> Decimal.abs() |> Decimal.round(2)
+
+          %{
+            side: if(Decimal.negative?(amount), do: :expenses, else: :income),
+            name: counterparty_name(entity),
+            amount: absolute,
+            lines: entry_lines(entity, absolute),
+            certain: certain_category(entity, tags, amount)
+          }
+        end
+      end)
+
+    inferred? = industry == nil
+
+    industry =
+      industry || IndustryTemplate.infer(Enum.map(rows, &{&1.side, &1.name, &1.amount}))
+
+    rows
+    |> CategoryReview.build(CounterpartyCategory.list!(scope: scope), industry)
+    |> Map.merge(%{industry: industry, inferred?: inferred?})
+  end
+
+  defp counterparty_name(%CostInvoice{} = invoice), do: invoice.effective_seller_display_name || "?"
+
+  defp counterparty_name(%SalesInvoice{} = invoice), do: invoice.buyer_display_name_label || "?"
+
+  defp counterparty_name(%Transaction{amount: amount} = transaction) do
+    name =
+      if Money.negative?(amount), do: transaction.creditor_name, else: transaction.debtor_name
+
+    name || transaction.remittance_information_unstructured || "?"
+  end
+
+  # Invoice lines, or the whole entry described by its description or transfer title.
+  defp entry_lines(%CostInvoice{items_list: [_ | _] = items}, _amount) do
+    for item <- items, is_binary(item["name"]) do
+      {item["name"], Decimal.mult(decimal(item["quantity"] || 1), decimal(item["price"] || 0))}
+    end
+  end
+
+  defp entry_lines(%CostInvoice{description: description}, amount) when is_binary(description),
+    do: [{description, amount}]
+
+  defp entry_lines(%Transaction{remittance_information_unstructured: title}, amount) when is_binary(title),
+    do: [{title, amount}]
+
+  defp entry_lines(_entity, _amount), do: []
+
+  defp decimal(value) when is_float(value), do: Decimal.from_float(value)
+  defp decimal(value), do: Decimal.new(value)
+
+  defp certain_category(%Transaction{salary_month: %Date{}}, _tags, _amount), do: :payroll
+
+  defp certain_category(_entity, tags, amount) do
+    if Decimal.negative?(amount) and Enum.any?(tags, &(&1.kind == :taxes)), do: :taxes
   end
 
   defp unpaid_invoices_by_month(year, scope) do
