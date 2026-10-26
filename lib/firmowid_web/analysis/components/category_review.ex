@@ -211,7 +211,7 @@ defmodule FirmowidWeb.Analysis.Components.CategoryReview do
         id={@form_id}
         phx-submit="confirm-category"
         phx-change={if @group.status == :confirmed, do: "confirm-category"}
-        class="flex items-center gap-2"
+        class="flex items-center gap-2 @2xl:shrink-0"
       >
         <input type="hidden" name="side" value={@group.side} />
         <input type="hidden" name="key" value={@group.key} />
@@ -222,7 +222,7 @@ defmodule FirmowidWeb.Analysis.Components.CategoryReview do
           id={"#{@form_id}-select"}
           name="category"
           required
-          class="min-w-0 flex-1 rounded-md border border-grey-400 bg-white px-3 text-sm min-block-11 focus-visible:outline-2 focus-visible:outline-teal-700 @2xl:flex-none"
+          class="min-w-0 flex-1 rounded-md border border-grey-400 bg-white px-3 text-sm min-block-11 focus-visible:outline-2 focus-visible:outline-teal-700 @2xl:w-64 @2xl:flex-none"
         >
           <option :if={selected_category(@group) == nil} value="" selected>
             {gettext("Choose a category")}
