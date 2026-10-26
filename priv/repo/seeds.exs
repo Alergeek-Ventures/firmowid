@@ -10,6 +10,7 @@
 #   seeds/timetracker.exs — salaries, time tracking sessions, hours records
 #   seeds/delegations.exs — example business trips and settlement expenses
 #   seeds/voidstack.exs  — VoidStack Labs evil org for authorization testing
+#   seeds/cafe.exs       — Kawiarnia Ziarno: small café with 10 months of unclassified data
 #
 # Run with: mix run priv/repo/seeds.exs
 #
@@ -18,6 +19,7 @@
 
 alias Firmowid.Ash.Core.Organization, as: CoreOrganization
 alias Firmowid.Seeds.Bytecraft
+alias Firmowid.Seeds.Cafe
 alias Firmowid.Seeds.Delegations
 alias Firmowid.Seeds.MonthM0
 alias Firmowid.Seeds.MonthM1
@@ -34,7 +36,7 @@ Logger.configure(level: :info)
 seeds_dir = Path.join(__DIR__, "seeds")
 
 for file <-
-      ~w(helpers bytecraft month_m2 month_m1 month_m0 timetracker salary_matching delegations voidstack) do
+      ~w(helpers bytecraft month_m2 month_m1 month_m0 timetracker salary_matching delegations voidstack cafe) do
   Code.require_file("#{file}.exs", seeds_dir)
 end
 
@@ -63,4 +65,7 @@ else
 
   # — Evil org: VoidStack Labs —
   Voidstack.seed!()
+
+  # — Café: second, non-project business (kira is its admin) —
+  Cafe.seed!()
 end

@@ -13,11 +13,14 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
   import FirmowidWeb.Infrastructure.Flags, only: [flag_enabled?: 2]
 
   alias Firmowid.Ash.Analysis
+  alias Firmowid.Ash.Analysis.CounterpartyCategory
   alias Firmowid.Ash.Analysis.EntityTag
+  alias Firmowid.Ash.Analysis.IndustryTemplate
   alias Firmowid.Ash.Analysis.ProjectProfitability
   alias Firmowid.Ash.Analysis.TagDefinition
   alias Firmowid.Ash.Analysis.TaxForecast
   alias Firmowid.Ash.Analysis.YearSummary
+  alias Firmowid.Ash.Core.Organization
   alias Firmowid.Ash.Finances.Transaction
   alias Firmowid.Ash.Invoicing.CostInvoice
   alias Firmowid.Ash.Invoicing.SalesInvoice
@@ -47,6 +50,7 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
         |> assign(:tag_definitions, tag_definitions)
         |> assign(:category_colors, CategoryColors.for_definitions(tag_definitions))
         |> assign(:expanded_section, :income)
+        |> assign(:industry, socket.assigns.current_org.analysis_industry)
         |> assign(
           :tax_forecast_settings_path,
           tax_forecast_settings_path(socket.assigns.current_org, scope)
@@ -105,6 +109,53 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
   end
 
   @impl true
+  def handle_event("set-industry", %{"industry" => industry}, socket) do
+    industry = Enum.find(IndustryTemplate.industries(), &(Atom.to_string(&1) == industry))
+
+    with true <- can_categorize?(socket.assigns) and industry != nil,
+         {:ok, org} <-
+           Organization.update_analysis_industry(socket.assigns.current_org, industry, scope: socket.assigns.ash_scope) do
+      {:noreply,
+       socket
+       |> assign(:current_org, org)
+       |> assign(:industry, org.analysis_industry)
+       |> load_review()}
+    else
+      _ -> {:noreply, put_flash(socket, :error, gettext("Could not update categories."))}
+    end
+  end
+
+  def handle_event("confirm-category", %{"key" => key, "side" => side} = params, socket) do
+    group =
+      Enum.find(
+        review_groups(socket.assigns),
+        &(&1.key == key and Atom.to_string(&1.side) == side)
+      )
+
+    category =
+      group &&
+        Enum.find(
+          IndustryTemplate.all_categories(group.side),
+          &(Atom.to_string(&1) == params["category"])
+        )
+
+    if category,
+      do: confirm_categories(socket, [{group, category}]),
+      else: {:noreply, socket}
+  end
+
+  def handle_event("confirm-suggestions", _params, socket) do
+    confirm_categories(
+      socket,
+      for(
+        group <- review_groups(socket.assigns),
+        group.status != :confirmed,
+        group.suggestion,
+        do: {group, group.suggestion}
+      )
+    )
+  end
+
   def handle_event("assign-unassigned", _params, socket) do
     if can_write?(socket.assigns) do
       case EntityTag.classify_month(%{month: socket.assigns.params.month},
@@ -238,6 +289,45 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
   # Category changes are confined to tagging, including forged read-only events.
   defp can_write?(assigns), do: assigns.params.view == :tagging and can_tag?(assigns)
 
+  # Category confirmations are confined to the categories view, including forged events.
+  defp can_categorize?(assigns), do: assigns.params.view == :categories and can_tag?(assigns)
+
+  defp review_groups(%{params: %{view: :categories}, review: review} = assigns) do
+    if can_categorize?(assigns), do: review.groups, else: []
+  end
+
+  defp review_groups(_assigns), do: []
+
+  defp confirm_categories(socket, confirmations) do
+    result =
+      Enum.reduce_while(confirmations, :ok, fn {group, category}, :ok ->
+        case CounterpartyCategory.confirm(
+               %{
+                 side: group.side,
+                 counterparty_key: group.key,
+                 counterparty_name: group.name,
+                 category: category,
+                 suggested_category: group.suggestion,
+                 suggestion_source: group.source
+               },
+               scope: socket.assigns.ash_scope
+             ) do
+          {:ok, _rule} -> {:cont, :ok}
+          {:error, error} -> {:halt, {:error, error}}
+        end
+      end)
+
+    socket = load_review(socket)
+
+    case result do
+      :ok ->
+        {:noreply, socket}
+
+      {:error, _} ->
+        {:noreply, put_flash(socket, :error, gettext("Could not update categories."))}
+    end
+  end
+
   defp category_entity_type(%SalesInvoice{}), do: :sales_invoice
   defp category_entity_type(%CostInvoice{}), do: :cost_invoice
   defp category_entity_type(%Transaction{}), do: :transaction
@@ -306,12 +396,26 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
 
   defp load_view(%{assigns: %{params: %{view: :tagging}}} = socket), do: load_month(socket)
 
+  defp load_view(%{assigns: %{params: %{view: :categories}}} = socket), do: load_review(socket)
+
   defp load_view(socket) do
     socket = load_year(socket)
 
     if socket.assigns.params.view == :dashboard and socket.assigns.params.month != nil,
       do: load_month(socket),
       else: assign(socket, :tax_forecast, nil)
+  end
+
+  defp load_review(socket) do
+    assign(
+      socket,
+      :review,
+      Analysis.get_category_review(
+        socket.assigns.params.year,
+        socket.assigns.industry,
+        socket.assigns.ash_scope
+      )
+    )
   end
 
   defp load_month(socket) do
@@ -408,6 +512,8 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
   end
 
   defp view_for(params, :tagging), do: %{view: :tagging, month: selected_month(params)}
+
+  defp view_for(params, :categories), do: %{view: :categories, year: selected_month(params).year}
 
   defp view_for(params, :dashboard), do: %{view: :dashboard, year: selected_month(params).year, month: nil}
 
@@ -523,6 +629,16 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
         </FirmowidUI.Components.Link.link>
         <FirmowidUI.Components.Link.link
           :if={can_tag?(assigns)}
+          id="analysis-categories"
+          kind="unstyled"
+          patch={Navigation.view_path(view_for(@params, :categories), [])}
+          aria-current={if @params.view == :categories, do: "page"}
+          class={tab_styles(@params.view == :categories)}
+        >
+          {pgettext("analysis view", "Categories")}
+        </FirmowidUI.Components.Link.link>
+        <FirmowidUI.Components.Link.link
+          :if={can_tag?(assigns)}
           id="analysis-tagging"
           kind="unstyled"
           patch={Navigation.view_path(view_for(@params, :tagging), @tag_filters)}
@@ -533,11 +649,11 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
         </FirmowidUI.Components.Link.link>
       </nav>
       <div
-        :if={@params.view != :tagging or @tag_filters != []}
+        :if={@params.view in [:dashboard, :matrix] or @tag_filters != []}
         class="@container flex flex-wrap items-end gap-x-3 gap-y-2 @lg:gap-4"
       >
         <form
-          :if={@params.view != :tagging}
+          :if={@params.view in [:dashboard, :matrix]}
           id="analysis-project-filter"
           phx-change="filter-project"
           class="flex flex-col gap-1 min-inline-0"
@@ -612,6 +728,11 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
           selected_month={@params.month}
         />
       <% end %>
+      <FirmowidWeb.Analysis.Components.CategoryReview.review
+        :if={@params.view == :categories}
+        review={@review}
+        year={@params.year}
+      />
       <%= if @params.view == :matrix do %>
         <FirmowidWeb.Analysis.Components.ProjectMatrix.matrix
           profitability={@profitability}

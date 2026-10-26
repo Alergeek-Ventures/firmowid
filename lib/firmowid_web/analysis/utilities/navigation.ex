@@ -12,6 +12,7 @@ defmodule FirmowidWeb.Analysis.Utilities.Navigation do
   @type view ::
           %{view: :tagging, month: Date.t()}
           | %{view: :dashboard, year: pos_integer(), month: Date.t() | nil}
+          | %{view: :categories, year: pos_integer()}
           | %{
               view: :matrix,
               year: pos_integer(),
@@ -30,7 +31,7 @@ defmodule FirmowidWeb.Analysis.Utilities.Navigation do
   end
 
   @doc """
-  Builds the canonical path of the dashboard, project matrix or monthly tagging.
+  Builds the canonical path of the dashboard, project matrix, categories or monthly tagging.
   """
   @spec view_path(view(), [tag_filter()]) :: String.t()
   def view_path(view, tag_filters) when is_list(tag_filters) do
@@ -51,6 +52,8 @@ defmodule FirmowidWeb.Analysis.Utilities.Navigation do
   """
   @spec parse_view(map()) :: view()
   def parse_view(%{"tryb" => "tagowanie"} = params), do: %{view: :tagging, month: parse_month(params)}
+
+  def parse_view(%{"tryb" => "kategorie"} = params), do: %{view: :categories, year: parse_year(params)}
 
   def parse_view(%{"tryb" => "macierz"} = params) do
     year = parse_year(params)
@@ -153,6 +156,8 @@ defmodule FirmowidWeb.Analysis.Utilities.Navigation do
   defp view_query(%{view: :tagging, month: month}), do: [tryb: "tagowanie", miesiac: Date.to_iso8601(month)]
 
   defp view_query(%{view: :dashboard, year: year, month: month}), do: with_month([rok: year], month)
+
+  defp view_query(%{view: :categories, year: year}), do: [tryb: "kategorie", rok: year]
 
   defp view_query(%{view: :matrix} = view) do
     query = [tryb: "macierz", rok: view.year]
