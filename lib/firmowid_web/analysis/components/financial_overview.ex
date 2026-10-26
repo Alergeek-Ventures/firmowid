@@ -1,7 +1,8 @@
 defmodule FirmowidWeb.Analysis.Components.FinancialOverview do
   @moduledoc """
   Annual totals of `Firmowid.Ash.Analysis.YearSummary` with a monthly net result
-  bar chart and a disclosure with the exact monthly amounts.
+  bar chart. Each bar has a rich tooltip with the month's amounts and, without
+  tag filters, an outline showing the result with the month's unpaid invoices.
 
   Months are buttons sending `select-month` with the ISO date of the month.
   Decimal amounts remain authoritative; bar lengths are only a float projection.
@@ -21,7 +22,7 @@ defmodule FirmowidWeb.Analysis.Components.FinancialOverview do
       assigns
       |> assign(:currency, summary.currency)
       |> assign(:kpis, kpis(summary.totals, summary.currency))
-      |> assign(:chart, chart(summary.months, summary.currency))
+      |> assign(:chart, chart(summary.months))
 
     ~H"""
     <section
@@ -49,6 +50,16 @@ defmodule FirmowidWeb.Analysis.Components.FinancialOverview do
             do: gettext("No income or expenses in %{year}.", year: @summary.year),
             else: gettext("The selected categories have no entries in %{year}.", year: @summary.year)}
         </p>
+        <ul
+          :if={@chart != :empty and @chart.legend != []}
+          id="analysis-month-results-legend"
+          class="flex flex-wrap gap-x-4 gap-y-1 text-xs text-grey-700"
+        >
+          <li :for={item <- @chart.legend} class="inline-flex items-center gap-1.5">
+            <span aria-hidden="true" class={legend_mark_styles(item)} />
+            {legend_label(item)}
+          </li>
+        </ul>
         <ol
           :if={@chart != :empty}
           id="analysis-month-results"
@@ -63,82 +74,33 @@ defmodule FirmowidWeb.Analysis.Components.FinancialOverview do
               phx-click="select-month"
               phx-value-month={Date.to_iso8601(bar.month)}
               aria-pressed={to_string(bar.month == @selected_month)}
-              aria-label={bar.description}
-              title={bar.description}
+              aria-label={bar.name}
+              aria-describedby={"analysis-month-tooltip-#{bar.month.month}"}
               class={[
-                "grid size-full min-w-0 cursor-pointer grid-rows-[minmax(0,1fr)_auto] gap-1 rounded-md px-0.5 py-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-700 active:bg-grey-200 @2xl:px-1 pointer-fine:hover:bg-grey-100",
+                "group relative grid size-full min-w-0 cursor-pointer grid-rows-[minmax(0,1fr)_auto] gap-1 rounded-md px-0.5 py-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-700 active:bg-grey-200 @2xl:px-1 pointer-fine:hover:bg-grey-100",
                 bar.month == @selected_month && "bg-teal-100"
               ]}
             >
               <span class="flex h-full flex-col-reverse" aria-hidden="true">
-                <span class="flex shrink-0 grow-0 basis-(--loss-share) flex-col">
-                  <span
-                    :if={bar.side == :loss}
-                    style={"--bar: #{bar.length}%"}
-                    class="block h-(--bar) min-h-0.5 w-full max-w-14 self-center rounded-xs bg-brick-700"
-                  />
+                <span class="relative shrink-0 grow-0 basis-(--loss-share)">
+                  <.bar_mark :for={mark <- bar.marks} :if={mark.side == :loss} mark={mark} />
                 </span>
-                <span class="flex shrink-0 grow-0 basis-(--profit-share) flex-col justify-end border-be border-grey-500">
-                  <span
-                    :if={bar.side == :profit}
-                    style={"--bar: #{bar.length}%"}
-                    class="block h-(--bar) min-h-0.5 w-full max-w-14 self-center rounded-xs bg-teal-600"
-                  />
+                <span class="relative shrink-0 grow-0 basis-(--profit-share) border-be border-grey-500">
+                  <.bar_mark :for={mark <- bar.marks} :if={mark.side == :profit} mark={mark} />
                 </span>
               </span>
               <span class={[
                 "text-center text-xs @2xl:text-sm",
-                bar_label_styles(bar, @selected_month)
+                bar_label_styles(bar, @selected_month),
+                bar.in_progress? &&
+                  "underline decoration-teal-600 decoration-dotted decoration-2 underline-offset-4"
               ]}>
                 {bar.label}
               </span>
+              <.month_tooltip bar={bar} currency={@currency} />
             </FirmowidUI.Components.Button.button>
           </li>
         </ol>
-        <details :if={@chart != :empty} id="analysis-month-amounts" class="group">
-          <summary class="inline-flex min-h-11 cursor-pointer items-center gap-2 text-sm font-medium text-grey-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-700">
-            <.icon name="hero-chevron-right-mini" class="size-4 group-open:rotate-90" />
-            {gettext("Monthly amounts")}
-          </summary>
-          <div class="overflow-x-auto">
-            <table class="w-full text-sm">
-              <thead>
-                <tr class="border-be border-grey-200 text-grey-700">
-                  <th scope="col" class="py-2 pe-4 text-start font-normal">{gettext("Month")}</th>
-                  <th scope="col" class="py-2 ps-4 text-end font-normal">{gettext("Income")}</th>
-                  <th scope="col" class="py-2 ps-4 text-end font-normal">{gettext("Expenses")}</th>
-                  <th scope="col" class="py-2 ps-4 text-end font-normal">{gettext("Net result")}</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr
-                  :for={month <- @summary.months}
-                  id={"analysis-month-amounts-#{month.month.month}"}
-                  class={[
-                    "border-be border-grey-100",
-                    month.month == @selected_month && "bg-teal-100 font-medium"
-                  ]}
-                >
-                  <th scope="row" class="py-2 pe-4 text-start font-normal">
-                    {month_name(month.month)}
-                  </th>
-                  <td class="py-2 ps-4 text-end whitespace-nowrap tabular-nums">
-                    {money(@currency, month.totals.total_income)}
-                  </td>
-                  <td class="py-2 ps-4 text-end whitespace-nowrap tabular-nums">
-                    {money(@currency, Decimal.abs(month.totals.total_expenses))}
-                  </td>
-                  <td class={[
-                    "py-2 ps-4 text-end whitespace-nowrap tabular-nums",
-                    result_styles(month.totals.net_profit)
-                  ]}>
-                    {money(@currency, month.totals.net_profit)}
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </details>
       </div>
     </section>
     """
@@ -175,13 +137,146 @@ defmodule FirmowidWeb.Analysis.Components.FinancialOverview do
     |> Kernel.++(margin)
   end
 
+  attr :mark, :map, required: true
+
+  # Settled bars are filled; the result with unpaid invoices is a dashed outline drawn
+  # over them, so it stays visible even when it is shorter than the settled bar.
+  defp bar_mark(assigns) do
+    ~H"""
+    <span
+      style={"--bar: #{@mark.length}%"}
+      class={[
+        "absolute inset-x-0 mx-auto block h-(--bar) min-h-0.5 w-full max-w-14 rounded-xs",
+        mark_styles(@mark),
+        if(@mark.side == :loss, do: "top-0", else: "bottom-0")
+      ]}
+    />
+    """
+  end
+
+  defp mark_styles(%{kind: :settled, side: :profit}), do: "bg-teal-600"
+  defp mark_styles(%{kind: :settled, side: :loss}), do: "bg-brick-700"
+
+  defp mark_styles(%{kind: :unpaid, side: :profit}), do: "border-[1.5px] border-dashed border-teal-800 bg-teal-600/15"
+
+  defp mark_styles(%{kind: :unpaid, side: :loss}), do: "border-[1.5px] border-dashed border-brick-800 bg-brick-700/15"
+
+  attr :bar, :map, required: true
+  attr :currency, :string, required: true
+
+  # Shown on hover and keyboard focus; it also describes the month button for screen readers.
+  # Values lead: each result is the prominent figure under a keyed caption matching the
+  # legend, with its income and expenses as quieter detail rows.
+  defp month_tooltip(assigns) do
+    ~H"""
+    <span
+      id={"analysis-month-tooltip-#{@bar.month.month}"}
+      role="tooltip"
+      class={[
+        "pointer-events-none absolute bottom-full z-10 mb-1 hidden w-80 flex-col gap-3 rounded-lg border border-grey-200 bg-white p-4 text-start shadow-lg group-focus-visible:flex pointer-fine:group-hover:flex",
+        tooltip_alignment_styles(@bar.month.month)
+      ]}
+    >
+      <span class="flex items-center justify-between gap-2">
+        <span class="text-sm font-medium text-grey-900">{@bar.name}</span>
+        <span
+          :if={@bar.in_progress?}
+          class="rounded-full bg-teal-100 px-2 py-0.5 text-xs font-medium text-teal-800"
+        >
+          {pgettext("month", "In progress")}
+        </span>
+      </span>
+      <span :if={@bar.empty?} class="text-sm text-grey-700">{gettext("No entries")}</span>
+      <.tooltip_result
+        :if={not @bar.empty?}
+        key={legend_mark_styles(:settled, @bar.result)}
+        label={legend_label(:settled)}
+        result={money(@currency, @bar.result)}
+        result_class={result_styles(@bar.result)}
+        rows={[
+          {gettext("Income"), money(@currency, @bar.income)},
+          {gettext("Expenses"), money(@currency, @bar.expenses)}
+        ]}
+      />
+      <.tooltip_result
+        :if={@bar.unpaid}
+        class="border-bs border-grey-200 pt-3"
+        key={legend_mark_styles(:unpaid, @bar.accrual)}
+        label={legend_label(:unpaid)}
+        result={money(@currency, @bar.accrual)}
+        result_class={result_styles(@bar.accrual)}
+        rows={
+          [
+            Decimal.positive?(@bar.unpaid.income) &&
+              {gettext("Unpaid income"), "+" <> money(@currency, @bar.unpaid.income)},
+            Decimal.positive?(@bar.unpaid.expenses) &&
+              {gettext("Unpaid expenses"), money(@currency, Decimal.negate(@bar.unpaid.expenses))}
+          ]
+          |> Enum.filter(& &1)
+        }
+      />
+    </span>
+    """
+  end
+
+  attr :key, :any, required: true
+  attr :label, :string, required: true
+  attr :result, :string, required: true
+  attr :result_class, :string, required: true
+  attr :rows, :list, required: true
+  attr :class, :string, default: nil
+
+  defp tooltip_result(assigns) do
+    ~H"""
+    <span class={["flex flex-col gap-1", @class]}>
+      <span class="flex items-center gap-1.5 text-xs text-grey-700">
+        <span aria-hidden="true" class={@key} />
+        {@label}
+      </span>
+      <span class={["text-lg font-semibold tabular-nums", @result_class]}>{@result}</span>
+      <span class="grid grid-cols-[1fr_auto] gap-x-4 gap-y-0.5 text-xs">
+        <%= for {label, value} <- @rows do %>
+          <span class="text-grey-700">{label}</span>
+          <span class="text-end text-grey-900 tabular-nums">{value}</span>
+        <% end %>
+      </span>
+    </span>
+    """
+  end
+
+  # Edge months anchor the tooltip to their own edge so it stays inside the chart.
+  defp tooltip_alignment_styles(month) when month <= 3, do: "start-0"
+  defp tooltip_alignment_styles(month) when month >= 10, do: "end-0"
+  defp tooltip_alignment_styles(_month), do: "start-1/2 -translate-x-1/2"
+
+  defp legend_mark_styles(:settled),
+    do: "h-2.5 w-3 rounded-xs bg-[linear-gradient(90deg,var(--color-teal-600)_50%,var(--color-brick-700)_50%)]"
+
+  defp legend_mark_styles(:unpaid), do: legend_mark_styles(:unpaid, Decimal.new(1))
+
+  defp legend_mark_styles(:in_progress), do: "w-3 self-end border-be-2 border-dotted border-teal-600"
+
+  # Tooltip keys take the color of the result they caption, like the bar they describe.
+  defp legend_mark_styles(kind, amount) do
+    [
+      "h-2.5 w-3 shrink-0 rounded-xs",
+      mark_styles(%{kind: kind, side: if(Decimal.negative?(amount), do: :loss, else: :profit)})
+    ]
+  end
+
+  defp legend_label(:settled), do: gettext("Settled")
+  defp legend_label(:unpaid), do: gettext("With unpaid invoices")
+  defp legend_label(:in_progress), do: gettext("Month in progress")
+
   # Losses grow below and profits above one shared zero line; the arms are sized
-  # by the largest loss and the largest profit so every bar uses the same scale.
-  defp chart(months, currency) do
-    if Enum.all?(months, &empty_month?/1) do
+  # by the largest loss and the largest profit, of settled results and results
+  # with unpaid invoices alike, so every mark uses the same scale.
+  defp chart(months) do
+    if Enum.all?(months, &(empty_month?(&1) and not unpaid?(&1))) do
       :empty
     else
-      results = Enum.map(months, & &1.totals.net_profit)
+      current_month = Date.beginning_of_month(Date.utc_today())
+      results = Enum.flat_map(months, &[&1.totals.net_profit, accrual(&1)])
 
       max_profit =
         results
@@ -195,41 +290,68 @@ defmodule FirmowidWeb.Analysis.Components.FinancialOverview do
         |> Enum.reduce(Decimal.new(0), &Decimal.max/2)
 
       range = Decimal.add(max_profit, max_loss)
+      bars = Enum.map(months, &bar(&1, current_month, max_profit, max_loss))
 
       %{
         loss_share: percent(max_loss, range),
         profit_share: percent(max_profit, range),
-        bars: Enum.map(months, &bar(&1, currency, max_profit, max_loss))
+        bars: bars,
+        legend:
+          [:settled] ++
+            if(Enum.any?(bars, & &1.unpaid), do: [:unpaid], else: []) ++
+            if(Enum.any?(bars, & &1.in_progress?), do: [:in_progress], else: [])
       }
     end
   end
 
-  defp bar(month, currency, max_profit, max_loss) do
+  defp bar(month, current_month, max_profit, max_loss) do
     result = month.totals.net_profit
-    empty? = empty_month?(month)
-    name = month_name(month.month, "LLLL y")
-
-    {side, length} =
-      cond do
-        Decimal.negative?(result) -> {:loss, percent(Decimal.abs(result), max_loss)}
-        Decimal.positive?(result) -> {:profit, percent(result, max_profit)}
-        true -> {nil, 0}
-      end
+    unpaid = if unpaid?(month), do: month.unpaid
 
     %{
       month: month.month,
       label: month_name(month.month),
-      empty?: empty?,
-      side: side,
-      length: length,
-      description:
-        if empty? do
-          gettext("%{month}: no entries", month: name)
-        else
-          gettext("%{month}: net result %{amount}", month: name, amount: money(currency, result))
-        end
+      name: month_name(month.month, "LLLL y"),
+      empty?: empty_month?(month) and unpaid == nil,
+      in_progress?: month.month == current_month,
+      result: result,
+      income: month.totals.total_income,
+      expenses: Decimal.abs(month.totals.total_expenses),
+      unpaid: unpaid,
+      accrual: accrual(month),
+      marks:
+        Enum.reject(
+          [
+            mark(:settled, result, max_profit, max_loss),
+            unpaid && mark(:unpaid, accrual(month), max_profit, max_loss)
+          ],
+          &is_nil/1
+        )
     }
   end
+
+  defp mark(kind, amount, max_profit, max_loss) do
+    cond do
+      Decimal.negative?(amount) ->
+        %{kind: kind, side: :loss, length: percent(Decimal.abs(amount), max_loss)}
+
+      Decimal.positive?(amount) ->
+        %{kind: kind, side: :profit, length: percent(amount, max_profit)}
+
+      true ->
+        nil
+    end
+  end
+
+  defp accrual(%{unpaid: %{income: income, expenses: expenses}} = month),
+    do: month.totals.net_profit |> Decimal.add(income) |> Decimal.sub(expenses)
+
+  defp accrual(month), do: month.totals.net_profit
+
+  defp unpaid?(%{unpaid: %{income: income, expenses: expenses}}),
+    do: Decimal.positive?(income) or Decimal.positive?(expenses)
+
+  defp unpaid?(_month), do: false
 
   defp empty_month?(month), do: month.totals.income_categories == [] and month.totals.expense_categories == []
 
