@@ -9,7 +9,7 @@
 
 services:
   db:
-    image: docker.io/paradedb/paradedb:v0.26.0@sha256:52fc9c95fdfd462201168d1d82334ed61f85cbd921957cab083ec39800a217ac
+    image: docker.io/paradedb/paradedb:v0.26.2@sha256:c552094b6b68dcb0a4e7a3969963d801eaec02490db4d2dd032dcb096bc86cf8
     container_name: ${COMPOSE_PROJECT_NAME:-firmowid}-postgres
     environment:
       POSTGRES_USER: postgres
