@@ -8,9 +8,6 @@ defmodule FirmowidWeb.Invoicing.Components.FilterBar do
   """
   use FirmowidWeb, :html
 
-  import FirmowidUI.Components.Link
-  import Phoenix.Component, except: [link: 1]
-
   alias FirmowidWeb.Invoicing.Utilities.Navigation
 
   attr :params, :map, required: true
@@ -25,57 +22,43 @@ defmodule FirmowidWeb.Invoicing.Components.FilterBar do
       !@is_month_touched && "hidden"
     ]}>
       <div class="flex items-center gap-6 max-md:w-full max-md:flex-wrap max-md:gap-y-3">
-        <div class="flex items-center gap-4 max-md:grid max-md:w-full max-md:grid-cols-2 max-md:gap-2">
-          <.link
-            kind="unstyled"
-            navigate={dashboard_url(@params.month)}
-            aria-label="Podsumowanie"
-            title="Podsumowanie"
-            class={top_level_filter_styles(@params.view_mode == :dashboard)}
-          >
+        <.filter_tabs label={gettext("Invoicing views")}>
+          <:tab navigate={dashboard_url(@params.month)} active={@params.view_mode == :dashboard}>
             Podsumowanie
-          </.link>
-          <%= for {tab, label} <- [
-            {:invoices, "Faktury"},
-            {:transactions, "Transakcje"}
-          ] do %>
-            <.link
-              kind="unstyled"
-              navigate={filter_url(@params, tab)}
-              class={top_level_filter_styles(@params.view_mode == :list && @params.filter == tab)}
-            >
-              {label}
-            </.link>
-          <% end %>
-
-          <.link
-            kind="unstyled"
+          </:tab>
+          <:tab
+            navigate={filter_url(@params, :invoices)}
+            active={@params.view_mode == :list && @params.filter == :invoices}
+          >
+            Faktury
+          </:tab>
+          <:tab
+            navigate={filter_url(@params, :transactions)}
+            active={@params.view_mode == :list && @params.filter == :transactions}
+          >
+            Transakcje
+          </:tab>
+          <:tab
             navigate={filter_url(@params, :unmatched)}
+            active={@params.view_mode == :list && @params.filter == :unmatched}
+            count={@pending_count}
             class={unmatched_filter_styles(@params, @is_month_closed)}
             id="unmatched-filter"
             phx-hook="Confetti"
             data-confetti-enabled={if @is_month_closed, do: "true", else: "false"}
           >
-            <%= if @pending_count != 0 do %>
-              <span class="pointer-events-none absolute -top-3 left-full flex -translate-x-3 items-center justify-center overflow-hidden rounded-full border-2 border-grey-100 bg-rust-200 px-2 text-rust-700 max-md:right-0 max-md:left-auto max-md:translate-x-0">
-                {@pending_count}
-              </span>
-            <% end %>
             <%= if @is_month_closed do %>
               Miesiąc zamknięty
             <% else %>
               Nieprzypisane
             <% end %>
-          </.link>
-        </div>
+          </:tab>
+        </.filter_tabs>
 
-        <div
+        <.sub_filters
           :if={@params.view_mode == :list && @params.filter in [:invoices, :transactions]}
-          class="flex items-center gap-6 max-md:w-full"
-        >
-          <div class="mx-2 h-7 w-px bg-grey-200 max-md:hidden"></div>
-          <.sub_filters params={@params} />
-        </div>
+          params={@params}
+        />
       </div>
     </div>
     """
@@ -85,49 +68,39 @@ defmodule FirmowidWeb.Invoicing.Components.FilterBar do
 
   defp sub_filters(%{params: %{filter: :invoices}} = assigns) do
     ~H"""
-    <div class="flex items-center gap-3 max-md:w-full">
-      <span class="text-sm font-normal text-grey-700/70">Filtry:</span>
-      <div class="flex items-center gap-2 max-md:flex-1">
-        <.link
-          kind="unstyled"
-          navigate={subfilter_url(@params, :oplacone)}
-          class={subfilter_styles(@params.subfilter == :oplacone)}
-        >
-          Opłacone
-        </.link>
-        <.link
-          kind="unstyled"
-          navigate={subfilter_url(@params, :nieoplacone)}
-          class={subfilter_styles(@params.subfilter == :nieoplacone)}
-        >
-          Nieopłacone
-        </.link>
-      </div>
-    </div>
+    <.filter_pills divider>
+      <:pill
+        navigate={subfilter_url(@params, :oplacone)}
+        active={@params.subfilter == :oplacone}
+      >
+        Opłacone
+      </:pill>
+      <:pill
+        navigate={subfilter_url(@params, :nieoplacone)}
+        active={@params.subfilter == :nieoplacone}
+      >
+        Nieopłacone
+      </:pill>
+    </.filter_pills>
     """
   end
 
   defp sub_filters(%{params: %{filter: :transactions}} = assigns) do
     ~H"""
-    <div class="flex items-center gap-3 max-md:w-full">
-      <span class="text-sm font-normal text-grey-700/70">Filtry:</span>
-      <div class="flex items-center gap-2 max-md:flex-1">
-        <.link
-          kind="unstyled"
-          navigate={subfilter_url(@params, :dopasowane)}
-          class={subfilter_styles(@params.subfilter == :dopasowane)}
-        >
-          Dopasowane
-        </.link>
-        <.link
-          kind="unstyled"
-          navigate={subfilter_url(@params, :bez_dokumentu)}
-          class={subfilter_styles(@params.subfilter == :bez_dokumentu)}
-        >
-          Bez dokumentu
-        </.link>
-      </div>
-    </div>
+    <.filter_pills divider>
+      <:pill
+        navigate={subfilter_url(@params, :dopasowane)}
+        active={@params.subfilter == :dopasowane}
+      >
+        Dopasowane
+      </:pill>
+      <:pill
+        navigate={subfilter_url(@params, :bez_dokumentu)}
+        active={@params.subfilter == :bez_dokumentu}
+      >
+        Bez dokumentu
+      </:pill>
+    </.filter_pills>
     """
   end
 
@@ -158,28 +131,11 @@ defmodule FirmowidWeb.Invoicing.Components.FilterBar do
     })
   end
 
-  defp top_level_filter_styles(active?) do
-    [
-      "bg-grey-100 text-grey-700 relative inline-flex items-center justify-center rounded-lg px-3 py-1 text-center text-sm/6 font-normal uppercase transition-colors hover:bg-grey-200",
-      active? && "bg-grey-700! text-white!"
-    ]
-  end
-
   defp unmatched_filter_styles(params, is_month_closed) do
     [
-      "bg-grey-100 text-grey-700 relative inline-flex items-center justify-center rounded-lg px-3 py-1 text-center text-sm/6 font-normal uppercase transition-colors hover:bg-grey-200",
-      params.view_mode == :list && params.filter == :unmatched && "bg-grey-700! text-white!",
       is_month_closed && params.filter != :unmatched && "text-grey-100!",
       params.filter == :unmatched && is_month_closed &&
         "bg-moss-200! border-moss-700! text-black!"
-    ]
-  end
-
-  defp subfilter_styles(active?) do
-    [
-      "bg-grey-100 border-grey-200 text-grey-700 inline-flex h-8 items-center justify-center rounded-full border px-4 py-1.5 text-sm leading-none font-medium transition-colors max-md:flex-1",
-      active? && "bg-grey-700! border-grey-700 text-white!",
-      not active? && "hover:bg-grey-200"
     ]
   end
 end

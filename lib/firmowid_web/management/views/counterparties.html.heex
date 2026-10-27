@@ -1,5 +1,5 @@
 <div :if={not @zero_state?} class="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-6 pb-4">
-  <div class="sticky top-10.5 z-10 flex flex-col gap-6 bg-grey-100 py-4 max-md:static">
+  <div class="sticky top-10.5 z-10 flex flex-col gap-6 bg-grey-100 py-4 max-md:static max-md:z-auto">
     <div class="flex items-center justify-between gap-4 max-md:flex-wrap">
       <form class="flex gap-4 max-md:w-full" phx-submit="search">
         <div class="flex h-11 w-[360px] items-center gap-2 rounded-lg border border-grey-200 bg-grey-100 p-1 focus-within:ring-2 max-md:w-full">
@@ -17,72 +17,57 @@
         </div>
       </form>
 
-      <.link
-        navigate={
-          Navigation.counterparty_new_path(%{
-            powrot_do: Navigation.counterparties_path(@live_action, @params)
-          })
-        }
-        kind="button"
-        variant="special"
-        class="max-md:w-full max-md:justify-center"
-      >
-        <Lucideicons.plus /> Dodaj kontrahenta
-      </.link>
+      <.page_actions>
+        <:action>
+          <.link
+            navigate={
+              Navigation.counterparty_new_path(%{
+                powrot_do: Navigation.counterparties_path(@live_action, @params)
+              })
+            }
+            kind="button"
+            variant="special"
+            data-fab
+          >
+            <Lucideicons.plus /> <span class="max-md:sr-only">Dodaj kontrahenta</span>
+          </.link>
+        </:action>
+      </.page_actions>
     </div>
 
     <div class="flex flex-wrap items-center justify-between gap-4">
-      <div class="flex flex-wrap items-center gap-6 max-md:w-full max-md:gap-3">
-        <div class="flex items-center gap-4 max-md:w-full">
-          <.link
-            :for={
-              {path, live_action, label} <- [
-                {Navigation.counterparties_path(:index, @params), :index, "Aktywni"},
-                {Navigation.counterparties_path(:archive, @params), :archive, "Zarchiwizowani"}
-              ]
-            }
-            patch={path}
-            kind="button"
-            variant="ghost"
-            size="small"
-            class={[
-              "max-md:flex-1",
-              @live_action == live_action && "bg-grey-700 text-white hover:text-grey-900"
-            ]}
+      <div class="flex items-center gap-6 max-md:w-full max-md:flex-wrap max-md:gap-y-3">
+        <.filter_tabs label={gettext("Counterparty scope")}>
+          <:tab
+            patch={Navigation.counterparties_path(:index, @params)}
+            active={@live_action == :index}
           >
-            {label}
-          </.link>
-        </div>
+            Aktywni
+          </:tab>
+          <:tab
+            patch={Navigation.counterparties_path(:archive, @params)}
+            active={@live_action == :archive}
+          >
+            Zarchiwizowani
+          </:tab>
+        </.filter_tabs>
 
-        <div class="mx-2 h-6 w-px bg-grey-200 max-md:hidden"></div>
-
-        <div class="flex items-center gap-3 max-md:w-full">
-          <span class="text-sm font-normal text-grey-700/70">Filtry:</span>
-
-          <div class="flex flex-wrap items-center gap-2 max-md:flex-1 max-md:flex-nowrap">
-            <.button
-              type="button"
-              variant="filter"
-              class="max-md:flex-1"
-              data-active={@type_filter == :individual}
-              phx-click="toggle_type"
-              phx-value-typ={Navigation.encode_counterparty_type(:individual)}
-            >
-              <Lucideicons.user class="size-4" /> Osoby fizyczne
-            </.button>
-
-            <.button
-              type="button"
-              variant="filter"
-              class="max-md:flex-1"
-              data-active={@type_filter == :company}
-              phx-click="toggle_type"
-              phx-value-typ={Navigation.encode_counterparty_type(:company)}
-            >
-              <Lucideicons.building_2 class="size-4" /> Firma
-            </.button>
-          </div>
-        </div>
+        <.filter_pills divider>
+          <:pill
+            active={@type_filter == :individual}
+            phx-click="toggle_type"
+            phx-value-typ={Navigation.encode_counterparty_type(:individual)}
+          >
+            <Lucideicons.user /> Osoby fizyczne
+          </:pill>
+          <:pill
+            active={@type_filter == :company}
+            phx-click="toggle_type"
+            phx-value-typ={Navigation.encode_counterparty_type(:company)}
+          >
+            <Lucideicons.building_2 /> Firma
+          </:pill>
+        </.filter_pills>
       </div>
       <.switch
         class="ml-auto flex-row-reverse gap-4 select-none max-md:hidden"
@@ -293,6 +278,6 @@
     variant="secondary"
     class="mt-6"
   >
-    <Lucideicons.plus /> Dodaj kontrahenta
+    <Lucideicons.plus /> <span class="max-md:sr-only">Dodaj kontrahenta</span>
   </.link>
 </div>

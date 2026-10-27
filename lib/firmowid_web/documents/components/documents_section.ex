@@ -236,47 +236,32 @@ defmodule FirmowidWeb.Documents.Components.DocumentsSection do
 
   defp filters(assigns) do
     ~H"""
-    <div class={["flex items-center gap-3", @class]}>
-      <span class="text-sm font-normal text-grey-700/70">Filtry:</span>
-
-      <div class="flex flex-wrap items-center gap-2">
-        <.button
-          class="font-normal"
-          type="button"
-          variant="filter"
-          data-active={@type_filter == "hours_record"}
-          phx-click="toggle_type"
-          phx-value-typ={:hours_record}
-          phx-target={@myself}
-        >
-          <.icon name="hero-clock" class="size-4" /> ewidencja
-        </.button>
-
-        <.button
-          class="font-normal"
-          type="button"
-          variant="filter"
-          data-active={@type_filter == "employment_contract"}
-          phx-click="toggle_type"
-          phx-value-typ={:employment_contract}
-          phx-target={@myself}
-        >
-          <.icon name="hero-document" class="size-4" /> umowa
-        </.button>
-
-        <.button
-          class="font-normal"
-          type="button"
-          variant="filter"
-          data-active={@type_filter == "other"}
-          phx-click="toggle_type"
-          phx-value-typ={:other}
-          phx-target={@myself}
-        >
-          <.icon name="hero-ellipsis-horizontal" class="size-4" /> inne
-        </.button>
-      </div>
-    </div>
+    <.filter_pills class={@class}>
+      <:pill
+        active={@type_filter == "hours_record"}
+        phx-click="toggle_type"
+        phx-value-typ={:hours_record}
+        phx-target={@myself}
+      >
+        <.icon name="hero-clock" class="size-4" /> ewidencja
+      </:pill>
+      <:pill
+        active={@type_filter == "employment_contract"}
+        phx-click="toggle_type"
+        phx-value-typ={:employment_contract}
+        phx-target={@myself}
+      >
+        <.icon name="hero-document" class="size-4" /> umowa
+      </:pill>
+      <:pill
+        active={@type_filter == "other"}
+        phx-click="toggle_type"
+        phx-value-typ={:other}
+        phx-target={@myself}
+      >
+        <.icon name="hero-ellipsis-horizontal" class="size-4" /> inne
+      </:pill>
+    </.filter_pills>
     """
   end
 

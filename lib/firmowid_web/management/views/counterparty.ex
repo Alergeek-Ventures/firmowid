@@ -364,8 +364,8 @@ defmodule FirmowidWeb.Management.Views.Counterparty do
       <div class="mb-4 flex items-center justify-between gap-4">
         <h3 class="text-lg font-medium text-grey-700">Faktury</h3>
 
-        <div class="flex gap-2">
-          <.link
+        <.filter_pills label={nil} class="max-md:w-auto">
+          <:pill
             :for={
               {value, label} <- [{:all, "Wszystkie"}, {:unpaid, "Nieopłacone"}, {:paid, "Opłacone"}]
             }
@@ -375,17 +375,11 @@ defmodule FirmowidWeb.Management.Views.Counterparty do
                 powrot_do: @params["powrot_do"]
               })
             }
-            kind="button"
-            variant="outline"
-            size="small"
-            class={[
-              "rounded-2xl! bg-grey-100 px-4",
-              if(@invoice_filter == value, do: invoice_filter_class_names(value))
-            ]}
+            active={@invoice_filter == value}
           >
             {label}
-          </.link>
-        </div>
+          </:pill>
+        </.filter_pills>
       </div>
 
       <%= if @invoices == [] do %>
@@ -589,12 +583,6 @@ defmodule FirmowidWeb.Management.Views.Counterparty do
   defp invoice_status(:skipped), do: {"pominięta", "bg-grey-200 text-grey-700"}
   defp invoice_status(:matched), do: {"opłacona", "bg-teal-100 text-teal-700"}
   defp invoice_status(_), do: {"opłacona", "bg-teal-100 text-teal-700"}
-
-  defp invoice_filter_class_names(:all), do: "bg-grey-200 text-grey-700 border-transparent"
-
-  defp invoice_filter_class_names(:unpaid), do: "bg-rust-200 text-rust-700 border-transparent hover:bg-rust-200"
-
-  defp invoice_filter_class_names(:paid), do: "bg-teal-200 text-teal-700 border-transparent hover:bg-teal-200"
 
   defp money_to_string(nil), do: "—"
   defp money_to_string(%Money{} = amount), do: Money.to_string!(amount)
