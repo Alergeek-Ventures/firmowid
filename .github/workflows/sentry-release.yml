@@ -77,6 +77,12 @@ jobs:
         with:
           catalog-version: ${{ needs.translations.outputs.catalog-version }}
 
+      - name: Setup Elixir project
+        uses: ./.github/actions/elixir-setup
+        with:
+          elixir-version: ${{ needs.extract-versions.outputs.elixir }}
+          otp-version: ${{ needs.extract-versions.outputs.otp }}
+
       - name: Setup Node.js
         uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
@@ -84,19 +90,14 @@ jobs:
           cache: npm
           cache-dependency-path: assets/package-lock.json
 
+      # npm's postinstall patches deps/, so it has to run after the Elixir setup.
       # LiveView links assets/node_modules into the colocated hooks directory
-      # during compilation, and only when the folder already exists.
-      - name: Install npm packages
-        run: npm ci --prefix assets
-
-      - name: Setup Elixir project
-        uses: ./.github/actions/elixir-setup
-        with:
-          elixir-version: ${{ needs.extract-versions.outputs.elixir }}
-          otp-version: ${{ needs.extract-versions.outputs.otp }}
-
+      # only when it exists during a compile that is not a noop, hence --force.
       - name: Build production assets with sourcemaps
-        run: mix assets.sentry.deploy
+        run: |
+          npm ci --prefix assets
+          mix compile --force
+          mix assets.sentry.deploy
 
       - name: Create and finalize Sentry release
         uses: getsentry/action-release@6fb9aeade7061441cf3864e34fbe11a1457ad7dc # v3
