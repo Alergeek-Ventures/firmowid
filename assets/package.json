@@ -1,8 +1,8 @@
 {
   "dependencies": {
     "@floating-ui/dom": "1.8.0",
-    "@modelcontextprotocol/ext-apps": "2.0.3",
-    "@sentry/browser": "11.8.0",
+    "@modelcontextprotocol/ext-apps": "2.0.4",
+    "@sentry/browser": "11.9.0",
     "@tailwindcss/forms": "0.5.11",
     "@tailwindcss/typography": "0.5.20",
     "@tarekraafat/autocomplete.js": "10.2.10",
@@ -15,7 +15,7 @@
     "phoenix": "file:../deps/phoenix",
     "phoenix_html": "file:../deps/phoenix_html",
     "phoenix_live_view": "file:../deps/phoenix_live_view",
-    "posthog-js": "1.438.13",
+    "posthog-js": "1.440.0",
     "sortablejs": "1.15.7",
     "tailwindcss": "4.3.3",
     "tippy.js": "6.3.7",
@@ -26,7 +26,7 @@
     "@tailwindcss/cli": "4.3.3",
     "audit-ci": "7.1.0",
     "esbuild": "0.28.2",
-    "impeccable": "4.7.0",
+    "impeccable": "4.8.0",
     "license-checker": "25.0.1"
   },
   "scripts": {
