@@ -270,10 +270,8 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
   defp can_write?(assigns), do: assigns.params.view == :tagging and can_tag?(assigns)
 
   # Category confirmations are confined to the categories view, including forged events.
-  defp can_categorize?(assigns), do: assigns.params.view == :categories and can_tag?(assigns)
-
   defp review_groups(%{params: %{view: :categories}, review: review} = assigns) do
-    if can_categorize?(assigns), do: review.groups, else: []
+    if can_tag?(assigns), do: review.groups, else: []
   end
 
   defp review_groups(_assigns), do: []
