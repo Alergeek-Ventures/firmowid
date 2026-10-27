@@ -47,6 +47,8 @@ const FRAME_FIELDS = [
   "addr_mode",
 ];
 const BREADCRUMB_DATA_FIELDS = ["method", "status_code", "url", "from", "to"];
+const LONGPOLL_CONTENT_TYPES = ["json", "html", "text", "other", "missing"];
+const LONGPOLL_RESPONSE_SHAPES = ["object", "array", "null", "string", "number", "boolean", "empty", "invalid_json", "too_large"];
 
 function object(value) {
   return value !== null && typeof value === "object" && !Array.isArray(value);
@@ -111,9 +113,57 @@ function sanitizeBreadcrumb(breadcrumb) {
         data[name] = breadcrumb.data[name];
       }
     }
+    if (breadcrumb.category === "xhr" && isLongpollRequest(breadcrumb.data)) {
+      if (LONGPOLL_CONTENT_TYPES.includes(breadcrumb.data.response_content_type)) {
+        data.response_content_type = breadcrumb.data.response_content_type;
+      }
+      if (LONGPOLL_RESPONSE_SHAPES.includes(breadcrumb.data.response_shape)) {
+        data.response_shape = breadcrumb.data.response_shape;
+      }
+      if (Number.isInteger(breadcrumb.data.json_status) &&
+        breadcrumb.data.json_status >= 100 && breadcrumb.data.json_status <= 599) {
+        data.json_status = breadcrumb.data.json_status;
+      }
+    }
     if (Object.keys(data).length) result.data = data;
   }
   return Object.keys(result).length ? result : null;
+}
+
+function isLongpollRequest(data) {
+  if (data?.method !== "GET" || typeof data.url !== "string") return false;
+  try {
+    const url = new URL(data.url, window.location.origin);
+    return url.origin === window.location.origin && !url.username && !url.password &&
+      url.pathname === "/live/longpoll";
+  } catch (_error) {
+    return false;
+  }
+}
+
+function longpollResponse(xhr) {
+  const mime = (xhr.getResponseHeader("Content-Type") || "").split(";", 1)[0].trim().toLowerCase();
+  const data = {
+    response_content_type: !mime ? "missing"
+      : mime === "application/json" || /^application\/[a-z0-9!#$&^_.+-]+\+json$/.test(mime) ? "json"
+      : mime === "text/html" ? "html"
+      : mime === "text/plain" ? "text" : "other",
+  };
+  // Only classify structure and a numeric protocol status; never retain body values or keys.
+  // Bound parsing even when an unexpected response is large.
+  const body = xhr.responseText;
+  if (body.length > 65536) return { ...data, response_shape: "too_large" };
+  if (body === "") return { ...data, response_shape: "empty" };
+  try {
+    const response = JSON.parse(body);
+    data.response_shape = response === null ? "null" : Array.isArray(response) ? "array" : typeof response;
+    if (object(response) && Number.isInteger(response.status) && response.status >= 100 && response.status <= 599) {
+      data.json_status = response.status;
+    }
+  } catch (_error) {
+    data.response_shape = "invalid_json";
+  }
+  return data;
 }
 
 function sanitizeStacktrace(stacktrace) {
@@ -356,11 +406,16 @@ function beforeSend(event) {
   }
 }
 
-function beforeBreadcrumb(event) {
+function beforeBreadcrumb(event, hint) {
+  let clean = null;
   try {
-    return sanitizeBreadcrumb(event);
+    clean = sanitizeBreadcrumb(event);
+    if (event?.category === "xhr" && isLongpollRequest(event.data) && hint?.xhr) {
+      clean = sanitizeBreadcrumb({ ...clean, data: { ...clean.data, ...longpollResponse(hint.xhr) } });
+    }
+    return clean;
   } catch (_error) {
-    return null;
+    return clean;
   }
 }
 
