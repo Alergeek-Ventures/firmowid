@@ -1,12 +1,14 @@
 <div :if={not @zero_state?} class="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-6 pb-4">
   <% # top -> collapsed navbar height (56px) / TODO: refactor %>
   <div class="sticky top-10.5 z-10 flex flex-col gap-6 bg-grey-100 py-4 max-md:static">
-    <div class="flex flex-row justify-between">
-      <form class="flex gap-4">
+    <div class="flex flex-row justify-between max-md:flex-col max-md:items-stretch max-md:gap-3">
+      <form class="flex gap-4 max-md:gap-3">
         <.month_picker
           id="project_date_picker"
+          show_on_mobile
           selected_date={@selected_date}
           active_months={@active_months}
+          class="max-md:flex-1"
         />
 
         <div
@@ -21,7 +23,7 @@
             phx-change={JS.push("search", loading: "#projects-list")}
             phx-debounce="300"
             input_class="py-0 px-1 bg-transparent border-none"
-            class="w-0 border-transparent px-0 opacity-0 transition-[width,opacity,padding] duration-200 ease-in-out group-data-[expanded=true]:w-64 group-data-[expanded=true]:px-2 group-data-[expanded=true]:py-1 group-data-[expanded=true]:opacity-100 focus:border-none focus:ring-0 focus:outline-hidden"
+            class="w-0 border-transparent px-0 opacity-0 transition-[width,opacity,padding] duration-200 ease-in-out group-data-[expanded=true]:w-64 group-data-[expanded=true]:px-2 group-data-[expanded=true]:py-1 group-data-[expanded=true]:opacity-100 focus:border-none focus:ring-0 focus:outline-hidden max-md:group-data-[expanded=true]:w-36"
           />
           <.button
             type="button"
@@ -40,6 +42,7 @@
         navigate={~p"/zarzadzanie/projekty/dodaj"}
         kind="button"
         variant="special"
+        class="max-md:w-full max-md:justify-center"
       >
         <Lucideicons.plus /> Dodaj projekt
       </.link>
@@ -57,7 +60,10 @@
         kind="button"
         variant="ghost"
         size="small"
-        class={if(@live_action == live_action, do: "bg-grey-700 text-white hover:text-grey-900")}
+        class={[
+          "max-md:flex-1",
+          @live_action == live_action && "bg-grey-700 text-white hover:text-grey-900"
+        ]}
       >
         {label}
       </.link>
@@ -85,7 +91,7 @@
     <% @live_action == :index -> %>
       <div
         id="projects-list"
-        class="grid grid-cols-[4fr_8.125rem_1fr_min-content] gap-x-6 gap-y-2 phx-change-loading:opacity-50"
+        class="grid grid-cols-[4fr_8.125rem_1fr_min-content] gap-x-6 gap-y-2 max-md:grid-cols-[minmax(0,1fr)_max-content_min-content] max-md:gap-x-4 phx-change-loading:opacity-50"
       >
         <div
           id="projects-list-header-active"
@@ -95,7 +101,7 @@
           data-scroll-offset="90"
         >
           <p>Projekt</p>
-          <p class="text-right">
+          <p class="text-right max-md:hidden">
             <!--Rentowność-->
           </p>
           <p class="text-right">Godziny</p>
@@ -107,7 +113,7 @@
             :key={project.id}
             class="col-span-full grid grid-cols-subgrid items-center rounded-sm bg-white p-4"
           >
-            <div class="space-y-1 truncate">
+            <div class="min-w-0 space-y-1 wrap-break-word">
               <.link
                 kind="unstyled"
                 navigate={Navigation.project_path(project.id, Map.take(@params, ["miesiac"]))}
@@ -119,7 +125,7 @@
                 {CounterpartyHelpers.party_label(project.counterparty, @current_org)}
               </p>
             </div>
-            <p class="text-right">
+            <p class="text-right max-md:hidden">
               <!--Rentowność-->
             </p>
             <p class="text-right">{project.hours} h</p>
@@ -137,7 +143,7 @@
     <% @live_action == :archive -> %>
       <div
         id="projects-list"
-        class="grid grid-cols-[4fr_8.125rem_1fr_min-content_min-content] gap-x-10 gap-y-2 phx-change-loading:opacity-50"
+        class="grid grid-cols-[4fr_8.125rem_1fr_min-content_min-content] gap-x-10 gap-y-2 max-md:grid-cols-[minmax(0,1fr)_max-content_min-content] max-md:gap-x-4 phx-change-loading:opacity-50"
       >
         <div
           id="projects-list-header-archive"
@@ -147,11 +153,11 @@
           data-scroll-offset="90"
         >
           <p>Projekt</p>
-          <p class="text-right">
+          <p class="text-right max-md:hidden">
             <!--Rentowność-->
           </p>
           <p class="text-right">Suma godzin</p>
-          <p class="text-right text-nowrap">Data archiwizacji</p>
+          <p class="text-right text-nowrap max-md:hidden">Data archiwizacji</p>
         </div>
 
         <div class="col-span-full grid grid-cols-subgrid gap-y-2">
@@ -160,7 +166,7 @@
             :key={project.id}
             class="col-span-full grid grid-cols-subgrid items-center rounded-sm bg-white p-4"
           >
-            <div class="space-y-1 truncate">
+            <div class="min-w-0 space-y-1 wrap-break-word">
               <.link
                 kind="unstyled"
                 navigate={Navigation.project_path(project.id, Map.take(@params, ["miesiac"]))}
@@ -176,11 +182,11 @@
                 end}
               </p>
             </div>
-            <p class="text-right">
+            <p class="text-right max-md:hidden">
               <!--Rentowność-->
             </p>
             <p class="text-right">{project.hours} h</p>
-            <p class="text-right text-black">
+            <p class="text-right text-black max-md:hidden">
               {Calendar.strftime(project.archived_at, "%d.%m.%Y")}
             </p>
             <div class="flex flex-row items-center gap-3">
@@ -189,6 +195,7 @@
                 type="button"
                 variant="secondary"
                 size="small"
+                class="max-md:hidden"
                 phx-click="unarchive_project"
                 phx-value-id={project.id}
               >
