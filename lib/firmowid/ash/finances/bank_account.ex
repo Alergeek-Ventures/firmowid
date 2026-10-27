@@ -201,9 +201,15 @@ defmodule Firmowid.Ash.Finances.BankAccount do
       authorize_if always()
     end
 
-    # invoice_matcher, cost_invoice_processor, and billing_snapshotter:
-    # read-only access
-    bypass {SystemActorRole, roles: [:invoice_matcher, :cost_invoice_processor, :billing_snapshotter]} do
+    # invoice_matcher, cost_invoice_processor, billing_snapshotter and
+    # analysis_classifier: read-only access
+    bypass {SystemActorRole,
+            roles: [
+              :invoice_matcher,
+              :cost_invoice_processor,
+              :billing_snapshotter,
+              :analysis_classifier
+            ]} do
       authorize_if action(:read)
     end
 

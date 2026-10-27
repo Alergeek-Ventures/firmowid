@@ -286,8 +286,8 @@ defmodule Firmowid.Ash.Analysis do
   @doc """
   Queues classification of the year's entries without a category, or with
   `refresh` also of the classifier's earlier suggestions, when the classifier
-  is configured. The job runs as the scope's member, who must be allowed to
-  store entry categories.
+  is configured. The job runs as `classifier_scope/1` of the scope's
+  organization, so callers decide whether the scope may trigger it.
   """
   @spec classify_categories_later(integer(), boolean(), Scope.t()) ::
           {:ok, Oban.Job.t()} | {:error, :classification_unavailable | term()}
@@ -303,7 +303,7 @@ defmodule Firmowid.Ash.Analysis do
         else: [:available, :scheduled, :executing, :retryable]
 
     if is_binary(key) and byte_size(key) > 0 do
-      %{organization_id: scope.tenant, user_id: scope.actor.id, year: year, refresh: refresh}
+      %{organization_id: scope.tenant, year: year, refresh: refresh}
       |> CategoryWorker.new(
         unique: [
           period: :infinity,
@@ -315,6 +315,30 @@ defmodule Firmowid.Ash.Analysis do
     else
       {:error, :classification_unavailable}
     end
+  end
+
+  @doc """
+  Queues classification of the current year's new entries for an organization
+  that already uses the analysis, i.e. has entries the classifier categorized.
+  Entries enter the analysis once reconciled, so this runs after matching.
+  """
+  @spec classify_new_entries_later(Ash.UUID.t()) ::
+          {:ok, Oban.Job.t() | :unused} | {:error, :classification_unavailable | term()}
+  def classify_new_entries_later(organization_id) do
+    scope = classifier_scope(organization_id)
+
+    if Ash.exists?(EntryCategory, scope: scope),
+      do: classify_categories_later(Date.utc_today().year, false, scope),
+      else: {:ok, :unused}
+  end
+
+  @doc "Scope of the background classifier of `organization_id`'s analysis entries."
+  @spec classifier_scope(Ash.UUID.t()) :: Scope.t()
+  def classifier_scope(organization_id) do
+    %Scope{
+      actor: %SystemActor{org_id: organization_id, role: :analysis_classifier},
+      tenant: organization_id
+    }
   end
 
   # The month the totals assign the entry to.

@@ -199,6 +199,11 @@ defmodule Firmowid.Ash.Timetracker.Project do
       authorize_if expr(not is_nil(^actor(:org_id)) and organization_id == ^actor(:org_id))
     end
 
+    # The category review names the projects pinned salaries are split between.
+    bypass [{SystemActorRole, roles: [:analysis_classifier]}, action(:list)] do
+      authorize_if always()
+    end
+
     # System actors have no access to employee timetracking data
     policy Firmowid.Ash.Checks.IsSystemActor do
       forbid_if always()

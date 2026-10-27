@@ -35,6 +35,10 @@ defmodule Firmowid.Ash.SystemActor do
     across invoices and transactions, and lists sessions to split pinned salaries
     between projects.
 
+  - `:analysis_classifier` — keeps analysis entry categories current in the
+    background. Reads what the category review reads and stores the categories
+    the classifier chose per entry.
+
   - `:exchange_rate_cache` — persists exchange-rate cache entries for the Money
     exchange-rate backend.
 
@@ -93,6 +97,7 @@ defmodule Firmowid.Ash.SystemActor do
           | :invoice_matcher
           | :bank_sync
           | :analysis_reader
+          | :analysis_classifier
           | :exchange_rate_cache
           | :organization_owner_setup
           | :project_tag_manager
