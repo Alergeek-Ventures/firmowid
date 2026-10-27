@@ -257,6 +257,9 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
 
   defp review_groups(_assigns), do: []
 
+  # Nothing to confirm, e.g. a forged event outside the categories view, leaves the view as is.
+  defp confirm_categories(socket, []), do: {:noreply, socket}
+
   defp confirm_categories(socket, confirmations) do
     result =
       Enum.reduce_while(confirmations, :ok, fn {group, category}, :ok ->
