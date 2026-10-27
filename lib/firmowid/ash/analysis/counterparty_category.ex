@@ -13,6 +13,7 @@ defmodule Firmowid.Ash.Analysis.CounterpartyCategory do
 
   alias Firmowid.Ash.Analysis.IndustryTemplate
   alias Firmowid.Ash.Checks.AtLeastRole
+  alias Firmowid.Ash.Checks.SystemActorRole
   alias Firmowid.Ash.Resource
 
   require Resource
@@ -62,6 +63,11 @@ defmodule Firmowid.Ash.Analysis.CounterpartyCategory do
   end
 
   policies do
+    # Confirmed categories decide the review and steer the classifier.
+    bypass [{SystemActorRole, roles: [:analysis_classifier]}, action_type(:read)] do
+      authorize_if always()
+    end
+
     policy Firmowid.Ash.Checks.IsSystemActor do
       forbid_if always()
     end

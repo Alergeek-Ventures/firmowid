@@ -11,7 +11,7 @@ defmodule Firmowid.Ash.Analysis.EntityTag.Policies do
       authorize_if always()
     end
 
-    bypass {SystemActorRole, roles: [:invoice_matcher]} do
+    bypass {SystemActorRole, roles: [:invoice_matcher, :analysis_classifier]} do
       authorize_if action_type(:read)
     end
 

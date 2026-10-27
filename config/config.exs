@@ -135,6 +135,7 @@ config :firmowid, Oban,
      crontab: [
        {"0 6 1 * *", Firmowid.Ash.Billing.Workers.MonthlySnapshotDispatcher, args: %{}},
        {"15 * * * *", Firmowid.Ash.Invoicing.Workers.MatchingWorker, args: %{name: "matching"}},
+       {"45 * * * *", Firmowid.Ash.Analysis.Workers.CategoryDispatcher, args: %{}},
        {"0 */2 * * *", Firmowid.Ash.Ksef.Workers.FetchDispatcher, args: %{}}
      ]}
   ]

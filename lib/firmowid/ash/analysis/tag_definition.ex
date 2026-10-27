@@ -144,7 +144,7 @@ defmodule Firmowid.Ash.Analysis.TagDefinition do
                    ])
     end
 
-    bypass {SystemActorRole, roles: [:invoice_matcher]} do
+    bypass {SystemActorRole, roles: [:invoice_matcher, :analysis_classifier]} do
       authorize_if action_type(:read)
     end
 
