@@ -632,7 +632,7 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
                 placeholder="Szukaj wniosku"
                 phx-change="search_leave_requests"
                 phx-debounce="300"
-                input_class="py-0 px-1 bg-transparent border-none"
+                input_class="py-0 px-1 bg-transparent! border-none"
                 class="group w-0 border-transparent px-0 opacity-0 transition-[width,opacity,padding] duration-200 ease-in-out group-data-[expanded=true]:w-42 group-data-[expanded=true]:px-2 group-data-[expanded=true]:opacity-100 focus:border-none focus:ring-0 focus:outline-hidden lg:group-data-[expanded=true]:w-56"
               />
               <.button

@@ -101,7 +101,7 @@ defmodule FirmowidWeb.Management.Components.LeavesTab do
                   phx-change="search"
                   phx-debounce="300"
                   phx-target={@myself}
-                  input_class="py-0 px-1 bg-transparent border-none"
+                  input_class="py-0 px-1 bg-transparent! border-none"
                   class="w-0 border-transparent px-0 opacity-0 transition-[width,opacity,padding] duration-200 ease-in-out group-data-[expanded=true]:w-64 group-data-[expanded=true]:px-2 group-data-[expanded=true]:opacity-100 focus:border-none focus:ring-0 focus:outline-hidden"
                 />
                 <.button
