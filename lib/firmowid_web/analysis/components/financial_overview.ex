@@ -1,7 +1,7 @@
 defmodule FirmowidWeb.Analysis.Components.FinancialOverview do
   @moduledoc """
-  Annual totals of `Firmowid.Ash.Analysis.YearSummary` with a monthly net result
-  bar chart. Each bar has a rich tooltip with the month's amounts and, without
+  Annual totals of `Firmowid.Ash.Analysis.YearSummary` and the industry's key
+  costs as shares of income, with a monthly net result bar chart. Each bar has a rich tooltip with the month's amounts and, without
   tag filters, an outline showing the result with the month's unpaid invoices.
 
   Months are buttons sending `select-month` with the ISO date of the month.
@@ -9,11 +9,17 @@ defmodule FirmowidWeb.Analysis.Components.FinancialOverview do
   """
   use FirmowidWeb, :html
 
+  alias Firmowid.Cldr.Number
+
   attr :summary, :map, required: true, doc: "`YearSummary.get/3` result"
   attr :tag_filters, :list, required: true, doc: "tag filters the summary was fetched with"
   attr :selected_month, Date, default: nil, doc: "first day of the highlighted month"
 
-  @doc "Renders the year's income, expenses, net result and margin, then the monthly net results."
+  attr :key_costs, :list,
+    default: [],
+    doc: "`CategoryReview.key_costs/1` of the unfiltered year, shown as shares of income"
+
+  @doc "Renders the year's income, expenses, net result with margin and key costs, then the monthly net results."
   @spec overview(map()) :: Phoenix.LiveView.Rendered.t()
   def overview(assigns) do
     %{summary: summary} = assigns
@@ -21,7 +27,7 @@ defmodule FirmowidWeb.Analysis.Components.FinancialOverview do
     assigns =
       assigns
       |> assign(:currency, summary.currency)
-      |> assign(:kpis, kpis(summary.totals, summary.currency))
+      |> assign(:kpis, kpis(summary.totals, summary.currency, assigns.key_costs))
       |> assign(:chart, chart(summary.months))
 
     ~H"""
@@ -39,6 +45,7 @@ defmodule FirmowidWeb.Analysis.Components.FinancialOverview do
           ]}>
             {kpi.value}
           </dd>
+          <dd :if={kpi.caption} class="text-sm text-grey-700 tabular-nums">{kpi.caption}</dd>
         </div>
       </dl>
       <div class="flex flex-col gap-4 p-4 @3xl:p-6">
@@ -106,36 +113,56 @@ defmodule FirmowidWeb.Analysis.Components.FinancialOverview do
     """
   end
 
-  defp kpis(totals, currency) do
+  defp kpis(totals, currency, key_costs) do
     margin =
-      if Decimal.positive?(totals.total_income) do
-        [
-          %{
-            id: "analysis-year-margin",
-            label: gettext("Margin"),
-            amount: totals.net_profit,
-            value:
-              totals.net_profit
-              |> Decimal.div(totals.total_income)
-              |> Firmowid.Cldr.Number.to_string!(format: :percent, fractional_digits: 1)
-          }
-        ]
-      else
-        []
-      end
+      if Decimal.positive?(totals.total_income),
+        do:
+          gettext("Margin %{margin}",
+            margin: percent(Decimal.div(totals.net_profit, totals.total_income))
+          )
 
     [
-      %{id: "analysis-year-income", label: gettext("Income"), amount: totals.total_income},
+      %{
+        id: "analysis-year-income",
+        label: gettext("Income"),
+        amount: totals.total_income,
+        caption: nil
+      },
       %{
         id: "analysis-year-expenses",
         label: gettext("Expenses"),
-        amount: Decimal.abs(totals.total_expenses)
+        amount: Decimal.abs(totals.total_expenses),
+        caption: nil
       },
-      %{id: "analysis-year-net-result", label: gettext("Net result"), amount: totals.net_profit}
+      %{
+        id: "analysis-year-net-result",
+        label: gettext("Net result"),
+        amount: totals.net_profit,
+        caption: margin
+      }
     ]
     |> Enum.map(&Map.put(&1, :value, money(currency, &1.amount)))
-    |> Kernel.++(margin)
+    |> Kernel.++(
+      for %{share: share} = cost <- key_costs, share != nil do
+        %{
+          id: "analysis-key-cost-#{cost.key}",
+          label: key_cost_label(cost.key),
+          amount: cost.amount,
+          value: percent(share),
+          caption: Number.to_string!(cost.amount, currency: currency, fractional_digits: 0)
+        }
+      end
+    )
   end
+
+  defp key_cost_label(:people), do: gettext("Team and subcontractors")
+  defp key_cost_label(:software), do: gettext("Software and IT")
+  defp key_cost_label(:premises), do: gettext("Premises and utilities")
+  defp key_cost_label(:food), do: gettext("Food cost")
+  defp key_cost_label(:labour), do: gettext("Labour cost")
+  defp key_cost_label(:goods), do: gettext("Cost of goods")
+
+  defp percent(ratio), do: Number.to_string!(ratio, format: :percent, fractional_digits: 1)
 
   attr :mark, :map, required: true
 

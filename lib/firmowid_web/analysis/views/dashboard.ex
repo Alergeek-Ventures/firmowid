@@ -1,9 +1,10 @@
 defmodule FirmowidWeb.Analysis.Views.Dashboard do
   @moduledoc """
-  Financial overview, project profitability matrix and monthly entry classification.
+  Financial overview with month details, segment ranking, category review and
+  monthly entry classification.
 
-  Read-only views share the authorized year summary. Matrix allocation always uses
-  the whole company before selecting projects. Only tagging allows category changes;
+  Read-only views share the authorized year summary. Project results always
+  allocate over the whole company. Only tagging allows entry category changes;
   unrealized entries and tax estimates stay separate from realized financial totals.
   """
   use FirmowidWeb, :live_view
@@ -13,6 +14,7 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
   import FirmowidWeb.Infrastructure.Flags, only: [flag_enabled?: 2]
 
   alias Firmowid.Ash.Analysis
+  alias Firmowid.Ash.Analysis.CategoryReview
   alias Firmowid.Ash.Analysis.CounterpartyCategory
   alias Firmowid.Ash.Analysis.EntityTag
   alias Firmowid.Ash.Analysis.IndustryTemplate
@@ -197,27 +199,6 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
     end
   end
 
-  def handle_event(
-        "select-cell",
-        %{"month" => month, "project" => project},
-        %{assigns: %{params: %{view: :matrix}}} = socket
-      ) do
-    allowed =
-      Enum.map(socket.assigns.profitability.annual.projects, fn %{key: {:project, id}} -> id end)
-
-    with {:ok, selection} <-
-           Navigation.parse_matrix_selection(socket.assigns.params.year, month, project),
-         true <- selection.project in [:company, :residual | allowed] do
-      {:noreply,
-       push_patch(socket,
-         to: build_path(socket, month: selection.month, project: selection.project)
-       )}
-    else
-      _invalid ->
-        {:noreply, socket}
-    end
-  end
-
   def handle_event("filter-project", %{"project" => project}, socket) do
     valid_ids = Enum.map(socket.assigns.tag_definitions, & &1.id)
 
@@ -376,12 +357,21 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
 
   defp load_view(%{assigns: %{params: %{view: :categories}}} = socket), do: load_review(socket)
 
-  defp load_view(socket) do
-    socket = load_year(socket)
+  defp load_view(%{assigns: %{params: %{view: :segments, year: year}}} = socket) do
+    summary = YearSummary.get!(year, %{tag_filters: []}, scope: socket.assigns.ash_scope)
 
-    if socket.assigns.params.view == :dashboard and socket.assigns.params.month != nil,
-      do: load_month(socket),
-      else: assign(socket, :tax_forecast, nil)
+    socket
+    |> assign(:profitability, ProjectProfitability.from_year_summary(summary))
+    |> load_review()
+  end
+
+  # Categories come from unfiltered entries, so project filters leave them out.
+  defp load_view(socket) do
+    socket = socket |> load_year() |> load_tax_forecast()
+
+    if socket.assigns.tag_filters == [],
+      do: load_review(socket),
+      else: assign(socket, :review, nil)
   end
 
   defp load_review(socket) do
@@ -403,7 +393,7 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
     |> load_data()
   end
 
-  defp load_tax_forecast(%{assigns: %{params: %{view: :dashboard, month: month}, tag_filters: []}} = socket) do
+  defp load_tax_forecast(%{assigns: %{params: %{view: :dashboard, month: %Date{} = month}, tag_filters: []}} = socket) do
     assign(
       socket,
       :tax_forecast,
@@ -417,16 +407,6 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
   defp tax_forecast_settings_path(organization, scope) do
     if Ash.can?({organization, :update_tax_forecast_settings}, scope),
       do: SettingsNavigation.canonical_path(:invoices) <> "#rezerwa-podatkowa"
-  end
-
-  defp load_year(%{assigns: %{params: %{view: :matrix} = params}} = socket) do
-    summary = YearSummary.get!(params.year, %{tag_filters: []}, scope: socket.assigns.ash_scope)
-
-    assign(
-      socket,
-      :profitability,
-      ProjectProfitability.from_year_summary(summary, params.allocation)
-    )
   end
 
   defp load_year(socket) do
@@ -491,17 +471,16 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
 
   defp view_for(params, :dashboard), do: %{view: :dashboard, year: selected_month(params).year, month: nil}
 
-  defp view_for(%{view: :matrix} = params, :matrix), do: params
+  defp view_for(params, :segments), do: %{view: :segments, year: selected_month(params).year}
 
-  defp view_for(params, :matrix) do
-    %{
-      view: :matrix,
-      year: selected_month(params).year,
-      allocation: :income,
-      metric: :net,
-      month: nil,
-      project: nil
-    }
+  # Completed months of the year besides the selected one, as its usual baseline.
+  defp compared_months(%{year: year, month: month}) do
+    current = Date.beginning_of_month(Date.utc_today())
+
+    for number <- 1..12,
+        compared = Date.new!(year, number, 1),
+        Date.before?(compared, current) and compared != month,
+        do: compared
   end
 
   defp selected_month(%{month: %Date{} = month}), do: month
@@ -513,17 +492,6 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
 
   defp selected_project([{:project, id}]), do: id
   defp selected_project(_filters), do: "all"
-
-  defp allocation_bases do
-    [
-      {:income, pgettext("allocation basis", "By income"), gettext("Income")},
-      {:direct_expenses, pgettext("allocation basis", "By direct expenses"), gettext("Expenses")}
-    ]
-  end
-
-  defp result_metrics do
-    [net: gettext("After overhead"), direct: gettext("Before overhead")]
-  end
 
   defp tab_styles(true) do
     "inline-flex min-block-11 items-center rounded-md bg-teal-700 px-4 text-sm font-medium text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-700 active:opacity-90"
@@ -593,13 +561,13 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
           {pgettext("analysis view", "Dashboard")}
         </FirmowidUI.Components.Link.link>
         <FirmowidUI.Components.Link.link
-          id="analysis-matrix"
+          id="analysis-segments-tab"
           kind="unstyled"
-          patch={Navigation.view_path(view_for(@params, :matrix), @tag_filters)}
-          aria-current={if @params.view == :matrix, do: "page"}
-          class={tab_styles(@params.view == :matrix)}
+          patch={Navigation.view_path(view_for(@params, :segments), [])}
+          aria-current={if @params.view == :segments, do: "page"}
+          class={tab_styles(@params.view == :segments)}
         >
-          {gettext("Project matrix")}
+          {pgettext("analysis view", "Segments")}
         </FirmowidUI.Components.Link.link>
         <FirmowidUI.Components.Link.link
           :if={can_tag?(assigns)}
@@ -623,11 +591,11 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
         </FirmowidUI.Components.Link.link>
       </nav>
       <div
-        :if={@params.view in [:dashboard, :matrix] or @tag_filters != []}
+        :if={@params.view == :dashboard or @tag_filters != []}
         class="@container flex flex-wrap items-end gap-x-3 gap-y-2 @lg:gap-4"
       >
         <form
-          :if={@params.view in [:dashboard, :matrix]}
+          :if={@params.view == :dashboard}
           id="analysis-project-filter"
           phx-change="filter-project"
           class="flex flex-col gap-1 min-inline-0"
@@ -650,39 +618,6 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
             </option>
           </select>
         </form>
-        <div :if={@params.view == :matrix} class="contents">
-          <div role="group" aria-label={gettext("Allocation basis")} class="flex flex-wrap gap-1">
-            <FirmowidUI.Components.Button.button
-              :for={{basis, label, short_label} <- allocation_bases()}
-              id={"analysis-allocation-#{basis}"}
-              type="button"
-              variant="unstyled"
-              class={tab_styles(@params.allocation == basis)}
-              aria-pressed={to_string(@params.allocation == basis)}
-              aria-label={label}
-              title={label}
-              phx-click={
-                JS.patch(Navigation.view_path(Map.put(@params, :allocation, basis), @tag_filters))
-              }
-            >
-              <span class="@lg:hidden">{short_label}</span>
-              <span class="hidden @lg:inline">{label}</span>
-            </FirmowidUI.Components.Button.button>
-          </div>
-          <div role="group" aria-label={gettext("Result measure")} class="flex flex-wrap gap-1">
-            <FirmowidUI.Components.Button.button
-              :for={{metric, label} <- result_metrics()}
-              id={"analysis-metric-#{metric}"}
-              type="button"
-              variant="unstyled"
-              class={tab_styles(@params.metric == metric)}
-              aria-pressed={to_string(@params.metric == metric)}
-              phx-click={
-                JS.patch(Navigation.view_path(Map.put(@params, :metric, metric), @tag_filters))
-              }
-            >{label}</FirmowidUI.Components.Button.button>
-          </div>
-        </div>
         <div :if={@tag_filters != []} class="text-sm text-grey-700">
           <FirmowidUI.Components.Button.button
             id="clear-tag-filters"
@@ -700,6 +635,22 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
           summary={@year_summary}
           tag_filters={@tag_filters}
           selected_month={@params.month}
+          key_costs={if @review, do: CategoryReview.key_costs(@review), else: []}
+        />
+        <FirmowidWeb.Analysis.Components.MonthDetails.details
+          :if={@params.month}
+          month={Enum.find(@year_summary.months, &(&1.month == @params.month))}
+          groups={@review && CategoryReview.month(@review, @params.month, compared_months(@params))}
+          entries_path={
+            if can_tag?(assigns),
+              do: Navigation.view_path(view_for(@params, :tagging), @tag_filters)
+          }
+        />
+        <FirmowidWeb.DesignSystem.Components.TaxForecastSummary.tax_forecast_summary
+          :if={@tax_forecast && flag_enabled?(:tax_prognosis, assigns)}
+          id="analysis-tax-forecast"
+          forecast={@tax_forecast}
+          settings_path={@tax_forecast_settings_path}
         />
       <% end %>
       <FirmowidWeb.Analysis.Components.CategoryReview.review
@@ -707,34 +658,14 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
         review={@review}
         year={@params.year}
       />
-      <%= if @params.view == :matrix do %>
-        <FirmowidWeb.Analysis.Components.ProjectMatrix.matrix
-          profitability={@profitability}
-          params={@params}
-          tag_filters={@tag_filters}
-        />
-      <% end %>
-      <%= if @params.view == :tagging or (@params.view == :dashboard and @params.month != nil) do %>
+      <FirmowidWeb.Analysis.Components.SegmentRanking.ranking
+        :if={@params.view == :segments}
+        profitability={@profitability}
+        review={@review}
+        year={@params.year}
+      />
+      <%= if @params.view == :tagging do %>
         <section id="analysis-month" class="flex flex-col gap-4">
-          <div
-            :if={@params.view == :dashboard}
-            class="flex flex-wrap items-center justify-between gap-3"
-          >
-            <h2 class="text-lg font-semibold text-grey-900">
-              {gettext("Entries for %{month}",
-                month: Firmowid.Cldr.Date.to_string!(@params.month, format: "LLLL y")
-              )}
-            </h2>
-            <FirmowidUI.Components.Link.link
-              :if={can_tag?(assigns)}
-              id="analysis-month-tagging"
-              kind="button"
-              variant="outline"
-              patch={Navigation.view_path(view_for(@params, :tagging), @tag_filters)}
-            >
-              {pgettext("analysis mode", "Tagging")}
-            </FirmowidUI.Components.Link.link>
-          </div>
           <div role="group" aria-label={gettext("Entry direction")} class="flex flex-wrap gap-1">
             <FirmowidUI.Components.Button.button
               type="button"
@@ -765,12 +696,6 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
             </FirmowidUI.Components.Button.button>
           </div>
         </section>
-        <FirmowidWeb.DesignSystem.Components.TaxForecastSummary.tax_forecast_summary
-          :if={@tax_forecast && flag_enabled?(:tax_prognosis, assigns)}
-          id="analysis-tax-forecast"
-          forecast={@tax_forecast}
-          settings_path={@tax_forecast_settings_path}
-        />
         <section id="analysis-entries">
           <p :if={@tag_filters != []} class="text-sm text-grey-700">
             {gettext("Entry amounts are shown in full; project filters select matching documents.")}

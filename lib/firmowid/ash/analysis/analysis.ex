@@ -258,6 +258,7 @@ defmodule Firmowid.Ash.Analysis do
 
           %{
             side: if(Decimal.negative?(amount), do: :expenses, else: :income),
+            month: entry_month(entity),
             name: counterparty_name(entity),
             amount: absolute,
             lines: entry_lines(entity, absolute),
@@ -268,10 +269,13 @@ defmodule Firmowid.Ash.Analysis do
 
     industry = IndustryTemplate.infer(Enum.map(rows, &{&1.side, &1.name, &1.amount}))
 
-    rows
-    |> CategoryReview.build(CounterpartyCategory.list!(scope: scope), industry)
-    |> Map.put(:industry, industry)
+    CategoryReview.build(rows, CounterpartyCategory.list!(scope: scope), industry)
   end
+
+  # The month the totals assign the entry to.
+  defp entry_month(%Transaction{salary_month: %Date{} = month}), do: month
+  defp entry_month(%Transaction{booking_date: date}), do: Date.beginning_of_month(date)
+  defp entry_month(invoice), do: Date.beginning_of_month(invoice.sale_date)
 
   defp counterparty_name(%CostInvoice{} = invoice), do: invoice.effective_seller_display_name || "?"
 
