@@ -1,6 +1,6 @@
 <div class="mx-auto flex w-full max-w-7xl flex-col gap-3 pb-4">
   <% # top -> collapsed navbar height (56px) / TODO: refactor %>
-  <div class="sticky top-10.5 z-10 flex flex-col gap-6 bg-grey-100 py-4 max-md:static">
+  <div class="sticky top-10.5 z-10 flex flex-col gap-6 bg-grey-100 py-4 max-md:static max-md:z-auto">
     <div class="flex items-center justify-between max-md:flex-col max-md:items-stretch max-md:gap-3">
       <form class="flex gap-4 max-md:gap-3" phx-submit="search">
         <.month_picker
@@ -39,7 +39,7 @@
         </div>
       </form>
 
-      <div class="flex gap-4">
+      <div class="flex gap-4 max-md:contents">
         <.link
           :if={@can_export_csv}
           kind="button"
@@ -51,36 +51,29 @@
         >
           <Lucideicons.file_text /> Raport wypłat
         </.link>
-        <.link
-          navigate={~p"/zaproszenia"}
-          kind="button"
-          variant="special"
-          class="max-md:w-full max-md:justify-center"
-        >
-          <.icon name="hero-plus-mini" class="size-6" /> Dodaj pracownika
-        </.link>
+        <.page_actions>
+          <:action>
+            <.link navigate={~p"/zaproszenia"} kind="button" variant="special" data-fab>
+              <.icon name="hero-plus-mini" class="size-6" />
+              <span class="max-md:sr-only">Dodaj pracownika</span>
+            </.link>
+          </:action>
+        </.page_actions>
       </div>
     </div>
 
-    <div class="flex gap-4">
-      <.link
-        :for={
-          {path, live_action, label} <- [
-            {Navigation.employees_path(:index, @params), :index, "Aktywni"},
-            {Navigation.employees_path(:archive, @params), :archive, "Zarchiwizowani"}
-          ]
-        }
-        patch={path}
-        kind="button"
-        variant="ghost"
-        size="small"
-        class={[
-          "max-md:flex-1",
-          @live_action == live_action && "bg-grey-700 text-white hover:text-grey-900"
-        ]}
-      >
-        {label}
-      </.link>
+    <div class="flex items-center gap-4">
+      <.filter_tabs label={gettext("Employee scope")}>
+        <:tab patch={Navigation.employees_path(:index, @params)} active={@live_action == :index}>
+          Aktywni
+        </:tab>
+        <:tab
+          patch={Navigation.employees_path(:archive, @params)}
+          active={@live_action == :archive}
+        >
+          Zarchiwizowani
+        </:tab>
+      </.filter_tabs>
       <.switch
         class="ml-auto flex-row-reverse gap-4 max-md:hidden"
         label="Widok wypłat"

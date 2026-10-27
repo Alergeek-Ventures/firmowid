@@ -147,7 +147,7 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
   @impl true
   def render(assigns) do
     ~H"""
-    <div class="sticky top-navbar z-10 flex justify-between bg-grey-100 py-3 max-md:static max-md:flex-col max-md:gap-3">
+    <div class="sticky top-navbar z-10 flex justify-between bg-grey-100 py-3 max-md:static max-md:z-auto max-md:flex-col max-md:gap-3">
       <div class="flex items-center gap-4 max-md:gap-3">
         <.month_picker
           id="month"
@@ -174,7 +174,7 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
 
       <div
         phx-drop-target={can_write_invoicing?(@current_user) && @uploads.file.ref}
-        class="flex flex-row gap-4 max-md:flex-col max-md:gap-3"
+        class="flex flex-row gap-4 max-md:contents"
       >
         <%= if @invoicing_entries != [] do %>
           <.live_component
@@ -183,69 +183,69 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
             month={@params.month}
           />
         <% end %>
-        <form
-          :if={can_write_invoicing?(@current_user)}
-          id="upload-form"
-          phx-change="upload"
-          phx-submit="upload"
-          class="max-md:flex"
-        >
-          <div class="hidden">
-            <.live_file_input upload={@uploads.file} />
-          </div>
-          <FirmowidUI.Components.Button.button
-            as="label"
-            for={@uploads.file.ref}
-            variant="secondary"
-            accent="rust"
-            class="relative max-md:h-12 max-md:w-full max-md:justify-center"
-          >
-            <%= if @currently_uploading_count > 0 or @processing_blobs_count > 0 do %>
-              <span
-                id="upload-count-indicator"
-                phx-hook="Tippy"
-                data-tippy-content="Pliki są przetwarzane i za kilka chwil będą dostępne w Firmowidzie"
-                class="absolute -top-3 -right-3 flex size-7 items-center justify-center overflow-hidden rounded-full bg-grey-100"
+        <.page_actions :if={can_write_invoicing?(@current_user)} label={gettext("Add invoice")}>
+          <:action>
+            <form id="upload-form" phx-change="upload" phx-submit="upload">
+              <div class="hidden">
+                <.live_file_input upload={@uploads.file} />
+              </div>
+              <FirmowidUI.Components.Button.button
+                as="label"
+                for={@uploads.file.ref}
+                variant="secondary"
+                accent="rust"
+                class="relative"
+                data-fab
               >
-                <span class="absolute block size-full animate-pulse bg-rust-600" />
-                <span class="z-10 flex size-5 items-center justify-center rounded-full bg-grey-100">
-                  <Lucideicons.arrow_up
-                    :if={@currently_uploading_count > 0 or @processing_blobs_count == 1}
-                    class="size-4 leading-none text-rust-900"
-                  />
-                  <span :if={@currently_uploading_count == 0 and @processing_blobs_count > 1}>
-                    {@processing_blobs_count}
+                <%= if @currently_uploading_count > 0 or @processing_blobs_count > 0 do %>
+                  <span
+                    id="upload-count-indicator"
+                    phx-hook="Tippy"
+                    data-tippy-content="Pliki są przetwarzane i za kilka chwil będą dostępne w Firmowidzie"
+                    class="absolute -top-3 -right-3 flex size-7 items-center justify-center overflow-hidden rounded-full bg-grey-100"
+                  >
+                    <span class="absolute block size-full animate-pulse bg-rust-600" />
+                    <span class="z-10 flex size-5 items-center justify-center rounded-full bg-grey-100">
+                      <Lucideicons.arrow_up
+                        :if={@currently_uploading_count > 0 or @processing_blobs_count == 1}
+                        class="size-4 leading-none text-rust-900"
+                      />
+                      <span :if={@currently_uploading_count == 0 and @processing_blobs_count > 1}>
+                        {@processing_blobs_count}
+                      </span>
+                    </span>
                   </span>
+                <% else %>
+                  <span
+                    id="upload-count-indicator"
+                    phx-hook="Tippy"
+                    data-tippy-content="Faktury od zagranicznych kontrahentów w formacie PDF lub ich zdjęcia (PNG, JPG)"
+                    class="absolute top-0 left-0 size-full"
+                  />
+                <% end %>
+                <Lucideicons.file_input />
+                <span class="block sm:grow sm:text-center md:max-lg:sr-only">
+                  Faktura spoza KSeF
                 </span>
+              </FirmowidUI.Components.Button.button>
+            </form>
+          </:action>
+          <:action>
+            <.link
+              navigate={Navigation.sales_invoice_creator_path()}
+              kind="button"
+              variant="secondary"
+              accent="teal"
+              id="sales-invoice-link"
+              data-fab
+            >
+              <Lucideicons.file_pen_line class="size-5" />
+              <span class="max-xl:sr-only max-md:not-sr-only">
+                Wystaw fakturę
               </span>
-            <% else %>
-              <span
-                id="upload-count-indicator"
-                phx-hook="Tippy"
-                data-tippy-content="Faktury od zagranicznych kontrahentów w formacie PDF lub ich zdjęcia (PNG, JPG)"
-                class="absolute top-0 left-0 size-full"
-              />
-            <% end %>
-            <Lucideicons.file_input />
-            <span class="block sm:grow sm:text-center md:max-lg:sr-only">
-              Faktura spoza KSeF
-            </span>
-          </FirmowidUI.Components.Button.button>
-        </form>
-        <.link
-          :if={can_write_invoicing?(@current_user)}
-          navigate={Navigation.sales_invoice_creator_path()}
-          kind="button"
-          variant="secondary"
-          accent="teal"
-          id="sales-invoice-link"
-          class="max-md:h-12 max-md:justify-center"
-        >
-          <Lucideicons.file_pen_line class="size-5" />
-          <span class="max-xl:sr-only max-md:not-sr-only">
-            Wystaw fakturę
-          </span>
-        </.link>
+            </.link>
+          </:action>
+        </.page_actions>
       </div>
     </div>
     <.live_component

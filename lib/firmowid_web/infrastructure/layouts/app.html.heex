@@ -303,12 +303,16 @@
   />
 <% end %>
 
-<main class={[
-  is_nil(assigns[:no_padding]) &&
-    "p-4 sm:px-6 lg:px-8",
-  "flex flex-1 flex-col bg-grey-100",
-  assigns[:main_class]
-]}>
+<main class={
+  [
+    is_nil(assigns[:no_padding]) &&
+      "p-4 sm:px-6 lg:px-8",
+    "flex flex-1 flex-col bg-grey-100",
+    # room below the content for the floating action button on phones, see `page_actions/1`
+    "max-md:has-data-page-actions:pb-28",
+    assigns[:main_class]
+  ]
+}>
   <div class="mx-auto flex size-full flex-1 flex-col">
     <LiveToast.toast_group
       flash={@flash}

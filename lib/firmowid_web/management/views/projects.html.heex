@@ -1,6 +1,6 @@
 <div :if={not @zero_state?} class="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-6 pb-4">
   <% # top -> collapsed navbar height (56px) / TODO: refactor %>
-  <div class="sticky top-10.5 z-10 flex flex-col gap-6 bg-grey-100 py-4 max-md:static">
+  <div class="sticky top-10.5 z-10 flex flex-col gap-6 bg-grey-100 py-4 max-md:static max-md:z-auto">
     <div class="flex flex-row justify-between max-md:flex-col max-md:items-stretch max-md:gap-3">
       <form class="flex gap-4 max-md:gap-3">
         <.month_picker
@@ -38,36 +38,28 @@
         </div>
       </form>
 
-      <.link
-        navigate={~p"/zarzadzanie/projekty/dodaj"}
-        kind="button"
-        variant="special"
-        class="max-md:w-full max-md:justify-center"
-      >
-        <Lucideicons.plus /> Dodaj projekt
-      </.link>
+      <.page_actions>
+        <:action>
+          <.link
+            navigate={~p"/zarzadzanie/projekty/dodaj"}
+            kind="button"
+            variant="special"
+            data-fab
+          >
+            <Lucideicons.plus /> <span class="max-md:sr-only">Dodaj projekt</span>
+          </.link>
+        </:action>
+      </.page_actions>
     </div>
 
-    <div class="flex gap-4">
-      <.link
-        :for={
-          {path, live_action, label} <- [
-            {Navigation.projects_path(:index, @params), :index, "Aktywne"},
-            {Navigation.projects_path(:archive, @params), :archive, "Zarchiwizowane"}
-          ]
-        }
-        patch={path}
-        kind="button"
-        variant="ghost"
-        size="small"
-        class={[
-          "max-md:flex-1",
-          @live_action == live_action && "bg-grey-700 text-white hover:text-grey-900"
-        ]}
-      >
-        {label}
-      </.link>
-    </div>
+    <.filter_tabs label={gettext("Project scope")}>
+      <:tab patch={Navigation.projects_path(:index, @params)} active={@live_action == :index}>
+        Aktywne
+      </:tab>
+      <:tab patch={Navigation.projects_path(:archive, @params)} active={@live_action == :archive}>
+        Zarchiwizowane
+      </:tab>
+    </.filter_tabs>
   </div>
 
   <%= cond do %>
@@ -232,6 +224,6 @@
     variant="secondary"
     class="mt-6"
   >
-    <Lucideicons.plus /> Dodaj projekt
+    <Lucideicons.plus /> <span class="max-md:sr-only">Dodaj projekt</span>
   </.link>
 </div>
