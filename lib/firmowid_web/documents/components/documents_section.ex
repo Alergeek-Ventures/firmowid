@@ -173,7 +173,7 @@ defmodule FirmowidWeb.Documents.Components.DocumentsSection do
             phx-change="search"
             phx-debounce="300"
             phx-target={@myself}
-            input_class="py-0 px-1 bg-transparent border-none z-10 font-normal"
+            input_class="py-0 px-1 bg-transparent! border-none z-10 font-normal"
             class={@search_input_styles}
           />
           <.button
