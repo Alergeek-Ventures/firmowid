@@ -66,8 +66,9 @@ defmodule Firmowid.Ash.Analysis.CounterpartyCategory do
       forbid_if always()
     end
 
+    # The dashboard shows categories to everyone who may read the year summary.
     policy action_type(:read) do
-      authorize_if {AtLeastRole, role: :accountant}
+      authorize_if {AtLeastRole, role: :invoicing}
     end
 
     policy action_type(:create) do

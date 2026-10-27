@@ -382,12 +382,12 @@ msgstr ""
 msgid "Alerts for unpaid invoices"
 msgstr ""
 
-#: lib/firmowid_web/analysis/views/dashboard.ex:739
+#: lib/firmowid_web/analysis/views/dashboard.ex:742
 #, elixir-autogen, elixir-format
 msgid "All categories assigned to this month's entries will be removed, including manual ones. This cannot be undone."
 msgstr ""
 
-#: lib/firmowid_web/analysis/views/dashboard.ex:610
+#: lib/firmowid_web/analysis/views/dashboard.ex:613
 #, elixir-autogen, elixir-format
 msgid "All projects"
 msgstr ""
@@ -409,7 +409,7 @@ msgstr ""
 msgid "An assistant to help you with your business"
 msgstr ""
 
-#: lib/firmowid_web/analysis/views/dashboard.ex:551
+#: lib/firmowid_web/analysis/views/dashboard.ex:554
 #, elixir-autogen, elixir-format
 msgid "Analysis views"
 msgstr ""
@@ -468,8 +468,8 @@ msgstr ""
 msgid "Ask Firmowid for help with invoices"
 msgstr ""
 
-#: lib/firmowid_web/analysis/views/dashboard.ex:528
-#: lib/firmowid_web/analysis/views/dashboard.ex:530
+#: lib/firmowid_web/analysis/views/dashboard.ex:531
+#: lib/firmowid_web/analysis/views/dashboard.ex:533
 #, elixir-autogen, elixir-format
 msgid "Assign unassigned"
 msgstr ""
@@ -626,7 +626,7 @@ msgstr ""
 msgid "Can I cancel at any time?"
 msgstr ""
 
-#: lib/firmowid_web/analysis/views/dashboard.ex:749
+#: lib/firmowid_web/analysis/views/dashboard.ex:752
 #: lib/firmowid_web/hours_record/views/index.html.heex:166
 #, elixir-autogen, elixir-format
 msgid "Cancel"
@@ -740,12 +740,12 @@ msgid "Choose an issued VAT invoice to correct."
 msgstr ""
 
 #: lib/firmowid_web/analysis/components/category_selector.ex:195
-#: lib/firmowid_web/analysis/views/dashboard.ex:756
+#: lib/firmowid_web/analysis/views/dashboard.ex:759
 #, elixir-autogen, elixir-format
 msgid "Clear categories"
 msgstr ""
 
-#: lib/firmowid_web/analysis/views/dashboard.ex:629
+#: lib/firmowid_web/analysis/views/dashboard.ex:632
 #, elixir-autogen, elixir-format
 msgid "Clear filters"
 msgstr ""
@@ -755,12 +755,12 @@ msgstr ""
 msgid "Clear invoice wizard"
 msgstr ""
 
-#: lib/firmowid_web/analysis/views/dashboard.ex:520
+#: lib/firmowid_web/analysis/views/dashboard.ex:523
 #, elixir-autogen, elixir-format
 msgid "Clear month's categories"
 msgstr ""
 
-#: lib/firmowid_web/analysis/views/dashboard.ex:737
+#: lib/firmowid_web/analysis/views/dashboard.ex:740
 #, elixir-autogen, elixir-format
 msgid "Clear month's categories?"
 msgstr ""
@@ -1016,7 +1016,7 @@ msgstr[1] ""
 #: lib/firmowid_web/analysis/components/entry_categories.ex:97
 #: lib/firmowid_web/analysis/views/dashboard.ex:104
 #: lib/firmowid_web/analysis/views/dashboard.ex:167
-#: lib/firmowid_web/analysis/views/dashboard.ex:286
+#: lib/firmowid_web/analysis/views/dashboard.ex:289
 #, elixir-autogen, elixir-format
 msgid "Could not update categories."
 msgstr ""
@@ -1374,12 +1374,12 @@ msgstr ""
 msgid "Entrepreneurs maintained by the XI Commercial Division of the National Court Register of the District Court for Kraków-Śródmieście in Kraków under number"
 msgstr ""
 
-#: lib/firmowid_web/analysis/views/dashboard.ex:701
+#: lib/firmowid_web/analysis/views/dashboard.ex:704
 #, elixir-autogen, elixir-format
 msgid "Entry amounts are shown in full; project filters select matching documents."
 msgstr ""
 
-#: lib/firmowid_web/analysis/views/dashboard.ex:669
+#: lib/firmowid_web/analysis/views/dashboard.ex:672
 #, elixir-autogen, elixir-format
 msgid "Entry direction"
 msgstr ""
@@ -1442,7 +1442,7 @@ msgstr ""
 
 #: lib/firmowid_web/analysis/components/financial_overview.ex:133
 #: lib/firmowid_web/analysis/components/financial_overview.ex:228
-#: lib/firmowid_web/analysis/views/dashboard.ex:691
+#: lib/firmowid_web/analysis/views/dashboard.ex:694
 #, elixir-autogen, elixir-format
 msgid "Expenses"
 msgstr ""
@@ -1762,7 +1762,7 @@ msgstr ""
 #: lib/firmowid_web/analysis/components/financial_overview.ex:127
 #: lib/firmowid_web/analysis/components/financial_overview.ex:227
 #: lib/firmowid_web/analysis/components/month_details.ex:65
-#: lib/firmowid_web/analysis/views/dashboard.ex:679
+#: lib/firmowid_web/analysis/views/dashboard.ex:682
 #, elixir-autogen, elixir-format
 msgid "Income"
 msgstr ""
@@ -1908,7 +1908,7 @@ msgstr ""
 msgid "Invoices that reach KSeF by themselves"
 msgstr ""
 
-#: lib/firmowid_web/analysis/views/dashboard.ex:723
+#: lib/firmowid_web/analysis/views/dashboard.ex:726
 #, elixir-autogen, elixir-format
 msgid "Invoices without a payment and payments without an invoice or salary, dated this month. Link them or mark them as skipped to include them in the analysis."
 msgstr ""
@@ -2725,7 +2725,7 @@ msgid "Programming services"
 msgstr ""
 
 #: lib/firmowid_web/analysis/components/category_selector.ex:334
-#: lib/firmowid_web/analysis/views/dashboard.ex:603
+#: lib/firmowid_web/analysis/views/dashboard.ex:606
 #, elixir-autogen, elixir-format
 msgid "Project"
 msgstr ""
@@ -3707,12 +3707,12 @@ msgstr ""
 msgid "Unpaid leave"
 msgstr ""
 
-#: lib/firmowid_web/analysis/views/dashboard.ex:720
+#: lib/firmowid_web/analysis/views/dashboard.ex:723
 #, elixir-autogen, elixir-format
 msgid "Unrealized expenses"
 msgstr ""
 
-#: lib/firmowid_web/analysis/views/dashboard.ex:719
+#: lib/firmowid_web/analysis/views/dashboard.ex:722
 #, elixir-autogen, elixir-format
 msgid "Unrealized income"
 msgstr ""
@@ -4297,13 +4297,13 @@ msgstr ""
 msgid "— working time entries and project assignments."
 msgstr ""
 
-#: lib/firmowid_web/analysis/views/dashboard.ex:590
+#: lib/firmowid_web/analysis/views/dashboard.ex:593
 #, elixir-autogen, elixir-format
 msgctxt "analysis mode"
 msgid "Tagging"
 msgstr ""
 
-#: lib/firmowid_web/analysis/views/dashboard.ex:561
+#: lib/firmowid_web/analysis/views/dashboard.ex:564
 #, elixir-autogen, elixir-format
 msgctxt "analysis view"
 msgid "Dashboard"
@@ -4428,7 +4428,7 @@ msgid "open source"
 msgstr ""
 
 #: lib/firmowid_web/analysis/views/dashboard.ex:59
-#: lib/firmowid_web/analysis/views/dashboard.ex:510
+#: lib/firmowid_web/analysis/views/dashboard.ex:513
 #: lib/firmowid_web/infrastructure/layouts.ex:78
 #, elixir-autogen, elixir-format
 msgctxt "main navigation"
@@ -4710,7 +4710,7 @@ msgstr ""
 msgid "Your choice"
 msgstr ""
 
-#: lib/firmowid_web/analysis/views/dashboard.ex:580
+#: lib/firmowid_web/analysis/views/dashboard.ex:583
 #, elixir-autogen, elixir-format
 msgctxt "analysis view"
 msgid "Categories"
@@ -4868,7 +4868,7 @@ msgstr ""
 msgid "usually %{amount} (%{change})"
 msgstr ""
 
-#: lib/firmowid_web/analysis/views/dashboard.ex:570
+#: lib/firmowid_web/analysis/views/dashboard.ex:573
 #, elixir-autogen, elixir-format
 msgctxt "analysis view"
 msgid "Segments"
