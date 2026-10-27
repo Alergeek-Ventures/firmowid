@@ -96,7 +96,8 @@ defmodule Firmowid.Ash.Analysis.CounterpartyCategory do
 
     attribute :suggestion_source, :atom,
       public?: true,
-      constraints: [one_of: [:certain, :invoice_lines, :name, :learned, :default]]
+      # Earlier keyword sources stay readable on rules confirmed before the classifier.
+      constraints: [one_of: [:certain, :jev, :invoice_lines, :name, :learned, :default]]
 
     Resource.firmowid_timestamps()
   end

@@ -1,4 +1,7 @@
-import { computePosition, autoUpdate, flip } from "@floating-ui/dom";
+import { computePosition, autoUpdate, flip, size } from "@floating-ui/dom";
+
+// Distance kept between a popover and the viewport edges.
+const VIEWPORT_PADDING = 16;
 
 export default {
   mounted() {
@@ -37,7 +40,19 @@ export default {
       computePosition(reference, this.el, {
         placement: this.el.dataset.placement,
         strategy: this.el.dataset.strategy || "absolute",
-        middleware: [flip()],
+        middleware: [
+          flip({ padding: VIEWPORT_PADDING }),
+          // Exposes the room left in the viewport, so long content can scroll within it.
+          size({
+            padding: VIEWPORT_PADDING,
+            apply: ({ availableHeight, elements }) => {
+              elements.floating.style.setProperty(
+                "--popover-available-height",
+                `${availableHeight}px`
+              );
+            },
+          }),
+        ],
       }).then(({ x, y }) => {
         Object.assign(this.el.style, {
           position: this.el.dataset.strategy || "absolute",

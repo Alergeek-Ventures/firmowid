@@ -14,9 +14,11 @@ defmodule Firmowid.Ash.Analysis do
   alias Firmowid.Ash.Analysis.CounterpartyCategory
   alias Firmowid.Ash.Analysis.EntityTag
   alias Firmowid.Ash.Analysis.Entry
+  alias Firmowid.Ash.Analysis.EntryCategory
   alias Firmowid.Ash.Analysis.IndustryTemplate
   alias Firmowid.Ash.Analysis.TagDefinition
   alias Firmowid.Ash.Analysis.TaxForecast
+  alias Firmowid.Ash.Analysis.Workers.CategoryWorker
   alias Firmowid.Ash.Analysis.YearSummary
   alias Firmowid.Ash.Currencies.Converter, as: Currencies
   alias Firmowid.Ash.Finances
@@ -86,6 +88,8 @@ defmodule Firmowid.Ash.Analysis do
     resource TagDefinition
 
     resource CounterpartyCategory
+
+    resource EntryCategory
 
     resource EntityTag
 
@@ -240,29 +244,36 @@ defmodule Firmowid.Ash.Analysis do
   Classifies a year's analysis entries into the categories of an industry template.
 
   Uses the same entries and PLN amounts as the totals, without internal ones,
-  together with the owner's confirmed counterparty categories. The industry is
-  inferred from the counterparties and returned as `:industry`.
-  See `CategoryReview.build/3` for the rest of the result.
+  together with the owner's confirmed counterparty categories and the
+  categories the classifier stored per entry. The industry is inferred from the
+  counterparties and returned as `:industry`. Each entry carries its `entity`
+  (`{entity_type, id}`) and `lines`: invoice line names, else the cost invoice
+  description or the transfer title. See `CategoryReview.build/3` for the rest.
   """
   @spec get_category_review(integer(), Scope.t()) :: map()
   def get_category_review(year, scope) do
     entries = get_organization_entries(Date.new!(year, 1, 1), Date.new!(year, 12, 31), scope)
     today = Date.utc_today()
 
+    classified =
+      Map.new(EntryCategory.list!(scope: scope), &{{&1.entity_type, &1.resource_id}, &1.category})
+
     rows =
       (entries.sales_invoices ++ entries.cost_invoices ++ entries.transactions)
       |> Enum.reject(&internal?(&1.entity_tags))
       |> Enum.flat_map(fn entity ->
         for {amount, tags} <- normalized_entity(entity, today), not Decimal.eq?(amount, 0) do
-          absolute = amount |> Decimal.abs() |> Decimal.round(2)
+          entry = {entity_type(entity), entity.id}
 
           %{
+            entity: entry,
             side: if(Decimal.negative?(amount), do: :expenses, else: :income),
             month: entry_month(entity),
             name: counterparty_name(entity),
-            amount: absolute,
-            lines: entry_lines(entity, absolute),
-            certain: certain_category(entity, tags, amount)
+            amount: amount |> Decimal.abs() |> Decimal.round(2),
+            lines: entry_lines(entity),
+            certain: certain_category(entity, tags, amount),
+            classified: Map.get(classified, entry)
           }
         end
       end)
@@ -270,6 +281,40 @@ defmodule Firmowid.Ash.Analysis do
     industry = IndustryTemplate.infer(Enum.map(rows, &{&1.side, &1.name, &1.amount}))
 
     CategoryReview.build(rows, CounterpartyCategory.list!(scope: scope), industry)
+  end
+
+  @doc """
+  Queues classification of the year's entries without a category, or with
+  `refresh` also of the classifier's earlier suggestions, when the classifier
+  is configured. The job runs as the scope's member, who must be allowed to
+  store entry categories.
+  """
+  @spec classify_categories_later(integer(), boolean(), Scope.t()) ::
+          {:ok, Oban.Job.t()} | {:error, :classification_unavailable | term()}
+  def classify_categories_later(year, refresh, scope) do
+    key = Application.get_env(:firmowid, :typesafe_api_key)
+
+    # A run is unique while it waits, runs or retries, so reloads triggered by
+    # its own progress never queue another. A refresh may queue behind a running
+    # one, so it learns from corrections made meanwhile.
+    unique_states =
+      if refresh,
+        do: [:available, :scheduled],
+        else: [:available, :scheduled, :executing, :retryable]
+
+    if is_binary(key) and byte_size(key) > 0 do
+      %{organization_id: scope.tenant, user_id: scope.actor.id, year: year, refresh: refresh}
+      |> CategoryWorker.new(
+        unique: [
+          period: :infinity,
+          keys: [:organization_id, :year, :refresh],
+          states: unique_states
+        ]
+      )
+      |> Oban.insert()
+    else
+      {:error, :classification_unavailable}
+    end
   end
 
   # The month the totals assign the entry to.
@@ -288,23 +333,21 @@ defmodule Firmowid.Ash.Analysis do
     name || transaction.remittance_information_unstructured || "?"
   end
 
+  defp entity_type(%SalesInvoice{}), do: :sales_invoice
+  defp entity_type(%CostInvoice{}), do: :cost_invoice
+  defp entity_type(%Transaction{}), do: :transaction
+
   # Invoice lines, or the whole entry described by its description or transfer title.
-  defp entry_lines(%CostInvoice{items_list: [_ | _] = items}, _amount) do
-    for item <- items, is_binary(item["name"]) do
-      {item["name"], Decimal.mult(decimal(item["quantity"] || 1), decimal(item["price"] || 0))}
-    end
-  end
+  defp entry_lines(%CostInvoice{items_list: [_ | _] = items}),
+    do: for(%{"name" => name} <- items, is_binary(name), do: name)
 
-  defp entry_lines(%CostInvoice{description: description}, amount) when is_binary(description),
-    do: [{description, amount}]
+  defp entry_lines(%CostInvoice{description: description}) when is_binary(description), do: [description]
 
-  defp entry_lines(%Transaction{remittance_information_unstructured: title}, amount) when is_binary(title),
-    do: [{title, amount}]
+  defp entry_lines(%SalesInvoice{sales_invoice_items: items}), do: Enum.map(items, & &1.name)
 
-  defp entry_lines(_entity, _amount), do: []
+  defp entry_lines(%Transaction{remittance_information_unstructured: title}) when is_binary(title), do: [title]
 
-  defp decimal(value) when is_float(value), do: Decimal.from_float(value)
-  defp decimal(value), do: Decimal.new(value)
+  defp entry_lines(_entity), do: []
 
   defp certain_category(%Transaction{salary_month: %Date{}}, _tags, _amount), do: :payroll
 

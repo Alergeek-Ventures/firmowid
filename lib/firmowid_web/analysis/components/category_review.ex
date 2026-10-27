@@ -6,7 +6,8 @@ defmodule FirmowidWeb.Analysis.Components.CategoryReview do
   counterparties. A counterparty row opens the categories to confirm or move
   it to; one button accepts every remaining suggestion. The industry is
   inferred, never chosen here. Sends `confirm-suggestions` and
-  `confirm-category` (with `side`, `key` and `category`).
+  `confirm-category` (with the group's `side`, `key`, `suggestion` and `source`,
+  and the chosen `category`).
   """
   use FirmowidWeb, :html
 
@@ -15,6 +16,10 @@ defmodule FirmowidWeb.Analysis.Components.CategoryReview do
 
   attr :review, :map, required: true, doc: "`Firmowid.Ash.Analysis.get_category_review/3` result"
   attr :year, :integer, required: true
+
+  attr :classifying, :boolean,
+    default: false,
+    doc: "whether a classification job is queued or running"
 
   @doc "Renders the bulk confirmation and the cost and income columns."
   @spec review(map()) :: Phoenix.LiveView.Rendered.t()
@@ -37,7 +42,7 @@ defmodule FirmowidWeb.Analysis.Components.CategoryReview do
       <div class="flex flex-wrap items-center justify-end gap-4">
         <div class="flex flex-wrap items-center gap-4">
           <p id="analysis-category-status" class="text-sm text-grey-700">
-            {gettext("%{confirmed} of %{total} confirmed", confirmed: @confirmed, total: @total)}
+            {status(@classifying, @review.unclassified, @confirmed, @total)}
           </p>
           <FirmowidUI.Components.Button.button
             :if={@suggested > 0}
@@ -129,7 +134,7 @@ defmodule FirmowidWeb.Analysis.Components.CategoryReview do
       assign(
         assigns,
         :id,
-        "analysis-counterparty-#{assigns.group.side}-#{:erlang.phash2(assigns.group.key)}"
+        "analysis-counterparty-#{assigns.group.side}-#{:erlang.phash2({assigns.group.key, assigns.group.suggestion, assigns.group.source})}"
       )
 
     ~H"""
@@ -151,7 +156,7 @@ defmodule FirmowidWeb.Analysis.Components.CategoryReview do
         <span class="ms-auto shrink-0 text-grey-700 tabular-nums">{whole_money(@group.amount)}</span>
       </FirmowidUI.Components.Button.button>
       <.popover id={"#{@id}-menu"} reference_id={"#{@id}-trigger"} placement="bottom-end">
-        <div class="flex w-72 flex-col gap-1 rounded-lg bg-white p-1 shadow-lg ring-1 ring-grey-700/10">
+        <div class="flex max-h-(--popover-available-height) w-72 flex-col gap-1 overflow-y-auto overscroll-contain rounded-lg bg-white p-1 shadow-lg ring-1 ring-grey-700/10">
           <p class="px-3 pt-2 pb-1 text-xs text-grey-600">{reason(@group)}</p>
           <FirmowidUI.Components.Button.button
             :for={category <- category_options(@industry, @group)}
@@ -159,7 +164,13 @@ defmodule FirmowidWeb.Analysis.Components.CategoryReview do
             variant="unstyled"
             phx-click={
               JS.push("confirm-category",
-                value: %{side: @group.side, key: @group.key, category: category}
+                value: %{
+                  side: @group.side,
+                  key: @group.key,
+                  suggestion: to_string(@group.suggestion),
+                  source: to_string(@group.source),
+                  category: category
+                }
               )
               |> hide_popover("#{@id}-menu")
             }
@@ -176,6 +187,14 @@ defmodule FirmowidWeb.Analysis.Components.CategoryReview do
     </li>
     """
   end
+
+  defp status(false, _unclassified, confirmed, total),
+    do: gettext("%{confirmed} of %{total} confirmed", confirmed: confirmed, total: total)
+
+  defp status(true, [], _confirmed, _total), do: gettext("Updating suggestions with your choices…")
+
+  defp status(true, unclassified, _confirmed, _total),
+    do: ngettext("Categorizing %{count} entry…", "Categorizing %{count} entries…", length(unclassified))
 
   defp name_styles(:confirmed), do: "min-w-0 truncate text-grey-900"
   defp name_styles(_status), do: "min-w-0 truncate text-grey-700"
@@ -215,16 +234,12 @@ defmodule FirmowidWeb.Analysis.Components.CategoryReview do
 
   defp reason(%{status: :confirmed}), do: gettext("Your choice")
 
-  defp reason(%{status: :automatic}), do: gettext("Assigned automatically; suggestions like this are reliable")
-
   defp reason(%{source: :certain}), do: gettext("Salary or tax payment")
 
-  defp reason(%{source: :invoice_lines, reason: [line | _]}), do: gettext("From the document: %{text}", text: line)
+  defp reason(%{source: :jev, reason: [line | _]}), do: gettext("From the document: %{text}", text: line)
 
-  defp reason(%{source: :name}), do: gettext("Known counterparty")
-  defp reason(%{source: :learned}), do: gettext("Similar to your earlier choices")
-  defp reason(%{source: :default}), do: gettext("Typical for your industry")
-  defp reason(_group), do: gettext("No suggestion; choose a category")
+  defp reason(%{source: :jev}), do: gettext("Chosen from the counterparty's name")
+  defp reason(_group), do: gettext("No suggestion yet; choose a category")
 
   defp category_options(industry, group) do
     options = IndustryTemplate.categories(industry, group.side)
