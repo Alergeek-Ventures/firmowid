@@ -36,7 +36,7 @@ jobs:
           repository: Alergeek-Ventures/av-secret-service
           ssh-key: ${{ secrets.AV_SECRET_SERVICE_DEPLOY_KEY }}
           path: .av-secret-service
-          ref: 98a6513f7b84def22025843c28fc7369ec1bb842
+          ref: d1f0dd1864e3b1b5830459787057408b587434f6
 
       - name: Deploy to Coolify
         uses: ./.av-secret-service/coolify-deploy
