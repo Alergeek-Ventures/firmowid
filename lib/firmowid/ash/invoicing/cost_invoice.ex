@@ -454,9 +454,8 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
 
       # A first KSeF import can hold thousands of invoices; generating names synchronously
       # would keep the fetch job running past its timeout.
+      # The seller display name refresh also writes the description.
       change EnqueueMissingCostInvoiceSellerDisplayNameRefresh
-
-      change EnqueueMissingCostInvoiceDescriptionRefresh
 
       change fn changeset, _context ->
         validate_non_correction_amount_sign(changeset)
@@ -510,10 +509,13 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
     end
 
     update :refresh_seller_display_name do
-      description "Recompute the seller display name for this cost invoice."
+      description "Recompute the seller display name and description for this cost invoice."
       require_atomic? false
 
       change ComputeCostInvoiceSellerDisplayName
+
+      # The description uses the seller activity found together with the display name.
+      change ComputeCostInvoiceDescription
     end
 
     update :connect_transactions do

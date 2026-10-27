@@ -69,11 +69,7 @@ defmodule Firmowid.Ash.Invoicing.Matching.ParametrizedResult do
       days_lag_gt_30: boolean_to_float(gt_30),
       signed_amount_match: calculate_signed_amount_match(invoice, transaction),
       relative_amount_difference: calculate_relative_amount_difference(invoice, transaction),
-      transaction_side_similarity:
-        calculate_transaction_side_similarity(
-          get_transaction_side_name(invoice, transaction),
-          get_invoice_display_name(invoice)
-        ),
+      transaction_side_similarity: transaction_side_similarity(invoice, transaction),
       bank_account_similarity:
         calculate_bank_account_similarity(
           get_transaction_side_account(invoice, transaction),
@@ -98,14 +94,25 @@ defmodule Firmowid.Ash.Invoicing.Matching.ParametrizedResult do
     }
   end
 
+  # The display name may show a franchise brand ("Stacja paliw Orlen w Krakowie")
+  # while the bank shows the franchisee, so the legal seller name is compared too.
+  defp transaction_side_similarity(invoice, transaction) do
+    transaction_side_name = get_transaction_side_name(invoice, transaction)
+
+    invoice
+    |> get_invoice_side_names()
+    |> Enum.map(&calculate_transaction_side_similarity(transaction_side_name, &1))
+    |> Enum.max()
+  end
+
   # Helper functions to extract the correct fields for each invoice type
   defp get_invoice_date(%CostInvoice{due_date: due_date}), do: due_date
   defp get_invoice_date(%SalesInvoice{issue_date: issue_date}), do: issue_date
 
-  defp get_invoice_display_name(%CostInvoice{seller_display_name: name}), do: name
+  defp get_invoice_side_names(%CostInvoice{seller_display_name: name, seller: seller}), do: [name, seller]
 
-  defp get_invoice_display_name(%SalesInvoice{} = invoice) do
-    invoice.buyer_display_name_label
+  defp get_invoice_side_names(%SalesInvoice{} = invoice) do
+    [invoice.buyer_display_name_label]
   end
 
   defp get_invoice_account_number(%CostInvoice{account_number: acc}), do: acc
