@@ -113,7 +113,9 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
     with %{} = group <-
            Enum.find(
              review_groups(socket.assigns),
-             &(&1.key == key and Atom.to_string(&1.side) == side)
+             &(&1.key == key and Atom.to_string(&1.side) == side and
+                 to_string(&1.suggestion) == params["suggestion"] and
+                 to_string(&1.source) == params["source"])
            ),
          category when category != nil <-
            Enum.find(
@@ -126,13 +128,25 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
     end
   end
 
+  # Confirmations apply to the whole counterparty, so one already confirmed or
+  # suggested several categories is left for the owner to decide.
   def handle_event("confirm-suggestions", _params, socket) do
+    groups = review_groups(socket.assigns)
+
+    undecided =
+      groups
+      |> Enum.group_by(&{&1.side, &1.key})
+      |> Map.filter(fn {_counterparty, groups} ->
+        Enum.any?(groups, &(&1.status == :confirmed)) or
+          groups |> Enum.map(& &1.suggestion) |> Enum.uniq() |> length() > 1
+      end)
+
     confirm_categories(
       socket,
       for(
-        group <- review_groups(socket.assigns),
-        group.status != :confirmed,
+        group <- groups,
         group.suggestion,
+        not Map.has_key?(undecided, {group.side, group.key}),
         do: {group, group.suggestion}
       )
     )
@@ -279,7 +293,20 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
         end
       end)
 
+    # A corrected suggestion teaches the classifier, so its other suggestions are refreshed.
+    refreshing =
+      Enum.any?(confirmations, fn {group, category} -> category != group.suggestion end) and
+        match?(
+          {:ok, _job},
+          Analysis.classify_categories_later(
+            socket.assigns.params.year,
+            true,
+            socket.assigns.ash_scope
+          )
+        )
+
     socket = load_review(socket)
+    socket = assign(socket, :classifying, socket.assigns.classifying or refreshing)
 
     case result do
       :ok ->
@@ -377,12 +404,22 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
       else: assign(socket, :review, nil)
   end
 
+  # Entries without a category are classified in the background for members who may store categories.
   defp load_review(socket) do
-    assign(
-      socket,
-      :review,
-      Analysis.get_category_review(socket.assigns.params.year, socket.assigns.ash_scope)
-    )
+    %{params: %{year: year}, ash_scope: scope} = socket.assigns
+    review = Analysis.get_category_review(year, scope)
+
+    # A unique conflict returns the existing job, which may have finished already.
+    classifying =
+      review.unclassified != [] and can_tag?(socket.assigns) and
+        case Analysis.classify_categories_later(year, false, scope) do
+          {:ok, job} -> job.state in ["available", "scheduled", "executing", "retryable"]
+          {:error, :classification_unavailable} -> false
+        end
+
+    socket
+    |> assign(:review, review)
+    |> assign(:classifying, classifying)
   end
 
   defp load_month(socket) do
@@ -660,6 +697,7 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
         :if={@params.view == :categories}
         review={@review}
         year={@params.year}
+        classifying={@classifying}
       />
       <FirmowidWeb.Analysis.Components.SegmentRanking.ranking
         :if={@params.view == :segments}
