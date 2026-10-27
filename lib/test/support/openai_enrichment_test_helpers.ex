@@ -6,7 +6,7 @@ defmodule Firmowid.Test.Support.OpenAIEnrichmentTestHelpers do
   @spec stub_openai_enrichment_request() :: :ok
   def stub_openai_enrichment_request do
     Req.Test.stub(:openai_enrichment, fn conn ->
-      Req.Test.json(conn, openai_responses_body())
+      Req.Test.json(conn, openai_responses_body("Zakup testowy"))
     end)
 
     :ok
@@ -35,7 +35,7 @@ defmodule Firmowid.Test.Support.OpenAIEnrichmentTestHelpers do
     {:ok, "http://localhost:#{port}#{path_suffix}"}
   end
 
-  defp openai_responses_body do
+  defp openai_responses_body(text) do
     %{
       "id" => "resp-test",
       "object" => "response",
@@ -48,7 +48,7 @@ defmodule Firmowid.Test.Support.OpenAIEnrichmentTestHelpers do
           "type" => "message",
           "role" => "assistant",
           "content" => [
-            %{"type" => "output_text", "text" => "Zakup testowy"}
+            %{"type" => "output_text", "text" => text}
           ]
         }
       ],
@@ -60,9 +60,9 @@ defmodule Firmowid.Test.Support.OpenAIEnrichmentTestHelpers do
     }
   end
 
-  @spec openai_responses_json() :: String.t()
-  def openai_responses_json do
-    Jason.encode!(openai_responses_body())
+  @spec openai_responses_json(String.t()) :: String.t()
+  def openai_responses_json(text \\ "Zakup testowy") do
+    Jason.encode!(openai_responses_body(text))
   end
 end
 
@@ -79,31 +79,24 @@ defmodule Firmowid.Test.Support.OpenAIEnrichmentTestHelpers.OpenAIExHttpStub do
   def init(opts), do: opts
 
   @spec call(Plug.Conn.t(), keyword()) :: Plug.Conn.t()
-  def call(%Plug.Conn{method: "POST", request_path: "/v1/chat/completions"} = conn, _opts) do
-    conn
-    |> put_resp_content_type("application/json")
-    |> send_resp(
-      200,
-      Jason.encode!(%{
-        "id" => "chatcmpl-test",
-        "object" => "chat.completion",
-        "created" => 1_745_000_000,
-        "model" => "gpt-5-nano",
-        "choices" => [
-          %{
-            "index" => 0,
-            "message" => %{"role" => "assistant", "content" => "Upload Supplier Sp. z o.o."},
-            "finish_reason" => "stop"
-          }
-        ]
-      })
-    )
-  end
-
+  # Only the seller display name request sets `instructions`; descriptions get the default body.
   def call(%Plug.Conn{method: "POST", request_path: "/v1/responses"} = conn, _opts) do
+    {:ok, body, conn} = read_body(conn)
+
+    response_json =
+      case Jason.decode!(body) do
+        %{"instructions" => _} ->
+          %{"display_name" => "Upload Supplier Sp. z o.o.", "seller_activity" => ""}
+          |> Jason.encode!()
+          |> OpenAIEnrichmentTestHelpers.openai_responses_json()
+
+        _ ->
+          OpenAIEnrichmentTestHelpers.openai_responses_json()
+      end
+
     conn
     |> put_resp_content_type("application/json")
-    |> send_resp(200, OpenAIEnrichmentTestHelpers.openai_responses_json())
+    |> send_resp(200, response_json)
   end
 
   def call(conn, _opts) do

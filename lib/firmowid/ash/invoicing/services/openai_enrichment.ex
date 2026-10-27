@@ -1,8 +1,16 @@
 defmodule Firmowid.Ash.Invoicing.Services.OpenAIEnrichment do
   @moduledoc """
   Generates short descriptions for cost invoices using OpenAI,
-  based on seller name and line items.
+  based on seller name, its display name and activity, and line items.
+
+  Returns an empty description when the request fails, so callers keep the
+  current one; empty descriptions are retried by the `refresh_missing_description`
+  trigger.
   """
+
+  alias Firmowid.ErrorKind
+
+  require Logger
 
   @spec generate_description(map()) :: String.t()
   def generate_description(document) do
@@ -27,10 +35,15 @@ defmodule Firmowid.Ash.Invoicing.Services.OpenAIEnrichment do
         openai_options()
       )
 
-    request
-    |> Req.request!(request_options())
-    |> Map.fetch!(:body)
-    |> ReqLLM.Response.text()
+    response = Req.request!(request, request_options())
+    ReqLLM.Response.text(response.body) || ""
+  rescue
+    error ->
+      Logger.warning("Failed to generate cost invoice description via OpenAI",
+        error_kind: ErrorKind.classify(error)
+      )
+
+      ""
   end
 
   defp request_options do
@@ -68,6 +81,8 @@ defmodule Firmowid.Ash.Invoicing.Services.OpenAIEnrichment do
     Oto metadane faktury sprzedażowej, którą chcą skatalogować:
     {
       sprzedawca: #{document["seller"]},
+      nazwa wyświetlana sprzedawcy (np. marka sieci franczyzowej): #{document["seller_display_name"]},
+      czym zajmuje się sprzedawca: #{document["seller_activity"]},
       przedmioty na fakturze: #{inspect(document["items_list"])}
     }
     Na podstawie tych danych, przygotuj opis faktury (w języku polskim)
@@ -76,7 +91,10 @@ defmodule Firmowid.Ash.Invoicing.Services.OpenAIEnrichment do
     dany artykuł wypisany w dokumencie.  Nie używaj słów 'faktura za'
     (bo każdy dokument to faktura) oraz nie zawieraj w opisie
     informacji, które są już dostępne w metadanych. Skup się na tym,
-    co zostało zakupione.
+    co zostało zakupione, i zachowaj z pozycji ważne szczegóły (daty,
+    okres, ilość, miejsce). Niejasne pozycje (kody, skróty) objaśnij na
+    podstawie tego, czym zajmuje się sprzedawca. Bez pozycji napisz tylko
+    ogólnie, jakiego rodzaju to zakup, bez zgadywania szczegółów.
     Dobre przykłady opisów:
     - Paliwo do samochodu z nr rej. RZ941AY, zakupione w Krakowie na stacji Orlen.
     - Abonament telekomunikacyjny, trzy numery telefonu oraz internet mobilny

@@ -6,6 +6,9 @@ defmodule Firmowid.Ash.Invoicing.Changes.ComputeCostInvoiceSellerDisplayName do
 
   Failed or blank generations keep the current value, or fall back to the seller
   when there is none.
+
+  The generated seller activity is put in the changeset context as
+  `:seller_activity` for `ComputeCostInvoiceDescription`.
   """
   use Ash.Resource.Change
 
@@ -23,17 +26,16 @@ defmodule Firmowid.Ash.Invoicing.Changes.ComputeCostInvoiceSellerDisplayName do
   end
 
   defp assign_seller_display_name(changeset, context) do
-    seller_display_name =
-      seller_display_name_generator().generate_display_name(document(changeset),
-        current_cost_invoice_id: changeset.data.id,
-        ash_opts: Ash.Context.to_opts(context)
-      )
+    case seller_display_name_generator().generate_display_name(document(changeset),
+           current_cost_invoice_id: changeset.data.id,
+           ash_opts: Ash.Context.to_opts(context)
+         ) do
+      %{display_name: display_name, seller_activity: seller_activity} ->
+        changeset
+        |> Ash.Changeset.force_change_attribute(:seller_display_name, display_name)
+        |> Ash.Changeset.put_context(:seller_activity, seller_activity)
 
-    case seller_display_name do
-      value when is_binary(value) and value != "" ->
-        Ash.Changeset.force_change_attribute(changeset, :seller_display_name, value)
-
-      _ ->
+      nil ->
         maybe_fallback_to_seller(changeset)
     end
   end
@@ -64,6 +66,7 @@ defmodule Firmowid.Ash.Invoicing.Changes.ComputeCostInvoiceSellerDisplayName do
   defp document(changeset) do
     %{
       seller: value(changeset, :seller),
+      seller_address: value(changeset, :seller_address),
       seller_nip: value(changeset, :seller_nip),
       items_list: normalize_items_list(value(changeset, :items_list))
     }

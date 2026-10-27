@@ -1,6 +1,8 @@
 defmodule Firmowid.Ash.Invoicing.Changes.ComputeCostInvoiceDescription do
   @moduledoc """
-  Computes cost invoice description from seller and items list using OpenAI.
+  Computes cost invoice description from seller, its display name, the seller
+  activity left in the context by `ComputeCostInvoiceSellerDisplayName` and the
+  items list using OpenAI.
 
   The description is system-derived. Failures are tolerated and leave the
   existing description unchanged (or empty on create).
@@ -12,20 +14,30 @@ defmodule Firmowid.Ash.Invoicing.Changes.ComputeCostInvoiceDescription do
   @impl true
   def change(changeset, _opts, _context) do
     seller = value(changeset, :seller)
-    items_list = value(changeset, :items_list)
+    items_list = normalize_items_list(value(changeset, :items_list))
 
-    case {seller, normalize_items_list(items_list)} do
-      {seller, items_list} when is_binary(seller) and is_list(items_list) ->
-        assign_description(changeset, seller, items_list)
-
-      _ ->
+    cond do
+      not is_binary(seller) ->
         changeset
+
+      # Without items the model can only guess what was bought, so an existing
+      # description stays.
+      items_list == [] and value(changeset, :description) not in [nil, ""] ->
+        changeset
+
+      true ->
+        assign_description(changeset, seller, items_list)
     end
   end
 
   defp assign_description(changeset, seller, items_list) do
     description =
-      %{"seller" => seller, "items_list" => items_list}
+      %{
+        "seller" => seller,
+        "seller_display_name" => value(changeset, :seller_display_name),
+        "seller_activity" => changeset.context[:seller_activity],
+        "items_list" => items_list
+      }
       |> description_generator().generate_description()
       |> String.trim()
 
