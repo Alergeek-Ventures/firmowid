@@ -15,6 +15,7 @@ defmodule Firmowid.Ash.Analysis.CategoryReview do
   @type source :: :certain | :invoice_lines | :name | :learned | :default
   @type entry :: %{
           side: IndustryTemplate.side(),
+          month: Date.t(),
           name: String.t(),
           amount: Decimal.t(),
           lines: [{String.t(), Decimal.t()}],
@@ -29,7 +30,8 @@ defmodule Firmowid.Ash.Analysis.CategoryReview do
 
   Amounts are positive. Each side lists template categories (plus any other
   confirmed ones) with their amounts, and the amount still waiting for review.
-  Groups are sorted by amount, largest first.
+  Groups are sorted by amount, largest first; `months` holds their amount per
+  month. The result echoes `industry`.
   """
   @spec build([entry()], [map()], IndustryTemplate.industry()) :: map()
   def build(entries, rules, industry) do
@@ -49,8 +51,49 @@ defmodule Firmowid.Ash.Analysis.CategoryReview do
       income: side_totals(groups, :income, industry),
       expenses: side_totals(groups, :expenses, industry),
       groups: groups,
-      accuracy: accuracy
+      accuracy: accuracy,
+      industry: industry
     }
+  end
+
+  @doc """
+  Sums the industry's key costs from confirmed or suggested categories, with
+  their share of income (nil without income).
+  """
+  @spec key_costs(map()) :: [%{key: atom(), amount: Decimal.t(), share: Decimal.t() | nil}]
+  def key_costs(review) do
+    expenses = Enum.filter(review.groups, &(&1.side == :expenses))
+
+    for {key, categories} <- IndustryTemplate.key_costs(review.industry) do
+      amount = expenses |> Enum.filter(&((&1.category || &1.suggestion) in categories)) |> sum()
+
+      share =
+        if Decimal.positive?(review.income.total), do: Decimal.div(amount, review.income.total)
+
+      %{key: key, amount: amount, share: share}
+    end
+  end
+
+  @doc """
+  Narrows the review's groups to `month`: `amount` becomes the month's amount
+  and `average` the group's mean monthly amount over `compared` months (nil
+  without any). Groups absent from the month keep a zero amount, so categories
+  can still compare against their usual amount.
+  """
+  @spec month(map(), Date.t(), [Date.t()]) :: [map()]
+  def month(review, month, compared) do
+    Enum.map(review.groups, fn group ->
+      average =
+        if compared == [],
+          do: nil,
+          else:
+            compared
+            |> Enum.map(&Map.get(group.months, &1, Decimal.new(0)))
+            |> Enum.reduce(&Decimal.add/2)
+            |> Decimal.div(length(compared))
+
+      Map.put(%{group | amount: Map.get(group.months, month, Decimal.new(0))}, :average, average)
+    end)
   end
 
   defp group(side, key, entries, rule, industry, learned, accuracy) do
@@ -68,6 +111,10 @@ defmodule Firmowid.Ash.Analysis.CategoryReview do
       key: key,
       name: entries |> Enum.max_by(& &1.amount, Decimal) |> Map.fetch!(:name),
       amount: sum(entries),
+      months:
+        entries
+        |> Enum.group_by(& &1.month)
+        |> Map.new(fn {month, entries} -> {month, sum(entries)} end),
       count: length(entries),
       suggestion: suggestion,
       source: source,

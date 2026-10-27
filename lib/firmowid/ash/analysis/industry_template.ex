@@ -41,6 +41,13 @@ defmodule Firmowid.Ash.Analysis.IndustryTemplate do
     retail: [:store, :online, :sales, :other_income]
   }
 
+  # Costs an owner in the industry watches as a share of income.
+  @key_costs %{
+    services: [people: [:payroll, :subcontractors], software: [:software], premises: [:premises]],
+    gastronomy: [food: [:goods], labour: [:payroll], premises: [:premises]],
+    retail: [goods: [:goods], labour: [:payroll], premises: [:premises]]
+  }
+
   # Keywords match inside normalized text; spaces around one require a whole word.
   @name_hints [
     {["zakład ubezpieczeń społecznych", " zus "], :expenses, :payroll},
@@ -244,6 +251,10 @@ defmodule Firmowid.Ash.Analysis.IndustryTemplate do
   end
 
   def categories(industry, :income), do: Map.fetch!(@income_categories, industry)
+
+  @doc "Lists the industry's key costs, each with the expense categories it sums."
+  @spec key_costs(industry()) :: [{atom(), [category()]}]
+  def key_costs(industry), do: Map.fetch!(@key_costs, industry)
 
   @doc "Returns the category for income without a better suggestion."
   @spec default_income(industry()) :: category()
