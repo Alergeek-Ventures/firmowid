@@ -167,7 +167,7 @@ defmodule Firmowid.Ash.Analysis do
 
     totals =
       (sales_invoices ++ cost_invoices ++ transactions)
-      |> Enum.flat_map(&normalized_entity(&1, Date.utc_today()))
+      |> Enum.flat_map(&normalized_entity/1)
       |> CategoryTotals.aggregate(tag_filters)
 
     Map.merge(totals, %{
@@ -253,7 +253,6 @@ defmodule Firmowid.Ash.Analysis do
   @spec get_category_review(integer(), Scope.t()) :: map()
   def get_category_review(year, scope) do
     entries = get_organization_entries(Date.new!(year, 1, 1), Date.new!(year, 12, 31), scope)
-    today = Date.utc_today()
 
     classified =
       Map.new(EntryCategory.list!(scope: scope), &{{&1.entity_type, &1.resource_id}, &1.category})
@@ -262,7 +261,7 @@ defmodule Firmowid.Ash.Analysis do
       (entries.sales_invoices ++ entries.cost_invoices ++ entries.transactions)
       |> Enum.reject(&internal?(&1.entity_tags))
       |> Enum.flat_map(fn entity ->
-        for {amount, tags} <- normalized_entity(entity, today), not Decimal.eq?(amount, 0) do
+        for {amount, tags} <- normalized_entity(entity), not Decimal.eq?(amount, 0) do
           entry = {entity_type(entity), entity.id}
 
           %{
@@ -341,6 +340,9 @@ defmodule Firmowid.Ash.Analysis do
       tenant: organization_id
     }
   end
+
+  defp rate_date(%Transaction{booking_date: date}), do: date
+  defp rate_date(invoice), do: invoice.sale_date
 
   # The month the totals assign the entry to.
   defp entry_month(%Transaction{salary_month: %Date{} = month}), do: month
@@ -539,10 +541,8 @@ defmodule Firmowid.Ash.Analysis do
   defp unrealized_date(%{sale_date: date}), do: date
 
   defp unrealized_sum(entries) do
-    today = Date.utc_today()
-
     entries
-    |> Enum.flat_map(&normalized_entity(Map.put(&1, :entity_tags, []), today))
+    |> Enum.flat_map(&normalized_entity(Map.put(&1, :entity_tags, [])))
     |> Enum.reduce(Decimal.new(0), fn {amount, _tags}, sum ->
       amount |> Decimal.abs() |> Decimal.round(2) |> Decimal.add(sum)
     end)
@@ -622,7 +622,8 @@ defmodule Firmowid.Ash.Analysis do
     {:ok, entity.amount}
   end
 
-  defp normalized_entity(entity, today) do
+  # Converted at the rate of the entry's date, so past months keep their amounts.
+  defp normalized_entity(entity) do
     case get_amount_and_currency(entity) do
       :skip ->
         []
@@ -632,7 +633,7 @@ defmodule Firmowid.Ash.Analysis do
           Currencies.normalize_amount_to_pln(
             Money.to_decimal(amount),
             amount |> Money.to_currency_code() |> Atom.to_string(),
-            today
+            Enum.min([rate_date(entity), Date.utc_today()], Date)
           )
 
         [{normalized_amount, entity.entity_tags}]
