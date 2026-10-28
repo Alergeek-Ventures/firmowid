@@ -26,6 +26,8 @@ defmodule Firmowid.Ash.Currencies.Converter do
   return the amount in PLN.
   """
   @spec normalize_amount_to_pln(Decimal.t(), String.t(), Date.t()) :: Decimal.t()
+  def normalize_amount_to_pln(amount, "PLN", _date), do: amount
+
   def normalize_amount_to_pln(amount, currency, date) do
     rates = get_rates(date)
 
