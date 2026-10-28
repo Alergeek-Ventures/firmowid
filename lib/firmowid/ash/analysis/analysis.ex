@@ -319,15 +319,16 @@ defmodule Firmowid.Ash.Analysis do
 
   @doc """
   Queues classification of the current year's new entries for an organization
-  that already uses the analysis, i.e. has entries the classifier categorized.
-  Entries enter the analysis once reconciled, so this runs after matching.
+  that already uses the analysis, i.e. has entries the classifier categorized
+  or counterparty categories the owner confirmed. Entries enter the analysis
+  once reconciled, so this runs after matching.
   """
   @spec classify_new_entries_later(Ash.UUID.t()) ::
           {:ok, Oban.Job.t() | :unused} | {:error, :classification_unavailable | term()}
   def classify_new_entries_later(organization_id) do
     scope = classifier_scope(organization_id)
 
-    if Ash.exists?(EntryCategory, scope: scope),
+    if Ash.exists?(EntryCategory, scope: scope) or Ash.exists?(CounterpartyCategory, scope: scope),
       do: classify_categories_later(Date.utc_today().year, false, scope),
       else: {:ok, :unused}
   end
