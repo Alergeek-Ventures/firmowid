@@ -1,9 +1,12 @@
 name: Deploy production
 
 on:
-  push:
-    branches:
-      - main
+  workflow_call:
+    inputs:
+      catalog-version:
+        description: Snapshot SHA in the translation artifact prepared by CI
+        required: true
+        type: string
   workflow_dispatch:
 
 permissions:
@@ -18,6 +21,8 @@ jobs:
   sentry-release:
     if: github.ref == 'refs/heads/main'
     uses: ./.github/workflows/sentry-release.yml
+    with:
+      catalog-version: ${{ inputs.catalog-version }}
     secrets: inherit
 
   deploy:

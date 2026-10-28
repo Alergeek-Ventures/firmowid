@@ -1,9 +1,6 @@
 name: Prepare translations
 
 on:
-  push:
-    branches:
-      - main
   workflow_call:
     inputs:
       version:

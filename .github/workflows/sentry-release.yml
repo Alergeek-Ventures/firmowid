@@ -2,19 +2,24 @@ name: Sentry Release
 
 on:
   workflow_call:
+    inputs:
+      catalog-version:
+        description: Snapshot SHA already prepared in the calling workflow run
+        required: false
+        type: string
   workflow_dispatch:
 
 permissions:
   contents: read
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: sentry-release-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
   translations:
     name: Prepare translations
-    if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main' && inputs.catalog-version == ''
     uses: ./.github/workflows/translations-prepare.yml
     with:
       version: ${{ github.sha }}
@@ -50,7 +55,7 @@ jobs:
 
   release:
     name: Create and finalize Sentry release
-    if: github.ref == 'refs/heads/main'
+    if: ${{ !cancelled() && github.ref == 'refs/heads/main' && needs.extract-versions.result == 'success' && (inputs.catalog-version != '' || needs.translations.result == 'success') }}
     runs-on: ubuntu-latest
     environment: production
     needs:
@@ -75,7 +80,7 @@ jobs:
       - name: Download generated PO catalog
         uses: ./.github/actions/download-translations
         with:
-          catalog-version: ${{ needs.translations.outputs.catalog-version }}
+          catalog-version: ${{ inputs.catalog-version || needs.translations.outputs.catalog-version }}
 
       - name: Setup Elixir project
         uses: ./.github/actions/elixir-setup
