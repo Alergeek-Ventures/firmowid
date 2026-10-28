@@ -1,33 +1,21 @@
 name: Docker Build Check
 
 on:
-  push:
-    branches:
-      - main
-  pull_request:
-    branches:
-      - "*"
+  workflow_call:
+    inputs:
+      catalog-version:
+        description: Snapshot SHA in the translation artifact prepared by CI
+        required: true
+        type: string
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  group: docker-build-check-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 jobs:
-  translations:
-    name: Prepare translations
-    uses: ./.github/workflows/translations-prepare.yml
-    with:
-      version: ${{ github.event.pull_request.head.sha || github.sha }}
-    secrets:
-      ACCENT_API_KEY: ${{ secrets.ACCENT_API_KEY }}
-      ACCENT_SNAPSHOT_API_KEY: ${{ github.ref == 'refs/heads/main' && github.actor != 'dependabot[bot]' && secrets.ACCENT_SNAPSHOT_API_KEY || '' }}
-    permissions:
-      contents: read
-
   docker-build:
     name: Verify Docker image builds successfully
     runs-on: ubuntu-latest
-    needs: translations
 
     steps:
       - name: Checkout code
@@ -38,7 +26,7 @@ jobs:
       - name: Download generated PO catalog
         uses: ./.github/actions/download-translations
         with:
-          catalog-version: ${{ needs.translations.outputs.catalog-version }}
+          catalog-version: ${{ inputs.catalog-version }}
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1

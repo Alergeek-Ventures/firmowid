@@ -1,0 +1,67 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - "*"
+
+permissions:
+  contents: read
+
+# Superseded PRs need no export. Main runs may create snapshots, so do not
+# interrupt them or serialize their deployments behind the entire test suite.
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  translations:
+    name: Prepare translations
+    uses: ./.github/workflows/translations-prepare.yml
+    with:
+      version: ${{ github.event.pull_request.head.sha || github.sha }}
+    secrets:
+      ACCENT_API_KEY: ${{ secrets.ACCENT_API_KEY }}
+      ACCENT_SNAPSHOT_API_KEY: ${{ github.ref == 'refs/heads/main' && github.actor != 'dependabot[bot]' && secrets.ACCENT_SNAPSHOT_API_KEY || '' }}
+
+  build:
+    name: Build and Test
+    needs: translations
+    uses: ./.github/workflows/elixir-build-and-test.yml
+    with:
+      catalog-version: ${{ needs.translations.outputs.catalog-version }}
+    permissions:
+      actions: read
+      contents: read
+      packages: write
+      pull-requests: write
+
+  quality:
+    name: Elixir Quality Checks
+    needs: translations
+    uses: ./.github/workflows/elixir-quality-checks.yml
+    with:
+      catalog-version: ${{ needs.translations.outputs.catalog-version }}
+
+  docker:
+    name: Docker Build Check
+    needs: translations
+    uses: ./.github/workflows/docker-build.yml
+    with:
+      catalog-version: ${{ needs.translations.outputs.catalog-version }}
+
+  # Keep the existing deployment gate (Sentry), independent of test completion.
+  deploy:
+    name: Deploy production
+    if: github.ref == 'refs/heads/main'
+    needs: translations
+    uses: ./.github/workflows/deploy-production.yml
+    with:
+      catalog-version: ${{ needs.translations.outputs.catalog-version }}
+    permissions:
+      contents: read
+      id-token: write
+    secrets: inherit

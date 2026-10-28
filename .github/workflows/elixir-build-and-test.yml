@@ -1,11 +1,11 @@
 name: Build and Test
 on:
-  push:
-    branches:
-      - main
-  pull_request:
-    branches:
-      - "*"
+  workflow_call:
+    inputs:
+      catalog-version:
+        description: Snapshot SHA in the translation artifact prepared by CI
+        required: true
+        type: string
   workflow_dispatch:
     inputs:
       coverage-benchmark:
@@ -15,13 +15,13 @@ on:
         required: false
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}${{ github.event_name == 'workflow_dispatch' && inputs.coverage-benchmark && '-coverage-benchmark' || '' }}
+  group: build-and-test-${{ github.event.pull_request.number || github.ref }}${{ github.event_name == 'workflow_dispatch' && inputs.coverage-benchmark && '-coverage-benchmark' || '' }}
   cancel-in-progress: true
 
 jobs:
   translations:
     name: Prepare translations
-    if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.coverage-benchmark) }}
+    if: ${{ github.event_name == 'workflow_dispatch' && !inputs.coverage-benchmark }}
     uses: ./.github/workflows/translations-prepare.yml
     with:
       version: ${{ github.event.pull_request.head.sha || github.sha }}
@@ -198,7 +198,7 @@ jobs:
     if: >-
       ${{ !cancelled() && needs.extract-versions.result == 'success' &&
           (needs.publish-seaweedfs.result == 'success' || needs.publish-seaweedfs.result == 'skipped') &&
-          (needs.translations.result == 'success' || needs.benchmark-translations.result == 'success') }}
+          (inputs.catalog-version != '' || needs.translations.result == 'success' || needs.benchmark-translations.result == 'success') }}
 
     runs-on: ubuntu-latest
     timeout-minutes: ${{ github.event_name == 'workflow_dispatch' && inputs.coverage-benchmark && 120 || 360 }}
@@ -263,7 +263,7 @@ jobs:
       - name: Download generated PO catalog
         uses: ./.github/actions/download-translations
         with:
-          catalog-version: ${{ needs.translations.outputs.catalog-version || needs.benchmark-translations.outputs.catalog-version }}
+          catalog-version: ${{ inputs.catalog-version || needs.translations.outputs.catalog-version || needs.benchmark-translations.outputs.catalog-version }}
 
       - name: Install xsltproc
         run: |
