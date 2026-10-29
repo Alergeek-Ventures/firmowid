@@ -82,6 +82,7 @@ defmodule FirmowidWeb.Management.Views.Employee do
           |> assign(:active_months, active_months)
           |> assign(:current_contract, current_contract)
           |> assign(:projects_filter_date, selected_date)
+          |> assign(:projects_view, Navigation.parse_employee_projects_view(params["widok"]))
           |> assign(:page_title, user.member.display_name)
         end
 
@@ -108,8 +109,10 @@ defmodule FirmowidWeb.Management.Views.Employee do
 
   @impl true
   def handle_event("change-month", %{"month" => month}, socket) do
-    employee = socket.assigns.employee
-    {:noreply, push_patch(socket, to: Navigation.employee_path(employee.id, %{miesiac: month}))}
+    %{employee: employee, projects_view: view} = socket.assigns
+    params = %{miesiac: month, widok: Navigation.encode_employee_projects_view(view)}
+
+    {:noreply, push_patch(socket, to: Navigation.employee_path(employee.id, params))}
   end
 
   def handle_event("change-year", %{"year" => year}, socket) do
