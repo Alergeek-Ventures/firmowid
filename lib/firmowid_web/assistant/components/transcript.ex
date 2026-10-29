@@ -56,9 +56,10 @@ defmodule FirmowidWeb.Assistant.Components.Transcript do
           class={["min-inline-0", turn.role == :user && "self-end max-inline-[85%]"]}
         >
           <%= if turn.role == :user do %>
-            <p class="rounded-lg bg-grey-100 px-3 py-2 wrap-anywhere whitespace-pre-wrap">
-              {turn.text}
-            </p>
+            <p
+              class="rounded-lg bg-grey-100 px-3 py-2 wrap-anywhere whitespace-pre-wrap"
+              phx-no-format
+            >{turn.text}</p>
           <% else %>
             <details
               :if={turn.tools != []}
@@ -101,8 +102,8 @@ defmodule FirmowidWeb.Assistant.Components.Transcript do
             phx-update="ignore"
             class="wrap-anywhere whitespace-pre-wrap"
             aria-hidden="true"
-          >
-          </div>
+            phx-no-format
+          ></div>
         </div>
 
         {render_slot(@inner_block)}

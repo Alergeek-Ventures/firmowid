@@ -180,9 +180,8 @@ defmodule FirmowidWeb.Delegations.Components.Settlement.Trips do
       <p
         :if={trip.description not in [nil, ""]}
         class="mbs-3 text-sm whitespace-pre-wrap text-grey-700"
-      >
-        {trip.description}
-      </p>
+        phx-no-format
+      >{trip.description}</p>
     </section>
     """
   end
