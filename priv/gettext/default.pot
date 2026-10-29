@@ -800,7 +800,7 @@ msgstr ""
 msgid "Compare the Free, Entrepreneur and Company plans. Monthly or annual billing, no hidden charges."
 msgstr ""
 
-#: lib/firmowid_web/invoicing/components/entries_table.ex:442
+#: lib/firmowid_web/invoicing/components/entries_table.ex:443
 #: lib/firmowid_web/invoicing/components/matching_components.ex:138
 #, elixir-autogen, elixir-format
 msgid "Complete"
