@@ -16,6 +16,7 @@ defmodule FirmowidWeb.Management.Views.Employee do
   alias Firmowid.Core
   alias Firmowid.Payroll
   alias Firmowid.Timetracker
+  alias FirmowidUI.Components.Inputs
   alias FirmowidWeb.Core.Endpoint
   alias FirmowidWeb.Documents.Components.DocumentsSection, as: DocumentsTab
   alias FirmowidWeb.Infrastructure.Components.BlobProcessingToasts
@@ -162,7 +163,8 @@ defmodule FirmowidWeb.Management.Views.Employee do
     |> assign(:page_title, employee.member.display_name)
   end
 
-  defp humanize_ash_error(%Ash.Error.Invalid{errors: [%{message: message} | _]}) when is_binary(message), do: message
+  defp humanize_ash_error(%Ash.Error.Invalid{errors: [%{message: message} = error | _]}) when is_binary(message),
+    do: Inputs.translate_error({message, Map.get(error, :vars, [])})
 
   defp humanize_ash_error(error), do: Exception.message(error)
 

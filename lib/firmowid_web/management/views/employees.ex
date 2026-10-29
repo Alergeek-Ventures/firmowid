@@ -15,6 +15,7 @@ defmodule FirmowidWeb.Management.Views.Employees do
   alias Firmowid.Core
   alias Firmowid.Payroll
   alias Firmowid.Timetracker
+  alias FirmowidUI.Components.Inputs
   alias FirmowidWeb.Core.Endpoint
   alias FirmowidWeb.Infrastructure.Utilities.PosthogBusinessEvents
   alias FirmowidWeb.Management.Utilities.Navigation
@@ -251,8 +252,9 @@ defmodule FirmowidWeb.Management.Views.Employees do
          {:ok, _member} <- Core.unarchive_member(user.member, scope: scope) do
       {:noreply, assign_employees(socket)}
     else
-      {:error, %Ash.Error.Invalid{errors: [%{message: message} | _]}} when is_binary(message) ->
-        {:noreply, put_flash(socket, :error, message)}
+      {:error, %Ash.Error.Invalid{errors: [%{message: message} = error | _]}}
+      when is_binary(message) ->
+        {:noreply, put_flash(socket, :error, Inputs.translate_error({message, Map.get(error, :vars, [])}))}
 
       _ ->
         {:noreply, put_flash(socket, :error, gettext("Could not restore the employee"))}

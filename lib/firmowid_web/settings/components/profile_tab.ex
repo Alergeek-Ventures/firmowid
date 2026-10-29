@@ -699,7 +699,7 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
         <div class="rounded bg-grey-50 px-3 py-1 text-sm text-grey-500">
           {pgettext("leave days", "Used this year:")}
           <span class="pl-1 font-medium text-grey-700">
-            {pngettext("leave days", "%{count} day", "%{count} days", @leave_days)}
+            {ngettext("%{count} day", "%{count} days", @leave_days)}
           </span>
         </div>
       </div>

@@ -229,7 +229,7 @@ defmodule FirmowidWeb.Admin.Views.Organizations do
             <div class="space-y-1 text-sm/snug">
               <p>{format_date(row.started_on)}</p>
               <p class="text-grey-700">
-                {pngettext("organization age", "%{count} day", "%{count} days", row.age_days)}
+                {ngettext("%{count} day", "%{count} days", row.age_days)}
               </p>
             </div>
 

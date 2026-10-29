@@ -12,6 +12,7 @@ defmodule FirmowidWeb.Management.Views.Counterparty do
   alias Firmowid.Invoicing
   alias Firmowid.Invoicing.CountryCodes
   alias Firmowid.Invoicing.Services.CounterpartyInvoiceSuggestions
+  alias FirmowidUI.Components.Inputs
   alias FirmowidWeb.Invoicing.Utilities.Navigation, as: InvoicingNavigation
   alias FirmowidWeb.Management.Utilities.CounterpartyHelpers
   alias FirmowidWeb.Management.Utilities.Navigation
@@ -104,8 +105,8 @@ defmodule FirmowidWeb.Management.Views.Counterparty do
       {:ok, nil} ->
         {:noreply, put_flash(socket, :error, gettext("Invoice not found"))}
 
-      {:error, %Ash.Error.Invalid{errors: [%{message: message} | _rest]}} ->
-        {:noreply, put_flash(socket, :error, message)}
+      {:error, %Ash.Error.Invalid{errors: [%{message: message} = error | _rest]}} ->
+        {:noreply, put_flash(socket, :error, Inputs.translate_error({message, Map.get(error, :vars, [])}))}
 
       {:error, _error} ->
         {:noreply, put_flash(socket, :error, gettext("Could not link the invoice to the counterparty"))}
