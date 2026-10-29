@@ -500,7 +500,7 @@ defmodule FirmowidWeb.DesignSystem.Components.CoreComponents do
   attr :patch, :any, default: nil
   attr :class, :any, default: nil
   attr :icon_only, :boolean, default: false
-  attr :aria_label, :string, default: "Wróć"
+  attr :aria_label, :string, default: nil
   attr :rest, :global
   slot :inner_block
 
@@ -509,7 +509,7 @@ defmodule FirmowidWeb.DesignSystem.Components.CoreComponents do
     <.link
       navigate={@navigate}
       patch={@patch}
-      aria-label={@icon_only && @aria_label}
+      aria-label={@icon_only && (@aria_label || gettext("Back"))}
       class={["inline-flex items-center gap-2 text-sm", @class]}
       {@rest}
     >
@@ -526,7 +526,7 @@ defmodule FirmowidWeb.DesignSystem.Components.CoreComponents do
   defp back_label(assigns) do
     ~H"""
     <%= if @blocks == [] do %>
-      Wróć
+      {gettext("Back")}
     <% else %>
       {render_slot(@blocks)}
     <% end %>

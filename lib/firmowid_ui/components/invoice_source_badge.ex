@@ -49,11 +49,11 @@ defmodule FirmowidUI.Components.InvoiceSourceBadge do
     >
       <span class="sr-only">
         {case @variant do
-          "cost_external" -> "Faktura spoza KSeF"
-          "cost_ksef" -> "Faktura z Krajowego Systemu e-Faktur"
-          "sales" -> "Faktura wystawiona w Firmowidzie"
-          "sales_draft" -> "Szkic wystawiany w Firmowidzie"
-          "sales_ksef" -> "Faktura z Krajowego Systemu e-Faktur"
+          "cost_external" -> gettext("Invoice from outside KSeF")
+          "cost_ksef" -> gettext("Invoice from the National e-Invoice System")
+          "sales" -> gettext("Invoice issued in Firmowid")
+          "sales_draft" -> gettext("Draft being issued in Firmowid")
+          "sales_ksef" -> gettext("Invoice from the National e-Invoice System")
         end}
       </span>
       <Lucideicons.file_input

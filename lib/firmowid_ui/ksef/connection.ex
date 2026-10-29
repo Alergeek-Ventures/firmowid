@@ -1,6 +1,8 @@
 defmodule FirmowidUI.Ksef.Connection do
   @moduledoc "Shared LiveView state and interactions for the three KSeF connection methods."
 
+  use Gettext, backend: Firmowid.Gettext
+
   import Phoenix.Component, only: [assign: 3]
   import Phoenix.LiveView
 
@@ -86,7 +88,7 @@ defmodule FirmowidUI.Ksef.Connection do
         {:noreply, socket}
 
       {:error, _reason} ->
-        LiveToast.send_toast(:error, "Nie udało się połączyć z KSeF. Spróbuj ponownie.")
+        LiveToast.send_toast(:error, gettext("Could not connect to KSeF. Please try again."))
         {:noreply, socket}
     end
   end
@@ -116,7 +118,7 @@ defmodule FirmowidUI.Ksef.Connection do
          })}
 
       {:error, _reason} ->
-        LiveToast.send_toast(:error, "Nie udało się pobrać dokumentu z KSeF.")
+        LiveToast.send_toast(:error, gettext("Could not download the document from KSeF."))
         {:noreply, socket}
     end
   end
@@ -135,7 +137,7 @@ defmodule FirmowidUI.Ksef.Connection do
              scope: scope,
              authorize?: true
            ) do
-      LiveToast.send_toast(:info, "Rozpoczęto generowanie certyfikatu KSeF.")
+      LiveToast.send_toast(:info, gettext("KSeF certificate generation has started."))
 
       {:noreply,
        socket
@@ -144,7 +146,11 @@ defmodule FirmowidUI.Ksef.Connection do
        |> assign(:ksef_failure, nil)}
     else
       _error ->
-        LiveToast.send_toast(:error, "Podpisany dokument nie zgadza się z pobranym wnioskiem.")
+        LiveToast.send_toast(
+          :error,
+          gettext("The signed document does not match the downloaded request.")
+        )
+
         {:noreply, socket}
     end
   end
@@ -171,14 +177,14 @@ defmodule FirmowidUI.Ksef.Connection do
         {:error, _reason} ->
           LiveToast.send_toast(
             :error,
-            "Nie udało się zalogować do KSeF. Sprawdź pliki i hasło do klucza."
+            gettext("Could not sign in to KSeF. Check the files and the key password.")
           )
 
           {:noreply, socket}
       end
     else
       _ ->
-        LiveToast.send_toast(:error, "Wybierz certyfikat i klucz prywatny.")
+        LiveToast.send_toast(:error, gettext("Choose a certificate and a private key."))
         {:noreply, socket}
     end
   end
@@ -194,7 +200,7 @@ defmodule FirmowidUI.Ksef.Connection do
       {:noreply, assign(socket, :ksef_fetching?, true)}
     else
       :ok = Ksef.fetch_new_invoices(scope)
-      LiveToast.send_toast(:info, "Rozpoczęto pobieranie faktur z KSeF.")
+      LiveToast.send_toast(:info, gettext("Fetching invoices from KSeF has started."))
       {:noreply, assign(socket, :ksef_fetching?, true)}
     end
   end
@@ -202,7 +208,7 @@ defmodule FirmowidUI.Ksef.Connection do
   defp do_handle_event("disconnect_ksef", _params, socket, scope) do
     case Ksef.unauthenticate(scope) do
       {:ok, _} ->
-        LiveToast.send_toast(:info, "Rozłączono z KSeF.")
+        LiveToast.send_toast(:info, gettext("Disconnected from KSeF."))
 
         {:noreply,
          socket
@@ -212,7 +218,7 @@ defmodule FirmowidUI.Ksef.Connection do
          |> assign(:ksef_failure, nil)}
 
       {:error, _} ->
-        LiveToast.send_toast(:error, "Wystąpił błąd podczas rozłączania z KSeF.")
+        LiveToast.send_toast(:error, gettext("An error occurred while disconnecting from KSeF."))
         {:noreply, socket}
     end
   end
@@ -246,7 +252,7 @@ defmodule FirmowidUI.Ksef.Connection do
     case status do
       :working ->
         if notification.action != :recover_certificate_refresh do
-          LiveToast.send_toast(:success, "Połączono z KSeF.")
+          LiveToast.send_toast(:success, gettext("Connected to KSeF."))
         end
 
         {:noreply,
@@ -271,7 +277,7 @@ defmodule FirmowidUI.Ksef.Connection do
   end
 
   defp authentication_started(socket, credential, scope) do
-    LiveToast.send_toast(:info, "Rozpoczęto uwierzytelnianie w KSeF.")
+    LiveToast.send_toast(:info, gettext("KSeF authentication has started."))
 
     {:noreply,
      socket
@@ -303,6 +309,6 @@ defmodule FirmowidUI.Ksef.Connection do
        when is_binary(tenant), do: :ok
 
   defp authorize_admin!(_scope) do
-    raise ForbiddenError, "Tylko administrator może zarządzać KSeF."
+    raise ForbiddenError, gettext("Only an administrator can manage KSeF.")
   end
 end

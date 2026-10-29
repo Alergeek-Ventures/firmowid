@@ -66,11 +66,11 @@ defmodule FirmowidUI.Invoicing.Components.InvoiceNumber do
             <span>
               <%= case warning do %>
                 <% {:invalid_format, _} -> %>
-                  Format numeru może być nieprawidłowy.
+                  {gettext("The number format may be invalid.")}
                 <% {:duplicate, _} -> %>
-                  Numer faktury już istnieje.
+                  {gettext("This invoice number already exists.")}
                 <% {:gap, _} -> %>
-                  Numer tworzy lukę w numeracji.
+                  {gettext("This number creates a gap in the numbering.")}
               <% end %>
             </span>
           </div>
@@ -86,7 +86,7 @@ defmodule FirmowidUI.Invoicing.Components.InvoiceNumber do
               size="small"
               class="text-xs"
             >
-              Użyj {suggestion}
+              {gettext("Use %{number}", number: suggestion)}
             </.button>
           </div>
         </div>
