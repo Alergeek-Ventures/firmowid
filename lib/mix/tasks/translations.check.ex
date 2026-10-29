@@ -1,5 +1,5 @@
 defmodule Mix.Tasks.Translations.Check do
-  @shortdoc "Validates Polish catalogs against POT sources"
+  @shortdoc "Validates translated catalogs against POT sources"
   @moduledoc """
   Always checks technical PO validity against POT sources. Editorial review is
   managed in Accent. `--check-extraction` also runs `translations.extract.check`,
@@ -15,20 +15,23 @@ defmodule Mix.Tasks.Translations.Check do
   def run(args) do
     if "--check-extraction" in args, do: check_extraction!()
 
-    Enum.each(Translations.domains(), &check_domain!/1)
+    for domain <- Translations.domains(),
+        locale <- Translations.locales(),
+        do: check_domain!(domain, locale)
+
     :ok
   end
 
-  defp check_domain!(domain) do
+  defp check_domain!(domain, locale) do
     pot_path = Path.join("priv/gettext", domain <> ".pot")
-    po_path = Path.join(["priv/gettext", "pl", "LC_MESSAGES", domain <> ".po"])
+    po_path = Path.join(["priv/gettext", locale, "LC_MESSAGES", domain <> ".po"])
     require_file!(pot_path, "missing expected POT")
-    require_file!(po_path, "missing expected Polish PO")
+    require_file!(po_path, "missing expected #{locale} PO")
 
     pot = Expo.PO.parse_file!(pot_path)
     po = Expo.PO.parse_file!(po_path)
 
-    case Translations.validate_catalog(pot, po, domain) do
+    case Translations.validate_catalog(pot, po, domain, locale) do
       :ok ->
         :ok
 

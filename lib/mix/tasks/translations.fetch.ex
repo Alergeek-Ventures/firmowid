@@ -1,6 +1,6 @@
 defmodule Mix.Tasks.Translations.Fetch do
   @shortdoc "Fetches the Polish catalog for a pinned Git revision"
-  @moduledoc "Fetches the Polish Accent catalog for an explicit revision, optionally falling back to a pinned main revision on HTTP 404. Never creates snapshots."
+  @moduledoc "Fetches the translated Accent catalogs for an explicit revision, optionally falling back to a pinned main revision on HTTP 404. Never creates snapshots."
 
   use Mix.Task
 

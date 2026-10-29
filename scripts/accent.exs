@@ -425,11 +425,19 @@ defmodule Firmowid.Translations.Accent do
   end
 
   defp install_catalog(temporary_directory, version) do
-    input = Path.join(temporary_directory, "exports/pl/default.po")
-    text = File.read!(input)
+    Enum.each(Firmowid.Translations.locales(), &install_locale(temporary_directory, version, &1))
+  end
+
+  defp install_locale(temporary_directory, version, locale) do
+    input = Path.join(temporary_directory, "exports/#{locale}/default.po")
+
+    text =
+      if File.exists?(input),
+        do: File.read!(input),
+        else: raise(RuntimeError, "Accent export has no #{locale} catalog")
 
     if text == "" do
-      raise RuntimeError, "Accent export produced an empty PO file"
+      raise RuntimeError, "Accent export produced an empty #{locale} PO file"
     end
 
     lines = text |> String.split("\n", trim: false) |> remove_old_version_marker()
@@ -442,13 +450,13 @@ defmodule Firmowid.Translations.Accent do
     content =
       @catalog
       |> Expo.PO.parse_file!()
-      |> Firmowid.Translations.catalog_for_source(catalog, "default")
+      |> Firmowid.Translations.catalog_for_source(catalog, "default", locale)
       |> Expo.PO.compose()
       |> IO.iodata_to_binary()
       |> then(&("# Accent version: #{version}\n" <> &1))
 
-    output = Path.join(@root, "priv/gettext/pl/LC_MESSAGES/default.po")
-    temporary_output = Path.join(temporary_directory, "catalog.po")
+    output = Path.join(@root, "priv/gettext/#{locale}/LC_MESSAGES/default.po")
+    temporary_output = Path.join(temporary_directory, "#{locale}.po")
 
     File.mkdir_p!(Path.dirname(output))
     File.write!(temporary_output, content)

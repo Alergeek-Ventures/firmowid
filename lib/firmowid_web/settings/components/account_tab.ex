@@ -432,15 +432,26 @@ defmodule FirmowidWeb.Settings.Components.AccountTab do
   end
 
   defp language_section(assigns) do
-    assigns = assign(assigns, :locale, Gettext.get_locale(Firmowid.Gettext))
+    assigns =
+      assign(assigns,
+        locale: Gettext.get_locale(Firmowid.Gettext),
+        languages: FirmowidWeb.Infrastructure.Plugs.Locale.languages()
+      )
 
     ~H"""
     <.account_section title={gettext("Language")}>
       <.form for={%{}} action={~p"/jezyk"} id="locale_form">
         <Helpers.settings_display_field>
           <.segmented_control label={gettext("Language")}>
-            <:option name="jezyk" value="pl" lang="pl" active={@locale == "pl"}>Polski</:option>
-            <:option name="jezyk" value="en" lang="en" active={@locale == "en"}>English</:option>
+            <:option
+              :for={{code, name} <- @languages}
+              name="jezyk"
+              value={code}
+              lang={code}
+              active={@locale == code}
+            >
+              {name}
+            </:option>
           </.segmented_control>
         </Helpers.settings_display_field>
       </.form>

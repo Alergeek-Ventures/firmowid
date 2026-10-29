@@ -6,8 +6,10 @@ defmodule FirmowidWeb.Landing.Components.Primitives do
   use FirmowidWeb, :html
 
   import FirmowidUI.Components.Link
+  import FirmowidWeb.DesignSystem.Components.CoreComponents, only: [popover: 1, show_popover: 1]
   import Phoenix.Component, except: [link: 1]
 
+  alias FirmowidWeb.Infrastructure.Plugs.Locale
   alias Phoenix.LiveView.Rendered
 
   @legal_entity Application.compile_env!(:firmowid, :legal_entity)
@@ -82,32 +84,60 @@ defmodule FirmowidWeb.Landing.Components.Primitives do
   end
 
   defp locale_switcher(assigns) do
-    assigns = assign(assigns, :locale, Gettext.get_locale(Firmowid.Gettext))
+    assigns =
+      assign(assigns,
+        locale: Gettext.get_locale(Firmowid.Gettext),
+        languages: Locale.languages()
+      )
 
     ~H"""
-    <.form for={%{}} action={~p"/jezyk"} id="landing-locale-switcher">
-      <div
-        role="group"
+    <div class="flex">
+      <button
+        id="landing-locale-trigger"
+        type="button"
+        aria-haspopup="menu"
         aria-label={gettext("Language")}
-        class="flex items-center text-sm/6 font-semibold text-[#0f0f0f]/45 group-data-[theme=dark]/navbar:text-[#f5f1ea]/50"
+        phx-click={show_popover("landing-locale-menu")}
+        class="flex cursor-pointer items-center gap-1.5 rounded-sm px-1.5 py-1 text-sm/6 font-semibold text-[#0f0f0f] uppercase transition-colors duration-180 group-data-[theme=dark]/navbar:text-[#f5f1ea] hover:text-rust-600 group-data-[theme=dark]/navbar:hover:text-rust-500"
       >
-        <button
-          :for={{code, name} <- [{"pl", "Polski"}, {"en", "English"}]}
-          type="submit"
-          name="jezyk"
-          value={code}
-          lang={code}
-          title={name}
-          aria-label={name}
-          aria-pressed={to_string(code == @locale)}
-          class="cursor-pointer rounded-sm px-1.5 py-1 uppercase transition-colors duration-180 hover:text-rust-600 group-data-[theme=dark]/navbar:hover:text-rust-500 aria-pressed:text-[#0f0f0f] group-data-[theme=dark]/navbar:aria-pressed:text-[#f5f1ea]"
+        <img src={flag(@locale)} alt="" width="20" height="14" class={flag_class()} />
+        {@locale}
+        <Lucideicons.chevron_down class="size-4" />
+      </button>
+      <.popover id="landing-locale-menu" reference_id="landing-locale-trigger" placement="bottom-end">
+        <.form
+          for={%{}}
+          action={~p"/jezyk"}
+          id="landing-locale-switcher"
+          role="menu"
+          aria-label={gettext("Language")}
+          class="flex min-w-44 flex-col rounded-lg bg-white p-1 shadow-lg ring-1 ring-grey-700/10"
         >
-          {code}
-        </button>
-      </div>
-    </.form>
+          <button
+            :for={{code, name} <- @languages}
+            type="submit"
+            role="menuitem"
+            name="jezyk"
+            value={code}
+            lang={code}
+            aria-current={code == @locale && "true"}
+            class="flex cursor-pointer items-center gap-3 rounded-md px-3 py-2 text-left text-sm text-grey-900 hover:bg-grey-100 aria-current:font-semibold"
+          >
+            <img src={flag(code)} alt="" width="20" height="14" class={flag_class()} />
+            <span class="flex-1">{name}</span>
+            <Lucideicons.check :if={code == @locale} class="size-4 text-rust-600" />
+          </button>
+        </.form>
+      </.popover>
+    </div>
     """
   end
+
+  defp flag("pl"), do: ~p"/images/flags/pl.svg"
+  defp flag("en"), do: ~p"/images/flags/gb.svg"
+  defp flag("uk"), do: ~p"/images/flags/ua.svg"
+
+  defp flag_class, do: "h-3.5 w-5 rounded-[2px] object-cover shadow-[0_0_0_1px_rgb(15_15_15/0.15)]"
 
   @doc """
   Renders a public-page action with brush artwork.

@@ -547,7 +547,7 @@ defmodule Firmowid.Core.User do
       default: :user
 
     # The interface language the user chose; nil until they choose one.
-    attribute :locale, :atom, public?: true, constraints: [one_of: [:pl, :en]]
+    attribute :locale, :atom, public?: true, constraints: [one_of: [:pl, :en, :uk]]
 
     Resource.firmowid_timestamps()
   end
