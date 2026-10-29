@@ -46,7 +46,8 @@ defmodule FirmowidWeb.Auth.Views.ResetPassword do
     case verify_reset_token(token) do
       {:ok, _token} ->
         form = to_form(%{"reset_token" => token}, as: "user")
-        {:ok, assign(socket, form: form, reset_token: token)}
+
+        {:ok, assign(socket, form: form, reset_token: token, page_title: gettext("Reset password"))}
 
       :error ->
         {:ok,

@@ -59,6 +59,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Summary do
       |> assign(:submission_info, submission_info)
       |> assign(:currency_rate, currency_rate)
       |> assign(:return_to, return_to)
+      |> assign(:page_title, gettext("Sales invoice"))
 
     {:ok, socket}
   end

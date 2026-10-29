@@ -152,6 +152,7 @@ defmodule Firmowid.Invoicing.WizardState do
       validate present([:currency]), message: "Waluta jest wymagana"
       validate match(:currency, ~r/^[A-Z]{3}$/), message: "Nieprawidłowy kod waluty"
       validate {Validations.ValidateItemsNotEmpty, field: :items, source: :argument}
+      validate {Validations.ValidatePositiveItemQuantities, field: :items}
     end
 
     update :update_payment do

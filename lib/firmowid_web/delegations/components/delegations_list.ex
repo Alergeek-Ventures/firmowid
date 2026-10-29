@@ -48,12 +48,12 @@ defmodule FirmowidWeb.Delegations.Components.DelegationsList do
 
   defp delegation_title(assigns) do
     ~H"""
-    <div class="flex flex-1 items-center gap-2">
+    <div class="flex min-w-0 flex-1 items-center gap-2">
       <.link
         :if={@is_link}
         kind="unstyled"
         navigate={FirmowidWeb.Delegations.Utilities.Navigation.show_path(@delegation.reference)}
-        class="hover:underline"
+        class="truncate hover:underline"
       >
         <span class="truncate">{@delegation.title}</span>
       </.link>

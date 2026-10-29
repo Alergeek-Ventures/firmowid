@@ -78,6 +78,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Show do
         |> assign(:preview_url, "")
         |> assign(:preview_type, :html)
         |> assign(:no_padding, true)
+        |> assign(:page_title, gettext("Sales invoice"))
         |> assign(:return_to, return_to)
 
       {:ok, socket}

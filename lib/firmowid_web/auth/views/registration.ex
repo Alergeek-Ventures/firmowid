@@ -104,6 +104,7 @@ defmodule FirmowidWeb.Auth.Views.Registration do
       |> assign(trigger_submit: false)
       |> assign(:check_errors, false)
       |> assign(:form, form)
+      |> assign(:page_title, gettext("Sign up"))
 
     {:ok, socket}
   end

@@ -485,6 +485,7 @@ defmodule Firmowid.Invoicing.SalesInvoice do
       change Changes.BindInvoiceCounterparty
 
       validate Validations.CompleteInvoice
+      validate Validations.ValidatePositiveItemQuantities
 
       validate {Validations.ValidateTaxId,
                 id_field: :buyer_id, country_field: :buyer_country, pesel_field: :buyer_pesel, type_field: :buyer_type}
@@ -528,6 +529,7 @@ defmodule Firmowid.Invoicing.SalesInvoice do
 
       validate Validations.InvoiceNumberRequired
       validate Validations.CompleteInvoice
+      validate Validations.ValidatePositiveItemQuantities
 
       validate {Validations.ValidateTaxId,
                 id_field: :buyer_id, country_field: :buyer_country, pesel_field: :buyer_pesel, type_field: :buyer_type}
@@ -687,6 +689,7 @@ defmodule Firmowid.Invoicing.SalesInvoice do
       validate Validations.InvoiceDraft
       validate {Validations.CheckIfLocked, []}, always_atomic?: true
       validate Validations.CompleteInvoice
+      validate Validations.ValidatePositiveItemQuantities
 
       validate {Validations.ValidateTaxId,
                 id_field: :buyer_id, country_field: :buyer_country, pesel_field: :buyer_pesel, type_field: :buyer_type}
@@ -735,6 +738,7 @@ defmodule Firmowid.Invoicing.SalesInvoice do
       validate Validations.InvoiceNumberRequired
       validate {Validations.CheckIfLocked, []}, always_atomic?: true
       validate Validations.CompleteInvoice
+      validate Validations.ValidatePositiveItemQuantities
 
       validate {Validations.ValidateTaxId,
                 id_field: :buyer_id, country_field: :buyer_country, pesel_field: :buyer_pesel, type_field: :buyer_type}

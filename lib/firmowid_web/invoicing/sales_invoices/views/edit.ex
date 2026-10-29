@@ -154,6 +154,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
     socket =
       socket
       |> assign(:step, :edit)
+      |> assign(:page_title, gettext("Edit invoice"))
       |> assign(:invoice, invoice)
       |> assign(:return_to, return_to)
       |> assign(:logo_url, logo_url)

@@ -90,6 +90,7 @@ defmodule FirmowidWeb.Auth.Views.Login do
       socket
       |> assign(form: form)
       |> assign(no_padding: true)
+      |> assign(:page_title, gettext("Log in"))
 
     {:ok, socket, temporary_assigns: [form: form]}
   end

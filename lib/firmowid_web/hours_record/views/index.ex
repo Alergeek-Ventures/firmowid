@@ -32,6 +32,7 @@ defmodule FirmowidWeb.HoursRecord.Views.Index do
       |> assign(:selected_date, selected_date)
       |> assign(:active_months, active_months)
       |> assign(:can_use_hours_records, can_use_hours_records)
+      |> assign(:page_title, gettext("Hours record"))
 
     {:ok, socket}
   end
@@ -77,7 +78,7 @@ defmodule FirmowidWeb.HoursRecord.Views.Index do
     date = socket.assigns.selected_date
 
     with {:ok, record} <-
-           HoursRecord.by_month(socket.assigns.current_user.id, date.month, date.year, scope: scope),
+           HoursRecord.by_month(socket.assigns.current_user.member.id, date.month, date.year, scope: scope),
          {:ok, _record} <-
            HoursRecord.request_change(
              record,

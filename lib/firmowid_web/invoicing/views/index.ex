@@ -996,7 +996,8 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
           date_to: to,
           date_field: :due_date,
           kind: :vat,
-          reconciliation: :pending
+          reconciliation: :pending,
+          submission: :confirmed
         },
         load: @sales_invoice_loads,
         scope: scope
@@ -1246,7 +1247,12 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
           list_sales_invoices(
             from,
             to,
-            %{date_field: :due_date, kind: :vat, reconciliation: :pending},
+            %{
+              date_field: :due_date,
+              kind: :vat,
+              reconciliation: :pending,
+              submission: :confirmed
+            },
             scope
           ),
           list_transactions(from, to, %{reconciliation: :pending}, scope)
@@ -1284,7 +1290,12 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
           list_sales_invoices(
             from,
             to,
-            %{date_field: :issue_date, kind: :vat, reconciliation: :pending},
+            %{
+              date_field: :issue_date,
+              kind: :vat,
+              reconciliation: :pending,
+              submission: :confirmed
+            },
             scope
           )
         ]

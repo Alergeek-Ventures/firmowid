@@ -66,7 +66,7 @@ defmodule FirmowidWeb.Settings.Components.SettingsPage do
               phx-hook="Tippy"
               data-tippy-content="Zmień zdjęcie profilowe"
               data-tippy-delay="100"
-              class="absolute -right-1 -bottom-1 hidden size-10 rounded-full p-0 shadow-sm lg:flex"
+              class="absolute -right-1 -bottom-1 size-10 rounded-full p-0 shadow-sm max-lg:hidden"
             >
               <Lucideicons.square_pen class="size-6!" />
             </.button>

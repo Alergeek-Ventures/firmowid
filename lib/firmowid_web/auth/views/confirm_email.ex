@@ -49,7 +49,14 @@ defmodule FirmowidWeb.Auth.Views.ConfirmEmail do
     case confirmation_details(token) do
       {:ok, %{email_change?: email_change?}} ->
         form = to_form(%{"confirm" => token}, as: "user")
-        {:ok, assign(socket, form: form, token: token, email_change?: email_change?)}
+
+        {:ok,
+         assign(socket,
+           form: form,
+           token: token,
+           email_change?: email_change?,
+           page_title: gettext("Confirm email address")
+         )}
 
       :error ->
         {:ok,

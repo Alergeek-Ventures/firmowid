@@ -120,14 +120,20 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
   defp submitted_form?(%AshPhoenix.Form{just_submitted?: true}), do: true
   defp submitted_form?(_source), do: false
 
-  defp displayed_item_unit_price_text(item_form) do
-    item_form[:unit_price].value
-    |> parse_decimal()
-    |> case do
-      nil -> "0.00"
-      unit_price -> unit_price |> Decimal.round(2) |> Decimal.to_string(:normal)
+  defp displayed_item_unit_price_text(item_form, currency) do
+    unit_price = parse_decimal(item_form[:unit_price].value) || Decimal.new(0)
+    format_amount(currency, unit_price)
+  end
+
+  # The gross price button shows what the user typed or the computed price, formatted like other amounts.
+  defp displayed_item_gross_price_text(item_form, gross_value_inputs, currency) do
+    case item_form |> displayed_item_gross_value(gross_value_inputs) |> parse_decimal() do
+      nil -> ""
+      gross_price -> format_amount(currency, gross_price)
     end
   end
+
+  defp format_amount(currency, amount), do: Money.to_string!(Money.new(currency, amount), currency_symbol: "")
 
   defp compute_vat_options(_invoice, _is_reverse_charge, false) do
     {VatRate.select_options_short(["zw"]), true}
@@ -391,7 +397,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
       <%= if to_boolean(@items_form[:is_reverse_charge].value) or not @show_vat do %>
         <p class="col-span-2 text-end">Wartość</p>
       <% else %>
-        <p class="text-end">Wartość VAT</p>
+        <p class="text-end">{gettext("VAT per unit")}</p>
         <.button
           id="gross-price"
           type="button"
@@ -401,7 +407,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
           phx-value-index="all"
           phx-value-mode="gross"
         >
-          Wartość brutto
+          {gettext("Gross price")}
         </.button>
       <% end %>
     </div>
@@ -421,6 +427,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
           <.input
             field={item[:name]}
             placeholder="Wprowadź nazwę"
+            aria-label={gettext("Item %{number}: product or service", number: item.index + 1)}
             phx-debounce
             class="w-full"
             input_class={[if(invalid_field?(item[:name]), do: "border-brick-700")]}
@@ -429,6 +436,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
           <.input
             field={item[:quantity]}
             placeholder="0"
+            aria-label={gettext("Item %{number}: quantity", number: item.index + 1)}
             phx-debounce
             type="number"
             step=".000001"
@@ -443,6 +451,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
                 field={item[:vat_rate]}
                 type="select"
                 options={@vat_options}
+                aria-label={gettext("Item %{number}: VAT rate", number: item.index + 1)}
                 phx-debounce
                 container_class="w-24"
                 readonly={@vat_disabled?}
@@ -453,6 +462,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
             field={item[:unit]}
             type="select"
             placeholder="0,00"
+            aria-label={gettext("Item %{number}: unit", number: item.index + 1)}
             phx-debounce
             container_class="w-24"
             options={["szt.", "godz."]}
@@ -465,6 +475,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
                   field={item[:unit_price]}
                   type="number"
                   value={item[:unit_price].value}
+                  aria-label={gettext("Item %{number}: net price", number: item.index + 1)}
                   phx-mounted={focus_price_input? && JS.focus()}
                   phx-debounce
                   step=".01"
@@ -490,7 +501,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
                   phx-value-index={item.index}
                   phx-value-mode="net"
                 >
-                  {displayed_item_unit_price_text(item)}
+                  {displayed_item_unit_price_text(item, @currency)}
                 </.button>
                 <p class="text-sm text-grey-500">{@items_form[:currency].value}</p>
               </div>
@@ -510,7 +521,8 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
           <% else %>
             <% vat_value =
               Money.new(@currency, item_unit_vat_value(item)) %>
-            <% gross_unit_price = displayed_item_gross_value(item, @gross_item_price_inputs) %>
+            <% gross_unit_price =
+              displayed_item_gross_price_text(item, @gross_item_price_inputs, @currency) %>
 
             <p class={[
               "w-28 truncate text-end",
@@ -526,11 +538,12 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
                     id={gross_value_input_id}
                     name={gross_value_input_name}
                     value={displayed_item_gross_value(item, @gross_item_price_inputs)}
+                    aria-label={gettext("Item %{number}: gross price", number: item.index + 1)}
                     phx-mounted={focus_price_input? && JS.focus()}
                     phx-debounce
                     step=".01"
                     min="0"
-                    placeholder="0.00"
+                    placeholder="0,00"
                     class="w-28"
                     input_class={[
                       "text-right",

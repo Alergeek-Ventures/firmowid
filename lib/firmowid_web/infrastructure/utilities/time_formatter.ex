@@ -40,24 +40,6 @@ defmodule FirmowidWeb.Infrastructure.Utilities.TimeFormatter do
     |> Enum.join(" ")
   end
 
-  @doc """
-  Format seconds into a human-readable string with days, hours, and minutes.
-  Example: "2 dni 8 h 32 min"
-  """
-  def format_duration(seconds, :with_days) do
-    days = div(seconds, 86_400)
-    hours = div(rem(seconds, 86_400), 3600)
-    minutes = div(rem(seconds, 3600), 60)
-
-    [
-      if(days > 0, do: "#{days} #{if days == 1, do: "dzień", else: "dni"}"),
-      if(hours > 0, do: "#{hours} h"),
-      if(minutes > 0, do: "#{minutes} min")
-    ]
-    |> Enum.filter(& &1)
-    |> Enum.join(" ")
-  end
-
   def format_date(date) when is_binary(date) do
     date
     |> Date.from_iso8601!()

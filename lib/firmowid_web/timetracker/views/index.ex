@@ -696,7 +696,7 @@ defmodule FirmowidWeb.Timetracker.Views.Index do
     day_name = Map.fetch!(@day_names, Date.day_of_week(date))
     month_name = Map.fetch!(@month_names_genitive, date.month)
 
-    "#{day_name}, #{date.day}. #{month_name}"
+    "#{day_name}, #{date.day} #{month_name}"
   end
 
   def format_week_header(%Date{} = date) do

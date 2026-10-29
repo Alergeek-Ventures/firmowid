@@ -35,7 +35,9 @@ defmodule Firmowid.Invoicing.CountryCodes do
   # EL -> GR (Greece uses EL in KSeF but GR in ISO/CLDR)
   # XI -> Northern Ireland (special post-Brexit status)
   # XC, XL -> KSeF-specific codes without CLDR equivalents
+  # AN -> Netherlands Antilles, which CLDR names after its successor Curaçao (CW)
   @special_code_names %{
+    "AN" => "Antyle Holenderskie",
     "EL" => "Grecja",
     "XI" => "Irlandia Północna",
     "XC" => "Ceuta",
@@ -144,6 +146,7 @@ defmodule Firmowid.Invoicing.CountryCodes do
 
   EU countries are listed first (sorted alphabetically by name),
   followed by non-EU countries (also sorted alphabetically by name).
+  Aliases that `normalize/1` replaces, such as GR, are left out.
   """
   @spec country_options() :: [{String.t(), String.t()}]
   def country_options do
@@ -154,7 +157,7 @@ defmodule Firmowid.Invoicing.CountryCodes do
 
     non_eu_options =
       @valid_country_codes
-      |> Enum.reject(&(&1 in @eu_country_codes))
+      |> Enum.reject(&(&1 in @eu_country_codes or normalize(&1) != &1))
       |> Enum.map(&{country_name(&1), &1})
       |> Enum.sort_by(fn {name, _code} -> name end)
 

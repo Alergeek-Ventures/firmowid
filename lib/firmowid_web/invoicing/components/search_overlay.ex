@@ -27,6 +27,7 @@ defmodule FirmowidWeb.Invoicing.Components.SearchOverlay do
                   name="q"
                   value={@search_query}
                   placeholder="Szukaj faktur kosztowych lub sprzedażowych..."
+                  aria-label={gettext("Search cost or sales invoices")}
                   autofocus
                   class="w-full bg-transparent text-sm outline-hidden placeholder:text-grey-700/50"
                   phx-debounce="200"

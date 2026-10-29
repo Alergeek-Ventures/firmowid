@@ -25,7 +25,11 @@ defmodule FirmowidWeb.Management.Views.CounterpartyForm do
 
     form =
       Counterparty
-      |> AshPhoenix.Form.for_create(:create, scope: scope, as: "counterparty")
+      |> AshPhoenix.Form.for_create(:create,
+        scope: scope,
+        as: "counterparty",
+        params: %{"country" => "PL"}
+      )
       |> to_form()
 
     {:ok, socket |> assign_navigation(nil, params) |> assign_form_view(nil, form, params)}
@@ -140,6 +144,10 @@ defmodule FirmowidWeb.Management.Views.CounterpartyForm do
     socket
     |> assign(:counterparty, counterparty)
     |> assign(:form, form)
+    |> assign(
+      :page_title,
+      if(counterparty, do: gettext("Edit counterparty"), else: gettext("New counterparty"))
+    )
     |> assign(:params, params)
     |> assign(:country_options, CountryCodes.country_options())
   end

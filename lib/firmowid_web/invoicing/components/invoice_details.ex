@@ -572,7 +572,7 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceDetails do
           <div class="space-y-2 text-center">
             <h3 class="text-lg/tight font-medium">Brak rekomendacji</h3>
             <p class="max-w-96 text-balance">
-              Firmowid nie znalazl zadnych transakcji, ktore potencjalnie pasowałyby do tej faktury.
+              {gettext("Firmowid found no transactions that might match this invoice.")}
             </p>
           </div>
 
@@ -594,7 +594,7 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceDetails do
 
       <div class="space-y-6">
         <h3 :if={@not_found and (@can_write or @is_cost_invoice)} class="leading-tight font-medium">
-          Co jeszcze mozesz zrobic?
+          {gettext("What else can you do?")}
         </h3>
         <.skip_invoicing
           show_assistant={not @not_found}

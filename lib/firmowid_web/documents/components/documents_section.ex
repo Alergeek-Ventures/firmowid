@@ -655,7 +655,7 @@ defmodule FirmowidWeb.Documents.Components.DocumentsSection do
   defp contract_status_badge(%{status: :pending_signature} = assigns) do
     ~H"""
     <span class="rounded-2xl bg-teal-100 px-4 py-1 text-sm text-teal-700">
-      oczekiwanie
+      {gettext("Pending")}
     </span>
     """
   end
