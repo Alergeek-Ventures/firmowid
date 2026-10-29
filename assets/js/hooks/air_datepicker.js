@@ -6,6 +6,8 @@ export const AirDatepicker = {
     this.enabledMonths = this.getEnabledMonths();
     this.enabledYears = this.getEnabledYears();
     this.picker.setViewDate(this.el.dataset.initialDate);
+    // Safari does not focus buttons on tap or click, and the picker opens on focus.
+    this.el.addEventListener("click", () => this.el.focus());
   },
 
   updated() {
