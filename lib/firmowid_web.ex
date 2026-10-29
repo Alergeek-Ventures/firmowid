@@ -60,6 +60,7 @@ defmodule FirmowidWeb do
         container: {:div, class: "min-h-full flex flex-col"}
 
       on_mount FirmowidWeb.Infrastructure.Hooks.SentryContext
+      on_mount FirmowidWeb.Infrastructure.Hooks.Locale
 
       unquote(html_helpers())
     end

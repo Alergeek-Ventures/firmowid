@@ -52,6 +52,8 @@ defmodule FirmowidWeb.Settings.Components.AccountTab do
           current_user={@current_user}
         />
 
+        <.language_section />
+
         <.account_closure_section
           current_user={@current_user}
           owned_organizations={@owned_organizations}
@@ -425,6 +427,23 @@ defmodule FirmowidWeb.Settings.Components.AccountTab do
           </div>
         </Helpers.settings_display_field>
       </div>
+    </.account_section>
+    """
+  end
+
+  defp language_section(assigns) do
+    assigns = assign(assigns, :locale, Gettext.get_locale(Firmowid.Gettext))
+
+    ~H"""
+    <.account_section title={gettext("Language")}>
+      <.form for={%{}} action={~p"/jezyk"} id="locale_form">
+        <Helpers.settings_display_field>
+          <.segmented_control label={gettext("Language")}>
+            <:option name="jezyk" value="pl" lang="pl" active={@locale == "pl"}>Polski</:option>
+            <:option name="jezyk" value="en" lang="en" active={@locale == "en"}>English</:option>
+          </.segmented_control>
+        </Helpers.settings_display_field>
+      </.form>
     </.account_section>
     """
   end
