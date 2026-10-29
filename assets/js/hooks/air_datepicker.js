@@ -46,11 +46,19 @@ export const AirDatepicker = {
 
   mountDatepicker() {
     const mode = this.el.dataset.mode || "months";
+    // Below Tailwind's md breakpoint the picker opens as a centered modal.
+    const isMobile = window.matchMedia("(max-width: 767px)").matches;
 
     return new Datepicker(this.el, {
       position: this.el.dataset.position || "bottom left",
+      isMobile,
+      autoClose: isMobile,
       selectedDates: [this.el.dataset.initialDate],
-      toggleSelected: false,
+      // Picking the current month or year skips autoClose, so close the modal here.
+      toggleSelected: ({ datepicker }) => {
+        if (isMobile) datepicker.hide();
+        return false;
+      },
       view: mode,
       minView: mode,
       locale: {
