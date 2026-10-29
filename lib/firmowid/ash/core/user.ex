@@ -279,6 +279,11 @@ defmodule Firmowid.Ash.Core.User do
         where: [attribute_does_not_equal(:hashed_password, nil)]
     end
 
+    update :set_locale do
+      description "Set the language of the current user's interface."
+      accept [:locale]
+    end
+
     action :update_current_profile, :struct do
       description "Update the acting user's member: name and profile details."
       transaction? true
@@ -500,6 +505,10 @@ defmodule Firmowid.Ash.Core.User do
       authorize_if expr(id == ^actor(:id))
     end
 
+    bypass action(:set_locale) do
+      authorize_if expr(id == ^actor(:id))
+    end
+
     bypass action_type(:destroy) do
       authorize_if expr(id == ^actor(:id))
       authorize_if {OrganizationMemberAdmin, active: true}
@@ -536,6 +545,9 @@ defmodule Firmowid.Ash.Core.User do
       public?: true,
       constraints: [one_of: [:user, :superuser]],
       default: :user
+
+    # The interface language the user chose; nil until they choose one.
+    attribute :locale, :atom, public?: true, constraints: [one_of: [:pl, :en]]
 
     Resource.firmowid_timestamps()
   end

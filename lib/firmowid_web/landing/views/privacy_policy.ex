@@ -36,7 +36,7 @@ defmodule FirmowidWeb.Landing.Views.PrivacyPolicy do
       <h2>{gettext("§1. Data Controller")}</h2>
       <p>
         {gettext("The data controller is")} <strong>{@legal_entity.name}</strong>
-        {gettext("with its registered office at")} {@legal_entity.headquarters_location}, {@legal_entity.address}, {gettext(
+        {gettext("with its registered office at %{address},", address: @legal_entity.address)} {gettext(
           "entered in the Register of Entrepreneurs maintained by the XI Commercial Division of the National Court Register of the District Court for Kraków-Śródmieście in Kraków under number"
         )} KRS: {@legal_entity.krs}, NIP: {@legal_entity.nip}, REGON: {@legal_entity.regon} {gettext(
           "(hereinafter: the “Controller” or “Alergeek Ventures”)."

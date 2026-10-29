@@ -43,7 +43,8 @@ defmodule FirmowidWeb.DesignSystem.Components.Tabs do
   @doc """
   Renders a segmented control: a group of pills where exactly one is active, for
   switching the scope of a list (for example active and archived records).
-  Options are links (`patch` or `navigate`) or buttons with `phx-click`.
+  Options are links (`patch` or `navigate`), buttons with `phx-click`, or submit
+  buttons of the enclosing form when given a `name` and `value`.
   """
   @spec segmented_control(map()) :: Rendered.t()
   attr :label, :string, required: true, doc: "Accessible name of the group."
@@ -55,6 +56,9 @@ defmodule FirmowidWeb.DesignSystem.Components.Tabs do
     attr :active, :boolean
     attr :"phx-click", :any
     attr :"phx-value-value", :any
+    attr :name, :string
+    attr :value, :string
+    attr :lang, :string
   end
 
   def segmented_control(assigns) do
@@ -72,7 +76,10 @@ defmodule FirmowidWeb.DesignSystem.Components.Tabs do
         </.link>
         <button
           :if={!(option[:patch] || option[:navigate])}
-          type="button"
+          type={if option[:name], do: "submit", else: "button"}
+          name={option[:name]}
+          value={option[:value]}
+          lang={option[:lang]}
           aria-pressed={to_string(option[:active] == true)}
           phx-click={option[:"phx-click"]}
           phx-value-value={option[:"phx-value-value"]}

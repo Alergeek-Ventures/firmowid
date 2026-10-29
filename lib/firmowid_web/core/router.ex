@@ -44,6 +44,7 @@ defmodule FirmowidWeb.Core.Router do
     plug :load_from_session
     plug :restore_live_socket_id
     plug :set_actor, :user
+    plug FirmowidWeb.Infrastructure.Plugs.Locale
   end
 
   pipeline :api do
@@ -107,6 +108,7 @@ defmodule FirmowidWeb.Core.Router do
 
     auth_routes(AuthController, Firmowid.Ash.Core.User, path: "/auth")
     delete "/wyloguj", AuthController, :sign_out
+    post "/jezyk", Infrastructure.Controllers.Locale, :update
   end
 
   scope "/", FirmowidWeb do

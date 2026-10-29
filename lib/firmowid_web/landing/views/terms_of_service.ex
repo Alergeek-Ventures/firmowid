@@ -47,7 +47,7 @@ defmodule FirmowidWeb.Landing.Views.TermsOfService do
       </p>
       <p>
         {gettext("The service provider is")} <strong>{@legal_entity.name}</strong>
-        {gettext("with its registered office at")} {@legal_entity.headquarters_location}, {@legal_entity.address}, {gettext(
+        {gettext("with its registered office at %{address},", address: @legal_entity.address)} {gettext(
           "entered in the Register of"
         )}
         {gettext(

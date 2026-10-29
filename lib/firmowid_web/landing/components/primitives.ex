@@ -44,37 +44,68 @@ defmodule FirmowidWeb.Landing.Components.Primitives do
           Firmowid
         </.link>
 
-        <div class="hidden items-center gap-3 lg:flex lg:gap-4">
-          <a
-            href={~p"/#zespol"}
-            class="min-w-21.5 rounded-sm p-3.5 text-center text-base/6 font-medium text-[#0f0f0f] transition-colors duration-180 group-data-[theme=dark]/navbar:text-[#f5f1ea] hover:text-rust-600 group-data-[theme=dark]/navbar:hover:text-rust-500"
-          >
-            {gettext("About us")}
-          </a>
-          <a
-            href={@repository}
-            target="_blank"
-            rel="noopener noreferrer"
-            class="min-w-24 rounded-sm p-3.5 text-center text-base/6 font-medium text-[#0f0f0f] transition-colors duration-180 group-data-[theme=dark]/navbar:text-[#f5f1ea] hover:text-rust-600 group-data-[theme=dark]/navbar:hover:text-rust-500"
-          >
-            GitHub
-          </a>
-          <.landing_button
-            navigate={~p"/zarejestruj"}
-            variant={:navbar_filled}
-            data-landing-cta="navbar_trial"
-          >
-            {gettext("Try it")}
-          </.landing_button>
-          <.landing_button
-            navigate={~p"/zaloguj"}
-            variant={:navbar_outline}
-          >
-            {gettext("Log in")}
-          </.landing_button>
+        <div class="flex items-center gap-3 lg:gap-4">
+          <div class="hidden items-center gap-3 lg:flex lg:gap-4">
+            <a
+              href={~p"/#zespol"}
+              class="min-w-21.5 rounded-sm p-3.5 text-center text-base/6 font-medium text-[#0f0f0f] transition-colors duration-180 group-data-[theme=dark]/navbar:text-[#f5f1ea] hover:text-rust-600 group-data-[theme=dark]/navbar:hover:text-rust-500"
+            >
+              {gettext("About us")}
+            </a>
+            <a
+              href={@repository}
+              target="_blank"
+              rel="noopener noreferrer"
+              class="min-w-24 rounded-sm p-3.5 text-center text-base/6 font-medium text-[#0f0f0f] transition-colors duration-180 group-data-[theme=dark]/navbar:text-[#f5f1ea] hover:text-rust-600 group-data-[theme=dark]/navbar:hover:text-rust-500"
+            >
+              GitHub
+            </a>
+            <.landing_button
+              navigate={~p"/zarejestruj"}
+              variant={:navbar_filled}
+              data-landing-cta="navbar_trial"
+            >
+              {gettext("Try it")}
+            </.landing_button>
+            <.landing_button
+              navigate={~p"/zaloguj"}
+              variant={:navbar_outline}
+            >
+              {gettext("Log in")}
+            </.landing_button>
+          </div>
+          <.locale_switcher />
         </div>
       </nav>
     </header>
+    """
+  end
+
+  defp locale_switcher(assigns) do
+    assigns = assign(assigns, :locale, Gettext.get_locale(Firmowid.Gettext))
+
+    ~H"""
+    <.form for={%{}} action={~p"/jezyk"} id="landing-locale-switcher">
+      <div
+        role="group"
+        aria-label={gettext("Language")}
+        class="flex items-center text-sm/6 font-semibold text-[#0f0f0f]/45 group-data-[theme=dark]/navbar:text-[#f5f1ea]/50"
+      >
+        <button
+          :for={{code, name} <- [{"pl", "Polski"}, {"en", "English"}]}
+          type="submit"
+          name="jezyk"
+          value={code}
+          lang={code}
+          title={name}
+          aria-label={name}
+          aria-pressed={to_string(code == @locale)}
+          class="cursor-pointer rounded-sm px-1.5 py-1 uppercase transition-colors duration-180 hover:text-rust-600 group-data-[theme=dark]/navbar:hover:text-rust-500 aria-pressed:text-[#0f0f0f] group-data-[theme=dark]/navbar:aria-pressed:text-[#f5f1ea]"
+        >
+          {code}
+        </button>
+      </div>
+    </.form>
     """
   end
 

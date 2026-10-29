@@ -84,6 +84,7 @@ defmodule Firmowid.Ash.Core do
       define :set_organization, action: :set_organization
       define :unlink_google_account, action: :unlink_google
       define :change_password, action: :change_password
+      define :set_user_locale, action: :set_locale, args: [:locale]
     end
 
     resource Member do
