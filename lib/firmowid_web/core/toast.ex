@@ -21,4 +21,9 @@ defmodule FirmowidWeb.Core.Toast do
       assigns[:kind] == :error && "!text-brick-700 !bg-brick-200"
     ]
   end
+
+  @doc """
+  Keeps toasts above the full-screen assistant on phones.
+  """
+  def group_class_fn(assigns), do: [LiveToast.group_class_fn(assigns), "max-md:z-60"]
 end
