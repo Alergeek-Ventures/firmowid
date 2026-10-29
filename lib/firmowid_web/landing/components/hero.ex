@@ -19,12 +19,13 @@ defmodule FirmowidWeb.Landing.Components.Hero do
       |> gettext(open_source: "__OPEN_SOURCE__")
       |> String.split("__OPEN_SOURCE__", parts: 2)
 
-    # Label positions in the 730×670 units of the compass artwork, in state order.
+    # Label position and the width left inside its box, in the 730×670 units of the
+    # compass artwork, in state order. Longer translations wrap within the box.
     compass_labels = [
-      {319.5, 45.5, pgettext("landing compass", "KSeF invoices"), pgettext("landing compass", "issuing and costs")},
-      {574.5, 320.5, pgettext("landing compass", "Bank"), pgettext("landing compass", "transaction matching")},
-      {319.5, 625.5, pgettext("landing compass", "Working time"), pgettext("landing compass", "hours and projects")},
-      {75, 320.5, pgettext("landing compass", "Team"), pgettext("landing compass", "leave and travel")}
+      {319.5, 45.5, 129, pgettext("landing compass", "KSeF invoices"), pgettext("landing compass", "issuing and costs")},
+      {574.5, 320.5, 131, pgettext("landing compass", "Bank"), pgettext("landing compass", "transaction matching")},
+      {319.5, 625.5, 128, pgettext("landing compass", "Working time"), pgettext("landing compass", "hours and projects")},
+      {75, 320.5, 114, pgettext("landing compass", "Team"), pgettext("landing compass", "leave and travel")}
     ]
 
     assigns =
@@ -124,13 +125,13 @@ defmodule FirmowidWeb.Landing.Components.Hero do
             class="absolute inset-0 size-full opacity-0 transition-opacity duration-300 ease-in-out data-[active=true]:opacity-100"
           />
           <div
-            :for={{{left, top, title, description}, index} <- @compass_labels}
+            :for={{{left, top, width, title, description}, index} <- @compass_labels}
             data-state={index}
             data-active={to_string(index == 0)}
-            style={"left: calc(var(--compass-unit) * #{left}); top: calc(var(--compass-unit) * #{top})"}
-            class="absolute flex -translate-y-1/2 flex-col gap-[calc(var(--compass-unit)*3)] leading-[1.2] whitespace-nowrap opacity-45 transition-opacity duration-300 ease-in-out data-[active=true]:opacity-100"
+            style={"left: calc(var(--compass-unit) * #{left}); top: calc(var(--compass-unit) * #{top}); max-width: calc(var(--compass-unit) * #{width})"}
+            class="absolute flex -translate-y-1/2 flex-col gap-[calc(var(--compass-unit)*3)] leading-[1.2] opacity-45 transition-opacity duration-300 ease-in-out data-[active=true]:opacity-100"
           >
-            <span class="text-[calc(var(--compass-unit)*16)] font-medium text-[#0f0f0f]">{title}</span>
+            <span class="text-[calc(var(--compass-unit)*16)] font-medium whitespace-nowrap text-[#0f0f0f]">{title}</span>
             <span class="text-[calc(var(--compass-unit)*12)] text-grey-700">{description}</span>
           </div>
         </div>
