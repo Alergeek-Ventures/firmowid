@@ -27,6 +27,7 @@ defmodule Firmowid.Ash.Delegations do
       define :approve_delegation, action: :approve, get_by: [:id]
 
       define :complete_delegation, action: :complete, get_by: [:id]
+      define :save_delegation_draft, action: :save_draft, get_by: [:id]
       define :detect_dates, action: :detect_dates
       define :notify_admins_about_delegation, action: :notify_admins, args: [:signal]
       define :notify_employee_about_delegation, action: :notify_employee, args: [:signal]

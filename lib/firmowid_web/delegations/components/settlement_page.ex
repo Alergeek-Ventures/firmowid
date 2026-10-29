@@ -25,11 +25,22 @@ defmodule FirmowidWeb.Delegations.Components.SettlementPage do
       <.form
         for={@complete_form}
         id="delegation-complete-form"
+        phx-hook=".SettlementDraft"
+        data-draft-key={"delegation:#{@ash_scope.actor.id}:#{@ash_scope.tenant}:#{@delegation.id}"}
+        data-editable={to_string(@editable?)}
+        data-save-status={@save_status}
         phx-change={if @editable?, do: "validate"}
         phx-submit={if @editable?, do: "submit"}
         class="group relative mt-10 grid w-full gap-10 pb-12 font-[340] lg:grid-cols-[minmax(0,1fr)_22.5rem]"
       >
         <.nested_hidden_inputs :if={@editable?} form={@complete_form} />
+        <input
+          :if={@editable?}
+          type="hidden"
+          name="draft_revision"
+          id="settlement-draft-revision"
+          value="0"
+        />
         <section aria-labelledby="delegation-settlement-title" class="min-w-0">
           <small class="text-sm text-grey-500">Cel:
           <span class="text-grey-700">{@delegation.purpose}</span></small>
@@ -41,7 +52,7 @@ defmodule FirmowidWeb.Delegations.Components.SettlementPage do
               </dd>
             </small>
           </dl>
-          <.saved_notice :if={@editable?} class="mt-2 lg:hidden" />
+          <.saved_notice :if={@editable?} status={@save_status} />
           <h1 id="delegation-settlement-title" class="mt-1 text-2xl font-medium">
             Rozliczenie delegacji
           </h1>
@@ -59,7 +70,6 @@ defmodule FirmowidWeb.Delegations.Components.SettlementPage do
             description_visible?={@description_visible?}
             expense_forms={@expense_forms}
             trip_forms={@trip_forms}
-            timezone={@timezone}
             related_upload={Map.get(assigns[:uploads] || %{}, :related_document)}
             expense_currencies={@expense_currencies}
             foreign_currency_modes={@foreign_currency_modes}
@@ -79,7 +89,6 @@ defmodule FirmowidWeb.Delegations.Components.SettlementPage do
             description_visible?={@description_visible?}
             expense_forms={@expense_forms}
             trip_forms={@trip_forms}
-            timezone={@timezone}
             related_upload={Map.get(assigns[:uploads] || %{}, :related_document)}
             expense_currencies={@expense_currencies}
             foreign_currency_modes={@foreign_currency_modes}
@@ -99,7 +108,6 @@ defmodule FirmowidWeb.Delegations.Components.SettlementPage do
             description_visible?={@description_visible?}
             expense_forms={@expense_forms}
             trip_forms={@trip_forms}
-            timezone={@timezone}
             related_upload={Map.get(assigns[:uploads] || %{}, :related_document)}
             expense_currencies={@expense_currencies}
             foreign_currency_modes={@foreign_currency_modes}
@@ -133,7 +141,6 @@ defmodule FirmowidWeb.Delegations.Components.SettlementPage do
             </small>
           </dl>
           <div :if={@editable?} class="relative mt-6 lg:mt-47">
-            <.saved_notice class="absolute -top-12 right-0 hidden h-6 items-center justify-end lg:flex" />
             <.summary
               delegation={@delegation}
               total={@total}
@@ -177,6 +184,63 @@ defmodule FirmowidWeb.Delegations.Components.SettlementPage do
         </div>
       </.form>
     </main>
+    <script :type={Phoenix.LiveView.ColocatedHook} name=".SettlementDraft">
+      export default {
+        mounted() {
+          this.key = this.el.dataset.draftKey;
+          this.revision = 0;
+          this.capture = (event) => {
+            if (this.el.dataset.editable !== "true" || !event.target.name || event.target.type === "file") return;
+            const fields = [...this.el.querySelectorAll("input:not([type=hidden]):not([type=file]), select, textarea")]
+              .filter((field) => field.id && field.name)
+              .map((field) => [field.id, field.value]);
+            const signature = JSON.stringify(fields);
+            if (signature === this.lastFields) return;
+            this.lastFields = signature;
+            this.revision += 1;
+            this.el.querySelector("#settlement-draft-revision").value = String(this.revision);
+            sessionStorage.setItem(this.key, JSON.stringify({ revision: this.revision, fields }));
+            this.el.dataset.dirty = "true";
+          };
+          this.el.addEventListener("input", this.capture, true);
+          this.el.addEventListener("change", this.capture, true);
+          this.handleEvent("settlement-saved", ({ revision }) => {
+            if (String(this.revision) !== revision) return;
+            sessionStorage.removeItem(this.key);
+            delete this.el.dataset.dirty;
+          });
+          if (this.el.dataset.editable === "true") {
+            const draft = JSON.parse(sessionStorage.getItem(this.key) || "null");
+            if (draft) {
+              this.revision = draft.revision;
+              let changed;
+              for (const [id, value] of draft.fields) {
+                const field = document.getElementById(id);
+                if (field && this.el.contains(field)) { field.value = value; changed = field; }
+              }
+              changed?.dispatchEvent(new Event("input", { bubbles: true }));
+            }
+          } else {
+            sessionStorage.removeItem(this.key);
+          }
+        },
+        updated() {
+          const revision = this.el.querySelector("#settlement-draft-revision");
+          if (revision) revision.value = String(this.revision);
+          if (sessionStorage.getItem(this.key)) this.el.dataset.dirty = "true";
+          if (this.el.dataset.editable !== "true") {
+            sessionStorage.removeItem(this.key);
+            delete this.el.dataset.dirty;
+          }
+        },
+        disconnected() { this.el.dataset.offline = "true"; },
+        reconnected() { delete this.el.dataset.offline; },
+        destroyed() {
+          this.el.removeEventListener("input", this.capture, true);
+          this.el.removeEventListener("change", this.capture, true);
+        },
+      };
+    </script>
     <script :type={Phoenix.LiveView.ColocatedHook} name=".DelegationDateChange">
       export default {
         mounted() {
@@ -221,15 +285,50 @@ defmodule FirmowidWeb.Delegations.Components.SettlementPage do
     """
   end
 
-  attr :class, :string, default: nil
+  attr :status, :atom, required: true
 
   defp saved_notice(assigns) do
     ~H"""
-    <div class={@class}>
-      <span class="inline-flex items-center gap-1 text-caps-sm font-medium text-grey-500 uppercase group-[.phx-change-loading]:hidden">Zmiany zostały zapisane
-      <.save_check_icon class="size-3" /></span>
-      <span class="hidden items-center gap-1 text-caps-sm font-medium text-grey-500 uppercase group-[.phx-change-loading]:inline-flex">Zapisywanie zmian
-      <Lucideicons.refresh_ccw class="size-3 animate-spin [animation-direction:reverse]" /></span>
+    <div
+      id="delegation-save-status"
+      role="status"
+      aria-live="polite"
+      class="sticky inset-bs-16.5 z-10 mbs-3 grid min-h-[3lh] items-start bg-grey-100 py-2 text-sm text-grey-700"
+    >
+      <span class="hidden items-center gap-2 group-[.phx-change-loading]:inline-flex group-[.phx-submit-loading]:inline-flex">
+        <Lucideicons.refresh_ccw class="size-4 shrink-0 motion-safe:animate-spin" />
+        {gettext("Saving changes…")}
+      </span>
+      <span class="hidden group-data-[offline=true]:inline">
+        {gettext("No connection. Changes remain in this tab until saving is confirmed.")}
+      </span>
+      <span
+        :if={@status in [:idle, :saved]}
+        class="hidden group-data-[dirty=true]:inline group-data-[offline=true]:hidden group-[.phx-change-loading]:hidden group-[.phx-submit-loading]:hidden"
+      >
+        {gettext("Waiting for save confirmation…")}
+      </span>
+      <span class={[
+        "group-data-[offline=true]:hidden group-[.phx-change-loading]:hidden group-[.phx-submit-loading]:hidden",
+        @status in [:idle, :saved] && "group-data-[dirty=true]:hidden"
+      ]}>
+        <%= case @status do %>
+          <% :saved -> %>
+            <span class="inline-flex items-center gap-2"><Lucideicons.check class="size-4" />{gettext(
+              "Changes saved"
+            )}</span>
+          <% :idle -> %>
+            {gettext("Changes are saved automatically.")}
+          <% :invalid -> %>
+            <span class="text-brick-700">{gettext(
+              "Not saved. Check the highlighted fields. Your draft remains in this tab."
+            )}</span>
+          <% :error -> %>
+            <span class="text-brick-700">{gettext(
+              "Saving failed. Your draft remains in this tab. Edit a field to try again."
+            )}</span>
+        <% end %>
+      </span>
     </div>
     """
   end
@@ -280,14 +379,14 @@ defmodule FirmowidWeb.Delegations.Components.SettlementPage do
   end
 
   attr :label, :string, required: true
-  attr :value, Money, required: true
+  attr :value, :any, required: true
   attr :class, :string, default: ""
 
   defp summary_row(assigns) do
     ~H"""
     <div class={["flex justify-between gap-4", @class]}>
-      <dt>{@label}</dt><dd class={[Money.zero?(@value) && "text-grey-500"]}>
-        {Money.to_string!(@value)}
+      <dt>{@label}</dt><dd class={[@value && Money.zero?(@value) && "text-grey-500"]}>
+        {if @value, do: Money.to_string!(@value), else: "—"}
       </dd>
     </div>
     """
@@ -344,27 +443,4 @@ defmodule FirmowidWeb.Delegations.Components.SettlementPage do
   defp blank?(value) when is_binary(value), do: String.trim(value) == ""
   defp blank?(nil), do: true
   defp blank?(_value), do: false
-
-  attr :class, :string, default: nil
-
-  defp save_check_icon(assigns) do
-    ~H"""
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      stroke-width="2"
-      stroke-linecap="round"
-      stroke-linejoin="round"
-      class={@class}
-      aria-hidden="true"
-    >
-      <path d="M12.5 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h10.2a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4v4.35" />
-      <path d="m16 19 2 2 4-4" />
-      <path d="M17 15.13V14a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7" />
-      <path d="M7 3v4a1 1 0 0 1 1 1h7" />
-    </svg>
-    """
-  end
 end

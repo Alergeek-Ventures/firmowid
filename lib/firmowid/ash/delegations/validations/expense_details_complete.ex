@@ -6,6 +6,7 @@ defmodule Firmowid.Ash.Delegations.Validations.ExpenseDetailsComplete do
   alias Firmowid.Ash.Delegations.DelegationExpense.AccommodationDetails
   alias Firmowid.Ash.Delegations.DelegationExpense.OtherDetails
   alias Firmowid.Ash.Delegations.DelegationExpense.TransportDetails
+  alias Firmowid.Ash.Delegations.DelegationExpense.Trip
 
   @impl true
   def validate(changeset, _opts, _context) do
@@ -44,18 +45,19 @@ defmodule Firmowid.Ash.Delegations.Validations.ExpenseDetailsComplete do
       else: {:error, field: :details, message: "Uzupełnij poprawnie każdą trasę."}
   end
 
-  defp valid_trip?(%{
-         departure_city: departure_city,
-         arrival_city: arrival_city,
-         departure_datetime: departure_datetime,
-         arrival_datetime: arrival_datetime
-       }) do
-    departure_city != "" and arrival_city != "" and not is_nil(departure_datetime) and
-      not is_nil(arrival_datetime) and
-      DateTime.compare(arrival_datetime, departure_datetime) in [:gt, :eq]
+  defp valid_trip?(%Trip{} = trip) do
+    trip.departure_city != "" and trip.arrival_city != "" and
+      not is_nil(Trip.local_datetime(trip, :departure)) and
+      not is_nil(Trip.local_datetime(trip, :arrival)) and chronological?(trip)
   end
 
   defp valid_trip?(_), do: false
+
+  defp chronological?(%{departure_datetime: %DateTime{} = departure, arrival_datetime: %DateTime{} = arrival}) do
+    DateTime.compare(arrival, departure) in [:gt, :eq]
+  end
+
+  defp chronological?(_trip), do: true
 
   defp validate_accommodation(%{locality: locality, arrival_date: arrival_date, departure_date: departure_date}) do
     if locality != "" and not is_nil(arrival_date) and not is_nil(departure_date) and

@@ -44,9 +44,9 @@ defmodule Firmowid.Ash.Invoicing.Services.ReductoApiClientMock do
             "trips" => [
               %{
                 "departure_city" => "Wrocław",
-                "departure_datetime" => "#{start_date}T08:15:00Z",
+                "departure_datetime" => "#{start_date}T08:15:00",
                 "arrival_city" => "Kraków",
-                "arrival_datetime" => "#{start_date}T11:30:00Z"
+                "arrival_datetime" => "#{start_date}T11:30:00"
               }
             ]
           }

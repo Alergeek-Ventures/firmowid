@@ -27,7 +27,6 @@ defmodule FirmowidWeb.Delegations.Components.Settlement.Expense do
   attr :description_visible?, :map, default: %{}
   attr :expense_forms, :map, required: true
   attr :trip_forms, :map, required: true
-  attr :timezone, :string, required: true
   attr :related_upload, :any, required: true
   attr :expense_currencies, :map, default: %{}
   attr :foreign_currency_modes, :map, default: %{}
@@ -219,13 +218,11 @@ defmodule FirmowidWeb.Delegations.Components.Settlement.Expense do
             :if={!@editable?}
             expense={expense}
             kind={@kind}
-            timezone={@timezone}
           />
           <.trip_fields
             :if={@kind == "transport"}
             trips={expense.trips || []}
             editable?={@editable?}
-            timezone={@timezone}
             description_visible?={@description_visible?}
             trip_forms={@trip_forms}
           />
@@ -402,7 +399,6 @@ defmodule FirmowidWeb.Delegations.Components.Settlement.Expense do
 
   attr :expense, :any, required: true
   attr :kind, :string, required: true
-  attr :timezone, :string, required: true
 
   defp expense_details(assigns) do
     ~H"""
@@ -431,7 +427,7 @@ defmodule FirmowidWeb.Delegations.Components.Settlement.Expense do
         value={@expense.description}
         class="sm:col-span-2 lg:col-span-3"
       />
-      <.trip_details :if={@kind == "transport"} trips={@expense.trips || []} timezone={@timezone} />
+      <.trip_details :if={@kind == "transport"} trips={@expense.trips || []} />
     </dl>
     """
   end
@@ -443,9 +439,11 @@ defmodule FirmowidWeb.Delegations.Components.Settlement.Expense do
 
   defp expense_description(assigns) do
     ~H"""
-    <div class="col-span-full flex flex-col items-end gap-2">
+    <div class={[
+      "col-span-full flex flex-col items-end gap-2",
+      !@visible? && @form[:description].value in [nil, ""] && "hidden"
+    ]}>
       <.input
-        :if={@visible?}
         id={"#{@kind}-description-#{@expense.id}"}
         field={@form[:description]}
         type="textarea"

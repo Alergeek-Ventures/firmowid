@@ -6,16 +6,23 @@ defmodule FirmowidWeb.Delegations.Utilities.SettlementPresentation do
   @spec expenses_for([map()], expense_kind()) :: [map()]
   def expenses_for(expenses, kind), do: Enum.filter(expenses, &(&1.kind == kind))
 
-  @spec sum([map()]) :: Money.t()
-  def sum(expenses),
-    do: Enum.reduce(expenses, Money.new(:PLN, 0), fn expense, total -> Money.add!(total, settlement_amount(expense)) end)
+  @spec sum([map()]) :: Money.t() | nil
+  def sum(expenses) do
+    amounts = Enum.map(expenses, &settlement_amount/1)
+
+    if Enum.all?(amounts, &(Money.to_currency_code(&1) == :PLN)) do
+      Enum.reduce(amounts, Money.new(:PLN, 0), &Money.add!/2)
+    end
+  end
 
   @doc "Returns the amount used in the delegation settlement summary."
   @spec settlement_amount(map()) :: Money.t()
   def settlement_amount(%{settlement_amount: %Money{} = amount}), do: amount
   def settlement_amount(expense), do: expense.expense_amount
 
-  @spec settlement_balance(Money.t(), Money.t()) :: {String.t(), Money.t()}
+  @spec settlement_balance(Money.t() | nil, Money.t()) :: {String.t(), Money.t() | nil}
+  def settlement_balance(nil, _advance), do: {"Do dopłaty", nil}
+
   def settlement_balance(total, advance) do
     if Money.compare(total, advance) in [:gt, :eq],
       do: {"Do dopłaty", Money.sub!(total, advance)},
@@ -38,18 +45,6 @@ defmodule FirmowidWeb.Delegations.Utilities.SettlementPresentation do
   @spec format_date(Date.t() | nil) :: String.t()
   def format_date(nil), do: "—"
   def format_date(date), do: Calendar.strftime(date, "%d.%m.%Y")
-
-  @spec format_time(DateTime.t() | nil, String.t()) :: String.t()
-  def format_time(nil, _timezone), do: "—"
-
-  def format_time(datetime, timezone) do
-    datetime |> DateTime.shift_zone!(timezone) |> Calendar.strftime("%H:%M")
-  end
-
-  @spec datetime_date(DateTime.t() | nil, String.t()) :: Date.t() | nil
-  def datetime_date(nil, _timezone), do: nil
-
-  def datetime_date(datetime, timezone), do: datetime |> DateTime.shift_zone!(timezone) |> DateTime.to_date()
 
   @spec roman_numeral(pos_integer()) :: String.t()
   def roman_numeral(number) do

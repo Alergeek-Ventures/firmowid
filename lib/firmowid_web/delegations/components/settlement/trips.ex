@@ -1,19 +1,19 @@
 defmodule FirmowidWeb.Delegations.Components.Settlement.Trips do
-  @moduledoc "Editable and read-only transport trip components for delegation settlements."
+  @moduledoc "Editable and read-only ticket-local route details for delegation settlements."
 
   use FirmowidWeb, :html
 
   import FirmowidUI.Components.Button
   import Phoenix.Component, except: [link: 1]
 
+  alias Firmowid.Ash.Delegations.DelegationExpense.Trip
   alias FirmowidWeb.Delegations.Utilities.SettlementPresentation
   alias Phoenix.LiveView.Rendered
 
-  @doc "Renders editable route fields for transport expense trips."
+  @doc "Renders editable route fields without converting the ticket's local clock."
   @spec trip_fields(map()) :: Rendered.t()
   attr :trips, :list, required: true
   attr :editable?, :boolean, required: true
-  attr :timezone, :string, required: true
   attr :description_visible?, :map, required: true
   attr :trip_forms, :map, required: true
 
@@ -22,244 +22,205 @@ defmodule FirmowidWeb.Delegations.Components.Settlement.Trips do
     <section
       :for={{trip, index} <- Enum.with_index(@trips, 1)}
       :if={@editable?}
-      class={[
-        "mt-4 border-t border-grey-100 pt-4",
-        length(@trips) > 1 && "grid grid-cols-[1.5rem_minmax(0,1fr)] gap-x-4"
-      ]}
+      id={"transport-trip-#{trip.id}"}
+      class="mbs-4 border-bs border-grey-100 pbs-4"
     >
       <% trip_form = Map.fetch!(@trip_forms, trip.id) %>
-      <span :if={length(@trips) > 1} class="self-center text-center text-sm font-medium text-grey-900">
-        {SettlementPresentation.roman_numeral(index)}
-      </span>
-      <div
-        id={"transport-trip-#{trip.id}"}
-        class={[length(@trips) > 1 && "border-l border-grey-200 pl-4"]}
-      >
-        <div class="min-w-0">
-          <table class="block w-full border-separate border-spacing-y-3 text-left text-sm sm:table sm:w-auto">
-            <thead class="hidden text-grey-500 sm:table-header-group">
-              <tr>
-                <th scope="col"></th>
-                <th scope="col" class="font-normal">Miejscowość</th>
-                <th scope="col" class="font-normal">Data</th>
-                <th scope="col" class="font-normal">Godzina</th>
-                <th scope="col"></th>
-              </tr>
-            </thead>
-            <tbody class="block sm:table-row-group">
-              <tr class="grid grid-cols-2 gap-3 sm:table-row">
-                <th scope="row" class="col-span-full font-normal text-grey-700 sm:table-cell sm:pr-3">
-                  Wyjazd
-                </th>
-                <td class="col-span-full block sm:table-cell sm:pr-3">
-                  <.input
-                    id={"trip-departure-city-#{trip.id}"}
-                    field={trip_form[:departure_city]}
-                    type="text"
-                    aria-label="Miejscowość wyjazdu"
-                    input_class="w-full sm:w-36"
-                  />
-                </td>
-                <td class="block sm:table-cell sm:pr-3">
-                  <.input
-                    id={"trip-departure-date-#{trip.id}"}
-                    name={"#{trip_form.name}[departure_date]"}
-                    value={
-                      trip_form.params["departure_date"] ||
-                        date_value(trip_form[:departure_datetime].value, @timezone)
-                    }
-                    errors={translated_errors(trip_form[:departure_datetime])}
-                    type="date"
-                    aria-label="Data wyjazdu"
-                    input_class="w-full sm:w-34"
-                  />
-                </td>
-                <td class="block sm:table-cell">
-                  <.input
-                    id={"trip-departure-time-#{trip.id}"}
-                    name={"#{trip_form.name}[departure_time]"}
-                    value={
-                      trip_form.params["departure_time"] ||
-                        time_value(trip_form[:departure_datetime].value, @timezone)
-                    }
-                    errors={translated_errors(trip_form[:departure_datetime])}
-                    type="time"
-                    aria-label="Godzina wyjazdu"
-                    input_class="w-full sm:w-24"
-                  />
-                </td>
-                <td
-                  rowspan="2"
-                  class="col-span-full block sm:table-cell sm:w-24 sm:pl-3 sm:align-bottom"
-                >
-                  <% description_visible? = Map.get(@description_visible?, trip.id, false) %>
-                  <.button
-                    type="button"
-                    variant="unstyled"
-                    class={[
-                      "block w-full cursor-pointer text-left text-sm font-normal whitespace-nowrap sm:w-24",
-                      description_visible? && "text-brick-700"
-                    ]}
-                    phx-click={
-                      if description_visible?, do: "hide-description", else: "show-description"
-                    }
-                    phx-value-id={trip.id}
-                  >{if description_visible?, do: "Usuń opis", else: "Dodaj opis"}</.button>
-                </td>
-              </tr>
-              <tr class="mt-4 grid grid-cols-2 gap-3 sm:mt-0 sm:table-row">
-                <th scope="row" class="col-span-full font-normal text-grey-700 sm:table-cell sm:pr-3">
-                  Przyjazd
-                </th>
-                <td class="col-span-full block sm:table-cell sm:pr-3">
-                  <.input
-                    id={"trip-arrival-city-#{trip.id}"}
-                    field={trip_form[:arrival_city]}
-                    type="text"
-                    aria-label="Miejscowość przyjazdu"
-                    input_class="w-full sm:w-36"
-                  />
-                </td>
-                <td class="block sm:table-cell sm:pr-3">
-                  <.input
-                    id={"trip-arrival-date-#{trip.id}"}
-                    name={"#{trip_form.name}[arrival_date]"}
-                    value={
-                      trip_form.params["arrival_date"] ||
-                        date_value(trip_form[:arrival_datetime].value, @timezone)
-                    }
-                    errors={translated_errors(trip_form[:arrival_datetime])}
-                    type="date"
-                    aria-label="Data przyjazdu"
-                    input_class="w-full sm:w-34"
-                  />
-                </td>
-                <td class="block sm:table-cell">
-                  <.input
-                    id={"trip-arrival-time-#{trip.id}"}
-                    name={"#{trip_form.name}[arrival_time]"}
-                    value={
-                      trip_form.params["arrival_time"] ||
-                        time_value(trip_form[:arrival_datetime].value, @timezone)
-                    }
-                    errors={translated_errors(trip_form[:arrival_datetime])}
-                    type="time"
-                    aria-label="Godzina przyjazdu"
-                    input_class="w-full sm:w-24"
-                  />
-                </td>
-              </tr>
-              <tr
-                :if={
-                  Map.get(@description_visible?, trip.id, false) ||
-                    trip_form[:description].value not in [nil, ""]
-                }
-                class="block sm:table-row"
-              >
-                <th
-                  scope="row"
-                  class="block pt-2 font-normal text-grey-700 sm:table-cell sm:pr-3 sm:align-top"
-                >
-                  Opis
-                </th>
-                <td colspan="4" class="block sm:table-cell">
-                  <.input
-                    id={"trip-description-#{trip.id}"}
-                    field={trip_form[:description]}
-                    type="textarea"
-                    aria-label="Opis"
-                  />
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
+      <p :if={length(@trips) > 1} class="mbe-3 text-sm font-medium text-grey-900">
+        {gettext("Route %{number}", number: SettlementPresentation.roman_numeral(index))}
+      </p>
+      <div class="grid grid-cols-[repeat(auto-fit,minmax(min(100%,18rem),1fr))] gap-4">
+        <.endpoint_fields form={trip_form} prefix={:departure} title={gettext("Departure")} />
+        <.endpoint_fields form={trip_form} prefix={:arrival} title={gettext("Arrival")} />
       </div>
+      <% description_visible? =
+        Map.get(@description_visible?, trip.id, trip_form[:description].value not in [nil, ""]) %>
+      <.button
+        type="button"
+        variant="unstyled"
+        class="cursor-pointer text-sm text-grey-700 underline underline-offset-4 active:text-grey-900"
+        phx-click={if description_visible?, do: "hide-description", else: "show-description"}
+        phx-value-id={trip.id}
+        aria-expanded={to_string(description_visible?)}
+        aria-controls={"trip-description-#{trip.id}"}
+      >
+        {if description_visible?, do: gettext("Hide description"), else: gettext("Add description")}
+      </.button>
+      <.input
+        id={"trip-description-#{trip.id}"}
+        field={trip_form[:description]}
+        type="textarea"
+        label={gettext("Description")}
+        class={["mbs-3", !description_visible? && "hidden"]}
+      />
     </section>
     """
   end
 
-  @doc "Renders saved route details for transport expense trips."
+  attr :form, :map, required: true
+  attr :prefix, :atom, required: true
+  attr :title, :string, required: true
+
+  defp endpoint_fields(assigns) do
+    %{form: form, prefix: prefix} = assigns
+    datetime = Trip.local_datetime(form.data, prefix)
+    date = Map.get(form.source.raw_params, "#{prefix}_date", format(datetime, "%Y-%m-%d"))
+    time = Map.get(form.source.raw_params, "#{prefix}_time", format(datetime, "%H:%M"))
+    errors = datetime_errors(form, prefix, date, time)
+    local_field = local_field(prefix)
+    legacy? = is_nil(Map.fetch!(form.data, local_field)) && not is_nil(datetime)
+
+    assigns =
+      assign(assigns,
+        date: date,
+        time: time,
+        errors: errors,
+        date_errors: if(valid_date?(date) && !valid_time?(time), do: [], else: errors),
+        time_errors: if(valid_time?(time) && !valid_date?(date), do: [], else: errors),
+        legacy?: legacy?,
+        city_field: city_field(prefix)
+      )
+
+    ~H"""
+    <fieldset class="min-w-0">
+      <legend class="mbe-3 text-sm font-medium text-grey-900">{@title}</legend>
+      <.input
+        id={"trip-#{@prefix}-city-#{@form.data.id}"}
+        field={@form[@city_field]}
+        type="text"
+        label={gettext("City")}
+        phx-debounce="400"
+      />
+      <div class="mbs-3 flex flex-wrap gap-3">
+        <div class="min-w-0 flex-[1_1_11.5rem]">
+          <.input
+            id={"trip-#{@prefix}-date-#{@form.data.id}"}
+            name={"#{@form.name}[#{@prefix}_date]"}
+            value={@date}
+            type="text"
+            inputmode="numeric"
+            label={gettext("Date (YYYY-MM-DD)")}
+            placeholder="2026-10-25"
+            aria-describedby={"trip-#{@prefix}-hint-#{@form.data.id}"}
+            errors={@date_errors}
+            show_error={false}
+            input_class="tabular-nums"
+            phx-debounce="400"
+          />
+        </div>
+        <div class="min-w-0 flex-[1_1_7rem]">
+          <.input
+            id={"trip-#{@prefix}-time-#{@form.data.id}"}
+            name={"#{@form.name}[#{@prefix}_time]"}
+            value={@time}
+            type="text"
+            inputmode="numeric"
+            label={gettext("Time (HH:MM)")}
+            placeholder="08:30"
+            aria-describedby={"trip-#{@prefix}-hint-#{@form.data.id}"}
+            errors={@time_errors}
+            show_error={false}
+            input_class="tabular-nums"
+            phx-debounce="400"
+          />
+        </div>
+      </div>
+      <p
+        id={"trip-#{@prefix}-hint-#{@form.data.id}"}
+        class={[
+          "mbs-2 min-h-[3lh] text-sm",
+          if(@errors == [], do: "text-grey-700", else: "text-brick-700")
+        ]}
+      >
+        <%= cond do %>
+          <% @errors != [] -> %>
+            {Enum.join(@errors, " ")}
+          <% @legacy? -> %>
+            {gettext("Historical time in UTC. Check it against the ticket.")}
+          <% true -> %>
+            {gettext("Local date and time as printed on the ticket.")}
+        <% end %>
+      </p>
+    </fieldset>
+    """
+  end
+
+  @doc "Renders saved ticket clocks; historical UTC-only records are explicitly labelled."
   @spec trip_details(map()) :: Rendered.t()
   attr :trips, :list, required: true
-  attr :timezone, :string, required: true
 
   def trip_details(assigns) do
     ~H"""
     <section
       :for={{trip, index} <- Enum.with_index(@trips, 1)}
-      class={[
-        "mt-1 border-t border-grey-100 pt-4 sm:col-span-2 lg:col-span-3",
-        length(@trips) > 1 && "grid grid-cols-[1.5rem_minmax(0,1fr)] gap-x-4"
-      ]}
+      class="mbs-4 border-bs border-grey-100 pbs-4 sm:col-span-2 lg:col-span-3"
     >
-      <span :if={length(@trips) > 1} class="self-center text-center text-sm font-medium text-grey-900">
-        {SettlementPresentation.roman_numeral(index)}
-      </span>
-      <div class={[length(@trips) > 1 && "border-l border-grey-200 pl-4"]}>
-        <table class="border-separate border-spacing-y-3 text-left text-sm">
-          <thead class="text-grey-500">
-            <tr>
-              <th scope="col"></th>
-              <th scope="col" class="font-normal">Miejscowość</th>
-              <th scope="col" class="font-normal">Data</th>
-              <th scope="col" class="font-normal">Godzina</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <th scope="row" class="pr-3 font-normal text-grey-700">Wyjazd</th>
-              <td class="pr-3">{SettlementPresentation.present_value(trip.departure_city)}</td>
-              <td class="pr-3">
-                {SettlementPresentation.format_date(
-                  SettlementPresentation.datetime_date(trip.departure_datetime, @timezone)
-                )}
-              </td>
-              <td>{SettlementPresentation.format_time(trip.departure_datetime, @timezone)}</td>
-            </tr>
-            <tr>
-              <th scope="row" class="pr-3 font-normal text-grey-700">Przyjazd</th>
-              <td class="pr-3">{SettlementPresentation.present_value(trip.arrival_city)}</td>
-              <td class="pr-3">
-                {SettlementPresentation.format_date(
-                  SettlementPresentation.datetime_date(trip.arrival_datetime, @timezone)
-                )}
-              </td>
-              <td>{SettlementPresentation.format_time(trip.arrival_datetime, @timezone)}</td>
-            </tr>
-          </tbody>
-        </table>
-        <dl class="mt-3"><.trip_detail label="Opis" value={trip.description} /></dl>
-      </div>
+      <p :if={length(@trips) > 1} class="mbe-3 text-sm font-medium">
+        {gettext("Route %{number}", number: SettlementPresentation.roman_numeral(index))}
+      </p>
+      <dl class="grid grid-cols-[repeat(auto-fit,minmax(min(100%,15rem),1fr))] gap-4 text-sm">
+        <div :for={
+          {prefix, title} <- [{:departure, gettext("Departure")}, {:arrival, gettext("Arrival")}]
+        }>
+          <dt class="font-medium">{title}</dt>
+          <dd class="mbs-2">
+            {SettlementPresentation.present_value(Map.fetch!(trip, city_field(prefix)))}
+          </dd>
+          <dd class="mbs-1 tabular-nums">
+            {format(Trip.local_datetime(trip, prefix), "%d.%m.%Y %H:%M") || "—"}
+          </dd>
+          <dd
+            :if={is_nil(Map.fetch!(trip, local_field(prefix))) && Trip.local_datetime(trip, prefix)}
+            class="mbs-1 text-grey-700"
+          >
+            {gettext("Historical time in UTC. Check it against the ticket.")}
+          </dd>
+        </div>
+      </dl>
+      <p
+        :if={trip.description not in [nil, ""]}
+        class="mbs-3 text-sm whitespace-pre-wrap text-grey-700"
+      >
+        {trip.description}
+      </p>
     </section>
     """
   end
 
-  attr :label, :string, required: true
-  attr :value, :any, required: true
+  defp datetime_errors(form, prefix, date, time) do
+    cond do
+      date in [nil, ""] && time in [nil, ""] ->
+        Enum.map(
+          form[local_field(prefix)].errors ++ form[utc_field(prefix)].errors,
+          &translate_error/1
+        )
 
-  defp trip_detail(assigns) do
-    ~H"""
-    <div>
-      <dt class="text-grey-500">{@label}</dt>
-      <dd class="mt-1 whitespace-pre-wrap text-grey-700">
-        {SettlementPresentation.present_value(@value)}
-      </dd>
-    </div>
-    """
+      not valid_datetime?(date, time) ->
+        [
+          gettext("Enter both a full date (YYYY-MM-DD) and time (HH:MM). The draft has not been saved.")
+        ]
+
+      true ->
+        Enum.map(
+          form[local_field(prefix)].errors ++ form[utc_field(prefix)].errors,
+          &translate_error/1
+        )
+    end
   end
 
-  defp date_value(nil, _timezone), do: nil
+  defp valid_datetime?(date, time), do: valid_date?(date) && valid_time?(time)
+  defp valid_date?(date) when is_binary(date), do: match?({:ok, _}, Date.from_iso8601(date))
+  defp valid_date?(_date), do: false
 
-  defp date_value(datetime, timezone) do
-    datetime |> DateTime.shift_zone!(timezone) |> Calendar.strftime("%Y-%m-%d")
-  end
+  defp valid_time?(time) when is_binary(time), do: match?({:ok, _}, Time.from_iso8601(time <> ":00"))
 
-  defp time_value(nil, _timezone), do: nil
-
-  defp time_value(datetime, timezone) do
-    datetime |> DateTime.shift_zone!(timezone) |> Calendar.strftime("%H:%M")
-  end
-
-  defp translated_errors(field), do: Enum.map(field.errors, &translate_error/1)
+  defp valid_time?(_time), do: false
+  defp format(nil, _pattern), do: nil
+  defp format(datetime, pattern), do: Calendar.strftime(datetime, pattern)
+  defp city_field(:departure), do: :departure_city
+  defp city_field(:arrival), do: :arrival_city
+  defp local_field(:departure), do: :departure_local_datetime
+  defp local_field(:arrival), do: :arrival_local_datetime
+  defp utc_field(:departure), do: :departure_datetime
+  defp utc_field(:arrival), do: :arrival_datetime
 end

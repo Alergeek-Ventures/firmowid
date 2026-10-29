@@ -4,6 +4,7 @@ defmodule Firmowid.Ash.Delegations.Changes.UpdateDetectedDelegationDates do
   use Ash.Resource.Change
 
   alias Firmowid.Ash.Delegations
+  alias Firmowid.Ash.Delegations.DelegationExpense.Trip
 
   @impl true
   def change(changeset, opts, context) do
@@ -43,11 +44,7 @@ defmodule Firmowid.Ash.Delegations.Changes.UpdateDetectedDelegationDates do
   defp expense_dates(%{details: %Ash.Union{value: details}}), do: expense_dates(details)
 
   defp expense_dates(%{trips: trips}) when is_list(trips) do
-    trips
-    |> Enum.flat_map(fn trip ->
-      [date_from_datetime(trip.departure_datetime), date_from_datetime(trip.arrival_datetime)]
-    end)
-    |> Enum.reject(&is_nil/1)
+    Enum.flat_map(trips, &Trip.evidence_dates/1)
   end
 
   defp expense_dates(%{arrival_date: arrival_date, departure_date: departure_date}) do
@@ -55,9 +52,6 @@ defmodule Firmowid.Ash.Delegations.Changes.UpdateDetectedDelegationDates do
   end
 
   defp expense_dates(_expense), do: []
-
-  defp date_from_datetime(%DateTime{} = datetime), do: DateTime.to_date(datetime)
-  defp date_from_datetime(_datetime), do: nil
 
   defp detected_date_params(_delegation, []), do: %{detected_start_date: nil, detected_end_date: nil}
 

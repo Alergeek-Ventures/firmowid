@@ -224,6 +224,170 @@ defmodule FirmowidWeb.Delegations.Views.DelegationTest do
     assert completed_delegation.detected_end_date == ~D[2026-08-12]
   end
 
+  test "autosaves document fields and reads them back without completing the delegation", %{
+    conn: conn
+  } do
+    {user, delegation} = approved_delegation()
+    expense = seed_expense(delegation, user)
+    conn = log_in_user(conn, user)
+    path = ~p"/delegacje/#{delegation.reference}"
+    {:ok, view, _html} = live(conn, path)
+
+    view
+    |> form("#delegation-complete-form", %{
+      delegation: %{
+        expenses: %{
+          "0" => %{
+            document_number: "HOTEL/POPRAWIONY",
+            expense_amount: "345.67",
+            details: %{locality: "Warszawa"}
+          }
+        }
+      }
+    })
+    |> render_change()
+
+    persisted =
+      Delegations.get_delegation!(delegation.id,
+        scope: %Scope{actor: user, tenant: user.member.organization_id},
+        load: [:expenses]
+      )
+
+    assert persisted.status == :in_progress
+    assert [saved] = persisted.expenses
+    assert saved.document_number == "HOTEL/POPRAWIONY"
+    assert Money.equal?(saved.expense_amount, Money.new(:PLN, "345.67"))
+    assert saved.details.value.locality == "Warszawa"
+    assert has_element?(view, "#delegation-save-status", "Zmiany zostały zapisane")
+
+    {:ok, reopened, _html} = live(conn, path)
+    assert has_element?(reopened, "#document-number-#{expense.id}[value='HOTEL/POPRAWIONY']")
+    assert has_element?(reopened, "#accommodation-locality-#{expense.id}[value='Warszawa']")
+
+    reopened
+    |> form("#delegation-complete-form", %{
+      delegation: %{expenses: %{"0" => %{expense_amount: ""}}}
+    })
+    |> render_change()
+
+    assert has_element?(reopened, "#delegation-save-status", "Nie zapisano")
+    assert has_element?(reopened, "#expense-amount-#{expense.id}:not([value])")
+
+    assert Money.equal?(
+             Delegations.get_expense!(expense.id,
+               scope: %Scope{actor: user, tenant: user.member.organization_id}
+             ).expense_amount,
+             Money.new(:PLN, "345.67")
+           )
+  end
+
+  test "keeps partial date and time drafts until both parts are valid, including after sorting",
+       %{conn: conn} do
+    {user, delegation} = approved_delegation()
+    expense = seed_transport_expense(delegation, user, %{departure_datetime: nil})
+    trip = hd(expense.details.value.trips)
+    conn = log_in_user(conn, user)
+    path = ~p"/delegacje/#{delegation.reference}"
+    {:ok, view, _} = live(conn, path)
+    scope = %Scope{actor: user, tenant: user.member.organization_id}
+
+    change_trip(view, %{departure_date: "2026-03-", departure_time: ""})
+    assert has_element?(view, "#trip-departure-date-#{trip.id}[value='2026-03-']")
+    assert has_element?(view, "#trip-departure-hint-#{trip.id}", "Uzupełnij pełną datę")
+    assert has_element?(view, "#delegation-save-status", "Nie zapisano")
+
+    assert hd(Delegations.get_expense!(expense.id, scope: scope).details.value.trips).departure_local_datetime ==
+             nil
+
+    view |> element("button", "Sortuj chronologicznie") |> render_click()
+    assert has_element?(view, "#trip-departure-date-#{trip.id}[value='2026-03-']")
+    change_trip(view, %{departure_date: "2026-03-29"})
+    assert has_element?(view, "#trip-departure-date-#{trip.id}[aria-invalid='false']")
+    assert has_element?(view, "#trip-departure-time-#{trip.id}[aria-invalid='true']")
+    change_trip(view, %{departure_time: "02:30"})
+
+    assert hd(Delegations.get_expense!(expense.id, scope: scope).details.value.trips).departure_local_datetime ==
+             ~N[2026-03-29 02:30:00]
+
+    {:ok, view, _} = live(conn, path)
+    assert has_element?(view, "#trip-departure-date-#{trip.id}[value='2026-03-29']")
+    assert has_element?(view, "#trip-departure-time-#{trip.id}[value='02:30']")
+
+    change_trip(view, %{departure_date: "", departure_time: ""})
+    change_trip(view, %{departure_time: "02:45"})
+    assert has_element?(view, "#trip-departure-time-#{trip.id}[value='02:45']")
+    assert has_element?(view, "#delegation-save-status", "Nie zapisano")
+    change_trip(view, %{departure_date: "2026-10-25"})
+    {:ok, reopened, _} = live(conn, path)
+    assert has_element?(reopened, "#trip-departure-time-#{trip.id}[value='02:45']")
+    assert has_element?(reopened, "#trip-departure-date-#{trip.id}[value='2026-10-25']")
+  end
+
+  test "reports a rejected save and keeps the draft when a delegation is no longer editable", %{
+    conn: conn
+  } do
+    {user, delegation} = approved_delegation()
+    expense = seed_expense(delegation, user)
+    {:ok, view, _} = conn |> log_in_user(user) |> live(~p"/delegacje/#{delegation.reference}")
+    Ash.Seed.update!(delegation, %{status: :complete})
+
+    view
+    |> form("#delegation-complete-form", %{
+      delegation: %{expenses: %{"0" => %{document_number: "NIEZAPISANY"}}}
+    })
+    |> render_change()
+
+    assert has_element?(view, "#delegation-save-status", "Zapis nie powiódł się")
+    refute has_element?(view, "#delegation-save-status", "Zmiany zostały zapisane")
+    assert has_element?(view, "#document-number-#{expense.id}[value='NIEZAPISANY']")
+
+    assert Delegations.get_expense!(expense.id,
+             scope: %Scope{actor: user, tenant: user.member.organization_id}
+           ).document_number == "REZ/1"
+  end
+
+  test "preserves both DST occurrences and legacy instants on unrelated edits and clears stale UTC on clock edits",
+       %{conn: conn} do
+    for {local, utc} <- [
+          {~N[2026-10-25 02:30:00], ~U[2026-10-25 00:30:00Z]},
+          {~N[2026-10-25 02:30:00], ~U[2026-10-25 01:30:00Z]},
+          {nil, ~U[2026-10-25 01:30:00Z]}
+        ] do
+      {user, delegation} = approved_delegation()
+
+      expense =
+        seed_transport_expense(delegation, user, %{
+          departure_local_datetime: local,
+          departure_datetime: utc,
+          arrival_local_datetime: ~N[2026-10-25 04:30:00],
+          arrival_datetime: ~U[2026-10-25 03:30:00Z]
+        })
+
+      trip = hd(expense.details.value.trips)
+      scope = %Scope{actor: user, tenant: user.member.organization_id}
+      conn = log_in_user(conn, user)
+      path = ~p"/delegacje/#{delegation.reference}"
+      {:ok, view, _} = live(conn, path)
+
+      view
+      |> form("#delegation-complete-form", %{
+        delegation: %{expenses: %{"0" => %{document_number: "BIL/2"}}}
+      })
+      |> render_change()
+
+      stored = hd(Delegations.get_expense!(expense.id, scope: scope).details.value.trips)
+      assert stored.departure_local_datetime == local
+      assert stored.departure_datetime == utc
+
+      change_trip(view, %{departure_time: "02:45"})
+      stored = hd(Delegations.get_expense!(expense.id, scope: scope).details.value.trips)
+      assert stored.departure_local_datetime == ~N[2026-10-25 02:45:00]
+      assert stored.departure_datetime == nil
+      {:ok, reopened, _} = live(conn, path)
+      assert has_element?(reopened, "#trip-departure-time-#{trip.id}[value='02:45']")
+    end
+  end
+
   test "shows foreign currency controls when an expense currency changes", %{conn: conn} do
     {user, delegation} = approved_delegation()
     expense = seed_expense(delegation, user)
@@ -311,16 +475,27 @@ defmodule FirmowidWeb.Delegations.Views.DelegationTest do
     assert has_element?(view, "#accommodation-departure-date-#{expense.id}[value='2026-08-12']")
   end
 
-  test "keeps the settlement editable after sorting expenses", %{conn: conn} do
+  test "keeps rows in place while editing after an explicit sort", %{conn: conn} do
     {user, delegation} = approved_delegation()
 
-    seed_transport_expense(delegation, user)
+    first = seed_transport_expense(delegation, user)
+
+    second =
+      seed_transport_expense(delegation, user, %{
+        departure_datetime: ~U[2026-08-11 08:00:00Z],
+        arrival_datetime: ~U[2026-08-11 10:00:00Z]
+      })
+
+    first_trip = hd(first.details.value.trips)
+    second_trip = hd(second.details.value.trips)
 
     {:ok, view, _html} = conn |> log_in_user(user) |> live(~p"/delegacje/#{delegation.reference}")
 
     view |> element("button", "Sortuj chronologicznie") |> render_click()
 
     assert has_element?(view, "#delegation-complete-form button[type='submit']", "Wyślij")
+    change_trip(view, %{departure_date: "2026-08-12", arrival_date: "2026-08-12"})
+    assert render(view) =~ ~r/transport-trip-#{first_trip.id}.*transport-trip-#{second_trip.id}/s
   end
 
   test "keeps both edited transport trip dates", %{conn: conn} do
@@ -385,8 +560,8 @@ defmodule FirmowidWeb.Delegations.Views.DelegationTest do
       |> then(& &1.details.value.trips)
       |> List.first()
 
-    assert DateTime.to_date(completed_trip.departure_datetime) == ~D[2026-08-09]
-    assert DateTime.to_date(completed_trip.arrival_datetime) == ~D[2026-08-12]
+    assert completed_trip.departure_local_datetime == ~N[2026-08-09 08:00:00]
+    assert completed_trip.arrival_local_datetime == ~N[2026-08-12 10:00:00]
   end
 
   test "prefills category-specific expense details from the Reducto mock", %{conn: conn} do
@@ -411,6 +586,10 @@ defmodule FirmowidWeb.Delegations.Views.DelegationTest do
         %{name: "#{kind}.png", content: File.read!(upload_fixture), type: "image/png"}
       ])
       |> render_upload("#{kind}.png")
+
+      if kind == :transport do
+        change_trip(view, %{departure_date: "2026-08-", departure_time: "08:15"})
+      end
     end
 
     html = render(view)
@@ -419,6 +598,14 @@ defmodule FirmowidWeb.Delegations.Views.DelegationTest do
     assert html =~ "Kraków"
     assert html =~ "Studencka 12, Kraków"
     assert html =~ "Polisa ubezpieczeniowa podróży służbowej"
+    assert has_element?(view, "input[id^='trip-departure-date-'][value='2026-08-']")
+
+    view
+    |> element("button[phx-click='delete'][phx-value-kind='accommodation']")
+    |> render_click()
+
+    assert has_element?(view, "input[id^='trip-departure-date-'][value='2026-08-']")
+    refute has_element?(view, "input[id^='accommodation-locality-']")
   end
 
   test "adds and removes a related expense document", %{conn: conn} do
@@ -499,6 +686,9 @@ defmodule FirmowidWeb.Delegations.Views.DelegationTest do
 
     render_change(view, "validate", params)
     view |> element("button", "Przelicz wg kursu NBP") |> render_click()
+    settled_draft = Delegations.get_expense!(expense.id, scope: scope)
+    assert settled_draft.settlement_method == :nbp
+    assert Money.equal?(settled_draft.settlement_amount, Money.new!(:PLN, 40))
     render_submit(view, "submit", params)
 
     completed = Delegations.get_delegation!(delegation.id, scope: scope, load: [:expenses])
@@ -561,6 +751,19 @@ defmodule FirmowidWeb.Delegations.Views.DelegationTest do
           params
           |> put_in(["delegation", "expenses", "0", "expense_amount"], "10")
           |> put_in(["expense_currencies", expense.id], submitted_currency)
+
+        view |> form("#delegation-complete-form", submitted) |> render_change()
+
+        if submitted_currency == "USD" do
+          {:ok, reopened, _} =
+            conn |> log_in_user(user) |> live(~p"/delegacje/#{delegation.reference}")
+
+          assert has_element?(reopened, "#foreign-currency-notice-#{expense.id}")
+          saved = Delegations.get_expense!(expense.id, scope: scope)
+          assert saved.settlement_method == nil
+          assert saved.nbp_rate == nil
+          assert saved.nbp_rate_date == nil
+        end
 
         view |> form("#delegation-complete-form", submitted) |> render_submit()
 
@@ -650,7 +853,15 @@ defmodule FirmowidWeb.Delegations.Views.DelegationTest do
     )
   end
 
-  defp seed_transport_expense(delegation, user) do
+  defp change_trip(view, fields) do
+    view
+    |> form("#delegation-complete-form", %{
+      delegation: %{expenses: %{"0" => %{details: %{trips: %{"0" => fields}}}}}
+    })
+    |> render_change()
+  end
+
+  defp seed_transport_expense(delegation, user, trip_attributes \\ %{}) do
     Ash.Seed.seed!(
       DelegationExpense,
       %{
@@ -665,12 +876,15 @@ defmodule FirmowidWeb.Delegations.Views.DelegationTest do
           type: "transport",
           transport_type: :railway,
           trips: [
-            %{
-              departure_city: "Wrocław",
-              departure_datetime: ~U[2026-08-10 08:00:00Z],
-              arrival_city: "Kraków",
-              arrival_datetime: ~U[2026-08-10 10:00:00Z]
-            }
+            Map.merge(
+              %{
+                departure_city: "Wrocław",
+                departure_datetime: ~U[2026-08-10 08:00:00Z],
+                arrival_city: "Kraków",
+                arrival_datetime: ~U[2026-08-10 10:00:00Z]
+              },
+              trip_attributes
+            )
           ]
         }
       },
