@@ -52,6 +52,26 @@ defmodule FirmowidWeb.Delegations.Utilities.SettlementForm do
     %{expense_forms: expense_forms, trip_forms: trip_forms}
   end
 
+  @doc "Detects stale IDs that AshPhoenix would treat as new expenses or trips."
+  @spec stale_params?(Form.t(), map()) :: boolean()
+  def stale_params?(form, params) do
+    %{expense_forms: expense_forms} = nested_forms(form)
+
+    Enum.any?(Map.get(params, "expenses", %{}), fn {_index, expense} ->
+      case Map.fetch(expense_forms, expense["id"]) do
+        {:ok, %{details: details}} ->
+          trip_ids = details |> nested_forms(:trips) |> Enum.map(& &1.data.id)
+
+          Enum.any?(get_in(expense, ["details", "trips"]) || %{}, fn {_index, trip} ->
+            trip["id"] not in trip_ids
+          end)
+
+        :error ->
+          true
+      end
+    end)
+  end
+
   @doc "Reconciles unsaved expense inputs by identity after documents are added or removed."
   @spec preserve_expense_params(Form.t(), map()) :: map()
   def preserve_expense_params(form, params) do
@@ -66,6 +86,10 @@ defmodule FirmowidWeb.Delegations.Utilities.SettlementForm do
           "id" => expense.data.id,
           "_form_type" => "update",
           "expense_amount" => Decimal.to_string(Money.to_decimal(expense.data.expense_amount), :normal),
+          "settlement_amount" =>
+            if(expense.data.settlement_amount,
+              do: Decimal.to_string(Money.to_decimal(expense.data.settlement_amount), :normal)
+            ),
           "details" => %{"_union_type" => Atom.to_string(expense.data.details.type)}
         }
 

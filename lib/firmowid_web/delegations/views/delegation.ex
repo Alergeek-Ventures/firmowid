@@ -186,24 +186,27 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
 
     date_change = detected_date_change(socket.assigns.delegation, params)
 
-    complete_form =
-      SettlementForm.complete_form(
-        socket.assigns.complete_form.source.data,
-        socket.assigns.ash_scope
-      )
+    with {:ok, delegation} when not is_nil(delegation) <-
+           load_delegation(socket.assigns.delegation.reference, socket),
+         true <- delegation.status == :in_progress,
+         complete_form = SettlementForm.complete_form(delegation, socket.assigns.ash_scope),
+         false <- SettlementForm.stale_params?(complete_form, params) do
+      case AshPhoenix.Form.submit(complete_form, params: params) do
+        {:ok, delegation} ->
+          {:noreply, reload(socket, delegation.reference)}
 
-    case AshPhoenix.Form.submit(complete_form, params: params) do
-      {:ok, delegation} ->
-        {:noreply, reload(socket, delegation.reference)}
+        {:error, %Form{} = complete_form} ->
+          socket =
+            socket
+            |> assign(submission_failed?: true, date_change: date_change, save_status: :invalid)
+            |> assign_complete_form(complete_form)
+            |> scroll_to_date_change(date_change)
 
-      {:error, %Form{} = complete_form} ->
-        socket =
-          socket
-          |> assign(submission_failed?: true, date_change: date_change, save_status: :invalid)
-          |> assign_complete_form(complete_form)
-          |> scroll_to_date_change(date_change)
-
-        {:noreply, socket}
+          {:noreply, socket}
+      end
+    else
+      _ ->
+        {:noreply, socket |> assign(:submission_failed?, true) |> assign_failed_draft(params)}
     end
   end
 
@@ -301,16 +304,11 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
              socket.assigns.ash_scope,
              :save_draft
            ),
+         false <- SettlementForm.stale_params?(form, params),
          {:ok, _saved} <- AshPhoenix.Form.submit(form, params: params),
          {:ok, persisted} when not is_nil(persisted) <-
            load_delegation(delegation.reference, socket) do
-      form =
-        persisted
-        |> SettlementForm.complete_form(
-          socket.assigns.ash_scope,
-          :save_draft
-        )
-        |> AshPhoenix.Form.validate(params)
+      form = SettlementForm.complete_form(persisted, socket.assigns.ash_scope, :save_draft)
 
       socket
       |> assign(
@@ -327,8 +325,18 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
         socket |> assign(:save_status, :invalid) |> assign_complete_form(form)
 
       _ ->
-        form = AshPhoenix.Form.validate(socket.assigns.complete_form, params)
-        socket |> assign(:save_status, :error) |> assign_complete_form(form)
+        assign_failed_draft(socket, params)
+    end
+  end
+
+  defp assign_failed_draft(socket, params) do
+    socket = assign(socket, :save_status, :error)
+
+    if SettlementForm.stale_params?(socket.assigns.complete_form, params) do
+      socket
+    else
+      form = AshPhoenix.Form.validate(socket.assigns.complete_form, params)
+      assign_complete_form(socket, form)
     end
   end
 
@@ -362,24 +370,30 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
             :save_draft
           )
 
-        complete_form =
-          AshPhoenix.Form.validate(
+        params =
+          SettlementForm.preserve_expense_params(
             complete_form,
-            SettlementForm.preserve_expense_params(
-              complete_form,
-              socket.assigns.complete_form.source.raw_params
-            )
+            socket.assigns.complete_form.source.raw_params
           )
 
-        delegation = preserve_expense_order(delegation, socket.assigns.delegation)
+        if SettlementForm.stale_params?(complete_form, params) do
+          assign_failed_draft(socket, params)
+        else
+          complete_form = AshPhoenix.Form.validate(complete_form, params)
+          delegation = preserve_expense_order(delegation, socket.assigns.delegation)
 
-        socket
-        |> assign(
-          delegation: delegation,
-          expense_currencies: Map.merge(expense_currencies(delegation.expenses), socket.assigns.expense_currencies)
-        )
-        |> assign_complete_form(complete_form)
-        |> assign_summary()
+          socket
+          |> assign(
+            delegation: delegation,
+            expense_currencies:
+              Map.merge(
+                expense_currencies(delegation.expenses),
+                socket.assigns.expense_currencies
+              )
+          )
+          |> assign_complete_form(complete_form)
+          |> assign_summary()
+        end
 
       _ ->
         unavailable_delegation(socket)
