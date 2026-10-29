@@ -111,7 +111,7 @@ defmodule FirmowidWeb.Assistant.Components.Controls do
       id="assistant-launcher"
       type="button"
       variant="special"
-      class="shadow-lg"
+      class="shadow-lg max-md:hidden"
       phx-click="open"
       hidden={@open}
       aria-expanded={to_string(@open)}

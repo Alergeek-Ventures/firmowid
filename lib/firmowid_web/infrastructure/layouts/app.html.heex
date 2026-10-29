@@ -320,6 +320,7 @@
       connected={assigns[:socket] != nil}
       toasts_sync={assigns[:toasts_sync]}
       toast_class_fn={&FirmowidWeb.Core.Toast.toast_class_fn/1}
+      group_class_fn={&FirmowidWeb.Core.Toast.group_class_fn/1}
     />
     {@inner_content}
   </div>

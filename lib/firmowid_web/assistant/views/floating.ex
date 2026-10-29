@@ -51,7 +51,7 @@ defmodule FirmowidWeb.Assistant.Views.Floating do
     ~H"""
     <aside
       id="firmowid-assistant"
-      class="fixed inset-e-(--assistant-inset) inset-be-[calc(var(--assistant-inset)+var(--assistant-bottom-obstruction,0px))] z-40 text-sm/normal text-grey-900 [--assistant-inset:clamp(.5rem,2vw,1.5rem)] max-md:data-[open=false]:inset-be-[calc(5.5rem+env(safe-area-inset-bottom)+var(--assistant-bottom-obstruction,0px))]"
+      class="fixed inset-e-(--assistant-inset) inset-be-[calc(var(--assistant-inset)+var(--assistant-bottom-obstruction,0px))] z-40 text-sm/normal text-grey-900 [--assistant-inset:clamp(.5rem,2vw,1.5rem)] max-md:z-50"
       phx-hook="AssistantChat"
       data-storage-key={"assistant:#{@current_user.id}:#{@current_org.id}"}
       data-open={to_string(@open)}
@@ -61,7 +61,7 @@ defmodule FirmowidWeb.Assistant.Views.Floating do
     >
       <section
         id="assistant-panel"
-        class="flex flex-col overflow-clip rounded-lg border border-grey-200 bg-white shadow-lg block-160 inline-104 max-block-[calc(100dvh-var(--navbar-height)-2*var(--assistant-inset)-var(--assistant-bottom-obstruction,0px))] max-inline-[calc(100vw-2*var(--assistant-inset))]"
+        class="flex flex-col overflow-clip rounded-lg border border-grey-200 bg-white shadow-lg block-160 inline-104 max-block-[calc(100dvh-var(--navbar-height)-2*var(--assistant-inset)-var(--assistant-bottom-obstruction,0px))] max-inline-[calc(100vw-2*var(--assistant-inset))] max-md:fixed max-md:inset-0 max-md:inset-be-(--assistant-bottom-obstruction,0px) max-md:rounded-none max-md:border-0 max-md:block-auto max-md:inline-auto max-md:max-block-none max-md:max-inline-none"
         role="dialog"
         aria-label={gettext("Firmowid assistant")}
         hidden={!@open}
