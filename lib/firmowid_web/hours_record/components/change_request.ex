@@ -28,9 +28,10 @@ defmodule FirmowidWeb.HoursRecord.Components.ChangeRequest do
           · {Calendar.strftime(@record.change_reviewed_at, "%d.%m.%Y %H:%M")}
         </span>
       </p>
-      <p class="scrollbar-card min-h-0 flex-1 overflow-y-auto text-base/snug wrap-break-word whitespace-pre-line text-grey-900">
-        {@record.change_request_reason}
-      </p>
+      <p
+        class="scrollbar-card min-h-0 flex-1 overflow-y-auto text-base/snug wrap-break-word whitespace-pre-line text-grey-900"
+        phx-no-format
+      >{@record.change_request_reason}</p>
       <p :if={@record.change_request_decision == :rejected} class="text-sm/snug text-grey-700">
         {gettext(
           "The request was rejected. The submitted document remains current and the month's hours stay locked."

@@ -327,7 +327,7 @@ msgstr ""
 msgid "Accept"
 msgstr ""
 
-#: lib/firmowid_web/hours_record/components/change_request.ex:54
+#: lib/firmowid_web/hours_record/components/change_request.ex:55
 #, elixir-autogen, elixir-format
 msgid "Accept request"
 msgstr ""
@@ -643,7 +643,7 @@ msgid "Cancel editing rates"
 msgstr ""
 
 #: lib/firmowid/ash/timetracker/actions/notify_admins_about_hours_record_change.ex:38
-#: lib/firmowid_web/hours_record/components/change_request.ex:99
+#: lib/firmowid_web/hours_record/components/change_request.ex:100
 #: lib/firmowid_web/hours_record/views/index.html.heex:148
 #, elixir-autogen, elixir-format
 msgid "Cancellation"
@@ -947,7 +947,7 @@ msgid "Correct this version"
 msgstr ""
 
 #: lib/firmowid/ash/timetracker/actions/notify_admins_about_hours_record_change.ex:37
-#: lib/firmowid_web/hours_record/components/change_request.ex:98
+#: lib/firmowid_web/hours_record/components/change_request.ex:99
 #: lib/firmowid_web/hours_record/views/index.html.heex:147
 #, elixir-autogen, elixir-format
 msgid "Correction"
@@ -2693,7 +2693,7 @@ msgstr ""
 msgid "Preview the invoice in full screen"
 msgstr ""
 
-#: lib/firmowid_web/hours_record/components/change_request.ex:87
+#: lib/firmowid_web/hours_record/components/change_request.ex:88
 #, elixir-autogen, elixir-format
 msgid "Previous documents"
 msgstr ""
@@ -2806,7 +2806,7 @@ msgstr ""
 msgid "Reject"
 msgstr ""
 
-#: lib/firmowid_web/hours_record/components/change_request.ex:68
+#: lib/firmowid_web/hours_record/components/change_request.ex:69
 #, elixir-autogen, elixir-format
 msgid "Reject request"
 msgstr ""
@@ -2959,8 +2959,8 @@ msgstr ""
 msgid "Save draft"
 msgstr ""
 
-#: lib/firmowid_web/hours_record/components/change_request.ex:52
-#: lib/firmowid_web/hours_record/components/change_request.ex:66
+#: lib/firmowid_web/hours_record/components/change_request.ex:53
+#: lib/firmowid_web/hours_record/components/change_request.ex:67
 #: lib/firmowid_web/settings/components/tax_forecast_settings.ex:85
 #, elixir-autogen, elixir-format
 msgid "Saving..."
@@ -3438,7 +3438,7 @@ msgstr ""
 msgid "The request decision has been saved."
 msgstr ""
 
-#: lib/firmowid_web/hours_record/components/change_request.ex:35
+#: lib/firmowid_web/hours_record/components/change_request.ex:36
 #, elixir-autogen, elixir-format
 msgid "The request was rejected. The submitted document remains current and the month's hours stay locked."
 msgstr ""
@@ -4906,7 +4906,7 @@ msgid_plural "%{count} results"
 msgstr[0] ""
 msgstr[1] ""
 
-#: lib/firmowid_web/assistant/components/transcript.ex:70
+#: lib/firmowid_web/assistant/components/transcript.ex:71
 #, elixir-autogen, elixir-format
 msgid "%{count} step"
 msgid_plural "%{count} steps"
@@ -4949,7 +4949,7 @@ msgstr ""
 msgid "Check already matched payments"
 msgstr ""
 
-#: lib/firmowid_web/assistant/components/transcript.ex:166
+#: lib/firmowid_web/assistant/components/transcript.ex:167
 #, elixir-autogen, elixir-format
 msgid "Check the result"
 msgstr ""
@@ -4959,7 +4959,7 @@ msgstr ""
 msgid "Close assistant"
 msgstr ""
 
-#: lib/firmowid_web/assistant/components/transcript.ex:162
+#: lib/firmowid_web/assistant/components/transcript.ex:163
 #, elixir-autogen, elixir-format
 msgid "Completed"
 msgstr ""
@@ -5007,7 +5007,7 @@ msgstr ""
 msgid "Draft invoice"
 msgstr ""
 
-#: lib/firmowid_web/assistant/components/transcript.ex:167
+#: lib/firmowid_web/assistant/components/transcript.ex:168
 #, elixir-autogen, elixir-format
 msgid "Error"
 msgstr ""
@@ -5044,7 +5044,7 @@ msgstr ""
 msgid "Firmowid assistant"
 msgstr ""
 
-#: lib/firmowid_web/assistant/components/transcript.ex:156
+#: lib/firmowid_web/assistant/components/transcript.ex:157
 #, elixir-autogen, elixir-format
 msgid "Let's put your transactions in order"
 msgstr ""
@@ -5059,7 +5059,7 @@ msgstr ""
 msgid "New messages"
 msgstr ""
 
-#: lib/firmowid_web/assistant/components/transcript.ex:165
+#: lib/firmowid_web/assistant/components/transcript.ex:166
 #, elixir-autogen, elixir-format
 msgid "Not performed"
 msgstr ""
@@ -5144,7 +5144,7 @@ msgstr ""
 msgid "The conversation changed. Review its current state before continuing."
 msgstr ""
 
-#: lib/firmowid_web/assistant/components/transcript.ex:113
+#: lib/firmowid_web/assistant/components/transcript.ex:114
 #, elixir-autogen, elixir-format
 msgid "The response was interrupted"
 msgstr ""
@@ -5164,12 +5164,12 @@ msgstr ""
 msgid "Unknown operation"
 msgstr ""
 
-#: lib/firmowid_web/assistant/components/transcript.ex:164
+#: lib/firmowid_web/assistant/components/transcript.ex:165
 #, elixir-autogen, elixir-format
 msgid "Waiting"
 msgstr ""
 
-#: lib/firmowid_web/assistant/components/transcript.ex:95
+#: lib/firmowid_web/assistant/components/transcript.ex:96
 #, elixir-autogen, elixir-format
 msgid "Working on your request"
 msgstr ""
@@ -5189,7 +5189,7 @@ msgstr ""
 msgid "Ask a question…"
 msgstr ""
 
-#: lib/firmowid_web/assistant/components/transcript.ex:160
+#: lib/firmowid_web/assistant/components/transcript.ex:161
 #, elixir-autogen, elixir-format
 msgid "Choose a matching scenario"
 msgstr ""
@@ -5205,7 +5205,7 @@ msgstr ""
 msgid "Conversation history"
 msgstr ""
 
-#: lib/firmowid_web/assistant/components/transcript.ex:158
+#: lib/firmowid_web/assistant/components/transcript.ex:159
 #, elixir-autogen, elixir-format
 msgid "How can I help?"
 msgstr ""
@@ -5302,7 +5302,7 @@ msgstr ""
 msgid "Description"
 msgstr ""
 
-#: lib/firmowid_web/delegations/components/settlement/trips.ex:200
+#: lib/firmowid_web/delegations/components/settlement/trips.ex:199
 #, elixir-autogen, elixir-format
 msgid "Enter both a full date (YYYY-MM-DD) and time (HH:MM). The draft has not been saved."
 msgstr ""

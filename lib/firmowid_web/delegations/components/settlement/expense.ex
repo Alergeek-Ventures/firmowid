@@ -462,9 +462,7 @@ defmodule FirmowidWeb.Delegations.Components.Settlement.Expense do
     ~H"""
     <div class={@class}>
       <dt class="text-grey-500">{@label}</dt>
-      <dd class="mt-1 whitespace-pre-wrap text-grey-700">
-        {SettlementPresentation.present_value(@value)}
-      </dd>
+      <dd class="mt-1 whitespace-pre-wrap text-grey-700" phx-no-format>{SettlementPresentation.present_value(@value)}</dd>
     </div>
     """
   end
