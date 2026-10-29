@@ -90,7 +90,7 @@ defmodule FirmowidWeb.Invoicing.CostInvoices.Views.Show do
 
   @impl true
   def handle_event("pdf-download-error", _params, socket) do
-    {:noreply, put_flash(socket, :error, "Nie udało się wygenerować PDF")}
+    {:noreply, put_flash(socket, :error, gettext("Could not generate the PDF."))}
   end
 
   @impl true
@@ -99,7 +99,7 @@ defmodule FirmowidWeb.Invoicing.CostInvoices.Views.Show do
 
     {:noreply,
      socket
-     |> put_flash(:info, "Faktura została usunięta")
+     |> put_flash(:info, gettext("The invoice has been deleted."))
      |> push_navigate(
        to:
          socket.assigns.return_to ||
@@ -129,7 +129,7 @@ defmodule FirmowidWeb.Invoicing.CostInvoices.Views.Show do
          |> assign(:potential_transactions, potential_transactions)}
 
       {:error, _error} ->
-        {:noreply, put_flash(socket, :error, "Nie udało się połączyć transakcji")}
+        {:noreply, put_flash(socket, :error, gettext("Could not connect the transaction."))}
     end
   end
 
@@ -157,7 +157,7 @@ defmodule FirmowidWeb.Invoicing.CostInvoices.Views.Show do
          |> assign(:potential_transactions, potential_transactions)}
 
       {:error, _error} ->
-        {:noreply, put_flash(socket, :error, "Nie udało się odłączyć transakcji")}
+        {:noreply, put_flash(socket, :error, gettext("Could not disconnect the transaction."))}
     end
   end
 

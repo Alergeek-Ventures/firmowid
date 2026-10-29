@@ -1,12 +1,14 @@
 <.shared_page
-  title="Nie znaleziono faktury — Firmowid"
+  title={gettext("Invoice not found — Firmowid")}
   body_class="bg-grey-100 min-h-full flex flex-col"
 >
   <main class="flex h-full flex-1 items-center justify-center">
     <div class="flex max-w-md flex-col gap-4 text-center">
       <.icon name="hero-document" class="mx-auto size-16 text-grey-400" />
-      <h1 class="text-xl font-bold text-grey-900">Nie znaleziono faktury</h1>
-      <p class="text-grey-600">Ten link jest nieprawidłowy lub faktura nie istnieje.</p>
+      <h1 class="text-xl font-bold text-grey-900">{gettext("Invoice not found")}</h1>
+      <p class="text-grey-600">
+        {gettext("This link is invalid or the invoice does not exist.")}
+      </p>
     </div>
   </main>
 </.shared_page>

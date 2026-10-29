@@ -40,7 +40,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceReview do
           </div>
 
           <div class="space-y-6">
-            <h2 class="mbe-4 text-lg font-medium text-grey-700">Dane faktury</h2>
+            <h2 class="mbe-4 text-lg font-medium text-grey-700">{gettext("Invoice details")}</h2>
             <FirmowidUI.Invoicing.Components.InvoiceNumber.invoice_number
               invoice_number={@invoice_number}
               next_numbers_by_series={@series_suggestions}
@@ -67,7 +67,9 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceReview do
                   disabled={!@counterparty_check.valid}
                   class="size-4 rounded border-grey-300 text-teal-600 focus:ring-teal-500 disabled:cursor-not-allowed disabled:opacity-60"
                 />
-                <span>Wyślij fakturę e-mailem do kontrahenta po otrzymaniu numeru KSeF</span>
+                <span>{gettext(
+                  "Email the invoice to the counterparty after receiving the KSeF number"
+                )}</span>
               </label>
             </form>
 
@@ -75,23 +77,23 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceReview do
               <.button
                 type="button"
                 phx-click="save_as_draft"
-                phx-disable-with="Zapisywanie..."
+                phx-disable-with={pgettext("sales invoice button", "Saving...")}
                 class="h-11 w-full"
                 variant="secondary"
               >
-                Zapisz wersję roboczą
+                {gettext("Save draft")}
               </.button>
               <.button
                 id="confirm-invoice-button"
                 type="button"
                 phx-click="send_to_ksef"
-                phx-disable-with="Wysyłanie..."
+                phx-disable-with={gettext("Sending...")}
                 class="h-11 w-full"
                 disabled={not @ksef_connected? or String.trim(@invoice_number) == ""}
                 variant="primary"
                 accent="teal"
               >
-                Zapisz i wyślij do KSeF
+                {gettext("Save and send to KSeF")}
               </.button>
             </div>
             <p
@@ -100,7 +102,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceReview do
               role="status"
               class="text-sm text-grey-500"
             >
-              Wystawienie faktury wymaga połączenia z KSeF. Możesz zapisać ją jako wersję roboczą.
+              {gettext("Issuing an invoice requires a KSeF connection. You can save it as a draft.")}
             </p>
           </div>
         </div>

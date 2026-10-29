@@ -2,7 +2,7 @@
   <.back patch={
     Navigation.sales_invoice_creator_path(%{szkic_kreatora: @creator_draft_id, krok: 3})
   } />
-  <.render_header invoice={@invoice} step={@step_number} title="Podgląd faktury" />
+  <.render_header invoice={@invoice} step={@step_number} title={gettext("Invoice preview")} />
   <p role="alert" class="text-sm text-brick-600">{@preview_error}</p>
   <.button type="button" phx-click="save_as_draft" variant="secondary">
     {gettext("Save draft")}
@@ -34,6 +34,6 @@
     />
   </:back>
   <:header>
-    <.render_header invoice={@invoice} step={@step_number} title="Podgląd faktury" />
+    <.render_header invoice={@invoice} step={@step_number} title={gettext("Invoice preview")} />
   </:header>
 </FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceReview.invoice_review>

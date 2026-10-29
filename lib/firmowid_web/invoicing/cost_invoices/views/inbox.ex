@@ -12,7 +12,7 @@ defmodule FirmowidWeb.Invoicing.CostInvoices.Views.Inbox do
 
     socket =
       socket
-      |> assign(:page_title, "Skrzynka odbiorcza")
+      |> assign(:page_title, gettext("Inbox"))
       |> stream(:emails, emails)
 
     {:ok, socket}
@@ -24,9 +24,9 @@ defmodule FirmowidWeb.Invoicing.CostInvoices.Views.Inbox do
     <div class="px-4 sm:px-6 lg:px-8">
       <div class="mb-6 sm:flex sm:items-center">
         <div class="sm:flex-auto">
-          <h1 class="text-xl/6 font-bold text-black">Skrzynka odbiorcza</h1>
+          <h1 class="text-xl/6 font-bold text-black">{gettext("Inbox")}</h1>
           <p class="mt-2 text-sm text-grey-700">
-            Lista wszystkich e-maili z fakturami kosztowymi
+            {gettext("List of all emails with cost invoices")}
           </p>
         </div>
       </div>
@@ -41,19 +41,19 @@ defmodule FirmowidWeb.Invoicing.CostInvoices.Views.Inbox do
           <thead class="sticky top-[130px] z-1 bg-grey-100">
             <tr>
               <th class="pt-4 pb-2 pl-5 text-left text-xs font-normal text-grey-700 uppercase">
-                Data otrzymania
+                {pgettext("inbox column", "Received")}
               </th>
               <th class="pt-4 pb-2 text-left text-xs font-normal text-grey-700 uppercase">
-                Nadawca
+                {pgettext("inbox column", "Sender")}
               </th>
               <th class="pt-4 pb-2 text-left text-xs font-normal text-grey-700 uppercase">
-                Temat
+                {pgettext("inbox column", "Subject")}
               </th>
               <th class="pt-4 pb-2 text-left text-xs font-normal text-grey-700 uppercase">
-                Status
+                {gettext("Status")}
               </th>
               <th class="pt-4 pb-2 text-left text-xs font-normal text-grey-700 uppercase">
-                Szczegóły
+                {pgettext("inbox column", "Details")}
               </th>
             </tr>
           </thead>
@@ -69,30 +69,30 @@ defmodule FirmowidWeb.Invoicing.CostInvoices.Views.Inbox do
               </td>
               <td class="bg-white py-4 text-sm transition-all duration-500">
                 <div class="w-full truncate">
-                  {email.subject || "(bez tematu)"}
+                  {email.subject || gettext("(no subject)")}
                 </div>
               </td>
               <td class="bg-white py-4 transition-all duration-500">
                 <%= if is_nil(email.processed_at) do %>
                   <div class="flex h-6 w-32 flex-row items-center justify-center rounded-md bg-grey-200 p-2 text-xs text-grey-700">
-                    <div class="font-normal uppercase">Przetwarzanie</div>
+                    <div class="font-normal uppercase">{pgettext("inbox status", "Processing")}</div>
                   </div>
                 <% else %>
                   <%= if is_nil(email.failure_reason) do %>
                     <div class="flex h-6 w-32 flex-row items-center justify-center rounded-md bg-moss-200 p-2 text-xs text-moss-700">
-                      <div class="font-normal uppercase">Sukces</div>
+                      <div class="font-normal uppercase">{pgettext("inbox status", "Success")}</div>
                       <.icon name="hero-check-micro" class="ml-1 size-4" />
                     </div>
                   <% else %>
                     <div class="flex h-6 w-32 flex-row items-center justify-center rounded-md bg-brick-200 p-2 text-xs text-brick-700">
-                      <div class="font-normal uppercase">Błąd</div>
+                      <div class="font-normal uppercase">{gettext("Error")}</div>
                     </div>
                   <% end %>
                 <% end %>
               </td>
               <td class="rounded-r-md bg-white py-2 pr-5 text-sm transition-all duration-500">
                 <%= if is_nil(email.processed_at) do %>
-                  <span class="text-grey-700 opacity-50">W trakcie...</span>
+                  <span class="text-grey-700 opacity-50">{gettext("In progress...")}</span>
                 <% else %>
                   <%= if is_nil(email.failure_reason) do %>
                     <.render_invoice_links email={email} />
@@ -115,7 +115,7 @@ defmodule FirmowidWeb.Invoicing.CostInvoices.Views.Inbox do
     case count do
       0 ->
         ~H"""
-        <span class="text-grey-700 opacity-50">Brak załączników do przetworzenia</span>
+        <span class="text-grey-700 opacity-50">{gettext("No attachments to process")}</span>
         """
 
       1 ->
@@ -141,7 +141,8 @@ defmodule FirmowidWeb.Invoicing.CostInvoices.Views.Inbox do
             class="inline-flex items-center gap-1 text-teal-800 hover:underline"
             phx-click={JS.toggle(to: "#invoice-list-#{@email.id}")}
           >
-            {length(@email.cost_invoices)} faktur <.icon name="hero-chevron-down" class="size-4" />
+            {ngettext("%{count} invoice", "%{count} invoices", length(@email.cost_invoices))}
+            <.icon name="hero-chevron-down" class="size-4" />
           </FirmowidUI.Components.Button.button>
           <div
             id={"invoice-list-#{@email.id}"}
@@ -163,8 +164,8 @@ defmodule FirmowidWeb.Invoicing.CostInvoices.Views.Inbox do
     end
   end
 
-  defp format_failure_reason(:unexpected_sender), do: "Nieznany nadawca"
-  defp format_failure_reason(:no_attachment), do: "Brak załączników"
-  defp format_failure_reason(:processing_failed), do: "Błąd przetwarzania"
-  defp format_failure_reason(_), do: "Nieznany błąd"
+  defp format_failure_reason(:unexpected_sender), do: gettext("Unknown sender")
+  defp format_failure_reason(:no_attachment), do: gettext("No attachments")
+  defp format_failure_reason(:processing_failed), do: gettext("Processing error")
+  defp format_failure_reason(_), do: gettext("Unknown error")
 end

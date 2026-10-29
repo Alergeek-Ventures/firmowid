@@ -39,6 +39,23 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoicePayment do
     end
   end
 
+  attr :kind, :atom, values: [:default, :account], required: true
+  attr :currency, :string, required: true
+
+  defp currency_label(assigns) do
+    case_result =
+      case assigns.kind do
+        :default -> gettext("default %{currency}", currency: "__CURRENCY__")
+        :account -> gettext("account currency: %{currency}", currency: "__CURRENCY__")
+      end
+
+    [label_before, label_after] = String.split(case_result, "__CURRENCY__", parts: 2)
+
+    assigns = assign(assigns, label_before: label_before, label_after: label_after)
+
+    ~H"{@label_before}<strong>{@currency}</strong>{@label_after}"
+  end
+
   attr :invoice, :map, required: true
   attr :bank_accounts, :list, required: true
   attr :selected_bank_account, :map, required: false
@@ -48,7 +65,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoicePayment do
     ~H"""
     <div class="grid grid-cols-[min-content_min-content_1fr] items-center gap-x-5 gap-y-4">
       <label class="whitespace-nowrap text-grey-700" for={@payment_form[:sale_date].id}>
-        Data sprzedaży
+        {gettext("Sale date")}
       </label>
       <.input
         field={@payment_form[:sale_date]}
@@ -72,7 +89,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoicePayment do
       </div>
 
       <label class="whitespace-nowrap text-grey-700" for={@payment_form[:due_date].id}>
-        Termin płatności
+        {gettext("Payment due date")}
       </label>
       <.input
         field={@payment_form[:due_date]}
@@ -96,15 +113,15 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoicePayment do
       </div>
 
       <label class="whitespace-nowrap text-grey-700" for={@payment_form[:payment_method].id}>
-        Forma płatności
+        {gettext("Payment method")}
       </label>
       <.input
         field={@payment_form[:payment_method]}
         type="select"
         options={[
-          {"Przelew", :transfer},
-          {"Gotówka", :cash},
-          {"Karta", :card}
+          {gettext("Transfer"), :transfer},
+          {gettext("Cash"), :cash},
+          {gettext("Card"), :card}
         ]}
         container_class="w-fit"
       />
@@ -126,7 +143,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoicePayment do
 
         <%= if Enum.empty?(@bank_accounts) do %>
           <p class="col-span-2 text-sm/snug text-grey-700">
-            Żadne z Twoich kont nie jest podpięte.
+            {gettext("None of your accounts is connected.")}
           </p>
           <.link
             kind="button"
@@ -136,14 +153,15 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoicePayment do
             target="_blank"
             redirect={~p"/ustawienia/firma"}
           >
-            <Lucideicons.plus class="inline-flex size-4" /> Podepnij konto
+            <Lucideicons.plus class="inline-flex size-4" /> {gettext("Connect an account")}
           </.link>
         <% end %>
 
         <%= if not Enum.empty?(@bank_accounts) and @selected_bank_account == nil do %>
           <p class="col-span-2">
-            Brak domyślnego konta dla tej waluty
-            ({Map.get(@invoice, :currency)}).
+            {gettext("No default account for this currency (%{currency}).",
+              currency: Map.get(@invoice, :currency)
+            )}
           </p>
 
           <.button
@@ -153,18 +171,18 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoicePayment do
             class="col-span-2 my-4"
             phx-click={show_modal("bank_account_selector_modal")}
           >
-            Wybierz konto
+            {gettext("Choose an account")}
           </.button>
         <% end %>
 
         <%= if is_nil(@selected_bank_account) do %>
           <label class="min-w-[150px] text-grey-700" for={@payment_form[:seller_account_number].id}>
-            lub wpisz ręcznie:
+            {gettext("or enter it manually:")}
           </label>
           <.input
             field={@payment_form[:seller_account_number]}
             type="text"
-            placeholder="np. PL61109010140000071219812874"
+            placeholder={gettext("e.g. PL61109010140000071219812874")}
             class="w-full"
           />
         <% end %>
@@ -182,14 +200,14 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoicePayment do
               }
               class="h-min rounded-full bg-moss-200 px-4 py-1 text-sm/snug text-moss-700"
             >
-              domyślny <strong>{@selected_bank_account.currency}</strong>
+              <.currency_label kind={:default} currency={@selected_bank_account.currency} />
             </p>
 
             <p
               :if={@selected_bank_account.currency != @invoice.currency}
               class="h-min rounded-full bg-brick-200 px-4 py-1 text-sm/snug text-brick-700"
             >
-              waluta konta: <strong>{@selected_bank_account.currency}</strong>
+              <.currency_label kind={:account} currency={@selected_bank_account.currency} />
             </p>
 
             <.button
@@ -199,14 +217,14 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoicePayment do
               class="ml-auto h-min"
               phx-click={show_modal("bank_account_selector_modal")}
             >
-              Zmień
+              {pgettext("bank account", "Change")}
             </.button>
           </div>
 
-          <p class="text-sm/snug text-grey-500">Bank</p>
+          <p class="text-sm/snug text-grey-500">{pgettext("bank account", "Bank")}</p>
           <p class="text-sm/snug text-grey-700">{@selected_bank_account.institution_name}</p>
 
-          <p class="text-sm/snug text-grey-500">Numer</p>
+          <p class="text-sm/snug text-grey-500">{pgettext("bank account", "Number")}</p>
           <p class="text-sm/snug text-grey-700">{@selected_bank_account.iban}</p>
         <% end %>
       </div>
@@ -214,8 +232,10 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoicePayment do
       <%!-- Bank account selector modal --%>
       <div class="absolute">
         <.modal id="bank_account_selector_modal" class="max-w-4xl">
-          <h2 class="mb-2 text-xl font-medium">Zmiana rachunku</h2>
-          <p class="mb-6 text-grey-600">Wybierz rachunek bankowy, na który chcesz otrzymać wpłatę.</p>
+          <h2 class="mb-2 text-xl font-medium">{gettext("Change account")}</h2>
+          <p class="mb-6 text-grey-600">
+            {gettext("Choose the bank account to receive the payment.")}
+          </p>
 
           <div class="space-y-3">
             <%= for account <- @bank_accounts do %>
@@ -232,10 +252,12 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoicePayment do
                 <Lucideicons.landmark class="mr-4 size-10 shrink-0 text-grey-600" />
 
                 <div class="flex flex-col gap-2 text-sm">
-                  <span :if={account.name} class="block text-grey-500">Nazwa</span>
-                  <span class="block text-grey-500">Bank</span>
-                  <span class="block text-grey-500">Numer</span>
-                  <span class="block text-grey-500">Waluta</span>
+                  <span :if={account.name} class="block text-grey-500">
+                    {gettext("Name")}
+                  </span>
+                  <span class="block text-grey-500">{pgettext("bank account", "Bank")}</span>
+                  <span class="block text-grey-500">{pgettext("bank account", "Number")}</span>
+                  <span class="block text-grey-500">{gettext("Currency")}</span>
                 </div>
 
                 <div class="flex flex-col gap-2 text-sm">
@@ -249,7 +271,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoicePayment do
                   :if={account.is_default and account.currency == @invoice.currency}
                   class="mx-4 rounded-full bg-moss-200 px-3 py-1 text-sm/snug whitespace-nowrap text-moss-700"
                 >
-                  domyślny <strong>{account.currency}</strong>
+                  <.currency_label kind={:default} currency={account.currency} />
                 </p>
 
                 <%= if @selected_bank_account && @selected_bank_account.id == account.id do %>
@@ -260,7 +282,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoicePayment do
                     phx-click="select_bank_account"
                     phx-value-account_id={account.id}
                   >
-                    Odznacz
+                    {pgettext("bank account", "Deselect")}
                   </.button>
                 <% else %>
                   <.button
@@ -270,7 +292,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoicePayment do
                     phx-click="select_bank_account"
                     phx-value-account_id={account.id}
                   >
-                    Wybierz
+                    {pgettext("bank account", "Select")}
                   </.button>
                 <% end %>
               </div>
@@ -284,7 +306,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoicePayment do
               accent="teal"
               phx-click={hide_modal("bank_account_selector_modal")}
             >
-              Dalej
+              {pgettext("sales invoice creator", "Next")}
             </.button>
           </div>
         </.modal>

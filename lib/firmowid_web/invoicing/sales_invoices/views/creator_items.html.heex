@@ -29,7 +29,7 @@
       <.render_header
         invoice={@invoice}
         step={@step_number}
-        title="Sprzedawane towary/usługi"
+        title={gettext("Goods and services sold")}
       />
     </div>
 
@@ -45,7 +45,7 @@
 
     <.button
       type="submit"
-      phx-disable-with="Przetwarzanie..."
+      phx-disable-with={gettext("Processing...")}
       class={[
         "mt-20 ml-auto h-11 w-full max-w-44",
         if(@current_org.is_vat_payer, do: "col-start-1 col-end-9", else: "col-start-1 col-end-8")
@@ -54,7 +54,7 @@
       accent="teal"
       disabled={not @items_form.source.valid?}
     >
-      Dalej
+      {pgettext("sales invoice creator", "Next")}
     </.button>
   </.form>
 </div>

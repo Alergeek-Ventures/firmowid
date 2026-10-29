@@ -375,6 +375,7 @@ msgstr ""
 msgid "Alerts for unpaid invoices"
 msgstr ""
 
+#: lib/firmowid_web/invoicing/sales_invoices/views/creator_counterparty.html.heex:289
 #: lib/firmowid_web/invoicing/transactions/components/salary_components.ex:28
 #: lib/firmowid_web/invoicing/transactions/components/show_components.ex:181
 #, elixir-autogen, elixir-format
@@ -594,6 +595,8 @@ msgid "Can I cancel at any time?"
 msgstr ""
 
 #: lib/firmowid_web/hours_record/views/index.html.heex:166
+#: lib/firmowid_web/invoicing/sales_invoices/views/creator_counterparty.html.heex:467
+#: lib/firmowid_web/invoicing/sales_invoices/views/edit_form.html.heex:249
 #, elixir-autogen, elixir-format
 msgid "Cancel"
 msgstr ""
@@ -640,7 +643,7 @@ msgstr ""
 msgid "Change requested"
 msgstr ""
 
-#: lib/firmowid_web/invoicing/sales_invoices/views/creator_counterparty.html.heex:132
+#: lib/firmowid_web/invoicing/sales_invoices/views/creator_counterparty.html.heex:133
 #, elixir-autogen, elixir-format
 msgid "Change sort order"
 msgstr ""
@@ -722,6 +725,7 @@ msgstr ""
 
 #: lib/firmowid_ui/invoicing/components/invoice_notes.ex:28
 #: lib/firmowid_web/invoicing/components/invoice_details.ex:189
+#: lib/firmowid_web/invoicing/sales_invoices/views/edit_form.html.heex:163
 #, elixir-autogen, elixir-format
 msgid "Comment"
 msgstr ""
@@ -936,8 +940,8 @@ msgstr ""
 msgid "Could not disconnect this transaction from the salary."
 msgstr ""
 
-#: lib/firmowid_web/invoicing/sales_invoices/views/creator.ex:1165
-#: lib/firmowid_web/invoicing/sales_invoices/views/creator.ex:1172
+#: lib/firmowid_web/invoicing/sales_invoices/views/creator.ex:1166
+#: lib/firmowid_web/invoicing/sales_invoices/views/creator.ex:1173
 #, elixir-autogen, elixir-format
 msgid "Could not issue the invoice."
 msgstr ""
@@ -966,6 +970,10 @@ msgstr[1] ""
 msgid "Could not update categories."
 msgstr ""
 
+#: lib/firmowid_web/invoicing/sales_invoices/views/creator.ex:1237
+#: lib/firmowid_web/invoicing/sales_invoices/views/creator_counterparty.html.heex:148
+#: lib/firmowid_web/invoicing/sales_invoices/views/creator_counterparty.html.heex:283
+#: lib/firmowid_web/invoicing/sales_invoices/views/edit_form.html.heex:61
 #: lib/firmowid_web/landing/components/sections.ex:269
 #, elixir-autogen, elixir-format
 msgid "Counterparty"
@@ -997,6 +1005,7 @@ msgid "Create, send, receive. Firmowid connects to the National e-Invoice System
 msgstr ""
 
 #: lib/firmowid_web/invoicing/components/deductible_vat.ex:80
+#: lib/firmowid_web/invoicing/sales_invoices/components/invoice_payment.ex:260
 #, elixir-autogen, elixir-format
 msgid "Currency"
 msgstr ""
@@ -1607,6 +1616,7 @@ msgstr ""
 msgid "Gross pay from submitted hours"
 msgstr ""
 
+#: lib/firmowid_web/invoicing/sales_invoices/components/invoice_items.ex:408
 #: lib/firmowid_web/landing/components/sections.ex:907
 #, elixir-autogen, elixir-format
 msgid "Gross value"
@@ -1767,6 +1777,7 @@ msgid "Internal note, not shown on the invoice (only in Firmowid)"
 msgstr ""
 
 #: lib/firmowid_web/invoicing/components/deductible_vat.ex:147
+#: lib/firmowid_web/invoicing/sales_invoices/views/edit_form.html.heex:193
 #, elixir-autogen, elixir-format
 msgid "Invoice %{number}"
 msgstr ""
@@ -1791,13 +1802,14 @@ msgstr ""
 msgid "Invoice number"
 msgstr ""
 
-#: lib/firmowid_web/invoicing/sales_invoices/views/creator.ex:1170
+#: lib/firmowid_web/invoicing/sales_invoices/views/creator.ex:1171
 #: lib/firmowid_web/invoicing/sales_invoices/views/edit.ex:683
 #, elixir-autogen, elixir-format
 msgid "Invoice number is required."
 msgstr ""
 
 #: lib/firmowid_mcp/invoicing/views/issue.ex:571
+#: lib/firmowid_web/invoicing/sales_invoices/views/summary.ex:84
 #, elixir-autogen, elixir-format
 msgid "Invoice sent to KSeF"
 msgstr ""
@@ -2094,6 +2106,9 @@ msgstr ""
 msgid "Multiple payouts in one month require shared monthly tax costs and reductions."
 msgstr ""
 
+#: lib/firmowid_web/invoicing/sales_invoices/components/invoice_payment.ex:256
+#: lib/firmowid_web/invoicing/sales_invoices/views/creator_counterparty.html.heex:240
+#: lib/firmowid_web/invoicing/sales_invoices/views/edit_form.html.heex:65
 #: lib/firmowid_web/landing/components/sections.ex:902
 #, elixir-autogen, elixir-format
 msgid "Name"
@@ -2110,6 +2125,7 @@ msgstr ""
 msgid "Needs details"
 msgstr ""
 
+#: lib/firmowid_web/invoicing/sales_invoices/components/invoice_items.ex:392
 #: lib/firmowid_web/landing/components/sections.ex:904
 #, elixir-autogen, elixir-format
 msgid "Net price"
@@ -2499,6 +2515,7 @@ msgstr ""
 msgid "Pay only for what you actually use. Choose the plan and billing cycle that suit you best."
 msgstr ""
 
+#: lib/firmowid_web/invoicing/sales_invoices/views/edit_form.html.heex:124
 #: lib/firmowid_web/landing/components/sections.ex:944
 #, elixir-autogen, elixir-format
 msgid "Payment"
@@ -2569,6 +2586,7 @@ msgstr ""
 msgid "Planned tax reserve"
 msgstr ""
 
+#: lib/firmowid_web/invoicing/sales_invoices/views/edit_form.html.heex:357
 #: lib/firmowid_web/management/components/employee_tax_details.ex:528
 #, elixir-autogen, elixir-format
 msgid "Poland"
@@ -2666,6 +2684,7 @@ msgstr ""
 msgid "Pupil or student"
 msgstr ""
 
+#: lib/firmowid_web/invoicing/sales_invoices/components/invoice_items.ex:379
 #: lib/firmowid_web/landing/components/sections.ex:903
 #, elixir-autogen, elixir-format
 msgid "Quantity"
@@ -2744,7 +2763,7 @@ msgstr ""
 msgid "Remove %{name} from project"
 msgstr ""
 
-#: lib/firmowid_web/invoicing/sales_invoices/components/invoice_items.ex:568
+#: lib/firmowid_web/invoicing/sales_invoices/components/invoice_items.ex:572
 #, elixir-autogen, elixir-format
 msgid "Remove item"
 msgstr ""
@@ -2877,7 +2896,9 @@ msgstr ""
 msgid "Save"
 msgstr ""
 
+#: lib/firmowid_web/invoicing/sales_invoices/components/invoice_review.ex:84
 #: lib/firmowid_web/invoicing/sales_invoices/views/creator_preview.html.heex:8
+#: lib/firmowid_web/invoicing/sales_invoices/views/edit_form.html.heex:259
 #, elixir-autogen, elixir-format
 msgid "Save draft"
 msgstr ""
@@ -2959,7 +2980,7 @@ msgid_plural "Show all %{count} features"
 msgstr[0] ""
 msgstr[1] ""
 
-#: lib/firmowid_web/invoicing/sales_invoices/views/creator_counterparty.html.heex:87
+#: lib/firmowid_web/invoicing/sales_invoices/views/creator_counterparty.html.heex:88
 #, elixir-autogen, elixir-format
 msgid "Show companies only"
 msgstr ""
@@ -2969,7 +2990,7 @@ msgstr ""
 msgid "Show details of employee %{name}"
 msgstr ""
 
-#: lib/firmowid_web/invoicing/sales_invoices/views/creator_counterparty.html.heex:110
+#: lib/firmowid_web/invoicing/sales_invoices/views/creator_counterparty.html.heex:111
 #, elixir-autogen, elixir-format
 msgid "Show individuals only"
 msgstr ""
@@ -3055,6 +3076,7 @@ msgstr ""
 msgid "Start with the free plan. No card. No commitment. If the software is not for you, delete your account with one click."
 msgstr ""
 
+#: lib/firmowid_web/invoicing/cost_invoices/views/inbox.ex:53
 #: lib/firmowid_web/landing/components/sections.ex:270
 #, elixir-autogen, elixir-format
 msgid "Status"
@@ -3548,6 +3570,7 @@ msgstr ""
 msgid "Transactions to match"
 msgstr ""
 
+#: lib/firmowid_web/invoicing/sales_invoices/components/invoice_payment.ex:122
 #: lib/firmowid_web/landing/components/sections.ex:946
 #, elixir-autogen, elixir-format
 msgid "Transfer"
@@ -3680,7 +3703,7 @@ msgstr ""
 msgid "VAT on sales"
 msgstr ""
 
-#: lib/firmowid_web/invoicing/sales_invoices/views/creator_counterparty.html.heex:304
+#: lib/firmowid_web/invoicing/sales_invoices/views/creator_counterparty.html.heex:305
 #, elixir-autogen, elixir-format
 msgid "View invoice %{number}"
 msgstr ""
@@ -3696,6 +3719,7 @@ msgid "View timesheet"
 msgstr ""
 
 #: lib/firmowid_ui/invoicing/components/invoice_notes.ex:23
+#: lib/firmowid_web/invoicing/sales_invoices/views/edit_form.html.heex:157
 #, elixir-autogen, elixir-format
 msgid "Visible on the invoice and in KSeF (invoice footer)"
 msgstr ""
@@ -4854,6 +4878,7 @@ msgid "Draft invoice"
 msgstr ""
 
 #: lib/firmowid_web/assistant/components/transcript.ex:168
+#: lib/firmowid_web/invoicing/cost_invoices/views/inbox.ex:88
 #, elixir-autogen, elixir-format
 msgid "Error"
 msgstr ""
@@ -5144,6 +5169,8 @@ msgid "Departure"
 msgstr ""
 
 #: lib/firmowid_web/delegations/components/settlement/trips.ex:53
+#: lib/firmowid_web/invoicing/sales_invoices/views/creator_counterparty.html.heex:456
+#: lib/firmowid_web/invoicing/sales_invoices/views/edit_form.html.heex:389
 #, elixir-autogen, elixir-format
 msgid "Description"
 msgstr ""
@@ -5432,4 +5459,857 @@ msgstr ""
 #, elixir-autogen, elixir-format
 msgctxt "landing compass"
 msgid "transaction matching"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/cost_invoices/views/inbox.ex:144
+#, elixir-autogen, elixir-format
+msgid "%{count} invoice"
+msgid_plural "%{count} invoices"
+msgstr[0] ""
+msgstr[1] ""
+
+#: lib/firmowid_web/invoicing/cost_invoices/views/inbox.ex:72
+#, elixir-autogen, elixir-format
+msgid "(no subject)"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/sales_invoices/views/show.ex:151
+#, elixir-autogen, elixir-format
+msgid "A cancelling correction was issued and its submission to KSeF has started."
+msgstr ""
+
+#: lib/firmowid_web/invoicing/sales_invoices/views/edit.ex:503
+#, elixir-autogen, elixir-format
+msgid "A correction cannot be saved as a draft."
+msgstr ""
+
+#: lib/firmowid_web/invoicing/sales_invoices/views/creator_counterparty.html.heex:44
+#, elixir-autogen, elixir-format
+msgid "Add a counterparty"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/sales_invoices/components/invoice_items.ex:592
+#, elixir-autogen, elixir-format
+msgid "Add item"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/sales_invoices/views/creator_counterparty.html.heex:22
+#, elixir-autogen, elixir-format
+msgid "Add new"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/sales_invoices/views/creator_counterparty.html.heex:438
+#: lib/firmowid_web/invoicing/sales_invoices/views/edit_form.html.heex:371
+#, elixir-autogen, elixir-format
+msgid "Additional information"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/sales_invoices/views/creator_counterparty.html.heex:424
+#: lib/firmowid_web/invoicing/sales_invoices/views/edit_form.html.heex:98
+#: lib/firmowid_web/invoicing/sales_invoices/views/edit_form.html.heex:348
+#, elixir-autogen, elixir-format
+msgid "Address"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/sales_invoices/views/creator_counterparty.html.heex:419
+#: lib/firmowid_web/invoicing/sales_invoices/views/edit_form.html.heex:343
+#, elixir-autogen, elixir-format
+msgid "Address details"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/sales_invoices/components/shared_page/error.html.heex:8
+#, elixir-autogen, elixir-format
+msgid "An error occurred"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/sales_invoices/views/show.ex:138
+#, elixir-autogen, elixir-format
+msgid "An invoice sent to KSeF cannot be deleted. Issue a correction invoice."
+msgstr ""
+
+#: lib/firmowid_web/invoicing/sales_invoices/views/creator_counterparty.html.heex:356
+#: lib/firmowid_web/invoicing/sales_invoices/views/edit_form.html.heex:290
+#, elixir-autogen, elixir-format
+msgid "Basic details"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/sales_invoices/components/invoice_payment.ex:124
+#, elixir-autogen, elixir-format
+msgid "Card"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/sales_invoices/components/invoice_payment.ex:123
+#, elixir-autogen, elixir-format
+msgid "Cash"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/sales_invoices/components/invoice_payment.ex:235
+#, elixir-autogen, elixir-format
+msgid "Change account"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/sales_invoices/views/creator_counterparty.html.heex:4
+#, elixir-autogen, elixir-format
+msgid "Choose a counterparty"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/sales_invoices/views/creator_counterparty.html.heex:432
+#: lib/firmowid_web/invoicing/sales_invoices/views/edit_form.html.heex:364
+#, elixir-autogen, elixir-format
+msgid "Choose a country"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/sales_invoices/components/invoice_payment.ex:174
+#, elixir-autogen, elixir-format
+msgid "Choose an account"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/sales_invoices/components/invoice_payment.ex:237
+#, elixir-autogen, elixir-format
+msgid "Choose the bank account to receive the payment."
+msgstr ""
+
+#: lib/firmowid_web/invoicing/sales_invoices/views/creator_counterparty.html.heex:170
+#, elixir-autogen, elixir-format
+msgid "Clear filters"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/sales_invoices/views/edit_form.html.heex:401
+#, elixir-autogen, elixir-format
+msgid "Close"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/sales_invoices/views/creator_counterparty.html.heex:348
+#: lib/firmowid_web/invoicing/sales_invoices/views/edit_form.html.heex:281
+#, elixir-autogen, elixir-format
+msgid "Company / sole proprietorship"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/sales_invoices/views/creator_counterparty.html.heex:391
+#: lib/firmowid_web/invoicing/sales_invoices/views/edit_form.html.heex:306
+#, elixir-autogen, elixir-format
+msgid "Company name"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/sales_invoices/components/invoice_payment.ex:156
+#, elixir-autogen, elixir-format
+msgid "Connect an account"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/sales_invoices/views/creator_counterparty.html.heex:476
+#, elixir-autogen, elixir-format
+msgid "Continue"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/sales_invoices/views/summary.ex:177
+#, elixir-autogen, elixir-format
+msgid "Correct and issue again"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/sales_invoices/views/edit.ex:664
+#, elixir-autogen, elixir-format
+msgid "Correct the errors in the form."
+msgstr ""
+
+#: lib/firmowid_web/invoicing/sales_invoices/views/edit_form.html.heex:33
+#, elixir-autogen, elixir-format
+msgid "Correction invoice"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/sales_invoices/views/edit_form.html.heex:209
+#, elixir-autogen, elixir-format
+msgid "Correction invoice %{number}"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/sales_invoices/views/edit_form.html.heex:143
+#, elixir-autogen, elixir-format
+msgid "Correction reason"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/sales_invoices/views/show.ex:156
+#, elixir-autogen, elixir-format
+msgid "Could not cancel the invoice."
+msgstr ""
+
+#: lib/firmowid_web/invoicing/cost_invoices/views/show.ex:132
+#: lib/firmowid_web/invoicing/sales_invoices/views/show.ex:178
+#, elixir-autogen, elixir-format
+msgid "Could not connect the transaction."
+msgstr ""
+
+#: lib/firmowid_web/invoicing/cost_invoices/views/show.ex:160
+#: lib/firmowid_web/invoicing/sales_invoices/views/show.ex:202
+#, elixir-autogen, elixir-format
+msgid "Could not disconnect the transaction."
+msgstr ""
+
+#: lib/firmowid_web/invoicing/cost_invoices/views/show.ex:93
+#: lib/firmowid_web/invoicing/sales_invoices/views/show.ex:117
+#, elixir-autogen, elixir-format
+msgid "Could not generate the PDF."
+msgstr ""
+
+#: lib/firmowid_web/invoicing/sales_invoices/components/shared_page/error.html.heex:10
+#, elixir-autogen, elixir-format
+msgid "Could not generate the invoice. Try again in a moment."
+msgstr ""
+
+#: lib/firmowid_web/invoicing/sales_invoices/views/edit.ex:705
+#, elixir-autogen, elixir-format
+msgid "Could not issue the invoice"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/sales_invoices/views/creator.ex:1148
+#, elixir-autogen, elixir-format
+msgid "Could not load the counterparty details. Try again."
+msgstr ""
+
+#: lib/firmowid_web/invoicing/sales_invoices/views/creator.ex:876
+#, elixir-autogen, elixir-format
+msgid "Could not save the counterparty details — check the form errors (e.g. NIP)."
+msgstr ""
+
+#: lib/firmowid_web/invoicing/sales_invoices/views/creator.ex:1046
+#: lib/firmowid_web/invoicing/sales_invoices/views/edit.ex:500
+#, elixir-autogen, elixir-format
+msgid "Could not save the invoice."
+msgstr ""
+
+#: lib/firmowid_web/invoicing/sales_invoices/views/creator_counterparty.html.heex:364
+#: lib/firmowid_web/invoicing/sales_invoices/views/creator_counterparty.html.heex:377
+#, elixir-autogen, elixir-format
+msgid "Customer NIP"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/sales_invoices/views/edit_form.html.heex:338
+#, elixir-autogen, elixir-format
+msgid "Display name (optional)"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/sales_invoices/views/summary.ex:136
+#, elixir-autogen, elixir-format
+msgid "Download"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/sales_invoices/views/summary.ex:113
+#: lib/firmowid_web/invoicing/sales_invoices/views/summary.ex:126
+#, elixir-autogen, elixir-format
+msgid "Edit"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/sales_invoices/views/edit_form.html.heex:274
+#, elixir-autogen, elixir-format
+msgid "Edit buyer details"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/sales_invoices/views/edit_form.html.heex:36
+#, elixir-autogen, elixir-format
+msgid "Editing invoice %{number}"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/sales_invoices/views/creator_counterparty.html.heex:444
+#: lib/firmowid_web/invoicing/sales_invoices/views/edit_form.html.heex:377
+#, elixir-autogen, elixir-format
+msgid "Email"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/sales_invoices/components/invoice_review.ex:70
+#: lib/firmowid_web/invoicing/sales_invoices/views/edit_form.html.heex:185
+#, elixir-autogen, elixir-format
+msgid "Email the invoice to the counterparty after receiving the KSeF number"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/sales_invoices/components/invoice_items.ex:427
+#, elixir-autogen, elixir-format
+msgid "Enter a name"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/sales_invoices/views/creator_counterparty.html.heex:12
+#, elixir-autogen, elixir-format
+msgid "Enter manually"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/sales_invoices/views/creator_counterparty.html.heex:335
+#, elixir-autogen, elixir-format
+msgid "Enter the counterparty details"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/sales_invoices/components/shared_page/error.html.heex:2
+#, elixir-autogen, elixir-format
+msgid "Error — Firmowid"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/sales_invoices/components/invoice_items.ex:331
+#, elixir-autogen, elixir-format
+msgid "Exemption basis"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/sales_invoices/views/creator_counterparty.html.heex:401
+#: lib/firmowid_web/invoicing/sales_invoices/views/edit_form.html.heex:326
+#, elixir-autogen, elixir-format
+msgid "First name"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/sales_invoices/views/edit_form.html.heex:104
+#, elixir-autogen, elixir-format
+msgid "Full name"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/sales_invoices/views/summary.ex:146
+#, elixir-autogen, elixir-format
+msgid "Go to the invoice"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/sales_invoices/views/creator_items.html.heex:32
+#, elixir-autogen, elixir-format
+msgid "Goods and services sold"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/sales_invoices/components/invoice_items.ex:619
+#, elixir-autogen, elixir-format
+msgid "Gross total"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/cost_invoices/views/inbox.ex:95
+#, elixir-autogen, elixir-format
+msgid "In progress..."
+msgstr ""
+
+#: lib/firmowid_web/invoicing/cost_invoices/views/inbox.ex:15
+#: lib/firmowid_web/invoicing/cost_invoices/views/inbox.ex:27
+#, elixir-autogen, elixir-format
+msgid "Inbox"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/sales_invoices/views/edit_form.html.heex:165
+#, elixir-autogen, elixir-format
+msgid "Internal note (not visible on the invoice - only inside Firmowid)"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/sales_invoices/views/creator.ex:1225
+#: lib/firmowid_web/invoicing/sales_invoices/views/summary.ex:71
+#, elixir-autogen, elixir-format
+msgid "Invoice creator"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/sales_invoices/components/invoice_review.ex:43
+#, elixir-autogen, elixir-format
+msgid "Invoice details"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/sales_invoices/views/edit_form.html.heex:34
+#, elixir-autogen, elixir-format
+msgid "Invoice editing"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/sales_invoices/views/summary.ex:76
+#, elixir-autogen, elixir-format
+msgid "Invoice is being sent"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/sales_invoices/views/summary.ex:71
+#: lib/firmowid_web/invoicing/sales_invoices/views/summary.ex:90
+#, elixir-autogen, elixir-format
+msgid "Invoice issued"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/sales_invoices/components/invoice_items.ex:352
+#, elixir-autogen, elixir-format
+msgid "Invoice items"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/sales_invoices/components/shared_page/not_found.html.heex:8
+#: lib/firmowid_web/invoicing/sales_invoices/views/edit.ex:119
+#, elixir-autogen, elixir-format
+msgid "Invoice not found"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/sales_invoices/components/shared_page/not_found.html.heex:2
+#, elixir-autogen, elixir-format
+msgid "Invoice not found — Firmowid"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/sales_invoices/views/creator.ex:161
+#, elixir-autogen, elixir-format
+msgid "Invoice not found."
+msgstr ""
+
+#: lib/firmowid_web/invoicing/sales_invoices/views/edit_form.html.heex:156
+#, elixir-autogen, elixir-format
+msgid "Invoice note"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/sales_invoices/views/creator_preview.html.heex:5
+#: lib/firmowid_web/invoicing/sales_invoices/views/creator_preview.html.heex:37
+#: lib/firmowid_web/invoicing/sales_invoices/views/edit.ex:77
+#, elixir-autogen, elixir-format
+msgid "Invoice preview"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/sales_invoices/views/summary.ex:154
+#, elixir-autogen, elixir-format
+msgid "Issue another"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/sales_invoices/views/edit_form.html.heex:268
+#, elixir-autogen, elixir-format
+msgid "Issue correction invoice"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/sales_invoices/components/invoice_review.ex:105
+#, elixir-autogen, elixir-format
+msgid "Issuing an invoice requires a KSeF connection. You can save it as a draft."
+msgstr ""
+
+#: lib/firmowid_web/invoicing/sales_invoices/views/creator_counterparty.html.heex:406
+#: lib/firmowid_web/invoicing/sales_invoices/views/edit_form.html.heex:331
+#, elixir-autogen, elixir-format
+msgid "Last name"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/sales_invoices/components/invoice_items.ex:340
+#, elixir-autogen, elixir-format
+msgid "Legal basis for the VAT exemption"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/sales_invoices/views/show.ex:218
+#, elixir-autogen, elixir-format
+msgid "Link copied to the clipboard."
+msgstr ""
+
+#: lib/firmowid_web/invoicing/cost_invoices/views/inbox.ex:29
+#, elixir-autogen, elixir-format
+msgid "List of all emails with cost invoices"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/sales_invoices/components/invoice_items.ex:607
+#, elixir-autogen, elixir-format
+msgid "Net total"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/cost_invoices/views/inbox.ex:168
+#, elixir-autogen, elixir-format
+msgid "No attachments"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/cost_invoices/views/inbox.ex:118
+#, elixir-autogen, elixir-format
+msgid "No attachments to process"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/sales_invoices/views/creator_counterparty.html.heex:163
+#, elixir-autogen, elixir-format
+msgid "No counterparties found."
+msgstr ""
+
+#: lib/firmowid_web/invoicing/sales_invoices/components/invoice_payment.ex:162
+#, elixir-autogen, elixir-format
+msgid "No default account for this currency (%{currency})."
+msgstr ""
+
+#: lib/firmowid_web/invoicing/sales_invoices/components/invoice_payment.ex:146
+#, elixir-autogen, elixir-format
+msgid "None of your accounts is connected."
+msgstr ""
+
+#: lib/firmowid_web/invoicing/sales_invoices/views/creator_counterparty.html.heex:414
+#, elixir-autogen, elixir-format
+msgid "PESEL (optional)"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/sales_invoices/views/creator_payment.html.heex:22
+#, elixir-autogen, elixir-format
+msgid "Payment date and method"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/sales_invoices/components/invoice_payment.ex:92
+#, elixir-autogen, elixir-format
+msgid "Payment due date"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/sales_invoices/components/invoice_payment.ex:116
+#, elixir-autogen, elixir-format
+msgid "Payment method"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/sales_invoices/views/creator_counterparty.html.heex:449
+#: lib/firmowid_web/invoicing/sales_invoices/views/edit_form.html.heex:382
+#, elixir-autogen, elixir-format
+msgid "Phone"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/sales_invoices/views/creator_counterparty.html.heex:350
+#: lib/firmowid_web/invoicing/sales_invoices/views/edit_form.html.heex:283
+#, elixir-autogen, elixir-format
+msgid "Private person"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/cost_invoices/views/inbox.ex:169
+#, elixir-autogen, elixir-format
+msgid "Processing error"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/sales_invoices/views/creator_items.html.heex:48
+#: lib/firmowid_web/invoicing/sales_invoices/views/creator_payment.html.heex:35
+#, elixir-autogen, elixir-format
+msgid "Processing..."
+msgstr ""
+
+#: lib/firmowid_web/invoicing/sales_invoices/components/invoice_items.ex:376
+#, elixir-autogen, elixir-format
+msgid "Product/service"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/sales_invoices/views/creator.ex:659
+#: lib/firmowid_web/invoicing/sales_invoices/views/creator.ex:662
+#, elixir-autogen, elixir-format
+msgid "Recent invoices"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/sales_invoices/views/creator.ex:662
+#, elixir-autogen, elixir-format
+msgid "Recently chosen"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/sales_invoices/views/edit_form.html.heex:148
+#, elixir-autogen, elixir-format
+msgid "Required by law (Art. 106j(2)(3) of the VAT Act). Maximum 256 characters."
+msgstr ""
+
+#: lib/firmowid_web/invoicing/sales_invoices/components/invoice_items.ex:303
+#, elixir-autogen, elixir-format
+msgid "Reverse charge"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/sales_invoices/components/invoice_items.ex:308
+#, elixir-autogen, elixir-format
+msgid "Reverse charge (odwrotne obciążenie) is a mechanism in which the obligation to account for VAT rests with the buyer of the service; it applies, among other things, to imports of services from the European Union."
+msgstr ""
+
+#: lib/firmowid_web/invoicing/sales_invoices/components/invoice_payment.ex:68
+#, elixir-autogen, elixir-format
+msgid "Sale date"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/sales_invoices/components/invoice_review.ex:96
+#: lib/firmowid_web/invoicing/sales_invoices/views/edit_form.html.heex:269
+#, elixir-autogen, elixir-format
+msgid "Save and send to KSeF"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/sales_invoices/views/creator_counterparty.html.heex:63
+#, elixir-autogen, elixir-format
+msgid "Search for a counterparty"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/sales_invoices/components/invoice_items.ex:280
+#, elixir-autogen, elixir-format
+msgid "Selected currency"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/sales_invoices/views/summary.ex:87
+#, elixir-autogen, elixir-format
+msgid "Sending to KSeF failed"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/sales_invoices/views/show.ex:271
+#: lib/firmowid_web/invoicing/sales_invoices/views/summary.ex:161
+#, elixir-autogen, elixir-format
+msgid "Sending to KSeF failed."
+msgstr ""
+
+#: lib/firmowid_web/invoicing/sales_invoices/components/invoice_review.ex:90
+#, elixir-autogen, elixir-format
+msgid "Sending..."
+msgstr ""
+
+#: lib/firmowid_web/invoicing/sales_invoices/views/summary.ex:224
+#, elixir-autogen, elixir-format
+msgid "Sent to KSeF!"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/sales_invoices/views/creator.ex:1229
+#, elixir-autogen, elixir-format
+msgid "Step %{step}."
+msgstr ""
+
+#: lib/firmowid_web/invoicing/sales_invoices/views/creator_counterparty.html.heex:367
+#, elixir-autogen, elixir-format
+msgid "Tax ID (optional)"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/sales_invoices/views/creator_counterparty.html.heex:373
+#, elixir-autogen, elixir-format
+msgid "Tax identifier"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/sales_invoices/views/creator.ex:1135
+#, elixir-autogen, elixir-format
+msgid "The counterparty details need completing — correct the form."
+msgstr ""
+
+#: lib/firmowid_web/invoicing/sales_invoices/views/creator.ex:296
+#, elixir-autogen, elixir-format
+msgid "The creator draft was not found, starting over."
+msgstr ""
+
+#: lib/firmowid_web/invoicing/sales_invoices/views/edit.ex:488
+#, elixir-autogen, elixir-format
+msgid "The invoice draft was saved."
+msgstr ""
+
+#: lib/firmowid_web/invoicing/cost_invoices/views/show.ex:102
+#: lib/firmowid_web/invoicing/sales_invoices/views/show.ex:126
+#, elixir-autogen, elixir-format
+msgid "The invoice has been deleted."
+msgstr ""
+
+#: lib/firmowid_web/invoicing/sales_invoices/views/creator.ex:269
+#, elixir-autogen, elixir-format
+msgid "The invoice items were copied, but the counterparty details need fixing — complete the form."
+msgstr ""
+
+#: lib/firmowid_web/invoicing/sales_invoices/views/summary.ex:166
+#, elixir-autogen, elixir-format
+msgid "The invoice returned to a draft without a number. Correct the details and issue it again."
+msgstr ""
+
+#: lib/firmowid_web/invoicing/sales_invoices/views/creator.ex:1037
+#, elixir-autogen, elixir-format
+msgid "The invoice was saved as a draft."
+msgstr ""
+
+#: lib/firmowid_web/invoicing/sales_invoices/views/show.ex:269
+#, elixir-autogen, elixir-format
+msgid "The invoice was sent to KSeF."
+msgstr ""
+
+#: lib/firmowid_web/invoicing/sales_invoices/views/edit.ex:889
+#, elixir-autogen, elixir-format
+msgid "This correction cannot be edited — a newer correction exists."
+msgstr ""
+
+#: lib/firmowid_web/invoicing/sales_invoices/views/edit.ex:885
+#, elixir-autogen, elixir-format
+msgid "This invoice cannot be edited — it has corrections. Edit the latest correction."
+msgstr ""
+
+#: lib/firmowid_web/invoicing/sales_invoices/views/edit.ex:127
+#, elixir-autogen, elixir-format
+msgid "This invoice cannot be edited — it is locked while being sent to KSeF."
+msgstr ""
+
+#: lib/firmowid_web/invoicing/sales_invoices/components/shared_page/not_found.html.heex:10
+#, elixir-autogen, elixir-format
+msgid "This link is invalid or the invoice does not exist."
+msgstr ""
+
+#: lib/firmowid_web/invoicing/cost_invoices/views/inbox.ex:170
+#, elixir-autogen, elixir-format
+msgid "Unknown error"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/cost_invoices/views/inbox.ex:167
+#, elixir-autogen, elixir-format
+msgid "Unknown sender"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/sales_invoices/components/invoice_items.ex:324
+#, elixir-autogen, elixir-format
+msgid "VAT exemption"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/sales_invoices/components/invoice_items.ex:613
+#, elixir-autogen, elixir-format
+msgid "VAT total"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/sales_invoices/components/invoice_items.ex:398
+#, elixir-autogen, elixir-format
+msgid "VAT value"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/sales_invoices/views/creator.ex:147
+#: lib/firmowid_web/invoicing/sales_invoices/views/creator.ex:181
+#, elixir-autogen, elixir-format
+msgid "You do not have permission to issue sales invoices."
+msgstr ""
+
+#: lib/firmowid_web/invoicing/sales_invoices/views/creator_counterparty.html.heex:33
+#, elixir-autogen, elixir-format
+msgid "You have not entered any counterparty yet. Enter one by clicking below to issue an invoice."
+msgstr ""
+
+#: lib/firmowid_web/invoicing/sales_invoices/components/invoice_payment.ex:49
+#, elixir-autogen, elixir-format
+msgid "account currency: %{currency}"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/sales_invoices/components/invoice_payment.ex:48
+#, elixir-autogen, elixir-format
+msgid "default %{currency}"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/sales_invoices/components/invoice_payment.ex:185
+#, elixir-autogen, elixir-format
+msgid "e.g. PL61109010140000071219812874"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/sales_invoices/views/edit_form.html.heex:144
+#, elixir-autogen, elixir-format
+msgid "e.g. price correction, change of buyer details..."
+msgstr ""
+
+#: lib/firmowid_web/invoicing/sales_invoices/components/invoice_payment.ex:180
+#, elixir-autogen, elixir-format
+msgid "or enter it manually:"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/sales_invoices/components/invoice_payment.ex:224
+#: lib/firmowid_web/invoicing/sales_invoices/components/invoice_payment.ex:258
+#, elixir-autogen, elixir-format
+msgctxt "bank account"
+msgid "Bank"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/sales_invoices/components/invoice_payment.ex:220
+#: lib/firmowid_web/invoicing/sales_invoices/views/edit_form.html.heex:118
+#, elixir-autogen, elixir-format
+msgctxt "bank account"
+msgid "Change"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/sales_invoices/components/invoice_payment.ex:285
+#, elixir-autogen, elixir-format
+msgctxt "bank account"
+msgid "Deselect"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/sales_invoices/components/invoice_payment.ex:227
+#: lib/firmowid_web/invoicing/sales_invoices/components/invoice_payment.ex:259
+#, elixir-autogen, elixir-format
+msgctxt "bank account"
+msgid "Number"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/sales_invoices/components/invoice_payment.ex:295
+#, elixir-autogen, elixir-format
+msgctxt "bank account"
+msgid "Select"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/sales_invoices/components/invoice_items.ex:30
+#, elixir-autogen, elixir-format
+msgctxt "currency list group"
+msgid "All"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/sales_invoices/components/invoice_items.ex:29
+#, elixir-autogen, elixir-format
+msgctxt "currency list group"
+msgid "Popular"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/cost_invoices/views/inbox.ex:56
+#, elixir-autogen, elixir-format
+msgctxt "inbox column"
+msgid "Details"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/cost_invoices/views/inbox.ex:44
+#, elixir-autogen, elixir-format
+msgctxt "inbox column"
+msgid "Received"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/cost_invoices/views/inbox.ex:47
+#, elixir-autogen, elixir-format
+msgctxt "inbox column"
+msgid "Sender"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/cost_invoices/views/inbox.ex:50
+#, elixir-autogen, elixir-format
+msgctxt "inbox column"
+msgid "Subject"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/cost_invoices/views/inbox.ex:78
+#, elixir-autogen, elixir-format
+msgctxt "inbox status"
+msgid "Processing"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/cost_invoices/views/inbox.ex:83
+#, elixir-autogen, elixir-format
+msgctxt "inbox status"
+msgid "Success"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/sales_invoices/components/invoice_review.ex:80
+#: lib/firmowid_web/invoicing/sales_invoices/views/creator_counterparty.html.heex:474
+#: lib/firmowid_web/invoicing/sales_invoices/views/edit_form.html.heex:257
+#, elixir-autogen, elixir-format
+msgctxt "sales invoice button"
+msgid "Saving..."
+msgstr ""
+
+#: lib/firmowid_web/invoicing/sales_invoices/views/creator_counterparty.html.heex:317
+#, elixir-autogen, elixir-format
+msgctxt "sales invoice creator"
+msgid "Copy"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/sales_invoices/views/creator_counterparty.html.heex:150
+#: lib/firmowid_web/invoicing/sales_invoices/views/creator_counterparty.html.heex:251
+#: lib/firmowid_web/invoicing/sales_invoices/views/edit_form.html.heex:355
+#, elixir-autogen, elixir-format
+msgctxt "sales invoice creator"
+msgid "Country"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/sales_invoices/views/creator_counterparty.html.heex:149
+#: lib/firmowid_web/invoicing/sales_invoices/views/edit_form.html.heex:79
+#: lib/firmowid_web/invoicing/sales_invoices/views/edit_form.html.heex:90
+#, elixir-autogen, elixir-format
+msgctxt "sales invoice creator"
+msgid "Identifier"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/sales_invoices/components/invoice_payment.ex:309
+#: lib/firmowid_web/invoicing/sales_invoices/views/creator_items.html.heex:57
+#: lib/firmowid_web/invoicing/sales_invoices/views/creator_payment.html.heex:41
+#, elixir-autogen, elixir-format
+msgctxt "sales invoice creator"
+msgid "Next"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/sales_invoices/views/creator_counterparty.html.heex:286
+#, elixir-autogen, elixir-format
+msgctxt "sales invoice creator"
+msgid "Number"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/sales_invoices/views/creator_counterparty.html.heex:272
+#, elixir-autogen, elixir-format
+msgctxt "sales invoice creator"
+msgid "Select"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/sales_invoices/components/invoice_items.ex:601
+#, elixir-autogen, elixir-format
+msgctxt "sales invoice items"
+msgid "Total"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/sales_invoices/components/invoice_items.ex:382
+#, elixir-autogen, elixir-format
+msgctxt "sales invoice items"
+msgid "Unit"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/sales_invoices/components/invoice_items.ex:396
+#, elixir-autogen, elixir-format
+msgctxt "sales invoice items"
+msgid "Value"
 msgstr ""
