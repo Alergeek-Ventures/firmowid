@@ -251,7 +251,8 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
   end
 
   defp mobile_cell_styles("party"),
-    do: "max-md:col-start-1 max-md:row-start-1 max-md:rounded-none max-md:border-0 max-md:pt-4 max-md:pb-1"
+    do:
+      "max-md:col-start-1 max-md:row-start-1 max-md:max-w-none max-md:rounded-none max-md:border-0 max-md:pt-4 max-md:pb-1"
 
   defp mobile_cell_styles(column) when column in ["issue_date", "value_date", "issue_or_value_date"],
     do:
