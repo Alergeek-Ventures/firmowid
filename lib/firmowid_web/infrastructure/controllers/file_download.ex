@@ -45,7 +45,7 @@ defmodule FirmowidWeb.Infrastructure.Controllers.FileDownload do
         )
 
       nil ->
-        send_resp(conn, 400, "Nieprawidłowy parametr miesiąca.")
+        send_resp(conn, 400, gettext("Invalid month parameter."))
     end
   end
 

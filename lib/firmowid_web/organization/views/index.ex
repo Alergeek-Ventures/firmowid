@@ -12,6 +12,12 @@ defmodule FirmowidWeb.Organization.Views.Index do
 
   @impl true
   def render(assigns) do
+    assigns =
+      assign(assigns,
+        owner_parts: split_bold(gettext("Are you %{owner}?", owner: "__BOLD__")),
+        partner_parts: split_bold(gettext("Are you %{partner} and have a code (invitation)?", partner: "__BOLD__"))
+      )
+
     ~H"""
     <div class="relative flex min-h-screen w-full items-center justify-center">
       <img
@@ -21,16 +27,19 @@ defmodule FirmowidWeb.Organization.Views.Index do
       <div class="z-10 max-w-3xl grow">
         <h1 class="mb-16 text-lg font-bold">
           <%= if @current_user.member do %>
-            Utwórz kolejną organizację lub dołącz do innej kodem
+            {gettext("Create another organization or join another one with a code")}
           <% else %>
-            Czas na przypisanie organizacji do Twojego konta
+            {gettext("Time to assign an organization to your account")}
           <% end %>
         </h1>
         <div class="flex justify-between md:flex-row">
           <div class="flex max-w-[400px] flex-col justify-between gap-4">
             <p>
-              Jesteś <span class="font-bold">właścicielem przedsiębiorstwa</span>?
-              Wypełnij formularz, aby utworzyć organizację wewnątrz Firmowida.
+              {elem(@owner_parts, 0)}<span class="font-bold">{gettext("a business owner")}</span>{elem(
+                @owner_parts,
+                1
+              )}
+              {gettext("Fill in the form to create an organization inside Firmowid.")}
             </p>
             <.simple_form
               for={@organization_form}
@@ -39,37 +48,37 @@ defmodule FirmowidWeb.Organization.Views.Index do
               phx-change="validate"
             >
               <.error :if={@check_errors}>
-                Popraw błędy w formularzu.
+                {gettext("Fix the errors in the form.")}
               </.error>
 
               <.input
                 field={@organization_form[:owner_name]}
                 type="text"
-                placeholder="Twoje imię i nazwisko"
+                placeholder={gettext("Your full name")}
                 aria-label={gettext("Your full name")}
                 required
               />
               <.input
                 field={@organization_form[:nip]}
                 type="text"
-                placeholder="Identyfikator (NIP)"
+                placeholder={gettext("Identifier (NIP)")}
                 aria-label={gettext("Tax ID (NIP)")}
                 required
               />
               <.input
                 field={@organization_form[:name]}
                 type="text"
-                placeholder="Nazwa organizacji"
+                placeholder={gettext("Organization name")}
                 aria-label={gettext("Organization name")}
                 required
               />
-              <p class="m-0">Adres przedsiębiorstwa</p>
+              <p class="m-0">{gettext("Business address")}</p>
               <div class="flex flex-row gap-2">
                 <.input
                   class="w-3/4!"
                   name="address[street]"
                   value={@address_form["street"]}
-                  placeholder="Ulica"
+                  placeholder={gettext("Street")}
                   aria-label={gettext("Street")}
                   type="text"
                   required
@@ -87,7 +96,7 @@ defmodule FirmowidWeb.Organization.Views.Index do
               <.input
                 name="address[postal_code]"
                 value={@address_form["postal_code"]}
-                placeholder="Kod pocztowy"
+                placeholder={gettext("Postal code")}
                 aria-label={gettext("Postal code")}
                 type="text"
                 required
@@ -95,7 +104,7 @@ defmodule FirmowidWeb.Organization.Views.Index do
               <.input
                 name="address[city]"
                 value={@address_form["city"]}
-                placeholder="Miasto"
+                placeholder={pgettext("address", "City")}
                 aria-label={pgettext("address", "City")}
                 type="text"
                 required
@@ -105,9 +114,9 @@ defmodule FirmowidWeb.Organization.Views.Index do
                 <.button
                   variant="special"
                   class="w-full"
-                  phx-disable-with="Tworzenie organizacji..."
+                  phx-disable-with={gettext("Creating organization...")}
                 >
-                  Utwórz organizację
+                  {gettext("Create organization")}
                 </.button>
               </:actions>
             </.simple_form>
@@ -116,21 +125,29 @@ defmodule FirmowidWeb.Organization.Views.Index do
           <div class="flex max-w-[250px] flex-col justify-between">
             <div>
               <p>
-                Jesteś <span class="font-bold">współpracownikiem</span> i posiadasz kod (zaproszenie)?
+                {elem(@partner_parts, 0)}<span class="font-bold">{gettext("a collaborator")}</span>{elem(
+                  @partner_parts,
+                  1
+                )}
               </p>
               <.simple_form for={@join_form} id="join_form" phx-submit="join">
-                <.input field={@join_form[:name]} type="text" label="Imię i nazwisko" required />
-                <.input field={@join_form[:code]} type="text" label="Kod zaproszenia" required />
+                <.input field={@join_form[:name]} type="text" label={gettext("Full name")} required />
+                <.input
+                  field={@join_form[:code]}
+                  type="text"
+                  label={gettext("Invitation code")}
+                  required
+                />
                 <:actions>
-                  <.button variant="special" class="w-full" phx-disable-with="Dołączanie...">
-                    Dołącz do organizacji
+                  <.button variant="special" class="w-full" phx-disable-with={gettext("Joining...")}>
+                    {gettext("Join organization")}
                   </.button>
                 </:actions>
               </.simple_form>
             </div>
             <div class="mt-8 mb-2.5 text-center">
               <p>
-                Nie to konto?
+                {gettext("Wrong account?")}
                 <.form
                   for={%{}}
                   id="organization-logout-form"
@@ -145,7 +162,7 @@ defmodule FirmowidWeb.Organization.Views.Index do
                     size="small"
                     class="h-auto border-none p-0 underline hover:bg-transparent active:bg-transparent"
                   >
-                    Wyloguj
+                    {pgettext("organization onboarding", "Log out")}
                   </.button>
                 </.form>
               </p>
@@ -191,7 +208,7 @@ defmodule FirmowidWeb.Organization.Views.Index do
       {:ok, created_org} ->
         socket =
           socket
-          |> LiveToast.put_toast(:success, "Pomyślnie utworzono organizację")
+          |> LiveToast.put_toast(:success, gettext("Organization created successfully"))
           |> assign(:switch_to, created_org.id)
 
         {:noreply, socket}
@@ -288,10 +305,12 @@ defmodule FirmowidWeb.Organization.Views.Index do
           "code" => ""
         })
       )
-      |> assign(:page_title, "Wybierz lub utwórz organizację")
+      |> assign(:page_title, gettext("Choose or create an organization"))
 
     {:ok, socket}
   end
+
+  defp split_bold(text), do: List.to_tuple(String.split(text, "__BOLD__", parts: 2))
 
   defp add_address(params, %{"street" => street, "number" => number, "postal_code" => postal_code, "city" => city}) do
     Map.put(params, "address", "#{street} #{number}, #{postal_code} #{city}")

@@ -266,7 +266,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
     updated_with_avatar =
       Ash.load!(updated, [avatar_blob: [:url]], scope: socket.assigns.ash_scope)
 
-    LiveToast.send_toast(:info, "Zdjęcie zostało zaktualizowane.")
+    LiveToast.send_toast(:info, gettext("The picture has been updated."))
 
     {:noreply, assign(socket, :current_user, %{current_user | member: updated_with_avatar})}
   end
@@ -281,7 +281,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
     updated_with_avatar =
       Ash.load!(updated, [avatar_blob: [:url]], scope: socket.assigns.ash_scope)
 
-    LiveToast.send_toast(:info, "Zdjęcie zostało zaktualizowane.")
+    LiveToast.send_toast(:info, gettext("The picture has been updated."))
 
     {:noreply,
      socket
@@ -309,11 +309,11 @@ defmodule FirmowidWeb.Settings.Views.Index do
             )}
          end) do
       {:ok, %Blob{}} ->
-        LiveToast.send_toast(:success, "Plik został wysłany.")
+        LiveToast.send_toast(:success, gettext("The file has been sent."))
 
       {:error, err} ->
         Logger.warning("Employment contract upload failed", error_kind: ErrorKind.classify(err))
-        LiveToast.send_toast(:error, "Wystąpił błąd podczas wysyłania pliku.")
+        LiveToast.send_toast(:error, gettext("An error occurred while sending the file."))
     end
 
     {:noreply, socket}
@@ -326,7 +326,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
   defp handle_progress(name, entry, socket) when name in [:organization_avatar, :user_avatar] do
     if name == :organization_avatar do
       if socket.assigns.current_user.member.role != :admin do
-        raise ForbiddenError, "Tylko administrator może zmienić logo organizacji."
+        raise ForbiddenError, gettext("Only an administrator can change the organization logo.")
       end
     end
 
@@ -346,7 +346,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
 
       {:error, err} ->
         Logger.warning("Avatar upload failed", error_kind: ErrorKind.classify(err))
-        LiveToast.send_toast(:error, "Wystąpił błąd podczas aktualizacji zdjęcia.")
+        LiveToast.send_toast(:error, gettext("An error occurred while updating the picture."))
         {:noreply, socket}
     end
   end
@@ -371,11 +371,11 @@ defmodule FirmowidWeb.Settings.Views.Index do
     if Argon2Provider.valid?(password, user.hashed_password) do
       case Core.destroy_user(user, scope: socket.assigns.ash_scope) do
         :ok ->
-          LiveToast.send_toast(:info, "Konto zostało usunięte.")
+          LiveToast.send_toast(:info, gettext("The account has been deleted."))
           {:noreply, redirect(socket, to: ~p"/")}
 
         {:error, error} ->
-          LiveToast.send_toast(:error, "Wystąpił błąd podczas usuwania konta")
+          LiveToast.send_toast(:error, gettext("An error occurred while deleting the account"))
 
           Logger.error("Failed to delete user account",
             error_kind: ErrorKind.classify(error)
@@ -384,7 +384,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
           {:noreply, socket}
       end
     else
-      LiveToast.send_toast(:error, "Nieprawidłowe hasło")
+      LiveToast.send_toast(:error, gettext("Incorrect password"))
       {:noreply, socket}
     end
   end
@@ -399,7 +399,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
 
     case Finances.destroy_bank_account(bank_account, scope: scope) do
       :ok ->
-        LiveToast.send_toast(:info, "Konto bankowe zostało usunięte.")
+        LiveToast.send_toast(:info, gettext("The bank account has been deleted."))
 
         bank_accounts = list_bank_accounts(scope)
 
@@ -415,7 +415,11 @@ defmodule FirmowidWeb.Settings.Views.Index do
          |> assign_subscription_preview_if_visible()}
 
       {:error, _} ->
-        LiveToast.send_toast(:error, "Wystąpił błąd podczas usuwania konta bankowego.")
+        LiveToast.send_toast(
+          :error,
+          gettext("An error occurred while deleting the bank account.")
+        )
+
         {:noreply, socket}
     end
   end
@@ -443,7 +447,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
       {:error, _} ->
         LiveToast.send_toast(
           :error,
-          "Wystąpił błąd podczas ustawiania konta bankowego jako domyślne."
+          gettext("An error occurred while setting the bank account as the default.")
         )
 
         {:noreply, socket}
@@ -455,7 +459,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
     scope = socket.assigns.ash_scope
 
     if current_user.member.role != :admin do
-      raise ForbiddenError, "Tylko administrator może aktualizować organizację."
+      raise ForbiddenError, gettext("Only an administrator can update the organization.")
     end
 
     case AshPhoenix.Form.submit(socket.assigns.company_form, params: org_params, scope: scope) do
@@ -500,7 +504,10 @@ defmodule FirmowidWeb.Settings.Views.Index do
   def handle_event("change_email", %{"user" => user_params}, socket) do
     case AshPhoenix.Form.submit(socket.assigns.email_form, params: user_params) do
       {:ok, user} ->
-        LiveToast.send_toast(:info, "Wysłaliśmy link potwierdzający na nowy adres email.")
+        LiveToast.send_toast(
+          :info,
+          gettext("We have sent a confirmation link to the new email address.")
+        )
 
         {:noreply,
          socket
@@ -511,7 +518,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
          |> assign(:email_form, form_email_form(user, socket.assigns.ash_scope))}
 
       {:error, form} ->
-        LiveToast.send_toast(:error, "Nie udało się wysłać wiadomości email. Spróbuj ponownie.")
+        LiveToast.send_toast(:error, gettext("Could not send the email. Try again."))
         {:noreply, assign(socket, :email_form, form)}
     end
   end
@@ -522,7 +529,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
         {:noreply, assign(socket, :selected_user, user)}
 
       {:error, :unknown_user} ->
-        LiveToast.send_toast(:error, "Nie znaleziono użytkownika w organizacji.")
+        LiveToast.send_toast(:error, gettext("The user was not found in the organization."))
         {:noreply, socket}
     end
   end
@@ -536,7 +543,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
          {:ok, user} <- find_loaded_organization_user(socket.assigns.organization_users, user_id),
          {:ok, _member} <-
            Core.update_member_role(user.member, %{role: role}, scope: socket.assigns.ash_scope) do
-      LiveToast.send_toast(:success, "Rola użytkownika została zmieniona.")
+      LiveToast.send_toast(:success, gettext("The user's role has been changed."))
 
       {:noreply,
        socket
@@ -545,15 +552,15 @@ defmodule FirmowidWeb.Settings.Views.Index do
        |> assign_subscription_preview_if_visible()}
     else
       {:error, :unknown_role} ->
-        LiveToast.send_toast(:error, "Nieznana rola użytkownika.")
+        LiveToast.send_toast(:error, gettext("Unknown user role."))
         {:noreply, assign(socket, :selected_user, nil)}
 
       {:error, :unknown_user} ->
-        LiveToast.send_toast(:error, "Nie znaleziono użytkownika w organizacji.")
+        LiveToast.send_toast(:error, gettext("The user was not found in the organization."))
         {:noreply, assign(socket, :selected_user, nil)}
 
       {:error, _error} ->
-        LiveToast.send_toast(:error, "Nie udało się zmienić roli użytkownika.")
+        LiveToast.send_toast(:error, gettext("Could not change the user's role."))
         {:noreply, assign(socket, :selected_user, nil)}
     end
   end
@@ -562,13 +569,13 @@ defmodule FirmowidWeb.Settings.Views.Index do
     current_user = socket.assigns.current_user
 
     if current_user.member.role != :admin do
-      raise ForbiddenError, "Tylko administrator może archiwizować użytkowników."
+      raise ForbiddenError, gettext("Only an administrator can archive users.")
     end
 
     with {:ok, user} <- find_loaded_organization_user(socket.assigns.organization_users, user_id),
          :ok <- prevent_self_user_management(current_user, user),
          {:ok, _member} <- Core.archive_member(user.member, scope: socket.assigns.ash_scope) do
-      LiveToast.send_toast(:info, "Użytkownik został zarchiwizowany.")
+      LiveToast.send_toast(:info, gettext("The user has been archived."))
 
       {:noreply,
        socket
@@ -576,15 +583,15 @@ defmodule FirmowidWeb.Settings.Views.Index do
        |> assign_subscription_preview_if_visible()}
     else
       {:error, :self_user_management} ->
-        LiveToast.send_toast(:error, "Nie możesz zarchiwizować własnego konta z tego miejsca.")
+        LiveToast.send_toast(:error, gettext("You cannot archive your own account from here."))
         {:noreply, socket}
 
       {:error, :unknown_user} ->
-        LiveToast.send_toast(:error, "Nie znaleziono użytkownika w organizacji.")
+        LiveToast.send_toast(:error, gettext("The user was not found in the organization."))
         {:noreply, socket}
 
       {:error, _error} ->
-        LiveToast.send_toast(:error, "Nie udało się zarchiwizować użytkownika.")
+        LiveToast.send_toast(:error, gettext("Could not archive the user."))
         {:noreply, socket}
     end
   end
@@ -595,7 +602,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
 
     case Finances.update_bank_account(bank_account, %{name: name}, scope: scope) do
       {:ok, _} ->
-        LiveToast.send_toast(:info, "Nazwa konta została zmieniona.")
+        LiveToast.send_toast(:info, gettext("The account name has been changed."))
 
         accounts = list_bank_accounts(scope)
 
@@ -615,7 +622,11 @@ defmodule FirmowidWeb.Settings.Views.Index do
          })}
 
       {:error, _} ->
-        LiveToast.send_toast(:error, "Wystąpił błąd podczas zmiany nazwy konta.")
+        LiveToast.send_toast(
+          :error,
+          gettext("An error occurred while changing the account name.")
+        )
+
         {:noreply, socket}
     end
   end
@@ -652,7 +663,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
           {:noreply, Phoenix.LiveView.redirect(socket, external: link)}
 
         {:error, _} ->
-          LiveToast.send_toast(:error, "Nie udało się rozpocząć ponownego połączenia.")
+          LiveToast.send_toast(:error, gettext("Could not start reconnecting."))
           {:noreply, socket}
       end
     end
@@ -670,7 +681,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
 
     case Finances.create_manual_bank_account(attrs, scope: scope) do
       {:ok, _} ->
-        LiveToast.send_toast(:info, "Konto zostało dodane.")
+        LiveToast.send_toast(:info, gettext("The account has been added."))
 
         accounts = list_bank_accounts(scope)
 
@@ -686,7 +697,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
          |> assign_subscription_preview_if_visible()}
 
       {:error, _} ->
-        LiveToast.send_toast(:error, "Nie udało się dodać konta.")
+        LiveToast.send_toast(:error, gettext("Could not add the account."))
         {:noreply, socket}
     end
   end
@@ -696,7 +707,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
     current_org = socket.assigns.current_org
 
     if current_user.member.role != :admin do
-      raise ForbiddenError, "Tylko administrator może zmienić adres e-mail."
+      raise ForbiddenError, gettext("Only an administrator can change the email address.")
     end
 
     case Core.regenerate_nickname(current_org, scope: socket.assigns.ash_scope) do
@@ -705,7 +716,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
         updated_with_avatar =
           Ash.load!(updated_org, [avatar_blob: [:url]], scope: socket.assigns.ash_scope)
 
-        LiveToast.send_toast(:info, "Nowy adres e-mail został wygenerowany.")
+        LiveToast.send_toast(:info, gettext("A new email address has been generated."))
 
         {:noreply,
          socket
@@ -713,7 +724,11 @@ defmodule FirmowidWeb.Settings.Views.Index do
          |> assign_subscription_preview_if_visible()}
 
       {:error, _} ->
-        LiveToast.send_toast(:error, "Wystąpił błąd podczas generowania nowego adresu.")
+        LiveToast.send_toast(
+          :error,
+          gettext("An error occurred while generating the new address.")
+        )
+
         {:noreply, socket}
     end
   end
@@ -722,7 +737,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
     {:noreply,
      socket
      |> push_event("copy-to-clipboard", %{text: email})
-     |> LiveToast.put_toast(:success, "Skopiowano adres odbiorczy")}
+     |> LiveToast.put_toast(:success, gettext("Receiving address copied"))}
   end
 
   def handle_event("add_allowed_email", %{"email" => email}, socket) do
@@ -730,7 +745,8 @@ defmodule FirmowidWeb.Settings.Views.Index do
     current_org = socket.assigns.current_org
 
     if current_user.member.role != :admin do
-      raise ForbiddenError, "Tylko administrator może zarządzać listą dozwolonych adresów."
+      raise ForbiddenError,
+            gettext("Only an administrator can manage the allowed addresses list.")
     end
 
     case Core.add_sender_email(current_org, %{email: String.trim(email)}, scope: socket.assigns.ash_scope) do
@@ -739,7 +755,10 @@ defmodule FirmowidWeb.Settings.Views.Index do
         updated_with_avatar =
           Ash.load!(updated_org, [avatar_blob: [:url]], scope: socket.assigns.ash_scope)
 
-        LiveToast.send_toast(:info, "Adres e-mail został dodany do listy dozwolonych.")
+        LiveToast.send_toast(
+          :info,
+          gettext("The email address has been added to the allowed list.")
+        )
 
         {:noreply,
          socket
@@ -747,7 +766,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
          |> assign_subscription_preview_if_visible()}
 
       {:error, _} ->
-        LiveToast.send_toast(:error, "Wystąpił błąd podczas dodawania adresu e-mail.")
+        LiveToast.send_toast(:error, gettext("An error occurred while adding the email address."))
         {:noreply, socket}
     end
   end
@@ -757,7 +776,8 @@ defmodule FirmowidWeb.Settings.Views.Index do
     current_org = socket.assigns.current_org
 
     if current_user.member.role != :admin do
-      raise ForbiddenError, "Tylko administrator może zarządzać listą dozwolonych adresów."
+      raise ForbiddenError,
+            gettext("Only an administrator can manage the allowed addresses list.")
     end
 
     case Core.remove_sender_email(current_org, %{email: email}, scope: socket.assigns.ash_scope) do
@@ -766,7 +786,10 @@ defmodule FirmowidWeb.Settings.Views.Index do
         updated_with_avatar =
           Ash.load!(updated_org, [avatar_blob: [:url]], scope: socket.assigns.ash_scope)
 
-        LiveToast.send_toast(:info, "Adres e-mail został usunięty z listy dozwolonych.")
+        LiveToast.send_toast(
+          :info,
+          gettext("The email address has been removed from the allowed list.")
+        )
 
         {:noreply,
          socket
@@ -774,7 +797,11 @@ defmodule FirmowidWeb.Settings.Views.Index do
          |> assign_subscription_preview_if_visible()}
 
       {:error, _} ->
-        LiveToast.send_toast(:error, "Wystąpił błąd podczas usuwania adresu e-mail.")
+        LiveToast.send_toast(
+          :error,
+          gettext("An error occurred while removing the email address.")
+        )
+
         {:noreply, socket}
     end
   end
@@ -828,7 +855,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
 
         LiveToast.send_toast(
           :success,
-          "Kod zaproszenia został wygenerowany i skopiowany do schowka."
+          gettext("The invitation code has been generated and copied to the clipboard.")
         )
 
         {:noreply,
@@ -838,13 +865,13 @@ defmodule FirmowidWeb.Settings.Views.Index do
          |> push_event("copy-to-clipboard", %{text: invite.invite_code})}
 
       {:error, :unknown_role} ->
-        LiveToast.send_toast(:error, "Nieprawidłowa rola.")
+        LiveToast.send_toast(:error, gettext("Invalid role."))
         {:noreply, socket}
     end
   end
 
   def handle_event("copy_organization_invite", %{"code" => invite_code}, socket) do
-    LiveToast.send_toast(:info, "Kod zaproszenia został skopiowany do schowka.")
+    LiveToast.send_toast(:info, gettext("The invitation code has been copied to the clipboard."))
 
     {:noreply, push_event(socket, "copy-to-clipboard", %{text: invite_code})}
   end
@@ -855,7 +882,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
     invite = Core.get_invite!(id, scope: scope)
     Core.destroy_invite!(invite, scope: scope)
 
-    LiveToast.send_toast(:info, "Zaproszenie zostało usunięte.")
+    LiveToast.send_toast(:info, gettext("The invitation has been deleted."))
 
     {:noreply, assign(socket, :organization_invites, list_organization_invites(scope))}
   end
@@ -896,7 +923,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
       {:ok, _user} ->
         {:noreply,
          socket
-         |> put_flash(:info, "Hasło zostało zmienione pomyślnie.")
+         |> put_flash(:info, gettext("The password has been changed successfully."))
          |> push_navigate(to: password_return_path(socket.assigns.settings_tab))}
 
       {:error, form} ->
@@ -916,7 +943,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
         {:noreply, redirect(socket, to: ~p"/auth/user/google")}
 
       {:error, _error} ->
-        LiveToast.send_toast(:error, "Nie udało się zmienić konta Google.")
+        LiveToast.send_toast(:error, gettext("Could not change the Google account."))
         {:noreply, socket}
     end
   end
@@ -926,14 +953,14 @@ defmodule FirmowidWeb.Settings.Views.Index do
 
     case Core.unlink_google_account(user, scope: socket.assigns.ash_scope) do
       {:ok, updated_user} ->
-        LiveToast.send_toast(:info, "Konto Google zostało odłączone.")
+        LiveToast.send_toast(:info, gettext("The Google account has been disconnected."))
         {:noreply, assign(socket, :current_user, updated_user)}
 
       {:error, error} ->
         message =
           case error do
             %{errors: [%{message: msg}]} -> msg
-            _ -> "Wystąpił błąd podczas odłączania konta Google."
+            _ -> gettext("An error occurred while disconnecting the Google account.")
           end
 
         LiveToast.send_toast(:error, message)
@@ -1004,7 +1031,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
         {:noreply, assign(socket, :leave_request_form, to_form(form))}
 
       {:error, _reason} ->
-        LiveToast.send_toast(:error, "Nie udało się wysłać wniosku.")
+        LiveToast.send_toast(:error, gettext("Could not submit the request."))
         {:noreply, socket}
     end
   end
@@ -1038,7 +1065,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
                 )}
              end) do
           {:ok, _contract} ->
-            LiveToast.send_toast(:success, "Umowa została pomyślnie podpisana.")
+            LiveToast.send_toast(:success, gettext("The contract has been signed successfully."))
 
             current_user =
               Core.get_user!(socket.assigns.current_user.id,
@@ -1050,16 +1077,18 @@ defmodule FirmowidWeb.Settings.Views.Index do
             {:noreply, refresh_profile_assigns(socket, current_user)}
 
           {:error, _error} ->
-            LiveToast.send_toast(:error, "Nie udało się przesłać umowy. Spróbuj ponownie.")
+            LiveToast.send_toast(:error, gettext("Could not upload the contract. Try again."))
             {:noreply, socket}
         end
 
       {_, [_ | _]} ->
-        LiveToast.send_toast(:error, "Plik jest jeszcze przesyłany.", title: "Błąd przesyłania")
+        LiveToast.send_toast(:error, gettext("The file is still being uploaded."), title: gettext("Upload error"))
+
         {:noreply, socket}
 
       {[], []} ->
-        LiveToast.send_toast(:error, "Wybierz plik do przesłania.", title: "Brak pliku")
+        LiveToast.send_toast(:error, gettext("Choose a file to upload."), title: gettext("No file"))
+
         {:noreply, socket}
     end
   end
@@ -1127,16 +1156,16 @@ defmodule FirmowidWeb.Settings.Views.Index do
     {toast_type, message} =
       case action do
         :accept ->
-          {:success, "Konto bankowe zostało pomyślnie połączone!"}
+          {:success, gettext("The bank account has been connected successfully!")}
 
         :reject ->
-          {:error, "Połączenie z bankiem zostało odrzucone. Spróbuj ponownie."}
+          {:error, gettext("The bank connection was rejected. Try again.")}
 
         :handle_check_error ->
-          {:error, "Wystąpił błąd podczas łączenia konta bankowego. Spróbuj ponownie."}
+          {:error, gettext("An error occurred while connecting the bank account. Try again.")}
 
         _ ->
-          {:info, "Status połączenia z bankiem został zaktualizowany."}
+          {:info, gettext("The bank connection status has been updated.")}
       end
 
     LiveToast.send_toast(toast_type, message)
@@ -1196,7 +1225,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
         },
         socket
       ) do
-    LiveToast.send_toast(:error, notification.data.original_filename, title: "Nie udało się wgrać pliku")
+    LiveToast.send_toast(:error, notification.data.original_filename, title: gettext("Could not upload the file"))
 
     send_update(DocumentsSection, id: "profile-documents", refetch: true)
     {:noreply, socket}
@@ -1216,8 +1245,11 @@ defmodule FirmowidWeb.Settings.Views.Index do
       ) do
     LiveToast.send_toast(
       :error,
-      "Plik #{notification.data.original_filename} nie zawiera wymaganych danych. Upewnij się, że wgrywasz umowę.",
-      title: "Nieprawidłowy dokument"
+      gettext(
+        "File %{filename} does not contain the required data. Make sure you are uploading a contract.",
+        filename: notification.data.original_filename
+      ),
+      title: gettext("Invalid document")
     )
 
     send_update(DocumentsSection, id: "profile-documents", refetch: true)

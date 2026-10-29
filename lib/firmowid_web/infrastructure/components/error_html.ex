@@ -18,12 +18,12 @@ defmodule FirmowidWeb.Infrastructure.Components.ErrorHtml do
       <main class="flex flex-1 items-center justify-center p-8">
         <div class="max-w-md text-center">
           <p class="mb-2 text-3xl font-extrabold text-black/20">404</p>
-          <h1 class="mb-2 text-xl font-bold">Nie znaleziono strony</h1>
+          <h1 class="mb-2 text-xl font-bold">{gettext("Page not found")}</h1>
           <p class="mb-6 text-sm text-black/50">
-            Strona, której szukasz, nie istnieje lub została przeniesiona.
+            {gettext("The page you are looking for does not exist or has been moved.")}
           </p>
           <.link kind="unstyled" navigate={~p"/"} class="text-sm underline">
-            Wróć do strony głównej
+            {gettext("Back to the home page")}
           </.link>
         </div>
       </main>
@@ -40,12 +40,14 @@ defmodule FirmowidWeb.Infrastructure.Components.ErrorHtml do
       <main class="flex flex-1 items-center justify-center p-8">
         <div class="max-w-md text-center">
           <p class="mb-2 text-3xl font-extrabold text-black/20">500</p>
-          <h1 class="mb-2 text-xl font-bold">Wystąpił błąd serwera</h1>
+          <h1 class="mb-2 text-xl font-bold">{gettext("A server error occurred")}</h1>
           <p class="mb-6 text-sm text-black/50">
-            Błąd został automatycznie zgłoszony — nasz zespół zajmie się nim jak najszybciej.
+            {gettext(
+              "The error has been reported automatically — our team will look into it as soon as possible."
+            )}
           </p>
           <.link kind="unstyled" navigate={~p"/"} class="text-sm underline">
-            Wróć do strony głównej
+            {gettext("Back to the home page")}
           </.link>
         </div>
       </main>

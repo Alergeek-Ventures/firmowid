@@ -4,6 +4,7 @@ defmodule FirmowidWeb.Infrastructure.Hooks.RequireSuperuser do
   """
 
   use FirmowidWeb, :verified_routes
+  use Gettext, backend: Firmowid.Gettext
 
   import Phoenix.LiveView
 
@@ -16,7 +17,7 @@ defmodule FirmowidWeb.Infrastructure.Hooks.RequireSuperuser do
     else
       {:halt,
        socket
-       |> LiveToast.put_toast(:error, "Nie masz dostępu do tej sekcji.")
+       |> LiveToast.put_toast(:error, gettext("You do not have access to this section."))
        |> redirect(to: ~p"/")}
     end
   end
@@ -24,7 +25,7 @@ defmodule FirmowidWeb.Infrastructure.Hooks.RequireSuperuser do
   def on_mount(:default, _params, _session, socket) do
     {:halt,
      socket
-     |> LiveToast.put_toast(:notice, "Musisz się zalogować.")
+     |> LiveToast.put_toast(:notice, gettext("You must log in."))
      |> redirect(to: ~p"/zaloguj")}
   end
 end

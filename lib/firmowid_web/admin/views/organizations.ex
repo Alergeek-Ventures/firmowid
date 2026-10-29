@@ -34,7 +34,7 @@ defmodule FirmowidWeb.Admin.Views.Organizations do
   def mount(_params, _session, socket) do
     {:ok,
      socket
-     |> assign(:page_title, "Rozliczenia")
+     |> assign(:page_title, gettext("Settlements"))
      |> assign(:params, %{})
      |> assign(:search, "")
      |> assign(:plan_filter, nil)
@@ -142,7 +142,7 @@ defmodule FirmowidWeb.Admin.Views.Organizations do
                 type="text"
                 name="szukaj"
                 value={@search}
-                placeholder="Szukaj organizacji"
+                placeholder={gettext("Search organizations")}
                 phx-change="search"
                 phx-debounce="300"
                 input_class="h-full bg-transparent! border-none py-0 px-1 text-sm"
@@ -155,7 +155,7 @@ defmodule FirmowidWeb.Admin.Views.Organizations do
         <div class="flex flex-wrap items-center justify-between gap-4">
           <div class="flex flex-wrap items-center gap-6">
             <div class="flex items-center gap-3">
-              <span class="text-sm font-normal text-grey-700/70">Filtry:</span>
+              <span class="text-sm font-normal text-grey-700/70">{gettext("Filters:")}</span>
 
               <div class="flex flex-wrap items-center gap-2">
                 <.button
@@ -173,7 +173,7 @@ defmodule FirmowidWeb.Admin.Views.Organizations do
           </div>
           <.switch
             class="ml-auto flex-row-reverse gap-4 select-none"
-            label="Tylko ponad limit"
+            label={gettext("Only over the limit")}
             field={@form[:tylko_nadwyzki]}
             phx-click="toggle_over_limit"
           />
@@ -183,17 +183,17 @@ defmodule FirmowidWeb.Admin.Views.Organizations do
       <%= if Enum.empty?(@rows) do %>
         <p class="text-sm/snug text-grey-700">
           <%= if @search != "" or not is_nil(@plan_filter) or @only_over_limit? do %>
-            Nie znaleziono organizacji dla wybranych filtrów.
+            {gettext("No organizations found for the selected filters.")}
           <% else %>
-            Brak organizacji do wyświetlenia.
+            {gettext("No organizations to display.")}
           <% end %>
         </p>
       <% else %>
         <div class="hidden gap-x-6 px-4 text-sm/snug text-grey-700 lg:grid lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.4fr)_auto]">
-          <p>Organizacja</p>
-          <p>Plan</p>
-          <p>Od kiedy</p>
-          <p>Użycie</p>
+          <p>{gettext("Organization")}</p>
+          <p>{gettext("Plan")}</p>
+          <p>{gettext("Since")}</p>
+          <p>{gettext("Usage")}</p>
           <span />
         </div>
 
@@ -219,16 +219,18 @@ defmodule FirmowidWeb.Admin.Views.Organizations do
               <p class="font-medium">{row.worksheet.selected_plan_label}</p>
               <p class="text-grey-700">
                 <%= if row.worksheet.base_fee_line do %>
-                  {row.worksheet.base_fee_line.amount} / mies.
+                  {gettext("%{amount} / mo.", amount: row.worksheet.base_fee_line.amount)}
                 <% else %>
-                  Brak opłaty bazowej
+                  {gettext("No base fee")}
                 <% end %>
               </p>
             </div>
 
             <div class="space-y-1 text-sm/snug">
               <p>{format_date(row.started_on)}</p>
-              <p class="text-grey-700">{row.age_days} dni</p>
+              <p class="text-grey-700">
+                {pngettext("organization age", "%{count} day", "%{count} days", row.age_days)}
+              </p>
             </div>
 
             <div class="space-y-1 text-sm/snug">
@@ -243,9 +245,9 @@ defmodule FirmowidWeb.Admin.Views.Organizations do
               </div>
               <p class="text-grey-700">
                 <%= if row.worksheet.suggestion_rows == [] do %>
-                  Brak nadwyżek
+                  {gettext("No overages")}
                 <% else %>
-                  Nadwyżki: {length(row.worksheet.suggestion_rows)}
+                  {gettext("Overages: %{count}", count: length(row.worksheet.suggestion_rows))}
                 <% end %>
               </p>
             </div>
@@ -272,7 +274,7 @@ defmodule FirmowidWeb.Admin.Views.Organizations do
           phx-click="show_more"
           class="mt-4 w-full self-center"
         >
-          Pokaż więcej
+          {gettext("Show more")}
         </.button>
       <% end %>
     </div>

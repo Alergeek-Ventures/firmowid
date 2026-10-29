@@ -14,15 +14,15 @@ defmodule FirmowidWeb.Auth.Views.Registration do
     ~H"""
     <div class="mx-auto max-w-sm">
       <.header class="text-center">
-        Zarejestruj się
+        {gettext("Sign up")}
         <:subtitle>
-          Masz już konto?
+          {gettext("Already have an account?")}
           <.link
             kind="unstyled"
             navigate={~p"/zaloguj"}
             class="font-semibold text-rust-700 hover:underline"
           >
-            Zaloguj się
+            {gettext("Log in")}
           </.link>
         </:subtitle>
       </.header>
@@ -37,15 +37,20 @@ defmodule FirmowidWeb.Auth.Views.Registration do
         method="post"
       >
         <.error :if={@check_errors and not @form.source.valid?}>
-          Coś poszło nie tak...
+          {gettext("Something went wrong...")}
         </.error>
 
-        <.input field={@form[:email]} type="email" label="Email" required />
-        <.input field={@form[:password]} type="password" label="Hasło" required />
+        <.input field={@form[:email]} type="email" label={gettext("Email")} required />
+        <.input
+          field={@form[:password]}
+          type="password"
+          label={gettext("Password")}
+          required
+        />
 
         <:actions>
-          <.button variant="special" phx-disable-with="Tworzenie konta..." class="w-full">
-            Stwórz konto
+          <.button variant="special" phx-disable-with={gettext("Creating account...")} class="w-full">
+            {gettext("Create account")}
           </.button>
         </:actions>
       </.simple_form>
@@ -55,7 +60,7 @@ defmodule FirmowidWeb.Auth.Views.Registration do
           <div class="w-full border-t border-grey-200"></div>
         </div>
         <div class="relative flex justify-center text-sm">
-          <span class="bg-white px-2 text-grey-600">lub</span>
+          <span class="bg-white px-2 text-grey-600">{gettext("or")}</span>
         </div>
       </div>
 
@@ -84,7 +89,7 @@ defmodule FirmowidWeb.Auth.Views.Registration do
             fill="#EA4335"
           />
         </svg>
-        Zarejestruj się przez Google
+        {gettext("Sign up with Google")}
       </.link>
     </div>
     """

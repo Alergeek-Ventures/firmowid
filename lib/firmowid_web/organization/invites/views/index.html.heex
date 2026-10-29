@@ -1,8 +1,8 @@
 <div class="flex flex-col items-center gap-8">
   <.header class="mx-auto w-full max-w-[1024px]">
-    Zaproszenia do Twojej organizacji
+    {gettext("Invitations to your organization")}
     <:actions>
-      <.button phx-click="create">Przygotuj zaproszenie</.button>
+      <.button phx-click="create">{gettext("Prepare invitation")}</.button>
     </:actions>
   </.header>
 
@@ -11,22 +11,22 @@
     rows={@organization_invites}
     class="mx-auto w-full max-w-[1024px] border-separate border-spacing-y-2"
   >
-    <:col :let={organization_invite} label="Data">
+    <:col :let={organization_invite} label={gettext("Date")}>
       <%= if is_nil(organization_invite.consumed_at) do %>
         {organization_invite.expires_at |> Calendar.strftime("%Y-%m-%d")}
       <% else %>
         {organization_invite.consumed_at |> Calendar.strftime("%Y-%m-%d")}
       <% end %>
     </:col>
-    <:col :let={organization_invite} label="Kod zaproszenia">
+    <:col :let={organization_invite} label={gettext("Invitation code")}>
       <code class="rounded-md bg-teal-800 p-2 text-white">
         {organization_invite.invite_code}
       </code>
     </:col>
-    <:col :let={organization_invite} label="Wydane przez">
+    <:col :let={organization_invite} label={gettext("Issued by")}>
       {organization_invite.issued_by.email}
     </:col>
-    <:col :let={organization_invite} label="Wykorzystane przez">
+    <:col :let={organization_invite} label={gettext("Used by")}>
       <%= if is_nil(organization_invite.consumed_by) do %>
         -
       <% else %>
@@ -38,9 +38,9 @@
         type="button"
         variant="outline"
         phx-click={JS.push("delete", value: %{id: organization_invite.id})}
-        data-confirm="Jesteś pewny?"
+        data-confirm={gettext("Are you sure?")}
       >
-        Usuń
+        {gettext("Delete")}
       </.button>
     </:action>
   </.table>

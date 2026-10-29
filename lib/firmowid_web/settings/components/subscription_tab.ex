@@ -21,16 +21,18 @@ defmodule FirmowidWeb.Settings.Components.SubscriptionTab do
         <section class="space-y-4">
           <div class="space-y-2">
             <h2 class="min-h-8 text-base leading-none font-semibold text-grey-900">
-              Aktualny plan
+              {gettext("Current plan")}
             </h2>
 
             <p class="max-w-prose text-sm/snug text-grey-700">
-              Plan przypisany do Twojej organizacji oraz limity, które obejmuje miesięczny snapshot rozliczeniowy.
+              {gettext(
+                "The plan assigned to your organization and the limits covered by the monthly billing snapshot."
+              )}
             </p>
           </div>
 
           <div class="grid gap-4 sm:grid-cols-2">
-            <Helpers.settings_display_field label="Plan">
+            <Helpers.settings_display_field label={gettext("Plan")}>
               <div class="flex flex-wrap items-center gap-2">
                 <span>{@worksheet.selected_plan_label}</span>
 
@@ -40,23 +42,27 @@ defmodule FirmowidWeb.Settings.Components.SubscriptionTab do
               </div>
             </Helpers.settings_display_field>
 
-            <Helpers.settings_display_field label="Miesięczna opłata bazowa">
+            <Helpers.settings_display_field label={gettext("Monthly base fee")}>
               <%= if @worksheet.base_fee_line do %>
                 {@worksheet.base_fee_line.amount}
               <% else %>
-                Brak opłaty bazowej
+                {gettext("No base fee")}
               <% end %>
             </Helpers.settings_display_field>
           </div>
 
           <div class="space-y-3 rounded-lg bg-grey-50 p-4">
-            <h3 class="text-sm leading-none font-medium text-grey-900">W cenie planu</h3>
+            <h3 class="text-sm leading-none font-medium text-grey-900">
+              {gettext("Included in the plan")}
+            </h3>
 
             <div class="space-y-3">
               <%= for row <- @worksheet.usage_rows do %>
                 <div class="flex items-start justify-between gap-4 text-sm/snug">
                   <p class="min-w-0 text-grey-900">{row.label}</p>
-                  <p class="shrink-0 text-right text-grey-700">W cenie: {row.included_units}</p>
+                  <p class="shrink-0 text-right text-grey-700">
+                    {gettext("Included in the price: %{units}", units: row.included_units)}
+                  </p>
                 </div>
               <% end %>
             </div>
@@ -73,7 +79,9 @@ defmodule FirmowidWeb.Settings.Components.SubscriptionTab do
             :if={@worksheet.suggestion_rows != []}
             class="space-y-3 rounded-lg bg-rust-100 p-4"
           >
-            <h3 class="text-sm leading-none font-medium text-grey-900">Aktualne nadwyżki</h3>
+            <h3 class="text-sm leading-none font-medium text-grey-900">
+              {gettext("Current overages")}
+            </h3>
 
             <div class="space-y-3">
               <%= for row <- @worksheet.suggestion_rows do %>
@@ -95,15 +103,20 @@ defmodule FirmowidWeb.Settings.Components.SubscriptionTab do
             :if={@worksheet.suggestion_rows == []}
             class="rounded-lg bg-grey-50 p-4 text-sm leading-[1.35] text-grey-700"
           >
-            Brak dodatkowych nadwyżek względem planu w bieżącym miesiącu.
+            {gettext("No additional overages compared to the plan in the current month.")}
           </div>
         </section>
 
         <section class="space-y-4">
           <div class="space-y-2">
-            <h2 class="text-base leading-none font-semibold text-grey-900">Bieżące liczniki</h2>
+            <h2 class="text-base leading-none font-semibold text-grey-900">
+              {gettext("Current counters")}
+            </h2>
             <p class="max-w-prose text-sm/snug text-grey-700">
-              Orientacyjny podgląd na żywo dla {month_label(@month)}. Dane liczymy według tej samej logiki miesiąca rozliczeniowego, z której powstaje snapshot, ale ostateczne rozliczenie opiera się wyłącznie na utrwalonym snapshotcie.
+              {gettext(
+                "An indicative live preview for %{month}. We calculate the data with the same billing month logic from which the snapshot is created, but the final settlement is based solely on the recorded snapshot.",
+                month: month_label(@month)
+              )}
             </p>
           </div>
 
@@ -120,7 +133,7 @@ defmodule FirmowidWeb.Settings.Components.SubscriptionTab do
                     <div class="shrink-0 text-right">
                       <p class="font-medium text-grey-900">{row.total_text}</p>
                       <p :if={row.over_limit > 0} class="text-rust-700">
-                        +{row.over_limit} ponad limit
+                        {gettext("+%{count} over the limit", count: row.over_limit)}
                       </p>
                     </div>
                   </div>
@@ -134,7 +147,7 @@ defmodule FirmowidWeb.Settings.Components.SubscriptionTab do
                   </div>
 
                   <div class="flex items-center justify-between gap-4 text-xs/snug text-grey-700">
-                    <span>W cenie: {row.included_units}</span>
+                    <span>{gettext("Included in the price: %{units}", units: row.included_units)}</span>
                     <span>{row.usage_text}</span>
                   </div>
                 </div>
@@ -145,7 +158,7 @@ defmodule FirmowidWeb.Settings.Components.SubscriptionTab do
       </div>
     <% else %>
       <div class="rounded-lg bg-grey-50 p-4 text-sm leading-[1.35] text-grey-700">
-        Ten podgląd jest dostępny tylko dla właściciela organizacji.
+        {gettext("This preview is available only to the organization owner.")}
       </div>
     <% end %>
     """
@@ -153,16 +166,16 @@ defmodule FirmowidWeb.Settings.Components.SubscriptionTab do
 
   defp month_label(%Date{} = month), do: Calendar.strftime(month, "%m.%Y")
 
-  defp counter_context(:synced_bank_accounts), do: "Aktualnie podłączone konta z synchronizacją."
+  defp counter_context(:synced_bank_accounts), do: gettext("Currently connected accounts with synchronization.")
 
-  defp counter_context(:active_non_owner_users), do: "Aktywni użytkownicy organizacji poza właścicielem."
+  defp counter_context(:active_non_owner_users), do: gettext("Active organization users other than the owner.")
 
   defp counter_context(:manual_external_invoices) do
-    "Dokumenty dodane ręcznie w bieżącym miesiącu rozliczeniowym."
+    gettext("Documents added manually in the current billing month.")
   end
 
-  defp plan_badge_label(:no_plan), do: "brak planu"
-  defp plan_badge_label(_plan), do: "aktywny"
+  defp plan_badge_label(:no_plan), do: gettext("no plan")
+  defp plan_badge_label(_plan), do: gettext("active")
 
   defp plan_badge_styles(:no_plan), do: "rounded-full bg-grey-200 px-3 py-1 text-sm/tight text-grey-700"
 

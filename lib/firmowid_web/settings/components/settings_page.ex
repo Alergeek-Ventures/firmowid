@@ -23,15 +23,21 @@ defmodule FirmowidWeb.Settings.Components.SettingsPage do
   slot :inner_block, required: true
 
   def settings_page(assigns) do
+    [greeting_before, greeting_after] =
+      "Hi, %{name}!"
+      |> gettext(name: "__NAME__")
+      |> String.split("__NAME__", parts: 2)
+
     assigns =
-      assign(
-        assigns,
+      assigns
+      |> assign(
         :tabs,
         Navigation.tabs_for(%{
           current_user: assigns.current_user,
           current_org: assigns.current_org
         })
       )
+      |> assign(greeting_before: greeting_before, greeting_after: greeting_after)
 
     ~H"""
     <section class="container flex max-w-7xl flex-col gap-6 py-8 lg:gap-10 lg:py-10">
@@ -41,7 +47,7 @@ defmodule FirmowidWeb.Settings.Components.SettingsPage do
             <.live_file_input
               upload={@user_avatar_upload}
               class="peer sr-only"
-              aria-label="Zmień zdjęcie profilowe"
+              aria-label={gettext("Change profile picture")}
             />
 
             <.avatar class="hidden size-32 rounded-full border border-grey-100 bg-grey-100 lg:block">
@@ -62,9 +68,9 @@ defmodule FirmowidWeb.Settings.Components.SettingsPage do
               type="button"
               variant="outline"
               size="small"
-              aria-label="Zmień zdjęcie profilowe"
+              aria-label={gettext("Change profile picture")}
               phx-hook="Tippy"
-              data-tippy-content="Zmień zdjęcie profilowe"
+              data-tippy-content={gettext("Change profile picture")}
               data-tippy-delay="100"
               class="absolute -right-1 -bottom-1 size-10 rounded-full p-0 shadow-sm max-lg:hidden"
             >
@@ -74,7 +80,7 @@ defmodule FirmowidWeb.Settings.Components.SettingsPage do
 
           <div class="flex flex-col gap-2">
             <h1 class="text-2xl font-medium text-grey-900">
-              Cześć, <span class="font-bold">{@current_user.member.name || "użytkowniku"}</span>!
+              {@greeting_before}<span class="font-bold">{@current_user.member.name || pgettext("greeting fallback", "user")}</span>{@greeting_after}
             </h1>
             <p class="text-grey-700">{@current_user.email}</p>
           </div>
@@ -89,7 +95,7 @@ defmodule FirmowidWeb.Settings.Components.SettingsPage do
             <.live_file_input
               upload={@organization_avatar_upload}
               class="peer sr-only"
-              aria-label="Zmień logo organizacji"
+              aria-label={gettext("Change organization logo")}
             />
           </form>
 
@@ -113,9 +119,9 @@ defmodule FirmowidWeb.Settings.Components.SettingsPage do
             type="button"
             variant="outline"
             size="small"
-            aria-label="Zmień logo organizacji"
+            aria-label={gettext("Change organization logo")}
             phx-hook="Tippy"
-            data-tippy-content="Zmień logo organizacji"
+            data-tippy-content={gettext("Change organization logo")}
             data-tippy-delay="100"
             class="absolute -right-4 -bottom-2 size-10 rounded-full p-0 shadow-sm"
           >

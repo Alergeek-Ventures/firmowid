@@ -53,7 +53,7 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
           editing_basic_info={@editing_basic_info}
         />
 
-        <.company_section title="Integracja z KSeF">
+        <.company_section title={gettext("KSeF integration")}>
           <.ksef_connection
             ksef_credential={@ksef_credential}
             ksef_auth_method={@ksef_auth_method}
@@ -141,9 +141,9 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
   defp company_basic_info_section(assigns) do
     ~H"""
     <.company_section
-      title="Dane firmy"
+      title={gettext("Company details")}
       action={if(!@editing_basic_info, do: "toggle_editing_basic_info")}
-      action_label="Edytuj dane firmy"
+      action_label={gettext("Edit company details")}
     >
       <%= if @editing_basic_info do %>
         <.form
@@ -153,11 +153,11 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
           class="space-y-4"
         >
           <div class="space-y-2">
-            <.row_input field={@company_form[:name]} label="Nazwa" type="text" />
+            <.row_input field={@company_form[:name]} label={gettext("Name")} type="text" />
             <.row_input field={@company_form[:nip]} label="NIP" type="text" />
 
             <Helpers.settings_field
-              label="Płatnik VAT"
+              label={gettext("VAT payer")}
               layout={:row}
               block_class="flex items-center my-1"
               for={@company_form[:is_vat_payer].id}
@@ -166,7 +166,7 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
             </Helpers.settings_field>
             <%= if @company_form[:is_vat_payer].value not in [true, "true"] do %>
               <Helpers.settings_field
-                label="Zwolnienie z VAT"
+                label={gettext("VAT exemption")}
                 layout={:row}
                 block_class="flex items-center"
                 for={@company_form[:vat_exemption_type].id}
@@ -181,7 +181,7 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
 
               <%= if to_string(@company_form[:vat_exemption_type].value) == "other" do %>
                 <Helpers.settings_field
-                  label="Podstawa prawna zwolnienia z VAT"
+                  label={gettext("Legal basis for the VAT exemption")}
                   layout={:row}
                   for={@company_form[:vat_exemption_basis].id}
                 >
@@ -202,13 +202,13 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
             <% end %>
             <.row_input
               field={@company_form[:address]}
-              label="Adres"
+              label={gettext("Address")}
               type="textarea"
               label_class="pt-1.5 self-start"
             />
 
             <Helpers.settings_field
-              label="Adres korespondencyjny jest taki sam jak adres firmy"
+              label={gettext("The correspondence address is the same as the company address")}
               label_class="max-w-50 ml-auto"
               layout={:row}
               for={@company_form[:is_same_correspondence_address].id}
@@ -226,7 +226,7 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
                 ) do %>
               <.row_input
                 field={@company_form[:correspondence_address]}
-                label="Adres korespondencyjny"
+                label={gettext("Correspondence address")}
                 type="textarea"
                 label_class="pt-1.5 self-start"
               />
@@ -240,27 +240,33 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
               size="small"
               phx-click="toggle_editing_basic_info"
             >
-              Anuluj
+              {gettext("Cancel")}
             </.button>
-            <.button type="submit" variant="success" size="small">Zapisz</.button>
+            <.button type="submit" variant="success" size="small">
+              {gettext("Save")}
+            </.button>
           </div>
         </.form>
       <% else %>
         <div class="space-y-2">
-          <.detail_row label="Nazwa" wide>{present(@current_org.name)}</.detail_row>
+          <.detail_row label={gettext("Name")} wide>{present(@current_org.name)}</.detail_row>
           <.detail_row label="NIP" wide>{present(@current_org.nip)}</.detail_row>
-          <.detail_row label="Płatnik VAT" wide>{yes_no(@current_org.is_vat_payer)}</.detail_row>
+          <.detail_row label={gettext("VAT payer")} wide>
+            {yes_no(@current_org.is_vat_payer)}
+          </.detail_row>
           <.detail_row
             :if={exemption = present_vat_exemption(@current_org)}
-            label="Zwolnienie z VAT"
+            label={gettext("VAT exemption")}
             wide
           >
             {exemption}
           </.detail_row>
-          <.detail_row label="Adres" wide>{multiline_address(@current_org.address)}</.detail_row>
+          <.detail_row label={gettext("Address")} wide>
+            {multiline_address(@current_org.address)}
+          </.detail_row>
           <.detail_row
             :if={@current_org.correspondence_address not in [nil, ""]}
-            label="Adres korespondencyjny"
+            label={gettext("Correspondence address")}
             wide
           >
             {multiline_address(@current_org.correspondence_address)}
@@ -283,7 +289,9 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
       <.pending_requisition_banner :if={Enum.any?(@pending_requisitions)} />
 
       <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <h2 class="text-base leading-none font-semibold text-grey-900">Konta bankowe</h2>
+        <h2 class="text-base leading-none font-semibold text-grey-900">
+          {gettext("Bank accounts")}
+        </h2>
 
         <div class="flex flex-wrap items-center gap-2.5">
           <.button
@@ -292,7 +300,7 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
             size="small"
             phx-click={show_modal("manual_bank_account_modal_company")}
           >
-            Dodaj ręcznie
+            {gettext("Add manually")}
           </.button>
           <.link
             kind="button"
@@ -300,13 +308,13 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
             size="small"
             navigate={~p"/ustawienia/bank/dodaj"}
           >
-            Nowe konto
+            {gettext("New account")}
           </.link>
         </div>
       </div>
 
       <div :if={Enum.empty?(@bank_accounts)} class="text-sm leading-[1.35] text-grey-700">
-        Nie dodano jeszcze żadnych kont bankowych.
+        {gettext("No bank accounts have been added yet.")}
       </div>
 
       <div
@@ -335,8 +343,12 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
         </span>
 
         <div class="space-y-1 text-sm leading-[1.35] text-grey-900">
-          <p class="font-medium">Trwa konfiguracja połączenia bankowego.</p>
-          <p>Konto pojawi się na liście po zakończeniu autoryzacji i pierwszej synchronizacji.</p>
+          <p class="font-medium">{gettext("The bank connection is being set up.")}</p>
+          <p>
+            {gettext(
+              "The account will appear on the list after authorization and the first synchronization finish."
+            )}
+          </p>
         </div>
       </div>
     </section>
@@ -359,7 +371,9 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
       class="col-span-2 space-y-4"
     >
       <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-        <h2 class="text-base/normal font-semibold text-grey-900">Członkowie organizacji</h2>
+        <h2 class="text-base/normal font-semibold text-grey-900">
+          {gettext("Organization members")}
+        </h2>
 
         <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
           <.button
@@ -371,7 +385,7 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
             aria-checked={to_string(@show_active_invites)}
             class="inline-flex h-11 items-center justify-between gap-3 rounded-lg bg-white px-3 text-sm font-medium text-grey-700 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-rust-700"
           >
-            <span>Aktywne zaproszenia</span>
+            <span>{gettext("Active invitations")}</span>
             <span class={invite_toggle_track_styles(@show_active_invites)}>
               <span class={invite_toggle_thumb_styles(@show_active_invites)}></span>
             </span>
@@ -382,7 +396,7 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
             size="small"
             phx-click={show_modal("organization_invite_modal")}
           >
-            Wygeneruj zaproszenie
+            {gettext("Generate invitation")}
           </.button>
         </div>
       </div>
@@ -395,7 +409,7 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
           :if={@active_invites == []}
           class="flex min-h-96 items-center justify-center text-sm leading-[1.35] text-grey-700"
         >
-          Brak aktywnych zaproszeń.
+          {gettext("No active invitations.")}
         </div>
 
         <div :if={@active_invites != []} class="space-y-6">
@@ -404,7 +418,7 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
             class="grid grid-cols-[minmax(0,1fr)_1fr_auto] items-center gap-4 rounded-lg"
           >
             <p class="text-sm">
-              <span class="text-grey-500">Wygenerowano:</span> {TimeFormatter.format_date(
+              <span class="text-grey-500">{gettext("Generated:")}</span> {TimeFormatter.format_date(
                 invite.inserted_at
               )} | {invite_issuer(invite)}
             </p>
@@ -473,7 +487,9 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
               <.dropdown :if={user.id != @current_user.id} id={"organization_user_#{user.id}"}>
                 <:trigger>
                   <span class="flex size-10 items-center justify-center rounded-lg text-grey-700 transition hover:bg-grey-100">
-                    <span class="sr-only">Opcje użytkownika {present(user.email)}</span>
+                    <span class="sr-only">
+                      {gettext("User options for %{email}", email: present(user.email))}
+                    </span>
                     <.icon name="hero-ellipsis-vertical" class="size-6" />
                   </span>
                 </:trigger>
@@ -486,7 +502,7 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
                     phx-value-user_id={user.id}
                     class={menu_item_styles()}
                   >
-                    Zmień rolę
+                    {gettext("Change role")}
                   </.button>
 
                   <.link
@@ -494,7 +510,7 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
                     navigate={~p"/zarzadzanie/pracownicy/#{user.id}"}
                     class={menu_item_styles()}
                   >
-                    Pokaż profil
+                    {gettext("Show profile")}
                   </.link>
 
                   <.button
@@ -504,7 +520,7 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
                     phx-value-user_id={user.id}
                     class={["text-brick-800 hover:bg-brick-100", menu_item_styles()]}
                   >
-                    Archiwizuj
+                    {gettext("Archive")}
                   </.button>
                 </div>
               </.dropdown>
@@ -526,6 +542,15 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
   attr :status, :atom, default: nil
 
   defp bank_card(assigns) do
+    assigns =
+      assign(assigns,
+        default_parts:
+          "Default %{currency}"
+          |> gettext(currency: "__CURRENCY__")
+          |> String.split("__CURRENCY__", parts: 2)
+          |> List.to_tuple()
+      )
+
     ~H"""
     <article
       id={"konto-bankowe-#{@account.id}"}
@@ -539,7 +564,10 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
               :if={@account.is_default}
               class="rounded-full bg-moss-100 px-4 py-1 text-sm text-moss-700"
             >
-              Domyślne <span class="font-semibold">{present(@account.currency)}</span>
+              {elem(@default_parts, 0)}<span class="font-semibold">{present(@account.currency)}</span>{elem(
+                @default_parts,
+                1
+              )}
             </span>
             <span
               :if={!@account.is_default}
@@ -570,7 +598,7 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
                 phx-click={show_modal("rename_bank_account_#{@account.id}")}
                 class={menu_item_styles()}
               >
-                Zmień nazwę
+                {gettext("Rename")}
               </.button>
 
               <.button
@@ -581,7 +609,7 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
                 phx-value-account_id={@account.id}
                 class={menu_item_styles()}
               >
-                Połącz ponownie
+                {gettext("Reconnect")}
               </.button>
 
               <.button
@@ -592,7 +620,7 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
                 phx-value-account_id={@account.id}
                 class={menu_item_styles()}
               >
-                Domyślne dla {present(@account.currency)}
+                {gettext("Default for %{currency}", currency: present(@account.currency))}
               </.button>
 
               <.button
@@ -601,7 +629,7 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
                 phx-click={show_modal("confirm_delete_bank_account_#{@account.id}")}
                 class={["text-brick-700 hover:bg-brick-100", menu_item_styles()]}
               >
-                Usuń
+                {gettext("Delete")}
               </.button>
             </div>
           </.dropdown>
@@ -609,16 +637,18 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
       </div>
 
       <div class="grid grid-cols-[max-content_1fr] items-center gap-x-6 gap-y-3">
-        <.bank_detail_row :if={!is_nil(@account.name)} label="Nazwa">
+        <.bank_detail_row :if={!is_nil(@account.name)} label={gettext("Name")}>
           {present(@account.name)}
         </.bank_detail_row>
-        <.bank_detail_row label="Bank">{present(@account.institution_name)}</.bank_detail_row>
-        <.bank_detail_row label="Numer">
+        <.bank_detail_row label={gettext("Bank")}>
+          {present(@account.institution_name)}
+        </.bank_detail_row>
+        <.bank_detail_row label={gettext("Number")}>
           <span class="break-all">{format_iban(@account.iban)}</span>
         </.bank_detail_row>
-        <.bank_detail_row :if={@status} label="Status">
+        <.bank_detail_row :if={@status} label={gettext("Status")}>
           <span :if={@status in [:broken, :disconnected]} class="inline-flex items-center gap-1.5">
-            <span class="font-medium text-brick-800">Konto rozłączone</span>
+            <span class="font-medium text-brick-800">{gettext("Account disconnected")}</span>
           </span>
 
           <span :if={@status not in [:broken, :disconnected]} class="inline-flex items-center gap-2">
@@ -634,10 +664,10 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
             class="w-full"
             phx-click="reconnect_bank_account"
             phx-value-account_id={@account.id}
-            aria-label="Połącz ponownie konto"
+            aria-label={gettext("Reconnect account")}
           >
             <Lucideicons.unplug class="size-4" />
-            <span class="inline-flex">Połącz ponownie</span>
+            <span class="inline-flex">{gettext("Reconnect")}</span>
           </.button>
         </div>
       </div>
@@ -649,7 +679,7 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
         <.input
           name="name"
           id={"rename_bank_account_name_#{@account.id}"}
-          label="Nowa nazwa"
+          label={gettext("New name")}
           value={@account.name}
         />
 
@@ -660,7 +690,7 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
             size="small"
             phx-click={hide_modal("rename_bank_account_#{@account.id}")}
           >
-            Anuluj
+            {gettext("Cancel")}
           </.button>
 
           <.button
@@ -668,18 +698,22 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
             variant="success"
             size="small"
             phx-click={hide_modal("rename_bank_account_#{@account.id}")}
-            phx-disable-with="Zapisywanie..."
+            phx-disable-with={pgettext("settings", "Saving...")}
           >
-            Zapisz
+            {gettext("Save")}
           </.button>
         </div>
       </.form>
     </.modal>
 
     <.modal id={"confirm_delete_bank_account_#{@account.id}"}>
-      <h3 class="text-lg font-semibold text-grey-900">Potwierdź usunięcie</h3>
+      <h3 class="text-lg font-semibold text-grey-900">
+        {gettext("Confirm deletion")}
+      </h3>
       <p class="mt-3 text-sm text-grey-700">
-        Czy na pewno chcesz usunąć to konto bankowe? Usuniemy też powiązane transakcje.
+        {gettext(
+          "Are you sure you want to delete this bank account? We will also delete the related transactions."
+        )}
       </p>
 
       <div class="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
@@ -689,7 +723,7 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
           size="small"
           phx-click={hide_modal("confirm_delete_bank_account_#{@account.id}")}
         >
-          Anuluj
+          {gettext("Cancel")}
         </.button>
 
         <.button
@@ -700,9 +734,9 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
             JS.push("delete_bank_account", value: %{account_id: @account.id})
             |> hide_modal("confirm_delete_bank_account_#{@account.id}")
           }
-          phx-disable-with="Usuwam..."
+          phx-disable-with={gettext("Deleting...")}
         >
-          Usuń
+          {gettext("Delete")}
         </.button>
       </div>
     </.modal>
@@ -717,9 +751,13 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
     >
       <div class="space-y-4">
         <div>
-          <h3 class="text-lg font-semibold text-grey-900">Dodaj konto bankowe ręcznie</h3>
+          <h3 class="text-lg font-semibold text-grey-900">
+            {gettext("Add a bank account manually")}
+          </h3>
           <p class="mt-2 text-sm text-grey-700">
-            Ta funkcja pozwala dodać konto bez integracji z bankiem. Synchronizacja transakcji będzie wyłączona.
+            {gettext(
+              "This feature lets you add an account without a bank integration. Transaction synchronization will be disabled."
+            )}
           </p>
         </div>
 
@@ -729,10 +767,20 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
           id="manual_bank_account_form_company"
           class="space-y-4"
         >
-          <.input name="name" id="manual_bank_account_name" label="Nazwa konta" value="" />
-          <.input name="owner_name" id="manual_bank_account_owner_name" label="Właściciel" value="" />
+          <.input name="name" id="manual_bank_account_name" label={gettext("Account name")} value="" />
+          <.input
+            name="owner_name"
+            id="manual_bank_account_owner_name"
+            label={gettext("Owner")}
+            value=""
+          />
           <.input name="iban" id="manual_bank_account_iban" label="IBAN" value="" />
-          <.input name="currency" id="manual_bank_account_currency" label="Waluta" value="" />
+          <.input
+            name="currency"
+            id="manual_bank_account_currency"
+            label={gettext("Currency")}
+            value=""
+          />
 
           <div class="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
             <.button
@@ -741,16 +789,16 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
               size="small"
               phx-click={hide_modal("manual_bank_account_modal_company")}
             >
-              Anuluj
+              {gettext("Cancel")}
             </.button>
 
             <.button
               type="submit"
               variant="success"
               size="small"
-              phx-disable-with="Dodawanie..."
+              phx-disable-with={gettext("Adding...")}
             >
-              Zapisz
+              {gettext("Save")}
             </.button>
           </div>
         </.form>
@@ -767,9 +815,11 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
       class="max-w-lg"
     >
       <div class="space-y-8">
-        <h3 class="text-xl font-medium">Zaproś nowego pracownika</h3>
+        <h3 class="text-xl font-medium">{gettext("Invite a new employee")}</h3>
         <p>
-          Wybierz rolę, a następnie wygeneruj kod. Pracownik, podając go przy zakładaniu konta, automatycznie dołączy do twojej organizacji.
+          {gettext(
+            "Choose a role, then generate a code. An employee who enters it when creating an account will automatically join your organization."
+          )}
         </p>
 
         <.form
@@ -791,7 +841,7 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
               size="small"
               phx-click={hide_modal("organization_invite_modal")}
             >
-              Anuluj
+              {gettext("Cancel")}
             </.button>
 
             <.button
@@ -801,7 +851,7 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
               size="small"
               phx-click={hide_modal("organization_invite_modal")}
             >
-              Wygeneruj kod
+              {gettext("Generate code")}
             </.button>
           </div>
         </.form>
@@ -829,9 +879,11 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
       class="max-w-lg"
     >
       <div class="space-y-8">
-        <h3 class="text-xl font-medium">Zmiana roli</h3>
+        <h3 class="text-xl font-medium">{gettext("Changing the role")}</h3>
         <p>
-          Zmieniasz rolę użytkownikowi {present(@user.member.name || to_string(@user.email))}. Jego dotychczasowa rola to:
+          {gettext("You are changing the role of user %{user}. Their current role is:",
+            user: present(@user.member.name || to_string(@user.email))
+          )}
         </p>
 
         <.form
@@ -852,7 +904,7 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
               size="small"
               phx-click={JS.push("clear_selected_user") |> hide_modal("update_role_modal")}
             >
-              Anuluj
+              {gettext("Cancel")}
             </.button>
 
             <.button
@@ -861,7 +913,7 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
               accent="teal"
               size="small"
             >
-              Zmień rolę
+              {gettext("Change role")}
             </.button>
           </div>
         </.form>
@@ -939,26 +991,26 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
   end
 
   defp invite_issuer(%{issued_by: %{email: email}}) when not is_nil(email), do: to_string(email)
-  defp invite_issuer(_invite), do: "administrator"
+  defp invite_issuer(_invite), do: gettext("administrator")
 
   defp menu_item_styles do
     "hover:text-teal-800 hover:bg-teal-100 w-full justify-start rounded-none px-3 py-2 text-left text-sm transition cursor-pointer"
   end
 
-  defp format_last_sync_info(:manual, _datetime), do: "konto dodane ręcznie"
-  defp format_last_sync_info(_status, nil), do: "jeszcze nie zsynchronizowano"
+  defp format_last_sync_info(:manual, _datetime), do: gettext("account added manually")
+  defp format_last_sync_info(_status, nil), do: gettext("not synchronized yet")
 
   defp format_last_sync_info(_status, %DateTime{} = datetime),
-    do: "aktualizacja: #{TimeFormatter.format_relative_time(datetime)}"
+    do: gettext("updated: %{time}", time: TimeFormatter.format_relative_time(datetime))
 
   defp format_last_sync_info(_status, %NaiveDateTime{} = datetime),
-    do: "aktualizacja: #{TimeFormatter.format_relative_time(datetime)}"
+    do: gettext("updated: %{time}", time: TimeFormatter.format_relative_time(datetime))
 
-  defp format_last_sync_info(_status, _datetime), do: "jeszcze nie zsynchronizowano"
+  defp format_last_sync_info(_status, _datetime), do: gettext("not synchronized yet")
 
   defp bank_account_menu_label(%{name: name}) when is_binary(name) and name != "", do: name
   defp bank_account_menu_label(%{iban: iban}) when is_binary(iban) and iban != "", do: iban
-  defp bank_account_menu_label(_account), do: "bankowego"
+  defp bank_account_menu_label(_account), do: pgettext("bank account fallback", "bank")
 
   defp present(nil), do: "—"
   defp present(""), do: "—"
@@ -973,24 +1025,28 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
     |> Enum.map_join(" ", &Enum.join/1)
   end
 
-  defp yes_no(true), do: "Tak"
-  defp yes_no(false), do: "Nie"
+  defp yes_no(true), do: gettext("Yes")
+  defp yes_no(false), do: gettext("No")
   defp yes_no(_), do: "—"
 
   defp role_desc(:admin) do
-    ~s|Pełny dostęp do zakładki "Zarządzanie" — w tym zarządzania pracownikami, kontrahentami oraz projektami. Ta rola pozwala także na pełny dostęp do faktur oraz do wgrywania faktur spoza KSeF.|
+    gettext(
+      "Full access to the \"Management\" tab, including managing employees, counterparties and projects. This role also gives full access to invoices and to uploading invoices from outside KSeF."
+    )
   end
 
   defp role_desc(:employee) do
-    "Podstawowy dostęp do organizacji, w tym do Czasośledzia (śledzenie czasu pracy). Możliwość zgłaszania urlopów oraz przesyłania dokumentów."
+    gettext(
+      "Basic access to the organization, including the Time Tracker (working time tracking). The ability to submit leave requests and upload documents."
+    )
   end
 
   defp role_desc(:invoicing) do
-    "Dostęp do fakturowania wyłącznie w trybie podglądu, bez możliwości dodawania i edycji."
+    gettext("Invoicing access in view-only mode, without the ability to add or edit.")
   end
 
   defp role_desc(:accountant) do
-    "Pełny dostęp do fakturowania (przeglądanie, dodawanie i edycja), z wyjątkiem dodawania faktur spoza KSeF."
+    gettext("Full invoicing access (viewing, adding and editing), except for adding invoices from outside KSeF.")
   end
 
   defp role_badge_styles(:admin) do

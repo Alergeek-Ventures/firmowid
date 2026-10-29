@@ -113,14 +113,16 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
     ~H"""
     <section class="flex w-full flex-col gap-6 rounded-lg bg-white p-6 shadow lg:col-span-2">
       <div class="flex items-start justify-between gap-3">
-        <h2 class="text-base leading-none font-medium text-grey-900">Delegacje</h2>
+        <h2 class="text-base leading-none font-medium text-grey-900">
+          {gettext("Business trips")}
+        </h2>
         <.link
           kind="button"
           navigate={~p"/delegacje/dodaj"}
           variant="secondary"
           size="small"
         >
-          <.icon name="hero-map" class="size-4" /> Zaplanuj delegację
+          <.icon name="hero-map" class="size-4" /> {gettext("Plan a business trip")}
         </.link>
       </div>
       <.delegations_list delegations={@delegations} />
@@ -181,7 +183,7 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
 
   defp contract_document_row(assigns) do
     ~H"""
-    <.detail_row label="Umowa">
+    <.detail_row label={gettext("Contract")}>
       <div class="flex w-full min-w-0 items-center gap-2">
         <.link
           kind="button"
@@ -198,7 +200,11 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
           </span>
         </.link>
         <form :if={@document_upload} phx-submit="upload" phx-change="upload">
-          <.live_file_input upload={@document_upload} class="sr-only" aria-label="Wgraj umowę" />
+          <.live_file_input
+            upload={@document_upload}
+            class="sr-only"
+            aria-label={gettext("Upload the contract")}
+          />
 
           <.button
             as="label"
@@ -207,7 +213,7 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
             variant="secondary"
             size="small"
             class="h-7.5 w-8"
-            aria-label="Wgraj umowę"
+            aria-label={gettext("Upload the contract")}
           >
             <.icon name="hero-cloud-arrow-up" class="size-4" />
           </.button>
@@ -227,6 +233,15 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
   attr :ash_scope, :map, default: nil
 
   defp employment_section(assigns) do
+    assigns =
+      assign(assigns,
+        drop_parts:
+          "Drag a PDF or %{choose}"
+          |> gettext(choose: "__CHOOSE__")
+          |> String.split("__CHOOSE__", parts: 2)
+          |> List.to_tuple()
+      )
+
     ~H"""
     <div
       :if={@pending_contract}
@@ -236,14 +251,16 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
     >
       <div class="flex-col gap-2 rounded-lg border border-teal-200 p-4 group-data-[expanded=false]:flex group-data-[expanded=true]:hidden">
         <h3 class="flex items-center gap-1 text-sm font-medium text-teal-700">
-          <Lucideicons.file_text class="size-4" /> Nowa umowa
+          <Lucideicons.file_text class="size-4" /> {gettext("New contract")}
         </h3>
         <p class="text-sm text-grey-700">
-          Czeka na ciebie nowa umowa. Podpisz ją profilem zaufanym, aby sfinalizować formalności.
+          {gettext(
+            "A new contract is waiting for you. Sign it with a Trusted Profile to finalize the formalities."
+          )}
         </p>
         <div class="flex items-center justify-between">
           <p class="text-sm text-grey-700">
-            Podpisz do: {present_date(@pending_contract.signed_at)}
+            {gettext("Sign by: %{date}", date: present_date(@pending_contract.signed_at))}
           </p>
           <.button
             type="button"
@@ -256,7 +273,7 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
               )
             }
           >
-            Rozpocznij
+            {pgettext("contract signing", "Start")}
           </.button>
         </div>
       </div>
@@ -264,16 +281,16 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
       <div class="flex flex-col gap-3 rounded-lg border border-teal-200 p-4 group-data-[expanded=false]:hidden group-data-[expanded=true]:flex">
         <div class="flex items-center justify-between">
           <h3 class="flex items-center gap-1 text-sm font-medium text-teal-700">
-            <Lucideicons.file_text class="size-4" /> Nowa umowa
+            <Lucideicons.file_text class="size-4" /> {gettext("New contract")}
           </h3>
           <p class="text-sm text-grey-500">
-            Podpisz do: {present_date(@pending_contract.signed_at)}
+            {gettext("Sign by: %{date}", date: present_date(@pending_contract.signed_at))}
           </p>
         </div>
 
         <ol class="list-decimal space-y-2 pl-4 text-sm text-grey-700">
           <li>
-            <span class="pr-2">Zapoznaj się z dokumentem</span>
+            <span class="pr-2">{gettext("Read the document")}</span>
             <.link
               kind="button"
               variant="outline"
@@ -281,11 +298,12 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
               redirect={~p"/zarzadzanie/umowy/#{@pending_contract.id}"}
               download
             >
-              <Lucideicons.file_text class="size-4" /> <span class="font-medium">Umowa</span>
+              <Lucideicons.file_text class="size-4" />
+              <span class="font-medium">{gettext("Contract")}</span>
             </.link>
           </li>
           <li>
-            <span>Podpisz dokument</span>
+            <span>{gettext("Sign the document")}</span>
             <.link
               kind="button"
               size="small"
@@ -294,12 +312,12 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
               external="https://podpis.gov.pl/podpisz-dokument-elektronicznie/"
               target="_blank"
             >
-              <span class="font-medium">Profilem Zaufanym</span>
+              <span class="font-medium">{gettext("With a Trusted Profile")}</span>
               <Lucideicons.external_link class="size-4" />
             </.link>
           </li>
           <li>
-            <p>Wgraj podpisaną umowę</p>
+            <p>{gettext("Upload the signed contract")}</p>
             <form phx-change="validate_signed_contract">
               <label
                 id={"signed-contract-drop-#{@signed_contract_upload.ref}"}
@@ -318,13 +336,16 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
                   :if={Enum.empty?(@signed_contract_upload.entries)}
                   class="flex items-center gap-1 text-sm font-medium text-grey-700 group-data-[dragging=true]:hidden"
                 >
-                  Przeciągnij PDF lub <span class="text-teal-700">Wybierz plik</span>
+                  {elem(@drop_parts, 0)}<span class="text-teal-700">{gettext("Choose a file")}</span>{elem(
+                    @drop_parts,
+                    1
+                  )}
                 </span>
                 <span
                   :if={Enum.empty?(@signed_contract_upload.entries)}
                   class="hidden text-teal-700 group-data-[dragging=true]:flex"
                 >
-                  Upuść plik
+                  {gettext("Drop the file")}
                 </span>
                 <.live_file_input upload={@signed_contract_upload} class="sr-only" />
 
@@ -368,30 +389,30 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
               )
             }
           >
-            Wróć później
+            {gettext("Come back later")}
           </.button>
           <.button
             type="button"
             accent="teal"
             size="small"
             phx-click="submit_signed_contract"
-            phx-disable-with="Przesyłanie..."
+            phx-disable-with={gettext("Uploading...")}
             disabled={contract_upload_submit_disabled?(@signed_contract_upload)}
           >
-            Prześlij umowę
+            {gettext("Upload contract")}
           </.button>
         </div>
       </div>
     </div>
 
     <.profile_section
-      title="Informacje o zatrudnieniu"
+      title={gettext("Employment information")}
       action={
         if(!@editing_profile_employment and can_edit_contract?(@current_contract, @ash_scope),
           do: "toggle_editing_profile_employment"
         )
       }
-      action_label="Edytuj informacje o zatrudnieniu"
+      action_label={gettext("Edit employment information")}
     >
       <%= if @editing_profile_employment do %>
         <div class="space-y-2">
@@ -408,9 +429,9 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
             class="mt-2 space-y-4"
           >
             <div class="space-y-2">
-              <.row_input field={@contract_form[:position]} label="Stanowisko" type="text" />
+              <.row_input field={@contract_form[:position]} label={gettext("Position")} type="text" />
               <Helpers.settings_field
-                label="Rodzaj umowy"
+                label={gettext("Contract type")}
                 layout={:row}
                 block_class="flex items-center"
                 for={@contract_form[:contract_type].id}
@@ -419,15 +440,19 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
                   type="select"
                   field={@contract_form[:contract_type]}
                   options={[
-                    {"Umowa o pracę", :uop},
+                    {gettext("Employment contract"), :uop},
                     {"B2B", :b2b},
-                    {"Umowa zlecenie", :uz},
-                    {"Umowa o dzieło", :uod}
+                    {gettext("Contract of mandate"), :uz},
+                    {gettext("Contract for specific work"), :uod}
                   ]}
                   container_class="w-full"
                 />
               </Helpers.settings_field>
-              <.row_input field={@contract_form[:starts_at]} label="Obowiązuje od" type="date" />
+              <.row_input
+                field={@contract_form[:starts_at]}
+                label={gettext("Valid from")}
+                type="date"
+              />
             </div>
 
             <div class="flex w-full justify-end gap-3">
@@ -437,11 +462,11 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
                 size="small"
                 phx-click="toggle_editing_profile_employment"
               >
-                Anuluj
+                {gettext("Cancel")}
               </.button>
 
               <.button type="submit" variant="success" size="small">
-                Zapisz
+                {gettext("Save")}
               </.button>
             </div>
           </.form>
@@ -454,13 +479,13 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
             current_user={@current_user}
             document_upload={@document_upload}
           />
-          <.detail_row label="Stanowisko">
+          <.detail_row label={gettext("Position")}>
             {present(@current_contract && @current_contract.position)}
           </.detail_row>
-          <.detail_row label="Rodzaj umowy">
+          <.detail_row label={gettext("Contract type")}>
             {format_contract_type(@current_contract && @current_contract.contract_type)}
           </.detail_row>
-          <.detail_row label="Obowiązuje od">
+          <.detail_row label={gettext("Valid from")}>
             {present_date(@current_contract && @current_contract.starts_at)}
           </.detail_row>
         </div>
@@ -476,16 +501,16 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
   defp finance_section(assigns) do
     ~H"""
     <.profile_section
-      title="Finanse"
+      title={gettext("Finances")}
       action={if(!@editing_profile_finance, do: "toggle_editing_profile_finance")}
-      action_label="Edytuj finanse"
+      action_label={gettext("Edit finances")}
     >
       <%= if @editing_profile_finance do %>
         <.form for={@member_form} phx-submit="save_profile_finance" class="space-y-4">
           <div class="space-y-2">
             <.row_input
               field={@member_form[:bank_account_number]}
-              label="Nr konta"
+              label={gettext("Account number")}
               label_class="self-baseline mt-2"
               type="text"
             />
@@ -498,14 +523,16 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
               phx-click="toggle_editing_profile_finance"
               size="small"
             >
-              Anuluj
+              {gettext("Cancel")}
             </.button>
-            <.button type="submit" variant="success" size="small">Zapisz</.button>
+            <.button type="submit" variant="success" size="small">
+              {gettext("Save")}
+            </.button>
           </div>
         </.form>
       <% else %>
         <div class="w-full space-y-2">
-          <.detail_row label="Nr konta">
+          <.detail_row label={gettext("Account number")}>
             <p class="text-nowrap">{present(@current_user.member.bank_account_number)}</p>
           </.detail_row>
         </div>
@@ -521,9 +548,9 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
   defp contact_section(assigns) do
     ~H"""
     <.profile_section
-      title="Dane korespondencyjne"
+      title={gettext("Contact details")}
       action={if(!@editing_profile_contact, do: "toggle_editing_profile_contact")}
-      action_label="Edytuj dane korespondencyjne"
+      action_label={gettext("Edit contact details")}
     >
       <%= if @editing_profile_contact do %>
         <.form
@@ -533,18 +560,18 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
           class="space-y-4"
         >
           <div class="space-y-2">
-            <.row_input field={@member_form[:phone]} label="Numer telefonu" type="tel" />
+            <.row_input field={@member_form[:phone]} label={gettext("Phone number")} type="tel" />
             <.row_input field={@member_form[:slack_url]} label="Slack" type="url" />
             <.row_input
               field={@member_form[:residence_address]}
-              label="Adres zamieszkania"
+              label={gettext("Residential address")}
               type="textarea"
               label_class="pt-1.5 self-start"
             />
 
             <Helpers.settings_field
               label_class="max-w-56 ml-auto"
-              label="Adres korespondencyjny jest taki sam jak adres zamieszkania"
+              label={gettext("The correspondence address is the same as the residential address")}
               layout={:row}
               block_class="flex items-center"
               for={@member_form[:is_same_correspondence_address].id}
@@ -559,7 +586,7 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
             <%= if not Phoenix.HTML.Form.normalize_value("switch", @member_form[:is_same_correspondence_address].value) do %>
               <.row_input
                 field={@member_form[:correspondence_address]}
-                label="Adres korespondencyjny"
+                label={gettext("Correspondence address")}
                 type="textarea"
                 label_class="pt-1.5 self-start"
               />
@@ -573,24 +600,28 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
               size="small"
               phx-click="toggle_editing_profile_contact"
             >
-              Anuluj
+              {gettext("Cancel")}
             </.button>
-            <.button type="submit" variant="success" size="small">Zapisz</.button>
+            <.button type="submit" variant="success" size="small">
+              {gettext("Save")}
+            </.button>
           </div>
         </.form>
       <% else %>
         <div class="w-full space-y-2">
-          <.detail_row label="Numer telefonu">{present(@current_user.member.phone)}</.detail_row>
+          <.detail_row label={gettext("Phone number")}>
+            {present(@current_user.member.phone)}
+          </.detail_row>
           <.detail_row label="Slack">
             <span :if={slack_present?(@current_user.member)}>{present_slack(@current_user.member)}</span>
             <span :if={!slack_present?(@current_user.member)}>—</span>
           </.detail_row>
-          <.detail_row label="Adres zamieszkania">
+          <.detail_row label={gettext("Residential address")}>
             {present(@current_user.member.residence_address)}
           </.detail_row>
           <.detail_row
             :if={@current_user.member.correspondence_address not in [nil, ""]}
-            label="Adres korespondencyjny"
+            label={gettext("Correspondence address")}
           >
             {present(@current_user.member.correspondence_address)}
           </.detail_row>
@@ -617,7 +648,9 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
     ~H"""
     <section class="flex size-full flex-col gap-6 rounded-lg bg-white p-6 shadow">
       <div class="flex items-start justify-between gap-3">
-        <h2 class="text-base leading-none font-medium text-grey-900">Nieobecności</h2>
+        <h2 class="text-base leading-none font-medium text-grey-900">
+          {gettext("Absences")}
+        </h2>
         <div class="flex items-center gap-3">
           <form class="flex gap-4" phx-submit="search_leave_requests">
             <div
@@ -629,7 +662,7 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
                 type="text"
                 name="szukaj"
                 value={@leave_search}
-                placeholder="Szukaj wniosku"
+                placeholder={gettext("Search requests")}
                 phx-change="search_leave_requests"
                 phx-debounce="300"
                 input_class="py-0 px-1 bg-transparent! border-none"
@@ -658,14 +691,16 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
             phx-click={show_modal("leave-request-modal")}
             class="py-1.75"
           >
-            <.icon name="hero-paper-airplane" class="size-4" /> Złóż wniosek
+            <.icon name="hero-paper-airplane" class="size-4" /> {gettext("Submit a request")}
           </.button>
         </div>
       </div>
       <div class="flex items-center gap-3">
         <div class="rounded bg-grey-50 px-3 py-1 text-sm text-grey-500">
-          Wykorzystane w tym roku:
-          <span class="pl-1 font-medium text-grey-700">{@leave_days} dni</span>
+          {pgettext("leave days", "Used this year:")}
+          <span class="pl-1 font-medium text-grey-700">
+            {pngettext("leave days", "%{count} day", "%{count} days", @leave_days)}
+          </span>
         </div>
       </div>
       <div class="scrollbar-card h-100 max-h-100 overflow-y-auto pr-1">
@@ -693,14 +728,14 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
           class="flex size-full items-center justify-center rounded-lg bg-grey-50 text-sm text-grey-700"
         >
           <p>
-            Brak wniosków o nieobecności.
+            {gettext("No absence requests.")}
           </p>
         </div>
       </div>
 
       <.modal id="leave-request-modal" class="max-w-xl">
         <h2 class="mb-8 text-xl font-medium">
-          Zgłoszenie nieobecności
+          {gettext("Absence request")}
         </h2>
         <.form
           for={@leave_request_form}
@@ -711,7 +746,7 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
         >
           <div>
             <p class="mb-2 text-sm text-grey-700">
-              Rodzaj nieobecności:
+              {gettext("Type of absence:")}
             </p>
             <div class="flex flex-wrap gap-2">
               <.button
@@ -739,7 +774,7 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
               for={@leave_request_form[:starts_on].id}
               class="flex items-center gap-2 text-sm text-grey-700"
             >
-              Od:
+              {gettext("From:")}
               <.input
                 field={@leave_request_form[:starts_on]}
                 is_tooltip={true}
@@ -750,7 +785,8 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
               for={@leave_request_form[:ends_on].id}
               class="flex items-center gap-2 text-sm text-grey-700"
             >
-              Do: <.input field={@leave_request_form[:ends_on]} is_tooltip={true} type="date" />
+              {gettext("To:")}
+              <.input field={@leave_request_form[:ends_on]} is_tooltip={true} type="date" />
             </.label>
           </div>
           <div>
@@ -758,7 +794,7 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
               for={@leave_request_form[:note].id}
               class="flex flex-col gap-2 text-sm text-grey-700"
             >
-              Dodatkowe informacje:
+              {gettext("Additional information:")}
               <.input
                 field={@leave_request_form[:note]}
                 type="textarea"
@@ -773,7 +809,7 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
               size="small"
               type="button"
             >
-              <.icon name="hero-cloud-arrow-up" class="size-4" /> Wgraj załącznik
+              <.icon name="hero-cloud-arrow-up" class="size-4" /> {gettext("Upload attachment")}
               <.live_file_input upload={@leave_request_upload} class="sr-only" />
             </.button>
             <div
@@ -790,7 +826,7 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
                   phx-click="cancel_leave_request_attachment"
                   phx-value-ref={entry.ref}
                 >
-                  Usuń
+                  {gettext("Delete")}
                 </.button>
               </div>
               <p
@@ -812,10 +848,10 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
               type="submit"
               variant="primary"
               size="big"
-              phx-disable-with="Wysyłanie..."
+              phx-disable-with={gettext("Sending...")}
               disabled={leave_attachment_submit_disabled?(@leave_request_upload)}
             >
-              Wyślij
+              {gettext("Send")}
             </.button>
           </div>
         </.form>
@@ -834,7 +870,9 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
       <section class="flex w-full flex-col gap-6 rounded-lg bg-white p-6 shadow">
         <div class="flex items-start justify-between gap-3">
           <div class="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-1">
-            <h2 class="text-base leading-none font-medium text-grey-900">Twoje projekty</h2>
+            <h2 class="text-base leading-none font-medium text-grey-900">
+              {gettext("Your projects")}
+            </h2>
             <span class="text-sm text-grey-500">
               {TimeFormatter.format_date(@date, "LLLL y")}
             </span>
@@ -856,7 +894,7 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
         </ul>
 
         <p :if={@projects == []} class="text-sm text-grey-500">
-          Brak przepracowanego czasu w tym miesiącu.
+          {gettext("No time worked this month.")}
         </p>
       </section>
       <.link
@@ -864,18 +902,20 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
         navigate={Navigation.hours_record_index_path(@date)}
         class="inline-flex items-center gap-1 text-sm font-medium text-grey-700 hover:text-grey-900"
       >
-        Zobacz ewidencję <.icon name="hero-chevron-right-mini" class="size-4" />
+        {gettext("View hours record")} <.icon name="hero-chevron-right-mini" class="size-4" />
       </.link>
     </div>
     """
   end
 
-  defp format_project_duration(seconds) when seconds < 60, do: "0h 0min"
+  defp format_project_duration(seconds) when seconds < 60 do
+    pgettext("compact duration", "%{hours}h %{minutes}min", hours: 0, minutes: 0)
+  end
 
   defp format_project_duration(seconds) do
     hours = div(seconds, 3600)
     minutes = div(rem(seconds, 3600), 60)
-    "#{hours}h #{minutes}min"
+    pgettext("compact duration", "%{hours}h %{minutes}min", hours: hours, minutes: minutes)
   end
 
   attr :reason, :atom, required: true
@@ -942,26 +982,26 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
       upload_errors(upload) != []
   end
 
-  defp leave_upload_error_to_string(:too_large), do: "Plik jest za duży (max 10 MB)."
-  defp leave_upload_error_to_string(:too_many_files), do: "Można wgrać tylko jeden plik."
+  defp leave_upload_error_to_string(:too_large), do: gettext("The file is too large (max 10 MB).")
+  defp leave_upload_error_to_string(:too_many_files), do: gettext("You can upload only one file.")
 
-  defp leave_upload_error_to_string(:not_accepted), do: "Dozwolone są pliki PDF oraz obrazy (JPG, JPEG, PNG)."
+  defp leave_upload_error_to_string(:not_accepted), do: gettext("PDF files and images (JPG, JPEG, PNG) are allowed.")
 
-  defp leave_upload_error_to_string(other), do: "Błąd wgrywania: #{inspect(other)}"
+  defp leave_upload_error_to_string(other), do: gettext("Upload error: %{error}", error: inspect(other))
 
   # TODO: Branch on employment contract (UoP leave vs absence reasons).
   defp leave_reasons, do: [:indisposition, :rest, :other]
 
-  defp upload_error_to_string(:too_large), do: "Plik jest za duży (max 10 MB)."
-  defp upload_error_to_string(:too_many_files), do: "Można wgrać tylko jeden plik."
-  defp upload_error_to_string(:not_accepted), do: "Dozwolone są tylko pliki PDF."
-  defp upload_error_to_string(other), do: "Błąd wgrywania: #{inspect(other)}"
+  defp upload_error_to_string(:too_large), do: gettext("The file is too large (max 10 MB).")
+  defp upload_error_to_string(:too_many_files), do: gettext("You can upload only one file.")
+  defp upload_error_to_string(:not_accepted), do: gettext("Only PDF files are allowed.")
+  defp upload_error_to_string(other), do: gettext("Upload error: %{error}", error: inspect(other))
 
-  defp format_contract_type(nil), do: "Nieokreślona"
-  defp format_contract_type(:uop), do: "Umowa o pracę"
+  defp format_contract_type(nil), do: gettext("Unspecified")
+  defp format_contract_type(:uop), do: gettext("Employment contract")
   defp format_contract_type(:b2b), do: "B2B"
-  defp format_contract_type(:uz), do: "Umowa zlecenie"
-  defp format_contract_type(:uod), do: "Umowa o dzieło"
+  defp format_contract_type(:uz), do: gettext("Contract of mandate")
+  defp format_contract_type(:uod), do: gettext("Contract for specific work")
 
   defp can_edit_contract?(nil, _scope), do: false
 

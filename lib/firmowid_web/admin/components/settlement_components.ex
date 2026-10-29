@@ -43,7 +43,7 @@ defmodule FirmowidWeb.Admin.Components.SettlementComponents do
           navigate={Navigation.settlements_path()}
           class="text-sm/snug text-grey-700 hover:underline"
         >
-          ← Wróć do listy organizacji
+          {gettext("← Back to the organization list")}
         </.link>
         <span class={status_chip_styles(@status)}>
           {status_chip_label(@status)}
@@ -54,7 +54,7 @@ defmodule FirmowidWeb.Admin.Components.SettlementComponents do
         <p class="text-sm/snug text-grey-700">
           {status_description(@status)}
           <span :if={@status.kind == :snapshot}>
-            Zamrożono {format_datetime(@status.frozen_at)}
+            {gettext("Frozen %{date}", date: format_datetime(@status.frozen_at))}
           </span>
         </p>
       </div>
@@ -67,17 +67,17 @@ defmodule FirmowidWeb.Admin.Components.SettlementComponents do
           </div>
 
           <div class="space-y-1">
-            <p class="text-grey-700">Właściciel</p>
+            <p class="text-grey-700">{gettext("Owner")}</p>
             <p class="text-black">{owner_display_name(@selected_org.owner)}</p>
           </div>
 
           <div class="space-y-1">
-            <p class="text-grey-700">E-mail właściciela</p>
+            <p class="text-grey-700">{gettext("Owner email")}</p>
             <p class="break-all text-black">{present_text(@selected_org.owner.email)}</p>
           </div>
 
           <div class="space-y-1">
-            <p class="text-grey-700">Telefon właściciela</p>
+            <p class="text-grey-700">{gettext("Owner phone")}</p>
             <p class="break-all text-black">{present_text(@selected_org.owner.member.phone)}</p>
           </div>
         </div>
@@ -94,7 +94,7 @@ defmodule FirmowidWeb.Admin.Components.SettlementComponents do
             <.input
               field={plan_form[:billing_plan]}
               type="select"
-              label="Aktualny plan"
+              label={gettext("Current plan")}
               options={plan_options()}
             />
 
@@ -105,12 +105,14 @@ defmodule FirmowidWeb.Admin.Components.SettlementComponents do
               disabled={@pending_billing_plan == Atom.to_string(@selected_org.billing_plan)}
               class="justify-center sm:min-w-32"
             >
-              Zapisz plan
+              {gettext("Save plan")}
             </FirmowidUI.Components.Button.button>
           </.form>
 
           <p class="text-sm/snug text-grey-700">
-            Zmiana planu działa na bieżący i przyszłe miesiące. Historyczny snapshot niżej pozostaje bez zmian.
+            {gettext(
+              "A plan change applies to the current and future months. The historical snapshot below stays unchanged."
+            )}
           </p>
         </div>
       </div>
@@ -123,10 +125,13 @@ defmodule FirmowidWeb.Admin.Components.SettlementComponents do
   def activity_panel(assigns) do
     ~H"""
     <section class="rounded-lg bg-white p-6 shadow-card">
-      <h2 class="text-lg/tight font-medium text-grey-900">Aktywność organizacji</h2>
+      <h2 class="text-lg/tight font-medium text-grey-900">
+        {gettext("Organization activity")}
+      </h2>
       <p class="mt-1 text-sm/snug text-grey-700">
-        Utrwalone zdarzenia w organizacji, niezależne od wybranego miesiąca rozliczenia.
-        Liczby obejmują ostatnie 30 dni (ruchome 720 godzin). Nie są to daty logowania.
+        {gettext(
+          "Recorded events in the organization, independent of the selected billing month. The numbers cover the last 30 days (rolling 720 hours). These are not sign-in dates."
+        )}
       </p>
       <div class="mt-4 divide-y divide-grey-200 text-sm/snug">
         <div
@@ -135,24 +140,29 @@ defmodule FirmowidWeb.Admin.Components.SettlementComponents do
         >
           <span class="text-grey-900">{label}</span>
           <span class="text-grey-700">
-            Ostatnio: {format_activity_datetime(trace.last_at)} · Ostatnie 30 dni: {trace.count_30_days}
+            {gettext("Last: %{last} · Last 30 days: %{count}",
+              last: format_activity_datetime(trace.last_at),
+              count: trace.count_30_days
+            )}
           </span>
         </div>
       </div>
-      <p class="mt-3 text-sm/snug text-grey-700">Ostatnie logowanie: niedostępne.</p>
+      <p class="mt-3 text-sm/snug text-grey-700">
+        {gettext("Last sign-in: unavailable.")}
+      </p>
     </section>
     """
   end
 
   defp activity_rows(activity) do
     [
-      {"Utworzenie faktury sprzedażowej", activity.sales},
-      {"Ręczny import faktury kosztowej (bez KSeF)", activity.costs},
-      {"Rozpoczęcie sesji czasu pracy", activity.sessions}
+      {gettext("Sales invoice created"), activity.sales},
+      {gettext("Manual cost invoice import (without KSeF)"), activity.costs},
+      {gettext("Working time session started"), activity.sessions}
     ]
   end
 
-  defp format_activity_datetime(nil), do: "brak"
+  defp format_activity_datetime(nil), do: gettext("none")
   defp format_activity_datetime(datetime), do: Calendar.strftime(datetime, "%d.%m.%Y %H:%M UTC")
 
   attr :selected_org, :map, required: true
@@ -164,12 +174,13 @@ defmodule FirmowidWeb.Admin.Components.SettlementComponents do
       id="organization-deletion"
       class="rounded-lg border border-brick-200 bg-white p-6 shadow-card"
     >
-      <h2 class="text-lg/tight font-medium text-grey-900">Usunięcie organizacji</h2>
+      <h2 class="text-lg/tight font-medium text-grey-900">
+        {gettext("Organization deletion")}
+      </h2>
       <p class="mt-2 text-sm/snug text-grey-700">
-        Usunięcie organizacji i jej danych z bazy jest trwałe. Konta użytkowników zostają zachowane
-        i odłączone od organizacji. Czyszczenie danych w usługach zewnętrznych jest podejmowane
-        niezwłocznie; w razie niepowodzenia może wymagać ręcznej interwencji, a pełne usunięcie
-        danych następuje w ciągu 30 dni.
+        {gettext(
+          "Deleting the organization and its data from the database is permanent. User accounts are kept and detached from the organization. Data in external services is cleaned up immediately; if that fails, it may require manual intervention, and full data deletion happens within 30 days."
+        )}
       </p>
 
       <%= if @delete_org_id == @selected_org.id do %>
@@ -183,14 +194,14 @@ defmodule FirmowidWeb.Admin.Components.SettlementComponents do
           <.input
             field={form[:name]}
             type="text"
-            label={"Wpisz dokładną nazwę organizacji: #{@selected_org.name}"}
+            label={gettext("Type the exact organization name: %{name}", name: @selected_org.name)}
             autocomplete="off"
             required
           />
           <.input
             field={form[:testowa_lub_porzucona]}
             type="checkbox"
-            label="Potwierdzam, że organizacja jest testowa lub porzucona"
+            label={gettext("I confirm that the organization is a test or abandoned one")}
           />
           <div class="flex flex-wrap gap-3">
             <FirmowidUI.Components.Button.button
@@ -198,7 +209,7 @@ defmodule FirmowidWeb.Admin.Components.SettlementComponents do
               variant="destructive"
               size="small"
             >
-              Usuń organizację na stałe
+              {gettext("Delete organization permanently")}
             </FirmowidUI.Components.Button.button>
             <FirmowidUI.Components.Button.button
               type="button"
@@ -206,7 +217,7 @@ defmodule FirmowidWeb.Admin.Components.SettlementComponents do
               size="small"
               phx-click="cancel-delete-organization"
             >
-              Anuluj
+              {gettext("Cancel")}
             </FirmowidUI.Components.Button.button>
           </div>
         </.form>
@@ -218,7 +229,7 @@ defmodule FirmowidWeb.Admin.Components.SettlementComponents do
           phx-click="open-delete-organization"
           class="mt-4"
         >
-          Usuń organizację
+          {gettext("Delete organization")}
         </FirmowidUI.Components.Button.button>
       <% end %>
     </section>
@@ -234,18 +245,20 @@ defmodule FirmowidWeb.Admin.Components.SettlementComponents do
     ~H"""
     <section class="rounded-lg bg-white p-6 shadow-card">
       <div class="space-y-1">
-        <h2 class="text-lg/tight font-medium text-grey-900">Arkusz rozliczenia</h2>
+        <h2 class="text-lg/tight font-medium text-grey-900">
+          {gettext("Settlement worksheet")}
+        </h2>
         <p class="text-sm/snug text-grey-700">{worksheet_intro(@selected_month, @status)}</p>
       </div>
 
       <div class="mt-8 grid gap-10 xl:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)]">
         <div class="space-y-8">
           <div class="space-y-4">
-            <h3 class="text-base/tight font-medium text-grey-900">Plan</h3>
+            <h3 class="text-base/tight font-medium text-grey-900">{gettext("Plan")}</h3>
 
             <div class="divide-y divide-grey-200">
               <div class="flex items-center justify-between gap-4 py-3 text-sm/snug">
-                <span class="text-grey-700">Plan dla wybranego miesiąca</span>
+                <span class="text-grey-700">{gettext("Plan for the selected month")}</span>
                 <span class="font-medium text-black">{@worksheet.selected_plan_label}</span>
               </div>
 
@@ -264,12 +277,12 @@ defmodule FirmowidWeb.Admin.Components.SettlementComponents do
           </div>
 
           <div class="space-y-4">
-            <h3 class="text-base/tight font-medium text-grey-900">Interpretacja</h3>
+            <h3 class="text-base/tight font-medium text-grey-900">{gettext("Interpretation")}</h3>
 
             <div class="divide-y divide-grey-200">
               <%= if @worksheet.suggestion_rows == [] do %>
                 <div class="py-3 text-sm/snug text-grey-700">
-                  Brak dodatkowych pozycji do pokazania dla wybranego miesiąca.
+                  {gettext("No additional items to show for the selected month.")}
                 </div>
               <% else %>
                 <div
@@ -291,12 +304,12 @@ defmodule FirmowidWeb.Admin.Components.SettlementComponents do
 
           <div :if={@worksheet.selected_plan != :no_plan} class="space-y-4">
             <h3 class="text-base/tight font-medium text-grey-900">
-              Do zapłaty za {format_month(@selected_month)}
+              {gettext("To pay for %{month}", month: format_month(@selected_month))}
             </h3>
 
             <div class="divide-y divide-grey-200">
               <div class="flex items-center justify-between gap-4 py-3 text-sm/snug">
-                <span class="font-medium text-black">Razem</span>
+                <span class="font-medium text-black">{gettext("Total")}</span>
                 <div class="flex shrink-0 items-center gap-2">
                   <.billing_status_badge :if={@selected_org.on_trial?} status={:trial} />
                   <span class="font-medium text-black">{@worksheet.month_total_text}</span>
@@ -307,7 +320,7 @@ defmodule FirmowidWeb.Admin.Components.SettlementComponents do
         </div>
 
         <div class="space-y-4">
-          <h3 class="text-base/tight font-medium text-grey-900">Liczniki użycia</h3>
+          <h3 class="text-base/tight font-medium text-grey-900">{gettext("Usage counters")}</h3>
           <div class="rounded-lg bg-grey-50 p-4">
             <div class="divide-y divide-grey-200">
               <div :for={row <- @worksheet.usage_rows} class="space-y-2 py-4 first:pt-0 last:pb-0">
@@ -320,7 +333,7 @@ defmodule FirmowidWeb.Admin.Components.SettlementComponents do
                   <div class="shrink-0 text-right">
                     <p class="font-medium text-grey-900">{row.total_text}</p>
                     <p :if={row.over_limit > 0} class="text-rust-700">
-                      +{row.over_limit} ponad limit
+                      {gettext("+%{count} over the limit", count: row.over_limit)}
                     </p>
                   </div>
                 </div>
@@ -330,7 +343,7 @@ defmodule FirmowidWeb.Admin.Components.SettlementComponents do
                 </div>
 
                 <div class="flex items-center justify-between gap-4 text-xs/snug text-grey-700">
-                  <span>W cenie: {row.included_units}</span>
+                  <span>{gettext("Included in the price: %{units}", units: row.included_units)}</span>
                   <span>{row.usage_text}</span>
                 </div>
               </div>
@@ -345,7 +358,7 @@ defmodule FirmowidWeb.Admin.Components.SettlementComponents do
   def empty_state(assigns) do
     ~H"""
     <section class="rounded-lg bg-white p-6 text-sm/snug text-grey-700 shadow-card">
-      Brak organizacji do rozliczenia.
+      {gettext("No organizations to settle.")}
     </section>
     """
   end
@@ -366,14 +379,14 @@ defmodule FirmowidWeb.Admin.Components.SettlementComponents do
     end)
   end
 
-  defp billing_status_badge_label(:trial), do: "okres próbny"
+  defp billing_status_badge_label(:trial), do: gettext("trial period")
 
   defp billing_status_badge_styles(:trial) do
     "inline-flex items-center rounded-full bg-rust-100 px-3 py-1 text-sm/tight text-rust-700"
   end
 
-  defp status_chip_label(%{kind: :live_preview}), do: "Na żywo"
-  defp status_chip_label(%{kind: :snapshot}), do: "Snapshot historyczny"
+  defp status_chip_label(%{kind: :live_preview}), do: gettext("Live")
+  defp status_chip_label(%{kind: :snapshot}), do: gettext("Historical snapshot")
 
   defp status_chip_styles(%{kind: :live_preview}) do
     "inline-flex items-center rounded-full px-3 py-1 text-sm/snug font-medium bg-grey-200 text-grey-900 text-center"
@@ -384,28 +397,35 @@ defmodule FirmowidWeb.Admin.Components.SettlementComponents do
   end
 
   defp status_description(%{kind: :live_preview}) do
-    "To orientacyjny podgląd bieżącego miesiąca. Ostateczne rozliczenie opiera się wyłącznie na utrwalonym snapshotcie."
+    gettext(
+      "This is an indicative preview of the current month. The final settlement is based solely on the recorded snapshot."
+    )
   end
 
-  defp status_description(%{kind: :snapshot}), do: "Dane pochodzą z utrwalonego snapshotu."
+  defp status_description(%{kind: :snapshot}), do: gettext("The data comes from the recorded snapshot.")
 
   defp worksheet_intro(selected_month, %{kind: :live_preview}) do
-    "#{format_month(selected_month)} • orientacyjny podgląd liczony według tej samej logiki miesiąca rozliczeniowego, z której powstaje snapshot."
+    gettext(
+      "%{month} • an indicative preview calculated with the same billing month logic from which the snapshot is created.",
+      month: format_month(selected_month)
+    )
   end
 
   defp worksheet_intro(selected_month, %{kind: :snapshot}) do
-    "#{format_month(selected_month)} • dane pochodzą z utrwalonego snapshotu."
+    gettext("%{month} • the data comes from the recorded snapshot.",
+      month: format_month(selected_month)
+    )
   end
 
   defp format_month(%Date{} = month), do: Calendar.strftime(month, "%m.%Y")
   defp format_datetime(%DateTime{} = datetime), do: Calendar.strftime(datetime, "%d.%m.%Y %H:%M")
 
-  defp counter_context(:synced_bank_accounts), do: "Aktualnie podłączone konta z synchronizacją."
+  defp counter_context(:synced_bank_accounts), do: gettext("Currently connected accounts with synchronization.")
 
-  defp counter_context(:active_non_owner_users), do: "Aktywni użytkownicy organizacji poza właścicielem."
+  defp counter_context(:active_non_owner_users), do: gettext("Active organization users other than the owner.")
 
   defp counter_context(:manual_external_invoices) do
-    "Dokumenty dodane ręcznie w bieżącym miesiącu rozliczeniowym."
+    gettext("Documents added manually in the current billing month.")
   end
 
   defp counter_bar_fill_styles(%{over_limit: over_limit}) when over_limit > 0, do: "h-full rounded-full bg-rust-500"

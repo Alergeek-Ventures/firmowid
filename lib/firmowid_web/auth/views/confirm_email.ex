@@ -13,7 +13,7 @@ defmodule FirmowidWeb.Auth.Views.ConfirmEmail do
   def render(assigns) do
     ~H"""
     <div class="mx-auto max-w-sm">
-      <.header class="text-center">Potwierdź adres email</.header>
+      <.header class="text-center">{gettext("Confirm your email address")}</.header>
 
       <p class="mt-2 text-center text-sm text-grey-600">
         {confirmation_instruction(@email_change?)}
@@ -30,14 +30,14 @@ defmodule FirmowidWeb.Auth.Views.ConfirmEmail do
       >
         <input type="hidden" name={@form[:confirm].name} value={@token} />
         <:actions>
-          <.button variant="special" phx-disable-with="Potwierdzanie..." class="w-full">
+          <.button variant="special" phx-disable-with={gettext("Confirming...")} class="w-full">
             {confirmation_button_label(@email_change?)}
           </.button>
         </:actions>
       </.simple_form>
 
       <p :if={!@email_change?} class="mt-4 text-center text-sm">
-        <.link kind="unstyled" redirect={~p"/zaloguj"}>Zaloguj się</.link>
+        <.link kind="unstyled" redirect={~p"/zaloguj"}>{gettext("Log in")}</.link>
       </p>
     </div>
     """
@@ -61,7 +61,7 @@ defmodule FirmowidWeb.Auth.Views.ConfirmEmail do
       :error ->
         {:ok,
          socket
-         |> put_flash(:error, "Link potwierdzający jest nieprawidłowy lub wygasł.")
+         |> put_flash(:error, gettext("The confirmation link is invalid or has expired."))
          |> redirect(to: ~p"/")}
     end
   end
@@ -80,12 +80,12 @@ defmodule FirmowidWeb.Auth.Views.ConfirmEmail do
     end
   end
 
-  defp confirmation_instruction(true), do: "Aby zmienić adres email, kliknij poniższy przycisk."
+  defp confirmation_instruction(true), do: gettext("To change your email address, click the button below.")
 
-  defp confirmation_instruction(false), do: "Aby potwierdzić założenie konta, kliknij poniższy przycisk."
+  defp confirmation_instruction(false), do: gettext("To confirm your account, click the button below.")
 
-  defp confirmation_button_label(true), do: "Potwierdź zmianę adresu email"
-  defp confirmation_button_label(false), do: "Potwierdź założenie konta"
+  defp confirmation_button_label(true), do: gettext("Confirm email address change")
+  defp confirmation_button_label(false), do: gettext("Confirm account creation")
 
   defp load_current_user(socket, session) do
     case socket.assigns[:current_user] &&
