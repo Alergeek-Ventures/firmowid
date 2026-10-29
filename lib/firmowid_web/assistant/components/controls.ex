@@ -63,19 +63,19 @@ defmodule FirmowidWeb.Assistant.Components.Controls do
       <p :if={@status == :awaiting_approval} class="mbe-2 text-xs/5 text-grey-700">
         {gettext("Confirm or reject the plan before sending another message.")}
       </p>
-      <div class="grid grid-cols-[minmax(0,1fr)_auto] items-end gap-2">
+      <div class="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-2">
         <Inputs.input
           type="textarea"
           id="assistant-input"
           name="message"
           value=""
-          rows="2"
+          rows="1"
           maxlength="20000"
           required
           placeholder={gettext("Ask a question…")}
           aria-label={gettext("Message to the assistant")}
           phx-update="ignore"
-          input_class="block field-sizing-content text-sm max-block-32 focus:border-grey-300!"
+          input_class="block field-sizing-content py-3.5! text-sm max-block-32 focus:border-grey-300!"
         />
         <Button.button
           type="submit"
