@@ -75,12 +75,12 @@ defmodule FirmowidWeb.Assistant.Components.Controls do
           placeholder={gettext("Ask a question…")}
           aria-label={gettext("Message to the assistant")}
           phx-update="ignore"
-          input_class="field-sizing-content text-sm max-block-32"
+          input_class="block field-sizing-content text-sm max-block-32 focus:border-grey-300!"
         />
         <Button.button
           type="submit"
           variant="tertiary"
-          class="min-block-9 min-inline-9 pointer-coarse:min-block-11 pointer-coarse:min-inline-11"
+          class="min-block-12 min-inline-12"
           disabled={@status in [:running, :awaiting_approval]}
           aria-label={gettext("Send message")}
         >
