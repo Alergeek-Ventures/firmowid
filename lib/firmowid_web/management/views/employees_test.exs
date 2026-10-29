@@ -162,7 +162,8 @@ defmodule FirmowidWeb.Management.Views.EmployeesTest do
     admin = admin_fixture()
     employee = user_in_org_fixture(admin.member.organization_id, %{role: :employee})
 
-    {:ok, lv, _html} = live(log_in_user(conn, admin), ~p"/zarzadzanie/pracownicy/#{employee.id}")
+    {:ok, lv, _html} =
+      live(log_in_user(conn, admin), ~p"/zarzadzanie/pracownicy/#{employee.id}/profil")
 
     lv |> element("[phx-click=toggle_payout_editor]") |> render_click()
 

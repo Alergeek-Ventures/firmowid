@@ -64,6 +64,13 @@ defmodule FirmowidWeb.Management.Components.ProfileTab do
         </div>
       </.card>
 
+      <.live_component
+        module={FirmowidWeb.Management.Components.EmployeePayoutDetails}
+        id={"employee-payout-details-#{@user.member.id}"}
+        user={@user}
+        scope={@scope}
+      />
+
       <div class="grid grid-cols-[repeat(auto-fit,minmax(min(100%,20rem),1fr))] items-start gap-6">
         <.card class="min-w-0">
           <.card_header>

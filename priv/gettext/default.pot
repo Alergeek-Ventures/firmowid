@@ -996,7 +996,7 @@ msgstr ""
 msgid "Could not issue the invoice."
 msgstr ""
 
-#: lib/firmowid_web/management/components/projects_tab.ex:290
+#: lib/firmowid_web/management/components/projects_tab.ex:142
 #, elixir-autogen, elixir-format
 msgid "Could not save the decision. The request may already have been reviewed."
 msgstr ""
@@ -1083,12 +1083,12 @@ msgstr ""
 msgid "Date missing"
 msgstr ""
 
-#: lib/firmowid_web/management/components/profile_tab.ex:248
+#: lib/firmowid_web/management/components/profile_tab.ex:255
 #, elixir-autogen, elixir-format
 msgid "Day %{day} of the following month"
 msgstr ""
 
-#: lib/firmowid_web/management/components/profile_tab.ex:245
+#: lib/firmowid_web/management/components/profile_tab.ex:252
 #, elixir-autogen, elixir-format
 msgid "Day %{day} of the same month"
 msgstr ""
@@ -1227,12 +1227,12 @@ msgstr ""
 msgid "Edit categories"
 msgstr ""
 
-#: lib/firmowid_web/management/components/profile_tab.ex:78
+#: lib/firmowid_web/management/components/profile_tab.ex:85
 #, elixir-autogen, elixir-format
 msgid "Edit employment details"
 msgstr ""
 
-#: lib/firmowid_web/management/components/projects_tab.ex:121
+#: lib/firmowid_web/management/components/employee_payout_details.ex:38
 #, elixir-autogen, elixir-format
 msgid "Edit transfer details"
 msgstr ""
@@ -1567,7 +1567,7 @@ msgstr ""
 msgid "Firmowid's Terms of Service define the rules for using its invoicing, KSeF, banking, and work-tracking service."
 msgstr ""
 
-#: lib/firmowid_web/management/components/profile_tab.ex:139
+#: lib/firmowid_web/management/components/profile_tab.ex:146
 #, elixir-autogen, elixir-format
 msgid "Following month"
 msgstr ""
@@ -2260,8 +2260,8 @@ msgstr ""
 
 #: lib/firmowid_web/management/components/employee_tax_details.ex:453
 #: lib/firmowid_web/management/components/employee_tax_details.ex:506
-#: lib/firmowid_web/management/components/profile_tab.ex:137
-#: lib/firmowid_web/management/components/profile_tab.ex:250
+#: lib/firmowid_web/management/components/profile_tab.ex:144
+#: lib/firmowid_web/management/components/profile_tab.ex:257
 #, elixir-autogen, elixir-format
 msgid "No information yet"
 msgstr ""
@@ -2581,7 +2581,7 @@ msgstr ""
 msgid "Payment"
 msgstr ""
 
-#: lib/firmowid_web/management/components/profile_tab.ex:123
+#: lib/firmowid_web/management/components/profile_tab.ex:130
 #, elixir-autogen, elixir-format
 msgid "Payment day"
 msgstr ""
@@ -2596,12 +2596,12 @@ msgstr ""
 msgid "Payment method:"
 msgstr ""
 
-#: lib/firmowid_web/management/components/profile_tab.ex:130
+#: lib/firmowid_web/management/components/profile_tab.ex:137
 #, elixir-autogen, elixir-format
 msgid "Payment month"
 msgstr ""
 
-#: lib/firmowid_web/management/components/profile_tab.ex:169
+#: lib/firmowid_web/management/components/profile_tab.ex:176
 #, elixir-autogen, elixir-format
 msgid "Payment schedule"
 msgstr ""
@@ -2943,7 +2943,7 @@ msgstr ""
 msgid "Sales invoices included"
 msgstr ""
 
-#: lib/firmowid_web/management/components/profile_tab.ex:138
+#: lib/firmowid_web/management/components/profile_tab.ex:145
 #, elixir-autogen, elixir-format
 msgid "Same month"
 msgstr ""
@@ -3382,7 +3382,7 @@ msgstr ""
 msgid "The employee's date of birth must not be after the payout date."
 msgstr ""
 
-#: lib/firmowid_web/management/views/employee.ex:270
+#: lib/firmowid_web/management/views/employee.ex:273
 #, elixir-autogen, elixir-format
 msgid "The file %{filename} is not a contract, employee declaration or payroll document."
 msgstr ""
@@ -3433,7 +3433,7 @@ msgstr ""
 msgid "The invoice is saved. Sending to KSeF…"
 msgstr ""
 
-#: lib/firmowid_web/management/components/projects_tab.ex:282
+#: lib/firmowid_web/management/components/projects_tab.ex:134
 #, elixir-autogen, elixir-format
 msgid "The request decision has been saved."
 msgstr ""
@@ -4796,6 +4796,7 @@ msgid "Others (%{count})"
 msgstr ""
 
 #: lib/firmowid_web/analysis/components/segment_ranking.ex:65
+#: lib/firmowid_web/management/components/projects_tab.ex:47
 #, elixir-autogen, elixir-format
 msgid "Projects"
 msgstr ""
@@ -5357,4 +5358,83 @@ msgstr ""
 #: lib/firmowid_web/delegations/components/settlement_page.ex:309
 #, elixir-autogen, elixir-format
 msgid "Waiting for save confirmation…"
+msgstr ""
+
+#: lib/firmowid_web/management/components/projects_tab.ex:42
+#, elixir-autogen, elixir-format
+msgid "Employee projects view"
+msgstr ""
+
+#: lib/firmowid_web/management/components/work_distribution.ex:240
+#, elixir-autogen, elixir-format
+msgid "No sessions on this day."
+msgstr ""
+
+#: lib/firmowid_web/management/components/work_distribution.ex:235
+#, elixir-autogen, elixir-format
+msgid "Show all months"
+msgstr ""
+
+#: lib/firmowid_web/management/components/work_distribution.ex:61
+#, elixir-autogen, elixir-format
+msgid "Week"
+msgstr ""
+
+#: lib/firmowid_web/management/components/projects_tab.ex:53
+#, elixir-autogen, elixir-format
+msgid "Work distribution"
+msgstr ""
+
+#: lib/firmowid_web/management/components/work_distribution.ex:170
+#, elixir-autogen, elixir-format
+msgctxt "weekday abbreviation"
+msgid "Fr"
+msgstr ""
+
+#: lib/firmowid_web/management/components/work_distribution.ex:166
+#, elixir-autogen, elixir-format
+msgctxt "weekday abbreviation"
+msgid "Mo"
+msgstr ""
+
+#: lib/firmowid_web/management/components/work_distribution.ex:171
+#, elixir-autogen, elixir-format
+msgctxt "weekday abbreviation"
+msgid "Sa"
+msgstr ""
+
+#: lib/firmowid_web/management/components/work_distribution.ex:172
+#, elixir-autogen, elixir-format
+msgctxt "weekday abbreviation"
+msgid "Su"
+msgstr ""
+
+#: lib/firmowid_web/management/components/work_distribution.ex:169
+#, elixir-autogen, elixir-format
+msgctxt "weekday abbreviation"
+msgid "Th"
+msgstr ""
+
+#: lib/firmowid_web/management/components/work_distribution.ex:167
+#, elixir-autogen, elixir-format
+msgctxt "weekday abbreviation"
+msgid "Tu"
+msgstr ""
+
+#: lib/firmowid_web/management/components/work_distribution.ex:168
+#, elixir-autogen, elixir-format
+msgctxt "weekday abbreviation"
+msgid "We"
+msgstr ""
+
+#: lib/firmowid_web/management/components/work_distribution.ex:108
+#, elixir-autogen, elixir-format
+msgctxt "work hours legend"
+msgid "Less"
+msgstr ""
+
+#: lib/firmowid_web/management/components/work_distribution.ex:113
+#, elixir-autogen, elixir-format
+msgctxt "work hours legend"
+msgid "More"
 msgstr ""

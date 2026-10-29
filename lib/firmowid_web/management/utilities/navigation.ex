@@ -17,21 +17,28 @@ defmodule FirmowidWeb.Management.Utilities.Navigation do
   @counterparty_invoice_filter_params Map.new(@counterparty_invoice_filter_values, fn {key, value} ->
                                         {value, key}
                                       end)
+  @employee_projects_view_values %{"rozklad" => :distribution}
+  @employee_projects_view_params Map.new(@employee_projects_view_values, fn {key, value} ->
+                                   {value, key}
+                                 end)
   @counterparty_param_keys ~w(filtr_faktur powrot_do)
   @counterparties_param_keys ~w(szukaj typ)
   @employees_param_keys ~w(miesiac szukaj)
   @projects_param_keys ~w(miesiac szukaj)
   @show_param_keys ~w(miesiac)
+  @employee_param_keys ~w(miesiac widok)
   @param_atom_keys %{
     "filtr_faktur" => :filtr_faktur,
     "powrot_do" => :powrot_do,
     "szukaj" => :szukaj,
     "typ" => :typ,
-    "miesiac" => :miesiac
+    "miesiac" => :miesiac,
+    "widok" => :widok
   }
 
   @type listing_action :: :index | :archive
   @type counterparty_invoice_filter :: :all | :paid | :unpaid
+  @type employee_projects_view :: :list | :distribution
 
   @doc """
   Returns the canonical current month used by management routes.
@@ -94,7 +101,7 @@ defmodule FirmowidWeb.Management.Utilities.Navigation do
   Filters query params for the employee details page.
   """
   @spec employee_params(map()) :: map()
-  def employee_params(params) when is_map(params), do: take_allowed_params(params, @show_param_keys)
+  def employee_params(params) when is_map(params), do: take_allowed_params(params, @employee_param_keys)
 
   @doc """
   Filters query params for the projects listing.
@@ -132,6 +139,18 @@ defmodule FirmowidWeb.Management.Utilities.Navigation do
   """
   @spec encode_counterparty_invoice_filter(counterparty_invoice_filter()) :: String.t()
   def encode_counterparty_invoice_filter(filter), do: Map.get(@counterparty_invoice_filter_params, filter)
+
+  @doc """
+  Parses the employee projects view (project list or work distribution) query value.
+  """
+  @spec parse_employee_projects_view(String.t() | nil) :: employee_projects_view()
+  def parse_employee_projects_view(raw_value), do: Map.get(@employee_projects_view_values, raw_value, :list)
+
+  @doc """
+  Encodes the employee projects view query value; the project list is the default and has none.
+  """
+  @spec encode_employee_projects_view(employee_projects_view()) :: String.t() | nil
+  def encode_employee_projects_view(view), do: Map.get(@employee_projects_view_params, view)
 
   @doc """
   Builds the canonical counterparties path.
