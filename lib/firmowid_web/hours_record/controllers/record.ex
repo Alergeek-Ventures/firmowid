@@ -133,7 +133,7 @@ defmodule FirmowidWeb.HoursRecord.Controllers.Record do
          ) do
       {:ok, nil} ->
         conn
-        |> LiveToast.put_toast(:error, "Nie masz dostępu do tej ewidencji godzin.")
+        |> LiveToast.put_toast(:error, gettext("You do not have access to this hours record."))
         |> redirect(to: ~p"/czasosledz")
 
       {:ok, record} ->
@@ -149,7 +149,7 @@ defmodule FirmowidWeb.HoursRecord.Controllers.Record do
 
       {:error, _error} ->
         conn
-        |> LiveToast.put_toast(:error, "Nie masz dostępu do tej ewidencji godzin.")
+        |> LiveToast.put_toast(:error, gettext("You do not have access to this hours record."))
         |> redirect(to: ~p"/czasosledz")
     end
   end

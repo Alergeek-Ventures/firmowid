@@ -10,34 +10,34 @@
         patch={~p"/zarzadzanie/pracownicy/#{@employee.id}"}
         active={@live_action == :projects}
       >
-        Projekty i ewidencja
+        {gettext("Projects and hours record")}
       </.tab>
 
       <.tab
         patch={~p"/zarzadzanie/pracownicy/#{@employee.id}/profil"}
         active={@live_action == :profile}
       >
-        Profil pracownika
+        {gettext("Employee profile")}
       </.tab>
 
       <.tab
         patch={~p"/zarzadzanie/pracownicy/#{@employee.id}/dokumenty"}
         active={@live_action == :documents}
       >
-        Dokumenty
+        {pgettext("employee tab", "Documents")}
       </.tab>
       <.tab
         patch={~p"/zarzadzanie/pracownicy/#{@employee.id}/urlopy"}
         active={@live_action == :leaves}
       >
-        Urlopy
+        {pgettext("employee tab", "Leave")}
       </.tab>
       <.tab
         :if={@employee.member.delegations != []}
         patch={~p"/zarzadzanie/pracownicy/#{@employee.id}/delegacje"}
         active={@live_action == :delegations}
       >
-        Delegacje
+        {gettext("Business trips")}
       </.tab>
     </div>
   </div>
@@ -48,7 +48,7 @@
         <.avatar_image
           :if={Map.get(@employee.member.avatar_blob || %{}, :url)}
           src={Map.get(@employee.member.avatar_blob || %{}, :url)}
-          alt="Avatar"
+          alt={gettext("Avatar")}
         />
         <.avatar_fallback class="bg-teal-200 text-2xl text-teal-800">
           {to_string(@employee.member.display_name || "")
@@ -62,14 +62,14 @@
           :if={@employee.member.slack_url not in [nil, ""]}
           class="flex items-center gap-2 text-sm text-grey-700"
         >
-          <img src="/images/slack.png" alt="slack logo" width={24} height={24} />
+          <img src="/images/slack.png" alt={gettext("Slack logo")} width={24} height={24} />
           <.link
             kind="unstyled"
             external={@employee.member.slack_url}
             target="_blank"
             class="border-b border-transparent transition-colors hover:border-grey-700"
           >
-            napisz na Slacku
+            {gettext("Write on Slack")}
           </.link>
         </div>
       </div>
@@ -87,7 +87,10 @@
             size="small"
             phx-click="archive_employee"
           >
-            <.icon name="hero-archive-box-mini" class="size-5" /> Archiwizuj
+            <.icon name="hero-archive-box-mini" class="size-5" /> {pgettext(
+              "archive action",
+              "Archive"
+            )}
           </.button>
         </div>
       </.dropdown>
@@ -97,10 +100,10 @@
       class="flex flex-col items-center gap-4 rounded-lg bg-grey-200 p-4 text-grey-700 shadow-card"
     >
       <p class="text-sm/snug text-balance">
-        Pracownik został zarchiwizowany {Firmowid.Cldr.Date.to_string!(
-          @employee.member.archived_at,
-          format: :long
-        )}. Nie ma dostępu do organizacji do czasu przywrócenia przez administratora.
+        {gettext(
+          "The employee was archived on %{date}. They have no access to the organization until an administrator restores them.",
+          date: Firmowid.Cldr.Date.to_string!(@employee.member.archived_at, format: :long)
+        )}
       </p>
 
       <.button
@@ -109,13 +112,13 @@
         size="small"
         phx-click="unarchive_employee"
       >
-        Przywróć pracownika
+        {gettext("Restore employee")}
       </.button>
     </div>
-    <.user_card_info :if={@employee.member.phone} label="Numer telefonu">
+    <.user_card_info :if={@employee.member.phone} label={gettext("Phone number")}>
       {@employee.member.phone}
     </.user_card_info>
-    <.user_card_info label="Adres e-mail">
+    <.user_card_info label={gettext("Email address")}>
       <span>{@employee.email}</span>
       <.button
         id="copy-email"
@@ -132,7 +135,7 @@
     </.user_card_info>
     <.user_card_info
       :if={@employee.member.bank_account_number != nil}
-      label="Numer konta bankowego"
+      label={gettext("Bank account number")}
     >
       <span>{@employee.member.bank_account_number}</span>
       <.button
@@ -148,7 +151,7 @@
       </.button>
     </.user_card_info>
 
-    <.user_card_info :if={not Enum.empty?(@employee.member.projects)} label="Projekty">
+    <.user_card_info :if={not Enum.empty?(@employee.member.projects)} label={gettext("Projects")}>
       <div class="mt-2 flex max-w-sm flex-wrap gap-2 text-sm/tight">
         <.link
           :for={project <- @employee.member.projects}

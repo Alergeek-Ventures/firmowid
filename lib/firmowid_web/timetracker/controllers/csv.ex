@@ -32,7 +32,7 @@ defmodule FirmowidWeb.Timetracker.Controllers.Csv do
 
           :error ->
             conn
-            |> put_flash(:error, "Podaj prawidłowy miesiąc i rok dla eksportu CSV.")
+            |> put_flash(:error, gettext("Enter a valid month and year for the CSV export."))
             |> redirect(to: ~p"/zarzadzanie/pracownicy")
         end
 
@@ -43,7 +43,7 @@ defmodule FirmowidWeb.Timetracker.Controllers.Csv do
 
   def salaries(conn, _params) do
     conn
-    |> put_flash(:error, "Podaj miesiąc i rok dla eksportu CSV.")
+    |> put_flash(:error, gettext("Enter the month and year for the CSV export."))
     |> redirect(to: ~p"/zarzadzanie/pracownicy")
   end
 
@@ -65,7 +65,7 @@ defmodule FirmowidWeb.Timetracker.Controllers.Csv do
     else
       :error ->
         conn
-        |> put_flash(:error, "Podaj prawidłowy miesiąc i rok dla eksportu CSV.")
+        |> put_flash(:error, gettext("Enter a valid month and year for the CSV export."))
         |> redirect(to: ~p"/zarzadzanie/projekty/#{project_id}")
 
       _ ->

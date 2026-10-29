@@ -144,14 +144,14 @@ defmodule FirmowidWeb.Management.Views.Employee do
     {:noreply,
      socket
      |> push_event("copy-to-clipboard", %{text: number})
-     |> LiveToast.put_toast(:success, "Skopiowano numer konta")}
+     |> LiveToast.put_toast(:success, gettext("Bank account number copied"))}
   end
 
   def handle_event("copy-email", %{"email" => email}, socket) do
     {:noreply,
      socket
      |> push_event("copy-to-clipboard", %{text: email})
-     |> LiveToast.put_toast(:success, "Skopiowano adres e-mail")}
+     |> LiveToast.put_toast(:success, gettext("Email address copied"))}
   end
 
   defp assign_reloaded_employee(socket) do
@@ -244,7 +244,7 @@ defmodule FirmowidWeb.Management.Views.Employee do
         },
         socket
       ) do
-    LiveToast.send_toast(:error, notification.data.original_filename, title: "Nie udało się wgrać pliku")
+    LiveToast.send_toast(:error, notification.data.original_filename, title: gettext("Could not upload the file"))
 
     send_update(DocumentsTab,
       id: "documents-tab",
@@ -273,7 +273,7 @@ defmodule FirmowidWeb.Management.Views.Employee do
       gettext("The file %{filename} is not a contract, employee declaration or payroll document.",
         filename: notification.data.original_filename
       ),
-      title: "Nieprawidłowy dokument"
+      title: gettext("Invalid document")
     )
 
     send_update(DocumentsTab,

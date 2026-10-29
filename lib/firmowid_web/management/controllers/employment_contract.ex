@@ -17,7 +17,7 @@ defmodule FirmowidWeb.Management.Controllers.EmploymentContract do
          ) do
       {:ok, nil} ->
         conn
-        |> LiveToast.put_toast(:error, "Nie masz dostępu do tego pliku.")
+        |> LiveToast.put_toast(:error, gettext("You do not have access to this file."))
         |> redirect(to: documents_return_path(current_user))
 
       {:ok, record} ->
@@ -37,18 +37,21 @@ defmodule FirmowidWeb.Management.Controllers.EmploymentContract do
 
           {:ok, %{status: status}} ->
             conn
-            |> LiveToast.put_toast(:error, "Nie udało się pobrać pliku (status: #{status}).")
+            |> LiveToast.put_toast(
+              :error,
+              gettext("Could not download the file (status: %{status}).", status: status)
+            )
             |> redirect(to: documents_return_path(current_user, record.member.user_id))
 
           {:error, _reason} ->
             conn
-            |> LiveToast.put_toast(:error, "Nie udało się pobrać pliku.")
+            |> LiveToast.put_toast(:error, gettext("Could not download the file."))
             |> redirect(to: documents_return_path(current_user, record.member.user_id))
         end
 
       {:error, _error} ->
         conn
-        |> LiveToast.put_toast(:error, "Nie masz dostępu do tego pliku.")
+        |> LiveToast.put_toast(:error, gettext("You do not have access to this file."))
         |> redirect(to: documents_return_path(current_user))
     end
   end

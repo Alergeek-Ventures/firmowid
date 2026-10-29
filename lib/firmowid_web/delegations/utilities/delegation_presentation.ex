@@ -7,8 +7,8 @@ defmodule FirmowidWeb.Delegations.Utilities.DelegationPresentation do
 
   @spec status_label(atom()) :: String.t()
   def status_label(:pending), do: gettext("Pending")
-  def status_label(:in_progress), do: "w toku"
-  def status_label(:complete), do: "zakończono"
+  def status_label(:in_progress), do: pgettext("business trip status", "in progress")
+  def status_label(:complete), do: pgettext("business trip status", "completed")
 
   @spec status_badge_styles(atom()) :: list(String.t())
   def status_badge_styles(:pending), do: ["bg-teal-100 text-teal-700"]

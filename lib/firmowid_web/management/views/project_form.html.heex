@@ -12,8 +12,8 @@
         </p>
         <p class="flex flex-row items-center gap-4 text-2xl/tight font-medium">
           {case @live_action do
-            :new -> "Nowy projekt"
-            :edit -> "Edycja projektu"
+            :new -> gettext("New project")
+            :edit -> gettext("Edit project")
           end}
         </p>
       </div>
@@ -29,13 +29,13 @@
           kind="button"
           variant="outline"
         >
-          Anuluj
+          {gettext("Cancel")}
         </.link>
 
         <.button variant="tertiary">
           {case @live_action do
-            :new -> "Dodaj projekt"
-            :edit -> "Zapisz zmiany"
+            :new -> gettext("Add project")
+            :edit -> gettext("Save changes")
           end}
         </.button>
       </div>
@@ -44,11 +44,11 @@
     <div class="flex flex-1 flex-col gap-12">
       <div class="flex flex-col gap-4">
         <p class="py-1 font-medium text-grey-900">
-          Informacje ogólne
+          {gettext("General information")}
         </p>
         <div class="grid grid-cols-[min-content_1fr] items-start gap-x-5 gap-y-2">
           <label class="pt-1.5 text-sm text-nowrap text-grey-700" for={@form[:name].id}>
-            Nazwa projektu
+            {gettext("Project name")}
           </label>
           <.input field={@form[:name]} class="max-w-90" />
         </div>
@@ -59,7 +59,7 @@
   <div class="flex flex-1 flex-col gap-6">
     <div class="flex flex-row items-center justify-between gap-8">
       <p class="font-medium text-grey-900">
-        Pracownicy
+        {gettext("Employees")}
       </p>
 
       <div class="flex w-full max-w-sm flex-row justify-end gap-2">
@@ -71,7 +71,8 @@
             name="user_search"
             type="search"
             value={nil}
-            placeholder="Wyszukaj pracownika, aby dodać"
+            placeholder={gettext("Search for an employee to add")}
+            data-no-results={gettext("No employees matching the query were found")}
             input_class="pl-9 !bg-transparent placeholder:text-grey-400 border max-w-sm w-full"
             autocomplete="off"
             phx-hook=".Autocomplete"
@@ -121,7 +122,7 @@
               element: (list, data) => {
                 if (data.results.length === 0) {
                   const info = document.createElement("p");
-                  info.innerHTML = `Nie znaleziono pracowników pasujących do zapytania`;
+                  info.textContent = this.el.dataset.noResults;
                   info.className = "p-2 text-sm/snug";
                   list.appendChild(info);
                 }
@@ -191,7 +192,9 @@
         class="flex flex-1 items-center justify-center rounded-lg border border-grey-200 p-6"
       >
         <p class="max-w-sm text-center text-sm/snug text-balance text-grey-700">
-          Aby dodać pracownika do tego projektu, wpisz jego imię lub nazwisko, a następnie kliknij wybraną osobę na liście wyników.
+          {gettext(
+            "To add an employee to this project, type their first or last name, then click the chosen person in the results list."
+          )}
         </p>
       </div>
     <% else %>
@@ -208,7 +211,7 @@
             <.avatar_image
               :if={Map.get(entry.user.member.avatar_blob || %{}, :url)}
               src={Map.get(entry.user.member.avatar_blob || %{}, :url)}
-              alt="Avatar"
+              alt={gettext("Avatar")}
             />
             <.avatar_fallback bg_color="teal-200" class="text-teal-800">
               {to_string(entry.user.member.name || entry.user.email || "")
@@ -230,7 +233,7 @@
               phx-click="restore_user"
               phx-value-user_id={entry.user.id}
             >
-              Przywróć
+              {gettext("Restore")}
             </.button>
           <% else %>
             <.button

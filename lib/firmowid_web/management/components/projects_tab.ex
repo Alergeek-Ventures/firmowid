@@ -73,7 +73,7 @@ defmodule FirmowidWeb.Management.Components.ProjectsTab do
                     target={@myself}
                   />
                 <% Enum.empty?(@projects) -> %>
-                  <div class="mt-4 text-sm text-grey-700">Brak projektów</div>
+                  <div class="mt-4 text-sm text-grey-700">{gettext("No projects")}</div>
                 <% true -> %>
                   <.project_accordion :for={project <- @projects} project={project} />
               <% end %>
@@ -326,7 +326,7 @@ defmodule FirmowidWeb.Management.Components.ProjectsTab do
         <div class="ml-4 flex flex-col gap-y-2 overflow-hidden *:last:mb-4">
           <%= if Enum.empty?(@project.sessions) do %>
             <p class="text-grey-700">
-              Brak sesji w tym miesiącu
+              {gettext("No sessions this month")}
             </p>
           <% else %>
             <div

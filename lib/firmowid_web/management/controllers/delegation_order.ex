@@ -31,7 +31,7 @@ defmodule FirmowidWeb.Management.Controllers.DelegationOrder do
     else
       _ ->
         conn
-        |> LiveToast.put_toast(:error, "Nie masz dostępu do tej delegacji.")
+        |> LiveToast.put_toast(:error, gettext("You do not have access to this business trip."))
         |> redirect(to: ~p"/zarzadzanie/pracownicy")
     end
   end

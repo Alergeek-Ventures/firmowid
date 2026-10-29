@@ -53,7 +53,7 @@ defmodule FirmowidWeb.Management.Views.Project do
   end
 
   def handle_event("pdf-download-error", _params, socket) do
-    {:noreply, put_flash(socket, :error, "Nie udało się pobrać raportu")}
+    {:noreply, put_flash(socket, :error, gettext("Could not download the report"))}
   end
 
   def handle_event("toggle-user", %{"id" => user_id}, socket) do
@@ -114,7 +114,7 @@ defmodule FirmowidWeb.Management.Views.Project do
         {:noreply, socket}
 
       {:error, _error} ->
-        {:noreply, put_flash(socket, :error, "Nie udało się przywrócić projektu")}
+        {:noreply, put_flash(socket, :error, gettext("Could not restore the project"))}
     end
   end
 
@@ -126,7 +126,7 @@ defmodule FirmowidWeb.Management.Views.Project do
 
     {:noreply,
      socket
-     |> put_flash(:info, "Projekt został usunięty.")
+     |> put_flash(:info, gettext("The project has been deleted."))
      |> push_navigate(to: Navigation.projects_path(:index, %{miesiac: socket.assigns.selected_date}))}
   end
 
@@ -337,11 +337,37 @@ defmodule FirmowidWeb.Management.Views.Project do
     end
   end
 
+  attr :name, :string, required: true
+
+  defp delete_project_prompt(assigns) do
+    [before_name, after_name] =
+      "__NAME__"
+      |> then(&gettext("Are you sure you want to delete the project %{name}?", name: &1))
+      |> String.split("__NAME__", parts: 2)
+
+    assigns = assign(assigns, before_name: before_name, after_name: after_name)
+
+    ~H"""
+    {@before_name}<b>{@name}</b>{@after_name}
+    """
+  end
+
   def comparison_text(%{percent: percent, direction: direction}, previous_month_label) do
     case direction do
-      :same -> "0% względem #{previous_month_label}"
-      :increase -> "+#{percent}% względem #{previous_month_label}"
-      :decrease -> "-#{percent}% względem #{previous_month_label}"
+      :same ->
+        gettext("%{percent} compared to %{month}", percent: "0%", month: previous_month_label)
+
+      :increase ->
+        gettext("%{percent} compared to %{month}",
+          percent: "+#{percent}%",
+          month: previous_month_label
+        )
+
+      :decrease ->
+        gettext("%{percent} compared to %{month}",
+          percent: "-#{percent}%",
+          month: previous_month_label
+        )
     end
   end
 

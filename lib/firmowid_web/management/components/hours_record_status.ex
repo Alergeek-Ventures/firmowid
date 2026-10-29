@@ -17,7 +17,7 @@ defmodule FirmowidWeb.Management.Components.HoursRecordStatus do
     ~H"""
     <div class="flex min-w-0 flex-1 items-center gap-3">
       <span class="flex w-[166.5px] min-w-0 items-center justify-between gap-2.5 rounded-sm bg-grey-200 px-2 py-1 text-caps-sm/tight font-medium text-grey-700 uppercase">
-        Brak <.icon name="hero-x-mark-micro" class="size-4" />
+        {gettext("None")} <.icon name="hero-x-mark-micro" class="size-4" />
       </span>
       <Lucideicons.file_x class="shrink-0 text-grey-400" />
     </div>
@@ -47,7 +47,7 @@ defmodule FirmowidWeb.Management.Components.HoursRecordStatus do
           <%= if @hours_record.submission_status == :withdrawn do %>
             {gettext("Withdrawn")} <.icon name="hero-x-mark-micro" />
           <% else %>
-            EWIDENCJA <.icon name="hero-check-micro" />
+            {pgettext("hours record badge", "Record")} <.icon name="hero-check-micro" />
           <% end %>
         </span>
         <.link

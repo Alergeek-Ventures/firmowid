@@ -57,7 +57,7 @@ defmodule FirmowidWeb.Management.Views.CounterpartyForm do
       {:error, _error} ->
         {:ok,
          socket
-         |> put_flash(:error, "Nie udało się wczytać kontrahenta")
+         |> put_flash(:error, gettext("Could not load the counterparty"))
          |> redirect_to_counterparties(params)}
     end
   end
@@ -119,14 +119,14 @@ defmodule FirmowidWeb.Management.Views.CounterpartyForm do
     end
   end
 
-  defp fetch_counterparty_data(""), do: {:error, "NIP jest wymagany"}
+  defp fetch_counterparty_data(""), do: {:error, gettext("NIP is required")}
 
   defp fetch_counterparty_data(nip) do
     case NipApiClient.fetch_org_data_by_nip(nip) do
       {:ok, organization} -> {:ok, organization}
-      {:error, :invalid_nip} -> {:error, "musi być poprawnym numerem NIP"}
-      {:error, :not_found} -> {:error, "Nie znaleziono kontrahenta dla podanego NIP"}
-      {:error, _reason} -> {:error, "Nie udało się pobrać danych kontrahenta"}
+      {:error, :invalid_nip} -> {:error, gettext("must be a valid NIP number")}
+      {:error, :not_found} -> {:error, gettext("No counterparty found for the given NIP")}
+      {:error, _reason} -> {:error, gettext("Could not fetch the counterparty data")}
     end
   end
 

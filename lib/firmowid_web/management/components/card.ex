@@ -35,7 +35,7 @@ defmodule FirmowidWeb.Management.Components.Card do
         accent="rust"
         class="ml-2"
       >
-        Zapisz
+        {gettext("Save")}
       </.button>
       <.button
         type="button"

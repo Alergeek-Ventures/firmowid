@@ -33,7 +33,7 @@ defmodule FirmowidWeb.Delegations.Views.DelegationForm do
     {:ok,
      socket
      |> assign(:current_user, user)
-     |> assign(:page_title, "Planowanie delegacji")
+     |> assign(:page_title, gettext("Business trip planning"))
      |> assign(:months, months)
      |> assign(:default_month, default_month)
      |> assign(:billing_month, default_month)
@@ -51,9 +51,11 @@ defmodule FirmowidWeb.Delegations.Views.DelegationForm do
         <.back navigate={~p"/ustawienia/profil"} class="inline-flex text-sm" />
       </div>
       <main class="px-0 pb-12 sm:px-32">
-        <h1 class="text-2xl/tight font-normal">Planowanie delegacji</h1>
+        <h1 class="text-2xl/tight font-normal">{gettext("Business trip planning")}</h1>
         <p class="mt-6 max-w-3xl text-base text-balance text-grey-700">
-          Wypełnij poniższy wniosek. Po wysłaniu zostanie on przesłany do Twojego pracodawcy. Gdy zostanie zaakceptowany otrzymasz maila z potwierdzeniem.
+          {gettext(
+            "Fill in the request below. After you send it, it will be forwarded to your employer. Once it is approved, you will receive a confirmation email."
+          )}
         </p>
         <.form
           for={@form}
@@ -63,9 +65,9 @@ defmodule FirmowidWeb.Delegations.Views.DelegationForm do
           class="mt-10 sm:mt-19"
         >
           <fieldset class="contents">
-            <legend class="sr-only">Dane delegacji</legend>
+            <legend class="sr-only">{gettext("Business trip details")}</legend>
             <div class="grid max-w-216 grid-cols-1 gap-y-2 sm:grid-cols-[auto_1fr] sm:items-center sm:gap-x-5 sm:gap-y-4">
-              <.form_row label="Miesiąc rozliczeniowy" for="delegation_billing_month">
+              <.form_row label={gettext("Billing month")} for="delegation_billing_month">
                 <div class="relative w-57">
                   <.month_picker
                     id="delegation_billing_month"
@@ -85,17 +87,20 @@ defmodule FirmowidWeb.Delegations.Views.DelegationForm do
                 </div>
               </.form_row>
               <dl class="contents">
-                <.detail_row dd_class="sm:mt-8" dt_class="sm:mt-8" label="Imię i nazwisko">
+                <.detail_row dd_class="sm:mt-8" dt_class="sm:mt-8" label={gettext("Full name")}>
                   {@current_user.member.display_name}
                 </.detail_row>
-                <.detail_row label="Stanowisko">
+                <.detail_row label={gettext("Position")}>
                   {(@employment_contract && @employment_contract.position) || "—"}
                 </.detail_row>
               </dl>
-              <.form_row label="Data wyjazdu" for="delegation_start_date">
+              <.form_row label={gettext("Departure date")} for="delegation_start_date">
                 <div class="flex flex-wrap items-start gap-2">
                   <div class="w-full sm:w-auto">
-                    <span class="text-sm text-grey-700 sm:hidden">od</span>
+                    <span class="text-sm text-grey-700 sm:hidden">{pgettext(
+                      "date range start",
+                      "from"
+                    )}</span>
                     <.input
                       field={@form[:start_date]}
                       id="delegation_start_date"
@@ -103,13 +108,13 @@ defmodule FirmowidWeb.Delegations.Views.DelegationForm do
                       required
                       placeholder="__.__.____"
                       pattern="[0-9]{2}\.[0-9]{2}\.[0-9]{4}"
-                      aria-label="Data wyjazdu"
+                      aria-label={gettext("Departure date")}
                       input_class="placeholder:text-grey-300 w-full sm:max-w-48"
                     />
                   </div>
                   <span aria-hidden="true" class="mt-2 hidden sm:block">-</span>
                   <div class="w-full sm:w-auto">
-                    <span class="text-sm text-grey-700 sm:hidden">do</span>
+                    <span class="text-sm text-grey-700 sm:hidden">{pgettext("date range end", "to")}</span>
                     <.input
                       field={@form[:end_date]}
                       id="delegation_end_date"
@@ -117,14 +122,14 @@ defmodule FirmowidWeb.Delegations.Views.DelegationForm do
                       required
                       placeholder="__.__.____"
                       pattern="[0-9]{2}\.[0-9]{2}\.[0-9]{4}"
-                      aria-label="Data powrotu"
+                      aria-label={gettext("Return date")}
                       input_class="placeholder:text-grey-300 w-full sm:max-w-48"
                     />
                   </div>
                 </div>
               </.form_row>
               <.form_row
-                label="Miejsce podróży"
+                label={gettext("Destination")}
                 for="delegation_destination"
                 label_class="self-start pt-2"
               >
@@ -137,7 +142,7 @@ defmodule FirmowidWeb.Delegations.Views.DelegationForm do
                 />
               </.form_row>
               <.form_row
-                label="Środek lokomocji"
+                label={gettext("Means of transport")}
                 for="delegation_transport_types_0"
                 label_class="self-start pt-2"
               >
@@ -152,9 +157,9 @@ defmodule FirmowidWeb.Delegations.Views.DelegationForm do
                       value={transport_type}
                       type="select"
                       required
-                      prompt="Wybierz z listy"
+                      prompt={gettext("Choose from the list")}
                       options={transport_options()}
-                      selected_labels={%{"bus" => "Autobus"}}
+                      selected_labels={%{"bus" => pgettext("means of transport", "Bus")}}
                       container_class="w-full sm:w-56"
                     />
                     <.button
@@ -164,7 +169,7 @@ defmodule FirmowidWeb.Delegations.Views.DelegationForm do
                       phx-click="remove_transport_type"
                       phx-value-index={index}
                       class="inline-flex size-8 items-center justify-center text-grey-500 transition-colors hover:text-brick-700"
-                      aria-label="Usuń środek lokomocji"
+                      aria-label={gettext("Remove means of transport")}
                     >
                       <Lucideicons.x class="size-4" />
                     </.button>
@@ -175,22 +180,22 @@ defmodule FirmowidWeb.Delegations.Views.DelegationForm do
                       size="small"
                       phx-click="add_transport_type"
                     >
-                      + Dodaj kolejny
+                      {gettext("+ Add another")}
                     </.button>
                   </div>
                 </div>
               </.form_row>
-              <.form_row label="Cel wyjazdu" for="delegation_purpose">
+              <.form_row label={gettext("Purpose of the trip")} for="delegation_purpose">
                 <.input
                   field={@form[:purpose]}
                   id="delegation_purpose"
                   type="text"
                   required
-                  placeholder="np. Wyjazd na Elixir Conf"
+                  placeholder={gettext("e.g. A trip to Elixir Conf")}
                   input_class="placeholder:text-grey-300 w-full sm:max-w-125"
                 />
               </.form_row>
-              <.form_row label="Przewidywana kwota" for="delegation_amount">
+              <.form_row label={gettext("Estimated amount")} for="delegation_amount">
                 <div class="flex flex-wrap items-center gap-2">
                   <div class="min-w-0 flex-1 sm:flex-none">
                     <.input
@@ -215,7 +220,7 @@ defmodule FirmowidWeb.Delegations.Views.DelegationForm do
             variant="primary"
             accent="teal"
             class="mt-20 w-full sm:float-end sm:mr-4 sm:w-42"
-          >Zaplanuj</.button>
+          >{pgettext("business trip form", "Plan")}</.button>
         </.form>
       </main>
     </div>
@@ -241,7 +246,7 @@ defmodule FirmowidWeb.Delegations.Views.DelegationForm do
         {:noreply,
          socket
          |> assign(:form, form)
-         |> put_flash(:error, "Wybierz poprawny miesiąc rozliczeniowy.")}
+         |> put_flash(:error, gettext("Choose a valid billing month."))}
     end
   end
 
@@ -324,11 +329,11 @@ defmodule FirmowidWeb.Delegations.Views.DelegationForm do
 
   defp transport_options do
     [
-      {"Kolej", "railway"},
-      {"Samolot", "airplane"},
-      {"Autobus (z wyłączeniem komunikacji miejskiej)", "bus"},
-      {"Komunikacja miejska", "public_transport"},
-      {"Inne", "other"}
+      {pgettext("means of transport", "Train"), "railway"},
+      {pgettext("means of transport", "Airplane"), "airplane"},
+      {pgettext("means of transport", "Bus (excluding public transport)"), "bus"},
+      {pgettext("means of transport", "Public transport"), "public_transport"},
+      {pgettext("means of transport", "Other"), "other"}
     ]
   end
 end

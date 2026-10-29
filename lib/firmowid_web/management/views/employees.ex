@@ -35,7 +35,7 @@ defmodule FirmowidWeb.Management.Views.Employees do
 
     socket =
       socket
-      |> assign(:page_title, "Zarządzanie pracownikami")
+      |> assign(:page_title, gettext("Employee management"))
       |> assign(:view, :standard)
       |> assign(:active_months, active_months)
       |> assign(
@@ -226,7 +226,7 @@ defmodule FirmowidWeb.Management.Views.Employees do
          put_flash(
            socket,
            :error,
-           "Nie udało się zaktualizować stawek: #{inspect(error)}"
+           gettext("Could not update the rates: %{error}", error: inspect(error))
          )}
     end
   end
@@ -255,7 +255,7 @@ defmodule FirmowidWeb.Management.Views.Employees do
         {:noreply, put_flash(socket, :error, message)}
 
       _ ->
-        {:noreply, put_flash(socket, :error, "Nie udało się przywrócić pracownika")}
+        {:noreply, put_flash(socket, :error, gettext("Could not restore the employee"))}
     end
   end
 
@@ -263,7 +263,7 @@ defmodule FirmowidWeb.Management.Views.Employees do
     {:noreply,
      socket
      |> push_event("copy-to-clipboard", %{text: number})
-     |> LiveToast.put_toast(:success, "Skopiowano numer konta")}
+     |> LiveToast.put_toast(:success, gettext("Bank account number copied"))}
   end
 
   # Distinct months (as naive_datetime) that have sessions, newest first.

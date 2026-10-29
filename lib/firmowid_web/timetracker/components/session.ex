@@ -51,7 +51,7 @@ defmodule FirmowidWeb.Timetracker.Components.Session do
         </.hidden_input>
 
         <span :if={length(@sessions) > 1} class="line-clamp-1 shrink-0 text-grey-600">
-          | {length(@sessions)} sesji
+          | {ngettext("%{count} session", "%{count} sessions", length(@sessions))}
         </span>
 
         <.button
@@ -60,7 +60,7 @@ defmodule FirmowidWeb.Timetracker.Components.Session do
           variant="unstyled"
           class="opacity-0 transition group-hover:opacity-100 focus:outline-hidden"
         >
-          <span class="sr-only">Edytuj tytuł</span>
+          <span class="sr-only">{gettext("Edit title")}</span>
         </.button>
       </div>
 
@@ -74,7 +74,7 @@ defmodule FirmowidWeb.Timetracker.Components.Session do
         class="ml-auto min-w-0 cursor-pointer rounded border-none bg-transparent px-2 py-1 text-sm text-grey-700 uppercase transition hover:bg-grey-200 focus:ring-0 disabled:pointer-events-none max-md:ml-0"
       >
         {case Enum.find(@active_projects, &(&1.id == parent_session.project_id)) do
-          nil -> "Select"
+          nil -> gettext("Select")
           project -> project.name
         end}
       </.button>
@@ -127,9 +127,9 @@ defmodule FirmowidWeb.Timetracker.Components.Session do
       >
         <div class="grid grid-cols-[repeat(5,auto)] gap-x-4 gap-y-3">
           <div class="col-span-5 grid grid-cols-subgrid text-sm text-grey-500">
-            <p class="col-start-2 px-2">Data</p>
-            <p class="px-2">Od</p>
-            <p class="px-2">Do</p>
+            <p class="col-start-2 px-2">{gettext("Date")}</p>
+            <p class="px-2">{pgettext("time range column", "From")}</p>
+            <p class="px-2">{pgettext("time range column", "To")}</p>
           </div>
           <div class="col-span-5 grid grid-cols-subgrid items-center gap-y-4">
             <.inputs_for :let={session} field={sessions_form[:start_end_times]}>
@@ -137,7 +137,7 @@ defmodule FirmowidWeb.Timetracker.Components.Session do
               <%= if overnight_session?(session) do %>
                 <div class="col-span-5 grid grid-cols-subgrid items-center gap-y-2">
                   <p class="line-clamp-1 text-sm text-grey-500">
-                    Sesja {session.index + 1}
+                    {gettext("Session %{number}", number: session.index + 1)}
                   </p>
                   <.input
                     type="date"
@@ -185,7 +185,11 @@ defmodule FirmowidWeb.Timetracker.Components.Session do
                     type="button"
                     phx-click="collapse_overnight_session"
                     phx-value-id={session[:id].value}
-                    data-confirm="Skrócić sesję nocną do jednego dnia? Czas po północy zostanie usunięty, bez możliwości przywrócenia."
+                    data-confirm={
+                      gettext(
+                        "Shorten the overnight session to one day? The time after midnight will be removed and cannot be restored."
+                      )
+                    }
                     variant="unstyled"
                     aria-label={gettext("Shorten session to one day")}
                   >
@@ -194,7 +198,7 @@ defmodule FirmowidWeb.Timetracker.Components.Session do
                 </div>
               <% else %>
                 <p class="line-clamp-1 text-sm text-grey-500">
-                  Sesja {session.index + 1}
+                  {gettext("Session %{number}", number: session.index + 1)}
                 </p>
                 <.input
                   type="date"
@@ -234,10 +238,10 @@ defmodule FirmowidWeb.Timetracker.Components.Session do
             size="small"
             phx-click={hide_popover(popover_id)}
           >
-            Anuluj
+            {gettext("Cancel")}
           </.button>
           <.button type="submit" class="text-sm" size="small">
-            Zapisz
+            {gettext("Save")}
           </.button>
         </div>
       </.popover>
@@ -245,7 +249,7 @@ defmodule FirmowidWeb.Timetracker.Components.Session do
     """
   end
 
-  def format_time(nil), do: "trwa"
+  def format_time(nil), do: gettext("ongoing")
 
   def format_time(%Time{} = time), do: Calendar.strftime(time, "%H:%M")
   def format_time(%DateTime{} = datetime), do: Calendar.strftime(datetime, "%H:%M")

@@ -41,13 +41,13 @@
 
     <div class="flex w-full max-w-[360px] flex-col gap-6">
       <div class="flex flex-col space-y-8 rounded-sm bg-grey-50 p-4">
-        <h3 class="font-bold">Podsumowanie:</h3>
+        <h3 class="font-bold">{gettext("Summary:")}</h3>
         <div>
-          <p class="mb-3">Przepracowane godziny:</p>
+          <p class="mb-3">{gettext("Hours worked:")}</p>
           <p class="text-xl font-bold">{TimeFormatter.format_duration(@total_duration)}</p>
         </div>
         <div :if={most_demanding = Enum.max_by(@projects, & &1.duration, fn -> nil end)}>
-          <p class="mb-3">Najbardziej wymagający projekt:</p>
+          <p class="mb-3">{gettext("Most demanding project:")}</p>
           <p class="text-xl font-bold">
             {TimeFormatter.format_duration(most_demanding.duration)}
           </p>
@@ -60,26 +60,26 @@
         class="flex flex-col gap-6 rounded-md bg-grey-50 p-4"
       >
         <div class="flex items-center justify-between gap-2 bg-grey-50">
-          <span class="font-bold">Ewidencja godzin</span>
+          <span class="font-bold">{gettext("Hours record")}</span>
 
           <%= if @current_hours_record do %>
             <span class="flex items-center justify-center gap-1 rounded-md bg-moss-200 py-[5px] pr-1 pl-2 text-xs font-semibold text-moss-700 uppercase">
-              WYSŁANO <.icon name="hero-check-micro" />
+              {pgettext("hours record badge", "Sent")} <.icon name="hero-check-micro" />
             </span>
           <% else %>
             <span class="flex items-center justify-center gap-1 rounded-md bg-grey-200 py-[5px] pr-1 pl-2 text-xs font-semibold text-grey-700 uppercase">
-              BRAK <.icon name="hero-x-mark-micro" />
+              {pgettext("hours record badge", "None")} <.icon name="hero-x-mark-micro" />
             </span>
           <% end %>
         </div>
         <p :if={!@can_use_hours_records} class="mt-2 text-sm">
-          Aby wypełnić ewidencję godzin musisz ustawić imię i nazwisko oraz datę zatrudnienia w
+          {gettext("To fill in the hours record you must set your name and employment date in")}
           <.link
             kind="unstyled"
             navigate={~p"/ustawienia"}
             class="text-rust-700 hover:underline"
           >
-            Ustawieniach
+            {pgettext("hours record settings link", "Settings")}
           </.link>
         </p>
         <.live_component
@@ -117,7 +117,7 @@
         <.submission_history records={@previous_hours_records} user={@current_user} />
       </div>
       <p :if={!@current_hours_record && @total_duration <= 3599} class="mt-2 text-center text-sm">
-        Aby wypełnić ewidencję godzin musisz dodać przynajmniej jedną godzinę pracy
+        {gettext("To fill in the hours record you must add at least one hour of work")}
       </p>
     </div>
   </div>

@@ -38,26 +38,29 @@ defmodule FirmowidWeb.Management.Components.ProfileTab do
     <div class="flex h-full min-h-0 flex-col gap-6 overflow-y-auto overscroll-contain">
       <.card dimmed={@user.member.archived_at} class="pb-9">
         <.card_header>
-          Dane korespondencyjne
+          {gettext("Contact details")}
         </.card_header>
         <div class="grid grid-cols-2 gap-5 max-md:grid-cols-1">
           <div class="flex flex-col gap-5">
-            <.user_card_info label="Numer telefonu">
+            <.user_card_info label={gettext("Phone number")}>
               {present(@user.member.phone)}
             </.user_card_info>
-            <.user_card_info label="Adres e-mail">
+            <.user_card_info label={gettext("Email address")}>
               {present(@user.email)}
             </.user_card_info>
-            <.user_card_info label="Slack">
+            <.user_card_info label={gettext("Slack")}>
               {present(@user.member.slack_url) |> String.replace_prefix("https://", "")}
             </.user_card_info>
           </div>
           <div class="flex flex-col gap-5">
-            <.user_card_info label="Adres zamieszkania">
+            <.user_card_info label={gettext("Residential address")}>
               {present(@user.member.residence_address)}
             </.user_card_info>
 
-            <.user_card_info :if={@user.member.correspondence_address} label="Adres korespondencyjny">
+            <.user_card_info
+              :if={@user.member.correspondence_address}
+              label={gettext("Correspondence address")}
+            >
               {@user.member.correspondence_address}
             </.user_card_info>
           </div>
@@ -74,7 +77,7 @@ defmodule FirmowidWeb.Management.Components.ProfileTab do
       <div class="grid grid-cols-[repeat(auto-fit,minmax(min(100%,20rem),1fr))] items-start gap-6">
         <.card class="min-w-0">
           <.card_header>
-            Informacje o zatrudnieniu
+            {gettext("Employment information")}
             <:actions>
               <.card_edit_actions
                 :if={@employment_contract}
@@ -94,35 +97,41 @@ defmodule FirmowidWeb.Management.Components.ProfileTab do
           >
             <div class="flex flex-col gap-4">
               <%= if @editing_contract do %>
-                <.user_card_info label="Status" for={@contract_form[:status].id}>
+                <.user_card_info label={gettext("Status")} for={@contract_form[:status].id}>
                   <.input
                     field={@contract_form[:status]}
                     container_class="w-full"
                     type="select"
                     options={[
-                      {"Oczekuje na podpis", :pending_signature},
-                      {"Podpisana", :signed},
-                      {"Obowiązująca", :active}
+                      {gettext("Awaiting signature"), :pending_signature},
+                      {gettext("Signed"), :signed},
+                      {pgettext("contract status", "Active"), :active}
                     ]}
                   />
                 </.user_card_info>
-                <.user_card_info label="Rodzaj umowy" for={@contract_form[:contract_type].id}>
+                <.user_card_info
+                  label={gettext("Contract type")}
+                  for={@contract_form[:contract_type].id}
+                >
                   <.input
                     field={@contract_form[:contract_type]}
                     container_class="w-full"
                     type="select"
                     options={[
-                      {"Umowa o pracę", :uop},
+                      {gettext("Employment contract"), :uop},
                       {"B2B", :b2b},
-                      {"Umowa zlecenie", :uz},
-                      {"Umowa o dzieło", :uod}
+                      {gettext("Mandate contract"), :uz},
+                      {gettext("Specific-task contract"), :uod}
                     ]}
                   />
                 </.user_card_info>
-                <.user_card_info label="Stanowisko" for={@contract_form[:position].id}>
+                <.user_card_info label={gettext("Position")} for={@contract_form[:position].id}>
                   <.input field={@contract_form[:position]} class="w-full" />
                 </.user_card_info>
-                <.user_card_info label="Data podpisania umowy" for={@contract_form[:signed_at].id}>
+                <.user_card_info
+                  label={gettext("Contract signing date")}
+                  for={@contract_form[:signed_at].id}
+                >
                   <.input field={@contract_form[:signed_at]} type="date" class="w-full" />
                 </.user_card_info>
                 <.user_card_info
@@ -148,16 +157,16 @@ defmodule FirmowidWeb.Management.Components.ProfileTab do
                   />
                 </.user_card_info>
               <% else %>
-                <.user_card_info label="Status umowy">
+                <.user_card_info label={gettext("Contract status")}>
                   {format_contract_status(@employment_contract && @employment_contract.status)}
                 </.user_card_info>
-                <.user_card_info label="Rodzaj umowy">
+                <.user_card_info label={gettext("Contract type")}>
                   {format_contract_type(@employment_contract && @employment_contract.contract_type)}
                 </.user_card_info>
-                <.user_card_info label="Stanowisko">
+                <.user_card_info label={gettext("Position")}>
                   {present(@employment_contract && @employment_contract.position)}
                 </.user_card_info>
-                <.user_card_info label="Data podpisania umowy">
+                <.user_card_info label={gettext("Contract signing date")}>
                   {present_date(@employment_contract && @employment_contract.signed_at)}
                   <.link
                     :if={@employment_contract}
@@ -168,7 +177,8 @@ defmodule FirmowidWeb.Management.Components.ProfileTab do
                     redirect={~p"/zarzadzanie/umowy/#{@employment_contract.id}"}
                     download
                   >
-                    <Lucideicons.file_text class="size-4" /> <span class="font-medium">Umowa</span>
+                    <Lucideicons.file_text class="size-4" />
+                    <span class="font-medium">{gettext("Contract")}</span>
                   </.link>
                 </.user_card_info>
                 <.user_card_info
@@ -228,16 +238,16 @@ defmodule FirmowidWeb.Management.Components.ProfileTab do
     end
   end
 
-  defp format_contract_type(nil), do: "Nieokreślony"
-  defp format_contract_type(:uop), do: "Umowa o pracę"
+  defp format_contract_type(nil), do: gettext("Unspecified")
+  defp format_contract_type(:uop), do: gettext("Employment contract")
   defp format_contract_type(:b2b), do: "B2B"
-  defp format_contract_type(:uz), do: "Umowa zlecenie"
-  defp format_contract_type(:uod), do: "Umowa o dzieło"
+  defp format_contract_type(:uz), do: gettext("Mandate contract")
+  defp format_contract_type(:uod), do: gettext("Specific-task contract")
 
   defp format_contract_status(nil), do: "—"
-  defp format_contract_status(:pending_signature), do: "Oczekuje na podpis"
-  defp format_contract_status(:signed), do: "Podpisana"
-  defp format_contract_status(:active), do: "Obowiązująca"
+  defp format_contract_status(:pending_signature), do: gettext("Awaiting signature")
+  defp format_contract_status(:signed), do: gettext("Signed")
+  defp format_contract_status(:active), do: pgettext("contract status", "Active")
 
   defp present(nil), do: "—"
   defp present(""), do: "—"

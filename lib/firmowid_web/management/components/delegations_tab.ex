@@ -30,13 +30,13 @@ defmodule FirmowidWeb.Management.Components.DelegationsTab do
     <div class="space-y-8">
       <.delegations_section
         :if={@ongoing_delegations != []}
-        title="Delegacje w toku"
+        title={gettext("Business trips in progress")}
         employee_id={@employee_id}
         delegations={@ongoing_delegations}
       />
       <.delegations_section
         :if={@previous_delegations != []}
-        title="Poprzednie delegacje"
+        title={gettext("Previous business trips")}
         employee_id={@employee_id}
         delegations={@previous_delegations}
       />
@@ -76,10 +76,10 @@ defmodule FirmowidWeb.Management.Components.DelegationsTab do
     <.link
       kind="unstyled"
       navigate={~p"/zarzadzanie/pracownicy/#{@employee_id}/delegacje/#{@delegation.reference}"}
-      aria-label={"Otwórz delegację: #{@delegation.title}"}
+      aria-label={gettext("Open business trip: %{title}", title: @delegation.title)}
       class="flex shrink-0 items-center gap-1"
     >
-      <.status_badge status={@delegation.status} label="wymaga podpisu" />
+      <.status_badge status={@delegation.status} label={gettext("requires signature")} />
       <Lucideicons.chevron_right class="size-4 text-grey-700" />
     </.link>
     """

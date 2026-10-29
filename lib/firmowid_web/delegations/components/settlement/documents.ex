@@ -18,7 +18,7 @@ defmodule FirmowidWeb.Delegations.Components.Settlement.Documents do
   def related_documents(assigns) do
     ~H"""
     <div class="mt-4 flex flex-wrap items-center gap-2 text-sm">
-      <span class="font-medium text-grey-700">Powiązane dokumenty:</span>
+      <span class="font-medium text-grey-700">{gettext("Related documents:")}</span>
       <div class="flex flex-wrap gap-2">
         <span :for={blob <- @expense.related_blobs}>
           <.document_pill filename={blob.original_filename} url={blob.url}>
@@ -30,7 +30,7 @@ defmodule FirmowidWeb.Delegations.Components.Settlement.Documents do
                 phx-click="remove-related-document"
                 phx-value-expense-id={@expense.id}
                 phx-value-blob-id={blob.id}
-                aria-label={"Usuń #{blob.original_filename}"}
+                aria-label={gettext("Remove %{name}", name: blob.original_filename)}
               ><Lucideicons.x class="size-3" /></.button>
             </:action>
           </.document_pill>
@@ -51,53 +51,71 @@ defmodule FirmowidWeb.Delegations.Components.Settlement.Documents do
     ~H"""
     <.modal id={@id} on_cancel={hide_modal(@id)} class="max-w-[600px]">
       <h2 id={"#{@id}-title"} class="flex items-center gap-2 text-base font-medium text-black">
-        {@icon}{@title} - jakie dokumenty załączyć?
+        {@icon}{gettext("%{title} - which documents should I attach?", title: @title)}
       </h2>
       <div id={"#{@id}-description"} class="mt-5 flex flex-col gap-2 text-sm text-black">
         <%= case @kind do %>
           <% "transport" -> %>
-            <.modal_paragraph heading="Masz Fakturę?">
-              Jeśli masz
-              <.document_emphasis>fakturę</.document_emphasis>
-              za bilet lub przejazd, dodaj ją jako podstawowy dokument rozliczeniowy.
+            <.modal_paragraph heading={pgettext("transport documents", "Do you have an invoice?")}>
+              <.emphasized_text text={
+                gettext(
+                  "If you have an *invoice* for a ticket or a journey, add it as the main settlement document."
+                )
+              } />
             </.modal_paragraph>
-            <.modal_paragraph heading="Nie masz faktury?">
-              Załącz
-              <.document_emphasis>bilet</.document_emphasis>
-              np. bilet kolejowy, autobusowy, lotniczy lub bilet komunikacji miejskiej wykorzystany w trakcie delegacji.
+            <.modal_paragraph heading={gettext("Don't have an invoice?")}>
+              <.emphasized_text text={
+                gettext(
+                  "Attach a *ticket*, e.g. a train, bus, plane or public transport ticket used during the business trip."
+                )
+              } />
             </.modal_paragraph>
-            <.modal_paragraph heading="Nie masz ani faktury, ani biletu?">
-              Załącz
-              <.document_emphasis>rezerwację</.document_emphasis>
-              lub <.document_emphasis>potwierdzenie rezerwacji</.document_emphasis>. Dokument powinien pokazywać, czego dotyczył wydatek: trasę, datę, przewoźnika lub usługę. W tym przypadku załącz także <.document_emphasis>potwierdzenie płatności</.document_emphasis>.
+            <.modal_paragraph heading={gettext("Have neither an invoice nor a ticket?")}>
+              <.emphasized_text text={
+                gettext(
+                  "Attach a *booking* or a *booking confirmation*. The document should show what the expense was for: the route, date, carrier or service. In this case, also attach a *payment confirmation*."
+                )
+              } />
             </.modal_paragraph>
             <hr class="my-2 w-full border-grey-200" />
             <p>
-              <span class="font-medium">Uwaga:</span>
-              Samo potwierdzenie płatności nie wystarczy. Jeśli załączasz potwierdzenie przelewu lub płatności kartą, dodaj do niego dokument potwierdzający, za co była płatność, np. rezerwację.
+              <span class="font-medium">{gettext("Note:")}</span>
+              {gettext(
+                "A payment confirmation alone is not enough. If you attach a transfer or card payment confirmation, add a document showing what the payment was for, e.g. a booking."
+              )}
             </p>
           <% "accommodation" -> %>
-            <.modal_paragraph heading="Masz fakturę?">
-              Jeśli masz
-              <.document_emphasis>fakturę</.document_emphasis>
-              za nocleg, dodaj ją jako podstawowy dokument rozliczeniowy.
+            <.modal_paragraph heading={pgettext("accommodation documents", "Do you have an invoice?")}>
+              <.emphasized_text text={
+                gettext(
+                  "If you have an *invoice* for accommodation, add it as the main settlement document."
+                )
+              } />
             </.modal_paragraph>
-            <.modal_paragraph heading="Nie masz faktury?">
-              Załącz
-              <.document_emphasis>rezerwację noclegu</.document_emphasis>
-              oraz <.document_emphasis>potwierdzenie zapłaty</.document_emphasis>. Dotyczy to np. sytuacji, gdy nocleg był rezerwowany przez Booking lub podobny serwis i obiekt nie wystawił faktury. Wtedy do rozliczenia dodaj dokument rezerwacji oraz dowód, że nocleg został opłacony.
+            <.modal_paragraph heading={gettext("Don't have an invoice?")}>
+              <.emphasized_text text={
+                gettext(
+                  "Attach an *accommodation booking* and a *payment confirmation*. This applies, for example, when the accommodation was booked through Booking or a similar service and the property did not issue an invoice. In that case, add the booking document and proof that the accommodation was paid for."
+                )
+              } />
             </.modal_paragraph>
-            <.modal_paragraph heading="Nie masz żadnego dokumentu?">
-              Możesz wybrać
-              <.document_emphasis>ryczałt</.document_emphasis>
-              za nocleg. W takiej sytuacji musisz jednak mieć inne potwierdzenie, że delegacja faktycznie się odbyła, np. bilety transportowe lub inny dokument związany z wyjazdem. Do tego wystarczy ci wypełniona sekcja "Przejazdy".
+            <.modal_paragraph heading={gettext("Don't have any document?")}>
+              <.emphasized_text text={
+                gettext(
+                  "You can choose a *flat rate* for accommodation. In that case, you must still have other confirmation that the business trip actually took place, e.g. transport tickets or another document related to the trip. The completed \"Journeys\" section is enough for that."
+                )
+              } />
             </.modal_paragraph>
           <% "other" -> %>
             <p>
-              Inne wydatki powinny mieć dokument pokazujący, czego dotyczył koszt. Najlepiej załączyć fakturę, rachunek, bilet, rezerwację, polisę albo inny dokument potwierdzający usługę lub zakup. Jeśli masz tylko potwierdzenie płatności, dodaj też dokument opisujący, za co zapłacono.
+              {gettext(
+                "Other expenses should have a document showing what the cost was for. It is best to attach an invoice, receipt, ticket, booking, policy or another document confirming the service or purchase. If you only have a payment confirmation, also add a document describing what was paid for."
+              )}
             </p>
             <p>
-              Wydatek musi być związany z delegacją. Przykładowo ubezpieczenie można rozliczyć wtedy, gdy pokrywa się z podróżą służbową.
+              {gettext(
+                "The expense must be related to the business trip. For example, insurance can be settled when it covers the business trip."
+              )}
             </p>
         <% end %>
       </div>
@@ -149,6 +167,23 @@ defmodule FirmowidWeb.Delegations.Components.Settlement.Documents do
     <div>
       <h3 class="font-medium">{@heading}</h3><p>{render_slot(@inner_block)}</p>
     </div>
+    """
+  end
+
+  attr :text, :string, required: true
+
+  # Renders a translated sentence, emphasising the parts wrapped in asterisks.
+  defp emphasized_text(assigns) do
+    assigns = assign(assigns, :parts, assigns.text |> String.split("*") |> Enum.with_index())
+
+    ~H"""
+    <%= for {part, index} <- @parts do %>
+      <%= if rem(index, 2) == 1 do %>
+        <.document_emphasis>{part}</.document_emphasis>
+      <% else %>
+        {part}
+      <% end %>
+    <% end %>
     """
   end
 

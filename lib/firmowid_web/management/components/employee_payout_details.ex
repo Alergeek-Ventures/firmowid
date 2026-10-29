@@ -28,7 +28,7 @@ defmodule FirmowidWeb.Management.Components.EmployeePayoutDetails do
     <div id={@id}>
       <.card class="relative z-10" dimmed={@user.member.archived_at}>
         <.card_header>
-          Dane do przelewu
+          {gettext("Transfer details")}
           <:actions>
             <.card_edit_actions
               editing={@editing}
@@ -47,7 +47,10 @@ defmodule FirmowidWeb.Management.Components.EmployeePayoutDetails do
           phx-submit="save_payout"
         >
           <div class="grid grid-cols-[minmax(min-content,2fr)_minmax(min-content,1fr)] gap-4">
-            <.user_card_info label="Numer konta bankowego" for={@form[:bank_account_number].id}>
+            <.user_card_info
+              label={gettext("Bank account number")}
+              for={@form[:bank_account_number].id}
+            >
               <%= if @editing do %>
                 <.input
                   field={@form[:bank_account_number]}
@@ -55,13 +58,13 @@ defmodule FirmowidWeb.Management.Components.EmployeePayoutDetails do
                   class="w-full"
                 />
               <% else %>
-                {@user.member.bank_account_number || "Brak danych"}
+                {@user.member.bank_account_number || gettext("No data")}
               <% end %>
             </.user_card_info>
             <div class="flex items-end justify-between gap-4">
               <%= if @editing do %>
                 <.user_card_info
-                  label="Nowa stawka"
+                  label={gettext("New rate")}
                   for={@form[:hourly_rate].id}
                   class="text-nowrap"
                 >
@@ -73,13 +76,17 @@ defmodule FirmowidWeb.Management.Components.EmployeePayoutDetails do
                       min="0"
                       input_class="max-w-20 text-right"
                     />
-                    <p>zł/godz.</p>
+                    <p>{gettext("PLN/h")}</p>
                   </div>
                 </.user_card_info>
               <% else %>
-                <.user_card_info label="Stawka" class="text-nowrap">
+                <.user_card_info label={pgettext("hourly rate", "Rate")} class="text-nowrap">
                   <div class="min-h-8.5">
-                    {Money.new(:PLN, @hourly_rate) |> Money.to_string!(no_fraction_if_integer: true)}/godz.
+                    {gettext("%{amount}/h",
+                      amount:
+                        Money.new(:PLN, @hourly_rate)
+                        |> Money.to_string!(no_fraction_if_integer: true)
+                    )}
                   </div>
                 </.user_card_info>
                 <.button
@@ -90,7 +97,7 @@ defmodule FirmowidWeb.Management.Components.EmployeePayoutDetails do
                   disabled={Enum.empty?(@salary_history)}
                   class="self-center"
                 >
-                  Historia stawek
+                  {gettext("Rate history")}
                 </.button>
               <% end %>
             </div>
@@ -99,21 +106,24 @@ defmodule FirmowidWeb.Management.Components.EmployeePayoutDetails do
       </.card>
 
       <.modal id="salary-history-modal">
-        <h2 class="mb-4 text-xl font-medium">Historia stawek</h2>
+        <h2 class="mb-4 text-xl font-medium">{gettext("Rate history")}</h2>
         <div class="flex scrollbar-card max-h-[400px] flex-col gap-2 divide-grey-100 overflow-y-auto">
           <%= if Enum.empty?(@salary_history) do %>
-            <p class="text-grey-700">Brak danych</p>
+            <p class="text-grey-700">{gettext("No data")}</p>
           <% else %>
             <div :for={salary <- @salary_history} class="flex items-end gap-2">
               <span>
-                {:PLN
-                |> Money.new(salary.hourly_rate)
-                |> Money.to_string!(no_fraction_if_integer: true)}/godz.
+                {gettext("%{amount}/h",
+                  amount:
+                    :PLN
+                    |> Money.new(salary.hourly_rate)
+                    |> Money.to_string!(no_fraction_if_integer: true)
+                )}
               </span>
               <span class="text-sm text-grey-500">
                 ({TimeFormatter.format_date(salary.starts_at)} - {if salary.ends_at,
                   do: TimeFormatter.format_date(salary.ends_at),
-                  else: "obecnie"})
+                  else: pgettext("salary period end", "present")})
               </span>
             </div>
           <% end %>
@@ -166,7 +176,7 @@ defmodule FirmowidWeb.Management.Components.EmployeePayoutDetails do
            scope: scope
          ) do
       {:ok, _salary} -> assign_salaries(socket)
-      {:error, _} -> put_flash(socket, :error, "Nie udało się zapisać stawki. Spróbuj ponownie.")
+      {:error, _} -> put_flash(socket, :error, gettext("Could not save the rate. Try again."))
     end
   end
 
@@ -180,7 +190,7 @@ defmodule FirmowidWeb.Management.Components.EmployeePayoutDetails do
         assign(socket, :user, updated_user)
 
       {:error, _} ->
-        put_flash(socket, :error, "Nie udało się zapisać numeru konta. Spróbuj ponownie.")
+        put_flash(socket, :error, gettext("Could not save the bank account number. Try again."))
     end
   end
 

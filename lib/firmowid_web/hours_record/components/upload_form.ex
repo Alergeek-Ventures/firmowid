@@ -40,19 +40,19 @@ defmodule FirmowidWeb.HoursRecord.Components.UploadForm do
         <div class="relative flex w-full justify-between">
           <div class="w-[60px] space-y-1">
             <.render_dot stage={:download} state={@state} />
-            <p class="text-center">Pobierz</p>
+            <p class="text-center">{gettext("Download")}</p>
           </div>
           <div class="w-[60px] space-y-1">
             <.render_dot stage={:sign} state={@state} />
-            <p class="text-center">Podpisz</p>
+            <p class="text-center">{gettext("Sign")}</p>
           </div>
           <div class="w-[60px] space-y-1">
             <.render_dot stage={:upload} state={@state} />
-            <p class="text-center">Wgraj</p>
+            <p class="text-center">{gettext("Upload")}</p>
           </div>
           <div class="w-[60px] space-y-1">
             <.render_dot stage={:send} state={@state} />
-            <p class="text-center">Wyślij</p>
+            <p class="text-center">{gettext("Send")}</p>
           </div>
         </div>
       </div>
@@ -71,9 +71,9 @@ defmodule FirmowidWeb.HoursRecord.Components.UploadForm do
             data-download-target={@myself}
             class="ml-auto w-full max-w-32"
           >
-            <span data-download-idle>Pobierz</span>
+            <span data-download-idle>{gettext("Download")}</span>
             <span data-download-loading class="hidden items-center gap-2">
-              <Lucideicons.loader_circle class="size-4 animate-spin" /> Pobieranie…
+              <Lucideicons.loader_circle class="size-4 animate-spin" /> {gettext("Downloading…")}
             </span>
           </.link>
         <% :sign -> %>
@@ -93,7 +93,7 @@ defmodule FirmowidWeb.HoursRecord.Components.UploadForm do
               variant="outline"
               class="w-full max-w-32 text-center"
             >
-              Podpisane!
+              {gettext("Signed!")}
             </.button>
           </div>
         <% value -> %>
@@ -106,13 +106,13 @@ defmodule FirmowidWeb.HoursRecord.Components.UploadForm do
           >
             <.file_upload
               upload={@uploads.hours_record}
-              prompt="Dodaj podpisaną ewidencję godzin"
+              prompt={gettext("Add the signed hours record")}
               content_class="flex"
               prompt_class="font-medium"
               error_formatter={&error_to_string/1}
             />
             <.button disabled={value == :upload} class="w-full max-w-32">
-              Wyślij
+              {gettext("Send")}
             </.button>
           </form>
       <% end %>
@@ -157,7 +157,7 @@ defmodule FirmowidWeb.HoursRecord.Components.UploadForm do
   end
 
   def handle_event("pdf-download-error", _params, socket) do
-    LiveToast.send_toast(:error, "Nie udało się pobrać ewidencji godzin.")
+    LiveToast.send_toast(:error, gettext("Could not download the hours record."))
     {:noreply, socket}
   end
 
@@ -188,11 +188,11 @@ defmodule FirmowidWeb.HoursRecord.Components.UploadForm do
 
       case result do
         {:error, error} ->
-          LiveToast.send_toast(:error, "Wystąpił błąd podczas zapisywania pliku.")
+          LiveToast.send_toast(:error, gettext("An error occurred while saving the file."))
           {:ok, {:error, error}}
 
         {:ok, hours_record} ->
-          LiveToast.send_toast(:info, "Plik został zapisany.")
+          LiveToast.send_toast(:info, gettext("The file has been saved."))
           {:ok, {:ok, hours_record}}
       end
     end)
@@ -224,7 +224,7 @@ defmodule FirmowidWeb.HoursRecord.Components.UploadForm do
     """
   end
 
-  def error_to_string(:too_large), do: "Image too large"
-  def error_to_string(:too_many_files), do: "Too many files"
-  def error_to_string(:not_accepted), do: "Unacceptable file type"
+  def error_to_string(:too_large), do: gettext("Image too large")
+  def error_to_string(:too_many_files), do: gettext("Too many files")
+  def error_to_string(:not_accepted), do: gettext("Unacceptable file type")
 end

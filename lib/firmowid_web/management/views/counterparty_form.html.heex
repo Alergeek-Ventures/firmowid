@@ -13,8 +13,8 @@
         </p>
         <p class="text-2xl/tight font-medium">
           {case @live_action do
-            :new -> "Nowy kontrahent"
-            :edit -> "Edycja kontrahenta"
+            :new -> gettext("New counterparty")
+            :edit -> gettext("Edit counterparty")
           end}
         </p>
       </div>
@@ -25,13 +25,13 @@
           kind="button"
           variant="outline"
         >
-          Anuluj
+          {gettext("Cancel")}
         </.link>
 
         <.button variant="tertiary">
           {case @live_action do
-            :new -> "Dodaj kontrahenta"
-            :edit -> "Zapisz zmiany"
+            :new -> gettext("Add counterparty")
+            :edit -> gettext("Save changes")
           end}
         </.button>
       </div>
@@ -40,7 +40,9 @@
     <div class="grid grid-rows-2 gap-16 md:grid-cols-2 md:grid-rows-1">
       <section class="flex flex-col gap-8">
         <div class="flex flex-col gap-4">
-          <h2 class="mb-6 text-base/tight font-medium text-grey-900">Informacje podstawowe</h2>
+          <h2 class="mb-6 text-base/tight font-medium text-grey-900">
+            {gettext("Basic information")}
+          </h2>
           <div class="grid grid-cols-[min-content_1fr] items-start gap-x-5 gap-y-3">
             <label class="pt-1.5 text-sm text-nowrap text-grey-700" for={@form[:tax_id].id}>
               NIP/ID*
@@ -59,37 +61,39 @@
                 phx-value-nip={@form[:tax_id].value}
                 class="w-[107px] bg-grey-200! text-grey-900! hover:bg-grey-300! active:bg-grey-400!"
               >
-                Pobierz dane
+                {gettext("Fetch data")}
               </.button>
             </div>
 
-            <label class="text-sm text-nowrap text-grey-700" for={@form[:type].id}>Typ</label>
+            <label class="text-sm text-nowrap text-grey-700" for={@form[:type].id}>{gettext(
+              "Type"
+            )}</label>
             <.input
               field={@form[:type]}
               type="select"
-              options={[{"Firma", :company}, {"Osoba fizyczna", :individual}]}
+              options={[{gettext("Company"), :company}, {gettext("Individual"), :individual}]}
             />
 
             <label class="pt-1.5 text-sm text-nowrap text-grey-700" for={@form[:display_name].id}>
-              Nazwa wyświetlana
+              {gettext("Display name")}
             </label>
             <.input field={@form[:display_name]} />
 
             <%= if to_string(@form[:type].value) == "company" do %>
               <label class="pt-1.5 text-sm text-nowrap text-grey-700" for={@form[:full_name].id}>
-                Pełna nazwa*
+                {pgettext("counterparty", "Full name")}*
               </label>
               <.input field={@form[:full_name]} />
             <% else %>
               <label class="pt-1.5 text-sm text-nowrap text-grey-700" for={@form[:given_name].id}>
-                Imię*
+                {gettext("First name")}*
               </label>
               <div>
                 <.input field={@form[:given_name]} />
               </div>
 
               <label class="pt-1.5 text-sm text-nowrap text-grey-700" for={@form[:surname].id}>
-                Nazwisko*
+                {gettext("Last name")}*
               </label>
               <.input field={@form[:surname]} />
 
@@ -99,10 +103,10 @@
           </div>
         </div>
         <div class="flex flex-col gap-4">
-          <h2 class="mb-6 text-base/tight font-medium text-grey-900">Dodatkowe</h2>
+          <h2 class="mb-6 text-base/tight font-medium text-grey-900">{gettext("Additional")}</h2>
           <div class="grid grid-cols-[min-content_1fr] items-start gap-x-5 gap-y-3">
             <label class="text-sm text-nowrap text-grey-700" for={@form[:description].id}>
-              Notatki
+              {gettext("Notes")}
             </label>
             <.input
               field={@form[:description]}
@@ -117,35 +121,43 @@
       <section>
         <div class="flex flex-col gap-4">
           <h2 class="mb-6 text-base/tight font-medium text-grey-900">
-            Dane kontaktowe i adresowe
+            {gettext("Contact and address details")}
           </h2>
           <div class="grid grid-cols-[min-content_1fr] items-start gap-x-5 gap-y-3">
-            <label class="pt-1.5 text-sm text-nowrap text-grey-700" for={@form[:email].id}>Email</label>
+            <label class="pt-1.5 text-sm text-nowrap text-grey-700" for={@form[:email].id}>{gettext(
+              "Email"
+            )}</label>
             <.input field={@form[:email]} is_tooltip={true} />
 
-            <label class="pt-1.5 text-sm text-nowrap text-grey-700" for={@form[:phone].id}>Telefon</label>
+            <label class="pt-1.5 text-sm text-nowrap text-grey-700" for={@form[:phone].id}>{gettext(
+              "Phone"
+            )}</label>
             <.input field={@form[:phone]} is_tooltip={true} />
 
             <label class="pt-1.5 text-sm text-nowrap text-grey-700" for={@form[:address].id}>
-              Adres
+              {gettext("Address")}
             </label>
             <.input
               field={@form[:address]}
               type="textarea"
               is_tooltip={true}
-              placeholder="Ulica, nr budynku i/lub mieszkania, kod pocztowy, miasto"
+              placeholder={gettext("Street, building and/or flat number, postal code, city")}
             />
 
-            <label class="pt-1.5 text-sm text-nowrap text-grey-700" for={@form[:country].id}>Kraj*</label>
+            <label class="pt-1.5 text-sm text-nowrap text-grey-700" for={@form[:country].id}>{gettext(
+              "Country"
+            )}*</label>
             <.input
               field={@form[:country]}
               type="select"
               options={@country_options}
-              prompt="Wybierz kraj"
+              prompt={gettext("Select a country")}
               required
             />
 
-            <label class="text-sm text-grey-700" for={@form[:is_different_mail_address].id}>Inny adres korespondencyjny</label>
+            <label class="text-sm text-grey-700" for={@form[:is_different_mail_address].id}>{gettext(
+              "Different correspondence address"
+            )}</label>
             <.switch
               field={@form[:is_different_mail_address]}
               class="w-12 gap-3! self-center"
@@ -154,7 +166,7 @@
 
             <%= if Phoenix.HTML.Form.normalize_value("switch", @form[:is_different_mail_address].value) do %>
               <label class="text-sm text-grey-700" for={@form[:mail_address].id}>
-                Adres
+                {gettext("Address")}
               </label>
               <.input
                 field={@form[:mail_address]}
@@ -162,13 +174,13 @@
                 is_tooltip={true}
               />
               <label class="text-sm text-grey-700" for={@form[:mail_country].id}>
-                Kraj
+                {gettext("Country")}
               </label>
               <.input
                 field={@form[:mail_country]}
                 type="select"
                 options={@country_options}
-                prompt="Wybierz kraj"
+                prompt={gettext("Select a country")}
               />
             <% end %>
           </div>
