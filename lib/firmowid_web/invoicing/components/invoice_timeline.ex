@@ -32,20 +32,20 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceTimeline do
     ~H"""
     <div class="flex flex-col gap-6">
       <div class="flex flex-row items-start justify-between">
-        <h3 class="text-sm/snug text-grey-700">Historia dokumentu</h3>
+        <h3 class="text-sm/snug text-grey-700">{gettext("Document history")}</h3>
         <.button
           phx-click="hide_timeline"
           phx-target="#invoice-show"
           variant="secondary"
           size="small"
         >
-          <.icon name="hero-chevron-left-mini" class="size-4" /> Wróć do podglądu
+          <.icon name="hero-chevron-left-mini" class="size-4" /> {gettext("Back to preview")}
         </.button>
       </div>
 
       <%= if Enum.empty?(@events) do %>
         <p class="py-4 text-grey-700">
-          Brak historii dla tego dokumentu.
+          {gettext("No history for this document.")}
         </p>
       <% else %>
         <div class="relative">
@@ -101,10 +101,11 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceTimeline do
     ~H"""
     <.timeline_item event={@event}>
       <:label>
-        Utworzenie dokumentu
+        {gettext("Document created")}
       </:label>
       <:content>
-        numer dokumentu: <span class="font-bold text-teal-700">{@event.metadata.invoice_number}</span>
+        {gettext("document number:")}
+        <span class="font-bold text-teal-700">{@event.metadata.invoice_number}</span>
       </:content>
     </.timeline_item>
     """
@@ -114,7 +115,7 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceTimeline do
     ~H"""
     <.timeline_item event={@event}>
       <:label>
-        Wysłano do KSeF
+        {gettext("Sent to KSeF")}
       </:label>
     </.timeline_item>
     """
@@ -124,10 +125,11 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceTimeline do
     ~H"""
     <.timeline_item event={@event}>
       <:label>
-        Potwierdzono przez KSeF
+        {gettext("Confirmed by KSeF")}
       </:label>
       <:content>
-        nadano numer KSeF: <span class="font-bold text-teal-700">{@event.metadata.ksef_number}</span>
+        {gettext("KSeF number assigned:")}
+        <span class="font-bold text-teal-700">{@event.metadata.ksef_number}</span>
       </:content>
     </.timeline_item>
     """
@@ -137,11 +139,12 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceTimeline do
     ~H"""
     <.timeline_item event={@event}>
       <:label>
-        Błąd wysyłki
+        {gettext("Submission error")}
       </:label>
       <:content>
-        Zespół odpowiedzialny za integrację z KSeF został powiadomiony.
-        Wysyłanie dokumentu zostanie automatycznie ponowione w ciągu 24 godzin.
+        {gettext(
+          "The team responsible for the KSeF integration has been notified. The document will be sent again automatically within 24 hours."
+        )}
       </:content>
     </.timeline_item>
     """
@@ -151,10 +154,10 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceTimeline do
     ~H"""
     <.timeline_item event={@event}>
       <:label>
-        Faktura wysłana e-mailem
+        {gettext("Invoice sent by email")}
       </:label>
       <:content>
-        Do kontrahenta wysłano wiadomość e-mail z fakturą.
+        {gettext("An email with the invoice was sent to the counterparty.")}
         <.email_target email={@event.metadata.recipient_email} />
       </:content>
     </.timeline_item>
@@ -165,10 +168,10 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceTimeline do
     ~H"""
     <.timeline_item event={@event}>
       <:label>
-        Błąd wysyłki e-maila
+        {gettext("Email sending error")}
       </:label>
       <:content>
-        <span>{@event.metadata.error_message || "Nie udało się wysłać wiadomości email"}</span>
+        <span>{@event.metadata.error_message || gettext("Failed to send the email message")}</span>
         <.email_target email={@event.metadata.recipient_email} />
       </:content>
     </.timeline_item>
@@ -179,10 +182,10 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceTimeline do
     ~H"""
     <.timeline_item event={@event}>
       <:label>
-        Wysłano przypomnienie o płatności
+        {gettext("Payment reminder sent")}
       </:label>
       <:content>
-        Do kontrahenta wysłano wiadomość e-mail z przypomnieniem o opłaceniu zaległej faktury.
+        {gettext("An email reminding the counterparty to pay the overdue invoice was sent.")}
         <.email_target email={@event.metadata.recipient_email} />
       </:content>
     </.timeline_item>
@@ -193,10 +196,10 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceTimeline do
     ~H"""
     <.timeline_item event={@event}>
       <:label>
-        Błąd wysyłki przypomnienia
+        {gettext("Reminder sending error")}
       </:label>
       <:content>
-        <span>{@event.metadata.error_message || "Nie udało się wysłać wiadomości email"}</span>
+        <span>{@event.metadata.error_message || gettext("Failed to send the email message")}</span>
         <.email_target email={@event.metadata.recipient_email} />
       </:content>
     </.timeline_item>
@@ -207,10 +210,10 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceTimeline do
     ~H"""
     <.timeline_item event={@event}>
       <:label>
-        Wysłano e-mail z korektą faktury
+        {gettext("Correction invoice email sent")}
       </:label>
       <:content>
-        Do kontrahenta wysłano wiadomość e-mail z fakturą korygującą.
+        {gettext("An email with the correction invoice was sent to the counterparty.")}
         <.email_target email={@event.metadata.recipient_email} />
       </:content>
     </.timeline_item>
@@ -221,10 +224,10 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceTimeline do
     ~H"""
     <.timeline_item event={@event}>
       <:label>
-        Błąd wysyłki e-maila z korektą faktury
+        {gettext("Correction invoice email sending error")}
       </:label>
       <:content>
-        <span>{@event.metadata.error_message || "Nie udało się wysłać wiadomości email"}</span>
+        <span>{@event.metadata.error_message || gettext("Failed to send the email message")}</span>
         <.email_target email={@event.metadata.recipient_email} />
       </:content>
     </.timeline_item>
@@ -235,10 +238,11 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceTimeline do
     ~H"""
     <.timeline_item event={@event}>
       <:label>
-        Pobrano z KSeF
+        {gettext("Downloaded from KSeF")}
       </:label>
       <:content>
-        nadano numer KSeF: <span class="font-bold text-teal-700">{@event.metadata.ksef_number}</span>
+        {gettext("KSeF number assigned:")}
+        <span class="font-bold text-teal-700">{@event.metadata.ksef_number}</span>
       </:content>
     </.timeline_item>
     """
@@ -248,10 +252,13 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceTimeline do
     ~H"""
     <.timeline_item event={@event}>
       <:label>
-        Pobrano fakturę korygującą {@event.metadata.invoice_identifier} z KSeF
+        {gettext("Downloaded correction invoice %{number} from KSeF",
+          number: @event.metadata.invoice_identifier
+        )}
       </:label>
       <:content>
-        nadano numer KSeF: <span class="font-bold text-teal-700">{@event.metadata.ksef_number}</span>
+        {gettext("KSeF number assigned:")}
+        <span class="font-bold text-teal-700">{@event.metadata.ksef_number}</span>
       </:content>
     </.timeline_item>
     """
@@ -261,10 +268,11 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceTimeline do
     ~H"""
     <.timeline_item event={@event}>
       <:label>
-        Utworzenie faktury korygującej
+        {gettext("Correction invoice created")}
       </:label>
       <:content>
-        numer dokumentu: <span class="font-bold text-teal-700">{@event.metadata.invoice_number}</span>
+        {gettext("document number:")}
+        <span class="font-bold text-teal-700">{@event.metadata.invoice_number}</span>
       </:content>
     </.timeline_item>
     """
@@ -274,7 +282,7 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceTimeline do
     ~H"""
     <.timeline_item event={@event}>
       <:label>
-        Wystawienie faktury korygującej
+        {gettext("Correction invoice issued")}
       </:label>
       <:content>
         {@event.metadata.invoice_identifier}
@@ -287,7 +295,7 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceTimeline do
     ~H"""
     <.timeline_item event={@event}>
       <:label>
-        Wysłano korektę do KSeF
+        {gettext("Correction sent to KSeF")}
       </:label>
     </.timeline_item>
     """
@@ -297,10 +305,11 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceTimeline do
     ~H"""
     <.timeline_item event={@event}>
       <:label>
-        Korekta potwierdzona przez KSeF
+        {gettext("Correction confirmed by KSeF")}
       </:label>
       <:content>
-        nadano numer KSeF: <span class="font-bold text-teal-700">{@event.metadata.ksef_number}</span>
+        {gettext("KSeF number assigned:")}
+        <span class="font-bold text-teal-700">{@event.metadata.ksef_number}</span>
       </:content>
     </.timeline_item>
     """
@@ -310,11 +319,12 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceTimeline do
     ~H"""
     <.timeline_item event={@event}>
       <:label>
-        Błąd wysyłki korekty
+        {gettext("Correction submission error")}
       </:label>
       <:content>
-        Zespół odpowiedzialny za integrację z KSeF został powiadomiony.
-        Wysyłanie dokumentu zostanie automatycznie ponowione w ciągu 24 godzin.
+        {gettext(
+          "The team responsible for the KSeF integration has been notified. The document will be sent again automatically within 24 hours."
+        )}
       </:content>
     </.timeline_item>
     """
@@ -331,7 +341,7 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceTimeline do
     ~H"""
     <%= if @email do %>
       <span>
-        Adres docelowy: <span class="font-bold text-teal-700">{@email}</span>
+        {gettext("Target address:")} <span class="font-bold text-teal-700">{@email}</span>
       </span>
     <% end %>
     """

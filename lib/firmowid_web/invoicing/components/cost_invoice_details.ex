@@ -64,6 +64,13 @@ defmodule FirmowidWeb.Invoicing.Components.CostInvoiceDetails do
 
   @impl true
   def render(assigns) do
+    [delete_before, delete_after] =
+      "Are you sure you want to delete invoice %{number}?"
+      |> gettext(number: "__NUMBER__")
+      |> String.split("__NUMBER__", parts: 2)
+
+    assigns = assign(assigns, delete_before: delete_before, delete_after: delete_after)
+
     ~H"""
     <div id="invoice-show" class="flex flex-col">
       <InvoiceDetails.invoice_header
@@ -92,7 +99,7 @@ defmodule FirmowidWeb.Invoicing.Components.CostInvoiceDetails do
                   download_path={Navigation.cost_invoice_pdf_path(@invoice)}
                   trigger_variant="secondary"
                   trigger_size="small"
-                  button_label="Pobierz PDF do druku"
+                  button_label={gettext("Download PDF for printing")}
                 />
 
                 <.link
@@ -103,7 +110,7 @@ defmodule FirmowidWeb.Invoicing.Components.CostInvoiceDetails do
                   external={@invoice.blob && @invoice.blob.url}
                   download
                 >
-                  <Lucideicons.download /><span class="max-xl:sr-only">Pobierz</span>
+                  <Lucideicons.download /><span class="max-xl:sr-only">{gettext("Download")}</span>
                 </.link>
 
                 <.button
@@ -114,7 +121,7 @@ defmodule FirmowidWeb.Invoicing.Components.CostInvoiceDetails do
                 >
                   <.icon name="hero-trash-solid" class="size-4" />
                   <span class="max-xl:sr-only">
-                    Usuń
+                    {gettext("Delete")}
                   </span>
                 </.button>
 
@@ -124,7 +131,7 @@ defmodule FirmowidWeb.Invoicing.Components.CostInvoiceDetails do
                 >
                   <.modal id="delete-invoice-modal" on_cancel={hide_modal("delete-invoice-modal")}>
                     <p>
-                      Czy na pewno chcesz usunąć fakturę <span class="font-semibold">{@invoice.invoice_identifier}</span>?
+                      {@delete_before}<span class="font-semibold">{@invoice.invoice_identifier}</span>{@delete_after}
                     </p>
                     <div class="mt-6 flex justify-end gap-3">
                       <.button
@@ -132,7 +139,7 @@ defmodule FirmowidWeb.Invoicing.Components.CostInvoiceDetails do
                         variant="secondary"
                         phx-click={hide_modal("delete-invoice-modal")}
                       >
-                        Anuluj
+                        {gettext("Cancel")}
                       </.button>
                       <.button
                         phx-click={
@@ -140,9 +147,9 @@ defmodule FirmowidWeb.Invoicing.Components.CostInvoiceDetails do
                           |> JS.push("delete")
                         }
                         variant="destructive"
-                        phx-disable-with="Usuwanie..."
+                        phx-disable-with={gettext("Deleting...")}
                       >
-                        Usuń
+                        {gettext("Delete")}
                       </.button>
                     </div>
                   </.modal>
@@ -157,7 +164,7 @@ defmodule FirmowidWeb.Invoicing.Components.CostInvoiceDetails do
                   variant="secondary"
                   size="small"
                 >
-                  <Lucideicons.database /><span class="max-xl:sr-only">Otwórz w KSeF</span>
+                  <Lucideicons.database /><span class="max-xl:sr-only">{gettext("Open in KSeF")}</span>
                 </.link>
 
                 <.button
@@ -168,48 +175,48 @@ defmodule FirmowidWeb.Invoicing.Components.CostInvoiceDetails do
                   phx-click="show_timeline"
                   phx-target={@myself}
                 >
-                  Historia faktury
+                  {gettext("Invoice history")}
                 </.button>
               </div>
 
               <InvoiceDetails.invoice_metadata>
                 <InvoiceDetails.invoice_metadata_piece
-                  label="Numer faktury"
+                  label={gettext("Invoice number")}
                   value={@invoice.invoice_identifier}
                   piece_id="invoice-identifier"
                 />
                 <InvoiceDetails.invoice_metadata_piece
                   :if={@invoice.ksef_number != nil}
-                  label="Identyfikator KSeF"
+                  label={gettext("KSeF ID")}
                   value={@invoice.ksef_number}
                   piece_id="ksef-id"
                 />
 
                 <InvoiceDetails.invoice_metadata_piece
                   :if={@invoice.original_invoice_ksef_number != nil}
-                  label="Identyfikator KSeF faktury korygowanej"
+                  label={gettext("KSeF ID of the corrected invoice")}
                   value={@invoice.original_invoice_ksef_number}
                   piece_id="original-invoice-ksef-id"
                 />
 
                 <InvoiceDetails.invoice_metadata_piece
-                  label="Sprzedawca"
+                  label={gettext("Seller")}
                   value={@invoice.seller}
                   piece_id="seller"
                   multiline
                 />
                 <InvoiceDetails.invoice_metadata_piece
-                  label="Data wystawienia"
+                  label={gettext("Issue date")}
                   value={@invoice.issue_date}
                   piece_id="issue-date"
                 />
                 <InvoiceDetails.invoice_metadata_piece
-                  label="Data sprzedaży"
+                  label={gettext("Sale date")}
                   value={@invoice.effective_sale_date}
                   piece_id="sale-date"
                 />
                 <InvoiceDetails.invoice_metadata_piece
-                  label="Termin płatności"
+                  label={gettext("Payment due date")}
                   value={@invoice.effective_due_date}
                   piece_id="due-date"
                 />
@@ -315,7 +322,7 @@ defmodule FirmowidWeb.Invoicing.Components.CostInvoiceDetails do
             class="h-fit max-h-[80vh] w-full overflow-hidden bg-white"
           >
             <div class="flex w-full items-center justify-center p-8 font-bold">
-              Ładowanie dokumentu...
+              {gettext("Loading document...")}
             </div>
           </div>
         </.link>
@@ -332,7 +339,7 @@ defmodule FirmowidWeb.Invoicing.Components.CostInvoiceDetails do
             class="size-full"
           >
             <div class="flex w-full items-center justify-center p-8 font-bold">
-              Ładowanie dokumentu...
+              {gettext("Loading document...")}
             </div>
           </div>
         </InvoiceDetails.scalable_invoice_preview>
@@ -398,7 +405,7 @@ defmodule FirmowidWeb.Invoicing.Components.CostInvoiceDetails do
       :none ->
         ~H"""
         <div class="flex w-full items-center justify-center p-8 font-bold">
-          Brak podglądu
+          {gettext("No preview")}
         </div>
         """
     end
@@ -444,7 +451,7 @@ defmodule FirmowidWeb.Invoicing.Components.CostInvoiceDetails do
          )}
 
       {:error, _error} ->
-        {:noreply, put_flash(socket, :error, "Nie udało się zapisać komentarza")}
+        {:noreply, put_flash(socket, :error, gettext("Failed to save the comment"))}
     end
   end
 end

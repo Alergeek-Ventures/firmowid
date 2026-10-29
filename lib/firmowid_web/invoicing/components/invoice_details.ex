@@ -77,7 +77,7 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceDetails do
   def invoice_preview(assigns) do
     ~H"""
     <div class="mx-auto mt-8 flex w-full max-w-max flex-col gap-4">
-      <h3 class="leading/snug ml-1 self-start text-sm text-grey-700">Podgląd faktury</h3>
+      <h3 class="leading/snug ml-1 self-start text-sm text-grey-700">{gettext("Invoice preview")}</h3>
       <%= case @subpreview do %>
         <% [main] -> %>
           <.invoice_preview_border>
@@ -354,7 +354,9 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceDetails do
     <MatchingComponents.score_indicator
       id={"match-prediction-score-#{@transaction_id}"}
       level={@prediction_level}
-      tooltip={"Ocena AI: #{Float.round(100 * @prediction_score, 2)}% pewności"}
+      tooltip={
+        gettext("AI score: %{percent}% confidence", percent: Float.round(100 * @prediction_score, 2))
+      }
     />
     """
   end
@@ -411,15 +413,15 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceDetails do
           <:detail
             :for={
               {label, val} <- [
-                {"Kontrahent",
+                {gettext("Counterparty"),
                  if(@is_cost_invoice, do: transaction.creditor_name, else: transaction.debtor_name)},
-                {"Wierzyciel",
+                {gettext("Creditor"),
                  if(not @is_cost_invoice,
                    do: transaction.creditor_name,
                    else: transaction.debtor_name
                  )},
-                {"Zaksięgowano", transaction.booking_date},
-                transaction.value_date && {"Przewalutowano", transaction.value_date}
+                {gettext("Booked"), transaction.booking_date},
+                transaction.value_date && {gettext("Currency converted"), transaction.value_date}
               ]
             }
             label={label}
@@ -432,7 +434,7 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceDetails do
           :if={@show_total?}
           class="flex flex-row items-center justify-between rounded-md bg-[#D0E6CE66] p-4"
         >
-          <p class="text-sm text-grey-700">Suma</p>
+          <p class="text-sm text-grey-700">{pgettext("matched transactions", "Total")}</p>
 
           <p class="text-lg/tight text-moss-700">
             {if @is_cost_invoice, do: "-", else: ""}{Money.new(@currency, @total)}
@@ -441,7 +443,7 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceDetails do
       </div>
 
       <div class="space-y-6">
-        <h3 class="leading-tight font-medium">Co jeszcze możesz zrobić?</h3>
+        <h3 class="leading-tight font-medium">{gettext("What else can you do?")}</h3>
 
         <div class="grid grid-cols-[1fr_8rem] gap-6 lg:gap-x-10">
           <div
@@ -450,9 +452,12 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceDetails do
           >
             <p class="text-sm/snug text-balance text-grey-700">
               <%= if @single_transaction? do %>
-                Poproś Firmowida o pomoc w znalezieniu kolejnych faktur dla tej transakcji.
+                {gettext("Ask Firmowid to help find more invoices for this transaction.")}
               <% else %>
-                Poproś Firmowida o pomoc w znalezieniu kolejnych faktur dla transakcji zaksięgowanej {transaction.booking_date}.
+                {gettext(
+                  "Ask Firmowid to help find more invoices for the transaction booked on %{date}.",
+                  date: transaction.booking_date
+                )}
               <% end %>
             </p>
 
@@ -462,7 +467,7 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceDetails do
               class="w-full"
               accent={if(@is_cost_invoice, do: "rust", else: "teal")}
             >
-              Zapytaj
+              {gettext("Ask")}
             </MatchingComponents.assistant_button>
           </div>
         </div>
@@ -478,7 +483,7 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceDetails do
     ~H"""
     <div class="space-y-4">
       <div class="flex flex-row items-center justify-between">
-        <p class="text-lg/tight font-medium">Transakcja pominięta</p>
+        <p class="text-lg/tight font-medium">{gettext("Transaction skipped")}</p>
         <div :if={@can_write} class="flex w-32 flex-row gap-1">
           <div class="flex flex-1 items-center justify-center rounded-md bg-moss-200 px-2 text-moss-700">
             <.icon name="hero-document-text-micro" class="size-4" />
@@ -491,7 +496,7 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceDetails do
         </div>
       </div>
       <div class="flex flex-col gap-6 rounded bg-grey-100 p-6">
-        <p class="text-base/snug">Transakcja została pominięta dla dokumentu</p>
+        <p class="text-base/snug">{gettext("The transaction was skipped for this document")}</p>
       </div>
     </div>
     """
@@ -508,7 +513,7 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceDetails do
       <%= if @show_bank_transfer_modal do %>
         <div class="col-span-full grid grid-cols-subgrid">
           <p class="text-sm/snug text-balance text-grey-700">
-            Wykonaj przelew teraz - kliknij przycisk, aby skopiować potrzebne dane.
+            {gettext("Make the transfer now - click the button to copy the required details.")}
           </p>
           <.live_component
             id="bank-transfer-modal"
@@ -519,7 +524,7 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceDetails do
       <% end %>
       <div :if={@show_assistant} class="col-span-full grid grid-cols-subgrid">
         <p class="self-center text-sm/snug text-balance text-grey-700">
-          Poproś Firmowida o pomoc w znalezieniu transakcji.
+          {gettext("Ask Firmowid to help find the transaction.")}
         </p>
 
         <MatchingComponents.assistant_button
@@ -528,14 +533,15 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceDetails do
           class="w-full"
           accent="teal"
         >
-          Zapytaj
+          {gettext("Ask")}
         </MatchingComponents.assistant_button>
       </div>
 
       <div :if={@can_write} class="col-span-full grid grid-cols-subgrid items-center">
         <p class="text-sm/snug text-balance text-grey-700">
-          A może żadna transakcja nie pasuje, bo zapłacono gotówką, lub na inne konto?
-          Pomiń jej szukanie. Firmowid oznaczy ją jako rozliczoną poza systemem.
+          {gettext(
+            "Or maybe no transaction fits because it was paid in cash or from another account? Skip searching for it. Firmowid will mark it as settled outside the system."
+          )}
         </p>
         <div class="flex h-8 w-full flex-row items-start gap-2">
           <div class="flex items-center justify-center rounded-md bg-grey-200 p-2 text-grey-700">
@@ -547,7 +553,7 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceDetails do
             variant="secondary"
             size="small"
           >
-            Pomiń
+            {gettext("Skip")}
           </.button>
         </div>
       </div>
@@ -570,7 +576,7 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceDetails do
           <Lucideicons.file_question_mark class="size-12" />
 
           <div class="space-y-2 text-center">
-            <h3 class="text-lg/tight font-medium">Brak rekomendacji</h3>
+            <h3 class="text-lg/tight font-medium">{gettext("No recommendations")}</h3>
             <p class="max-w-96 text-balance">
               {gettext("Firmowid found no transactions that might match this invoice.")}
             </p>
@@ -582,7 +588,7 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceDetails do
             class="mbs-2"
             accent={if(@is_cost_invoice, do: "rust", else: "teal")}
           >
-            Poproś Firmowida o pomoc
+            {gettext("Ask Firmowid for help")}
           </MatchingComponents.assistant_button>
         </div>
       <% else %>
@@ -618,9 +624,9 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceDetails do
 
     ~H"""
     <MatchingComponents.candidates
-      title="Potencjalne transakcje dla dokumentu"
-      date_label="Data"
-      amount_label="Kwota"
+      title={gettext("Potential transactions for the document")}
+      date_label={gettext("Date")}
+      amount_label={gettext("Amount")}
     >
       <:candidate
         :for={{{tx, score}, idx} <- Enum.with_index(@potential_transactions)}
@@ -641,7 +647,7 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceDetails do
           variant={if(@green_idx == idx, do: "tertiary", else: "secondary")}
           size="small"
         >
-          Zatwierdź
+          {gettext("Confirm")}
         </.button>
       </:candidate>
     </MatchingComponents.candidates>

@@ -105,7 +105,9 @@ defmodule FirmowidWeb.Documents.Components.DocumentsSection do
         <div class={header_wrapper_styles(@variant)}>
           <%= if @profile? do %>
             <div class="flex items-start justify-between gap-3">
-              <h2 class="text-base leading-none font-medium text-grey-900">Przesłane dokumenty</h2>
+              <h2 class="text-base leading-none font-medium text-grey-900">
+                {gettext("Uploaded documents")}
+              </h2>
               <.toolbar
                 id={@id}
                 myself={@myself}
@@ -121,7 +123,7 @@ defmodule FirmowidWeb.Documents.Components.DocumentsSection do
           <% else %>
             <h3 class="text-base/tight font-medium text-grey-900">
               <div class="flex items-center justify-between">
-                Przesłane dokumenty
+                {gettext("Uploaded documents")}
                 <.toolbar
                   id={@id}
                   myself={@myself}
@@ -169,7 +171,7 @@ defmodule FirmowidWeb.Documents.Components.DocumentsSection do
             type="text"
             name="szukaj"
             value={@search}
-            placeholder="Szukaj dokumentu"
+            placeholder={gettext("Search document")}
             phx-change="search"
             phx-debounce="300"
             phx-target={@myself}
@@ -202,7 +204,7 @@ defmodule FirmowidWeb.Documents.Components.DocumentsSection do
         <.live_file_input
           upload={@document_upload}
           class="peer sr-only"
-          aria-label="Wgraj dokument"
+          aria-label={gettext("Upload document")}
         />
 
         <.button
@@ -243,7 +245,7 @@ defmodule FirmowidWeb.Documents.Components.DocumentsSection do
         phx-value-typ={:hours_record}
         phx-target={@myself}
       >
-        <.icon name="hero-clock" class="size-4" /> ewidencja
+        <.icon name="hero-clock" class="size-4" /> {pgettext("document filter", "record")}
       </:pill>
       <:pill
         active={@type_filter == "employment_contract"}
@@ -251,7 +253,7 @@ defmodule FirmowidWeb.Documents.Components.DocumentsSection do
         phx-value-typ={:employment_contract}
         phx-target={@myself}
       >
-        <.icon name="hero-document" class="size-4" /> umowa
+        <.icon name="hero-document" class="size-4" /> {pgettext("document filter", "contract")}
       </:pill>
       <:pill
         active={@type_filter == "other"}
@@ -259,7 +261,7 @@ defmodule FirmowidWeb.Documents.Components.DocumentsSection do
         phx-value-typ={:other}
         phx-target={@myself}
       >
-        <.icon name="hero-ellipsis-horizontal" class="size-4" /> inne
+        <.icon name="hero-ellipsis-horizontal" class="size-4" /> {pgettext("document filter", "other")}
       </:pill>
     </.filter_pills>
     """
@@ -273,7 +275,7 @@ defmodule FirmowidWeb.Documents.Components.DocumentsSection do
     <div class="scrollbar-card h-100 max-h-100 space-y-2 overflow-y-auto">
       <%= if Enum.empty?(@documents) do %>
         <div class="flex size-full items-center justify-center rounded-lg bg-grey-50 text-sm text-grey-700">
-          <p>Brak dokumentów</p>
+          <p>{gettext("No documents")}</p>
         </div>
       <% else %>
         <.document_element :for={document <- @documents} document={document} />
@@ -288,7 +290,7 @@ defmodule FirmowidWeb.Documents.Components.DocumentsSection do
       <div class="absolute inset-0 scrollbar-card space-y-2 overflow-y-auto pr-2">
         <%= if Enum.empty?(@documents) do %>
           <div class="flex size-full items-center justify-center rounded-lg bg-grey-50 text-sm text-grey-700">
-            <p>Brak dokumentów</p>
+            <p>{gettext("No documents")}</p>
           </div>
         <% else %>
           <.document_element :for={document <- @documents} document={document} />
@@ -434,7 +436,10 @@ defmodule FirmowidWeb.Documents.Components.DocumentsSection do
           %{
             id: doc.id,
             type: :hours_record,
-            name: "Ewidencja #{String.pad_leading(Integer.to_string(doc.month), 2, "0")}.#{doc.year}",
+            name:
+              gettext("Hours record %{date}",
+                date: "#{String.pad_leading(Integer.to_string(doc.month), 2, "0")}.#{doc.year}"
+              ),
             date: DateTime.to_date(doc.inserted_at),
             url: ~p"/czasosledz/ewidencja/#{doc.id}",
             file_name: doc.blob.original_filename
@@ -453,7 +458,10 @@ defmodule FirmowidWeb.Documents.Components.DocumentsSection do
             id: doc.id,
             type: :employment_contract,
             status: doc.status,
-            name: "Umowa #{String.pad_leading(Integer.to_string(doc.starts_at.month), 2, "0")}.#{doc.starts_at.year}",
+            name:
+              gettext("Contract %{date}",
+                date: "#{String.pad_leading(Integer.to_string(doc.starts_at.month), 2, "0")}.#{doc.starts_at.year}"
+              ),
             date: doc.starts_at,
             url: ~p"/zarzadzanie/umowy/#{doc.id}",
             file_name: doc.blob.original_filename
@@ -588,11 +596,11 @@ defmodule FirmowidWeb.Documents.Components.DocumentsSection do
               )}
            end) do
         {:ok, %Blob{}} ->
-          LiveToast.send_toast(:success, "Plik został wysłany.")
+          LiveToast.send_toast(:success, gettext("The file was uploaded."))
 
         {:error, err} ->
           Logger.warning("Upload failed", error_kind: ErrorKind.classify(err))
-          LiveToast.send_toast(:error, "Wystąpił błąd podczas wysyłania pliku.")
+          LiveToast.send_toast(:error, gettext("An error occurred while uploading the file."))
       end
     end)
 
@@ -613,7 +621,9 @@ defmodule FirmowidWeb.Documents.Components.DocumentsSection do
     <span
       id={"#{@id}-upload-count-indicator"}
       phx-hook="Tippy"
-      data-tippy-content="Pliki są przetwarzane i za kilka chwil będą dostępne w Firmowidzie"
+      data-tippy-content={
+        gettext("The files are being processed and will be available in Firmowid in a few moments")
+      }
       class="absolute -top-3.5 -right-3.5 flex size-7 items-center justify-center overflow-hidden rounded-full bg-grey-100"
     >
       <span class="absolute block size-full animate-pulse bg-rust-600" />
@@ -663,7 +673,7 @@ defmodule FirmowidWeb.Documents.Components.DocumentsSection do
   defp contract_status_badge(%{status: :signed} = assigns) do
     ~H"""
     <span class="rounded-2xl bg-teal-100 px-4 py-1 text-sm text-teal-700">
-      podpisana
+      {pgettext("contract status", "signed")}
     </span>
     """
   end
@@ -671,7 +681,7 @@ defmodule FirmowidWeb.Documents.Components.DocumentsSection do
   defp contract_status_badge(%{status: :active} = assigns) do
     ~H"""
     <span class="rounded-2xl bg-moss-100 px-4 py-1 text-sm text-moss-700">
-      obowiązująca umowa
+      {pgettext("contract status", "current contract")}
     </span>
     """
   end

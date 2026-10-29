@@ -165,7 +165,7 @@ defmodule FirmowidWeb.Invoicing.Transactions.Views.Show do
         {:noreply, assign_transaction(socket, reload_transaction(transaction.id, scope))}
 
       {:error, _error} ->
-        {:noreply, put_flash(socket, :error, "Nie udało się odłączyć faktur")}
+        {:noreply, put_flash(socket, :error, gettext("Failed to unlink the invoices"))}
     end
   end
 

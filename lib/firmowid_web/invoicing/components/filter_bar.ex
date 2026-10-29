@@ -24,19 +24,19 @@ defmodule FirmowidWeb.Invoicing.Components.FilterBar do
       <div class="flex items-center gap-6 max-md:w-full max-md:flex-wrap max-md:gap-y-3">
         <.filter_tabs label={gettext("Invoicing views")}>
           <:tab navigate={dashboard_url(@params.month)} active={@params.view_mode == :dashboard}>
-            Podsumowanie
+            {gettext("Summary")}
           </:tab>
           <:tab
             navigate={filter_url(@params, :invoices)}
             active={@params.view_mode == :list && @params.filter == :invoices}
           >
-            Faktury
+            {gettext("Invoices")}
           </:tab>
           <:tab
             navigate={filter_url(@params, :transactions)}
             active={@params.view_mode == :list && @params.filter == :transactions}
           >
-            Transakcje
+            {gettext("Transactions")}
           </:tab>
           <:tab
             navigate={filter_url(@params, :unmatched)}
@@ -48,9 +48,9 @@ defmodule FirmowidWeb.Invoicing.Components.FilterBar do
             data-confetti-enabled={if @is_month_closed, do: "true", else: "false"}
           >
             <%= if @is_month_closed do %>
-              Miesiąc zamknięty
+              {gettext("Month closed")}
             <% else %>
-              Nieprzypisane
+              {pgettext("invoicing filter tab", "Unassigned")}
             <% end %>
           </:tab>
         </.filter_tabs>
@@ -73,13 +73,13 @@ defmodule FirmowidWeb.Invoicing.Components.FilterBar do
         navigate={subfilter_url(@params, :oplacone)}
         active={@params.subfilter == :oplacone}
       >
-        Opłacone
+        {gettext("Paid")}
       </:pill>
       <:pill
         navigate={subfilter_url(@params, :nieoplacone)}
         active={@params.subfilter == :nieoplacone}
       >
-        Nieopłacone
+        {gettext("Unpaid")}
       </:pill>
     </.filter_pills>
     """
@@ -92,13 +92,13 @@ defmodule FirmowidWeb.Invoicing.Components.FilterBar do
         navigate={subfilter_url(@params, :dopasowane)}
         active={@params.subfilter == :dopasowane}
       >
-        Dopasowane
+        {gettext("Matched")}
       </:pill>
       <:pill
         navigate={subfilter_url(@params, :bez_dokumentu)}
         active={@params.subfilter == :bez_dokumentu}
       >
-        Bez dokumentu
+        {gettext("Without document")}
       </:pill>
     </.filter_pills>
     """

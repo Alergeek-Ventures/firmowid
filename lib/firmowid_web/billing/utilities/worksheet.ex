@@ -3,6 +3,8 @@ defmodule FirmowidWeb.Billing.Utilities.Worksheet do
   Shapes billing facts into a worksheet-oriented structure for billing views.
   """
 
+  use Gettext, backend: Firmowid.Gettext
+
   alias Firmowid.Billing.PlanCatalog
 
   @type usage_source :: %{
@@ -27,7 +29,7 @@ defmodule FirmowidWeb.Billing.Utilities.Worksheet do
     bank_row =
       usage_row(
         :synced_bank_accounts,
-        "Konta bankowe",
+        gettext("Bank accounts"),
         source.synced_bank_accounts_count,
         rules.synced_bank_accounts
       )
@@ -35,7 +37,7 @@ defmodule FirmowidWeb.Billing.Utilities.Worksheet do
     employee_row =
       usage_row(
         :active_non_owner_users,
-        "Pracownicy",
+        gettext("Employees"),
         source.active_non_owner_users_count,
         rules.active_non_owner_users
       )
@@ -43,7 +45,7 @@ defmodule FirmowidWeb.Billing.Utilities.Worksheet do
     invoice_row =
       usage_row(
         :manual_external_invoices,
-        "Faktury kosztowe spoza KSeF",
+        gettext("Cost invoices from outside KSeF"),
         source.manual_external_invoices_count,
         rules.manual_external_invoices
       )
@@ -72,10 +74,10 @@ defmodule FirmowidWeb.Billing.Utilities.Worksheet do
   Returns the human label for a plan.
   """
   @spec plan_label(PlanCatalog.plan()) :: String.t()
-  def plan_label(:no_plan), do: "Brak planu"
+  def plan_label(:no_plan), do: pgettext("billing plan", "No plan")
   def plan_label(:start), do: "Start"
-  def plan_label(:przedsiebiorca), do: "Przedsiębiorca"
-  def plan_label(:firma), do: "Firma"
+  def plan_label(:przedsiebiorca), do: gettext("Entrepreneur")
+  def plan_label(:firma), do: gettext("Company")
 
   defp usage_row(key, label, count, %{included_units: included_units}) do
     over_limit = max(count - included_units, 0)
@@ -115,8 +117,12 @@ defmodule FirmowidWeb.Billing.Utilities.Worksheet do
       total = Decimal.mult(unit_price, Decimal.new(over_limit))
 
       %{
-        label: "Dodatkowe konta bankowe",
-        detail: "#{over_limit} ponad limit × #{money_to_string(unit_price)} / mies.",
+        label: gettext("Additional bank accounts"),
+        detail:
+          gettext("%{count} over the limit × %{price} / mo.",
+            count: over_limit,
+            price: money_to_string(unit_price)
+          ),
         amount: money_to_string(total),
         amount_value: total
       }
@@ -132,8 +138,12 @@ defmodule FirmowidWeb.Billing.Utilities.Worksheet do
       total = Decimal.mult(unit_price, Decimal.new(over_limit))
 
       %{
-        label: "Dodatkowi pracownicy",
-        detail: "#{over_limit} ponad limit × #{money_to_string(unit_price)} / mies.",
+        label: gettext("Additional employees"),
+        detail:
+          gettext("%{count} over the limit × %{price} / mo.",
+            count: over_limit,
+            price: money_to_string(unit_price)
+          ),
         amount: money_to_string(total),
         amount_value: total
       }
@@ -153,9 +163,14 @@ defmodule FirmowidWeb.Billing.Utilities.Worksheet do
       total = Decimal.mult(pack_price, Decimal.new(packs))
 
       %{
-        label: "Nadwyżka faktur kosztowych spoza KSeF",
+        label: gettext("Excess cost invoices from outside KSeF"),
         detail:
-          "#{over_limit} ponad limit. Pakiety rozliczeniowe: #{packs} × #{pack_size} za #{money_to_string(pack_price)}.",
+          gettext("%{count} over the limit. Billing packs: %{packs} × %{pack_size} for %{price}.",
+            count: over_limit,
+            packs: packs,
+            pack_size: pack_size,
+            price: money_to_string(pack_price)
+          ),
         amount: money_to_string(total),
         amount_value: total
       }
@@ -168,26 +183,27 @@ defmodule FirmowidWeb.Billing.Utilities.Worksheet do
 
   defp base_fee_line(%{monthly_price_pln: monthly_price_pln}) do
     %{
-      label: "Miesięczna opłata bazowa",
+      label: gettext("Monthly base fee"),
       amount: money_to_string(monthly_price_pln),
       amount_value: monthly_price_pln
     }
   end
 
-  defp no_plan_note(:no_plan),
-    do: "Brak planu — pokazujemy wyłącznie surowe dane użycia bez automatycznych sugestii rozliczeniowych."
+  defp no_plan_note(:no_plan), do: gettext("No plan — we only show raw usage data without automatic billing suggestions.")
 
   defp no_plan_note(_plan), do: nil
 
   defp usage_total_text(count, included_units), do: "#{count} / #{included_units}"
 
-  defp usage_text(_count, included_units, over_limit) when included_units > 0 and over_limit > 0, do: "Limit przekroczony"
+  defp usage_text(_count, included_units, over_limit) when included_units > 0 and over_limit > 0,
+    do: gettext("Limit exceeded")
 
   defp usage_text(count, included_units, _over_limit) when included_units > 0,
-    do: "#{max(included_units - count, 0)} pozostało"
+    do: gettext("%{count} remaining", count: max(included_units - count, 0))
 
-  defp usage_text(count, _included_units, _over_limit) when count > 0, do: "Poza planem"
-  defp usage_text(_count, _included_units, _over_limit), do: "Brak użycia"
+  defp usage_text(count, _included_units, _over_limit) when count > 0, do: gettext("Outside the plan")
+
+  defp usage_text(_count, _included_units, _over_limit), do: gettext("No usage")
 
   defp usage_bar_width(count, included_units) when included_units <= 0 and count <= 0, do: 0
   defp usage_bar_width(count, included_units) when included_units <= 0 and count > 0, do: 100

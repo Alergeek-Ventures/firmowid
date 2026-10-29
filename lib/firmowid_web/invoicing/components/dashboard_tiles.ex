@@ -163,13 +163,13 @@ defmodule FirmowidWeb.Invoicing.Components.DashboardTiles do
         {ngettext("%{count} day overdue", "%{count} days overdue", abs(days_diff)), true}
 
       days_diff == 0 ->
-        {"Termin dzisiaj", true}
+        {gettext("Due today"), true}
 
       days_diff <= 7 ->
         {ngettext("%{count} day left to pay", "%{count} days left to pay", days_diff), true}
 
       true ->
-        {"Termin: #{format_date(due_date)}", false}
+        {gettext("Due: %{date}", date: format_date(due_date)), false}
     end
   end
 
@@ -357,7 +357,7 @@ defmodule FirmowidWeb.Invoicing.Components.DashboardTiles do
   attr :confidence_percent, :integer, required: true
 
   defp confidence_chip(%{badge_type: :manual} = assigns) do
-    assigns = assign(assigns, :label, "Ręczne")
+    assigns = assign(assigns, :label, pgettext("match confidence", "Manual"))
 
     ~H"""
     <div class="mt-2 flex items-center justify-start gap-2">
@@ -370,7 +370,12 @@ defmodule FirmowidWeb.Invoicing.Components.DashboardTiles do
   end
 
   defp confidence_chip(%{badge_type: :high} = assigns) do
-    assigns = assign(assigns, :label, "#{assigns.confidence_percent}% pewności")
+    assigns =
+      assign(
+        assigns,
+        :label,
+        gettext("%{percent}% confidence", percent: assigns.confidence_percent)
+      )
 
     ~H"""
     <div class="mt-2 flex items-center justify-start gap-2">
@@ -383,7 +388,12 @@ defmodule FirmowidWeb.Invoicing.Components.DashboardTiles do
   end
 
   defp confidence_chip(%{badge_type: :mid} = assigns) do
-    assigns = assign(assigns, :label, "#{assigns.confidence_percent}% pewności")
+    assigns =
+      assign(
+        assigns,
+        :label,
+        gettext("%{percent}% confidence", percent: assigns.confidence_percent)
+      )
 
     ~H"""
     <div class="mt-2 flex items-center justify-start gap-2">
@@ -396,7 +406,12 @@ defmodule FirmowidWeb.Invoicing.Components.DashboardTiles do
   end
 
   defp confidence_chip(%{badge_type: :low} = assigns) do
-    assigns = assign(assigns, :label, "#{assigns.confidence_percent}% pewności")
+    assigns =
+      assign(
+        assigns,
+        :label,
+        gettext("%{percent}% confidence", percent: assigns.confidence_percent)
+      )
 
     ~H"""
     <div class="mt-2 flex items-center justify-between gap-2">
@@ -406,7 +421,7 @@ defmodule FirmowidWeb.Invoicing.Components.DashboardTiles do
       </span>
 
       <.button type="button" variant="secondary" size="small" class="text-caps-sm">
-        Sprawdź
+        {gettext("Review")}
       </.button>
     </div>
     """
@@ -414,7 +429,12 @@ defmodule FirmowidWeb.Invoicing.Components.DashboardTiles do
 
   defp confidence_chip(%{badge_type: _} = assigns) do
     # :unknown or any other value — keep simple neutral chip
-    assigns = assign(assigns, :label, "#{assigns.confidence_percent}% pewności")
+    assigns =
+      assign(
+        assigns,
+        :label,
+        gettext("%{percent}% confidence", percent: assigns.confidence_percent)
+      )
 
     ~H"""
     <div class="mt-2 flex items-center justify-start gap-2">
@@ -429,8 +449,14 @@ defmodule FirmowidWeb.Invoicing.Components.DashboardTiles do
   # ── Suggestion Tile ───────────────────────────────────────────────
 
   defp suggestion_tile(%{entry: %{type: :missing_invoice, client_name: client_name, amount: amount}} = assigns) do
+    [invoice_before, invoice_after] =
+      "%{client} pays regularly - this month we detected a missing invoice."
+      |> gettext(client: "__CLIENT__")
+      |> String.split("__CLIENT__", parts: 2)
+
     assigns = assign(assigns, :client_name, client_name)
     assigns = assign(assigns, :amount, amount)
+    assigns = assign(assigns, invoice_before: invoice_before, invoice_after: invoice_after)
 
     ~H"""
     <div class="flex flex-col gap-2">
@@ -439,14 +465,13 @@ defmodule FirmowidWeb.Invoicing.Components.DashboardTiles do
           <div class="flex size-6 items-center justify-center rounded bg-grey-200">
             <.icon name="hero-document-text" class="size-4 text-grey-600" />
           </div>
-          <span class="text-sm font-medium">Brak faktury</span>
+          <span class="text-sm font-medium">{gettext("Missing invoice")}</span>
         </div>
         <span class="text-sm font-semibold whitespace-nowrap">{format_money(nil, @amount)}</span>
       </div>
 
       <p class="text-xs text-grey-600">
-        <span class="font-medium">{@client_name}</span>
-        {" "}płaci cyklicznie - w tym miesiącu wykryliśmy brak faktury.
+        {@invoice_before}<span class="font-medium">{@client_name}</span>{@invoice_after}
       </p>
 
       <.link
@@ -456,15 +481,21 @@ defmodule FirmowidWeb.Invoicing.Components.DashboardTiles do
         size="small"
         class="mt-1 w-full"
       >
-        Wystaw fakturę
+        {gettext("Issue invoice")}
       </.link>
     </div>
     """
   end
 
   defp suggestion_tile(%{entry: %{type: :missing_payment, client_name: client_name, amount: amount}} = assigns) do
+    [payment_before, payment_after] =
+      "You regularly pay %{client}, and we have not detected a transaction yet this month."
+      |> gettext(client: "__CLIENT__")
+      |> String.split("__CLIENT__", parts: 2)
+
     assigns = assign(assigns, :client_name, client_name)
     assigns = assign(assigns, :amount, amount)
+    assigns = assign(assigns, payment_before: payment_before, payment_after: payment_after)
 
     ~H"""
     <div class="flex flex-col gap-2">
@@ -473,17 +504,17 @@ defmodule FirmowidWeb.Invoicing.Components.DashboardTiles do
           <div class="flex size-6 items-center justify-center rounded bg-grey-200">
             <.icon name="hero-banknotes" class="size-4 text-grey-600" />
           </div>
-          <span class="text-sm font-medium">Cykliczna płatność</span>
+          <span class="text-sm font-medium">{gettext("Recurring payment")}</span>
         </div>
         <span class="text-sm font-semibold whitespace-nowrap">{format_money(nil, @amount)}</span>
       </div>
 
       <p class="text-xs text-grey-600">
-        Płacisz regularnie firmie <span class="font-medium">{@client_name}</span>, w tym miesiącu nie wykryliśmy jeszcze transakcji.
+        {@payment_before}<span class="font-medium">{@client_name}</span>{@payment_after}
       </p>
 
       <div class={suggestion_action_styles()}>
-        Zapłać
+        {gettext("Pay")}
       </div>
     </div>
     """
@@ -572,10 +603,12 @@ defmodule FirmowidWeb.Invoicing.Components.DashboardTiles do
         <div class="flex size-6 items-center justify-center rounded bg-teal-200">
           <.icon name="hero-building-library" class="size-4 text-teal-800" />
         </div>
-        <span class="text-sm font-medium">Podepnij konto bankowe</span>
+        <span class="text-sm font-medium">{gettext("Connect a bank account")}</span>
       </div>
 
-      <p class="text-xs text-grey-600">Transakcje pojawią się automatycznie po podłączeniu konta.</p>
+      <p class="text-xs text-grey-600">
+        {gettext("Transactions will appear automatically once the account is connected.")}
+      </p>
 
       <.link
         navigate={~p"/ustawienia/bank/dodaj"}
@@ -584,7 +617,7 @@ defmodule FirmowidWeb.Invoicing.Components.DashboardTiles do
         size="small"
         class="mt-1 w-full"
       >
-        Połącz bank
+        {gettext("Connect bank")}
       </.link>
     </div>
     """
@@ -597,11 +630,11 @@ defmodule FirmowidWeb.Invoicing.Components.DashboardTiles do
         <div class="flex size-6 items-center justify-center rounded bg-moss-200">
           <.icon name="hero-document-arrow-up-solid" class="size-4 text-moss-700" />
         </div>
-        <span class="text-sm font-medium">Połącz z KSeF</span>
+        <span class="text-sm font-medium">{gettext("Connect to KSeF")}</span>
       </div>
 
       <p class="text-xs text-grey-600">
-        Faktury będą automatycznie wysyłane do Krajowego Systemu e-Faktur.
+        {gettext("Invoices will be sent automatically to the National e-Invoice System.")}
       </p>
 
       <.link
@@ -611,15 +644,15 @@ defmodule FirmowidWeb.Invoicing.Components.DashboardTiles do
         size="small"
         class="mt-1 w-full"
       >
-        Połącz KSeF
+        {gettext("Connect KSeF")}
       </.link>
     </div>
     """
   end
 
   defp suggestion_tile(%{entry: entry} = assigns) do
-    title = Map.get(entry, :title, "Sugestia")
-    description = Map.get(entry, :description, "Szczegóły sugestii nie są dostępne.")
+    title = Map.get(entry, :title, gettext("Suggestion"))
+    description = Map.get(entry, :description, gettext("Suggestion details are not available."))
 
     assigns =
       assigns

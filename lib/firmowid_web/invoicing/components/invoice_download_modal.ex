@@ -38,9 +38,9 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceDownloadModal do
       <.modal id={@modal_id} on_cancel={hide_modal(@modal_id)}>
         <div class="flex flex-col gap-6 p-1">
           <div>
-            <h3 class="text-lg font-semibold">Pobierz PDF</h3>
+            <h3 class="text-lg font-semibold">{gettext("Download PDF")}</h3>
             <p class="mt-2 text-sm text-grey-700">
-              Wybierz, czy dołączyć stronę z komentarzem wewnętrznym.
+              {gettext("Choose whether to include the page with the internal comment.")}
             </p>
           </div>
 
@@ -52,7 +52,7 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceDownloadModal do
           >
             <.switch
               field={@switch_form[:include_internal_note]}
-              label="Dołącz komentarz wewnętrzny"
+              label={gettext("Include internal comment")}
             />
           </.form>
 
@@ -64,9 +64,9 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceDownloadModal do
               data-download-url={Navigation.pdf_download_path(@download_path, @include_internal_note)}
               data-modal-id={@modal_id}
             >
-              <span data-download-idle>Pobierz</span>
+              <span data-download-idle>{gettext("Download")}</span>
               <span data-download-loading class="hidden items-center gap-2">
-                <Lucideicons.loader_circle class="size-4 animate-spin" /> Generowanie PDF…
+                <Lucideicons.loader_circle class="size-4 animate-spin" /> {gettext("Generating PDF…")}
               </span>
             </FirmowidUI.Components.Button.button>
           </div>
