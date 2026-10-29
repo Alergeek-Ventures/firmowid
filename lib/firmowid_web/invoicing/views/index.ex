@@ -15,6 +15,8 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
   import Phoenix.Component, except: [link: 1]
 
   alias Ash.Notifier.Notification
+  alias Firmowid.Ash.Analysis
+  alias Firmowid.Ash.Analysis.TagDefinition
   alias Firmowid.Ash.Analysis.TaxForecast
   alias Firmowid.Ash.Blobs
   alias Firmowid.Ash.Blobs.Blob
@@ -27,6 +29,8 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
   alias Firmowid.Ash.Invoicing.SalesInvoice
   alias Firmowid.Ash.Invoicing.TransactionGroup
   alias Firmowid.Ash.Ksef
+  alias FirmowidWeb.Analysis.Components.ProjectCell
+  alias FirmowidWeb.Analysis.Utilities.CategoryColors
   alias FirmowidWeb.Core.Endpoint
   alias FirmowidWeb.DesignSystem.Components.TaxForecastSummary
   alias FirmowidWeb.Infrastructure.Components.BlobProcessingToasts
@@ -107,6 +111,7 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
       |> Enum.count(&(&1.status == :accepted))
 
     socket = assign(socket, :has_connected_bank_account, connected_bank_accounts > 0)
+    socket = assign(socket, :projects_column, nil)
 
     socket =
       assign(
@@ -293,6 +298,7 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
             invoicing_entries={@invoicing_entries}
             return_to={build_invoicing_url(@params)}
             can_write_invoicing={can_write_invoicing?(@current_user)}
+            projects={@projects_column}
           />
       <% end %>
 
@@ -463,7 +469,10 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
     {:noreply, debounce_refetch(socket, :invoicing_entries, 10_000)}
   end
 
+  # A project assigned in one row also shows on the transaction paying that invoice.
   @impl true
+  def handle_info(:projects_changed, socket), do: {:noreply, refetch_invoicing_entries(socket)}
+
   def handle_info({:debounced_refetch, :invoicing_entries}, socket) do
     {:noreply, refetch_invoicing_entries(socket)}
   end
@@ -841,6 +850,19 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
     assign(socket, :invoicing_entries, entries)
   end
 
+  # Analysis members assign entries to the projects active in the month, behind the analysis flag.
+  defp projects_column(assigns, month, scope) do
+    if flag_enabled?(:analysis_dashboard, assigns) and
+         scope.actor.member.role in [:admin, :accountant] do
+      %{
+        projects: Analysis.list_available_categories(month, scope),
+        colors: CategoryColors.for_definitions(TagDefinition.list_tag_definitions!(scope: scope)),
+        scope: scope,
+        can_write: true
+      }
+    end
+  end
+
   defp refetch_invoicing_entries(socket) do
     month = socket.assigns.params.month
     filter = socket.assigns.params.filter
@@ -851,9 +873,19 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
 
     entries = fetch_entries(date_range_from, date_range_to, filter, subfilter, scope)
 
+    projects_column = projects_column(socket.assigns, month, scope)
+
+    entries =
+      if projects_column,
+        do: ProjectCell.preload(entries, scope),
+        else: entries
+
     entries = group_cost_transactions_by_party(entries)
 
-    socket = assign(socket, :invoicing_entries, entries)
+    socket =
+      socket
+      |> assign(:invoicing_entries, entries)
+      |> assign(:projects_column, projects_column)
 
     # Pending entries for badge count (no subfilter - we want all unmatched)
     # ── Dashboard data fetching ─────────────────────────────────────────

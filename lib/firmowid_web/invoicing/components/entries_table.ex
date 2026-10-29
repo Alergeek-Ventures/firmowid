@@ -13,6 +13,7 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
   alias Firmowid.Ash.Invoicing.TransactionGroup
   alias Firmowid.Ash.Ksef
   alias Firmowid.Ash.Ksef.SubmissionInfo
+  alias FirmowidWeb.Analysis.Components.ProjectCell
   alias FirmowidWeb.Infrastructure.Utilities.PolishQuantity
   alias FirmowidWeb.Invoicing.Utilities.BankBadges
   alias FirmowidWeb.Invoicing.Utilities.Navigation
@@ -21,6 +22,10 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
   attr :mode, :atom, required: true
   attr :return_to, :string, default: nil
   attr :can_write_invoicing, :boolean, default: true
+
+  attr :projects, :map,
+    default: nil,
+    doc: "project column settings (`projects`, `colors`, `scope`, `can_write`), or nil to hide it"
 
   @default_columns ["party", "issue_or_value_date", "due_or_booking_date", "status", "amount"]
 
@@ -67,10 +72,17 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
         _ -> @default_columns
       end
 
+    # Rows are assigned to analysis projects before the dates, where the table is wide enough.
+    columns =
+      if assigns[:projects],
+        do: List.insert_at(columns, 1, "project"),
+        else: columns
+
     assigns =
       assigns
       |> assign_new(:return_to, fn -> nil end)
       |> assign_new(:can_write_invoicing, fn -> true end)
+      |> assign_new(:projects, fn -> nil end)
       |> assign(
         :columns,
         columns
@@ -85,6 +97,7 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
         :for={column <- @columns}
         class={[
           case column do
+            "project" -> "w-48 max-xl:hidden"
             "issue_date" -> "w-36"
             "booking_date" -> "w-44"
             "issue_or_value_date" -> "w-36"
@@ -107,7 +120,8 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
             data-scroll-offset="90"
             class={[
               "h-[60px] py-2 text-left align-bottom text-xs font-normal text-grey-700 uppercase",
-              column == "party" && "pl-5"
+              column == "party" && "pl-5",
+              column == "project" && "pr-6 text-right max-xl:hidden"
             ]}
           >
             <.column_label column={column} />
@@ -120,12 +134,14 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
             <% %TransactionGroup{} = group -> %>
               <.group_row
                 group={group}
+                projects={@projects}
                 columns={@columns}
                 return_to={@return_to}
                 can_write_invoicing={@can_write_invoicing}
               />
             <% invoicing_entry -> %>
               <.table_row
+                projects={@projects}
                 columns={@columns}
                 invoicing_entry={invoicing_entry}
                 return_to={@return_to}
@@ -143,7 +159,10 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
       assign(
         assigns,
         :label,
-        Keyword.get(@column_labels, String.to_existing_atom(assigns.column))
+        if(assigns.column == "project",
+          do: gettext("Project"),
+          else: Keyword.get(@column_labels, String.to_existing_atom(assigns.column))
+        )
       )
 
     is_special_column =
@@ -207,6 +226,7 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
           [
             "bg-white py-2 transition-all duration-500",
             mobile_cell_styles(column),
+            column == "project" && "pr-6 max-xl:hidden",
             column == "party" && "rounded-l-md px-5 text-ellipsis max-xl:max-w-72",
             String.ends_with?(column, "date") && "font-light",
             column == "amount" && "rounded-r-md",
@@ -224,12 +244,13 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
         <div class={
           [
             # this column has no defined width, so we limit the worst offenders "manually"
-            column == "party" && "max-w-[50vw] max-md:max-w-none",
+            column == "party" && party_width_styles(@projects),
             # required to display the "dot freshness" indicator that is rendered outside of the cell
             column != "amount" && "w-full truncate"
           ]
         }>
           <.render_cell
+            projects={@projects}
             column={column}
             invoicing_entry={@invoicing_entry}
             return_to={@return_to}
@@ -240,6 +261,10 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
     </tr>
     """
   end
+
+  # The project column takes part of the room the party may use on wide screens.
+  defp party_width_styles(nil), do: "max-w-[50vw] max-md:max-w-none"
+  defp party_width_styles(_projects), do: "max-w-[50vw] max-md:max-w-none xl:max-w-[30vw]"
 
   # Below md each row becomes a tile: party and amount on top, the first date
   # underneath. Statuses and skip actions are left to the detail pages.
@@ -263,6 +288,20 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
       "max-md:col-start-2 max-md:row-start-1 max-md:rounded-none max-md:border-0 max-md:bg-white! max-md:pt-2 max-md:pb-0 max-md:pl-3 max-md:font-semibold"
 
   defp mobile_cell_styles(_status_or_second_date), do: "max-md:hidden"
+
+  defp render_cell(%{column: "project"} = assigns) do
+    ~H"""
+    <.live_component
+      module={ProjectCell}
+      id={"project-#{@invoicing_entry.__struct__ |> Module.split() |> List.last()}-#{@invoicing_entry.id}"}
+      entry={@invoicing_entry}
+      projects={@projects.projects}
+      colors={@projects.colors}
+      scope={@projects.scope}
+      can_write={@projects.can_write}
+    />
+    """
+  end
 
   # amount is differently rendered (has a background color that fills the cell)
   defp render_cell(%{column: "amount", invoicing_entry: %Transaction{} = transaction} = assigns) do
@@ -742,6 +781,10 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
   attr :return_to, :string, default: nil
   attr :can_write_invoicing, :boolean, default: true
 
+  attr :projects, :map,
+    default: nil,
+    doc: "project column settings (`projects`, `colors`, `scope`, `can_write`), or nil to hide it"
+
   defp group_row(assigns) do
     assigns = assign(assigns, :bank_badge, bank_badge_for_group(assigns.group))
 
@@ -764,6 +807,7 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
         class={[
           "bg-white py-2 transition-all duration-500",
           mobile_cell_styles(column),
+          column == "project" && "pr-6 max-xl:hidden",
           column == "party" && "rounded-l-md px-5 text-ellipsis max-xl:max-w-72",
           String.ends_with?(column, "date") && "font-light",
           column == "amount" && "rounded-r-md",
@@ -772,7 +816,7 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
         ]}
       >
         <div class={[
-          column == "party" && "max-w-[50vw] max-md:max-w-none",
+          column == "party" && party_width_styles(@projects),
           column != "amount" && "w-full truncate"
         ]}>
           <%= if column == "party" do %>
@@ -813,6 +857,7 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
           class={[
             "bg-white py-2 transition-all duration-500",
             mobile_cell_styles(column),
+            column == "project" && "pr-6 max-xl:hidden",
             column == "party" && "rounded-l-md px-5 text-ellipsis max-xl:max-w-72",
             String.ends_with?(column, "date") && "font-light",
             column == "amount" && "rounded-r-md",
@@ -823,13 +868,14 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
           ]}
         >
           <div class={[
-            column == "party" && "max-w-[50vw] max-md:max-w-none",
+            column == "party" && party_width_styles(@projects),
             column != "amount" && "w-full truncate"
           ]}>
             <%= if column == "party" do %>
               <div class="flex items-center gap-2">
                 <.icon name="hero-arrow-turn-down-right" class="size-3 text-grey-700 opacity-50" />
                 <.render_cell
+                  projects={@projects}
                   column={column}
                   invoicing_entry={transaction}
                   return_to={@return_to}
@@ -838,6 +884,7 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
               </div>
             <% else %>
               <.render_cell
+                projects={@projects}
                 column={column}
                 invoicing_entry={transaction}
                 return_to={@return_to}
@@ -866,7 +913,8 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
     """
   end
 
-  defp render_group_cell(%{column: column, group: _group} = assigns) when column in ["issue_date", "due_date"] do
+  defp render_group_cell(%{column: column, group: _group} = assigns)
+       when column in ["issue_date", "due_date", "project"] do
     ~H"""
     """
   end
