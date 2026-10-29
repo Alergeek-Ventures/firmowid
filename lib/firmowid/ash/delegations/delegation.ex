@@ -130,6 +130,24 @@ defmodule Firmowid.Ash.Delegations.Delegation do
       validate attribute_equals(:status, :pending)
     end
 
+    update :save_draft do
+      description "Save editable settlement fields without completing the delegation."
+      require_atomic? false
+      accept [:date_change_reason]
+      argument :expenses, {:array, :map}, allow_nil?: false, default: []
+
+      validate attribute_equals(:status, :in_progress)
+
+      change manage_relationship(:expenses,
+               type: :direct_control,
+               on_match: {:update, :update},
+               on_no_match: :error,
+               on_missing: :ignore,
+               # The parent authorizes the owner and limits updates to this delegation's expenses.
+               authorize?: false
+             )
+    end
+
     update :complete do
       description "Mark an in-progress delegation as complete."
       require_atomic? false
@@ -210,7 +228,7 @@ defmodule Firmowid.Ash.Delegations.Delegation do
       forbid_if always()
     end
 
-    policy action(:complete) do
+    policy action([:complete, :save_draft]) do
       authorize_if expr(status == :in_progress and member_id == ^actor([:member, :id]))
     end
 

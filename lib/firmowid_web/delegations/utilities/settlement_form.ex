@@ -5,23 +5,25 @@ defmodule FirmowidWeb.Delegations.Utilities.SettlementForm do
 
   alias AshMoney.Types.Money, as: MoneyType
   alias AshPhoenix.Form.Auto
-  alias FirmowidWeb.Infrastructure.Utilities.LocalTime
+  alias Firmowid.Ash.Delegations.DelegationExpense.Trip
   alias Phoenix.HTML.Form
 
   @doc "Builds the complete form for a delegation settlement."
-  @spec complete_form(struct(), map(), String.t()) :: Form.t()
-  def complete_form(delegation, scope, timezone) do
+  @spec complete_form(struct(), map(), atom()) :: Form.t()
+  def complete_form(delegation, scope, action \\ :complete) do
     forms =
       Firmowid.Ash.Delegations.Delegation
-      |> Auto.auto(:complete)
+      |> Auto.auto(action)
       |> Enum.map(fn {key, config} ->
         config =
           config |> Keyword.fetch!(:updater) |> then(& &1.(config)) |> Keyword.delete(:updater)
 
         if key == :expenses do
           {key,
-           Keyword.put(config, :transform_params, fn params, _type ->
-             transform_expense_params(params, timezone)
+           config
+           |> ticket_input_forms()
+           |> Keyword.put(:transform_params, fn params, _type ->
+             transform_expense_params(params)
            end)}
         else
           {key, config}
@@ -29,7 +31,7 @@ defmodule FirmowidWeb.Delegations.Utilities.SettlementForm do
       end)
 
     delegation
-    |> AshPhoenix.Form.for_update(:complete, scope: scope, as: "delegation", forms: forms)
+    |> AshPhoenix.Form.for_update(action, scope: scope, as: "delegation", forms: forms)
     |> to_form()
   end
 
@@ -50,26 +52,28 @@ defmodule FirmowidWeb.Delegations.Utilities.SettlementForm do
     %{expense_forms: expense_forms, trip_forms: trip_forms}
   end
 
-  @doc "Converts the browser's date and time fields into UTC timestamps."
-  @spec transform_trip_datetimes(map() | list(), String.t()) :: map() | list()
-  def transform_trip_datetimes(params, timezone) when is_map(params) do
-    params =
-      Map.new(params, fn {key, value} -> {key, transform_trip_datetimes(value, timezone)} end)
+  @doc "Reconciles unsaved expense inputs by identity after documents are added or removed."
+  @spec preserve_expense_params(Form.t(), map()) :: map()
+  def preserve_expense_params(form, params) do
+    previous = params |> Map.get("expenses", %{}) |> Map.values() |> Map.new(&{&1["id"], &1})
 
-    if Map.has_key?(params, "departure_time") || Map.has_key?(params, "arrival_time") do
-      params
-      |> put_trip_datetime("departure", timezone)
-      |> put_trip_datetime("arrival", timezone)
-      |> Map.drop(["departure_date", "departure_time", "arrival_date", "arrival_time"])
-    else
-      params
-    end
+    expenses =
+      form
+      |> nested_forms(:expenses)
+      |> Enum.with_index()
+      |> Map.new(fn {expense, index} ->
+        initial = %{
+          "id" => expense.data.id,
+          "_form_type" => "update",
+          "expense_amount" => Decimal.to_string(Money.to_decimal(expense.data.expense_amount), :normal),
+          "details" => %{"_union_type" => Atom.to_string(expense.data.details.type)}
+        }
+
+        {to_string(index), Map.get(previous, expense.data.id, initial)}
+      end)
+
+    Map.put(params, "expenses", expenses)
   end
-
-  def transform_trip_datetimes(params, timezone) when is_list(params),
-    do: Enum.map(params, &transform_trip_datetimes(&1, timezone))
-
-  def transform_trip_datetimes(params, _timezone), do: params
 
   @doc "Adds selected expense currencies to nested form parameters."
   @spec merge_expense_currencies(map(), map()) :: map()
@@ -98,7 +102,7 @@ defmodule FirmowidWeb.Delegations.Utilities.SettlementForm do
             :nbp ->
               put_nbp_settlement(expense, Map.get(nbp_settlements, expense["id"]))
 
-            _ ->
+            nil ->
               drop_settlement_amount(expense)
           end
 
@@ -107,7 +111,7 @@ defmodule FirmowidWeb.Delegations.Utilities.SettlementForm do
     end)
   end
 
-  defp transform_expense_params(%{"kind" => kind} = params, _timezone) do
+  defp transform_expense_params(%{"kind" => kind} = params) do
     details =
       case kind do
         "transport" ->
@@ -144,7 +148,7 @@ defmodule FirmowidWeb.Delegations.Utilities.SettlementForm do
     |> Map.put("details", details)
   end
 
-  defp transform_expense_params(%{"details" => details} = params, _timezone) do
+  defp transform_expense_params(%{"details" => details} = params) do
     params
     |> Map.take([
       "id",
@@ -173,6 +177,9 @@ defmodule FirmowidWeb.Delegations.Utilities.SettlementForm do
     params
     |> Map.delete(currency_key)
     |> Map.update(amount_key, nil, fn
+      nil ->
+        nil
+
       %{"amount" => _amount} = amount ->
         if currency, do: Map.put(amount, "currency", currency), else: amount
 
@@ -203,22 +210,91 @@ defmodule FirmowidWeb.Delegations.Utilities.SettlementForm do
     end
   end
 
-  defp drop_settlement_amount(expense), do: Map.drop(expense, ["settlement_amount", "settlement_currency"])
+  defp drop_settlement_amount(expense) do
+    expense
+    |> Map.delete("settlement_currency")
+    |> Map.merge(%{
+      "settlement_amount" => nil,
+      "settlement_method" => nil,
+      "nbp_rate" => nil,
+      "nbp_rate_date" => nil
+    })
+  end
 
   defp nested_forms(%Form{source: source}, field),
     do: source.forms |> Map.get(field, []) |> List.wrap() |> Enum.map(&to_form/1)
 
   defp nested_form(%Form{source: %{forms: forms}}, field), do: forms |> Map.fetch!(field) |> to_form()
 
-  defp put_trip_datetime(params, prefix, timezone) do
-    with date when is_binary(date) <- params["#{prefix}_date"],
-         time when is_binary(time) <- params["#{prefix}_time"],
-         {:ok, date} <- Date.from_iso8601(date),
-         {:ok, time} <- Time.from_iso8601(time <> ":00") do
-      datetime = LocalTime.to_utc(date, time, timezone)
-      Map.put(params, "#{prefix}_datetime", DateTime.to_iso8601(datetime))
+  defp ticket_input_forms(config) do
+    Keyword.update!(config, :forms, fn forms ->
+      Keyword.update!(forms, :details, fn details ->
+        updater = Keyword.fetch!(details, :updater)
+
+        Keyword.put(details, :updater, fn options, data, params ->
+          options = updater.(options, data, params)
+
+          Keyword.update(options, :forms, [], fn forms ->
+            Enum.map(forms, fn
+              {:trips, trip_options} ->
+                {:trips, Keyword.put(trip_options, :transform_params, &trip_action_params/3)}
+
+              other ->
+                other
+            end)
+          end)
+        end)
+      end)
+    end)
+  end
+
+  # Keep the raw date/time parts in the form draft, but never send virtual inputs to Ash.
+  defp trip_action_params(form, params, _type) do
+    if Map.has_key?(params, "departure_time") || Map.has_key?(params, "arrival_time") do
+      params
+      |> put_trip_datetime(:departure, form.data)
+      |> put_trip_datetime(:arrival, form.data)
+      |> Map.drop(["departure_date", "departure_time", "arrival_date", "arrival_time"])
     else
-      _ -> params
+      params
     end
   end
+
+  defp put_trip_datetime(params, prefix, original) do
+    date = params["#{prefix}_date"]
+    time = params["#{prefix}_time"]
+
+    cond do
+      unchanged_ticket_time?(params, prefix, original) ->
+        # An unrelated edit must not infer local time for a legacy record or lose a known DST offset.
+        Map.drop(params, ["#{prefix}_local_datetime", "#{prefix}_datetime"])
+
+      date in [nil, ""] && time in [nil, ""] ->
+        params |> Map.put("#{prefix}_local_datetime", nil) |> Map.put("#{prefix}_datetime", nil)
+
+      true ->
+        params
+        |> Map.put("#{prefix}_local_datetime", local_datetime_value(date, time))
+        |> Map.put("#{prefix}_datetime", nil)
+    end
+  end
+
+  defp unchanged_ticket_time?(_params, _prefix, nil), do: false
+
+  defp unchanged_ticket_time?(params, prefix, original) do
+    previous = Trip.local_datetime(original, prefix)
+
+    previous && params["#{prefix}_date"] == Calendar.strftime(previous, "%Y-%m-%d") &&
+      params["#{prefix}_time"] == Calendar.strftime(previous, "%H:%M") &&
+      params["#{prefix}_city"] == Map.fetch!(original, city_field(prefix))
+  end
+
+  defp local_datetime_value(date, time) when is_binary(date) and is_binary(time) do
+    date <> "T" <> time <> ":00"
+  end
+
+  defp local_datetime_value(_date, _time), do: "incomplete"
+
+  defp city_field(:departure), do: :departure_city
+  defp city_field(:arrival), do: :arrival_city
 end

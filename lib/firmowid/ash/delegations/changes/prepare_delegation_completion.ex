@@ -4,6 +4,7 @@ defmodule Firmowid.Ash.Delegations.Changes.PrepareDelegationCompletion do
   use Ash.Resource.Change
 
   alias Firmowid.Ash.Delegations.DelegationExpense
+  alias Firmowid.Ash.Delegations.DelegationExpense.Trip
 
   @impl true
   def change(changeset, _opts, context) do
@@ -32,9 +33,10 @@ defmodule Firmowid.Ash.Delegations.Changes.PrepareDelegationCompletion do
     case Enum.find(final_expenses, &(not &1.valid?)) do
       nil ->
         dates =
-          final_expenses
-          |> Enum.map(&Ash.Changeset.apply_attributes/1)
-          |> Enum.flat_map(&expense_dates/1)
+          Enum.flat_map(final_expenses, fn expense_changeset ->
+            {:ok, expense} = Ash.Changeset.apply_attributes(expense_changeset)
+            expense_dates(expense)
+          end)
 
         detected_start_date = detected_start_date(dates, changeset.data.start_date)
         detected_end_date = detected_end_date(dates, changeset.data.end_date)
@@ -56,11 +58,7 @@ defmodule Firmowid.Ash.Delegations.Changes.PrepareDelegationCompletion do
   defp expense_dates(%DelegationExpense{details: %Ash.Union{value: details}}), do: expense_dates(details)
 
   defp expense_dates(%{trips: trips}) when is_list(trips) do
-    trips
-    |> Enum.flat_map(fn trip ->
-      [date_from_datetime(trip.departure_datetime), date_from_datetime(trip.arrival_datetime)]
-    end)
-    |> Enum.reject(&is_nil/1)
+    Enum.flat_map(trips, &Trip.evidence_dates/1)
   end
 
   defp expense_dates(%{arrival_date: arrival_date, departure_date: departure_date}) do
@@ -68,9 +66,6 @@ defmodule Firmowid.Ash.Delegations.Changes.PrepareDelegationCompletion do
   end
 
   defp expense_dates(_expense), do: []
-
-  defp date_from_datetime(%DateTime{} = datetime), do: DateTime.to_date(datetime)
-  defp date_from_datetime(_datetime), do: nil
 
   defp detected_start_date([], _start_date), do: nil
 

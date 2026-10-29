@@ -18,6 +18,7 @@ defmodule Firmowid.Ash.Delegations.DelegationExpense.Trip do
       constraints: [allow_empty?: true],
       public?: true
 
+    attribute :departure_local_datetime, :naive_datetime, public?: true
     attribute :departure_datetime, :utc_datetime, public?: true
 
     attribute :arrival_city, :string,
@@ -26,7 +27,30 @@ defmodule Firmowid.Ash.Delegations.DelegationExpense.Trip do
       constraints: [allow_empty?: true],
       public?: true
 
+    attribute :arrival_local_datetime, :naive_datetime, public?: true
     attribute :arrival_datetime, :utc_datetime, public?: true
     attribute :description, :string, public?: true
   end
+
+  @doc "Returns the ticket wall clock, falling back to legacy UTC components without conversion."
+  @spec local_datetime(t(), :departure | :arrival) :: NaiveDateTime.t() | nil
+  def local_datetime(trip, :departure) do
+    trip.departure_local_datetime || legacy_datetime(trip.departure_datetime)
+  end
+
+  def local_datetime(trip, :arrival) do
+    trip.arrival_local_datetime || legacy_datetime(trip.arrival_datetime)
+  end
+
+  @doc "Returns evidence dates from ticket wall clocks, with legacy UTC fallback."
+  @spec evidence_dates(t()) :: [Date.t()]
+  def evidence_dates(trip) do
+    [:departure, :arrival]
+    |> Enum.map(&local_datetime(trip, &1))
+    |> Enum.reject(&is_nil/1)
+    |> Enum.map(&NaiveDateTime.to_date/1)
+  end
+
+  defp legacy_datetime(nil), do: nil
+  defp legacy_datetime(%DateTime{} = datetime), do: DateTime.to_naive(datetime)
 end

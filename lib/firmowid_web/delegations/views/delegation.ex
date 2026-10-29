@@ -7,6 +7,7 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
 
   alias Firmowid.Ash.Delegations
   alias Firmowid.Ash.Delegations.DelegationExpense
+  alias Firmowid.Ash.Delegations.DelegationExpense.Trip
   alias Firmowid.Ash.Delegations.DelegationExpenseExtractor
   alias FirmowidWeb.Delegations.Utilities.NbpSettlement
   alias FirmowidWeb.Delegations.Utilities.SettlementForm
@@ -43,6 +44,8 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
 
   def handle_event("upload-statement-document", _params, socket), do: {:noreply, assign(socket, :uploading?, true)}
 
+  def handle_event("validate", _params, %{assigns: %{editable?: false}} = socket), do: {:noreply, socket}
+
   def handle_event("validate", %{"delegation" => params} = event_params, socket) do
     expense_currencies =
       Map.merge(
@@ -50,13 +53,15 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
         Map.get(event_params, "expense_currencies", %{})
       )
 
-    params = SettlementForm.merge_expense_currencies(params, expense_currencies)
+    params =
+      params
+      |> SettlementForm.merge_expense_currencies(expense_currencies)
+      |> SettlementForm.merge_foreign_currency_settlements(
+        socket.assigns.foreign_currency_modes,
+        socket.assigns.nbp_settlements
+      )
 
     date_change = detected_date_change(socket.assigns.delegation, params)
-
-    params = SettlementForm.transform_trip_datetimes(params, socket.assigns.timezone)
-
-    form = AshPhoenix.Form.validate(socket.assigns.complete_form, params)
 
     {:noreply,
      socket
@@ -65,17 +70,23 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
        submission_failed?: false,
        date_change: date_change
      )
-     |> assign_complete_form(form)}
+     |> save_draft(params, Map.get(event_params, "draft_revision"))}
   end
 
   def handle_event("validate", _params, socket), do: {:noreply, socket}
 
   def handle_event("foreign-currency-action", %{"action" => "notice", "expense-id" => expense_id}, socket) do
-    {:noreply, update(socket, :foreign_currency_modes, &Map.delete(&1, expense_id))}
+    {:noreply,
+     socket
+     |> update(:foreign_currency_modes, &Map.delete(&1, expense_id))
+     |> save_current_draft()}
   end
 
   def handle_event("foreign-currency-action", %{"action" => "statement", "expense-id" => expense_id}, socket) do
-    {:noreply, update(socket, :foreign_currency_modes, &Map.put(&1, expense_id, :statement))}
+    {:noreply,
+     socket
+     |> update(:foreign_currency_modes, &Map.put(&1, expense_id, :statement))
+     |> save_current_draft()}
   end
 
   def handle_event("foreign-currency-action", %{"action" => "nbp", "expense-id" => expense_id}, socket) do
@@ -89,7 +100,8 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
         {:noreply,
          socket
          |> update(:foreign_currency_modes, &Map.put(&1, expense_id, :nbp))
-         |> update(:nbp_settlements, &Map.put(&1, expense_id, settlement))}
+         |> update(:nbp_settlements, &Map.put(&1, expense_id, settlement))
+         |> save_current_draft()}
 
       {:error, _reason} ->
         {:noreply, put_flash(socket, :error, "Nie udało się pobrać kursu NBP.")}
@@ -109,7 +121,7 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
 
     {:noreply,
      if(result == :ok,
-       do: reload(socket),
+       do: refresh_delegation(socket),
        else: put_flash(socket, :error, "Nie udało się usunąć dokumentu.")
      )}
   end
@@ -123,7 +135,7 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
       end
 
     case result do
-      :ok -> {:noreply, refresh_delegation(socket, preserve_form?: true)}
+      :ok -> {:noreply, refresh_delegation(socket)}
       _ -> {:noreply, put_flash(socket, :error, "Nie udało się usunąć powiązanego dokumentu.")}
     end
   end
@@ -135,7 +147,7 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
       end
 
     case result do
-      {:ok, _expense} -> {:noreply, refresh_delegation(socket, preserve_form?: true)}
+      {:ok, _expense} -> {:noreply, refresh_delegation(socket)}
       _ -> {:noreply, put_flash(socket, :error, "Nie udało się usunąć wyciągu.")}
     end
   end
@@ -147,25 +159,12 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
     do: {:noreply, update(socket, :description_visible?, &Map.put(&1, id, false))}
 
   def handle_event("sort", _params, socket) do
-    case load_delegation(socket.assigns.delegation.reference, socket) do
-      {:ok, delegation} when not is_nil(delegation) ->
-        delegation = Map.update!(delegation, :expenses, &sort_transport_expenses/1)
-
-        form =
-          SettlementForm.complete_form(
-            delegation,
-            socket.assigns.ash_scope,
-            socket.assigns.timezone
-          )
-
-        {:noreply,
-         socket
-         |> assign(delegation: decorate_delegation(delegation, false), sort_active?: true)
-         |> assign_complete_form(form)}
-
-      _ ->
-        {:noreply, unavailable_delegation(socket)}
-    end
+    # Reorder the presentation only: nested form indexes and unfinished inputs keep their identity.
+    {:noreply,
+     assign(socket,
+       delegation: decorate_delegation(socket.assigns.delegation, true),
+       sort_active?: true
+     )}
   end
 
   def handle_event("submit", _params, %{assigns: %{editable?: false}} = socket), do: {:noreply, socket}
@@ -187,23 +186,24 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
 
     date_change = detected_date_change(socket.assigns.delegation, params)
 
-    params = SettlementForm.transform_trip_datetimes(params, socket.assigns.timezone)
+    complete_form =
+      SettlementForm.complete_form(
+        socket.assigns.complete_form.source.data,
+        socket.assigns.ash_scope
+      )
 
-    case AshPhoenix.Form.submit(socket.assigns.complete_form, params: params) do
+    case AshPhoenix.Form.submit(complete_form, params: params) do
       {:ok, delegation} ->
         {:noreply, reload(socket, delegation.reference)}
 
       {:error, %Form{} = complete_form} ->
         socket =
           socket
-          |> assign(submission_failed?: true, date_change: date_change)
+          |> assign(submission_failed?: true, date_change: date_change, save_status: :invalid)
           |> assign_complete_form(complete_form)
           |> scroll_to_date_change(date_change)
 
         {:noreply, socket}
-
-      {:error, _reason} ->
-        {:noreply, put_flash(socket, :error, "Nie udało się wysłać ewidencji.")}
     end
   end
 
@@ -211,7 +211,11 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
     sort_active? = socket.assigns[:sort_active?] || false
 
     complete_form =
-      SettlementForm.complete_form(delegation, socket.assigns.ash_scope, socket.assigns.timezone)
+      SettlementForm.complete_form(
+        delegation,
+        socket.assigns.ash_scope,
+        :save_draft
+      )
 
     delegation = decorate_delegation(delegation, sort_active?)
 
@@ -264,14 +268,15 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
       editable?: delegation.status == :in_progress,
       uploading?: false,
       submission_failed?: false,
+      save_status: :idle,
       related_expense_id: nil,
       statement_expense_id: nil,
       page_title: "Rozliczenie delegacji",
       sort_active?: sort_active?,
       date_change: persisted_date_change(delegation),
       expense_currencies: expense_currencies(delegation.expenses),
-      foreign_currency_modes: %{},
-      nbp_settlements: %{}
+      foreign_currency_modes: foreign_currency_modes(delegation.expenses),
+      nbp_settlements: nbp_settlements(delegation.expenses)
     )
     |> assign_complete_form(complete_form)
     |> assign_new(:description_visible?, fn -> %{} end)
@@ -286,34 +291,87 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
         not_found_error?: false
       )
 
-  defp reload(socket, reference \\ nil) do
-    case load_delegation(reference || socket.assigns.delegation.reference, socket) do
+  defp save_draft(socket, params, revision) do
+    with {:ok, delegation} when not is_nil(delegation) <-
+           load_delegation(socket.assigns.delegation.reference, socket),
+         true <- delegation.status == :in_progress,
+         form =
+           SettlementForm.complete_form(
+             delegation,
+             socket.assigns.ash_scope,
+             :save_draft
+           ),
+         {:ok, _saved} <- AshPhoenix.Form.submit(form, params: params),
+         {:ok, persisted} when not is_nil(persisted) <-
+           load_delegation(delegation.reference, socket) do
+      form =
+        persisted
+        |> SettlementForm.complete_form(
+          socket.assigns.ash_scope,
+          :save_draft
+        )
+        |> AshPhoenix.Form.validate(params)
+
+      socket
+      |> assign(
+        delegation: preserve_expense_order(persisted, socket.assigns.delegation),
+        foreign_currency_modes: foreign_currency_modes(persisted.expenses),
+        nbp_settlements: nbp_settlements(persisted.expenses),
+        save_status: :saved
+      )
+      |> assign_complete_form(form)
+      |> assign_summary()
+      |> push_event("settlement-saved", %{revision: revision})
+    else
+      {:error, %Form{} = form} ->
+        socket |> assign(:save_status, :invalid) |> assign_complete_form(form)
+
+      _ ->
+        form = AshPhoenix.Form.validate(socket.assigns.complete_form, params)
+        socket |> assign(:save_status, :error) |> assign_complete_form(form)
+    end
+  end
+
+  defp save_current_draft(socket) do
+    params =
+      socket.assigns.complete_form
+      |> SettlementForm.preserve_expense_params(socket.assigns.complete_form.source.raw_params)
+      |> SettlementForm.merge_expense_currencies(socket.assigns.expense_currencies)
+      |> SettlementForm.merge_foreign_currency_settlements(
+        socket.assigns.foreign_currency_modes,
+        socket.assigns.nbp_settlements
+      )
+
+    save_draft(socket, params, nil)
+  end
+
+  defp reload(socket, reference) do
+    case load_delegation(reference, socket) do
       {:ok, delegation} when not is_nil(delegation) -> setup_socket(socket, delegation)
       _ -> unavailable_delegation(socket)
     end
   end
 
-  defp refresh_delegation(socket, options \\ []) do
+  defp refresh_delegation(socket) do
     case load_delegation(socket.assigns.delegation.reference, socket) do
       {:ok, delegation} when not is_nil(delegation) ->
         complete_form =
           SettlementForm.complete_form(
             delegation,
             socket.assigns.ash_scope,
-            socket.assigns.timezone
+            :save_draft
           )
 
         complete_form =
-          if Keyword.get(options, :preserve_form?, false) do
-            AshPhoenix.Form.validate(
+          AshPhoenix.Form.validate(
+            complete_form,
+            SettlementForm.preserve_expense_params(
               complete_form,
               socket.assigns.complete_form.source.raw_params
             )
-          else
-            complete_form
-          end
+          )
 
-        delegation = decorate_delegation(delegation, socket.assigns.sort_active?)
+        delegation = preserve_expense_order(delegation, socket.assigns.delegation)
 
         socket
         |> assign(
@@ -339,6 +397,20 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
       if sort_active?, do: sort_transport_expenses(delegation.expenses), else: delegation.expenses
 
     Map.put(delegation, :expenses, Enum.map(expenses, &decorate_expense/1))
+  end
+
+  defp preserve_expense_order(delegation, previous) do
+    order =
+      previous.expenses
+      |> Enum.with_index()
+      |> Map.new(fn {expense, index} -> {expense.id, index} end)
+
+    delegation
+    |> Map.update!(
+      :expenses,
+      &Enum.sort_by(&1, fn expense -> Map.get(order, expense.id, map_size(order)) end)
+    )
+    |> decorate_delegation(false)
   end
 
   defp decorate_expense(%{details: %Ash.Union{value: details}} = expense),
@@ -369,11 +441,17 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
       expenses,
       fn expense ->
         case Map.get(expense, :trips, []) do
-          [%{departure_datetime: %DateTime{} = departure_datetime}] ->
-            {0, DateTime.to_unix(departure_datetime, :microsecond), expense.inserted_at, expense.id}
+          [trip] ->
+            case Trip.local_datetime(trip, :departure) do
+              %NaiveDateTime{} = datetime ->
+                {0, NaiveDateTime.to_iso8601(datetime), expense.inserted_at, expense.id}
+
+              nil ->
+                {1, "", expense.inserted_at, expense.id}
+            end
 
           _ ->
-            {1, 0, expense.inserted_at, expense.id}
+            {1, "", expense.inserted_at, expense.id}
         end
       end,
       :asc
@@ -412,7 +490,7 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
     socket =
       case consume_statement_document(socket, entry, expense_id) do
         {:ok, _expense} ->
-          socket |> refresh_delegation(preserve_form?: true) |> assign(:statement_expense_id, nil)
+          socket |> refresh_delegation() |> assign(:statement_expense_id, nil)
 
         {:error, _reason} ->
           socket
@@ -431,7 +509,7 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
     socket =
       case consume_related_document(socket, entry, expense_id) do
         {:ok, _expense} ->
-          socket |> refresh_delegation(preserve_form?: true) |> assign(:related_expense_id, nil)
+          socket |> refresh_delegation() |> assign(:related_expense_id, nil)
 
         {:error, _reason} ->
           socket
@@ -557,6 +635,26 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
       currency = expense.expense_amount |> Money.to_currency_code() |> Atom.to_string()
       {expense.id, currency}
     end)
+  end
+
+  defp nbp_settlements(expenses) do
+    expenses
+    |> Enum.filter(&(&1.settlement_method == :nbp))
+    |> Map.new(fn expense ->
+      {expense.id,
+       %{
+         source_currency: Atom.to_string(Money.to_currency_code(expense.expense_amount)),
+         rate: expense.nbp_rate,
+         date: expense.nbp_rate_date,
+         amount: expense.settlement_amount
+       }}
+    end)
+  end
+
+  defp foreign_currency_modes(expenses) do
+    expenses
+    |> Enum.reject(&is_nil(&1.settlement_method))
+    |> Map.new(&{&1.id, &1.settlement_method})
   end
 
   defp assign_summary(socket) do

@@ -10,6 +10,7 @@ defmodule Firmowid.Ash.Delegations.DelegationTest do
   alias Firmowid.Ash.Blobs.Blob
   alias Firmowid.Ash.Delegations
   alias Firmowid.Ash.Delegations.DelegationExpense
+  alias Firmowid.Ash.Delegations.DelegationExpense.Trip
   alias Firmowid.Ash.Scope
 
   setup do
@@ -126,6 +127,50 @@ defmodule Firmowid.Ash.Delegations.DelegationTest do
     assert approved_delegation.status == :in_progress
     assert approved_delegation.advance_amount == Money.new(:PLN, 50)
     assert approved_delegation.signed_command_blob_id
+  end
+
+  test "draft saving cannot update another delegation's expenses and rolls back the whole save",
+       %{
+         employee_scope: employee_scope,
+         admin_scope: admin_scope
+       } do
+    first = Delegations.create_delegation!(delegation_attrs(), scope: employee_scope)
+    first = Delegations.approve_delegation!(first.id, approval_attrs(), scope: admin_scope)
+    second = Delegations.create_delegation!(delegation_attrs(), scope: employee_scope)
+    second = Delegations.approve_delegation!(second.id, approval_attrs(), scope: admin_scope)
+    own = seed_transport_expense(first, employee_scope.actor, %{})
+    other = seed_transport_expense(second, employee_scope.actor, %{})
+
+    assert {:error, _} =
+             Delegations.save_delegation_draft(
+               first.id,
+               %{
+                 date_change_reason: "Nie powinno się zapisać",
+                 expenses: [
+                   %{id: own.id, document_number: "CHANGED"},
+                   %{id: other.id, document_number: "FORGED"}
+                 ]
+               },
+               scope: employee_scope
+             )
+
+    assert Delegations.get_expense!(own.id, scope: employee_scope).document_number == "TICKET/1"
+    assert Delegations.get_expense!(other.id, scope: employee_scope).document_number == "TICKET/1"
+    assert Delegations.get_delegation!(first.id, scope: employee_scope).date_change_reason == nil
+
+    stranger = user_in_org_fixture(employee_scope.tenant)
+
+    assert {:error, _} =
+             Delegations.save_delegation_draft(first.id, %{date_change_reason: "FORGED"},
+               scope: %Scope{actor: stranger, tenant: employee_scope.tenant}
+             )
+
+    outsider = user_fixture()
+
+    assert {:error, _} =
+             Delegations.save_delegation_draft(first.id, %{date_change_reason: "FORGED"},
+               scope: %Scope{actor: outsider, tenant: outsider.member.organization_id}
+             )
   end
 
   test "cannot complete an empty settlement", %{
@@ -308,6 +353,96 @@ defmodule Firmowid.Ash.Delegations.DelegationTest do
     assert detected_delegation.detected_end_date == ~D[2026-09-12]
   end
 
+  test "detects local midnight evidence on update and completion instead of the UTC date", %{
+    employee_scope: employee_scope,
+    admin_scope: admin_scope
+  } do
+    delegation = Delegations.create_delegation!(delegation_attrs(), scope: employee_scope)
+
+    delegation =
+      Delegations.approve_delegation!(delegation.id, approval_attrs(), scope: admin_scope)
+
+    expense =
+      seed_transport_expense(delegation, employee_scope.actor, %{
+        departure_local_datetime: ~N[2026-09-11 23:30:00],
+        arrival_local_datetime: ~N[2026-09-12 00:30:00],
+        departure_datetime: ~U[2026-09-11 21:30:00Z],
+        arrival_datetime: ~U[2026-09-11 22:30:00Z]
+      })
+
+    assert {:ok, _expense} =
+             Delegations.update_expense(expense, %{document_number: "TICKET/2"}, scope: employee_scope)
+
+    assert Delegations.get_delegation!(delegation.id, scope: employee_scope).detected_end_date ==
+             ~D[2026-09-12]
+
+    assert {:error, _} = Delegations.complete_delegation(delegation.id, scope: employee_scope)
+
+    assert {:ok, completed} =
+             Delegations.complete_delegation(
+               delegation.id,
+               %{date_change_reason: "Powrót po północy"},
+               scope: employee_scope
+             )
+
+    assert completed.detected_end_date == ~D[2026-09-12]
+  end
+
+  test "completes local-only DST clocks and flights with earlier local arrival", %{
+    employee_scope: employee_scope,
+    admin_scope: admin_scope
+  } do
+    for times <- [
+          %{
+            departure_local_datetime: ~N[2026-03-29 02:30:00],
+            arrival_local_datetime: ~N[2026-03-29 03:30:00]
+          },
+          %{
+            departure_local_datetime: ~N[2026-10-25 02:30:00],
+            arrival_local_datetime: ~N[2026-10-25 02:15:00]
+          },
+          %{
+            departure_datetime: ~U[2026-09-10 09:30:00Z],
+            arrival_datetime: ~U[2026-09-10 12:30:00Z]
+          },
+          %{
+            departure_local_datetime: ~N[2026-09-10 12:00:00],
+            arrival_local_datetime: ~N[2026-09-10 11:00:00],
+            departure_datetime: ~U[2026-09-10 10:00:00Z],
+            arrival_datetime: ~U[2026-09-10 15:00:00Z]
+          }
+        ] do
+      delegation =
+        Delegations.create_delegation!(
+          delegation_attrs(%{start_date: ~D[2026-03-01], end_date: ~D[2026-10-31]}),
+          scope: employee_scope
+        )
+
+      delegation =
+        Delegations.approve_delegation!(delegation.id, approval_attrs(), scope: admin_scope)
+
+      expense = seed_transport_expense(delegation, employee_scope.actor, times)
+      original_trip = hd(expense.details.value.trips)
+      assert {:ok, _} = Delegations.complete_delegation(delegation.id, scope: employee_scope)
+      stored_expense = Delegations.get_expense!(expense.id, scope: employee_scope)
+      assert hd(stored_expense.details.value.trips) == original_trip
+    end
+  end
+
+  test "uses legacy UTC clock components without converting or populating local fields" do
+    assert {:ok, trip} =
+             Ash.Type.cast_input(Trip, %{
+               departure_datetime: "2026-09-11T23:30:00Z",
+               arrival_datetime: "2026-09-12T00:30:00Z"
+             })
+
+    assert trip.departure_local_datetime == nil
+    assert trip.arrival_local_datetime == nil
+    assert Trip.local_datetime(trip, :departure) == ~N[2026-09-11 23:30:00]
+    assert Trip.local_datetime(trip, :arrival) == ~N[2026-09-12 00:30:00]
+    assert Trip.evidence_dates(trip) == [~D[2026-09-11], ~D[2026-09-12]]
+  end
+
   test "clears detected dates after correcting and deleting evidence", %{
     employee_scope: employee_scope,
     admin_scope: admin_scope
@@ -385,6 +520,22 @@ defmodule Firmowid.Ash.Delegations.DelegationTest do
                },
                scope: employee_scope
              )
+  end
+
+  defp seed_transport_expense(delegation, user, times) do
+    Ash.Seed.seed!(DelegationExpense, %{
+      delegation_id: delegation.id,
+      organization_id: user.member.organization_id,
+      blob_id: seed_blob(user).id,
+      kind: :transport,
+      original_filename: "bilet.pdf",
+      document_number: "TICKET/1",
+      expense_amount: Money.new(:PLN, 100),
+      details: %{
+        type: "transport",
+        trips: [Map.merge(%{departure_city: "Warszawa", arrival_city: "Nowy Jork"}, times)]
+      }
+    })
   end
 
   defp seed_expense(delegation, user, details) do

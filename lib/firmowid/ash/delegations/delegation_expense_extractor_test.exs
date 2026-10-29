@@ -1,6 +1,9 @@
 defmodule Firmowid.Ash.Delegations.DelegationExpenseExtractorTest do
   use ExUnit.Case, async: false
 
+  import ExUnit.CaptureLog
+
+  alias Firmowid.Ash.Delegations.DelegationExpense.Trip
   alias Firmowid.Ash.Delegations.DelegationExpenseExtractor
   alias Firmowid.Ash.Invoicing.Services.ReductoApiClientMock
 
@@ -66,6 +69,102 @@ defmodule Firmowid.Ash.Delegations.DelegationExpenseExtractorTest do
     end
   end
 
+  test "preserves ticket wall clocks through DST gaps, both overlap offsets and transatlantic flights" do
+    configure_req_mock()
+
+    for {departure, arrival, local_departure, local_arrival, utc_departure, utc_arrival} <- [
+          {"2026-03-29T02:30:00", "2026-03-29T03:30:00", ~N[2026-03-29 02:30:00], ~N[2026-03-29 03:30:00], nil, nil},
+          {"2026-10-25T02:30:00+02:00", "2026-10-25T02:30:00+01:00", ~N[2026-10-25 02:30:00], ~N[2026-10-25 02:30:00],
+           ~U[2026-10-25 00:30:00Z], ~U[2026-10-25 01:30:00Z]},
+          {"2026-09-10T12:00:00+02:00", "2026-09-10T11:00:00-04:00", ~N[2026-09-10 12:00:00], ~N[2026-09-10 11:00:00],
+           ~U[2026-09-10 10:00:00Z], ~U[2026-09-10 15:00:00Z]},
+          {"2026-09-12T00:30:00+02:00", "2026-09-12T01:30:00+02:00", ~N[2026-09-12 00:30:00], ~N[2026-09-12 01:30:00],
+           ~U[2026-09-11 22:30:00Z], ~U[2026-09-11 23:30:00Z]},
+          {"2026-09-10T12:00:00Z", "2026-09-10T13:00:00Z", ~N[2026-09-10 12:00:00], ~N[2026-09-10 13:00:00],
+           ~U[2026-09-10 12:00:00Z], ~U[2026-09-10 13:00:00Z]}
+        ] do
+      stub_ticket(departure, arrival)
+      assert {:ok, %{details: %{"trips" => [params]}}} = extract_ticket()
+      assert params["departure_local_datetime"] == local_departure
+      assert params["arrival_local_datetime"] == local_arrival
+      assert params["departure_datetime"] == utc_departure
+      assert params["arrival_datetime"] == utc_arrival
+      assert {:ok, trip} = Ash.Type.cast_input(Trip, params)
+      assert {:ok, embedded} = Ash.Type.dump_to_embedded(Trip, trip)
+      assert {:ok, restored} = Ash.Type.cast_stored(Trip, embedded)
+      assert restored.departure_datetime == utc_departure
+      assert restored.arrival_datetime == utc_arrival
+      assert Trip.local_datetime(restored, :departure) == local_departure
+      assert Trip.local_datetime(restored, :arrival) == local_arrival
+    end
+  end
+
+  test "reports invalid ticket timestamps without timezone guessing or silent fallback" do
+    configure_req_mock()
+
+    for value <- [
+          "2026-02-30T02:30:00",
+          "2026-10-25T02:30:00 Europe/Warsaw",
+          "2026-10-25T02:30:00+99:00",
+          "not a date",
+          123
+        ] do
+      stub_ticket(value, "2026-10-25T03:30:00")
+
+      capture_log(fn ->
+        assert {:error, {:invalid_trip_datetime, "departure_datetime", ^value, _reason}} =
+                 extract_ticket()
+      end)
+    end
+  end
+
+  defp configure_req_mock do
+    previous_config = Application.get_env(:firmowid, :reducto_api_client)
+    previous_client = Application.get_env(:firmowid, :reducto_api_client_module)
+    Application.delete_env(:firmowid, :reducto_api_client_module)
+
+    Application.put_env(:firmowid, :reducto_api_client,
+      upload: [plug: {Req.Test, __MODULE__}],
+      extract: [plug: {Req.Test, __MODULE__}]
+    )
+
+    on_exit(fn ->
+      restore_env(:reducto_api_client, previous_config)
+      restore_env(:reducto_api_client_module, previous_client)
+    end)
+  end
+
+  defp stub_ticket(departure, arrival) do
+    Req.Test.stub(__MODULE__, fn
+      %{request_path: "/upload"} = conn ->
+        Req.Test.json(conn, %{file_id: "test-ticket"})
+
+      %{request_path: "/extract"} = conn ->
+        Req.Test.json(conn, %{
+          result: %{
+            document_number: "TICKET/1",
+            expense_amount: 100,
+            details: %{
+              trips: [
+                %{
+                  departure_city: "Warszawa",
+                  arrival_city: "Nowy Jork",
+                  departure_datetime: departure,
+                  arrival_datetime: arrival
+                }
+              ]
+            }
+          }
+        })
+    end)
+  end
+
+  defp extract_ticket do
+    path = Briefly.create!()
+    File.write!(path, "ticket")
+    DelegationExpenseExtractor.extract(path, :transport, ~D[2026-09-10], ~D[2026-09-11])
+  end
+
   defmodule UnavailableReductoClient do
     @moduledoc false
 
@@ -80,15 +179,17 @@ defmodule Firmowid.Ash.Delegations.DelegationExpenseExtractorTest do
       restore_env(:reducto_api_client_module, previous_client)
     end)
 
-    for expense_type <- [:transport, :accommodation, :other] do
-      assert {:error, :unavailable} =
-               DelegationExpenseExtractor.extract(
-                 "/tmp/document.pdf",
-                 expense_type,
-                 ~D[2026-08-10],
-                 ~D[2026-08-11]
-               )
-    end
+    capture_log(fn ->
+      for expense_type <- [:transport, :accommodation, :other] do
+        assert {:error, :unavailable} =
+                 DelegationExpenseExtractor.extract(
+                   "/tmp/document.pdf",
+                   expense_type,
+                   ~D[2026-08-10],
+                   ~D[2026-08-11]
+                 )
+      end
+    end)
   end
 
   test "uses category-specific development data through the configured Reducto client pipeline" do
@@ -120,9 +221,11 @@ defmodule Firmowid.Ash.Delegations.DelegationExpenseExtractorTest do
               "trips" => [
                 %{
                   "departure_city" => "Wrocław",
-                  "departure_datetime" => "2026-08-10T08:15:00Z",
+                  "departure_datetime" => nil,
+                  "departure_local_datetime" => ~N[2026-08-10 08:15:00],
                   "arrival_city" => "Kraków",
-                  "arrival_datetime" => "2026-08-10T11:30:00Z"
+                  "arrival_datetime" => nil,
+                  "arrival_local_datetime" => ~N[2026-08-10 11:30:00]
                 }
               ],
               "_union_type" => "transport"

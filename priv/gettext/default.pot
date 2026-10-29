@@ -5259,3 +5259,102 @@ msgstr ""
 #, elixir-autogen, elixir-format
 msgid "This was a bulk payment for several documents"
 msgstr ""
+
+#: lib/firmowid_web/delegations/components/settlement/trips.ex:47
+#, elixir-autogen, elixir-format
+msgid "Add description"
+msgstr ""
+
+#: lib/firmowid_web/delegations/components/settlement/trips.ex:34
+#: lib/firmowid_web/delegations/components/settlement/trips.ex:163
+#, elixir-autogen, elixir-format
+msgid "Arrival"
+msgstr ""
+
+#: lib/firmowid_web/delegations/components/settlement_page.ex:321
+#, elixir-autogen, elixir-format
+msgid "Changes are saved automatically."
+msgstr ""
+
+#: lib/firmowid_web/delegations/components/settlement_page.ex:317
+#, elixir-autogen, elixir-format
+msgid "Changes saved"
+msgstr ""
+
+#: lib/firmowid_web/delegations/components/settlement/trips.ex:91
+#, elixir-autogen, elixir-format
+msgid "City"
+msgstr ""
+
+#: lib/firmowid_web/delegations/components/settlement/trips.ex:102
+#, elixir-autogen, elixir-format
+msgid "Date (YYYY-MM-DD)"
+msgstr ""
+
+#: lib/firmowid_web/delegations/components/settlement/trips.ex:33
+#: lib/firmowid_web/delegations/components/settlement/trips.ex:163
+#, elixir-autogen, elixir-format
+msgid "Departure"
+msgstr ""
+
+#: lib/firmowid_web/delegations/components/settlement/trips.ex:53
+#, elixir-autogen, elixir-format
+msgid "Description"
+msgstr ""
+
+#: lib/firmowid_web/delegations/components/settlement/trips.ex:200
+#, elixir-autogen, elixir-format
+msgid "Enter both a full date (YYYY-MM-DD) and time (HH:MM). The draft has not been saved."
+msgstr ""
+
+#: lib/firmowid_web/delegations/components/settlement/trips.ex:47
+#, elixir-autogen, elixir-format
+msgid "Hide description"
+msgstr ""
+
+#: lib/firmowid_web/delegations/components/settlement/trips.ex:139
+#: lib/firmowid_web/delegations/components/settlement/trips.ex:176
+#, elixir-autogen, elixir-format
+msgid "Historical time in UTC. Check it against the ticket."
+msgstr ""
+
+#: lib/firmowid_web/delegations/components/settlement/trips.ex:141
+#, elixir-autogen, elixir-format
+msgid "Local date and time as printed on the ticket."
+msgstr ""
+
+#: lib/firmowid_web/delegations/components/settlement_page.ex:303
+#, elixir-autogen, elixir-format
+msgid "No connection. Changes remain in this tab until saving is confirmed."
+msgstr ""
+
+#: lib/firmowid_web/delegations/components/settlement_page.ex:323
+#, elixir-autogen, elixir-format
+msgid "Not saved. Check the highlighted fields. Your draft remains in this tab."
+msgstr ""
+
+#: lib/firmowid_web/delegations/components/settlement/trips.ex:30
+#: lib/firmowid_web/delegations/components/settlement/trips.ex:159
+#, elixir-autogen, elixir-format
+msgid "Route %{number}"
+msgstr ""
+
+#: lib/firmowid_web/delegations/components/settlement_page.ex:300
+#, elixir-autogen, elixir-format
+msgid "Saving changes…"
+msgstr ""
+
+#: lib/firmowid_web/delegations/components/settlement_page.ex:327
+#, elixir-autogen, elixir-format
+msgid "Saving failed. Your draft remains in this tab. Edit a field to try again."
+msgstr ""
+
+#: lib/firmowid_web/delegations/components/settlement/trips.ex:118
+#, elixir-autogen, elixir-format
+msgid "Time (HH:MM)"
+msgstr ""
+
+#: lib/firmowid_web/delegations/components/settlement_page.ex:309
+#, elixir-autogen, elixir-format
+msgid "Waiting for save confirmation…"
+msgstr ""
