@@ -12,6 +12,8 @@ defmodule FirmowidWeb.Auth.Controllers.AuthController do
   alias Ash.Error.Invalid
   alias AshAuthentication.Errors.AuthenticationFailed
   alias AshAuthentication.Strategy.RememberMe.Plug.Helpers
+  alias Assent.HTTPAdapter.HTTPResponse
+  alias Assent.InvalidResponseError
   alias Firmowid.Analytics
   alias Firmowid.Ash.Core
   alias Firmowid.Ash.Core.Member
@@ -187,6 +189,12 @@ defmodule FirmowidWeb.Auth.Controllers.AuthController do
     "#{inspect(Forbidden)}/#{auth_failure_errors(errors)}"
   end
 
+  defp auth_failure_reason(%InvalidResponseError{response: %HTTPResponse{} = response}) do
+    "#{inspect(InvalidResponseError)} http_status=#{response.status}" <>
+      " oauth_endpoint=#{google_oauth_endpoint(response.request_url)}" <>
+      " response_kind=#{term_type(response.body)} oauth_error=#{oauth_error_code(response.body)}"
+  end
+
   defp auth_failure_reason(%Postgrex.Error{postgres: %{code: code}}) do
     "#{inspect(Postgrex.Error)}/#{code}"
   end
@@ -200,6 +208,22 @@ defmodule FirmowidWeb.Auth.Controllers.AuthController do
     |> Enum.uniq()
     |> Enum.join(",")
   end
+
+  # Only fixed endpoint labels and OAuth error codes may leave the response.
+  # Assent can also fail decoding before it attaches the request URL.
+  defp google_oauth_endpoint("https://accounts.google.com/.well-known/openid-configuration"), do: :discovery
+
+  defp google_oauth_endpoint("https://oauth2.googleapis.com/token"), do: :token
+  defp google_oauth_endpoint("https://openidconnect.googleapis.com/v1/userinfo"), do: :userinfo
+  defp google_oauth_endpoint("https://www.googleapis.com/oauth2/v3/certs"), do: :jwks
+  defp google_oauth_endpoint(_url), do: :unknown
+
+  defp oauth_error_code(%{"error" => code})
+       when code in ~w(invalid_request invalid_client invalid_grant unauthorized_client unsupported_grant_type invalid_scope access_denied server_error temporarily_unavailable),
+       do: code
+
+  defp oauth_error_code(%{"error" => _error}), do: :other
+  defp oauth_error_code(_body), do: :none
 
   defp term_type(reason) when is_boolean(reason), do: :boolean
   defp term_type(reason) when is_atom(reason), do: :atom
