@@ -2,3 +2,5 @@
 b5cb74c39917968f3ae88ab7a0d99317e324ad27
 # Prettier formatting of repository skills and references (PR #35).
 cc11fc0c821982d1da533864c82c6f7a5701f842
+# Move of domain modules out of the Firmowid.Ash namespace (PR #228).
+ed0b91aff7ba40e1a29aca3f70f00435f924d0ce
