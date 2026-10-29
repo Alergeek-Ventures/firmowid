@@ -97,6 +97,7 @@ defmodule FirmowidWeb.BankSync.Views.Create do
       |> assign(:institution_refresh_attempts, 0)
       |> assign(:available_institutions, fetch_available_institutions(socket))
       |> assign(:requisition_link, nil)
+      |> assign(:page_title, gettext("Add bank account"))
 
     maybe_schedule_institution_refresh(socket)
 

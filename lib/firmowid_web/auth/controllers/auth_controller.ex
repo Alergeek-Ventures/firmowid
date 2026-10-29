@@ -118,8 +118,14 @@ defmodule FirmowidWeb.Auth.Controllers.AuthController do
 
     conn
     |> put_flash(:error, message)
+    |> keep_sign_in_email(activity)
     |> redirect(to: path)
   end
+
+  # The login view prefills the email field from this flash.
+  defp keep_sign_in_email(conn, {:password, :sign_in}), do: put_flash(conn, :email, conn.params["user"]["email"])
+
+  defp keep_sign_in_email(conn, _activity), do: conn
 
   defp failure_message_and_path({:password, :register}, reason) do
     case reason do

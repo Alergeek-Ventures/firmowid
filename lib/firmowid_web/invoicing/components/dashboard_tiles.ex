@@ -159,10 +159,17 @@ defmodule FirmowidWeb.Invoicing.Components.DashboardTiles do
     days_diff = Date.diff(due_date, today)
 
     cond do
-      days_diff < 0 -> {"#{abs(days_diff)} dni po terminie", true}
-      days_diff == 0 -> {"Termin dzisiaj", true}
-      days_diff <= 7 -> {"#{days_diff} dni do zapłaty", true}
-      true -> {"Termin: #{format_date(due_date)}", false}
+      days_diff < 0 ->
+        {ngettext("%{count} day overdue", "%{count} days overdue", abs(days_diff)), true}
+
+      days_diff == 0 ->
+        {"Termin dzisiaj", true}
+
+      days_diff <= 7 ->
+        {ngettext("%{count} day left to pay", "%{count} days left to pay", days_diff), true}
+
+      true ->
+        {"Termin: #{format_date(due_date)}", false}
     end
   end
 

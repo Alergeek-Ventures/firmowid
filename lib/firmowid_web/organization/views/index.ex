@@ -13,7 +13,7 @@ defmodule FirmowidWeb.Organization.Views.Index do
   @impl true
   def render(assigns) do
     ~H"""
-    <div class="relative flex min-h-screen w-screen items-center justify-center">
+    <div class="relative flex min-h-screen w-full items-center justify-center">
       <img
         src="/images/figurine.png"
         class="fixed -top-20 left-1/2 h-[135vh] overflow-clip opacity-10"
@@ -46,18 +46,21 @@ defmodule FirmowidWeb.Organization.Views.Index do
                 field={@organization_form[:owner_name]}
                 type="text"
                 placeholder="Twoje imię i nazwisko"
+                aria-label={gettext("Your full name")}
                 required
               />
               <.input
                 field={@organization_form[:nip]}
                 type="text"
                 placeholder="Identyfikator (NIP)"
+                aria-label={gettext("Tax ID (NIP)")}
                 required
               />
               <.input
                 field={@organization_form[:name]}
                 type="text"
                 placeholder="Nazwa organizacji"
+                aria-label={gettext("Organization name")}
                 required
               />
               <p class="m-0">Adres przedsiębiorstwa</p>
@@ -67,6 +70,7 @@ defmodule FirmowidWeb.Organization.Views.Index do
                   name="address[street]"
                   value={@address_form["street"]}
                   placeholder="Ulica"
+                  aria-label={gettext("Street")}
                   type="text"
                   required
                 />
@@ -75,6 +79,7 @@ defmodule FirmowidWeb.Organization.Views.Index do
                   name="address[number]"
                   value={@address_form["number"]}
                   placeholder="/"
+                  aria-label={gettext("Building and apartment number")}
                   type="text"
                   required
                 />
@@ -83,6 +88,7 @@ defmodule FirmowidWeb.Organization.Views.Index do
                 name="address[postal_code]"
                 value={@address_form["postal_code"]}
                 placeholder="Kod pocztowy"
+                aria-label={gettext("Postal code")}
                 type="text"
                 required
               />
@@ -90,6 +96,7 @@ defmodule FirmowidWeb.Organization.Views.Index do
                 name="address[city]"
                 value={@address_form["city"]}
                 placeholder="Miasto"
+                aria-label={pgettext("address", "City")}
                 type="text"
                 required
               />

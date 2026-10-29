@@ -77,7 +77,7 @@ defmodule FirmowidWeb.DesignSystem.Components.Filters do
       <div :if={@divider} class="mx-2 h-7 w-px bg-grey-200 max-md:hidden"></div>
       <div role="group" aria-label={gettext("Filters")} class="flex items-center gap-3 max-md:w-full">
         <span :if={@label} class="text-sm font-normal text-grey-700/70">{@label}</span>
-        <div class="flex items-center gap-2 max-md:flex-1">
+        <div class="flex flex-wrap items-center gap-2 max-md:flex-1">
           <%= for pill <- @pill do %>
             <.link
               :if={pill[:navigate] || pill[:patch]}

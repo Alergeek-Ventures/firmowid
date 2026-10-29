@@ -507,7 +507,7 @@ msgstr ""
 msgid "Bank accounts with transfer matching"
 msgstr ""
 
-#: lib/firmowid_web/invoicing/components/dashboard_tiles.ex:505
+#: lib/firmowid_web/invoicing/components/dashboard_tiles.ex:512
 #, elixir-autogen, elixir-format
 msgid "Bank connection expired"
 msgstr ""
@@ -593,7 +593,7 @@ msgstr ""
 msgid "Can I cancel at any time?"
 msgstr ""
 
-#: lib/firmowid_web/hours_record/views/index.html.heex:166
+#: lib/firmowid_web/hours_record/views/index.html.heex:163
 #, elixir-autogen, elixir-format
 msgid "Cancel"
 msgstr ""
@@ -610,7 +610,7 @@ msgstr ""
 
 #: lib/firmowid/timetracker/actions/notify_admins_about_hours_record_change.ex:38
 #: lib/firmowid_web/hours_record/components/change_request.ex:100
-#: lib/firmowid_web/hours_record/views/index.html.heex:148
+#: lib/firmowid_web/hours_record/views/index.html.heex:145
 #, elixir-autogen, elixir-format
 msgid "Cancellation"
 msgstr ""
@@ -640,7 +640,7 @@ msgstr ""
 msgid "Change requested"
 msgstr ""
 
-#: lib/firmowid_web/invoicing/sales_invoices/views/creator_counterparty.html.heex:132
+#: lib/firmowid_web/invoicing/sales_invoices/views/creator_counterparty.html.heex:133
 #, elixir-autogen, elixir-format
 msgid "Change sort order"
 msgstr ""
@@ -816,7 +816,7 @@ msgstr ""
 msgid "Connect to KSeF before issuing this invoice."
 msgstr ""
 
-#: lib/firmowid_web/invoicing/components/dashboard_tiles.ex:501
+#: lib/firmowid_web/invoicing/components/dashboard_tiles.ex:508
 #, elixir-autogen, elixir-format
 msgid "Connection to %{institution} has expired"
 msgstr ""
@@ -894,7 +894,7 @@ msgstr ""
 
 #: lib/firmowid/timetracker/actions/notify_admins_about_hours_record_change.ex:37
 #: lib/firmowid_web/hours_record/components/change_request.ex:99
-#: lib/firmowid_web/hours_record/views/index.html.heex:147
+#: lib/firmowid_web/hours_record/views/index.html.heex:144
 #, elixir-autogen, elixir-format
 msgid "Correction"
 msgstr ""
@@ -920,24 +920,24 @@ msgstr ""
 msgid "Cost invoices included"
 msgstr ""
 
-#: lib/firmowid_web/invoicing/transactions/views/show.ex:213
+#: lib/firmowid_web/invoicing/transactions/views/show.ex:214
 #, elixir-autogen, elixir-format
 msgid "Could not connect this transaction to a salary."
 msgstr ""
 
 #: lib/firmowid/invoicing/changes/validate_transaction_availability.ex:33
-#: lib/firmowid_web/invoicing/transactions/views/show.ex:196
+#: lib/firmowid_web/invoicing/transactions/views/show.ex:197
 #, elixir-autogen, elixir-format
 msgid "Could not connect this transaction to the invoice."
 msgstr ""
 
-#: lib/firmowid_web/invoicing/transactions/views/show.ex:227
+#: lib/firmowid_web/invoicing/transactions/views/show.ex:228
 #, elixir-autogen, elixir-format
 msgid "Could not disconnect this transaction from the salary."
 msgstr ""
 
-#: lib/firmowid_web/invoicing/sales_invoices/views/creator.ex:1165
-#: lib/firmowid_web/invoicing/sales_invoices/views/creator.ex:1172
+#: lib/firmowid_web/invoicing/sales_invoices/views/creator.ex:1171
+#: lib/firmowid_web/invoicing/sales_invoices/views/creator.ex:1178
 #, elixir-autogen, elixir-format
 msgid "Could not issue the invoice."
 msgstr ""
@@ -947,12 +947,12 @@ msgstr ""
 msgid "Could not save the decision. The request may already have been reviewed."
 msgstr ""
 
-#: lib/firmowid_web/hours_record/views/index.ex:99
+#: lib/firmowid_web/hours_record/views/index.ex:100
 #, elixir-autogen, elixir-format
 msgid "Could not submit the request. Enter a reason (up to 2000 characters). If a request already exists, refresh the page."
 msgstr ""
 
-#: lib/firmowid_web/invoicing/components/dashboard_tiles.ex:546
+#: lib/firmowid_web/invoicing/components/dashboard_tiles.ex:553
 #, elixir-autogen, elixir-format
 msgid "Could not synchronize %{count} invoice."
 msgid_plural "Could not synchronize %{count} invoices."
@@ -1791,8 +1791,8 @@ msgstr ""
 msgid "Invoice number"
 msgstr ""
 
-#: lib/firmowid_web/invoicing/sales_invoices/views/creator.ex:1170
-#: lib/firmowid_web/invoicing/sales_invoices/views/edit.ex:683
+#: lib/firmowid_web/invoicing/sales_invoices/views/creator.ex:1176
+#: lib/firmowid_web/invoicing/sales_invoices/views/edit.ex:684
 #, elixir-autogen, elixir-format
 msgid "Invoice number is required."
 msgstr ""
@@ -1989,6 +1989,7 @@ msgstr ""
 msgid "Leave, business trips and team documents in one place."
 msgstr ""
 
+#: lib/firmowid_web/auth/views/login.ex:93
 #: lib/firmowid_web/landing/components/hero.ex:80
 #: lib/firmowid_web/landing/components/primitives.ex:74
 #, elixir-autogen, elixir-format
@@ -2057,7 +2058,7 @@ msgstr ""
 msgid "Medical leave"
 msgstr ""
 
-#: lib/firmowid_web/invoicing/components/dashboard_tiles.ex:534
+#: lib/firmowid_web/invoicing/components/dashboard_tiles.ex:541
 #, elixir-autogen, elixir-format
 msgid "Missing invoices from KSeF"
 msgstr ""
@@ -2539,7 +2540,10 @@ msgstr ""
 msgid "Payout date"
 msgstr ""
 
+#: lib/firmowid_web/delegations/utilities/delegation_presentation.ex:9
+#: lib/firmowid_web/documents/components/documents_section.ex:658
 #: lib/firmowid_web/landing/components/sections.ex:501
+#: lib/firmowid_web/timetracker/utilities/leave_presentation.ex:35
 #, elixir-autogen, elixir-format
 msgid "Pending"
 msgstr ""
@@ -2687,7 +2691,7 @@ msgstr ""
 msgid "Real-time working hours monitoring"
 msgstr ""
 
-#: lib/firmowid_web/hours_record/views/index.html.heex:155
+#: lib/firmowid_web/hours_record/views/index.html.heex:152
 #, elixir-autogen, elixir-format
 msgid "Reason"
 msgstr ""
@@ -2744,7 +2748,7 @@ msgstr ""
 msgid "Remove %{name} from project"
 msgstr ""
 
-#: lib/firmowid_web/invoicing/sales_invoices/components/invoice_items.ex:568
+#: lib/firmowid_web/invoicing/sales_invoices/components/invoice_items.ex:581
 #, elixir-autogen, elixir-format
 msgid "Remove item"
 msgstr ""
@@ -2754,13 +2758,13 @@ msgstr ""
 msgid "Remove selected file"
 msgstr ""
 
-#: lib/firmowid_web/hours_record/views/index.html.heex:110
-#: lib/firmowid_web/hours_record/views/index.html.heex:135
+#: lib/firmowid_web/hours_record/views/index.html.heex:107
+#: lib/firmowid_web/hours_record/views/index.html.heex:132
 #, elixir-autogen, elixir-format
 msgid "Request correction or cancellation"
 msgstr ""
 
-#: lib/firmowid_web/hours_record/views/index.html.heex:145
+#: lib/firmowid_web/hours_record/views/index.html.heex:142
 #, elixir-autogen, elixir-format
 msgid "Request type"
 msgstr ""
@@ -2959,7 +2963,7 @@ msgid_plural "Show all %{count} features"
 msgstr[0] ""
 msgstr[1] ""
 
-#: lib/firmowid_web/invoicing/sales_invoices/views/creator_counterparty.html.heex:87
+#: lib/firmowid_web/invoicing/sales_invoices/views/creator_counterparty.html.heex:88
 #, elixir-autogen, elixir-format
 msgid "Show companies only"
 msgstr ""
@@ -2969,7 +2973,7 @@ msgstr ""
 msgid "Show details of employee %{name}"
 msgstr ""
 
-#: lib/firmowid_web/invoicing/sales_invoices/views/creator_counterparty.html.heex:110
+#: lib/firmowid_web/invoicing/sales_invoices/views/creator_counterparty.html.heex:111
 #, elixir-autogen, elixir-format
 msgid "Show individuals only"
 msgstr ""
@@ -3066,7 +3070,7 @@ msgstr ""
 msgid "Student status confirmed through"
 msgstr ""
 
-#: lib/firmowid_web/hours_record/views/index.html.heex:169
+#: lib/firmowid_web/hours_record/views/index.html.heex:166
 #, elixir-autogen, elixir-format
 msgid "Submit request"
 msgstr ""
@@ -3076,7 +3080,7 @@ msgstr ""
 msgid "Submitted timesheet for this month"
 msgstr ""
 
-#: lib/firmowid_web/hours_record/views/index.html.heex:168
+#: lib/firmowid_web/hours_record/views/index.html.heex:165
 #, elixir-autogen, elixir-format
 msgid "Submitting..."
 msgstr ""
@@ -3527,13 +3531,13 @@ msgstr ""
 msgid "Transaction categories"
 msgstr ""
 
-#: lib/firmowid_web/invoicing/components/dashboard_tiles.ex:507
-#: lib/firmowid_web/invoicing/components/dashboard_tiles.ex:518
+#: lib/firmowid_web/invoicing/components/dashboard_tiles.ex:514
+#: lib/firmowid_web/invoicing/components/dashboard_tiles.ex:525
 #, elixir-autogen, elixir-format
 msgid "Transactions are not being updated."
 msgstr ""
 
-#: lib/firmowid_web/invoicing/components/dashboard_tiles.ex:514
+#: lib/firmowid_web/invoicing/components/dashboard_tiles.ex:521
 #, elixir-autogen, elixir-format
 msgid "Transactions have not been synchronized since %{date}"
 msgstr ""
@@ -3680,7 +3684,7 @@ msgstr ""
 msgid "VAT on sales"
 msgstr ""
 
-#: lib/firmowid_web/invoicing/sales_invoices/views/creator_counterparty.html.heex:304
+#: lib/firmowid_web/invoicing/sales_invoices/views/creator_counterparty.html.heex:305
 #, elixir-autogen, elixir-format
 msgid "View invoice %{number}"
 msgstr ""
@@ -3711,7 +3715,7 @@ msgstr ""
 msgid "We always monitor application errors to keep the service reliable. After accepting, we may additionally store analytics cookies, enable diagnostic session recordings, and associate the data with the logged-in user."
 msgstr ""
 
-#: lib/firmowid_web/invoicing/components/dashboard_tiles.ex:553
+#: lib/firmowid_web/invoicing/components/dashboard_tiles.ex:560
 #, elixir-autogen, elixir-format
 msgid "We detected an import issue. Our team is working to resolve it as quickly as possible."
 msgstr ""
@@ -3871,7 +3875,7 @@ msgstr ""
 msgid "Your employees track their hours, but you still do not know what your team really costs? Firmowid keeps everything under control."
 msgstr ""
 
-#: lib/firmowid_web/hours_record/views/index.html.heex:138
+#: lib/firmowid_web/hours_record/views/index.html.heex:135
 #, elixir-autogen, elixir-format
 msgid "Your request will be saved and emailed to your organization administrators. It does not cancel the signature or unlock hours automatically."
 msgstr ""
@@ -4838,6 +4842,7 @@ msgstr ""
 
 #: lib/firmowid_web/assistant/utilities/presentation.ex:259
 #: lib/firmowid_web/assistant/utilities/presentation.ex:265
+#: lib/firmowid_web/invoicing/cost_invoices/views/show.ex:55
 #, elixir-autogen, elixir-format
 msgid "Cost invoice"
 msgstr ""
@@ -4941,6 +4946,8 @@ msgid "Review the changes before confirming"
 msgstr ""
 
 #: lib/firmowid_web/assistant/utilities/presentation.ex:253
+#: lib/firmowid_web/invoicing/sales_invoices/views/show.ex:81
+#: lib/firmowid_web/invoicing/sales_invoices/views/summary.ex:62
 #, elixir-autogen, elixir-format
 msgid "Sales invoice"
 msgstr ""
@@ -5432,4 +5439,228 @@ msgstr ""
 #, elixir-autogen, elixir-format
 msgctxt "landing compass"
 msgid "transaction matching"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/components/dashboard_tiles.ex:169
+#, elixir-autogen, elixir-format
+msgid "%{count} day left to pay"
+msgid_plural "%{count} days left to pay"
+msgstr[0] ""
+msgstr[1] ""
+
+#: lib/firmowid_web/invoicing/components/dashboard_tiles.ex:163
+#, elixir-autogen, elixir-format
+msgid "%{count} day overdue"
+msgid_plural "%{count} days overdue"
+msgstr[0] ""
+msgstr[1] ""
+
+#: lib/firmowid_web/bank_sync/views/create.ex:100
+#, elixir-autogen, elixir-format
+msgid "Add bank account"
+msgstr ""
+
+#: lib/firmowid_web/core/toast.ex:75
+#, elixir-autogen, elixir-format
+msgid "Attempting to reconnect"
+msgstr ""
+
+#: lib/firmowid_web/organization/views/index.ex:82
+#, elixir-autogen, elixir-format
+msgid "Building and apartment number"
+msgstr ""
+
+#: lib/firmowid_web/auth/views/confirm_email.ex:58
+#, elixir-autogen, elixir-format
+msgid "Confirm email address"
+msgstr ""
+
+#: lib/firmowid_web/management/views/counterparty_form.ex:149
+#, elixir-autogen, elixir-format
+msgid "Edit counterparty"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/sales_invoices/views/edit.ex:157
+#, elixir-autogen, elixir-format
+msgid "Edit invoice"
+msgstr ""
+
+#: lib/firmowid_web/management/views/project_form.ex:142
+#, elixir-autogen, elixir-format
+msgid "Edit project"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/components/invoice_details.ex:575
+#, elixir-autogen, elixir-format
+msgid "Firmowid found no transactions that might match this invoice."
+msgstr ""
+
+#: lib/firmowid_web/auth/views/forgot_password.ex:42
+#, elixir-autogen, elixir-format
+msgid "Forgot your password?"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/sales_invoices/components/invoice_items.ex:410
+#, elixir-autogen, elixir-format
+msgid "Gross price"
+msgstr ""
+
+#: lib/firmowid_web/core/toast.ex:79
+#, elixir-autogen, elixir-format
+msgid "Hang in there while we get back on track"
+msgstr ""
+
+#: lib/firmowid_web/hours_record/views/index.ex:35
+#, elixir-autogen, elixir-format
+msgid "Hours record"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/sales_invoices/views/creator.ex:95
+#, elixir-autogen, elixir-format
+msgid "Invoice creator"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/sales_invoices/components/invoice_items.ex:454
+#, elixir-autogen, elixir-format
+msgid "Item %{number}: VAT rate"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/sales_invoices/components/invoice_items.ex:541
+#, elixir-autogen, elixir-format
+msgid "Item %{number}: gross price"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/sales_invoices/components/invoice_items.ex:478
+#, elixir-autogen, elixir-format
+msgid "Item %{number}: net price"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/sales_invoices/components/invoice_items.ex:430
+#, elixir-autogen, elixir-format
+msgid "Item %{number}: product or service"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/sales_invoices/components/invoice_items.ex:439
+#, elixir-autogen, elixir-format
+msgid "Item %{number}: quantity"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/sales_invoices/components/invoice_items.ex:465
+#, elixir-autogen, elixir-format
+msgid "Item %{number}: unit"
+msgstr ""
+
+#: lib/firmowid_web/management/views/counterparty_form.ex:149
+#, elixir-autogen, elixir-format
+msgid "New counterparty"
+msgstr ""
+
+#: lib/firmowid_web/management/views/project_form.ex:142
+#, elixir-autogen, elixir-format
+msgid "New project"
+msgstr ""
+
+#: lib/firmowid_web/organization/views/index.ex:63
+#, elixir-autogen, elixir-format
+msgid "Organization name"
+msgstr ""
+
+#: lib/firmowid_web/organization/views/index.ex:91
+#, elixir-autogen, elixir-format
+msgid "Postal code"
+msgstr ""
+
+#: lib/firmowid/invoicing/validations/validate_positive_item_quantities.ex:37
+#, elixir-autogen, elixir-format
+msgid "Quantity must be greater than zero."
+msgstr ""
+
+#: lib/firmowid_web/auth/views/reset_password.ex:50
+#, elixir-autogen, elixir-format
+msgid "Reset password"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/components/search_overlay.ex:30
+#, elixir-autogen, elixir-format
+msgid "Search cost or sales invoices"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/sales_invoices/views/creator_counterparty.html.heex:63
+#, elixir-autogen, elixir-format
+msgid "Search for a counterparty"
+msgstr ""
+
+#: lib/firmowid_web/auth/views/registration.ex:107
+#, elixir-autogen, elixir-format
+msgid "Sign up"
+msgstr ""
+
+#: lib/firmowid_web/core/toast.ex:78
+#, elixir-autogen, elixir-format
+msgid "Something went wrong!"
+msgstr ""
+
+#: lib/firmowid_web/organization/views/index.ex:73
+#, elixir-autogen, elixir-format
+msgid "Street"
+msgstr ""
+
+#: lib/firmowid_web/organization/views/index.ex:56
+#, elixir-autogen, elixir-format
+msgid "Tax ID (NIP)"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/transactions/views/show.ex:60
+#, elixir-autogen, elixir-format
+msgid "Transaction"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/sales_invoices/components/invoice_items.ex:400
+#, elixir-autogen, elixir-format
+msgid "VAT per unit"
+msgstr ""
+
+#: lib/firmowid_web/core/toast.ex:74
+#, elixir-autogen, elixir-format
+msgid "We can't find the internet"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/components/invoice_details.ex:597
+#, elixir-autogen, elixir-format
+msgid "What else can you do?"
+msgstr ""
+
+#: lib/firmowid_web/organization/views/index.ex:49
+#, elixir-autogen, elixir-format
+msgid "Your full name"
+msgstr ""
+
+#: lib/firmowid_web/organization/views/index.ex:99
+#, elixir-autogen, elixir-format
+msgctxt "address"
+msgid "City"
+msgstr ""
+
+#: lib/firmowid_web/core/toast.ex:60
+#, elixir-autogen, elixir-format
+msgctxt "toast title"
+msgid "Error"
+msgstr ""
+
+#: lib/firmowid_web/core/toast.ex:59
+#, elixir-autogen, elixir-format
+msgctxt "toast title"
+msgid "Information"
+msgstr ""
+
+#: lib/firmowid_web/core/toast.ex:62
+#, elixir-autogen, elixir-format
+msgctxt "toast title"
+msgid "Notice"
+msgstr ""
+
+#: lib/firmowid_web/core/toast.ex:61
+#, elixir-autogen, elixir-format
+msgctxt "toast title"
+msgid "Success"
 msgstr ""

@@ -1,10 +1,12 @@
 defmodule FirmowidWeb.Delegations.Utilities.DelegationPresentation do
   @moduledoc "Presentation helpers shared by employee and management delegation lists."
 
+  use Gettext, backend: Firmowid.Gettext
+
   alias FirmowidWeb.Infrastructure.Utilities.TimeFormatter
 
   @spec status_label(atom()) :: String.t()
-  def status_label(:pending), do: "oczekiwanie"
+  def status_label(:pending), do: gettext("Pending")
   def status_label(:in_progress), do: "w toku"
   def status_label(:complete), do: "zakończono"
 

@@ -121,7 +121,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
       |> Map.fetch!(:accepted_leave_days_for_year)
 
     {profile_projects, profile_projects_total, profile_projects_date} =
-      load_profile_projects(current_user.id, scope)
+      load_profile_projects(current_user.member.id, scope)
 
     subscribe_to_admin_updates(socket, current_org.id, admin?)
 
@@ -1435,6 +1435,10 @@ defmodule FirmowidWeb.Settings.Views.Index do
         {:noreply,
          socket
          |> assign(:settings_tab, tab)
+         |> assign(
+           :page_title,
+           Enum.find(Navigation.tabs_for(socket.assigns), &(&1.id == tab)).label
+         )
          |> assign_subscription_preview_if_visible()}
     end
   end
@@ -1544,16 +1548,13 @@ defmodule FirmowidWeb.Settings.Views.Index do
     |> to_form()
   end
 
-  # TODO: Branch on employment contract (UoP leave vs absence reasons).
-  defp leave_reasons, do: [:indisposition, :rest, :other]
+  defp default_leave_reason, do: :rest
 
-  defp default_leave_reason, do: List.first(leave_reasons())
-
-  defp load_profile_projects(user_id, scope) do
+  defp load_profile_projects(member_id, scope) do
     date = Date.utc_today()
 
     projects =
-      user_id
+      member_id
       |> Timetracker.projects_duration_for_month(date, scope)
       |> Enum.filter(&(&1.duration > 0))
 

@@ -92,6 +92,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
       |> assign(:last_invoices, recent_invoices(socket.assigns.ash_scope))
       |> assign(:ksef_connected?, Ksef.connected?(socket.assigns.ash_scope))
       |> assign(:open_counterparty_modal, false)
+      |> assign(:page_title, gettext("Invoice creator"))
       |> assign(
         :can_manage_counterparties,
         can_manage_counterparties?(socket.assigns.current_user)
@@ -455,11 +456,16 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
         draft.currency
       )
 
+    # The invoice is issued today, so the sale date and the 7-day due-date shortcut start from today.
+    today = Date.utc_today()
+
     defaults =
       %{
         "payment_method" => draft.payment_method || :transfer,
         "seller_account_number" => draft.seller_account_number || (selected_bank_account && selected_bank_account.iban)
       }
+      |> PaymentDateSuggestions.apply_suggestion(:sale_date, :today, today, today)
+      |> PaymentDateSuggestions.apply_suggestion(:due_date, :days_7, today, today)
       |> maybe_put_date("sale_date", draft.sale_date)
       |> maybe_put_date("due_date", draft.due_date)
 
@@ -548,7 +554,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
     end
   end
 
-  defp initial_item_params([]), do: [%{}]
+  defp initial_item_params([]), do: [%{"quantity" => "1"}]
 
   defp initial_item_params(items) do
     Enum.map(items, fn item ->
@@ -712,7 +718,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
   def handle_event("add_item", %{"field" => field}, socket) do
     form =
       socket.assigns.items_form.source
-      |> AshPhoenix.Form.add_form(String.to_existing_atom(field))
+      |> AshPhoenix.Form.add_form(String.to_existing_atom(field), params: %{"quantity" => "1"})
       |> to_form()
 
     {:noreply, assign(socket, :items_form, form)}

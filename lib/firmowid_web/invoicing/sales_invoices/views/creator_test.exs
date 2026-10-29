@@ -209,7 +209,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.CreatorTest do
     selector =
       "button[phx-click='set_price_input_mode'][phx-value-mode='gross'][phx-value-index='0']"
 
-    assert has_element?(view, selector, "123.00")
+    assert has_element?(view, selector, "123,00")
     refute has_element?(view, selector, "246,00")
     assert has_element?(view, "p.w-28", "23,00")
     refute has_element?(view, "p.w-28", "46,00")
@@ -225,7 +225,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.CreatorTest do
 
     html = render(view)
 
-    assert html =~ "Wartość VAT"
+    assert has_element?(view, "#gross-price")
     assert html =~ ~s(name="form[items][0][unit_price]")
     refute html =~ ~s(name="form[items][0][gross_value]")
     assert has_element?(view, "input[type='number'][name='form[items][0][unit_price]']")
@@ -237,7 +237,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.CreatorTest do
       |> render_click()
 
     assert html =~ ~s(name="form[items][0][gross_value]")
-    assert html =~ ~s(placeholder="0.00")
+    assert html =~ ~s(placeholder="0,00")
     assert html =~ ~s(value="")
     assert has_element?(view, "input[type='number'][name='form[items][0][gross_value]']")
     refute has_element?(view, "input[type='number'][name='form[items][0][unit_price]']")

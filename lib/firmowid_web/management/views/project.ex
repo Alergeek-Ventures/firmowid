@@ -33,12 +33,14 @@ defmodule FirmowidWeb.Management.Views.Project do
     selected_date = Navigation.parse_month(params)
 
     active_months = months_with_sessions(%{project_id: project_id}, scope)
+    project = Project.get!(project_id, scope: scope)
 
     socket =
       socket
       |> assign(:selected_date, selected_date)
       |> assign(:active_months, active_months)
-      |> assign(:project, Project.get!(project_id, scope: scope))
+      |> assign(:project, project)
+      |> assign(:page_title, project.name)
       |> assign(:can_delete_project, socket.assigns.current_user.member.role == :admin)
       |> assign_project_data()
 

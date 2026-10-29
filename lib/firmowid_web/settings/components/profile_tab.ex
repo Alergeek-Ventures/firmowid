@@ -51,7 +51,7 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
 
   def profile_tab(assigns) do
     ~H"""
-    <div class="grid items-start gap-8 lg:grid-cols-2 lg:gap-16">
+    <div class="grid grid-cols-1 items-start gap-8 lg:grid-cols-2 lg:gap-16">
       <div class="space-y-14">
         <.employment_section
           current_user={@current_user}
@@ -81,7 +81,7 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
         date={@projects_date}
       />
 
-      <div class="grid items-start gap-5 lg:col-span-2 lg:grid-cols-2">
+      <div class="grid grid-cols-1 items-start gap-5 lg:col-span-2 lg:grid-cols-2">
         <.live_component
           module={FirmowidWeb.Documents.Components.DocumentsSection}
           id="profile-documents"
@@ -949,6 +949,7 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
 
   defp leave_upload_error_to_string(other), do: "Błąd wgrywania: #{inspect(other)}"
 
+  # TODO: Branch on employment contract (UoP leave vs absence reasons).
   defp leave_reasons, do: [:indisposition, :rest, :other]
 
   defp upload_error_to_string(:too_large), do: "Plik jest za duży (max 10 MB)."

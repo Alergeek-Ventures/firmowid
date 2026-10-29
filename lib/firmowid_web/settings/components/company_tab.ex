@@ -45,7 +45,7 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
 
   def company_tab(assigns) do
     ~H"""
-    <div class="grid items-start gap-8 lg:grid-cols-2 lg:gap-14">
+    <div class="grid grid-cols-1 items-start gap-8 lg:grid-cols-2 lg:gap-14">
       <div class="space-y-14">
         <.company_basic_info_section
           current_org={@current_org}

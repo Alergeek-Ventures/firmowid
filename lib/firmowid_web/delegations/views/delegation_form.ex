@@ -37,6 +37,7 @@ defmodule FirmowidWeb.Delegations.Views.DelegationForm do
      |> assign(:months, months)
      |> assign(:default_month, default_month)
      |> assign(:billing_month, default_month)
+     |> assign(:billing_month_chosen?, false)
      |> assign(:transport_types, [""])
      |> assign(:employment_contract, employment_contract)
      |> assign(:form, form)}
@@ -230,7 +231,11 @@ defmodule FirmowidWeb.Delegations.Views.DelegationForm do
 
     case Date.from_iso8601(month) do
       {:ok, billing_month} ->
-        {:noreply, socket |> assign(:billing_month, billing_month) |> assign(:form, form)}
+        {:noreply,
+         socket
+         |> assign(:billing_month, billing_month)
+         |> assign(:billing_month_chosen?, true)
+         |> assign(:form, form)}
 
       {:error, _reason} ->
         {:noreply,
@@ -242,6 +247,8 @@ defmodule FirmowidWeb.Delegations.Views.DelegationForm do
 
   @impl true
   def handle_event("validate", %{"delegation" => params}, socket) do
+    {params, billing_month} = follow_trip_month(params, socket.assigns)
+
     form =
       socket.assigns.form.source
       |> AshPhoenix.Form.validate(params)
@@ -250,6 +257,7 @@ defmodule FirmowidWeb.Delegations.Views.DelegationForm do
     {:noreply,
      socket
      |> assign(:form, form)
+     |> assign(:billing_month, billing_month)
      |> assign(:transport_types, transport_types(params))}
   end
 
@@ -270,6 +278,24 @@ defmodule FirmowidWeb.Delegations.Views.DelegationForm do
 
       {:error, form} ->
         {:noreply, assign(socket, :form, to_form(form))}
+    end
+  end
+
+  # Until the employee picks the billing month, it follows the month of departure,
+  # as long as that month can be picked.
+  defp follow_trip_month(params, %{billing_month_chosen?: true} = assigns), do: {params, assigns.billing_month}
+
+  defp follow_trip_month(params, assigns) do
+    case trip_month(params["start_date"], assigns.months) do
+      nil -> {params, assigns.billing_month}
+      month -> {Map.put(params, "billing_month", Date.to_iso8601(month)), month}
+    end
+  end
+
+  defp trip_month(start_date, months) do
+    case Date.from_iso8601(start_date) do
+      {:ok, date} -> Enum.find(months, &(&1 == Date.beginning_of_month(date)))
+      {:error, _reason} -> nil
     end
   end
 

@@ -3,6 +3,8 @@ defmodule FirmowidWeb.Timetracker.Utilities.LeavePresentation do
   Shared labels, icons, and formatting for leave request UI.
   """
 
+  use Gettext, backend: Firmowid.Gettext
+
   @type reason ::
           :sick | :vacation | :unpaid | :indisposition | :rest | :other
   @type status :: :pending | :accepted | :declined
@@ -30,7 +32,7 @@ defmodule FirmowidWeb.Timetracker.Utilities.LeavePresentation do
   def reason_icon(:other), do: "hero-ellipsis-horizontal"
 
   @spec status_label(status()) :: String.t()
-  def status_label(:pending), do: "oczekujący"
+  def status_label(:pending), do: gettext("Pending")
   def status_label(:accepted), do: "zatwierdzony"
   def status_label(:declined), do: "odrzucony"
 

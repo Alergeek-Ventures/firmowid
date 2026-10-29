@@ -139,6 +139,7 @@ defmodule FirmowidWeb.Management.Views.ProjectForm do
     socket
     |> assign(:project, project)
     |> assign(:form, form)
+    |> assign(:page_title, if(project, do: gettext("Edit project"), else: gettext("New project")))
     |> assign_edit_users(project_users)
   end
 

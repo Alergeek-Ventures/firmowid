@@ -52,6 +52,7 @@ defmodule FirmowidWeb.Invoicing.CostInvoices.Views.Show do
         |> assign(:current_user, current_user)
         |> assign(:return_to, return_to)
         |> assign(:no_padding, true)
+        |> assign(:page_title, gettext("Cost invoice"))
 
       {:ok, socket}
     else

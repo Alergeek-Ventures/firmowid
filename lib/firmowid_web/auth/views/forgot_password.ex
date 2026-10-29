@@ -39,6 +39,6 @@ defmodule FirmowidWeb.Auth.Views.ForgotPassword do
   end
 
   def mount(_params, _session, socket) do
-    {:ok, assign(socket, form: to_form(%{}, as: "user"))}
+    {:ok, assign(socket, form: to_form(%{}, as: "user"), page_title: gettext("Forgot your password?"))}
   end
 end
