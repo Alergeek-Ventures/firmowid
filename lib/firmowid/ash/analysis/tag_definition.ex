@@ -41,6 +41,7 @@ defmodule Firmowid.Ash.Analysis.TagDefinition do
     define :destroy, action: :destroy
     define :create_tag_definition
     define :update_tag_definition
+    define :set_overhead, args: [:overhead]
     define :list_tag_definitions
     define :get_tag_definition, action: :read, get_by: [:id]
     define :create_for_project, args: [:name]
@@ -118,7 +119,14 @@ defmodule Firmowid.Ash.Analysis.TagDefinition do
 
     update :update_tag_definition do
       description "Updates name and/or color of a tag definition."
+      primary? true
       accept [:name, :color]
+      require_atomic? false
+    end
+
+    update :set_overhead do
+      description "Marks a tag definition as a company function counted in overhead, or back as a project."
+      accept [:overhead]
       require_atomic? false
     end
   end
@@ -174,6 +182,12 @@ defmodule Firmowid.Ash.Analysis.TagDefinition do
 
     attribute :name, :string, public?: true, allow_nil?: false
     attribute :color, :string, public?: true, default: "#6B7280"
+
+    attribute :overhead, :boolean,
+      public?: true,
+      allow_nil?: false,
+      default: false,
+      description: "A company function such as marketing or HR: its shares count as overhead, not as a project."
 
     Resource.firmowid_timestamps()
   end

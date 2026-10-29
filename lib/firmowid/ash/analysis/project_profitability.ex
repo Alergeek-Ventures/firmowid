@@ -2,19 +2,22 @@ defmodule Firmowid.Ash.Analysis.ProjectProfitability do
   @moduledoc """
   Pure management scenarios, not bookkeeping or an approved allocation policy.
 
-  Consumes unfiltered, single-currency YearSummary months. Only company and tax
-  expenses are allocated; their income and all unassigned amounts stay in the
-  residual. No tags, documents or source values are changed. Project selection
-  belongs after this calculation, never in the source summary's tag filters.
+  Consumes unfiltered, single-currency YearSummary months. Costs of running the
+  company (company, tax and unassigned expenses) are allocated by the time
+  tracked on each project. Projects counted as shared costs (`{:function, id}`)
+  are not allocated: they stay in the residual with all income outside projects,
+  so what each of them adds stays visible. No tags, documents or source
+  values are changed. Project selection belongs after this calculation, never
+  in the source summary's tag filters.
   """
 
   alias Firmowid.Ash.Analysis.CategoryTotals
 
-  @type allocation_basis :: :income | :direct_expenses
   @type project :: %{
           key: {:project, String.t()},
           name: String.t() | nil,
           color: String.t(),
+          seconds: non_neg_integer(),
           income: Decimal.t(),
           direct_expenses: Decimal.t(),
           direct_profit: Decimal.t(),
@@ -30,7 +33,7 @@ defmodule Firmowid.Ash.Analysis.ProjectProfitability do
         }
   @type result :: %{
           scenario: :management,
-          allocation_basis: allocation_basis(),
+          allocation_basis: :hours,
           months: [month()],
           annual: period()
         }
@@ -42,8 +45,12 @@ defmodule Firmowid.Ash.Analysis.ProjectProfitability do
         }
 
   @doc """
-  Allocates each month's actual overhead by project income (default) or direct
-  expenses, then sums the allocated months into `annual` without reallocating.
+  Allocates each month's actual overhead by the seconds tracked on each project
+  that month, then sums the allocated months into `annual` without reallocating.
+
+  `seconds_by_month` maps a month to `%{key, name, color, seconds}` rows, as
+  returned by `Firmowid.Ash.Analysis.project_seconds_by_month/2`. A project
+  with tracked time but no money that month still takes its overhead share.
 
   Category amounts must already be nonnegative whole-cent Decimals, as produced
   by CategoryTotals. All component expenses and shares are positive;
@@ -51,8 +58,8 @@ defmodule Firmowid.Ash.Analysis.ProjectProfitability do
   CategoryTotals shape and signs. `totals` always includes projects AND residual.
 
   Largest integer remainders receive leftover cents; ties use ascending project
-  IDs independently for company and taxes. With zero basis, all overhead stays
-  in residual; there is no equal-share fallback. Projects are sorted by ID.
+  IDs independently for company and taxes. Without tracked time, all overhead
+  stays in residual; there is no equal-share fallback. Projects are sorted by ID.
   Annual project metadata comes from its first appearance in the supplied months.
 
   Fetch the source with `YearSummary.get(year, %{tag_filters: []}, scope: scope)`.
@@ -60,18 +67,18 @@ defmodule Firmowid.Ash.Analysis.ProjectProfitability do
   and full-period totals separate from any selected-project subtotal. An already
   filtered source cannot be detected and would give incorrect allocation shares.
   """
-  @spec from_year_summary(%{months: [map()]}, allocation_basis()) :: result()
-  def from_year_summary(summary, allocation_basis \\ :income) when allocation_basis in [:income, :direct_expenses] do
+  @spec from_year_summary(%{months: [map()]}, %{Date.t() => [map()]}) :: result()
+  def from_year_summary(summary, seconds_by_month) do
     months =
       Enum.map(summary.months, fn month ->
         month.totals
-        |> allocate_month(allocation_basis)
+        |> allocate_month(Map.get(seconds_by_month, month.month, []))
         |> Map.put(:month, month.month)
       end)
 
     %{
       scenario: :management,
-      allocation_basis: allocation_basis,
+      allocation_basis: :hours,
       months: months,
       annual: %{
         projects: combine_projects(months),
@@ -81,10 +88,17 @@ defmodule Firmowid.Ash.Analysis.ProjectProfitability do
     }
   end
 
-  defp allocate_month(totals, basis) do
-    projects = project_amounts(totals)
-    weights = Enum.map(projects, &{&1.key, Map.fetch!(&1, basis)})
-    company = category_cents(totals.expense_categories, :company)
+  defp allocate_month(totals, tracked) do
+    projects = project_amounts(totals, tracked)
+    weights = Enum.map(projects, &{&1.key, &1.seconds})
+
+    # Expenses without a project run the company, like the company category; functions stay apart.
+    company =
+      totals.expense_categories
+      |> Enum.filter(&shared_key?(&1.key))
+      |> Enum.map(&cents(&1.amount))
+      |> Enum.sum()
+
     taxes = category_cents(totals.expense_categories, :taxes)
     company_shares = allocate(company, weights)
     taxes_shares = allocate(taxes, weights)
@@ -100,7 +114,7 @@ defmodule Firmowid.Ash.Analysis.ProjectProfitability do
     residual_expenses =
       Enum.reject(totals.expense_categories, fn category ->
         project_key?(category.key) or
-          (category.key == :company and map_size(company_shares) > 0) or
+          (shared_key?(category.key) and map_size(company_shares) > 0) or
           (category.key == :taxes and map_size(taxes_shares) > 0)
       end)
 
@@ -116,33 +130,30 @@ defmodule Firmowid.Ash.Analysis.ProjectProfitability do
     %{projects: projects, residual: residual, totals: totals}
   end
 
-  defp project_amounts(totals) do
+  defp project_amounts(totals, tracked) do
+    projects =
+      Enum.reduce(tracked, %{}, fn row, projects ->
+        projects
+        |> Map.put_new(row.key, empty_project(row))
+        |> update_in([row.key, :seconds], &(&1 + row.seconds))
+      end)
+
     [{:income, totals.income_categories}, {:direct_expenses, totals.expense_categories}]
-    |> Enum.reduce(%{}, fn {field, categories}, projects ->
+    |> Enum.reduce(projects, fn {field, categories}, projects ->
       categories
       |> Enum.filter(&project_key?(&1.key))
       |> Enum.reduce(projects, fn category, projects ->
-        project = %{
-          key: category.key,
-          name: category.name,
-          color: category.color,
-          income: 0,
-          direct_expenses: 0
-        }
-
-        Map.update(
-          projects,
-          category.key,
-          Map.put(project, field, cents(category.amount)),
-          fn existing ->
-            Map.update!(existing, field, &(&1 + cents(category.amount)))
-          end
-        )
+        projects
+        |> Map.put_new(category.key, empty_project(category))
+        |> update_in([category.key, field], &(&1 + cents(category.amount)))
       end)
     end)
     |> Map.values()
     |> Enum.sort_by(& &1.key)
   end
+
+  defp empty_project(row),
+    do: %{key: row.key, name: row.name, color: row.color, seconds: 0, income: 0, direct_expenses: 0}
 
   defp allocate(amount, weights) do
     total = weights |> Enum.map(&elem(&1, 1)) |> Enum.sum()
@@ -177,7 +188,7 @@ defmodule Firmowid.Ash.Analysis.ProjectProfitability do
     |> Map.put(:total_expenses, -expenses)
     |> Map.put(:net_profit, project.income - expenses)
     |> Map.new(fn
-      {field, value} when field in [:key, :name, :color] -> {field, value}
+      {field, value} when field in [:key, :name, :color, :seconds] -> {field, value}
       {field, value} -> {field, money(value)}
     end)
   end
@@ -189,6 +200,7 @@ defmodule Firmowid.Ash.Analysis.ProjectProfitability do
       Map.update(projects, project.key, project, fn existing ->
         Map.new(existing, fn
           {field, value} when field in [:key, :name, :color] -> {field, value}
+          {:seconds, value} -> {:seconds, value + project.seconds}
           {field, value} -> {field, money(cents(value) + cents(Map.fetch!(project, field)))}
         end)
       end)
@@ -203,6 +215,8 @@ defmodule Firmowid.Ash.Analysis.ProjectProfitability do
     |> Enum.map(&cents(&1.amount))
     |> Enum.sum()
   end
+
+  defp shared_key?(key), do: key in [:company, :unassigned]
 
   defp project_key?({:project, _id}), do: true
   defp project_key?(_key), do: false
