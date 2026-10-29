@@ -5,7 +5,8 @@ defmodule Firmowid.Ash.Analysis.CategoryTotals do
   Allocation conserves each entity's rounded cent amount.
   """
 
-  @type category_key :: {:project, String.t()} | :company | :taxes | :unassigned
+  @type category_key ::
+          {:project, String.t()} | {:function, String.t()} | :company | :taxes | :unassigned
   @type category :: %{
           key: category_key(),
           name: String.t() | nil,
@@ -25,8 +26,10 @@ defmodule Firmowid.Ash.Analysis.CategoryTotals do
 
   Rounds each signed amount to cents and allocates project shares in
   proportion to each tag's `:weight` metadata (1 when absent), giving leftover
-  cents to the largest remainders, then to sorted IDs. Built-in categories
-  have nil names for caller-owned translation. Internal entities are excluded.
+  cents to the largest remainders, then to sorted IDs. Shares of overhead tag
+  definitions are keyed `{:function, id}`: they are shared costs, selected by
+  the company filter. Built-in categories have nil names for caller-owned
+  translation. Internal entities are excluded.
 
   Filters select shares with OR semantics (`{:project, id}`, `{:company}` or `{:taxes}`),
   after allocation. Category amounts are positive; expense totals stay negative.
@@ -101,19 +104,21 @@ defmodule Firmowid.Ash.Analysis.CategoryTotals do
       |> Enum.filter(&(&1.kind == :project))
       |> Enum.uniq_by(& &1.tag_definition_id)
       |> Enum.sort_by(& &1.tag_definition_id)
-      |> Enum.map(fn tag ->
-        %{
-          key: {:project, tag.tag_definition_id},
-          name: tag.tag_definition.name,
-          color: tag.tag_definition.color,
-          weight: Map.get(tag.__metadata__, :weight, 1)
-        }
-      end)
+      |> Enum.map(&project_category/1)
 
     case projects do
       [] -> [%{key: :unassigned, name: nil, color: "#94A3B8"}]
       projects -> projects
     end
+  end
+
+  defp project_category(tag) do
+    %{
+      key: {if(tag.tag_definition.overhead, do: :function, else: :project), tag.tag_definition_id},
+      name: tag.tag_definition.name,
+      color: tag.tag_definition.color,
+      weight: Map.get(tag.__metadata__, :weight, 1)
+    }
   end
 
   defp allocate([], _cents), do: []
@@ -151,6 +156,7 @@ defmodule Firmowid.Ash.Analysis.CategoryTotals do
   defp selected?(:company, filters), do: {:company} in filters
   defp selected?(:taxes, filters), do: {:taxes} in filters
   defp selected?({:project, id}, filters), do: {:project, id} in filters
+  defp selected?({:function, _id}, filters), do: {:company} in filters
   defp selected?(:unassigned, _filters), do: false
 
   defp category_list(rows), do: rows |> Map.values() |> Enum.sort_by(& &1.key)

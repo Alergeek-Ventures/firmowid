@@ -39,9 +39,10 @@ defmodule Firmowid.Ash.Analysis do
 
       description "List the authenticated organization's project tags with IDs and names. " <>
                     "Use these IDs as tag_definition_ids in set_analysis_entry_project_tags. " <>
-                    "Tags include custom categories and project tags. Company, taxes and internal are built-in categories."
+                    "Tags include custom categories and project tags. Company, taxes and internal are built-in categories. " <>
+                    "Tags with overhead set are company functions (e.g. marketing, HR): their shares count as company overhead."
 
-      select [:id, :name, :color]
+      select [:id, :name, :color, :overhead]
     end
 
     tool :list_analysis_entries, Entry, :list do
@@ -238,6 +239,53 @@ defmodule Firmowid.Ash.Analysis do
            |> CategoryTotals.combine()}
         end)
     }
+  end
+
+  @doc """
+  Sums the seconds tracked on each project per month of the year, keyed like
+  project categories (`{:project, tag_definition_id}`) with their name and color.
+
+  Company functions (overhead tag definitions) and sessions without a project
+  are left out, so the result weighs only the projects that share overhead.
+  """
+  @spec project_seconds_by_month(integer(), Scope.t()) :: %{Date.t() => [map()]}
+  def project_seconds_by_month(year, scope) do
+    seconds =
+      %{
+        started_from: DateTime.new!(Date.new!(year, 1, 1), ~T[00:00:00]),
+        started_to: DateTime.new!(Date.new!(year + 1, 1, 1), ~T[00:00:00])
+      }
+      |> Timetracker.list_sessions!(load: [:duration], scope: analysis_scope(scope))
+      |> Enum.reject(&(is_nil(&1.project_id) or &1.duration <= 0))
+      |> Enum.group_by(
+        &{Date.beginning_of_month(DateTime.to_date(&1.start_datetime)), &1.project_id},
+        & &1.duration
+      )
+
+    definitions =
+      %{ids: seconds |> Map.keys() |> Enum.map(&elem(&1, 1)) |> Enum.uniq()}
+      |> Timetracker.list_projects!(load: [:tag_definition], scope: scope)
+      |> Map.new(&{&1.id, &1.tag_definition})
+
+    seconds
+    |> Enum.flat_map(fn {{month, project_id}, durations} ->
+      case Map.get(definitions, project_id) do
+        %TagDefinition{overhead: false} = definition ->
+          [
+            {month,
+             %{
+               key: {:project, definition.id},
+               name: definition.name,
+               color: definition.color,
+               seconds: Enum.sum(durations)
+             }}
+          ]
+
+        _overhead_or_untagged ->
+          []
+      end
+    end)
+    |> Enum.group_by(&elem(&1, 0), &elem(&1, 1))
   end
 
   @doc """
@@ -782,7 +830,11 @@ defmodule Firmowid.Ash.Analysis do
   defp matches_tag_filters?(tags, filters) do
     Enum.any?(filters, fn
       {:company} ->
-        Enum.any?(tags, &(&1.kind == :company))
+        Enum.any?(
+          tags,
+          &(&1.kind == :company or
+              match?(%{kind: :project, tag_definition: %{overhead: true}}, &1))
+        )
 
       {:taxes} ->
         Enum.any?(tags, &(&1.kind == :taxes))

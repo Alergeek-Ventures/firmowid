@@ -4,8 +4,7 @@ defmodule FirmowidWeb.Analysis.Components.CategoryReview do
 
   Costs and income are two columns of categories, each listing its
   counterparties. A counterparty row opens the categories to confirm or move
-  it to; one button accepts every remaining suggestion. The industry is
-  inferred, never chosen here. Sends `confirm-suggestions` and
+  it to. The industry is inferred, never chosen here. Sends
   `confirm-category` (with the group's `side`, `key`, `suggestion` and `source`,
   and the chosen `category`).
   """
@@ -17,45 +16,18 @@ defmodule FirmowidWeb.Analysis.Components.CategoryReview do
   attr :review, :map, required: true, doc: "`Firmowid.Ash.Analysis.get_category_review/3` result"
   attr :year, :integer, required: true
 
-  attr :classifying, :boolean,
-    default: false,
-    doc: "whether a classification job is queued or running"
-
-  @doc "Renders the bulk confirmation and the cost and income columns."
+  @doc "Renders the cost and income columns."
   @spec review(map()) :: Phoenix.LiveView.Rendered.t()
   def review(assigns) do
     groups = assigns.review.groups
 
     assigns =
       assigns
-      |> assign(:confirmed, Enum.count(groups, &(&1.status == :confirmed)))
-      |> assign(
-        :suggested,
-        Enum.count(groups, &(&1.status != :confirmed and &1.suggestion != nil))
-      )
-      |> assign(:total, length(groups))
       |> assign(:expenses, ledger(groups, :expenses))
       |> assign(:income, ledger(groups, :income))
 
     ~H"""
     <div id="analysis-category-review" class="@container flex flex-col gap-10">
-      <div class="flex flex-wrap items-center justify-end gap-4">
-        <div class="flex flex-wrap items-center gap-4">
-          <p id="analysis-category-status" class="text-sm text-grey-700">
-            {status(@classifying, @review.unclassified, @confirmed, @total)}
-          </p>
-          <FirmowidUI.Components.Button.button
-            :if={@suggested > 0}
-            id="analysis-confirm-suggestions"
-            type="button"
-            variant="special"
-            phx-click="confirm-suggestions"
-            phx-disable-with={gettext("Saving…")}
-          >
-            {gettext("Accept suggestions")}
-          </FirmowidUI.Components.Button.button>
-        </div>
-      </div>
       <div class="grid grid-cols-[minmax(0,1fr)] gap-x-16 gap-y-12 @5xl:grid-cols-2">
         <.ledger
           id="analysis-expense-categories"
@@ -187,14 +159,6 @@ defmodule FirmowidWeb.Analysis.Components.CategoryReview do
     </li>
     """
   end
-
-  defp status(false, _unclassified, confirmed, total),
-    do: gettext("%{confirmed} of %{total} confirmed", confirmed: confirmed, total: total)
-
-  defp status(true, [], _confirmed, _total), do: gettext("Updating suggestions with your choices…")
-
-  defp status(true, unclassified, _confirmed, _total),
-    do: ngettext("Categorizing %{count} entry…", "Categorizing %{count} entries…", length(unclassified))
 
   defp name_styles(:confirmed), do: "min-w-0 truncate text-grey-900"
   defp name_styles(_status), do: "min-w-0 truncate text-grey-700"

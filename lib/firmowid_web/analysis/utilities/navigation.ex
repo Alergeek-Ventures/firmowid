@@ -9,8 +9,7 @@ defmodule FirmowidWeb.Analysis.Utilities.Navigation do
 
   @type tag_filter :: {:company} | {:taxes} | {:project, String.t()}
   @type view ::
-          %{view: :tagging, month: Date.t()}
-          | %{view: :dashboard, year: pos_integer(), month: Date.t() | nil}
+          %{view: :dashboard, year: pos_integer(), month: Date.t() | nil}
           | %{view: :categories, year: pos_integer()}
           | %{view: :segments, year: pos_integer()}
 
@@ -43,11 +42,9 @@ defmodule FirmowidWeb.Analysis.Utilities.Navigation do
   must belong to the selected year.
   """
   @spec parse_view(map()) :: view()
-  def parse_view(%{"tryb" => "tagowanie"} = params), do: %{view: :tagging, month: parse_month(params)}
+  def parse_view(%{"tryb" => "koszty-i-przychody"} = params), do: %{view: :categories, year: parse_year(params)}
 
-  def parse_view(%{"tryb" => "kategorie"} = params), do: %{view: :categories, year: parse_year(params)}
-
-  def parse_view(%{"tryb" => "segmenty"} = params), do: %{view: :segments, year: parse_year(params)}
+  def parse_view(%{"tryb" => "projekty"} = params), do: %{view: :segments, year: parse_year(params)}
 
   def parse_view(params) do
     year = parse_year(params)
@@ -69,7 +66,8 @@ defmodule FirmowidWeb.Analysis.Utilities.Navigation do
   @spec parse_tag_filters(map(), list()) :: [tag_filter()]
   def parse_tag_filters(%{"tagi" => tags_param}, tag_definitions)
       when is_binary(tags_param) and is_list(tag_definitions) do
-    valid_project_ids = MapSet.new(tag_definitions, & &1.id)
+    # Projects counted as shared costs are not slices of their own.
+    valid_project_ids = tag_definitions |> Enum.reject(& &1.overhead) |> MapSet.new(& &1.id)
 
     tags_param
     |> String.split(",", trim: true)
@@ -83,12 +81,6 @@ defmodule FirmowidWeb.Analysis.Utilities.Navigation do
   end
 
   def parse_tag_filters(_params, _tag_definitions), do: []
-
-  defp parse_month(%{"miesiac" => value} = params) when is_binary(value) do
-    QueryParams.parse_date(params, "miesiac", Date.beginning_of_month(Date.utc_today()))
-  end
-
-  defp parse_month(_params), do: Date.beginning_of_month(Date.utc_today())
 
   # YearSummary accepts years 1-9999; other values fall back like an invalid month.
   defp parse_year(params) do
@@ -107,13 +99,11 @@ defmodule FirmowidWeb.Analysis.Utilities.Navigation do
 
   defp selected_month(_params, _year), do: nil
 
-  defp view_query(%{view: :tagging, month: month}), do: [tryb: "tagowanie", miesiac: Date.to_iso8601(month)]
-
   defp view_query(%{view: :dashboard, year: year, month: month}), do: with_month([rok: year], month)
 
-  defp view_query(%{view: :categories, year: year}), do: [tryb: "kategorie", rok: year]
+  defp view_query(%{view: :categories, year: year}), do: [tryb: "koszty-i-przychody", rok: year]
 
-  defp view_query(%{view: :segments, year: year}), do: [tryb: "segmenty", rok: year]
+  defp view_query(%{view: :segments, year: year}), do: [tryb: "projekty", rok: year]
 
   defp with_month(query, nil), do: query
   defp with_month(query, month), do: query ++ [miesiac: Date.to_iso8601(month)]

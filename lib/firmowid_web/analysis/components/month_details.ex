@@ -21,7 +21,7 @@ defmodule FirmowidWeb.Analysis.Components.MonthDetails do
 
   attr :entries_path, :string,
     default: nil,
-    doc: "the month's entry list, when the viewer may open it"
+    doc: "the month's entry list in invoicing, where entries are assigned to projects"
 
   @doc "Renders the month's result and its costs and income by category."
   @spec details(map()) :: Phoenix.LiveView.Rendered.t()
@@ -53,7 +53,7 @@ defmodule FirmowidWeb.Analysis.Components.MonthDetails do
             :if={@entries_path}
             id="analysis-month-entries"
             kind="unstyled"
-            patch={@entries_path}
+            navigate={@entries_path}
             class="text-sm text-grey-700 underline underline-offset-4 active:text-grey-900"
           >
             {gettext("Month's entries")}
