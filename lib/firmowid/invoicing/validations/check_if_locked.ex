@@ -6,10 +6,9 @@ defmodule Firmowid.Invoicing.Validations.CheckIfLocked do
   calling action also uses non-atomic changes or relationship management.
   """
   use Ash.Resource.Validation
+  use Gettext, backend: Firmowid.Gettext
 
   alias Ash.Error.Changes.InvalidAttribute
-
-  @message "faktura jest zablokowana i nie może być modyfikowana"
 
   @impl true
   def validate(changeset, _opts, _context) do
@@ -18,13 +17,15 @@ defmodule Firmowid.Invoicing.Validations.CheckIfLocked do
     if is_nil(locked_at) do
       :ok
     else
-      {:error, field: :base, message: @message}
+      {:error, field: :base, message: message()}
     end
   end
 
   @impl true
   def atomic(_changeset, _opts, _context) do
     {:atomic, [:locked_at], expr(not is_nil(locked_at)),
-     expr(error(^InvalidAttribute, %{field: :base, message: ^@message}))}
+     expr(error(^InvalidAttribute, %{field: :base, message: ^message()}))}
   end
+
+  defp message, do: gettext("the invoice is locked and cannot be modified")
 end

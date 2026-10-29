@@ -22,6 +22,8 @@ defmodule Firmowid.Core.User do
     extensions: [AshAuthentication],
     notifiers: [Ash.Notifier.PubSub]
 
+  use Gettext, backend: Firmowid.Gettext
+
   alias AshAuthentication.Strategy.Password.PasswordValidation
   alias Firmowid.Checks.OrganizationMemberAdmin
   alias Firmowid.Checks.SystemActorRole
@@ -240,12 +242,12 @@ defmodule Firmowid.Core.User do
         cond do
           not is_binary(email) or email == "" ->
             Ash.Changeset.add_error(changeset,
-              message: "Logowanie Google nie powiodło się: brak adresu email."
+              message: gettext("Google sign-in failed: no email address.")
             )
 
           verified_email not in [true, "true", 1, "1"] ->
             Ash.Changeset.add_error(changeset,
-              message: "Logowanie Google nie powiodło się: email Google nie jest zweryfikowany."
+              message: gettext("Google sign-in failed: the Google email is not verified.")
             )
 
           true ->
@@ -411,7 +413,9 @@ defmodule Firmowid.Core.User do
 
         case identity do
           nil ->
-            Ash.Changeset.add_error(changeset, message: "Konto Google nie jest połączone.")
+            Ash.Changeset.add_error(changeset,
+              message: gettext("The Google account is not connected.")
+            )
 
           identity ->
             case Ash.destroy(identity, ash_opts) do
@@ -420,7 +424,7 @@ defmodule Firmowid.Core.User do
 
               {:error, _error} ->
                 Ash.Changeset.add_error(changeset,
-                  message: "Nie udało się odłączyć konta Google."
+                  message: gettext("Could not disconnect the Google account.")
                 )
             end
         end

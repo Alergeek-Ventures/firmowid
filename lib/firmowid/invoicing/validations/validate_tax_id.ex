@@ -13,6 +13,7 @@ defmodule Firmowid.Invoicing.Validations.ValidateTaxId do
     * `:type_field` — atom, optional (`:buyer_type` or `:type`)
   """
   use Ash.Resource.Validation
+  use Gettext, backend: Firmowid.Gettext
 
   alias Ash.Error.Changes.InvalidAttribute
   alias Firmowid.Core.Nip
@@ -75,7 +76,7 @@ defmodule Firmowid.Invoicing.Validations.ValidateTaxId do
        error(^InvalidAttribute, %{
          field: ^pesel_field,
          value: expr(^atomic_ref(pesel_field)),
-         message: "musi być poprawnym numerem PESEL"
+         message: ^gettext("must be a valid PESEL number")
        })
      )}
   end
@@ -90,7 +91,7 @@ defmodule Firmowid.Invoicing.Validations.ValidateTaxId do
        error(^InvalidAttribute, %{
          field: ^id_field,
          value: expr(^atomic_ref(id_field)),
-         message: "musi być poprawnym numerem NIP"
+         message: ^gettext("must be a valid NIP number")
        })
      )}
   end
@@ -105,7 +106,7 @@ defmodule Firmowid.Invoicing.Validations.ValidateTaxId do
        error(^InvalidAttribute, %{
          field: ^id_field,
          value: expr(^atomic_ref(id_field)),
-         message: "musi być numerem VAT-EU"
+         message: ^gettext("must be an EU VAT number")
        })
      )}
   end
@@ -121,7 +122,7 @@ defmodule Firmowid.Invoicing.Validations.ValidateTaxId do
        error(^InvalidAttribute, %{
          field: ^id_field,
          value: expr(^atomic_ref(id_field)),
-         message: "musi mieć maksymalnie 50 znaków"
+         message: ^gettext("must be at most 50 characters")
        })
      )}
   end
@@ -130,7 +131,7 @@ defmodule Firmowid.Invoicing.Validations.ValidateTaxId do
     if Nip.valid?(tax_id) do
       :ok
     else
-      {:error, field: field, message: "musi być poprawnym numerem NIP"}
+      {:error, field: field, message: gettext("must be a valid NIP number")}
     end
   end
 
@@ -140,7 +141,7 @@ defmodule Firmowid.Invoicing.Validations.ValidateTaxId do
     if Pesel.valid?(pesel) do
       :ok
     else
-      {:error, field: field, message: "musi być poprawnym numerem PESEL"}
+      {:error, field: field, message: gettext("must be a valid PESEL number")}
     end
   end
 
@@ -153,7 +154,7 @@ defmodule Firmowid.Invoicing.Validations.ValidateTaxId do
          Regex.match?(~r/^(\d|[A-Z]|\+|\*){1,12}$/, normalized_tax_id) do
       :ok
     else
-      {:error, field: field, message: "musi być numerem VAT-EU"}
+      {:error, field: field, message: gettext("must be an EU VAT number")}
     end
   end
 
@@ -165,7 +166,7 @@ defmodule Firmowid.Invoicing.Validations.ValidateTaxId do
     if is_nil(normalized_tax_id) or String.length(normalized_tax_id) <= 50 do
       :ok
     else
-      {:error, field: field, message: "musi mieć maksymalnie 50 znaków"}
+      {:error, field: field, message: gettext("must be at most 50 characters")}
     end
   end
 

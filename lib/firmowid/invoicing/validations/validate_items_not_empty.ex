@@ -12,6 +12,7 @@ defmodule Firmowid.Invoicing.Validations.ValidateItemsNotEmpty do
     * `:source` — `:attribute` or `:argument` (default: `:attribute`)
   """
   use Ash.Resource.Validation
+  use Gettext, backend: Firmowid.Gettext
 
   @impl true
   def validate(changeset, opts, _context) do
@@ -26,7 +27,7 @@ defmodule Firmowid.Invoicing.Validations.ValidateItemsNotEmpty do
 
     case items do
       items when is_list(items) and items != [] -> :ok
-      _ -> {:error, field: field, message: "musi zawierać co najmniej jedną pozycję"}
+      _ -> {:error, field: field, message: gettext("must contain at least one item")}
     end
   end
 end

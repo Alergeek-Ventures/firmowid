@@ -3,6 +3,7 @@ defmodule Firmowid.Invoicing.Changes.RequireTransactionIds do
   Ensures an action receives at least one transaction ID.
   """
   use Ash.Resource.Change
+  use Gettext, backend: Firmowid.Gettext
 
   @impl true
   def change(changeset, _opts, _context) do
@@ -13,7 +14,7 @@ defmodule Firmowid.Invoicing.Changes.RequireTransactionIds do
       _ ->
         Ash.Changeset.add_error(changeset,
           field: :transaction_ids,
-          message: "Wybierz co najmniej jedną transakcję."
+          message: gettext("Select at least one transaction.")
         )
     end
   end

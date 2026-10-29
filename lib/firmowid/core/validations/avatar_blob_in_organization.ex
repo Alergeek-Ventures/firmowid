@@ -4,6 +4,7 @@ defmodule Firmowid.Core.Validations.AvatarBlobInOrganization do
   organization.
   """
   use Ash.Resource.Validation
+  use Gettext, backend: Firmowid.Gettext
 
   alias Firmowid.Blobs.Blob
 
@@ -21,7 +22,7 @@ defmodule Firmowid.Core.Validations.AvatarBlobInOrganization do
         if Blob |> Ash.Query.filter(id == ^blob_id) |> Ash.exists?(opts) do
           :ok
         else
-          {:error, field: :avatar_blob_id, message: "musi należeć do organizacji"}
+          {:error, field: :avatar_blob_id, message: gettext("must belong to the organization")}
         end
     end
   end

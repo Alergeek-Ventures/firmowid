@@ -75,7 +75,7 @@ defmodule FirmowidWeb.Billing.Utilities.Worksheet do
   """
   @spec plan_label(PlanCatalog.plan()) :: String.t()
   def plan_label(:no_plan), do: pgettext("billing plan", "No plan")
-  def plan_label(:start), do: "Start"
+  def plan_label(:start), do: pgettext("billing plan", "Start")
   def plan_label(:przedsiebiorca), do: gettext("Entrepreneur")
   def plan_label(:firma), do: gettext("Company")
 

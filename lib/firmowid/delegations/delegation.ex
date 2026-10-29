@@ -10,6 +10,8 @@ defmodule Firmowid.Delegations.Delegation do
     authorizers: [Ash.Policy.Authorizer],
     extensions: [AshStateMachine]
 
+  use Gettext, backend: Firmowid.Gettext
+
   alias Firmowid.Checks.ActorRole
   alias Firmowid.Checks.SystemActorRole
   alias Firmowid.Core.Member
@@ -82,10 +84,10 @@ defmodule Firmowid.Delegations.Delegation do
       change AssignReference
 
       validate compare(:end_date, greater_than_or_equal_to: :start_date),
-        message: "nie może być wcześniejsza niż data wyjazdu"
+        message: gettext_noop("cannot be earlier than the departure date")
 
       validate compare(:expected_cost, greater_than_or_equal_to: Money.new(:PLN, 0)),
-        message: "musi być większa lub równa 0 PLN"
+        message: gettext_noop("must be greater than or equal to 0 PLN")
 
       emit Signals, :delegation_submitted, fields: [delegation_id: :id]
     end
@@ -106,7 +108,7 @@ defmodule Firmowid.Delegations.Delegation do
       validate present(:signed_command_filename)
 
       validate compare(:advance_amount, greater_than_or_equal_to: Money.new(:PLN, 0)),
-        message: "musi być większa lub równa 0 PLN"
+        message: gettext_noop("must be greater than or equal to 0 PLN")
 
       change transition_state(:in_progress)
 
@@ -120,7 +122,7 @@ defmodule Firmowid.Delegations.Delegation do
       validate attribute_equals(:status, :pending)
 
       validate compare(:advance_amount, greater_than_or_equal_to: Money.new(:PLN, 0)),
-        message: "musi być większa lub równa 0 PLN"
+        message: gettext_noop("must be greater than or equal to 0 PLN")
     end
 
     update :update_billing_month do

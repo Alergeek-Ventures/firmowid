@@ -7,6 +7,7 @@ defmodule Firmowid.Invoicing.Validations.ValidateVatRate do
     * `:field` — atom, the field to validate (default: `:vat_rate`)
   """
   use Ash.Resource.Validation
+  use Gettext, backend: Firmowid.Gettext
 
   alias Firmowid.Ksef.VatRate
 
@@ -23,7 +24,7 @@ defmodule Firmowid.Invoicing.Validations.ValidateVatRate do
         :ok
 
       true ->
-        {:error, field: field, message: "nieprawidłowa stawka VAT"}
+        {:error, field: field, message: gettext("invalid VAT rate")}
     end
   end
 end

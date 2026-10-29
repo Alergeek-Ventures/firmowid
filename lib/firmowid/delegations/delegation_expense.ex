@@ -7,6 +7,8 @@ defmodule Firmowid.Delegations.DelegationExpense do
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer]
 
+  use Gettext, backend: Firmowid.Gettext
+
   alias Firmowid.Blobs.Blob
   alias Firmowid.Checks.ActorRole
   alias Firmowid.Checks.SystemActorRole
@@ -94,9 +96,11 @@ defmodule Firmowid.Delegations.DelegationExpense do
         :nbp_rate_date
       ]
 
-      validate string_length(:document_number, min: 1), message: "Uzupełnij to pole."
+      validate string_length(:document_number, min: 1),
+        message: gettext_noop("Fill in this field.")
 
-      validate compare(:expense_amount, greater_than: 0), message: "musi być większa od zera"
+      validate compare(:expense_amount, greater_than: 0),
+        message: gettext_noop("must be greater than zero")
 
       validate {ExpenseDetailsMatchKind, []}
       validate {ExpenseDetailsComplete, []}

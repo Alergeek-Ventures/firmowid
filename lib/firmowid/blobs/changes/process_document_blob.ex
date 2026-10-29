@@ -76,7 +76,8 @@ defmodule Firmowid.Blobs.Changes.ProcessDocumentBlob do
 
   defp process_document_blob(_, _blob_url, _blob, _opts), do: {:error, :unsupported_processing_target}
 
-  defp invalid_document_error_message(:cost_invoice), do: "Plik nie zawiera danych wymaganych dla faktury kosztowej."
+  defp invalid_document_error_message(:cost_invoice),
+    do: gettext("The file does not contain the data required for a cost invoice.")
 
   defp invalid_document_error_message(:employment_contract),
     do: gettext("Upload a contract, an employee declaration or a payroll document.")
@@ -112,7 +113,7 @@ defmodule Firmowid.Blobs.Changes.ProcessDocumentBlob do
     failure = %{
       error: ":duplicate_ksef_invoice",
       error_code: "duplicate_ksef_invoice",
-      error_message: "Ta faktura z KSeF jest już w systemie.",
+      error_message: gettext("This KSeF invoice is already in the system."),
       cost_invoice_id: cost_invoice_id
     }
 
@@ -123,7 +124,7 @@ defmodule Firmowid.Blobs.Changes.ProcessDocumentBlob do
     failure = %{
       error: ":missing_salary_metadata",
       error_code: "missing_salary_metadata",
-      error_message: "Nie udało się wyekstrahować danych wynagrodzenia z umowy."
+      error_message: gettext("Could not extract the salary data from the contract.")
     }
 
     update_failed_blob(blob, failure, opts)
@@ -133,7 +134,7 @@ defmodule Firmowid.Blobs.Changes.ProcessDocumentBlob do
     failure = %{
       error: inspect(reason),
       error_code: "processing_failed",
-      error_message: "Nie udało się przetworzyć pliku."
+      error_message: gettext("Could not process the file.")
     }
 
     update_failed_blob(blob, failure, opts)

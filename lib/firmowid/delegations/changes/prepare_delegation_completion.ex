@@ -2,6 +2,7 @@ defmodule Firmowid.Delegations.Changes.PrepareDelegationCompletion do
   @moduledoc "Validates final expense data and derives evidence dates before completion."
 
   use Ash.Resource.Change
+  use Gettext, backend: Firmowid.Gettext
 
   alias Firmowid.Delegations.DelegationExpense
   alias Firmowid.Delegations.DelegationExpense.Trip
@@ -87,7 +88,7 @@ defmodule Firmowid.Delegations.Changes.PrepareDelegationCompletion do
     if blank?(Ash.Changeset.get_attribute(changeset, :date_change_reason)) do
       Ash.Changeset.add_error(changeset,
         field: :date_change_reason,
-        message: "To pole jest wymagane"
+        message: gettext("This field is required")
       )
     else
       changeset

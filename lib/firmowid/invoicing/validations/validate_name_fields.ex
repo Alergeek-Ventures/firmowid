@@ -13,6 +13,7 @@ defmodule Firmowid.Invoicing.Validations.ValidateNameFields do
     * `:surname_field` — atom (`:buyer_surname` or `:surname`)
   """
   use Ash.Resource.Validation
+  use Gettext, backend: Firmowid.Gettext
 
   alias Ash.Error.Changes.InvalidAttribute
 
@@ -30,7 +31,7 @@ defmodule Firmowid.Invoicing.Validations.ValidateNameFields do
         full_name = Ash.Changeset.get_attribute(changeset, full_name_field)
 
         if blank?(full_name) do
-          {:error, field: full_name_field, message: "nazwa firmy jest wymagana"}
+          {:error, field: full_name_field, message: gettext("company name is required")}
         else
           :ok
         end
@@ -41,8 +42,8 @@ defmodule Firmowid.Invoicing.Validations.ValidateNameFields do
 
         errors =
           []
-          |> maybe_add_error(given_name, given_name_field, "imię jest wymagane")
-          |> maybe_add_error(surname, surname_field, "nazwisko jest wymagane")
+          |> maybe_add_error(given_name, given_name_field, gettext("given name is required"))
+          |> maybe_add_error(surname, surname_field, gettext("surname is required"))
 
         case errors do
           [] -> :ok
@@ -79,7 +80,7 @@ defmodule Firmowid.Invoicing.Validations.ValidateNameFields do
            error(^InvalidAttribute, %{
              field: ^full_name_field,
              value: ^atomic_ref(full_name_field),
-             message: "nazwa firmy jest wymagana"
+             message: ^gettext("company name is required")
            })
          )},
         {:atomic, [type_field, given_name_field],
@@ -92,7 +93,7 @@ defmodule Firmowid.Invoicing.Validations.ValidateNameFields do
            error(^InvalidAttribute, %{
              field: ^given_name_field,
              value: ^atomic_ref(given_name_field),
-             message: "imię jest wymagane"
+             message: ^gettext("given name is required")
            })
          )},
         {:atomic, [type_field, surname_field],
@@ -104,7 +105,7 @@ defmodule Firmowid.Invoicing.Validations.ValidateNameFields do
            error(^InvalidAttribute, %{
              field: ^surname_field,
              value: ^atomic_ref(surname_field),
-             message: "nazwisko jest wymagane"
+             message: ^gettext("surname is required")
            })
          )}
       ]

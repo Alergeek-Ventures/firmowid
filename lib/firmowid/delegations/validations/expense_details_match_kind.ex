@@ -2,6 +2,7 @@ defmodule Firmowid.Delegations.Validations.ExpenseDetailsMatchKind do
   @moduledoc "Ensures an expense category and its typed details agree."
 
   use Ash.Resource.Validation
+  use Gettext, backend: Firmowid.Gettext
 
   alias Firmowid.Delegations.DelegationExpense.AccommodationDetails
   alias Firmowid.Delegations.DelegationExpense.OtherDetails
@@ -14,7 +15,7 @@ defmodule Firmowid.Delegations.Validations.ExpenseDetailsMatchKind do
 
     if matches?(kind, details),
       do: :ok,
-      else: {:error, field: :details, message: "nie pasują do kategorii wydatku"}
+      else: {:error, field: :details, message: gettext("do not match the expense category")}
   end
 
   defp matches?(:transport, %Ash.Union{value: %TransportDetails{}}), do: true

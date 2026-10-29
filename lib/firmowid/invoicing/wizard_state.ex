@@ -23,6 +23,8 @@ defmodule Firmowid.Invoicing.WizardState do
     data_layer: Ash.DataLayer.Ets,
     authorizers: [Ash.Policy.Authorizer]
 
+  use Gettext, backend: Firmowid.Gettext
+
   alias AshMoney.Types.Money
   alias Firmowid.Invoicing.Actions.IssueWizardState
   alias Firmowid.Invoicing.Changes
@@ -133,8 +135,8 @@ defmodule Firmowid.Invoicing.WizardState do
       validate {Validations.ValidateBuyerIdRequired,
                 id_field: :buyer_id, country_field: :buyer_country, pesel_field: :buyer_pesel, type_field: :buyer_type}
 
-      validate present([:buyer_country]), message: "Kraj jest wymagany"
-      validate present([:buyer_address]), message: "Adres jest wymagany"
+      validate present([:buyer_country]), message: gettext_noop("Country is required")
+      validate present([:buyer_address]), message: gettext_noop("Address is required")
     end
 
     update :update_items do
@@ -149,8 +151,8 @@ defmodule Firmowid.Invoicing.WizardState do
       change {Changes.NormalizeReverseChargeVatRates, source: :argument, field: :items}
       change set_attribute(:step, :payment)
 
-      validate present([:currency]), message: "Waluta jest wymagana"
-      validate match(:currency, ~r/^[A-Z]{3}$/), message: "Nieprawidłowy kod waluty"
+      validate present([:currency]), message: gettext_noop("Currency is required")
+      validate match(:currency, ~r/^[A-Z]{3}$/), message: gettext_noop("Invalid currency code")
       validate {Validations.ValidateItemsNotEmpty, field: :items, source: :argument}
       validate {Validations.ValidatePositiveItemQuantities, field: :items}
     end
@@ -162,9 +164,9 @@ defmodule Firmowid.Invoicing.WizardState do
       accept [:sale_date, :due_date, :payment_method, :seller_account_number]
       change set_attribute(:step, :preview)
 
-      validate present([:sale_date]), message: "Data sprzedaży jest wymagana"
-      validate present([:due_date]), message: "Termin płatności jest wymagany"
-      validate present([:payment_method]), message: "Forma płatności jest wymagana"
+      validate present([:sale_date]), message: gettext_noop("Sale date is required")
+      validate present([:due_date]), message: gettext_noop("Payment deadline is required")
+      validate present([:payment_method]), message: gettext_noop("Payment method is required")
 
       validate {Validations.ValidateSellerAccountForTransfer,
                 payment_method_field: :payment_method, seller_account_field: :seller_account_number}
@@ -255,7 +257,7 @@ defmodule Firmowid.Invoicing.WizardState do
   validations do
     validate present(:vat_exemption_basis) do
       where attribute_equals(:vat_exemption_type, :other)
-      message "Podaj podstawę prawną zwolnienia z VAT."
+      message gettext_noop("Provide the legal basis for the VAT exemption.")
     end
   end
 

@@ -2,6 +2,7 @@ defmodule Firmowid.Delegations.Validations.ForeignCurrencySettlementComplete do
   @moduledoc "Requires complete settlement evidence for expenses recorded in a foreign currency."
 
   use Ash.Resource.Validation
+  use Gettext, backend: Firmowid.Gettext
 
   @company_currency :PLN
 
@@ -18,9 +19,14 @@ defmodule Firmowid.Delegations.Validations.ForeignCurrencySettlementComplete do
 
   defp validate_settlement(changeset) do
     case attribute(changeset, :settlement_method) do
-      :statement -> validate_statement(changeset)
-      :nbp -> validate_nbp(changeset)
-      _ -> {:error, field: :settlement_method, message: "Wybierz sposób przeliczenia waluty."}
+      :statement ->
+        validate_statement(changeset)
+
+      :nbp ->
+        validate_nbp(changeset)
+
+      _ ->
+        {:error, field: :settlement_method, message: gettext("Choose how to convert the currency.")}
     end
   end
 
@@ -29,7 +35,8 @@ defmodule Firmowid.Delegations.Validations.ForeignCurrencySettlementComplete do
          attribute(changeset, :statement_blob_id) do
       :ok
     else
-      {:error, field: :settlement_amount, message: "Podaj kwotę z wyciągu i wgraj dokument."}
+      {:error,
+       field: :settlement_amount, message: gettext("Enter the amount from the statement and upload the document.")}
     end
   end
 
@@ -39,7 +46,7 @@ defmodule Firmowid.Delegations.Validations.ForeignCurrencySettlementComplete do
          attribute(changeset, :nbp_rate_date) do
       :ok
     else
-      {:error, field: :settlement_amount, message: "Nie udało się ustalić kursu NBP."}
+      {:error, field: :settlement_amount, message: gettext("Could not determine the NBP exchange rate.")}
     end
   end
 

@@ -11,6 +11,7 @@ defmodule Firmowid.Invoicing.Changes.ValidateCountryCode do
     * `:field` — atom, the attribute to validate (e.g. `:buyer_country`, `:country`)
   """
   use Ash.Resource.Change
+  use Gettext, backend: Firmowid.Gettext
 
   alias Ash.Error.Changes.InvalidAttribute
   alias Firmowid.Invoicing.CountryCodes
@@ -38,7 +39,7 @@ defmodule Firmowid.Invoicing.Changes.ValidateCountryCode do
         else
           Ash.Changeset.add_error(changeset,
             field: field,
-            message: "musi być prawidłowym kodem ISO kraju"
+            message: gettext("must be a valid ISO country code")
           )
         end
     end
@@ -67,7 +68,7 @@ defmodule Firmowid.Invoicing.Changes.ValidateCountryCode do
           error(^InvalidAttribute, %{
             field: ^field,
             value: expr(^atomic_ref(field)),
-            message: "musi być prawidłowym kodem ISO kraju"
+            message: ^gettext("must be a valid ISO country code")
           })
       end
     )

@@ -2,11 +2,12 @@ defmodule Firmowid.Delegations.DelegationExpense.Trip do
   @moduledoc "One route segment recorded on a transport expense document."
 
   use Ash.Resource, data_layer: :embedded, embed_nil_values?: false
+  use Gettext, backend: Firmowid.Gettext
 
   validations do
     validate compare(:arrival_datetime, greater_than_or_equal_to: :departure_datetime),
       where: [present(:arrival_datetime), present(:departure_datetime)],
-      message: "musi być po lub o tej samej godzinie co wyjazd"
+      message: gettext_noop("must be at the same time as the departure or later")
   end
 
   attributes do
