@@ -3,11 +3,11 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Show do
   use FirmowidWeb, :live_view
 
   alias Ash.Notifier.Notification
-  alias Firmowid.Ash.Invoicing
-  alias Firmowid.Ash.Invoicing.InvoiceMatching
-  alias Firmowid.Ash.Invoicing.SalesInvoice
-  alias Firmowid.Ash.Invoicing.Services.SalesInvoiceSharing
-  alias Firmowid.Ash.Ksef
+  alias Firmowid.Invoicing
+  alias Firmowid.Invoicing.InvoiceMatching
+  alias Firmowid.Invoicing.SalesInvoice
+  alias Firmowid.Invoicing.Services.SalesInvoiceSharing
+  alias Firmowid.Ksef
   alias FirmowidWeb.Core.Endpoint
   alias FirmowidWeb.Invoicing.Utilities.Navigation
   alias Phoenix.Socket.Broadcast
@@ -54,7 +54,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Show do
 
       {:ok, redirect(socket, to: redirect_path)}
     else
-      alias Firmowid.Ash.Invoicing.Calculations.AnnotatedCorrections
+      alias Firmowid.Invoicing.Calculations.AnnotatedCorrections
 
       potential_transactions =
         InvoiceMatching.get_potential_transactions_for_invoice(sales_invoice, scope)
@@ -216,7 +216,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Show do
   end
 
   defp refresh_invoice(id, scope) do
-    alias Firmowid.Ash.Invoicing.Calculations.AnnotatedCorrections
+    alias Firmowid.Invoicing.Calculations.AnnotatedCorrections
 
     invoice = Invoicing.get_sales_invoice!(id, load: @detail_loads, scope: scope)
     %{invoice | corrections: AnnotatedCorrections.annotate(invoice)}

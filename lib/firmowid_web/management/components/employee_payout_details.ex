@@ -6,8 +6,8 @@ defmodule FirmowidWeb.Management.Components.EmployeePayoutDetails do
   import FirmowidWeb.DesignSystem.Components.CoreComponents
   import FirmowidWeb.Management.Components.Card
 
-  alias Firmowid.Ash.Core
-  alias Firmowid.Ash.Payroll
+  alias Firmowid.Core
+  alias Firmowid.Payroll
   alias FirmowidWeb.Infrastructure.Utilities.TimeFormatter
 
   @impl true

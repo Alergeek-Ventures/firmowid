@@ -9,8 +9,8 @@ defmodule FirmowidWeb.DesignSystem.Components.InvoicingBadges do
 
   use FirmowidWeb, :html
 
-  alias Firmowid.Ash.Invoicing.CostInvoice
-  alias Firmowid.Ash.Invoicing.SalesInvoice
+  alias Firmowid.Invoicing.CostInvoice
+  alias Firmowid.Invoicing.SalesInvoice
   alias FirmowidUI.Components.InvoiceSourceBadge
   alias FirmowidWeb.DesignSystem.Components.InvoicingBadgeSpecs
   alias FirmowidWeb.DesignSystem.Components.InvoicingBankBadge

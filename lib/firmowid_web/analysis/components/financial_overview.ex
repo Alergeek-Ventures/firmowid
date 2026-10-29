@@ -1,6 +1,6 @@
 defmodule FirmowidWeb.Analysis.Components.FinancialOverview do
   @moduledoc """
-  Annual totals of `Firmowid.Ash.Analysis.YearSummary` and the industry's key
+  Annual totals of `Firmowid.Analysis.YearSummary` and the industry's key
   costs as shares of income, with a monthly net result bar chart. Each bar has a rich tooltip with the month's amounts and, without
   tag filters, an outline showing the result with the month's unpaid invoices.
 

@@ -10,7 +10,7 @@ defmodule FirmowidWeb.Invoicing.Components.DeductibleVat do
 
   import FirmowidUI.Components.Button
 
-  alias Firmowid.Ash.Invoicing.CostInvoice
+  alias Firmowid.Invoicing.CostInvoice
 
   @impl true
   def mount(socket) do

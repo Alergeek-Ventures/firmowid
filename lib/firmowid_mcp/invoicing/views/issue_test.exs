@@ -6,9 +6,9 @@ defmodule FirmowidMcp.Invoicing.Views.IssueTest do
   import Firmowid.AccountsFixtures
   import Phoenix.LiveViewTest
 
-  alias Firmowid.Ash.Invoicing
-  alias Firmowid.Ash.Invoicing.SalesInvoice
-  alias Firmowid.Ash.Invoicing.SalesInvoice.Preview
+  alias Firmowid.Invoicing
+  alias Firmowid.Invoicing.SalesInvoice
+  alias Firmowid.Invoicing.SalesInvoice.Preview
   alias FirmowidMcp.Invoicing.IssueInvoice
   alias FirmowidMcp.Invoicing.Views.Issue
 
@@ -136,7 +136,7 @@ defmodule FirmowidMcp.Invoicing.Views.IssueTest do
 
   defp draft_fixture!(admin, saved_on) do
     admin.member.organization_id
-    |> Firmowid.Ash.Core.get_organization!(actor: admin, tenant: admin.member.organization_id)
+    |> Firmowid.Core.get_organization!(actor: admin, tenant: admin.member.organization_id)
     |> Ash.Seed.update!(%{address: "Seller address"})
 
     Ash.Seed.seed!(SalesInvoice, %{

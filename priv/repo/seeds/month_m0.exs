@@ -25,15 +25,15 @@ defmodule Firmowid.Seeds.MonthM0 do
     linking them.
   """
 
-  alias Firmowid.Ash.Analysis.EntityTag
-  alias Firmowid.Ash.Invoicing.SalesInvoice, as: AshSalesInvoice
+  alias Firmowid.Analysis.EntityTag
+  alias Firmowid.Invoicing.SalesInvoice
   alias Firmowid.Seeds.Helpers
 
   require Ash.Query
 
-  @seed_actor %Firmowid.Ash.Core.User{
+  @seed_actor %Firmowid.Core.User{
     id: "00000000-0000-0000-0000-000000000000",
-    member: %Firmowid.Ash.Core.Member{role: :admin}
+    member: %Firmowid.Core.Member{role: :admin}
   }
 
   def seed!(ctx) do
@@ -476,10 +476,10 @@ defmodule Firmowid.Seeds.MonthM0 do
   # Builds a scope for Ash calls in seeds. Uses bytecraft.id as tenant and a
   # synthetic admin actor to bypass policies.
   defp seed_scope(bytecraft) do
-    %Firmowid.Ash.Scope{
-      actor: %Firmowid.Ash.Core.User{
+    %Firmowid.Scope{
+      actor: %Firmowid.Core.User{
         id: "00000000-0000-0000-0000-000000000000",
-        member: %Firmowid.Ash.Core.Member{role: :admin, organization_id: bytecraft.id}
+        member: %Firmowid.Core.Member{role: :admin, organization_id: bytecraft.id}
       },
       tenant: bytecraft.id
     }
@@ -487,11 +487,11 @@ defmodule Firmowid.Seeds.MonthM0 do
 
   defp find_sales_invoice(inv_number, org_id) do
     query =
-      AshSalesInvoice
+      SalesInvoice
       |> Ash.Query.filter(invoice_number == ^inv_number and organization_id == ^org_id)
       |> Ash.Query.limit(1)
 
-    case AshSalesInvoice.list(query: query, tenant: org_id, actor: @seed_actor) do
+    case SalesInvoice.list(query: query, tenant: org_id, actor: @seed_actor) do
       {:ok, [invoice | _]} -> invoice
       _ -> nil
     end

@@ -3,7 +3,7 @@ defmodule FirmowidWeb.Invoicing.Utilities.BankBadges do
   Resolves bank badge variants for invoicing-related transaction views.
   """
 
-  alias Firmowid.Ash.Finances.Transaction
+  alias Firmowid.Finances.Transaction
 
   @badge_candidates [
     "Alior Bank",

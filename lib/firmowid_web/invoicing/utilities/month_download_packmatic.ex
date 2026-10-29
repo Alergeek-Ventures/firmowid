@@ -3,7 +3,7 @@ defmodule FirmowidWeb.Invoicing.Utilities.MonthDownloadPackmatic do
   Adapts monthly invoice-download descriptors into Packmatic ZIP entries.
   """
 
-  alias Firmowid.Ash.Invoicing.Services.MonthDownloadEntries
+  alias Firmowid.Invoicing.Services.MonthDownloadEntries
   alias FirmowidWeb.Invoicing.Utilities.Navigation
 
   @doc """

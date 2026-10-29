@@ -5,7 +5,7 @@ defmodule Checks.RejectDirectHistoryRates do
   ## What this rule does
 
   This rule prevents direct usage of `Money.ExchangeRates.historic_rates/1` function
-  and encourages using `Firmowid.Ash.Currencies.Converter` module instead.
+  and encourages using `Firmowid.Currencies.Converter` module instead.
 
   ## Example
 
@@ -13,7 +13,7 @@ defmodule Checks.RejectDirectHistoryRates do
       Money.ExchangeRates.historic_rates(date)
 
       # Good
-      Firmowid.Ash.Currencies.Converter.normalize_amount_to_pln(amount, currency, date)
+      Firmowid.Currencies.Converter.normalize_amount_to_pln(amount, currency, date)
   """
 
   use Credo.Check, base_priority: :higher, category: :warning
@@ -51,7 +51,7 @@ defmodule Checks.RejectDirectHistoryRates do
     format_issue(
       issue_meta,
       message:
-        "Do not call Money.ExchangeRates.historic_rates/1 directly. Use Firmowid.Ash.Currencies.Converter instead.",
+        "Do not call Money.ExchangeRates.historic_rates/1 directly. Use Firmowid.Currencies.Converter instead.",
       line_no: line_no,
       trigger: trigger
     )

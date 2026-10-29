@@ -98,7 +98,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.SummaryTest do
   end
 
   defp scope_for(user) do
-    %Firmowid.Ash.Scope{actor: user, tenant: user.member.organization_id}
+    %Firmowid.Scope{actor: user, tenant: user.member.organization_id}
   end
 
   defp sales_invoice_fixture!(admin) do

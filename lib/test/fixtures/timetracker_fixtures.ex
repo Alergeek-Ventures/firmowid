@@ -7,11 +7,11 @@ defmodule Firmowid.TimetrackerFixtures do
   """
 
   alias Firmowid.AccountsFixtures
-  alias Firmowid.Ash.Core.Member
-  alias Firmowid.Ash.Payroll
-  alias Firmowid.Ash.Timetracker.Project, as: AshProject
-  alias Firmowid.Ash.Timetracker.ProjectUser, as: AshProjectUser
-  alias Firmowid.Ash.Timetracker.Session, as: AshSession
+  alias Firmowid.Core.Member
+  alias Firmowid.Payroll
+  alias Firmowid.Timetracker.Project
+  alias Firmowid.Timetracker.ProjectUser
+  alias Firmowid.Timetracker.Session
 
   require Ash.Query
 
@@ -22,7 +22,7 @@ defmodule Firmowid.TimetrackerFixtures do
     tenant = attrs[:organization_id] || raise "organization_id is required for project_fixture"
     opts = admin_opts(tenant)
 
-    {:ok, project} = AshProject.create(params, opts)
+    {:ok, project} = Project.create(params, opts)
     project
   end
 
@@ -45,10 +45,10 @@ defmodule Firmowid.TimetrackerFixtures do
       is_remote: attrs[:is_remote] || false
     }
 
-    {:ok, session} = AshSession.create(params, opts)
+    {:ok, session} = Session.create(params, opts)
 
     if attrs[:end_datetime] do
-      {:ok, session} = AshSession.update(session, %{end_datetime: attrs[:end_datetime]}, opts)
+      {:ok, session} = Session.update(session, %{end_datetime: attrs[:end_datetime]}, opts)
       session
     else
       session
@@ -60,7 +60,7 @@ defmodule Firmowid.TimetrackerFixtures do
     opts = admin_opts(tenant)
 
     {:ok, pu} =
-      AshProjectUser.create(
+      ProjectUser.create(
         %{member_id: member_id(user_id, tenant), project_id: project_id},
         opts
       )
@@ -92,13 +92,13 @@ defmodule Firmowid.TimetrackerFixtures do
 
   defp ensure_project_member!(member_id, project_id, opts) do
     exists? =
-      AshProjectUser
+      ProjectUser
       |> Ash.Query.filter(member_id: member_id, project_id: project_id)
       |> Ash.exists?(opts)
 
     if !exists? do
       {:ok, _project_user} =
-        AshProjectUser.create(%{member_id: member_id, project_id: project_id}, opts)
+        ProjectUser.create(%{member_id: member_id, project_id: project_id}, opts)
     end
 
     :ok

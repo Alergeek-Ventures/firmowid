@@ -10,14 +10,14 @@ defmodule FirmowidMcp.Utilities.TokenOrganization do
   tenant unset, and the OAuth server then rejects or exchanges it as before. The
   parameters are read like the OAuth server reads them, from the query and the
   body; the grant's exchange also rejects a request outside its organization
-  (`Firmowid.Ash.Core.Changes.RequireGrantTenant`).
+  (`Firmowid.Core.Changes.RequireGrantTenant`).
   """
 
   @behaviour Plug
 
   import Ash.PlugHelpers, only: [set_tenant: 2]
 
-  alias Firmowid.Ash.Core
+  alias Firmowid.Core
 
   @auth_context %{private: %{ash_authentication?: true}}
 

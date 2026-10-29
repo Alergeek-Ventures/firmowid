@@ -1,0 +1,244 @@
+defmodule Firmowid.Invoicing.Services.Timeline do
+  @moduledoc """
+  Builds a timeline for invoices from invoice fields (creation, KSeF submission, corrections).
+
+  Used by both sales and cost invoice detail views.
+  """
+
+  alias Firmowid.Invoicing.CostInvoice
+  alias Firmowid.Invoicing.SalesInvoice
+  alias Firmowid.Ksef
+  alias Firmowid.Ksef.SubmissionInfo
+
+  defguardp is_loaded(value)
+            when not is_struct(value, Ecto.Association.NotLoaded) and
+                   not is_struct(value, Ash.NotLoaded)
+
+  @type event :: %{
+          occurred_at: DateTime.t() | NaiveDateTime.t() | nil,
+          event: atom(),
+          metadata: map()
+        }
+
+  @doc "Builds a timeline of events for a sales invoice."
+  @spec for_sales_invoice(SalesInvoice.t(), SubmissionInfo.t()) :: [event()]
+  def for_sales_invoice(%SalesInvoice{} = invoice, %SubmissionInfo{} = submission_info) do
+    []
+    |> maybe_add_created_event(invoice)
+    |> maybe_add_submission_events(submission_info)
+    |> maybe_add_email_delivery_events(invoice)
+    |> maybe_add_correction_events(invoice)
+    |> Enum.sort_by(&event_sort_key/1)
+  end
+
+  @doc "Builds a timeline of events for a cost invoice."
+  @spec for_cost_invoice(CostInvoice.t()) :: [event()]
+  def for_cost_invoice(%CostInvoice{} = invoice) do
+    []
+    |> maybe_add_downloaded_event(invoice)
+    |> maybe_add_correction_events(invoice)
+    |> Enum.sort_by(&event_sort_key/1)
+  end
+
+  defp maybe_add_created_event(events, %SalesInvoice{inserted_at: inserted_at, invoice_number: number}) do
+    event = %{
+      occurred_at: to_datetime(inserted_at),
+      event: :created,
+      metadata: %{invoice_number: number}
+    }
+
+    [event | events]
+  end
+
+  defp maybe_add_submission_events(events, %SubmissionInfo{status: :not_submitted}), do: events
+
+  defp maybe_add_submission_events(events, %SubmissionInfo{status: :submitting} = info) do
+    add_submitted_event(events, info)
+  end
+
+  defp maybe_add_submission_events(events, %SubmissionInfo{status: :submitted} = info) do
+    events
+    |> add_submitted_event(info)
+    |> add_confirmed_event(info)
+  end
+
+  defp maybe_add_submission_events(events, %SubmissionInfo{status: :failed} = info) do
+    events
+    |> add_submitted_event(info)
+    |> add_failed_event(info)
+  end
+
+  defp add_submitted_event(events, %SubmissionInfo{submitted_at: nil}), do: events
+
+  defp add_submitted_event(events, %SubmissionInfo{} = info) do
+    event = %{
+      occurred_at: info.submitted_at,
+      event: :submitted,
+      metadata: %{session_reference: info.session_reference}
+    }
+
+    [event | events]
+  end
+
+  defp add_confirmed_event(events, %SubmissionInfo{} = info) do
+    event = %{
+      occurred_at: info.confirmed_at || info.submitted_at,
+      event: :confirmed,
+      metadata: %{ksef_number: info.ksef_number}
+    }
+
+    [event | events]
+  end
+
+  defp add_failed_event(events, %SubmissionInfo{} = info) do
+    event = %{
+      occurred_at: info.failed_at || info.submitted_at,
+      event: :failed,
+      metadata: %{error: info.error}
+    }
+
+    [event | events]
+  end
+
+  defp maybe_add_downloaded_event(events, %CostInvoice{ksef_permanent_storage_date: nil}), do: events
+
+  defp maybe_add_downloaded_event(events, %CostInvoice{} = invoice) do
+    event = %{
+      occurred_at: to_datetime(invoice.ksef_permanent_storage_date),
+      event: :downloaded,
+      metadata: %{ksef_number: invoice.ksef_number}
+    }
+
+    [event | events]
+  end
+
+  defp maybe_add_email_delivery_events(events, %SalesInvoice{email_deliveries: deliveries}) when is_loaded(deliveries) do
+    delivery_events = Enum.map(deliveries, &delivery_to_event/1)
+    delivery_events ++ events
+  end
+
+  defp maybe_add_email_delivery_events(events, _invoice), do: events
+
+  defp maybe_add_correction_events(events, %SalesInvoice{corrections: corrections}) when is_loaded(corrections) do
+    correction_events =
+      Enum.map(corrections, fn correction ->
+        %{
+          occurred_at: to_datetime(correction.inserted_at),
+          event: :correction_issued,
+          metadata: build_correction_metadata(correction)
+        }
+      end)
+
+    delivery_events = Enum.flat_map(corrections, &correction_delivery_events/1)
+    submission_events = correction_submission_events(corrections)
+
+    correction_events ++ delivery_events ++ submission_events ++ events
+  end
+
+  defp maybe_add_correction_events(events, %CostInvoice{correction_invoices: corrections}) when is_loaded(corrections) do
+    corrections
+    |> Enum.map(fn correction ->
+      %{
+        occurred_at: to_datetime(correction.ksef_permanent_storage_date),
+        event: :correction_downloaded,
+        metadata: build_correction_metadata(correction)
+      }
+    end)
+    |> Kernel.++(events)
+  end
+
+  defp maybe_add_correction_events(events, _invoice), do: events
+
+  defp correction_delivery_events(%{email_deliveries: deliveries}) when is_loaded(deliveries) do
+    Enum.map(deliveries, &delivery_to_event/1)
+  end
+
+  defp correction_delivery_events(_), do: []
+
+  defp correction_submission_events(corrections) do
+    corrections
+    |> Task.async_stream(
+      fn correction ->
+        Ksef.get_submission_info(correction)
+      end,
+      ordered: false
+    )
+    |> Enum.reduce([], fn
+      {:ok, submission_info}, acc ->
+        maybe_add_submission_events(acc, submission_info)
+
+      {:exit, reason}, _acc ->
+        raise "Failed to fetch submission info for correction: #{inspect(reason)}"
+    end)
+    |> Enum.map(fn
+      %{event: :submitted} = event -> %{event | event: :correction_submitted}
+      %{event: :confirmed} = event -> %{event | event: :correction_confirmed}
+      %{event: :failed} = event -> %{event | event: :correction_failed}
+    end)
+  end
+
+  defp build_correction_metadata(%SalesInvoice{} = correction) do
+    %{
+      invoice_number: correction.invoice_number,
+      invoice_id: correction.id
+    }
+  end
+
+  defp build_correction_metadata(%CostInvoice{} = correction) do
+    %{
+      invoice_identifier: correction.invoice_identifier,
+      invoice_id: correction.id,
+      ksef_number: correction.ksef_number
+    }
+  end
+
+  defp delivery_to_event(delivery) do
+    %{
+      occurred_at: delivery_occurred_at(delivery),
+      event: delivery_event_name(delivery.delivery_type, delivery.status),
+      metadata: %{
+        recipient_email: delivery.recipient_email,
+        error_message: delivery.error_message
+      }
+    }
+  end
+
+  defp delivery_event_name(:basic, :sent), do: :email_sent
+  defp delivery_event_name(:basic, :failed), do: :email_failed
+  defp delivery_event_name(:reminder, :sent), do: :reminder_sent
+  defp delivery_event_name(:reminder, :failed), do: :reminder_failed
+  defp delivery_event_name(:invoice_correction, :sent), do: :correction_email_sent
+  defp delivery_event_name(:invoice_correction, :failed), do: :correction_email_failed
+
+  defp delivery_occurred_at(%{status: :sent, sent_at: sent_at, inserted_at: inserted_at}) do
+    to_datetime(sent_at || inserted_at)
+  end
+
+  defp delivery_occurred_at(%{status: :failed, failed_at: failed_at, inserted_at: inserted_at}) do
+    to_datetime(failed_at || inserted_at)
+  end
+
+  defp to_datetime(nil), do: nil
+  defp to_datetime(%DateTime{} = dt), do: dt
+  defp to_datetime(%NaiveDateTime{} = dt), do: DateTime.from_naive!(dt, "Etc/UTC")
+
+  # sort by occurence time, resolve ties by event keys
+  defp event_sort_key(%{occurred_at: nil, event: event}), do: {0, email_event_order(event), 0}
+
+  defp event_sort_key(%{occurred_at: dt, event: event}) do
+    {DateTime.to_unix(dt, :second), email_event_order(event), DateTime.to_unix(dt, :microsecond)}
+  end
+
+  # email deliveries should always show up later in timeline (in case of time ties)
+  defp email_event_order(event)
+       when event in [
+              :email_sent,
+              :email_failed,
+              :reminder_sent,
+              :reminder_failed,
+              :correction_email_sent,
+              :correction_email_failed
+            ], do: 1
+
+  defp email_event_order(_event), do: 0
+end

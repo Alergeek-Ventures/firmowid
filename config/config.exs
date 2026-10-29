@@ -72,7 +72,7 @@ config :ex_cldr,
 config :ex_money,
   auto_start_exchange_rate_service: true,
   exchange_rates_retrieve_every: :never,
-  exchange_rates_cache_module: Firmowid.Ash.Currencies.DatabaseCache
+  exchange_rates_cache_module: Firmowid.Currencies.DatabaseCache
 
 config :firmowid, ChromicPDF,
   discard_stderr: false,
@@ -91,8 +91,8 @@ config :firmowid, Endpoint,
   pubsub_server: Firmowid.PubSub,
   live_view: [signing_salt: "s6RVH6WQ"]
 
-config :firmowid, Firmowid.Ash.Currencies.Converter, rates_provider: :mock
 config :firmowid, Firmowid.Cldr, locales: ["pl"]
+config :firmowid, Firmowid.Currencies.Converter, rates_provider: :mock
 
 # local mailer uses /mailbox route
 config :firmowid, Firmowid.Mailer, adapter: Swoosh.Adapters.Local
@@ -130,14 +130,14 @@ config :firmowid, Oban,
   ],
   plugins: [
     {Oban.Plugins.Lifeline, rescue_after: to_timeout(minute: 30)},
-    {Firmowid.Ash.Ksef.KsefAwarePruner, max_age: 60 * 60 * 24 * 30},
+    {Firmowid.Ksef.KsefAwarePruner, max_age: 60 * 60 * 24 * 30},
     {Oban.Plugins.Cron,
      timezone: "Europe/Warsaw",
      crontab: [
-       {"0 6 1 * *", Firmowid.Ash.Billing.Workers.MonthlySnapshotDispatcher, args: %{}},
-       {"15 * * * *", Firmowid.Ash.Invoicing.Workers.MatchingWorker, args: %{name: "matching"}},
-       {"45 * * * *", Firmowid.Ash.Analysis.Workers.CategoryDispatcher, args: %{}},
-       {"0 */2 * * *", Firmowid.Ash.Ksef.Workers.FetchDispatcher, args: %{}}
+       {"0 6 1 * *", Firmowid.Billing.Workers.MonthlySnapshotDispatcher, args: %{}},
+       {"15 * * * *", Firmowid.Invoicing.Workers.MatchingWorker, args: %{name: "matching"}},
+       {"45 * * * *", Firmowid.Analysis.Workers.CategoryDispatcher, args: %{}},
+       {"0 */2 * * *", Firmowid.Ksef.Workers.FetchDispatcher, args: %{}}
      ]}
   ]
 
@@ -159,19 +159,19 @@ config :firmowid,
   ecto_repos: [Firmowid.Repo],
   generators: [timestamp_type: :utc_datetime],
   ash_domains: [
-    Firmowid.Ash.Assistant,
-    Firmowid.Ash.Analysis,
-    Firmowid.Ash.Blobs,
-    Firmowid.Ash.Billing,
-    Firmowid.Ash.Core,
-    Firmowid.Ash.Currencies,
-    Firmowid.Ash.Delegations,
-    Firmowid.Ash.Finances,
-    Firmowid.Ash.Invoicing,
-    Firmowid.Ash.Payroll,
-    Firmowid.Ash.Timetracker,
-    Firmowid.Ash.Events,
-    Firmowid.Ash.Ksef,
+    Firmowid.Assistant,
+    Firmowid.Analysis,
+    Firmowid.Blobs,
+    Firmowid.Billing,
+    Firmowid.Core,
+    Firmowid.Currencies,
+    Firmowid.Delegations,
+    Firmowid.Finances,
+    Firmowid.Invoicing,
+    Firmowid.Payroll,
+    Firmowid.Timetracker,
+    Firmowid.Events,
+    Firmowid.Ksef,
     FirmowidMcp
   ]
 

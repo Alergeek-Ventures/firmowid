@@ -5,8 +5,8 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.EditTest do
   import Firmowid.AccountsFixtures
   import Phoenix.LiveViewTest
 
-  alias Firmowid.Ash.Finances
-  alias Firmowid.Ash.Invoicing.SalesInvoice
+  alias Firmowid.Finances
+  alias Firmowid.Invoicing.SalesInvoice
   alias Firmowid.InvoicingFixtures
 
   test "draft review preserves edits and issues the selected custom number to KSeF", %{conn: conn} do
@@ -125,7 +125,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.EditTest do
 
   defp draft_fixture!(admin) do
     admin.member.organization_id
-    |> Firmowid.Ash.Core.get_organization!(actor: admin, tenant: admin.member.organization_id)
+    |> Firmowid.Core.get_organization!(actor: admin, tenant: admin.member.organization_id)
     |> Ash.Seed.update!(%{address: "Seller address"})
 
     Ash.Seed.seed!(SalesInvoice, %{

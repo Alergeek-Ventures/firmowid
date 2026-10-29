@@ -15,8 +15,8 @@ defmodule FirmowidWeb.Auth.Controllers.AuthController do
   alias Assent.HTTPAdapter.HTTPResponse
   alias Assent.InvalidResponseError
   alias Firmowid.Analytics
-  alias Firmowid.Ash.Core
-  alias Firmowid.Ash.Core.Member
+  alias Firmowid.Core
+  alias Firmowid.Core.Member
   alias FirmowidWeb.Infrastructure.UserAuth
 
   require Logger

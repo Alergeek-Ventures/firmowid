@@ -15,10 +15,10 @@ defmodule FirmowidWeb.Invoicing.Components.DashboardTiles do
   import FirmowidWeb.DesignSystem.Components.InvoicingBadges, only: [bank_badge: 1]
   import Phoenix.Component, except: [link: 1]
 
-  alias Firmowid.Ash.Finances.Transaction
-  alias Firmowid.Ash.Invoicing.CostInvoice
-  alias Firmowid.Ash.Invoicing.SalesInvoice
+  alias Firmowid.Finances.Transaction
+  alias Firmowid.Invoicing.CostInvoice
   alias Firmowid.Invoicing.RecommendationThresholds
+  alias Firmowid.Invoicing.SalesInvoice
   alias FirmowidWeb.Invoicing.Utilities.Navigation
 
   attr :entry, :any, required: true

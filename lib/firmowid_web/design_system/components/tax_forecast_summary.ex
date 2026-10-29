@@ -1,6 +1,6 @@
 defmodule FirmowidWeb.DesignSystem.Components.TaxForecastSummary do
   @moduledoc """
-  Planned monthly tax reserves from `Firmowid.Ash.Analysis.TaxForecast`.
+  Planned monthly tax reserves from `Firmowid.Analysis.TaxForecast`.
 
   The summary is rendered apart from recorded documents, bank transactions and
   their totals. Unknown amounts and missing inputs stay visible instead of being

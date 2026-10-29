@@ -4,8 +4,8 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Controllers.PdfTest do
 
   import Firmowid.AccountsFixtures
 
-  alias Firmowid.Ash.Scope
   alias Firmowid.InvoicingFixtures
+  alias Firmowid.Scope
 
   test "renders a correction preview with its reference invoice amount", %{conn: conn} do
     admin = admin_fixture()

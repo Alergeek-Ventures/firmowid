@@ -7,10 +7,10 @@ defmodule FirmowidWeb.Invoicing.CostInvoices.Views.ShowTest do
   import Firmowid.FinancesFixtures
   import Phoenix.LiveViewTest
 
-  alias Firmowid.Ash.Finances.Transaction
-  alias Firmowid.Ash.Invoicing
-  alias Firmowid.Ash.Invoicing.CostInvoice
-  alias Firmowid.Ash.Scope
+  alias Firmowid.Finances.Transaction
+  alias Firmowid.Invoicing
+  alias Firmowid.Invoicing.CostInvoice
+  alias Firmowid.Scope
   alias FirmowidWeb.Invoicing.Utilities.Navigation
 
   test "shows recommendation, links transaction, and allows unlinking", %{conn: conn} do

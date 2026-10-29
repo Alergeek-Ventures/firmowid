@@ -2,7 +2,7 @@ defmodule FirmowidWeb.Invoicing.CostInvoices.Views.Inbox do
   @moduledoc false
   use FirmowidWeb, :live_view
 
-  alias Firmowid.Ash.Invoicing.InboundEmail
+  alias Firmowid.Invoicing.InboundEmail
 
   @impl true
   def mount(_params, _session, socket) do

@@ -6,12 +6,12 @@ defmodule FirmowidWeb.HoursRecord.Views.IndexTest do
   import Firmowid.TimetrackerFixtures
   import Phoenix.LiveViewTest
 
-  alias Firmowid.Ash.Blobs.Blob
-  alias Firmowid.Ash.Core
-  alias Firmowid.Ash.Payroll
-  alias Firmowid.Ash.Scope
-  alias Firmowid.Ash.SystemActor
-  alias Firmowid.Ash.Timetracker.HoursRecord, as: AshHoursRecord
+  alias Firmowid.Blobs.Blob
+  alias Firmowid.Core
+  alias Firmowid.Payroll
+  alias Firmowid.Scope
+  alias Firmowid.SystemActor
+  alias Firmowid.Timetracker.HoursRecord
 
   setup %{conn: conn} do
     admin = admin_fixture()
@@ -86,7 +86,7 @@ defmodule FirmowidWeb.HoursRecord.Views.IndexTest do
     assert render(lv) =~ "WYSŁANO"
 
     scope = %Scope{actor: employee, tenant: employee.member.organization_id}
-    {:ok, submitted_record} = AshHoursRecord.by_month(employee.member.id, 4, 2026, scope: scope)
+    {:ok, submitted_record} = HoursRecord.by_month(employee.member.id, 4, 2026, scope: scope)
     assert submitted_record.number_of_hours == 3
   end
 

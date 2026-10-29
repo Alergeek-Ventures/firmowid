@@ -2,8 +2,8 @@ defmodule FirmowidWeb.Infrastructure.Controllers.FileDownload do
   @moduledoc false
   use FirmowidWeb, :controller
 
-  alias Firmowid.Ash.Invoicing.Services.MonthDownloadEntries
   alias Firmowid.ErrorKind
+  alias Firmowid.Invoicing.Services.MonthDownloadEntries
   alias FirmowidWeb.Core.Endpoint
   alias FirmowidWeb.Infrastructure.Utilities.QueryParams
   alias FirmowidWeb.Invoicing.Utilities.InvoiceDownloadParams

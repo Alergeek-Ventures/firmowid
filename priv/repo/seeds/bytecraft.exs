@@ -5,13 +5,13 @@ defmodule Firmowid.Seeds.Bytecraft do
   Creates users, org, counterparties, projects, bank accounts, and a mock blob.
   """
 
-  alias Firmowid.Ash.Analysis.TagDefinition, as: AshTagDefinition
-  alias Firmowid.Ash.Core.Organization, as: CoreOrganization
-  alias Firmowid.Ash.Core.User, as: CoreUser
-  alias Firmowid.Ash.Invoicing.Counterparty, as: AshCounterparty
-  alias Firmowid.Ash.Ksef.Credential
-  alias Firmowid.Ash.Timetracker.Project, as: AshProject
-  alias Firmowid.Ash.Timetracker.ProjectUser, as: AshProjectUser
+  alias Firmowid.Analysis.TagDefinition
+  alias Firmowid.Core.Organization, as: CoreOrganization
+  alias Firmowid.Core.User, as: CoreUser
+  alias Firmowid.Invoicing.Counterparty
+  alias Firmowid.Ksef.Credential
+  alias Firmowid.Timetracker.Project
+  alias Firmowid.Timetracker.ProjectUser
   alias Firmowid.Seeds.Helpers
 
   require Ash.Query
@@ -63,9 +63,9 @@ defmodule Firmowid.Seeds.Bytecraft do
     }
   }
 
-  @seed_actor %Firmowid.Ash.Core.User{
+  @seed_actor %Firmowid.Core.User{
     id: "00000000-0000-0000-0000-000000000000",
-    member: %Firmowid.Ash.Core.Member{role: :admin}
+    member: %Firmowid.Core.Member{role: :admin}
   }
 
   def seed! do
@@ -246,7 +246,7 @@ defmodule Firmowid.Seeds.Bytecraft do
       Enum.each(member_ids, fn member_id ->
         if is_nil(find_project_user(tenant, project.id, member_id)) do
           Ash.Seed.seed!(
-            AshProjectUser,
+            ProjectUser,
             %{project_id: project.id, member_id: member_id, organization_id: tenant},
             tenant: tenant
           )
@@ -373,7 +373,7 @@ defmodule Firmowid.Seeds.Bytecraft do
   defp get_or_seed_counterparty!(org_id, attrs) do
     case find_counterparty(org_id, attrs) do
       nil ->
-        Ash.Seed.seed!(AshCounterparty, Map.put(attrs, :organization_id, org_id), tenant: org_id)
+        Ash.Seed.seed!(Counterparty, Map.put(attrs, :organization_id, org_id), tenant: org_id)
 
       counterparty ->
         ensure_counterparty_country!(counterparty, attrs[:country], org_id)
@@ -393,13 +393,13 @@ defmodule Firmowid.Seeds.Bytecraft do
       cond do
         attrs[:tax_id] && attrs[:tax_id] != "" ->
           Ash.Query.filter(
-            AshCounterparty,
+            Counterparty,
             tax_id == ^attrs[:tax_id] and organization_id == ^org_id
           )
 
         attrs[:display_name] ->
           Ash.Query.filter(
-            AshCounterparty,
+            Counterparty,
             display_name == ^attrs[:display_name] and organization_id == ^org_id
           )
 
@@ -424,7 +424,7 @@ defmodule Firmowid.Seeds.Bytecraft do
   defp seed_project!(tenant, name, counterparty_id) do
     tag_definition =
       Ash.Seed.upsert!(
-        AshTagDefinition,
+        TagDefinition,
         %{name: name, organization_id: tenant},
         identity: :unique_name_per_org,
         tenant: tenant
@@ -439,14 +439,14 @@ defmodule Firmowid.Seeds.Bytecraft do
       )
 
     case find_project(tenant, name) do
-      nil -> Ash.Seed.seed!(AshProject, project_attrs, tenant: tenant)
+      nil -> Ash.Seed.seed!(Project, project_attrs, tenant: tenant)
       project -> project
     end
   end
 
   defp find_project(tenant, name) do
     query =
-      AshProject
+      Project
       |> Ash.Query.filter(organization_id == ^tenant and name == ^name)
       |> Ash.Query.limit(1)
 
@@ -458,7 +458,7 @@ defmodule Firmowid.Seeds.Bytecraft do
 
   defp find_project_user(tenant, project_id, member_id) do
     query =
-      AshProjectUser
+      ProjectUser
       |> Ash.Query.filter(organization_id == ^tenant and project_id == ^project_id and member_id == ^member_id)
       |> Ash.Query.limit(1)
 

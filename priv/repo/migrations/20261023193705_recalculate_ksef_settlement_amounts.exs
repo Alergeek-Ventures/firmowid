@@ -10,7 +10,7 @@ defmodule Firmowid.Repo.Migrations.RecalculateKsefSettlementAmounts do
   def up do
     execute("""
     INSERT INTO oban.oban_jobs (queue, worker, args, max_attempts)
-    SELECT 'cost_invoices', 'Firmowid.Ash.Ksef.Workers.RecalculateSettlementAmountsWorker', '{}', 3
+    SELECT 'cost_invoices', 'Firmowid.Ksef.Workers.RecalculateSettlementAmountsWorker', '{}', 3
     WHERE EXISTS (SELECT 1 FROM cost_invoices WHERE ksef_number IS NOT NULL AND blob_id IS NOT NULL)
     """)
   end

@@ -11,10 +11,10 @@ defmodule FirmowidWeb.Management.Views.Employees do
   import Phoenix.Component, except: [link: 1]
 
   alias Ash.Notifier.Notification
-  alias Firmowid.Ash.Blobs.Blob
-  alias Firmowid.Ash.Core
-  alias Firmowid.Ash.Payroll
-  alias Firmowid.Ash.Timetracker
+  alias Firmowid.Blobs.Blob
+  alias Firmowid.Core
+  alias Firmowid.Payroll
+  alias Firmowid.Timetracker
   alias FirmowidWeb.Core.Endpoint
   alias FirmowidWeb.Infrastructure.Utilities.PosthogBusinessEvents
   alias FirmowidWeb.Management.Utilities.Navigation

@@ -5,9 +5,9 @@ defmodule FirmowidWeb.Timetracker.Views.IndexTest do
   import Firmowid.TimetrackerFixtures
   import Phoenix.LiveViewTest
 
-  alias Firmowid.Ash.Scope
-  alias Firmowid.Ash.Timetracker.Session
   alias Firmowid.Repo
+  alias Firmowid.Scope
+  alias Firmowid.Timetracker.Session
 
   describe "Timetracker page works" do
     test "renders timetracker page", %{conn: conn} do

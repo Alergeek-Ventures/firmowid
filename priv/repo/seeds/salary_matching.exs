@@ -1,12 +1,12 @@
 defmodule Firmowid.Seeds.SalaryMatching do
   @moduledoc "Reproducible salary-matching demo with amount boundaries and previous-month project hours."
 
-  alias Firmowid.Ash.Core.User
-  alias Firmowid.Ash.Payroll.UserSalary
-  alias Firmowid.Ash.Scope
-  alias Firmowid.Ash.Timetracker
-  alias Firmowid.Ash.Timetracker.ProjectUser
-  alias Firmowid.Ash.Timetracker.Session
+  alias Firmowid.Core.User
+  alias Firmowid.Payroll.UserSalary
+  alias Firmowid.Scope
+  alias Firmowid.Timetracker
+  alias Firmowid.Timetracker.ProjectUser
+  alias Firmowid.Timetracker.Session
   alias Firmowid.Seeds.Helpers
 
   @doc "Adds demo employees and unmatched transfers without clearing existing assignments."

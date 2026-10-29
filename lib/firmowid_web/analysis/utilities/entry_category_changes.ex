@@ -5,12 +5,12 @@ defmodule FirmowidWeb.Analysis.Utilities.EntryCategoryChanges do
   toggling one of the given projects.
   """
 
-  alias Firmowid.Ash.Analysis.EntityTag
-  alias Firmowid.Ash.Analysis.TagDefinition
-  alias Firmowid.Ash.Finances.Transaction
-  alias Firmowid.Ash.Invoicing.CostInvoice
-  alias Firmowid.Ash.Invoicing.SalesInvoice
-  alias Firmowid.Ash.Scope
+  alias Firmowid.Analysis.EntityTag
+  alias Firmowid.Analysis.TagDefinition
+  alias Firmowid.Finances.Transaction
+  alias Firmowid.Invoicing.CostInvoice
+  alias Firmowid.Invoicing.SalesInvoice
+  alias Firmowid.Scope
 
   @type entry :: SalesInvoice.t() | CostInvoice.t() | Transaction.t()
 

@@ -6,7 +6,7 @@ defmodule FirmowidWeb.Delegations.Components.Settlement.Trips do
   import FirmowidUI.Components.Button
   import Phoenix.Component, except: [link: 1]
 
-  alias Firmowid.Ash.Delegations.DelegationExpense.Trip
+  alias Firmowid.Delegations.DelegationExpense.Trip
   alias FirmowidWeb.Delegations.Utilities.SettlementPresentation
   alias Phoenix.LiveView.Rendered
 

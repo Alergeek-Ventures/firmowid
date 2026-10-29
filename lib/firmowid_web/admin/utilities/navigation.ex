@@ -5,8 +5,8 @@ defmodule FirmowidWeb.Admin.Utilities.Navigation do
 
   use FirmowidWeb, :verified_routes
 
-  alias Firmowid.Ash.Billing.Month
-  alias Firmowid.Ash.Billing.PlanCatalog
+  alias Firmowid.Billing.Month
+  alias Firmowid.Billing.PlanCatalog
   alias FirmowidWeb.Infrastructure.Utilities.QueryParams
 
   @list_param_keys ~w(szukaj plan tylko_nadwyzki)

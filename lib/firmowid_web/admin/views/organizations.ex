@@ -10,10 +10,10 @@ defmodule FirmowidWeb.Admin.Views.Organizations do
   import FirmowidWeb.DesignSystem.Components.CoreComponents
   import Phoenix.Component, except: [link: 1]
 
-  alias Firmowid.Ash.Billing.Month
-  alias Firmowid.Ash.Billing.PlanCatalog
-  alias Firmowid.Ash.Billing.SnapshotCalculator
-  alias Firmowid.Ash.Core
+  alias Firmowid.Billing.Month
+  alias Firmowid.Billing.PlanCatalog
+  alias Firmowid.Billing.SnapshotCalculator
+  alias Firmowid.Core
   alias FirmowidWeb.Admin.Components.SettlementComponents
   alias FirmowidWeb.Admin.Utilities.Navigation
   alias FirmowidWeb.Billing.Utilities.Worksheet

@@ -8,7 +8,7 @@ defmodule FirmowidWeb.Management.Components.LeavesTab do
   import FirmowidWeb.DesignSystem.Components.YearPicker
   import Phoenix.Component, except: [link: 1]
 
-  alias Firmowid.Ash.Timetracker
+  alias Firmowid.Timetracker
   alias FirmowidWeb.Timetracker.Utilities.LeavePresentation
 
   @impl true

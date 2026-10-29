@@ -4,7 +4,7 @@ defmodule FirmowidWeb.Timetracker.Utilities.SessionForm do
 
   import Ecto.Changeset
 
-  alias Firmowid.Ash.Timetracker.Session
+  alias Firmowid.Timetracker.Session
   alias FirmowidWeb.Infrastructure.Utilities.LocalTime
 
   embedded_schema do

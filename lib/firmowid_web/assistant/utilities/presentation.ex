@@ -5,12 +5,12 @@ defmodule FirmowidWeb.Assistant.Utilities.Presentation do
   alias Ash.Error.Forbidden
   alias Ash.Error.Invalid
   alias AshAi.ChatUI.Tools
-  alias Firmowid.Ash.Assistant
-  alias Firmowid.Ash.Core
-  alias Firmowid.Ash.Finances
-  alias Firmowid.Ash.Invoicing
-  alias Firmowid.Ash.Scope
-  alias Firmowid.Ash.Timetracker.Project
+  alias Firmowid.Assistant
+  alias Firmowid.Core
+  alias Firmowid.Finances
+  alias Firmowid.Invoicing
+  alias Firmowid.Scope
+  alias Firmowid.Timetracker.Project
   alias FirmowidWeb.Invoicing.Utilities.Navigation
   alias FirmowidWeb.Management.Utilities.Navigation, as: ManagementNavigation
 

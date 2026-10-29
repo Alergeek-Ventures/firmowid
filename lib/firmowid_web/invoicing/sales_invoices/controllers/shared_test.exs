@@ -4,11 +4,11 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Controllers.SharedTest do
 
   import Firmowid.AccountsFixtures
 
-  alias Firmowid.Ash.Blobs.Blob
-  alias Firmowid.Ash.Core
-  alias Firmowid.Ash.Invoicing.SalesInvoice
-  alias Firmowid.Ash.Scope
-  alias Firmowid.Ash.SystemActor
+  alias Firmowid.Blobs.Blob
+  alias Firmowid.Core
+  alias Firmowid.Invoicing.SalesInvoice
+  alias Firmowid.Scope
+  alias Firmowid.SystemActor
 
   setup do
     user = admin_fixture()

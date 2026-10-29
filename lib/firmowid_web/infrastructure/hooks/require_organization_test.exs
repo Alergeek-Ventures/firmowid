@@ -5,8 +5,8 @@ defmodule FirmowidWeb.Infrastructure.Hooks.RequireOrganizationTest do
   import Firmowid.AccountsFixtures
   import Phoenix.LiveViewTest
 
-  alias Firmowid.Ash.Core
-  alias Firmowid.Ash.Scope
+  alias Firmowid.Core
+  alias Firmowid.Scope
   alias FirmowidWeb.Organization.Utilities.Navigation, as: OrganizationNavigation
 
   test "an archived member is sent to onboarding on protected live routes", %{conn: conn} do

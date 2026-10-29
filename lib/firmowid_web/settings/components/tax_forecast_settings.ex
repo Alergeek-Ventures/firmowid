@@ -9,9 +9,9 @@ defmodule FirmowidWeb.Settings.Components.TaxForecastSettings do
 
   import FirmowidUI.Components.Button
 
-  alias Firmowid.Ash.Core
-  alias Firmowid.Ash.Core.Organization
-  alias Firmowid.Ash.Scope
+  alias Firmowid.Core
+  alias Firmowid.Core.Organization
+  alias Firmowid.Scope
 
   @impl true
   def update(%{current_user: user}, socket) do

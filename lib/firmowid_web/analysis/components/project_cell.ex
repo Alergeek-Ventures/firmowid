@@ -7,10 +7,10 @@ defmodule FirmowidWeb.Analysis.Components.ProjectCell do
   """
   use FirmowidWeb, :live_component
 
-  alias Firmowid.Ash.Analysis
-  alias Firmowid.Ash.Finances.Transaction
-  alias Firmowid.Ash.Invoicing.CostInvoice
-  alias Firmowid.Ash.Invoicing.SalesInvoice
+  alias Firmowid.Analysis
+  alias Firmowid.Finances.Transaction
+  alias Firmowid.Invoicing.CostInvoice
+  alias Firmowid.Invoicing.SalesInvoice
   alias FirmowidWeb.Analysis.Components.CategorySelector
   alias FirmowidWeb.Analysis.Utilities.EntryCategoryChanges
 
@@ -65,7 +65,7 @@ defmodule FirmowidWeb.Analysis.Components.ProjectCell do
   end
 
   @doc "Loads the selector's tags for a whole list at once, leaving other entries (groups) as they are."
-  @spec preload(list(), Firmowid.Ash.Scope.t()) :: list()
+  @spec preload(list(), Firmowid.Scope.t()) :: list()
   def preload(entries, scope) do
     loaded =
       entries

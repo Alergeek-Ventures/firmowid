@@ -13,8 +13,8 @@ defmodule FirmowidWeb.Auth.Components.McpConsent do
 
   import FirmowidUI.Components.Button
 
-  alias Firmowid.Ash.Core.Member
-  alias Firmowid.Ash.Core.Organization
+  alias Firmowid.Core.Member
+  alias Firmowid.Core.Organization
 
   @organizations_key {__MODULE__, :organizations}
 

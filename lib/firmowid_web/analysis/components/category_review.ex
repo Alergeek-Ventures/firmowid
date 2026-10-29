@@ -10,10 +10,10 @@ defmodule FirmowidWeb.Analysis.Components.CategoryReview do
   """
   use FirmowidWeb, :html
 
-  alias Firmowid.Ash.Analysis.IndustryTemplate
+  alias Firmowid.Analysis.IndustryTemplate
   alias Firmowid.Cldr.Number
 
-  attr :review, :map, required: true, doc: "`Firmowid.Ash.Analysis.get_category_review/3` result"
+  attr :review, :map, required: true, doc: "`Firmowid.Analysis.get_category_review/3` result"
   attr :year, :integer, required: true
 
   @doc "Renders the cost and income columns."

@@ -15,20 +15,20 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
   import Phoenix.Component, except: [link: 1]
 
   alias Ash.Notifier.Notification
-  alias Firmowid.Ash.Analysis
-  alias Firmowid.Ash.Analysis.TagDefinition
-  alias Firmowid.Ash.Analysis.TaxForecast
-  alias Firmowid.Ash.Blobs
-  alias Firmowid.Ash.Blobs.Blob
-  alias Firmowid.Ash.Finances
-  alias Firmowid.Ash.Finances.BankAccount
-  alias Firmowid.Ash.Finances.Requisition
-  alias Firmowid.Ash.Finances.Transaction
-  alias Firmowid.Ash.Invoicing
-  alias Firmowid.Ash.Invoicing.CostInvoice
-  alias Firmowid.Ash.Invoicing.SalesInvoice
-  alias Firmowid.Ash.Invoicing.TransactionGroup
-  alias Firmowid.Ash.Ksef
+  alias Firmowid.Analysis
+  alias Firmowid.Analysis.TagDefinition
+  alias Firmowid.Analysis.TaxForecast
+  alias Firmowid.Blobs
+  alias Firmowid.Blobs.Blob
+  alias Firmowid.Finances
+  alias Firmowid.Finances.BankAccount
+  alias Firmowid.Finances.Requisition
+  alias Firmowid.Finances.Transaction
+  alias Firmowid.Invoicing
+  alias Firmowid.Invoicing.CostInvoice
+  alias Firmowid.Invoicing.SalesInvoice
+  alias Firmowid.Invoicing.TransactionGroup
+  alias Firmowid.Ksef
   alias FirmowidWeb.Analysis.Components.ProjectCell
   alias FirmowidWeb.Analysis.Utilities.CategoryColors
   alias FirmowidWeb.Core.Endpoint

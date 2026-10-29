@@ -12,7 +12,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoicePayment do
   import FirmowidWeb.DesignSystem.Components.CoreComponents
   import Phoenix.Component, except: [link: 1]
 
-  alias Firmowid.Ash.Finances.BankAccount
+  alias Firmowid.Finances.BankAccount
   alias FirmowidWeb.Invoicing.SalesInvoices.Utilities.PaymentDateSuggestions
 
   @doc """

@@ -10,10 +10,10 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
   import FirmowidWeb.Invoicing.Components.StatusButton
   import Phoenix.Component, except: [link: 1]
 
-  alias Firmowid.Ash.Invoicing
-  alias Firmowid.Ash.Invoicing.SalesInvoice
-  alias Firmowid.Ash.Ksef
-  alias Firmowid.Ash.Ksef.SubmissionInfo
+  alias Firmowid.Invoicing
+  alias Firmowid.Invoicing.SalesInvoice
+  alias Firmowid.Ksef
+  alias Firmowid.Ksef.SubmissionInfo
   alias FirmowidWeb.Invoicing.Components.InvoiceDetails
   alias FirmowidWeb.Invoicing.Components.InvoiceDownloadModal
   alias FirmowidWeb.Invoicing.Components.InvoiceTimeline
@@ -26,7 +26,7 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
 
   @impl true
   def update(assigns, socket) do
-    alias Firmowid.Ash.Invoicing.Calculations.AnnotatedCorrections
+    alias Firmowid.Invoicing.Calculations.AnnotatedCorrections
     # Fetch submission info when invoice is assigned
     submission_info =
       if assigns[:invoice] do

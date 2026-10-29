@@ -5,11 +5,11 @@ defmodule FirmowidWeb.Delegations.Views.DelegationFormTest do
   import Firmowid.AccountsFixtures
   import Phoenix.LiveViewTest
 
-  alias Firmowid.Ash.Blobs.Blob
-  alias Firmowid.Ash.Delegations
-  alias Firmowid.Ash.Payroll
-  alias Firmowid.Ash.Scope
-  alias Firmowid.Ash.SystemActor
+  alias Firmowid.Blobs.Blob
+  alias Firmowid.Delegations
+  alias Firmowid.Payroll
+  alias Firmowid.Scope
+  alias Firmowid.SystemActor
 
   test "renders and validates a delegation", %{conn: conn} do
     employee = user_fixture()

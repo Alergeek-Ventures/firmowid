@@ -17,7 +17,7 @@
 # If the Bytecraft org already exists the database is considered seeded
 # and the entire script is a no-op (fast early exit).
 
-alias Firmowid.Ash.Core.Organization, as: CoreOrganization
+alias Firmowid.Core.Organization, as: CoreOrganization
 alias Firmowid.Seeds.Bytecraft
 alias Firmowid.Seeds.Cafe
 alias Firmowid.Seeds.Delegations

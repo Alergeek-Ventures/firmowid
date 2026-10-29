@@ -24,14 +24,14 @@ defmodule Firmowid.Oauth2Server do
 
   use AshAuthentication.Oauth2Server,
     otp_app: :firmowid,
-    user_resource: Firmowid.Ash.Core.User,
-    issuer_url: {Firmowid.Ash.Core.Secrets, []},
-    resource_url: {Firmowid.Ash.Core.Secrets, []},
-    signing_secret: {Firmowid.Ash.Core.Secrets, []},
-    client_resource: Firmowid.Ash.Core.OauthClient,
-    authorization_code_resource: Firmowid.Ash.Core.OauthAuthorizationCode,
-    refresh_token_resource: Firmowid.Ash.Core.OauthRefreshToken,
-    consent_resource: Firmowid.Ash.Core.OauthConsent,
+    user_resource: Firmowid.Core.User,
+    issuer_url: {Firmowid.Core.Secrets, []},
+    resource_url: {Firmowid.Core.Secrets, []},
+    signing_secret: {Firmowid.Core.Secrets, []},
+    client_resource: Firmowid.Core.OauthClient,
+    authorization_code_resource: Firmowid.Core.OauthAuthorizationCode,
+    refresh_token_resource: Firmowid.Core.OauthRefreshToken,
+    consent_resource: Firmowid.Core.OauthConsent,
     scopes: ["mcp"],
     # Dynamic client registration (RFC 7591). The library default is
     # `false` for safety; the installer turns it on because most

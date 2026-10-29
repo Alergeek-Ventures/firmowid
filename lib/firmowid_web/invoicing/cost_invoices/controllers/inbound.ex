@@ -3,12 +3,12 @@ defmodule FirmowidWeb.Invoicing.CostInvoices.Controllers.Inbound do
   use FirmowidWeb, :controller
 
   alias Ash.Error.Invalid
-  alias Firmowid.Ash.Core
-  alias Firmowid.Ash.Invoicing.InboundEmail
-  alias Firmowid.Ash.Invoicing.Workers.InboundEmailWorker
-  alias Firmowid.Ash.Scope
-  alias Firmowid.Ash.SystemActor
+  alias Firmowid.Core
   alias Firmowid.ErrorKind
+  alias Firmowid.Invoicing.InboundEmail
+  alias Firmowid.Invoicing.Workers.InboundEmailWorker
+  alias Firmowid.Scope
+  alias Firmowid.SystemActor
 
   require Logger
 

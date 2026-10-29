@@ -7,7 +7,7 @@ defmodule FirmowidWeb.Management.Components.ProfileTab do
   import FirmowidWeb.Management.Components.Card
   import Phoenix.Component, except: [link: 1]
 
-  alias Firmowid.Ash.Payroll
+  alias Firmowid.Payroll
   alias FirmowidWeb.Infrastructure.Utilities.TimeFormatter
 
   @impl true

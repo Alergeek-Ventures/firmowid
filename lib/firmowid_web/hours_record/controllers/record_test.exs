@@ -4,9 +4,9 @@ defmodule FirmowidWeb.HoursRecord.Controllers.RecordTest do
 
   import Firmowid.AccountsFixtures
 
-  alias Firmowid.Ash.Blobs.Blob
-  alias Firmowid.Ash.Timetracker.HoursRecord, as: AshHoursRecord
+  alias Firmowid.Blobs.Blob
   alias Firmowid.Repo
+  alias Firmowid.Timetracker.HoursRecord
 
   test "an employee's hours record preview renders with their name", %{conn: conn} do
     employee = user_fixture(%{name: "Sable Orin"})
@@ -34,7 +34,7 @@ defmodule FirmowidWeb.HoursRecord.Controllers.RecordTest do
 
     record =
       Repo.insert!(
-        %AshHoursRecord{
+        %HoursRecord{
           id: Ash.UUIDv7.generate(),
           member_id: employee_b.member.id,
           blob_id: blob.id,

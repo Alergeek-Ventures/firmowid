@@ -5,7 +5,7 @@ defmodule FirmowidWeb.Settings.Utilities.Navigation do
 
   use FirmowidWeb, :verified_routes
 
-  alias Firmowid.Ash.Core.UserRole
+  alias Firmowid.Core.UserRole
 
   @type role :: UserRole.t()
   @type tab_id :: :account | :profile | :organization | :subscription | :invoices

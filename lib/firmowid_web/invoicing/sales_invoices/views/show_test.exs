@@ -7,17 +7,17 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.ShowTest do
   import Firmowid.FinancesFixtures
   import Phoenix.LiveViewTest
 
-  alias Firmowid.Ash.Finances
-  alias Firmowid.Ash.Finances.Transaction
-  alias Firmowid.Ash.Invoicing
-  alias Firmowid.Ash.Invoicing.SalesInvoice
-  alias Firmowid.Ash.Invoicing.SalesInvoiceItem
-  alias Firmowid.Ash.Ksef.Credential
-  alias Firmowid.Ash.Ksef.KsefTestHelpers
-  alias Firmowid.Ash.Ksef.Workers.SubmissionWorker
-  alias Firmowid.Ash.Scope
+  alias Firmowid.Finances
+  alias Firmowid.Finances.Transaction
+  alias Firmowid.Invoicing
+  alias Firmowid.Invoicing.SalesInvoice
+  alias Firmowid.Invoicing.SalesInvoiceItem
   alias Firmowid.InvoicingFixtures
+  alias Firmowid.Ksef.Credential
+  alias Firmowid.Ksef.KsefTestHelpers
+  alias Firmowid.Ksef.Workers.SubmissionWorker
   alias Firmowid.Repo
+  alias Firmowid.Scope
   alias Firmowid.Test.Support.InvoicingCopyAssertions
   alias FirmowidWeb.Invoicing.Utilities.Navigation
 

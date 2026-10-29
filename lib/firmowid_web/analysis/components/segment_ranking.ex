@@ -19,7 +19,7 @@ defmodule FirmowidWeb.Analysis.Components.SegmentRanking do
     required: true,
     doc: "`ProjectProfitability.from_year_summary/2` result"
 
-  attr :review, :map, required: true, doc: "`Firmowid.Ash.Analysis.get_category_review/2` result"
+  attr :review, :map, required: true, doc: "`Firmowid.Analysis.get_category_review/2` result"
   attr :year, :integer, required: true
 
   attr :with_overhead, :boolean,

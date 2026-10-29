@@ -7,7 +7,7 @@ defmodule FirmowidWeb.Invoicing.Utilities.PriceInput do
   unit price before Ash validation/submission.
   """
 
-  alias Firmowid.Ash.Ksef.VatRate
+  alias Firmowid.Ksef.VatRate
 
   @doc "Returns the gross multiplier for a KSeF VAT rate code."
   @spec gross_multiplier(String.t() | nil) :: Decimal.t()

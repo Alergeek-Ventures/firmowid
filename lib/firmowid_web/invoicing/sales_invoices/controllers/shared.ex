@@ -12,11 +12,11 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Controllers.Shared do
   """
   use FirmowidWeb, :controller
 
-  alias Firmowid.Ash.Invoicing
-  alias Firmowid.Ash.Invoicing.SalesInvoice
-  alias Firmowid.Ash.Invoicing.Services.SalesInvoicePdf
-  alias Firmowid.Ash.Scope
-  alias Firmowid.Ash.SystemActor
+  alias Firmowid.Invoicing
+  alias Firmowid.Invoicing.SalesInvoice
+  alias Firmowid.Invoicing.Services.SalesInvoicePdf
+  alias Firmowid.Scope
+  alias Firmowid.SystemActor
   alias FirmowidWeb.Invoicing.Utilities.QueryCodec
 
   require Logger

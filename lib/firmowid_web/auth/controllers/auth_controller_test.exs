@@ -11,8 +11,8 @@ defmodule FirmowidWeb.Auth.Controllers.AuthControllerTest do
   alias AshAuthentication.Jwt
   alias AshAuthentication.Plug.Helpers
   alias AshAuthentication.TokenResource
-  alias Firmowid.Ash.Core
-  alias Firmowid.Ash.Core.Token
+  alias Firmowid.Core
+  alias Firmowid.Core.Token
   alias Phoenix.Socket.Broadcast
 
   test "logout revokes the session token and broadcasts its exact topic", %{conn: conn} do

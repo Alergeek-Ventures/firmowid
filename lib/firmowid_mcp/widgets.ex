@@ -20,7 +20,7 @@ defmodule FirmowidMcp.Widgets do
   def for_resource(uri), do: Enum.find(all(), &(&1.resource_uri() == uri))
 
   @doc "Runs the authorized AshAi data tool used by a widget, without invoking its presentation tool."
-  @spec execute(module(), map(), Firmowid.Ash.Scope.t()) ::
+  @spec execute(module(), map(), Firmowid.Scope.t()) ::
           {:ok, map(), term()} | {:error, term()}
   def execute(app, arguments, %{actor: actor, tenant: tenant}) do
     tool =

@@ -8,9 +8,9 @@ defmodule FirmowidWeb.Management.Components.ProjectsTab do
   import FirmowidWeb.Infrastructure.Flags, only: [flag_enabled?: 2]
   import FirmowidWeb.Management.Components.HoursRecordStatus, only: [hours_record_status: 1]
 
-  alias Firmowid.Ash.Payroll
-  alias Firmowid.Ash.Timetracker
-  alias Firmowid.Ash.Timetracker.HoursRecord
+  alias Firmowid.Payroll
+  alias Firmowid.Timetracker
+  alias Firmowid.Timetracker.HoursRecord
   alias FirmowidWeb.Management.Components.WorkDistribution
   alias FirmowidWeb.Management.Utilities.Navigation
   alias FirmowidWeb.Payroll.Components.MonthlyPayout

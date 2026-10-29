@@ -1,0 +1,895 @@
+defmodule Firmowid.Finances.Changes.SyncTransactionsTest do
+  @moduledoc false
+  use Firmowid.DataCase
+
+  import Ash.Expr
+  import Firmowid.AccountsFixtures
+  import Firmowid.FinancesFixtures, only: [bank_account_fixture!: 2]
+
+  alias AshOban.Signals.Worker
+  alias Firmowid.Events
+  alias Firmowid.Events.Event
+  alias Firmowid.Finances
+  alias Firmowid.Finances.BankAccount
+  alias Firmowid.Finances.BankAccount.Worker.SyncTransactions
+  alias Firmowid.Finances.DuplicateTransactionMatcher
+  alias Firmowid.Finances.Requisition
+  alias Firmowid.Finances.Transaction
+  alias Firmowid.SystemActor
+
+  require Ash.Query
+
+  setup do
+    user = admin_fixture()
+    org_id = user.member.organization_id
+
+    bank_account_1 =
+      Ash.Seed.seed!(
+        BankAccount,
+        %{
+          iban: "PL11111111111111111111111111",
+          currency: "PLN",
+          name: "Primary account",
+          owner_name: "Firmowid",
+          institution_id: "NEST_BANK_CORPORATE_NESBPLPW",
+          institution_name: "Test Bank",
+          gocardless_id: "gc-account-1"
+        },
+        tenant: org_id
+      )
+
+    bank_account_2 =
+      Ash.Seed.seed!(
+        BankAccount,
+        %{
+          iban: "PL22222222222222222222222222",
+          currency: "PLN",
+          name: "Secondary account",
+          owner_name: "Firmowid",
+          institution_id: "OTHER_BANK",
+          institution_name: "Test Bank",
+          gocardless_id: "gc-account-2"
+        },
+        tenant: org_id
+      )
+
+    actor = %SystemActor{org_id: org_id, role: :bank_sync}
+
+    {:ok, org_id: org_id, user: user, actor: actor, bank_account_1: bank_account_1, bank_account_2: bank_account_2}
+  end
+
+  describe "upsert_from_sync identity" do
+    test "upserts within the same bank account", ctx do
+      attrs = transaction_attrs(ctx.bank_account_1.id, "gc-internal-1")
+
+      assert {:ok, first} =
+               Finances.upsert_transaction_from_sync(attrs,
+                 actor: ctx.actor,
+                 tenant: ctx.org_id
+               )
+
+      assert {:ok, second} =
+               Finances.upsert_transaction_from_sync(
+                 Map.merge(attrs, %{
+                   transaction_id: "provider-2",
+                   remittance_information_unstructured: "updated remittance"
+                 }),
+                 actor: ctx.actor,
+                 tenant: ctx.org_id
+               )
+
+      query = Ash.Query.filter(Transaction, expr(bank_account_id == ^ctx.bank_account_1.id))
+
+      persisted =
+        Finances.list_transactions!(%{}, query: query, actor: ctx.actor, tenant: ctx.org_id)
+
+      assert length(persisted) == 1
+      assert first.id == second.id
+      assert hd(persisted).transaction_id == "provider-2"
+      assert hd(persisted).remittance_information_unstructured == "updated remittance"
+    end
+
+    test "does not collapse transactions from different bank accounts", ctx do
+      attrs = transaction_attrs(ctx.bank_account_1.id, "shared-internal-id")
+
+      assert {:ok, tx_1} =
+               Finances.upsert_transaction_from_sync(attrs,
+                 actor: ctx.actor,
+                 tenant: ctx.org_id
+               )
+
+      assert {:ok, tx_2} =
+               Finances.upsert_transaction_from_sync(
+                 transaction_attrs(ctx.bank_account_2.id, "shared-internal-id"),
+                 actor: ctx.actor,
+                 tenant: ctx.org_id
+               )
+
+      query =
+        Transaction
+        |> Ash.Query.filter(expr(internal_transaction_id == "shared-internal-id"))
+        |> Ash.Query.sort(:bank_account_id)
+
+      persisted =
+        Finances.list_transactions!(%{}, query: query, actor: ctx.actor, tenant: ctx.org_id)
+
+      assert length(persisted) == 2
+      assert tx_1.id != tx_2.id
+
+      assert Enum.map(persisted, & &1.bank_account_id) == [
+               ctx.bank_account_1.id,
+               ctx.bank_account_2.id
+             ]
+    end
+  end
+
+  describe "sync replay window" do
+    @tag capture_log: true
+    test "preserves two independent payments when the original is still in the snapshot", ctx do
+      today = Date.utc_today()
+
+      for account <- [ctx.bank_account_1, ctx.bank_account_2] do
+        account.id
+        |> transaction_attrs("payment-1")
+        |> Map.merge(%{
+          transaction_id: "provider-payment-1",
+          booking_date: today,
+          value_date: today
+        })
+        |> Finances.upsert_transaction_from_sync!(actor: ctx.actor, tenant: ctx.org_id)
+      end
+
+      stub_booked_transactions([
+        api_transaction("payment-1", today),
+        api_transaction("payment-2", today)
+      ])
+
+      assert {:ok, _account} =
+               ctx.bank_account_1
+               |> Ash.Changeset.for_update(:sync_from_gocardless, %{},
+                 actor: ctx.user,
+                 tenant: ctx.org_id
+               )
+               |> Ash.update(actor: ctx.user, tenant: ctx.org_id)
+
+      persisted = Finances.list_transactions!(%{}, actor: ctx.actor, tenant: ctx.org_id)
+      payments = Enum.filter(persisted, &(&1.bank_account_id == ctx.bank_account_1.id))
+
+      assert Enum.sort(Enum.map(payments, & &1.internal_transaction_id)) == [
+               "payment-1",
+               "payment-2"
+             ]
+
+      assert Enum.reduce(payments, Decimal.new(0), &Decimal.add(Money.to_decimal(&1.amount), &2)) ==
+               Decimal.new("200.00")
+
+      assert [%{internal_transaction_id: "payment-1"}] =
+               Enum.filter(persisted, &(&1.bank_account_id == ctx.bank_account_2.id))
+    end
+
+    @tag capture_log: true
+    test "preserves a known identity when correcting dates outside the heuristic window", ctx do
+      today = Date.utc_today()
+
+      for {id, date} <- [{"payment-1", Date.add(today, -5)}, {"payment-2", today}] do
+        ctx.bank_account_1.id
+        |> transaction_attrs(id)
+        |> Map.merge(%{transaction_id: "provider-#{id}", booking_date: date, value_date: date})
+        |> Finances.upsert_transaction_from_sync!(actor: ctx.actor, tenant: ctx.org_id)
+      end
+
+      stub_booked_transactions([api_transaction("payment-1", today)])
+
+      assert {:ok, _account} =
+               ctx.bank_account_1
+               |> Ash.Changeset.for_update(:sync_from_gocardless, %{},
+                 actor: ctx.user,
+                 tenant: ctx.org_id
+               )
+               |> Ash.update(actor: ctx.user, tenant: ctx.org_id)
+
+      dates =
+        %{}
+        |> Finances.list_transactions!(actor: ctx.actor, tenant: ctx.org_id)
+        |> Enum.filter(&(&1.bank_account_id == ctx.bank_account_1.id))
+        |> Map.new(&{&1.internal_transaction_id, {&1.transaction_id, &1.booking_date}})
+
+      assert dates == %{
+               "payment-1" => {"provider-payment-1", today},
+               "payment-2" => {"provider-payment-2", today}
+             }
+    end
+
+    test "canonicalizes a sparse Revolut TOPUP transaction", ctx do
+      today = Date.utc_today()
+
+      stub_booked_transactions([
+        %{
+          "internalTransactionId" => "revolut-topup-internal-id",
+          "transactionId" => "revolut-topup-provider-id",
+          "debtorName" => "Revolut Payments UAB",
+          "debtorAccount" => %{"iban" => "LT123456789012345678"},
+          "creditorName" => nil,
+          "creditorAccount" => nil,
+          "transactionAmount" => %{"amount" => "42.00", "currency" => "PLN"},
+          "bookingDate" => Date.to_iso8601(today),
+          "valueDate" => Date.to_iso8601(today),
+          "remittanceInformationUnstructured" => nil,
+          "remittanceInformationUnstructuredArray" => ["Card top up", "January balance"],
+          "proprietaryBankTransactionCode" => "TOPUP"
+        }
+      ])
+
+      assert {:ok, _bank_account} =
+               ctx.bank_account_1
+               |> Ash.Changeset.for_update(:sync_from_gocardless, %{},
+                 actor: ctx.user,
+                 tenant: ctx.org_id
+               )
+               |> Ash.update(actor: ctx.user, tenant: ctx.org_id)
+
+      persisted =
+        %{}
+        |> Finances.list_transactions!(actor: ctx.actor, tenant: ctx.org_id)
+        |> Enum.filter(&(&1.internal_transaction_id == "revolut-topup-internal-id"))
+
+      assert [transaction] = persisted
+      assert transaction.amount == Money.new!("PLN", Decimal.new("42.00"))
+      assert transaction.remittance_information_unstructured == "Card top up | January balance"
+
+      assert {transaction.debtor_name, transaction.debtor_account} ==
+               {"Revolut Payments UAB", "LT123456789012345678"}
+
+      assert {transaction.creditor_name, transaction.creditor_account} ==
+               {ctx.bank_account_1.owner_name, ctx.bank_account_1.iban}
+    end
+
+    test "imports full history on first successful sync", ctx do
+      old_booking_date = Date.add(Date.utc_today(), -80)
+
+      stub_booked_transactions([
+        api_transaction("hist-1", old_booking_date),
+        api_transaction("hist-2", Date.utc_today())
+      ])
+
+      assert {:ok, _bank_account} =
+               ctx.bank_account_1
+               |> Ash.Changeset.for_update(:sync_from_gocardless, %{},
+                 actor: ctx.user,
+                 tenant: ctx.org_id
+               )
+               |> Ash.update(actor: ctx.user, tenant: ctx.org_id)
+
+      persisted =
+        %{}
+        |> Finances.list_transactions!(actor: ctx.actor, tenant: ctx.org_id)
+        |> Enum.filter(&(&1.bank_account_id == ctx.bank_account_1.id))
+
+      assert Enum.sort(Enum.map(persisted, & &1.internal_transaction_id)) == ["hist-1", "hist-2"]
+    end
+
+    test "filters transactions older than dynamic replay cutoff after prior success", ctx do
+      last_success_at = DateTime.shift(DateTime.utc_now(), day: -20)
+      cutoff_date = Date.add(Date.utc_today(), -27)
+
+      seed_successful_sync_event(ctx.bank_account_1, ctx.org_id, last_success_at)
+
+      stub_booked_transactions([
+        api_transaction("kept-window", cutoff_date),
+        api_transaction("dropped-old", Date.add(cutoff_date, -1)),
+        api_transaction("kept-cutoff", cutoff_date)
+      ])
+
+      assert {:ok, _bank_account} =
+               ctx.bank_account_1
+               |> Ash.Changeset.for_update(:sync_from_gocardless, %{},
+                 actor: ctx.user,
+                 tenant: ctx.org_id
+               )
+               |> Ash.update(actor: ctx.user, tenant: ctx.org_id)
+
+      persisted_ids =
+        %{}
+        |> Finances.list_transactions!(actor: ctx.actor, tenant: ctx.org_id)
+        |> Enum.filter(&(&1.bank_account_id == ctx.bank_account_1.id))
+        |> Enum.map(& &1.internal_transaction_id)
+        |> Enum.sort()
+
+      assert persisted_ids == ["kept-cutoff", "kept-window"]
+    end
+  end
+
+  describe "expired requisition handling" do
+    @describetag capture_log: true
+
+    test "does not select expired connections or call the bank for an already queued job", ctx do
+      requisition = seed_requisition(ctx.org_id, :expired)
+      bank_account = seed_bank_account_with_requisition(ctx.org_id, requisition.id)
+
+      candidates =
+        for status <- [:accepted, :pending, :rejected] do
+          parent = seed_requisition(ctx.org_id, status)
+
+          {status,
+           bank_account_fixture!(ctx.user, %{
+             requisition_id: parent.id,
+             gocardless_id: "synthetic-#{status}",
+             institution_name: "Synthetic Bank"
+           })}
+        end
+
+      ids =
+        [actor: ctx.user, tenant: ctx.org_id]
+        |> Finances.list_bank_accounts_for_sync!()
+        |> Enum.map(& &1.id)
+
+      refute bank_account.id in ids
+      assert ctx.bank_account_1.id in ids
+
+      Enum.each(candidates, fn {status, account} ->
+        assert account.id in ids == (status == :accepted)
+      end)
+
+      Req.Test.stub(:bank_data_transactions, fn _conn ->
+        flunk("Expired connections must not call the bank")
+      end)
+
+      assert {:cancel, :trigger_no_longer_applies} =
+               SyncTransactions.perform(%Oban.Job{
+                 args: %{"primary_key" => %{"id" => bank_account.id}, "tenant" => ctx.org_id},
+                 attempt: 1,
+                 max_attempts: 5
+               })
+    end
+
+    test "cancels instead of expiring the same requisition again", ctx do
+      requisition = seed_requisition(ctx.org_id, :expired)
+      bank_account = seed_bank_account_with_requisition(ctx.org_id, requisition.id)
+      stub_expired_eua()
+
+      assert {:error, error} =
+               bank_account
+               |> Ash.Changeset.for_update(:sync_from_gocardless, %{},
+                 actor: ctx.user,
+                 tenant: ctx.org_id
+               )
+               |> Ash.update(actor: ctx.user, tenant: ctx.org_id)
+
+      assert {:cancel, :bank_connection_expired} = AshOban.check_for_oban_return(error)
+    end
+
+    test "worker cancels an expired EUA without losing sync history or the reconnect replay window",
+         ctx do
+      requisition = seed_requisition(ctx.org_id, :accepted)
+      bank_account = seed_bank_account_with_requisition(ctx.org_id, requisition.id)
+
+      last_success_at =
+        DateTime.utc_now() |> DateTime.shift(day: -60) |> DateTime.truncate(:second)
+
+      seed_successful_sync_event(bank_account, ctx.org_id, last_success_at)
+
+      assert {:ok, _} =
+               BankAccount.mark_sync_failed(bank_account, actor: ctx.user, tenant: ctx.org_id)
+
+      stub_expired_eua()
+
+      job = %Oban.Job{
+        args: %{"primary_key" => %{"id" => bank_account.id}, "tenant" => ctx.org_id},
+        attempt: 1,
+        max_attempts: 5
+      }
+
+      assert {:cancel, :bank_connection_expired} =
+               Oban.Testing.with_testing_mode(:manual, fn -> SyncTransactions.perform(job) end)
+
+      assert {:ok, refreshed} =
+               Finances.get_requisition(requisition.id,
+                 actor: ctx.user,
+                 tenant: ctx.org_id
+               )
+
+      assert refreshed.status == :expired
+
+      assert {:ok, persisted_success_at} =
+               Events.last_successful_sync_at(bank_account, actor: ctx.actor, tenant: ctx.org_id)
+
+      assert DateTime.compare(persisted_success_at, last_success_at) == :eq
+
+      account =
+        Finances.get_bank_account!(bank_account.id,
+          not_found_error?: false,
+          load: [:broken?, :latest_successful_sync_at],
+          authorize?: false,
+          actor: ctx.user,
+          tenant: ctx.org_id
+        )
+
+      assert account.broken?
+      assert DateTime.compare(account.latest_successful_sync_at, last_success_at) == :eq
+      assert Repo.aggregate(from(e in Event, where: e.record_id == ^bank_account.id), :count) == 2
+
+      assert Repo.aggregate(
+               from(t in Transaction, where: t.bank_account_id == ^bank_account.id),
+               :count
+             ) == 0
+
+      refute_enqueued(worker: Worker, args: %{signal: "bank_account_synced"})
+
+      assert {:cancel, :trigger_no_longer_applies} =
+               SyncTransactions.perform(job)
+
+      reconnected = seed_requisition(ctx.org_id, :accepted)
+
+      assert {:ok, _} =
+               bank_account
+               |> Map.take([
+                 :iban,
+                 :currency,
+                 :name,
+                 :owner_name,
+                 :institution_id,
+                 :institution_name,
+                 :gocardless_id
+               ])
+               |> Map.put(:requisition_id, reconnected.id)
+               |> Finances.sync_bank_account(actor: ctx.user, tenant: ctx.org_id)
+
+      stub_booked_transactions([
+        api_transaction("synthetic-missed", Date.add(Date.utc_today(), -30)),
+        api_transaction("synthetic-recent", Date.add(Date.utc_today(), -1))
+      ])
+
+      assert {:ok, _} =
+               Oban.Testing.with_testing_mode(:manual, fn -> SyncTransactions.perform(job) end)
+
+      persisted_ids =
+        Repo.all(
+          from(t in Transaction,
+            where: t.bank_account_id == ^bank_account.id,
+            select: t.internal_transaction_id,
+            order_by: t.internal_transaction_id
+          )
+        )
+
+      assert persisted_ids == ["synthetic-missed", "synthetic-recent"]
+      assert_enqueued(worker: Worker, args: %{signal: "bank_account_synced"})
+    end
+
+    test "propagates an expiration failure instead of cancelling the job", ctx do
+      requisition = seed_requisition(ctx.org_id, :rejected)
+      bank_account = seed_bank_account_with_requisition(ctx.org_id, requisition.id)
+      stub_expired_eua()
+
+      assert {:error, error} =
+               BankAccount.sync_from_gocardless(bank_account, actor: ctx.user, tenant: ctx.org_id)
+
+      assert AshOban.check_for_oban_return(error) == nil
+      assert Repo.aggregate(from(e in Event, where: e.record_id == ^bank_account.id), :count) == 0
+
+      assert {:ok, %{status: :rejected}} =
+               Finances.get_requisition(requisition.id, actor: ctx.user, tenant: ctx.org_id)
+    end
+
+    test "rejects a surrounding transaction before calling the bank", ctx do
+      Req.Test.stub(:bank_data_transactions, fn _conn ->
+        flunk("Bank sync must not run inside a surrounding transaction")
+      end)
+
+      assert {:ok, {:error, error}} =
+               Repo.transaction(fn ->
+                 BankAccount.sync_from_gocardless(ctx.bank_account_1,
+                   actor: ctx.user,
+                   tenant: ctx.org_id
+                 )
+               end)
+
+      assert Exception.message(error) =~ "Bank sync must run outside an existing transaction"
+      assert AshOban.check_for_oban_return(error) == nil
+
+      assert Repo.aggregate(
+               from(e in Event, where: e.record_id == ^ctx.bank_account_1.id),
+               :count
+             ) == 0
+    end
+
+    test "cancels an expired EUA without a parent requisition", ctx do
+      stub_expired_eua()
+
+      assert {:error, error} =
+               ctx.bank_account_1
+               |> Ash.Changeset.for_update(:sync_from_gocardless, %{},
+                 actor: ctx.user,
+                 tenant: ctx.org_id
+               )
+               |> Ash.update(actor: ctx.user, tenant: ctx.org_id)
+
+      assert {:cancel, :bank_connection_expired} = AshOban.check_for_oban_return(error)
+
+      assert Repo.aggregate(
+               from(e in Event, where: e.record_id == ^ctx.bank_account_1.id),
+               :count
+             ) == 0
+    end
+  end
+
+  describe "fallback dedupe" do
+    test "dedupes sparse legacy own-side fields against completed parser fields", ctx do
+      previous_sync_at = DateTime.shift(DateTime.utc_now(), day: -10)
+      seed_successful_sync_event(ctx.bank_account_1, ctx.org_id, previous_sync_at)
+
+      assert {:ok, existing_transaction} =
+               ctx.bank_account_1.id
+               |> transaction_attrs("legacy-internal-id")
+               |> Map.merge(%{
+                 transaction_id: "legacy-provider-id",
+                 creditor_name: "N/A",
+                 creditor_account: "N/A",
+                 booking_date: Date.utc_today(),
+                 value_date: Date.utc_today(),
+                 remittance_information_unstructured: "legacy remittance"
+               })
+               |> Finances.upsert_transaction_from_sync(
+                 actor: ctx.actor,
+                 tenant: ctx.org_id
+               )
+
+      today = Date.utc_today()
+
+      stub_booked_transactions([
+        %{
+          "internalTransactionId" => "current-internal-id",
+          "transactionId" => "current-provider-id",
+          "debtorName" => "Example Debtor",
+          "debtorAccount" => %{"iban" => "PL001"},
+          "creditorName" => ctx.bank_account_1.owner_name,
+          "creditorAccount" => %{"iban" => ctx.bank_account_1.iban},
+          "transactionAmount" => %{"amount" => "100.00", "currency" => "PLN"},
+          "bookingDate" => Date.to_iso8601(today),
+          "valueDate" => Date.to_iso8601(today),
+          "remittanceInformationUnstructured" => "legacy remittance"
+        }
+      ])
+
+      assert {:ok, _bank_account} =
+               ctx.bank_account_1
+               |> Ash.Changeset.for_update(:sync_from_gocardless, %{},
+                 actor: ctx.user,
+                 tenant: ctx.org_id
+               )
+               |> Ash.update(actor: ctx.user, tenant: ctx.org_id)
+
+      persisted =
+        %{}
+        |> Finances.list_transactions!(actor: ctx.actor, tenant: ctx.org_id)
+        |> Enum.filter(&(&1.bank_account_id == ctx.bank_account_1.id))
+
+      assert [transaction] = persisted
+      assert transaction.id == existing_transaction.id
+      assert transaction.internal_transaction_id == "legacy-internal-id"
+    end
+
+    test "uses account-aware buckets for contradictory positive-signed expenses", ctx do
+      previous_sync_at = DateTime.shift(DateTime.utc_now(), day: -10)
+      seed_successful_sync_event(ctx.bank_account_1, ctx.org_id, previous_sync_at)
+
+      assert {:ok, existing_transaction} =
+               ctx.bank_account_1.id
+               |> transaction_attrs("legacy-expense-id")
+               |> Map.merge(%{
+                 transaction_id: "legacy-provider-id",
+                 debtor_name: "Legacy own name",
+                 debtor_account: ctx.bank_account_1.iban,
+                 creditor_name: "External creditor",
+                 creditor_account: "PL999",
+                 booking_date: Date.utc_today(),
+                 value_date: Date.utc_today(),
+                 remittance_information_unstructured: "expense remittance"
+               })
+               |> Finances.upsert_transaction_from_sync(
+                 actor: ctx.actor,
+                 tenant: ctx.org_id
+               )
+
+      today = Date.utc_today()
+
+      stub_booked_transactions([
+        %{
+          "internalTransactionId" => "incoming-expense-id",
+          "transactionId" => "incoming-provider-id",
+          "debtorName" => "Provider own name",
+          "debtorAccount" => %{"iban" => ctx.bank_account_1.iban},
+          "creditorName" => "External creditor",
+          "creditorAccount" => %{"iban" => "PL999"},
+          "transactionAmount" => %{"amount" => "100.00", "currency" => "PLN"},
+          "bookingDate" => Date.to_iso8601(today),
+          "valueDate" => Date.to_iso8601(today),
+          "remittanceInformationUnstructured" => "expense remittance"
+        }
+      ])
+
+      assert {:ok, _bank_account} =
+               ctx.bank_account_1
+               |> Ash.Changeset.for_update(:sync_from_gocardless, %{},
+                 actor: ctx.user,
+                 tenant: ctx.org_id
+               )
+               |> Ash.update(actor: ctx.user, tenant: ctx.org_id)
+
+      persisted =
+        %{}
+        |> Finances.list_transactions!(actor: ctx.actor, tenant: ctx.org_id)
+        |> Enum.filter(&(&1.bank_account_id == ctx.bank_account_1.id))
+
+      assert [transaction] = persisted
+      assert transaction.id == existing_transaction.id
+      assert transaction.internal_transaction_id == "legacy-expense-id"
+      assert transaction.transaction_id == "legacy-provider-id"
+    end
+
+    test "merges changed provider ids when remittance differs by payer prefix and dates align across booking/value pairs",
+         ctx do
+      previous_sync_at = DateTime.shift(DateTime.utc_now(), day: -10)
+      seed_successful_sync_event(ctx.bank_account_1, ctx.org_id, previous_sync_at)
+
+      assert {:ok, existing_transaction} =
+               ctx.bank_account_1.id
+               |> transaction_attrs("original-internal-id")
+               |> Map.merge(%{
+                 transaction_id: "original-provider-id",
+                 booking_date: ~D[2026-04-20],
+                 value_date: ~D[2026-04-20],
+                 remittance_information_unstructured: "Usługi informatyczne Faktura 07/02/2026"
+               })
+               |> Finances.upsert_transaction_from_sync(
+                 actor: ctx.actor,
+                 tenant: ctx.org_id
+               )
+
+      stub_booked_transactions([
+        %{
+          "internalTransactionId" => "changed-internal-id",
+          "transactionId" => "changed-provider-id",
+          "debtorName" => "Example Debtor",
+          "debtorAccount" => %{"iban" => "PL001"},
+          "creditorName" => "Example Creditor",
+          "creditorAccount" => %{"iban" => "PL002"},
+          "transactionAmount" => %{"amount" => "100.00", "currency" => "PLN"},
+          "bookingDate" => "2026-04-21",
+          "valueDate" => "2026-04-20",
+          "remittanceInformationUnstructured" => "PRZYKŁADOWY NADAWCA, Usługi informatyczne Faktura 07/02/2026"
+        }
+      ])
+
+      assert {:ok, _bank_account} =
+               ctx.bank_account_1
+               |> Ash.Changeset.for_update(:sync_from_gocardless, %{},
+                 actor: ctx.user,
+                 tenant: ctx.org_id
+               )
+               |> Ash.update(actor: ctx.user, tenant: ctx.org_id)
+
+      persisted =
+        %{}
+        |> Finances.list_transactions!(actor: ctx.actor, tenant: ctx.org_id)
+        |> Enum.filter(&(&1.bank_account_id == ctx.bank_account_1.id))
+
+      assert length(persisted) == 1
+      assert hd(persisted).id == existing_transaction.id
+      assert hd(persisted).internal_transaction_id == "original-internal-id"
+    end
+
+    test "keeps first transaction when multiple incoming rows collapse to the same existing identity",
+         ctx do
+      previous_sync_at = DateTime.shift(DateTime.utc_now(), day: -10)
+      seed_successful_sync_event(ctx.bank_account_1, ctx.org_id, previous_sync_at)
+
+      assert {:ok, existing_transaction} =
+               ctx.bank_account_1.id
+               |> transaction_attrs("original-internal-id")
+               |> Map.merge(%{
+                 transaction_id: "original-provider-id",
+                 booking_date: ~D[2026-04-20],
+                 value_date: ~D[2026-04-20],
+                 remittance_information_unstructured: "Usługi informatyczne Faktura 07/02/2026"
+               })
+               |> Finances.upsert_transaction_from_sync(
+                 actor: ctx.actor,
+                 tenant: ctx.org_id
+               )
+
+      stub_booked_transactions([
+        %{
+          "internalTransactionId" => "changed-internal-id-1",
+          "transactionId" => "changed-provider-id-1",
+          "debtorName" => "Example Debtor",
+          "debtorAccount" => %{"iban" => "PL001"},
+          "creditorName" => "Example Creditor",
+          "creditorAccount" => %{"iban" => "PL002"},
+          "transactionAmount" => %{"amount" => "100.00", "currency" => "PLN"},
+          "bookingDate" => "2026-04-21",
+          "valueDate" => "2026-04-20",
+          "remittanceInformationUnstructured" => "PRZYKŁADOWY NADAWCA, Usługi informatyczne Faktura 07/02/2026"
+        },
+        %{
+          "internalTransactionId" => "changed-internal-id-2",
+          "transactionId" => "changed-provider-id-2",
+          "debtorName" => "Example Debtor",
+          "debtorAccount" => %{"iban" => "PL001"},
+          "creditorName" => "Example Creditor",
+          "creditorAccount" => %{"iban" => "PL002"},
+          "transactionAmount" => %{"amount" => "100.00", "currency" => "PLN"},
+          "bookingDate" => "2026-04-21",
+          "valueDate" => "2026-04-20",
+          "remittanceInformationUnstructured" => "PRZYKŁADOWY NADAWCA, Usługi informatyczne Faktura 07/02/2026"
+        }
+      ])
+
+      assert {:ok, _bank_account} =
+               ctx.bank_account_1
+               |> Ash.Changeset.for_update(:sync_from_gocardless, %{},
+                 actor: ctx.user,
+                 tenant: ctx.org_id
+               )
+               |> Ash.update(actor: ctx.user, tenant: ctx.org_id)
+
+      persisted =
+        %{}
+        |> Finances.list_transactions!(actor: ctx.actor, tenant: ctx.org_id)
+        |> Enum.filter(&(&1.bank_account_id == ctx.bank_account_1.id))
+
+      assert length(persisted) == 1
+      assert hd(persisted).id == existing_transaction.id
+      assert hd(persisted).internal_transaction_id == "original-internal-id"
+      assert hd(persisted).transaction_id == "original-provider-id"
+    end
+
+    test "prefers the exact-date duplicate candidate when repeated transactions create ambiguous matches" do
+      older_transaction = %{
+        booking_date: ~D[2026-04-22],
+        value_date: ~D[2026-04-22],
+        internal_transaction_id: "older-internal-id",
+        amount: Money.new!("EUR", Decimal.new("-35.56")),
+        debtor_name: "N/A",
+        debtor_account: "N/A",
+        creditor_name: "Liam Brown",
+        creditor_account: "GB49BARC20040478743951",
+        remittance_information_unstructured: "Water invoice #5678"
+      }
+
+      exact_date_transaction = %{
+        booking_date: ~D[2026-04-23],
+        value_date: ~D[2026-04-23],
+        internal_transaction_id: "exact-date-internal-id",
+        amount: Money.new!("EUR", Decimal.new("-35.56")),
+        debtor_name: "N/A",
+        debtor_account: "N/A",
+        creditor_name: "Liam Brown",
+        creditor_account: "GB49BARC20040478743951",
+        remittance_information_unstructured: "Water invoice #5678"
+      }
+
+      incoming_transaction = %{
+        booking_date: "2026-04-23",
+        value_date: "2026-04-23",
+        internal_transaction_id: "changed-internal-id",
+        amount: Money.new!("EUR", Decimal.new("-35.56")),
+        debtor_name: "N/A",
+        debtor_account: "N/A",
+        creditor_name: "Liam Brown",
+        creditor_account: "GB49BARC20040478743951",
+        remittance_information_unstructured: "Water invoice #5678"
+      }
+
+      assert DuplicateTransactionMatcher.unique_match(
+               incoming_transaction,
+               [older_transaction, exact_date_transaction]
+             ) == exact_date_transaction
+    end
+  end
+
+  defp transaction_attrs(bank_account_id, internal_transaction_id) do
+    %{
+      bank_account_id: bank_account_id,
+      internal_transaction_id: internal_transaction_id,
+      transaction_id: "provider-1",
+      debtor_name: "Example Debtor",
+      debtor_account: "PL001",
+      creditor_name: "Example Creditor",
+      creditor_account: "PL002",
+      amount: Money.new!("PLN", Decimal.new("100.00")),
+      booking_date: ~D[2026-04-23],
+      value_date: ~D[2026-04-23],
+      remittance_information_unstructured: "initial remittance"
+    }
+  end
+
+  defp api_transaction(internal_transaction_id, booking_date, value_date \\ :same_as_booking) do
+    value_date = if value_date == :same_as_booking, do: booking_date, else: value_date
+
+    %{
+      "internalTransactionId" => internal_transaction_id,
+      "transactionId" => "provider-#{internal_transaction_id}",
+      "debtorName" => "Example Debtor",
+      "debtorAccount" => %{"iban" => "PL001"},
+      "creditorName" => "Example Creditor",
+      "creditorAccount" => %{"iban" => "PL002"},
+      "transactionAmount" => %{"amount" => "100.00", "currency" => "PLN"},
+      "bookingDate" => booking_date && Date.to_iso8601(booking_date),
+      "valueDate" => value_date && Date.to_iso8601(value_date),
+      "remittanceInformationUnstructured" => "initial remittance"
+    }
+  end
+
+  defp stub_booked_transactions(booked_transactions) do
+    Req.Test.stub(:bank_data_transactions, fn conn ->
+      Req.Test.json(conn, %{
+        transactions: %{
+          booked: booked_transactions,
+          pending: []
+        }
+      })
+    end)
+  end
+
+  defp stub_expired_eua do
+    Req.Test.stub(:bank_data_transactions, fn conn ->
+      conn
+      |> Plug.Conn.put_resp_content_type("application/json")
+      |> Plug.Conn.send_resp(
+        401,
+        Jason.encode!(%{
+          summary: "End User Agreement (EUA) abc123 has expired",
+          detail: "EUA was valid for 90 days",
+          status_code: 401
+        })
+      )
+    end)
+  end
+
+  defp seed_requisition(org_id, status) do
+    Ash.Seed.seed!(
+      Requisition,
+      %{
+        id: Ecto.UUID.generate(),
+        status: status
+      },
+      tenant: org_id
+    )
+  end
+
+  defp seed_bank_account_with_requisition(org_id, requisition_id) do
+    Ash.Seed.seed!(
+      BankAccount,
+      %{
+        iban: "PL33333333333333333333333333",
+        currency: "PLN",
+        name: "Requisition account",
+        owner_name: "Firmowid",
+        institution_id: "NEST_BANK_CORPORATE_NESBPLPW",
+        institution_name: "Test Bank",
+        gocardless_id: "gc-account-with-requisition",
+        requisition_id: requisition_id
+      },
+      tenant: org_id
+    )
+  end
+
+  defp seed_successful_sync_event(bank_account, org_id, occurred_at) do
+    Ash.Seed.seed!(
+      Event,
+      %{
+        organization_id: org_id,
+        record_id: bank_account.id,
+        resource: BankAccount,
+        action: :sync_from_gocardless,
+        action_type: :update,
+        occurred_at: occurred_at,
+        metadata: %{},
+        data: %{},
+        changed_attributes: %{},
+        version: 1
+      },
+      tenant: org_id
+    )
+  end
+end

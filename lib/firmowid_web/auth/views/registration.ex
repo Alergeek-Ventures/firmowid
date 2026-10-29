@@ -7,8 +7,8 @@ defmodule FirmowidWeb.Auth.Views.Registration do
   import FirmowidWeb.DesignSystem.Components.CoreComponents
   import Phoenix.Component, except: [link: 1]
 
-  alias Firmowid.Ash.Core
-  alias Firmowid.Ash.Core.User
+  alias Firmowid.Core
+  alias Firmowid.Core.User
 
   def render(assigns) do
     ~H"""

@@ -14,16 +14,16 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
   import FirmowidUI.Components.Button
   import FirmowidWeb.DesignSystem.Components.CoreComponents
 
-  alias Firmowid.Ash.Core
-  alias Firmowid.Ash.Finances
-  alias Firmowid.Ash.Invoicing
-  alias Firmowid.Ash.Invoicing.SalesInvoice
-  alias Firmowid.Ash.Invoicing.SalesInvoice.EmailRecipientEligibility
-  alias Firmowid.Ash.Invoicing.SalesInvoiceItem
-  alias Firmowid.Ash.Invoicing.Services.CorrectionReason
-  alias Firmowid.Ash.Ksef
-  alias Firmowid.Ash.Ksef.SubmissionInfo
+  alias Firmowid.Core
   alias Firmowid.ErrorKind
+  alias Firmowid.Finances
+  alias Firmowid.Invoicing
+  alias Firmowid.Invoicing.SalesInvoice
+  alias Firmowid.Invoicing.SalesInvoice.EmailRecipientEligibility
+  alias Firmowid.Invoicing.SalesInvoiceItem
+  alias Firmowid.Invoicing.Services.CorrectionReason
+  alias Firmowid.Ksef
+  alias Firmowid.Ksef.SubmissionInfo
   alias FirmowidWeb.Infrastructure.Utilities.PosthogBusinessEvents
   alias FirmowidWeb.Invoicing.FormHelpers
   alias FirmowidWeb.Invoicing.SalesInvoices.Components.InvoicePayment
@@ -742,7 +742,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
   end
 
   defp invoice_input_from_form(ash_form) do
-    fields = Firmowid.Ash.Invoicing.Types.InvoiceInput.subtype_constraints()[:fields]
+    fields = Firmowid.Invoicing.Types.InvoiceInput.subtype_constraints()[:fields]
 
     input =
       fields
@@ -750,7 +750,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
       |> List.delete(:sales_invoice_items)
       |> Map.new(fn field -> {field, AshPhoenix.Form.value(ash_form, field)} end)
 
-    item_fields = Firmowid.Ash.Invoicing.Types.InvoiceItemInput.subtype_constraints()[:fields]
+    item_fields = Firmowid.Invoicing.Types.InvoiceItemInput.subtype_constraints()[:fields]
 
     items =
       ash_form.forms

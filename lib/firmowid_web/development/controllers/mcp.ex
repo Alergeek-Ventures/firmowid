@@ -8,7 +8,7 @@ defmodule FirmowidWeb.Development.Controllers.Mcp do
   """
   use FirmowidWeb, :controller
 
-  alias Firmowid.Ash.Invoicing.SalesInvoice
+  alias Firmowid.Invoicing.SalesInvoice
   alias FirmowidMcp.Invoicing.IssueCorrection
   alias FirmowidMcp.Invoicing.IssueInvoice
   alias FirmowidMcp.Runtime

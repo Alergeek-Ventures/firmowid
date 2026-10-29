@@ -12,17 +12,17 @@ defmodule Firmowid.Seeds.Timetracker do
   - No hours records for M-0 (so the upload wizard is testable)
   """
 
-  alias Firmowid.Ash.Payroll.UserEmploymentContract
-  alias Firmowid.Ash.Payroll.UserSalary
-  alias Firmowid.Ash.Timetracker.HoursRecord
-  alias Firmowid.Ash.Timetracker.Session
+  alias Firmowid.Payroll.UserEmploymentContract
+  alias Firmowid.Payroll.UserSalary
+  alias Firmowid.Timetracker.HoursRecord
+  alias Firmowid.Timetracker.Session
   alias Firmowid.Seeds.Helpers
 
   require Ash.Query
 
-  @seed_actor %Firmowid.Ash.Core.User{
+  @seed_actor %Firmowid.Core.User{
     id: "00000000-0000-0000-0000-000000000000",
-    member: %Firmowid.Ash.Core.Member{role: :admin}
+    member: %Firmowid.Core.Member{role: :admin}
   }
 
   # ---------------------------------------------------------------------------

@@ -106,7 +106,7 @@ defmodule FirmowidWeb.Core.Router do
   scope "/", FirmowidWeb do
     pipe_through :browser
 
-    auth_routes(AuthController, Firmowid.Ash.Core.User, path: "/auth")
+    auth_routes(AuthController, Firmowid.Core.User, path: "/auth")
     delete "/wyloguj", AuthController, :sign_out
     post "/jezyk", Infrastructure.Controllers.Locale, :update
   end

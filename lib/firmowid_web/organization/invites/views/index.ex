@@ -6,7 +6,7 @@ defmodule FirmowidWeb.Organization.Invites.Views.Index do
   import FirmowidWeb.DesignSystem.Components.CoreComponents
   import Phoenix.Component, except: [link: 1]
 
-  alias Firmowid.Ash.Core
+  alias Firmowid.Core
   alias FirmowidUI.Utilities.ForbiddenError
 
   @invite_load [issued_by: [:email], consumed_by: [:email]]

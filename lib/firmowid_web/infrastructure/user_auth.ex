@@ -11,15 +11,15 @@ defmodule FirmowidWeb.Infrastructure.UserAuth do
   import Plug.Conn
 
   alias AshAuthentication.Phoenix.Controller, as: AuthController
-  alias Firmowid.Ash.Core
-  alias Firmowid.Ash.Core.Member
-  alias Firmowid.Ash.Core.Organization
-  alias Firmowid.Ash.Core.User
-  alias Firmowid.Ash.Scope
+  alias Firmowid.Core
+  alias Firmowid.Core.Member
+  alias Firmowid.Core.Organization
+  alias Firmowid.Core.User
+  alias Firmowid.Scope
   alias FirmowidWeb.Organization.Utilities.Navigation, as: OrganizationNavigation
 
   @doc """
-  Session key of the organization the user selected (see `Firmowid.Ash.Core.load_member/2`).
+  Session key of the organization the user selected (see `Firmowid.Core.load_member/2`).
 
   It is only a preference: the user works in it only while they have a usable member
   there, otherwise in their default one (the most recently updated membership).
@@ -201,7 +201,7 @@ defmodule FirmowidWeb.Infrastructure.UserAuth do
 
   @doc """
   Returns the default signed-in path for a user in the organization selected in
-  their session (see `Firmowid.Ash.Core.load_member/2`).
+  their session (see `Firmowid.Core.load_member/2`).
 
   Members with invoicing permissions (`:invoicing`, `:accountant`, `:admin`) are
   redirected to invoicing hub, while other users land on time tracking.

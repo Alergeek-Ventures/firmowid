@@ -5,9 +5,9 @@ defmodule FirmowidWeb.Invoicing.Utilities.Navigation do
 
   use FirmowidWeb, :verified_routes
 
-  alias Firmowid.Ash.Finances.Transaction
-  alias Firmowid.Ash.Invoicing.CostInvoice
-  alias Firmowid.Ash.Invoicing.SalesInvoice
+  alias Firmowid.Finances.Transaction
+  alias Firmowid.Invoicing.CostInvoice
+  alias Firmowid.Invoicing.SalesInvoice
   alias FirmowidWeb.Infrastructure.Utilities.Navigation, as: InfrastructureNavigation
   alias FirmowidWeb.Infrastructure.Utilities.QueryParams
   alias FirmowidWeb.Invoicing.SalesInvoices.Utilities.CreatorQueryParams

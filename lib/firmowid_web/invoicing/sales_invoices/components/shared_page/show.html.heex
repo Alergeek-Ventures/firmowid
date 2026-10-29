@@ -92,7 +92,7 @@
               <.link
                 :if={not is_nil(invoice.ksef_number)}
                 kind="unstyled"
-                external={Firmowid.Ash.Ksef.invoice_url!(invoice)}
+                external={Firmowid.Ksef.invoice_url!(invoice)}
                 target="_blank"
                 class="flex w-full items-center justify-center gap-2 rounded-lg bg-black px-4 py-3 text-sm font-medium text-white transition-colors hover:bg-rust-700"
               >

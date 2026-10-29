@@ -6,9 +6,9 @@ defmodule Firmowid.Test.Support.SalesInvoiceEmailTestHelpers do
   import ExUnit.Assertions
   import ExUnit.Callbacks
 
-  alias Firmowid.Ash.Invoicing.SalesInvoiceEmailDelivery
-  alias Firmowid.Ash.Invoicing.Services.Pdf
-  alias Firmowid.Ash.Invoicing.Workers.SalesInvoiceEmailWorker
+  alias Firmowid.Invoicing.SalesInvoiceEmailDelivery
+  alias Firmowid.Invoicing.Services.Pdf
+  alias Firmowid.Invoicing.Workers.SalesInvoiceEmailWorker
 
   @oban_test_opts [repo: Firmowid.Repo, prefix: "oban"]
 
@@ -83,7 +83,7 @@ defmodule Firmowid.Test.Support.SalesInvoiceEmailTestHelpers do
   """
   @spec valid_counterparty_fixture!(struct(), map()) :: struct()
   def valid_counterparty_fixture!(user, attrs \\ %{}) do
-    alias Firmowid.Ash.Invoicing.Counterparty
+    alias Firmowid.Invoicing.Counterparty
 
     base_attrs = %{
       type: :company,

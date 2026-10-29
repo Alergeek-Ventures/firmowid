@@ -7,8 +7,8 @@ defmodule FirmowidWeb.HoursRecord.Components.UploadForm do
   import FirmowidWeb.DesignSystem.Components.CoreComponents
   import Phoenix.Component, except: [link: 1]
 
-  alias Firmowid.Ash.Timetracker
-  alias Firmowid.Ash.Timetracker.HoursRecord, as: AshHoursRecord
+  alias Firmowid.Timetracker
+  alias Firmowid.Timetracker.HoursRecord
   alias FirmowidWeb.Infrastructure.Utilities.ElectronicSignature
 
   @impl true
@@ -174,7 +174,7 @@ defmodule FirmowidWeb.HoursRecord.Components.UploadForm do
 
     consume_uploaded_entries(socket, :hours_record, fn %{path: path}, entry ->
       result =
-        AshHoursRecord.create(
+        HoursRecord.create(
           %{
             member_id: socket.assigns.current_user.member.id,
             number_of_hours: Timetracker.seconds_to_hours(socket.assigns.total_duration),

@@ -4,7 +4,7 @@ defmodule FirmowidMcp.Invoicing.PrivacyTest do
 
   import Firmowid.AccountsFixtures
 
-  alias Firmowid.Ash.Invoicing.SalesInvoice
+  alias Firmowid.Invoicing.SalesInvoice
   alias FirmowidMcp.Router
 
   for selector <- [

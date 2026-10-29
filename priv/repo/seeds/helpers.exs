@@ -8,23 +8,23 @@ defmodule Firmowid.Seeds.Helpers do
   and writes directly to the data layer — ideal for deterministic seed data.
   """
 
-  alias Firmowid.Ash.Blobs.Blob, as: AshBlob
-  alias Firmowid.Ash.Core.Member, as: CoreMember
-  alias Firmowid.Ash.Finances.BankAccount, as: AshBankAccount
-  alias Firmowid.Ash.Finances.Requisition, as: AshRequisition
-  alias Firmowid.Ash.Finances.Transaction, as: AshTransaction
-  alias Firmowid.Ash.Invoicing.CostInvoice, as: AshCostInvoice
-  alias Firmowid.Ash.Invoicing.CostInvoiceTransaction, as: AshCostInvoiceTransaction
-  alias Firmowid.Ash.Invoicing.SalesInvoice, as: AshSalesInvoice
-  alias Firmowid.Ash.Invoicing.SalesInvoiceItem, as: AshSalesInvoiceItem
-  alias Firmowid.Ash.Invoicing.SalesInvoiceTransaction, as: AshSalesInvoiceTransaction
+  alias Firmowid.Blobs.Blob
+  alias Firmowid.Core.Member, as: CoreMember
+  alias Firmowid.Finances.BankAccount
+  alias Firmowid.Finances.Requisition
+  alias Firmowid.Finances.Transaction
+  alias Firmowid.Invoicing.CostInvoice
+  alias Firmowid.Invoicing.CostInvoiceTransaction
+  alias Firmowid.Invoicing.SalesInvoice
+  alias Firmowid.Invoicing.SalesInvoiceItem
+  alias Firmowid.Invoicing.SalesInvoiceTransaction
   alias Firmowid.S3Client
 
   require Ash.Query
 
-  @seed_actor %Firmowid.Ash.Core.User{
+  @seed_actor %Firmowid.Core.User{
     id: "00000000-0000-0000-0000-000000000000",
-    member: %Firmowid.Ash.Core.Member{role: :admin}
+    member: %Firmowid.Core.Member{role: :admin}
   }
 
   @string_key_to_atom %{
@@ -130,7 +130,7 @@ defmodule Firmowid.Seeds.Helpers do
 
   def seed_requisition!(id, org_id) do
     Ash.Seed.upsert!(
-      AshRequisition,
+      Requisition,
       %{id: id, organization_id: org_id},
       identity: :unique_id,
       tenant: org_id
@@ -144,17 +144,17 @@ defmodule Firmowid.Seeds.Helpers do
 
     # Ash.Seed.upsert! does not expand attribute-tenant identity keys;
     # serial seed execution makes this read/write workaround appropriate.
-    query = Ash.Query.filter(AshBankAccount, iban == ^iban and currency == ^currency)
+    query = Ash.Query.filter(BankAccount, iban == ^iban and currency == ^currency)
 
     case Ash.read_one!(query, actor: @seed_actor, tenant: org_id) do
-      nil -> Ash.Seed.seed!(AshBankAccount, attrs, tenant: org_id)
+      nil -> Ash.Seed.seed!(BankAccount, attrs, tenant: org_id)
       bank_account -> Ash.Seed.update!(bank_account, attrs, tenant: org_id)
     end
   end
 
   def seed_transaction!(attrs, org_id) do
     Ash.Seed.upsert!(
-      AshTransaction,
+      Transaction,
       attrs
       |> normalize_transaction_dates()
       |> normalize_transaction_money()
@@ -251,7 +251,7 @@ defmodule Firmowid.Seeds.Helpers do
       |> Map.put(:organization_id, org_id)
       |> Map.put(:ksef_invoice_kind, :vat)
 
-    invoice = Ash.Seed.seed!(AshSalesInvoice, invoice_data, tenant: org_id)
+    invoice = Ash.Seed.seed!(SalesInvoice, invoice_data, tenant: org_id)
 
     Enum.with_index(items_raw, fn item_raw, index ->
       item_data =
@@ -264,7 +264,7 @@ defmodule Firmowid.Seeds.Helpers do
         })
         |> ensure_decimal_fields([:quantity, :unit_price])
 
-      Ash.Seed.seed!(AshSalesInvoiceItem, item_data, tenant: org_id)
+      Ash.Seed.seed!(SalesInvoiceItem, item_data, tenant: org_id)
     end)
 
     invoice
@@ -309,7 +309,7 @@ defmodule Firmowid.Seeds.Helpers do
           )
 
         Ash.Seed.seed!(
-          AshCostInvoice,
+          CostInvoice,
           Map.merge(attrs, %{
             invoice_identifier: invoice_identifier,
             organization_id: org_id,
@@ -325,40 +325,40 @@ defmodule Firmowid.Seeds.Helpers do
 
   defp find_sales_invoice(inv_number, org_id) do
     query =
-      AshSalesInvoice
+      SalesInvoice
       |> Ash.Query.filter(invoice_number == ^inv_number and organization_id == ^org_id)
       |> Ash.Query.limit(1)
 
     %{}
-    |> AshSalesInvoice.list!(query: query, tenant: org_id, actor: @seed_actor, authorize?: false)
+    |> SalesInvoice.list!(query: query, tenant: org_id, actor: @seed_actor, authorize?: false)
     |> List.first()
   end
 
   defp find_sales_invoice_draft(key, org_id) do
     query =
-      AshSalesInvoice
+      SalesInvoice
       |> Ash.Query.filter(is_nil(invoice_number) and internal_note == ^key and organization_id == ^org_id)
       |> Ash.Query.limit(1)
 
     %{}
-    |> AshSalesInvoice.list!(query: query, tenant: org_id, actor: @seed_actor, authorize?: false)
+    |> SalesInvoice.list!(query: query, tenant: org_id, actor: @seed_actor, authorize?: false)
     |> List.first()
   end
 
   defp find_cost_invoice(invoice_identifier, org_id) do
     query =
-      AshCostInvoice
+      CostInvoice
       |> Ash.Query.filter(invoice_identifier == ^invoice_identifier and organization_id == ^org_id)
       |> Ash.Query.limit(1)
 
     %{}
-    |> AshCostInvoice.list!(query: query, tenant: org_id, actor: @seed_actor, authorize?: false)
+    |> CostInvoice.list!(query: query, tenant: org_id, actor: @seed_actor, authorize?: false)
     |> List.first()
   end
 
   def seed_blob!(attrs, org_id) do
     blob =
-      Ash.Seed.upsert!(AshBlob, Map.put(attrs, :organization_id, org_id),
+      Ash.Seed.upsert!(Blob, Map.put(attrs, :organization_id, org_id),
         identity: :unique_checksum_per_org,
         tenant: org_id
       )
@@ -371,7 +371,7 @@ defmodule Firmowid.Seeds.Helpers do
   def connect_sales_invoice_transaction!(sales_invoice_id, transaction_id, org_id) do
     if !sales_invoice_transaction_exists?(sales_invoice_id, transaction_id, org_id) do
       Ash.Seed.seed!(
-        AshSalesInvoiceTransaction,
+        SalesInvoiceTransaction,
         %{
           sales_invoice_id: sales_invoice_id,
           transaction_id: transaction_id,
@@ -387,7 +387,7 @@ defmodule Firmowid.Seeds.Helpers do
   def connect_cost_invoice_transaction!(cost_invoice_id, transaction_id, org_id) do
     if !cost_invoice_transaction_exists?(cost_invoice_id, transaction_id, org_id) do
       Ash.Seed.seed!(
-        AshCostInvoiceTransaction,
+        CostInvoiceTransaction,
         %{
           cost_invoice_id: cost_invoice_id,
           transaction_id: transaction_id,
@@ -402,7 +402,7 @@ defmodule Firmowid.Seeds.Helpers do
 
   defp sales_invoice_transaction_exists?(sales_invoice_id, transaction_id, org_id) do
     query =
-      AshSalesInvoiceTransaction
+      SalesInvoiceTransaction
       |> Ash.Query.filter(
         sales_invoice_id == ^sales_invoice_id and
           transaction_id == ^transaction_id and
@@ -410,7 +410,7 @@ defmodule Firmowid.Seeds.Helpers do
       )
       |> Ash.Query.limit(1)
 
-    AshSalesInvoiceTransaction.read!(%{},
+    SalesInvoiceTransaction.read!(%{},
       query: query,
       tenant: org_id,
       actor: @seed_actor,
@@ -420,7 +420,7 @@ defmodule Firmowid.Seeds.Helpers do
 
   defp cost_invoice_transaction_exists?(cost_invoice_id, transaction_id, org_id) do
     query =
-      AshCostInvoiceTransaction
+      CostInvoiceTransaction
       |> Ash.Query.filter(
         cost_invoice_id == ^cost_invoice_id and
           transaction_id == ^transaction_id and
@@ -428,7 +428,7 @@ defmodule Firmowid.Seeds.Helpers do
       )
       |> Ash.Query.limit(1)
 
-    AshCostInvoiceTransaction.read!(%{},
+    CostInvoiceTransaction.read!(%{},
       query: query,
       tenant: org_id,
       actor: @seed_actor,

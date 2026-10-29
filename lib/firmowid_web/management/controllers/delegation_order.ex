@@ -3,10 +3,10 @@ defmodule FirmowidWeb.Management.Controllers.DelegationOrder do
 
   use FirmowidWeb, :controller
 
-  alias Firmowid.Ash.Core
-  alias Firmowid.Ash.Delegations
-  alias Firmowid.Ash.Invoicing.Services.PdfUtils
-  alias Firmowid.Ash.Payroll
+  alias Firmowid.Core
+  alias Firmowid.Delegations
+  alias Firmowid.Invoicing.Services.PdfUtils
+  alias Firmowid.Payroll
   alias FirmowidWeb.Infrastructure.Utilities.PdfHelpers
 
   # PDF downloads are Gotenberg-rendered binaries, not user-controlled HTML.

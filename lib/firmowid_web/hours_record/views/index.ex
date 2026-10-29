@@ -9,9 +9,9 @@ defmodule FirmowidWeb.HoursRecord.Views.Index do
   import FirmowidWeb.HoursRecord.Components.ChangeRequest
   import Phoenix.Component, except: [link: 1]
 
-  alias Firmowid.Ash.Payroll
-  alias Firmowid.Ash.Timetracker
-  alias Firmowid.Ash.Timetracker.HoursRecord, as: AshHoursRecord
+  alias Firmowid.Payroll
+  alias Firmowid.Timetracker
+  alias Firmowid.Timetracker.HoursRecord
   alias FirmowidWeb.Infrastructure.Utilities.QueryParams
   alias FirmowidWeb.Infrastructure.Utilities.TimeFormatter
   alias FirmowidWeb.Timetracker.Utilities.Navigation
@@ -77,9 +77,9 @@ defmodule FirmowidWeb.HoursRecord.Views.Index do
     date = socket.assigns.selected_date
 
     with {:ok, record} <-
-           AshHoursRecord.by_month(socket.assigns.current_user.id, date.month, date.year, scope: scope),
+           HoursRecord.by_month(socket.assigns.current_user.id, date.month, date.year, scope: scope),
          {:ok, _record} <-
-           AshHoursRecord.request_change(
+           HoursRecord.request_change(
              record,
              Map.take(params, ["change_request_kind", "change_request_reason"]),
              scope: scope
@@ -160,7 +160,7 @@ defmodule FirmowidWeb.HoursRecord.Views.Index do
       Ash.aggregate!(total_query, {:total, :sum, field: :duration, default: 0}, scope: scope)
 
     {:ok, current_month_hours_record} =
-      AshHoursRecord.by_month(member_id, month, year,
+      HoursRecord.by_month(member_id, month, year,
         scope: scope,
         not_found_error?: false
       )

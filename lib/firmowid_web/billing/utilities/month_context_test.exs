@@ -4,9 +4,9 @@ defmodule FirmowidWeb.Billing.Utilities.MonthContextTest do
 
   import Firmowid.AccountsFixtures
 
-  alias Firmowid.Ash.Billing
-  alias Firmowid.Ash.Billing.SnapshotCalculator
-  alias Firmowid.Ash.Core
+  alias Firmowid.Billing
+  alias Firmowid.Billing.SnapshotCalculator
+  alias Firmowid.Core
   alias FirmowidWeb.Billing.Utilities.MonthContext
 
   describe "load/4" do

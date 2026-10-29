@@ -11,9 +11,9 @@ defmodule FirmowidUI.Invoicing.Components.SalesInvoice do
   import FirmowidUI.Components.Link
   import Phoenix.Component, except: [link: 1]
 
-  alias Firmowid.Ash.Ksef
-  alias Firmowid.Ash.Ksef.Services.InvoiceRenderer
-  alias Firmowid.Ash.Ksef.VatRate
+  alias Firmowid.Ksef
+  alias Firmowid.Ksef.Services.InvoiceRenderer
+  alias Firmowid.Ksef.VatRate
   alias FirmowidUI.Invoicing.Components.Print
 
   attr :sales_invoice, :map, required: true

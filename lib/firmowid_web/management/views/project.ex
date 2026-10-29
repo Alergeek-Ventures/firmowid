@@ -11,10 +11,10 @@ defmodule FirmowidWeb.Management.Views.Project do
   import FirmowidWeb.DesignSystem.Components.MonthPicker
   import Phoenix.Component, except: [link: 1]
 
-  alias Firmowid.Ash.Core
-  alias Firmowid.Ash.Payroll
-  alias Firmowid.Ash.Timetracker
-  alias Firmowid.Ash.Timetracker.Project, as: AshProject
+  alias Firmowid.Core
+  alias Firmowid.Payroll
+  alias Firmowid.Timetracker
+  alias Firmowid.Timetracker.Project
   alias FirmowidWeb.Infrastructure.Utilities.TimeFormatter
   alias FirmowidWeb.Management.Utilities.CounterpartyHelpers
   alias FirmowidWeb.Management.Utilities.Navigation
@@ -38,7 +38,7 @@ defmodule FirmowidWeb.Management.Views.Project do
       socket
       |> assign(:selected_date, selected_date)
       |> assign(:active_months, active_months)
-      |> assign(:project, AshProject.get!(project_id, scope: scope))
+      |> assign(:project, Project.get!(project_id, scope: scope))
       |> assign(:can_delete_project, socket.assigns.current_user.member.role == :admin)
       |> assign_project_data()
 
@@ -88,7 +88,7 @@ defmodule FirmowidWeb.Management.Views.Project do
     scope = socket.assigns.ash_scope
     project = socket.assigns.project
 
-    {:ok, project} = AshProject.archive(project, scope: scope)
+    {:ok, project} = Project.archive(project, scope: scope)
 
     socket =
       socket
@@ -102,7 +102,7 @@ defmodule FirmowidWeb.Management.Views.Project do
     scope = socket.assigns.ash_scope
     project = socket.assigns.project
 
-    case AshProject.unarchive(project, scope: scope) do
+    case Project.unarchive(project, scope: scope) do
       {:ok, updated_project} ->
         socket =
           socket
@@ -120,7 +120,7 @@ defmodule FirmowidWeb.Management.Views.Project do
     scope = socket.assigns.ash_scope
     project = socket.assigns.project
 
-    :ok = AshProject.destroy(project, scope: scope)
+    :ok = Project.destroy(project, scope: scope)
 
     {:noreply,
      socket

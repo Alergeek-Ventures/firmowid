@@ -9,9 +9,9 @@ defmodule FirmowidWeb.Management.Views.Counterparty do
   import FirmowidWeb.DesignSystem.Components.CoreComponents
   import Phoenix.Component, except: [link: 1]
 
-  alias Firmowid.Ash.Invoicing
-  alias Firmowid.Ash.Invoicing.CountryCodes
-  alias Firmowid.Ash.Invoicing.Services.CounterpartyInvoiceSuggestions
+  alias Firmowid.Invoicing
+  alias Firmowid.Invoicing.CountryCodes
+  alias Firmowid.Invoicing.Services.CounterpartyInvoiceSuggestions
   alias FirmowidWeb.Invoicing.Utilities.Navigation, as: InvoicingNavigation
   alias FirmowidWeb.Management.Utilities.CounterpartyHelpers
   alias FirmowidWeb.Management.Utilities.Navigation

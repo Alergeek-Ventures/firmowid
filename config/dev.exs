@@ -1,6 +1,6 @@
 import Config
 
-alias Firmowid.Ash.Invoicing.Services.ReductoApiClientMock
+alias Firmowid.Invoicing.Services.ReductoApiClientMock
 alias FirmowidWeb.Core.Endpoint
 
 config :ash, policies: [show_policy_breakdowns?: true]

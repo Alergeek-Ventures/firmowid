@@ -3,9 +3,9 @@ defmodule FirmowidWeb.Invoicing.CostInvoices.Views.Show do
   use FirmowidWeb, :live_view
 
   alias Ash.Notifier.Notification
-  alias Firmowid.Ash.Invoicing
-  alias Firmowid.Ash.Invoicing.CostInvoice
-  alias Firmowid.Ash.Invoicing.InvoiceMatching
+  alias Firmowid.Invoicing
+  alias Firmowid.Invoicing.CostInvoice
+  alias Firmowid.Invoicing.InvoiceMatching
   alias FirmowidWeb.Core.Endpoint
   alias FirmowidWeb.Invoicing.Utilities.Navigation
   alias Phoenix.Socket.Broadcast

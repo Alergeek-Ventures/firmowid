@@ -2,7 +2,7 @@ defmodule FirmowidWeb.BankSync.Views.Create do
   @moduledoc """
   LiveView for creating GoCardless bank connections.
 
-  Uses Ash native code interfaces from Firmowid.Ash.Finances domain.
+  Uses Ash native code interfaces from Firmowid.Finances domain.
   The AshOban trigger on Requisition auto-schedules status polling.
   """
   use FirmowidWeb, :live_view
@@ -12,8 +12,8 @@ defmodule FirmowidWeb.BankSync.Views.Create do
   import FirmowidWeb.DesignSystem.Components.CoreComponents
   import Phoenix.Component, except: [link: 1]
 
-  alias Firmowid.Ash.Finances
   alias Firmowid.ErrorKind
+  alias Firmowid.Finances
   alias FirmowidWeb.Infrastructure.Utilities.PosthogBusinessEvents
 
   require Logger

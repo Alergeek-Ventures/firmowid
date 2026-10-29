@@ -8,19 +8,19 @@ defmodule Firmowid.Seeds.Voidstack do
   alley in Bratislava.
   """
 
-  alias Firmowid.Ash.Analysis.TagDefinition, as: AshTagDefinition
-  alias Firmowid.Ash.Core.Organization, as: CoreOrganization
-  alias Firmowid.Ash.Core.User, as: CoreUser
-  alias Firmowid.Ash.Invoicing.CostInvoice, as: AshCostInvoice
-  alias Firmowid.Ash.Timetracker.Project, as: AshProject
-  alias Firmowid.Ash.Timetracker.ProjectUser, as: AshProjectUser
+  alias Firmowid.Analysis.TagDefinition
+  alias Firmowid.Core.Organization, as: CoreOrganization
+  alias Firmowid.Core.User, as: CoreUser
+  alias Firmowid.Invoicing.CostInvoice
+  alias Firmowid.Timetracker.Project
+  alias Firmowid.Timetracker.ProjectUser
   alias Firmowid.Seeds.Helpers
 
   require Ash.Query
 
-  @seed_actor %Firmowid.Ash.Core.User{
+  @seed_actor %Firmowid.Core.User{
     id: "00000000-0000-0000-0000-000000000000",
-    member: %Firmowid.Ash.Core.Member{role: :admin}
+    member: %Firmowid.Core.Member{role: :admin}
   }
 
   def seed! do
@@ -66,7 +66,7 @@ defmodule Firmowid.Seeds.Voidstack do
   defp seed_project(member, voidstack) do
     tag_definition =
       Ash.Seed.upsert!(
-        AshTagDefinition,
+        TagDefinition,
         %{name: "Shadow Protocol", organization_id: voidstack.id},
         identity: :unique_name_per_org,
         tenant: voidstack.id
@@ -76,7 +76,7 @@ defmodule Firmowid.Seeds.Voidstack do
       case find_project(voidstack.id, "Shadow Protocol") do
         nil ->
           Ash.Seed.seed!(
-            AshProject,
+            Project,
             %{name: "Shadow Protocol", organization_id: voidstack.id, tag_definition_id: tag_definition.id},
             tenant: voidstack.id
           )
@@ -87,7 +87,7 @@ defmodule Firmowid.Seeds.Voidstack do
 
     if is_nil(find_project_user(voidstack.id, project.id, member.id)) do
       Ash.Seed.seed!(
-        AshProjectUser,
+        ProjectUser,
         %{project_id: project.id, member_id: member.id, organization_id: voidstack.id},
         tenant: voidstack.id
       )
@@ -181,7 +181,7 @@ defmodule Firmowid.Seeds.Voidstack do
     today = Helpers.today()
 
     Ash.Seed.seed!(
-      AshCostInvoice,
+      CostInvoice,
       %{
         id: "aaaaaaaa-3333-7433-bd41-3d8b719610a4",
         blob_id: blob.id,
@@ -244,7 +244,7 @@ defmodule Firmowid.Seeds.Voidstack do
 
   defp find_project(tenant, name) do
     query =
-      AshProject
+      Project
       |> Ash.Query.filter(organization_id == ^tenant and name == ^name)
       |> Ash.Query.limit(1)
 
@@ -256,7 +256,7 @@ defmodule Firmowid.Seeds.Voidstack do
 
   defp find_project_user(tenant, project_id, member_id) do
     query =
-      AshProjectUser
+      ProjectUser
       |> Ash.Query.filter(organization_id == ^tenant and project_id == ^project_id and member_id == ^member_id)
       |> Ash.Query.limit(1)
 

@@ -6,10 +6,10 @@ defmodule FirmowidWeb.Timetracker.Controllers.Csv do
   @moduledoc false
   use FirmowidWeb, :controller
 
-  alias Firmowid.Ash.Core
-  alias Firmowid.Ash.Payroll
-  alias Firmowid.Ash.Timetracker
-  alias Firmowid.Ash.Timetracker.Project, as: AshProject
+  alias Firmowid.Core
+  alias Firmowid.Payroll
+  alias Firmowid.Timetracker
+  alias Firmowid.Timetracker.Project
   alias FirmowidWeb.Infrastructure.Controllers.FileDownload
   alias FirmowidWeb.Infrastructure.Utilities.QueryParams
   alias FirmowidWeb.Infrastructure.Utilities.TimeFormatter
@@ -53,7 +53,7 @@ defmodule FirmowidWeb.Timetracker.Controllers.Csv do
     with :admin <- conn.assigns.current_user.member.role,
          {:ok, month, year} <- parse_export_period(%{"miesiac" => month_str, "rok" => year_str}),
          {:ok, project} when not is_nil(project) <-
-           AshProject.get(project_id, scope: scope, not_found_error?: false) do
+           Project.get(project_id, scope: scope, not_found_error?: false) do
       csv_content = build_project_tasks_csv(project_id, month, year, scope)
       project_name = FileDownload.clean_filename(project.name)
 

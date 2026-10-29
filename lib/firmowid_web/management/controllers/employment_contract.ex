@@ -2,7 +2,7 @@ defmodule FirmowidWeb.Management.Controllers.EmploymentContract do
   @moduledoc "Controller for downloading employment contract PDFs."
   use FirmowidWeb, :controller
 
-  alias Firmowid.Ash.Payroll
+  alias Firmowid.Payroll
 
   # sobelow_skip ["XSS.SendResp"]
   # Filename is sanitized before being placed in the header. The response body
