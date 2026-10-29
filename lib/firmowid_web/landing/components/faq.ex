@@ -26,7 +26,7 @@ defmodule FirmowidWeb.Landing.Components.Faq do
       id="faq"
       class="border-t border-rust-200 bg-grey-50 py-18 lg:py-26 max-lg:[&_h2]:wrap-anywhere max-lg:[&>div>*]:min-w-0"
     >
-      <div class="mx-auto grid w-[calc(100%-var(--spacing)*8)] max-w-284.75 gap-8 lg:w-[calc(100%-var(--spacing)*16)] lg:grid-cols-[minmax(0,1fr)_571px] lg:gap-12 [&_article]:rounded-lg [&_article]:border-2 [&_article]:border-rust-200 [&_article]:bg-white [&_button]:flex [&_button]:w-full [&_button]:cursor-pointer [&_button]:items-center [&_button]:justify-between [&_button]:gap-6 [&_button]:p-5 [&_button]:text-left [&_button]:text-base [&_button]:leading-[1.4] [&_button]:font-semibold **:[[role='region']]:text-[15px] **:[[role='region']]:leading-[1.6] **:[[role='region']]:text-grey-700">
+      <div class="mx-auto grid w-[calc(100%-var(--spacing)*8)] max-w-284.75 gap-8 lg:w-[calc(100%-var(--spacing)*16)] lg:grid-cols-[minmax(0,1fr)_571px] lg:gap-12 [&_article]:rounded-lg [&_article]:border-2 [&_article]:border-rust-200 [&_article]:bg-white [&_button]:flex [&_button]:w-full [&_button]:cursor-pointer [&_button]:items-center [&_button]:justify-between [&_button]:gap-6 [&_button]:p-5 [&_button]:text-left [&_button]:text-base [&_button]:leading-[1.4] [&_button]:font-semibold lg:[&_button]:text-h5/tight **:[[role='region']]:text-[15px] **:[[role='region']]:leading-[23px] **:[[role='region']]:text-grey-700">
         <div class="max-w-180 lg:max-w-284.75">
           <p class="mb-4 text-xs font-bold tracking-[0.08em] text-(--landing-accent) uppercase">
             {gettext("Questions and answers")}
@@ -54,7 +54,7 @@ defmodule FirmowidWeb.Landing.Components.Faq do
               phx-value-id={faq.id}
               aria-expanded={to_string(@open_faq == faq.id)}
               aria-controls={"faq-panel-#{faq.id}"}
-              class="transition-colors duration-200 hover:text-rust-700"
+              class="transition-[color,padding] duration-300 ease-in-out hover:text-rust-700 aria-expanded:pb-2.5 motion-reduce:transition-none"
             >
               <span>{faq.question}</span>
               <span
@@ -80,7 +80,7 @@ defmodule FirmowidWeb.Landing.Components.Faq do
             >
               <div class="min-h-0 overflow-hidden">
                 <div class="px-5 pb-5">
-                  <p :for={paragraph <- faq.answer} class="mt-4 first:mt-0">{paragraph}</p>
+                  <p :for={paragraph <- faq.answer} class="mt-[23px] first:mt-0">{paragraph}</p>
                 </div>
               </div>
             </div>

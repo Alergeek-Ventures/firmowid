@@ -126,7 +126,7 @@ defmodule FirmowidWeb.Landing.Components.Pricing do
           <p class="mb-4 text-xs font-bold tracking-[0.08em] text-(--landing-accent) uppercase">
             {gettext("Pricing")}
           </p>
-          <h2 class="text-[38px] leading-[1.1] font-bold tracking-[-0.03em] lg:text-[48px] lg:leading-[1.04]">
+          <h2 class="text-[38px] leading-[1.1] font-bold tracking-[-0.03em] lg:text-[48px] lg:leading-[50px] lg:tracking-[-1px]">
             {gettext("Fair pricing. No fine print.")}
           </h2>
           <p class="mx-auto mt-6 text-h5/6.75 text-grey-700 lg:max-w-147 lg:text-h5">
@@ -367,13 +367,13 @@ defmodule FirmowidWeb.Landing.Components.Pricing do
     <div
       id={@cutoff && "landing-pricing-cutoff"}
       tabindex={if @cutoff, do: "-1"}
-      class="grid grid-cols-3 border-b border-(--landing-line) text-xs lg:grid-cols-[1.45fr_repeat(3,minmax(0,1fr))] lg:text-sm [&_dt]:col-span-full [&_dt]:pt-4.5 [&_dt]:pb-2 [&_dt]:font-normal lg:[&_dt]:col-auto lg:[&_dt]:py-4 lg:[&_dt]:pr-6"
+      class="grid grid-cols-3 border-b border-(--landing-line) text-xs lg:grid-cols-[1.45fr_repeat(3,minmax(0,1fr))] lg:text-sm [&_dt]:col-span-full [&_dt]:pt-3 [&_dt]:pb-0.5 [&_dt]:font-normal lg:[&_dt]:col-auto lg:[&_dt]:py-4 lg:[&_dt]:pr-6"
     >
       <dt>{@label}</dt>
       <dd
         :for={{value, index} <- Enum.with_index(@values)}
         class={[
-          "px-1 pt-2 pb-4.5 text-center font-semibold text-[#0f0f0f] lg:px-3 lg:py-4",
+          "px-1 pt-0.5 pb-3 text-center font-semibold text-[#0f0f0f] lg:px-3 lg:py-4",
           index == 1 && "bg-transparent lg:bg-grey-900 lg:text-[#f5f1ea]"
         ]}
       >

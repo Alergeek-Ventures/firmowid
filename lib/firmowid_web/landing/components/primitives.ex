@@ -255,20 +255,20 @@ defmodule FirmowidWeb.Landing.Components.Primitives do
           </div>
 
           <div class="flex flex-col lg:flex-1 lg:pt-0">
-            <p class="mb-5 font-['Nothing_You_Could_Do',cursive] text-3xl leading-none text-rust-500 lg:text-[2rem]">
+            <p class="mb-5 font-['Nothing_You_Could_Do',cursive] text-3xl leading-none text-rust-500 lg:mb-4 lg:text-[2rem] lg:leading-normal">
               {gettext("YOUR MOVE!")}
             </p>
-            <h2 class="text-[3rem] leading-[.96] font-bold tracking-[-0.03em] lg:order-0 lg:max-w-160 lg:text-[4rem] lg:leading-[.92]">
+            <h2 class="text-[3rem] leading-[.96] font-bold tracking-[-0.03em] lg:order-0 lg:max-w-170 lg:text-[4rem] lg:leading-[57px] lg:tracking-[-1px]">
               {gettext("Run your business")}<br />
               {gettext("with a lighter mind.")}
             </h2>
-            <p class="mt-4 max-w-140 text-h5/6.75 text-grey-300 lg:mt-5 lg:max-w-170 lg:text-h5">
+            <p class="mt-4 max-w-140 text-h5/6.75 text-grey-200 lg:max-w-170">
               {gettext(
                 "Start with the free plan. No card. No commitment. If the software is not for you, delete your account with one click."
               )}
             </p>
 
-            <div class="mt-10 flex flex-col gap-4 *:min-h-14.5 *:text-lg lg:max-w-155 lg:flex-row lg:gap-6 lg:*:min-w-0 lg:*:flex-1 lg:*:px-3">
+            <div class="mt-10 flex flex-col gap-4 *:min-h-14.5 *:text-lg lg:mt-8 lg:max-w-155 lg:flex-row lg:gap-8 lg:*:min-h-14.25 lg:*:min-w-0 lg:*:flex-1 lg:*:px-3">
               <.landing_button
                 navigate={~p"/zarejestruj"}
                 variant={:rust}
@@ -289,56 +289,56 @@ defmodule FirmowidWeb.Landing.Components.Primitives do
           </div>
         </div>
 
-        <div class="relative pt-10 pb-8 before:absolute before:top-0 before:left-1/2 before:w-screen before:-translate-x-1/2 before:border-t before:border-[#f5f1ea]/20 lg:grid lg:grid-cols-[minmax(0,1fr)_auto] lg:items-start lg:gap-x-17 lg:pt-12 lg:pb-10">
+        <div class="relative pt-10 pb-8 before:absolute before:top-0 before:left-1/2 before:w-screen before:-translate-x-1/2 before:border-t before:border-[#f5f1ea]/20 lg:grid lg:grid-cols-[minmax(0,1fr)_auto] lg:items-start lg:gap-x-17 lg:pt-25.5 lg:pb-10">
           <div class="grid grid-cols-2 gap-6 lg:col-2 lg:row-1 lg:gap-17">
             <div>
-              <p class="mb-4 text-xs font-bold tracking-[0.08em] uppercase">
+              <p class="mb-4 text-xs font-bold tracking-[0.08em] uppercase lg:mb-3">
                 {gettext("Product")}
               </p>
               <a
                 href={~p"/funkcje"}
-                class="block py-1 text-base text-[rgb(245_241_234/0.75)] [&:hover]:text-white"
+                class="block py-1 text-base text-[rgb(245_241_234/0.75)] lg:text-sm/4.5 [&:hover]:text-white"
               >{gettext("Features")}</a>
               <a
                 href={~p"/cennik"}
-                class="block py-1 text-base text-[rgb(245_241_234/0.75)] [&:hover]:text-white"
+                class="block py-1 text-base text-[rgb(245_241_234/0.75)] lg:text-sm/4.5 [&:hover]:text-white"
               >{gettext("Pricing")}</a>
               <a
                 href={~p"/faq"}
-                class="block py-1 text-base text-[rgb(245_241_234/0.75)] [&:hover]:text-white"
+                class="block py-1 text-base text-[rgb(245_241_234/0.75)] lg:text-sm/4.5 [&:hover]:text-white"
               >{gettext("Questions and answers")}</a>
               <a
                 href={@repository}
                 target="_blank"
                 rel="noopener noreferrer"
-                class="block py-1 text-base text-[rgb(245_241_234/0.75)] [&:hover]:text-white"
+                class="block py-1 text-base text-[rgb(245_241_234/0.75)] lg:text-sm/4.5 [&:hover]:text-white"
               >
                 {gettext("Source code")}
               </a>
             </div>
             <div>
-              <p class="mb-4 text-xs font-bold tracking-[0.08em] uppercase">
+              <p class="mb-4 text-xs font-bold tracking-[0.08em] uppercase lg:mb-3">
                 {gettext("Company")}
               </p>
               <a
                 href="https://alergeek.ventures/contact-details"
                 target="_blank"
                 rel="noopener noreferrer"
-                class="block py-1 text-base text-[rgb(245_241_234/0.75)] [&:hover]:text-white"
+                class="block py-1 text-base text-[rgb(245_241_234/0.75)] lg:text-sm/4.5 [&:hover]:text-white"
               >
                 {gettext("Contact")}
               </a>
               <.link
                 kind="unstyled"
                 redirect={~p"/regulamin#top"}
-                class="block py-1 text-base text-[rgb(245_241_234/0.75)] [&:hover]:text-white"
+                class="block py-1 text-base text-[rgb(245_241_234/0.75)] lg:text-sm/4.5 [&:hover]:text-white"
               >
                 {gettext("Terms of Service")}
               </.link>
               <.link
                 kind="unstyled"
                 redirect={~p"/polityka-prywatnosci#top"}
-                class="block py-1 text-base text-[rgb(245_241_234/0.75)] [&:hover]:text-white"
+                class="block py-1 text-base text-[rgb(245_241_234/0.75)] lg:text-sm/4.5 [&:hover]:text-white"
               >
                 {pgettext("footer-policy-link", "Privacy Policy")}
               </.link>
@@ -346,18 +346,18 @@ defmodule FirmowidWeb.Landing.Components.Primitives do
           </div>
 
           <div class="order-1 mt-8 border-t border-[#f5f1ea]/20 pt-2 lg:order-0 lg:col-1 lg:row-1 lg:mt-0 lg:border-t-0 lg:pt-0">
-            <p class="text-lg font-bold lg:text-xl">Firmowid</p>
-            <p class="mt-3 text-sm/normal text-[rgb(245_241_234/0.6)]">
+            <p class="text-lg font-bold lg:text-[22px]">Firmowid</p>
+            <p class="mt-3 text-sm/normal text-[rgb(245_241_234/0.6)] lg:mt-1 lg:leading-5">
               {gettext("Invoicing, banking, and working hours.")}
               <br />{gettext("Built by entrepreneurs for entrepreneurs.")}
             </p>
           </div>
 
-          <div class="mt-2 flex flex-col-reverse gap-2 text-caps-sm leading-[1.6] text-[rgb(245_241_234/0.6)] lg:col-span-full lg:row-2 lg:mt-8 lg:flex-row lg:items-center lg:justify-between lg:gap-8 lg:bg-[url('/images/landing/decorations/dark-separator.svg')] lg:bg-size-[100%_--spacing(0.5)] lg:bg-top lg:bg-no-repeat lg:pt-7">
-            <p>
+          <div class="mt-2 flex flex-col-reverse gap-2 text-caps-sm leading-[1.6] text-[rgb(245_241_234/0.6)] lg:col-span-full lg:row-2 lg:mt-8 lg:flex-row lg:items-center lg:justify-between lg:gap-8 lg:bg-[url('/images/landing/decorations/dark-separator.svg')] lg:bg-size-[100%_--spacing(0.5)] lg:bg-top lg:bg-no-repeat lg:pt-10 lg:text-xs">
+            <p class="font-light">
               © {Date.utc_today().year} Firmowid · {@legal_entity.name}, {@legal_entity.address} · NIP {@legal_entity.nip} · KRS {@legal_entity.krs} · REGON {@legal_entity.regon}
             </p>
-            <div class="flex gap-4.5 text-sm">
+            <div class="flex gap-4.5 text-sm lg:text-xs">
               <a href={@repository} target="_blank" rel="noopener noreferrer">GitHub</a>
               <a
                 href="https://pl.linkedin.com/showcase/firmowid/"
