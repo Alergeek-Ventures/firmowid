@@ -30,10 +30,10 @@
         invoice={@invoice}
         step={
           if @invoice.invoice_number,
-            do: "Faktura korygująca",
-            else: "Edycja faktury"
+            do: gettext("Correction invoice"),
+            else: gettext("Invoice editing")
         }
-        title={"Edycja faktury #{@invoice.invoice_number}"}
+        title={gettext("Editing invoice %{number}", number: @invoice.invoice_number)}
       />
     </div>
 
@@ -58,11 +58,11 @@
             class="font-bold whitespace-nowrap text-grey-700"
             for={@form[:counterparty_id].id}
           >
-            Kontrahent
+            {gettext("Counterparty")}
           </label>
 
           <div class="col-start-2 grid grid-cols-[min-content_1fr] items-start gap-x-5 gap-y-4 py-4">
-            <p class="whitespace-nowrap text-grey-700">Nazwa</p>
+            <p class="whitespace-nowrap text-grey-700">{gettext("Name")}</p>
             <p>
               {@form[:buyer_display_name].value}
             </p>
@@ -75,7 +75,9 @@
                 </p>
               <% :optional_id -> %>
                 <%= if @form[:buyer_id].value && @form[:buyer_id].value != "" do %>
-                  <p class="whitespace-nowrap text-grey-700">Identyfikator</p>
+                  <p class="whitespace-nowrap text-grey-700">
+                    {pgettext("sales invoice creator", "Identifier")}
+                  </p>
                   <p>
                     {@form[:buyer_id].value}
                   </p>
@@ -85,7 +87,7 @@
                   {case id_type do
                     :nip -> "NIP"
                     :eu_vat -> "VAT-EU"
-                    :other_id -> "Identyfikator"
+                    :other_id -> pgettext("sales invoice creator", "Identifier")
                   end}
                 </p>
                 <p>
@@ -93,13 +95,13 @@
                 </p>
             <% end %>
 
-            <p class="whitespace-nowrap text-grey-700">Adres</p>
+            <p class="whitespace-nowrap text-grey-700">{gettext("Address")}</p>
             <p>
               {@form[:buyer_address].value}
             </p>
 
             <%= if @form[:buyer_given_name].value && @form[:buyer_surname].value do %>
-              <p class="whitespace-nowrap text-grey-700">Imię i nazwisko</p>
+              <p class="whitespace-nowrap text-grey-700">{gettext("Full name")}</p>
               <p>
                 {@form[:buyer_given_name].value} {@form[:buyer_surname].value}
               </p>
@@ -113,13 +115,13 @@
             class="col-start-2 justify-self-end"
             phx-click={show_modal("buyer-edit-modal")}
           >
-            Zmień
+            {pgettext("bank account", "Change")}
           </.button>
         </div>
 
         <div class="flex w-1/2 min-w-[400px] flex-col gap-4">
           <label class="font-bold whitespace-nowrap text-grey-700">
-            Płatność
+            {gettext("Payment")}
           </label>
 
           <FirmowidWeb.Invoicing.SalesInvoices.Components.InvoicePayment.invoice_payment
@@ -138,12 +140,12 @@
           class="min-h-20"
           field={@form[:correction_reason]}
           type="textarea"
-          label="Przyczyna korekty"
-          placeholder="np. korekta ceny, zmiana danych nabywcy..."
+          label={gettext("Correction reason")}
+          placeholder={gettext("e.g. price correction, change of buyer details...")}
           maxlength="256"
         />
         <p class="mt-1 text-xs text-grey-400">
-          Wymagana prawnie (Art. 106j ust. 2 pkt 3 ustawy o VAT). Maksymalnie 256 znaków.
+          {gettext("Required by law (Art. 106j(2)(3) of the VAT Act). Maximum 256 characters.")}
         </p>
       </div>
 
@@ -151,15 +153,17 @@
         <.input
           field={@form[:invoice_note]}
           type="textarea"
-          label="Notatka na fakturze"
-          placeholder="Widoczna na fakturze i w KSeF (stopka faktury)"
+          label={gettext("Invoice note")}
+          placeholder={gettext("Visible on the invoice and in KSeF (invoice footer)")}
           class="min-h-24!"
         />
         <.input
           field={@form[:internal_note]}
           type="textarea"
-          label="Komentarz"
-          placeholder="Notatka wewnętrzna (niewidoczna na fakturze - tylko wewnątrz Firmowida)"
+          label={gettext("Comment")}
+          placeholder={
+            gettext("Internal note (not visible on the invoice - only inside Firmowid)")
+          }
           class="min-h-24"
         />
       </div>
@@ -178,7 +182,7 @@
             disabled={!@counterparty_check.valid}
             class="size-4 rounded border-grey-300 text-teal-600 focus:ring-teal-500 disabled:cursor-not-allowed disabled:opacity-60"
           />
-          <span>Wyślij fakturę e-mailem do kontrahenta po otrzymaniu numeru KSeF</span>
+          <span>{gettext("Email the invoice to the counterparty after receiving the KSeF number")}</span>
         </label>
       </div>
 
@@ -186,7 +190,7 @@
         <%= if @invoice.invoice_number do %>
           <div class="space-y-4">
             <p class="text-lg/6 font-medium text-black">
-              Faktura {@invoice.invoice_number}
+              {gettext("Invoice %{number}", number: @invoice.invoice_number)}
             </p>
 
             <div class="max-w-[650px] overflow-hidden rounded-lg border border-grey-200 bg-white shadow-sm">
@@ -202,7 +206,7 @@
 
           <div class="space-y-4">
             <p class="text-lg/6 font-medium text-black">
-              Faktura korygująca {@preview_invoice.invoice_number}
+              {gettext("Correction invoice %{number}", number: @preview_invoice.invoice_number)}
             </p>
 
             <div class={[
@@ -242,7 +246,7 @@
         phx-click="cancel_edit"
         data-confirm-leave
       >
-        Anuluj
+        {gettext("Cancel")}
       </.button>
 
       <.button
@@ -250,9 +254,9 @@
         type="button"
         variant="secondary"
         phx-click="save_as_draft"
-        phx-disable-with="Zapisywanie..."
+        phx-disable-with={pgettext("sales invoice button", "Saving...")}
       >
-        Zapisz wersję roboczą
+        {gettext("Save draft")}
       </.button>
 
       <.button
@@ -261,27 +265,29 @@
         accent="teal"
       >
         {if @invoice.invoice_number,
-          do: "Wystaw fakturę korygującą",
-          else: "Zapisz i wyślij do KSeF"}
+          do: gettext("Issue correction invoice"),
+          else: gettext("Save and send to KSeF")}
       </.button>
     </div>
     <.modal id="buyer-edit-modal">
-      <h2 class="mb-6 text-xl font-semibold text-grey-900">Edytuj dane nabywcy</h2>
+      <h2 class="mb-6 text-xl font-semibold text-grey-900">
+        {gettext("Edit buyer details")}
+      </h2>
 
       <div class="space-y-6">
         <div class="rounded-lg bg-grey-50 px-5 py-3">
           <p class="text-sm text-grey-700">
             <%= if to_string(@form[:buyer_type].value) == "company" do %>
-              Firma / Jednoosobowa Działalność Gospodarcza
+              {gettext("Company / sole proprietorship")}
             <% else %>
-              Osoba prywatna
+              {gettext("Private person")}
             <% end %>
           </p>
         </div>
 
         <div class="grid grid-cols-2 gap-6">
           <div class="space-y-4">
-            <p class="text-sm font-medium text-grey-700">Dane podstawowe</p>
+            <p class="text-sm font-medium text-grey-700">{gettext("Basic details")}</p>
 
             <div
               :if={
@@ -297,7 +303,7 @@
               :if={to_string(@form[:buyer_type].value) == "company"}
               field={@form[:buyer_full_name]}
               type="text"
-              placeholder="Nazwa firmy"
+              placeholder={gettext("Company name")}
             />
 
             <div
@@ -317,68 +323,70 @@
               <.input
                 field={@form[:buyer_given_name]}
                 type="text"
-                placeholder="Imię"
+                placeholder={gettext("First name")}
               />
               <.input
                 field={@form[:buyer_surname]}
                 type="text"
-                placeholder="Nazwisko"
+                placeholder={gettext("Last name")}
               />
             </div>
 
             <.input
               field={@form[:buyer_display_name]}
               type="text"
-              placeholder="Nazwa wyświetlana (opcjonalnie)"
+              placeholder={gettext("Display name (optional)")}
             />
           </div>
 
           <div class="space-y-4">
-            <p class="text-sm font-medium text-grey-700">Dane adresowe</p>
+            <p class="text-sm font-medium text-grey-700">{gettext("Address details")}</p>
 
             <.input
               field={@form[:buyer_address]}
               type="textarea"
-              placeholder="Adres"
+              placeholder={gettext("Address")}
               input_class="resize-none min-h-[6rem]"
             />
 
             <%= if to_string(@form[:buyer_country].value) == "PL" do %>
               <div class="space-y-1">
-                <p class="text-sm text-grey-500">Kraj</p>
-                <p class="font-medium text-grey-900">Polska</p>
+                <p class="text-sm text-grey-500">
+                  {pgettext("sales invoice creator", "Country")}
+                </p>
+                <p class="font-medium text-grey-900">{gettext("Poland")}</p>
               </div>
             <% else %>
               <.input
                 field={@form[:buyer_country]}
                 type="select"
                 options={Firmowid.Invoicing.CountryCodes.country_options()}
-                prompt="Wybierz kraj"
+                prompt={gettext("Choose a country")}
               />
             <% end %>
           </div>
         </div>
 
         <div class="space-y-4">
-          <p class="text-sm font-medium text-grey-700">Dodatkowe informacje</p>
+          <p class="text-sm font-medium text-grey-700">{gettext("Additional information")}</p>
 
           <div class="grid grid-cols-2 gap-4">
             <.input
               field={@form[:buyer_email]}
               type="email"
-              placeholder="E-mail"
+              placeholder={gettext("Email")}
             />
             <.input
               field={@form[:buyer_phone]}
               type="tel"
-              placeholder="Telefon"
+              placeholder={gettext("Phone")}
             />
           </div>
 
           <.input
             field={@form[:buyer_description]}
             type="textarea"
-            placeholder="Opis"
+            placeholder={gettext("Description")}
             input_class="resize-none"
           />
         </div>
@@ -390,7 +398,7 @@
             accent="teal"
             phx-click={hide_modal("buyer-edit-modal")}
           >
-            Zamknij
+            {gettext("Close")}
           </.button>
         </div>
       </div>

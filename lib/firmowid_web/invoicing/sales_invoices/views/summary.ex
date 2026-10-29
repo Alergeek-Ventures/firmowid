@@ -69,12 +69,12 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Summary do
     ~H"""
     <div class="mx-auto my-4 flex w-full max-w-6xl flex-col gap-4">
       <p class="text-sm text-grey-500">
-        Kreator faktur | <span class="text-grey-700">Faktura wystawiona</span>
+        {gettext("Invoice creator")} | <span class="text-grey-700">{gettext("Invoice issued")}</span>
       </p>
       <%= cond do %>
         <% SubmissionInfo.submitting?(@submission_info) -> %>
           <h1 class="flex items-baseline gap-1 text-2xl/tight font-medium">
-            Faktura w trakcie wysyłania
+            {gettext("Invoice is being sent")}
             <span class="inline-flex gap-1">
               <span class="size-1.5 animate-bounce rounded-full bg-grey-400 [animation-delay:-0.3s]"></span>
               <span class="size-1.5 animate-bounce rounded-full bg-grey-400 [animation-delay:-0.15s]"></span>
@@ -82,13 +82,13 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Summary do
             </span>
           </h1>
         <% SubmissionInfo.submitted?(@submission_info) -> %>
-          <h1 class="text-2xl/tight font-medium">Faktura wysłana do KSeF</h1>
+          <h1 class="text-2xl/tight font-medium">{gettext("Invoice sent to KSeF")}</h1>
         <% SubmissionInfo.failed?(@submission_info) -> %>
           <h1 class="text-2xl/tight font-medium text-brick-600">
-            Wysyłka do KSeF nie powiodła się
+            {gettext("Sending to KSeF failed")}
           </h1>
         <% true -> %>
-          <h1 class="text-2xl/tight font-medium">Faktura wystawiona</h1>
+          <h1 class="text-2xl/tight font-medium">{gettext("Invoice issued")}</h1>
       <% end %>
 
       <div class="flex items-center justify-between">
@@ -111,7 +111,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Summary do
                 disabled
                 aria-describedby="edit-invoice-button-description"
               >
-                <Lucideicons.pencil /> Edytuj
+                <Lucideicons.pencil /> {gettext("Edit")}
               </FirmowidUI.Components.Button.button>
             </span>
             <span id="edit-invoice-button-description" class="sr-only">
@@ -124,7 +124,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Summary do
               variant="secondary"
               size="small"
             >
-              <Lucideicons.pencil /> Edytuj
+              <Lucideicons.pencil /> {gettext("Edit")}
             </.link>
           <% end %>
           <.link
@@ -134,7 +134,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Summary do
             redirect={Navigation.sales_invoice_pdf_download_path(@invoice, true)}
             download
           >
-            <Lucideicons.download /> Pobierz
+            <Lucideicons.download /> {gettext("Download")}
           </.link>
         </div>
 
@@ -144,7 +144,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Summary do
             navigate={Navigation.sales_invoice_show_path(@invoice, @return_to)}
             class="text-sm text-grey-600 hover:text-grey-900"
           >
-            Przejdź do faktury
+            {gettext("Go to the invoice")}
           </.link>
           <.link
             navigate={Navigation.sales_invoice_creator_path()}
@@ -152,19 +152,21 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Summary do
             variant="primary"
             accent="teal"
           >
-            Wystaw kolejną
+            {gettext("Issue another")}
           </.link>
         </div>
       </div>
       <%= if SubmissionInfo.failed?(@submission_info) do %>
         <div class="flex flex-col items-center justify-center gap-4 rounded-md bg-brick-200 p-8 text-center text-brick-700">
           <Lucideicons.triangle_alert class="size-10 text-brick-600" />
-          <h2 class="text-xl">Wysyłka do KSeF nie powiodła się.</h2>
+          <h2 class="text-xl">{gettext("Sending to KSeF failed.")}</h2>
           <p :if={@submission_info.error} class="max-w-lg text-sm">
             {@submission_info.error}
           </p>
           <p id="returned-to-draft-notice" class="mt-2 text-sm text-grey-600">
-            Faktura wróciła do wersji roboczej bez numeru. Popraw dane i wystaw ją ponownie.
+            {gettext(
+              "The invoice returned to a draft without a number. Correct the details and issue it again."
+            )}
           </p>
           <.link
             navigate={Navigation.sales_invoice_edit_path(@invoice, @return_to)}
@@ -173,7 +175,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Summary do
             accent="teal"
             class="mt-4"
           >
-            <Lucideicons.pencil class="size-4" /> Popraw i wystaw ponownie
+            <Lucideicons.pencil class="size-4" /> {gettext("Correct and issue again")}
           </.link>
         </div>
       <% end %>
@@ -219,7 +221,9 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Summary do
           >
             <div class="text-center">
               <Lucideicons.circle_check class="mx-auto size-24 text-moss-700" />
-              <p class="mt-4 text-xl font-medium text-grey-700">Wysłano do KSeF!</p>
+              <p class="mt-4 text-xl font-medium text-grey-700">
+                {gettext("Sent to KSeF!")}
+              </p>
             </div>
           </div>
 
