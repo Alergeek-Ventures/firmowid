@@ -8,7 +8,7 @@ defmodule FirmowidWeb.Organization.Controllers.Switch do
   """
   use FirmowidWeb, :controller
 
-  alias Firmowid.Ash.Core
+  alias Firmowid.Core
   alias FirmowidWeb.Infrastructure.UserAuth
 
   @doc "Selects the organization given in the `organizacja` param."

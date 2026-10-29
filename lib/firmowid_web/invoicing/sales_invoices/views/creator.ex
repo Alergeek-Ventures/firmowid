@@ -18,16 +18,16 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
   import FirmowidWeb.DesignSystem.Components.CoreComponents
   import Phoenix.Component, except: [link: 1]
 
-  alias Firmowid.Ash.Core
-  alias Firmowid.Ash.Finances
-  alias Firmowid.Ash.Invoicing
-  alias Firmowid.Ash.Invoicing.Counterparty
-  alias Firmowid.Ash.Invoicing.CountryCodes
-  alias Firmowid.Ash.Invoicing.SalesInvoice
-  alias Firmowid.Ash.Invoicing.SalesInvoice.EmailRecipientEligibility
-  alias Firmowid.Ash.Invoicing.WizardState
-  alias Firmowid.Ash.Ksef
+  alias Firmowid.Core
   alias Firmowid.ErrorKind
+  alias Firmowid.Finances
+  alias Firmowid.Invoicing
+  alias Firmowid.Invoicing.Counterparty
+  alias Firmowid.Invoicing.CountryCodes
+  alias Firmowid.Invoicing.SalesInvoice
+  alias Firmowid.Invoicing.SalesInvoice.EmailRecipientEligibility
+  alias Firmowid.Invoicing.WizardState
+  alias Firmowid.Ksef
   alias FirmowidWeb.Infrastructure.Utilities.PolishValues
   alias FirmowidWeb.Infrastructure.Utilities.PosthogBusinessEvents
   alias FirmowidWeb.Invoicing.SalesInvoices.Components.InvoicePayment

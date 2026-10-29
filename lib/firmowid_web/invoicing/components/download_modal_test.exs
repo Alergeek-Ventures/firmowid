@@ -5,8 +5,8 @@ defmodule FirmowidWeb.Invoicing.Components.DownloadModalTest do
   import Firmowid.AccountsFixtures
   import Phoenix.LiveViewTest
 
-  alias Firmowid.Ash.Blobs.Blob
-  alias Firmowid.Ash.Invoicing.CostInvoice
+  alias Firmowid.Blobs.Blob
+  alias Firmowid.Invoicing.CostInvoice
 
   test "download modal is rendered and builds month href with sales enabled by default", %{
     conn: conn

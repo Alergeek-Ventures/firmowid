@@ -1,7 +1,11 @@
 # This literal is a password-reset test fixture, not a deployed credential.
 # Match both its value and file so other passwords remain subject to scanning.
+# History keeps the file's path from before the domain left lib/firmowid/ash/.
 filter = '''
-attributes["path"] == "lib/firmowid/ash/core/user/authentication_test.exs" &&
+attributes["path"] in [
+  "lib/firmowid/core/user/authentication_test.exs",
+  "lib/firmowid/ash/core/user/authentication_test.exs"
+] &&
 finding["secret"] == "a different password!!"
 '''
 

@@ -4,7 +4,7 @@ defmodule FirmowidWeb.Auth.Views.RegistrationTest do
   import Firmowid.AccountsFixtures
   import Phoenix.LiveViewTest
 
-  alias Firmowid.Ash.Core
+  alias Firmowid.Core
 
   describe "Registration page" do
     test "renders registration page", %{conn: conn} do

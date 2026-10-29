@@ -6,12 +6,12 @@ defmodule FirmowidMcp.Invoicing.Views.Issue do
   import Phoenix.Component
 
   alias AshPhoenix.FormData.Error
-  alias Firmowid.Ash.Core
-  alias Firmowid.Ash.Invoicing
-  alias Firmowid.Ash.Invoicing.SalesInvoice
-  alias Firmowid.Ash.Invoicing.SalesInvoice.Preview
-  alias Firmowid.Ash.Ksef
-  alias Firmowid.Ash.Ksef.SubmissionInfo
+  alias Firmowid.Core
+  alias Firmowid.Invoicing
+  alias Firmowid.Invoicing.SalesInvoice
+  alias Firmowid.Invoicing.SalesInvoice.Preview
+  alias Firmowid.Ksef
+  alias Firmowid.Ksef.SubmissionInfo
   alias FirmowidMcp.Invoicing, as: McpInvoicing
   alias FirmowidMcp.Invoicing.IssueCorrection
   alias FirmowidMcp.Invoicing.IssueInvoice

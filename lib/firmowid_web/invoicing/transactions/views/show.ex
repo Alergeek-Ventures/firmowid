@@ -8,13 +8,13 @@ defmodule FirmowidWeb.Invoicing.Transactions.Views.Show do
   import FirmowidWeb.Infrastructure.Flags, only: [flag_enabled?: 2]
 
   alias Ash.Notifier.Notification
-  alias Firmowid.Ash.Finances
-  alias Firmowid.Ash.Finances.Transaction
-  alias Firmowid.Ash.Invoicing
-  alias Firmowid.Ash.Invoicing.CostInvoice
-  alias Firmowid.Ash.Invoicing.InvoiceMatching
-  alias Firmowid.Ash.Invoicing.SalesInvoice
-  alias Firmowid.Ash.Payroll
+  alias Firmowid.Finances
+  alias Firmowid.Finances.Transaction
+  alias Firmowid.Invoicing
+  alias Firmowid.Invoicing.CostInvoice
+  alias Firmowid.Invoicing.InvoiceMatching
+  alias Firmowid.Invoicing.SalesInvoice
+  alias Firmowid.Payroll
   alias FirmowidWeb.Core.Endpoint
   alias FirmowidWeb.Invoicing.Components.InvoiceDetails
   alias FirmowidWeb.Invoicing.Transactions.Components.SalaryComponents
@@ -284,7 +284,7 @@ defmodule FirmowidWeb.Invoicing.Transactions.Views.Show do
           |> List.first()
 
         if salary do
-          Firmowid.Ash.Payroll.UserSalary.Calculations.PayoutEstimates.closest(
+          Firmowid.Payroll.UserSalary.Calculations.PayoutEstimates.closest(
             salary.payout_estimates,
             transaction.amount
           ) ||

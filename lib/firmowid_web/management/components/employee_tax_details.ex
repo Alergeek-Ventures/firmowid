@@ -5,8 +5,8 @@ defmodule FirmowidWeb.Management.Components.EmployeeTaxDetails do
   import FirmowidUI.Components.Button
   import FirmowidWeb.Management.Components.Card
 
-  alias Firmowid.Ash.Payroll
-  alias Firmowid.Ash.Payroll.MemberTaxDeclaration
+  alias Firmowid.Payroll
+  alias Firmowid.Payroll.MemberTaxDeclaration
   alias FirmowidWeb.Infrastructure.Utilities.TimeFormatter
   alias Phoenix.LiveView.JS
 

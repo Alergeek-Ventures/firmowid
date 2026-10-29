@@ -7,7 +7,7 @@ defmodule Firmowid.Repo.Migrations.AddKsefCredentialLifecycle do
 
   use Ecto.Migration
 
-  alias Firmowid.Ash.Ksef.Credential
+  alias Firmowid.Ksef.Credential
 
   def up do
     alter table(:ksef_credentials) do

@@ -3,11 +3,11 @@ defmodule FirmowidWeb.Billing.Utilities.MonthContext do
   Builds shared billing month context for admin and settings screens.
   """
 
-  alias Firmowid.Ash.Billing
-  alias Firmowid.Ash.Billing.Month
-  alias Firmowid.Ash.Billing.Snapshot
-  alias Firmowid.Ash.Billing.SnapshotCalculator
-  alias Firmowid.Ash.Core.Organization
+  alias Firmowid.Billing
+  alias Firmowid.Billing.Month
+  alias Firmowid.Billing.Snapshot
+  alias Firmowid.Billing.SnapshotCalculator
+  alias Firmowid.Core.Organization
   alias FirmowidWeb.Billing.Utilities.Worksheet
 
   @type status :: %{kind: :live_preview} | %{kind: :snapshot, frozen_at: DateTime.t()}

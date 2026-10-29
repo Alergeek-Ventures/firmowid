@@ -5,8 +5,8 @@ defmodule FirmowidWeb.Management.Views.CounterpartiesTest do
   import Firmowid.AccountsFixtures
   import Phoenix.LiveViewTest
 
-  alias Firmowid.Ash.Invoicing
-  alias Firmowid.Ash.Scope
+  alias Firmowid.Invoicing
+  alias Firmowid.Scope
 
   test "admin can create, edit, archive and restore a counterparty", %{conn: conn} do
     admin = admin_fixture()

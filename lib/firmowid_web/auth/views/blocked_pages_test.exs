@@ -5,7 +5,7 @@ defmodule FirmowidWeb.Auth.Views.BlockedPagesTest do
   import Firmowid.AccountsFixtures
   import Phoenix.LiveViewTest
 
-  alias Firmowid.Ash.Core
+  alias Firmowid.Core
 
   test "organization owner without a plan signs in to the expired subscription page", %{
     conn: conn

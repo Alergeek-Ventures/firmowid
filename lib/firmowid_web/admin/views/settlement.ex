@@ -5,10 +5,10 @@ defmodule FirmowidWeb.Admin.Views.Settlement do
 
   use FirmowidWeb, :live_view
 
-  alias Firmowid.Ash.Billing.Month
-  alias Firmowid.Ash.Billing.PlanCatalog
-  alias Firmowid.Ash.Core
-  alias Firmowid.Ash.Core.Organization
+  alias Firmowid.Billing.Month
+  alias Firmowid.Billing.PlanCatalog
+  alias Firmowid.Core
+  alias Firmowid.Core.Organization
   alias FirmowidWeb.Admin.Components.SettlementComponents
   alias FirmowidWeb.Admin.Utilities.Navigation
   alias FirmowidWeb.Admin.Utilities.OrganizationActivity

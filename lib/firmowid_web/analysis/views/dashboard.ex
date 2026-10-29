@@ -11,14 +11,14 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
   import FirmowidWeb.DesignSystem.Components.YearPicker
   import FirmowidWeb.Infrastructure.Flags, only: [flag_enabled?: 2]
 
-  alias Firmowid.Ash.Analysis
-  alias Firmowid.Ash.Analysis.CategoryReview
-  alias Firmowid.Ash.Analysis.CounterpartyCategory
-  alias Firmowid.Ash.Analysis.IndustryTemplate
-  alias Firmowid.Ash.Analysis.ProjectProfitability
-  alias Firmowid.Ash.Analysis.TagDefinition
-  alias Firmowid.Ash.Analysis.TaxForecast
-  alias Firmowid.Ash.Analysis.YearSummary
+  alias Firmowid.Analysis
+  alias Firmowid.Analysis.CategoryReview
+  alias Firmowid.Analysis.CounterpartyCategory
+  alias Firmowid.Analysis.IndustryTemplate
+  alias Firmowid.Analysis.ProjectProfitability
+  alias Firmowid.Analysis.TagDefinition
+  alias Firmowid.Analysis.TaxForecast
+  alias Firmowid.Analysis.YearSummary
   alias FirmowidWeb.Analysis.Utilities.Navigation
   alias FirmowidWeb.Invoicing.Utilities.Navigation, as: InvoicingNavigation
   alias FirmowidWeb.Settings.Utilities.Navigation, as: SettingsNavigation

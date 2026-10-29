@@ -7,14 +7,14 @@ defmodule FirmowidWeb.Admin.Utilities.OrganizationActivity do
   start times, not evidence of a login or of the person who performed the action.
   """
 
-  alias Firmowid.Ash.Invoicing
-  alias Firmowid.Ash.Timetracker
+  alias Firmowid.Invoicing
+  alias Firmowid.Timetracker
 
   @doc "Returns counts and latest persisted traces for a selected organization."
   @spec load!(binary(), map(), DateTime.t()) :: map()
   def load!(organization_id, %{system_role: :superuser} = actor, now \\ DateTime.utc_now()) do
     from = DateTime.shift(now, day: -30)
-    scope = %Firmowid.Ash.Scope{actor: actor, tenant: organization_id}
+    scope = %Firmowid.Scope{actor: actor, tenant: organization_id}
 
     inserted_window = %{inserted_from: from, inserted_to: now}
     cost_filters = %{source: :manual_import, is_ksef_imported: false}

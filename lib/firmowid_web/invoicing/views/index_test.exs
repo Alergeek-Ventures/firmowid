@@ -13,16 +13,16 @@ defmodule FirmowidWeb.Invoicing.Views.IndexTest do
   import Firmowid.Test.Support.OpenAIEnrichmentTestHelpers
   import Phoenix.LiveViewTest
 
-  alias Firmowid.Ash.Blobs.Blob
-  alias Firmowid.Ash.Finances
-  alias Firmowid.Ash.Finances.BankAccount
-  alias Firmowid.Ash.Finances.Requisition
-  alias Firmowid.Ash.Finances.Transaction
-  alias Firmowid.Ash.Invoicing
-  alias Firmowid.Ash.Invoicing.CostInvoice
-  alias Firmowid.Ash.Invoicing.SkippedKsefSalesInvoice
-  alias Firmowid.Ash.Scope
+  alias Firmowid.Blobs.Blob
+  alias Firmowid.Finances
+  alias Firmowid.Finances.BankAccount
+  alias Firmowid.Finances.Requisition
+  alias Firmowid.Finances.Transaction
+  alias Firmowid.Invoicing
+  alias Firmowid.Invoicing.CostInvoice
+  alias Firmowid.Invoicing.SkippedKsefSalesInvoice
   alias Firmowid.InvoicingFixtures
+  alias Firmowid.Scope
   alias FirmowidWeb.Core.Endpoint
   alias Phoenix.Socket.Broadcast
 
@@ -240,7 +240,7 @@ defmodule FirmowidWeb.Invoicing.Views.IndexTest do
           })
 
         Ash.Seed.seed!(
-          Firmowid.Ash.Events.Event,
+          Firmowid.Events.Event,
           %{
             organization_id: user.member.organization_id,
             record_id: account.id,

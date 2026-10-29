@@ -4,8 +4,8 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTableTest do
 
   import Phoenix.LiveViewTest
 
-  alias Firmowid.Ash.Finances.Transaction
-  alias Firmowid.Ash.Invoicing.SalesInvoice
+  alias Firmowid.Finances.Transaction
+  alias Firmowid.Invoicing.SalesInvoice
   alias FirmowidWeb.Invoicing.Components.EntriesTable
   alias FirmowidWeb.Invoicing.Utilities.Navigation
 

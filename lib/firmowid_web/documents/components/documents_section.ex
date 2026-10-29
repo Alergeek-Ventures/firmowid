@@ -7,11 +7,11 @@ defmodule FirmowidWeb.Documents.Components.DocumentsSection do
   import FirmowidWeb.Infrastructure.Flags, only: [flag_enabled?: 2]
   import Phoenix.Component, except: [link: 1]
 
-  alias Firmowid.Ash.Blobs
-  alias Firmowid.Ash.Blobs.Blob
-  alias Firmowid.Ash.Payroll
-  alias Firmowid.Ash.Timetracker
+  alias Firmowid.Blobs
+  alias Firmowid.Blobs.Blob
   alias Firmowid.ErrorKind
+  alias Firmowid.Payroll
+  alias Firmowid.Timetracker
   alias FirmowidWeb.Infrastructure.Utilities.TimeFormatter
 
   require Logger

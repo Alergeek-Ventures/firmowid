@@ -3,7 +3,7 @@ defmodule Firmowid.FinancesFixtures do
   Test helpers for creating finance-domain records.
   """
 
-  alias Firmowid.Ash.Finances.BankAccount
+  alias Firmowid.Finances.BankAccount
 
   @doc """
   Creates a bank account fixture for the user's organization.

@@ -1,13 +1,13 @@
 defmodule Firmowid.Seeds.Delegations do
   @moduledoc "Seeds example business-trip delegations for Kira Voss."
 
-  alias Firmowid.Ash.Delegations.Delegation
-  alias Firmowid.Ash.Delegations.DelegationExpense
+  alias Firmowid.Delegations.Delegation
+  alias Firmowid.Delegations.DelegationExpense
   alias Firmowid.Seeds.Helpers
 
-  @seed_actor %Firmowid.Ash.Core.User{
+  @seed_actor %Firmowid.Core.User{
     id: "00000000-0000-0000-0000-000000000000",
-    member: %Firmowid.Ash.Core.Member{role: :admin}
+    member: %Firmowid.Core.Member{role: :admin}
   }
   @timezone "Europe/Warsaw"
 

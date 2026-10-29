@@ -5,10 +5,10 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
 
   import FirmowidWeb.Delegations.Components.SettlementPage
 
-  alias Firmowid.Ash.Delegations
-  alias Firmowid.Ash.Delegations.DelegationExpense
-  alias Firmowid.Ash.Delegations.DelegationExpense.Trip
-  alias Firmowid.Ash.Delegations.DelegationExpenseExtractor
+  alias Firmowid.Delegations
+  alias Firmowid.Delegations.DelegationExpense
+  alias Firmowid.Delegations.DelegationExpense.Trip
+  alias Firmowid.Delegations.DelegationExpenseExtractor
   alias FirmowidWeb.Delegations.Utilities.NbpSettlement
   alias FirmowidWeb.Delegations.Utilities.SettlementForm
   alias FirmowidWeb.Delegations.Utilities.SettlementPresentation
@@ -417,13 +417,13 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
     do: decorate_expense(%{expense | details: details})
 
   defp decorate_expense(
-         %{details: %{__struct__: Firmowid.Ash.Delegations.DelegationExpense.TransportDetails} = details} = expense
+         %{details: %{__struct__: Firmowid.Delegations.DelegationExpense.TransportDetails} = details} = expense
        ) do
     expense |> Map.put(:transport_type, details.transport_type) |> Map.put(:trips, details.trips)
   end
 
   defp decorate_expense(
-         %{details: %{__struct__: Firmowid.Ash.Delegations.DelegationExpense.AccommodationDetails} = details} = expense
+         %{details: %{__struct__: Firmowid.Delegations.DelegationExpense.AccommodationDetails} = details} = expense
        ) do
     expense
     |> Map.put(:locality, details.locality)
@@ -433,7 +433,7 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
   end
 
   defp decorate_expense(
-         %{details: %{__struct__: Firmowid.Ash.Delegations.DelegationExpense.OtherDetails} = details} = expense
+         %{details: %{__struct__: Firmowid.Delegations.DelegationExpense.OtherDetails} = details} = expense
        ), do: Map.put(expense, :description, details.description)
 
   defp sort_transport_expenses(expenses) do

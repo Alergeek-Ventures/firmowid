@@ -5,8 +5,8 @@ defmodule FirmowidWeb.Timetracker.Controllers.CsvTest do
   import Firmowid.AccountsFixtures
   import Firmowid.TimetrackerFixtures
 
-  alias Firmowid.Ash.Scope
-  alias Firmowid.Ash.Timetracker.Session
+  alias Firmowid.Scope
+  alias Firmowid.Timetracker.Session
 
   test "project csv exports session rows with expected columns", %{conn: conn} do
     admin = admin_fixture()

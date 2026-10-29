@@ -10,12 +10,12 @@ defmodule FirmowidWeb.Timetracker.Views.Index do
   alias Ash.Error.Invalid
   alias Ash.Error.Unknown
   alias Ash.Error.Unknown.UnknownError
-  alias Firmowid.Ash.Timetracker
-  alias Firmowid.Ash.Timetracker.Changes.NormalizeSessionBoundaries
-  alias Firmowid.Ash.Timetracker.HoursRecord, as: AshHoursRecord
-  alias Firmowid.Ash.Timetracker.OverlapResolver
-  alias Firmowid.Ash.Timetracker.Session, as: AshSession
-  alias Firmowid.Ash.Timetracker.TrimPlan
+  alias Firmowid.Timetracker
+  alias Firmowid.Timetracker.Changes.NormalizeSessionBoundaries
+  alias Firmowid.Timetracker.HoursRecord
+  alias Firmowid.Timetracker.OverlapResolver
+  alias Firmowid.Timetracker.Session
+  alias Firmowid.Timetracker.TrimPlan
   alias FirmowidWeb.Infrastructure.Utilities.PosthogBusinessEvents
   alias FirmowidWeb.Infrastructure.Utilities.TimeFormatter
   alias FirmowidWeb.Timetracker.Utilities.GroupedSessionForm
@@ -67,7 +67,7 @@ defmodule FirmowidWeb.Timetracker.Views.Index do
     scope = socket.assigns.ash_scope
     user = socket.assigns.current_user
 
-    {:ok, last_session} = AshSession.most_recent(scope: scope, not_found_error?: false)
+    {:ok, last_session} = Session.most_recent(scope: scope, not_found_error?: false)
 
     active_projects =
       Timetracker.list_projects!(%{member_id: user.member.id, status: :active}, scope: scope)
@@ -121,7 +121,7 @@ defmodule FirmowidWeb.Timetracker.Views.Index do
     member_id = socket.assigns.current_user.member.id
 
     {:ok, sessions} =
-      AshSession.list_user_sessions(%{after_date: after_date}, scope: scope)
+      Session.list_user_sessions(%{after_date: after_date}, scope: scope)
 
     sessions =
       Enum.map(sessions, fn session ->
@@ -177,7 +177,7 @@ defmodule FirmowidWeb.Timetracker.Views.Index do
          end)}
       end)
 
-    {:ok, current_session} = AshSession.get_current(scope: scope, not_found_error?: false)
+    {:ok, current_session} = Session.get_current(scope: scope, not_found_error?: false)
 
     project_ids_in_sessions =
       sessions
@@ -305,7 +305,7 @@ defmodule FirmowidWeb.Timetracker.Views.Index do
     # The overlap plan must use the exact boundaries persisted by Session.
     {new_start, new_end} = effective_time_range(attrs)
 
-    case AshSession.list_overlapping(member_id, new_start, %{end_datetime: new_end}, scope: scope) do
+    case Session.list_overlapping(member_id, new_start, %{end_datetime: new_end}, scope: scope) do
       {:ok, []} ->
         # No overlaps — save normally (original flow)
         save_session_directly(attrs, socket)
@@ -386,7 +386,7 @@ defmodule FirmowidWeb.Timetracker.Views.Index do
 
     results =
       Enum.reduce_while(session_updates, :ok, fn {session, attrs}, :ok ->
-        case AshSession.update(session, attrs, scope: scope) do
+        case Session.update(session, attrs, scope: scope) do
           {:ok, _updated} -> {:cont, :ok}
           {:error, error} -> {:halt, {:error, session.id, error}}
         end
@@ -444,7 +444,7 @@ defmodule FirmowidWeb.Timetracker.Views.Index do
     |> case do
       {:ok, attributes} ->
         current_session
-        |> AshSession.update(attributes, scope: scope)
+        |> Session.update(attributes, scope: scope)
         |> handle_session_save_result(socket)
 
       {:error, changeset} ->
@@ -588,7 +588,7 @@ defmodule FirmowidWeb.Timetracker.Views.Index do
     scope = socket.assigns.ash_scope
     current_session = socket.assigns.current_session
 
-    case AshSession.stop(current_session, scope: scope) do
+    case Session.stop(current_session, scope: scope) do
       {:ok, ended_session} ->
         duration_seconds = DateTime.diff(ended_session.end_datetime, ended_session.start_datetime)
         _duration_minutes = div(duration_seconds, 60)
@@ -607,7 +607,7 @@ defmodule FirmowidWeb.Timetracker.Views.Index do
     scope = socket.assigns.ash_scope
     session = Timetracker.get_session_by_id!(id, scope: scope)
 
-    case AshSession.destroy(session, scope: scope) do
+    case Session.destroy(session, scope: scope) do
       :ok ->
         {:noreply, assign_sessions(socket)}
 
@@ -665,7 +665,7 @@ defmodule FirmowidWeb.Timetracker.Views.Index do
       |> DateTime.new!(~T[23:59:00], timezone)
       |> DateTime.shift_zone!("Etc/UTC")
 
-    case AshSession.update(session, %{end_datetime: end_datetime}, scope: scope) do
+    case Session.update(session, %{end_datetime: end_datetime}, scope: scope) do
       {:ok, _} ->
         {:noreply, assign_sessions(socket)}
 
@@ -747,7 +747,7 @@ defmodule FirmowidWeb.Timetracker.Views.Index do
     today = Date.utc_today()
 
     {:ok, hours_record} =
-      AshHoursRecord.by_month(socket.assigns.current_user.member.id, today.month, today.year,
+      HoursRecord.by_month(socket.assigns.current_user.member.id, today.month, today.year,
         scope: scope,
         not_found_error?: false
       )

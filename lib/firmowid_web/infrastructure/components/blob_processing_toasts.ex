@@ -8,7 +8,7 @@ defmodule FirmowidWeb.Infrastructure.Components.BlobProcessingToasts do
   import FirmowidUI.Components.Link
   import Phoenix.Component, except: [link: 1]
 
-  alias Firmowid.Ash.Blobs.Blob
+  alias Firmowid.Blobs.Blob
   alias FirmowidWeb.Invoicing.Utilities.Navigation
 
   @doc """

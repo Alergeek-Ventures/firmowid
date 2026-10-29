@@ -13,7 +13,7 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
   import FirmowidWeb.Settings.Components.EditButton
   import Phoenix.Component, except: [link: 1]
 
-  alias Firmowid.Ash.Core.UserRole
+  alias Firmowid.Core.UserRole
   alias FirmowidWeb.Infrastructure.Utilities.TimeFormatter
   alias FirmowidWeb.Invoicing.Utilities.VatExemption
   alias FirmowidWeb.Settings.Components.Helpers

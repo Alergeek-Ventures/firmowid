@@ -202,8 +202,8 @@ files, as they have access to Credo and will be linted / checked more rigorously
 
 Tests are colocated with the code they test — placed as close to the source files as
 possible inside `lib/`, not in a separate `test/` tree. This is followed across the
-entire codebase. Example: tests for `lib/firmowid/ash/finances/transaction.ex` live
-at `lib/firmowid/ash/finances/finances_test.exs`.
+entire codebase. Example: tests for `lib/firmowid/finances/transaction.ex` live
+at `lib/firmowid/finances/finances_test.exs`.
 
 ### Module Documentation
 

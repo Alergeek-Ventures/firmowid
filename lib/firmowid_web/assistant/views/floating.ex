@@ -4,7 +4,7 @@ defmodule FirmowidWeb.Assistant.Views.Floating do
 
   alias Ash.Error.Forbidden
   alias Ash.Error.Invalid
-  alias Firmowid.Ash.Assistant
+  alias Firmowid.Assistant
   alias FirmowidWeb.Assistant.Components.Controls
   alias FirmowidWeb.Assistant.Components.History
   alias FirmowidWeb.Assistant.Components.Records

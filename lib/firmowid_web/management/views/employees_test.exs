@@ -6,18 +6,18 @@ defmodule FirmowidWeb.Management.Views.EmployeesTest do
   import Firmowid.TimetrackerFixtures
   import Phoenix.LiveViewTest
 
-  alias Firmowid.Ash.Blobs.Blob
-  alias Firmowid.Ash.Core
-  alias Firmowid.Ash.Delegations
-  alias Firmowid.Ash.Delegations.Delegation
-  alias Firmowid.Ash.Payroll
-  alias Firmowid.Ash.Payroll.MemberPayrollInput
-  alias Firmowid.Ash.Payroll.MemberTaxDeclaration
-  alias Firmowid.Ash.Payroll.UserEmploymentContract
-  alias Firmowid.Ash.Payroll.UserSalary
-  alias Firmowid.Ash.Scope
-  alias Firmowid.Ash.Timetracker.HoursRecord, as: AshHoursRecord
+  alias Firmowid.Blobs.Blob
+  alias Firmowid.Core
+  alias Firmowid.Delegations
+  alias Firmowid.Delegations.Delegation
+  alias Firmowid.Payroll
+  alias Firmowid.Payroll.MemberPayrollInput
+  alias Firmowid.Payroll.MemberTaxDeclaration
+  alias Firmowid.Payroll.UserEmploymentContract
+  alias Firmowid.Payroll.UserSalary
   alias Firmowid.Repo
+  alias Firmowid.Scope
+  alias Firmowid.Timetracker.HoursRecord
 
   test "employee list updates without refresh after invite consumption", %{conn: conn} do
     admin = admin_fixture()
@@ -592,7 +592,7 @@ defmodule FirmowidWeb.Management.Views.EmployeesTest do
       })
 
     Repo.insert!(
-      %AshHoursRecord{
+      %HoursRecord{
         id: Ash.UUIDv7.generate(),
         member_id: member_id,
         blob_id: blob.id,

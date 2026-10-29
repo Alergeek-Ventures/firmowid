@@ -3,10 +3,10 @@ defmodule Firmowid.AccountsFixtures do
   Test helpers for creating users and organizations via the Ash Core domain.
   """
 
-  alias Firmowid.Ash.Core
-  alias Firmowid.Ash.Core.Nip
-  alias Firmowid.Ash.Core.User
-  alias Firmowid.Ash.SystemActor
+  alias Firmowid.Core
+  alias Firmowid.Core.Nip
+  alias Firmowid.Core.User
+  alias Firmowid.SystemActor
 
   def unique_user_email, do: "user#{System.unique_integer()}@example.com"
   def valid_user_password, do: "hello world!!"

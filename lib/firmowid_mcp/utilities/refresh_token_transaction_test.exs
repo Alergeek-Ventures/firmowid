@@ -8,8 +8,8 @@ defmodule FirmowidMcp.Utilities.RefreshTokenTransactionTest do
 
   alias AshAuthentication.Oauth2Server.Register
   alias Ecto.Adapters.SQL.Sandbox
-  alias Firmowid.Ash.Core
-  alias Firmowid.Ash.Core.OauthRefreshToken
+  alias Firmowid.Core
+  alias Firmowid.Core.OauthRefreshToken
   alias Firmowid.Oauth2Server
   alias Firmowid.Repo
 

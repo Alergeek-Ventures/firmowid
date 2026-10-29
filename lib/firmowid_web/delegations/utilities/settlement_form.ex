@@ -5,14 +5,14 @@ defmodule FirmowidWeb.Delegations.Utilities.SettlementForm do
 
   alias AshMoney.Types.Money, as: MoneyType
   alias AshPhoenix.Form.Auto
-  alias Firmowid.Ash.Delegations.DelegationExpense.Trip
+  alias Firmowid.Delegations.DelegationExpense.Trip
   alias Phoenix.HTML.Form
 
   @doc "Builds the complete form for a delegation settlement."
   @spec complete_form(struct(), map(), atom()) :: Form.t()
   def complete_form(delegation, scope, action \\ :complete) do
     forms =
-      Firmowid.Ash.Delegations.Delegation
+      Firmowid.Delegations.Delegation
       |> Auto.auto(action)
       |> Enum.map(fn {key, config} ->
         config =

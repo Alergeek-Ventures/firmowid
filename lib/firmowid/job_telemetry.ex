@@ -49,7 +49,7 @@ defmodule Firmowid.JobTelemetry do
     )
   end
 
-  defp subject_type(%{worker: "Firmowid.Ash.Ksef.Workers.FetchWorker", args: args}),
+  defp subject_type(%{worker: "Firmowid.Ksef.Workers.FetchWorker", args: args}),
     do: Map.get(args, "subject_type", "Subject2")
 
   defp subject_type(_job), do: nil

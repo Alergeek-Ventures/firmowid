@@ -2,8 +2,8 @@ defmodule FirmowidWeb.Infrastructure.Controllers.Health do
   @moduledoc false
   use FirmowidWeb, :controller
 
-  alias Firmowid.Ash.Invoicing.Services.GotenbergClient
   alias Firmowid.ErrorKind
+  alias Firmowid.Invoicing.Services.GotenbergClient
 
   require Logger
 

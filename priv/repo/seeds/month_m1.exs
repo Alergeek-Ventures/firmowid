@@ -35,7 +35,7 @@ defmodule Firmowid.Seeds.MonthM1 do
     Aurora Retail (5 PLN txns) +250 +300 +180 +200 +300 = +1,230 PLN
   """
 
-  alias Firmowid.Ash.Analysis.EntityTag
+  alias Firmowid.Analysis.EntityTag
   alias Firmowid.Seeds.Helpers
 
   def seed!(ctx) do
@@ -649,10 +649,10 @@ defmodule Firmowid.Seeds.MonthM1 do
   end
 
   defp seed_scope(bytecraft) do
-    %Firmowid.Ash.Scope{
-      actor: %Firmowid.Ash.Core.User{
+    %Firmowid.Scope{
+      actor: %Firmowid.Core.User{
         id: "00000000-0000-0000-0000-000000000000",
-        member: %Firmowid.Ash.Core.Member{role: :admin, organization_id: bytecraft.id}
+        member: %Firmowid.Core.Member{role: :admin, organization_id: bytecraft.id}
       },
       tenant: bytecraft.id
     }

@@ -7,20 +7,20 @@ defmodule FirmowidWeb.Invoicing.Transactions.Views.ShowTest do
   import Firmowid.FinancesFixtures
   import Phoenix.LiveViewTest
 
-  alias Firmowid.Ash.Blobs.Blob
-  alias Firmowid.Ash.Finances
-  alias Firmowid.Ash.Finances.Transaction
-  alias Firmowid.Ash.Invoicing
-  alias Firmowid.Ash.Invoicing.CostInvoice
-  alias Firmowid.Ash.Invoicing.CostInvoiceTransaction
-  alias Firmowid.Ash.Invoicing.SalesInvoice
-  alias Firmowid.Ash.Invoicing.SalesInvoiceItem
-  alias Firmowid.Ash.Payroll.UserEmploymentContract
-  alias Firmowid.Ash.Payroll.UserSalary
-  alias Firmowid.Ash.Scope
-  alias Firmowid.Ash.Timetracker.HoursRecord
-  alias Firmowid.Ash.Timetracker.Project
-  alias Firmowid.Ash.Timetracker.Session
+  alias Firmowid.Blobs.Blob
+  alias Firmowid.Finances
+  alias Firmowid.Finances.Transaction
+  alias Firmowid.Invoicing
+  alias Firmowid.Invoicing.CostInvoice
+  alias Firmowid.Invoicing.CostInvoiceTransaction
+  alias Firmowid.Invoicing.SalesInvoice
+  alias Firmowid.Invoicing.SalesInvoiceItem
+  alias Firmowid.Payroll.UserEmploymentContract
+  alias Firmowid.Payroll.UserSalary
+  alias Firmowid.Scope
+  alias Firmowid.Timetracker.HoursRecord
+  alias Firmowid.Timetracker.Project
+  alias Firmowid.Timetracker.Session
   alias FirmowidWeb.Invoicing.Utilities.Navigation
 
   test "matches a net payout alternative using the contract from the salary month", %{conn: conn} do

@@ -8,8 +8,8 @@ defmodule Firmowid.InvoicingFixtures do
 
   import Ecto.Query, only: [from: 2]
 
-  alias Firmowid.Ash.Invoicing.SalesInvoice
-  alias Firmowid.Ash.Ksef.Credential
+  alias Firmowid.Invoicing.SalesInvoice
+  alias Firmowid.Ksef.Credential
 
   @doc "Seeds a working KSeF connection, which issuance requires, unless the organization has one."
   @spec connect_ksef!(Ecto.UUID.t()) :: :ok

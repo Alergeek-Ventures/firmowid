@@ -24,19 +24,19 @@ defmodule FirmowidWeb.Settings.Views.Index do
 
   alias Ash.Notifier.Notification
   alias AshAuthentication.Argon2Provider
-  alias Firmowid.Ash.Billing.Month
-  alias Firmowid.Ash.Blobs
-  alias Firmowid.Ash.Blobs.Blob
-  alias Firmowid.Ash.Core
-  alias Firmowid.Ash.Core.UserRole
-  alias Firmowid.Ash.Delegations
-  alias Firmowid.Ash.Finances
-  alias Firmowid.Ash.Finances.GoCardless.ApiClient
-  alias Firmowid.Ash.Finances.Requisition
-  alias Firmowid.Ash.Ksef.Credential
-  alias Firmowid.Ash.Payroll
-  alias Firmowid.Ash.Timetracker
+  alias Firmowid.Billing.Month
+  alias Firmowid.Blobs
+  alias Firmowid.Blobs.Blob
+  alias Firmowid.Core
+  alias Firmowid.Core.UserRole
+  alias Firmowid.Delegations
   alias Firmowid.ErrorKind
+  alias Firmowid.Finances
+  alias Firmowid.Finances.GoCardless.ApiClient
+  alias Firmowid.Finances.Requisition
+  alias Firmowid.Ksef.Credential
+  alias Firmowid.Payroll
+  alias Firmowid.Timetracker
   alias FirmowidUI.Ksef.Connection
   alias FirmowidUI.Utilities.ForbiddenError
   alias FirmowidWeb.Billing.Utilities.MonthContext

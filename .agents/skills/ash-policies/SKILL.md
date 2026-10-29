@@ -188,6 +188,6 @@ end
 
 ## Examples
 
-- `lib/firmowid/ash/timetracker/session.ex`
+- `lib/firmowid/timetracker/session.ex`
 - Great example of using `SystemActorRole` checks and policy structure for
-  non-human actors: `lib/firmowid/ash/invoicing/sales_invoice.ex`
+  non-human actors: `lib/firmowid/invoicing/sales_invoice.ex`

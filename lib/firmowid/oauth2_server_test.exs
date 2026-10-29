@@ -10,10 +10,10 @@ defmodule Firmowid.Oauth2ServerTest do
   alias AshAuthentication.Oauth2Server.PKCE
   alias AshAuthentication.Oauth2Server.Register
   alias AshAuthentication.Oauth2Server.Token
-  alias Firmowid.Ash.Core
-  alias Firmowid.Ash.Core.OauthAuthorizationCode
-  alias Firmowid.Ash.Core.OauthConsent
-  alias Firmowid.Ash.Core.OauthRefreshToken
+  alias Firmowid.Core
+  alias Firmowid.Core.OauthAuthorizationCode
+  alias Firmowid.Core.OauthConsent
+  alias Firmowid.Core.OauthRefreshToken
   alias Firmowid.Oauth2Server
 
   @auth_context %{private: %{ash_authentication?: true}}

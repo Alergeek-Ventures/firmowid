@@ -7,16 +7,16 @@ defmodule FirmowidWeb.Management.Views.ProjectForm do
   import FirmowidWeb.DesignSystem.Components.CoreComponents
   import Phoenix.Component, except: [link: 1]
 
-  alias Firmowid.Ash.Core
-  alias Firmowid.Ash.Timetracker
-  alias Firmowid.Ash.Timetracker.Project, as: AshProject
+  alias Firmowid.Core
+  alias Firmowid.Timetracker
+  alias Firmowid.Timetracker.Project
 
   @impl true
   def mount(_params, _session, %{assigns: %{live_action: :new}} = socket) do
     scope = socket.assigns.ash_scope
 
     form =
-      AshProject
+      Project
       |> AshPhoenix.Form.for_create(:create, scope: scope, as: "project")
       |> to_form()
 
@@ -26,7 +26,7 @@ defmodule FirmowidWeb.Management.Views.ProjectForm do
   def mount(%{"id" => id}, _session, %{assigns: %{live_action: :edit}} = socket) do
     scope = socket.assigns.ash_scope
 
-    case AshProject.get(id, scope: scope, not_found_error?: false) do
+    case Project.get(id, scope: scope, not_found_error?: false) do
       {:ok, nil} ->
         {:ok, push_navigate(socket, to: ~p"/zarzadzanie/projekty")}
 

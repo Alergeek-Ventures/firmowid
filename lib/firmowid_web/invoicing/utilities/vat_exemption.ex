@@ -3,11 +3,11 @@ defmodule FirmowidWeb.Invoicing.Utilities.VatExemption do
   Presentation layer for VAT exemption types.
 
   Provides select-specific labels
-  for form inputs. Delegates to `Firmowid.Ash.Invoicing.VatExemption` for validation
+  for form inputs. Delegates to `Firmowid.Invoicing.VatExemption` for validation
   and business logic.
   """
 
-  alias Firmowid.Ash.Invoicing.VatExemption
+  alias Firmowid.Invoicing.VatExemption
 
   @select_options [
     {"Art. 113 ust. 1 i 9 (limit obrotów do 200 tys. zł)", :art_113},

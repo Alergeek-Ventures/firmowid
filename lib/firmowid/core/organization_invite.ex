@@ -1,0 +1,196 @@
+defmodule Firmowid.Core.OrganizationInvite do
+  @moduledoc """
+  Ash resource for organization invites.
+
+  Each invite has a unique code, an expiration date, and tracks who
+  issued it and (optionally) who consumed it. Consuming an invite
+  assigns the consuming user to the invite's organization.
+
+  Scoped by `organization_id` (attribute multitenancy).
+  """
+  use Ash.Resource,
+    domain: Firmowid.Core,
+    data_layer: AshPostgres.DataLayer,
+    authorizers: [Ash.Policy.Authorizer]
+
+  alias Firmowid.Checks.ActorRole
+  alias Firmowid.Core
+  alias Firmowid.Core.Organization
+  alias Firmowid.Core.User
+  alias Firmowid.Core.UserRole
+  alias Firmowid.Resource
+  alias Firmowid.SystemActor
+
+  require Resource
+
+  postgres do
+    table "organization_invites"
+    repo Firmowid.Repo
+  end
+
+  actions do
+    defaults [:read]
+
+    create :create do
+      description "Create a new invitation for joining an organization."
+      accept [:role]
+
+      argument :issued_by_id, :uuid, allow_nil?: false
+      change manage_relationship(:issued_by_id, :issued_by, type: :append)
+
+      change fn changeset, _context ->
+        invite_code =
+          20
+          |> :crypto.strong_rand_bytes()
+          |> Base.url_encode64()
+
+        expires_at =
+          DateTime.utc_now()
+          |> DateTime.shift(week: 1)
+          |> DateTime.truncate(:second)
+
+        changeset
+        |> Ash.Changeset.change_attribute(:invite_code, invite_code)
+        |> Ash.Changeset.change_attribute(:expires_at, expires_at)
+      end
+    end
+
+    read :read_by_code do
+      description "Fetch an active, unconsumed invite by its public code."
+      argument :invite_code, :string, allow_nil?: false
+      multitenancy :allow_global
+
+      filter expr(
+               invite_code == ^arg(:invite_code) and
+                 is_nil(consumed_by_id) and
+                 is_nil(consumed_at) and
+                 expires_at > now()
+             )
+    end
+
+    update :consume do
+      description "Consume an invite and assign the invited user to the organization."
+      accept []
+      require_atomic? false
+
+      argument :name, :string,
+        allow_nil?: false,
+        description: "The joining person's name, stored on their member."
+
+      # The update only matches an unconsumed row, so concurrent joins with the same
+      # code cannot both consume it; the loser gets a stale-record error.
+      change filter(expr(is_nil(consumed_at)))
+      change Firmowid.Core.Changes.RequireNotActiveInOrganization
+      change set_attribute(:consumed_by_id, actor(:id))
+      change set_attribute(:consumed_at, &DateTime.utc_now/0)
+
+      change after_action(fn changeset, invite, context ->
+               user_id = invite.consumed_by_id
+               organization_id = invite.organization_id
+
+               bridge_opts =
+                 case Map.get(context, :tenant) do
+                   nil ->
+                     [
+                       actor: %SystemActor{
+                         org_id: organization_id,
+                         role: :organization_owner_setup,
+                         user_id: user_id
+                       }
+                     ]
+
+                   tenant ->
+                     [
+                       actor: %SystemActor{
+                         org_id: organization_id,
+                         role: :organization_owner_setup,
+                         user_id: user_id
+                       },
+                       tenant: tenant
+                     ]
+                 end
+
+               user_id
+               |> Core.get_user!(bridge_opts)
+               |> Core.changeset_to_set_organization(
+                 %{
+                   organization_id: organization_id,
+                   role: invite.role,
+                   name: Ash.Changeset.get_argument(changeset, :name)
+                 },
+                 bridge_opts
+               )
+               |> Ash.update!()
+
+               {:ok, invite}
+             end)
+    end
+
+    destroy :destroy do
+      description "Delete an organization invite."
+    end
+  end
+
+  policies do
+    # Default read — admin only (listing invites in org settings)
+    policy action(:read) do
+      authorize_if {ActorRole, role: :admin}
+    end
+
+    # Invite acceptance flow — anyone with the code can look up an invite
+    policy action(:read_by_code) do
+      authorize_if always()
+    end
+
+    policy action_type(:create) do
+      authorize_if {ActorRole, role: :admin}
+    end
+
+    # The invite code identifies an invitation, which any authenticated user may
+    # redeem for themselves (see `RequireNotActiveInOrganization` for an
+    # organization they are already active in).
+    policy action(:consume) do
+      authorize_if actor_present()
+    end
+
+    policy action_type(:destroy) do
+      authorize_if {ActorRole, role: :admin}
+    end
+  end
+
+  multitenancy do
+    strategy :attribute
+    attribute :organization_id
+  end
+
+  attributes do
+    uuid_v7_primary_key :id
+
+    attribute :expires_at, :utc_datetime, public?: true, allow_nil?: false
+    attribute :consumed_at, :utc_datetime, public?: true
+    attribute :invite_code, :string, public?: true, allow_nil?: false
+
+    attribute :role, :atom,
+      public?: true,
+      constraints: [one_of: UserRole.roles()],
+      default: :employee
+
+    Resource.firmowid_timestamps()
+  end
+
+  relationships do
+    belongs_to :organization, Organization do
+      allow_nil? false
+    end
+
+    belongs_to :issued_by, User do
+      allow_nil? false
+      attribute_writable? true
+    end
+
+    belongs_to :consumed_by, User do
+      allow_nil? true
+      attribute_writable? true
+    end
+  end
+end

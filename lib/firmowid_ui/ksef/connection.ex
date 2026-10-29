@@ -7,9 +7,9 @@ defmodule FirmowidUI.Ksef.Connection do
   alias Ash.Error.Invalid
   alias Ash.Notifier.Notification
   alias Firmowid.Analytics
-  alias Firmowid.Ash.Ksef
-  alias Firmowid.Ash.Ksef.Credential
-  alias Firmowid.Ash.Scope
+  alias Firmowid.Ksef
+  alias Firmowid.Ksef.Credential
+  alias Firmowid.Scope
   alias FirmowidUI.Utilities.ForbiddenError
   alias Phoenix.LiveView.Socket
   alias Phoenix.Socket.Broadcast

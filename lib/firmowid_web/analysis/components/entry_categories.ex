@@ -6,10 +6,10 @@ defmodule FirmowidWeb.Analysis.Components.EntryCategories do
   import FirmowidWeb.Infrastructure.Flags, only: [flag_enabled?: 2]
   import Phoenix.Component, except: [link: 1]
 
-  alias Firmowid.Ash.Analysis.TagDefinition
-  alias Firmowid.Ash.Finances.Transaction
-  alias Firmowid.Ash.Invoicing.CostInvoice
-  alias Firmowid.Ash.Invoicing.SalesInvoice
+  alias Firmowid.Analysis.TagDefinition
+  alias Firmowid.Finances.Transaction
+  alias Firmowid.Invoicing.CostInvoice
+  alias Firmowid.Invoicing.SalesInvoice
   alias FirmowidWeb.Analysis.Components.CategorySelector
   alias FirmowidWeb.Analysis.Utilities.CategoryColors
   alias FirmowidWeb.Analysis.Utilities.EntryCategoryChanges

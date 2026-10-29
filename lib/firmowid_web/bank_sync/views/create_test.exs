@@ -14,8 +14,8 @@ defmodule FirmowidWeb.BankSync.Views.CreateTest do
 
   import Phoenix.LiveViewTest
 
-  alias Firmowid.Ash.Finances
-  alias Firmowid.Ash.Finances.Requisition
+  alias Firmowid.Finances
+  alias Firmowid.Finances.Requisition
 
   describe "handle_params with ref" do
     setup %{conn: conn} do

@@ -64,7 +64,7 @@ defmodule FirmowidWeb.Admin.RoutesTest do
       token = Plug.Conn.get_session(conn, "user_token")
 
       assert :ok =
-               TokenResource.revoke(Firmowid.Ash.Core.Token, token,
+               TokenResource.revoke(Firmowid.Core.Token, token,
                  authorize?: false,
                  store_all_tokens?: true
                )

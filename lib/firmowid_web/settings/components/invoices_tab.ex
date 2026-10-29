@@ -7,7 +7,7 @@ defmodule FirmowidWeb.Settings.Components.InvoicesTab do
 
   import FirmowidUI.Components.Button
 
-  alias Firmowid.Ash.Analysis.TaxForecast
+  alias Firmowid.Analysis.TaxForecast
   alias FirmowidWeb.Settings.Components.TaxForecastSettings
   alias Phoenix.LiveView.Rendered
 

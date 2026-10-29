@@ -1,10 +1,10 @@
 defmodule Firmowid.Test.Support.FakePdfAdapter do
   @moduledoc """
-  Test-only adapter for `Firmowid.Ash.Invoicing.Services.Pdf` that returns
+  Test-only adapter for `Firmowid.Invoicing.Services.Pdf` that returns
   an empty binary instead of generating a real PDF through Gotenberg.
   """
 
-  alias Firmowid.Ash.Invoicing.SalesInvoice
+  alias Firmowid.Invoicing.SalesInvoice
 
   @doc false
   @spec generate(SalesInvoice.t(), keyword()) :: {:ok, binary()}

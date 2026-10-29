@@ -5,8 +5,8 @@ defmodule FirmowidMcp.Utilities.RefreshTokenTransaction do
 
   alias AshAuthentication.Phoenix.Oauth2Server.Errors
   alias AshAuthentication.Phoenix.Oauth2Server.ProtocolRouter
-  alias Firmowid.Ash.Core
-  alias Firmowid.Ash.Core.User
+  alias Firmowid.Core
+  alias Firmowid.Core.User
   alias Firmowid.Repo
 
   require Ash.Query

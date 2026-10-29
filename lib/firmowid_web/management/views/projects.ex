@@ -7,9 +7,9 @@ defmodule FirmowidWeb.Management.Views.Projects do
   import FirmowidWeb.DesignSystem.Components.MonthPicker
   import Phoenix.Component, except: [link: 1]
 
-  alias Firmowid.Ash.Timetracker
-  alias Firmowid.Ash.Timetracker.Project, as: AshProject
-  alias Firmowid.Ash.Timetracker.Session
+  alias Firmowid.Timetracker
+  alias Firmowid.Timetracker.Project
+  alias Firmowid.Timetracker.Session
   alias FirmowidWeb.Management.Utilities.CounterpartyHelpers
   alias FirmowidWeb.Management.Utilities.Navigation
 
@@ -59,8 +59,8 @@ defmodule FirmowidWeb.Management.Views.Projects do
   def handle_event("unarchive_project", %{"id" => id}, socket) do
     scope = socket.assigns.ash_scope
 
-    with {:ok, project} <- AshProject.get(id, scope: scope, not_found_error?: false),
-         {:ok, _project} <- AshProject.unarchive(project, scope: scope) do
+    with {:ok, project} <- Project.get(id, scope: scope, not_found_error?: false),
+         {:ok, _project} <- Project.unarchive(project, scope: scope) do
       {:noreply, assign_projects(socket)}
     else
       _ ->

@@ -7,15 +7,15 @@ defmodule FirmowidWeb.Assistant.Views.FloatingTest do
   import Firmowid.FinancesFixtures
   import Phoenix.LiveViewTest
 
-  alias Firmowid.Ash.Assistant
-  alias Firmowid.Ash.Assistant.Conversation
-  alias Firmowid.Ash.Assistant.Conversation.Worker.Respond
-  alias Firmowid.Ash.Assistant.Message
-  alias Firmowid.Ash.Finances
-  alias Firmowid.Ash.Finances.Transaction
-  alias Firmowid.Ash.Invoicing
-  alias Firmowid.Ash.Invoicing.CostInvoice
-  alias Firmowid.Ash.Scope
+  alias Firmowid.Assistant
+  alias Firmowid.Assistant.Conversation
+  alias Firmowid.Assistant.Conversation.Worker.Respond
+  alias Firmowid.Assistant.Message
+  alias Firmowid.Finances
+  alias Firmowid.Finances.Transaction
+  alias Firmowid.Invoicing
+  alias Firmowid.Invoicing.CostInvoice
+  alias Firmowid.Scope
 
   @moduletag capture_log: true
 

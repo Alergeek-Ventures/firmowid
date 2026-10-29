@@ -12,10 +12,10 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Summary do
   import FirmowidUI.Components.Link
   import Phoenix.Component, except: [link: 1]
 
-  alias Firmowid.Ash.Invoicing
-  alias Firmowid.Ash.Invoicing.SalesInvoice
-  alias Firmowid.Ash.Ksef
-  alias Firmowid.Ash.Ksef.SubmissionInfo
+  alias Firmowid.Invoicing
+  alias Firmowid.Invoicing.SalesInvoice
+  alias Firmowid.Ksef
+  alias Firmowid.Ksef.SubmissionInfo
   alias FirmowidWeb.Invoicing.Utilities.Navigation
 
   @invoice_loads [
@@ -308,7 +308,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Summary do
   end
 
   defp get_previous_invoices(%{ksef_invoice_kind: :kor} = invoice, scope) do
-    alias Firmowid.Ash.Invoicing.Calculations.AnnotatedCorrections
+    alias Firmowid.Invoicing.Calculations.AnnotatedCorrections
 
     # Re-fetch corrected invoice to ensure all attributes are loaded,
     # then annotate corrections directly (avoids Ash.load! re-fetch issue).

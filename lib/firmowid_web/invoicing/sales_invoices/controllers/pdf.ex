@@ -6,9 +6,9 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Controllers.Pdf do
   @moduledoc false
   use FirmowidWeb, :controller
 
-  alias Firmowid.Ash.Invoicing
-  alias Firmowid.Ash.Invoicing.SalesInvoice
-  alias Firmowid.Ash.Invoicing.Services.SalesInvoicePdf
+  alias Firmowid.Invoicing
+  alias Firmowid.Invoicing.SalesInvoice
+  alias Firmowid.Invoicing.Services.SalesInvoicePdf
   alias FirmowidWeb.Invoicing.Utilities.InvoiceDownloadParams
 
   plug :put_view, html: FirmowidUI.Invoicing.Components.SalesInvoice
@@ -43,7 +43,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Controllers.Pdf do
   end
 
   defp render_sales_invoice(conn, %SalesInvoice{} = sales_invoice, logo_url) do
-    alias Firmowid.Ash.Invoicing.Calculations.AnnotatedCorrections
+    alias Firmowid.Invoicing.Calculations.AnnotatedCorrections
 
     sales_invoice =
       then(sales_invoice, fn inv -> %{inv | corrections: AnnotatedCorrections.annotate(inv)} end)

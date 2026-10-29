@@ -1,9 +1,9 @@
 defmodule FirmowidMcp.Session do
   @moduledoc "Short-lived, app-bound LiveView capabilities issued after MCP OAuth authorization."
 
-  alias Firmowid.Ash.Core
-  alias Firmowid.Ash.Core.User
-  alias Firmowid.Ash.Scope
+  alias Firmowid.Core
+  alias Firmowid.Core.User
+  alias Firmowid.Scope
 
   @salt "mcp-app-session-v1"
   @lifetime 900

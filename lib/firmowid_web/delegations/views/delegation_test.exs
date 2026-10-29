@@ -6,12 +6,12 @@ defmodule FirmowidWeb.Delegations.Views.DelegationTest do
   import Firmowid.AccountsFixtures
   import Phoenix.LiveViewTest
 
-  alias Firmowid.Ash.Blobs.Blob
-  alias Firmowid.Ash.Delegations
-  alias Firmowid.Ash.Delegations.Delegation
-  alias Firmowid.Ash.Delegations.DelegationExpense
-  alias Firmowid.Ash.Invoicing.Services.ReductoApiClientMock
-  alias Firmowid.Ash.Scope
+  alias Firmowid.Blobs.Blob
+  alias Firmowid.Delegations
+  alias Firmowid.Delegations.Delegation
+  alias Firmowid.Delegations.DelegationExpense
+  alias Firmowid.Invoicing.Services.ReductoApiClientMock
+  alias Firmowid.Scope
 
   test "renders an approved delegation settlement page", %{conn: conn} do
     user = user_fixture()

@@ -14,8 +14,8 @@ defmodule Firmowid.Seeds.Cafe do
   café organization already exists.
   """
 
-  alias Firmowid.Ash.Core.Organization, as: CoreOrganization
-  alias Firmowid.Ash.Core.User, as: CoreUser
+  alias Firmowid.Core.Organization, as: CoreOrganization
+  alias Firmowid.Core.User, as: CoreUser
   alias Firmowid.Seeds.Helpers
 
   require Ash.Query

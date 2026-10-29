@@ -1,7 +1,7 @@
 defmodule FirmowidWeb.Delegations.Utilities.NbpSettlement do
   @moduledoc "Calculates NBP-based settlement amounts for delegation expense forms."
 
-  alias Firmowid.Ash.Currencies.NbpApiClient
+  alias Firmowid.Currencies.NbpApiClient
 
   @doc "Calculates a settlement amount in the requested target currency."
   @spec calculate(map(), map(), String.t(), String.t()) ::

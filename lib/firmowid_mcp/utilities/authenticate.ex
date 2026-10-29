@@ -8,7 +8,7 @@ defmodule FirmowidMcp.Utilities.Authenticate do
   in it, and is rejected otherwise rather than moved to another organization.
   Tokens issued before the choice existed carry no claim and work in the default
   organization: the most recently updated usable membership (see
-  `Firmowid.Ash.Core.load_member/2` without a selection).
+  `Firmowid.Core.load_member/2` without a selection).
   """
 
   @behaviour Plug
@@ -16,8 +16,8 @@ defmodule FirmowidMcp.Utilities.Authenticate do
   import Ash.PlugHelpers, only: [get_actor: 1, get_tenant: 1, set_actor: 2, set_tenant: 2]
   import Plug.Conn
 
-  alias Firmowid.Ash.Core
-  alias Firmowid.Ash.Core.User
+  alias Firmowid.Core
+  alias Firmowid.Core.User
 
   @impl Plug
   def init(opts), do: opts

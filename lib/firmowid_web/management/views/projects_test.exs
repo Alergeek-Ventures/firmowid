@@ -6,9 +6,9 @@ defmodule FirmowidWeb.Management.Views.ProjectsTest do
   import Firmowid.TimetrackerFixtures
   import Phoenix.LiveViewTest
 
-  alias Firmowid.Ash.Scope
-  alias Firmowid.Ash.Timetracker
-  alias Firmowid.Ash.Timetracker.Project
+  alias Firmowid.Scope
+  alias Firmowid.Timetracker
+  alias Firmowid.Timetracker.Project
 
   test "renders active projects list when project has no counterparty", %{conn: conn} do
     admin = admin_fixture()

@@ -7,8 +7,8 @@ defmodule FirmowidWeb.Organization.Views.Index do
   import Phoenix.Component, except: [link: 1]
 
   alias Ash.Error.Invalid
-  alias Firmowid.Ash.Core
-  alias Firmowid.Ash.Core.Organization
+  alias Firmowid.Core
+  alias Firmowid.Core.Organization
 
   @impl true
   def render(assigns) do

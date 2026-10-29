@@ -4,9 +4,9 @@ defmodule Firmowid.Repo.Migrations.NormalizeSessionBoundariesToMinutesTest do
   import Firmowid.AccountsFixtures
   import Firmowid.TimetrackerFixtures
 
-  alias Firmowid.Ash.Timetracker.Session, as: AshSession
   alias Firmowid.Repo
   alias Firmowid.Repo.Migrations.NormalizeSessionBoundariesToMinutes
+  alias Firmowid.Timetracker.Session
 
   test "normalizes only August 2026 sessions" do
     user = user_fixture()
@@ -63,12 +63,12 @@ defmodule Firmowid.Repo.Migrations.NormalizeSessionBoundariesToMinutesTest do
     )
 
     assert %{start_datetime: ~U[2026-07-31 09:00:42Z], end_datetime: ~U[2026-07-31 10:00:17Z]} =
-             Repo.get!(AshSession, july_session.id)
+             Repo.get!(Session, july_session.id)
 
     assert %{start_datetime: ~U[2026-08-01 09:00:00Z], end_datetime: ~U[2026-08-01 10:00:00Z]} =
-             Repo.get!(AshSession, august_session.id)
+             Repo.get!(Session, august_session.id)
 
     assert %{start_datetime: ~U[2026-09-01 09:00:42Z], end_datetime: ~U[2026-09-01 10:00:17Z]} =
-             Repo.get!(AshSession, september_session.id)
+             Repo.get!(Session, september_session.id)
   end
 end

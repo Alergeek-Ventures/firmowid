@@ -4,9 +4,9 @@ defmodule FirmowidWeb.Analysis.Components.CategorySelector do
   """
   use FirmowidWeb, :html
 
-  alias Firmowid.Ash.Finances.Transaction
-  alias Firmowid.Ash.Invoicing.CostInvoice
-  alias Firmowid.Ash.Invoicing.SalesInvoice
+  alias Firmowid.Finances.Transaction
+  alias Firmowid.Invoicing.CostInvoice
+  alias Firmowid.Invoicing.SalesInvoice
   alias Phoenix.LiveView.Rendered
 
   attr :entry, :any, required: true

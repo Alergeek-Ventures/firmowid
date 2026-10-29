@@ -9,7 +9,7 @@ defmodule FirmowidMcp.Utilities.ConsentOrganizationTest do
   alias AshAuthentication.Oauth2Server.PKCE
   alias AshAuthentication.Oauth2Server.Register
   alias AshAuthentication.Oauth2Server.Token
-  alias Firmowid.Ash.Core
+  alias Firmowid.Core
   alias Firmowid.Oauth2Server
 
   @redirect_uri "https://example.com/oauth/callback"

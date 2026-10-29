@@ -2,9 +2,9 @@ defmodule FirmowidWeb.Invoicing.CostInvoices.Controllers.Pdf do
   @moduledoc false
   use FirmowidWeb, :controller
 
-  alias Firmowid.Ash.Invoicing.CostInvoice
-  alias Firmowid.Ash.Invoicing.Services.CostInvoicePdf
-  alias Firmowid.Ash.Invoicing.Services.MonthDownloadEntries
+  alias Firmowid.Invoicing.CostInvoice
+  alias Firmowid.Invoicing.Services.CostInvoicePdf
+  alias Firmowid.Invoicing.Services.MonthDownloadEntries
   alias FirmowidWeb.Invoicing.Utilities.InvoiceDownloadParams
 
   # sobelow_skip ["XSS.SendResp"]

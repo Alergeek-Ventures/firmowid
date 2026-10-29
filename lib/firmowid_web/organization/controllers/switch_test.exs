@@ -5,8 +5,8 @@ defmodule FirmowidWeb.Organization.Controllers.SwitchTest do
   import Firmowid.AccountsFixtures
   import Phoenix.LiveViewTest
 
-  alias Firmowid.Ash.Core
-  alias Firmowid.Ash.Scope
+  alias Firmowid.Core
+  alias Firmowid.Scope
 
   setup do
     # Sable owns her first organization and joins a second one as an admin; each

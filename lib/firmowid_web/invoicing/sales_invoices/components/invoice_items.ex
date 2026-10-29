@@ -10,8 +10,8 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
   import FirmowidUI.Components.Button
   import FirmowidWeb.DesignSystem.Components.CoreComponents
 
-  alias Firmowid.Ash.Currencies.NbpApiClient
-  alias Firmowid.Ash.Ksef.VatRate
+  alias Firmowid.Currencies.NbpApiClient
+  alias Firmowid.Ksef.VatRate
   alias FirmowidWeb.Invoicing.FormHelpers
   alias FirmowidWeb.Invoicing.Utilities.PriceInput
   alias FirmowidWeb.Invoicing.Utilities.VatExemption

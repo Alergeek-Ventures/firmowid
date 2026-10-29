@@ -10,9 +10,9 @@ defmodule FirmowidWeb.Management.Views.Delegation do
   import FirmowidWeb.DesignSystem.Components.MonthPicker
   import Phoenix.Component, except: [link: 1]
 
-  alias Firmowid.Ash.Core
-  alias Firmowid.Ash.Delegations
-  alias Firmowid.Ash.Payroll
+  alias Firmowid.Core
+  alias Firmowid.Delegations
+  alias Firmowid.Payroll
   alias FirmowidWeb.Delegations.Utilities.DelegationPresentation
   alias FirmowidWeb.Infrastructure.Utilities.ElectronicSignature
   alias FirmowidWeb.Management.Utilities.Navigation

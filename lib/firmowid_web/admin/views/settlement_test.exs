@@ -5,7 +5,7 @@ defmodule FirmowidWeb.Admin.Views.SettlementTest do
   import Firmowid.AccountsFixtures
   import Phoenix.LiveViewTest
 
-  alias Firmowid.Ash.Core
+  alias Firmowid.Core
 
   test "a system admin sees the owner's phone in an organization's settlement, also after a plan change",
        %{

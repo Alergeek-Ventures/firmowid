@@ -147,7 +147,7 @@
                 <.icon name="hero-check" class="size-4 shrink-0" />
               </div>
               <%= for organization <- @organizations, organization.id != @current_org.id do %>
-                <%= if Firmowid.Ash.Core.usable_organization?(@current_user, organization) do %>
+                <%= if Firmowid.Core.usable_organization?(@current_user, organization) do %>
                   <.form
                     for={%{}}
                     id={"switch-organization-#{organization.id}"}

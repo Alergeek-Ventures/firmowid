@@ -9,8 +9,8 @@ defmodule FirmowidWeb.Delegations.Views.DelegationForm do
   import FirmowidWeb.DesignSystem.Components.MonthPicker
   import Phoenix.Component, except: [link: 1]
 
-  alias Firmowid.Ash.Delegations.Delegation
-  alias Firmowid.Ash.Payroll
+  alias Firmowid.Delegations.Delegation
+  alias Firmowid.Payroll
 
   @impl true
   def mount(_params, _session, socket) do

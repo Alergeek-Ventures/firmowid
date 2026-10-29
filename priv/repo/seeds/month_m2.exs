@@ -28,7 +28,7 @@ defmodule Firmowid.Seeds.MonthM2 do
     PLN side of conv.     +4,800 PLN  → :internal (skip_invoicing)
   """
 
-  alias Firmowid.Ash.Analysis.EntityTag
+  alias Firmowid.Analysis.EntityTag
   alias Firmowid.Seeds.Helpers
 
   def seed!(ctx) do
@@ -555,10 +555,10 @@ defmodule Firmowid.Seeds.MonthM2 do
   end
 
   defp seed_scope(bytecraft) do
-    %Firmowid.Ash.Scope{
-      actor: %Firmowid.Ash.Core.User{
+    %Firmowid.Scope{
+      actor: %Firmowid.Core.User{
         id: "00000000-0000-0000-0000-000000000000",
-        member: %Firmowid.Ash.Core.Member{role: :admin, organization_id: bytecraft.id}
+        member: %Firmowid.Core.Member{role: :admin, organization_id: bytecraft.id}
       },
       tenant: bytecraft.id
     }

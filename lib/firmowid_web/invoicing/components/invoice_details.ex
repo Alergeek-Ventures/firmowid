@@ -15,8 +15,8 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceDetails do
   import FirmowidWeb.Invoicing.Components.StatusButton
   import Phoenix.Component, except: [link: 1]
 
-  alias Firmowid.Ash.Invoicing.SalesInvoice
   alias Firmowid.Invoicing.RecommendationThresholds
+  alias Firmowid.Invoicing.SalesInvoice
   alias FirmowidWeb.Invoicing.Components.MatchingComponents
   alias FirmowidWeb.Invoicing.Utilities.Navigation
 

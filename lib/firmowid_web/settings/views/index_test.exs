@@ -5,11 +5,11 @@ defmodule FirmowidWeb.Settings.Views.IndexTest do
   import Firmowid.AccountsFixtures
   import Phoenix.LiveViewTest
 
-  alias Firmowid.Ash.Core
-  alias Firmowid.Ash.Finances
-  alias Firmowid.Ash.Finances.Requisition
-  alias Firmowid.Ash.Ksef.Credential
-  alias Firmowid.Ash.Scope
+  alias Firmowid.Core
+  alias Firmowid.Finances
+  alias Firmowid.Finances.Requisition
+  alias Firmowid.Ksef.Credential
+  alias Firmowid.Scope
 
   test "bank accounts are sorted by IBAN and keep order after rename", %{conn: conn} do
     admin = admin_fixture()

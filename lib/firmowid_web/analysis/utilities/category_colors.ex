@@ -1,7 +1,7 @@
 defmodule FirmowidWeb.Analysis.Utilities.CategoryColors do
   @moduledoc "Stable category colors shared by analysis entries and their category selectors."
 
-  alias Firmowid.Ash.Analysis.CategoryTotals
+  alias Firmowid.Analysis.CategoryTotals
 
   @palette ~w(#0072B2 #E69F00 #009E73 #CC79A7 #D55E00 #56B4E9 #6F4C9B #B6A800 #E5383B #00A6A6 #845B32 #F285B5)
 

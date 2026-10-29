@@ -7,12 +7,12 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
   import FirmowidWeb.Invoicing.Components.StatusButton
   import Phoenix.Component, except: [link: 1]
 
-  alias Firmowid.Ash.Finances.Transaction
-  alias Firmowid.Ash.Invoicing.CostInvoice
-  alias Firmowid.Ash.Invoicing.SalesInvoice
-  alias Firmowid.Ash.Invoicing.TransactionGroup
-  alias Firmowid.Ash.Ksef
-  alias Firmowid.Ash.Ksef.SubmissionInfo
+  alias Firmowid.Finances.Transaction
+  alias Firmowid.Invoicing.CostInvoice
+  alias Firmowid.Invoicing.SalesInvoice
+  alias Firmowid.Invoicing.TransactionGroup
+  alias Firmowid.Ksef
+  alias Firmowid.Ksef.SubmissionInfo
   alias FirmowidWeb.Analysis.Components.ProjectCell
   alias FirmowidWeb.Infrastructure.Utilities.PolishQuantity
   alias FirmowidWeb.Invoicing.Utilities.BankBadges

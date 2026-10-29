@@ -8,8 +8,8 @@ defmodule FirmowidWeb.Invoicing.Transactions.Components.SalaryComponents do
   import FirmowidWeb.Invoicing.Components.StatusButton
   import Phoenix.Component, except: [link: 1]
 
-  alias Firmowid.Ash.Core.User
-  alias Firmowid.Ash.Finances.Transaction
+  alias Firmowid.Core.User
+  alias Firmowid.Finances.Transaction
   alias FirmowidWeb.Invoicing.Components.MatchingComponents
   alias FirmowidWeb.Management.Utilities.Navigation
   alias FirmowidWeb.Payroll.Components.PayoutEstimates

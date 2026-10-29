@@ -53,7 +53,7 @@ safe_sentry_metadata = [
   :health_check
 ]
 
-config :firmowid, Firmowid.Ash.Currencies.Converter, rates_provider: :api
+config :firmowid, Firmowid.Currencies.Converter, rates_provider: :api
 
 # Note we also include the path to a cache manifest
 # containing the digested version of static files. This

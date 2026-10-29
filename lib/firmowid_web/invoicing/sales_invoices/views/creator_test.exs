@@ -5,13 +5,13 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.CreatorTest do
   import Firmowid.AccountsFixtures
   import Phoenix.LiveViewTest
 
-  alias Firmowid.Ash.Core
-  alias Firmowid.Ash.Finances
-  alias Firmowid.Ash.Invoicing
-  alias Firmowid.Ash.Invoicing.SalesInvoice
-  alias Firmowid.Ash.Invoicing.WizardState
-  alias Firmowid.Ash.Scope
+  alias Firmowid.Core
+  alias Firmowid.Finances
+  alias Firmowid.Invoicing
+  alias Firmowid.Invoicing.SalesInvoice
+  alias Firmowid.Invoicing.WizardState
   alias Firmowid.InvoicingFixtures
+  alias Firmowid.Scope
   alias Firmowid.Test.Support.InvoicingCopyAssertions
 
   for deletion <- [:organization, :account] do
@@ -777,7 +777,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.CreatorTest do
         ksef_invoice_kind: :vat
       })
 
-    Ash.Seed.seed!(Firmowid.Ash.Invoicing.SalesInvoiceItem, %{
+    Ash.Seed.seed!(Firmowid.Invoicing.SalesInvoiceItem, %{
       organization_id: admin.member.organization_id,
       sales_invoice_id: invoice.id,
       index: 0,

@@ -3,7 +3,7 @@ defmodule FirmowidMcp.Utilities.AuthenticateTest do
 
   import Firmowid.AccountsFixtures
 
-  alias Firmowid.Ash.Core
+  alias Firmowid.Core
   alias FirmowidMcp.Utilities.Authenticate
 
   test "rejects requests without an authenticated actor", %{conn: conn} do

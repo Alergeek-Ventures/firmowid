@@ -6,8 +6,8 @@ defmodule FirmowidWeb.Auth.Views.ConfirmEmailTest do
   import Phoenix.LiveViewTest
   import Swoosh.TestAssertions
 
-  alias Firmowid.Ash.Blobs.Blob
-  alias Firmowid.Ash.Core
+  alias Firmowid.Blobs.Blob
+  alias Firmowid.Core
 
   setup :set_swoosh_global
 

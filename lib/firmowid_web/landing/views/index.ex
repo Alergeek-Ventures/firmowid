@@ -11,7 +11,7 @@ defmodule FirmowidWeb.Landing.Views.Index do
   import FirmowidWeb.Landing.Components.Primitives
   import FirmowidWeb.Landing.Components.Sections
 
-  alias Firmowid.Ash.Core
+  alias Firmowid.Core
   alias FirmowidWeb.Infrastructure.UserAuth
 
   @impl true

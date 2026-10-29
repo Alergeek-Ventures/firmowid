@@ -8,7 +8,7 @@ defmodule FirmowidWeb.Infrastructure.Controllers.Locale do
   """
   use FirmowidWeb, :controller
 
-  alias Firmowid.Ash.Core
+  alias Firmowid.Core
   alias FirmowidWeb.Infrastructure.Plugs.Locale
 
   @doc "Selects the language given in the `jezyk` param."

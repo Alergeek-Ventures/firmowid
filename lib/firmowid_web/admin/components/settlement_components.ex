@@ -9,7 +9,7 @@ defmodule FirmowidWeb.Admin.Components.SettlementComponents do
   import FirmowidWeb.DesignSystem.Components.MonthPicker
   import Phoenix.Component, except: [link: 1]
 
-  alias Firmowid.Ash.Billing.PlanCatalog
+  alias Firmowid.Billing.PlanCatalog
   alias FirmowidWeb.Admin.Utilities.Navigation
   alias FirmowidWeb.Billing.Utilities.Worksheet
 

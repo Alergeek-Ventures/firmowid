@@ -10,10 +10,10 @@ defmodule FirmowidWeb.Management.Views.CounterpartyForm do
   import Phoenix.Component, except: [link: 1]
 
   alias Ash.Error.Changes.InvalidAttribute
-  alias Firmowid.Ash.Invoicing
-  alias Firmowid.Ash.Invoicing.Counterparty
-  alias Firmowid.Ash.Invoicing.CountryCodes
-  alias Firmowid.Ash.Invoicing.Services.NipApiClient
+  alias Firmowid.Invoicing
+  alias Firmowid.Invoicing.Counterparty
+  alias Firmowid.Invoicing.CountryCodes
+  alias Firmowid.Invoicing.Services.NipApiClient
   alias FirmowidWeb.Infrastructure.Utilities.PosthogBusinessEvents
   alias FirmowidWeb.Invoicing.Utilities.Navigation, as: InvoicingNavigation
   alias FirmowidWeb.Management.Utilities.Navigation

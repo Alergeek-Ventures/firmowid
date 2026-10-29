@@ -16,8 +16,8 @@ defmodule FirmowidMcp.Utilities.ConsentOrganization do
   import Plug.Conn, only: [get_session: 2, register_before_send: 2]
 
   alias AshAuthentication.Phoenix.Oauth2Server.Errors
-  alias Firmowid.Ash.Core
-  alias Firmowid.Ash.Core.User
+  alias Firmowid.Core
+  alias Firmowid.Core.User
   alias FirmowidWeb.Auth.Components.McpConsent
   alias FirmowidWeb.Infrastructure.UserAuth
 

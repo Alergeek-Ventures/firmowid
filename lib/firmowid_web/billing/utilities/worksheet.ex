@@ -3,7 +3,7 @@ defmodule FirmowidWeb.Billing.Utilities.Worksheet do
   Shapes billing facts into a worksheet-oriented structure for billing views.
   """
 
-  alias Firmowid.Ash.Billing.PlanCatalog
+  alias Firmowid.Billing.PlanCatalog
 
   @type usage_source :: %{
           required(:billing_plan) => PlanCatalog.plan(),
