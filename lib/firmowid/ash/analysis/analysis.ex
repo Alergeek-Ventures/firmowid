@@ -759,6 +759,17 @@ defmodule Firmowid.Ash.Analysis do
     |> Enum.group_by(fn {type, tag} -> {type, tag.resource_id} end, fn {_type, tag} -> tag end)
   end
 
+  @doc """
+  Project tags of transfers pinned to a salary, keyed by transaction ID, derived
+  from the time tracked in the salary month like the totals; never stored.
+  """
+  @spec salary_project_tags([Transaction.t()], Scope.t()) :: %{String.t() => [EntityTag.t()]}
+  def salary_project_tags(transactions, scope) do
+    transactions
+    |> salary_tags_map(analysis_scope(scope), scope)
+    |> Map.new(fn {{:transaction, id}, tags} -> {id, tags} end)
+  end
+
   defp salary_tags_map([], _analysis_scope, _scope), do: %{}
 
   defp salary_tags_map(transactions, analysis_scope, scope) do

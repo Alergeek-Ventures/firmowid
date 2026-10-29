@@ -6,13 +6,13 @@ defmodule FirmowidWeb.Analysis.Components.EntryCategories do
   import FirmowidWeb.Infrastructure.Flags, only: [flag_enabled?: 2]
   import Phoenix.Component, except: [link: 1]
 
-  alias Firmowid.Ash.Analysis.EntityTag
   alias Firmowid.Ash.Analysis.TagDefinition
   alias Firmowid.Ash.Finances.Transaction
   alias Firmowid.Ash.Invoicing.CostInvoice
   alias Firmowid.Ash.Invoicing.SalesInvoice
   alias FirmowidWeb.Analysis.Components.CategorySelector
   alias FirmowidWeb.Analysis.Utilities.CategoryColors
+  alias FirmowidWeb.Analysis.Utilities.EntryCategoryChanges
   alias FirmowidWeb.Analysis.Utilities.Navigation
 
   @impl true
@@ -81,12 +81,18 @@ defmodule FirmowidWeb.Analysis.Components.EntryCategories do
       socket.assigns.entry
       |> category_entries()
       |> Enum.find(fn entry ->
-        %{entity_type: type, resource_id: id} = entity_arguments(entry)
+        %{entity_type: type, resource_id: id} = EntryCategoryChanges.entity_arguments(entry)
         id == params["entity_id"] and Atom.to_string(type) == params["entity_type"]
       end)
 
     if flag_enabled?(:analysis_dashboard, socket.assigns) and entry != nil and editable?(entry) do
-      case change_category(event, params, %{socket.assigns | entry: entry}) do
+      case EntryCategoryChanges.change(
+             event,
+             params,
+             entry,
+             socket.assigns.categories,
+             socket.assigns.scope
+           ) do
         {:ok, _} when event == "create-category" ->
           {:noreply, socket |> load_categories() |> load_entry()}
 
@@ -136,40 +142,6 @@ defmodule FirmowidWeb.Analysis.Components.EntryCategories do
 
   defp invoice_number(%SalesInvoice{invoice_number: number}), do: number
   defp invoice_number(%CostInvoice{invoice_identifier: number}), do: number
-
-  defp change_category("create-category", %{"name" => name}, assigns) do
-    arguments = Map.put(entity_arguments(assigns.entry), :name, name)
-    TagDefinition.create_for_entry(arguments, scope: assigns.scope)
-  end
-
-  defp change_category("clear-entity-tags", _params, assigns) do
-    EntityTag.clear_entity_tags(entity_arguments(assigns.entry), scope: assigns.scope)
-  end
-
-  defp change_category("set-entity-category", %{"kind" => kind}, assigns) when kind in ["company", "taxes", "internal"] do
-    arguments = Map.put(entity_arguments(assigns.entry), :kind, kind)
-    EntityTag.set_entity_category(arguments, scope: assigns.scope)
-  end
-
-  defp change_category("toggle-project-tag", %{"tag_definition_id" => id}, assigns) do
-    if Enum.any?(assigns.categories, &(&1.id == id)) do
-      current =
-        assigns.entry.entity_tags
-        |> Enum.filter(&(&1.kind == :project))
-        |> Enum.map(& &1.tag_definition_id)
-
-      ids = if id in current, do: List.delete(current, id), else: [id | current]
-      arguments = Map.put(entity_arguments(assigns.entry), :tag_definition_ids, ids)
-      EntityTag.set_entity_project_tags(arguments, scope: assigns.scope)
-    else
-      {:error, :invalid_category}
-    end
-  end
-
-  defp entity_arguments(%SalesInvoice{id: id}), do: %{entity_type: :sales_invoice, resource_id: id}
-
-  defp entity_arguments(%CostInvoice{id: id}), do: %{entity_type: :cost_invoice, resource_id: id}
-  defp entity_arguments(%Transaction{id: id}), do: %{entity_type: :transaction, resource_id: id}
 
   defp category_title(%Transaction{}), do: gettext("Transaction categories")
   defp category_title(_invoice), do: gettext("Invoice categories")

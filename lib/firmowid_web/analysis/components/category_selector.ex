@@ -12,6 +12,7 @@ defmodule FirmowidWeb.Analysis.Components.CategorySelector do
   attr :entry, :any, required: true
   attr :categories, :list, default: []
   attr :colors, :map, required: true
+  attr :limit, :integer, default: 3, doc: "how many categories show before a count of the rest"
   attr :can_write, :boolean, default: false
   attr :target, :any, default: nil
 
@@ -46,7 +47,7 @@ defmodule FirmowidWeb.Analysis.Components.CategorySelector do
           phx-click={show_popover(@popover_id)}
           class="flex min-h-9 w-full cursor-pointer items-center justify-end gap-2 rounded-md px-2 py-1 text-left text-grey-700 transition hover:bg-grey-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-grey-600"
         >
-          <.badges tags={@tags} colors={@colors} />
+          <.badges tags={@tags} colors={@colors} limit={@limit} />
           <.icon name="hero-chevron-up-down-mini" class="size-4 shrink-0 text-grey-500" />
         </FirmowidUI.Components.Button.button>
         <.popover
@@ -198,7 +199,7 @@ defmodule FirmowidWeb.Analysis.Components.CategorySelector do
           </div>
         </.popover>
       <% else %>
-        <.badges tags={@tags} colors={@colors} />
+        <.badges tags={@tags} colors={@colors} limit={@limit} />
       <% end %>
       <script :type={Phoenix.LiveView.ColocatedHook} name=".CategoryCombobox">
         export default {
@@ -252,9 +253,10 @@ defmodule FirmowidWeb.Analysis.Components.CategorySelector do
 
   attr :tags, :list, required: true
   attr :colors, :map, required: true
+  attr :limit, :integer, default: 3
 
   @doc """
-  Renders categories on one line: the first three and a count of the rest, with
+  Renders categories on one line: the first `limit` and a count of the rest, with
   all names in the title. An empty list shows an explicit unassigned badge.
   """
   @spec badges(map()) :: Rendered.t()
@@ -273,7 +275,7 @@ defmodule FirmowidWeb.Analysis.Components.CategorySelector do
         <.color_dot color={Map.fetch!(@colors, :unassigned)} />{gettext("Unassigned")}
       </span>
       <span
-        :for={tag <- Enum.take(@tags, 3)}
+        :for={tag <- Enum.take(@tags, @limit)}
         class="inline-flex min-w-0 items-center gap-1.5 rounded-full bg-grey-100 px-2 py-0.5 text-xs text-grey-700"
       >
         <.omitted_dot :if={tag.kind == :internal} />
@@ -281,10 +283,10 @@ defmodule FirmowidWeb.Analysis.Components.CategorySelector do
         <span class="truncate">{tag_label(tag)}</span>
       </span>
       <span
-        :if={length(@tags) > 3}
+        :if={length(@tags) > @limit}
         class="shrink-0 rounded-full bg-grey-100 px-1.5 py-0.5 text-xs text-grey-700"
       >
-        +{length(@tags) - 3}
+        +{length(@tags) - @limit}
       </span>
     </span>
     """
@@ -323,9 +325,14 @@ defmodule FirmowidWeb.Analysis.Components.CategorySelector do
   defp entity_type(%CostInvoice{}), do: :cost_invoice
   defp entity_type(%Transaction{}), do: :transaction
 
-  defp editable?(%Transaction{} = row), do: row.skip_invoicing
+  @doc """
+  Whether the entry's categories may change: a skipped transaction other than a
+  salary (split by tracked time instead), or a skipped or paid invoice.
+  """
+  @spec editable?(SalesInvoice.t() | CostInvoice.t() | Transaction.t()) :: boolean()
+  def editable?(%Transaction{} = row), do: row.skip_invoicing and is_nil(row.salary_user_id)
 
-  defp editable?(row), do: row.skip_invoicing or row.transactions != []
+  def editable?(row), do: row.skip_invoicing or row.transactions != []
 
   defp tag_label(%{kind: :company}), do: gettext("Company")
   defp tag_label(%{kind: :taxes}), do: gettext("Taxes")

@@ -615,12 +615,12 @@ msgstr ""
 msgid "Cancellation"
 msgstr ""
 
-#: lib/firmowid_web/analysis/components/entry_categories.ex:181
+#: lib/firmowid_web/analysis/components/entry_categories.ex:153
 #, elixir-autogen, elixir-format
 msgid "Categories help you understand how this expense affects your budget."
 msgstr ""
 
-#: lib/firmowid_web/analysis/components/entry_categories.ex:179
+#: lib/firmowid_web/analysis/components/entry_categories.ex:151
 #, elixir-autogen, elixir-format
 msgid "Categories help you understand how this income affects your budget."
 msgstr ""
@@ -700,7 +700,7 @@ msgstr ""
 msgid "Choose an issued VAT invoice to correct."
 msgstr ""
 
-#: lib/firmowid_web/analysis/components/category_selector.ex:195
+#: lib/firmowid_web/analysis/components/category_selector.ex:196
 #, elixir-autogen, elixir-format
 msgid "Clear categories"
 msgstr ""
@@ -726,9 +726,9 @@ msgstr ""
 msgid "Comment"
 msgstr ""
 
-#: lib/firmowid_web/analysis/components/category_selector.ex:107
-#: lib/firmowid_web/analysis/components/category_selector.ex:116
-#: lib/firmowid_web/analysis/components/category_selector.ex:330
+#: lib/firmowid_web/analysis/components/category_selector.ex:108
+#: lib/firmowid_web/analysis/components/category_selector.ex:117
+#: lib/firmowid_web/analysis/components/category_selector.ex:337
 #: lib/firmowid_web/analysis/views/dashboard.ex:288
 #: lib/firmowid_web/landing/components/pricing.ex:34
 #: lib/firmowid_web/landing/components/primitives.ex:260
@@ -746,7 +746,7 @@ msgstr ""
 msgid "Compare the Free, Entrepreneur and Company plans. Monthly or annual billing, no hidden charges."
 msgstr ""
 
-#: lib/firmowid_web/invoicing/components/entries_table.ex:443
+#: lib/firmowid_web/invoicing/components/entries_table.ex:482
 #: lib/firmowid_web/invoicing/components/matching_components.ex:138
 #, elixir-autogen, elixir-format
 msgid "Complete"
@@ -959,7 +959,8 @@ msgid_plural "Could not synchronize %{count} invoices."
 msgstr[0] ""
 msgstr[1] ""
 
-#: lib/firmowid_web/analysis/components/entry_categories.ex:97
+#: lib/firmowid_web/analysis/components/entry_categories.ex:103
+#: lib/firmowid_web/analysis/components/project_cell.ex:50
 #: lib/firmowid_web/analysis/views/dashboard.ex:193
 #, elixir-autogen, elixir-format
 msgid "Could not update categories."
@@ -1166,7 +1167,7 @@ msgstr ""
 msgid "Edit %{section}"
 msgstr ""
 
-#: lib/firmowid_web/analysis/components/category_selector.ex:43
+#: lib/firmowid_web/analysis/components/category_selector.ex:44
 #, elixir-autogen, elixir-format
 msgid "Edit categories"
 msgstr ""
@@ -1770,7 +1771,7 @@ msgstr ""
 msgid "Invoice %{number}"
 msgstr ""
 
-#: lib/firmowid_web/analysis/components/entry_categories.ex:175
+#: lib/firmowid_web/analysis/components/entry_categories.ex:147
 #, elixir-autogen, elixir-format
 msgid "Invoice categories"
 msgstr ""
@@ -2140,7 +2141,7 @@ msgstr ""
 msgid "Net value"
 msgstr ""
 
-#: lib/firmowid_web/analysis/components/category_selector.ex:176
+#: lib/firmowid_web/analysis/components/category_selector.ex:177
 #, elixir-autogen, elixir-format
 msgid "New category"
 msgstr ""
@@ -2275,9 +2276,9 @@ msgstr ""
 msgid "Number of payouts this month"
 msgstr ""
 
-#: lib/firmowid_web/analysis/components/category_selector.ex:127
-#: lib/firmowid_web/analysis/components/category_selector.ex:136
-#: lib/firmowid_web/analysis/components/category_selector.ex:332
+#: lib/firmowid_web/analysis/components/category_selector.ex:128
+#: lib/firmowid_web/analysis/components/category_selector.ex:137
+#: lib/firmowid_web/analysis/components/category_selector.ex:339
 #, elixir-autogen, elixir-format
 msgid "Omitted"
 msgstr ""
@@ -2647,8 +2648,9 @@ msgstr ""
 msgid "Programming services"
 msgstr ""
 
-#: lib/firmowid_web/analysis/components/category_selector.ex:334
+#: lib/firmowid_web/analysis/components/category_selector.ex:341
 #: lib/firmowid_web/assistant/utilities/presentation.ex:301
+#: lib/firmowid_web/invoicing/components/entries_table.ex:163
 #, elixir-autogen, elixir-format
 msgid "Project"
 msgstr ""
@@ -2897,13 +2899,13 @@ msgstr ""
 msgid "Scheduled"
 msgstr ""
 
-#: lib/firmowid_web/analysis/components/category_selector.ex:63
 #: lib/firmowid_web/analysis/components/category_selector.ex:64
+#: lib/firmowid_web/analysis/components/category_selector.ex:65
 #, elixir-autogen, elixir-format
 msgid "Search categories"
 msgstr ""
 
-#: lib/firmowid_web/invoicing/views/index.ex:167
+#: lib/firmowid_web/invoicing/views/index.ex:172
 #, elixir-autogen, elixir-format
 msgid "Search invoices"
 msgstr ""
@@ -3139,9 +3141,9 @@ msgid "Taxable income before this payout"
 msgstr ""
 
 #: lib/firmowid_web/analysis/components/category_review.ex:247
-#: lib/firmowid_web/analysis/components/category_selector.ex:147
-#: lib/firmowid_web/analysis/components/category_selector.ex:156
-#: lib/firmowid_web/analysis/components/category_selector.ex:331
+#: lib/firmowid_web/analysis/components/category_selector.ex:148
+#: lib/firmowid_web/analysis/components/category_selector.ex:157
+#: lib/firmowid_web/analysis/components/category_selector.ex:338
 #: lib/firmowid_web/analysis/views/dashboard.ex:289
 #, elixir-autogen, elixir-format
 msgid "Taxes"
@@ -3520,7 +3522,7 @@ msgstr ""
 msgid "Tracked hours ready for payroll"
 msgstr ""
 
-#: lib/firmowid_web/analysis/components/entry_categories.ex:174
+#: lib/firmowid_web/analysis/components/entry_categories.ex:146
 #, elixir-autogen, elixir-format
 msgid "Transaction categories"
 msgstr ""
@@ -3602,7 +3604,7 @@ msgstr ""
 msgid "Unable to refresh the invoice status. Try again."
 msgstr ""
 
-#: lib/firmowid_web/analysis/components/category_selector.ex:273
+#: lib/firmowid_web/analysis/components/category_selector.ex:275
 #, elixir-autogen, elixir-format
 msgid "Unassigned"
 msgstr ""
@@ -4709,7 +4711,7 @@ msgstr ""
 msgid "usually %{amount} (%{change})"
 msgstr ""
 
-#: lib/firmowid_web/invoicing/views/index.ex:186
+#: lib/firmowid_web/invoicing/views/index.ex:191
 #, elixir-autogen, elixir-format
 msgid "Add invoice"
 msgstr ""
