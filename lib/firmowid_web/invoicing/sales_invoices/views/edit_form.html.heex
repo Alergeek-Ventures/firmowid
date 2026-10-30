@@ -349,11 +349,11 @@
                 <p class="font-medium text-grey-900">Polska</p>
               </div>
             <% else %>
-              <.input
+              <.searchable_select
                 field={@form[:buyer_country]}
-                type="select"
-                options={Firmowid.Invoicing.CountryCodes.country_options()}
+                options={@country_options}
                 prompt="Wybierz kraj"
+                aria-label="Kraj"
               />
             <% end %>
           </div>

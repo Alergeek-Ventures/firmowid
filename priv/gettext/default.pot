@@ -936,8 +936,8 @@ msgstr ""
 msgid "Could not disconnect this transaction from the salary."
 msgstr ""
 
-#: lib/firmowid_web/invoicing/sales_invoices/views/creator.ex:1160
-#: lib/firmowid_web/invoicing/sales_invoices/views/creator.ex:1167
+#: lib/firmowid_web/invoicing/sales_invoices/views/creator.ex:1162
+#: lib/firmowid_web/invoicing/sales_invoices/views/creator.ex:1169
 #, elixir-autogen, elixir-format
 msgid "Could not issue the invoice."
 msgstr ""
@@ -1790,8 +1790,8 @@ msgstr ""
 msgid "Invoice number"
 msgstr ""
 
-#: lib/firmowid_web/invoicing/sales_invoices/views/creator.ex:1165
-#: lib/firmowid_web/invoicing/sales_invoices/views/edit.ex:684
+#: lib/firmowid_web/invoicing/sales_invoices/views/creator.ex:1167
+#: lib/firmowid_web/invoicing/sales_invoices/views/edit.ex:686
 #, elixir-autogen, elixir-format
 msgid "Invoice number is required."
 msgstr ""
@@ -5446,12 +5446,12 @@ msgstr ""
 msgid "Confirm email address"
 msgstr ""
 
-#: lib/firmowid_web/management/views/counterparty_form.ex:149
+#: lib/firmowid_web/management/views/counterparty_form.ex:150
 #, elixir-autogen, elixir-format
 msgid "Edit counterparty"
 msgstr ""
 
-#: lib/firmowid_web/invoicing/sales_invoices/views/edit.ex:157
+#: lib/firmowid_web/invoicing/sales_invoices/views/edit.ex:158
 #, elixir-autogen, elixir-format
 msgid "Edit invoice"
 msgstr ""
@@ -5486,7 +5486,7 @@ msgstr ""
 msgid "Hours record"
 msgstr ""
 
-#: lib/firmowid_web/invoicing/sales_invoices/views/creator.ex:95
+#: lib/firmowid_web/invoicing/sales_invoices/views/creator.ex:97
 #, elixir-autogen, elixir-format
 msgid "Invoice creator"
 msgstr ""
@@ -5521,7 +5521,7 @@ msgstr ""
 msgid "Item %{number}: unit"
 msgstr ""
 
-#: lib/firmowid_web/management/views/counterparty_form.ex:149
+#: lib/firmowid_web/management/views/counterparty_form.ex:150
 #, elixir-autogen, elixir-format
 msgid "New counterparty"
 msgstr ""
@@ -5676,4 +5676,31 @@ msgstr ""
 #, elixir-autogen, elixir-format
 msgctxt "avatar menu"
 msgid "Superadmin panel"
+msgstr ""
+
+#: lib/firmowid_web/organization/invites/views/index.html.heex:12
+#, elixir-autogen, elixir-format
+msgid "No invites yet"
+msgstr ""
+
+#: lib/firmowid_web/design_system/components/searchable_select.ex:102
+#, elixir-autogen, elixir-format
+msgid "No matches found."
+msgstr ""
+
+#: lib/firmowid_web/organization/invites/views/index.html.heex:15
+#, elixir-autogen, elixir-format
+msgid "Prepare an invite and give its code to the person who should join your organization."
+msgstr ""
+
+#: lib/firmowid/invoicing/country_codes.ex:159
+#, elixir-autogen, elixir-format
+msgctxt "country group"
+msgid "European Union"
+msgstr ""
+
+#: lib/firmowid/invoicing/country_codes.ex:160
+#, elixir-autogen, elixir-format
+msgctxt "country group"
+msgid "Other countries"
 msgstr ""

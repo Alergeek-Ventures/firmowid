@@ -7,6 +7,7 @@ defmodule FirmowidWeb.Management.Views.CounterpartyForm do
   import FirmowidUI.Components.Button
   import FirmowidUI.Components.Link
   import FirmowidWeb.DesignSystem.Components.CoreComponents
+  import FirmowidWeb.DesignSystem.Components.SearchableSelect
   import Phoenix.Component, except: [link: 1]
 
   alias Ash.Error.Changes.InvalidAttribute

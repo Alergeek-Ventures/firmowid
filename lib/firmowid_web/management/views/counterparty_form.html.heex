@@ -137,9 +137,8 @@
             />
 
             <label class="pt-1.5 text-sm text-nowrap text-grey-700" for={@form[:country].id}>Kraj*</label>
-            <.input
+            <.searchable_select
               field={@form[:country]}
-              type="select"
               options={@country_options}
               prompt="Wybierz kraj"
               required
@@ -164,9 +163,8 @@
               <label class="text-sm text-grey-700" for={@form[:mail_country].id}>
                 Kraj
               </label>
-              <.input
+              <.searchable_select
                 field={@form[:mail_country]}
-                type="select"
                 options={@country_options}
                 prompt="Wybierz kraj"
               />

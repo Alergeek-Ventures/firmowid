@@ -13,6 +13,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
 
   import FirmowidUI.Components.Button
   import FirmowidWeb.DesignSystem.Components.CoreComponents
+  import FirmowidWeb.DesignSystem.Components.SearchableSelect
 
   alias Firmowid.Core
   alias Firmowid.ErrorKind
@@ -155,6 +156,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
       socket
       |> assign(:step, :edit)
       |> assign(:page_title, gettext("Edit invoice"))
+      |> assign(:country_options, Firmowid.Invoicing.CountryCodes.country_options())
       |> assign(:invoice, invoice)
       |> assign(:return_to, return_to)
       |> assign(:logo_url, logo_url)
