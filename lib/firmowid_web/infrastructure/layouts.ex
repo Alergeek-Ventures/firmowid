@@ -22,6 +22,54 @@ defmodule FirmowidWeb.Infrastructure.Layouts do
 
   embed_templates "layouts/*"
 
+  attr :current_user, :map, default: nil
+
+  @doc """
+  Bottom banner shown while a superuser uses the application as another account
+  (see `Firmowid.Core.impersonator_id/1`), with the way back to their own.
+  """
+  def impersonation_banner(assigns) do
+    ~H"""
+    <div
+      :if={impersonating?(@current_user)}
+      id="impersonation-banner"
+      class="pointer-events-none fixed inset-x-0 bottom-0 z-100 p-4"
+    >
+      <div class="pointer-events-auto mx-auto flex w-fit max-w-full flex-wrap items-center gap-x-4 gap-y-2 rounded-xl bg-rust-700 px-5 py-3 text-sm text-white shadow-2xl">
+        <Lucideicons.venetian_mask class="size-5 shrink-0" aria-hidden="true" />
+        <p>
+          {gettext("You are using the app as %{email}. Analytics are not recorded.",
+            email: @current_user.email
+          )}
+        </p>
+        <.form for={%{}} action={~p"/admin/impersonacja"} method="delete">
+          <.button
+            type="submit"
+            variant="secondary"
+            size="small"
+            class="bg-white text-black hover:bg-white/90 active:bg-white/80"
+          >
+            {gettext("Return to your account")}
+          </.button>
+        </.form>
+      </div>
+    </div>
+    """
+  end
+
+  defp impersonating?(%Firmowid.Core.User{} = user), do: not is_nil(Firmowid.Core.impersonator_id(user))
+
+  defp impersonating?(_user), do: false
+
+  defp posthog_enabled?(current_user) do
+    Keyword.get(
+      Application.get_env(:firmowid, :frontend_observability, []),
+      :posthog_enabled,
+      false
+    ) and
+      not impersonating?(current_user)
+  end
+
   attr :current_user, :map, required: true
   attr :current_uri, URI, required: true
   attr :analysis_enabled, :boolean, required: true

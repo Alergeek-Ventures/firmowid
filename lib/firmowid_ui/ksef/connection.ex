@@ -186,7 +186,7 @@ defmodule FirmowidUI.Ksef.Connection do
   defp do_handle_event("fetch_ksef_invoices", _params, socket, scope) do
     fetching? = Ksef.fetching_invoices?(scope)
 
-    Analytics.capture_business_event(:ksef_fetch_requested, scope.actor.id, scope.tenant, %{
+    Analytics.capture_business_event(:ksef_fetch_requested, scope.actor, scope.tenant, %{
       already_fetching: fetching?
     })
 

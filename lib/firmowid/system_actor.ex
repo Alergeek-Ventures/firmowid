@@ -87,6 +87,10 @@ defmodule Firmowid.SystemActor do
   - `:actor_member_loader` — loads the authenticated user's active member, which
     decides the user's organization and which policies read the user's role from.
     Can read only the active member of `user_id`, in any organization.
+
+  - `:sign_in_recorder` — records that a session was just issued to `user_id`
+    (see `Firmowid.Core.Token.Changes.RecordSignIn`). Can run only that update on
+    that account, blocked or not.
   """
 
   @type role ::
@@ -113,6 +117,7 @@ defmodule Firmowid.SystemActor do
           | :anonymous
           | :avatar_cleanup
           | :actor_member_loader
+          | :sign_in_recorder
 
   @enforce_keys [:org_id, :role]
   defstruct [:org_id, :role, :blob_id, :user_id]

@@ -130,6 +130,7 @@ defmodule FirmowidWeb.Core.Router do
 
     auth_routes(AuthController, Firmowid.Core.User, path: "/auth")
     delete "/wyloguj", AuthController, :sign_out
+    delete "/admin/impersonacja", Admin.Controllers.Impersonation, :delete
     post "/jezyk", Infrastructure.Controllers.Locale, :update
   end
 
@@ -200,6 +201,12 @@ defmodule FirmowidWeb.Core.Router do
         :set_analysis_entry_project_tags
       ],
       mcp_resources: [:ksef_connection, :issue_invoice, :issue_correction]
+  end
+
+  scope "/admin", FirmowidWeb.Admin.Controllers do
+    pipe_through [:browser, :require_authenticated_user_with_organization, :require_superuser]
+
+    post "/rozliczenia/:org_id/impersonacja", Impersonation, :create
   end
 
   scope "/admin" do

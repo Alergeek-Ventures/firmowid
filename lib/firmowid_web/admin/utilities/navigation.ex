@@ -93,6 +93,12 @@ defmodule FirmowidWeb.Admin.Utilities.Navigation do
     ~p"/admin/rozliczenia/#{org_id}?#{encode_params(params)}"
   end
 
+  @doc """
+  Builds the path that signs the superuser in as the organization's owner.
+  """
+  @spec impersonation_path(String.t()) :: String.t()
+  def impersonation_path(org_id) when is_binary(org_id), do: ~p"/admin/rozliczenia/#{org_id}/impersonacja"
+
   defp find_plan(raw) do
     Enum.find(PlanCatalog.plans(), &(Atom.to_string(&1) == raw))
   end

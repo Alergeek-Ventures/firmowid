@@ -37,9 +37,21 @@ defmodule FirmowidWeb.Infrastructure.UserAuth do
   def load_member(%User{} = user, session) do
     members = Core.list_active_members(user)
     usable = Enum.filter(members, &Core.usable_organization?(user, &1.organization))
+    user = put_token_claims(user, session)
 
     {Core.select_member(user, usable, session[organization_session_key()]), Enum.map(members, & &1.organization)}
   end
+
+  # A connected LiveView gets the user without the claims of their session token,
+  # which the plug adds (`AshAuthentication.Phoenix.LiveSession` only loads the
+  # subject), so they are read from the token in the session it has verified. They
+  # tell a superuser's session as the user (see `Core.impersonator_id/1`).
+  defp put_token_claims(user, %{"user_token" => token}) when is_binary(token) do
+    {:ok, claims} = AshAuthentication.Jwt.peek(token)
+    Ash.Resource.put_metadata(user, :token_claims, claims)
+  end
+
+  defp put_token_claims(user, _session), do: user
 
   @doc """
   Stores the organization of the user's loaded member in the session, so the

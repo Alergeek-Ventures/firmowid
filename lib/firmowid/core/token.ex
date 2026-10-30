@@ -57,6 +57,12 @@ defmodule Firmowid.Core.Token do
     end
   end
 
+  changes do
+    change Firmowid.Core.Token.Changes.RecordSignIn,
+      on: [:create],
+      where: [attribute_equals(:purpose, "user")]
+  end
+
   attributes do
     attribute :jti, :string,
       primary_key?: true,

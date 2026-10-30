@@ -286,6 +286,12 @@ defmodule Firmowid.Core.User do
       accept [:locale]
     end
 
+    update :record_sign_in do
+      description "Record that the account was just signed in."
+      accept []
+      change set_attribute(:last_signed_in_at, &DateTime.utc_now/0)
+    end
+
     action :update_current_profile, :struct do
       description "Update the acting user's member: name and profile details."
       transaction? true
@@ -509,6 +515,10 @@ defmodule Firmowid.Core.User do
       authorize_if expr(id == ^actor(:id))
     end
 
+    bypass [{SystemActorRole, roles: [:sign_in_recorder]}, action(:record_sign_in)] do
+      authorize_if expr(id == ^actor(:user_id))
+    end
+
     bypass action(:set_locale) do
       authorize_if expr(id == ^actor(:id))
     end
@@ -544,6 +554,10 @@ defmodule Firmowid.Core.User do
     attribute :hashed_password, :string, sensitive?: true
 
     attribute :confirmed_at, :utc_datetime, public?: true
+
+    # Set when a session is issued to the account itself (see `Token`); support
+    # impersonation does not count.
+    attribute :last_signed_in_at, :utc_datetime, public?: true
 
     attribute :system_role, :atom,
       public?: true,

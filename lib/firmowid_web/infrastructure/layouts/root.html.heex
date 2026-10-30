@@ -81,15 +81,7 @@
       src={~p"/assets/app.js"}
       data-telemetry-config="true"
       data-public-marketing={to_string(assigns[:public_marketing?] == true)}
-      data-posthog-enabled={
-        to_string(
-          Keyword.get(
-            Application.get_env(:firmowid, :frontend_observability, []),
-            :posthog_enabled,
-            false
-          )
-        )
-      }
+      data-posthog-enabled={to_string(posthog_enabled?(assigns[:current_user]))}
       data-posthog-api-key={
         Keyword.get(
           Application.get_env(:firmowid, :frontend_observability, []),
@@ -139,5 +131,6 @@
   <body class="h-full">
     {@inner_content}
     <FirmowidWeb.Landing.Components.CookieConsent.cookie_consent_banner />
+    <.impersonation_banner current_user={assigns[:current_user]} />
   </body>
 </html>

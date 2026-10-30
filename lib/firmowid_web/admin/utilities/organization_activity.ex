@@ -5,8 +5,10 @@ defmodule FirmowidWeb.Admin.Utilities.OrganizationActivity do
   Counts cover the rolling 30 * 24 hours ending at `now` (inclusive start, exclusive end).
   Latest timestamps are not limited to that window. These are record creation / session
   start times, not evidence of a login or of the person who performed the action.
+  `last_sign_in` is the active member's account that signed in most recently, if any.
   """
 
+  alias Firmowid.Core
   alias Firmowid.Invoicing
   alias Firmowid.Timetracker
 
@@ -30,6 +32,7 @@ defmodule FirmowidWeb.Admin.Utilities.OrganizationActivity do
     sessions = Timetracker.list_sessions!(%{}, latest_options(:start_datetime, scope))
 
     %{
+      last_sign_in: last_sign_in(scope),
       sales:
         summary(
           sales,
@@ -56,6 +59,20 @@ defmodule FirmowidWeb.Admin.Utilities.OrganizationActivity do
           scope
         )
     }
+  end
+
+  defp last_sign_in(scope) do
+    %{status: :active}
+    |> Core.list_users!(
+      scope: scope,
+      load: [:member],
+      query: [
+        filter: [last_signed_in_at: [is_nil: false]],
+        sort: [last_signed_in_at: :desc],
+        limit: 1
+      ]
+    )
+    |> List.first()
   end
 
   defp latest_options(field, scope) do

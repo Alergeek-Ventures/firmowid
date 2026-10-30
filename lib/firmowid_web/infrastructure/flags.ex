@@ -18,9 +18,12 @@ defmodule FirmowidWeb.Infrastructure.Flags do
   Development enables every flag. Elsewhere missing flags default to `false`.
   """
 
+  alias Firmowid.Core
+  alias Firmowid.Core.User
   alias Firmowid.ErrorKind
   alias PostHog.FeatureFlags
   alias PostHog.FeatureFlags.Evaluations
+  alias PostHog.FeatureFlags.Result
 
   require Logger
 
@@ -55,7 +58,7 @@ defmodule FirmowidWeb.Infrastructure.Flags do
       |> FeatureFlags.evaluate_flags()
       |> case do
         {:ok, snapshot} ->
-          resolve_flags(snapshot)
+          resolve_flags(snapshot, impersonated?(user))
 
         {:error, error} ->
           Logger.warning("PostHog feature flag evaluation failed",
@@ -99,11 +102,21 @@ defmodule FirmowidWeb.Infrastructure.Flags do
     Map.values(@flag_keys)
   end
 
-  defp resolve_flags(snapshot) do
+  defp resolve_flags(snapshot, impersonated?) do
     Enum.reduce(@flag_keys, empty_flags(), fn {flag_name, posthog_key}, flags ->
-      Map.put(flags, flag_name, Evaluations.enabled?(snapshot, posthog_key))
+      Map.put(flags, flag_name, flag_enabled_in?(snapshot, posthog_key, impersonated?))
     end)
   end
+
+  # `Evaluations.enabled?/2` reports a `$feature_flag_called` event, which a
+  # superuser's session as the user must not add to the user's analytics.
+  defp flag_enabled_in?(snapshot, posthog_key, false), do: Evaluations.enabled?(snapshot, posthog_key)
+
+  defp flag_enabled_in?(%Evaluations{flags: flags}, posthog_key, true),
+    do: match?({:ok, %Result{enabled: true}}, Map.fetch(flags, posthog_key))
+
+  defp impersonated?(%User{} = user), do: not is_nil(Core.impersonator_id(user))
+  defp impersonated?(_user), do: false
 
   defp evaluation_payload(user) do
     %{
