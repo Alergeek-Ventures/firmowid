@@ -7,12 +7,12 @@ defmodule FirmowidWeb.Timetracker.Controllers.Csv do
   use FirmowidWeb, :controller
 
   alias Firmowid.Core
+  alias Firmowid.Invoicing.Services.MonthDownloadEntries
   alias Firmowid.Payroll
+  alias Firmowid.TimeFormatter
   alias Firmowid.Timetracker
   alias Firmowid.Timetracker.Project
-  alias FirmowidWeb.Infrastructure.Controllers.FileDownload
   alias FirmowidWeb.Infrastructure.Utilities.QueryParams
-  alias FirmowidWeb.Infrastructure.Utilities.TimeFormatter
 
   action_fallback FirmowidWeb.Infrastructure.Controllers.Fallback
 
@@ -55,7 +55,7 @@ defmodule FirmowidWeb.Timetracker.Controllers.Csv do
          {:ok, project} when not is_nil(project) <-
            Project.get(project_id, scope: scope, not_found_error?: false) do
       csv_content = build_project_tasks_csv(project_id, month, year, scope)
-      project_name = FileDownload.clean_filename(project.name)
+      project_name = MonthDownloadEntries.clean_filename(project.name)
 
       send_download(conn, {:binary, csv_content},
         filename: "#{project_name}_#{month}_#{year}.csv",

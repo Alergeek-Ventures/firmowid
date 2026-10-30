@@ -25,7 +25,6 @@ defmodule Firmowid.Ksef.Workers.CertificateEnrollmentWorker do
   alias Firmowid.Ksef.Services.ApiClient
   alias Firmowid.Ksef.Workers.SessionWorker
   alias Firmowid.Scope
-  alias Firmowid.Sentry
   alias Firmowid.SystemActor
 
   require Logger
@@ -374,36 +373,19 @@ defmodule Firmowid.Ksef.Workers.CertificateEnrollmentWorker do
   # An unbound initial stage only starts a fresh request for the current credential.
   defp current_refresh?(_credential, _args), do: true
 
+  # Every failed attempt, including the final one, returns the error so the Oban
+  # integration reports it; the final attempt first restores the working credential.
   defp handle_refresh_failure(credential, scope, reason, job) do
-    if retrying?(job) do
-      {:error, reason}
-    else
+    if not retrying?(job) do
       Logger.error(
         "KSeF certificate refresh failed for organization #{scope.tenant}: " <>
           "operation=refresh stage=certificate error_kind=#{ErrorKind.classify(reason)}"
       )
 
-      report_refresh_failure(reason, scope.tenant)
-
       Credential.recover_certificate_refresh!(credential, scope: scope)
-
-      {:cancel, reason}
     end
-  end
 
-  defp report_refresh_failure(reason, organization_id) do
-    Sentry.capture_exception(
-      RuntimeError.exception("KSeF certificate refresh failed"),
-      tags: %{source: "ksef_certificate_refresh"},
-      extra: %{
-        organization_id: organization_id,
-        operation: "refresh",
-        error_kind: ErrorKind.classify(reason)
-      }
-    )
-  rescue
-    _sentry_error ->
-      Logger.warning("Failed to report KSeF certificate refresh error to Sentry")
+    {:error, reason}
   end
 
   defp handle_enrollment_failure(credential, scope, reason, job) do

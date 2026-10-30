@@ -7,7 +7,7 @@ defmodule Firmowid.Oauth2Server do
   preparation, which also covers bearer-token user loading. Accounts without an
   organization are rejected by OAuth grant actions and by the MCP authentication
   plug. Grants are bound to the organization chosen on the consent screen (the
-  Ash tenant, see `FirmowidMcp.Utilities.ConsentOrganization` and
+  Ash tenant, see `FirmowidWeb.Auth.Utilities.ConsentOrganization` and
   `FirmowidMcp.Utilities.TokenOrganization`). Leaving an organization (archiving
   the member) revokes its refresh tokens and removes its codes and consent in the
   same transaction.

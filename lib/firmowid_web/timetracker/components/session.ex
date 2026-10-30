@@ -6,7 +6,7 @@ defmodule FirmowidWeb.Timetracker.Components.Session do
   import FirmowidWeb.DesignSystem.Components.CoreComponents
   import Phoenix.Component, except: [link: 1]
 
-  alias FirmowidWeb.Infrastructure.Utilities.TimeFormatter
+  alias Firmowid.TimeFormatter
   alias FirmowidWeb.Timetracker.Utilities.GroupedSessionForm
   alias FirmowidWeb.Timetracker.Views.Index
 

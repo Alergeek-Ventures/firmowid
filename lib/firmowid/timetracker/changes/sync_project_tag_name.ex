@@ -35,7 +35,10 @@ defmodule Firmowid.Timetracker.Changes.SyncProjectTagName do
 
     opts = [scope: scope]
 
-    case TagDefinition.get_tag_definition(tag_definition_id, opts) do
+    case TagDefinition.get_tag_definition(
+           tag_definition_id,
+           Keyword.put(opts, :not_found_error?, false)
+         ) do
       {:ok, nil} ->
         {:ok, :synced}
 
@@ -48,8 +51,8 @@ defmodule Firmowid.Timetracker.Changes.SyncProjectTagName do
           {:error, changeset} -> {:error, changeset}
         end
 
-      {:error, %Ash.Error.Query.NotFound{}} ->
-        {:ok, :synced}
+      {:error, reason} ->
+        {:error, reason}
     end
   end
 end

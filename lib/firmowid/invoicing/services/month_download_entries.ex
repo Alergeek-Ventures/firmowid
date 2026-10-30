@@ -73,7 +73,7 @@ defmodule Firmowid.Invoicing.Services.MonthDownloadEntries do
   end
 
   @doc """
-  Sanitizes invoice-derived file names for zip paths.
+  Sanitizes a name for use in a downloaded file or zip path.
   """
   @spec clean_filename(binary()) :: binary()
   def clean_filename(filename) do

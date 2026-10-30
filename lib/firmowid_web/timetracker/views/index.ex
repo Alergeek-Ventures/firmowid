@@ -10,6 +10,7 @@ defmodule FirmowidWeb.Timetracker.Views.Index do
   alias Ash.Error.Invalid
   alias Ash.Error.Unknown
   alias Ash.Error.Unknown.UnknownError
+  alias Firmowid.TimeFormatter
   alias Firmowid.Timetracker
   alias Firmowid.Timetracker.Changes.NormalizeSessionBoundaries
   alias Firmowid.Timetracker.HoursRecord
@@ -17,7 +18,6 @@ defmodule FirmowidWeb.Timetracker.Views.Index do
   alias Firmowid.Timetracker.Session
   alias Firmowid.Timetracker.TrimPlan
   alias FirmowidWeb.Infrastructure.Utilities.PosthogBusinessEvents
-  alias FirmowidWeb.Infrastructure.Utilities.TimeFormatter
   alias FirmowidWeb.Timetracker.Utilities.GroupedSessionForm
   alias FirmowidWeb.Timetracker.Utilities.SessionForm
 
@@ -615,34 +615,6 @@ defmodule FirmowidWeb.Timetracker.Views.Index do
         LiveToast.send_toast(:error, "Nie udało się usunąć sesji")
         {:noreply, socket}
     end
-  end
-
-  def handle_event("edit_sessions", %{"sessions_form" => %{"ids" => ids} = form_params}, socket) do
-    form =
-      form_params
-      |> GroupedSessionForm.changeset()
-      |> Ecto.Changeset.apply_changes()
-
-    sessions = fetch_sessions_by_ids(ids, socket)
-
-    session_updates =
-      Enum.map(sessions, fn session ->
-        {start_datetime, end_datetime} =
-          form.start_end_times
-          |> Enum.find(fn s -> s.id == session.id end)
-          |> SessionForm.times_to_datetimes(socket.assigns.timezone)
-
-        attrs = %{
-          title: form.title,
-          project_id: form.project_id,
-          start_datetime: start_datetime,
-          end_datetime: end_datetime
-        }
-
-        {session, attrs}
-      end)
-
-    ash_update_sessions(session_updates, socket)
   end
 
   def handle_event("load_more", _, socket) do

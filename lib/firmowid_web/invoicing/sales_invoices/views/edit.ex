@@ -415,12 +415,12 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
 
   def handle_event("set_price_input_mode", %{"index" => index, "mode" => mode}, socket) do
     item_price_input_modes =
-      set_price_input_mode(socket.assigns.item_price_input_modes, index, mode)
+      PriceInput.put_price_input_mode(socket.assigns.item_price_input_modes, index, mode)
 
     {:noreply,
      socket
      |> assign(:item_price_input_modes, item_price_input_modes)
-     |> assign(:focused_item_price_input_index, item_price_input_focus_index(index))}
+     |> assign(:focused_item_price_input_index, PriceInput.price_input_focus_index(index))}
   end
 
   def handle_event("suggest_payment_date", %{"field" => field, "suggestion" => suggestion}, socket) do
@@ -858,27 +858,11 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
     end
   end
 
-  defp parse_decimal(value), do: FormHelpers.parse_decimal(value)
-
   defp normalize_price_input_params(params, target \\ :all) do
     indexes = PriceInput.gross_value_indexes(params, :sales_invoice_items, target)
 
-    PriceInput.normalize_gross_value_params(
-      params,
-      :sales_invoice_items,
-      &parse_decimal/1,
-      indexes
-    )
+    PriceInput.normalize_gross_value_params(params, :sales_invoice_items, indexes)
   end
-
-  defp set_price_input_mode(_item_price_input_modes, "all", mode), do: %{"all" => mode}
-
-  defp set_price_input_mode(item_price_input_modes, item_index, mode) do
-    Map.put(item_price_input_modes, item_index, mode)
-  end
-
-  defp item_price_input_focus_index("all"), do: nil
-  defp item_price_input_focus_index(item_index), do: item_index
 
   defp not_editable_message(%SalesInvoice{ksef_number: nil}), do: SubmissionInfo.outside_ksef_message()
 

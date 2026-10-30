@@ -330,7 +330,13 @@
         </div>
 
         <div class="ml-2 flex items-center gap-4 rounded-sm bg-white p-4 max-md:hidden">
-          <.hours_record_status hours_record={employee.hours_record} user={employee.user} />
+          <.hours_record_status
+            hours_record={employee.hours_record}
+            user={employee.user}
+            change_request_path={
+              Navigation.employee_path(employee.user.id, %{miesiac: @selected_date})
+            }
+          />
 
           <.button
             type="button"

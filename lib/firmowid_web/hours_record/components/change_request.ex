@@ -3,7 +3,7 @@ defmodule FirmowidWeb.HoursRecord.Components.ChangeRequest do
   use FirmowidWeb, :html
 
   import FirmowidUI.Components.Button
-  import FirmowidWeb.Management.Components.HoursRecordStatus, only: [hours_record_status: 1]
+  import FirmowidWeb.HoursRecord.Components.Status, only: [hours_record_status: 1]
 
   alias Phoenix.LiveView.Rendered
 
@@ -90,7 +90,6 @@ defmodule FirmowidWeb.HoursRecord.Components.ChangeRequest do
         :for={record <- @records}
         hours_record={record}
         user={@user}
-        show_change_request={false}
       />
     </section>
     """

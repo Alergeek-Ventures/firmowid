@@ -1,6 +1,6 @@
-defmodule FirmowidWeb.Infrastructure.Utilities.TimeFormatter do
+defmodule Firmowid.TimeFormatter do
   @moduledoc """
-  Helper functions for formatting time durations.
+  Formats durations, dates and relative times for e-mails and the interface.
   """
 
   def format_timer(duration, :with_seconds) when is_integer(duration) do

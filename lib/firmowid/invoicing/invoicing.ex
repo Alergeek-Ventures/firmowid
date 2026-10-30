@@ -662,14 +662,10 @@ defmodule Firmowid.Invoicing do
     cost_invoice =
       CostInvoice
       |> Ash.Query.filter_input(%{id: %{eq: cost_invoice_id}})
-      |> Ash.Query.load([:blob])
+      |> Ash.Query.load([:blob, :is_ksef_imported])
       |> Ash.read_one!(opts)
 
-    ksef_imported? =
-      not (is_nil(cost_invoice.ksef_downloaded_at) and
-             is_nil(cost_invoice.ksef_permanent_storage_date) and is_nil(cost_invoice.ksef_number))
-
-    if ksef_imported? do
+    if cost_invoice.is_ksef_imported do
       raise "Cost invoice #{cost_invoice_id} is imported from KSeF and cannot be deleted"
     end
 

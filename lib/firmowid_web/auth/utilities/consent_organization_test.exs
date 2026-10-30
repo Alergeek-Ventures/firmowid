@@ -1,4 +1,4 @@
-defmodule FirmowidMcp.Utilities.ConsentOrganizationTest do
+defmodule FirmowidWeb.Auth.Utilities.ConsentOrganizationTest do
   @moduledoc "Checks that MCP OAuth grants work in the organization chosen on the consent screen."
 
   use FirmowidWeb.ConnCase, async: true

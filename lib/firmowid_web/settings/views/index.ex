@@ -1364,19 +1364,16 @@ defmodule FirmowidWeb.Settings.Views.Index do
   defp derive_bank_account_status(_account, _requisition_status), do: :disconnected
 
   defp list_bank_accounts(scope) do
-    case Finances.list_bank_accounts(
-           scope: scope,
-           load: [:broken?, :has_successful_sync?, :requisition]
-         ) do
-      {:ok, accounts} ->
-        accounts
-        # Keep the latest outcome independent of the last-success aggregate's filter.
-        |> Ash.load!(:latest_successful_sync_at, scope: scope)
-        |> Enum.sort_by(&bank_account_sort_key/1)
+    accounts =
+      Finances.list_bank_accounts!(
+        scope: scope,
+        load: [:broken?, :has_successful_sync?, :requisition]
+      )
 
-      {:error, _} ->
-        []
-    end
+    accounts
+    # Keep the latest outcome independent of the last-success aggregate's filter.
+    |> Ash.load!(:latest_successful_sync_at, scope: scope)
+    |> Enum.sort_by(&bank_account_sort_key/1)
   end
 
   defp bank_account_sort_key(account) do
@@ -1384,10 +1381,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
   end
 
   defp list_pending_requisitions(scope) do
-    case Finances.list_requisitions(scope: scope) do
-      {:ok, requisitions} -> Enum.filter(requisitions, &(&1.status == :pending))
-      {:error, _} -> []
-    end
+    Enum.filter(Finances.list_requisitions!(scope: scope), &(&1.status == :pending))
   end
 
   defp list_bank_institutions(_current_user, []), do: %{}

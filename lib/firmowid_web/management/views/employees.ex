@@ -6,8 +6,8 @@ defmodule FirmowidWeb.Management.Views.Employees do
   import FirmowidUI.Components.Link
   import FirmowidWeb.DesignSystem.Components.CoreComponents
   import FirmowidWeb.DesignSystem.Components.MonthPicker
+  import FirmowidWeb.HoursRecord.Components.Status, only: [hours_record_status: 1]
   import FirmowidWeb.Infrastructure.Flags, only: [flag_enabled?: 2]
-  import FirmowidWeb.Management.Components.HoursRecordStatus, only: [hours_record_status: 1]
   import Phoenix.Component, except: [link: 1]
 
   alias Ash.Notifier.Notification
@@ -26,7 +26,7 @@ defmodule FirmowidWeb.Management.Views.Employees do
   @impl true
   def mount(_params, _session, socket) do
     scope = socket.assigns.ash_scope
-    active_months = months_with_sessions(%{}, scope)
+    active_months = Timetracker.months_with_sessions(%{}, scope)
 
     if connected?(socket) do
       Endpoint.subscribe("user:joined_org:#{scope.tenant}")
@@ -265,7 +265,4 @@ defmodule FirmowidWeb.Management.Views.Employees do
      |> push_event("copy-to-clipboard", %{text: number})
      |> LiveToast.put_toast(:success, "Skopiowano numer konta")}
   end
-
-  # Distinct months (as naive_datetime) that have sessions, newest first.
-  defp months_with_sessions(filters, scope), do: Timetracker.months_with_sessions(filters, scope)
 end

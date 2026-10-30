@@ -64,7 +64,7 @@ defmodule FirmowidWeb.Core.Router do
   end
 
   pipeline :oauth_consent do
-    plug FirmowidMcp.Utilities.ConsentOrganization
+    plug FirmowidWeb.Auth.Utilities.ConsentOrganization
   end
 
   pipeline :webhook do

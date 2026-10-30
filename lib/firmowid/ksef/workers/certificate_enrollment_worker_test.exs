@@ -109,7 +109,7 @@ defmodule Firmowid.Ksef.Workers.CertificateEnrollmentWorkerTest do
                Credential.refresh_certificate(credential, scope: scope)
              end)
 
-    assert {:cancel, :certificate_limit_exhausted} =
+    assert {:error, :certificate_limit_exhausted} =
              perform_job(CertificateEnrollmentWorker, refresh_args(organization_id), attempt: 5)
 
     assert %Credential{status: :working, credentials: credentials} =

@@ -11,7 +11,7 @@ defmodule Firmowid.Delegations.DelegationEmails do
   alias Firmowid.Core.User
   alias Firmowid.Delegations.Delegation
   alias Firmowid.Mailer
-  alias FirmowidWeb.Infrastructure.Utilities.TimeFormatter
+  alias Firmowid.TimeFormatter
 
   @spec deliver_new_delegation([User.t() | map()], Delegation.t(), Member.t() | map()) ::
           {:ok, Swoosh.Email.t()} | {:error, term()}

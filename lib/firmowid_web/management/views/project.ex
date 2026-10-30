@@ -13,9 +13,9 @@ defmodule FirmowidWeb.Management.Views.Project do
 
   alias Firmowid.Core
   alias Firmowid.Payroll
+  alias Firmowid.TimeFormatter
   alias Firmowid.Timetracker
   alias Firmowid.Timetracker.Project
-  alias FirmowidWeb.Infrastructure.Utilities.TimeFormatter
   alias FirmowidWeb.Management.Utilities.CounterpartyHelpers
   alias FirmowidWeb.Management.Utilities.Navigation
   alias FirmowidWeb.Timetracker.Utilities.Navigation, as: TimetrackerNavigation
@@ -32,7 +32,7 @@ defmodule FirmowidWeb.Management.Views.Project do
 
     selected_date = Navigation.parse_month(params)
 
-    active_months = months_with_sessions(%{project_id: project_id}, scope)
+    active_months = Timetracker.months_with_sessions(%{project_id: project_id}, scope)
     project = Project.get!(project_id, scope: scope)
 
     socket =
@@ -372,7 +372,4 @@ defmodule FirmowidWeb.Management.Views.Project do
       u -> u
     end
   end
-
-  # Distinct months (as naive_datetime) that have sessions, newest first.
-  defp months_with_sessions(filters, scope), do: Timetracker.months_with_sessions(filters, scope)
 end

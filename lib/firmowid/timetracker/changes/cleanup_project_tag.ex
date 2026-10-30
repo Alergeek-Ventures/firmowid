@@ -46,15 +46,15 @@ defmodule Firmowid.Timetracker.Changes.CleanupProjectTag do
   defp delete_tag_definition(tag_definition_id, scope) do
     opts = [scope: scope]
 
-    case TagDefinition.get_tag_definition(tag_definition_id, opts) do
+    case TagDefinition.get_tag_definition(
+           tag_definition_id,
+           Keyword.put(opts, :not_found_error?, false)
+         ) do
       {:ok, nil} ->
         :ok
 
       {:ok, tag_def} ->
         TagDefinition.destroy(tag_def, opts)
-
-      {:error, %Ash.Error.Query.NotFound{}} ->
-        :ok
 
       {:error, error} ->
         {:error, error}

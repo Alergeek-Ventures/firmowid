@@ -2,7 +2,6 @@ defmodule FirmowidWeb.Invoicing.Utilities.PriceInputTest do
   @moduledoc false
   use ExUnit.Case, async: true
 
-  alias FirmowidWeb.Invoicing.FormHelpers
   alias FirmowidWeb.Invoicing.Utilities.PriceInput
 
   describe "net_unit_price_from_gross/2" do
@@ -25,7 +24,7 @@ defmodule FirmowidWeb.Invoicing.Utilities.PriceInputTest do
     end
   end
 
-  describe "normalize_gross_value_params/4" do
+  describe "normalize_gross_value_params/3" do
     test "converts gross unit prices to net unit prices and strips UI-only values" do
       params = %{
         "items" => %{
@@ -39,7 +38,7 @@ defmodule FirmowidWeb.Invoicing.Utilities.PriceInputTest do
       }
 
       normalized =
-        PriceInput.normalize_gross_value_params(params, :items, &FormHelpers.parse_decimal/1)
+        PriceInput.normalize_gross_value_params(params, :items)
 
       net = normalized["items"]["0"]["unit_price"]
 
@@ -73,12 +72,7 @@ defmodule FirmowidWeb.Invoicing.Utilities.PriceInputTest do
       indexes = MapSet.new(["1"])
 
       normalized =
-        PriceInput.normalize_gross_value_params(
-          params,
-          :items,
-          &FormHelpers.parse_decimal/1,
-          indexes
-        )
+        PriceInput.normalize_gross_value_params(params, :items, indexes)
 
       assert Decimal.eq?(normalized["items"]["0"]["unit_price"], Decimal.new("10.00"))
 

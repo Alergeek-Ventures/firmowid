@@ -9,10 +9,10 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
 
   import FirmowidUI.Components.Button
   import FirmowidWeb.DesignSystem.Components.CoreComponents
+  import FirmowidWeb.Invoicing.FormHelpers, only: [access_forms: 2, parse_decimal: 1]
 
   alias Firmowid.Currencies.NbpApiClient
   alias Firmowid.Ksef.VatRate
-  alias FirmowidWeb.Invoicing.FormHelpers
   alias FirmowidWeb.Invoicing.Utilities.PriceInput
   alias FirmowidWeb.Invoicing.Utilities.VatExemption
   alias Phoenix.HTML.FormData
@@ -49,8 +49,6 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
     vat = Decimal.mult(net, Decimal.div(vat_rate_numeric, 100))
     Decimal.add(net, vat)
   end
-
-  defp parse_decimal(value), do: FormHelpers.parse_decimal(value)
 
   defp item_unit_vat_value(item_form) do
     unit_price = parse_decimal(item_form[:unit_price].value) || Decimal.new(0)
@@ -668,8 +666,6 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
   end
 
   defp ensure_minimum_item(source, items, _items_field), do: {source, items}
-
-  defp access_forms(forms, key), do: FormHelpers.access_forms(forms, key)
 
   defp sort_param_name(%AshPhoenix.Form{}, items_field), do: "_sort_#{items_field}"
 

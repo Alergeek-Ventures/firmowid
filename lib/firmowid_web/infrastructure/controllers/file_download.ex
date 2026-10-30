@@ -70,6 +70,4 @@ defmodule FirmowidWeb.Infrastructure.Controllers.FileDownload do
   end
 
   defp log_packmatic_event(_event), do: :ok
-
-  defdelegate clean_filename(filename), to: MonthDownloadEntries
 end

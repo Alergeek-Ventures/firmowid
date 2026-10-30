@@ -11,8 +11,8 @@ defmodule FirmowidWeb.Documents.Components.DocumentsSection do
   alias Firmowid.Blobs.Blob
   alias Firmowid.ErrorKind
   alias Firmowid.Payroll
+  alias Firmowid.TimeFormatter
   alias Firmowid.Timetracker
-  alias FirmowidWeb.Infrastructure.Utilities.TimeFormatter
 
   require Logger
 

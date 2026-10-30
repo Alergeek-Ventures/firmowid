@@ -11,7 +11,7 @@ defmodule FirmowidWeb.DesignSystem.Components.TaxForecastSummary do
   import FirmowidUI.Components.Link
   import Phoenix.Component, except: [link: 1]
 
-  alias FirmowidWeb.Infrastructure.Utilities.TimeFormatter
+  alias Firmowid.TimeFormatter
   alias Phoenix.LiveView.Rendered
 
   @doc """

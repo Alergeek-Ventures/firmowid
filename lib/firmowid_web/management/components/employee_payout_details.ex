@@ -8,7 +8,7 @@ defmodule FirmowidWeb.Management.Components.EmployeePayoutDetails do
 
   alias Firmowid.Core
   alias Firmowid.Payroll
-  alias FirmowidWeb.Infrastructure.Utilities.TimeFormatter
+  alias Firmowid.TimeFormatter
 
   @impl true
   def update(assigns, socket) do

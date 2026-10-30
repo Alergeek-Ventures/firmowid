@@ -7,7 +7,7 @@ defmodule FirmowidWeb.Management.Components.WorkDistribution do
 
   import FirmowidUI.Components.Button
 
-  alias FirmowidWeb.Infrastructure.Utilities.TimeFormatter
+  alias Firmowid.TimeFormatter
 
   @colors ~w(bg-teal-600 bg-rust-400 bg-moss-400 bg-brick-500 bg-grey-400)
   @timezone "Europe/Warsaw"

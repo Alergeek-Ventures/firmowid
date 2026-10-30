@@ -5,7 +5,7 @@ defmodule FirmowidWeb.Auth.Components.McpConsent do
   Renders a standalone HTML document that
   loads app CSS and mirrors the login page layout. The approval names the
   organization the client will work in (see
-  `FirmowidMcp.Utilities.ConsentOrganization`): a choice when the account has
+  `FirmowidWeb.Auth.Utilities.ConsentOrganization`): a choice when the account has
   several.
   """
 
