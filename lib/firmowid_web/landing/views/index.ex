@@ -1,6 +1,6 @@
 defmodule FirmowidWeb.Landing.Views.Index do
   @moduledoc """
-  Public landing, pricing, features and FAQ pages.
+  Public landing, pricing, features, open-source and FAQ pages.
   """
 
   use FirmowidWeb, :live_view
@@ -60,7 +60,10 @@ defmodule FirmowidWeb.Landing.Views.Index do
       <main>
         <h1
           :if={@live_action != :home}
-          class="mx-auto w-[calc(100%-var(--spacing)*8)] max-w-284.75 pt-18 text-3xl leading-[1.1] font-bold tracking-[-0.03em]"
+          class={[
+            "mx-auto w-[calc(100%-var(--spacing)*8)] max-w-284.75 pt-18 text-3xl leading-[1.1] font-bold tracking-[-0.03em]",
+            @live_action == :open_source && "pb-12"
+          ]}
         >
           {@page_title}
         </h1>
@@ -72,9 +75,13 @@ defmodule FirmowidWeb.Landing.Views.Index do
         <.proof_section :if={@live_action == :home} />
         <.how_it_works_section :if={@live_action == :home} />
         <.pricing_section :if={@live_action in [:home, :pricing]} billing_period={@billing_period} />
-        <.open_source_section :if={@live_action == :home} />
+        <.open_source_section :if={@live_action in [:home, :open_source]} />
         <.team_section :if={@live_action == :home} />
-        <.faq_section :if={@live_action in [:home, :faq]} open_faq={@open_faq} />
+        <.faq_section
+          :if={@live_action in [:home, :faq]}
+          open_faq={@open_faq}
+          structured_data?={@live_action == :faq}
+        />
       </main>
 
       <.cta_footer />
@@ -102,6 +109,14 @@ defmodule FirmowidWeb.Landing.Views.Index do
     [
       page_title: gettext("Firmowid features — KSeF, banking and your team"),
       meta_description: gettext("Invoices, transaction matching, time tracking, leave and business trips in one place.")
+    ]
+  end
+
+  defp metadata(:open_source) do
+    [
+      page_title: gettext("Firmowid open source — self-hosted KSeF invoicing"),
+      meta_description:
+        gettext("Firmowid's source code is public under the AGPL-3.0 license. You can host it on your own server.")
     ]
   end
 

@@ -24,6 +24,7 @@ defmodule FirmowidWeb.Core.Router do
   alias Invoicing.CostInvoices.Controllers.Pdf, as: CostInvoicePdf
   alias Invoicing.SalesInvoices.Controllers.Pdf
   alias Invoicing.SalesInvoices.Controllers.Shared
+  alias Landing.Views.Guides
   alias Management.Controllers.EmploymentContract
   alias Management.Views.Counterparties
   alias Management.Views.CounterpartyForm
@@ -430,6 +431,9 @@ defmodule FirmowidWeb.Core.Router do
       live "/cennik", Landing.Views.Index, :pricing
       live "/funkcje", Landing.Views.Index, :features
       live "/faq", Landing.Views.Index, :faq
+      live "/open-source", Landing.Views.Index, :open_source
+      live "/poradnik", Guides, :index
+      live "/poradnik/:slug", Guides, :show
       live "/polityka-prywatnosci", Landing.Views.PrivacyPolicy
       live "/regulamin", Landing.Views.TermsOfService
     end

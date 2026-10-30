@@ -221,8 +221,30 @@ defmodule FirmowidWeb.Infrastructure.Layouts do
       }
     ]
 
+    graph = graph ++ article_data(assigns[:article], canonical_url(assigns), organization_id)
+
     %{"@context" => "https://schema.org", "@graph" => graph}
     |> Jason.encode!(escape: :html_safe)
     |> Phoenix.HTML.raw()
+  end
+
+  defp article_data(nil, _url, _organization_id), do: []
+
+  defp article_data(article, url, organization_id) do
+    [
+      %{
+        "@type" => "Article",
+        "@id" => url <> "#article",
+        "headline" => article.title,
+        "description" => article.description,
+        "datePublished" => Date.to_iso8601(article.published),
+        "dateModified" => Date.to_iso8601(article.updated),
+        "inLanguage" => "pl-PL",
+        "mainEntityOfPage" => %{"@id" => url <> "#webpage"},
+        "author" => %{"@id" => organization_id},
+        "publisher" => %{"@id" => organization_id},
+        "image" => social_image_url()
+      }
+    ]
   end
 end

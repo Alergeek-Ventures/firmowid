@@ -10,6 +10,16 @@ Firmowid to aplikacja webowa dla firm, prowadzona przez Alergeek Ventures sp. z 
 - [Funkcje](https://firmowid.pl/funkcje): faktury, parowanie transakcji, czas pracy, urlopy i delegacje w jednym miejscu
 - [Cennik](https://firmowid.pl/cennik): plany Darmowy, Przedsiębiorca i Firma, rozliczenie miesięczne lub roczne
 - [FAQ](https://firmowid.pl/faq): odpowiedzi na pytania o KSeF, integracje bankowe, bezpieczeństwo danych, migrację i plany
+- [Open source](https://firmowid.pl/open-source): kod na licencji AGPL-3.0 i uruchamianie Firmowida na własnym serwerze
+
+## Poradnik
+
+- [Limit 10 000 zł w KSeF w 2026 r.: co się wlicza i co po przekroczeniu](https://firmowid.pl/poradnik/limit-10000-ksef): Które faktury wliczasz do limitu 10 000 zł brutto miesięcznie, która faktura musi już trafić do KSeF i czemu słabszy miesiąc nic nie zmienia.
+- [Darmowe programy do faktur KSeF: porównanie planów za 0 zł](https://firmowid.pl/poradnik/darmowe-programy-ksef): Co dostajesz za 0 zł: bezpłatne narzędzia MF, plany z limitem 3–10 faktur albo KSeF bez limitu z innymi ograniczeniami. Porównanie 14 ofert.
+- [Pierwsza faktura w KSeF krok po kroku](https://firmowid.pl/poradnik/pierwsza-faktura-ksef): Jak wystawić pierwszą fakturę w KSeF, sprawdzić status, numer KSeF i UPO, i nie wysłać testu na produkcję.
+- [Co to jest KSeF i czym e-faktura różni się od PDF-a](https://firmowid.pl/poradnik/co-to-jest-ksef-i-e-faktura): KSeF, e-faktura, numer KSeF i UPO w skrócie, terminy obowiązku oraz co zrobić przed pierwszą fakturą.
+- [Jak przetestować KSeF przed pierwszą prawdziwą fakturą](https://firmowid.pl/poradnik/jak-bezpiecznie-przetestowac-ksef): Środowisko testowe, Demo i produkcyjne w KSeF: które wybrać do nauki i jak przejść próbę bez skutków prawnych.
+- [Czy trzeba kupować program do KSeF?](https://firmowid.pl/poradnik/czy-trzeba-kupowac-program-do-ksef): Do wystawiania i odbierania faktur w KSeF wystarczą bezpłatne narzędzia MF. Kiedy płatny program albo własny serwer się opłaca.
 
 ## Asystent AI
 
