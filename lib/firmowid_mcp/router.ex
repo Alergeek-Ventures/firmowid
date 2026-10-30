@@ -85,9 +85,14 @@ defmodule FirmowidMcp.Router do
   end
 
   defp decorate(responses, %{"_json" => requests}, conn) when is_list(responses) do
+    requests_by_id = requests |> Enum.filter(&is_map/1) |> Enum.group_by(& &1["id"])
+
     Enum.map(responses, fn response ->
-      request = Enum.find(requests, &(&1["id"] == response["id"])) || %{}
-      decorate(response, request, conn)
+      # Duplicate IDs cannot safely associate optional metadata with a request.
+      case Map.get(requests_by_id, response["id"]) do
+        [request] -> decorate(response, request, conn)
+        _ambiguous_or_missing -> decorate(response, %{}, conn)
+      end
     end)
   end
 
@@ -127,23 +132,18 @@ defmodule FirmowidMcp.Router do
     put_in(response, ["result", "resources"], Enum.map(resources, &resource_metadata/1))
   end
 
-  defp decorate(
-         %{"result" => %{"isError" => false}} = response,
-         %{"method" => "tools/call", "params" => %{"name" => name} = params},
-         conn
-       ) do
+  defp decorate(%{"result" => %{"isError" => false}} = response, request, conn) do
     response = update_in(response, ["result"], &Privacy.result/1)
 
-    case Widgets.for_tool(name) do
-      nil ->
-        response
+    with %{"method" => "tools/call", "params" => %{"name" => name} = params} <- request,
+         app when not is_nil(app) <- Widgets.for_tool(name) do
+      arguments = params["arguments"] || %{}
 
-      app ->
-        arguments = params["arguments"] || %{}
-
-        update_in(response, ["result", "_meta"], fn meta ->
-          Map.put(meta || %{}, "firmowid/app", Runtime.mount_metadata(conn, app, arguments))
-        end)
+      update_in(response, ["result", "_meta"], fn meta ->
+        Map.put(meta || %{}, "firmowid/app", Runtime.mount_metadata(conn, app, arguments))
+      end)
+    else
+      _not_a_widget -> response
     end
   end
 
