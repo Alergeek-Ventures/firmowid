@@ -5,8 +5,6 @@ defmodule Firmowid.Payroll.Changes.MaybeActivateContract do
 
   use Ash.Resource.Change
 
-  require Logger
-
   @impl true
   def change(changeset, _opts, context) do
     Ash.Changeset.after_action(changeset, fn _changeset, contract ->
@@ -24,17 +22,9 @@ defmodule Firmowid.Payroll.Changes.MaybeActivateContract do
         |> Keyword.take([:actor, :tenant, :authorize?, :tracer])
         |> Keyword.put(:tenant, contract.organization_id)
 
-      case contract
-           |> Ash.Changeset.for_update(:activate, %{}, opts)
-           |> Ash.update(opts) do
-        {:ok, activated} ->
-          {:ok, activated}
-
-        {:error, reason} ->
-          Logger.warning("Failed to activate employment contract contract_id=#{contract.id} reason=#{inspect(reason)}")
-
-          {:ok, contract}
-      end
+      contract
+      |> Ash.Changeset.for_update(:activate, %{}, opts)
+      |> Ash.update(opts)
     end
   end
 

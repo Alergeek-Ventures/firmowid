@@ -13,7 +13,7 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
   import FirmowidWeb.Settings.Components.EditButton
   import Phoenix.Component, except: [link: 1]
 
-  alias FirmowidWeb.Infrastructure.Utilities.TimeFormatter
+  alias Firmowid.TimeFormatter
   alias FirmowidWeb.Settings.Components.Helpers
   alias FirmowidWeb.Timetracker.Utilities.LeavePresentation
   alias FirmowidWeb.Timetracker.Utilities.Navigation

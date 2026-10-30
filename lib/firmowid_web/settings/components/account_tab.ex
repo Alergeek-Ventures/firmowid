@@ -9,8 +9,8 @@ defmodule FirmowidWeb.Settings.Components.AccountTab do
   import FirmowidWeb.DesignSystem.Components.CoreComponents, except: [button: 1]
   import FirmowidWeb.Settings.Components.EditButton
 
+  alias Firmowid.TimeFormatter
   alias FirmowidUI.Components.Inputs
-  alias FirmowidWeb.Infrastructure.Utilities.TimeFormatter
   alias FirmowidWeb.Settings.Components.Helpers
   alias Phoenix.LiveView.Rendered
 

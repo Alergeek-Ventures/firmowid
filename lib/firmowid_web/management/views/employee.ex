@@ -15,11 +15,11 @@ defmodule FirmowidWeb.Management.Views.Employee do
   alias Firmowid.Blobs.Blob
   alias Firmowid.Core
   alias Firmowid.Payroll
+  alias Firmowid.TimeFormatter
   alias Firmowid.Timetracker
   alias FirmowidWeb.Core.Endpoint
   alias FirmowidWeb.Documents.Components.DocumentsSection, as: DocumentsTab
   alias FirmowidWeb.Infrastructure.Components.BlobProcessingToasts
-  alias FirmowidWeb.Infrastructure.Utilities.TimeFormatter
   alias FirmowidWeb.Management.Components.LeavesTab
   alias FirmowidWeb.Management.Components.ProfileTab
   alias FirmowidWeb.Management.Components.ProjectsTab
@@ -74,7 +74,7 @@ defmodule FirmowidWeb.Management.Views.Employee do
             to: Navigation.employees_path(:index, %{miesiac: Navigation.current_month()})
           )
         else
-          active_months = months_with_sessions(%{member_id: user.member.id}, scope)
+          active_months = Timetracker.months_with_sessions(%{member_id: user.member.id}, scope)
           {:ok, current_contract} = Payroll.load_current_contract(user.member.id, scope: scope)
 
           socket
@@ -165,9 +165,6 @@ defmodule FirmowidWeb.Management.Views.Employee do
   defp humanize_ash_error(%Ash.Error.Invalid{errors: [%{message: message} | _]}) when is_binary(message), do: message
 
   defp humanize_ash_error(error), do: Exception.message(error)
-
-  # Distinct months (as naive_datetime) that have sessions, newest first.
-  defp months_with_sessions(filters, scope), do: Timetracker.months_with_sessions(filters, scope)
 
   # Blob created — file is being processed, refresh list
   @impl true

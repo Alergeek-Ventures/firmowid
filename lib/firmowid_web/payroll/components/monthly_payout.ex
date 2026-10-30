@@ -2,7 +2,7 @@ defmodule FirmowidWeb.Payroll.Components.MonthlyPayout do
   @moduledoc "Shows the automatically calculated monthly payout and the facts still needed."
   use FirmowidWeb, :html
 
-  alias FirmowidWeb.Infrastructure.Utilities.TimeFormatter
+  alias Firmowid.TimeFormatter
   alias Phoenix.LiveView.Rendered
 
   attr :calculation, :map, default: nil

@@ -1,7 +1,7 @@
-defmodule FirmowidWeb.Infrastructure.Utilities.TimeFormatterTest do
+defmodule Firmowid.TimeFormatterTest do
   use ExUnit.Case, async: true
 
-  alias FirmowidWeb.Infrastructure.Utilities.TimeFormatter
+  alias Firmowid.TimeFormatter
 
   describe "format_date_range/2" do
     test "omits repeated month and year" do

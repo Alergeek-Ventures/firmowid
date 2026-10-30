@@ -20,7 +20,7 @@ defmodule FirmowidWeb.Management.Views.Projects do
     scope = socket.assigns.ash_scope
 
     all_projects = Timetracker.list_projects!(%{}, scope: scope)
-    active_months = months_with_sessions(%{}, scope)
+    active_months = Timetracker.months_with_sessions(%{}, scope)
 
     socket =
       socket
@@ -128,7 +128,4 @@ defmodule FirmowidWeb.Management.Views.Projects do
 
     push_patch(socket, to: Navigation.projects_path(socket.assigns.live_action, params))
   end
-
-  # Distinct months (as naive_datetime) that have sessions, newest first.
-  defp months_with_sessions(filters, scope), do: Timetracker.months_with_sessions(filters, scope)
 end

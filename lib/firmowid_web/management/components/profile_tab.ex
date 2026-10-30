@@ -8,7 +8,7 @@ defmodule FirmowidWeb.Management.Components.ProfileTab do
   import Phoenix.Component, except: [link: 1]
 
   alias Firmowid.Payroll
-  alias FirmowidWeb.Infrastructure.Utilities.TimeFormatter
+  alias Firmowid.TimeFormatter
 
   @impl true
   def mount(socket) do

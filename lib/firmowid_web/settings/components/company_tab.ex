@@ -14,7 +14,7 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
   import Phoenix.Component, except: [link: 1]
 
   alias Firmowid.Core.UserRole
-  alias FirmowidWeb.Infrastructure.Utilities.TimeFormatter
+  alias Firmowid.TimeFormatter
   alias FirmowidWeb.Invoicing.Utilities.VatExemption
   alias FirmowidWeb.Settings.Components.Helpers
   alias Phoenix.LiveView.JS

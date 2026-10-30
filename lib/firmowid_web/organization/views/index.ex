@@ -216,10 +216,25 @@ defmodule FirmowidWeb.Organization.Views.Index do
     Logger.metadata(user_id: user.id)
 
     # Find invite by code (unscoped read - invite codes are unique)
-    invite =
-      %{invite_code: trimmed_code}
-      |> Core.query_to_read_invite_by_code(actor: user)
-      |> Ash.read_one!(actor: user)
+    %{invite_code: trimmed_code}
+    |> Core.query_to_read_invite_by_code(actor: user)
+    |> Ash.read_one!(actor: user)
+    |> case do
+      nil ->
+        join_form =
+          to_form(%{"name" => name, "code" => invite_code},
+            errors: [code: {gettext("This invite code is invalid or has expired."), []}]
+          )
+
+        {:noreply, assign(socket, :join_form, join_form)}
+
+      invite ->
+        consume_invite(invite, invite_code, name, socket)
+    end
+  end
+
+  defp consume_invite(invite, invite_code, name, socket) do
+    user = socket.assigns.current_user
 
     Logger.metadata(
       user_id: user.id,

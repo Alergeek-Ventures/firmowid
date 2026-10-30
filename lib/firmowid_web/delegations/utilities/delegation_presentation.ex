@@ -3,7 +3,7 @@ defmodule FirmowidWeb.Delegations.Utilities.DelegationPresentation do
 
   use Gettext, backend: Firmowid.Gettext
 
-  alias FirmowidWeb.Infrastructure.Utilities.TimeFormatter
+  alias Firmowid.TimeFormatter
 
   @spec status_label(atom()) :: String.t()
   def status_label(:pending), do: gettext("Pending")

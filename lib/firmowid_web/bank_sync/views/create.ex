@@ -229,10 +229,7 @@ defmodule FirmowidWeb.BankSync.Views.Create do
   end
 
   defp fetch_available_institutions(socket) do
-    case Finances.list_institutions("pl", actor: socket.assigns.current_user) do
-      {:ok, institutions} -> institutions
-      {:error, _} -> []
-    end
+    Finances.list_institutions!("pl", actor: socket.assigns.current_user)
   end
 
   defp maybe_schedule_institution_refresh(socket) do

@@ -1,4 +1,4 @@
-defmodule FirmowidMcp.Utilities.ConsentOrganization do
+defmodule FirmowidWeb.Auth.Utilities.ConsentOrganization do
   @moduledoc """
   Binds the MCP consent step to an organization of the signed-in account.
 

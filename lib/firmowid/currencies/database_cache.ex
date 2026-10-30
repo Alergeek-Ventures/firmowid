@@ -57,10 +57,7 @@ defmodule Firmowid.Currencies.DatabaseCache do
 
   @spec get_cache_entry(Date.t()) :: struct() | nil
   def get_cache_entry(cache_date) do
-    case Currencies.get_exchange_rate_by_date(cache_date) do
-      {:ok, entry} -> entry
-      {:error, _} -> nil
-    end
+    Currencies.get_exchange_rate_by_date!(cache_date, not_found_error?: false)
   end
 
   @spec convert_rates_to_decimal(map()) :: map()

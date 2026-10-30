@@ -5,8 +5,8 @@ defmodule FirmowidWeb.Management.Components.ProjectsTab do
   import FirmowidUI.Components.Button
   import FirmowidWeb.DesignSystem.Components.MonthPicker
   import FirmowidWeb.HoursRecord.Components.ChangeRequest
+  import FirmowidWeb.HoursRecord.Components.Status, only: [hours_record_status: 1]
   import FirmowidWeb.Infrastructure.Flags, only: [flag_enabled?: 2]
-  import FirmowidWeb.Management.Components.HoursRecordStatus, only: [hours_record_status: 1]
 
   alias Firmowid.Payroll
   alias Firmowid.Timetracker
@@ -90,7 +90,6 @@ defmodule FirmowidWeb.Management.Components.ProjectsTab do
               <.hours_record_status
                 hours_record={@hours_record}
                 user={@user}
-                show_change_request={false}
               />
             </div>
           </.card>

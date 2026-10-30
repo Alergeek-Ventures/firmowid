@@ -10,10 +10,10 @@ defmodule FirmowidWeb.HoursRecord.Views.Index do
   import Phoenix.Component, except: [link: 1]
 
   alias Firmowid.Payroll
+  alias Firmowid.TimeFormatter
   alias Firmowid.Timetracker
   alias Firmowid.Timetracker.HoursRecord
   alias FirmowidWeb.Infrastructure.Utilities.QueryParams
-  alias FirmowidWeb.Infrastructure.Utilities.TimeFormatter
   alias FirmowidWeb.Timetracker.Utilities.Navigation
 
   @impl true
@@ -22,7 +22,7 @@ defmodule FirmowidWeb.HoursRecord.Views.Index do
     current_user = socket.assigns.current_user
 
     selected_date = Date.utc_today()
-    active_months = months_with_sessions(%{member_id: current_user.member.id}, scope)
+    active_months = Timetracker.months_with_sessions(%{member_id: current_user.member.id}, scope)
     {:ok, current_contract} = Payroll.load_current_contract(current_user.member.id, scope: scope)
 
     can_use_hours_records = current_user.member.name && not is_nil(current_contract)
@@ -189,7 +189,4 @@ defmodule FirmowidWeb.HoursRecord.Views.Index do
   def error_to_string(:too_large), do: "Image too large"
   def error_to_string(:too_many_files), do: "Too many files"
   def error_to_string(:not_accepted), do: "Unacceptable file type"
-
-  # Distinct months (as naive_datetime) that have sessions, newest first.
-  defp months_with_sessions(filters, scope), do: Timetracker.months_with_sessions(filters, scope)
 end

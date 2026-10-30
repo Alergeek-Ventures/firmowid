@@ -1,17 +1,16 @@
-defmodule FirmowidWeb.Management.Components.HoursRecordStatus do
+defmodule FirmowidWeb.HoursRecord.Components.Status do
   @moduledoc """
-  Shared component for rendering an hours record status badge with optional download link.
+  Renders an hours record status badge with a download link and, when given a
+  `change_request_path`, a link to the pending change request.
   """
   use FirmowidWeb, :html
 
   import FirmowidUI.Components.Link
   import Phoenix.Component, except: [link: 1]
 
-  alias FirmowidWeb.Management.Utilities.Navigation
-
   attr :hours_record, :map, required: true
   attr :user, :map, required: true
-  attr :show_change_request, :boolean, default: true
+  attr :change_request_path, :string, default: nil
 
   def hours_record_status(%{hours_record: nil} = assigns) do
     ~H"""
@@ -61,13 +60,9 @@ defmodule FirmowidWeb.Management.Components.HoursRecordStatus do
         </.link>
       </div>
       <.link
-        :if={@show_change_request && @hours_record.change_requested_at}
+        :if={@change_request_path && @hours_record.change_requested_at}
         kind="text"
-        navigate={
-          Navigation.employee_path(@user.id, %{
-            miesiac: Date.new!(@hours_record.year, @hours_record.month, 1)
-          })
-        }
+        navigate={@change_request_path}
         class="text-sm wrap-break-word"
         title={@hours_record.change_request_reason}
       >

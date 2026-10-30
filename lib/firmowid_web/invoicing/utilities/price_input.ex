@@ -8,6 +8,7 @@ defmodule FirmowidWeb.Invoicing.Utilities.PriceInput do
   """
 
   alias Firmowid.Ksef.VatRate
+  alias FirmowidWeb.Invoicing.FormHelpers
 
   @doc "Returns the gross multiplier for a KSeF VAT rate code."
   @spec gross_multiplier(String.t() | nil) :: Decimal.t()
@@ -32,14 +33,8 @@ defmodule FirmowidWeb.Invoicing.Utilities.PriceInput do
   end
 
   @doc "Converts nested gross unit prices to net unit prices and strips UI-only fields."
-  @spec normalize_gross_value_params(
-          map(),
-          String.t() | atom(),
-          (term() -> Decimal.t() | nil),
-          :all | MapSet.t()
-        ) ::
-          map()
-  def normalize_gross_value_params(params, items_field, parse_decimal, indexes \\ :all) when is_map(params) do
+  @spec normalize_gross_value_params(map(), String.t() | atom(), :all | MapSet.t()) :: map()
+  def normalize_gross_value_params(params, items_field, indexes \\ :all) when is_map(params) do
     field = to_string(items_field)
 
     Map.update(params, field, %{}, fn items ->
@@ -48,7 +43,7 @@ defmodule FirmowidWeb.Invoicing.Utilities.PriceInput do
 
         item =
           if indexes == :all or MapSet.member?(indexes, index) do
-            case parse_decimal.(gross_value) do
+            case FormHelpers.parse_decimal(gross_value) do
               nil ->
                 item
 
@@ -70,6 +65,22 @@ defmodule FirmowidWeb.Invoicing.Utilities.PriceInput do
       end)
     end)
   end
+
+  @doc """
+  Sets the price input mode for one item, or for every item when `item_index` is
+  `"all"`, which also drops the per-item overrides.
+  """
+  @spec put_price_input_mode(map(), String.t(), String.t()) :: map()
+  def put_price_input_mode(_item_price_input_modes, "all", mode), do: %{"all" => mode}
+
+  def put_price_input_mode(item_price_input_modes, item_index, mode) do
+    Map.put(item_price_input_modes, item_index, mode)
+  end
+
+  @doc "Returns the item whose price input should take focus after a mode switch."
+  @spec price_input_focus_index(String.t()) :: String.t() | nil
+  def price_input_focus_index("all"), do: nil
+  def price_input_focus_index(item_index), do: item_index
 
   @doc "Returns item indexes whose gross price should be converted."
   @spec gross_value_indexes(map(), String.t() | atom(), term()) :: :all | MapSet.t()

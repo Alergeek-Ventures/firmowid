@@ -7,7 +7,7 @@ defmodule FirmowidWeb.Management.Components.EmployeeTaxDetails do
 
   alias Firmowid.Payroll
   alias Firmowid.Payroll.MemberTaxDeclaration
-  alias FirmowidWeb.Infrastructure.Utilities.TimeFormatter
+  alias Firmowid.TimeFormatter
   alias Phoenix.LiveView.JS
 
   @additional_fields [:pit0, :preferential, :copyright_costs]

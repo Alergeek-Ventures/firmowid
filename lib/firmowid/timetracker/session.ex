@@ -393,16 +393,10 @@ defmodule Firmowid.Timetracker.Session do
       change set_attribute(:member_id, actor([:member, :id]))
 
       change after_action(fn _changeset, session, _context ->
-               case StopSessionWorker.enqueue(session) do
-                 {:ok, _job} ->
-                   Logger.info("Enqueued session auto-stop session_id=#{session.id} org=#{session.organization_id}")
+               with {:ok, _job} <- StopSessionWorker.enqueue(session) do
+                 Logger.info("Enqueued session auto-stop session_id=#{session.id} org=#{session.organization_id}")
 
-                   {:ok, session}
-
-                 {:error, reason} ->
-                   Logger.error("Failed to enqueue session auto-stop session_id=#{session.id} reason=#{inspect(reason)}")
-
-                   {:ok, session}
+                 {:ok, session}
                end
              end)
     end

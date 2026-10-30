@@ -609,7 +609,7 @@ msgid "Cancel editing rates"
 msgstr ""
 
 #: lib/firmowid/timetracker/actions/notify_admins_about_hours_record_change.ex:38
-#: lib/firmowid_web/hours_record/components/change_request.ex:100
+#: lib/firmowid_web/hours_record/components/change_request.ex:99
 #: lib/firmowid_web/hours_record/views/index.html.heex:145
 #, elixir-autogen, elixir-format
 msgid "Cancellation"
@@ -630,12 +630,12 @@ msgstr ""
 msgid "Change declarations"
 msgstr ""
 
-#: lib/firmowid_web/management/components/hours_record_status.ex:75
+#: lib/firmowid_web/hours_record/components/status.ex:70
 #, elixir-autogen, elixir-format
 msgid "Change request rejected"
 msgstr ""
 
-#: lib/firmowid_web/management/components/hours_record_status.ex:77
+#: lib/firmowid_web/hours_record/components/status.ex:72
 #, elixir-autogen, elixir-format
 msgid "Change requested"
 msgstr ""
@@ -862,7 +862,7 @@ msgstr ""
 msgid "Copy %{field}"
 msgstr ""
 
-#: lib/firmowid_web/management/views/employees.html.heex:343
+#: lib/firmowid_web/management/views/employees.html.heex:349
 #, elixir-autogen, elixir-format
 msgid "Copy bank account number"
 msgstr ""
@@ -893,7 +893,7 @@ msgid "Correct this version"
 msgstr ""
 
 #: lib/firmowid/timetracker/actions/notify_admins_about_hours_record_change.ex:37
-#: lib/firmowid_web/hours_record/components/change_request.ex:99
+#: lib/firmowid_web/hours_record/components/change_request.ex:98
 #: lib/firmowid_web/hours_record/views/index.html.heex:144
 #, elixir-autogen, elixir-format
 msgid "Correction"
@@ -936,13 +936,13 @@ msgstr ""
 msgid "Could not disconnect this transaction from the salary."
 msgstr ""
 
-#: lib/firmowid_web/invoicing/sales_invoices/views/creator.ex:1171
-#: lib/firmowid_web/invoicing/sales_invoices/views/creator.ex:1178
+#: lib/firmowid_web/invoicing/sales_invoices/views/creator.ex:1160
+#: lib/firmowid_web/invoicing/sales_invoices/views/creator.ex:1167
 #, elixir-autogen, elixir-format
 msgid "Could not issue the invoice."
 msgstr ""
 
-#: lib/firmowid_web/management/components/projects_tab.ex:142
+#: lib/firmowid_web/management/components/projects_tab.ex:141
 #, elixir-autogen, elixir-format
 msgid "Could not save the decision. The request may already have been reviewed."
 msgstr ""
@@ -1127,7 +1127,7 @@ msgstr ""
 msgid "Document analysis data"
 msgstr ""
 
-#: lib/firmowid_web/management/components/hours_record_status.ex:34
+#: lib/firmowid_web/hours_record/components/status.ex:33
 #, elixir-autogen, elixir-format
 msgid "Document submitted on %{date}"
 msgstr ""
@@ -1137,7 +1137,7 @@ msgstr ""
 msgid "Don't see your bank? Add an account manually by entering its IBAN. You can issue invoices with this account, just without automatically importing transfers."
 msgstr ""
 
-#: lib/firmowid_web/management/components/hours_record_status.ex:58
+#: lib/firmowid_web/hours_record/components/status.ex:57
 #, elixir-autogen, elixir-format
 msgid "Download hours record"
 msgstr ""
@@ -1790,7 +1790,7 @@ msgstr ""
 msgid "Invoice number"
 msgstr ""
 
-#: lib/firmowid_web/invoicing/sales_invoices/views/creator.ex:1176
+#: lib/firmowid_web/invoicing/sales_invoices/views/creator.ex:1165
 #: lib/firmowid_web/invoicing/sales_invoices/views/edit.ex:684
 #, elixir-autogen, elixir-format
 msgid "Invoice number is required."
@@ -2742,7 +2742,7 @@ msgstr ""
 msgid "Remove %{name} from project"
 msgstr ""
 
-#: lib/firmowid_web/invoicing/sales_invoices/components/invoice_items.ex:581
+#: lib/firmowid_web/invoicing/sales_invoices/components/invoice_items.ex:579
 #, elixir-autogen, elixir-format
 msgid "Remove item"
 msgstr ""
@@ -3304,7 +3304,7 @@ msgstr ""
 msgid "The employee's date of birth must not be after the payout date."
 msgstr ""
 
-#: lib/firmowid_web/management/views/employee.ex:273
+#: lib/firmowid_web/management/views/employee.ex:270
 #, elixir-autogen, elixir-format
 msgid "The file %{filename} is not a contract, employee declaration or payroll document."
 msgstr ""
@@ -3355,7 +3355,7 @@ msgstr ""
 msgid "The invoice is saved. Sending to KSeF…"
 msgstr ""
 
-#: lib/firmowid_web/management/components/projects_tab.ex:134
+#: lib/firmowid_web/management/components/projects_tab.ex:133
 #, elixir-autogen, elixir-format
 msgid "The request decision has been saved."
 msgstr ""
@@ -3769,7 +3769,7 @@ msgstr ""
 msgid "Withdrawal request"
 msgstr ""
 
-#: lib/firmowid_web/management/components/hours_record_status.ex:48
+#: lib/firmowid_web/hours_record/components/status.ex:47
 #, elixir-autogen, elixir-format
 msgid "Withdrawn"
 msgstr ""
@@ -5477,7 +5477,7 @@ msgstr ""
 msgid "Forgot your password?"
 msgstr ""
 
-#: lib/firmowid_web/invoicing/sales_invoices/components/invoice_items.ex:410
+#: lib/firmowid_web/invoicing/sales_invoices/components/invoice_items.ex:408
 #, elixir-autogen, elixir-format
 msgid "Gross price"
 msgstr ""
@@ -5497,32 +5497,32 @@ msgstr ""
 msgid "Invoice creator"
 msgstr ""
 
-#: lib/firmowid_web/invoicing/sales_invoices/components/invoice_items.ex:454
+#: lib/firmowid_web/invoicing/sales_invoices/components/invoice_items.ex:452
 #, elixir-autogen, elixir-format
 msgid "Item %{number}: VAT rate"
 msgstr ""
 
-#: lib/firmowid_web/invoicing/sales_invoices/components/invoice_items.ex:541
+#: lib/firmowid_web/invoicing/sales_invoices/components/invoice_items.ex:539
 #, elixir-autogen, elixir-format
 msgid "Item %{number}: gross price"
 msgstr ""
 
-#: lib/firmowid_web/invoicing/sales_invoices/components/invoice_items.ex:478
+#: lib/firmowid_web/invoicing/sales_invoices/components/invoice_items.ex:476
 #, elixir-autogen, elixir-format
 msgid "Item %{number}: net price"
 msgstr ""
 
-#: lib/firmowid_web/invoicing/sales_invoices/components/invoice_items.ex:430
+#: lib/firmowid_web/invoicing/sales_invoices/components/invoice_items.ex:428
 #, elixir-autogen, elixir-format
 msgid "Item %{number}: product or service"
 msgstr ""
 
-#: lib/firmowid_web/invoicing/sales_invoices/components/invoice_items.ex:439
+#: lib/firmowid_web/invoicing/sales_invoices/components/invoice_items.ex:437
 #, elixir-autogen, elixir-format
 msgid "Item %{number}: quantity"
 msgstr ""
 
-#: lib/firmowid_web/invoicing/sales_invoices/components/invoice_items.ex:465
+#: lib/firmowid_web/invoicing/sales_invoices/components/invoice_items.ex:463
 #, elixir-autogen, elixir-format
 msgid "Item %{number}: unit"
 msgstr ""
@@ -5592,7 +5592,7 @@ msgstr ""
 msgid "Transaction"
 msgstr ""
 
-#: lib/firmowid_web/invoicing/sales_invoices/components/invoice_items.ex:400
+#: lib/firmowid_web/invoicing/sales_invoices/components/invoice_items.ex:398
 #, elixir-autogen, elixir-format
 msgid "VAT per unit"
 msgstr ""
@@ -5666,4 +5666,9 @@ msgstr ""
 #: lib/firmowid_web/analysis/views/dashboard.ex:366
 #, elixir-autogen, elixir-format
 msgid "This year"
+msgstr ""
+
+#: lib/firmowid_web/organization/views/index.ex:226
+#, elixir-autogen, elixir-format
+msgid "This invite code is invalid or has expired."
 msgstr ""

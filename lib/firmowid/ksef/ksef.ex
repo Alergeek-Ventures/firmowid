@@ -17,7 +17,6 @@ defmodule Firmowid.Ksef do
 
   import Ecto.Query, warn: false
 
-  alias Ash.Error.Query.NotFound
   alias Firmowid.Core
   alias Firmowid.Invoicing
   alias Firmowid.Invoicing.CostInvoice
@@ -722,7 +721,7 @@ defmodule Firmowid.Ksef do
   def cleanup_failed_correction(sales_invoice_id, scope) do
     opts = [scope: scope]
 
-    case SalesInvoice.by_id(sales_invoice_id, opts) do
+    case SalesInvoice.by_id(sales_invoice_id, Keyword.put(opts, :not_found_error?, false)) do
       {:ok, %{ksef_invoice_kind: :kor, ksef_number: nil} = invoice} ->
         case SalesInvoice.destroy(invoice, opts) do
           :ok -> {:ok, :deleted, invoice.corrected_invoice_id}
@@ -732,14 +731,14 @@ defmodule Firmowid.Ksef do
       {:ok, %{ksef_invoice_kind: :kor}} ->
         {:ok, :already_submitted}
 
+      {:ok, nil} ->
+        {:ok, :not_found}
+
       {:ok, _invoice} ->
         {:ok, :not_correction}
 
-      {:error, %NotFound{}} ->
-        {:ok, :not_found}
-
-      {:error, _} ->
-        {:ok, :not_found}
+      {:error, reason} ->
+        {:error, reason}
     end
   end
 

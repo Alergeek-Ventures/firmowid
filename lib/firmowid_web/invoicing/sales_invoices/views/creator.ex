@@ -685,19 +685,8 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
   defp normalize_price_input_params(params, items_field, target \\ :all) do
     indexes = PriceInput.gross_value_indexes(params, items_field, target)
 
-    PriceInput.normalize_gross_value_params(params, items_field, &parse_decimal/1, indexes)
+    PriceInput.normalize_gross_value_params(params, items_field, indexes)
   end
-
-  defp set_price_input_mode(_item_price_input_modes, "all", mode), do: %{"all" => mode}
-
-  defp set_price_input_mode(item_price_input_modes, item_index, mode) do
-    Map.put(item_price_input_modes, item_index, mode)
-  end
-
-  defp item_price_input_focus_index("all"), do: nil
-  defp item_price_input_focus_index(item_index), do: item_index
-
-  defp parse_decimal(value), do: FirmowidWeb.Invoicing.FormHelpers.parse_decimal(value)
 
   defp parse_sort_order(raw_sort_order), do: PolishValues.parse_sort_order(raw_sort_order) || :asc
 
@@ -726,12 +715,12 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
 
   def handle_event("set_price_input_mode", %{"index" => index, "mode" => mode}, socket) do
     item_price_input_modes =
-      set_price_input_mode(socket.assigns.item_price_input_modes, index, mode)
+      PriceInput.put_price_input_mode(socket.assigns.item_price_input_modes, index, mode)
 
     {:noreply,
      socket
      |> assign(:item_price_input_modes, item_price_input_modes)
-     |> assign(:focused_item_price_input_index, item_price_input_focus_index(index))}
+     |> assign(:focused_item_price_input_index, PriceInput.price_input_focus_index(index))}
   end
 
   def handle_event("validate_items", %{"form" => params} = event, socket) do

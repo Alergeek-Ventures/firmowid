@@ -661,17 +661,9 @@ defmodule FirmowidWeb.Invoicing.Components.DashboardTiles do
 
   defp format_money(_currency, amount) when is_nil(amount), do: "—"
 
-  defp format_money(nil, amount) when not is_nil(amount) do
-    Money.new(:PLN, amount)
-  rescue
-    _ -> "—"
-  end
+  defp format_money(nil, amount), do: Money.new(:PLN, amount)
 
-  defp format_money(currency, amount) do
-    Money.new(currency, amount)
-  rescue
-    _ -> "—"
-  end
+  defp format_money(currency, amount), do: Money.new(currency, amount)
 
   defp decimal_abs(nil), do: nil
 
