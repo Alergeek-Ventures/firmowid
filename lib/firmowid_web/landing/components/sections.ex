@@ -1074,7 +1074,7 @@ defmodule FirmowidWeb.Landing.Components.Sections do
       data-landing-dark-surface
       class="bg-[#0f0f0f] py-18 text-white lg:py-25 [&_article_p]:text-grey-300"
     >
-      <div class="mx-auto grid w-[calc(100%-var(--spacing)*8)] max-w-284.75 gap-10 lg:w-[calc(100%-var(--spacing)*16)] lg:grid-cols-[minmax(0,1fr)_--spacing(110)] lg:gap-20 [&_article_p]:text-base [&_article_p]:leading-[1.4] lg:[&_article_p]:text-[15px]/5.5 [&_h3]:mb-5 [&_h3]:text-xl [&_h3]:leading-[1.3] [&_h3]:font-semibold [&_h3]:tracking-[-0.01em] lg:[&_h3]:text-h5">
+      <div class="mx-auto grid w-[calc(100%-var(--spacing)*8)] max-w-284.75 gap-10 lg:w-[calc(100%-var(--spacing)*16)] lg:grid-cols-[minmax(0,1fr)_--spacing(110)] lg:gap-20 [&_article_:is(h2,h3)]:mb-5 [&_article_:is(h2,h3)]:text-xl [&_article_:is(h2,h3)]:leading-[1.3] [&_article_:is(h2,h3)]:font-semibold [&_article_:is(h2,h3)]:tracking-[-0.01em] lg:[&_article_:is(h2,h3)]:text-h5 [&_article_p]:text-base [&_article_p]:leading-[1.4] lg:[&_article_p]:text-[15px]/5.5">
         <div class="max-w-180 max-lg:relative lg:max-w-284.75 lg:self-center">
           <p class="mb-4 text-xs font-bold tracking-[0.08em] text-rust-500 uppercase lg:mb-4.5">
             {gettext("Open source")}
@@ -1106,17 +1106,23 @@ defmodule FirmowidWeb.Landing.Components.Sections do
           </div>
         </div>
 
-        <div class="rounded-2xl border border-grey-800 bg-grey-900 px-7 py-2 lg:self-center lg:py-3 lg:pr-11.5 [&_article]:py-6 lg:[&_article]:py-4.5 [&_article_h3]:mb-2.5 lg:[&_article_h3]:mb-2 [&_article+article]:border-t [&_article+article]:border-grey-800 [&_h3]:flex [&_h3]:items-center [&_h3]:gap-2.5 [&_h3]:text-[#f5f1ea] [&_h3::before]:h-3.25 [&_h3::before]:w-3 [&_h3::before]:flex-none [&_h3::before]:bg-rust-500 [&_h3::before]:mask-[url('/images/landing/icons/check.svg')] [&_h3::before]:mask-contain [&_h3::before]:mask-center [&_h3::before]:mask-no-repeat [&_h3::before]:content-['']">
+        <div class="rounded-2xl border border-grey-800 bg-grey-900 px-7 py-2 lg:self-center lg:py-3 lg:pr-11.5 [&_:is(h2,h3)]:flex [&_:is(h2,h3)]:items-center [&_:is(h2,h3)]:gap-2.5 [&_:is(h2,h3)]:text-[#f5f1ea] [&_:is(h2,h3)::before]:h-3.25 [&_:is(h2,h3)::before]:w-3 [&_:is(h2,h3)::before]:flex-none [&_:is(h2,h3)::before]:bg-rust-500 [&_:is(h2,h3)::before]:mask-[url('/images/landing/icons/check.svg')] [&_:is(h2,h3)::before]:mask-contain [&_:is(h2,h3)::before]:mask-center [&_:is(h2,h3)::before]:mask-no-repeat [&_:is(h2,h3)::before]:content-[''] [&_article]:py-6 lg:[&_article]:py-4.5 [&_article_:is(h2,h3)]:mb-2.5 lg:[&_article_:is(h2,h3)]:mb-2 [&_article+article]:border-t [&_article+article]:border-grey-800">
           <article>
-            <h3>{gettext("No limits")}</h3>
+            <.dynamic_tag tag_name={if @standalone?, do: "h2", else: "h3"}>
+              {gettext("No limits")}
+            </.dynamic_tag>
             <p>{gettext("Invoices, bank accounts and users without plan limits.")}</p>
           </article>
           <article>
-            <h3>{gettext("No fees")}</h3>
+            <.dynamic_tag tag_name={if @standalone?, do: "h2", else: "h3"}>
+              {gettext("No fees")}
+            </.dynamic_tag>
             <p>{gettext("Install on your own server and pay no subscription.")}</p>
           </article>
           <article>
-            <h3>{gettext("Full control")}</h3>
+            <.dynamic_tag tag_name={if @standalone?, do: "h2", else: "h3"}>
+              {gettext("Full control")}
+            </.dynamic_tag>
             <p>{gettext("The code is public, your data stays with you. AGPL-3.0 license.")}</p>
           </article>
         </div>
