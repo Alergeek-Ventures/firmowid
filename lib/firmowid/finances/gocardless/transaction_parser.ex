@@ -5,7 +5,7 @@ defmodule Firmowid.Finances.GoCardless.TransactionParser do
   """
 
   alias Firmowid.ErrorKind
-  alias Firmowid.Finances.BankAccount
+  alias Firmowid.Finances.AccountNumber
   alias Firmowid.Finances.GoCardless.RevolutTransactionNormalizer
 
   require Logger
@@ -306,7 +306,7 @@ defmodule Firmowid.Finances.GoCardless.TransactionParser do
   defp matching_account?(provider_account, owner_iban) do
     useful_account_value?(provider_account) and
       useful_account_value?(owner_iban) and
-      BankAccount.normalize_iban(provider_account) == BankAccount.normalize_iban(owner_iban)
+      AccountNumber.key(provider_account) == AccountNumber.key(owner_iban)
   end
 
   defp normalize_transaction_amount(data) do

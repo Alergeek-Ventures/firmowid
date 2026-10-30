@@ -8,7 +8,7 @@ defmodule Firmowid.Finances.TransactionDirection do
   amount, where zero and negative amounts are expenses.
   """
 
-  alias Firmowid.Finances.BankAccount
+  alias Firmowid.Finances.AccountNumber
 
   @type direction :: :income | :expense
   @type transaction_like :: map() | struct()
@@ -22,15 +22,16 @@ defmodule Firmowid.Finances.TransactionDirection do
   @spec direction(transaction_like()) :: direction()
   @spec direction(transaction_like(), String.t() | nil) :: direction()
   def direction(transaction, connected_account_iban \\ nil) do
-    connected_iban = connected_account_iban || bank_account_iban(transaction)
+    connected_account =
+      AccountNumber.key(connected_account_iban || bank_account_iban(transaction))
 
     cond do
-      useful_account?(connected_iban) and
-          same_account?(connected_iban, field(transaction, :creditor_account)) ->
+      connected_account &&
+          connected_account == AccountNumber.key(field(transaction, :creditor_account)) ->
         :income
 
-      useful_account?(connected_iban) and
-          same_account?(connected_iban, field(transaction, :debtor_account)) ->
+      connected_account &&
+          connected_account == AccountNumber.key(field(transaction, :debtor_account)) ->
         :expense
 
       Money.positive?(field(transaction, :amount)) ->
@@ -47,16 +48,6 @@ defmodule Firmowid.Finances.TransactionDirection do
       _ -> nil
     end
   end
-
-  defp same_account?(left, right), do: normalize_account(left) == normalize_account(right)
-
-  defp useful_account?(value) when is_binary(value) do
-    normalize_account(value) not in ["", "N/A"]
-  end
-
-  defp useful_account?(_value), do: false
-
-  defp normalize_account(value), do: BankAccount.normalize_iban(value) || ""
 
   defp field(%_{} = struct, key), do: Map.get(struct, key)
   defp field(map, key) when is_map(map), do: Map.get(map, key)

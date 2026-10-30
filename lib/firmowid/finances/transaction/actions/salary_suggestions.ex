@@ -1,10 +1,19 @@
 defmodule Firmowid.Finances.Transaction.Actions.SalarySuggestions do
-  @moduledoc "Finds recent unassigned salaries within the transfer's amount window, prioritizing the recipient's name, payroll month and amount, and explains an empty result."
+  @moduledoc """
+  Finds recent unassigned salaries for an outgoing transfer and explains an empty result.
+
+  When both the employee's stored bank account and the recipient's account are known, the account
+  decides: a transfer to the employee's account is suggested whatever the amount and ranked first, and
+  a transfer to another account is not suggested, unless that employee was chosen explicitly.
+  Otherwise the amount has to fall within a tolerance window, and the recipient's name, payroll month
+  and amount set the order.
+  """
 
   use Ash.Resource.Actions.Implementation
 
   alias Firmowid.Core.Member
   alias Firmowid.Finances
+  alias Firmowid.Finances.AccountNumber
   alias Firmowid.Payroll
   alias Firmowid.Payroll.UserSalary.Calculations.PayoutEstimates
   alias Firmowid.Scope
@@ -14,6 +23,8 @@ defmodule Firmowid.Finances.Transaction.Actions.SalarySuggestions do
   @relative_tolerance Decimal.new("0.20")
   @lookback_months 6
   @partial_name_similarity 0.9
+  # Ranks above a full name match, which is 2.
+  @same_account_rank 3
 
   @impl true
   def run(input, _opts, context) do
@@ -40,7 +51,14 @@ defmodule Firmowid.Finances.Transaction.Actions.SalarySuggestions do
   # Each step narrows the candidates; the first step that leaves none explains the empty result.
   defp suggestions(transaction, arguments, scope) do
     amount = transaction.amount |> Money.to_decimal() |> Decimal.abs()
-    recipient_parts = name_parts(transaction.creditor_name)
+
+    recipient = %{
+      name_parts: name_parts(transaction.creditor_name),
+      account: AccountNumber.key(transaction.creditor_account),
+      # Assigning a chosen salary re-checks it here, and a different account must not block that.
+      chosen?: not is_nil(arguments[:salary_user_id])
+    }
+
     member_id = member_id(arguments[:salary_user_id], scope)
     no_months_reason = if arguments[:salary_month], do: :month_out_of_range, else: :no_logged_time
 
@@ -57,10 +75,17 @@ defmodule Firmowid.Finances.Transaction.Actions.SalarySuggestions do
              submitted(unpaid, months, member_id, arguments.submitted_hours_only?, scope),
              :hours_not_submitted
            ),
+         {:ok, payable} <-
+           present(
+             Enum.reject(submitted, fn {salary, _month} ->
+               account_match(salary.member, recipient) == :different
+             end),
+             :different_account
+           ),
          {:ok, suggestions} <-
            present(
-             Enum.flat_map(submitted, fn {salary, month} ->
-               suggestion(salary, month, amount, recipient_parts)
+             Enum.flat_map(payable, fn {salary, month} ->
+               suggestion(salary, month, amount, recipient)
              end),
              :amount_out_of_range
            ) do
@@ -124,9 +149,9 @@ defmodule Firmowid.Finances.Transaction.Actions.SalarySuggestions do
 
   defp sort(suggestions, expected_month) do
     suggestions
-    |> Enum.sort(fn {a_name_rank, a}, {b_name_rank, b} ->
-      a_priority = {a_name_rank, a.month == expected_month}
-      b_priority = {b_name_rank, b.month == expected_month}
+    |> Enum.sort(fn {a_rank, a}, {b_rank, b} ->
+      a_priority = {a_rank, a.month == expected_month}
+      b_priority = {b_rank, b.month == expected_month}
 
       # Recipient identity is an absolute priority, not a small score bonus:
       # neither an exact amount nor the preferred month can outrank a full name.
@@ -141,7 +166,7 @@ defmodule Firmowid.Finances.Transaction.Actions.SalarySuggestions do
         a_priority > b_priority
       end
     end)
-    |> Enum.map(fn {_name_rank, suggestion} -> suggestion end)
+    |> Enum.map(fn {_rank, suggestion} -> suggestion end)
   end
 
   defp candidate_months(transaction, nil, member_id, scope) do
@@ -188,16 +213,19 @@ defmodule Firmowid.Finances.Transaction.Actions.SalarySuggestions do
 
   defp expected_salary_month(date), do: Date.beginning_of_month(date)
 
-  defp suggestion(%{member: %{user: user}} = salary, month, amount, recipient_parts) do
+  defp suggestion(%{member: %{user: user}} = salary, month, amount, recipient) do
     estimate = PayoutEstimates.closest(salary.payout_estimates, Money.new!(:PLN, amount))
     expected_amount = if estimate, do: estimate.amount, else: salary.monthly_amount
     expected = Money.to_decimal(expected_amount)
     difference = Decimal.abs(Decimal.sub(amount, expected))
     tolerance = Decimal.max(@minimum_tolerance, Decimal.mult(expected, @relative_tolerance))
 
-    if Decimal.compare(expected, 0) == :gt and Decimal.compare(difference, tolerance) != :gt do
+    within_tolerance? =
+      Decimal.compare(expected, 0) == :gt and Decimal.compare(difference, tolerance) != :gt
+
+    if rank = rank(salary.member, recipient, within_tolerance?) do
       [
-        {name_match_rank(salary.member.name, recipient_parts),
+        {rank,
          %{
            user_id: user.id,
            name: salary.member.name || to_string(user.email),
@@ -209,6 +237,25 @@ defmodule Firmowid.Finances.Transaction.Actions.SalarySuggestions do
       ]
     else
       []
+    end
+  end
+
+  # Returns nil when the salary should not be suggested.
+  defp rank(member, recipient, within_tolerance?) do
+    cond do
+      account_match(member, recipient) == :same -> @same_account_rank
+      within_tolerance? -> name_match_rank(member.name, recipient.name_parts)
+      true -> nil
+    end
+  end
+
+  defp account_match(member, recipient) do
+    case {AccountNumber.key(member.bank_account_number), recipient} do
+      {nil, _recipient} -> :unknown
+      {_employee_account, %{account: nil}} -> :unknown
+      {account, %{account: account}} -> :same
+      {_employee_account, %{chosen?: true}} -> :unknown
+      {_employee_account, _recipient} -> :different
     end
   end
 

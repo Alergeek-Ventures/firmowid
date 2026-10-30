@@ -20,6 +20,7 @@ defmodule Firmowid.Finances.Transaction.Types.SalarySuggestions do
               :no_salaries,
               :salaries_already_paid,
               :hours_not_submitted,
+              :different_account,
               :amount_out_of_range
             ]
           ],
@@ -27,8 +28,8 @@ defmodule Firmowid.Finances.Transaction.Types.SalarySuggestions do
             "Why suggestions is empty: not_outgoing_pln, transaction_matched (already linked to an invoice or a " <>
               "salary), month_out_of_range (salary_month outside the six months before the transfer), " <>
               "no_logged_time (nobody logged time in that window), no_salaries (no salary rate in the considered " <>
-              "months), salaries_already_paid, hours_not_submitted or amount_out_of_range. Null when there are " <>
-              "suggestions."
+              "months), salaries_already_paid, hours_not_submitted, different_account (the employees' stored bank " <>
+              "accounts differ from the recipient's) or amount_out_of_range. Null when there are suggestions."
         ]
       ]
     ]
