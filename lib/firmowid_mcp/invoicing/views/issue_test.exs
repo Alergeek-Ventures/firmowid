@@ -1,7 +1,6 @@
 defmodule FirmowidMcp.Invoicing.Views.IssueTest do
   @moduledoc false
   use FirmowidWeb.ConnCase, async: true
-  use Gettext, backend: Firmowid.Gettext
 
   import Firmowid.AccountsFixtures
   import Phoenix.LiveViewTest
@@ -116,7 +115,7 @@ defmodule FirmowidMcp.Invoicing.Views.IssueTest do
                )
 
       assert Exception.message(error) =~
-               gettext("The invoice data changed. Review the updated preview and confirm again.")
+               "The invoice data changed. Review the updated preview and confirm again."
 
       view |> element("#confirm-invoice-issuance") |> render_click()
 

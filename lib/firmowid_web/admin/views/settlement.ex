@@ -169,6 +169,15 @@ defmodule FirmowidWeb.Admin.Views.Settlement do
         LiveToast.send_toast(:error, gettext("Invalid plan."))
         {:noreply, socket}
 
+      {:error, %Ash.Error.Invalid{errors: errors}} ->
+        message =
+          Enum.map_join(errors, ", ", fn error ->
+            translate_error({Map.get(error, :message) || Exception.message(error), error.vars})
+          end)
+
+        LiveToast.send_toast(:error, message)
+        {:noreply, socket}
+
       {:error, error} ->
         LiveToast.send_toast(:error, Exception.message(error))
         {:noreply, socket}

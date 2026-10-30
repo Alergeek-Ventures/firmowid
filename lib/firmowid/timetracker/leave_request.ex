@@ -1,7 +1,6 @@
 # credo:disable-for-this-file AshCredo.Check.Design.MissingPrimaryAction
 defmodule Firmowid.Timetracker.LeaveRequest do
-  @moduledoc "Represents a leave or absence request submitted by an employee.
-  The request can be accepted or declined by an admin."
+  @moduledoc "Represents an employee leave or absence request that an admin can accept or decline."
 
   use Ash.Resource,
     otp_app: :firmowid,
@@ -46,10 +45,7 @@ defmodule Firmowid.Timetracker.LeaveRequest do
         WHERE (status IN ('accepted', 'pending'));
         """
 
-        down """
-        ALTER TABLE leave_requests
-        DROP CONSTRAINT no_overlapping_leave_requests;
-        """
+        down "ALTER TABLE leave_requests\nDROP CONSTRAINT no_overlapping_leave_requests;\n"
       end
     end
   end

@@ -959,7 +959,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
       {:error, error} ->
         message =
           case error do
-            %{errors: [%{message: msg}]} -> msg
+            %{errors: [%{message: msg, vars: vars}]} -> translate_error({msg, vars})
             _ -> gettext("An error occurred while disconnecting the Google account.")
           end
 
