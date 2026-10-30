@@ -42,6 +42,28 @@ defmodule FirmowidWeb.Auth.Controllers.AuthControllerTest do
     assert_receive %Broadcast{topic: ^topic, event: "disconnect"}
   end
 
+  test "logout during impersonation revokes both sessions and prevents returning", %{conn: conn} do
+    superuser = Ash.Seed.update!(admin_fixture(), %{system_role: :superuser})
+    owner = admin_fixture()
+
+    impersonated =
+      conn
+      |> init_test_session(%{})
+      |> Helpers.store_in_session(superuser)
+      |> post("/admin/rozliczenia/#{owner.member.organization_id}/impersonacja")
+
+    assert redirected_to(impersonated) == "/fakturowanie"
+    superuser_token = get_session(impersonated, "impersonator_token")
+    owner_token = get_session(impersonated, :user_token)
+
+    logged_out = delete(impersonated, "/wyloguj")
+
+    assert redirected_to(logged_out) == "/"
+    assert TokenResource.token_revoked?(Token, owner_token)
+    assert TokenResource.token_revoked?(Token, superuser_token)
+    assert impersonated |> delete("/admin/impersonacja") |> redirected_to() == "/zaloguj"
+  end
+
   test "independent token revocation broadcasts the token topic" do
     user = user_fixture()
     {:ok, token, %{"jti" => jti}} = Jwt.token_for_user(user)
