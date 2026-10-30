@@ -263,10 +263,25 @@ defmodule FirmowidWeb.Auth.Controllers.AuthController do
   """
   def sign_out(conn, _params) do
     conn
+    |> revoke_impersonated_session()
     |> clear_session(:firmowid)
     |> Helpers.delete_all_remember_me_cookies(:firmowid)
     |> LiveToast.put_toast(:notice, "Wylogowano.")
     |> redirect(to: ~p"/")
+  end
+
+  defp revoke_impersonated_session(conn) do
+    case get_session(conn, "impersonator_token") do
+      nil ->
+        conn
+
+      token ->
+        # Revoke the owner's token first; clear_session/2 then revokes the
+        # parked superuser token using the same authentication library path.
+        conn
+        |> AshAuthentication.Plug.Helpers.revoke_session_tokens(:firmowid)
+        |> put_session(:user_token, token)
+    end
   end
 
   defp renew_session(conn) do
