@@ -101,6 +101,11 @@ defmodule FirmowidWeb.Core.Router do
     plug :put_agent_discovery_links
   end
 
+  # Runs before `:browser`, whose `accepts ["html"]` answers 406 to markdown requests.
+  pipeline :markdown_home do
+    plug :serve_markdown_home
+  end
+
   scope "/", FirmowidWeb do
     get "/.well-known/openai-apps-challenge", Infrastructure.Controllers.OpenaiChallenge, :show
     get "/.well-known/ai-catalog.json", AgentDiscovery, :ai_catalog
@@ -407,7 +412,7 @@ defmodule FirmowidWeb.Core.Router do
   end
 
   scope "/", FirmowidWeb do
-    pipe_through [:browser, :agent_discovery_links]
+    pipe_through [:markdown_home, :browser, :agent_discovery_links]
 
     get "/index.html", Infrastructure.Controllers.LegacyIndex, :index
     get "/sitemap.xml", Infrastructure.Controllers.Sitemap, :index
@@ -432,4 +437,12 @@ defmodule FirmowidWeb.Core.Router do
 
   defp put_agent_discovery_links(conn, _opts),
     do: put_resp_header(conn, "link", FirmowidWeb.Infrastructure.Controllers.AgentDiscovery.link_header())
+
+  defp serve_markdown_home(%Plug.Conn{request_path: "/"} = conn, _opts) do
+    if conn |> get_req_header("accept") |> Enum.any?(&String.contains?(&1, "text/markdown")),
+      do: conn |> FirmowidWeb.Infrastructure.Controllers.AgentDiscovery.markdown_home(%{}) |> halt(),
+      else: conn
+  end
+
+  defp serve_markdown_home(conn, _opts), do: conn
 end
