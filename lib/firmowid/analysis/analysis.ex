@@ -15,11 +15,11 @@ defmodule Firmowid.Analysis do
   alias Firmowid.Analysis.EntityTag
   alias Firmowid.Analysis.Entry
   alias Firmowid.Analysis.EntryCategory
-  alias Firmowid.Analysis.IndustryTemplate
   alias Firmowid.Analysis.TagDefinition
   alias Firmowid.Analysis.TaxForecast
   alias Firmowid.Analysis.Workers.CategoryWorker
   alias Firmowid.Analysis.YearSummary
+  alias Firmowid.Core
   alias Firmowid.Currencies.Converter, as: Currencies
   alias Firmowid.Finances
   alias Firmowid.Finances.AccountNumber
@@ -295,8 +295,8 @@ defmodule Firmowid.Analysis do
 
   Uses the same entries and PLN amounts as the totals, without internal ones,
   together with the owner's confirmed counterparty categories and the
-  categories the classifier stored per entry. The industry is inferred from the
-  counterparties and returned as `:industry`. Each entry carries its `entity`
+  categories the classifier stored per entry. The organization's industry is
+  returned as `:industry`. Each entry carries its `entity`
   (`{entity_type, id}`) and `lines`: invoice line names, else the cost invoice
   description or the transfer title. See `CategoryReview.build/3` for the rest.
   """
@@ -330,9 +330,9 @@ defmodule Firmowid.Analysis do
         end
       end)
 
-    industry = IndustryTemplate.infer(Enum.map(rows, &{&1.side, &1.name, &1.amount}))
+    organization = Core.get_organization!(scope.tenant, scope: scope)
 
-    CategoryReview.build(rows, CounterpartyCategory.list!(scope: scope), industry)
+    CategoryReview.build(rows, CounterpartyCategory.list!(scope: scope), organization.industry)
   end
 
   @doc """

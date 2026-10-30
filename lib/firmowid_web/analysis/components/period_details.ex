@@ -5,7 +5,7 @@ defmodule FirmowidWeb.Analysis.Components.PeriodDetails do
   counterparties and shares of income. A single month compares each category
   with its usual monthly amount. Unpaid invoices are mentioned beside the
   totals they are missing from. With `can_edit`, a counterparty row opens the
-  categories to confirm or move it to; the industry is inferred, never chosen.
+  categories of the organization's industry to confirm or move it to.
   Sends `confirm-category` (with the group's `side`, `key`, `suggestion` and
   `source`, and the chosen `category`).
   """
@@ -29,7 +29,7 @@ defmodule FirmowidWeb.Analysis.Components.PeriodDetails do
 
   attr :industry, :atom,
     default: nil,
-    doc: "inferred industry, for the categories a counterparty can move to"
+    doc: "organization's industry, for the categories a counterparty can move to"
 
   attr :can_edit, :boolean,
     default: false,

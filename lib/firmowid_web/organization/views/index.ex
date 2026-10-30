@@ -9,6 +9,7 @@ defmodule FirmowidWeb.Organization.Views.Index do
   alias Ash.Error.Invalid
   alias Firmowid.Core
   alias Firmowid.Core.Organization
+  alias FirmowidWeb.Analysis.Utilities.Industry
 
   @impl true
   def render(assigns) do
@@ -62,6 +63,12 @@ defmodule FirmowidWeb.Organization.Views.Index do
                 placeholder="Nazwa organizacji"
                 aria-label={gettext("Organization name")}
                 required
+              />
+              <.input
+                field={@organization_form[:industry]}
+                type="select"
+                label={gettext("Industry")}
+                options={Industry.options()}
               />
               <p class="m-0">Adres przedsiębiorstwa</p>
               <div class="flex flex-row gap-2">
