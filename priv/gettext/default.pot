@@ -4215,12 +4215,6 @@ msgctxt "avatar menu"
 msgid "Bank accounts"
 msgstr ""
 
-#: lib/firmowid_web/infrastructure/layouts/app.html.heex:209
-#, elixir-autogen, elixir-format
-msgctxt "avatar menu"
-msgid "Billing"
-msgstr ""
-
 #: lib/firmowid_web/infrastructure/layouts/app.html.heex:226
 #, elixir-autogen, elixir-format
 msgctxt "avatar menu"
@@ -5671,4 +5665,15 @@ msgstr ""
 #: lib/firmowid_web/organization/views/index.ex:226
 #, elixir-autogen, elixir-format
 msgid "This invite code is invalid or has expired."
+msgstr ""
+
+#: lib/firmowid_web/admin/views/organizations.ex:37
+#, elixir-autogen, elixir-format
+msgid "Superadmin panel"
+msgstr ""
+
+#: lib/firmowid_web/infrastructure/layouts/app.html.heex:209
+#, elixir-autogen, elixir-format
+msgctxt "avatar menu"
+msgid "Superadmin panel"
 msgstr ""

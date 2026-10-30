@@ -34,7 +34,7 @@ defmodule FirmowidWeb.Admin.Views.Organizations do
   def mount(_params, _session, socket) do
     {:ok,
      socket
-     |> assign(:page_title, "Rozliczenia")
+     |> assign(:page_title, gettext("Superadmin panel"))
      |> assign(:params, %{})
      |> assign(:search, "")
      |> assign(:plan_filter, nil)
