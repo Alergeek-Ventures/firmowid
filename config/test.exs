@@ -78,6 +78,9 @@ config :firmowid, :s3,
 
 config :firmowid, :start_gocardless_token_manager, false
 
+# No GUS register lookups in tests, so nothing reaches the GUS test server
+config :gusex, api_key: nil
+
 # Keep expected warning noise out of CI test logs.
 config :logger, level: :error
 

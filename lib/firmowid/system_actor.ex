@@ -37,7 +37,8 @@ defmodule Firmowid.SystemActor do
 
   - `:analysis_classifier` — keeps analysis entry categories current in the
     background. Reads what the category review reads and stores the categories
-    the classifier chose per entry.
+    the classifier chose per entry, and caches the register data of counterparties
+    that it looks up for them.
 
   - `:exchange_rate_cache` — persists exchange-rate cache entries for the Money
     exchange-rate backend.

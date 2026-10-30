@@ -20,6 +20,7 @@ defmodule Firmowid.Core do
   alias Firmowid.Core.Organization
   alias Firmowid.Core.OrganizationCleanup
   alias Firmowid.Core.OrganizationExternalCleanup
+  alias Firmowid.Core.RegisteredCompany
   alias Firmowid.Core.User
   alias Firmowid.Finances.Requisition
   alias Firmowid.Invoicing.KsefInvoiceDigest
@@ -124,6 +125,11 @@ defmodule Firmowid.Core do
     end
 
     resource OauthConsent
+
+    resource RegisteredCompany do
+      define :list_registered_companies, action: :by_nips, args: [:nips]
+      define :register_company, action: :register
+    end
   end
 
   authorization do
