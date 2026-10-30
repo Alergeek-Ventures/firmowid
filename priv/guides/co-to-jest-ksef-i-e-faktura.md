@@ -33,7 +33,7 @@ Terminy:
 - od 1 lutego 2026 r. faktury w KSeF wystawiają najwięksi podatnicy, ze sprzedażą brutto powyżej 200 mln zł w 2024 r.;
 - od 1 lutego 2026 r. firmy objęte ustawą odbierają faktury przez KSeF;
 - od 1 kwietnia 2026 r. wystawiają pozostali przedsiębiorcy, z wyjątkami przejściowymi;
-- do końca 2026 r. najmniejsze firmy mogą wystawiać faktury poza KSeF, dopóki ich łączna wartość nie przekroczy 10 000 zł brutto miesięcznie ([szczegóły limitu](/poradnik/limit-10000-ksef));
+- do końca 2026 r. najmniejsze firmy mogą wystawiać faktury poza KSeF, dopóki miesięczna wartość brutto faktur, które bez tego wyjątku podlegałyby obowiązkowemu KSeF, nie przekroczy 10 000 zł ([szczegóły limitu](/poradnik/limit-10000-ksef));
 - od 1 stycznia 2027 r. obowiązek obejmie także je.
 
 JDG nie jest z KSeF zwolniona. Sprzedaż za granicę, konsumentom albo w szczególnej procedurze może rządzić się innymi zasadami, więc sprawdź ją osobno.
