@@ -14,6 +14,7 @@ defmodule FirmowidWeb.Landing.Components.Faq do
   @spec faq_section(map()) :: Rendered.t()
   attr :open_faq, :string, default: nil
   attr :structured_data?, :boolean, default: false
+  attr :standalone?, :boolean, default: false
 
   # sobelow_skip ["XSS.Raw"]
   # JSON encoding and escaping '<' prevent translated answers from closing the script element.
@@ -26,16 +27,27 @@ defmodule FirmowidWeb.Landing.Components.Faq do
     ~H"""
     <section
       id="faq"
-      class="border-t border-rust-200 bg-grey-50 py-18 lg:py-26 max-lg:[&_h2]:wrap-anywhere max-lg:[&>div>*]:min-w-0"
+      class={[
+        "bg-grey-50 py-18 lg:py-26 max-lg:[&>div>*]:min-w-0",
+        !@standalone? && "border-t border-rust-200"
+      ]}
     >
       <div class="mx-auto grid w-[calc(100%-var(--spacing)*8)] max-w-284.75 gap-8 lg:w-[calc(100%-var(--spacing)*16)] lg:grid-cols-[minmax(0,1fr)_571px] lg:gap-12 [&_article]:rounded-lg [&_article]:border-2 [&_article]:border-rust-200 [&_article]:bg-white [&_button]:flex [&_button]:w-full [&_button]:cursor-pointer [&_button]:items-center [&_button]:justify-between [&_button]:gap-6 [&_button]:p-5 [&_button]:text-left [&_button]:text-base [&_button]:leading-[1.4] [&_button]:font-semibold lg:[&_button]:text-h5/tight **:[[role='region']]:text-[15px] **:[[role='region']]:leading-[23px] **:[[role='region']]:text-grey-700">
         <div class="max-w-180 lg:max-w-284.75">
-          <p class="mb-4 text-xs font-bold tracking-[0.08em] text-(--landing-accent) uppercase">
+          <p
+            :if={!@standalone?}
+            class="mb-4 text-xs font-bold tracking-[0.08em] text-(--landing-accent) uppercase"
+          >
             {gettext("Questions and answers")}
           </p>
-          <h2 class="text-[38px] leading-[1.1] font-bold tracking-[-0.03em] text-balance lg:text-[48px] lg:leading-[50px] lg:tracking-[-1px]">
-            {gettext("Before you ask — we may have already answered.")}
-          </h2>
+          <.dynamic_tag
+            tag_name={if @standalone?, do: "h1", else: "h2"}
+            class="text-[38px] leading-[1.1] font-bold tracking-[-0.03em] text-balance max-lg:wrap-anywhere lg:text-[48px] lg:leading-[50px] lg:tracking-[-1px]"
+          >
+            {if @standalone?,
+              do: gettext("Questions and answers"),
+              else: gettext("Before you ask — we may have already answered.")}
+          </.dynamic_tag>
           <p class="mt-6 text-h5/6.75 text-grey-700 lg:max-w-115">
             {gettext("Didn't find your question?")}
             <a
