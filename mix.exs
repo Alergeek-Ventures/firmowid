@@ -76,7 +76,7 @@ defmodule Firmowid.MixProject do
     [
       {:ash_authentication_oauth2_server, "~> 0.4.0"},
       # Pin upstream main until a release includes MCP UI renderers and tool annotations.
-      {:ash_ai, github: "ash-project/ash_ai", ref: "afa2d9bd2e19086d60bc22ad647f4818575dc4cd"},
+      {:ash_ai, github: "ash-project/ash_ai", ref: "ea2c3b024cc23463220f8b558345d721fe5f678f"},
       {:sourceror, "~> 1.8"},
       {:ash, "~> 3.36"},
       {:ash_postgres, "~> 2.15"},
