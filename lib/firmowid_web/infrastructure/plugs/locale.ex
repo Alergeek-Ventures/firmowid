@@ -13,6 +13,11 @@ defmodule FirmowidWeb.Infrastructure.Plugs.Locale do
   import Plug.Conn
 
   @session_key "locale"
+  @languages [{"pl", "Polski"}, {"en", "English"}, {"uk", "Українська"}]
+
+  @doc "The interface languages as `{locale, name in that language}`, in display order."
+  @spec languages() :: [{String.t(), String.t()}]
+  def languages, do: @languages
 
   @doc "The session key holding the chosen language."
   @spec session_key() :: String.t()

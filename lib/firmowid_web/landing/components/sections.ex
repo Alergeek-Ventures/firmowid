@@ -712,7 +712,7 @@ defmodule FirmowidWeb.Landing.Components.Sections do
         icon: "╱"
       },
       %{
-        name: gettext("Medical leave"),
+        name: gettext("Sick leave"),
         date: "16.02 - 19.02.2026",
         status: pgettext("landing leave status", "Rejected"),
         approved: false,
@@ -944,7 +944,7 @@ defmodule FirmowidWeb.Landing.Components.Sections do
                   {gettext("Payment")}
                 </p>
                 <p>{gettext("Payment method:")} {gettext("Transfer")}</p>
-                <p>{gettext("Payment deadline:")} <strong>28.10.2026</strong></p>
+                <p>{gettext("Payment due date:")} <strong>28.10.2026</strong></p>
                 <p class="absolute bottom-[3.5cqw] left-[5cqw] flex items-end gap-[0.8cqw] text-[0.7cqw]">
                   <img
                     src={~p"/images/landing/character-head.png"}
