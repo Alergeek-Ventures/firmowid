@@ -148,6 +148,13 @@ msgstr ""
 msgid "%{count} over the limit. Billing packs: %{packs} × %{pack_size} for %{price}."
 msgstr ""
 
+#: lib/firmowid_web/delegations/components/settlement_signature_page.ex
+#, elixir-autogen, elixir-format
+msgid "%{count} page"
+msgid_plural "%{count} pages"
+msgstr[0] ""
+msgstr[1] ""
+
 #: lib/firmowid_web/billing/utilities/worksheet.ex
 #, elixir-autogen, elixir-format
 msgid "%{count} remaining"
@@ -611,6 +618,7 @@ msgstr ""
 msgid "Access to the organization has been temporarily blocked because the subscription has expired. Write to us to renew access."
 msgstr ""
 
+#: lib/firmowid_web/delegations/components/delegation.ex
 #: lib/firmowid_web/delegations/components/settlement_page.ex
 #, elixir-autogen, elixir-format
 msgid "Accommodation"
@@ -909,12 +917,14 @@ msgstr ""
 msgid "Advance payments, cash accounting and special VAT schemes are not modelled."
 msgstr ""
 
+#: lib/firmowid_web/delegations/components/delegation.ex
 #: lib/firmowid_web/delegations/components/settlement_page.ex
 #, elixir-autogen, elixir-format
 msgid "Advance received"
 msgstr ""
 
 #: lib/firmowid_web/delegations/components/settlement_page.ex
+#: lib/firmowid_web/delegations/components/settlement_signature_page.ex
 #, elixir-autogen, elixir-format
 msgid "Advance:"
 msgstr ""
@@ -1239,6 +1249,11 @@ msgstr ""
 msgid "Approve"
 msgstr ""
 
+#: lib/firmowid_web/management/views/delegation.ex
+#, elixir-autogen, elixir-format
+msgid "Approve the settlement"
+msgstr ""
+
 #: lib/firmowid_web/landing/components/sections.ex
 #, elixir-autogen, elixir-format
 msgctxt "landing leave status"
@@ -1246,6 +1261,7 @@ msgid "Approved"
 msgstr ""
 
 #: lib/firmowid_web/management/components/leaves_tab.ex
+#: lib/firmowid_web/management/views/delegation.ex
 #, elixir-autogen, elixir-format
 msgid "Approving..."
 msgstr ""
@@ -1756,6 +1772,7 @@ msgid "Business trip planning"
 msgstr ""
 
 #: lib/firmowid_web/delegations/components/settlement_page.ex
+#: lib/firmowid_web/delegations/components/settlement_signature_page.ex
 #: lib/firmowid_web/delegations/views/delegation.ex
 #: lib/firmowid_web/management/views/delegation.ex
 #, elixir-autogen, elixir-format
@@ -2005,6 +2022,11 @@ msgstr ""
 msgid "Check already matched payments"
 msgstr ""
 
+#: lib/firmowid_web/delegations/components/settlement_signature_page.ex
+#, elixir-autogen, elixir-format
+msgid "Check the generated document. Sign it with a Trusted Profile, upload the signed file and send the settlement to your employer."
+msgstr ""
+
 #: lib/firmowid_web/hours_record/components/upload_form.ex
 #, elixir-autogen, elixir-format
 msgid "Check the month, hours and your details in the downloaded document. Submitting the signed record will lock editing of this month's hours. Later changes require a correction or cancellation request to your organization administrators."
@@ -2040,6 +2062,11 @@ msgstr ""
 msgid "Check-out"
 msgstr ""
 
+#: lib/firmowid_web/delegations/components/settlement_signature_page.ex
+#, elixir-autogen, elixir-format
+msgid "Choose a PDF file."
+msgstr ""
+
 #: lib/firmowid_ui/ksef/connection.ex
 #, elixir-autogen, elixir-format
 msgid "Choose a certificate and a private key."
@@ -2067,6 +2094,7 @@ msgid "Choose a date to see the employee's declarations."
 msgstr ""
 
 #: lib/firmowid_web/delegations/components/settlement/expense.ex
+#: lib/firmowid_web/delegations/components/settlement_signature_page.ex
 #: lib/firmowid_web/management/views/delegation.ex
 #: lib/firmowid_web/settings/components/profile_tab.ex
 #, elixir-autogen, elixir-format
@@ -2136,6 +2164,11 @@ msgstr ""
 #: lib/firmowid_web/invoicing/sales_invoices/components/invoice_payment.ex
 #, elixir-autogen, elixir-format
 msgid "Choose the bank account to receive the payment."
+msgstr ""
+
+#: lib/firmowid/delegations/changes/create_signed_settlement_blob.ex
+#, elixir-autogen, elixir-format
+msgid "Choose the signed PDF file."
 msgstr ""
 
 #: lib/firmowid_web/invoicing/components/invoice_download_modal.ex
@@ -2826,6 +2859,11 @@ msgstr ""
 msgid "Could not approve the request."
 msgstr ""
 
+#: lib/firmowid_web/management/views/delegation.ex
+#, elixir-autogen, elixir-format
+msgid "Could not approve the settlement."
+msgstr ""
+
 #: lib/firmowid_web/management/views/counterparty.ex
 #, elixir-autogen, elixir-format
 msgid "Could not archive the counterparty"
@@ -3065,6 +3103,16 @@ msgstr ""
 msgid "Could not restore the project"
 msgstr ""
 
+#: lib/firmowid_web/management/views/delegation.ex
+#, elixir-autogen, elixir-format
+msgid "Could not return the settlement."
+msgstr ""
+
+#: lib/firmowid_web/delegations/views/delegation.ex
+#, elixir-autogen, elixir-format
+msgid "Could not return to editing."
+msgstr ""
+
 #: lib/firmowid_web/management/components/employee_payout_details.ex
 #, elixir-autogen, elixir-format
 msgid "Could not save the bank account number. Try again."
@@ -3109,6 +3157,11 @@ msgstr ""
 #: lib/firmowid_web/auth/controllers/auth_controller.ex
 #, elixir-autogen, elixir-format
 msgid "Could not send the password reset instructions. Try again."
+msgstr ""
+
+#: lib/firmowid_web/delegations/views/delegation.ex
+#, elixir-autogen, elixir-format
+msgid "Could not send the settlement. Try again."
 msgstr ""
 
 #: lib/firmowid_ui/ksef/connection.ex
@@ -3181,6 +3234,11 @@ msgstr ""
 #: lib/firmowid_web/settings/views/index.ex
 #, elixir-autogen, elixir-format
 msgid "Could not upload the file"
+msgstr ""
+
+#: lib/firmowid_web/delegations/components/settlement_signature_page.ex
+#, elixir-autogen, elixir-format
+msgid "Could not upload the file."
 msgstr ""
 
 #: lib/firmowid_web/analysis/components/segment_ranking.ex
@@ -3409,6 +3467,7 @@ msgid "Date of birth"
 msgstr ""
 
 #: lib/firmowid_web/delegations/components/settlement_page.ex
+#: lib/firmowid_web/delegations/components/settlement_signature_page.ex
 #, elixir-autogen, elixir-format
 msgid "Dates:"
 msgstr ""
@@ -3438,6 +3497,11 @@ msgstr ""
 #, elixir-autogen, elixir-format
 msgctxt "month name in a date"
 msgid "December"
+msgstr ""
+
+#: lib/firmowid_web/management/views/delegation.ex
+#, elixir-autogen, elixir-format
+msgid "Decision"
 msgstr ""
 
 #: lib/firmowid_web/management/components/employee_tax_details.ex
@@ -3797,6 +3861,7 @@ msgstr ""
 msgid "Download report"
 msgstr ""
 
+#: lib/firmowid_web/delegations/components/settlement_signature_page.ex
 #: lib/firmowid_web/management/views/delegation.ex
 #, elixir-autogen, elixir-format
 msgid "Download the document"
@@ -3805,6 +3870,16 @@ msgstr ""
 #: lib/firmowid_ui/components/ksef_connection.ex
 #, elixir-autogen, elixir-format
 msgid "Download the request"
+msgstr ""
+
+#: lib/firmowid_web/delegations/components/settlement_page.ex
+#, elixir-autogen, elixir-format
+msgid "Download the settlement"
+msgstr ""
+
+#: lib/firmowid_web/management/views/delegation.ex
+#, elixir-autogen, elixir-format
+msgid "Download the signed settlement"
 msgstr ""
 
 #: lib/firmowid_web/hours_record/components/status.ex
@@ -3879,6 +3954,11 @@ msgstr ""
 #: lib/firmowid_web/invoicing/views/index.ex
 #, elixir-autogen, elixir-format
 msgid "Drag invoices here to%{line_break}upload them to Firmowid."
+msgstr ""
+
+#: lib/firmowid_web/delegations/components/settlement_signature_page.ex
+#, elixir-autogen, elixir-format
+msgid "Drag or choose a file."
 msgstr ""
 
 #: lib/firmowid_web/settings/components/profile_tab.ex
@@ -3969,6 +4049,11 @@ msgstr ""
 #: lib/firmowid_web/management/views/counterparty_form.html.heex
 #, elixir-autogen, elixir-format
 msgid "Edit counterparty"
+msgstr ""
+
+#: lib/firmowid_web/delegations/components/settlement_signature_page.ex
+#, elixir-autogen, elixir-format
+msgid "Edit document"
 msgstr ""
 
 #: lib/firmowid_web/management/components/profile_tab.ex
@@ -4143,6 +4228,11 @@ msgstr ""
 #: lib/firmowid_web/management/views/employees.html.heex
 #, elixir-autogen, elixir-format
 msgid "Employee scope"
+msgstr ""
+
+#: lib/firmowid_web/management/views/delegation.ex
+#, elixir-autogen, elixir-format
+msgid "Employee's business trips"
 msgstr ""
 
 #: lib/firmowid/timetracker/actions/notify_admins_about_hours_record_change.ex
@@ -5959,6 +6049,7 @@ msgstr ""
 msgid "Joint — own income up to PLN 120,000"
 msgstr ""
 
+#: lib/firmowid_web/delegations/components/delegation.ex
 #: lib/firmowid_web/delegations/components/settlement_page.ex
 #, elixir-autogen, elixir-format
 msgid "Journeys"
@@ -6268,6 +6359,7 @@ msgid "Load more invoices"
 msgstr ""
 
 #: lib/firmowid_web/invoicing/components/cost_invoice_details.ex
+#: lib/firmowid_web/management/views/delegation.ex
 #, elixir-autogen, elixir-format
 msgid "Loading document..."
 msgstr ""
@@ -6784,6 +6876,11 @@ msgstr ""
 #: lib/firmowid_web/management/components/employee_tax_details.ex
 #, elixir-autogen, elixir-format
 msgid "No advances (record only)"
+msgstr ""
+
+#: lib/firmowid_web/management/views/delegation.ex
+#, elixir-autogen, elixir-format
+msgid "No attached documents."
 msgstr ""
 
 #: lib/firmowid_web/invoicing/cost_invoices/views/inbox.ex
@@ -7550,6 +7647,7 @@ msgctxt "means of transport"
 msgid "Other"
 msgstr ""
 
+#: lib/firmowid_web/delegations/components/delegation.ex
 #: lib/firmowid_web/delegations/components/settlement_page.ex
 #, elixir-autogen, elixir-format
 msgctxt "settlement summary"
@@ -8230,6 +8328,11 @@ msgstr ""
 msgid "Projects together"
 msgstr ""
 
+#: lib/firmowid_web/management/views/delegation.ex
+#, elixir-autogen, elixir-format
+msgid "Proof of expenses"
+msgstr ""
+
 #: lib/firmowid_web/assistant/components/records.ex
 #, elixir-autogen, elixir-format
 msgid "Proposed changes"
@@ -8261,6 +8364,7 @@ msgid "Purpose of the trip"
 msgstr ""
 
 #: lib/firmowid_web/delegations/components/settlement_page.ex
+#: lib/firmowid_web/delegations/components/settlement_signature_page.ex
 #, elixir-autogen, elixir-format
 msgid "Purpose:"
 msgstr ""
@@ -8469,6 +8573,7 @@ msgstr ""
 
 #: lib/firmowid_web/delegations/components/settlement/documents.ex
 #: lib/firmowid_web/delegations/components/settlement/foreign_currency.ex
+#: lib/firmowid_web/delegations/components/settlement_signature_page.ex
 #, elixir-autogen, elixir-format
 msgid "Remove %{name}"
 msgstr ""
@@ -8649,6 +8754,11 @@ msgstr ""
 msgid "Return date"
 msgstr ""
 
+#: lib/firmowid_web/management/views/delegation.ex
+#, elixir-autogen, elixir-format
+msgid "Return for correction"
+msgstr ""
+
 #: lib/firmowid_web/management/components/employee_tax_details.ex
 #, elixir-autogen, elixir-format
 msgid "Return relief"
@@ -8657,6 +8767,11 @@ msgstr ""
 #: lib/firmowid_web/infrastructure/layouts.ex
 #, elixir-autogen, elixir-format
 msgid "Return to your account"
+msgstr ""
+
+#: lib/firmowid_web/management/views/delegation.ex
+#, elixir-autogen, elixir-format
+msgid "Returning..."
 msgstr ""
 
 #: lib/firmowid_web/invoicing/sales_invoices/components/invoice_items.ex
@@ -9072,6 +9187,7 @@ msgstr ""
 msgid "Seller"
 msgstr ""
 
+#: lib/firmowid_web/delegations/components/settlement_signature_page.ex
 #: lib/firmowid_web/feedback/components/form.ex
 #: lib/firmowid_web/hours_record/components/upload_form.ex
 #: lib/firmowid_web/management/views/delegation.ex
@@ -9149,6 +9265,7 @@ msgstr ""
 
 #: lib/firmowid_ui/components/ksef_connection.ex
 #: lib/firmowid_web/auth/views/forgot_password.ex
+#: lib/firmowid_web/delegations/components/settlement_signature_page.ex
 #: lib/firmowid_web/invoicing/components/entries_table.ex
 #: lib/firmowid_web/invoicing/sales_invoices/components/invoice_review.ex
 #: lib/firmowid_web/settings/components/profile_tab.ex
@@ -9225,6 +9342,31 @@ msgstr ""
 #: lib/firmowid_web/admin/views/settlement.ex
 #, elixir-autogen, elixir-format
 msgid "Settlement"
+msgstr ""
+
+#: lib/firmowid_web/delegations/components/settlement_page.ex
+#, elixir-autogen, elixir-format
+msgid "Settlement no. %{number} has been approved."
+msgstr ""
+
+#: lib/firmowid_web/delegations/components/settlement_page.ex
+#, elixir-autogen, elixir-format
+msgid "Settlement no. %{number} is awaiting your employer's review."
+msgstr ""
+
+#: lib/firmowid_web/delegations/controllers/settlement.ex
+#, elixir-autogen, elixir-format
+msgid "Settlement not found."
+msgstr ""
+
+#: lib/firmowid_web/management/views/delegation.ex
+#, elixir-autogen, elixir-format
+msgid "Settlement number"
+msgstr ""
+
+#: lib/firmowid_web/delegations/components/settlement_signature_page.ex
+#, elixir-autogen, elixir-format
+msgid "Settlement preview"
 msgstr ""
 
 #: lib/firmowid_web/admin/components/settlement_components.ex
@@ -9348,6 +9490,11 @@ msgstr ""
 msgid "Sign"
 msgstr ""
 
+#: lib/firmowid_web/delegations/components/settlement_signature_page.ex
+#, elixir-autogen, elixir-format
+msgid "Sign and send"
+msgstr ""
+
 #: lib/firmowid_web/settings/components/profile_tab.ex
 #, elixir-autogen, elixir-format
 msgid "Sign by: %{date}"
@@ -9358,11 +9505,17 @@ msgstr ""
 msgid "Sign in as owner"
 msgstr ""
 
+#: lib/firmowid_web/delegations/views/delegation.ex
+#, elixir-autogen, elixir-format
+msgid "Sign the business trip settlement"
+msgstr ""
+
 #: lib/firmowid_web/settings/components/profile_tab.ex
 #, elixir-autogen, elixir-format
 msgid "Sign the document"
 msgstr ""
 
+#: lib/firmowid_web/delegations/components/settlement_signature_page.ex
 #: lib/firmowid_web/management/views/delegation.ex
 #, elixir-autogen, elixir-format
 msgid "Sign the document %{link}"
@@ -9404,6 +9557,11 @@ msgstr ""
 #: lib/firmowid_web/auth/controllers/auth_controller.ex
 #, elixir-autogen, elixir-format
 msgid "Signed out."
+msgstr ""
+
+#: lib/firmowid_web/management/views/delegation.ex
+#, elixir-autogen, elixir-format
+msgid "Signed settlement preview"
 msgstr ""
 
 #: lib/firmowid_web/hours_record/components/upload_form.ex
@@ -9706,6 +9864,7 @@ msgstr ""
 msgid "Suggestion details are not available."
 msgstr ""
 
+#: lib/firmowid_web/delegations/components/delegation.ex
 #: lib/firmowid_web/delegations/components/settlement_page.ex
 #: lib/firmowid_web/invoicing/components/filter_bar.ex
 #: lib/firmowid_web/landing/components/sections.ex
@@ -10190,6 +10349,11 @@ msgstr ""
 msgid "The employee has no salary rate in this month."
 msgstr ""
 
+#: lib/firmowid_web/management/views/delegation.ex
+#, elixir-autogen, elixir-format
+msgid "The employee has sent the signed settlement. Check the document and proof of expenses, then approve the settlement or return it for correction."
+msgstr ""
+
 #: lib/firmowid_web/management/views/employee.html.heex
 #, elixir-autogen, elixir-format
 msgid "The employee was archived on %{date}. They have no access to the organization until an administrator restores them."
@@ -10255,6 +10419,8 @@ msgstr ""
 msgid "The file is still being uploaded."
 msgstr ""
 
+#: lib/firmowid/delegations/changes/create_signed_settlement_blob.ex
+#: lib/firmowid_web/delegations/components/settlement_signature_page.ex
 #: lib/firmowid_web/settings/components/profile_tab.ex
 #, elixir-autogen, elixir-format
 msgid "The file is too large (max 10 MB)."
@@ -10562,6 +10728,21 @@ msgstr ""
 #: lib/firmowid_web/timetracker/components/overlap.ex
 #, elixir-autogen, elixir-format
 msgid "The session will be deleted"
+msgstr ""
+
+#: lib/firmowid_web/management/views/delegation.ex
+#, elixir-autogen, elixir-format
+msgid "The settlement has been approved."
+msgstr ""
+
+#: lib/firmowid_web/management/views/delegation.ex
+#, elixir-autogen, elixir-format
+msgid "The settlement has been returned to the employee for correction."
+msgstr ""
+
+#: lib/firmowid_web/delegations/views/delegation.ex
+#, elixir-autogen, elixir-format
+msgid "The settlement has been sent for review."
 msgstr ""
 
 #: lib/firmowid_ui/ksef/connection.ex
@@ -11053,6 +11234,7 @@ msgctxt "project members table"
 msgid "Total"
 msgstr ""
 
+#: lib/firmowid_web/delegations/components/delegation.ex
 #: lib/firmowid_web/delegations/components/settlement_page.ex
 #, elixir-autogen, elixir-format
 msgid "Total costs"
@@ -11479,6 +11661,11 @@ msgstr ""
 msgid "Upload the signed business trip order."
 msgstr ""
 
+#: lib/firmowid_web/delegations/components/settlement_signature_page.ex
+#, elixir-autogen, elixir-format
+msgid "Upload the signed business trip settlement."
+msgstr ""
+
 #: lib/firmowid_web/settings/components/profile_tab.ex
 #, elixir-autogen, elixir-format
 msgid "Upload the signed contract"
@@ -11487,6 +11674,11 @@ msgstr ""
 #: lib/firmowid_ui/components/ksef_connection.ex
 #, elixir-autogen, elixir-format
 msgid "Upload the signed file"
+msgstr ""
+
+#: lib/firmowid_web/delegations/views/delegation.ex
+#, elixir-autogen, elixir-format
+msgid "Upload the signed settlement as a PDF file."
 msgstr ""
 
 #: lib/firmowid_web/invoicing/components/download_modal.ex
@@ -11748,6 +11940,13 @@ msgstr ""
 msgid "We will keep trying to connect on your behalf."
 msgstr ""
 
+#: lib/firmowid_web/delegations/components/settlement_signature_page.ex
+#, elixir-autogen, elixir-format
+msgid "We will send %{count} attachment with the settlement (%{categories})."
+msgid_plural "We will send %{count} attachments with the settlement (%{categories})."
+msgstr[0] ""
+msgstr[1] ""
+
 #: lib/firmowid_web/settings/components/account_tab.ex
 #, elixir-autogen, elixir-format
 msgid "We will send a confirmation link to the new address. After opening it, confirm the change with the button on the displayed page"
@@ -11793,6 +11992,11 @@ msgstr ""
 #: lib/firmowid_web/invoicing/transactions/components/show_components.ex
 #, elixir-autogen, elixir-format
 msgid "What else can you do?"
+msgstr ""
+
+#: lib/firmowid_web/management/views/delegation.ex
+#, elixir-autogen, elixir-format
+msgid "What should the employee correct?"
 msgstr ""
 
 #: lib/firmowid_web/management/components/employee_tax_details.ex
@@ -11922,6 +12126,11 @@ msgstr ""
 msgid "Write to us."
 msgstr ""
 
+#: lib/firmowid_web/management/views/delegation.ex
+#, elixir-autogen, elixir-format
+msgid "Write what the employee should correct."
+msgstr ""
+
 #: lib/firmowid_web/landing/components/sections.ex
 #, elixir-autogen, elixir-format
 msgid "Write what you need - Firmowid will issue an invoice, create a correction or find any document. Before anything reaches KSeF, you will see a preview and confirm it yourself."
@@ -11994,6 +12203,7 @@ msgstr ""
 msgid "You are using the app as %{email}. Analytics are not recorded."
 msgstr ""
 
+#: lib/firmowid_web/delegations/components/settlement_signature_page.ex
 #: lib/firmowid_web/management/views/delegation.ex
 #, elixir-autogen, elixir-format
 msgid "You can add only one file."
@@ -12173,6 +12383,11 @@ msgstr ""
 msgid "Your employees track their hours, but you still do not know what your team really costs? Firmowid keeps everything under control."
 msgstr ""
 
+#: lib/firmowid_web/delegations/components/settlement_page.ex
+#, elixir-autogen, elixir-format
+msgid "Your employer returned the settlement for correction"
+msgstr ""
+
 #: lib/firmowid_web/organization/views/index.ex
 #, elixir-autogen, elixir-format
 msgid "Your full name"
@@ -12331,6 +12546,12 @@ msgstr ""
 #: lib/firmowid_web/landing/components/sections.ex
 #, elixir-autogen, elixir-format
 msgid "bank accounts"
+msgstr ""
+
+#: lib/firmowid_web/delegations/components/settlement_signature_page.ex
+#, elixir-autogen, elixir-format
+msgctxt "settlement attachments"
+msgid "bank statement"
 msgstr ""
 
 #: lib/firmowid_web/landing/components/sections.ex
@@ -12531,9 +12752,21 @@ msgctxt "business trip status"
 msgid "in progress"
 msgstr ""
 
+#: lib/firmowid_web/delegations/components/settlement_signature_page.ex
+#, elixir-autogen, elixir-format
+msgctxt "settlement attachments"
+msgid "insurance policy"
+msgstr ""
+
 #: lib/firmowid/invoicing/validations/validate_vat_rate.ex
 #, elixir-autogen, elixir-format
 msgid "invalid VAT rate"
+msgstr ""
+
+#: lib/firmowid_web/delegations/components/settlement_signature_page.ex
+#, elixir-autogen, elixir-format
+msgctxt "settlement attachments"
+msgid "invoices and receipts"
 msgstr ""
 
 #: lib/firmowid_web/landing/components/sections.ex
@@ -12746,6 +12979,12 @@ msgstr ""
 msgid "must match the pattern %{regex}"
 msgstr ""
 
+#: lib/firmowid_web/delegations/components/settlement_signature_page.ex
+#, elixir-autogen, elixir-format
+msgctxt "settlement attachments"
+msgid "no additional documents"
+msgstr ""
+
 #: lib/firmowid_web/settings/components/subscription_tab.ex
 #, elixir-autogen, elixir-format
 msgid "no plan"
@@ -12949,6 +13188,12 @@ msgstr ""
 msgid "the recalculated net amount or VAT in rate groups differs from the invoice in KSeF"
 msgstr ""
 
+#: lib/firmowid_web/delegations/components/settlement_signature_page.ex
+#, elixir-autogen, elixir-format
+msgctxt "settlement attachments"
+msgid "tickets"
+msgstr ""
+
 #: lib/firmowid_web/delegations/views/delegation_form.ex
 #, elixir-autogen, elixir-format
 msgctxt "date range end"
@@ -13035,6 +13280,7 @@ msgstr ""
 msgid "website project"
 msgstr ""
 
+#: lib/firmowid_web/delegations/components/settlement_signature_page.ex
 #: lib/firmowid_web/management/views/delegation.ex
 #, elixir-autogen, elixir-format
 msgid "with a Trusted Profile"

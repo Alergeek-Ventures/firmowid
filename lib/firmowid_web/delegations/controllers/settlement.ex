@@ -15,10 +15,10 @@ defmodule FirmowidWeb.Delegations.Controllers.Settlement do
       )
     else
       {:error, :not_found} ->
-        send_resp(conn, :not_found, "Nie znaleziono rozliczenia.")
+        conn |> put_status(:not_found) |> text(gettext("Settlement not found."))
 
       {:error, %Ash.Error.Forbidden{}} ->
-        send_resp(conn, :not_found, "Nie znaleziono rozliczenia.")
+        conn |> put_status(:not_found) |> text(gettext("Settlement not found."))
     end
   end
 end

@@ -75,11 +75,11 @@ defmodule FirmowidWeb.Delegations.Components.Delegation do
   def settlement_summary(assigns) do
     ~H"""
     <section class="mt-6 rounded-lg bg-white p-5 shadow-sm">
-      <h2 class="text-grey-500">Podsumowanie</h2>
+      <h2 class="text-grey-500">{gettext("Summary")}</h2>
       <dl class="mt-6 space-y-3 text-sm">
-        <.summary_row label="Przejazdy" value={@document.transport_total} />
-        <.summary_row label="Nocleg" value={@document.accommodation_total} />
-        <.summary_row label="Inne" value={@document.other_total} />
+        <.summary_row label={gettext("Journeys")} value={@document.transport_total} />
+        <.summary_row label={gettext("Accommodation")} value={@document.accommodation_total} />
+        <.summary_row label={pgettext("settlement summary", "Other")} value={@document.other_total} />
         <.summary_row
           :if={@document.per_diem}
           label={gettext("Per diem")}
@@ -91,8 +91,11 @@ defmodule FirmowidWeb.Delegations.Components.Delegation do
           value={@document.per_diem.lump_sums}
         />
         <div class="my-5 space-y-3 border-y border-grey-100 py-5">
-          <.summary_row label="Razem koszty" value={@document.total} strong />
-          <.summary_row label="Pobrana zaliczka" value={@document.delegation.advance_amount} />
+          <.summary_row label={gettext("Total costs")} value={@document.total} strong />
+          <.summary_row
+            label={gettext("Advance received")}
+            value={@document.delegation.advance_amount}
+          />
         </div>
         <.summary_row label={@document.balance_label} value={@document.balance} strong />
       </dl>

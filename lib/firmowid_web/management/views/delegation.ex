@@ -186,17 +186,17 @@ defmodule FirmowidWeb.Management.Views.Delegation do
       {:ok, _delegation} ->
         {:noreply,
          socket
-         |> put_flash(:info, "Rozliczenie zostało zatwierdzone.")
+         |> put_flash(:info, gettext("The settlement has been approved."))
          |> push_navigate(to: Navigation.employee_delegations_path(socket.assigns.employee.id))}
 
       {:error, _error} ->
-        {:noreply, put_flash(socket, :error, "Nie udało się zatwierdzić rozliczenia.")}
+        {:noreply, put_flash(socket, :error, gettext("Could not approve the settlement."))}
     end
   end
 
   def handle_event("return-settlement", %{"settlement_return" => %{"reason" => reason}}, socket) do
     if String.trim(reason) == "" do
-      {:noreply, put_flash(socket, :error, "Napisz, co pracownik ma poprawić.")}
+      {:noreply, put_flash(socket, :error, gettext("Write what the employee should correct."))}
     else
       return_settlement(socket, reason)
     end
@@ -208,28 +208,30 @@ defmodule FirmowidWeb.Management.Views.Delegation do
     ~H"""
     <main class="w-full px-4 py-6">
       <.back navigate={Navigation.employee_delegations_path(@employee.id)} class="justify-self-start">
-        Delegacje pracownika
+        {gettext("Employee's business trips")}
       </.back>
 
       <small class="mt-10 block text-grey-500">{@delegation.title}</small>
-      <h1 class="mt-1 text-2xl/tight font-medium">Rozliczenie delegacji</h1>
+      <h1 class="mt-1 text-2xl/tight font-medium">{gettext("Business trip settlement")}</h1>
       <p
         :if={@delegation.status == :submitted}
         class="mt-4 max-w-2xl text-base text-balance text-grey-700"
       >
-        Pracownik przesłał podpisane rozliczenie. Sprawdź dokument i dowody kosztów, a potem zatwierdź rozliczenie albo zwróć je do poprawy.
+        {gettext(
+          "The employee has sent the signed settlement. Check the document and proof of expenses, then approve the settlement or return it for correction."
+        )}
       </p>
       <p
         :if={@delegation.status == :complete}
         class="mt-4 max-w-2xl text-base text-balance text-grey-700"
       >
-        Rozliczenie zostało zatwierdzone.
+        {gettext("The settlement has been approved.")}
       </p>
 
       <div class="mt-10 grid min-w-0 grid-cols-1 items-start gap-10 lg:grid-cols-[minmax(0,680px)_minmax(0,400px)]">
         <section
           class="min-w-0 rounded-lg bg-grey-200 p-4 sm:p-6"
-          aria-label="Podgląd podpisanego rozliczenia"
+          aria-label={gettext("Signed settlement preview")}
         >
           <p class="mb-4 truncate text-sm font-medium">
             {@document.delegation.signed_settlement_blob.original_filename}
@@ -241,20 +243,20 @@ defmodule FirmowidWeb.Management.Views.Delegation do
             data-pdf-url={@document.delegation.signed_settlement_blob.url}
             class="space-y-4 [&_canvas]:block [&_canvas]:h-auto! [&_canvas]:max-w-full [&_canvas]:bg-white [&_canvas]:shadow-sm"
           >
-            <p class="p-8 text-center text-sm text-grey-700">Ładowanie dokumentu...</p>
+            <p class="p-8 text-center text-sm text-grey-700">{gettext("Loading document...")}</p>
           </div>
         </section>
 
         <aside class="min-w-0 lg:sticky lg:top-6">
           <dl class="grid grid-cols-[auto_1fr] gap-x-6 gap-y-4">
-            <.detail_row label="Imię i nazwisko">
+            <.detail_row label={gettext("Full name")}>
               {@employee.member.name || @employee.email}
             </.detail_row>
-            <.detail_row label="Data wyjazdu">
+            <.detail_row label={gettext("Departure date")}>
               <.date_range start_date={@delegation.start_date} end_date={@delegation.end_date} />
             </.detail_row>
-            <.detail_row label="Cel wyjazdu">{@delegation.purpose}</.detail_row>
-            <.detail_row label="Numer rozliczenia">
+            <.detail_row label={gettext("Purpose of the trip")}>{@delegation.purpose}</.detail_row>
+            <.detail_row label={gettext("Settlement number")}>
               {@delegation.settlement_sequence}/{@delegation.settlement_year}
             </.detail_row>
           </dl>
@@ -269,14 +271,14 @@ defmodule FirmowidWeb.Management.Views.Delegation do
             class="mt-6 flex w-fit max-w-full"
           >
             <Lucideicons.file_down class="size-4 shrink-0 text-grey-900" />
-            <span class="truncate">Pobierz podpisane rozliczenie</span>
+            <span class="truncate">{gettext("Download the signed settlement")}</span>
           </.link>
 
           <.settlement_summary document={@document}>
             <div class="mt-5 border-t border-grey-100 pt-5">
-              <h3 class="text-sm text-grey-500">Dowody kosztów</h3>
+              <h3 class="text-sm text-grey-500">{gettext("Proof of expenses")}</h3>
               <p :if={@document.attachments == []} class="mt-3 text-sm text-grey-700">
-                Brak załączonych dokumentów.
+                {gettext("No attached documents.")}
               </p>
               <div :if={@document.attachments != []} class="mt-3 flex flex-wrap gap-2">
                 <.document_pill
@@ -291,7 +293,7 @@ defmodule FirmowidWeb.Management.Views.Delegation do
           <section
             :if={@delegation.status == :submitted}
             class="mt-6 rounded-lg border border-grey-200 bg-grey-50 p-5"
-            aria-label="Decyzja"
+            aria-label={gettext("Decision")}
           >
             <.button
               type="button"
@@ -299,9 +301,9 @@ defmodule FirmowidWeb.Management.Views.Delegation do
               accent="teal"
               class="w-full"
               phx-click="accept-settlement"
-              phx-disable-with="Zatwierdzanie..."
+              phx-disable-with={gettext("Approving...")}
             >
-              Zatwierdź rozliczenie
+              {gettext("Approve the settlement")}
             </.button>
             <.form
               for={@return_form}
@@ -312,16 +314,16 @@ defmodule FirmowidWeb.Management.Views.Delegation do
               <.input
                 field={@return_form[:reason]}
                 type="textarea"
-                label="Co pracownik ma poprawić?"
+                label={gettext("What should the employee correct?")}
                 required
               />
               <.button
                 type="submit"
                 variant="secondary"
                 class="mt-3 w-full"
-                phx-disable-with="Zwracanie..."
+                phx-disable-with={gettext("Returning...")}
               >
-                Zwróć do poprawy
+                {gettext("Return for correction")}
               </.button>
             </.form>
           </section>
@@ -552,11 +554,14 @@ defmodule FirmowidWeb.Management.Views.Delegation do
       {:ok, _delegation} ->
         {:noreply,
          socket
-         |> put_flash(:info, "Rozliczenie zostało zwrócone pracownikowi do poprawy.")
+         |> put_flash(
+           :info,
+           gettext("The settlement has been returned to the employee for correction.")
+         )
          |> push_navigate(to: Navigation.employee_delegations_path(socket.assigns.employee.id))}
 
       {:error, _error} ->
-        {:noreply, put_flash(socket, :error, "Nie udało się zwrócić rozliczenia.")}
+        {:noreply, put_flash(socket, :error, gettext("Could not return the settlement."))}
     end
   end
 
