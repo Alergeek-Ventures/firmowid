@@ -4,8 +4,8 @@ defmodule Firmowid.Analysis.IndustryTemplate do
 
   Every template shares one cost skeleton modelled on the Polish cost-by-nature
   layout (układ rodzajowy), ordered by what matters most in that industry, and
-  names its own revenue channels. Counterparty name hints of industry-specific
-  businesses infer the industry; category descriptions guide the classifier.
+  names its own revenue channels. The organization chooses its industry;
+  category descriptions guide the classifier.
   """
 
   @type industry :: :services | :gastronomy | :retail
@@ -71,39 +71,6 @@ defmodule Firmowid.Analysis.IndustryTemplate do
     other_income: "Grants, subsidies, refunds, interest and other income"
   }
 
-  # Keywords match inside normalized text; spaces around one require a whole word.
-  @delivery_platforms ["glovo", "takeaway", "pyszne", " wolt ", "uber eats", "bolt food"]
-  @card_acquirers ["fiserv", "polcard", "eservice", "sumup", "adyen"]
-
-  # Counterparties typical of one industry, by the side they appear on.
-  @industry_name_hints %{
-    services: [],
-    gastronomy: [
-      {[
-         "palarni",
-         "piekarni",
-         "mleczar",
-         "cukierni",
-         "browar",
-         "warzyw",
-         "owoc",
-         " lidl ",
-         "biedronka",
-         "kaufland",
-         "auchan",
-         "carrefour"
-       ], :expenses},
-      {@delivery_platforms, :expenses},
-      {@delivery_platforms, :income},
-      {@card_acquirers, :income}
-    ],
-    retail: [
-      {["kwiat", "giełd", "flor", "ogrodnic", "szkółk"], :expenses},
-      {["allegro", "shopify", "etsy", "amazon", "przelewy24", " payu "], :income},
-      {@card_acquirers, :income}
-    ]
-  }
-
   @doc "Lists the supported industries."
   @spec industries() :: [industry()]
   def industries, do: @industries
@@ -130,40 +97,4 @@ defmodule Firmowid.Analysis.IndustryTemplate do
   @doc "Describes what a category covers."
   @spec describe(category()) :: String.t()
   def describe(category), do: Map.fetch!(@descriptions, category)
-
-  @doc """
-  Infers the industry from counterparty names weighted by amount.
-
-  Only industry-specific hints count; without any, the business is treated as services.
-  """
-  @spec infer([{side(), String.t() | nil, Decimal.t()}]) :: industry()
-  def infer(counterparties) do
-    scores =
-      for industry <- [:gastronomy, :retail], into: %{} do
-        hints = Map.fetch!(@industry_name_hints, industry)
-
-        score =
-          Enum.reduce(counterparties, Decimal.new(0), fn {side, name, amount}, sum ->
-            name = normalize(name || "")
-
-            if Enum.any?(hints, fn {keywords, hint_side} ->
-                 hint_side == side and String.contains?(name, keywords)
-               end),
-               do: Decimal.add(sum, amount),
-               else: sum
-          end)
-
-        {industry, score}
-      end
-
-    {industry, score} = Enum.max_by(scores, &elem(&1, 1), Decimal)
-    if Decimal.positive?(score), do: industry, else: :services
-  end
-
-  @doc "Lowercases text and pads its words with single spaces for keyword matching."
-  @spec normalize(String.t()) :: String.t()
-  def normalize(text) do
-    words = text |> String.downcase() |> String.split(~r/[^\p{L}\p{N}\-]+/u, trim: true)
-    " " <> Enum.join(words, " ") <> " "
-  end
 end

@@ -11,6 +11,7 @@ defmodule Firmowid.Core.Organization do
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer]
 
+  alias Firmowid.Analysis.IndustryTemplate
   alias Firmowid.Billing.PlanCatalog
   alias Firmowid.Blobs.Blob
   alias Firmowid.Checks.ActorRole
@@ -86,7 +87,8 @@ defmodule Firmowid.Core.Organization do
         :name,
         :nip,
         :address,
-        :is_vat_payer
+        :is_vat_payer,
+        :industry
       ]
 
       argument :owner_name, :string,
@@ -113,6 +115,7 @@ defmodule Firmowid.Core.Organization do
         :address,
         :correspondence_address,
         :is_vat_payer,
+        :industry,
         :allowed_sender_emails,
         :vat_exemption_type,
         :vat_exemption_basis
@@ -135,6 +138,7 @@ defmodule Firmowid.Core.Organization do
         :correspondence_address,
         :name,
         :is_vat_payer,
+        :industry,
         :vat_exemption_type,
         :vat_exemption_basis
       ]
@@ -234,6 +238,11 @@ defmodule Firmowid.Core.Organization do
       authorize_if action_type(:read)
     end
 
+    # Reads the industry whose categories the classifier chooses from.
+    bypass [{SystemActorRole, roles: [:analysis_classifier]}, action_type(:read)] do
+      authorize_if expr(id == ^actor(:org_id))
+    end
+
     # Names the organizations the account can switch between.
     bypass [{SystemActorRole, roles: [:actor_member_loader]}, action_type(:read)] do
       authorize_if expr(exists(members, user_id == ^actor(:user_id) and is_nil(archived_at)))
@@ -288,6 +297,14 @@ defmodule Firmowid.Core.Organization do
     attribute :address, :string, public?: true
     attribute :correspondence_address, :string, public?: true
     attribute :is_vat_payer, :boolean, public?: true, default: true
+
+    attribute :industry, :atom,
+      public?: true,
+      allow_nil?: false,
+      default: :services,
+      description: "The industry template the financial analysis follows.",
+      constraints: [one_of: IndustryTemplate.industries()]
+
     attribute :tax_forecast_settings, TaxForecastSettings, public?: true
     attribute :allowed_sender_emails, {:array, :string}, public?: true, default: []
     attribute :inbound_email_nickname, :string, public?: true, allow_nil?: false

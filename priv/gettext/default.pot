@@ -330,7 +330,7 @@ msgstr ""
 msgid "Account data"
 msgstr ""
 
-#: lib/firmowid_web/settings/components/company_tab.ex:558
+#: lib/firmowid_web/settings/components/company_tab.ex:575
 #, elixir-autogen, elixir-format
 msgid "Account options for %{account}"
 msgstr ""
@@ -1069,7 +1069,7 @@ msgstr ""
 msgid "Deductions exceed the payout. Tax collection requires an individual payroll calculation."
 msgstr ""
 
-#: lib/firmowid_web/settings/components/company_tab.ex:432
+#: lib/firmowid_web/settings/components/company_tab.ex:449
 #, elixir-autogen, elixir-format
 msgid "Delete invitation"
 msgstr ""
@@ -1159,8 +1159,8 @@ msgstr ""
 msgid "Early access"
 msgstr ""
 
-#: lib/firmowid_web/settings/components/company_tab.ex:104
-#: lib/firmowid_web/settings/components/company_tab.ex:111
+#: lib/firmowid_web/settings/components/company_tab.ex:105
+#: lib/firmowid_web/settings/components/company_tab.ex:112
 #: lib/firmowid_web/settings/components/profile_tab.ex:146
 #: lib/firmowid_web/settings/components/profile_tab.ex:153
 #, elixir-autogen, elixir-format
@@ -5436,7 +5436,7 @@ msgstr ""
 msgid "Attempting to reconnect"
 msgstr ""
 
-#: lib/firmowid_web/organization/views/index.ex:82
+#: lib/firmowid_web/organization/views/index.ex:89
 #, elixir-autogen, elixir-format
 msgid "Building and apartment number"
 msgstr ""
@@ -5531,12 +5531,12 @@ msgstr ""
 msgid "New project"
 msgstr ""
 
-#: lib/firmowid_web/organization/views/index.ex:63
+#: lib/firmowid_web/organization/views/index.ex:64
 #, elixir-autogen, elixir-format
 msgid "Organization name"
 msgstr ""
 
-#: lib/firmowid_web/organization/views/index.ex:91
+#: lib/firmowid_web/organization/views/index.ex:98
 #, elixir-autogen, elixir-format
 msgid "Postal code"
 msgstr ""
@@ -5571,12 +5571,12 @@ msgstr ""
 msgid "Something went wrong!"
 msgstr ""
 
-#: lib/firmowid_web/organization/views/index.ex:73
+#: lib/firmowid_web/organization/views/index.ex:80
 #, elixir-autogen, elixir-format
 msgid "Street"
 msgstr ""
 
-#: lib/firmowid_web/organization/views/index.ex:56
+#: lib/firmowid_web/organization/views/index.ex:57
 #, elixir-autogen, elixir-format
 msgid "Tax ID (NIP)"
 msgstr ""
@@ -5601,12 +5601,12 @@ msgstr ""
 msgid "What else can you do?"
 msgstr ""
 
-#: lib/firmowid_web/organization/views/index.ex:49
+#: lib/firmowid_web/organization/views/index.ex:50
 #, elixir-autogen, elixir-format
 msgid "Your full name"
 msgstr ""
 
-#: lib/firmowid_web/organization/views/index.ex:99
+#: lib/firmowid_web/organization/views/index.ex:106
 #, elixir-autogen, elixir-format
 msgctxt "address"
 msgid "City"
@@ -5662,7 +5662,7 @@ msgstr ""
 msgid "This year"
 msgstr ""
 
-#: lib/firmowid_web/organization/views/index.ex:226
+#: lib/firmowid_web/organization/views/index.ex:233
 #, elixir-autogen, elixir-format
 msgid "This invite code is invalid or has expired."
 msgstr ""
@@ -5703,4 +5703,26 @@ msgstr ""
 #, elixir-autogen, elixir-format
 msgctxt "country group"
 msgid "Other countries"
+msgstr ""
+
+#: lib/firmowid_web/analysis/utilities/industry.ex:17
+#, elixir-autogen, elixir-format
+msgid "Food service"
+msgstr ""
+
+#: lib/firmowid_web/organization/views/index.ex:70
+#: lib/firmowid_web/settings/components/company_tab.ex:205
+#: lib/firmowid_web/settings/components/company_tab.ex:274
+#, elixir-autogen, elixir-format
+msgid "Industry"
+msgstr ""
+
+#: lib/firmowid_web/analysis/utilities/industry.ex:18
+#, elixir-autogen, elixir-format
+msgid "Retail"
+msgstr ""
+
+#: lib/firmowid_web/analysis/utilities/industry.ex:16
+#, elixir-autogen, elixir-format
+msgid "Services"
 msgstr ""

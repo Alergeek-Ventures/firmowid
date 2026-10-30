@@ -141,7 +141,10 @@ defmodule Firmowid.Analysis.CategoryReview do
   defp resolve(%{classified: category}, nil) when category != nil, do: {category, :jev}
   defp resolve(_entry, nil), do: {nil, nil}
 
-  defp key(name), do: name |> IndustryTemplate.normalize() |> String.trim()
+  # Lowercase words separated by single spaces.
+  defp key(name) do
+    name |> String.downcase() |> String.split(~r/[^\p{L}\p{N}\-]+/u, trim: true) |> Enum.join(" ")
+  end
 
   defp side_totals(groups, side, industry) do
     groups = Enum.filter(groups, &(&1.side == side))

@@ -15,6 +15,7 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
 
   alias Firmowid.Core.UserRole
   alias Firmowid.TimeFormatter
+  alias FirmowidWeb.Analysis.Utilities.Industry
   alias FirmowidWeb.Invoicing.Utilities.VatExemption
   alias FirmowidWeb.Settings.Components.Helpers
   alias Phoenix.LiveView.JS
@@ -200,6 +201,19 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
               <input type="hidden" name={@company_form[:vat_exemption_type].name} value="" />
               <input type="hidden" name={@company_form[:vat_exemption_basis].name} value="" />
             <% end %>
+            <Helpers.settings_field
+              label={gettext("Industry")}
+              layout={:row}
+              block_class="flex items-center"
+              for={@company_form[:industry].id}
+            >
+              <.input
+                type="select"
+                field={@company_form[:industry]}
+                options={Industry.options()}
+                input_class="w-full"
+              />
+            </Helpers.settings_field>
             <.row_input
               field={@company_form[:address]}
               label="Adres"
@@ -256,6 +270,9 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
             wide
           >
             {exemption}
+          </.detail_row>
+          <.detail_row label={gettext("Industry")} wide>
+            {Industry.label(@current_org.industry)}
           </.detail_row>
           <.detail_row label="Adres" wide>{multiline_address(@current_org.address)}</.detail_row>
           <.detail_row
