@@ -34,7 +34,7 @@ defmodule FirmowidWeb.Invoicing.Components.Dashboard do
     ~H"""
     <div class="grid grid-cols-1 items-stretch gap-4 md:grid-cols-2 xl:grid-cols-4">
       <.column
-        title="Nieopłacone faktury"
+        title={gettext("Unpaid invoices")}
         count={@unpaid_invoices_count}
         variant={:rust}
         see_all_url={
@@ -49,11 +49,11 @@ defmodule FirmowidWeb.Invoicing.Components.Dashboard do
         <%= for invoice <- @unpaid_invoices do %>
           <DashboardTiles.tile entry={invoice} type={:unpaid_invoice} />
         <% end %>
-        <.zero_state :if={@unpaid_invoices == []} message="Brak nieopłaconych faktur." />
+        <.zero_state :if={@unpaid_invoices == []} message={gettext("No unpaid invoices.")} />
       </.column>
 
       <.column
-        title="Transakcje do dopasowania"
+        title={gettext("Transactions to match")}
         count={@unmatched_transactions_count}
         variant={:rust}
         see_all_url={
@@ -72,18 +72,21 @@ defmodule FirmowidWeb.Invoicing.Components.Dashboard do
             return_to={@return_to}
           />
         <% end %>
-        <.zero_state :if={@unmatched_transactions == []} message="Brak transakcji bez dokumentu." />
+        <.zero_state
+          :if={@unmatched_transactions == []}
+          message={gettext("No transactions without a document.")}
+        />
       </.column>
 
       <.column
-        title="Dopasowane"
+        title={gettext("Matched")}
         count={@matched_entries_count}
         variant={:teal}
       >
         <%= for entry <- @matched_entries do %>
           <DashboardTiles.tile entry={entry} type={:matched} return_to={@return_to} />
         <% end %>
-        <.zero_state :if={@matched_entries == []} message="Brak dopasowanych pozycji." />
+        <.zero_state :if={@matched_entries == []} message={gettext("No matched entries.")} />
         <%!-- TODO: add activity log view and restore a dedicated CTA for matched entries. --%>
       </.column>
 
@@ -98,7 +101,7 @@ defmodule FirmowidWeb.Invoicing.Components.Dashboard do
         <% end %>
         <%= if @suggestions == [] do %>
           <p class="px-4 py-3 text-sm text-grey-700">
-            Na ten moment Firmowid nie ma żadnych sugestii.
+            {gettext("Firmowid has no suggestions at the moment.")}
           </p>
         <% end %>
       </.column>
@@ -173,7 +176,7 @@ defmodule FirmowidWeb.Invoicing.Components.Dashboard do
           @title_text_class
         ]}
       >
-        Zobacz wszystkie
+        {gettext("See all")}
       </.link>
     </div>
     """

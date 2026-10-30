@@ -26,17 +26,19 @@ defmodule FirmowidWeb.BankSync.Views.Create do
     ~H"""
     <section class="container flex flex-col gap-8 pt-4">
       <.header>
-        Dodaj konto bankowe
+        {gettext("Add bank account")}
       </.header>
 
       <div class="flex flex-col gap-1">
         <p class="m-0">
-          Za pomocą rozwiązania naszego partnera, GoCardless, połączymy Twoje konto z
-          Firmowidem.
+          {gettext(
+            "Using the solution of our partner, GoCardless, we will connect your account to Firmowid."
+          )}
         </p>
         <p class="m-0">
-          Sprawi to, że transakcje będą automatycznie synchronizowane, a
-          faktury automatycznie dopasowywane.
+          {gettext(
+            "This makes transactions synchronize automatically and invoices get matched automatically."
+          )}
         </p>
       </div>
 
@@ -68,21 +70,25 @@ defmodule FirmowidWeb.BankSync.Views.Create do
             phx-value-institution-id="SANDBOXFINANCE_SFIN0000"
             phx-value-institution-transaction-total-days={90}
             phx-hook="Tippy"
-            data-tippy-content="Kliknij aby dodać konto bankowe przygotowane przez nas, które zawiera kilkanaście transakcji i pozwala przetestować system."
+            data-tippy-content={
+              gettext(
+                "Click to add a bank account prepared by us, which contains a dozen or so transactions and lets you try out the system."
+              )
+            }
           >
             <.institution_button>
               <div class="flex h-10 items-center justify-center">
                 <Lucideicons.flask_conical class="size-7" />
               </div>
               <p>
-                Konto Sandbox
+                {gettext("Sandbox account")}
               </p>
             </.institution_button>
           </form>
         </div>
       <% else %>
         <.link kind="unstyled" external={@requisition_link} class="text-xl font-bold underline">
-          Kliknij, aby potwierdzić połączenie
+          {gettext("Click to confirm the connection")}
           <.icon name="hero-arrow-right-start-on-rectangle" class="size-8" />
         </.link>
       <% end %>
@@ -137,8 +143,8 @@ defmodule FirmowidWeb.BankSync.Views.Create do
          |> PosthogBusinessEvents.capture(:bank_connection_completed)
          |> LiveToast.put_toast(
            :success,
-           "Konto bankowe zostało poprawnie połączone.",
-           title: "Gotowe"
+           gettext("The bank account was connected successfully."),
+           title: gettext("Done")
          )
          |> push_navigate(to: ~p"/ustawienia/firma")}
       else
@@ -153,8 +159,8 @@ defmodule FirmowidWeb.BankSync.Views.Create do
          socket
          |> LiveToast.put_toast(
            :error,
-           "Będziemy kontynuować próby połączenia w Twoim imieniu.",
-           title: "Połączenie z bankiem nie zostało utworzone w tym momencie."
+           gettext("We will keep trying to connect on your behalf."),
+           title: gettext("The bank connection could not be created at this time.")
          )
          |> push_patch(to: ~p"/fakturowanie")}
       end

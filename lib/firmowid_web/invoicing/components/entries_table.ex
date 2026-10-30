@@ -14,7 +14,6 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
   alias Firmowid.Ksef
   alias Firmowid.Ksef.SubmissionInfo
   alias FirmowidWeb.Analysis.Components.ProjectCell
-  alias FirmowidWeb.Infrastructure.Utilities.PolishQuantity
   alias FirmowidWeb.Invoicing.Utilities.BankBadges
   alias FirmowidWeb.Invoicing.Utilities.Navigation
 
@@ -33,15 +32,15 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
   @transaction_columns ["party", "value_date", "booking_date", "status", "amount"]
 
   @column_labels [
-    party: "Kontrahent",
-    issue_date: "Wystawiono",
-    value_date: "Wykonano",
-    issue_or_value_date: "Wystawiono / Wykonano",
-    due_date: "Termin płatności",
-    booking_date: "Zaksięgowano",
-    due_or_booking_date: "Termin płatności / Zaksięgowano",
-    status: "Status",
-    amount: "Kwota"
+    party: pgettext_noop("Counterparty", "entries table column"),
+    issue_date: pgettext_noop("Issued", "entries table column"),
+    value_date: pgettext_noop("Performed", "entries table column"),
+    issue_or_value_date: pgettext_noop("Issued / Performed", "entries table column"),
+    due_date: pgettext_noop("Payment due date", "entries table column"),
+    booking_date: pgettext_noop("Booked", "entries table column"),
+    due_or_booking_date: pgettext_noop("Payment due date / Booked", "entries table column"),
+    status: pgettext_noop("Status", "entries table column"),
+    amount: pgettext_noop("Amount", "entries table column")
   ]
 
   # Using map pattern match to avoid Dialyzer false positive about
@@ -55,10 +54,10 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
     <div class="flex min-h-[300px] flex-col items-center justify-center gap-4">
       <.icon name="hero-cloud-arrow-up" class="size-16 text-moss-700" />
       <p class="text-center text-black">
-        Brak transakcji i dokumentów dla wybranej daty
+        {gettext("No transactions or documents for the selected date")}
       </p>
       <p class="text-center text-grey-700">
-        Przeciągnij pliki, aby je wgrać
+        {gettext("Drag files here to upload them")}
       </p>
     </div>
     """
@@ -161,7 +160,12 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
         :label,
         if(assigns.column == "project",
           do: gettext("Project"),
-          else: Keyword.get(@column_labels, String.to_existing_atom(assigns.column))
+          else:
+            Gettext.pgettext(
+              Firmowid.Gettext,
+              "entries table column",
+              Keyword.fetch!(@column_labels, String.to_existing_atom(assigns.column))
+            )
         )
       )
 
@@ -181,10 +185,12 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
         data-tippy-content={
           case @column do
             "issue_or_value_date" ->
-              "W przypadku faktur będzie to data wystawienia, w przypadku transakcji to data wykonania"
+              gettext("For invoices this is the issue date, for transactions the execution date")
 
             "due_or_booking_date" ->
-              "W przypadku faktur to termin płatności, w przypadku transakcji to data zaksięgowania płatnosci"
+              gettext(
+                "For invoices this is the payment due date, for transactions the payment booking date"
+              )
           end
         }
       >
@@ -352,7 +358,7 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
           id={"amount-fresh-#{@invoicing_entry.id}"}
           phx-hook="Tippy"
           data-tippy-delay="10"
-          data-tippy-content="Ten dokument właśnie został dodany!"
+          data-tippy-content={gettext("This document has just been added!")}
           class="absolute top-[-10px] right-[-4px] flex size-3"
         >
           <span class="absolute inline-flex size-full animate-ping rounded-full bg-teal-800 opacity-75"></span>
@@ -373,10 +379,10 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
       data-tippy-content={
         case @invoicing_entry do
           %Transaction{} ->
-            "Transakcja została pominięta. Faktury nie będą do niej przypisywane"
+            gettext("The transaction has been skipped. Invoices will not be assigned to it")
 
           _ ->
-            "Dokument został pominięty. Transakcje nie będą do niego przypisywane"
+            gettext("The document has been skipped. Transactions will not be assigned to it")
         end
       }
       class="flex w-32 flex-row gap-2 overflow-hidden"
@@ -427,11 +433,11 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
       id={"status-#{@invoicing_entry.id}"}
       phx-hook="Tippy"
       data-tippy-delay="1000"
-      data-tippy-content="Faktura jest wysyłana do KSeF. Proszę czekać na potwierdzenie."
+      data-tippy-content={gettext("The invoice is being sent to KSeF. Please wait for confirmation.")}
       class="flex w-32 flex-row gap-2 overflow-hidden"
     >
       <div class="flex h-6 w-full flex-row items-center justify-center rounded-md p-2 text-xs text-grey-700">
-        <div class="font-normal uppercase">Wysyłanie...</div>
+        <div class="font-normal uppercase">{gettext("Sending...")}</div>
         <.icon name="hero-arrow-path" class="size-4 animate-spin" />
       </div>
     </div>
@@ -444,11 +450,15 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
       id={"status-#{@invoicing_entry.id}"}
       phx-hook="Tippy"
       data-tippy-delay="1000"
-      data-tippy-content="Wysyłanie faktury do KSeF nie powiodło się. Nasz zespół został poinformowany i działa nad naprawą problemu."
+      data-tippy-content={
+        gettext(
+          "Sending the invoice to KSeF failed. Our team has been notified and is working on a fix."
+        )
+      }
       class="flex w-32 flex-row gap-2 overflow-hidden"
     >
       <div class="flex h-6 w-full animate-error-pulse flex-row items-center justify-center rounded-md p-2 text-xs">
-        <div class="font-normal uppercase">Błąd wysyłania</div>
+        <div class="font-normal uppercase">{gettext("Sending error")}</div>
         <.icon name="hero-exclamation-triangle-mini" class="size-4" />
       </div>
     </div>
@@ -462,8 +472,9 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
           nil
 
         _ ->
-          "Udało się połączyć transakcje i dokument - to oznacza, " <>
-            "że faktura jest opłacona i przygotowana do zaksięgowania."
+          gettext(
+            "The transaction and the document were matched - this means the invoice is paid and ready to be booked."
+          )
       end
 
     assigns = assign(assigns, :match_tooltip, match_tooltip)
@@ -492,11 +503,11 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
       id={"status-#{@invoicing_entry.id}"}
       phx-hook="Tippy"
       data-tippy-delay="1000"
-      data-tippy-content="To szkic faktury — dokument nie został jeszcze wystawiony."
+      data-tippy-content={gettext("This is a draft invoice — the document has not been issued yet.")}
       class="flex w-32 flex-row gap-2 overflow-hidden"
     >
       <div class="flex h-6 w-full flex-row items-center justify-between rounded-md border-2 border-grey-200 bg-white p-2 text-xs text-grey-700 uppercase transition-all duration-500">
-        <p>Szkic</p>
+        <p>{gettext("Draft")}</p>
         <.icon name="hero-pencil-square-solid" class="size-4" />
       </div>
     </div>
@@ -512,14 +523,14 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
       data-tippy-content={
         case @invoicing_entry do
           %Transaction{} ->
-            "Z Twojego konta zsynchronizowaliśmy transakcje - to znaczy, że " <>
-              "do wydatku należy przyporządkować dokument. "
+            gettext(
+              "We synchronized transactions from your account - this means a document should be assigned to the expense. "
+            )
 
           _ ->
-            "Dodałeś plik, zawierający fakturę kosztową. Aby potwierdzić jej " <>
-              "opłacenie, przyporządkujemy odpowiednią transakcję z konta - lub " <>
-              "kliknij 'pomiń', aby zasygnalizować opłacenie jej innym sposobem " <>
-              "(np. gotówką)"
+            gettext(
+              "You added a file containing a cost invoice. To confirm it has been paid, we will assign the matching transaction from your account - or click 'skip' to indicate it was paid another way (e.g. in cash)"
+            )
         end
       }
       class="flex w-32 flex-row gap-2 overflow-hidden"
@@ -561,7 +572,7 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
             %SalesInvoice{} -> "sales_invoice"
           end
         }
-        label="Pomiń"
+        label={gettext("Skip")}
         class="transition-all duration-500"
       />
     </div>
@@ -691,7 +702,7 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
           party,
           Enum.map_join(invoice.sales_invoice_items, ", ", & &1.name)
         } do
-          {"", ""} -> "szkic faktury sprzedażowej"
+          {"", ""} -> gettext("draft sales invoice")
           {_party, ""} -> ""
           {_party, description} -> description
         end
@@ -966,7 +977,7 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
                 value: %{transaction_ids: Enum.map(@group.transactions, & &1.id)}
               )
             }
-            label="Pomiń"
+            label={gettext("Skip")}
             class="transition-all duration-500"
           />
         </div>
@@ -1005,7 +1016,7 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
   end
 
   defp pluralize_transaction_count(count) do
-    PolishQuantity.quantity(count, "transakcja", "transakcje", "transakcji")
+    ngettext("%{count} transaction", "%{count} transactions", count)
   end
 
   defp bank_badge_for_group(%TransactionGroup{transactions: transactions}) do

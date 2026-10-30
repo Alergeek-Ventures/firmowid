@@ -16,7 +16,11 @@
     phx-submit="submit_payment"
     class="flex flex-col gap-12 px-9"
   >
-    <.render_header invoice={@invoice} step={@step_number} title="Termin i forma płatności" />
+    <.render_header
+      invoice={@invoice}
+      step={@step_number}
+      title={gettext("Payment date and method")}
+    />
 
     <FirmowidWeb.Invoicing.SalesInvoices.Components.InvoicePayment.invoice_payment
       payment_form={@payment_form}
@@ -28,13 +32,13 @@
     <div class="mt-12 flex w-full flex-row justify-end">
       <.button
         type="submit"
-        phx-disable-with="Przetwarzanie..."
+        phx-disable-with={gettext("Processing...")}
         class="h-11 w-full max-w-44"
         variant="primary"
         accent="teal"
         disabled={not @payment_form.source.valid?}
       >
-        Dalej
+        {pgettext("sales invoice creator", "Next")}
       </.button>
     </div>
   </.form>

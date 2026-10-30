@@ -1,7 +1,7 @@
 <div class="mx-auto my-4 flex w-full max-w-7xl flex-1 flex-col">
   <div class="flex flex-1 flex-col space-y-10 px-9">
     <div class="flex flex-row items-start justify-between max-md:flex-wrap max-md:gap-4">
-      <.render_header step={@step_number} title="Wybierz kontrahenta" />
+      <.render_header step={@step_number} title={gettext("Choose a counterparty")} />
 
       <div class="flex flex-row gap-2">
         <.button
@@ -9,7 +9,7 @@
           variant="secondary"
           phx-click={show_modal("counterparty-modal")}
         >
-          Wprowadź ręcznie
+          {gettext("Enter manually")}
         </.button>
 
         <.link
@@ -19,7 +19,7 @@
           variant="secondary"
           navigate={counterparty_management_new_path(assigns)}
         >
-          <Lucideicons.plus /> Dodaj nowego
+          <Lucideicons.plus /> {gettext("Add new")}
         </.link>
       </div>
     </div>
@@ -30,8 +30,9 @@
         class="flex w-full flex-col items-center justify-center gap-6 self-stretch rounded-lg border border-grey-200 p-10"
       >
         <p class="text-center text-sm/snug text-balance text-grey-700">
-          Nie wprowadziłeś jeszcze żadnego kontrahenta.
-          Wprowadź go, klikając poniżej, aby wystawić fakturę.
+          {gettext(
+            "You have not entered any counterparty yet. Enter one by clicking below to issue an invoice."
+          )}
         </p>
         <.link
           :if={@can_manage_counterparties}
@@ -40,7 +41,7 @@
           accent="teal"
           navigate={counterparty_management_new_path(assigns)}
         >
-          Dodaj kontrahenta
+          {gettext("Add a counterparty")}
         </.link>
       </div>
 
@@ -59,7 +60,7 @@
 
             <.input
               field={@params[:szukaj]}
-              placeholder="Wyszukaj kontrahenta"
+              placeholder={gettext("Search for a counterparty")}
               aria-label={gettext("Search for a counterparty")}
               input_class="pl-9 bg-grey-100 border min-w-[250px]"
               phx-debounce
@@ -145,9 +146,9 @@
           data-empty={@counterparties_empty?}
           class="col-span-full grid grid-cols-subgrid items-center px-4 py-1 text-sm/snug text-grey-700 data-empty:hidden"
         >
-          <p class="max-md:col-span-2">Kontrahent</p>
-          <p class="max-md:col-start-1">Identyfikator</p>
-          <p>Kraj</p>
+          <p class="max-md:col-span-2">{gettext("Counterparty")}</p>
+          <p class="max-md:col-start-1">{pgettext("sales invoice creator", "Identifier")}</p>
+          <p>{pgettext("sales invoice creator", "Country")}</p>
         </div>
 
         <div
@@ -160,14 +161,14 @@
             class="col-span-full hidden flex-col items-center justify-center gap-4 p-8 only:flex"
           >
             <p class="text-center text-grey-600">
-              Nie znaleziono kontrahentów.
+              {gettext("No counterparties found.")}
             </p>
             <.button
               variant="outline"
               class="border-transparent"
               phx-click="clear_counterparty_filters"
             >
-              Wyczyść filtry
+              {gettext("Clear filters")}
             </.button>
           </div>
 
@@ -237,7 +238,7 @@
                 class="flex flex-row justify-between gap-4 rounded-md border border-grey-200 px-4 py-3.5 transition-opacity max-md:flex-col phx-click-loading:opacity-50"
               >
                 <div class="grid min-w-0 grid-cols-[max-content_minmax(0,1fr)] gap-x-5 gap-y-2 text-sm">
-                  <p class="text-grey-700">Nazwa</p>
+                  <p class="text-grey-700">{gettext("Name")}</p>
                   <p class="truncate text-black">{counterparty.display_label}</p>
 
                   <%= if counterparty.type == :individual do %>
@@ -248,7 +249,7 @@
                     <p class="text-grey-600">{counterparty.tax_id}</p>
                   <% end %>
 
-                  <p class="text-grey-700">Kraj</p>
+                  <p class="text-grey-700">{pgettext("sales invoice creator", "Country")}</p>
                   <p class="text-grey-600">
                     {CountryCodes.country_name(counterparty.country)}
                   </p>
@@ -269,7 +270,7 @@
                       size="small"
                       variant="secondary"
                     >
-                      Wybierz
+                      {pgettext("sales invoice creator", "Select")}
                     </.button>
                   </div>
                 </div>
@@ -280,13 +281,13 @@
                 class="flex flex-row justify-between gap-4 rounded-md border border-grey-200 px-4 py-3.5 transition-opacity max-md:flex-col phx-click-loading:opacity-50"
               >
                 <div class="grid min-w-0 grid-cols-[max-content_minmax(0,1fr)] gap-x-5 gap-y-2 text-sm">
-                  <p class="text-grey-700">Kontrahent</p>
+                  <p class="text-grey-700">{gettext("Counterparty")}</p>
                   <p class="truncate text-black">{invoice.buyer_display_name_label}</p>
 
-                  <p class="text-grey-700">Numer</p>
+                  <p class="text-grey-700">{pgettext("sales invoice creator", "Number")}</p>
                   <p class="text-grey-600">{invoice.invoice_number}</p>
 
-                  <p class="text-grey-700">Kwota</p>
+                  <p class="text-grey-700">{gettext("Amount")}</p>
                   <p class="text-grey-600">
                     {Money.to_string!(invoice.amount)}
                   </p>
@@ -314,7 +315,7 @@
                       size="small"
                       variant="secondary"
                     >
-                      Skopiuj
+                      {pgettext("sales invoice creator", "Copy")}
                     </.button>
                   </div>
                 </div>
@@ -331,7 +332,9 @@
   show={@open_counterparty_modal}
   on_cancel={JS.push("close_counterparty_modal")}
 >
-  <h2 class="mb-6 text-xl font-semibold text-grey-900">Wprowadź dane kontrahenta</h2>
+  <h2 class="mb-6 text-xl font-semibold text-grey-900">
+    {gettext("Enter the counterparty details")}
+  </h2>
 
   <.form
     for={@counterparty_form}
@@ -342,14 +345,16 @@
   >
     <div class="rounded-lg bg-grey-50 px-5 py-3">
       <.radio_group field={@counterparty_form[:buyer_type]} class="gap-8">
-        <:radio value="company">Firma / Jednoosobowa Działalność Gospodarcza</:radio>
-        <:radio value="individual">Osoba prywatna</:radio>
+        <:radio value="company">
+          {gettext("Company / sole proprietorship")}
+        </:radio>
+        <:radio value="individual">{gettext("Private individual")}</:radio>
       </.radio_group>
     </div>
 
     <div class="grid grid-cols-2 gap-6">
       <div class="space-y-4">
-        <p class="text-sm font-medium text-grey-700">Dane podstawowe</p>
+        <p class="text-sm font-medium text-grey-700">{gettext("Basic details")}</p>
 
         <% # Dynamic label/placeholder based on country
         buyer_country = to_string(@counterparty_form[:buyer_country].value)
@@ -357,20 +362,20 @@
         {id_placeholder, id_required?} =
           case buyer_country do
             "PL" ->
-              {"NIP klienta", true}
+              {gettext("Customer NIP"), true}
 
             "US" ->
-              {"Tax ID (opcjonalnie)", false}
+              {gettext("Tax ID (optional)"), false}
 
             country when country != "" ->
               if CountryCodes.eu_country?(country) do
                 {"VAT-EU", true}
               else
-                {"Identyfikator podatkowy", true}
+                {gettext("Tax identifier"), true}
               end
 
             _ ->
-              {"NIP klienta", true}
+              {gettext("Customer NIP"), true}
           end %>
         <.input
           :if={to_string(@counterparty_form[:buyer_type].value) == "company"}
@@ -384,7 +389,7 @@
           :if={to_string(@counterparty_form[:buyer_type].value) == "company"}
           field={@counterparty_form[:buyer_full_name]}
           type="text"
-          placeholder="Nazwa firmy"
+          placeholder={gettext("Company name")}
         />
 
         <div
@@ -394,12 +399,12 @@
           <.input
             field={@counterparty_form[:buyer_given_name]}
             type="text"
-            placeholder="Imię"
+            placeholder={gettext("First name")}
           />
           <.input
             field={@counterparty_form[:buyer_surname]}
             type="text"
-            placeholder="Nazwisko"
+            placeholder={gettext("Last name")}
           />
         </div>
 
@@ -407,49 +412,49 @@
           :if={to_string(@counterparty_form[:buyer_type].value) == "individual"}
           field={@counterparty_form[:buyer_pesel]}
           type="text"
-          placeholder="PESEL (opcjonalnie)"
+          placeholder={gettext("PESEL (optional)")}
         />
       </div>
 
       <div class="space-y-4">
-        <p class="text-sm font-medium text-grey-700">Dane adresowe</p>
+        <p class="text-sm font-medium text-grey-700">{gettext("Address details")}</p>
 
         <.input
           field={@counterparty_form[:buyer_address]}
           type="textarea"
-          placeholder="Adres"
+          placeholder={gettext("Address")}
           input_class="resize-none min-h-[6rem]"
         />
 
         <.searchable_select
           field={@counterparty_form[:buyer_country]}
           options={@country_options}
-          prompt="Wybierz kraj"
-          aria-label="Kraj"
+          prompt={gettext("Choose a country")}
+          aria-label={pgettext("sales invoice creator", "Country")}
         />
       </div>
     </div>
 
     <div class="space-y-4">
-      <p class="text-sm font-medium text-grey-700">Dodatkowe informacje</p>
+      <p class="text-sm font-medium text-grey-700">{gettext("Additional information")}</p>
 
       <div class="grid grid-cols-2 gap-4">
         <.input
           field={@counterparty_form[:buyer_email]}
           type="email"
-          placeholder="E-mail"
+          placeholder={gettext("Email")}
         />
         <.input
           field={@counterparty_form[:buyer_phone]}
           type="tel"
-          placeholder="Telefon"
+          placeholder={gettext("Phone")}
         />
       </div>
 
       <.input
         field={@counterparty_form[:buyer_description]}
         type="textarea"
-        placeholder="Opis"
+        placeholder={gettext("Description")}
         input_class="resize-none"
       />
     </div>
@@ -460,16 +465,16 @@
         variant="outline"
         phx-click={JS.push("close_counterparty_modal") |> hide_modal("counterparty-modal")}
       >
-        Anuluj
+        {gettext("Cancel")}
       </.button>
 
       <.button
         type="submit"
         variant="primary"
         accent="teal"
-        phx-disable-with="Zapisywanie..."
+        phx-disable-with={pgettext("sales invoice button", "Saving...")}
       >
-        Kontynuuj
+        {gettext("Continue")}
       </.button>
     </div>
   </.form>

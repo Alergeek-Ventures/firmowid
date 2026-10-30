@@ -75,7 +75,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
         />
       </:back>
       <:header>
-        <Creator.render_header invoice={@invoice} step={4} title="Podgląd faktury" />
+        <Creator.render_header invoice={@invoice} step={4} title={gettext("Invoice preview")} />
       </:header>
     </InvoiceReview.invoice_review>
     """
@@ -117,7 +117,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
       is_nil(invoice) ->
         {:ok,
          socket
-         |> put_flash(:error, "Nie znaleziono faktury")
+         |> put_flash(:error, gettext("Invoice not found"))
          |> push_navigate(to: Navigation.sales_invoice_creator_path())}
 
       SubmissionInfo.editing_blocked?(invoice, Ksef.get_submission_info(invoice)) ->
@@ -125,7 +125,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
          socket
          |> put_flash(
            :error,
-           "Nie można edytować tej faktury — jest zablokowana podczas wysyłki do KSeF."
+           gettext("This invoice cannot be edited — it is locked while being sent to KSeF.")
          )
          |> push_navigate(to: Navigation.sales_invoice_show_path(invoice, return_to))}
 
@@ -488,7 +488,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
           {:noreply,
            socket
            |> push_event("unsaved-changed", %{value: false})
-           |> put_flash(:info, "Wersja robocza faktury została zapisana")
+           |> put_flash(:info, gettext("The invoice draft was saved."))
            |> push_navigate(to: Navigation.sales_invoice_show_path(invoice, socket.assigns.return_to))}
 
         {:error, form} ->
@@ -500,10 +500,10 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
           {:noreply,
            socket
            |> assign_form_with_preview(form)
-           |> put_flash(:error, "Nie udało się zapisać faktury")}
+           |> put_flash(:error, gettext("Could not save the invoice."))}
       end
     else
-      {:noreply, put_flash(socket, :error, "Nie można zapisać korekty jako wersji roboczej")}
+      {:noreply, put_flash(socket, :error, gettext("A correction cannot be saved as a draft."))}
     end
   end
 
@@ -664,7 +664,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
     {:noreply,
      socket
      |> assign_form_with_preview(form)
-     |> put_flash(:error, "Popraw błędy w formularzu")}
+     |> put_flash(:error, gettext("Correct the errors in the form."))}
   end
 
   defp handle_submit_result({:error, error}, socket) do
@@ -705,7 +705,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
     end
   end
 
-  defp get_error_message(_), do: "Nie udało się wystawić faktury"
+  defp get_error_message(_), do: gettext("Could not issue the invoice")
 
   # --- Shared domain preview from form values ---
 
@@ -773,8 +773,11 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
     counterparty_id = AshPhoenix.Form.value(ash_form, :counterparty_id) || invoice.counterparty_id
 
     case EmailRecipientEligibility.fetch_valid_counterparty_email(counterparty_id, scope) do
-      {:ok, _email} -> %{valid: true, tooltip: nil}
-      {:error, reason, _email} -> %{valid: false, tooltip: reason}
+      {:ok, _email} ->
+        %{valid: true, tooltip: nil}
+
+      {:error, reason, _email} ->
+        %{valid: false, tooltip: Gettext.gettext(Firmowid.Gettext, reason)}
     end
   end
 
@@ -869,10 +872,10 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
   defp not_editable_message(%SalesInvoice{ksef_number: nil}), do: SubmissionInfo.outside_ksef_message()
 
   defp not_editable_message(%SalesInvoice{ksef_invoice_kind: :vat}) do
-    "Nie można edytować tej faktury — posiada korekty. Edytuj ostatnią korektę."
+    gettext("This invoice cannot be edited — it has corrections. Edit the latest correction.")
   end
 
   defp not_editable_message(%SalesInvoice{ksef_invoice_kind: :kor}) do
-    "Nie można edytować tej korekty — istnieje nowsza korekta."
+    gettext("This correction cannot be edited — a newer correction exists.")
   end
 end

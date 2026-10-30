@@ -7,21 +7,27 @@ defmodule FirmowidWeb.Invoicing.Utilities.VatExemption do
   and business logic.
   """
 
+  use Gettext, backend: Firmowid.Gettext
+
   alias Firmowid.Invoicing.VatExemption
 
   @select_options [
-    {"Art. 113 ust. 1 i 9 (limit obrotów do 200 tys. zł)", :art_113},
-    {"Art. 43 ust. 1 (zwolnienie ze względu na rodzaj usług)", :art_43},
-    {"Art. 82 ust. 3 (rozporządzenia Ministra Finansów)", :art_82_ust_3},
-    {"Dyrektywa 2006/112/WE (transakcje unijne)", :directive_2006_112},
-    {"Inna podstawa prawna", :other}
+    {gettext_noop("Art. 113 sec. 1 and 9 (turnover limit of up to PLN 200 thousand)"), :art_113},
+    {gettext_noop("Art. 43 sec. 1 (exemption based on the type of services)"), :art_43},
+    {gettext_noop("Art. 82 sec. 3 (regulations of the Minister of Finance)"), :art_82_ust_3},
+    {gettext_noop("Directive 2006/112/EC (EU transactions)"), :directive_2006_112},
+    {gettext_noop("Other legal basis"), :other}
   ]
 
   @doc """
   Returns the select options for VAT exemption legal bases.
   """
   @spec options() :: [{String.t(), atom()}]
-  def options, do: @select_options
+  def options do
+    Enum.map(@select_options, fn {label, type} ->
+      {Gettext.gettext(Firmowid.Gettext, label), type}
+    end)
+  end
 
   @doc """
   Returns the display label for an exemption legal basis.

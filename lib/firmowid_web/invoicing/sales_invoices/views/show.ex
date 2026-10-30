@@ -115,7 +115,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Show do
 
   @impl true
   def handle_event("pdf-download-error", _params, socket) do
-    {:noreply, put_flash(socket, :error, "Nie udało się wygenerować PDF")}
+    {:noreply, put_flash(socket, :error, gettext("Could not generate the PDF."))}
   end
 
   @impl true
@@ -124,7 +124,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Show do
       :ok ->
         {:noreply,
          socket
-         |> put_flash(:info, "Faktura została usunięta")
+         |> put_flash(:info, gettext("The invoice has been deleted."))
          |> push_navigate(
            to:
              socket.assigns.return_to ||
@@ -136,7 +136,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Show do
          put_flash(
            socket,
            :error,
-           "Nie można usunąć faktury wysłanej do KSeF. Wystaw fakturę korygującą."
+           gettext("An invoice sent to KSeF cannot be deleted. Issue a correction invoice.")
          )}
     end
   end
@@ -147,11 +147,14 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Show do
       {:ok, correction} ->
         {:noreply,
          socket
-         |> put_flash(:info, "Wystawiono korektę anulującą i rozpoczęto jej wysyłkę do KSeF")
+         |> put_flash(
+           :info,
+           gettext("A cancelling correction was issued and its submission to KSeF has started.")
+         )
          |> push_navigate(to: Navigation.sales_invoice_summary_path(correction, socket.assigns.return_to))}
 
       {:error, _error} ->
-        {:noreply, put_flash(socket, :error, "Nie udało się anulować faktury")}
+        {:noreply, put_flash(socket, :error, gettext("Could not cancel the invoice."))}
     end
   end
 
@@ -173,7 +176,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Show do
          |> assign(:potential_transactions, potential_transactions)}
 
       {:error, _error} ->
-        {:noreply, put_flash(socket, :error, "Nie udało się połączyć transakcji")}
+        {:noreply, put_flash(socket, :error, gettext("Could not link the transaction."))}
     end
   end
 
@@ -197,7 +200,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Show do
          |> assign(:potential_transactions, potential_transactions)}
 
       {:error, _error} ->
-        {:noreply, put_flash(socket, :error, "Nie udało się odłączyć transakcji")}
+        {:noreply, put_flash(socket, :error, gettext("Could not unlink the transaction."))}
     end
   end
 
@@ -213,7 +216,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Show do
      socket
      |> assign(:invoice, updated_invoice)
      |> push_event("copy-to-clipboard", %{text: url})
-     |> put_flash(:info, "Link skopiowany do schowka")}
+     |> put_flash(:info, gettext("Link copied to the clipboard."))}
   end
 
   defp refresh_invoice(id, scope) do
@@ -264,9 +267,9 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Show do
     {:noreply, socket}
   end
 
-  defp ksef_status_flash(socket, :submitted), do: put_flash(socket, :info, "Faktura została wysłana do KSeF")
+  defp ksef_status_flash(socket, :submitted), do: put_flash(socket, :info, gettext("The invoice was sent to KSeF."))
 
-  defp ksef_status_flash(socket, :failed), do: put_flash(socket, :error, "Wysyłka do KSeF nie powiodła się")
+  defp ksef_status_flash(socket, :failed), do: put_flash(socket, :error, gettext("Sending to KSeF failed."))
 
   defp ksef_status_flash(socket, _status), do: socket
 end

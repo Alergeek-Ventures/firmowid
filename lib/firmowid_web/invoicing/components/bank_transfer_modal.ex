@@ -26,7 +26,7 @@ defmodule FirmowidWeb.Invoicing.Components.BankTransferModal do
         variant="tertiary"
         size="small"
       >
-        Skopiuj dane
+        {gettext("Copy details")}
       </.button>
 
       <.modal
@@ -35,16 +35,16 @@ defmodule FirmowidWeb.Invoicing.Components.BankTransferModal do
         on_cancel={hide_modal("bank-transfer-modal")}
       >
         <div class="flex flex-col gap-12">
-          <h3 class="text-center text-lg font-semibold">Dane do przelewu</h3>
+          <h3 class="text-center text-lg font-semibold">{gettext("Transfer details")}</h3>
           <div class="grid grid-cols-[min-content_1fr_min-content] items-center gap-4">
             <%= for {label, value} <- [
-            {"Odbiorca", @invoice.seller},
-            {"Adres", @invoice.effective_seller_address},
-            {"Numer konta", @invoice.effective_account_number},
-            {"Tytuł przelewu", "Płatność za fakturę
-                #{@invoice.invoice_identifier}"},
-            {"Kwota", @invoice.effective_amount |> Money.abs() |> Money.to_decimal()},
-            {"Waluta", @invoice.effective_amount.currency}
+            {gettext("Recipient"), @invoice.seller},
+            {gettext("Address"), @invoice.effective_seller_address},
+            {gettext("Account number"), @invoice.effective_account_number},
+            {gettext("Transfer title"),
+             gettext("Payment for invoice %{number}", number: @invoice.invoice_identifier)},
+            {gettext("Amount"), @invoice.effective_amount |> Money.abs() |> Money.to_decimal()},
+            {gettext("Currency"), @invoice.effective_amount.currency}
           ] do %>
               <label for={"transfer-#{label}"} class="self-start text-sm text-nowrap">
                 {label}
@@ -66,7 +66,7 @@ defmodule FirmowidWeb.Invoicing.Components.BankTransferModal do
           <div class="flex flex-row gap-6">
             <div class="flex grow items-center justify-center rounded-lg bg-rust-200 px-4 py-2">
               <h4 class="text-rust-700">
-                Zawsze weryfikuj kopiowane dane z fakturą!
+                {gettext("Always verify the copied details against the invoice!")}
               </h4>
             </div>
             <.button
@@ -74,7 +74,7 @@ defmodule FirmowidWeb.Invoicing.Components.BankTransferModal do
               accent="rust"
               phx-click={hide_modal("bank-transfer-modal")}
             >
-              Gotowe
+              {gettext("Done")}
             </.button>
           </div>
         </div>

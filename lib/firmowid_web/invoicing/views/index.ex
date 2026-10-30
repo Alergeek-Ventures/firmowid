@@ -151,6 +151,13 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
 
   @impl true
   def render(assigns) do
+    [drop_before, drop_after] =
+      "Drag invoices here to%{line_break}upload them to Firmowid."
+      |> gettext(line_break: "__BREAK__")
+      |> String.split("__BREAK__", parts: 2)
+
+    assigns = assign(assigns, drop_before: drop_before, drop_after: drop_after)
+
     ~H"""
     <div class="sticky top-navbar z-10 flex justify-between bg-grey-100 py-3 max-md:static max-md:z-auto max-md:flex-col max-md:gap-3">
       <div class="flex items-center gap-4 max-md:gap-3">
@@ -171,7 +178,7 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
           phx-click="open-search"
           aria-label={gettext("Search invoices")}
           phx-hook="Tippy"
-          data-tippy-content="Szukaj faktur"
+          data-tippy-content={gettext("Search invoices")}
         >
           <Lucideicons.search />
         </.button>
@@ -206,7 +213,11 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
                   <span
                     id="upload-count-indicator"
                     phx-hook="Tippy"
-                    data-tippy-content="Pliki są przetwarzane i za kilka chwil będą dostępne w Firmowidzie"
+                    data-tippy-content={
+                      gettext(
+                        "The files are being processed and will be available in Firmowid in a few moments"
+                      )
+                    }
                     class="absolute -top-3 -right-3 flex size-7 items-center justify-center overflow-hidden rounded-full bg-grey-100"
                   >
                     <span class="absolute block size-full animate-pulse bg-rust-600" />
@@ -224,13 +235,17 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
                   <span
                     id="upload-count-indicator"
                     phx-hook="Tippy"
-                    data-tippy-content="Faktury od zagranicznych kontrahentów w formacie PDF lub ich zdjęcia (PNG, JPG)"
+                    data-tippy-content={
+                      gettext(
+                        "Invoices from foreign counterparties as PDF files or their photos (PNG, JPG)"
+                      )
+                    }
                     class="absolute top-0 left-0 size-full"
                   />
                 <% end %>
                 <Lucideicons.file_input />
                 <span class="block sm:grow sm:text-center md:max-lg:sr-only">
-                  Faktura spoza KSeF
+                  {gettext("Invoice from outside KSeF")}
                 </span>
               </FirmowidUI.Components.Button.button>
             </form>
@@ -246,7 +261,7 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
             >
               <Lucideicons.file_pen_line class="size-5" />
               <span class="max-xl:sr-only max-md:not-sr-only">
-                Wystaw fakturę
+                {gettext("Issue invoice")}
               </span>
             </.link>
           </:action>
@@ -320,10 +335,10 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
           <div class="flex w-fit flex-col items-center gap-6 rounded-4xl bg-teal-200 px-10 pt-6 pb-8 text-teal-700">
             <.icon name="hero-cloud-arrow-up" class="size-16" />
             <p class="text-center text-xl font-medium">
-              Przeciągnij faktury, aby<br /> załadować je do Firmowida.
+              {@drop_before}<br />{@drop_after}
             </p>
             <p class="max-w-sm text-center text-sm text-teal-600">
-              (max 50 plików, PDF, JPG oraz PNG)
+              {gettext("(max 50 files, PDF, JPG and PNG)")}
             </p>
           </div>
         </div>
@@ -521,7 +536,7 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
         },
         socket
       ) do
-    LiveToast.send_toast(:error, notification.data.original_filename, title: "Nie udało się wgrać pliku")
+    LiveToast.send_toast(:error, notification.data.original_filename, title: gettext("Failed to upload the file"))
 
     {:noreply, refetch_invoicing_entries(socket)}
   end
@@ -542,8 +557,11 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
       ) do
     LiveToast.send_toast(
       :error,
-      "Plik #{notification.data.original_filename} nie zawiera wymaganych danych. Upewnij się, że wgrywasz fakturę, paragon lub rachunek.",
-      title: "Nieprawidłowy dokument"
+      gettext(
+        "The file %{filename} does not contain the required data. Make sure you are uploading an invoice, receipt or bill.",
+        filename: notification.data.original_filename
+      ),
+      title: gettext("Invalid document")
     )
 
     {:noreply, socket}
@@ -573,7 +591,7 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
     LiveToast.send_toast(
       :success,
       "#{cost_invoice.issue_date} / #{cost_invoice.seller_display_name}",
-      title: "Faktura załadowana",
+      title: gettext("Invoice uploaded"),
       action: fn assigns ->
         assigns = assign(assigns, :cost_invoice_path, cost_invoice_path)
 
@@ -583,7 +601,7 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
           class="text-sm font-bold underline"
           navigate={@cost_invoice_path}
         >
-          Wyświetl <.icon name="hero-arrow-right-solid" class="size-3" />
+          {gettext("View")} <.icon name="hero-arrow-right-solid" class="size-3" />
         </.link>
         """
       end
@@ -604,7 +622,7 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
     LiveToast.send_toast(
       :success,
       "#{cost_invoice.issue_date} / #{cost_invoice.seller_display_name}",
-      title: "Połączenie faktury z transakcją",
+      title: gettext("Invoice matched with a transaction"),
       action: fn assigns ->
         assigns =
           assign(
@@ -626,7 +644,7 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
             })
           }
         >
-          Wyświetl <.icon name="hero-arrow-right-solid" class="size-3" />
+          {gettext("View")} <.icon name="hero-arrow-right-solid" class="size-3" />
         </.link>
         """
       end
@@ -664,16 +682,16 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
     {toast_type, message} =
       case action do
         :accept ->
-          {:success, "Konto bankowe zostało pomyślnie połączone!"}
+          {:success, gettext("The bank account was connected successfully!")}
 
         :reject ->
-          {:error, "Połączenie z bankiem zostało odrzucone. Spróbuj ponownie."}
+          {:error, gettext("The bank connection was rejected. Please try again.")}
 
         :handle_check_error ->
-          {:error, "Wystąpił błąd podczas łączenia konta bankowego. Spróbuj ponownie."}
+          {:error, gettext("An error occurred while connecting the bank account. Please try again.")}
 
         _ ->
-          {:info, "Status połączenia z bankiem został zaktualizowany."}
+          {:info, gettext("The bank connection status has been updated.")}
       end
 
     LiveToast.send_toast(toast_type, message)
@@ -732,8 +750,8 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
   defp handle_upload_result({:ok, {:existing_cost_invoice, cost_invoice}}, _scope) do
     LiveToast.send_toast(
       :info,
-      "Ta faktura jest już w systemie",
-      title: "Duplikat pliku",
+      gettext("This invoice is already in the system"),
+      title: gettext("Duplicate file"),
       action: fn assigns ->
         assigns = assign(assigns, :cost_invoice_id, cost_invoice.id)
 
@@ -743,7 +761,7 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
           class="text-sm font-bold underline"
           navigate={Navigation.cost_invoice_show_path(@cost_invoice_id)}
         >
-          Wyświetl <.icon name="hero-arrow-right-solid" class="size-3" />
+          {gettext("View")} <.icon name="hero-arrow-right-solid" class="size-3" />
         </.link>
         """
       end
@@ -751,15 +769,15 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
   end
 
   defp handle_upload_result({:ok, :blob_already_processing}, _scope) do
-    LiveToast.send_toast(:info, "Ten plik jest już przetwarzany")
+    LiveToast.send_toast(:info, gettext("This file is already being processed"))
   end
 
   defp handle_upload_result({:ok, :blob_reprocessing_started}, _scope) do
-    LiveToast.send_toast(:info, "Plik został dodany ponownie do kolejki przetwarzania")
+    LiveToast.send_toast(:info, gettext("The file was added to the processing queue again"))
   end
 
   defp handle_upload_result({:error, :blob_already_exists}, _scope) do
-    LiveToast.send_toast(:info, "Ta faktura jest już w systemie")
+    LiveToast.send_toast(:info, gettext("This invoice is already in the system"))
   end
 
   defp handle_upload_result(_result, _scope), do: nil
