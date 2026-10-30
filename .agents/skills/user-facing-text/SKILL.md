@@ -68,9 +68,10 @@ Follow these steps in order when changing user-facing text:
    `mix gettext.extract`. Extraction force-compiles the app and updates the
    tracked `priv/gettext/default.pot`; inspect that diff for the intended
    strings, contexts, and placeholders.
-2. Prepare the exact Polish wording, even when the requested wording was
-   supplied in Polish. Review the latest native Accent document and preserve
-   existing translations and unrelated entries.
+2. Write the Polish and Ukrainian wording yourself (or with subagents), unless
+   the user supplied their own copy, e.g. from Figma or a design, which is used
+   verbatim. Review the latest native Accent document, reuse existing terms and
+   preserve existing translations and unrelated entries.
 3. Write the Polish and Ukrainian values into Accent following
    `accent-translations` (CI fails until Accent holds them), then commit/push if
    explicitly authorized. Never upload the extracted POT to Accent: it
@@ -86,8 +87,8 @@ Follow these steps in order when changing user-facing text:
   `priv/gettext/default.pot`.
 - Polish requires three plural forms. An English POT usually has only two
   `msgstr` slots, so do not upload a raw POT as if it were ready to seed Polish
-  plural entries. Accent can machine translate, but this project does not use
-  it: Polish is prepared by humans.
+  plural entries. Do not use Accent's built-in machine translation; the
+  translations are written by the agent (see `accent-translations`).
 - Accent v1.26's contextual-plural export drops `msgctxt`. Prefer an
   uncontextualized plural phrase with distinct English forms until the adapter
   supports it. If contextual plurals are essential, flag the limitation and
@@ -131,15 +132,9 @@ Follow these steps in order when changing user-facing text:
 
 ## Verification
 
-After editing source, extract, write the Polish and Ukrainian values into Accent
-(`accent-translations`), then validate exactly as CI does:
-
-```sh
-mix gettext.extract
-mix translations.fetch --latest
-mix translations.check --check-extraction
-mix check
-```
+After editing source, run `mix gettext.extract`, write the Polish and Ukrainian
+values into Accent (`accent-translations`) and push. CI validates extraction and
+both catalogs; do not run `mix check` or Dialyzer locally for this.
 
 The local Infisical fallback for `ACCENT_API_KEY` is disabled in CI, production,
 and when `AV_SKIP_INFISICAL` is set.
