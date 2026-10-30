@@ -369,8 +369,7 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceTimeline do
 
   defp delivery_error(nil), do: gettext("Failed to send the email message")
 
-  defp delivery_error("Nie udało się wysłać wiadomości email"),
-    do: gettext("Failed to send the email message")
+  defp delivery_error("Nie udało się wysłać wiadomości email"), do: gettext("Failed to send the email message")
 
   defp delivery_error(message), do: Gettext.gettext(Firmowid.Gettext, message)
 end
