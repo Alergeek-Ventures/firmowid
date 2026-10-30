@@ -200,11 +200,18 @@ defmodule Firmowid.Ksef.Services.SalesInvoiceImport do
   defp skip_reason(:invoice_number_taken), do: "invoice number already used in Firmowid"
 
   defp skip_reason(%Invalid{errors: errors}) do
-    Enum.map_join(
-      errors,
-      ", ",
-      &"#{Map.get(&1, :field)}: #{Map.get(&1, :message) || Exception.message(&1)}"
-    )
+    Enum.map_join(errors, ", ", fn error ->
+      message =
+        case error do
+          %{message: message} when is_binary(message) ->
+            Gettext.gettext(Firmowid.Gettext, message, Map.get(error, :vars, []))
+
+          error ->
+            Exception.message(error)
+        end
+
+      "#{Map.get(error, :field)}: #{message}"
+    end)
   end
 
   defp skip_reason(reason), do: ErrorKind.classify(reason)
