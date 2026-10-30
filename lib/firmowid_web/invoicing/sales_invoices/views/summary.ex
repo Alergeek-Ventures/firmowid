@@ -68,7 +68,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Summary do
   def render(assigns) do
     ~H"""
     <div class="mx-auto my-4 flex w-full max-w-6xl flex-col gap-4">
-      <p class="text-sm text-grey-500">
+      <p class="text-sm text-grey-600">
         Kreator faktur | <span class="text-grey-700">Faktura wystawiona</span>
       </p>
       <%= cond do %>

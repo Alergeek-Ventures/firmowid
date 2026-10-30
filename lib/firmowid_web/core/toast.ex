@@ -26,9 +26,9 @@ defmodule FirmowidWeb.Core.Toast do
   end
 
   @doc """
-  Keeps toasts above the full-screen assistant on phones.
+  Keeps toasts above every other layer, including modals, the assistant and the cookie banner.
   """
-  def group_class_fn(assigns), do: [LiveToast.group_class_fn(assigns), "max-md:z-60"]
+  def group_class_fn(assigns), do: [LiveToast.group_class_fn(assigns), "z-110!"]
 
   @doc """
   Renders toast content with LiveToast's default markup and a translated title for Phoenix flashes.

@@ -78,7 +78,7 @@ defmodule FirmowidWeb.DesignSystem.Components.CoreComponents do
                 <button
                   phx-click={JS.exec("data-cancel", to: "##{@id}")}
                   type="button"
-                  class="-m-3 flex-none p-3 opacity-20 hover:opacity-40"
+                  class="-m-3 flex-none p-3 text-grey-600 hover:text-grey-900"
                   aria-label={gettext("close")}
                 >
                   <.icon name="hero-x-mark-solid" class="size-5" />

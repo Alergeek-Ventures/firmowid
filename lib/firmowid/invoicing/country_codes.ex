@@ -6,6 +6,8 @@ defmodule Firmowid.Invoicing.CountryCodes do
   Uses ex_cldr_territories for localized country names in Polish.
   """
 
+  use Gettext, backend: Firmowid.Gettext
+
   alias Firmowid.Cldr.Territory
 
   # All valid ISO country codes from KodyKrajow_v10-0E.xsd
@@ -138,30 +140,54 @@ defmodule Firmowid.Invoicing.CountryCodes do
   end
 
   @doc """
-  Returns a list of country options for select inputs.
+  Returns country options for select inputs, ordered by how often Polish companies need them.
 
-  Each option is a tuple of `{display_name, code}` where:
-  - `display_name` is the Polish name of the country
-  - `code` is the KSeF-compatible ISO code
-
-  EU countries are listed first (sorted alphabetically by name),
-  followed by non-EU countries (also sorted alphabetically by name).
-  Aliases that `normalize/1` replaces, such as GR, are left out.
+  Poland comes first, followed by an EU group and a group with the remaining countries, each
+  sorted alphabetically by Polish name. An option is a `{display_name, code}` tuple with the
+  KSeF-compatible code, and a group is a `{group_name, options}` tuple. Aliases that
+  `normalize/1` replaces, such as GR, are left out.
   """
-  @spec country_options() :: [{String.t(), String.t()}]
+  @spec country_options() :: [{String.t(), String.t() | [{String.t(), String.t()}]}]
   def country_options do
-    eu_options =
-      @eu_country_codes
-      |> Enum.map(&{country_name(&1), &1})
-      |> Enum.sort_by(fn {name, _code} -> name end)
-
-    non_eu_options =
+    {eu_codes, other_codes} =
       @valid_country_codes
-      |> Enum.reject(&(&1 in @eu_country_codes or normalize(&1) != &1))
-      |> Enum.map(&{country_name(&1), &1})
-      |> Enum.sort_by(fn {name, _code} -> name end)
+      |> Enum.reject(&(&1 == "PL" or normalize(&1) != &1))
+      |> Enum.split_with(&(&1 in @eu_country_codes))
 
-    eu_options ++ non_eu_options
+    [
+      {country_name("PL"), "PL"},
+      {pgettext("country group", "European Union"), sorted_options(eu_codes)},
+      {pgettext("country group", "Other countries"), sorted_options(other_codes)}
+    ]
+  end
+
+  defp sorted_options(codes) do
+    codes
+    |> Enum.map(&{country_name(&1), &1})
+    |> Enum.sort_by(fn {name, _code} -> polish_sort_key(name) end)
+  end
+
+  # Byte order would put "Łotwa" after "Włochy". Polish letters with diacritics follow their
+  # base letter, so they are mapped to the base letter and a character sorted after "z".
+  @polish_letters %{
+    "ą" => "a~",
+    "ć" => "c~",
+    "ę" => "e~",
+    "ł" => "l~",
+    "ń" => "n~",
+    "ó" => "o~",
+    "ś" => "s~",
+    "ź" => "z~",
+    "ż" => "z~~"
+  }
+
+  defp polish_sort_key(name) do
+    name
+    |> String.downcase()
+    |> String.graphemes()
+    |> Enum.map_join(&Map.get(@polish_letters, &1, &1))
+    |> :unicode.characters_to_nfd_binary()
+    |> String.replace(~r/\p{Mn}/u, "")
   end
 
   @doc """

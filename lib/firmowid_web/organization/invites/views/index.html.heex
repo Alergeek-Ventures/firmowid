@@ -6,7 +6,19 @@
     </:actions>
   </.header>
 
+  <.empty_state
+    :if={@organization_invites == []}
+    id="organization_invites_empty"
+    title={gettext("No invites yet")}
+    class="w-full max-w-[1024px]"
+  >
+    {gettext(
+      "Prepare an invite and give its code to the person who should join your organization."
+    )}
+  </.empty_state>
+
   <.table
+    :if={@organization_invites != []}
     id="organization_invites"
     rows={@organization_invites}
     class="mx-auto w-full max-w-[1024px] border-separate border-spacing-y-2"

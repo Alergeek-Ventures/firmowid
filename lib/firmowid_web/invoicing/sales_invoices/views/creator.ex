@@ -16,6 +16,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
   import FirmowidUI.Components.Button
   import FirmowidUI.Components.Link
   import FirmowidWeb.DesignSystem.Components.CoreComponents
+  import FirmowidWeb.DesignSystem.Components.SearchableSelect
   import Phoenix.Component, except: [link: 1]
 
   alias Firmowid.Core
@@ -92,6 +93,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
       |> assign(:last_invoices, recent_invoices(socket.assigns.ash_scope))
       |> assign(:ksef_connected?, Ksef.connected?(socket.assigns.ash_scope))
       |> assign(:open_counterparty_modal, false)
+      |> assign(:country_options, CountryCodes.country_options())
       |> assign(:page_title, gettext("Invoice creator"))
       |> assign(
         :can_manage_counterparties,
@@ -1214,7 +1216,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
 
     ~H"""
     <div class="flex flex-col gap-4">
-      <div class="flex flex-row gap-4 text-sm/snug text-grey-500">
+      <div class="flex flex-row gap-4 text-sm/snug text-grey-600">
         <h2>
           Kreator faktur |
           <span class="text-grey-700">

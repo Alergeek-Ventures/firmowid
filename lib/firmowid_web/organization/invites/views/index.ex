@@ -4,6 +4,7 @@ defmodule FirmowidWeb.Organization.Invites.Views.Index do
 
   import FirmowidUI.Components.Button
   import FirmowidWeb.DesignSystem.Components.CoreComponents
+  import FirmowidWeb.DesignSystem.Components.EmptyState
   import Phoenix.Component, except: [link: 1]
 
   alias Firmowid.Core

@@ -159,7 +159,7 @@
             id="counterparties_empty"
             class="col-span-full hidden flex-col items-center justify-center gap-4 p-8 only:flex"
           >
-            <p class="text-center text-grey-500">
+            <p class="text-center text-grey-600">
               Nie znaleziono kontrahentów.
             </p>
             <.button
@@ -192,11 +192,11 @@
               </span>
             </p>
 
-            <p class="text-left text-grey-500">
+            <p class="text-left text-grey-600">
               {counterparty.pesel || counterparty.tax_id}
             </p>
 
-            <p class="text-left text-grey-500">
+            <p class="text-left text-grey-600">
               {CountryCodes.country_name(counterparty.country)}
             </p>
 
@@ -242,14 +242,14 @@
 
                   <%= if counterparty.type == :individual do %>
                     <p class="text-grey-700">PESEL</p>
-                    <p class="text-grey-500">{counterparty.pesel}</p>
+                    <p class="text-grey-600">{counterparty.pesel}</p>
                   <% else %>
                     <p class="text-grey-700">ID</p>
-                    <p class="text-grey-500">{counterparty.tax_id}</p>
+                    <p class="text-grey-600">{counterparty.tax_id}</p>
                   <% end %>
 
                   <p class="text-grey-700">Kraj</p>
-                  <p class="text-grey-500">
+                  <p class="text-grey-600">
                     {CountryCodes.country_name(counterparty.country)}
                   </p>
                 </div>
@@ -284,16 +284,16 @@
                   <p class="truncate text-black">{invoice.buyer_display_name_label}</p>
 
                   <p class="text-grey-700">Numer</p>
-                  <p class="text-grey-500">{invoice.invoice_number}</p>
+                  <p class="text-grey-600">{invoice.invoice_number}</p>
 
                   <p class="text-grey-700">Kwota</p>
-                  <p class="text-grey-500">
+                  <p class="text-grey-600">
                     {Money.to_string!(invoice.amount)}
                   </p>
                 </div>
 
                 <div class="flex flex-col items-end justify-between text-right max-md:flex-row max-md:items-center">
-                  <p class="text-sm text-grey-500">{invoice.issue_date}</p>
+                  <p class="text-sm text-grey-600">{invoice.issue_date}</p>
 
                   <div class="flex flex-row gap-2.5">
                     <.link
@@ -421,11 +421,11 @@
           input_class="resize-none min-h-[6rem]"
         />
 
-        <.input
+        <.searchable_select
           field={@counterparty_form[:buyer_country]}
-          type="select"
-          options={CountryCodes.country_options()}
+          options={@country_options}
           prompt="Wybierz kraj"
+          aria-label="Kraj"
         />
       </div>
     </div>

@@ -200,7 +200,7 @@ defmodule FirmowidWeb.Delegations.Views.DelegationForm do
                       min="0"
                       step="0.01"
                       required
-                      placeholder="0.00"
+                      placeholder="0,00"
                       aria-describedby="delegation_amount_currency"
                       input_class="w-full text-right placeholder:text-grey-300 sm:w-25"
                     />
@@ -301,10 +301,15 @@ defmodule FirmowidWeb.Delegations.Views.DelegationForm do
 
   defp billing_months(nil, today), do: billing_months(Date.beginning_of_month(today), today)
 
+  # Months from the start of the contract up to a year ahead, so trips planned well in
+  # advance can be billed in the month of departure.
   defp billing_months(starts_at, today) do
     first = Date.beginning_of_month(starts_at)
-    last = today |> Date.beginning_of_month() |> Date.add(32) |> Date.beginning_of_month()
-    first |> Stream.iterate(&Date.add(&1, 1)) |> Enum.take_while(&(Date.compare(&1, last) != :gt))
+    last = today |> Date.beginning_of_month() |> Date.shift(month: 12)
+
+    first
+    |> Stream.iterate(&Date.shift(&1, month: 1))
+    |> Enum.take_while(&(Date.compare(&1, last) != :gt))
   end
 
   defp delegation_form(scope, billing_month) do

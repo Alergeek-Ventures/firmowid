@@ -129,7 +129,7 @@ defmodule FirmowidWeb.Management.Views.CounterpartiesTest do
     assert has_element?(view, "#counterparty_display_name[value='Acme Sp. z o.o.']")
     assert has_element?(view, "#counterparty_full_name[value='Acme Sp. z o.o.']")
     assert has_element?(view, "#counterparty_address", "Prosta 1, 00-001 Warszawa")
-    assert has_element?(view, "#counterparty_country option[value='PL'][selected]")
+    assert has_element?(view, "input[name='counterparty[country]'][value='PL']")
   end
 
   test "new counterparty form validates NIP before fetching data", %{conn: conn} do
