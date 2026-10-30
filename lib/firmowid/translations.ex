@@ -6,15 +6,28 @@ defmodule Firmowid.Translations do
   @domains ["default"]
   @identity_example_limit 3
   @identity_text_limit 120
-  @polish_plural_forms "nplurals=3; plural=(n==1 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);"
+  # Translated locales: English is the msgid source language and needs no catalog.
+  @languages %{"pl" => "Polish", "uk" => "Ukrainian"}
+  @plural_forms %{
+    "pl" => "nplurals=3; plural=(n==1 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);",
+    "uk" => "nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);"
+  }
 
   @doc "Returns the domains supported by the application catalogs."
   @spec domains() :: [String.t()]
   def domains, do: @domains
 
+  @doc "Returns the locales whose catalogs are translated in Accent."
+  @spec locales() :: [String.t()]
+  def locales, do: @plural_forms |> Map.keys() |> Enum.sort()
+
   @doc "Returns the canonical Polish gettext plural rule used by local catalogs."
   @spec polish_plural_forms() :: String.t()
-  def polish_plural_forms, do: @polish_plural_forms
+  def polish_plural_forms, do: plural_forms("pl")
+
+  @doc "Returns the canonical gettext plural rule of a translated locale."
+  @spec plural_forms(String.t()) :: String.t()
+  def plural_forms(locale), do: Map.fetch!(@plural_forms, locale)
 
   @doc "Builds the canonical identity key for an Expo message."
   @spec message_key(struct(), String.t()) :: key()
@@ -47,14 +60,15 @@ defmodule Firmowid.Translations do
     |> MapSet.new()
   end
 
-  @doc "Projects an exported catalog onto current source identities with canonical Polish metadata."
-  @spec catalog_for_source(Expo.Messages.t(), Expo.Messages.t(), String.t()) :: Expo.Messages.t()
-  def catalog_for_source(pot, po, domain) do
+  @doc "Projects an exported catalog onto current source identities with the locale's canonical metadata."
+  @spec catalog_for_source(Expo.Messages.t(), Expo.Messages.t(), String.t(), String.t()) ::
+          Expo.Messages.t()
+  def catalog_for_source(pot, po, domain, locale \\ "pl") do
     identities = MapSet.new(source_messages(pot), &message_key(&1, domain))
 
     %{
       po
-      | headers: polish_headers(po.headers),
+      | headers: locale_headers(po.headers, locale),
         messages:
           Enum.filter(
             po.messages,
@@ -63,7 +77,7 @@ defmodule Firmowid.Translations do
     }
   end
 
-  defp polish_headers(headers) do
+  defp locale_headers(headers, locale) do
     preserved =
       headers
       |> text()
@@ -71,20 +85,22 @@ defmodule Firmowid.Translations do
       |> Enum.reject(&String.match?(&1, ~r/^(Language|Plural-Forms):/i))
 
     Enum.map(
-      preserved ++ ["Language: pl", "Plural-Forms: #{@polish_plural_forms}"],
+      preserved ++ ["Language: #{locale}", "Plural-Forms: #{plural_forms(locale)}"],
       &(&1 <> "\n")
     )
   end
 
-  @doc "Validates source and Polish PO catalogs using technical checks only."
-  @spec validate_catalog(struct(), struct(), String.t()) :: :ok | {:error, String.t()}
-  def validate_catalog(pot, po, domain) do
-    with :ok <- validate_metadata(po, domain),
+  @doc "Validates source and translated PO catalogs using technical checks only."
+  @spec validate_catalog(struct(), struct(), String.t(), String.t()) :: :ok | {:error, String.t()}
+  def validate_catalog(pot, po, domain, locale \\ "pl") do
+    language = Map.fetch!(@languages, locale)
+
+    with :ok <- validate_metadata(po, domain, locale),
          {:ok, source} <- index_messages(pot, domain),
          {:ok, target} <- index_messages(po, domain),
-         :ok <- validate_identity(source, target, domain) do
+         :ok <- validate_identity(source, target, domain, language) do
       Enum.reduce_while(source, :ok, fn {key, original}, :ok ->
-        case validate_entry(original, Map.fetch!(target, key), domain) do
+        case validate_entry(original, Map.fetch!(target, key), domain, language) do
           :ok -> {:cont, :ok}
           error -> {:halt, error}
         end
@@ -102,7 +118,7 @@ defmodule Firmowid.Translations do
     end
   end
 
-  defp validate_identity(source, target, domain) do
+  defp validate_identity(source, target, domain, language) do
     source_keys = MapSet.new(Map.keys(source))
     target_keys = MapSet.new(Map.keys(target))
 
@@ -119,7 +135,7 @@ defmodule Firmowid.Translations do
             identity_difference("missing from PO", missing),
             identity_difference("extra in PO", extra),
             "The downloaded PO may be stale; newly added or changed source identities require " <>
-              "Accent synchronization and Polish translation before exporting a matching catalog."
+              "Accent synchronization and #{language} translation before exporting a matching catalog."
           ],
           "\n"
         )
@@ -152,20 +168,20 @@ defmodule Firmowid.Translations do
     inspect(shortened <> suffix)
   end
 
-  defp validate_entry(original, translated, domain) do
+  defp validate_entry(original, translated, domain, language) do
     if plural_id(original) do
-      validate_plural_entry(original, translated, domain)
+      validate_plural_entry(original, translated, domain, language)
     else
-      validate_singular_entry(original, translated, domain)
+      validate_singular_entry(original, translated, domain, language)
     end
   end
 
-  defp validate_singular_entry(original, translated, domain) do
+  defp validate_singular_entry(original, translated, domain, language) do
     value = text(translated.msgstr)
 
     cond do
       value in [nil, ""] ->
-        {:error, "missing Polish translation in #{domain}: #{inspect(original.msgid)}"}
+        {:error, "missing #{language} translation in #{domain}: #{inspect(original.msgid)}"}
 
       placeholders(original.msgid) != placeholders(value) ->
         {:error, "placeholder mismatch in #{domain}: #{inspect(original.msgid)}"}
@@ -175,11 +191,11 @@ defmodule Firmowid.Translations do
     end
   end
 
-  defp validate_plural_entry(original, translated, domain) do
+  defp validate_plural_entry(original, translated, domain, language) do
     values = translated.msgstr
 
     if not is_map(values) or values |> Map.keys() |> Enum.sort() != [0, 1, 2] do
-      {:error, "Polish plural must have three forms: #{inspect(original.msgid)}"}
+      {:error, "#{language} plural must have three forms: #{inspect(original.msgid)}"}
     else
       expected = [original.msgid, original.msgid_plural, original.msgid_plural]
 
@@ -190,7 +206,7 @@ defmodule Firmowid.Translations do
 
         cond do
           value in [nil, ""] ->
-            {:halt, {:error, "missing Polish translation in #{domain}: #{inspect(original.msgid)}"}}
+            {:halt, {:error, "missing #{language} translation in #{domain}: #{inspect(original.msgid)}"}}
 
           placeholders(source) != placeholders(value) ->
             {:halt, {:error, "placeholder mismatch in #{domain}: #{inspect(original.msgid)}"}}
@@ -202,7 +218,7 @@ defmodule Firmowid.Translations do
     end
   end
 
-  defp validate_metadata(%Expo.Messages{headers: headers}, domain) do
+  defp validate_metadata(%Expo.Messages{headers: headers}, domain, locale) do
     metadata =
       headers
       |> text()
@@ -216,11 +232,11 @@ defmodule Firmowid.Translations do
       |> Map.new()
 
     cond do
-      Map.get(metadata, "Language") != "pl" ->
-        {:error, "invalid Polish catalog metadata for #{domain}"}
+      Map.get(metadata, "Language") != locale ->
+        {:error, "invalid #{Map.fetch!(@languages, locale)} catalog metadata for #{domain}"}
 
-      normalize(Map.get(metadata, "Plural-Forms")) != normalize(@polish_plural_forms) ->
-        {:error, "invalid Polish catalog metadata for #{domain}"}
+      normalize(Map.get(metadata, "Plural-Forms")) != normalize(plural_forms(locale)) ->
+        {:error, "invalid #{Map.fetch!(@languages, locale)} catalog metadata for #{domain}"}
 
       true ->
         :ok

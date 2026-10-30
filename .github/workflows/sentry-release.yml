@@ -25,7 +25,6 @@ jobs:
       version: ${{ github.sha }}
     secrets:
       ACCENT_API_KEY: ${{ secrets.ACCENT_API_KEY }}
-      ACCENT_SNAPSHOT_API_KEY: ${{ github.ref == 'refs/heads/main' && github.actor != 'dependabot[bot]' && secrets.ACCENT_SNAPSHOT_API_KEY || '' }}
 
   extract-versions:
     name: Extract versions from .tool-versions

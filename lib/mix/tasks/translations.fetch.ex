@@ -1,6 +1,10 @@
 defmodule Mix.Tasks.Translations.Fetch do
-  @shortdoc "Fetches the Polish catalog for a pinned Git revision"
-  @moduledoc "Fetches the Polish Accent catalog for an explicit revision, optionally falling back to a pinned main revision on HTTP 404. Never creates snapshots."
+  @shortdoc "Installs the translated catalogs of a Git revision"
+  @moduledoc """
+  Installs the published translation snapshot of a main revision (`--version`, default
+  HEAD), optionally falling back to another revision when it is not published, or
+  exports and validates the current Accent catalog with `--latest`.
+  """
 
   use Mix.Task
 
@@ -8,7 +12,9 @@ defmodule Mix.Tasks.Translations.Fetch do
   @spec run([String.t()]) :: :ok
   def run(args) do
     {options, remaining} =
-      OptionParser.parse!(args, strict: [version: :string, fallback_version: :string])
+      OptionParser.parse!(args,
+        strict: [version: :string, fallback_version: :string, latest: :boolean]
+      )
 
     ensure_no_arguments!(remaining)
 
@@ -20,7 +26,10 @@ defmodule Mix.Tasks.Translations.Fetch do
         :error -> []
       end
 
-    arguments = ["scripts/accent.exs", "export", "--version", version] ++ fallback_arguments
+    arguments =
+      if Keyword.get(options, :latest, false),
+        do: ["scripts/accent.exs", "snapshot", "--version", version],
+        else: ["scripts/accent.exs", "export", "--version", version] ++ fallback_arguments
 
     case System.cmd("elixir", arguments, stderr_to_stdout: true) do
       {_output, 0} ->

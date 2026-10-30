@@ -34,8 +34,9 @@ firmowid-*.tar
 # Localize locale data downloaded during setup/build.
 /priv/localize/
 
-# Polish catalog generated from the pinned Accent version.
+# Translated catalogs generated from the pinned Accent version.
 /priv/gettext/pl/LC_MESSAGES/default.po
+/priv/gettext/uk/LC_MESSAGES/default.po
 
 # In case you use Node.js/npm, you want to ignore these.
 npm-debug.log

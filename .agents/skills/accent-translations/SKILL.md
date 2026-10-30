@@ -1,13 +1,15 @@
 ---
 name: accent-translations
-description: Write Polish translations into Accent and freeze a pinned snapshot for a commit so translation CI passes. Use when translations must reach Accent, when a snapshot is needed for a commit or PR head, or when mix translations.check or a Gettext plural error fails.
+description: Write Polish and Ukrainian translations into Accent so translation CI passes. Use when translations must reach Accent, when mix translations.check or the CI translation export fails, or when a Gettext plural error appears.
 ---
 
 # Accent Translations
 
-How Polish text reaches a green build: English source in code, Polish values
-written into Accent, an immutable snapshot frozen for one commit SHA, and CI
-exporting exactly that snapshot.
+How translated text reaches a green build: English source in code, Polish and
+Ukrainian values written into Accent, and CI exporting the current Accent catalog,
+validating it against the POT and marking it with the commit SHA. On `main`, CI
+publishes that validated catalog as `<sha>.tar.gz` in the `translation-snapshots`
+GitHub release, which the deployment build installs.
 
 For how to *write* source msgids, contexts, and placeholders, see
 `user-facing-text`. For secret handling rules, see `infisical-secrets`.
@@ -29,9 +31,9 @@ For how to *write* source msgids, contexts, and placeholders, see
 4. **Write values with `correctTranslation`, then verify** by re-reading the
    record and exporting. Import endpoints accept uploads and leave records
    empty.
-5. **Never create a snapshot before Accent holds the translations**, and
-   validate the latest catalog before freezing one. Snapshots are immutable, so
-   a premature one is permanently wrong for its commit.
+5. **Write the values before CI needs them.** Every CI run exports the current
+   Accent catalog and fails when a POT entry lacks a Polish or Ukrainian value.
+   A published `main` snapshot is immutable: it never changes for its commit.
 
 ## Polish plural forms
 
@@ -54,10 +56,17 @@ msgstr[1] "%{count} konta bankowe"
 msgstr[2] "%{count} kont bankowych"
 ```
 
+## Ukrainian plural forms
+
+Ukrainian also has three forms, with a different rule: slot 0 for counts ending
+in 1 except 11 (1, 21, 31…), slot 1 for counts ending in 2–4 except 12–14, slot 2
+for the rest (`%{count} рахунок`, `%{count} рахунки`, `%{count} рахунків`). The
+same checks apply to `priv/gettext/uk/LC_MESSAGES/default.po`.
+
 ## Credential
 
 Use the write-capable developer credential from Infisical: environment `dev`,
-path `/dev`. It can read, export, write translations, and create snapshots.
+path `/dev`. It can read, export and write translations; it cannot add languages.
 
 ```sh
 ACCENT_KEY=$(infisical secrets get ACCENT_API_KEY \
@@ -68,8 +77,8 @@ Never print it or write it into a tracked file; unset it after use.
 
 ## Procedure
 
-Steps 3 and 4 happen **after** the code change is committed and pushed, because
-the snapshot must be tagged with a SHA that already exists.
+Write the translations (step 3) before pushing, or rerun CI afterwards: the PR's
+translation job exports whatever Accent holds when it runs.
 
 ### 1. Extract the English source and commit
 
@@ -143,64 +152,31 @@ and is only for the repair in
 Call the API with `curl`; Accent rejects some HTTP clients with 403 before
 checking the key.
 
-### 4. Verify with the latest catalog export
-
-Export the mutable catalog, project it onto the current POT, and validate it
-before freezing anything:
+### 4. Verify with the current catalog
 
 ```sh
-ROOT="$(pwd)" && SCRATCH="$(mktemp -d)" &&
-  mkdir -p "$SCRATCH/gettext/landing-native" &&
-  cp priv/gettext/default.pot "$SCRATCH/gettext/landing-native/default.pot" &&
-  (cd "$SCRATCH" && ACCENT_API_KEY="$ACCENT_KEY" accent export --config "$ROOT/accent.json") &&
-  CANDIDATE_PO="$SCRATCH/exports/pl/default.po" mix run --no-start -e '
-candidate = System.fetch_env!("CANDIDATE_PO") |> File.read!() |> Expo.PO.parse_string!()
-pot = Expo.PO.parse_file!("priv/gettext/default.pot")
-File.write!("priv/gettext/pl/LC_MESSAGES/default.po",
-  pot |> Firmowid.Translations.catalog_for_source(candidate, "default") |> Expo.PO.compose())
-' && mix translations.check --check-extraction
-rm -rf "$SCRATCH"
+ACCENT_API_KEY="$ACCENT_KEY" mix translations.fetch --latest && mix translations.check --check-extraction
 ```
 
-The local candidate has no `# Accent version:` marker, so the check reports
-`Accent snapshot: unmarked`; only CI requires that marker. Running
-`mix translations.fetch` afterwards replaces it with a pinned catalog, which is
-how to reproduce CI locally.
+`--latest` exports the current Accent catalog, projects it onto the local POT,
+validates Polish and Ukrainian and installs both catalogs marked with `HEAD`; it
+fails on the first missing value, context, plural form or placeholder. This is
+exactly what the CI translation job does.
 
-### 5. Freeze a snapshot for the pushed commit
-
-```sh
-ACCENT_API_KEY="$ACCENT_KEY" elixir scripts/accent.exs prepare --version "$(git rev-parse HEAD)"
-```
-
-- Requires the full 40-character SHA of the pushed commit and is idempotent: it
-  reuses an existing snapshot and creates one only when the export returns 404.
-  It never syncs or translates; it freezes whatever Accent holds right now, so
-  step 4 must pass first.
-- On `main`, the workflow does this automatically for pushes not made by
-  Dependabot. Doing it locally is for PR heads and for repairing a missing
-  `main` snapshot.
-- A snapshot that already exists with stale or invalid content cannot be
-  repaired. Freeze a new one for a new commit SHA.
-
-### 6. Rerun CI
+### 5. Rerun CI
 
 - Use **Re-run all jobs**. **Re-run failed jobs** reuses the successful
-  translation-preparation job and its old PO artifact, so the quality job
-  downloads the same stale catalog and fails identically.
-- A rerun never picks up a newer PR head: runs are pinned to the head SHA at
-  event time. A snapshot for today's head SHA is only used by a fresh run for
-  that SHA — close/reopen the PR to trigger one, or push a new commit and
-  create a snapshot for that new SHA.
-- The preparation job feeds both `Build and Test` and `Elixir Quality Checks` →
-  `Validate translation catalogs`, so refreshing only one is not enough.
+  translation job and its old PO artifact, so the quality job downloads the same
+  stale catalog and fails identically.
+- The translation job feeds `Build and Test`, `Elixir Quality Checks` and the
+  Docker check, so refreshing only one is not enough.
 
 ## Failure modes
 
 | Symptom | Cause | Fix |
 | --- | --- | --- |
-| `POT/PO identity mismatch ... missing from PO: N` with an old `Accent snapshot: <sha>` | The selected snapshot predates the new source strings | Push Polish, snapshot the PR head SHA (or land a `main` SHA), then **Re-run all jobs** |
-| `No Accent snapshot for main commit <sha>` | The fallback SHA has no snapshot, e.g. a Dependabot push to `main` skipped creation | Run `prepare` for that SHA locally, or push again as a human actor |
+| `POT/PO identity mismatch ... missing from PO: N` or `missing Ukrainian translation` in the CI translation job | Accent has no value for a new source string | Write Polish and Ukrainian (step 3), then **Re-run all jobs** |
+| `No published translation snapshot for <sha>` in a deployment build or `mix translations.fetch` | The commit is not on `main`, or its CI did not publish (e.g. a Dependabot push) | Use `mix translations.fetch --latest` locally; production deploys with the next `main` commit |
 | `Gettext.PluralFormError: plural form 2 is required for locale "pl"` during compile, extraction, or tests | Accent holds only two forms for that string | See [Damaged plural forms](references/damaged-plurals.md) |
 | `missing Polish translation in default: "<msgid>"` | The Accent record exists but is empty; PO import left it empty | Write it with `correctTranslation` and verify |
 | HTTP 401 on a write | A read-only credential was used | Use the Infisical `dev` `/dev` credential |

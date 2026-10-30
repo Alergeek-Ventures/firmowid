@@ -40,47 +40,41 @@ ponowną kontrolę. Cache nie przechowuje ani nie nadpisuje POT. Pozostałe kont
 działają normalnie. Lokalny `mix check` również zapamiętuje udaną kontrolę;
 `mix translations.extract.check --force` wymusza jej ponowne wykonanie.
 
-### CI: przypięte snapshoty tłumaczeń
+### CI: snapshoty tłumaczeń
 
-Każdy PR, także Dependabota, może wykorzystać istniejący snapshot Accent dla
-własnego SHA, ale nie tworzy go ani nie wymaga jego istnienia. Jeśli snapshotu
-brakuje, workflow używa snapshotu bieżącego HEAD `main`: pełny SHA `main` jest
-ustalany raz na przebieg workflow i przekazywany jako jawny fallback. Nie
-korzystamy z mutowalnego katalogu `latest`. Błędy 401/403, 5xx i problemy sieciowe
-przerywają przygotowanie; nie uruchamiają fallbacku. Brak snapshotu fallback
-również jest błędem.
+Każdy przebieg CI (PR i `main`) eksportuje aktualny katalog z Accent przez
+`elixir scripts/accent.exs snapshot --version FULL_SHA`. Skrypt rzutuje go na
+bieżący POT, waliduje każdy tłumaczony język (`pl`, `uk`: brakujące tłumaczenia,
+konteksty, formy liczby mnogiej, placeholdery) i oznacza pliki PO znacznikiem
+`# Accent version: FULL_SHA` commita. Joby testów, jakości i Dockera pobierają ten
+katalog jako artefakt i sprawdzają znacznik. Nowe i zmienione teksty muszą więc mieć
+tłumaczenia w Accent, zanim CI PR-a przejdzie.
 
-`main` nadal tworzy lub ponownie wykorzystuje niezmienny snapshot dla pełnego
-SHA przez `elixir scripts/accent.exs prepare --version FULL_SHA`. PR-y tylko
-eksportują katalog. Własny snapshot jest opcjonalny, ale nowe i zmienione teksty
-muszą mieć poprawne polskie tłumaczenia w wybranym katalogu. Ekstrakcja Gettext
-i walidacja tłumaczeń pozostają rygorystyczne.
+Po eksporcie na `main` job `Publish translation snapshot` publikuje zwalidowany
+katalog jako niezmienny plik `FULL_SHA.tar.gz` w wydaniu GitHub
+`translation-snapshots`. Build wdrożeniowy (`deployment/Containerfile.app`) instaluje
+ten snapshot przez `elixir scripts/accent.exs export --version FULL_SHA`, więc
+produkcja dostaje dokładnie katalog zwalidowany dla swojego commita. Ponowne
+uruchomienie CI dla commita `main` używa już opublikowanego snapshotu. Nie
+tworzymy wersji w Accent.
 
-Jawny fallback obsługują oba polecenia:
+Lokalnie:
 
 ```bash
-elixir scripts/accent.exs export --version FULL_SHA --fallback-version MAIN_FULL_SHA
-mix translations.fetch --version FULL_SHA --fallback-version MAIN_FULL_SHA
+mix translations.fetch --latest                                  # aktualny katalog z Accent (wymaga ACCENT_API_KEY)
+mix translations.fetch --version FULL_SHA --fallback-version MAIN_FULL_SHA  # opublikowany snapshot
 ```
 
-Bez `--fallback-version` eksport pozostaje ściśle przypięty do żądanej wersji;
-unikalny prefiks SHA o długości 7–39 znaków jest rozwiązywany do pełnego SHA.
-Lokalny `mix setup` próbuje snapshotu `HEAD`, a przy jego braku używa
-`origin/main`. Przed setupem wykonaj `git fetch origin main`, jeśli ta lokalna
-referencja ma wskazywać aktualny `main`.
-Artefakt katalogu zachowuje nazwę opartą na SHA kodu/wywołującego, natomiast
-pierwszy znacznik PO zawiera SHA faktycznie wybranego snapshotu. Joby korzystające
-z artefaktu weryfikują ten znacznik względem outputu producenta `catalog-version`,
-nie względem nazwy artefaktu. Katalog jest kompilowany podczas builda; aplikacja
-nie wywołuje Accent w runtime.
+Lokalny `mix setup` i hook worktree instalują snapshot `HEAD`, a przy jego braku
+snapshot `origin/main`. Przed setupem wykonaj `git fetch origin main`, jeśli ta
+lokalna referencja ma wskazywać aktualny `main`. Katalog jest kompilowany podczas
+builda; aplikacja nie wywołuje Accent w runtime.
 
-PR-y wymagają tylko sekretu `ACCENT_API_KEY` z uprawnieniami odczytu/eksportu.
-GitHub Actions i Dependabot mają osobne tokeny projektu. Workflowy uruchamiane
-przez Dependabota nie otrzymują sekretów Actions, również po ręcznym ponowieniu.
-`ACCENT_SNAPSHOT_API_KEY` (odczyt/eksport/`create_version`, bez edycji tłumaczeń)
-jest używany wyłącznie na `main` i nie jest udostępniany Dependabotowi. Stare PR-y
-wymagające tego sekretu trzeba zaktualizować do nowych workflowów; nie przywracamy
-im klucza zapisu.
+CI wymaga tylko sekretu `ACCENT_API_KEY` z uprawnieniami odczytu/eksportu.
+GitHub Actions i Dependabot mają osobne tokeny projektu. Przebiegi Dependabota na
+`main` nie publikują snapshotu (ich token nie może tworzyć wydań, także przy
+ponowieniu), więc build wdrożeniowy takiego commita nie znajdzie katalogu; aplikację
+wdroży następny commit na `main`.
 
 Sekrety CI utrzymujemy w Infisicalu.
 
@@ -263,9 +257,10 @@ instalacji można wykonać poleceniem:
 accent --version
 ```
 
-Pobieranie tłumaczeń uruchamiaj przez `mix translations.fetch`. Wymaga klucza
-`ACCENT_API_KEY` z uprawnieniami odczytu, dostępnego przez istniejącą konfigurację
-Infisical; klucza nie umieszczaj w plikach repozytorium.
+Pobieranie tłumaczeń uruchamiaj przez `mix translations.fetch`. Eksport aktualnego
+katalogu (`--latest`) wymaga klucza `ACCENT_API_KEY` z uprawnieniami odczytu,
+dostępnego przez istniejącą konfigurację Infisical; klucza nie umieszczaj w plikach
+repozytorium.
 
 Eksportowany katalog PO zawiera tylko wpisy używane przez bieżący POT.
 Historyczne tłumaczenia pozostają w Accent; brakujące tłumaczenia, konteksty,
