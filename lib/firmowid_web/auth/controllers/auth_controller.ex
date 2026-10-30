@@ -17,6 +17,7 @@ defmodule FirmowidWeb.Auth.Controllers.AuthController do
   alias Firmowid.Analytics
   alias Firmowid.Core
   alias Firmowid.Core.Member
+  alias FirmowidWeb.Infrastructure.Plugs.Locale
   alias FirmowidWeb.Infrastructure.UserAuth
 
   require Logger
@@ -296,10 +297,12 @@ defmodule FirmowidWeb.Auth.Controllers.AuthController do
   end
 
   defp renew_session(conn) do
+    locale = get_session(conn, Locale.session_key())
     delete_csrf_token()
 
     conn
     |> configure_session(renew: true)
     |> Plug.Conn.clear_session()
+    |> put_session(Locale.session_key(), locale)
   end
 end
