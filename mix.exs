@@ -13,6 +13,9 @@ defmodule Firmowid.MixProject do
       compilers: [:ash_signals, :phoenix_live_view] ++ Mix.compilers(),
       listeners: [Phoenix.CodeReloader],
       test_paths: ["lib"],
+      # Keep the POT stable across branches: no line numbers in references and a
+      # fixed order, so moving code or adding strings elsewhere does not conflict.
+      gettext: [write_reference_line_numbers: false, sort_by_msgid: :case_sensitive],
       test_pattern: "*_test.exs",
       test_coverage: [tool: ExCoveralls],
       licenses: ["AGPL-3.0-or-later"],
