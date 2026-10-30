@@ -6,6 +6,8 @@ defmodule Firmowid.Core.User.AuthenticationTest do
 
   import Firmowid.AccountsFixtures
 
+  alias Ash.Error.Forbidden
+  alias AshAuthentication.Errors.CannotConfirmUnconfirmedUser
   alias AshAuthentication.Info
   alias AshAuthentication.Strategy
   alias Ecto.Adapters.SQL.Sandbox
@@ -25,13 +27,14 @@ defmodule Firmowid.Core.User.AuthenticationTest do
     assert is_nil(user.confirmed_at)
     tokens_before = Token.read!(context: @authentication_context)
 
-    assert {:error, _} =
+    assert {:error, %Forbidden{errors: errors}} =
              User.register_with_google(
                google_user_info(user),
                %{"access_token" => "test-google-token"},
                context: @authentication_context
              )
 
+    assert Enum.any?(errors, &match?(%CannotConfirmUnconfirmedUser{}, &1))
     assert [] = UserIdentity.read!(actor: user)
     assert Token.read!(context: @authentication_context) == tokens_before
     assert User.get!(user.id, actor: user).hashed_password == user.hashed_password
