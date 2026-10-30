@@ -179,7 +179,7 @@ defmodule FirmowidWeb.Delegations.Components.Settlement.Documents do
     ~H"""
     <span
       :for={{part, index} <- @parts}
-      class={rem(index, 2) == 1 && "font-medium text-teal-700 underline"}
+      class={[rem(index, 2) == 1 && "font-medium text-teal-700 underline"]}
     >{part}</span>
     """
   end
