@@ -26,8 +26,8 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
     rest = all_supported -- popular
 
     [
-      {"Popularne", popular},
-      {"Wszystkie", Enum.sort(rest)}
+      {pgettext("currency list group", "Popular"), popular},
+      {pgettext("currency list group", "All"), Enum.sort(rest)}
     ]
   end
 
@@ -281,7 +281,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
     ]}>
       <div class="mb-2 flex flex-row items-center gap-5">
         <label class="mr-auto flex flex-row items-center gap-5 text-grey-700">
-          <span><strong>1.</strong> Wybrana waluta</span>
+          <span><strong>1.</strong> {gettext("Selected currency")}</span>
           <.input
             :if={@invoice.buyer_id_type == :nip}
             type="hidden"
@@ -304,11 +304,15 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
             class="flex-row-reverse gap-2 text-sm text-grey-700"
           >
             <:label_slot>
-              Reverse charge
+              {gettext("Reverse charge")}
               <Lucideicons.info
                 id="reverse-charge-tooltip"
                 phx-hook="Tippy"
-                data-tippy-content="Reverse charge (odwrotne obciążenie) to mechanizm, w którym obowiązek rozliczenia podatku VAT spoczywa na nabywcy usługi; dotyczy m.in. importu usług z Unii Europejskiej."
+                data-tippy-content={
+                  gettext(
+                    "Reverse charge (odwrotne obciążenie) is a mechanism in which the obligation to account for VAT rests with the buyer of the service; it applies, among other things, to imports of services from the European Union."
+                  )
+                }
                 class="ml-0.5 size-4"
               />
             </:label_slot>
@@ -321,14 +325,14 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
         class="mb-4 flex flex-col items-start gap-4"
       >
         <div class="text-grey-700">
-          <strong>2.</strong> Zwolnienie z VAT
+          <strong>2.</strong> {gettext("VAT exemption")}
         </div>
 
         <div class="flex w-full gap-3 space-y-2">
           <.input
             type="select"
             field={@items_form[:vat_exemption_type]}
-            label="Podstawa zwolnienia"
+            label={gettext("Exemption basis")}
             options={VatExemption.options()}
             input_class="w-full"
           />
@@ -337,7 +341,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
             <.input
               type="text"
               field={@items_form[:vat_exemption_basis]}
-              label="Podstawa prawna zwolnienia z VAT"
+              label={gettext("Legal basis for the VAT exemption")}
               input_class="w-full"
               class="text-grey-700"
             />
@@ -349,7 +353,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
 
       <div class="items-star flex flex-row gap-4">
         <p class="mr-auto text-grey-700">
-          <strong>{if @show_exemption?, do: "3.", else: "2."}</strong> Pozycje na fakturze
+          <strong>{if @show_exemption?, do: "3.", else: "2."}</strong> {gettext("Invoice items")}
         </p>
       </div>
     </div>
@@ -373,13 +377,13 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
         {@unit_price_error}
       </.error>
       <p id="name">
-        Towar/usługa
+        {gettext("Product/service")}
       </p>
       <p id="quantity">
-        Ilość
+        {gettext("Quantity")}
       </p>
       <p :if={@show_vat}>VAT</p>
-      <p>Jednostka</p>
+      <p>{pgettext("sales invoice items", "Unit")}</p>
       <.button
         id="price"
         type="button"
@@ -389,11 +393,11 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
         phx-value-index="all"
         phx-value-mode="net"
       >
-        Cena netto
+        {gettext("Net price")}
       </.button>
 
       <%= if to_boolean(@items_form[:is_reverse_charge].value) or not @show_vat do %>
-        <p class="col-span-2 text-end">Wartość</p>
+        <p class="col-span-2 text-end">{pgettext("sales invoice items", "Value")}</p>
       <% else %>
         <p class="text-end">{gettext("VAT per unit")}</p>
         <.button
@@ -424,7 +428,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
           <Lucideicons.grip_vertical class="mr-1 text-grey-700" drag-handle />
           <.input
             field={item[:name]}
-            placeholder="Wprowadź nazwę"
+            placeholder={gettext("Enter a name")}
             aria-label={gettext("Item %{number}: product or service", number: item.index + 1)}
             phx-debounce
             class="w-full"
@@ -596,7 +600,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
       size="small"
       variant="secondary"
     >
-      <Lucideicons.plus /> Dodaj pozycję
+      <Lucideicons.plus /> {gettext("Add item")}
     </.button>
 
     <div class={[
@@ -605,25 +609,25 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
       if(Money.zero?(@summary.net_value), do: "text-grey-500", else: "text-black")
     ]}>
       <%= if to_boolean(@items_form[:is_reverse_charge].value) or not @show_vat do %>
-        <p class="text-left text-sm text-grey-500">Suma</p>
+        <p class="text-left text-sm text-grey-500">{pgettext("sales invoice items", "Total")}</p>
         <p class="text-right text-2xl/tight font-medium">
           {Money.to_string!(@summary.gross_value, currency_symbol: "")}
         </p>
         <p class="text-right">{@items_form[:currency].value}</p>
       <% else %>
-        <p class="text-left text-sm text-grey-500">Suma netto</p>
+        <p class="text-left text-sm text-grey-500">{gettext("Net total")}</p>
         <p class="text-right">
           {Money.to_string!(@summary.net_value, currency_symbol: "")}
         </p>
         <p class="text-right">{@items_form[:currency].value}</p>
 
-        <p class="text-left text-sm text-grey-500">Suma VAT</p>
+        <p class="text-left text-sm text-grey-500">{gettext("VAT total")}</p>
         <p class="text-right">
           {Money.to_string!(@summary.vat_value, currency_symbol: "")}
         </p>
         <p class="text-right">{@items_form[:currency].value}</p>
 
-        <p class="text-left text-sm text-grey-500">Suma brutto</p>
+        <p class="text-left text-sm text-grey-500">{gettext("Gross total")}</p>
         <p class="text-right text-2xl/tight font-medium">
           {Money.to_string!(@summary.gross_value, currency_symbol: "")}
         </p>

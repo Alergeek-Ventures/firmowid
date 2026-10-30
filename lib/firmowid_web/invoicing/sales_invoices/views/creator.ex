@@ -29,6 +29,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
   alias Firmowid.Invoicing.SalesInvoice.EmailRecipientEligibility
   alias Firmowid.Invoicing.WizardState
   alias Firmowid.Ksef
+  alias FirmowidUI.Components.Inputs
   alias FirmowidWeb.Infrastructure.Utilities.PolishValues
   alias FirmowidWeb.Infrastructure.Utilities.PosthogBusinessEvents
   alias FirmowidWeb.Invoicing.SalesInvoices.Components.InvoicePayment
@@ -94,7 +95,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
       |> assign(:ksef_connected?, Ksef.connected?(socket.assigns.ash_scope))
       |> assign(:open_counterparty_modal, false)
       |> assign(:country_options, CountryCodes.country_options())
-      |> assign(:page_title, gettext("Invoice creator"))
+      |> assign(:page_title, gettext("Invoice wizard"))
       |> assign(
         :can_manage_counterparties,
         can_manage_counterparties?(socket.assigns.current_user)
@@ -147,7 +148,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
       {:error, _error} ->
         {:noreply,
          socket
-         |> put_flash(:error, "Nie masz uprawnień do wystawiania faktur sprzedażowych")
+         |> put_flash(:error, gettext("You do not have permission to issue sales invoices."))
          |> push_navigate(to: ~p"/fakturowanie")}
     end
   end
@@ -161,7 +162,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
       {:error, _} ->
         {:noreply,
          socket
-         |> put_flash(:error, "Faktura nie została znaleziona")
+         |> put_flash(:error, gettext("Invoice not found."))
          |> push_patch(to: Navigation.sales_invoice_creator_path(), replace: true)}
 
       {:ok, base_invoice} ->
@@ -181,7 +182,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
       {:error, _error} ->
         {:noreply,
          socket
-         |> put_flash(:error, "Nie masz uprawnień do wystawiania faktur sprzedażowych")
+         |> put_flash(:error, gettext("You do not have permission to issue sales invoices."))
          |> push_navigate(to: ~p"/fakturowanie")}
     end
   end
@@ -269,7 +270,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
     |> assign(:open_counterparty_modal, true)
     |> LiveToast.put_toast(
       :error,
-      "Skopiowano pozycje z faktury, ale dane kontrahenta wymagają poprawy — uzupełnij formularz."
+      gettext("The invoice items were copied, but the counterparty details need fixing — complete the form.")
     )
     |> push_patch(to: creator_draft_url(creator_draft_id, :counterparty), replace: true)
   end
@@ -296,7 +297,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
       {:error, _} ->
         {:noreply,
          socket
-         |> put_flash(:info, "Szkic kreatora nie został znaleziony, rozpoczynamy od nowa")
+         |> put_flash(:info, gettext("The wizard draft was not found, starting over."))
          |> push_patch(to: Navigation.sales_invoice_creator_path(), replace: true)}
     end
   end
@@ -551,8 +552,11 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
 
   defp counterparty_check(counterparty_id, scope) do
     case EmailRecipientEligibility.fetch_valid_counterparty_email(counterparty_id, scope) do
-      {:ok, _email} -> %{valid: true, tooltip: nil}
-      {:error, reason, _email} -> %{valid: false, tooltip: reason}
+      {:ok, _email} ->
+        %{valid: true, tooltip: nil}
+
+      {:error, reason, _email} ->
+        %{valid: false, tooltip: Gettext.gettext(Firmowid.Gettext, reason)}
     end
   end
 
@@ -663,10 +667,11 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
   end
 
   defp counterparty_tab_definitions([], []), do: []
-  defp counterparty_tab_definitions([], _last_invoices), do: [last_invoices: "Ostatnie faktury"]
+
+  defp counterparty_tab_definitions([], _last_invoices), do: [last_invoices: gettext("Recent invoices")]
 
   defp counterparty_tab_definitions(_last_counterparties, _last_invoices) do
-    [last_counterparties: "Ostatnio wybierani", last_invoices: "Ostatnie faktury"]
+    [last_counterparties: gettext("Recently chosen"), last_invoices: gettext("Recent invoices")]
   end
 
   defp counterparty_tab_patch(assigns, tab) do
@@ -869,7 +874,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
          |> assign(:counterparty_form, to_form(form))
          |> LiveToast.put_toast(
            :error,
-           "Nie udało się zapisać danych kontrahenta — sprawdź błędy formularza (np. NIP)."
+           gettext("Could not save the counterparty details — check the form errors (e.g. NIP).")
          )}
     end
   end
@@ -1030,7 +1035,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
       {:ok, invoice} ->
         {:noreply,
          socket
-         |> put_flash(:info, "Faktura zapisana jako szkic")
+         |> put_flash(:info, gettext("The invoice was saved as a draft."))
          |> redirect(to: Navigation.sales_invoice_show_path(invoice))}
 
       {:error, error} ->
@@ -1039,7 +1044,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
           error_kind: ErrorKind.classify(error)
         )
 
-        {:noreply, put_flash(socket, :error, "Nie udało się zapisać faktury")}
+        {:noreply, put_flash(socket, :error, gettext("Could not save the invoice."))}
     end
   end
 
@@ -1128,7 +1133,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
              LiveToast.put_toast(
                socket,
                :error,
-               "Dane kontrahenta wymagają uzupełnienia — popraw formularz."
+               gettext("The counterparty details need completing — correct the form.")
              )}
         end
 
@@ -1141,7 +1146,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
          LiveToast.put_toast(
            socket,
            :error,
-           "Nie udało się pobrać danych kontrahenta. Spróbuj ponownie."
+           gettext("Could not load the counterparty details. Try again.")
          )}
     end
   end
@@ -1154,8 +1159,8 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
 
     messages =
       errors
-      |> Enum.map(fn e -> Map.get(e, :message, "") end)
-      |> Enum.reject(&(&1 == ""))
+      |> Enum.reject(&(Map.get(&1, :message) in [nil, ""]))
+      |> Enum.map(&Inputs.translate_error({&1.message, Map.get(&1, :vars, [])}))
       |> Enum.uniq()
 
     case messages do
@@ -1218,11 +1223,11 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
     <div class="flex flex-col gap-4">
       <div class="flex flex-row gap-4 text-sm/snug text-grey-600">
         <h2>
-          Kreator faktur |
+          {gettext("Invoice wizard")} |
           <span class="text-grey-700">
             <%= case @step do %>
               <% _step when is_integer(@step) -> %>
-                Krok {@step}.
+                {gettext("Step %{step}.", step: @step)}
               <% _step when is_binary(@step) -> %>
                 {@step}
             <% end %>
@@ -1230,7 +1235,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
         </h2>
         <%= if @buyer_name do %>
           <p class="ml-auto">
-            Kontrahent <span class="text-grey-700">{@buyer_name}</span>
+            {gettext("Counterparty")} <span class="text-grey-700">{@buyer_name}</span>
           </p>
           <p>
             <%= case @invoice.buyer_id_type do %>

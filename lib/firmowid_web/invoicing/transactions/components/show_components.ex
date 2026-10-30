@@ -60,19 +60,19 @@ defmodule FirmowidWeb.Invoicing.Transactions.Components.ShowComponents do
     <InvoiceDetails.aside>
       <div class="flex h-full flex-col gap-8">
         <section class="space-y-3">
-          <h2 class="text-lg/tight font-medium">Szczegóły transakcji</h2>
+          <h2 class="text-lg/tight font-medium">{gettext("Transaction details")}</h2>
 
           <InvoiceDetails.invoice_metadata>
             <InvoiceDetails.invoice_metadata_piece
-              label="Wykonano"
+              label={gettext("Performed")}
               value={@transaction.value_date}
             />
             <InvoiceDetails.invoice_metadata_piece
-              label="Zaksięgowano"
+              label={gettext("Booked")}
               value={@transaction.booking_date}
             />
             <InvoiceDetails.invoice_metadata_piece
-              label="Opis przelewu"
+              label={gettext("Transfer description")}
               value={present(@transaction.remittance_information_unstructured)}
               multiline
             />
@@ -80,23 +80,23 @@ defmodule FirmowidWeb.Invoicing.Transactions.Components.ShowComponents do
         </section>
 
         <section class="space-y-3">
-          <h2 class="text-lg/tight font-medium">Strony transakcji</h2>
+          <h2 class="text-lg/tight font-medium">{gettext("Transaction parties")}</h2>
 
           <InvoiceDetails.invoice_metadata>
             <InvoiceDetails.invoice_metadata_piece
-              label="Nadawca"
+              label={gettext("Sender")}
               value={present(@transaction.debtor_name)}
             />
             <InvoiceDetails.invoice_metadata_piece
-              label="Konto nadawcy"
+              label={gettext("Sender account")}
               value={present(@transaction.debtor_account)}
             />
             <InvoiceDetails.invoice_metadata_piece
-              label="Odbiorca"
+              label={gettext("Recipient")}
               value={present(@transaction.creditor_name)}
             />
             <InvoiceDetails.invoice_metadata_piece
-              label="Konto odbiorcy"
+              label={gettext("Recipient account")}
               value={present(@transaction.creditor_account)}
             />
           </InvoiceDetails.invoice_metadata>
@@ -137,12 +137,12 @@ defmodule FirmowidWeb.Invoicing.Transactions.Components.ShowComponents do
       </div>
 
       <div class="space-y-6">
-        <h3 class="leading-tight font-medium">Co jeszcze możesz zrobić?</h3>
+        <h3 class="leading-tight font-medium">{gettext("What else can you do?")}</h3>
 
         <div class="grid grid-cols-[1fr_8rem] gap-6 lg:gap-x-10">
           <div class="col-span-full grid grid-cols-subgrid">
             <p class="self-center text-sm/snug text-balance text-grey-700">
-              Poproś Firmowida o pomoc w znalezieniu kolejnych faktur dla tej transakcji.
+              {gettext("Ask Firmowid to help find more invoices for this transaction.")}
             </p>
 
             <MatchingComponents.assistant_button
@@ -151,7 +151,7 @@ defmodule FirmowidWeb.Invoicing.Transactions.Components.ShowComponents do
               class="w-full"
               accent={assistant_accent(@transaction)}
             >
-              Zapytaj
+              {gettext("Ask")}
             </MatchingComponents.assistant_button>
           </div>
         </div>
@@ -219,9 +219,11 @@ defmodule FirmowidWeb.Invoicing.Transactions.Components.ShowComponents do
         <Lucideicons.file_question_mark class="size-12" />
 
         <div class="space-y-2 text-center">
-          <h3 class="text-lg/tight font-medium">Brak rekomendacji</h3>
+          <h3 class="text-lg/tight font-medium">{gettext("No recommendations")}</h3>
           <p class="max-w-96 text-balance">
-            Firmowid nie znalazł jeszcze żadnych faktur, które potencjalnie pasowałyby do tej transakcji.
+            {gettext(
+              "Firmowid has not found any invoices yet that could potentially match this transaction."
+            )}
           </p>
         </div>
 
@@ -231,13 +233,13 @@ defmodule FirmowidWeb.Invoicing.Transactions.Components.ShowComponents do
           class="mbs-2"
           accent={assistant_accent(@transaction)}
         >
-          Poproś Firmowida o pomoc
+          {gettext("Ask Firmowid for help")}
         </MatchingComponents.assistant_button>
       </div>
 
       <div class="space-y-6">
         <h3 :if={@can_write and @show_no_recommendations} class="leading-tight font-medium">
-          Co jeszcze możesz zrobić?
+          {gettext("What else can you do?")}
         </h3>
 
         <div class="grid grid-cols-[1fr_8rem] gap-6 lg:gap-x-10">
@@ -316,7 +318,7 @@ defmodule FirmowidWeb.Invoicing.Transactions.Components.ShowComponents do
     ~H"""
     <div class="space-y-4 pt-8">
       <div class="flex flex-row items-center justify-between">
-        <p class="text-lg/tight font-medium">Transakcja pominięta</p>
+        <p class="text-lg/tight font-medium">{gettext("Transaction skipped")}</p>
         <div :if={@can_write} class="flex w-32 flex-row gap-2">
           <div class="flex flex-1 items-center justify-center rounded-md bg-moss-200 px-2 text-moss-700">
             <.icon name="hero-document-text-micro" class="size-4" />
@@ -331,7 +333,9 @@ defmodule FirmowidWeb.Invoicing.Transactions.Components.ShowComponents do
 
       <div class="flex flex-col gap-6 rounded bg-grey-100 p-6">
         <p class="text-base/snug">
-          Transakcja została pominięta w dopasowywaniu. Przywróć ją, jeśli jednak chcesz połączyć ją z dokumentem.
+          {gettext(
+            "The transaction was skipped in matching. Restore it if you still want to link it to a document."
+          )}
         </p>
       </div>
     </div>
@@ -344,7 +348,9 @@ defmodule FirmowidWeb.Invoicing.Transactions.Components.ShowComponents do
   def transaction_amount_summary(assigns) do
     ~H"""
     <div class="flex flex-col items-end justify-between gap-2 pl-1">
-      <label class="text-sm/snug text-grey-700" for="transaction-amount">Kwota transakcji</label>
+      <label class="text-sm/snug text-grey-700" for="transaction-amount">
+        {gettext("Transaction amount")}
+      </label>
       <p
         id="transaction-amount"
         class={[
@@ -386,15 +392,17 @@ defmodule FirmowidWeb.Invoicing.Transactions.Components.ShowComponents do
   end
 
   defp skip_transaction_copy(%Transaction{skip_invoicing: true}) do
-    "Ta transakcja jest pominięta w dopasowywaniu. Przywróć ją, jeśli jednak chcesz szukać dla niej faktury."
+    gettext("This transaction is skipped in matching. Restore it if you still want to look for an invoice for it.")
   end
 
   defp skip_transaction_copy(%Transaction{}) do
-    "A może żadna faktura nie pasuje do tej transakcji? Pomiń jej szukanie. Firmowid oznaczy ją jako rozliczoną poza systemem."
+    gettext(
+      "Or maybe no invoice fits this transaction? Skip searching for it. Firmowid will mark it as settled outside the system."
+    )
   end
 
-  defp skip_transaction_button_label(%Transaction{skip_invoicing: true}), do: "Przywróć"
-  defp skip_transaction_button_label(%Transaction{}), do: "Pomiń"
+  defp skip_transaction_button_label(%Transaction{skip_invoicing: true}), do: gettext("Restore")
+  defp skip_transaction_button_label(%Transaction{}), do: gettext("Skip")
 
   defp internal_account_name(transaction), do: bank_account_name(transaction)
 
@@ -413,7 +421,7 @@ defmodule FirmowidWeb.Invoicing.Transactions.Components.ShowComponents do
 
   defp bank_account_name(%Transaction{bank_account: %{iban: iban}}) when is_binary(iban) and iban != "", do: iban
 
-  defp bank_account_name(_transaction), do: "Rachunek bankowy"
+  defp bank_account_name(_transaction), do: gettext("Bank account")
 
   defp bank_name(%Transaction{bank_account: %{institution_name: institution_name}}), do: present(institution_name)
 
@@ -459,14 +467,14 @@ defmodule FirmowidWeb.Invoicing.Transactions.Components.ShowComponents do
   defp sales_invoice_card(%SalesInvoice{} = invoice, return_to) do
     %{
       navigate: Navigation.sales_invoice_show_path(invoice, return_to),
-      type_label: "Faktura sprzedażowa",
+      type_label: gettext("Sales invoice"),
       number: present(invoice.invoice_number),
       amount: invoice.amount,
       badge_variant: nil,
       metadata: [
-        {"Na fakturze", first_sales_item_name(invoice)},
-        {"Kontrahent", present(invoice.buyer_display_name_label)},
-        {"Wystawiono", invoice.issue_date}
+        {gettext("On the invoice"), first_sales_item_name(invoice)},
+        {gettext("Counterparty"), present(invoice.buyer_display_name_label)},
+        {gettext("Issued"), invoice.issue_date}
       ]
     }
   end
@@ -476,15 +484,15 @@ defmodule FirmowidWeb.Invoicing.Transactions.Components.ShowComponents do
 
     %{
       navigate: Navigation.cost_invoice_show_path(invoice, return_to),
-      type_label: "Faktura kosztowa",
+      type_label: gettext("Cost invoice"),
       number: present(invoice.invoice_identifier),
       amount: invoice.effective_amount,
       badge_variant: variant,
       metadata: [
-        {"Kontrahent", present(invoice.effective_seller_display_name)},
-        {"Źródło", invoice_source_badge_label(variant)},
-        {"Wystawiono", invoice.issue_date},
-        {"Typ", "Faktura kosztowa"}
+        {gettext("Counterparty"), present(invoice.effective_seller_display_name)},
+        {gettext("Source"), invoice_source_badge_label(variant)},
+        {gettext("Issued"), invoice.issue_date},
+        {gettext("Type"), gettext("Cost invoice")}
       ]
     }
   end

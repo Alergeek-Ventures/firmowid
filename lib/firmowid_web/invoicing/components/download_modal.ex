@@ -31,6 +31,13 @@ defmodule FirmowidWeb.Invoicing.Components.DownloadModal do
     assigns = assign(assigns, :any_selected, any_selected?(assigns))
     assigns = assign(assigns, :switch_form, switch_form)
 
+    intro_parts =
+      "The file %{file} will contain all documents whose %{dates} falls in the current month."
+      |> gettext(file: "__FILE__", dates: "__DATES__")
+      |> String.split(~r/__FILE__|__DATES__/, include_captures: true)
+
+    assigns = assign(assigns, :intro_parts, intro_parts)
+
     ~H"""
     <div class="max-md:hidden">
       <FirmowidUI.Components.Button.button
@@ -38,51 +45,44 @@ defmodule FirmowidWeb.Invoicing.Components.DownloadModal do
         type="button"
         variant="secondary"
         phx-click={show_modal("download-modal")}
-        data-tippy-content="Pobierz wszystkie faktury wystawione lub z datą sprzedaży w tym miesiącu"
+        data-tippy-content={gettext("Download all invoices issued or with a sale date in this month")}
         phx-hook="Tippy"
         class="relative"
       >
         <Lucideicons.file_down />
         <span class="max-xl:sr-only">
-          Pobierz
+          {gettext("Download")}
         </span>
       </FirmowidUI.Components.Button.button>
 
       <.modal id="download-modal" on_cancel={hide_modal("download-modal")}>
         <div class="flex flex-col gap-8 p-4">
-          <h3 class="text-lg font-semibold text-balance">Pobierz faktury</h3>
+          <h3 class="text-lg font-semibold text-balance">{gettext("Download invoices")}</h3>
           <p class="text-pretty">
-            W pliku
-            <span class="inline-flex items-center gap-1 rounded border border-black bg-grey-100 px-2 py-1">
-              <span aria-hidden="true"><.icon name="hero-document-solid" class="size-4" /></span>
-              {@month |> Calendar.strftime("%Y-%m")}-dokumenty.zip
-            </span>
-            znajdą się wszystkie dokumenty, których
-            <span class="font-bold">data wystawienia lub sprzedaży</span>
-            przypada na aktualny miesiąc.
+            <.intro_part :for={part <- @intro_parts} part={part} month={@month} />
           </p>
           <div class="flex flex-col gap-3">
             <.filter_checkbox
               name="include_digital"
-              label="Wgrane dokumenty cyfrowe (PDF)"
+              label={gettext("Uploaded digital documents (PDF)")}
               checked={@include_digital}
               myself={@myself}
             />
             <.filter_checkbox
               name="include_sales"
-              label="Faktury sprzedażowe"
+              label={pgettext("invoice download option", "Sales invoices")}
               checked={@include_sales}
               myself={@myself}
             />
             <.filter_checkbox
               name="include_ksef"
-              label="Kosztowe z KSeF (PDF generowane z danych KSeF)"
+              label={gettext("Cost invoices from KSeF (PDF generated from KSeF data)")}
               checked={@include_ksef}
               myself={@myself}
             />
             <.filter_checkbox
               name="include_photos"
-              label="Zdjęcia i skany dokumentów"
+              label={gettext("Photos and scans of documents")}
               checked={@include_photos}
               myself={@myself}
             />
@@ -97,7 +97,7 @@ defmodule FirmowidWeb.Invoicing.Components.DownloadModal do
             >
               <.switch
                 field={@switch_form[:include_internal_note]}
-                label="Dołącz komentarze wewnętrzne do generowanych PDF-ów"
+                label={gettext("Include internal comments in generated PDFs")}
               />
             </.form>
           </div>
@@ -116,13 +116,33 @@ defmodule FirmowidWeb.Invoicing.Components.DownloadModal do
             aria-disabled={if(!@any_selected, do: "true")}
             tabindex={if(!@any_selected, do: "-1")}
           >
-            Pobierz dokumenty
+            {gettext("Download documents")}
           </.link>
         </div>
       </.modal>
     </div>
     """
   end
+
+  attr :part, :string, required: true
+  attr :month, :any, required: true
+
+  defp intro_part(%{part: "__FILE__"} = assigns) do
+    ~H"""
+    <span class="inline-flex items-center gap-1 rounded border border-black bg-grey-100 px-2 py-1">
+      <span aria-hidden="true"><.icon name="hero-document-solid" class="size-4" /></span>
+      {@month |> Calendar.strftime("%Y-%m")}-dokumenty.zip
+    </span>
+    """
+  end
+
+  defp intro_part(%{part: "__DATES__"} = assigns) do
+    ~H"""
+    <span class="font-bold">{gettext("issue or sale date")}</span>
+    """
+  end
+
+  defp intro_part(assigns), do: ~H"{@part}"
 
   attr :name, :string, required: true
   attr :label, :string, required: true

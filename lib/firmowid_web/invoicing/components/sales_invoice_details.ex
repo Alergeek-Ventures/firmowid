@@ -123,6 +123,24 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
 
   @impl true
   def render(assigns) do
+    [delete_before, delete_after] =
+      "Are you sure you want to delete invoice %{number}?"
+      |> gettext(number: "__NUMBER__")
+      |> String.split("__NUMBER__", parts: 2)
+
+    [cancel_before, cancel_after] =
+      "Are you sure you want to cancel invoice %{number}? We will issue a correction invoice that zeroes the items."
+      |> gettext(number: "__NUMBER__")
+      |> String.split("__NUMBER__", parts: 2)
+
+    assigns =
+      assign(assigns,
+        delete_before: delete_before,
+        delete_after: delete_after,
+        cancel_before: cancel_before,
+        cancel_after: cancel_after
+      )
+
     ~H"""
     <div id="invoice-show" class="flex flex-col">
       <InvoiceDetails.invoice_header
@@ -154,7 +172,7 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
                   variant="secondary"
                   size="small"
                 >
-                  <Lucideicons.copy /><span class="max-xl:sr-only">Kopiuj</span>
+                  <Lucideicons.copy /><span class="max-xl:sr-only">{gettext("Copy")}</span>
                 </.link>
 
                 <%= if @can_write_invoicing? do %>
@@ -179,7 +197,7 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
                         aria-describedby="edit-invoice-button-description"
                       >
                         <.icon name="hero-pencil-square" class="size-4" />
-                        <span class="max-xl:sr-only">Edytuj</span>
+                        <span class="max-xl:sr-only">{gettext("Edit")}</span>
                       </.button>
                     </span>
                     <span id="edit-invoice-button-description" class="sr-only">
@@ -191,8 +209,8 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
                       phx-hook="Tippy"
                       data-tippy-content={
                         if @invoice.ksef_number,
-                          do: "Wystaw fakturę korygującą",
-                          else: "Edytuj fakturę"
+                          do: gettext("Issue correction invoice"),
+                          else: gettext("Edit invoice")
                       }
                       data-tippy-delay="100"
                       navigate={
@@ -203,7 +221,7 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
                       size="small"
                     >
                       <.icon name="hero-pencil-square" class="size-4" />
-                      <span class="max-xl:sr-only">Edytuj</span>
+                      <span class="max-xl:sr-only">{gettext("Edit")}</span>
                     </.link>
                   <% end %>
                 <% end %>
@@ -216,7 +234,7 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
                 >
                   <.icon name="hero-trash-solid" class="size-4" />
                   <span class="max-xl:sr-only">
-                    Usuń
+                    {gettext("Delete")}
                   </span>
                 </.button>
 
@@ -228,7 +246,7 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
                 >
                   <.icon name="hero-trash-solid" class="size-4" />
                   <span class="max-xl:sr-only">
-                    Anuluj
+                    {pgettext("invoice action", "Cancel")}
                   </span>
                 </.button>
 
@@ -239,7 +257,7 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
                   download_path={Navigation.sales_invoice_pdf_path(@invoice)}
                   trigger_variant="secondary"
                   trigger_size="small"
-                  button_label="Pobierz"
+                  button_label={gettext("Download")}
                 />
               </div>
 
@@ -255,7 +273,7 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
                 phx-click="show_timeline"
                 phx-target={@myself}
               >
-                Historia faktury
+                {gettext("Invoice history")}
                 <span
                   :if={SubmissionInfo.failed?(@submission_info)}
                   class="absolute -top-2.5 -right-2.5 flex size-5 items-center justify-center rounded-full border-2 border-brick-200 bg-brick-700 p-1 text-xs font-bold text-brick-200"
@@ -267,7 +285,7 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
               <div :if={@can_write_invoicing? and @invoice.is_deletable} class="absolute">
                 <.modal id="delete-invoice-modal" on_cancel={hide_modal("delete-invoice-modal")}>
                   <p>
-                    Czy na pewno chcesz usunąć fakturę <span class="font-semibold">{@invoice.invoice_number}</span>?
+                    {@delete_before}<span class="font-semibold">{@invoice.invoice_number}</span>{@delete_after}
                   </p>
                   <div class="mt-6 flex justify-end gap-3">
                     <.button
@@ -275,7 +293,7 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
                       variant="secondary"
                       phx-click={hide_modal("delete-invoice-modal")}
                     >
-                      Anuluj
+                      {gettext("Cancel")}
                     </.button>
                     <.button
                       phx-click={
@@ -283,9 +301,9 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
                         |> JS.push("delete")
                       }
                       variant="destructive"
-                      phx-disable-with="Usuwanie..."
+                      phx-disable-with={gettext("Deleting...")}
                     >
-                      Usuń
+                      {gettext("Delete")}
                     </.button>
                   </div>
                 </.modal>
@@ -297,8 +315,7 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
               >
                 <.modal id="cancel-invoice-modal" on_cancel={hide_modal("cancel-invoice-modal")}>
                   <p>
-                    Czy na pewno chcesz anulować fakturę <span class="font-semibold">{@invoice.invoice_number}</span>?
-                    Wystawimy fakturę korygującą zerującą pozycje.
+                    {@cancel_before}<span class="font-semibold">{@invoice.invoice_number}</span>{@cancel_after}
                   </p>
                   <div class="mt-6 flex justify-end gap-3">
                     <.button
@@ -306,7 +323,7 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
                       variant="secondary"
                       phx-click={hide_modal("cancel-invoice-modal")}
                     >
-                      Wróć
+                      {gettext("Back")}
                     </.button>
                     <.button
                       phx-click={
@@ -314,9 +331,9 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
                         |> JS.push("cancel")
                       }
                       variant="destructive"
-                      phx-disable-with="Anulowanie..."
+                      phx-disable-with={gettext("Cancelling...")}
                     >
-                      Anuluj fakturę
+                      {gettext("Cancel invoice")}
                     </.button>
                   </div>
                 </.modal>
@@ -326,7 +343,7 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
                 :if={@invoice.invoice_number}
                 id="share-invoice-button-container"
                 phx-hook="Tippy"
-                data-tippy-content="Skopiuj link do faktury"
+                data-tippy-content={pgettext("share invoice tooltip", "Copy invoice link")}
                 data-tippy-delay="100"
               >
                 <.button
@@ -352,33 +369,33 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
               />
               <InvoiceDetails.invoice_metadata_piece
                 :if={!is_nil(@invoice.invoice_number)}
-                label="Numer faktury"
+                label={gettext("Invoice number")}
                 value={@invoice.invoice_number}
                 piece_id="inv-id"
               />
               <InvoiceDetails.invoice_metadata_piece
                 :if={@invoice.ksef_number != nil}
-                label="Identyfikator KSeF"
+                label={gettext("KSeF ID")}
                 value={@invoice.ksef_number}
                 piece_id="ksef-id"
               />
               <InvoiceDetails.invoice_metadata_piece
-                label="Kupujący"
+                label={gettext("Buyer")}
                 value={@latest_invoice_snapshot.buyer_display_name_label}
                 piece_id="buyer"
               />
               <InvoiceDetails.invoice_metadata_piece
-                label="Data wystawienia"
+                label={gettext("Issue date")}
                 value={@invoice.issue_date}
                 piece_id="issue-date"
               />
               <InvoiceDetails.invoice_metadata_piece
-                label="Data sprzedaży"
+                label={gettext("Sale date")}
                 value={@invoice.effective_sale_date}
                 piece_id="sale-date"
               />
               <InvoiceDetails.invoice_metadata_piece
-                label="Termin płatności"
+                label={gettext("Payment due date")}
                 value={@invoice.effective_due_date}
                 piece_id="due-date"
               />
