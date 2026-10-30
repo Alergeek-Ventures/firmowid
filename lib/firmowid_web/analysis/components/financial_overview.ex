@@ -1,25 +1,30 @@
 defmodule FirmowidWeb.Analysis.Components.FinancialOverview do
   @moduledoc """
-  Annual totals of `Firmowid.Analysis.YearSummary` and the industry's key
-  costs as shares of income, with a monthly net result bar chart. Each bar has a rich tooltip with the month's amounts and, without
+  Totals of the analysed period and the industry's key costs as shares of
+  income, with a net result bar for each of its months. Each bar has a rich tooltip with the month's amounts and, without
   tag filters, an outline showing the result with the month's unpaid invoices.
 
-  Months are buttons sending `select-month` with the ISO date of the month.
+  Months are buttons sending `select-month` with the month's ISO date; a period
+  over several years marks each first month of a year with the year.
   Decimal amounts remain authoritative; bar lengths are only a float projection.
   """
   use FirmowidWeb, :html
 
   alias Firmowid.Cldr.Number
 
-  attr :summary, :map, required: true, doc: "`YearSummary.get/3` result"
+  attr :summary, :map,
+    required: true,
+    doc: "the period's `months` of `YearSummary.get/3` results with their combined `totals` and `currency`"
+
   attr :tag_filters, :list, required: true, doc: "tag filters the summary was fetched with"
+
   attr :selected_month, Date, default: nil, doc: "first day of the highlighted month"
 
   attr :key_costs, :list,
     default: [],
-    doc: "`CategoryReview.key_costs/1` of the unfiltered year, shown as shares of income"
+    doc: "`CategoryReview.key_costs/1` of the unfiltered period, shown as shares of income"
 
-  @doc "Renders the year's income, expenses, net result with margin and key costs, then the monthly net results."
+  @doc "Renders the period's income, expenses, net result with margin and key costs, then the monthly net results."
   @spec overview(map()) :: Phoenix.LiveView.Rendered.t()
   def overview(assigns) do
     %{summary: summary} = assigns
@@ -54,8 +59,8 @@ defmodule FirmowidWeb.Analysis.Components.FinancialOverview do
         </h2>
         <p :if={@chart == :empty} id="analysis-month-results-empty" class="text-sm text-grey-700">
           {if @tag_filters == [],
-            do: gettext("No income or expenses in %{year}.", year: @summary.year),
-            else: gettext("The selected categories have no entries in %{year}.", year: @summary.year)}
+            do: gettext("No income or expenses in this period."),
+            else: gettext("The selected categories have no entries in this period.")}
         </p>
         <ul
           :if={@chart != :empty and @chart.legend != []}
@@ -70,19 +75,19 @@ defmodule FirmowidWeb.Analysis.Components.FinancialOverview do
         <ol
           :if={@chart != :empty}
           id="analysis-month-results"
-          style={"--loss-share: #{@chart.loss_share}%; --profit-share: #{@chart.profit_share}%"}
-          class="grid h-44 grid-cols-12 gap-0.5 @2xl:h-56 @2xl:gap-1"
+          style={"--loss-share: #{@chart.loss_share}%; --profit-share: #{@chart.profit_share}%; grid-template-columns: repeat(#{length(@chart.bars)}, minmax(0, 1fr))"}
+          class="grid h-44 gap-0.5 @2xl:h-56 @2xl:gap-1"
         >
           <li :for={bar <- @chart.bars} class="min-w-0">
             <FirmowidUI.Components.Button.button
-              id={"analysis-month-result-#{bar.month.month}"}
+              id={"analysis-month-result-#{Date.to_iso8601(bar.month)}"}
               type="button"
               variant="unstyled"
               phx-click="select-month"
               phx-value-month={Date.to_iso8601(bar.month)}
               aria-pressed={to_string(bar.month == @selected_month)}
               aria-label={bar.name}
-              aria-describedby={"analysis-month-tooltip-#{bar.month.month}"}
+              aria-describedby={"analysis-month-tooltip-#{Date.to_iso8601(bar.month)}"}
               class={[
                 "group relative grid size-full min-w-0 cursor-pointer grid-rows-[minmax(0,1fr)_auto] gap-1 rounded-md px-0.5 py-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-700 active:bg-grey-200 @2xl:px-1 pointer-fine:hover:bg-grey-100",
                 bar.month == @selected_month && "bg-teal-100"
@@ -103,6 +108,9 @@ defmodule FirmowidWeb.Analysis.Components.FinancialOverview do
                   "underline decoration-teal-600 decoration-dotted decoration-2 underline-offset-4"
               ]}>
                 {bar.label}
+                <span :if={bar.year} class="block text-xs font-normal text-grey-600">
+                  {if bar.year != :none, do: bar.year, else: raw("&nbsp;")}
+                </span>
               </span>
               <.month_tooltip bar={bar} currency={@currency} />
             </FirmowidUI.Components.Button.button>
@@ -200,11 +208,11 @@ defmodule FirmowidWeb.Analysis.Components.FinancialOverview do
   defp month_tooltip(assigns) do
     ~H"""
     <span
-      id={"analysis-month-tooltip-#{@bar.month.month}"}
+      id={"analysis-month-tooltip-#{Date.to_iso8601(@bar.month)}"}
       role="tooltip"
       class={[
         "pointer-events-none absolute bottom-full z-10 mb-1 hidden w-80 flex-col gap-3 rounded-lg border border-grey-200 bg-white p-4 text-start shadow-lg group-focus-visible:flex pointer-fine:group-hover:flex",
-        tooltip_alignment_styles(@bar.month.month)
+        tooltip_alignment_styles(@bar.align)
       ]}
     >
       <span class="flex items-center justify-between gap-2">
@@ -274,10 +282,14 @@ defmodule FirmowidWeb.Analysis.Components.FinancialOverview do
     """
   end
 
-  # Edge months anchor the tooltip to their own edge so it stays inside the chart.
-  defp tooltip_alignment_styles(month) when month <= 3, do: "start-0"
-  defp tooltip_alignment_styles(month) when month >= 10, do: "end-0"
-  defp tooltip_alignment_styles(_month), do: "start-1/2 -translate-x-1/2"
+  # Bars near the chart's edges anchor the tooltip to that edge so it stays inside the chart.
+  defp tooltip_alignment_styles(:start), do: "start-0"
+  defp tooltip_alignment_styles(:end), do: "end-0"
+  defp tooltip_alignment_styles(:center), do: "start-1/2 -translate-x-1/2"
+
+  defp alignment(index, count) when index * 4 < count, do: :start
+  defp alignment(index, count) when index * 4 >= count * 3, do: :end
+  defp alignment(_index, _count), do: :center
 
   defp legend_mark_styles(:settled),
     do: "h-2.5 w-3 rounded-xs bg-[linear-gradient(90deg,var(--color-teal-600)_50%,var(--color-brick-700)_50%)]"
@@ -325,7 +337,17 @@ defmodule FirmowidWeb.Analysis.Components.FinancialOverview do
         |> Enum.reduce(Decimal.new(0), &Decimal.max/2)
 
       range = Decimal.add(max_profit, max_loss)
-      bars = Enum.map(months, &bar(&1, current_month, max_profit, max_loss))
+      years? = months |> Enum.map(& &1.month.year) |> Enum.uniq() |> length() > 1
+
+      bars =
+        months
+        |> Enum.with_index()
+        |> Enum.map(fn {month, index} ->
+          month
+          |> bar(current_month, max_profit, max_loss)
+          |> Map.put(:year, year_label(years?, index, month.month))
+          |> Map.put(:align, alignment(index, length(months)))
+        end)
 
       %{
         loss_share: percent(max_loss, range),
@@ -407,6 +429,13 @@ defmodule FirmowidWeb.Analysis.Components.FinancialOverview do
       do: 0,
       else: amount |> Decimal.div(total) |> Decimal.to_float() |> Kernel.*(100) |> Float.round(2)
   end
+
+  # Over several years each first month of a year shows it; the others keep its line, so bars stay level.
+  defp year_label(false, _index, _month), do: nil
+
+  defp year_label(true, index, %Date{month: number, year: year}) when index == 0 or number == 1, do: year
+
+  defp year_label(true, _index, _month), do: :none
 
   defp bar_label_styles(bar, selected_month) do
     cond do

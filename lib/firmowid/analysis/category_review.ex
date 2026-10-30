@@ -86,13 +86,13 @@ defmodule Firmowid.Analysis.CategoryReview do
   end
 
   @doc """
-  Narrows the review's groups to `month`: `amount` becomes the month's amount
-  and `average` the group's mean monthly amount over `compared` months (nil
-  without any). Groups absent from the month keep a zero amount, so categories
-  can still compare against their usual amount.
+  Narrows the review's groups to `months`: `amount` becomes the sum over those
+  months and `average` the group's mean monthly amount over `compared` months
+  (nil without any). Groups absent from the period keep a zero amount, so
+  categories can still compare against their usual amount.
   """
-  @spec month(map(), Date.t(), [Date.t()]) :: [map()]
-  def month(review, month, compared) do
+  @spec period(map(), [Date.t()], [Date.t()]) :: [map()]
+  def period(review, months, compared) do
     Enum.map(review.groups, fn group ->
       average =
         if compared == [],
@@ -103,7 +103,12 @@ defmodule Firmowid.Analysis.CategoryReview do
             |> Enum.reduce(&Decimal.add/2)
             |> Decimal.div(length(compared))
 
-      Map.put(%{group | amount: Map.get(group.months, month, Decimal.new(0))}, :average, average)
+      amount =
+        months
+        |> Enum.map(&Map.get(group.months, &1, Decimal.new(0)))
+        |> Enum.reduce(Decimal.new(0), &Decimal.add/2)
+
+      Map.put(%{group | amount: amount}, :average, average)
     end)
   end
 

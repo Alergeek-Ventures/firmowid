@@ -8,21 +8,38 @@ defmodule FirmowidWeb.Analysis.Utilities.Navigation do
   alias FirmowidWeb.Infrastructure.Utilities.QueryParams
 
   @type tag_filter :: {:company} | {:taxes} | {:project, String.t()}
+  @typedoc "First and last month of the analysed period."
+  @type period :: {Date.t(), Date.t()}
   @type view ::
-          %{view: :dashboard, year: pos_integer(), month: Date.t() | nil}
-          | %{view: :categories, year: pos_integer()}
-          | %{view: :segments, year: pos_integer()}
+          %{view: :dashboard, period: period(), month: Date.t() | nil}
+          | %{view: :segments, period: period()}
+
+  # The chart shows one bar per month, so a longer period keeps its latest months.
+  @max_months 36
 
   @doc """
-  Builds the dashboard path with the selected month's details.
+  Builds the dashboard path with the given month's details within its year.
   """
   @spec dashboard_path(Date.t(), [tag_filter()]) :: String.t()
   def dashboard_path(%Date{} = month, tag_filters \\ []) when is_list(tag_filters) do
-    view_path(%{view: :dashboard, year: month.year, month: month}, tag_filters)
+    month = Date.beginning_of_month(month)
+    view_path(%{view: :dashboard, period: year_period(month.year), month: month}, tag_filters)
+  end
+
+  @doc "The calendar year of `year` as a period, the default one."
+  @spec year_period(pos_integer()) :: period()
+  def year_period(year), do: {Date.new!(year, 1, 1), Date.new!(year, 12, 1)}
+
+  @doc "The period's months, first to last."
+  @spec months(period()) :: [Date.t()]
+  def months({from, to}) do
+    from
+    |> Stream.iterate(&Date.shift(&1, month: 1))
+    |> Enum.take_while(&(Date.compare(&1, to) != :gt))
   end
 
   @doc """
-  Builds the canonical path of the dashboard, segments, categories or monthly tagging.
+  Builds the canonical path of the dashboard or the projects view.
   """
   @spec view_path(view(), [tag_filter()]) :: String.t()
   def view_path(view, tag_filters) when is_list(tag_filters) do
@@ -38,17 +55,21 @@ defmodule FirmowidWeb.Analysis.Utilities.Navigation do
   @doc """
   Parses the selected view from raw route params.
 
-  Invalid values fall back to the current year. A selected dashboard month
-  must belong to the selected year.
+  The period runs from month `od` to month `do` (`do` defaults to `od`), at
+  most #{@max_months} months; without a valid `od` it is the current year. A
+  dashboard `miesiac` within the period selects that month's details.
   """
   @spec parse_view(map()) :: view()
-  def parse_view(%{"tryb" => "koszty-i-przychody"} = params), do: %{view: :categories, year: parse_year(params)}
-
-  def parse_view(%{"tryb" => "projekty"} = params), do: %{view: :segments, year: parse_year(params)}
+  def parse_view(%{"tryb" => "projekty"} = params), do: %{view: :segments, period: parse_period(params)}
 
   def parse_view(params) do
-    year = parse_year(params)
-    %{view: :dashboard, year: year, month: selected_month(params, year)}
+    {from, to} = period = parse_period(params)
+    month = parse_month(params, "miesiac", nil)
+
+    month =
+      if month && Date.compare(month, from) != :lt && Date.compare(month, to) != :gt, do: month
+
+    %{view: :dashboard, period: period, month: month}
   end
 
   @doc """
@@ -82,31 +103,34 @@ defmodule FirmowidWeb.Analysis.Utilities.Navigation do
 
   def parse_tag_filters(_params, _tag_definitions), do: []
 
-  # YearSummary accepts years 1-9999; other values fall back like an invalid month.
-  defp parse_year(params) do
-    case QueryParams.parse_integer(params, "rok", nil) do
-      year when year in 1..9999 -> year
-      _invalid -> Date.utc_today().year
+  defp parse_period(params) do
+    from = parse_month(params, "od", nil)
+    to = parse_month(params, "do", from)
+
+    case {from, to} do
+      {%Date{}, %Date{}} ->
+        {from, to} = Enum.min_max_by([from, to], & &1, Date)
+        {Enum.max([from, Date.shift(to, month: 1 - @max_months)], Date), to}
+
+      _current_year ->
+        year_period(Date.utc_today().year)
     end
   end
 
-  defp selected_month(%{"miesiac" => value} = params, year) when is_binary(value) do
-    case QueryParams.parse_date(params, "miesiac", nil) do
-      %Date{year: ^year} = month -> Date.beginning_of_month(month)
-      _ -> nil
+  # YearSummary accepts years 1-9999.
+  defp parse_month(params, key, default) do
+    case is_binary(params[key]) && QueryParams.parse_date(params, key, nil) do
+      %Date{year: year} = date when year in 1..9999 -> Date.beginning_of_month(date)
+      _invalid -> default
     end
   end
 
-  defp selected_month(_params, _year), do: nil
+  defp view_query(%{view: :dashboard, period: period, month: month}),
+    do: period_query(period) ++ if(month, do: [miesiac: Date.to_iso8601(month)], else: [])
 
-  defp view_query(%{view: :dashboard, year: year, month: month}), do: with_month([rok: year], month)
+  defp view_query(%{view: :segments, period: period}), do: [tryb: "projekty"] ++ period_query(period)
 
-  defp view_query(%{view: :categories, year: year}), do: [tryb: "koszty-i-przychody", rok: year]
-
-  defp view_query(%{view: :segments, year: year}), do: [tryb: "projekty", rok: year]
-
-  defp with_month(query, nil), do: query
-  defp with_month(query, month), do: query ++ [miesiac: Date.to_iso8601(month)]
+  defp period_query({from, to}), do: [od: Date.to_iso8601(from), do: Date.to_iso8601(to)]
 
   defp encode_tag_key({:company}), do: "firma"
   defp encode_tag_key({:taxes}), do: "podatki"

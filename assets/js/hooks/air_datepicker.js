@@ -16,7 +16,13 @@ export const AirDatepicker = {
     } else {
       this.enabledMonths = this.getEnabledMonths();
       this.enabledYears = this.getEnabledYears();
-      this.picker.selectDate(this.el.dataset.initialDate, { silent: true });
+      if (this.isRange()) {
+        this.picker.update(this.rangeOptions(), { silent: true });
+        this.picker.clear({ silent: true });
+        this.picker.selectDate(this.getSelectedDates(), { silent: true });
+      } else {
+        this.picker.selectDate(this.el.dataset.initialDate, { silent: true });
+      }
     }
   },
 
@@ -37,6 +43,27 @@ export const AirDatepicker = {
     });
   },
 
+  isRange() {
+    return this.el.dataset.range === "true";
+  },
+
+  /**
+   * @returns {Array<string>}
+   */
+  getSelectedDates() {
+    return this.el.dataset.selectedDates?.split(",").filter(Boolean) || [];
+  },
+
+  // A range of months, with a button clearing it; clicking a month twice selects just that month.
+  rangeOptions() {
+    return {
+      range: true,
+      toggleSelected: false,
+      multipleDatesSeparator: " – ",
+      buttons: [{ content: this.el.dataset.clearLabel, onClick: (picker) => picker.clear() }],
+    };
+  },
+
   /**
    * @returns {Array<number>}
    */
@@ -53,12 +80,18 @@ export const AirDatepicker = {
       position: this.el.dataset.position || "bottom left",
       isMobile,
       autoClose: isMobile,
-      selectedDates: [this.el.dataset.initialDate],
-      // Picking the current month or year skips autoClose, so close the modal here.
-      toggleSelected: ({ datepicker }) => {
-        if (isMobile) datepicker.hide();
-        return false;
-      },
+      selectedDates: this.isRange() ? this.getSelectedDates() : [this.el.dataset.initialDate],
+      ...(this.isRange() ? this.rangeOptions() : {}),
+      // Picking the current month or year skips autoClose, so close the modal here;
+      // a range leaves its selected ends to the picker.
+      ...(this.isRange()
+        ? {}
+        : {
+            toggleSelected: ({ datepicker }) => {
+              if (isMobile) datepicker.hide();
+              return false;
+            },
+          }),
       view: mode,
       minView: mode,
       locale: {
@@ -109,6 +142,17 @@ export const AirDatepicker = {
       },
       dateFormat: mode === "months" ? "MMMM yyyy" : "yyyy",
       onSelect: ({ date }) => {
+        if (this.isRange()) {
+          // A range is complete with both months; clearing it selects the whole span.
+          if (date.length === 2) {
+            const [from, to] = date.map((month) => month.toLocaleDateString("sv"));
+            this.pushEvent("select-period", { from, to });
+          } else if (date.length === 0) {
+            this.pushEvent("select-period", {});
+          }
+          return;
+        }
+
         switch (mode) {
           case "months":
             // 'sv' is the Swedish locale - Sweden date formatting uses ISO 8601
