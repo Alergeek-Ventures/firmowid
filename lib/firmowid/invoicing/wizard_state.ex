@@ -1,3 +1,4 @@
+# credo:disable-for-this-file AshCredo.Check.Refactor.LargeResource
 # credo:disable-for-this-file ExDNA.Credo
 # Wizard step actions intentionally repeat field lists/validations per step; extracting this
 # would require broader action DSL redesign across WizardState and related changes/validations.

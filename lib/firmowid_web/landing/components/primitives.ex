@@ -100,7 +100,7 @@ defmodule FirmowidWeb.Landing.Components.Primitives do
         phx-click={show_popover("landing-locale-menu")}
         class="flex cursor-pointer items-center gap-1.5 rounded-sm px-1.5 py-1 text-sm/6 font-semibold text-[#0f0f0f] uppercase transition-colors duration-180 group-data-[theme=dark]/navbar:text-[#f5f1ea] hover:text-rust-600 group-data-[theme=dark]/navbar:hover:text-rust-500"
       >
-        <img src={flag(@locale)} alt="" width="20" height="14" class={flag_class()} />
+        <img src={flag(@locale)} alt="" width="20" height="14" class={flag_styles()} />
         {@locale}
         <Lucideicons.chevron_down class="size-4" />
       </button>
@@ -123,7 +123,7 @@ defmodule FirmowidWeb.Landing.Components.Primitives do
             aria-current={code == @locale && "true"}
             class="flex cursor-pointer items-center gap-3 rounded-md px-3 py-2 text-left text-sm text-grey-900 hover:bg-grey-100 aria-current:font-semibold"
           >
-            <img src={flag(code)} alt="" width="20" height="14" class={flag_class()} />
+            <img src={flag(code)} alt="" width="20" height="14" class={flag_styles()} />
             <span class="flex-1">{name}</span>
             <Lucideicons.check :if={code == @locale} class="size-4 text-rust-600" />
           </button>
@@ -137,7 +137,7 @@ defmodule FirmowidWeb.Landing.Components.Primitives do
   defp flag("en"), do: ~p"/images/flags/gb.svg"
   defp flag("uk"), do: ~p"/images/flags/ua.svg"
 
-  defp flag_class, do: "h-3.5 w-5 rounded-[2px] object-cover shadow-[0_0_0_1px_rgb(15_15_15/0.15)]"
+  defp flag_styles, do: "h-3.5 w-5 rounded-[2px] object-cover shadow-[0_0_0_1px_rgb(15_15_15/0.15)]"
 
   @doc """
   Renders a public-page action with brush artwork.

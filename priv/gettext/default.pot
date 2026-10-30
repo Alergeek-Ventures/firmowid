@@ -6230,7 +6230,7 @@ msgstr ""
 msgid "Address details"
 msgstr ""
 
-#: lib/firmowid/invoicing/wizard_state.ex:139
+#: lib/firmowid/invoicing/wizard_state.ex:140
 #, elixir-autogen, elixir-format
 msgid "Address is required"
 msgstr ""
@@ -7570,7 +7570,7 @@ msgstr ""
 msgid "Country"
 msgstr ""
 
-#: lib/firmowid/invoicing/wizard_state.ex:138
+#: lib/firmowid/invoicing/wizard_state.ex:139
 #, elixir-autogen, elixir-format
 msgid "Country is required"
 msgstr ""
@@ -7610,7 +7610,7 @@ msgstr ""
 msgid "Currency converted"
 msgstr ""
 
-#: lib/firmowid/invoicing/wizard_state.ex:154
+#: lib/firmowid/invoicing/wizard_state.ex:155
 #, elixir-autogen, elixir-format
 msgid "Currency is required"
 msgstr ""
@@ -8646,7 +8646,7 @@ msgstr ""
 
 #: lib/firmowid/finances/bank_account.ex:123
 #: lib/firmowid/finances/bank_account.ex:140
-#: lib/firmowid/invoicing/wizard_state.ex:155
+#: lib/firmowid/invoicing/wizard_state.ex:156
 #, elixir-autogen, elixir-format
 msgid "Invalid currency code"
 msgstr ""
@@ -8657,11 +8657,6 @@ msgstr ""
 #: lib/firmowid_web/settings/views/index.ex:1252
 #, elixir-autogen, elixir-format
 msgid "Invalid document"
-msgstr ""
-
-#: lib/firmowid_web/infrastructure/controllers/file_download.ex:48
-#, elixir-autogen, elixir-format
-msgid "Invalid month parameter."
 msgstr ""
 
 #: lib/firmowid_web/admin/views/settlement.ex:169
@@ -9626,7 +9621,7 @@ msgstr ""
 msgid "Payment date and method"
 msgstr ""
 
-#: lib/firmowid/invoicing/wizard_state.ex:168
+#: lib/firmowid/invoicing/wizard_state.ex:169
 #, elixir-autogen, elixir-format
 msgid "Payment deadline is required"
 msgstr ""
@@ -9648,7 +9643,7 @@ msgstr ""
 msgid "Payment method"
 msgstr ""
 
-#: lib/firmowid/invoicing/wizard_state.ex:169
+#: lib/firmowid/invoicing/wizard_state.ex:170
 #, elixir-autogen, elixir-format
 msgid "Payment method is required"
 msgstr ""
@@ -9794,7 +9789,7 @@ msgstr ""
 
 #: lib/firmowid/core/organization.ex:281
 #: lib/firmowid/invoicing/sales_invoice.ex:1346
-#: lib/firmowid/invoicing/wizard_state.ex:260
+#: lib/firmowid/invoicing/wizard_state.ex:261
 #, elixir-autogen, elixir-format
 msgid "Provide the legal basis for the VAT exemption."
 msgstr ""
@@ -10018,7 +10013,7 @@ msgstr ""
 msgid "Sale date"
 msgstr ""
 
-#: lib/firmowid/invoicing/wizard_state.ex:167
+#: lib/firmowid/invoicing/wizard_state.ex:168
 #, elixir-autogen, elixir-format
 msgid "Sale date is required"
 msgstr ""
