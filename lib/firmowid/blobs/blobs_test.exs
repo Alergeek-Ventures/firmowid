@@ -178,7 +178,7 @@ defmodule Firmowid.Blobs.BlobsTest do
       assert failed_blob.processing_metadata["cost_invoice_id"] == existing_invoice.id
 
       assert failed_blob.processing_metadata["error_message"] ==
-               "Ta faktura z KSeF jest już w systemie."
+               "This KSeF invoice is already in the system."
     end
   end
 

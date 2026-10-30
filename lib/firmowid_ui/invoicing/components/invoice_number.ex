@@ -100,6 +100,7 @@ defmodule FirmowidUI.Invoicing.Components.InvoiceNumber do
   defp warning_suggestions({:duplicate, suggestions}), do: suggestions
   defp warning_suggestions({:gap, expected}), do: [expected]
 
-  defp error_message({message, _options}), do: message
+  defp error_message({message, options}), do: FirmowidUI.Components.Inputs.translate_error({message, options})
+
   defp error_message(message), do: message
 end
