@@ -73,14 +73,14 @@
           <% end %>
         </div>
         <p :if={!@can_use_hours_records} class="mt-2 text-sm">
-          {gettext("To fill in the timesheet you must set your name and employment date in")}
+          {@settings_before}
           <.link
             kind="unstyled"
             navigate={~p"/ustawienia"}
             class="text-rust-700 hover:underline"
           >
             {pgettext("hours record settings link", "Settings")}
-          </.link>
+          </.link>{@settings_after}
         </p>
         <.live_component
           :if={!@current_hours_record && @can_use_hours_records}
