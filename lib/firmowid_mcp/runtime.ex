@@ -4,6 +4,8 @@ defmodule FirmowidMcp.Runtime do
 
   alias FirmowidMcp.Session
 
+  @locales Gettext.known_locales(Firmowid.Gettext)
+
   @doc "Renders the standalone shell using the same compiled styles as the web application."
   @spec document() :: String.t()
   # sobelow_skip ["XSS.Raw"]
@@ -60,26 +62,67 @@ defmodule FirmowidMcp.Runtime do
     String.trim_trailing(app.resource_uri(), ".html") <> "-" <> digest <> ".html"
   end
 
-  @doc "Places the signed mount exclusively in tool-result metadata, never model-visible content."
+  @doc "Describes the optional `language` argument of widget tools."
+  @spec language_schema() :: map()
+  def language_schema do
+    %{
+      "type" => "string",
+      "enum" => @locales,
+      "description" =>
+        "Language of the widget interface, for example the language of the conversation. " <>
+          "Omit it to use the language set in the user's Firmowid account."
+    }
+  end
+
+  @doc """
+  Places the signed mount exclusively in tool-result metadata, never model-visible content.
+
+  The widget uses the language the `language` argument requests, otherwise the one set in the
+  user's account.
+  """
   @spec mount_metadata(Plug.Conn.t(), module(), map()) :: map()
   def mount_metadata(conn, app, arguments) do
+    # AshAi ignores top-level arguments outside its own schema, so the tool ran without it.
+    {language, arguments} = Map.pop(arguments, "language")
+    locale = locale(conn, language)
     token = Session.issue(conn, app.resource_uri(), arguments)
 
-    html =
-      conn
-      |> Phoenix.Component.live_render(app.live_view(),
-        session: %{"mcp_session" => token, "mcp_resource" => app.resource_uri()}
-      )
-      |> Phoenix.HTML.safe_to_string()
+    # The widget's mount also puts its language in this process; with_locale restores the caller's.
+    {html, messages} =
+      Gettext.with_locale(Firmowid.Gettext, locale, fn ->
+        html =
+          conn
+          |> Phoenix.Component.live_render(app.live_view(),
+            session: %{
+              "mcp_session" => token,
+              "mcp_resource" => app.resource_uri(),
+              "mcp_locale" => locale
+            }
+          )
+          |> Phoenix.HTML.safe_to_string()
+
+        {html, messages()}
+      end)
 
     %{
       "version" => 1,
       "html" => html,
+      "locale" => locale,
+      "messages" => messages,
       "socket_url" => socket_url(),
       "resource_uri" => resource_uri(app),
       "tool_name" => app.tool_name(),
       "arguments" => arguments
     }
+  end
+
+  defp locale(_conn, language) when language in @locales, do: language
+
+  defp locale(conn, _language) do
+    case Ash.PlugHelpers.get_actor(conn).locale do
+      nil -> Gettext.get_locale(Firmowid.Gettext)
+      locale -> Atom.to_string(locale)
+    end
   end
 
   @doc "Returns standard MCP Apps CSP and the ChatGPT compatibility representation."

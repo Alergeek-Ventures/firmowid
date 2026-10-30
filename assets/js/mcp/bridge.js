@@ -17,7 +17,8 @@ let currentView;
 
 const report = key => {
   if (lifetime.signal.aborted) return;
-  status.textContent = messages[key] ?? "";
+  // The mount carries the messages in the widget's language; the document only has the default.
+  status.textContent = (mountData?.messages ?? messages)[key] ?? "";
   status.hidden = !status.textContent;
 };
 
@@ -136,6 +137,7 @@ function mount(result) {
   // A single LiveSocket owns document listeners; host remounts replace its roots.
   destroyView();
   mountData = data;
+  document.documentElement.lang = data.locale;
   // Only the authenticated tool's private metadata carries this signed native root.
   root.innerHTML = data.html;
   if (!liveSocket) {

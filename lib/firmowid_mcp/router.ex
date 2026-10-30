@@ -191,8 +191,9 @@ defmodule FirmowidMcp.Router do
       app ->
         uri = Runtime.resource_uri(app)
 
-        update_in(
-          tool,
+        tool
+        |> put_in(["inputSchema", "properties", "language"], Runtime.language_schema())
+        |> update_in(
           ["_meta"],
           &Map.merge(&1, %{"ui" => %{"resourceUri" => uri}, "openai/outputTemplate" => uri})
         )
