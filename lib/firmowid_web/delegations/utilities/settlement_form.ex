@@ -11,6 +11,8 @@ defmodule FirmowidWeb.Delegations.Utilities.SettlementForm do
   @doc "Builds the complete form for a delegation settlement."
   @spec complete_form(struct(), map(), atom()) :: Form.t()
   def complete_form(delegation, scope, action \\ :complete) do
+    detail_types = Map.new(delegation.expenses, &{&1.id, Atom.to_string(&1.details.type)})
+
     forms =
       Firmowid.Delegations.Delegation
       |> Auto.auto(action)
@@ -31,7 +33,12 @@ defmodule FirmowidWeb.Delegations.Utilities.SettlementForm do
       end)
 
     delegation
-    |> AshPhoenix.Form.for_update(action, scope: scope, as: "delegation", forms: forms)
+    |> AshPhoenix.Form.for_update(action,
+      scope: scope,
+      as: "delegation",
+      forms: forms,
+      prepare_params: fn params, :validate -> restore_details_types(params, detail_types) end
+    )
     |> to_form()
   end
 
@@ -134,6 +141,25 @@ defmodule FirmowidWeb.Delegations.Utilities.SettlementForm do
       end)
     end)
   end
+
+  # AshPhoenix revalidates unwrapped embedded data, so it cannot recover the union
+  # type itself when a draft omits both hidden type markers.
+  defp restore_details_types(%{"expenses" => expenses} = params, detail_types) do
+    expenses =
+      Map.new(expenses, fn {index, expense} ->
+        with %{"id" => id, "details" => details} <- expense,
+             {:ok, type} <- Map.fetch(detail_types, id),
+             false <- Map.has_key?(details, "_union_type") or Map.has_key?(details, "type") do
+          {index, Map.put(expense, "details", Map.put(details, "_union_type", type))}
+        else
+          _ -> {index, expense}
+        end
+      end)
+
+    Map.put(params, "expenses", expenses)
+  end
+
+  defp restore_details_types(params, _detail_types), do: params
 
   defp transform_expense_params(%{"kind" => kind} = params) do
     details =
