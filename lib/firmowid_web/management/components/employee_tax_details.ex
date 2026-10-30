@@ -537,7 +537,7 @@ defmodule FirmowidWeb.Management.Components.EmployeeTaxDetails do
       field(:employee_costs, gettext("Tax-deductible costs"), "select", [
         {gettext("Do not apply"), :none},
         {gettext("Standard — PLN 250"), :standard},
-        {gettext("Elevated — PLN 300"), :elevated}
+        {gettext("Increased — PLN 300"), :elevated}
       ]),
       field(:youth_relief, gettext("Youth tax relief"), "select", [
         {gettext("Apply when eligible"), :apply},
@@ -551,7 +551,7 @@ defmodule FirmowidWeb.Management.Components.EmployeeTaxDetails do
       field(:student, gettext("Pupil or student"), "select", yes_no()),
       field(:student_until, gettext("Student status confirmed through"), "date"),
       field(:other_employment, gettext("Other insurance title"), "select", [
-        {gettext("No other title"), :none},
+        {gettext("No other insurance title"), :none},
         {gettext("Other employment below minimum wage"), :below_minimum},
         {gettext("Other employment at least minimum wage"), :at_least_minimum},
         {gettext("Other situation requiring individual assessment"), :other}
@@ -565,7 +565,7 @@ defmodule FirmowidWeb.Management.Components.EmployeeTaxDetails do
       field(:ppk_employee_rate, gettext("Employee PPK rate (%)"), "number"),
       field(:pit0, gettext("Other PIT-0 exemption declaration"), "select", [
         {gettext("None"), :none},
-        {gettext("Return to Poland"), :returning},
+        {gettext("Return relief"), :returning},
         {gettext("Families with four or more children"), :family},
         {gettext("Working seniors"), :senior}
       ]),

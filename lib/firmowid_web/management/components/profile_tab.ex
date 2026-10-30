@@ -120,8 +120,8 @@ defmodule FirmowidWeb.Management.Components.ProfileTab do
                     options={[
                       {gettext("Employment contract"), :uop},
                       {"B2B", :b2b},
-                      {gettext("Mandate contract"), :uz},
-                      {gettext("Specific-task contract"), :uod}
+                      {gettext("Contract of mandate"), :uz},
+                      {gettext("Contract for specific work"), :uod}
                     ]}
                   />
                 </.user_card_info>
@@ -241,8 +241,8 @@ defmodule FirmowidWeb.Management.Components.ProfileTab do
   defp format_contract_type(nil), do: gettext("Unspecified")
   defp format_contract_type(:uop), do: gettext("Employment contract")
   defp format_contract_type(:b2b), do: "B2B"
-  defp format_contract_type(:uz), do: gettext("Mandate contract")
-  defp format_contract_type(:uod), do: gettext("Specific-task contract")
+  defp format_contract_type(:uz), do: gettext("Contract of mandate")
+  defp format_contract_type(:uod), do: gettext("Contract for specific work")
 
   defp format_contract_status(nil), do: "—"
   defp format_contract_status(:pending_signature), do: gettext("Awaiting signature")

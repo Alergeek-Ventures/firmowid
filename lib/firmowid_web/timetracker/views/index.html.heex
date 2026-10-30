@@ -18,7 +18,7 @@
       kind="button"
       variant="outline"
     >
-      <Lucideicons.clipboard_list /> {pgettext("time tracker link", "Hours record")}
+      <Lucideicons.clipboard_list /> {pgettext("time tracker link", "Timesheet")}
     </.link>
   </div>
 
@@ -61,8 +61,7 @@
               placeholder={
                 if not is_hours_record_submitted,
                   do: gettext("What are you working on today?"),
-                  else:
-                    gettext("You cannot add a session after the hours record has been submitted")
+                  else: gettext("You cannot add a session after the timesheet has been submitted")
               }
               input_class="h-11 border-none hover:!bg-grey-300 focus:!outline-[2px] focus:!outline-offset-0 focus:!outline-grey-300 bg-grey-200! text-black"
               phx-hook="FocusOnMount"

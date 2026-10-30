@@ -55,7 +55,7 @@ defmodule FirmowidWeb.Management.Components.HoursRecordStatus do
           navigate={~p"/czasosledz/ewidencja/#{@hours_record.id}"}
           download={"Ewidencja_#{@hours_record.year}_#{@hours_record.month}_#{@user.member.name || @user.email}.pdf"}
           class="inline-flex shrink-0 items-center justify-center rounded-md p-0.5 transition hover:bg-grey-200"
-          aria-label={gettext("Download hours record")}
+          aria-label={gettext("Download timesheet")}
         >
           <.icon name="hero-arrow-down-tray-mini" class="shrink-0 text-grey-400" />
         </.link>

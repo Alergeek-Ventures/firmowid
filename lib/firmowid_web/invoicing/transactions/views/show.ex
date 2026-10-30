@@ -194,7 +194,7 @@ defmodule FirmowidWeb.Invoicing.Transactions.Views.Show do
          )}
 
       {:error, _error} ->
-        {:noreply, put_flash(socket, :error, gettext("Could not connect this transaction to the invoice."))}
+        {:noreply, put_flash(socket, :error, gettext("Could not link this transaction to the invoice."))}
     end
   end
 
@@ -211,7 +211,7 @@ defmodule FirmowidWeb.Invoicing.Transactions.Views.Show do
         {:noreply, assign_transaction(socket, reload_transaction(transaction.id, socket.assigns.ash_scope))}
 
       {:error, _error} ->
-        {:noreply, put_flash(socket, :error, gettext("Could not connect this transaction to a salary."))}
+        {:noreply, put_flash(socket, :error, gettext("Could not link this transaction to a salary."))}
     end
   end
 
@@ -225,7 +225,7 @@ defmodule FirmowidWeb.Invoicing.Transactions.Views.Show do
          put_flash(
            socket,
            :error,
-           gettext("Could not disconnect this transaction from the salary.")
+           gettext("Could not unlink this transaction from the salary.")
          )}
     end
   end

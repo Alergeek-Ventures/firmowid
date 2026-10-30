@@ -437,7 +437,7 @@ defmodule FirmowidWeb.Documents.Components.DocumentsSection do
             id: doc.id,
             type: :hours_record,
             name:
-              gettext("Hours record %{date}",
+              gettext("Timesheet %{date}",
                 date: "#{String.pad_leading(Integer.to_string(doc.month), 2, "0")}.#{doc.year}"
               ),
             date: DateTime.to_date(doc.inserted_at),

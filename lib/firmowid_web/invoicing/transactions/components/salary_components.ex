@@ -90,8 +90,8 @@ defmodule FirmowidWeb.Invoicing.Transactions.Components.SalaryComponents do
             id="disconnect-salary"
             phx-click="disconnect_salary"
             icon="hero-arrow-uturn-left-micro"
-            title={gettext("Disconnect salary")}
-            aria-label={gettext("Disconnect salary")}
+            title={gettext("Unlink salary")}
+            aria-label={gettext("Unlink salary")}
           />
         </:action>
       </MatchingComponents.confirmed_header>

@@ -93,7 +93,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
       |> assign(:last_invoices, recent_invoices(socket.assigns.ash_scope))
       |> assign(:ksef_connected?, Ksef.connected?(socket.assigns.ash_scope))
       |> assign(:open_counterparty_modal, false)
-      |> assign(:page_title, gettext("Invoice creator"))
+      |> assign(:page_title, gettext("Invoice wizard"))
       |> assign(
         :can_manage_counterparties,
         can_manage_counterparties?(socket.assigns.current_user)
@@ -295,7 +295,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
       {:error, _} ->
         {:noreply,
          socket
-         |> put_flash(:info, gettext("The creator draft was not found, starting over."))
+         |> put_flash(:info, gettext("The wizard draft was not found, starting over."))
          |> push_patch(to: Navigation.sales_invoice_creator_path(), replace: true)}
     end
   end
@@ -1232,7 +1232,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
     <div class="flex flex-col gap-4">
       <div class="flex flex-row gap-4 text-sm/snug text-grey-500">
         <h2>
-          {gettext("Invoice creator")} |
+          {gettext("Invoice wizard")} |
           <span class="text-grey-700">
             <%= case @step do %>
               <% _step when is_integer(@step) -> %>

@@ -13,7 +13,7 @@ defmodule Firmowid.Finances.Transaction.Validations.NotMatched do
       {:error,
        InvalidChanges.exception(
          fields: [:skip_invoicing],
-         message: gettext("The transaction is already connected to an invoice or a salary. Disconnect it first.")
+         message: gettext("The transaction is already linked to an invoice or a salary. Unlink it first.")
        )}
     else
       :ok

@@ -166,7 +166,7 @@ defmodule Firmowid.Invoicing.WizardState do
       change set_attribute(:step, :preview)
 
       validate present([:sale_date]), message: gettext_noop("Sale date is required")
-      validate present([:due_date]), message: gettext_noop("Payment deadline is required")
+      validate present([:due_date]), message: gettext_noop("Payment due date is required")
       validate present([:payment_method]), message: gettext_noop("Payment method is required")
 
       validate {Validations.ValidateSellerAccountForTransfer,

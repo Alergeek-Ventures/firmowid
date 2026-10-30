@@ -337,12 +337,12 @@ defmodule FirmowidWeb.Assistant.Utilities.Presentation do
   defp tool_label("suggest_transaction_invoices"), do: gettext("Find matching invoices")
   defp tool_label("suggest_sales_invoice_transactions"), do: gettext("Find invoice payments")
   defp tool_label("suggest_cost_invoice_transactions"), do: gettext("Find invoice payments")
-  defp tool_label("connect_sales_invoice_transactions"), do: gettext("Connect invoice payments")
-  defp tool_label("connect_cost_invoice_transactions"), do: gettext("Connect invoice payments")
+  defp tool_label("connect_sales_invoice_transactions"), do: gettext("Link invoice payments")
+  defp tool_label("connect_cost_invoice_transactions"), do: gettext("Link invoice payments")
 
-  defp tool_label("disconnect_sales_invoice_transactions"), do: gettext("Disconnect invoice payments")
+  defp tool_label("disconnect_sales_invoice_transactions"), do: gettext("Unlink invoice payments")
 
-  defp tool_label("disconnect_cost_invoice_transactions"), do: gettext("Disconnect invoice payments")
+  defp tool_label("disconnect_cost_invoice_transactions"), do: gettext("Unlink invoice payments")
 
   defp tool_label("restore_transaction_for_matching"), do: gettext("Restore a skipped transaction")
 

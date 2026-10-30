@@ -45,7 +45,7 @@ defmodule Firmowid.Finances.Changes.ConnectSalary do
         nil
 
       transaction.salary_user_id ->
-        gettext("The transaction already pays the salary of %{month}. Disconnect it first.",
+        gettext("The transaction already pays the salary of %{month}. Unlink it first.",
           month: Date.to_iso8601(transaction.salary_month)
         )
 
@@ -78,7 +78,7 @@ defmodule Firmowid.Finances.Changes.ConnectSalary do
     do: gettext("Only an outgoing PLN transfer can pay a salary.")
 
   defp reason_message(%{reason: :transaction_matched}, _user_id, _month, _scope),
-    do: gettext("The transaction is already connected to an invoice or a salary. Disconnect it first.")
+    do: gettext("The transaction is already linked to an invoice or a salary. Unlink it first.")
 
   defp reason_message(%{reason: :month_out_of_range}, _user_id, _month, _scope),
     do: gettext("The salary month must fall within six months before the transfer.")

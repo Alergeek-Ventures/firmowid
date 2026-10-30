@@ -57,7 +57,7 @@ defmodule Firmowid.Timetracker.Actions.NotifyAdminsAboutHoursRecordChange do
       |> to(Enum.map(admins, &to_string(&1.email)))
       |> from({"Firmowid", "piotr@firmowid.pl"})
       |> reply_to(to_string(record.member.user.email))
-      |> subject(gettext("Hours record change request"))
+      |> subject(gettext("Timesheet change request"))
       |> text_body(body)
       |> Mailer.deliver()
     end)

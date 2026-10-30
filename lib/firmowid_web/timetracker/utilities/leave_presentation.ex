@@ -13,10 +13,10 @@ defmodule FirmowidWeb.Timetracker.Utilities.LeavePresentation do
   @spec reason_label(reason(), label_style()) :: String.t()
   def reason_label(reason, style \\ :full)
 
-  def reason_label(:vacation, :short), do: pgettext("leave type, short", "Recreational")
+  def reason_label(:vacation, :short), do: pgettext("leave type, short", "Annual")
   def reason_label(:sick, :short), do: pgettext("leave type, short", "Sick")
   def reason_label(:unpaid, :short), do: pgettext("leave type, short", "Unpaid")
-  def reason_label(:vacation, :full), do: pgettext("leave type", "Recreational leave")
+  def reason_label(:vacation, :full), do: pgettext("leave type", "Annual leave")
   def reason_label(:sick, :full), do: pgettext("leave type", "Sick leave")
   def reason_label(:unpaid, :full), do: pgettext("leave type", "Unpaid leave")
   def reason_label(:indisposition, _), do: pgettext("leave type", "Indisposition")

@@ -902,7 +902,8 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
         navigate={Navigation.hours_record_index_path(@date)}
         class="inline-flex items-center gap-1 text-sm font-medium text-grey-700 hover:text-grey-900"
       >
-        {gettext("View hours record")} <.icon name="hero-chevron-right-mini" class="size-4" />
+        {pgettext("profile tab link", "View timesheet")}
+        <.icon name="hero-chevron-right-mini" class="size-4" />
       </.link>
     </div>
     """

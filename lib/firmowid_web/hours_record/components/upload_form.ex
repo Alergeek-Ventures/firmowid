@@ -84,7 +84,7 @@ defmodule FirmowidWeb.HoursRecord.Components.UploadForm do
               variant="outline"
               phx-click={show_modal("hours-record-sign-warning")}
             >
-              {gettext("Sign hours record")}
+              {gettext("Sign timesheet")}
             </.button>
             <.button
               type="button"
@@ -106,7 +106,7 @@ defmodule FirmowidWeb.HoursRecord.Components.UploadForm do
           >
             <.file_upload
               upload={@uploads.hours_record}
-              prompt={gettext("Add the signed hours record")}
+              prompt={gettext("Add the signed timesheet")}
               content_class="flex"
               prompt_class="font-medium"
               error_formatter={&error_to_string/1}
@@ -157,7 +157,7 @@ defmodule FirmowidWeb.HoursRecord.Components.UploadForm do
   end
 
   def handle_event("pdf-download-error", _params, socket) do
-    LiveToast.send_toast(:error, gettext("Could not download the hours record."))
+    LiveToast.send_toast(:error, gettext("Could not download the timesheet."))
     {:noreply, socket}
   end
 

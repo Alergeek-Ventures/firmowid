@@ -13,7 +13,7 @@ defmodule FirmowidWeb.Auth.Views.Login do
       <img src="/images/figurine.png" class="absolute -top-20 left-1/2 h-[135vh] opacity-10" />
       <div class="z-10 max-w-sm">
         <h1 class="text-center text-2xl font-bold">
-          {gettext("Enter Firmowid")}
+          {gettext("Go to Firmowid")}
         </h1>
 
         <.simple_form

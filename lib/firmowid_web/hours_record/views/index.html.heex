@@ -60,7 +60,7 @@
         class="flex flex-col gap-6 rounded-md bg-grey-50 p-4"
       >
         <div class="flex items-center justify-between gap-2 bg-grey-50">
-          <span class="font-bold">{gettext("Hours record")}</span>
+          <span class="font-bold">{pgettext("hours record page", "Timesheet")}</span>
 
           <%= if @current_hours_record do %>
             <span class="flex items-center justify-center gap-1 rounded-md bg-moss-200 py-[5px] pr-1 pl-2 text-xs font-semibold text-moss-700 uppercase">
@@ -73,7 +73,7 @@
           <% end %>
         </div>
         <p :if={!@can_use_hours_records} class="mt-2 text-sm">
-          {gettext("To fill in the hours record you must set your name and employment date in")}
+          {gettext("To fill in the timesheet you must set your name and employment date in")}
           <.link
             kind="unstyled"
             navigate={~p"/ustawienia"}
@@ -117,7 +117,7 @@
         <.submission_history records={@previous_hours_records} user={@current_user} />
       </div>
       <p :if={!@current_hours_record && @total_duration <= 3599} class="mt-2 text-center text-sm">
-        {gettext("To fill in the hours record you must add at least one hour of work")}
+        {gettext("To fill in the timesheet you must add at least one hour of work")}
       </p>
     </div>
   </div>

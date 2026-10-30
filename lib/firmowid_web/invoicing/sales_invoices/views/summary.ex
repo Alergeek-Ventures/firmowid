@@ -69,7 +69,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Summary do
     ~H"""
     <div class="mx-auto my-4 flex w-full max-w-6xl flex-col gap-4">
       <p class="text-sm text-grey-500">
-        {gettext("Invoice creator")} | <span class="text-grey-700">{gettext("Invoice issued")}</span>
+        {gettext("Invoice wizard")} | <span class="text-grey-700">{gettext("Invoice issued")}</span>
       </p>
       <%= cond do %>
         <% SubmissionInfo.submitting?(@submission_info) -> %>

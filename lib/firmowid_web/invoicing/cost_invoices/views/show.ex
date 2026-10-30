@@ -130,7 +130,7 @@ defmodule FirmowidWeb.Invoicing.CostInvoices.Views.Show do
          |> assign(:potential_transactions, potential_transactions)}
 
       {:error, _error} ->
-        {:noreply, put_flash(socket, :error, gettext("Could not connect the transaction."))}
+        {:noreply, put_flash(socket, :error, gettext("Could not link the transaction."))}
     end
   end
 
@@ -158,7 +158,7 @@ defmodule FirmowidWeb.Invoicing.CostInvoices.Views.Show do
          |> assign(:potential_transactions, potential_transactions)}
 
       {:error, _error} ->
-        {:noreply, put_flash(socket, :error, gettext("Could not disconnect the transaction."))}
+        {:noreply, put_flash(socket, :error, gettext("Could not unlink the transaction."))}
     end
   end
 

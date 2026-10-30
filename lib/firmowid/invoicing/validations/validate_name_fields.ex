@@ -42,8 +42,8 @@ defmodule Firmowid.Invoicing.Validations.ValidateNameFields do
 
         errors =
           []
-          |> maybe_add_error(given_name, given_name_field, gettext("given name is required"))
-          |> maybe_add_error(surname, surname_field, gettext("surname is required"))
+          |> maybe_add_error(given_name, given_name_field, gettext("first name is required"))
+          |> maybe_add_error(surname, surname_field, gettext("last name is required"))
 
         case errors do
           [] -> :ok
@@ -93,7 +93,7 @@ defmodule Firmowid.Invoicing.Validations.ValidateNameFields do
            error(^InvalidAttribute, %{
              field: ^given_name_field,
              value: ^atomic_ref(given_name_field),
-             message: ^gettext("given name is required")
+             message: ^gettext("first name is required")
            })
          )},
         {:atomic, [type_field, surname_field],
@@ -105,7 +105,7 @@ defmodule Firmowid.Invoicing.Validations.ValidateNameFields do
            error(^InvalidAttribute, %{
              field: ^surname_field,
              value: ^atomic_ref(surname_field),
-             message: ^gettext("surname is required")
+             message: ^gettext("last name is required")
            })
          )}
       ]
