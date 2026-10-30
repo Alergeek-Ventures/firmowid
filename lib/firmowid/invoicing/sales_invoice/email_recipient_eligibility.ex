@@ -39,9 +39,10 @@ defmodule Firmowid.Invoicing.SalesInvoice.EmailRecipientEligibility do
 
   defp validate_email(_email), do: {:error, no_counterparty_email(), nil}
 
-  defp no_counterparty, do: gettext("The invoice has no counterparty assigned.")
+  defp no_counterparty, do: gettext_noop("The invoice has no counterparty assigned.")
 
-  defp no_counterparty_email, do: gettext("The counterparty assigned to the invoice has no email address.")
+  defp no_counterparty_email, do: gettext_noop("The counterparty assigned to the invoice has no email address.")
 
-  defp invalid_counterparty_email, do: gettext("The counterparty assigned to the invoice has an invalid email address.")
+  defp invalid_counterparty_email,
+    do: gettext_noop("The counterparty assigned to the invoice has an invalid email address.")
 end

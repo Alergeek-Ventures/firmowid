@@ -12,6 +12,7 @@ defmodule FirmowidUI.Ksef.Connection do
   alias Firmowid.Ksef
   alias Firmowid.Ksef.Credential
   alias Firmowid.Scope
+  alias FirmowidUI.Components.Inputs
   alias FirmowidUI.Utilities.ForbiddenError
   alias Phoenix.LiveView.Socket
   alias Phoenix.Socket.Broadcast
@@ -83,8 +84,8 @@ defmodule FirmowidUI.Ksef.Connection do
       {:ok, credential} ->
         authentication_started(socket, credential, scope)
 
-      {:error, %Invalid{errors: [%{message: message} | _]}} ->
-        LiveToast.send_toast(:error, message)
+      {:error, %Invalid{errors: [%{message: message} = error | _]}} ->
+        LiveToast.send_toast(:error, Inputs.translate_error({message, Map.get(error, :vars, [])}))
         {:noreply, socket}
 
       {:error, _reason} ->

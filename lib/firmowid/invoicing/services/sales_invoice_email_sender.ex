@@ -3,6 +3,8 @@ defmodule Firmowid.Invoicing.Services.SalesInvoiceEmailSender do
   Sends sales invoice emails and returns delivery outcome attributes.
   """
 
+  use Gettext, backend: Firmowid.Gettext
+
   import Swoosh.Email
 
   alias Firmowid.Invoicing.SalesInvoice
@@ -13,7 +15,8 @@ defmodule Firmowid.Invoicing.Services.SalesInvoiceEmailSender do
   alias Firmowid.Mailer
   alias Firmowid.Scope
 
-  @generic_send_failure_message "Nie udało się wysłać wiadomości email"
+  # Stored as a msgid on the delivery record and translated where it is shown.
+  @generic_send_failure_message gettext_noop("Failed to send the email message")
 
   @doc """
   Sends a sales invoice email and returns attrs for the final delivery record.

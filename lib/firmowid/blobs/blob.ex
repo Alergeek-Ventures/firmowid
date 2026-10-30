@@ -200,7 +200,7 @@ defmodule Firmowid.Blobs.Blob do
         metadata = %{
           error: error || "unknown_error",
           error_code: error_code || "processing_failed",
-          error_message: error_message || gettext("Could not process the file.")
+          error_message: error_message || gettext_noop("Could not process the file.")
         }
 
         metadata =

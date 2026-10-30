@@ -28,6 +28,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
   alias Firmowid.Invoicing.SalesInvoice.EmailRecipientEligibility
   alias Firmowid.Invoicing.WizardState
   alias Firmowid.Ksef
+  alias FirmowidUI.Components.Inputs
   alias FirmowidWeb.Infrastructure.Utilities.PolishValues
   alias FirmowidWeb.Infrastructure.Utilities.PosthogBusinessEvents
   alias FirmowidWeb.Invoicing.SalesInvoices.Components.InvoicePayment
@@ -549,8 +550,11 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
 
   defp counterparty_check(counterparty_id, scope) do
     case EmailRecipientEligibility.fetch_valid_counterparty_email(counterparty_id, scope) do
-      {:ok, _email} -> %{valid: true, tooltip: nil}
-      {:error, reason, _email} -> %{valid: false, tooltip: reason}
+      {:ok, _email} ->
+        %{valid: true, tooltip: nil}
+
+      {:error, reason, _email} ->
+        %{valid: false, tooltip: Gettext.gettext(Firmowid.Gettext, reason)}
     end
   end
 
@@ -1164,8 +1168,8 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
 
     messages =
       errors
-      |> Enum.map(fn e -> Map.get(e, :message, "") end)
-      |> Enum.reject(&(&1 == ""))
+      |> Enum.reject(&(Map.get(&1, :message) in [nil, ""]))
+      |> Enum.map(&Inputs.translate_error({&1.message, Map.get(&1, :vars, [])}))
       |> Enum.uniq()
 
     case messages do

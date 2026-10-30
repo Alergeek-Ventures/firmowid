@@ -987,8 +987,8 @@ msgstr ""
 msgid "Could not disconnect this transaction from the salary."
 msgstr ""
 
-#: lib/firmowid_web/invoicing/sales_invoices/views/creator.ex:1172
-#: lib/firmowid_web/invoicing/sales_invoices/views/creator.ex:1179
+#: lib/firmowid_web/invoicing/sales_invoices/views/creator.ex:1176
+#: lib/firmowid_web/invoicing/sales_invoices/views/creator.ex:1183
 #, elixir-autogen, elixir-format
 msgid "Could not issue the invoice."
 msgstr ""
@@ -1018,7 +1018,7 @@ msgid "Could not update categories."
 msgstr ""
 
 #: lib/firmowid_web/invoicing/components/invoice_details.ex:416
-#: lib/firmowid_web/invoicing/sales_invoices/views/creator.ex:1243
+#: lib/firmowid_web/invoicing/sales_invoices/views/creator.ex:1247
 #: lib/firmowid_web/invoicing/sales_invoices/views/creator_counterparty.html.heex:149
 #: lib/firmowid_web/invoicing/sales_invoices/views/creator_counterparty.html.heex:284
 #: lib/firmowid_web/invoicing/sales_invoices/views/edit_form.html.heex:61
@@ -1873,7 +1873,7 @@ msgstr ""
 msgid "Invoice number"
 msgstr ""
 
-#: lib/firmowid_web/invoicing/sales_invoices/views/creator.ex:1177
+#: lib/firmowid_web/invoicing/sales_invoices/views/creator.ex:1181
 #: lib/firmowid_web/invoicing/sales_invoices/views/edit.ex:684
 #, elixir-autogen, elixir-format
 msgid "Invoice number is required."
@@ -3771,7 +3771,7 @@ msgstr ""
 msgid "Unpaid leave"
 msgstr ""
 
-#: lib/firmowid/blobs/changes/process_document_blob.ex:83
+#: lib/firmowid/blobs/changes/process_document_blob.ex:85
 #, elixir-autogen, elixir-format
 msgid "Upload a contract, an employee declaration or a payroll document."
 msgstr ""
@@ -5676,8 +5676,8 @@ msgstr ""
 msgid "Hours record"
 msgstr ""
 
-#: lib/firmowid_web/invoicing/sales_invoices/views/creator.ex:95
-#: lib/firmowid_web/invoicing/sales_invoices/views/creator.ex:1231
+#: lib/firmowid_web/invoicing/sales_invoices/views/creator.ex:96
+#: lib/firmowid_web/invoicing/sales_invoices/views/creator.ex:1235
 #: lib/firmowid_web/invoicing/sales_invoices/views/summary.ex:72
 #, elixir-autogen, elixir-format
 msgid "Invoice creator"
@@ -5934,7 +5934,7 @@ msgstr ""
 msgid "%{title} - which documents should I attach?"
 msgstr ""
 
-#: lib/firmowid_web/timetracker/views/index.ex:697
+#: lib/firmowid_web/timetracker/views/index.ex:703
 #, elixir-autogen, elixir-format
 msgid "%{weekday}, %{month} %{day}"
 msgstr ""
@@ -5975,7 +5975,7 @@ msgstr ""
 msgid "A new contract is waiting for you. Sign it with a Trusted Profile to finalize the formalities."
 msgstr ""
 
-#: lib/firmowid_web/settings/views/index.ex:719
+#: lib/firmowid_web/settings/views/index.ex:720
 #, elixir-autogen, elixir-format
 msgid "A new email address has been generated."
 msgstr ""
@@ -6329,12 +6329,12 @@ msgstr ""
 msgid "An error occurred"
 msgstr ""
 
-#: lib/firmowid_web/settings/views/index.ex:769
+#: lib/firmowid_web/settings/views/index.ex:770
 #, elixir-autogen, elixir-format
 msgid "An error occurred while adding the email address."
 msgstr ""
 
-#: lib/firmowid_web/settings/views/index.ex:627
+#: lib/firmowid_web/settings/views/index.ex:628
 #, elixir-autogen, elixir-format
 msgid "An error occurred while changing the account name."
 msgstr ""
@@ -6344,27 +6344,27 @@ msgstr ""
 msgid "An error occurred while connecting the bank account. Please try again."
 msgstr ""
 
-#: lib/firmowid_web/settings/views/index.ex:1165
+#: lib/firmowid_web/settings/views/index.ex:1169
 #, elixir-autogen, elixir-format
 msgid "An error occurred while connecting the bank account. Try again."
 msgstr ""
 
-#: lib/firmowid_web/settings/views/index.ex:378
+#: lib/firmowid_web/settings/views/index.ex:379
 #, elixir-autogen, elixir-format
 msgid "An error occurred while deleting the account"
 msgstr ""
 
-#: lib/firmowid_web/settings/views/index.ex:420
+#: lib/firmowid_web/settings/views/index.ex:421
 #, elixir-autogen, elixir-format
 msgid "An error occurred while deleting the bank account."
 msgstr ""
 
-#: lib/firmowid_ui/ksef/connection.ex:221
+#: lib/firmowid_ui/ksef/connection.ex:222
 #, elixir-autogen, elixir-format
 msgid "An error occurred while disconnecting from KSeF."
 msgstr ""
 
-#: lib/firmowid_web/settings/views/index.ex:963
+#: lib/firmowid_web/settings/views/index.ex:967
 #, elixir-autogen, elixir-format
 msgid "An error occurred while disconnecting the Google account."
 msgstr ""
@@ -6374,12 +6374,12 @@ msgstr ""
 msgid "An error occurred while generating the KSeF certificate."
 msgstr ""
 
-#: lib/firmowid_web/settings/views/index.ex:729
+#: lib/firmowid_web/settings/views/index.ex:730
 #, elixir-autogen, elixir-format
 msgid "An error occurred while generating the new address."
 msgstr ""
 
-#: lib/firmowid_web/settings/views/index.ex:802
+#: lib/firmowid_web/settings/views/index.ex:803
 #, elixir-autogen, elixir-format
 msgid "An error occurred while removing the email address."
 msgstr ""
@@ -6389,23 +6389,23 @@ msgstr ""
 msgid "An error occurred while saving the file."
 msgstr ""
 
-#: lib/firmowid_web/settings/views/index.ex:316
+#: lib/firmowid_web/settings/views/index.ex:317
 #, elixir-autogen, elixir-format
 msgid "An error occurred while sending the file."
 msgstr ""
 
-#: lib/firmowid_web/settings/views/index.ex:450
+#: lib/firmowid_web/settings/views/index.ex:451
 #, elixir-autogen, elixir-format
 msgid "An error occurred while setting the bank account as the default."
 msgstr ""
 
-#: lib/firmowid_web/settings/views/index.ex:349
+#: lib/firmowid_web/settings/views/index.ex:350
 #, elixir-autogen, elixir-format
 msgid "An error occurred while updating the picture."
 msgstr ""
 
-#: lib/firmowid_web/timetracker/views/index.ex:404
-#: lib/firmowid_web/timetracker/views/index.ex:428
+#: lib/firmowid_web/timetracker/views/index.ex:410
+#: lib/firmowid_web/timetracker/views/index.ex:434
 #, elixir-autogen, elixir-format
 msgid "An error occurred while updating the session."
 msgstr ""
@@ -6431,12 +6431,12 @@ msgstr ""
 msgid "An unexpected error occurred while sending to KSeF"
 msgstr ""
 
-#: lib/firmowid_web/timetracker/views/index.ex:272
+#: lib/firmowid_web/timetracker/views/index.ex:273
 #, elixir-autogen, elixir-format
 msgid "An unexpected error occurred."
 msgstr ""
 
-#: lib/firmowid_web/timetracker/views/index.ex:579
+#: lib/firmowid_web/timetracker/views/index.ex:585
 #, elixir-autogen, elixir-format
 msgid "An unexpected error occurred. Try again."
 msgstr ""
@@ -6824,7 +6824,7 @@ msgstr ""
 msgid "Check-out"
 msgstr ""
 
-#: lib/firmowid_ui/ksef/connection.ex:187
+#: lib/firmowid_ui/ksef/connection.ex:188
 #, elixir-autogen, elixir-format
 msgid "Choose a certificate and a private key."
 msgstr ""
@@ -6847,7 +6847,7 @@ msgstr ""
 msgid "Choose a file"
 msgstr ""
 
-#: lib/firmowid_web/settings/views/index.ex:1090
+#: lib/firmowid_web/settings/views/index.ex:1094
 #, elixir-autogen, elixir-format
 msgid "Choose a file to upload."
 msgstr ""
@@ -7040,7 +7040,7 @@ msgstr ""
 msgid "Connected to KSeF"
 msgstr ""
 
-#: lib/firmowid_ui/ksef/connection.ex:255
+#: lib/firmowid_ui/ksef/connection.ex:256
 #, elixir-autogen, elixir-format
 msgid "Connected to KSeF."
 msgstr ""
@@ -7221,7 +7221,7 @@ msgstr ""
 msgid "Cost invoices from outside KSeF"
 msgstr ""
 
-#: lib/firmowid_web/settings/views/index.ex:700
+#: lib/firmowid_web/settings/views/index.ex:701
 #, elixir-autogen, elixir-format
 msgid "Could not add the account."
 msgstr ""
@@ -7256,7 +7256,7 @@ msgstr ""
 msgid "Could not archive the counterparty"
 msgstr ""
 
-#: lib/firmowid_web/settings/views/index.ex:594
+#: lib/firmowid_web/settings/views/index.ex:595
 #, elixir-autogen, elixir-format
 msgid "Could not archive the user."
 msgstr ""
@@ -7271,7 +7271,7 @@ msgstr ""
 msgid "Could not cancel the invoice."
 msgstr ""
 
-#: lib/firmowid_web/settings/views/index.ex:946
+#: lib/firmowid_web/settings/views/index.ex:947
 #, elixir-autogen, elixir-format
 msgid "Could not change the Google account."
 msgstr ""
@@ -7281,12 +7281,12 @@ msgstr ""
 msgid "Could not change the billing month."
 msgstr ""
 
-#: lib/firmowid_web/settings/views/index.ex:563
+#: lib/firmowid_web/settings/views/index.ex:564
 #, elixir-autogen, elixir-format
 msgid "Could not change the user's role."
 msgstr ""
 
-#: lib/firmowid_web/timetracker/views/index.ex:342
+#: lib/firmowid_web/timetracker/views/index.ex:348
 #, elixir-autogen, elixir-format
 msgid "Could not check for conflicts. Try again."
 msgstr ""
@@ -7298,7 +7298,7 @@ msgid "Could not connect the transaction."
 msgstr ""
 
 #: lib/firmowid_ui/components/ksef_connection.ex:555
-#: lib/firmowid_ui/ksef/connection.ex:91
+#: lib/firmowid_ui/ksef/connection.ex:92
 #, elixir-autogen, elixir-format
 msgid "Could not connect to KSeF. Please try again."
 msgstr ""
@@ -7318,7 +7318,7 @@ msgstr ""
 msgid "Could not delete the organization from the database. Try again."
 msgstr ""
 
-#: lib/firmowid_web/timetracker/views/index.ex:616
+#: lib/firmowid_web/timetracker/views/index.ex:622
 #, elixir-autogen, elixir-format
 msgid "Could not delete the session"
 msgstr ""
@@ -7339,7 +7339,7 @@ msgstr ""
 msgid "Could not disconnect the transaction."
 msgstr ""
 
-#: lib/firmowid_ui/ksef/connection.ex:121
+#: lib/firmowid_ui/ksef/connection.ex:122
 #, elixir-autogen, elixir-format
 msgid "Could not download the document from KSeF."
 msgstr ""
@@ -7364,7 +7364,7 @@ msgstr ""
 msgid "Could not download the report"
 msgstr ""
 
-#: lib/firmowid/blobs/changes/process_document_blob.ex:127
+#: lib/firmowid/blobs/changes/process_document_blob.ex:129
 #, elixir-autogen, elixir-format
 msgid "Could not extract the salary data from the contract."
 msgstr ""
@@ -7421,7 +7421,7 @@ msgstr ""
 msgid "Could not load the counterparty"
 msgstr ""
 
-#: lib/firmowid_web/invoicing/sales_invoices/views/creator.ex:1154
+#: lib/firmowid_web/invoicing/sales_invoices/views/creator.ex:1158
 #, elixir-autogen, elixir-format
 msgid "Could not load the counterparty details. Try again."
 msgstr ""
@@ -7432,7 +7432,7 @@ msgid "Could not open the request."
 msgstr ""
 
 #: lib/firmowid/blobs/blob.ex:203
-#: lib/firmowid/blobs/changes/process_document_blob.ex:137
+#: lib/firmowid/blobs/changes/process_document_blob.ex:139
 #, elixir-autogen, elixir-format
 msgid "Could not process the file."
 msgstr ""
@@ -7484,12 +7484,12 @@ msgstr ""
 msgid "Could not save the changes. Refresh the page and try again."
 msgstr ""
 
-#: lib/firmowid_web/invoicing/sales_invoices/views/creator.ex:882
+#: lib/firmowid_web/invoicing/sales_invoices/views/creator.ex:886
 #, elixir-autogen, elixir-format
 msgid "Could not save the counterparty details — check the form errors (e.g. NIP)."
 msgstr ""
 
-#: lib/firmowid_web/invoicing/sales_invoices/views/creator.ex:1052
+#: lib/firmowid_web/invoicing/sales_invoices/views/creator.ex:1056
 #: lib/firmowid_web/invoicing/sales_invoices/views/edit.ex:501
 #, elixir-autogen, elixir-format
 msgid "Could not save the invoice."
@@ -7505,7 +7505,7 @@ msgstr ""
 msgid "Could not send the correction to KSeF. The correction was deleted — fix the data and try again."
 msgstr ""
 
-#: lib/firmowid_web/settings/views/index.ex:521
+#: lib/firmowid_web/settings/views/index.ex:522
 #, elixir-autogen, elixir-format
 msgid "Could not send the email. Try again."
 msgstr ""
@@ -7515,12 +7515,12 @@ msgstr ""
 msgid "Could not send the password reset instructions. Try again."
 msgstr ""
 
-#: lib/firmowid_ui/ksef/connection.ex:180
+#: lib/firmowid_ui/ksef/connection.ex:181
 #, elixir-autogen, elixir-format
 msgid "Could not sign in to KSeF. Check the files and the key password."
 msgstr ""
 
-#: lib/firmowid_web/settings/views/index.ex:666
+#: lib/firmowid_web/settings/views/index.ex:667
 #, elixir-autogen, elixir-format
 msgid "Could not start reconnecting."
 msgstr ""
@@ -7530,7 +7530,7 @@ msgstr ""
 msgid "Could not submit the record. Fill in the required fields."
 msgstr ""
 
-#: lib/firmowid_web/settings/views/index.ex:1034
+#: lib/firmowid_web/settings/views/index.ex:1038
 #, elixir-autogen, elixir-format
 msgid "Could not submit the request."
 msgstr ""
@@ -7540,20 +7540,20 @@ msgstr ""
 msgid "Could not update the rates: %{error}"
 msgstr ""
 
-#: lib/firmowid_web/timetracker/views/index.ex:677
 #: lib/firmowid_web/timetracker/views/index.ex:683
+#: lib/firmowid_web/timetracker/views/index.ex:689
 #, elixir-autogen, elixir-format
 msgid "Could not update the session"
 msgstr ""
 
-#: lib/firmowid_web/settings/views/index.ex:1080
+#: lib/firmowid_web/settings/views/index.ex:1084
 #, elixir-autogen, elixir-format
 msgid "Could not upload the contract. Try again."
 msgstr ""
 
 #: lib/firmowid_web/infrastructure/components/blob_processing_toasts.ex:58
 #: lib/firmowid_web/management/views/employee.ex:249
-#: lib/firmowid_web/settings/views/index.ex:1228
+#: lib/firmowid_web/settings/views/index.ex:1232
 #, elixir-autogen, elixir-format
 msgid "Could not upload the file"
 msgstr ""
@@ -7756,7 +7756,7 @@ msgstr ""
 msgid "Disconnect"
 msgstr ""
 
-#: lib/firmowid_ui/ksef/connection.ex:211
+#: lib/firmowid_ui/ksef/connection.ex:212
 #, elixir-autogen, elixir-format
 msgid "Disconnected from KSeF."
 msgstr ""
@@ -8159,9 +8159,8 @@ msgstr ""
 msgid "Failed to save the comment"
 msgstr ""
 
-#: lib/firmowid_web/invoicing/components/invoice_timeline.ex:174
-#: lib/firmowid_web/invoicing/components/invoice_timeline.ex:202
-#: lib/firmowid_web/invoicing/components/invoice_timeline.ex:230
+#: lib/firmowid/invoicing/services/sales_invoice_email_sender.ex:19
+#: lib/firmowid_web/invoicing/components/invoice_timeline.ex:371
 #, elixir-autogen, elixir-format
 msgid "Failed to send the email message"
 msgstr ""
@@ -8191,7 +8190,7 @@ msgstr ""
 msgid "Fetching invoices"
 msgstr ""
 
-#: lib/firmowid_ui/ksef/connection.ex:203
+#: lib/firmowid_ui/ksef/connection.ex:204
 #, elixir-autogen, elixir-format
 msgid "Fetching invoices from KSeF has started."
 msgstr ""
@@ -8201,7 +8200,7 @@ msgstr ""
 msgid "Field is required"
 msgstr ""
 
-#: lib/firmowid_web/settings/views/index.ex:1248
+#: lib/firmowid_web/settings/views/index.ex:1252
 #, elixir-autogen, elixir-format
 msgid "File %{filename} does not contain the required data. Make sure you are uploading a contract."
 msgstr ""
@@ -8609,7 +8608,7 @@ msgstr ""
 msgid "Incorrect email or password."
 msgstr ""
 
-#: lib/firmowid_web/settings/views/index.ex:387
+#: lib/firmowid_web/settings/views/index.ex:388
 #, elixir-autogen, elixir-format
 msgid "Incorrect password"
 msgstr ""
@@ -8654,7 +8653,7 @@ msgstr ""
 #: lib/firmowid_web/infrastructure/components/blob_processing_toasts.ex:44
 #: lib/firmowid_web/invoicing/views/index.ex:564
 #: lib/firmowid_web/management/views/employee.ex:278
-#: lib/firmowid_web/settings/views/index.ex:1252
+#: lib/firmowid_web/settings/views/index.ex:1256
 #, elixir-autogen, elixir-format
 msgid "Invalid document"
 msgstr ""
@@ -8664,7 +8663,7 @@ msgstr ""
 msgid "Invalid plan."
 msgstr ""
 
-#: lib/firmowid_web/settings/views/index.ex:868
+#: lib/firmowid_web/settings/views/index.ex:869
 #, elixir-autogen, elixir-format
 msgid "Invalid role."
 msgstr ""
@@ -8751,7 +8750,7 @@ msgstr ""
 msgid "Invoice not found — Firmowid"
 msgstr ""
 
-#: lib/firmowid_web/invoicing/sales_invoices/views/creator.ex:162
+#: lib/firmowid_web/invoicing/sales_invoices/views/creator.ex:163
 #, elixir-autogen, elixir-format
 msgid "Invoice not found."
 msgstr ""
@@ -8878,7 +8877,7 @@ msgstr ""
 msgid "KSeF authentication failed."
 msgstr ""
 
-#: lib/firmowid_ui/ksef/connection.ex:280
+#: lib/firmowid_ui/ksef/connection.ex:281
 #, elixir-autogen, elixir-format
 msgid "KSeF authentication has started."
 msgstr ""
@@ -8893,7 +8892,7 @@ msgstr ""
 msgid "KSeF certificate"
 msgstr ""
 
-#: lib/firmowid_ui/ksef/connection.ex:140
+#: lib/firmowid_ui/ksef/connection.ex:141
 #, elixir-autogen, elixir-format
 msgid "KSeF certificate generation has started."
 msgstr ""
@@ -9241,7 +9240,7 @@ msgstr ""
 msgid "No expenses have been added in this category."
 msgstr ""
 
-#: lib/firmowid_web/settings/views/index.ex:1090
+#: lib/firmowid_web/settings/views/index.ex:1094
 #, elixir-autogen, elixir-format
 msgid "No file"
 msgstr ""
@@ -9408,17 +9407,17 @@ msgstr ""
 msgid "Only PDF files are allowed."
 msgstr ""
 
-#: lib/firmowid_web/settings/views/index.ex:572
+#: lib/firmowid_web/settings/views/index.ex:573
 #, elixir-autogen, elixir-format
 msgid "Only an administrator can archive users."
 msgstr ""
 
-#: lib/firmowid_web/settings/views/index.ex:710
+#: lib/firmowid_web/settings/views/index.ex:711
 #, elixir-autogen, elixir-format
 msgid "Only an administrator can change the email address."
 msgstr ""
 
-#: lib/firmowid_web/settings/views/index.ex:329
+#: lib/firmowid_web/settings/views/index.ex:330
 #, elixir-autogen, elixir-format
 msgid "Only an administrator can change the organization logo."
 msgstr ""
@@ -9438,18 +9437,18 @@ msgstr ""
 msgid "Only an administrator can delete invitations."
 msgstr ""
 
-#: lib/firmowid_ui/ksef/connection.ex:312
+#: lib/firmowid_ui/ksef/connection.ex:313
 #, elixir-autogen, elixir-format
 msgid "Only an administrator can manage KSeF."
 msgstr ""
 
-#: lib/firmowid_web/settings/views/index.ex:749
-#: lib/firmowid_web/settings/views/index.ex:780
+#: lib/firmowid_web/settings/views/index.ex:750
+#: lib/firmowid_web/settings/views/index.ex:781
 #, elixir-autogen, elixir-format
 msgid "Only an administrator can manage the allowed addresses list."
 msgstr ""
 
-#: lib/firmowid_web/settings/views/index.ex:462
+#: lib/firmowid_web/settings/views/index.ex:463
 #, elixir-autogen, elixir-format
 msgid "Only an administrator can update the organization."
 msgstr ""
@@ -9826,18 +9825,18 @@ msgstr ""
 msgid "Receiving address"
 msgstr ""
 
-#: lib/firmowid_web/settings/views/index.ex:740
+#: lib/firmowid_web/settings/views/index.ex:741
 #, elixir-autogen, elixir-format
 msgid "Receiving address copied"
 msgstr ""
 
-#: lib/firmowid_web/invoicing/sales_invoices/views/creator.ex:665
-#: lib/firmowid_web/invoicing/sales_invoices/views/creator.ex:668
+#: lib/firmowid_web/invoicing/sales_invoices/views/creator.ex:669
+#: lib/firmowid_web/invoicing/sales_invoices/views/creator.ex:672
 #, elixir-autogen, elixir-format
 msgid "Recent invoices"
 msgstr ""
 
-#: lib/firmowid_web/invoicing/sales_invoices/views/creator.ex:668
+#: lib/firmowid_web/invoicing/sales_invoices/views/creator.ex:672
 #, elixir-autogen, elixir-format
 msgid "Recently chosen"
 msgstr ""
@@ -10361,7 +10360,7 @@ msgstr ""
 msgid "Statistics"
 msgstr ""
 
-#: lib/firmowid_web/invoicing/sales_invoices/views/creator.ex:1235
+#: lib/firmowid_web/invoicing/sales_invoices/views/creator.ex:1239
 #, elixir-autogen, elixir-format
 msgid "Step %{step}."
 msgstr ""
@@ -10449,7 +10448,7 @@ msgstr ""
 msgid "The %{client} application is requesting access to your Firmowid account through MCP."
 msgstr ""
 
-#: lib/firmowid_web/settings/views/index.ex:956
+#: lib/firmowid_web/settings/views/index.ex:957
 #, elixir-autogen, elixir-format
 msgid "The Google account has been disconnected."
 msgstr ""
@@ -10469,17 +10468,17 @@ msgstr ""
 msgid "The NIP in the token does not match the organization's NIP."
 msgstr ""
 
-#: lib/firmowid_web/settings/views/index.ex:684
+#: lib/firmowid_web/settings/views/index.ex:685
 #, elixir-autogen, elixir-format
 msgid "The account has been added."
 msgstr ""
 
-#: lib/firmowid_web/settings/views/index.ex:374
+#: lib/firmowid_web/settings/views/index.ex:375
 #, elixir-autogen, elixir-format
 msgid "The account has been deleted."
 msgstr ""
 
-#: lib/firmowid_web/settings/views/index.ex:605
+#: lib/firmowid_web/settings/views/index.ex:606
 #, elixir-autogen, elixir-format
 msgid "The account name has been changed."
 msgstr ""
@@ -10509,12 +10508,12 @@ msgstr ""
 msgid "The application will work in the selected organization."
 msgstr ""
 
-#: lib/firmowid_web/settings/views/index.ex:1159
+#: lib/firmowid_web/settings/views/index.ex:1163
 #, elixir-autogen, elixir-format
 msgid "The bank account has been connected successfully!"
 msgstr ""
 
-#: lib/firmowid_web/settings/views/index.ex:402
+#: lib/firmowid_web/settings/views/index.ex:403
 #, elixir-autogen, elixir-format
 msgid "The bank account has been deleted."
 msgstr ""
@@ -10540,7 +10539,7 @@ msgid "The bank connection is being set up."
 msgstr ""
 
 #: lib/firmowid_web/invoicing/views/index.ex:694
-#: lib/firmowid_web/settings/views/index.ex:1168
+#: lib/firmowid_web/settings/views/index.ex:1172
 #, elixir-autogen, elixir-format
 msgid "The bank connection status has been updated."
 msgstr ""
@@ -10550,7 +10549,7 @@ msgstr ""
 msgid "The bank connection was rejected. Please try again."
 msgstr ""
 
-#: lib/firmowid_web/settings/views/index.ex:1162
+#: lib/firmowid_web/settings/views/index.ex:1166
 #, elixir-autogen, elixir-format
 msgid "The bank connection was rejected. Try again."
 msgstr ""
@@ -10565,7 +10564,7 @@ msgstr ""
 msgid "The confirmation link is invalid or has expired."
 msgstr ""
 
-#: lib/firmowid_web/settings/views/index.ex:1068
+#: lib/firmowid_web/settings/views/index.ex:1072
 #, elixir-autogen, elixir-format
 msgid "The contract has been signed successfully."
 msgstr ""
@@ -10585,7 +10584,7 @@ msgstr ""
 msgid "The correspondence address is the same as the residential address"
 msgstr ""
 
-#: lib/firmowid/invoicing/sales_invoice/email_recipient_eligibility.ex:46
+#: lib/firmowid/invoicing/sales_invoice/email_recipient_eligibility.ex:47
 #, elixir-autogen, elixir-format
 msgid "The counterparty assigned to the invoice has an invalid email address."
 msgstr ""
@@ -10595,7 +10594,7 @@ msgstr ""
 msgid "The counterparty assigned to the invoice has no email address."
 msgstr ""
 
-#: lib/firmowid_web/invoicing/sales_invoices/views/creator.ex:1141
+#: lib/firmowid_web/invoicing/sales_invoices/views/creator.ex:1145
 #, elixir-autogen, elixir-format
 msgid "The counterparty details need completing — correct the form."
 msgstr ""
@@ -10605,7 +10604,7 @@ msgstr ""
 msgid "The counterparty was archived on %{date}. The data remains available historically, but the counterparty will not appear in new selections."
 msgstr ""
 
-#: lib/firmowid_web/invoicing/sales_invoices/views/creator.ex:297
+#: lib/firmowid_web/invoicing/sales_invoices/views/creator.ex:298
 #, elixir-autogen, elixir-format
 msgid "The creator draft was not found, starting over."
 msgstr ""
@@ -10625,12 +10624,12 @@ msgstr ""
 msgid "The document has been skipped. Transactions will not be assigned to it"
 msgstr ""
 
-#: lib/firmowid_web/settings/views/index.ex:760
+#: lib/firmowid_web/settings/views/index.ex:761
 #, elixir-autogen, elixir-format
 msgid "The email address has been added to the allowed list."
 msgstr ""
 
-#: lib/firmowid_web/settings/views/index.ex:791
+#: lib/firmowid_web/settings/views/index.ex:792
 #, elixir-autogen, elixir-format
 msgid "The email address has been removed from the allowed list."
 msgstr ""
@@ -10665,7 +10664,7 @@ msgstr ""
 msgid "The file %{file} will contain all documents whose %{dates} falls in the current month."
 msgstr ""
 
-#: lib/firmowid/blobs/changes/process_document_blob.ex:80
+#: lib/firmowid/blobs/changes/process_document_blob.ex:82
 #, elixir-autogen, elixir-format
 msgid "The file does not contain the data required for a cost invoice."
 msgstr ""
@@ -10675,12 +10674,12 @@ msgstr ""
 msgid "The file has been saved."
 msgstr ""
 
-#: lib/firmowid_web/settings/views/index.ex:312
+#: lib/firmowid_web/settings/views/index.ex:313
 #, elixir-autogen, elixir-format
 msgid "The file has been sent."
 msgstr ""
 
-#: lib/firmowid_web/settings/views/index.ex:1085
+#: lib/firmowid_web/settings/views/index.ex:1089
 #, elixir-autogen, elixir-format
 msgid "The file is still being uploaded."
 msgstr ""
@@ -10718,17 +10717,17 @@ msgstr ""
 msgid "The files are being processed and will be available in Firmowid in a few moments"
 msgstr ""
 
-#: lib/firmowid_web/settings/views/index.ex:874
+#: lib/firmowid_web/settings/views/index.ex:875
 #, elixir-autogen, elixir-format
 msgid "The invitation code has been copied to the clipboard."
 msgstr ""
 
-#: lib/firmowid_web/settings/views/index.ex:858
+#: lib/firmowid_web/settings/views/index.ex:859
 #, elixir-autogen, elixir-format
 msgid "The invitation code has been generated and copied to the clipboard."
 msgstr ""
 
-#: lib/firmowid_web/settings/views/index.ex:885
+#: lib/firmowid_web/settings/views/index.ex:886
 #, elixir-autogen, elixir-format
 msgid "The invitation has been deleted."
 msgstr ""
@@ -10774,7 +10773,7 @@ msgstr ""
 msgid "The invoice is locked. Editing will be available once the submission to KSeF is finished."
 msgstr ""
 
-#: lib/firmowid_web/invoicing/sales_invoices/views/creator.ex:270
+#: lib/firmowid_web/invoicing/sales_invoices/views/creator.ex:271
 #, elixir-autogen, elixir-format
 msgid "The invoice items were copied, but the counterparty details need fixing — complete the form."
 msgstr ""
@@ -10794,7 +10793,7 @@ msgstr ""
 msgid "The invoice was not found"
 msgstr ""
 
-#: lib/firmowid_web/invoicing/sales_invoices/views/creator.ex:1043
+#: lib/firmowid_web/invoicing/sales_invoices/views/creator.ex:1047
 #, elixir-autogen, elixir-format
 msgid "The invoice was saved as a draft."
 msgstr ""
@@ -10829,7 +10828,7 @@ msgstr ""
 msgid "The page you are looking for does not exist or has been moved."
 msgstr ""
 
-#: lib/firmowid_web/settings/views/index.ex:926
+#: lib/firmowid_web/settings/views/index.ex:927
 #, elixir-autogen, elixir-format
 msgid "The password has been changed successfully."
 msgstr ""
@@ -10839,8 +10838,8 @@ msgstr ""
 msgid "The password reset link is invalid or has expired."
 msgstr ""
 
-#: lib/firmowid_web/settings/views/index.ex:269
-#: lib/firmowid_web/settings/views/index.ex:284
+#: lib/firmowid_web/settings/views/index.ex:270
+#: lib/firmowid_web/settings/views/index.ex:285
 #, elixir-autogen, elixir-format
 msgid "The picture has been updated."
 msgstr ""
@@ -10875,19 +10874,19 @@ msgstr ""
 msgid "The request has no content."
 msgstr ""
 
-#: lib/firmowid_web/timetracker/views/index.ex:571
+#: lib/firmowid_web/timetracker/views/index.ex:577
 #, elixir-autogen, elixir-format
 msgid "The session conflict has changed. Try again."
 msgstr ""
 
-#: lib/firmowid_web/timetracker/views/index.ex:255
-#: lib/firmowid_web/timetracker/views/index.ex:402
-#: lib/firmowid_web/timetracker/views/index.ex:675
+#: lib/firmowid_web/timetracker/views/index.ex:256
+#: lib/firmowid_web/timetracker/views/index.ex:408
+#: lib/firmowid_web/timetracker/views/index.ex:681
 #, elixir-autogen, elixir-format
 msgid "The session overlaps another session."
 msgstr ""
 
-#: lib/firmowid_web/timetracker/views/index.ex:332
+#: lib/firmowid_web/timetracker/views/index.ex:338
 #, elixir-autogen, elixir-format
 msgid "The session overlaps approved sessions: %{titles}. Change the time of the new session."
 msgstr ""
@@ -10897,7 +10896,7 @@ msgstr ""
 msgid "The session will be deleted"
 msgstr ""
 
-#: lib/firmowid_ui/ksef/connection.ex:151
+#: lib/firmowid_ui/ksef/connection.ex:152
 #, elixir-autogen, elixir-format
 msgid "The signed document does not match the downloaded request."
 msgstr ""
@@ -10928,19 +10927,19 @@ msgstr ""
 msgid "The transaction was skipped in matching. Restore it if you still want to link it to a document."
 msgstr ""
 
-#: lib/firmowid_web/settings/views/index.ex:578
+#: lib/firmowid_web/settings/views/index.ex:579
 #, elixir-autogen, elixir-format
 msgid "The user has been archived."
 msgstr ""
 
-#: lib/firmowid_web/settings/views/index.ex:532
-#: lib/firmowid_web/settings/views/index.ex:559
-#: lib/firmowid_web/settings/views/index.ex:590
+#: lib/firmowid_web/settings/views/index.ex:533
+#: lib/firmowid_web/settings/views/index.ex:560
+#: lib/firmowid_web/settings/views/index.ex:591
 #, elixir-autogen, elixir-format
 msgid "The user was not found in the organization."
 msgstr ""
 
-#: lib/firmowid_web/settings/views/index.ex:546
+#: lib/firmowid_web/settings/views/index.ex:547
 #, elixir-autogen, elixir-format
 msgid "The user's role has been changed."
 msgstr ""
@@ -10960,7 +10959,7 @@ msgstr ""
 msgid "This %{likely} means the month can be considered closed."
 msgstr ""
 
-#: lib/firmowid/blobs/changes/process_document_blob.ex:116
+#: lib/firmowid/blobs/changes/process_document_blob.ex:118
 #, elixir-autogen, elixir-format
 msgid "This KSeF invoice is already in the system."
 msgstr ""
@@ -10980,7 +10979,7 @@ msgstr ""
 msgid "This cannot be undone."
 msgstr ""
 
-#: lib/firmowid_web/invoicing/sales_invoices/views/edit.ex:890
+#: lib/firmowid_web/invoicing/sales_invoices/views/edit.ex:893
 #, elixir-autogen, elixir-format
 msgid "This correction cannot be edited — a newer correction exists."
 msgstr ""
@@ -11013,7 +11012,7 @@ msgstr ""
 msgid "This file is already being processed"
 msgstr ""
 
-#: lib/firmowid_web/invoicing/sales_invoices/views/edit.ex:886
+#: lib/firmowid_web/invoicing/sales_invoices/views/edit.ex:889
 #, elixir-autogen, elixir-format
 msgid "This invoice cannot be edited — it has corrections. Edit the latest correction."
 msgstr ""
@@ -11225,8 +11224,7 @@ msgid "Unacceptable file type"
 msgstr ""
 
 #: lib/firmowid_web/invoicing/cost_invoices/views/inbox.ex:170
-#: lib/firmowid_web/timetracker/views/index.ex:265
-#: lib/firmowid_web/timetracker/views/index.ex:412
+#: lib/firmowid_web/timetracker/views/index.ex:281
 #, elixir-autogen, elixir-format
 msgid "Unknown error"
 msgstr ""
@@ -11236,7 +11234,7 @@ msgstr ""
 msgid "Unknown sender"
 msgstr ""
 
-#: lib/firmowid_web/settings/views/index.ex:555
+#: lib/firmowid_web/settings/views/index.ex:556
 #, elixir-autogen, elixir-format
 msgid "Unknown user role."
 msgstr ""
@@ -11292,7 +11290,7 @@ msgstr ""
 msgid "Upload document"
 msgstr ""
 
-#: lib/firmowid_web/settings/views/index.ex:1085
+#: lib/firmowid_web/settings/views/index.ex:1089
 #, elixir-autogen, elixir-format
 msgid "Upload error"
 msgstr ""
@@ -11412,7 +11410,7 @@ msgstr ""
 msgid "View hours record"
 msgstr ""
 
-#: lib/firmowid_web/timetracker/views/index.ex:717
+#: lib/firmowid_web/timetracker/views/index.ex:723
 #, elixir-autogen, elixir-format
 msgid "WEEK %{start}-%{end}"
 msgstr ""
@@ -11427,7 +11425,7 @@ msgstr ""
 msgid "We could not find the project you are looking for."
 msgstr ""
 
-#: lib/firmowid_web/settings/views/index.ex:509
+#: lib/firmowid_web/settings/views/index.ex:510
 #, elixir-autogen, elixir-format
 msgid "We have sent a confirmation link to the new email address."
 msgstr ""
@@ -11544,7 +11542,7 @@ msgstr ""
 msgid "You cannot add a session after the hours record has been submitted"
 msgstr ""
 
-#: lib/firmowid_web/settings/views/index.ex:586
+#: lib/firmowid_web/settings/views/index.ex:587
 #, elixir-autogen, elixir-format
 msgid "You cannot archive your own account from here."
 msgstr ""
@@ -11592,13 +11590,13 @@ msgstr ""
 msgid "You do not have any counterparties yet. Add the first one by clicking below."
 msgstr ""
 
-#: lib/firmowid_web/timetracker/views/index.ex:422
+#: lib/firmowid_web/timetracker/views/index.ex:428
 #, elixir-autogen, elixir-format
 msgid "You do not have permission to edit this session (it may be locked)."
 msgstr ""
 
-#: lib/firmowid_web/invoicing/sales_invoices/views/creator.ex:148
-#: lib/firmowid_web/invoicing/sales_invoices/views/creator.ex:182
+#: lib/firmowid_web/invoicing/sales_invoices/views/creator.ex:149
+#: lib/firmowid_web/invoicing/sales_invoices/views/creator.ex:183
 #, elixir-autogen, elixir-format
 msgid "You do not have permission to issue sales invoices."
 msgstr ""
@@ -12701,145 +12699,145 @@ msgctxt "member role"
 msgid "invoicing"
 msgstr ""
 
-#: lib/firmowid_web/timetracker/views/index.ex:52
-#, elixir-autogen, elixir-format
-msgctxt "month name after 'in'"
-msgid "April"
-msgstr ""
-
-#: lib/firmowid_web/timetracker/views/index.ex:56
-#, elixir-autogen, elixir-format
-msgctxt "month name after 'in'"
-msgid "August"
-msgstr ""
-
-#: lib/firmowid_web/timetracker/views/index.ex:60
-#, elixir-autogen, elixir-format
-msgctxt "month name after 'in'"
-msgid "December"
-msgstr ""
-
-#: lib/firmowid_web/timetracker/views/index.ex:50
-#, elixir-autogen, elixir-format
-msgctxt "month name after 'in'"
-msgid "February"
-msgstr ""
-
-#: lib/firmowid_web/timetracker/views/index.ex:49
-#, elixir-autogen, elixir-format
-msgctxt "month name after 'in'"
-msgid "January"
-msgstr ""
-
-#: lib/firmowid_web/timetracker/views/index.ex:55
-#, elixir-autogen, elixir-format
-msgctxt "month name after 'in'"
-msgid "July"
-msgstr ""
-
-#: lib/firmowid_web/timetracker/views/index.ex:54
-#, elixir-autogen, elixir-format
-msgctxt "month name after 'in'"
-msgid "June"
-msgstr ""
-
-#: lib/firmowid_web/timetracker/views/index.ex:51
-#, elixir-autogen, elixir-format
-msgctxt "month name after 'in'"
-msgid "March"
-msgstr ""
-
 #: lib/firmowid_web/timetracker/views/index.ex:53
 #, elixir-autogen, elixir-format
 msgctxt "month name after 'in'"
-msgid "May"
-msgstr ""
-
-#: lib/firmowid_web/timetracker/views/index.ex:59
-#, elixir-autogen, elixir-format
-msgctxt "month name after 'in'"
-msgid "November"
-msgstr ""
-
-#: lib/firmowid_web/timetracker/views/index.ex:58
-#, elixir-autogen, elixir-format
-msgctxt "month name after 'in'"
-msgid "October"
+msgid "April"
 msgstr ""
 
 #: lib/firmowid_web/timetracker/views/index.ex:57
 #, elixir-autogen, elixir-format
 msgctxt "month name after 'in'"
-msgid "September"
-msgstr ""
-
-#: lib/firmowid_web/timetracker/views/index.ex:38
-#, elixir-autogen, elixir-format
-msgctxt "month name in a date"
-msgid "April"
-msgstr ""
-
-#: lib/firmowid_web/timetracker/views/index.ex:42
-#, elixir-autogen, elixir-format
-msgctxt "month name in a date"
 msgid "August"
 msgstr ""
 
-#: lib/firmowid_web/timetracker/views/index.ex:46
+#: lib/firmowid_web/timetracker/views/index.ex:61
 #, elixir-autogen, elixir-format
-msgctxt "month name in a date"
+msgctxt "month name after 'in'"
 msgid "December"
 msgstr ""
 
-#: lib/firmowid_web/timetracker/views/index.ex:36
+#: lib/firmowid_web/timetracker/views/index.ex:51
 #, elixir-autogen, elixir-format
-msgctxt "month name in a date"
+msgctxt "month name after 'in'"
 msgid "February"
 msgstr ""
 
-#: lib/firmowid_web/timetracker/views/index.ex:35
+#: lib/firmowid_web/timetracker/views/index.ex:50
 #, elixir-autogen, elixir-format
-msgctxt "month name in a date"
+msgctxt "month name after 'in'"
 msgid "January"
 msgstr ""
 
-#: lib/firmowid_web/timetracker/views/index.ex:41
+#: lib/firmowid_web/timetracker/views/index.ex:56
 #, elixir-autogen, elixir-format
-msgctxt "month name in a date"
+msgctxt "month name after 'in'"
 msgid "July"
 msgstr ""
 
-#: lib/firmowid_web/timetracker/views/index.ex:40
+#: lib/firmowid_web/timetracker/views/index.ex:55
 #, elixir-autogen, elixir-format
-msgctxt "month name in a date"
+msgctxt "month name after 'in'"
 msgid "June"
 msgstr ""
 
-#: lib/firmowid_web/timetracker/views/index.ex:37
+#: lib/firmowid_web/timetracker/views/index.ex:52
 #, elixir-autogen, elixir-format
-msgctxt "month name in a date"
+msgctxt "month name after 'in'"
 msgid "March"
+msgstr ""
+
+#: lib/firmowid_web/timetracker/views/index.ex:54
+#, elixir-autogen, elixir-format
+msgctxt "month name after 'in'"
+msgid "May"
+msgstr ""
+
+#: lib/firmowid_web/timetracker/views/index.ex:60
+#, elixir-autogen, elixir-format
+msgctxt "month name after 'in'"
+msgid "November"
+msgstr ""
+
+#: lib/firmowid_web/timetracker/views/index.ex:59
+#, elixir-autogen, elixir-format
+msgctxt "month name after 'in'"
+msgid "October"
+msgstr ""
+
+#: lib/firmowid_web/timetracker/views/index.ex:58
+#, elixir-autogen, elixir-format
+msgctxt "month name after 'in'"
+msgid "September"
 msgstr ""
 
 #: lib/firmowid_web/timetracker/views/index.ex:39
 #, elixir-autogen, elixir-format
 msgctxt "month name in a date"
+msgid "April"
+msgstr ""
+
+#: lib/firmowid_web/timetracker/views/index.ex:43
+#, elixir-autogen, elixir-format
+msgctxt "month name in a date"
+msgid "August"
+msgstr ""
+
+#: lib/firmowid_web/timetracker/views/index.ex:47
+#, elixir-autogen, elixir-format
+msgctxt "month name in a date"
+msgid "December"
+msgstr ""
+
+#: lib/firmowid_web/timetracker/views/index.ex:37
+#, elixir-autogen, elixir-format
+msgctxt "month name in a date"
+msgid "February"
+msgstr ""
+
+#: lib/firmowid_web/timetracker/views/index.ex:36
+#, elixir-autogen, elixir-format
+msgctxt "month name in a date"
+msgid "January"
+msgstr ""
+
+#: lib/firmowid_web/timetracker/views/index.ex:42
+#, elixir-autogen, elixir-format
+msgctxt "month name in a date"
+msgid "July"
+msgstr ""
+
+#: lib/firmowid_web/timetracker/views/index.ex:41
+#, elixir-autogen, elixir-format
+msgctxt "month name in a date"
+msgid "June"
+msgstr ""
+
+#: lib/firmowid_web/timetracker/views/index.ex:38
+#, elixir-autogen, elixir-format
+msgctxt "month name in a date"
+msgid "March"
+msgstr ""
+
+#: lib/firmowid_web/timetracker/views/index.ex:40
+#, elixir-autogen, elixir-format
+msgctxt "month name in a date"
 msgid "May"
 msgstr ""
 
-#: lib/firmowid_web/timetracker/views/index.ex:45
+#: lib/firmowid_web/timetracker/views/index.ex:46
 #, elixir-autogen, elixir-format
 msgctxt "month name in a date"
 msgid "November"
 msgstr ""
 
-#: lib/firmowid_web/timetracker/views/index.ex:44
+#: lib/firmowid_web/timetracker/views/index.ex:45
 #, elixir-autogen, elixir-format
 msgctxt "month name in a date"
 msgid "October"
 msgstr ""
 
-#: lib/firmowid_web/timetracker/views/index.ex:43
+#: lib/firmowid_web/timetracker/views/index.ex:44
 #, elixir-autogen, elixir-format
 msgctxt "month name in a date"
 msgid "September"
@@ -12863,7 +12861,7 @@ msgctxt "page title"
 msgid "Invitations to your organization"
 msgstr ""
 
-#: lib/firmowid_web/timetracker/views/index.ex:223
+#: lib/firmowid_web/timetracker/views/index.ex:224
 #, elixir-autogen, elixir-format
 msgctxt "page title"
 msgid "Time tracker"
@@ -13103,43 +13101,43 @@ msgctxt "transport documents"
 msgid "Do you have an invoice?"
 msgstr ""
 
-#: lib/firmowid_web/timetracker/views/index.ex:30
+#: lib/firmowid_web/timetracker/views/index.ex:31
 #, elixir-autogen, elixir-format
 msgctxt "weekday name"
 msgid "Friday"
 msgstr ""
 
-#: lib/firmowid_web/timetracker/views/index.ex:26
+#: lib/firmowid_web/timetracker/views/index.ex:27
 #, elixir-autogen, elixir-format
 msgctxt "weekday name"
 msgid "Monday"
 msgstr ""
 
-#: lib/firmowid_web/timetracker/views/index.ex:31
+#: lib/firmowid_web/timetracker/views/index.ex:32
 #, elixir-autogen, elixir-format
 msgctxt "weekday name"
 msgid "Saturday"
 msgstr ""
 
-#: lib/firmowid_web/timetracker/views/index.ex:32
+#: lib/firmowid_web/timetracker/views/index.ex:33
 #, elixir-autogen, elixir-format
 msgctxt "weekday name"
 msgid "Sunday"
 msgstr ""
 
-#: lib/firmowid_web/timetracker/views/index.ex:29
+#: lib/firmowid_web/timetracker/views/index.ex:30
 #, elixir-autogen, elixir-format
 msgctxt "weekday name"
 msgid "Thursday"
 msgstr ""
 
-#: lib/firmowid_web/timetracker/views/index.ex:27
+#: lib/firmowid_web/timetracker/views/index.ex:28
 #, elixir-autogen, elixir-format
 msgctxt "weekday name"
 msgid "Tuesday"
 msgstr ""
 
-#: lib/firmowid_web/timetracker/views/index.ex:28
+#: lib/firmowid_web/timetracker/views/index.ex:29
 #, elixir-autogen, elixir-format
 msgctxt "weekday name"
 msgid "Wednesday"

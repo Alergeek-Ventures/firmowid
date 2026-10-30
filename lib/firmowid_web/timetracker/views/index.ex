@@ -16,6 +16,7 @@ defmodule FirmowidWeb.Timetracker.Views.Index do
   alias Firmowid.Timetracker.OverlapResolver
   alias Firmowid.Timetracker.Session
   alias Firmowid.Timetracker.TrimPlan
+  alias FirmowidUI.Components.Inputs
   alias FirmowidWeb.Infrastructure.Utilities.PosthogBusinessEvents
   alias FirmowidWeb.Infrastructure.Utilities.TimeFormatter
   alias FirmowidWeb.Timetracker.Utilities.GroupedSessionForm
@@ -262,7 +263,7 @@ defmodule FirmowidWeb.Timetracker.Views.Index do
       {:error, %Invalid{} = error} ->
         messages =
           Enum.map_join(error.errors, ", ", fn err ->
-            Map.get(err, :message, gettext("Unknown error"))
+            translate_ash_message(err)
           end)
 
         LiveToast.send_toast(:error, messages)
@@ -273,6 +274,11 @@ defmodule FirmowidWeb.Timetracker.Views.Index do
         {:noreply, socket}
     end
   end
+
+  defp translate_ash_message(%{message: message} = error) when is_binary(message),
+    do: Inputs.translate_error({message, Map.get(error, :vars, [])})
+
+  defp translate_ash_message(_error), do: gettext("Unknown error")
 
   defp overlap_error?(%Unknown{errors: errors}) do
     Enum.any?(errors, fn
@@ -409,7 +415,7 @@ defmodule FirmowidWeb.Timetracker.Views.Index do
       {:error, _session_id, %Invalid{errors: errors}} ->
         messages =
           Enum.map_join(errors, ", ", fn error ->
-            Map.get(error, :message, gettext("Unknown error"))
+            translate_ash_message(error)
           end)
 
         LiveToast.send_toast(:error, messages)

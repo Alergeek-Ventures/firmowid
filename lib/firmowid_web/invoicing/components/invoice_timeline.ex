@@ -171,7 +171,7 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceTimeline do
         {gettext("Email sending error")}
       </:label>
       <:content>
-        <span>{@event.metadata.error_message || gettext("Failed to send the email message")}</span>
+        <span>{delivery_error(@event.metadata.error_message)}</span>
         <.email_target email={@event.metadata.recipient_email} />
       </:content>
     </.timeline_item>
@@ -199,7 +199,7 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceTimeline do
         {gettext("Reminder sending error")}
       </:label>
       <:content>
-        <span>{@event.metadata.error_message || gettext("Failed to send the email message")}</span>
+        <span>{delivery_error(@event.metadata.error_message)}</span>
         <.email_target email={@event.metadata.recipient_email} />
       </:content>
     </.timeline_item>
@@ -227,7 +227,7 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceTimeline do
         {gettext("Correction invoice email sending error")}
       </:label>
       <:content>
-        <span>{@event.metadata.error_message || gettext("Failed to send the email message")}</span>
+        <span>{delivery_error(@event.metadata.error_message)}</span>
         <.email_target email={@event.metadata.recipient_email} />
       </:content>
     </.timeline_item>
@@ -366,4 +366,8 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceTimeline do
   defp format_datetime(nil), do: ""
   defp format_datetime(%DateTime{} = dt), do: Calendar.strftime(dt, "%d.%m.%Y")
   defp format_datetime(%NaiveDateTime{} = dt), do: Calendar.strftime(dt, "%d.%m.%Y")
+
+  # Delivery records store a msgid; older ones hold Polish text, which passes through.
+  defp delivery_error(nil), do: gettext("Failed to send the email message")
+  defp delivery_error(message), do: Gettext.gettext(Firmowid.Gettext, message)
 end

@@ -771,8 +771,11 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
     counterparty_id = AshPhoenix.Form.value(ash_form, :counterparty_id) || invoice.counterparty_id
 
     case EmailRecipientEligibility.fetch_valid_counterparty_email(counterparty_id, scope) do
-      {:ok, _email} -> %{valid: true, tooltip: nil}
-      {:error, reason, _email} -> %{valid: false, tooltip: reason}
+      {:ok, _email} ->
+        %{valid: true, tooltip: nil}
+
+      {:error, reason, _email} ->
+        %{valid: false, tooltip: Gettext.gettext(Firmowid.Gettext, reason)}
     end
   end
 

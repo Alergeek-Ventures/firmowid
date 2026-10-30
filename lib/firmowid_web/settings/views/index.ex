@@ -37,6 +37,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
   alias Firmowid.Ksef.Credential
   alias Firmowid.Payroll
   alias Firmowid.Timetracker
+  alias FirmowidUI.Components.Inputs
   alias FirmowidUI.Ksef.Connection
   alias FirmowidUI.Utilities.ForbiddenError
   alias FirmowidWeb.Billing.Utilities.MonthContext
@@ -959,8 +960,11 @@ defmodule FirmowidWeb.Settings.Views.Index do
       {:error, error} ->
         message =
           case error do
-            %{errors: [%{message: msg}]} -> msg
-            _ -> gettext("An error occurred while disconnecting the Google account.")
+            %{errors: [%{message: msg} = error]} ->
+              Inputs.translate_error({msg, Map.get(error, :vars, [])})
+
+            _ ->
+              gettext("An error occurred while disconnecting the Google account.")
           end
 
         LiveToast.send_toast(:error, message)
