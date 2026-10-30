@@ -15,6 +15,8 @@ defmodule FirmowidWeb.Management.Components.ProjectsTab do
   alias FirmowidWeb.Management.Utilities.Navigation
   alias FirmowidWeb.Payroll.Components.MonthlyPayout
 
+  @months_per_page 3
+
   @impl true
   def mount(socket) do
     {:ok, socket}
@@ -47,13 +49,14 @@ defmodule FirmowidWeb.Management.Components.ProjectsTab do
                 {gettext("Projects")}
               </:tab>
               <:tab
-                patch={view_path(@user, @date, :distribution)}
+                patch={view_path(@user, Navigation.current_month(), :distribution)}
                 active={@view == :distribution}
               >
                 {gettext("Work distribution")}
               </:tab>
             </.tabs>
             <.month_picker
+              :if={@view == :list}
               id="projects_filter_month"
               selected_date={@date}
               active_months={@active_months}
@@ -63,12 +66,16 @@ defmodule FirmowidWeb.Management.Components.ProjectsTab do
           </div>
 
           <div class="relative w-full flex-1">
-            <div class="absolute inset-0 scrollbar-card divide-y divide-grey-100 overflow-y-auto pr-4 max-md:static">
+            <div class="absolute inset-0 scrollbar-card divide-y divide-grey-100 overflow-y-auto pr-4 max-md:static max-md:overflow-visible">
               <%= cond do %>
                 <% @view == :distribution -> %>
                   <WorkDistribution.work_distribution
                     sessions={@distribution_sessions}
                     months={@distribution_months}
+                    more={
+                      is_nil(@selected_day) and
+                        length(@distribution_months) < length(@all_distribution_months)
+                    }
                     selected_day={@selected_day}
                     target={@myself}
                   />
@@ -162,6 +169,16 @@ defmodule FirmowidWeb.Management.Components.ProjectsTab do
     end
   end
 
+  def handle_event("load_more_months", _params, socket) do
+    %{all_distribution_months: all_months, distribution_months: months} = socket.assigns
+    more = Enum.slice(all_months, length(months), @months_per_page)
+
+    {:noreply,
+     socket
+     |> assign(:distribution_months, months ++ more)
+     |> update(:distribution_sessions, &(&1 ++ list_distribution_sessions(socket, more)))}
+  end
+
   defp view_path(user, date, view) do
     Navigation.employee_path(user.id, %{
       miesiac: date,
@@ -169,26 +186,22 @@ defmodule FirmowidWeb.Management.Components.ProjectsTab do
     })
   end
 
-  # Calendars of the selected month followed by up to five earlier months with sessions.
+  # Calendars of this month and every earlier month with sessions, newest first. Older
+  # months load a page at a time as the list is scrolled; re-renders keep the loaded ones.
   defp assign_view(%{assigns: %{view: :distribution}} = socket) do
-    %{date: date, user: user, scope: scope, active_months: active_months} = socket.assigns
+    %{date: date, active_months: active_months} = socket.assigns
     date = Date.beginning_of_month(date)
+    this_month = Navigation.current_month()
 
-    earlier =
-      active_months
-      |> Enum.map(&NaiveDateTime.to_date/1)
-      |> Enum.filter(&Date.before?(&1, date))
-      |> Enum.take(5)
+    all_months = [
+      this_month
+      | active_months
+        |> Enum.map(&NaiveDateTime.to_date/1)
+        |> Enum.filter(&Date.before?(&1, this_month))
+    ]
 
-    months = [date | earlier]
-    {started_from, started_to} = WorkDistribution.started_range(months)
-
-    sessions =
-      Timetracker.list_sessions!(
-        %{member_id: user.member.id, started_from: started_from, started_to: started_to},
-        scope: scope,
-        load: [:duration, :project]
-      )
+    loaded = max(length(socket.assigns[:distribution_months] || []), @months_per_page)
+    months = Enum.take(all_months, loaded)
 
     # A day stays selected across re-renders of its own month only.
     selected_day = socket.assigns[:selected_day]
@@ -197,8 +210,9 @@ defmodule FirmowidWeb.Management.Components.ProjectsTab do
       if selected_day && Date.beginning_of_month(selected_day) == date, do: selected_day
 
     assign(socket,
+      all_distribution_months: all_months,
       distribution_months: months,
-      distribution_sessions: sessions,
+      distribution_sessions: list_distribution_sessions(socket, months),
       selected_day: selected_day
     )
   end
@@ -251,6 +265,22 @@ defmodule FirmowidWeb.Management.Components.ProjectsTab do
     assign(socket, projects: projects, selected_day: nil)
   end
 
+  defp list_distribution_sessions(_socket, []), do: []
+
+  defp list_distribution_sessions(socket, months) do
+    {started_from, started_to} = WorkDistribution.started_range(months)
+
+    Timetracker.list_sessions!(
+      %{
+        member_id: socket.assigns.user.member.id,
+        started_from: started_from,
+        started_to: started_to
+      },
+      scope: socket.assigns.scope,
+      load: [:duration, :project]
+    )
+  end
+
   defp assign_monthly_payout(socket) do
     %{date: date, user: user, scope: scope} = socket.assigns
 
@@ -298,7 +328,7 @@ defmodule FirmowidWeb.Management.Components.ProjectsTab do
     ~H"""
     <div
       id={"project-accordion-#{@project.id}"}
-      class="group grid grid-cols-[1fr_min-content_min-content] gap-x-6 overflow-hidden"
+      class="group grid grid-cols-[minmax(0,1fr)_min-content_min-content] gap-x-6 overflow-hidden"
     >
       <.button
         type="button"
@@ -306,7 +336,7 @@ defmodule FirmowidWeb.Management.Components.ProjectsTab do
         phx-click={toggle_project_accordion(@project.id)}
         class="group col-span-full grid w-full cursor-pointer grid-cols-subgrid items-center gap-x-6 py-4 text-left"
       >
-        <span class="text-start text-nowrap">{@project.name}</span>
+        <span class="text-start wrap-break-word">{@project.name}</span>
         <span class="text-nowrap">
           {@project.sessions
           |> Enum.map(& &1.duration)
@@ -330,10 +360,10 @@ defmodule FirmowidWeb.Management.Components.ProjectsTab do
           <% else %>
             <div
               :for={session <- @project.sessions}
-              class="flex justify-between text-base/snug text-grey-700"
+              class="flex justify-between gap-x-4 text-base/snug text-grey-700"
             >
-              <p class="truncate text-nowrap">{session.title}</p>
-              <p>
+              <p class="min-w-0 wrap-break-word">{session.title}</p>
+              <p class="shrink-0 text-nowrap">
                 {Timetracker.seconds_to_hours(session.duration)} h
               </p>
             </div>
