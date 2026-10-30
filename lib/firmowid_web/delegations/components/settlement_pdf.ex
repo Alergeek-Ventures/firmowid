@@ -26,6 +26,7 @@ defmodule FirmowidWeb.Delegations.Components.SettlementPdf do
       </.page>
       <.page page={2} footer_logo_data_uri={@footer_logo_data_uri}>
         <.expense_table title="Inne wydatki" expenses={@document.other_expenses} />
+        <.per_diem :if={@document.per_diem} document={@document} />
         <.totals document={@document} />
         <section class="mt-7">
           <h2 class="font-bold text-grey-600 uppercase">
@@ -145,6 +146,47 @@ defmodule FirmowidWeb.Delegations.Components.SettlementPdf do
     """
   end
 
+  attr :document, :map, required: true
+
+  defp per_diem(assigns) do
+    ~H"""
+    <.section title={gettext("Per diem and lump sums")}>
+      <div class="grid grid-cols-2 gap-x-8 gap-y-2">
+        <.data_row
+          label={gettext("Trip")}
+          value={time_range(@document.delegation.trip_started_at, @document.delegation.trip_ended_at)}
+        />
+        <.data_row
+          :if={@document.delegation.destination_country != "PL"}
+          label={gettext("Time abroad")}
+          value={
+            time_range(@document.delegation.abroad_started_at, @document.delegation.abroad_ended_at)
+          }
+        />
+        <.data_row
+          label={gettext("Meals provided")}
+          value={
+            gettext("breakfasts: %{breakfasts}, lunches: %{lunches}, dinners: %{dinners}",
+              breakfasts: @document.delegation.provided_breakfasts,
+              lunches: @document.delegation.provided_lunches,
+              dinners: @document.delegation.provided_dinners
+            )
+          }
+        />
+      </div>
+      <div class="mt-4 space-y-2 border-t border-grey-200 pt-3">
+        <div :for={line <- @document.per_diem.lines} class="flex justify-between gap-4">
+          <span>{DelegationPresentation.per_diem_line_label(line, @document.delegation)}</span>
+          <span class="font-semibold whitespace-nowrap">{money(line.amount)}</span>
+        </div>
+      </div>
+    </.section>
+    """
+  end
+
+  defp time_range(started_at, ended_at),
+    do: "#{Calendar.strftime(started_at, "%d.%m.%Y %H:%M")} – #{Calendar.strftime(ended_at, "%d.%m.%Y %H:%M")}"
+
   attr :title, :string, required: true
   attr :expenses, :list, required: true
 
@@ -188,6 +230,16 @@ defmodule FirmowidWeb.Delegations.Components.SettlementPdf do
       <.total_row label="Transport" value={@document.transport_total} />
       <.total_row label="Noclegi" value={@document.accommodation_total} />
       <.total_row label="Inne wydatki" value={@document.other_total} />
+      <.total_row
+        :if={@document.per_diem}
+        label={gettext("Per diem")}
+        value={@document.per_diem.per_diem}
+      />
+      <.total_row
+        :if={@document.per_diem && !Money.zero?(@document.per_diem.lump_sums)}
+        label={gettext("Lump sums")}
+        value={@document.per_diem.lump_sums}
+      />
       <div class="border-y border-grey-200 py-3">
         <.total_row label="Razem koszty delegacji" value={@document.total} strong />
         <.total_row label="Pobrana zaliczka" value={@document.delegation.advance_amount} />

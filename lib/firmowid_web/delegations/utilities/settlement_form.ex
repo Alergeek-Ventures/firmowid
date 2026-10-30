@@ -142,6 +142,63 @@ defmodule FirmowidWeb.Delegations.Utilities.SettlementForm do
     end)
   end
 
+  @doc """
+  Suggests missing per-diem trip times from the delegation's tickets.
+
+  The trip runs from the first departure to the last arrival. On a foreign trip by plane,
+  the time abroad runs from the first take-off to the last landing, as § 12 counts it.
+  """
+  @spec prefill_trip_times(struct()) :: struct()
+  def prefill_trip_times(delegation) do
+    trips = trips(delegation.expenses, & &1)
+    flights = trips(delegation.expenses, &(&1.transport_type == :airplane))
+
+    delegation
+    |> put_missing(:trip_started_at, first_departure(trips))
+    |> put_missing(:trip_ended_at, last_arrival(trips))
+    |> then(fn delegation ->
+      if delegation.destination_country == "PL",
+        do: delegation,
+        else:
+          delegation
+          |> put_missing(:abroad_started_at, first_departure(flights))
+          |> put_missing(:abroad_ended_at, last_arrival(flights))
+    end)
+  end
+
+  @doc "Drops empty trip-time inputs, so times suggested from a new ticket are not cleared."
+  @spec drop_blank_trip_times(map()) :: map()
+  def drop_blank_trip_times(params) do
+    Map.reject(params, fn {key, value} ->
+      key in ~w(trip_started_at trip_ended_at abroad_started_at abroad_ended_at) and value == ""
+    end)
+  end
+
+  defp trips(expenses, filter) do
+    for %{details: %Ash.Union{type: :transport, value: details}} <- expenses,
+        filter.(details),
+        trip <- details.trips,
+        do: trip
+  end
+
+  defp first_departure(trips) do
+    trips
+    |> Enum.map(&Trip.local_datetime(&1, :departure))
+    |> Enum.reject(&is_nil/1)
+    |> Enum.min(NaiveDateTime, fn -> nil end)
+  end
+
+  defp last_arrival(trips) do
+    trips
+    |> Enum.map(&Trip.local_datetime(&1, :arrival))
+    |> Enum.reject(&is_nil/1)
+    |> Enum.max(NaiveDateTime, fn -> nil end)
+  end
+
+  defp put_missing(delegation, field, value) do
+    if Map.fetch!(delegation, field), do: delegation, else: Map.put(delegation, field, value)
+  end
+
   # AshPhoenix revalidates unwrapped embedded data, so it cannot recover the union
   # type itself when a draft omits both hidden type markers.
   defp restore_details_types(%{"expenses" => expenses} = params, detail_types) do

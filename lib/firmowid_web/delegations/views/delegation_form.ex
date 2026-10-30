@@ -7,9 +7,11 @@ defmodule FirmowidWeb.Delegations.Views.DelegationForm do
   import FirmowidWeb.Delegations.Components.Delegation
   import FirmowidWeb.DesignSystem.Components.CoreComponents
   import FirmowidWeb.DesignSystem.Components.MonthPicker
+  import FirmowidWeb.DesignSystem.Components.SearchableSelect
   import Phoenix.Component, except: [link: 1]
 
   alias Firmowid.Delegations.Delegation
+  alias Firmowid.Invoicing.CountryCodes
   alias Firmowid.Payroll
 
   @impl true
@@ -40,6 +42,7 @@ defmodule FirmowidWeb.Delegations.Views.DelegationForm do
      |> assign(:billing_month_chosen?, false)
      |> assign(:transport_types, [""])
      |> assign(:employment_contract, employment_contract)
+     |> assign(:country_options, CountryCodes.country_options())
      |> assign(:form, form)}
   end
 
@@ -140,6 +143,16 @@ defmodule FirmowidWeb.Delegations.Views.DelegationForm do
                   required
                   input_class="w-full sm:max-w-125"
                 />
+              </.form_row>
+              <.form_row label={gettext("Destination country")} for="delegation_destination_country">
+                <div class="w-full sm:max-w-125">
+                  <.searchable_select
+                    field={@form[:destination_country]}
+                    options={@country_options}
+                    prompt={gettext("Select a country")}
+                    required
+                  />
+                </div>
               </.form_row>
               <.form_row
                 label={gettext("Means of transport")}
@@ -322,7 +335,7 @@ defmodule FirmowidWeb.Delegations.Views.DelegationForm do
     |> AshPhoenix.Form.for_create(:create,
       scope: scope,
       as: "delegation",
-      params: %{"billing_month" => Date.to_iso8601(billing_month)},
+      params: %{"billing_month" => Date.to_iso8601(billing_month), "destination_country" => "PL"},
       transform_params: fn params, _type -> Map.put(params, "title", params["purpose"]) end
     )
     |> to_form()

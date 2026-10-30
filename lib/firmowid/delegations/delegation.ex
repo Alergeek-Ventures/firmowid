@@ -9,7 +9,10 @@ defmodule Firmowid.Delegations.Delegation do
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer],
     extensions: [AshStateMachine],
-    fragments: [Firmowid.Delegations.Delegation.Policies]
+    fragments: [
+      Firmowid.Delegations.Delegation.Policies,
+      Firmowid.Delegations.Delegation.PerDiemAttributes
+    ]
 
   use Gettext, backend: Firmowid.Gettext
 
@@ -24,13 +27,28 @@ defmodule Firmowid.Delegations.Delegation do
   alias Firmowid.Delegations.Changes.CreateSignedSettlementBlob
   alias Firmowid.Delegations.Changes.PrepareDelegationCompletion
   alias Firmowid.Delegations.Changes.PrepareSettlement
+  alias Firmowid.Delegations.Changes.SetPerDiemExchangeRate
   alias Firmowid.Delegations.Changes.SetSubmittedAt
   alias Firmowid.Delegations.Signals
   alias Firmowid.Delegations.Validations.HasDateChangeReason
   alias Firmowid.Delegations.Validations.HasExpenses
+  alias Firmowid.Delegations.Validations.PerDiemTimesComplete
   alias Firmowid.Resource
 
   require Resource
+
+  @per_diem_fields [
+    :trip_started_at,
+    :trip_ended_at,
+    :abroad_started_at,
+    :abroad_ended_at,
+    :provided_breakfasts,
+    :provided_lunches,
+    :provided_dinners,
+    :lump_sum_nights,
+    :local_transport_lump_sum,
+    :station_transfers
+  ]
 
   postgres do
     table "delegations"
@@ -81,6 +99,7 @@ defmodule Firmowid.Delegations.Delegation do
         :title,
         :billing_month,
         :destination,
+        :destination_country,
         :transport_types,
         :purpose,
         :expected_cost,
@@ -119,6 +138,7 @@ defmodule Firmowid.Delegations.Delegation do
       validate compare(:advance_amount, greater_than_or_equal_to: Money.new(:PLN, 0)),
         message: gettext_noop("must be greater than or equal to 0 PLN")
 
+      change SetPerDiemExchangeRate
       change transition_state(:in_progress)
 
       emit Signals, :delegation_approved, fields: [delegation_id: :id]
@@ -144,7 +164,7 @@ defmodule Firmowid.Delegations.Delegation do
     update :save_draft do
       description "Save editable settlement fields without completing the delegation."
       require_atomic? false
-      accept [:date_change_reason]
+      accept [:date_change_reason | @per_diem_fields]
       argument :expenses, {:array, :map}, allow_nil?: false, default: []
 
       validate attribute_equals(:status, :in_progress)
@@ -162,7 +182,7 @@ defmodule Firmowid.Delegations.Delegation do
     update :prepare_settlement do
       description "Validate an in-progress settlement and prepare it for employee signature."
       require_atomic? false
-      accept [:date_change_reason]
+      accept [:date_change_reason | @per_diem_fields]
 
       argument :expenses, {:array, :map}, allow_nil?: false, default: []
 
@@ -177,8 +197,10 @@ defmodule Firmowid.Delegations.Delegation do
                authorize?: false
              )
 
-      validate {HasExpenses, []}
+      # Runs after Ash requires values, so the per diem it checks is calculated from cast inputs.
+      validate {HasExpenses, []}, before_action?: true
       validate {HasDateChangeReason, []}
+      validate {PerDiemTimesComplete, []}
 
       change PrepareSettlement
       change transition_state(:awaiting_signature)
@@ -269,6 +291,12 @@ defmodule Firmowid.Delegations.Delegation do
     attribute :title, :string, allow_nil?: false, public?: true
     attribute :billing_month, :date, allow_nil?: false, public?: true
     attribute :destination, :string, allow_nil?: false, public?: true
+
+    attribute :destination_country, :string,
+      allow_nil?: false,
+      default: "PL",
+      public?: true,
+      description: "ISO 3166-1 alpha-2 code of the destination, as used by the country select."
 
     attribute :transport_types, {:array, :atom},
       allow_nil?: false,

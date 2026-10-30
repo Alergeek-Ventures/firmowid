@@ -16,6 +16,7 @@ defmodule FirmowidWeb.Management.Views.Delegation do
 
   alias Firmowid.Core
   alias Firmowid.Delegations
+  alias Firmowid.Invoicing.CountryCodes
   alias Firmowid.Payroll
   alias FirmowidWeb.Delegations.Utilities.DelegationPresentation
   alias FirmowidWeb.Delegations.Utilities.SettlementDocument
@@ -371,6 +372,9 @@ defmodule FirmowidWeb.Management.Views.Delegation do
             </.detail_row>
             <.detail_row label={gettext("Departure date")}>
               {DelegationPresentation.format_range(@delegation.start_date, @delegation.end_date)}
+            </.detail_row>
+            <.detail_row label={gettext("Destination country")}>
+              {CountryCodes.country_name(@delegation.destination_country)}
             </.detail_row>
             <.detail_row label={gettext("Purpose of the trip")}>{@delegation.purpose}</.detail_row>
             <.detail_row label={gettext("Estimated amount")}>

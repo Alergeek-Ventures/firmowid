@@ -80,6 +80,16 @@ defmodule FirmowidWeb.Delegations.Components.Delegation do
         <.summary_row label="Przejazdy" value={@document.transport_total} />
         <.summary_row label="Nocleg" value={@document.accommodation_total} />
         <.summary_row label="Inne" value={@document.other_total} />
+        <.summary_row
+          :if={@document.per_diem}
+          label={gettext("Per diem")}
+          value={@document.per_diem.per_diem}
+        />
+        <.summary_row
+          :if={@document.per_diem && !Money.zero?(@document.per_diem.lump_sums)}
+          label={gettext("Lump sums")}
+          value={@document.per_diem.lump_sums}
+        />
         <div class="my-5 space-y-3 border-y border-grey-100 py-5">
           <.summary_row label="Razem koszty" value={@document.total} strong />
           <.summary_row label="Pobrana zaliczka" value={@document.delegation.advance_amount} />

@@ -7,6 +7,7 @@ defmodule FirmowidWeb.Delegations.Components.Settlement.ForeignCurrency do
   import FirmowidWeb.Delegations.Components.Settlement.Documents, only: [document_pill: 1]
   import Phoenix.Component, except: [link: 1]
 
+  alias FirmowidWeb.Delegations.Utilities.DelegationPresentation
   alias Phoenix.HTML.Form
   alias Phoenix.LiveView.Rendered
 
@@ -268,7 +269,7 @@ defmodule FirmowidWeb.Delegations.Components.Settlement.ForeignCurrency do
   defp format_rate(_source, nil, _target), do: gettext("Could not fetch the rate")
 
   defp format_rate(source, %{rate: rate}, target),
-    do: "1 #{source} = #{rate |> Decimal.to_string(:normal) |> String.replace(".", ",")} #{target}"
+    do: "1 #{source} = #{DelegationPresentation.format_rate(rate)} #{target}"
 
   defp expense_currency(%Money{} = amount), do: amount |> Money.to_currency_code() |> Atom.to_string()
 

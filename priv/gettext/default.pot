@@ -276,6 +276,11 @@ msgctxt "compact duration"
 msgid "%{hours}h %{minutes}min"
 msgstr ""
 
+#: lib/firmowid_web/delegations/utilities/delegation_presentation.ex
+#, elixir-autogen, elixir-format
+msgid "%{label}: %{amount} at the NBP rate %{rate} of %{date}"
+msgstr ""
+
 #: lib/firmowid_web/landing/components/hero.ex
 #, elixir-autogen, elixir-format
 msgid "%{minutes} min"
@@ -1697,6 +1702,11 @@ msgctxt "entries table column"
 msgid "Booked"
 msgstr ""
 
+#: lib/firmowid_web/delegations/components/settlement_page.ex
+#, elixir-autogen, elixir-format
+msgid "Breakfasts"
+msgstr ""
+
 #: lib/firmowid_web/organization/views/index.ex
 #, elixir-autogen, elixir-format
 msgid "Building and apartment number"
@@ -1747,6 +1757,7 @@ msgstr ""
 
 #: lib/firmowid_web/delegations/components/settlement_page.ex
 #: lib/firmowid_web/delegations/views/delegation.ex
+#: lib/firmowid_web/management/views/delegation.ex
 #, elixir-autogen, elixir-format
 msgid "Business trip settlement"
 msgstr ""
@@ -2007,6 +2018,11 @@ msgstr ""
 #: lib/firmowid_web/assistant/components/transcript.ex
 #, elixir-autogen, elixir-format
 msgid "Check the result"
+msgstr ""
+
+#: lib/firmowid_web/delegations/components/settlement_page.ex
+#, elixir-autogen, elixir-format
+msgid "Check the trip times suggested from your tickets. Enter local times in Poland."
 msgstr ""
 
 #: lib/firmowid_web/hours_record/components/upload_form.ex
@@ -2279,6 +2295,11 @@ msgstr ""
 #: lib/firmowid/invoicing/validations/complete_invoice.ex
 #, elixir-autogen, elixir-format
 msgid "Complete the company name in the organization settings."
+msgstr ""
+
+#: lib/firmowid_web/delegations/components/settlement_page.ex
+#, elixir-autogen, elixir-format
+msgid "Complete the trip times to calculate the per diem."
 msgstr ""
 
 #: lib/firmowid_web/assistant/components/transcript.ex
@@ -2911,6 +2932,7 @@ msgstr ""
 msgid "Could not extract the salary data from the contract."
 msgstr ""
 
+#: lib/firmowid/delegations/changes/set_per_diem_exchange_rate.ex
 #: lib/firmowid_web/delegations/views/delegation.ex
 #, elixir-autogen, elixir-format
 msgid "Could not fetch the NBP exchange rate."
@@ -3535,6 +3557,7 @@ msgstr ""
 
 #: lib/firmowid_web/delegations/components/settlement/expense.ex
 #: lib/firmowid_web/delegations/components/settlement/trips.ex
+#: lib/firmowid_web/delegations/components/settlement_page.ex
 #, elixir-autogen, elixir-format
 msgid "Departure"
 msgstr ""
@@ -3569,6 +3592,12 @@ msgstr ""
 msgid "Destination"
 msgstr ""
 
+#: lib/firmowid_web/delegations/views/delegation_form.ex
+#: lib/firmowid_web/management/views/delegation.ex
+#, elixir-autogen, elixir-format
+msgid "Destination country"
+msgstr ""
+
 #: lib/firmowid_web/invoicing/cost_invoices/views/inbox.ex
 #, elixir-autogen, elixir-format
 msgctxt "inbox column"
@@ -3598,6 +3627,11 @@ msgstr ""
 #: lib/firmowid_web/management/views/counterparty_form.html.heex
 #, elixir-autogen, elixir-format
 msgid "Different correspondence address"
+msgstr ""
+
+#: lib/firmowid_web/delegations/components/settlement_page.ex
+#, elixir-autogen, elixir-format
+msgid "Dinners"
 msgstr ""
 
 #: lib/firmowid_web/invoicing/utilities/vat_exemption.ex
@@ -3689,6 +3723,11 @@ msgstr ""
 #: lib/firmowid_web/settings/components/subscription_tab.ex
 #, elixir-autogen, elixir-format
 msgid "Documents added manually in the current billing month."
+msgstr ""
+
+#: lib/firmowid_web/delegations/utilities/delegation_presentation.ex
+#, elixir-autogen, elixir-format
+msgid "Domestic per diem"
 msgstr ""
 
 #: lib/firmowid_web/auth/views/login.ex
@@ -4157,6 +4196,11 @@ msgstr ""
 msgid "Employment information"
 msgstr ""
 
+#: lib/firmowid_web/delegations/components/settlement_page.ex
+#, elixir-autogen, elixir-format
+msgid "End of time abroad"
+msgstr ""
+
 #: lib/firmowid_web/invoicing/sales_invoices/components/invoice_items.ex
 #, elixir-autogen, elixir-format
 msgid "Enter a name"
@@ -4476,6 +4520,7 @@ msgid "Fill in the request below. After you send it, it will be forwarded to you
 msgstr ""
 
 #: lib/firmowid/delegations/delegation_expense.ex
+#: lib/firmowid/delegations/validations/per_diem_times_complete.ex
 #, elixir-autogen, elixir-format
 msgid "Fill in this field."
 msgstr ""
@@ -4722,6 +4767,11 @@ msgstr ""
 msgid "For everyone who issues invoices in KSeF"
 msgstr ""
 
+#: lib/firmowid_web/delegations/components/settlement_page.ex
+#, elixir-autogen, elixir-format
+msgid "For flights, use take-off from Poland and landing back in Poland. Otherwise, use the border crossing times."
+msgstr ""
+
 #: lib/firmowid_web/invoicing/components/entries_table.ex
 #, elixir-autogen, elixir-format
 msgid "For invoices this is the issue date, for transactions the execution date"
@@ -4760,6 +4810,11 @@ msgstr ""
 #: lib/firmowid_web/delegations/components/settlement/foreign_currency.ex
 #, elixir-autogen, elixir-format
 msgid "Foreign currency detected"
+msgstr ""
+
+#: lib/firmowid_web/delegations/utilities/delegation_presentation.ex
+#, elixir-autogen, elixir-format
+msgid "Foreign per diem"
 msgstr ""
 
 #: lib/firmowid_web/payroll/components/monthly_payout.ex
@@ -4978,6 +5033,11 @@ msgstr ""
 msgid "Go to project management"
 msgstr ""
 
+#: lib/firmowid_web/delegations/components/settlement_page.ex
+#, elixir-autogen, elixir-format
+msgid "Go to signature"
+msgstr ""
+
 #: lib/firmowid_web/invoicing/sales_invoices/views/summary.ex
 #, elixir-autogen, elixir-format
 msgid "Go to the invoice"
@@ -5176,6 +5236,11 @@ msgstr ""
 #: lib/firmowid_web/delegations/components/settlement/foreign_currency.ex
 #, elixir-autogen, elixir-format
 msgid "I have the amount from the statement"
+msgstr ""
+
+#: lib/firmowid_web/delegations/components/settlement_page.ex
+#, elixir-autogen, elixir-format
+msgid "I paid for local public transport myself"
 msgstr ""
 
 #: lib/firmowid_web/landing/components/sections.ex
@@ -6246,6 +6311,38 @@ msgctxt "organization onboarding"
 msgid "Log out"
 msgstr ""
 
+#: lib/firmowid_web/delegations/utilities/delegation_presentation.ex
+#, elixir-autogen, elixir-format
+msgid "Lump sum for local transport"
+msgstr ""
+
+#: lib/firmowid_web/delegations/utilities/delegation_presentation.ex
+#, elixir-autogen, elixir-format
+msgid "Lump sum for nights without a receipt"
+msgstr ""
+
+#: lib/firmowid_web/delegations/utilities/delegation_presentation.ex
+#, elixir-autogen, elixir-format
+msgid "Lump sum for station and airport transfers"
+msgstr ""
+
+#: lib/firmowid_web/delegations/components/delegation.ex
+#: lib/firmowid_web/delegations/components/settlement_page.ex
+#: lib/firmowid_web/delegations/components/settlement_pdf.ex
+#, elixir-autogen, elixir-format
+msgid "Lump sums"
+msgstr ""
+
+#: lib/firmowid_web/delegations/components/settlement_page.ex
+#, elixir-autogen, elixir-format
+msgid "Lump sums you can claim instead of receipts"
+msgstr ""
+
+#: lib/firmowid_web/delegations/components/settlement_page.ex
+#, elixir-autogen, elixir-format
+msgid "Lunches"
+msgstr ""
+
 #: lib/firmowid_web/landing/components/pricing.ex
 #, elixir-autogen, elixir-format
 msgid "MCP (Claude, Cursor and others)"
@@ -6362,6 +6459,16 @@ msgstr ""
 #, elixir-autogen, elixir-format
 msgctxt "month name in a date"
 msgid "May"
+msgstr ""
+
+#: lib/firmowid_web/delegations/components/settlement_pdf.ex
+#, elixir-autogen, elixir-format
+msgid "Meals provided"
+msgstr ""
+
+#: lib/firmowid_web/delegations/components/settlement_page.ex
+#, elixir-autogen, elixir-format
+msgid "Meals provided free of charge, including hotel breakfast"
 msgstr ""
 
 #: lib/firmowid_web/delegations/components/settlement/expense.ex
@@ -6631,6 +6738,11 @@ msgstr ""
 #, elixir-autogen, elixir-format
 msgctxt "sales invoice creator"
 msgid "Next"
+msgstr ""
+
+#: lib/firmowid_web/delegations/components/settlement_page.ex
+#, elixir-autogen, elixir-format
+msgid "Nights without a receipt"
 msgstr ""
 
 #: lib/firmowid_web/management/components/employee_tax_details.ex
@@ -7191,6 +7303,11 @@ msgstr ""
 #: lib/firmowid_web/landing/components/sections.ex
 #, elixir-autogen, elixir-format
 msgid "One-click time tracking export"
+msgstr ""
+
+#: lib/firmowid_web/delegations/components/settlement_page.ex
+#, elixir-autogen, elixir-format
+msgid "One-way transfers to a station or airport abroad"
 msgstr ""
 
 #: lib/firmowid_web/analysis/components/period_details.ex
@@ -7759,11 +7876,6 @@ msgstr ""
 msgid "Payout date"
 msgstr ""
 
-#: lib/firmowid_web/delegations/utilities/settlement_presentation.ex
-#, elixir-autogen, elixir-format
-msgid "Payout reduction"
-msgstr ""
-
 #: lib/firmowid_web/management/views/employees.html.heex
 #, elixir-autogen, elixir-format
 msgid "Payroll report"
@@ -7785,6 +7897,19 @@ msgstr ""
 #: lib/firmowid_web/payroll/components/monthly_payout.ex
 #, elixir-autogen, elixir-format
 msgid "Pension contribution base before this payout, from all employers"
+msgstr ""
+
+#: lib/firmowid_web/delegations/components/delegation.ex
+#: lib/firmowid_web/delegations/components/settlement_page.ex
+#: lib/firmowid_web/delegations/components/settlement_pdf.ex
+#, elixir-autogen, elixir-format
+msgid "Per diem"
+msgstr ""
+
+#: lib/firmowid_web/delegations/components/settlement_page.ex
+#: lib/firmowid_web/delegations/components/settlement_pdf.ex
+#, elixir-autogen, elixir-format
+msgid "Per diem and lump sums"
 msgstr ""
 
 #: lib/firmowid_web/landing/views/privacy_policy.ex
@@ -8514,6 +8639,11 @@ msgstr ""
 msgid "Retail"
 msgstr ""
 
+#: lib/firmowid_web/delegations/components/settlement_page.ex
+#, elixir-autogen, elixir-format
+msgid "Return"
+msgstr ""
+
 #: lib/firmowid_web/delegations/views/delegation_form.ex
 #, elixir-autogen, elixir-format
 msgid "Return date"
@@ -8915,6 +9045,7 @@ msgstr ""
 msgid "Select"
 msgstr ""
 
+#: lib/firmowid_web/delegations/views/delegation_form.ex
 #: lib/firmowid_web/management/views/counterparty_form.html.heex
 #, elixir-autogen, elixir-format
 msgid "Select a country"
@@ -8941,7 +9072,6 @@ msgstr ""
 msgid "Seller"
 msgstr ""
 
-#: lib/firmowid_web/delegations/components/settlement_page.ex
 #: lib/firmowid_web/feedback/components/form.ex
 #: lib/firmowid_web/hours_record/components/upload_form.ex
 #: lib/firmowid_web/management/views/delegation.ex
@@ -9412,6 +9542,11 @@ msgstr ""
 #: lib/firmowid_web/landing/components/primitives.ex
 #, elixir-autogen, elixir-format
 msgid "Start for free"
+msgstr ""
+
+#: lib/firmowid_web/delegations/components/settlement_page.ex
+#, elixir-autogen, elixir-format
+msgid "Start of time abroad"
 msgstr ""
 
 #: lib/firmowid_web/assistant/components/controls.ex
@@ -10439,6 +10574,11 @@ msgstr ""
 msgid "The team responsible for the KSeF integration has been notified. The document will be sent again automatically within 24 hours."
 msgstr ""
 
+#: lib/firmowid/delegations/validations/per_diem_times_complete.ex
+#, elixir-autogen, elixir-format
+msgid "The times must be in chronological order."
+msgstr ""
+
 #: lib/firmowid/finances/changes/connect_salary.ex
 #, elixir-autogen, elixir-format
 msgid "The transaction already pays the salary of %{month}. Unlink it first."
@@ -10741,6 +10881,11 @@ msgstr ""
 msgid "Time (HH:MM)"
 msgstr ""
 
+#: lib/firmowid_web/delegations/components/settlement_pdf.ex
+#, elixir-autogen, elixir-format
+msgid "Time abroad"
+msgstr ""
+
 #: lib/firmowid_web/organization/views/index.ex
 #, elixir-autogen, elixir-format
 msgid "Time to assign an organization to your account"
@@ -10800,6 +10945,16 @@ msgstr ""
 #: lib/firmowid_web/management/views/project_form.html.heex
 #, elixir-autogen, elixir-format
 msgid "To add an employee to this project, type their first or last name, then click the chosen person in the results list."
+msgstr ""
+
+#: lib/firmowid_web/delegations/utilities/settlement_presentation.ex
+#, elixir-autogen, elixir-format
+msgid "To be paid to the employee"
+msgstr ""
+
+#: lib/firmowid_web/delegations/utilities/settlement_presentation.ex
+#, elixir-autogen, elixir-format
+msgid "To be returned by the employee"
 msgstr ""
 
 #: lib/firmowid_web/auth/views/confirm_email.ex
@@ -11023,6 +11178,16 @@ msgstr ""
 #: lib/firmowid_web/landing/components/pricing.ex
 #, elixir-autogen, elixir-format
 msgid "Trial period"
+msgstr ""
+
+#: lib/firmowid_web/delegations/components/settlement_pdf.ex
+#, elixir-autogen, elixir-format
+msgid "Trip"
+msgstr ""
+
+#: lib/firmowid_web/delegations/components/settlement_page.ex
+#, elixir-autogen, elixir-format
+msgid "Trip times"
 msgstr ""
 
 #: lib/firmowid_ui/components/ksef_connection.ex
@@ -12134,6 +12299,12 @@ msgctxt "leave request status"
 msgid "approved"
 msgstr ""
 
+#: lib/firmowid_web/delegations/utilities/delegation_presentation.ex
+#, elixir-autogen, elixir-format
+msgctxt "business trip status"
+msgid "approved"
+msgstr ""
+
 #: lib/firmowid_web/management/views/counterparty.ex
 #: lib/firmowid_web/management/views/project.html.heex
 #, elixir-autogen, elixir-format
@@ -12143,6 +12314,12 @@ msgstr ""
 #: lib/firmowid_ui/components/inputs.ex
 #, elixir-autogen, elixir-format
 msgid "are still associated with this entry"
+msgstr ""
+
+#: lib/firmowid_web/delegations/utilities/delegation_presentation.ex
+#, elixir-autogen, elixir-format
+msgctxt "business trip status"
+msgid "awaiting signature"
 msgstr ""
 
 #: lib/firmowid_web/settings/components/company_tab.ex
@@ -12159,6 +12336,11 @@ msgstr ""
 #: lib/firmowid_web/landing/components/sections.ex
 #, elixir-autogen, elixir-format
 msgid "beta program participant"
+msgstr ""
+
+#: lib/firmowid_web/delegations/components/settlement_pdf.ex
+#, elixir-autogen, elixir-format
+msgid "breakfasts: %{breakfasts}, lunches: %{lunches}, dinners: %{dinners}"
 msgstr ""
 
 #: lib/firmowid_ui/components/inputs.ex
@@ -12194,12 +12376,6 @@ msgstr ""
 #: lib/firmowid/invoicing/validations/validate_name_fields.ex
 #, elixir-autogen, elixir-format
 msgid "company name is required"
-msgstr ""
-
-#: lib/firmowid_web/delegations/utilities/delegation_presentation.ex
-#, elixir-autogen, elixir-format
-msgctxt "business trip status"
-msgid "completed"
 msgstr ""
 
 #: lib/firmowid_web/landing/components/sections.ex
@@ -12804,6 +12980,12 @@ msgstr ""
 #: lib/firmowid_web/admin/components/settlement_components.ex
 #, elixir-autogen, elixir-format
 msgid "trial period"
+msgstr ""
+
+#: lib/firmowid_web/delegations/utilities/delegation_presentation.ex
+#, elixir-autogen, elixir-format
+msgctxt "business trip status"
+msgid "under review"
 msgstr ""
 
 #: lib/firmowid_web/landing/components/pricing.ex

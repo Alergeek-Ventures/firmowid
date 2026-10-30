@@ -13,6 +13,9 @@ defmodule Firmowid.Delegations.DelegationTest do
   alias Firmowid.Delegations.DelegationExpense.Trip
   alias Firmowid.Scope
 
+  # The per diem is calculated from these, so a settlement cannot be prepared without them.
+  @trip_times %{trip_started_at: ~N[2026-09-10 07:00:00], trip_ended_at: ~N[2026-09-11 20:00:00]}
+
   setup do
     employee = user_fixture(%{name: "Kira Voss"})
     admin = admin_fixture(%{organization_id: employee.member.organization_id})
@@ -173,7 +176,7 @@ defmodule Firmowid.Delegations.DelegationTest do
              )
   end
 
-  test "cannot prepare an empty settlement", %{
+  test "cannot prepare a settlement without documents when no per diem is due", %{
     employee_scope: employee_scope,
     admin_scope: admin_scope
   } do
@@ -182,7 +185,13 @@ defmodule Firmowid.Delegations.DelegationTest do
     {:ok, delegation} =
       Delegations.approve_delegation(delegation.id, approval_attrs(), scope: admin_scope)
 
-    assert {:error, _} = Delegations.prepare_settlement(delegation.id, scope: employee_scope)
+    short_trip = %{
+      trip_started_at: ~N[2026-09-10 08:00:00],
+      trip_ended_at: ~N[2026-09-10 13:00:00]
+    }
+
+    assert {:error, _} =
+             Delegations.prepare_settlement(delegation.id, short_trip, scope: employee_scope)
   end
 
   test "cannot prepare a delegation with an incomplete uploaded expense", %{
@@ -206,7 +215,8 @@ defmodule Firmowid.Delegations.DelegationTest do
         details: %{type: "other", description: "Parking"}
       })
 
-    assert {:error, _} = Delegations.prepare_settlement(delegation.id, scope: employee_scope)
+    assert {:error, _} =
+             Delegations.prepare_settlement(delegation.id, @trip_times, scope: employee_scope)
   end
 
   test "requires a reason when final expense dates extend the delegation", %{
@@ -259,7 +269,8 @@ defmodule Firmowid.Delegations.DelegationTest do
         departure_date: ~D[2026-09-11]
       )
 
-    assert {:ok, _} = Delegations.prepare_settlement(delegation.id, scope: employee_scope)
+    assert {:ok, _} =
+             Delegations.prepare_settlement(delegation.id, @trip_times, scope: employee_scope)
 
     assert {:error, %Forbidden{}} =
              Delegations.complete_expense(expense, %{document_number: "NOWY/1"}, scope: employee_scope)
@@ -376,12 +387,13 @@ defmodule Firmowid.Delegations.DelegationTest do
     assert Delegations.get_delegation!(delegation.id, scope: employee_scope).detected_end_date ==
              ~D[2026-09-12]
 
-    assert {:error, _} = Delegations.prepare_settlement(delegation.id, scope: employee_scope)
+    assert {:error, _} =
+             Delegations.prepare_settlement(delegation.id, @trip_times, scope: employee_scope)
 
     assert {:ok, completed} =
              Delegations.prepare_settlement(
                delegation.id,
-               %{date_change_reason: "Powrót po północy"},
+               Map.put(@trip_times, :date_change_reason, "Powrót po północy"),
                scope: employee_scope
              )
 
@@ -423,7 +435,10 @@ defmodule Firmowid.Delegations.DelegationTest do
 
       expense = seed_transport_expense(delegation, employee_scope.actor, times)
       original_trip = hd(expense.details.value.trips)
-      assert {:ok, _} = Delegations.prepare_settlement(delegation.id, scope: employee_scope)
+
+      assert {:ok, _} =
+               Delegations.prepare_settlement(delegation.id, @trip_times, scope: employee_scope)
+
       stored_expense = Delegations.get_expense!(expense.id, scope: employee_scope)
       assert hd(stored_expense.details.value.trips) == original_trip
     end
@@ -538,7 +553,7 @@ defmodule Firmowid.Delegations.DelegationTest do
       )
 
     assert {:ok, prepared} =
-             Delegations.prepare_settlement(delegation.id, scope: employee_scope)
+             Delegations.prepare_settlement(delegation.id, @trip_times, scope: employee_scope)
 
     assert prepared.status == :awaiting_signature
     assert prepared.settlement_sequence == 1
@@ -549,7 +564,7 @@ defmodule Firmowid.Delegations.DelegationTest do
     assert reopened.status == :in_progress
 
     assert {:ok, prepared_again} =
-             Delegations.prepare_settlement(reopened.id, scope: employee_scope)
+             Delegations.prepare_settlement(reopened.id, @trip_times, scope: employee_scope)
 
     assert prepared_again.settlement_sequence == prepared.settlement_sequence
     assert prepared_again.status == :awaiting_signature
@@ -603,9 +618,9 @@ defmodule Firmowid.Delegations.DelegationTest do
     other_scope = %Scope{actor: other_employee, tenant: employee_scope.tenant}
 
     assert {:error, %Forbidden{}} =
-             Delegations.prepare_settlement(delegation.id, scope: other_scope)
+             Delegations.prepare_settlement(delegation.id, @trip_times, scope: other_scope)
 
-    prepared = Delegations.prepare_settlement!(delegation.id, scope: employee_scope)
+    prepared = Delegations.prepare_settlement!(delegation.id, @trip_times, scope: employee_scope)
     invalid_path = Briefly.create!(extname: ".txt")
     File.write!(invalid_path, "not a pdf")
 
