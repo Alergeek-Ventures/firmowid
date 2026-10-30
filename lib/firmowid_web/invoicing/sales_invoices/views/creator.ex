@@ -29,7 +29,6 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
   alias Firmowid.Invoicing.SalesInvoice.EmailRecipientEligibility
   alias Firmowid.Invoicing.WizardState
   alias Firmowid.Ksef
-  alias FirmowidUI.Components.Inputs
   alias FirmowidWeb.Infrastructure.Utilities.PolishValues
   alias FirmowidWeb.Infrastructure.Utilities.PosthogBusinessEvents
   alias FirmowidWeb.Invoicing.SalesInvoices.Components.InvoicePayment
@@ -1159,8 +1158,8 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
 
     messages =
       errors
-      |> Enum.reject(&(Map.get(&1, :message) in [nil, ""]))
-      |> Enum.map(&Inputs.translate_error({&1.message, Map.get(&1, :vars, [])}))
+      |> Enum.map(fn e -> Map.get(e, :message, "") end)
+      |> Enum.reject(&(&1 == ""))
       |> Enum.uniq()
 
     case messages do

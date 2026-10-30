@@ -367,7 +367,10 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceTimeline do
   defp format_datetime(%DateTime{} = dt), do: Calendar.strftime(dt, "%d.%m.%Y")
   defp format_datetime(%NaiveDateTime{} = dt), do: Calendar.strftime(dt, "%d.%m.%Y")
 
-  # Delivery records store a msgid; older ones hold Polish text, which passes through.
   defp delivery_error(nil), do: gettext("Failed to send the email message")
+
+  defp delivery_error("Nie udało się wysłać wiadomości email"),
+    do: gettext("Failed to send the email message")
+
   defp delivery_error(message), do: Gettext.gettext(Firmowid.Gettext, message)
 end
