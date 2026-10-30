@@ -28,41 +28,41 @@ defmodule FirmowidWeb.Feedback.Components.Form do
     <div id={@id}>
       <.modal id="feedback-modal" on_cancel={JS.push("reset", target: "##{@id}")}>
         <div :if={!@submitted}>
-          <h2 class="mb-2 text-xl font-semibold">Podziel się swoim feedbackiem</h2>
+          <h2 class="mb-2 text-xl font-semibold">{gettext("Share your feedback")}</h2>
           <p class="mb-6 text-sm text-grey-700">
-            Twoja opinia pomaga nam rozwijać Firmowida. Napisz co możemy poprawić,
-            co działa dobrze, albo czego Ci brakuje.
+            {gettext(
+              "Your opinion helps us develop Firmowid. Tell us what we can improve, what works well, or what you are missing."
+            )}
           </p>
           <form id={"#{@id}-form"} phx-submit="save" phx-target={"##{@id}"} class="space-y-6">
             <div>
               <label for="feedback-content" class="mb-2 block text-sm font-medium">
-                Co możemy poprawić?
+                {gettext("What can we improve?")}
               </label>
               <textarea
                 id="feedback-content"
                 name="content"
                 rows="5"
                 required
-                placeholder="Opisz swój pomysł, sugestię lub zgłoś problem"
+                placeholder={gettext("Describe your idea or suggestion, or report a problem")}
                 class="min-h-[120px] w-full resize-y rounded-md border border-grey-200 px-3 py-2 text-sm focus:border-rust-700 focus:ring-rust-700"
               ><%= @content %></textarea>
             </div>
             <div class="flex justify-end gap-3">
               <.button type="button" variant="outline" phx-click={hide_modal("feedback-modal")}>
-                Zamknij
+                {gettext("Close")}
               </.button>
               <.button type="submit" variant="special">
-                Wyślij
+                {gettext("Send")}
               </.button>
             </div>
           </form>
         </div>
         <div :if={@submitted} class="p-4 text-center">
           <div class="mb-4 text-3xl">&#127881;</div>
-          <h2 class="mb-2 text-xl font-semibold">Dziękujemy za feedback!</h2>
+          <h2 class="mb-2 text-xl font-semibold">{gettext("Thank you for your feedback!")}</h2>
           <p class="mb-6 text-sm text-grey-700">
-            Twoja opinia jest dla nas bardzo ważna i pomoże nam ulepszyć
-            aplikację.
+            {gettext("Your opinion is very important to us and will help us improve the application.")}
           </p>
           <.button
             type="button"
@@ -72,7 +72,7 @@ defmodule FirmowidWeb.Feedback.Components.Form do
               |> hide_modal("feedback-modal")
             }
           >
-            Zamknij
+            {gettext("Close")}
           </.button>
         </div>
       </.modal>

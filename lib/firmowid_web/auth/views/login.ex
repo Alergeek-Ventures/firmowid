@@ -13,7 +13,7 @@ defmodule FirmowidWeb.Auth.Views.Login do
       <img src="/images/figurine.png" class="absolute -top-20 left-1/2 h-[135vh] opacity-10" />
       <div class="z-10 max-w-sm">
         <h1 class="text-center text-2xl font-bold">
-          Wejdź do Firmowida
+          {gettext("Go to Firmowid")}
         </h1>
 
         <.simple_form
@@ -23,30 +23,35 @@ defmodule FirmowidWeb.Auth.Views.Login do
           phx-update="ignore"
           method="post"
         >
-          <.input field={@form[:email]} type="email" label="Email" required />
-          <.input field={@form[:password]} type="password" label="Hasło" required />
+          <.input field={@form[:email]} type="email" label={gettext("Email")} required />
+          <.input
+            field={@form[:password]}
+            type="password"
+            label={gettext("Password")}
+            required
+          />
 
           <:actions>
-            <.input name="remember_me" value="true" type="checkbox" label="Zapamiętaj mnie" />
+            <.input name="remember_me" value="true" type="checkbox" label={gettext("Remember me")} />
             <.link kind="unstyled" redirect={~p"/resetuj-haslo"} class="text-sm font-semibold">
-              Zapomniałeś hasła?
+              {gettext("Forgot your password?")}
             </.link>
           </:actions>
           <:actions>
-            <.button variant="special" phx-disable-with="Logowanie..." class="w-full">
-              Zaloguj się
+            <.button variant="special" phx-disable-with={gettext("Signing in...")} class="w-full">
+              {gettext("Log in")}
             </.button>
           </:actions>
         </.simple_form>
 
         <p class="mt-4 text-center">
-          Nie masz konta?
+          {gettext("Don't have an account?")}
           <.link
             kind="unstyled"
             navigate={~p"/zarejestruj"}
             class="font-semibold text-rust-700 hover:underline"
           >
-            Zarejestruj się
+            {gettext("Sign up")}
           </.link>
         </p>
 
@@ -75,7 +80,7 @@ defmodule FirmowidWeb.Auth.Views.Login do
               fill="#EA4335"
             />
           </svg>
-          Zaloguj się przez Google
+          {gettext("Log in with Google")}
         </.link>
       </div>
     </div>

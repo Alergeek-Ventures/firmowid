@@ -4,6 +4,7 @@ defmodule FirmowidWeb.Settings.Utilities.Navigation do
   """
 
   use FirmowidWeb, :verified_routes
+  use Gettext, backend: Firmowid.Gettext
 
   alias Firmowid.Core.UserRole
 
@@ -24,27 +25,39 @@ defmodule FirmowidWeb.Settings.Utilities.Navigation do
     %{
       id: :account,
       slug: "konto",
-      label: "Konto Firmowid",
+      label: pgettext_noop("Firmowid account", "settings tab"),
       roles: @all_roles,
       legacy_slugs: ["bezpieczenstwo"]
     },
-    %{id: :profile, slug: "profil", label: "Twój profil", roles: @all_roles, legacy_slugs: []},
+    %{
+      id: :profile,
+      slug: "profil",
+      label: pgettext_noop("Your profile", "settings tab"),
+      roles: @all_roles,
+      legacy_slugs: []
+    },
     %{
       id: :organization,
       slug: "firma",
-      label: "Twoja firma",
+      label: pgettext_noop("Your company", "settings tab"),
       roles: [:admin],
       legacy_slugs: ["organizacja", "konta-bankowe"]
     },
     %{
       id: :subscription,
       slug: "abonament",
-      label: "Abonament",
+      label: pgettext_noop("Subscription", "settings tab"),
       roles: @all_roles,
       owner_only: true,
       legacy_slugs: []
     },
-    %{id: :invoices, slug: "fakturowanie", label: "Faktury", roles: @all_roles, legacy_slugs: []}
+    %{
+      id: :invoices,
+      slug: "fakturowanie",
+      label: pgettext_noop("Invoices", "settings tab"),
+      roles: @all_roles,
+      legacy_slugs: []
+    }
   ]
 
   @doc """
@@ -54,7 +67,13 @@ defmodule FirmowidWeb.Settings.Utilities.Navigation do
   def tabs_for(%{current_user: _current_user, current_org: _current_org} = context) do
     @tabs
     |> Enum.filter(&visible_for_context?(&1, context))
-    |> Enum.map(&%{id: &1.id, label: &1.label, path: canonical_path(&1.id)})
+    |> Enum.map(
+      &%{
+        id: &1.id,
+        label: Gettext.pgettext(Firmowid.Gettext, "settings tab", &1.label),
+        path: canonical_path(&1.id)
+      }
+    )
   end
 
   @doc """

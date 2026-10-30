@@ -25,7 +25,7 @@ defmodule FirmowidWeb.Organization.Controllers.Switch do
       |> redirect(to: UserAuth.signed_in_path_for_user(user, organization_id))
     else
       conn
-      |> LiveToast.put_toast(:error, "Nie należysz do tej organizacji.")
+      |> LiveToast.put_toast(:error, gettext("You do not belong to this organization."))
       |> redirect(to: UserAuth.signed_in_path(conn))
     end
   end

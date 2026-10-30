@@ -7,13 +7,13 @@ defmodule FirmowidWeb.Infrastructure.Utilities.FormErrorReporter do
   reporting for those protocol implementations in one place.
   """
 
+  use Gettext, backend: Firmowid.Gettext
+
   alias Ash.Error.Forbidden.Policy
   alias Firmowid.ErrorKind
   alias Firmowid.Sentry
 
   require Logger
-
-  @authorization_message "Nie udało się zapisać zmian. Odśwież stronę i spróbuj ponownie."
 
   @doc """
   Reports an Ash policy denial that happened during an AshPhoenix form submit.
@@ -22,12 +22,13 @@ defmodule FirmowidWeb.Infrastructure.Utilities.FormErrorReporter do
           {:_form, String.t(), Keyword.t()}
   def report_policy_denial(%Policy{} = error) do
     message = "AshPhoenix form submission forbidden for #{resource_action(error)}"
+    authorization_message = gettext("Could not save the changes. Refresh the page and try again.")
 
     Logger.error(message)
     capture_exception(error)
-    send_toast(@authorization_message)
+    send_toast(authorization_message)
 
-    {:_form, @authorization_message, []}
+    {:_form, authorization_message, []}
   end
 
   defp resource_action(error) do

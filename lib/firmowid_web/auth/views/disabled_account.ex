@@ -9,7 +9,7 @@ defmodule FirmowidWeb.Auth.Views.DisabledAccount do
   @impl true
   def mount(_params, _session, socket) do
     case socket.assigns[:current_user] do
-      nil -> {:ok, assign(socket, :page_title, "Konto wyłączone")}
+      nil -> {:ok, assign(socket, :page_title, gettext("Account disabled"))}
       user -> {:ok, redirect(socket, to: UserAuth.signed_in_path_for_user(user))}
     end
   end
@@ -22,10 +22,11 @@ defmodule FirmowidWeb.Auth.Views.DisabledAccount do
         <div class="mx-auto mb-4 flex size-12 items-center justify-center rounded-full bg-rust-100 text-rust-700">
           <Lucideicons.shield_alert class="size-6" />
         </div>
-        <h1 class="mb-2 text-2xl/tight font-semibold">Konto wyłączone</h1>
+        <h1 class="mb-2 text-2xl/tight font-semibold">{gettext("Account disabled")}</h1>
         <p class="text-base/snug text-grey-700">
-          To konto jest obecnie niedostępne. Skontaktuj się z administratorem organizacji,
-          aby potwierdzić, czy konto zostało wyłączone lub dostęp został zablokowany.
+          {gettext(
+            "This account is currently unavailable. Contact your organization administrator to confirm whether the account has been disabled or access has been blocked."
+          )}
         </p>
       </div>
     </div>

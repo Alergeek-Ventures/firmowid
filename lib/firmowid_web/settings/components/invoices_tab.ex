@@ -42,15 +42,15 @@ defmodule FirmowidWeb.Settings.Components.InvoicesTab do
       <section class="space-y-4">
         <div class="flex min-h-8 flex-wrap items-center gap-3">
           <h2 class="text-base leading-none font-semibold text-grey-900">
-            Import e-mail faktur kosztowych
+            {gettext("Cost invoice email import")}
           </h2>
 
           <span class="rounded-full bg-rust-100 px-3 py-1 text-sm/tight text-rust-700">
-            aktywny
+            {gettext("active")}
           </span>
         </div>
 
-        <.settings_row label="Adres odbiorczy">
+        <.settings_row label={gettext("Receiving address")}>
           <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
             <.button
               type="button"
@@ -69,7 +69,11 @@ defmodule FirmowidWeb.Settings.Components.InvoicesTab do
               :if={@admin?}
               id="settings-regenerate-inbound-email-tooltip"
               phx-hook="Tippy"
-              data-tippy-content="Wygeneruje nowy adres importu. Zaktualizuj reguły przekazywania poczty po zmianie."
+              data-tippy-content={
+                gettext(
+                  "Generates a new import address. Update your mail forwarding rules after the change."
+                )
+              }
               data-tippy-delay="100"
             >
               <.button
@@ -77,9 +81,13 @@ defmodule FirmowidWeb.Settings.Components.InvoicesTab do
                 variant="secondary"
                 size="small"
                 phx-click="regenerate_inbound_nickname"
-                data-confirm="Wygenerować nowy adres importu faktur? Dotychczasowy adres przestanie być właściwym miejscem do wysyłki nowych wiadomości."
+                data-confirm={
+                  gettext(
+                    "Generate a new invoice import address? The current address will no longer be the right place to send new messages."
+                  )
+                }
               >
-                Wygeneruj nowy adres
+                {gettext("Generate new address")}
               </.button>
             </span>
           </div>
@@ -89,8 +97,9 @@ defmodule FirmowidWeb.Settings.Components.InvoicesTab do
           <div class="flex gap-4">
             <.icon name="hero-information-circle" class="mt-0.5 size-5 shrink-0 text-grey-600" />
             <p>
-              Wysyłaj faktury kosztowe na ten adres. Firmowid zaimportuje je automatycznie,
-              ale przyjmie tylko wiadomości z adresów dodanych do listy dozwolonych nadawców.
+              {gettext(
+                "Send cost invoices to this address. Firmowid will import them automatically, but it only accepts messages from addresses added to the allowed senders list."
+              )}
             </p>
           </div>
         </div>
@@ -99,10 +108,10 @@ defmodule FirmowidWeb.Settings.Components.InvoicesTab do
       <section class="space-y-4">
         <div class="space-y-2">
           <h2 class="text-base leading-none font-semibold text-grey-900">
-            Dozwoleni nadawcy
+            {gettext("Allowed senders")}
           </h2>
           <p class="max-w-prose text-sm/snug text-grey-700">
-            Dodaj adresy, z których dostawcy lub zespół mogą przesyłać faktury do Firmowida.
+            {gettext("Add addresses from which suppliers or the team can send invoices to Firmowid.")}
           </p>
         </div>
 
@@ -111,7 +120,9 @@ defmodule FirmowidWeb.Settings.Components.InvoicesTab do
             :if={Enum.empty?(@allowed_sender_emails)}
             class="rounded-lg bg-grey-50 px-4 py-3 text-sm leading-[1.35] text-grey-700"
           >
-            Nie dodano jeszcze żadnych adresów. Import zadziała dopiero po dodaniu pierwszego nadawcy.
+            {gettext(
+              "No addresses have been added yet. Import will work only after the first sender is added."
+            )}
           </p>
 
           <div
@@ -135,7 +146,7 @@ defmodule FirmowidWeb.Settings.Components.InvoicesTab do
         </div>
 
         <form :if={@admin?} phx-submit="add_allowed_email" class="space-y-3">
-          <.settings_row label="Dodaj nowy adres" for="allowed_sender_email">
+          <.settings_row label={gettext("Add new address")} for="allowed_sender_email">
             <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
               <.input
                 type="email"
@@ -143,13 +154,13 @@ defmodule FirmowidWeb.Settings.Components.InvoicesTab do
                 id="allowed_sender_email"
                 value=""
                 required
-                placeholder="np. faktury@dostawca.pl"
+                placeholder={gettext("e.g. invoices@supplier.com")}
                 class="w-full max-w-sm"
                 input_class="w-full"
               />
 
               <.button type="submit" variant="secondary" size="small">
-                Dodaj adres
+                {gettext("Add address")}
               </.button>
             </div>
           </.settings_row>
@@ -159,7 +170,9 @@ defmodule FirmowidWeb.Settings.Components.InvoicesTab do
           :if={!@admin?}
           class="rounded-lg bg-grey-50 px-4 py-3 text-sm leading-[1.35] text-grey-700"
         >
-          Tylko administrator może zmieniać adres odbiorczy i listę dozwolonych nadawców.
+          {gettext(
+            "Only an administrator can change the receiving address and the allowed senders list."
+          )}
         </div>
       </section>
 
