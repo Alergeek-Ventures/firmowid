@@ -2,6 +2,7 @@ defmodule Firmowid.Delegations.Validations.HasExpenses do
   @moduledoc "Requires at least one expense before a delegation can be completed."
 
   use Ash.Resource.Validation
+  use Gettext, backend: Firmowid.Gettext
 
   @impl true
   def init(opts), do: {:ok, opts}
@@ -12,7 +13,7 @@ defmodule Firmowid.Delegations.Validations.HasExpenses do
       {:ok, delegation} ->
         if has_expenses?(delegation),
           do: :ok,
-          else: {:error, "Dodaj przynajmniej jeden dokument."}
+          else: {:error, gettext_noop("Add at least one document.")}
 
       {:error, error} ->
         {:error, error}

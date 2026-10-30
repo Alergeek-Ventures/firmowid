@@ -2,6 +2,7 @@ defmodule Firmowid.Delegations.Changes.UpdateDetectedDelegationDates do
   @moduledoc "Updates a delegation's detected date range after evidence changes."
 
   use Ash.Resource.Change
+  use Gettext, backend: Firmowid.Gettext
 
   alias Firmowid.Delegations
   alias Firmowid.Delegations.DelegationExpense.Trip
@@ -69,7 +70,7 @@ defmodule Firmowid.Delegations.Changes.UpdateDetectedDelegationDates do
     if opts[:require_date_change_reason?] &&
          (params.detected_start_date || params.detected_end_date) &&
          blank?(delegation.date_change_reason) do
-      {:error, field: :date_change_reason, message: "To pole jest wymagane"}
+      {:error, field: :date_change_reason, message: gettext_noop("This field is required")}
     else
       :ok
     end

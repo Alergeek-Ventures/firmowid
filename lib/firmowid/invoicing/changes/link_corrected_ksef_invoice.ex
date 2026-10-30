@@ -9,12 +9,13 @@ defmodule Firmowid.Invoicing.Changes.LinkCorrectedKsefInvoice do
   was stored in KSeF in the same second, which leaves their order undetermined.
   """
   use Ash.Resource.Change
+  use Gettext, backend: Firmowid.Gettext
 
   alias Firmowid.Invoicing.SalesInvoice
 
   require Ash.Query
 
-  @missing "faktura korygowana nie jest zapisana w Firmowidzie"
+  @missing gettext_noop("the invoice being corrected is not saved in Firmowid")
 
   @doc "Sets `corrected_invoice_id` of a KOR from its `corrected_invoice_ksef_number` argument."
   @spec change(Ash.Changeset.t(), keyword(), Ash.Resource.Change.Context.t()) :: Ash.Changeset.t()
@@ -66,7 +67,7 @@ defmodule Firmowid.Invoicing.Changes.LinkCorrectedKsefInvoice do
       {:ok, [_same_second | _]} ->
         Ash.Changeset.add_error(changeset,
           field: :locked_at,
-          message: "inna korekta tej faktury została zapisana w KSeF w tej samej sekundzie"
+          message: gettext_noop("another correction of this invoice was saved in KSeF in the same second")
         )
 
       {:error, error} ->

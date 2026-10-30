@@ -14,6 +14,7 @@ defmodule Firmowid.Invoicing.Validations.ValidateBuyerIdRequired do
     * `:type_field` — atom, optional (default: `:buyer_type`)
   """
   use Ash.Resource.Validation
+  use Gettext, backend: Firmowid.Gettext
 
   alias Firmowid.Invoicing.CountryCodes
 
@@ -41,7 +42,7 @@ defmodule Firmowid.Invoicing.Validations.ValidateBuyerIdRequired do
     buyer_id = Ash.Changeset.get_attribute(changeset, id_field)
 
     if blank?(buyer_id) do
-      {:error, field: id_field, message: "nie może być puste"}
+      {:error, field: id_field, message: gettext_noop("cannot be empty")}
     else
       :ok
     end

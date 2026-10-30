@@ -10,6 +10,6 @@ defmodule Firmowid.Invoicing.Validations.InvoiceDraft do
   def validate(%{data: %{invoice_number: nil, ksef_invoice_kind: :vat}}, _opts, _context), do: :ok
 
   def validate(_changeset, _opts, _context) do
-    {:error, field: :invoice_id, message: gettext("Only an unnumbered invoice draft can be issued.")}
+    {:error, field: :invoice_id, message: gettext_noop("Only an unnumbered invoice draft can be issued.")}
   end
 end

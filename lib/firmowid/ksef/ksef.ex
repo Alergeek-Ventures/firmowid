@@ -14,6 +14,7 @@ defmodule Firmowid.Ksef do
   """
 
   use Ash.Domain, extensions: [AshAi]
+  use Gettext, backend: Firmowid.Gettext
 
   import Ecto.Query, warn: false
 
@@ -536,7 +537,7 @@ defmodule Firmowid.Ksef do
           session_reference: ref,
           submitted_at: get_job_timestamp(job, :inserted_at),
           failed_at: get_job_timestamp(job, :completed_at),
-          error: "Wysyłka zakończona bez potwierdzenia z KSeF"
+          error: gettext("Submission finished without confirmation from KSeF")
         }
 
       nil ->
@@ -544,7 +545,7 @@ defmodule Firmowid.Ksef do
         %SubmissionInfo{
           status: :failed,
           session_reference: ref,
-          error: "Brak informacji o wysyłce"
+          error: gettext("No submission information")
         }
     end
   end
@@ -629,7 +630,7 @@ defmodule Firmowid.Ksef do
   defp format_job_error(%Oban.Job{errors: errors}) when is_list(errors) do
     case List.last(errors) do
       %{"error" => error_string} -> parse_error_string(error_string)
-      _ -> "Wystąpił nieoczekiwany błąd podczas wysyłania do KSeF"
+      _ -> gettext("An unexpected error occurred while sending to KSeF")
     end
   end
 
@@ -639,22 +640,22 @@ defmodule Firmowid.Ksef do
         extract_ksef_validation_error(error_string)
 
       String.contains?(error_string, "invoice_not_found") ->
-        "Faktura nie została znaleziona"
+        gettext("The invoice was not found")
 
       String.contains?(error_string, "invoice_is_draft") ->
-        "Faktura jest szkicem - najpierw ją zatwierdź"
+        gettext("The invoice is a draft - approve it first")
 
       String.contains?(error_string, "invoice_already_locked") ->
-        "Faktura została już wysłana do KSeF"
+        gettext("The invoice has already been sent to KSeF")
 
       String.contains?(error_string, "not_authenticated") ->
-        "Brak połączenia z KSeF"
+        gettext("No connection to KSeF")
 
       String.contains?(error_string, "invoice_duplicate") ->
-        "KSeF odrzucił wysyłkę jako duplikat. Zmień dane faktury i wyślij ponownie."
+        gettext("KSeF rejected the submission as a duplicate. Change the invoice data and send it again.")
 
       true ->
-        "Wystąpił nieoczekiwany błąd podczas wysyłania do KSeF"
+        gettext("An unexpected error occurred while sending to KSeF")
     end
   end
 
@@ -673,7 +674,7 @@ defmodule Firmowid.Ksef do
         if details == [] do
           extract_ksef_description(error_string)
         else
-          "Błąd walidacji KSeF: #{Enum.join(details, "; ")}"
+          gettext("KSeF validation error: %{details}", details: Enum.join(details, "; "))
         end
 
       nil ->
@@ -684,8 +685,8 @@ defmodule Firmowid.Ksef do
   defp extract_ksef_description(error_string) do
     # Try to extract description field
     case Regex.run(~r/"description"\s*=>\s*"([^"]+)"/, error_string) do
-      [_, description] -> "Błąd KSeF: #{description}"
-      nil -> "Błąd walidacji dokumentu przez KSeF"
+      [_, description] -> gettext("KSeF error: %{description}", description: description)
+      nil -> gettext("KSeF document validation error")
     end
   end
 
@@ -747,6 +748,6 @@ defmodule Firmowid.Ksef do
   """
   @spec failed_correction_deleted_message() :: String.t()
   def failed_correction_deleted_message do
-    "Nie udało się wysłać korekty do KSeF. Korekta została usunięta — popraw dane i spróbuj ponownie."
+    gettext("Could not send the correction to KSeF. The correction was deleted — fix the data and try again.")
   end
 end

@@ -241,12 +241,12 @@ defmodule Firmowid.Core.User do
         cond do
           not is_binary(email) or email == "" ->
             Ash.Changeset.add_error(changeset,
-              message: gettext("Google sign-in failed: no email address.")
+              message: gettext_noop("Google sign-in failed: no email address.")
             )
 
           verified_email not in [true, "true", 1, "1"] ->
             Ash.Changeset.add_error(changeset,
-              message: gettext("Google sign-in failed: the Google email is not verified.")
+              message: gettext_noop("Google sign-in failed: the Google email is not verified.")
             )
 
           true ->
@@ -428,7 +428,7 @@ defmodule Firmowid.Core.User do
         case identity do
           nil ->
             Ash.Changeset.add_error(changeset,
-              message: gettext("The Google account is not connected.")
+              message: gettext_noop("The Google account is not connected.")
             )
 
           identity ->
@@ -438,7 +438,7 @@ defmodule Firmowid.Core.User do
 
               {:error, _error} ->
                 Ash.Changeset.add_error(changeset,
-                  message: gettext("Could not disconnect the Google account.")
+                  message: gettext_noop("Could not disconnect the Google account.")
                 )
             end
         end

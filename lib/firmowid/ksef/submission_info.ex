@@ -37,6 +37,8 @@ defmodule Firmowid.Ksef.SubmissionInfo do
       }
   """
 
+  use Gettext, backend: Firmowid.Gettext
+
   @type status :: :not_submitted | :submitting | :submitted | :failed
 
   @type t :: %__MODULE__{
@@ -87,14 +89,14 @@ defmodule Firmowid.Ksef.SubmissionInfo do
 
   @doc "Explains why an invoice issued outside KSeF cannot be edited."
   @spec outside_ksef_message() :: String.t()
-  def outside_ksef_message, do: "Faktura wystawiona poza KSeF — nie można jej edytować ani korygować."
+  def outside_ksef_message, do: gettext("The invoice was issued outside KSeF — it cannot be edited or corrected.")
 
   @doc "Explains why the edit control is unavailable, for an invoice that is locked or outside KSeF."
   @spec edit_unavailable_reason(map(), t()) :: String.t()
   def edit_unavailable_reason(invoice, submission_info) do
     if outside_ksef?(invoice, submission_info),
       do: outside_ksef_message(),
-      else: "Faktura jest zablokowana. Edycja będzie dostępna po zakończeniu wysyłki do KSeF."
+      else: gettext("The invoice is locked. Editing will be available once the submission to KSeF is finished.")
   end
 
   @doc "Returns `true` if the submission failed."

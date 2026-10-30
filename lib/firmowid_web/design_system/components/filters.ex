@@ -54,7 +54,7 @@ defmodule FirmowidWeb.DesignSystem.Components.Filters do
   end
 
   @doc """
-  Renders sub-filter pills that narrow a list, prefixed with a "Filtry:" label. Pills
+  Renders sub-filter pills that narrow a list, prefixed with a "Filters:" label. Pills
   are links (`navigate` or `patch`) or buttons with `phx-click`; clicking an active
   pill is expected to clear it. With `divider`, a vertical rule separates the pills
   from preceding tabs on wide screens.
@@ -63,7 +63,7 @@ defmodule FirmowidWeb.DesignSystem.Components.Filters do
   attr :divider, :boolean, default: false
   attr :class, :any, default: nil
 
-  attr :label, :any, default: "Filtry:", doc: "Visible label before the pills; `nil` hides it."
+  attr :label, :any, default: :default, doc: "Visible label before the pills; `nil` hides it."
 
   slot :pill,
     required: true,
@@ -72,6 +72,8 @@ defmodule FirmowidWeb.DesignSystem.Components.Filters do
       "Attributes: `navigate` or `patch` for a link, otherwise a button; `active`; any other attribute (`phx-click`, `phx-value-*`, `phx-target`) goes to the element."
 
   def filter_pills(assigns) do
+    assigns = update(assigns, :label, &if(&1 == :default, do: gettext("Filters:"), else: &1))
+
     ~H"""
     <div class={["flex items-center gap-6 max-md:w-full", @class]}>
       <div :if={@divider} class="mx-2 h-7 w-px bg-grey-200 max-md:hidden"></div>

@@ -99,9 +99,12 @@ defmodule FirmowidWeb.Infrastructure.Components.BlobProcessingToasts do
   defp duplicate_cost_invoice_id(%{"cost_invoice_id" => id}), do: id
   defp duplicate_cost_invoice_id(%{cost_invoice_id: id}), do: id
 
-  defp processing_failure_message(%{"error_message" => message}, _filename) when is_binary(message), do: message
+  # The message is a msgid stored by the processing job; older blobs hold Polish text.
+  defp processing_failure_message(%{"error_message" => message}, _filename) when is_binary(message),
+    do: Gettext.gettext(Firmowid.Gettext, message)
 
-  defp processing_failure_message(%{error_message: message}, _filename) when is_binary(message), do: message
+  defp processing_failure_message(%{error_message: message}, _filename) when is_binary(message),
+    do: Gettext.gettext(Firmowid.Gettext, message)
 
   defp processing_failure_message(_metadata, filename), do: filename
 end

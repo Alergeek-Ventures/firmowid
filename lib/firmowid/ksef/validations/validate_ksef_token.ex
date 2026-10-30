@@ -4,6 +4,7 @@ defmodule Firmowid.Ksef.Validations.ValidateKsefToken do
   matches the current organization's NIP.
   """
   use Ash.Resource.Validation
+  use Gettext, backend: Firmowid.Gettext
 
   alias Firmowid.Core
   alias Firmowid.Scope
@@ -19,10 +20,10 @@ defmodule Firmowid.Ksef.Validations.ValidateKsefToken do
       :ok
     else
       {:error, :invalid_token_format} ->
-        {:error, field: :ksef_token, message: "Nieprawidłowy format tokenu KSeF."}
+        {:error, field: :ksef_token, message: gettext_noop("Invalid KSeF token format.")}
 
       {:error, :nip_mismatch} ->
-        {:error, field: :ksef_token, message: "NIP w tokenie nie zgadza się z NIP organizacji."}
+        {:error, field: :ksef_token, message: gettext_noop("The NIP in the token does not match the organization's NIP.")}
     end
   end
 

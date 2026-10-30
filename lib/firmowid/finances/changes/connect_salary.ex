@@ -25,8 +25,14 @@ defmodule Firmowid.Finances.Changes.ConnectSalary do
       scope = Scope.new!(context.actor, context.tenant)
 
       case conflict(changeset.data.id, user_id, month, scope) do
-        nil -> changeset
-        message -> Ash.Changeset.add_error(changeset, field: :salary_month, message: message)
+        nil ->
+          changeset
+
+        {message, vars} ->
+          Ash.Changeset.add_error(changeset, field: :salary_month, message: message, vars: vars)
+
+        message ->
+          Ash.Changeset.add_error(changeset, field: :salary_month, message: message)
       end
     end)
   end
@@ -45,12 +51,11 @@ defmodule Firmowid.Finances.Changes.ConnectSalary do
         nil
 
       transaction.salary_user_id ->
-        gettext("The transaction already pays the salary of %{month}. Disconnect it first.",
-          month: Date.to_iso8601(transaction.salary_month)
-        )
+        {gettext_noop("The transaction already pays the salary of %{month}. Unlink it first."),
+         [month: Date.to_iso8601(transaction.salary_month)]}
 
       transaction.skip_invoicing ->
-        gettext("The transaction is skipped. Restore it for matching first.")
+        gettext_noop("The transaction is skipped. Restore it for matching first.")
 
       true ->
         transaction_id
@@ -63,7 +68,7 @@ defmodule Firmowid.Finances.Changes.ConnectSalary do
   end
 
   defp conflict(_transaction_id, _user_id, _month, _scope),
-    do: gettext("The salary cannot be assigned to this transaction.")
+    do: gettext_noop("The salary cannot be assigned to this transaction.")
 
   defp reason_message(%{suggestions: [_ | _]}, _user_id, _month, _scope), do: nil
 
@@ -71,21 +76,21 @@ defmodule Firmowid.Finances.Changes.ConnectSalary do
     [paying] =
       Finances.list_transactions!(%{salary_user_id: user_id, salary_month: month}, scope: scope)
 
-    gettext("The salary is already paid by transaction %{id}.", id: paying.id)
+    {gettext_noop("The salary is already paid by transaction %{id}."), [id: paying.id]}
   end
 
   defp reason_message(%{reason: :not_outgoing_pln}, _user_id, _month, _scope),
-    do: gettext("Only an outgoing PLN transfer can pay a salary.")
+    do: gettext_noop("Only an outgoing PLN transfer can pay a salary.")
 
   defp reason_message(%{reason: :transaction_matched}, _user_id, _month, _scope),
-    do: gettext("The transaction is already connected to an invoice or a salary. Disconnect it first.")
+    do: gettext_noop("The transaction is already linked to an invoice or a salary. Unlink it first.")
 
   defp reason_message(%{reason: :month_out_of_range}, _user_id, _month, _scope),
-    do: gettext("The salary month must fall within six months before the transfer.")
+    do: gettext_noop("The salary month must fall within six months before the transfer.")
 
   defp reason_message(%{reason: :no_salaries}, _user_id, _month, _scope),
-    do: gettext("The employee has no salary rate in this month.")
+    do: gettext_noop("The employee has no salary rate in this month.")
 
   defp reason_message(%{reason: :amount_out_of_range}, _user_id, _month, _scope),
-    do: gettext("The transfer amount differs from the expected salary by more than 20% (at least 1000 PLN).")
+    do: gettext_noop("The transfer amount differs from the expected salary by more than 20% (at least 1000 PLN).")
 end

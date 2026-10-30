@@ -11,6 +11,8 @@ defmodule Firmowid.Core.Organization do
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer]
 
+  use Gettext, backend: Firmowid.Gettext
+
   alias Firmowid.Analysis.IndustryTemplate
   alias Firmowid.Billing.PlanCatalog
   alias Firmowid.Blobs.Blob
@@ -285,7 +287,7 @@ defmodule Firmowid.Core.Organization do
   validations do
     validate present(:vat_exemption_basis) do
       where [attribute_equals(:vat_exemption_type, :other)]
-      message "Podaj podstawę prawną zwolnienia z VAT."
+      message gettext_noop("Provide the legal basis for the VAT exemption.")
     end
   end
 

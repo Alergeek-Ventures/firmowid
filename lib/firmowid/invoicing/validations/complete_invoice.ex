@@ -24,7 +24,7 @@ defmodule Firmowid.Invoicing.Validations.CompleteInvoice do
           :ok | {:error, [Exception.t()]}
   @impl true
   def validate(changeset, _opts, context) do
-    required = Enum.map(@required_fields, &{&1, gettext("This field is required.")})
+    required = Enum.map(@required_fields, &{&1, gettext_noop("This field is required.")})
 
     errors =
       Enum.flat_map(seller_requirements() ++ required, fn {field, message} ->
@@ -58,9 +58,9 @@ defmodule Firmowid.Invoicing.Validations.CompleteInvoice do
   # Seller details are copied from the organization, so the fix belongs in its settings, not the invoice form.
   defp seller_requirements do
     [
-      seller_nip: gettext("Complete the company NIP in the organization settings."),
-      seller_display_name: gettext("Complete the company name in the organization settings."),
-      seller_address: gettext("Complete the company address in the organization settings.")
+      seller_nip: gettext_noop("Complete the company NIP in the organization settings."),
+      seller_display_name: gettext_noop("Complete the company name in the organization settings."),
+      seller_address: gettext_noop("Complete the company address in the organization settings.")
     ]
   end
 
@@ -84,7 +84,7 @@ defmodule Firmowid.Invoicing.Validations.CompleteInvoice do
       [
         InvalidAttribute.exception(
           field: :currency,
-          message: gettext("Choose a valid three-letter currency code.")
+          message: gettext_noop("Choose a valid three-letter currency code.")
         )
       ]
     end
@@ -101,7 +101,7 @@ defmodule Firmowid.Invoicing.Validations.CompleteInvoice do
         InvalidAttribute.exception(
           field: if(company?, do: :buyer_id, else: :buyer_type),
           message:
-            gettext(
+            gettext_noop(
               "Only business buyers with a tax ID are supported here. Use the Firmowid web app for invoices to private individuals."
             )
         )

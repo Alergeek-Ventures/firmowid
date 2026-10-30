@@ -22,7 +22,7 @@ defmodule Firmowid.Invoicing.Changes.PrepareInvoiceSeller do
       {:ok, nil} ->
         Ash.Changeset.add_error(changeset,
           field: :input,
-          message: gettext("The current organization was not found.")
+          message: gettext_noop("The current organization was not found.")
         )
 
       {:ok, organization} ->

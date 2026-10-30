@@ -964,7 +964,7 @@ defmodule FirmowidUI.Invoicing.Components.SalesInvoice do
           </div>
           <%!-- NBP can be unreachable; previews still render, while PDF generation refuses to run without a rate. --%>
           <div :if={is_nil(@currency_rate)} class="text-[10px]/[14px]">
-            Nie udało się pobrać kursu NBP. Spróbuj ponownie za chwilę.
+            {gettext("Could not fetch the NBP exchange rate. Please try again shortly.")}
           </div>
         </div>
       <% end %>

@@ -10,6 +10,7 @@ defmodule Firmowid.Invoicing.Validations.ValidateSellerAccountForTransfer do
     * `:seller_account_field` — seller account attribute name (default: `:seller_account_number`)
   """
   use Ash.Resource.Validation
+  use Gettext, backend: Firmowid.Gettext
 
   @impl true
   def validate(changeset, opts, _context) do
@@ -33,10 +34,10 @@ defmodule Firmowid.Invoicing.Validations.ValidateSellerAccountForTransfer do
 
     cond do
       account_number == "" ->
-        {:error, field: field, message: "Numer konta jest wymagany dla przelewu"}
+        {:error, field: field, message: gettext_noop("The account number is required for a bank transfer")}
 
       String.length(account_number) < 10 or String.length(account_number) > 34 ->
-        {:error, field: field, message: "Numer konta musi mieć od 10 do 34 znaków"}
+        {:error, field: field, message: gettext_noop("The account number must be between 10 and 34 characters")}
 
       true ->
         :ok

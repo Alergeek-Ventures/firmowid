@@ -749,7 +749,7 @@ defmodule Firmowid.Invoicing.SalesInvoiceTest do
                  scope: scope_for(user)
                )
 
-      assert %{message: "Uzupełnij adres firmy w ustawieniach organizacji."} =
+      assert %{message: "Complete the company address in the organization settings."} =
                Enum.find(errors, &match?(%{field: :seller_address}, &1))
     end
 

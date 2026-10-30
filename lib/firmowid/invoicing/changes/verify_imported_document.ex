@@ -12,6 +12,7 @@ defmodule Firmowid.Invoicing.Changes.VerifyImportedDocument do
   Otherwise the error rolls the import back.
   """
   use Ash.Resource.Change
+  use Gettext, backend: Firmowid.Gettext
 
   alias Ash.Error.Changes.InvalidArgument
   alias Firmowid.Currencies.NbpApiClient
@@ -64,7 +65,7 @@ defmodule Firmowid.Invoicing.Changes.VerifyImportedDocument do
       else:
         error(
           :corrected_lines,
-          "pozycje przed korektą różnią się od faktury korygowanej w Firmowidzie"
+          gettext_noop("the items before correction differ from the invoice being corrected in Firmowid")
         )
   end
 
@@ -80,7 +81,11 @@ defmodule Firmowid.Invoicing.Changes.VerifyImportedDocument do
          gross_total
        ),
        do: :ok,
-       else: error(:ksef_gross_total, "kwota brutto po przeliczeniu różni się od faktury w KSeF")
+       else:
+         error(
+           :ksef_gross_total,
+           gettext_noop("the recalculated gross amount differs from the invoice in KSeF")
+         )
   end
 
   # Each P_14_x is its rate group's VAT rounded to the grosz; for a correction, the change
@@ -103,7 +108,7 @@ defmodule Firmowid.Invoicing.Changes.VerifyImportedDocument do
       else:
         error(
           :ksef_vat,
-          "netto lub VAT w grupach stawek po przeliczeniu różni się od faktury w KSeF"
+          gettext_noop("the recalculated net amount or VAT in rate groups differs from the invoice in KSeF")
         )
   end
 
@@ -129,11 +134,17 @@ defmodule Firmowid.Invoicing.Changes.VerifyImportedDocument do
 
         if converted?,
           do: :ok,
-          else: error(:ksef_vat, "faktura w KSeF przelicza VAT na PLN po innym kursie niż NBP")
+          else:
+            error(
+              :ksef_vat,
+              gettext_noop("the invoice in KSeF converts VAT to PLN using a different exchange rate than NBP")
+            )
 
       # NBP's table A has no rate for this currency, so Firmowid cannot show its conversion.
       {:error, {:no_rates_found, _currency, _date}} ->
-        error(:ksef_vat, "NBP nie publikuje kursu waluty #{invoice.currency}")
+        error(:ksef_vat, gettext_noop("NBP does not publish an exchange rate for %{currency}"),
+          currency: invoice.currency
+        )
 
       {:error, reason} ->
         raise "NBP exchange rate unavailable for #{invoice.currency} on #{date}: #{inspect(reason)}"
@@ -168,5 +179,6 @@ defmodule Firmowid.Invoicing.Changes.VerifyImportedDocument do
 
   defp difference(invoice, reference, field), do: Decimal.sub(Map.fetch!(invoice, field), Map.fetch!(reference, field))
 
-  defp error(field, message), do: {:error, InvalidArgument.exception(field: field, message: message)}
+  defp error(field, message, vars \\ []),
+    do: {:error, InvalidArgument.exception(field: field, message: message, vars: vars)}
 end

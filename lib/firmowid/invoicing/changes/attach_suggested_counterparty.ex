@@ -5,6 +5,7 @@ defmodule Firmowid.Invoicing.Changes.AttachSuggestedCounterparty do
   Atomic eligibility checks are enforced in the action-level write filter.
   """
   use Ash.Resource.Change
+  use Gettext, backend: Firmowid.Gettext
 
   alias Ash.Error.Changes.InvalidAttribute
   alias Firmowid.Invoicing.Counterparty
@@ -34,6 +35,9 @@ defmodule Firmowid.Invoicing.Changes.AttachSuggestedCounterparty do
   end
 
   defp not_found_error do
-    InvalidAttribute.exception(field: :counterparty_id, message: "Nie znaleziono kontrahenta")
+    InvalidAttribute.exception(
+      field: :counterparty_id,
+      message: gettext_noop("Counterparty not found")
+    )
   end
 end

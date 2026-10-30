@@ -7,6 +7,7 @@ defmodule Firmowid.Core.Validations.ValidateIban do
   not enforced — the mod-97 check already rejects mistyped numbers.
   """
   use Ash.Resource.Validation
+  use Gettext, backend: Firmowid.Gettext
 
   @min_length 15
   @max_length 34
@@ -20,7 +21,7 @@ defmodule Firmowid.Core.Validations.ValidateIban do
         if valid?(value) do
           :ok
         else
-          {:error, field: field, message: "musi być poprawnym numerem konta bankowego (IBAN)"}
+          {:error, field: field, message: gettext_noop("must be a valid bank account number (IBAN)")}
         end
 
       _ ->

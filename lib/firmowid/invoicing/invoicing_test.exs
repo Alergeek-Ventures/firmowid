@@ -459,7 +459,7 @@ defmodule Firmowid.Invoicing.InvoicingTest do
                  scope: scope
                )
 
-      assert Exception.message(error) =~ "Wybierz co najmniej jedną transakcję."
+      assert Exception.message(error) =~ "Select at least one transaction."
 
       disconnected_invoice =
         Invoicing.get_sales_invoice!(sales_invoice.id, load: [:transactions], scope: scope)
@@ -490,7 +490,7 @@ defmodule Firmowid.Invoicing.InvoicingTest do
                  scope: scope
                )
 
-      assert Exception.message(error) =~ "Wybierz co najmniej jedną transakcję."
+      assert Exception.message(error) =~ "Select at least one transaction."
 
       still_connected_invoice =
         Invoicing.get_sales_invoice!(sales_invoice.id, load: [:transactions], scope: scope)
@@ -548,7 +548,7 @@ defmodule Firmowid.Invoicing.InvoicingTest do
                  scope: scope
                )
 
-      assert Exception.message(error) =~ "Wybierz co najmniej jedną transakcję."
+      assert Exception.message(error) =~ "Select at least one transaction."
 
       still_connected_invoice =
         Invoicing.get_cost_invoice!(cost_invoice.id, load: [:transactions], scope: scope)
@@ -595,7 +595,7 @@ defmodule Firmowid.Invoicing.InvoicingTest do
                  scope: scope
                )
 
-      assert Exception.message(error) =~ "Wybierz co najmniej jedną transakcję."
+      assert Exception.message(error) =~ "Select at least one transaction."
 
       disconnected_invoice =
         Invoicing.get_cost_invoice!(cost_invoice.id, load: [:transactions], scope: scope)

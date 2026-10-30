@@ -24,7 +24,7 @@ defmodule Firmowid.Invoicing.Changes.VerifyInvoiceReview do
         else
           Ash.Changeset.add_error(changeset,
             field: :input,
-            message: gettext("The invoice data changed. Review the updated preview and confirm again.")
+            message: gettext_noop("The invoice data changed. Review the updated preview and confirm again.")
           )
         end
       else
