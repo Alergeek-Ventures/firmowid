@@ -12,14 +12,15 @@ in Accent. Do not leave new UI text untranslated. Exceptions are proper names,
 user-provided content, and technical/internal strings that are not user-facing
 (for example logs).
 
-Writing Polish into Accent, freezing snapshots, and translation CI failures are
+Writing Polish and Ukrainian into Accent and translation CI failures are
 documented in `accent-translations`.
 
 ## Scope and locale behavior
 
-- The managed locale is Polish (`pl`); English is the source language. Current
-  tooling and Accent catalog are configured for `en`/`pl`, not arbitrary
-  locales.
+- English is the source language; the translated locales are Polish (`pl`, the
+  default) and Ukrainian (`uk`). `Firmowid.Translations.locales/0` lists them and
+  every new or changed string needs a value in both. Users choose the interface
+  language from the list in `FirmowidWeb.Infrastructure.Plugs.Locale.languages/0`.
 - `Firmowid.Gettext` is the backend Gettext module. In a module that needs
   Gettext macros, use the actual backend declaration:
 
@@ -27,8 +28,8 @@ documented in `accent-translations`.
   use Gettext, backend: Firmowid.Gettext
   ```
 
-- The default Gettext locale is Polish. Do not add browser-locale detection or
-  an English UI-language switcher as an assumed part of translating a string.
+- The default Gettext locale is Polish. Do not add browser-locale detection as
+  an assumed part of translating a string.
 - User-facing URLs and query parameters remain Polish, independently of UI
   locale.
 - This policy applies to new/changed user-facing text broadly. It does not
@@ -70,9 +71,9 @@ Follow these steps in order when changing user-facing text:
 2. Prepare the exact Polish wording, even when the requested wording was
    supplied in Polish. Review the latest native Accent document and preserve
    existing translations and unrelated entries.
-3. Commit/push if explicitly authorized. After the change is pushed, write the
-   Polish values into Accent and freeze a snapshot for that exact commit SHA,
-   following `accent-translations`. Never upload the extracted POT to Accent: it
+3. Write the Polish and Ukrainian values into Accent following
+   `accent-translations` (CI fails until Accent holds them), then commit/push if
+   explicitly authorized. Never upload the extracted POT to Accent: it
    rebuilds the Polish plural entries with the English two-form shape.
 
 ### Accent structure cautions
@@ -94,36 +95,23 @@ Follow these steps in order when changing user-facing text:
 - The export helper already fixes a specific malformed Polish plural header. Do
   not duplicate that workaround or broadly rewrite/normalize PO headers.
 
-## Pinned catalog snapshots and runtime
+## Catalog snapshots and runtime
 
-- Only main CI creates/reuses immutable Accent snapshots for its full commit
-  SHA. PRs, including Dependabot, must not create snapshots or require an
-  own-SHA snapshot: use it if present, otherwise explicitly fall back to the
-  current HEAD main snapshot, with main's full SHA resolved once per CI
-  workflow. Never use mutable latest as a build fallback. A PR that adds
-  strings needs a snapshot for its own head commit, created manually as
-  described in `accent-translations`.
-- If a snapshot already exists with stale content, do not edit/delete it, force
-  a fallback to latest, or pretend `prepare` translates it. Write the Polish into
-  Accent, then use a new commit SHA for a fresh snapshot. Do not amend, rewrite,
-  or force-push history without explicit permission.
-- `mix translations.fetch [--version FULL_SHA] [--fallback-version FULL_SHA]`
-  exports only; it never creates a snapshot. Without an explicit fallback it
-  retains strict pinned export, including unique 7–39-character SHA prefix
-  resolution.
-  `elixir scripts/accent.exs export --version FULL_SHA --fallback-version MAIN_FULL_SHA`
-  supports the same explicit fallback.
-- Fallback applies only when the requested snapshot is absent, not on 401/403,
-  5xx, network failures, or invalid translations. A missing fallback snapshot
-  also fails. Source extraction and real Polish translation validation remain
-  strict: missing/changed strings, contexts, plural forms, and placeholders must
-  validate against the selected catalog even when an own snapshot is optional.
-- The catalog artifact remains named by the code/caller SHA. Its first PO marker
-  reports the actual selected snapshot SHA; consumers validate that marker
-  against the producer's `catalog-version` output, not the artifact's name.
-  Normal builds compile the pinned artifact; there are no runtime Accent calls.
+- Every CI run exports the current Accent catalog with
+  `elixir scripts/accent.exs snapshot --version FULL_SHA`, validates `pl` and `uk`
+  against the POT and marks the PO files with that SHA. A PR passes only when
+  Accent already holds its new strings in both languages.
+- On `main`, CI publishes the validated catalog as `FULL_SHA.tar.gz` in the
+  `translation-snapshots` GitHub release; the deployment build installs it with
+  `elixir scripts/accent.exs export --version FULL_SHA`. A published snapshot is
+  immutable; reruns of that commit reuse it. Accent versions are not used.
+- `mix translations.fetch --latest` reproduces the CI export locally;
+  `mix translations.fetch [--version FULL_SHA] [--fallback-version FULL_SHA]`
+  installs a published snapshot, falling back only when the requested one is not
+  published (HTTP 404). Normal builds compile the installed catalogs; there are no
+  runtime Accent calls.
 - Do not commit generated managed translation PO files, JSON exports, seeds, or
-  keys. The tracked POT is source; the downloaded managed Polish PO is
+  keys. The tracked POT is source; the downloaded managed Polish and Ukrainian POs are
   generated/ignored runtime build input and is compiled before runtime. Preserve
   legacy catalogs and other PO files outside this managed workflow; do not
   delete them as cleanup.
@@ -143,31 +131,18 @@ Follow these steps in order when changing user-facing text:
 
 ## Verification
 
-After editing source, use the repository's actual extraction/export/check flow.
-Before commit/push, export the latest unversioned candidate from Accent to the
-ignored managed Polish PO and validate it. After authorized commit/push, fetch
-and validate the selected pinned catalog: main uses its own snapshot; a PR uses
-its existing snapshot or the explicitly pinned main fallback.
+After editing source, extract, write the Polish and Ukrainian values into Accent
+(`accent-translations`), then validate exactly as CI does:
 
 ```sh
 mix gettext.extract
-# Export latest candidate as described in `accent-translations`.
-mix translations.check --check-extraction
-# Main after CI snapshot creation, or an existing own-SHA snapshot:
-mix translations.fetch --version FULL_SHA
-# PR alternative: use main's full SHA resolved once for this workflow:
-mix translations.fetch --version FULL_SHA --fallback-version MAIN_FULL_SHA
+mix translations.fetch --latest
 mix translations.check --check-extraction
 mix check
 ```
 
-`mix translations.fetch` defaults to current Git HEAD; specify the full SHA when
-checking a particular snapshot. Pass `--fallback-version` only when an explicit
-pinned fallback is intended; its absence never permits a latest fallback. The
-standalone `elixir scripts/accent.exs export --version FULL_SHA` also requires
-the pinned SHA and credentials and accepts `--fallback-version FULL_SHA`. Its
-local Infisical fallback is disabled in CI, production, and when
-`AV_SKIP_INFISICAL` is set. Do not treat `prepare` as a local sync substitute.
+The local Infisical fallback for `ACCENT_API_KEY` is disabled in CI, production,
+and when `AV_SKIP_INFISICAL` is set.
 
 Manually inspect the rendered UI, accessibility/context, interpolation, and
 plural behavior (especially counts 0, 1, 2, 5, 12, and 22). Keep existing copy

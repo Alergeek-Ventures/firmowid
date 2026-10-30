@@ -5,233 +5,108 @@ Mix.install([{:req, "~> 0.7.4"}, {:expo, "~> 1.1"}],
 Code.require_file("../lib/firmowid/translations.ex", __DIR__)
 
 defmodule Firmowid.Translations.Accent do
-  @moduledoc "Prepares and exports the Polish Accent translation catalog."
+  @moduledoc """
+  Builds and installs the translated Gettext catalogs.
+
+  `snapshot` exports the current Accent catalog, validates every translated locale
+  against the source POT and installs it marked with a commit SHA. CI publishes the
+  snapshot of each main commit as `<sha>.tar.gz` in the `translation-snapshots`
+  GitHub release; `export` installs such a published snapshot, so deployment builds
+  use exactly the catalog CI validated for their commit.
+  """
 
   @root Path.expand("..", __DIR__)
   @config Path.join(@root, "accent.json")
   @catalog Path.join(@root, "priv/gettext/default.pot")
 
+  @snapshot_url "https://github.com/Alergeek-Ventures/firmowid/releases/download/translation-snapshots"
   @request_timeout 30_000
   @cli_timeout "120"
-  @usage "usage: accent.exs <prepare|export> --version SHA [--fallback-version FULL_SHA] (fallback is export-only; export accepts a unique 7-39 character SHA prefix)"
+  @usage "usage: accent.exs snapshot --version FULL_SHA | accent.exs export --version FULL_SHA [--fallback-version FULL_SHA]"
   @version_marker ~r/^# Accent version: [[:xdigit:]]{40}$/
 
-  @create_version_query """
-  mutation CreateVersion(
-    $projectId: ID!
-    $nameGitSHA: String!
-    $tagSHA: String!
-    $copyOnUpdateTranslation: Boolean!
-  ) {
-    createVersion(
-      projectId: $projectId
-      name: $nameGitSHA
-      tag: $tagSHA
-      copyOnUpdateTranslation: $copyOnUpdateTranslation
-    ) {
-      version { id tag }
-      errors
-    }
-  }
-  """
-
-  @versions_query """
-  query ProjectVersions($projectId: ID!, $page: Int!, $pageSize: Int!) {
-    viewer {
-      project(id: $projectId) {
-        versions(page: $page, pageSize: $pageSize) {
-          meta { totalEntries }
-          entries { tag }
-        }
-      }
-    }
-  }
-  """
-
   @doc """
-  Runs the standalone Accent operation.
+  Runs the standalone operation.
 
-  `prepare` requires a full Git SHA. `export` accepts a full SHA or a
-  7-39-character hexadecimal prefix that uniquely identifies an existing snapshot.
-  An explicit full fallback SHA is used only when the requested full SHA returns HTTP 404.
+  `snapshot` needs an Accent key and fails when a locale catalog is incomplete.
+  `export` downloads the published snapshot of a full SHA, falling back to the
+  explicit fallback SHA only when the requested one is not published.
   """
   @spec run([String.t()]) :: :ok
-  def run(["prepare", "--version", version]), do: run_operation(:prepare, version)
-  def run(["export", "--version", version]), do: run_operation(:export, version)
+  def run(["snapshot", "--version", version]) do
+    validate_version(version)
+    api_key = api_key()
+
+    with_temp_directory(fn temporary_directory ->
+      export_catalog(temporary_directory, api_key)
+      install_catalog(temporary_directory, version)
+    end)
+  end
+
+  def run(["export", "--version", version]), do: run(["export", "--version", version, "--fallback-version", version])
 
   def run(["export", "--version", version, "--fallback-version", fallback]) do
-    validate_version(:prepare, version)
-    validate_version(:prepare, fallback)
-    run_operation(:export, version, fallback)
+    validate_version(version)
+    validate_version(fallback)
+
+    with_temp_directory(fn temporary_directory ->
+      selected = download_snapshot(version, fallback, temporary_directory)
+      install_snapshot(temporary_directory, selected)
+    end)
   end
 
   def run(_args), do: raise(RuntimeError, message: @usage)
 
-  defp run_operation(operation, version, fallback \\ nil) do
-    validate_version(operation, version)
-    context = context()
-
-    version =
-      case operation do
-        :prepare ->
-          prepare(context, version)
-          version
-
-        :export ->
-          selected = resolve_export_version(context, version)
-          select_existing_snapshot(context, selected, fallback)
-      end
-
-    with_temp_directory(fn temporary_directory ->
-      export_catalog(version, temporary_directory, context.api_key)
-      install_catalog(temporary_directory, version)
-    end)
-
-    :ok
-  end
-
-  defp select_existing_snapshot(_context, version, nil), do: version
-
-  defp select_existing_snapshot(context, version, fallback) do
-    case request_status(context.client,
-           method: :get,
-           url: "/export",
-           params: export_params(context, version)
-         ) do
-      {:ok, 200} ->
-        version
-
-      {:ok, 404} when version != fallback ->
-        IO.puts("No Accent snapshot for #{version}; using main snapshot #{fallback}")
-        select_existing_snapshot(context, fallback, fallback)
-
-      {:ok, 404} ->
-        raise RuntimeError, "No Accent snapshot for main commit #{fallback}"
-
-      {:ok, status} ->
-        raise RuntimeError, "Accent snapshot export failed (HTTP #{status})"
-
-      {:error, kind} ->
-        raise RuntimeError, "Accent snapshot export failed (transport: #{kind})"
-    end
-  end
-
-  defp validate_version(:prepare, version) when is_binary(version) do
+  defp validate_version(version) do
     if Regex.match?(~r/^[[:xdigit:]]{40}$/, version),
       do: :ok,
       else: raise(RuntimeError, "version must be a full 40-character Git SHA")
   end
 
-  defp validate_version(:export, version) when is_binary(version) do
-    if Regex.match?(~r/^[[:xdigit:]]{7,40}$/, version),
-      do: :ok,
-      else:
-        raise(
-          RuntimeError,
-          "version must be a full 40-character Git SHA or a 7-39 character hexadecimal prefix"
-        )
-  end
+  defp download_snapshot(version, fallback, temporary_directory) do
+    case Req.get("#{@snapshot_url}/#{version}.tar.gz",
+           receive_timeout: @request_timeout,
+           connect_options: [timeout: 10_000],
+           retry: false,
+           decode_body: false
+         ) do
+      {:ok, %Req.Response{status: 200, body: body}} ->
+        :ok =
+          :erl_tar.extract({:binary, body}, [
+            :compressed,
+            {:cwd, String.to_charlist(temporary_directory)}
+          ])
 
-  defp resolve_export_version(_context, <<_::binary-size(40)>> = version), do: version
+        version
 
-  defp resolve_export_version(context, prefix) do
-    normalized_prefix = String.downcase(prefix)
+      {:ok, %Req.Response{status: 404}} when version != fallback ->
+        IO.puts("No published translation snapshot for #{version}; using #{fallback}")
+        download_snapshot(fallback, fallback, temporary_directory)
 
-    matches =
-      context
-      |> list_snapshot_tags()
-      |> Enum.filter(&String.starts_with?(String.downcase(&1), normalized_prefix))
-
-    case matches do
-      [tag] ->
-        tag
-
-      [] ->
-        raise RuntimeError, "No Accent snapshot matches commit prefix #{prefix}"
-
-      _multiple ->
-        raise RuntimeError,
-              "Multiple Accent snapshots match commit prefix #{prefix}; supply full SHA"
-    end
-  end
-
-  defp list_snapshot_tags(context), do: list_snapshot_tags(context, 1, 0, [])
-
-  defp list_snapshot_tags(context, page, loaded, tags) do
-    {total, entries} = version_page(context, page)
-
-    page_tags =
-      Enum.flat_map(entries, fn
-        %{"tag" => tag} when is_binary(tag) ->
-          if Regex.match?(~r/^[[:xdigit:]]{40}$/, tag), do: [tag], else: []
-
-        _other ->
-          []
-      end)
-
-    new_loaded = loaded + length(entries)
-    new_tags = tags ++ page_tags
-
-    cond do
-      new_loaded >= total ->
-        new_tags
-
-      entries == [] ->
-        raise RuntimeError, "Accent snapshot lookup returned incomplete pagination data"
-
-      true ->
-        list_snapshot_tags(context, page + 1, new_loaded, new_tags)
-    end
-  end
-
-  defp version_page(context, page) do
-    body = %{
-      "query" => @versions_query,
-      "variables" => %{"projectId" => context.project, "page" => page, "pageSize" => 100}
-    }
-
-    case Req.request(context.client, method: :post, url: "/graphql", json: body) do
-      {:ok, %Req.Response{status: 200, body: response_body}} ->
-        parse_version_page(response_body)
+      {:ok, %Req.Response{status: 404}} ->
+        raise RuntimeError, "No published translation snapshot for #{version}"
 
       {:ok, %Req.Response{status: status}} ->
-        raise RuntimeError, "Accent snapshot lookup failed (HTTP #{status})"
+        raise RuntimeError, "Translation snapshot download failed (HTTP #{status})"
 
       {:error, reason} ->
-        raise RuntimeError, "Accent snapshot lookup failed (transport: #{error_kind(reason)})"
+        raise RuntimeError,
+              "Translation snapshot download failed (transport: #{error_kind(reason)})"
     end
   end
 
-  defp parse_version_page(%{
-         "data" => %{
-           "viewer" => %{"project" => %{"versions" => %{"meta" => %{"totalEntries" => total}, "entries" => entries}}}
-         }
-       })
-       when is_integer(total) and total >= 0 and is_list(entries), do: {total, entries}
+  # A published snapshot was validated by CI for its commit; install it unchanged.
+  defp install_snapshot(temporary_directory, version) do
+    Enum.each(Firmowid.Translations.locales(), fn locale ->
+      relative = "#{locale}/LC_MESSAGES/default.po"
+      content = File.read!(Path.join(temporary_directory, relative))
 
-  defp parse_version_page(_response_body) do
-    raise RuntimeError,
-          "Accent snapshot lookup failed; check project read and index_versions permissions"
-  end
+      if List.first(String.split(content, "\n", parts: 2)) != "# Accent version: #{version}" do
+        raise RuntimeError, "Published #{locale} snapshot is not marked with #{version}"
+      end
 
-  defp context do
-    %{"apiUrl" => api_url, "project" => project} =
-      @config |> File.read!() |> JSON.decode!()
-
-    api_key = api_key()
-
-    %{
-      project: System.get_env("ACCENT_PROJECT", project),
-      api_key: api_key,
-      client:
-        Req.new(
-          base_url: "ACCENT_API_URL" |> System.get_env(api_url) |> String.trim_trailing("/"),
-          auth: {:bearer, api_key},
-          receive_timeout: @request_timeout,
-          connect_options: [timeout: 10_000],
-          retry: false
-        )
-    }
+      write_catalog(Path.join(@root, "priv/gettext/" <> relative), content, temporary_directory)
+    end)
   end
 
   defp api_key do
@@ -302,68 +177,6 @@ defmodule Firmowid.Translations.Accent do
     end
   end
 
-  defp prepare(context, version) do
-    case request_status(context.client,
-           method: :get,
-           url: "/export",
-           params: export_params(context, version)
-         ) do
-      {:ok, 200} ->
-        :ok
-
-      {:ok, 404} ->
-        create_version(context, version)
-
-      {:ok, status} ->
-        raise RuntimeError, "Accent request failed (HTTP #{status})"
-
-      {:error, kind} ->
-        raise RuntimeError, "Accent request failed (transport: #{kind})"
-    end
-  end
-
-  defp export_params(context, version) do
-    [
-      project_id: context.project,
-      language: "pl",
-      document_format: "gettext",
-      document_path: "gettext/landing-native",
-      inline_render: true,
-      order_by: "index",
-      version: version
-    ]
-  end
-
-  defp create_version(context, version) do
-    body = %{
-      "query" => @create_version_query,
-      "variables" => %{
-        "projectId" => context.project,
-        "nameGitSHA" => "Git " <> version,
-        "tagSHA" => version,
-        "copyOnUpdateTranslation" => false
-      }
-    }
-
-    case request_status(context.client, method: :post, url: "/graphql", json: body) do
-      {:ok, 200} ->
-        :ok
-
-      {:ok, status} ->
-        raise RuntimeError, "Accent version creation failed (HTTP #{status})"
-
-      {:error, kind} ->
-        raise RuntimeError, "Accent version creation failed (transport: #{kind})"
-    end
-  end
-
-  defp request_status(client, options) do
-    case Req.request(client, options) do
-      {:ok, %Req.Response{status: status}} -> {:ok, status}
-      {:error, reason} -> {:error, error_kind(reason)}
-    end
-  end
-
   defp error_kind(%Req.TransportError{reason: reason}), do: transport_kind(reason)
   defp error_kind(_error), do: "other"
 
@@ -395,7 +208,7 @@ defmodule Firmowid.Translations.Accent do
     end
   end
 
-  defp export_catalog(version, temporary_directory, api_key) do
+  defp export_catalog(temporary_directory, api_key) do
     source = Path.join(temporary_directory, "gettext/landing-native/default.pot")
     File.mkdir_p!(Path.dirname(source))
     File.cp!(@catalog, source)
@@ -404,15 +217,7 @@ defmodule Firmowid.Translations.Accent do
       System.find_executable("accent") ||
         raise(RuntimeError, "Accent CLI is required; enter the devenv environment")
 
-    arguments = [
-      @cli_timeout,
-      accent_executable,
-      "export",
-      "--config",
-      @config,
-      "--version",
-      version
-    ]
+    arguments = [@cli_timeout, accent_executable, "export", "--config", @config]
 
     case System.cmd("timeout", arguments,
            cd: temporary_directory,
@@ -425,11 +230,19 @@ defmodule Firmowid.Translations.Accent do
   end
 
   defp install_catalog(temporary_directory, version) do
-    input = Path.join(temporary_directory, "exports/pl/default.po")
-    text = File.read!(input)
+    Enum.each(Firmowid.Translations.locales(), &install_locale(temporary_directory, version, &1))
+  end
+
+  defp install_locale(temporary_directory, version, locale) do
+    input = Path.join(temporary_directory, "exports/#{locale}/default.po")
+
+    text =
+      if File.exists?(input),
+        do: File.read!(input),
+        else: raise(RuntimeError, "Accent export has no #{locale} catalog")
 
     if text == "" do
-      raise RuntimeError, "Accent export produced an empty PO file"
+      raise RuntimeError, "Accent export produced an empty #{locale} PO file"
     end
 
     lines = text |> String.split("\n", trim: false) |> remove_old_version_marker()
@@ -439,15 +252,24 @@ defmodule Firmowid.Translations.Accent do
       |> Enum.join("\n")
       |> Expo.PO.parse_string!()
 
-    content =
-      @catalog
-      |> Expo.PO.parse_file!()
-      |> Firmowid.Translations.catalog_for_source(catalog, "default")
-      |> Expo.PO.compose()
-      |> IO.iodata_to_binary()
-      |> then(&("# Accent version: #{version}\n" <> &1))
+    pot = Expo.PO.parse_file!(@catalog)
+    projected = Firmowid.Translations.catalog_for_source(pot, catalog, "default", locale)
 
-    output = Path.join(@root, "priv/gettext/pl/LC_MESSAGES/default.po")
+    case Firmowid.Translations.validate_catalog(pot, projected, "default", locale) do
+      :ok -> :ok
+      {:error, message} -> raise RuntimeError, message
+    end
+
+    content = "# Accent version: #{version}\n" <> IO.iodata_to_binary(Expo.PO.compose(projected))
+
+    write_catalog(
+      Path.join(@root, "priv/gettext/#{locale}/LC_MESSAGES/default.po"),
+      content,
+      temporary_directory
+    )
+  end
+
+  defp write_catalog(output, content, temporary_directory) do
     temporary_output = Path.join(temporary_directory, "catalog.po")
 
     File.mkdir_p!(Path.dirname(output))

@@ -25,7 +25,37 @@ jobs:
       version: ${{ github.event.pull_request.head.sha || github.sha }}
     secrets:
       ACCENT_API_KEY: ${{ secrets.ACCENT_API_KEY }}
-      ACCENT_SNAPSHOT_API_KEY: ${{ github.ref == 'refs/heads/main' && github.actor != 'dependabot[bot]' && secrets.ACCENT_SNAPSHOT_API_KEY || '' }}
+
+  # Deployment builds install the snapshot published here for their commit.
+  publish-translations:
+    name: Publish translation snapshot
+    if: github.ref == 'refs/heads/main'
+    needs: translations
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download generated PO catalog
+        if: needs.translations.outputs.published != 'true' && github.actor != 'dependabot[bot]'
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          name: accent-po-${{ github.sha }}
+          path: priv/gettext
+
+      - name: Publish the snapshot of this commit
+        if: needs.translations.outputs.published != 'true' && github.actor != 'dependabot[bot]'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          SNAPSHOT: ${{ github.sha }}.tar.gz
+        run: |
+          set -euo pipefail
+          tar -czf "$SNAPSHOT" -C priv/gettext pl/LC_MESSAGES/default.po uk/LC_MESSAGES/default.po
+          gh release view translation-snapshots > /dev/null 2>&1 ||
+            gh release create translation-snapshots --prerelease --title "Translation snapshots" \
+              --notes "Validated translation catalogs of main commits, installed by deployment builds. Managed by CI." ||
+            gh release view translation-snapshots > /dev/null
+          gh release upload translation-snapshots "$SNAPSHOT"
 
   build:
     name: Build and Test
@@ -57,7 +87,7 @@ jobs:
   deploy:
     name: Deploy production
     if: github.ref == 'refs/heads/main'
-    needs: translations
+    needs: [translations, publish-translations]
     uses: ./.github/workflows/deploy-production.yml
     with:
       catalog-version: ${{ needs.translations.outputs.catalog-version }}

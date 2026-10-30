@@ -9,15 +9,15 @@ on:
         type: string
     secrets:
       ACCENT_API_KEY:
-        description: Read-only Accent project key for exporting existing snapshots
-        required: false
-      ACCENT_SNAPSHOT_API_KEY:
-        description: Accent project key with read/export and create_version permissions
+        description: Read-only Accent project key for exporting the current catalog
         required: false
     outputs:
       catalog-version:
-        description: Actual full snapshot SHA used by the exported catalog
+        description: Full commit SHA the prepared catalog is marked with
         value: ${{ jobs.prepare.outputs.catalog-version }}
+      published:
+        description: Whether a snapshot for this main commit was already published
+        value: ${{ jobs.prepare.outputs.published }}
 
 jobs:
   prepare:
@@ -27,6 +27,7 @@ jobs:
       contents: read
     outputs:
       catalog-version: ${{ steps.catalog.outputs.version }}
+      published: ${{ steps.published.outputs.published }}
     env:
       ACCENT_VERSION: ${{ inputs.version || github.sha }}
       CALLER_COMMIT: ${{ github.event.pull_request.head.sha || github.sha }}
@@ -60,41 +61,34 @@ jobs:
       - name: Setup Accent CLI
         uses: ./.github/actions/setup-accent
 
-      - name: Resolve current main HEAD once
-        if: github.ref != 'refs/heads/main' || github.actor == 'dependabot[bot]'
-        env:
-          GH_TOKEN: ${{ github.token }}
+      # A main commit keeps the snapshot it was first validated and deployed with.
+      - name: Reuse the published snapshot of this main commit
+        id: published
+        if: github.ref == 'refs/heads/main'
         run: |
-          set -euo pipefail
-          main_sha=$(gh api "repos/$GITHUB_REPOSITORY/commits/main" --jq .sha)
-          [[ "$main_sha" =~ ^[0-9a-fA-F]{40}$ ]]
-          echo "MAIN_VERSION=$main_sha" >> "$GITHUB_ENV"
+          if elixir scripts/accent.exs export --version "$ACCENT_VERSION"; then
+            echo "published=true" >> "$GITHUB_OUTPUT"
+          fi
 
-      - name: Create or reuse main snapshot
-        if: github.ref == 'refs/heads/main' && github.actor != 'dependabot[bot]'
-        env:
-          ACCENT_API_KEY: ${{ secrets.ACCENT_SNAPSHOT_API_KEY }}
-        run: elixir scripts/accent.exs prepare --version "$ACCENT_VERSION"
-
-      - name: Export existing snapshot with main fallback
-        if: github.ref != 'refs/heads/main' || github.actor == 'dependabot[bot]'
+      - name: Export and validate the current Accent catalog
+        if: steps.published.outputs.published != 'true'
         env:
           ACCENT_API_KEY: ${{ secrets.ACCENT_API_KEY }}
-        run: elixir scripts/accent.exs export --version "$ACCENT_VERSION" --fallback-version "$MAIN_VERSION"
+        run: elixir scripts/accent.exs snapshot --version "$ACCENT_VERSION"
 
       - name: Record selected catalog version
         id: catalog
         run: |
           set -euo pipefail
           marker=$(head -n 1 priv/gettext/pl/LC_MESSAGES/default.po)
-          [[ "$marker" =~ ^\#\ Accent\ version:\ ([0-9a-fA-F]{40})$ ]]
-          version=${BASH_REMATCH[1]}
-          [[ "$version" == "$ACCENT_VERSION" || "$version" == "${MAIN_VERSION:-}" ]]
-          echo "version=$version" >> "$GITHUB_OUTPUT"
+          [[ "$marker" == "# Accent version: $ACCENT_VERSION" ]]
+          echo "version=$ACCENT_VERSION" >> "$GITHUB_OUTPUT"
 
       - name: Upload generated PO catalog
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: accent-po-${{ env.ACCENT_VERSION }}
-          path: priv/gettext/pl/LC_MESSAGES/default.po
+          path: |
+            priv/gettext/pl/LC_MESSAGES/default.po
+            priv/gettext/uk/LC_MESSAGES/default.po
           if-no-files-found: error
