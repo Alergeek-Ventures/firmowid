@@ -105,6 +105,8 @@ defmodule FirmowidWeb.Core.Router do
     get "/.well-known/openai-apps-challenge", Infrastructure.Controllers.OpenaiChallenge, :show
     get "/.well-known/ai-catalog.json", AgentDiscovery, :ai_catalog
     get "/.well-known/api-catalog", AgentDiscovery, :api_catalog
+    get "/.well-known/agent-skills/index.json", AgentDiscovery, :agent_skills
+    get "/.well-known/agent-skills/firmowid-mcp/SKILL.md", AgentDiscovery, :agent_skill
     # Pre-final SEP-2127 location, still probed by isitagentready.com.
     get "/.well-known/mcp/server-card.json", AgentDiscovery, :server_card
     options "/.well-known/mcp/server-card.json", AgentDiscovery, :preflight
