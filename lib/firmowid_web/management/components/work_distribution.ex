@@ -16,11 +16,13 @@ defmodule FirmowidWeb.Management.Components.WorkDistribution do
 
   @doc """
   Renders one calendar per month in `months` (newest first). A selected day collapses
-  every other month and week, and opens that day's sessions below its week.
+  every other month and week, and opens that day's sessions below its week. While `more`
+  is set, scrolling to the last calendar sends `load_more_months` to `target`.
   """
   @spec work_distribution(map()) :: Phoenix.LiveView.Rendered.t()
   attr :sessions, :list, required: true, doc: "Sessions with `:duration` and `:project` loaded."
   attr :months, :list, required: true, doc: "First days of the months to show, newest first."
+  attr :more, :boolean, default: false, doc: "Whether earlier months can still be loaded."
   attr :selected_day, Date, default: nil
   attr :target, :any, required: true
 
@@ -42,58 +44,63 @@ defmodule FirmowidWeb.Management.Components.WorkDistribution do
       data-selected-day={@selected_day}
       class="flex flex-col px-1 pt-1 pb-4"
     >
-      <.collapsible
-        :for={month <- @months}
-        id={"work-month-#{month.date}"}
-        collapsed={@selected_day != nil and Date.beginning_of_month(@selected_day) != month.date}
-        phx-remove={collapse()}
+      <div
+        id="work-months"
+        phx-viewport-bottom={@more && "load_more_months"}
+        phx-target={@target}
       >
-        <section class="flex flex-col gap-3 pb-7">
-          <div class="flex items-baseline justify-between gap-4">
-            <h4 class="text-base font-medium text-grey-900 first-letter:uppercase">
-              {TimeFormatter.format_date(month.date, "LLLL yyyy")}
-            </h4>
-            <span class="text-sm font-medium text-grey-800 tabular-nums">{hours(month.seconds)} h</span>
-          </div>
-          <div class="flex flex-col">
-            <div class={["grid items-center gap-x-1.5 px-1", week_styles()]}>
-              <span :for={day <- @weekdays} class="text-center text-xs text-grey-600">{day}</span>
-              <span class="text-right text-xs text-grey-600">{gettext("Week")}</span>
+        <.collapsible
+          :for={month <- @months}
+          id={"work-month-#{month.date}"}
+          collapsed={@selected_day != nil and Date.beginning_of_month(@selected_day) != month.date}
+        >
+          <section class="flex flex-col gap-3 pb-7">
+            <div class="flex items-baseline justify-between gap-4">
+              <h4 class="text-base font-medium text-grey-900 first-letter:uppercase">
+                {TimeFormatter.format_date(month.date, "LLLL yyyy")}
+              </h4>
+              <span class="text-sm font-medium text-grey-800 tabular-nums">{hours(month.seconds)} h</span>
             </div>
-            <.collapsible
-              :for={week <- month.weeks}
-              collapsed={@selected_day != nil and @selected_day not in week.dates}
-            >
-              <div class={["grid items-center gap-x-1.5 p-1", week_styles()]}>
-                <%= for cell <- week.cells do %>
-                  <span :if={cell.outside} class="h-14" />
-                  <.button
-                    :if={!cell.outside}
-                    type="button"
-                    variant="unstyled"
-                    phx-click="select_day"
-                    phx-value-date={Date.to_iso8601(cell.date)}
-                    phx-target={@target}
-                    aria-pressed={to_string(cell.date == @selected_day)}
-                    aria-label={"#{Calendar.strftime(cell.date, "%d.%m")} · #{hours(cell.seconds)} h"}
-                    class={[
-                      "flex h-14 cursor-pointer flex-col items-center justify-center rounded-md leading-tight tabular-nums transition hover:brightness-95 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-700",
-                      intensity_styles(cell.seconds),
-                      cell.date == @selected_day && "ring-2 ring-grey-900 ring-offset-2"
-                    ]}
-                  >
-                    <span class="text-caps-sm opacity-70">{cell.date.day}</span>
-                    <span :if={cell.seconds > 0} class="text-sm font-medium">{hours(cell.seconds)} h</span>
-                  </.button>
-                <% end %>
-                <span class="text-right text-sm font-medium text-grey-800 tabular-nums">
-                  {hours(week.seconds)} h
-                </span>
+            <div class="flex flex-col">
+              <div class={["grid items-center gap-x-1.5 px-1", week_styles()]}>
+                <span :for={day <- @weekdays} class="text-center text-xs text-grey-600">{day}</span>
+                <span class="text-right text-xs text-grey-600">{gettext("Week")}</span>
               </div>
-            </.collapsible>
-          </div>
-        </section>
-      </.collapsible>
+              <.collapsible
+                :for={week <- month.weeks}
+                collapsed={@selected_day != nil and @selected_day not in week.dates}
+              >
+                <div class={["grid items-center gap-x-1.5 p-1", week_styles()]}>
+                  <%= for cell <- week.cells do %>
+                    <span :if={cell.outside} class="h-14" />
+                    <.button
+                      :if={!cell.outside}
+                      type="button"
+                      variant="unstyled"
+                      phx-click="select_day"
+                      phx-value-date={Date.to_iso8601(cell.date)}
+                      phx-target={@target}
+                      aria-pressed={to_string(cell.date == @selected_day)}
+                      aria-label={"#{Calendar.strftime(cell.date, "%d.%m")} · #{hours(cell.seconds)} h"}
+                      class={[
+                        "flex h-14 cursor-pointer flex-col items-center justify-center rounded-md leading-tight tabular-nums transition hover:brightness-95 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-700",
+                        intensity_styles(cell.seconds),
+                        cell.date == @selected_day && "ring-2 ring-grey-900 ring-offset-2"
+                      ]}
+                    >
+                      <span class="text-caps-sm opacity-70">{cell.date.day}</span>
+                      <span :if={cell.seconds > 0} class="text-sm font-medium">{hours(cell.seconds)} h</span>
+                    </.button>
+                  <% end %>
+                  <span class="text-right text-sm font-medium text-grey-800 tabular-nums">
+                    {hours(week.seconds)} h
+                  </span>
+                </div>
+              </.collapsible>
+            </div>
+          </section>
+        </.collapsible>
+      </div>
 
       <.day_details
         :if={@selected_day}
@@ -157,9 +164,6 @@ defmodule FirmowidWeb.Management.Components.WorkDistribution do
     </div>
     """
   end
-
-  # A month dropped from the list after switching months collapses before it is removed.
-  defp collapse, do: {"data-collapsed", "true"} |> JS.set_attribute() |> JS.transition("pointer-events-none", time: 300)
 
   defp weekdays do
     [
