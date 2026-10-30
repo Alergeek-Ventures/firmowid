@@ -2,6 +2,7 @@ defmodule Firmowid.Delegations.Changes.CreateSignedSettlementBlob do
   @moduledoc "Stores the employee-signed settlement PDF and relates it to the delegation."
 
   use Ash.Resource.Change
+  use Gettext, backend: Firmowid.Gettext
 
   alias Firmowid.Blobs
 
@@ -28,7 +29,7 @@ defmodule Firmowid.Delegations.Changes.CreateSignedSettlementBlob do
       nil ->
         Ash.Changeset.add_error(changeset,
           field: :upload_path,
-          message: "Wybierz podpisany plik PDF."
+          message: gettext_noop("Choose the signed PDF file.")
         )
 
       {:error, error} ->
@@ -41,7 +42,7 @@ defmodule Firmowid.Delegations.Changes.CreateSignedSettlementBlob do
   defp validate_size(upload_path) do
     case File.stat(upload_path) do
       {:ok, %{size: size}} when size <= @max_file_size -> :ok
-      {:ok, _stat} -> {:error, "Plik może mieć maksymalnie 10 MB."}
+      {:ok, _stat} -> {:error, gettext_noop("The file is too large (max 10 MB).")}
       {:error, reason} -> {:error, reason}
     end
   end

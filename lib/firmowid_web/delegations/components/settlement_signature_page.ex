@@ -16,8 +16,14 @@ defmodule FirmowidWeb.Delegations.Components.SettlementSignaturePage do
   @doc "Renders the responsive signature, upload, preview, and submission screen."
   @spec settlement_signature_page(map()) :: Phoenix.LiveView.Rendered.t()
   def settlement_signature_page(assigns) do
+    [sign_before, sign_after] =
+      "Sign the document %{link}"
+      |> gettext(link: "__LINK__")
+      |> String.split("__LINK__", parts: 2)
+
     assigns =
       assigns
+      |> assign(sign_before: sign_before, sign_after: sign_after)
       |> assign(:pdf_filename, SettlementDocument.filename(assigns.delegation))
       |> assign(:pdf_url, Navigation.settlement_download_path(assigns.delegation.reference))
       |> assign(:profile_signature_url, @profile_signature_url)
@@ -29,33 +35,43 @@ defmodule FirmowidWeb.Delegations.Components.SettlementSignaturePage do
       <header class="mt-8">
         <div class="flex flex-col justify-between gap-4 lg:flex-row lg:items-start">
           <div>
-            <small class="text-grey-500">Cel: <span class="text-grey-700">{@delegation.purpose}</span></small>
-            <h1 class="mt-1 text-2xl font-medium">Rozliczenie delegacji</h1>
+            <small class="text-grey-500">{gettext("Purpose:")}
+            <span class="text-grey-700">{@delegation.purpose}</span></small>
+            <h1 class="mt-1 text-2xl font-medium">{gettext("Business trip settlement")}</h1>
           </div>
           <dl class="flex flex-wrap gap-4 text-sm text-grey-500">
             <div>
-              <dt class="inline">Termin:</dt>
+              <dt class="inline">{gettext("Dates:")}</dt>
 
               <dd class="inline text-grey-700">
                 <.date_range start_date={@delegation.start_date} end_date={@delegation.end_date} />
               </dd>
             </div>
             <div>
-              <dt class="inline">Zaliczka:</dt>
+              <dt class="inline">{gettext("Advance:")}</dt>
 
               <dd class="inline text-grey-700">{Money.to_string!(@delegation.advance_amount)}</dd>
             </div>
           </dl>
         </div>
         <p class="mt-4 max-w-2xl text-grey-700">
-          Sprawdź wygenerowany dokument. Podpisz go Profilem Zaufanym, wgraj podpisany plik i wyślij rozliczenie do pracodawcy.
+          {gettext(
+            "Check the generated document. Sign it with a Trusted Profile, upload the signed file and send the settlement to your employer."
+          )}
         </p>
       </header>
 
       <div class="mt-10 grid min-w-0 items-start gap-10 lg:grid-cols-[minmax(0,680px)_minmax(0,400px)]">
-        <section class="min-w-0 rounded-lg bg-grey-200 p-4 sm:p-6" aria-label="Podgląd rozliczenia">
+        <section
+          class="min-w-0 rounded-lg bg-grey-200 p-4 sm:p-6"
+          aria-label={gettext("Settlement preview")}
+        >
           <div class="mb-4 flex flex-wrap items-center gap-2 text-sm">
-            <strong class="truncate">{@pdf_filename}</strong><span class="text-grey-500">· 2 strony</span>
+            <strong class="truncate">{@pdf_filename}</strong><span class="text-grey-500">· {ngettext(
+              "%{count} page",
+              "%{count} pages",
+              2
+            )}</span>
           </div>
           <div
             id="settlement-pdf-preview"
@@ -73,10 +89,10 @@ defmodule FirmowidWeb.Delegations.Components.SettlementSignaturePage do
             phx-submit="submit-for-review"
           >
             <section class="rounded-lg border border-grey-200 bg-grey-50 p-6">
-              <h2 class="font-medium text-teal-700">Podpisz i wyślij</h2>
+              <h2 class="font-medium text-teal-700">{gettext("Sign and send")}</h2>
               <ol class="mt-5 list-decimal space-y-4 pl-5 text-sm text-grey-700">
                 <li>
-                  <span>Pobierz dokument</span>
+                  <span>{gettext("Download the document")}</span>
                   <.link
                     kind="unstyled"
                     redirect={@pdf_url}
@@ -87,16 +103,16 @@ defmodule FirmowidWeb.Delegations.Components.SettlementSignaturePage do
                   </.link>
                 </li>
                 <li>
-                  Podpisz dokument
+                  {@sign_before}
                   <.link
                     kind="unstyled"
                     external={@profile_signature_url}
                     class="inline-flex items-center gap-1 font-medium text-teal-700"
                   >
-                    Profilem Zaufanym <Lucideicons.external_link class="size-4" />
-                  </.link>
+                    {gettext("with a Trusted Profile")} <Lucideicons.external_link class="size-4" />
+                  </.link>{@sign_after}
                 </li>
-                <li>Wgraj podpisane rozliczenie delegacji.</li>
+                <li>{gettext("Upload the signed business trip settlement.")}</li>
               </ol>
 
               <div :if={is_nil(@entry)} class="mt-5">
@@ -105,8 +121,10 @@ defmodule FirmowidWeb.Delegations.Components.SettlementSignaturePage do
                   phx-drop-target={@uploads.signed_settlement.ref}
                   class="flex cursor-pointer flex-wrap items-center justify-between gap-3 rounded-lg border border-dashed border-grey-200 bg-grey-100 px-4 py-6 text-sm text-grey-700 transition-colors hover:border-teal-500"
                 >
-                  <span>Przeciągnij lub wybierz plik.</span>
-                  <span class="rounded-md bg-grey-200 px-2 py-1.5 font-medium text-grey-900">Wybierz plik</span>
+                  <span>{gettext("Drag or choose a file.")}</span>
+                  <span class="rounded-md bg-grey-200 px-2 py-1.5 font-medium text-grey-900">{gettext(
+                    "Choose a file"
+                  )}</span>
                 </label>
               </div>
 
@@ -122,7 +140,7 @@ defmodule FirmowidWeb.Delegations.Components.SettlementSignaturePage do
                     variant="unstyled"
                     phx-click="cancel-signed-settlement"
                     phx-value-ref={@entry.ref}
-                    aria-label={"Usuń #{@entry.client_name}"}
+                    aria-label={gettext("Remove %{name}", name: @entry.client_name)}
                     class="rounded p-1 hover:bg-teal-200"
                   >
                     <Lucideicons.x class="size-4" />
@@ -154,9 +172,12 @@ defmodule FirmowidWeb.Delegations.Components.SettlementSignaturePage do
 
             <.settlement_summary document={@document}>
               <p class="mt-5 text-xs text-grey-500">
-                Razem z rozliczeniem wyślemy {length(@document.attachments)} {attachment_label(
-                  length(@document.attachments)
-                )} ({attachment_categories(@document.attachments)}).
+                {ngettext(
+                  "We will send %{count} attachment with the settlement (%{categories}).",
+                  "We will send %{count} attachments with the settlement (%{categories}).",
+                  length(@document.attachments),
+                  categories: attachment_categories(@document.attachments)
+                )}
               </p>
             </.settlement_summary>
 
@@ -166,15 +187,15 @@ defmodule FirmowidWeb.Delegations.Components.SettlementSignaturePage do
                 variant="secondary"
                 size="big"
                 phx-click="edit-settlement"
-              >Edytuj dokument</.button>
+              >{gettext("Edit document")}</.button>
               <.button
                 type="submit"
                 variant="primary"
                 accent="teal"
                 size="big"
                 disabled={is_nil(@entry) or !@entry.done? or @submitting?}
-                phx-disable-with="Wysyłanie..."
-              >Wyślij</.button>
+                phx-disable-with={gettext("Sending...")}
+              >{gettext("Send")}</.button>
             </div>
           </form>
         </aside>
@@ -183,16 +204,12 @@ defmodule FirmowidWeb.Delegations.Components.SettlementSignaturePage do
     """
   end
 
-  defp upload_error(:not_accepted), do: "Wybierz plik PDF."
-  defp upload_error(:too_large), do: "Plik może mieć maksymalnie 10 MB."
-  defp upload_error(:too_many_files), do: "Możesz wgrać tylko jeden plik."
-  defp upload_error(_error), do: "Nie udało się wgrać pliku."
+  defp upload_error(:not_accepted), do: gettext("Choose a PDF file.")
+  defp upload_error(:too_large), do: gettext("The file is too large (max 10 MB).")
+  defp upload_error(:too_many_files), do: gettext("You can add only one file.")
+  defp upload_error(_error), do: gettext("Could not upload the file.")
 
-  defp attachment_label(1), do: "załącznik"
-  defp attachment_label(count) when count in 2..4, do: "załączniki"
-  defp attachment_label(_count), do: "załączników"
-
-  defp attachment_categories([]), do: "brak dodatkowych dokumentów"
+  defp attachment_categories([]), do: pgettext("settlement attachments", "no additional documents")
 
   defp attachment_categories(attachments) do
     attachments
@@ -205,10 +222,17 @@ defmodule FirmowidWeb.Delegations.Components.SettlementSignaturePage do
     filename = String.downcase(filename || "")
 
     cond do
-      String.contains?(filename, "bilet") -> "bilety"
-      String.contains?(filename, "wyci") -> "wyciąg"
-      String.contains?(filename, "polis") -> "polisa"
-      true -> "faktury i rachunki"
+      String.contains?(filename, "bilet") ->
+        pgettext("settlement attachments", "tickets")
+
+      String.contains?(filename, "wyci") ->
+        pgettext("settlement attachments", "bank statement")
+
+      String.contains?(filename, "polis") ->
+        pgettext("settlement attachments", "insurance policy")
+
+      true ->
+        pgettext("settlement attachments", "invoices and receipts")
     end
   end
 end

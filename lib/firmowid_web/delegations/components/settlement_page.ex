@@ -70,7 +70,9 @@ defmodule FirmowidWeb.Delegations.Components.SettlementPage do
             id="settlement-return-reason"
             class="mt-4 max-w-2xl rounded-lg bg-rust-100 px-4 py-3 text-sm text-rust-700"
           >
-            <p class="font-medium">Pracodawca zwrócił rozliczenie do poprawy</p>
+            <p class="font-medium">
+              {gettext("Your employer returned the settlement for correction")}
+            </p>
             <p class="mt-1 whitespace-pre-line">{@delegation.settlement_return_reason}</p>
           </div>
           <.settlement_status :if={!@editable?} delegation={@delegation} />
@@ -620,10 +622,14 @@ defmodule FirmowidWeb.Delegations.Components.SettlementPage do
     <div class="mt-3 flex max-w-2xl flex-wrap items-center gap-3 text-grey-700">
       <.status_badge status={@delegation.status} />
       <p :if={@delegation.status == :submitted}>
-        Rozliczenie nr {@delegation.settlement_sequence}/{@delegation.settlement_year} czeka na rozpatrzenie przez pracodawcę.
+        {gettext("Settlement no. %{number} is awaiting your employer's review.",
+          number: "#{@delegation.settlement_sequence}/#{@delegation.settlement_year}"
+        )}
       </p>
       <p :if={@delegation.status == :complete && @delegation.settlement_sequence}>
-        Rozliczenie nr {@delegation.settlement_sequence}/{@delegation.settlement_year} zostało zatwierdzone.
+        {gettext("Settlement no. %{number} has been approved.",
+          number: "#{@delegation.settlement_sequence}/#{@delegation.settlement_year}"
+        )}
       </p>
       <.link
         :if={@delegation.settlement_sequence}
@@ -632,7 +638,7 @@ defmodule FirmowidWeb.Delegations.Components.SettlementPage do
         download
         class="inline-flex items-center gap-1 font-medium text-teal-700"
       >
-        <Lucideicons.file_down class="size-4" /> Pobierz rozliczenie
+        <Lucideicons.file_down class="size-4" /> {gettext("Download the settlement")}
       </.link>
     </div>
     """

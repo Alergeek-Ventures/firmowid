@@ -61,7 +61,7 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
         {:noreply, reload(socket, delegation.reference)}
 
       {:error, _reason} ->
-        {:noreply, put_flash(socket, :error, "Nie udało się wrócić do edycji.")}
+        {:noreply, put_flash(socket, :error, gettext("Could not return to editing."))}
     end
   end
 
@@ -90,20 +90,20 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
       [{:ok, _delegation}] ->
         {:noreply,
          socket
-         |> put_flash(:info, "Rozliczenie zostało wysłane do rozpatrzenia.")
+         |> put_flash(:info, gettext("The settlement has been sent for review."))
          |> push_navigate(to: ~p"/ustawienia/profil")}
 
       [] ->
         {:noreply,
          socket
          |> assign(:submitting?, false)
-         |> put_flash(:error, "Wgraj podpisane rozliczenie w formacie PDF.")}
+         |> put_flash(:error, gettext("Upload the signed settlement as a PDF file."))}
 
       _errors ->
         {:noreply,
          socket
          |> assign(:submitting?, false)
-         |> put_flash(:error, "Nie udało się wysłać rozliczenia. Spróbuj ponownie.")}
+         |> put_flash(:error, gettext("Could not send the settlement. Try again."))}
     end
   end
 
@@ -305,7 +305,7 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
       delegation: delegation,
       document: document,
       submitting?: false,
-      page_title: "Podpisz rozliczenie delegacji"
+      page_title: gettext("Sign the business trip settlement")
     )
   end
 
