@@ -16,7 +16,7 @@ defmodule FirmowidWeb.HoursRecord.Components.Status do
     ~H"""
     <div class="flex min-w-0 flex-1 items-center gap-3">
       <span class="flex w-[166.5px] min-w-0 items-center justify-between gap-2.5 rounded-sm bg-grey-200 px-2 py-1 text-caps-sm/tight font-medium text-grey-700 uppercase">
-        Brak <.icon name="hero-x-mark-micro" class="size-4" />
+        {gettext("None")} <.icon name="hero-x-mark-micro" class="size-4" />
       </span>
       <Lucideicons.file_x class="shrink-0 text-grey-400" />
     </div>
@@ -46,7 +46,7 @@ defmodule FirmowidWeb.HoursRecord.Components.Status do
           <%= if @hours_record.submission_status == :withdrawn do %>
             {gettext("Withdrawn")} <.icon name="hero-x-mark-micro" />
           <% else %>
-            EWIDENCJA <.icon name="hero-check-micro" />
+            {pgettext("hours record badge", "Record")} <.icon name="hero-check-micro" />
           <% end %>
         </span>
         <.link
@@ -54,7 +54,7 @@ defmodule FirmowidWeb.HoursRecord.Components.Status do
           navigate={~p"/czasosledz/ewidencja/#{@hours_record.id}"}
           download={"Ewidencja_#{@hours_record.year}_#{@hours_record.month}_#{@user.member.name || @user.email}.pdf"}
           class="inline-flex shrink-0 items-center justify-center rounded-md p-0.5 transition hover:bg-grey-200"
-          aria-label={gettext("Download hours record")}
+          aria-label={gettext("Download timesheet")}
         >
           <.icon name="hero-arrow-down-tray-mini" class="shrink-0 text-grey-400" />
         </.link>

@@ -57,21 +57,21 @@ defmodule FirmowidWeb.Delegations.Components.Settlement.Expense do
                 (length(@expenses) > 0 and Enum.any?(@expenses, &(length(&1.trips || []) > 1)))
             }
             phx-click="sort"
-          >Sortuj chronologicznie <Lucideicons.arrow_down_up class="size-4" /></.button>
+          >{gettext("Sort chronologically")} <Lucideicons.arrow_down_up class="size-4" /></.button>
           <span class="hidden h-5 w-px bg-grey-200 sm:block" aria-hidden="true" />
           <.button
             type="button"
             variant="unstyled"
             class="hidden text-sm font-medium text-grey-700 hover:underline sm:inline-flex"
             phx-click={show_modal("#{@kind}-documents-modal")}
-          >Jakie dokumenty załączyć?</.button>
+          >{gettext("Which documents should I attach?")}</.button>
         </div>
         <.button
           type="button"
           variant="unstyled"
           class="mt-2 text-sm font-medium text-grey-700 hover:underline sm:hidden"
           phx-click={show_modal("#{@kind}-documents-modal")}
-        >Jakie dokumenty załączyć?</.button>
+        >{gettext("Which documents should I attach?")}</.button>
       </header>
       <div class="space-y-3">
         <div
@@ -79,7 +79,7 @@ defmodule FirmowidWeb.Delegations.Components.Settlement.Expense do
           id={"#{@kind}-empty-state"}
           class="px-4 py-5 text-sm text-grey-500"
         >
-          Nie dodano żadnych wydatków w tej kategorii.
+          {gettext("No expenses have been added in this category.")}
         </div>
         <article
           :for={expense <- @expenses}
@@ -108,13 +108,13 @@ defmodule FirmowidWeb.Delegations.Components.Settlement.Expense do
               download={expense.original_filename}
               class="shrink-0"
             >
-              <Lucideicons.download class="size-4" /> Pobierz
+              <Lucideicons.download class="size-4" /> {gettext("Download")}
             </.link>
             <.dropdown :if={@editable?} id={"expense-menu-#{expense.id}"}>
               <:trigger>
                 <span
                   class="inline-flex size-8 cursor-pointer items-center justify-center rounded text-grey-500 hover:bg-grey-100"
-                  aria-label="Opcje pozycji"
+                  aria-label={gettext("Item options")}
                 >
                   <Lucideicons.ellipsis_vertical class="size-4" />
                 </span>
@@ -127,7 +127,7 @@ defmodule FirmowidWeb.Delegations.Components.Settlement.Expense do
                   phx-click="select-related-expense"
                   phx-value-id={expense.id}
                 >
-                  Dodaj powiązany dokument
+                  {gettext("Add a related document")}
                 </label>
                 <.button
                   :if={@kind == "accommodation"}
@@ -141,8 +141,8 @@ defmodule FirmowidWeb.Delegations.Components.Settlement.Expense do
                   }
                   phx-value-id={expense.id}
                 >{if Map.get(@description_visible?, expense.id, false),
-                  do: "Usuń opis",
-                  else: "Dodaj opis"}</.button>
+                  do: gettext("Remove description"),
+                  else: gettext("Add description")}</.button>
                 <.button
                   type="button"
                   variant="unstyled"
@@ -150,7 +150,7 @@ defmodule FirmowidWeb.Delegations.Components.Settlement.Expense do
                   phx-click="delete"
                   phx-value-kind={@kind}
                   phx-value-id={expense.id}
-                >Usuń pozycję</.button>
+                >{gettext("Delete item")}</.button>
               </div>
             </.dropdown>
           </div>
@@ -164,7 +164,7 @@ defmodule FirmowidWeb.Delegations.Components.Settlement.Expense do
               id={"#{@kind}-transport-type-#{expense.id}"}
               field={forms.details[:transport_type]}
               type="select"
-              label="Środek lokomocji"
+              label={gettext("Means of transport")}
               options={SettlementPresentation.transport_options()}
             />
             <.input
@@ -172,7 +172,7 @@ defmodule FirmowidWeb.Delegations.Components.Settlement.Expense do
               id={"#{@kind}-locality-#{expense.id}"}
               field={forms.details[:locality]}
               type="text"
-              label="Miejscowość"
+              label={gettext("Locality")}
             />
             <.document_fields
               expense={expense}
@@ -189,14 +189,14 @@ defmodule FirmowidWeb.Delegations.Components.Settlement.Expense do
               id={"#{@kind}-arrival-date-#{expense.id}"}
               field={forms.details[:arrival_date]}
               type="date"
-              label="Zameldowanie"
+              label={gettext("Check-in")}
             />
             <.input
               :if={@kind == "accommodation"}
               id={"#{@kind}-departure-date-#{expense.id}"}
               field={forms.details[:departure_date]}
               type="date"
-              label="Wymeldowanie"
+              label={gettext("Check-out")}
             />
             <.expense_description
               :if={@kind == "accommodation"}
@@ -210,7 +210,7 @@ defmodule FirmowidWeb.Delegations.Components.Settlement.Expense do
               id={"#{@kind}-description-#{expense.id}"}
               field={forms.details[:description]}
               type="textarea"
-              label="Opis"
+              label={gettext("Description")}
               class="col-span-full"
             />
           </div>
@@ -244,14 +244,14 @@ defmodule FirmowidWeb.Delegations.Components.Settlement.Expense do
         >
           <.file_upload
             upload={@upload}
-            prompt="Wgraj fakturę/rachunek"
+            prompt={gettext("Upload an invoice/receipt")}
             content_class="text-grey-700!"
             prompt_class="sm:hidden"
             class="justify-between! rounded-lg! border! border-grey-200! px-4! py-7! sm:py-10!"
             phx_change="upload"
           />
           <p class="pointer-events-none absolute top-1/2 left-4 hidden -translate-y-1/2 text-sm text-grey-700 sm:block">
-            Przeciągnij tu fakturę/rachunek lub wybierz plik z komputera
+            {gettext("Drag an invoice/receipt here or choose a file from your computer")}
           </p>
           <.button
             as="label"
@@ -260,7 +260,7 @@ defmodule FirmowidWeb.Delegations.Components.Settlement.Expense do
             variant="secondary"
             size="small"
             class="absolute top-1/2 right-3 -translate-y-1/2"
-          >Wybierz plik</.button>
+          >{gettext("Choose a file")}</.button>
         </div>
       </div>
       <.documents_modal
@@ -301,8 +301,8 @@ defmodule FirmowidWeb.Delegations.Components.Settlement.Expense do
   defp pending_expense_form(%{kind: "transport"} = assigns) do
     ~H"""
     <div class="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-      <.skeleton_field label="Środek lokomocji" />
-      <.skeleton_field label="Nr dokumentu" shimmer? />
+      <.skeleton_field label={gettext("Means of transport")} />
+      <.skeleton_field label={gettext("Document no.")} shimmer? />
       <.skeleton_amount_field />
     </div>
     <div class="mt-4 border-t border-grey-100 pt-4">
@@ -310,20 +310,20 @@ defmodule FirmowidWeb.Delegations.Components.Settlement.Expense do
         <thead class="text-grey-500">
           <tr>
             <th scope="col"></th>
-            <th scope="col" class="font-normal">Miejscowość</th>
-            <th scope="col" class="font-normal">Data</th>
-            <th scope="col" class="font-normal">Godzina</th>
+            <th scope="col" class="font-normal">{gettext("Locality")}</th>
+            <th scope="col" class="font-normal">{gettext("Date")}</th>
+            <th scope="col" class="font-normal">{pgettext("time of day", "Time")}</th>
           </tr>
         </thead>
         <tbody>
           <tr>
-            <th scope="row" class="pr-3 font-normal text-grey-700">Wyjazd</th>
+            <th scope="row" class="pr-3 font-normal text-grey-700">{gettext("Departure")}</th>
             <td class="pr-3"><.skeleton_blob class="w-[237px] min-w-[237px]" /></td>
             <td class="pr-3"><.skeleton_blob class="w-[172px] min-w-[172px]" /></td>
             <td><.skeleton_blob class="w-[91px] min-w-[91px]" /></td>
           </tr>
           <tr>
-            <th scope="row" class="pr-3 font-normal text-grey-700">Przyjazd</th>
+            <th scope="row" class="pr-3 font-normal text-grey-700">{gettext("Arrival")}</th>
             <td class="pr-3"><.skeleton_blob class="w-[237px] min-w-[237px]" /></td>
             <td class="pr-3"><.skeleton_blob class="w-[172px] min-w-[172px]" /></td>
             <td><.skeleton_blob class="w-[91px] min-w-[91px]" /></td>
@@ -337,11 +337,11 @@ defmodule FirmowidWeb.Delegations.Components.Settlement.Expense do
   defp pending_expense_form(%{kind: "accommodation"} = assigns) do
     ~H"""
     <div class="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-      <.skeleton_field label="Miejscowość" />
-      <.skeleton_field label="Nr dokumentu" shimmer? />
+      <.skeleton_field label={gettext("Locality")} />
+      <.skeleton_field label={gettext("Document no.")} shimmer? />
       <.skeleton_amount_field />
-      <.skeleton_field label="Zameldowanie" />
-      <.skeleton_field label="Wymeldowanie" />
+      <.skeleton_field label={gettext("Check-in")} />
+      <.skeleton_field label={gettext("Check-out")} />
     </div>
     """
   end
@@ -349,9 +349,9 @@ defmodule FirmowidWeb.Delegations.Components.Settlement.Expense do
   defp pending_expense_form(%{kind: "other"} = assigns) do
     ~H"""
     <div class="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-      <.skeleton_field label="Nr dokumentu" shimmer? />
+      <.skeleton_field label={gettext("Document no.")} shimmer? />
       <.skeleton_amount_field />
-      <.skeleton_field label="Opis" class="col-span-full" />
+      <.skeleton_field label={gettext("Description")} class="col-span-full" />
     </div>
     """
   end
@@ -376,7 +376,7 @@ defmodule FirmowidWeb.Delegations.Components.Settlement.Expense do
     ~H"""
     <div class="w-full min-w-0">
       <div class="mb-2 flex items-center gap-1 text-sm/6 text-grey-700">
-        <Lucideicons.sparkles class="size-4" aria-hidden="true" /> Kwota
+        <Lucideicons.sparkles class="size-4" aria-hidden="true" /> {gettext("Amount")}
       </div>
       <div class="flex items-end gap-2">
         <.skeleton_blob class="flex-1" />
@@ -405,25 +405,29 @@ defmodule FirmowidWeb.Delegations.Components.Settlement.Expense do
     <dl class="mt-4 grid gap-3 text-sm sm:grid-cols-2 lg:grid-cols-3">
       <.expense_detail
         :if={@kind == "transport"}
-        label="Środek lokomocji"
+        label={gettext("Means of transport")}
         value={SettlementPresentation.transport_label(to_string(@expense.transport_type))}
       />
-      <.expense_detail label="Nr dokumentu" value={@expense.document_number} />
-      <.expense_detail label="Kwota" value={Money.to_string!(@expense.expense_amount)} />
-      <.expense_detail :if={@kind == "accommodation"} label="Miejscowość" value={@expense.locality} />
+      <.expense_detail label={gettext("Document no.")} value={@expense.document_number} />
+      <.expense_detail label={gettext("Amount")} value={Money.to_string!(@expense.expense_amount)} />
       <.expense_detail
         :if={@kind == "accommodation"}
-        label="Zameldowanie"
+        label={gettext("Locality")}
+        value={@expense.locality}
+      />
+      <.expense_detail
+        :if={@kind == "accommodation"}
+        label={gettext("Check-in")}
         value={SettlementPresentation.format_date(@expense.arrival_date)}
       />
       <.expense_detail
         :if={@kind == "accommodation"}
-        label="Wymeldowanie"
+        label={gettext("Check-out")}
         value={SettlementPresentation.format_date(@expense.departure_date)}
       />
       <.expense_detail
         :if={@kind in ["accommodation", "other"]}
-        label="Opis"
+        label={gettext("Description")}
         value={@expense.description}
         class="sm:col-span-2 lg:col-span-3"
       />
@@ -447,7 +451,7 @@ defmodule FirmowidWeb.Delegations.Components.Settlement.Expense do
         id={"#{@kind}-description-#{@expense.id}"}
         field={@form[:description]}
         type="textarea"
-        label="Opis"
+        label={gettext("Description")}
         class="w-full"
       />
     </div>

@@ -18,7 +18,7 @@
       kind="button"
       variant="outline"
     >
-      <Lucideicons.clipboard_list /> Ewidencja
+      <Lucideicons.clipboard_list /> {pgettext("time tracker link", "Timesheet")}
     </.link>
   </div>
 
@@ -26,20 +26,22 @@
     <div class="mx-auto w-full max-w-md md:mx-0">
       <%= if Enum.empty?(@active_projects) do %>
         <div class="w-full py-8 text-center text-grey-700">
-          <p class="text-lg font-semibold">Nie masz przypisanych projektów</p>
+          <p class="text-lg font-semibold">{gettext("You have no assigned projects")}</p>
           <%= if @current_user.member.role == :admin do %>
             <p class="mt-2 text-sm">
-              Dodaj swój pierwszy projekt i przypisz się do niego, aby rozpocząć śledzenie czasu
+              {gettext("Add your first project and assign yourself to it to start tracking time")}
             </p>
             <.link
               kind="unstyled"
               navigate={~p"/zarzadzanie/projekty"}
               class="mt-4 inline-block text-rust-700 hover:underline"
             >
-              Przejdź do zarządzania projektami
+              {gettext("Go to project management")}
             </.link>
           <% else %>
-            <p class="mt-2 text-sm">Poproś administratora o przypisanie Cię do projektu</p>
+            <p class="mt-2 text-sm">
+              {gettext("Ask an administrator to assign you to a project")}
+            </p>
           <% end %>
         </div>
       <% else %>
@@ -58,8 +60,8 @@
               required={true}
               placeholder={
                 if not is_hours_record_submitted,
-                  do: "Nad czym dzisiaj pracujesz?",
-                  else: "Nie możesz dodać sesji, po wysłaniu ewidencji godzin"
+                  do: gettext("What are you working on today?"),
+                  else: gettext("You cannot add a session after the timesheet has been submitted")
               }
               input_class="h-11 border-none hover:!bg-grey-300 focus:!outline-[2px] focus:!outline-offset-0 focus:!outline-grey-300 bg-grey-200! text-black"
               phx-hook="FocusOnMount"
@@ -78,7 +80,7 @@
             <div class="mt-2 flex justify-between">
               <.switch
                 field={@form[:is_remote]}
-                label="pracuję z domu"
+                label={gettext("I work from home")}
                 class="gap-3! font-normal"
                 disabled={is_hours_record_submitted}
               />
@@ -114,7 +116,7 @@
 
                     <.input
                       step="60"
-                      label="od"
+                      label={pgettext("session time range", "from")}
                       type="time"
                       class="flex min-w-0 flex-1 items-baseline justify-center gap-4"
                       input_class="w-full h-8 border-none bg-grey-200!"
@@ -125,7 +127,7 @@
                     <.input
                       step="60"
                       type="time"
-                      label="do"
+                      label={pgettext("session time range", "to")}
                       class="flex min-w-0 flex-1 items-baseline justify-center gap-4"
                       input_class="w-full h-8 border-none bg-grey-200!"
                       field={@form[:end_time]}
@@ -139,7 +141,7 @@
                     class="w-31.5"
                     disabled={is_hours_record_submitted}
                   >
-                    Start
+                    {gettext("Start")}
                   </.button>
                   <.button
                     :if={@current_session}
@@ -149,7 +151,7 @@
                     class="w-31.5"
                     disabled={is_hours_record_submitted}
                   >
-                    Stop
+                    {gettext("Stop")}
                   </.button>
                 </div>
               <% @current_session -> %>
@@ -169,23 +171,28 @@
                     variant="primary"
                     class="w-31.5"
                   >
-                    Stop
+                    {gettext("Stop")}
                   </.button>
                 </div>
               <% true -> %>
                 <div class="mt-8 flex w-full flex-col items-center gap-5">
                   <div class="h-[60px]">
                     <p class="text-center text-2xl/tight font-semibold text-rust-700">
-                      {@month_stats.hours} godz. {@month_stats.minutes} min
+                      {gettext("%{hours} h %{minutes} min",
+                        hours: @month_stats.hours,
+                        minutes: @month_stats.minutes
+                      )}
                     </p>
-                    <p class="text-center text-rust-700">w {@month_stats.month}</p>
+                    <p class="text-center text-rust-700">
+                      {gettext("in %{month}", month: @month_stats.month)}
+                    </p>
                   </div>
                   <.button
                     variant="primary"
                     class="w-31.5"
                     disabled={is_hours_record_submitted}
                   >
-                    Start
+                    {gettext("Start")}
                   </.button>
                 </div>
             <% end %>
@@ -198,13 +205,15 @@
         :if={Enum.empty?(@grouped_sessions) and Enum.empty?(@today_sessions)}
         class="py-8 text-center text-grey-700"
       >
-        <p class="text-lg font-semibold">Brak zarejestrowanych sesji</p>
-        <p class="mt-2 text-sm">Rozpocznij swoją pierwszą sesję używając formularza po lewej</p>
+        <p class="text-lg font-semibold">{gettext("No sessions recorded")}</p>
+        <p class="mt-2 text-sm">
+          {gettext("Start your first session using the form on the left")}
+        </p>
       </div>
 
       <div :if={not Enum.empty?(@today_sessions)}>
         <div class="flex items-center justify-between pb-3">
-          <p class="font-semibold text-rust-700">Twoje dzisiejsze sesje</p>
+          <p class="font-semibold text-rust-700">{gettext("Your sessions today")}</p>
           <% today_time = @today_sessions |> List.flatten() |> calculate_total_duration() %>
           <p
             class="rounded-md bg-rust-200 px-2 py-1 text-xl/tight font-bold text-rust-700"
@@ -264,7 +273,7 @@
         variant="secondary"
         class="mx-auto block"
       >
-        Pokaż więcej
+        {gettext("Show more")}
       </.button>
     </div>
   </div>
@@ -278,9 +287,9 @@
 >
   <div class="space-y-6">
     <div>
-      <h3 class="text-lg font-bold text-grey-900">Nakładające się sesje</h3>
+      <h3 class="text-lg font-bold text-grey-900">{gettext("Overlapping sessions")}</h3>
       <p class="mt-1 text-sm text-grey-700">
-        Nowa sesja nachodzi na istniejące. Zapisanie wymaga poniższych zmian:
+        {gettext("The new session overlaps existing ones. Saving requires the changes below:")}
       </p>
     </div>
 
@@ -295,7 +304,7 @@
 
     <%!-- Affected sessions --%>
     <div class="space-y-3">
-      <p class="text-sm font-medium text-grey-700">Zmiany w istniejących sesjach:</p>
+      <p class="text-sm font-medium text-grey-700">{gettext("Changes to existing sessions:")}</p>
 
       <FirmowidWeb.Timetracker.Components.Overlap.trim_action_card
         :for={action <- @trim_plan.actions}
@@ -315,14 +324,14 @@
         }
         variant="tertiary"
       >
-        Anuluj
+        {gettext("Cancel")}
       </.button>
       <.button
         phx-click="confirm_overlap_save"
         variant="primary"
-        phx-disable-with="Zapisywanie..."
+        phx-disable-with={pgettext("overlap confirmation", "Saving...")}
       >
-        Zapisz i dostosuj sesje
+        {gettext("Save and adjust sessions")}
       </.button>
     </div>
   </div>

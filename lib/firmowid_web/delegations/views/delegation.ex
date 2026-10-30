@@ -104,7 +104,7 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
          |> save_current_draft()}
 
       {:error, _reason} ->
-        {:noreply, put_flash(socket, :error, "Nie udało się pobrać kursu NBP.")}
+        {:noreply, put_flash(socket, :error, gettext("Could not fetch the NBP exchange rate."))}
     end
   end
 
@@ -122,7 +122,7 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
     {:noreply,
      if(result == :ok,
        do: refresh_delegation(socket),
-       else: put_flash(socket, :error, "Nie udało się usunąć dokumentu.")
+       else: put_flash(socket, :error, gettext("Could not delete the document."))
      )}
   end
 
@@ -135,8 +135,11 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
       end
 
     case result do
-      :ok -> {:noreply, refresh_delegation(socket)}
-      _ -> {:noreply, put_flash(socket, :error, "Nie udało się usunąć powiązanego dokumentu.")}
+      :ok ->
+        {:noreply, refresh_delegation(socket)}
+
+      _ ->
+        {:noreply, put_flash(socket, :error, gettext("Could not remove the related document."))}
     end
   end
 
@@ -148,7 +151,7 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
 
     case result do
       {:ok, _expense} -> {:noreply, refresh_delegation(socket)}
-      _ -> {:noreply, put_flash(socket, :error, "Nie udało się usunąć wyciągu.")}
+      _ -> {:noreply, put_flash(socket, :error, gettext("Could not remove the statement."))}
     end
   end
 
@@ -274,7 +277,7 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
       save_status: :idle,
       related_expense_id: nil,
       statement_expense_id: nil,
-      page_title: "Rozliczenie delegacji",
+      page_title: gettext("Business trip settlement"),
       sort_active?: sort_active?,
       date_change: persisted_date_change(delegation),
       expense_currencies: expense_currencies(delegation.expenses),
@@ -402,7 +405,7 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
 
   defp unavailable_delegation(socket) do
     socket
-    |> put_flash(:error, "Nie można już wyświetlić tej delegacji.")
+    |> put_flash(:error, gettext("This business trip can no longer be displayed."))
     |> push_navigate(to: ~p"/ustawienia/profil")
   end
 
@@ -490,7 +493,7 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
               )}
            end) do
         {:ok, _expense} -> refresh_delegation(socket)
-        {:error, _reason} -> put_flash(socket, :error, "Nie udało się dodać dokumentu.")
+        {:error, _reason} -> put_flash(socket, :error, gettext("Could not add the document."))
       end
 
     {:noreply, assign(socket, :uploading?, uploads_in_progress?(socket))}
@@ -509,7 +512,7 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
         {:error, _reason} ->
           socket
           |> assign(:statement_expense_id, nil)
-          |> put_flash(:error, "Nie udało się dodać wyciągu.")
+          |> put_flash(:error, gettext("Could not add the statement."))
       end
 
     {:noreply, assign(socket, :uploading?, uploads_in_progress?(socket))}
@@ -528,7 +531,7 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
         {:error, _reason} ->
           socket
           |> assign(:related_expense_id, nil)
-          |> put_flash(:error, "Nie udało się dodać powiązanego dokumentu.")
+          |> put_flash(:error, gettext("Could not add the related document."))
       end
 
     {:noreply, assign(socket, :uploading?, uploads_in_progress?(socket))}

@@ -19,7 +19,7 @@
           <.input
             name="szukaj"
             value={@params["szukaj"] || ""}
-            placeholder="Szukaj projektu"
+            placeholder={gettext("Search projects")}
             phx-change={JS.push("search", loading: "#projects-list")}
             phx-debounce="300"
             input_class="py-0 px-1 bg-transparent! border-none"
@@ -46,7 +46,7 @@
             variant="special"
             data-fab
           >
-            <Lucideicons.plus /> <span class="max-md:sr-only">Dodaj projekt</span>
+            <Lucideicons.plus /> <span class="max-md:sr-only">{gettext("Add project")}</span>
           </.link>
         </:action>
       </.page_actions>
@@ -54,10 +54,10 @@
 
     <.filter_tabs label={gettext("Project scope")}>
       <:tab patch={Navigation.projects_path(:index, @params)} active={@live_action == :index}>
-        Aktywne
+        {pgettext("projects list tab", "Active")}
       </:tab>
       <:tab patch={Navigation.projects_path(:archive, @params)} active={@live_action == :archive}>
-        Zarchiwizowane
+        {pgettext("projects list tab", "Archived")}
       </:tab>
     </.filter_tabs>
   </div>
@@ -68,14 +68,14 @@
         <%= if @params["szukaj"] do %>
           <Lucideicons.file_x class="size-26 text-grey-300" />
           <p class="text-sm/snug text-grey-700">
-            Nie znaleźliśmy szukanego przez Ciebie projektu.
+            {gettext("We could not find the project you are looking for.")}
           </p>
         <% else %>
           <Lucideicons.presentation class="size-26 text-grey-300" />
           <p class="text-sm/snug text-grey-700">
             {case @live_action do
-              :index -> "Nie masz aktywnych projektów do wyświetlenia."
-              :archive -> "Nie masz zarchiwizowanych projektów do wyświetlenia."
+              :index -> gettext("You have no active projects to show.")
+              :archive -> gettext("You have no archived projects to show.")
             end}
           </p>
         <% end %>
@@ -92,11 +92,11 @@
           data-classes="border-b-4 border-solid border-grey-700/40 pt-3"
           data-scroll-offset="90"
         >
-          <p>Projekt</p>
+          <p>{gettext("Project")}</p>
           <p class="text-right max-md:hidden">
             <!--Rentowność-->
           </p>
-          <p class="text-right">Godziny</p>
+          <p class="text-right">{gettext("Hours")}</p>
         </div>
 
         <div class="col-span-full grid grid-cols-subgrid gap-y-2">
@@ -144,12 +144,12 @@
           data-classes="border-b-4 border-solid border-grey-700/40 pt-3"
           data-scroll-offset="90"
         >
-          <p>Projekt</p>
+          <p>{gettext("Project")}</p>
           <p class="text-right max-md:hidden">
             <!--Rentowność-->
           </p>
-          <p class="text-right">Suma godzin</p>
-          <p class="text-right text-nowrap max-md:hidden">Data archiwizacji</p>
+          <p class="text-right">{gettext("Total hours")}</p>
+          <p class="text-right text-nowrap max-md:hidden">{gettext("Archived on")}</p>
         </div>
 
         <div class="col-span-full grid grid-cols-subgrid gap-y-2">
@@ -191,7 +191,7 @@
                 phx-click="unarchive_project"
                 phx-value-id={project.id}
               >
-                Przywróć
+                {gettext("Restore")}
               </.button>
               <.link
                 kind="unstyled"
@@ -215,7 +215,7 @@
   <Lucideicons.presentation class="size-26 text-grey-300" size={48} />
 
   <p class="mt-4 text-center text-sm/snug text-balance text-grey-700">
-    Nie masz aktywnych projektów do wyświetlenia. Dodaj nowy klikając poniżej.
+    {gettext("You have no active projects to show. Add a new one by clicking below.")}
   </p>
 
   <.link
@@ -224,6 +224,6 @@
     variant="secondary"
     class="mt-6"
   >
-    <Lucideicons.plus /> <span class="max-md:sr-only">Dodaj projekt</span>
+    <Lucideicons.plus /> <span class="max-md:sr-only">{gettext("Add project")}</span>
   </.link>
 </div>

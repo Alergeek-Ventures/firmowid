@@ -8,7 +8,7 @@
             type="text"
             name="szukaj"
             value={@search}
-            placeholder="Wyszukaj kontrahenta"
+            placeholder={gettext("Search counterparties")}
             phx-change="search"
             phx-debounce="300"
             input_class="h-full bg-transparent! border-none py-0 px-1 text-sm"
@@ -29,7 +29,7 @@
             variant="special"
             data-fab
           >
-            <Lucideicons.plus /> <span class="max-md:sr-only">Dodaj kontrahenta</span>
+            <Lucideicons.plus /> <span class="max-md:sr-only">{gettext("Add counterparty")}</span>
           </.link>
         </:action>
       </.page_actions>
@@ -42,13 +42,13 @@
             patch={Navigation.counterparties_path(:index, @params)}
             active={@live_action == :index}
           >
-            Aktywni
+            {pgettext("people list tab", "Active")}
           </:tab>
           <:tab
             patch={Navigation.counterparties_path(:archive, @params)}
             active={@live_action == :archive}
           >
-            Zarchiwizowani
+            {pgettext("people list tab", "Archived")}
           </:tab>
         </.filter_tabs>
 
@@ -58,20 +58,20 @@
             phx-click="toggle_type"
             phx-value-typ={Navigation.encode_counterparty_type(:individual)}
           >
-            <Lucideicons.user /> Osoby fizyczne
+            <Lucideicons.user /> {gettext("Individuals")}
           </:pill>
           <:pill
             active={@type_filter == :company}
             phx-click="toggle_type"
             phx-value-typ={Navigation.encode_counterparty_type(:company)}
           >
-            <Lucideicons.building_2 /> Firma
+            <Lucideicons.building_2 /> {gettext("Company")}
           </:pill>
         </.filter_pills>
       </div>
       <.switch
         class="ml-auto flex-row-reverse gap-4 select-none max-md:hidden"
-        label="Wartość współpracy"
+        label={gettext("Total paid")}
         field={@form[:view_cooperation_value]}
         phx-click="toggle_cooperation_value_view"
       />
@@ -83,13 +83,15 @@
       <div class="flex flex-1 flex-col items-center justify-center gap-4 rounded-lg border border-grey-200 p-6">
         <%= if @search != "" or not is_nil(@type_filter) do %>
           <Lucideicons.file_x class="size-26 text-grey-300" />
-          <p class="text-sm/snug text-grey-700">Nie znaleźliśmy szukanego kontrahenta.</p>
+          <p class="text-sm/snug text-grey-700">
+            {gettext("We could not find the counterparty you are looking for.")}
+          </p>
         <% else %>
           <Lucideicons.building_2 class="size-26 text-grey-300" />
           <p class="text-sm/snug text-grey-700">
             {case @live_action do
-              :index -> "Nie masz aktywnych kontrahentów do wyświetlenia."
-              :archive -> "Nie masz zarchiwizowanych kontrahentów do wyświetlenia."
+              :index -> gettext("You have no active counterparties to show.")
+              :archive -> gettext("You have no archived counterparties to show.")
             end}
           </p>
         <% end %>
@@ -113,12 +115,12 @@
           data-classes="border-b-4 border-solid border-grey-700/40 pt-3"
           data-scroll-offset="90"
         >
-          <p>Kontrahent</p>
+          <p>{gettext("Counterparty")}</p>
 
-          <p class="text-right">Identyfikator</p>
+          <p class="text-right">{gettext("Identifier")}</p>
 
           <%= if @view == :cooperation_value do %>
-            <p class="text-right">Wartość współpracy</p>
+            <p class="text-right">{gettext("Total paid")}</p>
           <% end %>
         </div>
 
@@ -186,11 +188,11 @@
           data-classes="border-b-4 border-solid border-grey-700/40 pt-3"
           data-scroll-offset="90"
         >
-          <p>Kontrahent</p>
-          <p class="text-right">Identyfikator</p>
-          <p class="text-right text-nowrap">Data archiwizacji</p>
+          <p>{gettext("Counterparty")}</p>
+          <p class="text-right">{gettext("Identifier")}</p>
+          <p class="text-right text-nowrap">{gettext("Archived on")}</p>
           <%= if @view == :cooperation_value do %>
-            <p class="text-right">Wartość współpracy</p>
+            <p class="text-right">{gettext("Total paid")}</p>
           <% end %>
         </div>
 
@@ -235,7 +237,7 @@
                 phx-click="unarchive_counterparty"
                 phx-value-id={counterparty.id}
               >
-                Przywróć
+                {gettext("Restore")}
               </.button>
               <.link
                 kind="unstyled"
@@ -265,7 +267,7 @@
   <Lucideicons.building_2 class="size-26 text-grey-300" size={48} />
 
   <p class="mt-4 text-center text-sm/snug text-balance text-grey-700">
-    Nie masz jeszcze żadnych kontrahentów. Dodaj pierwszego, klikając poniżej.
+    {gettext("You do not have any counterparties yet. Add the first one by clicking below.")}
   </p>
 
   <.link
@@ -278,6 +280,6 @@
     variant="secondary"
     class="mt-6"
   >
-    <Lucideicons.plus /> <span class="max-md:sr-only">Dodaj kontrahenta</span>
+    <Lucideicons.plus /> <span class="max-md:sr-only">{gettext("Add counterparty")}</span>
   </.link>
 </div>

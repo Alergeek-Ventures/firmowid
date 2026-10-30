@@ -11,8 +11,8 @@ defmodule FirmowidWeb.Payroll.Components.PayoutEstimates do
 
   def variant_label(:uz_health), do: gettext("Mandate — health insurance only")
   def variant_label(:uz_student), do: gettext("Mandate — student under 26")
-  def variant_label(:uod_20), do: gettext("Specific-task contract — 20% costs")
-  def variant_label(:uod_50), do: gettext("Specific-task contract — 50% costs")
+  def variant_label(:uod_20), do: gettext("Contract for specific work — 20% costs")
+  def variant_label(:uod_50), do: gettext("Contract for specific work — 50% costs")
   def variant_label(:b2b), do: gettext("B2B — gross amount")
 
   @doc "Returns a compact contract label for payroll lists."
@@ -22,6 +22,6 @@ defmodule FirmowidWeb.Payroll.Components.PayoutEstimates do
   def contract_label(type) when type in [:uz_social, :uz_social_with_sickness, :uz_health, :uz_student],
     do: gettext("Mandate")
 
-  def contract_label(type) when type in [:uod_20, :uod_50], do: gettext("Specific-task")
+  def contract_label(type) when type in [:uod_20, :uod_50], do: gettext("Specific work")
   def contract_label(:b2b), do: "B2B"
 end

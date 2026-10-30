@@ -32,7 +32,7 @@ defmodule FirmowidWeb.HoursRecord.Views.Index do
       |> assign(:selected_date, selected_date)
       |> assign(:active_months, active_months)
       |> assign(:can_use_hours_records, can_use_hours_records)
-      |> assign(:page_title, gettext("Hours record"))
+      |> assign(:page_title, pgettext("hours record page", "Timesheet"))
 
     {:ok, socket}
   end

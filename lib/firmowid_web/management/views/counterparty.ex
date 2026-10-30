@@ -12,6 +12,7 @@ defmodule FirmowidWeb.Management.Views.Counterparty do
   alias Firmowid.Invoicing
   alias Firmowid.Invoicing.CountryCodes
   alias Firmowid.Invoicing.Services.CounterpartyInvoiceSuggestions
+  alias FirmowidUI.Components.Inputs
   alias FirmowidWeb.Invoicing.Utilities.Navigation, as: InvoicingNavigation
   alias FirmowidWeb.Management.Utilities.CounterpartyHelpers
   alias FirmowidWeb.Management.Utilities.Navigation
@@ -48,7 +49,7 @@ defmodule FirmowidWeb.Management.Views.Counterparty do
       {:error, _error} ->
         {:noreply,
          socket
-         |> put_flash(:error, "Nie udało się wczytać kontrahenta")
+         |> put_flash(:error, gettext("Could not load the counterparty"))
          |> push_navigate(to: return_path)}
     end
   end
@@ -62,7 +63,7 @@ defmodule FirmowidWeb.Management.Views.Counterparty do
         {:noreply, assign_counterparty_page(socket, counterparty)}
 
       {:error, _error} ->
-        {:noreply, put_flash(socket, :error, "Nie udało się zarchiwizować kontrahenta")}
+        {:noreply, put_flash(socket, :error, gettext("Could not archive the counterparty"))}
     end
   end
 
@@ -74,7 +75,7 @@ defmodule FirmowidWeb.Management.Views.Counterparty do
         {:noreply, assign_counterparty_page(socket, counterparty)}
 
       {:error, _error} ->
-        {:noreply, put_flash(socket, :error, "Nie udało się przywrócić kontrahenta")}
+        {:noreply, put_flash(socket, :error, gettext("Could not restore the counterparty"))}
     end
   end
 
@@ -82,7 +83,7 @@ defmodule FirmowidWeb.Management.Views.Counterparty do
     {:noreply,
      socket
      |> push_event("copy-to-clipboard", %{text: value})
-     |> LiveToast.put_toast(:success, "Skopiowano identyfikator")}
+     |> LiveToast.put_toast(:success, gettext("Identifier copied"))}
   end
 
   def handle_event("connect_suggested_invoice", %{"invoice_id" => invoice_id}, socket) do
@@ -96,16 +97,19 @@ defmodule FirmowidWeb.Management.Views.Counterparty do
       {:noreply,
        socket
        |> assign_counterparty_page(counterparty)
-       |> LiveToast.put_toast(:success, "Połączono fakturę z kontrahentem")}
+       |> LiveToast.put_toast(
+         :success,
+         gettext("The invoice has been linked to the counterparty")
+       )}
     else
       {:ok, nil} ->
-        {:noreply, put_flash(socket, :error, "Nie znaleziono faktury")}
+        {:noreply, put_flash(socket, :error, gettext("Invoice not found"))}
 
-      {:error, %Ash.Error.Invalid{errors: [%{message: message} | _rest]}} ->
-        {:noreply, put_flash(socket, :error, message)}
+      {:error, %Ash.Error.Invalid{errors: [%{message: message} = error | _rest]}} ->
+        {:noreply, put_flash(socket, :error, Inputs.translate_error({message, Map.get(error, :vars, [])}))}
 
       {:error, _error} ->
-        {:noreply, put_flash(socket, :error, "Nie udało się połączyć faktury z kontrahentem")}
+        {:noreply, put_flash(socket, :error, gettext("Could not link the invoice to the counterparty"))}
     end
   end
 
@@ -173,14 +177,17 @@ defmodule FirmowidWeb.Management.Views.Counterparty do
           :if={@counterparty.archived_at}
           class="inline-flex items-center gap-2 rounded-full bg-grey-200 px-4 py-2 text-sm/snug font-normal text-grey-700"
         >
-          <Lucideicons.archive class="size-4" /> zarchiwizowany
+          <Lucideicons.archive class="size-4" /> {gettext("archived")}
         </span>
       </p>
 
       <div class="flex gap-4">
         <%= if !@counterparty.archived_at do %>
           <.button variant="outline" type="button" phx-click="archive_counterparty">
-            <.icon name="hero-archive-box-mini" class="size-5" /> Archiwizuj
+            <.icon name="hero-archive-box-mini" class="size-5" /> {pgettext(
+              "archive action",
+              "Archive"
+            )}
           </.button>
         <% end %>
 
@@ -189,7 +196,7 @@ defmodule FirmowidWeb.Management.Views.Counterparty do
           kind="button"
           variant="outline"
         >
-          <Lucideicons.square_pen /> Edytuj
+          <Lucideicons.square_pen /> {gettext("Edit")}
         </.link>
       </div>
     </div>
@@ -210,10 +217,10 @@ defmodule FirmowidWeb.Management.Views.Counterparty do
     >
       <Lucideicons.info class="size-4" />
       <p class="text-sm/snug text-balance">
-        Kontrahent został zarchiwizowany {Firmowid.Cldr.Date.to_string!(@counterparty.archived_at,
-          format: :long
-        )}.
-        Dane pozostają dostępne historycznie, ale kontrahent nie pojawi się w nowych wyborach.
+        {gettext(
+          "The counterparty was archived on %{date}. The data remains available historically, but the counterparty will not appear in new selections.",
+          date: Firmowid.Cldr.Date.to_string!(@counterparty.archived_at, format: :long)
+        )}
       </p>
 
       <.button
@@ -223,7 +230,7 @@ defmodule FirmowidWeb.Management.Views.Counterparty do
         phx-click="unarchive_counterparty"
         class="ml-auto"
       >
-        Przywróć kontrahenta
+        {gettext("Restore counterparty")}
       </.button>
     </div>
     """
@@ -261,26 +268,26 @@ defmodule FirmowidWeb.Management.Views.Counterparty do
               </div>
 
               <div class="space-y-1">
-                <p class="text-sm/snug text-grey-700">Adres</p>
+                <p class="text-sm/snug text-grey-700">{gettext("Address")}</p>
                 <p class="text-base/snug whitespace-pre-line text-black" phx-no-format>{formatted_multiline(@counterparty.address)}</p>
               </div>
 
               <div class="space-y-1">
-                <p class="text-sm/snug text-grey-700">Kraj</p>
+                <p class="text-sm/snug text-grey-700">{gettext("Country")}</p>
                 <p class="text-base/snug text-black">{country_label(@counterparty.country)}</p>
               </div>
             </div>
 
             <div class="space-y-6">
               <div class="space-y-1">
-                <p class="text-sm/snug text-grey-700">Pełna nazwa</p>
+                <p class="text-sm/snug text-grey-700">{pgettext("counterparty", "Full name")}</p>
                 <p class="text-base/snug text-black">
                   {CounterpartyHelpers.full_name(@counterparty)}
                 </p>
               </div>
 
               <div class="space-y-2">
-                <p class="text-sm/snug text-grey-700">Kontakt</p>
+                <p class="text-sm/snug text-grey-700">{gettext("Contact")}</p>
                 <div class="space-y-2 text-base/snug text-black">
                   <div class="flex items-center gap-2">
                     <.icon name="hero-envelope" class="size-4 shrink-0 text-grey-700" />
@@ -294,7 +301,7 @@ defmodule FirmowidWeb.Management.Views.Counterparty do
               </div>
 
               <div :if={@counterparty.is_different_mail_address} class="space-y-1">
-                <p class="text-sm/snug text-grey-700">Adres korespondencyjny</p>
+                <p class="text-sm/snug text-grey-700">{gettext("Correspondence address")}</p>
                 <p class="text-base/snug whitespace-pre-line text-black" phx-no-format>{formatted_multiline(@counterparty.mail_address)}</p>
               </div>
             </div>
@@ -302,17 +309,17 @@ defmodule FirmowidWeb.Management.Views.Counterparty do
         </section>
 
         <section class="rounded-lg bg-white p-6 shadow-card">
-          <p class="mb-2 text-sm/snug text-grey-700">Notatki</p>
+          <p class="mb-2 text-sm/snug text-grey-700">{gettext("Notes")}</p>
           <p class="text-base/snug whitespace-pre-line text-black" phx-no-format>{@counterparty.description || "—"}</p>
         </section>
       </div>
 
       <section class="flex min-h-[318px] flex-col justify-between rounded-lg bg-white p-6 shadow-card">
         <div class="space-y-6">
-          <h3 class="text-base/tight font-medium text-grey-900">Statystyki</h3>
+          <h3 class="text-base/tight font-medium text-grey-900">{gettext("Statistics")}</h3>
 
           <div class="space-y-1">
-            <p class="text-sm/snug text-grey-700">Wartość współpracy</p>
+            <p class="text-sm/snug text-grey-700">{gettext("Total paid")}</p>
             <p class="text-xl/tight font-medium text-teal-700">
               {money_to_string(@stats.cooperation_value, @stats.currency)}
             </p>
@@ -320,12 +327,12 @@ defmodule FirmowidWeb.Management.Views.Counterparty do
 
           <div class="grid grid-cols-2 gap-5">
             <div class="space-y-1">
-              <p class="text-sm/snug text-grey-700">Liczba faktur</p>
+              <p class="text-sm/snug text-grey-700">{gettext("Number of invoices")}</p>
               <p class="text-base/snug text-black">{@stats.invoices_count}</p>
             </div>
 
             <div class="space-y-1">
-              <p class="text-sm/snug text-grey-700">Średnia kwota faktury</p>
+              <p class="text-sm/snug text-grey-700">{gettext("Average invoice amount")}</p>
               <p class="text-base/snug text-black">
                 {money_to_string(@stats.average_value, @stats.currency)}
               </p>
@@ -336,7 +343,7 @@ defmodule FirmowidWeb.Management.Views.Counterparty do
         <div class="mt-6 border-t border-grey-200 pt-4">
           <div class="flex items-center justify-between rounded-lg bg-grey-50 px-3 py-2">
             <div class="space-y-1">
-              <p class="text-sm/snug text-grey-700">Ostatnia faktura</p>
+              <p class="text-sm/snug text-grey-700">{gettext("Last invoice")}</p>
               <p class="text-base/snug text-black">{format_date(@stats.last_invoice_date)}</p>
             </div>
 
@@ -362,12 +369,16 @@ defmodule FirmowidWeb.Management.Views.Counterparty do
       @class
     ]}>
       <div class="mb-4 flex items-center justify-between gap-4">
-        <h3 class="text-lg font-medium text-grey-700">Faktury</h3>
+        <h3 class="text-lg font-medium text-grey-700">{gettext("Invoices")}</h3>
 
         <.filter_pills label={nil} class="max-md:w-auto">
           <:pill
             :for={
-              {value, label} <- [{:all, "Wszystkie"}, {:unpaid, "Nieopłacone"}, {:paid, "Opłacone"}]
+              {value, label} <- [
+                {:all, pgettext("counterparty invoice filter", "All")},
+                {:unpaid, pgettext("counterparty invoice filter", "Unpaid")},
+                {:paid, pgettext("counterparty invoice filter", "Paid")}
+              ]
             }
             patch={
               Navigation.counterparty_path(@counterparty.id, %{
@@ -384,15 +395,15 @@ defmodule FirmowidWeb.Management.Views.Counterparty do
 
       <%= if @invoices == [] do %>
         <div class="py-6 text-center text-sm/snug text-grey-700">
-          Brak faktur dla wybranego filtra.
+          {gettext("No invoices for the selected filter.")}
         </div>
       <% else %>
         <div class="grid grid-cols-[220px_1fr_140px_123px_min-content] gap-x-6 gap-y-2">
           <div class="col-span-full grid grid-cols-subgrid px-2 py-1 text-sm/snug text-grey-500">
-            <p>Numer faktury</p>
-            <p class="text-left">Data wystawienia</p>
-            <p class="text-right">Kwota</p>
-            <p class="text-center">Status</p>
+            <p>{gettext("Invoice number")}</p>
+            <p class="text-left">{gettext("Issue date")}</p>
+            <p class="text-right">{gettext("Amount")}</p>
+            <p class="text-center">{gettext("Status")}</p>
           </div>
 
           <div class="col-span-full grid grid-cols-subgrid gap-y-2">
@@ -439,7 +450,7 @@ defmodule FirmowidWeb.Management.Views.Counterparty do
           phx-click="increase_invoice_limit"
           class="mt-4 self-center"
         >
-          Załaduj więcej faktur
+          {gettext("Load more invoices")}
         </.button>
       <% end %>
     </section>
@@ -456,9 +467,9 @@ defmodule FirmowidWeb.Management.Views.Counterparty do
     <section class={["rounded-lg bg-white p-6", @class]}>
       <div class="mb-4 flex items-start justify-between gap-4">
         <div class="space-y-1">
-          <h3 class="text-lg font-medium text-grey-700">Sugerowane faktury do połączenia</h3>
+          <h3 class="text-lg font-medium text-grey-700">{gettext("Suggested invoices to link")}</h3>
           <p class="text-sm/snug text-grey-700">
-            Wyszukane po NIP / VAT-ID:
+            {gettext("Found by NIP / VAT ID:")}
             <span class="font-medium text-black">{@counterparty.tax_id}</span>
           </p>
         </div>
@@ -466,10 +477,10 @@ defmodule FirmowidWeb.Management.Views.Counterparty do
 
       <div class="grid grid-cols-[1fr_180px_140px_140px_min-content] gap-x-6 gap-y-2">
         <div class="col-span-full grid grid-cols-subgrid px-2 py-1 text-sm/snug text-grey-500">
-          <p>Numer faktury</p>
-          <p>Identyfikator nabywcy</p>
-          <p class="text-right">Data wystawienia</p>
-          <p class="text-right">Kwota</p>
+          <p>{gettext("Invoice number")}</p>
+          <p>{gettext("Buyer identifier")}</p>
+          <p class="text-right">{gettext("Issue date")}</p>
+          <p class="text-right">{gettext("Amount")}</p>
         </div>
 
         <div class="col-span-full grid grid-cols-subgrid gap-y-2">
@@ -500,7 +511,7 @@ defmodule FirmowidWeb.Management.Views.Counterparty do
               phx-click="connect_suggested_invoice"
               phx-value-invoice_id={invoice.id}
             >
-              Połącz
+              {pgettext("suggested invoice", "Link")}
             </.button>
           </div>
         </div>
@@ -577,12 +588,15 @@ defmodule FirmowidWeb.Management.Views.Counterparty do
 
   defp invoice_label(%{invoice_number: invoice_number}) when invoice_number not in [nil, ""], do: invoice_number
 
-  defp invoice_label(_invoice), do: "Szkic bez numeru"
+  defp invoice_label(_invoice), do: gettext("Draft without a number")
 
-  defp invoice_status(:pending), do: {"nieopłacona", "bg-rust-100 text-rust-700"}
-  defp invoice_status(:skipped), do: {"pominięta", "bg-grey-200 text-grey-700"}
-  defp invoice_status(:matched), do: {"opłacona", "bg-teal-100 text-teal-700"}
-  defp invoice_status(_), do: {"opłacona", "bg-teal-100 text-teal-700"}
+  defp invoice_status(:pending), do: {pgettext("invoice payment status", "unpaid"), "bg-rust-100 text-rust-700"}
+
+  defp invoice_status(:skipped), do: {pgettext("invoice payment status", "skipped"), "bg-grey-200 text-grey-700"}
+
+  defp invoice_status(:matched), do: {pgettext("invoice payment status", "paid"), "bg-teal-100 text-teal-700"}
+
+  defp invoice_status(_), do: {pgettext("invoice payment status", "paid"), "bg-teal-100 text-teal-700"}
 
   defp money_to_string(nil), do: "—"
   defp money_to_string(%Money{} = amount), do: Money.to_string!(amount)

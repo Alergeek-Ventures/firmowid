@@ -1,6 +1,8 @@
 defmodule FirmowidWeb.Delegations.Utilities.SettlementPresentation do
   @moduledoc "Pure presentation helpers for delegation settlement expenses."
 
+  use Gettext, backend: Firmowid.Gettext
+
   @type expense_kind :: :transport | :accommodation | :other
 
   @spec expenses_for([map()], expense_kind()) :: [map()]
@@ -21,19 +23,19 @@ defmodule FirmowidWeb.Delegations.Utilities.SettlementPresentation do
   def settlement_amount(expense), do: expense.expense_amount
 
   @spec settlement_balance(Money.t() | nil, Money.t()) :: {String.t(), Money.t() | nil}
-  def settlement_balance(nil, _advance), do: {"Do dopłaty", nil}
+  def settlement_balance(nil, _advance), do: {gettext("Amount due"), nil}
 
   def settlement_balance(total, advance) do
     if Money.compare(total, advance) in [:gt, :eq],
-      do: {"Do dopłaty", Money.sub!(total, advance)},
-      else: {"Pomniejszenie wypłaty", Money.sub!(advance, total)}
+      do: {gettext("Amount due"), Money.sub!(total, advance)},
+      else: {gettext("Payout reduction"), Money.sub!(advance, total)}
   end
 
   @spec transport_label(String.t()) :: String.t()
-  def transport_label("railway"), do: "Kolej"
-  def transport_label("airplane"), do: "Samolot"
-  def transport_label("bus"), do: "Autobus"
-  def transport_label("other"), do: "Inne"
+  def transport_label("railway"), do: pgettext("means of transport", "Train")
+  def transport_label("airplane"), do: pgettext("means of transport", "Airplane")
+  def transport_label("bus"), do: pgettext("means of transport", "Bus")
+  def transport_label("other"), do: pgettext("means of transport", "Other")
 
   @spec transport_options() :: [{String.t(), String.t()}]
   def transport_options, do: Enum.map(~w(railway airplane bus other), &{transport_label(&1), &1})

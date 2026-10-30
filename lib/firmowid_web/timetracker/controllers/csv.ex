@@ -32,7 +32,7 @@ defmodule FirmowidWeb.Timetracker.Controllers.Csv do
 
           :error ->
             conn
-            |> put_flash(:error, "Podaj prawidłowy miesiąc i rok dla eksportu CSV.")
+            |> put_flash(:error, gettext("Enter a valid month and year for the CSV export."))
             |> redirect(to: ~p"/zarzadzanie/pracownicy")
         end
 
@@ -43,7 +43,7 @@ defmodule FirmowidWeb.Timetracker.Controllers.Csv do
 
   def salaries(conn, _params) do
     conn
-    |> put_flash(:error, "Podaj miesiąc i rok dla eksportu CSV.")
+    |> put_flash(:error, gettext("Enter the month and year for the CSV export."))
     |> redirect(to: ~p"/zarzadzanie/pracownicy")
   end
 
@@ -65,7 +65,7 @@ defmodule FirmowidWeb.Timetracker.Controllers.Csv do
     else
       :error ->
         conn
-        |> put_flash(:error, "Podaj prawidłowy miesiąc i rok dla eksportu CSV.")
+        |> put_flash(:error, gettext("Enter a valid month and year for the CSV export."))
         |> redirect(to: ~p"/zarzadzanie/projekty/#{project_id}")
 
       _ ->
@@ -114,10 +114,10 @@ defmodule FirmowidWeb.Timetracker.Controllers.Csv do
     |> CSV.encode(
       escape_formulas: true,
       headers: [
-        name: "Imie i Nazwisko",
-        hourly_rate: "Stawka godzinowa",
-        number_of_hours: "Liczba godzin",
-        salary: "Wynagrodzenie"
+        name: pgettext("payroll CSV header", "Full name"),
+        hourly_rate: gettext("Hourly rate"),
+        number_of_hours: gettext("Number of hours"),
+        salary: gettext("Remuneration")
       ]
     )
     |> Enum.join()
@@ -140,7 +140,12 @@ defmodule FirmowidWeb.Timetracker.Controllers.Csv do
     end)
     |> CSV.encode(
       escape_formulas: true,
-      headers: [user: "Użytkownik", date: "Data", duration: "Czas trwania", title: "Tytuł"]
+      headers: [
+        user: gettext("User"),
+        date: gettext("Date"),
+        duration: gettext("Duration"),
+        title: gettext("Title")
+      ]
     )
     |> Enum.join()
   end
