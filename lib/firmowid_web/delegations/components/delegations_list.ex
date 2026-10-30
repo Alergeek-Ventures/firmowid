@@ -35,11 +35,11 @@ defmodule FirmowidWeb.Delegations.Components.DelegationsList do
           phx-click="approve_delegation"
           phx-value-id={delegation.id}
         >
-          Zatwierdź
+          {gettext("Approve")}
         </.button>
       </li>
     </ul>
-    <p :if={@delegations == []} class="text-sm text-grey-500">Brak delegacji.</p>
+    <p :if={@delegations == []} class="text-sm text-grey-500">{gettext("No business trips.")}</p>
     """
   end
 
@@ -61,7 +61,7 @@ defmodule FirmowidWeb.Delegations.Components.DelegationsList do
         <span class="truncate">{@delegation.title}</span>
       </p>
       <span :if={@delegation.status == :in_progress} class="ml-2 text-xs text-grey-500 uppercase">
-        Wersja robocza
+        {gettext("Draft version")}
       </span>
     </div>
     """

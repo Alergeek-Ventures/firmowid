@@ -42,11 +42,11 @@ defmodule FirmowidWeb.Delegations.Components.SettlementPage do
           value="0"
         />
         <section aria-labelledby="delegation-settlement-title" class="min-w-0">
-          <small class="text-sm text-grey-500">Cel:
+          <small class="text-sm text-grey-500">{gettext("Purpose:")}
           <span class="text-grey-700">{@delegation.purpose}</span></small>
           <dl class="mt-2 flex gap-4 text-grey-500 lg:hidden">
             <small>
-              <dt class="inline">Termin:</dt>
+              <dt class="inline">{gettext("Dates:")}</dt>
               <dd class="inline text-grey-700 tabular-nums">
                 <.date_range start_date={@delegation.start_date} end_date={@delegation.end_date} />
               </dd>
@@ -54,14 +54,16 @@ defmodule FirmowidWeb.Delegations.Components.SettlementPage do
           </dl>
           <.saved_notice :if={@editable?} status={@save_status} />
           <h1 id="delegation-settlement-title" class="mt-1 text-2xl font-medium">
-            Rozliczenie delegacji
+            {gettext("Business trip settlement")}
           </h1>
           <p class="mt-3 max-w-2xl text-balance text-grey-700">
-            Załącz bilety i rachunki. Uzupełnij potrzebne dane. Kwoty i numery faktur uzupełnimy automatycznie.
+            {gettext(
+              "Attach tickets and receipts. Fill in the required details. We will fill in amounts and invoice numbers automatically."
+            )}
           </p>
 
           <.expense_section
-            title="Przejazdy"
+            title={gettext("Journeys")}
             expenses={SettlementPresentation.expenses_for(@delegation.expenses, :transport)}
             upload={Map.get(assigns[:uploads] || %{}, :transport)}
             kind="transport"
@@ -80,7 +82,7 @@ defmodule FirmowidWeb.Delegations.Components.SettlementPage do
             <:icon><Lucideicons.plane class="size-5" /></:icon>
           </.expense_section>
           <.expense_section
-            title="Nocleg"
+            title={gettext("Accommodation")}
             expenses={SettlementPresentation.expenses_for(@delegation.expenses, :accommodation)}
             upload={Map.get(assigns[:uploads] || %{}, :accommodation)}
             kind="accommodation"
@@ -99,7 +101,7 @@ defmodule FirmowidWeb.Delegations.Components.SettlementPage do
             <:icon><Lucideicons.bed_double class="size-5" /></:icon>
           </.expense_section>
           <.expense_section
-            title="Inne wydatki"
+            title={gettext("Other expenses")}
             expenses={SettlementPresentation.expenses_for(@delegation.expenses, :other)}
             upload={Map.get(assigns[:uploads] || %{}, :other)}
             kind="other"
@@ -128,13 +130,13 @@ defmodule FirmowidWeb.Delegations.Components.SettlementPage do
         <aside class="min-w-0 lg:pt-1">
           <dl class="hidden justify-end gap-4 text-grey-500 lg:flex">
             <small>
-              <dt class="inline">Termin:</dt>
+              <dt class="inline">{gettext("Dates:")}</dt>
               <dd class="inline text-grey-700 tabular-nums">
                 <.date_range start_date={@delegation.start_date} end_date={@delegation.end_date} />
               </dd>
             </small>
             <small>
-              <dt class="inline">Zaliczka:</dt>
+              <dt class="inline">{gettext("Advance:")}</dt>
               <dd class="inline text-grey-700">
                 {Money.to_string!(@delegation.advance_amount)}
               </dd>
@@ -148,7 +150,7 @@ defmodule FirmowidWeb.Delegations.Components.SettlementPage do
               balance_label={@balance_label}
             />
             <.error :if={@submission_failed? and is_nil(@date_change)}>
-              Nie udało się wysłać ewidencji. Uzupełnij wymagane pola.
+              {gettext("Could not submit the record. Fill in the required fields.")}
             </.error>
             <.button
               type="submit"
@@ -157,7 +159,7 @@ defmodule FirmowidWeb.Delegations.Components.SettlementPage do
               size="big"
               class="mt-6 w-full"
               disabled={@uploading?}
-            >Wyślij</.button>
+            >{gettext("Send")}</.button>
           </div>
           <.summary
             :if={!@editable?}
@@ -342,10 +344,10 @@ defmodule FirmowidWeb.Delegations.Components.SettlementPage do
   defp summary(assigns) do
     ~H"""
     <div class={["rounded-lg bg-white px-6 py-4 shadow-sm", @class]}>
-      <h2 class="font-normal text-grey-500">Podsumowanie</h2>
+      <h2 class="font-normal text-grey-500">{gettext("Summary")}</h2>
       <dl class="mt-6 space-y-3 text-sm">
         <.summary_row
-          label="Przejazdy"
+          label={gettext("Journeys")}
           value={
             SettlementPresentation.sum(
               SettlementPresentation.expenses_for(@delegation.expenses, :transport)
@@ -353,7 +355,7 @@ defmodule FirmowidWeb.Delegations.Components.SettlementPage do
           }
         />
         <.summary_row
-          label="Nocleg"
+          label={gettext("Accommodation")}
           value={
             SettlementPresentation.sum(
               SettlementPresentation.expenses_for(@delegation.expenses, :accommodation)
@@ -361,7 +363,7 @@ defmodule FirmowidWeb.Delegations.Components.SettlementPage do
           }
         />
         <.summary_row
-          label="Inne"
+          label={pgettext("settlement summary", "Other")}
           value={
             SettlementPresentation.sum(
               SettlementPresentation.expenses_for(@delegation.expenses, :other)
@@ -369,8 +371,8 @@ defmodule FirmowidWeb.Delegations.Components.SettlementPage do
           }
         />
         <div class="my-5 space-y-3 border-y border-grey-100 py-5">
-          <.summary_row label="Razem koszty" value={@total} class="font-medium" />
-          <.summary_row label="Pobrana zaliczka" value={@delegation.advance_amount} />
+          <.summary_row label={gettext("Total costs")} value={@total} class="font-medium" />
+          <.summary_row label={gettext("Advance received")} value={@delegation.advance_amount} />
         </div>
         <.summary_row label={@balance_label} value={@balance} />
       </dl>
@@ -413,7 +415,7 @@ defmodule FirmowidWeb.Delegations.Components.SettlementPage do
     >
       <div class="flex flex-wrap items-center justify-between gap-3">
         <h2 class="flex items-center gap-2 font-medium">
-          <Lucideicons.calendar_1 class="size-5" /> Zmiana terminu delegacji
+          <Lucideicons.calendar_1 class="size-5" /> {gettext("Business trip date change")}
         </h2>
         <div class="flex items-center gap-2 font-medium tabular-nums">
           <span class="text-grey-500 line-through"><.date_range
@@ -424,15 +426,21 @@ defmodule FirmowidWeb.Delegations.Components.SettlementPage do
         </div>
       </div>
       <p class="mt-4">
-        Terminy różnią się od tych podanych w zgłoszeniu. Jeśli jest to zmiana celowa, podaj jej powód. Jeśli nie, sprawdź poprawność powyższych danych.
+        {gettext(
+          "The dates differ from those given in the request. If the change is intentional, give the reason. If not, check that the details above are correct."
+        )}
       </p>
       <.input
         id={@form[:date_change_reason].id}
         name={@form[:date_change_reason].name}
         type="textarea"
         value={@form[:date_change_reason].value}
-        errors={if blank?(@form[:date_change_reason].value), do: ["To pole jest wymagane"], else: []}
-        placeholder="Podaj powód zmiany terminu delegacji..."
+        errors={
+          if blank?(@form[:date_change_reason].value),
+            do: [gettext("This field is required")],
+            else: []
+        }
+        placeholder={gettext("Give the reason for changing the business trip dates...")}
         disabled={!@editable?}
         class="mt-4"
       />

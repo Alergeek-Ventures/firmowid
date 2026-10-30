@@ -21,7 +21,7 @@ defmodule FirmowidWeb.Timetracker.Components.Overlap do
     <div class="rounded-lg border border-moss-200 bg-moss-100 p-4">
       <div class="mb-1 flex items-center gap-2">
         <span class="inline-flex items-center rounded-full bg-moss-200 px-2 py-0.5 text-xs font-medium text-moss-700">
-          Nowa sesja
+          {gettext("New session")}
         </span>
         <span class="text-sm font-medium text-grey-900">
           {@title}
@@ -71,7 +71,7 @@ defmodule FirmowidWeb.Timetracker.Components.Overlap do
 
       <div class="flex flex-col gap-1 text-sm">
         <div class="flex items-center gap-2">
-          <span class="w-12 shrink-0 text-grey-700">Przed:</span>
+          <span class="w-12 shrink-0 text-grey-700">{gettext("Before:")}</span>
           <span class="text-grey-700 line-through">
             {format_datetime_local(@session.start_datetime, @timezone)} – {format_datetime_local(
               @session.end_datetime,
@@ -97,7 +97,7 @@ defmodule FirmowidWeb.Timetracker.Components.Overlap do
 
     ~H"""
     <div class="flex items-center gap-2">
-      <span class="w-12 shrink-0 text-grey-700">Po:</span>
+      <span class="w-12 shrink-0 text-grey-700">{gettext("After:")}</span>
       <span class="font-medium text-grey-900">
         {format_datetime_local(@session.start_datetime, @timezone)} – {format_datetime_local(
           @new_end,
@@ -113,7 +113,7 @@ defmodule FirmowidWeb.Timetracker.Components.Overlap do
 
     ~H"""
     <div class="flex items-center gap-2">
-      <span class="w-12 shrink-0 text-grey-700">Po:</span>
+      <span class="w-12 shrink-0 text-grey-700">{gettext("After:")}</span>
       <span class="font-medium text-grey-900">
         {format_datetime_local(@new_start, @timezone)} – {format_datetime_local(
           @session.end_datetime,
@@ -127,8 +127,8 @@ defmodule FirmowidWeb.Timetracker.Components.Overlap do
   defp trim_action_after(%{action: {:delete, _}} = assigns) do
     ~H"""
     <div class="flex items-center gap-2">
-      <span class="w-12 shrink-0 text-grey-700">Po:</span>
-      <span class="font-medium text-brick-700">Sesja zostanie usunięta</span>
+      <span class="w-12 shrink-0 text-grey-700">{gettext("After:")}</span>
+      <span class="font-medium text-brick-700">{gettext("The session will be deleted")}</span>
     </div>
     """
   end
@@ -138,7 +138,7 @@ defmodule FirmowidWeb.Timetracker.Components.Overlap do
 
     ~H"""
     <div class="flex items-center gap-2">
-      <span class="w-12 shrink-0 text-grey-700">Po:</span>
+      <span class="w-12 shrink-0 text-grey-700">{gettext("After:")}</span>
       <div class="flex flex-col gap-0.5">
         <span class="font-medium text-grey-900">
           {format_datetime_local(@session.start_datetime, @timezone)} – {format_datetime_local(
@@ -161,10 +161,10 @@ defmodule FirmowidWeb.Timetracker.Components.Overlap do
 
   defp trim_action_label(action) do
     case action do
-      {:trim_end, _, _} -> "Skrócona"
-      {:trim_start, _, _} -> "Skrócona"
-      {:delete, _} -> "Usunięta"
-      {:split, _, _, _} -> "Podzielona"
+      {:trim_end, _, _} -> pgettext("session overlap action", "Shortened")
+      {:trim_start, _, _} -> pgettext("session overlap action", "Shortened")
+      {:delete, _} -> pgettext("session overlap action", "Deleted")
+      {:split, _, _, _} -> pgettext("session overlap action", "Split")
     end
   end
 
@@ -177,7 +177,7 @@ defmodule FirmowidWeb.Timetracker.Components.Overlap do
     end
   end
 
-  defp format_datetime_local(nil, _timezone), do: "teraz (trwa)"
+  defp format_datetime_local(nil, _timezone), do: gettext("now (ongoing)")
 
   defp format_datetime_local(%DateTime{} = dt, timezone) do
     dt

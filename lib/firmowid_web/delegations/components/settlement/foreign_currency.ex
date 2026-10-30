@@ -37,7 +37,7 @@ defmodule FirmowidWeb.Delegations.Components.Settlement.ForeignCurrency do
     <.input id={"document-number-#{@expense.id}"} field={@form[:document_number]} type="text">
       <:label_slot>
         <span class="inline-flex items-center gap-1">
-          <Lucideicons.sparkles class="size-4" aria-hidden="true" /> Nr dokumentu
+          <Lucideicons.sparkles class="size-4" aria-hidden="true" /> {gettext("Document no.")}
         </span>
       </:label_slot>
     </.input>
@@ -54,7 +54,7 @@ defmodule FirmowidWeb.Delegations.Components.Settlement.ForeignCurrency do
         >
           <:label_slot>
             <span class="inline-flex items-center gap-1">
-              <Lucideicons.sparkles class="size-4" aria-hidden="true" /> Kwota
+              <Lucideicons.sparkles class="size-4" aria-hidden="true" /> {gettext("Amount")}
             </span>
           </:label_slot>
         </.input>
@@ -66,7 +66,7 @@ defmodule FirmowidWeb.Delegations.Components.Settlement.ForeignCurrency do
         type="select"
         options={currency_options()}
         input_class={["w-24 shrink-0", @foreign_currency? && "bg-teal-100"]}
-        aria-label="Waluta"
+        aria-label={gettext("Currency")}
       />
     </div>
     <.foreign_currency_settlement
@@ -98,7 +98,7 @@ defmodule FirmowidWeb.Delegations.Components.Settlement.ForeignCurrency do
       id={"foreign-currency-notice-#{@expense.id}"}
       class="mt-1 flex w-full flex-wrap items-center justify-between gap-3 rounded-lg border border-grey-200 bg-teal-100 p-6 text-teal-700 sm:col-span-2 lg:col-span-3"
     >
-      <p>Wykryto obcą walutę</p>
+      <p>{gettext("Foreign currency detected")}</p>
       <div class="flex gap-2">
         <.button
           type="button"
@@ -108,7 +108,7 @@ defmodule FirmowidWeb.Delegations.Components.Settlement.ForeignCurrency do
           phx-click="foreign-currency-action"
           phx-value-action="statement"
           phx-value-expense-id={@expense.id}
-        >Mam kwotę z wyciągu</.button>
+        >{gettext("I have the amount from the statement")}</.button>
         <.button
           type="button"
           variant="primary"
@@ -117,7 +117,7 @@ defmodule FirmowidWeb.Delegations.Components.Settlement.ForeignCurrency do
           phx-click="foreign-currency-action"
           phx-value-action="nbp"
           phx-value-expense-id={@expense.id}
-        >Przelicz wg kursu NBP</.button>
+        >{gettext("Convert at the NBP rate")}</.button>
       </div>
     </section>
     """
@@ -148,7 +148,7 @@ defmodule FirmowidWeb.Delegations.Components.Settlement.ForeignCurrency do
       </div>
       <%= if @mode == :statement do %>
         <div>
-          <.label for={@statement_upload.ref} class="mb-2">Wyciąg z rachunku</.label>
+          <.label for={@statement_upload.ref} class="mb-2">{gettext("Account statement")}</.label>
           <.statement_document :if={@statement_blob} expense_id={@expense.id} blob={@statement_blob} />
           <.document_pill
             :if={!@statement_blob && @statement_entry}
@@ -165,12 +165,14 @@ defmodule FirmowidWeb.Delegations.Components.Settlement.ForeignCurrency do
             class="border-grey-200 bg-grey-200"
             phx-click="select-statement-expense"
             phx-value-id={@expense.id}
-          >Wgraj dokument</.button>
+          >{gettext("Upload a document")}</.button>
         </div>
         <.settlement_amount_field form={@form} expense_id={@expense.id} currency="PLN" />
       <% else %>
         <div>
-          <.label class="mb-2">Kurs | {format_date(@nbp_settlement && @nbp_settlement.date)}</.label>
+          <.label class="mb-2">
+            {gettext("Rate | %{date}", date: format_date(@nbp_settlement && @nbp_settlement.date))}
+          </.label>
           <div class="rounded-lg border border-grey-200 bg-transparent px-3 py-1.5 text-base/tight text-grey-700">
             {format_rate(@currency, @nbp_settlement, "PLN")}
           </div>
@@ -198,7 +200,7 @@ defmodule FirmowidWeb.Delegations.Components.Settlement.ForeignCurrency do
           class="cursor-pointer text-grey-500"
           phx-click="remove-statement-document"
           phx-value-expense-id={@expense_id}
-          aria-label={"Usuń #{@blob.original_filename}"}
+          aria-label={gettext("Remove %{name}", name: @blob.original_filename)}
         ><Lucideicons.x class="size-3" /></.button>
       </:action>
     </.document_pill>
@@ -217,7 +219,7 @@ defmodule FirmowidWeb.Delegations.Components.Settlement.ForeignCurrency do
           id={"settlement-amount-#{@expense_id}"}
           field={@form[:settlement_amount]}
           type="number"
-          label={"Kwota w #{@currency}"}
+          label={gettext("Amount in %{currency}", currency: @currency)}
           min="0"
           step="0.01"
           placeholder="0,00"
@@ -239,7 +241,7 @@ defmodule FirmowidWeb.Delegations.Components.Settlement.ForeignCurrency do
     ~H"""
     <div class="flex items-end gap-2">
       <div class="w-25 shrink-0">
-        <.label class="mb-2">Po przeliczeniu</.label><div
+        <.label class="mb-2">{gettext("After conversion")}</.label><div
           id={"settlement-amount-#{@expense_id}"}
           class="rounded-lg border border-grey-200 bg-transparent px-3 py-1.5 text-base/tight text-grey-700"
         >
@@ -256,14 +258,14 @@ defmodule FirmowidWeb.Delegations.Components.Settlement.ForeignCurrency do
   defp currency_options do
     popular = ~w(PLN EUR GBP USD)
     currencies = Enum.map(Money.known_current_currencies(), &Atom.to_string/1)
-    [{"Najczęściej używane", popular}, {"Wszystkie waluty", currencies -- popular}]
+    [{gettext("Most used"), popular}, {gettext("All currencies"), currencies -- popular}]
   end
 
-  defp mode_label(:statement), do: "Mam kwotę z wyciągu"
-  defp mode_label(:nbp), do: "Przelicz wg kursu NBP"
+  defp mode_label(:statement), do: gettext("I have the amount from the statement")
+  defp mode_label(:nbp), do: gettext("Convert at the NBP rate")
   defp format_date(nil), do: "—"
   defp format_date(date), do: Calendar.strftime(date, "%d.%m.%Y")
-  defp format_rate(_source, nil, _target), do: "Nie udało się pobrać kursu"
+  defp format_rate(_source, nil, _target), do: gettext("Could not fetch the rate")
 
   defp format_rate(source, %{rate: rate}, target),
     do: "1 #{source} = #{rate |> Decimal.to_string(:normal) |> String.replace(".", ",")} #{target}"

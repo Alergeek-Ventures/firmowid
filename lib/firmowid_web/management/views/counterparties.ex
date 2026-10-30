@@ -22,7 +22,7 @@ defmodule FirmowidWeb.Management.Views.Counterparties do
 
     {:ok,
      socket
-     |> assign(:page_title, "Zarządzanie kontrahentami")
+     |> assign(:page_title, gettext("Counterparty management"))
      |> assign(:zero_state?, zero_state?)
      |> assign(:counterparties_empty?, true)
      |> assign(:view, :standard)
@@ -82,7 +82,7 @@ defmodule FirmowidWeb.Management.Views.Counterparties do
          length(socket.assigns.streams.counterparties.inserts) == 1
        )}
     else
-      _ -> {:noreply, put_flash(socket, :error, "Nie udało się przywrócić kontrahenta")}
+      _ -> {:noreply, put_flash(socket, :error, gettext("Could not restore the counterparty"))}
     end
   end
 

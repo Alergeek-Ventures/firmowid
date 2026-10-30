@@ -17,51 +17,48 @@ defmodule FirmowidWeb.Timetracker.Views.Index do
   alias Firmowid.Timetracker.OverlapResolver
   alias Firmowid.Timetracker.Session
   alias Firmowid.Timetracker.TrimPlan
+  alias FirmowidUI.Components.Inputs
   alias FirmowidWeb.Infrastructure.Utilities.PosthogBusinessEvents
   alias FirmowidWeb.Timetracker.Utilities.GroupedSessionForm
   alias FirmowidWeb.Timetracker.Utilities.SessionForm
 
   require Ash.Query
 
-  @day_names %{
-    1 => "Poniedziałek",
-    2 => "Wtorek",
-    3 => "Środa",
-    4 => "Czwartek",
-    5 => "Piątek",
-    6 => "Sobota",
-    7 => "Niedziela"
-  }
+  defp day_name(1), do: pgettext("weekday name", "Monday")
+  defp day_name(2), do: pgettext("weekday name", "Tuesday")
+  defp day_name(3), do: pgettext("weekday name", "Wednesday")
+  defp day_name(4), do: pgettext("weekday name", "Thursday")
+  defp day_name(5), do: pgettext("weekday name", "Friday")
+  defp day_name(6), do: pgettext("weekday name", "Saturday")
+  defp day_name(7), do: pgettext("weekday name", "Sunday")
 
-  @month_names_genitive %{
-    1 => "stycznia",
-    2 => "lutego",
-    3 => "marca",
-    4 => "kwietnia",
-    5 => "maja",
-    6 => "czerwca",
-    7 => "lipca",
-    8 => "sierpnia",
-    9 => "września",
-    10 => "października",
-    11 => "listopada",
-    12 => "grudnia"
-  }
+  # Month names in the form used inside a full date, e.g. "5. października".
+  defp month_name_in_date(1), do: pgettext("month name in a date", "January")
+  defp month_name_in_date(2), do: pgettext("month name in a date", "February")
+  defp month_name_in_date(3), do: pgettext("month name in a date", "March")
+  defp month_name_in_date(4), do: pgettext("month name in a date", "April")
+  defp month_name_in_date(5), do: pgettext("month name in a date", "May")
+  defp month_name_in_date(6), do: pgettext("month name in a date", "June")
+  defp month_name_in_date(7), do: pgettext("month name in a date", "July")
+  defp month_name_in_date(8), do: pgettext("month name in a date", "August")
+  defp month_name_in_date(9), do: pgettext("month name in a date", "September")
+  defp month_name_in_date(10), do: pgettext("month name in a date", "October")
+  defp month_name_in_date(11), do: pgettext("month name in a date", "November")
+  defp month_name_in_date(12), do: pgettext("month name in a date", "December")
 
-  @month_names_locative %{
-    1 => "styczniu",
-    2 => "lutym",
-    3 => "marcu",
-    4 => "kwietniu",
-    5 => "maju",
-    6 => "czerwcu",
-    7 => "lipcu",
-    8 => "sierpniu",
-    9 => "wrześniu",
-    10 => "październiku",
-    11 => "listopadzie",
-    12 => "grudniu"
-  }
+  # Month names in the form used after "in", e.g. "w październiku".
+  defp month_name_after_in(1), do: pgettext("month name after 'in'", "January")
+  defp month_name_after_in(2), do: pgettext("month name after 'in'", "February")
+  defp month_name_after_in(3), do: pgettext("month name after 'in'", "March")
+  defp month_name_after_in(4), do: pgettext("month name after 'in'", "April")
+  defp month_name_after_in(5), do: pgettext("month name after 'in'", "May")
+  defp month_name_after_in(6), do: pgettext("month name after 'in'", "June")
+  defp month_name_after_in(7), do: pgettext("month name after 'in'", "July")
+  defp month_name_after_in(8), do: pgettext("month name after 'in'", "August")
+  defp month_name_after_in(9), do: pgettext("month name after 'in'", "September")
+  defp month_name_after_in(10), do: pgettext("month name after 'in'", "October")
+  defp month_name_after_in(11), do: pgettext("month name after 'in'", "November")
+  defp month_name_after_in(12), do: pgettext("month name after 'in'", "December")
 
   def mount(_params, _session, socket) do
     scope = socket.assigns.ash_scope
@@ -224,7 +221,7 @@ defmodule FirmowidWeb.Timetracker.Views.Index do
 
   def assign_page_title(socket) do
     case socket.assigns.current_session do
-      nil -> assign(socket, :page_title, "Czasośledź")
+      nil -> assign(socket, :page_title, pgettext("page title", "Time tracker"))
       session -> assign(socket, :page_title, session.title)
     end
   end
@@ -256,7 +253,7 @@ defmodule FirmowidWeb.Timetracker.Views.Index do
 
       {:error, %Unknown{} = error} ->
         if overlap_error?(error) do
-          LiveToast.send_toast(:error, "Sesja nachodzi na inną sesję.")
+          LiveToast.send_toast(:error, gettext("The session overlaps another session."))
         else
           raise error
         end
@@ -265,16 +262,23 @@ defmodule FirmowidWeb.Timetracker.Views.Index do
 
       {:error, %Invalid{} = error} ->
         messages =
-          Enum.map_join(error.errors, ", ", fn err -> Map.get(err, :message, "Nieznany błąd") end)
+          Enum.map_join(error.errors, ", ", fn err ->
+            translate_ash_message(err)
+          end)
 
         LiveToast.send_toast(:error, messages)
         {:noreply, socket}
 
       {:error, _other} ->
-        LiveToast.send_toast(:error, "Wystąpił nieoczekiwany błąd.")
+        LiveToast.send_toast(:error, gettext("An unexpected error occurred."))
         {:noreply, socket}
     end
   end
+
+  defp translate_ash_message(%{message: message} = error) when is_binary(message),
+    do: Inputs.translate_error({message, Map.get(error, :vars, [])})
+
+  defp translate_ash_message(_error), do: gettext("Unknown error")
 
   defp overlap_error?(%Unknown{errors: errors}) do
     Enum.any?(errors, fn
@@ -331,14 +335,17 @@ defmodule FirmowidWeb.Timetracker.Views.Index do
 
             LiveToast.send_toast(
               :error,
-              "Sesja nachodzi na zatwierdzone sesje: #{titles}. Zmień czas nowej sesji."
+              gettext(
+                "The session overlaps approved sessions: %{titles}. Change the time of the new session.",
+                titles: titles
+              )
             )
 
             {:noreply, socket}
         end
 
       {:error, _} ->
-        LiveToast.send_toast(:error, "Nie udało się sprawdzić konfliktów. Spróbuj ponownie.")
+        LiveToast.send_toast(:error, gettext("Could not check for conflicts. Try again."))
         {:noreply, socket}
     end
   end
@@ -398,9 +405,9 @@ defmodule FirmowidWeb.Timetracker.Views.Index do
 
       {:error, _session_id, %Unknown{} = error} ->
         if overlap_error?(error) do
-          LiveToast.send_toast(:error, "Sesja nachodzi na inną sesję.")
+          LiveToast.send_toast(:error, gettext("The session overlaps another session."))
         else
-          LiveToast.send_toast(:error, "Wystąpił błąd podczas aktualizacji sesji.")
+          LiveToast.send_toast(:error, gettext("An error occurred while updating the session."))
         end
 
         {:noreply, socket}
@@ -408,7 +415,7 @@ defmodule FirmowidWeb.Timetracker.Views.Index do
       {:error, _session_id, %Invalid{errors: errors}} ->
         messages =
           Enum.map_join(errors, ", ", fn error ->
-            Map.get(error, :message, "Nieznany błąd")
+            translate_ash_message(error)
           end)
 
         LiveToast.send_toast(:error, messages)
@@ -418,13 +425,13 @@ defmodule FirmowidWeb.Timetracker.Views.Index do
       {:error, _session_id, %Ash.Error.Forbidden{}} ->
         LiveToast.send_toast(
           :error,
-          "Brak uprawnień do edycji tej sesji (sesja może być zablokowana)."
+          gettext("You do not have permission to edit this session (it may be locked).")
         )
 
         {:noreply, socket}
 
       {:error, _session_id, _other} ->
-        LiveToast.send_toast(:error, "Wystąpił błąd podczas aktualizacji sesji.")
+        LiveToast.send_toast(:error, gettext("An error occurred while updating the session."))
         {:noreply, socket}
     end
   end
@@ -567,7 +574,7 @@ defmodule FirmowidWeb.Timetracker.Views.Index do
 
       {:error, %Unknown{} = error} ->
         if overlap_error?(error) do
-          LiveToast.send_toast(:error, "Konflikt sesji uległ zmianie. Spróbuj ponownie.")
+          LiveToast.send_toast(:error, gettext("The session conflict has changed. Try again."))
         else
           raise error
         end
@@ -575,7 +582,7 @@ defmodule FirmowidWeb.Timetracker.Views.Index do
         {:noreply, assign_sessions(socket)}
 
       {:error, _} ->
-        LiveToast.send_toast(:error, "Wystąpił nieoczekiwany błąd. Spróbuj ponownie.")
+        LiveToast.send_toast(:error, gettext("An unexpected error occurred. Try again."))
         {:noreply, assign_sessions(socket)}
     end
   end
@@ -612,7 +619,7 @@ defmodule FirmowidWeb.Timetracker.Views.Index do
         {:noreply, assign_sessions(socket)}
 
       {:error, _error} ->
-        LiveToast.send_toast(:error, "Nie udało się usunąć sesji")
+        LiveToast.send_toast(:error, gettext("Could not delete the session"))
         {:noreply, socket}
     end
   end
@@ -643,32 +650,33 @@ defmodule FirmowidWeb.Timetracker.Views.Index do
 
       {:error, %Unknown{} = error} ->
         if overlap_error?(error) do
-          LiveToast.send_toast(:error, "Sesja nachodzi na inną sesję.")
+          LiveToast.send_toast(:error, gettext("The session overlaps another session."))
         else
-          LiveToast.send_toast(:error, "Nie udało się zaktualizować sesji")
+          LiveToast.send_toast(:error, gettext("Could not update the session"))
         end
 
         {:noreply, socket}
 
       {:error, _} ->
-        LiveToast.send_toast(:error, "Nie udało się zaktualizować sesji")
+        LiveToast.send_toast(:error, gettext("Could not update the session"))
         {:noreply, socket}
     end
   end
 
   def format_day_header(%Date{} = date) do
     day_name =
-      Calendar.strftime(date, "%A", day_of_week_names: fn number -> Map.get(@day_names, number, "Unknown") end)
+      Calendar.strftime(date, "%A", day_of_week_names: &day_name/1)
 
     day_number = Calendar.strftime(date, "%d.%m")
     "#{day_name} (#{day_number})"
   end
 
   def format_current_day_header(%Date{} = date) do
-    day_name = Map.fetch!(@day_names, Date.day_of_week(date))
-    month_name = Map.fetch!(@month_names_genitive, date.month)
-
-    "#{day_name}, #{date.day} #{month_name}"
+    gettext("%{weekday}, %{month} %{day}",
+      weekday: day_name(Date.day_of_week(date)),
+      day: date.day,
+      month: month_name_in_date(date.month)
+    )
   end
 
   def format_week_header(%Date{} = date) do
@@ -684,7 +692,7 @@ defmodule FirmowidWeb.Timetracker.Views.Index do
 
     week_end_str = Calendar.strftime(week_end, "%d.%m.%Y")
 
-    "TYDZIEŃ #{week_start_str}-#{week_end_str}"
+    gettext("WEEK %{start}-%{end}", start: week_start_str, end: week_end_str)
   end
 
   def format_time(""), do: nil
@@ -714,7 +722,7 @@ defmodule FirmowidWeb.Timetracker.Views.Index do
     minutes = rem(div(total_seconds, 60), 60)
     percentage = round(total_seconds / (160 * 3600) * 100)
 
-    current_month = Map.fetch!(@month_names_locative, now.month)
+    current_month = month_name_after_in(now.month)
 
     today = Date.utc_today()
 

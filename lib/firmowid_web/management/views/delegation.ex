@@ -58,7 +58,7 @@ defmodule FirmowidWeb.Management.Views.Delegation do
            |> assign(:command_form, command_form(false, delegation.advance_amount))
            |> assign(:current_advance_amount, delegation.advance_amount)
            |> assign(:billing_month, delegation.billing_month)
-           |> assign(:page_title, "Polecenie wyjazdu służbowego")}
+           |> assign(:page_title, gettext("Business trip order"))}
         else
           {:noreply, push_navigate(socket, to: Navigation.employee_path(employee.id))}
         end
@@ -97,7 +97,7 @@ defmodule FirmowidWeb.Management.Views.Delegation do
          |> assign(:command_form, command_form(params["advance"] == "true", advance_amount))}
 
       {:error, _error} ->
-        {:noreply, put_flash(socket, :error, "Nie udało się wygenerować polecenia.")}
+        {:noreply, put_flash(socket, :error, gettext("Could not generate the order."))}
     end
   end
 
@@ -117,11 +117,11 @@ defmodule FirmowidWeb.Management.Views.Delegation do
              |> assign(:billing_month, delegation.billing_month)}
 
           {:error, _error} ->
-            {:noreply, put_flash(socket, :error, "Nie udało się zmienić miesiąca rozliczeniowego.")}
+            {:noreply, put_flash(socket, :error, gettext("Could not change the billing month."))}
         end
 
       {:error, _reason} ->
-        {:noreply, put_flash(socket, :error, "Nieprawidłowy miesiąc rozliczeniowy.")}
+        {:noreply, put_flash(socket, :error, gettext("Invalid billing month."))}
     end
   end
 
@@ -153,11 +153,11 @@ defmodule FirmowidWeb.Management.Views.Delegation do
       [{:ok, _delegation}] ->
         {:noreply,
          socket
-         |> put_flash(:info, "Delegacja została zatwierdzona pomyślnie!")
+         |> put_flash(:info, gettext("The business trip has been approved successfully!"))
          |> push_navigate(to: Navigation.employee_delegations_path(socket.assigns.employee.id))}
 
       _ ->
-        {:noreply, put_flash(socket, :error, "Nie udało się zatwierdzić delegacji.")}
+        {:noreply, put_flash(socket, :error, gettext("Could not approve the business trip."))}
     end
   end
 
@@ -166,19 +166,21 @@ defmodule FirmowidWeb.Management.Views.Delegation do
     ~H"""
     <main class="w-full px-4 py-6">
       <.back navigate={Navigation.employee_path(@employee.id)} class="justify-self-start">
-        Profil pracownika
+        {gettext("Employee profile")}
       </.back>
 
-      <h1 class="mt-10 text-2xl/tight font-medium">Polecenie wyjazdu służbowego</h1>
+      <h1 class="mt-10 text-2xl/tight font-medium">{gettext("Business trip order")}</h1>
 
       <div class="mt-10 grid grid-cols-1 items-start gap-10 lg:grid-cols-2">
         <section>
           <p class="max-w-xl text-base text-balance text-grey-700">
-            Poniżej znajdziesz szczegóły delegacji zgłoszonej przez pracownika. Na tej podstawie ustal, czy przysługuje mu zaliczka, a następnie wygeneruj polecenie.
+            {gettext(
+              "Below you will find the details of the business trip submitted by the employee. Use them to decide whether they are entitled to an advance, then generate the order."
+            )}
           </p>
 
           <dl class="mt-8 grid grid-cols-1 gap-x-8 gap-y-5 lg:grid-cols-[minmax(10rem,auto)_1fr]">
-            <.detail_row label="Imię i nazwisko">
+            <.detail_row label={gettext("Full name")}>
               <span class="flex items-center gap-2">
                 <.avatar
                   id="delegation-employee-avatar"
@@ -196,14 +198,14 @@ defmodule FirmowidWeb.Management.Views.Delegation do
                 {@employee.member.name || @employee.email}
               </span>
             </.detail_row>
-            <.detail_row label="Stanowisko">
+            <.detail_row label={gettext("Position")}>
               {(@employment_contract && @employment_contract.position) || "—"}
             </.detail_row>
-            <.detail_row label="Data wyjazdu">
+            <.detail_row label={gettext("Departure date")}>
               {DelegationPresentation.format_range(@delegation.start_date, @delegation.end_date)}
             </.detail_row>
-            <.detail_row label="Cel wyjazdu">{@delegation.purpose}</.detail_row>
-            <.detail_row label="Przewidywana kwota">
+            <.detail_row label={gettext("Purpose of the trip")}>{@delegation.purpose}</.detail_row>
+            <.detail_row label={gettext("Estimated amount")}>
               {Money.to_string!(@delegation.expected_cost)}
             </.detail_row>
           </dl>
@@ -216,10 +218,10 @@ defmodule FirmowidWeb.Management.Views.Delegation do
             class="mt-10"
           >
             <dl class="grid grid-cols-1 items-start gap-x-8 gap-y-5 lg:grid-cols-[minmax(10rem,auto)_1fr]">
-              <dt class="text-base text-grey-700">Zaliczka</dt>
+              <dt class="text-base text-grey-700">{gettext("Advance")}</dt>
               <dd><.switch field={@command_form[:advance]} color="teal" /></dd>
 
-              <dt class="text-base text-grey-500">Na kwotę</dt>
+              <dt class="text-base text-grey-500">{gettext("For the amount")}</dt>
               <dd>
                 <div class="grid w-full grid-cols-[8rem_auto] items-center gap-x-2 gap-y-5 lg:w-auto">
                   <.input
@@ -248,7 +250,7 @@ defmodule FirmowidWeb.Management.Views.Delegation do
                       )
                     }
                   >
-                    Wygeneruj polecenie
+                    {gettext("Generate order")}
                   </.button>
                 </div>
               </dd>
@@ -258,7 +260,7 @@ defmodule FirmowidWeb.Management.Views.Delegation do
 
         <section>
           <div class="grid w-full grid-cols-1 gap-y-2 text-base lg:ml-auto lg:w-fit lg:grid-cols-[auto_1fr] lg:items-center lg:gap-x-6">
-            <span class="text-grey-700">Miesiąc rozliczeniowy</span>
+            <span class="text-grey-700">{gettext("Billing month")}</span>
             <div class="relative w-57">
               <.month_picker
                 id="delegation-billing-month"
@@ -274,22 +276,26 @@ defmodule FirmowidWeb.Management.Views.Delegation do
 
           <%= if is_nil(@generated_advance_amount) do %>
             <div class="mt-8 flex min-h-96 items-center justify-center rounded-md border border-grey-200 p-8 text-center shadow-sm">
-              <p class="text-base text-grey-700">Wygeneruj polecenie, aby móc je podpisać.</p>
+              <p class="text-base text-grey-700">
+                {gettext("Generate the order to be able to sign it.")}
+              </p>
             </div>
           <% else %>
             <div class="mt-8 min-h-96 rounded-md border border-grey-200 p-8 shadow-sm">
               <div class="flex items-center justify-between gap-4">
-                <h2 class="text-base font-medium text-teal-700">Polecenie wyjazdu służbowego</h2>
+                <h2 class="text-base font-medium text-teal-700">{gettext("Business trip order")}</h2>
                 <p class="text-base text-grey-400">
                   {if Money.equal?(@delegation.advance_amount, Money.new(:PLN, 0)),
-                    do: "Bez zaliczki",
+                    do: gettext("No advance"),
                     else:
-                      "Zaliczka: #{DelegationPresentation.format_money(@delegation.advance_amount)}"}
+                      gettext("Advance: %{amount}",
+                        amount: DelegationPresentation.format_money(@delegation.advance_amount)
+                      )}
                 </p>
               </div>
               <ol class="mt-6 list-decimal space-y-3 pl-5 text-sm">
                 <li>
-                  Pobierz dokument
+                  {gettext("Download the document")}
                   <.link
                     kind="button"
                     variant="outline"
@@ -305,17 +311,17 @@ defmodule FirmowidWeb.Management.Views.Delegation do
                   </.link>
                 </li>
                 <li>
-                  Podpisz dokument
+                  {gettext("Sign the document")}
                   <.link
                     kind="unstyled"
                     external={ElectronicSignature.trusted_profile_url()}
                     target="_blank"
                     class="inline-flex items-center gap-1 font-medium whitespace-nowrap text-teal-700"
                   >
-                    Profilem Zaufanym <Lucideicons.external_link class="size-4" />
+                    {gettext("with a Trusted Profile")} <Lucideicons.external_link class="size-4" />
                   </.link>
                 </li>
-                <li>Wgraj podpisane polecenie wyjazdu służbowego.</li>
+                <li>{gettext("Upload the signed business trip order.")}</li>
               </ol>
               <form
                 id="signed-command-upload"
@@ -330,9 +336,9 @@ defmodule FirmowidWeb.Management.Views.Delegation do
                   phx-drop-target={@uploads.signed_command.ref}
                   class="flex min-h-28 cursor-pointer items-center justify-center rounded-[5px] border border-dashed border-teal-200 px-4 text-center"
                 >
-                  <span class="text-teal-700 sm:hidden">Wybierz plik</span>
-                  <span class="hidden sm:inline">Przeciągnij plik tutaj lub
-                  <span class="text-teal-700">wybierz z komputera</span></span>
+                  <span class="text-teal-700 sm:hidden">{gettext("Choose a file")}</span>
+                  <span class="hidden sm:inline">{gettext("Drag a file here or")}
+                  <span class="text-teal-700">{gettext("choose from your computer")}</span></span>
                 </label>
                 <.file_display
                   :for={entry <- @uploads.signed_command.entries}
@@ -346,7 +352,7 @@ defmodule FirmowidWeb.Management.Views.Delegation do
                   {upload_error(error)}
                 </p>
                 <div class="mt-5 flex gap-3">
-                  <.button type="button" variant="secondary" class="w-[170px]">Odrzuć</.button>
+                  <.button type="button" variant="secondary" class="w-[170px]">{gettext("Reject")}</.button>
                   <.button
                     type="submit"
                     variant="primary"
@@ -354,7 +360,7 @@ defmodule FirmowidWeb.Management.Views.Delegation do
                     disabled={@uploads.signed_command.entries == []}
                     class="w-[170px]"
                   >
-                    Wyślij
+                    {gettext("Send")}
                   </.button>
                 </div>
               </form>
@@ -388,9 +394,9 @@ defmodule FirmowidWeb.Management.Views.Delegation do
       generated_billing_month != billing_month
   end
 
-  defp upload_error(:too_large), do: "Plik jest zbyt duży."
-  defp upload_error(:too_many_files), do: "Możesz dodać tylko jeden plik."
-  defp upload_error(:not_accepted), do: "Wgraj plik PDF."
+  defp upload_error(:too_large), do: gettext("The file is too large.")
+  defp upload_error(:too_many_files), do: gettext("You can add only one file.")
+  defp upload_error(:not_accepted), do: gettext("Upload a PDF file.")
 
   attr :entry, :map, required: true
   attr :upload, :map, required: true
@@ -411,7 +417,7 @@ defmodule FirmowidWeb.Management.Views.Delegation do
         phx-click="cancel-upload"
         phx-value-ref={@entry.ref}
         class="ml-3 flex size-8 shrink-0 items-center justify-center text-teal-500 transition hover:text-teal-700"
-        aria-label="Usuń podpisane polecenie"
+        aria-label={gettext("Remove the signed order")}
       >
         <Lucideicons.x class="size-5" />
       </.button>

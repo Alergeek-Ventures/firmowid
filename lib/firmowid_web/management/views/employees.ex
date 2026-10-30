@@ -15,6 +15,7 @@ defmodule FirmowidWeb.Management.Views.Employees do
   alias Firmowid.Core
   alias Firmowid.Payroll
   alias Firmowid.Timetracker
+  alias FirmowidUI.Components.Inputs
   alias FirmowidWeb.Core.Endpoint
   alias FirmowidWeb.Infrastructure.Utilities.PosthogBusinessEvents
   alias FirmowidWeb.Management.Utilities.Navigation
@@ -35,7 +36,7 @@ defmodule FirmowidWeb.Management.Views.Employees do
 
     socket =
       socket
-      |> assign(:page_title, "Zarządzanie pracownikami")
+      |> assign(:page_title, gettext("Employee management"))
       |> assign(:view, :standard)
       |> assign(:active_months, active_months)
       |> assign(
@@ -226,7 +227,7 @@ defmodule FirmowidWeb.Management.Views.Employees do
          put_flash(
            socket,
            :error,
-           "Nie udało się zaktualizować stawek: #{inspect(error)}"
+           gettext("Could not update the rates: %{error}", error: inspect(error))
          )}
     end
   end
@@ -251,11 +252,12 @@ defmodule FirmowidWeb.Management.Views.Employees do
          {:ok, _member} <- Core.unarchive_member(user.member, scope: scope) do
       {:noreply, assign_employees(socket)}
     else
-      {:error, %Ash.Error.Invalid{errors: [%{message: message} | _]}} when is_binary(message) ->
-        {:noreply, put_flash(socket, :error, message)}
+      {:error, %Ash.Error.Invalid{errors: [%{message: message} = error | _]}}
+      when is_binary(message) ->
+        {:noreply, put_flash(socket, :error, Inputs.translate_error({message, Map.get(error, :vars, [])}))}
 
       _ ->
-        {:noreply, put_flash(socket, :error, "Nie udało się przywrócić pracownika")}
+        {:noreply, put_flash(socket, :error, gettext("Could not restore the employee"))}
     end
   end
 
@@ -263,6 +265,6 @@ defmodule FirmowidWeb.Management.Views.Employees do
     {:noreply,
      socket
      |> push_event("copy-to-clipboard", %{text: number})
-     |> LiveToast.put_toast(:success, "Skopiowano numer konta")}
+     |> LiveToast.put_toast(:success, gettext("Bank account number copied"))}
   end
 end

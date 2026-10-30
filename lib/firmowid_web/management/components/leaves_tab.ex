@@ -64,7 +64,7 @@ defmodule FirmowidWeb.Management.Components.LeavesTab do
         dimmed={@employee.member.archived_at}
       >
         <div class="shrink-0">
-          <.card_header>Wnioski do zatwierdzenia</.card_header>
+          <.card_header>{gettext("Requests awaiting approval")}</.card_header>
         </div>
         <div class="scrollbar-card min-h-0 overflow-y-auto pr-2">
           <ul :if={@pending_requests != []} class="space-y-1">
@@ -77,14 +77,14 @@ defmodule FirmowidWeb.Management.Components.LeavesTab do
             />
           </ul>
           <p :if={@pending_requests == []} class="text-sm text-grey-500">
-            Brak wniosków do zatwierdzenia.
+            {gettext("No requests awaiting approval.")}
           </p>
         </div>
       </.card>
 
       <.card class="relative z-10 flex min-h-0 flex-1 flex-col" dimmed={@employee.member.archived_at}>
         <div class="flex items-center justify-between gap-3">
-          <.card_header>Pozostałe wnioski</.card_header>
+          <.card_header>{gettext("Other requests")}</.card_header>
 
           <div class="flex items-center gap-2">
             <form class="flex gap-4" phx-submit="search" phx-target={@myself}>
@@ -97,7 +97,7 @@ defmodule FirmowidWeb.Management.Components.LeavesTab do
                   type="text"
                   name="szukaj"
                   value={@search}
-                  placeholder="Szukaj wniosku"
+                  placeholder={gettext("Search requests")}
                   phx-change="search"
                   phx-debounce="300"
                   phx-target={@myself}
@@ -134,8 +134,10 @@ defmodule FirmowidWeb.Management.Components.LeavesTab do
 
         <div class="flex gap-3">
           <span class="rounded bg-grey-50 px-3 py-1 text-sm text-grey-500">
-            Wykorzystane w tym roku:
-            <span class="pl-1 font-medium text-grey-700">{@leave_days} dni</span>
+            {pgettext("leave days summary", "Used this year:")}
+            <span class="pl-1 font-medium text-grey-700">
+              {ngettext("%{count} day", "%{count} days", @leave_days)}
+            </span>
           </span>
         </div>
 
@@ -154,7 +156,7 @@ defmodule FirmowidWeb.Management.Components.LeavesTab do
               class="flex size-full items-center justify-center rounded-lg bg-grey-50 text-sm text-grey-700"
             >
               <p>
-                Brak pozostałych wniosków.
+                {gettext("No other requests.")}
               </p>
             </div>
           </div>
@@ -185,7 +187,7 @@ defmodule FirmowidWeb.Management.Components.LeavesTab do
             </div>
           </div>
 
-          <div class="text-base whitespace-pre-line text-black" phx-no-format>{(@selected_request.note != "" && @selected_request.note) || "Brak treści wniosku."}</div>
+          <div class="text-base whitespace-pre-line text-black" phx-no-format>{(@selected_request.note != "" && @selected_request.note) || gettext("The request has no content.")}</div>
 
           <div class="flex items-center justify-between">
             <.link
@@ -208,9 +210,9 @@ defmodule FirmowidWeb.Management.Components.LeavesTab do
                 size="small"
                 phx-click="decline_leave_request"
                 phx-target={@myself}
-                phx-disable-with="Odrzucanie..."
+                phx-disable-with={gettext("Rejecting...")}
               >
-                Odrzuć
+                {gettext("Reject")}
               </.button>
 
               <.button
@@ -220,9 +222,9 @@ defmodule FirmowidWeb.Management.Components.LeavesTab do
                 size="small"
                 phx-click="accept_leave_request"
                 phx-target={@myself}
-                phx-disable-with="Zatwierdzanie..."
+                phx-disable-with={gettext("Approving...")}
               >
-                Zatwierdź
+                {gettext("Approve")}
               </.button>
             </div>
           </div>
@@ -256,7 +258,7 @@ defmodule FirmowidWeb.Management.Components.LeavesTab do
            not_found_error?: false
          ) do
       {:ok, nil} ->
-        LiveToast.send_toast(:error, "Nie znaleziono wniosku.")
+        LiveToast.send_toast(:error, gettext("Request not found."))
         {:noreply, socket}
 
       {:ok, request} ->
@@ -269,7 +271,7 @@ defmodule FirmowidWeb.Management.Components.LeavesTab do
          })}
 
       {:error, _} ->
-        LiveToast.send_toast(:error, "Nie udało się otworzyć wniosku.")
+        LiveToast.send_toast(:error, gettext("Could not open the request."))
         {:noreply, socket}
     end
   end
@@ -280,7 +282,7 @@ defmodule FirmowidWeb.Management.Components.LeavesTab do
 
     case Timetracker.accept_leave_request(id, scope: scope) do
       {:ok, _} ->
-        LiveToast.send_toast(:info, "Wniosek został zatwierdzony.")
+        LiveToast.send_toast(:info, gettext("The request has been approved."))
 
         {:noreply,
          socket
@@ -289,7 +291,7 @@ defmodule FirmowidWeb.Management.Components.LeavesTab do
          |> push_event("js-exec", %{to: "#leave-request-review-modal", attr: "data-cancel"})}
 
       {:error, _} ->
-        LiveToast.send_toast(:error, "Nie udało się zatwierdzić wniosku.")
+        LiveToast.send_toast(:error, gettext("Could not approve the request."))
         {:noreply, socket}
     end
   end
@@ -300,7 +302,7 @@ defmodule FirmowidWeb.Management.Components.LeavesTab do
 
     case Timetracker.decline_leave_request(id, scope: scope) do
       {:ok, _} ->
-        LiveToast.send_toast(:info, "Wniosek został odrzucony.")
+        LiveToast.send_toast(:info, gettext("The request has been rejected."))
 
         {:noreply,
          socket
@@ -309,7 +311,7 @@ defmodule FirmowidWeb.Management.Components.LeavesTab do
          |> push_event("js-exec", %{to: "#leave-request-review-modal", attr: "data-cancel"})}
 
       {:error, _} ->
-        LiveToast.send_toast(:error, "Nie udało się odrzucić wniosku.")
+        LiveToast.send_toast(:error, gettext("Could not reject the request."))
         {:noreply, socket}
     end
   end
@@ -364,7 +366,7 @@ defmodule FirmowidWeb.Management.Components.LeavesTab do
       <span
         :if={@request.blob_id}
         class="flex shrink-0 items-center text-grey-400"
-        title="Załącznik"
+        title={gettext("Attachment")}
       >
         <.icon name="hero-paper-clip" class="size-4" />
       </span>

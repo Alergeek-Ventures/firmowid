@@ -13,15 +13,15 @@ defmodule FirmowidWeb.Timetracker.Utilities.LeavePresentation do
   @spec reason_label(reason(), label_style()) :: String.t()
   def reason_label(reason, style \\ :full)
 
-  def reason_label(:vacation, :short), do: "Wypoczynkowy"
-  def reason_label(:sick, :short), do: "Zdrowotny"
-  def reason_label(:unpaid, :short), do: "Bezpłatny"
-  def reason_label(:vacation, :full), do: "Urlop wypoczynkowy"
-  def reason_label(:sick, :full), do: "Urlop zdrowotny"
-  def reason_label(:unpaid, :full), do: "Urlop bezpłatny"
-  def reason_label(:indisposition, _), do: "Niedyspozycja"
-  def reason_label(:rest, _), do: "Wypoczynek"
-  def reason_label(:other, _), do: "Inne"
+  def reason_label(:vacation, :short), do: pgettext("leave type, short", "Annual")
+  def reason_label(:sick, :short), do: pgettext("leave type, short", "Sick")
+  def reason_label(:unpaid, :short), do: pgettext("leave type, short", "Unpaid")
+  def reason_label(:vacation, :full), do: pgettext("leave type", "Annual leave")
+  def reason_label(:sick, :full), do: pgettext("leave type", "Sick leave")
+  def reason_label(:unpaid, :full), do: pgettext("leave type", "Unpaid leave")
+  def reason_label(:indisposition, _), do: pgettext("leave type", "Indisposition")
+  def reason_label(:rest, _), do: pgettext("leave type", "Rest")
+  def reason_label(:other, _), do: pgettext("leave type", "Other")
 
   @spec reason_icon(reason()) :: String.t()
   def reason_icon(:vacation), do: "hero-sun"
@@ -33,8 +33,8 @@ defmodule FirmowidWeb.Timetracker.Utilities.LeavePresentation do
 
   @spec status_label(status()) :: String.t()
   def status_label(:pending), do: gettext("Pending")
-  def status_label(:accepted), do: "zatwierdzony"
-  def status_label(:declined), do: "odrzucony"
+  def status_label(:accepted), do: pgettext("leave request status", "approved")
+  def status_label(:declined), do: pgettext("leave request status", "rejected")
 
   @spec status_badge_styles(status()) :: String.t()
   def status_badge_styles(:pending), do: "bg-teal-100 text-teal-700"

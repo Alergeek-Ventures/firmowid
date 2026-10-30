@@ -20,7 +20,7 @@
             type="text"
             name="szukaj"
             value={@search}
-            placeholder="Szukaj pracownika"
+            placeholder={gettext("Search employees")}
             phx-change="search"
             phx-debounce="300"
             input_class="py-0 px-1 bg-transparent! border-none"
@@ -49,13 +49,13 @@
           redirect={TimetrackerNavigation.salaries_csv_path(@selected_date)}
           class="max-md:hidden"
         >
-          <Lucideicons.file_text /> Raport wypłat
+          <Lucideicons.file_text /> {gettext("Payroll report")}
         </.link>
         <.page_actions>
           <:action>
             <.link navigate={~p"/zaproszenia"} kind="button" variant="special" data-fab>
               <.icon name="hero-plus-mini" class="size-6" />
-              <span class="max-md:sr-only">Dodaj pracownika</span>
+              <span class="max-md:sr-only">{gettext("Add employee")}</span>
             </.link>
           </:action>
         </.page_actions>
@@ -65,18 +65,18 @@
     <div class="flex items-center gap-4">
       <.filter_tabs label={gettext("Employee scope")}>
         <:tab patch={Navigation.employees_path(:index, @params)} active={@live_action == :index}>
-          Aktywni
+          {pgettext("people list tab", "Active")}
         </:tab>
         <:tab
           patch={Navigation.employees_path(:archive, @params)}
           active={@live_action == :archive}
         >
-          Zarchiwizowani
+          {pgettext("people list tab", "Archived")}
         </:tab>
       </.filter_tabs>
       <.switch
         class="ml-auto flex-row-reverse gap-4 max-md:hidden"
-        label="Widok wypłat"
+        label={gettext("Payroll view")}
         field={@form[:viewing_wages]}
         phx-click="toggle_wages_view"
       />
@@ -114,11 +114,11 @@
       data-classes="border-b-4 border-solid border-grey-700/40 pt-3"
       data-scroll-offset="90"
     >
-      <p>Pracownik</p>
+      <p>{gettext("Employee")}</p>
       <p class="text-end text-nowrap">{gettext("Hours")}</p>
 
       <%= if @live_action == :archive do %>
-        <p class="text-right text-nowrap">Data archiwizacji</p>
+        <p class="text-right text-nowrap">{gettext("Archived on")}</p>
       <% end %>
 
       <%= if @view in [:wages, :wage_editor] do %>
@@ -132,10 +132,11 @@
                 size="small"
                 class="justify-self-end"
               >
-                Stawka <.icon name="hero-pencil-square-solid" class="size-4" />
+                {pgettext("hourly rate", "Rate")}
+                <.icon name="hero-pencil-square-solid" class="size-4" />
               </.button>
             <% else %>
-              <p class="text-right text-nowrap">Stawka</p>
+              <p class="text-right text-nowrap">{pgettext("hourly rate", "Rate")}</p>
             <% end %>
           <% :wage_editor -> %>
             <div class="flex gap-2 justify-self-end">
@@ -160,7 +161,7 @@
                 class="w-22 text-caps-sm/tight font-medium uppercase"
                 type="submit"
               >
-                Zapisz
+                {gettext("Save")}
               </.button>
             </div>
         <% end %>
@@ -180,13 +181,13 @@
     <%= if Enum.empty?(@employees) do %>
       <div class="col-span-full py-10 text-center text-grey-700">
         <%= if @search != "" do %>
-          Brak wyników. Spróbuj zmienić kryteria wyszukiwania.
+          {gettext("No results. Try changing the search criteria.")}
         <% else %>
           <%= case @live_action do %>
             <% :index -> %>
-              Brak aktywnych pracowników do wyświetlenia.
+              {gettext("There are no active employees to show.")}
             <% :archive -> %>
-              Brak zarchiwizowanych pracowników do wyświetlenia.
+              {gettext("There are no archived employees to show.")}
           <% end %>
         <% end %>
       </div>
@@ -221,7 +222,7 @@
               <.avatar_image
                 :if={Map.get(employee.user.member.avatar_blob || %{}, :url)}
                 src={Map.get(employee.user.member.avatar_blob || %{}, :url)}
-                alt="Avatar"
+                alt={gettext("Avatar")}
               />
               <.avatar_fallback class="bg-teal-200 text-teal-800">
                 {to_string(employee.user.member.name || employee.user.email || "")
@@ -268,7 +269,7 @@
             <%= case @view do %>
               <% :wages -> %>
                 <p class="mx-2 text-right">
-                  {Decimal.round(employee.hourly_rate || 0)} zł/godz.
+                  {Decimal.round(employee.hourly_rate || 0)} {gettext("PLN/h")}
                 </p>
               <% :wage_editor -> %>
                 <div class="mx-2 flex items-center gap-1 justify-self-end">
@@ -281,7 +282,7 @@
                     name={"employee[#{employee.user.id}][wage]"}
                     value={Decimal.round(employee.hourly_rate || 0)}
                   />
-                  <p>zł/godz.</p>
+                  <p>{gettext("PLN/h")}</p>
                 </div>
             <% end %>
 
@@ -308,7 +309,7 @@
               phx-click="unarchive_employee"
               phx-value-id={employee.user.id}
             >
-              Przywróć
+              {gettext("Restore")}
             </.button>
             <%= if @can_export_csv do %>
               <.link

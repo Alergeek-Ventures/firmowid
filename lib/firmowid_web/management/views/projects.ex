@@ -24,7 +24,7 @@ defmodule FirmowidWeb.Management.Views.Projects do
 
     socket =
       socket
-      |> assign(:page_title, "Zarządzanie projektami")
+      |> assign(:page_title, gettext("Project management"))
       |> assign(:zero_state?, Enum.empty?(all_projects))
       |> assign(:active_months, active_months)
 
@@ -64,7 +64,7 @@ defmodule FirmowidWeb.Management.Views.Projects do
       {:noreply, assign_projects(socket)}
     else
       _ ->
-        {:noreply, put_flash(socket, :error, "Nie udało się przywrócić projektu")}
+        {:noreply, put_flash(socket, :error, gettext("Could not restore the project"))}
     end
   end
 

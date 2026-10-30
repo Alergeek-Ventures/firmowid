@@ -15,7 +15,7 @@
             :if={@project.archived_at}
             class="inline-flex items-center gap-2 rounded-full bg-grey-200 px-4 py-1 text-sm/snug font-normal text-grey-700"
           >
-            <Lucideicons.archive class="size-4" /> zarchiwizowany
+            <Lucideicons.archive class="size-4" /> {gettext("archived")}
           </span>
         </p>
       </div>
@@ -25,14 +25,14 @@
         class="flex flex-row gap-4 max-md:w-full max-md:flex-wrap max-md:gap-3"
       >
         <.button variant="outline" type="button" phx-click="archive_project">
-          Archiwizuj
+          {pgettext("archive action", "Archive")}
         </.button>
         <.link
           navigate={~p"/zarzadzanie/projekty/#{@project.id}/edycja"}
           kind="button"
           variant="outline"
         >
-          <Lucideicons.square_pen /> Edytuj
+          <Lucideicons.square_pen /> {gettext("Edit")}
         </.link>
 
         <.month_picker
@@ -52,9 +52,10 @@
       <Lucideicons.info class="size-4 shrink-0" />
 
       <p class="text-sm/snug text-balance max-md:basis-[calc(100%-2rem)]">
-        Projekt został zarchiwizowany {Firmowid.Cldr.Date.to_string!(@project.archived_at,
-          format: :long
-        )}. Dane są dostępne tylko do odczytu. Aby edytować projekt lub rejestrować czas, przywróć go do aktywnych.
+        {gettext(
+          "The project was archived on %{date}. The data is read-only. To edit the project or log time, restore it to active projects.",
+          date: Firmowid.Cldr.Date.to_string!(@project.archived_at, format: :long)
+        )}
       </p>
 
       <.button
@@ -64,7 +65,7 @@
         type="button"
         phx-click="unarchive_project"
       >
-        Przywróć projekt
+        {gettext("Restore project")}
       </.button>
       <.button
         :if={@can_delete_project}
@@ -73,14 +74,14 @@
         type="button"
         phx-click={show_modal("delete_project_modal")}
       >
-        Usuń projekt
+        {gettext("Delete project")}
       </.button>
     </div>
 
     <div class="flex flex-col gap-8">
       <div class="grid grid-cols-4 gap-4 max-md:grid-cols-2 max-md:gap-3">
         <div class="rounded-sm bg-white p-4">
-          <p class="mb-6 leading-snug text-grey-500">Przepracowane godziny</p>
+          <p class="mb-6 leading-snug text-grey-500">{gettext("Hours worked")}</p>
           <p class="mb-1 text-lg/tight font-medium text-black">
             {format_hours(@total_time_worked)}
           </p>
@@ -88,7 +89,7 @@
           <%= cond do %>
             <% @project.archived_at -> %>
               <p class="text-sm/snug text-grey-500">
-                Stan końcowy
+                {gettext("Final state")}
               </p>
             <% @cost_delta -> %>
               <p class={[
@@ -106,7 +107,7 @@
         </div>
 
         <div class="rounded-sm bg-white p-4">
-          <p class="mb-6 leading-snug text-grey-500">Koszty pracowników</p>
+          <p class="mb-6 leading-snug text-grey-500">{gettext("Employee costs")}</p>
           <p class="mb-1 text-lg/tight font-medium text-black">
             <%= if @total_cost do %>
               {:PLN
@@ -120,7 +121,7 @@
           <%= cond do %>
             <% @project.archived_at -> %>
               <p class="text-sm/snug text-grey-500">
-                Stan końcowy
+                {gettext("Final state")}
               </p>
             <% @cost_delta -> %>
               <p class={[
@@ -140,7 +141,7 @@
       <div class="space-y-4 rounded-sm bg-white p-4">
         <div class="flex flex-row items-center justify-between">
           <p class="text-lg/tight">
-            Pracownicy
+            {gettext("Employees")}
           </p>
 
           <.button
@@ -155,10 +156,10 @@
             }
           >
             <span data-download-idle class="inline-flex items-center gap-1.5">
-              <Lucideicons.cloud_download /> Pobierz raport
+              <Lucideicons.cloud_download /> {gettext("Download report")}
             </span>
             <span data-download-loading class="hidden items-center gap-1.5">
-              <Lucideicons.loader_circle class="size-4 animate-spin" /> Pobieranie…
+              <Lucideicons.loader_circle class="size-4 animate-spin" /> {gettext("Downloading…")}
             </span>
           </.button>
         </div>
@@ -166,11 +167,11 @@
         <%= if not Enum.empty?(@project.members) do %>
           <div class="grid grid-cols-[1fr_repeat(3,minmax(min-content,6rem))_min-content] items-center gap-x-4 gap-y-2 max-md:grid-cols-[minmax(0,1fr)_repeat(2,max-content)_min-content] max-md:gap-x-3">
             <div class="col-span-full grid grid-cols-subgrid px-2 py-1 text-sm text-grey-500">
-              <p>Imię i nazwisko</p>
-              <p class="text-right max-md:hidden">Stawka</p>
+              <p>{gettext("Full name")}</p>
+              <p class="text-right max-md:hidden">{pgettext("hourly rate", "Rate")}</p>
 
-              <p class="text-right">Godziny</p>
-              <p class="text-right">Koszt</p>
+              <p class="text-right">{gettext("Hours")}</p>
+              <p class="text-right">{gettext("Cost")}</p>
               <div></div>
             </div>
 
@@ -184,7 +185,7 @@
                     <.avatar_image
                       :if={Map.get(user.member.avatar_blob || %{}, :url)}
                       src={Map.get(user.member.avatar_blob || %{}, :url)}
-                      alt="Avatar"
+                      alt={gettext("Avatar")}
                     />
                     <.avatar_fallback class="bg-teal-200 text-teal-800">
                       {to_string(user.member.name || user.email || "")
@@ -199,9 +200,12 @@
 
                 <p class="text-right text-grey-500 max-md:hidden">
                   <%= if user.hourly_rate do %>
-                    {:PLN
-                    |> Money.new(user.hourly_rate)
-                    |> Money.to_string!(fractional_digits: 0)}/godz.
+                    {gettext("%{amount}/h",
+                      amount:
+                        :PLN
+                        |> Money.new(user.hourly_rate)
+                        |> Money.to_string!(fractional_digits: 0)
+                    )}
                   <% else %>
                     —
                   <% end %>
@@ -259,7 +263,7 @@
 
             <div class="col-span-full grid grid-cols-subgrid items-center p-2 leading-snug">
               <p class="text-sm text-grey-500">
-                Suma
+                {pgettext("project members table", "Total")}
               </p>
 
               <div class="max-md:hidden" />
@@ -283,7 +287,8 @@
         <% else %>
           <div class="flex flex-col items-center justify-center gap-4 py-8">
             <p class="text-center text-sm text-grey-700">
-              Żaden pracownik nie jest przypisany do projektu. <br />Dodaj członków zespołu.
+              {gettext("No employee is assigned to the project.")}
+              <br />{gettext("Add team members.")}
             </p>
             <.link
               navigate={~p"/zarzadzanie/projekty/#{@project.id}/edycja"}
@@ -291,7 +296,7 @@
               size="small"
               variant="tertiary"
             >
-              Dodaj pracowników
+              {gettext("Add employees")}
             </.link>
           </div>
         <% end %>
@@ -303,10 +308,12 @@
 <.modal :if={@can_delete_project} id="delete_project_modal">
   <div class="space-y-6">
     <h3 class="text-lg font-medium">
-      Czy na pewno chcesz usunąć projekt <b>{@project.name}</b>?
+      <.delete_project_prompt name={@project.name} />
     </h3>
     <p class="text-sm text-grey-700">
-      Ta operacja jest nieodwracalna. Wszystkie dane związane z tym projektem zostaną trwale usunięte.
+      {gettext(
+        "This operation is irreversible. All data related to this project will be permanently deleted."
+      )}
     </p>
     <div class="flex justify-end gap-4">
       <.button
@@ -314,15 +321,15 @@
         variant="outline"
         phx-click={hide_modal("delete_project_modal")}
       >
-        Anuluj
+        {gettext("Cancel")}
       </.button>
       <.button
         type="button"
         variant="destructive"
         phx-click="delete_project"
-        phx-disable-with="Usuwam..."
+        phx-disable-with={gettext("Deleting...")}
       >
-        Usuń projekt
+        {gettext("Delete project")}
       </.button>
     </div>
   </div>
