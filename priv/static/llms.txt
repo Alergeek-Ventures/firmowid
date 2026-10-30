@@ -1,0 +1,22 @@
+# Firmowid
+
+> Darmowe faktury KSeF, synchronizacja banku, czas pracy, urlopy i delegacje w jednym miejscu.
+
+Firmowid to aplikacja webowa dla firm, prowadzona przez Alergeek Ventures sp. z o.o.
+
+## Strony
+
+- [Strona główna](https://firmowid.pl/): przegląd funkcji, asystent AI i najczęstsze pytania
+- [Funkcje](https://firmowid.pl/funkcje): faktury, parowanie transakcji, czas pracy, urlopy i delegacje w jednym miejscu
+- [Cennik](https://firmowid.pl/cennik): plany Darmowy, Przedsiębiorca i Firma, rozliczenie miesięczne lub roczne
+- [FAQ](https://firmowid.pl/faq): odpowiedzi na pytania o KSeF, integracje bankowe, bezpieczeństwo danych, migrację i plany
+
+## Asystent AI
+
+- [MCP Server Card](https://firmowid.pl/mcp/server-card): opis serwera MCP pod https://firmowid.pl/mcp, wymagającego logowania OAuth do konta Firmowid
+
+## Optional
+
+- [Regulamin](https://firmowid.pl/regulamin): zasady korzystania z usługi
+- [Polityka prywatności](https://firmowid.pl/polityka-prywatnosci): przetwarzanie danych, cookies i prawa użytkowników
+- [Kod źródłowy](https://github.com/Alergeek-Ventures/firmowid): repozytorium na GitHubie

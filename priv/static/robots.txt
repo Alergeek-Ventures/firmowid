@@ -1,4 +1,11 @@
+# AI model training crawlers. Search and user-initiated fetchers stay allowed.
+User-agent: GPTBot
+User-agent: ClaudeBot
+User-agent: Applebot-Extended
+Disallow: /
+
 User-agent: *
+Content-Signal: ai-train=no, search=yes, ai-input=yes
 Allow: /
 
 Sitemap: https://firmowid.pl/sitemap.xml

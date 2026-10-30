@@ -17,6 +17,7 @@ defmodule FirmowidMcp.Router do
   def init(opts) do
     opts
     |> Keyword.put(:otp_app, :firmowid)
+    |> Keyword.put(:mcp_name, "Firmowid")
     |> Keyword.put(:instructions, FirmowidMcp.instructions())
     |> Keyword.put(:tool_argument_transformer, &Privacy.validate_arguments/3)
     |> Transport.init()
