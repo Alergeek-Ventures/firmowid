@@ -6194,6 +6194,16 @@ msgstr ""
 msgid "The cost assumption for the reserve has not been accepted."
 msgstr ""
 
+#: lib/firmowid/invoicing/sales_invoice/email_recipient_eligibility.ex
+#, elixir-autogen, elixir-format
+msgid "The counterparty assigned to the invoice has an invalid email address."
+msgstr ""
+
+#: lib/firmowid/invoicing/sales_invoice/email_recipient_eligibility.ex
+#, elixir-autogen, elixir-format
+msgid "The counterparty assigned to the invoice has no email address."
+msgstr ""
+
 #: lib/firmowid_web/invoicing/sales_invoices/views/creator.ex
 #, elixir-autogen, elixir-format
 msgid "The counterparty details need completing — correct the form."
@@ -6305,6 +6315,11 @@ msgstr ""
 #: lib/firmowid_web/invoicing/sales_invoices/views/show.ex
 #, elixir-autogen, elixir-format
 msgid "The invoice has been deleted."
+msgstr ""
+
+#: lib/firmowid/invoicing/sales_invoice/email_recipient_eligibility.ex
+#, elixir-autogen, elixir-format
+msgid "The invoice has no counterparty assigned."
 msgstr ""
 
 #: lib/firmowid_mcp/invoicing/views/issue.ex

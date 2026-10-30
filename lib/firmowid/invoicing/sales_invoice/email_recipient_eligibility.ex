@@ -3,12 +3,14 @@ defmodule Firmowid.Invoicing.SalesInvoice.EmailRecipientEligibility do
   Checks if counterparty connected to SalesInvoice has valid email for invoice email delivery.
   """
 
+  use Gettext, backend: Firmowid.Gettext
+
   alias Firmowid.Invoicing.Counterparty
   alias Firmowid.Scope
 
-  @no_counterparty "Faktura nie ma przypisanego kontrahenta."
-  @no_counterparty_email "Kontrahent przypisany do faktury nie posiada wprowadzonego adresu email."
-  @invalid_counterparty_email "Kontrahent przypisany do faktury posiada niepoprawny adres email."
+  @no_counterparty gettext_noop("The invoice has no counterparty assigned.")
+  @no_counterparty_email gettext_noop("The counterparty assigned to the invoice has no email address.")
+  @invalid_counterparty_email gettext_noop("The counterparty assigned to the invoice has an invalid email address.")
   @email_regex ~r/^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
   @type result :: {:ok, String.t()} | {:error, String.t(), String.t() | nil}
