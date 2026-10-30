@@ -53,17 +53,18 @@ defmodule FirmowidWeb.Landing.Views.Index do
     <div
       id="top"
       data-landing-page="true"
-      class="min-h-screen bg-grey-100 text-[#0f0f0f] [--landing-accent:#8b3f13] [--landing-beige:#f0eae6] [--landing-line:#e6d7ce] [--landing-nav-height:--spacing(16)] motion-reduce:**:animate-none! motion-reduce:**:transition-none! lg:[--landing-nav-height:--spacing(24)] motion-reduce:[&_*::after]:animate-none! motion-reduce:[&_*::after]:transition-none! motion-reduce:[&_*::before]:animate-none! motion-reduce:[&_*::before]:transition-none! [&_a:focus-visible]:outline-2 [&_a:focus-visible]:outline-offset-4 [&_a:focus-visible]:outline-rust-600 [&_button:focus-visible]:outline-2 [&_button:focus-visible]:outline-offset-4 [&_button:focus-visible]:outline-rust-600 **:[[id]]:scroll-mt-[calc(var(--landing-nav-height)+var(--spacing)*6)]"
+      data-landing-dark-surface={if @live_action == :open_source, do: true}
+      class={[
+        "min-h-screen text-[#0f0f0f] [--landing-accent:#8b3f13] [--landing-beige:#f0eae6] [--landing-line:#e6d7ce] [--landing-nav-height:--spacing(16)] motion-reduce:**:animate-none! motion-reduce:**:transition-none! lg:[--landing-nav-height:--spacing(24)] motion-reduce:[&_*::after]:animate-none! motion-reduce:[&_*::after]:transition-none! motion-reduce:[&_*::before]:animate-none! motion-reduce:[&_*::before]:transition-none! [&_a:focus-visible]:outline-2 [&_a:focus-visible]:outline-offset-4 [&_a:focus-visible]:outline-rust-600 [&_button:focus-visible]:outline-2 [&_button:focus-visible]:outline-offset-4 [&_button:focus-visible]:outline-rust-600 **:[[id]]:scroll-mt-[calc(var(--landing-nav-height)+var(--spacing)*6)]",
+        if(@live_action == :open_source, do: "bg-[#0f0f0f]", else: "bg-grey-100")
+      ]}
     >
       <.landing_navbar />
 
       <main>
         <h1
-          :if={@live_action != :home}
-          class={[
-            "mx-auto w-[calc(100%-var(--spacing)*8)] max-w-284.75 pt-18 text-3xl leading-[1.1] font-bold tracking-[-0.03em]",
-            @live_action == :open_source && "pb-12"
-          ]}
+          :if={@live_action in [:pricing, :features]}
+          class="mx-auto w-[calc(100%-var(--spacing)*8)] max-w-284.75 pt-18 text-3xl leading-[1.1] font-bold tracking-[-0.03em]"
         >
           {@page_title}
         </h1>
@@ -75,12 +76,16 @@ defmodule FirmowidWeb.Landing.Views.Index do
         <.proof_section :if={@live_action == :home} />
         <.how_it_works_section :if={@live_action == :home} />
         <.pricing_section :if={@live_action in [:home, :pricing]} billing_period={@billing_period} />
-        <.open_source_section :if={@live_action in [:home, :open_source]} />
+        <.open_source_section
+          :if={@live_action in [:home, :open_source]}
+          standalone?={@live_action == :open_source}
+        />
         <.team_section :if={@live_action == :home} />
         <.faq_section
           :if={@live_action in [:home, :faq]}
           open_faq={@open_faq}
           structured_data?={@live_action == :faq}
+          standalone?={@live_action == :faq}
         />
       </main>
 

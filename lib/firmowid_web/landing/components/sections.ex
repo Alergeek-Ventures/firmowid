@@ -1063,6 +1063,8 @@ defmodule FirmowidWeb.Landing.Components.Sections do
   Renders the self-hosting and open-source band.
   """
   @spec open_source_section(map()) :: Rendered.t()
+  attr :standalone?, :boolean, default: false
+
   def open_source_section(assigns) do
     assigns = assign(assigns, :repository, @repository)
 
@@ -1077,9 +1079,12 @@ defmodule FirmowidWeb.Landing.Components.Sections do
           <p class="mb-4 text-xs font-bold tracking-[0.08em] text-rust-500 uppercase lg:mb-4.5">
             {gettext("Open source")}
           </p>
-          <h2 class="text-[32px] leading-[1.1] font-bold tracking-[-0.03em] max-lg:mt-10 lg:text-[48px] lg:leading-[54px] lg:tracking-normal">
+          <.dynamic_tag
+            tag_name={if @standalone?, do: "h1", else: "h2"}
+            class="text-[32px] leading-[1.1] font-bold tracking-[-0.03em] max-lg:mt-10 lg:text-[48px] lg:leading-[54px] lg:tracking-normal"
+          >
             <span class="whitespace-pre-line">{gettext("Your data on your server.")}</span>
-          </h2>
+          </.dynamic_tag>
           <p class="mt-6 text-h5/6.75 text-grey-300 lg:mt-5">
             {gettext("Firmowid is open source. Host it yourself, without limits or fees.")}
           </p>
