@@ -10,6 +10,10 @@ defmodule FirmowidMcp.LiveSession do
   @doc "Establishes the widget scope and runs its initial load within the session lifetime."
   @spec mount(map(), Socket.t(), module(), keyword()) :: {:ok, Socket.t()}
   def mount(session, socket, widget, callbacks) do
+    # Also before authorization, so an expired view uses the widget's language.
+    # Tool results signed before the widget language existed have no "mcp_locale".
+    if locale = session["mcp_locale"], do: Gettext.put_locale(Firmowid.Gettext, locale)
+
     socket =
       socket
       |> assign(connected?: connected?(socket), status: :ready, scope: nil)
