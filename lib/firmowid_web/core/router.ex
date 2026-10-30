@@ -20,6 +20,7 @@ defmodule FirmowidWeb.Core.Router do
   alias FirmowidWeb.Infrastructure.Hooks.RequireSuperuser
   alias FirmowidWeb.Infrastructure.Hooks.RequireUser
   alias FirmowidWeb.Infrastructure.Hooks.Timezone
+  alias Infrastructure.Controllers.AgentDiscovery
   alias Invoicing.CostInvoices.Controllers.Pdf, as: CostInvoicePdf
   alias Invoicing.SalesInvoices.Controllers.Pdf
   alias Invoicing.SalesInvoices.Controllers.Shared
@@ -96,8 +97,20 @@ defmodule FirmowidWeb.Core.Router do
     get "/health", Infrastructure.Controllers.Health, :check
   end
 
+  pipeline :agent_discovery_links do
+    plug :put_agent_discovery_links
+  end
+
   scope "/", FirmowidWeb do
     get "/.well-known/openai-apps-challenge", Infrastructure.Controllers.OpenaiChallenge, :show
+    get "/.well-known/ai-catalog.json", AgentDiscovery, :ai_catalog
+    get "/.well-known/api-catalog", AgentDiscovery, :api_catalog
+    # Pre-final SEP-2127 location, still probed by isitagentready.com.
+    get "/.well-known/mcp/server-card.json", AgentDiscovery, :server_card
+    options "/.well-known/mcp/server-card.json", AgentDiscovery, :preflight
+    # Must precede the bearer-protected `/mcp` forward below.
+    get "/mcp/server-card", AgentDiscovery, :server_card
+    options "/mcp/server-card", AgentDiscovery, :preflight
   end
 
   ## Authentication routes (Ash Authentication)
@@ -392,7 +405,7 @@ defmodule FirmowidWeb.Core.Router do
   end
 
   scope "/", FirmowidWeb do
-    pipe_through [:browser]
+    pipe_through [:browser, :agent_discovery_links]
 
     get "/index.html", Infrastructure.Controllers.LegacyIndex, :index
     get "/sitemap.xml", Infrastructure.Controllers.Sitemap, :index
@@ -414,4 +427,7 @@ defmodule FirmowidWeb.Core.Router do
       live "/regulamin", Landing.Views.TermsOfService
     end
   end
+
+  defp put_agent_discovery_links(conn, _opts),
+    do: put_resp_header(conn, "link", FirmowidWeb.Infrastructure.Controllers.AgentDiscovery.link_header())
 end
