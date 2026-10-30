@@ -45,9 +45,23 @@ defmodule FirmowidWeb.Admin.Components.SettlementComponents do
         >
           ← Wróć do listy organizacji
         </.link>
-        <span class={status_chip_styles(@status)}>
-          {status_chip_label(@status)}
-        </span>
+        <div class="flex flex-wrap items-center justify-end gap-3">
+          <%!-- A blocked owner (see the User `:access_block` calculation) cannot be signed in. --%>
+          <.form
+            :if={@selected_org.billing_plan != :no_plan}
+            for={%{}}
+            id="impersonation-form"
+            action={Navigation.impersonation_path(@selected_org.id)}
+            method="post"
+          >
+            <FirmowidUI.Components.Button.button type="submit" variant="outline" size="small">
+              {gettext("Sign in as owner")}
+            </FirmowidUI.Components.Button.button>
+          </.form>
+          <span class={status_chip_styles(@status)}>
+            {status_chip_label(@status)}
+          </span>
+        </div>
       </div>
       <div class="mt-4 space-y-1">
         <h2 class="text-xl/tight font-medium text-grey-900">{@selected_org.name}</h2>
@@ -139,7 +153,7 @@ defmodule FirmowidWeb.Admin.Components.SettlementComponents do
           </span>
         </div>
       </div>
-      <p class="mt-3 text-sm/snug text-grey-700">Ostatnie logowanie: niedostępne.</p>
+      <p class="mt-3 text-sm/snug text-grey-700">{last_sign_in_text(@activity.last_sign_in)}</p>
     </section>
     """
   end
@@ -150,6 +164,15 @@ defmodule FirmowidWeb.Admin.Components.SettlementComponents do
       {"Ręczny import faktury kosztowej (bez KSeF)", activity.costs},
       {"Rozpoczęcie sesji czasu pracy", activity.sessions}
     ]
+  end
+
+  defp last_sign_in_text(nil), do: gettext("Last sign-in: none recorded.")
+
+  defp last_sign_in_text(user) do
+    gettext("Last sign-in: %{datetime} · %{user}",
+      datetime: format_activity_datetime(user.last_signed_in_at),
+      user: owner_display_name(user)
+    )
   end
 
   defp format_activity_datetime(nil), do: "brak"

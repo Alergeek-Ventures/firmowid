@@ -10,9 +10,9 @@ defmodule FirmowidWeb.Infrastructure.Utilities.PosthogBusinessEvents do
   def capture(socket, event, properties \\ %{})
 
   def capture(socket, event, properties) when is_struct(socket, Socket) and is_atom(event) and is_map(properties) do
-    with %{id: user_id} when not is_nil(user_id) <- socket.assigns[:current_user],
+    with %{id: user_id} = user when not is_nil(user_id) <- socket.assigns[:current_user],
          %{id: organization_id} when not is_nil(organization_id) <- socket.assigns[:current_org] do
-      Analytics.capture_business_event(event, user_id, organization_id, properties)
+      Analytics.capture_business_event(event, user, organization_id, properties)
     end
 
     socket

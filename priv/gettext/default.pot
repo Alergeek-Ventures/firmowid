@@ -2629,6 +2629,16 @@ msgstr ""
 msgid "Language"
 msgstr ""
 
+#: lib/firmowid_web/admin/components/settlement_components.ex
+#, elixir-autogen, elixir-format
+msgid "Last sign-in: %{datetime} · %{user}"
+msgstr ""
+
+#: lib/firmowid_web/admin/components/settlement_components.ex
+#, elixir-autogen, elixir-format
+msgid "Last sign-in: none recorded."
+msgstr ""
+
 #: lib/firmowid_web/landing/views/privacy_policy.ex
 #: lib/firmowid_web/landing/views/terms_of_service.ex
 #, elixir-autogen, elixir-format
@@ -3789,6 +3799,11 @@ msgstr ""
 msgid "Return to Poland"
 msgstr ""
 
+#: lib/firmowid_web/infrastructure/layouts.ex
+#, elixir-autogen, elixir-format
+msgid "Return to your account"
+msgstr ""
+
 #: lib/firmowid_web/landing/components/pricing.ex
 #, elixir-autogen, elixir-format
 msgid "Reverse charge for EU customers (automatic)"
@@ -4111,6 +4126,11 @@ msgstr ""
 #: lib/firmowid_web/hours_record/components/upload_form.ex
 #, elixir-autogen, elixir-format
 msgid "Sign hours record"
+msgstr ""
+
+#: lib/firmowid_web/admin/components/settlement_components.ex
+#, elixir-autogen, elixir-format
+msgid "Sign in as owner"
 msgstr ""
 
 #: lib/firmowid_web/auth/views/registration.ex
@@ -5274,6 +5294,11 @@ msgstr ""
 #: lib/firmowid_web/management/components/employee_tax_details.ex
 #, elixir-autogen, elixir-format
 msgid "You are correcting an earlier declaration. Its date stays the same."
+msgstr ""
+
+#: lib/firmowid_web/infrastructure/layouts.ex
+#, elixir-autogen, elixir-format
+msgid "You are using the app as %{email}. Analytics are not recorded."
 msgstr ""
 
 #: lib/firmowid_web/landing/components/sections.ex

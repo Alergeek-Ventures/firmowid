@@ -290,15 +290,9 @@ defmodule FirmowidWeb.Admin.Views.Organizations do
     %{search: search, billing_plan: plan_filter}
     |> Core.query_to_list_organizations()
     |> Ash.Query.load([:on_trial?])
-    |> sort_organizations(search)
+    |> Ash.Query.sort(inserted_at: :desc, id: :desc)
     |> Ash.read!(actor: current_user, page: page_opts)
   end
-
-  defp sort_organizations(query, search) when search in [nil, ""] do
-    Ash.Query.sort(query, name: :asc, id: :asc)
-  end
-
-  defp sort_organizations(query, _search), do: query
 
   defp filter_over_limit(rows, false), do: rows
   defp filter_over_limit(rows, true), do: Enum.filter(rows, & &1.over_limit?)

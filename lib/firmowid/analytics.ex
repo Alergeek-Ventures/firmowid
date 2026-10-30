@@ -8,6 +8,9 @@ defmodule Firmowid.Analytics do
   use cookies.
   """
 
+  alias Firmowid.Core
+  alias Firmowid.Core.User
+
   @event_names %{
     invoice_created: "invoice_created",
     sales_invoice_creator_opened: "sales_invoice_creator_opened",
@@ -22,10 +25,14 @@ defmodule Firmowid.Analytics do
     counterparty_updated: "counterparty_updated"
   }
 
-  @doc "Synchronizes the current account email to its PostHog person profile, independently of browser consent."
+  @doc """
+  Synchronizes the current account email to its PostHog person profile, independently of browser consent.
+
+  A superuser's session as the account (see `Firmowid.Core.impersonator_id/1`) is not synchronized.
+  """
   @spec identify_user(map() | nil) :: :ok
-  def identify_user(%{id: user_id, email: email}) when not is_nil(user_id) and not is_nil(email) do
-    if Application.get_env(:posthog, :enable, false) and enabled?() do
+  def identify_user(%{id: user_id, email: email} = user) when not is_nil(user_id) and not is_nil(email) do
+    if Application.get_env(:posthog, :enable, false) and enabled?() and not impersonated?(user) do
       # This SDK has no identify helper; its capture API supports PostHog's
       # $identify/$set protocol without changing the business-event allowlist.
       PostHog.bare_capture("$identify", to_string(user_id), %{
@@ -42,14 +49,20 @@ defmodule Firmowid.Analytics do
 
   def identify_user(_user), do: :ok
 
-  @doc "Captures an allowlisted organization-scoped event, ignoring invalid inputs or telemetry failures."
-  @spec capture_business_event(atom(), term(), term(), map()) :: :ok
-  def capture_business_event(event, user_id, organization_id, properties \\ %{})
+  @doc """
+  Captures an allowlisted organization-scoped event of the acting user, ignoring invalid
+  inputs or telemetry failures.
 
-  def capture_business_event(event, user_id, organization_id, properties)
-      when is_atom(event) and not is_nil(user_id) and not is_nil(organization_id) and is_map(properties) do
+  Nothing is captured in a superuser's session as the user (see `Firmowid.Core.impersonator_id/1`).
+  """
+  @spec capture_business_event(atom(), term(), term(), map()) :: :ok
+  def capture_business_event(event, actor, organization_id, properties \\ %{})
+
+  def capture_business_event(event, %User{id: user_id} = actor, organization_id, properties)
+      when is_atom(event) and not is_nil(organization_id) and is_map(properties) do
     with {:ok, event_name} <- Map.fetch(@event_names, event),
          {:ok, safe_properties} <- validate_properties(event, properties),
+         false <- impersonated?(actor),
          true <- enabled?() do
       properties =
         safe_properties
@@ -64,7 +77,7 @@ defmodule Firmowid.Analytics do
     _ -> :ok
   end
 
-  def capture_business_event(_event, _user_id, _organization_id, _properties), do: :ok
+  def capture_business_event(_event, _actor, _organization_id, _properties), do: :ok
 
   @doc "Captures a successful password or Google account registration, without requiring an organization."
   @spec capture_account_created(map(), :password | :google) :: :ok
@@ -107,6 +120,9 @@ defmodule Firmowid.Analytics do
   rescue
     _ -> :ok
   end
+
+  defp impersonated?(%User{} = user), do: not is_nil(Core.impersonator_id(user))
+  defp impersonated?(_user), do: false
 
   defp enabled? do
     match?(%{enabled: true}, PostHog.config())

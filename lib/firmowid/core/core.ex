@@ -34,6 +34,8 @@ defmodule Firmowid.Core do
   alias Firmowid.Timetracker.Project
   alias Firmowid.Timetracker.Session
 
+  @impersonator_claim "impersonator_id"
+
   tools do
     tool :update_profile, User, :update_current_profile,
       load: [:member],
@@ -86,6 +88,7 @@ defmodule Firmowid.Core do
       define :unlink_google_account, action: :unlink_google
       define :change_password, action: :change_password
       define :set_user_locale, action: :set_locale, args: [:locale]
+      define :record_user_sign_in, action: :record_sign_in
     end
 
     resource Member do
@@ -210,6 +213,24 @@ defmodule Firmowid.Core do
       | member: Enum.find(members, List.first(members), &(&1.organization_id == organization_id))
     }
   end
+
+  @doc """
+  Extra session token claims for a superuser signed in as another account.
+
+  The token stores them, so the account loaded from that session carries them in
+  its `:token_claims` metadata (see `impersonator_id/1`).
+  """
+  @spec impersonation_claims(User.t()) :: map()
+  def impersonation_claims(%User{system_role: :superuser, id: id}), do: %{@impersonator_claim => id}
+
+  @doc """
+  The superuser signed in as the user, read from the claims of their session token
+  (see `impersonation_claims/1`); `nil` in the user's own session.
+  """
+  @spec impersonator_id(User.t() | map()) :: binary() | nil
+  def impersonator_id(%User{__metadata__: metadata}), do: impersonator_id(Map.get(metadata, :token_claims, %{}))
+
+  def impersonator_id(claims) when is_map(claims), do: Map.get(claims, @impersonator_claim)
 
   @doc """
   Destroys a user inside a single explicit Ash transaction.
