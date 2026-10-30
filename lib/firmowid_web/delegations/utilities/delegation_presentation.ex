@@ -3,12 +3,15 @@ defmodule FirmowidWeb.Delegations.Utilities.DelegationPresentation do
 
   use Gettext, backend: Firmowid.Gettext
 
+  alias Firmowid.Delegations.PerDiem
   alias Firmowid.TimeFormatter
 
   @spec status_label(atom()) :: String.t()
   def status_label(:pending), do: gettext("Pending")
   def status_label(:in_progress), do: pgettext("business trip status", "in progress")
+
   def status_label(:awaiting_signature), do: pgettext("business trip status", "awaiting signature")
+
   def status_label(:submitted), do: pgettext("business trip status", "under review")
   def status_label(:complete), do: pgettext("business trip status", "approved")
 
@@ -24,6 +27,32 @@ defmodule FirmowidWeb.Delegations.Utilities.DelegationPresentation do
 
   @spec format_date(Date.t()) :: String.t()
   def format_date(date), do: Calendar.strftime(date, "%d.%m.%Y")
+
+  @doc "Formats an exchange rate with a Polish decimal comma."
+  @spec format_rate(Decimal.t()) :: String.t()
+  def format_rate(rate), do: rate |> Decimal.to_string(:normal) |> String.replace(".", ",")
+
+  @doc "Labels a per-diem line, with the foreign amount and NBP rate it was converted with."
+  @spec per_diem_line_label(PerDiem.line(), map()) :: String.t()
+  def per_diem_line_label(%{foreign_amount: nil} = line, _delegation), do: per_diem_kind_label(line.kind)
+
+  def per_diem_line_label(line, delegation) do
+    gettext("%{label}: %{amount} at the NBP rate %{rate} of %{date}",
+      label: per_diem_kind_label(line.kind),
+      amount: Money.to_string!(line.foreign_amount),
+      rate: format_rate(delegation.per_diem_nbp_rate),
+      date: format_date(delegation.per_diem_nbp_rate_date)
+    )
+  end
+
+  defp per_diem_kind_label(:domestic_per_diem), do: gettext("Domestic per diem")
+  defp per_diem_kind_label(:foreign_per_diem), do: gettext("Foreign per diem")
+
+  defp per_diem_kind_label(:accommodation_lump_sum), do: gettext("Lump sum for nights without a receipt")
+
+  defp per_diem_kind_label(:local_transport_lump_sum), do: gettext("Lump sum for local transport")
+
+  defp per_diem_kind_label(:station_transfer_lump_sum), do: gettext("Lump sum for station and airport transfers")
 
   @doc "Formats money with grouped thousands for delegation documents."
   @spec format_money(Money.t()) :: String.t()

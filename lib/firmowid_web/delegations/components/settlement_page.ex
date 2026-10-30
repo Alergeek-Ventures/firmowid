@@ -10,6 +10,8 @@ defmodule FirmowidWeb.Delegations.Components.SettlementPage do
   import FirmowidWeb.DesignSystem.Components.CoreComponents
   import Phoenix.Component, except: [link: 1]
 
+  alias Firmowid.Delegations.PerDiem
+  alias FirmowidWeb.Delegations.Utilities.DelegationPresentation
   alias FirmowidWeb.Delegations.Utilities.Navigation
   alias FirmowidWeb.Delegations.Utilities.SettlementPresentation
   alias Phoenix.LiveView.Rendered
@@ -130,6 +132,12 @@ defmodule FirmowidWeb.Delegations.Components.SettlementPage do
           >
             <:icon><Lucideicons.wallet class="size-5" /></:icon>
           </.expense_section>
+          <.per_diem_fields
+            form={@complete_form}
+            delegation={@delegation}
+            editable?={@editable?}
+            per_diem={@per_diem}
+          />
           <.date_change_notice
             :if={@date_change}
             delegation={@delegation}
@@ -206,7 +214,7 @@ defmodule FirmowidWeb.Delegations.Components.SettlementPage do
             if (this.el.dataset.editable !== "true" || !event.target.name || event.target.type === "file") return;
             const fields = [...this.el.querySelectorAll("input:not([type=hidden]):not([type=file]), select, textarea")]
               .filter((field) => field.id && field.name)
-              .map((field) => [field.id, field.value]);
+              .map((field) => [field.id, field.type === "checkbox" ? field.checked : field.value]);
             const signature = JSON.stringify(fields);
             if (signature === this.lastFields) return;
             this.lastFields = signature;
@@ -229,7 +237,9 @@ defmodule FirmowidWeb.Delegations.Components.SettlementPage do
               let changed;
               for (const [id, value] of draft.fields) {
                 const field = document.getElementById(id);
-                if (field && this.el.contains(field)) { field.value = value; changed = field; }
+                if (!field || !this.el.contains(field)) continue;
+                if (field.type === "checkbox") field.checked = value; else field.value = value;
+                changed = field;
               }
               changed?.dispatchEvent(new Event("input", { bubbles: true }));
             }
@@ -346,6 +356,137 @@ defmodule FirmowidWeb.Delegations.Components.SettlementPage do
     """
   end
 
+  attr :form, :map, required: true
+  attr :delegation, :map, required: true
+  attr :editable?, :boolean, required: true
+  attr :per_diem, :map, default: nil
+
+  defp per_diem_fields(assigns) do
+    ~H"""
+    <section
+      id="delegation-per-diem"
+      aria-labelledby="per-diem-title"
+      class="mbs-8 space-y-5 border-b border-grey-200 pbe-8"
+    >
+      <h2 id="per-diem-title" class="text-h5 font-medium">{gettext("Per diem")}</h2>
+      <p class="max-w-prose text-sm text-grey-700">
+        {gettext("Check the trip times suggested from your tickets. Enter local times in Poland.")}
+      </p>
+      <fieldset disabled={!@editable?} class="space-y-5">
+        <legend class="sr-only">{gettext("Trip times")}</legend>
+        <div class="grid grid-cols-[repeat(auto-fit,minmax(min(100%,15rem),1fr))] gap-4">
+          <.input
+            field={@form[:trip_started_at]}
+            type="datetime-local"
+            label={gettext("Departure")}
+            input_class="w-full min-w-0"
+          />
+          <.input
+            field={@form[:trip_ended_at]}
+            type="datetime-local"
+            label={gettext("Return")}
+            input_class="w-full min-w-0"
+          />
+        </div>
+        <div :if={@delegation.destination_country != "PL"} class="space-y-3">
+          <p class="text-sm text-grey-700">
+            {gettext(
+              "For flights, use take-off from Poland and landing back in Poland. Otherwise, use the border crossing times."
+            )}
+          </p>
+          <div class="grid grid-cols-[repeat(auto-fit,minmax(min(100%,15rem),1fr))] gap-4">
+            <.input
+              field={@form[:abroad_started_at]}
+              type="datetime-local"
+              label={gettext("Start of time abroad")}
+              input_class="w-full min-w-0"
+            />
+            <.input
+              field={@form[:abroad_ended_at]}
+              type="datetime-local"
+              label={gettext("End of time abroad")}
+              input_class="w-full min-w-0"
+            />
+          </div>
+        </div>
+        <div class="space-y-3">
+          <p class="text-sm text-grey-700">
+            {gettext("Meals provided free of charge, including hotel breakfast")}
+          </p>
+          <div class="grid grid-cols-[repeat(auto-fit,minmax(min(100%,9rem),1fr))] gap-4">
+            <.input
+              field={@form[:provided_breakfasts]}
+              type="number"
+              min="0"
+              step="1"
+              label={gettext("Breakfasts")}
+              input_class="w-full"
+            />
+            <.input
+              field={@form[:provided_lunches]}
+              type="number"
+              min="0"
+              step="1"
+              label={gettext("Lunches")}
+              input_class="w-full"
+            />
+            <.input
+              field={@form[:provided_dinners]}
+              type="number"
+              min="0"
+              step="1"
+              label={gettext("Dinners")}
+              input_class="w-full"
+            />
+          </div>
+        </div>
+        <div class="space-y-3">
+          <p class="text-sm text-grey-700">
+            {gettext("Lump sums you can claim instead of receipts")}
+          </p>
+          <div class="grid grid-cols-[repeat(auto-fit,minmax(min(100%,15rem),1fr))] gap-4">
+            <.input
+              field={@form[:lump_sum_nights]}
+              type="number"
+              min="0"
+              step="1"
+              label={gettext("Nights without a receipt")}
+              input_class="w-full"
+            />
+            <.input
+              :if={@delegation.destination_country != "PL"}
+              field={@form[:station_transfers]}
+              type="number"
+              min="0"
+              step="1"
+              label={gettext("One-way transfers to a station or airport abroad")}
+              input_class="w-full"
+            />
+          </div>
+          <.input
+            field={@form[:local_transport_lump_sum]}
+            type="checkbox"
+            label={gettext("I paid for local public transport myself")}
+          />
+        </div>
+      </fieldset>
+      <dl :if={@per_diem} class="space-y-1 text-sm text-grey-700">
+        <div :for={line <- @per_diem.lines} class="flex flex-wrap justify-between gap-3">
+          <dt>{DelegationPresentation.per_diem_line_label(line, @delegation)}</dt>
+          <dd class="tabular-nums">{Money.to_string!(line.amount)}</dd>
+        </div>
+        <div class="flex flex-wrap justify-between gap-3 pbs-2 text-base text-grey-900">
+          <dt>{gettext("Per diem and lump sums")}</dt>
+          <dd class="font-medium tabular-nums">{Money.to_string!(@per_diem.total)}</dd>
+        </div>
+      </dl>
+      <p :if={!@per_diem} class="text-sm text-grey-700">
+        {gettext("Complete the trip times to calculate the per diem.")}
+      </p>
+    </section>
+    """
+  end
+
   attr :delegation, :map, required: true
   attr :total, :any, required: true
   attr :balance, :any, required: true
@@ -353,6 +494,9 @@ defmodule FirmowidWeb.Delegations.Components.SettlementPage do
   attr :class, :string, default: nil
 
   defp summary(assigns) do
+    assigns =
+      assign(assigns, :per_diem, PerDiem.for_delegation(assigns.delegation))
+
     ~H"""
     <div class={["rounded-lg bg-white px-6 py-4 shadow-sm", @class]}>
       <h2 class="font-normal text-grey-500">{gettext("Summary")}</h2>
@@ -380,6 +524,12 @@ defmodule FirmowidWeb.Delegations.Components.SettlementPage do
               SettlementPresentation.expenses_for(@delegation.expenses, :other)
             )
           }
+        />
+        <.summary_row label={gettext("Per diem")} value={@per_diem && @per_diem.per_diem} />
+        <.summary_row
+          :if={@per_diem && !Money.zero?(@per_diem.lump_sums)}
+          label={gettext("Lump sums")}
+          value={@per_diem.lump_sums}
         />
         <div class="my-5 space-y-3 border-y border-grey-100 py-5">
           <.summary_row label={gettext("Total costs")} value={@total} class="font-medium" />

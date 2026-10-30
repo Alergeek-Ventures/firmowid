@@ -10,6 +10,7 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
   alias Firmowid.Delegations.DelegationExpense
   alias Firmowid.Delegations.DelegationExpense.Trip
   alias Firmowid.Delegations.DelegationExpenseExtractor
+  alias Firmowid.Delegations.PerDiem
   alias FirmowidWeb.Delegations.Utilities.NbpSettlement
   alias FirmowidWeb.Delegations.Utilities.SettlementDocument
   alias FirmowidWeb.Delegations.Utilities.SettlementForm
@@ -310,6 +311,11 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
 
   defp setup_editor_socket(socket, delegation) do
     sort_active? = socket.assigns[:sort_active?] || false
+    # Closed settlements show only the saved trip times, as their document and the review do.
+    delegation =
+      if delegation.status == :in_progress,
+        do: SettlementForm.prefill_trip_times(delegation),
+        else: delegation
 
     complete_form =
       SettlementForm.complete_form(
@@ -461,6 +467,9 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
   defp refresh_delegation(socket) do
     case load_delegation(socket.assigns.delegation.reference, socket) do
       {:ok, delegation} when not is_nil(delegation) ->
+        # A newly added ticket can suggest the trip times that are still empty.
+        delegation = SettlementForm.prefill_trip_times(delegation)
+
         complete_form =
           SettlementForm.complete_form(
             delegation,
@@ -471,7 +480,7 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
         params =
           SettlementForm.preserve_expense_params(
             complete_form,
-            socket.assigns.complete_form.source.raw_params
+            SettlementForm.drop_blank_trip_times(socket.assigns.complete_form.source.raw_params)
           )
 
         if SettlementForm.stale_params?(complete_form, params) do
@@ -772,12 +781,14 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
   end
 
   defp assign_summary(socket) do
-    total = SettlementPresentation.sum(socket.assigns.delegation.expenses)
+    per_diem = PerDiem.for_delegation(socket.assigns.delegation)
+    total = SettlementPresentation.total(socket.assigns.delegation.expenses, per_diem)
 
     advance = socket.assigns.delegation.advance_amount
     {label, balance} = SettlementPresentation.settlement_balance(total, advance)
 
     assign(socket,
+      per_diem: per_diem,
       total: total,
       balance_label: label,
       balance: balance

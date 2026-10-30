@@ -3,6 +3,8 @@ defmodule FirmowidWeb.Delegations.Utilities.SettlementPresentation do
 
   use Gettext, backend: Firmowid.Gettext
 
+  alias Firmowid.Delegations.PerDiem
+
   @type expense_kind :: :transport | :accommodation | :other
 
   @spec expenses_for([map()], expense_kind()) :: [map()]
@@ -14,6 +16,16 @@ defmodule FirmowidWeb.Delegations.Utilities.SettlementPresentation do
 
     if Enum.all?(amounts, &(Money.to_currency_code(&1) == :PLN)) do
       Enum.reduce(amounts, Money.new(:PLN, 0), &Money.add!/2)
+    end
+  end
+
+  @doc "Adds the per diem and lump sums to the expenses, while both totals are known."
+  @spec total([map()], PerDiem.t() | nil) :: Money.t() | nil
+  def total(expenses, per_diem) do
+    case {sum(expenses), per_diem} do
+      {nil, _per_diem} -> nil
+      {expenses_total, nil} -> expenses_total
+      {expenses_total, per_diem} -> Money.add!(expenses_total, per_diem.total)
     end
   end
 

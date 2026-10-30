@@ -1,6 +1,7 @@
 defmodule FirmowidWeb.Delegations.Utilities.SettlementDocument do
   @moduledoc "Builds the canonical presentation model for settlement preview, PDF, and summary."
 
+  alias Firmowid.Delegations.PerDiem
   alias FirmowidWeb.Delegations.Utilities.SettlementPresentation
 
   @type t :: map()
@@ -9,7 +10,8 @@ defmodule FirmowidWeb.Delegations.Utilities.SettlementDocument do
   @spec build(struct(), struct() | nil, String.t() | nil) :: t()
   def build(delegation, employment_contract, organization_logo_data_uri) do
     expenses = Enum.map(delegation.expenses, &unwrap_details/1)
-    total = SettlementPresentation.sum(expenses)
+    per_diem = PerDiem.for_delegation(delegation)
+    total = SettlementPresentation.total(expenses, per_diem)
 
     {balance_label, balance} =
       SettlementPresentation.settlement_balance(total, delegation.advance_amount)
@@ -27,6 +29,7 @@ defmodule FirmowidWeb.Delegations.Utilities.SettlementDocument do
       transport_total: category_total(expenses, :transport),
       accommodation_total: category_total(expenses, :accommodation),
       other_total: category_total(expenses, :other),
+      per_diem: per_diem,
       total: total,
       balance_label: balance_label,
       balance: balance,

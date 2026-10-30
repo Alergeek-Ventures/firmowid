@@ -57,6 +57,24 @@ defmodule Firmowid.Currencies.NbpApiClient do
     end
   end
 
+  @doc """
+  Fetches the rate in effect on `date`: its own table, or the latest earlier one when NBP
+  has not published a table that day.
+
+  Unlike `get_exchange_rate/2`, which uses the previous business day as tax rules require,
+  this suits amounts that must use the rate of a given day. It is not cached, because the
+  table for today may still be published later.
+  """
+  @spec get_exchange_rate_on(String.t(), Date.t()) ::
+          {:ok, %{effective_date: String.t(), rate: float(), table_number: String.t()}}
+          | {:error, term()}
+  def get_exchange_rate_on(currency, date) do
+    case fetch_rate(currency, date) do
+      {:commit, result, _options} -> result
+      {:ignore, result} -> result
+    end
+  end
+
   defp clamp_to_today(date) do
     today = Date.utc_today()
     if Date.before?(date, today), do: date, else: today

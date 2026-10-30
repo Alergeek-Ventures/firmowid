@@ -162,7 +162,10 @@ defmodule FirmowidWeb.Delegations.Views.DelegationTest do
 
     {:ok, view, _html} = conn |> log_in_user(user) |> live(~p"/delegacje/#{delegation.reference}")
 
-    html = view |> form("#delegation-complete-form", %{delegation: %{}}) |> render_submit()
+    html =
+      view
+      |> form("#delegation-complete-form", %{delegation: %{trip_started_at: ""}})
+      |> render_submit()
 
     assert html =~ "Nie udało się wysłać ewidencji. Uzupełnij wymagane pola."
   end
@@ -931,6 +934,13 @@ defmodule FirmowidWeb.Delegations.Views.DelegationTest do
         },
         scope: %Scope{actor: admin, tenant: user.member.organization_id}
       )
+
+    # The per diem is calculated from these, so a settlement cannot be prepared without them.
+    delegation =
+      Ash.Seed.update!(delegation, %{
+        trip_started_at: ~N[2026-08-10 07:00:00],
+        trip_ended_at: ~N[2026-08-11 20:00:00]
+      })
 
     {user, delegation}
   end

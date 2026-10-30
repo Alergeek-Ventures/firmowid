@@ -64,7 +64,19 @@ defmodule Firmowid.Seeds.Delegations do
         "3000.00",
         kira.member.id,
         bytecraft.id,
-        :awaiting_signature
+        :awaiting_signature,
+        %{
+          destination_country: "GB",
+          per_diem_nbp_rate: Decimal.new("5.2143"),
+          per_diem_nbp_rate_date: Date.add(friday, -10),
+          trip_started_at: NaiveDateTime.new!(friday, ~T[06:30:00]),
+          abroad_started_at: NaiveDateTime.new!(friday, ~T[08:00:00]),
+          abroad_ended_at: NaiveDateTime.new!(sunday, ~T[23:20:00]),
+          trip_ended_at: NaiveDateTime.new!(Date.add(sunday, 1), ~T[00:30:00]),
+          provided_breakfasts: 2,
+          local_transport_lump_sum: true,
+          station_transfers: 2
+        }
       )
 
     seed_expense!(flight, bytecraft.id, :transport, "bilet-lotniczy-londyn.pdf", "1250.00", %{
@@ -100,7 +112,13 @@ defmodule Firmowid.Seeds.Delegations do
         "700.00",
         kira.member.id,
         bytecraft.id,
-        :submitted
+        :submitted,
+        %{
+          trip_started_at: NaiveDateTime.new!(Date.add(monday, -14), ~T[06:15:00]),
+          trip_ended_at: NaiveDateTime.new!(Date.add(monday, -13), ~T[21:40:00]),
+          lump_sum_nights: 1,
+          local_transport_lump_sum: true
+        }
       )
 
     seed_expense!(submitted, bytecraft.id, :transport, "bilet-warszawa.pdf", "420.00", %{
@@ -129,7 +147,8 @@ defmodule Firmowid.Seeds.Delegations do
          expected_cost,
          member_id,
          organization_id,
-         status
+         status,
+         attributes \\ %{}
        ) do
     reference =
       "DEMO-#{String.slice(member_id, 0, 8)}-#{Calendar.strftime(Date.beginning_of_month(start_date), "%Y-%m")}-#{start_date.day}"
@@ -184,7 +203,7 @@ defmodule Firmowid.Seeds.Delegations do
           member_id: member_id,
           organization_id: organization_id
         },
-        settlement_metadata
+        Map.merge(settlement_metadata, attributes)
       ),
       tenant: organization_id
     )
@@ -209,8 +228,10 @@ defmodule Firmowid.Seeds.Delegations do
   defp trip(departure_date, departure_time, departure_city, arrival_date, arrival_time, arrival_city),
     do: %{
       departure_city: departure_city,
+      departure_local_datetime: NaiveDateTime.new!(departure_date, departure_time),
       departure_datetime: DateTime.new!(departure_date, departure_time, @timezone),
       arrival_city: arrival_city,
+      arrival_local_datetime: NaiveDateTime.new!(arrival_date, arrival_time),
       arrival_datetime: DateTime.new!(arrival_date, arrival_time, @timezone)
     }
 
