@@ -1,13 +1,15 @@
 defmodule FirmowidMcp.Utilities.RefreshTokenTransaction do
-  @moduledoc "Serializes HTTP refresh rotation and chain revocation with account credential changes."
+  @moduledoc "Serializes HTTP OAuth exchange and token registration with account credential changes."
 
   @behaviour Plug
 
   alias AshAuthentication.Phoenix.Oauth2Server.Errors
   alias AshAuthentication.Phoenix.Oauth2Server.ProtocolRouter
   alias Firmowid.Core
+  alias Firmowid.Core.OauthAuthorizationCode
   alias Firmowid.Core.User
   alias Firmowid.Repo
+  alias FirmowidMcp.Utilities.AccessToken
 
   require Ash.Query
 
@@ -25,13 +27,8 @@ defmodule FirmowidMcp.Utilities.RefreshTokenTransaction do
   @impl true
   @spec call(Plug.Conn.t(), keyword()) :: Plug.Conn.t()
   def call(conn, opts) do
-    ash_opts = [context: @auth_context, tenant: Ash.PlugHelpers.get_tenant(conn)]
-
-    with raw when is_binary(raw) and raw != "" <- refresh_token(conn),
-         hash = :sha256 |> :crypto.hash(raw) |> Base.encode16(case: :lower),
-         {:ok, token} <- Core.get_oauth_refresh_token_by_hash(hash, ash_opts) do
-      transact(conn, opts, token.user_id)
-    else
+    case grant(conn) do
+      {:ok, token} when not is_nil(token) -> transact(conn, opts, token.user_id)
       _ -> ProtocolRouter.call(conn, opts)
     end
   end
@@ -40,18 +37,26 @@ defmodule FirmowidMcp.Utilities.RefreshTokenTransaction do
     ref = make_ref()
     defer = fn conn -> throw({ref, conn}) end
 
-    # Rotation, successor issuance and reuse revocation must share the user lock
+    # Exchange, JWT registration and reuse revocation must share the user lock
     # held by password changes and membership archival, including error responses.
     fn ->
-      lock_user(user_id)
+      user = lock_user(user_id)
 
       # ProtocolRouter sends immediately and has no transaction hook. Capture its
       # response before other callbacks or the adapter run, then send after commit.
-      try do
-        conn |> Plug.Conn.register_before_send(defer) |> ProtocolRouter.call(opts)
-      catch
-        {^ref, response} -> response
+      response =
+        try do
+          conn |> Plug.Conn.register_before_send(defer) |> ProtocolRouter.call(opts)
+        catch
+          {^ref, response} -> response
+        end
+
+      if response.status == 200 and Enum.map(conn.path_info, &URI.decode/1) == ["token"] do
+        %{"access_token" => token} = Jason.decode!(response.resp_body)
+        AccessToken.store!(token, user)
       end
+
+      response
     end
     |> Repo.transaction()
     |> case do
@@ -79,13 +84,35 @@ defmodule FirmowidMcp.Utilities.RefreshTokenTransaction do
     |> Ash.read_one!(action: :read, authorize?: false)
   end
 
-  defp refresh_token(%{method: "POST", path_info: path, params: params}) do
+  defp grant(%{method: "POST", path_info: path, params: params} = conn) do
+    ash_opts = [context: @auth_context, tenant: Ash.PlugHelpers.get_tenant(conn)]
+
     case Enum.map(path, &URI.decode/1) do
-      ["token"] -> if params["grant_type"] == "refresh_token", do: params["refresh_token"]
-      ["revoke"] -> params["token"]
-      _ -> nil
+      ["token"] ->
+        case params["grant_type"] do
+          "authorization_code" -> authorization_code(params["code"], ash_opts)
+          "refresh_token" -> refresh_token(params["refresh_token"], ash_opts)
+          _ -> :no_grant
+        end
+
+      ["revoke"] ->
+        refresh_token(params["token"], ash_opts)
+
+      _ ->
+        :no_grant
     end
   end
 
-  defp refresh_token(_conn), do: nil
+  defp grant(_conn), do: :no_grant
+
+  defp authorization_code(code, opts) when is_binary(code) and code != "", do: Ash.get(OauthAuthorizationCode, code, opts)
+
+  defp authorization_code(_, _), do: :no_grant
+
+  defp refresh_token(raw, opts) when is_binary(raw) and raw != "" do
+    hash = :sha256 |> :crypto.hash(raw) |> Base.encode16(case: :lower)
+    Core.get_oauth_refresh_token_by_hash(hash, opts)
+  end
+
+  defp refresh_token(_, _), do: :no_grant
 end

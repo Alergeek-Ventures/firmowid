@@ -46,9 +46,13 @@ defmodule FirmowidMcp.Utilities.RefreshTokenTransactionTest do
       await_lock(revoker, backend_pid, 2_000)
       send(rotation_pid, :continue_rotation)
       rotated = Task.await(rotation, 10_000)
-      assert %{"refresh_token" => descendant} = json_response(rotated, 200)
+
+      assert %{"refresh_token" => descendant, "access_token" => access_token} =
+               json_response(rotated, 200)
 
       assert_revocation(operation, Task.await(revoker, 10_000))
+
+      assert_revoked_access(operation, access_token)
 
       rejected = independently(fn -> refresh(descendant, client_id) end)
       assert %{"error" => "invalid_grant"} = json_response(rejected, 400)
@@ -209,6 +213,19 @@ defmodule FirmowidMcp.Utilities.RefreshTokenTransactionTest do
 
     client
   end
+
+  defp assert_revoked_access(:password_change, access_token) do
+    rejected =
+      independently(fn ->
+        build_conn()
+        |> put_req_header("authorization", "Bearer #{access_token}")
+        |> post("/mcp", %{})
+      end)
+
+    assert %{"error" => "unauthorized"} = json_response(rejected, 401)
+  end
+
+  defp assert_revoked_access(_operation, _access_token), do: :ok
 
   defp hash(raw), do: :sha256 |> :crypto.hash(raw) |> Base.encode16(case: :lower)
 

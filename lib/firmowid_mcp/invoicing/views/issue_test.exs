@@ -20,7 +20,7 @@ defmodule FirmowidMcp.Invoicing.Views.IssueTest do
 
     conn =
       conn
-      |> Plug.Conn.assign(:oauth_claims, %{"exp" => System.system_time(:second) + 600})
+      |> Plug.Conn.assign(:oauth_claims, registered_claims(admin))
       |> Ash.PlugHelpers.set_actor(admin)
       |> Ash.PlugHelpers.set_tenant(admin.member.organization_id)
 
@@ -63,7 +63,7 @@ defmodule FirmowidMcp.Invoicing.Views.IssueTest do
 
       conn =
         conn
-        |> Plug.Conn.assign(:oauth_claims, %{"exp" => System.system_time(:second) + 600})
+        |> Plug.Conn.assign(:oauth_claims, registered_claims(admin))
         |> Ash.PlugHelpers.set_actor(admin)
         |> Ash.PlugHelpers.set_tenant(admin.member.organization_id)
 
@@ -132,6 +132,19 @@ defmodule FirmowidMcp.Invoicing.Views.IssueTest do
         :gtu -> assert Enum.map(issued.sales_invoice_items, & &1.gtu) == ["GTU_02"]
       end
     end
+  end
+
+  defp registered_claims(user) do
+    {:ok, token, claims} =
+      AshAuthentication.Oauth2Server.Jwt.mint(Firmowid.Oauth2Server,
+        sub: user.id,
+        client_id: Ash.UUIDv7.generate(),
+        scope: "mcp",
+        ttl: 600
+      )
+
+    FirmowidMcp.Utilities.AccessToken.store!(token, user)
+    claims
   end
 
   defp draft_fixture!(admin, saved_on) do

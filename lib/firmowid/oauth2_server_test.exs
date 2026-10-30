@@ -15,6 +15,8 @@ defmodule Firmowid.Oauth2ServerTest do
   alias Firmowid.Core.OauthConsent
   alias Firmowid.Core.OauthRefreshToken
   alias Firmowid.Oauth2Server
+  alias FirmowidMcp.Session
+  alias FirmowidMcp.Utilities.AccessToken
 
   @auth_context %{private: %{ash_authentication?: true}}
   @redirect_uri "https://example.com/oauth/callback"
@@ -65,6 +67,60 @@ defmodule Firmowid.Oauth2ServerTest do
     assert_authenticated(rotated.access_token, user)
     assert {:error, :reuse} = exchange_refresh(tokens.refresh_token, client)
     assert {:error, :revoked} = exchange_refresh(rotated.refresh_token, client)
+  end
+
+  for operation <- [:change, :reset] do
+    test "password #{operation} denies existing HTTP OAuth JWTs and widgets only for that user",
+         context do
+      %{user: user, admin: admin, validated: validated} = context
+      other = user_in_org_fixture(admin.member.organization_id)
+      tokens = http_exchange(user, validated, context)
+      other_tokens = http_exchange(other, validated, context)
+      old_widget = widget(tokens["access_token"])
+      other_widget = widget(other_tokens["access_token"])
+      resource_uri = "ui://oauth-revocation"
+
+      assert {:ok, _} = Session.authorize(old_widget, resource_uri)
+      assert {:ok, _} = Session.authorize(other_widget, resource_uri)
+
+      rotated =
+        build_conn()
+        |> post("/oauth/token", %{
+          grant_type: "refresh_token",
+          refresh_token: tokens["refresh_token"],
+          client_id: context.client.id
+        })
+        |> json_response(200)
+
+      assert_authenticated(rotated["access_token"], user)
+      rotated_widget = widget(rotated["access_token"])
+      assert {:ok, _} = Session.authorize(rotated_widget, resource_uri)
+      assert {:ok, _} = revoke_password(unquote(operation), user)
+
+      for token <- [tokens["access_token"], rotated["access_token"]] do
+        assert mcp_request(token).status == 401
+      end
+
+      assert {:error, :unauthorized} = Session.authorize(old_widget, resource_uri)
+      assert {:error, :unauthorized} = Session.authorize(rotated_widget, resource_uri)
+      assert_authenticated(other_tokens["access_token"], other)
+      assert {:ok, _} = Session.authorize(other_widget, resource_uri)
+      assert {:error, :revoked} = exchange_refresh(rotated["refresh_token"], context.client)
+    end
+  end
+
+  test "a valid native JWT without registration requires reauthentication", %{
+    user: user,
+    client: client
+  } do
+    {:ok, token, _claims} =
+      AshAuthentication.Oauth2Server.Jwt.mint(Oauth2Server,
+        sub: user.id,
+        client_id: client.id,
+        scope: "mcp"
+      )
+
+    assert mcp_request(token).status == 401
   end
 
   test "authorization rejects ambiguous loopback redirect authorities", %{client: client} do
@@ -214,19 +270,79 @@ defmodule Firmowid.Oauth2ServerTest do
   end
 
   defp exchange_code(code, context) do
-    Token.exchange_authorization_code(Oauth2Server, %{
+    Oauth2Server
+    |> Token.exchange_authorization_code(%{
       "code" => code.id,
       "client_id" => context.client.id,
       "redirect_uri" => @redirect_uri,
       "code_verifier" => context.verifier
     })
+    |> register_exchange()
   end
 
   defp exchange_refresh(raw, client) do
-    Token.exchange_refresh_token(Oauth2Server, %{
+    Oauth2Server
+    |> Token.exchange_refresh_token(%{
       "refresh_token" => raw,
       "client_id" => client.id
     })
+    |> register_exchange()
+  end
+
+  # Library-level assertions bypass HTTP registration deliberately.
+  defp register_exchange({:ok, tokens} = result) do
+    {:ok, %{"sub" => id}} = AshAuthentication.Jwt.peek(tokens.access_token)
+    AccessToken.store!(tokens.access_token, Core.get_user!(id, context: @auth_context))
+    result
+  end
+
+  defp register_exchange(result), do: result
+
+  defp http_exchange(user, validated, context) do
+    code = Authorize.issue_code!(Oauth2Server, user, validated)
+
+    build_conn()
+    |> post("/oauth/%74oken", %{
+      grant_type: "authorization_code",
+      code: code.id,
+      client_id: context.client.id,
+      redirect_uri: @redirect_uri,
+      code_verifier: context.verifier
+    })
+    |> json_response(200)
+  end
+
+  defp widget(token) do
+    conn = mcp_request(token)
+    assert conn.status == 200
+    Session.issue(conn, "ui://oauth-revocation", %{})
+  end
+
+  defp revoke_password(:change, user) do
+    Core.change_password(
+      user,
+      %{
+        current_password: valid_user_password(),
+        password: String.reverse(valid_user_password()),
+        password_confirmation: String.reverse(valid_user_password())
+      },
+      actor: user
+    )
+  end
+
+  defp revoke_password(:reset, user) do
+    strategy = AshAuthentication.Info.strategy!(Core.User, :password)
+    {:ok, token} = AshAuthentication.Strategy.Password.reset_token_for(strategy, user)
+
+    AshAuthentication.Strategy.action(
+      strategy,
+      :reset,
+      %{
+        "reset_token" => token,
+        "password" => String.reverse(valid_user_password())
+      },
+      []
+    )
   end
 
   defp refresh_attributes(user, client) do

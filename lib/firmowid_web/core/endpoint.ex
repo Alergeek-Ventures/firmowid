@@ -8,6 +8,7 @@ defmodule FirmowidWeb.Core.Endpoint do
   # credo:disable-for-next-line Checks.RejectDirectSentrySdk
   alias Elixir.Sentry, as: SentrySDK
   alias Firmowid.Sentry
+  alias FirmowidWeb.Core.RequestLogMetadata
   alias Phoenix.LiveView.Socket
 
   # The session will be stored in the cookie and signed,
@@ -73,8 +74,11 @@ defmodule FirmowidWeb.Core.Endpoint do
     cookie_key: "request_logger"
 
   plug Plug.RequestId
-  plug FirmowidWeb.Core.RequestLogMetadata
-  plug Plug.Telemetry, event_prefix: [:phoenix, :endpoint]
+  plug RequestLogMetadata
+
+  plug Plug.Telemetry,
+    event_prefix: [:phoenix, :endpoint],
+    log: {RequestLogMetadata, :log_level, []}
 
   plug FirmowidWeb.Infrastructure.Plugs.TelemetryProxy
 

@@ -89,6 +89,7 @@ defmodule FirmowidWeb.Auth.Utilities.ConsentOrganizationTest do
         "code_verifier" => legacy_verifier
       })
 
+    FirmowidMcp.Utilities.AccessToken.store!(legacy.access_token, user)
     assert mcp_tenant(legacy.access_token) == second_id
 
     Core.archive_member!(Core.load_member(user, first_id).member, actor: admin, tenant: first_id)

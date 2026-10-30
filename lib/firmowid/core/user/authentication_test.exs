@@ -10,10 +10,32 @@ defmodule Firmowid.Core.User.AuthenticationTest do
   alias AshAuthentication.Strategy
   alias Ecto.Adapters.SQL.Sandbox
   alias Firmowid.Core
+  alias Firmowid.Core.Token
   alias Firmowid.Core.User
   alias Firmowid.Core.UserIdentity
 
   @authentication_context %{private: %{ash_authentication?: true}}
+
+  test "Google cannot link an unconfirmed password account or issue its credentials" do
+    user =
+      valid_user_attributes()
+      |> Core.register_with_password!(authorize?: false)
+      |> Core.load_member()
+
+    assert is_nil(user.confirmed_at)
+    tokens_before = Token.read!(context: @authentication_context)
+
+    assert {:error, _} =
+             User.register_with_google(
+               google_user_info(user),
+               %{"access_token" => "test-google-token"},
+               context: @authentication_context
+             )
+
+    assert [] = UserIdentity.read!(actor: user)
+    assert Token.read!(context: @authentication_context) == tokens_before
+    assert User.get!(user.id, actor: user).hashed_password == user.hashed_password
+  end
 
   describe "account authentication" do
     setup do

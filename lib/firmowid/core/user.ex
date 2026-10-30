@@ -80,9 +80,8 @@ defmodule Firmowid.Core.User do
 
     add_ons do
       confirmation :confirm do
-        # Monitor email changes — this is what satisfies prevent_hijacking? on the
-        # google strategy. At runtime it blocks upsert-via-Google over unconfirmed
-        # password accounts (CannotConfirmUnconfirmedUser error).
+        # Monitor email changes. The Google action also checks the returned account:
+        # skipped upserts can bypass the confirmation add-on's conflict filter.
         monitor_fields [:email]
 
         # Google OAuth users are already verified by Google — skip the confirmation
@@ -257,9 +256,18 @@ defmodule Firmowid.Core.User do
 
       change fn changeset, _context ->
         Ash.Changeset.after_action(changeset, fn changeset, user ->
-          user_info = Ash.Changeset.get_argument(changeset, :user_info)
-
-          GoogleAvatarImporter.maybe_import(user, user_info)
+          # Check the persisted result before token issuance or identity linking,
+          # independently of upsert filters (the conflict may have been skipped).
+          if is_nil(user.confirmed_at) do
+            {:error,
+             AshAuthentication.Errors.CannotConfirmUnconfirmedUser.exception(
+               resource: __MODULE__,
+               confirmation_strategy: :confirm
+             )}
+          else
+            user_info = Ash.Changeset.get_argument(changeset, :user_info)
+            GoogleAvatarImporter.maybe_import(user, user_info)
+          end
         end)
       end
 
