@@ -289,7 +289,8 @@ defmodule Firmowid.Analysis do
   end
 
   @doc """
-  Classifies a year's analysis entries into the categories of an industry template.
+  Classifies the analysis entries of a year, or of a range of dates, into the
+  categories of an industry template.
 
   Uses the same entries and PLN amounts as the totals, without internal ones,
   together with the owner's confirmed counterparty categories and the
@@ -298,9 +299,12 @@ defmodule Firmowid.Analysis do
   (`{entity_type, id}`) and `lines`: invoice line names, else the cost invoice
   description or the transfer title. See `CategoryReview.build/3` for the rest.
   """
-  @spec get_category_review(integer(), Scope.t()) :: map()
-  def get_category_review(year, scope) do
-    entries = get_organization_entries(Date.new!(year, 1, 1), Date.new!(year, 12, 31), scope)
+  @spec get_category_review(integer() | Date.Range.t(), Scope.t()) :: map()
+  def get_category_review(year, scope) when is_integer(year),
+    do: get_category_review(Date.range(Date.new!(year, 1, 1), Date.new!(year, 12, 31)), scope)
+
+  def get_category_review(%Date.Range{first: from, last: to}, scope) do
+    entries = get_organization_entries(from, to, scope)
 
     classified =
       Map.new(EntryCategory.list!(scope: scope), &{{&1.entity_type, &1.resource_id}, &1.category})
@@ -594,64 +598,6 @@ defmodule Firmowid.Analysis do
     |> Enum.reduce(Decimal.new(0), fn {amount, _tags}, sum ->
       amount |> Decimal.abs() |> Decimal.round(2) |> Decimal.add(sum)
     end)
-  end
-
-  @doc """
-  Returns a list of dates (first day of each month) that have analysis-relevant
-  entries. Uses `sale_date` for invoices, `booking_date` for standalone
-  (skipped, unmatched) transactions and `salary_month` for salary-pinned ones.
-
-  Only includes invoices that are matched to an external transaction or marked
-  `skip_invoicing`.
-  Excludes transfers between the organization's own bank accounts.
-  Includes months with entries tagged as `:internal` so they remain editable.
-  """
-  @spec get_months_with_entries(Scope.t()) :: [Date.t()]
-  def get_months_with_entries(scope) do
-    opts = [scope: analysis_scope(scope)]
-    own_account_ibans = own_account_ibans(scope)
-
-    tx_months =
-      %{reconciliation: :skipped}
-      |> Finances.list_transactions!(opts)
-      |> Enum.reject(&own_account_transfer?(&1, own_account_ibans))
-      |> Enum.map(&Date.beginning_of_month(&1.booking_date))
-      |> Enum.concat(
-        %{salary_assigned: true}
-        |> Finances.list_transactions!(opts)
-        |> Enum.map(& &1.salary_month)
-      )
-
-    si_months =
-      invoice_months(
-        &Invoicing.list_sales_invoices!/2,
-        :sale_date,
-        %{merge_corrections: true},
-        opts,
-        own_account_ibans
-      )
-
-    ci_months =
-      invoice_months(
-        &Invoicing.list_cost_invoices!/2,
-        :sale_date,
-        %{merge_corrections: true},
-        opts,
-        own_account_ibans
-      )
-
-    (tx_months ++ si_months ++ ci_months)
-    |> Enum.uniq()
-    |> Enum.sort()
-  end
-
-  defp invoice_months(list_fn, date_field, base_args, opts, own_account_ibans) do
-    opts = Keyword.put(opts, :load, [:transactions])
-
-    (list_fn.(Map.put(base_args, :reconciliation, :matched), opts) ++
-       list_fn.(Map.put(base_args, :reconciliation, :skipped), opts))
-    |> Enum.filter(&analysis_relevant_invoice?(&1, own_account_ibans))
-    |> Enum.map(&Date.beginning_of_month(Map.fetch!(&1, date_field)))
   end
 
   defp get_amount_and_currency(%SalesInvoice{effective_amount: %Money{} = amount}) do

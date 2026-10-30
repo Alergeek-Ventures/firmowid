@@ -67,7 +67,8 @@ defmodule Firmowid.Analysis.ProjectProfitability do
   and full-period totals separate from any selected-project subtotal. An already
   filtered source cannot be detected and would give incorrect allocation shares.
   """
-  @spec from_year_summary(%{months: [map()]}, %{Date.t() => [map()]}) :: result()
+  @spec from_year_summary(%{:months => [map()], optional(atom()) => any()}, %{Date.t() => [map()]}) ::
+          result()
   def from_year_summary(summary, seconds_by_month) do
     months =
       Enum.map(summary.months, fn month ->

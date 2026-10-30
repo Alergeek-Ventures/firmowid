@@ -2,17 +2,19 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
   @moduledoc """
   Financial overview with month details, project results and category review.
 
-  Views share the authorized year summary. Project results always allocate over
-  the whole company. Entries are assigned to projects in invoicing; tax
-  estimates stay separate from realized financial totals.
+  Views share the selected period, any run of months, built from the authorized
+  year summaries; a chart month narrows the dashboard's details to it. Project
+  results always allocate over the whole company. Entries are assigned to
+  projects in invoicing; tax estimates stay separate from realized totals.
   """
   use FirmowidWeb, :live_view
 
-  import FirmowidWeb.DesignSystem.Components.YearPicker
+  import FirmowidWeb.DesignSystem.Components.MonthPicker, only: [month_range_picker: 1]
   import FirmowidWeb.Infrastructure.Flags, only: [flag_enabled?: 2]
 
   alias Firmowid.Analysis
   alias Firmowid.Analysis.CategoryReview
+  alias Firmowid.Analysis.CategoryTotals
   alias Firmowid.Analysis.CounterpartyCategory
   alias Firmowid.Analysis.IndustryTemplate
   alias Firmowid.Analysis.ProjectProfitability
@@ -20,7 +22,6 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
   alias Firmowid.Analysis.TaxForecast
   alias Firmowid.Analysis.YearSummary
   alias FirmowidWeb.Analysis.Utilities.Navigation
-  alias FirmowidWeb.Invoicing.Utilities.Navigation, as: InvoicingNavigation
   alias FirmowidWeb.Settings.Utilities.Navigation, as: SettingsNavigation
 
   @impl true
@@ -33,15 +34,10 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
         Phoenix.PubSub.subscribe(Firmowid.PubSub, "analysis-classification:#{scope.tenant}")
       end
 
-      active_months =
-        Analysis.get_months_with_entries(scope) ++
-          [Date.utc_today()]
-
       tag_definitions = TagDefinition.list_tag_definitions!(scope: scope)
 
       socket =
         socket
-        |> assign(:active_months, active_months)
         |> assign(:tag_definitions, tag_definitions)
         |> assign(:with_overhead, false)
         |> assign(
@@ -89,27 +85,46 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
     end
   end
 
-  @impl true
-  def handle_event("change-year", %{"year" => year}, socket) do
-    case Integer.parse(year) do
-      {year, ""} when year in 1..9999 ->
-        {:noreply, push_patch(socket, to: build_path(socket, year: year, month: nil))}
+  def handle_event("select-period", %{"from" => from, "to" => to}, socket) when is_binary(from) and is_binary(to) do
+    with {:ok, from} <- Date.from_iso8601(from),
+         {:ok, to} <- Date.from_iso8601(to) do
+      {from, to} =
+        Enum.min_max_by([Date.beginning_of_month(from), Date.beginning_of_month(to)], & &1, Date)
 
-      _ ->
-        {:noreply, socket}
+      {:noreply, push_patch(socket, to: build_path(socket, period: {from, to}, month: nil))}
+    else
+      _invalid -> {:noreply, socket}
     end
   end
 
-  def handle_event("select-month", %{"month" => month}, %{assigns: %{params: %{view: :dashboard}}} = socket) do
+  # The period picker's clear button sends no months and goes back to this year; anything partial is ignored.
+  def handle_event("select-period", params, socket) when map_size(params) == 0 do
+    period = Navigation.year_period(Date.utc_today().year)
+    {:noreply, push_patch(socket, to: build_path(socket, period: period, month: nil))}
+  end
+
+  def handle_event("select-period", _params, socket), do: {:noreply, socket}
+
+  # A chart month narrows the details; choosing it again shows the whole period.
+  def handle_event("select-month", %{"month" => month}, %{assigns: %{params: %{view: :dashboard} = params}} = socket)
+      when is_binary(month) do
     case Date.from_iso8601(month) do
-      {:ok, %Date{year: year} = month} when year == socket.assigns.params.year ->
-        month = if socket.assigns.params.month == month, do: nil, else: month
-        {:noreply, push_patch(socket, to: build_path(socket, month: month))}
+      {:ok, month} ->
+        month = Date.beginning_of_month(month)
 
-      _ ->
+        if month in Navigation.months(params.period) do
+          month = if month == params.month, do: nil, else: month
+          {:noreply, push_patch(socket, to: build_path(socket, month: month))}
+        else
+          {:noreply, socket}
+        end
+
+      _invalid ->
         {:noreply, socket}
     end
   end
+
+  def handle_event("select-month", _params, socket), do: {:noreply, socket}
 
   def handle_event("show-overhead", %{"overhead" => %{"with" => with_overhead}}, socket) do
     {:noreply, assign(socket, :with_overhead, with_overhead == "true")}
@@ -153,8 +168,8 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
       assigns.ash_scope.actor.member.role in [:admin, :accountant]
   end
 
-  # Category confirmations are confined to the categories view, including forged events.
-  defp review_groups(%{params: %{view: :categories}, review: review} = assigns) do
+  # Category confirmations are confined to the dashboard's period details, including forged events.
+  defp review_groups(%{params: %{view: :dashboard}, review: %{} = review} = assigns) do
     if can_tag?(assigns), do: review.groups, else: []
   end
 
@@ -177,10 +192,9 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
     # A corrected suggestion teaches the classifier, so its other suggestions are refreshed.
     if category != group.suggestion,
       do:
-        Analysis.classify_categories_later(
-          socket.assigns.params.year,
-          true,
-          socket.assigns.ash_scope
+        for(
+          year <- years(socket.assigns.params.period),
+          do: Analysis.classify_categories_later(year, true, socket.assigns.ash_scope)
         )
 
     socket = load_review(socket)
@@ -194,11 +208,14 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
     end
   end
 
-  defp load_view(%{assigns: %{params: %{view: :categories}}} = socket), do: load_review(socket)
+  defp load_view(%{assigns: %{params: %{view: :segments, period: period}, ash_scope: scope}} = socket) do
+    summary = period_summary(period, [], scope)
 
-  defp load_view(%{assigns: %{params: %{view: :segments, year: year}, ash_scope: scope}} = socket) do
-    summary = YearSummary.get!(year, %{tag_filters: []}, scope: scope)
-    seconds = Analysis.project_seconds_by_month(year, scope)
+    seconds =
+      period
+      |> years()
+      |> Enum.map(&Analysis.project_seconds_by_month(&1, scope))
+      |> Enum.reduce(%{}, &Map.merge/2)
 
     socket
     |> assign(:profitability, ProjectProfitability.from_year_summary(summary, seconds))
@@ -206,22 +223,25 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
   end
 
   # Categories come from unfiltered entries, so project filters leave them out.
-  defp load_view(socket) do
-    socket = socket |> load_year() |> load_tax_forecast()
+  defp load_view(%{assigns: %{params: params, tag_filters: tag_filters, ash_scope: scope}} = socket) do
+    socket =
+      socket
+      |> assign(:summary, period_summary(params.period, tag_filters, scope))
+      |> load_tax_forecast()
 
-    if socket.assigns.tag_filters == [],
+    if tag_filters == [],
       do: load_review(socket),
       else: assign(socket, :review, nil)
   end
 
   # Entries without a category are classified in the background for members who may store categories.
   defp load_review(socket) do
-    %{params: %{year: year}, ash_scope: scope} = socket.assigns
-    review = Analysis.get_category_review(year, scope)
+    %{params: %{period: {from, to} = period}, ash_scope: scope} = socket.assigns
+    review = Analysis.get_category_review(Date.range(from, Date.end_of_month(to)), scope)
 
     # A unique conflict returns the existing job, so reopening the view queues nothing new.
     if review.unclassified != [] and can_tag?(socket.assigns),
-      do: Analysis.classify_categories_later(year, false, scope)
+      do: for(year <- years(period), do: Analysis.classify_categories_later(year, false, scope))
 
     assign(socket, :review, review)
   end
@@ -242,14 +262,24 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
       do: SettingsNavigation.canonical_path(:invoices) <> "#rezerwa-podatkowa"
   end
 
-  defp load_year(socket) do
-    summary =
-      YearSummary.get!(socket.assigns.params.year, %{tag_filters: socket.assigns.tag_filters},
-        scope: socket.assigns.ash_scope
-      )
+  # The period's months from the year summaries it spans.
+  defp period_summary(period, tag_filters, scope) do
+    months = Navigation.months(period)
 
-    assign(socket, :year_summary, summary)
+    months =
+      for year <- years(period),
+          month <- YearSummary.get!(year, %{tag_filters: tag_filters}, scope: scope).months,
+          month.month in months,
+          do: month
+
+    %{
+      currency: "PLN",
+      months: months,
+      totals: months |> Enum.map(& &1.totals) |> CategoryTotals.combine()
+    }
   end
+
+  defp years({from, to}), do: Enum.to_list(from.year..to.year)
 
   defp build_path(socket, overrides) do
     {tag_filters, overrides} = Keyword.pop(overrides, :tag_filters, socket.assigns.tag_filters)
@@ -259,28 +289,44 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
     |> Navigation.view_path(tag_filters)
   end
 
-  defp view_for(params, :categories), do: %{view: :categories, year: selected_month(params).year}
+  defp view_for(params, :dashboard), do: %{view: :dashboard, period: params.period, month: nil}
+  defp view_for(params, :segments), do: %{view: :segments, period: params.period}
 
-  defp view_for(params, :dashboard), do: %{view: :dashboard, year: selected_month(params).year, month: nil}
+  defp details_months(%{month: %Date{} = month}), do: [month]
+  defp details_months(%{period: period}), do: Navigation.months(period)
 
-  defp view_for(params, :segments), do: %{view: :segments, year: selected_month(params).year}
-
-  # Completed months of the year besides the selected one, as its usual baseline.
-  defp compared_months(%{year: year, month: month}) do
+  # A month compares with the period's other completed months, its usual baseline.
+  defp compared_months(%{period: period, month: %Date{} = month}) do
     current = Date.beginning_of_month(Date.utc_today())
 
-    for number <- 1..12,
-        compared = Date.new!(year, number, 1),
-        Date.before?(compared, current) and compared != month,
+    for compared <- Navigation.months(period),
+        Date.before?(compared, current),
+        compared != month,
         do: compared
   end
 
-  defp selected_month(%{month: %Date{} = month}), do: month
+  defp compared_months(_params), do: []
 
-  defp selected_month(%{year: year}) do
-    today = Date.utc_today()
-    if year == today.year, do: Date.beginning_of_month(today), else: Date.new!(year, 1, 1)
-  end
+  defp details_title(%{month: %Date{} = month}), do: month_name(month, "LLLL y")
+  defp details_title(%{period: period}), do: period_title(period)
+
+  defp period_title({month, month}), do: month_name(month, "LLLL y")
+
+  defp period_title({%Date{month: 1, year: year}, %Date{month: 12, year: year}}), do: Integer.to_string(year)
+
+  defp period_title({%Date{year: year} = from, %Date{year: year} = to}),
+    do: gettext("%{from} – %{to}", from: month_name(from, "LLLL"), to: month_name(to, "LLLL y"))
+
+  defp period_title({from, to}),
+    do: gettext("%{from} – %{to}", from: month_name(from, "LLLL y"), to: month_name(to, "LLLL y"))
+
+  # The picker holds only ranges; a single month or a calendar year is shown as its label instead,
+  # so two clicks start a new range.
+  defp range({%Date{month: 1, year: year}, %Date{month: 12, year: year}}), do: nil
+  defp range({from, to}) when from != to, do: {from, to}
+  defp range(_month), do: nil
+
+  defp month_name(month, format), do: month |> Firmowid.Cldr.Date.to_string!(format: format) |> String.capitalize()
 
   defp slice_name(filters, definitions) do
     Enum.map_join(filters, ", ", fn
@@ -311,23 +357,17 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
           >
             {pgettext("analysis view", "Projects")}
           </:tab>
-          <:tab
-            :if={can_tag?(assigns)}
-            id="analysis-categories"
-            patch={Navigation.view_path(view_for(@params, :categories), [])}
-            active={@params.view == :categories}
-          >
-            {pgettext("analysis view", "Costs and income")}
-          </:tab>
         </.filter_tabs>
-        <.year_picker
-          id="year"
-          selected_year={@params.year}
-          active_years={@active_months |> Enum.map(& &1.year) |> Enum.uniq()}
-          variant="secondary"
-          size="big"
-          data-position="bottom right"
-        />
+        <div class="flex flex-wrap items-center gap-3">
+          <.month_range_picker
+            id="analysis-period-picker"
+            selected={range(@params.period)}
+            label={period_title(@params.period)}
+            clear_label={gettext("This year")}
+            aria-label={gettext("Period")}
+            data-position="bottom right"
+          />
+        </div>
       </div>
       <div
         :if={@tag_filters != []}
@@ -349,23 +389,20 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
       </div>
       <%= if @params.view == :dashboard do %>
         <FirmowidWeb.Analysis.Components.FinancialOverview.overview
-          summary={@year_summary}
+          summary={@summary}
           tag_filters={@tag_filters}
           selected_month={@params.month}
           key_costs={if @review, do: CategoryReview.key_costs(@review), else: []}
         />
-        <FirmowidWeb.Analysis.Components.MonthDetails.details
-          :if={@params.month}
-          month={Enum.find(@year_summary.months, &(&1.month == @params.month))}
-          groups={@review && CategoryReview.month(@review, @params.month, compared_months(@params))}
-          entries_path={
-            InvoicingNavigation.invoicing_index_path(%{
-              month: @params.month,
-              filter: :all,
-              subfilter: nil,
-              view_mode: :list
-            })
+        <FirmowidWeb.Analysis.Components.PeriodDetails.details
+          title={details_title(@params)}
+          months={Enum.filter(@summary.months, &(&1.month in details_months(@params)))}
+          groups={
+            @review &&
+              CategoryReview.period(@review, details_months(@params), compared_months(@params))
           }
+          industry={@review && @review.industry}
+          can_edit={can_tag?(assigns)}
         />
         <FirmowidWeb.DesignSystem.Components.TaxForecastSummary.tax_forecast_summary
           :if={@tax_forecast && flag_enabled?(:tax_prognosis, assigns)}
@@ -374,16 +411,11 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
           settings_path={@tax_forecast_settings_path}
         />
       <% end %>
-      <FirmowidWeb.Analysis.Components.CategoryReview.review
-        :if={@params.view == :categories}
-        review={@review}
-        year={@params.year}
-      />
       <FirmowidWeb.Analysis.Components.SegmentRanking.ranking
         :if={@params.view == :segments}
         profitability={@profitability}
         review={@review}
-        year={@params.year}
+        period={@params.period}
         with_overhead={@with_overhead}
         functions={Enum.filter(@tag_definitions, & &1.overhead)}
         can_edit={can_tag?(assigns)}

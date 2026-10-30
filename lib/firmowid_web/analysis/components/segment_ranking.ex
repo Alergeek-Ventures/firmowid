@@ -1,6 +1,6 @@
 defmodule FirmowidWeb.Analysis.Components.SegmentRanking do
   @moduledoc """
-  The year's result as one list of what earns and what costs: projects first,
+  The period's result as one list of what earns and what costs: projects first,
   then shared costs (projects counted as shared costs and everything without a
   project), down to the company result. Bars share one scale, red for what
   lowers the result. A switch splits shared costs across projects by tracked
@@ -12,7 +12,7 @@ defmodule FirmowidWeb.Analysis.Components.SegmentRanking do
   use FirmowidWeb, :html
 
   alias Firmowid.Cldr.Number
-  alias FirmowidWeb.Analysis.Components.CategoryReview
+  alias FirmowidWeb.Analysis.Components.PeriodDetails
   alias FirmowidWeb.Analysis.Utilities.Navigation
 
   attr :profitability, :map,
@@ -20,7 +20,7 @@ defmodule FirmowidWeb.Analysis.Components.SegmentRanking do
     doc: "`ProjectProfitability.from_year_summary/2` result"
 
   attr :review, :map, required: true, doc: "`Firmowid.Analysis.get_category_review/2` result"
-  attr :year, :integer, required: true
+  attr :period, :any, required: true, doc: "first and last month of the analysed period"
 
   attr :with_overhead, :boolean,
     required: true,
@@ -36,7 +36,7 @@ defmodule FirmowidWeb.Analysis.Components.SegmentRanking do
   @spec ranking(map()) :: Phoenix.LiveView.Rendered.t()
   def ranking(assigns) do
     %{profitability: %{annual: annual}, review: review, with_overhead: with_overhead} = assigns
-    projects = project_rows(annual.projects, with_overhead, assigns.year)
+    projects = project_rows(annual.projects, with_overhead, assigns.period)
     # Split shared costs leave the residual; what stays there was not split.
     shared =
       shared_rows(if(with_overhead, do: annual.residual, else: annual.totals), assigns.functions)
@@ -271,7 +271,7 @@ defmodule FirmowidWeb.Analysis.Components.SegmentRanking do
     """
   end
 
-  defp project_rows(projects, with_overhead, year) do
+  defp project_rows(projects, with_overhead, period) do
     result = if with_overhead, do: :net_profit, else: :direct_profit
 
     projects
@@ -285,7 +285,7 @@ defmodule FirmowidWeb.Analysis.Components.SegmentRanking do
         name: project.name,
         amount: Map.fetch!(project, result),
         caption: project_caption(project, with_overhead),
-        patch: Navigation.view_path(%{view: :dashboard, year: year, month: nil}, [project.key])
+        patch: Navigation.view_path(%{view: :dashboard, period: period, month: nil}, [project.key])
       }
     end)
     |> Enum.sort_by(& &1.amount, {:desc, Decimal})
@@ -374,7 +374,7 @@ defmodule FirmowidWeb.Analysis.Components.SegmentRanking do
       %{
         name:
           if(category,
-            do: CategoryReview.category_label(category),
+            do: PeriodDetails.category_label(category),
             else: gettext("Uncategorized")
           ),
         amount: Enum.reduce(groups, Decimal.new(0), &Decimal.add(&1.amount, &2)),
