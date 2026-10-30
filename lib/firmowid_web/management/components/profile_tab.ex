@@ -35,7 +35,7 @@ defmodule FirmowidWeb.Management.Components.ProfileTab do
   @impl true
   def render(assigns) do
     ~H"""
-    <div class="flex h-full min-h-0 flex-col gap-6 overflow-y-auto overscroll-contain">
+    <div class="flex h-full min-h-0 flex-col gap-6">
       <.card dimmed={@user.member.archived_at} class="pb-9">
         <.card_header>
           Dane korespondencyjne
