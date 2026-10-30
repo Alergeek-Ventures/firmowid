@@ -278,11 +278,10 @@ defmodule FirmowidWeb.Landing.Components.Pricing do
 
           <dl class="lg:col-[1/5] lg:row-3">
             <.comparison_row
-              :for={{{label, values}, index} <- Enum.with_index(@rows)}
+              :for={{label, values} <- @rows}
               label={label}
               values={values}
               plans={@plans}
-              cutoff={index == length(@rows) - 1}
             />
           </dl>
 
@@ -360,15 +359,10 @@ defmodule FirmowidWeb.Landing.Components.Pricing do
   attr :label, :string, required: true
   attr :values, :list, required: true
   attr :plans, :list, required: true
-  attr :cutoff, :boolean, default: false
 
   defp comparison_row(assigns) do
     ~H"""
-    <div
-      id={@cutoff && "landing-pricing-cutoff"}
-      tabindex={if @cutoff, do: "-1"}
-      class="grid grid-cols-3 border-b border-(--landing-line) text-xs lg:grid-cols-[1.45fr_repeat(3,minmax(0,1fr))] lg:text-sm [&_dt]:col-span-full [&_dt]:pt-3 [&_dt]:pb-0.5 [&_dt]:font-normal lg:[&_dt]:col-auto lg:[&_dt]:py-4 lg:[&_dt]:pr-6"
-    >
+    <div class="grid grid-cols-3 border-b border-(--landing-line) text-xs lg:grid-cols-[1.45fr_repeat(3,minmax(0,1fr))] lg:text-sm [&_dt]:col-span-full [&_dt]:pt-3 [&_dt]:pb-0.5 [&_dt]:font-normal lg:[&_dt]:col-auto lg:[&_dt]:py-4 lg:[&_dt]:pr-6">
       <dt>{@label}</dt>
       <dd
         :for={{value, index} <- Enum.with_index(@values)}

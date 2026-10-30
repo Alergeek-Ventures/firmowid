@@ -4,18 +4,18 @@ export const LandingPricing = {
     this.followCollapse = () => {
       const button = this.el.querySelector("#landing-pricing-toggle");
       const features = this.el.querySelector("#landing-pricing-features");
-      button.scrollIntoView({ block: "end", behavior: "instant" });
+      window.scrollBy({
+        top: button.getBoundingClientRect().top - this.toggleTop,
+        behavior: "instant",
+      });
 
       if (features.getAnimations().length > 0) {
         this.collapseFrame = requestAnimationFrame(this.followCollapse);
-      } else {
-        const cutoff = this.el.querySelector("#landing-pricing-cutoff");
-        cutoff.focus({ preventScroll: true });
-        cutoff.scrollIntoView({ block: "end", behavior: "instant" });
       }
     };
-    this.toggleFeatures = () => {
+    this.toggleFeatures = (event) => {
       cancelAnimationFrame(this.collapseFrame);
+      this.toggleTop = event.currentTarget.getBoundingClientRect().top;
       this.expanded = !this.expanded;
       this.updateFeatures();
       if (!this.expanded) {
