@@ -11,7 +11,7 @@ Pierwszą fakturę wystawisz w bezpłatnej Aplikacji Podatnika KSeF 2.0 albo w p
 
 ## 1. Sprawdź, czy obowiązek już cię obejmuje
 
-Od 1 kwietnia 2026 r. KSeF 2.0 obowiązuje przedsiębiorców z drugiego etapu wdrożenia. Najmniejsze firmy mogą do końca 2026 r. wystawiać faktury poza KSeF, dopóki ich łączna wartość nie przekroczy 10 000 zł miesięcznie ([szczegóły limitu](/poradnik/limit-10000-ksef)). Od 1 stycznia 2027 r. obowiązek obejmie także je. Terminy podaje [harmonogram MF](https://ksef.podatki.gov.pl/etapy-wdrozenia-ksef/).
+Od 1 kwietnia 2026 r. KSeF 2.0 obowiązuje przedsiębiorców z drugiego etapu wdrożenia. Najmniejsze firmy mogą do końca 2026 r. wystawiać faktury poza KSeF, dopóki miesięczna wartość brutto faktur, które bez tego wyjątku podlegałyby obowiązkowemu KSeF, nie przekroczy 10 000 zł ([szczegóły limitu](/poradnik/limit-10000-ksef)). Od 1 stycznia 2027 r. obowiązek obejmie także je. Terminy podaje [harmonogram MF](https://ksef.podatki.gov.pl/etapy-wdrozenia-ksef/).
 
 JDG nie jest z KSeF zwolniona. Jeśli nie wiesz, czy twoja sprzedaż podlega obowiązkowi, zajrzyj do [pytań MF dla JDG i MŚP](https://ksef.podatki.gov.pl/jdg-i-msp/) albo zapytaj księgową.
 

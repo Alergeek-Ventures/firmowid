@@ -48,7 +48,7 @@ Jeśli wystawiasz kilka faktur i nie potrzebujesz ich łączyć z bankiem ani cz
 
 e-mikrofirma przyda się, jeśli rozliczasz VAT i chcesz przenieść faktury z KSeF do ewidencji bez przepisywania. Logujesz się przez e-Urząd Skarbowy.
 
-Nie powiedzą ci natomiast, kto już zapłacił, ile godzin zajął projekt ani kto w zespole może wystawiać faktury. Po program komercyjny warto sięgnąć wtedy, gdy ta praca zaczyna zajmować za dużo czasu.
+Nie powiedzą ci natomiast, kto już zapłacił ani ile godzin zajął projekt. Po program komercyjny warto sięgnąć wtedy, gdy ta praca zaczyna zajmować za dużo czasu.
 
 ## Kiedy wystarczy limit 3 albo 10 faktur
 

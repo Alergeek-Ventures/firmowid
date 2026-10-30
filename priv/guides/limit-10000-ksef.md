@@ -37,7 +37,7 @@ Wyjątek dotyczy tylko wystawiania. Faktury od dostawców odbierasz przez KSeF n
 
 ## Do kiedy działa limit
 
-Do końca 2026 r. Od 1 stycznia 2027 r. KSeF obowiązuje także firmy, które z niego korzystały.
+Do końca 2026 r. Od 1 stycznia 2027 r. KSeF obowiązuje także firmy, które dotąd korzystały z tego wyjątku.
 
 Jeśli zbliżasz się do 10 000 zł w miesiącu, przygotuj dostęp do KSeF przed wystawieniem następnej faktury. Jeśli faktura przekraczająca próg poszła już poza KSeF, nie wystawiaj od razu drugiej. Najpierw ustal z księgową, jak ją przesłać, rozliczyć i poinformować nabywcę.
 
