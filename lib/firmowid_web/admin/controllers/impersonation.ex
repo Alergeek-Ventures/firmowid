@@ -21,15 +21,12 @@ defmodule FirmowidWeb.Admin.Controllers.Impersonation do
   @doc "Signs the superuser in as the owner of the `org_id` organization."
   @spec create(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def create(conn, %{"org_id" => organization_id}) do
-    case get_session(conn, @superuser_token_key) do
-      nil ->
-        impersonate(conn, organization_id)
-
-      # Already in a session as an owner who is a superuser too: their token would
-      # replace the superuser's own one.
-      _superuser_token ->
-        redirect(conn, to: Navigation.settlement_path(organization_id))
-    end
+    # Already in a session as an owner who is a superuser too: their token would
+    # replace the superuser's own one. A key left by a session that ended without
+    # returning (e.g. the owner's token was revoked) is replaced.
+    if is_nil(Core.impersonator_id(conn.assigns.current_user)),
+      do: impersonate(conn, organization_id),
+      else: redirect(conn, to: Navigation.settlement_path(organization_id))
   end
 
   defp impersonate(conn, organization_id) do
