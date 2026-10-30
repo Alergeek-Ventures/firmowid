@@ -1158,8 +1158,9 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
 
     messages =
       errors
-      |> Enum.map(fn e -> Map.get(e, :message, "") end)
-      |> Enum.reject(&(&1 == ""))
+      |> Enum.map(&{Map.get(&1, :message), Map.get(&1, :vars, [])})
+      |> Enum.reject(fn {message, _vars} -> message in [nil, ""] end)
+      |> Enum.map(&translate_error/1)
       |> Enum.uniq()
 
     case messages do

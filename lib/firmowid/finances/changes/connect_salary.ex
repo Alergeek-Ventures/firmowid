@@ -29,7 +29,14 @@ defmodule Firmowid.Finances.Changes.ConnectSalary do
           changeset
 
         {message, vars} ->
-          Ash.Changeset.add_error(changeset, field: :salary_month, message: message, vars: vars)
+          Ash.Changeset.add_error(
+            changeset,
+            Ash.Error.Changes.InvalidAttribute.exception(
+              field: :salary_month,
+              message: message,
+              vars: vars
+            )
+          )
 
         message ->
           Ash.Changeset.add_error(changeset, field: :salary_month, message: message)

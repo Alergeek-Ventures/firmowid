@@ -3,8 +3,7 @@
 # would require broader action DSL redesign across WizardState and related changes/validations.
 defmodule Firmowid.Invoicing.WizardState do
   @moduledoc """
-  Ephemeral browser invoice wizard state backed by ETS, distinct from saved invoice drafts.
-  Each action's `description` documents its wizard step.
+  Ephemeral ETS-backed browser invoice wizard state, distinct from saved drafts; actions describe each step.
 
   ## ETS scoping
 
@@ -15,8 +14,7 @@ defmodule Firmowid.Invoicing.WizardState do
 
   ## Items relationship
 
-  Items are stored as standalone ETS resources in `WizardState.Item`. This enables
-  Ash aggregates (sum net_value, vat_value, gross_value) and item calculations.
+  Items in `WizardState.Item` enable Ash aggregates (sum net_value, vat_value, gross_value) and calculations.
   """
   use Ash.Resource,
     domain: Firmowid.Invoicing,
