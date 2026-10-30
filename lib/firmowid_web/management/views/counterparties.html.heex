@@ -71,7 +71,7 @@
       </div>
       <.switch
         class="ml-auto flex-row-reverse gap-4 select-none max-md:hidden"
-        label={gettext("Cooperation value")}
+        label={gettext("Total paid")}
         field={@form[:view_cooperation_value]}
         phx-click="toggle_cooperation_value_view"
       />
@@ -120,7 +120,7 @@
           <p class="text-right">{gettext("Identifier")}</p>
 
           <%= if @view == :cooperation_value do %>
-            <p class="text-right">{gettext("Cooperation value")}</p>
+            <p class="text-right">{gettext("Total paid")}</p>
           <% end %>
         </div>
 
@@ -192,7 +192,7 @@
           <p class="text-right">{gettext("Identifier")}</p>
           <p class="text-right text-nowrap">{gettext("Archived on")}</p>
           <%= if @view == :cooperation_value do %>
-            <p class="text-right">{gettext("Cooperation value")}</p>
+            <p class="text-right">{gettext("Total paid")}</p>
           <% end %>
         </div>
 

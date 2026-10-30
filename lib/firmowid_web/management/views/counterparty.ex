@@ -319,7 +319,7 @@ defmodule FirmowidWeb.Management.Views.Counterparty do
           <h3 class="text-base/tight font-medium text-grey-900">{gettext("Statistics")}</h3>
 
           <div class="space-y-1">
-            <p class="text-sm/snug text-grey-700">{gettext("Cooperation value")}</p>
+            <p class="text-sm/snug text-grey-700">{gettext("Total paid")}</p>
             <p class="text-xl/tight font-medium text-teal-700">
               {money_to_string(@stats.cooperation_value, @stats.currency)}
             </p>

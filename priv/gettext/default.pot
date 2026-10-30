@@ -6999,14 +6999,6 @@ msgstr ""
 msgid "Convert at the NBP rate"
 msgstr ""
 
-#: lib/firmowid_web/management/views/counterparties.html.heex:74
-#: lib/firmowid_web/management/views/counterparties.html.heex:123
-#: lib/firmowid_web/management/views/counterparties.html.heex:195
-#: lib/firmowid_web/management/views/counterparty.ex:322
-#, elixir-autogen, elixir-format
-msgid "Cooperation value"
-msgstr ""
-
 #: lib/firmowid_web/invoicing/components/sales_invoice_details.ex:175
 #, elixir-autogen, elixir-format
 msgid "Copy"
@@ -13135,4 +13127,12 @@ msgstr ""
 #, elixir-autogen, elixir-format
 msgctxt "profile tab link"
 msgid "View timesheet"
+msgstr ""
+
+#: lib/firmowid_web/management/views/counterparties.html.heex:74
+#: lib/firmowid_web/management/views/counterparties.html.heex:123
+#: lib/firmowid_web/management/views/counterparties.html.heex:195
+#: lib/firmowid_web/management/views/counterparty.ex:322
+#, elixir-autogen, elixir-format
+msgid "Total paid"
 msgstr ""
