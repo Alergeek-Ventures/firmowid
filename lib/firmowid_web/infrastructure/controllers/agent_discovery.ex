@@ -1,7 +1,8 @@
 defmodule FirmowidWeb.Infrastructure.Controllers.AgentDiscovery do
   @moduledoc """
   Serves public discovery documents that let AI agents find the Firmowid MCP
-  server: the AI Catalog, the MCP Server Card and the RFC 9727 API catalog.
+  server: the AI Catalog, the MCP Server Card, the RFC 9727 API catalog and the
+  Agent Skills index.
   """
   use FirmowidWeb, :controller
 
@@ -9,6 +10,8 @@ defmodule FirmowidWeb.Infrastructure.Controllers.AgentDiscovery do
   alias FirmowidWeb.Core.Endpoint
 
   @server_card_type "application/mcp-server-card+json"
+
+  @skill_name "firmowid-mcp"
 
   @doc "Returns the Link header value advertising the discovery documents."
   @spec link_header() :: String.t()
@@ -63,6 +66,43 @@ defmodule FirmowidWeb.Infrastructure.Controllers.AgentDiscovery do
   @doc "Answers CORS preflight requests for the Server Card."
   @spec preflight(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def preflight(conn, _params), do: conn |> put_cors_headers() |> send_resp(204, "")
+
+  @doc "Returns the Agent Skills discovery index (v0.2.0)."
+  @spec agent_skills(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def agent_skills(conn, _params) do
+    skill = read_skill()
+    # The index description must match the SKILL.md frontmatter.
+    [description] = Regex.run(~r/^description: (.+)$/m, skill, capture: :all_but_first)
+
+    send_document(conn, "application/json", %{
+      "$schema" => "https://schemas.agentskills.io/discovery/0.2.0/schema.json",
+      "skills" => [
+        %{
+          "name" => @skill_name,
+          "type" => "skill-md",
+          "description" => description,
+          "url" => "/.well-known/agent-skills/#{@skill_name}/SKILL.md",
+          "digest" => "sha256:" <> Base.encode16(:crypto.hash(:sha256, skill), case: :lower)
+        }
+      ]
+    })
+  end
+
+  @doc "Returns the SKILL.md listed in the Agent Skills index."
+  @spec agent_skill(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  # sobelow_skip ["XSS.SendResp"]
+  # The body is the fixed SKILL.md from application priv, never request input.
+  def agent_skill(conn, _params) do
+    conn
+    |> put_resp_content_type("text/markdown")
+    |> put_resp_header("access-control-allow-origin", "*")
+    |> put_resp_header("cache-control", "public, max-age=3600")
+    |> send_resp(200, read_skill())
+  end
+
+  # sobelow_skip ["Traversal.FileModule"]
+  # No request input enters this fixed path in application priv.
+  defp read_skill, do: :firmowid |> Application.app_dir("priv/agent_skills/#{@skill_name}/SKILL.md") |> File.read!()
 
   @doc "Returns the RFC 9727 API catalog for the MCP endpoint."
   @spec api_catalog(Plug.Conn.t(), map()) :: Plug.Conn.t()
