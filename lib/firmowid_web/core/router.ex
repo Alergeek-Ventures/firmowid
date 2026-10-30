@@ -13,6 +13,7 @@ defmodule FirmowidWeb.Core.Router do
   alias FirmowidWeb.Core.Telemetry
   alias FirmowidWeb.Infrastructure.Hooks.CurrentPath
   alias FirmowidWeb.Infrastructure.Hooks.FeatureFlags
+  alias FirmowidWeb.Infrastructure.Hooks.Locale
   alias FirmowidWeb.Infrastructure.Hooks.RedirectAuthenticated
   alias FirmowidWeb.Infrastructure.Hooks.RequireAdmin
   alias FirmowidWeb.Infrastructure.Hooks.RequireOrganization
@@ -213,6 +214,7 @@ defmodule FirmowidWeb.Core.Router do
 
     ash_authentication_live_session :admin,
       on_mount: [
+        Locale,
         {RequireOrganization, :default},
         {RequireSuperuser, :default},
         {FeatureFlags, :default},
@@ -244,6 +246,7 @@ defmodule FirmowidWeb.Core.Router do
 
     ash_authentication_live_session :onboarding,
       on_mount: [
+        Locale,
         {RequireUser, :default},
         {FeatureFlags, :default},
         {CurrentPath, :save_request_uri}
@@ -273,6 +276,7 @@ defmodule FirmowidWeb.Core.Router do
 
     ash_authentication_live_session :with_org,
       on_mount: [
+        Locale,
         {RequireOrganization, :default},
         {FeatureFlags, :default},
         {CurrentPath, :save_request_uri},
@@ -302,6 +306,7 @@ defmodule FirmowidWeb.Core.Router do
 
     ash_authentication_live_session :with_org_management,
       on_mount: [
+        Locale,
         {RequireOrganization, :default},
         {RequireAdmin, :default},
         {FeatureFlags, :default},
@@ -345,6 +350,7 @@ defmodule FirmowidWeb.Core.Router do
 
     ash_authentication_live_session :with_org_extended,
       on_mount: [
+        Locale,
         {RequireOrganization, :default},
         {FeatureFlags, :default},
         {CurrentPath, :save_request_uri},
@@ -366,6 +372,7 @@ defmodule FirmowidWeb.Core.Router do
 
     ash_authentication_live_session :guest,
       on_mount: [
+        Locale,
         {RedirectAuthenticated, :default},
         {CurrentPath, :save_request_uri},
         Timezone
@@ -392,6 +399,7 @@ defmodule FirmowidWeb.Core.Router do
 
     ash_authentication_live_session :public,
       on_mount: [
+        Locale,
         {CurrentPath, :save_request_uri},
         Timezone
       ] do

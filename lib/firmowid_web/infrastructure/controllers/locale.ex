@@ -11,9 +11,11 @@ defmodule FirmowidWeb.Infrastructure.Controllers.Locale do
   alias Firmowid.Core
   alias FirmowidWeb.Infrastructure.Plugs.Locale
 
+  @locales Enum.map(Locale.languages(), &elem(&1, 0))
+
   @doc "Selects the language given in the `jezyk` param."
   @spec update(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def update(conn, %{"jezyk" => locale}) when locale in ["pl", "en"] do
+  def update(conn, %{"jezyk" => locale}) when locale in @locales do
     if user = conn.assigns[:current_user], do: Core.set_user_locale!(user, locale, actor: user)
 
     conn

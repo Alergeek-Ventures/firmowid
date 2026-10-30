@@ -1,4 +1,9 @@
 import Datepicker from "air-datepicker";
+import localeEn from "air-datepicker/locale/en";
+import localePl from "air-datepicker/locale/pl";
+import localeUk from "air-datepicker/locale/uk";
+
+const LOCALES = { en: localeEn, pl: localePl, uk: localeUk };
 
 export const AirDatepicker = {
   mounted() {
@@ -94,52 +99,8 @@ export const AirDatepicker = {
           }),
       view: mode,
       minView: mode,
-      locale: {
-        days: [
-          "Niedziela",
-          "Poniedziałek",
-          "Wtorek",
-          "Środa",
-          "Czwartek",
-          "Piątek",
-          "Sobota",
-        ],
-        daysShort: ["Nie", "Pon", "Wto", "Śro", "Czw", "Pią", "Sob"],
-        daysMin: ["Nd", "Pn", "Wt", "Śr", "Czw", "Pt", "So"],
-        months: [
-          "Styczeń",
-          "Luty",
-          "Marzec",
-          "Kwiecień",
-          "Maj",
-          "Czerwiec",
-          "Lipiec",
-          "Sierpień",
-          "Wrzesień",
-          "Październik",
-          "Listopad",
-          "Grudzień",
-        ],
-        monthsShort: [
-          "Sty",
-          "Lut",
-          "Mar",
-          "Kwi",
-          "Maj",
-          "Cze",
-          "Lip",
-          "Sie",
-          "Wrz",
-          "Paź",
-          "Lis",
-          "Gru",
-        ],
-        today: "Dzisiaj",
-        clear: "Wyczyść",
-        dateFormat: "yyyy-MM-dd",
-        timeFormat: "hh:mm:aa",
-        firstDay: 1,
-      },
+      // Follow the interface language; weeks start on Monday as in Poland.
+      locale: { ...LOCALES[document.documentElement.lang] ?? localePl, firstDay: 1 },
       dateFormat: mode === "months" ? "MMMM yyyy" : "yyyy",
       onSelect: ({ date }) => {
         if (this.isRange()) {
