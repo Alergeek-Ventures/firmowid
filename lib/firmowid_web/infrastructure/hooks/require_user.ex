@@ -9,6 +9,7 @@ defmodule FirmowidWeb.Infrastructure.Hooks.RequireUser do
   """
 
   use FirmowidWeb, :verified_routes
+  use Gettext, backend: Firmowid.Gettext
 
   import Phoenix.Component
   import Phoenix.LiveView
@@ -20,7 +21,7 @@ defmodule FirmowidWeb.Infrastructure.Hooks.RequireUser do
       nil ->
         {:halt,
          socket
-         |> LiveToast.put_toast(:notice, "Musisz się zalogować.")
+         |> LiveToast.put_toast(:notice, gettext("You must log in."))
          |> redirect(to: ~p"/zaloguj")}
 
       user ->

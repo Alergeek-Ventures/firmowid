@@ -19,7 +19,7 @@ defmodule FirmowidWeb.Auth.Views.ExpiredSubscription do
 
         {:ok,
          socket
-         |> assign(:page_title, "Abonament wygasł")
+         |> assign(:page_title, gettext("Subscription expired"))
          |> assign(:organization_name, organization_name)
          |> assign(:contact_email, @contact_email)
          |> assign(:contact_mailto, contact_mailto(organization_name))}
@@ -37,22 +37,25 @@ defmodule FirmowidWeb.Auth.Views.ExpiredSubscription do
         <div class="mx-auto mb-4 flex size-12 items-center justify-center rounded-full bg-rust-100 text-rust-700">
           <Lucideicons.shield_alert class="size-6" />
         </div>
-        <h1 class="mb-2 text-2xl/tight font-semibold">Abonament wygasł</h1>
+        <h1 class="mb-2 text-2xl/tight font-semibold">
+          {gettext("Subscription expired")}
+        </h1>
         <p :if={@organization_name} class="mb-2 text-sm font-medium text-grey-900">
           {@organization_name}
         </p>
         <p class="text-base/snug text-grey-700">
-          Dostęp do organizacji został tymczasowo zablokowany z powodu wygaśnięcia abonamentu.
-          Napisz do nas, aby odnowić dostęp.
+          {gettext(
+            "Access to the organization has been temporarily blocked because the subscription has expired. Write to us to renew access."
+          )}
         </p>
 
         <div class="mt-6 space-y-3">
           <.link kind="button" mailto={@contact_mailto} variant="primary" class="w-full sm:w-auto">
-            Skontaktuj się w sprawie abonamentu
+            {gettext("Contact us about the subscription")}
           </.link>
 
           <p class="text-sm text-grey-700">
-            Jeśli przycisk nie działa, napisz na:
+            {gettext("If the button does not work, write to:")}
             <.link kind="unstyled" mailto={@contact_email} class="font-semibold underline">
               {@contact_email}
             </.link>
@@ -63,6 +66,10 @@ defmodule FirmowidWeb.Auth.Views.ExpiredSubscription do
     """
   end
 
-  defp contact_mailto(nil), do: "#{@contact_email}?subject=Abonament wygasł"
-  defp contact_mailto(org_name), do: "#{@contact_email}?subject=Abonament wygasł - #{org_name}"
+  defp contact_mailto(nil), do: "#{@contact_email}?subject=#{gettext("Subscription expired")}"
+
+  defp contact_mailto(org_name) do
+    subject = gettext("Subscription expired - %{organization}", organization: org_name)
+    "#{@contact_email}?subject=#{subject}"
+  end
 end

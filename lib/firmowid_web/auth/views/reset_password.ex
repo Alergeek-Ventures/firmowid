@@ -10,7 +10,7 @@ defmodule FirmowidWeb.Auth.Views.ResetPassword do
   def render(assigns) do
     ~H"""
     <div class="mx-auto max-w-sm">
-      <.header class="text-center">Resetuj hasło</.header>
+      <.header class="text-center">{gettext("Reset password")}</.header>
 
       <%!-- Form posts to ash_authentication password reset endpoint --%>
       <.simple_form
@@ -21,21 +21,21 @@ defmodule FirmowidWeb.Auth.Views.ResetPassword do
         phx-update="ignore"
       >
         <.error :if={@form.errors != []}>
-          Ups, coś poszło nie tak! Sprawdź błędy poniżej.
+          {gettext("Oops, something went wrong! Check the errors below.")}
         </.error>
 
         <input type="hidden" name={@form[:reset_token].name} value={@reset_token} />
-        <.input field={@form[:password]} type="password" label="Nowe hasło" required />
+        <.input field={@form[:password]} type="password" label={gettext("New password")} required />
         <:actions>
-          <.button variant="special" phx-disable-with="Resetowanie..." class="w-full">
-            Resetuj hasło
+          <.button variant="special" phx-disable-with={gettext("Resetting...")} class="w-full">
+            {gettext("Reset password")}
           </.button>
         </:actions>
       </.simple_form>
 
       <p class="mt-4 text-center text-sm">
-        <.link kind="unstyled" redirect={~p"/zarejestruj"}>Zarejestruj się</.link>
-        | <.link kind="unstyled" redirect={~p"/zaloguj"}>Zaloguj się</.link>
+        <.link kind="unstyled" redirect={~p"/zarejestruj"}>{gettext("Sign up")}</.link>
+        | <.link kind="unstyled" redirect={~p"/zaloguj"}>{gettext("Log in")}</.link>
       </p>
     </div>
     """
@@ -52,7 +52,7 @@ defmodule FirmowidWeb.Auth.Views.ResetPassword do
       :error ->
         {:ok,
          socket
-         |> put_flash(:error, "Link do resetowania hasła jest nieprawidłowy lub wygasł.")
+         |> put_flash(:error, gettext("The password reset link is invalid or has expired."))
          |> redirect(to: ~p"/")}
     end
   end

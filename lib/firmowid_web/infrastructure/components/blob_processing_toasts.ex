@@ -21,7 +21,7 @@ defmodule FirmowidWeb.Infrastructure.Components.BlobProcessingToasts do
         LiveToast.send_toast(
           :info,
           processing_failure_message(metadata, filename),
-          title: "Duplikat faktury",
+          title: gettext("Duplicate invoice"),
           action: fn assigns ->
             assigns = assign(assigns, :cost_invoice_id, duplicate_cost_invoice_id(metadata))
 
@@ -31,7 +31,7 @@ defmodule FirmowidWeb.Infrastructure.Components.BlobProcessingToasts do
               class="text-sm font-bold underline"
               navigate={Navigation.cost_invoice_show_path(@cost_invoice_id)}
             >
-              Wyświetl <.icon name="hero-arrow-right-solid" class="size-3" />
+              {gettext("View")} <.icon name="hero-arrow-right-solid" class="size-3" />
             </.link>
             """
           end
@@ -41,21 +41,21 @@ defmodule FirmowidWeb.Infrastructure.Components.BlobProcessingToasts do
         LiveToast.send_toast(
           :error,
           processing_failure_message(metadata, filename),
-          title: "Nieprawidłowy dokument"
+          title: gettext("Invalid document")
         )
 
       :missing_salary_metadata ->
         LiveToast.send_toast(
           :error,
           processing_failure_message(metadata, filename),
-          title: "Brak danych wynagrodzenia"
+          title: gettext("Missing salary data")
         )
 
       _ ->
         LiveToast.send_toast(
           :error,
           processing_failure_message(metadata, filename),
-          title: "Nie udało się wgrać pliku"
+          title: gettext("Could not upload the file")
         )
     end
   end
@@ -74,7 +74,7 @@ defmodule FirmowidWeb.Infrastructure.Components.BlobProcessingToasts do
   end
 
   def show_success_toast(%Blob{}, _) do
-    LiveToast.send_toast(:success, "Plik został pomyślnie przesłany.")
+    LiveToast.send_toast(:success, gettext("The file was uploaded successfully."))
   end
 
   defp processing_failure_reason(%{"error_code" => "invalid_document"}), do: :invalid_document
@@ -99,9 +99,12 @@ defmodule FirmowidWeb.Infrastructure.Components.BlobProcessingToasts do
   defp duplicate_cost_invoice_id(%{"cost_invoice_id" => id}), do: id
   defp duplicate_cost_invoice_id(%{cost_invoice_id: id}), do: id
 
-  defp processing_failure_message(%{"error_message" => message}, _filename) when is_binary(message), do: message
+  # The message is a msgid stored by the processing job; older blobs hold Polish text.
+  defp processing_failure_message(%{"error_message" => message}, _filename) when is_binary(message),
+    do: Gettext.gettext(Firmowid.Gettext, message)
 
-  defp processing_failure_message(%{error_message: message}, _filename) when is_binary(message), do: message
+  defp processing_failure_message(%{error_message: message}, _filename) when is_binary(message),
+    do: Gettext.gettext(Firmowid.Gettext, message)
 
   defp processing_failure_message(_metadata, filename), do: filename
 end

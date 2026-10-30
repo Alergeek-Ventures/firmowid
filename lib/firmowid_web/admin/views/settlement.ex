@@ -18,7 +18,7 @@ defmodule FirmowidWeb.Admin.Views.Settlement do
   def mount(_params, _session, socket) do
     {:ok,
      socket
-     |> assign(:page_title, "Rozliczenie")
+     |> assign(:page_title, gettext("Settlement"))
      |> assign(:selected_org, nil)
      |> assign(:delete_org_id, nil)
      |> assign(:activity, nil)
@@ -49,7 +49,7 @@ defmodule FirmowidWeb.Admin.Views.Settlement do
       {:error, _} ->
         {:noreply,
          socket
-         |> put_flash(:error, "Nie znaleziono organizacji.")
+         |> put_flash(:error, gettext("Organization not found."))
          |> push_navigate(to: Navigation.settlements_path())}
     end
   end
@@ -105,7 +105,7 @@ defmodule FirmowidWeb.Admin.Views.Settlement do
          :ok <- Core.destroy_organization(organization, actor: fresh_user) do
       LiveToast.send_toast(
         :success,
-        "Organizacja została usunięta z bazy. Usunięcie danych zewnętrznych może wymagać ręcznej weryfikacji."
+        gettext("The organization was deleted from the database. Deleting external data may require manual verification.")
       )
 
       {:noreply,
@@ -114,13 +114,17 @@ defmodule FirmowidWeb.Admin.Views.Settlement do
        |> push_navigate(to: Navigation.settlements_path())}
     else
       {:error, _error} ->
-        LiveToast.send_toast(:error, "Nie udało się usunąć organizacji z bazy. Spróbuj ponownie.")
+        LiveToast.send_toast(
+          :error,
+          gettext("Could not delete the organization from the database. Try again.")
+        )
+
         {:noreply, socket}
 
       _ ->
         LiveToast.send_toast(
           :error,
-          "Potwierdź nazwę organizacji i zaznacz, że jest testowa lub porzucona."
+          gettext("Confirm the organization name and check that it is a test or abandoned one.")
         )
 
         {:noreply, socket}
@@ -130,7 +134,7 @@ defmodule FirmowidWeb.Admin.Views.Settlement do
   def handle_event("delete-organization", _params, socket) do
     LiveToast.send_toast(
       :error,
-      "Potwierdź nazwę organizacji i zaznacz, że jest testowa lub porzucona."
+      gettext("Confirm the organization name and check that it is a test or abandoned one.")
     )
 
     {:noreply, socket}
@@ -145,7 +149,7 @@ defmodule FirmowidWeb.Admin.Views.Settlement do
              %{billing_plan: plan},
              actor: socket.assigns.current_user
            ) do
-      LiveToast.send_toast(:success, "Plan organizacji został zapisany.")
+      LiveToast.send_toast(:success, gettext("The organization plan was saved."))
 
       reloaded_org =
         Core.get_organization!(selected_org.id,
@@ -162,7 +166,7 @@ defmodule FirmowidWeb.Admin.Views.Settlement do
       {:noreply, reloaded_socket}
     else
       :error ->
-        LiveToast.send_toast(:error, "Nieprawidłowy plan.")
+        LiveToast.send_toast(:error, gettext("Invalid plan."))
         {:noreply, socket}
 
       {:error, error} ->

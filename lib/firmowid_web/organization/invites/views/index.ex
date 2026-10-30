@@ -18,7 +18,7 @@ defmodule FirmowidWeb.Organization.Invites.Views.Index do
     scope = socket.assigns.ash_scope
 
     if current_user.member.role != :admin do
-      raise ForbiddenError, "Tylko administrator może przeglądać zaproszenia."
+      raise ForbiddenError, gettext("Only an administrator can view invitations.")
     end
 
     invites =
@@ -26,7 +26,7 @@ defmodule FirmowidWeb.Organization.Invites.Views.Index do
 
     socket =
       socket
-      |> assign(:page_title, "Zaproszenia do twojej organizacji")
+      |> assign(:page_title, pgettext("page title", "Invitations to your organization"))
       |> assign(:organization_invites, invites)
 
     {:ok, socket}
@@ -38,7 +38,7 @@ defmodule FirmowidWeb.Organization.Invites.Views.Index do
     scope = socket.assigns.ash_scope
 
     if current_user.member.role != :admin do
-      raise ForbiddenError, "Tylko administrator może tworzyć zaproszenia."
+      raise ForbiddenError, gettext("Only an administrator can create invitations.")
     end
 
     Core.create_invite!(%{issued_by_id: current_user.id}, scope: scope)
@@ -58,7 +58,7 @@ defmodule FirmowidWeb.Organization.Invites.Views.Index do
     scope = socket.assigns.ash_scope
 
     if current_user.member.role != :admin do
-      raise ForbiddenError, "Tylko administrator może usuwać zaproszenia."
+      raise ForbiddenError, gettext("Only an administrator can delete invitations.")
     end
 
     invite =

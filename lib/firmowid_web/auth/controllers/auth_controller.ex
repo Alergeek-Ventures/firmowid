@@ -30,7 +30,10 @@ defmodule FirmowidWeb.Auth.Controllers.AuthController do
   def success(conn, {:password, :reset_request}, _user, _token) do
     conn
     |> delete_session(:return_to)
-    |> put_flash(:info, "Jeśli konto istnieje, wysłaliśmy instrukcje resetowania hasła.")
+    |> put_flash(
+      :info,
+      gettext("If the account exists, we have sent password reset instructions.")
+    )
     |> redirect(to: ~p"/zaloguj")
   end
 
@@ -84,10 +87,10 @@ defmodule FirmowidWeb.Auth.Controllers.AuthController do
   end
 
   defp maybe_put_sign_in_toast(conn, {:password, :reset}),
-    do: LiveToast.put_toast(conn, :success, "Hasło zmienione poprawnie")
+    do: LiveToast.put_toast(conn, :success, gettext("Password changed successfully"))
 
   defp maybe_put_sign_in_toast(conn, {:confirm, :confirm}),
-    do: LiveToast.put_toast(conn, :success, "Adres email został potwierdzony.")
+    do: LiveToast.put_toast(conn, :success, gettext("Email address has been confirmed."))
 
   defp maybe_put_sign_in_toast(conn, _activity), do: conn
 
@@ -137,41 +140,49 @@ defmodule FirmowidWeb.Auth.Controllers.AuthController do
           end)
 
         if duplicate_email? do
-          {"Taki email jest już zajęty.", ~p"/zarejestruj"}
+          {gettext("This email is already taken."), ~p"/zarejestruj"}
         else
-          {"Nie udało się utworzyć konta. Sprawdź formularz i spróbuj ponownie.", ~p"/zarejestruj"}
+          {account_creation_failed_message(), ~p"/zarejestruj"}
         end
 
       _ ->
-        {"Nie udało się utworzyć konta. Sprawdź formularz i spróbuj ponownie.", ~p"/zarejestruj"}
+        {account_creation_failed_message(), ~p"/zarejestruj"}
     end
   end
 
   defp failure_message_and_path({:password, :sign_in}, reason) do
     if unconfirmed_user_error?(reason) do
-      {"Twoje konto nie zostało jeszcze potwierdzone. Sprawdź skrzynkę pocztową.", ~p"/zaloguj"}
+      {gettext("Your account has not been confirmed yet. Check your inbox."), ~p"/zaloguj"}
     else
-      {"Niewłaściwy email lub hasło.", ~p"/zaloguj"}
+      {invalid_credentials_message(), ~p"/zaloguj"}
     end
   end
 
   defp failure_message_and_path({:password, :reset}, _reason) do
-    {"Nie udało się zresetować hasła. Link jest nieprawidłowy lub wygasł.", ~p"/resetuj-haslo"}
+    {gettext("Could not reset the password. The link is invalid or has expired."), ~p"/resetuj-haslo"}
   end
 
   defp failure_message_and_path({:password, :reset_request}, _reason) do
-    {"Nie udało się wysłać instrukcji resetowania hasła. Spróbuj ponownie.", ~p"/resetuj-haslo"}
+    {gettext("Could not send the password reset instructions. Try again."), ~p"/resetuj-haslo"}
   end
 
   defp failure_message_and_path({:google, _phase}, reason) do
     if unconfirmed_user_error?(reason) do
-      {"Konto z tym adresem email czeka na potwierdzenie. Potwierdź email lub zaloguj się hasłem.", ~p"/zaloguj"}
+      {gettext(
+         "The account with this email address is awaiting confirmation. Confirm your email or log in with your password."
+       ), ~p"/zaloguj"}
     else
-      {"Logowanie Google nie powiodło się. Spróbuj ponownie.", ~p"/zaloguj"}
+      {gettext("Google sign-in failed. Try again."), ~p"/zaloguj"}
     end
   end
 
-  defp failure_message_and_path(_activity, _reason), do: {"Niewłaściwy email lub hasło.", ~p"/zaloguj"}
+  defp failure_message_and_path(_activity, _reason), do: {invalid_credentials_message(), ~p"/zaloguj"}
+
+  defp invalid_credentials_message, do: gettext("Incorrect email or password.")
+
+  defp account_creation_failed_message do
+    gettext("Could not create the account. Check the form and try again.")
+  end
 
   defp log_auth_failure(conn, {:google, phase}, reason) do
     Logger.warning(
@@ -266,7 +277,7 @@ defmodule FirmowidWeb.Auth.Controllers.AuthController do
     |> revoke_impersonated_session()
     |> clear_session(:firmowid)
     |> Helpers.delete_all_remember_me_cookies(:firmowid)
-    |> LiveToast.put_toast(:notice, "Wylogowano.")
+    |> LiveToast.put_toast(:notice, gettext("Signed out."))
     |> redirect(to: ~p"/")
   end
 

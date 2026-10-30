@@ -11,8 +11,10 @@ defmodule FirmowidWeb.Auth.Views.ForgotPassword do
     ~H"""
     <div class="mx-auto max-w-sm">
       <.header class="text-center">
-        Nie pamiętasz hasła?
-        <:subtitle>Wyślemy Ci link do resetowania hasła na Twoją skrzynkę</:subtitle>
+        {gettext("Can't remember your password?")}
+        <:subtitle>
+          {gettext("We will send a password reset link to your inbox")}
+        </:subtitle>
       </.header>
 
       <%!-- Form posts to ash_authentication password reset request endpoint --%>
@@ -23,16 +25,16 @@ defmodule FirmowidWeb.Auth.Views.ForgotPassword do
         method="post"
         phx-update="ignore"
       >
-        <.input field={@form[:email]} type="email" placeholder="Email" required />
+        <.input field={@form[:email]} type="email" placeholder={gettext("Email")} required />
         <:actions>
-          <.button variant="special" phx-disable-with="Wysyłanie..." class="w-full">
-            Wyślij instrukcje resetowania hasła
+          <.button variant="special" phx-disable-with={gettext("Sending...")} class="w-full">
+            {gettext("Send password reset instructions")}
           </.button>
         </:actions>
       </.simple_form>
       <p class="mt-4 text-center text-sm">
-        <.link kind="unstyled" redirect={~p"/zarejestruj"}>Zarejestruj się</.link>
-        | <.link kind="unstyled" redirect={~p"/zaloguj"}>Zaloguj się</.link>
+        <.link kind="unstyled" redirect={~p"/zarejestruj"}>{gettext("Sign up")}</.link>
+        | <.link kind="unstyled" redirect={~p"/zaloguj"}>{gettext("Log in")}</.link>
       </p>
     </div>
     """

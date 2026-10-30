@@ -47,11 +47,11 @@ defmodule FirmowidWeb.Auth.Components.McpConsent do
 
     Phoenix.HTML.Safe.to_iodata(~H"""
     <!DOCTYPE html>
-    <html class="h-full" lang="pl">
+    <html class="h-full" lang={Gettext.get_locale(Firmowid.Gettext)}>
       <head>
         <meta charset="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <title>Autoryzacja MCP · Firmowid</title>
+        <title>{gettext("MCP authorization")} · Firmowid</title>
         <link rel="icon" type="image/png" href="/images/favicon.png" />
         <link
           rel="preload"
@@ -78,24 +78,26 @@ defmodule FirmowidWeb.Auth.Components.McpConsent do
           />
           <div class="z-10 w-full max-w-md rounded-2xl bg-white p-8 shadow-sm ring-1 ring-grey-200">
             <h1 class="text-center text-2xl font-bold text-grey-900">
-              Zezwól na dostęp
+              {gettext("Allow access")}
             </h1>
             <p class="mt-3 text-center text-sm text-grey-600">
-              Aplikacja <span class="font-semibold text-grey-900">{@client_name}</span>
-              prosi o dostęp do Twojego konta Firmowid w zakresie MCP.
+              {gettext(
+                "The %{client} application is requesting access to your Firmowid account through MCP.",
+                client: @client_name
+              )}
             </p>
 
             <dl class="mt-6 space-y-3 rounded-xl bg-grey-100 p-4 text-sm text-grey-700">
               <div>
-                <dt class="font-medium text-grey-900">Zakres</dt>
+                <dt class="font-medium text-grey-900">{gettext("Scope")}</dt>
                 <dd class="mt-0.5 font-mono text-xs break-all text-grey-600">{@scope}</dd>
               </div>
               <div>
-                <dt class="font-medium text-grey-900">Zasób</dt>
+                <dt class="font-medium text-grey-900">{gettext("Resource")}</dt>
                 <dd class="mt-0.5 font-mono text-xs break-all text-grey-600">{@resource}</dd>
               </div>
               <div>
-                <dt class="font-medium text-grey-900">Przekierowanie</dt>
+                <dt class="font-medium text-grey-900">{gettext("Redirect")}</dt>
                 <dd class="mt-0.5 font-mono text-xs break-all text-grey-600">{@redirect_uri}</dd>
               </div>
             </dl>
@@ -111,9 +113,9 @@ defmodule FirmowidWeb.Auth.Components.McpConsent do
                 value={organization.id}
               />
               <fieldset :if={length(@organizations) > 1} class="space-y-3 pb-3">
-                <legend class="text-sm font-medium text-grey-900">Organizacja</legend>
+                <legend class="text-sm font-medium text-grey-900">{gettext("Organization")}</legend>
                 <p class="text-sm text-grey-600">
-                  Aplikacja będzie działać w wybranej organizacji.
+                  {gettext("The application will work in the selected organization.")}
                 </p>
                 <label
                   :for={organization <- @organizations}
@@ -130,10 +132,10 @@ defmodule FirmowidWeb.Auth.Components.McpConsent do
                 </label>
               </fieldset>
               <.button variant="special" type="submit" name="action" value="approve" class="w-full">
-                Zezwól
+                {gettext("Allow")}
               </.button>
               <.button variant="outline" type="submit" name="action" value="deny" class="w-full">
-                Odrzuć
+                {gettext("Deny")}
               </.button>
             </form>
           </div>

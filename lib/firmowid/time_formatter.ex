@@ -3,6 +3,8 @@ defmodule Firmowid.TimeFormatter do
   Formats durations, dates and relative times for e-mails and the interface.
   """
 
+  use Gettext, backend: Firmowid.Gettext
+
   def format_timer(duration, :with_seconds) when is_integer(duration) do
     hours = div(duration, 60 * 60)
     minutes = rem(div(duration, 60), 60)
@@ -25,7 +27,7 @@ defmodule Firmowid.TimeFormatter do
   Example: "241 h 12 min"
   """
   def format_duration(seconds) when seconds < 60 do
-    "#{seconds} s"
+    pgettext("duration", "%{seconds} s", seconds: seconds)
   end
 
   def format_duration(seconds) do
@@ -33,8 +35,8 @@ defmodule Firmowid.TimeFormatter do
     minutes = div(rem(seconds, 3600), 60)
 
     [
-      if(hours > 0, do: "#{hours} h"),
-      if(minutes > 0, do: "#{minutes} min")
+      if(hours > 0, do: pgettext("duration", "%{hours} h", hours: hours)),
+      if(minutes > 0, do: pgettext("duration", "%{minutes} min", minutes: minutes))
     ]
     |> Enum.filter(& &1)
     |> Enum.join(" ")
@@ -83,10 +85,10 @@ defmodule Firmowid.TimeFormatter do
       |> max(0)
 
     cond do
-      seconds < 60 -> "przed chwilą"
-      seconds < 3600 -> "#{div(seconds, 60)} min temu"
-      seconds < 86_400 -> "#{div(seconds, 3600)} godz. temu"
-      true -> "#{div(seconds, 86_400)} dni temu"
+      seconds < 60 -> gettext("just now")
+      seconds < 3600 -> pgettext("relative time", "%{minutes} min ago", minutes: div(seconds, 60))
+      seconds < 86_400 -> pgettext("relative time", "%{hours} hr ago", hours: div(seconds, 3600))
+      true -> ngettext("%{count} day ago", "%{count} days ago", div(seconds, 86_400))
     end
   end
 

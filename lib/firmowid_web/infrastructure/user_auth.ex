@@ -6,6 +6,7 @@ defmodule FirmowidWeb.Infrastructure.UserAuth do
   `load_from_session` / `load_from_bearer` plugs from AshAuthentication.
   """
   use FirmowidWeb, :verified_routes
+  use Gettext, backend: Firmowid.Gettext
 
   import Phoenix.Controller
   import Plug.Conn
@@ -120,14 +121,14 @@ defmodule FirmowidWeb.Infrastructure.UserAuth do
       is_nil(user) ->
         conn
         |> maybe_store_return_to()
-        |> LiveToast.put_toast(:notice, "Musisz się zalogować.")
+        |> LiveToast.put_toast(:notice, gettext("You must log in."))
         |> redirect(to: ~p"/zaloguj")
         |> halt()
 
       is_nil(user.member) ->
         conn
         |> maybe_store_return_to()
-        |> LiveToast.put_toast(:notice, "Aby przejść dalej, przypisz sobie organizację.")
+        |> LiveToast.put_toast(:notice, gettext("To continue, assign yourself an organization."))
         |> redirect(to: OrganizationNavigation.onboarding_path())
         |> halt()
 
@@ -152,7 +153,7 @@ defmodule FirmowidWeb.Infrastructure.UserAuth do
       nil ->
         conn
         |> maybe_store_return_to()
-        |> LiveToast.put_toast(:notice, "Musisz się zalogować, żeby wejść na tę stronę.")
+        |> LiveToast.put_toast(:notice, gettext("You must log in to access this page."))
         |> redirect(to: ~p"/zaloguj")
         |> halt()
 

@@ -122,16 +122,16 @@ defmodule FirmowidWeb.Settings.Components.AccountTab do
   defp name_section(assigns) do
     ~H"""
     <.account_section
-      title="Dane osobowe"
+      title={gettext("Personal data")}
       action={if(!@editing_account_name, do: "toggle_editing_account_name")}
-      action_label="Edytuj dane osobowe"
+      action_label={gettext("Edit personal data")}
     >
       <%= if @editing_account_name do %>
         <form phx-submit="save" class="space-y-4">
           <input type="hidden" name="user[name]" value={@member_form[:name].value || ""} />
 
           <div class="space-y-2">
-            <Helpers.settings_field label="Imię" layout={:row} for="user_first_name">
+            <Helpers.settings_field label={gettext("First name")} layout={:row} for="user_first_name">
               <.input
                 type="text"
                 name="user[first_name]"
@@ -142,7 +142,7 @@ defmodule FirmowidWeb.Settings.Components.AccountTab do
               />
             </Helpers.settings_field>
 
-            <Helpers.settings_field label="Nazwisko" layout={:row} for="user_last_name">
+            <Helpers.settings_field label={gettext("Last name")} layout={:row} for="user_last_name">
               <.input
                 type="text"
                 name="user[last_name]"
@@ -152,7 +152,11 @@ defmodule FirmowidWeb.Settings.Components.AccountTab do
               />
             </Helpers.settings_field>
 
-            <Helpers.settings_field label="Data urodzenia" layout={:row} for="user_birthday">
+            <Helpers.settings_field
+              label={gettext("Date of birth")}
+              layout={:row}
+              for="user_birthday"
+            >
               <.input
                 type="date"
                 name="user[birthday]"
@@ -164,7 +168,7 @@ defmodule FirmowidWeb.Settings.Components.AccountTab do
             </Helpers.settings_field>
 
             <Helpers.settings_field
-              label="Udostępnianie daty urodzenia"
+              label={gettext("Sharing your date of birth")}
               layout={:row}
               for="user_birthday_visibility"
             >
@@ -174,9 +178,9 @@ defmodule FirmowidWeb.Settings.Components.AccountTab do
                 id="user_birthday_visibility"
                 value={to_string(@member_form[:birthday_visibility].value || :not_shared)}
                 options={[
-                  {"Nie udostępniam", "not_shared"},
-                  {"Dzień i miesiąc", "day_with_month"},
-                  {"Pełna data", "full_date"}
+                  {gettext("I do not share it"), "not_shared"},
+                  {gettext("Day and month"), "day_with_month"},
+                  {gettext("Full date"), "full_date"}
                 ]}
                 input_class="w-full"
               />
@@ -186,7 +190,9 @@ defmodule FirmowidWeb.Settings.Components.AccountTab do
               <div class="flex items-start gap-4 rounded-lg bg-grey-50 p-4 text-sm text-grey-700">
                 <span class="shrink-0"><.icon name="hero-information-circle" class="size-5" /></span>
                 <p>
-                  Jeżeli wyrażasz zgodę na udostępnienie swojej daty urodzenia wybierz odpowiednią opcję z listy.
+                  {gettext(
+                    "If you agree to share your date of birth, choose the appropriate option from the list."
+                  )}
                 </p>
               </div>
             </Helpers.settings_display_field>
@@ -199,19 +205,23 @@ defmodule FirmowidWeb.Settings.Components.AccountTab do
               phx-click="toggle_editing_account_name"
               size="small"
             >
-              Anuluj
+              {gettext("Cancel")}
             </.button>
 
             <.button type="submit" variant="success" size="small">
-              Zapisz
+              {gettext("Save")}
             </.button>
           </div>
         </form>
       <% else %>
         <div class="space-y-2">
-          <.detail_row label="Imię">{first_name(@current_user.member.name)}</.detail_row>
-          <.detail_row label="Nazwisko">{last_name(@current_user.member.name)}</.detail_row>
-          <.detail_row label="Data urodzenia">
+          <.detail_row label={gettext("First name")}>
+            {first_name(@current_user.member.name)}
+          </.detail_row>
+          <.detail_row label={gettext("Last name")}>
+            {last_name(@current_user.member.name)}
+          </.detail_row>
+          <.detail_row label={gettext("Date of birth")}>
             {format_birthday(@current_user.member.birthday)}
           </.detail_row>
         </div>
@@ -229,9 +239,9 @@ defmodule FirmowidWeb.Settings.Components.AccountTab do
   defp credentials_section(assigns) do
     ~H"""
     <.account_section
-      title="Dane dostępowe"
+      title={gettext("Access data")}
       action={if(!@editing_credentials, do: "toggle_editing_credentials")}
-      action_label="Edytuj dane dostępowe"
+      action_label={gettext("Edit access data")}
     >
       <.form
         :if={@editing_credentials}
@@ -241,11 +251,14 @@ defmodule FirmowidWeb.Settings.Components.AccountTab do
         class="space-y-4"
       >
         <div class="space-y-2">
-          <Helpers.settings_display_field label="Zmiana e-maila:" label_class="text-grey-900">
+          <Helpers.settings_display_field
+            label={gettext("Changing your email:")}
+            label_class="text-grey-900"
+          >
           </Helpers.settings_display_field>
 
           <Helpers.settings_field
-            label="Nowy adres email"
+            label={gettext("New email address")}
             class="w-full"
             for={@email_form[:email].id}
             layout={:row}
@@ -254,7 +267,7 @@ defmodule FirmowidWeb.Settings.Components.AccountTab do
           </Helpers.settings_field>
           <Helpers.settings_field
             :if={@current_user.hashed_password}
-            label="Twoje hasło"
+            label={gettext("Your password")}
             class="w-full"
             for="email_form_current_password"
             layout={:row}
@@ -267,14 +280,18 @@ defmodule FirmowidWeb.Settings.Components.AccountTab do
             />
           </Helpers.settings_field>
           <Helpers.settings_display_field
-            label="Wyślemy link potwierdzający na nowy adres. Po jego otwarciu potwierdź zmianę przyciskiem na wyświetlonej stronie"
+            label={
+              gettext(
+                "We will send a confirmation link to the new address. After opening it, confirm the change with the button on the displayed page"
+              )
+            }
             label_class="order-2 text-start px-1"
           >
           </Helpers.settings_display_field>
         </div>
         <div class="flex w-full justify-start gap-5 sm:justify-end">
           <.button type="submit" variant="success" size="small">
-            Zapisz adres email
+            {gettext("Save email address")}
           </.button>
         </div>
       </.form>
@@ -290,10 +307,13 @@ defmodule FirmowidWeb.Settings.Components.AccountTab do
         class="space-y-4"
       >
         <div class="space-y-2">
-          <Helpers.settings_display_field label="Zmiana hasła:" label_class="text-grey-900">
+          <Helpers.settings_display_field
+            label={gettext("Changing your password:")}
+            label_class="text-grey-900"
+          >
           </Helpers.settings_display_field>
           <Helpers.settings_field
-            label="Twoje hasło"
+            label={gettext("Your password")}
             layout={:row}
             class="pb-6"
             for="current_password_for_password"
@@ -308,7 +328,11 @@ defmodule FirmowidWeb.Settings.Components.AccountTab do
             />
           </Helpers.settings_field>
 
-          <Helpers.settings_field label="Nowe hasło" layout={:row} for={@password_form[:password].id}>
+          <Helpers.settings_field
+            label={gettext("New password")}
+            layout={:row}
+            for={@password_form[:password].id}
+          >
             <.input
               field={@password_form[:password]}
               type="password"
@@ -318,7 +342,7 @@ defmodule FirmowidWeb.Settings.Components.AccountTab do
           </Helpers.settings_field>
 
           <Helpers.settings_field
-            label="Powtórz hasło"
+            label={gettext("Repeat password")}
             layout={:row}
             for={@password_form[:password_confirmation].id}
           >
@@ -330,7 +354,7 @@ defmodule FirmowidWeb.Settings.Components.AccountTab do
             />
           </Helpers.settings_field>
           <Helpers.settings_display_field
-            label='Wpisz nowe hasło w obu okienkach, a następnie kliknij "zapisz"'
+            label={gettext("Enter the new password in both fields, then click \"save\"")}
             label_class="order-2 text-start px-1"
           >
           </Helpers.settings_display_field>
@@ -343,23 +367,23 @@ defmodule FirmowidWeb.Settings.Components.AccountTab do
             size="small"
             phx-click="toggle_editing_credentials"
           >
-            Anuluj
+            {gettext("Cancel")}
           </.button>
 
           <.button
             type="submit"
             variant="success"
             size="small"
-            phx-disable-with="Zapisywanie..."
+            phx-disable-with={pgettext("settings", "Saving...")}
           >
-            Zapisz hasło
+            {gettext("Save password")}
           </.button>
         </div>
       </.form>
 
       <div :if={!@editing_credentials} class="space-y-2">
-        <.detail_row label="E-mail">{@current_user.email}</.detail_row>
-        <.detail_row label="Hasło">****************</.detail_row>
+        <.detail_row label={gettext("E-mail")}>{@current_user.email}</.detail_row>
+        <.detail_row label={gettext("Password")}>****************</.detail_row>
       </div>
     </.account_section>
     """
@@ -370,9 +394,9 @@ defmodule FirmowidWeb.Settings.Components.AccountTab do
 
   defp google_login_section(assigns) do
     ~H"""
-    <.account_section title="Logowanie przez Google">
+    <.account_section title={gettext("Log in with Google")}>
       <div class="flex flex-col gap-4">
-        <Helpers.settings_display_field label="Powiązane konto" class="w-full">
+        <Helpers.settings_display_field label={gettext("Linked account")} class="w-full">
           <%= if @google_connected? do %>
             <div class="flex items-center gap-2">
               <span>{@current_user.email}</span>
@@ -381,7 +405,7 @@ defmodule FirmowidWeb.Settings.Components.AccountTab do
               </span>
             </div>
           <% else %>
-            Brak
+            {gettext("None")}
           <% end %>
         </Helpers.settings_display_field>
 
@@ -412,7 +436,9 @@ defmodule FirmowidWeb.Settings.Components.AccountTab do
                   fill="#EA4335"
                 />
               </svg>
-              {if @google_connected?, do: "Powiąż inne", else: "Połącz z Google"}
+              {if @google_connected?,
+                do: gettext("Link another"),
+                else: gettext("Connect with Google")}
             </.button>
 
             <.button
@@ -422,7 +448,7 @@ defmodule FirmowidWeb.Settings.Components.AccountTab do
               size="small"
               phx-click="unlink_google_account"
             >
-              Rozłącz
+              {gettext("Disconnect")}
             </.button>
           </div>
         </Helpers.settings_display_field>
@@ -432,15 +458,26 @@ defmodule FirmowidWeb.Settings.Components.AccountTab do
   end
 
   defp language_section(assigns) do
-    assigns = assign(assigns, :locale, Gettext.get_locale(Firmowid.Gettext))
+    assigns =
+      assign(assigns,
+        locale: Gettext.get_locale(Firmowid.Gettext),
+        languages: FirmowidWeb.Infrastructure.Plugs.Locale.languages()
+      )
 
     ~H"""
     <.account_section title={gettext("Language")}>
       <.form for={%{}} action={~p"/jezyk"} id="locale_form">
         <Helpers.settings_display_field>
           <.segmented_control label={gettext("Language")}>
-            <:option name="jezyk" value="pl" lang="pl" active={@locale == "pl"}>Polski</:option>
-            <:option name="jezyk" value="en" lang="en" active={@locale == "en"}>English</:option>
+            <:option
+              :for={{code, name} <- @languages}
+              name="jezyk"
+              value={code}
+              lang={code}
+              active={@locale == code}
+            >
+              {name}
+            </:option>
           </.segmented_control>
         </Helpers.settings_display_field>
       </.form>
@@ -453,10 +490,27 @@ defmodule FirmowidWeb.Settings.Components.AccountTab do
   attr :delete_account_form, :map, required: true
 
   defp account_closure_section(assigns) do
+    assigns =
+      assign(assigns,
+        closure_parts:
+          split_bold(
+            gettext("Are you sure you want to close your account? %{warning}",
+              warning: "__BOLD__"
+            )
+          ),
+        owned_parts:
+          split_bold(
+            gettext(
+              "We will also delete the organizations you own and all their data: %{organizations}.",
+              organizations: "__BOLD__"
+            )
+          )
+      )
+
     ~H"""
-    <.account_section title="Zamykanie konta">
+    <.account_section title={gettext("Closing the account")}>
       <div class="flex flex-col gap-4">
-        <.detail_row label="Nazwa konta">{@current_user.email}</.detail_row>
+        <.detail_row label={gettext("Account name")}>{@current_user.email}</.detail_row>
         <Helpers.settings_display_field>
           <.button
             class="max-w-[200px]"
@@ -465,20 +519,23 @@ defmodule FirmowidWeb.Settings.Components.AccountTab do
             size="small"
             phx-click={show_modal("confirm_modal")}
           >
-            Zamknij konto
+            {gettext("Close account")}
           </.button>
         </Helpers.settings_display_field>
       </div>
 
       <.modal id="confirm_modal">
         <h3 class="text-lg font-semibold text-grey-900">
-          Czy na pewno chcesz zamknąć konto? <b>Nie da się tego cofnąć.</b>
+          {elem(@closure_parts, 0)}<b>{gettext("This cannot be undone.")}</b>{elem(@closure_parts, 1)}
         </h3>
 
         <p class="mt-3 text-sm text-grey-700">
-          Usuniemy Twoje konto i wszystkie przypisane do niego dane.
+          {gettext("We will delete your account and all data assigned to it.")}
           <%= if @owned_organizations != [] do %>
-            Usuniemy też organizacje, których jesteś właścicielem, i wszystkie ich dane: <b>{Enum.map_join(@owned_organizations, ", ", & &1.name)}</b>.
+            {elem(@owned_parts, 0)}<b>{Enum.map_join(@owned_organizations, ", ", & &1.name)}</b>{elem(
+              @owned_parts,
+              1
+            )}
           <% end %>
         </p>
 
@@ -489,7 +546,7 @@ defmodule FirmowidWeb.Settings.Components.AccountTab do
             required
             input_class="w-full mb-0"
             class="flex items-center gap-5 text-sm text-grey-700 [&>label]:mb-0"
-            label="Hasło"
+            label={gettext("Password")}
           />
 
           <:actions>
@@ -499,15 +556,15 @@ defmodule FirmowidWeb.Settings.Components.AccountTab do
                 variant="secondary"
                 phx-click={hide_modal("confirm_modal")}
               >
-                Anuluj
+                {gettext("Cancel")}
               </.button>
 
               <.button
                 type="submit"
                 variant="destructive"
-                phx-disable-with="Usuwam..."
+                phx-disable-with={gettext("Deleting...")}
               >
-                Zamknij konto
+                {gettext("Close account")}
               </.button>
             </div>
           </:actions>
@@ -516,6 +573,8 @@ defmodule FirmowidWeb.Settings.Components.AccountTab do
     </.account_section>
     """
   end
+
+  defp split_bold(text), do: List.to_tuple(String.split(text, "__BOLD__", parts: 2))
 
   defp first_name(nil), do: "—"
 
