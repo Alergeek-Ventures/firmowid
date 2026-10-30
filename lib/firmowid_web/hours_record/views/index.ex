@@ -27,11 +27,17 @@ defmodule FirmowidWeb.HoursRecord.Views.Index do
 
     can_use_hours_records = current_user.member.name && not is_nil(current_contract)
 
+    [settings_before, settings_after] =
+      "To fill in the timesheet you must set your name and employment date in %{link}"
+      |> gettext(link: "__LINK__")
+      |> String.split("__LINK__", parts: 2)
+
     socket =
       socket
       |> assign(:selected_date, selected_date)
       |> assign(:active_months, active_months)
       |> assign(:can_use_hours_records, can_use_hours_records)
+      |> assign(settings_before: settings_before, settings_after: settings_after)
       |> assign(:page_title, pgettext("hours record page", "Timesheet"))
 
     {:ok, socket}

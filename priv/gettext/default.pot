@@ -3626,7 +3626,7 @@ msgstr ""
 
 #: lib/firmowid_web/management/views/delegation.ex
 #, elixir-autogen, elixir-format
-msgid "Drag a file here or"
+msgid "Drag a file here or %{link}"
 msgstr ""
 
 #: lib/firmowid_web/delegations/components/settlement/expense.ex
@@ -8755,10 +8755,14 @@ msgstr ""
 msgid "Sign in as owner"
 msgstr ""
 
-#: lib/firmowid_web/management/views/delegation.ex
 #: lib/firmowid_web/settings/components/profile_tab.ex
 #, elixir-autogen, elixir-format
 msgid "Sign the document"
+msgstr ""
+
+#: lib/firmowid_web/management/views/delegation.ex
+#, elixir-autogen, elixir-format
+msgid "Sign the document %{link}"
 msgstr ""
 
 #: lib/firmowid_web/hours_record/components/upload_form.ex
@@ -10246,9 +10250,9 @@ msgstr ""
 msgid "To fill in the timesheet you must add at least one hour of work"
 msgstr ""
 
-#: lib/firmowid_web/hours_record/views/index.html.heex
+#: lib/firmowid_web/hours_record/views/index.ex
 #, elixir-autogen, elixir-format
-msgid "To fill in the timesheet you must set your name and employment date in"
+msgid "To fill in the timesheet you must set your name and employment date in %{link}"
 msgstr ""
 
 #: lib/firmowid_web/landing/components/sections.ex

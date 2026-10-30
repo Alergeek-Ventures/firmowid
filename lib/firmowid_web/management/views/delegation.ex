@@ -19,11 +19,19 @@ defmodule FirmowidWeb.Management.Views.Delegation do
 
   @impl true
   def mount(_params, _session, socket) do
+    [sign_before, sign_after] =
+      split_sentence(gettext("Sign the document %{link}", link: "__LINK__"))
+
+    [drop_before, drop_after] =
+      split_sentence(gettext("Drag a file here or %{link}", link: "__LINK__"))
+
     {:ok,
      socket
      |> assign(:generated_advance_amount, nil)
      |> assign(:generated_billing_month, nil)
      |> assign(:current_advance_amount, Money.new(:PLN, 0))
+     |> assign(sign_before: sign_before, sign_after: sign_after)
+     |> assign(drop_before: drop_before, drop_after: drop_after)
      |> allow_upload(:signed_command, accept: ~w(.pdf), max_entries: 1)}
   end
 
@@ -311,7 +319,7 @@ defmodule FirmowidWeb.Management.Views.Delegation do
                   </.link>
                 </li>
                 <li>
-                  {gettext("Sign the document")}
+                  {@sign_before}
                   <.link
                     kind="unstyled"
                     external={ElectronicSignature.trusted_profile_url()}
@@ -319,7 +327,7 @@ defmodule FirmowidWeb.Management.Views.Delegation do
                     class="inline-flex items-center gap-1 font-medium whitespace-nowrap text-teal-700"
                   >
                     {gettext("with a Trusted Profile")} <Lucideicons.external_link class="size-4" />
-                  </.link>
+                  </.link>{@sign_after}
                 </li>
                 <li>{gettext("Upload the signed business trip order.")}</li>
               </ol>
@@ -337,8 +345,7 @@ defmodule FirmowidWeb.Management.Views.Delegation do
                   class="flex min-h-28 cursor-pointer items-center justify-center rounded-[5px] border border-dashed border-teal-200 px-4 text-center"
                 >
                   <span class="text-teal-700 sm:hidden">{gettext("Choose a file")}</span>
-                  <span class="hidden sm:inline">{gettext("Drag a file here or")}
-                  <span class="text-teal-700">{gettext("choose from your computer")}</span></span>
+                  <span class="hidden sm:inline">{@drop_before}<span class="text-teal-700">{gettext("choose from your computer")}</span>{@drop_after}</span>
                 </label>
                 <.file_display
                   :for={entry <- @uploads.signed_command.entries}
@@ -439,4 +446,7 @@ defmodule FirmowidWeb.Management.Views.Delegation do
   end
 
   defp initial(name), do: name |> String.trim() |> String.first() |> String.upcase()
+
+  # Splits a translated sentence around the marker that stands for its inline link.
+  defp split_sentence(sentence), do: String.split(sentence, "__LINK__", parts: 2)
 end

@@ -177,21 +177,10 @@ defmodule FirmowidWeb.Delegations.Components.Settlement.Documents do
     assigns = assign(assigns, :parts, assigns.text |> String.split("*") |> Enum.with_index())
 
     ~H"""
-    <%= for {part, index} <- @parts do %>
-      <%= if rem(index, 2) == 1 do %>
-        <.document_emphasis>{part}</.document_emphasis>
-      <% else %>
-        {part}
-      <% end %>
-    <% end %>
-    """
-  end
-
-  slot :inner_block, required: true
-
-  defp document_emphasis(assigns) do
-    ~H"""
-    <span class="font-medium text-teal-700 underline">{render_slot(@inner_block)}</span>
+    <span
+      :for={{part, index} <- @parts}
+      class={rem(index, 2) == 1 && "font-medium text-teal-700 underline"}
+    >{part}</span>
     """
   end
 end
