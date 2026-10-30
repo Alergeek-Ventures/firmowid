@@ -43,6 +43,15 @@ defmodule FirmowidMcp.Invoicing.PrivacyTest do
   defp assert_private_arguments(arguments, error? \\ true) do
     user = user_fixture(%{role: :invoicing})
 
+    {:ok, token, claims} =
+      AshAuthentication.Oauth2Server.Jwt.mint(Firmowid.Oauth2Server,
+        sub: user.id,
+        client_id: Ash.UUIDv7.generate(),
+        scope: "mcp"
+      )
+
+    FirmowidMcp.Utilities.AccessToken.store!(token, user)
+
     Ash.Seed.seed!(SalesInvoice, %{
       organization_id: user.member.organization_id,
       issue_date: Date.utc_today(),
@@ -74,6 +83,7 @@ defmodule FirmowidMcp.Invoicing.PrivacyTest do
       |> Plug.Conn.put_req_header("mcp-protocol-version", "2026-07-28")
       |> Plug.Conn.put_req_header("mcp-method", "tools/call")
       |> Plug.Conn.put_req_header("mcp-name", "list_sales_invoices")
+      |> Plug.Conn.assign(:oauth_claims, claims)
       |> Ash.PlugHelpers.set_actor(user)
       |> FirmowidMcp.Utilities.Authenticate.call([])
       |> Router.call(opts)

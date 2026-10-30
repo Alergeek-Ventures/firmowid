@@ -8,10 +8,13 @@ defmodule FirmowidWeb.Development.Controllers.Mcp do
   """
   use FirmowidWeb, :controller
 
+  alias AshAuthentication.Oauth2Server.Jwt
   alias Firmowid.Invoicing.SalesInvoice
+  alias Firmowid.Oauth2Server
   alias FirmowidMcp.Invoicing.IssueCorrection
   alias FirmowidMcp.Invoicing.IssueInvoice
   alias FirmowidMcp.Runtime
+  alias FirmowidMcp.Utilities.AccessToken
   alias FirmowidMcp.Widgets
 
   require Ash.Query
@@ -27,9 +30,20 @@ defmodule FirmowidWeb.Development.Controllers.Mcp do
   def index(conn, _params) do
     scope = conn.assigns.ash_scope
 
+    {:ok, access_token, claims} =
+      Jwt.mint(Oauth2Server,
+        sub: scope.actor.id,
+        client_id: "development",
+        scope: "mcp",
+        tenant: scope.tenant,
+        ttl: @mount_lifetime
+      )
+
+    AccessToken.store!(access_token, scope.actor)
+
     oauth_conn =
       conn
-      |> assign(:oauth_claims, %{"exp" => System.system_time(:second) + @mount_lifetime})
+      |> assign(:oauth_claims, claims)
       |> Ash.PlugHelpers.set_actor(scope.actor)
       |> Ash.PlugHelpers.set_tenant(scope.tenant)
 

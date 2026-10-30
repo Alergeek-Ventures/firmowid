@@ -10,6 +10,14 @@ defmodule FirmowidWeb.Core.RequestLogMetadata do
 
   @health_path "/health"
 
+  @doc "Disables Phoenix request logs for paths carrying authentication credentials."
+  @spec log_level(Plug.Conn.t()) :: :info | false
+  def log_level(%{path_info: [segment | _]}) do
+    if URI.decode(segment) in ["resetuj-haslo", "potwierdz-email"], do: false, else: :info
+  end
+
+  def log_level(_conn), do: :info
+
   @impl Plug
   @doc """
   Returns plug options unchanged.

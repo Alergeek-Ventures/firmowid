@@ -23,7 +23,7 @@ defmodule FirmowidMcp.Utilities.AuthenticateTest do
 
     conn =
       conn
-      |> Ash.PlugHelpers.set_actor(user)
+      |> oauth_actor(user)
       |> Authenticate.call([])
 
     assert conn.halted
@@ -35,7 +35,7 @@ defmodule FirmowidMcp.Utilities.AuthenticateTest do
 
     conn =
       conn
-      |> Ash.PlugHelpers.set_actor(user)
+      |> oauth_actor(user)
       |> Authenticate.call([])
 
     refute conn.halted
@@ -54,7 +54,7 @@ defmodule FirmowidMcp.Utilities.AuthenticateTest do
 
     conn =
       conn
-      |> Ash.PlugHelpers.set_actor(user)
+      |> oauth_actor(user)
       |> Authenticate.call([])
 
     refute conn.halted
@@ -72,11 +72,26 @@ defmodule FirmowidMcp.Utilities.AuthenticateTest do
 
     conn =
       conn
-      |> Ash.PlugHelpers.set_actor(user)
+      |> oauth_actor(user)
       |> Authenticate.call([])
 
     refute conn.halted
     assert Ash.PlugHelpers.get_tenant(conn) == organization.id
     assert Ash.PlugHelpers.get_actor(conn).member.organization_id == organization.id
+  end
+
+  defp oauth_actor(conn, user) do
+    {:ok, token, claims} =
+      AshAuthentication.Oauth2Server.Jwt.mint(Firmowid.Oauth2Server,
+        sub: user.id,
+        client_id: Ash.UUIDv7.generate(),
+        scope: "mcp"
+      )
+
+    FirmowidMcp.Utilities.AccessToken.store!(token, user)
+
+    conn
+    |> Plug.Conn.assign(:oauth_claims, claims)
+    |> Ash.PlugHelpers.set_actor(user)
   end
 end

@@ -3,8 +3,9 @@ defmodule FirmowidWeb.Auth.Controllers.AuthControllerTest do
   Covers authentication session topics and revocation disconnects through HTTP.
   """
 
-  use FirmowidWeb.ConnCase, async: true
+  use FirmowidWeb.ConnCase, async: false
 
+  import ExUnit.CaptureLog
   import Firmowid.AccountsFixtures
   import Phoenix.LiveViewTest
 
@@ -14,6 +15,20 @@ defmodule FirmowidWeb.Auth.Controllers.AuthControllerTest do
   alias Firmowid.Core
   alias Firmowid.Core.Token
   alias Phoenix.Socket.Broadcast
+
+  test "reset and confirmation URLs never expose bearer credentials in request logs" do
+    level = Logger.level()
+    Logger.configure(level: :info)
+    on_exit(fn -> Logger.configure(level: level) end)
+    credential = "sensitive-auth-credential-probe"
+
+    for path <- ["resetuj-haslo", "potwierdz-email", "%72esetuj-haslo", "%70otwierdz-email"] do
+      logs = capture_log([level: :info], fn -> get(build_conn(), "/#{path}/#{credential}") end)
+      refute logs =~ credential
+    end
+
+    assert capture_log([level: :info], fn -> get(build_conn(), "/zaloguj") end) =~ "GET /zaloguj"
+  end
 
   test "logout revokes the session token and broadcasts its exact topic", %{conn: conn} do
     user = user_fixture()

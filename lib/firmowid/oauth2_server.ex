@@ -12,7 +12,11 @@ defmodule Firmowid.Oauth2Server do
   the member) revokes its refresh tokens and removes its codes and consent in the
   same transaction.
 
-  The installed OAuth library uses stateless access JWTs: restoring a member can
+  HTTP exchanges register native access JWTs in Core.Token. Password changes and
+  resets revoke those records; MCP and widget interactions require an active entry.
+  Previously issued, unregistered JWTs require reauthentication.
+
+  Membership archival still relies on membership checks: restoring a member can
   re-enable an unexpired access token issued before the archive. Its multi-action
   exchange also has no account-generation check across an archive/restore cycle.
   Permanent OAuth revocation across restoration requires support at the exchange

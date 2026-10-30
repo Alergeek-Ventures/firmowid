@@ -4,11 +4,12 @@ defmodule FirmowidMcp.Session do
   alias Firmowid.Core
   alias Firmowid.Core.User
   alias Firmowid.Scope
+  alias FirmowidMcp.Utilities.AccessToken
 
   @salt "mcp-app-session-v1"
   @lifetime 900
 
-  @doc "Binds a mount to the authenticated user, tenant, app and original OAuth expiry."
+  @doc "Binds a mount to the authenticated user, tenant, app, OAuth JTI and original expiry."
   @spec issue(Plug.Conn.t(), String.t(), map()) :: String.t()
   def issue(conn, resource_uri, query) do
     actor = Ash.PlugHelpers.get_actor(conn)
@@ -18,6 +19,7 @@ defmodule FirmowidMcp.Session do
 
     Phoenix.Token.sign(FirmowidMcp.endpoint(), @salt, %{
       actor_id: actor.id,
+      oauth_jti: claims["jti"],
       tenant: tenant,
       resource_uri: resource_uri,
       query: query,
@@ -29,19 +31,21 @@ defmodule FirmowidMcp.Session do
   # An authentication read, so blocked accounts (see User `:access_block`) are not found.
   @authentication_context %{private: %{ash_authentication?: true}}
 
-  @doc "Revalidates expiry, account access and organization membership on mount and every interaction."
+  @doc "Revalidates expiry, OAuth revocation, account access and membership on every interaction."
   @spec authorize(String.t(), String.t()) :: {:ok, map()} | {:error, term()}
   def authorize(token, resource_uri) when is_binary(token) do
     with {:ok,
           %{
             resource_uri: ^resource_uri,
             actor_id: id,
+            oauth_jti: oauth_jti,
             tenant: tenant,
             confirmation_id: confirmation_id
           } = claims} <-
            Phoenix.Token.verify(FirmowidMcp.endpoint(), @salt, token, max_age: @lifetime),
          true <- claims.expires_at > System.system_time(:second),
          {:ok, %User{} = user} <- Core.get_user(id, context: @authentication_context),
+         true <- AccessToken.active?(oauth_jti, user),
          {:ok, scope} <- Scope.new(Core.load_member(user, tenant), tenant) do
       {:ok,
        %{
