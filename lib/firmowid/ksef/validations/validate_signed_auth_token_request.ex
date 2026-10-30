@@ -3,6 +3,7 @@ defmodule Firmowid.Ksef.Validations.ValidateSignedAuthTokenRequest do
   Validates a signed KSeF AuthTokenRequest before certificate enrollment starts.
   """
   use Ash.Resource.Validation
+  use Gettext, backend: Firmowid.Gettext
 
   import SweetXml
 
@@ -22,7 +23,7 @@ defmodule Firmowid.Ksef.Validations.ValidateSignedAuthTokenRequest do
       {:error, reason} ->
         {:error,
          field: :signed_auth_token_request,
-         message: "nie jest poprawnym podpisanym żądaniem uwierzytelnienia KSeF",
+         message: gettext_noop("is not a valid signed KSeF authentication request"),
          vars: [reason: reason]}
     end
   end

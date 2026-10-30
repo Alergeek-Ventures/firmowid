@@ -14,6 +14,7 @@ defmodule Firmowid.Timetracker.Validations.SessionMonthBoundaries do
   """
 
   use Ash.Resource.Validation
+  use Gettext, backend: Firmowid.Gettext
 
   alias Ash.Error.Changes.InvalidAttribute
 
@@ -49,11 +50,11 @@ defmodule Firmowid.Timetracker.Validations.SessionMonthBoundaries do
       crosses_month_boundary?(start_datetime, end_datetime) ->
         error(
           :end_datetime,
-          "Data zakończenia musi przypadać w tym samym miesiącu co data rozpoczęcia"
+          gettext_noop("The end date must fall in the same month as the start date")
         )
 
       too_long?(start_datetime, end_datetime) ->
-        error(:end_datetime, "Sesja nie może trwać dłużej niż 24 godziny")
+        error(:end_datetime, gettext_noop("A session cannot last longer than 24 hours"))
 
       true ->
         :ok

@@ -56,6 +56,8 @@ defmodule Firmowid.Invoicing.SalesInvoice do
     extensions: [AshEvents.Events, AshOban],
     notifiers: [Ash.Notifier.PubSub]
 
+  use Gettext, backend: Firmowid.Gettext
+
   alias AshMoney.Types.Money
   alias AshOban.Checks.AshObanInteraction
   alias Firmowid.Blobs.Blob
@@ -613,11 +615,11 @@ defmodule Firmowid.Invoicing.SalesInvoice do
 
       validate present(:invoice_number) do
         where argument_equals(:preview?, false)
-        message "Pole jest wymagane"
+        message gettext_noop("Field is required")
       end
 
       validate string_length(:correction_reason, max: 256),
-        message: "Powód korekty może mieć maksymalnie 256 znaków"
+        message: gettext_noop("The correction reason can be at most 256 characters")
 
       validate Validations.CompleteInvoice
 
@@ -1341,7 +1343,7 @@ defmodule Firmowid.Invoicing.SalesInvoice do
   validations do
     validate present(:vat_exemption_basis) do
       where attribute_equals(:vat_exemption_type, :other)
-      message "Podaj podstawę prawną zwolnienia z VAT."
+      message gettext_noop("Provide the legal basis for the VAT exemption.")
     end
   end
 
@@ -1676,7 +1678,7 @@ defmodule Firmowid.Invoicing.SalesInvoice do
   identities do
     identity :invoice_number_per_org, [:invoice_number, :organization_id],
       nils_distinct?: true,
-      message: "numer faktury już istnieje dla tej organizacji"
+      message: gettext_noop("the invoice number already exists for this organization")
   end
 
   # Invoice numbering helpers -------------------------------------------------

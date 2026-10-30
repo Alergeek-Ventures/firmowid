@@ -34,7 +34,7 @@ defmodule Firmowid.Invoicing.Validations.ValidatePositiveItemQuantities do
             InvalidAttribute.exception(
               field: :quantity,
               path: [field, index],
-              message: gettext("Quantity must be greater than zero.")
+              message: gettext_noop("Quantity must be greater than zero.")
             )
           ]
         end

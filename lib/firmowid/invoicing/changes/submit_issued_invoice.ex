@@ -44,7 +44,7 @@ defmodule Firmowid.Invoicing.Changes.SubmitIssuedInvoice do
         {:error,
          InvalidAttribute.exception(
            field: :invoice_number,
-           message: gettext("The invoice could not be queued for KSeF submission. Nothing was issued.")
+           message: gettext_noop("The invoice could not be queued for KSeF submission. Nothing was issued.")
          )}
     end
   end
@@ -52,7 +52,7 @@ defmodule Firmowid.Invoicing.Changes.SubmitIssuedInvoice do
   defp not_connected_error do
     InvalidAttribute.exception(
       field: :invoice_number,
-      message: gettext("Connect to KSeF before issuing this invoice.")
+      message: gettext_noop("Connect to KSeF before issuing this invoice.")
     )
   end
 end

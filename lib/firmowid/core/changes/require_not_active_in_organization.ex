@@ -8,6 +8,7 @@ defmodule Firmowid.Core.Changes.RequireNotActiveInOrganization do
   second one sees the member created by the first.
   """
   use Ash.Resource.Change
+  use Gettext, backend: Firmowid.Gettext
 
   alias Ash.Error.Changes.InvalidChanges
   alias Firmowid.Core
@@ -35,7 +36,7 @@ defmodule Firmowid.Core.Changes.RequireNotActiveInOrganization do
             changeset,
             InvalidChanges.exception(
               fields: [:organization_id],
-              message: "Należysz już do tej organizacji."
+              message: gettext_noop("You already belong to this organization.")
             )
           )
 

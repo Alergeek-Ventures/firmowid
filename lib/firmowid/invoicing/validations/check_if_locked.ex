@@ -6,10 +6,11 @@ defmodule Firmowid.Invoicing.Validations.CheckIfLocked do
   calling action also uses non-atomic changes or relationship management.
   """
   use Ash.Resource.Validation
+  use Gettext, backend: Firmowid.Gettext
 
   alias Ash.Error.Changes.InvalidAttribute
 
-  @message "faktura jest zablokowana i nie może być modyfikowana"
+  @message gettext_noop("the invoice is locked and cannot be modified")
 
   @impl true
   def validate(changeset, _opts, _context) do

@@ -3,6 +3,7 @@ defmodule Firmowid.Core.Validations.NotSelfArchive do
   Validation preventing a member from archiving themselves.
   """
   use Ash.Resource.Validation
+  use Gettext, backend: Firmowid.Gettext
 
   alias Ash.Error.Changes.InvalidAttribute
 
@@ -15,7 +16,7 @@ defmodule Firmowid.Core.Validations.NotSelfArchive do
       {:error,
        InvalidAttribute.exception(
          field: :id,
-         message: "Nie możesz zarchiwizować własnego konta."
+         message: gettext_noop("You cannot archive your own account.")
        )}
     else
       :ok
@@ -31,7 +32,7 @@ defmodule Firmowid.Core.Validations.NotSelfArchive do
       {:error,
        InvalidAttribute.exception(
          field: :id,
-         message: "Nie możesz zarchiwizować własnego konta."
+         message: gettext_noop("You cannot archive your own account.")
        )}
     else
       :ok

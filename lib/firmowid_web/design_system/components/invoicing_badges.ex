@@ -105,10 +105,14 @@ defmodule FirmowidWeb.DesignSystem.Components.InvoicingBadges do
   Returns the human-readable label for an invoice badge variant.
   """
   @spec invoice_source_badge_label(String.t()) :: String.t()
-  def invoice_source_badge_label("cost_external"), do: "Faktura spoza KSeF"
-  def invoice_source_badge_label("cost_ksef"), do: "Faktura z Krajowego Systemu e-Faktur"
-  def invoice_source_badge_label("sales"), do: "Faktura wystawiona w Firmowidzie"
-  def invoice_source_badge_label("sales_draft"), do: "Szkic wystawiany w Firmowidzie"
-  def invoice_source_badge_label("sales_ksef"), do: "Faktura z Krajowego Systemu e-Faktur"
+  def invoice_source_badge_label("cost_external"), do: gettext("Invoice from outside KSeF")
+
+  def invoice_source_badge_label("cost_ksef"), do: gettext("Invoice from the National e-Invoice System")
+
+  def invoice_source_badge_label("sales"), do: gettext("Invoice issued in Firmowid")
+  def invoice_source_badge_label("sales_draft"), do: gettext("Draft being issued in Firmowid")
+
+  def invoice_source_badge_label("sales_ksef"), do: gettext("Invoice from the National e-Invoice System")
+
   def invoice_source_badge_label(_variant), do: "—"
 end

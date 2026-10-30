@@ -9,7 +9,7 @@ defmodule Firmowid.Invoicing.Validations.InvoiceNumberRequired do
   @impl true
   def validate(changeset, _opts, _context) do
     if is_nil(Ash.Changeset.get_attribute(changeset, :invoice_number)) do
-      {:error, field: :invoice_number, message: gettext("Choose an invoice number before issuing the invoice.")}
+      {:error, field: :invoice_number, message: gettext_noop("Choose an invoice number before issuing the invoice.")}
     else
       :ok
     end

@@ -20,6 +20,8 @@ defmodule Firmowid.Invoicing.Counterparty do
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer]
 
+  use Gettext, backend: Firmowid.Gettext
+
   alias Firmowid.Checks.ActorRole
   alias Firmowid.Checks.AtLeastRole
   alias Firmowid.Invoicing.Changes.ClearIrrelevantBuyerFields
@@ -324,10 +326,10 @@ defmodule Firmowid.Invoicing.Counterparty do
   identities do
     identity :unique_tax_id_country_per_org, [:normalized_tax_id, :country, :organization_id],
       nils_distinct?: true,
-      message: "kontrahent o tym identyfikatorze podatkowym już istnieje"
+      message: gettext_noop("a counterparty with this tax ID already exists")
 
     identity :unique_pesel_per_org, [:pesel, :organization_id],
       nils_distinct?: true,
-      message: "kontrahent o tym numerze PESEL już istnieje"
+      message: gettext_noop("a counterparty with this PESEL number already exists")
   end
 end

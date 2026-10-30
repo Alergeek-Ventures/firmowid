@@ -12,6 +12,8 @@ defmodule Firmowid.Blobs.Blob do
     extensions: [AshOban],
     notifiers: [Ash.Notifier.PubSub]
 
+  use Gettext, backend: Firmowid.Gettext
+
   alias AshOban.Checks.AshObanInteraction
   alias Firmowid.Blobs.Changes.DeleteFromS3
   alias Firmowid.Blobs.Changes.EnqueueDocumentBlobProcessing
@@ -198,7 +200,7 @@ defmodule Firmowid.Blobs.Blob do
         metadata = %{
           error: error || "unknown_error",
           error_code: error_code || "processing_failed",
-          error_message: error_message || "Nie udało się przetworzyć pliku."
+          error_message: error_message || gettext_noop("Could not process the file.")
         }
 
         metadata =

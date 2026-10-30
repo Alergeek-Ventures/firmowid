@@ -108,7 +108,7 @@ defmodule Firmowid.Invoicing.Changes.PrepareCorrection do
   defp validate_original(%SalesInvoice{ksef_invoice_kind: :vat, invoice_number: number}) when not is_nil(number), do: :ok
 
   defp validate_original(_original_invoice) do
-    {:error, field: :original_invoice_id, message: gettext("Choose an issued VAT invoice to correct.")}
+    {:error, field: :original_invoice_id, message: gettext_noop("Choose an issued VAT invoice to correct.")}
   end
 
   defp prepare_from_snapshot(changeset, original_invoice, latest_snapshot) do

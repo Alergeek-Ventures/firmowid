@@ -30,7 +30,7 @@ defmodule Firmowid.Invoicing.Changes.ValidateTransactionAvailability do
       else
         Ash.Changeset.add_error(changeset,
           field: :transaction_ids,
-          message: gettext("Could not connect this transaction to the invoice.")
+          message: gettext_noop("Could not link this transaction to the invoice.")
         )
       end
     end)

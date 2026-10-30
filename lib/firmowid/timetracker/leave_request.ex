@@ -10,6 +10,8 @@ defmodule Firmowid.Timetracker.LeaveRequest do
     authorizers: [Ash.Policy.Authorizer],
     extensions: [AshStateMachine]
 
+  use Gettext, backend: Firmowid.Gettext
+
   alias Firmowid.Blobs
   alias Firmowid.Checks.ActorRole
   alias Firmowid.Checks.SystemActorRole
@@ -164,20 +166,20 @@ defmodule Firmowid.Timetracker.LeaveRequest do
 
       validate one_of(:reason, [:sick, :vacation, :unpaid]) do
         where [attribute_equals(:category, :leave)]
-        message "nie jest prawidłowy dla tej kategorii urlopu"
+        message gettext_noop("is not valid for this leave category")
       end
 
       validate one_of(:reason, [:indisposition, :rest, :other]) do
         where [attribute_equals(:category, :absence)]
-        message "nie jest prawidłowy dla tej kategorii nieobecności"
+        message gettext_noop("is not valid for this absence category")
       end
 
       validate compare(:starts_on, greater_than_or_equal_to: &Date.utc_today/0) do
-        message "musi być dzisiejsza lub późniejsza"
+        message gettext_noop("must be today or later")
       end
 
       validate compare(:ends_on, greater_than_or_equal_to: :starts_on) do
-        message "nie może być wcześniejsza niż data rozpoczęcia"
+        message gettext_noop("cannot be earlier than the start date")
       end
 
       emit Signals, :leave_request_submitted, fields: [leave_request_id: :id]
@@ -226,20 +228,20 @@ defmodule Firmowid.Timetracker.LeaveRequest do
 
       validate one_of(:reason, [:sick, :vacation, :unpaid]) do
         where [attribute_equals(:category, :leave)]
-        message "nie jest prawidłowy dla tej kategorii urlopu"
+        message gettext_noop("is not valid for this leave category")
       end
 
       validate one_of(:reason, [:indisposition, :rest, :other]) do
         where [attribute_equals(:category, :absence)]
-        message "nie jest prawidłowy dla tej kategorii nieobecności"
+        message gettext_noop("is not valid for this absence category")
       end
 
       validate compare(:starts_on, greater_than_or_equal_to: &Date.utc_today/0) do
-        message "musi być dzisiejsza lub późniejsza"
+        message gettext_noop("must be today or later")
       end
 
       validate compare(:ends_on, greater_than_or_equal_to: :starts_on) do
-        message "nie może być wcześniejsza niż data rozpoczęcia"
+        message gettext_noop("cannot be earlier than the start date")
       end
 
       emit Signals, :leave_request_submitted, fields: [leave_request_id: :id]
@@ -258,7 +260,7 @@ defmodule Firmowid.Timetracker.LeaveRequest do
       accept []
 
       validate attribute_equals(:category, :leave),
-        message: "można odrzucać tylko wnioski urlopowe"
+        message: gettext_noop("only leave requests can be declined")
 
       change transition_state(:declined)
     end

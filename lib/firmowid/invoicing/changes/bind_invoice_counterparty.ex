@@ -31,7 +31,7 @@ defmodule Firmowid.Invoicing.Changes.BindInvoiceCounterparty do
   defp invalid_counterparty(changeset) do
     Ash.Changeset.add_error(changeset,
       field: :counterparty_id,
-      message: gettext("Counterparty must belong to the current organization.")
+      message: gettext_noop("Counterparty must belong to the current organization.")
     )
   end
 

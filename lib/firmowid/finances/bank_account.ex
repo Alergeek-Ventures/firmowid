@@ -16,6 +16,8 @@ defmodule Firmowid.Finances.BankAccount do
     extensions: [AshEvents.Events, AshOban],
     notifiers: [Ash.Notifier.PubSub]
 
+  use Gettext, backend: Firmowid.Gettext
+
   alias Elixir.Firmowid.Finances.BankAccount
   alias Firmowid.Checks.ActorRole
   alias Firmowid.Checks.SystemActorRole
@@ -112,10 +114,13 @@ defmodule Firmowid.Finances.BankAccount do
 
       change update_change(:iban, &normalize_iban/1)
       change update_change(:currency, &normalize_currency/1)
-      validate match(:iban, ~r/.+/), message: "IBAN jest wymagany", before_action?: true
+
+      validate match(:iban, ~r/.+/),
+        message: gettext_noop("IBAN is required"),
+        before_action?: true
 
       validate match(:currency, ~r/^[A-Z]{3}$/),
-        message: "Nieprawidłowy kod waluty",
+        message: gettext_noop("Invalid currency code"),
         before_action?: true
     end
 
@@ -126,10 +131,13 @@ defmodule Firmowid.Finances.BankAccount do
 
       change update_change(:iban, &normalize_iban/1)
       change update_change(:currency, &normalize_currency/1)
-      validate match(:iban, ~r/.+/), message: "IBAN jest wymagany", before_action?: true
+
+      validate match(:iban, ~r/.+/),
+        message: gettext_noop("IBAN is required"),
+        before_action?: true
 
       validate match(:currency, ~r/^[A-Z]{3}$/),
-        message: "Nieprawidłowy kod waluty",
+        message: gettext_noop("Invalid currency code"),
         before_action?: true
 
       change set_attribute(:institution_name, "Manual")

@@ -3,6 +3,7 @@ defmodule Firmowid.Core.Validations.ValidateNip do
   Ash validation for Polish NIP values using shared checksum rules.
   """
   use Ash.Resource.Validation
+  use Gettext, backend: Firmowid.Gettext
 
   alias Firmowid.Core.Nip
 
@@ -15,7 +16,7 @@ defmodule Firmowid.Core.Validations.ValidateNip do
         if Nip.valid?(nip) do
           :ok
         else
-          {:error, field: field, message: "musi być poprawnym numerem NIP"}
+          {:error, field: field, message: gettext_noop("must be a valid NIP number")}
         end
 
       _ ->
