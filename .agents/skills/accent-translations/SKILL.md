@@ -22,9 +22,11 @@ For how to *write* source msgids, contexts, and placeholders, see
    Accent cannot recreate, and it removes every key missing from the uploaded
    file. New keys are added only through the peeked passive sync in step 3;
    the other exception is the repair below.
-2. **Never use machine translation.** Accent can machine translate (Google
-   Translate and DeepL); this project deliberately does not. Polish is written
-   by humans and the approved wording comes from Figma.
+2. **Models write the translations; the user's own copy wins.** English
+   (msgids), Polish and Ukrainian are written by you or your subagents. When the
+   user supplies wording (e.g. from Figma or a design), use it verbatim. Do not
+   use Accent's built-in machine translation (Google Translate, DeepL): write
+   the values yourself so terminology and tone stay consistent.
 3. **Always write all three Polish plural slots**, non-empty, even when slot 1
    and slot 2 hold the same value, which is correct for nouns like `%{count}
    dni`. A two-slot entry is always wrong.
@@ -90,17 +92,20 @@ Read the `priv/gettext/default.pot` diff and note every new msgid, its context,
 its placeholders, and whether it is plural. Commit and push only when explicitly
 authorized.
 
-### 2. Prepare the Polish text
+### 2. Write the Polish and Ukrainian text
 
-- Ask the user for the wording and wait for it. Do not invent copy for visible
-  product text.
-- Read the approved Polish from Figma only when the user asks for it. The Figma
-  MCP server is configured here but is expensive; never reach for it on your
-  own.
-- Draft translations only when the user explicitly asks, then present them with
-  the English source and where each string renders and get approval before
-  pushing. All three plural forms must be human-written and match the counts
-  they serve.
+- If the user gave wording (from Figma, a design or the message), use it as is
+  for that language and translate only the rest.
+- Otherwise write the Polish and Ukrainian yourself. Open the code where the
+  string renders to judge context and length; keep labels as short as the
+  English and as the space allows.
+- Reuse the terms the app already uses (search `priv/gettext/default.pot` and
+  the current Accent export): one concept, one term, in every language. Polish
+  addresses the user informally ("Twoja firma"), Ukrainian politely with
+  lowercase "ви/ваш"; Ukrainian uses ’ and «», keeps KSeF, NIP and PLN, and
+  calls an invoice «фактура».
+- Write all three plural forms for counts 1, 2–4 and 5+ in both languages.
+- Read Figma only when the user asks for it: the Figma MCP server is expensive.
 
 ### 3. Write the Polish values into Accent
 
@@ -126,7 +131,7 @@ mutation {
 ```
 
    `correctTranslation` sets the final text; `updateTranslation` only proposes.
-   Always pass the human-approved Polish from step 2.
+   Always pass the wording from step 2.
 3. Re-read the records. `correctedText` must be non-empty; `isTranslated: true`
    with empty `correctedText` counts as untranslated.
 4. A brand-new identity has no record yet. Create it through the API, then
@@ -152,16 +157,14 @@ and is only for the repair in
 Call the API with `curl`; Accent rejects some HTTP clients with 403 before
 checking the key.
 
-### 4. Verify with the current catalog
+### 4. Verify in CI
 
-```sh
-ACCENT_API_KEY="$ACCENT_KEY" mix translations.fetch --latest && mix translations.check --check-extraction
-```
-
-`--latest` exports the current Accent catalog, projects it onto the local POT,
-validates Polish and Ukrainian and installs both catalogs marked with `HEAD`; it
-fails on the first missing value, context, plural form or placeholder. This is
-exactly what the CI translation job does.
+Push and let the CI translation job verify: it exports the current Accent
+catalog, projects it onto the POT and validates Polish and Ukrainian, failing on
+the first missing value, context, plural form or placeholder. Do not run
+`mix check` or Dialyzer locally for this. To inspect one catalog locally,
+`ACCENT_API_KEY="$ACCENT_KEY" mix translations.fetch --latest` runs the same
+export and validation.
 
 ### 5. Rerun CI
 
