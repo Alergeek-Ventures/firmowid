@@ -349,7 +349,7 @@ Analityka i flagi funkcjonalności są obsługiwane przez PostHog.
 
 #### Kursy walut
 
-- `OPEN_EXCHANGE_RATES_APP_ID` - klucz API Open Exchange Rates (używa mock danych jeśli nie ustawione)
+- `OPEN_EXCHANGE_RATES_APP_ID` - klucz API Open Exchange Rates, wymagany na produkcji: bez kursów przeliczenie walut kończy się błędem (dev i testy używają stałych kursów)
 
 #### Integracja bankowa
 

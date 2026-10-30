@@ -6,20 +6,13 @@ defmodule Firmowid.Currencies.Converter do
   1. In-memory (Cachex) — fastest, populated on first access
   2. Database (Ash ExchangeRate resource) — persistent across restarts
   3. Open Exchange Rates API — external source of truth
-  4. Mock rates — fallback when API is rate-limited or unavailable
 
-  Uses an Agent to track OXR API rate-limiting state.
+  When none of them has rates for the date, conversion raises instead of
+  using approximate rates, and the failure is not cached. The `:mock`
+  provider, configured outside production, always uses the fixed rates.
   """
 
-  use Agent
-
   alias Firmowid.Currencies.DatabaseCache
-
-  @spec start_link(keyword()) :: Agent.on_start()
-  def start_link(_opts), do: Agent.start_link(fn -> false end, name: __MODULE__)
-
-  defp rate_limited?, do: Agent.get(__MODULE__, & &1)
-  defp set_rate_limiting(value), do: Agent.update(__MODULE__, fn _ -> value end)
 
   @doc """
   Given an amount in a given currency and date (for historic rates),
@@ -45,43 +38,34 @@ defmodule Firmowid.Currencies.Converter do
   defp get_rates(_date, :mock), do: mock_rates()
 
   defp get_rates(date, :api) do
-    case Cachex.fetch!(:currencies, date, &get_rates(&1, :database)) do
-      :mock -> mock_rates()
-      rates -> rates
+    case Cachex.fetch!(:currencies, date, &fetch_rates/1) do
+      {:error, reason} ->
+        raise Money.ExchangeRateError, "No exchange rates for #{date}: #{inspect(reason)}"
+
+      rates ->
+        rates
     end
   end
 
-  defp get_rates(date, :database) do
+  defp fetch_rates(date) do
     case DatabaseCache.get_cache_entry(date) do
-      nil -> get_rates(date, :oxr)
-      entry -> DatabaseCache.convert_rates_to_decimal(entry.rates)
+      nil -> fetch_oxr_rates(date)
+      entry -> {:commit, DatabaseCache.convert_rates_to_decimal(entry.rates)}
     end
   end
 
-  defp get_rates(date, :oxr) do
-    # returning :mock instead of `mock_rates` to reduce cache size
-    if rate_limited?() do
-      :mock
-    else
-      # credo:disable-for-next-line
-      case Money.ExchangeRates.historic_rates(date) do
-        {:ok, rates} ->
-          rates
-
-        {:error, {_, "429"}} ->
-          set_rate_limiting(true)
-          :mock
-
-        _ ->
-          :mock
-      end
+  defp fetch_oxr_rates(date) do
+    # credo:disable-for-next-line
+    case Money.ExchangeRates.historic_rates(date) do
+      {:ok, rates} -> {:commit, rates}
+      {:error, reason} -> {:ignore, {:error, reason}}
     end
   end
 
   # Mock rates for the Money library (rates as "units of currency per 1 PLN")
   # The Money library expects rates in the format: how many units of currency X equal 1 unit of base currency
   # With PLN as base (1.0), a rate like EUR: 0.238 means 0.238 EUR = 1 PLN (or 1 EUR = 4.20 PLN)
-  # These are fallback values when API/database rates are unavailable
+  # Used only by the `:mock` provider, never as a fallback for the API
   # Source values are NBP Table A mid-rates (PLN per 1 unit of foreign currency), inverted for Money compatibility
   defp mock_rates do
     # NBP rates (PLN per 1 foreign currency unit) - for reference:
