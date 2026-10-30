@@ -297,8 +297,9 @@ defmodule Firmowid.Analysis do
   together with the owner's confirmed counterparty categories and the
   categories the classifier stored per entry. The organization's industry is
   returned as `:industry`. Each entry carries its `entity`
-  (`{entity_type, id}`) and `lines`: invoice line names, else the cost invoice
-  description or the transfer title. See `CategoryReview.build/3` for the rest.
+  (`{entity_type, id}`), `nip` (of the invoice's counterparty, as written there)
+  and `lines`: invoice line names, else the cost invoice description or the
+  transfer title. See `CategoryReview.build/3` for the rest.
   """
   @spec get_category_review(integer() | Date.Range.t(), Scope.t()) :: map()
   def get_category_review(year, scope) when is_integer(year),
@@ -322,6 +323,7 @@ defmodule Firmowid.Analysis do
             side: if(Decimal.negative?(amount), do: :expenses, else: :income),
             month: entry_month(entity),
             name: counterparty_name(entity),
+            nip: counterparty_nip(entity),
             amount: amount |> Decimal.abs() |> Decimal.round(2),
             lines: entry_lines(entity),
             certain: certain_category(entity, tags, amount),
@@ -413,6 +415,13 @@ defmodule Firmowid.Analysis do
     name || transaction.remittance_information_unstructured || "?"
   end
 
+  # Transactions carry no NIP; it is not validated here.
+  defp counterparty_nip(%CostInvoice{} = invoice), do: invoice.effective_seller_nip
+
+  defp counterparty_nip(%SalesInvoice{} = invoice), do: invoice.buyer_id
+
+  defp counterparty_nip(%Transaction{}), do: nil
+
   defp entity_type(%SalesInvoice{}), do: :sales_invoice
   defp entity_type(%CostInvoice{}), do: :cost_invoice
   defp entity_type(%Transaction{}), do: :transaction
@@ -490,6 +499,7 @@ defmodule Firmowid.Analysis do
         load: [
           :transactions,
           :effective_seller_display_name,
+          :effective_seller_nip,
           :effective_sale_date,
           :effective_amount
         ],

@@ -331,6 +331,9 @@ if config_env() == :prod do
     adapter: Firmowid.Invoicing.Services.ResendAdapter,
     api_key: System.get_env("RESEND_API_KEY")
 
+  # GUS BIR register of companies; development and tests use the library's test environment
+  config :gusex, api_key: System.get_env("GUS_BIR_API_KEY"), environment: :production
+
   if database_ssl_config do
     config :firmowid, Firmowid.Repo, ssl: database_ssl_config
   end

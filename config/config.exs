@@ -175,6 +175,10 @@ config :firmowid,
     FirmowidMcp
   ]
 
+# GUS BIR test environment with the public test key from its documentation;
+# production is configured in runtime.exs
+config :gusex, api_key: "abcde12345abcde12345", environment: :test
+
 config :localize,
   otp_app: :firmowid,
   default_locale: :pl,
