@@ -474,6 +474,11 @@ msgstr ""
 msgid "Alerts for unpaid invoices"
 msgstr ""
 
+#: lib/firmowid_web/landing/views/guides.ex
+#, elixir-autogen, elixir-format
+msgid "All guides"
+msgstr ""
+
 #: lib/firmowid_web/invoicing/transactions/components/salary_components.ex
 #: lib/firmowid_web/invoicing/transactions/components/show_components.ex
 #, elixir-autogen, elixir-format
@@ -1900,6 +1905,11 @@ msgstr ""
 msgid "Firmowid found no transactions that might match this invoice."
 msgstr ""
 
+#: lib/firmowid_web/landing/views/guides.ex
+#, elixir-autogen, elixir-format
+msgid "Firmowid guides — KSeF and invoicing"
+msgstr ""
+
 #: lib/firmowid_web/landing/components/pricing.ex
 #, elixir-autogen, elixir-format
 msgid "Firmowid in ChatGPT (panel beside the conversation)"
@@ -1932,6 +1942,11 @@ msgstr ""
 
 #: lib/firmowid_web/landing/views/index.ex
 #, elixir-autogen, elixir-format
+msgid "Firmowid open source — self-hosted KSeF invoicing"
+msgstr ""
+
+#: lib/firmowid_web/landing/views/index.ex
+#, elixir-autogen, elixir-format
 msgid "Firmowid pricing — choose your plan"
 msgstr ""
 
@@ -1958,6 +1973,11 @@ msgstr ""
 #: lib/firmowid_web/landing/views/terms_of_service.ex
 #, elixir-autogen, elixir-format
 msgid "Firmowid's Terms of Service define the rules for using its invoicing, KSeF, banking, and work-tracking service."
+msgstr ""
+
+#: lib/firmowid_web/landing/views/index.ex
+#, elixir-autogen, elixir-format
+msgid "Firmowid's source code is public under the AGPL-3.0 license. You can host it on your own server."
 msgstr ""
 
 #: lib/firmowid_web/management/components/profile_tab.ex
@@ -2121,6 +2141,12 @@ msgstr ""
 #: lib/firmowid_web/landing/components/sections.ex
 #, elixir-autogen, elixir-format
 msgid "Gross value"
+msgstr ""
+
+#: lib/firmowid_web/landing/components/primitives.ex
+#: lib/firmowid_web/landing/views/guides.ex
+#, elixir-autogen, elixir-format
+msgid "Guides"
 msgstr ""
 
 #: lib/firmowid_web/landing/components/pricing.ex
@@ -3462,6 +3488,11 @@ msgstr ""
 #: lib/firmowid_web/invoicing/transactions/components/salary_components.ex
 #, elixir-autogen, elixir-format
 msgid "Potential salaries for this transaction"
+msgstr ""
+
+#: lib/firmowid_web/landing/views/guides.ex
+#, elixir-autogen, elixir-format
+msgid "Practical guides on KSeF, e-invoices and invoicing software for small businesses."
 msgstr ""
 
 #: lib/firmowid_web/landing/views/privacy_policy.ex
@@ -4944,6 +4975,11 @@ msgstr ""
 #: lib/firmowid_web/landing/components/sections.ex
 #, elixir-autogen, elixir-format
 msgid "Unpaid leave"
+msgstr ""
+
+#: lib/firmowid_web/landing/views/guides.ex
+#, elixir-autogen, elixir-format
+msgid "Updated:"
 msgstr ""
 
 #: lib/firmowid/blobs/changes/process_document_blob.ex

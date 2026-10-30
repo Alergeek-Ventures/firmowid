@@ -8,10 +8,12 @@ defmodule FirmowidWeb.Landing.Components.Faq do
   alias Phoenix.LiveView.Rendered
 
   @doc """
-  Renders the accordion and encodes the same answers as FAQPage JSON-LD.
+  Renders the accordion and, when `structured_data?` is set, encodes the same
+  answers as FAQPage JSON-LD.
   """
   @spec faq_section(map()) :: Rendered.t()
   attr :open_faq, :string, default: nil
+  attr :structured_data?, :boolean, default: false
 
   # sobelow_skip ["XSS.Raw"]
   # JSON encoding and escaping '<' prevent translated answers from closing the script element.
@@ -88,7 +90,7 @@ defmodule FirmowidWeb.Landing.Components.Faq do
         </div>
       </div>
 
-      <script type="application/ld+json">
+      <script :if={@structured_data?} type="application/ld+json">
         <%= Phoenix.HTML.raw(@schema) %>
       </script>
     </section>

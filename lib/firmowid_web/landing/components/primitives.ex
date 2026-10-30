@@ -308,13 +308,13 @@ defmodule FirmowidWeb.Landing.Components.Primitives do
                 class="block py-1 text-base text-[rgb(245_241_234/0.75)] lg:text-sm/4.5 [&:hover]:text-white"
               >{gettext("Questions and answers")}</a>
               <a
-                href={@repository}
-                target="_blank"
-                rel="noopener noreferrer"
+                href={~p"/poradnik"}
                 class="block py-1 text-base text-[rgb(245_241_234/0.75)] lg:text-sm/4.5 [&:hover]:text-white"
-              >
-                {gettext("Source code")}
-              </a>
+              >{gettext("Guides")}</a>
+              <a
+                href={~p"/open-source"}
+                class="block py-1 text-base text-[rgb(245_241_234/0.75)] lg:text-sm/4.5 [&:hover]:text-white"
+              >{gettext("Source code")}</a>
             </div>
             <div>
               <p class="mb-4 text-xs font-bold tracking-[0.08em] uppercase lg:mb-3">

@@ -18,7 +18,8 @@ defmodule FirmowidWeb.Landing.Components.LegalPage do
   """
   @spec legal_page(map()) :: Phoenix.LiveView.Rendered.t()
   slot :inner_block, required: true
-  attr :class, :string, default: "prose prose-neutral mx-auto max-w-3xl px-6 pt-32 pb-20 lg:px-10"
+
+  attr :class, :string, default: "prose prose-neutral mx-auto w-full max-w-3xl px-6 pt-32 pb-20 lg:px-10"
 
   def legal_page(assigns) do
     ~H"""
