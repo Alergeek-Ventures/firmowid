@@ -22,6 +22,7 @@ defmodule Firmowid.Analysis do
   alias Firmowid.Analysis.YearSummary
   alias Firmowid.Currencies.Converter, as: Currencies
   alias Firmowid.Finances
+  alias Firmowid.Finances.AccountNumber
   alias Firmowid.Finances.Transaction
   alias Firmowid.Invoicing
   alias Firmowid.Invoicing.CostInvoice
@@ -645,7 +646,7 @@ defmodule Firmowid.Analysis do
   defp own_account_ibans(scope) do
     %{}
     |> Finances.list_bank_accounts!(scope: scope)
-    |> MapSet.new(&normalize_iban(&1.iban))
+    |> MapSet.new(&AccountNumber.key(&1.iban))
     |> MapSet.delete(nil)
   end
 
@@ -657,29 +658,8 @@ defmodule Firmowid.Analysis do
         true -> nil
       end
 
-    MapSet.member?(own_account_ibans, normalize_iban(account))
+    MapSet.member?(own_account_ibans, AccountNumber.key(account))
   end
-
-  defp normalize_iban(account) when is_binary(account) do
-    account
-    |> String.replace(~r/[^[:alnum:]]/, "")
-    |> String.upcase()
-    |> case do
-      "" ->
-        nil
-
-      "NA" ->
-        nil
-
-      <<"PL", account::binary-size(26)>> = iban ->
-        if String.match?(account, ~r/^\d{26}$/), do: account, else: iban
-
-      iban ->
-        iban
-    end
-  end
-
-  defp normalize_iban(_account), do: nil
 
   defp build_entity_id_list(sales_invoices, cost_invoices, transactions) do
     si = Enum.map(sales_invoices, &{:sales_invoice, &1.id})

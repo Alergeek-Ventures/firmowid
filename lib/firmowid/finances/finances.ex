@@ -106,7 +106,9 @@ defmodule Firmowid.Finances do
 
       description "Suggest which employee's monthly salary a pending or skipped outgoing PLN transfer pays. " <>
                     "Considers months with logged time up to six months back whose salary is not yet assigned and " <>
-                    "whose closest estimated payout is within 20% (at least 1000 PLN) of the transfer. Uses gross pay " <>
+                    "whose closest estimated payout is within 20% (at least 1000 PLN) of the transfer. When the employee's " <>
+                    "stored bank account is known, it decides instead: a transfer to that account is suggested " <>
+                    "whatever the amount and ranked first, a transfer to another account is not. Uses gross pay " <>
                     "only if the contract type is unknown. A full recipient name strictly outranks a partial name, " <>
                     "the expected month and the amount difference. A payout variant is a hypothesis, not confirmed " <>
                     "insurance or tax status. By default only salaries with a submitted hours " <>
