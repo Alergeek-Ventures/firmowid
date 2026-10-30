@@ -40,6 +40,47 @@ defmodule FirmowidMcp.Invoicing.PrivacyTest do
     )
   end
 
+  test "legacy batches redact invoice results even when a ping has the same id" do
+    user = user_fixture(%{role: :invoicing})
+
+    invoice =
+      Ash.Seed.seed!(SalesInvoice, %{
+        organization_id: user.member.organization_id,
+        issue_date: Date.utc_today(),
+        sale_date: Date.utc_today(),
+        due_date: Date.utc_today(),
+        currency: "PLN",
+        buyer_type: :individual,
+        buyer_pesel: "44051401458"
+      })
+
+    opts = Router.init(tools: [:get_sales_invoice], mcp_resources: [])
+
+    for tool_id <- ["ping", "invoices"] do
+      requests = [
+        %{"jsonrpc" => "2.0", "id" => "ping", "method" => "ping"},
+        %{
+          "jsonrpc" => "2.0",
+          "id" => tool_id,
+          "method" => "tools/call",
+          "params" => %{"name" => "get_sales_invoice", "arguments" => %{"id" => invoice.id}}
+        }
+      ]
+
+      conn =
+        :post
+        |> Plug.Test.conn("/", %{"_json" => requests})
+        |> put_req_header("mcp-protocol-version", "2025-03-26")
+        |> Ash.PlugHelpers.set_actor(user)
+        |> Ash.PlugHelpers.set_tenant(user.member.organization_id)
+        |> Router.call(opts)
+
+      assert conn.status == 200
+      assert conn.resp_body =~ invoice.id
+      refute conn.resp_body =~ "44051401458"
+    end
+  end
+
   defp assert_private_arguments(arguments, error? \\ true) do
     user = user_fixture(%{role: :invoicing})
 
