@@ -14,6 +14,7 @@ defmodule FirmowidWeb.BankSync.Views.Create do
 
   alias Firmowid.ErrorKind
   alias Firmowid.Finances
+  alias FirmowidWeb.Core.Endpoint
   alias FirmowidWeb.Infrastructure.Utilities.PosthogBusinessEvents
 
   require Logger
@@ -123,10 +124,8 @@ defmodule FirmowidWeb.BankSync.Views.Create do
   end
 
   @impl true
-  def handle_params(params, url, socket) do
-    # extract domain for redirecting when submitting an account
-    # (makes it work for both localhost and production)
-    socket = assign(socket, :redirect_url, url |> String.split("?") |> List.first())
+  def handle_params(params, _url, socket) do
+    socket = assign(socket, :redirect_url, Endpoint.url() <> ~p"/ustawienia/bank/dodaj")
 
     requisition_id = params["ref"]
 

@@ -1,6 +1,6 @@
 defmodule Firmowid.Oauth2.CimdMetadataFetcher do
   @moduledoc """
-  Negotiates public-client CIMD authentication using the official fetcher.
+  Negotiates public-client CIMD authentication using the official metadata policy.
 
   The server implements only `none`. A plural capability declaration takes
   precedence over the legacy singular preference, but must explicitly include
@@ -8,8 +8,9 @@ defmodule Firmowid.Oauth2.CimdMetadataFetcher do
   `none`. Unlike the native omission default, missing declarations fail closed
   for CIMD only; Dynamic Client Registration is unaffected.
 
-  Fetch options pass unchanged to `ReqFetcher`, retaining its URL, DNS/IP,
-  pinned TLS, redirect, response-size and timeout restrictions. Native document
+  Uses the official URL and IP policy with a single, unpooled Mint connection,
+  retaining pinned TLS, redirect, response-size and timeout restrictions without
+  creating permanent Finch pool names from untrusted hostnames. Native document
   validation still runs after negotiation and before returning a cacheable result.
   """
 
@@ -38,17 +39,152 @@ defmodule Firmowid.Oauth2.CimdMetadataFetcher do
   @spec fetch(String.t(), keyword()) ::
           {:ok, Fetcher.result()} | {:error, negotiation_error() | :metadata_fetch_failed}
   def fetch(url, opts \\ []) do
-    case ReqFetcher.fetch(url, opts) do
+    case fetch_document(url, opts) do
       {:ok, %{document: document} = result} ->
         with {:ok, negotiated} <- negotiate(document),
              :ok <- validate_document(negotiated, url) do
           {:ok, %{result | document: negotiated}}
         end
 
-      {:error, _reason} ->
+      _transport_failure ->
         {:error, :metadata_fetch_failed}
     end
   end
+
+  defp fetch_document(url, opts) do
+    connect_timeout = Keyword.get(opts, :connect_timeout, 5_000)
+    receive_timeout = Keyword.get(opts, :receive_timeout, 5_000)
+
+    with {:ok, uri} <- ReqFetcher.validate_url(url, opts),
+         {:ok, ip} <- resolve_and_validate(uri.host, opts),
+         {:ok, conn} <-
+           Mint.HTTP.connect(:https, ip, uri.port,
+             hostname: uri.host,
+             protocols: [:http1],
+             mode: :passive,
+             transport_opts: [
+               timeout: connect_timeout,
+               inet6: tuple_size(ip) == 8,
+               inet4: tuple_size(ip) == 4
+             ]
+           ) do
+      # HTTP/1 keeps one socket. Close it on every return without retaining a pool.
+      try do
+        path = uri.path <> if(uri.query, do: "?" <> uri.query, else: "")
+        deadline = System.monotonic_time(:millisecond) + receive_timeout
+        max_body = Keyword.get(opts, :max_body_bytes, 5_120)
+
+        with {:ok, conn, ref} <-
+               Mint.HTTP.request(conn, "GET", path, [{"accept", "application/json"}], nil) do
+          receive_document(conn, ref, deadline, max_body, %{status: nil, headers: [], body: ""})
+        end
+      after
+        Mint.HTTP.close(conn)
+      end
+    end
+  end
+
+  # ReqFetcher keeps its resolver private. Preserve its all-addresses check and
+  # IPv4 preference, then connect only to the selected, already validated tuple.
+  defp resolve_and_validate(host, opts) do
+    host = String.to_charlist(host)
+
+    ips =
+      case :inet.parse_address(host) do
+        {:ok, ip} ->
+          [ip]
+
+        {:error, _} ->
+          Enum.uniq(resolve_addresses(host, :inet) ++ resolve_addresses(host, :inet6))
+      end
+
+    cond do
+      ips == [] -> {:error, :metadata_fetch_failed}
+      Keyword.get(opts, :allow_non_public_ips?, false) -> {:ok, hd(ips)}
+      Enum.all?(ips, &ReqFetcher.public_ip?/1) -> {:ok, hd(ips)}
+      true -> {:error, :metadata_fetch_failed}
+    end
+  end
+
+  defp resolve_addresses(host, family) do
+    case :inet.getaddrs(host, family) do
+      {:ok, ips} -> ips
+      {:error, _} -> []
+    end
+  end
+
+  defp receive_document(conn, ref, deadline, max_body, response) do
+    remaining = deadline - System.monotonic_time(:millisecond)
+
+    if remaining > 0 do
+      with {:ok, conn, events} <- Mint.HTTP.recv(conn, 0, remaining) do
+        case collect_response(events, ref, max_body, response) do
+          {:cont, response} -> receive_document(conn, ref, deadline, max_body, response)
+          result -> result
+        end
+      end
+    else
+      {:error, :metadata_fetch_failed}
+    end
+  end
+
+  defp collect_response([], _ref, _max_body, response), do: {:cont, response}
+
+  defp collect_response([{:status, ref, status} | rest], ref, max_body, response) do
+    collect_response(rest, ref, max_body, %{response | status: status})
+  end
+
+  defp collect_response([{:headers, ref, headers} | rest], ref, max_body, response) do
+    collect_response(rest, ref, max_body, %{response | headers: headers})
+  end
+
+  defp collect_response([{:data, ref, chunk} | rest], ref, max_body, response) do
+    if byte_size(response.body) + byte_size(chunk) <= max_body do
+      collect_response(rest, ref, max_body, %{response | body: response.body <> chunk})
+    else
+      {:error, :metadata_fetch_failed}
+    end
+  end
+
+  defp collect_response([{:done, ref} | _rest], ref, _max_body, response) do
+    with 200 <- response.status,
+         {:ok, document} when is_map(document) <- Jason.decode(response.body) do
+      {:ok, %{document: document, cache_ttl: cache_ttl(response.headers)}}
+    else
+      _ -> {:error, :metadata_fetch_failed}
+    end
+  end
+
+  # Keep ReqFetcher's private Cache-Control parser semantics, including the
+  # first header value, permissive integer suffix and no-cache precedence.
+  defp cache_ttl(headers) do
+    case Req.Response.get_header(Req.Response.new(headers: headers), "cache-control") do
+      [value | _] ->
+        directives =
+          value
+          |> String.downcase()
+          |> String.split(",", trim: true)
+          |> Enum.map(&String.trim/1)
+
+        cond do
+          Enum.any?(directives, &(&1 in ["no-store", "no-cache", "private"])) -> 0
+          max_age = Enum.find_value(directives, &parse_max_age/1) -> max_age
+          true -> nil
+        end
+
+      [] ->
+        nil
+    end
+  end
+
+  defp parse_max_age("max-age=" <> value) do
+    case Integer.parse(value) do
+      {seconds, _} when seconds >= 0 -> seconds
+      _ -> nil
+    end
+  end
+
+  defp parse_max_age(_), do: nil
 
   @doc """
   Purely negotiates an explicitly declared method with the server's capabilities.
