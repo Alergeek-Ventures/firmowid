@@ -22,10 +22,10 @@ defmodule FirmowidWeb.Invoicing.CostInvoices.Controllers.Pdf do
           {:ok, pdf_binary} ->
             filename = cost_invoice_filename(invoice, conn.assigns.ash_scope)
 
-            conn
-            |> put_resp_content_type("application/pdf")
-            |> put_resp_header("content-disposition", ~s(attachment; filename="#{filename}"))
-            |> send_resp(200, pdf_binary)
+            send_download(conn, {:binary, pdf_binary},
+              filename: filename,
+              content_type: "application/pdf"
+            )
 
           {:error, _reason} ->
             send_resp(conn, 500, "PDF generation failed")

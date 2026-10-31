@@ -76,10 +76,10 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Controllers.Shared do
            ) do
       filename = (target_invoice.invoice_number || "faktura") <> ".pdf"
 
-      conn
-      |> put_resp_content_type("application/pdf")
-      |> put_resp_header("content-disposition", ~s(attachment; filename="#{filename}"))
-      |> send_resp(200, pdf_binary)
+      send_download(conn, {:binary, pdf_binary},
+        filename: filename,
+        content_type: "application/pdf"
+      )
     else
       :not_found -> conn |> put_status(404) |> render(:not_found, layout: false)
       {:error, _reason} -> conn |> put_status(500) |> render(:error, layout: false)
