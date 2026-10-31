@@ -505,7 +505,12 @@ defmodule Firmowid.Sentry do
 
   defp scrub_exception_item(%SentrySDK.Interfaces.Exception{} = exception),
     do: [
-      %{exception | mechanism: scrub_mechanism(exception.mechanism), stacktrace: scrub_stacktrace(exception.stacktrace)}
+      %{
+        exception
+        | value: nil,
+          mechanism: scrub_mechanism(exception.mechanism),
+          stacktrace: scrub_stacktrace(exception.stacktrace)
+      }
     ]
 
   defp scrub_exception_item(_exception), do: []
