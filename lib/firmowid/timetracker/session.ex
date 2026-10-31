@@ -19,6 +19,7 @@ defmodule Firmowid.Timetracker.Session do
   alias Firmowid.Resource
   alias Firmowid.Timetracker.Changes.ClampSessionBoundaries
   alias Firmowid.Timetracker.Changes.NormalizeSessionBoundaries
+  alias Firmowid.Timetracker.Changes.SynchronizeSubmittedMonth
   alias Firmowid.Timetracker.Checks.HoursRecordNotSubmitted
   alias Firmowid.Timetracker.HoursRecord
   alias Firmowid.Timetracker.Project
@@ -391,6 +392,7 @@ defmodule Firmowid.Timetracker.Session do
       change set_attribute(:start_datetime, &DateTime.utc_now/0)
       change NormalizeSessionBoundaries
       change set_attribute(:member_id, actor([:member, :id]))
+      change SynchronizeSubmittedMonth
 
       change after_action(fn _changeset, session, _context ->
                with {:ok, _job} <- StopSessionWorker.enqueue(session) do
@@ -405,6 +407,7 @@ defmodule Firmowid.Timetracker.Session do
       description "Create a session with explicit attributes (for import or admin use)."
       accept [:title, :start_datetime, :end_datetime, :project_id, :is_remote, :member_id]
       change NormalizeSessionBoundaries
+      change SynchronizeSubmittedMonth
     end
 
     update :stop do
@@ -500,6 +503,7 @@ defmodule Firmowid.Timetracker.Session do
       require_atomic? false
 
       change NormalizeSessionBoundaries
+      change SynchronizeSubmittedMonth
 
       change after_action(fn _changeset, session, _context ->
                if session.end_datetime do
@@ -514,6 +518,7 @@ defmodule Firmowid.Timetracker.Session do
       description "Delete a session and cancel auto-stop worker."
       primary? true
       require_atomic? false
+      change SynchronizeSubmittedMonth
 
       change after_action(fn _changeset, session, _context ->
                StopSessionWorker.cancel(session.id)

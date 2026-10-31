@@ -8,6 +8,8 @@ defmodule Firmowid.Timetracker.OverlapResolver do
   """
 
   alias Firmowid.Scope
+  alias Firmowid.Timetracker
+  alias Firmowid.Timetracker.Changes.SynchronizeSubmittedMonth
   alias Firmowid.Timetracker.Session
 
   @type trim_action ::
@@ -39,7 +41,28 @@ defmodule Firmowid.Timetracker.OverlapResolver do
     Ash.DataLayer.transaction(
       Session,
       fn ->
-        Enum.each(trim_actions, &execute_action!(&1, scope))
+        member_id = new_session_attrs[:member_id] || scope.actor.member.id
+        SynchronizeSubmittedMonth.lock_member!(member_id, scope: scope)
+
+        Enum.each(trim_actions, fn action ->
+          planned = elem(action, 1)
+          query = Session |> Ash.Query.new() |> Ash.Query.lock(:for_update)
+          current = Timetracker.get_session_by_id!(planned.id, scope: scope, query: query)
+
+          if current.start_datetime != planned.start_datetime or
+               current.end_datetime != planned.end_datetime do
+            Ash.DataLayer.rollback(
+              Session,
+              Ash.Error.Changes.StaleRecord.exception(
+                resource: Session,
+                filter: %{id: planned.id}
+              )
+            )
+          end
+
+          execute_action!(put_elem(action, 1, current), scope)
+        end)
+
         create_session!(new_session_attrs, scope)
       end
     )
