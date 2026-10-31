@@ -528,11 +528,15 @@ defmodule FirmowidWeb.Documents.Components.DocumentsSection do
             {month, num, text}
 
           _ ->
-            {month, year, text ++ [token]}
+            {month, year, [token | text]}
         end
       end)
 
-    %{month: month, year: year, text: text_tokens |> Enum.join(" ") |> String.trim()}
+    %{
+      month: month,
+      year: year,
+      text: text_tokens |> Enum.reverse() |> Enum.join(" ") |> String.trim()
+    }
   end
 
   defp maybe_add_month(args, nil), do: args

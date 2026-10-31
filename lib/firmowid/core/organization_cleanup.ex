@@ -8,6 +8,7 @@ defmodule Firmowid.Core.OrganizationCleanup do
   records matching its organization/user.
   """
 
+  alias Ash.BulkResult
   alias Firmowid.Analysis.TagDefinition
   alias Firmowid.Billing.Snapshot
   alias Firmowid.Core.Member
@@ -89,19 +90,18 @@ defmodule Firmowid.Core.OrganizationCleanup do
   @doc "Removes ephemeral wizard data only after the organization's database deletion succeeds."
   @spec remove_wizard_states(Scope.t()) :: :ok | {:error, term()}
   def remove_wizard_states(scope) do
-    # Include orphaned items; destroying each wizard also cascades to its items.
-    with :ok <-
-           destroy_records(
-             WizardState.Item.read(scope: scope),
-             &WizardState.Item.destroy/2,
-             scope
+    # Include orphaned items; the normal parent action retains its cascade.
+    Enum.reduce_while([WizardState.Item, WizardState], :ok, fn resource, :ok ->
+      case Ash.bulk_destroy(resource, :destroy, %{},
+             scope: scope,
+             strategy: [:atomic],
+             return_errors?: true,
+             stop_on_error?: true
            ) do
-      destroy_records(
-        Firmowid.Invoicing.list_wizard_states(scope: scope),
-        &WizardState.destroy/2,
-        scope
-      )
-    end
+        %BulkResult{status: :success} -> {:cont, :ok}
+        %BulkResult{errors: errors} -> {:halt, {:error, Ash.Error.to_error_class(errors)}}
+      end
+    end)
   end
 
   @doc "Remove only the actual deleted account's OAuth dependents, even without an organization."
