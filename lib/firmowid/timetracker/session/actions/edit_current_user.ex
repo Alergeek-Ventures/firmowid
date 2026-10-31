@@ -1,6 +1,7 @@
 defmodule Firmowid.Timetracker.Session.Actions.EditCurrentUser do
   @moduledoc "Updates an unfrozen session after constraining it to the acting user."
 
+  alias Firmowid.Timetracker.Checks.HoursRecordNotSubmitted
   alias Firmowid.Timetracker.Session
 
   @doc "Edits the selected session only when it belongs to the action actor."
@@ -10,11 +11,23 @@ defmodule Firmowid.Timetracker.Session.Actions.EditCurrentUser do
     opts = Ash.Context.to_opts(context)
 
     with {:ok, session} <- Session.current_session(input.arguments.id, opts) do
-      Ash.update(
-        session,
-        editable_attributes(input.arguments),
-        Keyword.put(opts, :action, :update)
-      )
+      changeset =
+        session
+        |> Ash.Changeset.for_update(:update, editable_attributes(input.arguments), opts)
+        |> Ash.Changeset.before_action(fn changeset ->
+          case HoursRecordNotSubmitted.match?(context.actor, %{subject: changeset}, []) do
+            {:ok, true} ->
+              changeset
+
+            {:ok, false} ->
+              Ash.Changeset.add_error(
+                changeset,
+                Ash.Error.Forbidden.exception(action_input: input)
+              )
+          end
+        end)
+
+      Ash.update(changeset, opts)
     end
   end
 
