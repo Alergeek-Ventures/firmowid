@@ -225,7 +225,7 @@ defmodule FirmowidWeb.Management.Views.Project do
     prev_total_cost = compute_total_cost(prev_sessions, prev_salary_by_user)
 
     previous_month_label =
-      Cldr.Date.to_string!(previous_month, Firmowid.Cldr, format: "MMMM", locale: "pl")
+      Cldr.Date.to_string!(previous_month, Firmowid.Cldr, format: "LLLL")
 
     users =
       build_users_with_cost(project, current_sessions, current_salary_by_user, hr_by_user, scope)
@@ -355,16 +355,19 @@ defmodule FirmowidWeb.Management.Views.Project do
   def comparison_text(%{percent: percent, direction: direction}, previous_month_label) do
     case direction do
       :same ->
-        gettext("%{percent} compared to %{month}", percent: "0%", month: previous_month_label)
+        gettext("%{percent} compared to previous month (%{month})",
+          percent: "0%",
+          month: previous_month_label
+        )
 
       :increase ->
-        gettext("%{percent} compared to %{month}",
+        gettext("%{percent} compared to previous month (%{month})",
           percent: "+#{percent}%",
           month: previous_month_label
         )
 
       :decrease ->
-        gettext("%{percent} compared to %{month}",
+        gettext("%{percent} compared to previous month (%{month})",
           percent: "-#{percent}%",
           month: previous_month_label
         )

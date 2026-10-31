@@ -90,18 +90,20 @@ defmodule FirmowidMcp.Runtime do
     # The widget's mount also puts its language in this process; with_locale restores the caller's.
     {html, messages} =
       Gettext.with_locale(Firmowid.Gettext, locale, fn ->
-        html =
-          conn
-          |> Phoenix.Component.live_render(app.live_view(),
-            session: %{
-              "mcp_session" => token,
-              "mcp_resource" => app.resource_uri(),
-              "mcp_locale" => locale
-            }
-          )
-          |> Phoenix.HTML.safe_to_string()
+        Firmowid.Cldr.with_locale(locale, fn ->
+          html =
+            conn
+            |> Phoenix.Component.live_render(app.live_view(),
+              session: %{
+                "mcp_session" => token,
+                "mcp_resource" => app.resource_uri(),
+                "mcp_locale" => locale
+              }
+            )
+            |> Phoenix.HTML.safe_to_string()
 
-        {html, messages()}
+          {html, messages()}
+        end)
       end)
 
     %{

@@ -34,6 +34,7 @@ defmodule FirmowidWeb.Infrastructure.Plugs.Locale do
 
       locale ->
         Gettext.put_locale(Firmowid.Gettext, locale)
+        {:ok, _locale} = Firmowid.Cldr.put_locale(locale)
 
         if get_session(conn, @session_key) == locale,
           do: conn,

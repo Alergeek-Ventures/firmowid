@@ -12,7 +12,10 @@ defmodule FirmowidMcp.LiveSession do
   def mount(session, socket, widget, callbacks) do
     # Also before authorization, so an expired view uses the widget's language.
     # Tool results signed before the widget language existed have no "mcp_locale".
-    if locale = session["mcp_locale"], do: Gettext.put_locale(Firmowid.Gettext, locale)
+    if locale = session["mcp_locale"] do
+      Gettext.put_locale(Firmowid.Gettext, locale)
+      {:ok, _locale} = Firmowid.Cldr.put_locale(locale)
+    end
 
     socket =
       socket
