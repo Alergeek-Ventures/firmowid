@@ -371,9 +371,10 @@ defmodule Firmowid.Timetracker.LeaveRequest do
               :integer,
               expr(
                 fragment(
-                  "(SELECT count(*)::integer FROM generate_series(?::date, ?::date, '1 day'::interval) AS gs(date) WHERE EXTRACT(isodow FROM gs.date) < 6)",
+                  "(SELECT (day_count / 7) * 5 + LEAST(day_count % 7, GREATEST(6 - start_weekday, 0)) + GREATEST(day_count % 7 - (8 - start_weekday), 0) FROM (SELECT GREATEST(?::date - ?::date + 1, 0) AS day_count, EXTRACT(isodow FROM ?::date)::integer AS start_weekday) AS bounds)",
+                  ends_on,
                   starts_on,
-                  ends_on
+                  starts_on
                 )
               ) do
       public? true

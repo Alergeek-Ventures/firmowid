@@ -1034,13 +1034,19 @@ defmodule FirmowidUI.Invoicing.Components.SalesInvoice do
   end
 
   defp correction_table_rows(current_items, reference_items, compare_vat_rate?) do
+    reference_items_by_index = List.to_tuple(reference_items)
+
     rows =
       current_items
       |> Enum.with_index()
       |> Enum.flat_map(fn {curr, offset} ->
         index = offset + 1
 
-        case Enum.at(reference_items, offset) do
+        reference =
+          if offset < tuple_size(reference_items_by_index),
+            do: elem(reference_items_by_index, offset)
+
+        case reference do
           nil ->
             [{curr, index, false}]
 
