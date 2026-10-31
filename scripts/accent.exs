@@ -21,7 +21,6 @@ defmodule Firmowid.Translations.Accent do
 
   @snapshot_url "https://github.com/Alergeek-Ventures/firmowid/releases/download/translation-snapshots"
   @request_timeout 30_000
-  @cli_timeout "120"
   @usage "usage: accent.exs snapshot --version FULL_SHA | accent.exs export --version FULL_SHA [--fallback-version FULL_SHA]"
   @version_marker ~r/^# Accent version: [[:xdigit:]]{40}$/
 
@@ -209,24 +208,44 @@ defmodule Firmowid.Translations.Accent do
   end
 
   defp export_catalog(temporary_directory, api_key) do
-    source = Path.join(temporary_directory, "gettext/landing-native/default.pot")
-    File.mkdir_p!(Path.dirname(source))
-    File.cp!(@catalog, source)
+    %{
+      "apiUrl" => api_url,
+      "project" => project,
+      "files" => [%{"source" => source, "format" => format}]
+    } =
+      @config |> File.read!() |> JSON.decode!()
 
-    accent_executable =
-      System.find_executable("accent") ||
-        raise(RuntimeError, "Accent CLI is required; enter the devenv environment")
+    Enum.each(Firmowid.Translations.locales(), fn locale ->
+      result =
+        Req.get(api_url <> "/export",
+          auth: {:bearer, api_key},
+          params: [
+            document_path: Path.dirname(source),
+            document_format: format,
+            language: locale,
+            project_id: project,
+            order_by: "index"
+          ],
+          receive_timeout: @request_timeout,
+          connect_options: [timeout: 10_000],
+          retry: false,
+          redirect: false,
+          decode_body: false
+        )
 
-    arguments = [@cli_timeout, accent_executable, "export", "--config", @config]
+      case result do
+        {:ok, %Req.Response{status: 200, body: body}} ->
+          path = Path.join(temporary_directory, "exports/#{locale}/default.po")
+          File.mkdir_p!(Path.dirname(path))
+          File.write!(path, body)
 
-    case System.cmd("timeout", arguments,
-           cd: temporary_directory,
-           env: [{"ACCENT_API_KEY", api_key}],
-           stderr_to_stdout: true
-         ) do
-      {_output, 0} -> :ok
-      {_output, status} -> raise RuntimeError, "Accent CLI export failed (exit status #{status})"
-    end
+        {:ok, %Req.Response{status: status}} ->
+          raise RuntimeError, "Accent export failed (HTTP #{status})"
+
+        {:error, reason} ->
+          raise RuntimeError, "Accent export failed (transport: #{error_kind(reason)})"
+      end
+    end)
   end
 
   defp install_catalog(temporary_directory, version) do
