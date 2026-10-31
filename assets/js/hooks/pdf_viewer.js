@@ -1,5 +1,8 @@
 import { version as pdfjsVersion } from "pdfjs-dist/package.json";
 
+const MAX_PAGE_PIXELS = 16_000_000;
+const MAX_DOCUMENT_PIXELS = 64_000_000;
+
 export const PDFViewer = {
   mounted() {
     this.loadPdf();
@@ -27,7 +30,9 @@ export const PDFViewer = {
       .then((pdfDocument) => {
         const renderPage = (pageNum) => {
           return pdfDocument.getPage(pageNum).then((pdfPage) => {
-            const renderScale = 2.0;
+            const baseViewport = pdfPage.getViewport({ scale: 1 });
+            const pixelBudget = Math.min(MAX_PAGE_PIXELS, MAX_DOCUMENT_PIXELS / pdfDocument.numPages);
+            const renderScale = Math.min(2, Math.sqrt(pixelBudget / (baseViewport.width * baseViewport.height)));
             let viewport = pdfPage.getViewport({ scale: renderScale });
             const aspectRatio = viewport.width / viewport.height;
 
@@ -64,4 +69,3 @@ export const PDFViewer = {
       });
   },
 };
-

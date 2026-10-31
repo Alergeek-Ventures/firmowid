@@ -19,6 +19,20 @@ defmodule Firmowid.Ksef.Services.XadesSigner do
   @ecdsa_sha256_uri "http://www.w3.org/2001/04/xmldsig-more#ecdsa-sha256"
   @p256_oid {1, 2, 840, 10_045, 3, 1, 7}
 
+  # JOSE emits 600,000 PBKDF2 iterations by default. Allow those keys while
+  # bounding OTP's Erlang KDF and its cipher-sized output. PBES1 also copies
+  # all preceding hashes on every iteration.
+  @max_pbkdf2_iterations 1_000_000
+  @max_pbes1_iterations 4_096
+  @pbe_ciphers %{
+    ~c"DES-CBC" => {{1, 3, 14, 3, 2, 7}, 8, 8},
+    ~c"DES-EDE3-CBC" => {{1, 2, 840, 113_549, 3, 7}, 24, 8},
+    ~c"RC2-CBC" => {{1, 2, 840, 113_549, 3, 2}, 16, 8},
+    ~c"AES-128-CBC" => {{2, 16, 840, 1, 101, 3, 4, 1, 2}, 16, 16},
+    ~c"AES-192-CBC" => {{2, 16, 840, 1, 101, 3, 4, 1, 22}, 24, 16},
+    ~c"AES-256-CBC" => {{2, 16, 840, 1, 101, 3, 4, 1, 42}, 32, 16}
+  }
+
   @typedoc "Stable errors returned while loading credentials or producing XAdES."
   @type error_reason ::
           :invalid_certificate
@@ -60,15 +74,12 @@ defmodule Firmowid.Ksef.Services.XadesSigner do
     encrypted? = encrypted_private_key_pem?(pem)
 
     result =
-      cond do
-        encrypted? and is_binary(password) ->
-          X509.PrivateKey.from_pem(pem, password: password)
-
-        not encrypted? ->
-          X509.PrivateKey.from_pem(pem)
-
-        true ->
-          {:error, :private_key_password_required}
+      if encrypted? and not is_binary(password) do
+        {:error, :private_key_password_required}
+      else
+        with :ok <- validate_pem_parameters(pem) do
+          decode_validated_private_key(pem, password, encrypted?)
+        end
       end
 
     case result do
@@ -78,6 +89,89 @@ defmodule Firmowid.Ksef.Services.XadesSigner do
       result ->
         result
     end
+  end
+
+  defp validate_pem_parameters(pem) do
+    # Native PEM decoding exposes the KDF records without deriving any key.
+    pem
+    |> :public_key.pem_decode()
+    |> Enum.find(&(elem(&1, 0) in [:RSAPrivateKey, :ECPrivateKey, :PrivateKeyInfo]))
+    |> case do
+      nil ->
+        {:error, :invalid_private_key}
+
+      entry ->
+        if bounded_pem_entry?(entry), do: :ok, else: {:error, :invalid_private_key}
+    end
+  rescue
+    _error in [ArgumentError, MatchError, FunctionClauseError, CaseClauseError] ->
+      {:error, :invalid_private_key}
+  end
+
+  defp bounded_pem_entry?({_type, _data, :not_encrypted}), do: true
+
+  defp bounded_pem_entry?({_type, _data, {cipher, parameters}}) do
+    case Map.fetch(@pbe_ciphers, cipher) do
+      {:ok, {oid, key_length, iv_length}} ->
+        bounded_kdf?(parameters, oid, key_length, iv_length)
+
+      :error ->
+        false
+    end
+  end
+
+  defp bounded_pem_entry?(_entry), do: false
+
+  defp bounded_kdf?(
+         {:"PBES2-params",
+          {:"PBES2-params_keyDerivationFunc", {1, 2, 840, 113_549, 1, 5, 12},
+           {:"PBKDF2-params", {:specified, salt}, iterations, length, _prf}}, {:"PBES2-params_encryptionScheme", oid, _}},
+         oid,
+         key_length,
+         _iv_length
+       ) do
+    is_binary(salt) and is_integer(iterations) and iterations in 1..@max_pbkdf2_iterations and
+      length in [:asn1_NOVALUE, key_length]
+  end
+
+  defp bounded_kdf?({{:PBEParameter, salt, iterations}, hash}, oid, _key_length, _iv_length) do
+    oid in [{1, 3, 14, 3, 2, 7}, {1, 2, 840, 113_549, 3, 2}] and
+      hash in [:md5, :sha] and is_binary(salt) and byte_size(salt) == 8 and
+      is_integer(iterations) and iterations in 1..@max_pbes1_iterations
+  end
+
+  # Traditional encrypted PEM carries an IV, not an uploaded KDF work factor.
+  defp bounded_kdf?(iv, _oid, _key_length, iv_length) when is_binary(iv), do: byte_size(iv) == iv_length
+
+  defp bounded_kdf?(_parameters, _oid, _key_length, _iv_length), do: false
+
+  defp decode_validated_private_key(pem, password, encrypted?) do
+    if encrypted? do
+      X509.PrivateKey.from_pem(pem, password: password)
+    else
+      X509.PrivateKey.from_pem(pem)
+    end
+  rescue
+    _error in [
+      ArgumentError,
+      MatchError,
+      FunctionClauseError,
+      CaseClauseError,
+      UnicodeConversionError
+    ] ->
+      {:error, :invalid_private_key}
+
+    error in ErlangError ->
+      case error.original do
+        :notsup ->
+          {:error, :invalid_private_key}
+
+        {reason, _source, _message} when reason in [:badarg, :notsup] ->
+          {:error, :invalid_private_key}
+
+        _unexpected ->
+          reraise error, __STACKTRACE__
+      end
   end
 
   defp encrypted_private_key_pem?(pem),
