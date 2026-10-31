@@ -21,6 +21,8 @@ defmodule Firmowid.Invoicing.Changes.PrepareCorrection do
   use Gettext, backend: Firmowid.Gettext
 
   alias Firmowid.Invoicing.SalesInvoice
+  alias Firmowid.Ksef
+  alias Firmowid.Ksef.SubmissionInfo
 
   @copied_fields [
     :seller_nip,
@@ -70,6 +72,10 @@ defmodule Firmowid.Invoicing.Changes.PrepareCorrection do
 
   @latest_snapshot_load [
     :sales_invoice_items,
+    :invoice_number,
+    :ksef_number,
+    :ksef_session_reference_number,
+    :locked_at,
     :sale_date,
     :due_date,
     :invoice_type | @copied_fields
@@ -98,7 +104,9 @@ defmodule Firmowid.Invoicing.Changes.PrepareCorrection do
            ),
          :ok <- validate_original(original_invoice),
          {:ok, latest_snapshot} <-
-           Ash.load(original_invoice.effective_snapshot, @latest_snapshot_load, opts) do
+           Ash.load(original_invoice.effective_snapshot, @latest_snapshot_load, opts),
+         :ok <- validate_submission(original_invoice),
+         :ok <- validate_submission(latest_snapshot) do
       prepare_from_snapshot(changeset, original_invoice, latest_snapshot)
     else
       {:error, error} -> Ash.Changeset.add_error(changeset, error)
@@ -109,6 +117,17 @@ defmodule Firmowid.Invoicing.Changes.PrepareCorrection do
 
   defp validate_original(_original_invoice) do
     {:error, field: :original_invoice_id, message: gettext_noop("Choose an issued VAT invoice to correct.")}
+  end
+
+  defp validate_submission(invoice) do
+    submission = Ksef.get_submission_info(invoice)
+
+    if SubmissionInfo.outside_ksef?(invoice, submission) or
+         SubmissionInfo.editing_blocked?(invoice, submission) do
+      {:error, field: :original_invoice_id, message: SubmissionInfo.edit_unavailable_reason(invoice, submission)}
+    else
+      :ok
+    end
   end
 
   defp prepare_from_snapshot(changeset, original_invoice, latest_snapshot) do

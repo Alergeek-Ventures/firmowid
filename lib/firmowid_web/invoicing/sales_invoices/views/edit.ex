@@ -649,6 +649,10 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
     if is_nil(invoice.invoice_number) do
       issue_draft(invoice, form_params, ash_form, socket.assigns.ash_scope)
     else
+      original =
+        if invoice.ksef_invoice_kind == :kor, do: invoice.corrected_invoice, else: invoice
+
+      form_params = Map.put(form_params, "original_invoice_id", original.id)
       AshPhoenix.Form.submit(ash_form, params: form_params)
     end
   end
