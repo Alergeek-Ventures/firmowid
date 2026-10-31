@@ -17,6 +17,18 @@ defmodule Firmowid.Analysis.EntityTag.Persistence do
     validate KindTagDefinitionConsistency, on: [:create]
   end
 
+  changes do
+    change fn changeset, _context ->
+             Ash.Changeset.manage_relationship(
+               changeset,
+               :tag_definition,
+               Ash.Changeset.get_attribute(changeset, :tag_definition_id),
+               type: :append_and_remove
+             )
+           end,
+           on: [:create]
+  end
+
   multitenancy do
     strategy :attribute
     attribute :organization_id

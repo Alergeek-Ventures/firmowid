@@ -220,6 +220,19 @@ defmodule Firmowid.Timetracker.Project do
     end
   end
 
+  changes do
+    change fn changeset, _context ->
+             Ash.Changeset.manage_relationship(
+               changeset,
+               :counterparty,
+               Ash.Changeset.get_attribute(changeset, :counterparty_id),
+               type: :append_and_remove
+             )
+           end,
+           on: [:create, :update],
+           where: [changing(:counterparty_id)]
+  end
+
   multitenancy do
     strategy :attribute
     attribute :organization_id

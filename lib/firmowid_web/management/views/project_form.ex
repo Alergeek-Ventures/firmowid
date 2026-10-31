@@ -168,7 +168,9 @@ defmodule FirmowidWeb.Management.Views.ProjectForm do
       |> Enum.reject(& &1.removed_from_project)
       |> Enum.map(& &1.user.member.id)
 
-    Map.put(params, "member_ids", member_ids)
+    params
+    |> Map.take(["name"])
+    |> Map.put("member_ids", member_ids)
   end
 
   # Resolve a user by ID: prefer already-loaded project members, fall back to Core.
