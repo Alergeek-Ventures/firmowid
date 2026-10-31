@@ -5,6 +5,7 @@ defmodule FirmowidWeb.HoursRecord.Components.UploadForm do
   import FirmowidUI.Components.Button
   import FirmowidUI.Components.Link
   import FirmowidWeb.DesignSystem.Components.CoreComponents
+  import FirmowidWeb.Infrastructure.Hooks.RequireOrganization, only: [attach_access_hook: 2]
   import Phoenix.Component, except: [link: 1]
 
   alias Firmowid.Timetracker
@@ -15,6 +16,7 @@ defmodule FirmowidWeb.HoursRecord.Components.UploadForm do
   def mount(socket) do
     socket =
       socket
+      |> attach_access_hook(:ash_scope)
       |> assign(:state, :download)
       |> allow_upload(:hours_record,
         max_entries: 1,

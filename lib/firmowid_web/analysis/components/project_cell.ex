@@ -7,12 +7,17 @@ defmodule FirmowidWeb.Analysis.Components.ProjectCell do
   """
   use FirmowidWeb, :live_component
 
+  import FirmowidWeb.Infrastructure.Hooks.RequireOrganization, only: [attach_access_hook: 2]
+
   alias Firmowid.Analysis
   alias Firmowid.Finances.Transaction
   alias Firmowid.Invoicing.CostInvoice
   alias Firmowid.Invoicing.SalesInvoice
   alias FirmowidWeb.Analysis.Components.CategorySelector
   alias FirmowidWeb.Analysis.Utilities.EntryCategoryChanges
+
+  @impl true
+  def mount(socket), do: {:ok, attach_access_hook(socket, :scope)}
 
   @impl true
   def update(assigns, socket) do

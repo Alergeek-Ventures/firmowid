@@ -7,6 +7,7 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
   import FirmowidWeb.DesignSystem.Components.CoreComponents
   import FirmowidWeb.DesignSystem.Components.InvoicingBadges
   import FirmowidWeb.Infrastructure.Flags, only: [flag_enabled?: 2]
+  import FirmowidWeb.Infrastructure.Hooks.RequireOrganization, only: [attach_access_hook: 2]
   import FirmowidWeb.Invoicing.Components.StatusButton
   import Phoenix.Component, except: [link: 1]
 
@@ -21,7 +22,7 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
 
   @impl true
   def mount(socket) do
-    {:ok, assign(socket, show_timeline: false, is_cost_invoice: false)}
+    {:ok, socket |> attach_access_hook(:scope) |> assign(show_timeline: false, is_cost_invoice: false)}
   end
 
   @impl true

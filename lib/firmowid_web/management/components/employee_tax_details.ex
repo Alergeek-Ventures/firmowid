@@ -3,6 +3,7 @@ defmodule FirmowidWeb.Management.Components.EmployeeTaxDetails do
   use FirmowidWeb, :live_component
 
   import FirmowidUI.Components.Button
+  import FirmowidWeb.Infrastructure.Hooks.RequireOrganization, only: [attach_access_hook: 2]
   import FirmowidWeb.Management.Components.Card
 
   alias Firmowid.Payroll
@@ -11,6 +12,9 @@ defmodule FirmowidWeb.Management.Components.EmployeeTaxDetails do
   alias Phoenix.LiveView.JS
 
   @additional_fields [:pit0, :preferential, :copyright_costs]
+
+  @impl true
+  def mount(socket), do: {:ok, attach_access_hook(socket, :scope)}
 
   @impl true
   def update(assigns, socket) do

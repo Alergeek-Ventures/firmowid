@@ -6,10 +6,14 @@ defmodule FirmowidWeb.Management.Components.LeavesTab do
   import FirmowidUI.Components.Link
   import FirmowidWeb.DesignSystem.Components.CoreComponents
   import FirmowidWeb.DesignSystem.Components.YearPicker
+  import FirmowidWeb.Infrastructure.Hooks.RequireOrganization, only: [attach_access_hook: 2]
   import Phoenix.Component, except: [link: 1]
 
   alias Firmowid.Timetracker
   alias FirmowidWeb.Timetracker.Utilities.LeavePresentation
+
+  @impl true
+  def mount(socket), do: {:ok, attach_access_hook(socket, :scope)}
 
   @impl true
   def update(assigns, socket) do

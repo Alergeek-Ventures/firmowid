@@ -7,6 +7,7 @@ defmodule FirmowidWeb.Management.Components.ProjectsTab do
   import FirmowidWeb.HoursRecord.Components.ChangeRequest
   import FirmowidWeb.HoursRecord.Components.Status, only: [hours_record_status: 1]
   import FirmowidWeb.Infrastructure.Flags, only: [flag_enabled?: 2]
+  import FirmowidWeb.Infrastructure.Hooks.RequireOrganization, only: [attach_access_hook: 2]
 
   alias Firmowid.Payroll
   alias Firmowid.Timetracker
@@ -19,7 +20,7 @@ defmodule FirmowidWeb.Management.Components.ProjectsTab do
 
   @impl true
   def mount(socket) do
-    {:ok, socket}
+    {:ok, attach_access_hook(socket, :scope)}
   end
 
   @impl true

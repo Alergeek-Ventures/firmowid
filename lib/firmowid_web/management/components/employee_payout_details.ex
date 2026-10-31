@@ -4,11 +4,15 @@ defmodule FirmowidWeb.Management.Components.EmployeePayoutDetails do
 
   import FirmowidUI.Components.Button
   import FirmowidWeb.DesignSystem.Components.CoreComponents
+  import FirmowidWeb.Infrastructure.Hooks.RequireOrganization, only: [attach_access_hook: 2]
   import FirmowidWeb.Management.Components.Card
 
   alias Firmowid.Core
   alias Firmowid.Payroll
   alias Firmowid.TimeFormatter
+
+  @impl true
+  def mount(socket), do: {:ok, attach_access_hook(socket, :scope)}
 
   @impl true
   def update(assigns, socket) do

@@ -5,6 +5,7 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
 
   import FirmowidWeb.Delegations.Components.SettlementPage
   import FirmowidWeb.Delegations.Components.SettlementSignaturePage
+  import FirmowidWeb.Infrastructure.Hooks.RequireOrganization, only: [guard_upload_progress: 2]
 
   alias Firmowid.Delegations
   alias Firmowid.Delegations.DelegationExpense
@@ -333,7 +334,7 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
             accept: ~w(.pdf .png .jpg .jpeg),
             max_entries: 1,
             auto_upload: true,
-            progress: &handle_upload_progress/3
+            progress: guard_upload_progress(&handle_upload_progress/3, :ash_scope)
           )
 
     socket = if transport, do: transport, else: socket
@@ -345,25 +346,25 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
           accept: ~w(.pdf .png .jpg .jpeg),
           max_entries: 1,
           auto_upload: true,
-          progress: &handle_upload_progress/3
+          progress: guard_upload_progress(&handle_upload_progress/3, :ash_scope)
         )
         |> allow_upload(:other,
           accept: ~w(.pdf .png .jpg .jpeg),
           max_entries: 1,
           auto_upload: true,
-          progress: &handle_upload_progress/3
+          progress: guard_upload_progress(&handle_upload_progress/3, :ash_scope)
         )
         |> allow_upload(:related_document,
           accept: ~w(.pdf .png .jpg .jpeg),
           max_entries: 1,
           auto_upload: true,
-          progress: &handle_related_upload_progress/3
+          progress: guard_upload_progress(&handle_related_upload_progress/3, :ash_scope)
         )
         |> allow_upload(:statement_document,
           accept: ~w(.pdf .png .jpg .jpeg),
           max_entries: 1,
           auto_upload: true,
-          progress: &handle_statement_upload_progress/3
+          progress: guard_upload_progress(&handle_statement_upload_progress/3, :ash_scope)
         )
       else
         socket

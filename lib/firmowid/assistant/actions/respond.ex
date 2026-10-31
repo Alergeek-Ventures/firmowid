@@ -50,6 +50,7 @@ defmodule Firmowid.Assistant.Actions.Respond do
         context: %{},
         system_prompt: fn _opts -> Prompt.system() end,
         approve_tool_call: fn call, _context -> ToolPolicy.approve(call, tool_names) end,
+        on_tool_start: fn _event -> ToolPolicy.ensure_current!(scope) end,
         approvals: ToolPolicy.approvals(conversation.approvals),
         max_iterations: 20,
         req_llm_opts: [max_retries: 0]
