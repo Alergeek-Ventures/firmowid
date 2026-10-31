@@ -4,5 +4,9 @@
   "low": true,
   "report-type": "summary",
   "show-found": false,
-  "allowlist": []
+  "allowlist": [
+    // Remove on or after 2026-11-30 and rerun npm run audit:check. license-checker only
+    // globs our own node_modules in CI, and glob@7 cannot use the patched minimatch 11.
+    "GHSA-g3hv-75wg-m249|license-checker>read-installed>read-package-json>glob>minimatch"
+  ]
 }
