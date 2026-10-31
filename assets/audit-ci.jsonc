@@ -4,5 +4,10 @@
   "low": true,
   "report-type": "summary",
   "show-found": false,
-  "allowlist": []
+  "allowlist": [
+    // license-checker's glob 7 needs minimatch 3, which predates the vulnerable
+    // globParts preprocessing (optimizationLevel >= 2) the advisory describes,
+    // and it only matches our own dev-time patterns.
+    "GHSA-g3hv-75wg-m249|license-checker>read-installed>read-package-json>glob>minimatch"
+  ]
 }
