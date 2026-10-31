@@ -99,8 +99,10 @@ if System.get_env("DATABASE_URL") do
     if config_env() == :test do
       test_db = "firmowid_test#{System.get_env("MIX_TEST_PARTITION")}"
 
-      # Replace database name in URL: postgresql://user:pass@host:port/dbname -> postgresql://user:pass@host:port/test_dbname
-      String.replace(database_url, ~r{/[^/]+$}, "/#{test_db}")
+      database_url
+      |> URI.new!()
+      |> Map.put(:path, "/#{test_db}")
+      |> URI.to_string()
     else
       database_url
     end
@@ -318,7 +320,6 @@ if config_env() == :prod do
         [
           verify: :verify_peer,
           cacertfile: cert_path,
-          server_name_indication: :disable,
           customize_hostname_check: [
             match_fun: :public_key.pkix_verify_hostname_match_fun(:https)
           ]
