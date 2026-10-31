@@ -4,6 +4,7 @@ defmodule Firmowid.Invoicing.SalesInvoiceTest do
 
   import Firmowid.AccountsFixtures
 
+  alias Ash.Error.Changes.InvalidAttribute
   alias Ash.Error.Forbidden
   alias Ash.Error.Invalid
   alias Firmowid.Invoicing
@@ -56,7 +57,7 @@ defmodule Firmowid.Invoicing.SalesInvoiceTest do
 
       assert Enum.any?(
                errors,
-               &match?(%Ash.Error.Changes.InvalidAttribute{field: :invoice_number}, &1)
+               &match?(%InvalidAttribute{field: :invoice_number}, &1)
              )
     end
   end
@@ -170,18 +171,33 @@ defmodule Firmowid.Invoicing.SalesInvoiceTest do
 
       InvoicingFixtures.connect_ksef!(user.member.organization_id)
 
+      correction_attrs = %{
+        original_invoice_id: invoice.id,
+        invoice_number: "FK/#{System.unique_integer([:positive])}",
+        issue_date: ~D[2026-01-11],
+        currency: "PLN",
+        sales_invoice_items: [base_item_attrs(%{unit_price: Decimal.new("50")})]
+      }
+
       assert {:ok, _correction} =
                Oban.Testing.with_testing_mode(:manual, fn ->
-                 SalesInvoice.correct(
-                   %{
-                     original_invoice_id: invoice.id,
-                     invoice_number: "FK/#{System.unique_integer([:positive])}",
-                     issue_date: ~D[2026-01-11],
-                     currency: "PLN",
-                     sales_invoice_items: [base_item_attrs(%{unit_price: Decimal.new("50")})]
-                   },
-                   scope: scope
+                 assert {:error, %Invalid{errors: errors}} =
+                          SalesInvoice.correct(correction_attrs, scope: scope)
+
+                 assert Enum.any?(
+                          errors,
+                          &match?(
+                            %InvalidAttribute{field: :original_invoice_id},
+                            &1
+                          )
+                        )
+
+                 Ash.Seed.update!(
+                   invoice,
+                   %{ksef_number: "5261040828-20260110-ABCDEF123456-AB"}
                  )
+
+                 SalesInvoice.correct(correction_attrs, scope: scope)
                end)
 
       invoice = Ash.load!(invoice, [:effective_amount], scope: scope)

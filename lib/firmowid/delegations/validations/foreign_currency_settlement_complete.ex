@@ -60,5 +60,5 @@ defmodule Firmowid.Delegations.Validations.ForeignCurrencySettlementComplete do
   defp positive_decimal?(%Decimal{} = value), do: Decimal.compare(value, 0) == :gt
   defp positive_decimal?(_), do: false
 
-  defp attribute(changeset, name), do: Ash.Changeset.get_attribute(changeset, name) || Map.get(changeset.data, name)
+  defp attribute(changeset, name), do: Ash.Changeset.get_attribute(changeset, name)
 end
