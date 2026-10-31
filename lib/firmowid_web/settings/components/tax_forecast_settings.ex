@@ -8,10 +8,14 @@ defmodule FirmowidWeb.Settings.Components.TaxForecastSettings do
   use FirmowidWeb, :live_component
 
   import FirmowidUI.Components.Button
+  import FirmowidWeb.Infrastructure.Hooks.RequireOrganization, only: [attach_access_hook: 2]
 
   alias Firmowid.Core
   alias Firmowid.Core.Organization
   alias Firmowid.Scope
+
+  @impl true
+  def mount(socket), do: {:ok, attach_access_hook(socket, :scope)}
 
   @impl true
   def update(%{current_user: user}, socket) do

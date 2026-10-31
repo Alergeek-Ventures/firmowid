@@ -4,6 +4,7 @@ defmodule FirmowidWeb.Management.Components.ProfileTab do
 
   import FirmowidUI.Components.Link
   import FirmowidWeb.Infrastructure.Flags, only: [flag_enabled?: 2]
+  import FirmowidWeb.Infrastructure.Hooks.RequireOrganization, only: [attach_access_hook: 2]
   import FirmowidWeb.Management.Components.Card
   import Phoenix.Component, except: [link: 1]
 
@@ -12,7 +13,7 @@ defmodule FirmowidWeb.Management.Components.ProfileTab do
 
   @impl true
   def mount(socket) do
-    {:ok, socket}
+    {:ok, attach_access_hook(socket, :scope)}
   end
 
   @impl true

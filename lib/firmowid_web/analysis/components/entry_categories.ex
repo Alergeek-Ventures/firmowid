@@ -4,6 +4,7 @@ defmodule FirmowidWeb.Analysis.Components.EntryCategories do
 
   import FirmowidUI.Components.Link
   import FirmowidWeb.Infrastructure.Flags, only: [flag_enabled?: 2]
+  import FirmowidWeb.Infrastructure.Hooks.RequireOrganization, only: [attach_access_hook: 2]
   import Phoenix.Component, except: [link: 1]
 
   alias Firmowid.Analysis.TagDefinition
@@ -14,6 +15,9 @@ defmodule FirmowidWeb.Analysis.Components.EntryCategories do
   alias FirmowidWeb.Analysis.Utilities.CategoryColors
   alias FirmowidWeb.Analysis.Utilities.EntryCategoryChanges
   alias FirmowidWeb.Analysis.Utilities.Navigation
+
+  @impl true
+  def mount(socket), do: {:ok, attach_access_hook(socket, :scope)}
 
   @impl true
   def update(assigns, socket) do

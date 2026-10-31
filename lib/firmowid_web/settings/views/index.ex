@@ -14,6 +14,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
   use FirmowidWeb, :live_view
 
   import FirmowidWeb.Infrastructure.Flags, only: [flag_enabled?: 2]
+  import FirmowidWeb.Infrastructure.Hooks.RequireOrganization, only: [guard_upload_progress: 2]
   import FirmowidWeb.Settings.Components.AccountTab
   import FirmowidWeb.Settings.Components.CompanyTab
   import FirmowidWeb.Settings.Components.InvoicesTab
@@ -140,13 +141,13 @@ defmodule FirmowidWeb.Settings.Views.Index do
           accept: ~w(.jpg .jpeg .png),
           max_entries: 1,
           auto_upload: true,
-          progress: &handle_progress/3
+          progress: guard_upload_progress(&handle_progress/3, :ash_scope)
         )
         |> allow_upload(:document_upload,
           accept: ~w(.pdf .doc .docx),
           max_entries: 1,
           auto_upload: true,
-          progress: &handle_progress/3
+          progress: guard_upload_progress(&handle_progress/3, :ash_scope)
         )
       else
         socket
@@ -202,7 +203,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
        accept: ~w(.jpg .jpeg .png),
        max_entries: 1,
        auto_upload: true,
-       progress: &handle_progress/3
+       progress: guard_upload_progress(&handle_progress/3, :ash_scope)
      )
      |> assign(:leave_requests, leave_requests)
      |> assign(:delegations, delegations)

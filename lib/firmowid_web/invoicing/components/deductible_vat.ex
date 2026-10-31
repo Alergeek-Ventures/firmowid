@@ -9,13 +9,14 @@ defmodule FirmowidWeb.Invoicing.Components.DeductibleVat do
   use FirmowidWeb, :live_component
 
   import FirmowidUI.Components.Button
+  import FirmowidWeb.Infrastructure.Hooks.RequireOrganization, only: [attach_access_hook: 2]
 
   alias Firmowid.Invoicing.CostInvoice
 
   @impl true
   def mount(socket) do
     # Amounts saved here: the parent's invoice keeps its value from the page mount.
-    {:ok, assign(socket, saved: %{}, errors: %{})}
+    {:ok, socket |> attach_access_hook(:scope) |> assign(saved: %{}, errors: %{})}
   end
 
   @impl true

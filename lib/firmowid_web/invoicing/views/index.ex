@@ -12,6 +12,7 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
   import FirmowidWeb.Core.PubSubDebounce
   import FirmowidWeb.DesignSystem.Components.MonthPicker
   import FirmowidWeb.Infrastructure.Flags, only: [flag_enabled?: 2]
+  import FirmowidWeb.Infrastructure.Hooks.RequireOrganization, only: [guard_upload_progress: 2]
   import Phoenix.Component, except: [link: 1]
 
   alias Ash.Notifier.Notification
@@ -98,7 +99,7 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
         allow_upload(socket, :file,
           max_entries: 50,
           accept: ["application/pdf", "image/*"],
-          progress: &handle_progress/3,
+          progress: guard_upload_progress(&handle_progress/3, :ash_scope),
           auto_upload: true
         )
       else

@@ -5,6 +5,10 @@ defmodule FirmowidWeb.Documents.Components.DocumentsSection do
   import FirmowidUI.Components.Button
   import FirmowidUI.Components.Link
   import FirmowidWeb.Infrastructure.Flags, only: [flag_enabled?: 2]
+
+  import FirmowidWeb.Infrastructure.Hooks.RequireOrganization,
+    only: [attach_access_hook: 2, guard_upload_progress: 2]
+
   import Phoenix.Component, except: [link: 1]
 
   alias Firmowid.Blobs
@@ -20,6 +24,7 @@ defmodule FirmowidWeb.Documents.Components.DocumentsSection do
   def mount(socket) do
     {:ok,
      socket
+     |> attach_access_hook(:scope)
      |> assign(:search, "")
      |> assign(:type_filter, nil)
      |> assign(:can_upload?, false)}
@@ -61,7 +66,7 @@ defmodule FirmowidWeb.Documents.Components.DocumentsSection do
         accept: ~w(.pdf .doc .docx),
         max_entries: 1,
         auto_upload: true,
-        progress: &handle_progress/3
+        progress: guard_upload_progress(&handle_progress/3, :scope)
       )
     end
   end

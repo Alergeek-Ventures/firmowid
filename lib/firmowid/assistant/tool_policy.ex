@@ -34,6 +34,22 @@ defmodule Firmowid.Assistant.ToolPolicy do
     end
   end
 
+  @doc "Stops a tool call if the run's membership or authority has changed."
+  @spec ensure_current!(Scope.t()) :: :ok
+  def ensure_current!(scope) do
+    identity = %{user_id: scope.actor.id, organization_id: scope.tenant}
+
+    with {:ok, current} <- fresh_scope(identity),
+         true <-
+           current.actor.member.id == scope.actor.member.id and
+             current.actor.member.role == scope.actor.member.role and
+             current.actor.system_role == scope.actor.system_role do
+      :ok
+    else
+      _ -> raise Ash.Error.Forbidden
+    end
+  end
+
   @doc "Returns the tool allowlist for the user's current organization role."
   @spec tools(Scope.t()) :: [atom()]
   def tools(scope) do
