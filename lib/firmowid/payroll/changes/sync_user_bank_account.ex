@@ -7,6 +7,7 @@ defmodule Firmowid.Payroll.Changes.SyncUserBankAccount do
   use Ash.Resource.Change
 
   alias Firmowid.Core
+  alias Firmowid.ErrorKind
 
   require Logger
 
@@ -40,9 +41,8 @@ defmodule Firmowid.Payroll.Changes.SyncUserBankAccount do
     else
       {:error, reason} ->
         Logger.warning(
-          "Skipped bank account from employment contract " <>
-            "contract_id=#{contract.id} value=#{inspect(bank_account_number)} " <>
-            "reason=#{inspect(reason)}"
+          "Skipped bank account from employment contract contract_id=#{contract.id}",
+          error_kind: ErrorKind.classify(reason)
         )
 
         contract
