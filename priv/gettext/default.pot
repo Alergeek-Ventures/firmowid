@@ -10351,6 +10351,11 @@ msgstr ""
 
 #: lib/firmowid_web/management/views/delegation.ex
 #, elixir-autogen, elixir-format
+msgid "The employee has sent a new signed settlement. Review it before approving."
+msgstr ""
+
+#: lib/firmowid_web/management/views/delegation.ex
+#, elixir-autogen, elixir-format
 msgid "The employee has sent the signed settlement. Check the document and proof of expenses, then approve the settlement or return it for correction."
 msgstr ""
 

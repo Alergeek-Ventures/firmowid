@@ -229,6 +229,8 @@ defmodule Firmowid.Delegations.Delegation do
       change CreateSignedSettlementBlob
       change SetSubmittedAt
       change set_attribute(:settlement_return_reason, nil)
+      # Checks the stored state, so a concurrent second submission fails instead of repeating it.
+      change filter(expr(status == :awaiting_signature))
       change transition_state(:submitted)
 
       emit Signals, :settlement_submitted, fields: [delegation_id: :id]
@@ -237,6 +239,11 @@ defmodule Firmowid.Delegations.Delegation do
     update :accept_settlement do
       description "Accept a submitted settlement and close the delegation."
       accept []
+
+      argument :submitted_at, :utc_datetime, allow_nil?: false
+
+      # Fails when the employee has submitted again since, even with the same signed PDF.
+      change filter(expr(submitted_at == ^arg(:submitted_at)))
       change transition_state(:complete)
 
       emit Signals, :settlement_reviewed, fields: [delegation_id: :id, reason: :settlement_return_reason]
