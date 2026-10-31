@@ -904,7 +904,7 @@ defmodule Firmowid.Invoicing.InvoicingTest do
           currency: "USD",
           buyer_type: :company,
           organization_id: organization_id,
-          item_names: "Consulting Services for Project X"
+          item_names: "Consulting Services for Project X Software License Fee"
         })
 
       Ash.Seed.seed!(SalesInvoiceItem, %{

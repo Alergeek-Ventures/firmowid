@@ -35,6 +35,14 @@ defmodule Firmowid.Invoicing.SalesInvoiceItem do
   postgres do
     table "sales_invoice_items"
     repo Firmowid.Repo
+
+    custom_statements do
+      statement :remove_redundant_item_names_trigger do
+        up "DROP TRIGGER IF EXISTS sales_invoice_items_update_names ON sales_invoice_items;"
+
+        down "CREATE TRIGGER sales_invoice_items_update_names AFTER INSERT OR DELETE OR UPDATE ON sales_invoice_items FOR EACH ROW EXECUTE FUNCTION update_sales_invoice_item_names();"
+      end
+    end
   end
 
   code_interface do
