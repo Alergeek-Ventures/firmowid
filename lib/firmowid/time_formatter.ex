@@ -70,11 +70,11 @@ defmodule Firmowid.TimeFormatter do
   end
 
   def format_date(date, format) do
-    Cldr.Date.to_string!(date, Firmowid.Cldr, format: format, locale: "pl")
+    Cldr.Date.to_string!(date, Firmowid.Cldr, format: format)
   end
 
   @doc """
-  Format DateTime as relative Polish time, e.g. "2 dni temu".
+  Format DateTime as localized relative time, e.g. "2 dni temu".
   """
   def format_relative_time(datetime, now \\ DateTime.utc_now())
 

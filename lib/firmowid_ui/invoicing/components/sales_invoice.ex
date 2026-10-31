@@ -954,7 +954,7 @@ defmodule FirmowidUI.Invoicing.Components.SalesInvoice do
           <div :if={@currency_rate}>
             <div class="text-[10px]/[14px]">
               Kurs {@sales_invoice.currency} / {@sales_invoice.currency} exchange rate: {@currency_rate.rate
-              |> Firmowid.Cldr.Number.to_string!(format: "#0.0000 ¤¤", currency: "PLN")}
+              |> Firmowid.Cldr.Number.to_string!(format: "#0.0000 ¤¤", currency: "PLN", locale: "pl")}
             </div>
             <div class="mt-1 text-[8px]">
               Kurs waluty wg. tabeli kursów średnich nr {@currency_rate.table_number} z dnia {@currency_rate.effective_date}

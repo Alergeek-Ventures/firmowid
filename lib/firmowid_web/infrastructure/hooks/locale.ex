@@ -11,7 +11,10 @@ defmodule FirmowidWeb.Infrastructure.Hooks.Locale do
   @spec on_mount(:default, map() | :not_mounted_at_router, map(), Socket.t()) ::
           {:cont, Socket.t()}
   def on_mount(:default, _params, session, socket) do
-    if locale = session[Locale.session_key()], do: Gettext.put_locale(Firmowid.Gettext, locale)
+    if locale = session[Locale.session_key()] do
+      Gettext.put_locale(Firmowid.Gettext, locale)
+      {:ok, _locale} = Firmowid.Cldr.put_locale(locale)
+    end
 
     {:cont, socket}
   end

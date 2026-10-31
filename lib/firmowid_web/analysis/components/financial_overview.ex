@@ -451,7 +451,7 @@ defmodule FirmowidWeb.Analysis.Components.FinancialOverview do
 
   defp month_name(month, format \\ "LLL") do
     month
-    |> Firmowid.Cldr.Date.to_string!(format: format, locale: "pl")
+    |> Firmowid.Cldr.Date.to_string!(format: format)
     |> String.capitalize()
   end
 end

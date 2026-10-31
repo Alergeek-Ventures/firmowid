@@ -305,7 +305,7 @@ msgstr ""
 
 #: lib/firmowid_web/management/views/project.ex
 #, elixir-autogen, elixir-format
-msgid "%{percent} compared to %{month}"
+msgid "%{percent} compared to previous month (%{month})"
 msgstr ""
 
 #: lib/firmowid_web/invoicing/components/dashboard_tiles.ex

@@ -3,6 +3,7 @@ defmodule Firmowid.Cldr do
   use Cldr,
     otp_app: :firmowid,
     default_locale: :pl,
+    locales: [:pl, :en, :uk],
     json_library: Jason,
     data_dir: "./priv/cldr",
     precompile_number_formats: ["¤¤#,##0.##"],

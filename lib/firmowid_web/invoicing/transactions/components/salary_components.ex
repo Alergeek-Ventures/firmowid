@@ -140,8 +140,7 @@ defmodule FirmowidWeb.Invoicing.Transactions.Components.SalaryComponents do
 
   defp month_label(month) do
     Firmowid.Cldr.Date.to_string!(month,
-      format: "LLLL y",
-      locale: "pl"
+      format: "LLLL y"
     )
   end
 end
