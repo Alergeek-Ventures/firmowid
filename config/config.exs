@@ -91,7 +91,6 @@ config :firmowid, Endpoint,
   pubsub_server: Firmowid.PubSub,
   live_view: [signing_salt: "s6RVH6WQ"]
 
-config :firmowid, Firmowid.Cldr, locales: ["pl"]
 config :firmowid, Firmowid.Currencies.Converter, rates_provider: :mock
 
 # local mailer uses /mailbox route
