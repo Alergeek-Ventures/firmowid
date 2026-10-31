@@ -1,5 +1,5 @@
 import { test } from '@e2e-dev/web';
-import { expect } from 'e2e';
+import { expect, secrets } from 'e2e';
 
 // Fixed, otherwise unused NIP: the shared KSeF test environment holds thousands of invoices
 // for popular sample NIPs, which the first fetch would import.
@@ -8,7 +8,7 @@ const newCompany = {
   name: 'E2E Nowa Firma sp. z o.o.',
 };
 
-test('Bytecraft invoices a new company that signs up and receives it from KSeF', { session: 'kira', timeout: 900_000 }, async ({ app, screen, browser, agent }) => {
+test('Bytecraft invoices a new company that signs up and receives it from KSeF', { session: 'kira', timeout: 900_000 }, async ({ app, screen, browser }) => {
   // Bytecraft issues a sales invoice to the new company and sends it to the KSeF test environment.
   await app.open('/sprzedazowe');
   await screen.getByRole('button', 'Wprowadź ręcznie').tap();
@@ -61,22 +61,10 @@ test('Bytecraft invoices a new company that signs up and receives it from KSeF',
   await screen.getByRole('button', 'Utwórz organizację').tap();
   await expect(browser).toHaveURL('/fakturowanie');
 
-  // It gets a KSeF token from the test environment's taxpayer app and connects Firmowid.
-  await browser.goto('https://ap-test.ksef.mf.gov.pl/web/');
-  await agent.act('sign in with the test authentication ("Uwierzytelnienie testowe") as the company with NIP {nip}', {
-    params: { nip: newCompany.nip },
-  });
-  await agent.act('generate a new KSeF token named {name} that can view and issue invoices, and show its value', {
-    params: { name: 'Firmowid e2e' },
-  });
-  const token = await browser.evaluate(
-    () => document.body.innerText.match(/\d{8}-EC-[0-9A-F-]+\|nip-\d{10}\|[0-9a-f]{64}/)?.[0] ?? null,
-  );
-  expect(token).toContain(`|nip-${newCompany.nip}|`);
-
+  // The SDK fills and redacts the configured token without exposing its value to an agent.
   await app.open('/ustawienia/firma');
   await screen.getByRole('tab', 'Token').tap();
-  await screen.getByLabel('Wklej token').fill(token!);
+  await screen.getByLabel('Wklej token').fill(secrets.get('buyer_ksef_token'));
   await screen.getByRole('button', 'Połącz z KSeF').tap();
   await expect(screen.getByText('Połączono z KSeF')).toBeVisible({ timeout: 30_000 });
 
