@@ -3,7 +3,7 @@ defmodule Firmowid.Invoicing.CountryCodes do
   Provides country code validation and EU country identification
   based on KSeF XSD schemas (KodyKrajow_v10-0E.xsd and schemat.xsd).
 
-  Uses ex_cldr_territories for localized country names in Polish.
+  Uses ex_cldr_territories for country names in the interface language.
   """
 
   use Gettext, backend: Firmowid.Gettext
@@ -33,22 +33,16 @@ defmodule Firmowid.Invoicing.CountryCodes do
     ES SE XI
   )
 
-  # Mapping from KSeF special codes to CLDR territory codes or Polish names
+  # KSeF codes without their own CLDR territory, named in `country_name/1`
   # EL -> GR (Greece uses EL in KSeF but GR in ISO/CLDR)
   # XI -> Northern Ireland (special post-Brexit status)
   # XC, XL -> KSeF-specific codes without CLDR equivalents
   # AN -> Netherlands Antilles, which CLDR names after its successor Curaçao (CW)
-  @special_code_names %{
-    "AN" => "Antyle Holenderskie",
-    "EL" => "Grecja",
-    "XI" => "Irlandia Północna",
-    "XC" => "Ceuta",
-    "XL" => "Melilla"
-  }
+  @special_codes ~w(AN EL XI XC XL)
 
   # Compile-time map from string codes to atoms, ensuring all territory atoms exist
   # in the VM before any runtime call to String.to_existing_atom/1.
-  @territory_atoms Map.new(@valid_country_codes -- Map.keys(@special_code_names), fn code ->
+  @territory_atoms Map.new(@valid_country_codes -- @special_codes, fn code ->
                      {code, String.to_atom(code)}
                    end)
 
@@ -191,22 +185,22 @@ defmodule Firmowid.Invoicing.CountryCodes do
   end
 
   @doc """
-  Returns the Polish name for a country code.
+  Returns the name of a country code in the interface language.
 
   Uses CLDR territories for standard ISO codes, with fallbacks for
   KSeF-specific codes (EL for Greece, XI for Northern Ireland, etc.).
   """
   @spec country_name(String.t()) :: String.t()
-  def country_name(code) when is_binary(code) do
-    case Map.fetch(@special_code_names, code) do
-      {:ok, name} ->
-        name
+  def country_name("EL"), do: country_name("GR")
+  def country_name("AN"), do: gettext("Netherlands Antilles")
+  def country_name("XI"), do: gettext("Northern Ireland")
+  def country_name("XC"), do: gettext("Ceuta")
+  def country_name("XL"), do: gettext("Melilla")
 
-      :error ->
-        case Territory.from_territory_code(@territory_atoms[code]) do
-          {:ok, name} -> name
-          _other -> code
-        end
+  def country_name(code) when is_binary(code) do
+    case Territory.from_territory_code(@territory_atoms[code]) do
+      {:ok, name} -> name
+      _other -> code
     end
   end
 end
