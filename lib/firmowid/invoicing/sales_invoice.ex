@@ -1853,11 +1853,18 @@ defmodule Firmowid.Invoicing.SalesInvoice do
   end
 
   @doc """
-  Returns all non-nil invoice numbers visible in the provided Ash context.
+  Returns visible non-nil invoice numbers, optionally omitting one invoice.
   """
-  def read_all_invoice_numbers(opts) do
-    __MODULE__
-    |> Ash.Query.filter(not is_nil(invoice_number))
+  @spec read_all_invoice_numbers(keyword(), Ash.UUID.t() | nil) :: [String.t()]
+  def read_all_invoice_numbers(opts, omit_invoice_id \\ nil) do
+    query =
+      __MODULE__
+      |> Ash.Query.filter(not is_nil(invoice_number))
+      |> Ash.Query.select([:invoice_number])
+
+    query = if omit_invoice_id, do: Ash.Query.filter(query, id != ^omit_invoice_id), else: query
+
+    query
     |> then(&__MODULE__.list!(Keyword.put(opts, :query, &1)))
     |> Enum.map(& &1.invoice_number)
   end

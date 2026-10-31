@@ -856,16 +856,26 @@ defmodule Firmowid.Invoicing do
   `INITIALS/N/YYYY` (see `SalesInvoice.organization_initials/1`), plus every
   monthly series already used by the organization's invoices (such as `FK`).
   Yearly prefixes other than the current initials are not suggested, because a
-  number like `ABC/10/2026` may equally be a monthly one. Fans out multiple
-  `:get_next_number` action calls.
+  number like `ABC/10/2026` may equally be a monthly one. Computes suggestions
+  from scoped invoice numbers without per-series database reads.
   """
   @spec get_next_numbers_for_series(Date.t(), keyword(), keyword()) :: %{
           {:monthly | :yearly, String.t() | nil} => String.t()
         }
   def get_next_numbers_for_series(date, opts, extra_opts \\ []) do
+    all_numbers = SalesInvoice.read_all_invoice_numbers(opts)
+
+    available_numbers =
+      case extra_opts[:omit_invoice_id] do
+        nil -> all_numbers
+        id -> SalesInvoice.read_all_invoice_numbers(opts, id)
+      end
+
+    counters = current_number_counters(available_numbers, date)
+    occupied = MapSet.new(available_numbers)
+
     existing_monthly_sequences =
-      opts
-      |> SalesInvoice.read_all_invoice_numbers()
+      all_numbers
       |> Enum.map(&SalesInvoice.parse_invoice_number/1)
       |> Enum.flat_map(fn
         {:ok, %{format: :monthly, series: series}} -> [{:monthly, series}]
@@ -882,18 +892,44 @@ defmodule Firmowid.Invoicing do
        initials_sequences ++ existing_monthly_sequences)
     |> Enum.uniq()
     |> Map.new(fn {format, series} = sequence ->
-      {:ok, number} =
-        SalesInvoice.get_next_number(
-          date,
-          series,
-          extra_opts[:omit_invoice_id],
-          %{format: format},
-          opts
-        )
+      number =
+        counters
+        |> Map.get(sequence, 0)
+        |> Kernel.+(1)
+        |> Stream.iterate(&(&1 + 1))
+        |> Enum.find_value(fn counter ->
+          candidate = SalesInvoice.format_invoice_number(counter, format, date, series)
+          if not MapSet.member?(occupied, candidate), do: candidate
+        end)
 
       {sequence, number}
     end)
   end
+
+  defp current_number_counters(numbers, date) do
+    Enum.reduce(numbers, %{}, fn number, counters ->
+      with {:ok, parsed} <- SalesInvoice.parse_invoice_number(number),
+           true <- number_in_period?(number, parsed.format, date) do
+        Map.update(
+          counters,
+          {parsed.format, parsed.series},
+          parsed.num,
+          &Kernel.max(&1, parsed.num)
+        )
+      else
+        _ -> counters
+      end
+    end)
+  end
+
+  defp number_in_period?(number, :monthly, date) do
+    [_counter, month, year | _] = String.split(number, "/", parts: 4)
+
+    month == String.pad_leading(Integer.to_string(date.month), 2, "0") and
+      year == Integer.to_string(date.year)
+  end
+
+  defp number_in_period?(number, :yearly, date), do: List.last(String.split(number, "/")) == Integer.to_string(date.year)
 
   # Callers pass either `scope:` or the `actor:`/`tenant:` options of an action context.
   defp organization_name(opts) do
