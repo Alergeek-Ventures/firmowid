@@ -17,4 +17,11 @@ export default {
       password: process.env.E2E_KIRA_PASSWORD ?? 'kolejka123456',
     },
   },
+  secrets: {
+    buyer_ksef_token: () => {
+      const token = process.env.E2E_SECRET_BUYER_KSEF_TOKEN;
+      if (!token) throw new Error('E2E_SECRET_BUYER_KSEF_TOKEN must be a KSeF test token for NIP 6970016329.');
+      return token;
+    },
+  },
 } satisfies E2EConfig;
