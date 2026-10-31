@@ -180,7 +180,9 @@ defmodule FirmowidWeb.Management.Views.Delegation do
   end
 
   def handle_event("accept-settlement", _params, socket) do
-    case Delegations.accept_settlement(socket.assigns.delegation.id,
+    case Delegations.accept_settlement(
+           socket.assigns.delegation.id,
+           %{submitted_at: socket.assigns.delegation.submitted_at},
            scope: socket.assigns.ash_scope
          ) do
       {:ok, _delegation} ->
@@ -188,6 +190,18 @@ defmodule FirmowidWeb.Management.Views.Delegation do
          socket
          |> put_flash(:info, gettext("The settlement has been approved."))
          |> push_navigate(to: Navigation.employee_delegations_path(socket.assigns.employee.id))}
+
+      # The employee has submitted the settlement again, so reload the page with the new one.
+      {:error, %Ash.Error.Invalid{errors: [%Ash.Error.Query.NotFound{}]}} ->
+        {:noreply,
+         socket
+         |> put_flash(
+           :error,
+           gettext("The employee has sent a new signed settlement. Review it before approving.")
+         )
+         |> push_navigate(
+           to: ~p"/zarzadzanie/pracownicy/#{socket.assigns.employee.id}/delegacje/#{socket.assigns.delegation.reference}"
+         )}
 
       {:error, _error} ->
         {:noreply, put_flash(socket, :error, gettext("Could not approve the settlement."))}
@@ -237,7 +251,7 @@ defmodule FirmowidWeb.Management.Views.Delegation do
             {@document.delegation.signed_settlement_blob.original_filename}
           </p>
           <div
-            id="signed-settlement-preview"
+            id={"signed-settlement-preview-#{@document.delegation.signed_settlement_blob_id}"}
             phx-update="ignore"
             phx-hook="PDFViewer"
             data-pdf-url={@document.delegation.signed_settlement_blob.url}
