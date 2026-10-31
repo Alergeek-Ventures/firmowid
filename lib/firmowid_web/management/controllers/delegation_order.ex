@@ -21,13 +21,10 @@ defmodule FirmowidWeb.Management.Controllers.DelegationOrder do
            Payroll.load_current_contract(employee.member.id, scope: scope),
          true <- delegation.member_id == employee.member.id,
          {:ok, pdf} <- render_pdf(employee, employment_contract, delegation) do
-      conn
-      |> put_resp_header(
-        "content-disposition",
-        "attachment; filename=\"#{filename(employee)}\""
+      send_download(conn, {:binary, pdf},
+        filename: filename(employee),
+        content_type: "application/pdf"
       )
-      |> put_resp_content_type("application/pdf")
-      |> send_resp(200, pdf)
     else
       _ ->
         conn

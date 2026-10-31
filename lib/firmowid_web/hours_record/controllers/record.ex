@@ -140,12 +140,10 @@ defmodule FirmowidWeb.HoursRecord.Controllers.Record do
         url = record.blob.url
         {:ok, file} = Req.get(url)
 
-        conn
-        |> put_resp_header(
-          "content-disposition",
-          "attachment; filename=\"Ewidencja_#{record.year}_#{record.month}_#{record.member.name}.pdf\""
+        send_download(conn, {:binary, file.body},
+          filename: "Ewidencja_#{record.year}_#{record.month}_#{record.member.name}.pdf",
+          content_type: "application/octet-stream"
         )
-        |> send_resp(200, file.body)
 
       {:error, _error} ->
         conn
