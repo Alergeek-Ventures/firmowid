@@ -33,6 +33,7 @@ defmodule Firmowid.Delegations.Delegation do
   alias Firmowid.Delegations.Validations.HasDateChangeReason
   alias Firmowid.Delegations.Validations.HasExpenses
   alias Firmowid.Delegations.Validations.PerDiemTimesComplete
+  alias Firmowid.Invoicing.Changes.ValidateCountryCode
   alias Firmowid.Resource
 
   require Resource
@@ -110,6 +111,7 @@ defmodule Firmowid.Delegations.Delegation do
       change set_attribute(:member_id, actor([:member, :id]))
       change set_attribute(:reference, "pending")
       change AssignReference
+      change {ValidateCountryCode, field: :destination_country}
 
       validate compare(:end_date, greater_than_or_equal_to: :start_date),
         message: gettext_noop("cannot be earlier than the departure date")
