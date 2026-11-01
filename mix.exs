@@ -155,7 +155,7 @@ defmodule Firmowid.MixProject do
       {:igniter, "~> 0.5", only: [:dev]},
       {:tidewave, "~> 0.2", only: :dev},
       {:lazy_html, ">= 0.1.0"},
-      {:erlsom, "~> 1.5", only: [:dev, :test]},
+      {:erlsom, "~> 1.5"},
       {:styler, "~> 1.5", only: [:dev, :test], runtime: false},
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
       {:ash_credo, "~> 0.12", only: [:dev, :test], runtime: false},
