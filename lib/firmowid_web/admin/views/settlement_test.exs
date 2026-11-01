@@ -5,6 +5,7 @@ defmodule FirmowidWeb.Admin.Views.SettlementTest do
   import Firmowid.AccountsFixtures
   import Phoenix.LiveViewTest
 
+  alias Firmowid.Billing.Month
   alias Firmowid.Core
 
   test "a system admin sees the owner's phone in an organization's settlement, also after a plan change",
@@ -20,11 +21,12 @@ defmodule FirmowidWeb.Admin.Views.SettlementTest do
 
     superuser = Ash.Seed.update!(admin_fixture(), %{system_role: :superuser})
     superuser = Core.load_member(superuser)
+    current_month = Month.current()
 
     {:ok, lv, html} =
       live(
         log_in_user(conn, superuser),
-        ~p"/admin/rozliczenia/#{owner.member.organization_id}?miesiac=2026-10-01"
+        ~p"/admin/rozliczenia/#{owner.member.organization_id}?miesiac=#{Date.to_iso8601(current_month)}"
       )
 
     assert html =~ "+48 600 700 800"
