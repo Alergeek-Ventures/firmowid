@@ -130,7 +130,7 @@ defmodule Firmowid.Sentry do
 
   @doc "Clears password-login diagnostics before a new request can fail during parsing."
   @spec clear_password_login_context() :: :ok
-  def clear_password_login_context, do: SentrySDK.Context.set_extra_context(%{password_login: nil})
+  def clear_password_login_context, do: SentrySDK.Context.set_extra_context(%{sign_in_presence: nil})
 
   @doc "Sets request-owned password-login presence flags without retaining input values."
   @spec put_password_login_context(Plug.Conn.t(), String.t(), String.t()) :: Plug.Conn.t()
@@ -150,7 +150,7 @@ defmodule Firmowid.Sentry do
       end
 
     # Context setters merge: replace the whole namespace even on a later request.
-    SentrySDK.Context.set_extra_context(%{password_login: diagnostics})
+    SentrySDK.Context.set_extra_context(%{sign_in_presence: diagnostics})
     conn
   end
 
@@ -419,7 +419,7 @@ defmodule Firmowid.Sentry do
 
   defp scrub_extra(extra) when is_map(extra) do
     scrubbed = scalar_map_or_lists(extra, @extra_keys)
-    scrubbed = scrub_password_login(scrubbed, extra[:password_login])
+    scrubbed = scrub_password_login(scrubbed, extra[:sign_in_presence])
 
     case extra[:logger_metadata] do
       metadata when is_map(metadata) ->
@@ -439,7 +439,8 @@ defmodule Firmowid.Sentry do
           into: %{},
           do: {key, diagnostics[key]}
 
-    Map.put(extra, :password_login, fields)
+    # A namespace containing "password" is removed by Sentry's server-side PII rule.
+    Map.put(extra, :sign_in_presence, fields)
   end
 
   defp scrub_password_login(extra, _diagnostics), do: extra
