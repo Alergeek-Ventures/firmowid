@@ -1,0 +1,114 @@
+name: IndexNow
+
+# Submits the sitemap URLs to IndexNow (Bing, Yandex, Seznam, Naver) after a
+# deployment that changed public content. Manual runs always submit.
+# A failed submission only leaves a warning, it never fails the deployment.
+
+on:
+  workflow_call:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  submit:
+    name: Submit sitemap URLs
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    env:
+      SITE: https://firmowid.pl
+      KEY_FILE: priv/static/indexnow.txt
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Check whether public content changed
+        id: changes
+        env:
+          EVENT: ${{ github.event_name }}
+          BEFORE: ${{ github.event.before }}
+        run: |
+          set -euo pipefail
+          if [ "$EVENT" = "workflow_dispatch" ]; then
+            echo "Manual run, submitting all URLs"
+            echo "submit=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          if ! git fetch --no-tags --depth=1 origin "$BEFORE"; then
+            echo "::notice::Previous commit $BEFORE is not available, submitting all URLs"
+            echo "submit=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          changed=$(git diff --name-only "$BEFORE" "$GITHUB_SHA" -- \
+            lib/firmowid_web/landing/ \
+            priv/gettext/ \
+            priv/static/llms.txt \
+            lib/firmowid_web/infrastructure/layouts.ex)
+
+          if [ -n "$changed" ]; then
+            echo "Public content changed:"
+            echo "$changed"
+            echo "submit=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "No public content changes, skipping submission"
+            echo "submit=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Wait for the deployment
+        id: deployment
+        if: steps.changes.outputs.submit == 'true'
+        run: |
+          set -euo pipefail
+          key=$(tr -d '[:space:]' < "$KEY_FILE")
+
+          for attempt in $(seq 1 20); do
+            served=$(curl -fsS --max-time 15 "$SITE/indexnow.txt" | tr -d '[:space:]' || true)
+            if [ "$served" = "$key" ]; then
+              echo "Key is served, waiting 2 minutes for the deployment to settle"
+              sleep 120
+              echo "ready=true" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+            echo "Attempt $attempt/20: $SITE/indexnow.txt does not serve the key yet"
+            sleep 30
+          done
+
+          echo "::warning::$SITE/indexnow.txt did not serve the key within 10 minutes, skipping submission"
+          echo "ready=false" >> "$GITHUB_OUTPUT"
+
+      - name: Submit URLs
+        if: steps.deployment.outputs.ready == 'true'
+        run: |
+          set -euo pipefail
+          key=$(tr -d '[:space:]' < "$KEY_FILE")
+
+          if ! urls=$(curl -fsS --max-time 30 "$SITE/sitemap.xml" |
+            grep -o '<loc>[^<]*</loc>' |
+            sed -e 's/<loc>//' -e 's/<\/loc>//'); then
+            echo "::warning::Could not read URLs from $SITE/sitemap.xml, skipping submission"
+            exit 0
+          fi
+
+          count=$(echo "$urls" | grep -c .)
+          url_list=$(echo "$urls" | sed 's/.*/"&"/' | paste -sd, -)
+          body=$(printf '{"host":"%s","key":"%s","keyLocation":"%s/indexnow.txt","urlList":[%s]}' \
+            "${SITE#https://}" "$key" "$SITE" "$url_list")
+
+          status=$(curl -sS --max-time 30 -o response.txt -w '%{http_code}' \
+            -X POST https://api.indexnow.org/indexnow \
+            -H 'Content-Type: application/json; charset=utf-8' \
+            --data "$body") || status=000
+
+          case "$status" in
+            200|202)
+              echo "IndexNow accepted $count URLs (HTTP $status)"
+              ;;
+            *)
+              echo "::warning::IndexNow returned HTTP $status for $count URLs"
+              cat response.txt
+              ;;
+          esac
