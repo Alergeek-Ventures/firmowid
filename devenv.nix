@@ -4,6 +4,25 @@ let
   # Owner of the Hex version; version-sync-check.yml keeps CI and Containerfile.app in sync.
   hex-version = "2.5.3";
 
+  # Security-only overrides keep the remaining nixpkgs packages on the 7-day cooldown.
+  # https://github.com/elixir-lang/elixir/releases/tag/v1.20.5
+  elixir = pkgs.beam29Packages.elixir_1_20.overrideAttrs {
+    version = "1.20.5";
+    src = pkgs.fetchFromGitHub {
+      owner = "elixir-lang";
+      repo = "elixir";
+      rev = "v1.20.5";
+      hash = "sha256-MsRNaWAQ05ysL3hOqpfhm//tRNL0Z4Ia/NfEWEQfEWE=";
+    };
+  };
+
+  # https://github.com/pnpm/pnpm/releases/tag/v11.28.9 (GHSA-xjj6-f33q-929c).
+  pnpm = pkgs.pnpm_11.override {
+    version = "11.28.9";
+    hash = "sha256-5UsH5WNLe/Q1IVPgyMJbzvKTCinj0b3EKp6vL/1ENt8=";
+    nodejs-slim = pkgs.nodejs-slim_26;
+  };
+
   accent-cli-src = pkgs.fetchgit {
     url = "https://github.com/mirego/accent.git";
     rev = "43872af8578df4121e39ea17c679b5eebb08f3f4";
@@ -22,28 +41,28 @@ let
   };
 
   # Full official client archives, pinned to the release's SHA256SUMS.txt:
-  # https://github.com/openai/tunnel-client/releases/download/v0.0.15/SHA256SUMS.txt
+  # https://github.com/openai/tunnel-client/releases/download/v0.0.18/SHA256SUMS.txt
   tunnel-client-platforms = {
     x86_64-linux = {
       arch = "amd64";
-      hash = "sha256-jINtxdaNaLZj2aXFso/5+ngNn3o//7HDBogLjzL6tfE=";
+      hash = "sha256-PIIwcxas2TyIo4S2KvHYHT9MsO+pdfnAv675IoZqBMQ=";
     };
     aarch64-linux = {
       arch = "arm64";
-      hash = "sha256-xRv9iD/CLjRFSUoDwBeYdRdlZL3kcGYbMI/YOvXQGrs=";
+      hash = "sha256-pfPXDvx19eZqtcZ8RNJyqoCyc2+T+HXxZRQFF3UOwDU=";
     };
   };
   tunnel-client-system = pkgs.stdenv.hostPlatform.system;
   tunnel-client-platform =
     assert pkgs.lib.assertMsg (builtins.hasAttr tunnel-client-system tunnel-client-platforms)
-      "OpenAI tunnel-client 0.0.15 is pinned only for x86_64-linux and aarch64-linux; other platforms need separately verified official release archives.";
+      "OpenAI tunnel-client 0.0.18 is pinned only for x86_64-linux and aarch64-linux; other platforms need separately verified official release archives.";
     tunnel-client-platforms.${tunnel-client-system};
 
   tunnel-client = pkgs.stdenvNoCC.mkDerivation {
     pname = "tunnel-client";
-    version = "0.0.15";
+    version = "0.0.18";
     src = pkgs.fetchurl {
-      url = "https://github.com/openai/tunnel-client/releases/download/v0.0.15/tunnel-client-v0.0.15-linux-${tunnel-client-platform.arch}.zip";
+      url = "https://github.com/openai/tunnel-client/releases/download/v0.0.18/tunnel-client-v0.0.18-linux-${tunnel-client-platform.arch}.zip";
       inherit (tunnel-client-platform) hash;
     };
     nativeBuildInputs = [ pkgs.unzip ];
@@ -78,8 +97,9 @@ in
 {
   packages = with pkgs; [
     nodejs_26
+    pnpm
     accent-cli
-    beam29Packages.elixir_1_20
+    elixir
     beam29Packages.erlang
     infisical
     worktrunk
