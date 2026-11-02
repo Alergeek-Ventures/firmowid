@@ -710,6 +710,35 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.CreatorTest do
     assert copied_invoice.invoice_number != source_invoice.invoice_number
   end
 
+  test "review step saves the invoice as an unnumbered draft", %{conn: conn} do
+    admin = admin_fixture()
+    scope = scope_for(admin)
+    source_invoice = sales_invoice_fixture!(admin, %{})
+
+    conn = log_in_user(conn, admin)
+    {:ok, _view, _html} = live(conn, "/sprzedazowe?skopiuj=#{source_invoice.id}")
+
+    {:ok, wizard_state} =
+      WizardState.update_payment(
+        copied_draft!(admin),
+        %{sale_date: ~D[2026-02-01], due_date: ~D[2026-02-14], payment_method: :cash},
+        scope: scope
+      )
+
+    {:ok, view, _html} = live(conn, "/sprzedazowe?krok=4&szkic_kreatora=#{wizard_state.id}")
+    view |> element("#invoice-review button[phx-click='save_as_draft']") |> render_click()
+
+    {path, _flash} = assert_redirect(view)
+
+    [draft] =
+      Enum.reject(Invoicing.list_sales_invoices!(scope: scope), &(&1.id == source_invoice.id))
+
+    assert path == "/sprzedazowe/#{draft.id}"
+    assert is_nil(draft.invoice_number)
+    assert is_nil(draft.ksef_number)
+    assert Invoicing.list_wizard_states!(scope: scope) == []
+  end
+
   defp scope_for(user), do: %Scope{actor: user, tenant: user.member.organization_id}
 
   defp copied_draft!(admin) do
