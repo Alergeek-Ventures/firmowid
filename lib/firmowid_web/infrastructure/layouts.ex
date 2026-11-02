@@ -261,6 +261,7 @@ defmodule FirmowidWeb.Infrastructure.Layouts do
           "https://x.com/firmowid"
         ],
         "isAccessibleForFree" => true,
+        "license" => "https://www.gnu.org/licenses/agpl-3.0.html",
         "offers" => %{
           "@type" => "Offer",
           "price" => "0",
