@@ -95,3 +95,9 @@ jobs:
       contents: read
       id-token: write
     secrets: inherit
+
+  indexnow:
+    name: IndexNow
+    if: github.ref == 'refs/heads/main'
+    needs: deploy
+    uses: ./.github/workflows/indexnow.yml
