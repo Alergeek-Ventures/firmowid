@@ -4946,7 +4946,7 @@ msgstr ""
 
 #: lib/firmowid_web/landing/views/index.ex
 #, elixir-autogen, elixir-format
-msgid "Free KSeF invoicing, bank synchronization, time tracking, leave and business trips in one place."
+msgid "Free KSeF invoicing with no invoice limit, automatic bank payment matching and project time tracking. Open source (AGPL-3.0), self-hosting available."
 msgstr ""
 
 #: lib/firmowid_web/landing/components/sections.ex
