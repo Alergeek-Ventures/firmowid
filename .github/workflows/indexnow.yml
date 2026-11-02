@@ -45,6 +45,7 @@ jobs:
 
           changed=$(git diff --name-only "$BEFORE" "$GITHUB_SHA" -- \
             lib/firmowid_web/landing/ \
+            priv/guides/ \
             priv/gettext/ \
             priv/static/llms.txt \
             lib/firmowid_web/infrastructure/layouts.ex)
