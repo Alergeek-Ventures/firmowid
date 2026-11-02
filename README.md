@@ -1,5 +1,11 @@
 # Firmowid
 
+Firmowid to aplikacja dla małych firm w Polsce: faktury w KSeF (wystawianie i pobieranie), automatyczne parowanie przelewów z bankiem (Open Banking) i ewidencja czasu pracy w projektach.
+
+Kod jest na licencji [AGPL-3.0](LICENSE). Możesz uruchomić Firmowid na własnym serwerze albo korzystać z wersji hostowanej na [firmowid.pl](https://firmowid.pl) (plan Darmowy 0 zł, bez limitu faktur).
+
+*Firmowid is a web app for small Polish businesses: KSeF e-invoicing, automatic bank-to-invoice matching and project time tracking. Open source under AGPL-3.0.*
+
 > **Note for English speakers:** This product is designed for the Polish market, so the README is in Polish. For environment variable configuration, see `env.template` file which contains documentation in English.
 
 ## Jeśli masz już zainstalowane środowisko
