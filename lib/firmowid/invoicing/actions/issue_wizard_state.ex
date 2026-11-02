@@ -88,7 +88,7 @@ defmodule Firmowid.Invoicing.Actions.IssueWizardState do
     state
     |> Map.take(@invoice_fields)
     |> Map.put(:sales_invoice_items, items)
-    |> Map.put(:invoice_number, arguments.invoice_number)
+    |> Map.put(:invoice_number, Map.get(arguments, :invoice_number))
     |> Map.put(:should_send_emails, arguments.should_send_emails)
   end
 end
