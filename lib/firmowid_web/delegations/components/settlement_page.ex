@@ -374,6 +374,12 @@ defmodule FirmowidWeb.Delegations.Components.SettlementPage do
       <p class="max-w-prose text-sm text-grey-700">
         {gettext("Check the trip times suggested from your tickets. Enter local times in Poland.")}
       </p>
+      <.switch
+        field={@form[:per_diem_claimed]}
+        label={gettext("Claim the per diem")}
+        color="teal"
+        disabled={!@editable?}
+      />
       <fieldset disabled={!@editable?} class="space-y-5">
         <legend class="sr-only">{gettext("Trip times")}</legend>
         <div class="grid grid-cols-[repeat(auto-fit,minmax(min(100%,15rem),1fr))] gap-4">

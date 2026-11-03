@@ -8,6 +8,12 @@ defmodule Firmowid.Delegations.Delegation.PerDiemAttributes do
     attribute :abroad_started_at, :naive_datetime, public?: true
     attribute :abroad_ended_at, :naive_datetime, public?: true
 
+    attribute :per_diem_claimed, :boolean,
+      allow_nil?: false,
+      default: true,
+      public?: true,
+      description: "Whether the employee claims the per diem; lump sums are claimed separately."
+
     attribute :provided_breakfasts, :integer,
       allow_nil?: false,
       default: 0,

@@ -43,6 +43,7 @@ defmodule Firmowid.Delegations.Delegation do
     :trip_ended_at,
     :abroad_started_at,
     :abroad_ended_at,
+    :per_diem_claimed,
     :provided_breakfasts,
     :provided_lunches,
     :provided_dinners,

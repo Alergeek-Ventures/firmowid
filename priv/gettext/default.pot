@@ -2192,6 +2192,11 @@ msgctxt "address"
 msgid "City"
 msgstr ""
 
+#: lib/firmowid_web/delegations/components/settlement_page.ex
+#, elixir-autogen, elixir-format
+msgid "Claim the per diem"
+msgstr ""
+
 #: lib/firmowid_web/analysis/components/category_selector.ex
 #, elixir-autogen, elixir-format
 msgid "Clear categories"
