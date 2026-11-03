@@ -5,7 +5,8 @@ defmodule Firmowid.Timetracker.Session do
 
   Attribute multitenancy via `organization_id`. Write actions include `start`
   (begins a new session), `stop` (ends a running session), `stop_current`
-  (ends the actor's running session without a client-supplied id), `create`
+  (ends the actor's running session without a client-supplied id),
+  `add_completed_sessions` (the actor's past sessions, all or none), `create`
   (full attrs), `update`, and `destroy`. A DB trigger rejects overlapping sessions;
   an exclusion constraint also protects concurrent writes. Database errors are
   surfaced by AshPostgres.
@@ -239,6 +240,7 @@ defmodule Firmowid.Timetracker.Session do
     define :stop_current
     define :auto_stop
     define :edit_current_user_session
+    define :add_completed_sessions, args: [:sessions]
     define :create
     define :update
     define :destroy
@@ -496,6 +498,32 @@ defmodule Firmowid.Timetracker.Session do
       run &Firmowid.Timetracker.Session.Actions.EditCurrentUser.run/2
     end
 
+    action :add_completed_sessions, {:array, :struct} do
+      description """
+      Add completed sessions with explicit start and end times for the acting
+      member, all or none. Never stops, edits or resumes a running session.
+      """
+
+      constraints items: [instance_of: __MODULE__]
+      transaction? true
+
+      argument :sessions, {:array, :map} do
+        allow_nil? false
+
+        constraints items: [
+                      fields: [
+                        title: [type: :string, allow_nil?: false],
+                        project_id: [type: :uuid, allow_nil?: false],
+                        start_datetime: [type: :utc_datetime, allow_nil?: false],
+                        end_datetime: [type: :utc_datetime, allow_nil?: false],
+                        is_remote: [type: :boolean]
+                      ]
+                    ]
+      end
+
+      run &Firmowid.Timetracker.Session.Actions.AddCompleted.run/2
+    end
+
     update :update do
       description "Update session attributes."
       primary? true
@@ -570,6 +598,10 @@ defmodule Firmowid.Timetracker.Session do
     end
 
     policy action(:edit_current_user_session) do
+      authorize_if actor_present()
+    end
+
+    policy action(:add_completed_sessions) do
       authorize_if actor_present()
     end
   end

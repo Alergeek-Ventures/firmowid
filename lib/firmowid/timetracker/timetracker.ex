@@ -92,7 +92,8 @@ defmodule Firmowid.Timetracker do
       ],
       description:
         "Start a work session for the authenticated user now. Optionally pass project_id from list_projects, " <>
-          "a title and is_remote. Check get_current_session first so a running session is not duplicated."
+          "a title and is_remote. Check get_current_session first so a running session is not duplicated. " <>
+          "To log past work use add_sessions instead of stopping the running session."
 
     tool :edit_session, Session, :edit_current_user_session,
       annotations: [
@@ -104,6 +105,22 @@ defmodule Firmowid.Timetracker do
       description:
         "Edit the title, start or end time, project or remote flag of one of the authenticated user's sessions by id. " <>
           "Sessions locked by a submitted hours record cannot be changed."
+
+    tool :add_sessions, Session, :add_completed_sessions,
+      annotations: [
+        title: "Add past work sessions",
+        read_only_hint: false,
+        destructive_hint: false,
+        open_world_hint: false
+      ],
+      description:
+        "Add one or more completed work sessions of the authenticated user with explicit start and end times, " <>
+          "e.g. to fill in a forgotten morning. A running session keeps going untouched; do not stop, edit or restart it. " <>
+          "Pass ISO 8601 times with an offset (2026-11-04T08:00:00+01:00 or ...Z); times without one are read as UTC. " <>
+          "Times are stored at minute precision. Each session needs a title and a project_id from list_projects, " <>
+          "must not end before it starts, stay within one calendar month, last at most 24 hours and must not overlap " <>
+          "any other session, including the running one from its start onwards. Months with a submitted hours record are locked. " <>
+          "All sessions are added or none; an error names the failing item as sessions.<index>."
 
     tool :list_leave_requests, LeaveRequest, :list_current_user do
       annotations title: "List leave requests",
