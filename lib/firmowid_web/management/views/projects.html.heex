@@ -120,7 +120,9 @@
             <p class="text-right max-md:hidden">
               <!--Rentowność-->
             </p>
-            <p class="text-right">{project.hours} h</p>
+            <p class="text-right text-nowrap">
+              {TimeFormatter.format_duration(project.duration)}
+            </p>
             <.link
               kind="unstyled"
               navigate={Navigation.project_path(project.id, Map.take(@params, ["miesiac"]))}
@@ -177,7 +179,9 @@
             <p class="text-right max-md:hidden">
               <!--Rentowność-->
             </p>
-            <p class="text-right">{project.hours} h</p>
+            <p class="text-right text-nowrap">
+              {TimeFormatter.format_duration(project.duration)}
+            </p>
             <p class="text-right text-black max-md:hidden">
               {Calendar.strftime(project.archived_at, "%d.%m.%Y")}
             </p>

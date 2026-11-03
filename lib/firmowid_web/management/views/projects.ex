@@ -7,6 +7,7 @@ defmodule FirmowidWeb.Management.Views.Projects do
   import FirmowidWeb.DesignSystem.Components.MonthPicker
   import Phoenix.Component, except: [link: 1]
 
+  alias Firmowid.TimeFormatter
   alias Firmowid.Timetracker
   alias Firmowid.Timetracker.Project
   alias Firmowid.Timetracker.Session
@@ -111,7 +112,7 @@ defmodule FirmowidWeb.Management.Views.Projects do
       |> Ash.read!(scope: scope)
       |> Enum.map(fn project ->
         seconds = project.aggregates[:duration] || 0
-        Map.put(project, :hours, Timetracker.seconds_to_hours(seconds))
+        Map.put(project, :duration, seconds)
       end)
 
     Firmowid.Repo.drop_paradedb_unnamed()

@@ -10,6 +10,7 @@ defmodule FirmowidWeb.Management.Components.ProjectsTab do
   import FirmowidWeb.Infrastructure.Hooks.RequireOrganization, only: [attach_access_hook: 2]
 
   alias Firmowid.Payroll
+  alias Firmowid.TimeFormatter
   alias Firmowid.Timetracker
   alias Firmowid.Timetracker.HoursRecord
   alias FirmowidWeb.Management.Components.WorkDistribution
@@ -342,7 +343,7 @@ defmodule FirmowidWeb.Management.Components.ProjectsTab do
           {@project.sessions
           |> Enum.map(& &1.duration)
           |> Enum.sum()
-          |> Timetracker.seconds_to_hours()} h
+          |> TimeFormatter.format_duration()}
         </span>
         <.icon
           name="hero-chevron-down"
@@ -365,7 +366,7 @@ defmodule FirmowidWeb.Management.Components.ProjectsTab do
             >
               <p class="min-w-0 wrap-break-word">{session.title}</p>
               <p class="shrink-0 text-nowrap">
-                {Timetracker.seconds_to_hours(session.duration)} h
+                {TimeFormatter.format_duration(session.duration)}
               </p>
             </div>
           <% end %>
