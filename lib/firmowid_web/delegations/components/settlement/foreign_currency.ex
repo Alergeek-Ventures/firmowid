@@ -47,7 +47,7 @@ defmodule FirmowidWeb.Delegations.Components.Settlement.ForeignCurrency do
         <.input
           id={"expense-amount-#{@expense.id}"}
           field={@form[:expense_amount]}
-          value={expense_amount_value(@form[:expense_amount].value)}
+          value={amount_value(@form[:expense_amount].value)}
           type="number"
           min="0"
           step="0.01"
@@ -219,6 +219,7 @@ defmodule FirmowidWeb.Delegations.Components.Settlement.ForeignCurrency do
         <.input
           id={"settlement-amount-#{@expense_id}"}
           field={@form[:settlement_amount]}
+          value={amount_value(@form[:settlement_amount].value)}
           type="number"
           label={gettext("Amount in %{currency}", currency: @currency)}
           min="0"
@@ -275,6 +276,8 @@ defmodule FirmowidWeb.Delegations.Components.Settlement.ForeignCurrency do
 
   defp expense_currency(%{"currency" => currency}) when is_binary(currency), do: currency
   defp expense_currency(_amount), do: @company_currency
-  defp expense_amount_value(%Money{} = amount), do: Money.to_decimal(amount)
-  defp expense_amount_value(amount), do: amount
+
+  # A number input drops a localized Money string such as "16,50 zł", so render the plain decimal.
+  defp amount_value(%Money{} = amount), do: Money.to_decimal(amount)
+  defp amount_value(amount), do: amount
 end

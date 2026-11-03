@@ -391,13 +391,19 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
     |> assign_summary()
   end
 
-  defp load_delegation(reference, socket),
-    do:
-      Delegations.get_delegation_by_reference(reference,
-        scope: socket.assigns.ash_scope,
-        load: [expenses: [blob: [:url], statement_blob: [:url], related_blobs: [:url]]],
-        not_found_error?: false
-      )
+  defp load_delegation(reference, socket) do
+    case Delegations.get_delegation_by_reference(reference,
+           scope: socket.assigns.ash_scope,
+           load: [expenses: [blob: [:url], statement_blob: [:url], related_blobs: [:url]]],
+           not_found_error?: false
+         ) do
+      {:ok, %{status: :in_progress} = delegation} ->
+        {:ok, SettlementForm.put_blank_trips(delegation)}
+
+      result ->
+        result
+    end
+  end
 
   defp save_draft(socket, params, revision) do
     with {:ok, delegation} when not is_nil(delegation) <-
@@ -687,15 +693,14 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
   end
 
   defp create_expense(kind, id, filename, content_type, path, start_date, end_date, scope) do
-    with {:ok, extracted_details} <-
-           DelegationExpenseExtractor.extract(
-             path,
-             kind,
-             start_date,
-             end_date
-           ) do
-      create_expense_form(id, filename, content_type, path, kind, extracted_details, scope)
-    end
+    extracted_details =
+      case DelegationExpenseExtractor.extract(path, kind, start_date, end_date) do
+        {:ok, extracted_details} -> extracted_details
+        # The extractor logs the failure; the employee fills in what the AI could not read.
+        {:error, _reason} -> %{}
+      end
+
+    create_expense_form(id, filename, content_type, path, kind, extracted_details, scope)
   end
 
   defp create_expense_form(id, filename, content_type, path, kind, extracted_details, scope) do

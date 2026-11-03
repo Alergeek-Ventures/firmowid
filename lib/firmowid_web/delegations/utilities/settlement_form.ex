@@ -166,6 +166,27 @@ defmodule FirmowidWeb.Delegations.Utilities.SettlementForm do
     end)
   end
 
+  @doc """
+  Offers one blank route on every transport document without a route, e.g. when the AI read
+  nothing from a ticket or statement, so the employee can enter its cities, times and description.
+
+  The route is saved with the next autosave. Until then it takes the expense ID, so it keeps
+  the same identity, and the same inputs, across reloads and that first save.
+  """
+  @spec put_blank_trips(struct()) :: struct()
+  def put_blank_trips(delegation) do
+    Map.update!(delegation, :expenses, fn expenses ->
+      Enum.map(expenses, fn
+        %{details: %Ash.Union{type: :transport, value: %{trips: []} = details} = union} = expense ->
+          trip = %Trip{id: expense.id, departure_city: "", arrival_city: ""}
+          %{expense | details: %{union | value: %{details | trips: [trip]}}}
+
+        expense ->
+          expense
+      end)
+    end)
+  end
+
   @doc "Drops empty trip-time inputs, so times suggested from a new ticket are not cleared."
   @spec drop_blank_trip_times(map()) :: map()
   def drop_blank_trip_times(params) do
