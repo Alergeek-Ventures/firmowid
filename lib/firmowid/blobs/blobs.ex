@@ -226,7 +226,7 @@ defmodule Firmowid.Blobs do
   defp compute_checksum(upload_path) do
     upload_path
     |> Path.expand()
-    |> File.stream!()
+    |> File.stream!(64 * 1024)
     |> Enum.reduce(:crypto.hash_init(:sha256), &:crypto.hash_update(&2, &1))
     |> :crypto.hash_final()
     |> Base.encode16()

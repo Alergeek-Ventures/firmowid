@@ -45,7 +45,7 @@ defmodule Firmowid.Blobs.UploadFingerprint do
   # upload_path comes from Briefly temp files or Phoenix uploads, not user input.
   defp compute_checksum(upload_path) do
     upload_path
-    |> File.stream!()
+    |> File.stream!(64 * 1024)
     |> Enum.reduce(:crypto.hash_init(:sha256), &:crypto.hash_update(&2, &1))
     |> :crypto.hash_final()
     |> Base.encode16()
