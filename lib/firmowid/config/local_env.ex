@@ -101,6 +101,8 @@ defmodule Firmowid.Config.LocalEnv do
         infisical login --domain="https://infisical.alergeek.me"
 
         To work offline temporarily, run Mix commands with AV_SKIP_INFISICAL=1.
+        Outside Alergeek Ventures, set AV_SKIP_INFISICAL=1 and create .env.worktree
+        from env.template (see README).
         """
 
     case run_infisical_export(infisical) do
