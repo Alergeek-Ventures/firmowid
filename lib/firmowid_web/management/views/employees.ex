@@ -14,6 +14,7 @@ defmodule FirmowidWeb.Management.Views.Employees do
   alias Firmowid.Blobs.Blob
   alias Firmowid.Core
   alias Firmowid.Payroll
+  alias Firmowid.TimeFormatter
   alias Firmowid.Timetracker
   alias FirmowidUI.Components.Inputs
   alias FirmowidWeb.Core.Endpoint

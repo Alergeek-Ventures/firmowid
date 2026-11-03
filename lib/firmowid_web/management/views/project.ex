@@ -374,16 +374,6 @@ defmodule FirmowidWeb.Management.Views.Project do
     end
   end
 
-  defp format_hours(seconds) do
-    hours = div(seconds, 60 * 60)
-
-    cond do
-      seconds == 0 -> "0 h"
-      hours > 0 -> "#{hours} h"
-      true -> TimeFormatter.format_duration(seconds)
-    end
-  end
-
   # Group raw sessions (with :duration loaded) by title, summing durations.
   defp group_sessions_by_title(sessions) do
     sessions

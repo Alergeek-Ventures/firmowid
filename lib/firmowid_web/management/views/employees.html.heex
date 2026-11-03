@@ -253,8 +253,8 @@
             </span>
           </div>
 
-          <p class="text-right">
-            {Timetracker.seconds_to_hours(employee.time_worked)} h
+          <p class="text-right text-nowrap">
+            {TimeFormatter.format_duration(employee.time_worked)}
           </p>
 
           <%= if @live_action == :archive do %>

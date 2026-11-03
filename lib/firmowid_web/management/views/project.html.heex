@@ -79,11 +79,11 @@
     </div>
 
     <div class="flex flex-col gap-8">
-      <div class="grid grid-cols-4 gap-4 max-md:grid-cols-2 max-md:gap-3">
+      <div class="grid grid-cols-[repeat(4,minmax(min-content,1fr))] gap-4 max-md:grid-cols-2 max-md:gap-3">
         <div class="rounded-sm bg-white p-4">
           <p class="mb-6 leading-snug text-grey-500">{gettext("Hours worked")}</p>
-          <p class="mb-1 text-lg/tight font-medium text-black">
-            {format_hours(@total_time_worked)}
+          <p class="mb-1 text-lg/tight font-medium text-nowrap text-black">
+            {TimeFormatter.format_duration(@total_time_worked)}
           </p>
 
           <%= cond do %>
@@ -165,7 +165,7 @@
         </div>
 
         <%= if not Enum.empty?(@project.members) do %>
-          <div class="grid grid-cols-[1fr_repeat(3,minmax(min-content,6rem))_min-content] items-center gap-x-4 gap-y-2 max-md:grid-cols-[minmax(0,1fr)_repeat(2,max-content)_min-content] max-md:gap-x-3">
+          <div class="grid grid-cols-[1fr_minmax(min-content,6rem)_minmax(min-content,7rem)_minmax(min-content,6rem)_min-content] items-center gap-x-4 gap-y-2 max-md:grid-cols-[minmax(0,1fr)_repeat(2,max-content)_min-content] max-md:gap-x-3">
             <div class="col-span-full grid grid-cols-subgrid px-2 py-1 text-sm text-grey-500">
               <p>{gettext("Full name")}</p>
               <p class="text-right max-md:hidden">{pgettext("hourly rate", "Rate")}</p>
@@ -211,8 +211,8 @@
                   <% end %>
                 </p>
 
-                <p class="text-right text-grey-900">
-                  {format_hours(user.time_worked)}
+                <p class="text-right text-nowrap text-grey-900">
+                  {TimeFormatter.format_duration(user.time_worked)}
                 </p>
 
                 <p class="text-right text-grey-900">
@@ -253,7 +253,7 @@
                     class="col-span-full grid grid-cols-subgrid pl-12 leading-snug text-grey-700 max-md:pl-10"
                   >
                     <p>{session.title}</p>
-                    <p class="col-start-3 text-right max-md:col-start-2">
+                    <p class="col-start-3 text-right text-nowrap max-md:col-start-2">
                       {TimeFormatter.format_duration(session.duration)}
                     </p>
                   </div>
@@ -268,8 +268,8 @@
 
               <div class="max-md:hidden" />
 
-              <p class="text-right font-bold">
-                {format_hours(@total_time_worked)}
+              <p class="text-right font-bold text-nowrap">
+                {TimeFormatter.format_duration(@total_time_worked)}
               </p>
               <p class="text-right font-bold">
                 <%= if @total_cost do %>
