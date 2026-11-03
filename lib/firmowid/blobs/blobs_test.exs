@@ -27,7 +27,7 @@ defmodule Firmowid.Blobs.BlobsTest do
     end
 
     test "computes correct SHA-256 checksum", %{scope: scope} do
-      content = "deterministic content for checksum"
+      content = "deterministic\r\ncontent for checksum\r\n"
       {:ok, path} = Briefly.create()
       File.write!(path, content)
 

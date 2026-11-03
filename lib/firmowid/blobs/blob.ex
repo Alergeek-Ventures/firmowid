@@ -7,10 +7,10 @@ defmodule Firmowid.Blobs.Blob do
   """
   use Ash.Resource,
     domain: Firmowid.Blobs,
-    data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer],
     extensions: [AshOban],
-    notifiers: [Ash.Notifier.PubSub]
+    notifiers: [Ash.Notifier.PubSub],
+    fragments: [Firmowid.Blobs.Blob.Persistence]
 
   use Gettext, backend: Firmowid.Gettext
 
@@ -26,11 +26,6 @@ defmodule Firmowid.Blobs.Blob do
   alias Firmowid.Resource
 
   require Resource
-
-  postgres do
-    table "blobs"
-    repo Firmowid.Repo
-  end
 
   oban do
     use_tenant_from_record? true
