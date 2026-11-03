@@ -165,6 +165,7 @@ defmodule FirmowidWeb.Core.Router do
         :stop_current_session,
         :start_session,
         :edit_session,
+        :add_sessions,
         :list_leave_requests,
         :create_leave_request,
         :update_profile,
