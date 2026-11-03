@@ -3,6 +3,7 @@ defmodule FirmowidWeb.Delegations.Views.DelegationTest do
 
   use FirmowidWeb.ConnCase, async: false
 
+  import ExUnit.CaptureLog
   import Firmowid.AccountsFixtures
   import Phoenix.LiveViewTest
 
@@ -614,6 +615,118 @@ defmodule FirmowidWeb.Delegations.Views.DelegationTest do
 
     assert has_element?(view, "input[id^='trip-departure-date-'][value='2026-08-']")
     refute has_element?(view, "input[id^='accommodation-locality-']")
+  end
+
+  defmodule UnreadableTicketClient do
+    @moduledoc false
+
+    # A bank statement for a Dutch bus fare: the AI recognizes neither the document nor the route.
+    def extract_file(_path, _schema, _options),
+      do: {:ok, %{"document_number" => nil, "expense_amount" => nil, "details" => nil}}
+  end
+
+  defmodule PartlyReadTicketClient do
+    @moduledoc false
+
+    def extract_file(_path, _schema, _options) do
+      {:ok,
+       %{
+         "document_number" => "GVB/1",
+         "expense_amount" => 3.4,
+         "details" => %{
+           "trips" => [
+             %{"departure_city" => nil, "arrival_city" => nil, "departure_datetime" => nil}
+           ]
+         }
+       }}
+    end
+  end
+
+  test "adds a ticket the AI could not read and saves its route, times and description by hand",
+       %{
+         conn: conn
+       } do
+    previous_client = Application.get_env(:firmowid, :reducto_api_client_module)
+    on_exit(fn -> restore_env(:reducto_api_client_module, previous_client) end)
+    upload_fixture = Path.expand("../../../test/fixtures/receipt.png", __DIR__)
+
+    for client <- [UnreadableTicketClient, PartlyReadTicketClient] do
+      Application.put_env(:firmowid, :reducto_api_client_module, client)
+      {user, delegation} = approved_delegation()
+      scope = %Scope{actor: user, tenant: user.member.organization_id}
+      conn = log_in_user(conn, user)
+      path = ~p"/delegacje/#{delegation.reference}"
+      {:ok, view, _html} = live(conn, path)
+
+      capture_log(fn ->
+        view
+        |> file_input("#transport-upload-form", :transport, [
+          %{name: "wyciag.png", content: File.read!(upload_fixture), type: "image/png"}
+        ])
+        |> render_upload("wyciag.png")
+      end)
+
+      assert [expense] =
+               Delegations.get_delegation!(delegation.id, scope: scope, load: [:expenses]).expenses
+
+      assert [city_id] =
+               view
+               |> render()
+               |> LazyHTML.from_fragment()
+               |> LazyHTML.query("input[id^='trip-departure-city-']")
+               |> LazyHTML.attribute("id")
+
+      change_trip(view, %{
+        departure_city: "Amsterdam",
+        departure_date: "2026-08-10",
+        departure_time: "09:15",
+        arrival_city: "Schiphol",
+        arrival_date: "2026-08-10",
+        arrival_time: "09:45",
+        description: "Autobus 397, płatność kartą"
+      })
+
+      # The first save keeps the route's identity, so the employee keeps typing in the same input.
+      assert has_element?(view, "##{city_id}[value='Amsterdam']")
+      assert has_element?(view, "#delegation-save-status", "Zmiany zostały zapisane")
+
+      assert [trip] = Delegations.get_expense!(expense.id, scope: scope).details.value.trips
+      assert trip.departure_local_datetime == ~N[2026-08-10 09:15:00]
+      assert trip.arrival_local_datetime == ~N[2026-08-10 09:45:00]
+      assert trip.description == "Autobus 397, płatność kartą"
+
+      {:ok, reopened, _html} = live(conn, path)
+      assert has_element?(reopened, "#trip-departure-city-#{trip.id}[value='Amsterdam']")
+      assert has_element?(reopened, "#trip-arrival-time-#{trip.id}[value='09:45']")
+      assert has_element?(reopened, "#trip-description-#{trip.id}", "Autobus 397, płatność kartą")
+    end
+  end
+
+  test "shows a saved statement amount after reopening and keeps it on later edits", %{conn: conn} do
+    {user, delegation} = approved_delegation()
+    scope = %Scope{actor: user, tenant: user.member.organization_id}
+
+    expense =
+      delegation
+      |> seed_expense(user)
+      |> Ash.Seed.update!(%{
+        expense_amount: Money.new(:EUR, "3.40"),
+        settlement_method: :statement,
+        settlement_amount: Money.new(:PLN, "16.50")
+      })
+
+    {:ok, view, _html} = conn |> log_in_user(user) |> live(~p"/delegacje/#{delegation.reference}")
+    assert has_element?(view, "#settlement-amount-#{expense.id}[value='16.50']")
+
+    view
+    |> form("#delegation-complete-form", %{
+      delegation: %{expenses: %{"0" => %{document_number: "REZ/2"}}}
+    })
+    |> render_change()
+
+    saved = Delegations.get_expense!(expense.id, scope: scope)
+    assert saved.document_number == "REZ/2"
+    assert Money.equal?(saved.settlement_amount, Money.new(:PLN, "16.50"))
   end
 
   test "adds and removes a related expense document", %{conn: conn} do

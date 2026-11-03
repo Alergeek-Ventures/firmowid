@@ -11,7 +11,8 @@ defmodule Firmowid.Delegations.DelegationExpense.Trip do
   end
 
   attributes do
-    uuid_v7_primary_key :id
+    # Writable, so a blank route offered for manual entry keeps its identity when first saved.
+    uuid_v7_primary_key :id, writable?: true
 
     attribute :departure_city, :string,
       allow_nil?: false,

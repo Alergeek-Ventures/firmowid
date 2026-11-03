@@ -111,7 +111,7 @@ defmodule Firmowid.Delegations.DelegationExpenseExtractor do
        )
        when is_binary(document_number) and document_number != "" and is_map(details) do
     with {:ok, amount} <- decimal(amount),
-         {:ok, details} <- normalize_details(details, expense_type) do
+         {:ok, details} <- normalize_details(drop_nil_values(details), expense_type) do
       {:ok,
        %{
          document_number: document_number,
@@ -132,6 +132,8 @@ defmodule Firmowid.Delegations.DelegationExpenseExtractor do
   defp normalize_details(%{"trips" => trips} = details, :transport) when is_list(trips) do
     trips
     |> Enum.reduce_while({:ok, []}, fn trip, {:ok, normalized} ->
+      trip = drop_nil_values(trip)
+
       with {:ok, trip} <-
              normalize_datetime(trip, "departure_datetime", "departure_local_datetime"),
            {:ok, trip} <- normalize_datetime(trip, "arrival_datetime", "arrival_local_datetime") do
@@ -147,6 +149,10 @@ defmodule Firmowid.Delegations.DelegationExpenseExtractor do
   end
 
   defp normalize_details(details, _expense_type), do: {:ok, details}
+
+  # Reducto returns null for fields it could not read. Omitting them keeps the attribute
+  # defaults, so a partly read document is still added for the employee to complete.
+  defp drop_nil_values(map), do: Map.reject(map, fn {_key, value} -> is_nil(value) end)
 
   defp normalize_datetime(trip, field, local_field) do
     case Map.get(trip, field) do

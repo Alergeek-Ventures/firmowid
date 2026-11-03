@@ -213,7 +213,12 @@ defmodule Firmowid.Delegations.DelegationExpense do
       constraints: [one_of: [:transport, :accommodation, :other]]
 
     attribute :original_filename, :string, allow_nil?: false, public?: true
-    attribute :document_number, :string, allow_nil?: false, default: "", public?: true
+    # Empty while a draft waits for a number the AI could not read; completion requires one.
+    attribute :document_number, :string,
+      allow_nil?: false,
+      default: "",
+      constraints: [allow_empty?: true],
+      public?: true
 
     attribute :expense_amount, AshMoney.Types.Money,
       allow_nil?: false,
