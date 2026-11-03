@@ -46,7 +46,8 @@ defmodule Firmowid.Delegations.PerDiem do
   Calculates the per diem and lump sums for a delegation, or returns `nil` until its trip
   times are complete and in order.
 
-  Lines always include the per diems; a lump sum appears only when it is claimed.
+  Lines include the per diems unless the employee does not claim them; a lump sum appears
+  only when it is claimed.
   """
   @spec for_delegation(map()) :: t() | nil
   def for_delegation(%{destination_country: "PL"} = delegation) do
@@ -55,7 +56,7 @@ defmodule Firmowid.Delegations.PerDiem do
       duration = NaiveDateTime.diff(ended_at, started_at)
       rate = PerDiemRates.domestic_per_diem()
 
-      summarize([
+      summarize(delegation, [
         line(
           :domestic_per_diem,
           amount(rate, domestic_days(duration), meals(delegation), @domestic_meals)
@@ -88,7 +89,7 @@ defmodule Firmowid.Delegations.PerDiem do
       abroad_days =
         Decimal.add(div(abroad_duration, @day), foreign_partial_day(rem(abroad_duration, @day)))
 
-      summarize([
+      summarize(delegation, [
         line(
           :domestic_per_diem,
           amount(
@@ -148,8 +149,14 @@ defmodule Firmowid.Delegations.PerDiem do
     %{kind: kind, amount: amount, foreign_amount: foreign_amount}
   end
 
-  defp summarize(lines) do
-    lines = Enum.reject(lines, &(&1.kind not in @per_diem_kinds and Money.zero?(&1.amount)))
+  defp summarize(delegation, lines) do
+    lines =
+      Enum.reject(lines, fn line ->
+        if line.kind in @per_diem_kinds,
+          do: not delegation.per_diem_claimed,
+          else: Money.zero?(line.amount)
+      end)
+
     {per_diem, lump_sums} = Enum.split_with(lines, &(&1.kind in @per_diem_kinds))
 
     %{

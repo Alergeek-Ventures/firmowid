@@ -11,8 +11,10 @@ defmodule FirmowidWeb.Delegations.Views.DelegationTest do
   alias Firmowid.Delegations
   alias Firmowid.Delegations.Delegation
   alias Firmowid.Delegations.DelegationExpense
+  alias Firmowid.Delegations.PerDiem
   alias Firmowid.Invoicing.Services.ReductoApiClientMock
   alias Firmowid.Scope
+  alias FirmowidWeb.Delegations.Utilities.SettlementPresentation
 
   test "renders an approved delegation settlement page", %{conn: conn} do
     user = user_fixture()
@@ -727,6 +729,47 @@ defmodule FirmowidWeb.Delegations.Views.DelegationTest do
     saved = Delegations.get_expense!(expense.id, scope: scope)
     assert saved.document_number == "REZ/2"
     assert Money.equal?(saved.settlement_amount, Money.new(:PLN, "16.50"))
+  end
+
+  test "lets the employee waive the per diem and keeps the choice after reopening", %{conn: conn} do
+    {user, delegation} = approved_delegation()
+    # A waived per diem must leave the claimed lump sums: one night is 1.5 × 45 zł.
+    delegation = Ash.Seed.update!(delegation, %{lump_sum_nights: 1})
+    lump_sums = Money.new(:PLN, "67.50")
+    seed_expense(delegation, user)
+    scope = %Scope{actor: user, tenant: user.member.organization_id}
+    conn = log_in_user(conn, user)
+    path = ~p"/delegacje/#{delegation.reference}"
+    {:ok, view, _html} = live(conn, path)
+
+    assert has_element?(view, "#delegation_per_diem_claimed[checked]")
+    assert has_element?(view, "#delegation-per-diem dt", "Dieta krajowa")
+
+    for {claimed, per_diem} <- [{"false", Money.new(:PLN, 0)}, {"true", Money.new(:PLN, 90)}] do
+      view
+      |> form("#delegation-complete-form", %{delegation: %{per_diem_claimed: claimed}})
+      |> render_change()
+
+      assert has_element?(view, "#delegation-per-diem dt", "Dieta krajowa") == (claimed == "true")
+
+      saved = Delegations.get_delegation!(delegation.id, scope: scope, load: [:expenses])
+      assert to_string(saved.per_diem_claimed) == claimed
+      assert Money.equal?(PerDiem.for_delegation(saved).per_diem, per_diem)
+      assert Money.equal?(PerDiem.for_delegation(saved).lump_sums, lump_sums)
+      # The total is the 250 zł accommodation, the lump sum and the per diem, if claimed.
+      assert Money.equal?(
+               SettlementPresentation.total(saved.expenses, PerDiem.for_delegation(saved)),
+               :PLN |> Money.new(250) |> Money.add!(lump_sums) |> Money.add!(per_diem)
+             )
+
+      {:ok, reopened, _html} = live(conn, path)
+
+      assert has_element?(reopened, "#delegation_per_diem_claimed[checked]") ==
+               (claimed == "true")
+
+      assert has_element?(reopened, "#delegation-per-diem dt", "Dieta krajowa") ==
+               (claimed == "true")
+    end
   end
 
   test "adds and removes a related expense document", %{conn: conn} do
