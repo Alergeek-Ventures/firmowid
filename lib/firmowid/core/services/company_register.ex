@@ -49,7 +49,9 @@ defmodule Firmowid.Core.Services.CompanyRegister do
 
   defp register_batch(nips, subjects, scope) do
     Enum.reduce_while(nips, {:ok, []}, fn nip, {:ok, companies} ->
-      subject = Enum.find(subjects, &(&1["nip"] == nip))
+      # A NIP may list several subjects; the one registered in KRS has an activity to read.
+      matching = Enum.filter(subjects, &(&1["nip"] == nip))
+      subject = Enum.find(matching, &(&1["krs"] not in [nil, ""])) || List.first(matching)
 
       with {:ok, attrs} <- vat_activity(nip, subject),
            {:ok, attrs} <- gus_fallback(attrs),
