@@ -33,7 +33,7 @@ defmodule Firmowid.Invoicing.Services.NipApiClient do
 
   defp fetch_valid_nip(nip, request_options) do
     date = Date.to_string(Date.utc_today())
-    url = "https://wl-api.mf.gov.pl/api/search/nip/#{nip}?date=#{date}"
+    url = "https://wykazpodatnikowvat.mf.gov.pl/api/search/nip/#{nip}?date=#{date}"
 
     request_options =
       [
