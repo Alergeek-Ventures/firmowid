@@ -1,7 +1,8 @@
 ---
 name: polish-user-facing-urls
-description: Rules about our nomenclature regarding URLs, pathnames, query
-params and so on. Use always when adding, changing or removing one of these.
+description:
+  Rules about our nomenclature regarding URLs, pathnames, query params and so
+  on. Use always when adding, changing or removing one of these.
 ---
 
 # Polish User-Facing URLs

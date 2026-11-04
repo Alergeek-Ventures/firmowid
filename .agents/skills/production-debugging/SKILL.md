@@ -10,8 +10,8 @@ description: Use when the user reports a bug, crash, log, Sentry issue or data p
   production behavior. A local reproduction is a hypothesis until production
   evidence supports it.
 - Production evidence comes from what the user pastes (logs, psql output, IEx
-  results) and from Sentry and PostHog. In opencode, use the `sentry` and
-  `posthog` subagents, which have the production MCPs; elsewhere ask the user.
+  results) and from the Sentry and PostHog MCP tools; when they are not
+  available, ask the user.
 - Name the evidence that ties a proposed fix to production before recommending
   it. When it does not match the code, look for release-only differences:
   runtime configuration and environment variables, paths resolved at compile

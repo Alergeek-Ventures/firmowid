@@ -1,31 +1,13 @@
 {
   "$schema": "https://opencode.ai/config.json",
-  "permission": {
-    "sentry_*": "deny",
-    "posthog_*": "deny"
-  },
-  "agent": {
-    "sentry": {
-      "mode": "subagent",
-      "permission": {
-        "sentry_*": "allow"
-      },
-      "description": "An agent that has access to Sentry's MCP to check issue details",
-      "prompt": "Your goal is to access Sentry and provide information about issues"
-    },
-    "posthog": {
-      "mode": "subagent",
-      "permission": {
-        "posthog_*": "allow"
-      },
-      "description": "An agent that has access to PostHog's MCP to check analytics details",
-      "prompt": "Your goal is to access PostHog and provide information about analytics"
-    }
-  },
   "mcp": {
     "tidewave": {
-      "type": "remote",
-      "url": "http://localhost:{file:.server.port}/tidewave/mcp",
+      "type": "local",
+      "command": [
+        "sh",
+        "-c",
+        "exec npx -y mcp-remote@0.16.0 \"http://localhost:$(cat .server.port 2>/dev/null || echo 4000)/tidewave/mcp\""
+      ],
       "enabled": true
     },
     "sentry": {

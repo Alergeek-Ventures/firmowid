@@ -1,0 +1,4 @@
+# Keep these servers identical in .mcp.json (Claude Code) and opencode.json (OpenCode).
+[mcp_servers.tidewave]
+command = "sh"
+args = ["-c", "exec npx -y mcp-remote@0.16.0 \"http://localhost:$(cat .server.port 2>/dev/null || echo 4000)/tidewave/mcp\""]
