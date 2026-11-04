@@ -4,7 +4,7 @@ defmodule Firmowid.Analysis.Services.CategoryClassifier do
   its description, and stores the choice per entry.
 
   Jev sees the entry's side, counterparty with its main activity (PKD) from the
-  GUS register when the invoice names its NIP, invoice lines or transfer title
+  public registers when the invoice names its NIP, invoice lines or transfer title
   and amount, the industry's categories with what they cover, and the counterparty
   categories the owner confirmed as examples, corrections of earlier
   suggestions first, so the owner's decisions steer later suggestions.

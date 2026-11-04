@@ -1,16 +1,15 @@
 defmodule Firmowid.Core.Services.CompanyRegister do
   @moduledoc """
-  Looks companies up in the GUS register by NIP and caches the answers in
-  `Firmowid.Core.RegisteredCompany`, so each NIP is asked for once for all
-  organizations.
-
-  GUS allows at most 3 requests per second, so missing NIPs are looked up one
-  after another with a pause. Failures are returned to the caller.
+  Looks companies up in the VAT white list and KRS, falling back to GUS when
+  configured. Answers are cached once per NIP for all organizations.
+  Missing NIPs are batched by 30 for MF; KRS and GUS calls are sequential.
+  Registry failures are returned to the caller without caching them.
   """
 
   alias Firmowid.Core
   alias Firmowid.Core.Nip
   alias Firmowid.Core.RegisteredCompany
+  alias Firmowid.Core.Services.VatApiClient
   alias Firmowid.Scope
   alias Gusex.Types.OsFizycznaPkd
   alias Gusex.Types.OsPrawnaPkd
@@ -23,25 +22,21 @@ defmodule Firmowid.Core.Services.CompanyRegister do
 
   @doc """
   Returns the cached register data of the valid Polish `nips` by NIP, first
-  looking up and storing those not cached yet when a GUS key is configured.
+  looking up and storing those not cached yet.
   """
   @spec fetch([String.t()], Scope.t()) ::
           {:ok, %{String.t() => RegisteredCompany.t()}} | {:error, term()}
   def fetch(nips, scope) do
     nips = nips |> Enum.filter(&Nip.valid?/1) |> Enum.map(&Nip.normalize_digits/1) |> Enum.uniq()
     cached = Core.list_registered_companies!(nips, scope: scope)
-    # Without a GUS key, e.g. in production before one is configured, only cached data is used.
-    missing =
-      if Application.get_env(:gusex, :api_key), do: nips -- Enum.map(cached, & &1.nip), else: []
+    missing = nips -- Enum.map(cached, & &1.nip)
 
-    # Pausing before every lookup also spaces out lookups of consecutive jobs.
     missing
-    |> Enum.reduce_while({:ok, cached}, fn nip, {:ok, companies} ->
-      Process.sleep(@pause_ms)
-
-      with {:ok, attrs} <- lookup(nip),
-           {:ok, company} <- Core.register_company(attrs, scope: scope) do
-        {:cont, {:ok, [company | companies]}}
+    |> Enum.chunk_every(30)
+    |> Enum.reduce_while({:ok, cached}, fn batch, {:ok, companies} ->
+      with {:ok, subjects} <- VatApiClient.fetch_by_nips(batch),
+           {:ok, stored} <- register_batch(batch, subjects, scope) do
+        {:cont, {:ok, stored ++ companies}}
       else
         {:error, _reason} = error -> {:halt, error}
       end
@@ -49,6 +44,91 @@ defmodule Firmowid.Core.Services.CompanyRegister do
     |> case do
       {:ok, companies} -> {:ok, Map.new(companies, &{&1.nip, &1})}
       {:error, _reason} = error -> error
+    end
+  end
+
+  defp register_batch(nips, subjects, scope) do
+    Enum.reduce_while(nips, {:ok, []}, fn nip, {:ok, companies} ->
+      subject = Enum.find(subjects, &(&1["nip"] == nip))
+
+      with {:ok, attrs} <- vat_activity(nip, subject),
+           {:ok, attrs} <- gus_fallback(attrs),
+           {:ok, company} <- Core.register_company(attrs, scope: scope) do
+        {:cont, {:ok, [company | companies]}}
+      else
+        {:error, _reason} = error -> {:halt, error}
+      end
+    end)
+  end
+
+  defp vat_activity(nip, nil), do: {:ok, %{nip: nip}}
+
+  defp vat_activity(nip, subject) do
+    base = %{nip: nip, regon: subject["regon"], name: subject["name"]}
+
+    case subject["krs"] do
+      krs when krs in [nil, ""] ->
+        {:ok, base}
+
+      krs ->
+        with {:ok, activity} <- krs_activity(krs, "P") do
+          {:ok, Map.merge(base, activity)}
+        end
+    end
+  end
+
+  defp krs_activity(krs, registry) do
+    options =
+      Keyword.merge(
+        [
+          url: "https://api-krs.ms.gov.pl/api/krs/OdpisAktualny/#{krs}",
+          params: [rejestr: registry, format: "json"],
+          retry: false
+        ],
+        Application.get_env(:firmowid, :krs_api_request_options, [])
+      )
+
+    case Req.get(options) do
+      {:ok, %{status: 200, body: %{"odpis" => %{"dane" => data}}}} ->
+        activities =
+          get_in(data, ["dzial3", "przedmiotDzialalnosci", "przedmiotPrzewazajacejDzialalnosci"])
+
+        {:ok, krs_predominant(activities)}
+
+      {:ok, %{status: 404}} when registry == "P" ->
+        krs_activity(krs, "S")
+
+      {:ok, %{status: 404}} ->
+        {:ok, %{}}
+
+      {:ok, %{status: status}} ->
+        {:error, {:krs_http_error, status}}
+
+      {:error, _reason} = error ->
+        error
+    end
+  end
+
+  defp krs_predominant([activity | _]) do
+    %{
+      pkd: "#{activity["kodDzial"]}.#{activity["kodKlasa"]}.#{activity["kodPodklasa"]}",
+      pkd_name: activity["opis"]
+    }
+  end
+
+  defp krs_predominant(activities) when activities in [nil, []], do: %{}
+
+  defp gus_fallback(%{pkd: _pkd} = attrs), do: {:ok, attrs}
+
+  defp gus_fallback(attrs) do
+    if Application.get_env(:gusex, :api_key) do
+      Process.sleep(@pause_ms)
+
+      with {:ok, gus_attrs} <- lookup(attrs.nip) do
+        {:ok, Map.merge(attrs, gus_attrs)}
+      end
+    else
+      {:ok, attrs}
     end
   end
 

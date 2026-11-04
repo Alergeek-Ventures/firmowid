@@ -32,24 +32,11 @@ defmodule Firmowid.Invoicing.Services.NipApiClient do
   end
 
   defp fetch_valid_nip(nip, request_options) do
-    date = Date.to_string(Date.utc_today())
-    url = "https://wykazpodatnikowvat.mf.gov.pl/api/search/nip/#{nip}?date=#{date}"
-
-    request_options =
-      [
-        url: url,
-        headers: %{
-          "Accept" => "application/json"
-        }
-      ]
-      |> Keyword.merge(Application.get_env(:firmowid, :nip_api_request_options, []))
-      |> Keyword.merge(request_options)
-
-    case Req.get(request_options) do
-      {:ok, %Req.Response{status: 200, body: %{"result" => %{"subject" => nil}}}} ->
+    case Firmowid.Core.Services.VatApiClient.fetch_by_nip(nip, request_options) do
+      {:ok, %{"result" => %{"subject" => nil}}} ->
         {:error, :not_found}
 
-      {:ok, %Req.Response{status: 200, body: body}} ->
+      {:ok, body} ->
         with {:ok, response} <-
                validate_response(Recase.Enumerable.convert_keys(body, &Recase.to_snake/1)) do
           {:ok,
@@ -59,12 +46,6 @@ defmodule Firmowid.Invoicing.Services.NipApiClient do
              address: response.result.subject.working_address
            }}
         end
-
-      {:ok, %Req.Response{status: 400}} ->
-        {:error, :invalid_nip}
-
-      {:ok, %Req.Response{status: status}} ->
-        {:error, "HTTP error: #{status}"}
 
       {:error, reason} ->
         {:error, reason}

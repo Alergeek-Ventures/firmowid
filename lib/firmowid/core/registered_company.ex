@@ -2,7 +2,7 @@ defmodule Firmowid.Core.RegisteredCompany do
   @moduledoc """
   Public register data of a company, shared by all organizations.
 
-  Caches what the GUS register knows about a NIP, so each NIP is looked up
+  Caches what the public registers know about a NIP, so each NIP is looked up
   once. A NIP the register does not know is stored without a `pkd`, so it is
   never asked for again. `pkd` is the predominant activity, e.g. `"69.20.Z"`.
   """

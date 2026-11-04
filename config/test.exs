@@ -60,6 +60,7 @@ config :firmowid, :bank_data_api_client,
 
 # Gotenberg is not running during tests, so it is excluded from /health.
 config :firmowid, :health_checks, [:database, :oban]
+config :firmowid, :krs_api_request_options, plug: {Req.Test, :krs_api}
 
 # Tests never reach the real KSeF API; a test that submits stubs `:ksef_api`.
 config :firmowid, :ksef, request_options: [plug: {Req.Test, :ksef_api}]
