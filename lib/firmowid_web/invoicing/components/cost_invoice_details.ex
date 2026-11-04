@@ -13,7 +13,6 @@ defmodule FirmowidWeb.Invoicing.Components.CostInvoiceDetails do
 
   alias Firmowid.Invoicing.CostInvoice
   alias Firmowid.Ksef
-  alias FirmowidWeb.Invoicing.Components.DeductibleVat
   alias FirmowidWeb.Invoicing.Components.InvoiceDetails
   alias FirmowidWeb.Invoicing.Components.InvoiceDownloadModal
   alias FirmowidWeb.Invoicing.Components.InvoiceTimeline
@@ -37,10 +36,6 @@ defmodule FirmowidWeb.Invoicing.Components.CostInvoiceDetails do
       |> assign(
         :can_write_invoicing?,
         Ash.can?({CostInvoice, :toggle_skip}, assigns.current_user)
-      )
-      |> assign(
-        :can_record_deductible_vat?,
-        Ash.can?({CostInvoice, :update_tax_forecast_vat}, assigns.current_user)
       )
 
     socket =
@@ -226,14 +221,6 @@ defmodule FirmowidWeb.Invoicing.Components.CostInvoiceDetails do
               <InvoiceDetails.invoice_amount
                 is_cost_invoice={true}
                 amount={@invoice.effective_amount}
-              />
-
-              <.live_component
-                :if={@can_record_deductible_vat? and flag_enabled?(:tax_prognosis, assigns)}
-                module={DeductibleVat}
-                id="deductible-vat"
-                invoice={@invoice}
-                scope={@scope}
               />
 
               <InvoiceDetails.internal_note_form

@@ -7,7 +7,7 @@ defmodule Firmowid.Invoicing.Signals do
 
   signals do
     signal :cost_invoice_created do
-      description "A cost invoice was imported from KSeF, an inbound email or an uploaded document."
+      description "A cost invoice was imported from KSeF or an uploaded document."
       argument :cost_invoice_id, :uuid, allow_nil?: false
       argument :organization_id, :uuid, allow_nil?: false
     end

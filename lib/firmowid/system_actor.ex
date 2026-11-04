@@ -16,8 +16,8 @@ defmodule Firmowid.SystemActor do
     Created only after the original actor passes the user's destroy authorization;
     `user_id` identifies the account, including accounts without an organization.
 
-  - `:cost_invoice_processor` — processes incoming cost invoices (inbound email
-    worker, OCR pipeline). Can read/write cost invoices, blobs, and bank accounts.
+  - `:cost_invoice_processor` — processes incoming cost invoices (KSeF imports,
+    OCR pipeline). Can read/write cost invoices, blobs, and bank accounts.
 
   - `:sales_invoice_processor` — processes outgoing sales invoices (KSeF submission
     workers, invoice generation). Can read/write sales invoices and related items.

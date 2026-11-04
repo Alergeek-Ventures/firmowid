@@ -107,10 +107,6 @@ defmodule Firmowid.Blobs.Utils.ProcessCostInvoiceBlob do
   end
 
   defp create_invoice(extracted_metadata, blob, _opts) do
-    inbound_email_id =
-      blob.processing_metadata["inbound_email_id"] ||
-        blob.processing_metadata[:inbound_email_id]
-
     attrs =
       extracted_metadata
       |> Map.delete("document_type")
@@ -119,7 +115,6 @@ defmodule Firmowid.Blobs.Utils.ProcessCostInvoiceBlob do
       |> Map.put("amount", extracted_amount(extracted_metadata))
       |> Map.put("organization_id", blob.organization_id)
       |> Map.put("blob_id", blob.id)
-      |> maybe_put_inbound_email_id(inbound_email_id)
 
     with {:ok, _cost_invoice} <- Invoicing.create_cost_invoice_from_document(attrs), do: :ok
   end
@@ -138,10 +133,6 @@ defmodule Firmowid.Blobs.Utils.ProcessCostInvoiceBlob do
       value -> value
     end)
   end
-
-  defp maybe_put_inbound_email_id(attrs, nil), do: attrs
-
-  defp maybe_put_inbound_email_id(attrs, inbound_email_id), do: Map.put(attrs, "inbound_email_id", inbound_email_id)
 
   defp extracted_amount(%{"currency" => currency, "total_amount" => total_amount}) do
     Money.new!(currency, total_amount |> decimal_amount() |> Decimal.negate())
