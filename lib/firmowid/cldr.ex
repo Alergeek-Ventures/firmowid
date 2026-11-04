@@ -6,6 +6,6 @@ defmodule Firmowid.Cldr do
     locales: [:pl, :en, :uk],
     json_library: Jason,
     data_dir: "./priv/cldr",
-    precompile_number_formats: ["¤¤#,##0.##"],
+    precompile_number_formats: ["¤¤#,##0.##", "+#,##0%;-#,##0%", "#0.0000 ¤¤"],
     providers: [Cldr.Number, Cldr.DateTime, Cldr.Calendar, Cldr.Territory]
 end
