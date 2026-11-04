@@ -10,7 +10,7 @@ defmodule Firmowid.Core.Services.VatApiClient do
   Not retried: a failed batch fails the caller's run, which is repeated later.
   """
   @spec fetch_by_nips([String.t()]) :: {:ok, [map()]} | {:error, term()}
-  def fetch_by_nips(nips) when length(nips) in 1..30 do
+  def fetch_by_nips(nips) do
     with {:ok, %{"result" => %{"entries" => entries}}} <-
            request("nips/#{Enum.join(nips, ",")}", retry: false) do
       Enum.reduce_while(entries, {:ok, []}, fn
