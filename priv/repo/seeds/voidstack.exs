@@ -46,16 +46,14 @@ defmodule Firmowid.Seeds.Voidstack do
   end
 
   defp seed_organization(dragan) do
-    Ash.Seed.upsert!(
+    Ash.Seed.seed!(
       CoreOrganization,
       %{
         name: "VoidStack Labs spółka z ograniczoną odpowiedzialnością",
         nip: "7871963656",
         address: "ul. Kręgielnia 1, 811 01 Bratislava (oddział w Polsce)",
-        owner_id: dragan.id,
-        inbound_email_nickname: "voidstack"
-      },
-      identity: :unique_nickname
+        owner_id: dragan.id
+      }
     )
   end
 

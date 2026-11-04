@@ -8,16 +8,14 @@ defmodule FirmowidWeb.Settings.Views.Index do
 
    TODO: This view handles ~15 distinct responsibilities (company settings,
    user profile, email/password change, account deletion, bank accounts,
-   KSeF auth, inbound email, Google linking, avatars,
+   KSeF auth, Google linking, avatars,
    requisition PubSub). Split into focused LiveComponents per section.
   """
   use FirmowidWeb, :live_view
 
-  import FirmowidWeb.Infrastructure.Flags, only: [flag_enabled?: 2]
   import FirmowidWeb.Infrastructure.Hooks.RequireOrganization, only: [guard_upload_progress: 2]
   import FirmowidWeb.Settings.Components.AccountTab
   import FirmowidWeb.Settings.Components.CompanyTab
-  import FirmowidWeb.Settings.Components.InvoicesTab
   import FirmowidWeb.Settings.Components.ProfileTab
   import FirmowidWeb.Settings.Components.SettingsPage
   import FirmowidWeb.Settings.Components.SubscriptionTab
@@ -703,110 +701,6 @@ defmodule FirmowidWeb.Settings.Views.Index do
     end
   end
 
-  def handle_event("regenerate_inbound_nickname", _params, socket) do
-    current_user = socket.assigns.current_user
-    current_org = socket.assigns.current_org
-
-    if current_user.member.role != :admin do
-      raise ForbiddenError, gettext("Only an administrator can change the email address.")
-    end
-
-    case Core.regenerate_nickname(current_org, scope: socket.assigns.ash_scope) do
-      {:ok, updated_org} ->
-        # Load avatar using Ash.load!
-        updated_with_avatar =
-          Ash.load!(updated_org, [avatar_blob: [:url]], scope: socket.assigns.ash_scope)
-
-        LiveToast.send_toast(:info, gettext("A new email address has been generated."))
-
-        {:noreply,
-         socket
-         |> assign(:current_org, updated_with_avatar)
-         |> assign_subscription_preview_if_visible()}
-
-      {:error, _} ->
-        LiveToast.send_toast(
-          :error,
-          gettext("An error occurred while generating the new address.")
-        )
-
-        {:noreply, socket}
-    end
-  end
-
-  def handle_event("copy_inbound_email", %{"email" => email}, socket) do
-    {:noreply,
-     socket
-     |> push_event("copy-to-clipboard", %{text: email})
-     |> LiveToast.put_toast(:success, gettext("Receiving address copied"))}
-  end
-
-  def handle_event("add_allowed_email", %{"email" => email}, socket) do
-    current_user = socket.assigns.current_user
-    current_org = socket.assigns.current_org
-
-    if current_user.member.role != :admin do
-      raise ForbiddenError,
-            gettext("Only an administrator can manage the allowed addresses list.")
-    end
-
-    case Core.add_sender_email(current_org, %{email: String.trim(email)}, scope: socket.assigns.ash_scope) do
-      {:ok, updated_org} ->
-        # Load avatar using Ash.load!
-        updated_with_avatar =
-          Ash.load!(updated_org, [avatar_blob: [:url]], scope: socket.assigns.ash_scope)
-
-        LiveToast.send_toast(
-          :info,
-          gettext("The email address has been added to the allowed list.")
-        )
-
-        {:noreply,
-         socket
-         |> assign(:current_org, updated_with_avatar)
-         |> assign_subscription_preview_if_visible()}
-
-      {:error, _} ->
-        LiveToast.send_toast(:error, gettext("An error occurred while adding the email address."))
-        {:noreply, socket}
-    end
-  end
-
-  def handle_event("remove_allowed_email", %{"email" => email}, socket) do
-    current_user = socket.assigns.current_user
-    current_org = socket.assigns.current_org
-
-    if current_user.member.role != :admin do
-      raise ForbiddenError,
-            gettext("Only an administrator can manage the allowed addresses list.")
-    end
-
-    case Core.remove_sender_email(current_org, %{email: email}, scope: socket.assigns.ash_scope) do
-      {:ok, updated_org} ->
-        # Load avatar using Ash.load!
-        updated_with_avatar =
-          Ash.load!(updated_org, [avatar_blob: [:url]], scope: socket.assigns.ash_scope)
-
-        LiveToast.send_toast(
-          :info,
-          gettext("The email address has been removed from the allowed list.")
-        )
-
-        {:noreply,
-         socket
-         |> assign(:current_org, updated_with_avatar)
-         |> assign_subscription_preview_if_visible()}
-
-      {:error, _} ->
-        LiveToast.send_toast(
-          :error,
-          gettext("An error occurred while removing the email address.")
-        )
-
-        {:noreply, socket}
-    end
-  end
-
   def handle_event(event, params, socket)
       when event in [
              "save_ksef_token",
@@ -1319,12 +1213,6 @@ defmodule FirmowidWeb.Settings.Views.Index do
             selected_user={@selected_user}
             bank_account_statuses={@bank_account_statuses}
             uploads={@uploads}
-          />
-        <% :invoices -> %>
-          <.invoices_tab
-            current_org={@current_org}
-            current_user={@current_user}
-            tax_prognosis?={flag_enabled?(:tax_prognosis, assigns)}
           />
         <% :subscription -> %>
           <.subscription_tab month={@subscription_month} worksheet={@subscription_worksheet} />

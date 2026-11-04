@@ -77,8 +77,6 @@ config :firmowid,
   reducto_api_key: System.get_env("REDUCTO_API_KEY") || Application.get_env(:firmowid, :reducto_api_key),
   openai_api_key: System.get_env("OPENAI_API_KEY") || Application.get_env(:firmowid, :openai_api_key),
   typesafe_api_key: System.get_env("TYPESAFE_API_KEY"),
-  resend_api_key: System.get_env("RESEND_API_KEY"),
-  resend_webhook_secret: System.get_env("RESEND_WEBHOOK_SECRET"),
   google_client_id: System.get_env("GOOGLE_CLIENT_ID"),
   # use DATABASE_URL if set
   google_client_secret: System.get_env("GOOGLE_CLIENT_SECRET")

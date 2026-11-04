@@ -64,41 +64,6 @@ msgstr ""
 msgid "%{confidence}% confidence"
 msgstr ""
 
-#: lib/firmowid_web/design_system/components/tax_forecast_summary.ex
-#, elixir-autogen, elixir-format
-msgid "%{count} cost invoice in a currency outside NBP Table A"
-msgid_plural "%{count} cost invoices in currencies outside NBP Table A"
-msgstr[0] ""
-msgstr[1] ""
-
-#: lib/firmowid_web/design_system/components/tax_forecast_summary.ex
-#, elixir-autogen, elixir-format
-msgid "%{count} cost invoice with deductible VAT in neither PLN nor the invoice currency"
-msgid_plural "%{count} cost invoices with deductible VAT in neither PLN nor the invoice currency"
-msgstr[0] ""
-msgstr[1] ""
-
-#: lib/firmowid_web/design_system/components/tax_forecast_summary.ex
-#, elixir-autogen, elixir-format
-msgid "%{count} cost invoice without a sale or issue date"
-msgid_plural "%{count} cost invoices without a sale or issue date"
-msgstr[0] ""
-msgstr[1] ""
-
-#: lib/firmowid_web/design_system/components/tax_forecast_summary.ex
-#, elixir-autogen, elixir-format
-msgid "%{count} cost invoice without an available NBP rate"
-msgid_plural "%{count} cost invoices without an available NBP rate"
-msgstr[0] ""
-msgstr[1] ""
-
-#: lib/firmowid_web/design_system/components/tax_forecast_summary.ex
-#, elixir-autogen, elixir-format
-msgid "%{count} cost invoice without recorded deductible VAT"
-msgid_plural "%{count} cost invoices without recorded deductible VAT"
-msgstr[0] ""
-msgstr[1] ""
-
 #: lib/firmowid_web/admin/views/organizations.ex
 #: lib/firmowid_web/invoicing/sales_invoices/utilities/payment_date_suggestions.ex
 #: lib/firmowid_web/landing/components/sections.ex
@@ -131,13 +96,6 @@ msgid_plural "%{count} days overdue"
 msgstr[0] ""
 msgstr[1] ""
 
-#: lib/firmowid_web/invoicing/cost_invoices/views/inbox.ex
-#, elixir-autogen, elixir-format
-msgid "%{count} invoice"
-msgid_plural "%{count} invoices"
-msgstr[0] ""
-msgstr[1] ""
-
 #: lib/firmowid_web/billing/utilities/worksheet.ex
 #, elixir-autogen, elixir-format
 msgid "%{count} over the limit × %{price} / mo."
@@ -167,62 +125,6 @@ msgid_plural "%{count} results"
 msgstr[0] ""
 msgstr[1] ""
 
-#: lib/firmowid_web/design_system/components/tax_forecast_summary.ex
-#, elixir-autogen, elixir-format
-msgid "%{count} sales correction in a different currency than the corrected invoice"
-msgid_plural "%{count} sales corrections in a different currency than the corrected invoice"
-msgstr[0] ""
-msgstr[1] ""
-
-#: lib/firmowid_web/design_system/components/tax_forecast_summary.ex
-#, elixir-autogen, elixir-format
-msgid "%{count} sales correction without the corrected invoice"
-msgid_plural "%{count} sales corrections without the corrected invoice"
-msgstr[0] ""
-msgstr[1] ""
-
-#: lib/firmowid_web/design_system/components/tax_forecast_summary.ex
-#, elixir-autogen, elixir-format
-msgid "%{count} sales invoice in a currency outside NBP Table A"
-msgid_plural "%{count} sales invoices in currencies outside NBP Table A"
-msgstr[0] ""
-msgstr[1] ""
-
-#: lib/firmowid_web/design_system/components/tax_forecast_summary.ex
-#, elixir-autogen, elixir-format
-msgid "%{count} sales invoice with an item missing its VAT rate, quantity or price"
-msgid_plural "%{count} sales invoices with an item missing its VAT rate, quantity or price"
-msgstr[0] ""
-msgstr[1] ""
-
-#: lib/firmowid_web/design_system/components/tax_forecast_summary.ex
-#, elixir-autogen, elixir-format
-msgid "%{count} sales invoice with an item missing its quantity or price"
-msgid_plural "%{count} sales invoices with an item missing its quantity or price"
-msgstr[0] ""
-msgstr[1] ""
-
-#: lib/firmowid_web/design_system/components/tax_forecast_summary.ex
-#, elixir-autogen, elixir-format
-msgid "%{count} sales invoice without a sale or issue date"
-msgid_plural "%{count} sales invoices without a sale or issue date"
-msgstr[0] ""
-msgstr[1] ""
-
-#: lib/firmowid_web/design_system/components/tax_forecast_summary.ex
-#, elixir-autogen, elixir-format
-msgid "%{count} sales invoice without an available NBP rate"
-msgid_plural "%{count} sales invoices without an available NBP rate"
-msgstr[0] ""
-msgstr[1] ""
-
-#: lib/firmowid_web/design_system/components/tax_forecast_summary.ex
-#, elixir-autogen, elixir-format
-msgid "%{count} sales invoice without items"
-msgid_plural "%{count} sales invoices without items"
-msgstr[0] ""
-msgstr[1] ""
-
 #: lib/firmowid_web/landing/components/sections.ex
 #: lib/firmowid_web/timetracker/components/session.ex
 #, elixir-autogen, elixir-format
@@ -244,11 +146,6 @@ msgid "%{count} transaction"
 msgid_plural "%{count} transactions"
 msgstr[0] ""
 msgstr[1] ""
-
-#: lib/firmowid_web/design_system/components/tax_forecast_summary.ex
-#, elixir-autogen, elixir-format
-msgid "%{covered} of %{documents}"
-msgstr ""
 
 #: lib/firmowid_web/analysis/views/dashboard.ex
 #, elixir-autogen, elixir-format
@@ -421,11 +318,6 @@ msgstr ""
 msgid "(max 50 files, PDF, JPG and PNG)"
 msgstr ""
 
-#: lib/firmowid_web/invoicing/cost_invoices/views/inbox.ex
-#, elixir-autogen, elixir-format
-msgid "(no subject)"
-msgstr ""
-
 #: lib/firmowid_web/landing/views/terms_of_service.ex
 #, elixir-autogen, elixir-format
 msgid "). The Service Provider makes efforts to ensure the continuity and proper operation of the Service, but does not guarantee uninterrupted availability or the absence of errors."
@@ -532,11 +424,6 @@ msgstr ""
 msgid "A new contract is waiting for you. Sign it with a Trusted Profile to finalize the formalities."
 msgstr ""
 
-#: lib/firmowid_web/settings/views/index.ex
-#, elixir-autogen, elixir-format
-msgid "A new email address has been generated."
-msgstr ""
-
 #: lib/firmowid_web/delegations/components/settlement/documents.ex
 #, elixir-autogen, elixir-format
 msgid "A payment confirmation alone is not enough. If you attach a transfer or card payment confirmation, add a document showing what the payment was for, e.g. a booking."
@@ -550,11 +437,6 @@ msgstr ""
 #: lib/firmowid_web/assistant/utilities/presentation.ex
 #, elixir-autogen, elixir-format
 msgid "A plan is ready for your decision."
-msgstr ""
-
-#: lib/firmowid_web/design_system/components/tax_forecast_summary.ex
-#, elixir-autogen, elixir-format
-msgid "A planning estimate from the invoices recorded in Firmowid. It is not a tax return, the tax due or a balance to pay, and it is not included in this month's totals."
 msgstr ""
 
 #: lib/firmowid_web/infrastructure/components/error_html.ex
@@ -600,12 +482,6 @@ msgstr ""
 #: lib/firmowid_web/hours_record/components/change_request.ex
 #, elixir-autogen, elixir-format
 msgid "Accept request"
-msgstr ""
-
-#: lib/firmowid_web/settings/components/tax_forecast_settings.ex
-#, elixir-autogen, elixir-format
-msgctxt "tax reserve cost assumption"
-msgid "Accepted"
 msgstr ""
 
 #: lib/firmowid_web/settings/components/account_tab.ex
@@ -721,16 +597,6 @@ msgstr ""
 msgid "Add a related document"
 msgstr ""
 
-#: lib/firmowid_web/settings/components/invoices_tab.ex
-#, elixir-autogen, elixir-format
-msgid "Add address"
-msgstr ""
-
-#: lib/firmowid_web/settings/components/invoices_tab.ex
-#, elixir-autogen, elixir-format
-msgid "Add addresses from which suppliers or the team can send invoices to Firmowid."
-msgstr ""
-
 #: lib/firmowid/delegations/validations/has_expenses.ex
 #, elixir-autogen, elixir-format
 msgid "Add at least one document."
@@ -801,11 +667,6 @@ msgstr ""
 #: lib/firmowid_web/invoicing/sales_invoices/views/creator_counterparty.html.heex
 #, elixir-autogen, elixir-format
 msgid "Add new"
-msgstr ""
-
-#: lib/firmowid_web/settings/components/invoices_tab.ex
-#, elixir-autogen, elixir-format
-msgid "Add new address"
 msgstr ""
 
 #: lib/firmowid_web/infrastructure/layouts/app.html.heex
@@ -912,11 +773,6 @@ msgstr ""
 msgid "Advance"
 msgstr ""
 
-#: lib/firmowid_web/design_system/components/tax_forecast_summary.ex
-#, elixir-autogen, elixir-format
-msgid "Advance payments, cash accounting and special VAT schemes are not modelled."
-msgstr ""
-
 #: lib/firmowid_web/delegations/components/delegation.ex
 #: lib/firmowid_web/delegations/components/settlement_page.ex
 #, elixir-autogen, elixir-format
@@ -993,11 +849,6 @@ msgstr ""
 msgid "Allow access"
 msgstr ""
 
-#: lib/firmowid_web/settings/components/invoices_tab.ex
-#, elixir-autogen, elixir-format
-msgid "Allowed senders"
-msgstr ""
-
 #: lib/firmowid_web/auth/views/registration.ex
 #, elixir-autogen, elixir-format
 msgid "Already have an account?"
@@ -1069,11 +920,6 @@ msgstr ""
 
 #: lib/firmowid_web/settings/views/index.ex
 #, elixir-autogen, elixir-format
-msgid "An error occurred while adding the email address."
-msgstr ""
-
-#: lib/firmowid_web/settings/views/index.ex
-#, elixir-autogen, elixir-format
 msgid "An error occurred while changing the account name."
 msgstr ""
 
@@ -1110,16 +956,6 @@ msgstr ""
 #: lib/firmowid_ui/components/ksef_connection.ex
 #, elixir-autogen, elixir-format
 msgid "An error occurred while generating the KSeF certificate."
-msgstr ""
-
-#: lib/firmowid_web/settings/views/index.ex
-#, elixir-autogen, elixir-format
-msgid "An error occurred while generating the new address."
-msgstr ""
-
-#: lib/firmowid_web/settings/views/index.ex
-#, elixir-autogen, elixir-format
-msgid "An error occurred while removing the email address."
 msgstr ""
 
 #: lib/firmowid_web/hours_record/components/upload_form.ex
@@ -1436,11 +1272,6 @@ msgstr ""
 msgid "Assistant is working…"
 msgstr ""
 
-#: lib/firmowid_web/design_system/components/tax_forecast_summary.ex
-#, elixir-autogen, elixir-format
-msgid "Assumptions"
-msgstr ""
-
 #: lib/firmowid_web/landing/components/sections.ex
 #, elixir-autogen, elixir-format
 msgid "At Alergeek Ventures, he handles company logistics and manages a team of 20. A happy Firmowid user, he uses it for daily tasks, leaving more time for management and less for invoices and settlements."
@@ -1629,11 +1460,6 @@ msgstr ""
 msgid "Bank connection expired"
 msgstr ""
 
-#: lib/firmowid_web/design_system/components/tax_forecast_summary.ex
-#, elixir-autogen, elixir-format
-msgid "Bank costs without an invoice, payroll and tax adjustments are not included."
-msgstr ""
-
 #: lib/firmowid_web/landing/components/hero.ex
 #, elixir-autogen, elixir-format
 msgid "Bank integrations"
@@ -1647,11 +1473,6 @@ msgstr ""
 #: lib/firmowid_web/landing/components/pricing.ex
 #, elixir-autogen, elixir-format
 msgid "Banking and payments"
-msgstr ""
-
-#: lib/firmowid_web/design_system/components/tax_forecast_summary.ex
-#, elixir-autogen, elixir-format
-msgid "Base: net sales less invoice costs"
 msgstr ""
 
 #: lib/firmowid_web/settings/components/company_tab.ex
@@ -2713,11 +2534,6 @@ msgstr ""
 msgid "Correction"
 msgstr ""
 
-#: lib/firmowid_web/invoicing/components/deductible_vat.ex
-#, elixir-autogen, elixir-format
-msgid "Correction %{number}"
-msgstr ""
-
 #: lib/firmowid_web/invoicing/components/invoice_timeline.ex
 #, elixir-autogen, elixir-format
 msgid "Correction confirmed by KSeF"
@@ -2768,11 +2584,6 @@ msgstr ""
 msgid "Correction submission error"
 msgstr ""
 
-#: lib/firmowid_web/design_system/components/tax_forecast_summary.ex
-#, elixir-autogen, elixir-format
-msgid "Corrections count in their own sale month, which may differ from the statutory settlement period."
-msgstr ""
-
 #: lib/firmowid_web/landing/components/sections.ex
 #, elixir-autogen, elixir-format
 msgid "Corrections, e.g. “give a 10% discount on invoice BC/01/10/2026”"
@@ -2804,11 +2615,6 @@ msgstr ""
 msgid "Cost invoice"
 msgstr ""
 
-#: lib/firmowid_web/settings/components/invoices_tab.ex
-#, elixir-autogen, elixir-format
-msgid "Cost invoice email import"
-msgstr ""
-
 #: lib/firmowid_web/invoicing/components/download_modal.ex
 #, elixir-autogen, elixir-format
 msgid "Cost invoices from KSeF (PDF generated from KSeF data)"
@@ -2817,11 +2623,6 @@ msgstr ""
 #: lib/firmowid_web/billing/utilities/worksheet.ex
 #, elixir-autogen, elixir-format
 msgid "Cost invoices from outside KSeF"
-msgstr ""
-
-#: lib/firmowid_web/design_system/components/tax_forecast_summary.ex
-#, elixir-autogen, elixir-format
-msgid "Cost invoices included"
 msgstr ""
 
 #: lib/firmowid_web/analysis/components/financial_overview.ex
@@ -3369,7 +3170,6 @@ msgstr ""
 
 #: lib/firmowid_web/delegations/components/settlement/foreign_currency.ex
 #: lib/firmowid_web/invoicing/components/bank_transfer_modal.ex
-#: lib/firmowid_web/invoicing/components/deductible_vat.ex
 #: lib/firmowid_web/invoicing/sales_invoices/components/invoice_payment.ex
 #: lib/firmowid_web/settings/components/company_tab.ex
 #, elixir-autogen, elixir-format
@@ -3427,18 +3227,6 @@ msgstr ""
 #: lib/firmowid_web/landing/components/pricing.ex
 #, elixir-autogen, elixir-format
 msgid "Data and security"
-msgstr ""
-
-#: lib/firmowid_web/design_system/components/tax_forecast_summary.ex
-#, elixir-autogen, elixir-format
-msgctxt "tax reserve status"
-msgid "Data complete"
-msgstr ""
-
-#: lib/firmowid_web/design_system/components/tax_forecast_summary.ex
-#, elixir-autogen, elixir-format
-msgctxt "tax reserve status"
-msgid "Data incomplete"
 msgstr ""
 
 #: lib/firmowid_web/landing/components/sections.ex
@@ -3518,21 +3306,6 @@ msgstr ""
 #: lib/firmowid_web/payroll/components/monthly_payout.ex
 #, elixir-autogen, elixir-format
 msgid "Declaration received on"
-msgstr ""
-
-#: lib/firmowid_web/invoicing/components/deductible_vat.ex
-#, elixir-autogen, elixir-format
-msgid "Deductible VAT for the tax reserve"
-msgstr ""
-
-#: lib/firmowid_web/design_system/components/tax_forecast_summary.ex
-#, elixir-autogen, elixir-format
-msgid "Deductible VAT on costs"
-msgstr ""
-
-#: lib/firmowid_web/invoicing/components/deductible_vat.ex
-#, elixir-autogen, elixir-format
-msgid "Deductible VAT saved."
 msgstr ""
 
 #: lib/firmowid_web/payroll/components/monthly_payout.ex
@@ -3665,12 +3438,6 @@ msgstr ""
 #: lib/firmowid_web/management/views/delegation.ex
 #, elixir-autogen, elixir-format
 msgid "Destination country"
-msgstr ""
-
-#: lib/firmowid_web/invoicing/cost_invoices/views/inbox.ex
-#, elixir-autogen, elixir-format
-msgctxt "inbox column"
-msgid "Details"
 msgstr ""
 
 #: lib/firmowid_web/landing/components/cookie_consent.ex
@@ -4001,11 +3768,6 @@ msgstr ""
 msgid "E-mail"
 msgstr ""
 
-#: lib/firmowid_web/settings/components/tax_forecast_settings.ex
-#, elixir-autogen, elixir-format
-msgid "Each cost invoice counts with its payment amount less the deductible VAT recorded on it, including non-deductible VAT and settlement charges. These are not statutory tax-deductible costs. Bank costs without an invoice, payroll and tax adjustments are not included."
-msgstr ""
-
 #: lib/firmowid_web/landing/components/sections.ex
 #, elixir-autogen, elixir-format
 msgid "Early access"
@@ -4301,19 +4063,9 @@ msgstr ""
 msgid "Enter a name"
 msgstr ""
 
-#: lib/firmowid_web/settings/components/tax_forecast_settings.ex
-#, elixir-autogen, elixir-format
-msgid "Enter a number from 0 to 100, or leave the field empty."
-msgstr ""
-
 #: lib/firmowid_web/timetracker/controllers/csv.ex
 #, elixir-autogen, elixir-format
 msgid "Enter a valid month and year for the CSV export."
-msgstr ""
-
-#: lib/firmowid_web/invoicing/components/deductible_vat.ex
-#, elixir-autogen, elixir-format
-msgid "Enter an amount with up to two decimal places, or leave the field empty."
 msgstr ""
 
 #: lib/firmowid_web/delegations/components/settlement/trips.ex
@@ -4324,16 +4076,6 @@ msgstr ""
 #: lib/firmowid_web/invoicing/sales_invoices/views/creator_counterparty.html.heex
 #, elixir-autogen, elixir-format
 msgid "Enter manually"
-msgstr ""
-
-#: lib/firmowid_web/invoicing/components/deductible_vat.ex
-#, elixir-autogen, elixir-format
-msgid "Enter the VAT in PLN or %{currency}. An amount in %{currency} is converted at the NBP rate from the last business day before the earlier of the document's issue and sale dates; without that rate, it counts as missing data."
-msgstr ""
-
-#: lib/firmowid_web/invoicing/components/deductible_vat.ex
-#, elixir-autogen, elixir-format
-msgid "Enter the VAT you deduct from the document yourself. Leave the field empty when it is unknown, enter 0 when nothing is deducted and a negative amount for a correction that lowers the VAT. Firmowid never derives it from the gross amount."
 msgstr ""
 
 #: lib/firmowid/delegations/validations/foreign_currency_settlement_complete.ex
@@ -4393,7 +4135,6 @@ msgid "Equipment testing"
 msgstr ""
 
 #: lib/firmowid_web/assistant/components/transcript.ex
-#: lib/firmowid_web/invoicing/cost_invoices/views/inbox.ex
 #, elixir-autogen, elixir-format
 msgid "Error"
 msgstr ""
@@ -4441,11 +4182,6 @@ msgctxt "country group"
 msgid "European Union"
 msgstr ""
 
-#: lib/firmowid_web/design_system/components/tax_forecast_summary.ex
-#, elixir-autogen, elixir-format
-msgid "Every cost invoice counts as a cost: its payment amount less the recorded deductible VAT."
-msgstr ""
-
 #: lib/firmowid_web/landing/components/sections.ex
 #, elixir-autogen, elixir-format
 msgid "Every transaction is automatically assigned to the right invoice. No more manually matching transfers at the end of the month."
@@ -4469,11 +4205,6 @@ msgstr ""
 #: lib/firmowid_web/billing/utilities/worksheet.ex
 #, elixir-autogen, elixir-format
 msgid "Excess cost invoices from outside KSeF"
-msgstr ""
-
-#: lib/firmowid_web/design_system/components/tax_forecast_summary.ex
-#, elixir-autogen, elixir-format
-msgid "Excess deductible VAT"
 msgstr ""
 
 #: lib/firmowid_web/invoicing/sales_invoices/components/invoice_items.ex
@@ -4701,11 +4432,6 @@ msgstr ""
 #: lib/firmowid_web/landing/components/faq.ex
 #, elixir-autogen, elixir-format
 msgid "Firmowid connects to your bank via Open Banking (partner: GoCardless). We support 29 banks and payment institutions:"
-msgstr ""
-
-#: lib/firmowid_web/settings/components/tax_forecast_settings.ex
-#, elixir-autogen, elixir-format
-msgid "Firmowid does not know how your company is taxed, so it does not choose a rate for you. The reserve is a planning assumption, not a PIT or CIT rate, an advance payment or a tax return."
 msgstr ""
 
 #: lib/firmowid_web/landing/views/index.ex
@@ -5048,11 +4774,6 @@ msgstr ""
 msgid "Generate a KSeF certificate"
 msgstr ""
 
-#: lib/firmowid_web/settings/components/invoices_tab.ex
-#, elixir-autogen, elixir-format
-msgid "Generate a new invoice import address? The current address will no longer be the right place to send new messages."
-msgstr ""
-
 #: lib/firmowid_ui/components/ksef_connection.ex
 #, elixir-autogen, elixir-format
 msgid "Generate a token"
@@ -5068,11 +4789,6 @@ msgstr ""
 msgid "Generate invitation"
 msgstr ""
 
-#: lib/firmowid_web/settings/components/invoices_tab.ex
-#, elixir-autogen, elixir-format
-msgid "Generate new address"
-msgstr ""
-
 #: lib/firmowid_web/management/views/delegation.ex
 #, elixir-autogen, elixir-format
 msgid "Generate order"
@@ -5086,11 +4802,6 @@ msgstr ""
 #: lib/firmowid_web/settings/components/company_tab.ex
 #, elixir-autogen, elixir-format
 msgid "Generated:"
-msgstr ""
-
-#: lib/firmowid_web/settings/components/invoices_tab.ex
-#, elixir-autogen, elixir-format
-msgid "Generates a new import address. Update your mail forwarding rules after the change."
 msgstr ""
 
 #: lib/firmowid_web/invoicing/components/invoice_download_modal.ex
@@ -5421,19 +5132,9 @@ msgctxt "month"
 msgid "In progress"
 msgstr ""
 
-#: lib/firmowid_web/invoicing/cost_invoices/views/inbox.ex
-#, elixir-autogen, elixir-format
-msgid "In progress..."
-msgstr ""
-
 #: lib/firmowid_web/analysis/components/period_details.ex
 #, elixir-autogen, elixir-format
 msgid "In-store sales"
-msgstr ""
-
-#: lib/firmowid_web/invoicing/cost_invoices/views/inbox.ex
-#, elixir-autogen, elixir-format
-msgid "Inbox"
 msgstr ""
 
 #: lib/firmowid_web/invoicing/components/invoice_download_modal.ex
@@ -5488,19 +5189,9 @@ msgstr ""
 msgid "Income outside projects"
 msgstr ""
 
-#: lib/firmowid_web/design_system/components/tax_forecast_summary.ex
-#, elixir-autogen, elixir-format
-msgid "Income tax"
-msgstr ""
-
 #: lib/firmowid_web/payroll/components/monthly_payout.ex
 #, elixir-autogen, elixir-format
 msgid "Income tax advance"
-msgstr ""
-
-#: lib/firmowid_web/settings/components/tax_forecast_settings.ex
-#, elixir-autogen, elixir-format
-msgid "Income tax reserve"
 msgstr ""
 
 #: lib/firmowid_web/auth/controllers/auth_controller.ex
@@ -5662,7 +5353,6 @@ msgstr ""
 msgid "Invite a new employee"
 msgstr ""
 
-#: lib/firmowid_web/invoicing/components/deductible_vat.ex
 #: lib/firmowid_web/invoicing/sales_invoices/views/edit_form.html.heex
 #, elixir-autogen, elixir-format
 msgid "Invoice %{number}"
@@ -5814,12 +5504,6 @@ msgstr ""
 msgid "Invoices"
 msgstr ""
 
-#: lib/firmowid_web/settings/utilities/navigation.ex
-#, elixir-autogen, elixir-format
-msgctxt "settings tab"
-msgid "Invoices"
-msgstr ""
-
 #: lib/firmowid_web/landing/components/pricing.ex
 #, elixir-autogen, elixir-format
 msgid "Invoices and KSeF"
@@ -5830,16 +5514,6 @@ msgstr ""
 msgid "Invoices appear in KSeF and you do not even know"
 msgstr ""
 
-#: lib/firmowid_web/design_system/components/tax_forecast_summary.ex
-#, elixir-autogen, elixir-format
-msgid "Invoices count in their sale month, or in their issue month when the sale date is missing."
-msgstr ""
-
-#: lib/firmowid_web/design_system/components/tax_forecast_summary.ex
-#, elixir-autogen, elixir-format
-msgid "Invoices count whether or not they have been paid."
-msgstr ""
-
 #: lib/firmowid_web/invoicing/views/index.ex
 #, elixir-autogen, elixir-format
 msgid "Invoices from foreign counterparties as PDF files or their photos (PNG, JPG)"
@@ -5848,11 +5522,6 @@ msgstr ""
 #: lib/firmowid_web/landing/components/pricing.ex
 #, elixir-autogen, elixir-format
 msgid "Invoices in 33 currencies"
-msgstr ""
-
-#: lib/firmowid_web/design_system/components/tax_forecast_summary.ex
-#, elixir-autogen, elixir-format
-msgid "Invoices in currencies other than PLN are converted at the NBP Table A rate from the last business day before the earlier of their issue and sale dates, as on invoices issued in Firmowid; corrections use their own rate. An invoice without that rate counts as missing data, and no other rate is used."
 msgstr ""
 
 #: lib/firmowid_web/landing/components/sections.ex
@@ -6274,11 +5943,6 @@ msgctxt "employee tab"
 msgid "Leave"
 msgstr ""
 
-#: lib/firmowid_web/settings/components/tax_forecast_settings.ex
-#, elixir-autogen, elixir-format
-msgid "Leave it empty to keep the income tax reserve unset."
-msgstr ""
-
 #: lib/firmowid_web/landing/components/sections.ex
 #, elixir-autogen, elixir-format
 msgid "Leave requests to approve"
@@ -6346,11 +6010,6 @@ msgstr ""
 #: lib/firmowid_web/settings/components/account_tab.ex
 #, elixir-autogen, elixir-format
 msgid "Linked account"
-msgstr ""
-
-#: lib/firmowid_web/invoicing/cost_invoices/views/inbox.ex
-#, elixir-autogen, elixir-format
-msgid "List of all emails with cost invoices"
 msgstr ""
 
 #: lib/firmowid_web/admin/components/settlement_components.ex
@@ -6868,11 +6527,6 @@ msgstr ""
 msgid "No additional overages compared to the plan in the current month."
 msgstr ""
 
-#: lib/firmowid_web/settings/components/invoices_tab.ex
-#, elixir-autogen, elixir-format
-msgid "No addresses have been added yet. Import will work only after the first sender is added."
-msgstr ""
-
 #: lib/firmowid_web/management/views/delegation.ex
 #, elixir-autogen, elixir-format
 msgid "No advance"
@@ -6886,16 +6540,6 @@ msgstr ""
 #: lib/firmowid_web/management/views/delegation.ex
 #, elixir-autogen, elixir-format
 msgid "No attached documents."
-msgstr ""
-
-#: lib/firmowid_web/invoicing/cost_invoices/views/inbox.ex
-#, elixir-autogen, elixir-format
-msgid "No attachments"
-msgstr ""
-
-#: lib/firmowid_web/invoicing/cost_invoices/views/inbox.ex
-#, elixir-autogen, elixir-format
-msgid "No attachments to process"
 msgstr ""
 
 #: lib/firmowid_web/settings/components/company_tab.ex
@@ -7007,11 +6651,6 @@ msgstr ""
 #: lib/firmowid_web/analysis/components/financial_overview.ex
 #, elixir-autogen, elixir-format
 msgid "No income or expenses in this period."
-msgstr ""
-
-#: lib/firmowid_web/design_system/components/tax_forecast_summary.ex
-#, elixir-autogen, elixir-format
-msgid "No income tax reserve rate has been chosen."
 msgstr ""
 
 #: lib/firmowid_web/analysis/components/segment_ranking.ex
@@ -7188,11 +6827,6 @@ msgstr ""
 msgid "No usage"
 msgstr ""
 
-#: lib/firmowid_web/design_system/components/tax_forecast_summary.ex
-#, elixir-autogen, elixir-format
-msgid "Non-deductible VAT and settlement charges stay in the costs."
-msgstr ""
-
 #: lib/firmowid_web/hours_record/components/status.ex
 #: lib/firmowid_web/management/components/employee_tax_details.ex
 #: lib/firmowid_web/settings/components/account_tab.ex
@@ -7216,31 +6850,9 @@ msgstr ""
 msgid "Northern Ireland"
 msgstr ""
 
-#: lib/firmowid_web/settings/components/tax_forecast_settings.ex
-#, elixir-autogen, elixir-format
-msgctxt "tax reserve cost assumption"
-msgid "Not accepted"
-msgstr ""
-
-#: lib/firmowid_web/design_system/components/tax_forecast_summary.ex
-#, elixir-autogen, elixir-format
-msgctxt "tax reserve status"
-msgid "Not applicable"
-msgstr ""
-
 #: lib/firmowid_web/management/components/employee_tax_details.ex
 #, elixir-autogen, elixir-format
 msgid "Not applied"
-msgstr ""
-
-#: lib/firmowid_web/design_system/components/tax_forecast_summary.ex
-#, elixir-autogen, elixir-format
-msgid "Not calculated"
-msgstr ""
-
-#: lib/firmowid_web/design_system/components/tax_forecast_summary.ex
-#, elixir-autogen, elixir-format
-msgid "Not calculated: some data is missing"
 msgstr ""
 
 #: lib/firmowid_web/management/components/employee_tax_details.ex
@@ -7273,20 +6885,9 @@ msgstr ""
 msgid "Not performed"
 msgstr ""
 
-#: lib/firmowid_web/invoicing/components/deductible_vat.ex
-#, elixir-autogen, elixir-format
-msgid "Not recorded: the tax reserve counts this document as missing data."
-msgstr ""
-
 #: lib/firmowid_web/delegations/components/settlement_page.ex
 #, elixir-autogen, elixir-format
 msgid "Not saved. Check the highlighted fields. Your draft remains in this tab."
-msgstr ""
-
-#: lib/firmowid_web/settings/components/tax_forecast_settings.ex
-#, elixir-autogen, elixir-format
-msgctxt "tax reserve rate"
-msgid "Not set"
 msgstr ""
 
 #: lib/firmowid_ui/invoicing/components/invoice_notes.ex
@@ -7303,11 +6904,6 @@ msgstr ""
 #: lib/firmowid_web/management/views/counterparty_form.html.heex
 #, elixir-autogen, elixir-format
 msgid "Notes"
-msgstr ""
-
-#: lib/firmowid_web/design_system/components/tax_forecast_summary.ex
-#, elixir-autogen, elixir-format
-msgid "Nothing is carried forward from previous periods."
 msgstr ""
 
 #: lib/firmowid_web/core/toast.ex
@@ -7427,11 +7023,6 @@ msgstr ""
 msgid "Only PDF files are allowed."
 msgstr ""
 
-#: lib/firmowid_web/design_system/components/tax_forecast_summary.ex
-#, elixir-autogen, elixir-format
-msgid "Only a positive monthly base is used. Losses and allowances are not carried forward."
-msgstr ""
-
 #: lib/firmowid_web/settings/views/index.ex
 #, elixir-autogen, elixir-format
 msgid "Only an administrator can archive users."
@@ -7439,22 +7030,7 @@ msgstr ""
 
 #: lib/firmowid_web/settings/views/index.ex
 #, elixir-autogen, elixir-format
-msgid "Only an administrator can change the email address."
-msgstr ""
-
-#: lib/firmowid_web/settings/views/index.ex
-#, elixir-autogen, elixir-format
 msgid "Only an administrator can change the organization logo."
-msgstr ""
-
-#: lib/firmowid_web/settings/components/invoices_tab.ex
-#, elixir-autogen, elixir-format
-msgid "Only an administrator can change the receiving address and the allowed senders list."
-msgstr ""
-
-#: lib/firmowid_web/settings/components/tax_forecast_settings.ex
-#, elixir-autogen, elixir-format
-msgid "Only an administrator can change the reserve assumptions."
 msgstr ""
 
 #: lib/firmowid_web/organization/invites/views/index.ex
@@ -7470,11 +7046,6 @@ msgstr ""
 #: lib/firmowid_ui/ksef/connection.ex
 #, elixir-autogen, elixir-format
 msgid "Only an administrator can manage KSeF."
-msgstr ""
-
-#: lib/firmowid_web/settings/views/index.ex
-#, elixir-autogen, elixir-format
-msgid "Only an administrator can manage the allowed addresses list."
 msgstr ""
 
 #: lib/firmowid_web/settings/views/index.ex
@@ -7510,11 +7081,6 @@ msgstr ""
 #: lib/firmowid_web/payroll/components/monthly_payout.ex
 #, elixir-autogen, elixir-format
 msgid "Only employer PPK transfers made in the payout month on or before payout can be included. Other transfers require separate tax collection."
-msgstr ""
-
-#: lib/firmowid_web/design_system/components/tax_forecast_summary.ex
-#, elixir-autogen, elixir-format
-msgid "Only invoices recorded in Firmowid are used. They are not a complete tax register."
 msgstr ""
 
 #: lib/firmowid_web/admin/views/organizations.ex
@@ -8036,11 +7602,6 @@ msgstr ""
 msgid "Period"
 msgstr ""
 
-#: lib/firmowid_web/design_system/components/tax_forecast_summary.ex
-#, elixir-autogen, elixir-format
-msgid "Period: %{period}"
-msgstr ""
-
 #: lib/firmowid_web/settings/components/account_tab.ex
 #, elixir-autogen, elixir-format
 msgid "Personal data"
@@ -8091,11 +7652,6 @@ msgstr ""
 #: lib/firmowid_web/admin/components/settlement_components.ex
 #, elixir-autogen, elixir-format
 msgid "Plan for the selected month"
-msgstr ""
-
-#: lib/firmowid_web/design_system/components/tax_forecast_summary.ex
-#, elixir-autogen, elixir-format
-msgid "Planned tax reserve"
 msgstr ""
 
 #: lib/firmowid_web/invoicing/sales_invoices/views/edit_form.html.heex
@@ -8242,17 +7798,6 @@ msgstr ""
 #: lib/firmowid_ui/components/ksef_connection.ex
 #, elixir-autogen, elixir-format
 msgid "Private key password"
-msgstr ""
-
-#: lib/firmowid_web/invoicing/cost_invoices/views/inbox.ex
-#, elixir-autogen, elixir-format
-msgctxt "inbox status"
-msgid "Processing"
-msgstr ""
-
-#: lib/firmowid_web/invoicing/cost_invoices/views/inbox.ex
-#, elixir-autogen, elixir-format
-msgid "Processing error"
 msgstr ""
 
 #: lib/firmowid_web/invoicing/sales_invoices/views/creator_items.html.heex
@@ -8429,25 +7974,9 @@ msgstr ""
 msgid "Reason"
 msgstr ""
 
-#: lib/firmowid_web/invoicing/cost_invoices/views/inbox.ex
-#, elixir-autogen, elixir-format
-msgctxt "inbox column"
-msgid "Received"
-msgstr ""
-
 #: lib/firmowid_web/management/components/employee_tax_details.ex
 #, elixir-autogen, elixir-format
 msgid "Received on %{date}"
-msgstr ""
-
-#: lib/firmowid_web/settings/components/invoices_tab.ex
-#, elixir-autogen, elixir-format
-msgid "Receiving address"
-msgstr ""
-
-#: lib/firmowid_web/settings/views/index.ex
-#, elixir-autogen, elixir-format
-msgid "Receiving address copied"
 msgstr ""
 
 #: lib/firmowid_web/invoicing/sales_invoices/views/creator.ex
@@ -8487,24 +8016,9 @@ msgctxt "hours record badge"
 msgid "Record"
 msgstr ""
 
-#: lib/firmowid_web/settings/components/tax_forecast_settings.ex
-#, elixir-autogen, elixir-format
-msgid "Recorded cost invoices as reserve costs"
-msgstr ""
-
 #: lib/firmowid_web/admin/components/settlement_components.ex
 #, elixir-autogen, elixir-format
 msgid "Recorded events in the organization, independent of the selected billing month. The numbers cover the last 30 days (rolling 720 hours). These are not sign-in dates."
-msgstr ""
-
-#: lib/firmowid_web/invoicing/components/deductible_vat.ex
-#, elixir-autogen, elixir-format
-msgid "Recorded: %{amount}"
-msgstr ""
-
-#: lib/firmowid_web/invoicing/components/deductible_vat.ex
-#, elixir-autogen, elixir-format
-msgid "Recorded: nothing to deduct."
 msgstr ""
 
 #: lib/firmowid_web/landing/views/terms_of_service.ex
@@ -8569,11 +8083,6 @@ msgstr ""
 #: lib/firmowid_web/invoicing/components/invoice_timeline.ex
 #, elixir-autogen, elixir-format
 msgid "Reminder sending error"
-msgstr ""
-
-#: lib/firmowid_web/settings/components/invoices_tab.ex
-#, elixir-autogen, elixir-format
-msgid "Remove %{email}"
 msgstr ""
 
 #: lib/firmowid_web/delegations/components/settlement/documents.ex
@@ -8651,36 +8160,6 @@ msgstr ""
 #: lib/firmowid_web/invoicing/sales_invoices/views/edit_form.html.heex
 #, elixir-autogen, elixir-format
 msgid "Required by law (Art. 106j(2)(3) of the VAT Act). Maximum 256 characters."
-msgstr ""
-
-#: lib/firmowid_web/design_system/components/tax_forecast_summary.ex
-#, elixir-autogen, elixir-format
-msgid "Reserve assumptions in settings"
-msgstr ""
-
-#: lib/firmowid_web/settings/components/tax_forecast_settings.ex
-#, elixir-autogen, elixir-format
-msgid "Reserve assumptions saved."
-msgstr ""
-
-#: lib/firmowid_web/settings/components/tax_forecast_settings.ex
-#, elixir-autogen, elixir-format
-msgid "Reserve rate"
-msgstr ""
-
-#: lib/firmowid_web/settings/components/tax_forecast_settings.ex
-#, elixir-autogen, elixir-format
-msgid "Reserve rate (%)"
-msgstr ""
-
-#: lib/firmowid_web/design_system/components/tax_forecast_summary.ex
-#, elixir-autogen, elixir-format
-msgid "Reserve rate chosen by an administrator"
-msgstr ""
-
-#: lib/firmowid_web/design_system/components/tax_forecast_summary.ex
-#, elixir-autogen, elixir-format
-msgid "Reserve to set aside"
 msgstr ""
 
 #: lib/firmowid_web/auth/views/reset_password.ex
@@ -8927,11 +8406,6 @@ msgctxt "invoice download option"
 msgid "Sales invoices"
 msgstr ""
 
-#: lib/firmowid_web/design_system/components/tax_forecast_summary.ex
-#, elixir-autogen, elixir-format
-msgid "Sales invoices included"
-msgstr ""
-
 #: lib/firmowid_web/management/components/profile_tab.ex
 #, elixir-autogen, elixir-format
 msgid "Same month"
@@ -8948,13 +8422,11 @@ msgctxt "weekday name"
 msgid "Saturday"
 msgstr ""
 
-#: lib/firmowid_web/invoicing/components/deductible_vat.ex
 #: lib/firmowid_web/management/components/card.ex
 #: lib/firmowid_web/management/views/employees.html.heex
 #: lib/firmowid_web/settings/components/account_tab.ex
 #: lib/firmowid_web/settings/components/company_tab.ex
 #: lib/firmowid_web/settings/components/profile_tab.ex
-#: lib/firmowid_web/settings/components/tax_forecast_settings.ex
 #: lib/firmowid_web/timetracker/components/session.ex
 #, elixir-autogen, elixir-format
 msgid "Save"
@@ -9010,7 +8482,6 @@ msgid "Saving failed. Your draft remains in this tab. Edit a field to try again.
 msgstr ""
 
 #: lib/firmowid_web/hours_record/components/change_request.ex
-#: lib/firmowid_web/settings/components/tax_forecast_settings.ex
 #, elixir-autogen, elixir-format
 msgid "Saving..."
 msgstr ""
@@ -9201,11 +8672,6 @@ msgstr ""
 msgid "Send"
 msgstr ""
 
-#: lib/firmowid_web/settings/components/invoices_tab.ex
-#, elixir-autogen, elixir-format
-msgid "Send cost invoices to this address. Firmowid will import them automatically, but it only accepts messages from addresses added to the allowed senders list."
-msgstr ""
-
 #: lib/firmowid_web/assistant/components/controls.ex
 #, elixir-autogen, elixir-format
 msgid "Send message"
@@ -9228,12 +8694,6 @@ msgstr ""
 
 #: lib/firmowid_web/invoicing/transactions/components/show_components.ex
 #, elixir-autogen, elixir-format
-msgid "Sender"
-msgstr ""
-
-#: lib/firmowid_web/invoicing/cost_invoices/views/inbox.ex
-#, elixir-autogen, elixir-format
-msgctxt "inbox column"
 msgid "Sender"
 msgstr ""
 
@@ -9738,7 +9198,6 @@ msgid "Statistics"
 msgstr ""
 
 #: lib/firmowid_ui/components/ksef_connection.ex
-#: lib/firmowid_web/invoicing/cost_invoices/views/inbox.ex
 #: lib/firmowid_web/landing/components/sections.ex
 #: lib/firmowid_web/management/components/profile_tab.ex
 #: lib/firmowid_web/management/views/counterparty.ex
@@ -9790,12 +9249,6 @@ msgstr ""
 msgid "Subcontractors"
 msgstr ""
 
-#: lib/firmowid_web/invoicing/cost_invoices/views/inbox.ex
-#, elixir-autogen, elixir-format
-msgctxt "inbox column"
-msgid "Subject"
-msgstr ""
-
 #: lib/firmowid_web/invoicing/components/invoice_timeline.ex
 #, elixir-autogen, elixir-format
 msgid "Submission error"
@@ -9840,12 +9293,6 @@ msgstr ""
 #: lib/firmowid_web/auth/views/expired_subscription.ex
 #, elixir-autogen, elixir-format
 msgid "Subscription expired - %{organization}"
-msgstr ""
-
-#: lib/firmowid_web/invoicing/cost_invoices/views/inbox.ex
-#, elixir-autogen, elixir-format
-msgctxt "inbox status"
-msgid "Success"
 msgstr ""
 
 #: lib/firmowid_web/core/toast.ex
@@ -9943,11 +9390,6 @@ msgstr ""
 #: lib/firmowid_web/invoicing/sales_invoices/views/creator_counterparty.html.heex
 #, elixir-autogen, elixir-format
 msgid "Tax identifier"
-msgstr ""
-
-#: lib/firmowid_web/design_system/components/tax_forecast_summary.ex
-#, elixir-autogen, elixir-format
-msgid "Tax payments already made are not deducted, so this is not a balance to pay."
 msgstr ""
 
 #: lib/firmowid_web/management/components/employee_tax_details.ex
@@ -10219,21 +9661,6 @@ msgstr ""
 msgid "The code is public, your data stays with you. AGPL-3.0 license."
 msgstr ""
 
-#: lib/firmowid_web/design_system/components/tax_forecast_summary.ex
-#, elixir-autogen, elixir-format
-msgid "The company is not a VAT payer."
-msgstr ""
-
-#: lib/firmowid_web/design_system/components/tax_forecast_summary.ex
-#, elixir-autogen, elixir-format
-msgid "The company's VAT payer status is not set."
-msgstr ""
-
-#: lib/firmowid_web/design_system/components/tax_forecast_summary.ex
-#, elixir-autogen, elixir-format
-msgid "The company's current VAT status is applied to this month."
-msgstr ""
-
 #: lib/firmowid_web/auth/views/confirm_email.ex
 #, elixir-autogen, elixir-format
 msgid "The confirmation link is invalid or has expired."
@@ -10272,11 +9699,6 @@ msgstr ""
 #: lib/firmowid_web/settings/components/profile_tab.ex
 #, elixir-autogen, elixir-format
 msgid "The correspondence address is the same as the residential address"
-msgstr ""
-
-#: lib/firmowid_web/design_system/components/tax_forecast_summary.ex
-#, elixir-autogen, elixir-format
-msgid "The cost assumption for the reserve has not been accepted."
 msgstr ""
 
 #: lib/firmowid/invoicing/sales_invoice/email_recipient_eligibility.ex
@@ -10332,16 +9754,6 @@ msgstr ""
 #: lib/firmowid_web/invoicing/components/entries_table.ex
 #, elixir-autogen, elixir-format
 msgid "The document has been skipped. Transactions will not be assigned to it"
-msgstr ""
-
-#: lib/firmowid_web/settings/views/index.ex
-#, elixir-autogen, elixir-format
-msgid "The email address has been added to the allowed list."
-msgstr ""
-
-#: lib/firmowid_web/settings/views/index.ex
-#, elixir-autogen, elixir-format
-msgid "The email address has been removed from the allowed list."
 msgstr ""
 
 #: lib/firmowid_web/payroll/components/monthly_payout.ex
@@ -10675,11 +10087,6 @@ msgstr ""
 msgid "The request was rejected. The submitted document remains current and the month's hours stay locked."
 msgstr ""
 
-#: lib/firmowid_web/design_system/components/tax_forecast_summary.ex
-#, elixir-autogen, elixir-format
-msgid "The reserve rate is chosen by an administrator and is not a PIT or CIT rate."
-msgstr ""
-
 #: lib/firmowid_web/assistant/components/transcript.ex
 #, elixir-autogen, elixir-format
 msgid "The response was interrupted"
@@ -10977,11 +10384,6 @@ msgstr ""
 #: lib/firmowid_web/invoicing/components/entries_table.ex
 #, elixir-autogen, elixir-format
 msgid "This is a draft invoice — the document has not been issued yet."
-msgstr ""
-
-#: lib/firmowid_web/design_system/components/tax_forecast_summary.ex
-#, elixir-autogen, elixir-format
-msgid "This is a planning reserve, not a tax return."
 msgstr ""
 
 #: lib/firmowid_web/admin/components/settlement_components.ex
@@ -11487,12 +10889,6 @@ msgstr ""
 msgid "Unavailable"
 msgstr ""
 
-#: lib/firmowid_web/design_system/components/tax_forecast_summary.ex
-#, elixir-autogen, elixir-format
-msgctxt "tax reserve status"
-msgid "Unavailable"
-msgstr ""
-
 #: lib/firmowid_web/analysis/components/period_details.ex
 #: lib/firmowid_web/analysis/components/segment_ranking.ex
 #, elixir-autogen, elixir-format
@@ -11510,13 +10906,6 @@ msgctxt "sales invoice items"
 msgid "Unit"
 msgstr ""
 
-#: lib/firmowid_web/design_system/components/tax_forecast_summary.ex
-#, elixir-autogen, elixir-format
-msgctxt "tax reserve amount"
-msgid "Unknown"
-msgstr ""
-
-#: lib/firmowid_web/invoicing/cost_invoices/views/inbox.ex
 #: lib/firmowid_web/timetracker/views/index.ex
 #, elixir-autogen, elixir-format
 msgid "Unknown error"
@@ -11525,11 +10914,6 @@ msgstr ""
 #: lib/firmowid_web/assistant/utilities/presentation.ex
 #, elixir-autogen, elixir-format
 msgid "Unknown operation"
-msgstr ""
-
-#: lib/firmowid_web/invoicing/cost_invoices/views/inbox.ex
-#, elixir-autogen, elixir-format
-msgid "Unknown sender"
 msgstr ""
 
 #: lib/firmowid_web/settings/views/index.ex
@@ -11721,11 +11105,6 @@ msgstr ""
 msgid "Use %{number}"
 msgstr ""
 
-#: lib/firmowid_web/settings/components/tax_forecast_settings.ex
-#, elixir-autogen, elixir-format
-msgid "Use recorded cost invoices as reserve costs"
-msgstr ""
-
 #: lib/firmowid_web/organization/invites/views/index.html.heex
 #, elixir-autogen, elixir-format
 msgid "Used by"
@@ -11778,11 +11157,6 @@ msgstr ""
 msgid "Using the solution of our partner, GoCardless, we will connect your account to Firmowid."
 msgstr ""
 
-#: lib/firmowid_web/design_system/components/tax_forecast_summary.ex
-#, elixir-autogen, elixir-format
-msgid "VAT"
-msgstr ""
-
 #: lib/firmowid_web/landing/components/sections.ex
 #, elixir-autogen, elixir-format
 msgid "VAT %{rate}%"
@@ -11797,11 +11171,6 @@ msgstr ""
 #: lib/firmowid_web/landing/components/sections.ex
 #, elixir-autogen, elixir-format
 msgid "VAT invoice %{number}"
-msgstr ""
-
-#: lib/firmowid_web/design_system/components/tax_forecast_summary.ex
-#, elixir-autogen, elixir-format
-msgid "VAT on sales"
 msgstr ""
 
 #: lib/firmowid_web/settings/components/company_tab.ex
@@ -12491,7 +11860,6 @@ msgstr ""
 msgid "actions performed through their account."
 msgstr ""
 
-#: lib/firmowid_web/settings/components/invoices_tab.ex
 #: lib/firmowid_web/settings/components/subscription_tab.ex
 #, elixir-autogen, elixir-format
 msgid "active"
@@ -12665,11 +12033,6 @@ msgstr ""
 #: lib/firmowid_web/invoicing/sales_invoices/components/invoice_payment.ex
 #, elixir-autogen, elixir-format
 msgid "e.g. PL61109010140000071219812874"
-msgstr ""
-
-#: lib/firmowid_web/settings/components/invoices_tab.ex
-#, elixir-autogen, elixir-format
-msgid "e.g. invoices@supplier.com"
 msgstr ""
 
 #: lib/firmowid_web/invoicing/sales_invoices/views/edit_form.html.heex

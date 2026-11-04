@@ -21,7 +21,7 @@
       "references": null,
       "scale": null,
       "size": null,
-      "source": "resend_email_id",
+      "source": "name",
       "type": "text"
     },
     {
@@ -33,7 +33,7 @@
       "references": null,
       "scale": null,
       "size": null,
-      "source": "sender_email",
+      "source": "nip",
       "type": "text"
     },
     {
@@ -45,7 +45,7 @@
       "references": null,
       "scale": null,
       "size": null,
-      "source": "subject",
+      "source": "address",
       "type": "text"
     },
     {
@@ -57,20 +57,77 @@
       "references": null,
       "scale": null,
       "size": null,
-      "source": "body",
+      "source": "correspondence_address",
       "type": "text"
+    },
+    {
+      "allow_nil?": true,
+      "default": "true",
+      "generated?": false,
+      "precision": null,
+      "primary_key?": false,
+      "references": null,
+      "scale": null,
+      "size": null,
+      "source": "is_vat_payer",
+      "type": "boolean"
     },
     {
       "allow_nil?": false,
-      "default": "nil",
+      "default": "\"services\"",
       "generated?": false,
       "precision": null,
       "primary_key?": false,
       "references": null,
       "scale": null,
       "size": null,
-      "source": "received_at",
-      "type": "utc_datetime"
+      "source": "industry",
+      "type": "text"
+    },
+    {
+      "allow_nil?": true,
+      "default": "nil",
+      "generated?": false,
+      "precision": null,
+      "primary_key?": false,
+      "references": {
+        "deferrable": false,
+        "destination_attribute": "id",
+        "destination_attribute_default": null,
+        "destination_attribute_generated": null,
+        "index?": false,
+        "index_where": null,
+        "match_tenant?": false,
+        "match_type": null,
+        "match_with": null,
+        "multitenancy": {
+          "attribute": "organization_id",
+          "global": false,
+          "strategy": "attribute"
+        },
+        "name": "organizations_avatar_blob_id_fkey",
+        "on_delete": null,
+        "on_update": null,
+        "primary_key?": true,
+        "schema": "public",
+        "table": "blobs"
+      },
+      "scale": null,
+      "size": null,
+      "source": "avatar_blob_id",
+      "type": "uuid"
+    },
+    {
+      "allow_nil?": false,
+      "default": "\"przedsiebiorca\"",
+      "generated?": false,
+      "precision": null,
+      "primary_key?": false,
+      "references": null,
+      "scale": null,
+      "size": null,
+      "source": "billing_plan",
+      "type": "text"
     },
     {
       "allow_nil?": true,
@@ -81,8 +138,8 @@
       "references": null,
       "scale": null,
       "size": null,
-      "source": "processed_at",
-      "type": "utc_datetime"
+      "source": "vat_exemption_type",
+      "type": "text"
     },
     {
       "allow_nil?": true,
@@ -93,7 +150,7 @@
       "references": null,
       "scale": null,
       "size": null,
-      "source": "failure_reason",
+      "source": "vat_exemption_basis",
       "type": "text"
     },
     {
@@ -132,6 +189,8 @@
         "destination_attribute_default": null,
         "destination_attribute_generated": null,
         "index?": false,
+        "index_where": null,
+        "match_tenant?": false,
         "match_type": null,
         "match_with": null,
         "multitenancy": {
@@ -139,16 +198,16 @@
           "global": null,
           "strategy": null
         },
-        "name": "inbound_emails_organization_id_fkey",
+        "name": "organizations_owner_id_fkey",
         "on_delete": null,
         "on_update": null,
         "primary_key?": true,
         "schema": "public",
-        "table": "organizations"
+        "table": "users"
       },
       "scale": null,
       "size": null,
-      "source": "organization_id",
+      "source": "owner_id",
       "type": "uuid"
     }
   ],
@@ -156,31 +215,26 @@
   "check_constraints": [],
   "create_table_options": null,
   "custom_indexes": [],
-  "custom_statements": [],
-  "has_create_action": true,
-  "hash": "78A7EB21F9F085B9A1C07C2D3212B0C8D3673A03CBC8AF903EE1E5755C7562A3",
-  "identities": [
+  "custom_statements": [
     {
-      "all_tenants?": false,
-      "base_filter": null,
-      "index_name": "inbound_emails_unique_resend_email_id_index",
-      "keys": [
-        {
-          "type": "atom",
-          "value": "resend_email_id"
-        }
-      ],
-      "name": "unique_resend_email_id",
-      "nils_distinct?": true,
-      "where": null
+      "after_tables": [],
+      "code?": false,
+      "down": "DROP INDEX IF EXISTS organizations_search_idx;\n",
+      "global?": false,
+      "name": "organizations_paradedb_search_idx",
+      "up": "CREATE INDEX IF NOT EXISTS organizations_search_idx\nON organizations\nUSING bm25 (id, name, nip)\nWITH (key_field='id', text_fields='{\n  \"name\": {\"tokenizer\": {\"type\": \"ngram\", \"min_gram\": 2, \"max_gram\": 4, \"prefix_only\": false}},\n  \"nip\": {\"tokenizer\": {\"type\": \"ngram\", \"min_gram\": 2, \"max_gram\": 10, \"prefix_only\": true}}\n}');\n"
     }
   ],
+  "has_create_action": true,
+  "hash": "F802144E309BB36CCC58DD255CCF9EA0B1BCBDA32A0AE78A320437D952F106CC",
+  "identities": [],
   "multitenancy": {
-    "attribute": "organization_id",
-    "global": false,
-    "strategy": "attribute"
+    "attribute": null,
+    "global": null,
+    "strategy": null
   },
   "repo": "Elixir.Firmowid.Repo",
   "schema": null,
-  "table": "inbound_emails"
+  "table": "organizations",
+  "temporal": null
 }

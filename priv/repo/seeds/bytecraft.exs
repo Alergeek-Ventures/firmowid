@@ -125,16 +125,14 @@ defmodule Firmowid.Seeds.Bytecraft do
   # ===========================================================================
 
   defp seed_organization(kira) do
-    Ash.Seed.upsert!(
+    Ash.Seed.seed!(
       CoreOrganization,
       %{
         name: "Bytecraft Collective spółka z ograniczoną odpowiedzialnością",
         nip: "6161525811",
         address: "ul. Marszałkowska 11/4, 00-624 Warszawa",
-        owner_id: kira.id,
-        inbound_email_nickname: "bytecraft"
-      },
-      identity: :unique_nickname
+        owner_id: kira.id
+      }
     )
   end
 

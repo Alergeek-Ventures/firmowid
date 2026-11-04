@@ -70,11 +70,6 @@ defmodule FirmowidWeb.Core.Router do
     plug FirmowidWeb.Auth.Utilities.ConsentOrganization
   end
 
-  pipeline :webhook do
-    plug :accepts, ["json"]
-    plug FirmowidWeb.Infrastructure.Plugs.WebhookAuth
-  end
-
   pipeline :health do
     plug :accepts, ["json"]
   end
@@ -255,14 +250,6 @@ defmodule FirmowidWeb.Core.Router do
     end
   end
 
-  ## Webhook routes
-
-  scope "/", FirmowidWeb do
-    pipe_through :webhook
-
-    post "/kosztowe/skrzynka", Invoicing.CostInvoices.Controllers.Inbound, :handle_webhook
-  end
-
   # Canonical policy: Google accounts auto-link only when provider email is verified
   # and matches an existing user email (enforced in User.register_with_google).
   # TODO: Make this auto-link policy opt-in per organization.
@@ -312,7 +299,6 @@ defmodule FirmowidWeb.Core.Router do
         Timezone
       ] do
       live "/fakturowanie", Invoicing.Views.Index, :index
-      live "/kosztowe/skrzynka", Invoicing.CostInvoices.Views.Inbox, :index
       live "/kosztowe/:id", Invoicing.CostInvoices.Views.Show, :show
 
       live "/sprzedazowe", Invoicing.SalesInvoices.Views.Creator

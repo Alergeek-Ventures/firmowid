@@ -106,17 +106,15 @@ defmodule Firmowid.Seeds.Cafe do
   end
 
   defp seed_organization(kira) do
-    Ash.Seed.upsert!(
+    Ash.Seed.seed!(
       CoreOrganization,
       %{
         name: @org_name,
         nip: @nip,
         address: @address,
         owner_id: kira.id,
-        inbound_email_nickname: "ziarno",
         is_vat_payer: true
-      },
-      identity: :unique_nickname
+      }
     )
   end
 
@@ -306,7 +304,6 @@ defmodule Firmowid.Seeds.Cafe do
         issue_date: issue_date,
         due_date: Date.add(issue_date, 14),
         amount: Helpers.money!("PLN", Decimal.negate(gross)),
-        deductible_vat_amount: Helpers.money!("PLN", vat),
         description: spec.description,
         items_list: spec.items,
         skip_invoicing: false

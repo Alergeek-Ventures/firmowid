@@ -9,7 +9,7 @@ defmodule FirmowidWeb.Settings.Utilities.Navigation do
   alias Firmowid.Core.UserRole
 
   @type role :: UserRole.t()
-  @type tab_id :: :account | :profile | :organization | :subscription | :invoices
+  @type tab_id :: :account | :profile | :organization | :subscription
   @type tab :: %{id: tab_id(), label: String.t(), path: String.t()}
   @type visibility_context :: %{
           required(:current_user) => %{
@@ -50,13 +50,6 @@ defmodule FirmowidWeb.Settings.Utilities.Navigation do
       roles: @all_roles,
       owner_only: true,
       legacy_slugs: []
-    },
-    %{
-      id: :invoices,
-      slug: "fakturowanie",
-      label: pgettext_noop("Invoices", "settings tab"),
-      roles: @all_roles,
-      legacy_slugs: []
     }
   ]
 
@@ -90,7 +83,6 @@ defmodule FirmowidWeb.Settings.Utilities.Navigation do
   def canonical_path(:profile), do: ~p"/ustawienia/profil"
   def canonical_path(:organization), do: ~p"/ustawienia/firma"
   def canonical_path(:subscription), do: ~p"/ustawienia/abonament"
-  def canonical_path(:invoices), do: ~p"/ustawienia/fakturowanie"
 
   @doc """
   Resolves a settings section slug or legacy alias.

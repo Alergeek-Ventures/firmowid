@@ -16,7 +16,6 @@ defmodule Firmowid.Analysis do
   alias Firmowid.Analysis.Entry
   alias Firmowid.Analysis.EntryCategory
   alias Firmowid.Analysis.TagDefinition
-  alias Firmowid.Analysis.TaxForecast
   alias Firmowid.Analysis.Workers.CategoryWorker
   alias Firmowid.Analysis.YearSummary
   alias Firmowid.Core
@@ -98,8 +97,6 @@ defmodule Firmowid.Analysis do
     resource Entry
 
     resource YearSummary
-
-    resource TaxForecast
   end
 
   authorization do

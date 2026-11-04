@@ -299,16 +299,6 @@ defmodule Firmowid.Invoicing do
       define :destroy_counterparty, action: :destroy
     end
 
-    resource Firmowid.Invoicing.InboundEmail do
-      define :list_inbound_emails, action: :list_all
-      define :get_inbound_email, action: :by_id, args: [:id]
-      define :create_inbound_email, action: :create
-
-      define :mark_inbound_email_processed,
-        action: :mark_processed,
-        args: [{:optional, :failure_reason}]
-    end
-
     resource CostInvoice do
       define :list_cost_invoices, action: :list
       define :get_cost_invoice, action: :by_id, args: [:id]
@@ -696,7 +686,7 @@ defmodule Firmowid.Invoicing do
   defp ksef_import_role(SalesInvoice), do: :sales_invoice_processor
 
   @doc """
-  Creates a cost invoice from metadata extracted from an uploaded or e-mailed document.
+  Creates a cost invoice from metadata extracted from an uploaded document.
 
   A KSeF number read from the document is not trusted as the invoice's identity; it
   only detects an invoice already imported from KSeF. That document is then skipped

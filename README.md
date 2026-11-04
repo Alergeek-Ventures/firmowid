@@ -493,7 +493,6 @@ Analityka i flagi funkcjonalności są obsługiwane przez PostHog.
 #### Email
 
 - `RESEND_API_KEY` - klucz API Resend do emaili transakcyjnych
-- `RESEND_WEBHOOK_SECRET` - sekret do weryfikacji webhooków Resend
 
 **Development:** Email używa lokalnego adaptera domyślnie, nie wymaga klucza API.
 

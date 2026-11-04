@@ -19,10 +19,8 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
   alias Firmowid.Analysis.IndustryTemplate
   alias Firmowid.Analysis.ProjectProfitability
   alias Firmowid.Analysis.TagDefinition
-  alias Firmowid.Analysis.TaxForecast
   alias Firmowid.Analysis.YearSummary
   alias FirmowidWeb.Analysis.Utilities.Navigation
-  alias FirmowidWeb.Settings.Utilities.Navigation, as: SettingsNavigation
 
   @impl true
   def mount(_params, _session, socket) do
@@ -40,10 +38,6 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
         socket
         |> assign(:tag_definitions, tag_definitions)
         |> assign(:with_overhead, false)
-        |> assign(
-          :tax_forecast_settings_path,
-          tax_forecast_settings_path(socket.assigns.current_org, scope)
-        )
 
       {:ok, assign(socket, page_title: pgettext("main navigation", "Analysis"))}
     else
@@ -224,10 +218,7 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
 
   # Categories come from unfiltered entries, so project filters leave them out.
   defp load_view(%{assigns: %{params: params, tag_filters: tag_filters, ash_scope: scope}} = socket) do
-    socket =
-      socket
-      |> assign(:summary, period_summary(params.period, tag_filters, scope))
-      |> load_tax_forecast()
+    socket = assign(socket, :summary, period_summary(params.period, tag_filters, scope))
 
     if tag_filters == [],
       do: load_review(socket),
@@ -244,22 +235,6 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
       do: for(year <- years(period), do: Analysis.classify_categories_later(year, false, scope))
 
     assign(socket, :review, review)
-  end
-
-  defp load_tax_forecast(%{assigns: %{params: %{view: :dashboard, month: %Date{} = month}, tag_filters: []}} = socket) do
-    assign(
-      socket,
-      :tax_forecast,
-      TaxForecast.get!(%{month: month}, scope: socket.assigns.ash_scope)
-    )
-  end
-
-  defp load_tax_forecast(socket), do: assign(socket, :tax_forecast, nil)
-
-  # Only viewers who may change the reserve assumptions get a link to them.
-  defp tax_forecast_settings_path(organization, scope) do
-    if Ash.can?({organization, :update_tax_forecast_settings}, scope),
-      do: SettingsNavigation.canonical_path(:invoices) <> "#rezerwa-podatkowa"
   end
 
   # The period's months from the year summaries it spans.
@@ -403,12 +378,6 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
           }
           industry={@review && @review.industry}
           can_edit={can_tag?(assigns)}
-        />
-        <FirmowidWeb.DesignSystem.Components.TaxForecastSummary.tax_forecast_summary
-          :if={@tax_forecast && flag_enabled?(:tax_prognosis, assigns)}
-          id="analysis-tax-forecast"
-          forecast={@tax_forecast}
-          settings_path={@tax_forecast_settings_path}
         />
       <% end %>
       <FirmowidWeb.Analysis.Components.SegmentRanking.ranking

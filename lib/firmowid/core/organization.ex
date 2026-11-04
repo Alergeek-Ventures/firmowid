@@ -3,8 +3,7 @@ defmodule Firmowid.Core.Organization do
   Ash resource for the `organizations` table.
 
   No multitenancy — organizations are the identity layer.
-  Owns members, invites, and configuration like allowed sender emails
-  and inbound email nickname.
+  Owns members, invites, and organization configuration.
   """
   use Ash.Resource,
     domain: Firmowid.Core,
@@ -20,9 +19,7 @@ defmodule Firmowid.Core.Organization do
   alias Firmowid.Checks.SystemActorRole
   alias Firmowid.Core.Changes.CleanupOldAvatarBlob
   alias Firmowid.Core.Changes.ClearVatExemptionFields
-  alias Firmowid.Core.Changes.GenerateNickname
   alias Firmowid.Core.Changes.SetOwnerOrganization
-  alias Firmowid.Core.Organization.Types.TaxForecastSettings
   alias Firmowid.Core.User
   alias Firmowid.Core.Validations.ValidateNip
   alias Firmowid.Invoicing.VatExemption
@@ -57,7 +54,6 @@ defmodule Firmowid.Core.Organization do
 
   code_interface do
     define :destroy, action: :destroy
-    define :update_tax_forecast_settings, action: :update_tax_forecast_settings
   end
 
   actions do
@@ -98,7 +94,6 @@ defmodule Firmowid.Core.Organization do
         description: "The owner's name, stored on their member."
 
       change set_attribute(:owner_id, actor(:id))
-      change GenerateNickname
       change SetOwnerOrganization
 
       validate match(:nip, ~r/^[0-9]{10}$/)
@@ -118,7 +113,6 @@ defmodule Firmowid.Core.Organization do
         :correspondence_address,
         :is_vat_payer,
         :industry,
-        :allowed_sender_emails,
         :vat_exemption_type,
         :vat_exemption_basis
       ]
@@ -156,11 +150,6 @@ defmodule Firmowid.Core.Organization do
       validate {ValidateNip, field: :nip}
     end
 
-    update :update_tax_forecast_settings do
-      description "Set the explicit organization-wide income reserve rate and invoice planning cost assumption."
-      accept [:tax_forecast_settings]
-    end
-
     update :update_billing_plan do
       description "Update the billing plan assigned to an organization."
       accept [:billing_plan]
@@ -172,52 +161,6 @@ defmodule Firmowid.Core.Organization do
       require_atomic? false
 
       change CleanupOldAvatarBlob
-    end
-
-    # ── Sender email management ─────────────────────────────────────
-    update :add_sender_email do
-      description "Add an allowed sender email for organization email workflows."
-      accept []
-      require_atomic? false
-      argument :email, :string, allow_nil?: false
-
-      change fn changeset, _context ->
-        email = Ash.Changeset.get_argument(changeset, :email)
-        current = Ash.Changeset.get_data(changeset, :allowed_sender_emails) || []
-
-        if email in current do
-          changeset
-        else
-          Ash.Changeset.change_attribute(changeset, :allowed_sender_emails, current ++ [email])
-        end
-      end
-    end
-
-    update :remove_sender_email do
-      description "Remove an allowed sender email from the organization."
-      accept []
-      require_atomic? false
-      argument :email, :string, allow_nil?: false
-
-      change fn changeset, _context ->
-        email = Ash.Changeset.get_argument(changeset, :email)
-        current = Ash.Changeset.get_data(changeset, :allowed_sender_emails) || []
-
-        Ash.Changeset.change_attribute(
-          changeset,
-          :allowed_sender_emails,
-          Enum.reject(current, &(&1 == email))
-        )
-      end
-    end
-
-    # ── Nickname regeneration ───────────────────────────────────────
-    update :regenerate_nickname do
-      description "Regenerate the inbound-email nickname for the organization."
-      accept []
-      require_atomic? false
-
-      change GenerateNickname
     end
 
     # ── Destroy ─────────────────────────────────────────────────────
@@ -264,11 +207,7 @@ defmodule Firmowid.Core.Organization do
       action([
         :update,
         :update_basic_info,
-        :update_tax_forecast_settings,
-        :update_avatar,
-        :add_sender_email,
-        :remove_sender_email,
-        :regenerate_nickname
+        :update_avatar
       ]),
       {ActorRole, role: :admin}
     ] do
@@ -307,9 +246,6 @@ defmodule Firmowid.Core.Organization do
       description: "The industry template the financial analysis follows.",
       constraints: [one_of: IndustryTemplate.industries()]
 
-    attribute :tax_forecast_settings, TaxForecastSettings, public?: true
-    attribute :allowed_sender_emails, {:array, :string}, public?: true, default: []
-    attribute :inbound_email_nickname, :string, public?: true, allow_nil?: false
     attribute :avatar_blob_id, :uuid, public?: true
 
     attribute :billing_plan, :atom,
@@ -351,9 +287,5 @@ defmodule Firmowid.Core.Organization do
     calculate :vat_eu, :string, expr("PL" <> nip)
 
     calculate :on_trial?, :boolean, expr(inserted_at >= ago(@trial_days, :day))
-  end
-
-  identities do
-    identity :unique_nickname, [:inbound_email_nickname]
   end
 end
