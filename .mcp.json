@@ -1,8 +1,12 @@
 {
   "mcpServers": {
     "tidewave": {
-      "type": "http",
-      "url": "http://localhost:${TIDEWAVE_PORT:-4000}/tidewave/mcp"
+      "type": "stdio",
+      "command": "sh",
+      "args": [
+        "-c",
+        "exec npx -y mcp-remote@0.16.0 \"http://localhost:$(cat .server.port 2>/dev/null || echo 4000)/tidewave/mcp\""
+      ]
     }
   }
 }

@@ -26,6 +26,14 @@ is expected; report it if the connection remains unavailable after startup.
 It never shows production; for production issues follow the
 production-debugging skill.
 
+Every coding agent gets the same MCP servers. Each harness reads its own file:
+`.mcp.json` (Claude Code), `.codex/config.toml` (Codex) and `opencode.json`
+(OpenCode); add, change or remove a server in all three. Local servers run
+through the pinned `mcp-remote` bridge, which reads `.server.port`, so they
+reach the current worktree. The remote servers in `opencode.json` (Sentry,
+PostHog, Figma, anonymized MCP) are still OpenCode-only; do not expect them in
+Claude Code or Codex.
+
 ## Local access and seed data
 
 The local database is seeded by default, so sample accounts and data are
