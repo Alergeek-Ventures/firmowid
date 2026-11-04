@@ -52,7 +52,7 @@ This skill is for day-to-day usage, not migration. For migration, use
 - Infisical URL: `https://infisical.alergeek.me`
 - All example commands include `--domain https://infisical.alergeek.me` to
   target the self-hosted instance. Omit it only if your CLI is already logged
-  into this domain or the project has `.infisical.json` configured.
+  into this domain or the project has `.infisical.yaml` configured.
 - Projects normally have at least `dev` and `prod` environments.
 - Local development should use Infisical as the source of shared env values.
 - App runtime secrets and variables live under `/app` in each environment.
@@ -179,7 +179,7 @@ user explicitly confirms that the value is non-sensitive.
 When a user asks to run a command that needs env values:
 
 1. Check whether the repo already has an Infisical setup, such as
-   `.infisical.json`, README instructions, or deployment workflows.
+   `.infisical.yaml`, README instructions, or deployment workflows.
 2. Identify the minimum variables needed for the task.
 3. Use plain `mix ...` commands for this Elixir app; config loads Infisical
    automatically in local `:dev` and `:test`.
