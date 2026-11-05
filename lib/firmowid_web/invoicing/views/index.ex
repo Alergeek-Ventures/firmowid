@@ -557,6 +557,11 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
     {:noreply, refetch_invoicing_entries(socket)}
   end
 
+  # Blobs of other targets (attachments, employment contracts) share the topics
+  def handle_info(%Broadcast{payload: %Notification{resource: Blob}}, socket) do
+    {:noreply, socket}
+  end
+
   # Cost invoice created — show success toast with link
   @impl true
   def handle_info(
