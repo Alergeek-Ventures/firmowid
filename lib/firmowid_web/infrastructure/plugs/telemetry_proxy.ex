@@ -129,12 +129,21 @@ defmodule FirmowidWeb.Infrastructure.Plugs.TelemetryProxy do
   defp posthog_headers(conn) do
     headers =
       Enum.filter(conn.req_headers, fn {name, _} ->
-        name in ["user-agent", "x-forwarded-for" | @forwarded_headers]
+        name in ["user-agent" | @forwarded_headers]
       end)
 
-    if List.keymember?(headers, "x-forwarded-for", 0),
-      do: headers,
-      else: [{"x-forwarded-for", conn.remote_ip |> :inet.ntoa() |> to_string()} | headers]
+    [{"x-forwarded-for", client_ip(conn)} | headers]
+  end
+
+  # PostHog geolocates the first X-Forwarded-For address, but the reverse proxy
+  # behind Cloudflare sets it to Cloudflare's edge. Only analytics trusts
+  # CF-Connecting-IP to recover the visitor's own address.
+  defp client_ip(conn) do
+    case Conn.get_req_header(conn, "cf-connecting-ip") ++
+           Conn.get_req_header(conn, "x-forwarded-for") do
+      [ip | _] -> ip
+      [] -> conn.remote_ip |> :inet.ntoa() |> to_string()
+    end
   end
 
   defp safe_suffix?(path, opaque) do
