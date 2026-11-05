@@ -14,6 +14,7 @@ Firmowid to aplikacja webowa dla firm, prowadzona przez Alergeek Ventures sp. z 
 
 ## Poradnik
 
+- [KSeF, bank, czas projektów i ChatGPT w jednym programie](https://firmowid.pl/poradnik/faktury-ksef-chatgpt-claude-mcp): Firmowid łączy faktury KSeF, automatyczne parowanie przelewów, czas projektów oraz ChatGPT i Claude przez MCP. Jak działa ten obieg i jakie ma ograniczenia.
 - [Jak wybrać program do faktur? 9 rzeczy, które warto sprawdzić przed rejestracją](https://firmowid.pl/poradnik/jak-wybrac-program-do-faktur): Na co patrzeć przy wyborze programu do faktur z KSeF: limit dokumentów, odbiór kosztów, bank, waluty, użytkownicy, czas pracy, eksport dla księgowej i cena po okresie próbnym.
 - [Limit 10 000 zł w KSeF w 2026 r.: co się wlicza i co po przekroczeniu](https://firmowid.pl/poradnik/limit-10000-ksef): Które faktury wliczasz do limitu 10 000 zł brutto miesięcznie, która faktura musi już trafić do KSeF i czemu słabszy miesiąc nic nie zmienia.
 - [Darmowe programy do faktur KSeF: porównanie planów za 0 zł](https://firmowid.pl/poradnik/darmowe-programy-ksef): Co dostajesz za 0 zł: bezpłatne narzędzia MF, plany z limitem 3–10 faktur albo KSeF bez limitu z innymi ograniczeniami. Porównanie 14 ofert.
