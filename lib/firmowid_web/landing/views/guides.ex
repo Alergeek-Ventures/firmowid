@@ -8,7 +8,9 @@ defmodule FirmowidWeb.Landing.Views.Guides do
   import FirmowidWeb.Landing.Components.LegalPage, only: [legal_page: 1]
 
   alias Firmowid.TimeFormatter
+  alias FirmowidWeb.Core.Endpoint
   alias FirmowidWeb.Landing.Utilities.Guides
+  alias Phoenix.LiveView.JS
 
   @impl true
   def mount(params, _session, socket) do
@@ -28,6 +30,7 @@ defmodule FirmowidWeb.Landing.Views.Guides do
       {:ok, guide} ->
         assign(socket,
           article: guide,
+          share_url: Endpoint.url() <> ~p"/poradnik/#{guide.slug}",
           page_title: guide.title,
           meta_description: guide.description
         )
@@ -35,6 +38,11 @@ defmodule FirmowidWeb.Landing.Views.Guides do
       :error ->
         raise Ecto.NoResultsError, queryable: "guides"
     end
+  end
+
+  @impl true
+  def handle_event("copy_link", _params, socket) do
+    {:noreply, push_event(socket, "copy-to-clipboard", %{text: socket.assigns.share_url})}
   end
 
   @impl true
@@ -89,6 +97,44 @@ defmodule FirmowidWeb.Landing.Views.Guides do
         </time>
       </p>
       <div class="[&_table]:block [&_table]:overflow-x-auto">{Phoenix.HTML.raw(@article.html)}</div>
+      <div class="not-prose mt-12 flex flex-wrap items-center gap-3 border-t border-grey-300 pt-6 text-sm font-medium [&>a]:rounded-full [&>a]:border [&>a]:border-grey-300 [&>a]:px-4 [&>a]:py-2 [&>a:hover]:border-grey-900 [&>button]:rounded-full [&>button]:border [&>button]:border-grey-300 [&>button]:px-4 [&>button]:py-2 [&>button:hover]:border-grey-900">
+        <.icon name="hero-share" class="size-5 text-grey-600" />
+        <a
+          href={"https://www.linkedin.com/sharing/share-offsite/?" <> URI.encode_query(url: @share_url)}
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          LinkedIn
+        </a>
+        <a
+          href={"https://www.facebook.com/sharer/sharer.php?" <> URI.encode_query(u: @share_url)}
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          Facebook
+        </a>
+        <a
+          href={"https://x.com/intent/post?" <> URI.encode_query(url: @share_url, text: @article.title)}
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          X
+        </a>
+        <button
+          id="copy-guide-link"
+          type="button"
+          phx-hook="CopyToClipboard"
+          phx-click={
+            "copy_link"
+            |> JS.push()
+            |> JS.hide(to: "#copy-guide-link-label")
+            |> JS.show(to: "#copy-guide-link-done")
+          }
+        >
+          <span id="copy-guide-link-label">{gettext("Copy")}</span>
+          <span id="copy-guide-link-done" class="hidden">{gettext("Link copied to the clipboard.")}</span>
+        </button>
+      </div>
     </.legal_page>
     """
   end

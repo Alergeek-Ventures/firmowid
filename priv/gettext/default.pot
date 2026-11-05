@@ -2526,6 +2526,7 @@ msgid "Convert at the NBP rate"
 msgstr ""
 
 #: lib/firmowid_web/invoicing/components/sales_invoice_details.ex
+#: lib/firmowid_web/landing/views/guides.ex
 #, elixir-autogen, elixir-format
 msgid "Copy"
 msgstr ""
@@ -4480,7 +4481,7 @@ msgstr ""
 msgid "Fintech and payments: Revolut, Wise, Stripe, PayPal, Paysera, N26, Airwallex, Finom, Vivid Money, Monese, Lunar, Swan, Soldo, Ebury, Skrill, Neteller."
 msgstr ""
 
-#: lib/firmowid_web/infrastructure/layouts/root.html.heex
+#: lib/firmowid_web/infrastructure/layouts.ex
 #: lib/firmowid_web/landing/views/index.ex
 #, elixir-autogen, elixir-format
 msgid "Firmowid - free KSeF invoices, banking and team time tracking"
@@ -6112,6 +6113,7 @@ msgid "Link another"
 msgstr ""
 
 #: lib/firmowid_web/invoicing/sales_invoices/views/show.ex
+#: lib/firmowid_web/landing/views/guides.ex
 #, elixir-autogen, elixir-format
 msgid "Link copied to the clipboard."
 msgstr ""
