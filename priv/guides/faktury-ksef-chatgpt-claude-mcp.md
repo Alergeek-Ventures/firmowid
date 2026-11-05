@@ -41,11 +41,15 @@ Serwer podłączony wyłącznie do KSeF zna faktury. Nie ma danych o czasie proj
 
 Na rynku są programy księgowe i ERP z obsługą KSeF, banku oraz projektów. Są też trackery czasu, programy fakturowe z importem transakcji i osobne serwery MCP. W naszym przeglądzie nie znaleźliśmy drugiego gotowego produktu, który łączyłby KSeF, automatyczne parowanie przelewów, czas projektów oraz własne MCP w jednym obiegu.
 
+![Tabela: co zwykle obejmuje serwer MCP tylko do KSeF, tracker czasu, program do faktur z importem banku, program księgowy lub ERP oraz Firmowid w zakresie faktur z KSeF, parowania przelewów, czasu projektów i MCP.](/images/guides/ksef-bank-czas-mcp-porownanie.webp)
+
 ## Jak wygląda cały obieg
 
 Zespół zapisuje pracę przy projekcie, a Firmowid liczy jej koszt na podstawie godzin i stawek. Po zakończeniu etapu przygotowujesz fakturę w panelu albo prosisz o to ChatGPT lub Claude. Sprawdzasz podgląd, potwierdzasz dokument i wysyłasz go do KSeF.
 
 Po wpłacie transakcja pojawia się w Firmowidzie przez połączenie z bankiem. System proponuje dopasowanie jej do faktury. Przy projekcie masz wtedy godziny, koszt pracy, dokument sprzedażowy i rzeczywistą płatność klienta.
+
+![Schemat obiegu jednego projektu w Firmowidzie: czas pracy, faktura w KSeF, przelew z banku i wynik projektu. ChatGPT lub Claude przez MCP przygotowuje fakturę, a wysyłka do KSeF następuje po potwierdzeniu.](/images/guides/ksef-bank-czas-obieg-projektu.webp)
 
 MCP w Firmowidzie obejmuje obecnie przygotowanie, korekty i odczyt faktur. Analizy marży i rentowności projektów działają jako beta w aplikacji hostowanej. Nie są jeszcze częścią publicznej wersji open source i nie udostępniamy ich obecnie przez MCP.
 
