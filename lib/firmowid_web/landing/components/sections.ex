@@ -121,7 +121,7 @@ defmodule FirmowidWeb.Landing.Components.Sections do
     %{
       name: "Franek Madej",
       role: gettext_noop("CEO · Alergeek Ventures"),
-      image: "/images/team-franek-madej.png",
+      image: "/images/team-franek-madej.webp",
       bio:
         gettext_noop(
           "For a decade, he has advised companies on software development, including startups from the Y Combinator ecosystem. He is obsessed with polished products and turning complex processes into simple tools."
@@ -130,7 +130,7 @@ defmodule FirmowidWeb.Landing.Components.Sections do
     %{
       name: "Stanisław Madej",
       role: gettext_noop("COO · Alergeek Ventures"),
-      image: "/images/team-stanislaw-madej.png",
+      image: "/images/team-stanislaw-madej.webp",
       bio:
         gettext_noop(
           "At Alergeek Ventures, he handles company logistics and manages a team of 20. A happy Firmowid user, he uses it for daily tasks, leaving more time for management and less for invoices and settlements."

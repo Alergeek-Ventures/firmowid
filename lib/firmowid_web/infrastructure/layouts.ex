@@ -311,14 +311,29 @@ defmodule FirmowidWeb.Infrastructure.Layouts do
     if String.contains?(title, "Firmowid"), do: title, else: title <> " · Firmowid"
   end
 
-  defp social_image_url do
-    Endpoint.url() <> Endpoint.static_path("/images/social-card.png")
+  defp social_image(%{article: %{image: %{} = image} = article}) do
+    %{
+      url: Endpoint.url() <> Endpoint.static_path(image.path),
+      width: image.width,
+      height: image.height,
+      alt: article.title
+    }
+  end
+
+  defp social_image(_assigns) do
+    %{
+      url: Endpoint.url() <> Endpoint.static_path("/images/social-card.png"),
+      width: 1200,
+      height: 630,
+      alt: gettext("Firmowid - free KSeF invoices, banking and team time tracking")
+    }
   end
 
   # sobelow_skip ["XSS.Raw"]
   # Jason's html_safe encoding escapes closing script tags before marking JSON-LD as safe HTML.
   defp structured_data(assigns) do
     base_url = Endpoint.url()
+    image = social_image(assigns)
     organization_id = base_url <> "/#organization"
     website_id = base_url <> "/#website"
     application_id = base_url <> "/#application"
@@ -330,6 +345,8 @@ defmodule FirmowidWeb.Infrastructure.Layouts do
         "@id" => organization_id,
         "name" => legal_entity.name,
         "legalName" => legal_entity.official_name,
+        "address" => legal_entity.address,
+        "taxID" => legal_entity.nip,
         "url" => "https://alergeek.ventures",
         "brand" => %{
           "@type" => "Brand",
@@ -356,9 +373,9 @@ defmodule FirmowidWeb.Infrastructure.Layouts do
         "about" => %{"@id" => application_id},
         "primaryImageOfPage" => %{
           "@type" => "ImageObject",
-          "url" => social_image_url(),
-          "width" => 1200,
-          "height" => 630
+          "url" => image.url,
+          "width" => image.width,
+          "height" => image.height
         }
       },
       %{
@@ -386,16 +403,17 @@ defmodule FirmowidWeb.Infrastructure.Layouts do
       }
     ]
 
-    graph = graph ++ article_data(assigns[:article], canonical_url(assigns), organization_id)
+    graph =
+      graph ++ article_data(assigns[:article], canonical_url(assigns), organization_id, image.url)
 
     %{"@context" => "https://schema.org", "@graph" => graph}
     |> Jason.encode!(escape: :html_safe)
     |> Phoenix.HTML.raw()
   end
 
-  defp article_data(nil, _url, _organization_id), do: []
+  defp article_data(nil, _url, _organization_id, _image_url), do: []
 
-  defp article_data(article, url, organization_id) do
+  defp article_data(article, url, organization_id, image_url) do
     [
       %{
         "@type" => "Article",
@@ -408,7 +426,7 @@ defmodule FirmowidWeb.Infrastructure.Layouts do
         "mainEntityOfPage" => %{"@id" => url <> "#webpage"},
         "author" => %{"@id" => organization_id},
         "publisher" => %{"@id" => organization_id},
-        "image" => social_image_url()
+        "image" => image_url
       }
     ]
   end

@@ -20,7 +20,18 @@
         else: assigns[:page_title] || "Firmowid"}
     </.live_title>
     <link rel="canonical" href={canonical_url(assigns)} />
-    <meta :if={assigns[:public_marketing?]} property="og:type" content="website" />
+    <link
+      :if={assigns[:public_marketing?]}
+      rel="alternate"
+      type="text/markdown"
+      href={~p"/llms.txt"}
+      title="llms.txt"
+    />
+    <meta
+      :if={assigns[:public_marketing?]}
+      property="og:type"
+      content={if assigns[:article], do: "article", else: "website"}
+    />
     <meta :if={assigns[:public_marketing?]} property="og:site_name" content="Firmowid" />
     <meta :if={assigns[:public_marketing?]} property="og:locale" content="pl_PL" />
     <meta :if={assigns[:public_marketing?]} property="og:title" content={meta_title(assigns)} />
@@ -30,14 +41,36 @@
       content={meta_description(assigns)}
     />
     <meta :if={assigns[:public_marketing?]} property="og:url" content={canonical_url(assigns)} />
-    <meta :if={assigns[:public_marketing?]} property="og:image" content={social_image_url()} />
+    <meta
+      :if={assigns[:public_marketing?]}
+      property="og:image"
+      content={social_image(assigns).url}
+    />
     <meta :if={assigns[:public_marketing?]} property="og:image:type" content="image/png" />
-    <meta :if={assigns[:public_marketing?]} property="og:image:width" content="1200" />
-    <meta :if={assigns[:public_marketing?]} property="og:image:height" content="630" />
+    <meta
+      :if={assigns[:public_marketing?]}
+      property="og:image:width"
+      content={social_image(assigns).width}
+    />
+    <meta
+      :if={assigns[:public_marketing?]}
+      property="og:image:height"
+      content={social_image(assigns).height}
+    />
     <meta
       :if={assigns[:public_marketing?]}
       property="og:image:alt"
-      content={gettext("Firmowid - free KSeF invoices, banking and team time tracking")}
+      content={social_image(assigns).alt}
+    />
+    <meta
+      :if={assigns[:article]}
+      property="article:published_time"
+      content={Date.to_iso8601(@article.published)}
+    />
+    <meta
+      :if={assigns[:article]}
+      property="article:modified_time"
+      content={Date.to_iso8601(@article.updated)}
     />
     <meta :if={assigns[:public_marketing?]} name="twitter:card" content="summary_large_image" />
     <meta :if={assigns[:public_marketing?]} name="twitter:site" content="@firmowid" />
@@ -47,11 +80,15 @@
       name="twitter:description"
       content={meta_description(assigns)}
     />
-    <meta :if={assigns[:public_marketing?]} name="twitter:image" content={social_image_url()} />
+    <meta
+      :if={assigns[:public_marketing?]}
+      name="twitter:image"
+      content={social_image(assigns).url}
+    />
     <meta
       :if={assigns[:public_marketing?]}
       name="twitter:image:alt"
-      content={gettext("Firmowid - free KSeF invoices, banking and team time tracking")}
+      content={social_image(assigns).alt}
     />
     <script :if={assigns[:public_marketing?]} type="application/ld+json">
       <%= structured_data(assigns) %>
