@@ -13,6 +13,7 @@ defmodule FirmowidWeb.Invoicing.Views.IndexTest do
   import Firmowid.Test.Support.OpenAIEnrichmentTestHelpers
   import Phoenix.LiveViewTest
 
+  alias Firmowid.Blobs
   alias Firmowid.Blobs.Blob
   alias Firmowid.Finances
   alias Firmowid.Finances.BankAccount
@@ -67,6 +68,22 @@ defmodule FirmowidWeb.Invoicing.Views.IndexTest do
 
     {:ok, skipped_dashboard, _html} = live(conn, ~p"/fakturowanie?miesiac=2026-01-01")
     assert has_element?(skipped_dashboard, "p", "Brak nieopłaconych faktur.")
+  end
+
+  test "keeps the list open when a file unrelated to cost invoices is added and removed", %{
+    conn: conn
+  } do
+    user = admin_fixture()
+    scope = scope_for(user)
+    {:ok, view, _html} = conn |> log_in_user(user) |> live(~p"/fakturowanie")
+    ref = Process.monitor(view.pid)
+
+    {:ok, path} = Briefly.create()
+    File.write!(path, "attachment")
+    {:ok, blob} = Blobs.create_blob(path, "text/plain", "attachment.txt", scope: scope)
+    :ok = Ash.destroy(blob, scope: scope)
+
+    refute_receive {:DOWN, ^ref, _, _, _}, 500
   end
 
   describe "invoicing access" do
