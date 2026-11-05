@@ -56,7 +56,10 @@ defmodule FirmowidWeb.Landing.Utilities.Guides do
             slug = Path.basename(path, ".md")
 
             dimensions = fn static_path ->
-              image = Image.open!(Path.join(@static_dir, static_path))
+              # Read the bytes so libvips cannot serve dimensions cached from an earlier version of the file.
+              image =
+                @static_dir |> Path.join(static_path) |> File.read!() |> Image.from_binary!()
+
               {Image.width(image), Image.height(image)}
             end
 
