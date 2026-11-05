@@ -586,8 +586,10 @@ defmodule Firmowid.Analysis do
       |> Enum.reject(&own_account_transfer?(&1, own_account_ibans))
       |> Enum.split_with(&Money.positive?(&1.amount))
 
-    income_entries = Enum.sort_by(sales_invoices ++ incoming, &unrealized_date/1, Date)
-    expense_entries = Enum.sort_by(cost_invoices ++ outgoing, &unrealized_date/1, Date)
+    {refunds, costs} = Enum.split_with(cost_invoices, &Money.positive?(&1.effective_amount))
+
+    income_entries = Enum.sort_by(sales_invoices ++ refunds ++ incoming, &unrealized_date/1, Date)
+    expense_entries = Enum.sort_by(costs ++ outgoing, &unrealized_date/1, Date)
 
     %{
       income_entries: income_entries,
@@ -614,8 +616,9 @@ defmodule Firmowid.Analysis do
 
   defp get_amount_and_currency(%SalesInvoice{}), do: :skip
 
+  # Positive only for a refund, such as a settlement invoice whose advances exceed it.
   defp get_amount_and_currency(%CostInvoice{effective_amount: %Money{} = amount}) do
-    {:ok, amount |> Money.abs() |> Money.negate!()}
+    {:ok, amount}
   end
 
   defp get_amount_and_currency(%CostInvoice{}), do: :skip

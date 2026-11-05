@@ -363,7 +363,8 @@ defmodule Firmowid.Invoicing.CostInvoiceTest do
                  scope: scope
                )
 
-      assert Exception.message(error) =~ "must be <= 0 for non-correction invoices"
+      assert Exception.message(error) =~
+               "must be <= 0 except for corrections and settlement invoices"
     end
   end
 
