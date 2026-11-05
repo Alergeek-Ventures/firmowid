@@ -226,7 +226,10 @@ config :logger, :console,
     :sentry_live_view_captured
   ]
 
+config :mime, :extensions, %{"json" => "application/json"}
+
 config :mime, :types, %{
+  "application/vnd.api+json" => ["json"],
   "application/pkix-cert" => ["crt"],
   "application/pkcs8" => ["key"]
 }

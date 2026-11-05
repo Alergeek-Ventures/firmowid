@@ -9,8 +9,11 @@ defmodule FirmowidWeb.Core.Router do
   import Phoenix.LiveDashboard.Router
 
   alias AshAuthentication.Phoenix.LiveSession
+  alias AshAuthentication.Phoenix.Oauth2Server.BearerPlug
+  alias AshAuthentication.Phoenix.Oauth2Server.RequireScopePlug
   alias Auth.Controllers.AuthController
   alias Delegations.Views.DelegationForm
+  alias FirmowidMcp.Utilities.Authenticate
   alias FirmowidWeb.Core.Telemetry
   alias FirmowidWeb.Infrastructure.Hooks.CurrentPath
   alias FirmowidWeb.Infrastructure.Hooks.FeatureFlags
@@ -52,8 +55,16 @@ defmodule FirmowidWeb.Core.Router do
   end
 
   pipeline :api do
-    plug :accepts, ["json"]
-    plug :load_from_bearer
+    plug BearerPlug,
+      oauth2_server: Firmowid.Oauth2Server,
+      required?: true,
+      scope: "api"
+
+    plug RequireScopePlug,
+      oauth2_server: Firmowid.Oauth2Server,
+      scope: "api"
+
+    plug Authenticate
   end
 
   pipeline :oauth_api do
@@ -76,16 +87,16 @@ defmodule FirmowidWeb.Core.Router do
   end
 
   pipeline :mcp do
-    plug AshAuthentication.Phoenix.Oauth2Server.BearerPlug,
+    plug BearerPlug,
       oauth2_server: Firmowid.Oauth2Server,
       required?: true,
       scope: "mcp"
 
-    plug AshAuthentication.Phoenix.Oauth2Server.RequireScopePlug,
+    plug RequireScopePlug,
       oauth2_server: Firmowid.Oauth2Server,
       scope: "mcp"
 
-    plug FirmowidMcp.Utilities.Authenticate
+    plug Authenticate
   end
 
   scope "/", FirmowidWeb do
@@ -147,6 +158,12 @@ defmodule FirmowidWeb.Core.Router do
     forward "/.well-known", AshAuthentication.Phoenix.Oauth2Server.ProtocolRouter,
       oauth2_server: Firmowid.Oauth2Server,
       well_known?: true
+  end
+
+  scope "/api/timetracker" do
+    pipe_through :api
+
+    forward "/", FirmowidWeb.Timetracker.Api
   end
 
   ## MCP resource server

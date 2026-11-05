@@ -7,7 +7,7 @@ defmodule Firmowid.Timetracker do
   authorization and attribute multitenancy via `organization_id`.
   """
   use Ash.Domain,
-    extensions: [Ash.Policy.Authorizer, AshAi]
+    extensions: [AshJsonApi.Domain, Ash.Policy.Authorizer, AshAi]
 
   alias Firmowid.Checks.ActorRole
   alias Firmowid.Timetracker.LeaveRequest
@@ -15,6 +15,23 @@ defmodule Firmowid.Timetracker do
   alias Firmowid.Timetracker.Session
 
   require Ash.Query
+
+  json_api do
+    routes do
+      base_route "/sessions", Session do
+        index :list_user_sessions
+        get(:get_current, route: "/current")
+        post(:start)
+        post(:stop_current, route: "/current/stop")
+        patch(:update, read_action: :current_session)
+        delete(:destroy, read_action: :current_session)
+      end
+
+      base_route "/projects", Project do
+        index :list_current_user, paginate?: false
+      end
+    end
+  end
 
   resources do
     resource Firmowid.Timetracker.HoursRecord do
@@ -92,7 +109,7 @@ defmodule Firmowid.Timetracker do
       ],
       description:
         "Start a work session for the authenticated user now. Optionally pass project_id from list_projects, " <>
-          "a title and is_remote. Check get_current_session first so a running session is not duplicated. " <>
+          "a title and is_remote. Stops the current session, if any. " <>
           "To log past work use add_sessions instead of stopping the running session."
 
     tool :edit_session, Session, :edit_current_user_session,

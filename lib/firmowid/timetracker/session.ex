@@ -14,7 +14,8 @@ defmodule Firmowid.Timetracker.Session do
   use Ash.Resource,
     domain: Firmowid.Timetracker,
     data_layer: AshPostgres.DataLayer,
-    authorizers: [Ash.Policy.Authorizer]
+    authorizers: [Ash.Policy.Authorizer],
+    extensions: [AshJsonApi.Resource]
 
   alias Firmowid.Checks.AtLeastRole
   alias Firmowid.Checks.SystemActorRole
@@ -229,6 +230,12 @@ defmodule Firmowid.Timetracker.Session do
     end
   end
 
+  json_api do
+    type "session"
+    includes([:project])
+    default_fields([:title, :start_datetime, :end_datetime, :is_remote, :lockdown, :project])
+  end
+
   code_interface do
     define :read, action: :read
     define :list_user_sessions
@@ -312,6 +319,7 @@ defmodule Firmowid.Timetracker.Session do
       argument :after_date, :date
 
       pagination offset?: true,
+                 keyset?: true,
                  countable: true,
                  default_limit: 25,
                  max_page_size: 100,
@@ -389,7 +397,7 @@ defmodule Firmowid.Timetracker.Session do
     # ── Write actions ─────────────────────────────────────────────────
 
     create :start do
-      description "Start a new time tracking session (auto-sets start_datetime to now)."
+      description "Start a new time tracking session, stopping the current session if one exists."
       primary? true
       accept [:title, :project_id, :is_remote]
 
@@ -397,6 +405,34 @@ defmodule Firmowid.Timetracker.Session do
       change NormalizeSessionBoundaries
       change set_attribute(:member_id, actor([:member, :id]))
       change SynchronizeSubmittedMonth
+
+      change fn changeset, context ->
+        opts = Ash.Scope.to_opts(context)
+
+        Ash.Changeset.before_action(changeset, fn changeset ->
+          case stop_current(opts) do
+            {:ok, nil} ->
+              changeset
+
+            {:ok, stopped} ->
+              if DateTime.after?(
+                   stopped.end_datetime,
+                   Ash.Changeset.get_attribute(changeset, :start_datetime)
+                 ) do
+                Ash.Changeset.force_change_attribute(
+                  changeset,
+                  :start_datetime,
+                  stopped.end_datetime
+                )
+              else
+                changeset
+              end
+
+            {:error, error} ->
+              Ash.Changeset.add_error(changeset, error)
+          end
+        end)
+      end
 
       change after_action(fn _changeset, session, _context ->
                with {:ok, _job} <- StopSessionWorker.enqueue(session) do
@@ -678,6 +714,7 @@ defmodule Firmowid.Timetracker.Session do
     end
 
     belongs_to :project, Project do
+      public? true
       allow_nil? false
       attribute_writable? true
     end
