@@ -74,7 +74,7 @@ defmodule FirmowidWeb.Inbox.Utilities.Queue do
             context: gettext("Cost invoices do not arrive on their own and sales invoices cannot be sent to KSeF."),
             person: nil,
             action: gettext("Connect"),
-            href: Navigation.company_settings_path()
+            href: Navigation.ksef_settings_path()
           }
         ]
 
@@ -99,7 +99,7 @@ defmodule FirmowidWeb.Inbox.Utilities.Queue do
         context: last_sync_context(account.latest_successful_sync_at),
         person: nil,
         action: gettext("Renew consent"),
-        href: Navigation.company_settings_path()
+        href: Navigation.bank_settings_path()
       }
     end)
   end

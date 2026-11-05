@@ -638,7 +638,7 @@ defmodule FirmowidWeb.Invoicing.Components.DashboardTiles do
       </p>
 
       <.link
-        navigate={~p"/ustawienia/firma"}
+        navigate={~p"/ustawienia/ksef"}
         kind="button"
         variant="secondary"
         size="small"

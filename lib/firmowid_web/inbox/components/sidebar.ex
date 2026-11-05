@@ -26,7 +26,13 @@ defmodule FirmowidWeb.Inbox.Components.Sidebar do
 
   @doc "Renders the sidebar and, on phones, the top bar that opens it."
   def sidebar(assigns) do
-    destinations = Navigation.for_role(assigns.current_user.member.role, assigns.analysis_enabled)
+    destinations =
+      Navigation.for_role(
+        assigns.current_user.member.role,
+        assigns.analysis_enabled,
+        assigns.current_org.owner_id == assigns.current_user.id
+      )
+
     current = Navigation.current(destinations, assigns.current_uri)
     layered? = Navigation.in_layer(destinations, :company) != []
     layer = layer(layered?, current, assigns.current_uri)

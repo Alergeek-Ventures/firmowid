@@ -14,10 +14,15 @@ defmodule FirmowidWeb.Settings.Components.SubscriptionTab do
   attr :month, :any, required: true
   attr :worksheet, :any, required: true
 
+  attr :standalone, :boolean, default: false
+
   def subscription_tab(assigns) do
     ~H"""
     <%= if @worksheet do %>
-      <div class="grid w-full gap-8 lg:grid-cols-2 lg:gap-x-12">
+      <div class={[
+        "grid w-full gap-8",
+        !@standalone && "lg:grid-cols-2 lg:gap-x-12"
+      ]}>
         <section class="space-y-4">
           <div class="space-y-2">
             <h2 class="min-h-8 text-base leading-none font-semibold text-grey-900">

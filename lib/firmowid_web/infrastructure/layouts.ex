@@ -127,7 +127,7 @@ defmodule FirmowidWeb.Infrastructure.Layouts do
     <%= if @current_user.member.role == :admin do %>
       <.link
         kind="unstyled"
-        navigate={~p"/ustawienia/firma"}
+        navigate={~p"/ustawienia/konta-bankowe"}
         class="rounded-md p-2 hover:bg-grey-700/50"
       >
         {pgettext("avatar menu", "Bank accounts")}

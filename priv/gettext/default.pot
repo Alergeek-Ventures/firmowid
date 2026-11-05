@@ -1479,6 +1479,7 @@ msgstr ""
 
 #: lib/firmowid_web/billing/utilities/worksheet.ex
 #: lib/firmowid_web/settings/components/company_tab.ex
+#: lib/firmowid_web/settings/utilities/navigation.ex
 #, elixir-autogen, elixir-format
 msgid "Bank accounts"
 msgstr ""
@@ -1803,11 +1804,13 @@ msgid "Change declarations"
 msgstr ""
 
 #: lib/firmowid_web/settings/components/settings_page.ex
+#: lib/firmowid_web/settings/views/index.ex
 #, elixir-autogen, elixir-format
 msgid "Change organization logo"
 msgstr ""
 
 #: lib/firmowid_web/settings/components/settings_page.ex
+#: lib/firmowid_web/settings/views/index.ex
 #, elixir-autogen, elixir-format
 msgid "Change profile picture"
 msgstr ""
@@ -2160,6 +2163,7 @@ msgid "Company / sole proprietorship"
 msgstr ""
 
 #: lib/firmowid_web/settings/components/company_tab.ex
+#: lib/firmowid_web/settings/utilities/navigation.ex
 #, elixir-autogen, elixir-format
 msgid "Company details"
 msgstr ""
@@ -2173,12 +2177,6 @@ msgstr ""
 #: lib/firmowid_web/analysis/components/segment_ranking.ex
 #, elixir-autogen, elixir-format
 msgid "Company result"
-msgstr ""
-
-#: lib/firmowid_web/inbox/utilities/navigation.ex
-#, elixir-autogen, elixir-format
-msgctxt "sidebar"
-msgid "Company settings"
 msgstr ""
 
 #: lib/firmowid_web/landing/components/pricing.ex
@@ -4996,6 +4994,11 @@ msgstr ""
 msgid "HR"
 msgstr ""
 
+#: lib/firmowid_web/settings/utilities/navigation.ex
+#, elixir-autogen, elixir-format
+msgid "HR details"
+msgstr ""
+
 #: lib/firmowid_web/core/toast.ex
 #, elixir-autogen, elixir-format
 msgid "Hang in there while we get back on track"
@@ -6450,9 +6453,15 @@ msgid "Multiple payouts in one month require shared monthly tax costs and reduct
 msgstr ""
 
 #: lib/firmowid_web/inbox/utilities/navigation.ex
+#: lib/firmowid_web/settings/utilities/navigation.ex
 #, elixir-autogen, elixir-format
 msgctxt "sidebar"
 msgid "My account"
+msgstr ""
+
+#: lib/firmowid_web/settings/utilities/navigation.ex
+#, elixir-autogen, elixir-format
+msgid "My documents"
 msgstr ""
 
 #: lib/firmowid_web/inbox/utilities/navigation.ex
@@ -8459,6 +8468,7 @@ msgid "Right to restriction of processing (Article 18 GDPR)"
 msgstr ""
 
 #: lib/firmowid_web/inbox/utilities/navigation.ex
+#: lib/firmowid_web/settings/utilities/navigation.ex
 #, elixir-autogen, elixir-format
 msgctxt "sidebar"
 msgid "Roles and invitations"
@@ -11990,7 +12000,6 @@ msgstr ""
 msgid "Your password"
 msgstr ""
 
-#: lib/firmowid_web/inbox/utilities/navigation.ex
 #: lib/firmowid_web/settings/utilities/navigation.ex
 #, elixir-autogen, elixir-format
 msgctxt "settings tab"
