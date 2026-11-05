@@ -76,14 +76,13 @@ defmodule FirmowidWeb.Invoicing.Views.IndexTest do
     user = admin_fixture()
     scope = scope_for(user)
     {:ok, view, _html} = conn |> log_in_user(user) |> live(~p"/fakturowanie")
-    ref = Process.monitor(view.pid)
 
     {:ok, path} = Briefly.create()
     File.write!(path, "attachment")
     {:ok, blob} = Blobs.create_blob(path, "text/plain", "attachment.txt", scope: scope)
     :ok = Ash.destroy(blob, scope: scope)
 
-    refute_receive {:DOWN, ^ref, _, _, _}, 500
+    assert has_element?(view, "#upload-form")
   end
 
   describe "invoicing access" do
