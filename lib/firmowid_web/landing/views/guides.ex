@@ -10,7 +10,6 @@ defmodule FirmowidWeb.Landing.Views.Guides do
   alias Firmowid.TimeFormatter
   alias FirmowidWeb.Core.Endpoint
   alias FirmowidWeb.Landing.Utilities.Guides
-  alias Phoenix.LiveView.JS
 
   @impl true
   def mount(params, _session, socket) do
@@ -38,11 +37,6 @@ defmodule FirmowidWeb.Landing.Views.Guides do
       :error ->
         raise Ecto.NoResultsError, queryable: "guides"
     end
-  end
-
-  @impl true
-  def handle_event("copy_link", _params, socket) do
-    {:noreply, push_event(socket, "copy-to-clipboard", %{text: socket.assigns.share_url})}
   end
 
   @impl true
@@ -124,15 +118,10 @@ defmodule FirmowidWeb.Landing.Views.Guides do
           id="copy-guide-link"
           type="button"
           phx-hook="CopyToClipboard"
-          phx-click={
-            "copy_link"
-            |> JS.push()
-            |> JS.hide(to: "#copy-guide-link-label")
-            |> JS.show(to: "#copy-guide-link-done")
-          }
+          data-copy-text={@share_url}
         >
-          <span id="copy-guide-link-label">{gettext("Copy")}</span>
-          <span id="copy-guide-link-done" class="hidden">{gettext("Link copied to the clipboard.")}</span>
+          <span data-copy-label>{gettext("Copy")}</span>
+          <span data-copy-done class="hidden">{gettext("Link copied to the clipboard.")}</span>
         </button>
       </div>
     </.legal_page>

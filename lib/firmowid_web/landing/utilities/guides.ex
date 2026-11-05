@@ -92,10 +92,23 @@ defmodule FirmowidWeb.Landing.Utilities.Guides do
                 Enum.find(@categories, &(&1.slug == category_slug)) ||
                   raise("#{path}: unknown guide category #{inspect(category_slug)}"),
               html: html,
-              image: image
+              image: image,
+              # Body images and the preview path (even when missing) recompile this module when they change.
+              resources:
+                [Path.join(@static_dir, og_path)] ++
+                  for(
+                    [_, src] <- Regex.scan(~r/<img src="([^"]+)"/, html),
+                    do: Path.join(@static_dir, src)
+                  )
             }
           end)
           |> Enum.sort_by(& &1.published, {:desc, Date})
+
+  for guide <- @guides, resource <- guide.resources do
+    @external_resource resource
+  end
+
+  @guides Enum.map(@guides, &Map.delete(&1, :resources))
 
   @doc "Lists all guides, newest first."
   @spec all() :: [guide()]
