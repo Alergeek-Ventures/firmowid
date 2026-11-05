@@ -71,9 +71,11 @@ defmodule FirmowidWeb.Inbox.Views.Index do
     |> session_changed(socket)
   end
 
-  def handle_event("stop_session", _params, %{assigns: %{session: %{} = session}} = socket) do
-    session
-    |> Session.stop(scope: socket.assigns.ash_scope)
+  # Stops the session running now, not the one this page loaded: another tab or
+  # the auto-stop may have ended it, and stopping it again would move its end.
+  def handle_event("stop_session", _params, %{assigns: %{session: %{}}} = socket) do
+    [scope: socket.assigns.ash_scope]
+    |> Session.stop_current()
     |> session_changed(socket)
   end
 
@@ -89,7 +91,7 @@ defmodule FirmowidWeb.Inbox.Views.Index do
 
     {:noreply,
      socket
-     |> assign(:session, if(is_nil(session.end_datetime), do: session))
+     |> assign(:session, if(session && is_nil(session.end_datetime), do: session))
      |> push_patch(to: Navigation.inbox_path(socket.assigns.layer))}
   end
 
