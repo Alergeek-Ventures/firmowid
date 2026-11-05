@@ -65,26 +65,32 @@ defmodule FirmowidWeb.Inbox.Views.Index do
   end
 
   @impl true
-  def handle_event("start_session", _params, socket) do
-    %{title: title, project_id: project_id, is_remote: remote?} = socket.assigns.last_session
-
-    %{title: title, project_id: project_id, is_remote: remote?}
-    |> Session.start(scope: socket.assigns.ash_scope)
+  def handle_event("start_session", _params, %{assigns: %{session: nil, last_session: %{} = last}} = socket) do
+    %{title: last.title, project_id: last.project_id, is_remote: last.is_remote}
+    |> Session.start(scope: socket.assigns.ash_scope, load: [:project])
     |> session_changed(socket)
   end
 
-  def handle_event("stop_session", _params, socket) do
-    socket.assigns.session
+  def handle_event("stop_session", _params, %{assigns: %{session: %{} = session}} = socket) do
+    session
     |> Session.stop(scope: socket.assigns.ash_scope)
     |> session_changed(socket)
   end
 
-  # Reloads the page and the sidebar, which shows whether the session runs. A
-  # submitted hours record or a project the member left blocks the change; the
-  # session form in Czasośledź explains those.
-  defp session_changed({:ok, _session}, socket) do
+  # A second click that arrives before the page shows the first one's result.
+  def handle_event(event, _params, socket) when event in ["start_session", "stop_session"], do: {:noreply, socket}
+
+  # Reloads the page and the sidebar, which shows whether the session runs; the
+  # session is assigned right away so a repeated click is ignored. A submitted
+  # hours record or a project the member left blocks the change; the session
+  # form in Czasośledź explains those.
+  defp session_changed({:ok, session}, socket) do
     send_update(SidebarNav, id: SidebarNav.id(), refresh: true)
-    {:noreply, push_patch(socket, to: Navigation.inbox_path(socket.assigns.layer))}
+
+    {:noreply,
+     socket
+     |> assign(:session, if(is_nil(session.end_datetime), do: session))
+     |> push_patch(to: Navigation.inbox_path(socket.assigns.layer))}
   end
 
   defp session_changed({:error, %error{}}, socket) when error in [Ash.Error.Forbidden, Ash.Error.Invalid] do
