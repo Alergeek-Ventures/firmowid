@@ -55,6 +55,121 @@ defmodule FirmowidWeb.Infrastructure.Layouts do
     """
   end
 
+  attr :current_user, :map, required: true
+  attr :current_org, :map, required: true
+  attr :organizations, :list, required: true
+
+  @doc """
+  The account menu: email, organization switcher, settings and logging out.
+  Shared by the navbar dropdown and the sidebar.
+  """
+  def account_menu(assigns) do
+    ~H"""
+    <div class="truncate border-b border-grey-700/50 p-2 pb-4 text-xs text-white/50 lowercase">
+      {@current_user.email}
+    </div>
+    <div
+      id="organization-switcher"
+      class="flex flex-col gap-2 border-b border-grey-700/50 pb-2"
+    >
+      <div class="truncate p-2 pb-0 text-xs text-white/50">
+        {pgettext("avatar menu", "Organization")}
+      </div>
+      <div class="flex items-center justify-between gap-2 p-2" title={@current_org.name}>
+        <span class="truncate">{@current_org.name}</span>
+        <.icon name="hero-check" class="size-4 shrink-0" />
+      </div>
+      <%= for organization <- @organizations, organization.id != @current_org.id do %>
+        <%= if Firmowid.Core.usable_organization?(@current_user, organization) do %>
+          <.form
+            for={%{}}
+            id={"switch-organization-#{organization.id}"}
+            action={~p"/organizacja/przelacz"}
+            class="w-full"
+          >
+            <input type="hidden" name="organizacja" value={organization.id} />
+            <FirmowidUI.Components.Button.button
+              type="submit"
+              variant="unstyled"
+              class="block w-full cursor-pointer rounded-md text-left text-white hover:bg-grey-700/50 hover:text-white active:bg-grey-700/70"
+              title={organization.name}
+            >
+              <span class="block truncate p-2">{organization.name}</span>
+            </FirmowidUI.Components.Button.button>
+          </.form>
+        <% else %>
+          <div
+            id={"unavailable-organization-#{organization.id}"}
+            class="flex items-center justify-between gap-2 p-2 text-white/50"
+            title={organization.name}
+          >
+            <span class="truncate">{organization.name}</span>
+            <span class="shrink-0 text-xs">{pgettext("avatar menu", "No plan")}</span>
+          </div>
+        <% end %>
+      <% end %>
+      <.link
+        kind="unstyled"
+        navigate={~p"/organizacja"}
+        class="flex items-center justify-between rounded-md p-2 hover:bg-grey-700/50"
+      >
+        {pgettext("avatar menu", "Add organization")}
+        <.icon name="hero-plus" class="size-4" />
+      </.link>
+    </div>
+    <.link
+      kind="unstyled"
+      navigate={~p"/ustawienia"}
+      class="rounded-md p-2 hover:bg-grey-700/50"
+    >
+      {pgettext("avatar menu", "Settings")}
+    </.link>
+    <%= if @current_user.member.role == :admin do %>
+      <.link
+        kind="unstyled"
+        navigate={~p"/ustawienia/firma"}
+        class="rounded-md p-2 hover:bg-grey-700/50"
+      >
+        {pgettext("avatar menu", "Bank accounts")}
+      </.link>
+    <% end %>
+    <%= if @current_user.system_role == :superuser do %>
+      <.link
+        kind="unstyled"
+        navigate={~p"/admin/rozliczenia"}
+        class="rounded-md p-2 hover:bg-grey-700/50"
+      >
+        {pgettext("avatar menu", "Superadmin panel")}
+      </.link>
+    <% end %>
+    <.form
+      for={%{}}
+      id="app-logout-form"
+      action={~p"/wyloguj"}
+      method="delete"
+      class="w-full"
+      data-posthog-reset-on-submit="true"
+    >
+      <FirmowidUI.Components.Button.button
+        type="submit"
+        variant="unstyled"
+        class="block w-full cursor-pointer rounded-md text-white hover:bg-grey-700/50 hover:text-white active:bg-grey-700/70"
+      >
+        <span class="flex w-full items-center justify-between p-2">
+          {pgettext("avatar menu", "Log out")}
+          <.icon name="hero-arrow-right-start-on-rectangle" />
+        </span>
+      </FirmowidUI.Components.Button.button>
+    </.form>
+    """
+  end
+
+  # Members of organizations with the `inbox` flag get the sidebar instead of the navbar.
+  defp inbox_sidebar?(assigns) do
+    match?(%{member: %{organization_id: _}}, assigns[:current_user]) and
+      flag_enabled?(:inbox, assigns)
+  end
+
   defp impersonating?(%Firmowid.Core.User{} = user), do: not is_nil(Firmowid.Core.impersonator_id(user))
 
   defp impersonating?(_user), do: false

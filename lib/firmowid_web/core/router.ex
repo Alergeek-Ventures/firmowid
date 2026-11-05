@@ -298,6 +298,7 @@ defmodule FirmowidWeb.Core.Router do
         {CurrentPath, :save_request_uri},
         Timezone
       ] do
+      live "/skrzynka", Inbox.Views.Index, :index
       live "/fakturowanie", Invoicing.Views.Index, :index
       live "/kosztowe/:id", Invoicing.CostInvoices.Views.Show, :show
 
