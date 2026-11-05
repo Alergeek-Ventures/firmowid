@@ -73,6 +73,12 @@
       href={~p"/fonts/lexend-latin-ext.woff2"}
       crossorigin
     />
+    <%!-- restores the collapsed sidebar before the first paint, see `FirmowidWeb.Inbox.Components.Sidebar` --%>
+    <script>
+      try {
+        if (localStorage.getItem("sidebar") === "collapsed") document.documentElement.dataset.sidebar = "collapsed";
+      } catch {}
+    </script>
     <link phx-track-static rel="stylesheet" href={~p"/assets/app.css"} />
     <script
       defer

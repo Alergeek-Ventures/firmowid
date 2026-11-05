@@ -30,7 +30,8 @@ defmodule FirmowidWeb.Infrastructure.Flags do
   @flag_keys %{
     accurate_salary_calculation: "accurate_salary_calculation",
     analysis_dashboard: "analysis_dashboard",
-    delegations: "delegations"
+    delegations: "delegations",
+    inbox: "inbox"
   }
 
   @doc """
