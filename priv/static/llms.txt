@@ -14,6 +14,7 @@ Firmowid to aplikacja webowa dla firm, prowadzona przez Alergeek Ventures sp. z 
 
 ## Poradnik
 
+- [Program do faktur z dopasowaniem przelewów: import to nie Open Banking](https://firmowid.pl/poradnik/dopasowanie-przelewow-do-faktur): Skąd program do faktur wie o wpłacie: import MT940, CSV lub XML albo Open Banking (AISP). Porównanie 8 programów, które łączą przelewy z fakturami.
 - [Tryb offline w KSeF: co zrobić, gdy nie możesz wysłać faktury](https://firmowid.pl/poradnik/tryb-offline-ksef): Tryb offline24, niedostępność i awaria KSeF: kiedy wolno wystawić fakturę poza systemem i do kiedy trzeba ją dosłać.
 - [Polskie programy open source do faktur i KSeF: ranking repozytoriów 2026](https://firmowid.pl/poradnik/polskie-programy-open-source-do-faktur): Aktywne aplikacje open source z KSeF według gwiazdek GitHub z 5.11.2026: MyCompany, Firmowid i JDG Księgowy. Osobno OpenLinker (OMS), publiczne repozytoria bez licencji open source oraz SDK.
 - [KSeF, bank, czas projektów i ChatGPT w jednym programie](https://firmowid.pl/poradnik/faktury-ksef-chatgpt-claude-mcp): Firmowid łączy faktury KSeF, automatyczne parowanie przelewów, czas projektów oraz ChatGPT i Claude przez MCP. Jak działa ten obieg i jakie ma ograniczenia.
