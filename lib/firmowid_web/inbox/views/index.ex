@@ -66,9 +66,18 @@ defmodule FirmowidWeb.Inbox.Views.Index do
 
   @impl true
   def handle_event("start_session", _params, %{assigns: %{session: nil, last_session: %{} = last}} = socket) do
-    %{title: last.title, project_id: last.project_id, is_remote: last.is_remote}
-    |> Session.start(scope: socket.assigns.ash_scope, load: [:project])
-    |> session_changed(socket)
+    scope = socket.assigns.ash_scope
+
+    case Session.get_current(scope: scope, load: [:project]) do
+      # Another tab started one meanwhile: show it instead of starting a second.
+      {:ok, %Session{} = running} ->
+        session_changed({:ok, running}, socket)
+
+      {:ok, nil} ->
+        %{title: last.title, project_id: last.project_id, is_remote: last.is_remote}
+        |> Session.start(scope: scope, load: [:project])
+        |> session_changed(socket)
+    end
   end
 
   # Stops the session running now, not the one this page loaded: another tab or
