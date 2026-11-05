@@ -151,7 +151,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoicePayment do
             size="small"
             class="inline-flex items-center gap-1.5"
             target="_blank"
-            redirect={~p"/ustawienia/firma"}
+            redirect={~p"/ustawienia/konta-bankowe"}
           >
             <Lucideicons.plus class="inline-flex size-4" /> {gettext("Connect an account")}
           </.link>

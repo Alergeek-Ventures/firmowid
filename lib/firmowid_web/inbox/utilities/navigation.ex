@@ -8,6 +8,7 @@ defmodule FirmowidWeb.Inbox.Utilities.Navigation do
   use Gettext, backend: Firmowid.Gettext
 
   alias Firmowid.Core.UserRole
+  alias FirmowidWeb.Settings.Utilities.Navigation, as: SettingsNavigation
 
   @type layer :: :main | :company | :me
   @type destination :: %{
@@ -35,18 +36,27 @@ defmodule FirmowidWeb.Inbox.Utilities.Navigation do
   @spec employee_leaves_path(String.t()) :: String.t()
   def employee_leaves_path(member_id), do: ~p"/zarzadzanie/pracownicy/#{member_id}/urlopy"
 
-  @doc "Company settings with KSeF, bank accounts and company details."
+  @doc "Company details settings."
   @spec company_settings_path() :: String.t()
-  def company_settings_path, do: ~p"/ustawienia/firma"
+  def company_settings_path, do: SettingsNavigation.canonical_path(:organization)
+
+  @doc "KSeF integration settings."
+  @spec ksef_settings_path() :: String.t()
+  def ksef_settings_path, do: SettingsNavigation.canonical_path(:ksef)
+
+  @doc "Bank account settings."
+  @spec bank_settings_path() :: String.t()
+  def bank_settings_path, do: SettingsNavigation.canonical_path(:bank_accounts)
 
   @doc """
   The destinations a member with `role` may open. `analysis?` reflects the
-  analysis dashboard flag.
+  analysis dashboard flag; `owner?` controls subscription visibility.
   """
-  @spec for_role(UserRole.t(), boolean()) :: [destination()]
-  def for_role(role, analysis?) do
+  @spec for_role(UserRole.t(), boolean(), boolean()) :: [destination()]
+  def for_role(role, analysis?, owner? \\ false) do
     Enum.filter(all(), fn destination ->
-      role in destination.roles and (destination.id != :analysis or analysis?)
+      role in destination.roles and (destination.id != :analysis or analysis?) and
+        (destination.id != :subscription or owner?)
     end)
   end
 
@@ -141,9 +151,25 @@ defmodule FirmowidWeb.Inbox.Utilities.Navigation do
       %{
         id: :company_settings,
         layer: :company,
-        label: pgettext("sidebar", "Company settings"),
+        label: SettingsNavigation.page_title(:organization),
         icon: "briefcase",
         path: company_settings_path(),
+        roles: [:admin]
+      },
+      %{
+        id: :ksef,
+        layer: :company,
+        label: SettingsNavigation.page_title(:ksef),
+        icon: "unplug",
+        path: ksef_settings_path(),
+        roles: [:admin]
+      },
+      %{
+        id: :bank_accounts,
+        layer: :company,
+        label: SettingsNavigation.page_title(:bank_accounts),
+        icon: "landmark",
+        path: bank_settings_path(),
         roles: [:admin]
       },
       %{
@@ -151,8 +177,16 @@ defmodule FirmowidWeb.Inbox.Utilities.Navigation do
         layer: :company,
         label: pgettext("sidebar", "Roles and invitations"),
         icon: "user-plus",
-        path: ~p"/zaproszenia",
+        path: SettingsNavigation.canonical_path(:roles),
         roles: [:admin]
+      },
+      %{
+        id: :subscription,
+        layer: :company,
+        label: SettingsNavigation.page_title(:subscription),
+        icon: "credit-card",
+        path: SettingsNavigation.canonical_path(:subscription),
+        roles: UserRole.roles()
       },
       %{
         id: :hours_record,
@@ -165,9 +199,17 @@ defmodule FirmowidWeb.Inbox.Utilities.Navigation do
       %{
         id: :profile,
         layer: :me,
-        label: pgettext("settings tab", "Your profile"),
+        label: SettingsNavigation.page_title(:profile),
         icon: "id-card",
-        path: ~p"/ustawienia/profil",
+        path: SettingsNavigation.canonical_path(:profile),
+        roles: UserRole.roles()
+      },
+      %{
+        id: :documents,
+        layer: :me,
+        label: SettingsNavigation.page_title(:documents),
+        icon: "files",
+        path: SettingsNavigation.canonical_path(:documents),
         roles: UserRole.roles()
       },
       %{
@@ -175,7 +217,7 @@ defmodule FirmowidWeb.Inbox.Utilities.Navigation do
         layer: :me,
         label: pgettext("sidebar", "My account"),
         icon: "settings",
-        path: ~p"/ustawienia/konto",
+        path: SettingsNavigation.canonical_path(:account),
         roles: UserRole.roles()
       }
     ]

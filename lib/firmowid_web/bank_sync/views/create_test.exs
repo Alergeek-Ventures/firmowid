@@ -60,7 +60,7 @@ defmodule FirmowidWeb.BankSync.Views.CreateTest do
       {:error,
        {:live_redirect,
         %{
-          to: "/ustawienia/firma",
+          to: "/ustawienia/konta-bankowe",
           flash: %{"success" => "Konto bankowe zostało poprawnie połączone."}
         }}} =
         live(conn, "/ustawienia/bank/dodaj?ref=#{requisition_id}")

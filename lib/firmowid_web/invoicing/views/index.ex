@@ -957,7 +957,14 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
       unpaid_invoices = fetch_unpaid_invoices(date_range_from, date_range_to, scope)
       unmatched_transactions = fetch_unmatched_transactions(date_range_from, date_range_to, scope)
       matched_entries = fetch_matched_entries(date_range_from, date_range_to, scope)
-      suggestions = fetch_suggestions(scope, socket.assigns.skipped_ksef_sales_invoices)
+      # With the inbox sidebar, bank accounts have their own settings page.
+      bank_accounts_path =
+        if flag_enabled?(:inbox, socket.assigns),
+          do: ~p"/ustawienia/konta-bankowe",
+          else: ~p"/ustawienia/firma"
+
+      suggestions =
+        fetch_suggestions(scope, socket.assigns.skipped_ksef_sales_invoices, bank_accounts_path)
 
       socket
       |> assign(:dashboard_unpaid_invoices, unpaid_invoices.entries)
@@ -1034,7 +1041,7 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
     )
   end
 
-  defp bank_attention_entries(scope) do
+  defp bank_attention_entries(scope, bank_accounts_path) do
     [scope: scope, load: [:requisition, :broken?]]
     |> Finances.list_bank_accounts!()
     # Keep the latest outcome independent of the last-success aggregate's filter.
@@ -1064,15 +1071,15 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
         unsynced_since: unsynced_since,
         navigate:
           if(scope.actor.member.role == :admin,
-            do: ~p"/ustawienia/firma#konto-bankowe-#{account.id}"
+            do: "#{bank_accounts_path}#konto-bankowe-#{account.id}"
           )
       }
     end)
     |> Enum.sort_by(&{not &1.warning?, &1.account.institution_name || ""})
   end
 
-  defp fetch_suggestions(scope, skipped_invoices) do
-    bank_alerts = bank_attention_entries(scope)
+  defp fetch_suggestions(scope, skipped_invoices, bank_accounts_path) do
+    bank_alerts = bank_attention_entries(scope, bank_accounts_path)
 
     ksef_warnings =
       if skipped_invoices == [] do

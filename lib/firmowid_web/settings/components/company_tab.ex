@@ -44,17 +44,25 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
   attr :uploads, :map, required: true
   attr :ksef_fetching?, :boolean, required: true
 
+  attr :section, :atom, default: :all
+
   def company_tab(assigns) do
     ~H"""
-    <div class="grid grid-cols-1 items-start gap-8 lg:grid-cols-2 lg:gap-14">
-      <div class="space-y-14">
+    <div class={[
+      if(@section == :all,
+        do: "grid grid-cols-1 items-start gap-8 lg:grid-cols-2 lg:gap-14",
+        else: "flex flex-col gap-8"
+      )
+    ]}>
+      <div :if={@section in [:all, :organization, :ksef]} class="space-y-14">
         <.company_basic_info_section
+          :if={@section in [:all, :organization]}
           current_org={@current_org}
           company_form={@company_form}
           editing_basic_info={@editing_basic_info}
         />
 
-        <.company_section title={gettext("KSeF integration")}>
+        <.company_section :if={@section in [:all, :ksef]} title={gettext("KSeF integration")}>
           <.ksef_connection
             ksef_credential={@ksef_credential}
             ksef_auth_method={@ksef_auth_method}
@@ -68,14 +76,16 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
       </div>
 
       <.bank_accounts_section
+        :if={@section in [:all, :bank_accounts]}
         bank_accounts={@bank_accounts}
         bank_institutions={@bank_institutions}
         pending_requisitions={@pending_requisitions}
         bank_account_statuses={@bank_account_statuses}
-        class="col-span-2"
+        class={[if(@section == :all, do: "col-span-2")]}
       />
 
       <.administrators_section
+        :if={@section in [:all, :roles]}
         organization_users={@organization_users}
         organization_invites={@organization_invites}
         show_active_invites={@show_active_invites}
@@ -298,7 +308,7 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
   attr :bank_institutions, :map, required: true
   attr :pending_requisitions, :list, required: true
   attr :bank_account_statuses, :map, required: true
-  attr :class, :string, default: nil
+  attr :class, :any, default: nil
 
   defp bank_accounts_section(assigns) do
     ~H"""

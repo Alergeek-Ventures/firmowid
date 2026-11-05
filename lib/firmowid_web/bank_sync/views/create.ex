@@ -145,7 +145,7 @@ defmodule FirmowidWeb.BankSync.Views.Create do
            gettext("The bank account was connected successfully."),
            title: gettext("Done")
          )
-         |> push_navigate(to: ~p"/ustawienia/firma")}
+         |> push_navigate(to: ~p"/ustawienia/konta-bankowe")}
       else
         details = params["details"]
 

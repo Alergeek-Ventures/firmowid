@@ -13,6 +13,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
   """
   use FirmowidWeb, :live_view
 
+  import FirmowidWeb.Infrastructure.Flags, only: [flag_enabled?: 2]
   import FirmowidWeb.Infrastructure.Hooks.RequireOrganization, only: [guard_upload_progress: 2]
   import FirmowidWeb.Settings.Components.AccountTab
   import FirmowidWeb.Settings.Components.CompanyTab
@@ -246,7 +247,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
   end
 
   def handle_params(%{"section" => section}, _uri, socket) do
-    case Navigation.resolve_section(section) do
+    case Navigation.resolve_section(section, flag_enabled?(:inbox, socket.assigns)) do
       {:ok, %{id: tab} = resolved} ->
         handle_resolved_section(tab, resolved, socket)
 
@@ -1186,15 +1187,34 @@ defmodule FirmowidWeb.Settings.Views.Index do
   def render(assigns) do
     ~H"""
     <.settings_page
+      standalone={flag_enabled?(:inbox, assigns)}
+      title={@page_title}
       current_user={@current_user}
       current_org={@current_org}
       current_tab={@settings_tab}
       user_avatar_upload={@uploads.user_avatar}
       organization_avatar_upload={Map.get(@uploads, :organization_avatar)}
     >
+      <%= if flag_enabled?(:inbox, assigns) do %>
+        <.settings_avatar
+          :if={@settings_tab == :organization}
+          upload={@uploads.organization_avatar}
+          name={@current_org.name}
+          url={@current_org.avatar_blob && @current_org.avatar_blob.url}
+          label={gettext("Change organization logo")}
+        />
+        <.settings_avatar
+          :if={@settings_tab == :account}
+          upload={@uploads.user_avatar}
+          name={@current_user.member.name || @current_user.email}
+          url={@current_user.member.avatar_blob && @current_user.member.avatar_blob.url}
+          label={gettext("Change profile picture")}
+        />
+      <% end %>
       <%= case @settings_tab do %>
-        <% :organization -> %>
+        <% section when section in [:organization, :ksef, :bank_accounts, :roles] -> %>
           <.company_tab
+            section={if flag_enabled?(:inbox, assigns), do: @settings_tab, else: :all}
             current_user={@current_user}
             current_org={@current_org}
             company_form={@company_form}
@@ -1215,9 +1235,14 @@ defmodule FirmowidWeb.Settings.Views.Index do
             uploads={@uploads}
           />
         <% :subscription -> %>
-          <.subscription_tab month={@subscription_month} worksheet={@subscription_worksheet} />
+          <.subscription_tab
+            standalone={flag_enabled?(:inbox, assigns)}
+            month={@subscription_month}
+            worksheet={@subscription_worksheet}
+          />
         <% :account -> %>
           <.account_tab
+            standalone={flag_enabled?(:inbox, assigns)}
             current_user={@current_user}
             owned_organizations={@owned_organizations}
             delete_account_form={@delete_account_form}
@@ -1229,8 +1254,19 @@ defmodule FirmowidWeb.Settings.Views.Index do
             password_form={@password_form}
             current_password={@current_password}
           />
+        <% :documents -> %>
+          <.live_component
+            module={DocumentsSection}
+            id="profile-documents"
+            user={@current_user}
+            scope={@ash_scope}
+            feature_flags={@feature_flags}
+            variant={:profile}
+            current_contract_id={@current_contract && @current_contract.id}
+          />
         <% :profile -> %>
           <.profile_tab
+            standalone={flag_enabled?(:inbox, assigns)}
             current_user={@current_user}
             ash_scope={@ash_scope}
             member_form={@member_form}
@@ -1350,9 +1386,13 @@ defmodule FirmowidWeb.Settings.Views.Index do
         {:noreply,
          socket
          |> assign(:settings_tab, tab)
+         |> assign(:no_padding, if(flag_enabled?(:inbox, socket.assigns), do: nil, else: true))
          |> assign(
            :page_title,
-           Enum.find(Navigation.tabs_for(socket.assigns), &(&1.id == tab)).label
+           if(flag_enabled?(:inbox, socket.assigns),
+             do: Navigation.page_title(tab),
+             else: Enum.find(Navigation.tabs_for(socket.assigns), &(&1.id == tab)).label
+           )
          )
          |> assign_subscription_preview_if_visible()}
     end

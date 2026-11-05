@@ -10,17 +10,29 @@ defmodule FirmowidWeb.Settings.Components.SettingsPage do
   import Phoenix.Component, except: [link: 1]
 
   alias FirmowidWeb.Settings.Utilities.Navigation
+  alias Phoenix.LiveView.Rendered
 
   @doc """
   Renders the shared settings header and route navigation.
   """
-  @spec settings_page(map()) :: Phoenix.LiveView.Rendered.t()
+  @spec settings_page(map()) :: Rendered.t()
   attr :current_user, :map, required: true
   attr :current_org, :map, required: true
   attr :current_tab, :atom, required: true
   attr :user_avatar_upload, :any, required: true
   attr :organization_avatar_upload, :any, default: nil
+  attr :standalone, :boolean, default: false
+  attr :title, :string, default: nil
   slot :inner_block, required: true
+
+  def settings_page(%{standalone: true} = assigns) do
+    ~H"""
+    <section class="mx-auto flex w-full max-w-6xl flex-col gap-8 py-4">
+      <h1 class="text-2xl font-semibold text-grey-900">{@title}</h1>
+      {render_slot(@inner_block)}
+    </section>
+    """
+  end
 
   def settings_page(assigns) do
     [greeting_before, greeting_after] =
@@ -148,6 +160,33 @@ defmodule FirmowidWeb.Settings.Components.SettingsPage do
 
       {render_slot(@inner_block)}
     </section>
+    """
+  end
+
+  @doc "Renders an avatar upload within its settings page."
+  @spec settings_avatar(map()) :: Rendered.t()
+  attr :upload, :any, required: true
+  attr :name, :string, required: true
+  attr :url, :string, default: nil
+  attr :label, :string, required: true
+
+  def settings_avatar(assigns) do
+    ~H"""
+    <form
+      id={"settings-#{@upload.name}-form"}
+      phx-submit="upload"
+      phx-change="upload"
+      class="flex flex-wrap items-center gap-4"
+    >
+      <.live_file_input upload={@upload} class="sr-only" aria-label={@label} />
+      <.avatar class="size-20 border border-grey-100 bg-grey-100">
+        <.avatar_image :if={@url} src={@url} alt={@name} class="object-contain" />
+        <.avatar_fallback class="text-2xl font-medium text-grey-700">
+          {initial(@name)}
+        </.avatar_fallback>
+      </.avatar>
+      <.button as="label" for={@upload.ref} variant="outline" size="small">{@label}</.button>
+    </form>
     """
   end
 

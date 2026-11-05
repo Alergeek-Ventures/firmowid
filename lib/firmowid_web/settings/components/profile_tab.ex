@@ -49,9 +49,16 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
     default: nil,
     doc: "Contract document upload, only allowed for admins viewing their own profile."
 
+  attr :standalone, :boolean, default: false
+
   def profile_tab(assigns) do
     ~H"""
-    <div class="grid grid-cols-1 items-start gap-8 lg:grid-cols-2 lg:gap-16">
+    <div class={[
+      if(@standalone,
+        do: "flex flex-col gap-8",
+        else: "grid grid-cols-1 items-start gap-8 lg:grid-cols-2 lg:gap-16"
+      )
+    ]}>
       <div class="space-y-14">
         <.employment_section
           current_user={@current_user}
@@ -81,8 +88,14 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
         date={@projects_date}
       />
 
-      <div class="grid grid-cols-1 items-start gap-5 lg:col-span-2 lg:grid-cols-2">
+      <div class={[
+        if(@standalone,
+          do: "flex flex-col gap-5",
+          else: "grid grid-cols-1 items-start gap-5 lg:col-span-2 lg:grid-cols-2"
+        )
+      ]}>
         <.live_component
+          :if={!@standalone}
           module={FirmowidWeb.Documents.Components.DocumentsSection}
           id="profile-documents"
           user={@current_user}
