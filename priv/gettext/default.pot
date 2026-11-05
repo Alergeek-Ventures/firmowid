@@ -274,6 +274,11 @@ msgstr ""
 msgid "%{weekday}, %{month} %{day}"
 msgstr ""
 
+#: lib/firmowid_web/inbox/components/queue.ex
+#, elixir-autogen, elixir-format
+msgid "%{working} of %{count} working"
+msgstr ""
+
 #: lib/firmowid_web/landing/views/privacy_policy.ex
 #, elixir-autogen, elixir-format
 msgid "(1st Floor, The Liffey Trust Centre, 117-126 Sheriff Street Upper, Dublin 1, D01 YC43, Ireland) — automatically generating descriptions of purchase invoices, standardizing seller names, and supporting assistant and invoice-to-transaction matching features. For these features, OpenAI processes data extracted from invoices, in particular seller data, invoice line items and amounts, as well as information provided by the user."
@@ -2102,11 +2107,6 @@ msgstr ""
 msgid "Close assistant"
 msgstr ""
 
-#: lib/firmowid_web/inbox/components/sidebar.ex
-#, elixir-autogen, elixir-format
-msgid "Close the menu"
-msgstr ""
-
 #: lib/firmowid_web/settings/components/account_tab.ex
 #, elixir-autogen, elixir-format
 msgid "Closing the account"
@@ -2151,6 +2151,7 @@ msgid "Company"
 msgstr ""
 
 #: lib/firmowid_web/inbox/components/sidebar.ex
+#: lib/firmowid_web/inbox/components/sidebar_nav.ex
 #, elixir-autogen, elixir-format
 msgctxt "sidebar layer"
 msgid "Company"
@@ -2440,6 +2441,11 @@ msgstr ""
 #: lib/firmowid_web/hours_record/components/upload_form.ex
 #, elixir-autogen, elixir-format
 msgid "Continue to signing"
+msgstr ""
+
+#: lib/firmowid_web/inbox/components/queue.ex
+#, elixir-autogen, elixir-format
+msgid "Continue: %{session}"
 msgstr ""
 
 #: lib/firmowid_web/landing/views/terms_of_service.ex
@@ -6028,7 +6034,7 @@ msgstr ""
 msgid "Last: %{last} · Last 30 days: %{count}"
 msgstr ""
 
-#: lib/firmowid_web/inbox/components/sidebar.ex
+#: lib/firmowid_web/inbox/components/sidebar_nav.ex
 #, elixir-autogen, elixir-format
 msgctxt "sidebar"
 msgid "Layer"
@@ -6211,7 +6217,7 @@ msgstr ""
 msgid "MCP authorization"
 msgstr ""
 
-#: lib/firmowid_web/inbox/components/sidebar.ex
+#: lib/firmowid_web/inbox/components/sidebar_nav.ex
 #, elixir-autogen, elixir-format
 msgctxt "sidebar"
 msgid "Main"
@@ -9323,6 +9329,12 @@ msgctxt "contract signing"
 msgid "Start"
 msgstr ""
 
+#: lib/firmowid_web/inbox/components/queue.ex
+#, elixir-autogen, elixir-format
+msgctxt "session"
+msgid "Start"
+msgstr ""
+
 #: lib/firmowid_web/landing/components/faq.ex
 #, elixir-autogen, elixir-format
 msgid "Start by connecting KSeF and your bank — we import data from the last three months. You can immediately match transactions to invoices and analyze cash flow."
@@ -9386,6 +9398,12 @@ msgstr ""
 
 #: lib/firmowid_web/timetracker/views/index.html.heex
 #, elixir-autogen, elixir-format
+msgid "Stop"
+msgstr ""
+
+#: lib/firmowid_web/inbox/components/queue.ex
+#, elixir-autogen, elixir-format
+msgctxt "session"
 msgid "Stop"
 msgstr ""
 
@@ -10310,6 +10328,16 @@ msgstr ""
 msgid "The session conflict has changed. Try again."
 msgstr ""
 
+#: lib/firmowid_web/inbox/views/index.ex
+#, elixir-autogen, elixir-format
+msgid "The session could not be changed here. Open Time tracking."
+msgstr ""
+
+#: lib/firmowid_web/inbox/components/sidebar_nav.ex
+#, elixir-autogen, elixir-format
+msgid "The session is running"
+msgstr ""
+
 #: lib/firmowid_web/timetracker/views/index.ex
 #, elixir-autogen, elixir-format
 msgid "The session overlaps another session."
@@ -10784,6 +10812,11 @@ msgstr ""
 #: lib/firmowid_web/settings/components/profile_tab.ex
 #, elixir-autogen, elixir-format
 msgid "To:"
+msgstr ""
+
+#: lib/firmowid_web/inbox/components/queue.ex
+#, elixir-autogen, elixir-format
+msgid "Today at the company"
 msgstr ""
 
 #: lib/firmowid_web/landing/components/sections.ex
@@ -11755,6 +11788,7 @@ msgid "Yes. You can cancel at any time and delete your account without long-term
 msgstr ""
 
 #: lib/firmowid_web/inbox/components/sidebar.ex
+#: lib/firmowid_web/inbox/components/sidebar_nav.ex
 #, elixir-autogen, elixir-format
 msgctxt "sidebar layer"
 msgid "You"
@@ -12057,6 +12091,12 @@ msgstr ""
 msgid "a counterparty with this tax ID already exists"
 msgstr ""
 
+#: lib/firmowid_web/inbox/components/queue.ex
+#, elixir-autogen, elixir-format
+msgctxt "presence"
+msgid "absent"
+msgstr ""
+
 #: lib/firmowid_web/settings/components/company_tab.ex
 #, elixir-autogen, elixir-format
 msgid "account added manually"
@@ -12343,6 +12383,12 @@ msgctxt "business trip status"
 msgid "in progress"
 msgstr ""
 
+#: lib/firmowid_web/inbox/components/queue.ex
+#, elixir-autogen, elixir-format
+msgctxt "presence"
+msgid "in the office"
+msgstr ""
+
 #: lib/firmowid_web/delegations/components/settlement_signature_page.ex
 #, elixir-autogen, elixir-format
 msgctxt "settlement attachments"
@@ -12596,6 +12642,12 @@ msgstr ""
 msgid "not synchronized yet"
 msgstr ""
 
+#: lib/firmowid_web/inbox/components/queue.ex
+#, elixir-autogen, elixir-format
+msgctxt "presence"
+msgid "not working"
+msgstr ""
+
 #: lib/firmowid_web/timetracker/components/overlap.ex
 #, elixir-autogen, elixir-format
 msgid "now (ongoing)"
@@ -12665,6 +12717,12 @@ msgstr ""
 #, elixir-autogen, elixir-format
 msgctxt "leave request status"
 msgid "rejected"
+msgstr ""
+
+#: lib/firmowid_web/inbox/components/queue.ex
+#, elixir-autogen, elixir-format
+msgctxt "presence"
+msgid "remotely"
 msgstr ""
 
 #: lib/firmowid_web/management/components/delegations_tab.ex

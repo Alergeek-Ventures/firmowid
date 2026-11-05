@@ -77,6 +77,9 @@ defmodule Firmowid.SystemActor do
   - `:session_auto_stopper` — caps forgotten running timetracker sessions at
     12 hours. Can read sessions and run the auto-stop action.
 
+  - `:presence_reader` — lists the running sessions of the organization to tell
+    administrators who works now and where.
+
   - `:anonymous` — unauthenticated share-token access. Can only read the specific
     invoice identified by the share token.
 
@@ -114,6 +117,7 @@ defmodule Firmowid.SystemActor do
           | :hours_record_change_notifier
           | :employment_contract_notifier
           | :session_auto_stopper
+          | :presence_reader
           | :anonymous
           | :avatar_cleanup
           | :actor_member_loader

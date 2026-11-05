@@ -5,6 +5,7 @@
     organizations={@organizations}
     current_uri={@current_uri}
     analysis_enabled={flag_enabled?(:analysis_dashboard, assigns)}
+    scope={@ash_scope}
   />
   <.live_component
     module={FirmowidWeb.Feedback.Components.Form}
