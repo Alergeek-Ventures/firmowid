@@ -604,7 +604,7 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceDetails do
         </h3>
         <.skip_invoicing
           show_assistant={not @not_found}
-          show_bank_transfer_modal={@is_cost_invoice}
+          show_bank_transfer_modal={@is_cost_invoice and Money.negative?(@invoice.effective_amount)}
           invoice={@invoice}
           can_write={@can_write}
         />

@@ -107,6 +107,63 @@ defmodule Firmowid.Ksef.Workers.FetchWorkerTest do
     assert invoice.blob_id
   end
 
+  # A settlement invoice (ROZ) shows the amount left after advance invoices; it is
+  # negative when the advances exceed the total, so the seller owes a refund.
+  test "imports a settlement invoice whose advances exceed its total as a refund", %{
+    organization_id: organization_id,
+    scope: scope
+  } do
+    ksef_number = "KSEF-ROZ-#{System.unique_integer([:positive])}"
+    encryption_data = Encryption.generate_encryption_data()
+
+    {zip_binary, encrypted_package} =
+      build_encrypted_package(
+        [
+          %{
+            ksef_number: ksef_number,
+            xml:
+              invoice_xml(
+                invoice_identifier: "ROZ/2026/001",
+                total_amount: "-2027.08",
+                kind: "ROZ"
+              ),
+            permanent_storage_date: "2026-03-06T12:34:56Z"
+          }
+        ],
+        encryption_data
+      )
+
+    part =
+      package_part(zip_binary, encrypted_package, "https://ksef.example/downloads/package-roz")
+
+    Req.Test.stub(:ksef_api, fn conn ->
+      case conn.request_path do
+        "/invoices/exports/export-ref-roz" ->
+          Req.Test.json(conn, %{
+            "status" => %{"code" => 200},
+            "package" => %{"parts" => [part], "isTruncated" => false}
+          })
+
+        "/downloads/package-roz" ->
+          Plug.Conn.send_resp(conn, 200, encrypted_package)
+
+        _ ->
+          Plug.Conn.send_resp(conn, 404, "unexpected request: #{conn.request_path}")
+      end
+    end)
+
+    assert :ok =
+             perform_job(
+               FetchWorker,
+               poll_export_args(organization_id, encryption_data, "export-ref-roz")
+             )
+
+    [invoice] = cost_invoices_by_ksef_number([ksef_number], scope)
+
+    assert invoice.invoice_type == :roz
+    assert Decimal.equal?(Money.to_decimal(invoice.amount), Decimal.new("2027.08"))
+  end
+
   test "skips already imported KSeF invoices while importing new ones from a mocked export", %{
     organization_id: organization_id,
     scope: scope
@@ -482,7 +539,7 @@ defmodule Firmowid.Ksef.Workers.FetchWorkerTest do
         <P_1>2026-03-06</P_1>
         <P_2>#{invoice_identifier}</P_2>
         <P_15>#{total_amount}</P_15>
-        <RodzajFaktury>VAT</RodzajFaktury>
+        <RodzajFaktury>#{Keyword.get(opts, :kind, "VAT")}</RodzajFaktury>
         <Platnosc>
           #{if opts[:partially_paid], do: "<ZnacznikZaplatyCzesciowej>1</ZnacznikZaplatyCzesciowej><ZaplataCzesciowa><KwotaZaplatyCzesciowej>50.00</KwotaZaplatyCzesciowej><DataZaplatyCzesciowej>2026-03-06</DataZaplatyCzesciowej></ZaplataCzesciowa>"}
           <FormaPlatnosci>6</FormaPlatnosci>

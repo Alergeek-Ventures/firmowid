@@ -359,8 +359,8 @@ defmodule Firmowid.Ksef.Workers.FetchWorker do
       _ ->
         stamp_job_meta(job, summary)
 
-        error_kinds = errors |> Enum.map(&ErrorKind.classify/1) |> Enum.uniq() |> Enum.join(",")
-        {:error, "Failed to process #{length(errors)} invoice(s): error_kinds=#{error_kinds}"}
+        reasons = errors |> Enum.uniq() |> Enum.join("; ")
+        {:error, "Failed to process #{length(errors)} invoice(s): #{reasons}"}
     end
   end
 
@@ -393,11 +393,9 @@ defmodule Firmowid.Ksef.Workers.FetchWorker do
     end)
   end
 
+  # The reason is already a message with the stage and error kind.
   defp report_invoice_failure(reason, organization_id) do
-    Logger.error(
-      "KSeF invoice processing failed: organization_id=#{organization_id} " <>
-        "error_kind=#{ErrorKind.classify(reason)}"
-    )
+    Logger.error("KSeF invoice processing failed: organization_id=#{organization_id} #{reason}")
   end
 
   defp parse_metadata_json(metadata_json) do

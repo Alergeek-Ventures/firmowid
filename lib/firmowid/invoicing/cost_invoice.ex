@@ -65,7 +65,7 @@ defmodule Firmowid.Invoicing.CostInvoice do
 
   require Resource
 
-  @correction_invoice_types [:kor, :kor_zal, :kor_roz]
+  @positive_amount_invoice_types [:kor, :kor_zal, :kor_roz, :roz]
 
   postgres do
     table "cost_invoices"
@@ -87,10 +87,10 @@ defmodule Firmowid.Invoicing.CostInvoice do
       check_constraint :amount,
                        "cost_invoices_non_correction_amount_non_positive",
                        check: """
-                       COALESCE((invoice_type)::text = ANY ((ARRAY['kor'::character varying, 'kor_zal'::character varying, 'kor_roz'::character varying])::text[]), false)
+                       COALESCE((invoice_type)::text = ANY ((ARRAY['kor'::character varying, 'kor_zal'::character varying, 'kor_roz'::character varying, 'roz'::character varying])::text[]), false)
                        OR (amount).amount <= (0)::numeric
                        """,
-                       message: "must be <= 0 for non-correction invoices"
+                       message: "must be <= 0 except for corrections and settlement invoices"
     end
 
     references do
@@ -399,7 +399,7 @@ defmodule Firmowid.Invoicing.CostInvoice do
       change EnqueueMissingCostInvoiceDescriptionRefresh
 
       change fn changeset, _context ->
-        validate_non_correction_amount_sign(changeset)
+        validate_amount_sign(changeset)
       end
 
       emit Signals, :cost_invoice_created, fields: [cost_invoice_id: :id]
@@ -453,7 +453,7 @@ defmodule Firmowid.Invoicing.CostInvoice do
       change EnqueueMissingCostInvoiceSellerDisplayNameRefresh
 
       change fn changeset, _context ->
-        validate_non_correction_amount_sign(changeset)
+        validate_amount_sign(changeset)
       end
 
       emit Signals, :cost_invoice_created, fields: [cost_invoice_id: :id]
@@ -924,20 +924,21 @@ defmodule Firmowid.Invoicing.CostInvoice do
   end
 
   # Cost invoices represent money going out, so amount is stored as negative
-  # (convention matching bank transaction sign). A positive amount on a
-  # non-correction invoice is invalid — only corrections may flip the sign.
-  defp validate_non_correction_amount_sign(changeset) do
+  # (convention matching bank transaction sign). Only corrections and settlement
+  # invoices may flip the sign: a settlement invoice (ROZ) shows the amount left to
+  # pay after advance invoices, which is negative when the advances exceed it.
+  defp validate_amount_sign(changeset) do
     invoice_type = Ash.Changeset.get_attribute(changeset, :invoice_type)
     amount = Ash.Changeset.get_attribute(changeset, :amount)
 
     cond do
-      invoice_type in @correction_invoice_types ->
+      invoice_type in @positive_amount_invoice_types ->
         changeset
 
       is_nil(amount) or Money.positive?(amount) ->
         Ash.Changeset.add_error(changeset,
           field: :amount,
-          message: "must be <= 0 for non-correction invoices"
+          message: "must be <= 0 except for corrections and settlement invoices"
         )
 
       true ->
