@@ -36,7 +36,7 @@ defmodule Firmowid.Oauth2Server do
     authorization_code_resource: Firmowid.Core.OauthAuthorizationCode,
     refresh_token_resource: Firmowid.Core.OauthRefreshToken,
     consent_resource: Firmowid.Core.OauthConsent,
-    scopes: ["mcp"],
+    scopes: ["mcp", "api"],
     # Dynamic client registration (RFC 7591). The library default is
     # `false` for safety; the installer turns it on because most
     # people setting up an OAuth server today need it for MCP-style

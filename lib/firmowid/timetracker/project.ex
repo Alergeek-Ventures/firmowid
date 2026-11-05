@@ -13,7 +13,8 @@ defmodule Firmowid.Timetracker.Project do
   use Ash.Resource,
     domain: Firmowid.Timetracker,
     data_layer: AshPostgres.DataLayer,
-    authorizers: [Ash.Policy.Authorizer]
+    authorizers: [Ash.Policy.Authorizer],
+    extensions: [AshJsonApi.Resource]
 
   alias Firmowid.Checks.ActorRole
   alias Firmowid.Checks.SystemActorRole
@@ -29,6 +30,11 @@ defmodule Firmowid.Timetracker.Project do
   postgres do
     table "projects"
     repo Firmowid.Repo
+  end
+
+  json_api do
+    type "project"
+    default_fields([:name])
   end
 
   code_interface do

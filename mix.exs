@@ -80,6 +80,7 @@ defmodule Firmowid.MixProject do
       {:ash_ai, github: "ash-project/ash_ai", ref: "ea2c3b024cc23463220f8b558345d721fe5f678f"},
       {:sourceror, "~> 1.8"},
       {:ash, "~> 3.36"},
+      {:ash_json_api, "~> 1.7"},
       {:ash_postgres, "~> 2.15"},
       {:ash_phoenix, "~> 2.3"},
       {:ash_oban, "~> 0.10.1"},
