@@ -4,9 +4,10 @@ defmodule FirmowidWeb.Inbox.Components.Sidebar do
   layer listed flat. The switch at the top moves between the company layer and
   the member's own layer, landing in that layer's inbox.
 
-  On desktop it collapses to icons; the state lives on `<html data-sidebar>`
-  (restored from local storage in the root layout), so it survives navigation
-  without a server round trip. On phones it opens over the page from a top bar.
+  The Firmowid head at the top collapses it to icons on desktop; the state
+  lives on `<html data-sidebar>` (restored from local storage in the root
+  layout), so it survives navigation without a server round trip. On phones the
+  head in the top bar opens it over the page and the one in the sidebar closes it.
   """
 
   use FirmowidWeb, :html
@@ -15,6 +16,7 @@ defmodule FirmowidWeb.Inbox.Components.Sidebar do
   import FirmowidUI.Components.Link
   import Phoenix.Component, except: [link: 1]
 
+  alias FirmowidWeb.Inbox.Components.SidebarNav
   alias FirmowidWeb.Inbox.Utilities.Navigation
   alias FirmowidWeb.Infrastructure.Layouts
 
@@ -23,6 +25,7 @@ defmodule FirmowidWeb.Inbox.Components.Sidebar do
   attr :organizations, :list, required: true
   attr :current_uri, URI, required: true
   attr :analysis_enabled, :boolean, required: true
+  attr :scope, Firmowid.Scope, required: true
 
   @doc "Renders the sidebar and, on phones, the top bar that opens it."
   def sidebar(assigns) do
@@ -49,52 +52,33 @@ defmodule FirmowidWeb.Inbox.Components.Sidebar do
       )
 
     ~H"""
-    <.navbar class="sticky top-0 z-40 flex h-navbar items-center justify-between md:hidden">
-      <.navbar_logo navigate={@inbox.path} />
-      <.button
-        variant="unstyled"
-        type="button"
-        class="p-1"
+    <.navbar class="sticky top-0 z-40 flex h-navbar items-center gap-3 md:hidden">
+      <.head_button
         phx-click={JS.toggle_class("max-md:hidden", to: "#app-sidebar")}
-        aria-label={pgettext("main navigation", "Navigation menu")}
-      >
-        <.icon name="hero-bars-3" class="size-6" />
-      </.button>
+        label={pgettext("main navigation", "Navigation menu")}
+      />
+      <span class="truncate text-sm text-white/70">{@current_org.name}</span>
     </.navbar>
     <aside
       id="app-sidebar"
       class="fixed inset-y-0 left-0 z-50 flex w-64 flex-col gap-6 overflow-y-auto bg-black px-3 py-5 text-sm text-white [--focus-ring:var(--color-white)] max-md:hidden max-md:w-full md:in-data-[sidebar=collapsed]:w-16 md:in-data-[sidebar=collapsed]:px-2"
     >
-      <div class="flex items-center justify-between gap-2 px-2 md:in-data-[sidebar=collapsed]:justify-center md:in-data-[sidebar=collapsed]:px-0">
-        <div class="flex min-w-0 flex-col gap-0.5 md:in-data-[sidebar=collapsed]:hidden">
-          <.navbar_logo navigate={@inbox.path} />
-          <span class="truncate text-xs text-white/50">{@current_org.name}</span>
-        </div>
-        <.button
-          variant="unstyled"
+      <div class="flex items-center gap-3 px-1 md:in-data-[sidebar=collapsed]:justify-center md:in-data-[sidebar=collapsed]:px-0">
+        <.head_button
           id="app-sidebar-collapse"
-          type="button"
           phx-hook=".SidebarCollapse"
-          class="rounded-md p-1.5 text-white/60 transition-colors hover:bg-grey-700/50 hover:text-white max-md:hidden"
-          aria-label={gettext("Collapse or expand the menu")}
-          title={gettext("Collapse or expand the menu")}
-        >
-          <Lucideicons.panel_left class="size-4" aria-hidden="true" />
-        </.button>
-        <.button
-          variant="unstyled"
-          type="button"
-          phx-click={JS.toggle_class("max-md:hidden", to: "#app-sidebar")}
-          class="rounded-md p-1.5 text-white/60 hover:text-white md:hidden"
-          aria-label={gettext("Close the menu")}
-        >
-          <Lucideicons.x class="size-5" aria-hidden="true" />
-        </.button>
+          phx-click={JS.add_class("max-md:hidden", to: "#app-sidebar")}
+          label={gettext("Collapse or expand the menu")}
+        />
+        <span class="truncate text-xs text-white/50 md:in-data-[sidebar=collapsed]:hidden">
+          {@current_org.name}
+        </span>
       </div>
       <script :type={Phoenix.LiveView.ColocatedHook} name=".SidebarCollapse">
         export default {
           mounted() {
             this.el.addEventListener("click", () => {
+              if (!window.matchMedia("(min-width: 48rem)").matches) return;
               const root = document.documentElement;
               const collapsed = root.dataset.sidebar !== "collapsed";
               if (collapsed) root.dataset.sidebar = "collapsed";
@@ -106,15 +90,16 @@ defmodule FirmowidWeb.Inbox.Components.Sidebar do
           }
         }
       </script>
-      <nav class="flex flex-col gap-0.5" aria-label={pgettext("sidebar", "Main")}>
-        <.layer_switch :if={@layered?} layer={@layer} />
-        <.sidebar_link destination={@inbox} active={@current_id == :inbox} />
-        <.sidebar_link
-          :if={@layer == :me}
-          destination={@timetracker}
-          active={@current_id == :timetracker}
-        />
-      </nav>
+      <.live_component
+        module={SidebarNav}
+        id={SidebarNav.id()}
+        scope={@scope}
+        layer={@layer}
+        layered?={@layered?}
+        current_id={@current_id}
+        inbox={@inbox}
+        timetracker={@timetracker}
+      />
       <nav class="flex flex-col gap-0.5" aria-label={layer_label(@layer)}>
         <h2 class="px-2 pb-1 text-caps-sm tracking-wide text-white/40 uppercase md:in-data-[sidebar=collapsed]:sr-only">
           {layer_label(@layer)}
@@ -175,34 +160,22 @@ defmodule FirmowidWeb.Inbox.Components.Sidebar do
   defp layer(true, %{id: :timetracker}, _uri), do: :me
   defp layer(true, nil, _uri), do: :company
 
-  attr :layer, :atom, required: true
+  attr :label, :string, required: true
+  attr :rest, :global
 
-  defp layer_switch(assigns) do
+  # The Firmowid head as the button that opens, closes or collapses the sidebar.
+  defp head_button(assigns) do
     ~H"""
-    <div
-      class="mb-2 grid grid-cols-2 rounded-full bg-grey-800 p-1 md:in-data-[sidebar=collapsed]:grid-cols-1 md:in-data-[sidebar=collapsed]:gap-1 md:in-data-[sidebar=collapsed]:rounded-md"
-      role="group"
-      aria-label={pgettext("sidebar", "Layer")}
+    <.button
+      variant="unstyled"
+      type="button"
+      class="shrink-0 rounded-md transition-opacity hover:opacity-80"
+      aria-label={@label}
+      title={@label}
+      {@rest}
     >
-      <.link
-        :for={{layer, icon} <- [company: "building-2", me: "user"]}
-        kind="unstyled"
-        navigate={Navigation.inbox_path(layer)}
-        aria-current={@layer == layer && "page"}
-        title={layer_label(layer)}
-        class={[
-          "flex items-center justify-center gap-2 rounded-full py-1.5 font-medium transition-colors md:in-data-[sidebar=collapsed]:rounded-md",
-          if(@layer == layer, do: "bg-white text-black", else: "text-white/60 hover:text-white")
-        ]}
-      >
-        <Lucideicons.render!
-          name={icon}
-          class="hidden size-4 md:in-data-[sidebar=collapsed]:block"
-          aria-hidden="true"
-        />
-        <span class="md:in-data-[sidebar=collapsed]:sr-only">{layer_label(layer)}</span>
-      </.link>
-    </div>
+      <img src={~p"/images/favicon.png"} alt="" class="size-8 rounded-md" />
+    </.button>
     """
   end
 

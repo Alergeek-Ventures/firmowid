@@ -16,6 +16,7 @@ defmodule Firmowid.Timetracker.Session do
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer]
 
+  alias Firmowid.Checks.ActorRole
   alias Firmowid.Checks.SystemActorRole
   alias Firmowid.Resource
   alias Firmowid.Timetracker.Changes.ClampSessionBoundaries
@@ -241,6 +242,7 @@ defmodule Firmowid.Timetracker.Session do
     define :auto_stop
     define :edit_current_user_session
     define :add_completed_sessions, args: [:sessions]
+    define :team_presence, args: [:date]
     define :create
     define :update
     define :destroy
@@ -524,6 +526,29 @@ defmodule Firmowid.Timetracker.Session do
       run &Firmowid.Timetracker.Session.Actions.AddCompleted.run/2
     end
 
+    action :team_presence, {:array, :map} do
+      description """
+      Where the organization's active members are on `date`: working now in the
+      office or remotely (a running session), on accepted leave covering `date`,
+      or neither. Exposes only this state, not sessions or leave reasons.
+      """
+
+      constraints items: [
+                    fields: [
+                      name: [type: :string, allow_nil?: false],
+                      status: [
+                        type: :atom,
+                        allow_nil?: false,
+                        constraints: [one_of: [:office, :remote, :leave, :away]]
+                      ]
+                    ]
+                  ]
+
+      argument :date, :date, allow_nil?: false
+
+      run &Firmowid.Timetracker.Session.Actions.TeamPresence.run/2
+    end
+
     update :update do
       description "Update session attributes."
       primary? true
@@ -573,6 +598,11 @@ defmodule Firmowid.Timetracker.Session do
       authorize_if expr(not is_nil(^actor(:org_id)) and organization_id == ^actor(:org_id))
     end
 
+    # Who works now, for the team presence administrators see.
+    bypass [{SystemActorRole, roles: [:presence_reader]}, action(:list)] do
+      authorize_if expr(not is_nil(^actor(:org_id)) and organization_id == ^actor(:org_id))
+    end
+
     policy Firmowid.Checks.IsSystemActor do
       forbid_if always()
     end
@@ -603,6 +633,10 @@ defmodule Firmowid.Timetracker.Session do
 
     policy action(:add_completed_sessions) do
       authorize_if actor_present()
+    end
+
+    policy action(:team_presence) do
+      authorize_if {ActorRole, role: :admin}
     end
   end
 

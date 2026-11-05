@@ -1,11 +1,12 @@
 defmodule FirmowidWeb.Inbox.Components.Queue do
   @moduledoc """
-  Inbox building blocks: queue rows grouped by tier, the running session and
-  the month in numbers.
+  Inbox building blocks: queue rows grouped by tier, the member's session, who
+  works today and the month in numbers.
   """
 
   use FirmowidWeb, :html
 
+  import FirmowidUI.Components.Button
   import FirmowidUI.Components.Link
   import Phoenix.Component, except: [link: 1]
 
@@ -85,8 +86,15 @@ defmodule FirmowidWeb.Inbox.Components.Queue do
     """
   end
 
-  @doc "The running session, with the way to Czasośledź where it is started and stopped."
+  @doc """
+  The member's session: the running one with a stop button, or the last one to
+  continue with a start button. Without any session yet, the way to Czasośledź.
+  """
   attr :session, :any, required: true, doc: "the running `Firmowid.Timetracker.Session` or nil"
+
+  attr :last_session, :any,
+    required: true,
+    doc: "the most recent `Firmowid.Timetracker.Session` or nil"
 
   def session_panel(assigns) do
     ~H"""
@@ -103,27 +111,52 @@ defmodule FirmowidWeb.Inbox.Components.Queue do
           {pgettext("session state", "Running")}
         </span>
       </div>
-      <div class="flex items-end justify-between gap-3">
-        <div class="flex min-w-0 flex-col">
-          <%= if @session do %>
-            <span
-              id="inbox-session-timer"
-              phx-hook="Timer"
-              data-start_time={DateTime.to_iso8601(@session.start_datetime)}
-              data-format="short"
-              class="text-3xl font-semibold text-grey-900 tabular-nums"
-            >
-              00:00
-            </span>
-            <span :if={@session.project} class="truncate text-xs text-grey-500">
-              {@session.project.name}
-            </span>
-          <% else %>
-            <span class="text-3xl font-semibold text-grey-400 tabular-nums">00:00</span>
-            <span class="text-xs text-grey-500">{gettext("You are not tracking time now.")}</span>
-          <% end %>
-        </div>
-        <.link kind="button" navigate={~p"/czasosledz"} size="small" variant="secondary">
+      <%= if @session do %>
+        <span
+          id="inbox-session-timer"
+          phx-hook="Timer"
+          data-start_time={DateTime.to_iso8601(@session.start_datetime)}
+          data-format="short"
+          class="text-3xl font-semibold text-grey-900 tabular-nums"
+        >
+          00:00
+        </span>
+        <p class="truncate text-xs text-grey-500">{session_summary(@session)}</p>
+      <% else %>
+        <span class="text-3xl font-semibold text-grey-400 tabular-nums">00:00</span>
+        <p :if={@last_session} class="truncate text-xs text-grey-500">
+          {gettext("Continue: %{session}", session: session_summary(@last_session))}
+        </p>
+        <p :if={!@last_session} class="text-xs text-grey-500">
+          {gettext("You are not tracking time now.")}
+        </p>
+      <% end %>
+      <div class="flex items-center justify-between gap-3">
+        <.button
+          :if={@session}
+          type="button"
+          size="small"
+          variant="secondary"
+          phx-click="stop_session"
+        >
+          <Lucideicons.square class="size-4" aria-hidden="true" />{pgettext("session", "Stop")}
+        </.button>
+        <.button
+          :if={!@session && @last_session}
+          type="button"
+          size="small"
+          variant="special"
+          phx-click="start_session"
+        >
+          <Lucideicons.play class="size-4" aria-hidden="true" />{pgettext("session", "Start")}
+        </.button>
+        <.link
+          kind="button"
+          navigate={~p"/czasosledz"}
+          size="small"
+          variant="ghost"
+          class="ml-auto"
+        >
           {pgettext("main navigation", "Time tracking")}
           <Lucideicons.arrow_right class="size-4" aria-hidden="true" />
         </.link>
@@ -131,6 +164,60 @@ defmodule FirmowidWeb.Inbox.Components.Queue do
     </section>
     """
   end
+
+  defp session_summary(session) do
+    Enum.join(
+      [
+        session.title,
+        session.project.name,
+        if(session.is_remote,
+          do: pgettext("presence", "remotely"),
+          else: pgettext("presence", "in the office")
+        )
+      ],
+      " · "
+    )
+  end
+
+  @doc "Who works today and where, for administrators."
+  attr :presence, :list,
+    required: true,
+    doc: "from `Firmowid.Timetracker.Session.team_presence/2`"
+
+  def office_panel(assigns) do
+    ~H"""
+    <section class="flex flex-col gap-3 rounded-md bg-white p-5">
+      <div class="flex items-center justify-between gap-2">
+        <h2 class="text-caps-sm font-medium tracking-wide text-grey-500 uppercase">
+          {gettext("Today at the company")}
+        </h2>
+        <span class="text-xs text-grey-500">
+          {gettext("%{working} of %{count} working",
+            working: Enum.count(@presence, &(&1.status in [:office, :remote])),
+            count: length(@presence)
+          )}
+        </span>
+      </div>
+      <ul class="flex flex-col gap-2">
+        <li :for={person <- @presence} class="flex items-center gap-2 text-sm">
+          <span class={[
+            "size-2 shrink-0 rounded-full",
+            person.status == :office && "bg-moss-600",
+            person.status == :remote && "bg-moss-300",
+            person.status in [:leave, :away] && "bg-grey-300"
+          ]}></span>
+          <span class="min-w-0 flex-1 truncate text-grey-800">{person.name}</span>
+          <span class="shrink-0 text-xs text-grey-500">{status_label(person.status)}</span>
+        </li>
+      </ul>
+    </section>
+    """
+  end
+
+  defp status_label(:office), do: pgettext("presence", "in the office")
+  defp status_label(:remote), do: pgettext("presence", "remotely")
+  defp status_label(:leave), do: pgettext("presence", "absent")
+  defp status_label(:away), do: pgettext("presence", "not working")
 
   @doc "The month in numbers as quiet label and value rows, for a side column."
   attr :month, :list, required: true

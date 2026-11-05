@@ -1,7 +1,8 @@
 defmodule FirmowidWeb.Inbox.Views.Index do
   @moduledoc """
   The inbox: things that need attention, most important first, next to the
-  running session or this month's numbers.
+  member's session, who works today (for administrators) and this month's
+  numbers. The session is started and stopped right here.
 
   `?warstwa=ty` shows the member's own layer instead of the company's; members
   without the company layer always see their own.
@@ -12,6 +13,7 @@ defmodule FirmowidWeb.Inbox.Views.Index do
   import FirmowidWeb.Infrastructure.Flags, only: [flag_enabled?: 2]
 
   alias Firmowid.Timetracker.Session
+  alias FirmowidWeb.Inbox.Components.SidebarNav
   alias FirmowidWeb.Inbox.Utilities.Navigation
   alias FirmowidWeb.Inbox.Utilities.Queue
 
@@ -37,14 +39,61 @@ defmodule FirmowidWeb.Inbox.Views.Index do
     socket =
       case layer do
         :company ->
-          assign(socket, month: Queue.month(scope, today), session: nil)
+          assign(socket, month: Queue.month(scope, today), session: nil, last_session: nil)
 
         :me ->
           {:ok, session} = Session.get_current(scope: scope, load: [:project])
-          assign(socket, month: [], session: session)
+
+          {:ok, last_session} =
+            Session.most_recent(scope: scope, not_found_error?: false, load: [:project])
+
+          assign(socket, month: [], session: session, last_session: last_session)
       end
 
-    {:noreply, assign(socket, layer: layer, today: today, items: Queue.items(layer, scope))}
+    presence =
+      if socket.assigns.current_user.member.role == :admin,
+        do: Session.team_presence!(today, scope: scope),
+        else: []
+
+    {:noreply,
+     assign(socket,
+       layer: layer,
+       today: today,
+       items: Queue.items(layer, scope),
+       presence: presence
+     )}
+  end
+
+  @impl true
+  def handle_event("start_session", _params, socket) do
+    %{title: title, project_id: project_id, is_remote: remote?} = socket.assigns.last_session
+
+    %{title: title, project_id: project_id, is_remote: remote?}
+    |> Session.start(scope: socket.assigns.ash_scope)
+    |> session_changed(socket)
+  end
+
+  def handle_event("stop_session", _params, socket) do
+    socket.assigns.session
+    |> Session.stop(scope: socket.assigns.ash_scope)
+    |> session_changed(socket)
+  end
+
+  # Reloads the page and the sidebar, which shows whether the session runs. A
+  # submitted hours record or a project the member left blocks the change; the
+  # session form in Czasośledź explains those.
+  defp session_changed({:ok, _session}, socket) do
+    send_update(SidebarNav, id: SidebarNav.id(), refresh: true)
+    {:noreply, push_patch(socket, to: Navigation.inbox_path(socket.assigns.layer))}
+  end
+
+  defp session_changed({:error, %error{}}, socket) when error in [Ash.Error.Forbidden, Ash.Error.Invalid] do
+    LiveToast.send_toast(
+      :error,
+      gettext("The session could not be changed here. Open Time tracking.")
+    )
+
+    {:noreply, socket}
   end
 
   @impl true
@@ -71,7 +120,8 @@ defmodule FirmowidWeb.Inbox.Views.Index do
           </section>
         </div>
         <aside class="flex flex-col gap-4 lg:sticky lg:top-8">
-          <.session_panel :if={@layer == :me} session={@session} />
+          <.session_panel :if={@layer == :me} session={@session} last_session={@last_session} />
+          <.office_panel :if={@presence != []} presence={@presence} />
           <.month_list :if={@month != []} month={@month} />
         </aside>
       </div>
