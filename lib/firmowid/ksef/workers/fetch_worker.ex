@@ -340,18 +340,24 @@ defmodule Firmowid.Ksef.Workers.FetchWorker do
         end
       end)
 
-    errors = collect_errors(results)
+    # KSeF numbers contain the seller's NIP, so they stay in the job meta, which Sentry does not get.
+    failed_invoices =
+      for {{ksef_number, _xml_content}, {:error, reason}} <-
+            Enum.zip(downloaded_invoices, results),
+          do: %{ksef_number: ksef_number, reason: reason}
+
     created_count = Enum.count(results, &(&1 == :ok))
 
     summary = %{
       total_in_package: length(invoice_entries),
       created: created_count,
       skipped_duplicate: length(rejected_invoices),
-      failed: length(errors),
+      failed: length(failed_invoices),
+      failed_invoices: failed_invoices,
       is_truncated: is_truncated
     }
 
-    case errors do
+    case failed_invoices do
       [] ->
         stamp_job_meta(job, summary)
         :ok
@@ -359,17 +365,11 @@ defmodule Firmowid.Ksef.Workers.FetchWorker do
       _ ->
         stamp_job_meta(job, summary)
 
-        reasons = errors |> Enum.uniq() |> Enum.join("; ")
-        {:error, "Failed to process #{length(errors)} invoice(s): #{reasons}"}
-    end
-  end
+        reasons = failed_invoices |> Enum.map(& &1.reason) |> Enum.uniq() |> Enum.join("; ")
 
-  defp collect_errors(results) do
-    Enum.flat_map(results, fn
-      :ok -> []
-      {:ok, _} -> []
-      {:error, error} -> [error]
-    end)
+        {:error,
+         "Failed to process #{length(failed_invoices)} invoice(s), listed in failed_invoices in the job meta: #{reasons}"}
+    end
   end
 
   defp stamp_job_meta(job, summary) do
