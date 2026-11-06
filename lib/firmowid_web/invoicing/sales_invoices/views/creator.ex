@@ -458,16 +458,12 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
         draft.currency
       )
 
-    # The invoice is issued today, so the sale date and the 7-day due-date shortcut start from today.
-    today = Date.utc_today()
-
+    # Dates stay empty until the user enters or picks them; issuing requires both.
     defaults =
       %{
         "payment_method" => draft.payment_method || :transfer,
         "seller_account_number" => draft.seller_account_number || (selected_bank_account && selected_bank_account.iban)
       }
-      |> PaymentDateSuggestions.apply_suggestion(:sale_date, :today, today, today)
-      |> PaymentDateSuggestions.apply_suggestion(:due_date, :days_7, today, today)
       |> maybe_put_date("sale_date", draft.sale_date)
       |> maybe_put_date("due_date", draft.due_date)
 

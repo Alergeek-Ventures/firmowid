@@ -154,12 +154,15 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.CreatorTest do
     assert has_element?(view, "#bank-account-option-#{default_account.id} button", "Wybierz")
   end
 
-  test "payment suggestions set due date from issue date in creator", %{conn: conn} do
+  test "payment step starts without dates and suggestions set the due date", %{conn: conn} do
     admin = admin_fixture()
     draft = payment_step_draft!(admin)
     conn = log_in_user(conn, admin)
 
     {:ok, view, _html} = live(conn, ~p"/sprzedazowe?szkic_kreatora=#{draft.id}&krok=3")
+
+    refute has_element?(view, "input[name='form[sale_date]'][value]")
+    refute has_element?(view, "input[name='form[due_date]'][value]")
 
     view
     |> element("button[phx-click='suggest_payment_date'][phx-value-field='due_date'][phx-value-suggestion='days_7']")
