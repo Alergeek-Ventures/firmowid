@@ -3,6 +3,7 @@ title: "Tryb offline w KSeF: co zrobić, gdy nie możesz wysłać faktury"
 description: "Tryb offline24, niedostępność KSeF i awaria: kiedy wolno wystawić fakturę poza systemem i do kiedy trzeba ją dosłać. Stan na listopad 2026."
 published: 2026-11-06
 updated: 2026-11-06
+category: ksef-w-praktyce
 ---
 
 O tym, od kiedy KSeF obowiązuje poszczególne firmy, pisaliśmy już [w poradniku o terminach](/poradnik/co-to-jest-ksef-i-e-faktura), dlatego tu tylko krótko przypomnimy najważniejsze. Faktury kosztowe odbiera się przez system od 1 lutego 2026 r., a większość przedsiębiorców wystawia w nim faktury od 1 kwietnia. Najmniejsze firmy, ze sprzedażą do [10 000 zł brutto miesięcznie](/poradnik/limit-10000-ksef), mają czas do końca roku. System działa, jak można się domyślić, wyłącznie online, więc ustawodawca musiał przewidzieć, co robić, gdy w biurze nie ma internetu albo przestaje działać program do faktur.

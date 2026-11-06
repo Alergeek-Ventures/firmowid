@@ -3,6 +3,7 @@ title: "Co to jest KSeF i czym e-faktura różni się od PDF-a"
 description: "KSeF, e-faktura, numer KSeF i UPO w skrócie, terminy obowiązku oraz co zrobić przed pierwszą fakturą."
 published: 2026-10-29
 updated: 2026-10-30
+category: ksef-w-praktyce
 ---
 
 KSeF (Krajowy System e-Faktur) to państwowy system, przez który firmy wystawiają i odbierają faktury ustrukturyzowane. Taka faktura nie jest PDF-em, tylko plikiem z danymi zapisanymi według wzoru Ministerstwa Finansów. Gdy KSeF ją przyjmie, nadaje jej numer KSeF.

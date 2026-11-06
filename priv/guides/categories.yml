@@ -1,0 +1,16 @@
+# Guide categories on /poradnik, in display order. Each guide sets `category` to one of these slugs.
+- slug: ksef-w-praktyce
+  name: KSeF w praktyce
+  description: Terminy, pierwsza faktura, limit 10 000 zł, awarie i korekty w Krajowym Systemie e-Faktur.
+- slug: wybor-programu
+  name: Wybór programu do faktur
+  description: Czy kupować program, darmowe plany i na co patrzeć przed rejestracją.
+- slug: bank-i-platnosci
+  name: Bank i płatności
+  description: Jak przelewy z banku trafiają do programu i łączą się z fakturami.
+- slug: firma-uslugowa
+  name: Firma usługowa
+  description: Faktury, czas pracy przy projektach i przelewy w małym zespole.
+- slug: ai-api-i-open-source
+  name: AI, API i open source
+  description: ChatGPT i Claude przez MCP, otwarty kod i programy do uruchomienia na własnym serwerze.

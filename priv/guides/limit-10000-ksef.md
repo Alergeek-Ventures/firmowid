@@ -3,6 +3,7 @@ title: "Limit 10 000 zł w KSeF w 2026 r.: co się wlicza i co po przekroczeniu"
 description: "Które faktury wliczasz do limitu 10 000 zł brutto miesięcznie, która faktura musi już trafić do KSeF i czemu słabszy miesiąc nic nie zmienia."
 published: 2026-10-30
 updated: 2026-10-30
+category: ksef-w-praktyce
 ---
 
 Do końca 2026 r. najmniejsze firmy mogą wystawiać faktury poza KSeF, dopóki suma faktur objętych limitem nie przekroczy w danym miesiącu 10 000 zł brutto. Faktura, która przekracza próg, musi już trafić do KSeF. Limit nie dotyczy całej sprzedaży firmy.

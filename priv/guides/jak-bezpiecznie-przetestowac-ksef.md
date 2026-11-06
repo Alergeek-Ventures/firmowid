@@ -3,6 +3,7 @@ title: "Jak przetestować KSeF przed pierwszą prawdziwą fakturą"
 description: "Środowisko testowe, Demo i produkcyjne w KSeF: które wybrać do nauki i jak przejść próbę bez skutków prawnych."
 published: 2026-10-28
 updated: 2026-10-30
+category: ksef-w-praktyce
 ---
 
 KSeF ma trzy środowiska: testowe, przedprodukcyjne Demo i produkcyjne. Do nauki używaj dwóch pierwszych.

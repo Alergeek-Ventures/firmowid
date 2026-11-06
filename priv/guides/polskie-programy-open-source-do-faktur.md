@@ -3,6 +3,7 @@ title: "Polskie programy open source do faktur i KSeF: ranking repozytoriów 202
 description: "Uczciwe porównanie aktywnych programów open source do faktur i KSeF: licencje, gwiazdki GitHub, aktywność, self-hosting i ograniczenia."
 published: 2026-11-05
 updated: 2026-11-05
+category: ai-api-i-open-source
 ---
 
 O tym, od kiedy KSeF obowiązuje poszczególne firmy, pisaliśmy już [w poradniku o terminach](/poradnik/co-to-jest-ksef-i-e-faktura), dlatego tu tylko krótko przypomnimy najważniejsze. Faktury kosztowe odbiera się przez system od 1 lutego 2026 r., a większość przedsiębiorców wystawia w nim faktury od 1 kwietnia. Repozytoria MyCompany, Firmowida i JDG Księgowego zawierają pliki LICENSE, odpowiednio na licencjach Apache-2.0, AGPL-3.0 i MIT. ProFak ma własne warunki ograniczające modyfikację i rozpowszechnianie, toudi/ksef nie ma pliku z licencją, a KsefInvoice autor opisuje jako freeware, dlatego projekty te pokazujemy w osobnej tabeli. Według stanu z 5 listopada 2026 r. MyCompany miało 370 gwiazdek, Firmowid 31, a JDG Księgowy 11; Firmowid nie zajmuje więc pierwszego miejsca.
