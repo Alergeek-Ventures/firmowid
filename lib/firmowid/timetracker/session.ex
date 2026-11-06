@@ -535,7 +535,7 @@ defmodule Firmowid.Timetracker.Session do
 
       constraints items: [
                     fields: [
-                      name: [type: :string, allow_nil?: false],
+                      name: [type: :string, allow_nil?: true],
                       status: [
                         type: :atom,
                         allow_nil?: false,
