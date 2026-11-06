@@ -96,7 +96,7 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
         :for={column <- @columns}
         class={[
           case column do
-            "project" -> "w-48 max-xl:hidden"
+            "project" -> "w-48 in-data-[layout=sidebar]:max-[90rem]:hidden max-xl:hidden"
             "issue_date" -> "w-36"
             "booking_date" -> "w-44"
             "issue_or_value_date" -> "w-36"
@@ -109,7 +109,7 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
           end
         ]}
       />
-      <thead class="sticky top-[130px] z-1 bg-grey-100 max-md:hidden">
+      <thead class="sticky top-[calc(var(--spacing-navbar)+64px)] z-1 bg-grey-100 max-md:hidden">
         <tr>
           <th
             :for={column <- @columns}
@@ -120,7 +120,8 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
             class={[
               "h-[60px] py-2 text-left align-bottom text-xs font-normal text-grey-700 uppercase",
               column == "party" && "pl-5",
-              column == "project" && "pr-6 text-right max-xl:hidden"
+              column == "project" &&
+                "pr-6 text-right in-data-[layout=sidebar]:max-[90rem]:hidden max-xl:hidden"
             ]}
           >
             <.column_label column={column} />
@@ -232,7 +233,7 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
           [
             "bg-white py-2 transition-all duration-500",
             mobile_cell_styles(column),
-            column == "project" && "pr-6 max-xl:hidden",
+            column == "project" && "pr-6 in-data-[layout=sidebar]:max-[90rem]:hidden max-xl:hidden",
             column == "party" && "rounded-l-md px-5 text-ellipsis max-xl:max-w-72",
             String.ends_with?(column, "date") && "font-light",
             column == "amount" && "rounded-r-md",
@@ -818,7 +819,7 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
         class={[
           "bg-white py-2 transition-all duration-500",
           mobile_cell_styles(column),
-          column == "project" && "pr-6 max-xl:hidden",
+          column == "project" && "pr-6 in-data-[layout=sidebar]:max-[90rem]:hidden max-xl:hidden",
           column == "party" && "rounded-l-md px-5 text-ellipsis max-xl:max-w-72",
           String.ends_with?(column, "date") && "font-light",
           column == "amount" && "rounded-r-md",
@@ -868,7 +869,7 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
           class={[
             "bg-white py-2 transition-all duration-500",
             mobile_cell_styles(column),
-            column == "project" && "pr-6 max-xl:hidden",
+            column == "project" && "pr-6 in-data-[layout=sidebar]:max-[90rem]:hidden max-xl:hidden",
             column == "party" && "rounded-l-md px-5 text-ellipsis max-xl:max-w-72",
             String.ends_with?(column, "date") && "font-light",
             column == "amount" && "rounded-r-md",

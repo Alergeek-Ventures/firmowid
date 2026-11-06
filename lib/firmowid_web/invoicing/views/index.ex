@@ -262,7 +262,9 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
       search_results={@search_results}
     />
 
+    <%!-- With the inbox sidebar, invoices and transactions are separate places and the inbox takes the summary. --%>
     <FirmowidWeb.Invoicing.Components.FilterBar.filter_bar
+      :if={not flag_enabled?(:inbox, assigns)}
       params={@params}
       pending_count={@pending_invoicing_entries_count}
       is_month_closed={@is_month_closed}
