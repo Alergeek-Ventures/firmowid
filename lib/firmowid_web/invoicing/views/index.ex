@@ -270,6 +270,10 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
       is_month_closed={@is_month_closed}
       is_month_touched={@is_month_touched}
     />
+    <FirmowidWeb.Invoicing.Components.FilterBar.active_sub_filters
+      :if={flag_enabled?(:inbox, assigns)}
+      params={@params}
+    />
 
     <div
       :if={can_view_invoicing?(@current_user)}

@@ -64,11 +64,26 @@ defmodule FirmowidWeb.Invoicing.Components.FilterBar do
     """
   end
 
+  @doc """
+  Only the sub-filters, while one is active: the inbox sidebar layout has no
+  filter bar, but links from the summary still open a filtered list.
+  """
   attr :params, :map, required: true
+
+  def active_sub_filters(assigns) do
+    ~H"""
+    <div :if={@params.view_mode == :list && @params.subfilter} class="mt-4 mb-3 flex">
+      <.sub_filters params={@params} divider={false} />
+    </div>
+    """
+  end
+
+  attr :params, :map, required: true
+  attr :divider, :boolean, default: true
 
   defp sub_filters(%{params: %{filter: :invoices}} = assigns) do
     ~H"""
-    <.filter_pills divider>
+    <.filter_pills divider={@divider}>
       <:pill
         navigate={subfilter_url(@params, :oplacone)}
         active={@params.subfilter == :oplacone}
@@ -87,7 +102,7 @@ defmodule FirmowidWeb.Invoicing.Components.FilterBar do
 
   defp sub_filters(%{params: %{filter: :transactions}} = assigns) do
     ~H"""
-    <.filter_pills divider>
+    <.filter_pills divider={@divider}>
       <:pill
         navigate={subfilter_url(@params, :dopasowane)}
         active={@params.subfilter == :dopasowane}
