@@ -871,11 +871,6 @@ msgstr ""
 msgid "All done"
 msgstr ""
 
-#: lib/firmowid_web/landing/views/guides.ex
-#, elixir-autogen, elixir-format
-msgid "All guides"
-msgstr ""
-
 #: lib/firmowid_web/auth/components/mcp_consent.ex
 #, elixir-autogen, elixir-format
 msgid "Allow"
@@ -4988,6 +4983,7 @@ msgstr ""
 msgid "Gross value"
 msgstr ""
 
+#: lib/firmowid_web/infrastructure/layouts.ex
 #: lib/firmowid_web/landing/components/primitives.ex
 #: lib/firmowid_web/landing/views/guides.ex
 #, elixir-autogen, elixir-format

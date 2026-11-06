@@ -386,11 +386,46 @@ defmodule FirmowidWeb.Infrastructure.Layouts do
       }
     ]
 
-    graph = graph ++ article_data(assigns[:article], canonical_url(assigns), organization_id)
+    graph =
+      graph ++
+        article_data(assigns[:article], canonical_url(assigns), organization_id) ++
+        breadcrumb_data(assigns[:article], canonical_url(assigns), base_url)
 
     %{"@context" => "https://schema.org", "@graph" => graph}
     |> Jason.encode!(escape: :html_safe)
     |> Phoenix.HTML.raw()
+  end
+
+  defp breadcrumb_data(nil, _url, _base_url), do: []
+
+  defp breadcrumb_data(article, url, base_url) do
+    [
+      %{
+        "@type" => "BreadcrumbList",
+        "@id" => url <> "#breadcrumb",
+        "itemListElement" => [
+          %{
+            "@type" => "ListItem",
+            "position" => 1,
+            "name" => "Firmowid",
+            "item" => base_url <> "/"
+          },
+          %{
+            "@type" => "ListItem",
+            "position" => 2,
+            "name" => gettext("Guides"),
+            "item" => base_url <> "/poradnik"
+          },
+          %{
+            "@type" => "ListItem",
+            "position" => 3,
+            "name" => article.category.name,
+            "item" => base_url <> "/poradnik#" <> article.category.slug
+          },
+          %{"@type" => "ListItem", "position" => 4, "name" => article.title}
+        ]
+      }
+    ]
   end
 
   defp article_data(nil, _url, _organization_id), do: []
