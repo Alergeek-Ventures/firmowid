@@ -70,9 +70,17 @@ defmodule FirmowidWeb.Landing.Views.Guides do
   def render(%{live_action: :show} = assigns) do
     ~H"""
     <.legal_page>
-      <p class="text-sm">
-        <a href={~p"/poradnik"}>{gettext("All guides")}</a>
-      </p>
+      <nav class="not-prose text-sm">
+        <ol class="flex flex-wrap gap-x-2 text-grey-600">
+          <li><a href={~p"/poradnik"} class="underline">{gettext("Guides")}</a></li>
+          <li aria-hidden="true">/</li>
+          <li>
+            <a href={~p"/poradnik" <> "#" <> @article.category.slug} class="underline">
+              {@article.category.name}
+            </a>
+          </li>
+        </ol>
+      </nav>
       <h1>{@article.title}</h1>
       <p class="text-sm text-grey-600">
         {gettext("Updated:")}
