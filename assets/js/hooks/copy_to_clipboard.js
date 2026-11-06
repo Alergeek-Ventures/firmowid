@@ -18,8 +18,10 @@ export const CopyToClipboard = {
         label?.classList.remove("hidden");
         done?.classList.add("hidden");
 
-        navigator.clipboard
-          .writeText(this.el.dataset.copyText)
+        // Start from a resolved promise so a missing Clipboard API (old browser, plain HTTP)
+        // lands in the catch below instead of throwing out of the click handler.
+        Promise.resolve()
+          .then(() => navigator.clipboard.writeText(this.el.dataset.copyText))
           .then(() => {
             label?.classList.add("hidden");
             done?.classList.remove("hidden");
