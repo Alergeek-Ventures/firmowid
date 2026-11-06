@@ -1,7 +1,7 @@
 defmodule FirmowidWeb.Inbox.Views.Index do
   @moduledoc """
   The inbox: things that need attention, most important first, next to the
-  member's session, who works today (for administrators) and this month's
+  member's session, who works today and this month's
   numbers. The session is started and stopped right here.
 
   `?warstwa=ty` shows the member's own layer instead of the company's; members
@@ -50,10 +50,7 @@ defmodule FirmowidWeb.Inbox.Views.Index do
           assign(socket, month: [], session: session, last_session: last_session)
       end
 
-    presence =
-      if socket.assigns.current_user.member.role == :admin,
-        do: Session.team_presence!(today, scope: scope),
-        else: []
+    presence = Session.team_presence!(today, scope: scope)
 
     {:noreply,
      assign(socket,

@@ -179,7 +179,7 @@ defmodule FirmowidWeb.Inbox.Components.Queue do
     )
   end
 
-  @doc "Who works today and where, for administrators."
+  @doc "Who works today and where."
   attr :presence, :list,
     required: true,
     doc: "from `Firmowid.Timetracker.Session.team_presence/2`"
