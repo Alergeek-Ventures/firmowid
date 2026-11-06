@@ -464,6 +464,29 @@ defmodule FirmowidWeb.Management.Views.EmployeesTest do
     assert has_element?(view, "#signed-command-upload")
     assert render(view) =~ "Zaliczka: 1 300,00 zł"
 
+    oversized_upload =
+      file_input(view, "#signed-command-upload", :signed_command, [
+        %{
+          name: "uszkodzony-skan.pdf",
+          content: String.duplicate("not a PDF", 1_000_000),
+          type: "application/pdf"
+        }
+      ])
+
+    render_upload(oversized_upload, "uszkodzony-skan.pdf")
+    view |> form("#signed-command-upload") |> render_submit()
+
+    assert has_element?(view, "#command-upload-error[role='alert']", "8 MB")
+    assert has_element?(view, "#signed-command-upload", "uszkodzony-skan.pdf")
+    assert render(view) =~ "Zaliczka: 1 300,00 zł"
+    pending = Delegations.get_delegation!(delegation.id, scope: current_scope(admin))
+    assert pending.status == :pending
+    assert pending.billing_month == ~D[2026-10-01]
+    assert is_nil(pending.signed_command_blob_id)
+
+    view |> element("button[phx-click='cancel-upload']") |> render_click()
+    refute has_element?(view, "#command-upload-error")
+
     upload =
       file_input(view, "#signed-command-upload", :signed_command, [
         %{

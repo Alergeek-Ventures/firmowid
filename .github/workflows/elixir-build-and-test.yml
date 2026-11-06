@@ -266,10 +266,10 @@ jobs:
         with:
           catalog-version: ${{ inputs.catalog-version || needs.translations.outputs.catalog-version || needs.benchmark-translations.outputs.catalog-version }}
 
-      - name: Install xsltproc
+      - name: Install document processing tools
         run: |
           sudo apt-get update
-          sudo apt-get install -y --no-install-recommends xsltproc
+          sudo apt-get install -y --no-install-recommends xsltproc qpdf
 
       - name: Generate isolated test keys
         run: |

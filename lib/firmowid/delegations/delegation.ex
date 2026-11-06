@@ -10,6 +10,7 @@ defmodule Firmowid.Delegations.Delegation do
     authorizers: [Ash.Policy.Authorizer],
     extensions: [AshStateMachine],
     fragments: [
+      Firmowid.Delegations.Delegation.PendingOrderActions,
       Firmowid.Delegations.Delegation.Policies,
       Firmowid.Delegations.Delegation.PerDiemAttributes
     ]
@@ -100,6 +101,7 @@ defmodule Firmowid.Delegations.Delegation do
       accept [
         :title,
         :billing_month,
+        :command_date,
         :destination,
         :destination_country,
         :transport_types,
@@ -135,6 +137,10 @@ defmodule Firmowid.Delegations.Delegation do
         allow_nil?: false,
         constraints: [match: ~r/^application\/pdf$/]
 
+      argument :updated_at, :utc_datetime, allow_nil?: false
+
+      # Fails when the order was corrected after it was generated, so the signed PDF is outdated.
+      change filter(expr(updated_at == ^arg(:updated_at)))
       change CreateSignedCommandBlob
       validate present(:signed_command_filename)
 
@@ -145,23 +151,6 @@ defmodule Firmowid.Delegations.Delegation do
       change transition_state(:in_progress)
 
       emit Signals, :delegation_approved, fields: [delegation_id: :id]
-    end
-
-    update :prepare_command do
-      description "Set the advance amount used in a pending business trip order."
-      require_atomic? false
-      accept [:advance_amount]
-      validate attribute_equals(:status, :pending)
-
-      validate compare(:advance_amount, greater_than_or_equal_to: Money.new(:PLN, 0)),
-        message: gettext_noop("must be greater than or equal to 0 PLN")
-    end
-
-    update :update_billing_month do
-      description "Set the billing month for a pending business trip delegation."
-      require_atomic? false
-      accept [:billing_month]
-      validate attribute_equals(:status, :pending)
     end
 
     update :save_draft do
@@ -300,6 +289,7 @@ defmodule Firmowid.Delegations.Delegation do
     attribute :reference, :string, allow_nil?: false, public?: true
     attribute :title, :string, allow_nil?: false, public?: true
     attribute :billing_month, :date, allow_nil?: false, public?: true
+    attribute :command_date, :date, allow_nil?: false, default: &Date.utc_today/0, public?: true
     attribute :destination, :string, allow_nil?: false, public?: true
 
     attribute :destination_country, :string,

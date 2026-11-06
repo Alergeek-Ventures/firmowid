@@ -1930,6 +1930,11 @@ msgstr ""
 msgid "Choose a PDF file."
 msgstr ""
 
+#: lib/firmowid_web/management/views/delegation.ex
+#, elixir-autogen, elixir-format
+msgid "Choose a PDF up to 32 MB for automatic compression. The saved order must fit within 8 MB."
+msgstr ""
+
 #: lib/firmowid_ui/ksef/connection.ex
 #, elixir-autogen, elixir-format
 msgid "Choose a certificate and a private key."
@@ -2991,9 +2996,19 @@ msgstr ""
 msgid "Could not return to editing."
 msgstr ""
 
+#: lib/firmowid/delegations/changes/create_signed_command_blob.ex
+#, elixir-autogen, elixir-format
+msgid "Could not safely reduce this PDF to 8 MB. Choose an unprotected PDF or scan it again with a smaller file size. Your order details are saved."
+msgstr ""
+
 #: lib/firmowid_web/management/components/employee_payout_details.ex
 #, elixir-autogen, elixir-format
 msgid "Could not save the bank account number. Try again."
+msgstr ""
+
+#: lib/firmowid_web/delegations/views/delegation_form.ex
+#, elixir-autogen, elixir-format
+msgid "Could not save the business trip order. Check the details and whether it has already been signed."
 msgstr ""
 
 #: lib/firmowid_web/infrastructure/utilities/form_error_reporter.ex
@@ -3851,6 +3866,7 @@ msgstr ""
 msgid "Early access"
 msgstr ""
 
+#: lib/firmowid_web/delegations/components/delegations_list.ex
 #: lib/firmowid_web/invoicing/components/sales_invoice_details.ex
 #: lib/firmowid_web/invoicing/sales_invoices/views/summary.ex
 #: lib/firmowid_web/management/views/counterparty.ex
@@ -3868,6 +3884,12 @@ msgstr ""
 #: lib/firmowid_web/settings/components/account_tab.ex
 #, elixir-autogen, elixir-format
 msgid "Edit access data"
+msgstr ""
+
+#: lib/firmowid_web/delegations/views/delegation_form.ex
+#: lib/firmowid_web/management/views/delegation.ex
+#, elixir-autogen, elixir-format
+msgid "Edit business trip order"
 msgstr ""
 
 #: lib/firmowid_web/invoicing/sales_invoices/views/edit_form.html.heex
@@ -7309,6 +7331,11 @@ msgstr ""
 msgid "Or maybe no transaction fits because it was paid in cash or from another account? Skip searching for it. Firmowid will mark it as settled outside the system."
 msgstr ""
 
+#: lib/firmowid_web/delegations/views/delegation_form.ex
+#, elixir-autogen, elixir-format
+msgid "Order issue date"
+msgstr ""
+
 #: lib/firmowid_web/admin/views/organizations.ex
 #: lib/firmowid_web/auth/components/mcp_consent.ex
 #, elixir-autogen, elixir-format
@@ -7494,6 +7521,11 @@ msgstr ""
 #: lib/firmowid_web/landing/components/pricing.ex
 #, elixir-autogen, elixir-format
 msgid "PDF time tracking and payroll report"
+msgstr ""
+
+#: lib/firmowid_web/management/views/delegation.ex
+#, elixir-autogen, elixir-format
+msgid "PDF, up to 8 MB. For files up to 32 MB, we try lossless compression locally on Firmowid's server. PDFs with electronic signatures are not modified."
 msgstr ""
 
 #: lib/firmowid_web/invoicing/sales_invoices/views/creator_counterparty.html.heex
@@ -7895,6 +7927,11 @@ msgstr ""
 #: lib/firmowid_ui/components/ksef_connection.ex
 #, elixir-autogen, elixir-format
 msgid "Preparing the certificate request."
+msgstr ""
+
+#: lib/firmowid_web/management/views/delegation.ex
+#, elixir-autogen, elixir-format
+msgid "Preparing the file..."
 msgstr ""
 
 #: lib/firmowid_mcp/invoicing/views/issue.ex
@@ -8614,6 +8651,7 @@ msgstr ""
 msgid "Save and send to KSeF"
 msgstr ""
 
+#: lib/firmowid_web/delegations/views/delegation_form.ex
 #: lib/firmowid_web/management/views/counterparty_form.html.heex
 #: lib/firmowid_web/management/views/project_form.html.heex
 #, elixir-autogen, elixir-format
@@ -9860,6 +9898,11 @@ msgstr ""
 msgid "The business trip has been approved successfully!"
 msgstr ""
 
+#: lib/firmowid_web/management/views/delegation.ex
+#, elixir-autogen, elixir-format
+msgid "The business trip order has changed since it was generated. Generate and sign it again."
+msgstr ""
+
 #: lib/firmowid_web/landing/components/sections.ex
 #, elixir-autogen, elixir-format
 msgid "The code is public, your data stays with you. AGPL-3.0 license."
@@ -10053,7 +10096,6 @@ msgid "The file is too large (max 10 MB)."
 msgstr ""
 
 #: lib/firmowid_ui/components/ksef_connection.ex
-#: lib/firmowid_web/management/views/delegation.ex
 #, elixir-autogen, elixir-format
 msgid "The file is too large."
 msgstr ""
@@ -10214,6 +10256,11 @@ msgstr ""
 #: lib/firmowid_ui/invoicing/components/invoice_number.ex
 #, elixir-autogen, elixir-format
 msgid "The number format may be invalid."
+msgstr ""
+
+#: lib/firmowid/delegations/changes/create_signed_command_blob.ex
+#, elixir-autogen, elixir-format
+msgid "The order must fit within 8 MB. Choose a PDF up to 32 MB for automatic lossless compression."
 msgstr ""
 
 #: lib/firmowid_web/admin/views/settlement.ex
@@ -10495,6 +10542,11 @@ msgstr ""
 #: lib/firmowid/blobs/changes/process_document_blob.ex
 #, elixir-autogen, elixir-format
 msgid "This KSeF invoice is already in the system."
+msgstr ""
+
+#: lib/firmowid/delegations/changes/create_signed_command_blob.ex
+#, elixir-autogen, elixir-format
+msgid "This PDF has an electronic signature and exceeds 8 MB. Compression would invalidate the signature. Reduce the file before signing, then upload it again. Your order details are saved."
 msgstr ""
 
 #: lib/firmowid_web/auth/views/disabled_account.ex
@@ -11229,7 +11281,7 @@ msgstr ""
 
 #: lib/firmowid_web/management/views/delegation.ex
 #, elixir-autogen, elixir-format
-msgid "Upload a PDF file."
+msgid "Upload a PDF file. Other scan formats are not supported for signed orders."
 msgstr ""
 
 #: lib/firmowid/blobs/changes/process_document_blob.ex
@@ -12214,6 +12266,7 @@ msgid "can't be blank"
 msgstr ""
 
 #: lib/firmowid/delegations/delegation.ex
+#: lib/firmowid/delegations/delegation/pending_order_actions.ex
 #, elixir-autogen, elixir-format
 msgid "cannot be earlier than the departure date"
 msgstr ""
@@ -12581,6 +12634,7 @@ msgid "must be greater than or equal to %{number}"
 msgstr ""
 
 #: lib/firmowid/delegations/delegation.ex
+#: lib/firmowid/delegations/delegation/pending_order_actions.ex
 #, elixir-autogen, elixir-format
 msgid "must be greater than or equal to 0 PLN"
 msgstr ""

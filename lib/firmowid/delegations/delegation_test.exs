@@ -6,6 +6,7 @@ defmodule Firmowid.Delegations.DelegationTest do
   import Firmowid.AccountsFixtures
 
   alias Ash.Error.Forbidden
+  alias Ash.Error.Invalid
   alias Ecto.Adapters.SQL.Sandbox
   alias Firmowid.Blobs.Blob
   alias Firmowid.Delegations
@@ -24,6 +25,127 @@ defmodule Firmowid.Delegations.DelegationTest do
       employee_scope: %Scope{actor: employee, tenant: employee.member.organization_id},
       admin_scope: %Scope{actor: admin, tenant: employee.member.organization_id}
     }
+  end
+
+  test "owner and admin correct a pending order without replacing its identity or other data", %{
+    employee_scope: employee_scope,
+    admin_scope: admin_scope
+  } do
+    delegation = Delegations.create_delegation!(delegation_attrs(), scope: employee_scope)
+    expense = seed_expense(delegation, employee_scope.actor, %{})
+
+    changes = %{
+      command_date: ~D[2026-08-31],
+      destination: "Berlin",
+      destination_country: "DE",
+      purpose: "Conference",
+      transport_types: [:airplane],
+      expected_cost: Money.new(:PLN, 500),
+      start_date: ~D[2026-10-10],
+      end_date: ~D[2026-10-12],
+      billing_month: ~D[2026-10-01]
+    }
+
+    assert {:ok, updated} =
+             Delegations.update_pending_delegation(delegation.id, changes, scope: employee_scope)
+
+    for {field, value} <- changes do
+      assert Map.fetch!(updated, field) == value
+    end
+
+    assert updated.title == changes.purpose
+
+    assert {:ok, corrected} =
+             Delegations.update_pending_delegation(updated.id, %{purpose: "Client meeting"}, scope: admin_scope)
+
+    assert corrected.title == corrected.purpose
+
+    for field <- [:id, :reference, :member_id, :organization_id, :inserted_at, :advance_amount] do
+      assert Map.fetch!(corrected, field) == Map.fetch!(delegation, field)
+    end
+
+    assert corrected.status == :pending
+
+    assert Delegations.get_expense!(expense.id, scope: employee_scope).delegation_id ==
+             corrected.id
+  end
+
+  test "pending order edits reject another employee and another tenant", %{employee_scope: scope} do
+    delegation = Delegations.create_delegation!(delegation_attrs(), scope: scope)
+    other_employee = user_in_org_fixture(scope.tenant)
+    other_scope = %Scope{actor: other_employee, tenant: scope.tenant}
+
+    assert {:error, %Forbidden{}} =
+             Ash.update(delegation, %{purpose: "Forbidden"},
+               action: :update_pending,
+               scope: other_scope
+             )
+
+    foreign_admin = admin_fixture()
+    foreign_scope = %Scope{actor: foreign_admin, tenant: foreign_admin.member.organization_id}
+
+    assert {:error, _error} =
+             Delegations.update_pending_delegation(delegation.id, %{purpose: "Foreign"}, scope: foreign_scope)
+
+    assert {:error, _error} =
+             Ash.update(delegation, %{purpose: "Foreign"},
+               action: :update_pending,
+               scope: foreign_scope
+             )
+
+    assert Delegations.get_delegation!(delegation.id, scope: scope).purpose == delegation.purpose
+  end
+
+  test "a stale pending order cannot overwrite a signed order even for its admin", %{
+    employee_scope: employee_scope,
+    admin_scope: admin_scope
+  } do
+    pending = Delegations.create_delegation!(delegation_attrs(), scope: employee_scope)
+
+    approved =
+      Ash.Seed.update!(pending, %{
+        status: :in_progress,
+        signed_command_blob_id: seed_blob(employee_scope.actor).id,
+        signed_command_filename: "signed.pdf"
+      })
+
+    for scope <- [employee_scope, admin_scope] do
+      assert {:error, _error} =
+               Ash.update(pending, %{purpose: "Stale form"},
+                 action: :update_pending,
+                 scope: scope
+               )
+
+      assert {:error, _error} =
+               Ash.update(approved, %{purpose: "Signed"}, action: :update_pending, scope: scope)
+    end
+
+    assert {:error, _error} =
+             Ash.update(pending, %{billing_month: ~D[2026-10-01]},
+               action: :update_billing_month,
+               scope: admin_scope
+             )
+
+    assert {:error, _error} =
+             Ash.update(pending, %{advance_amount: Money.new(:PLN, 500)},
+               action: :prepare_command,
+               scope: admin_scope
+             )
+
+    stored = Delegations.get_delegation!(pending.id, scope: employee_scope)
+    assert stored.purpose == pending.purpose
+    assert stored.status == :in_progress
+    assert stored.signed_command_blob_id == approved.signed_command_blob_id
+
+    signed_pending = Ash.Seed.update!(stored, %{status: :pending})
+
+    assert {:error, _error} =
+             Ash.update(signed_pending, %{purpose: "Signed pending"},
+               action: :update_pending,
+               scope: admin_scope
+             )
+
+    assert Delegations.get_delegation!(pending.id, scope: admin_scope).purpose == pending.purpose
   end
 
   test "rejects a negative expected cost", %{employee_scope: employee_scope} do
@@ -119,7 +241,7 @@ defmodule Firmowid.Delegations.DelegationTest do
     admin_scope: admin_scope
   } do
     delegation = Delegations.create_delegation!(delegation_attrs(), scope: employee_scope)
-    approval_attrs = approval_attrs()
+    approval_attrs = approval_attrs(delegation)
 
     assert {:error, %Forbidden{}} =
              Delegations.approve_delegation(delegation.id, approval_attrs, scope: employee_scope)
@@ -132,15 +254,39 @@ defmodule Firmowid.Delegations.DelegationTest do
     assert approved_delegation.signed_command_blob_id
   end
 
+  test "an order corrected after it was generated cannot be approved with the outdated signature",
+       %{
+         employee_scope: employee_scope,
+         admin_scope: admin_scope
+       } do
+    generated = Delegations.create_delegation!(delegation_attrs(), scope: employee_scope)
+
+    # Timestamps have second precision, so move the correction past the generated version.
+    Ash.Seed.update!(generated, %{
+      destination: "Berlin",
+      updated_at: DateTime.shift(generated.updated_at, minute: 1)
+    })
+
+    assert {:error, %Invalid{errors: [%Ash.Error.Query.NotFound{}]}} =
+             Delegations.approve_delegation(generated.id, approval_attrs(generated), scope: admin_scope)
+
+    stored = Delegations.get_delegation!(generated.id, scope: admin_scope)
+    assert stored.status == :pending
+    assert is_nil(stored.signed_command_blob_id)
+  end
+
   test "draft saving cannot update another delegation's expenses and rolls back the whole save",
        %{
          employee_scope: employee_scope,
          admin_scope: admin_scope
        } do
     first = Delegations.create_delegation!(delegation_attrs(), scope: employee_scope)
-    first = Delegations.approve_delegation!(first.id, approval_attrs(), scope: admin_scope)
+    first = Delegations.approve_delegation!(first.id, approval_attrs(first), scope: admin_scope)
     second = Delegations.create_delegation!(delegation_attrs(), scope: employee_scope)
-    second = Delegations.approve_delegation!(second.id, approval_attrs(), scope: admin_scope)
+
+    second =
+      Delegations.approve_delegation!(second.id, approval_attrs(second), scope: admin_scope)
+
     own = seed_transport_expense(first, employee_scope.actor, %{})
     other = seed_transport_expense(second, employee_scope.actor, %{})
 
@@ -183,7 +329,7 @@ defmodule Firmowid.Delegations.DelegationTest do
     delegation = Delegations.create_delegation!(delegation_attrs(), scope: employee_scope)
 
     {:ok, delegation} =
-      Delegations.approve_delegation(delegation.id, approval_attrs(), scope: admin_scope)
+      Delegations.approve_delegation(delegation.id, approval_attrs(delegation), scope: admin_scope)
 
     short_trip = %{
       trip_started_at: ~N[2026-09-10 08:00:00],
@@ -201,7 +347,7 @@ defmodule Firmowid.Delegations.DelegationTest do
     delegation = Delegations.create_delegation!(delegation_attrs(), scope: employee_scope)
 
     {:ok, delegation} =
-      Delegations.approve_delegation(delegation.id, approval_attrs(), scope: admin_scope)
+      Delegations.approve_delegation(delegation.id, approval_attrs(delegation), scope: admin_scope)
 
     _expense =
       Ash.Seed.seed!(DelegationExpense, %{
@@ -226,7 +372,7 @@ defmodule Firmowid.Delegations.DelegationTest do
     delegation = Delegations.create_delegation!(delegation_attrs(), scope: employee_scope)
 
     {:ok, delegation} =
-      Delegations.approve_delegation(delegation.id, approval_attrs(), scope: admin_scope)
+      Delegations.approve_delegation(delegation.id, approval_attrs(delegation), scope: admin_scope)
 
     expense =
       seed_expense(delegation, employee_scope.actor,
@@ -261,7 +407,7 @@ defmodule Firmowid.Delegations.DelegationTest do
     delegation = Delegations.create_delegation!(delegation_attrs(), scope: employee_scope)
 
     {:ok, delegation} =
-      Delegations.approve_delegation(delegation.id, approval_attrs(), scope: admin_scope)
+      Delegations.approve_delegation(delegation.id, approval_attrs(delegation), scope: admin_scope)
 
     expense =
       seed_expense(delegation, employee_scope.actor,
@@ -283,7 +429,7 @@ defmodule Firmowid.Delegations.DelegationTest do
     delegation = Delegations.create_delegation!(delegation_attrs(), scope: employee_scope)
 
     {:ok, delegation} =
-      Delegations.approve_delegation(delegation.id, approval_attrs(), scope: admin_scope)
+      Delegations.approve_delegation(delegation.id, approval_attrs(delegation), scope: admin_scope)
 
     expense = seed_foreign_expense(delegation, employee_scope.actor)
 
@@ -304,7 +450,7 @@ defmodule Firmowid.Delegations.DelegationTest do
     delegation = Delegations.create_delegation!(delegation_attrs(), scope: employee_scope)
 
     {:ok, delegation} =
-      Delegations.approve_delegation(delegation.id, approval_attrs(), scope: admin_scope)
+      Delegations.approve_delegation(delegation.id, approval_attrs(delegation), scope: admin_scope)
 
     assert {:error, _} =
              %{
@@ -334,7 +480,7 @@ defmodule Firmowid.Delegations.DelegationTest do
     delegation = Delegations.create_delegation!(delegation_attrs(), scope: employee_scope)
 
     {:ok, delegation} =
-      Delegations.approve_delegation(delegation.id, approval_attrs(), scope: admin_scope)
+      Delegations.approve_delegation(delegation.id, approval_attrs(delegation), scope: admin_scope)
 
     assert {:ok, _expense} =
              %{
@@ -371,7 +517,7 @@ defmodule Firmowid.Delegations.DelegationTest do
     delegation = Delegations.create_delegation!(delegation_attrs(), scope: employee_scope)
 
     delegation =
-      Delegations.approve_delegation!(delegation.id, approval_attrs(), scope: admin_scope)
+      Delegations.approve_delegation!(delegation.id, approval_attrs(delegation), scope: admin_scope)
 
     expense =
       seed_transport_expense(delegation, employee_scope.actor, %{
@@ -431,7 +577,7 @@ defmodule Firmowid.Delegations.DelegationTest do
         )
 
       delegation =
-        Delegations.approve_delegation!(delegation.id, approval_attrs(), scope: admin_scope)
+        Delegations.approve_delegation!(delegation.id, approval_attrs(delegation), scope: admin_scope)
 
       expense = seed_transport_expense(delegation, employee_scope.actor, times)
       original_trip = hd(expense.details.value.trips)
@@ -465,7 +611,7 @@ defmodule Firmowid.Delegations.DelegationTest do
     delegation = Delegations.create_delegation!(delegation_attrs(), scope: employee_scope)
 
     {:ok, delegation} =
-      Delegations.approve_delegation(delegation.id, approval_attrs(), scope: admin_scope)
+      Delegations.approve_delegation(delegation.id, approval_attrs(delegation), scope: admin_scope)
 
     expense =
       seed_expense(delegation, employee_scope.actor,
@@ -523,7 +669,7 @@ defmodule Firmowid.Delegations.DelegationTest do
     delegation = Delegations.create_delegation!(delegation_attrs(), scope: employee_scope)
 
     {:ok, delegation} =
-      Delegations.approve_delegation(delegation.id, approval_attrs(), scope: admin_scope)
+      Delegations.approve_delegation(delegation.id, approval_attrs(delegation), scope: admin_scope)
 
     assert {:error, _error} =
              Delegations.create_expense(
@@ -544,7 +690,7 @@ defmodule Firmowid.Delegations.DelegationTest do
     delegation = Delegations.create_delegation!(delegation_attrs(), scope: employee_scope)
 
     {:ok, delegation} =
-      Delegations.approve_delegation(delegation.id, approval_attrs(), scope: admin_scope)
+      Delegations.approve_delegation(delegation.id, approval_attrs(delegation), scope: admin_scope)
 
     _expense =
       seed_expense(delegation, employee_scope.actor,
@@ -606,7 +752,7 @@ defmodule Firmowid.Delegations.DelegationTest do
     delegation = Delegations.create_delegation!(delegation_attrs(), scope: employee_scope)
 
     {:ok, delegation} =
-      Delegations.approve_delegation(delegation.id, approval_attrs(), scope: admin_scope)
+      Delegations.approve_delegation(delegation.id, approval_attrs(delegation), scope: admin_scope)
 
     _expense =
       seed_expense(delegation, employee_scope.actor,
@@ -738,7 +884,7 @@ defmodule Firmowid.Delegations.DelegationTest do
     %{upload_path: path, content_type: "application/pdf"}
   end
 
-  defp approval_attrs do
+  defp approval_attrs(delegation) do
     path = Briefly.create!(extname: ".pdf")
     File.write!(path, "%PDF-1.4 signed command")
 
@@ -746,7 +892,8 @@ defmodule Firmowid.Delegations.DelegationTest do
       advance_amount: Money.new(:PLN, 50),
       signed_command_filename: "polecenie.pdf",
       upload_path: path,
-      content_type: "application/pdf"
+      content_type: "application/pdf",
+      updated_at: delegation.updated_at
     }
   end
 end

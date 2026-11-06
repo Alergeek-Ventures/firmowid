@@ -10,6 +10,7 @@ defmodule FirmowidWeb.Core.Router do
 
   alias AshAuthentication.Phoenix.LiveSession
   alias Auth.Controllers.AuthController
+  alias Delegations.Views.DelegationForm
   alias FirmowidWeb.Core.Telemetry
   alias FirmowidWeb.Infrastructure.Hooks.CurrentPath
   alias FirmowidWeb.Infrastructure.Hooks.FeatureFlags
@@ -341,6 +342,10 @@ defmodule FirmowidWeb.Core.Router do
            Management.Views.Delegation,
            :show
 
+      live "/zarzadzanie/pracownicy/:id/delegacje/:reference/edycja",
+           DelegationForm,
+           :edit
+
       live "/zarzadzanie/kontrahenci", Counterparties, :index
       live "/zarzadzanie/kontrahenci/archiwum", Counterparties, :archive
       live "/zarzadzanie/kontrahenci/dodaj", CounterpartyForm, :new
@@ -383,7 +388,8 @@ defmodule FirmowidWeb.Core.Router do
 
       live "/ustawienia", Settings.Views.Index, :index
       live "/ustawienia/:section", Settings.Views.Index, :index
-      live "/delegacje/dodaj", Delegations.Views.DelegationForm, :new
+      live "/delegacje/dodaj", DelegationForm, :new
+      live "/delegacje/:reference/edycja", DelegationForm, :edit
       live "/delegacje/:reference", Delegations.Views.Delegation, :show
     end
   end
