@@ -17,9 +17,12 @@ defmodule Firmowid.Timetracker.Session.Actions.TeamPresence do
   alias Firmowid.Timetracker
 
   @type status :: :office | :remote | :leave | :away
-  @type presence :: %{name: String.t(), status: status()}
+  @type presence :: %{name: String.t() | nil, status: status()}
 
-  @doc "Lists the active members with their state, the working ones first."
+  @doc """
+  Lists the active members with their state, the working ones first. The name
+  is `nil` for a member who has not set one, so their email stays private.
+  """
   @spec run(Ash.ActionInput.t(), Ash.Resource.Actions.Implementation.Context.t()) ::
           {:ok, [presence()]}
   def run(input, context) do
@@ -40,14 +43,14 @@ defmodule Firmowid.Timetracker.Session.Actions.TeamPresence do
 
     presence =
       %{status: :active}
-      |> Core.list_users!(scope: reader, load: [member: [:display_name]])
+      |> Core.list_users!(scope: reader, load: [:member])
       |> Enum.map(fn %{member: member} ->
         %{
-          name: member.display_name,
+          name: member.name,
           status: status(Map.fetch(remote_by_member, member.id), MapSet.member?(on_leave, member.id))
         }
       end)
-      |> Enum.sort_by(&{rank(&1.status), String.downcase(&1.name)})
+      |> Enum.sort_by(&{rank(&1.status), String.downcase(&1.name || "")})
 
     {:ok, presence}
   end

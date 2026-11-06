@@ -56,6 +56,7 @@ defmodule Firmowid.Core.Member do
     end
 
     field_policy [
+      :display_name,
       :avatar_blob_id,
       :phone,
       :slack_url,
@@ -83,8 +84,9 @@ defmodule Firmowid.Core.Member do
                     ]}
     end
 
-    # The same as the other personal fields, plus the team presence, which shows names.
-    field_policy [:name, :display_name] do
+    # The same as the other personal fields, plus the team presence, which shows
+    # names. Not `display_name`: it falls back to the email.
+    field_policy :name do
       authorize_if expr(user_id == ^actor(:id))
       authorize_if OrganizationAdmin
       authorize_if actor_attribute_equals(:system_role, :superuser)

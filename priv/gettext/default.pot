@@ -11220,6 +11220,12 @@ msgstr ""
 msgid "Unmatched"
 msgstr ""
 
+#: lib/firmowid_web/inbox/components/queue.ex
+#, elixir-autogen, elixir-format
+msgctxt "presence"
+msgid "Unnamed member"
+msgstr ""
+
 #: lib/firmowid_web/invoicing/components/filter_bar.ex
 #, elixir-autogen, elixir-format
 msgid "Unpaid"
