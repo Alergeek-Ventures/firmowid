@@ -14,6 +14,7 @@ Firmowid to aplikacja webowa dla firm, prowadzona przez Alergeek Ventures sp. z 
 
 ## Poradnik
 
+- [Masowa korekta faktur w KSeF](https://firmowid.pl/poradnik/masowa-korekta-faktur-ksef): Faktury przyjętej przez KSeF nie można edytować. Przy masowym błędzie przygotuj listę dokumentów, wystaw korekty, wyślij małą partię i sprawdź status każdej wysyłki.
 - [Obca faktura w KSeF: co zrobić przed zapłatą](https://firmowid.pl/poradnik/obca-faktura-w-ksef): Gdy w KSeF pojawi się obca faktura, nie płać jej przed sprawdzeniem; podejrzenie nadużycia zgłosisz w Aplikacji Podatnika KSeF 2.0.
 - [Program do faktur z dopasowaniem przelewów: import to nie Open Banking](https://firmowid.pl/poradnik/dopasowanie-przelewow-do-faktur): Skąd program do faktur wie o wpłacie: import MT940, CSV lub XML albo Open Banking (AISP). Porównanie 8 programów, które łączą przelewy z fakturami.
 - [Tryb offline w KSeF: co zrobić, gdy nie możesz wysłać faktury](https://firmowid.pl/poradnik/tryb-offline-ksef): Tryb offline24, niedostępność i awaria KSeF: kiedy wolno wystawić fakturę poza systemem i do kiedy trzeba ją dosłać.
