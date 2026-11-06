@@ -14,6 +14,7 @@ Firmowid to aplikacja webowa dla firm, prowadzona przez Alergeek Ventures sp. z 
 
 ## Poradnik
 
+- [Program do faktur dla JDG: jak wybrać po wejściu KSeF](https://firmowid.pl/poradnik/program-do-faktur-dla-jdg): Program do faktur dla JDG warto dobrać do powtarzalnych czynności poza KSeF: księgowości, sprawdzania wpłat i ewidencji czasu projektów.
 - [Zaliczka wyższa niż cena końcowa: korekta w KSeF](https://firmowid.pl/poradnik/zaliczka-za-wysoka-faktura-rozliczeniowa): Gdy zafakturowana zaliczka przewyższa ostateczną cenę, zwróć klientowi różnicę i wystaw w KSeF fakturę korygującą do faktury zaliczkowej.
 - [Masowa korekta faktur w KSeF](https://firmowid.pl/poradnik/masowa-korekta-faktur-ksef): Faktury przyjętej przez KSeF nie można edytować. Przy masowym błędzie przygotuj listę dokumentów, wystaw korekty, wyślij małą partię i sprawdź status każdej wysyłki.
 - [Obca faktura w KSeF: co zrobić przed zapłatą](https://firmowid.pl/poradnik/obca-faktura-w-ksef): Gdy w KSeF pojawi się obca faktura, nie płać jej przed sprawdzeniem; podejrzenie nadużycia zgłosisz w Aplikacji Podatnika KSeF 2.0.
