@@ -21,9 +21,9 @@
     </.live_title>
     <link rel="canonical" href={canonical_url(assigns)} />
     <link
-      :if={assigns[:public_marketing?]}
+      :if={assigns[:public_marketing?] && canonical_path(assigns) == "/"}
       rel="alternate"
-      type="text/markdown"
+      type="text/plain"
       href={~p"/llms.txt"}
       title="llms.txt"
     />
