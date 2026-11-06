@@ -68,7 +68,7 @@ defmodule FirmowidWeb.Inbox.Components.Sidebar do
     <aside
       id="app-sidebar"
       class={[
-        "fixed inset-y-0 left-0 z-50 flex w-64 flex-col gap-6 overflow-x-hidden overflow-y-auto bg-black px-3 py-5 text-sm text-white [--focus-ring:var(--color-white)] max-md:w-full max-md:duration-300 max-md:ease-out-quint motion-safe:max-md:transition-[translate,visibility] md:duration-250 md:ease-out-quint md:in-data-[sidebar=collapsed]:w-14 motion-safe:md:transition-[width]",
+        "fixed inset-y-0 left-0 z-50 flex w-64 flex-col gap-6 overflow-x-hidden overflow-y-auto bg-black px-3 py-5 text-sm text-white [--focus-ring:var(--color-white)] max-md:w-full max-md:ease-out-quint motion-safe:max-md:transition-[translate,visibility] motion-safe:max-md:duration-300 md:ease-out-quint md:in-data-[sidebar=collapsed]:w-14 motion-safe:md:transition-[width] motion-safe:md:duration-250",
         @closed_on_phone
       ]}
     >

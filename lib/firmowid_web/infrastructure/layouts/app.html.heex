@@ -240,7 +240,7 @@
       # the sidebar replaces the navbar on desktop, so sticky headers stick to the top;
       # the margin follows the sidebar's width as it collapses
       inbox_sidebar?(assigns) &&
-        "md:ms-64 md:duration-250 md:ease-out-quint md:[--navbar-height:0px] md:[--spacing-navbar:0px] md:in-data-[sidebar=collapsed]:ms-14 motion-safe:md:transition-[margin-inline-start]",
+        "md:ms-64 md:ease-out-quint md:[--navbar-height:0px] md:[--spacing-navbar:0px] md:in-data-[sidebar=collapsed]:ms-14 motion-safe:md:transition-[margin-inline-start] motion-safe:md:duration-250",
       assigns[:main_class]
     ]
   }
