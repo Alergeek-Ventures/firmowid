@@ -61,6 +61,59 @@ defmodule FirmowidWeb.Delegations.Views.DelegationFormTest do
     end
   end
 
+  test "edits the existing pending order and preserves unedited data", %{conn: conn} do
+    employee = user_fixture()
+    scope = %Scope{actor: employee, tenant: employee.member.organization_id}
+
+    delegation =
+      Delegations.create_delegation!(
+        %{
+          title: "Original purpose",
+          purpose: "Original purpose",
+          billing_month: current_billing_month(),
+          command_date: Date.add(Date.utc_today(), -2),
+          destination: "Kraków",
+          destination_country: "PL",
+          transport_types: [:railway, :bus],
+          expected_cost: Money.new(:PLN, "123.45"),
+          start_date: delegation_start_date(),
+          end_date: Date.add(delegation_start_date(), 1)
+        },
+        scope: scope
+      )
+
+    {:ok, view, _html} =
+      conn |> log_in_user(employee) |> live(~p"/delegacje/#{delegation.reference}/edycja")
+
+    assert has_element?(view, "#delegation_amount[value='123.45']")
+    assert has_element?(view, "#delegation_command_date[value='#{delegation.command_date}']")
+    assert has_element?(view, "#delegation_transport_types_1 option[value='bus'][selected]")
+
+    view
+    |> form("#delegation-form",
+      delegation: %{
+        purpose: "Updated purpose",
+        command_date: Date.to_iso8601(Date.add(Date.utc_today(), -1))
+      }
+    )
+    |> render_submit()
+
+    assert_redirect(view, ~p"/ustawienia/profil")
+    [stored] = Delegations.list_delegations_for_member!(employee.member.id, scope: scope)
+    assert stored.id == delegation.id
+    assert stored.reference == delegation.reference
+    assert stored.inserted_at == delegation.inserted_at
+    assert stored.member_id == delegation.member_id
+    assert stored.organization_id == delegation.organization_id
+    assert stored.purpose == "Updated purpose"
+    assert stored.title == stored.purpose
+    assert stored.command_date == Date.add(Date.utc_today(), -1)
+    assert stored.expected_cost == delegation.expected_cost
+    assert stored.transport_types == delegation.transport_types
+    assert stored.destination_country == delegation.destination_country
+    assert stored.billing_month == delegation.billing_month
+  end
+
   test "keeps the form live when the billing month is malformed", %{conn: conn} do
     employee = user_fixture()
     {:ok, view, _html} = conn |> log_in_user(employee) |> live(~p"/delegacje/dodaj")

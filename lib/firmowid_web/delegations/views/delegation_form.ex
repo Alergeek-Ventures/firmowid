@@ -1,5 +1,5 @@
 defmodule FirmowidWeb.Delegations.Views.DelegationForm do
-  @moduledoc "Form for submitting a new business trip delegation."
+  @moduledoc "Form for submitting or correcting an unsigned business trip order."
 
   use FirmowidWeb, :live_view
 
@@ -10,40 +10,91 @@ defmodule FirmowidWeb.Delegations.Views.DelegationForm do
   import FirmowidWeb.DesignSystem.Components.SearchableSelect
   import Phoenix.Component, except: [link: 1]
 
+  alias Firmowid.Core
+  alias Firmowid.Delegations
   alias Firmowid.Delegations.Delegation
   alias Firmowid.Invoicing.CountryCodes
   alias Firmowid.Payroll
 
   @impl true
-  def mount(_params, _session, socket) do
-    user = socket.assigns.current_user
+  def mount(%{"reference" => reference} = params, _session, socket) do
+    scope = socket.assigns.ash_scope
 
-    user = %{
-      user
-      | member: Ash.load!(user.member, :display_name, scope: socket.assigns.ash_scope)
-    }
+    case Delegations.get_delegation_by_reference(reference, scope: scope, not_found_error?: false) do
+      {:ok, %{status: :pending, signed_command_blob_id: nil} = delegation} ->
+        if Ash.can?({delegation, :update_pending}, scope) do
+          {:ok, setup_form(socket, delegation, params)}
+        else
+          {:ok, push_navigate(socket, to: ~p"/ustawienia/profil")}
+        end
 
+      {:ok, _delegation} ->
+        {:ok, push_navigate(socket, to: ~p"/ustawienia/profil")}
+    end
+  end
+
+  def mount(_params, _session, socket), do: {:ok, setup_form(socket, nil, %{})}
+
+  defp setup_form(socket, delegation, params) do
+    scope = socket.assigns.ash_scope
+
+    member =
+      if delegation do
+        Ash.load!(delegation, :member, scope: scope).member
+      else
+        socket.assigns.current_user.member
+      end
+
+    member = Ash.load!(member, :display_name, scope: scope)
     today = Date.utc_today()
-    default_month = Date.beginning_of_month(today)
-    form = delegation_form(socket.assigns.ash_scope, default_month)
 
-    {:ok, employment_contract} =
-      Payroll.load_current_contract(user.member.id, scope: socket.assigns.ash_scope)
+    billing_month =
+      if delegation, do: delegation.billing_month, else: Date.beginning_of_month(today)
 
+    form = delegation_form(scope, billing_month, delegation)
+    {:ok, employment_contract} = Payroll.load_current_contract(member.id, scope: scope)
     months = billing_months(employment_contract && employment_contract.starts_at, today)
+    months = [billing_month | months] |> Enum.uniq() |> Enum.sort(Date)
 
-    {:ok,
-     socket
-     |> assign(:current_user, user)
-     |> assign(:page_title, gettext("Business trip planning"))
-     |> assign(:months, months)
-     |> assign(:default_month, default_month)
-     |> assign(:billing_month, default_month)
-     |> assign(:billing_month_chosen?, false)
-     |> assign(:transport_types, [""])
-     |> assign(:employment_contract, employment_contract)
-     |> assign(:country_options, CountryCodes.country_options())
-     |> assign(:form, form)}
+    back_path =
+      case params do
+        %{"id" => employee_id} ->
+          employee =
+            %{id: employee_id}
+            |> Core.get_org_user!(scope: scope)
+            |> Ash.load!(:member, scope: scope)
+
+          if employee.member.id == member.id do
+            ~p"/zarzadzanie/pracownicy/#{employee_id}/delegacje/#{delegation.reference}"
+          else
+            ~p"/ustawienia/profil"
+          end
+
+        _ ->
+          ~p"/ustawienia/profil"
+      end
+
+    socket
+    |> assign(:member, member)
+    |> assign(:delegation, delegation)
+    |> assign(:back_path, back_path)
+    |> assign(
+      :page_title,
+      if(delegation,
+        do: gettext("Edit business trip order"),
+        else: gettext("Business trip planning")
+      )
+    )
+    |> assign(:months, months)
+    |> assign(:billing_month, billing_month)
+    |> assign(:billing_month_chosen?, not is_nil(delegation))
+    |> assign(
+      :transport_types,
+      if(delegation, do: Enum.map(delegation.transport_types, &to_string/1), else: [""])
+    )
+    |> assign(:employment_contract, employment_contract)
+    |> assign(:country_options, CountryCodes.country_options())
+    |> assign(:form, form)
   end
 
   @impl true
@@ -51,11 +102,11 @@ defmodule FirmowidWeb.Delegations.Views.DelegationForm do
     ~H"""
     <div class="mt-4 min-h-screen font-[340]">
       <div class="mb-6">
-        <.back navigate={~p"/ustawienia/profil"} class="inline-flex text-sm" />
+        <.back navigate={@back_path} class="inline-flex text-sm" />
       </div>
       <main class="px-0 pb-12 sm:px-32">
-        <h1 class="text-2xl/tight font-normal">{gettext("Business trip planning")}</h1>
-        <p class="mt-6 max-w-3xl text-base text-balance text-grey-700">
+        <h1 class="text-2xl/tight font-normal">{@page_title}</h1>
+        <p :if={!@delegation} class="mt-6 max-w-3xl text-base text-balance text-grey-700">
           {gettext(
             "Fill in the request below. After you send it, it will be forwarded to your employer. Once it is approved, you will receive a confirmation email."
           )}
@@ -89,9 +140,18 @@ defmodule FirmowidWeb.Delegations.Views.DelegationForm do
                   />
                 </div>
               </.form_row>
+              <.form_row label={gettext("Order issue date")} for="delegation_command_date">
+                <.input
+                  field={@form[:command_date]}
+                  id="delegation_command_date"
+                  type="date"
+                  required
+                  input_class="w-full sm:max-w-48"
+                />
+              </.form_row>
               <dl class="contents">
                 <.detail_row dd_class="sm:mt-8" dt_class="sm:mt-8" label={gettext("Full name")}>
-                  {@current_user.member.display_name}
+                  {@member.display_name}
                 </.detail_row>
                 <.detail_row label={gettext("Position")}>
                   {(@employment_contract && @employment_contract.position) || "—"}
@@ -213,6 +273,7 @@ defmodule FirmowidWeb.Delegations.Views.DelegationForm do
                   <div class="min-w-0 flex-1 sm:flex-none">
                     <.input
                       field={@form[:expected_cost]}
+                      value={expected_cost_value(@form[:expected_cost].value)}
                       id="delegation_amount"
                       type="number"
                       min="0"
@@ -233,7 +294,7 @@ defmodule FirmowidWeb.Delegations.Views.DelegationForm do
             variant="primary"
             accent="teal"
             class="mt-20 w-full sm:float-end sm:mr-4 sm:w-42"
-          >{pgettext("business trip form", "Plan")}</.button>
+          >{if @delegation, do: gettext("Save changes"), else: pgettext("business trip form", "Plan")}</.button>
         </.form>
       </main>
     </div>
@@ -292,10 +353,23 @@ defmodule FirmowidWeb.Delegations.Views.DelegationForm do
   def handle_event("save", %{"delegation" => params}, socket) do
     case AshPhoenix.Form.submit(socket.assigns.form, params: params) do
       {:ok, _delegation} ->
-        {:noreply, push_navigate(socket, to: ~p"/ustawienia/profil")}
+        {:noreply, push_navigate(socket, to: socket.assigns.back_path)}
 
       {:error, form} ->
-        {:noreply, assign(socket, :form, to_form(form))}
+        socket = assign(socket, :form, to_form(form))
+
+        socket =
+          if socket.assigns.delegation do
+            put_flash(
+              socket,
+              :error,
+              gettext("Could not save the business trip order. Check the details and whether it has already been signed.")
+            )
+          else
+            socket
+          end
+
+        {:noreply, socket}
     end
   end
 
@@ -330,16 +404,29 @@ defmodule FirmowidWeb.Delegations.Views.DelegationForm do
     |> Enum.take_while(&(Date.compare(&1, last) != :gt))
   end
 
-  defp delegation_form(scope, billing_month) do
+  defp delegation_form(scope, _billing_month, %Delegation{} = delegation) do
+    delegation
+    |> AshPhoenix.Form.for_update(:update_pending, scope: scope, as: "delegation")
+    |> to_form()
+  end
+
+  defp delegation_form(scope, billing_month, nil) do
     Delegation
     |> AshPhoenix.Form.for_create(:create,
       scope: scope,
       as: "delegation",
-      params: %{"billing_month" => Date.to_iso8601(billing_month), "destination_country" => "PL"},
+      params: %{
+        "billing_month" => Date.to_iso8601(billing_month),
+        "command_date" => Date.to_iso8601(Date.utc_today()),
+        "destination_country" => "PL"
+      },
       transform_params: fn params, _type -> Map.put(params, "title", params["purpose"]) end
     )
     |> to_form()
   end
+
+  defp expected_cost_value(%Money{amount: amount}), do: Decimal.to_string(amount)
+  defp expected_cost_value(value), do: value
 
   defp transport_types(%{"transport_types" => transport_types}) when is_list(transport_types), do: transport_types
 

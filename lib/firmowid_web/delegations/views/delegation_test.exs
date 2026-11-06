@@ -110,7 +110,8 @@ defmodule FirmowidWeb.Delegations.Views.DelegationTest do
           advance_amount: Money.new(:PLN, 0),
           signed_command_filename: "polecenie.pdf",
           upload_path: signed_command_path,
-          content_type: "application/pdf"
+          content_type: "application/pdf",
+          updated_at: delegation.updated_at
         },
         scope: %Scope{actor: admin, tenant: user.member.organization_id}
       )
@@ -1086,7 +1087,8 @@ defmodule FirmowidWeb.Delegations.Views.DelegationTest do
         %{
           signed_command_filename: "polecenie.pdf",
           upload_path: signed_command_path,
-          content_type: "application/pdf"
+          content_type: "application/pdf",
+          updated_at: delegation.updated_at
         },
         scope: %Scope{actor: admin, tenant: user.member.organization_id}
       )

@@ -22,7 +22,7 @@ defmodule FirmowidWeb.Management.Components.DelegationOrderPdf do
             Polecenie wyjazdu służbowego nr <strong>{@delegation.reference}</strong>
           </h1>
           <p class="mt-1">
-            z dnia <strong>{DelegationPresentation.format_date(@delegation.inserted_at)}</strong>
+            z dnia <strong>{DelegationPresentation.format_date(@delegation.command_date)}</strong>
           </p>
         </div>
       </header>

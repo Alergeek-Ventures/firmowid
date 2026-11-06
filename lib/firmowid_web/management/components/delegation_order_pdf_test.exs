@@ -14,6 +14,7 @@ defmodule FirmowidWeb.Management.Components.DelegationOrderPdfTest do
         delegation: %{
           reference: "JK-2026-09-1",
           inserted_at: ~U[2026-09-01 12:00:00Z],
+          command_date: ~D[2026-08-31],
           start_date: ~D[2026-09-10],
           end_date: ~D[2026-09-11],
           destination: "Krakow",
@@ -25,5 +26,6 @@ defmodule FirmowidWeb.Management.Components.DelegationOrderPdfTest do
       )
 
     assert html =~ "komunikacja publiczna"
+    assert html =~ "31.08.2026"
   end
 end

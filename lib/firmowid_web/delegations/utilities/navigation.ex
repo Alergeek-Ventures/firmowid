@@ -5,6 +5,10 @@ defmodule FirmowidWeb.Delegations.Utilities.Navigation do
   @spec new_path() :: String.t()
   def new_path, do: "/delegacje/dodaj"
 
+  @doc "Returns the path for correcting an unsigned delegation order."
+  @spec edit_path(String.t()) :: String.t()
+  def edit_path(reference), do: "/delegacje/#{reference}/edycja"
+
   @doc "Returns the path for viewing a delegation."
   @spec show_path(String.t()) :: String.t()
   def show_path(reference), do: "/delegacje/#{reference}"

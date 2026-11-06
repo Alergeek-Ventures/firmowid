@@ -46,6 +46,10 @@ defmodule Firmowid.Delegations.Delegation.Policies do
       authorize_if expr(member_id == ^actor([:member, :id]))
     end
 
+    policy action(:update_pending) do
+      authorize_if expr(status == :pending and member_id == ^actor([:member, :id]))
+    end
+
     policy action(:approve) do
       forbid_if always()
     end

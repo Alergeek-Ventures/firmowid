@@ -14,8 +14,11 @@ defmodule FirmowidWeb.Management.Views.Delegation do
   import FirmowidWeb.DesignSystem.Components.MonthPicker
   import Phoenix.Component, except: [link: 1]
 
+  alias Ash.Error.Invalid
+  alias Ash.Error.Query.NotFound
   alias Firmowid.Core
   alias Firmowid.Delegations
+  alias Firmowid.Delegations.CommandUpload
   alias Firmowid.Invoicing.CountryCodes
   alias Firmowid.Payroll
   alias FirmowidWeb.Delegations.Utilities.DelegationPresentation
@@ -36,9 +39,14 @@ defmodule FirmowidWeb.Management.Views.Delegation do
      |> assign(:generated_advance_amount, nil)
      |> assign(:generated_billing_month, nil)
      |> assign(:current_advance_amount, Money.new(:PLN, 0))
+     |> assign(:command_upload_error, nil)
      |> assign(sign_before: sign_before, sign_after: sign_after)
      |> assign(drop_before: drop_before, drop_after: drop_after)
-     |> allow_upload(:signed_command, accept: ~w(.pdf), max_entries: 1)}
+     |> allow_upload(:signed_command,
+       accept: ~w(.pdf),
+       max_entries: 1,
+       max_file_size: CommandUpload.max_input_size()
+     )}
   end
 
   @impl true
@@ -143,10 +151,10 @@ defmodule FirmowidWeb.Management.Views.Delegation do
     end
   end
 
-  def handle_event("validate-upload", _params, socket), do: {:noreply, socket}
+  def handle_event("validate-upload", _params, socket), do: {:noreply, assign(socket, :command_upload_error, nil)}
 
   def handle_event("cancel-upload", %{"ref" => ref}, socket) do
-    {:noreply, cancel_upload(socket, :signed_command, ref)}
+    {:noreply, socket |> cancel_upload(:signed_command, ref) |> assign(:command_upload_error, nil)}
   end
 
   def handle_event("approve", _params, socket) do
@@ -154,17 +162,20 @@ defmodule FirmowidWeb.Management.Views.Delegation do
 
     result =
       consume_uploaded_entries(socket, :signed_command, fn %{path: path}, entry ->
-        {:ok,
-         Delegations.approve_delegation(
-           socket.assigns.delegation.id,
-           %{
-             advance_amount: socket.assigns.delegation.advance_amount,
-             signed_command_filename: entry.client_name,
-             upload_path: path,
-             content_type: entry.client_type
-           },
-           scope: scope
-         )}
+        case Delegations.approve_delegation(
+               socket.assigns.delegation.id,
+               %{
+                 advance_amount: socket.assigns.delegation.advance_amount,
+                 signed_command_filename: entry.client_name,
+                 upload_path: path,
+                 content_type: entry.client_type,
+                 updated_at: socket.assigns.delegation.updated_at
+               },
+               scope: scope
+             ) do
+          {:ok, delegation} -> {:ok, {:ok, delegation}}
+          {:error, error} -> {:postpone, {:error, error}}
+        end
       end)
 
     case result do
@@ -173,6 +184,35 @@ defmodule FirmowidWeb.Management.Views.Delegation do
          socket
          |> put_flash(:info, gettext("The business trip has been approved successfully!"))
          |> push_navigate(to: Navigation.employee_delegations_path(socket.assigns.employee.id))}
+
+      # The order was corrected after it was generated, so reload it to generate and sign it again.
+      [{:error, %Invalid{errors: [%NotFound{}]}}] ->
+        {:noreply,
+         socket
+         |> put_flash(
+           :error,
+           gettext("The business trip order has changed since it was generated. Generate and sign it again.")
+         )
+         |> push_navigate(
+           to: ~p"/zarzadzanie/pracownicy/#{socket.assigns.employee.id}/delegacje/#{socket.assigns.delegation.reference}"
+         )}
+
+      [{:error, %Invalid{errors: errors}}] ->
+        message =
+          Enum.find_value(errors, fn
+            %{field: :upload_path, message: message} when is_binary(message) ->
+              Gettext.gettext(Firmowid.Gettext, message)
+
+            _error ->
+              nil
+          end)
+
+        {:noreply,
+         assign(
+           socket,
+           :command_upload_error,
+           message || gettext("Could not approve the business trip.")
+         )}
 
       _ ->
         {:noreply, put_flash(socket, :error, gettext("Could not approve the business trip."))}
@@ -192,7 +232,7 @@ defmodule FirmowidWeb.Management.Views.Delegation do
          |> push_navigate(to: Navigation.employee_delegations_path(socket.assigns.employee.id))}
 
       # The employee has submitted the settlement again, so reload the page with the new one.
-      {:error, %Ash.Error.Invalid{errors: [%Ash.Error.Query.NotFound{}]}} ->
+      {:error, %Invalid{errors: [%NotFound{}]}} ->
         {:noreply,
          socket
          |> put_flash(
@@ -398,6 +438,17 @@ defmodule FirmowidWeb.Management.Views.Delegation do
             </.detail_row>
           </dl>
 
+          <.link
+            :if={@delegation.status == :pending && is_nil(@delegation.signed_command_blob_id)}
+            kind="button"
+            variant="outline"
+            size="small"
+            navigate={Navigation.employee_delegation_edit_path(@employee.id, @delegation.reference)}
+            class="mbs-6"
+          >
+            {gettext("Edit business trip order")}
+          </.link>
+
           <.form
             for={@command_form}
             id="delegation-command-form"
@@ -517,7 +568,16 @@ defmodule FirmowidWeb.Management.Views.Delegation do
                 phx-submit="approve"
                 class="mt-6"
               >
-                <.live_file_input upload={@uploads.signed_command} class="sr-only" />
+                <p id="command-upload-hint" class="mbe-3 text-sm text-grey-700">
+                  {gettext(
+                    "PDF, up to 8 MB. For files up to 32 MB, we try lossless compression locally on Firmowid's server. PDFs with electronic signatures are not modified."
+                  )}
+                </p>
+                <.live_file_input
+                  upload={@uploads.signed_command}
+                  aria-describedby="command-upload-hint"
+                  class="sr-only"
+                />
                 <label
                   :if={@uploads.signed_command.entries == []}
                   for={@uploads.signed_command.ref}
@@ -538,13 +598,26 @@ defmodule FirmowidWeb.Management.Views.Delegation do
                 >
                   {upload_error(error)}
                 </p>
+                <.alert
+                  :if={@command_upload_error}
+                  id="command-upload-error"
+                  tone="danger"
+                  class="mbs-3"
+                >
+                  {@command_upload_error}
+                </.alert>
                 <div class="mt-5 flex gap-3">
                   <.button type="button" variant="secondary" class="w-[170px]">{gettext("Reject")}</.button>
                   <.button
                     type="submit"
                     variant="primary"
                     accent="teal"
-                    disabled={@uploads.signed_command.entries == []}
+                    disabled={
+                      @uploads.signed_command.entries == [] or
+                        upload_errors(@uploads.signed_command) != [] or
+                        Enum.any?(@uploads.signed_command.entries, &(!&1.valid?))
+                    }
+                    phx-disable-with={gettext("Preparing the file...")}
                     class="w-[170px]"
                   >
                     {gettext("Send")}
@@ -619,9 +692,13 @@ defmodule FirmowidWeb.Management.Views.Delegation do
       generated_billing_month != billing_month
   end
 
-  defp upload_error(:too_large), do: gettext("The file is too large.")
+  defp upload_error(:too_large),
+    do: gettext("Choose a PDF up to 32 MB for automatic compression. The saved order must fit within 8 MB.")
+
   defp upload_error(:too_many_files), do: gettext("You can add only one file.")
-  defp upload_error(:not_accepted), do: gettext("Upload a PDF file.")
+
+  defp upload_error(:not_accepted),
+    do: gettext("Upload a PDF file. Other scan formats are not supported for signed orders.")
 
   attr :entry, :map, required: true
   attr :upload, :map, required: true

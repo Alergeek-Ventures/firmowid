@@ -15,7 +15,10 @@ defmodule FirmowidWeb.Delegations.Components.DelegationsList do
   def delegations_list(assigns) do
     ~H"""
     <ul :if={@delegations != []} class="divide-y divide-grey-100">
-      <li :for={delegation <- @delegations} class="flex items-center gap-3 py-3 first:pt-0 last:pb-0">
+      <li
+        :for={delegation <- @delegations}
+        class="flex flex-wrap items-center gap-3 py-3 first:pt-0 last:pb-0"
+      >
         <.delegation_title
           delegation={delegation}
           is_link={
@@ -27,6 +30,18 @@ defmodule FirmowidWeb.Delegations.Components.DelegationsList do
           <.date_range start_date={delegation.start_date} end_date={delegation.end_date} />
         </p>
         <.status_badge status={delegation.status} />
+        <.link
+          :if={
+            !@management? && delegation.status == :pending &&
+              is_nil(delegation.signed_command_blob_id)
+          }
+          kind="button"
+          variant="outline"
+          size="small"
+          navigate={FirmowidWeb.Delegations.Utilities.Navigation.edit_path(delegation.reference)}
+        >
+          {gettext("Edit")}
+        </.link>
         <.button
           :if={@management? && delegation.status == :pending}
           type="button"
@@ -49,7 +64,7 @@ defmodule FirmowidWeb.Delegations.Components.DelegationsList do
 
   defp delegation_title(assigns) do
     ~H"""
-    <div class="flex min-w-0 flex-1 items-center gap-2">
+    <div class="flex min-w-0 flex-1 basis-48 items-center gap-2">
       <.link
         :if={@is_link}
         kind="unstyled"
