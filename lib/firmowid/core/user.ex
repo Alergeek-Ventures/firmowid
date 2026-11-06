@@ -488,6 +488,14 @@ defmodule Firmowid.Core.User do
                     ]}
     end
 
+    # The members of the reader's organization, for the team presence.
+    bypass [{SystemActorRole, roles: [:presence_reader]}, action(:list)] do
+      authorize_if expr(
+                     not is_nil(^actor(:org_id)) and
+                       exists(member, organization_id == ^actor(:org_id))
+                   )
+    end
+
     # :get_org_user — admin-only, tenant-scoped user lookup
     bypass action(:get_org_user) do
       authorize_if OrganizationMemberAdmin

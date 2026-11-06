@@ -16,7 +16,7 @@ defmodule Firmowid.Timetracker.Session do
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer]
 
-  alias Firmowid.Checks.ActorRole
+  alias Firmowid.Checks.AtLeastRole
   alias Firmowid.Checks.SystemActorRole
   alias Firmowid.Resource
   alias Firmowid.Timetracker.Changes.ClampSessionBoundaries
@@ -598,7 +598,7 @@ defmodule Firmowid.Timetracker.Session do
       authorize_if expr(not is_nil(^actor(:org_id)) and organization_id == ^actor(:org_id))
     end
 
-    # Who works now, for the team presence administrators see.
+    # Who works now, for the team presence every member sees.
     bypass [{SystemActorRole, roles: [:presence_reader]}, action(:list)] do
       authorize_if expr(not is_nil(^actor(:org_id)) and organization_id == ^actor(:org_id))
     end
@@ -636,7 +636,7 @@ defmodule Firmowid.Timetracker.Session do
     end
 
     policy action(:team_presence) do
-      authorize_if {ActorRole, role: :admin}
+      authorize_if {AtLeastRole, role: :employee}
     end
   end
 
