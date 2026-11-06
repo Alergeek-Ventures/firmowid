@@ -31,8 +31,11 @@ Every coding agent gets the same MCP servers. Each harness reads its own file:
 (OpenCode); add, change or remove a server in all three. Local servers run
 through the pinned `mcp-remote` bridge, which reads `.server.port`, so they
 reach the current worktree. The remote servers in `opencode.json` (Sentry,
-PostHog, Figma, anonymized MCP) are still OpenCode-only; do not expect them in
-Claude Code or Codex.
+PostHog, Figma, anonymized MCP) are not in the other two files, but a
+developer's machine may provide Sentry, PostHog and the anonymized production
+database to every harness globally, with a `gw-` prefix (`gw-sentry`,
+`gw-posthog`, `gw-firmowid-anonymized`). Check the tools you actually have
+before concluding that one is missing.
 
 ## Local access and seed data
 
