@@ -11,6 +11,7 @@ defmodule FirmowidWeb.Inbox.Components.SidebarNav do
   use FirmowidWeb, :live_component
 
   import FirmowidUI.Components.Link
+  import FirmowidWeb.Inbox.Components.Sidebar, only: [label_styles: 0]
   import Phoenix.Component, except: [link: 1]
 
   alias Firmowid.Timetracker.Session
@@ -48,9 +49,14 @@ defmodule FirmowidWeb.Inbox.Components.SidebarNav do
 
     ~H"""
     <nav id={@id} class="flex flex-col gap-0.5" aria-label={pgettext("sidebar", "Main")}>
+      <%!--
+        Both layers when expanded; collapsed, only the way to the other layer,
+        so the switch keeps its height and nothing below it moves. Its buttons
+        stay hidden while the sidebar resizes and fade in once it has settled.
+      --%>
       <div
         :if={@layered?}
-        class="mb-2 grid grid-cols-2 rounded-full bg-grey-800 p-1 md:in-data-[sidebar=collapsed]:grid-cols-1 md:in-data-[sidebar=collapsed]:gap-1 md:in-data-[sidebar=collapsed]:rounded-md"
+        class="mb-2 grid h-10 grid-cols-2 gap-1 overflow-clip rounded-full bg-grey-800 p-1 md:in-data-[sidebar=collapsed]:grid-cols-1"
         role="group"
         aria-label={pgettext("sidebar", "Layer")}
       >
@@ -61,16 +67,19 @@ defmodule FirmowidWeb.Inbox.Components.SidebarNav do
           aria-current={@layer == layer && "page"}
           title={layer_label(layer)}
           class={[
-            "relative flex items-center justify-center gap-2 rounded-full py-1.5 font-medium transition-colors md:in-data-[sidebar=collapsed]:rounded-md",
-            if(@layer == layer, do: "bg-white text-black", else: "text-white/60 hover:text-white")
+            "relative flex h-8 min-w-0 items-center justify-center gap-2 rounded-full font-medium transition-[color,background-color,opacity] duration-150 in-data-sidebar-moving:opacity-0 in-data-sidebar-moving:duration-0",
+            if(@layer == layer,
+              do: "bg-white text-black md:in-data-[sidebar=collapsed]:hidden",
+              else: "text-white/60 hover:text-white"
+            )
           ]}
         >
           <Lucideicons.render!
             name={icon}
-            class="hidden size-4 md:in-data-[sidebar=collapsed]:block"
+            class="hidden size-4 shrink-0 md:in-data-[sidebar=collapsed]:block"
             aria-hidden="true"
           />
-          <span class="md:in-data-[sidebar=collapsed]:sr-only">{layer_label(layer)}</span>
+          <span class="truncate md:in-data-[sidebar=collapsed]:sr-only">{layer_label(layer)}</span>
           <.count
             :if={layer == :company and @layer != :company}
             count={@company_count}
@@ -86,7 +95,7 @@ defmodule FirmowidWeb.Inbox.Components.SidebarNav do
         class={link_styles(@current_id == :inbox)}
       >
         <Lucideicons.render! name={@inbox.icon} class="size-4 shrink-0" aria-hidden="true" />
-        <span class="flex-1 truncate md:in-data-[sidebar=collapsed]:sr-only">{@inbox.label}</span>
+        <span class={label_styles()}>{@inbox.label}</span>
         <.count :if={@layer == :company} count={@company_count} class="bg-white text-black" />
       </.link>
       <.link
@@ -98,9 +107,7 @@ defmodule FirmowidWeb.Inbox.Components.SidebarNav do
         class={link_styles(@current_id == :timetracker)}
       >
         <Lucideicons.render! name={@timetracker.icon} class="size-4 shrink-0" aria-hidden="true" />
-        <span class="flex-1 truncate md:in-data-[sidebar=collapsed]:sr-only">
-          {@timetracker.label}
-        </span>
+        <span class={label_styles()}>{@timetracker.label}</span>
         <span
           :if={@running?}
           class="size-2 shrink-0 animate-pulse rounded-full bg-moss-400 md:in-data-[sidebar=collapsed]:absolute md:in-data-[sidebar=collapsed]:top-1 md:in-data-[sidebar=collapsed]:right-1"
@@ -135,7 +142,7 @@ defmodule FirmowidWeb.Inbox.Components.SidebarNav do
   # Same as the other sidebar links; relative for the corner badge when collapsed.
   defp link_styles(active?) do
     [
-      "relative flex w-full items-center gap-3 rounded-md px-2 py-1.5 text-left transition-colors hover:bg-grey-700/50 md:in-data-[sidebar=collapsed]:justify-center",
+      "relative flex w-full items-center gap-3 rounded-md px-2 py-1.5 text-left transition-colors hover:bg-grey-700/50",
       if(active?, do: "bg-grey-700/70 text-white", else: "text-white/70")
     ]
   end

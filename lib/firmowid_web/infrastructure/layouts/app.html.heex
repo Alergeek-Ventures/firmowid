@@ -237,9 +237,10 @@
       "flex flex-1 flex-col bg-grey-100",
       # room below the content for the floating action button on phones, see `page_actions/1`
       "max-md:has-data-page-actions:pb-28",
-      # the sidebar replaces the navbar on desktop, so sticky headers stick to the top
+      # the sidebar replaces the navbar on desktop, so sticky headers stick to the top;
+      # the margin follows the sidebar's width as it collapses
       inbox_sidebar?(assigns) &&
-        "md:ml-64 md:[--navbar-height:0px] md:[--spacing-navbar:0px] md:in-data-[sidebar=collapsed]:ml-16",
+        "md:ms-64 md:duration-250 md:ease-out-quint md:[--navbar-height:0px] md:[--spacing-navbar:0px] md:in-data-[sidebar=collapsed]:ms-14 motion-safe:md:transition-[margin-inline-start]",
       assigns[:main_class]
     ]
   }
