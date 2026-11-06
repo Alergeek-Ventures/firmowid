@@ -10,6 +10,7 @@ defmodule FirmowidWeb.Timetracker.Utilities.GroupedSessionForm do
   embedded_schema do
     field :title, :string
     field :project_id, :binary_id
+    field :is_remote, :boolean
 
     embeds_many :start_end_times, SessionStartEndTime do
       field :date, :date
@@ -25,7 +26,7 @@ defmodule FirmowidWeb.Timetracker.Utilities.GroupedSessionForm do
 
   def changeset(form, attrs) do
     form
-    |> cast(attrs, [:title, :project_id])
+    |> cast(attrs, [:title, :project_id, :is_remote])
     |> cast_embed(:start_end_times, with: &start_end_time_changeset/2)
     |> validate_required([:title, :project_id])
     |> validate_length(:start_end_times, min: 1)
@@ -43,6 +44,7 @@ defmodule FirmowidWeb.Timetracker.Utilities.GroupedSessionForm do
     changeset(%{
       title: parent_session.title,
       project_id: parent_session.project_id,
+      is_remote: parent_session.is_remote,
       start_end_times:
         sessions
         |> Enum.sort_by(& &1.start_datetime)

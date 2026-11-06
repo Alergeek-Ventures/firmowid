@@ -12392,6 +12392,7 @@ msgid "in progress"
 msgstr ""
 
 #: lib/firmowid_web/inbox/components/queue.ex
+#: lib/firmowid_web/timetracker/components/session.ex
 #, elixir-autogen, elixir-format
 msgctxt "presence"
 msgid "in the office"
@@ -12728,6 +12729,7 @@ msgid "rejected"
 msgstr ""
 
 #: lib/firmowid_web/inbox/components/queue.ex
+#: lib/firmowid_web/timetracker/components/session.ex
 #, elixir-autogen, elixir-format
 msgctxt "presence"
 msgid "remotely"

@@ -263,6 +263,49 @@ defmodule FirmowidWeb.Timetracker.Views.IndexTest do
       assert updated_session.title == new_title
     end
 
+    test "switches a finished session from the office to remote work", %{
+      conn: conn,
+      user: user,
+      project: project
+    } do
+      yesterday = Date.add(Date.utc_today(), -1)
+
+      session =
+        session_fixture(%{
+          user_id: user.id,
+          project_id: project.id,
+          title: "Office day",
+          start_datetime: DateTime.new!(yesterday, ~T[09:00:00], "Etc/UTC"),
+          end_datetime: DateTime.new!(yesterday, ~T[12:00:00], "Etc/UTC"),
+          organization_id: user.member.organization_id
+        })
+
+      {:ok, lv, _html} = live(conn, ~p"/czasosledz")
+
+      refute has_element?(lv, "#session-presence-#{session.id}")
+
+      lv
+      |> form("#edit-session-form-#{session.id}", %{sessions_form: %{"is_remote" => "true"}})
+      |> render_change()
+
+      updated_session = Repo.get!(Session, session.id)
+
+      assert updated_session.is_remote
+      assert updated_session.title == session.title
+      assert updated_session.project_id == session.project_id
+      assert updated_session.start_datetime == session.start_datetime
+      assert updated_session.end_datetime == session.end_datetime
+
+      {:ok, lv, _html} = live(conn, ~p"/czasosledz")
+
+      assert has_element?(lv, "#session-presence-#{session.id}", "zdalnie")
+
+      assert has_element?(
+               lv,
+               "#edit-session-form-#{session.id} input[name='sessions_form[is_remote]'][value='true'][checked]"
+             )
+    end
+
     test "edits an adjacent session through the minute-only form", %{
       conn: conn,
       user: user,

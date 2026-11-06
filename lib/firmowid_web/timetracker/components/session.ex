@@ -64,6 +64,17 @@ defmodule FirmowidWeb.Timetracker.Components.Session do
         </.button>
       </div>
 
+      <span class="ml-auto max-md:ml-0">
+        <span
+          :if={parent_session.is_remote}
+          id={"session-presence-#{parent_session.id}"}
+          class="inline-flex shrink-0 items-center gap-1 rounded-full bg-grey-200 px-2 py-0.5 text-xs text-grey-700"
+        >
+          <Lucideicons.house class="size-3.5" aria-hidden="true" />
+          {pgettext("presence", "remotely")}
+        </span>
+      </span>
+
       <% select_id = "session-project-select-#{parent_session.id}" %>
       <.button
         id={"project-select-#{parent_session.id}"}
@@ -71,7 +82,7 @@ defmodule FirmowidWeb.Timetracker.Components.Session do
         phx-click={show_popover(select_id)}
         disabled={parent_session.lockdown}
         variant="unstyled"
-        class="ml-auto min-w-0 cursor-pointer rounded border-none bg-transparent px-2 py-1 text-sm text-grey-700 uppercase transition hover:bg-grey-200 focus:ring-0 disabled:pointer-events-none max-md:ml-0"
+        class="ml-1 min-w-0 cursor-pointer rounded border-none bg-transparent px-2 py-1 text-sm text-grey-700 uppercase transition hover:bg-grey-200 focus:ring-0 disabled:pointer-events-none"
       >
         {case Enum.find(@active_projects, &(&1.id == parent_session.project_id)) do
           nil -> gettext("Select")
@@ -230,7 +241,32 @@ defmodule FirmowidWeb.Timetracker.Components.Session do
           </div>
         </div>
 
-        <div class="flex justify-end gap-3">
+        <div class="flex items-center justify-end gap-3">
+          <%!-- On phones the popover overflows the left edge, so keep the choice beside the buttons. --%>
+          <div class="flex gap-1 md:mr-auto">
+            <label
+              :for={
+                {value, label} <- [
+                  {false, pgettext("presence", "in the office")},
+                  {true, pgettext("presence", "remotely")}
+                ]
+              }
+              class="cursor-pointer"
+            >
+              <input
+                type="radio"
+                name={sessions_form[:is_remote].name}
+                value={to_string(value)}
+                checked={sessions_form[:is_remote].value == value}
+                class="peer sr-only"
+              />
+              <span class="inline-flex h-8 items-center gap-1.5 rounded-full px-3 text-sm font-medium whitespace-nowrap text-grey-700 transition-colors peer-checked:bg-grey-700 peer-checked:text-white peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-(--focus-ring) hover:bg-grey-200 peer-checked:hover:bg-grey-700">
+                <Lucideicons.building_2 :if={!value} class="size-4" aria-hidden="true" />
+                <Lucideicons.house :if={value} class="size-4" aria-hidden="true" />
+                {label}
+              </span>
+            </label>
+          </div>
           <.button
             type="button"
             variant="outline"
