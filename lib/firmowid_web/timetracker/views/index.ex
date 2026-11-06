@@ -216,7 +216,9 @@ defmodule FirmowidWeb.Timetracker.Views.Index do
   end
 
   def group_nearby(sessions) do
-    Enum.chunk_by(sessions, fn session -> {session.title, session.project_id} end)
+    Enum.chunk_by(sessions, fn session ->
+      {session.title, session.project_id, session.is_remote}
+    end)
   end
 
   def assign_page_title(socket) do
@@ -484,6 +486,7 @@ defmodule FirmowidWeb.Timetracker.Views.Index do
         attrs = %{
           title: form.title,
           project_id: form.project_id,
+          is_remote: form.is_remote,
           start_datetime: start_datetime,
           end_datetime: end_datetime
         }
@@ -494,12 +497,12 @@ defmodule FirmowidWeb.Timetracker.Views.Index do
     ash_update_sessions(session_updates, socket)
   end
 
-  def edit_sessions_realtime(ids, %{"title" => title, "project_id" => project_id}, socket) do
+  def edit_sessions_realtime(ids, %{"title" => title, "project_id" => project_id, "is_remote" => is_remote}, socket) do
     sessions = fetch_sessions_by_ids(ids, socket)
 
     session_updates =
       Enum.map(sessions, fn session ->
-        {session, %{title: title, project_id: project_id}}
+        {session, %{title: title, project_id: project_id, is_remote: is_remote}}
       end)
 
     ash_update_sessions(session_updates, socket)
