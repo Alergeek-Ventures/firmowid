@@ -37,6 +37,9 @@
     }
   }
 
+  /* Easing: quick start, soft landing, for panels that slide or resize */
+  --ease-out-quint: cubic-bezier(0.23, 1, 0.32, 1);
+
   /* Animations */
   --animate-fade-in: appear 150ms ease-out forwards;
   --animate-error-pulse: error-pulse 2s ease-in-out infinite;
