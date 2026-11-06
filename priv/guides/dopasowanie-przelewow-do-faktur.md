@@ -3,6 +3,7 @@ title: "Program do faktur z dopasowaniem przelewów: import to nie Open Banking"
 description: "Import MT940 to nie Open Banking. Porównanie programów, które łączą przelewy z fakturami, i limitów ich darmowych planów."
 published: 2026-11-06
 updated: 2026-11-06
+category: bank-i-platnosci
 ---
 
 O tym, od kiedy KSeF obowiązuje poszczególne firmy, pisaliśmy już [w poradniku o terminach](/poradnik/co-to-jest-ksef-i-e-faktura), dlatego tu tylko krótko przypomnimy najważniejsze. Faktury kosztowe odbiera się przez system od 1 lutego 2026 r., a większość przedsiębiorców wystawia w nim faktury od 1 kwietnia. Nadanie numeru KSeF potwierdza przyjęcie dokumentu przez system, lecz nie oznacza, że nabywca zapłacił należność. Informacja o wpłacie nadal znajduje się w banku i stamtąd trzeba ją dostarczyć do programu do faktur.

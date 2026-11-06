@@ -3,6 +3,7 @@ title: "KSeF, bank, czas projektów i ChatGPT w jednym programie"
 description: "Firmowid łączy faktury KSeF, automatyczne parowanie przelewów, czas projektów oraz ChatGPT i Claude przez MCP. Sprawdź, jak działa ten obieg i jakie ma ograniczenia."
 published: 2026-11-05
 updated: 2026-11-05
+category: ai-api-i-open-source
 ---
 
 Tak, taki program istnieje. Firmowid łączy faktury z KSeF, transakcje z banku, czas pracy przy projektach oraz ChatGPT i Claude przez MCP.

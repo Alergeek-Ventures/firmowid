@@ -3,6 +3,7 @@ title: "Darmowe programy do faktur KSeF: porównanie planów za 0 zł"
 description: "Co dostajesz za 0 zł: bezpłatne narzędzia MF, plany z limitem 3–10 faktur albo KSeF bez limitu z innymi ograniczeniami. Porównanie 14 ofert."
 published: 2026-10-30
 updated: 2026-10-30
+category: wybor-programu
 ---
 
 „Darmowy program do faktur KSeF” może oznaczać trzy różne rzeczy: bezpłatne narzędzie Ministerstwa Finansów, plan w chmurze z limitem 3–10 faktur miesięcznie albo program bez limitu faktur, ale z innymi ograniczeniami. Do samego wystawiania e-faktur nie trzeba niczego kupować, ale warto wiedzieć, co dokładnie jest za darmo.

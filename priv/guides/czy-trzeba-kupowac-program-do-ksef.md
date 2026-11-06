@@ -3,6 +3,7 @@ title: "Czy trzeba kupować program do KSeF?"
 description: "Do wystawiania i odbierania faktur w KSeF wystarczą bezpłatne narzędzia MF. Kiedy płatny program albo własny serwer się opłaca."
 published: 2026-10-28
 updated: 2026-10-30
+category: wybor-programu
 ---
 
 Nie. Ministerstwo Finansów udostępnia bezpłatnie Aplikację Podatnika KSeF 2.0 i e-mikrofirmę. W obu wystawisz i odbierzesz faktury. Płatny program przydaje się dopiero wtedy, gdy chcesz w jednym miejscu obsługiwać też koszty, bank, płatności albo pracę kilku osób.

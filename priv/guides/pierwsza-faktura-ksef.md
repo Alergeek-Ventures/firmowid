@@ -3,6 +3,7 @@ title: "Pierwsza faktura w KSeF krok po kroku"
 description: "Jak wystawić pierwszą fakturę w KSeF, sprawdzić status, numer KSeF i UPO, i nie wysłać testu na produkcję."
 published: 2026-10-29
 updated: 2026-10-30
+category: ksef-w-praktyce
 ---
 
 Pierwszą fakturę wystawisz w bezpłatnej Aplikacji Podatnika KSeF 2.0 albo w programie zintegrowanym z KSeF. Faktura jest przyjęta dopiero wtedy, gdy KSeF nada jej numer i wystawi UPO (Urzędowe Poświadczenie Odbioru).

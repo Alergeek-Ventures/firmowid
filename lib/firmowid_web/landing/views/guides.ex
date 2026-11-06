@@ -17,7 +17,7 @@ defmodule FirmowidWeb.Landing.Views.Guides do
 
   defp assign_page(socket, :index, _params) do
     assign(socket,
-      guides: Guides.all(),
+      categories: Guides.by_category(),
       page_title: gettext("Firmowid guides — KSeF and invoicing"),
       meta_description: gettext("Practical guides on KSeF, e-invoices and invoicing software for small businesses.")
     )
@@ -43,15 +43,24 @@ defmodule FirmowidWeb.Landing.Views.Guides do
     ~H"""
     <.legal_page>
       <h1>{gettext("Guides")}</h1>
-      <article :for={guide <- @guides}>
-        <h2><a href={~p"/poradnik/#{guide.slug}"}>{guide.title}</a></h2>
-        <p>{guide.description}</p>
-        <p class="text-sm text-grey-600">
-          <time datetime={Date.to_iso8601(guide.updated)}>
-            {TimeFormatter.format_date(guide.updated, :long)}
-          </time>
-        </p>
-      </article>
+      <ul>
+        <li :for={{category, _guides} <- @categories}>
+          <a href={"#" <> category.slug}>{category.name}</a>
+        </li>
+      </ul>
+      <section :for={{category, guides} <- @categories} id={category.slug}>
+        <h2>{category.name}</h2>
+        <p>{category.description}</p>
+        <article :for={guide <- guides}>
+          <h3><a href={~p"/poradnik/#{guide.slug}"}>{guide.title}</a></h3>
+          <p>{guide.description}</p>
+          <p class="text-sm text-grey-600">
+            <time datetime={Date.to_iso8601(guide.updated)}>
+              {TimeFormatter.format_date(guide.updated, :long)}
+            </time>
+          </p>
+        </article>
+      </section>
     </.legal_page>
     """
   end
