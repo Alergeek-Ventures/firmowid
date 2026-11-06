@@ -3573,6 +3573,11 @@ msgstr ""
 msgid "Display name (optional)"
 msgstr ""
 
+#: lib/firmowid_web/landing/components/faq.ex
+#, elixir-autogen, elixir-format
+msgid "Do I need an invoicing program or accounting software?"
+msgstr ""
+
 #: lib/firmowid_web/management/components/employee_tax_details.ex
 #, elixir-autogen, elixir-format
 msgid "Do not apply"
@@ -5163,6 +5168,11 @@ msgstr ""
 #: lib/firmowid_web/management/views/counterparty.ex
 #, elixir-autogen, elixir-format
 msgid "Identifier copied"
+msgstr ""
+
+#: lib/firmowid_web/landing/components/faq.ex
+#, elixir-autogen, elixir-format
+msgid "If an accounting office keeps your records and settles taxes, an invoicing program with KSeF is enough. You need accounting software when you handle those settlements yourself, and an ERP only when invoices come from orders, a warehouse or production. Firmowid does not keep the KPiR ledger, lump-sum tax, ZUS or tax returns, but it prepares a monthly ZIP package of documents for your accountant."
 msgstr ""
 
 #: lib/firmowid_web/auth/controllers/auth_controller.ex

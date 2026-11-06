@@ -181,6 +181,15 @@ defmodule FirmowidWeb.Landing.Components.Faq do
             "Yes, in every plan, including Free. KSeF invoices arrive automatically, and you simply drag invoices from outside KSeF (e.g. foreign invoices) into Firmowid. We match them with transfers just like the rest."
           )
         ]
+      },
+      %{
+        id: "ksiegowosc",
+        question: gettext_noop("Do I need an invoicing program or accounting software?"),
+        answer: [
+          gettext_noop(
+            "If an accounting office keeps your records and settles taxes, an invoicing program with KSeF is enough. You need accounting software when you handle those settlements yourself, and an ERP only when invoices come from orders, a warehouse or production. Firmowid does not keep the KPiR ledger, lump-sum tax, ZUS or tax returns, but it prepares a monthly ZIP package of documents for your accountant."
+          )
+        ]
       }
     ]
   end
