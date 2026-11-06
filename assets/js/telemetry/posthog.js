@@ -53,6 +53,29 @@ function posthogOptions() {
   };
 }
 
+const INTERNAL_TRAFFIC_KEY = "fw_internal";
+
+// Team members mark their browser with ?internal=1 (and clear it with ?internal=0)
+// so their own visits can be filtered out of dashboards via is_internal.
+function internalTraffic() {
+  try {
+    const flag = new URLSearchParams(window.location.search).get("internal");
+    if (flag === "1") window.localStorage.setItem(INTERNAL_TRAFFIC_KEY, "1");
+    if (flag === "0") window.localStorage.removeItem(INTERNAL_TRAFFIC_KEY);
+    return window.localStorage.getItem(INTERNAL_TRAFFIC_KEY) === "1";
+  } catch (_error) {
+    return false;
+  }
+}
+
+function registerInternalTraffic(instance = posthog) {
+  if (internalTraffic()) {
+    instance.register({ is_internal: true });
+  } else {
+    instance.unregister("is_internal");
+  }
+}
+
 function applyIdentifiedState(instance = posthog) {
   if (consentAccepted()) {
     instance.set_config({ persistence: "localStorage+cookie" });
@@ -69,6 +92,7 @@ function applyIdentifiedState(instance = posthog) {
   }
 
   instance.register(telemetryContextProperties);
+  registerInternalTraffic(instance);
 
   if (!consentAccepted()) {
     return;
@@ -178,6 +202,8 @@ export function optOutPosthog() {
 
 function resetPosthog() {
   posthog.reset();
+  // reset() drops super properties; keep the team-browser marker after logout.
+  registerInternalTraffic();
 }
 
 export function installPosthogLogoutReset() {
