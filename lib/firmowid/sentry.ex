@@ -278,7 +278,12 @@ defmodule Firmowid.Sentry do
         request: scrub_request(event.request),
         transaction: scrub_url_string(event.transaction),
         extra: scrub_extra(event.extra),
-        tags: scrub_tags(Map.merge(logger_tags(event.extra), event.tags || %{})),
+        tags:
+          event.extra
+          |> logger_tags()
+          |> Map.merge(event.tags || %{})
+          |> put_exception_kind(event.original_exception)
+          |> scrub_tags(),
         contexts: scrub_contexts(event.contexts),
         fingerprint: scrub_fingerprint(event.fingerprint),
         breadcrumbs: scrub_breadcrumbs(event.breadcrumbs),
@@ -410,6 +415,12 @@ defmodule Firmowid.Sentry do
     do: scalar_map(metadata, [:organization_id, :view, :live_action, :callback])
 
   defp logger_tags(_extra), do: %{}
+
+  # Exception values are dropped, so keep their non-sensitive category instead,
+  # for example the SQLSTATE of a Postgrex error.
+  defp put_exception_kind(tags, nil), do: tags
+
+  defp put_exception_kind(tags, exception), do: Map.put_new(tags, :error_kind, ErrorKind.classify(exception))
 
   defp scrub_tags(nil), do: nil
   defp scrub_tags(tags) when is_map(tags), do: scalar_map(tags, @tag_keys)
