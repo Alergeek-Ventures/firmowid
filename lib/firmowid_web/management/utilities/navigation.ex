@@ -193,6 +193,12 @@ defmodule FirmowidWeb.Management.Utilities.Navigation do
     ~p"/zarzadzanie/pracownicy/#{employee_id}/delegacje"
   end
 
+  @doc "Builds the canonical employee business trip review path."
+  @spec employee_delegation_path(String.t(), String.t()) :: String.t()
+  def employee_delegation_path(employee_id, reference) do
+    ~p"/zarzadzanie/pracownicy/#{employee_id}/delegacje/#{reference}"
+  end
+
   @doc "Builds the canonical employee order edit path."
   @spec employee_delegation_edit_path(String.t(), String.t()) :: String.t()
   def employee_delegation_edit_path(employee_id, reference) do

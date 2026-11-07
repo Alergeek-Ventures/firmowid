@@ -79,6 +79,7 @@ defmodule Firmowid.Timetracker.HoursRecord do
       argument :member_id, :uuid
       argument :month, :integer
       argument :year, :integer
+      argument :pending_change?, :boolean
 
       argument :submission_status, :atom do
         default :submitted
@@ -86,6 +87,16 @@ defmodule Firmowid.Timetracker.HoursRecord do
       end
 
       prepare build(sort: [inserted_at: :desc, id: :desc])
+
+      prepare build(
+                filter:
+                  expr(
+                    (not is_nil(change_requested_at) and is_nil(change_request_decision)) ==
+                      ^arg(:pending_change?)
+                  )
+              ) do
+        where present(:pending_change?)
+      end
 
       prepare build(filter: expr(submission_status == ^arg(:submission_status))) do
         where present(:submission_status)

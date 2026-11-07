@@ -26,13 +26,10 @@ defmodule FirmowidWeb.Inbox.Components.Queue do
       id={"item-#{@item.id}"}
       class="flex items-center gap-4 border-b border-grey-200 px-5 py-4 last:border-b-0 max-md:flex-col max-md:items-start max-md:gap-3 max-md:px-4"
     >
-      <div class="flex min-w-0 flex-1 items-start gap-4">
+      <div class="flex w-full min-w-0 flex-1 items-start gap-4">
         <span class={[
           "flex size-9 shrink-0 items-center justify-center rounded-md",
-          if(@item.tier == :urgent,
-            do: "bg-brick-200 text-brick-800",
-            else: "bg-grey-200 text-grey-800"
-          )
+          icon_styles(@item)
         ]}>
           <Lucideicons.render! name={@item.icon} class="size-4" aria-hidden="true" />
         </span>
@@ -41,9 +38,15 @@ defmodule FirmowidWeb.Inbox.Components.Queue do
             {@item.title}<span :if={Map.has_key?(@item, :date_range)}>,
             <span class="whitespace-nowrap">{@item.date_range}</span></span>
           </h3>
-          <p class="text-sm text-grey-600">
-            <span :if={@item.person} class="font-medium text-grey-800">{@item.person} ·</span>
-            {@item.context}
+          <p class={["text-sm text-grey-600", @item.tier == :books && "flex min-w-0 gap-1"]}>
+            <span
+              :if={@item.person}
+              class={["font-medium text-grey-800", @item.tier == :books && "min-w-0 truncate"]}
+              title={@item.person}
+            >{@item.person}</span>
+            <span class={[@item.tier == :books && "shrink-0 whitespace-nowrap"]}>
+              {if @item.person, do: "· "}{@item.context}
+            </span>
           </p>
         </div>
       </div>
@@ -73,7 +76,7 @@ defmodule FirmowidWeb.Inbox.Components.Queue do
           navigate={@item.href}
           size="small"
           variant={if @item.tier == :urgent, do: "special", else: "secondary"}
-          class="shrink-0"
+          class="min-w-36 shrink-0"
         >
           {@item.action}<Lucideicons.arrow_right class="size-4" aria-hidden="true" />
         </.link>
@@ -81,6 +84,11 @@ defmodule FirmowidWeb.Inbox.Components.Queue do
     </article>
     """
   end
+
+  defp icon_styles(%{tier: :urgent}), do: "bg-brick-200 text-brick-800"
+  defp icon_styles(%{tier: :books, side: :cost}), do: "bg-rust-200 text-rust-900"
+  defp icon_styles(%{tier: :books, side: :sales}), do: "bg-teal-200 text-teal-900"
+  defp icon_styles(_item), do: "bg-grey-200 text-grey-800"
 
   @doc "Header of a queue section: tier name, count and why it matters."
   attr :tier, :atom, required: true

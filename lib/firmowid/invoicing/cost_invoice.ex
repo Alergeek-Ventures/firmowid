@@ -197,6 +197,9 @@ defmodule Firmowid.Invoicing.CostInvoice do
         description "Date compared with date_from and date_to; any matches either issue_date or sale_date."
       end
 
+      argument :overdue_on, :date,
+        description: "Only unpaid transfer invoices overdue on this date, using corrected dates and amounts."
+
       argument :reconciliation, :atom do
         constraints one_of: [:pending, :matched, :skipped]
 
@@ -266,6 +269,20 @@ defmodule Firmowid.Invoicing.CostInvoice do
       # Linked corrections affect the original's amount and have no separate reconciliation state.
       prepare build(filter: expr(is_nil(original_invoice_ksef_number) or is_nil(original_invoice.id))) do
         where any([argument_equals(:merge_corrections, true), present(:reconciliation)])
+      end
+
+      prepare build(
+                filter:
+                  expr(
+                    effective_due_date < ^arg(:overdue_on) and
+                      effective_amount[:amount] < 0 and
+                      effective_payment_method == :bank_transfer and
+                      skip_invoicing == false and
+                      not exists(transactions, true) and
+                      not exists(correction_invoices, exists(transactions, true))
+                  )
+              ) do
+        where present(:overdue_on)
       end
 
       # :pending — no linked transactions, not skipped

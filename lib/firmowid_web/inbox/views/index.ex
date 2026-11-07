@@ -9,6 +9,7 @@ defmodule FirmowidWeb.Inbox.Views.Index do
   """
   use FirmowidWeb, :live_view
 
+  import FirmowidUI.Components.Button
   import FirmowidWeb.Inbox.Components.Queue
   import FirmowidWeb.Infrastructure.Flags, only: [flag_enabled?: 2]
 
@@ -68,7 +69,7 @@ defmodule FirmowidWeb.Inbox.Views.Index do
      assign(socket,
        layer: layer,
        today: today,
-       items: Queue.items(layer, scope),
+       items: Queue.items(layer, scope, today),
        presence: presence
      )}
   end
@@ -174,7 +175,8 @@ defmodule FirmowidWeb.Inbox.Views.Index do
   defp refresh_queue(socket) do
     send_update(SidebarNav, id: SidebarNav.id(), refresh: true)
 
-    {:noreply, assign(socket, :items, Queue.items(socket.assigns.layer, socket.assigns.ash_scope))}
+    %{layer: layer, ash_scope: scope, today: today} = socket.assigns
+    {:noreply, assign(socket, :items, Queue.items(layer, scope, today))}
   end
 
   # Reloads the page and the sidebar, which shows whether the session runs; the
@@ -212,14 +214,32 @@ defmodule FirmowidWeb.Inbox.Views.Index do
         </p>
         <h1 class="text-2xl font-semibold text-grey-900">{greeting(@items)}</h1>
       </header>
-      <div class="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_18rem]">
+      <div class="grid grid-cols-1 items-start gap-6 lg:grid-cols-[minmax(0,1fr)_18rem]">
         <div class="flex min-w-0 flex-col gap-8">
           <.all_done :if={@items == []} />
           <section :for={{tier, items} <- Queue.by_tier(@items)} class="flex flex-col gap-3">
             <.tier_header tier={tier} count={length(items)} />
             <div class="overflow-hidden rounded-md bg-white">
-              <.item_row :for={item <- items} item={item} />
+              <.item_row
+                :for={item <- if(tier == :books, do: Enum.take(items, 5), else: items)}
+                item={item}
+              />
+              <%!-- The rest of the overdue invoices, revealed in place: the invoice list only shows one month. --%>
+              <div :if={tier == :books and length(items) > 5} id="inbox-books-rest" class="hidden">
+                <.item_row :for={item <- Enum.drop(items, 5)} item={item} />
+              </div>
             </div>
+            <.button
+              :if={tier == :books and length(items) > 5}
+              type="button"
+              size="small"
+              variant="ghost"
+              class="self-end"
+              phx-click={JS.remove_class("hidden", to: "#inbox-books-rest") |> JS.hide()}
+            >
+              {gettext("Show all (%{count})", count: length(items))}
+              <Lucideicons.chevron_down class="size-4" aria-hidden="true" />
+            </.button>
           </section>
         </div>
         <aside class="flex flex-col gap-4 lg:sticky lg:top-8">
