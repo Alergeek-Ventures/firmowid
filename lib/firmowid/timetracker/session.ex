@@ -250,6 +250,7 @@ defmodule Firmowid.Timetracker.Session do
     define :edit_current_user_session
     define :add_completed_sessions, args: [:sessions]
     define :team_presence, args: [:date]
+    define :month_duration, args: [:date]
     define :create
     define :update
     define :destroy
@@ -562,6 +563,27 @@ defmodule Firmowid.Timetracker.Session do
       run &Firmowid.Timetracker.Session.Actions.AddCompleted.run/2
     end
 
+    action :month_duration, :integer do
+      description "Total session seconds in the acting member's month, including the capped running session. Uses the same UTC month and duration as Time tracking."
+      argument :date, :date, allow_nil?: false
+
+      run fn input, context ->
+        date = input.arguments.date
+        opts = Ash.Scope.to_opts(context)
+
+        query =
+          Firmowid.Timetracker.query_to_list_sessions(
+            %{member_id: context.actor.member.id, month: date.month, year: date.year},
+            opts
+          )
+
+        with {:ok, %{total: total}} <-
+               Ash.aggregate(query, {:total, :sum, field: :duration, default: 0}, opts) do
+          {:ok, total}
+        end
+      end
+    end
+
     action :team_presence, {:array, :map} do
       description """
       Where the organization's active members are on `date`: working now in the
@@ -672,6 +694,10 @@ defmodule Firmowid.Timetracker.Session do
     end
 
     policy action(:team_presence) do
+      authorize_if {AtLeastRole, role: :employee}
+    end
+
+    policy action(:month_duration) do
       authorize_if {AtLeastRole, role: :employee}
     end
   end
