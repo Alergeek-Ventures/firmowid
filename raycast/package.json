@@ -1,0 +1,139 @@
+{
+  "$schema": "https://www.raycast.com/schemas/extension.json",
+  "name": "firmowid",
+  "title": "Firmowid",
+  "description": "Manage work sessions in Firmowid and see your active session in the menu bar.",
+  "icon": "icon.png",
+  "author": "migoyam",
+  "license": "MIT",
+  "platforms": [
+    "macOS"
+  ],
+  "categories": [
+    "Productivity"
+  ],
+  "commands": [
+    {
+      "name": "start-session",
+      "title": "Start Session",
+      "description": "Start a work session in a project, automatically stopping your current session.",
+      "mode": "view"
+    },
+    {
+      "name": "continue-session",
+      "title": "Continue Session",
+      "description": "Choose a previous session and start a new one with the same description and project.",
+      "mode": "view"
+    },
+    {
+      "name": "edit-current-session",
+      "title": "Edit Current Session",
+      "description": "Edit your active work session.",
+      "mode": "view"
+    },
+    {
+      "name": "stop-session",
+      "title": "Stop Session",
+      "description": "Stop your current work session without opening the session list.",
+      "mode": "no-view"
+    },
+    {
+      "name": "manage-sessions",
+      "title": "Manage Sessions",
+      "description": "Start, stop, edit, and delete work sessions and browse your session history.",
+      "mode": "view"
+    },
+    {
+      "name": "session-status",
+      "title": "Session Status",
+      "description": "Show your active session and elapsed time in the menu bar.",
+      "mode": "menu-bar",
+      "interval": "1m"
+    }
+  ],
+  "tools": [
+    {
+      "name": "get-current-session",
+      "title": "Get Current Session",
+      "description": "Get your active work session, including its project and start time. Returns null when no session is active."
+    },
+    {
+      "name": "list-sessions",
+      "title": "List Sessions",
+      "description": "List your work sessions from newest to oldest, with cursor pagination."
+    },
+    {
+      "name": "list-projects",
+      "title": "List Projects",
+      "description": "List the active projects you can track time in, including their IDs."
+    },
+    {
+      "name": "start-session",
+      "title": "Start Session",
+      "description": "Start a work session with a description and project, automatically stopping your current session first. Also use this to continue a previous session with the same details."
+    },
+    {
+      "name": "stop-session",
+      "title": "Stop Session",
+      "description": "Stop your active work session. Does nothing when no session is active."
+    },
+    {
+      "name": "edit-session",
+      "title": "Edit Session",
+      "description": "Update a session's description, project, remote work setting, or start and end times. Omitted fields stay unchanged."
+    },
+    {
+      "name": "delete-session",
+      "title": "Delete Session",
+      "description": "Permanently delete one of your work sessions after confirmation."
+    }
+  ],
+  "ai": {
+    "instructions": "Use List Projects to resolve project names to IDs and Get Current Session or List Sessions to resolve session IDs. Never invent IDs. To continue a session, use Start Session with its description, project ID, and remote work setting; this creates a new session and stops the current one. Session history is paginated: follow next_cursor using after before claiming a complete total or that an older session does not exist. Provide timestamps in UTC ISO 8601 format. Only change fields the user asks to update."
+  },
+  "preferences": [
+    {
+      "name": "serverUrl",
+      "title": "Firmowid URL",
+      "description": "The base URL of your Firmowid instance.",
+      "type": "textfield",
+      "required": true,
+      "placeholder": "https://firmowid.pl",
+      "default": "https://firmowid.pl"
+    }
+  ],
+  "dependencies": {
+    "@formatjs/intl-durationformat": "0.11.1",
+    "@raycast/api": "2.8.2",
+    "@raycast/utils": "2.3.2",
+    "@tanstack/query-async-storage-persister": "5.104.5",
+    "@tanstack/react-query": "5.104.5",
+    "@tanstack/react-query-persist-client": "5.104.5",
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "@raycast/eslint-config": "^2.0.4",
+    "@raycast/eslint-plugin": "2.2.0",
+    "@tanstack/eslint-plugin-query": "5.104.0",
+    "@types/node": "^22.0.0",
+    "@types/react": "^19.0.0",
+    "eslint": "^10.13.0",
+    "typescript": "^5.9.0",
+    "ultracite": "^8.1.0",
+    "vite-plus": "1.4.0"
+  },
+  "scripts": {
+    "dev": "ray develop",
+    "build": "ray build -o dist",
+    "lint": "vp lint",
+    "typecheck": "tsc --noEmit",
+    "format": "vp fmt --write",
+    "bundle": "ray bundle -o dist/firmowid.rayext",
+    "lint:raycast": "ray lint",
+    "format:check": "vp fmt --check",
+    "check": "vp check && npm run typecheck"
+  },
+  "engines": {
+    "node": ">=22.22.2"
+  }
+}
