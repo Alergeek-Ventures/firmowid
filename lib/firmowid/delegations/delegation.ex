@@ -10,6 +10,7 @@ defmodule Firmowid.Delegations.Delegation do
     authorizers: [Ash.Policy.Authorizer],
     extensions: [AshStateMachine],
     fragments: [
+      Firmowid.Delegations.Delegation.List,
       Firmowid.Delegations.Delegation.PendingOrderActions,
       Firmowid.Delegations.Delegation.Policies,
       Firmowid.Delegations.Delegation.PerDiemAttributes
@@ -86,12 +87,6 @@ defmodule Firmowid.Delegations.Delegation do
 
       argument :reference, :string, allow_nil?: false
       filter expr(reference == ^arg(:reference))
-    end
-
-    read :list_for_member do
-      description "Delegations submitted by a given organization member."
-      argument :member_id, :uuid, allow_nil?: false
-      prepare build(filter: expr(member_id == ^arg(:member_id)), sort: [inserted_at: :desc])
     end
 
     create :create do

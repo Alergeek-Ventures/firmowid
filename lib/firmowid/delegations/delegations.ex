@@ -20,7 +20,8 @@ defmodule Firmowid.Delegations do
       define :create_delegation, action: :create
       define :get_delegation, action: :read, get_by: [:id]
       define :get_delegation_by_reference, action: :by_reference, args: [:reference]
-      define :list_delegations_for_member, action: :list_for_member, args: [:member_id]
+      define :list_delegations, action: :list
+      define :list_delegations_for_member, action: :list, args: [:member_id]
       define :update_pending_delegation, action: :update_pending, get_by: [:id]
       define :prepare_delegation_command, action: :prepare_command, get_by: [:id]
       define :update_delegation_billing_month, action: :update_billing_month, get_by: [:id]

@@ -242,6 +242,9 @@ defmodule Firmowid.Invoicing.SalesInvoice do
         description "KSeF document kind: vat for a regular invoice, kor for a correction."
       end
 
+      argument :overdue_on, :date,
+        description: "Only unpaid transfer invoices overdue on this date, using corrected dates and amounts."
+
       argument :reconciliation, :atom do
         constraints one_of: [:pending, :matched, :skipped]
 
@@ -312,6 +315,20 @@ defmodule Firmowid.Invoicing.SalesInvoice do
       # A correction of an invoice in Firmowid is already its original's effective_amount.
       prepare build(filter: expr(ksef_invoice_kind != :kor or is_nil(corrected_invoice_id))) do
         where argument_equals(:merge_corrections, true)
+      end
+
+      prepare build(
+                filter:
+                  expr(
+                    effective_due_date < ^arg(:overdue_on) and
+                      effective_amount[:amount] > 0 and
+                      effective_payment_method == :transfer and
+                      skip_invoicing == false and
+                      not exists(transactions, true) and
+                      not exists(corrections, exists(transactions, true))
+                  )
+              ) do
+        where present(:overdue_on)
       end
 
       # :pending — no linked transactions, not skipped
