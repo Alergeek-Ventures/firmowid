@@ -5,7 +5,7 @@ defmodule FirmowidWeb.Inbox.Utilities.Queue do
 
   Only signals the app already knows are shown (KSeF connection, broken bank
   syncs, pending leave requests). Each item links to the page where it is dealt
-  with; decisions are not made in the inbox yet.
+  with; pending leave requests also offer inline decisions.
   """
 
   use Gettext, backend: Firmowid.Gettext
@@ -15,9 +15,19 @@ defmodule FirmowidWeb.Inbox.Utilities.Queue do
   alias Firmowid.Ksef
   alias Firmowid.Timetracker
   alias FirmowidWeb.Inbox.Utilities.Navigation
+  alias FirmowidWeb.Timetracker.Utilities.LeavePresentation
 
   @type tier :: :urgent | :people
+  @type decision :: %{
+          action: atom(),
+          record_id: String.t(),
+          label: String.t(),
+          icon: String.t(),
+          show_label?: boolean()
+        }
   @type item :: %{
+          optional(:decisions) => [decision()],
+          optional(:date_range) => String.t(),
           id: String.t(),
           tier: tier(),
           icon: String.t(),
@@ -129,17 +139,42 @@ defmodule FirmowidWeb.Inbox.Utilities.Queue do
         id: "leave-#{request.id}",
         tier: :people,
         icon: "calendar-days",
-        title:
-          gettext("Leave request, %{from}–%{to}",
-            from: Calendar.strftime(request.starts_on, "%d.%m"),
-            to: Calendar.strftime(request.ends_on, "%d.%m")
+        title: gettext("Leave request"),
+        date_range: "#{Calendar.strftime(request.starts_on, "%d.%m")}–#{Calendar.strftime(request.ends_on, "%d.%m")}",
+        context:
+          Enum.join(
+            [
+              LeavePresentation.reason_label(request.reason),
+              ngettext("%{count} calendar day", "%{count} calendar days", days)
+            ],
+            " · "
           ),
-        context: ngettext("%{count} calendar day", "%{count} calendar days", days),
         person: request.member.display_name,
         action: gettext("Review"),
-        href: Navigation.employee_leaves_path(request.member_id)
+        href: Navigation.employee_leaves_path(request.member_id),
+        decisions: leave_decisions(request)
       }
     end)
+  end
+
+  defp leave_decisions(request) do
+    accept = %{
+      action: :accept_leave_request,
+      record_id: request.id,
+      label: pgettext("inbox decision", "Accept"),
+      icon: "check",
+      show_label?: true
+    }
+
+    decline = %{
+      action: :decline_leave_request,
+      record_id: request.id,
+      label: gettext("Reject"),
+      icon: "x",
+      show_label?: false
+    }
+
+    if request.category == :leave, do: [accept, decline], else: [accept]
   end
 
   @doc """

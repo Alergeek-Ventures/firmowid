@@ -13,12 +13,14 @@ defmodule FirmowidWeb.Inbox.Components.Queue do
   alias FirmowidWeb.Inbox.Utilities.Queue
 
   @doc """
-  A queue item as a full-width row with a link to where it is dealt with. Only
-  urgent items get the solid black button, so the rest does not compete with them.
+  A queue item with optional inline decisions and a link to its full page.
+  Only urgent items get the solid black navigation button.
   """
   attr :item, :map, required: true
 
   def item_row(assigns) do
+    assigns = assign(assigns, :decisions, Map.get(assigns.item, :decisions, []))
+
     ~H"""
     <article
       id={"item-#{@item.id}"}
@@ -35,22 +37,47 @@ defmodule FirmowidWeb.Inbox.Components.Queue do
           <Lucideicons.render! name={@item.icon} class="size-4" aria-hidden="true" />
         </span>
         <div class="flex min-w-0 flex-1 flex-col gap-1">
-          <h3 class="text-sm font-medium text-grey-900">{@item.title}</h3>
+          <h3 class="text-sm font-medium text-grey-900">
+            {@item.title}<span :if={Map.has_key?(@item, :date_range)}>,
+            <span class="whitespace-nowrap">{@item.date_range}</span></span>
+          </h3>
           <p class="text-sm text-grey-600">
             <span :if={@item.person} class="font-medium text-grey-800">{@item.person} ·</span>
             {@item.context}
           </p>
         </div>
       </div>
-      <.link
-        kind="button"
-        navigate={@item.href}
-        size="small"
-        variant={if @item.tier == :urgent, do: "special", else: "secondary"}
-        class="shrink-0"
-      >
-        {@item.action}<Lucideicons.arrow_right class="size-4" aria-hidden="true" />
-      </.link>
+      <div class="flex max-w-full shrink-0 items-center gap-2">
+        <div :if={@decisions != []} class="flex shrink-0 items-center gap-2">
+          <.button
+            :for={decision <- @decisions}
+            id={"item-#{@item.id}-#{decision.action}"}
+            type="button"
+            size="small"
+            variant="secondary"
+            class="shrink-0"
+            phx-click="decide_item"
+            phx-value-id={@item.id}
+            phx-value-decision={decision.action}
+            phx-disable-with=""
+            aria-label={decision.label}
+          >
+            <Lucideicons.render! name={decision.icon} class="size-4" aria-hidden="true" />
+            <span :if={decision.show_label?}>{decision.label}</span>
+          </.button>
+          <%!-- Holds the x's place when an item cannot be rejected, so the buttons line up across rows. --%>
+          <span :if={length(@decisions) == 1} class="w-8.5 shrink-0" aria-hidden="true"></span>
+        </div>
+        <.link
+          kind="button"
+          navigate={@item.href}
+          size="small"
+          variant={if @item.tier == :urgent, do: "special", else: "secondary"}
+          class="shrink-0"
+        >
+          {@item.action}<Lucideicons.arrow_right class="size-4" aria-hidden="true" />
+        </.link>
+      </div>
     </article>
     """
   end
