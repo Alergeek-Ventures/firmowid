@@ -189,6 +189,7 @@ msgctxt "duration"
 msgid "%{hours} h"
 msgstr ""
 
+#: lib/firmowid_web/inbox/components/queue.ex
 #: lib/firmowid_web/timetracker/views/index.html.heex
 #, elixir-autogen, elixir-format
 msgid "%{hours} h %{minutes} min"
@@ -5106,6 +5107,7 @@ msgstr ""
 msgid "Hours that count themselves"
 msgstr ""
 
+#: lib/firmowid_web/inbox/components/queue.ex
 #: lib/firmowid_web/management/views/project.html.heex
 #, elixir-autogen, elixir-format
 msgid "Hours worked"

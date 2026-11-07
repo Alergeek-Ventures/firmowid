@@ -39,7 +39,12 @@ defmodule FirmowidWeb.Inbox.Views.Index do
     socket =
       case layer do
         :company ->
-          assign(socket, month: Queue.month(scope, today), session: nil, last_session: nil)
+          assign(socket,
+            month: Queue.month(scope, today),
+            month_duration: nil,
+            session: nil,
+            last_session: nil
+          )
 
         :me ->
           {:ok, session} = Session.get_current(scope: scope, load: [:project])
@@ -47,7 +52,12 @@ defmodule FirmowidWeb.Inbox.Views.Index do
           {:ok, last_session} =
             Session.most_recent(scope: scope, not_found_error?: false, load: [:project])
 
-          assign(socket, month: [], session: session, last_session: last_session)
+          assign(socket,
+            month: [],
+            month_duration: Session.month_duration!(today, scope: scope),
+            session: session,
+            last_session: last_session
+          )
       end
 
     presence = Session.team_presence!(today, scope: scope)
@@ -135,6 +145,7 @@ defmodule FirmowidWeb.Inbox.Views.Index do
         </div>
         <aside class="flex flex-col gap-4 lg:sticky lg:top-8">
           <.session_panel :if={@layer == :me} session={@session} last_session={@last_session} />
+          <.personal_month :if={@layer == :me} duration={@month_duration} />
           <.office_panel :if={@presence != []} presence={@presence} />
           <.month_list :if={@month != []} month={@month} />
         </aside>

@@ -221,6 +221,35 @@ defmodule FirmowidWeb.Inbox.Components.Queue do
   defp status_label(:leave), do: pgettext("presence", "absent")
   defp status_label(:away), do: pgettext("presence", "not working")
 
+  @doc "The member's recorded time this month, using the same quiet rows as the company summary."
+  attr :duration, :integer, required: true, doc: "session seconds from Session.month_duration/2"
+
+  def personal_month(assigns) do
+    ~H"""
+    <section id="inbox-personal-month" class="flex flex-col gap-3 rounded-md bg-white p-5">
+      <h2 class="text-caps-sm font-medium tracking-wide text-grey-500 uppercase">
+        {gettext("This month")}
+      </h2>
+      <dl class="flex flex-col gap-2.5">
+        <div class="flex items-baseline justify-between gap-3">
+          <dt class="truncate text-sm text-grey-700">{gettext("Hours worked")}</dt>
+          <dd class="shrink-0 text-sm font-semibold text-grey-800 tabular-nums">
+            {hours_and_minutes(@duration)}
+          </dd>
+        </div>
+      </dl>
+    </section>
+    """
+  end
+
+  # Whole hours read better without "0 min".
+  defp hours_and_minutes(seconds) do
+    case {div(seconds, 3600), rem(div(seconds, 60), 60)} do
+      {hours, 0} -> pgettext("duration", "%{hours} h", hours: hours)
+      {hours, minutes} -> gettext("%{hours} h %{minutes} min", hours: hours, minutes: minutes)
+    end
+  end
+
   @doc "The month in numbers as quiet label and value rows, for a side column."
   attr :month, :list, required: true
 
