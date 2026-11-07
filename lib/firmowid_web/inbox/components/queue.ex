@@ -179,7 +179,7 @@ defmodule FirmowidWeb.Inbox.Components.Queue do
     )
   end
 
-  @doc "Who works today and where, for administrators."
+  @doc "Who works today and where."
   attr :presence, :list,
     required: true,
     doc: "from `Firmowid.Timetracker.Session.team_presence/2`"
@@ -206,7 +206,9 @@ defmodule FirmowidWeb.Inbox.Components.Queue do
             person.status == :remote && "bg-moss-300",
             person.status in [:leave, :away] && "bg-grey-300"
           ]}></span>
-          <span class="min-w-0 flex-1 truncate text-grey-800">{person.name}</span>
+          <span class="min-w-0 flex-1 truncate text-grey-800">
+            {person.name || pgettext("presence", "Unnamed member")}
+          </span>
           <span class="shrink-0 text-xs text-grey-500">{status_label(person.status)}</span>
         </li>
       </ul>

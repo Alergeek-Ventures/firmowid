@@ -56,7 +56,6 @@ defmodule Firmowid.Core.Member do
     end
 
     field_policy [
-      :name,
       :display_name,
       :avatar_blob_id,
       :phone,
@@ -82,6 +81,27 @@ defmodule Firmowid.Core.Member do
                       :hours_record_change_notifier,
                       :document_blob_processor,
                       :employment_contract_notifier
+                    ]}
+    end
+
+    # The same as the other personal fields, plus the team presence, which shows
+    # names. Not `display_name`: it falls back to the email.
+    field_policy :name do
+      authorize_if expr(user_id == ^actor(:id))
+      authorize_if OrganizationAdmin
+      authorize_if actor_attribute_equals(:system_role, :superuser)
+
+      authorize_if {SystemActorRole,
+                    roles: [
+                      :actor_member_loader,
+                      :organization_cleanup,
+                      :ksef_digest,
+                      :billing_snapshotter,
+                      :leave_notifier,
+                      :hours_record_change_notifier,
+                      :document_blob_processor,
+                      :employment_contract_notifier,
+                      :presence_reader
                     ]}
     end
 
@@ -233,6 +253,11 @@ defmodule Firmowid.Core.Member do
     end
 
     bypass [{SystemActorRole, roles: [:organization_cleanup]}, action([:read, :destroy])] do
+      authorize_if expr(not is_nil(^actor(:org_id)) and organization_id == ^actor(:org_id))
+    end
+
+    # The members of the reader's organization, for the team presence.
+    bypass [{SystemActorRole, roles: [:presence_reader]}, action(:read)] do
       authorize_if expr(not is_nil(^actor(:org_id)) and organization_id == ^actor(:org_id))
     end
 

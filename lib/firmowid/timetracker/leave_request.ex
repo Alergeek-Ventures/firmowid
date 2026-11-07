@@ -1,3 +1,4 @@
+# credo:disable-for-this-file AshCredo.Check.Refactor.LargeResource
 # credo:disable-for-this-file AshCredo.Check.Design.MissingPrimaryAction
 defmodule Firmowid.Timetracker.LeaveRequest do
   @moduledoc "Represents an employee leave or absence request that an admin can accept or decline."
@@ -278,6 +279,11 @@ defmodule Firmowid.Timetracker.LeaveRequest do
 
     bypass {ActorRole, role: :admin} do
       authorize_if always()
+    end
+
+    # Who is on leave, for the team presence every member sees.
+    bypass [{SystemActorRole, roles: [:presence_reader]}, action(:list)] do
+      authorize_if expr(not is_nil(^actor(:org_id)) and organization_id == ^actor(:org_id))
     end
 
     bypass [{SystemActorRole, roles: [:leave_notifier, :avatar_cleanup]}, action_type(:read)] do

@@ -3,9 +3,12 @@ defmodule Firmowid.Timetracker.Session.Actions.TeamPresence do
   Where the organization's active members are on a day: working now in the
   office or remotely, on accepted leave, or neither.
 
-  Members only read their own sessions, so the running sessions of the team
-  are read by the `:presence_reader` system actor of the caller's tenant. Only
-  the resulting state leaves this module, never the sessions or leave reasons.
+  Every member sees it, but members only read their own sessions and leave
+  requests, and only administrators list the team. So the team, its running
+  sessions and accepted leave are read by the `:presence_reader` system actor
+  of the caller's organization, taken from the caller's membership rather than
+  the requested tenant. Only names and states leave this module, never the
+  sessions or leave reasons.
   """
 
   alias Firmowid.Core
@@ -14,19 +17,19 @@ defmodule Firmowid.Timetracker.Session.Actions.TeamPresence do
   alias Firmowid.Timetracker
 
   @type status :: :office | :remote | :leave | :away
-  @type presence :: %{name: String.t(), status: status()}
+  @type presence :: %{name: String.t() | nil, status: status()}
 
-  @doc "Lists the active members with their state, the working ones first."
+  @doc """
+  Lists the active members with their state, the working ones first. The name
+  is `nil` for a member who has not set one, so their email stays private.
+  """
   @spec run(Ash.ActionInput.t(), Ash.Resource.Actions.Implementation.Context.t()) ::
           {:ok, [presence()]}
   def run(input, context) do
-    opts = Ash.Context.to_opts(context)
     date = input.arguments.date
 
-    reader = %Scope{
-      actor: %SystemActor{org_id: context.tenant, role: :presence_reader},
-      tenant: context.tenant
-    }
+    org_id = context.actor.member.organization_id
+    reader = %Scope{actor: %SystemActor{org_id: org_id, role: :presence_reader}, tenant: org_id}
 
     remote_by_member =
       %{running_only: true}
@@ -35,19 +38,19 @@ defmodule Firmowid.Timetracker.Session.Actions.TeamPresence do
 
     on_leave =
       %{status: :accepted, start_date: date, end_date: date}
-      |> Timetracker.list_leave_requests!(opts)
+      |> Timetracker.list_leave_requests!(scope: reader)
       |> MapSet.new(& &1.member_id)
 
     presence =
       %{status: :active}
-      |> Core.list_users!(Keyword.put(opts, :load, member: [:display_name]))
+      |> Core.list_users!(scope: reader, load: [:member])
       |> Enum.map(fn %{member: member} ->
         %{
-          name: member.display_name,
+          name: member.name,
           status: status(Map.fetch(remote_by_member, member.id), MapSet.member?(on_leave, member.id))
         }
       end)
-      |> Enum.sort_by(&{rank(&1.status), String.downcase(&1.name)})
+      |> Enum.sort_by(&{rank(&1.status), String.downcase(&1.name || "")})
 
     {:ok, presence}
   end

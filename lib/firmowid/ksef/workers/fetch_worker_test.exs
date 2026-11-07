@@ -2,6 +2,7 @@ defmodule Firmowid.Ksef.Workers.FetchWorkerTest do
   @moduledoc false
   use Firmowid.DataCase, async: false
 
+  import ExUnit.CaptureLog
   import Firmowid.AccountsFixtures
   import Firmowid.Test.Support.OpenAIEnrichmentTestHelpers
 
@@ -162,6 +163,68 @@ defmodule Firmowid.Ksef.Workers.FetchWorkerTest do
 
     assert invoice.invoice_type == :roz
     assert Decimal.equal?(Money.to_decimal(invoice.amount), Decimal.new("2027.08"))
+  end
+
+  test "lists each cost invoice it fails to import in the job meta", %{
+    organization_id: organization_id
+  } do
+    imported_number = "KSEF-OK-#{System.unique_integer([:positive])}"
+    failed_number = "KSEF-FAILED-#{System.unique_integer([:positive])}"
+    encryption_data = Encryption.generate_encryption_data()
+
+    # A VAT invoice cannot be due from the seller, so the negative amount fails validation.
+    {zip_binary, encrypted_package} =
+      build_encrypted_package(
+        [
+          %{
+            ksef_number: imported_number,
+            xml: invoice_xml(invoice_identifier: "FV/2026/001", total_amount: "10.00"),
+            permanent_storage_date: "2026-03-06T12:34:56Z"
+          },
+          %{
+            ksef_number: failed_number,
+            xml: invoice_xml(invoice_identifier: "FV/2026/002", total_amount: "-10.00"),
+            permanent_storage_date: "2026-03-06T12:34:56Z"
+          }
+        ],
+        encryption_data
+      )
+
+    part =
+      package_part(zip_binary, encrypted_package, "https://ksef.example/downloads/package-failed")
+
+    Req.Test.stub(:ksef_api, fn conn ->
+      case conn.request_path do
+        "/invoices/exports/export-ref-failed" ->
+          Req.Test.json(conn, %{
+            "status" => %{"code" => 200},
+            "package" => %{"parts" => [part], "isTruncated" => false}
+          })
+
+        "/downloads/package-failed" ->
+          Plug.Conn.send_resp(conn, 200, encrypted_package)
+      end
+    end)
+
+    # A job stored in the database, so the meta the worker stamps can be read back.
+    Oban.Testing.with_testing_mode(:manual, fn ->
+      job =
+        organization_id
+        |> poll_export_args(encryption_data, "export-ref-failed")
+        |> FetchWorker.new()
+        |> Oban.insert!()
+
+      assert {{:error, "Failed to process 1 invoice(s), " <> _}, _log} =
+               with_log(fn -> FetchWorker.perform(job) end)
+
+      assert %{
+               "created" => 1,
+               "failed" => 1,
+               "failed_invoices" => [%{"ksef_number" => ^failed_number, "reason" => reason}]
+             } = Repo.get!(Oban.Job, job.id, prefix: "oban").meta
+
+      assert reason =~ "stage=create"
+    end)
   end
 
   test "skips already imported KSeF invoices while importing new ones from a mocked export", %{
