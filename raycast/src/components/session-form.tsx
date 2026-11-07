@@ -1,9 +1,11 @@
 import {
   Action,
   ActionPanel,
+  closeMainWindow,
   Form,
   Icon,
   List,
+  PopToRootType,
   showToast,
   Toast,
   useNavigation,
@@ -17,17 +19,18 @@ import {
   editSessionMutationOptions,
 } from "../lib/mutations";
 import { projectsOptions, sessionNeighborsOptions } from "../lib/queries";
+import { withQueryClient } from "../lib/query-client";
 
 type SessionFormProps = {
   navigationTitle?: string;
 } & (
-  | { kind: "start"; onStart?: () => Promise<void> }
-  | { kind: "edit"; session: Session; onSaved?: () => Promise<void> }
+  | { kind: "start"; returnToRoot?: boolean }
+  | { kind: "edit"; session: Session; returnToRoot?: boolean }
 );
 
 function SessionForm(props: SessionFormProps) {
   const { pop } = useNavigation();
-  const { data, error, isLoading } = useQuery(projectsOptions);
+  const { data, error, isFetching } = useQuery(projectsOptions);
 
   const start = useMutation(startSessionMutationOptions);
 
@@ -38,7 +41,7 @@ function SessionForm(props: SessionFormProps) {
   const {
     data: neighbors,
     error: neighborsError,
-    isLoading: isLoadingNeighbors,
+    isFetching: isFetchingNeighbors,
   } = useQuery(sessionNeighborsOptions(session));
 
   const { data: projects, visitItem } = useFrecencySorting(data, {
@@ -67,22 +70,22 @@ function SessionForm(props: SessionFormProps) {
       start_datetime: session ? FormValidation.Required : undefined,
       end_datetime: session?.end_datetime ? FormValidation.Required : undefined,
     },
-    async onSubmit(values) {
-      let windowClosed = false;
+    async onSubmit(submittedValues) {
       let toast: Toast | undefined;
 
       try {
         const input = {
-          title: values.title,
-          project_id: values.project_id,
-          is_remote: values.is_remote,
+          title: submittedValues.title,
+          project_id: submittedValues.project_id,
+          is_remote: submittedValues.is_remote,
         };
 
         const project = projects.find(
-          (project) => project.id === values.project_id
+          (candidate) => candidate.id === submittedValues.project_id
         );
 
         if (!project) {
+          // oxlint-disable-next-line react/todo -- This throw runs in a submit handler, not during rendering.
           throw new Error(
             "Select a project. If no projects are listed, ask your administrator for access."
           );
@@ -95,14 +98,17 @@ function SessionForm(props: SessionFormProps) {
           lockdown: session?.lockdown ?? false,
           project,
           start_datetime: session
-            ? (values.start_datetime?.toISOString() ?? session.start_datetime)
+            ? (submittedValues.start_datetime?.toISOString() ??
+              session.start_datetime)
             : new Date().toISOString(),
-          end_datetime: values.end_datetime?.toISOString(),
+          end_datetime: submittedValues.end_datetime?.toISOString(),
         };
 
-        if (props.kind === "start" && props.onStart) {
-          await props.onStart();
-          windowClosed = true;
+        if (props.returnToRoot) {
+          await closeMainWindow({
+            clearRootSearch: true,
+            popToRootType: PopToRootType.Immediate,
+          });
         }
 
         toast = await showToast({
@@ -110,52 +116,37 @@ function SessionForm(props: SessionFormProps) {
           title: session ? "Saving session…" : "Starting session…",
         });
 
-        const pendingToast = toast;
-
-        const request = session
-          ? edit.mutateAsync({
-              session: optimisticSession,
-              input: {
-                ...input,
-                id: session.id,
-                start_datetime: values.start_datetime?.toISOString(),
-                end_datetime: values.end_datetime?.toISOString(),
-              },
-            })
-          : start.mutateAsync({ session: optimisticSession });
-
-        void (async () => {
-          try {
-            await request;
-            pendingToast.style = Toast.Style.Success;
-            pendingToast.title = session ? "Session saved" : "Session started";
-          } catch (error) {
-            pendingToast.style = Toast.Style.Failure;
-            pendingToast.title = `Couldn't ${session ? "save" : "start"} the session: ${String(error)}`;
-          }
-        })();
-
-        if (props.kind === "edit" && props.onSaved) {
-          windowClosed = true;
+        if (session) {
+          await edit.mutateAsync({
+            session: optimisticSession,
+            input: {
+              ...input,
+              id: session.id,
+              start_datetime: submittedValues.start_datetime?.toISOString(),
+              end_datetime: submittedValues.end_datetime?.toISOString(),
+            },
+          });
+        } else {
+          await start.mutateAsync({ session: optimisticSession });
         }
-        await Promise.all([
-          visitItem(project),
-          props.kind === "edit" && props.onSaved
-            ? props.onSaved()
-            : windowClosed
-              ? Promise.resolve()
-              : pop(),
-        ]);
-      } catch (error) {
+
+        await visitItem(project);
+        toast.style = Toast.Style.Success;
+        toast.title = session ? "Session saved" : "Session started";
+
+        if (!props.returnToRoot) {
+          pop();
+        }
+      } catch (submitError) {
         const shown = toast;
 
         if (shown) {
           shown.style = Toast.Style.Failure;
-          shown.title = `Couldn't save the session: ${String(error)}`;
+          shown.title = `Couldn't save the session: ${String(submitError)}`;
         } else {
           await showToast({
             style: Toast.Style.Failure,
-            title: `Couldn't save the session: ${String(error)}`,
+            title: `Couldn't save the session: ${String(submitError)}`,
           });
         }
       }
@@ -173,7 +164,7 @@ function SessionForm(props: SessionFormProps) {
   return (
     <Form
       navigationTitle={props.navigationTitle}
-      isLoading={isLoadingNeighbors}
+      isLoading={isFetchingNeighbors}
       actions={
         <ActionPanel>
           <Action.SubmitForm
@@ -192,7 +183,7 @@ function SessionForm(props: SessionFormProps) {
       <Form.Dropdown
         title="Project"
         placeholder="Select a project"
-        isLoading={isLoading}
+        isLoading={isFetching}
         {...itemProps.project_id}
       >
         {projects.map((project) => (
@@ -243,5 +234,7 @@ function SessionForm(props: SessionFormProps) {
     </Form>
   );
 }
+
+export const PushedSessionForm = withQueryClient(SessionForm);
 
 export default SessionForm;

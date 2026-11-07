@@ -9,6 +9,7 @@ import {
 } from "@raycast/api";
 import {
   useIsFetching,
+  useIsRestoring,
   useMutation,
   usePrefetchQuery,
   useQuery,
@@ -23,7 +24,15 @@ import { duration, timetrackerUrl } from "./lib/status";
 import type { SessionsLaunchContext } from "./manage-sessions";
 
 function SessionStatus() {
-  const { data: current, error, isLoading } = useQuery(currentSessionOptions);
+  const {
+    data: current,
+    dataUpdatedAt,
+    error,
+    errorUpdatedAt,
+    isFetching,
+  } = useQuery(currentSessionOptions);
+
+  const isRestoring = useIsRestoring();
   usePrefetchQuery(projectsOptions);
 
   const fetchingProjects = useIsFetching({
@@ -38,11 +47,7 @@ function SessionStatus() {
       ? `${current.title.slice(0, 23)}…`
       : current.title;
 
-  const title = error
-    ? "?"
-    : current
-      ? `${duration(current)} · ${shortTitle}`
-      : "";
+  const title = current ? `${duration(current)} · ${shortTitle}` : "";
 
   async function stopSession() {
     const toast = await showToast({
@@ -54,71 +59,68 @@ function SessionStatus() {
       await mutation.mutateAsync();
       toast.style = Toast.Style.Success;
       toast.title = "Session stopped";
-    } catch (error) {
+    } catch (mutationError) {
       toast.style = Toast.Style.Failure;
-      toast.title = `Couldn't stop the session: ${String(error)}`;
+      toast.title = `Couldn't stop the session: ${String(mutationError)}`;
     }
   }
 
+  if (!current && (isRestoring || isFetching)) {
+    return (
+      <MenuBarExtra
+        isLoading
+        icon={{ source: Icon.Play, tintColor: Color.Green }}
+      />
+    );
+  }
+
   if (
-    isLoading ||
+    !current ||
     error instanceof AuthenticationError ||
-    (current === null && !error)
+    (error &&
+      !isRestoring &&
+      !isFetching &&
+      errorUpdatedAt - dataUpdatedAt >= 5 * 60_000)
   ) {
     return null;
   }
 
   return (
     <MenuBarExtra
-      isLoading={fetchingProjects > 0}
+      isLoading={isRestoring || isFetching || fetchingProjects > 0}
       icon={{
-        source: error ? Icon.ExclamationMark : current ? Icon.Play : Icon.Pause,
-        tintColor: error
-          ? Color.Orange
-          : current
-            ? Color.Green
-            : Color.SecondaryText,
+        source: Icon.Play,
+        tintColor: Color.Green,
       }}
       title={title}
-      tooltip={
-        error
-          ? `Firmowid: Session status is unavailable. ${error.message}`
-          : current
-            ? `${current.title} · ${current.project.name}`
-            : `Firmowid: ${title}`
-      }
+      tooltip={`${current.title} · ${current.project.name}`}
     >
-      {error ? (
-        <MenuBarExtra.Item title="Couldn't check session status" />
-      ) : null}
-      {current && !error ? (
-        <MenuBarExtra.Section title={current.project.name}>
-          <MenuBarExtra.Item title={current.title} />
-          {current.lockdown === false ? (
-            <>
-              <ProjectSubmenu session={current} />
-              <MenuBarExtra.Item
-                title="Edit Session"
-                icon={Icon.Pencil}
-                onAction={() =>
-                  launchCommand({
-                    name: "manage-sessions",
-                    type: LaunchType.UserInitiated,
-                    context: {
-                      editSession: current,
-                    } satisfies SessionsLaunchContext,
-                  })
-                }
-              />
-            </>
-          ) : null}
-          <MenuBarExtra.Item
-            title="Stop Session"
-            icon={Icon.Stop}
-            onAction={stopSession}
-          />
-        </MenuBarExtra.Section>
-      ) : null}
+      <MenuBarExtra.Section title={current.project.name}>
+        <MenuBarExtra.Item title={current.title} />
+        {current.lockdown === false ? (
+          <>
+            <ProjectSubmenu session={current} />
+            <MenuBarExtra.Item
+              title="Edit Session"
+              icon={Icon.Pencil}
+              onAction={() =>
+                launchCommand({
+                  name: "manage-sessions",
+                  type: LaunchType.UserInitiated,
+                  context: {
+                    editSession: current,
+                  } satisfies SessionsLaunchContext,
+                })
+              }
+            />
+          </>
+        ) : null}
+        <MenuBarExtra.Item
+          title="Stop Session"
+          icon={Icon.Stop}
+          onAction={stopSession}
+        />
+      </MenuBarExtra.Section>
       <MenuBarExtra.Item
         title="Manage Sessions"
         icon={Icon.List}

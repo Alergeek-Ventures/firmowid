@@ -1,4 +1,4 @@
-import { showToast, Toast } from "@raycast/api";
+import { closeMainWindow, PopToRootType, showToast, Toast } from "@raycast/api";
 import { withAccessToken } from "@raycast/utils";
 
 import { stopCurrentSession } from "./lib/api";
@@ -6,13 +6,19 @@ import { authorize } from "./lib/auth";
 import { refreshMenuBar } from "./lib/status";
 
 async function StopSession() {
+  await closeMainWindow({
+    clearRootSearch: true,
+    popToRootType: PopToRootType.Immediate,
+  });
+
   const toast = await showToast({
     style: Toast.Style.Animated,
     title: "Stopping session…",
   });
 
   try {
-    await stopCurrentSession({ token: await authorize() });
+    const token = await authorize();
+    await stopCurrentSession({ token });
     await refreshMenuBar();
     toast.style = Toast.Style.Success;
     toast.title = "Session stopped";

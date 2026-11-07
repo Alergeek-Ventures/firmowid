@@ -10,42 +10,50 @@ import {
   Toast,
   Keyboard,
   List,
+  PopToRootType,
 } from "@raycast/api";
 import { useFrecencySorting } from "@raycast/utils";
 import { useMutation, useQuery } from "@tanstack/react-query";
 
 import type { Project, Session } from "../lib/api";
 import {
-  startSessionMutationOptions,
-  stopSessionMutationOptions,
   deleteSessionMutationOptions,
   editSessionMutationOptions,
+  startSessionMutationOptions,
+  stopSessionMutationOptions,
 } from "../lib/mutations";
 import { currentSessionOptions, projectsOptions } from "../lib/queries";
 import { duration } from "../lib/status";
 import ListActions from "./list-actions";
-import SessionForm from "./session-form";
+import { PushedSessionForm } from "./session-form";
 
 export default function SessionItem({
   session,
   actions,
+  showTime = false,
 }: {
   session: Session;
   actions?: List.Item.Props["actions"];
+  showTime?: boolean;
 }) {
   return (
     <List.Item
-      id={session.id}
-      title={session.title}
-      subtitle={session.project.name}
+      title={
+        showTime
+          ? `${new Date(session.start_datetime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false })} – ${session.end_datetime ? new Date(session.end_datetime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false }) : "Now"}`
+          : session.title
+      }
+      subtitle={showTime ? undefined : session.project.name}
       keywords={[session.project.name]}
       icon={{
         source: session.end_datetime ? Icon.CheckCircle : Icon.Play,
         tintColor: session.end_datetime ? Color.SecondaryText : Color.Green,
       }}
       accessories={[
+        ...(session.is_remote
+          ? [{ icon: Icon.House, tooltip: "Remote Work" }]
+          : []),
         { text: duration(session), tooltip: "Duration" },
-        // { date: new Date(session.start_datetime), tooltip: "Start Time" },
       ]}
       actions={
         actions ?? (
@@ -59,14 +67,11 @@ export default function SessionItem({
   );
 }
 
-function SessionActions({ session }: { session: Session }) {
+export function SessionPrimaryAction({ session }: { session: Session }) {
   const { data: current } = useQuery(currentSessionOptions);
 
-  const stop = useMutation(stopSessionMutationOptions);
-
   const start = useMutation(startSessionMutationOptions);
-
-  const remove = useMutation(deleteSessionMutationOptions);
+  const stop = useMutation(stopSessionMutationOptions);
 
   async function stopSession() {
     const toast = await showToast({
@@ -75,7 +80,7 @@ function SessionActions({ session }: { session: Session }) {
     });
 
     try {
-      await stop.mutateAsync(undefined);
+      await stop.mutateAsync();
       toast.style = Toast.Style.Success;
       toast.title = "Session stopped";
     } catch (error) {
@@ -85,7 +90,10 @@ function SessionActions({ session }: { session: Session }) {
   }
 
   async function continueSession() {
-    await closeMainWindow();
+    await closeMainWindow({
+      clearRootSearch: true,
+      popToRootType: PopToRootType.Immediate,
+    });
 
     const toast = await showToast({
       style: Toast.Style.Animated,
@@ -96,8 +104,8 @@ function SessionActions({ session }: { session: Session }) {
       await start.mutateAsync({
         session: {
           ...session,
-          lockdown: false,
           id: crypto.randomUUID(),
+          lockdown: false,
           start_datetime: new Date().toISOString(),
           end_datetime: undefined,
         },
@@ -109,6 +117,20 @@ function SessionActions({ session }: { session: Session }) {
       toast.title = `Couldn't start the session: ${String(error)}`;
     }
   }
+
+  return current?.id === session.id ? (
+    <Action title="Stop Session" icon={Icon.Stop} onAction={stopSession} />
+  ) : (
+    <Action
+      title="Continue Session"
+      icon={Icon.Play}
+      onAction={continueSession}
+    />
+  );
+}
+
+export function SessionDeleteAction({ session }: { session: Session }) {
+  const remove = useMutation(deleteSessionMutationOptions);
 
   async function removeSession() {
     if (
@@ -141,30 +163,44 @@ function SessionActions({ session }: { session: Session }) {
   }
 
   return (
-    <>
-      {current?.id === session.id ? (
-        <Action title="Stop Session" icon={Icon.Stop} onAction={stopSession} />
-      ) : (
-        <Action
-          title="Continue Session"
-          icon={Icon.Play}
-          onAction={continueSession}
+    <Action
+      title="Delete Session"
+      icon={Icon.Trash}
+      style={Action.Style.Destructive}
+      shortcut={Keyboard.Shortcut.Common.Remove}
+      onAction={removeSession}
+    />
+  );
+}
+
+export function SessionEditAction({ session }: { session: Session }) {
+  if (session.lockdown !== false) {
+    return null;
+  }
+
+  return (
+    <Action.Push
+      title="Edit Session"
+      icon={Icon.Pencil}
+      shortcut={Keyboard.Shortcut.Common.Edit}
+      target={
+        <PushedSessionForm
+          kind="edit"
+          session={session}
+          navigationTitle="Edit Session"
         />
-      )}
+      }
+    />
+  );
+}
+
+function SessionActions({ session }: { session: Session }) {
+  return (
+    <>
+      <SessionPrimaryAction session={session} />
       {session.lockdown === false ? (
         <>
-          <Action.Push
-            title="Edit Session"
-            icon={Icon.Pencil}
-            shortcut={Keyboard.Shortcut.Common.Edit}
-            target={
-              <SessionForm
-                kind="edit"
-                session={session}
-                navigationTitle="Edit Session"
-              />
-            }
-          />
+          <SessionEditAction session={session} />
           <ProjectMenu session={session} />
         </>
       ) : null}
@@ -173,19 +209,13 @@ function SessionActions({ session }: { session: Session }) {
         content={session.title}
         shortcut={Keyboard.Shortcut.Common.Copy}
       />
-      <Action
-        title="Delete Session"
-        icon={Icon.Trash}
-        style={Action.Style.Destructive}
-        shortcut={Keyboard.Shortcut.Common.Remove}
-        onAction={removeSession}
-      />
+      <SessionDeleteAction session={session} />
     </>
   );
 }
 
 function ProjectMenu({ session }: { session: Session }) {
-  const { data, isLoading } = useQuery(projectsOptions);
+  const { data, isFetching } = useQuery(projectsOptions);
 
   const mutation = useMutation(editSessionMutationOptions);
 
@@ -223,13 +253,12 @@ function ProjectMenu({ session }: { session: Session }) {
       title="Change Project…"
       icon={Icon.Folder}
       shortcut={{ modifiers: ["cmd", "shift"], key: "p" }}
-      isLoading={isLoading}
+      isLoading={isFetching}
     >
       {projects.map((project) => (
         <Action
           key={project.id}
           title={project.name}
-          icon={Icon.Folder}
           autoFocus={project.id === session.project.id}
           onAction={() => changeProject(project)}
         />

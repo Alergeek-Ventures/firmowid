@@ -12,7 +12,7 @@ import { getOrigin } from "./auth";
 
 declare module "@tanstack/react-query" {
   interface Register {
-    queryMeta: Record<string, unknown> & { errorToastTitle?: string };
+    queryMeta: { errorToastTitle?: string };
   }
 }
 
@@ -43,7 +43,8 @@ export function createRaycastQueryClient() {
           void showToast({
             style: Toast.Style.Failure,
             title,
-            message: error.message,
+            message:
+              error.cause instanceof TypeError ? "Fetch failed" : error.message,
           });
         }
       },
@@ -63,14 +64,22 @@ const client = createRaycastQueryClient();
 export function withQueryClient<Props extends object>(
   Command: ComponentType<Props>
 ) {
-  return function QueryCommand(props: Props) {
+  function QueryCommand(props: Props) {
     return (
       <PersistQueryClientProvider
         client={client}
-        persistOptions={{ persister, buster: "1" }}
+        persistOptions={{
+          persister,
+          buster: "1",
+          dehydrateOptions: {
+            shouldDehydrateQuery: (query) => query.state.data !== undefined,
+          },
+        }}
       >
         <Command {...props} />
       </PersistQueryClientProvider>
     );
-  };
+  }
+
+  return QueryCommand;
 }

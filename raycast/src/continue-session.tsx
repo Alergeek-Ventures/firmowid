@@ -4,6 +4,7 @@ import {
   closeMainWindow,
   Icon,
   List,
+  PopToRootType,
   showToast,
   Toast,
 } from "@raycast/api";
@@ -19,11 +20,13 @@ import { withQueryClient } from "./lib/query-client";
 
 function ContinueSession() {
   const history = useInfiniteQuery(sessionHistoryOptions);
-
-  const mutation = useMutation(startSessionMutationOptions);
+  const start = useMutation(startSessionMutationOptions);
 
   async function continueSession(session: Session) {
-    await closeMainWindow();
+    await closeMainWindow({
+      clearRootSearch: true,
+      popToRootType: PopToRootType.Immediate,
+    });
 
     const toast = await showToast({
       style: Toast.Style.Animated,
@@ -31,11 +34,11 @@ function ContinueSession() {
     });
 
     try {
-      await mutation.mutateAsync({
+      await start.mutateAsync({
         session: {
           ...session,
-          lockdown: false,
           id: crypto.randomUUID(),
+          lockdown: false,
           // oxlint-disable-next-line react/purity -- This handler runs after a user action.
           start_datetime: new Date().toISOString(),
           end_datetime: undefined,
@@ -51,7 +54,7 @@ function ContinueSession() {
 
   return (
     <List
-      isLoading={history.isLoading}
+      isLoading={history.isFetching}
       searchBarPlaceholder="Search sessions to continue…"
       pagination={{
         pageSize: 25,
@@ -61,7 +64,7 @@ function ContinueSession() {
         },
       }}
     >
-      {!history.isLoading ? (
+      {!history.isFetching ? (
         <List.EmptyView
           icon={history.error ? Icon.ExclamationMark : Icon.Clock}
           title={history.error ? "Couldn't load sessions" : "No sessions"}

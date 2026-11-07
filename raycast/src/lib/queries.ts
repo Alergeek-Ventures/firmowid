@@ -32,8 +32,8 @@ export const projectsOptions = queryOptions({
   meta: { errorToastTitle: "Couldn't load Firmowid data" },
 });
 
-export const sessionNeighborsOptions = (session?: Session) =>
-  queryOptions({
+export function sessionNeighborsOptions(session?: Session) {
+  return queryOptions({
     queryKey: [
       "sessions",
       "neighbors",
@@ -47,7 +47,6 @@ export const sessionNeighborsOptions = (session?: Session) =>
             token: await accessToken(),
             signal,
             limit: 1,
-            offset: 0,
           };
 
           const [previous, next] = await Promise.all([
@@ -80,17 +79,24 @@ export const sessionNeighborsOptions = (session?: Session) =>
       : skipToken,
     meta: { errorToastTitle: "Couldn't load neighboring sessions" },
   });
+}
 
 export const sessionHistoryOptions = infiniteQueryOptions({
-  queryKey: ["sessions", "history"],
-  queryFn: async ({ signal, pageParam }) =>
+  queryKey: ["sessions", "history", "keyset"],
+  queryFn: async ({
+    signal,
+    pageParam,
+  }: {
+    signal: AbortSignal;
+    pageParam: string | null;
+  }) =>
     listSessions({
       token: await accessToken(),
       signal,
       limit: 50,
       after: pageParam ?? undefined,
     }),
-  initialPageParam: "",
+  initialPageParam: null,
   getNextPageParam: (lastPage) => lastPage.next_cursor,
   meta: { errorToastTitle: "Couldn't load session history" },
 });

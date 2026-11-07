@@ -60,7 +60,7 @@
     {
       "name": "list-sessions",
       "title": "List Sessions",
-      "description": "List your work sessions from newest to oldest, with offset pagination."
+      "description": "List your work sessions from newest to oldest, with cursor pagination."
     },
     {
       "name": "list-projects",
@@ -89,7 +89,7 @@
     }
   ],
   "ai": {
-    "instructions": "Use List Projects to resolve project names to IDs and Get Current Session or List Sessions to resolve session IDs. Never invent IDs. To continue a session, use Start Session with its description, project ID, and remote work setting; this creates a new session and stops the current one. Session history is paginated: follow has_more using offset before claiming a complete total or that an older session does not exist. Provide timestamps in UTC ISO 8601 format. Only change fields the user asks to update."
+    "instructions": "Use List Projects to resolve project names to IDs and Get Current Session or List Sessions to resolve session IDs. Never invent IDs. To continue a session, use Start Session with its description, project ID, and remote work setting; this creates a new session and stops the current one. Session history is paginated: follow next_cursor using after before claiming a complete total or that an older session does not exist. Provide timestamps in UTC ISO 8601 format. Only change fields the user asks to update."
   },
   "preferences": [
     {

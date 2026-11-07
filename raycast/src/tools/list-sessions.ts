@@ -6,17 +6,17 @@ import { authorize } from "../lib/auth";
 interface Input {
   /** Number of sessions to return, from 1 to 100. Defaults to 25. */
   limit?: number;
-  /** Number of sessions to skip. Defaults to 0. Increase by limit when has_more is true. */
-  offset?: number;
+  /** Cursor returned as next_cursor by the previous page. Omit for the first page. */
+  after?: string;
 }
 
 export default async function tool(input: Input) {
-  const { limit, offset } = z
+  const { limit, after } = z
     .object({
       limit: z.number().int().min(1).max(100).default(25),
-      offset: z.number().int().min(0).default(0),
+      after: z.string().min(1).optional(),
     })
     .parse(input);
 
-  return listSessions({ token: await authorize(), limit, offset });
+  return listSessions({ token: await authorize(), limit, after });
 }

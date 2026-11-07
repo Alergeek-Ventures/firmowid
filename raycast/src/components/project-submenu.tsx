@@ -7,7 +7,7 @@ import { editSessionMutationOptions } from "../lib/mutations";
 import { projectsOptions } from "../lib/queries";
 
 export default function ProjectSubmenu({ session }: { session: Session }) {
-  const { data, error, isLoading } = useQuery({
+  const { data, error, isFetching } = useQuery({
     ...projectsOptions,
     refetchOnMount: false,
     retryOnMount: false,
@@ -39,15 +39,15 @@ export default function ProjectSubmenu({ session }: { session: Session }) {
       ]);
       toast.style = Toast.Style.Success;
       toast.title = "Project changed";
-    } catch (error) {
+    } catch (mutationError) {
       toast.style = Toast.Style.Failure;
-      toast.title = `Couldn't change the project: ${String(error)}`;
+      toast.title = `Couldn't change the project: ${String(mutationError)}`;
     }
   }
 
   return (
     <MenuBarExtra.Submenu title="Change Project…" icon={Icon.Folder}>
-      {isLoading ? (
+      {isFetching ? (
         <MenuBarExtra.Item title="Loading projects…" />
       ) : error ? (
         <MenuBarExtra.Item
@@ -65,7 +65,7 @@ export default function ProjectSubmenu({ session }: { session: Session }) {
           onAction={() => changeProject(project)}
         />
       ))}
-      {!isLoading && !error && projects.length === 0 ? (
+      {!isFetching && !error && projects.length === 0 ? (
         <MenuBarExtra.Item title="No projects" />
       ) : null}
     </MenuBarExtra.Submenu>

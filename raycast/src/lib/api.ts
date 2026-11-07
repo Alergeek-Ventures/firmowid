@@ -140,23 +140,19 @@ export async function listSessions({
   token,
   signal,
   limit,
-  offset,
   after,
   filter,
   sort,
 }: RequestOptions & {
   limit: number;
+  after?: string;
   filter?: Record<string, Record<string, string>>;
   sort?: string;
-} & ({ offset: number; after?: never } | { offset?: never; after?: string })) {
+}) {
   const query = new URLSearchParams({
     include: "project",
     "page[limit]": String(limit),
   });
-
-  if (offset !== undefined) {
-    query.set("page[offset]", String(offset));
-  }
 
   if (after !== undefined) {
     query.set("page[after]", after);

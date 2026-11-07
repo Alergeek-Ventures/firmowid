@@ -135,7 +135,7 @@ export const startSessionMutationOptions = sessionMutationOptions(
 );
 
 export const stopSessionMutationOptions = sessionMutationOptions<
-  void,
+  undefined,
   Awaited<ReturnType<typeof stopCurrentSession>>
 >(
   async () => stopCurrentSession({ token: await accessToken() }),
@@ -189,3 +189,39 @@ export const editSessionMutationOptions = sessionMutationOptions(
     updateHistory(client, [session]);
   }
 );
+
+export const editSessionGroupMutationOptions = mutationOptions({
+  mutationKey: ["sessions"],
+  mutationFn: async ({
+    ids,
+    input,
+  }: {
+    ids: Session["id"][];
+    input: Omit<Parameters<typeof editSession>[0]["input"], "id">;
+  }) => {
+    const token = await accessToken();
+
+    for (const id of ids) {
+      // oxlint-disable-next-line eslint/no-await-in-loop -- Stop at the first failure, as the web does.
+      await editSession({ token, input: { ...input, id } });
+    }
+  },
+  onSettled(_data, _error, _variables, _result, context) {
+    return refreshSessions(context);
+  },
+});
+
+export const deleteSessionGroupMutationOptions = mutationOptions({
+  mutationKey: ["sessions"],
+  mutationFn: async (ids: Session["id"][]) => {
+    const token = await accessToken();
+
+    for (const id of ids) {
+      // oxlint-disable-next-line eslint/no-await-in-loop -- Stop at the first failure instead of deleting further sessions.
+      await deleteSession({ token, id });
+    }
+  },
+  onSettled(_data, _error, _variables, _result, context) {
+    return refreshSessions(context);
+  },
+});
