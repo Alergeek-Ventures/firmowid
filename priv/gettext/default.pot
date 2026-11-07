@@ -6497,6 +6497,11 @@ msgstr ""
 
 #: lib/firmowid_web/settings/utilities/navigation.ex
 #, elixir-autogen, elixir-format
+msgid "My business trips"
+msgstr ""
+
+#: lib/firmowid_web/settings/utilities/navigation.ex
+#, elixir-autogen, elixir-format
 msgid "My documents"
 msgstr ""
 

@@ -49,14 +49,16 @@ defmodule FirmowidWeb.Inbox.Utilities.Navigation do
   def bank_settings_path, do: SettingsNavigation.canonical_path(:bank_accounts)
 
   @doc """
-  The destinations a member with `role` may open. `analysis?` reflects the
-  analysis dashboard flag; `owner?` controls subscription visibility.
+  The destinations a member with `role` may open. `analysis?` and
+  `delegations?` reflect the analysis dashboard and business trips flags;
+  `owner?` controls subscription visibility.
   """
-  @spec for_role(UserRole.t(), boolean(), boolean()) :: [destination()]
-  def for_role(role, analysis?, owner? \\ false) do
+  @spec for_role(UserRole.t(), boolean(), boolean(), boolean()) :: [destination()]
+  def for_role(role, analysis?, owner? \\ false, delegations? \\ false) do
     Enum.filter(all(), fn destination ->
       role in destination.roles and (destination.id != :analysis or analysis?) and
-        (destination.id != :subscription or owner?)
+        (destination.id != :subscription or owner?) and
+        (destination.id != :delegations or delegations?)
     end)
   end
 
@@ -210,6 +212,14 @@ defmodule FirmowidWeb.Inbox.Utilities.Navigation do
         label: SettingsNavigation.page_title(:documents),
         icon: "files",
         path: SettingsNavigation.canonical_path(:documents),
+        roles: UserRole.roles()
+      },
+      %{
+        id: :delegations,
+        layer: :me,
+        label: SettingsNavigation.page_title(:delegations),
+        icon: "plane",
+        path: SettingsNavigation.canonical_path(:delegations),
         roles: UserRole.roles()
       },
       %{

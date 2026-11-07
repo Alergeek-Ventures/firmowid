@@ -1254,6 +1254,8 @@ defmodule FirmowidWeb.Settings.Views.Index do
             password_form={@password_form}
             current_password={@current_password}
           />
+        <% :delegations -> %>
+          <.delegations_section delegations={@delegations} standalone />
         <% :documents -> %>
           <.live_component
             module={DocumentsSection}
@@ -1377,6 +1379,9 @@ defmodule FirmowidWeb.Settings.Views.Index do
         current_user: socket.assigns.current_user,
         current_org: socket.assigns.current_org
       }) ->
+        {:noreply, push_patch(socket, to: Navigation.default_path())}
+
+      tab == :delegations and not flag_enabled?(:delegations, socket.assigns) ->
         {:noreply, push_patch(socket, to: Navigation.default_path())}
 
       not canonical? ->
