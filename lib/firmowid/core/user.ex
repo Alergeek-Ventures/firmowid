@@ -129,6 +129,12 @@ defmodule Firmowid.Core.User do
         constraints one_of: UserRole.roles()
       end
 
+      argument :limit, :integer, constraints: [min: 1, max: 100]
+
+      prepare build(limit: arg(:limit)) do
+        where present(:limit)
+      end
+
       prepare fn query, _context ->
         tenant = query.tenant || raise "User :list action requires a tenant (organization_id)"
         Ash.Query.filter(query, exists(member, organization_id == ^tenant))

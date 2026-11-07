@@ -2681,6 +2681,7 @@ msgid "Cost"
 msgstr ""
 
 #: lib/firmowid_web/assistant/utilities/presentation.ex
+#: lib/firmowid_web/inbox/components/search_palette.ex
 #: lib/firmowid_web/invoicing/cost_invoices/views/show.ex
 #: lib/firmowid_web/invoicing/transactions/components/show_components.ex
 #, elixir-autogen, elixir-format
@@ -3166,6 +3167,12 @@ msgstr ""
 #: lib/firmowid_web/invoicing/components/entries_table.ex
 #, elixir-autogen, elixir-format
 msgctxt "entries table column"
+msgid "Counterparty"
+msgstr ""
+
+#: lib/firmowid_web/inbox/components/search_palette.ex
+#, elixir-autogen, elixir-format
+msgctxt "search result"
 msgid "Counterparty"
 msgstr ""
 
@@ -3769,6 +3776,7 @@ msgstr ""
 msgid "Downloading…"
 msgstr ""
 
+#: lib/firmowid_web/inbox/components/search_palette.ex
 #: lib/firmowid_web/invoicing/components/entries_table.ex
 #: lib/firmowid_web/invoicing/components/sales_invoice_details.ex
 #: lib/firmowid_web/landing/components/sections.ex
@@ -6942,6 +6950,11 @@ msgstr ""
 msgid "No results for:"
 msgstr ""
 
+#: lib/firmowid_web/inbox/components/search_palette.ex
+#, elixir-autogen, elixir-format
+msgid "No results. Try a different search."
+msgstr ""
+
 #: lib/firmowid_web/management/views/employees.html.heex
 #, elixir-autogen, elixir-format
 msgid "No results. Try changing the search criteria."
@@ -7792,6 +7805,12 @@ msgstr ""
 msgid "Period"
 msgstr ""
 
+#: lib/firmowid_web/inbox/components/search_palette.ex
+#, elixir-autogen, elixir-format
+msgctxt "search result"
+msgid "Person"
+msgstr ""
+
 #: lib/firmowid_web/settings/components/account_tab.ex
 #, elixir-autogen, elixir-format
 msgid "Personal data"
@@ -7819,6 +7838,12 @@ msgstr ""
 #: lib/firmowid_web/invoicing/components/download_modal.ex
 #, elixir-autogen, elixir-format
 msgid "Photos and scans of documents"
+msgstr ""
+
+#: lib/firmowid_web/inbox/components/search_palette.ex
+#, elixir-autogen, elixir-format
+msgctxt "search result"
+msgid "Place"
 msgstr ""
 
 #: lib/firmowid_web/admin/components/settlement_components.ex
@@ -8598,6 +8623,7 @@ msgid "Sales"
 msgstr ""
 
 #: lib/firmowid_web/assistant/utilities/presentation.ex
+#: lib/firmowid_web/inbox/components/search_palette.ex
 #: lib/firmowid_web/invoicing/sales_invoices/views/show.ex
 #: lib/firmowid_web/invoicing/sales_invoices/views/summary.ex
 #: lib/firmowid_web/invoicing/transactions/components/show_components.ex
@@ -8738,6 +8764,12 @@ msgstr ""
 msgid "Scope"
 msgstr ""
 
+#: lib/firmowid_web/inbox/components/search_palette.ex
+#: lib/firmowid_web/inbox/components/sidebar_nav.ex
+#, elixir-autogen, elixir-format
+msgid "Search"
+msgstr ""
+
 #: lib/firmowid_web/analysis/components/category_selector.ex
 #, elixir-autogen, elixir-format
 msgid "Search categories"
@@ -8798,6 +8830,16 @@ msgstr ""
 msgid "Search organizations"
 msgstr ""
 
+#: lib/firmowid_web/inbox/components/search_palette.ex
+#, elixir-autogen, elixir-format
+msgid "Search places"
+msgstr ""
+
+#: lib/firmowid_web/inbox/components/search_palette.ex
+#, elixir-autogen, elixir-format
+msgid "Search places, invoices, counterparties and people"
+msgstr ""
+
 #: lib/firmowid_web/management/views/projects.html.heex
 #, elixir-autogen, elixir-format
 msgid "Search projects"
@@ -8807,6 +8849,11 @@ msgstr ""
 #: lib/firmowid_web/settings/components/profile_tab.ex
 #, elixir-autogen, elixir-format
 msgid "Search requests"
+msgstr ""
+
+#: lib/firmowid_web/inbox/components/search_palette.ex
+#, elixir-autogen, elixir-format
+msgid "Search results"
 msgstr ""
 
 #: lib/firmowid_web/assistant/utilities/presentation.ex
@@ -9407,6 +9454,11 @@ msgstr ""
 #: lib/firmowid_web/assistant/components/controls.ex
 #, elixir-autogen, elixir-format
 msgid "Start over"
+msgstr ""
+
+#: lib/firmowid_web/inbox/components/search_palette.ex
+#, elixir-autogen, elixir-format
+msgid "Start typing to find a place or record."
 msgstr ""
 
 #: lib/firmowid_web/landing/components/hero.ex
@@ -11408,6 +11460,11 @@ msgstr ""
 msgid "Use %{number}"
 msgstr ""
 
+#: lib/firmowid_web/inbox/components/search_palette.ex
+#, elixir-autogen, elixir-format
+msgid "Use arrow keys to choose a result, Enter to open, and Escape to close."
+msgstr ""
+
 #: lib/firmowid_web/organization/invites/views/index.html.heex
 #, elixir-autogen, elixir-format
 msgid "Used by"
@@ -13187,4 +13244,9 @@ msgstr ""
 #: lib/firmowid_web/admin/components/settlement_components.ex
 #, elixir-autogen, elixir-format
 msgid "← Back to the organization list"
+msgstr ""
+
+#: lib/firmowid_web/inbox/components/search_palette.ex
+#, elixir-autogen, elixir-format
+msgid "↑ ↓ choose · Enter open · Esc close"
 msgstr ""

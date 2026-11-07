@@ -39,7 +39,7 @@ defmodule FirmowidWeb.DesignSystem.Components.Fields do
   attr :placeholder, :string, required: true
   attr :size, :string, values: ~w(small big), default: "big"
   attr :class, :any, default: nil
-  attr :rest, :global, include: ~w(form autofocus)
+  attr :rest, :global, include: ~w(form autofocus autocomplete maxlength)
 
   def search_field(assigns) do
     ~H"""
