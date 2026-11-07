@@ -98,7 +98,9 @@ defmodule FirmowidWeb.Landing.Views.Index do
     [
       page_title: gettext("Firmowid - free KSeF invoices, banking and team time tracking"),
       meta_description:
-        gettext("Free KSeF invoicing, bank synchronization, time tracking, leave and business trips in one place.")
+        gettext(
+          "Free KSeF invoicing with no invoice limit, automatic bank payment matching and project time tracking. Open source (AGPL-3.0), self-hosting available."
+        )
     ]
   end
 
