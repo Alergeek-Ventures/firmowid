@@ -12,6 +12,8 @@ defmodule FirmowidWeb.Inbox.Views.Index do
   import FirmowidWeb.Inbox.Components.Queue
   import FirmowidWeb.Infrastructure.Flags, only: [flag_enabled?: 2]
 
+  alias Firmowid.Timetracker
+  alias Firmowid.Timetracker.LeaveRequest
   alias Firmowid.Timetracker.Session
   alias FirmowidWeb.Inbox.Components.SidebarNav
   alias FirmowidWeb.Inbox.Utilities.Navigation
@@ -72,6 +74,32 @@ defmodule FirmowidWeb.Inbox.Views.Index do
   end
 
   @impl true
+  def handle_event("decide_item", %{"id" => id, "decision" => action}, socket) do
+    decision =
+      with true <- flag_enabled?(:inbox, socket.assigns),
+           %{actor: %{member: %{role: :admin}}} <- socket.assigns.ash_scope,
+           %{} = item <- Enum.find(socket.assigns.items, &(&1.id == id)) do
+        Enum.find(Map.get(item, :decisions, []), &(Atom.to_string(&1.action) == action))
+      else
+        _ -> nil
+      end
+
+    case decision do
+      nil ->
+        LiveToast.send_toast(
+          :info,
+          gettext("This request is no longer waiting for a decision.")
+        )
+
+        {:noreply, socket}
+
+      %{} ->
+        decision
+        |> decide(socket.assigns.ash_scope)
+        |> decision_changed(socket)
+    end
+  end
+
   def handle_event("start_session", _params, %{assigns: %{session: nil, last_session: %{} = last}} = socket) do
     scope = socket.assigns.ash_scope
 
@@ -97,6 +125,57 @@ defmodule FirmowidWeb.Inbox.Views.Index do
 
   # A second click that arrives before the page shows the first one's result.
   def handle_event(event, _params, socket) when event in ["start_session", "stop_session"], do: {:noreply, socket}
+
+  defp decide(%{action: action, record_id: id}, scope) when action in [:accept_leave_request, :decline_leave_request] do
+    case Timetracker.get_leave_request(id, scope: scope, not_found_error?: false) do
+      {:ok, %LeaveRequest{status: :pending}} ->
+        case action do
+          :accept_leave_request -> Timetracker.accept_leave_request(id, scope: scope)
+          :decline_leave_request -> Timetracker.decline_leave_request(id, scope: scope)
+        end
+
+      {:ok, _decided_or_deleted} ->
+        :stale
+
+      {:error, error} ->
+        {:error, error}
+    end
+  end
+
+  defp decision_changed({:ok, %LeaveRequest{status: status}}, socket) do
+    message =
+      case status do
+        :accepted -> gettext("The request has been approved.")
+        :declined -> gettext("The request has been rejected.")
+      end
+
+    LiveToast.send_toast(:info, message)
+    refresh_queue(socket)
+  end
+
+  defp decision_changed(:stale, socket) do
+    LiveToast.send_toast(
+      :info,
+      gettext("This request is no longer waiting for a decision.")
+    )
+
+    refresh_queue(socket)
+  end
+
+  defp decision_changed({:error, _error}, socket) do
+    LiveToast.send_toast(
+      :error,
+      gettext("Could not save the decision. Open the request and try again.")
+    )
+
+    {:noreply, socket}
+  end
+
+  defp refresh_queue(socket) do
+    send_update(SidebarNav, id: SidebarNav.id(), refresh: true)
+
+    {:noreply, assign(socket, :items, Queue.items(socket.assigns.layer, socket.assigns.ash_scope))}
+  end
 
   # Reloads the page and the sidebar, which shows whether the session runs; the
   # session is assigned right away so a repeated click is ignored. A submitted
