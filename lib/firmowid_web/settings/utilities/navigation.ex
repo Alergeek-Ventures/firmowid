@@ -10,7 +10,7 @@ defmodule FirmowidWeb.Settings.Utilities.Navigation do
 
   @type role :: UserRole.t()
   @type tab_id :: :account | :profile | :organization | :subscription
-  @type page_id :: tab_id() | :ksef | :bank_accounts | :roles | :documents
+  @type page_id :: tab_id() | :ksef | :bank_accounts | :roles | :documents | :delegations
   @type tab :: %{id: tab_id(), label: String.t(), path: String.t()}
   @type visibility_context :: %{
           required(:current_user) => %{
@@ -89,6 +89,7 @@ defmodule FirmowidWeb.Settings.Utilities.Navigation do
   def canonical_path(:bank_accounts), do: ~p"/ustawienia/konta-bankowe"
   def canonical_path(:roles), do: ~p"/ustawienia/role"
   def canonical_path(:documents), do: ~p"/ustawienia/dokumenty"
+  def canonical_path(:delegations), do: ~p"/ustawienia/delegacje"
 
   @doc "Returns the title of a standalone settings page."
   @spec page_title(page_id()) :: String.t()
@@ -100,6 +101,7 @@ defmodule FirmowidWeb.Settings.Utilities.Navigation do
   def page_title(:bank_accounts), do: gettext("Bank accounts")
   def page_title(:roles), do: pgettext("sidebar", "Roles and invitations")
   def page_title(:documents), do: gettext("My documents")
+  def page_title(:delegations), do: gettext("My business trips")
 
   @doc """
   Resolves a settings section slug or legacy alias.
@@ -108,13 +110,14 @@ defmodule FirmowidWeb.Settings.Utilities.Navigation do
           {:ok, %{id: page_id(), canonical?: boolean(), canonical_path: String.t()}} | :error
   def resolve_section(section, standalone? \\ false)
 
-  def resolve_section(section, true) when section in ["ksef", "konta-bankowe", "role", "dokumenty"] do
+  def resolve_section(section, true) when section in ["ksef", "konta-bankowe", "role", "dokumenty", "delegacje"] do
     id =
       %{
         "ksef" => :ksef,
         "konta-bankowe" => :bank_accounts,
         "role" => :roles,
-        "dokumenty" => :documents
+        "dokumenty" => :documents,
+        "delegacje" => :delegations
       }[section]
 
     {:ok, %{id: id, canonical?: true, canonical_path: canonical_path(id)}}
@@ -142,7 +145,7 @@ defmodule FirmowidWeb.Settings.Utilities.Navigation do
 
   defp tab_definition(id) when id in [:ksef, :bank_accounts, :roles], do: tab_definition(:organization)
 
-  defp tab_definition(:documents), do: tab_definition(:profile)
+  defp tab_definition(id) when id in [:documents, :delegations], do: tab_definition(:profile)
   defp tab_definition(tab_id), do: Enum.find(@tabs, &(&1.id == tab_id))
 
   defp visible_for_context?(%{roles: roles} = tab, %{current_user: %{member: %{role: role}}} = context) do

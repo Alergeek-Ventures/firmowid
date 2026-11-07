@@ -113,7 +113,7 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
         />
       </div>
       <.delegations_section
-        :if={flag_enabled?(:delegations, assigns)}
+        :if={!@standalone and flag_enabled?(:delegations, assigns)}
         delegations={@delegations}
       />
     </div>
@@ -122,11 +122,22 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
 
   attr :delegations, :list, required: true
 
-  defp delegations_section(assigns) do
+  attr :standalone, :boolean,
+    default: false,
+    doc: "On its own page the page title names it, so it drops its heading and card shadow."
+
+  @doc "The member's business trips with a way to plan one; its own page behind the `inbox` flag."
+  def delegations_section(assigns) do
     ~H"""
-    <section class="flex w-full flex-col gap-6 rounded-lg bg-white p-6 shadow lg:col-span-2">
-      <div class="flex items-start justify-between gap-3">
-        <h2 class="text-base leading-none font-medium text-grey-900">
+    <section class={[
+      "flex w-full flex-col gap-6 rounded-lg bg-white p-6 lg:col-span-2",
+      !@standalone && "shadow"
+    ]}>
+      <div class={[
+        "flex items-start gap-3",
+        if(@standalone, do: "justify-end", else: "justify-between")
+      ]}>
+        <h2 :if={!@standalone} class="text-base leading-none font-medium text-grey-900">
           {gettext("Business trips")}
         </h2>
         <.link

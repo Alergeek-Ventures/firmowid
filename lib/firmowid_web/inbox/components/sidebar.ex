@@ -30,6 +30,7 @@ defmodule FirmowidWeb.Inbox.Components.Sidebar do
   attr :organizations, :list, required: true
   attr :current_uri, URI, required: true
   attr :analysis_enabled, :boolean, required: true
+  attr :delegations_enabled, :boolean, required: true
   attr :scope, Firmowid.Scope, required: true
 
   @doc "Renders the sidebar and, on phones, the top bar that opens it."
@@ -38,7 +39,8 @@ defmodule FirmowidWeb.Inbox.Components.Sidebar do
       Navigation.for_role(
         assigns.current_user.member.role,
         assigns.analysis_enabled,
-        assigns.current_org.owner_id == assigns.current_user.id
+        assigns.current_org.owner_id == assigns.current_user.id,
+        assigns.delegations_enabled
       )
 
     current = Navigation.current(destinations, assigns.current_uri)
