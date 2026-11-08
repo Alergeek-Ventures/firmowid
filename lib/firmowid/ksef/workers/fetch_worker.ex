@@ -316,18 +316,21 @@ defmodule Firmowid.Ksef.Workers.FetchWorker do
         {String.replace_suffix(filename, ".xml", ""), xml}
       end)
 
-    {downloaded_invoices, rejected_invoices} =
+    # A fetch starts at the latest imported invoice's storage date (a continuation at the previous
+    # package's lastPermanentStorageDate), and the range includes that moment, so the latest invoice
+    # comes back; finding it already imported is expected.
+    {new_invoices, already_imported_invoices} =
       Enum.split_with(invoice_entries, fn {ksef_number, _xml_content} ->
         not MapSet.member?(existing_invoices, ksef_number)
       end)
 
     Logger.info(
-      "KSeF invoice download results: downloaded_count=#{length(downloaded_invoices)} " <>
-        "rejected_count=#{length(rejected_invoices)}"
+      "KSeF invoices in package: new_count=#{length(new_invoices)} " <>
+        "already_imported_count=#{length(already_imported_invoices)}"
     )
 
     results =
-      Enum.map(downloaded_invoices, fn {ksef_number, xml_content} ->
+      Enum.map(new_invoices, fn {ksef_number, xml_content} ->
         metadata = Map.fetch!(metadata_by_ksef_number, ksef_number)
 
         case create_cost_invoice_from_xml(ksef_number, xml_content, metadata, scope) do
@@ -343,7 +346,7 @@ defmodule Firmowid.Ksef.Workers.FetchWorker do
     # KSeF numbers contain the seller's NIP, so they stay in the job meta, which Sentry does not get.
     failed_invoices =
       for {{ksef_number, _xml_content}, {:error, reason}} <-
-            Enum.zip(downloaded_invoices, results),
+            Enum.zip(new_invoices, results),
           do: %{ksef_number: ksef_number, reason: reason}
 
     created_count = Enum.count(results, &(&1 == :ok))
@@ -351,7 +354,7 @@ defmodule Firmowid.Ksef.Workers.FetchWorker do
     summary = %{
       total_in_package: length(invoice_entries),
       created: created_count,
-      skipped_duplicate: length(rejected_invoices),
+      skipped_duplicate: length(already_imported_invoices),
       failed: length(failed_invoices),
       failed_invoices: failed_invoices,
       is_truncated: is_truncated
