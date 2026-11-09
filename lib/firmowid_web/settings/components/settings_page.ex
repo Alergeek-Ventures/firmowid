@@ -169,6 +169,7 @@ defmodule FirmowidWeb.Settings.Components.SettingsPage do
   attr :name, :string, required: true
   attr :url, :string, default: nil
   attr :label, :string, required: true
+  attr :class, :any, default: nil
 
   def settings_avatar(assigns) do
     ~H"""
@@ -176,7 +177,7 @@ defmodule FirmowidWeb.Settings.Components.SettingsPage do
       id={"settings-#{@upload.name}-form"}
       phx-submit="upload"
       phx-change="upload"
-      class="flex flex-wrap items-center gap-4"
+      class={["flex flex-wrap items-center gap-4", @class]}
     >
       <.live_file_input upload={@upload} class="sr-only" aria-label={@label} />
       <.avatar class="size-20 border border-grey-100 bg-grey-100">
