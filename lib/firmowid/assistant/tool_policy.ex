@@ -8,13 +8,14 @@ defmodule Firmowid.Assistant.ToolPolicy do
   alias Firmowid.Invoicing.FailureReporter
   alias Firmowid.Scope
 
-  @read_tools ~w(list_transactions list_sales_invoices list_cost_invoices get_ksef_connection_status
-    suggest_transaction_invoices suggest_sales_invoice_transactions suggest_cost_invoice_transactions)a
+  @read_tools ~w(list_transactions list_sales_invoices list_cost_invoices list_counterparties
+    get_ksef_connection_status suggest_transaction_invoices suggest_sales_invoice_transactions
+    suggest_cost_invoice_transactions)a
   # The numbering lookup is read-only, but SalesInvoice authorizes its generic actions for issuers only.
   @issuer_read_tools ~w(get_next_sales_invoice_number)a
   @write_tools ~w(restore_transaction_for_matching connect_sales_invoice_transactions
     connect_cost_invoice_transactions disconnect_sales_invoice_transactions
-    disconnect_cost_invoice_transactions issue_sales_invoice)a
+    disconnect_cost_invoice_transactions issue_sales_invoice link_sales_invoice_counterparty)a
   @salary_tools ~w(list_monthly_salaries suggest_transaction_salaries)a
   @read_names Enum.map(@read_tools ++ @issuer_read_tools ++ @salary_tools, &Atom.to_string/1)
 

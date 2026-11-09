@@ -11,6 +11,7 @@ defmodule Firmowid.Invoicing do
   alias Firmowid.Finances
   alias Firmowid.Finances.Transaction
   alias Firmowid.Invoicing.CostInvoice
+  alias Firmowid.Invoicing.Counterparty
   alias Firmowid.Invoicing.FailureReporter
   alias Firmowid.Invoicing.SalesInvoice
   alias Firmowid.Invoicing.Services.RecentMatchedEntries
@@ -35,6 +36,8 @@ defmodule Firmowid.Invoicing do
         :invoice_number,
         :issue_date,
         :due_date,
+        :counterparty_id,
+        :buyer_id,
         :buyer_full_name,
         :buyer_given_name,
         :buyer_surname,
@@ -230,6 +233,51 @@ defmodule Firmowid.Invoicing do
       select [:id, :internal_note]
     end
 
+    tool :list_counterparties, Counterparty, :list do
+      annotations title: "List counterparties",
+                  read_only_hint: true,
+                  destructive_hint: false,
+                  open_world_hint: false
+
+      description "Search the organization's counterparties (clients) by name, display name, tax ID, PESEL or e-mail. " <>
+                    "Use it to find the counterparty a sales invoice belongs to before link_sales_invoice_counterparty; " <>
+                    "a counterparty may be known under a brand different from the buyer name on the invoice. Changes nothing."
+
+      # Without a top-level limit the tool returns at most 25 counterparties; narrow them with search.
+      action_parameters [:sort, :filter]
+
+      select [
+        :id,
+        :type,
+        :display_name,
+        :full_name,
+        :given_name,
+        :surname,
+        :tax_id,
+        :country,
+        :address,
+        :email
+      ]
+
+      load [:display_label]
+    end
+
+    tool :link_sales_invoice_counterparty, SalesInvoice, :link_counterparty do
+      annotations title: "Link a sales invoice to a counterparty",
+                  read_only_hint: false,
+                  destructive_hint: false,
+                  idempotent_hint: true,
+                  open_world_hint: false
+
+      description "Attach an issued sales invoice that has no counterparty yet to an existing counterparty, only after " <>
+                    "the user approves the specific pair. Use it when the buyer on the invoice is the same company or " <>
+                    "person as the counterparty but the tax ID or name differ (a brand, a typo, a renamed company). " <>
+                    "The buyer data printed on the invoice stays unchanged. An invoice that already has a counterparty " <>
+                    "is not changed. Requires an accountant or administrator."
+
+      select [:id, :invoice_number, :counterparty_id]
+    end
+
     tool :suggest_sales_invoice_transactions, SalesInvoice, :transaction_suggestions do
       annotations title: "Suggest sales invoice payments",
                   read_only_hint: true,
@@ -320,7 +368,12 @@ defmodule Firmowid.Invoicing do
   end
 
   resources do
-    resource Firmowid.Invoicing.Counterparty do
+    resource Firmowid.Invoicing.CounterpartyProposal do
+      define :list_counterparty_proposals, action: :by_group_keys, args: [:group_keys]
+      define :record_counterparty_proposal, action: :record
+    end
+
+    resource Counterparty do
       define :list_counterparties, action: :list
       define :get_counterparty, action: :by_id, args: [:id]
       define :create_counterparty, action: :create
@@ -382,6 +435,10 @@ defmodule Firmowid.Invoicing do
 
       define :attach_suggested_sales_invoice_counterparty,
         action: :attach_suggested_counterparty,
+        args: [:counterparty_id]
+
+      define :link_sales_invoice_counterparty,
+        action: :link_counterparty,
         args: [:counterparty_id]
 
       define :destroy_sales_invoice, action: :destroy

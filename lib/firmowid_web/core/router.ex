@@ -32,6 +32,7 @@ defmodule FirmowidWeb.Core.Router do
   alias Management.Controllers.EmploymentContract
   alias Management.Views.Counterparties
   alias Management.Views.CounterpartyForm
+  alias Management.Views.CounterpartySuggestions
   alias Management.Views.Employee
   alias Management.Views.Employees
   alias Management.Views.ProjectForm
@@ -195,6 +196,8 @@ defmodule FirmowidWeb.Core.Router do
         :update_cost_invoice_internal_note,
         :suggest_sales_invoice_transactions,
         :suggest_cost_invoice_transactions,
+        :list_counterparties,
+        :link_sales_invoice_counterparty,
         :connect_sales_invoice_transactions,
         :connect_cost_invoice_transactions,
         :disconnect_sales_invoice_transactions,
@@ -366,6 +369,7 @@ defmodule FirmowidWeb.Core.Router do
 
       live "/zarzadzanie/kontrahenci", Counterparties, :index
       live "/zarzadzanie/kontrahenci/archiwum", Counterparties, :archive
+      live "/zarzadzanie/kontrahenci/do-przejrzenia", CounterpartySuggestions, :index
       live "/zarzadzanie/kontrahenci/dodaj", CounterpartyForm, :new
       live "/zarzadzanie/kontrahenci/:id", Management.Views.Counterparty, :show
       live "/zarzadzanie/kontrahenci/:id/edycja", CounterpartyForm, :edit

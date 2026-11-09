@@ -832,6 +832,18 @@ defmodule Firmowid.Invoicing.SalesInvoice do
       change {Changes.AttachSuggestedCounterparty, []}
     end
 
+    update :link_counterparty do
+      description "Link an unassigned invoice to a counterparty the user confirmed, also when only the buyer name matches. Keeps the issued buyer data."
+      require_atomic? false
+      accept []
+
+      argument :counterparty_id, :uuid_v7, allow_nil?: false
+
+      # Drafts bind their counterparty from the buyer data when they are revised or finalized.
+      change filter(expr(is_nil(counterparty_id) and not is_nil(invoice_number)))
+      change {Changes.AttachSuggestedCounterparty, []}
+    end
+
     destroy :destroy do
       description "Delete a sales invoice when deletion is allowed."
       require_atomic? false
@@ -1362,6 +1374,7 @@ defmodule Firmowid.Invoicing.SalesInvoice do
     publish :update_internal_note, ["updated", :_tenant]
     publish :generate_share_token, ["updated", :_tenant]
     publish :attach_suggested_counterparty, ["updated", :_tenant]
+    publish :link_counterparty, ["updated", :_tenant]
     publish :connect_transactions, ["updated", :_tenant]
     publish :disconnect_transactions, ["updated", :_tenant]
     publish :disconnect_all_transactions, ["updated", :_tenant]

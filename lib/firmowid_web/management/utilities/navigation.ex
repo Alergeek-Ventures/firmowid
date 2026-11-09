@@ -205,6 +205,10 @@ defmodule FirmowidWeb.Management.Utilities.Navigation do
     ~p"/zarzadzanie/pracownicy/#{employee_id}/delegacje/#{reference}/edycja"
   end
 
+  @doc "Buyers of issued invoices waiting for a counterparty."
+  @spec counterparty_suggestions_path() :: String.t()
+  def counterparty_suggestions_path, do: ~p"/zarzadzanie/kontrahenci/do-przejrzenia"
+
   @doc """
   Builds the canonical counterparty creation path.
   """
