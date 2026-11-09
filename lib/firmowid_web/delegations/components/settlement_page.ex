@@ -318,7 +318,7 @@ defmodule FirmowidWeb.Delegations.Components.SettlementPage do
       id="delegation-save-status"
       role="status"
       aria-live="polite"
-      class="sticky inset-bs-16.5 z-10 mbs-3 grid min-h-[3lh] items-start bg-grey-100 py-2 text-sm text-grey-700"
+      class="sticky inset-bs-navbar z-10 mbs-3 grid min-h-[3lh] items-start bg-grey-100 py-2 text-sm text-grey-700"
     >
       <span class="hidden items-center gap-2 group-[.phx-change-loading]:inline-flex group-[.phx-submit-loading]:inline-flex">
         <Lucideicons.refresh_ccw class="size-4 shrink-0 motion-safe:animate-spin" />

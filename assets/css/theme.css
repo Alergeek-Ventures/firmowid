@@ -13,6 +13,7 @@
   /* Extended spacing */
   --spacing-navbar: var(--navbar-height);
   --spacing-navbar-management: var(--navbar-height-management);
+  --spacing-navbar-collapsed: var(--navbar-height-collapsed);
 
   /* Keyframes */
   @keyframes error-pulse {

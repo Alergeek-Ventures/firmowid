@@ -109,7 +109,7 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
           end
         ]}
       />
-      <thead class="sticky top-[calc(var(--spacing-navbar)+64px)] z-1 bg-grey-100 max-md:hidden">
+      <thead class="sticky top-[calc(var(--spacing-navbar)+var(--page-header-height))] z-1 bg-grey-100 max-md:hidden">
         <tr>
           <th
             :for={column <- @columns}

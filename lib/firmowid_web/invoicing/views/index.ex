@@ -145,7 +145,7 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
     assigns = assign(assigns, drop_before: drop_before, drop_after: drop_after)
 
     ~H"""
-    <div class="sticky top-navbar z-10 flex justify-between bg-grey-100 py-3 max-md:static max-md:z-auto max-md:flex-col max-md:gap-3">
+    <div class="sticky top-navbar z-10 flex justify-between bg-grey-100 py-4 max-md:static max-md:z-auto max-md:flex-col max-md:gap-3">
       <div class="flex items-center gap-4 max-md:gap-3">
         <.month_picker
           id="month"
