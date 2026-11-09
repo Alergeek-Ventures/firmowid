@@ -10,7 +10,6 @@ defmodule FirmowidWeb.Inbox.Components.SidebarNav do
 
   use FirmowidWeb, :live_component
 
-  import FirmowidUI.Components.Button
   import FirmowidUI.Components.Link
   import FirmowidWeb.Inbox.Components.Sidebar, only: [label_styles: 0]
   import Phoenix.Component, except: [link: 1]
@@ -88,24 +87,6 @@ defmodule FirmowidWeb.Inbox.Components.SidebarNav do
           />
         </.link>
       </div>
-      <.button
-        id="app-search-open"
-        variant="unstyled"
-        type="button"
-        phx-click={JS.dispatch("firmowid:search", to: "#app-search")}
-        class={link_styles(false)}
-        title={gettext("Search")}
-        aria-haspopup="dialog"
-        aria-controls="app-search-modal"
-      >
-        <Lucideicons.search class="size-5 shrink-0" aria-hidden="true" />
-        <span class={label_styles()}>
-          <span class="flex items-center justify-between gap-2">
-            {gettext("Search")}
-            <kbd data-search-shortcut class="text-xs text-white/70">Ctrl K</kbd>
-          </span>
-        </span>
-      </.button>
       <.link
         kind="unstyled"
         navigate={@inbox.path}

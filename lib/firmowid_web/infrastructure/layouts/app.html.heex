@@ -9,14 +9,6 @@
     scope={@ash_scope}
   />
   <.live_component
-    module={FirmowidWeb.Inbox.Components.SearchPalette}
-    id="app-search"
-    scope={@ash_scope}
-    analysis_enabled={flag_enabled?(:analysis_dashboard, assigns)}
-    delegations_enabled={flag_enabled?(:delegations, assigns)}
-    owner?={@current_org.owner_id == @current_user.id}
-  />
-  <.live_component
     module={FirmowidWeb.Feedback.Components.Form}
     id="feedback-form"
     current_user={@current_user}
