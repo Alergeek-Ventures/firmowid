@@ -65,25 +65,52 @@ defmodule FirmowidWeb.Invoicing.Components.FilterBar do
   end
 
   @doc """
-  Only the sub-filters, while one is active: the inbox sidebar layout has no
-  filter bar, but links from the summary still open a filtered list.
+  Filters of the inbox sidebar layout, where invoices and transactions are
+  separate places listing every month: the side of the invoice or the direction
+  of the transaction. A status sub-filter opened from the summary stays visible
+  while it is active.
   """
   attr :params, :map, required: true
 
-  def active_sub_filters(assigns) do
+  def inbox_filters(assigns) do
     ~H"""
-    <div :if={@params.view_mode == :list && @params.subfilter} class="mt-4 mb-3 flex">
-      <.sub_filters params={@params} divider={false} />
+    <div :if={@params.view_mode == :list} class="flex shrink-0 items-center gap-4">
+      <.filter_pills divider={false} label={nil}>
+        <:pill
+          :for={{subfilter, label} <- side_filters(@params.filter)}
+          navigate={subfilter_url(@params, subfilter)}
+          active={@params.subfilter == subfilter}
+        >
+          {label}
+        </:pill>
+      </.filter_pills>
+      <.sub_filters
+        :if={@params.subfilter in [:oplacone, :nieoplacone, :dopasowane, :bez_dokumentu]}
+        params={@params}
+        label={nil}
+      />
     </div>
     """
   end
 
+  defp side_filters(:invoices),
+    do: [sprzedazowe: pgettext("invoice side filter", "Sales"), zakupowe: pgettext("invoice side filter", "Purchase")]
+
+  defp side_filters(:transactions),
+    do: [
+      wplywy: pgettext("transaction direction filter", "Incoming"),
+      wydatki: pgettext("transaction direction filter", "Outgoing")
+    ]
+
+  defp side_filters(_filter), do: []
+
   attr :params, :map, required: true
   attr :divider, :boolean, default: true
+  attr :label, :any, default: :default
 
   defp sub_filters(%{params: %{filter: :invoices}} = assigns) do
     ~H"""
-    <.filter_pills divider={@divider}>
+    <.filter_pills divider={@divider} label={@label}>
       <:pill
         navigate={subfilter_url(@params, :oplacone)}
         active={@params.subfilter == :oplacone}
@@ -102,7 +129,7 @@ defmodule FirmowidWeb.Invoicing.Components.FilterBar do
 
   defp sub_filters(%{params: %{filter: :transactions}} = assigns) do
     ~H"""
-    <.filter_pills divider={@divider}>
+    <.filter_pills divider={@divider} label={@label}>
       <:pill
         navigate={subfilter_url(@params, :dopasowane)}
         active={@params.subfilter == :dopasowane}

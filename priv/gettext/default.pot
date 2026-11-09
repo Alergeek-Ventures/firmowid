@@ -5379,6 +5379,12 @@ msgstr ""
 msgid "Income tax advance"
 msgstr ""
 
+#: lib/firmowid_web/invoicing/components/filter_bar.ex
+#, elixir-autogen, elixir-format
+msgctxt "transaction direction filter"
+msgid "Incoming"
+msgstr ""
+
 #: lib/firmowid_web/auth/controllers/auth_controller.ex
 #, elixir-autogen, elixir-format
 msgid "Incorrect email or password."
@@ -6235,6 +6241,11 @@ msgstr ""
 #: lib/firmowid_web/management/views/delegation.ex
 #, elixir-autogen, elixir-format
 msgid "Loading document..."
+msgstr ""
+
+#: lib/firmowid_web/invoicing/components/entries_table.ex
+#, elixir-autogen, elixir-format
+msgid "Loading more months"
 msgstr ""
 
 #: lib/firmowid_web/delegations/components/settlement/trips.ex
@@ -7563,6 +7574,12 @@ msgstr ""
 msgid "Other situation requiring individual assessment"
 msgstr ""
 
+#: lib/firmowid_web/invoicing/components/filter_bar.ex
+#, elixir-autogen, elixir-format
+msgctxt "transaction direction filter"
+msgid "Outgoing"
+msgstr ""
+
 #: lib/firmowid_web/billing/utilities/worksheet.ex
 #, elixir-autogen, elixir-format
 msgid "Outside the plan"
@@ -8192,6 +8209,12 @@ msgstr ""
 msgid "Pupil or student"
 msgstr ""
 
+#: lib/firmowid_web/invoicing/components/filter_bar.ex
+#, elixir-autogen, elixir-format
+msgctxt "invoice side filter"
+msgid "Purchase"
+msgstr ""
+
 #: lib/firmowid_web/delegations/views/delegation_form.ex
 #: lib/firmowid_web/management/views/delegation.ex
 #, elixir-autogen, elixir-format
@@ -8684,6 +8707,12 @@ msgstr ""
 #: lib/firmowid_web/invoicing/components/search_overlay.ex
 #, elixir-autogen, elixir-format
 msgctxt "invoice type badge"
+msgid "Sales"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/components/filter_bar.ex
+#, elixir-autogen, elixir-format
+msgctxt "invoice side filter"
 msgid "Sales"
 msgstr ""
 
