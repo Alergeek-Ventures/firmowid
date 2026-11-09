@@ -76,6 +76,7 @@ defmodule Firmowid.Invoicing.SalesInvoice do
   alias Firmowid.Invoicing.SalesInvoiceEmailDelivery
   alias Firmowid.Invoicing.SalesInvoiceItem
   alias Firmowid.Invoicing.SalesInvoiceTransaction
+  alias Firmowid.Invoicing.Services.CorrectionReason
   alias Firmowid.Invoicing.Services.SalesInvoiceChain
   alias Firmowid.Invoicing.Signals
   alias Firmowid.Invoicing.Types.InvoiceInput
@@ -928,6 +929,9 @@ defmodule Firmowid.Invoicing.SalesInvoice do
       constraints instance_of: __MODULE__
       argument :invoice_id, :uuid_v7, allow_nil?: false
 
+      argument :correction_reason, :string,
+        description: "Reason stated on the correction; omit for the default cancellation reason."
+
       run fn input, context ->
         opts = Ash.Context.to_opts(context)
 
@@ -988,10 +992,8 @@ defmodule Firmowid.Invoicing.SalesInvoice do
             end)
 
           correction_reason =
-            case latest.invoice_type do
-              :foreign -> "Anulowanie faktury / Invoice cancellation"
-              _poland -> "Anulowanie faktury"
-            end
+            Ash.ActionInput.get_argument(input, :correction_reason) ||
+              CorrectionReason.cancellation(latest.invoice_type)
 
           Ash.create(
             __MODULE__,

@@ -2691,6 +2691,7 @@ msgstr ""
 msgid "Correction invoice issued"
 msgstr ""
 
+#: lib/firmowid_web/invoicing/components/sales_invoice_details.ex
 #: lib/firmowid_web/invoicing/sales_invoices/views/edit_form.html.heex
 #, elixir-autogen, elixir-format
 msgid "Correction reason"
