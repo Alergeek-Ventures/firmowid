@@ -52,7 +52,23 @@
         </.link>
         <.page_actions>
           <:action>
-            <.link navigate={~p"/zaproszenia"} kind="button" variant="special" data-fab>
+            <.button
+              :if={flag_enabled?(:inbox, assigns)}
+              type="button"
+              variant="special"
+              phx-click={show_modal("organization_invite_modal")}
+              data-fab
+            >
+              <.icon name="hero-plus-mini" class="size-6" />
+              <span class="max-md:sr-only">{gettext("Add employee")}</span>
+            </.button>
+            <.link
+              :if={!flag_enabled?(:inbox, assigns)}
+              navigate={~p"/zaproszenia"}
+              kind="button"
+              variant="special"
+              data-fab
+            >
               <.icon name="hero-plus-mini" class="size-6" />
               <span class="max-md:sr-only">{gettext("Add employee")}</span>
             </.link>
@@ -86,7 +102,9 @@
     phx-submit="save_wages"
     class={[
       "grid gap-x-6 gap-y-2",
-      @view == :standard && @live_action == :index &&
+      roles_column?(assigns) &&
+        "grid-cols-[1fr_max-content_min-content_min-content_min-content] max-md:grid-cols-[1fr_min-content_min-content]",
+      !roles_column?(assigns) && @view == :standard && @live_action == :index &&
         "grid-cols-[1fr_min-content_min-content_min-content] max-md:grid-cols-[1fr_min-content_min-content]",
       @view == :standard && @live_action == :archive &&
         "grid-cols-[1fr_min-content_min-content_min-content_min-content] max-md:grid-cols-[1fr_min-content_min-content_min-content]",
@@ -114,6 +132,9 @@
       data-scroll-offset="90"
     >
       <p>{gettext("Employee")}</p>
+      <p :if={roles_column?(assigns)} class="pr-10 text-nowrap max-md:hidden">
+        {gettext("Role")}
+      </p>
       <p class="text-end text-nowrap">{gettext("Hours")}</p>
 
       <%= if @live_action == :archive do %>
@@ -199,6 +220,9 @@
         <div class={[
           "grid grid-cols-subgrid items-center rounded-sm bg-white px-4",
           cond do
+            roles_column?(assigns) ->
+              "col-span-4 max-md:col-span-3"
+
             @view == :standard and @live_action == :index ->
               "col-span-3"
 
@@ -250,6 +274,31 @@
             >
               {PayoutEstimates.contract_label(employee.monthly_payout.result.variant)}
             </span>
+          </div>
+
+          <%!-- Room between the role and the hours, which align to the right. --%>
+          <div :if={roles_column?(assigns)} class="pr-10 max-md:hidden">
+            <%!-- The owner's and your own role cannot be changed (see the Member policies). --%>
+            <%= if employee.user.id in [@current_user.id, @current_org.owner_id] do %>
+              <.role_badge role={employee.user.member.role} />
+            <% else %>
+              <.button
+                type="button"
+                variant="unstyled"
+                phx-click="open_update_role_modal"
+                phx-value-user_id={employee.user.id}
+                aria-label={
+                  gettext("Change role of %{name}",
+                    name: employee.user.member.name || to_string(employee.user.email)
+                  )
+                }
+                class="cursor-pointer rounded-sm transition hover:opacity-80 focus-visible:outline-2 focus-visible:outline-teal-700 active:scale-95"
+              >
+                <.role_badge role={employee.user.member.role}>
+                  <Lucideicons.chevron_down class="size-3.5 shrink-0" aria-hidden="true" />
+                </.role_badge>
+              </.button>
+            <% end %>
           </div>
 
           <p class="text-right text-nowrap">
@@ -355,4 +404,23 @@
       </div>
     <% end %>
   </form>
+
+  <section
+    :if={flag_enabled?(:inbox, assigns)}
+    id="employees-invites"
+    phx-hook="CopyToClipboard"
+    class="flex flex-col gap-2 has-[h2]:pbe-14"
+  >
+    <%= if @invites != [] and @live_action == :index do %>
+      <h2 class="mbs-4 px-4 text-sm/snug text-grey-700">{gettext("Active invitations")}</h2>
+      <.invite_row
+        :for={invite <- @invites}
+        invite={invite}
+        class="rounded-sm bg-white px-4 py-2.5"
+      />
+    <% end %>
+  </section>
 </div>
+
+<.invite_modal :if={flag_enabled?(:inbox, assigns)} />
+<.update_role_modal :if={@selected_user} user={@selected_user} />

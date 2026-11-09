@@ -539,7 +539,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
   end
 
   def handle_event("update_user_role", %{"user_id" => user_id, "role" => role_param}, socket) do
-    with {:ok, role} <- parse_role(role_param),
+    with {:ok, role} <- UserRole.from_param(role_param),
          {:ok, user} <- find_loaded_organization_user(socket.assigns.organization_users, user_id),
          {:ok, _member} <-
            Core.update_member_role(user.member, %{role: role}, scope: socket.assigns.ash_scope) do
@@ -745,7 +745,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
     current_user = socket.assigns.current_user
     scope = socket.assigns.ash_scope
 
-    case parse_role(role_param) do
+    case UserRole.from_param(role_param) do
       {:ok, role} ->
         invite = Core.create_invite!(%{issued_by_id: current_user.id, role: role}, scope: scope)
 
@@ -1212,7 +1212,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
         />
       <% end %>
       <%= case @settings_tab do %>
-        <% section when section in [:organization, :ksef, :bank_accounts, :roles] -> %>
+        <% section when section in [:organization, :ksef, :bank_accounts] -> %>
           <.company_tab
             section={if flag_enabled?(:inbox, assigns), do: @settings_tab, else: :all}
             current_user={@current_user}
@@ -1384,6 +1384,10 @@ defmodule FirmowidWeb.Settings.Views.Index do
       tab == :delegations and not flag_enabled?(:delegations, socket.assigns) ->
         {:noreply, push_patch(socket, to: Navigation.default_path())}
 
+      # Roles and invitations moved to the team page in the new UI.
+      tab == :roles ->
+        {:noreply, push_navigate(socket, to: canonical_path)}
+
       not canonical? ->
         {:noreply, push_patch(socket, to: canonical_path)}
 
@@ -1425,15 +1429,6 @@ defmodule FirmowidWeb.Settings.Views.Index do
     |> assign(:subscription_month, month)
     |> assign(:subscription_worksheet, worksheet)
   end
-
-  defp parse_role(role_param) when is_binary(role_param) do
-    case Enum.find(UserRole.roles(), &(UserRole.param(&1) == role_param)) do
-      nil -> {:error, :unknown_role}
-      role -> {:ok, role}
-    end
-  end
-
-  defp parse_role(_role_param), do: {:error, :unknown_role}
 
   defp find_loaded_organization_user(users, user_id) do
     case Enum.find(users, &(to_string(&1.id) == user_id)) do

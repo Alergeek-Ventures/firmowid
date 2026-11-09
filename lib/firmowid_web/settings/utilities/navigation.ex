@@ -87,7 +87,8 @@ defmodule FirmowidWeb.Settings.Utilities.Navigation do
 
   def canonical_path(:ksef), do: ~p"/ustawienia/ksef"
   def canonical_path(:bank_accounts), do: ~p"/ustawienia/konta-bankowe"
-  def canonical_path(:roles), do: ~p"/ustawienia/role"
+  # The new UI manages roles and invitations on the team page.
+  def canonical_path(:roles), do: ~p"/zarzadzanie/pracownicy"
   def canonical_path(:documents), do: ~p"/ustawienia/dokumenty"
   def canonical_path(:delegations), do: ~p"/ustawienia/delegacje"
 
@@ -99,7 +100,6 @@ defmodule FirmowidWeb.Settings.Utilities.Navigation do
   def page_title(:subscription), do: pgettext("settings tab", "Subscription")
   def page_title(:ksef), do: "KSeF"
   def page_title(:bank_accounts), do: gettext("Bank accounts")
-  def page_title(:roles), do: pgettext("sidebar", "Roles and invitations")
   def page_title(:documents), do: gettext("My documents")
   def page_title(:delegations), do: gettext("My business trips")
 

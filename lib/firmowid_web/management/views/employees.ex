@@ -8,11 +8,13 @@ defmodule FirmowidWeb.Management.Views.Employees do
   import FirmowidWeb.DesignSystem.Components.MonthPicker
   import FirmowidWeb.HoursRecord.Components.Status, only: [hours_record_status: 1]
   import FirmowidWeb.Infrastructure.Flags, only: [flag_enabled?: 2]
+  import FirmowidWeb.Management.Components.Roles
   import Phoenix.Component, except: [link: 1]
 
   alias Ash.Notifier.Notification
   alias Firmowid.Blobs.Blob
   alias Firmowid.Core
+  alias Firmowid.Core.UserRole
   alias Firmowid.Payroll
   alias Firmowid.TimeFormatter
   alias Firmowid.Timetracker
@@ -24,6 +26,8 @@ defmodule FirmowidWeb.Management.Views.Employees do
   alias FirmowidWeb.Payroll.Components.PayoutEstimates
   alias FirmowidWeb.Timetracker.Utilities.Navigation, as: TimetrackerNavigation
   alias Phoenix.Socket.Broadcast
+
+  @invite_load [issued_by: [:email]]
 
   @impl true
   def mount(_params, _session, socket) do
@@ -45,14 +49,17 @@ defmodule FirmowidWeb.Management.Views.Employees do
         [Date.beginning_of_month(Date.utc_today())]
       )
       |> assign(:can_export_csv, socket.assigns.current_user.member.role == :admin)
+      |> assign(:selected_user, nil)
+      |> assign_invites()
       |> assign_form()
 
     {:ok, socket}
   end
 
   @impl true
+  # Joining uses up the invitation, so it leaves the active ones too.
   def handle_info(%Broadcast{topic: "user:joined_org:" <> _tenant}, socket) do
-    {:noreply, assign_employees(socket)}
+    {:noreply, socket |> assign_employees() |> assign_invites()}
   end
 
   def handle_info(
@@ -172,6 +179,21 @@ defmodule FirmowidWeb.Management.Views.Employees do
     end
   end
 
+  # The new UI moves roles and invitations from the settings to this page.
+  defp assign_invites(socket) do
+    invites =
+      if flag_enabled?(:inbox, socket.assigns),
+        do: active_invites(Core.list_invites!(load: @invite_load, scope: socket.assigns.ash_scope)),
+        else: []
+
+    assign(socket, :invites, invites)
+  end
+
+  # Roles show in the active list of the new UI while the wages are hidden.
+  defp roles_column?(assigns) do
+    flag_enabled?(:inbox, assigns) and assigns.view == :standard and assigns.live_action == :index
+  end
+
   defp assign_form(socket) do
     assign(socket, :form, to_form(%{"wages_view" => socket.assigns.view != :standard}))
   end
@@ -261,6 +283,94 @@ defmodule FirmowidWeb.Management.Views.Employees do
         {:noreply, put_flash(socket, :error, gettext("Could not restore the employee"))}
     end
   end
+
+  def handle_event("create_organization_invite", %{"role" => role_param}, socket) do
+    case UserRole.from_param(role_param) do
+      {:ok, role} ->
+        invite =
+          Core.create_invite!(%{issued_by_id: socket.assigns.current_user.id, role: role},
+            scope: socket.assigns.ash_scope
+          )
+
+        {:noreply,
+         socket
+         |> assign_invites()
+         |> push_event("copy-to-clipboard", %{text: invite.invite_code})
+         |> LiveToast.put_toast(
+           :success,
+           gettext("The invitation code has been generated and copied to the clipboard.")
+         )}
+
+      {:error, :unknown_role} ->
+        {:noreply, LiveToast.put_toast(socket, :error, gettext("Invalid role."))}
+    end
+  end
+
+  def handle_event("copy_organization_invite", %{"code" => invite_code}, socket) do
+    {:noreply,
+     socket
+     |> push_event("copy-to-clipboard", %{text: invite_code})
+     |> LiveToast.put_toast(
+       :info,
+       gettext("The invitation code has been copied to the clipboard.")
+     )}
+  end
+
+  def handle_event("delete_organization_invite", %{"id" => id}, socket) do
+    scope = socket.assigns.ash_scope
+
+    id
+    |> Core.get_invite!(scope: scope)
+    |> Core.destroy_invite!(scope: scope)
+
+    {:noreply,
+     socket
+     |> assign_invites()
+     |> LiveToast.put_toast(:info, gettext("The invitation has been deleted."))}
+  end
+
+  def handle_event("open_update_role_modal", %{"user_id" => user_id}, socket) do
+    # The list may be stale, e.g. the member was archived in another tab.
+    case Enum.find(socket.assigns.employees, &(&1.user.id == user_id)) do
+      %{user: user} ->
+        {:noreply, assign(socket, :selected_user, user)}
+
+      nil ->
+        {:noreply,
+         LiveToast.put_toast(
+           socket,
+           :error,
+           gettext("The user was not found in the organization.")
+         )}
+    end
+  end
+
+  def handle_event("clear_selected_user", _params, socket) do
+    {:noreply, assign(socket, :selected_user, nil)}
+  end
+
+  # The member comes from the opened modal, not from the submitted user_id.
+  def handle_event("update_user_role", %{"role" => role_param}, %{assigns: %{selected_user: %{} = user}} = socket) do
+    socket = assign(socket, :selected_user, nil)
+
+    with {:ok, role} <- UserRole.from_param(role_param),
+         {:ok, _member} <-
+           Core.update_member_role(user.member, %{role: role}, scope: socket.assigns.ash_scope) do
+      {:noreply,
+       socket
+       |> assign_employees()
+       |> LiveToast.put_toast(:success, gettext("The user's role has been changed."))}
+    else
+      {:error, :unknown_role} ->
+        {:noreply, LiveToast.put_toast(socket, :error, gettext("Unknown user role."))}
+
+      {:error, _error} ->
+        {:noreply, LiveToast.put_toast(socket, :error, gettext("Could not change the user's role."))}
+    end
+  end
+
+  # A second submit after the dialog closed has no member to change.
+  def handle_event("update_user_role", _params, socket), do: {:noreply, socket}
 
   def handle_event("copy-bank-number", %{"number" => number}, socket) do
     {:noreply,

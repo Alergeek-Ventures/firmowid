@@ -10,10 +10,10 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
   import FirmowidUI.Components.Link
   import FirmowidWeb.DesignSystem.Components.CoreComponents
   import FirmowidWeb.DesignSystem.Components.InvoicingBadges
+  import FirmowidWeb.Management.Components.Roles
   import FirmowidWeb.Settings.Components.EditButton
   import Phoenix.Component, except: [link: 1]
 
-  alias Firmowid.Core.UserRole
   alias Firmowid.TimeFormatter
   alias FirmowidWeb.Analysis.Utilities.Industry
   alias FirmowidWeb.Invoicing.Utilities.VatExemption
@@ -85,7 +85,7 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
       />
 
       <.administrators_section
-        :if={@section in [:all, :roles]}
+        :if={@section == :all}
         organization_users={@organization_users}
         organization_invites={@organization_invites}
         show_active_invites={@show_active_invites}
@@ -440,42 +440,7 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
         </div>
 
         <div :if={@active_invites != []} class="space-y-6">
-          <div
-            :for={invite <- @active_invites}
-            class="grid grid-cols-[minmax(0,1fr)_1fr_auto] items-center gap-4 rounded-lg"
-          >
-            <p class="text-sm">
-              <span class="text-grey-500">{gettext("Generated:")}</span> {TimeFormatter.format_date(
-                invite.inserted_at
-              )} | {invite_issuer(invite)}
-            </p>
-
-            <.button
-              type="button"
-              variant="unstyled"
-              size="small"
-              class="flex w-full max-w-80 cursor-pointer items-center justify-between gap-5 rounded bg-teal-100 p-1 py-2 pl-3 text-sm text-teal-700"
-              phx-click="copy_organization_invite"
-              phx-value-code={invite.invite_code}
-            >
-              {invite.invite_code}
-              <Lucideicons.copy class="size-5" />
-            </.button>
-
-            <div class="flex items-center gap-4">
-              <span class={role_badge_styles(invite.role)}>{UserRole.label(invite.role)}</span>
-
-              <.button
-                type="button"
-                variant="unstyled"
-                phx-click="delete_organization_invite"
-                phx-value-id={invite.id}
-                aria-label={gettext("Delete invitation")}
-              >
-                <Lucideicons.trash_2 class="text-grey-500 transition-all hover:text-grey-700" />
-              </.button>
-            </div>
-          </div>
+          <.invite_row :for={invite <- @active_invites} invite={invite} />
         </div>
       </div>
 
@@ -509,7 +474,7 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
             </div>
 
             <div class="flex items-center justify-end gap-2">
-              <span class={role_badge_styles(user.member.role)}>{UserRole.label(user.member.role)}</span>
+              <.role_badge role={user.member.role} />
 
               <.dropdown :if={user.id != @current_user.id} id={"organization_user_#{user.id}"}>
                 <:trigger>
@@ -559,7 +524,7 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
       </div>
     </section>
 
-    <.organization_invite_modal />
+    <.invite_modal />
     <.update_role_modal :if={@selected_user} user={@selected_user} />
     """
   end
@@ -834,121 +799,6 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
     """
   end
 
-  defp organization_invite_modal(assigns) do
-    ~H"""
-    <.modal
-      id="organization_invite_modal"
-      on_cancel={hide_modal("organization_invite_modal")}
-      class="max-w-lg"
-    >
-      <div class="space-y-8">
-        <h3 class="text-xl font-medium">{gettext("Invite a new employee")}</h3>
-        <p>
-          {gettext(
-            "Choose a role, then generate a code. An employee who enters it when creating an account will automatically join your organization."
-          )}
-        </p>
-
-        <.form
-          for={%{}}
-          phx-submit="create_organization_invite"
-          id="organization_invite_form"
-          class="flex flex-col gap-8"
-        >
-          <.role_row_input
-            :for={role <- UserRole.roles()}
-            role={role}
-            checked={role == :employee}
-          />
-
-          <div class="flex flex-col-reverse gap-4 sm:flex-row sm:justify-end">
-            <.button
-              type="button"
-              variant="secondary"
-              size="small"
-              phx-click={hide_modal("organization_invite_modal")}
-            >
-              {gettext("Cancel")}
-            </.button>
-
-            <.button
-              type="submit"
-              variant="primary"
-              accent="teal"
-              size="small"
-              phx-click={hide_modal("organization_invite_modal")}
-            >
-              {gettext("Generate code")}
-            </.button>
-          </div>
-        </.form>
-      </div>
-    </.modal>
-    """
-  end
-
-  attr :user, :map, required: true
-
-  defp update_role_modal(assigns) do
-    current_role = assigns.user.member.role
-    other_roles = Enum.reject(UserRole.roles(), &(&1 == current_role))
-
-    assigns =
-      assigns
-      |> assign(:current_role, current_role)
-      |> assign(:other_roles, other_roles)
-
-    ~H"""
-    <.modal
-      id="update_role_modal"
-      show
-      on_cancel={JS.push("clear_selected_user")}
-      class="max-w-lg"
-    >
-      <div class="space-y-8">
-        <h3 class="text-xl font-medium">{gettext("Changing the role")}</h3>
-        <p>
-          {gettext("You are changing the role of user %{user}. Their current role is:",
-            user: present(@user.member.name || to_string(@user.email))
-          )}
-        </p>
-
-        <.form
-          for={%{}}
-          phx-submit="update_user_role"
-          id="update_role_form"
-          class="flex flex-col gap-8"
-        >
-          <input type="hidden" name="user_id" value={@user.id} />
-
-          <.role_row_input role={@current_role} checked />
-          <.role_row_input :for={role <- @other_roles} role={role} />
-
-          <div class="flex flex-col-reverse gap-4 sm:flex-row sm:justify-end">
-            <.button
-              type="button"
-              variant="secondary"
-              size="small"
-              phx-click={JS.push("clear_selected_user") |> hide_modal("update_role_modal")}
-            >
-              {gettext("Cancel")}
-            </.button>
-
-            <.button
-              type="submit"
-              variant="primary"
-              accent="teal"
-              size="small"
-            >
-              {gettext("Change role")}
-            </.button>
-          </div>
-        </.form>
-      </div>
-    </.modal>
-    """
-  end
-
   attr :label, :string, required: true
   slot :inner_block, required: true
 
@@ -974,27 +824,6 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
     """
   end
 
-  attr :role, :atom, required: true
-  attr :checked, :boolean, default: false
-
-  defp role_row_input(assigns) do
-    ~H"""
-    <.label class="flex cursor-pointer flex-row items-start gap-2">
-      <input
-        name="role"
-        type="radio"
-        value={UserRole.param(@role)}
-        checked={@checked}
-        class="size-5 shrink-0 appearance-none rounded-full border-2 border-grey-300 bg-white text-teal-700 checked:bg-teal-700 focus:outline-none"
-      />
-      <div>
-        <span class="font-medium capitalize">{UserRole.label(@role)}</span>
-        <p class="text-sm">{role_desc(@role)}</p>
-      </div>
-    </.label>
-    """
-  end
-
   defp invite_toggle_track_styles(true), do: "bg-teal-700 relative inline-flex h-[24px] w-[44px] rounded-full"
 
   defp invite_toggle_track_styles(false), do: "bg-grey-200 relative inline-flex h-[24px] w-[44px] rounded-full"
@@ -1006,19 +835,6 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
   defp invite_toggle_thumb_styles(false) do
     "absolute top-[3px] left-[3px] size-[18px] rounded-full bg-white transition"
   end
-
-  defp active_invites(invites) do
-    now = DateTime.utc_now()
-
-    invites
-    |> Enum.filter(fn invite ->
-      is_nil(invite.consumed_at) and DateTime.after?(invite.expires_at, now)
-    end)
-    |> Enum.sort_by(&DateTime.to_unix(&1.expires_at))
-  end
-
-  defp invite_issuer(%{issued_by: %{email: email}}) when not is_nil(email), do: to_string(email)
-  defp invite_issuer(_invite), do: gettext("administrator")
 
   defp menu_item_styles do
     "hover:text-teal-800 hover:bg-teal-100 w-full justify-start rounded-none px-3 py-2 text-left text-sm transition cursor-pointer"
@@ -1055,42 +871,6 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
   defp yes_no(true), do: gettext("Yes")
   defp yes_no(false), do: gettext("No")
   defp yes_no(_), do: "—"
-
-  defp role_desc(:admin) do
-    gettext(
-      "Full access to the \"Management\" tab, including managing employees, counterparties and projects. This role also gives full access to invoices and to uploading invoices from outside KSeF."
-    )
-  end
-
-  defp role_desc(:employee) do
-    gettext(
-      "Basic access to the organization, including the Time Tracker (working time tracking). The ability to submit leave requests and upload documents."
-    )
-  end
-
-  defp role_desc(:invoicing) do
-    gettext("Invoicing access in view-only mode, without the ability to add or edit.")
-  end
-
-  defp role_desc(:accountant) do
-    gettext("Full invoicing access (viewing, adding and editing), except for adding invoices from outside KSeF.")
-  end
-
-  defp role_badge_styles(:admin) do
-    "bg-teal-200 text-teal-700 inline-flex w-28 items-center justify-center rounded-sm px-3 py-1 text-sm leading-[1.35]"
-  end
-
-  defp role_badge_styles(:accountant) do
-    "bg-moss-200 text-moss-700 inline-flex w-28 items-center justify-center rounded-sm px-3 py-1 text-sm leading-[1.35]"
-  end
-
-  defp role_badge_styles(:invoicing) do
-    "bg-rust-200 text-rust-700 inline-flex w-28 items-center justify-center rounded-sm px-3 py-1 text-sm leading-[1.35]"
-  end
-
-  defp role_badge_styles(_role) do
-    "bg-grey-200 text-grey-700 inline-flex w-28 items-center justify-center rounded-sm px-3 py-1 text-sm leading-[1.35]"
-  end
 
   defp multiline_address(nil), do: "—"
   defp multiline_address(""), do: "—"
