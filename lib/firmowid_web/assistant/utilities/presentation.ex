@@ -17,6 +17,8 @@ defmodule FirmowidWeb.Assistant.Utilities.Presentation do
   alias FirmowidWeb.Invoicing.Utilities.Navigation
   alias FirmowidWeb.Management.Utilities.Navigation, as: ManagementNavigation
 
+  require Ash.Query
+
   @sales_tools ~w(connect_sales_invoice_transactions disconnect_sales_invoice_transactions)
   @cost_tools ~w(connect_cost_invoice_transactions disconnect_cost_invoice_transactions)
 
@@ -271,6 +273,11 @@ defmodule FirmowidWeb.Assistant.Utilities.Presentation do
 
   defp references(%{name: "restore_transaction_for_matching", arguments: %{"id" => id}}), do: {:ok, [{:transaction, id}]}
 
+  defp references(%{
+         name: "link_sales_invoice_counterparty",
+         arguments: %{"id" => id, "input" => %{"counterparty_id" => counterparty_id}}
+       }), do: {:ok, [{:sales, id}, {:counterparty, counterparty_id}]}
+
   # ToolLoop requests approval before validating the tool name and arguments.
   # A malformed call must remain rejectable, but cannot produce an approvable preview.
   defp references(_call), do: :error
@@ -282,6 +289,21 @@ defmodule FirmowidWeb.Assistant.Utilities.Presentation do
       kind |> read_records(ids, scope) |> Enum.map(&{{kind, &1.id}, record(kind, &1)})
     end)
     |> Map.new()
+  end
+
+  defp read_records(:counterparty, ids, scope) do
+    query = Ash.Query.filter(Firmowid.Invoicing.Counterparty, id in ^ids)
+
+    case Invoicing.list_counterparties(%{status: :all},
+           scope: scope,
+           query: query,
+           load: [:display_label]
+         ) do
+      {:ok, records} -> records
+      {:error, %Forbidden{}} -> []
+      {:error, %Invalid{}} -> []
+      {:error, error} -> raise Ash.Error.to_error_class(error)
+    end
   end
 
   defp read_records(kind, ids, scope) do
@@ -347,6 +369,22 @@ defmodule FirmowidWeb.Assistant.Utilities.Presentation do
       date: invoice.issue_date,
       path: Navigation.cost_invoice_show_path(invoice),
       kind: gettext("Cost invoice")
+    }
+  end
+
+  defp record(:counterparty, counterparty) do
+    %{
+      label: counterparty.display_label,
+      description:
+        Enum.join(
+          Enum.reject([counterparty.full_name, counterparty.tax_id], &(&1 in [nil, ""])),
+          " · "
+        ),
+      amount: nil,
+      amount_tone: nil,
+      date: nil,
+      path: ManagementNavigation.counterparty_path(counterparty.id),
+      kind: gettext("Counterparty")
     }
   end
 
@@ -435,5 +473,9 @@ defmodule FirmowidWeb.Assistant.Utilities.Presentation do
   defp tool_label("issue_sales_invoice"), do: gettext("Issue a sales invoice")
   defp tool_label("list_monthly_salaries"), do: gettext("Search monthly salaries")
   defp tool_label("suggest_transaction_salaries"), do: gettext("Find a matching salary")
+  defp tool_label("list_counterparties"), do: gettext("Search counterparties")
+
+  defp tool_label("link_sales_invoice_counterparty"), do: gettext("Link the invoice to a counterparty")
+
   defp tool_label(_name), do: gettext("Unknown operation")
 end

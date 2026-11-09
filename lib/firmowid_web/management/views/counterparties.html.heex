@@ -1,58 +1,43 @@
 <div :if={not @zero_state?} class="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-6 pb-4">
-  <div class="sticky top-navbar-collapsed z-10 flex flex-col gap-6 bg-grey-100 py-4 max-md:static max-md:z-auto">
-    <div class="flex items-center justify-between gap-4 max-md:flex-wrap">
-      <form class="flex gap-4 max-md:w-full" phx-submit="search">
-        <div class="flex h-11 w-[360px] items-center gap-2 rounded-lg border border-grey-200 bg-grey-100 p-1 focus-within:ring-2 max-md:w-full">
-          <Lucideicons.search class="size-6 shrink-0 text-grey-500" />
-          <.input
-            type="text"
-            name="szukaj"
-            value={@search}
-            placeholder={gettext("Search counterparties")}
-            phx-change="search"
-            phx-debounce="300"
-            input_class="h-full bg-transparent! border-none py-0 px-1 text-sm"
-            class="w-full border-transparent focus:border-none focus:ring-0 focus:outline-hidden"
-          />
-        </div>
-      </form>
+  <%= if @suggestion_count do %>
+    <%!-- UI 2.0: tabs on top, then search and filters with the actions on the right. --%>
+    <div class="sticky top-navbar-collapsed z-10 flex flex-col gap-6 bg-grey-100 py-4 max-md:static max-md:z-auto">
+      <.filter_tabs label={gettext("Counterparty scope")}>
+        <:tab
+          patch={Navigation.counterparties_path(:index, @params)}
+          active={@live_action == :index}
+        >
+          {pgettext("people list tab", "Active")}
+        </:tab>
+        <:tab
+          patch={Navigation.counterparties_path(:archive, @params)}
+          active={@live_action == :archive}
+        >
+          {pgettext("people list tab", "Archived")}
+        </:tab>
+        <:tab navigate={Navigation.counterparty_suggestions_path()} count={@suggestion_count}>
+          {pgettext("people list tab", "To review")}
+        </:tab>
+      </.filter_tabs>
 
-      <.page_actions>
-        <:action>
-          <.link
-            navigate={
-              Navigation.counterparty_new_path(%{
-                powrot_do: Navigation.counterparties_path(@live_action, @params)
-              })
-            }
-            kind="button"
-            variant="special"
-            data-fab
-          >
-            <Lucideicons.plus /> <span class="max-md:sr-only">{gettext("Add counterparty")}</span>
-          </.link>
-        </:action>
-      </.page_actions>
-    </div>
+      <div class="flex items-center gap-4 max-md:flex-wrap">
+        <form class="flex min-w-40 flex-1 max-md:w-full md:max-w-[360px]" phx-submit="search">
+          <div class="flex h-11 w-full items-center gap-2 rounded-lg border border-grey-200 bg-grey-100 p-1 focus-within:ring-2 max-md:w-full">
+            <Lucideicons.search class="size-6 shrink-0 text-grey-500" />
+            <.input
+              type="text"
+              name="szukaj"
+              value={@search}
+              placeholder={gettext("Search counterparties")}
+              phx-change="search"
+              phx-debounce="300"
+              input_class="h-full bg-transparent! border-none py-0 px-1 text-sm"
+              class="w-full border-transparent focus:border-none focus:ring-0 focus:outline-hidden"
+            />
+          </div>
+        </form>
 
-    <div class="flex flex-wrap items-center justify-between gap-4">
-      <div class="flex items-center gap-6 max-md:w-full max-md:flex-wrap max-md:gap-y-3">
-        <.filter_tabs label={gettext("Counterparty scope")}>
-          <:tab
-            patch={Navigation.counterparties_path(:index, @params)}
-            active={@live_action == :index}
-          >
-            {pgettext("people list tab", "Active")}
-          </:tab>
-          <:tab
-            patch={Navigation.counterparties_path(:archive, @params)}
-            active={@live_action == :archive}
-          >
-            {pgettext("people list tab", "Archived")}
-          </:tab>
-        </.filter_tabs>
-
-        <.filter_pills divider>
+        <.filter_pills label={nil} class="w-auto shrink-0">
           <:pill
             active={@type_filter == :individual}
             phx-click="toggle_type"
@@ -68,15 +53,115 @@
             <Lucideicons.building_2 /> {gettext("Company")}
           </:pill>
         </.filter_pills>
+
+        <div class="ml-auto flex shrink-0 items-center gap-6">
+          <.switch
+            class="flex-row-reverse gap-4 select-none max-md:hidden"
+            label={gettext("Total paid")}
+            field={@form[:view_cooperation_value]}
+            phx-click="toggle_cooperation_value_view"
+          />
+          <.page_actions>
+            <:action>
+              <.link
+                navigate={
+                  Navigation.counterparty_new_path(%{
+                    powrot_do: Navigation.counterparties_path(@live_action, @params)
+                  })
+                }
+                kind="button"
+                variant="special"
+                data-fab
+              >
+                <Lucideicons.plus />
+                <span class="max-md:sr-only">{gettext("Add counterparty")}</span>
+              </.link>
+            </:action>
+          </.page_actions>
+        </div>
       </div>
-      <.switch
-        class="ml-auto flex-row-reverse gap-4 select-none max-md:hidden"
-        label={gettext("Total paid")}
-        field={@form[:view_cooperation_value]}
-        phx-click="toggle_cooperation_value_view"
-      />
     </div>
-  </div>
+  <% else %>
+    <div class="sticky top-navbar-collapsed z-10 flex flex-col gap-6 bg-grey-100 py-4 max-md:static max-md:z-auto">
+      <div class="flex items-center justify-between gap-4 max-md:flex-wrap">
+        <form class="flex gap-4 max-md:w-full" phx-submit="search">
+          <div class="flex h-11 w-[360px] items-center gap-2 rounded-lg border border-grey-200 bg-grey-100 p-1 focus-within:ring-2 max-md:w-full">
+            <Lucideicons.search class="size-6 shrink-0 text-grey-500" />
+            <.input
+              type="text"
+              name="szukaj"
+              value={@search}
+              placeholder={gettext("Search counterparties")}
+              phx-change="search"
+              phx-debounce="300"
+              input_class="h-full bg-transparent! border-none py-0 px-1 text-sm"
+              class="w-full border-transparent focus:border-none focus:ring-0 focus:outline-hidden"
+            />
+          </div>
+        </form>
+
+        <.page_actions>
+          <:action>
+            <.link
+              navigate={
+                Navigation.counterparty_new_path(%{
+                  powrot_do: Navigation.counterparties_path(@live_action, @params)
+                })
+              }
+              kind="button"
+              variant="special"
+              data-fab
+            >
+              <Lucideicons.plus />
+              <span class="max-md:sr-only">{gettext("Add counterparty")}</span>
+            </.link>
+          </:action>
+        </.page_actions>
+      </div>
+
+      <div class="flex flex-wrap items-center justify-between gap-4">
+        <div class="flex items-center gap-6 max-md:w-full max-md:flex-wrap max-md:gap-y-3">
+          <.filter_tabs label={gettext("Counterparty scope")}>
+            <:tab
+              patch={Navigation.counterparties_path(:index, @params)}
+              active={@live_action == :index}
+            >
+              {pgettext("people list tab", "Active")}
+            </:tab>
+            <:tab
+              patch={Navigation.counterparties_path(:archive, @params)}
+              active={@live_action == :archive}
+            >
+              {pgettext("people list tab", "Archived")}
+            </:tab>
+          </.filter_tabs>
+
+          <.filter_pills divider>
+            <:pill
+              active={@type_filter == :individual}
+              phx-click="toggle_type"
+              phx-value-typ={Navigation.encode_counterparty_type(:individual)}
+            >
+              <Lucideicons.user /> {gettext("Individuals")}
+            </:pill>
+            <:pill
+              active={@type_filter == :company}
+              phx-click="toggle_type"
+              phx-value-typ={Navigation.encode_counterparty_type(:company)}
+            >
+              <Lucideicons.building_2 /> {gettext("Company")}
+            </:pill>
+          </.filter_pills>
+        </div>
+        <.switch
+          class="ml-auto flex-row-reverse gap-4 select-none max-md:hidden"
+          label={gettext("Total paid")}
+          field={@form[:view_cooperation_value]}
+          phx-click="toggle_cooperation_value_view"
+        />
+      </div>
+    </div>
+  <% end %>
 
   <%= cond do %>
     <% @counterparties_empty? -> %>
@@ -102,6 +187,7 @@
         data-view={@view}
         class={[
           "group grid gap-x-6 gap-y-2",
+          flag_enabled?(:inbox, assigns) && "mt-4",
           if(@view == :cooperation_value,
             do: "grid-cols-[3fr_1.2fr_1.2fr_min-content]",
             else: "grid-cols-[3fr_1.2fr_min-content]"
@@ -174,6 +260,7 @@
         data-view={@view}
         class={[
           "group grid gap-x-6 gap-y-2",
+          flag_enabled?(:inbox, assigns) && "mt-4",
           if(@view == :cooperation_value,
             do: "grid-cols-[3fr_1.2fr_1fr_1.2fr_min-content]",
             else: "grid-cols-[3fr_1.2fr_1fr_min-content]"
