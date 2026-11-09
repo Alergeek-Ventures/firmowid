@@ -32,6 +32,17 @@ defmodule Firmowid.Assistant do
 
   def pending_calls(_conversation), do: []
 
+  @doc """
+  Whether the assistant may reopen a conversation without the user choosing it: only
+  one active on the current Polish calendar day. Older ones stay available in history.
+  """
+  @spec resumable?(map()) :: boolean()
+  def resumable?(%{updated_at: updated_at}) do
+    local_date(updated_at) == local_date(DateTime.utc_now())
+  end
+
+  defp local_date(datetime), do: datetime |> DateTime.shift_zone!("Europe/Warsaw") |> DateTime.to_date()
+
   @doc "PubSub topic carrying canonical updates and ephemeral response tokens."
   @spec topic(String.t()) :: String.t()
   def topic(id), do: "assistant:conversation:" <> id

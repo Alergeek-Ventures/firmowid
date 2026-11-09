@@ -8,6 +8,7 @@ defmodule FirmowidWeb.Inbox.Utilities.Navigation do
   use Gettext, backend: Firmowid.Gettext
 
   alias Firmowid.Core.UserRole
+  alias FirmowidWeb.Assistant.Utilities.Navigation, as: AssistantNavigation
   alias FirmowidWeb.Settings.Utilities.Navigation, as: SettingsNavigation
 
   @type layer :: :main | :company | :me
@@ -116,6 +117,14 @@ defmodule FirmowidWeb.Inbox.Utilities.Navigation do
         label: gettext("Transactions"),
         icon: "arrow-left-right",
         path: ~p"/fakturowanie?#{[filtr: "transakcje", widok: "lista"]}",
+        roles: @managers
+      },
+      %{
+        id: :assistant,
+        layer: :company,
+        label: pgettext("sidebar", "Assistant"),
+        icon: "messages-square",
+        path: AssistantNavigation.page_path(),
         roles: @managers
       },
       %{

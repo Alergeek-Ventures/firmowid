@@ -170,6 +170,7 @@ defmodule Firmowid.Invoicing.SalesInvoice do
     define :finalize, action: :finalize
     define :return_to_draft, action: :return_to_draft
     define :preview_invoice, action: :preview_invoice
+    define :issue_invoice, action: :issue_invoice
     define :preview_correction, action: :preview_correction
 
     define :attach_suggested_counterparty,
@@ -1041,6 +1042,17 @@ defmodule Firmowid.Invoicing.SalesInvoice do
               |> Preview.from_changeset(opts)
             end
         end
+      end
+    end
+
+    # One typed invoice argument gives tools a clear schema; `:issue` also accepts every field flat.
+    action :issue_invoice, :struct do
+      description "Issue a new invoice from typed input, dated today, and queue its KSeF submission."
+      constraints instance_of: __MODULE__
+      argument :invoice, InvoiceInput, allow_nil?: false
+
+      run fn input, context ->
+        __MODULE__.issue(%{input: input.arguments.invoice}, Ash.Context.to_opts(context))
       end
     end
 

@@ -1,33 +1,94 @@
 defmodule FirmowidWeb.Assistant.Components.Controls do
-  @moduledoc "Assistant panel controls and draft composer; events belong to the floating LiveView."
+  @moduledoc "Assistant panel and page controls and draft composer; events belong to the assistant LiveView."
   use FirmowidWeb, :html
 
   alias FirmowidUI.Components.Button
   alias FirmowidUI.Components.Inputs
+  alias FirmowidUI.Components.Link
+  alias FirmowidUI.Utilities.ButtonStyles
   alias FirmowidWeb.Assistant.Utilities.Presentation
   alias Phoenix.LiveView.Rendered
 
   attr :history_open?, :boolean, required: true
+  attr :page_path, :string, default: nil, doc: "The full assistant page, when available."
 
-  @doc "Renders the history toggle and close action without a panel heading."
+  @doc "Renders the history toggle, the way to the full page and the close action without a panel heading."
   @spec header(map()) :: Rendered.t()
   def header(assigns) do
+    assigns = assign(assigns, :ghost_classes, ButtonStyles.variant_classes("ghost", nil))
+
     ~H"""
     <header class="flex flex-none items-center justify-between gap-2 border-be border-grey-200 p-2">
+      <.history_toggle history_open?={@history_open?} />
+      <div class="flex items-center gap-1">
+        <Link.link
+          :if={@page_path}
+          id="assistant-expand"
+          kind="unstyled"
+          navigate={@page_path}
+          aria-label={gettext("Open the assistant in full screen")}
+          title={gettext("Open the assistant in full screen")}
+          class={[
+            "inline-flex size-8 shrink-0 items-center justify-center rounded-md border transition duration-100 ease-out min-block-9 min-inline-9 pointer-coarse:min-block-11 pointer-coarse:min-inline-11 [&>svg]:size-4",
+            @ghost_classes
+          ]}
+        ><Lucideicons.maximize_2 aria-hidden="true" /></Link.link>
+        <.icon_button
+          label={gettext("Close assistant")}
+          class="min-block-9 min-inline-9 pointer-coarse:min-block-11 pointer-coarse:min-inline-11"
+          phx-click="close"
+        ><Lucideicons.x aria-hidden="true" /></.icon_button>
+      </div>
+    </header>
+    """
+  end
+
+  attr :history_open?, :boolean, required: true
+
+  @doc "Renders the page's conversation list heading, with the way back to the chat on phones."
+  @spec page_history_header(map()) :: Rendered.t()
+  def page_history_header(assigns) do
+    ~H"""
+    <header class="flex flex-none items-center justify-between gap-2 border-be border-grey-200 p-2 ps-4 min-block-13">
+      <h1 class="text-base/tight font-medium">{gettext("Conversations")}</h1>
       <.icon_button
-        id="assistant-history-toggle"
-        label={gettext("Conversation history")}
-        class="min-block-9 min-inline-9 aria-expanded:not-active:bg-grey-200 pointer-coarse:min-block-11 pointer-coarse:min-inline-11"
+        label={gettext("Back to the conversation")}
+        class="min-block-11 min-inline-11 md:hidden"
         phx-click="history"
-        aria-expanded={to_string(@history_open?)}
-        aria-controls="assistant-history"
-      ><Lucideicons.history aria-hidden="true" /></.icon_button>
-      <.icon_button
-        label={gettext("Close assistant")}
-        class="min-block-9 min-inline-9 pointer-coarse:min-block-11 pointer-coarse:min-inline-11"
-        phx-click="close"
       ><Lucideicons.x aria-hidden="true" /></.icon_button>
     </header>
+    """
+  end
+
+  attr :history_open?, :boolean, required: true
+
+  @doc "Renders the page's chat heading; on phones it also opens the conversation list."
+  @spec page_header(map()) :: Rendered.t()
+  def page_header(assigns) do
+    ~H"""
+    <header class="flex flex-none items-center gap-2 border-be border-grey-200 p-2 ps-4 min-block-13 max-md:ps-2">
+      <.history_toggle history_open?={@history_open?} class="md:hidden" />
+      <h2 class="text-base/tight font-medium">{gettext("Firmowid assistant")}</h2>
+    </header>
+    """
+  end
+
+  attr :history_open?, :boolean, required: true
+  attr :class, :any, default: nil
+
+  defp history_toggle(assigns) do
+    ~H"""
+    <.icon_button
+      id="assistant-history-toggle"
+      label={gettext("Conversation history")}
+      class={[
+        "min-block-9 min-inline-9 aria-expanded:not-active:bg-grey-200 pointer-coarse:min-block-11 pointer-coarse:min-inline-11",
+        @class
+      ]}
+      phx-click="history"
+      aria-expanded={to_string(@history_open?)}
+      aria-controls="assistant-history"
+    ><Lucideicons.history aria-hidden="true" /></.icon_button>
     """
   end
 

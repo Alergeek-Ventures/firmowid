@@ -1,5 +1,9 @@
 defmodule FirmowidWeb.Assistant.Views.Floating do
-  @moduledoc "A nonmodal LiveView assistant that keeps its conversation across product navigation."
+  @moduledoc """
+  The assistant LiveView: a nonmodal panel that keeps its conversation across product
+  navigation, or the full assistant page (`page` session flag) with the conversation list beside
+  the chat. Both restore the tab's conversation, so moving between them continues it.
+  """
   use FirmowidWeb, :live_view
 
   alias Ash.Error.Forbidden
@@ -20,16 +24,28 @@ defmodule FirmowidWeb.Assistant.Views.Floating do
 
     case RequireOrganization.on_mount(:default, %{}, session, socket) do
       {:cont, socket} ->
+        page? = session["page"] == true
+
         socket =
-          socket |> assign(open: false, form_error: nil, history_open?: false) |> load_history()
+          socket
+          |> assign(
+            page?: page?,
+            page_path: session["page_path"],
+            open: page?,
+            form_error: nil,
+            history_open?: false
+          )
+          |> load_history()
 
+        # History is ordered by creation; resume the conversation used most recently today.
         conversation =
-          case socket.assigns.history do
-            [latest | _] ->
-              Assistant.get_conversation!(latest.id, scope: socket.assigns.ash_scope)
-
+          case Enum.filter(socket.assigns.history, &Assistant.resumable?/1) do
             [] ->
               nil
+
+            today ->
+              latest = Enum.max_by(today, & &1.updated_at, DateTime)
+              Assistant.get_conversation!(latest.id, scope: socket.assigns.ash_scope)
           end
 
         {:ok, select_conversation(socket, conversation), layout: false}
@@ -48,6 +64,57 @@ defmodule FirmowidWeb.Assistant.Views.Floating do
         conversation_error: assigns.conversation && assigns.conversation.error
       )
 
+    if assigns.page?, do: page(assigns), else: floating(assigns)
+  end
+
+  defp page(assigns) do
+    ~H"""
+    <section
+      id="firmowid-assistant"
+      class="grid size-full grid-cols-1 bg-white text-sm/normal text-grey-900 block-[calc(100dvh-var(--navbar-height))] md:grid-cols-[18rem_minmax(0,1fr)]"
+      phx-hook="AssistantChat"
+      data-page
+      data-storage-key={"assistant:#{@current_user.id}:#{@current_org.id}"}
+      data-open="true"
+      data-conversation-id={@conversation_id}
+      data-history-open={to_string(@history_open?)}
+      aria-label={gettext("Firmowid assistant")}
+    >
+      <div class={[
+        "flex flex-col border-grey-200 min-block-0 md:border-e",
+        !@history_open? && "max-md:hidden"
+      ]}>
+        <Controls.page_history_header history_open?={@history_open?} />
+        <History.history
+          conversations={@history}
+          conversation_id={@conversation_id}
+          open={true}
+          more?={@history_more?}
+        />
+      </div>
+      <section
+        id="assistant-panel"
+        class={["flex flex-col min-block-0", @history_open? && "max-md:hidden"]}
+        aria-label={gettext("Conversation")}
+      >
+        <Controls.page_header history_open?={@history_open?} />
+        <.conversation
+          subject={@subject}
+          history_open?={false}
+          turns={@turns}
+          conversation_id={@conversation_id}
+          conversation_status={@conversation_status}
+          conversation_error={@conversation_error}
+          plan={@plan}
+          conversation={@conversation}
+          form_error={@form_error}
+        />
+      </section>
+    </section>
+    """
+  end
+
+  defp floating(assigns) do
     ~H"""
     <aside
       id="firmowid-assistant"
@@ -66,15 +133,7 @@ defmodule FirmowidWeb.Assistant.Views.Floating do
         aria-label={gettext("Firmowid assistant")}
         hidden={!@open}
       >
-        <Controls.header history_open?={@history_open?} />
-
-        <section
-          :if={@subject && !@history_open?}
-          class="flex-none border-be border-grey-200 bg-grey-100 px-4 py-3"
-          aria-label={gettext("Conversation about")}
-        >
-          <Records.preview record={@subject.record} />
-        </section>
+        <Controls.header history_open?={@history_open?} page_path={@page_path} />
 
         <History.history
           conversations={@history}
@@ -82,26 +141,16 @@ defmodule FirmowidWeb.Assistant.Views.Floating do
           open={@history_open?}
           more?={@history_more?}
         />
-        <Transcript.transcript
-          turns={@turns}
+        <.conversation
           subject={@subject}
-          conversation_id={@conversation_id}
-          status={@conversation_status}
-          error={@conversation_error}
           history_open?={@history_open?}
-        >
-          <Records.approval_plan
-            :if={@plan.calls != []}
-            plan={@plan}
-            version={@conversation.version}
-            conversation_id={@conversation_id}
-          />
-        </Transcript.transcript>
-        <Controls.composer
+          turns={@turns}
           conversation_id={@conversation_id}
-          status={@conversation_status}
+          conversation_status={@conversation_status}
+          conversation_error={@conversation_error}
+          plan={@plan}
+          conversation={@conversation}
           form_error={@form_error}
-          history_open?={@history_open?}
         />
       </section>
 
@@ -110,9 +159,43 @@ defmodule FirmowidWeb.Assistant.Views.Floating do
     """
   end
 
+  # The subject, transcript and composer, identical in the panel and on the page.
+  defp conversation(assigns) do
+    ~H"""
+    <section
+      :if={@subject && !@history_open?}
+      class="flex-none border-be border-grey-200 bg-grey-100 px-4 py-3"
+      aria-label={gettext("Conversation about")}
+    >
+      <Records.preview record={@subject.record} />
+    </section>
+    <Transcript.transcript
+      turns={@turns}
+      subject={@subject}
+      conversation_id={@conversation_id}
+      status={@conversation_status}
+      error={@conversation_error}
+      history_open?={@history_open?}
+    >
+      <Records.approval_plan
+        :if={@plan.calls != []}
+        plan={@plan}
+        version={@conversation.version}
+        conversation_id={@conversation_id}
+      />
+    </Transcript.transcript>
+    <Controls.composer
+      conversation_id={@conversation_id}
+      status={@conversation_status}
+      form_error={@form_error}
+      history_open?={@history_open?}
+    />
+    """
+  end
+
   @impl true
   def handle_event("restore", %{"open" => opened, "conversation_id" => id}, socket) do
-    socket = assign(socket, :open, opened == true)
+    socket = assign(socket, :open, socket.assigns.page? or opened == true)
 
     case id do
       nil -> {:noreply, socket}
@@ -300,12 +383,22 @@ defmodule FirmowidWeb.Assistant.Views.Floating do
     )
   end
 
+  # A tab's conversation last used on an earlier day is not restored: the one mount resumed stays.
   defp restore_conversation(socket, id) do
     case Assistant.get_conversation(id, scope: socket.assigns.ash_scope) do
-      {:ok, conversation} -> select_conversation(socket, conversation)
-      {:error, %Invalid{}} -> select_conversation(socket, nil)
-      {:error, %Forbidden{}} -> select_conversation(socket, nil)
-      {:error, error} -> raise Ash.Error.to_error_class(error)
+      {:ok, conversation} ->
+        if Assistant.resumable?(conversation),
+          do: select_conversation(socket, conversation),
+          else: socket
+
+      {:error, %Invalid{}} ->
+        select_conversation(socket, nil)
+
+      {:error, %Forbidden{}} ->
+        select_conversation(socket, nil)
+
+      {:error, error} ->
+        raise Ash.Error.to_error_class(error)
     end
   end
 
@@ -345,8 +438,16 @@ defmodule FirmowidWeb.Assistant.Views.Floating do
       conversation: conversation,
       subject: Presentation.subject(conversation, socket.assigns.ash_scope),
       turns: Presentation.turns(conversation),
-      plan: Presentation.plan(conversation, socket.assigns.ash_scope)
+      plan: Presentation.plan(conversation, socket.assigns.ash_scope),
+      history: put_history_entry(socket.assigns.history, conversation)
     )
+  end
+
+  # Keeps the always visible list on the page current without reloading its loaded pages.
+  defp put_history_entry(history, conversation) do
+    if Enum.any?(history, &(&1.id == conversation.id)),
+      do: Enum.map(history, &if(&1.id == conversation.id, do: conversation, else: &1)),
+      else: [conversation | history]
   end
 
   defp client_conversation_id(nil), do: "new"
@@ -362,7 +463,15 @@ defmodule FirmowidWeb.Assistant.Views.Floating do
         page: pagination
       )
 
-    history = if cursor, do: socket.assigns.history ++ page.results, else: page.results
+    # The open conversation may already be listed above its page; list it once.
+    history =
+      if cursor do
+        listed = MapSet.new(socket.assigns.history, & &1.id)
+        socket.assigns.history ++ Enum.reject(page.results, &MapSet.member?(listed, &1.id))
+      else
+        page.results
+      end
+
     last = List.last(page.results)
 
     assign(socket,
