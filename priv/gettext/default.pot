@@ -1303,6 +1303,12 @@ msgstr ""
 msgid "Assistant"
 msgstr ""
 
+#: lib/firmowid_web/inbox/utilities/navigation.ex
+#, elixir-autogen, elixir-format
+msgctxt "sidebar"
+msgid "Assistant"
+msgstr ""
+
 #: lib/firmowid_web/assistant/utilities/presentation.ex
 #, elixir-autogen, elixir-format
 msgid "Assistant is ready."
@@ -1444,6 +1450,11 @@ msgstr ""
 #: lib/firmowid_web/invoicing/components/invoice_timeline.ex
 #, elixir-autogen, elixir-format
 msgid "Back to preview"
+msgstr ""
+
+#: lib/firmowid_web/assistant/components/controls.ex
+#, elixir-autogen, elixir-format
+msgid "Back to the conversation"
 msgstr ""
 
 #: lib/firmowid_web/infrastructure/components/error_html.ex
@@ -1912,6 +1923,11 @@ msgstr ""
 #: lib/firmowid_web/assistant/utilities/presentation.ex
 #, elixir-autogen, elixir-format
 msgid "Check already matched payments"
+msgstr ""
+
+#: lib/firmowid_web/assistant/utilities/presentation.ex
+#, elixir-autogen, elixir-format
+msgid "Check the KSeF connection"
 msgstr ""
 
 #: lib/firmowid_web/delegations/components/settlement_signature_page.ex
@@ -2539,6 +2555,7 @@ msgid "Contract with own employer"
 msgstr ""
 
 #: lib/firmowid_web/assistant/components/transcript.ex
+#: lib/firmowid_web/assistant/views/floating.ex
 #, elixir-autogen, elixir-format
 msgid "Conversation"
 msgstr ""
@@ -2552,6 +2569,11 @@ msgstr ""
 #: lib/firmowid_web/assistant/components/history.ex
 #, elixir-autogen, elixir-format
 msgid "Conversation history"
+msgstr ""
+
+#: lib/firmowid_web/assistant/components/controls.ex
+#, elixir-autogen, elixir-format
+msgid "Conversations"
 msgstr ""
 
 #: lib/firmowid_web/delegations/components/settlement/foreign_currency.ex
@@ -4537,6 +4559,11 @@ msgstr ""
 
 #: lib/firmowid_web/assistant/utilities/presentation.ex
 #, elixir-autogen, elixir-format
+msgid "Find the next invoice number"
+msgstr ""
+
+#: lib/firmowid_web/assistant/utilities/presentation.ex
+#, elixir-autogen, elixir-format
 msgid "Find transactions without an invoice"
 msgstr ""
 
@@ -4557,7 +4584,9 @@ msgctxt "settings tab"
 msgid "Firmowid account"
 msgstr ""
 
+#: lib/firmowid_web/assistant/components/controls.ex
 #: lib/firmowid_web/assistant/views/floating.ex
+#: lib/firmowid_web/assistant/views/index.ex
 #, elixir-autogen, elixir-format
 msgid "Firmowid assistant"
 msgstr ""
@@ -5581,6 +5610,7 @@ msgstr ""
 msgid "Invoice issued in Firmowid"
 msgstr ""
 
+#: lib/firmowid_web/assistant/components/records.ex
 #: lib/firmowid_web/invoicing/sales_invoices/components/invoice_items.ex
 #, elixir-autogen, elixir-format
 msgid "Invoice items"
@@ -5742,6 +5772,11 @@ msgstr ""
 #: lib/firmowid_web/landing/components/faq.ex
 #, elixir-autogen, elixir-format
 msgid "Is my data safe?"
+msgstr ""
+
+#: lib/firmowid_web/assistant/utilities/presentation.ex
+#, elixir-autogen, elixir-format
+msgid "Issue a sales invoice"
 msgstr ""
 
 #: lib/firmowid_web/landing/components/sections.ex
@@ -7372,6 +7407,11 @@ msgstr ""
 #: lib/firmowid_web/landing/components/sections.ex
 #, elixir-autogen, elixir-format
 msgid "Open source"
+msgstr ""
+
+#: lib/firmowid_web/assistant/components/controls.ex
+#, elixir-autogen, elixir-format
+msgid "Open the assistant in full screen"
 msgstr ""
 
 #: lib/firmowid_web/invoicing/transactions/components/show_components.ex
@@ -10373,6 +10413,7 @@ msgid "The new session overlaps existing ones. Saving requires the changes below
 msgstr ""
 
 #: lib/firmowid_ui/invoicing/components/invoice_number.ex
+#: lib/firmowid_web/assistant/utilities/presentation.ex
 #, elixir-autogen, elixir-format
 msgid "The number format may be invalid."
 msgstr ""
@@ -10764,6 +10805,7 @@ msgid "This invoice is already in the system"
 msgstr ""
 
 #: lib/firmowid_ui/invoicing/components/invoice_number.ex
+#: lib/firmowid_web/assistant/utilities/presentation.ex
 #, elixir-autogen, elixir-format
 msgid "This invoice number already exists."
 msgstr ""
@@ -10799,6 +10841,7 @@ msgid "This month is behind us, so no more transactions will appear."
 msgstr ""
 
 #: lib/firmowid_ui/invoicing/components/invoice_number.ex
+#: lib/firmowid_web/assistant/utilities/presentation.ex
 #, elixir-autogen, elixir-format
 msgid "This number creates a gap in the numbering."
 msgstr ""
@@ -11265,6 +11308,7 @@ msgid "Type what you want to find (e.g. counterparty, invoice number, descriptio
 msgstr ""
 
 #: lib/firmowid_mcp/invoicing/views/issue.ex
+#: lib/firmowid_web/assistant/utilities/presentation.ex
 #, elixir-autogen, elixir-format
 msgid "Unable to issue the invoice. Check its details and try again."
 msgstr ""

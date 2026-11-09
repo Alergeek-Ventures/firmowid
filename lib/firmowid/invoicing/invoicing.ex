@@ -146,6 +146,37 @@ defmodule Firmowid.Invoicing do
       ]
     end
 
+    tool :get_next_sales_invoice_number, SalesInvoice, :get_next_number do
+      annotations title: "Get next invoice number",
+                  read_only_hint: true,
+                  destructive_hint: false,
+                  open_world_hint: false
+
+      description "Return the next free sales invoice number for an issue date. format is monthly (NN/MM/YYYY) or " <>
+                    "yearly (N/YYYY); series is an optional suffix or prefix such as A. Match the format and series " <>
+                    "of the organization's most recent invoices. Saves nothing."
+    end
+
+    tool :issue_sales_invoice, SalesInvoice, :issue_invoice do
+      annotations title: "Issue sales invoice",
+                  read_only_hint: false,
+                  destructive_hint: false,
+                  open_world_hint: true
+
+      description "Issue a numbered sales invoice dated today and send it to KSeF. Requires an active KSeF connection. " <>
+                    "Put every invoice field, including invoice_number, in invoice. Required: buyer_type, " <>
+                    "buyer_full_name (or given name and surname), buyer_id (tax ID) for companies, buyer_address, " <>
+                    "sale_date, due_date and sales_invoice_items with name, quantity, unit, net unit_price and vat_rate " <>
+                    "such as \"23\". Seller details, issue date, PLN, Poland and payment by transfer to the organization's " <>
+                    "default account for the currency are filled in when omitted."
+
+      load [
+        :amount,
+        :ksef_submission_status,
+        sales_invoice_items: [:net_value, :vat_value, :gross_value]
+      ]
+    end
+
     tool :create_sales_invoice_draft, SalesInvoice, :draft do
       annotations title: "Save invoice draft",
                   read_only_hint: false,
@@ -800,6 +831,19 @@ defmodule Firmowid.Invoicing do
   end
 
   def get_logo_url(_organization_id, _opts), do: nil
+
+  @doc """
+  Validates and calculates the invoice `:issue_invoice` would create from the `invoice` input,
+  without saving it or queueing its KSeF submission. Lets an approval show exactly the
+  document that issuing the same input produces.
+  """
+  @spec preview_issued_sales_invoice(map(), keyword()) ::
+          {:ok, SalesInvoice.t()} | {:error, term()}
+  def preview_issued_sales_invoice(invoice, opts) do
+    %{input: invoice}
+    |> SalesInvoice.changeset_to_issue(opts)
+    |> SalesInvoice.Preview.from_changeset(opts)
+  end
 
   @doc """
   Returns the currency exchange rate for a sales invoice.

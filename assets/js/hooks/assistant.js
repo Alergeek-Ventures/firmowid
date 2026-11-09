@@ -1,6 +1,9 @@
 export const AssistantChat = {
   mounted() {
     this.storageKey = this.el.dataset.storageKey;
+    // The full page shares the tab's conversation with the panel, but leaving it keeps the panel closed.
+    this.page = "page" in this.el.dataset;
+    if (this.page) sessionStorage.setItem(`${this.storageKey}:open`, "false");
     this.conversationId = this.el.dataset.conversationId;
     this.followingLatest = true;
     this.messageList = this.el.querySelector("#assistant-messages");
@@ -21,7 +24,7 @@ export const AssistantChat = {
       this.newMessages.hidden = true;
     };
     this.onKey = (event) => {
-      if (event.key === "Escape" && this.el.dataset.open === "true") {
+      if (event.key === "Escape" && !this.page && this.el.dataset.open === "true") {
         event.preventDefault();
         event.stopPropagation();
         this.pushEvent("close", {});
@@ -95,7 +98,7 @@ export const AssistantChat = {
   },
   updated() {
     this.syncConversation();
-    sessionStorage.setItem(`${this.storageKey}:open`, this.el.dataset.open);
+    if (!this.page) sessionStorage.setItem(`${this.storageKey}:open`, this.el.dataset.open);
     sessionStorage.setItem(`${this.storageKey}:conversation`, this.conversationId);
     this.followLatest();
   },

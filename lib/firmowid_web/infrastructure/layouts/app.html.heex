@@ -269,13 +269,21 @@
   </div>
 </main>
 
-<%= if match?(%{member: %{role: role}} when role != :employee, @current_user) do %>
+<%!-- The full assistant page renders the same chat itself, so the panel stays out of it. --%>
+<%= if match?(%{member: %{role: role}} when role != :employee, @current_user) and
+       @current_uri.path != FirmowidWeb.Assistant.Utilities.Navigation.page_path() do %>
   {Phoenix.Component.live_render(
     assigns[:socket] || assigns[:conn],
     FirmowidWeb.Assistant.Views.Floating,
     id: "floating-assistant-#{@current_user.member.organization_id}",
     sticky: true,
     container: {:div, []},
-    session: %{"organization_id" => @current_user.member.organization_id}
+    session: %{
+      "organization_id" => @current_user.member.organization_id,
+      "page_path" =>
+        if(flag_enabled?(:inbox, assigns),
+          do: FirmowidWeb.Assistant.Utilities.Navigation.page_path()
+        )
+    }
   )}
 <% end %>

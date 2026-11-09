@@ -19,6 +19,7 @@ defmodule FirmowidWeb.Assistant.Components.Records do
           {@record.kind}<span :if={@record.date}> · {Calendar.strftime(@record.date, "%d.%m.%Y")}</span>
         </p>
         <Link.link
+          :if={@record.path}
           kind="unstyled"
           navigate={@record.path}
           class="group inline-flex items-start justify-start gap-1 justify-self-start text-start text-sm leading-[1.35] font-medium wrap-anywhere whitespace-normal text-grey-900 select-text active:text-grey-700"
@@ -28,6 +29,12 @@ defmodule FirmowidWeb.Assistant.Components.Records do
             aria-hidden="true"
           />
         </Link.link>
+        <p
+          :if={!@record.path}
+          class="text-sm leading-[1.35] font-medium wrap-anywhere text-grey-900"
+        >
+          {@record.label}
+        </p>
         <span
           class={[
             "rounded-sm px-1.5 py-0.5 text-sm/5 text-nowrap tabular-nums empty:hidden",
@@ -38,6 +45,19 @@ defmodule FirmowidWeb.Assistant.Components.Records do
         <p class="col-span-full line-clamp-2 overflow-clip text-xs leading-[1.4] wrap-anywhere text-grey-600">
           {@record.description}
         </p>
+        <ul
+          :if={@record[:lines]}
+          class="col-span-full mbs-1.5 flex flex-col gap-1 border-bs border-grey-200 pbs-1.5"
+          aria-label={gettext("Invoice items")}
+        >
+          <li
+            :for={line <- @record.lines}
+            class="grid grid-cols-[minmax(0,1fr)_auto] gap-x-3 text-xs leading-[1.4] text-grey-700"
+          >
+            <span class="wrap-anywhere">{line.name} · {line.quantity} {line.unit}</span>
+            <span class="text-nowrap tabular-nums">{line.gross}</span>
+          </li>
+        </ul>
       <% else %>
         <p class="text-sm/5 text-brick-700">{gettext("This record is no longer available.")}</p>
       <% end %>
@@ -64,8 +84,18 @@ defmodule FirmowidWeb.Assistant.Components.Records do
       <div :for={call <- @plan.calls} class="flex flex-col gap-2">
         <h4 class="text-sm/snug text-grey-700">{call.label}</h4>
         <.preview :for={record <- call.records} record={record} class="rounded-lg bg-white p-2.5" />
+        <p
+          :for={note <- call.notes}
+          class="rounded-sm bg-rust-200 px-2.5 py-1.5 text-xs/snug text-rust-700"
+        >
+          {note}
+        </p>
+        <p :for={error <- call.errors} class="text-sm/snug text-brick-700" role="alert">{error}</p>
       </div>
-      <p :if={!@plan.available?} class="text-sm/snug text-brick-700">
+      <p
+        :if={!@plan.available? and Enum.all?(@plan.calls, &(&1.errors == []))}
+        class="text-sm/snug text-brick-700"
+      >
         {gettext("Some records could not be read. Reject this plan and ask for a new one.")}
       </p>
       <p class="text-xs/snug text-grey-700">

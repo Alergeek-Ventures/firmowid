@@ -317,6 +317,7 @@ defmodule FirmowidWeb.Core.Router do
         Timezone
       ] do
       live "/skrzynka", Inbox.Views.Index, :index
+      live "/asystent", Assistant.Views.Index, :index
       live "/fakturowanie", Invoicing.Views.Index, :index
       live "/kosztowe/:id", Invoicing.CostInvoices.Views.Show, :show
 

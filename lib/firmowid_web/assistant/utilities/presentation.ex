@@ -5,12 +5,15 @@ defmodule FirmowidWeb.Assistant.Utilities.Presentation do
   alias Ash.Error.Forbidden
   alias Ash.Error.Invalid
   alias AshAi.ChatUI.Tools
+  alias AshPhoenix.FormData.Error
   alias Firmowid.Assistant
   alias Firmowid.Core
   alias Firmowid.Finances
   alias Firmowid.Invoicing
+  alias Firmowid.Invoicing.SalesInvoice
   alias Firmowid.Scope
   alias Firmowid.Timetracker.Project
+  alias FirmowidUI.Components.Inputs
   alias FirmowidWeb.Invoicing.Utilities.Navigation
   alias FirmowidWeb.Management.Utilities.Navigation, as: ManagementNavigation
 
@@ -181,20 +184,80 @@ defmodule FirmowidWeb.Assistant.Utilities.Presentation do
     records = load_records(references, scope)
 
     previews =
-      Enum.map(calls, fn {call, references} ->
-        %{
-          id: call.id,
-          label: tool_label(call.name),
-          records: preview_records(references, records)
-        }
+      Enum.map(calls, fn
+        {%{name: "issue_sales_invoice"} = call, _references} ->
+          Map.merge(
+            %{id: call.id, label: tool_label(call.name)},
+            issue_preview(call.arguments, scope)
+          )
+
+        {call, references} ->
+          %{
+            id: call.id,
+            label: tool_label(call.name),
+            records: preview_records(references, records),
+            notes: [],
+            errors: []
+          }
       end)
 
-    %{available?: Enum.all?(previews, &Enum.all?(&1.records)), calls: previews}
+    %{
+      available?: Enum.all?(previews, &(Enum.all?(&1.records) and &1.errors == [])),
+      calls: previews
+    }
   end
 
   defp preview_records({:ok, references}, records), do: Enum.map(references, &Map.get(records, &1))
 
   defp preview_records(:error, _records), do: [nil]
+
+  # Builds the same changeset the approved call will submit, so the card shows the document,
+  # numbering warnings and validation errors (including a missing KSeF connection) before approval.
+  defp issue_preview(%{"input" => %{"invoice" => invoice}}, scope) when is_map(invoice) do
+    opts = [actor: scope.actor, tenant: scope.tenant]
+
+    with {:ok, invoice} <- Invoicing.preview_issued_sales_invoice(invoice, opts),
+         {:ok, warnings} <-
+           SalesInvoice.validate_number(invoice.invoice_number, invoice.issue_date, nil, opts) do
+      %{
+        records: [record(:issued, invoice)],
+        notes: Enum.map(warnings, &number_warning/1),
+        errors: []
+      }
+    else
+      {:error, error} -> %{records: [], notes: [], errors: error_messages(error)}
+    end
+  end
+
+  defp issue_preview(_arguments, _scope), do: %{records: [nil], notes: [], errors: []}
+
+  defp number_warning({:invalid_format, _suggestions}), do: gettext("The number format may be invalid.")
+
+  defp number_warning({:duplicate, _suggestions}), do: gettext("This invoice number already exists.")
+
+  defp number_warning({:gap, _expected}), do: gettext("This number creates a gap in the numbering.")
+
+  defp error_messages(error) do
+    error
+    |> Ash.Error.to_error_class()
+    |> Map.fetch!(:errors)
+    |> Enum.flat_map(fn error ->
+      if Error.impl_for(error) do
+        error
+        |> Error.to_form_error()
+        |> List.wrap()
+        |> Enum.map(fn {_field, message, bindings} ->
+          Inputs.translate_error({message, bindings})
+        end)
+      else
+        []
+      end
+    end)
+    |> case do
+      [] -> [gettext("Unable to issue the invoice. Check its details and try again.")]
+      messages -> Enum.uniq(messages)
+    end
+  end
 
   defp references(%{name: name, arguments: %{"id" => id, "input" => %{"transaction_ids" => ids}}})
        when name in @sales_tools and is_list(ids) do
@@ -251,6 +314,27 @@ defmodule FirmowidWeb.Assistant.Utilities.Presentation do
       date: invoice.issue_date,
       path: Navigation.sales_invoice_show_path(invoice),
       kind: gettext("Sales invoice")
+    }
+  end
+
+  defp record(:issued, invoice) do
+    %{
+      label: invoice.invoice_number,
+      description: invoice.buyer_display_name_label,
+      amount: invoice.amount,
+      amount_tone: :income,
+      date: invoice.issue_date,
+      path: nil,
+      kind: gettext("Sales invoice"),
+      lines:
+        Enum.map(invoice.sales_invoice_items, fn item ->
+          %{
+            name: item.name,
+            quantity: item.quantity,
+            unit: item.unit,
+            gross: Money.new(invoice.currency, item.gross_value)
+          }
+        end)
     }
   end
 
@@ -346,6 +430,9 @@ defmodule FirmowidWeb.Assistant.Utilities.Presentation do
 
   defp tool_label("restore_transaction_for_matching"), do: gettext("Restore a skipped transaction")
 
+  defp tool_label("get_ksef_connection_status"), do: gettext("Check the KSeF connection")
+  defp tool_label("get_next_sales_invoice_number"), do: gettext("Find the next invoice number")
+  defp tool_label("issue_sales_invoice"), do: gettext("Issue a sales invoice")
   defp tool_label("list_monthly_salaries"), do: gettext("Search monthly salaries")
   defp tool_label("suggest_transaction_salaries"), do: gettext("Find a matching salary")
   defp tool_label(_name), do: gettext("Unknown operation")
