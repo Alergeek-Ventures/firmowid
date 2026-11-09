@@ -74,13 +74,17 @@ defmodule FirmowidWeb.Inbox.Components.Sidebar do
         @closed_on_phone
       ]}
     >
-      <div class="flex items-center">
+      <div class="flex items-center gap-1.5">
         <.head_button
           id="app-sidebar-collapse"
           phx-hook=".SidebarCollapse"
           phx-click={JS.add_class(@closed_on_phone, to: "#app-sidebar")}
           label={gettext("Collapse or expand the menu")}
         />
+        <%!-- The wordmark lines up with the labels below and fades with them when collapsed. --%>
+        <span class={["text-xl/8 font-extrabold tracking-wide text-grey-100", label_styles()]}>
+          Firmowid
+        </span>
       </div>
       <script :type={Phoenix.LiveView.ColocatedHook} name=".SidebarCollapse">
         export default {
