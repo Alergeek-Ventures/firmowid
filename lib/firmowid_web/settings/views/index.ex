@@ -468,6 +468,10 @@ defmodule FirmowidWeb.Settings.Views.Index do
         updated_with_avatar =
           Ash.load!(updated_org, [avatar_blob: [:url]], scope: socket.assigns.ash_scope)
 
+        # The new UI edits in place, so nothing else confirms the save.
+        if flag_enabled?(:inbox, socket.assigns),
+          do: LiveToast.send_toast(:success, gettext("Changes saved"))
+
         {:noreply,
          socket
          |> assign(:editing_basic_info, false)
@@ -600,34 +604,12 @@ defmodule FirmowidWeb.Settings.Views.Index do
     scope = socket.assigns.ash_scope
     bank_account = Finances.get_bank_account!(account_id, scope: scope)
 
-    case Finances.update_bank_account(bank_account, %{name: name}, scope: scope) do
-      {:ok, _} ->
-        LiveToast.send_toast(:info, gettext("The account name has been changed."))
-
-        accounts = list_bank_accounts(scope)
-
-        {:noreply,
-         socket
-         |> assign(:bank_accounts, accounts)
-         |> assign(
-           :bank_institutions,
-           list_bank_institutions(socket.assigns.current_user, accounts)
-         )
-         |> assign(:pending_requisitions, list_pending_requisitions(scope))
-         |> assign(:bank_account_statuses, derive_statuses(accounts))
-         |> assign_subscription_preview_if_visible()
-         |> push_event("js-exec", %{
-           to: "#manual_bank_account_modal_company",
-           attr: "data-cancel"
-         })}
-
-      {:error, _} ->
-        LiveToast.send_toast(
-          :error,
-          gettext("An error occurred while changing the account name.")
-        )
-
-        {:noreply, socket}
+    # Enter in the card's name field sends the change on blur and then the submit;
+    # the second one finds the name already saved.
+    if bank_account.name == name do
+      {:noreply, socket}
+    else
+      rename_bank_account(bank_account, name, scope, socket)
     end
   end
 
@@ -1023,6 +1005,38 @@ defmodule FirmowidWeb.Settings.Views.Index do
     end
   end
 
+  defp rename_bank_account(bank_account, name, scope, socket) do
+    case Finances.update_bank_account(bank_account, %{name: name}, scope: scope) do
+      {:ok, _} ->
+        LiveToast.send_toast(:info, gettext("The account name has been changed."))
+
+        accounts = list_bank_accounts(scope)
+
+        {:noreply,
+         socket
+         |> assign(:bank_accounts, accounts)
+         |> assign(
+           :bank_institutions,
+           list_bank_institutions(socket.assigns.current_user, accounts)
+         )
+         |> assign(:pending_requisitions, list_pending_requisitions(scope))
+         |> assign(:bank_account_statuses, derive_statuses(accounts))
+         |> assign_subscription_preview_if_visible()
+         |> push_event("js-exec", %{
+           to: "#manual_bank_account_modal_company",
+           attr: "data-cancel"
+         })}
+
+      {:error, _} ->
+        LiveToast.send_toast(
+          :error,
+          gettext("An error occurred while changing the account name.")
+        )
+
+        {:noreply, socket}
+    end
+  end
+
   def handle_info(%Broadcast{topic: "credential:" <> _, payload: %Notification{resource: Credential}} = message, socket) do
     Connection.handle_info(message, socket, socket.assigns.ash_scope)
   end
@@ -1202,6 +1216,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
           name={@current_org.name}
           url={@current_org.avatar_blob && @current_org.avatar_blob.url}
           label={gettext("Change organization logo")}
+          class="rounded-md bg-white p-5"
         />
         <.settings_avatar
           :if={@settings_tab == :account}
@@ -1396,6 +1411,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
          socket
          |> assign(:settings_tab, tab)
          |> assign(:no_padding, if(flag_enabled?(:inbox, socket.assigns), do: nil, else: true))
+         |> assign(:main_class, main_class(tab, flag_enabled?(:inbox, socket.assigns)))
          |> assign(
            :page_title,
            if(flag_enabled?(:inbox, socket.assigns),
@@ -1406,6 +1422,10 @@ defmodule FirmowidWeb.Settings.Views.Index do
          |> assign_subscription_preview_if_visible()}
     end
   end
+
+  # The company pages of the new UI show white cards on the grey background of the company layer.
+  defp main_class(tab, true) when tab in [:organization, :ksef, :bank_accounts], do: nil
+  defp main_class(_tab, _inbox?), do: "bg-white"
 
   defp assign_subscription_preview_if_visible(%{assigns: %{settings_tab: :subscription}} = socket) do
     assign_subscription_preview(socket)

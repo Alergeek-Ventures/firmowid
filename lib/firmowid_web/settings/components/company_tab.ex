@@ -54,15 +54,14 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
         else: "flex flex-col gap-8"
       )
     ]}>
-      <div :if={@section in [:all, :organization, :ksef]} class="space-y-14">
+      <div :if={@section == :all} class="space-y-14">
         <.company_basic_info_section
-          :if={@section in [:all, :organization]}
           current_org={@current_org}
           company_form={@company_form}
           editing_basic_info={@editing_basic_info}
         />
 
-        <.company_section :if={@section in [:all, :ksef]} title={gettext("KSeF integration")}>
+        <.company_section title={gettext("KSeF integration")}>
           <.ksef_connection
             ksef_credential={@ksef_credential}
             ksef_auth_method={@ksef_auth_method}
@@ -75,8 +74,24 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
         </.company_section>
       </div>
 
+      <.company_details_form :if={@section == :organization} company_form={@company_form} />
+
+      <section :if={@section == :ksef} class={card_styles()}>
+        <.ksef_connection
+          ksef_credential={@ksef_credential}
+          ksef_auth_method={@ksef_auth_method}
+          ksef_auth_status={@ksef_auth_status}
+          ksef_failure={@ksef_failure}
+          uploads={@uploads}
+          allow_fetch?
+          fetching?={@ksef_fetching?}
+          details={:inline}
+        />
+      </section>
+
       <.bank_accounts_section
         :if={@section in [:all, :bank_accounts]}
+        standalone={@section == :bank_accounts}
         bank_accounts={@bank_accounts}
         bank_institutions={@bank_institutions}
         pending_requisitions={@pending_requisitions}
@@ -304,10 +319,130 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
     """
   end
 
+  attr :company_form, :map, required: true
+
+  # The standalone page edits the details in place; the combined settings page
+  # keeps the read-only view behind its edit button.
+  defp company_details_form(assigns) do
+    ~H"""
+    <.form
+      for={@company_form}
+      id="company-details-form"
+      phx-submit="save"
+      phx-change="validate_company_form"
+      class={card_styles()}
+    >
+      <div class="grid gap-4 sm:grid-cols-2">
+        <Helpers.settings_field
+          label={gettext("Name")}
+          for={@company_form[:name].id}
+          class="sm:col-span-2"
+        >
+          <.input field={@company_form[:name]} type="text" input_class="w-full" />
+        </Helpers.settings_field>
+        <Helpers.settings_field label="NIP" for={@company_form[:nip].id}>
+          <.input field={@company_form[:nip]} type="text" input_class="w-full" />
+        </Helpers.settings_field>
+        <Helpers.settings_field label={gettext("Industry")} for={@company_form[:industry].id}>
+          <.input
+            type="select"
+            field={@company_form[:industry]}
+            options={Industry.options()}
+            input_class="w-full"
+          />
+        </Helpers.settings_field>
+      </div>
+
+      <div class="grid gap-4 border-bs border-grey-200 pbs-5 sm:grid-cols-2">
+        <.switch
+          field={@company_form[:is_vat_payer]}
+          label={gettext("VAT payer")}
+          color="teal"
+          class="sm:col-span-2"
+        />
+        <%= if @company_form[:is_vat_payer].value not in [true, "true"] do %>
+          <Helpers.settings_field
+            label={gettext("VAT exemption")}
+            for={@company_form[:vat_exemption_type].id}
+          >
+            <.input
+              type="select"
+              field={@company_form[:vat_exemption_type]}
+              options={VatExemption.options()}
+              input_class="w-full"
+            />
+          </Helpers.settings_field>
+
+          <%= if to_string(@company_form[:vat_exemption_type].value) == "other" do %>
+            <Helpers.settings_field
+              label={gettext("Legal basis for the VAT exemption")}
+              for={@company_form[:vat_exemption_basis].id}
+            >
+              <.input
+                type="text"
+                field={@company_form[:vat_exemption_basis]}
+                required
+                input_class="w-full"
+              />
+            </Helpers.settings_field>
+          <% else %>
+            <input type="hidden" name={@company_form[:vat_exemption_basis].name} value="" />
+          <% end %>
+        <% else %>
+          <input type="hidden" name={@company_form[:vat_exemption_type].name} value="" />
+          <input type="hidden" name={@company_form[:vat_exemption_basis].name} value="" />
+        <% end %>
+      </div>
+
+      <div class="grid items-start gap-4 border-bs border-grey-200 pbs-5 sm:grid-cols-2">
+        <Helpers.settings_field label={gettext("Address")} for={@company_form[:address].id}>
+          <.input field={@company_form[:address]} type="textarea" input_class="w-full" />
+        </Helpers.settings_field>
+
+        <div class="flex flex-col gap-3">
+          <.switch
+            field={@company_form[:is_same_correspondence_address]}
+            label={gettext("The correspondence address is the same as the company address")}
+            color="teal"
+          />
+          <Helpers.settings_field
+            :if={
+              not Phoenix.HTML.Form.normalize_value(
+                "switch",
+                @company_form[:is_same_correspondence_address].value
+              )
+            }
+            label={gettext("Correspondence address")}
+            for={@company_form[:correspondence_address].id}
+          >
+            <.input
+              field={@company_form[:correspondence_address]}
+              type="textarea"
+              input_class="w-full"
+            />
+          </Helpers.settings_field>
+        </div>
+      </div>
+
+      <div class="flex justify-end">
+        <.button
+          type="submit"
+          variant="success"
+          size="small"
+          phx-disable-with={pgettext("settings", "Saving...")}
+        >
+          {gettext("Save changes")}
+        </.button>
+      </div>
+    </.form>
+    """
+  end
+
   attr :bank_accounts, :list, required: true
   attr :bank_institutions, :map, required: true
   attr :pending_requisitions, :list, required: true
   attr :bank_account_statuses, :map, required: true
+  attr :standalone, :boolean, default: false
   attr :class, :any, default: nil
 
   defp bank_accounts_section(assigns) do
@@ -315,8 +450,12 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
     <section class={["space-y-4", @class]}>
       <.pending_requisition_banner :if={Enum.any?(@pending_requisitions)} />
 
-      <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <h2 class="text-base leading-none font-semibold text-grey-900">
+      <div class={[
+        "flex flex-col gap-3 sm:flex-row sm:items-center",
+        if(@standalone, do: "sm:justify-end", else: "sm:justify-between")
+      ]}>
+        <%!-- The standalone page title already names the section. --%>
+        <h2 :if={!@standalone} class="text-base leading-none font-semibold text-grey-900">
           {gettext("Bank accounts")}
         </h2>
 
@@ -350,6 +489,7 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
       >
         <.bank_card
           :for={account <- @bank_accounts}
+          standalone={@standalone}
           account={account}
           bank_institutions={@bank_institutions}
           status={Map.get(@bank_account_statuses, account.id)}
@@ -532,6 +672,7 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
   attr :account, :map, required: true
   attr :bank_institutions, :map, required: true
   attr :status, :atom, default: nil
+  attr :standalone, :boolean, default: false
 
   defp bank_card(assigns) do
     assigns =
@@ -546,7 +687,10 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
     ~H"""
     <article
       id={"konto-bankowe-#{@account.id}"}
-      class="relative flex flex-col gap-4 rounded-lg border border-grey-200 bg-white p-4"
+      class={[
+        "relative flex flex-col gap-4 bg-white",
+        if(@standalone, do: "rounded-md p-5", else: "rounded-lg border border-grey-200 p-4")
+      ]}
     >
       <div class="flex items-center justify-start gap-4">
         <.bank_badge institution={@account} />
@@ -585,6 +729,7 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
 
             <div class="flex w-48 flex-col overflow-hidden rounded-lg border border-grey-200 bg-white py-1 text-sm font-medium text-grey-700 shadow-lg">
               <.button
+                :if={!@standalone}
                 type="button"
                 variant="unstyled"
                 phx-click={show_modal("rename_bank_account_#{@account.id}")}
@@ -629,8 +774,30 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
       </div>
 
       <div class="grid grid-cols-[max-content_1fr] items-center gap-x-6 gap-y-3">
-        <.bank_detail_row :if={!is_nil(@account.name)} label={gettext("Name")}>
+        <.bank_detail_row :if={!@standalone and !is_nil(@account.name)} label={gettext("Name")}>
           {present(@account.name)}
+        </.bank_detail_row>
+        <%!-- The standalone page renames in place and saves when the field loses focus or on Enter. --%>
+        <.bank_detail_row
+          :if={@standalone}
+          label={gettext("Name")}
+          for={"bank_account_name_#{@account.id}"}
+        >
+          <.form
+            for={%{}}
+            id={"bank_account_name_form_#{@account.id}"}
+            phx-change="rename_bank_account"
+            phx-submit="rename_bank_account"
+          >
+            <input type="hidden" name="account_id" value={@account.id} />
+            <.input
+              name="name"
+              id={"bank_account_name_#{@account.id}"}
+              value={@account.name}
+              phx-debounce="blur"
+              input_class="w-full"
+            />
+          </.form>
         </.bank_detail_row>
         <.bank_detail_row label={gettext("Bank")}>
           {present(@account.institution_name)}
@@ -652,8 +819,8 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
           <.button
             :if={@status in [:broken, :disconnected]}
             variant="outline"
-            size="big"
-            class="w-full"
+            size={if(@standalone, do: "small", else: "big")}
+            class={[if(!@standalone, do: "w-full")]}
             phx-click="reconnect_bank_account"
             phx-value-account_id={@account.id}
             aria-label={gettext("Reconnect account")}
@@ -665,7 +832,7 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
       </div>
     </article>
 
-    <.modal id={"rename_bank_account_#{@account.id}"}>
+    <.modal :if={!@standalone} id={"rename_bank_account_#{@account.id}"}>
       <.form for={%{}} phx-submit="rename_bank_account" id={"rename_form_#{@account.id}"}>
         <input type="hidden" name="account_id" value={@account.id} />
         <.input
@@ -800,11 +967,12 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
   end
 
   attr :label, :string, required: true
+  attr :for, :string, default: nil
   slot :inner_block, required: true
 
   defp bank_detail_row(assigns) do
     ~H"""
-    <label class="text-sm text-grey-700">{@label}</label>
+    <label for={@for} class="text-sm text-grey-700">{@label}</label>
     <div class="text-base/snug">
       {render_slot(@inner_block)}
     </div>
@@ -835,6 +1003,9 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
   defp invite_toggle_thumb_styles(false) do
     "absolute top-[3px] left-[3px] size-[18px] rounded-full bg-white transition"
   end
+
+  # The white card of the standalone settings pages, as in the inbox.
+  defp card_styles, do: "flex flex-col gap-5 rounded-md bg-white p-5"
 
   defp menu_item_styles do
     "hover:text-teal-800 hover:bg-teal-100 w-full justify-start rounded-none px-3 py-2 text-left text-sm transition cursor-pointer"

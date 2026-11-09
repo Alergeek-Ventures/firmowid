@@ -1909,6 +1909,7 @@ msgid "Changes in mandate insurance status require separate calculations for eac
 msgstr ""
 
 #: lib/firmowid_web/delegations/components/settlement_page.ex
+#: lib/firmowid_web/settings/views/index.ex
 #, elixir-autogen, elixir-format
 msgid "Changes saved"
 msgstr ""
@@ -8913,6 +8914,7 @@ msgstr ""
 #: lib/firmowid_web/delegations/views/delegation_form.ex
 #: lib/firmowid_web/management/views/counterparty_form.html.heex
 #: lib/firmowid_web/management/views/project_form.html.heex
+#: lib/firmowid_web/settings/components/company_tab.ex
 #, elixir-autogen, elixir-format
 msgid "Save changes"
 msgstr ""
