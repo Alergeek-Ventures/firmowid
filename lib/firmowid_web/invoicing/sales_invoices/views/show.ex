@@ -4,6 +4,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Show do
 
   alias Ash.Notifier.Notification
   alias Firmowid.Invoicing
+  alias Firmowid.Invoicing.FailureReporter
   alias Firmowid.Invoicing.InvoiceMatching
   alias Firmowid.Invoicing.SalesInvoice
   alias Firmowid.Invoicing.Services.SalesInvoiceSharing
@@ -156,8 +157,15 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Show do
          )
          |> push_navigate(to: Navigation.sales_invoice_summary_path(correction, socket.assigns.return_to))}
 
-      {:error, %Ash.Error.Invalid{errors: [%{message: message} = error | _rest]}}
+      {:error, %Ash.Error.Invalid{errors: [%{message: message} = error | _rest]} = invalid}
       when is_binary(message) ->
+        FailureReporter.report(
+          invalid,
+          :cancel,
+          socket.assigns.ash_scope.tenant,
+          socket.assigns.invoice.id
+        )
+
         {:noreply, put_flash(socket, :error, Inputs.translate_error({message, Map.get(error, :vars, [])}))}
 
       {:error, error} ->

@@ -5,6 +5,7 @@ defmodule Firmowid.Assistant.ToolPolicy do
   alias Firmowid.Core
   alias Firmowid.Core.User
   alias Firmowid.Invoicing
+  alias Firmowid.Invoicing.FailureReporter
   alias Firmowid.Scope
 
   @read_tools ~w(list_transactions list_sales_invoices list_cost_invoices get_ksef_connection_status
@@ -82,6 +83,8 @@ defmodule Firmowid.Assistant.ToolPolicy do
         :ask
 
       {:error, error} ->
+        FailureReporter.report_unexpected(error, :issue, scope.tenant)
+
         {:deny,
          "Not shown to the user and nothing was issued: the invoice data is invalid. " <>
            "Correct it and call issue_sales_invoice again. Errors: " <>

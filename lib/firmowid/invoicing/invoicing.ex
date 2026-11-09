@@ -8,10 +8,10 @@ defmodule Firmowid.Invoicing do
   alias Firmowid.Blobs
   alias Firmowid.Core
   alias Firmowid.Currencies.NbpApiClient
-  alias Firmowid.ErrorKind
   alias Firmowid.Finances
   alias Firmowid.Finances.Transaction
   alias Firmowid.Invoicing.CostInvoice
+  alias Firmowid.Invoicing.FailureReporter
   alias Firmowid.Invoicing.SalesInvoice
   alias Firmowid.Invoicing.Services.RecentMatchedEntries
   alias Firmowid.Ksef
@@ -792,13 +792,7 @@ defmodule Firmowid.Invoicing do
       end
     else
       {:error, reason} ->
-        require Logger
-
-        Logger.error("Failed to fetch KSeF XML for cost invoice",
-          invoice_id: invoice.id,
-          error_kind: ErrorKind.classify(reason)
-        )
-
+        FailureReporter.report(reason, :ksef_document, org_id, invoice.id)
         invoice
     end
   end

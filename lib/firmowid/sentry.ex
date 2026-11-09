@@ -31,6 +31,8 @@ defmodule Firmowid.Sentry do
     :action,
     :stage,
     :error_kind,
+    :error_fields,
+    :invoice_id,
     :oban_worker,
     :oban_queue,
     :oban_state,

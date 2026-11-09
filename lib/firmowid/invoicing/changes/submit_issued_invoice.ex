@@ -9,6 +9,7 @@ defmodule Firmowid.Invoicing.Changes.SubmitIssuedInvoice do
   use Gettext, backend: Firmowid.Gettext
 
   alias Ash.Error.Changes.InvalidAttribute
+  alias Firmowid.Invoicing.FailureReporter
   alias Firmowid.Ksef
   alias Firmowid.Scope
 
@@ -40,7 +41,10 @@ defmodule Firmowid.Invoicing.Changes.SubmitIssuedInvoice do
       {:error, :not_authenticated} ->
         {:error, not_connected_error()}
 
-      {:error, _reason} ->
+      {:error, reason} ->
+        # The callers only see the validation error below, so the cause is reported here.
+        FailureReporter.report(reason, :ksef_enqueue, scope.tenant, invoice.id)
+
         {:error,
          InvalidAttribute.exception(
            field: :invoice_number,
