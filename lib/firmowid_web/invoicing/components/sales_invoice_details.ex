@@ -13,6 +13,7 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
 
   alias Firmowid.Invoicing
   alias Firmowid.Invoicing.SalesInvoice
+  alias Firmowid.Invoicing.Services.CorrectionReason
   alias Firmowid.Ksef
   alias Firmowid.Ksef.SubmissionInfo
   alias FirmowidWeb.Invoicing.Components.InvoiceDetails
@@ -76,6 +77,7 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
           :amount,
           :sale_date,
           :due_date,
+          :invoice_type,
           :buyer_display_name_label,
           sales_invoice_items: [:net_value, :vat_value, :gross_value]
         ],
@@ -315,28 +317,45 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
                 class="absolute"
               >
                 <.modal id="cancel-invoice-modal" on_cancel={hide_modal("cancel-invoice-modal")}>
-                  <p>
-                    {@cancel_before}<span class="font-semibold">{@invoice.invoice_number}</span>{@cancel_after}
-                  </p>
-                  <div class="mt-6 flex justify-end gap-3">
-                    <.button
-                      type="button"
-                      variant="secondary"
-                      phx-click={hide_modal("cancel-invoice-modal")}
-                    >
-                      {gettext("Back")}
-                    </.button>
-                    <.button
-                      phx-click={
-                        JS.exec("data-cancel", to: "#cancel-invoice-modal")
-                        |> JS.push("cancel")
-                      }
-                      variant="destructive"
-                      phx-disable-with={gettext("Cancelling...")}
-                    >
-                      {gettext("Cancel invoice")}
-                    </.button>
-                  </div>
+                  <.form
+                    for={%{}}
+                    id="cancel-invoice-form"
+                    phx-submit={
+                      JS.exec("data-cancel", to: "#cancel-invoice-modal")
+                      |> JS.push("cancel")
+                    }
+                  >
+                    <p>
+                      {@cancel_before}<span class="font-semibold">{@invoice.invoice_number}</span>{@cancel_after}
+                    </p>
+                    <div class="mt-4">
+                      <.input
+                        id="cancel-invoice-correction-reason"
+                        name="correction_reason"
+                        type="textarea"
+                        input_class="min-h-20"
+                        label={gettext("Correction reason")}
+                        value={CorrectionReason.cancellation(@latest_invoice_snapshot.invoice_type)}
+                        maxlength="256"
+                      />
+                    </div>
+                    <div class="mt-6 flex justify-end gap-3">
+                      <.button
+                        type="button"
+                        variant="secondary"
+                        phx-click={hide_modal("cancel-invoice-modal")}
+                      >
+                        {gettext("Back")}
+                      </.button>
+                      <.button
+                        type="submit"
+                        variant="destructive"
+                        phx-disable-with={gettext("Cancelling...")}
+                      >
+                        {gettext("Cancel invoice")}
+                      </.button>
+                    </div>
+                  </.form>
                 </.modal>
               </div>
 

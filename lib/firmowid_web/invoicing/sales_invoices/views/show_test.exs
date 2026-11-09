@@ -348,8 +348,8 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.ShowTest do
       assert html =~ "Anuluj fakturę"
 
       view
-      |> element("#cancel-invoice-modal button", "Anuluj fakturę")
-      |> render_click()
+      |> form("#cancel-invoice-form", %{correction_reason: "Błędny nabywca"})
+      |> render_submit()
 
       cancelled_invoice =
         Invoicing.get_sales_invoice!(invoice.id,
@@ -358,6 +358,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.ShowTest do
         )
 
       correction = List.first(cancelled_invoice.corrections)
+      assert correction.correction_reason == "Błędny nabywca"
       assert correction.ksef_number == "KSEF-CANCELLATION"
       assert correction.ksef_invoice_checksum == "cancellation-hash"
       assert_redirect(view, Navigation.sales_invoice_summary_path(correction))

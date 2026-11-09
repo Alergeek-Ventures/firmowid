@@ -71,6 +71,17 @@ defmodule Firmowid.Invoicing.Services.CorrectionReason do
     |> truncate(@max_length)
   end
 
+  @doc """
+  Returns the default reason of a correction that cancels an invoice of the given type.
+
+  ## Examples
+
+      iex> cancellation(:foreign)
+      "Anulowanie faktury / Invoice cancellation"
+  """
+  @spec cancellation(:poland | :foreign) :: String.t()
+  def cancellation(invoice_type), do: format_reasons([:cancellation], invoice_type)
+
   @spec detect_changes(map(), map()) :: [change_type()]
   defp detect_changes(invoice, reference) do
     if cancellation?(invoice) do

@@ -143,8 +143,10 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Show do
   end
 
   @impl true
-  def handle_event("cancel", _params, socket) do
-    case SalesInvoice.cancel(socket.assigns.invoice.id, scope: socket.assigns.ash_scope) do
+  def handle_event("cancel", %{"correction_reason" => correction_reason}, socket) do
+    case SalesInvoice.cancel(socket.assigns.invoice.id, %{correction_reason: correction_reason},
+           scope: socket.assigns.ash_scope
+         ) do
       {:ok, correction} ->
         {:noreply,
          socket
