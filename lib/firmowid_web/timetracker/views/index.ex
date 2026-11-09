@@ -698,7 +698,9 @@ defmodule FirmowidWeb.Timetracker.Views.Index do
     gettext("WEEK %{start}-%{end}", start: week_start_str, end: week_end_str)
   end
 
-  def format_time(""), do: nil
+  # A form field that casts to its current value stays out of the changeset's
+  # changes, so the form returns the raw "HH:MM" param instead of a %Time{}.
+  def format_time(time) when is_binary(time), do: time
   def format_time(nil), do: nil
   def format_time(%Time{} = time), do: Calendar.strftime(time, "%H:%M")
 
