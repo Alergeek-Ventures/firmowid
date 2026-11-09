@@ -242,7 +242,8 @@ defmodule FirmowidWeb.Inbox.Views.Index do
             </.button>
           </section>
         </div>
-        <aside class="flex flex-col gap-4 lg:sticky lg:top-8">
+        <%!-- Starts level with the first card of the queue, below its tier heading (18px + 12px gap). --%>
+        <aside class={["flex flex-col gap-4 lg:sticky lg:top-8", @items != [] && "lg:mt-7.5"]}>
           <.session_panel :if={@layer == :me} session={@session} last_session={@last_session} />
           <.personal_month :if={@layer == :me} duration={@month_duration} />
           <.office_panel :if={@presence != []} presence={@presence} />
