@@ -62,16 +62,14 @@ defmodule Firmowid.Invoicing.Digests.EmailTest do
 
       assert email.subject == "Nowa faktura w Firmowidzie"
       assert email.html_body =~ "<!doctype html>"
-      assert email.html_body =~ "alt=\"Firmowid\""
-      assert email.html_body =~ "Pozdrawiamy,<br>Zespół Firmowid"
 
       bodies = [email.html_body, email.text_body]
 
       for body <- bodies do
         assert body =~ "Masz nową fakturę z KSeF"
         assert body =~ "Maksimumowy Sprzedawca"
-        assert body =~ "Firmowid znalazł 3 możliwe dopasowania transakcji"
-        assert body =~ "96% pewności"
+        assert body =~ "Możliwe przelewy"
+        assert body =~ "96%"
         assert body =~ "wczoraj"
         assert body =~ "Abonament workspace × 1"
 
@@ -179,18 +177,16 @@ defmodule Firmowid.Invoicing.Digests.EmailTest do
       assert email.html_body =~ "Gamma"
       refute email.html_body =~ "Delta"
 
-      assert email.html_body =~ "+ 1 faktura więcej czeka w Firmowidzie"
-      assert email.html_body =~ "Firmowid znalazł 2 możliwe dopasowania transakcji"
+      assert email.html_body =~ "Jeszcze 1 faktura czeka w Firmowidzie"
+      assert email.html_body =~ "Możliwy przelew: 2 dni temu (91%), +1 inny"
       assert email.html_body =~ "niedopasowane"
       assert email.html_body =~ "dopasowane"
-      assert email.html_body =~ "91% pewności"
-      assert email.html_body =~ "dzisiaj"
+      assert email.html_body =~ "Możliwy przelew: dzisiaj (94%)"
       assert email.html_body =~ "Abonament workspace × 1"
 
       assert email.text_body =~ "Masz 4 nowe faktury z KSeF"
-      assert email.text_body =~ "+ 1 faktura więcej czeka w Firmowidzie"
-      assert email.text_body =~ "Firmowid znalazł 1 możliwe dopasowanie transakcji"
-      assert email.text_body =~ "💳 dzisiaj — 94% pewności"
+      assert email.text_body =~ "Jeszcze 1 faktura czeka w Firmowidzie"
+      assert email.text_body =~ "Możliwy przelew:\n- dzisiaj, 94%"
       assert email.text_body =~ "dopasowane"
       refute email.text_body =~ "Delta"
 

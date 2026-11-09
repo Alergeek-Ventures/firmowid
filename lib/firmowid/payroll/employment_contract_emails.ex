@@ -85,20 +85,17 @@ defmodule Firmowid.Payroll.EmploymentContractEmails do
     }
 
     to_html(~H"""
-    <.email preheader={"Nowa umowa do podpisu · #{@signed_at}"}>
-      <.greeting>Nowa umowa do podpisu</.greeting>
-      <.paragraph>
-        Cześć {@user_name}, w Firmowidzie czeka na Ciebie nowa umowa do podpisu.
-      </.paragraph>
+    <.email preheader={"#{@contract_type}, od #{@starts_at}"} figure={:invoice}>
+      <:headline>Nowa umowa do podpisu</:headline>
+      <:lead>{@user_name}, pobierz umowę z profilu i prześlij podpisaną wersję.</:lead>
       <.detail_row label="Data podpisania" value={@signed_at} />
       <.detail_row label="Data rozpoczęcia" value={@starts_at} />
       <.detail_row label="Rodzaj umowy" value={@contract_type} />
       <.detail_row label="Stanowisko" value={@position} />
-      <.paragraph_spaced>
-        Otwórz profil, pobierz dokument i prześlij podpisaną wersję.
-      </.paragraph_spaced>
       <.button href={@url}>Otwórz profil w Firmowidzie</.button>
-      <.signature />
+      <:footer>
+        <.fallback_link href={@url} />
+      </:footer>
     </.email>
     """)
   end
@@ -128,18 +125,17 @@ defmodule Firmowid.Payroll.EmploymentContractEmails do
     }
 
     to_html(~H"""
-    <.email preheader={"Podpisana umowa · #{@employee_name}"}>
-      <.greeting>Podpisana umowa</.greeting>
-      <.paragraph>
-        {@employee_name} przesłał(a) podpisaną umowę. Dokument znajdziesz w profilu pracownika.
-      </.paragraph>
-      <.detail_row label="Pracownik" value={@employee_name} />
+    <.email preheader={"#{@contract_type}, od #{@starts_at}"} figure={:invoice}>
+      <:headline>Podpisana umowa: {@employee_name}</:headline>
+      <:lead>Dokument jest w profilu pracownika.</:lead>
       <.detail_row label="Data podpisania" value={@signed_at} />
       <.detail_row label="Data rozpoczęcia" value={@starts_at} />
       <.detail_row label="Rodzaj umowy" value={@contract_type} />
       <.detail_row label="Stanowisko" value={@position} />
       <.button href={@url}>Otwórz profil pracownika</.button>
-      <.signature />
+      <:footer>
+        <.fallback_link href={@url} />
+      </:footer>
     </.email>
     """)
   end

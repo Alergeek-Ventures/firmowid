@@ -24,7 +24,6 @@ defmodule Firmowid.Timetracker.LeaveRequestEmailsTest do
              LeaveRequestEmails.deliver_new_leave_request([admin], leave_request, nil, employee)
 
     assert email.html_body =~ "<!doctype html>"
-    assert email.html_body =~ "alt=\"Firmowid\""
     assert email.html_body =~ "Pilne &lt;sprawdź&gt;<br>druga linia"
     refute email.html_body =~ "&amp;lt;sprawdź&amp;gt;"
     assert email.html_body =~ "Otwórz wniosek w Firmowidzie"

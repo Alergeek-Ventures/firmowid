@@ -185,6 +185,16 @@ msgid_plural "%{count} urgent items"
 msgstr[0] ""
 msgstr[1] ""
 
+#: lib/firmowid/timetracker/actions/notify_admins_about_hours_record_change.ex
+#, elixir-autogen, elixir-format
+msgid "%{employee} asks to cancel the hours record for %{period}"
+msgstr ""
+
+#: lib/firmowid/timetracker/actions/notify_admins_about_hours_record_change.ex
+#, elixir-autogen, elixir-format
+msgid "%{employee} asks to correct the hours record for %{period}"
+msgstr ""
+
 #: lib/firmowid_web/analysis/views/dashboard.ex
 #, elixir-autogen, elixir-format
 msgid "%{from} – %{to}"
@@ -8408,6 +8418,7 @@ msgstr ""
 msgid "Real-time working hours monitoring"
 msgstr ""
 
+#: lib/firmowid/timetracker/actions/notify_admins_about_hours_record_change.ex
 #: lib/firmowid_web/hours_record/views/index.html.heex
 #, elixir-autogen, elixir-format
 msgid "Reason"
@@ -8582,6 +8593,11 @@ msgstr ""
 msgid "Repeat password"
 msgstr ""
 
+#: lib/firmowid/timetracker/actions/notify_admins_about_hours_record_change.ex
+#, elixir-autogen, elixir-format
+msgid "Replies to this email go to %{email}."
+msgstr ""
+
 #: lib/firmowid_web/hours_record/views/index.html.heex
 #, elixir-autogen, elixir-format
 msgid "Request correction or cancellation"
@@ -8732,6 +8748,11 @@ msgstr ""
 #: lib/firmowid_web/assistant/components/records.ex
 #, elixir-autogen, elixir-format
 msgid "Review the changes before confirming"
+msgstr ""
+
+#: lib/firmowid/timetracker/actions/notify_admins_about_hours_record_change.ex
+#, elixir-autogen, elixir-format
+msgid "Review the request"
 msgstr ""
 
 #: lib/firmowid_web/landing/views/privacy_policy.ex
@@ -12361,6 +12382,11 @@ msgstr ""
 #: lib/firmowid_web/infrastructure/user_auth.ex
 #, elixir-autogen, elixir-format
 msgid "You must log in."
+msgstr ""
+
+#: lib/firmowid/timetracker/actions/notify_admins_about_hours_record_change.ex
+#, elixir-autogen, elixir-format
+msgid "You receive this email as an organization administrator in Firmowid."
 msgstr ""
 
 #: lib/firmowid_web/invoicing/components/dashboard_tiles.ex

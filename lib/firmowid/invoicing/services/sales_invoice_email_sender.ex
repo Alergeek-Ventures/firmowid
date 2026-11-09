@@ -26,7 +26,10 @@ defmodule Firmowid.Invoicing.Services.SalesInvoiceEmailSender do
   def deliver(sales_invoice_id, delivery_type, %Scope{} = scope) do
     ash_opts = [scope: scope]
 
-    case SalesInvoice.by_id(sales_invoice_id, Keyword.put(ash_opts, :load, [:counterparty])) do
+    case SalesInvoice.by_id(
+           sales_invoice_id,
+           Keyword.put(ash_opts, :load, [:counterparty, :amount])
+         ) do
       {:ok, nil} ->
         {:cancel, :sales_invoice_not_found}
 
