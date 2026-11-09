@@ -2792,11 +2792,6 @@ msgstr ""
 msgid "Could not authenticate with KSeF. Check the certificate, key and password and try again."
 msgstr ""
 
-#: lib/firmowid_web/invoicing/sales_invoices/views/show.ex
-#, elixir-autogen, elixir-format
-msgid "Could not cancel the invoice."
-msgstr ""
-
 #: lib/firmowid_web/settings/views/index.ex
 #, elixir-autogen, elixir-format
 msgid "Could not change the Google account."

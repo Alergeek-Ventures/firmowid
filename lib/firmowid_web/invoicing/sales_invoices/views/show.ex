@@ -8,6 +8,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Show do
   alias Firmowid.Invoicing.SalesInvoice
   alias Firmowid.Invoicing.Services.SalesInvoiceSharing
   alias Firmowid.Ksef
+  alias FirmowidUI.Components.Inputs
   alias FirmowidWeb.Core.Endpoint
   alias FirmowidWeb.Invoicing.Utilities.Navigation
   alias Phoenix.Socket.Broadcast
@@ -153,8 +154,12 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Show do
          )
          |> push_navigate(to: Navigation.sales_invoice_summary_path(correction, socket.assigns.return_to))}
 
-      {:error, _error} ->
-        {:noreply, put_flash(socket, :error, gettext("Could not cancel the invoice."))}
+      {:error, %Ash.Error.Invalid{errors: [%{message: message} = error | _rest]}}
+      when is_binary(message) ->
+        {:noreply, put_flash(socket, :error, Inputs.translate_error({message, Map.get(error, :vars, [])}))}
+
+      {:error, error} ->
+        raise error
     end
   end
 
