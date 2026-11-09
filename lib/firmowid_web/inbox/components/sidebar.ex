@@ -114,7 +114,7 @@ defmodule FirmowidWeb.Inbox.Components.Sidebar do
       />
       <nav class="flex flex-col gap-0.5" aria-label={layer_label(@layer)}>
         <%!-- Keeps its height when collapsed, so the links below never move. --%>
-        <h2 class="overflow-clip px-2 pb-1 text-caps-sm tracking-wide whitespace-nowrap text-white/40 uppercase">
+        <h2 class="overflow-clip px-1.5 pb-1 text-caps-sm/4 tracking-wide whitespace-nowrap text-white/40 uppercase">
           <span class={label_styles()}>{layer_label(@layer)}</span>
         </h2>
         <.sidebar_link
@@ -131,7 +131,7 @@ defmodule FirmowidWeb.Inbox.Components.Sidebar do
           class={link_styles(false)}
           title={gettext("Feedback")}
         >
-          <Lucideicons.message_square_text class="size-4 shrink-0" aria-hidden="true" />
+          <Lucideicons.message_square_text class="size-5 shrink-0" aria-hidden="true" />
           <span class={label_styles()}>{gettext("Feedback")}</span>
         </.button>
         <.button
@@ -142,7 +142,7 @@ defmodule FirmowidWeb.Inbox.Components.Sidebar do
           class={link_styles(false)}
           title={@current_user.email}
         >
-          <Lucideicons.circle_user class="size-4 shrink-0" aria-hidden="true" />
+          <Lucideicons.circle_user class="size-5 shrink-0" aria-hidden="true" />
           <span class={label_styles()}>{@current_user.email}</span>
         </.button>
         <div
@@ -208,15 +208,18 @@ defmodule FirmowidWeb.Inbox.Components.Sidebar do
       title={@destination.label}
       class={link_styles(@active)}
     >
-      <Lucideicons.render! name={@destination.icon} class="size-4 shrink-0" aria-hidden="true" />
+      <Lucideicons.render! name={@destination.icon} class="size-5 shrink-0" aria-hidden="true" />
       <span class={label_styles()}>{@destination.label}</span>
     </.link>
     """
   end
 
+  # Lucide draws on a 24 px grid: at 16 px its strokes shrink to 1.33 px and blur
+  # on 1x screens, so icons are 20 px and rows 32 px tall, keeping every icon on
+  # whole pixels. The 6 px inset centers them in the collapsed 56 px sidebar.
   defp link_styles(active?) do
     [
-      "flex w-full items-center gap-3 rounded-md px-2 py-1.5 text-left transition-colors hover:bg-grey-700/50",
+      "flex w-full items-center gap-3 rounded-md px-1.5 py-1.5 text-left leading-5 transition-colors hover:bg-grey-700/50",
       if(active?, do: "bg-grey-700/70 text-white", else: "text-white/70")
     ]
   end
