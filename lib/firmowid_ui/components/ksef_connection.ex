@@ -384,14 +384,23 @@ defmodule FirmowidUI.Components.KsefConnection do
   attr :layout, :atom, required: true
   slot :inner_block, required: true
 
+  # The inline layout keeps a 10rem label column and moves the value under its
+  # label once it would get narrower than half the card, as on phones.
+  defp detail_row(%{layout: :inline} = assigns) do
+    ~H"""
+    <div class={["flex flex-wrap items-baseline gap-x-5", @class]}>
+      <div class="grow basis-40 text-sm/snug text-grey-700">{@label}</div>
+      <div class="grow-999 basis-0 text-base/snug wrap-break-word text-grey-900 min-inline-1/2">
+        {render_slot(@inner_block)}
+      </div>
+    </div>
+    """
+  end
+
   defp detail_row(assigns) do
     ~H"""
-    <div class={[
-      "grid items-baseline gap-x-5",
-      if(@layout == :inline, do: "grid-cols-[10rem_minmax(0,1fr)]", else: "grid-cols-2"),
-      @class
-    ]}>
-      <div class={["text-sm/snug text-grey-700", @layout == :split && "text-end"]}>{@label}</div>
+    <div class={["grid grid-cols-2 items-baseline gap-x-5", @class]}>
+      <div class="text-end text-sm/snug text-grey-700">{@label}</div>
       <div class="min-w-0 text-base/snug wrap-break-word text-grey-900">
         {render_slot(@inner_block)}
       </div>
