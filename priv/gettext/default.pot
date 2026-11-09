@@ -2890,11 +2890,6 @@ msgstr ""
 msgid "Could not create the account. Check the form and try again."
 msgstr ""
 
-#: lib/firmowid_web/management/views/counterparty_suggestions.ex
-#, elixir-autogen, elixir-format
-msgid "Could not create the counterparty. Add it manually to complete the data."
-msgstr ""
-
 #: lib/firmowid_web/delegations/views/delegation.ex
 #, elixir-autogen, elixir-format
 msgid "Could not delete the document."
@@ -3000,11 +2995,6 @@ msgstr ""
 #: lib/firmowid_web/management/views/counterparty.ex
 #, elixir-autogen, elixir-format
 msgid "Could not link the invoice to the counterparty"
-msgstr ""
-
-#: lib/firmowid_web/management/views/counterparty_suggestions.ex
-#, elixir-autogen, elixir-format
-msgid "Could not link the invoices to the counterparty"
 msgstr ""
 
 #: lib/firmowid_web/invoicing/cost_invoices/views/show.ex

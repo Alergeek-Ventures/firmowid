@@ -13,7 +13,9 @@ defmodule FirmowidWeb.Management.Views.CounterpartySuggestions do
   import FirmowidWeb.Infrastructure.Flags, only: [flag_enabled?: 2]
   import Phoenix.Component, except: [link: 1]
 
+  alias Ash.Error.Invalid
   alias Firmowid.Invoicing.Services.CounterpartyDetection
+  alias FirmowidUI.Components.Inputs
   alias FirmowidWeb.Management.Utilities.CounterpartyHelpers
   alias FirmowidWeb.Management.Utilities.Navigation
 
@@ -101,6 +103,13 @@ defmodule FirmowidWeb.Management.Views.CounterpartySuggestions do
         end
       end)
 
+    # Validation failures stay on the list for review. Anything else is a bug and raises
+    # here, after the other groups were saved; the remount then lists only what is left.
+    Enum.each(results, fn
+      {_key, {:error, error}} -> validation_message!(error)
+      _done -> :ok
+    end)
+
     done = for {key, result} <- results, result == :ok or match?({:ok, _}, result), do: key
     failed = length(results) - length(done)
 
@@ -130,8 +139,8 @@ defmodule FirmowidWeb.Management.Views.CounterpartySuggestions do
            gettext("Invoices linked to %{name}", name: group.match.counterparty.display_label)
          )}
 
-      {:error, _error} ->
-        {:noreply, put_flash(socket, :error, gettext("Could not link the invoices to the counterparty"))}
+      {:error, error} ->
+        {:noreply, put_flash(socket, :error, validation_message!(error))}
     end
   end
 
@@ -146,15 +155,21 @@ defmodule FirmowidWeb.Management.Views.CounterpartySuggestions do
            gettext("Counterparty %{name} created", name: counterparty.display_name)
          )}
 
-      {:error, _error} ->
-        {:noreply,
-         put_flash(
-           socket,
-           :error,
-           gettext("Could not create the counterparty. Add it manually to complete the data.")
-         )}
+      {:error, error} ->
+        {:noreply, put_flash(socket, :error, validation_message!(error))}
     end
   end
+
+  # The proposal goes through the same validations as the counterparty form, so a
+  # failure the user can fix is shown as such; any other error is unexpected and raises.
+  defp validation_message!(%Invalid{errors: [%{message: message} = error | _rest]}) when is_binary(message) do
+    Inputs.translate_error({message, Map.get(error, :vars, [])})
+  end
+
+  # Some validation errors, such as a missing required country, carry no message of their own.
+  defp validation_message!(%Invalid{errors: [error | _rest]}), do: Exception.message(error)
+
+  defp validation_message!(error), do: raise(Ash.Error.to_error_class(error))
 
   defp load_groups(socket) do
     scope = socket.assigns.ash_scope

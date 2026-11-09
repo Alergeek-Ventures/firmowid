@@ -14,6 +14,7 @@ defmodule Firmowid.Invoicing.Services.CounterpartyDetection do
   alias Firmowid.Core.Services.VatApiClient
   alias Firmowid.Invoicing
   alias Firmowid.Invoicing.Counterparty
+  alias Firmowid.Invoicing.CountryCodes
   alias Firmowid.Invoicing.IdentifierNormalization
   alias Firmowid.Invoicing.SalesInvoice
   alias Firmowid.Invoicing.Services.CounterpartyProposalCleanup
@@ -218,8 +219,24 @@ defmodule Firmowid.Invoicing.Services.CounterpartyDetection do
     })
     |> Map.merge(cleaned_fields(group))
     |> Map.merge(Map.get(group, :overrides, %{}))
+    |> without_eu_vat_prefix()
     |> Map.reject(fn {_field, value} -> value in [nil, ""] end)
   end
+
+  # A counterparty keeps its country apart, so its EU VAT number is stored without
+  # the prefix invoices often carry (SE559441909401 fails the 12-character rule).
+  # Polish NIPs may keep PL, which the NIP validation accepts.
+  defp without_eu_vat_prefix(%{tax_id: tax_id, country: country} = attributes)
+       when is_binary(tax_id) and country != "PL" do
+    if country in CountryCodes.eu_countries_with_aliases() do
+      prefix = if country == "GR", do: "EL", else: country
+      %{attributes | tax_id: String.replace(tax_id, ~r/^\s*#{prefix}[\s-]*/i, "")}
+    else
+      attributes
+    end
+  end
+
+  defp without_eu_vat_prefix(attributes), do: attributes
 
   defp cleaned_fields(%{cleaned: nil}), do: %{}
 
