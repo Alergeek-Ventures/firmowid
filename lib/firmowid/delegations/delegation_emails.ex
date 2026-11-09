@@ -115,12 +115,9 @@ defmodule Firmowid.Delegations.DelegationEmails do
 
   defp html(assigns) do
     ~H"""
-    <.email preheader="Nowe zgłoszenie delegacji">
-      <.greeting>Nowe zgłoszenie delegacji</.greeting>
-      <.paragraph>
-        {@name} zgłosił(a) nową delegację. Szczegóły znajdziesz poniżej. Aby zatwierdzić wniosek, przejdź do Firmowida.
-      </.paragraph>
-      <.detail_row label="Pracownik" value={@name} />
+    <.email preheader={"#{@name}, #{date_range(@delegation)}"} figure={:suitcase}>
+      <:headline>Nowe zgłoszenie delegacji</:headline>
+      <:lead>{@name}</:lead>
       <.detail_row label="Data wyjazdu" value={date_range(@delegation)} />
       <.detail_row label="Cel wyjazdu" value={@delegation.purpose} />
       <.detail_row
@@ -128,7 +125,9 @@ defmodule Firmowid.Delegations.DelegationEmails do
         value={Money.to_string!(@delegation.expected_cost)}
       />
       <.button href={@url}>Otwórz wniosek w Firmowidzie</.button>
-      <.signature />
+      <:footer>
+        <.fallback_link href={@url} />
+      </:footer>
     </.email>
     """
   end
@@ -149,18 +148,15 @@ defmodule Firmowid.Delegations.DelegationEmails do
 
   defp approval_html(assigns) do
     ~H"""
-    <.email preheader="Delegacja została zatwierdzona">
-      <.greeting>Delegacja została zatwierdzona</.greeting>
-      <.paragraph>
-        {@name}, Twoja delegacja została zaakceptowana.
-      </.paragraph>
+    <.email preheader={date_range(@delegation)} figure={:suitcase}>
+      <:headline>Delegacja została zatwierdzona</:headline>
+      <:lead>{@name}, możesz jechać.</:lead>
       <.detail_row label="Data wyjazdu" value={date_range(@delegation)} />
       <.detail_row label="Cel wyjazdu" value={@delegation.purpose} />
       <.detail_row
         label="Przewidywana kwota"
         value={Money.to_string!(@delegation.expected_cost)}
       />
-      <.signature />
     </.email>
     """
   end
@@ -177,18 +173,17 @@ defmodule Firmowid.Delegations.DelegationEmails do
 
   defp submitted_settlement_html(assigns) do
     ~H"""
-    <.email preheader="Rozliczenie delegacji do rozpatrzenia">
-      <.greeting>Rozliczenie delegacji do rozpatrzenia</.greeting>
-      <.paragraph>
-        {@name} przesłał(a) podpisane rozliczenie delegacji. Dokument oraz dowody kosztów są dostępne w Firmowidzie.
-      </.paragraph>
-      <.detail_row label="Pracownik" value={@name} />
+    <.email preheader={"#{@name}, #{date_range(@delegation)}"} figure={:suitcase}>
+      <:headline>Rozliczenie delegacji do rozpatrzenia</:headline>
+      <:lead>{@name}. Podpisane rozliczenie i dowody kosztów są w Firmowidzie.</:lead>
       <.detail_row label="Termin" value={date_range(@delegation)} />
       <.detail_row label="Cel" value={@delegation.purpose} />
       <.detail_row label="Łączny koszt" value={Money.to_string!(@total)} />
       <.detail_row label={@balance_label} value={Money.to_string!(@balance)} />
       <.button href={@url}>Otwórz rozliczenie</.button>
-      <.signature />
+      <:footer>
+        <.fallback_link href={@url} />
+      </:footer>
     </.email>
     """
   end
@@ -212,14 +207,14 @@ defmodule Firmowid.Delegations.DelegationEmails do
 
   defp reviewed_settlement_html(assigns) do
     ~H"""
-    <.email preheader={@subject}>
-      <.greeting>{@subject}</.greeting>
-      <.paragraph :if={@status == :complete}>
+    <.email preheader={date_range(@delegation)} figure={:suitcase}>
+      <:headline>{@subject}</:headline>
+      <:lead :if={@status == :complete}>
         {@name}, pracodawca zatwierdził Twoje rozliczenie delegacji.
-      </.paragraph>
-      <.paragraph :if={@status == :in_progress}>
+      </:lead>
+      <:lead :if={@status == :in_progress}>
         {@name}, pracodawca zwrócił Twoje rozliczenie delegacji do poprawy.
-      </.paragraph>
+      </:lead>
       <.detail_row label="Termin" value={date_range(@delegation)} />
       <.detail_row label="Cel" value={@delegation.purpose} />
       <.detail_row
@@ -233,7 +228,9 @@ defmodule Firmowid.Delegations.DelegationEmails do
         value={@reason}
       />
       <.button href={@url}>Otwórz rozliczenie</.button>
-      <.signature />
+      <:footer>
+        <.fallback_link href={@url} />
+      </:footer>
     </.email>
     """
   end

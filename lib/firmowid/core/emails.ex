@@ -29,18 +29,17 @@ defmodule Firmowid.Core.Emails do
     html =
       to_html(~H"""
       <.email preheader="Potwierdź adres email">
-        <.greeting>Potwierdź adres email</.greeting>
-        <.paragraph>
-          Cześć {@email}, potwierdź swój adres email klikając poniższy przycisk.
-        </.paragraph>
+        <:headline>Potwierdź adres email</:headline>
+        <:lead>{@email}</:lead>
         <.button href={@url}>Potwierdź adres email</.button>
-        <.fallback_link href={@url} />
-        <.note>
-          {if @email_change?,
-            do: "Jeśli nie prosiłeś o zmianę adresu email, zignoruj tę wiadomość.",
-            else: "Jeśli nie zakładałeś konta, zignoruj tę wiadomość."}
-        </.note>
-        <.signature />
+        <:footer>
+          <.note>
+            {if @email_change?,
+              do: "Jeśli nie prosiłeś o zmianę adresu email, zignoruj tę wiadomość.",
+              else: "Jeśli nie zakładałeś konta, zignoruj tę wiadomość."}
+          </.note>
+          <.fallback_link href={@url} />
+        </:footer>
       </.email>
       """)
 
@@ -84,14 +83,13 @@ defmodule Firmowid.Core.Emails do
     html =
       to_html(~H"""
       <.email preheader="Instrukcje resetowania hasła">
-        <.greeting>Resetowanie hasła</.greeting>
-        <.paragraph>
-          Cześć {@email}, otrzymaliśmy prośbę o resetowanie hasła. Kliknij poniższy przycisk, aby ustawić nowe hasło.
-        </.paragraph>
-        <.button href={@url}>Zresetuj hasło</.button>
-        <.fallback_link href={@url} />
-        <.note>Jeśli nie prosiłeś o tę zmianę, zignoruj tę wiadomość.</.note>
-        <.signature />
+        <:headline>Resetowanie hasła</:headline>
+        <:lead>Ktoś poprosił o nowe hasło do konta {@email}.</:lead>
+        <.button href={@url}>Ustaw nowe hasło</.button>
+        <:footer>
+          <.note>Jeśli nie prosiłeś o tę zmianę, zignoruj tę wiadomość.</.note>
+          <.fallback_link href={@url} />
+        </:footer>
       </.email>
       """)
 

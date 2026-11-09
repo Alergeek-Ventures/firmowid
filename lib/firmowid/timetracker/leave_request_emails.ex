@@ -67,20 +67,16 @@ defmodule Firmowid.Timetracker.LeaveRequestEmails do
     }
 
     to_html(~H"""
-    <.email preheader={"Nowy wniosek o #{@category_label}: #{@employee_name}"}>
-      <.greeting>Nowy wniosek o {@category_label}</.greeting>
-      <.paragraph>
-        {@employee_name} złożył(a) nowy wniosek. Szczegóły poniżej - decyzję podejmiesz w Firmowidzie.
-      </.paragraph>
-      <.detail_row label="Pracownik" value={@employee_name} />
-      <.detail_row label="Kategoria" value={@category_label} />
+    <.email preheader={"#{@employee_name}, #{@starts_on} – #{@ends_on}"} figure={:hourglass}>
+      <:headline>Nowy wniosek: {@category_label}</:headline>
+      <:lead>{@employee_name}</:lead>
       <.detail_row label="Powód" value={@reason_label} />
       <.detail_row label="Okres" value={"#{@starts_on} – #{@ends_on}"} />
-      <.note :if={@note != ""}>
-        {Phoenix.HTML.raw(@note)}
-      </.note>
+      <.quotation :if={@note != ""} label="Treść">{Phoenix.HTML.raw(@note)}</.quotation>
       <.button href={@url}>Otwórz wniosek w Firmowidzie</.button>
-      <.signature />
+      <:footer>
+        <.fallback_link href={@url} />
+      </:footer>
     </.email>
     """)
   end
