@@ -184,14 +184,6 @@ defmodule FirmowidWeb.Inbox.Utilities.Navigation do
         roles: [:admin]
       },
       %{
-        id: :roles,
-        layer: :company,
-        label: pgettext("sidebar", "Roles and invitations"),
-        icon: "user-plus",
-        path: SettingsNavigation.canonical_path(:roles),
-        roles: [:admin]
-      },
-      %{
         id: :subscription,
         layer: :company,
         label: SettingsNavigation.page_title(:subscription),

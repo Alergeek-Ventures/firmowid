@@ -628,6 +628,7 @@ msgstr ""
 msgid "Active employment contract"
 msgstr ""
 
+#: lib/firmowid_web/management/views/employees.html.heex
 #: lib/firmowid_web/settings/components/company_tab.ex
 #, elixir-autogen, elixir-format
 msgid "Active invitations"
@@ -1554,7 +1555,7 @@ msgstr ""
 msgid "Banking and payments"
 msgstr ""
 
-#: lib/firmowid_web/settings/components/company_tab.ex
+#: lib/firmowid_web/management/components/roles.ex
 #, elixir-autogen, elixir-format
 msgid "Basic access to the organization, including the Time Tracker (working time tracking). The ability to submit leave requests and upload documents."
 msgstr ""
@@ -1756,6 +1757,7 @@ msgstr ""
 #: lib/firmowid_web/invoicing/components/sales_invoice_details.ex
 #: lib/firmowid_web/invoicing/sales_invoices/views/creator_counterparty.html.heex
 #: lib/firmowid_web/invoicing/sales_invoices/views/edit_form.html.heex
+#: lib/firmowid_web/management/components/roles.ex
 #: lib/firmowid_web/management/views/counterparty_form.html.heex
 #: lib/firmowid_web/management/views/project.html.heex
 #: lib/firmowid_web/management/views/project_form.html.heex
@@ -1880,9 +1882,15 @@ msgstr ""
 msgid "Change requested"
 msgstr ""
 
+#: lib/firmowid_web/management/components/roles.ex
 #: lib/firmowid_web/settings/components/company_tab.ex
 #, elixir-autogen, elixir-format
 msgid "Change role"
+msgstr ""
+
+#: lib/firmowid_web/management/views/employees.html.heex
+#, elixir-autogen, elixir-format
+msgid "Change role of %{name}"
 msgstr ""
 
 #: lib/firmowid_web/invoicing/sales_invoices/views/creator_counterparty.html.heex
@@ -1910,7 +1918,7 @@ msgstr ""
 msgid "Changes to existing sessions:"
 msgstr ""
 
-#: lib/firmowid_web/settings/components/company_tab.ex
+#: lib/firmowid_web/management/components/roles.ex
 #, elixir-autogen, elixir-format
 msgid "Changing the role"
 msgstr ""
@@ -2044,7 +2052,7 @@ msgstr ""
 msgid "Choose a matching scenario"
 msgstr ""
 
-#: lib/firmowid_web/settings/components/company_tab.ex
+#: lib/firmowid_web/management/components/roles.ex
 #, elixir-autogen, elixir-format
 msgid "Choose a role, then generate a code. An employee who enters it when creating an account will automatically join your organization."
 msgstr ""
@@ -2849,6 +2857,7 @@ msgstr ""
 msgid "Could not change the billing month."
 msgstr ""
 
+#: lib/firmowid_web/management/views/employees.ex
 #: lib/firmowid_web/settings/views/index.ex
 #, elixir-autogen, elixir-format
 msgid "Could not change the user's role."
@@ -3529,7 +3538,7 @@ msgstr ""
 msgid "Delete"
 msgstr ""
 
-#: lib/firmowid_web/settings/components/company_tab.ex
+#: lib/firmowid_web/management/components/roles.ex
 #, elixir-autogen, elixir-format
 msgid "Delete invitation"
 msgstr ""
@@ -4957,7 +4966,7 @@ msgstr ""
 msgid "Frozen %{date}"
 msgstr ""
 
-#: lib/firmowid_web/settings/components/company_tab.ex
+#: lib/firmowid_web/management/components/roles.ex
 #, elixir-autogen, elixir-format
 msgid "Full access to the \"Management\" tab, including managing employees, counterparties and projects. This role also gives full access to invoices and to uploading invoices from outside KSeF."
 msgstr ""
@@ -4972,7 +4981,7 @@ msgstr ""
 msgid "Full date"
 msgstr ""
 
-#: lib/firmowid_web/settings/components/company_tab.ex
+#: lib/firmowid_web/management/components/roles.ex
 #, elixir-autogen, elixir-format
 msgid "Full invoicing access (viewing, adding and editing), except for adding invoices from outside KSeF."
 msgstr ""
@@ -5020,7 +5029,7 @@ msgstr ""
 msgid "Generate a token"
 msgstr ""
 
-#: lib/firmowid_web/settings/components/company_tab.ex
+#: lib/firmowid_web/management/components/roles.ex
 #, elixir-autogen, elixir-format
 msgid "Generate code"
 msgstr ""
@@ -5040,7 +5049,7 @@ msgstr ""
 msgid "Generate the order to be able to sign it."
 msgstr ""
 
-#: lib/firmowid_web/settings/components/company_tab.ex
+#: lib/firmowid_web/management/components/roles.ex
 #, elixir-autogen, elixir-format
 msgid "Generated:"
 msgstr ""
@@ -5594,6 +5603,7 @@ msgstr ""
 msgid "Invalid plan."
 msgstr ""
 
+#: lib/firmowid_web/management/views/employees.ex
 #: lib/firmowid_web/settings/views/index.ex
 #, elixir-autogen, elixir-format
 msgid "Invalid role."
@@ -5616,7 +5626,7 @@ msgctxt "page title"
 msgid "Invitations to your organization"
 msgstr ""
 
-#: lib/firmowid_web/settings/components/company_tab.ex
+#: lib/firmowid_web/management/components/roles.ex
 #, elixir-autogen, elixir-format
 msgid "Invite a new employee"
 msgstr ""
@@ -5826,7 +5836,7 @@ msgctxt "main navigation"
 msgid "Invoicing"
 msgstr ""
 
-#: lib/firmowid_web/settings/components/company_tab.ex
+#: lib/firmowid_web/management/components/roles.ex
 #, elixir-autogen, elixir-format
 msgid "Invoicing access in view-only mode, without the ability to add or edit."
 msgstr ""
@@ -8758,11 +8768,9 @@ msgstr ""
 msgid "Right to restriction of processing (Article 18 GDPR)"
 msgstr ""
 
-#: lib/firmowid_web/inbox/utilities/navigation.ex
-#: lib/firmowid_web/settings/utilities/navigation.ex
+#: lib/firmowid_web/management/views/employees.html.heex
 #, elixir-autogen, elixir-format
-msgctxt "sidebar"
-msgid "Roles and invitations"
+msgid "Role"
 msgstr ""
 
 #: lib/firmowid_web/delegations/components/settlement/trips.ex
@@ -10410,16 +10418,19 @@ msgstr ""
 msgid "The hourly rate changed during this month. Add a document confirming the gross pay."
 msgstr ""
 
+#: lib/firmowid_web/management/views/employees.ex
 #: lib/firmowid_web/settings/views/index.ex
 #, elixir-autogen, elixir-format
 msgid "The invitation code has been copied to the clipboard."
 msgstr ""
 
+#: lib/firmowid_web/management/views/employees.ex
 #: lib/firmowid_web/settings/views/index.ex
 #, elixir-autogen, elixir-format
 msgid "The invitation code has been generated and copied to the clipboard."
 msgstr ""
 
+#: lib/firmowid_web/management/views/employees.ex
 #: lib/firmowid_web/settings/views/index.ex
 #, elixir-autogen, elixir-format
 msgid "The invitation has been deleted."
@@ -10771,11 +10782,13 @@ msgstr ""
 msgid "The user has been archived."
 msgstr ""
 
+#: lib/firmowid_web/management/views/employees.ex
 #: lib/firmowid_web/settings/views/index.ex
 #, elixir-autogen, elixir-format
 msgid "The user was not found in the organization."
 msgstr ""
 
+#: lib/firmowid_web/management/views/employees.ex
 #: lib/firmowid_web/settings/views/index.ex
 #, elixir-autogen, elixir-format
 msgid "The user's role has been changed."
@@ -11508,6 +11521,7 @@ msgstr ""
 msgid "Unknown operation"
 msgstr ""
 
+#: lib/firmowid_web/management/views/employees.ex
 #: lib/firmowid_web/settings/views/index.ex
 #, elixir-autogen, elixir-format
 msgid "Unknown user role."
@@ -12188,7 +12202,7 @@ msgstr ""
 msgid "You already belong to this organization."
 msgstr ""
 
-#: lib/firmowid_web/settings/components/company_tab.ex
+#: lib/firmowid_web/management/components/roles.ex
 #, elixir-autogen, elixir-format
 msgid "You are changing the role of user %{user}. Their current role is:"
 msgstr ""
@@ -12528,7 +12542,7 @@ msgctxt "member role"
 msgid "admin"
 msgstr ""
 
-#: lib/firmowid_web/settings/components/company_tab.ex
+#: lib/firmowid_web/management/components/roles.ex
 #, elixir-autogen, elixir-format
 msgid "administrator"
 msgstr ""

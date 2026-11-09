@@ -48,4 +48,15 @@ defmodule Firmowid.Core.UserRole do
   """
   @spec param(t()) :: String.t()
   def param(role) when role in @roles, do: Atom.to_string(role)
+
+  @doc """
+  Parses a role from its form/param string.
+  """
+  @spec from_param(term()) :: {:ok, t()} | {:error, :unknown_role}
+  def from_param(param) do
+    case Enum.find(@roles, &(param(&1) == param)) do
+      nil -> {:error, :unknown_role}
+      role -> {:ok, role}
+    end
+  end
 end
