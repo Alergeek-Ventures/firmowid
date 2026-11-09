@@ -19,6 +19,7 @@ defmodule Firmowid.Ksef.Workers.SessionWorker do
 
   alias Firmowid.Core
   alias Firmowid.ErrorKind
+  alias Firmowid.Invoicing.FailureReporter
   alias Firmowid.Ksef
   alias Firmowid.Ksef.Credential
   alias Firmowid.Ksef.Services.ApiClient
@@ -120,10 +121,17 @@ defmodule Firmowid.Ksef.Workers.SessionWorker do
          {:ok, _job} <- schedule_reauthentication(refresh_token, organization_id),
          {:ok, _credential} <- Credential.mark_working(credential, scope: scope) do
       if status == :authenticating do
-        Ksef.fetch_invoices(DateTime.shift(DateTime.utc_now(), day: -30), scope)
+        fetch_first_invoices(scope)
       end
 
       :ok
+    end
+  end
+
+  defp fetch_first_invoices(scope) do
+    case Ksef.fetch_invoices(DateTime.shift(DateTime.utc_now(), day: -30), scope) do
+      :ok -> :ok
+      {:error, reason} -> FailureReporter.report(reason, :ksef_fetch, scope.tenant)
     end
   end
 

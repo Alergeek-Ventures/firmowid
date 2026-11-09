@@ -10,6 +10,7 @@ defmodule Firmowid.Ksef.Workers.FetchDispatcher do
     queue: :ksef_fetch,
     max_attempts: 1
 
+  alias Firmowid.Invoicing.FailureReporter
   alias Firmowid.Ksef
   alias Firmowid.Ksef.Credential
   alias Firmowid.Scope
@@ -35,7 +36,10 @@ defmodule Firmowid.Ksef.Workers.FetchDispatcher do
       actor = %SystemActor{org_id: org_id, role: :ksef_session}
       org_scope = %Scope{actor: actor, tenant: org_id}
 
-      Ksef.fetch_new_invoices(org_scope)
+      case Ksef.fetch_new_invoices(org_scope) do
+        :ok -> :ok
+        {:error, reason} -> FailureReporter.report(reason, :ksef_fetch, org_id)
+      end
     end)
 
     :ok

@@ -25,6 +25,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
   alias Firmowid.Invoicing
   alias Firmowid.Invoicing.Counterparty
   alias Firmowid.Invoicing.CountryCodes
+  alias Firmowid.Invoicing.FailureReporter
   alias Firmowid.Invoicing.SalesInvoice
   alias Firmowid.Invoicing.SalesInvoice.EmailRecipientEligibility
   alias Firmowid.Invoicing.WizardState
@@ -1034,11 +1035,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
          |> redirect(to: Navigation.sales_invoice_show_path(invoice))}
 
       {:error, error} ->
-        Logger.error("Failed to save invoice as draft",
-          organization_id: scope.tenant,
-          error_kind: ErrorKind.classify(error)
-        )
-
+        FailureReporter.report_unexpected(error, :issue, scope.tenant)
         {:noreply, put_flash(socket, :error, gettext("Could not save the invoice."))}
     end
   end
@@ -1061,12 +1058,11 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
        |> PosthogBusinessEvents.capture(:invoice_created)
        |> push_navigate(to: Navigation.sales_invoice_summary_path(invoice))}
     else
-      {:error, error} ->
-        Logger.error("Failed to confirm invoice",
-          organization_id: scope.tenant,
-          error_kind: ErrorKind.classify(error)
-        )
+      {:error, :missing_invoice_number} ->
+        {:noreply, put_flash(socket, :error, get_error_message(:missing_invoice_number))}
 
+      {:error, error} ->
+        FailureReporter.report_unexpected(error, :issue, scope.tenant)
         {:noreply, put_flash(socket, :error, get_error_message(error))}
     end
   end

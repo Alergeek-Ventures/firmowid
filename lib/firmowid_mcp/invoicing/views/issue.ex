@@ -8,6 +8,7 @@ defmodule FirmowidMcp.Invoicing.Views.Issue do
   alias AshPhoenix.FormData.Error
   alias Firmowid.Core
   alias Firmowid.Invoicing
+  alias Firmowid.Invoicing.FailureReporter
   alias Firmowid.Invoicing.SalesInvoice
   alias Firmowid.Invoicing.SalesInvoice.Preview
   alias Firmowid.Ksef
@@ -323,6 +324,8 @@ defmodule FirmowidMcp.Invoicing.Views.Issue do
         withdrawn(socket)
 
       _ ->
+        operation = if socket.assigns.widget == IssueCorrection, do: :correct, else: :issue
+        FailureReporter.report_unexpected(error, operation, socket.assigns.scope.tenant)
         assign(socket, :errors, error_messages(error))
     end
   end

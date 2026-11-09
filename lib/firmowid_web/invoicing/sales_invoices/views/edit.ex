@@ -19,6 +19,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
   alias Firmowid.ErrorKind
   alias Firmowid.Finances
   alias Firmowid.Invoicing
+  alias Firmowid.Invoicing.FailureReporter
   alias Firmowid.Invoicing.SalesInvoice
   alias Firmowid.Invoicing.SalesInvoice.EmailRecipientEligibility
   alias Firmowid.Invoicing.SalesInvoiceItem
@@ -665,6 +666,17 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
   end
 
   defp handle_submit_result({:error, %AshPhoenix.Form{} = form}, socket) do
+    if Enum.any?(form.source.errors, &state_error?/1) do
+      operation = if socket.assigns.invoice.invoice_number, do: :correct, else: :finalize
+
+      FailureReporter.report(
+        Ash.Error.to_error_class(form.source.errors),
+        operation,
+        socket.assigns.ash_scope.tenant,
+        socket.assigns.invoice.id
+      )
+    end
+
     {:noreply,
      socket
      |> assign_form_with_preview(form)
@@ -672,13 +684,21 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
   end
 
   defp handle_submit_result({:error, error}, socket) do
-    Logger.error("Failed to create invoice",
-      invoice_id: socket.assigns.invoice.id,
-      error_kind: ErrorKind.classify(error)
+    FailureReporter.report_unexpected(
+      error,
+      :finalize,
+      socket.assigns.ash_scope.tenant,
+      socket.assigns.invoice.id
     )
 
     {:noreply, put_flash(socket, :error, get_error_message(error))}
   end
+
+  # The view sets original_invoice_id, so its errors come from the state of the corrected
+  # invoice, not from what the user typed. Errors other than validation are unexpected.
+  defp state_error?(%{class: :invalid, field: :original_invoice_id}), do: true
+  defp state_error?(%{class: :invalid}), do: false
+  defp state_error?(_error), do: true
 
   defp issue_draft(invoice, form_params, ash_form, scope) do
     if String.trim(form_params["invoice_number"] || "") == "" do
@@ -708,6 +728,9 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
       end
     end
   end
+
+  defp get_error_message(%Ash.Error.Invalid{errors: [%{message: message} = error | _rest]}) when is_binary(message),
+    do: translate_error({message, Map.get(error, :vars, [])})
 
   defp get_error_message(_), do: gettext("Could not issue the invoice")
 

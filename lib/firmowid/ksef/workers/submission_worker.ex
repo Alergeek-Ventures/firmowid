@@ -16,6 +16,7 @@ defmodule Firmowid.Ksef.Workers.SubmissionWorker do
     max_attempts: 3
 
   alias Firmowid.ErrorKind
+  alias Firmowid.Invoicing.FailureReporter
   alias Firmowid.Invoicing.SalesInvoice
   alias Firmowid.Ksef
   alias Firmowid.Ksef.Services.ApiClient
@@ -54,20 +55,11 @@ defmodule Firmowid.Ksef.Workers.SubmissionWorker do
         schedule_verification(invoice.id, session_reference, invoice_reference, scope.tenant)
         Logger.info("Resumed KSeF verification for sales invoice #{invoice.id}")
 
-      {:error, :invoice_not_found} ->
-        Logger.error("Sales invoice #{sales_invoice_id} not found")
+      {:error, reason}
+      when reason in [:invoice_not_found, :invoice_is_draft, :invoice_already_submitted] ->
+        FailureReporter.report(reason, :ksef_submission, scope.tenant, sales_invoice_id)
         Ksef.broadcast_ksef_status(scope.tenant, sales_invoice_id, :failed)
-        {:cancel, :invoice_not_found}
-
-      {:error, :invoice_is_draft} ->
-        Logger.error("Sales invoice #{sales_invoice_id} is a draft (no invoice number)")
-        Ksef.broadcast_ksef_status(scope.tenant, sales_invoice_id, :failed)
-        {:cancel, :invoice_is_draft}
-
-      {:error, :invoice_already_submitted} ->
-        Logger.error("Sales invoice #{sales_invoice_id} is already submitted")
-        Ksef.broadcast_ksef_status(scope.tenant, sales_invoice_id, :failed)
-        {:cancel, :invoice_already_submitted}
+        {:cancel, reason}
 
       {:error, reason} = error ->
         handle_submission_error(sales_invoice_id, reason, job, scope, error)
@@ -111,7 +103,7 @@ defmodule Firmowid.Ksef.Workers.SubmissionWorker do
     )
 
     if final_attempt?(job) do
-      withdraw_failed_submission(sales_invoice_id, scope)
+      withdraw_failed_submission(sales_invoice_id, e, scope)
       {:cancel, e}
     else
       reraise e, stacktrace
@@ -127,7 +119,7 @@ defmodule Firmowid.Ksef.Workers.SubmissionWorker do
     )
 
     if final_attempt?(job) do
-      withdraw_failed_submission(sales_invoice_id, scope)
+      withdraw_failed_submission(sales_invoice_id, reason, scope)
       {:cancel, reason}
     else
       error
@@ -315,6 +307,7 @@ defmodule Firmowid.Ksef.Workers.SubmissionWorker do
 
     # KSeF has not rejected the invoice, so it stays numbered and locked and is checked hourly from then on.
     if snooze_count >= @max_verify_snooze_count do
+      FailureReporter.report(:pending, :ksef_verification, invoice.organization_id, invoice.id)
       {:snooze, @recheck_after_seconds}
     else
       Logger.debug("Invoice #{invoice.id} still pending, will retry")
@@ -328,7 +321,7 @@ defmodule Firmowid.Ksef.Workers.SubmissionWorker do
       operation: "verification"
     )
 
-    withdraw_failed_submission(invoice.id, scope)
+    withdraw_failed_submission(invoice.id, :retry, scope)
     :ok
   end
 
@@ -338,7 +331,7 @@ defmodule Firmowid.Ksef.Workers.SubmissionWorker do
       operation: "verification"
     )
 
-    withdraw_failed_submission(invoice.id, scope)
+    withdraw_failed_submission(invoice.id, :invoice_duplicate, scope)
     {:cancel, {:invoice_duplicate, ksef_number, session_ref}}
   end
 
@@ -353,7 +346,12 @@ defmodule Firmowid.Ksef.Workers.SubmissionWorker do
     )
 
     # An unreadable status is not a rejection; keep the invoice locked and retry.
-    if final_attempt?(job), do: {:snooze, @recheck_after_seconds}, else: error
+    if final_attempt?(job) do
+      FailureReporter.report(reason, :ksef_verification, invoice.organization_id, invoice.id)
+      {:snooze, @recheck_after_seconds}
+    else
+      error
+    end
   end
 
   defp fail_invoice(invoice, error, scope) do
@@ -362,12 +360,14 @@ defmodule Firmowid.Ksef.Workers.SubmissionWorker do
       error_kind: ErrorKind.classify(error)
     )
 
-    withdraw_failed_submission(invoice.id, scope)
+    withdraw_failed_submission(invoice.id, error, scope)
     {:cancel, error}
   end
 
   # Terminal failure: a numbered document must not stay outside KSeF.
-  defp withdraw_failed_submission(sales_invoice_id, scope) do
+  defp withdraw_failed_submission(sales_invoice_id, reason, scope) do
+    FailureReporter.report(reason, :ksef_submission, scope.tenant, sales_invoice_id)
+
     case SalesInvoice.by_id(sales_invoice_id, scope: scope) do
       {:ok, %{ksef_number: nil, ksef_invoice_kind: :vat} = invoice} ->
         SalesInvoice.return_to_draft!(invoice, scope: scope)
@@ -393,10 +393,7 @@ defmodule Firmowid.Ksef.Workers.SubmissionWorker do
         Logger.info("Deleted correction KSeF did not accept", invoice_id: sales_invoice_id)
 
       {:error, reason} ->
-        Logger.error("Failed to delete correction KSeF did not accept",
-          invoice_id: sales_invoice_id,
-          error_kind: ErrorKind.classify(reason)
-        )
+        FailureReporter.report(reason, :ksef_submission, scope.tenant, sales_invoice_id)
 
       _ ->
         :ok
