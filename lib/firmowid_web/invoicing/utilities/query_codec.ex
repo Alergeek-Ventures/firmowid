@@ -18,7 +18,11 @@ defmodule FirmowidWeb.Invoicing.Utilities.QueryCodec do
     "oplacone" => :oplacone,
     "nieoplacone" => :nieoplacone,
     "dopasowane" => :dopasowane,
-    "bez_dokumentu" => :bez_dokumentu
+    "bez_dokumentu" => :bez_dokumentu,
+    "sprzedazowe" => :sprzedazowe,
+    "zakupowe" => :zakupowe,
+    "wplywy" => :wplywy,
+    "wydatki" => :wydatki
   }
   @subfilter_params Map.new(@subfilter_values, fn {key, value} -> {value, key} end)
 
@@ -39,7 +43,15 @@ defmodule FirmowidWeb.Invoicing.Utilities.QueryCodec do
   @invoicing_index_param_keys ~w(miesiac filtr podfiltr widok)
 
   @type filter :: :all | :invoices | :transactions | :unmatched
-  @type subfilter :: :oplacone | :nieoplacone | :dopasowane | :bez_dokumentu
+  @type subfilter ::
+          :oplacone
+          | :nieoplacone
+          | :dopasowane
+          | :bez_dokumentu
+          | :sprzedazowe
+          | :zakupowe
+          | :wplywy
+          | :wydatki
   @type view_mode :: :dashboard | :list
   @type creator_tab :: :last_counterparties | :last_invoices
   @type counterparty_type :: CounterpartyTypeCodec.counterparty_type()

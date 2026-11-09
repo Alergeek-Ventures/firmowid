@@ -34,6 +34,7 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
   alias FirmowidWeb.Core.Endpoint
   alias FirmowidWeb.Infrastructure.Components.BlobProcessingToasts
   alias FirmowidWeb.Infrastructure.Utilities.PosthogBusinessEvents
+  alias FirmowidWeb.Invoicing.Components.EntriesTable
   alias FirmowidWeb.Invoicing.Utilities.Navigation
   alias FirmowidWeb.Invoicing.Utilities.QueryCodec
   alias Phoenix.Socket.Broadcast
@@ -56,6 +57,10 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
     corrections: :sales_invoice_items,
     latest_correction: :sales_invoice_items
   ]
+
+  # Rendering every row of every month at once takes seconds, so the list of every
+  # month shows a window of a few months and widens it as either end comes into view.
+  @window_months 3
 
   @impl true
   def mount(_params, _session, socket) do
@@ -145,17 +150,30 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
     assigns = assign(assigns, drop_before: drop_before, drop_after: drop_after)
 
     ~H"""
-    <div class="sticky top-navbar z-10 flex justify-between bg-grey-100 py-4 max-md:static max-md:z-auto max-md:flex-col max-md:gap-3">
+    <div class={
+      [
+        "sticky top-navbar z-10 flex justify-between bg-grey-100 py-4 max-md:static max-md:z-auto max-md:flex-col max-md:gap-3",
+        # above the bar as much room as between it and the column headings below it, the same
+        # before and while scrolling: the bar starts at the top of the page, as it sticks there
+        @all_months? && "md:-mt-4 md:pt-11 md:pb-3"
+      ]
+    }>
       <div class="flex items-center gap-4 max-md:gap-3">
+        <%!-- On the list of every month the label is the month scrolled to, set in the browser;
+             the server renders the first one and leaves the input alone afterwards. --%>
         <.month_picker
           id="month"
           show_on_mobile
           active_months={@active_months}
           selected_date={@params.month}
+          value={@all_months? && EntriesTable.month_label(@params.month)}
+          widest_value={@all_months? && widest_month_label(@params.month)}
+          phx-update={@all_months? && "ignore"}
           class="max-md:h-12 max-md:flex-1"
         />
 
         <.button
+          :if={not @all_months?}
           type="button"
           variant="secondary"
           size="big"
@@ -170,6 +188,9 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
         </.button>
       </div>
 
+      <%!-- On the list of every month, the picker scrolls to the month and the filters take the search's place, centred in the bar. --%>
+      <FirmowidWeb.Invoicing.Components.FilterBar.inbox_filters :if={@all_months?} params={@params} />
+
       <div
         phx-drop-target={can_write_invoicing?(@current_user) && @uploads.file.ref}
         class="flex flex-row gap-4 max-md:contents"
@@ -178,7 +199,7 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
           <.live_component
             id="download-component"
             module={FirmowidWeb.Invoicing.Components.DownloadModal}
-            month={@params.month}
+            month={(@all_months? && @visible_month) || @params.month}
           />
         <% end %>
         <.page_actions :if={can_write_invoicing?(@current_user)} label={gettext("Add invoice")}>
@@ -270,11 +291,6 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
       is_month_closed={@is_month_closed}
       is_month_touched={@is_month_touched}
     />
-    <FirmowidWeb.Invoicing.Components.FilterBar.active_sub_filters
-      :if={flag_enabled?(:inbox, assigns)}
-      params={@params}
-    />
-
     <div
       :if={can_view_invoicing?(@current_user)}
       class="relative mt-2 flex flex-col gap-4"
@@ -300,9 +316,11 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
             month={@params.month}
           />
         <% true -> %>
-          <FirmowidWeb.Invoicing.Components.EntriesTable.table
+          <EntriesTable.table
             mode={@params.filter}
-            invoicing_entries={@invoicing_entries}
+            invoicing_entries={window_entries(@invoicing_entries, @month_window)}
+            load_newer={newer_months?(@month_window) && "load-newer-months"}
+            load_more={older_months?(@invoicing_entries, @month_window) && "load-older-months"}
             return_to={build_invoicing_url(@params)}
             can_write_invoicing={can_write_invoicing?(@current_user)}
             projects={@projects_column}
@@ -340,6 +358,10 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
       socket
       |> apply_action(socket.assigns.live_action, params)
       |> assign(:params, parsed)
+      |> then(&assign(&1, :all_months?, all_months_list?(&1.assigns)))
+      |> assign(:month_window, {0, @window_months})
+      # Kept across patches, like the hook's own record of the month it last reported.
+      |> assign_new(:visible_month, fn -> nil end)
       |> refetch_invoicing_entries()
 
     {:noreply, socket}
@@ -364,10 +386,52 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
     {:noreply, socket}
   end
 
+  # The list of every month already holds the chosen one, so the picker only scrolls
+  # to it, first moving the window there when the month is not shown.
   def handle_event("change-month", %{"month" => month}, socket) do
-    month = Date.from_iso8601!(month)
+    if socket.assigns.all_months? do
+      target = Date.from_iso8601!(month)
+      months = for {:month, month} <- socket.assigns.invoicing_entries, do: month
+      # Months run newest first; a month without entries opens the next older one,
+      # and a month older than every entry has nothing to show, so the hook only puts
+      # the picker back on the month on screen.
+      case Enum.find_index(months, &(Date.compare(&1, target) != :gt)) do
+        nil ->
+          {:noreply, push_event(socket, "scroll-to-month", %{month: month})}
 
-    {:noreply, update_param(socket, :month, month)}
+        index ->
+          {first, count} = socket.assigns.month_window
+
+          window =
+            if index in first..(first + count - 1)//1,
+              do: {first, count},
+              else: {index, @window_months}
+
+          {:noreply,
+           socket
+           |> assign(:month_window, window)
+           |> push_event("scroll-to-month", %{month: month})}
+      end
+    else
+      {:noreply, update_param(socket, :month, Date.from_iso8601!(month))}
+    end
+  end
+
+  # The list of every month downloads the month on screen, which the picker names.
+  def handle_event("visible-month", %{"month" => month}, socket) do
+    {:noreply, assign(socket, :visible_month, Date.from_iso8601!(month))}
+  end
+
+  def handle_event("load-older-months", _params, socket) do
+    {:noreply, update(socket, :month_window, fn {first, count} -> {first, count + @window_months} end)}
+  end
+
+  def handle_event("load-newer-months", _params, socket) do
+    {:noreply,
+     update(socket, :month_window, fn {first, count} ->
+       newer = min(first, @window_months)
+       {first - newer, count + newer}
+     end)}
   end
 
   def handle_event("change-filter", %{"filter" => filter}, socket) do
@@ -878,8 +942,13 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
     scope = socket.assigns.ash_scope
     date_range_from = Date.beginning_of_month(month)
     date_range_to = Date.end_of_month(month)
+    all_months? = socket.assigns.all_months?
 
-    entries = fetch_entries(date_range_from, date_range_to, filter, subfilter, scope)
+    # The inbox lists of invoices and transactions show every month, newest first.
+    entries =
+      if all_months?,
+        do: fetch_entries(nil, nil, filter, subfilter, scope),
+        else: fetch_entries(date_range_from, date_range_to, filter, subfilter, scope)
 
     projects_column = projects_column(socket.assigns, month, scope)
 
@@ -888,7 +957,10 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
         do: ProjectCell.preload(entries, scope),
         else: entries
 
-    entries = group_cost_transactions_by_party(entries)
+    entries =
+      if all_months?,
+        do: with_month_separators(entries),
+        else: group_cost_transactions_by_party(entries)
 
     socket =
       socket
@@ -1144,6 +1216,53 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
 
   defp awaiting_bank_sync?(_account), do: false
 
+  # Entries of `count` months from the `first` one; a list without month headings is whole.
+  defp window_entries(entries, {first, count}) do
+    headings =
+      entries
+      |> Enum.with_index()
+      |> Enum.filter(&match?({{:month, _month}, _index}, &1))
+      |> Enum.map(fn {_heading, index} -> index end)
+
+    case headings do
+      [] ->
+        entries
+
+      headings ->
+        from = Enum.at(headings, first, length(entries))
+        to = Enum.at(headings, first + count, length(entries))
+        Enum.slice(entries, from, to - from)
+    end
+  end
+
+  defp newer_months?({first, _count}), do: first > 0
+
+  defp older_months?(entries, {first, count}), do: Enum.count(entries, &match?({:month, _month}, &1)) > first + count
+
+  # The inbox lists of invoices and transactions show every month, each under its heading row.
+  defp all_months_list?(assigns) do
+    flag_enabled?(:inbox, assigns) and assigns.params.view_mode == :list and
+      assigns.params.filter in [:invoices, :transactions]
+  end
+
+  # The picker on the list of every month names the month on screen; sized for the
+  # longest name, it keeps its width, and the filters their place, while scrolling.
+  defp widest_month_label(month) do
+    1..12
+    |> Enum.map(&EntriesTable.month_label(%{month | month: &1, day: 1}))
+    |> Enum.max_by(&String.length/1)
+  end
+
+  # Entries are grouped within their month, so a group never spans two separators.
+  defp with_month_separators(entries) do
+    entries
+    |> Enum.group_by(&(&1 |> entry_date() |> Date.beginning_of_month()))
+    |> Enum.sort_by(fn {month, _entries} -> month end, {:desc, Date})
+    |> Enum.flat_map(fn {month, month_entries} ->
+      [{:month, month} | group_cost_transactions_by_party(month_entries)]
+    end)
+  end
+
   defp apply_action(socket, :index, _params) do
     assign(socket, :page_title, "Fakturowanie")
   end
@@ -1241,6 +1360,28 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
 
   defp transaction_group_id(kind, party) do
     "group-#{kind}-#{:erlang.phash2({kind, party})}"
+  end
+
+  # The side filters of the inbox lists: sales or purchase invoices, incoming or outgoing transactions.
+  defp fetch_entries(from, to, :invoices, :sprzedazowe, scope) do
+    from
+    |> list_sales_invoices(to, %{date_field: :issue_date, kind: :vat}, scope)
+    |> order_entries_for_display()
+  end
+
+  defp fetch_entries(from, to, :invoices, :zakupowe, scope) do
+    from
+    |> list_cost_invoices(to, %{date_field: :issue_date}, scope)
+    |> order_entries_for_display()
+  end
+
+  defp fetch_entries(from, to, :transactions, side, scope) when side in [:wplywy, :wydatki] do
+    direction = if side == :wplywy, do: :income, else: :expense
+
+    from
+    |> list_transactions(to, %{}, scope)
+    |> Enum.filter(&(&1.direction == direction))
+    |> order_entries_for_display()
   end
 
   defp fetch_entries(from, to, filter, subfilter, scope) do
@@ -1343,15 +1484,29 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
 
   defp list_cost_invoices(from, to, extra_args, scope) do
     args = Map.merge(%{date_from: from, date_to: to, merge_corrections: true}, extra_args)
-    Invoicing.list_cost_invoices!(args, load: @cost_invoice_loads, scope: scope)
+
+    Invoicing.list_cost_invoices!(args,
+      load: @cost_invoice_loads,
+      scope: scope,
+      query: dated_only(from)
+    )
   end
 
   defp list_sales_invoices(from, to, extra_args, scope) do
     # ── Active months — 3 Ash reads + Elixir dedup ─────────────────────
     args = Map.merge(%{date_from: from, date_to: to}, extra_args)
 
-    Invoicing.list_sales_invoices!(args, load: @sales_invoice_loads, scope: scope)
+    Invoicing.list_sales_invoices!(args,
+      load: @sales_invoice_loads,
+      scope: scope,
+      query: dated_only(from)
+    )
   end
+
+  # The list of every month asks for no date range, which would include invoices without an
+  # issue date; they belong to no month, as a month's range never held them either.
+  defp dated_only(nil), do: [filter: [issue_date: [is_nil: false]]]
+  defp dated_only(_from), do: []
 
   defp list_transactions(from, to, extra_args, scope) do
     args = Map.merge(%{date_from: from, date_to: to}, extra_args)

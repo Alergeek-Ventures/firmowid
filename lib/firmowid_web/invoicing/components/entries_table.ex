@@ -19,6 +19,15 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
 
   attr :invoicing_entries, :list, required: true
   attr :mode, :atom, required: true
+
+  attr :load_newer, :string,
+    default: nil,
+    doc: "event loading newer rows when the table's start comes into view"
+
+  attr :load_more, :string,
+    default: nil,
+    doc: "event loading more rows when the table's end comes into view"
+
   attr :return_to, :string, default: nil
   attr :can_write_invoicing, :boolean, default: true
 
@@ -82,75 +91,219 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
       |> assign_new(:return_to, fn -> nil end)
       |> assign_new(:can_write_invoicing, fn -> true end)
       |> assign_new(:projects, fn -> nil end)
+      |> assign_new(:load_newer, fn -> nil end)
+      |> assign_new(:load_more, fn -> nil end)
       |> assign(
         :columns,
         columns
       )
+      # A list of every month repeats the column headings under each month.
+      |> assign(:by_month?, Enum.any?(assigns.invoicing_entries, &match?({:month, _}, &1)))
 
     ~H"""
-    <table
-      id="invoicing-entries"
-      class="-mt-8 table-fixed border-separate border-spacing-y-3 max-md:mt-0 max-md:block"
+    <%!-- The hook keeps rows in place itself when months load above, so the browser must not as well.
+         A flex column stretches the table across the page, as its parent did before this wrapper. --%>
+    <div
+      id="invoicing-entries-list"
+      phx-hook=".MonthScroll"
+      class={["flex flex-col", @by_month? && "[overflow-anchor:none]"]}
     >
-      <col
-        :for={column <- @columns}
-        class={[
-          case column do
-            "project" -> "w-48 in-data-[layout=sidebar]:max-[90rem]:hidden max-xl:hidden"
-            "issue_date" -> "w-36"
-            "booking_date" -> "w-44"
-            "issue_or_value_date" -> "w-36"
-            "due_date" -> "w-44"
-            "value_date" -> "w-36"
-            "due_or_booking_date" -> "w-44"
-            "status" -> "w-40"
-            "amount" -> "w-44"
-            _ -> ""
-          end
-        ]}
-      />
-      <thead class="sticky top-[calc(var(--spacing-navbar)+var(--page-header-height))] z-1 bg-grey-100 max-md:hidden">
-        <tr>
-          <th
-            :for={column <- @columns}
-            id={"header-#{column}"}
-            phx-hook="ScrollStyle"
-            data-classes="border-b-4 border-solid border-grey-700/40"
-            data-scroll-offset="90"
-            class={[
-              "h-[60px] py-2 text-left align-bottom text-xs font-normal text-grey-700 uppercase",
-              column == "party" && "pl-5",
-              column == "project" &&
-                "pr-6 text-right in-data-[layout=sidebar]:max-[90rem]:hidden max-xl:hidden"
-            ]}
-          >
-            <.column_label column={column} />
-          </th>
-        </tr>
-      </thead>
-      <tbody class="max-md:flex max-md:flex-col max-md:gap-3">
-        <%= for entry <- @invoicing_entries do %>
-          <%= case entry do %>
-            <% %TransactionGroup{} = group -> %>
-              <.group_row
-                group={group}
-                projects={@projects}
-                columns={@columns}
-                return_to={@return_to}
-                can_write_invoicing={@can_write_invoicing}
-              />
-            <% invoicing_entry -> %>
-              <.table_row
-                projects={@projects}
-                columns={@columns}
-                invoicing_entry={invoicing_entry}
-                return_to={@return_to}
-                can_write_invoicing={@can_write_invoicing}
-              />
+      <%!-- Coming into view (with a margin), each indicator loads the months on its side. --%>
+      <.load_indicator :if={@load_newer} event={@load_newer} />
+      <table
+        id="invoicing-entries"
+        class={
+          [
+            "table-fixed border-separate border-spacing-y-3 max-md:mt-0 max-md:block",
+            # month headings start where they stick, so nothing moves as scrolling begins
+            if(@by_month?, do: "-mt-6", else: "-mt-8")
+          ]
+        }
+      >
+        <col
+          :for={column <- @columns}
+          class={[
+            case column do
+              "project" -> "w-48 in-data-[layout=sidebar]:max-[90rem]:hidden max-xl:hidden"
+              "issue_date" -> "w-36"
+              "booking_date" -> "w-44"
+              "issue_or_value_date" -> "w-36"
+              "due_date" -> "w-44"
+              "value_date" -> "w-36"
+              "due_or_booking_date" -> "w-44"
+              "status" -> "w-40"
+              "amount" -> "w-44"
+              _ -> ""
+            end
+          ]}
+        />
+        <thead
+          :if={not @by_month?}
+          class="sticky top-[calc(var(--spacing-navbar)+var(--page-header-height))] z-1 bg-grey-100 max-md:hidden"
+        >
+          <tr>
+            <th
+              :for={column <- @columns}
+              id={"header-#{column}"}
+              phx-hook="ScrollStyle"
+              data-classes="border-b-4 border-solid border-grey-700/40"
+              data-scroll-offset="90"
+              class={[
+                "h-[60px] py-2 text-left align-bottom text-xs font-normal text-grey-700 uppercase",
+                column == "party" && "pl-5",
+                column == "project" &&
+                  "pr-6 text-right in-data-[layout=sidebar]:max-[90rem]:hidden max-xl:hidden"
+              ]}
+            >
+              <.column_label column={column} />
+            </th>
+          </tr>
+        </thead>
+        <tbody class="max-md:flex max-md:flex-col max-md:gap-3">
+          <%= for entry <- @invoicing_entries do %>
+            <%= case entry do %>
+              <% {:month, month} -> %>
+                <.month_row month={month} columns={@columns} />
+              <% %TransactionGroup{} = group -> %>
+                <.group_row
+                  group={group}
+                  projects={@projects}
+                  columns={@columns}
+                  return_to={@return_to}
+                  can_write_invoicing={@can_write_invoicing}
+                />
+              <% invoicing_entry -> %>
+                <.table_row
+                  projects={@projects}
+                  columns={@columns}
+                  invoicing_entry={invoicing_entry}
+                  return_to={@return_to}
+                  can_write_invoicing={@can_write_invoicing}
+                />
+            <% end %>
           <% end %>
-        <% end %>
-      </tbody>
-    </table>
+        </tbody>
+      </table>
+      <.load_indicator :if={@load_more} event={@load_more} />
+      <script :type={Phoenix.LiveView.ColocatedHook} name=".MonthScroll">
+        export default {
+          // Headings stick this far from the top. On phones they scroll with the page under the
+          // navbar, which their scroll margin matches, so the month on top is the last heading
+          // that passed below the navbar.
+          stickyTop(heading) {
+            const style = getComputedStyle(heading);
+            return style.position === "sticky" ? parseFloat(style.top) : parseFloat(style.scrollMarginTop) || 0;
+          },
+          mounted() {
+            this.sync = () => {
+              const rows = Array.from(this.el.querySelectorAll("tr[data-month]"));
+              // Headings stick at their offset; the last one there covers the others.
+              const stuck = rows.filter(row => {
+                const heading = row.querySelector("th");
+                return heading.getBoundingClientRect().top <= this.stickyTop(heading) + 0.5;
+              }).pop();
+              const picker = document.getElementById("month");
+              const current = stuck ?? rows[0];
+              if (current && picker) picker.value = current.dataset.label;
+              // The server downloads the month on screen, so it hears of each new one.
+              if (current && current.dataset.month !== this.month) {
+                this.month = current.dataset.month;
+                this.pushEvent("visible-month", {month: this.month});
+              }
+              // The stuck heading is underlined once rows pass under it. A later month's heading
+              // sticks over the rows of the month before; the first heading rests where it sticks,
+              // so for it the first row tells, a row gap (12px) below it at rest. A shadow just below
+              // the heading, unlike a border inside it, leaves the headings' text in place and keeps
+              // the 8px gap the border leaves between them on the other lists.
+              const heading = stuck?.querySelector("th");
+              const underlined = heading && (stuck !== rows[0] ||
+                stuck.nextElementSibling?.getBoundingClientRect().top < heading.getBoundingClientRect().bottom + 11.5);
+              rows.forEach(row => row.querySelectorAll("th").forEach(cell =>
+                cell.classList.toggle("shadow-[0_4px_0_0_color-mix(in_oklab,var(--color-grey-700)_40%,transparent)]", underlined && row === stuck)
+              ));
+            };
+            this.onScroll = () => {
+              if (this.frame) return;
+              this.frame = requestAnimationFrame(() => {
+                this.frame = null;
+                this.sync();
+              });
+            };
+            window.addEventListener("scroll", this.onScroll, {passive: true});
+            // Months load ahead of the reader, before an indicator scrolls into view.
+            this.observer = new IntersectionObserver(entries => {
+              const entry = entries.find(entry => entry.isIntersecting);
+              if (entry) this.load(entry.target.dataset.load);
+            }, {rootMargin: "1200px 0px"});
+            this.observe();
+            this.sync();
+            this.handleEvent("scroll-to-month", ({month}) => {
+              // Months run newest first; a month without entries scrolls to the next older one.
+              const row = Array.from(this.el.querySelectorAll("tr[data-month]"))
+                .find(row => row.dataset.month <= month);
+              // No month to scroll to: the picker names the chosen one, so name the one on screen.
+              if (!row) return this.sync();
+              const heading = row.querySelector("th");
+              // The heading sticks, so the row's own box is measured from its unstuck neighbour.
+              const anchor = row.nextElementSibling ?? row;
+              const top = anchor.getBoundingClientRect().top + window.scrollY
+                - this.stickyTop(heading) - heading.offsetHeight - 12;
+              // Gliding across many months takes seconds, so a far month is shown at once.
+              const far = Math.abs(top - window.scrollY) > 3 * window.innerHeight;
+              window.scrollTo({top, behavior: far ? "instant" : "smooth"});
+            });
+          },
+          observe() {
+            this.observer.disconnect();
+            this.el.querySelectorAll("[data-load]").forEach(indicator => this.observer.observe(indicator));
+          },
+          load(event) {
+            if (this.loading) return;
+            this.loading = true;
+            // Months added above move the rows down the page; scrolling by as much keeps the
+            // first row on screen in place, whatever the reader scrolled meanwhile.
+            const anchor = Array.from(this.el.querySelectorAll("tbody tr"))
+              .find(row => row.getBoundingClientRect().bottom > 0);
+            const pageTop = row => row.getBoundingClientRect().top + window.scrollY;
+            const before = anchor && pageTop(anchor);
+            this.pushEvent(event, {}, () => {
+              if (anchor?.isConnected) window.scrollBy({top: pageTop(anchor) - before, behavior: "instant"});
+              // `updated` ran before the scroll above, so the heading on top is found again.
+              this.sync();
+              this.loading = false;
+              // Observing again reports an indicator still in range, which loads the next months.
+              this.observe();
+            });
+          },
+          // A patch resets the headings' classes and may replace the indicators.
+          updated() {
+            this.sync();
+            this.observe();
+          },
+          // A reply lost with the connection would leave loading stuck.
+          reconnected() {
+            this.loading = false;
+            this.observe();
+          },
+          destroyed() {
+            window.removeEventListener("scroll", this.onScroll);
+            cancelAnimationFrame(this.frame);
+            this.observer.disconnect();
+          }
+        }
+      </script>
+    </div>
+    """
+  end
+
+  attr :event, :string, required: true
+
+  defp load_indicator(assigns) do
+    ~H"""
+    <div data-load={@event} role="status" class="flex justify-center py-6 text-grey-700">
+      <Lucideicons.loader_circle class="size-6 motion-safe:animate-spin" aria-hidden="true" />
+      <span class="sr-only">{gettext("Loading more months")}</span>
+    </div>
     """
   end
 
@@ -204,6 +357,47 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
       """
     end
   end
+
+  # Heads each month of a list that spans all of them with the column headings,
+  # sticking until the next month's heading covers it. The month picker above names
+  # the month on top, so the month itself is written out only on phones, where the
+  # picker scrolls away.
+  defp month_row(assigns) do
+    assigns = assign(assigns, :label, month_label(assigns.month))
+
+    ~H"""
+    <tr
+      id={"month-#{Date.to_iso8601(@month)}"}
+      data-month={Date.to_iso8601(@month)}
+      data-label={@label}
+      class="max-md:block"
+    >
+      <th
+        :for={{column, index} <- Enum.with_index(@columns)}
+        scope="col"
+        class={
+          [
+            # sticks under the taller bar of the list of every month (`Index`)
+            "sticky top-[calc(var(--spacing-navbar)+96px)] z-1 h-[60px] bg-grey-100 py-2 text-left align-bottom text-xs font-normal text-grey-700 uppercase max-md:static max-md:block max-md:h-auto max-md:scroll-mt-navbar max-md:pt-4 max-md:pb-0 max-md:pl-1",
+            index > 0 && "max-md:hidden",
+            column == "party" && "pl-5",
+            column == "project" &&
+              "pr-6 text-right in-data-[layout=sidebar]:max-[90rem]:hidden max-xl:hidden"
+          ]
+        }
+      >
+        <span :if={index == 0} class="text-base font-medium text-black normal-case md:hidden">
+          {@label}
+        </span>
+        <span class="max-md:hidden"><.column_label column={column} /></span>
+      </th>
+    </tr>
+    """
+  end
+
+  @doc "The month as a capitalized name and year, e.g. \"Listopad 2026\", as the month headings name it."
+  @spec month_label(Date.t()) :: String.t()
+  def month_label(month), do: month |> Firmowid.Cldr.Date.to_string!(format: "LLLL y") |> String.capitalize()
 
   defp table_row(assigns) do
     assigns =

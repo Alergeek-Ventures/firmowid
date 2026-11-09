@@ -21,6 +21,11 @@ defmodule FirmowidWeb.DesignSystem.Components.MonthPicker do
   attr :rest, :global
   attr :class, :any, default: nil
   attr :value, :string, default: nil
+
+  attr :widest_value, :string,
+    default: nil,
+    doc: "label the trigger is sized for, so that its width does not follow the shown month"
+
   attr :size, :string, values: @sizes, default: "big"
   attr :variant, :string, values: @variants, default: "secondary"
 
@@ -42,18 +47,28 @@ defmodule FirmowidWeb.DesignSystem.Components.MonthPicker do
       }
     >
       <Lucideicons.calendar_1 />
-      <input
-        type="button"
-        class="flex-1 cursor-pointer bg-transparent text-left outline-none"
-        phx-hook="AirDatepicker"
-        value={@value}
-        data-enabled-months={
-          @active_months && @active_months |> Enum.map(&Date.to_iso8601/1) |> Enum.join(",")
-        }
-        data-initial-date={@selected_date}
-        disabled={@disabled}
-        {@rest}
-      />
+      <%!-- The hidden widest label shares the input's grid cell, so the cell is as wide as it. --%>
+      <span class="grid flex-1">
+        <span
+          :if={@widest_value}
+          aria-hidden="true"
+          class="invisible col-start-1 row-start-1 whitespace-nowrap"
+        >
+          {@widest_value}
+        </span>
+        <input
+          type="button"
+          class="col-start-1 row-start-1 flex-1 cursor-pointer bg-transparent text-left outline-none"
+          phx-hook="AirDatepicker"
+          value={@value}
+          data-enabled-months={
+            @active_months && @active_months |> Enum.map(&Date.to_iso8601/1) |> Enum.join(",")
+          }
+          data-initial-date={@selected_date}
+          disabled={@disabled}
+          {@rest}
+        />
+      </span>
     </FirmowidUI.Components.Button.button>
     """
   end
