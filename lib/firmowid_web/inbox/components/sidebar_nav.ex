@@ -77,14 +77,14 @@ defmodule FirmowidWeb.Inbox.Components.SidebarNav do
         >
           <Lucideicons.render!
             name={icon}
-            class="hidden size-4 shrink-0 md:in-data-[sidebar=collapsed]:block"
+            class="hidden size-5 shrink-0 md:in-data-[sidebar=collapsed]:block"
             aria-hidden="true"
           />
           <span class="truncate md:in-data-[sidebar=collapsed]:sr-only">{layer_label(layer)}</span>
           <.count
             :if={layer == :company and @layer != :company}
             count={@company_count}
-            class="bg-grey-700 text-white"
+            class="bg-grey-700 text-white md:in-data-[sidebar=collapsed]:-top-1 md:in-data-[sidebar=collapsed]:-right-1"
           />
         </.link>
       </div>
@@ -98,7 +98,7 @@ defmodule FirmowidWeb.Inbox.Components.SidebarNav do
         aria-haspopup="dialog"
         aria-controls="app-search-modal"
       >
-        <Lucideicons.search class="size-4 shrink-0" aria-hidden="true" />
+        <Lucideicons.search class="size-5 shrink-0" aria-hidden="true" />
         <span class={label_styles()}>
           <span class="flex items-center justify-between gap-2">
             {gettext("Search")}
@@ -113,9 +113,14 @@ defmodule FirmowidWeb.Inbox.Components.SidebarNav do
         title={@inbox.label}
         class={link_styles(@current_id == :inbox)}
       >
-        <Lucideicons.render! name={@inbox.icon} class="size-4 shrink-0" aria-hidden="true" />
+        <Lucideicons.render! name={@inbox.icon} class="size-5 shrink-0" aria-hidden="true" />
         <span class={label_styles()}>{@inbox.label}</span>
-        <.count :if={@layer == :company} count={@company_count} class="bg-white text-black" />
+        <%!-- Clear of the 20 px icon, so the badge hides little of it. --%>
+        <.count
+          :if={@layer == :company}
+          count={@company_count}
+          class="bg-white text-black md:in-data-[sidebar=collapsed]:-top-1.5 md:in-data-[sidebar=collapsed]:-right-2"
+        />
       </.link>
       <.link
         :if={@layer == :me}
@@ -125,11 +130,11 @@ defmodule FirmowidWeb.Inbox.Components.SidebarNav do
         title={@timetracker.label}
         class={link_styles(@current_id == :timetracker)}
       >
-        <Lucideicons.render! name={@timetracker.icon} class="size-4 shrink-0" aria-hidden="true" />
+        <Lucideicons.render! name={@timetracker.icon} class="size-5 shrink-0" aria-hidden="true" />
         <span class={label_styles()}>{@timetracker.label}</span>
         <span
           :if={@running?}
-          class="size-2 shrink-0 animate-pulse rounded-full bg-moss-400 md:in-data-[sidebar=collapsed]:absolute md:in-data-[sidebar=collapsed]:top-1 md:in-data-[sidebar=collapsed]:right-1"
+          class="size-2 shrink-0 animate-pulse rounded-full bg-moss-400 md:in-data-[sidebar=collapsed]:absolute md:in-data-[sidebar=collapsed]:top-0.5 md:in-data-[sidebar=collapsed]:right-0.5"
           title={gettext("The session is running")}
         ></span>
       </.link>
@@ -140,13 +145,14 @@ defmodule FirmowidWeb.Inbox.Components.SidebarNav do
   attr :count, :integer, required: true
   attr :class, :any, required: true
 
-  # Collapsed, the number moves to the icon's corner.
+  # Its own line height, not the 20 px rows; collapsed, it moves to the icon's
+  # corner, placed by the caller.
   defp count(assigns) do
     ~H"""
     <span
       :if={@count > 0}
       class={[
-        "rounded-full px-1.5 text-xs font-medium tabular-nums md:in-data-[sidebar=collapsed]:absolute md:in-data-[sidebar=collapsed]:-top-1 md:in-data-[sidebar=collapsed]:-right-1",
+        "rounded-full px-1.5 text-xs/normal font-medium tabular-nums md:in-data-[sidebar=collapsed]:absolute",
         @class
       ]}
     >
@@ -161,7 +167,7 @@ defmodule FirmowidWeb.Inbox.Components.SidebarNav do
   # Same as the other sidebar links; relative for the corner badge when collapsed.
   defp link_styles(active?) do
     [
-      "relative flex w-full items-center gap-3 rounded-md px-2 py-1.5 text-left transition-colors hover:bg-grey-700/50",
+      "relative flex w-full items-center gap-3 rounded-md px-1.5 py-1.5 text-left leading-5 transition-colors hover:bg-grey-700/50",
       if(active?, do: "bg-grey-700/70 text-white", else: "text-white/70")
     ]
   end
