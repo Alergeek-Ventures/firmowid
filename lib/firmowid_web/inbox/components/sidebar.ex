@@ -25,6 +25,9 @@ defmodule FirmowidWeb.Inbox.Components.Sidebar do
   alias FirmowidWeb.Inbox.Utilities.Navigation
   alias FirmowidWeb.Infrastructure.Layouts
 
+  # Off-screen and hidden from focus on phones until the top bar slides it in.
+  @closed_on_phone "max-md:-translate-x-full max-md:invisible"
+
   attr :current_user, :map, required: true
   attr :current_org, :map, required: true
   attr :organizations, :list, required: true
@@ -56,8 +59,7 @@ defmodule FirmowidWeb.Inbox.Components.Sidebar do
         layer: layer,
         inbox: %{inbox | path: Navigation.inbox_path(layer)},
         timetracker: timetracker,
-        # Off-screen and hidden from focus on phones until the top bar slides it in.
-        closed_on_phone: "max-md:-translate-x-full max-md:invisible"
+        closed_on_phone: @closed_on_phone
       )
 
     ~H"""
@@ -93,7 +95,7 @@ defmodule FirmowidWeb.Inbox.Components.Sidebar do
         <.panel_button
           id="app-sidebar-collapse"
           phx-hook=".SidebarCollapse"
-          phx-click={JS.add_class(@closed_on_phone, to: "#app-sidebar")}
+          phx-click={close_on_phone()}
           label={gettext("Collapse or expand the menu")}
         >
           <%!-- Collapses on desktop; on phones it closes the menu the hamburger opened. --%>
@@ -266,6 +268,13 @@ defmodule FirmowidWeb.Inbox.Components.Sidebar do
     </.link>
     """
   end
+
+  @doc """
+  Slides the sidebar out on phones; links that only patch the page call it,
+  since the sidebar would otherwise stay open over it.
+  """
+  @spec close_on_phone() :: JS.t()
+  def close_on_phone, do: JS.add_class(@closed_on_phone, to: "#app-sidebar")
 
   @doc """
   A sidebar row as in the Figma "Sidebar / Link": 32 px tall, an 18 px icon 8 px
