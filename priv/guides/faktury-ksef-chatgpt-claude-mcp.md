@@ -2,7 +2,7 @@
 title: "KSeF, bank, czas projektów i ChatGPT w jednym programie"
 description: "Firmowid łączy faktury KSeF, automatyczne parowanie przelewów, czas projektów oraz ChatGPT i Claude przez MCP. Sprawdź, jak działa ten obieg i jakie ma ograniczenia."
 published: 2026-11-05
-updated: 2026-11-05
+updated: 2026-11-10
 category: ai-api-i-open-source
 ---
 
@@ -20,13 +20,17 @@ Firmowid przechowuje czas przy projekcie, obsługuje faktury sprzedażowe i kosz
 
 ## Co można zrobić przez ChatGPT lub Claude
 
-MCP, czyli Model Context Protocol, pozwala asystentowi korzystać z funkcji udostępnionych przez program. W przypadku Firmowida chodzi obecnie o faktury.
+MCP, czyli Model Context Protocol, pozwala asystentowi korzystać z funkcji udostępnionych przez program. W przypadku Firmowida chodzi obecnie o faktury, bank, czas pracy i urlopy.
 
-We wczesnym dostępie można:
+Można:
 
 - przygotować fakturę i zobaczyć jej podgląd przed wysłaniem do KSeF,
 - wystawić korektę,
-- odczytać faktury sprzedażowe i kosztowe.
+- odczytać faktury sprzedażowe i kosztowe,
+- połączyć przelew z fakturą albo wynagrodzeniem,
+- włączyć licznik czasu, dopisać sesję lub złożyć wniosek urlopowy,
+- połączyć firmę z KSeF (administrator),
+- odczytać i opisać wpisy analizy przychodów i kosztów (beta).
 
 Polecenie może wyglądać tak:
 
@@ -34,7 +38,7 @@ Polecenie może wyglądać tak:
 
 Firmowid przygotuje dokument. Przed wysłaniem sprawdzasz kontrahenta, pozycje, VAT, termin płatności i rachunek. Faktura trafia do KSeF dopiero po potwierdzeniu.
 
-Zakres dostępu zależy od uprawnień użytkownika i funkcji udostępnionych przez serwer MCP. ChatGPT ani Claude nie zastępują UPO. Urzędowe Poświadczenie Odbioru nadal pochodzi z KSeF.
+Zakres dostępu zależy od uprawnień użytkownika i funkcji udostępnionych przez serwer MCP. Przez MCP wystawisz fakturę tylko firmie, a osobie prywatnej w aplikacji. ChatGPT ani Claude nie zastępują UPO. Urzędowe Poświadczenie Odbioru nadal pochodzi z KSeF.
 
 ## Czym różni się to od osobnego serwera MCP do KSeF
 
@@ -52,7 +56,7 @@ Po wpłacie transakcja pojawia się w Firmowidzie przez połączenie z bankiem. 
 
 ![Schemat obiegu jednego projektu w Firmowidzie: czas pracy, faktura w KSeF, przelew z banku i wynik projektu. ChatGPT lub Claude przez MCP przygotowuje fakturę, a wysyłka do KSeF następuje po potwierdzeniu.](/images/guides/ksef-bank-czas-obieg-projektu.webp)
 
-MCP w Firmowidzie obejmuje obecnie przygotowanie, korekty i odczyt faktur. Analizy marży i rentowności projektów działają jako beta w aplikacji hostowanej. Nie są jeszcze częścią publicznej wersji open source i nie udostępniamy ich obecnie przez MCP.
+MCP w Firmowidzie obejmuje obecnie faktury, bank, czas pracy i urlopy. Analizy marży i rentowności projektów działają jako beta, także przez MCP.
 
 ## Kiedy Firmowid pasuje, a kiedy nie
 
@@ -64,9 +68,9 @@ Firmowid nie prowadzi KPiR, ryczałtu, ZUS ani deklaracji podatkowych. Nie ma te
 
 Plan Darmowy kosztuje 0 zł. Nie ma limitu faktur sprzedażowych ani wysyłki i odbioru dokumentów z KSeF. Obejmuje 2 użytkowników, 1 konto bankowe z parowaniem przelewów oraz ewidencję czasu dla 3 projektów.
 
-MCP dla ChatGPT, Claude, Cursora i innych zgodnych klientów jest we wczesnym dostępie dla części użytkowników płatnych planów. Plan Darmowy go nie obejmuje.
+MCP dla ChatGPT, Claude, Cursora i innych zgodnych klientów jest dostępne w planach Przedsiębiorca i Firma. Plan Darmowy go nie obejmuje.
 
-Kod Firmowida jest dostępny na licencji AGPL-3.0. Możesz uruchomić go na własnym serwerze bez opłaty licencyjnej. Trzeba wtedy samodzielnie skonfigurować i utrzymywać aplikację. Część funkcji dostępnych w wersji hostowanej nie trafiła jeszcze do publicznego repozytorium.
+Kod Firmowida jest dostępny na licencji AGPL-3.0. Możesz uruchomić go na własnym serwerze bez opłaty licencyjnej. Trzeba wtedy samodzielnie skonfigurować i utrzymywać aplikację.
 
 ## Jak przetestować ten obieg
 
@@ -92,11 +96,11 @@ Może przygotować fakturę przez połączony program, jeśli jego serwer MCP ud
 
 ### Czy Claude łączy się z Firmowidem?
 
-Tak, przez MCP. Funkcja jest we wczesnym dostępie dla części użytkowników płatnych planów.
+Tak, przez MCP. Funkcja jest dostępna w planach Przedsiębiorca i Firma.
 
 ### Czy MCP jest dostępny w planie Darmowym?
 
-Nie. Plan Darmowy obejmuje KSeF bez limitu, jedno konto bankowe z parowaniem przelewów i ewidencję czasu dla 3 projektów. MCP jest dostępne we wczesnym dostępie dla części użytkowników płatnych planów.
+Nie. Plan Darmowy obejmuje KSeF bez limitu, jedno konto bankowe z parowaniem przelewów i ewidencję czasu dla 3 projektów. MCP jest dostępne w planach Przedsiębiorca i Firma.
 
 ### Czy Firmowid prowadzi księgowość?
 
@@ -105,8 +109,8 @@ Nie. Firmowid obsługuje dokumenty, bank i projekty, ale nie prowadzi KPiR, rycz
 ## Źródła
 
 - [Firmowid, funkcje](https://firmowid.pl/funkcje), dostęp 4.11.2026.
-- [Firmowid, cennik](https://firmowid.pl/cennik), dostęp 4.11.2026.
+- [Firmowid, cennik](https://firmowid.pl/cennik), dostęp 10.11.2026.
 - [Firmowid, open source](https://firmowid.pl/open-source), dostęp 4.11.2026.
 - [Firmowid MCP Server Card](https://firmowid.pl/mcp/server-card), dostęp 4.11.2026.
-- [Repozytorium Firmowida](https://github.com/Alergeek-Ventures/firmowid), dostęp 4.11.2026.
+- [Repozytorium Firmowida](https://github.com/Alergeek-Ventures/firmowid), dostęp 10.11.2026.
 - [Model Context Protocol, wprowadzenie](https://modelcontextprotocol.io/docs/getting-started/intro), dostęp 4.11.2026.
