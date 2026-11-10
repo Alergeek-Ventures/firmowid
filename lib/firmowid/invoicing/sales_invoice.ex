@@ -41,6 +41,7 @@ defmodule Firmowid.Invoicing.SalesInvoice do
 
     * `:preview_invoice` / `:preview_correction` — read-only validated document previews
     * `:cancel` — cancel a KSeF-submitted invoice via zero-quantity correction
+    * `:wait_for_ksef_submissions` — wait for KSeF to accept or reject issued invoices
     * `:get_next_number` — get next available invoice number for date/format/series
     * `:validate_number` — validate an invoice number (format, duplicate, gap)
     * `:list_series` — list distinct invoice number series
@@ -172,6 +173,7 @@ defmodule Firmowid.Invoicing.SalesInvoice do
     define :return_to_draft, action: :return_to_draft
     define :preview_invoice, action: :preview_invoice
     define :issue_invoice, action: :issue_invoice
+    define :wait_for_ksef_submissions, args: [:invoice_ids]
     define :preview_correction, action: :preview_correction
 
     define :attach_suggested_counterparty,
@@ -1068,6 +1070,29 @@ defmodule Firmowid.Invoicing.SalesInvoice do
       run fn input, context ->
         __MODULE__.issue(%{input: input.arguments.invoice}, Ash.Context.to_opts(context))
       end
+    end
+
+    action :wait_for_ksef_submissions, {:array, :map} do
+      description "Wait until KSeF accepts or rejects issued invoices, at most three minutes, and return their statuses."
+
+      constraints items: [
+                    fields: [
+                      invoice_id: [type: :uuid, allow_nil?: false],
+                      status: [
+                        type: :atom,
+                        allow_nil?: false,
+                        constraints: [one_of: [:not_submitted, :submitting, :submitted, :failed]]
+                      ],
+                      ksef_number: [type: :string],
+                      error: [type: :string]
+                    ]
+                  ]
+
+      argument :invoice_ids, {:array, :uuid},
+        allow_nil?: false,
+        description: "IDs of the invoices returned by issue_sales_invoice."
+
+      run Firmowid.Invoicing.Actions.WaitForKsefSubmissions
     end
 
     action :preview_correction, :struct do

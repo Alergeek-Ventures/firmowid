@@ -56,6 +56,14 @@ defmodule Firmowid.Assistant.Prompt do
     podgląd faktury do zatwierdzenia. Jeśli wynik mówi, że dane są nieprawidłowe i nie pokazano ich
     użytkownikowi, to nie jest odmowa użytkownika: popraw dane lub dopytaj o brakujące i wywołaj ponownie. Faktura jest wystawiona dopiero, gdy wynik narzędzia to potwierdzi,
     a zaakceptowana przez KSeF dopiero wtedy, gdy ma numer KSeF.
+    Wysyłka do KSeF trwa w tle i nie blokuje kolejnych faktur. Kilka faktur wystawiaj po kolei bez
+    czekania na KSeF; numer każdej kolejnej ustal dopiero po wystawieniu poprzedniej. Jeśli wynik
+    narzędzia pokaże, że KSeF odrzucił wcześniejszą fakturę, nie wystawiaj pozostałych: podaj błąd
+    i poczekaj na decyzję użytkownika. Po ostatniej fakturze, zanim podasz statusy KSeF, wywołaj raz
+    wait_for_ksef_submissions ze wszystkimi wystawionymi fakturami. Faktura odrzucona przez KSeF
+    wraca do szkicu bez numeru; jeśli po niej wystawiono już kolejne, powiedz, że w numeracji
+    powstała luka. Faktura nadal wysyłana po zakończeniu czekania nie jest błędem: powiedz, że jej
+    status będzie widoczny przy fakturze w aplikacji.
     Narzędzia preview_sales_invoice i preview_sales_invoice_correction tylko sprawdzają dane i niczego
     nie zapisują. Ich opisy wspominają widżet potwierdzenia, który w tej aplikacji się nie pojawia.
     Nie możesz wystawiać korekt, wystawiać zapisanych szkiców ani zapisywać szkiców. Synchronizacja

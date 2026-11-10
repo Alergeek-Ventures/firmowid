@@ -171,13 +171,26 @@ defmodule Firmowid.Invoicing do
                     "buyer_full_name (or given name and surname), buyer_id (tax ID) for companies, buyer_address, " <>
                     "sale_date, due_date and sales_invoice_items with name, quantity, unit, net unit_price and vat_rate " <>
                     "such as \"23\". Seller details, issue date, PLN, Poland and payment by transfer to the organization's " <>
-                    "default account for the currency are filled in when omitted."
+                    "default account for the currency are filled in when omitted. The invoice is issued when " <>
+                    "this returns; KSeF accepts or rejects it in the background, without blocking further invoices."
 
       load [
         :amount,
         :ksef_submission_status,
         sales_invoice_items: [:net_value, :vat_value, :gross_value]
       ]
+    end
+
+    tool :wait_for_ksef_submissions, SalesInvoice, :wait_for_ksef_submissions do
+      annotations title: "Wait for KSeF submissions",
+                  read_only_hint: true,
+                  destructive_hint: false,
+                  open_world_hint: false
+
+      description "Wait up to three minutes until KSeF accepts or rejects the given issued invoices, then return " <>
+                    "each one's status: submitted with ksef_number, failed with error (the invoice went back to " <>
+                    "an unnumbered draft) or still submitting when the wait ran out. Call it once for all invoices " <>
+                    "issued in the conversation, after the last one, not between invoices. This tool never changes an invoice."
     end
 
     tool :create_sales_invoice_draft, SalesInvoice, :draft do
