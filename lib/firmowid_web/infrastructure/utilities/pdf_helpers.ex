@@ -137,7 +137,7 @@ defmodule FirmowidWeb.Infrastructure.Utilities.PdfHelpers do
       )
 
     # Inline CSS by reading the compiled app.css file
-    # CSS includes @font-face rules for the Geist and Lexend fonts installed in container
+    # get_app_css/0 lets Geist and Lexend resolve to the fonts installed in the container
     css_content = get_app_css() <> pdf_pagination_css(opts)
 
     """
@@ -211,20 +211,14 @@ defmodule FirmowidWeb.Infrastructure.Utilities.PdfHelpers do
 
     case File.read(css_path) do
       {:ok, css} ->
-        # Replace Google Fonts import with @font-face pointing to container's local font.
-        # The Google Fonts @import won't work when Chrome can't make external requests.
-        # Tailwind v4 minifies `@import url("...")` to `@import "..."`, so we match both forms.
+        # The app.css faces load `/fonts/*.woff2`, which Chromium cannot fetch for the
+        # inlined HTML, and a face that fails to load hides the installed font of the
+        # same name. Dropping them lets Chromium use the Geist and Lexend fonts
+        # installed in the Gotenberg image (deployment/Containerfile.gotenberg).
         String.replace(
           css,
-          ~r/@import\s+(?:url\()?"https:\/\/fonts\.googleapis\.com\/css2\?family=Lexend[^"]+"\)?;/,
-          """
-          @font-face {
-            font-family: 'Lexend';
-            font-style: normal;
-            font-weight: 100 900;
-            src: local('Lexend'), url('file:///usr/share/fonts/truetype/lexend/Lexend.ttf') format('truetype');
-          }
-          """
+          ~r/@font-face\s*\{[^}]*font-family:\s*["']?(?:Geist|Lexend)["']?\s*;[^}]*\}/,
+          ""
         )
 
       {:error, reason} ->
