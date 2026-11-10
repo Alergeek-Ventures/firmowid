@@ -3,6 +3,7 @@ defmodule Firmowid.Assistant.Actions.Respond do
   use Ash.Resource.ManualUpdate
 
   alias AshAi.Transcript, as: AshTranscript
+  alias Firmowid.AiTools
   alias Firmowid.Assistant
   alias Firmowid.Assistant.Conversation
   alias Firmowid.Assistant.Prompt
@@ -28,7 +29,6 @@ defmodule Firmowid.Assistant.Actions.Respond do
 
   defp stream(conversation, scope, opts) do
     tools = ToolPolicy.tools(scope)
-    tool_names = Enum.map(tools, &Atom.to_string/1)
 
     messages =
       Assistant.list_messages!(
@@ -43,13 +43,13 @@ defmodule Firmowid.Assistant.Actions.Respond do
       |> AshAi.ToolLoop.stream(
         otp_app: :firmowid,
         model: "openai:gpt-6-luna",
-        tools: tools,
+        tools: AiTools.assistant(),
         actor: scope.actor,
         tenant: scope.tenant,
         # Never forward the worker's private AshOban authorization context.
         context: %{},
         system_prompt: fn _opts -> Prompt.system() end,
-        approve_tool_call: fn call, _context -> ToolPolicy.approve(call, tool_names, scope) end,
+        approve_tool_call: fn call, _context -> ToolPolicy.approve(call, tools, scope) end,
         on_tool_start: fn _event -> ToolPolicy.ensure_current!(scope) end,
         approvals: ToolPolicy.approvals(conversation.approvals),
         max_iterations: 20,

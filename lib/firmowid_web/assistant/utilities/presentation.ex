@@ -477,5 +477,15 @@ defmodule FirmowidWeb.Assistant.Utilities.Presentation do
 
   defp tool_label("link_sales_invoice_counterparty"), do: gettext("Link the invoice to a counterparty")
 
+  defp tool_label("list_sessions"), do: gettext("Search work sessions")
+  defp tool_label("get_current_session"), do: gettext("Check the running work session")
+  defp tool_label("list_leave_requests"), do: gettext("Search leave requests")
+  defp tool_label("get_shared_birthday"), do: gettext("Check your shared birthday")
+  defp tool_label("list_projects"), do: gettext("Search projects")
+  defp tool_label("get_sales_invoice"), do: gettext("Open a sales invoice")
+  defp tool_label("preview_sales_invoice"), do: gettext("Check invoice details")
+  defp tool_label("preview_sales_invoice_correction"), do: gettext("Check correction details")
+  defp tool_label("list_analysis_entries"), do: gettext("Search analysis entries")
+  defp tool_label("list_analysis_tags"), do: gettext("Search analysis tags")
   defp tool_label(_name), do: gettext("Unknown operation")
 end
