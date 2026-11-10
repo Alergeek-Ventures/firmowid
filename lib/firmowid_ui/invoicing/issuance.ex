@@ -57,7 +57,10 @@ defmodule FirmowidUI.Invoicing.Issuance do
     next_numbers_by_series: %{},
     errors: [],
     submission_info: nil,
-    show_vat: true
+    show_vat: true,
+    # The invoice note and comment typed during review, kept apart from the loaded invoice so a
+    # reload, also after one that failed, shows them again.
+    edited_notes: nil
   ]
 
   @type kind :: :invoice | :correction
@@ -126,7 +129,11 @@ defmodule FirmowidUI.Invoicing.Issuance do
   @doc "Keeps the note printed on the invoice and the internal comment edited during review."
   @spec update_notes(t(), String.t(), String.t()) :: t()
   def update_notes(%{phase: :review, invoice: invoice} = issuance, note, comment) when not is_nil(invoice) do
-    %{issuance | invoice: %{invoice | invoice_note: note, internal_note: comment}}
+    %{
+      issuance
+      | invoice: %{invoice | invoice_note: note, internal_note: comment},
+        edited_notes: %{invoice_note: note, internal_note: comment}
+    }
   end
 
   def update_notes(issuance, _note, _comment), do: issuance
@@ -251,7 +258,7 @@ defmodule FirmowidUI.Invoicing.Issuance do
       select_number(
         %{
           issuance
-          | invoice: invoice,
+          | invoice: Map.merge(invoice, issuance.edited_notes || %{}),
             currency_rate: Invoicing.get_currency_rate(invoice),
             invoice_number: number,
             next_numbers_by_series:

@@ -589,16 +589,13 @@ defmodule FirmowidWeb.Assistant.Views.Floating do
   end
 
   # A series is prepared as several cards proposing the same next number: once one is issued,
-  # the others still under review proposing its number load the next free one, keeping the
-  # notes typed into them.
+  # the others still under review proposing its number load the next free one. The issuance
+  # keeps the notes typed into them.
   defp renumber_after(socket, %{phase: phase, invoice: %{invoice_number: number}}) when phase != :review do
     invoices =
       Map.new(socket.assigns.invoices, fn
-        {id, %{phase: :review, invoice_number: ^number, invoice: %{} = edited} = issuance} ->
-          {id,
-           issuance
-           |> Issuance.load(socket.assigns.ash_scope)
-           |> Issuance.update_notes(edited.invoice_note, edited.internal_note)}
+        {id, %{phase: :review, invoice_number: ^number} = issuance} ->
+          {id, Issuance.load(issuance, socket.assigns.ash_scope)}
 
         entry ->
           entry
