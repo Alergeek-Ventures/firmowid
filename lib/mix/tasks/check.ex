@@ -1,46 +1,35 @@
 defmodule Mix.Tasks.Check do
   @shortdoc "Runs code quality checks with timings and failure details"
   @moduledoc """
-  Runs the project's full final verification without formatting source files.
+  Runs the local verification loop without formatting source files.
 
-  Strict compilation runs first, followed by inexpensive checks, translation
-  extraction, Dialyzer and tests. Compilation failure skips checks that may
-  implicitly compile; any failed prerequisite skips the remaining costly checks.
-  Each executed check reports elapsed time and its real subprocess exit status.
-  Each check uses one result line; child output is shown only on failure or with --verbose.
+  Strict compilation runs first. Formatting and Credo then check only the files
+  changed since the merge base with `origin/main`, followed by the translation
+  catalog check and tests. Compilation failure skips the remaining checks, which
+  would compile implicitly; any other failure still runs every remaining check,
+  so one run reports all problems. Each executed check reports elapsed time and
+  its real subprocess exit status. Child output is shown only on failure or with
+  --verbose.
+
+  Dialyzer, translation extraction, Sobelow, design tokens, the dependency
+  audits and full-tree formatting and Credo run only in CI, the final gate.
 
   ## Usage
 
       mix check
-      mix check --quick     # Local loop: skip only extraction and Dialyzer
-      mix check --no-test   # Tests are verified separately, for example in CI
+      mix check --no-test   # Tests are verified separately
       mix check --external  # Include tests calling real third-party APIs
       mix check --verbose   # Stream all child output, including successful checks
 
   Tests use plain `mix test` by default, which excludes tests tagged `:external`.
-  Quick verification does not replace a full `mix check` before submitting changes.
   Unknown options and positional arguments are rejected.
   """
 
   use Mix.Task
 
-  @cheap_checks [
-    {"Format", ["format", "--check-formatted"]},
-    {"Translations", ["translations.check"]},
-    {"Design tokens", ["design.tokens", "--check"]},
-    {"Unused Deps", ["deps.unlock", "--check-unused"]},
-    {"Hex audit", ["hex.audit"]},
-    {"Depscheck", ["depscheck"]},
-    {"Credo", ["credo", "--strict"]},
-    {"Sobelow", ["sobelow", "--config", "--compact", "--private"]},
-    {"Npm licenses", ["assets.licenses"]},
-    {"Npm audit", ["assets.audit"]}
-  ]
-
-  @full_checks [
-    {"Translation extraction", ["translations.extract.check"]},
-    {"Dialyzer", ["dialyzer"]}
-  ]
+  # A change under these paths can alter the result for files that did not change.
+  @format_config_paths [".formatter.exs", "mix.lock"]
+  @credo_config_paths [".credo.exs", "checks/", "mix.lock"]
 
   @impl Mix.Task
   @doc "Runs the selected verification checks and exits with the first failing child status."
@@ -49,26 +38,30 @@ defmodule Mix.Tasks.Check do
     options = parse_options!(args)
     verbose = Keyword.get(options, :verbose, false)
     compilation = run_check("Compiling", ["compile", "--warnings-as-errors"], verbose)
-    {_name, compile_status} = compilation
 
-    cheap_results =
-      Enum.map(@cheap_checks, fn {name, task_args} ->
-        if compile_status == 0 do
-          run_check(name, task_args, verbose)
-        else
-          skip_check(name, "compilation failed")
-        end
-      end)
+    results =
+      case compilation do
+        {_name, 0} ->
+          options
+          |> selected_checks()
+          |> Enum.map(fn
+            {name, {:skip, reason}} -> skip_check(name, reason)
+            {name, task_args} -> run_check(name, task_args, verbose)
+          end)
 
-    [compilation | cheap_results]
-    |> run_remaining_checks(options)
-    |> summarize()
+        _failed ->
+          options
+          |> selected_checks()
+          |> Enum.map(fn {name, _} -> skip_check(name, "compilation failed") end)
+      end
+
+    summarize([compilation | results])
   end
 
   defp parse_options!(args) do
     {options, rest} =
       OptionParser.parse!(args,
-        strict: [quick: :boolean, test: :boolean, external: :boolean, verbose: :boolean]
+        strict: [test: :boolean, external: :boolean, verbose: :boolean]
       )
 
     if rest != [], do: Mix.raise("Unexpected arguments: #{Enum.join(rest, " ")}")
@@ -76,31 +69,69 @@ defmodule Mix.Tasks.Check do
     options
   end
 
-  defp run_remaining_checks(results, options) do
-    test_args =
-      if Keyword.get(options, :external, false),
-        do: ["test", "--include", "external"],
-        else: ["test"]
+  defp selected_checks(options) do
+    changed = changed_files()
 
-    checks =
-      Enum.map(@full_checks, fn {name, args} ->
-        {name, args, Keyword.get(options, :quick, false), "--quick"}
-      end) ++ [{"Tests", test_args, not Keyword.get(options, :test, true), "--no-test"}]
+    test_check =
+      cond do
+        not Keyword.get(options, :test, true) -> {"Tests", {:skip, "--no-test"}}
+        Keyword.get(options, :external, false) -> {"Tests", ["test", "--include", "external"]}
+        true -> {"Tests", ["test"]}
+      end
 
-    Enum.reduce(checks, results, fn {name, args, omitted?, reason}, previous ->
-      result =
-        cond do
-          omitted? -> skip_check(name, reason)
-          failed?(previous) -> skip_check(name, "a prerequisite failed")
-          true -> run_check(name, args, Keyword.get(options, :verbose, false))
-        end
-
-      previous ++ [result]
-    end)
+    [
+      {"Format",
+       scoped_args(
+         ["format", "--check-formatted"],
+         changed,
+         @format_config_paths,
+         &format_input?/1
+       )},
+      {"Translations", ["translations.check"]},
+      {"Credo", scoped_args(["credo", "--strict"], changed, @credo_config_paths, &credo_input?/1)},
+      test_check
+    ]
   end
 
-  defp failed?(results) do
-    Enum.any?(results, fn {_name, status} -> is_integer(status) and status != 0 end)
+  # Checks every file when the scope is unknown or a shared configuration changed.
+  defp scoped_args(task_args, :all, _config_paths, _input?), do: task_args
+
+  defp scoped_args(task_args, changed, config_paths, input?) do
+    config_changed? = Enum.any?(changed, &String.starts_with?(&1, config_paths))
+
+    case Enum.filter(changed, input?) do
+      _files when config_changed? -> task_args
+      [] -> {:skip, "no changed files"}
+      files -> task_args ++ files
+    end
+  end
+
+  defp format_input?(path) do
+    Path.extname(path) in [".ex", ".exs", ".heex"] and
+      (Path.dirname(path) == "." or
+         String.starts_with?(path, ["config/", "lib/", "priv/", "scripts/"]))
+  end
+
+  # Credo's default scope; migrations, seeds and config are not linted in CI either.
+  defp credo_input?(path), do: Path.extname(path) in [".ex", ".exs"] and String.starts_with?(path, "lib/")
+
+  # Committed, staged, unstaged and untracked changes since the branch left main.
+  # Without a merge base (for example no origin/main), every file is checked.
+  defp changed_files do
+    with {:ok, base} <- git(["merge-base", "HEAD", "origin/main"]),
+         {:ok, diff} <- git(["diff", "--name-only", "--diff-filter=d", String.trim(base)]),
+         {:ok, untracked} <- git(["ls-files", "--others", "--exclude-standard"]) do
+      String.split(diff <> untracked, "\n", trim: true)
+    else
+      :error -> :all
+    end
+  end
+
+  defp git(args) do
+    case System.cmd("git", args, stderr_to_stdout: true) do
+      {output, 0} -> {:ok, output}
+      {_output, _status} -> :error
+    end
   end
 
   defp skip_check(name, reason) do

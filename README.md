@@ -203,8 +203,7 @@ z bankiem (GoCardless) i logowanie przez Google. Klucze możesz dopisać do `.en
 
 ```bash
 mix test               # testy (używa tej samej bazy z compose)
-mix check --quick      # szybka kontrola w trakcie pracy
-mix check              # pełna weryfikacja przed PR
+mix check              # weryfikacja przed wypchnięciem
 ```
 
 Pamiętaj o `AV_SKIP_INFISICAL=1` także przy tych poleceniach. Więcej w
@@ -310,9 +309,8 @@ Conventional Commits. Więcej zasad (także dla agentów AI) jest w
 
 | Polecenie | Kiedy używać |
 | --- | --- |
-| `mix check --quick` | W trakcie pracy: szybka informacja zwrotna z kompilacji, lekkich kontroli i testów, bez Dialyzera i ekstrakcji tłumaczeń. |
 | `mix test lib/ścieżka/do/feature_test.exs` | Do sprawdzenia konkretnej zmiany lub regresji. |
-| `mix check` | Pełna weryfikacja przed oddaniem zmian; tryb szybki jej nie zastępuje. |
+| `mix check` | Przed wypchnięciem: kompilacja, formatowanie i Credo zmienionych plików, katalogi tłumaczeń i wszystkie testy. |
 | `mix check --no-test` | Gdy testy są uruchamiane i weryfikowane osobno, np. w CI. |
 | `mix check --external` | Świadome włączenie testów korzystających z prawdziwych zewnętrznych API; wymaga dostępnych usług i danych dostępowych. |
 
@@ -320,6 +318,10 @@ Domyślnie testy z oznaczeniem `:external` są pomijane. Weryfikacja nie formatu
 plików automatycznie. Każdy wykonany krok pokazuje czas; błędy mają pełny wynik
 polecenia, a pominięte kroki są wyraźnie oznaczone. `--verbose` pokazuje również
 wynik poprawnie zakończonych kroków.
+
+Dialyzer, ekstrakcja tłumaczeń, Sobelow, tokeny designu, audyty zależności oraz
+formatowanie i Credo całego drzewa działają tylko w CI, które jest ostateczną
+bramką.
 
 ### Konwencja commitów (Conventional Commits, Angular)
 
@@ -377,7 +379,7 @@ Migracje schematu bazy danych muszą być zarządzane przez narzędzia Ash/AshPo
 - Każdą większą zmianę struktury kończymy pełną walidacją: `mix check`.
 - Kolory, rozmiary tekstu i promienie zaokrągleń zmieniamy we frontmatterze
   `DESIGN.md`, potem `mix design.tokens` generuje
-  `assets/css/design-tokens.css` (`mix check` pilnuje zgodności). Fonty,
+  `assets/css/design-tokens.css` (CI pilnuje zgodności). Fonty,
   odstępy i animacje są w `assets/css/theme.css`.
 
 ### Skille agentów
@@ -589,7 +591,7 @@ tę kontrolę, ale zapamiętuje jej udany wynik dla dokładnego drzewa Git i wer
 OTP/Elixir. Drzewo obejmuje zarówno treść, jak i ścieżki plików, więc zmiana
 źródeł, numerów linii, nazw plików, POT, konfiguracji lub zależności wymusza
 ponowną kontrolę. Cache nie przechowuje ani nie nadpisuje POT. Pozostałe kontrole
-działają normalnie. Lokalny `mix check` również zapamiętuje udaną kontrolę;
+działają normalnie. Lokalne uruchomienie również zapamiętuje udaną kontrolę;
 `mix translations.extract.check --force` wymusza jej ponowne wykonanie.
 
 #### CI: snapshoty tłumaczeń
