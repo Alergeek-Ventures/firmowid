@@ -75,12 +75,13 @@ defmodule Firmowid.Mailer.Components do
   headline and an optional Światowid figure, then the white body and footer.
   """
   # sobelow_skip ["XSS.Raw"]
-  # raw/1 only emits the module's constant @mobile_css; HEEx cannot interpolate
-  # inside <style>, and no user input reaches it.
+  # raw/1 only emits the module's constant CSS and font URLs built from the
+  # endpoint's configured host; HEEx cannot interpolate inside <style>, and no
+  # user input reaches it.
   def email(assigns) do
     assigns =
       assign(assigns,
-        css: @mobile_css,
+        css: font_face_css() <> @mobile_css,
         head_url: static_url("images/email/firmowid-head.png"),
         figure_image: figure_image(assigns.figure),
         text_width: if(assigns.figure, do: 528, else: 680)
@@ -453,6 +454,34 @@ defmodule Firmowid.Mailer.Components do
   defp figure_image(figure) do
     image = Map.fetch!(@figures, figure)
     Map.put(image, :url, static_url(image.path))
+  end
+
+  # Without @font-face every client falls back to Arial, since nobody has Lexend
+  # installed. Apple Mail, iOS Mail and Thunderbird load these files; Gmail strips
+  # the rules and keeps Arial. The `@media screen` wrapper hides them from desktop
+  # Outlook, which otherwise renders text in Times New Roman. The unicode ranges
+  # match assets/css/app.css, so Polish letters come from the latin-ext file.
+  defp font_face_css do
+    """
+    @media screen {
+      @font-face {
+        font-family: "Lexend";
+        font-style: normal;
+        font-weight: 100 900;
+        font-display: swap;
+        src: url("#{static_url("fonts/lexend-latin-ext.woff2")}") format("woff2");
+        unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+      }
+      @font-face {
+        font-family: "Lexend";
+        font-style: normal;
+        font-weight: 100 900;
+        font-display: swap;
+        src: url("#{static_url("fonts/lexend-latin.woff2")}") format("woff2");
+        unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+      }
+    }
+    """
   end
 
   defp static_url(path) do
