@@ -113,7 +113,10 @@ function applyIdentifiedState(instance = posthog) {
   }
 
   // Opt-in may capture the initial pageview immediately, so identify and group first.
-  instance.opt_in_capturing();
+  // The stored opt-in survives page loads; repeating it would send $opt_in on every page.
+  if (!instance.has_opted_in_capturing()) {
+    instance.opt_in_capturing();
+  }
 }
 
 function telemetryResetForm(element) {
