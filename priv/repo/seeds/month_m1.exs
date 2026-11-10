@@ -21,11 +21,11 @@ defmodule Firmowid.Seeds.MonthM1 do
     Spotify (1 txn, cost — should NOT group, too few)
 
   Wages (skip_invoicing, :company):
-    Kira Voss       -4,500 PLN (30h × 150 PLN/h)
-    Tomek Briar     -4,560 PLN (38h × 120 PLN/h)
-    Sable Orin      -1,600 PLN (16h × 100 PLN/h)
-    Jules Kadar     -3,250 PLN (25h × 130 PLN/h)
-    Maren Solke     -3,300 PLN (30h × 110 PLN/h)
+    Kinga Nowak       -4,500 PLN (30h × 150 PLN/h)
+    Tomasz Wiśniewski     -4,560 PLN (38h × 120 PLN/h)
+    Sabina Kowalczyk      -1,600 PLN (16h × 100 PLN/h)
+    Julia Wójcik     -3,250 PLN (25h × 130 PLN/h)
+    Marek Lewandowski     -3,300 PLN (30h × 110 PLN/h)
 
   THB:
     Outgoing conversion   -50,000 THB → :internal (skip_invoicing)
@@ -56,7 +56,7 @@ defmodule Firmowid.Seeds.MonthM1 do
       Helpers.seed_transaction!(
         %{
           internal_transaction_id: "m1_sale_ghostpet",
-          creditor_name: "Bytecraft Collective sp. z o.o.",
+          creditor_name: "Biuro Cyfrowe sp. z o.o.",
           creditor_account: "PL42105000997603123456789014",
           debtor_name: "GhostPet Inc.",
           debtor_account: "N/A",
@@ -73,7 +73,7 @@ defmodule Firmowid.Seeds.MonthM1 do
       Helpers.seed_transaction!(
         %{
           internal_transaction_id: "m1_sale_flatmate",
-          creditor_name: "Bytecraft Collective sp. z o.o.",
+          creditor_name: "Biuro Cyfrowe sp. z o.o.",
           creditor_account: "PL19105000997603123456789015",
           debtor_name: "FlatEarth Dating Ltd.",
           debtor_account: "N/A",
@@ -90,7 +90,7 @@ defmodule Firmowid.Seeds.MonthM1 do
       Helpers.seed_transaction!(
         %{
           internal_transaction_id: "m1_sale_taco",
-          creditor_name: "Bytecraft Collective sp. z o.o.",
+          creditor_name: "Biuro Cyfrowe sp. z o.o.",
           creditor_account: "PL85105000997603123456789013",
           debtor_name: "TacoOverflow Inc.",
           debtor_account: "DE89370400440532013000",
@@ -111,7 +111,7 @@ defmodule Firmowid.Seeds.MonthM1 do
           internal_transaction_id: "m1_cost_ovh",
           creditor_name: "OVH Cloud Sp. z o.o.",
           creditor_account: "PL50102013300000210201234567",
-          debtor_name: "Bytecraft Collective sp. z o.o.",
+          debtor_name: "Biuro Cyfrowe sp. z o.o.",
           debtor_account: "PL61105000997603123456789012",
           amount: Helpers.money!("PLN", -2_400.00),
           booking_date: Helpers.date_months_ago(1, 5),
@@ -128,7 +128,7 @@ defmodule Firmowid.Seeds.MonthM1 do
           internal_transaction_id: "m1_cost_opencode",
           creditor_name: "OpenCode GmbH",
           creditor_account: "DE44500105175407324931",
-          debtor_name: "Bytecraft Collective sp. z o.o.",
+          debtor_name: "Biuro Cyfrowe sp. z o.o.",
           debtor_account: "PL85105000997603123456789013",
           amount: Helpers.money!("EUR", -120.00),
           booking_date: Helpers.date_months_ago(1, 7),
@@ -145,7 +145,7 @@ defmodule Firmowid.Seeds.MonthM1 do
           internal_transaction_id: "m1_cost_rent",
           creditor_name: "Regus Business Centre Sp. z o.o.",
           creditor_account: "PL15109024020000000134672891",
-          debtor_name: "Bytecraft Collective sp. z o.o.",
+          debtor_name: "Biuro Cyfrowe sp. z o.o.",
           debtor_account: "PL61105000997603123456789012",
           amount: Helpers.money!("PLN", -4_500.00),
           booking_date: Helpers.date_months_ago(1, 1),
@@ -162,7 +162,7 @@ defmodule Firmowid.Seeds.MonthM1 do
           internal_transaction_id: "m1_cost_biuro",
           creditor_name: "Biuro Plus Sp. z o.o.",
           creditor_account: "PL88109024020000000139876543",
-          debtor_name: "Bytecraft Collective sp. z o.o.",
+          debtor_name: "Biuro Cyfrowe sp. z o.o.",
           debtor_account: "PL61105000997603123456789012",
           amount: Helpers.money!("PLN", -380.00),
           booking_date: Helpers.date_months_ago(1, 12),
@@ -179,7 +179,7 @@ defmodule Firmowid.Seeds.MonthM1 do
           internal_transaction_id: "m1_cost_bankfee",
           creditor_name: "ING Bank Śląski S.A.",
           creditor_account: "INTERNAL",
-          debtor_name: "Bytecraft Collective sp. z o.o.",
+          debtor_name: "Biuro Cyfrowe sp. z o.o.",
           debtor_account: "PL61105000997603123456789012",
           amount: Helpers.money!("PLN", -25.00),
           booking_date: Helpers.date_months_ago(1, 1),
@@ -198,7 +198,7 @@ defmodule Firmowid.Seeds.MonthM1 do
           internal_transaction_id: "m1_thb_conversion_out",
           creditor_name: "Bank Millennium S.A.",
           creditor_account: "INTERNAL",
-          debtor_name: "Bytecraft Collective sp. z o.o.",
+          debtor_name: "Biuro Cyfrowe sp. z o.o.",
           debtor_account: "PL73116022020000000512345678",
           amount: Helpers.money!("THB", -50_000.00),
           booking_date: Helpers.date_months_ago(1, 10),
@@ -213,7 +213,7 @@ defmodule Firmowid.Seeds.MonthM1 do
       Helpers.seed_transaction!(
         %{
           internal_transaction_id: "m1_thb_conversion_pln",
-          creditor_name: "Bytecraft Collective sp. z o.o.",
+          creditor_name: "Biuro Cyfrowe sp. z o.o.",
           creditor_account: "PL61105000997603123456789012",
           debtor_name: "Bank Millennium S.A.",
           debtor_account: "INTERNAL",
@@ -234,15 +234,15 @@ defmodule Firmowid.Seeds.MonthM1 do
       Helpers.seed_transaction!(
         %{
           internal_transaction_id: "m1_wage_kira",
-          creditor_name: "Kira Voss",
+          creditor_name: "Kinga Nowak",
           creditor_account: "PL11109024020000000187654321",
-          debtor_name: "Bytecraft Collective sp. z o.o.",
+          debtor_name: "Biuro Cyfrowe sp. z o.o.",
           debtor_account: "PL61105000997603123456789012",
           amount: Helpers.money!("PLN", -4_500.00),
           booking_date: wage_booking,
           bank_account_id: banks.pln.id,
           skip_invoicing: true,
-          remittance_information_unstructured: "Wynagrodzenie — Kira Voss, #{prefix}"
+          remittance_information_unstructured: "Wynagrodzenie — Kinga Nowak, #{prefix}"
         },
         bytecraft.id
       )
@@ -251,15 +251,15 @@ defmodule Firmowid.Seeds.MonthM1 do
       Helpers.seed_transaction!(
         %{
           internal_transaction_id: "m1_wage_tomek",
-          creditor_name: "Tomek Briar",
+          creditor_name: "Tomasz Wiśniewski",
           creditor_account: "PL22109024020000000198765432",
-          debtor_name: "Bytecraft Collective sp. z o.o.",
+          debtor_name: "Biuro Cyfrowe sp. z o.o.",
           debtor_account: "PL61105000997603123456789012",
           amount: Helpers.money!("PLN", -4_560.00),
           booking_date: wage_booking,
           bank_account_id: banks.pln.id,
           skip_invoicing: true,
-          remittance_information_unstructured: "Wynagrodzenie — Tomek Briar, #{prefix}"
+          remittance_information_unstructured: "Wynagrodzenie — Tomasz Wiśniewski, #{prefix}"
         },
         bytecraft.id
       )
@@ -268,15 +268,15 @@ defmodule Firmowid.Seeds.MonthM1 do
       Helpers.seed_transaction!(
         %{
           internal_transaction_id: "m1_wage_sable",
-          creditor_name: "Sable Orin",
+          creditor_name: "Sabina Kowalczyk",
           creditor_account: "PL33109024020000000209876543",
-          debtor_name: "Bytecraft Collective sp. z o.o.",
+          debtor_name: "Biuro Cyfrowe sp. z o.o.",
           debtor_account: "PL61105000997603123456789012",
           amount: Helpers.money!("PLN", -1_600.00),
           booking_date: wage_booking,
           bank_account_id: banks.pln.id,
           skip_invoicing: true,
-          remittance_information_unstructured: "Wynagrodzenie — Sable Orin, #{prefix}"
+          remittance_information_unstructured: "Wynagrodzenie — Sabina Kowalczyk, #{prefix}"
         },
         bytecraft.id
       )
@@ -285,15 +285,15 @@ defmodule Firmowid.Seeds.MonthM1 do
       Helpers.seed_transaction!(
         %{
           internal_transaction_id: "m1_wage_jules",
-          creditor_name: "Jules Kadar",
+          creditor_name: "Julia Wójcik",
           creditor_account: "PL44109024020000000210987654",
-          debtor_name: "Bytecraft Collective sp. z o.o.",
+          debtor_name: "Biuro Cyfrowe sp. z o.o.",
           debtor_account: "PL61105000997603123456789012",
           amount: Helpers.money!("PLN", -3_250.00),
           booking_date: wage_booking,
           bank_account_id: banks.pln.id,
           skip_invoicing: true,
-          remittance_information_unstructured: "Wynagrodzenie — Jules Kadar, #{prefix}"
+          remittance_information_unstructured: "Wynagrodzenie — Julia Wójcik, #{prefix}"
         },
         bytecraft.id
       )
@@ -302,15 +302,15 @@ defmodule Firmowid.Seeds.MonthM1 do
       Helpers.seed_transaction!(
         %{
           internal_transaction_id: "m1_wage_maren",
-          creditor_name: "Maren Solke",
+          creditor_name: "Marek Lewandowski",
           creditor_account: "PL55109024020000000221098765",
-          debtor_name: "Bytecraft Collective sp. z o.o.",
+          debtor_name: "Biuro Cyfrowe sp. z o.o.",
           debtor_account: "PL61105000997603123456789012",
           amount: Helpers.money!("PLN", -3_300.00),
           booking_date: wage_booking,
           bank_account_id: banks.pln.id,
           skip_invoicing: true,
-          remittance_information_unstructured: "Wynagrodzenie — Maren Solke, #{prefix}"
+          remittance_information_unstructured: "Wynagrodzenie — Marek Lewandowski, #{prefix}"
         },
         bytecraft.id
       )
@@ -529,7 +529,7 @@ defmodule Firmowid.Seeds.MonthM1 do
       Helpers.seed_transaction!(
         %{
           internal_transaction_id: "m1_s08_aurora_#{id}",
-          creditor_name: "Bytecraft Collective sp. z o.o.",
+          creditor_name: "Biuro Cyfrowe sp. z o.o.",
           creditor_account: "PL61105000997603123456789012",
           debtor_name: "Aurora Retail Sp. z o.o.",
           debtor_account: "PL95109010140000071219812874",
@@ -553,7 +553,7 @@ defmodule Firmowid.Seeds.MonthM1 do
         internal_transaction_id: "m1_hetzner_1",
         creditor_name: "Hetzner Online GmbH",
         creditor_account: "DE72100110012627388415",
-        debtor_name: "Bytecraft Collective sp. z o.o.",
+        debtor_name: "Biuro Cyfrowe sp. z o.o.",
         debtor_account: "PL85105000997603123456789013",
         amount: Helpers.money!("EUR", -89.00),
         booking_date: Helpers.date_months_ago(1, 3),
@@ -565,7 +565,7 @@ defmodule Firmowid.Seeds.MonthM1 do
         internal_transaction_id: "m1_hetzner_2",
         creditor_name: "Hetzner Online GmbH",
         creditor_account: "DE72100110012627388415",
-        debtor_name: "Bytecraft Collective sp. z o.o.",
+        debtor_name: "Biuro Cyfrowe sp. z o.o.",
         debtor_account: "PL85105000997603123456789013",
         amount: Helpers.money!("EUR", -45.00),
         booking_date: Helpers.date_months_ago(1, 10),
@@ -577,7 +577,7 @@ defmodule Firmowid.Seeds.MonthM1 do
         internal_transaction_id: "m1_hetzner_3",
         creditor_name: "Hetzner Online GmbH",
         creditor_account: "DE72100110012627388415",
-        debtor_name: "Bytecraft Collective sp. z o.o.",
+        debtor_name: "Biuro Cyfrowe sp. z o.o.",
         debtor_account: "PL85105000997603123456789013",
         amount: Helpers.money!("EUR", -12.50),
         booking_date: Helpers.date_months_ago(1, 15),
@@ -588,7 +588,7 @@ defmodule Firmowid.Seeds.MonthM1 do
       # DigitalPigeon — 2 income transactions from the same debtor → should group
       %{
         internal_transaction_id: "m1_dpigeon_1",
-        creditor_name: "Bytecraft Collective sp. z o.o.",
+        creditor_name: "Biuro Cyfrowe sp. z o.o.",
         creditor_account: "PL85105000997603123456789013",
         debtor_name: "DigitalPigeon Inc.",
         debtor_account: "DE89370400440532019999",
@@ -600,7 +600,7 @@ defmodule Firmowid.Seeds.MonthM1 do
       },
       %{
         internal_transaction_id: "m1_dpigeon_2",
-        creditor_name: "Bytecraft Collective sp. z o.o.",
+        creditor_name: "Biuro Cyfrowe sp. z o.o.",
         creditor_account: "PL85105000997603123456789013",
         debtor_name: "DigitalPigeon Inc.",
         debtor_account: "DE89370400440532019999",
@@ -615,7 +615,7 @@ defmodule Firmowid.Seeds.MonthM1 do
         internal_transaction_id: "m1_spotify",
         creditor_name: "Spotify AB",
         creditor_account: "SE3550000000058398257466",
-        debtor_name: "Bytecraft Collective sp. z o.o.",
+        debtor_name: "Biuro Cyfrowe sp. z o.o.",
         debtor_account: "PL85105000997603123456789013",
         amount: Helpers.money!("EUR", -17.99),
         booking_date: Helpers.date_months_ago(1, 1),

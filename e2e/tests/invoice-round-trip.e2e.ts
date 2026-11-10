@@ -8,8 +8,8 @@ const newCompany = {
   name: 'E2E Nowa Firma sp. z o.o.',
 };
 
-test('Bytecraft invoices a new company that signs up and receives it from KSeF', { session: 'kira', timeout: 900_000 }, async ({ app, screen, browser }) => {
-  // Bytecraft issues a sales invoice to the new company and sends it to the KSeF test environment.
+test('Biuro Cyfrowe invoices a new company that signs up and receives it from KSeF', { session: 'kira', timeout: 900_000 }, async ({ app, screen, browser }) => {
+  // Biuro Cyfrowe issues a sales invoice to the new company and sends it to the KSeF test environment.
   await app.open('/sprzedazowe');
   await screen.getByRole('button', 'Wprowadź ręcznie').tap();
   await screen.getByRole('textbox', 'NIP klienta').fill(newCompany.nip);
@@ -41,7 +41,7 @@ test('Bytecraft invoices a new company that signs up and receives it from KSeF',
   // The heading switches once KSeF assigns its number.
   await expect(screen.getByRole('heading', 'Faktura wysłana do KSeF')).toBeVisible({ timeout: 90_000 });
 
-  await screen.getByRole('button', 'kira@bytecraft.collective').tap();
+  await screen.getByRole('button', 'kinga@biurocyfrowe.pl').tap();
   await screen.getByRole('button', 'Wyloguj się').tap();
 
   // The new company signs up.
@@ -82,7 +82,7 @@ test('Bytecraft invoices a new company that signs up and receives it from KSeF',
         await app.open('/fakturowanie');
         return screen.getByText(invoiceNumber).isVisible();
       },
-      { timeout: 480_000, interval: 20_000, message: 'the Bytecraft invoice never arrived from KSeF' },
+      { timeout: 480_000, interval: 20_000, message: 'the Biuro Cyfrowe invoice never arrived from KSeF' },
     )
     .toBe(true);
 });

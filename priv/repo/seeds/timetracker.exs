@@ -4,8 +4,8 @@ defmodule Firmowid.Seeds.Timetracker do
   Seeds for the timetracker: salaries, time tracking sessions, and hours records.
 
   Creates:
-  - Active employment contract for each employee (Sable has pending_signature for signing flow)
-  - Active salary for each employee (+ one historical entry for Kira), linked to contracts
+  - Active employment contract for each employee (Sabina has pending_signature for signing flow)
+  - Active salary for each employee (+ one historical entry for Kinga), linked to contracts
   - Sessions for M-2 and M-1 (completed months, locked down by hours records)
   - Sessions for M-0 (current month, open — no hours record)
   - Hours records for M-2 and M-1 (with placeholder blob attachments)
@@ -161,7 +161,7 @@ defmodule Firmowid.Seeds.Timetracker do
       get_or_create_salary(user.member.id, bytecraft.id, rate, Map.get(contracts_by_user_id, user.id))
     end
 
-    # Historical salary for Kira — she got a raise from 120 to 150
+    # Historical salary for Kinga — she got a raise from 120 to 150
     create_historical_salary(users.kira.member.id, bytecraft.id, Decimal.new("120.00"))
   end
 
@@ -217,47 +217,47 @@ defmodule Firmowid.Seeds.Timetracker do
     %{users: users, projects: projects, bytecraft: bytecraft} = ctx
 
     m2_sessions = [
-      # Kira — Firmowid (code reviews, architecture)
+      # Kinga — Firmowid (code reviews, architecture)
       session_attrs(users.kira, projects.firmowid, "Przegląd kodu — moduł faktur", 2, 3, 9, 0, 12, 0, false),
       session_attrs(users.kira, projects.firmowid, "Architektura — integracja KSeF", 2, 5, 10, 0, 14, 0, true),
       session_attrs(users.kira, projects.firmowid, "Refaktoring — warstwa persystencji", 2, 7, 9, 0, 11, 30, false),
-      # Kira — FlatMate (disc map, sprint 7-8)
+      # Kinga — FlatMate (disc map, sprint 7-8)
       session_attrs(users.kira, projects.flatmate, "Mapa dysku — algorytm renderowania", 2, 4, 9, 0, 14, 0, true),
       session_attrs(users.kira, projects.flatmate, "Mapa dysku — optymalizacja WebGL", 2, 6, 10, 0, 15, 0, true),
       session_attrs(users.kira, projects.flatmate, "FlatMate sprint 7 — review & merge", 2, 8, 9, 0, 12, 0, false),
       session_attrs(users.kira, projects.flatmate, "FlatMate sprint 8 — planowanie", 2, 10, 13, 0, 16, 0, true),
       session_attrs(users.kira, projects.flatmate, "Algorytm dopasowań — testy integracyjne", 2, 12, 9, 0, 13, 0, false),
-      # Tomek — Firmowid
+      # Tomasz — Firmowid
       session_attrs(users.tomek, projects.firmowid, "Migracje bazy danych — nowe indeksy", 2, 3, 9, 0, 12, 0, false),
       session_attrs(users.tomek, projects.firmowid, "Testy jednostkowe — moduł płatności", 2, 9, 10, 0, 14, 0, true),
-      # Tomek — GhostPet (AI conversation platform)
+      # Tomasz — GhostPet (AI conversation platform)
       session_attrs(users.tomek, projects.ghostpet, "API konwersacji — endpoint czatu", 2, 4, 9, 0, 13, 0, false),
       session_attrs(users.tomek, projects.ghostpet, "Model NLP — trenowanie na danych zwierząt", 2, 5, 9, 0, 14, 0, true),
       session_attrs(users.tomek, projects.ghostpet, "Pipeline audio — synteza mowy zwierząt", 2, 6, 10, 0, 15, 0, false),
       session_attrs(users.tomek, projects.ghostpet, "Integracja z bazą wspomnień", 2, 8, 9, 0, 13, 0, true),
       session_attrs(users.tomek, projects.ghostpet, "GhostPet — poprawki bugów w czacie", 2, 10, 9, 0, 11, 0, false),
-      # Tomek — TacoOverflow
+      # Tomasz — TacoOverflow
       session_attrs(users.tomek, projects.taco, "Backend — system ocen pikantności", 2, 7, 9, 0, 14, 0, false),
       session_attrs(users.tomek, projects.taco, "API wyszukiwania przepisów", 2, 11, 10, 0, 15, 0, true),
-      # Sable — FlatMate (design)
+      # Sabina — FlatMate (design)
       session_attrs(users.sable, projects.flatmate, "Mockupy UI — profil użytkownika", 2, 3, 9, 0, 13, 0, true),
       session_attrs(users.sable, projects.flatmate, "Projekt interfejsu — ekran dopasowań", 2, 5, 10, 0, 14, 0, false),
       session_attrs(users.sable, projects.flatmate, "Design system — komponenty FlatMate", 2, 7, 9, 0, 12, 0, true),
       session_attrs(users.sable, projects.flatmate, "Testy użyteczności — nawigacja mapą", 2, 9, 10, 0, 15, 0, false),
       session_attrs(users.sable, projects.flatmate, "Ikony i grafiki — flat earth theme", 2, 11, 9, 0, 12, 0, true),
-      # Jules — TacoOverflow
+      # Julia — TacoOverflow
       session_attrs(users.jules, projects.taco, "Infrastruktura — deploy na Raspberry Pi", 2, 3, 9, 0, 14, 0, false),
       session_attrs(users.jules, projects.taco, "CI/CD pipeline — testy na mikrofali", 2, 5, 10, 0, 15, 0, true),
       session_attrs(users.jules, projects.taco, "Monitoring — Grafana dashboardy", 2, 7, 9, 0, 13, 0, false),
       session_attrs(users.jules, projects.taco, "Konfiguracja Kubernetes — klaster taco", 2, 9, 10, 0, 15, 0, true),
       session_attrs(users.jules, projects.taco, "Backup bazy danych — procedury DR", 2, 11, 9, 0, 12, 0, false),
       session_attrs(users.jules, projects.taco, "Optymalizacja sieci — edge caching", 2, 12, 13, 0, 17, 0, true),
-      # Maren — GhostPet (frontend)
+      # Marek — GhostPet (frontend)
       session_attrs(users.maren, projects.ghostpet, "Frontend czatu — komponent konwersacji", 2, 3, 9, 0, 13, 0, true),
       session_attrs(users.maren, projects.ghostpet, "Animacje — avatar zwierzaka", 2, 5, 10, 0, 14, 0, false),
       session_attrs(users.maren, projects.ghostpet, "Responsywność — widok mobilny", 2, 7, 9, 0, 12, 0, true),
       session_attrs(users.maren, projects.ghostpet, "Integracja API — websockety", 2, 9, 10, 0, 14, 0, false),
-      # Maren — TacoOverflow
+      # Marek — TacoOverflow
       session_attrs(users.maren, projects.taco, "Frontend — strona z przepisami", 2, 4, 9, 0, 13, 0, true),
       session_attrs(users.maren, projects.taco, "Komponent ocen — gwiazdki pikantności", 2, 6, 10, 0, 14, 0, false),
       session_attrs(users.maren, projects.taco, "Formularz dodawania przepisu", 2, 10, 9, 0, 13, 0, true),
@@ -275,42 +275,42 @@ defmodule Firmowid.Seeds.Timetracker do
     %{users: users, projects: projects, bytecraft: bytecraft} = ctx
 
     m1_sessions = [
-      # Kira — Firmowid
+      # Kinga — Firmowid
       session_attrs(users.kira, projects.firmowid, "Przegląd PR — tagowanie analiz", 1, 2, 9, 0, 12, 0, true),
       session_attrs(users.kira, projects.firmowid, "Planowanie sprintu — Q2 roadmap", 1, 8, 14, 0, 17, 0, false),
-      # Kira — FlatMate
+      # Kinga — FlatMate
       session_attrs(users.kira, projects.flatmate, "Edge-of-disc — system powiadomień", 1, 3, 9, 0, 14, 0, true),
       session_attrs(users.kira, projects.flatmate, "Udostępnianie lokalizacji — backend", 1, 5, 10, 0, 15, 0, false),
       session_attrs(users.kira, projects.flatmate, "FlatMate — bugfix lokalizacji GPS", 1, 7, 9, 0, 11, 0, true),
       session_attrs(users.kira, projects.flatmate, "Optymalizacja zapytań — mapa dysku", 1, 9, 10, 0, 14, 0, false),
-      # Tomek — Firmowid
+      # Tomasz — Firmowid
       session_attrs(users.tomek, projects.firmowid, "Optymalizacja zapytań SQL", 1, 4, 9, 0, 12, 0, true),
-      # Tomek — GhostPet (parrot module)
+      # Tomasz — GhostPet (parrot module)
       session_attrs(users.tomek, projects.ghostpet, "Moduł papugi — silnik konwersacji", 1, 2, 9, 0, 14, 0, false),
       session_attrs(users.tomek, projects.ghostpet, "AI żałoby — dostrajanie modelu", 1, 3, 10, 0, 15, 0, true),
       session_attrs(users.tomek, projects.ghostpet, "Pipeline danych — import wspomnień", 1, 5, 9, 0, 13, 0, false),
       session_attrs(users.tomek, projects.ghostpet, "GhostPet — naprawka memory leaks", 1, 7, 10, 0, 14, 0, true),
       session_attrs(users.tomek, projects.ghostpet, "Testy wydajnościowe — obciążenie API", 1, 9, 9, 0, 12, 0, false),
-      # Tomek — TacoOverflow
+      # Tomasz — TacoOverflow
       session_attrs(users.tomek, projects.taco, "System odznak — hot sauce badges", 1, 6, 9, 0, 13, 0, true),
       session_attrs(users.tomek, projects.taco, "Przygotowanie do Series A — demo API", 1, 10, 10, 0, 15, 0, false),
-      # Sable — FlatMate
+      # Sabina — FlatMate
       session_attrs(users.sable, projects.flatmate, "Redesign — ekran powiadomień", 1, 2, 9, 0, 13, 0, false),
       session_attrs(users.sable, projects.flatmate, "Prototypy — udostępnianie lokalizacji", 1, 4, 10, 0, 15, 0, true),
       session_attrs(users.sable, projects.flatmate, "Testy A/B — nowy onboarding", 1, 6, 9, 0, 12, 0, false),
       session_attrs(users.sable, projects.flatmate, "Grafiki marketingowe — kampania Q2", 1, 8, 10, 0, 14, 0, true),
       session_attrs(users.sable, projects.flatmate, "Aktualizacja design systemu", 1, 10, 9, 0, 12, 0, false),
-      # Jules — TacoOverflow
+      # Julia — TacoOverflow
       session_attrs(users.jules, projects.taco, "Migracja serwera — z Pi na Pi 5", 1, 2, 9, 0, 14, 0, false),
       session_attrs(users.jules, projects.taco, "Konfiguracja SSL — certyfikaty", 1, 4, 10, 0, 14, 0, true),
       session_attrs(users.jules, projects.taco, "Load balancing — przygotowanie do ruchu", 1, 6, 9, 0, 13, 0, false),
       session_attrs(users.jules, projects.taco, "Automatyzacja deploymentu — Ansible", 1, 8, 10, 0, 15, 0, true),
       session_attrs(users.jules, projects.taco, "Audyt bezpieczeństwa — penetration test", 1, 10, 9, 0, 13, 0, false),
-      # Maren — GhostPet
+      # Marek — GhostPet
       session_attrs(users.maren, projects.ghostpet, "Frontend — nowy widok czatu papugi", 1, 2, 9, 0, 13, 0, true),
       session_attrs(users.maren, projects.ghostpet, "Animacje emocji — reakcje AI", 1, 4, 10, 0, 14, 0, false),
       session_attrs(users.maren, projects.ghostpet, "Dashboard użytkownika — statystyki", 1, 8, 9, 0, 12, 0, true),
-      # Maren — TacoOverflow
+      # Marek — TacoOverflow
       session_attrs(users.maren, projects.taco, "Frontend — system odznak", 1, 3, 9, 0, 13, 0, false),
       session_attrs(users.maren, projects.taco, "Strona Series A — landing page", 1, 5, 10, 0, 14, 0, true),
       session_attrs(users.maren, projects.taco, "Responsywność — widok tabletu", 1, 9, 9, 0, 12, 0, false)
@@ -328,25 +328,25 @@ defmodule Firmowid.Seeds.Timetracker do
 
     # Fewer sessions — month is "in progress"
     m0_sessions = [
-      # Kira — Firmowid
+      # Kinga — Firmowid
       session_attrs(users.kira, projects.firmowid, "Standup — planowanie tygodnia", 0, 3, 9, 0, 10, 0, true),
       session_attrs(users.kira, projects.firmowid, "Code review — moduł analizy", 0, 5, 10, 0, 13, 0, false),
-      # Kira — FlatMate
+      # Kinga — FlatMate
       session_attrs(users.kira, projects.flatmate, "Hotfix — crash mapy na iOS", 0, 4, 14, 0, 17, 0, true),
-      # Tomek — GhostPet
+      # Tomasz — GhostPet
       session_attrs(users.tomek, projects.ghostpet, "Silnik konwersacji — nowe funkcje", 0, 3, 9, 0, 14, 0, false),
       session_attrs(users.tomek, projects.ghostpet, "Debugowanie — problem z pamięcią", 0, 5, 10, 0, 13, 0, true),
-      # Tomek — TacoOverflow
+      # Tomasz — TacoOverflow
       session_attrs(users.tomek, projects.taco, "Series A — sprint końcowy", 0, 4, 9, 0, 13, 0, false),
-      # Sable — FlatMate
+      # Sabina — FlatMate
       session_attrs(users.sable, projects.flatmate, "Nowe ikony — aktualizacja zestawu", 0, 3, 9, 0, 12, 0, true),
       session_attrs(users.sable, projects.flatmate, "Przegląd UX — flow rejestracji", 0, 5, 10, 0, 14, 0, false),
-      # Jules — TacoOverflow
+      # Julia — TacoOverflow
       session_attrs(users.jules, projects.taco, "Deploy — nowa wersja na Pi 5", 0, 3, 9, 0, 12, 0, false),
       session_attrs(users.jules, projects.taco, "Monitoring — alerty Slack", 0, 5, 10, 0, 13, 0, true),
-      # Maren — GhostPet
+      # Marek — GhostPet
       session_attrs(users.maren, projects.ghostpet, "Poprawki CSS — widok mobilny", 0, 3, 9, 0, 12, 0, true),
-      # Maren — TacoOverflow
+      # Marek — TacoOverflow
       session_attrs(users.maren, projects.taco, "Landing page — poprawki copy", 0, 4, 10, 0, 13, 0, false)
     ]
 
