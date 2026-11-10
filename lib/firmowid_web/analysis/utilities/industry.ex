@@ -16,4 +16,14 @@ defmodule FirmowidWeb.Analysis.Utilities.Industry do
   def label(:services), do: gettext("Services")
   def label(:gastronomy), do: gettext("Food service")
   def label(:retail), do: gettext("Retail")
+
+  @doc "Says how Analysis reads the finances of the industry, from its income channels and key costs."
+  @spec description(IndustryTemplate.industry()) :: String.t()
+  def description(:services), do: gettext("Analysis watches the cost of people, subcontractors and software.")
+
+  def description(:gastronomy),
+    do: gettext("Analysis splits income into the venue, delivery and catering, and watches the cost of food.")
+
+  def description(:retail),
+    do: gettext("Analysis splits income into the store and online sales, and watches the cost of goods.")
 end

@@ -22,6 +22,10 @@ defmodule FirmowidUI.Components.KsefConnection do
   attr :allow_fetch?, :boolean, default: false
   attr :fetching?, :boolean, default: false
 
+  attr :intro?, :boolean,
+    default: true,
+    doc: "shows the status and the introduction above the methods; a page whose heading already says it hides them"
+
   attr :details, :atom,
     default: :split,
     values: [:split, :inline],
@@ -83,14 +87,14 @@ defmodule FirmowidUI.Components.KsefConnection do
           </.detail_row>
         </div>
       <% else %>
-        <.detail_row layout={@details} label={gettext("Status")}>
+        <.detail_row :if={@intro?} layout={@details} label={gettext("Status")}>
           <span class="inline-flex items-center gap-2">
             <span>{gettext("Not connected to KSeF")}</span>
             <.icon name="hero-x-circle-solid" class="size-5 text-brick-700" />
           </span>
         </.detail_row>
 
-        <div class="mbs-8 mbe-3 text-grey-800">
+        <div :if={@intro?} class="mbs-8 mbe-3 text-grey-800">
           <%= if @allow_token? do %>
             {gettext("Connect KSeF using one of three methods.")}
           <% else %>
@@ -146,7 +150,7 @@ defmodule FirmowidUI.Components.KsefConnection do
             </div>
           </div>
 
-          <p class="text-sm text-grey-600">
+          <p :if={@intro?} class="text-sm text-grey-600">
             {gettext("Follow the steps below to connect Firmowid to KSeF.")}
           </p>
 
@@ -203,7 +207,7 @@ defmodule FirmowidUI.Components.KsefConnection do
           aria-labelledby="ksef-auth-tab-trusted_profile"
           class="w-full max-w-lg space-y-5"
         >
-          <p class="text-sm text-grey-600">
+          <p :if={@intro?} class="text-sm text-grey-600">
             {gettext("Follow the steps below to connect Firmowid to KSeF.")}
           </p>
           <ol class="space-y-6">
@@ -275,7 +279,7 @@ defmodule FirmowidUI.Components.KsefConnection do
           aria-labelledby="ksef-auth-tab-certificate"
           class="w-full max-w-lg space-y-5"
         >
-          <p class="text-sm text-grey-600">
+          <p :if={@intro?} class="text-sm text-grey-600">
             {gettext("Follow the steps below to connect Firmowid to KSeF.")}
           </p>
           <ol class="space-y-6">

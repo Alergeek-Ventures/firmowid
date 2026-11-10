@@ -8,14 +8,16 @@ defmodule FirmowidWeb.Infrastructure.Hooks.RequireAdmin do
 
   import Phoenix.LiveView
 
+  alias FirmowidWeb.Infrastructure.UserAuth
+
   def on_mount(:default, _params, _session, %{assigns: %{current_user: %{member: %{role: :admin}}}} = socket) do
     {:cont, socket}
   end
 
-  def on_mount(:default, _params, _session, socket) do
+  def on_mount(:default, _params, _session, %{assigns: %{current_user: user, current_org: org}} = socket) do
     {:halt,
      socket
      |> LiveToast.put_toast(:error, gettext("You do not have access to the management section."))
-     |> redirect(to: ~p"/czasosledz")}
+     |> redirect(to: UserAuth.signed_in_path_for_user(user, org.id))}
   end
 end

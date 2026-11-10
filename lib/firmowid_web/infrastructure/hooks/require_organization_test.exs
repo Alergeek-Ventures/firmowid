@@ -63,7 +63,7 @@ defmodule FirmowidWeb.Infrastructure.Hooks.RequireOrganizationTest do
     invite = Core.create_invite!(%{issued_by_id: other_admin.id}, scope: scope_for(other_admin))
 
     conn = log_in_user(conn, employee)
-    {:ok, lv, _html} = live(conn, OrganizationNavigation.onboarding_path())
+    {:ok, lv, _html} = live(conn, OrganizationNavigation.onboarding_path(:dolacz))
 
     lv
     |> form("#join_form", %{code: invite.invite_code, name: "Sable Orin"})

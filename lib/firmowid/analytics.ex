@@ -22,8 +22,19 @@ defmodule Firmowid.Analytics do
     time_entry_created: "time_entry_created",
     payroll_rates_updated: "payroll_rates_updated",
     counterparty_created: "counterparty_created",
-    counterparty_updated: "counterparty_updated"
+    counterparty_updated: "counterparty_updated",
+    onboarding_completed: "onboarding_completed"
   }
+
+  # Where the owner finishing the onboarding heard about Firmowid.
+  @heard_from_sources [
+    :search,
+    :ai_assistant,
+    :recommendation,
+    :accountant,
+    :social_media,
+    :other
+  ]
 
   @doc """
   Synchronizes the current account email to its PostHog person profile, independently of browser consent.
@@ -143,6 +154,11 @@ defmodule Firmowid.Analytics do
             ] do
     if properties == %{}, do: {:ok, %{}}, else: :error
   end
+
+  defp validate_properties(:onboarding_completed, %{heard_from: source}) when source in @heard_from_sources,
+    do: {:ok, %{"heard_from" => Atom.to_string(source)}}
+
+  defp validate_properties(:onboarding_completed, properties) when properties == %{}, do: {:ok, %{}}
 
   defp validate_properties(:payroll_rates_updated, %{changed_employee_count: count})
        when is_integer(count) and count >= 0, do: {:ok, %{"changed_employee_count" => count}}

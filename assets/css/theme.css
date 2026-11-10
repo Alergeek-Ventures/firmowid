@@ -41,6 +41,57 @@
     }
   }
 
+  /* Onboarding: an ink stamp pressed onto the company card. It drops from above
+     the paper, out of focus and casting a shadow, and lands with a short squash.
+     The resting angle comes from --stamp-rotate. */
+  @keyframes stamp-press {
+    0% {
+      opacity: 0;
+      scale: 1.55;
+      translate: 0 -14px;
+      rotate: calc(var(--stamp-rotate, 0deg) - 10deg);
+      filter: blur(2px) drop-shadow(0 18px 12px rgb(0 0 0 / 0.22));
+    }
+    55% {
+      opacity: 1;
+      scale: 0.93;
+      translate: 0 0;
+      rotate: var(--stamp-rotate, 0deg);
+      filter: blur(0) drop-shadow(0 0 0 rgb(0 0 0 / 0));
+    }
+    78% {
+      scale: 1.025;
+    }
+    100% {
+      opacity: 1;
+      scale: 1;
+      rotate: var(--stamp-rotate, 0deg);
+      filter: none;
+    }
+  }
+
+  /* Onboarding: a highlighter marking data that has just been filled in. */
+  @keyframes marker {
+    0% {
+      background-size: 0% 100%;
+    }
+    100% {
+      background-size: 100% 100%;
+    }
+  }
+
+  /* Onboarding: the next step's panel settling into place. */
+  @keyframes step-in {
+    0% {
+      opacity: 0;
+      translate: 0 10px;
+    }
+    100% {
+      opacity: 1;
+      translate: 0 0;
+    }
+  }
+
   /* Easing: quick start, soft landing, for panels that slide or resize */
   --ease-out-quint: cubic-bezier(0.23, 1, 0.32, 1);
 
@@ -49,4 +100,7 @@
   /* Content that replaces other content in place, like the sidebar layers */
   --animate-dissolve: appear 300ms ease-out;
   --animate-error-pulse: error-pulse 2s ease-in-out infinite;
+  --animate-stamp-press: stamp-press 640ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  --animate-marker: marker 650ms cubic-bezier(0.23, 1, 0.32, 1) both;
+  --animate-step-in: step-in 320ms cubic-bezier(0.16, 1, 0.3, 1) both;
 }

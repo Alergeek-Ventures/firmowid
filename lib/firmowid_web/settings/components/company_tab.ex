@@ -179,7 +179,12 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
           class="space-y-4"
         >
           <div class="space-y-2">
-            <.row_input field={@company_form[:name]} label={gettext("Name")} type="text" />
+            <.row_input field={@company_form[:name]} label={gettext("Name on invoices")} type="text" />
+            <.row_input
+              field={@company_form[:display_name]}
+              label={gettext("Name in the app")}
+              type="text"
+            />
             <.row_input field={@company_form[:nip]} label="NIP" type="text" />
 
             <Helpers.settings_field
@@ -239,6 +244,14 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
                 input_class="w-full"
               />
             </Helpers.settings_field>
+            <Helpers.settings_field
+              label={gettext("Billing by the hour")}
+              layout={:row}
+              block_class="flex items-center my-1"
+              for={@company_form[:bills_hourly].id}
+            >
+              <.switch field={@company_form[:bills_hourly]} color="teal" />
+            </Helpers.settings_field>
             <.row_input
               field={@company_form[:address]}
               label={gettext("Address")}
@@ -288,7 +301,12 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
         </.form>
       <% else %>
         <div class="space-y-2">
-          <.detail_row label={gettext("Name")} wide>{present(@current_org.name)}</.detail_row>
+          <.detail_row label={gettext("Name on invoices")} wide>
+            {present(@current_org.name)}
+          </.detail_row>
+          <.detail_row label={gettext("Name in the app")} wide>
+            {present(@current_org.display_name)}
+          </.detail_row>
           <.detail_row label="NIP" wide>{present(@current_org.nip)}</.detail_row>
           <.detail_row label={gettext("VAT payer")} wide>
             {yes_no(@current_org.is_vat_payer)}
@@ -302,6 +320,9 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
           </.detail_row>
           <.detail_row label={gettext("Industry")} wide>
             {Industry.label(@current_org.industry)}
+          </.detail_row>
+          <.detail_row label={gettext("Billing by the hour")} wide>
+            {yes_no(@current_org.bills_hourly)}
           </.detail_row>
           <.detail_row label={gettext("Address")} wide>
             {multiline_address(@current_org.address)}
@@ -334,11 +355,18 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
     >
       <div class="grid gap-4 sm:grid-cols-2">
         <Helpers.settings_field
-          label={gettext("Name")}
+          label={gettext("Name on invoices")}
           for={@company_form[:name].id}
           class="sm:col-span-2"
         >
           <.input field={@company_form[:name]} type="text" input_class="w-full" />
+        </Helpers.settings_field>
+        <Helpers.settings_field
+          label={gettext("Name in the app")}
+          for={@company_form[:display_name].id}
+          class="sm:col-span-2"
+        >
+          <.input field={@company_form[:display_name]} type="text" input_class="w-full" />
         </Helpers.settings_field>
         <Helpers.settings_field label="NIP" for={@company_form[:nip].id}>
           <.input field={@company_form[:nip]} type="text" input_class="w-full" />
@@ -354,6 +382,12 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
       </div>
 
       <div class="grid gap-4 border-bs border-grey-200 pbs-5 sm:grid-cols-2">
+        <.switch
+          field={@company_form[:bills_hourly]}
+          label={gettext("Billing by the hour: time tracking and projects")}
+          color="teal"
+          class="sm:col-span-2"
+        />
         <.switch
           field={@company_form[:is_vat_payer]}
           label={gettext("VAT payer")}

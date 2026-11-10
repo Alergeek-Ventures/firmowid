@@ -230,7 +230,7 @@ defmodule FirmowidWeb.Inbox.Components.SidebarNav do
         <span data-label class={label_styles()}>{@inbox.label}</span>
       </.link>
       <.link
-        :if={@layer == :me}
+        :if={@layer == :me and @timetracker}
         id="app-sidebar-link-timetracker"
         kind="unstyled"
         navigate={@timetracker.path}

@@ -33,7 +33,7 @@ defmodule FirmowidWeb.Auth.Views.RegistrationTest do
         |> render_submit()
 
       assert result =~ "Stwórz konto"
-      assert result =~ "Coś poszło nie tak..."
+      assert result =~ "Hasło musi mieć co najmniej 8 znaków."
     end
   end
 
@@ -61,10 +61,13 @@ defmodule FirmowidWeb.Auth.Views.RegistrationTest do
       conn = follow_trigger_action(form, conn)
 
       assert redirected_to(conn) == ~p"/zarejestruj"
-      assert Phoenix.Flash.get(conn.assigns.flash, :error) == "Taki email jest już zajęty."
+      assert Phoenix.Flash.get(conn.assigns.flash, :email_error) == "Taki email jest już zajęty."
     end
 
     test "creates account and organization", %{conn: conn} do
+      # The VAT white list does not know the NIP, so the owner enters the details.
+      Req.Test.stub(:nip_api, &Req.Test.json(&1, %{"result" => %{"subject" => nil}}))
+
       {:ok, registration_lv, _html} = live(conn, ~p"/zarejestruj")
 
       email = unique_user_email()
@@ -77,63 +80,55 @@ defmodule FirmowidWeb.Auth.Views.RegistrationTest do
 
       assert redirected_to(conn) == ~p"/czasosledz"
 
-      {:ok, organization_lv, organization_html} = live(conn, ~p"/organizacja")
+      {:ok, _start_lv, start_html} = live(conn, ~p"/organizacja")
 
-      assert organization_html =~ "Czas na przypisanie organizacji do Twojego konta"
+      assert start_html =~ "Zakładam firmę"
+
+      {:ok, organization_lv, _html} = live(conn, ~p"/organizacja?krok=firma")
+
+      organization_lv |> form("#company-form", %{"nip" => "5261040828"}) |> render_change()
+      assert render_async(organization_lv) =~ "Biała lista VAT nie zna tego NIP-u."
+
+      company = %{
+        "nip" => "5261040828",
+        "name" => "Nowa Organizacja",
+        "address" => "Prosta 1, 00-001 Warszawa"
+      }
 
       blank_name_html =
         organization_lv
-        |> form("#organization_form", %{
-          "organization" => %{
-            "owner_name" => "   ",
-            "nip" => "5261040828",
-            "name" => "Nowa Organizacja"
-          },
-          "address" => %{
-            "street" => "Prosta",
-            "number" => "1",
-            "postal_code" => "00-001",
-            "city" => "Warszawa"
-          }
-        })
+        |> form("#company-form", Map.put(company, "owner_name", "   "))
         |> render_submit()
 
-      assert blank_name_html =~ "jest wymagane"
+      assert blank_name_html =~ "Wpisz swoje imię i nazwisko."
+
+      organization_lv
+      |> form("#company-form", Map.put(company, "owner_name", "Ada Lovelace"))
+      |> render_submit()
+
+      assert_patch(organization_lv, ~p"/organizacja?krok=branza")
       assert is_nil(Core.load_member(Core.get_user_by_email!(email, authorize?: false)).member)
 
       organization_lv
-      |> form("#organization_form", %{
-        "organization" => %{
-          "owner_name" => "Ada Lovelace",
-          "nip" => "5261040828",
-          "name" => "Nowa Organizacja"
-        },
-        "address" => %{
-          "street" => "Prosta",
-          "number" => "1",
-          "postal_code" => "00-001",
-          "city" => "Warszawa"
-        }
-      })
+      |> form("#industry-form", %{"industry" => "services", "bills_hourly" => "false"})
       |> render_submit()
 
       created_user = email |> Core.get_user_by_email!(authorize?: false) |> Core.load_member()
-
-      assert created_user.member.organization_id
 
       organization =
         Core.get_organization!(created_user.member.organization_id, authorize?: false)
 
       assert organization.name == "Nowa Organizacja"
       assert organization.owner_id == created_user.id
+      refute organization.bills_hourly
       assert created_user.member.name == "Ada Lovelace"
 
-      {:ok, _dashboard_lv, dashboard_html} = live(conn, ~p"/fakturowanie")
+      conn = organization_lv |> form("#switch-organization-form") |> follow_trigger_action(conn)
 
-      assert dashboard_html =~ "Podepnij konto bankowe"
-      assert dashboard_html =~ "Połącz bank"
-      assert dashboard_html =~ "Połącz z KSeF"
-      assert dashboard_html =~ "Połącz KSeF"
+      assert redirected_to(conn) == ~p"/pierwsze-kroki"
+
+      # Until the first steps are done, the rest of the app leads back to them.
+      assert {:error, {:redirect, %{to: "/pierwsze-kroki"}}} = live(conn, ~p"/fakturowanie")
     end
 
     test "creates account and joins organization", %{conn: conn} do
@@ -165,16 +160,24 @@ defmodule FirmowidWeb.Auth.Views.RegistrationTest do
 
       assert redirected_to(conn) == ~p"/czasosledz"
 
-      {:ok, organization_lv, organization_html} = live(conn, ~p"/organizacja")
+      {:ok, organization_lv, _html} = live(conn, ~p"/organizacja?krok=dolacz")
 
-      assert organization_html =~ "Czas na przypisanie organizacji do Twojego konta"
+      # Typing a valid code shows which company invites before joining.
+      code_html =
+        organization_lv
+        |> form("#join_form", %{"name" => "", "code" => invite_code})
+        |> render_change()
+
+      organization = Core.get_organization!(admin.member.organization_id, authorize?: false)
+      assert code_html =~ "zaprasza Cię do swojego zespołu."
+      assert code_html =~ organization.name
 
       blank_name_html =
         organization_lv
         |> form("#join_form", %{"name" => "   ", "code" => invite_code})
         |> render_submit()
 
-      assert blank_name_html =~ "jest wymagane"
+      assert blank_name_html =~ "Wpisz swoje imię i nazwisko."
       assert is_nil(Core.load_member(Core.get_user_by_email!(email, authorize?: false)).member)
 
       organization_lv

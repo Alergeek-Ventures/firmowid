@@ -33,6 +33,7 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
   alias FirmowidWeb.Analysis.Utilities.CategoryColors
   alias FirmowidWeb.Core.Endpoint
   alias FirmowidWeb.Infrastructure.Components.BlobProcessingToasts
+  alias FirmowidWeb.Infrastructure.UserAuth
   alias FirmowidWeb.Infrastructure.Utilities.PosthogBusinessEvents
   alias FirmowidWeb.Invoicing.Components.EntriesTable
   alias FirmowidWeb.Invoicing.Utilities.Navigation
@@ -67,7 +68,14 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
     if can_view_invoicing?(socket.assigns.current_user) do
       mount_invoicing(socket)
     else
-      {:ok, redirect(socket, to: ~p"/czasosledz")}
+      {:ok,
+       redirect(socket,
+         to:
+           UserAuth.signed_in_path_for_user(
+             socket.assigns.current_user,
+             socket.assigns.current_org.id
+           )
+       )}
     end
   end
 

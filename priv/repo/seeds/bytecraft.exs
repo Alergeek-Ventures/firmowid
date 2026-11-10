@@ -129,6 +129,8 @@ defmodule Firmowid.Seeds.Bytecraft do
       CoreOrganization,
       %{
         name: "Biuro Cyfrowe spółka z ograniczoną odpowiedzialnością",
+        display_name: "Biuro Cyfrowe",
+        onboarding_completed_at: DateTime.utc_now(),
         nip: "6161525811",
         address: "ul. Marszałkowska 11/4, 00-624 Warszawa",
         owner_id: kira.id

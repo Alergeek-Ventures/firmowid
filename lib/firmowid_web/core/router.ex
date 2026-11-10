@@ -308,6 +308,7 @@ defmodule FirmowidWeb.Core.Router do
         {CurrentPath, :save_request_uri},
         Timezone
       ] do
+      live "/pierwsze-kroki", Organization.Views.FirstSteps, :index
       live "/zarzadzanie/pracownicy", Employees, :index
       live "/zarzadzanie/pracownicy/archiwum", Employees, :archive
       live "/zarzadzanie/pracownicy/:id", Employee, :projects

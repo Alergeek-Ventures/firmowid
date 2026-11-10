@@ -1213,7 +1213,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
         <.settings_avatar
           :if={@settings_tab == :organization}
           upload={@uploads.organization_avatar}
-          name={@current_org.name}
+          name={@current_org.display_name}
           url={@current_org.avatar_blob && @current_org.avatar_blob.url}
           label={gettext("Change organization logo")}
           class="rounded-md bg-white p-5"

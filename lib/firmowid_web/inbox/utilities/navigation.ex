@@ -52,14 +52,16 @@ defmodule FirmowidWeb.Inbox.Utilities.Navigation do
   @doc """
   The destinations a member with `role` may open. `analysis?` and
   `delegations?` reflect the analysis dashboard and business trips flags;
-  `owner?` controls subscription visibility.
+  `owner?` controls subscription visibility; `time_tracking?` is off for a
+  company that does not bill by the hour, which hides time tracking and projects.
   """
-  @spec for_role(UserRole.t(), boolean(), boolean(), boolean()) :: [destination()]
-  def for_role(role, analysis?, owner? \\ false, delegations? \\ false) do
+  @spec for_role(UserRole.t(), boolean(), boolean(), boolean(), boolean()) :: [destination()]
+  def for_role(role, analysis?, owner? \\ false, delegations? \\ false, time_tracking? \\ true) do
     Enum.filter(all(), fn destination ->
       role in destination.roles and (destination.id != :analysis or analysis?) and
         (destination.id != :subscription or owner?) and
-        (destination.id != :delegations or delegations?)
+        (destination.id != :delegations or delegations?) and
+        (destination.id not in [:timetracker, :projects] or time_tracking?)
     end)
   end
 

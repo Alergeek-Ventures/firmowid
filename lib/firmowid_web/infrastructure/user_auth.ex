@@ -126,23 +126,44 @@ defmodule FirmowidWeb.Infrastructure.UserAuth do
         |> halt()
 
       is_nil(user.member) ->
+        # The onboarding page itself explains that the account needs a company first.
         conn
         |> maybe_store_return_to()
-        |> LiveToast.put_toast(:notice, gettext("To continue, assign yourself an organization."))
         |> redirect(to: OrganizationNavigation.onboarding_path())
         |> halt()
 
       true ->
         {user, org, ash_scope} = load_scope_and_avatars(user)
 
-        conn
-        |> put_organization(user)
-        |> assign(:current_user, user)
-        |> assign(:current_org, org)
-        |> assign(:organizations, organizations)
-        |> assign(:ash_scope, ash_scope)
+        # Switching stays open, so the admin can move to another company of theirs.
+        if first_steps_pending?(user, org) and
+             conn.request_path not in [
+               OrganizationNavigation.first_steps_path(),
+               ~p"/organizacja/przelacz"
+             ] do
+          conn
+          |> redirect(to: OrganizationNavigation.first_steps_path())
+          |> halt()
+        else
+          conn
+          |> put_organization(user)
+          |> assign(:current_user, user)
+          |> assign(:current_org, org)
+          |> assign(:organizations, organizations)
+          |> assign(:ash_scope, ash_scope)
+        end
     end
   end
+
+  @doc """
+  Whether the admin of a just created company still has its first steps ahead;
+  every page leads them back there until they finish. Other members are not
+  sent there, since the first steps are the admin's.
+  """
+  @spec first_steps_pending?(User.t(), Organization.t()) :: boolean()
+  def first_steps_pending?(%User{member: %Member{role: :admin}}, %Organization{onboarding_completed_at: nil}), do: true
+
+  def first_steps_pending?(_user, _organization), do: false
 
   @doc """
   Plug: Requires an authenticated user, who creates or joins an organization
@@ -217,15 +238,26 @@ defmodule FirmowidWeb.Infrastructure.UserAuth do
   their session (see `Firmowid.Core.load_member/2`).
 
   Members with invoicing permissions (`:invoicing`, `:accountant`, `:admin`) are
-  redirected to invoicing hub, while other users land on time tracking.
+  redirected to invoicing hub, while other users land on time tracking, or on
+  their hours record in a company that does not bill by the hour.
   """
   @spec signed_in_path_for_user(User.t() | nil, binary() | nil) :: String.t()
   def signed_in_path_for_user(user, organization_id \\ nil)
 
   def signed_in_path_for_user(%User{} = user, organization_id) do
     case Core.load_member(user, organization_id).member do
-      %{role: role} when role in [:invoicing, :accountant, :admin] -> ~p"/fakturowanie"
-      _member -> ~p"/czasosledz"
+      %{role: :admin, organization: %{onboarding_completed_at: nil}} ->
+        OrganizationNavigation.first_steps_path()
+
+      %{role: role} when role in [:invoicing, :accountant, :admin] ->
+        ~p"/fakturowanie"
+
+      # A company that does not bill by the hour hides time tracking; the hours record stays.
+      %{organization: %{bills_hourly: false}} ->
+        ~p"/czasosledz/ewidencja"
+
+      _member ->
+        ~p"/czasosledz"
     end
   end
 

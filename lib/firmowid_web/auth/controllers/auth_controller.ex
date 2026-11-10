@@ -109,7 +109,7 @@ defmodule FirmowidWeb.Auth.Controllers.AuthController do
 
     conn
     |> renew_session()
-    |> redirect(to: ~p"/abonament-wygasl?#{[organizacja: organization.name]}")
+    |> redirect(to: ~p"/abonament-wygasl?#{[organizacja: organization.display_name]}")
   end
 
   @doc """
@@ -121,34 +121,35 @@ defmodule FirmowidWeb.Auth.Controllers.AuthController do
     log_auth_failure(conn, activity, reason)
 
     conn
-    |> put_flash(:error, message)
-    |> keep_sign_in_email(activity)
+    |> put_failure_flash(activity, reason, message)
+    |> keep_email(activity)
     |> redirect(to: path)
   end
 
-  # The login view prefills the email field from this flash.
-  defp keep_sign_in_email(conn, {:password, :sign_in}), do: put_flash(conn, :email, conn.params["user"]["email"])
+  # The sign-up page shows a taken email under its field instead of in a toast.
+  defp put_failure_flash(conn, {:password, :register}, reason, message) do
+    if duplicate_email?(reason),
+      do: put_flash(conn, :email_error, message),
+      else: put_flash(conn, :error, message)
+  end
 
-  defp keep_sign_in_email(conn, _activity), do: conn
+  defp put_failure_flash(conn, _activity, _reason, message), do: put_flash(conn, :error, message)
+
+  # The login and sign-up views prefill the email field from this flash.
+  defp keep_email(conn, {:password, phase}) when phase in [:sign_in, :register],
+    do: put_flash(conn, :email, conn.params["user"]["email"])
+
+  defp keep_email(conn, _activity), do: conn
+
+  defp duplicate_email?(%Invalid{errors: errors}) when is_list(errors),
+    do: Enum.any?(errors, &match?(%Ash.Error.Changes.InvalidAttribute{field: :email}, &1))
+
+  defp duplicate_email?(_reason), do: false
 
   defp failure_message_and_path({:password, :register}, reason) do
-    case reason do
-      %Invalid{errors: errors} when is_list(errors) ->
-        duplicate_email? =
-          Enum.any?(errors, fn
-            %Ash.Error.Changes.InvalidAttribute{field: :email} -> true
-            _ -> false
-          end)
-
-        if duplicate_email? do
-          {gettext("This email is already taken."), ~p"/zarejestruj"}
-        else
-          {account_creation_failed_message(), ~p"/zarejestruj"}
-        end
-
-      _ ->
-        {account_creation_failed_message(), ~p"/zarejestruj"}
-    end
+    if duplicate_email?(reason),
+      do: {gettext("This email is already taken."), ~p"/zarejestruj"},
+      else: {account_creation_failed_message(), ~p"/zarejestruj"}
   end
 
   defp failure_message_and_path({:password, :sign_in}, reason) do
