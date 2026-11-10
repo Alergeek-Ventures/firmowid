@@ -110,6 +110,10 @@ to validate the behavior, not just compilation or automated tests.
 - For UI work, compare the result with the reference the user gave (design,
   PDF, an existing component) and copy styling from the closest existing
   component.
+- When you test production (https://firmowid.pl) in a browser, open
+  `https://firmowid.pl/?internal=1` once first, in every new browser profile or
+  incognito session, so PostHog marks your browser as internal traffic and
+  excludes it from analytics.
 
 ## Automated Tests
 
