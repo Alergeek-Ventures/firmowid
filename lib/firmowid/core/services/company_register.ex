@@ -21,6 +21,10 @@ defmodule Firmowid.Core.Services.CompanyRegister do
   # a minute, 5760 an hour); the classification queue runs one job at a time.
   @pause_ms 1_250
 
+  # CEIDG allows 50 requests in 3 minutes and 1000 an hour, and blocks for 3 minutes
+  # when exceeded; a steady 3.7 s between requests keeps under both.
+  @ceidg_pause_ms 3_700
+
   @doc """
   Returns the cached register data of the valid Polish `nips` by NIP, first
   looking up and storing those not cached yet.
@@ -127,8 +131,12 @@ defmodule Firmowid.Core.Services.CompanyRegister do
 
   defp ceidg_fallback(attrs) do
     case Application.get_env(:firmowid, :ceidg_api_token) do
-      nil -> {:ok, attrs}
-      token -> ceidg_activity(attrs, token)
+      nil ->
+        {:ok, attrs}
+
+      token ->
+        Process.sleep(@ceidg_pause_ms)
+        ceidg_activity(attrs, token)
     end
   end
 
