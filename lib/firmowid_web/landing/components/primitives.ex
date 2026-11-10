@@ -46,11 +46,11 @@ defmodule FirmowidWeb.Landing.Components.Primitives do
           Firmowid
         </.link>
 
-        <div class="flex items-center gap-3 lg:gap-4">
-          <div class="hidden items-center gap-3 lg:flex lg:gap-4">
+        <div class="flex items-center gap-4">
+          <div class="flex items-center gap-2">
             <a
               href={~p"/#zespol"}
-              class="min-w-21.5 rounded-sm p-3.5 text-center text-base/6 font-medium text-[#0f0f0f] transition-colors duration-180 group-data-[theme=dark]/navbar:text-[#f5f1ea] hover:text-rust-600 group-data-[theme=dark]/navbar:hover:text-rust-500"
+              class="hidden rounded-sm px-5 py-3.75 text-base/5 font-medium text-[#0f0f0f] transition-colors duration-180 group-data-[theme=dark]/navbar:text-[#f5f1ea] hover:text-rust-600 group-data-[theme=dark]/navbar:hover:text-rust-500 lg:block"
             >
               {gettext("About us")}
             </a>
@@ -58,10 +58,19 @@ defmodule FirmowidWeb.Landing.Components.Primitives do
               href={@repository}
               target="_blank"
               rel="noopener noreferrer"
-              class="min-w-24 rounded-sm p-3.5 text-center text-base/6 font-medium text-[#0f0f0f] transition-colors duration-180 group-data-[theme=dark]/navbar:text-[#f5f1ea] hover:text-rust-600 group-data-[theme=dark]/navbar:hover:text-rust-500"
+              class="hidden rounded-sm px-5 py-3.75 text-base/5 font-medium text-[#0f0f0f] transition-colors duration-180 group-data-[theme=dark]/navbar:text-[#f5f1ea] hover:text-rust-600 group-data-[theme=dark]/navbar:hover:text-rust-500 lg:block"
             >
               GitHub
             </a>
+            <.locale_switcher />
+          </div>
+          <div class="hidden items-center gap-4 lg:flex">
+            <.landing_button
+              navigate={~p"/zaloguj"}
+              variant={:navbar_outline}
+            >
+              {gettext("Log in")}
+            </.landing_button>
             <.landing_button
               navigate={~p"/zarejestruj"}
               variant={:navbar_filled}
@@ -69,14 +78,7 @@ defmodule FirmowidWeb.Landing.Components.Primitives do
             >
               {gettext("Try it")}
             </.landing_button>
-            <.landing_button
-              navigate={~p"/zaloguj"}
-              variant={:navbar_outline}
-            >
-              {gettext("Log in")}
-            </.landing_button>
           </div>
-          <.locale_switcher />
         </div>
       </nav>
     </header>
@@ -98,11 +100,37 @@ defmodule FirmowidWeb.Landing.Components.Primitives do
         aria-haspopup="menu"
         aria-label={gettext("Language")}
         phx-click={show_popover("landing-locale-menu")}
-        class="flex cursor-pointer items-center gap-1.5 rounded-sm px-1.5 py-1 text-sm/6 font-semibold text-[#0f0f0f] uppercase transition-colors duration-180 group-data-[theme=dark]/navbar:text-[#f5f1ea] hover:text-rust-600 group-data-[theme=dark]/navbar:hover:text-rust-500"
+        class="flex h-9 cursor-pointer items-center gap-1.5 rounded-md px-4 text-base/5 font-medium text-[#0f0f0f] transition-colors duration-180 group-data-[theme=dark]/navbar:text-[#f5f1ea] hover:bg-black/6 group-data-[theme=dark]/navbar:hover:bg-white/12"
       >
-        <img src={flag(@locale)} alt="" width="20" height="14" class={flag_styles()} />
-        {@locale}
-        <Lucideicons.chevron_down class="size-4" />
+        <img
+          src={~p"/images/landing/icons/globe.svg"}
+          alt=""
+          width="18"
+          height="18"
+          class="size-4.5 group-data-[theme=dark]/navbar:hidden"
+        />
+        <img
+          src={~p"/images/landing/icons/globe-inverse.svg"}
+          alt=""
+          width="18"
+          height="18"
+          class="hidden size-4.5 group-data-[theme=dark]/navbar:block"
+        />
+        {locale_code(@locale)}
+        <img
+          src={~p"/images/landing/icons/chevron-down.svg"}
+          alt=""
+          width="14"
+          height="14"
+          class="size-3.5 group-data-[theme=dark]/navbar:hidden"
+        />
+        <img
+          src={~p"/images/landing/icons/chevron-down-inverse.svg"}
+          alt=""
+          width="14"
+          height="14"
+          class="hidden size-3.5 group-data-[theme=dark]/navbar:block"
+        />
       </button>
       <.popover id="landing-locale-menu" reference_id="landing-locale-trigger" placement="bottom-end">
         <.form
@@ -111,7 +139,7 @@ defmodule FirmowidWeb.Landing.Components.Primitives do
           id="landing-locale-switcher"
           role="menu"
           aria-label={gettext("Language")}
-          class="flex min-w-44 flex-col rounded-lg bg-white p-1 shadow-lg ring-1 ring-grey-700/10"
+          class="mt-4.25 flex translate-x-2 flex-col gap-0.5 rounded-lg border border-black/8 bg-white p-1.5 font-landing shadow-[0_0.5rem_0.75rem_rgb(0_0_0/0.1)]"
         >
           <button
             :for={{code, name} <- @languages}
@@ -121,17 +149,23 @@ defmodule FirmowidWeb.Landing.Components.Primitives do
             value={code}
             lang={code}
             aria-current={code == @locale && "true"}
-            class="flex cursor-pointer items-center gap-3 rounded-md px-3 py-2 text-left text-sm text-grey-900 hover:bg-grey-100 aria-current:font-semibold"
+            class="group/item flex w-51.5 cursor-pointer items-center justify-between gap-2.5 rounded-md px-3 py-2.25 text-left hover:bg-[#f0f0f0] aria-current:bg-[#f0f0f0]"
           >
-            <img src={flag(code)} alt="" width="20" height="14" class={flag_styles()} />
-            <span class="flex-1">{name}</span>
-            <Lucideicons.check :if={code == @locale} class="size-4 text-rust-600" />
+            <span class="flex items-center gap-2.5 text-[15px]/[normal] text-black group-aria-current/item:font-medium">
+              <img src={flag(code)} alt="" width="20" height="14" class={flag_styles()} />
+              {name}
+            </span>
+            <span class="text-[13px]/[normal] text-[#737373]">{locale_code(code)}</span>
           </button>
         </.form>
       </.popover>
     </div>
     """
   end
+
+  # Ukrainian is labelled with the country code UA, as in the flag, not the ISO 639 code.
+  defp locale_code("uk"), do: "UA"
+  defp locale_code(code), do: String.upcase(code)
 
   defp flag("pl"), do: ~p"/images/flags/pl.svg"
   defp flag("en"), do: ~p"/images/flags/gb.svg"
