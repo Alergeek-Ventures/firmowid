@@ -172,7 +172,6 @@ defmodule Firmowid.Invoicing.SalesInvoice do
     define :finalize, action: :finalize
     define :return_to_draft, action: :return_to_draft
     define :preview_invoice, action: :preview_invoice
-    define :issue_invoice, action: :issue_invoice
     define :wait_for_ksef_submissions, args: [:invoice_ids]
     define :preview_correction, action: :preview_correction
 
@@ -1061,17 +1060,6 @@ defmodule Firmowid.Invoicing.SalesInvoice do
       end
     end
 
-    # One typed invoice argument gives tools a clear schema; `:issue` also accepts every field flat.
-    action :issue_invoice, :struct do
-      description "Issue a new invoice from typed input, dated today, and queue its KSeF submission."
-      constraints instance_of: __MODULE__
-      argument :invoice, InvoiceInput, allow_nil?: false
-
-      run fn input, context ->
-        __MODULE__.issue(%{input: input.arguments.invoice}, Ash.Context.to_opts(context))
-      end
-    end
-
     action :wait_for_ksef_submissions, {:array, :map} do
       description "Wait until KSeF accepts or rejects issued invoices, at most three minutes, and return their statuses."
 
@@ -1090,7 +1078,7 @@ defmodule Firmowid.Invoicing.SalesInvoice do
 
       argument :invoice_ids, {:array, :uuid},
         allow_nil?: false,
-        description: "IDs of the invoices returned by issue_sales_invoice."
+        description: "IDs of the issued invoices."
 
       run Firmowid.Invoicing.Actions.WaitForKsefSubmissions
     end

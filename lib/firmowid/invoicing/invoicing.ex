@@ -160,27 +160,6 @@ defmodule Firmowid.Invoicing do
                     "of the organization's most recent invoices. Saves nothing."
     end
 
-    tool :issue_sales_invoice, SalesInvoice, :issue_invoice do
-      annotations title: "Issue sales invoice",
-                  read_only_hint: false,
-                  destructive_hint: false,
-                  open_world_hint: true
-
-      description "Issue a numbered sales invoice dated today and send it to KSeF. Requires an active KSeF connection. " <>
-                    "Put every invoice field, including invoice_number, in invoice. Required: buyer_type, " <>
-                    "buyer_full_name (or given name and surname), buyer_id (tax ID) for companies, buyer_address, " <>
-                    "sale_date, due_date and sales_invoice_items with name, quantity, unit, net unit_price and vat_rate " <>
-                    "such as \"23\". Seller details, issue date, PLN, Poland and payment by transfer to the organization's " <>
-                    "default account for the currency are filled in when omitted. The invoice is issued when " <>
-                    "this returns; KSeF accepts or rejects it in the background, without blocking further invoices."
-
-      load [
-        :amount,
-        :ksef_submission_status,
-        sales_invoice_items: [:net_value, :vat_value, :gross_value]
-      ]
-    end
-
     tool :wait_for_ksef_submissions, SalesInvoice, :wait_for_ksef_submissions do
       annotations title: "Wait for KSeF submissions",
                   read_only_hint: true,
@@ -895,19 +874,6 @@ defmodule Firmowid.Invoicing do
   end
 
   def get_logo_url(_organization_id, _opts), do: nil
-
-  @doc """
-  Validates and calculates the invoice `:issue_invoice` would create from the `invoice` input,
-  without saving it or queueing its KSeF submission. Lets an approval show exactly the
-  document that issuing the same input produces.
-  """
-  @spec preview_issued_sales_invoice(map(), keyword()) ::
-          {:ok, SalesInvoice.t()} | {:error, term()}
-  def preview_issued_sales_invoice(invoice, opts) do
-    %{input: invoice}
-    |> SalesInvoice.changeset_to_issue(opts)
-    |> SalesInvoice.Preview.from_changeset(opts)
-  end
 
   @doc """
   Returns the currency exchange rate for a sales invoice.

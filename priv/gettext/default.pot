@@ -64,6 +64,11 @@ msgstr ""
 msgid "%{amount}/h"
 msgstr ""
 
+#: lib/firmowid_web/assistant/components/invoice.ex
+#, elixir-autogen, elixir-format
+msgid "%{buyer} · NIP %{tax_id}"
+msgstr ""
+
 #: lib/firmowid_web/invoicing/components/dashboard_tiles.ex
 #, elixir-autogen, elixir-format
 msgid "%{client} pays regularly - this month we detected a missing invoice."
@@ -74,10 +79,66 @@ msgstr ""
 msgid "%{confidence}% confidence"
 msgstr ""
 
+#: lib/firmowid_web/assistant/utilities/presentation.ex
+#, elixir-autogen, elixir-format
+msgid "%{count} analysis entry"
+msgid_plural "%{count} analysis entries"
+msgstr[0] ""
+msgstr[1] ""
+
+#: lib/firmowid_web/assistant/utilities/presentation.ex
+#, elixir-autogen, elixir-format
+msgid "%{count} analysis tag"
+msgid_plural "%{count} analysis tags"
+msgstr[0] ""
+msgstr[1] ""
+
+#: lib/firmowid_web/assistant/utilities/presentation.ex
+#, elixir-autogen, elixir-format
+msgid "%{count} bank transaction"
+msgid_plural "%{count} bank transactions"
+msgstr[0] ""
+msgstr[1] ""
+
 #: lib/firmowid_web/inbox/utilities/queue.ex
 #, elixir-autogen, elixir-format
 msgid "%{count} calendar day"
 msgid_plural "%{count} calendar days"
+msgstr[0] ""
+msgstr[1] ""
+
+#: lib/firmowid_web/assistant/utilities/presentation.ex
+#, elixir-autogen, elixir-format
+msgid "%{count} candidate invoice"
+msgid_plural "%{count} candidate invoices"
+msgstr[0] ""
+msgstr[1] ""
+
+#: lib/firmowid_web/assistant/utilities/presentation.ex
+#, elixir-autogen, elixir-format
+msgid "%{count} candidate payment"
+msgid_plural "%{count} candidate payments"
+msgstr[0] ""
+msgstr[1] ""
+
+#: lib/firmowid_web/assistant/utilities/presentation.ex
+#, elixir-autogen, elixir-format
+msgid "%{count} candidate salary"
+msgid_plural "%{count} candidate salaries"
+msgstr[0] ""
+msgstr[1] ""
+
+#: lib/firmowid_web/assistant/utilities/presentation.ex
+#, elixir-autogen, elixir-format
+msgid "%{count} cost invoice"
+msgid_plural "%{count} cost invoices"
+msgstr[0] ""
+msgstr[1] ""
+
+#: lib/firmowid_web/assistant/utilities/presentation.ex
+#, elixir-autogen, elixir-format
+msgid "%{count} counterparty"
+msgid_plural "%{count} counterparties"
 msgstr[0] ""
 msgstr[1] ""
 
@@ -127,6 +188,20 @@ msgid_plural "%{count} items are waiting"
 msgstr[0] ""
 msgstr[1] ""
 
+#: lib/firmowid_web/assistant/utilities/presentation.ex
+#, elixir-autogen, elixir-format
+msgid "%{count} leave request"
+msgid_plural "%{count} leave requests"
+msgstr[0] ""
+msgstr[1] ""
+
+#: lib/firmowid_web/assistant/utilities/presentation.ex
+#, elixir-autogen, elixir-format
+msgid "%{count} monthly salary"
+msgid_plural "%{count} monthly salaries"
+msgstr[0] ""
+msgstr[1] ""
+
 #: lib/firmowid_web/billing/utilities/worksheet.ex
 #, elixir-autogen, elixir-format
 msgid "%{count} over the limit × %{price} / mo."
@@ -144,6 +219,13 @@ msgid_plural "%{count} pages"
 msgstr[0] ""
 msgstr[1] ""
 
+#: lib/firmowid_web/assistant/utilities/presentation.ex
+#, elixir-autogen, elixir-format
+msgid "%{count} project"
+msgid_plural "%{count} projects"
+msgstr[0] ""
+msgstr[1] ""
+
 #: lib/firmowid_web/billing/utilities/worksheet.ex
 #, elixir-autogen, elixir-format
 msgid "%{count} remaining"
@@ -156,6 +238,13 @@ msgid_plural "%{count} results"
 msgstr[0] ""
 msgstr[1] ""
 
+#: lib/firmowid_web/assistant/utilities/presentation.ex
+#, elixir-autogen, elixir-format
+msgid "%{count} sales invoice"
+msgid_plural "%{count} sales invoices"
+msgstr[0] ""
+msgstr[1] ""
+
 #: lib/firmowid_web/landing/components/sections.ex
 #: lib/firmowid_web/timetracker/components/session.ex
 #, elixir-autogen, elixir-format
@@ -164,10 +253,10 @@ msgid_plural "%{count} sessions"
 msgstr[0] ""
 msgstr[1] ""
 
-#: lib/firmowid_web/assistant/components/transcript.ex
+#: lib/firmowid_web/assistant/utilities/presentation.ex
 #, elixir-autogen, elixir-format
-msgid "%{count} step"
-msgid_plural "%{count} steps"
+msgid "%{count} step failed"
+msgid_plural "%{count} steps failed"
 msgstr[0] ""
 msgstr[1] ""
 
@@ -184,6 +273,18 @@ msgid "%{count} urgent item"
 msgid_plural "%{count} urgent items"
 msgstr[0] ""
 msgstr[1] ""
+
+#: lib/firmowid_web/assistant/utilities/presentation.ex
+#, elixir-autogen, elixir-format
+msgid "%{count} work session"
+msgid_plural "%{count} work sessions"
+msgstr[0] ""
+msgstr[1] ""
+
+#: lib/firmowid_web/assistant/components/invoice.ex
+#, elixir-autogen, elixir-format
+msgid "%{difference} against %{number}"
+msgstr ""
 
 #: lib/firmowid/timetracker/actions/notify_admins_about_hours_record_change.ex
 #, elixir-autogen, elixir-format
@@ -230,6 +331,11 @@ msgctxt "compact duration"
 msgid "%{hours}h %{minutes}min"
 msgstr ""
 
+#: lib/firmowid_web/assistant/utilities/presentation.ex
+#, elixir-autogen, elixir-format
+msgid "%{items} and %{last}"
+msgstr ""
+
 #: lib/firmowid_web/delegations/utilities/delegation_presentation.ex
 #, elixir-autogen, elixir-format
 msgid "%{label}: %{amount} at the NBP rate %{rate} of %{date}"
@@ -270,6 +376,11 @@ msgstr ""
 #: lib/firmowid_web/invoicing/components/dashboard_tiles.ex
 #, elixir-autogen, elixir-format
 msgid "%{percent}% confidence"
+msgstr ""
+
+#: lib/firmowid_web/assistant/components/invoice.ex
+#, elixir-autogen, elixir-format
+msgid "%{quantity} %{unit} × %{price} net"
 msgstr ""
 
 #: lib/firmowid_web/management/components/employee_tax_details.ex
@@ -1956,11 +2067,6 @@ msgstr ""
 
 #: lib/firmowid_web/assistant/utilities/presentation.ex
 #, elixir-autogen, elixir-format
-msgid "Check already matched payments"
-msgstr ""
-
-#: lib/firmowid_web/assistant/utilities/presentation.ex
-#, elixir-autogen, elixir-format
 msgid "Check correction details"
 msgstr ""
 
@@ -1994,7 +2100,7 @@ msgstr ""
 msgid "Check the other declarations before calculating pay."
 msgstr ""
 
-#: lib/firmowid_web/assistant/components/transcript.ex
+#: lib/firmowid_web/assistant/utilities/presentation.ex
 #, elixir-autogen, elixir-format
 msgid "Check the result"
 msgstr ""
@@ -2216,6 +2322,11 @@ msgstr ""
 msgid "Close assistant"
 msgstr ""
 
+#: lib/firmowid_web/assistant/components/invoice.ex
+#, elixir-autogen, elixir-format
+msgid "Close the invoice preview"
+msgstr ""
+
 #: lib/firmowid_web/settings/components/account_tab.ex
 #, elixir-autogen, elixir-format
 msgid "Closing the account"
@@ -2229,6 +2340,11 @@ msgstr ""
 #: lib/firmowid_web/inbox/components/sidebar.ex
 #, elixir-autogen, elixir-format
 msgid "Collapse or expand the menu"
+msgstr ""
+
+#: lib/firmowid_web/assistant/components/records.ex
+#, elixir-autogen, elixir-format
+msgid "Collapse the list"
 msgstr ""
 
 #: lib/firmowid_web/settings/components/profile_tab.ex
@@ -2289,9 +2405,19 @@ msgstr ""
 msgid "Company result"
 msgstr ""
 
+#: lib/firmowid_web/assistant/utilities/presentation.ex
+#, elixir-autogen, elixir-format
+msgid "Compare fixed costs from the last three months by category and tell me what went up."
+msgstr ""
+
 #: lib/firmowid_web/landing/components/pricing.ex
 #, elixir-autogen, elixir-format
 msgid "Compare plans"
+msgstr ""
+
+#: lib/firmowid_web/assistant/utilities/presentation.ex
+#, elixir-autogen, elixir-format
+msgid "Compare revenue and team costs per project over the last three months."
 msgstr ""
 
 #: lib/firmowid_web/landing/views/index.ex
@@ -2330,7 +2456,7 @@ msgstr ""
 msgid "Complete the trip times to calculate the per diem."
 msgstr ""
 
-#: lib/firmowid_web/assistant/components/transcript.ex
+#: lib/firmowid_web/assistant/utilities/presentation.ex
 #, elixir-autogen, elixir-format
 msgid "Completed"
 msgstr ""
@@ -2347,7 +2473,8 @@ msgstr ""
 msgid "Confirm account creation"
 msgstr ""
 
-#: lib/firmowid_mcp/invoicing/views/issue.ex
+#: lib/firmowid_ui/invoicing/components/issuance.ex
+#: lib/firmowid_web/assistant/components/invoice.ex
 #: lib/firmowid_web/landing/components/sections.ex
 #, elixir-autogen, elixir-format
 msgid "Confirm and send to KSeF"
@@ -2373,13 +2500,13 @@ msgstr ""
 msgid "Confirm email address change"
 msgstr ""
 
-#: lib/firmowid_mcp/invoicing/views/issue.ex
+#: lib/firmowid_ui/invoicing/issuance.ex
 #: lib/firmowid_web/landing/components/sections.ex
 #, elixir-autogen, elixir-format
 msgid "Confirm invoice"
 msgstr ""
 
-#: lib/firmowid_mcp/invoicing/views/issue.ex
+#: lib/firmowid_ui/invoicing/issuance.ex
 #, elixir-autogen, elixir-format
 msgid "Confirm invoice correction"
 msgstr ""
@@ -2444,7 +2571,8 @@ msgstr ""
 msgid "Connect KSeF"
 msgstr ""
 
-#: lib/firmowid_mcp/invoicing/views/issue.ex
+#: lib/firmowid_ui/invoicing/components/issuance.ex
+#: lib/firmowid_ui/invoicing/issuance.ex
 #, elixir-autogen, elixir-format
 msgid "Connect KSeF before issuing the invoice."
 msgstr ""
@@ -2718,6 +2846,11 @@ msgstr ""
 #: lib/firmowid_web/hours_record/views/index.html.heex
 #, elixir-autogen, elixir-format
 msgid "Correction"
+msgstr ""
+
+#: lib/firmowid_web/assistant/components/invoice.ex
+#, elixir-autogen, elixir-format
+msgid "Correction %{number}"
 msgstr ""
 
 #: lib/firmowid_web/invoicing/components/invoice_timeline.ex
@@ -4385,7 +4518,7 @@ msgstr ""
 msgid "Equipment testing"
 msgstr ""
 
-#: lib/firmowid_web/assistant/components/transcript.ex
+#: lib/firmowid_web/assistant/utilities/presentation.ex
 #, elixir-autogen, elixir-format
 msgid "Error"
 msgstr ""
@@ -4649,19 +4782,14 @@ msgstr ""
 msgid "Find matching invoices"
 msgstr ""
 
-#: lib/firmowid_web/assistant/components/transcript.ex
+#: lib/firmowid_web/assistant/utilities/presentation.ex
 #, elixir-autogen, elixir-format
-msgid "Find payments, check matches and prepare changes. You decide what gets saved."
+msgid "Find outgoing transfers from the last three months that have no cost invoice."
 msgstr ""
 
 #: lib/firmowid_web/assistant/utilities/presentation.ex
 #, elixir-autogen, elixir-format
 msgid "Find the next invoice number"
-msgstr ""
-
-#: lib/firmowid_web/assistant/utilities/presentation.ex
-#, elixir-autogen, elixir-format
-msgid "Find transactions without an invoice"
 msgstr ""
 
 #: lib/firmowid_web/landing/components/faq.ex
@@ -4681,7 +4809,6 @@ msgctxt "settings tab"
 msgid "Firmowid account"
 msgstr ""
 
-#: lib/firmowid_web/assistant/components/controls.ex
 #: lib/firmowid_web/assistant/views/floating.ex
 #: lib/firmowid_web/assistant/views/index.ex
 #, elixir-autogen, elixir-format
@@ -5219,6 +5346,11 @@ msgstr ""
 msgid "Hi, %{name}!"
 msgstr ""
 
+#: lib/firmowid_web/assistant/components/invoice.ex
+#, elixir-autogen, elixir-format
+msgid "Hide"
+msgstr ""
+
 #: lib/firmowid_web/delegations/components/settlement/trips.ex
 #, elixir-autogen, elixir-format
 msgid "Hide description"
@@ -5305,6 +5437,11 @@ msgstr ""
 #: lib/firmowid_web/landing/components/faq.ex
 #, elixir-autogen, elixir-format
 msgid "How does migration from another program work?"
+msgstr ""
+
+#: lib/firmowid_web/assistant/utilities/presentation.ex
+#, elixir-autogen, elixir-format
+msgid "How have fixed costs changed?"
 msgstr ""
 
 #: lib/firmowid_web/admin/components/settlement_components.ex
@@ -5717,7 +5854,6 @@ msgstr ""
 msgid "Invoice issued in Firmowid"
 msgstr ""
 
-#: lib/firmowid_web/assistant/components/records.ex
 #: lib/firmowid_web/invoicing/sales_invoices/components/invoice_items.ex
 #, elixir-autogen, elixir-format
 msgid "Invoice items"
@@ -5776,7 +5912,7 @@ msgstr ""
 msgid "Invoice sent by email"
 msgstr ""
 
-#: lib/firmowid_mcp/invoicing/views/issue.ex
+#: lib/firmowid_ui/invoicing/issuance.ex
 #: lib/firmowid_web/invoicing/sales_invoices/views/summary.ex
 #, elixir-autogen, elixir-format
 msgid "Invoice sent to KSeF"
@@ -5887,11 +6023,6 @@ msgstr ""
 msgid "Is my data safe?"
 msgstr ""
 
-#: lib/firmowid_web/assistant/utilities/presentation.ex
-#, elixir-autogen, elixir-format
-msgid "Issue a sales invoice"
-msgstr ""
-
 #: lib/firmowid_web/landing/components/sections.ex
 #, elixir-autogen, elixir-format
 msgid "Issue an invoice for Północny Kod: 120 h at PLN 180 net."
@@ -5963,7 +6094,8 @@ msgstr ""
 msgid "Issuing, managing, and storing sales and purchase invoices"
 msgstr ""
 
-#: lib/firmowid_mcp/invoicing/views/issue.ex
+#: lib/firmowid_ui/invoicing/components/issuance.ex
+#: lib/firmowid_web/assistant/components/invoice.ex
 #, elixir-autogen, elixir-format
 msgid "Issuing…"
 msgstr ""
@@ -6076,7 +6208,7 @@ msgstr ""
 msgid "KSeF ID of the corrected invoice"
 msgstr ""
 
-#: lib/firmowid_mcp/invoicing/views/issue.ex
+#: lib/firmowid_ui/invoicing/issuance.ex
 #, elixir-autogen, elixir-format
 msgid "KSeF accepted the invoice."
 msgstr ""
@@ -6111,7 +6243,7 @@ msgstr ""
 msgid "KSeF certificate is being renewed"
 msgstr ""
 
-#: lib/firmowid_mcp/invoicing/views/issue.ex
+#: lib/firmowid_ui/invoicing/issuance.ex
 #, elixir-autogen, elixir-format
 msgid "KSeF did not accept the invoice, so it returned to a draft without a number. Correct its details and issue it again."
 msgstr ""
@@ -6174,7 +6306,7 @@ msgstr ""
 msgid "KSeF setup is unavailable."
 msgstr ""
 
-#: lib/firmowid_mcp/invoicing/views/issue.ex
+#: lib/firmowid_ui/invoicing/issuance.ex
 #, elixir-autogen, elixir-format
 msgid "KSeF submission failed"
 msgstr ""
@@ -6303,11 +6435,6 @@ msgstr ""
 #, elixir-autogen, elixir-format
 msgctxt "work hours legend"
 msgid "Less"
-msgstr ""
-
-#: lib/firmowid_web/assistant/components/transcript.ex
-#, elixir-autogen, elixir-format
-msgid "Let's put your transactions in order"
 msgstr ""
 
 #: lib/firmowid_web/billing/utilities/worksheet.ex
@@ -6820,6 +6947,7 @@ msgstr ""
 msgid "New contract"
 msgstr ""
 
+#: lib/firmowid_web/assistant/components/controls.ex
 #: lib/firmowid_web/assistant/components/history.ex
 #, elixir-autogen, elixir-format
 msgid "New conversation"
@@ -7271,7 +7399,7 @@ msgstr ""
 msgid "Not participating"
 msgstr ""
 
-#: lib/firmowid_web/assistant/components/transcript.ex
+#: lib/firmowid_web/assistant/utilities/presentation.ex
 #, elixir-autogen, elixir-format
 msgid "Not performed"
 msgstr ""
@@ -7557,6 +7685,11 @@ msgstr ""
 #: lib/firmowid_web/assistant/components/controls.ex
 #, elixir-autogen, elixir-format
 msgid "Open the assistant in full screen"
+msgstr ""
+
+#: lib/firmowid_web/assistant/components/invoice.ex
+#, elixir-autogen, elixir-format
+msgid "Open the invoice preview"
 msgstr ""
 
 #: lib/firmowid_web/invoicing/transactions/components/show_components.ex
@@ -7977,6 +8110,11 @@ msgstr ""
 msgid "Payment schedule"
 msgstr ""
 
+#: lib/firmowid_web/assistant/utilities/presentation.ex
+#, elixir-autogen, elixir-format
+msgid "Payments without a cost invoice"
+msgstr ""
+
 #: lib/firmowid_web/payroll/components/monthly_payout.ex
 #, elixir-autogen, elixir-format
 msgid "Payout calculated from saved details"
@@ -8191,6 +8329,11 @@ msgstr ""
 #: lib/firmowid_web/management/views/delegation.ex
 #, elixir-autogen, elixir-format
 msgid "Preparing the file..."
+msgstr ""
+
+#: lib/firmowid_web/assistant/components/invoice.ex
+#, elixir-autogen, elixir-format
+msgid "Preview"
 msgstr ""
 
 #: lib/firmowid_mcp/invoicing/views/issue.ex
@@ -8439,6 +8582,11 @@ msgstr ""
 msgid "Reason"
 msgstr ""
 
+#: lib/firmowid_web/assistant/components/invoice.ex
+#, elixir-autogen, elixir-format
+msgid "Reason: %{reason}"
+msgstr ""
+
 #: lib/firmowid_web/management/components/employee_tax_details.ex
 #, elixir-autogen, elixir-format
 msgid "Received on %{date}"
@@ -8501,11 +8649,12 @@ msgstr ""
 msgid "Redirect"
 msgstr ""
 
-#: lib/firmowid_mcp/invoicing/views/issue.ex
+#: lib/firmowid_ui/invoicing/components/issuance.ex
 #, elixir-autogen, elixir-format
 msgid "Refresh"
 msgstr ""
 
+#: lib/firmowid_web/assistant/components/invoice.ex
 #: lib/firmowid_web/assistant/components/records.ex
 #: lib/firmowid_web/inbox/utilities/queue.ex
 #: lib/firmowid_web/landing/components/cookie_consent.ex
@@ -8734,6 +8883,11 @@ msgstr ""
 msgid "Returning..."
 msgstr ""
 
+#: lib/firmowid_web/assistant/utilities/presentation.ex
+#, elixir-autogen, elixir-format
+msgid "Revenue against team costs"
+msgstr ""
+
 #: lib/firmowid_web/invoicing/sales_invoices/components/invoice_items.ex
 #, elixir-autogen, elixir-format
 msgid "Reverse charge"
@@ -8760,14 +8914,14 @@ msgstr ""
 msgid "Review changes"
 msgstr ""
 
-#: lib/firmowid_web/assistant/components/records.ex
-#, elixir-autogen, elixir-format
-msgid "Review the changes before confirming"
-msgstr ""
-
 #: lib/firmowid/timetracker/actions/notify_admins_about_hours_record_change.ex
 #, elixir-autogen, elixir-format
 msgid "Review the request"
+msgstr ""
+
+#: lib/firmowid_web/assistant/utilities/presentation.ex
+#, elixir-autogen, elixir-format
+msgid "Reviewed %{items}"
 msgstr ""
 
 #: lib/firmowid_web/landing/views/privacy_policy.ex
@@ -8845,6 +8999,11 @@ msgstr ""
 #: lib/firmowid_web/analysis/components/period_details.ex
 #, elixir-autogen, elixir-format
 msgid "Salary, ZUS or tax payment"
+msgstr ""
+
+#: lib/firmowid_web/assistant/components/invoice.ex
+#, elixir-autogen, elixir-format
+msgid "Sale %{date}"
 msgstr ""
 
 #: lib/firmowid_web/invoicing/components/cost_invoice_details.ex
@@ -9415,6 +9574,13 @@ msgid_plural "Show all %{count} features"
 msgstr[0] ""
 msgstr[1] ""
 
+#: lib/firmowid_web/assistant/components/records.ex
+#, elixir-autogen, elixir-format
+msgid "Show %{count} more row"
+msgid_plural "Show %{count} more rows"
+msgstr[0] ""
+msgstr[1] ""
+
 #: lib/firmowid_web/inbox/views/index.ex
 #, elixir-autogen, elixir-format
 msgid "Show all (%{count})"
@@ -9461,14 +9627,14 @@ msgstr ""
 msgid "Show sessions"
 msgstr ""
 
-#: lib/firmowid_web/assistant/utilities/presentation.ex
-#, elixir-autogen, elixir-format
-msgid "Show skipped transactions"
-msgstr ""
-
 #: lib/firmowid_web/analysis/views/dashboard.ex
 #, elixir-autogen, elixir-format
 msgid "Show the whole company"
+msgstr ""
+
+#: lib/firmowid_web/assistant/utilities/presentation.ex
+#, elixir-autogen, elixir-format
+msgid "Show unpaid sales invoices past their due date, oldest first, with how many days each is overdue."
 msgstr ""
 
 #: lib/firmowid_web/timetracker/utilities/leave_presentation.ex
@@ -9736,11 +9902,6 @@ msgstr ""
 #: lib/firmowid_web/delegations/components/settlement_page.ex
 #, elixir-autogen, elixir-format
 msgid "Start of time abroad"
-msgstr ""
-
-#: lib/firmowid_web/assistant/components/controls.ex
-#, elixir-autogen, elixir-format
-msgid "Start over"
 msgstr ""
 
 #: lib/firmowid_web/landing/components/hero.ex
@@ -10269,7 +10430,7 @@ msgstr ""
 msgid "The conversation changed. Review its current state before continuing."
 msgstr ""
 
-#: lib/firmowid_mcp/invoicing/views/issue.ex
+#: lib/firmowid_ui/invoicing/issuance.ex
 #, elixir-autogen, elixir-format
 msgid "The correction could not be sent and was removed. Prepare a new correction after fixing its details."
 msgstr ""
@@ -10501,7 +10662,7 @@ msgid "The invoice could not be queued for KSeF submission. Nothing was issued."
 msgstr ""
 
 #: lib/firmowid/invoicing/changes/verify_invoice_review.ex
-#: lib/firmowid_mcp/invoicing/views/issue.ex
+#: lib/firmowid_ui/invoicing/issuance.ex
 #, elixir-autogen, elixir-format
 msgid "The invoice data changed. Review the updated preview and confirm again."
 msgstr ""
@@ -10537,7 +10698,7 @@ msgstr ""
 msgid "The invoice is a draft - approve it first"
 msgstr ""
 
-#: lib/firmowid_mcp/invoicing/views/issue.ex
+#: lib/firmowid_ui/invoicing/issuance.ex
 #, elixir-autogen, elixir-format
 msgid "The invoice is being sent"
 msgstr ""
@@ -10552,17 +10713,17 @@ msgstr ""
 msgid "The invoice is locked. Editing will be available once the submission to KSeF is finished."
 msgstr ""
 
-#: lib/firmowid_mcp/invoicing/views/issue.ex
+#: lib/firmowid_ui/invoicing/issuance.ex
 #, elixir-autogen, elixir-format
 msgid "The invoice is saved, but KSeF submission failed."
 msgstr ""
 
-#: lib/firmowid_mcp/invoicing/views/issue.ex
+#: lib/firmowid_ui/invoicing/issuance.ex
 #, elixir-autogen, elixir-format
 msgid "The invoice is saved, but KSeF submission has not started."
 msgstr ""
 
-#: lib/firmowid_mcp/invoicing/views/issue.ex
+#: lib/firmowid_ui/invoicing/issuance.ex
 #, elixir-autogen, elixir-format
 msgid "The invoice is saved. Sending to KSeF…"
 msgstr ""
@@ -10597,13 +10758,17 @@ msgstr ""
 msgid "The invoice was sent to KSeF."
 msgstr ""
 
+#: lib/firmowid_web/assistant/utilities/presentation.ex
+#, elixir-autogen, elixir-format
+msgid "The last three months by category"
+msgstr ""
+
 #: lib/firmowid_web/timetracker/views/index.html.heex
 #, elixir-autogen, elixir-format
 msgid "The new session overlaps existing ones. Saving requires the changes below:"
 msgstr ""
 
 #: lib/firmowid_ui/invoicing/components/invoice_number.ex
-#: lib/firmowid_web/assistant/utilities/presentation.ex
 #, elixir-autogen, elixir-format
 msgid "The number format may be invalid."
 msgstr ""
@@ -10997,7 +11162,6 @@ msgid "This invoice is already in the system"
 msgstr ""
 
 #: lib/firmowid_ui/invoicing/components/invoice_number.ex
-#: lib/firmowid_web/assistant/utilities/presentation.ex
 #, elixir-autogen, elixir-format
 msgid "This invoice number already exists."
 msgstr ""
@@ -11033,9 +11197,13 @@ msgid "This month is behind us, so no more transactions will appear."
 msgstr ""
 
 #: lib/firmowid_ui/invoicing/components/invoice_number.ex
-#: lib/firmowid_web/assistant/utilities/presentation.ex
 #, elixir-autogen, elixir-format
 msgid "This number creates a gap in the numbering."
+msgstr ""
+
+#: lib/firmowid_web/assistant/views/floating.ex
+#, elixir-autogen, elixir-format
+msgid "This one: %{choice}"
 msgstr ""
 
 #: lib/firmowid_web/management/views/project.html.heex
@@ -11231,6 +11399,11 @@ msgstr ""
 msgid "To find out about a new invoice, you have to log in to KSeF. Firmowid downloads documents continuously, and paid plans email you as soon as a new invoice arrives."
 msgstr ""
 
+#: lib/firmowid_web/assistant/components/invoice.ex
+#, elixir-autogen, elixir-format
+msgid "To pay after the correction"
+msgstr ""
+
 #: lib/firmowid_web/admin/components/settlement_components.ex
 #, elixir-autogen, elixir-format
 msgid "To pay for %{month}"
@@ -11272,6 +11445,13 @@ msgstr ""
 #, elixir-autogen, elixir-format
 msgid "Too many files"
 msgstr ""
+
+#: lib/firmowid_web/assistant/utilities/presentation.ex
+#, elixir-autogen, elixir-format
+msgid "Took %{count} step"
+msgid_plural "Took %{count} steps"
+msgstr[0] ""
+msgstr[1] ""
 
 #: lib/firmowid_web/analysis/components/segment_ranking.ex
 #, elixir-autogen, elixir-format
@@ -11318,6 +11498,11 @@ msgstr ""
 #: lib/firmowid_web/management/views/counterparty.ex
 #, elixir-autogen, elixir-format
 msgid "Total paid"
+msgstr ""
+
+#: lib/firmowid_web/assistant/components/invoice.ex
+#, elixir-autogen, elixir-format
+msgid "Total to pay"
 msgstr ""
 
 #: lib/firmowid_web/landing/components/sections.ex
@@ -11506,8 +11691,7 @@ msgstr ""
 msgid "Type what you want to find (e.g. counterparty, invoice number, description)..."
 msgstr ""
 
-#: lib/firmowid_mcp/invoicing/views/issue.ex
-#: lib/firmowid_web/assistant/utilities/presentation.ex
+#: lib/firmowid_ui/invoicing/issuance.ex
 #, elixir-autogen, elixir-format
 msgid "Unable to issue the invoice. Check its details and try again."
 msgstr ""
@@ -11517,7 +11701,7 @@ msgstr ""
 msgid "Unable to load the KSeF connection status. Try again."
 msgstr ""
 
-#: lib/firmowid_mcp/invoicing/views/issue.ex
+#: lib/firmowid_ui/invoicing/issuance.ex
 #, elixir-autogen, elixir-format
 msgid "Unable to load the invoice preview. Try again."
 msgstr ""
@@ -11527,7 +11711,7 @@ msgstr ""
 msgid "Unable to open the link. Try again."
 msgstr ""
 
-#: lib/firmowid_mcp/invoicing/views/issue.ex
+#: lib/firmowid_ui/invoicing/issuance.ex
 #, elixir-autogen, elixir-format
 msgid "Unable to refresh the invoice status. Try again."
 msgstr ""
@@ -11648,6 +11832,11 @@ msgstr ""
 #, elixir-autogen, elixir-format
 msgctxt "leave type"
 msgid "Unpaid leave"
+msgstr ""
+
+#: lib/firmowid_web/assistant/utilities/presentation.ex
+#, elixir-autogen, elixir-format
+msgid "Unpaid, oldest first"
 msgstr ""
 
 #: lib/firmowid_web/management/components/profile_tab.ex
@@ -11845,6 +12034,7 @@ msgstr ""
 msgid "VAT exemption"
 msgstr ""
 
+#: lib/firmowid_web/assistant/components/invoice.ex
 #: lib/firmowid_web/landing/components/sections.ex
 #, elixir-autogen, elixir-format
 msgid "VAT invoice %{number}"
@@ -11930,7 +12120,7 @@ msgstr ""
 msgid "Wait for KSeF"
 msgstr ""
 
-#: lib/firmowid_web/assistant/components/transcript.ex
+#: lib/firmowid_web/assistant/utilities/presentation.ex
 #, elixir-autogen, elixir-format
 msgid "Waiting"
 msgstr ""
@@ -12093,6 +12283,21 @@ msgstr ""
 #: lib/firmowid_web/delegations/components/settlement/expense.ex
 #, elixir-autogen, elixir-format
 msgid "Which documents should I attach?"
+msgstr ""
+
+#: lib/firmowid_web/assistant/utilities/presentation.ex
+#, elixir-autogen, elixir-format
+msgid "Which projects earn money and which lose it?"
+msgstr ""
+
+#: lib/firmowid_web/assistant/utilities/presentation.ex
+#, elixir-autogen, elixir-format
+msgid "Which sales invoices are overdue?"
+msgstr ""
+
+#: lib/firmowid_web/assistant/utilities/presentation.ex
+#, elixir-autogen, elixir-format
+msgid "Which transfers will the accountant ask about?"
 msgstr ""
 
 #: lib/firmowid_web/landing/components/sections.ex
@@ -12435,6 +12640,16 @@ msgstr ""
 msgid "You regularly pay %{client}, and we have not detected a transaction yet this month."
 msgstr ""
 
+#: lib/firmowid_web/assistant/components/invoice.ex
+#, elixir-autogen, elixir-format
+msgid "You rejected this correction."
+msgstr ""
+
+#: lib/firmowid_web/assistant/components/invoice.ex
+#, elixir-autogen, elixir-format
+msgid "You rejected this invoice."
+msgstr ""
+
 #: lib/firmowid_web/landing/components/sections.ex
 #, elixir-autogen, elixir-format
 msgid "You run a business."
@@ -12766,6 +12981,11 @@ msgstr ""
 msgid "draft sales invoice"
 msgstr ""
 
+#: lib/firmowid_web/assistant/components/invoice.ex
+#, elixir-autogen, elixir-format
+msgid "due %{date}"
+msgstr ""
+
 #: lib/firmowid_web/delegations/views/delegation_form.ex
 #, elixir-autogen, elixir-format
 msgid "e.g. A trip to Elixir Conf"
@@ -12946,6 +13166,11 @@ msgstr ""
 msgid "issue or sale date"
 msgstr ""
 
+#: lib/firmowid_web/assistant/components/invoice.ex
+#, elixir-autogen, elixir-format
+msgid "issued %{date}"
+msgstr ""
+
 #: lib/firmowid_web/landing/components/hero.ex
 #, elixir-autogen, elixir-format
 msgctxt "landing compass"
@@ -13101,6 +13326,11 @@ msgstr ""
 msgid "must match the pattern %{regex}"
 msgstr ""
 
+#: lib/firmowid_web/assistant/components/invoice.ex
+#, elixir-autogen, elixir-format
+msgid "net %{net} · VAT %{vat}"
+msgstr ""
+
 #: lib/firmowid_web/delegations/components/settlement_signature_page.ex
 #, elixir-autogen, elixir-format
 msgctxt "settlement attachments"
@@ -13131,6 +13361,11 @@ msgstr ""
 #, elixir-autogen, elixir-format
 msgctxt "presence"
 msgid "not working"
+msgstr ""
+
+#: lib/firmowid_web/assistant/components/invoice.ex
+#, elixir-autogen, elixir-format
+msgid "notes “%{note}”"
 msgstr ""
 
 #: lib/firmowid_web/timetracker/components/overlap.ex
@@ -13344,6 +13579,11 @@ msgstr ""
 #, elixir-autogen, elixir-format
 msgctxt "session time range"
 msgid "to"
+msgstr ""
+
+#: lib/firmowid_web/assistant/components/invoice.ex
+#, elixir-autogen, elixir-format
+msgid "to %{number} · %{buyer}"
 msgstr ""
 
 #: lib/firmowid_web/invoicing/sales_invoices/utilities/payment_date_suggestions.ex

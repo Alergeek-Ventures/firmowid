@@ -54,11 +54,9 @@ defmodule Firmowid.AiTools do
   # status through get_ksef_connection_status.
   @mcp_only [:show_ksef_connection]
 
-  # issue_sales_invoice issues as soon as the call runs. The assistant runs it only after the
-  # user approves its preview on the approval card; MCP has no such card and issues only from
-  # the confirmation widget that preview_sales_invoice opens. That widget also reports the KSeF
-  # outcome, which the assistant waits for with wait_for_ksef_submissions instead.
-  @assistant_only [:issue_sales_invoice, :wait_for_ksef_submissions]
+  # The confirmation widget reports the KSeF outcome on MCP; the assistant's invoice card shows it
+  # to the user, and the assistant reads it with wait_for_ksef_submissions when asked.
+  @assistant_only [:wait_for_ksef_submissions]
 
   # Writes the assistant's approval card cannot show yet: the user could not see what changes,
   # so the assistant gets them once each has its card. The assistant prompt names them as
