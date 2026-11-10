@@ -41,7 +41,7 @@ defmodule FirmowidWeb.Landing.Components.Primitives do
         <.link
           kind="unstyled"
           redirect={~p"/#top"}
-          class="text-lg leading-[1.2] font-extrabold text-[#0f0f0f] transition-colors duration-180 group-data-[theme=dark]/navbar:text-[#f5f1ea] lg:text-2xl"
+          class="font-logo text-lg leading-[1.2] font-extrabold text-[#0f0f0f] transition-colors duration-180 group-data-[theme=dark]/navbar:text-[#f5f1ea] lg:text-2xl"
         >
           Firmowid
         </.link>
@@ -346,7 +346,7 @@ defmodule FirmowidWeb.Landing.Components.Primitives do
           </div>
 
           <div class="order-1 mt-8 border-t border-[#f5f1ea]/20 pt-2 lg:order-0 lg:col-1 lg:row-1 lg:mt-0 lg:border-t-0 lg:pt-0">
-            <p class="text-lg font-bold lg:text-[22px]">Firmowid</p>
+            <p class="font-logo text-lg font-bold lg:text-[22px]">Firmowid</p>
             <p class="mt-3 text-sm/normal text-[rgb(245_241_234/0.6)] lg:mt-1 lg:leading-5">
               {gettext("Invoicing, banking, and working hours.")}
               <br />{gettext("Built by entrepreneurs for entrepreneurs.")}

@@ -4,7 +4,8 @@
 
 @theme {
   --font-*: initial;
-  --font-sans: "Lexend", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Geist", ui-sans-serif, system-ui, sans-serif;
+  --font-logo: "Lexend", ui-sans-serif, system-ui, sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 
   /* Elevation: resting cards; floating overlays use shadow-lg */

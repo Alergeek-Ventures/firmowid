@@ -28,7 +28,7 @@ defmodule FirmowidMcp.Runtime do
         <style>
           <%= Phoenix.HTML.raw(@css) %>
           /* ChatGPT can wrap the root in an element with its own font, which plain text would inherit. */
-          body, #mcp-root, #mcp-status, button, input, select, textarea { font-family: "Lexend", ui-sans-serif, system-ui, sans-serif !important; }
+          body, #mcp-root, #mcp-status, button, input, select, textarea { font-family: "Geist", ui-sans-serif, system-ui, sans-serif !important; }
           #mcp-root, #mcp-status { inline-size: min(100%, 34rem); margin-inline: auto; }
           #mcp-root:has(#mcp-invoice-issuance) { inline-size: min(100%, 72rem); }
         </style>

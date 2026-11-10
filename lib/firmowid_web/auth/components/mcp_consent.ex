@@ -57,14 +57,14 @@ defmodule FirmowidWeb.Auth.Components.McpConsent do
           rel="preload"
           as="font"
           type="font/woff2"
-          href="/fonts/lexend-latin.woff2"
+          href="/fonts/geist-latin.woff2"
           crossorigin
         />
         <link
           rel="preload"
           as="font"
           type="font/woff2"
-          href="/fonts/lexend-latin-ext.woff2"
+          href="/fonts/geist-latin-ext.woff2"
           crossorigin
         />
         <link rel="stylesheet" href="/assets/app.css" />

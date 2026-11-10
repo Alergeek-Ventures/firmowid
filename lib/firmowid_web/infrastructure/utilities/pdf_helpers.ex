@@ -137,7 +137,7 @@ defmodule FirmowidWeb.Infrastructure.Utilities.PdfHelpers do
       )
 
     # Inline CSS by reading the compiled app.css file
-    # CSS includes @font-face rule for Lexend font installed in container
+    # CSS includes @font-face rules for the Geist and Lexend fonts installed in container
     css_content = get_app_css() <> pdf_pagination_css(opts)
 
     """
