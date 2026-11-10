@@ -74,13 +74,14 @@ defmodule FirmowidMcp.Invoicing.Views.Issue do
   defp load_review(socket) do
     %{kind: kind, context: context} = socket.assigns.issuance
 
+    # Before loading, so a KSeF status sent meanwhile is not lost, and also when the first load
+    # fails, so the status arrives after "Refresh" loads it.
+    if connected?(socket), do: Ksef.subscribe_ksef_status(socket.assigns.scope.tenant)
+
     issuance =
       kind
       |> Issuance.new(socket.assigns.arguments, socket.assigns.confirmation_id, context)
       |> Issuance.load(socket.assigns.scope)
-
-    if connected?(socket) and issuance.connection,
-      do: Ksef.subscribe_ksef_status(socket.assigns.scope.tenant)
 
     socket |> assign(:issuance, issuance) |> publish_context()
   end

@@ -372,9 +372,7 @@ defmodule FirmowidWeb.Assistant.Views.Floating do
      )}
   end
 
-  # The card names its invoice; the panel's widget acts on the invoice it shows.
-  def handle_event("confirm_issuance", params, socket) do
-    id = params["call"] || socket.assigns.open_invoice
+  def handle_event("confirm_issuance", %{"call" => id}, socket) do
     socket = update_invoice(socket, id, &Issuance.confirm(&1, socket.assigns.ash_scope))
     {:noreply, renumber_after(socket, socket.assigns.invoices[id])}
   end
@@ -563,9 +561,14 @@ defmodule FirmowidWeb.Assistant.Views.Floating do
         else: {%{}, MapSet.new()}
 
     scope = socket.assigns.ash_scope
+    previews = Presentation.invoice_previews(turns)
+
+    # Before loading, so a KSeF status sent meanwhile reaches the card.
+    subscribe? = connected?(socket) and previews != [] and not socket.assigns.ksef_subscribed?
+    if subscribe?, do: Ksef.subscribe_ksef_status(scope.tenant)
 
     invoices =
-      Map.new(Presentation.invoice_previews(turns), fn preview ->
+      Map.new(previews, fn preview ->
         {preview.id,
          known[preview.id] ||
            preview.kind
@@ -576,9 +579,6 @@ defmodule FirmowidWeb.Assistant.Views.Floating do
            )
            |> Issuance.load(scope)}
       end)
-
-    subscribe? = connected?(socket) and invoices != %{} and not socket.assigns.ksef_subscribed?
-    if subscribe?, do: Ksef.subscribe_ksef_status(scope.tenant)
 
     assign(socket,
       invoices: invoices,
@@ -594,7 +594,7 @@ defmodule FirmowidWeb.Assistant.Views.Floating do
   defp renumber_after(socket, %{phase: phase, invoice: %{invoice_number: number}}) when phase != :review do
     invoices =
       Map.new(socket.assigns.invoices, fn
-        {id, %{phase: :review, invoice_number: ^number, invoice: edited} = issuance} ->
+        {id, %{phase: :review, invoice_number: ^number, invoice: %{} = edited} = issuance} ->
           {id,
            issuance
            |> Issuance.load(socket.assigns.ash_scope)

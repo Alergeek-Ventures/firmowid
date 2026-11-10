@@ -205,6 +205,7 @@ defmodule FirmowidWeb.Assistant.Components.Invoice do
         <IssuanceWidget.issuance
           issuance={@issuance}
           footer_logo_url={~p"/images/invoice_firmowid_logo.png"}
+          call={@id}
           stacked
         >
           <:actions>

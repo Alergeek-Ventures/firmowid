@@ -23,6 +23,10 @@ defmodule FirmowidUI.Invoicing.Components.Issuance do
 
   attr :footer_logo_url, :string, required: true
 
+  attr :call, :string,
+    default: nil,
+    doc: "Sent as `call` with `confirm_issuance`, for a LiveView confirming several invoices."
+
   attr :stacked, :boolean,
     default: false,
     doc: """
@@ -143,6 +147,7 @@ defmodule FirmowidUI.Invoicing.Components.Issuance do
                 variant="primary"
                 accent="teal"
                 phx-click="confirm_issuance"
+                phx-value-call={@call}
                 phx-disable-with={gettext("Issuing…")}
                 disabled={not @connected? or not Issuance.confirmable?(@issuance)}
                 class="grow justify-center outline-offset-2 focus-visible:outline-2 active:opacity-80 disabled:opacity-50"
