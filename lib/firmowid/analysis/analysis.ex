@@ -51,10 +51,17 @@ defmodule Firmowid.Analysis do
                   destructive_hint: false,
                   open_world_hint: false
 
-      description "List the entries behind the monthly income and expense analysis: sales invoices, cost invoices " <>
-                    "and standalone bank transactions with their full document amounts and categories. " <>
-                    "Categories are custom or project tags (shared equally), company, taxes, or internal (excluded from totals); " <>
-                    "an entry without categories is unassigned. Results belong to the authenticated organization."
+      description "List the entries behind the income and expense analysis for whole months, at most 12: " <>
+                    "sales invoices, cost invoices, standalone bank transactions and salary transfers. " <>
+                    "Each entry has its document amount and currency, the month it is counted in, and amount_pln " <>
+                    "as counted in the totals (negative for expenses; nil when internal or zero, i.e. not counted). " <>
+                    "category is the industry template category (e.g. payroll, software, premises, sales), nil while " <>
+                    "unclassified; category_source says who chose it: owner (confirmed), rule (salary, ZUS or tax " <>
+                    "payment) or classifier, with category_probability for the classifier's choice. " <>
+                    "counterparty_nip and registered_activity (PKD from public registers) describe the counterparty. " <>
+                    "allocation splits amount_pln exactly as the dashboard does between projects, shared_cost " <>
+                    "(company functions), company, taxes or unassigned (salaries by tracked time, else equally). " <>
+                    "Sum amount_pln yourself for any breakdown. Results belong to the authenticated organization."
     end
 
     tool :set_analysis_entry_category, EntityTag, :set_entity_category do
@@ -303,35 +310,53 @@ defmodule Firmowid.Analysis do
     do: get_category_review(Date.range(Date.new!(year, 1, 1), Date.new!(year, 12, 31)), scope)
 
   def get_category_review(%Date.Range{first: from, last: to}, scope) do
-    entries = get_organization_entries(from, to, scope)
-
-    classified =
-      Map.new(EntryCategory.list!(scope: scope), &{{&1.entity_type, &1.resource_id}, &1.category})
-
-    rows =
-      (entries.sales_invoices ++ entries.cost_invoices ++ entries.transactions)
-      |> Enum.reject(&internal?(&1.entity_tags))
-      |> Enum.flat_map(fn entity ->
-        for {amount, tags} <- normalized_entity(entity), not Decimal.eq?(amount, 0) do
-          entry = {entity_type(entity), entity.id}
-
-          %{
-            entity: entry,
-            side: if(Decimal.negative?(amount), do: :expenses, else: :income),
-            month: entry_month(entity),
-            name: counterparty_name(entity),
-            nip: counterparty_nip(entity),
-            amount: amount |> Decimal.abs() |> Decimal.round(2),
-            lines: entry_lines(entity),
-            certain: certain_category(entity, tags, amount),
-            classified: Map.get(classified, entry)
-          }
-        end
-      end)
-
+    entries = from |> get_organization_entries(to, scope) |> review_entries(scope)
     organization = Core.get_organization!(scope.tenant, scope: scope)
 
-    CategoryReview.build(rows, CounterpartyCategory.list!(scope: scope), organization.industry)
+    CategoryReview.build(entries, CounterpartyCategory.list!(scope: scope), organization.industry)
+  end
+
+  @doc """
+  Categorizes the result of `get_organization_entries/3`: maps each entry's
+  `{entity_type, id}` to its `get_category_review/2` entry and the
+  `CategoryReview.resolve/2` resolution. Internal entries and zero amounts
+  are left out, as in the review.
+  """
+  @spec categorize_entries(map(), Scope.t()) :: %{
+          {atom(), Ash.UUID.t()} => {CategoryReview.entry(), CategoryReview.resolution()}
+        }
+  def categorize_entries(entries, scope) do
+    entries
+    |> review_entries(scope)
+    |> CategoryReview.resolve(CounterpartyCategory.list!(scope: scope))
+    |> Map.new(fn {entry, _key, resolution} -> {entry.entity, {entry, resolution}} end)
+  end
+
+  defp review_entries(entries, scope) do
+    classified =
+      Map.new(EntryCategory.list!(scope: scope), &{{&1.entity_type, &1.resource_id}, &1})
+
+    (entries.sales_invoices ++ entries.cost_invoices ++ entries.transactions)
+    |> Enum.reject(&internal?(&1.entity_tags))
+    |> Enum.flat_map(fn entity ->
+      for {amount, tags} <- normalized_entity(entity), not Decimal.eq?(amount, 0) do
+        entry = {entity_type(entity), entity.id}
+        stored = Map.get(classified, entry)
+
+        %{
+          entity: entry,
+          side: if(Decimal.negative?(amount), do: :expenses, else: :income),
+          month: entry_month(entity),
+          name: counterparty_name(entity),
+          nip: counterparty_nip(entity),
+          amount: amount |> Decimal.abs() |> Decimal.round(2),
+          lines: entry_lines(entity),
+          certain: certain_category(entity, tags, amount),
+          classified: stored && stored.category,
+          probability: stored && stored.probability
+        }
+      end
+    end)
   end
 
   @doc """
@@ -396,10 +421,11 @@ defmodule Firmowid.Analysis do
   defp rate_date(%Transaction{booking_date: date}), do: date
   defp rate_date(invoice), do: invoice.sale_date
 
-  # The month the totals assign the entry to.
-  defp entry_month(%Transaction{salary_month: %Date{} = month}), do: month
-  defp entry_month(%Transaction{booking_date: date}), do: Date.beginning_of_month(date)
-  defp entry_month(invoice), do: Date.beginning_of_month(invoice.sale_date)
+  @doc "Returns the month the totals count an entry in: its salary month, else its booking or sale month."
+  @spec entry_month(SalesInvoice.t() | CostInvoice.t() | Transaction.t()) :: Date.t()
+  def entry_month(%Transaction{salary_month: %Date{} = month}), do: month
+  def entry_month(%Transaction{booking_date: date}), do: Date.beginning_of_month(date)
+  def entry_month(invoice), do: Date.beginning_of_month(invoice.sale_date)
 
   defp counterparty_name(%CostInvoice{} = invoice), do: invoice.effective_seller_display_name || "?"
 
@@ -412,16 +438,18 @@ defmodule Firmowid.Analysis do
     name || transaction.remittance_information_unstructured || "?"
   end
 
-  # Transactions carry no NIP; it is not validated here.
-  defp counterparty_nip(%CostInvoice{} = invoice), do: invoice.effective_seller_nip
+  @doc "Returns the NIP of an invoice's counterparty as written there, unvalidated; transactions carry none."
+  @spec counterparty_nip(SalesInvoice.t() | CostInvoice.t() | Transaction.t()) :: String.t() | nil
+  def counterparty_nip(%CostInvoice{} = invoice), do: invoice.effective_seller_nip
+  def counterparty_nip(%SalesInvoice{} = invoice), do: invoice.buyer_id
+  def counterparty_nip(%Transaction{}), do: nil
 
-  defp counterparty_nip(%SalesInvoice{} = invoice), do: invoice.buyer_id
-
-  defp counterparty_nip(%Transaction{}), do: nil
-
-  defp entity_type(%SalesInvoice{}), do: :sales_invoice
-  defp entity_type(%CostInvoice{}), do: :cost_invoice
-  defp entity_type(%Transaction{}), do: :transaction
+  @doc "Returns the analysis entity type of an entry."
+  @spec entity_type(SalesInvoice.t() | CostInvoice.t() | Transaction.t()) ::
+          :sales_invoice | :cost_invoice | :transaction
+  def entity_type(%SalesInvoice{}), do: :sales_invoice
+  def entity_type(%CostInvoice{}), do: :cost_invoice
+  def entity_type(%Transaction{}), do: :transaction
 
   # Invoice lines, or the whole entry described by its description or transfer title.
   defp entry_lines(%CostInvoice{items_list: [_ | _] = items}),
@@ -437,9 +465,25 @@ defmodule Firmowid.Analysis do
 
   defp certain_category(%Transaction{salary_month: %Date{}}, _tags, _amount), do: :payroll
 
-  defp certain_category(_entity, tags, amount) do
-    if Decimal.negative?(amount) and Enum.any?(tags, &(&1.kind == :taxes)), do: :taxes
+  defp certain_category(entity, tags, amount) do
+    cond do
+      not Decimal.negative?(amount) -> nil
+      Enum.any?(tags, &(&1.kind == :taxes)) -> :taxes
+      true -> public_levy(entity)
+    end
   end
+
+  # Every payer has its own ZUS contribution account (60000002026 at digits 3-13)
+  # and tax micro-account (10100071222), so a transfer to one is certain.
+  defp public_levy(%Transaction{creditor_account: account}) do
+    case AccountNumber.key(account) do
+      <<_check::binary-size(2), "60000002026", _rest::binary-size(13)>> -> :payroll
+      <<_check::binary-size(2), "10100071222", _rest::binary-size(13)>> -> :taxes
+      _other -> nil
+    end
+  end
+
+  defp public_levy(_invoice), do: nil
 
   defp unpaid_invoices_by_month(year, scope) do
     unrealized = get_unrealized_entries(Date.new!(year, 1, 1), Date.new!(year, 12, 31), scope)

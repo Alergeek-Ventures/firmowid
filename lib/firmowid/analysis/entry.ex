@@ -7,20 +7,26 @@ defmodule Firmowid.Analysis.Entry do
   alias Firmowid.Checks.AtLeastRole
 
   code_interface do
-    define :list, args: [:month]
+    define :list, args: [:from, :to]
   end
 
   actions do
     action :list, :map do
-      description "List a month's analysis entries with their categories, as shown on the analysis dashboard."
+      description "List the analysis entries of a period, as counted on the analysis dashboard, " <>
+                    "with their expense or income category, counterparty register data and project allocation."
+
       allow_nil? false
 
-      argument :month, :date,
+      argument :from, :date,
         allow_nil?: false,
-        description: "Any date within the analyzed month."
+        description: "Any day of the period's first month."
+
+      argument :to, :date,
+        allow_nil?: false,
+        description: "Any day of the period's last month; the period covers whole months, at most 12."
 
       constraints fields: [
-                    month: [type: :date, allow_nil?: false],
+                    industry: [type: :atom, allow_nil?: false],
                     entries: [
                       type: {:array, :map},
                       allow_nil?: false,
@@ -39,11 +45,22 @@ defmodule Firmowid.Analysis.Entry do
                               constraints: [one_of: [:income, :expenses]]
                             ],
                             counterparty: [type: :string],
+                            counterparty_nip: [type: :string],
+                            registered_activity: [type: :string],
                             description: [type: :string],
                             date: [type: :date],
+                            month: [type: :date, allow_nil?: false],
                             amount: [type: :decimal],
                             currency: [type: :string],
-                            categories: [
+                            amount_pln: [type: :decimal],
+                            category: [type: :atom],
+                            category_source: [
+                              type: :atom,
+                              constraints: [one_of: [:owner, :rule, :classifier]]
+                            ],
+                            category_probability: [type: :float],
+                            internal: [type: :boolean, allow_nil?: false],
+                            allocation: [
                               type: {:array, :map},
                               allow_nil?: false,
                               constraints: [
@@ -53,10 +70,17 @@ defmodule Firmowid.Analysis.Entry do
                                       type: :atom,
                                       allow_nil?: false,
                                       constraints: [
-                                        one_of: [:project, :company, :taxes, :internal]
+                                        one_of: [
+                                          :project,
+                                          :shared_cost,
+                                          :company,
+                                          :taxes,
+                                          :unassigned
+                                        ]
                                       ]
                                     ],
-                                    name: [type: :string]
+                                    name: [type: :string],
+                                    amount_pln: [type: :decimal, allow_nil?: false]
                                   ]
                                 ]
                               ]

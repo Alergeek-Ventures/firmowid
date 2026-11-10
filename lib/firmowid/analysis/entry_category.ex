@@ -1,8 +1,9 @@
 defmodule Firmowid.Analysis.EntryCategory do
   @moduledoc """
-  Category the classifier chose for one analysis entry from its description.
+  Category the classifier chose for one analysis entry from its description,
+  with the classifier's probability that it is right.
 
-  Certain signals (salaries, tax tags) and the owner's counterparty categories
+  Certain signals (salaries, ZUS and tax payments) and the owner's counterparty categories
   take precedence over it, so it only fills in what they leave open.
   """
   use Ash.Resource,
@@ -36,11 +37,11 @@ defmodule Firmowid.Analysis.EntryCategory do
 
     create :assign do
       description "Store the category the classifier chose for an entry."
-      accept [:entity_type, :resource_id, :category]
+      accept [:entity_type, :resource_id, :category, :probability]
 
       upsert? true
       upsert_identity :unique_entry
-      upsert_fields [:category, :updated_at]
+      upsert_fields [:category, :probability, :updated_at]
 
       validate fn changeset, _context ->
         category = Ash.Changeset.get_attribute(changeset, :category)
@@ -87,6 +88,11 @@ defmodule Firmowid.Analysis.EntryCategory do
 
     attribute :resource_id, :uuid, allow_nil?: false, public?: true
     attribute :category, :atom, allow_nil?: false, public?: true
+
+    attribute :probability, :float,
+      allow_nil?: false,
+      public?: true,
+      constraints: [min: 0]
 
     Resource.firmowid_timestamps()
   end

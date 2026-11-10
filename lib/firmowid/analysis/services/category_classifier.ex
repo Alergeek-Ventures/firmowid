@@ -1,7 +1,8 @@
 defmodule Firmowid.Analysis.Services.CategoryClassifier do
   @moduledoc """
   Lets Jev choose an industry template category for each analysis entry from
-  its description, and stores the choice per entry.
+  its description, and stores the choice per entry with Jev's probability that
+  it is right.
 
   Jev sees the entry's side, counterparty with its main activity (PKD) from the
   public registers when the invoice names its NIP, invoice lines or transfer title
@@ -106,8 +107,8 @@ defmodule Firmowid.Analysis.Services.CategoryClassifier do
 
   defp registered_activity(%{nip: nip}, companies) when is_binary(nip) do
     case Map.get(companies, Nip.normalize_digits(nip)) do
-      %RegisteredCompany{pkd: pkd, pkd_name: name} when is_binary(pkd) -> "#{pkd} #{name}"
-      _unknown -> nil
+      %RegisteredCompany{} = company -> RegisteredCompany.activity(company)
+      nil -> nil
     end
   end
 
@@ -132,11 +133,17 @@ defmodule Firmowid.Analysis.Services.CategoryClassifier do
       }
     }
 
-    with {:ok, %{"category" => %{"choice" => choice}}} <- Jev.evaluate(state, questions),
+    with {:ok, %{"category" => %{"choice" => choice, "probabilities" => probabilities}}} <-
+           Jev.evaluate(state, questions),
          category when category != nil <- Enum.find(categories, &(Atom.to_string(&1) == choice)),
          {:ok, _stored} <-
            EntryCategory.assign(
-             %{entity_type: entity_type, resource_id: resource_id, category: category},
+             %{
+               entity_type: entity_type,
+               resource_id: resource_id,
+               category: category,
+               probability: Map.fetch!(probabilities, choice)
+             },
              scope: scope
            ) do
       :ok

@@ -8844,7 +8844,7 @@ msgstr ""
 
 #: lib/firmowid_web/analysis/components/period_details.ex
 #, elixir-autogen, elixir-format
-msgid "Salary or tax payment"
+msgid "Salary, ZUS or tax payment"
 msgstr ""
 
 #: lib/firmowid_web/invoicing/components/cost_invoice_details.ex

@@ -4,14 +4,16 @@ defmodule Firmowid.Analysis.CategoryReview do
 
   The owner has the last word: an entry takes the category confirmed for its
   counterparty. Otherwise it is only suggested one, from a certain signal
-  (salaries, tax tags) or else the one the classifier chose from its
-  description, until the owner confirms. Entries are grouped by counterparty
-  and that outcome, so a mixed supplier shows each kind of purchase.
+  (salaries, ZUS and tax payments) or else the one the classifier chose from
+  its description, until the owner confirms. Entries are grouped by
+  counterparty and that outcome, so a mixed supplier shows each kind of
+  purchase.
   """
 
   alias Firmowid.Analysis.IndustryTemplate
 
   @type source :: :certain | :jev
+  @type resolution :: {IndustryTemplate.category(), :confirmed | source()} | {nil, nil}
   @type entry :: %{
           side: IndustryTemplate.side(),
           month: Date.t(),
@@ -19,7 +21,8 @@ defmodule Firmowid.Analysis.CategoryReview do
           amount: Decimal.t(),
           lines: [String.t()],
           certain: IndustryTemplate.category() | nil,
-          classified: IndustryTemplate.category() | nil
+          classified: IndustryTemplate.category() | nil,
+          probability: float() | nil
         }
 
   @doc """
@@ -35,13 +38,7 @@ defmodule Firmowid.Analysis.CategoryReview do
   """
   @spec build([entry()], [map()], IndustryTemplate.industry()) :: map()
   def build(entries, rules, industry) do
-    rules = Map.new(rules, &{{&1.side, &1.counterparty_key}, &1})
-
-    resolved =
-      Enum.map(entries, fn entry ->
-        key = key(entry.name)
-        {entry, key, resolve(entry, Map.get(rules, {entry.side, key}))}
-      end)
+    resolved = resolve(entries, rules)
 
     groups =
       resolved
@@ -65,6 +62,21 @@ defmodule Firmowid.Analysis.CategoryReview do
       classifier_suggested: classifier_suggested,
       industry: industry
     }
+  end
+
+  @doc """
+  Pairs each entry with its counterparty key and its category with where it
+  comes from: `:confirmed` by the owner in `rules`, else a `:certain` signal,
+  else the classifier (`:jev`), else `{nil, nil}`.
+  """
+  @spec resolve([entry()], [map()]) :: [{entry(), String.t(), resolution()}]
+  def resolve(entries, rules) do
+    rules = Map.new(rules, &{{&1.side, &1.counterparty_key}, &1})
+
+    Enum.map(entries, fn entry ->
+      key = key(entry.name)
+      {entry, key, resolution(entry, Map.get(rules, {entry.side, key}))}
+    end)
   end
 
   @doc """
@@ -136,10 +148,10 @@ defmodule Firmowid.Analysis.CategoryReview do
   end
 
   # The owner has the last word; a certain signal, else the classifier, only suggests.
-  defp resolve(_entry, %{category: category}), do: {category, :confirmed}
-  defp resolve(%{certain: category}, nil) when category != nil, do: {category, :certain}
-  defp resolve(%{classified: category}, nil) when category != nil, do: {category, :jev}
-  defp resolve(_entry, nil), do: {nil, nil}
+  defp resolution(_entry, %{category: category}), do: {category, :confirmed}
+  defp resolution(%{certain: category}, nil) when category != nil, do: {category, :certain}
+  defp resolution(%{classified: category}, nil) when category != nil, do: {category, :jev}
+  defp resolution(_entry, nil), do: {nil, nil}
 
   # Lowercase words separated by single spaces.
   defp key(name) do
