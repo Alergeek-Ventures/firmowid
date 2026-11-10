@@ -58,32 +58,11 @@ defmodule Firmowid.AiTools do
   # to the user, and the assistant reads it with wait_for_ksef_submissions when asked.
   @assistant_only [:wait_for_ksef_submissions]
 
-  # Writes the assistant's approval card cannot show yet: the user could not see what changes,
-  # so the assistant gets them once each has its card. The assistant prompt names them as
-  # changes it does not make; update it together with this list.
-  @awaiting_approval_card [
-    :start_session,
-    :stop_current_session,
-    :edit_session,
-    :add_sessions,
-    :create_leave_request,
-    :update_profile,
-    :create_sales_invoice_draft,
-    :update_sales_invoice_draft,
-    :update_sales_invoice_internal_note,
-    :update_cost_invoice_internal_note,
-    :update_transaction_internal_note,
-    :connect_transaction_salary,
-    :disconnect_transaction_salary,
-    :set_analysis_entry_category,
-    :set_analysis_entry_project_tags
-  ]
-
   @doc "Returns the tools exposed by the MCP server."
   @spec mcp() :: [atom()]
   def mcp, do: @shared ++ @mcp_only
 
   @doc "Returns the tools exposed to the in-app assistant."
   @spec assistant() :: [atom()]
-  def assistant, do: (@shared -- @awaiting_approval_card) ++ @assistant_only
+  def assistant, do: @shared ++ @assistant_only
 end

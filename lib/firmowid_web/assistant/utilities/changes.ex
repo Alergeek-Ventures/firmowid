@@ -1,0 +1,388 @@
+defmodule FirmowidWeb.Assistant.Utilities.Changes do
+  @moduledoc """
+  What a proposed write changes, for its approval card: the records it touches and each field
+  before and after, read with the user's permissions. Covers the writes whose effect the record
+  rows alone do not show.
+
+  A malformed call or a record the user cannot read gives `:error`: the card stays rejectable
+  but not approvable.
+  """
+  use Gettext, backend: Firmowid.Gettext
+
+  alias Ash.Error.Forbidden
+  alias Ash.Error.Invalid
+  alias Firmowid.Analysis.TagDefinition
+  alias Firmowid.Core
+  alias Firmowid.Finances
+  alias Firmowid.Invoicing
+  alias Firmowid.Scope
+  alias Firmowid.Timetracker.Project
+  alias Firmowid.Timetracker.Session
+  alias FirmowidWeb.Timetracker.Utilities.LeavePresentation
+
+  # Session times are shown in the app's default time zone; the assistant has no browser zone.
+  @timezone "Europe/Warsaw"
+
+  @entity_kinds %{
+    "sales_invoice" => :sales,
+    "cost_invoice" => :cost,
+    "transaction" => :transaction
+  }
+  @note_kinds %{
+    "update_sales_invoice_internal_note" => :sales,
+    "update_cost_invoice_internal_note" => :cost,
+    "update_transaction_internal_note" => :transaction
+  }
+  @categories %{"company" => :company, "taxes" => :taxes, "internal" => :internal}
+  @leave_reasons %{"indisposition" => :indisposition, "rest" => :rest, "other" => :other}
+
+  @tools Map.keys(@note_kinds) ++
+           ~w(connect_transaction_salary disconnect_transaction_salary set_analysis_entry_category
+              set_analysis_entry_project_tags start_session stop_current_session edit_session add_sessions
+              create_leave_request update_profile create_sales_invoice_draft update_sales_invoice_draft)
+
+  @type record_ref :: {atom(), String.t()}
+  @type change :: %{label: String.t(), from: String.t() | nil, to: String.t() | nil}
+
+  @doc "Whether the tool's approval card shows field changes."
+  @spec covers?(String.t()) :: boolean()
+  def covers?(name), do: name in @tools
+
+  @doc "Returns the records a covered write touches and its field changes."
+  @spec preview(map(), Scope.t()) :: {:ok, [record_ref()], [change()]} | :error
+  def preview(%{name: name, arguments: arguments}, scope) do
+    case preview(name, arguments, scope) do
+      {:ok, references, changes} -> {:ok, references, Enum.filter(changes, & &1)}
+      :error -> :error
+    end
+  end
+
+  defp preview(name, %{"id" => id, "input" => %{"internal_note" => note}}, scope) when is_map_key(@note_kinds, name) do
+    kind = Map.fetch!(@note_kinds, name)
+
+    with {:ok, record} <- read(kind, id, scope) do
+      {:ok, [{kind, id}], [change(gettext("Internal note"), record.internal_note, note)]}
+    end
+  end
+
+  defp preview("connect_transaction_salary", %{"id" => id, "input" => input}, scope) do
+    with %{"salary_user_id" => user_id, "salary_month" => month} <- input,
+         {:ok, month} <- parse(&Date.from_iso8601/1, month),
+         {:ok, transaction} <- read(:transaction, id, scope),
+         {:ok, before} <- salary(transaction, scope),
+         {:ok, later} <- salary(user_id, month, scope) do
+      {:ok, [{:transaction, id}], [change(gettext("Salary"), before, later)]}
+    else
+      _invalid -> :error
+    end
+  end
+
+  defp preview("disconnect_transaction_salary", %{"id" => id}, scope) do
+    with {:ok, transaction} <- read(:transaction, id, scope),
+         {:ok, before} <- salary(transaction, scope) do
+      {:ok, [{:transaction, id}], [change(gettext("Salary"), before, nil)]}
+    end
+  end
+
+  defp preview("set_analysis_entry_category", %{"input" => input}, scope) do
+    with %{"entity_type" => type, "resource_id" => id, "kind" => kind} <- input,
+         {:ok, entity} <- Map.fetch(@entity_kinds, type),
+         {:ok, category} <- Map.fetch(@categories, kind),
+         {:ok, entry} <- read(entity, id, scope, entity_tags: :tag_definition) do
+      {:ok, [{entity, id}], [change(gettext("Category"), tags(entry.entity_tags), category_label(category))]}
+    else
+      _invalid -> :error
+    end
+  end
+
+  defp preview("set_analysis_entry_project_tags", %{"input" => input}, scope) do
+    with %{"entity_type" => type, "resource_id" => id, "tag_definition_ids" => [_ | _] = tag_ids} <-
+           input,
+         {:ok, entity} <- Map.fetch(@entity_kinds, type),
+         {:ok, entry} <- read(entity, id, scope, entity_tags: :tag_definition),
+         {:ok, tags} <- all(tag_ids, &result(TagDefinition.get_tag_definition(&1, scope: scope))) do
+      {:ok, [{entity, id}],
+       [
+         change(
+           gettext("Category"),
+           tags(entry.entity_tags),
+           Enum.map_join(tags, ", ", & &1.name)
+         )
+       ]}
+    else
+      _invalid -> :error
+    end
+  end
+
+  defp preview("start_session", %{"input" => %{"project_id" => project_id} = input}, scope) do
+    with {:ok, running} <- result(Session.get_current(scope: scope)) do
+      {:ok, [{:project, project_id}],
+       [
+         running && change(gettext("Running session"), session_label(running), gettext("stopped")),
+         change(gettext("Title"), nil, input["title"]),
+         change(gettext("Start"), nil, gettext("now")),
+         input["is_remote"] == true && change(gettext("Remote work"), nil, gettext("Yes"))
+       ]}
+    end
+  end
+
+  defp preview("stop_current_session", _arguments, scope) do
+    case result(Session.get_current(scope: scope)) do
+      {:ok, %Session{} = session} ->
+        {:ok, [{:session, session.id}], [change(gettext("End"), nil, gettext("now"))]}
+
+      _none ->
+        :error
+    end
+  end
+
+  defp preview("edit_session", %{"input" => %{"id" => id} = input}, scope) do
+    with {:ok, session} <- result(Session.current_session(id, scope: scope, load: [:project])),
+         {:ok, start} <- optional(input["start_datetime"], &datetime/1),
+         {:ok, finish} <- optional(input["end_datetime"], &datetime/1),
+         {:ok, project} <- optional(input["project_id"], &result(Project.get(&1, scope: scope))) do
+      {:ok, [{:session, id}],
+       [
+         input["title"] && change(gettext("Title"), session.title, input["title"]),
+         start && change(gettext("Start"), time(session.start_datetime), time(start)),
+         finish && change(gettext("End"), time(session.end_datetime), time(finish)),
+         project &&
+           change(gettext("Project"), session.project && session.project.name, project.name),
+         is_boolean(input["is_remote"]) &&
+           change(gettext("Remote work"), yes_no(session.is_remote), yes_no(input["is_remote"]))
+       ]}
+    end
+  end
+
+  defp preview("add_sessions", %{"input" => %{"sessions" => [_ | _] = sessions}}, scope) do
+    with {:ok, changes} <- all(sessions, &added_session(&1, scope)) do
+      {:ok, [], changes}
+    end
+  end
+
+  defp preview("create_leave_request", %{"input" => input}, _scope) do
+    with %{"starts_on" => starts_on, "ends_on" => ends_on, "reason" => reason} <- input,
+         {:ok, starts_on} <- parse(&Date.from_iso8601/1, starts_on),
+         {:ok, ends_on} <- parse(&Date.from_iso8601/1, ends_on),
+         {:ok, reason} <- Map.fetch(@leave_reasons, reason) do
+      {:ok, [],
+       [
+         change(gettext("Period"), nil, "#{date(starts_on)}–#{date(ends_on)}"),
+         change(gettext("Leave type"), nil, LeavePresentation.reason_label(reason)),
+         change(gettext("Note"), nil, input["note"])
+       ]}
+    else
+      _invalid -> :error
+    end
+  end
+
+  defp preview("update_profile", %{"input" => input}, scope) when is_map(input) do
+    member = scope.actor.member
+
+    changes =
+      Enum.flat_map(profile_fields(), fn {field, label} ->
+        case input[Atom.to_string(field)] do
+          nil ->
+            []
+
+          value ->
+            [
+              change(
+                label,
+                profile_value(field, Map.get(member, field)),
+                profile_value(field, value)
+              )
+            ]
+        end
+      end)
+
+    {:ok, [], changes}
+  end
+
+  defp preview("create_sales_invoice_draft", %{"input" => %{"invoice" => invoice}}, scope) do
+    with {:ok, draft} <-
+           result(Invoicing.preview_sales_invoice(%{invoice: invoice}, scope: scope)) do
+      {:ok, [], invoice_changes(nil, draft)}
+    end
+  end
+
+  defp preview("update_sales_invoice_draft", %{"id" => id, "input" => %{"invoice" => invoice}}, scope) do
+    with {:ok, saved} <-
+           result(Invoicing.get_sales_invoice(id, scope: scope, load: [sales_invoice_items: []])),
+         {:ok, revised} <-
+           result(Invoicing.preview_sales_invoice(%{invoice_id: id, invoice: invoice}, scope: scope)) do
+      {:ok, [{:sales, id}], invoice_changes(saved, revised)}
+    end
+  end
+
+  defp preview(_name, _arguments, _scope), do: :error
+
+  defp change(label, from, to), do: %{label: label, from: blank(from), to: blank(to)}
+
+  defp blank(value) when value in [nil, ""], do: nil
+  defp blank(value), do: value
+
+  # An unreadable or missing record makes the plan unavailable; other failures are bugs.
+  defp result({:ok, value}), do: {:ok, value}
+  defp result({:error, %Forbidden{}}), do: :error
+  defp result({:error, %Invalid{}}), do: :error
+  defp result({:error, error}), do: raise(Ash.Error.to_error_class(error))
+
+  defp read(kind, id, scope, loads \\ []) do
+    read =
+      case kind do
+        :sales -> &Invoicing.list_sales_invoices/2
+        :cost -> &Invoicing.list_cost_invoices/2
+        :transaction -> &Finances.list_transactions/2
+      end
+
+    case result(read.(%{ids: [id]}, scope: scope, page: false, load: loads)) do
+      {:ok, [record]} -> {:ok, record}
+      _missing -> :error
+    end
+  end
+
+  defp parse(parse, value) when is_binary(value) do
+    case parse.(value) do
+      {:ok, parsed} -> {:ok, parsed}
+      {:ok, parsed, _offset} -> {:ok, parsed}
+      {:error, _reason} -> :error
+    end
+  end
+
+  defp parse(_parse, _value), do: :error
+
+  defp optional(nil, _fun), do: {:ok, nil}
+  defp optional(value, fun), do: fun.(value)
+
+  defp all(values, fun) do
+    Enum.reduce_while(values, {:ok, []}, fn value, {:ok, acc} ->
+      case fun.(value) do
+        {:ok, result} -> {:cont, {:ok, acc ++ [result]}}
+        :error -> {:halt, :error}
+      end
+    end)
+  end
+
+  defp salary(%{salary_user_id: nil}, _scope), do: {:ok, nil}
+
+  defp salary(%{salary_user_id: user_id, salary_month: month}, scope), do: salary(user_id, month, scope)
+
+  defp salary(user_id, month, scope) do
+    with {:ok, user} <-
+           result(Core.get_org_user(%{id: user_id}, scope: scope, load: [member: :display_name])) do
+      {:ok,
+       gettext("%{employee} · %{month}",
+         employee: user.member.display_name,
+         month: Calendar.strftime(month, "%m.%Y")
+       )}
+    end
+  end
+
+  defp tags([]), do: nil
+
+  defp tags(tags) do
+    Enum.map_join(tags, ", ", fn
+      %{kind: :project, tag_definition: %{name: name}} -> name
+      %{kind: kind} -> category_label(kind)
+    end)
+  end
+
+  defp category_label(:company), do: gettext("Company")
+  defp category_label(:taxes), do: gettext("Taxes")
+  defp category_label(:internal), do: gettext("Omitted")
+
+  defp session_label(session) do
+    [session.project && session.project.name, session.title]
+    |> Enum.reject(&(&1 in [nil, ""]))
+    |> Enum.join(" · ")
+  end
+
+  defp added_session(session, scope) do
+    with %{"project_id" => project_id, "start_datetime" => from, "end_datetime" => to} <- session,
+         {:ok, from} <- datetime(from),
+         {:ok, to} <- datetime(to),
+         {:ok, project} <- result(Project.get(project_id, scope: scope)) do
+      {:ok,
+       change(
+         project.name,
+         nil,
+         gettext("%{date}, %{from}–%{to} · %{title}",
+           date: Calendar.strftime(local(from), "%d.%m.%Y"),
+           from: Calendar.strftime(local(from), "%H:%M"),
+           to: Calendar.strftime(local(to), "%H:%M"),
+           title: session["title"]
+         )
+       )}
+    else
+      _invalid -> :error
+    end
+  end
+
+  defp datetime(value), do: parse(&DateTime.from_iso8601/1, value)
+
+  defp local(datetime), do: DateTime.shift_zone!(datetime, @timezone)
+
+  defp time(nil), do: nil
+  defp time(datetime), do: Calendar.strftime(local(datetime), "%d.%m.%Y %H:%M")
+
+  defp date(date), do: Calendar.strftime(date, "%d.%m.%Y")
+
+  defp yes_no(true), do: gettext("Yes")
+  defp yes_no(_value), do: gettext("No")
+
+  defp profile_fields do
+    [
+      name: gettext("Full name"),
+      phone: gettext("Phone"),
+      slack_url: gettext("Slack"),
+      bank_account_number: gettext("Bank account number"),
+      birthday: gettext("Birthday"),
+      birthday_visibility: gettext("Birthday visibility"),
+      residence_address: gettext("Residence address"),
+      correspondence_address: gettext("Correspondence address"),
+      is_same_correspondence_address: gettext("Same correspondence address")
+    ]
+  end
+
+  defp profile_value(_field, nil), do: nil
+  defp profile_value(:birthday, %Date{} = birthday), do: date(birthday)
+  defp profile_value(:birthday, birthday), do: birthday
+  defp profile_value(:is_same_correspondence_address, value), do: yes_no(value)
+
+  defp profile_value(:birthday_visibility, value) do
+    case to_string(value) do
+      "not_shared" -> gettext("Not shared")
+      "day_with_month" -> gettext("Day and month")
+      _full_date -> gettext("Full date")
+    end
+  end
+
+  defp profile_value(_field, value), do: value
+
+  # A draft is compared by what the user recognises on the document: buyer, dates, note,
+  # items and total.
+  defp invoice_changes(saved, revised) do
+    [
+      {gettext("Buyer"), & &1.buyer_full_name},
+      {gettext("Sale date"), &(&1.sale_date && date(&1.sale_date))},
+      {gettext("Due date"), &(&1.due_date && date(&1.due_date))},
+      {gettext("Invoice note"), & &1.invoice_note},
+      {gettext("Items"), &items/1}
+    ]
+    |> Enum.map(fn {label, value} -> {label, saved && value.(saved), value.(revised)} end)
+    |> Enum.reject(fn {_label, before, later} -> before == later end)
+    |> Enum.map(fn {label, before, later} -> change(label, before, later) end)
+  end
+
+  defp items(invoice) do
+    Enum.map_join(invoice.sales_invoice_items, "; ", fn item ->
+      gettext("%{name} · %{quantity} %{unit} × %{price} net",
+        name: item.name,
+        quantity: item.quantity,
+        unit: item.unit,
+        price: Money.new(invoice.currency, item.unit_price)
+      )
+    end)
+  end
+end

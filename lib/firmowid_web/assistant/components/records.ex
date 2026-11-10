@@ -190,9 +190,13 @@ defmodule FirmowidWeb.Assistant.Components.Records do
     >
       <div :for={call <- @plan.calls} class="flex flex-col gap-1">
         <h4 class="text-sm/snug font-semibold text-grey-900">{call.label}</h4>
-        <div class="flex flex-col divide-y divide-grey-200 border-y border-grey-200">
+        <div
+          :if={call.records != []}
+          class="flex flex-col divide-y divide-grey-200 border-y border-grey-200"
+        >
           <.preview :for={record <- call.records} record={record} />
         </div>
+        <.changes :if={call.changes != []} changes={call.changes} />
       </div>
       <p :if={!@plan.available?} class="text-sm/snug text-brick-700">
         {gettext("Some records could not be read. Reject this plan and ask for a new one.")}
@@ -222,6 +226,29 @@ defmodule FirmowidWeb.Assistant.Components.Records do
         >{gettext("Confirm plan")}</Button.button>
       </div>
     </section>
+    """
+  end
+
+  attr :changes, :list, required: true
+
+  # Each changed field as it was and as it will be; a dash marks no value.
+  defp changes(assigns) do
+    ~H"""
+    <dl class="grid grid-cols-[minmax(0,max-content)_minmax(0,1fr)] gap-x-6 gap-y-1.5 py-1.5 text-sm max-[30rem]:grid-cols-1 max-[30rem]:gap-y-0">
+      <%= for change <- @changes do %>
+        <dt class="text-grey-600 max-[30rem]:pbs-1.5">{change.label}</dt>
+        <dd class="wrap-anywhere min-inline-0">
+          <del :if={change.from} class="text-grey-500">{change.from}</del>
+          <span :if={!change.from} class="text-grey-400" aria-hidden="true">—</span>
+          <Lucideicons.arrow_right
+            class="mx-1.5 inline-block size-3.5 -translate-y-px text-grey-400"
+            aria-hidden="true"
+          />
+          <ins :if={change.to} class="font-medium text-grey-900 no-underline">{change.to}</ins>
+          <span :if={!change.to} class="text-grey-400">{gettext("none")}</span>
+        </dd>
+      <% end %>
+    </dl>
     """
   end
 
