@@ -81,6 +81,12 @@ defmodule Firmowid.Ksef do
     Phoenix.PubSub.subscribe(Firmowid.PubSub, "#{@ksef_broadcast_topic}:#{organization_id}")
   end
 
+  @doc "Stops KSeF status updates for an organization."
+  @spec unsubscribe_ksef_status(String.t()) :: :ok
+  def unsubscribe_ksef_status(organization_id) do
+    Phoenix.PubSub.unsubscribe(Firmowid.PubSub, "#{@ksef_broadcast_topic}:#{organization_id}")
+  end
+
   @doc """
   Broadcasts a KSeF status change for an invoice.
 

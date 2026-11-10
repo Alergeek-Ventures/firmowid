@@ -11925,6 +11925,11 @@ msgstr ""
 msgid "WEEK %{start}-%{end}"
 msgstr ""
 
+#: lib/firmowid_web/assistant/utilities/presentation.ex
+#, elixir-autogen, elixir-format
+msgid "Wait for KSeF"
+msgstr ""
+
 #: lib/firmowid_web/assistant/components/transcript.ex
 #, elixir-autogen, elixir-format
 msgid "Waiting"

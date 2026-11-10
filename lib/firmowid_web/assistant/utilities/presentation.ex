@@ -471,6 +471,7 @@ defmodule FirmowidWeb.Assistant.Utilities.Presentation do
   defp tool_label("get_ksef_connection_status"), do: gettext("Check the KSeF connection")
   defp tool_label("get_next_sales_invoice_number"), do: gettext("Find the next invoice number")
   defp tool_label("issue_sales_invoice"), do: gettext("Issue a sales invoice")
+  defp tool_label("wait_for_ksef_submissions"), do: gettext("Wait for KSeF")
   defp tool_label("list_monthly_salaries"), do: gettext("Search monthly salaries")
   defp tool_label("suggest_transaction_salaries"), do: gettext("Find a matching salary")
   defp tool_label("list_counterparties"), do: gettext("Search counterparties")
