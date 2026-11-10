@@ -5,21 +5,19 @@ defmodule FirmowidWeb.Assistant.Utilities.Presentation do
   alias Ash.Error.Forbidden
   alias Ash.Error.Invalid
   alias AshAi.ChatUI.Tools
-  alias AshPhoenix.FormData.Error
   alias Firmowid.Assistant
   alias Firmowid.Core
   alias Firmowid.Finances
   alias Firmowid.Invoicing
-  alias Firmowid.Invoicing.SalesInvoice
   alias Firmowid.Scope
   alias Firmowid.Timetracker.Project
-  alias FirmowidUI.Components.Inputs
   alias FirmowidWeb.Invoicing.Utilities.Navigation
   alias FirmowidWeb.Management.Utilities.Navigation, as: ManagementNavigation
 
   require Ash.Query
 
   @sales_tools ~w(connect_sales_invoice_transactions disconnect_sales_invoice_transactions)
+  @invoice_previews ~w(preview_sales_invoice preview_sales_invoice_correction)
   @cost_tools ~w(connect_cost_invoice_transactions disconnect_cost_invoice_transactions)
 
   @doc "Returns the same contextual prompt keys and text for display and submission."
@@ -42,11 +40,42 @@ defmodule FirmowidWeb.Assistant.Utilities.Presentation do
 
   def suggestions(%{type: type}) when type in ["employee", "project"], do: []
 
+  # Fixed scenarios the current tools answer; data-driven tiles come later.
   def suggestions(nil) do
+    for tile <- tiles(), do: {tile.key, tile.question}
+  end
+
+  @doc "Returns the empty screen's suggestion tiles: a question, one line of context and the prompt sent."
+  @spec tiles() :: [
+          %{key: String.t(), title: String.t(), context: String.t(), question: String.t()}
+        ]
+  def tiles do
     [
-      {"unmatched", gettext("Find transactions without an invoice")},
-      {"skipped", gettext("Show skipped transactions")},
-      {"matched", gettext("Check already matched payments")}
+      %{
+        key: "overdue",
+        title: gettext("Which sales invoices are overdue?"),
+        context: gettext("Unpaid, oldest first"),
+        question:
+          gettext("Show unpaid sales invoices past their due date, oldest first, with how many days each is overdue.")
+      },
+      %{
+        key: "accountant",
+        title: gettext("Which transfers will the accountant ask about?"),
+        context: gettext("Payments without a cost invoice"),
+        question: gettext("Find outgoing transfers from the last three months that have no cost invoice.")
+      },
+      %{
+        key: "fixed_costs",
+        title: gettext("How have fixed costs changed?"),
+        context: gettext("The last three months by category"),
+        question: gettext("Compare fixed costs from the last three months by category and tell me what went up.")
+      },
+      %{
+        key: "projects",
+        title: gettext("Which projects earn money and which lose it?"),
+        context: gettext("Revenue against team costs"),
+        question: gettext("Compare revenue and team costs per project over the last three months.")
+      }
     ]
   end
 
@@ -82,7 +111,7 @@ defmodule FirmowidWeb.Assistant.Utilities.Presentation do
   end
 
   defp turn(%{"role" => "user", "text" => text}, id) do
-    %{id: id, role: :user, text: text, html: nil, tools: []}
+    %{id: id, role: :user, text: text}
   end
 
   defp turn(%{"role" => "assistant", "parts" => parts}, id) do
@@ -103,9 +132,12 @@ defmodule FirmowidWeb.Assistant.Utilities.Presentation do
 
         %{
           id: call.id,
+          name: call.name,
+          arguments: call.arguments,
           label: tool_label(call.name),
           status: result_status(result, payload),
-          summary: result_summary(payload)
+          summary: result_summary(payload),
+          count: result_count(payload)
         }
       end)
 
@@ -113,10 +145,112 @@ defmodule FirmowidWeb.Assistant.Utilities.Presentation do
       id: id,
       role: :assistant,
       text: text,
-      html: markdown(text),
-      tools: tools
+      blocks: blocks(text, id),
+      tools: tools,
+      steps: steps(tools),
+      invoices: for(%{name: name, status: :done} = tool <- tools, name in @invoice_previews, do: tool.id)
     }
   end
+
+  @doc """
+  Returns the invoice and correction previews the transcript shows as invoice cards, keyed by
+  tool call: each previewed call becomes one confirmation.
+  """
+  @spec invoice_previews([map()]) :: [
+          %{id: String.t(), kind: :invoice | :correction, arguments: map()}
+        ]
+  def invoice_previews(turns) do
+    for %{role: :assistant, tools: tools} <- turns,
+        %{name: name, status: :done} = tool <- tools,
+        name in @invoice_previews do
+      kind = if name == "preview_sales_invoice_correction", do: :correction, else: :invoice
+      %{id: tool.id, kind: kind, arguments: tool.arguments}
+    end
+  end
+
+  @doc """
+  Derives the ID the confirmed invoice is issued with from the conversation and the tool call, so
+  the card finds the issued document again after a reload instead of offering to issue it twice.
+  A UUIDv7 with the conversation's timestamp and the rest taken from a hash.
+  """
+  @spec confirmation_id(String.t(), String.t()) :: String.t()
+  def confirmation_id(conversation_id, call_id) do
+    <<timestamp::48, _rest::80>> = Ecto.UUID.dump!(conversation_id)
+    <<rand_a::12, rand_b::62, _::182>> = :crypto.hash(:sha256, conversation_id <> call_id)
+    Ecto.UUID.load!(<<timestamp::48, 7::4, rand_a::12, 2::2, rand_b::62>>)
+  end
+
+  # One sentence about what was looked at, in the user's terms, and one line per step.
+  defp steps([]), do: nil
+
+  defp steps(tools) do
+    items =
+      tools
+      |> Enum.filter(&(&1.status == :done and &1.count != nil))
+      |> Enum.group_by(& &1.name, & &1.count)
+      |> Enum.flat_map(fn {name, counts} -> List.wrap(reviewed(name, Enum.sum(counts))) end)
+
+    failed = Enum.count(tools, &(&1.status in [:error, :unknown]))
+
+    %{
+      summary:
+        if(items == [],
+          do: ngettext("Took %{count} step", "Took %{count} steps", length(tools)),
+          else: gettext("Reviewed %{items}", items: join_items(items))
+        ),
+      failure: if(failed > 0, do: ngettext("%{count} step failed", "%{count} steps failed", failed)),
+      lines:
+        Enum.map(
+          tools,
+          &%{id: &1.id, label: &1.label, result: tool_status_label(&1.status, &1.summary)}
+        )
+    }
+  end
+
+  defp join_items([item]), do: item
+
+  defp join_items(items) do
+    {init, [last]} = Enum.split(items, -1)
+    gettext("%{items} and %{last}", items: Enum.join(init, ", "), last: last)
+  end
+
+  defp reviewed("list_transactions", n), do: ngettext("%{count} bank transaction", "%{count} bank transactions", n)
+
+  defp reviewed("list_sales_invoices", n), do: ngettext("%{count} sales invoice", "%{count} sales invoices", n)
+
+  defp reviewed("list_cost_invoices", n), do: ngettext("%{count} cost invoice", "%{count} cost invoices", n)
+
+  defp reviewed("suggest_transaction_invoices", n),
+    do: ngettext("%{count} candidate invoice", "%{count} candidate invoices", n)
+
+  defp reviewed(name, n) when name in ["suggest_sales_invoice_transactions", "suggest_cost_invoice_transactions"],
+    do: ngettext("%{count} candidate payment", "%{count} candidate payments", n)
+
+  defp reviewed("list_monthly_salaries", n), do: ngettext("%{count} monthly salary", "%{count} monthly salaries", n)
+
+  defp reviewed("suggest_transaction_salaries", n),
+    do: ngettext("%{count} candidate salary", "%{count} candidate salaries", n)
+
+  defp reviewed("list_counterparties", n), do: ngettext("%{count} counterparty", "%{count} counterparties", n)
+
+  defp reviewed("list_sessions", n), do: ngettext("%{count} work session", "%{count} work sessions", n)
+
+  defp reviewed("list_leave_requests", n), do: ngettext("%{count} leave request", "%{count} leave requests", n)
+
+  defp reviewed("list_projects", n), do: ngettext("%{count} project", "%{count} projects", n)
+
+  defp reviewed("list_analysis_entries", n), do: ngettext("%{count} analysis entry", "%{count} analysis entries", n)
+
+  defp reviewed("list_analysis_tags", n), do: ngettext("%{count} analysis tag", "%{count} analysis tags", n)
+
+  defp reviewed(_name, _n), do: nil
+
+  defp tool_status_label(:done, nil), do: gettext("Completed")
+  defp tool_status_label(:done, summary), do: summary
+  defp tool_status_label(:pending, _summary), do: gettext("Waiting")
+  defp tool_status_label(:denied, _summary), do: gettext("Not performed")
+  defp tool_status_label(:unknown, _summary), do: gettext("Check the result")
+  defp tool_status_label(:error, _summary), do: gettext("Error")
 
   @doc "Loads the selected conversation subject with the current user's permissions."
   @spec subject(map(), Scope.t()) :: map() | nil
@@ -155,10 +289,149 @@ defmodule FirmowidWeb.Assistant.Utilities.Presentation do
   defp subject_result({:error, %Invalid{}}, _kind), do: nil
   defp subject_result({:error, error}, _kind), do: raise(Ash.Error.to_error_class(error))
 
+  # A list longer than this shows its first @visible_records rows and expands in place.
+  @collapsed_after 10
+  @visible_records 8
+
+  # Markdown tables with a record per row (see the prompt) become dense record rows and a task
+  # list of candidates becomes a pick list; the rest of the answer stays sanitized HTML. Wider
+  # tables are comparisons and keep their columns.
+  defp blocks(text, id) do
+    text
+    |> MDEx.parse_document!(extension: [table: true, strikethrough: true, tasklist: true])
+    |> Map.fetch!(:nodes)
+    |> Enum.chunk_by(&block_kind/1)
+    |> Enum.with_index()
+    |> Enum.flat_map(fn {nodes, index} ->
+      case block_kind(hd(nodes)) do
+        :html ->
+          [{:html, html(nodes)}]
+
+        kind ->
+          nodes
+          |> Enum.with_index()
+          |> Enum.map(fn {node, nth} ->
+            structured(kind, node, "#{id}-#{kind}-#{index}-#{nth}")
+          end)
+      end
+    end)
+  end
+
+  defp block_kind(%MDEx.Table{nodes: [%{nodes: cells} | _]}) do
+    if length(cells) <= 4, do: :records, else: :html
+  end
+
+  defp block_kind(%MDEx.List{is_task_list: true, nodes: items}) do
+    if Enum.all?(items, &(length(candidate_cells(&1)) == 5)), do: :pick, else: :html
+  end
+
+  defp block_kind(_node), do: :html
+
+  defp structured(:records, table, id), do: {:records, records(table, id)}
+
+  defp structured(:pick, list, id), do: {:pick, %{id: id, candidates: Enum.map(list.nodes, &candidate/1)}}
+
+  # A candidate is "date | counterparty | title | evidence | amount"; caveats in the evidence are
+  # emphasized (see the prompt).
+  defp candidate(item) do
+    [date, who, title, evidence, amount] = Enum.map(candidate_cells(item), &trim_cell/1)
+
+    %{
+      date: html(date),
+      counterparty: html(who),
+      title: html(title),
+      evidence: html(evidence),
+      amount: html(amount),
+      amount_tone: amount_tone(plain_text(%{nodes: amount}), links(item.nodes)),
+      choice: Enum.map_join([date, who, amount], " · ", &plain_text(%{nodes: &1}))
+    }
+  end
+
+  defp candidate_cells(%MDEx.TaskItem{nodes: [%MDEx.Paragraph{nodes: nodes}]}) do
+    nodes
+    |> Enum.flat_map(fn
+      %MDEx.Text{literal: literal} = text ->
+        literal
+        |> String.split("|")
+        |> Enum.map_intersperse(:cell, &%{text | literal: &1})
+
+      node ->
+        [node]
+    end)
+    |> Enum.chunk_by(&(&1 == :cell))
+    |> Enum.reject(&(&1 == [:cell]))
+  end
+
+  defp candidate_cells(_item), do: []
+
+  # Trims the spaces around the separators, keeping those between the cell's own nodes.
+  defp trim_cell(nodes) do
+    nodes
+    |> List.update_at(0, &trim_text(&1, :leading))
+    |> List.update_at(-1, &trim_text(&1, :trailing))
+    |> Enum.reject(&match?(%MDEx.Text{literal: ""}, &1))
+  end
+
+  defp trim_text(%MDEx.Text{literal: literal} = text, :leading), do: %{text | literal: String.trim_leading(literal)}
+
+  defp trim_text(%MDEx.Text{literal: literal} = text, :trailing), do: %{text | literal: String.trim_trailing(literal)}
+
+  defp trim_text(node, _side), do: node
+
+  defp records(table, id) do
+    rows =
+      for %MDEx.TableRow{header: false, nodes: cells} <- table.nodes do
+        [title | rest] = cells
+        {meta, amount} = if rest == [], do: {[], nil}, else: Enum.split(rest, -1)
+        amount = amount && hd(amount)
+
+        %{
+          title: html(title.nodes),
+          meta: meta |> Enum.reject(&(plain_text(&1) == "")) |> Enum.map(&html(&1.nodes)),
+          amount: amount && html(amount.nodes),
+          amount_tone: amount && amount_tone(plain_text(amount), links(cells))
+        }
+      end
+
+    %{
+      id: id,
+      rows: rows,
+      collapse?: length(rows) > @collapsed_after,
+      visible: @visible_records
+    }
+  end
+
+  # Costs are written with a minus (see the prompt); a link to a cost invoice also marks one.
+  defp amount_tone(amount, links) do
+    cond do
+      not Regex.match?(~r/\d/u, amount) or
+          not Regex.match?(~r/zł|PLN|EUR|USD|GBP|CHF|€|\$|£/u, amount) ->
+        nil
+
+      String.starts_with?(amount, ["-", "−", "–"]) ->
+        :expense
+
+      Enum.any?(links, &String.contains?(&1, "/kosztowe/")) ->
+        :expense
+
+      true ->
+        :income
+    end
+  end
+
+  defp plain_text(%{literal: literal}) when is_binary(literal), do: literal
+  defp plain_text(%{nodes: nodes}), do: nodes |> Enum.map_join(&plain_text/1) |> String.trim()
+  defp plain_text(_node), do: ""
+
+  defp links(nodes) when is_list(nodes), do: Enum.flat_map(nodes, &links/1)
+  defp links(%MDEx.Link{url: url} = link), do: [url | links(link.nodes)]
+  defp links(%{nodes: nodes}), do: links(nodes)
+  defp links(_node), do: []
+
   # sobelow_skip ["XSS.Raw"]
   # Model text is untrusted: MDEx omits raw HTML and Ammonia sanitizes the generated HTML.
-  defp markdown(text) do
-    text
+  defp html(nodes) do
+    %MDEx.Document{nodes: nodes}
     |> MDEx.to_html!(
       extension: [table: true, strikethrough: true],
       render: [unsafe: false],
@@ -186,80 +459,20 @@ defmodule FirmowidWeb.Assistant.Utilities.Presentation do
     records = load_records(references, scope)
 
     previews =
-      Enum.map(calls, fn
-        {%{name: "issue_sales_invoice"} = call, _references} ->
-          Map.merge(
-            %{id: call.id, label: tool_label(call.name)},
-            issue_preview(call.arguments, scope)
-          )
-
-        {call, references} ->
-          %{
-            id: call.id,
-            label: tool_label(call.name),
-            records: preview_records(references, records),
-            notes: [],
-            errors: []
-          }
+      Enum.map(calls, fn {call, references} ->
+        %{
+          id: call.id,
+          label: tool_label(call.name),
+          records: preview_records(references, records)
+        }
       end)
 
-    %{
-      available?: Enum.all?(previews, &(Enum.all?(&1.records) and &1.errors == [])),
-      calls: previews
-    }
+    %{available?: Enum.all?(previews, &Enum.all?(&1.records)), calls: previews}
   end
 
   defp preview_records({:ok, references}, records), do: Enum.map(references, &Map.get(records, &1))
 
   defp preview_records(:error, _records), do: [nil]
-
-  # Builds the same changeset the approved call will submit, so the card shows the document,
-  # numbering warnings and validation errors (including a missing KSeF connection) before approval.
-  defp issue_preview(%{"input" => %{"invoice" => invoice}}, scope) when is_map(invoice) do
-    opts = [actor: scope.actor, tenant: scope.tenant]
-
-    with {:ok, invoice} <- Invoicing.preview_issued_sales_invoice(invoice, opts),
-         {:ok, warnings} <-
-           SalesInvoice.validate_number(invoice.invoice_number, invoice.issue_date, nil, opts) do
-      %{
-        records: [record(:issued, invoice)],
-        notes: Enum.map(warnings, &number_warning/1),
-        errors: []
-      }
-    else
-      {:error, error} -> %{records: [], notes: [], errors: error_messages(error)}
-    end
-  end
-
-  defp issue_preview(_arguments, _scope), do: %{records: [nil], notes: [], errors: []}
-
-  defp number_warning({:invalid_format, _suggestions}), do: gettext("The number format may be invalid.")
-
-  defp number_warning({:duplicate, _suggestions}), do: gettext("This invoice number already exists.")
-
-  defp number_warning({:gap, _expected}), do: gettext("This number creates a gap in the numbering.")
-
-  defp error_messages(error) do
-    error
-    |> Ash.Error.to_error_class()
-    |> Map.fetch!(:errors)
-    |> Enum.flat_map(fn error ->
-      if Error.impl_for(error) do
-        error
-        |> Error.to_form_error()
-        |> List.wrap()
-        |> Enum.map(fn {_field, message, bindings} ->
-          Inputs.translate_error({message, bindings})
-        end)
-      else
-        []
-      end
-    end)
-    |> case do
-      [] -> [gettext("Unable to issue the invoice. Check its details and try again.")]
-      messages -> Enum.uniq(messages)
-    end
-  end
 
   defp references(%{name: name, arguments: %{"id" => id, "input" => %{"transaction_ids" => ids}}})
        when name in @sales_tools and is_list(ids) do
@@ -336,27 +549,6 @@ defmodule FirmowidWeb.Assistant.Utilities.Presentation do
       date: invoice.issue_date,
       path: Navigation.sales_invoice_show_path(invoice),
       kind: gettext("Sales invoice")
-    }
-  end
-
-  defp record(:issued, invoice) do
-    %{
-      label: invoice.invoice_number,
-      description: invoice.buyer_display_name_label,
-      amount: invoice.amount,
-      amount_tone: :income,
-      date: invoice.issue_date,
-      path: nil,
-      kind: gettext("Sales invoice"),
-      lines:
-        Enum.map(invoice.sales_invoice_items, fn item ->
-          %{
-            name: item.name,
-            quantity: item.quantity,
-            unit: item.unit,
-            gross: Money.new(invoice.currency, item.gross_value)
-          }
-        end)
     }
   end
 
@@ -453,6 +645,9 @@ defmodule FirmowidWeb.Assistant.Utilities.Presentation do
 
   defp result_summary(_payload), do: nil
 
+  defp result_count(%{"results" => results}) when is_list(results), do: length(results)
+  defp result_count(_payload), do: nil
+
   defp tool_label("list_transactions"), do: gettext("Search transactions")
   defp tool_label("list_sales_invoices"), do: gettext("Search sales invoices")
   defp tool_label("list_cost_invoices"), do: gettext("Search cost invoices")
@@ -470,7 +665,6 @@ defmodule FirmowidWeb.Assistant.Utilities.Presentation do
 
   defp tool_label("get_ksef_connection_status"), do: gettext("Check the KSeF connection")
   defp tool_label("get_next_sales_invoice_number"), do: gettext("Find the next invoice number")
-  defp tool_label("issue_sales_invoice"), do: gettext("Issue a sales invoice")
   defp tool_label("wait_for_ksef_submissions"), do: gettext("Wait for KSeF")
   defp tool_label("list_monthly_salaries"), do: gettext("Search monthly salaries")
   defp tool_label("suggest_transaction_salaries"), do: gettext("Find a matching salary")

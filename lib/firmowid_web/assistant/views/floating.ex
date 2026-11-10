@@ -9,8 +9,11 @@ defmodule FirmowidWeb.Assistant.Views.Floating do
   alias Ash.Error.Forbidden
   alias Ash.Error.Invalid
   alias Firmowid.Assistant
+  alias Firmowid.Ksef
+  alias FirmowidUI.Invoicing.Issuance
   alias FirmowidWeb.Assistant.Components.Controls
   alias FirmowidWeb.Assistant.Components.History
+  alias FirmowidWeb.Assistant.Components.Invoice
   alias FirmowidWeb.Assistant.Components.Records
   alias FirmowidWeb.Assistant.Components.Transcript
   alias FirmowidWeb.Assistant.Utilities.PageContext
@@ -33,7 +36,11 @@ defmodule FirmowidWeb.Assistant.Views.Floating do
             page_path: session["page_path"],
             open: page?,
             form_error: nil,
-            history_open?: false
+            history_open?: false,
+            invoices: %{},
+            open_invoice: nil,
+            dismissed_invoices: MapSet.new(),
+            ksef_subscribed?: false
           )
           |> load_history()
 
@@ -71,7 +78,10 @@ defmodule FirmowidWeb.Assistant.Views.Floating do
     ~H"""
     <section
       id="firmowid-assistant"
-      class="grid size-full grid-cols-1 bg-white text-sm/normal text-grey-900 block-[calc(100dvh-var(--navbar-height))] md:grid-cols-[18rem_minmax(0,1fr)]"
+      class={[
+        "relative grid size-full grid-cols-1 grid-rows-[minmax(0,1fr)] bg-white text-sm/normal text-grey-900 block-[calc(100dvh-var(--navbar-height))]",
+        @open_invoice && "md:grid-cols-[minmax(0,1fr)_min(41.25rem,58%)]"
+      ]}
       phx-hook="AssistantChat"
       data-page
       data-storage-key={"assistant:#{@current_user.id}:#{@current_org.id}"}
@@ -80,24 +90,15 @@ defmodule FirmowidWeb.Assistant.Views.Floating do
       data-history-open={to_string(@history_open?)}
       aria-label={gettext("Firmowid assistant")}
     >
-      <div class={[
-        "flex flex-col border-grey-200 min-block-0 md:border-e",
-        !@history_open? && "max-md:hidden"
-      ]}>
-        <Controls.page_history_header history_open?={@history_open?} />
-        <History.history
-          conversations={@history}
-          conversation_id={@conversation_id}
-          open={true}
-          more?={@history_more?}
-        />
-      </div>
       <section
         id="assistant-panel"
-        class={["flex flex-col min-block-0", @history_open? && "max-md:hidden"]}
+        class="@container/assistant flex flex-col min-block-0 min-inline-0"
         aria-label={gettext("Conversation")}
       >
-        <Controls.page_header history_open?={@history_open?} />
+        <Controls.page_header
+          history_open?={@history_open?}
+          title={@conversation && @conversation.title}
+        />
         <.conversation
           subject={@subject}
           history_open?={false}
@@ -108,8 +109,36 @@ defmodule FirmowidWeb.Assistant.Views.Floating do
           plan={@plan}
           conversation={@conversation}
           form_error={@form_error}
+          invoices={@invoices}
+          open_invoice={@open_invoice}
+          dismissed_invoices={@dismissed_invoices}
         />
       </section>
+      <div
+        :if={@history_open?}
+        class="motion-safe:animate-in motion-safe:fade-in absolute inset-0 z-20 bg-black/20"
+        phx-click="history"
+        aria-hidden="true"
+      >
+      </div>
+      <div
+        class="absolute inset-y-0 inset-s-0 z-21 flex flex-col bg-white shadow-lg inline-80 max-inline-[86vw]"
+        hidden={!@history_open?}
+      >
+        <Controls.page_history_header />
+        <History.history
+          conversations={@history}
+          conversation_id={@conversation_id}
+          open={@history_open?}
+          more?={@history_more?}
+        />
+      </div>
+      <Invoice.panel
+        :if={@open_invoice}
+        id={@open_invoice}
+        issuance={@invoices[@open_invoice]}
+        class="border-s border-grey-200 max-md:fixed max-md:inset-0 max-md:z-50 max-md:border-0"
+      />
     </section>
     """
   end
@@ -128,12 +157,16 @@ defmodule FirmowidWeb.Assistant.Views.Floating do
     >
       <section
         id="assistant-panel"
-        class="flex flex-col overflow-clip rounded-lg border border-grey-200 bg-white shadow-lg block-160 inline-104 max-block-[calc(100dvh-var(--navbar-height)-2*var(--assistant-inset)-var(--assistant-bottom-obstruction,0px))] max-inline-[calc(100vw-2*var(--assistant-inset))] max-md:fixed max-md:inset-0 max-md:inset-be-(--assistant-bottom-obstruction,0px) max-md:rounded-none max-md:border-0 max-md:block-auto max-md:inline-auto max-md:max-block-none max-md:max-inline-none"
+        class="@container/assistant relative flex flex-col overflow-clip rounded-lg border border-grey-200 bg-white shadow-lg block-160 inline-104 max-block-[calc(100dvh-var(--navbar-height)-2*var(--assistant-inset)-var(--assistant-bottom-obstruction,0px))] max-inline-[calc(100vw-2*var(--assistant-inset))] max-md:fixed max-md:inset-0 max-md:inset-be-(--assistant-bottom-obstruction,0px) max-md:rounded-none max-md:border-0 max-md:block-auto max-md:inline-auto max-md:max-block-none max-md:max-inline-none"
         role="dialog"
         aria-label={gettext("Firmowid assistant")}
         hidden={!@open}
       >
-        <Controls.header history_open?={@history_open?} page_path={@page_path} />
+        <Controls.header
+          history_open?={@history_open?}
+          title={@conversation && @conversation.title}
+          page_path={@page_path}
+        />
 
         <History.history
           conversations={@history}
@@ -151,6 +184,16 @@ defmodule FirmowidWeb.Assistant.Views.Floating do
           plan={@plan}
           conversation={@conversation}
           form_error={@form_error}
+          invoices={@invoices}
+          open_invoice={@open_invoice}
+          dismissed_invoices={@dismissed_invoices}
+        />
+        <%!-- The panel is narrow: the invoice widget opens over the whole of it. --%>
+        <Invoice.panel
+          :if={@open_invoice}
+          id={@open_invoice}
+          issuance={@invoices[@open_invoice]}
+          class="absolute inset-0 z-10"
         />
       </section>
 
@@ -164,10 +207,10 @@ defmodule FirmowidWeb.Assistant.Views.Floating do
     ~H"""
     <section
       :if={@subject && !@history_open?}
-      class="flex-none border-be border-grey-200 bg-grey-100 px-4 py-3"
+      class="flex-none border-be border-grey-200 bg-grey-100 px-4"
       aria-label={gettext("Conversation about")}
     >
-      <Records.preview record={@subject.record} />
+      <Records.preview record={@subject.record} class="mx-auto max-inline-182" />
     </section>
     <Transcript.transcript
       turns={@turns}
@@ -176,6 +219,9 @@ defmodule FirmowidWeb.Assistant.Views.Floating do
       status={@conversation_status}
       error={@conversation_error}
       history_open?={@history_open?}
+      invoices={@invoices}
+      open_invoice={@open_invoice}
+      dismissed_invoices={@dismissed_invoices}
     >
       <Records.approval_plan
         :if={@plan.calls != []}
@@ -267,6 +313,14 @@ defmodule FirmowidWeb.Assistant.Views.Floating do
     end
   end
 
+  def handle_event("pick", %{"choice" => choice, "conversation-id" => id}, socket) do
+    if id == client_conversation_id(socket.assigns.conversation) do
+      send_message(gettext("This one: %{choice}", choice: choice), socket)
+    else
+      {:noreply, changed_conversation(socket)}
+    end
+  end
+
   def handle_event("send", %{"message" => message, "conversation_id" => id}, socket) do
     if id == client_conversation_id(socket.assigns.conversation) do
       send_message(String.trim(message), socket)
@@ -301,7 +355,56 @@ defmodule FirmowidWeb.Assistant.Views.Floating do
     end
   end
 
+  def handle_event("invoice_open", %{"call" => id}, socket) do
+    {:noreply, assign(socket, :open_invoice, if(socket.assigns.open_invoice != id, do: id))}
+  end
+
+  def handle_event("invoice_close", _params, socket), do: {:noreply, assign(socket, :open_invoice, nil)}
+
+  # Rejecting only puts the card away: the preview saved nothing and issues nothing.
+  def handle_event("invoice_reject", %{"call" => id}, socket) do
+    {:noreply,
+     socket
+     |> update(:dismissed_invoices, &MapSet.put(&1, id))
+     |> assign(
+       :open_invoice,
+       if(socket.assigns.open_invoice != id, do: socket.assigns.open_invoice)
+     )}
+  end
+
+  # The card names its invoice; the panel's widget acts on the invoice it shows.
+  def handle_event("confirm_issuance", params, socket) do
+    id = params["call"] || socket.assigns.open_invoice
+    socket = update_invoice(socket, id, &Issuance.confirm(&1, socket.assigns.ash_scope))
+    {:noreply, renumber_after(socket, socket.assigns.invoices[id])}
+  end
+
+  def handle_event("update_invoice_number", %{"invoice_number" => number}, socket) do
+    {:noreply, update_open_invoice(socket, &Issuance.select_number(&1, number, socket.assigns.ash_scope))}
+  end
+
+  def handle_event("select_invoice_series", %{"number" => number}, socket) do
+    {:noreply, update_open_invoice(socket, &Issuance.select_number(&1, number, socket.assigns.ash_scope))}
+  end
+
+  def handle_event("update_notes", %{"invoice_note" => note, "internal_note" => comment}, socket) do
+    {:noreply, update_open_invoice(socket, &Issuance.update_notes(&1, note, comment))}
+  end
+
+  def handle_event("refresh_invoice_status", _params, socket) do
+    {:noreply, update_open_invoice(socket, &Issuance.refresh(&1, socket.assigns.ash_scope))}
+  end
+
   @impl true
+  def handle_info({:ksef_invoice_status, status}, socket) do
+    invoices =
+      Map.new(socket.assigns.invoices, fn {id, issuance} ->
+        {id, Issuance.ksef_status(issuance, status, socket.assigns.ash_scope)}
+      end)
+
+    {:noreply, assign(socket, :invoices, invoices)}
+  end
+
   def handle_info({:assistant_updated, id}, %{assigns: %{conversation: %{id: id}}} = socket) do
     conversation = Assistant.get_conversation!(id, scope: socket.assigns.ash_scope)
 
@@ -421,7 +524,10 @@ defmodule FirmowidWeb.Assistant.Views.Floating do
       conversation: nil,
       subject: nil,
       turns: [],
-      plan: %{available?: true, calls: []}
+      plan: %{available?: true, calls: []},
+      invoices: %{},
+      open_invoice: nil,
+      dismissed_invoices: MapSet.new()
     )
   end
 
@@ -433,14 +539,86 @@ defmodule FirmowidWeb.Assistant.Views.Floating do
       )
 
     conversation = %{conversation | messages: messages}
+    turns = Presentation.turns(conversation)
 
-    assign(socket,
+    socket
+    |> assign_invoices(conversation, turns)
+    |> assign(
       conversation: conversation,
       subject: Presentation.subject(conversation, socket.assigns.ash_scope),
-      turns: Presentation.turns(conversation),
+      turns: turns,
       plan: Presentation.plan(conversation, socket.assigns.ash_scope),
       history: put_history_entry(socket.assigns.history, conversation)
     )
+  end
+
+  # Each invoice preview in the conversation gets one confirmation, loaded once and then kept:
+  # the card and the panel render the same state.
+  defp assign_invoices(socket, conversation, turns) do
+    same? = match?(%{id: id} when id == conversation.id, socket.assigns[:conversation])
+
+    {known, dismissed} =
+      if same?,
+        do: {socket.assigns.invoices, socket.assigns.dismissed_invoices},
+        else: {%{}, MapSet.new()}
+
+    scope = socket.assigns.ash_scope
+
+    invoices =
+      Map.new(Presentation.invoice_previews(turns), fn preview ->
+        {preview.id,
+         known[preview.id] ||
+           preview.kind
+           |> Issuance.new(
+             preview.arguments,
+             Presentation.confirmation_id(conversation.id, preview.id),
+             %{}
+           )
+           |> Issuance.load(scope)}
+      end)
+
+    subscribe? = connected?(socket) and invoices != %{} and not socket.assigns.ksef_subscribed?
+    if subscribe?, do: Ksef.subscribe_ksef_status(scope.tenant)
+
+    assign(socket,
+      invoices: invoices,
+      dismissed_invoices: dismissed,
+      open_invoice: if(Map.has_key?(invoices, socket.assigns.open_invoice), do: socket.assigns.open_invoice),
+      ksef_subscribed?: socket.assigns.ksef_subscribed? or subscribe?
+    )
+  end
+
+  # A series is prepared as several cards proposing the same next number: once one is issued,
+  # the others still under review proposing its number load the next free one, keeping the
+  # notes typed into them.
+  defp renumber_after(socket, %{phase: phase, invoice: %{invoice_number: number}}) when phase != :review do
+    invoices =
+      Map.new(socket.assigns.invoices, fn
+        {id, %{phase: :review, invoice_number: ^number, invoice: edited} = issuance} ->
+          {id,
+           issuance
+           |> Issuance.load(socket.assigns.ash_scope)
+           |> Issuance.update_notes(edited.invoice_note, edited.internal_note)}
+
+        entry ->
+          entry
+      end)
+
+    assign(socket, :invoices, invoices)
+  end
+
+  defp renumber_after(socket, _issuance), do: socket
+
+  defp update_open_invoice(socket, fun), do: update_invoice(socket, socket.assigns.open_invoice, fun)
+
+  defp update_invoice(socket, id, fun) do
+    case socket.assigns.invoices do
+      %{^id => issuance} ->
+        assign(socket, :invoices, Map.put(socket.assigns.invoices, id, fun.(issuance)))
+
+      _invoices ->
+        socket
+    end
   end
 
   # Keeps the always visible list on the page current without reloading its loaded pages.
