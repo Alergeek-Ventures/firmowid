@@ -26,6 +26,11 @@ if System.get_env("PHX_SERVER") do
   config :firmowid, Endpoint, server: true
 end
 
+# CEIDG register of sole proprietorships; tests never call it.
+if config_env() != :test do
+  config :firmowid, :ceidg_api_token, System.get_env("CEIDG_API_TOKEN")
+end
+
 # Public URL of this instance: the domain in staging and production, the worktree's
 # URL in development (written to .env.worktree by `mix dev.up`). Tests keep the URL
 # from config/config.exs.

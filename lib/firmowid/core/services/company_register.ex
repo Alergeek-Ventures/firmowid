@@ -1,8 +1,9 @@
 defmodule Firmowid.Core.Services.CompanyRegister do
   @moduledoc """
-  Looks companies up in the VAT white list and KRS, falling back to GUS when
-  configured. Answers are cached once per NIP for all organizations.
-  Missing NIPs are batched by 30 for MF; KRS and GUS calls are sequential.
+  Looks companies up in the VAT white list and KRS, then sole proprietorships
+  in CEIDG, falling back to GUS when configured. Answers are cached once per
+  NIP for all organizations. Missing NIPs are batched by 30 for MF; KRS, CEIDG
+  and GUS calls are sequential.
   Registry failures are returned to the caller without caching them.
   """
 
@@ -54,6 +55,7 @@ defmodule Firmowid.Core.Services.CompanyRegister do
       subject = Enum.find(matching, &(&1["krs"] not in [nil, ""])) || List.first(matching)
 
       with {:ok, attrs} <- vat_activity(nip, subject),
+           {:ok, attrs} <- ceidg_fallback(attrs),
            {:ok, attrs} <- gus_fallback(attrs),
            {:ok, company} <- Core.register_company(attrs, scope: scope) do
         {:cont, {:ok, [company | companies]}}
@@ -119,6 +121,55 @@ defmodule Firmowid.Core.Services.CompanyRegister do
   end
 
   defp krs_predominant(activities) when activities in [nil, []], do: %{}
+
+  # KRS has no sole proprietorships, and the VAT white list misses those not paying VAT.
+  defp ceidg_fallback(%{pkd: _pkd} = attrs), do: {:ok, attrs}
+
+  defp ceidg_fallback(attrs) do
+    case Application.get_env(:firmowid, :ceidg_api_token) do
+      nil -> {:ok, attrs}
+      token -> ceidg_activity(attrs, token)
+    end
+  end
+
+  defp ceidg_activity(attrs, token) do
+    case Req.get("https://dane.biznes.gov.pl/api/ceidg/v3/firma",
+           params: [nip: attrs.nip],
+           auth: {:bearer, token},
+           retry: false
+         ) do
+      {:ok, %{status: 200, body: %{"firma" => businesses}}} ->
+        {:ok, ceidg_attrs(attrs, ceidg_current(businesses))}
+
+      {:ok, %{status: 204}} ->
+        {:ok, attrs}
+
+      {:ok, %{status: status}} ->
+        {:error, {:ceidg_http_error, status}}
+
+      {:error, _reason} = error ->
+        error
+    end
+  end
+
+  # A NIP may hold several businesses over the years; the active one, else the latest started.
+  defp ceidg_current(businesses) do
+    Enum.find(businesses, &(&1["status"] == "AKTYWNY")) ||
+      Enum.max_by(businesses, & &1["dataRozpoczecia"])
+  end
+
+  defp ceidg_attrs(attrs, business) do
+    regon = get_in(business, ["wlasciciel", "regon"])
+
+    attrs
+    |> Map.update(:name, business["nazwa"], &(&1 || business["nazwa"]))
+    |> Map.update(:regon, regon, &(&1 || regon))
+    |> Map.merge(ceidg_main(business["pkdGlowny"]))
+  end
+
+  defp ceidg_main(%{"kod" => code, "nazwa" => name}), do: %{pkd: format_code(code), pkd_name: name}
+
+  defp ceidg_main(nil), do: %{}
 
   defp gus_fallback(%{pkd: _pkd} = attrs), do: {:ok, attrs}
 
@@ -186,7 +237,7 @@ defmodule Firmowid.Core.Services.CompanyRegister do
   defp name(%OsPrawnaPkd{praw_pkdNazwa: name}), do: name
   defp name(%OsFizycznaPkd{fiz_pkdNazwa: name}), do: name
 
-  # GUS gives "6920Z"; the classification writes "69.20.Z".
+  # GUS and CEIDG give "6920Z"; the classification writes "69.20.Z".
   defp format_code(<<division::binary-size(2), group::binary-size(2), class::binary>>),
     do: "#{division}.#{group}.#{class}"
 end
