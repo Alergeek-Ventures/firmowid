@@ -160,29 +160,28 @@ Schema migrations must be managed through Ash/AshPostgres migration tooling.
 
 ## Code Quality Verification
 
-Use verification to get fast feedback while working and establish confidence in
-the integrated change before submitting it:
+Verify in proportion to the change and let CI be the final gate:
 
-- During the local edit loop, use `mix check --quick`. It keeps strict compilation,
-  inexpensive checks and tests, but skips costly type analysis and translation
-  extraction. It is feedback, not final verification.
 - For a narrow change or a failing check, run the relevant task or focused test
   directly (for example `mix test lib/path/to/feature_test.exs`). Fix the cause
   before repeating the broader verification.
-- Before submitting changes, run the full verification:
-
-```bash
-mix check
-```
+- Before pushing, run `mix check` once. It compiles with warnings as errors,
+  checks formatting and Credo on the files changed since `origin/main`, validates
+  the translation catalogs and runs the whole test suite. Every check runs even
+  after another fails, so one run lists all problems.
 
 > Do not `tail` or `grep` the output - it's super compact, specifically for agents.
 
-All full checks must pass before changes can be merged. Verification does not
-auto-format source files; fix formatting explicitly. Timings and failure output
-identify what needs attention, and skipped checks are not evidence of success.
-Use `--no-test` only when tests are verified separately. Tests calling real
-external APIs are excluded by default; include them deliberately with
-`mix check --external` when credentials and external services are available.
+CI runs every check on all files, including Dialyzer, translation extraction,
+Sobelow and the dependency audits, in about five minutes. These run only in CI:
+push and read its result instead of reproducing it locally. When CI reports a
+failure, run that one task (for example `mix credo --strict <path>`) to iterate.
+Skipped checks are not evidence of success. Verification does not auto-format source files: format the files you
+changed with `mix format <paths>`, since a full `mix format` takes about a
+minute. Do not use `mix compile --force`; `mix compile` already reprints
+warnings from earlier compilations. Tests calling real external APIs are
+excluded by default; include them deliberately with `mix check --external` when
+credentials and external services are available.
 
 ## Code Style Guidelines
 

@@ -67,6 +67,9 @@ config :firmowid, :ksef, request_options: [plug: {Req.Test, :ksef_api}]
 config :firmowid, :nbp_api_request_options, plug: Firmowid.Test.Support.NbpApiStub
 config :firmowid, :nip_api_request_options, plug: {Req.Test, :nip_api}
 config :firmowid, :openai_api_key, "test-openai-api-key"
+# OpenaiEx clients fall back to api.openai.com. A closed local port fails at once,
+# so tests never wait for the real API; tests needing a response start a stub.
+config :firmowid, :openai_ex, base_url: "http://127.0.0.1:9/v1"
 config :firmowid, :reducto_api_key, "test-reducto-api-key"
 
 config :firmowid, :s3,

@@ -295,7 +295,7 @@ jobs:
         id: tests
         run: |
           set -o pipefail
-          mix coveralls.lcov --slowest 20 2>&1 | tee coveralls.log
+          mix coveralls.lcov 2>&1 | tee coveralls.log
 
       - name: Run paired coverage benchmark on this runner
         if: ${{ github.event_name == 'workflow_dispatch' && inputs.coverage-benchmark }}
