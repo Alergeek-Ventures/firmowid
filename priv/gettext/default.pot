@@ -1959,9 +1959,19 @@ msgstr ""
 msgid "Check already matched payments"
 msgstr ""
 
+#: lib/firmowid_web/assistant/utilities/presentation.ex
+#, elixir-autogen, elixir-format
+msgid "Check correction details"
+msgstr ""
+
 #: lib/firmowid_web/management/views/counterparty_suggestions.ex
 #, elixir-autogen, elixir-format
 msgid "Check first"
+msgstr ""
+
+#: lib/firmowid_web/assistant/utilities/presentation.ex
+#, elixir-autogen, elixir-format
+msgid "Check invoice details"
 msgstr ""
 
 #: lib/firmowid_web/assistant/utilities/presentation.ex
@@ -1989,6 +1999,11 @@ msgstr ""
 msgid "Check the result"
 msgstr ""
 
+#: lib/firmowid_web/assistant/utilities/presentation.ex
+#, elixir-autogen, elixir-format
+msgid "Check the running work session"
+msgstr ""
+
 #: lib/firmowid_web/delegations/components/settlement_page.ex
 #, elixir-autogen, elixir-format
 msgid "Check the trip times suggested from your tickets. Enter local times in Poland."
@@ -1997,6 +2012,11 @@ msgstr ""
 #: lib/firmowid_web/hours_record/components/upload_form.ex
 #, elixir-autogen, elixir-format
 msgid "Check your hours before signing"
+msgstr ""
+
+#: lib/firmowid_web/assistant/utilities/presentation.ex
+#, elixir-autogen, elixir-format
+msgid "Check your shared birthday"
 msgstr ""
 
 #: lib/firmowid_web/delegations/components/settlement/expense.ex
@@ -7489,6 +7509,11 @@ msgstr ""
 msgid "Oops, something went wrong! Check the errors below."
 msgstr ""
 
+#: lib/firmowid_web/assistant/utilities/presentation.ex
+#, elixir-autogen, elixir-format
+msgid "Open a sales invoice"
+msgstr ""
+
 #: lib/firmowid_web/management/components/delegations_tab.ex
 #, elixir-autogen, elixir-format
 msgid "Open business trip: %{title}"
@@ -9003,6 +9028,16 @@ msgstr ""
 msgid "Scope"
 msgstr ""
 
+#: lib/firmowid_web/assistant/utilities/presentation.ex
+#, elixir-autogen, elixir-format
+msgid "Search analysis entries"
+msgstr ""
+
+#: lib/firmowid_web/assistant/utilities/presentation.ex
+#, elixir-autogen, elixir-format
+msgid "Search analysis tags"
+msgstr ""
+
 #: lib/firmowid_web/analysis/components/category_selector.ex
 #, elixir-autogen, elixir-format
 msgid "Search categories"
@@ -9056,6 +9091,11 @@ msgstr ""
 
 #: lib/firmowid_web/assistant/utilities/presentation.ex
 #, elixir-autogen, elixir-format
+msgid "Search leave requests"
+msgstr ""
+
+#: lib/firmowid_web/assistant/utilities/presentation.ex
+#, elixir-autogen, elixir-format
 msgid "Search monthly salaries"
 msgstr ""
 
@@ -9064,6 +9104,7 @@ msgstr ""
 msgid "Search organizations"
 msgstr ""
 
+#: lib/firmowid_web/assistant/utilities/presentation.ex
 #: lib/firmowid_web/management/views/projects.html.heex
 #, elixir-autogen, elixir-format
 msgid "Search projects"
@@ -9083,6 +9124,11 @@ msgstr ""
 #: lib/firmowid_web/assistant/utilities/presentation.ex
 #, elixir-autogen, elixir-format
 msgid "Search transactions"
+msgstr ""
+
+#: lib/firmowid_web/assistant/utilities/presentation.ex
+#, elixir-autogen, elixir-format
+msgid "Search work sessions"
 msgstr ""
 
 #: lib/firmowid_web/landing/components/hero.ex
