@@ -39,14 +39,10 @@ defmodule Firmowid.Analysis.CategoryTotals do
   def aggregate(entities, filters \\ []) do
     categories =
       Enum.reduce(entities, %{income: %{}, expenses: %{}}, fn {amount, tags}, acc ->
-        cents =
-          amount |> Decimal.abs() |> Decimal.round(2) |> Decimal.mult(100) |> Decimal.to_integer()
-
         direction = if Decimal.negative?(amount), do: :expenses, else: :income
 
-        tags
-        |> categories_for_tags()
-        |> allocate(cents)
+        amount
+        |> split(tags)
         |> Enum.filter(&(selected?(&1.key, filters) and Decimal.positive?(&1.amount)))
         |> Enum.reduce(acc, fn row, acc ->
           update_in(acc, [direction], fn rows ->
@@ -56,6 +52,19 @@ defmodule Firmowid.Analysis.CategoryTotals do
       end)
 
     build_totals(category_list(categories.income), category_list(categories.expenses))
+  end
+
+  @doc """
+  Splits one entity's amount into its category shares exactly as `aggregate/2`
+  allocates them, including zero shares; none for an internal entity. Share
+  amounts are positive and sum to the absolute amount rounded to cents.
+  """
+  @spec split(Decimal.t(), [map()]) :: [category()]
+  def split(amount, tags) do
+    cents =
+      amount |> Decimal.abs() |> Decimal.round(2) |> Decimal.mult(100) |> Decimal.to_integer()
+
+    tags |> categories_for_tags() |> allocate(cents)
   end
 
   @doc "Combines already allocated totals in one currency without reallocating or rerounding shares."

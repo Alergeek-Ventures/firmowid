@@ -26,10 +26,8 @@ defmodule Firmowid.Analysis.EntryTest do
 
     refute Flags.evaluate_for_user(user).analysis_dashboard
 
-    assert {:ok, %{month: ~D[2026-10-01], entries: [entry]}} =
-             Entry.list(~D[2026-10-12],
-               scope: %Scope{actor: user, tenant: user.member.organization_id}
-             )
+    assert {:ok, %{entries: [entry]}} =
+             Entry.list(~D[2026-10-01], ~D[2026-10-31], scope: %Scope{actor: user, tenant: user.member.organization_id})
 
     assert entry.id == own_transaction.id
     assert entry.entity_type == :transaction
@@ -41,7 +39,7 @@ defmodule Firmowid.Analysis.EntryTest do
     other_user = admin_fixture()
 
     assert {:error, %Forbidden{}} =
-             Entry.list(~D[2026-10-01],
+             Entry.list(~D[2026-10-01], ~D[2026-10-31],
                scope: %Scope{actor: user, tenant: other_user.member.organization_id}
              )
   end
@@ -50,9 +48,7 @@ defmodule Firmowid.Analysis.EntryTest do
     user = user_fixture()
 
     assert {:error, %Forbidden{}} =
-             Entry.list(~D[2026-10-01],
-               scope: %Scope{actor: user, tenant: user.member.organization_id}
-             )
+             Entry.list(~D[2026-10-01], ~D[2026-10-31], scope: %Scope{actor: user, tenant: user.member.organization_id})
   end
 
   defp skipped_transaction(user) do

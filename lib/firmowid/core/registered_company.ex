@@ -12,6 +12,8 @@ defmodule Firmowid.Core.RegisteredCompany do
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer]
 
+  alias Firmowid.Checks.AtLeastRole
+  alias Firmowid.Checks.SystemActorRole
   alias Firmowid.Resource
 
   require Resource
@@ -38,10 +40,21 @@ defmodule Firmowid.Core.RegisteredCompany do
   end
 
   policies do
-    policy {Firmowid.Checks.SystemActorRole, roles: [:analysis_classifier]} do
-      authorize_if action([:by_nips, :register])
+    # Public register data: members who read the analysis see their counterparties' activity.
+    policy action(:by_nips) do
+      authorize_if {SystemActorRole, roles: [:analysis_classifier]}
+      authorize_if {AtLeastRole, role: :invoicing}
+    end
+
+    policy action(:register) do
+      authorize_if {SystemActorRole, roles: [:analysis_classifier]}
     end
   end
+
+  @doc "Describes the company's predominant activity by its PKD code and name, nil when unknown."
+  @spec activity(%__MODULE__{}) :: String.t() | nil
+  def activity(%__MODULE__{pkd: pkd, pkd_name: name}) when is_binary(pkd), do: "#{pkd} #{name}"
+  def activity(%__MODULE__{}), do: nil
 
   attributes do
     uuid_v7_primary_key :id

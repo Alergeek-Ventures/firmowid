@@ -281,7 +281,7 @@ defmodule FirmowidWeb.Analysis.Components.PeriodDetails do
     do: gettext("%{amount} · %{share}", amount: whole_money(amount), share: ratio(amount, total))
 
   defp reason(%{status: :confirmed}), do: gettext("Your choice")
-  defp reason(%{source: :certain}), do: gettext("Salary or tax payment")
+  defp reason(%{source: :certain}), do: gettext("Salary, ZUS or tax payment")
 
   defp reason(%{source: :jev, reason: [line | _]}), do: gettext("From the document: %{text}", text: line)
 
