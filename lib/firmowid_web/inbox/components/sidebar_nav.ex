@@ -13,7 +13,10 @@ defmodule FirmowidWeb.Inbox.Components.SidebarNav do
   use FirmowidWeb, :live_component
 
   import FirmowidUI.Components.Link
-  import FirmowidWeb.Inbox.Components.Sidebar, only: [label_styles: 0, link_styles: 1]
+
+  import FirmowidWeb.Inbox.Components.Sidebar,
+    only: [close_on_phone: 0, label_styles: 0, link_styles: 1]
+
   import Phoenix.Component, except: [link: 1]
 
   alias Firmowid.Timetracker.Session
@@ -30,13 +33,21 @@ defmodule FirmowidWeb.Inbox.Components.SidebarNav do
   @impl true
   def update(%{refresh: true}, socket), do: {:ok, load_status(socket)}
 
+  # A layer switch on the inbox only patches the page, so this component stays
+  # mounted; it reloads the status then, as the inbox reloads its own data.
   def update(assigns, socket) do
+    layer_changed? = socket.assigns[:layer] != assigns[:layer]
     socket = assign(socket, assigns)
 
-    if socket.assigns[:status] do
-      {:ok, socket}
-    else
-      {:ok, socket |> assign(:cached, cached_status(socket.assigns.scope)) |> load_status()}
+    cond do
+      !socket.assigns[:status] ->
+        {:ok, socket |> assign(:cached, cached_status(socket.assigns.scope)) |> load_status()}
+
+      layer_changed? ->
+        {:ok, load_status(socket)}
+
+      true ->
+        {:ok, socket}
     end
   end
 
@@ -108,6 +119,7 @@ defmodule FirmowidWeb.Inbox.Components.SidebarNav do
           kind="unstyled"
           navigate={if @current_id != :inbox, do: Navigation.inbox_path(layer)}
           patch={if @current_id == :inbox, do: Navigation.inbox_path(layer)}
+          phx-click={if @current_id == :inbox, do: close_on_phone()}
           aria-current={@layer == layer && "page"}
           phx-hook="TippyWhenTruncated"
           data-tippy-content={layer_label(layer)}
