@@ -90,7 +90,9 @@ defmodule FirmowidWeb.Landing.Views.Guides do
           {TimeFormatter.format_date(@article.updated, :long)}
         </time>
       </p>
-      <div class="[&_table]:block [&_table]:overflow-x-auto">{Phoenix.HTML.raw(@article.html)}</div>
+      <div class="[&_table]:block [&_table]:overflow-x-auto [&_tr.firmowid]:bg-[#1c1f23] [&_tr.firmowid_*]:text-white [&_tr.firmowid>td:first-child]:ps-3 [&_tr.firmowid>td:last-child]:pe-3">
+        {Phoenix.HTML.raw(@article.html)}
+      </div>
       <div class="not-prose mt-12 flex flex-wrap items-center gap-3 border-t border-grey-300 pt-6 text-sm font-medium [&>a]:rounded-full [&>a]:border [&>a]:border-grey-300 [&>a]:px-4 [&>a]:py-2 [&>a:hover]:border-grey-900 [&>button]:rounded-full [&>button]:border [&>button]:border-grey-300 [&>button]:px-4 [&>button]:py-2 [&>button:hover]:border-grey-900">
         <.icon name="hero-share" class="size-5 text-grey-600" />
         <a
