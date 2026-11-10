@@ -96,7 +96,25 @@
     {Application.get_env(:live_debugger, :live_debugger_tags)}
     <link rel="icon" type="image/png" href={~p"/images/favicon.png"} />
     <link rel="apple-touch-icon" href={~p"/images/favicon.png"} />
+    <%!-- the landing page is set in Lexend, the app in Geist --%>
     <link
+      :if={assigns[:public_marketing?]}
+      rel="preload"
+      as="font"
+      type="font/woff2"
+      href={~p"/fonts/lexend-latin.woff2"}
+      crossorigin
+    />
+    <link
+      :if={assigns[:public_marketing?]}
+      rel="preload"
+      as="font"
+      type="font/woff2"
+      href={~p"/fonts/lexend-latin-ext.woff2"}
+      crossorigin
+    />
+    <link
+      :if={!assigns[:public_marketing?]}
       rel="preload"
       as="font"
       type="font/woff2"
@@ -104,6 +122,7 @@
       crossorigin
     />
     <link
+      :if={!assigns[:public_marketing?]}
       rel="preload"
       as="font"
       type="font/woff2"

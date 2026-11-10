@@ -214,12 +214,13 @@ grey canvas through tonal contrast, and a shadowed card is used only in the
 few places that group a self-contained record. A heavy black navigation bar
 frames the workspace like the spine of a ledger. The typeface is Geist
 throughout, a plain, compact sans that keeps dense financial tables calm and
-businesslike. Lexend survives only in the "Firmowid" wordmark, where it keeps
-the brand recognisable.
+businesslike. Lexend survives in the "Firmowid" wordmark, where it keeps
+the brand recognisable, and on the landing page (see below).
 
 This document covers the application UI only. The marketing landing page is
 an expressive surface with its own hand-drawn vocabulary and is deliberately
-out of scope here.
+out of scope here. It is set in Lexend (`font-landing`); only its previews of
+real product screens switch back to Geist (`font-sans`), so they look like the app.
 
 The frontmatter is the source of truth for colours, the text size scale and
 radii. Its keys are the Tailwind token names (`rust-700` is `bg-rust-700`,
@@ -315,7 +316,7 @@ the landing's 1.35 from the original Figma was folded into it.
 ### Named Rules
 **The Weight Carries Hierarchy Rule.** Emphasis comes from medium (500) and semibold (600) Geist, not from colour or a second typeface. Bold (700) is for figures that must jump out, such as totals and big numbers.
 
-**The Wordmark Only Rule.** Lexend (`font-logo`) sets the "Firmowid" wordmark and nothing else: the sidebar head, the navbar logo, the landing navigation and footer, and the email header. Headings, empty states and modals stay in Geist.
+**The Wordmark Only Rule.** In the app, Lexend (`font-logo`) sets the "Firmowid" wordmark and nothing else: the sidebar head, the navbar logo, the landing navigation and footer, and the email header. Headings, empty states and modals stay in Geist.
 
 ## Layout
 

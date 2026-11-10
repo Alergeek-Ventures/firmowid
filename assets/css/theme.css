@@ -6,6 +6,8 @@
   --font-*: initial;
   --font-sans: "Geist", ui-sans-serif, system-ui, sans-serif;
   --font-logo: "Lexend", ui-sans-serif, system-ui, sans-serif;
+  /* The landing page is set in Lexend; only its product previews use Geist (`font-sans`). */
+  --font-landing: "Lexend", ui-sans-serif, system-ui, sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 
   /* Elevation: resting cards; floating overlays use shadow-lg */
