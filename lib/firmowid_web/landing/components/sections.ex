@@ -254,7 +254,7 @@ defmodule FirmowidWeb.Landing.Components.Sections do
     ~H"""
     <div
       class={[
-        "@container relative min-w-0 rounded-2xl border border-(--landing-line) bg-grey-100 text-caps-sm leading-[1.4] shadow-[0_0.875rem_2.125rem_rgb(80_50_30/8%)] lg:text-xs [&_h4]:mb-4.5 [&_h4]:text-sm [&_h4]:font-semibold lg:[&_h4]:text-base",
+        "@container relative min-w-0 rounded-2xl border border-(--landing-line) bg-grey-100 font-sans text-caps-sm leading-[1.4] shadow-[0_0.875rem_2.125rem_rgb(80_50_30/8%)] lg:text-xs [&_h4]:mb-4.5 [&_h4]:text-sm [&_h4]:font-semibold lg:[&_h4]:text-base",
         @visual == :invoices &&
           "p-2.5 lg:px-4 lg:pt-5 lg:pb-4",
         @visual == :banking && "p-2.5 lg:p-4",
@@ -846,7 +846,7 @@ defmodule FirmowidWeb.Landing.Components.Sections do
         </div>
 
         <div
-          class="@container self-center rounded-[1.25rem] border border-teal-300 bg-white p-5.5 text-sm/snug text-grey-900 shadow-[0_1.125rem_2.75rem_rgb(47_67_67/10%)] max-lg:p-3.5 max-lg:[&_h3]:text-base max-lg:[&>div>p]:text-left max-lg:[&>div>p]:text-xs max-lg:[&>div>span]:text-sm max-lg:[&>p]:text-sm max-lg:[&>p:first-child]:w-[88%] max-lg:[&>p:first-child]:text-left max-lg:[&>p:nth-child(2)]:mt-5 max-lg:[&>p:nth-child(2)]:text-xs"
+          class="@container self-center rounded-[1.25rem] border border-teal-300 bg-white p-5.5 font-sans text-sm/snug text-grey-900 shadow-[0_1.125rem_2.75rem_rgb(47_67_67/10%)] max-lg:p-3.5 max-lg:[&_h3]:text-base max-lg:[&>div>p]:text-left max-lg:[&>div>p]:text-xs max-lg:[&>div>span]:text-sm max-lg:[&>p]:text-sm max-lg:[&>p:first-child]:w-[88%] max-lg:[&>p:first-child]:text-left max-lg:[&>p:nth-child(2)]:mt-5 max-lg:[&>p:nth-child(2)]:text-xs"
           role="img"
           aria-label={gettext("Example conversation and invoice confirmation preview")}
         >
