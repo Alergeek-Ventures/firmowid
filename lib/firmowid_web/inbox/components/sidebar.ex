@@ -4,11 +4,11 @@ defmodule FirmowidWeb.Inbox.Components.Sidebar do
   layer listed flat. The switch at the top moves between the company layer and
   the member's own layer, landing in that layer's inbox.
 
-  The Firmowid head at the top collapses it to icons on desktop; the state
-  lives on `<html data-sidebar>` (restored from local storage in the root
+  The panel button right of the wordmark collapses it to icons on desktop; the
+  state lives on `<html data-sidebar>` (restored from local storage in the root
   layout), so it survives navigation without a server round trip. On phones the
-  head in the top bar slides it in over the page and the one in the sidebar
-  slides it out.
+  hamburger in the top bar slides it in over the page and the same button,
+  showing a close icon, slides it out.
 
   Collapsing keeps every icon exactly where it was: the sidebar narrows to the
   icon column while the labels fade, and nothing changes height, so only the
@@ -61,33 +61,48 @@ defmodule FirmowidWeb.Inbox.Components.Sidebar do
       )
 
     ~H"""
-    <.navbar class="sticky top-0 z-40 flex h-navbar items-center gap-3 md:hidden">
-      <.head_button
+    <%!-- Same insets as the sidebar head, so the wordmark and button stay put as it slides in. --%>
+    <.navbar class="sticky top-0 z-40 flex h-navbar items-start gap-3 px-3! pt-4 sm:px-3! md:hidden">
+      <span class="pl-1 font-logo text-[22px]/7 font-extrabold text-white">
+        Firmowid
+      </span>
+      <.panel_button
+        class="ml-auto"
         phx-click={JS.toggle_class(@closed_on_phone, to: "#app-sidebar")}
         label={pgettext("main navigation", "Navigation menu")}
-      />
+      >
+        <Lucideicons.menu class="size-5.5" aria-hidden="true" />
+      </.panel_button>
     </.navbar>
     <aside
       id="app-sidebar"
       class={[
-        "fixed inset-y-0 left-0 z-50 flex w-64 flex-col gap-6 overflow-x-hidden overflow-y-auto bg-black px-3 py-5 text-sm text-white [--focus-ring:var(--color-white)] max-md:w-full max-md:ease-out-quint motion-safe:max-md:transition-[translate,visibility] motion-safe:max-md:duration-300 md:ease-out-quint md:in-data-[sidebar=collapsed]:w-14 motion-safe:md:transition-[width] motion-safe:md:duration-250",
+        "fixed inset-y-0 left-0 z-50 flex w-64 flex-col gap-6 overflow-x-hidden overflow-y-auto bg-black px-3 py-4 text-sm text-white [--focus-ring:var(--color-white)] max-md:w-full max-md:ease-out-quint motion-safe:max-md:transition-[translate,visibility] motion-safe:max-md:duration-300 md:ease-out-quint md:in-data-[sidebar=collapsed]:w-14 motion-safe:md:transition-[width] motion-safe:md:duration-250",
         @closed_on_phone
       ]}
     >
-      <div class="flex items-center gap-1.5">
-        <.head_button
-          id="app-sidebar-collapse"
-          phx-hook=".SidebarCollapse"
-          phx-click={JS.add_class(@closed_on_phone, to: "#app-sidebar")}
-          label={gettext("Collapse or expand the menu")}
-        />
-        <%!-- The wordmark lines up with the labels below and fades with them when collapsed. --%>
+      <div class="flex items-center gap-1.5 md:in-data-[sidebar=collapsed]:gap-0">
+        <%!-- The wordmark lines up with the icons below and fades with the labels when collapsed. --%>
         <span class={[
-          "font-logo text-xl/8 font-extrabold tracking-wide text-grey-100",
+          "pl-1 font-logo text-[22px]/7 font-extrabold text-white md:in-data-[sidebar=collapsed]:pl-0",
           label_styles()
         ]}>
           Firmowid
         </span>
+        <%!-- Collapsed, the wordmark gives up its width, so the button lands on the icon column. --%>
+        <.panel_button
+          id="app-sidebar-collapse"
+          phx-hook=".SidebarCollapse"
+          phx-click={JS.add_class(@closed_on_phone, to: "#app-sidebar")}
+          label={gettext("Collapse or expand the menu")}
+        >
+          <%!-- Collapses on desktop; on phones it closes the menu the hamburger opened. --%>
+          <Lucideicons.panel_left
+            class="size-5.5 max-md:hidden md:in-data-[sidebar=collapsed]:size-4.5"
+            aria-hidden="true"
+          />
+          <Lucideicons.x class="size-5.5 md:hidden" aria-hidden="true" />
+        </.panel_button>
       </div>
       <script :type={Phoenix.LiveView.ColocatedHook} name=".SidebarCollapse">
         export default {
@@ -119,9 +134,17 @@ defmodule FirmowidWeb.Inbox.Components.Sidebar do
         inbox={@inbox}
         timetracker={@timetracker}
       />
-      <nav class="flex flex-col gap-0.5" aria-label={layer_label(@layer)}>
-        <%!-- Keeps its height when collapsed, so the links below never move. --%>
-        <h2 class="overflow-clip px-1.5 pb-1 text-caps-sm/4 tracking-wide whitespace-nowrap text-white/40 uppercase">
+      <%!-- Dissolves in when the layer changes (see SidebarNav's LayerSwitch hook). --%>
+      <nav
+        data-layer-dissolve
+        class="mt-2 flex flex-col gap-0.5 motion-safe:transition-[margin] motion-safe:duration-250 motion-safe:ease-out-quint md:in-data-[sidebar=collapsed]:mt-0.5"
+        aria-label={layer_label(@layer)}
+      >
+        <%!--
+          Collapsed, the header folds away while the taller vertical switch takes
+          its room, so the links below land where they were (Figma "Zwinięty").
+        --%>
+        <h2 class="h-[19px] overflow-clip px-2 pb-1.5 text-caps-sm/[13px] font-normal whitespace-nowrap text-grey-500 uppercase motion-safe:transition-[height,padding] motion-safe:duration-250 motion-safe:ease-out-quint md:in-data-[sidebar=collapsed]:h-0 md:in-data-[sidebar=collapsed]:pb-0">
           <span class={label_styles()}>{layer_label(@layer)}</span>
         </h2>
         <.sidebar_link
@@ -130,27 +153,37 @@ defmodule FirmowidWeb.Inbox.Components.Sidebar do
           active={@current_id == destination.id}
         />
       </nav>
-      <div class="mt-auto flex flex-col gap-0.5 border-t border-grey-700/50 pt-4">
+      <div class="mt-auto flex flex-col gap-0.5 border-t border-grey-800 pt-11 motion-safe:transition-[padding] motion-safe:duration-250 motion-safe:ease-out-quint md:in-data-[sidebar=collapsed]:pt-3">
         <.button
+          id="app-sidebar-feedback"
           variant="unstyled"
           type="button"
           phx-click={show_modal("feedback-modal")}
           class={link_styles(false)}
-          title={gettext("Feedback")}
+          phx-hook="TippyWhenTruncated"
+          data-tippy-content={gettext("Feedback")}
+          data-tippy-placement="right"
+          data-tippy-delay="[300, 0]"
+          data-tippy-truncate-selector="[data-label]"
         >
-          <Lucideicons.message_square_text class="size-5 shrink-0" aria-hidden="true" />
-          <span class={label_styles()}>{gettext("Feedback")}</span>
+          <Lucideicons.message_square_text class="size-4.5 shrink-0" aria-hidden="true" />
+          <span data-label class={label_styles()}>{gettext("Feedback")}</span>
         </.button>
         <.button
           variant="unstyled"
           type="button"
           phx-click={JS.toggle(to: "#app-sidebar-account", display: "flex")}
           phx-click-away={JS.hide(to: "#app-sidebar-account")}
+          id="app-sidebar-account-button"
           class={link_styles(false)}
-          title={@current_user.email}
+          phx-hook="TippyWhenTruncated"
+          data-tippy-content={@current_user.email}
+          data-tippy-placement="right"
+          data-tippy-delay="[300, 0]"
+          data-tippy-truncate-selector="[data-label]"
         >
-          <Lucideicons.circle_user class="size-5 shrink-0" aria-hidden="true" />
-          <span class={label_styles()}>{@current_user.email}</span>
+          <Lucideicons.circle_user class="size-4.5 shrink-0" aria-hidden="true" />
+          <span data-label class={label_styles()}>{@current_user.email}</span>
         </.button>
         <div
           id="app-sidebar-account"
@@ -181,21 +214,28 @@ defmodule FirmowidWeb.Inbox.Components.Sidebar do
   defp layer(true, nil, _uri), do: :company
 
   attr :label, :string, required: true
+  attr :class, :any, default: nil
   attr :rest, :global
+  slot :inner_block, required: true
 
-  # The Firmowid head as the button that opens, closes or collapses the sidebar.
-  # A vector trace of the favicon drawing, so it stays sharp at any pixel density.
-  defp head_button(assigns) do
+  # The icon button right of the wordmark that opens, closes or collapses the sidebar.
+  # Its 32 px hit area overhangs the 28 px head row, so the 22 px icon sits on the
+  # row's right edge as in Figma; collapsed, it starts at the top inset instead
+  # and only overhangs below, so the switch keeps its place.
+  defp panel_button(assigns) do
     ~H"""
     <.button
       variant="unstyled"
       type="button"
-      class="flex size-8 shrink-0 items-center justify-center rounded-md transition-colors hover:bg-white/10 active:bg-white/15"
+      class={[
+        "-my-0.5 -mr-1.25 flex size-8 shrink-0 items-center justify-center rounded-md text-white transition-colors hover:bg-white/10 active:bg-white/15 md:in-data-[sidebar=collapsed]:mt-0 md:in-data-[sidebar=collapsed]:mr-0 md:in-data-[sidebar=collapsed]:-mb-1",
+        @class
+      ]}
       aria-label={@label}
       title={@label}
       {@rest}
     >
-      <img src={~p"/images/logo-head.svg"} alt="" class="size-8" />
+      {render_slot(@inner_block)}
     </.button>
     """
   end
@@ -208,26 +248,41 @@ defmodule FirmowidWeb.Inbox.Components.Sidebar do
 
   defp sidebar_link(assigns) do
     ~H"""
+    <%!-- The tooltip shows only while the label is cut off, i.e. when collapsed. --%>
     <.link
+      id={"app-sidebar-link-#{@destination.id}"}
       kind="unstyled"
       navigate={@destination.path}
       aria-current={@active && "page"}
-      title={@destination.label}
       class={link_styles(@active)}
+      phx-hook="TippyWhenTruncated"
+      data-tippy-content={@destination.label}
+      data-tippy-placement="right"
+      data-tippy-delay="[300, 0]"
+      data-tippy-truncate-selector="[data-label]"
     >
-      <Lucideicons.render! name={@destination.icon} class="size-5 shrink-0" aria-hidden="true" />
-      <span class={label_styles()}>{@destination.label}</span>
+      <Lucideicons.render! name={@destination.icon} class="size-4.5 shrink-0" aria-hidden="true" />
+      <span data-label class={label_styles()}>{@destination.label}</span>
     </.link>
     """
   end
 
-  # Lucide draws on a 24 px grid: at 16 px its strokes shrink to 1.33 px and blur
-  # on 1x screens, so icons are 20 px and rows 32 px tall, keeping every icon on
-  # whole pixels. The 6 px inset centers them in the collapsed 56 px sidebar.
-  defp link_styles(active?) do
+  @doc """
+  A sidebar row as in the Figma "Sidebar / Link": 32 px tall, an 18 px icon 8 px
+  in, grey-300 text, and the current page on a grey-900 fill. Collapsed ("Sidebar
+  / Link ikona"), the inset shrinks to 7 px so the icon centers in a 32 px square
+  and the current page sits on a grey-800 fill with 6 px corners; it is relative
+  for the corner badges.
+  """
+  @spec link_styles(boolean()) :: list(String.t())
+  def link_styles(active?) do
     [
-      "flex w-full items-center gap-3 rounded-md px-1.5 py-1.5 text-left leading-5 transition-colors hover:bg-grey-700/50",
-      if(active?, do: "bg-grey-700/70 text-white", else: "text-white/70")
+      "relative flex w-full items-center gap-3 px-2 py-1.5 text-left leading-5 transition-colors md:in-data-[sidebar=collapsed]:px-1.75",
+      if(active?,
+        do:
+          "rounded-[2px] bg-grey-900 text-white md:in-data-[sidebar=collapsed]:rounded-md md:in-data-[sidebar=collapsed]:bg-grey-800",
+        else: "rounded-md text-grey-300 hover:bg-grey-900/60 hover:text-white"
+      )
     ]
   end
 

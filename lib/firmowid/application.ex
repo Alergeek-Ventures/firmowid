@@ -40,6 +40,7 @@ defmodule Firmowid.Application do
         Supervisor.child_spec({Cachex, name: :currencies}, id: :currencies_cache),
         Supervisor.child_spec({Cachex, name: :institutions}, id: :institutions_cache),
         Supervisor.child_spec({Cachex, name: :ksef}, id: :ksef_cache),
+        Supervisor.child_spec({Cachex, name: :sidebar_status}, id: :sidebar_status_cache),
         Firmowid.Vault,
         Gusex.SessionCache,
         {Oban, Application.fetch_env!(:firmowid, Oban)},

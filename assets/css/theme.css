@@ -46,5 +46,7 @@
 
   /* Animations */
   --animate-fade-in: appear 150ms ease-out forwards;
+  /* Content that replaces other content in place, like the sidebar layers */
+  --animate-dissolve: appear 300ms ease-out;
   --animate-error-pulse: error-pulse 2s ease-in-out infinite;
 }

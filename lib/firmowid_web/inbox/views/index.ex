@@ -204,7 +204,8 @@ defmodule FirmowidWeb.Inbox.Views.Index do
   @impl true
   def render(assigns) do
     ~H"""
-    <div class="mx-auto flex w-full max-w-6xl flex-col gap-8 py-4">
+    <%!-- Dissolves in when the layer changes (see the sidebar's LayerSwitch hook). --%>
+    <div data-layer-dissolve class="mx-auto flex w-full max-w-6xl flex-col gap-8 py-4">
       <header class="flex flex-col gap-1">
         <p class="text-sm text-grey-500">
           {if @layer == :company, do: @current_org.name, else: gettext("Your matters")} · {Firmowid.Cldr.Date.to_string!(
