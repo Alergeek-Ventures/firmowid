@@ -62,45 +62,45 @@ colors:
   brick-950: "#2A0002"
 typography:
   caps-sm:
-    fontFamily: "Lexend, ui-sans-serif, system-ui, sans-serif"
+    fontFamily: "Geist, ui-sans-serif, system-ui, sans-serif"
     fontSize: "11px"
     fontWeight: 500
     lineHeight: 1.6
   xs:
-    fontFamily: "Lexend, ui-sans-serif, system-ui, sans-serif"
+    fontFamily: "Geist, ui-sans-serif, system-ui, sans-serif"
     fontSize: "12px"
     fontWeight: 500
     lineHeight: 1.4
   sm:
-    fontFamily: "Lexend, ui-sans-serif, system-ui, sans-serif"
+    fontFamily: "Geist, ui-sans-serif, system-ui, sans-serif"
     fontSize: "14px"
     fontWeight: 400
     lineHeight: 1.5
   base:
-    fontFamily: "Lexend, ui-sans-serif, system-ui, sans-serif"
+    fontFamily: "Geist, ui-sans-serif, system-ui, sans-serif"
     fontSize: "16px"
     fontWeight: 400
     lineHeight: 1.25
   h5:
-    fontFamily: "Lexend, ui-sans-serif, system-ui, sans-serif"
+    fontFamily: "Geist, ui-sans-serif, system-ui, sans-serif"
     fontSize: "18px"
     fontWeight: 500
     lineHeight: 1.4
   lg:
-    fontFamily: "Lexend, ui-sans-serif, system-ui, sans-serif"
+    fontFamily: "Geist, ui-sans-serif, system-ui, sans-serif"
     fontSize: "20px"
     fontWeight: 600
     lineHeight: 1.4
   xl:
-    fontFamily: "Lexend, ui-sans-serif, system-ui, sans-serif"
+    fontFamily: "Geist, ui-sans-serif, system-ui, sans-serif"
     fontSize: "23px"
   "2xl":
-    fontFamily: "Lexend, ui-sans-serif, system-ui, sans-serif"
+    fontFamily: "Geist, ui-sans-serif, system-ui, sans-serif"
     fontSize: "27px"
     fontWeight: 600
     lineHeight: 1.25
   "3xl":
-    fontFamily: "Lexend, ui-sans-serif, system-ui, sans-serif"
+    fontFamily: "Geist, ui-sans-serif, system-ui, sans-serif"
     fontSize: "40px"
 rounded:
   sm: "0.25rem"
@@ -212,9 +212,10 @@ pastel tonal fills instead of hard outlines. Corners are gently rounded
 (8px on most controls). The page is flat by default: white surfaces sit on the
 grey canvas through tonal contrast, and a shadowed card is used only in the
 few places that group a self-contained record. A heavy black navigation bar
-frames the workspace like the spine of a ledger. The typeface is Lexend
-throughout, a wide, highly legible sans that keeps dense financial tables
-readable and friendly.
+frames the workspace like the spine of a ledger. The typeface is Geist
+throughout, a plain, compact sans that keeps dense financial tables calm and
+businesslike. Lexend survives only in the "Firmowid" wordmark, where it keeps
+the brand recognisable.
 
 This document covers the application UI only. The marketing landing page is
 an expressive surface with its own hand-drawn vocabulary and is deliberately
@@ -237,7 +238,7 @@ Firmowid's own.
 - Colour has a fixed meaning: rust means costs, teal means sales. Neutral work uses black and graphite.
 - Warm, tactile components with pastel tonal fills (secondary buttons, pills, badges).
 - Flat by default: white surfaces on the `grey-100` canvas separated by tone or a 1px `grey-200` line. Cards with a shadow are the exception.
-- Lexend everywhere. Dense, 14px-led body text with medium weight for emphasis.
+- Geist everywhere, Lexend only in the wordmark. Dense, 14px-led body text with medium weight for emphasis.
 - Gentle 8px corners on controls, 6px on small controls and cards, full pills for filters and toggles.
 
 ## Colors
@@ -282,12 +283,15 @@ Five palettes (`grey`, `rust`, `teal`, `moss`, `brick`) share one step naming,
 
 ## Typography
 
-**Display Font:** Lexend (with ui-sans-serif, system-ui, sans-serif)
-**Body Font:** Lexend (same stack)
+**Display Font:** Geist (with ui-sans-serif, system-ui, sans-serif)
+**Body Font:** Geist (same stack)
+**Wordmark Font:** Lexend (`font-logo`), for the "Firmowid" wordmark only
 
-**Character:** One wide, open, highly legible sans for everything. Lexend's
-generous letterforms keep amounts, NIP numbers and dense tables calm, while
-weight (medium and semibold) carries hierarchy instead of a second family.
+**Character:** One plain, compact sans for everything. Geist's narrow,
+even letterforms fit more into dense tables and keep amounts, NIP numbers
+and forms businesslike, while weight (medium and semibold) carries hierarchy
+instead of a second family. Its tabular figures (`tabular-nums`) keep
+amounts aligned in columns.
 The mono stack (`font-mono`, system monospace) is only for raw identifiers a
 user may compare character by character: IBANs, NIPs, OAuth scopes and URIs.
 
@@ -309,7 +313,9 @@ Line heights come from the Tailwind scale through the size shorthand
 the landing's 1.35 from the original Figma was folded into it.
 
 ### Named Rules
-**The Weight Carries Hierarchy Rule.** Emphasis comes from medium (500) and semibold (600) Lexend, not from colour or a second typeface. Bold (700) is for figures that must jump out, such as totals and big numbers.
+**The Weight Carries Hierarchy Rule.** Emphasis comes from medium (500) and semibold (600) Geist, not from colour or a second typeface. Bold (700) is for figures that must jump out, such as totals and big numbers.
+
+**The Wordmark Only Rule.** Lexend (`font-logo`) sets the "Firmowid" wordmark and nothing else: the sidebar head, the navbar logo, the landing navigation and footer, and the email header. Headings, empty states and modals stay in Geist.
 
 ## Layout
 
@@ -484,7 +490,7 @@ a faint ring, over a black/60 scrim. A low-contrast close "×" sits top right.
 - **Do** use the black `special` or graphite `tertiary` button for actions that are neither cost nor sale.
 - **Do** prefer pastel tint plus deep-text pairs for secondary actions, pills and statuses.
 - **Do** keep surfaces flat: white on the `grey-100` canvas, separated by tone or a `grey-200` line.
-- **Do** keep body text at 14px Lexend in graphite, and lift emphasis with weight, not colour.
+- **Do** keep body text at 14px Geist in graphite, and lift emphasis with weight, not colour.
 - **Do** use the 8px radius for controls, 6px for small controls and cards, and pills only for filters, toggles and avatars.
 - **Do** change colours and text sizes in the DESIGN.md frontmatter and run `mix design.tokens`.
 - **Do** go through `FirmowidUI.Components.Button` and its variants instead of hand-rolled button classes.
@@ -495,5 +501,5 @@ a faint ring, over a black/60 scrim. A low-contrast close "×" sits top right.
 - **Don't** introduce new zinc, gray or rose Tailwind palettes. Legacy fields still use them; new work uses the grey, red and green scales from this file's frontmatter.
 - **Don't** wrap lists, tables or forms in shadowed cards, and never nest cards. `shadow-lg` belongs to floating overlays.
 - **Don't** edit `assets/css/design-tokens.css` by hand.
-- **Don't** add a second typeface to the app UI. The handwriting face belongs to the landing page only.
+- **Don't** add a second typeface to the app UI or use `font-logo` outside the wordmark. The handwriting face belongs to the landing page only.
 - **Don't** use solid red or green blocks for destructive or success buttons. Use the tint fills.

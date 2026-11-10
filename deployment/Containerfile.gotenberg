@@ -1,5 +1,5 @@
 # Containerfile for Gotenberg service with invoice fonts
-# Upstream Gotenberg ships without Lexend / Open Sans / Montserrat, which the
+# Upstream Gotenberg ships without Geist / Lexend / Open Sans / Montserrat, which the
 # invoice PDFs rely on (see PdfHelpers font handling). This image adds them
 # so local and deployed renders use the same typefaces.
 #
@@ -13,10 +13,13 @@ ENV CHROMIUM_AUTO_START=true
 
 # Install custom fonts
 USER root
-RUN mkdir -p /usr/share/fonts/truetype/lexend \
+RUN mkdir -p /usr/share/fonts/truetype/geist \
+             /usr/share/fonts/truetype/lexend \
              /usr/share/fonts/truetype/open-sans \
              /usr/share/fonts/truetype/montserrat && \
     cd /tmp && \
+    curl -fsSL https://github.com/google/fonts/raw/main/ofl/geist/Geist%5Bwght%5D.ttf -o Geist.ttf && \
+    mv Geist.ttf /usr/share/fonts/truetype/geist/ && \
     curl -fsSL https://github.com/google/fonts/raw/main/ofl/lexend/Lexend%5Bwght%5D.ttf -o Lexend.ttf && \
     mv Lexend.ttf /usr/share/fonts/truetype/lexend/ && \
     curl -fsSL https://github.com/google/fonts/raw/main/ofl/opensans/OpenSans%5Bwdth%2Cwght%5D.ttf -o OpenSans.ttf && \

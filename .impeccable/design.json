@@ -418,7 +418,7 @@
       "refersTo": "button-primary-cost",
       "description": "Solid rust primary action for cost/purchase context.",
       "html": "<button class=\"ds-btn-cost\">Dodaj koszt</button>",
-      "css": ".ds-btn-cost { font-family: Lexend, ui-sans-serif, system-ui, sans-serif; display: inline-flex; align-items: center; justify-content: center; gap: 10px; height: 44px; padding: 8px 11px; border-radius: 8px; border: 1px solid transparent; font-size: 16px; line-height: 1.25; font-weight: 400; cursor: pointer; transition: background-color 100ms ease-out, color 100ms ease-out; background: #8B3F13; color: #FFFFFF; } .ds-btn-cost:hover { background: #662905; } .ds-btn-cost:active { background: #4E2005; } .ds-btn-cost:focus-visible { outline: 2px solid #4E4E4E; outline-offset: 2px; }"
+      "css": ".ds-btn-cost { font-family: Geist, ui-sans-serif, system-ui, sans-serif; display: inline-flex; align-items: center; justify-content: center; gap: 10px; height: 44px; padding: 8px 11px; border-radius: 8px; border: 1px solid transparent; font-size: 16px; line-height: 1.25; font-weight: 400; cursor: pointer; transition: background-color 100ms ease-out, color 100ms ease-out; background: #8B3F13; color: #FFFFFF; } .ds-btn-cost:hover { background: #662905; } .ds-btn-cost:active { background: #4E2005; } .ds-btn-cost:focus-visible { outline: 2px solid #4E4E4E; outline-offset: 2px; }"
     },
     {
       "name": "Primary Button (sales)",
@@ -426,7 +426,7 @@
       "refersTo": "button-primary-sales",
       "description": "Solid teal primary action for sales/revenue context.",
       "html": "<button class=\"ds-btn-sales\">Wystaw fakturę</button>",
-      "css": ".ds-btn-sales { font-family: Lexend, ui-sans-serif, system-ui, sans-serif; display: inline-flex; align-items: center; justify-content: center; gap: 10px; height: 44px; padding: 8px 11px; border-radius: 8px; border: 1px solid transparent; font-size: 16px; line-height: 1.25; font-weight: 400; cursor: pointer; transition: background-color 100ms ease-out, color 100ms ease-out; background: #455E5E; color: #FFFFFF; } .ds-btn-sales:hover { background: #2F4343; } .ds-btn-sales:active { background: #1D3232; } .ds-btn-sales:focus-visible { outline: 2px solid #4E4E4E; outline-offset: 2px; }"
+      "css": ".ds-btn-sales { font-family: Geist, ui-sans-serif, system-ui, sans-serif; display: inline-flex; align-items: center; justify-content: center; gap: 10px; height: 44px; padding: 8px 11px; border-radius: 8px; border: 1px solid transparent; font-size: 16px; line-height: 1.25; font-weight: 400; cursor: pointer; transition: background-color 100ms ease-out, color 100ms ease-out; background: #455E5E; color: #FFFFFF; } .ds-btn-sales:hover { background: #2F4343; } .ds-btn-sales:active { background: #1D3232; } .ds-btn-sales:focus-visible { outline: 2px solid #4E4E4E; outline-offset: 2px; }"
     },
     {
       "name": "Secondary Button (cost)",
@@ -434,7 +434,7 @@
       "refersTo": "button-secondary-cost",
       "description": "Pastel rust tint with deep text; secondary cost action.",
       "html": "<button class=\"ds-btn-cost-soft\">Pobierz PDF</button>",
-      "css": ".ds-btn-cost-soft { font-family: Lexend, ui-sans-serif, system-ui, sans-serif; display: inline-flex; align-items: center; justify-content: center; gap: 10px; height: 44px; padding: 8px 11px; border-radius: 8px; border: 1px solid transparent; font-size: 16px; line-height: 1.25; font-weight: 400; cursor: pointer; transition: background-color 100ms ease-out, color 100ms ease-out; background: #E6D7CE; color: #4E2005; } .ds-btn-cost-soft:hover { background: #E9C3AC; } .ds-btn-cost-soft:active { background: #DEA785; } .ds-btn-cost-soft:focus-visible { outline: 2px solid #4E4E4E; outline-offset: 2px; }"
+      "css": ".ds-btn-cost-soft { font-family: Geist, ui-sans-serif, system-ui, sans-serif; display: inline-flex; align-items: center; justify-content: center; gap: 10px; height: 44px; padding: 8px 11px; border-radius: 8px; border: 1px solid transparent; font-size: 16px; line-height: 1.25; font-weight: 400; cursor: pointer; transition: background-color 100ms ease-out, color 100ms ease-out; background: #E6D7CE; color: #4E2005; } .ds-btn-cost-soft:hover { background: #E9C3AC; } .ds-btn-cost-soft:active { background: #DEA785; } .ds-btn-cost-soft:focus-visible { outline: 2px solid #4E4E4E; outline-offset: 2px; }"
     },
     {
       "name": "Special Button (neutral)",
@@ -442,7 +442,7 @@
       "refersTo": "button-neutral-special",
       "description": "Black fill for actions that belong to neither ledger side.",
       "html": "<button class=\"ds-btn-special\">Zapisz</button>",
-      "css": ".ds-btn-special { font-family: Lexend, ui-sans-serif, system-ui, sans-serif; display: inline-flex; align-items: center; justify-content: center; gap: 10px; height: 44px; padding: 8px 11px; border-radius: 8px; border: 1px solid transparent; font-size: 16px; line-height: 1.25; font-weight: 400; cursor: pointer; transition: background-color 100ms ease-out, color 100ms ease-out; background: #000000; color: #FFFFFF; } .ds-btn-special:hover { background: #4E4E4E; } .ds-btn-special:active { background: #303030; } .ds-btn-special:focus-visible { outline: 2px solid #4E4E4E; outline-offset: 2px; }"
+      "css": ".ds-btn-special { font-family: Geist, ui-sans-serif, system-ui, sans-serif; display: inline-flex; align-items: center; justify-content: center; gap: 10px; height: 44px; padding: 8px 11px; border-radius: 8px; border: 1px solid transparent; font-size: 16px; line-height: 1.25; font-weight: 400; cursor: pointer; transition: background-color 100ms ease-out, color 100ms ease-out; background: #000000; color: #FFFFFF; } .ds-btn-special:hover { background: #4E4E4E; } .ds-btn-special:active { background: #303030; } .ds-btn-special:focus-visible { outline: 2px solid #4E4E4E; outline-offset: 2px; }"
     },
     {
       "name": "Outline Button",
@@ -450,7 +450,7 @@
       "refersTo": "button-outline",
       "description": "Stone-line border, charcoal text; low-emphasis action.",
       "html": "<button class=\"ds-btn-outline\">Anuluj</button>",
-      "css": ".ds-btn-outline { font-family: Lexend, ui-sans-serif, system-ui, sans-serif; display: inline-flex; align-items: center; justify-content: center; gap: 10px; height: 44px; padding: 8px 11px; border-radius: 8px; border: 1px solid transparent; font-size: 16px; line-height: 1.25; font-weight: 400; cursor: pointer; transition: background-color 100ms ease-out, color 100ms ease-out; background: #FFFFFF; color: #1A1A1A; border-color: #DDDDDD; } .ds-btn-outline:hover { background: #DDDDDD; } .ds-btn-outline:active { background: #CCCCCC; } .ds-btn-outline:focus-visible { outline: 2px solid #4E4E4E; outline-offset: 2px; }"
+      "css": ".ds-btn-outline { font-family: Geist, ui-sans-serif, system-ui, sans-serif; display: inline-flex; align-items: center; justify-content: center; gap: 10px; height: 44px; padding: 8px 11px; border-radius: 8px; border: 1px solid transparent; font-size: 16px; line-height: 1.25; font-weight: 400; cursor: pointer; transition: background-color 100ms ease-out, color 100ms ease-out; background: #FFFFFF; color: #1A1A1A; border-color: #DDDDDD; } .ds-btn-outline:hover { background: #DDDDDD; } .ds-btn-outline:active { background: #CCCCCC; } .ds-btn-outline:focus-visible { outline: 2px solid #4E4E4E; outline-offset: 2px; }"
     },
     {
       "name": "Filter Chip",
@@ -458,7 +458,7 @@
       "refersTo": "filter-chip",
       "description": "Pill filter; active state inverts to graphite.",
       "html": "<div class=\"ds-chips\"><button class=\"ds-chip\" data-active>Wszystkie</button><button class=\"ds-chip\">Nieopłacone</button></div>",
-      "css": ".ds-chips { display: flex; gap: 8px; } .ds-chip { font-family: Lexend, ui-sans-serif, system-ui, sans-serif; display: inline-flex; align-items: center; gap: 8px; padding: 4px 8px; border-radius: 9999px; border: 1px solid #DDDDDD; background: #F5F5F5; color: #4E4E4E; font-size: 14px; line-height: 1.25; font-weight: 500; cursor: pointer; transition: background-color 150ms; } .ds-chip:hover { background: #DDDDDD; } .ds-chip[data-active] { background: #4E4E4E; border-color: #4E4E4E; color: #FFFFFF; } .ds-chip:focus-visible { outline: 2px solid #4E4E4E; outline-offset: 2px; }"
+      "css": ".ds-chips { display: flex; gap: 8px; } .ds-chip { font-family: Geist, ui-sans-serif, system-ui, sans-serif; display: inline-flex; align-items: center; gap: 8px; padding: 4px 8px; border-radius: 9999px; border: 1px solid #DDDDDD; background: #F5F5F5; color: #4E4E4E; font-size: 14px; line-height: 1.25; font-weight: 500; cursor: pointer; transition: background-color 150ms; } .ds-chip:hover { background: #DDDDDD; } .ds-chip[data-active] { background: #4E4E4E; border-color: #4E4E4E; color: #FFFFFF; } .ds-chip:focus-visible { outline: 2px solid #4E4E4E; outline-offset: 2px; }"
     },
     {
       "name": "Input Field",
@@ -466,7 +466,7 @@
       "refersTo": "input-field",
       "description": "Field-paper background, grey-200 border, 8px radius.",
       "html": "<label class=\"ds-field\"><span>Kontrahent</span><input class=\"ds-input\" placeholder=\"Nazwa lub NIP\"></label>",
-      "css": ".ds-field { font-family: Lexend, ui-sans-serif, system-ui, sans-serif; display: flex; flex-direction: column; gap: 8px; font-size: 14px; color: #1A1A1A; } .ds-input { font-family: Lexend, ui-sans-serif, system-ui, sans-serif; border: 1px solid #DDDDDD; background: #FAFAFA; border-radius: 8px; padding: 6px 12px; font-size: 16px; line-height: 1.25; color: #1A1A1A; } .ds-input::placeholder { color: #CCCCCC; } .ds-input:focus { outline: none; border-color: #B5B5B5; } .ds-input:focus-visible { box-shadow: 0 0 0 2px #6AAAAA; border-color: transparent; }"
+      "css": ".ds-field { font-family: Geist, ui-sans-serif, system-ui, sans-serif; display: flex; flex-direction: column; gap: 8px; font-size: 14px; color: #1A1A1A; } .ds-input { font-family: Geist, ui-sans-serif, system-ui, sans-serif; border: 1px solid #DDDDDD; background: #FAFAFA; border-radius: 8px; padding: 6px 12px; font-size: 16px; line-height: 1.25; color: #1A1A1A; } .ds-input::placeholder { color: #CCCCCC; } .ds-input:focus { outline: none; border-color: #B5B5B5; } .ds-input:focus-visible { box-shadow: 0 0 0 2px #6AAAAA; border-color: transparent; }"
     },
     {
       "name": "Invoice Source Badge",
@@ -474,7 +474,7 @@
       "refersTo": "invoice-source-badge",
       "description": "Signature tile: fill names the ledger side, icon names the source.",
       "html": "<div class=\"ds-badges\"><span class=\"ds-badge ds-badge-cost\">KSeF</span><span class=\"ds-badge ds-badge-sales\">KSeF</span></div>",
-      "css": ".ds-badges { display: flex; gap: 8px; } .ds-badge { font-family: Lexend, ui-sans-serif, system-ui, sans-serif; display: inline-flex; align-items: center; justify-content: center; width: 48px; height: 32px; border-radius: 3px; font-size: 11px; font-weight: 600; } .ds-badge-cost { background: #E6D7CE; color: #8B3F13; } .ds-badge-sales { background: #CEE6E6; color: #354E4E; }"
+      "css": ".ds-badges { display: flex; gap: 8px; } .ds-badge { font-family: Geist, ui-sans-serif, system-ui, sans-serif; display: inline-flex; align-items: center; justify-content: center; width: 48px; height: 32px; border-radius: 3px; font-size: 11px; font-weight: 600; } .ds-badge-cost { background: #E6D7CE; color: #8B3F13; } .ds-badge-sales { background: #CEE6E6; color: #354E4E; }"
     },
     {
       "name": "Card",
@@ -482,7 +482,7 @@
       "refersTo": "card",
       "description": "Flat-by-default exception: the Management Card (rounded-md, white, p-6, shadow) for one self-contained record.",
       "html": "<div class=\"ds-canvas\"><div class=\"ds-card\"><h3>Do zapłaty</h3><p>12 450,00 zł</p></div></div>",
-      "css": ".ds-canvas { background: #F5F5F5; padding: 24px; } .ds-card { font-family: Lexend, ui-sans-serif, system-ui, sans-serif; background: #FFFFFF; border-radius: 8px; padding: 24px; box-shadow: 0px 1px 6px 0px rgba(0,0,0,0.1); color: #4E4E4E; } .ds-card h3 { margin: 0 0 8px; font-size: 20px; font-weight: 600; color: #1A1A1A; } .ds-card p { margin: 0; font-size: 27px; font-weight: 700; color: #000000; }"
+      "css": ".ds-canvas { background: #F5F5F5; padding: 24px; } .ds-card { font-family: Geist, ui-sans-serif, system-ui, sans-serif; background: #FFFFFF; border-radius: 8px; padding: 24px; box-shadow: 0px 1px 6px 0px rgba(0,0,0,0.1); color: #4E4E4E; } .ds-card h3 { margin: 0 0 8px; font-size: 20px; font-weight: 600; color: #1A1A1A; } .ds-card p { margin: 0; font-size: 27px; font-weight: 700; color: #000000; }"
     },
     {
       "name": "Navbar",
@@ -490,17 +490,17 @@
       "refersTo": "navbar",
       "description": "Black ledger-spine bar; uppercase links at 50% opacity, active 90%.",
       "html": "<nav class=\"ds-nav\"><span class=\"ds-nav-logo\">Firmowid</span><div class=\"ds-nav-links\"><a href=\"#\" class=\"ds-nav-link ds-active\">Fakturowanie</a><a href=\"#\" class=\"ds-nav-link\">Zarządzanie</a><a href=\"#\" class=\"ds-nav-link\">Czasośledź</a></div></nav>",
-      "css": ".ds-nav { font-family: Lexend, ui-sans-serif, system-ui, sans-serif; display: flex; align-items: center; justify-content: space-between; height: 66px; padding: 0 32px; background: #000000; color: #FFFFFF; } .ds-nav-logo { font-size: 23px; font-weight: 800; letter-spacing: 0.025em; color: #F0F0F0; } .ds-nav-links { display: flex; gap: 64px; text-transform: uppercase; font-size: 14px; } .ds-nav-link { color: #FFFFFF; text-decoration: none; opacity: 0.5; transition: opacity 150ms; } .ds-nav-link.ds-active { opacity: 0.9; } .ds-nav-link:hover, .ds-nav-link:focus-visible { opacity: 1; }"
+      "css": ".ds-nav { font-family: Geist, ui-sans-serif, system-ui, sans-serif; display: flex; align-items: center; justify-content: space-between; height: 66px; padding: 0 32px; background: #000000; color: #FFFFFF; } .ds-nav-logo { font-size: 23px; font-weight: 800; letter-spacing: 0.025em; color: #F0F0F0; } .ds-nav-links { display: flex; gap: 64px; text-transform: uppercase; font-size: 14px; } .ds-nav-link { color: #FFFFFF; text-decoration: none; opacity: 0.5; transition: opacity 150ms; } .ds-nav-link.ds-active { opacity: 0.9; } .ds-nav-link:hover, .ds-nav-link:focus-visible { opacity: 1; }"
     }
   ],
   "narrative": {
     "northStar": "The Craftsman's Ledger",
-    "overview": "**Creative North Star: \"The Craftsman's Ledger\"**\n\nFirmowid is a well-kept account book on a craftsman's workbench. It is orderly\nand dependable, but made by people for people. Surfaces are warm rather than\nclinical. Neutrals are true greys on a soft paper-grey canvas, and colour is\nreserved for the two sides of the ledger: rust for money going out (costs and\npurchases) and deep sea teal for money coming in (sales and revenue). When you\nsee colour, it tells you which side of the book you are looking at.\n\nComponents are warm and tactile. Secondary actions and status pills use\npastel tonal fills instead of hard outlines. Corners are gently rounded\n(8px on most controls). The page is flat by default: white surfaces sit on the\ngrey canvas through tonal contrast, and a shadowed card is used only in the\nfew places that group a self-contained record. A heavy black navigation bar\nframes the workspace like the spine of a ledger. The typeface is Lexend\nthroughout, a wide, highly legible sans that keeps dense financial tables\nreadable and friendly.\n\nThis document covers the application UI only. The marketing landing page is\nan expressive surface with its own hand-drawn vocabulary and is deliberately\nout of scope here.\n\nThe frontmatter is the source of truth for colours, the text size scale and\nradii. Its keys are the Tailwind token names (`rust-700` is `bg-rust-700`,\n`sm` under typography is `text-sm`). After editing it, run `mix design.tokens`\nto regenerate `assets/css/design-tokens.css`; `mix check` fails while that\nfile is out of date. Fonts, spacing and animations live in\n`assets/css/theme.css`.",
+    "overview": "**Creative North Star: \"The Craftsman's Ledger\"**\n\nFirmowid is a well-kept account book on a craftsman's workbench. It is orderly\nand dependable, but made by people for people. Surfaces are warm rather than\nclinical. Neutrals are true greys on a soft paper-grey canvas, and colour is\nreserved for the two sides of the ledger: rust for money going out (costs and\npurchases) and deep sea teal for money coming in (sales and revenue). When you\nsee colour, it tells you which side of the book you are looking at.\n\nComponents are warm and tactile. Secondary actions and status pills use\npastel tonal fills instead of hard outlines. Corners are gently rounded\n(8px on most controls). The page is flat by default: white surfaces sit on the\ngrey canvas through tonal contrast, and a shadowed card is used only in the\nfew places that group a self-contained record. A heavy black navigation bar\nframes the workspace like the spine of a ledger. The typeface is Geist\nthroughout, a plain, compact sans that keeps dense financial tables calm and\nbusinesslike. Lexend survives only in the \"Firmowid\" wordmark, where it keeps\nthe brand recognisable.\n\nThis document covers the application UI only. The marketing landing page is\nan expressive surface with its own hand-drawn vocabulary and is deliberately\nout of scope here.\n\nThe frontmatter is the source of truth for colours, the text size scale and\nradii. Its keys are the Tailwind token names (`rust-700` is `bg-rust-700`,\n`sm` under typography is `text-sm`). After editing it, run `mix design.tokens`\nto regenerate `assets/css/design-tokens.css`; `mix check` fails while that\nfile is out of date. Fonts, spacing and animations live in\n`assets/css/theme.css`.",
     "keyCharacteristics": [
       "Colour has a fixed meaning: rust means costs, teal means sales. Neutral work uses black and graphite.",
       "Warm, tactile components with pastel tonal fills (secondary buttons, pills, badges).",
       "Flat by default: white surfaces on the `grey-100` canvas separated by tone or a 1px `grey-200` line. Cards with a shadow are the exception.",
-      "Lexend everywhere. Dense, 14px-led body text with medium weight for emphasis.",
+      "Geist everywhere, Lexend only in the wordmark. Dense, 14px-led body text with medium weight for emphasis.",
       "Gentle 8px corners on controls, 6px on small controls and cards, full pills for filters and toggles."
     ],
     "rules": [
@@ -521,7 +521,7 @@
       },
       {
         "name": "The Weight Carries Hierarchy Rule",
-        "body": "Emphasis comes from medium (500) and semibold (600) Lexend, not from colour or a second typeface. Bold (700) is for figures that must jump out, such as totals and big numbers.",
+        "body": "Emphasis comes from medium (500) and semibold (600) Geist, not from colour or a second typeface. Bold (700) is for figures that must jump out, such as totals and big numbers.",
         "section": "typography"
       },
       {
@@ -545,7 +545,7 @@
       "Do use the black `special` or graphite `tertiary` button for actions that are neither cost nor sale.",
       "Do prefer pastel tint plus deep-text pairs for secondary actions, pills and statuses.",
       "Do keep surfaces flat: white on the `grey-100` canvas, separated by tone or a `grey-200` line.",
-      "Do keep body text at 14px Lexend in graphite, and lift emphasis with weight, not colour.",
+      "Do keep body text at 14px Geist in graphite, and lift emphasis with weight, not colour.",
       "Do use the 8px radius for controls, 6px for small controls and cards, and pills only for filters, toggles and avatars.",
       "Do change colours and text sizes in the DESIGN.md frontmatter and run `mix design.tokens`.",
       "Do go through `FirmowidUI.Components.Button` and its variants instead of hand-rolled button classes."

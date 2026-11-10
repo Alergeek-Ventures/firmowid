@@ -82,7 +82,10 @@ defmodule FirmowidWeb.Inbox.Components.Sidebar do
           label={gettext("Collapse or expand the menu")}
         />
         <%!-- The wordmark lines up with the labels below and fades with them when collapsed. --%>
-        <span class={["text-xl/8 font-extrabold tracking-wide text-grey-100", label_styles()]}>
+        <span class={[
+          "font-logo text-xl/8 font-extrabold tracking-wide text-grey-100",
+          label_styles()
+        ]}>
           Firmowid
         </span>
       </div>

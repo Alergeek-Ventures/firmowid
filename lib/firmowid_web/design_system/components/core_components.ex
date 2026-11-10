@@ -726,7 +726,7 @@ defmodule FirmowidWeb.DesignSystem.Components.CoreComponents do
       <.link
         navigate={@navigate}
         class={[
-          "inline-block text-xl font-extrabold tracking-wide text-grey-100",
+          "inline-block font-logo text-xl font-extrabold tracking-wide text-grey-100",
           @class
         ]}
         {@rest}
@@ -736,7 +736,7 @@ defmodule FirmowidWeb.DesignSystem.Components.CoreComponents do
     <% else %>
       <span
         class={[
-          "inline-block text-xl font-extrabold tracking-wide text-grey-100",
+          "inline-block font-logo text-xl font-extrabold tracking-wide text-grey-100",
           @class
         ]}
         {@rest}
