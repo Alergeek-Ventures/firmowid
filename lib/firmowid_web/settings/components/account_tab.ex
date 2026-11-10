@@ -536,7 +536,7 @@ defmodule FirmowidWeb.Settings.Components.AccountTab do
         <p class="mt-3 text-sm text-grey-700">
           {gettext("We will delete your account and all data assigned to it.")}
           <%= if @owned_organizations != [] do %>
-            {elem(@owned_parts, 0)}<b>{Enum.map_join(@owned_organizations, ", ", & &1.name)}</b>{elem(
+            {elem(@owned_parts, 0)}<b>{Enum.map_join(@owned_organizations, ", ", & &1.display_name)}</b>{elem(
               @owned_parts,
               1
             )}

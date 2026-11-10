@@ -16,7 +16,7 @@ defmodule FirmowidWeb.Management.Views.AccessTest do
     assert {:error, {:redirect, %{to: to, flash: flash}}} =
              live(conn, ~p"/zarzadzanie/pracownicy")
 
-    assert to == ~p"/czasosledz"
+    assert to == ~p"/fakturowanie"
     assert flash["error"] =~ "Nie masz dostępu do sekcji zarządzania."
   end
 

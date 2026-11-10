@@ -128,7 +128,7 @@ defmodule FirmowidWeb.Auth.Components.McpConsent do
                     checked={organization.id == @selected_id}
                     class="size-5 shrink-0 appearance-none rounded-full border-2 border-grey-300 bg-white checked:bg-teal-700 focus:outline-none"
                   />
-                  <span class="font-medium">{organization.name}</span>
+                  <span class="font-medium">{organization.display_name}</span>
                 </label>
               </fieldset>
               <.button variant="special" type="submit" name="action" value="approve" class="w-full">

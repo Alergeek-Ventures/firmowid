@@ -75,6 +75,17 @@ defmodule Firmowid.Analysis.IndustryTemplate do
   @spec industries() :: [industry()]
   def industries, do: @industries
 
+  @doc """
+  Suggests the industry of a company from its predominant activity (PKD), such as
+  `"56.10.A"`: division 56 is food service, divisions 46 and 47 are wholesale and
+  retail trade, and anything else, or an unknown activity, is services.
+  """
+  @spec industry_for_pkd(String.t() | nil) :: industry()
+  def industry_for_pkd("56." <> _class), do: :gastronomy
+  def industry_for_pkd("46." <> _class), do: :retail
+  def industry_for_pkd("47." <> _class), do: :retail
+  def industry_for_pkd(_pkd), do: :services
+
   @doc "Lists every category of a side across all industries."
   @spec all_categories(side()) :: [category()]
   def all_categories(:expenses), do: @expense_categories

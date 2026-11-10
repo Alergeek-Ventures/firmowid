@@ -1,180 +1,51 @@
 defmodule FirmowidWeb.Organization.Views.Index do
-  @moduledoc false
+  @moduledoc """
+  Onboarding of an account without a company to work in, or with one more to add.
+
+  An owner builds the company card in three steps: the path, the NIP with the
+  register data it finds, and the industry, hourly billing and VAT status. Creating
+  the company switches to it and continues with the first steps (KSeF, bank). An
+  employee joins with an invite code instead.
+  """
   use FirmowidWeb, :live_view
 
   import FirmowidUI.Components.Button
-  import FirmowidWeb.DesignSystem.Components.CoreComponents
+  import FirmowidUI.Components.Inputs
+  import FirmowidUI.Components.Link
+  import FirmowidWeb.Organization.Components.CompanyCard
+  import FirmowidWeb.Organization.Components.OnboardingHeader
   import Phoenix.Component, except: [link: 1]
 
   alias Ash.Error.Invalid
+  alias Firmowid.Analysis.IndustryTemplate
   alias Firmowid.Core
-  alias Firmowid.Core.Organization
+  alias Firmowid.Core.Nip
   alias FirmowidWeb.Analysis.Utilities.Industry
+  alias FirmowidWeb.Infrastructure.UserAuth
+  alias FirmowidWeb.Invoicing.Utilities.VatExemption
+  alias FirmowidWeb.Organization.Utilities.Navigation, as: OrganizationNavigation
 
   @impl true
   def render(assigns) do
-    assigns =
-      assign(assigns,
-        owner_parts: split_bold(gettext("Are you %{owner}?", owner: "__BOLD__")),
-        partner_parts: split_bold(gettext("Are you %{partner} and have a code (invitation)?", partner: "__BOLD__"))
-      )
-
     ~H"""
-    <div class="relative flex min-h-screen w-full items-center justify-center">
-      <img
-        src="/images/figurine.png"
-        class="fixed -top-20 left-1/2 h-[135vh] overflow-clip opacity-10"
-      />
-      <div class="z-10 max-w-3xl grow">
-        <h1 class="mb-16 text-lg font-bold">
-          <%= if @current_user.member do %>
-            {gettext("Create another organization or join another one with a code")}
-          <% else %>
-            {gettext("Time to assign an organization to your account")}
-          <% end %>
-        </h1>
-        <div class="flex justify-between md:flex-row">
-          <div class="flex max-w-[400px] flex-col justify-between gap-4">
-            <p>
-              {elem(@owner_parts, 0)}<span class="font-bold">{gettext("a business owner")}</span>{elem(
-                @owner_parts,
-                1
-              )}
-              {gettext("Fill in the form to create an organization inside Firmowid.")}
-            </p>
-            <.simple_form
-              for={@organization_form}
-              id="organization_form"
-              phx-submit="create"
-              phx-change="validate"
+    <div class="min-h-screen w-full bg-grey-100">
+      <div class="mx-auto flex max-w-7xl flex-col gap-4 px-4 pb-8 sm:px-8 lg:px-20 lg:pb-10">
+        <.onboarding_header exit_path={@exit_path} back={back_path(@step)} step={step_number(@step)} />
+
+        <div class="grid items-start gap-10 lg:grid-cols-[minmax(0,1fr)_26rem] lg:gap-16">
+          <%!-- The card stays under the header while the steps beside it scroll. --%>
+          <div class="order-2 lg:sticky lg:top-28 lg:order-1 lg:pt-2">
+            <.card_for_step {assigns} />
+          </div>
+          <section class="order-1 lg:order-2" aria-live="polite">
+            <%!-- A new id per step makes the panel enter anew. --%>
+            <div
+              id={"step-#{@step}"}
+              class="motion-safe:animate-step-in motion-reduce:animate-fade-in"
             >
-              <.error :if={@check_errors}>
-                {gettext("Fix the errors in the form.")}
-              </.error>
-
-              <.input
-                field={@organization_form[:owner_name]}
-                type="text"
-                placeholder={gettext("Your full name")}
-                aria-label={gettext("Your full name")}
-                required
-              />
-              <.input
-                field={@organization_form[:nip]}
-                type="text"
-                placeholder={gettext("Identifier (NIP)")}
-                aria-label={gettext("Tax ID (NIP)")}
-                required
-              />
-              <.input
-                field={@organization_form[:name]}
-                type="text"
-                placeholder={gettext("Organization name")}
-                aria-label={gettext("Organization name")}
-                required
-              />
-              <.input
-                field={@organization_form[:industry]}
-                type="select"
-                label={gettext("Industry")}
-                options={Industry.options()}
-              />
-              <p class="m-0">{gettext("Business address")}</p>
-              <div class="flex flex-row gap-2">
-                <.input
-                  class="w-3/4!"
-                  name="address[street]"
-                  value={@address_form["street"]}
-                  placeholder={gettext("Street")}
-                  aria-label={gettext("Street")}
-                  type="text"
-                  required
-                />
-                <.input
-                  class="w-1/4!"
-                  name="address[number]"
-                  value={@address_form["number"]}
-                  placeholder="/"
-                  aria-label={gettext("Building and apartment number")}
-                  type="text"
-                  required
-                />
-              </div>
-              <.input
-                name="address[postal_code]"
-                value={@address_form["postal_code"]}
-                placeholder={gettext("Postal code")}
-                aria-label={gettext("Postal code")}
-                type="text"
-                required
-              />
-              <.input
-                name="address[city]"
-                value={@address_form["city"]}
-                placeholder={pgettext("address", "City")}
-                aria-label={pgettext("address", "City")}
-                type="text"
-                required
-              />
-
-              <:actions>
-                <.button
-                  variant="special"
-                  class="w-full"
-                  phx-disable-with={gettext("Creating organization...")}
-                >
-                  {gettext("Create organization")}
-                </.button>
-              </:actions>
-            </.simple_form>
-          </div>
-
-          <div class="flex max-w-[250px] flex-col justify-between">
-            <div>
-              <p>
-                {elem(@partner_parts, 0)}<span class="font-bold">{gettext("a collaborator")}</span>{elem(
-                  @partner_parts,
-                  1
-                )}
-              </p>
-              <.simple_form for={@join_form} id="join_form" phx-submit="join">
-                <.input field={@join_form[:name]} type="text" label={gettext("Full name")} required />
-                <.input
-                  field={@join_form[:code]}
-                  type="text"
-                  label={gettext("Invitation code")}
-                  required
-                />
-                <:actions>
-                  <.button variant="special" class="w-full" phx-disable-with={gettext("Joining...")}>
-                    {gettext("Join organization")}
-                  </.button>
-                </:actions>
-              </.simple_form>
+              <.step_panel {assigns} />
             </div>
-            <div class="mt-8 mb-2.5 text-center">
-              <p>
-                {gettext("Wrong account?")}
-                <.form
-                  for={%{}}
-                  id="organization-logout-form"
-                  action={~p"/wyloguj"}
-                  method="delete"
-                  class="inline"
-                  data-posthog-reset-on-submit="true"
-                >
-                  <.button
-                    type="submit"
-                    variant="ghost"
-                    size="small"
-                    class="h-auto border-none p-0 underline hover:bg-transparent active:bg-transparent"
-                  >
-                    {pgettext("organization onboarding", "Log out")}
-                  </.button>
-                </.form>
-              </p>
-            </div>
-          </div>
+          </section>
         </div>
       </div>
     </div>
@@ -185,65 +56,622 @@ defmodule FirmowidWeb.Organization.Views.Index do
       phx-trigger-action={not is_nil(@switch_to)}
     >
       <input type="hidden" name="organizacja" value={@switch_to} />
+      <input type="hidden" name="cel" value={@switch_target} />
     </.form>
     """
   end
 
+  # ── Card ─────────────────────────────────────────────────────────────
+
+  defp card_for_step(%{step: :dolacz} = assigns) do
+    ~H"""
+    <.company_card
+      id="company-card"
+      name={@invite && @invite.organization_name}
+      rows={invite_rows(@invite)}
+    >
+      <:stamps :let={card}>
+        <.stamp
+          :if={@invite}
+          card={card}
+          text={gettext("INVITATION")}
+          icon={:users}
+          rotate={-7}
+          pressed
+        />
+      </:stamps>
+    </.company_card>
+    """
+  end
+
+  defp card_for_step(assigns) do
+    ~H"""
+    <.company_card
+      id="company-card"
+      name={@company && @company.name}
+      rows={company_rows(@company, @step)}
+      source={@company && @company.source}
+    >
+      <:stamps :let={card}>
+        <%= if @step == :branza and @industry do %>
+          <.stamp
+            card={card}
+            text={billing_stamp_text(@industry, @bills_hourly)}
+            icon={billing_icon(@bills_hourly)}
+            rotate={-9}
+            pressed
+          />
+        <% else %>
+          <.stamp_slot label={gettext("Industry")} hint={gettext("step %{number}", number: 3)} />
+        <% end %>
+        <.stamp_slot label="KSeF" hint={gettext("step %{number}", number: 4)} />
+        <.stamp_slot label={gettext("Bank")} hint={gettext("step %{number}", number: 5)} />
+      </:stamps>
+    </.company_card>
+    """
+  end
+
+  # ── Step panels ──────────────────────────────────────────────────────
+
+  defp step_panel(%{step: :start} = assigns) do
+    ~H"""
+    <h1 class="text-2xl/tight font-semibold tracking-tight text-balance text-grey-900 sm:text-[2.625rem]/[1.1]">
+      <%= if @current_user.member do %>
+        {gettext("Add another company.")}
+      <% else %>
+        {gettext("Welcome to Firmowid.")}
+      <% end %>
+    </h1>
+    <p class="mt-4 text-[1.0625rem]/relaxed text-grey-700">
+      {gettext(
+        "We will start with your company card. Every step stamps it, and after five steps the company is ready to issue invoices."
+      )}
+    </p>
+    <div class="mt-9 grid gap-3">
+      <.choice
+        id="choose-owner"
+        patch={OrganizationNavigation.onboarding_path(:firma)}
+        icon="building-2"
+        title={gettext("I am setting up my company")}
+        description={gettext("I run the company or handle its administration")}
+        primary
+      />
+      <.choice
+        id="choose-employee"
+        patch={OrganizationNavigation.onboarding_path(:dolacz)}
+        icon="users"
+        title={gettext("I am joining a team")}
+        description={gettext("I have an invite code from my employer")}
+      />
+    </div>
+    """
+  end
+
+  defp step_panel(%{step: :firma} = assigns) do
+    ~H"""
+    <h1 class="text-2xl/tight font-semibold tracking-tight text-balance text-grey-900 sm:text-[2.625rem]/[1.1]">
+      {gettext("Enter the NIP, we will find the rest.")}
+    </h1>
+    <.form
+      for={%{}}
+      id="company-form"
+      phx-change="company_changed"
+      phx-submit="company_confirmed"
+      class="mt-7"
+    >
+      <.label for="company-nip" class="mb-2 text-sm text-grey-700">{gettext("Company NIP")}</.label>
+      <div class="relative">
+        <input
+          id="company-nip"
+          name="nip"
+          value={@nip}
+          inputmode="numeric"
+          autocomplete="off"
+          phx-debounce="300"
+          aria-invalid={to_string(Map.has_key?(@errors, :nip))}
+          class="h-16 w-full rounded-xl border-2 border-black bg-white px-5 text-2xl font-medium tracking-[.06em] text-grey-900 tabular-nums focus:border-black focus:ring-0 aria-invalid:border-brick-700"
+        />
+        <span class="absolute inset-y-0 right-5 flex items-center gap-1.5 text-sm font-medium">
+          <%= case @lookup do %>
+            <% :loading -> %>
+              <span class="size-4 rounded-full border-2 border-moss-200 border-t-moss-800 motion-safe:animate-spin"></span>
+              <span class="text-grey-600">{gettext("searching")}</span>
+            <% :found -> %>
+              <Lucideicons.check class="size-4 text-moss-700" aria-hidden="true" />
+              <span class="text-moss-800">{gettext("found")}</span>
+            <% _other -> %>
+          <% end %>
+        </span>
+      </div>
+      <.field_error :if={@errors[:nip]} message={@errors[:nip]} />
+
+      <p :if={@lookup == :found} class="mt-4 text-[1.0625rem]/relaxed text-grey-700">
+        {gettext(
+          "We took the name, address and PKD from the VAT white list. They go onto every invoice of yours, so check that they are right."
+        )}
+        <.button
+          :if={not @manual?}
+          id="edit-company-manually"
+          type="button"
+          variant="unstyled"
+          phx-click="edit_manually"
+          class="font-medium text-grey-900 underline underline-offset-4 hover:text-black"
+        >
+          {gettext("Correct the details")}
+        </.button>
+      </p>
+      <p :if={@lookup == :not_found} class="mt-4 text-[1.0625rem]/relaxed text-grey-700">
+        {gettext("The VAT white list does not know this NIP. Enter the company details yourself.")}
+      </p>
+      <p :if={@lookup == :failed} class="mt-4 text-[1.0625rem]/relaxed text-grey-700">
+        {gettext("We could not reach the VAT white list. Enter the company details yourself.")}
+      </p>
+
+      <div :if={@manual?} class="mt-5 grid gap-4">
+        <.input
+          id="company-name"
+          name="name"
+          value={@company && @company.name}
+          label={gettext("Company name")}
+          errors={List.wrap(@errors[:name])}
+        />
+        <.input
+          id="company-address"
+          name="address"
+          value={@company && @company.address}
+          label={gettext("Business address")}
+          placeholder={gettext("Street and number, postal code and city")}
+          errors={List.wrap(@errors[:address])}
+        />
+      </div>
+
+      <div :if={@company} class="mt-5">
+        <.input
+          id="company-display-name"
+          name="display_name"
+          value={@display_name}
+          label={gettext("Name in the app")}
+        />
+        <p class="mt-1.5 text-sm text-grey-600">
+          {gettext("Invoices keep the full name from the register.")}
+        </p>
+      </div>
+
+      <div class="mt-5">
+        <.input
+          id="owner-name"
+          name="owner_name"
+          value={@owner_name}
+          label={gettext("Your full name")}
+          autocomplete="name"
+          errors={List.wrap(@errors[:owner_name])}
+        />
+      </div>
+
+      <.primary_action
+        id="confirm-company"
+        title={gettext("This is my company")}
+        hint={gettext("We will put the details on the card")}
+        disabled={@lookup == :loading or is_nil(@company)}
+      />
+    </.form>
+    """
+  end
+
+  defp step_panel(%{step: :branza} = assigns) do
+    ~H"""
+    <h1 class="text-2xl/tight font-semibold tracking-tight text-balance text-grey-900 sm:text-[2.375rem]/[1.1]">
+      {gettext("What does your company do?")}
+    </h1>
+    <p class="mt-3 text-[1.0625rem]/relaxed text-grey-700">
+      {gettext(
+        "Choose how Analysis groups your income and costs. You can change it in the company settings."
+      )}
+    </p>
+    <.form for={%{}} id="industry-form" phx-change="industry_changed" phx-submit="create" class="mt-5">
+      <fieldset>
+        <legend class="sr-only">{gettext("Industry")}</legend>
+        <div class="grid gap-2">
+          <.option
+            :for={{label, industry} <- Industry.options()}
+            name="industry"
+            value={industry}
+            checked={@industry == industry}
+            title={label}
+            description={Industry.description(industry)}
+            note={
+              @company.pkd && @company.suggested_industry == industry &&
+                gettext("matches PKD %{code}", code: @company.pkd)
+            }
+          />
+        </div>
+      </fieldset>
+
+      <fieldset class="mt-6">
+        <legend class="text-[1.0625rem] font-medium text-grey-900">
+          {gettext("Do you bill clients by the hour?")}
+        </legend>
+        <div class="mt-2.5 grid gap-2">
+          <.option
+            name="bills_hourly"
+            value="true"
+            checked={@bills_hourly == true}
+            title={gettext("Yes, I sell hours of work")}
+            description={
+              gettext(
+                "We will turn on time tracking and projects with an hours budget. Analysis will show revenue per hour."
+              )
+            }
+          />
+          <.option
+            name="bills_hourly"
+            value="false"
+            checked={@bills_hourly == false}
+            title={gettext("No, a flat fee or selling goods")}
+            description={gettext("You can turn time tracking on later in the company settings.")}
+          />
+        </div>
+      </fieldset>
+
+      <fieldset class="mt-6">
+        <legend class="text-[1.0625rem] font-medium text-grey-900">{gettext("VAT")}</legend>
+        <div class="mt-2.5 grid grid-cols-2 gap-1 rounded-xl border border-grey-300 bg-white p-1 text-sm">
+          <label class="cursor-pointer rounded-lg p-2 text-center has-checked:bg-grey-700 has-checked:text-white has-focus-visible:outline-2 has-focus-visible:outline-black">
+            <input type="radio" name="vat_payer" value="true" checked={@vat_payer} class="sr-only" />
+            {gettext("Active VAT payer")}
+          </label>
+          <label class="cursor-pointer rounded-lg p-2 text-center has-checked:bg-grey-700 has-checked:text-white has-focus-visible:outline-2 has-focus-visible:outline-black">
+            <input
+              type="radio"
+              name="vat_payer"
+              value="false"
+              checked={not @vat_payer}
+              class="sr-only"
+            />
+            {gettext("Exempt from VAT")}
+          </label>
+        </div>
+        <div :if={not @vat_payer} class="mt-3 grid gap-3">
+          <.input
+            id="vat-exemption-type"
+            type="select"
+            name="vat_exemption_type"
+            value={@vat_exemption_type}
+            options={VatExemption.options()}
+            label={gettext("VAT exemption")}
+          />
+          <.input
+            :if={@vat_exemption_type == "other"}
+            id="vat-exemption-basis"
+            name="vat_exemption_basis"
+            value={@vat_exemption_basis}
+            label={gettext("Legal basis for the VAT exemption")}
+          />
+        </div>
+      </fieldset>
+
+      <div
+        :if={@create_errors != []}
+        class="mt-5 rounded-lg bg-brick-100 px-4 py-3 text-sm text-brick-800"
+        role="alert"
+      >
+        <p class="font-medium">{gettext("We could not create the company.")}</p>
+        <ul class="mt-1 list-disc pl-5">
+          <li :for={message <- @create_errors}>{message}</li>
+        </ul>
+      </div>
+
+      <.primary_action
+        id="create-company"
+        title={gettext("Stamp it")}
+        hint={gettext("Next: connecting KSeF")}
+        disabled={is_nil(@industry) or is_nil(@bills_hourly) or not is_nil(@switch_to)}
+      />
+    </.form>
+    """
+  end
+
+  defp step_panel(%{step: :dolacz} = assigns) do
+    ~H"""
+    <h1 class="text-2xl/tight font-semibold tracking-tight text-balance text-grey-900 sm:text-[2.625rem]/[1.1]">
+      {gettext("Join your team.")}
+    </h1>
+    <p class="mt-4 text-[1.0625rem]/relaxed text-grey-700">
+      <%= if @invite do %>
+        {gettext("%{company} invites you to its team.",
+          company: @invite.organization_name
+        )}
+      <% else %>
+        {gettext("Enter the invite code you got from your employer.")}
+      <% end %>
+      {gettext("Enter the full name you will sign your hours and leave requests with.")}
+    </p>
+    <.form
+      for={@join_form}
+      id="join_form"
+      phx-change="invite_changed"
+      phx-submit="join"
+      class="mt-7 grid gap-4"
+    >
+      <.input
+        field={@join_form[:code]}
+        type="text"
+        label={gettext("Invitation code")}
+        autocomplete="off"
+        phx-debounce="300"
+      />
+      <.input field={@join_form[:name]} type="text" label={gettext("Full name")} autocomplete="name" />
+      <.primary_action
+        id="join-team"
+        title={gettext("Join the team")}
+        hint={gettext("You will see your hours record right away")}
+        class="mt-2"
+      />
+    </.form>
+    """
+  end
+
+  # ── Building blocks ──────────────────────────────────────────────────
+
+  defp back_path(:start), do: nil
+  defp back_path(:branza), do: OrganizationNavigation.onboarding_path(:firma)
+  defp back_path(_firma_or_dolacz), do: OrganizationNavigation.onboarding_path()
+
+  defp step_number(:start), do: 1
+  defp step_number(:firma), do: 2
+  defp step_number(:branza), do: 3
+  defp step_number(:dolacz), do: nil
+
+  attr :id, :string, required: true
+  attr :patch, :string, required: true
+  attr :icon, :string, required: true
+  attr :title, :string, required: true
+  attr :description, :string, required: true
+  attr :primary, :boolean, default: false
+
+  defp choice(assigns) do
+    ~H"""
+    <.link
+      id={@id}
+      kind="unstyled"
+      patch={@patch}
+      class={[
+        "group flex items-center gap-4 rounded-2xl border bg-white px-6 py-5 transition-colors hover:border-black focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black",
+        if(@primary,
+          do: "border-2 border-black shadow-[0_18px_36px_-24px_rgba(0,0,0,.5)]",
+          else: "border-grey-300"
+        )
+      ]}
+    >
+      <span class="grid size-11 shrink-0 place-items-center rounded-xl bg-grey-100 text-grey-900">
+        <Lucideicons.render! name={@icon} class="size-5" aria-hidden="true" />
+      </span>
+      <span class="min-w-0 flex-1">
+        <span class="block text-lg font-medium text-grey-900">{@title}</span>
+        <span class="mt-0.5 block text-sm text-grey-600">{@description}</span>
+      </span>
+      <Lucideicons.arrow_right
+        class="size-5 shrink-0 text-grey-900 transition-transform group-hover:translate-x-0.5"
+        aria-hidden="true"
+      />
+    </.link>
+    """
+  end
+
+  attr :name, :string, required: true
+  attr :value, :string, required: true
+  attr :checked, :boolean, required: true
+  attr :title, :string, required: true
+  attr :description, :string, required: true
+
+  attr :note, :any,
+    default: nil,
+    doc: "a short remark beside the title, such as why the option is suggested"
+
+  defp option(assigns) do
+    ~H"""
+    <label class="flex cursor-pointer items-start gap-3.5 rounded-xl border border-grey-300 bg-white px-4.5 py-3.5 has-checked:border-2 has-checked:border-black has-checked:px-4.25 has-checked:py-3.25 has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-black">
+      <input type="radio" name={@name} value={@value} checked={@checked} class="peer sr-only" />
+      <span class="mt-0.5 size-4.5 shrink-0 rounded-full border-[1.5px] border-grey-400 peer-checked:border-[5px] peer-checked:border-black"></span>
+      <span>
+        <span class="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+          <span class="text-[0.9375rem] text-grey-900">{@title}</span>
+          <span :if={@note} class="text-xs font-medium text-moss-700">{@note}</span>
+        </span>
+        <span class="mt-0.5 block text-[0.8125rem] text-grey-600">{@description}</span>
+      </span>
+    </label>
+    """
+  end
+
+  attr :id, :string, required: true
+  attr :title, :string, required: true
+  attr :hint, :string, required: true
+  attr :disabled, :boolean, default: false
+  attr :class, :any, default: nil
+
+  defp primary_action(assigns) do
+    ~H"""
+    <.button
+      id={@id}
+      type="submit"
+      variant="unstyled"
+      disabled={@disabled}
+      phx-disable-with
+      class={[
+        "mt-6 flex w-full items-center gap-4 rounded-xl bg-black px-5.5 py-4 text-left text-white shadow-[0_18px_36px_-20px_rgba(0,0,0,.6)] transition-colors hover:bg-grey-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black disabled:cursor-not-allowed disabled:opacity-60 phx-submit-loading:opacity-75",
+        @class
+      ]}
+    >
+      <span class="flex-1">
+        <span class="block text-lg font-medium">{@title}</span>
+        <span class="block text-sm text-white/65">{@hint}</span>
+      </span>
+      <Lucideicons.arrow_right class="size-5" aria-hidden="true" />
+    </.button>
+    """
+  end
+
+  attr :message, :string, required: true
+
+  defp field_error(assigns) do
+    ~H"""
+    <p class="mt-2 flex items-center gap-1.5 text-sm text-brick-700">
+      <Lucideicons.circle_alert class="size-4" aria-hidden="true" />
+      {@message}
+    </p>
+    """
+  end
+
+  # ── Params and lifecycle ─────────────────────────────────────────────
+
   @impl true
-  def handle_event("validate", %{"organization" => organization, "address" => address_form}, socket) do
-    form =
-      socket.assigns.organization_form.source
-      |> AshPhoenix.Form.validate(add_address(organization, address_form))
-      |> to_form()
+  def mount(_params, _session, socket) do
+    user = socket.assigns.current_user
+    # A user adding another company is prefilled with the name they use in the current one.
+    name = if user.member, do: user.member.name, else: ""
 
-    socket =
-      socket
-      |> assign(:organization_form, form)
-      |> assign(:address_form, address_form)
-      |> assign(:check_errors, false)
-
-    {:noreply, socket}
+    {:ok,
+     assign(socket,
+       # The wizard is a page of its own, without the app navigation.
+       focused: true,
+       no_padding: true,
+       exit_path: user.member && UserAuth.signed_in_path_for_user(user, user.member.organization_id),
+       page_title: gettext("Set up your company"),
+       switch_to: nil,
+       switch_target: nil,
+       nip: "",
+       lookup: :idle,
+       company: nil,
+       manual?: false,
+       owner_name: name,
+       display_name: "",
+       errors: %{},
+       industry: nil,
+       bills_hourly: nil,
+       vat_payer: true,
+       vat_exemption_type: nil,
+       vat_exemption_basis: nil,
+       create_errors: [],
+       invite: nil,
+       join_form: to_form(%{"name" => name, "code" => ""})
+     )}
   end
 
   @impl true
-  def handle_event("create", %{"organization" => organization, "address" => address_form}, socket) do
-    params = add_address(organization, address_form)
+  def handle_params(params, _uri, socket) do
+    case {params["krok"], socket.assigns.company} do
+      {"firma", _company} ->
+        {:noreply, assign(socket, :step, :firma)}
 
-    case AshPhoenix.Form.submit(socket.assigns.organization_form.source,
-           params: params
-         ) do
-      {:ok, created_org} ->
-        socket =
-          socket
-          |> LiveToast.put_toast(:success, gettext("Organization created successfully"))
-          |> assign(:switch_to, created_org.id)
+      {"branza", nil} ->
+        {:noreply, push_patch(socket, to: OrganizationNavigation.onboarding_path(:firma), replace: true)}
 
-        {:noreply, socket}
+      {"branza", _company} ->
+        {:noreply, assign(socket, :step, :branza)}
 
-      {:error, form} ->
-        socket =
-          socket
-          |> assign(:organization_form, to_form(form))
-          |> assign(:address_form, address_form)
-          |> assign(:check_errors, true)
+      {"dolacz", _company} ->
+        {:noreply, assign(socket, :step, :dolacz)}
 
-        {:noreply, socket}
+      _start ->
+        {:noreply, assign(socket, :step, :start)}
     end
   end
 
+  # ── NIP and company details ──────────────────────────────────────────
+
   @impl true
+  def handle_event("company_changed", params, socket) do
+    nip = Nip.normalize_digits(params["nip"] || "")
+
+    socket =
+      socket
+      |> assign(
+        nip: params["nip"],
+        owner_name: params["owner_name"] || socket.assigns.owner_name,
+        display_name: params["display_name"] || socket.assigns.display_name
+      )
+      |> update_manual_details(params)
+
+    {:noreply, maybe_look_up(socket, nip)}
+  end
+
+  def handle_event("edit_manually", _params, socket) do
+    {:noreply, assign(socket, :manual?, true)}
+  end
+
+  def handle_event("company_confirmed", params, socket) do
+    socket =
+      socket
+      |> assign(owner_name: params["owner_name"], display_name: params["display_name"] || "")
+      |> update_manual_details(params)
+
+    errors = company_errors(socket.assigns)
+
+    if errors == %{} do
+      {:noreply,
+       socket
+       |> assign(errors: %{})
+       |> assign_industry_defaults()
+       |> push_patch(to: OrganizationNavigation.onboarding_path(:branza))}
+    else
+      {:noreply, assign(socket, :errors, errors)}
+    end
+  end
+
+  # ── Industry, billing and VAT ────────────────────────────────────────
+
+  def handle_event("industry_changed", params, socket) do
+    {:noreply, assign_industry_params(socket, params)}
+  end
+
+  def handle_event("create", params, socket) do
+    socket = assign_industry_params(socket, params)
+    %{company: company, current_user: user} = socket.assigns
+
+    attrs = %{
+      name: company.name,
+      nip: Nip.normalize_digits(company.nip),
+      address: company.address,
+      display_name: socket.assigns.display_name,
+      # The owner goes on to the first steps, which every page leads back to until done.
+      start_onboarding: true,
+      owner_name: String.trim(socket.assigns.owner_name),
+      industry: socket.assigns.industry,
+      bills_hourly: socket.assigns.bills_hourly,
+      is_vat_payer: socket.assigns.vat_payer,
+      vat_exemption_type: socket.assigns.vat_exemption_type,
+      vat_exemption_basis: socket.assigns.vat_exemption_basis
+    }
+
+    case Core.create_organization(attrs, actor: user) do
+      {:ok, organization} ->
+        {:noreply,
+         assign(socket,
+           switch_to: organization.id,
+           switch_target: OrganizationNavigation.first_steps_target()
+         )}
+
+      {:error, %Invalid{} = error} ->
+        {:noreply, assign(socket, :create_errors, Enum.map(error.errors, &Exception.message/1))}
+    end
+  end
+
+  # ── Joining with an invite code ──────────────────────────────────────
+
+  def handle_event("invite_changed", %{"code" => code, "name" => name}, socket) do
+    {:noreply,
+     assign(socket,
+       join_form: to_form(%{"name" => name, "code" => code}),
+       invite: find_invite(code, socket.assigns.current_user)
+     )}
+  end
+
   def handle_event("join", %{"code" => invite_code, "name" => name}, socket) do
     user = socket.assigns.current_user
-
-    trimmed_code = String.trim(invite_code)
-
     Logger.metadata(user_id: user.id)
 
-    # Find invite by code (unscoped read - invite codes are unique)
-    %{invite_code: trimmed_code}
-    |> Core.query_to_read_invite_by_code(actor: user)
-    |> Ash.read_one!(actor: user)
-    |> case do
+    case find_invite(invite_code, user) do
       nil ->
         join_form =
           to_form(%{"name" => name, "code" => invite_code},
@@ -257,15 +685,223 @@ defmodule FirmowidWeb.Organization.Views.Index do
     end
   end
 
+  @impl true
+  # The NIP was shortened or broken while the lookup ran, so its result no longer applies.
+  def handle_async(:look_up, _result, %{assigns: %{lookup: lookup}} = socket) when lookup != :loading do
+    {:noreply, socket}
+  end
+
+  def handle_async(:look_up, {:ok, {:ok, nil}}, socket) do
+    {:noreply, assign(socket, lookup: :not_found, manual?: true, company: blank_company(socket.assigns.nip))}
+  end
+
+  def handle_async(:look_up, {:ok, {:ok, found}}, socket) do
+    company = %{
+      nip: found.nip,
+      name: found.name,
+      address: found.address,
+      pkd: found.pkd,
+      pkd_name: found.pkd_name,
+      suggested_industry: found.industry,
+      vat_payer?: found.vat_payer?,
+      fresh?: true,
+      source:
+        gettext("From the VAT white list of the Ministry of Finance, %{date}",
+          date: Calendar.strftime(Date.utc_today(), "%d.%m.%Y")
+        )
+    }
+
+    {:noreply,
+     assign(socket,
+       lookup: :found,
+       manual?: false,
+       company: company,
+       display_name: suggested_display_name(found.name),
+       errors: %{}
+     )}
+  end
+
+  # The lookup only saves typing: when the white list is unreachable, the owner enters the details.
+  def handle_async(:look_up, _failed, socket) do
+    {:noreply, assign(socket, lookup: :failed, manual?: true, company: blank_company(socket.assigns.nip))}
+  end
+
+  defp maybe_look_up(socket, nip) do
+    looked_up = socket.assigns.company && socket.assigns.company.nip
+
+    cond do
+      String.length(nip) < 10 ->
+        assign(socket,
+          lookup: :idle,
+          company: nil,
+          manual?: false,
+          errors: Map.delete(socket.assigns.errors, :nip)
+        )
+
+      not Nip.valid?(nip) ->
+        assign(socket,
+          lookup: :idle,
+          company: nil,
+          manual?: false,
+          errors: %{nip: gettext("This NIP has a wrong check digit.")}
+        )
+
+      nip == looked_up ->
+        socket
+
+      true ->
+        user = socket.assigns.current_user
+
+        socket
+        |> assign(lookup: :loading, company: nil, errors: %{})
+        |> start_async(:look_up, fn -> Core.look_up_company(nip, actor: user) end)
+    end
+  end
+
+  defp update_manual_details(%{assigns: %{manual?: true, company: %{} = company}} = socket, params) do
+    company = %{
+      company
+      | name: params["name"] || company.name,
+        address: params["address"] || company.address,
+        fresh?: false
+    }
+
+    assign(socket, :company, company)
+  end
+
+  defp update_manual_details(socket, _params), do: socket
+
+  defp company_errors(%{company: company, owner_name: owner_name, nip: nip}) do
+    []
+    |> add_error(
+      :nip,
+      not Nip.valid?(Nip.normalize_digits(nip || "")),
+      gettext("Enter a valid NIP.")
+    )
+    |> add_error(
+      :name,
+      is_nil(company) or blank?(company.name),
+      gettext("Enter the company name.")
+    )
+    |> add_error(
+      :address,
+      is_nil(company) or blank?(company.address),
+      gettext("Enter the business address.")
+    )
+    |> add_error(:owner_name, blank?(owner_name), gettext("Enter your full name."))
+    |> Map.new()
+  end
+
+  defp add_error(errors, field, true, message), do: [{field, message} | errors]
+  defp add_error(errors, _field, false, _message), do: errors
+
+  defp blank?(value), do: is_nil(value) or String.trim(value) == ""
+
+  defp blank_company(nip) do
+    %{
+      nip: Nip.normalize_digits(nip || ""),
+      name: nil,
+      address: nil,
+      pkd: nil,
+      pkd_name: nil,
+      suggested_industry: nil,
+      vat_payer?: true,
+      fresh?: false,
+      source: nil
+    }
+  end
+
+  # The PKD suggests the industry, the industry suggests hourly billing, and the
+  # white list knows the VAT status; the owner can change each of them.
+  defp assign_industry_defaults(%{assigns: %{industry: nil, company: company}} = socket) do
+    industry = company.suggested_industry || :services
+
+    assign(socket,
+      industry: industry,
+      bills_hourly: industry == :services,
+      vat_payer: company.vat_payer?
+    )
+  end
+
+  defp assign_industry_defaults(socket), do: socket
+
+  defp assign_industry_params(socket, params) do
+    exemption = if params["vat_payer"] == "false", do: params["vat_exemption_type"] || "art_113"
+
+    assign(socket,
+      industry: parse_industry(params["industry"]) || socket.assigns.industry,
+      bills_hourly: parse_boolean(params["bills_hourly"], socket.assigns.bills_hourly),
+      vat_payer: parse_boolean(params["vat_payer"], socket.assigns.vat_payer),
+      vat_exemption_type: exemption,
+      vat_exemption_basis: params["vat_exemption_basis"]
+    )
+  end
+
+  defp parse_industry(value), do: Enum.find(IndustryTemplate.industries(), &(Atom.to_string(&1) == value))
+
+  defp parse_boolean("true", _default), do: true
+  defp parse_boolean("false", _default), do: false
+  defp parse_boolean(_value, default), do: default
+
+  # ── Card content ─────────────────────────────────────────────────────
+
+  defp company_rows(nil, _step) do
+    [
+      %{label: "NIP", value: nil},
+      %{label: gettext("Address"), value: nil},
+      %{label: "PKD", value: nil},
+      %{label: "VAT", value: nil}
+    ]
+  end
+
+  defp company_rows(company, step) do
+    fresh? = company.fresh? and step == :firma
+
+    [
+      %{label: "NIP", value: format_nip(Nip.normalize_digits(company.nip)), fresh: fresh?},
+      %{label: gettext("Address"), value: company.address, fresh: fresh?},
+      %{
+        label: "PKD",
+        value: company.pkd && "#{company.pkd} · #{company.pkd_name}",
+        fresh: fresh?
+      },
+      %{label: "VAT", value: vat_label(company.vat_payer?), fresh: fresh?}
+    ]
+  end
+
+  defp invite_rows(nil), do: [%{label: gettext("Role"), value: nil}, %{label: gettext("Code valid until"), value: nil}]
+
+  defp invite_rows(invite) do
+    [
+      %{label: gettext("Role"), value: Firmowid.Core.UserRole.label(invite.role)},
+      %{
+        label: gettext("Code valid until"),
+        value: Calendar.strftime(invite.expires_at, "%d.%m.%Y")
+      }
+    ]
+  end
+
+  defp vat_label(true), do: gettext("Active VAT payer")
+  defp vat_label(false), do: gettext("Exempt from VAT")
+
+  # ── Invites ──────────────────────────────────────────────────────────
+
+  defp find_invite(code, user) do
+    case String.trim(code || "") do
+      "" ->
+        nil
+
+      code ->
+        %{invite_code: code}
+        |> Core.query_to_read_invite_by_code(actor: user)
+        |> Ash.read_one!(actor: user, load: [:organization_name])
+    end
+  end
+
   defp consume_invite(invite, invite_code, name, socket) do
     user = socket.assigns.current_user
+    Logger.metadata(user_id: user.id, organization_id: invite.organization_id)
 
-    Logger.metadata(
-      user_id: user.id,
-      organization_id: invite.organization_id
-    )
-
-    # Consume the invite (scoped to the invite's organization)
     case Core.consume_invite(invite, %{name: name}, tenant: invite.organization_id, actor: user) do
       {:ok, invite} ->
         {:noreply, assign(socket, :switch_to, invite.organization_id)}
@@ -281,60 +917,14 @@ defmodule FirmowidWeb.Organization.Views.Index do
 
       {:error, %Invalid{errors: [%Ash.Error.Changes.Required{field: :name}]}} ->
         join_form =
-          to_form(%{"name" => name, "code" => invite_code}, errors: [name: {"is required", []}])
+          to_form(%{"name" => name, "code" => invite_code},
+            errors: [name: {gettext("Enter your full name."), []}]
+          )
 
         {:noreply, assign(socket, :join_form, join_form)}
 
       {:error, error} ->
         raise error
     end
-  end
-
-  @impl true
-  def mount(_params, _session, socket) do
-    user = socket.assigns.current_user
-
-    # A user joining or creating another organization is prefilled with the name
-    # they use in the current one.
-    name = if user.member, do: user.member.name, else: ""
-
-    socket = assign(socket, no_padding: true, switch_to: nil)
-
-    organization_form =
-      Organization
-      |> AshPhoenix.Form.for_create(:create,
-        domain: Core,
-        actor: user,
-        as: "organization",
-        params: %{"owner_name" => name}
-      )
-      |> to_form()
-
-    socket =
-      socket
-      |> assign(:organization_form, organization_form)
-      |> assign(:address_form, %{
-        "street" => "",
-        "number" => "",
-        "postal_code" => "",
-        "city" => ""
-      })
-      |> assign(:check_errors, false)
-      |> assign(
-        :join_form,
-        to_form(%{
-          "name" => name,
-          "code" => ""
-        })
-      )
-      |> assign(:page_title, gettext("Choose or create an organization"))
-
-    {:ok, socket}
-  end
-
-  defp split_bold(text), do: List.to_tuple(String.split(text, "__BOLD__", parts: 2))
-
-  defp add_address(params, %{"street" => street, "number" => number, "postal_code" => postal_code, "city" => city}) do
-    Map.put(params, "address", "#{street} #{number}, #{postal_code} #{city}")
   end
 end

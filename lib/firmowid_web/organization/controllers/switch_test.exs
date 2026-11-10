@@ -101,7 +101,7 @@ defmodule FirmowidWeb.Organization.Controllers.SwitchTest do
     invite = Core.create_invite!(%{issued_by_id: other_admin.id}, scope: scope_for(other_admin))
 
     conn = log_in_user(conn, user)
-    {:ok, lv, _html} = live(conn, ~p"/organizacja")
+    {:ok, lv, _html} = live(conn, ~p"/organizacja?krok=dolacz")
 
     lv
     |> form("#join_form", %{code: invite.invite_code, name: "Nowe Imię"})
@@ -142,7 +142,7 @@ defmodule FirmowidWeb.Organization.Controllers.SwitchTest do
     other_admin: other_admin
   } do
     invite = Core.create_invite!(%{issued_by_id: other_admin.id}, scope: scope_for(other_admin))
-    {:ok, lv, _html} = conn |> log_in_user(sable) |> live(~p"/organizacja")
+    {:ok, lv, _html} = conn |> log_in_user(sable) |> live(~p"/organizacja?krok=dolacz")
 
     html =
       lv
@@ -150,6 +150,31 @@ defmodule FirmowidWeb.Organization.Controllers.SwitchTest do
       |> render_submit()
 
     assert html =~ "Należysz już do tej organizacji."
+  end
+
+  test "an admin still on a new company's first steps can switch to another company",
+       %{conn: conn, sable: sable, first_id: first_id} do
+    pending =
+      Core.create_organization!(
+        %{
+          nip: unique_nip(),
+          name: "Nowa Firma",
+          owner_name: "Sable Orin",
+          start_onboarding: true
+        },
+        actor: Core.load_member(sable)
+      )
+
+    conn =
+      conn
+      |> log_in_user(sable)
+      |> Plug.Test.init_test_session(%{"organization_id" => pending.id})
+
+    assert {:error, {:redirect, %{to: "/pierwsze-kroki"}}} = live(conn, ~p"/fakturowanie")
+
+    conn = post(conn, ~p"/organizacja/przelacz", %{"organizacja" => first_id})
+    assert redirected_to(conn) == ~p"/fakturowanie"
+    assert get_session(conn, "organization_id") == first_id
   end
 
   defp scope_for(admin), do: %Scope{actor: admin, tenant: admin.member.organization_id}

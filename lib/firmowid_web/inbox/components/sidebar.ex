@@ -43,13 +43,14 @@ defmodule FirmowidWeb.Inbox.Components.Sidebar do
         assigns.current_user.member.role,
         assigns.analysis_enabled,
         assigns.current_org.owner_id == assigns.current_user.id,
-        assigns.delegations_enabled
+        assigns.delegations_enabled,
+        assigns.current_org.bills_hourly
       )
 
     current = Navigation.current(destinations, assigns.current_uri)
     layered? = Navigation.in_layer(destinations, :company) != []
     layer = layer(layered?, current, assigns.current_uri)
-    [inbox, timetracker] = Navigation.in_layer(destinations, :main)
+    [inbox | main] = Navigation.in_layer(destinations, :main)
 
     assigns =
       assign(assigns,
@@ -58,7 +59,7 @@ defmodule FirmowidWeb.Inbox.Components.Sidebar do
         layered?: layered?,
         layer: layer,
         inbox: %{inbox | path: Navigation.inbox_path(layer)},
-        timetracker: timetracker,
+        timetracker: List.first(main),
         closed_on_phone: @closed_on_phone
       )
 

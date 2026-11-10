@@ -208,7 +208,7 @@ defmodule FirmowidWeb.Inbox.Views.Index do
     <div data-layer-dissolve class="mx-auto flex w-full max-w-6xl flex-col gap-8 py-4">
       <header class="flex flex-col gap-1">
         <p class="text-sm text-grey-500">
-          {if @layer == :company, do: @current_org.name, else: gettext("Your matters")} · {Firmowid.Cldr.Date.to_string!(
+          {if @layer == :company, do: @current_org.display_name, else: gettext("Your matters")} · {Firmowid.Cldr.Date.to_string!(
             @today,
             format: :long
           )}
@@ -245,7 +245,11 @@ defmodule FirmowidWeb.Inbox.Views.Index do
         </div>
         <%!-- Starts level with the first card of the queue, below its tier heading (18px + 12px gap). --%>
         <aside class={["flex flex-col gap-4 lg:sticky lg:top-8", @items != [] && "lg:mt-7.5"]}>
-          <.session_panel :if={@layer == :me} session={@session} last_session={@last_session} />
+          <.session_panel
+            :if={@layer == :me and @current_org.bills_hourly}
+            session={@session}
+            last_session={@last_session}
+          />
           <.personal_month :if={@layer == :me} duration={@month_duration} />
           <.office_panel :if={@presence != []} presence={@presence} />
           <.month_list :if={@month != []} month={@month} />

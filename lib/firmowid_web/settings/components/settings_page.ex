@@ -115,11 +115,11 @@ defmodule FirmowidWeb.Settings.Components.SettingsPage do
             <.avatar_image
               :if={@current_org.avatar_blob && @current_org.avatar_blob.url}
               src={@current_org.avatar_blob.url}
-              alt={@current_org.name}
+              alt={@current_org.display_name}
               class="rounded-2xl! object-contain"
             />
             <.avatar_fallback class="rounded-2xl! text-center text-2xl font-medium text-grey-700">
-              {initial(@current_org.name)}
+              {initial(@current_org.display_name)}
             </.avatar_fallback>
           </.avatar>
 

@@ -75,8 +75,8 @@ defmodule FirmowidWeb.Infrastructure.Layouts do
       <div class="truncate p-2 pb-0 text-xs text-white/50">
         {pgettext("avatar menu", "Organization")}
       </div>
-      <div class="flex items-center justify-between gap-2 p-2" title={@current_org.name}>
-        <span class="truncate">{@current_org.name}</span>
+      <div class="flex items-center justify-between gap-2 p-2" title={@current_org.display_name}>
+        <span class="truncate">{@current_org.display_name}</span>
         <.icon name="hero-check" class="size-4 shrink-0" />
       </div>
       <%= for organization <- @organizations, organization.id != @current_org.id do %>
@@ -92,18 +92,18 @@ defmodule FirmowidWeb.Infrastructure.Layouts do
               type="submit"
               variant="unstyled"
               class="block w-full cursor-pointer rounded-md text-left text-white hover:bg-grey-700/50 hover:text-white active:bg-grey-700/70"
-              title={organization.name}
+              title={organization.display_name}
             >
-              <span class="block truncate p-2">{organization.name}</span>
+              <span class="block truncate p-2">{organization.display_name}</span>
             </FirmowidUI.Components.Button.button>
           </.form>
         <% else %>
           <div
             id={"unavailable-organization-#{organization.id}"}
             class="flex items-center justify-between gap-2 p-2 text-white/50"
-            title={organization.name}
+            title={organization.display_name}
           >
-            <span class="truncate">{organization.name}</span>
+            <span class="truncate">{organization.display_name}</span>
             <span class="shrink-0 text-xs">{pgettext("avatar menu", "No plan")}</span>
           </div>
         <% end %>
@@ -164,10 +164,15 @@ defmodule FirmowidWeb.Infrastructure.Layouts do
     """
   end
 
+  # A company that does not bill by the hour does not see time tracking.
+  defp time_tracking_enabled?(organization), do: not match?(%{bills_hourly: false}, organization)
+
   # Members of organizations with the `inbox` flag get the sidebar instead of the navbar.
-  defp inbox_sidebar?(assigns) do
-    match?(%{member: %{organization_id: _}}, assigns[:current_user]) and
-      flag_enabled?(:inbox, assigns)
+  defp inbox_sidebar?(assigns), do: app_navigation?(assigns) and flag_enabled?(:inbox, assigns)
+
+  # A member works inside the app navigation, except on a `focused` page of its own (onboarding).
+  defp app_navigation?(assigns) do
+    match?(%{member: %{organization_id: _}}, assigns[:current_user]) and is_nil(assigns[:focused])
   end
 
   defp impersonating?(%Firmowid.Core.User{} = user), do: not is_nil(Firmowid.Core.impersonator_id(user))
@@ -184,6 +189,7 @@ defmodule FirmowidWeb.Infrastructure.Layouts do
   end
 
   attr :current_user, :map, required: true
+  attr :current_org, :map, default: nil
   attr :current_uri, URI, required: true
   attr :analysis_enabled, :boolean, required: true
 
@@ -252,6 +258,7 @@ defmodule FirmowidWeb.Infrastructure.Layouts do
       </.link>
     <% end %>
     <.link
+      :if={time_tracking_enabled?(@current_org)}
       kind="unstyled"
       navigate={~p"/czasosledz"}
       class={navigation_link_styles(@variant, @time_tracking?)}

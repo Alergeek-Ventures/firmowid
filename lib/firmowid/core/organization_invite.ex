@@ -193,4 +193,9 @@ defmodule Firmowid.Core.OrganizationInvite do
       attribute_writable? true
     end
   end
+
+  calculations do
+    # Whoever holds a valid code may see which company invites them before joining.
+    calculate :organization_name, :string, expr(organization.display_name)
+  end
 end

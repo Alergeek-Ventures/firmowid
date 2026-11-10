@@ -7,7 +7,9 @@ defmodule FirmowidWeb.Infrastructure.Hooks.RequireOrganization do
   2. Loads the member of the organization selected in the session (see
      `UserAuth.load_member/2`); redirects to /organizacja if there is none
   3. Loads avatar on user and organization via shared `UserAuth.load_scope_and_avatars/1`
-  4. Assigns current_user, current_org, organizations (to switch between), ash_scope
+  4. Sends the admin of a company still before its first steps back to them
+     (see `UserAuth.first_steps_pending?/2`)
+  5. Assigns current_user, current_org, organizations (to switch between), ash_scope
   """
 
   use FirmowidWeb, :verified_routes
@@ -19,6 +21,7 @@ defmodule FirmowidWeb.Infrastructure.Hooks.RequireOrganization do
   alias Firmowid.Core
   alias FirmowidWeb.Infrastructure.UserAuth
   alias FirmowidWeb.Organization.Utilities.Navigation, as: OrganizationNavigation
+  alias FirmowidWeb.Organization.Views.FirstSteps
   alias Phoenix.LiveView.Socket
 
   def on_mount(:default, _params, session, socket) do
@@ -31,21 +34,22 @@ defmodule FirmowidWeb.Infrastructure.Hooks.RequireOrganization do
          |> redirect(to: ~p"/zaloguj")}
 
       {%{member: nil}, _organizations} ->
-        {:halt,
-         socket
-         |> LiveToast.put_toast(:notice, gettext("To continue, assign yourself an organization."))
-         |> redirect(to: OrganizationNavigation.onboarding_path())}
+        {:halt, redirect(socket, to: OrganizationNavigation.onboarding_path())}
 
       {user, organizations} ->
         {user, org, scope} = UserAuth.load_scope_and_avatars(user)
 
-        {:cont,
-         socket
-         |> assign(:current_user, user)
-         |> assign(:current_org, org)
-         |> assign(:organizations, organizations)
-         |> assign(:ash_scope, scope)
-         |> attach_access_hook(:ash_scope)}
+        if UserAuth.first_steps_pending?(user, org) and socket.view != FirstSteps do
+          {:halt, redirect(socket, to: OrganizationNavigation.first_steps_path())}
+        else
+          {:cont,
+           socket
+           |> assign(:current_user, user)
+           |> assign(:current_org, org)
+           |> assign(:organizations, organizations)
+           |> assign(:ash_scope, scope)
+           |> attach_access_hook(:ash_scope)}
+        end
     end
   end
 

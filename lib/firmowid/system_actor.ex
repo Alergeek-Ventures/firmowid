@@ -39,6 +39,8 @@ defmodule Firmowid.SystemActor do
     background. Reads what the category review reads and stores the categories
     the classifier chose per entry, and caches the register data of counterparties
     that it looks up for them.
+  - `:company_lookup` — reads and caches the public register data of the NIP a
+    signed-in user is creating an organization for.
 
   - `:exchange_rate_cache` — persists exchange-rate cache entries for the Money
     exchange-rate backend.
@@ -109,6 +111,7 @@ defmodule Firmowid.SystemActor do
           | :bank_sync
           | :analysis_reader
           | :analysis_classifier
+          | :company_lookup
           | :exchange_rate_cache
           | :organization_owner_setup
           | :project_tag_manager

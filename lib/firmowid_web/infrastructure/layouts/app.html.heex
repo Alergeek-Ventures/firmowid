@@ -15,7 +15,7 @@
     current_uri={@current_uri}
   />
 <% end %>
-<%= if match?(%{member: %{organization_id: _}}, @current_user) and not inbox_sidebar?(assigns) do %>
+<%= if app_navigation?(assigns) and not inbox_sidebar?(assigns) do %>
   <%!-- simulates the navbar height, so the content does not jump when the navbar collapses --%>
   <%= if String.starts_with?(@current_uri.path, "/zarzadzanie") do %>
     <div class={[
@@ -67,6 +67,7 @@
       ]}>
         <.main_navigation_links
           current_user={@current_user}
+          current_org={assigns[:current_org]}
           current_uri={@current_uri}
           analysis_enabled={flag_enabled?(:analysis_dashboard, assigns)}
         />
@@ -136,6 +137,7 @@
             <div class="flex flex-col gap-2 border-b border-grey-700/50 pb-2 md:hidden">
               <.main_navigation_links
                 current_user={@current_user}
+                current_org={assigns[:current_org]}
                 current_uri={@current_uri}
                 analysis_enabled={flag_enabled?(:analysis_dashboard, assigns)}
                 variant={:menu}
@@ -262,7 +264,7 @@
 </main>
 
 <%!-- The full assistant page renders the same chat itself, so the panel stays out of it. --%>
-<%= if match?(%{member: %{role: role}} when role != :employee, @current_user) and
+<%= if app_navigation?(assigns) and match?(%{member: %{role: role}} when role != :employee, @current_user) and
        @current_uri.path != FirmowidWeb.Assistant.Utilities.Navigation.page_path() do %>
   {Phoenix.Component.live_render(
     assigns[:socket] || assigns[:conn],

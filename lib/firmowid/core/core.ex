@@ -64,6 +64,7 @@ defmodule Firmowid.Core do
       define :get_organization, action: :read, get_by: [:id]
       define :create_organization, action: :create
       define :update_organization, action: :update
+      define :complete_organization_onboarding, action: :complete_onboarding
       define :update_basic_info, action: :update_basic_info
       define :update_organization_billing_plan, action: :update_billing_plan
       define :update_organization_avatar, action: :update_avatar
@@ -128,6 +129,7 @@ defmodule Firmowid.Core do
     resource RegisteredCompany do
       define :list_registered_companies, action: :by_nips, args: [:nips]
       define :register_company, action: :register
+      define :look_up_company, action: :look_up, args: [:nip]
     end
   end
 

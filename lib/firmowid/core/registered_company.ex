@@ -37,17 +37,35 @@ defmodule Firmowid.Core.RegisteredCompany do
       upsert_identity :unique_nip
       upsert_fields {:replace_all_except, [:id, :inserted_at]}
     end
+
+    action :look_up, :map do
+      description """
+      Looks up a company by NIP for someone creating an organization: name, address
+      and VAT status from the VAT white list, and the predominant activity (PKD) with
+      the industry it suggests. Returns nil when the white list does not know the NIP.
+      """
+
+      allow_nil? true
+
+      argument :nip, :string, allow_nil?: false
+      run Firmowid.Core.RegisteredCompany.Actions.LookUp
+    end
   end
 
   policies do
     # Public register data: members who read the analysis see their counterparties' activity.
     policy action(:by_nips) do
-      authorize_if {SystemActorRole, roles: [:analysis_classifier]}
+      authorize_if {SystemActorRole, roles: [:analysis_classifier, :company_lookup]}
       authorize_if {AtLeastRole, role: :invoicing}
     end
 
     policy action(:register) do
-      authorize_if {SystemActorRole, roles: [:analysis_classifier]}
+      authorize_if {SystemActorRole, roles: [:analysis_classifier, :company_lookup]}
+    end
+
+    # Anyone signed in may look up the company they are about to create.
+    policy action(:look_up) do
+      authorize_if actor_present()
     end
   end
 

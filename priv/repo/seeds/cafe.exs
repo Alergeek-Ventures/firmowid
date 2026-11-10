@@ -110,6 +110,8 @@ defmodule Firmowid.Seeds.Cafe do
       CoreOrganization,
       %{
         name: @org_name,
+        display_name: @org_name,
+        onboarding_completed_at: DateTime.utc_now(),
         nip: @nip,
         address: @address,
         owner_id: kira.id,

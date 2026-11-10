@@ -19,6 +19,7 @@ defmodule Firmowid.Core.Organization do
   alias Firmowid.Checks.SystemActorRole
   alias Firmowid.Core.Changes.CleanupOldAvatarBlob
   alias Firmowid.Core.Changes.ClearVatExemptionFields
+  alias Firmowid.Core.Changes.DefaultDisplayName
   alias Firmowid.Core.Changes.SetOwnerOrganization
   alias Firmowid.Core.User
   alias Firmowid.Core.Validations.ValidateNip
@@ -83,17 +84,31 @@ defmodule Firmowid.Core.Organization do
 
       accept [
         :name,
+        :display_name,
         :nip,
         :address,
         :is_vat_payer,
-        :industry
+        :vat_exemption_type,
+        :vat_exemption_basis,
+        :industry,
+        :bills_hourly
       ]
 
       argument :owner_name, :string,
         allow_nil?: false,
         description: "The owner's name, stored on their member."
 
+      argument :start_onboarding, :boolean,
+        default: false,
+        description: "Whether the owner still takes the first steps, which the app leads them back to."
+
+      change {ClearVatExemptionFields, []}
+      change DefaultDisplayName
       change set_attribute(:owner_id, actor(:id))
+
+      change set_attribute(:onboarding_completed_at, &DateTime.utc_now/0),
+        where: [argument_equals(:start_onboarding, false)]
+
       change SetOwnerOrganization
 
       validate match(:nip, ~r/^[0-9]{10}$/)
@@ -108,16 +123,19 @@ defmodule Firmowid.Core.Organization do
 
       accept [
         :name,
+        :display_name,
         :nip,
         :address,
         :correspondence_address,
         :is_vat_payer,
         :industry,
+        :bills_hourly,
         :vat_exemption_type,
         :vat_exemption_basis
       ]
 
       change {ClearVatExemptionFields, []}
+      change DefaultDisplayName
 
       validate match(:nip, ~r/^[0-9]{10}$/)
       validate {ValidateNip, field: :nip}
@@ -133,8 +151,10 @@ defmodule Firmowid.Core.Organization do
         :address,
         :correspondence_address,
         :name,
+        :display_name,
         :is_vat_payer,
         :industry,
+        :bills_hourly,
         :vat_exemption_type,
         :vat_exemption_basis
       ]
@@ -142,12 +162,19 @@ defmodule Firmowid.Core.Organization do
       argument :is_same_correspondence_address, :boolean
 
       change {ClearVatExemptionFields, []}
+      change DefaultDisplayName
 
       change set_attribute(:correspondence_address, nil),
         where: [argument_equals(:is_same_correspondence_address, true)]
 
       validate match(:nip, ~r/^[0-9]{10}$/)
       validate {ValidateNip, field: :nip}
+    end
+
+    update :complete_onboarding do
+      description "Mark the first steps of a just created organization as done."
+      accept []
+      change set_attribute(:onboarding_completed_at, &DateTime.utc_now/0)
     end
 
     update :update_billing_plan do
@@ -207,7 +234,8 @@ defmodule Firmowid.Core.Organization do
       action([
         :update,
         :update_basic_info,
-        :update_avatar
+        :update_avatar,
+        :complete_onboarding
       ]),
       {ActorRole, role: :admin}
     ] do
@@ -233,7 +261,16 @@ defmodule Firmowid.Core.Organization do
   attributes do
     uuid_v7_primary_key :id
 
-    attribute :name, :string, public?: true, allow_nil?: false
+    attribute :name, :string,
+      public?: true,
+      allow_nil?: false,
+      description: "The full registered name, which invoices and KSeF carry."
+
+    attribute :display_name, :string,
+      public?: true,
+      allow_nil?: false,
+      description: "The short name the app shows, the full `name` unless set."
+
     attribute :nip, :string, public?: true, allow_nil?: false
     attribute :address, :string, public?: true
     attribute :correspondence_address, :string, public?: true
@@ -245,6 +282,16 @@ defmodule Firmowid.Core.Organization do
       default: :services,
       description: "The industry template the financial analysis follows.",
       constraints: [one_of: IndustryTemplate.industries()]
+
+    attribute :bills_hourly, :boolean,
+      public?: true,
+      allow_nil?: false,
+      default: true,
+      description: "Whether the company bills clients by the hour, which shows time tracking and projects."
+
+    attribute :onboarding_completed_at, :utc_datetime_usec,
+      public?: true,
+      description: "When the owner finished the first steps; until then the app leads admins back to them."
 
     attribute :avatar_blob_id, :uuid, public?: true
 

@@ -10,10 +10,14 @@ defmodule FirmowidWeb.Organization.Controllers.Switch do
 
   alias Firmowid.Core
   alias FirmowidWeb.Infrastructure.UserAuth
+  alias FirmowidWeb.Organization.Utilities.Navigation, as: OrganizationNavigation
 
-  @doc "Selects the organization given in the `organizacja` param."
+  @doc """
+  Selects the organization given in the `organizacja` param. With `cel` set to
+  the first steps, a just created organization continues with its setup.
+  """
   @spec switch(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def switch(conn, %{"organizacja" => organization_id}) do
+  def switch(conn, %{"organizacja" => organization_id} = params) do
     user = conn.assigns.current_user
 
     if Enum.any?(
@@ -22,11 +26,17 @@ defmodule FirmowidWeb.Organization.Controllers.Switch do
        ) do
       conn
       |> put_session(UserAuth.organization_session_key(), organization_id)
-      |> redirect(to: UserAuth.signed_in_path_for_user(user, organization_id))
+      |> redirect(to: destination(params["cel"], user, organization_id))
     else
       conn
       |> LiveToast.put_toast(:error, gettext("You do not belong to this organization."))
       |> redirect(to: UserAuth.signed_in_path(conn))
     end
+  end
+
+  defp destination(target, user, organization_id) do
+    if target == OrganizationNavigation.first_steps_target(),
+      do: OrganizationNavigation.first_steps_path(),
+      else: UserAuth.signed_in_path_for_user(user, organization_id)
   end
 end

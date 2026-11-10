@@ -169,8 +169,8 @@
               </.link>
               <p class="text-sm/snug text-grey-500">
                 {case project.counterparty && project.counterparty.display_label do
-                  "" -> @current_org.name
-                  nil -> @current_org.name
+                  "" -> @current_org.display_name
+                  nil -> @current_org.display_name
                   label -> label
                 end}
               </p>
