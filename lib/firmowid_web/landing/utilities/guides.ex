@@ -76,6 +76,14 @@ defmodule FirmowidWeb.Landing.Utilities.Guides do
                   ~s(<img src="#{src}" width="#{width}" height="#{height}" loading="lazy" decoding="async")
                 end)
               )
+              # Comparison tables always set Firmowid's row apart from other programs.
+              |> then(
+                &Regex.replace(
+                  ~r/<tr>(\s*<td>(?:<strong>)?Firmowid)/,
+                  &1,
+                  ~S(<tr class="firmowid">\1)
+                )
+              )
 
             og_path = "/images/guides/og/#{slug}.png"
 
