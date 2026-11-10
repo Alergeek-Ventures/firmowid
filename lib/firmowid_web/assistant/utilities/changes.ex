@@ -176,41 +176,41 @@ defmodule FirmowidWeb.Assistant.Utilities.Changes do
     end
   end
 
+  # The member is read again: the actor's was loaded at mount, before earlier approved changes.
   defp preview("update_profile", %{"input" => input}, scope) when is_map(input) do
-    member = scope.actor.member
-
-    changes =
-      Enum.flat_map(profile_fields(), fn {field, label} ->
-        case input[Atom.to_string(field)] do
-          nil ->
-            []
-
-          value ->
-            [
-              change(
-                label,
-                profile_value(field, Map.get(member, field)),
-                profile_value(field, value)
-              )
-            ]
+    with {:ok, user} <-
+           result(Core.get_org_user(%{id: scope.actor.id}, scope: scope, load: [:member])) do
+      changes =
+        for {field, label} <- profile_fields(),
+            value = input[Atom.to_string(field)],
+            not is_nil(value) do
+          change(
+            label,
+            profile_value(field, Map.get(user.member, field)),
+            profile_value(field, value)
+          )
         end
-      end)
 
-    {:ok, [], changes}
+      if changes == [], do: :error, else: {:ok, [], changes}
+    end
   end
 
-  defp preview("create_sales_invoice_draft", %{"input" => %{"invoice" => invoice}}, scope) do
+  defp preview("create_sales_invoice_draft", %{"input" => input}, scope) when is_map(input) do
     with {:ok, draft} <-
-           result(Invoicing.preview_sales_invoice(%{invoice: invoice}, scope: scope)) do
+           result(Invoicing.preview_sales_invoice(%{invoice: invoice_input(input)}, scope: scope)) do
       {:ok, [], invoice_changes(nil, draft)}
     end
   end
 
-  defp preview("update_sales_invoice_draft", %{"id" => id, "input" => %{"invoice" => invoice}}, scope) do
+  defp preview("update_sales_invoice_draft", %{"id" => id, "input" => input}, scope) when is_map(input) do
     with {:ok, saved} <-
            result(Invoicing.get_sales_invoice(id, scope: scope, load: [sales_invoice_items: []])),
          {:ok, revised} <-
-           result(Invoicing.preview_sales_invoice(%{invoice_id: id, invoice: invoice}, scope: scope)) do
+           result(
+             Invoicing.preview_sales_invoice(%{invoice_id: id, invoice: invoice_input(input)},
+               scope: scope
+             )
+           ) do
       {:ok, [{:sales, id}], invoice_changes(saved, revised)}
     end
   end
@@ -360,6 +360,10 @@ defmodule FirmowidWeb.Assistant.Utilities.Changes do
 
   defp profile_value(_field, value), do: value
 
+  # The draft actions take the invoice as fields beside an `input` (InvoiceInput) that
+  # `ApplyInvoiceInput` applies over them; the preview takes the same invoice as one InvoiceInput.
+  defp invoice_input(input), do: Map.merge(Map.delete(input, "input"), input["input"] || %{})
+
   # A draft is compared by what the user recognises on the document: buyer, dates, note,
   # items and total.
   defp invoice_changes(saved, revised) do
@@ -367,12 +371,27 @@ defmodule FirmowidWeb.Assistant.Utilities.Changes do
       {gettext("Buyer"), & &1.buyer_full_name},
       {gettext("Sale date"), &(&1.sale_date && date(&1.sale_date))},
       {gettext("Due date"), &(&1.due_date && date(&1.due_date))},
-      {gettext("Invoice note"), & &1.invoice_note},
-      {gettext("Items"), &items/1}
+      {gettext("Invoice note"), & &1.invoice_note}
     ]
     |> Enum.map(fn {label, value} -> {label, saved && value.(saved), value.(revised)} end)
     |> Enum.reject(fn {_label, before, later} -> before == later end)
     |> Enum.map(fn {label, before, later} -> change(label, before, later) end)
+    |> Kernel.++([
+      not same_items?(saved, revised) &&
+        change(gettext("Items"), saved && items(saved), items(revised))
+    ])
+  end
+
+  # Quantities and prices are compared as numbers: a saved 1.0 is the proposed 1.
+  defp same_items?(nil, _revised), do: false
+
+  defp same_items?(saved, revised) do
+    length(saved.sales_invoice_items) == length(revised.sales_invoice_items) and
+      Enum.all?(Enum.zip(saved.sales_invoice_items, revised.sales_invoice_items), fn {before, later} ->
+        before.name == later.name and before.unit == later.unit and
+          Decimal.eq?(before.quantity, later.quantity) and
+          Decimal.eq?(before.unit_price, later.unit_price)
+      end) and saved.currency == revised.currency
   end
 
   defp items(invoice) do
