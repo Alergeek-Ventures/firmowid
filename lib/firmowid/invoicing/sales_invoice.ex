@@ -702,6 +702,14 @@ defmodule Firmowid.Invoicing.SalesInvoice do
 
       change {Changes.NormalizeReverseChargeVatRates, source: :argument, field: :sales_invoice_items}
 
+      # A null list (agents send one for "unchanged") keeps the saved items.
+      change fn changeset, _context ->
+        case Ash.Changeset.fetch_argument(changeset, :sales_invoice_items) do
+          {:ok, nil} -> Ash.Changeset.delete_argument(changeset, :sales_invoice_items)
+          _items -> changeset
+        end
+      end
+
       change manage_relationship(:sales_invoice_items, type: :direct_control)
       change Changes.SetItemNames
       change Changes.SetIsCashAccount
