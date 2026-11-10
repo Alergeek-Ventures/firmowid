@@ -13,7 +13,7 @@ export default {
   },
   credentials: {
     kira: {
-      username: 'kira@bytecraft.collective',
+      username: 'kinga@biurocyfrowe.pl',
       password: process.env.E2E_KIRA_PASSWORD ?? 'kolejka123456',
     },
   },

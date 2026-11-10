@@ -27,7 +27,7 @@ defmodule Firmowid.Seeds.SalaryMatching do
         Ash.Seed.upsert!(
           User,
           %{
-            email: "pensja.#{key}@bytecraft.collective",
+            email: "pensja.#{key}@biurocyfrowe.pl",
             hashed_password: Argon2.hash_pwd_salt("kolejka123456"),
             organization_id: organization.id,
             system_role: :user

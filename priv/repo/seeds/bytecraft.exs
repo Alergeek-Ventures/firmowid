@@ -1,7 +1,7 @@
 # credo:disable-for-this-file Credo.Check.Readability.Specs
 defmodule Firmowid.Seeds.Bytecraft do
   @moduledoc """
-  Seeds for the primary organization: Bytecraft Collective.
+  Seeds for the primary organization: Biuro Cyfrowe.
   Creates users, org, counterparties, projects, bank accounts, and a mock blob.
   """
 
@@ -20,7 +20,7 @@ defmodule Firmowid.Seeds.Bytecraft do
 
   @profiles %{
     kira: %{
-      name: "Kira Voss",
+      name: "Kinga Nowak",
       phone: "+48 501 200 300",
       slack_url: "https://example.slack.com/team/U_KIRA_001",
       bank_account_number: "PL61 1050 0099 7603 1234 5678 9012",
@@ -29,7 +29,7 @@ defmodule Firmowid.Seeds.Bytecraft do
       residence_address: "ul. Marszałkowska 11/4, 00-624 Warszawa"
     },
     tomek: %{
-      name: "Tomek Briar",
+      name: "Tomasz Wiśniewski",
       phone: "+48 502 300 400",
       slack_url: "https://example.slack.com/team/U_TOMEK_002",
       bank_account_number: "PL27 1140 2004 0000 3002 0135 5387",
@@ -38,7 +38,7 @@ defmodule Firmowid.Seeds.Bytecraft do
       residence_address: "ul. Świdnicka 36/8, 50-068 Wrocław"
     },
     sable: %{
-      name: "Sable Orin",
+      name: "Sabina Kowalczyk",
       phone: "+48 503 400 500",
       slack_url: "https://example.slack.com/team/U_SABLE_003",
       birthday: ~D[1996-08-14],
@@ -46,7 +46,7 @@ defmodule Firmowid.Seeds.Bytecraft do
       residence_address: "ul. Floriańska 22/10, 31-021 Kraków"
     },
     jules: %{
-      name: "Jules Kadar",
+      name: "Julia Wójcik",
       phone: "+48 504 500 600",
       slack_url: "https://example.slack.com/team/U_JULES_004",
       birthday: ~D[1989-12-03],
@@ -54,7 +54,7 @@ defmodule Firmowid.Seeds.Bytecraft do
       residence_address: "ul. Piotrkowska 80/15, 90-265 Łódź"
     },
     maren: %{
-      name: "Maren Solke",
+      name: "Marek Lewandowski",
       phone: "+48 505 600 700",
       slack_url: "https://example.slack.com/team/U_MAREN_005",
       birthday: ~D[1997-02-28],
@@ -89,7 +89,7 @@ defmodule Firmowid.Seeds.Bytecraft do
   end
 
   # ===========================================================================
-  # Users — Bytecraft Collective team
+  # Users — Biuro Cyfrowe team
   # ===========================================================================
 
   defp seed_users do
@@ -101,11 +101,11 @@ defmodule Firmowid.Seeds.Bytecraft do
       )
     end
 
-    kira = register.("kira@bytecraft.collective")
-    tomek = register.("tomek@bytecraft.collective")
-    sable = register.("sable@bytecraft.collective")
-    jules = register.("jules@bytecraft.collective")
-    maren = register.("maren@bytecraft.collective")
+    kira = register.("kinga@biurocyfrowe.pl")
+    tomek = register.("tomasz@biurocyfrowe.pl")
+    sable = register.("sabina@biurocyfrowe.pl")
+    jules = register.("julia@biurocyfrowe.pl")
+    maren = register.("marek@biurocyfrowe.pl")
 
     kira = Ash.Seed.update!(kira, %{system_role: :superuser})
 
@@ -121,14 +121,14 @@ defmodule Firmowid.Seeds.Bytecraft do
   end
 
   # ===========================================================================
-  # Organization — Bytecraft Collective
+  # Organization — Biuro Cyfrowe
   # ===========================================================================
 
   defp seed_organization(kira) do
     Ash.Seed.seed!(
       CoreOrganization,
       %{
-        name: "Bytecraft Collective spółka z ograniczoną odpowiedzialnością",
+        name: "Biuro Cyfrowe spółka z ograniczoną odpowiedzialnością",
         nip: "6161525811",
         address: "ul. Marszałkowska 11/4, 00-624 Warszawa",
         owner_id: kira.id
@@ -170,7 +170,7 @@ defmodule Firmowid.Seeds.Bytecraft do
         country: "GB",
         email: "accounts@flatmate.earth",
         phone: "+44 20 7946 0958",
-        description: "Dating app for flat earthers. Kira built the disc map. 200k users."
+        description: "Dating app for flat earthers. Kinga built the disc map. 200k users."
       })
 
     taco =
@@ -271,7 +271,7 @@ defmodule Firmowid.Seeds.Bytecraft do
   end
 
   # ===========================================================================
-  # KSeF credential — test environment token for Bytecraft (NIP 6161525811)
+  # KSeF credential — test environment token for Biuro Cyfrowe (NIP 6161525811)
   # ===========================================================================
 
   @ksef_token "20260405-EC-28297E1000-AA3A3DCEA6-57|nip-6161525811|c8948520f70e428f850a668b445c5ba3579da2cb100d43fbb725d377b3eaa819"
@@ -302,7 +302,7 @@ defmodule Firmowid.Seeds.Bytecraft do
     ing_base = %{
       institution_id: "ING_PL_INGBPLPW",
       institution_name: "ING Bank Śląski",
-      owner_name: "Bytecraft Collective sp. z o.o.",
+      owner_name: "Biuro Cyfrowe sp. z o.o.",
       requisition_id: mock_requisition.id
     }
 
@@ -356,7 +356,7 @@ defmodule Firmowid.Seeds.Bytecraft do
           iban: "PL73116022020000000512345678",
           institution_id: "BANK_MILLENNIUM_BIGBPLPW",
           institution_name: "Bank Millennium",
-          owner_name: "Bytecraft Collective sp. z o.o.",
+          owner_name: "Biuro Cyfrowe sp. z o.o.",
           gocardless_id: "c5831186-ca3e-4edc-a4f5-a48b1d1ead55",
           currency: "THB",
           is_default: false,

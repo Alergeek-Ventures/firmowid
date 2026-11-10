@@ -3,7 +3,7 @@ defmodule Firmowid.Seeds.Voidstack do
   @moduledoc """
   Seeds for VoidStack Labs — the evil org for authorization testing.
 
-  Dragan Krypt, former Bytecraft intern fired for mining crypto on the
+  Dragan Krypt, former Biuro Cyfrowe intern fired for mining crypto on the
   office Keurig, now runs a 12-person operation from a converted bowling
   alley in Bratislava.
   """

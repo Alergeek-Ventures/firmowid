@@ -185,7 +185,7 @@ mix phx.server
 ```
 
 Wejdź na [`localhost:4000`](http://localhost:4000), zaloguj się jako
-`kira@bytecraft.collective` / `kolejka123456` i otwórz
+`kinga@biurocyfrowe.pl` / `kolejka123456` i otwórz
 [`/development`](http://localhost:4000/development): znajdziesz tam pełny
 przewodnik po danych testowych, kontrahentach, projektach i scenariuszach KSeF.
 Wysłane maile zobaczysz w [`/mailbox`](http://localhost:4000/mailbox).

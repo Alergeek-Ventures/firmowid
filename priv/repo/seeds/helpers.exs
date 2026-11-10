@@ -2,7 +2,7 @@
 defmodule Firmowid.Seeds.Helpers do
   @moduledoc """
   Shared helpers for seed scripts: date utilities, idempotent insert helpers,
-  and common data (Bytecraft seller info).
+  and common data (Biuro Cyfrowe seller info).
 
   Finance-related helpers use `Ash.Seed` which bypasses actions/validations
   and writes directly to the data layer — ideal for deterministic seed data.
@@ -99,12 +99,12 @@ defmodule Firmowid.Seeds.Helpers do
   end
 
   # ---------------------------------------------------------------------------
-  # Bytecraft seller info — shared across all sales invoices
+  # Biuro Cyfrowe seller info — shared across all sales invoices
   # ---------------------------------------------------------------------------
 
   def bc_seller_info do
     %{
-      "seller_display_name" => "Bytecraft Collective sp. z o.o.",
+      "seller_display_name" => "Biuro Cyfrowe sp. z o.o.",
       "seller_address" => "ul. Marszałkowska 11/4, 00-624 Warszawa",
       "seller_nip" => "6161525811",
       "seller_account_number" => "PL61105000997603123456789012"

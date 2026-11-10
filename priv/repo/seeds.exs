@@ -3,7 +3,7 @@
 # The seed modules are organized by concern:
 #
 #   seeds/helpers.exs    — date utilities, idempotent insert helpers
-#   seeds/bytecraft.exs  — Bytecraft Collective org, users, counterparties, projects, bank accounts
+#   seeds/bytecraft.exs  — Biuro Cyfrowe org, users, counterparties, projects, bank accounts
 #   seeds/month_m2.exs   — 2 months ago: fully matched revenue, costs, THB, tags
 #   seeds/month_m1.exs   — 1 month ago: fully matched revenue, costs, THB, tags
 #   seeds/month_m0.exs   — current month: unmatched transactions, KSeF showcase, 1 matched entry
@@ -14,7 +14,7 @@
 #
 # Run with: mix run priv/repo/seeds.exs
 #
-# If the Bytecraft org already exists the database is considered seeded
+# If the Biuro Cyfrowe org already exists the database is considered seeded
 # and the entire script is a no-op (fast early exit).
 
 alias Firmowid.Core.Organization, as: CoreOrganization
@@ -48,7 +48,7 @@ already_seeded? =
 if already_seeded? do
   IO.puts("[seeds] Database already seeded — skipping")
 else
-  # — Primary organization: Bytecraft Collective —
+  # — Primary organization: Biuro Cyfrowe —
   ctx = Bytecraft.seed!()
 
   # — Monthly financial data (newest → oldest for tagging context) —

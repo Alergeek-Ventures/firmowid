@@ -21,7 +21,7 @@ defmodule FirmowidWeb.Development.Controllers.Mcp do
 
   plug :put_view, html: FirmowidWeb.Development.Components.McpPage
 
-  # Seeded Bytecraft bank account, as ChatGPT would repeat it from the conversation.
+  # Seeded Biuro Cyfrowe bank account, as ChatGPT would repeat it from the conversation.
   @seller_account_number "PL61105000997603123456789012"
   @mount_lifetime 900
 

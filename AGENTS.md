@@ -42,7 +42,7 @@ before concluding that one is missing.
 The local database is seeded by default, so sample accounts and data are
 available for development and manual testing.
 
-- Sign in with `kira@bytecraft.collective` / `kolejka123456`.
+- Sign in with `kinga@biurocyfrowe.pl` / `kolejka123456`.
 - Visit `/development` in the application for the full seed data guide.
 
 ## Use git

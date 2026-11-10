@@ -883,7 +883,7 @@ defmodule FirmowidWeb.Landing.Components.Sections do
                     <p class="mb-[0.8cqw] text-[0.85cqw] font-semibold text-grey-600 uppercase">
                       {gettext("Seller")}
                     </p>
-                    <p class="font-semibold">Bytecraft Collective sp. z o.o.</p>
+                    <p class="font-semibold">Biuro Cyfrowe sp. z o.o.</p>
                     <p>ul. Marszałkowska 11/4, 00-624 Warszawa</p>
                     <p>NIP: 6161525811</p>
                   </div>

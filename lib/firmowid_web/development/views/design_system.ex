@@ -256,7 +256,7 @@ defmodule FirmowidWeb.Development.Views.DesignSystem do
                 <.icon_button label="Edytuj dane firmy"><Lucideicons.pencil /></.icon_button>
               </:actions>
             </.card_header>
-            <.field_row label="Nazwa">Bytecraft Collective sp. z o.o.</.field_row>
+            <.field_row label="Nazwa">Biuro Cyfrowe sp. z o.o.</.field_row>
           </.card>
         </div>
       </.catalog_section>

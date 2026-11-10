@@ -1,5 +1,5 @@
 defmodule Firmowid.Seeds.Delegations do
-  @moduledoc "Seeds example business-trip delegations for Kira Voss."
+  @moduledoc "Seeds example business-trip delegations for Kinga Nowak."
 
   alias Firmowid.Delegations.Delegation
   alias Firmowid.Delegations.DelegationExpense

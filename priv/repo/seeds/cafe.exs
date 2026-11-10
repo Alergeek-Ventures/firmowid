@@ -78,12 +78,12 @@ defmodule Firmowid.Seeds.Cafe do
       IO.puts("[seeds] Kawiarnia Ziarno already seeded — skipping")
     else
       kira =
-        Ash.read_one!(Ash.Query.filter(CoreUser, email == ^"kira@bytecraft.collective"),
+        Ash.read_one!(Ash.Query.filter(CoreUser, email == ^"kinga@biurocyfrowe.pl"),
           authorize?: false
         )
 
       org = seed_organization(kira)
-      Helpers.seed_member!(kira.id, org.id, :admin, %{name: "Kira Voss"})
+      Helpers.seed_member!(kira.id, org.id, :admin, %{name: "Kinga Nowak"})
       bank = seed_bank_account(org)
       ctx = %{org_id: org.id, bank_id: bank.id}
 
