@@ -25,7 +25,7 @@
     U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
 }
 
-/* Lexend is kept only for the Firmowid wordmark (`font-logo`). */
+/* Lexend sets the Firmowid wordmark (`font-logo`) and the landing page (`font-landing`). */
 @font-face {
   font-family: "Lexend";
   font-style: normal;
