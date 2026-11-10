@@ -29,6 +29,11 @@ description: Use when the user reports a bug, crash, log, Sentry issue or data p
   - File contents in S3, such as the KSeF XML behind `blobs.blob_path`, are
     not reachable through it; ask the user for a file when the evidence you
     need is only there.
+- Read the code of the release that produced the evidence, not your
+  worktree's `HEAD`: take the SHA from the Sentry event's `release` tag, or for
+  current behavior from the `data-sentry-release` attribute of the `app.js`
+  script tag in the page source of https://firmowid.pl/ (empty means unknown).
+  Run `git fetch origin` and read that code with `git show <sha>:<path>`.
 - Name the evidence that ties a proposed fix to production before recommending
   it. When it does not match the code, look for release-only differences:
   runtime configuration and environment variables, paths resolved at compile
