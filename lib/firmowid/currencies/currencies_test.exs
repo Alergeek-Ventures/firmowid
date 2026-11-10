@@ -119,7 +119,7 @@ defmodule Firmowid.Currencies.CurrenciesTest do
   describe "historic_rates/2" do
     test "returns error when no rates for date" do
       date = ~D[2024-01-15]
-      assert {:error, {%Money.ExchangeRateError{}, _}} = DatabaseCache.historic_rates(nil, date)
+      assert {:error, {Money.ExchangeRateError, _}} = DatabaseCache.historic_rates(nil, date)
     end
 
     test "returns rates when cached for date" do
