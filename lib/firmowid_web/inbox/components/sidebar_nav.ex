@@ -89,11 +89,12 @@ defmodule FirmowidWeb.Inbox.Components.SidebarNav do
         stay hidden while the sidebar resizes and fade in once it has settled.
         One white pill sits under the current layer instead of each button
         painting its own. On the inbox a switch only patches the URL, so the
-        page keeps its state instead of mounting again. Other pages render the
-        sidebar anew, so the hook
-        slides the pill over from the layer seen last and dissolves the new
-        layer's content in; the labels invert over the pill (difference blend),
-        so they stay readable while it moves.
+        pill stays in the DOM and its own transition slides it. Other pages
+        render the sidebar anew, so after a live navigation the hook starts the
+        pill at the layer seen last; after a full page load the server already
+        painted it in place. When the pill moves, the hook dissolves the new
+        layer's content in; the labels invert over the pill (difference
+        blend), so they stay readable while it moves.
       --%>
       <div
         :if={@layered?}
@@ -160,20 +161,46 @@ defmodule FirmowidWeb.Inbox.Components.SidebarNav do
         </.link>
       </div>
       <script :type={Phoenix.LiveView.ColocatedHook} name=".LayerSwitch">
+        // After a full page load the server painted the switch and the content
+        // at their layer already; moving them in again would replay the switch.
+        let painted = false
+
         export default {
-          mounted() { this.sync() },
-          updated() { this.sync() },
-          sync() {
+          mounted() {
+            // Clicked while another page is still loading, a patch would reach
+            // the inbox being left, fail and reload it; navigate instead.
+            this.el.addEventListener(
+              "click",
+              (e) => {
+                const link = e.target.closest("[data-phx-link=patch]")
+                if (link && this.liveSocket.hasPendingLink()) link.dataset.phxLink = "redirect"
+              },
+              true
+            )
+            this.sync(painted ? "navigated" : "loaded")
+            painted = true
+          },
+          updated() { this.sync("patched") },
+          sync(how) {
             const layer = this.el.dataset.layer
             let previous = null
             try {
               previous = sessionStorage.getItem("sidebar-layer")
               sessionStorage.setItem("sidebar-layer", layer)
             } catch {}
-            if (!previous || previous === layer) return
+            if (how === "loaded" || !previous || previous === layer) return
             if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return
-            // Start the pill where the last layer had it; clearing the inline
-            // style lets its transition carry it to the current layer.
+            if (how === "navigated") this.slideFrom(previous)
+            document.querySelectorAll("[data-layer-dissolve]").forEach((el) => {
+              el.classList.remove("animate-dissolve")
+              el.offsetWidth
+              el.classList.add("animate-dissolve")
+            })
+          },
+          // A new pill starts where the last layer had it; clearing the inline
+          // style lets its transition carry it to the current layer. A patched
+          // pill is already on its way, and moving it back would replay it.
+          slideFrom(previous) {
             const pill = this.el.querySelector("[data-layer-pill]")
             pill.style.transition = "none"
             const collapsed =
@@ -184,11 +211,6 @@ defmodule FirmowidWeb.Inbox.Components.SidebarNav do
             pill.offsetWidth
             pill.style.transition = ""
             pill.style.translate = ""
-            document.querySelectorAll("[data-layer-dissolve]").forEach((el) => {
-              el.classList.remove("animate-dissolve")
-              el.offsetWidth
-              el.classList.add("animate-dissolve")
-            })
           }
         }
       </script>
