@@ -77,7 +77,9 @@ defmodule FirmowidWeb.Inbox.Components.SidebarNav do
         on a grey-900 tray (Figma "Sidebar / Przełącznik pionowy"). Its buttons
         stay hidden while the sidebar resizes and fade in once it has settled.
         One white pill sits under the current layer instead of each button
-        painting its own. Every page renders the sidebar anew, so the hook
+        painting its own. On the inbox a switch only patches the URL, so the
+        page keeps its state instead of mounting again. Other pages render the
+        sidebar anew, so the hook
         slides the pill over from the layer seen last and dissolves the new
         layer's content in; the labels invert over the pill (difference blend),
         so they stay readable while it moves.
@@ -104,7 +106,8 @@ defmodule FirmowidWeb.Inbox.Components.SidebarNav do
           :for={{layer, icon} <- [company: "building-2", me: "user"]}
           id={"app-sidebar-layer-#{layer}"}
           kind="unstyled"
-          navigate={Navigation.inbox_path(layer)}
+          navigate={if @current_id != :inbox, do: Navigation.inbox_path(layer)}
+          patch={if @current_id == :inbox, do: Navigation.inbox_path(layer)}
           aria-current={@layer == layer && "page"}
           phx-hook="TippyWhenTruncated"
           data-tippy-content={layer_label(layer)}
