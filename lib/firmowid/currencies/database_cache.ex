@@ -20,16 +20,14 @@ defmodule Firmowid.Currencies.DatabaseCache do
 
   @impl true
   def latest_rates(_cache) do
-    error_message = "Latest rates caching not implemented"
-    {:error, {Money.ExchangeRateError.exception(message: error_message), error_message}}
+    {:error, {Money.ExchangeRateError, "Latest rates caching not implemented"}}
   end
 
   @impl true
   def historic_rates(_cache, date) do
     case get_cache_entry(date) do
       nil ->
-        error_message = "No rates available for #{date}"
-        {:error, {Money.ExchangeRateError.exception(message: error_message), error_message}}
+        {:error, {Money.ExchangeRateError, "No rates available for #{date}"}}
 
       entry ->
         {:ok, convert_rates_to_decimal(entry.rates)}
