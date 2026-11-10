@@ -11,6 +11,8 @@ defmodule FirmowidWeb.Assistant.Utilities.Presentation do
   alias Firmowid.Invoicing
   alias Firmowid.Scope
   alias Firmowid.Timetracker.Project
+  alias Firmowid.Timetracker.Session
+  alias FirmowidWeb.Assistant.Utilities.Changes
   alias FirmowidWeb.Invoicing.Utilities.Navigation
   alias FirmowidWeb.Management.Utilities.Navigation, as: ManagementNavigation
 
@@ -180,10 +182,15 @@ defmodule FirmowidWeb.Assistant.Utilities.Presentation do
     Ecto.UUID.load!(<<timestamp::48, 7::4, rand_a::12, 2::2, rand_b::62>>)
   end
 
-  # One sentence about what was looked at, in the user's terms, and one line per step.
-  defp steps([]), do: nil
-
+  # One sentence about what was looked at, in the user's terms, and one line per step. Calls
+  # waiting for approval are on the approval card, not steps.
   defp steps(tools) do
+    tools |> Enum.reject(&(&1.status == :pending)) |> taken_steps()
+  end
+
+  defp taken_steps([]), do: nil
+
+  defp taken_steps(tools) do
     items =
       tools
       |> Enum.filter(&(&1.status == :done and &1.count != nil))
@@ -446,28 +453,41 @@ defmodule FirmowidWeb.Assistant.Utilities.Presentation do
     {:ok, %{tool_calls: calls}} =
       Tools.extract(%{tool_calls: Assistant.pending_calls(conversation)})
 
-    calls = Enum.map(calls, &{&1, references(&1)})
+    calls = Enum.map(calls, &call_changes(&1, scope))
 
     references =
       calls
       |> Enum.flat_map(fn
-        {_call, {:ok, references}} -> references
-        {_call, :error} -> []
+        {_call, {:ok, references}, _changes} -> references
+        {_call, :error, _changes} -> []
       end)
       |> Enum.uniq()
 
     records = load_records(references, scope)
 
     previews =
-      Enum.map(calls, fn {call, references} ->
+      Enum.map(calls, fn {call, references, changes} ->
         %{
           id: call.id,
           label: tool_label(call.name),
-          records: preview_records(references, records)
+          records: preview_records(references, records),
+          changes: changes
         }
       end)
 
     %{available?: Enum.all?(previews, &Enum.all?(&1.records)), calls: previews}
+  end
+
+  # Writes that change fields show them before and after; links show only the linked records.
+  defp call_changes(call, scope) do
+    if Changes.covers?(call.name) do
+      case Changes.preview(call, scope) do
+        {:ok, references, changes} -> {call, {:ok, references}, changes}
+        :error -> {call, :error, []}
+      end
+    else
+      {call, references(call), []}
+    end
   end
 
   defp preview_records({:ok, references}, records), do: Enum.map(references, &Map.get(records, &1))
@@ -519,6 +539,17 @@ defmodule FirmowidWeb.Assistant.Utilities.Presentation do
     end
   end
 
+  defp read_records(:project, ids, scope) do
+    Enum.flat_map(ids, &(&1 |> Project.get(scope: scope) |> found()))
+  end
+
+  defp read_records(:session, ids, scope) do
+    Enum.flat_map(
+      ids,
+      &(&1 |> Session.current_session(scope: scope, load: [:project]) |> found())
+    )
+  end
+
   defp read_records(kind, ids, scope) do
     {read, loads} =
       case kind do
@@ -538,6 +569,28 @@ defmodule FirmowidWeb.Assistant.Utilities.Presentation do
       {:error, %Invalid{}} -> []
       {:error, error} -> raise Ash.Error.to_error_class(error)
     end
+  end
+
+  defp found({:ok, record}), do: [record]
+  defp found({:error, %Forbidden{}}), do: []
+  defp found({:error, %Invalid{}}), do: []
+  defp found({:error, error}), do: raise(Ash.Error.to_error_class(error))
+
+  defp record(:session, session) do
+    minutes =
+      session.end_datetime && DateTime.diff(session.end_datetime, session.start_datetime, :minute)
+
+    %{
+      label: (session.project && session.project.name) || gettext("Work session"),
+      description: session.title,
+      amount:
+        minutes &&
+          "#{div(minutes, 60)}:#{String.pad_leading(to_string(rem(minutes, 60)), 2, "0")}",
+      amount_tone: nil,
+      date: DateTime.to_date(session.start_datetime),
+      path: nil,
+      kind: gettext("Work session")
+    }
   end
 
   defp record(:sales, invoice) do
@@ -682,5 +735,27 @@ defmodule FirmowidWeb.Assistant.Utilities.Presentation do
   defp tool_label("preview_sales_invoice_correction"), do: gettext("Check correction details")
   defp tool_label("list_analysis_entries"), do: gettext("Search analysis entries")
   defp tool_label("list_analysis_tags"), do: gettext("Search analysis tags")
+
+  defp tool_label("update_sales_invoice_internal_note"), do: gettext("Change the sales invoice note")
+
+  defp tool_label("update_cost_invoice_internal_note"), do: gettext("Change the cost invoice note")
+
+  defp tool_label("update_transaction_internal_note"), do: gettext("Change the transaction note")
+  defp tool_label("connect_transaction_salary"), do: gettext("Assign the transfer to a salary")
+
+  defp tool_label("disconnect_transaction_salary"), do: gettext("Unassign the transfer from a salary")
+
+  defp tool_label("set_analysis_entry_category"), do: gettext("Set the analysis category")
+
+  defp tool_label("set_analysis_entry_project_tags"), do: gettext("Assign projects in the analysis")
+
+  defp tool_label("start_session"), do: gettext("Start a work session")
+  defp tool_label("stop_current_session"), do: gettext("Stop the work session")
+  defp tool_label("edit_session"), do: gettext("Edit a work session")
+  defp tool_label("add_sessions"), do: gettext("Add work sessions")
+  defp tool_label("create_leave_request"), do: gettext("Request leave")
+  defp tool_label("update_profile"), do: gettext("Update your profile")
+  defp tool_label("create_sales_invoice_draft"), do: gettext("Save an invoice draft")
+  defp tool_label("update_sales_invoice_draft"), do: gettext("Update the invoice draft")
   defp tool_label(_name), do: gettext("Unknown operation")
 end
