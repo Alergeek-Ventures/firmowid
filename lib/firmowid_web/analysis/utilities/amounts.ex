@@ -4,7 +4,7 @@ defmodule FirmowidWeb.Analysis.Utilities.Amounts do
   alias Firmowid.Cldr.Number
 
   @doc "An amount in whole złoty."
-  @spec whole_money(Decimal.t()) :: String.t()
+  @spec whole_money(Decimal.t() | integer()) :: String.t()
   def whole_money(amount), do: Number.to_string!(amount, currency: :PLN, fractional_digits: 0)
 
   @doc "The share of a positive `total` as a percent label; empty otherwise."
