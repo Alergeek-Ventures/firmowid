@@ -14214,16 +14214,6 @@ msgstr ""
 msgid "is not a valid signed KSeF authentication request"
 msgstr ""
 
-#: lib/firmowid/timetracker/leave_request.ex
-#, elixir-autogen, elixir-format
-msgid "is not valid for this absence category"
-msgstr ""
-
-#: lib/firmowid/timetracker/leave_request.ex
-#, elixir-autogen, elixir-format
-msgid "is not valid for this leave category"
-msgstr ""
-
 #: lib/firmowid_web/landing/views/terms_of_service.ex
 #, elixir-autogen, elixir-format
 msgid "is possible using an email address or a Google account (OAuth)."
