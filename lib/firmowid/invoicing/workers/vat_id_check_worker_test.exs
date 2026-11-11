@@ -53,14 +53,15 @@ defmodule Firmowid.Invoicing.Workers.VatIdCheckWorkerTest do
     assert "vat-id-#{inactive.id}" in inbox_ids
     refute "vat-id-#{active.id}" in inbox_ids
 
-    fixed =
-      Invoicing.update_counterparty!(
-        Invoicing.get_counterparty!(inactive.id, scope: scope),
-        %{tax_id: "123456789B01"},
-        scope: scope
-      )
+    Invoicing.update_counterparty!(
+      Invoicing.get_counterparty!(inactive.id, scope: scope),
+      %{tax_id: "123456789B01"},
+      scope: scope
+    )
 
-    assert is_nil(fixed.vat_id_status)
+    # Saving a new number checks it right away (Oban runs inline in tests).
+    assert %{vat_id_status: :active, vat_id_checked_at: %DateTime{}} =
+             Invoicing.get_counterparty!(inactive.id, scope: scope)
   end
 
   test "the daily run queues a check for every organization" do
