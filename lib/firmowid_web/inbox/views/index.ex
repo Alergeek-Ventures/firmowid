@@ -245,8 +245,9 @@ defmodule FirmowidWeb.Inbox.Views.Index do
         </div>
         <%!-- Starts level with the first card of the queue, below its tier heading (18px + 12px gap). --%>
         <aside class={["flex flex-col gap-4 lg:sticky lg:top-8", @items != [] && "lg:mt-7.5"]}>
+          <%!-- A session still running stays stoppable after hourly billing is turned off. --%>
           <.session_panel
-            :if={@layer == :me and @current_org.bills_hourly}
+            :if={@layer == :me and (@current_org.bills_hourly or not is_nil(@session))}
             session={@session}
             last_session={@last_session}
           />
