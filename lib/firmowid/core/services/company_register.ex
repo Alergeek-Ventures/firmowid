@@ -1,9 +1,9 @@
 defmodule Firmowid.Core.Services.CompanyRegister do
   @moduledoc """
   Looks companies up in the VAT white list and KRS, then sole proprietorships
-  in CEIDG, falling back to GUS when configured. Answers are cached once per
-  NIP for all organizations. Missing NIPs are batched by 30 for MF; KRS, CEIDG
-  and GUS calls are sequential.
+  in CEIDG, falling back to GUS when configured. Answers are cached per NIP
+  for all organizations and looked up again once stale. Missing NIPs are
+  batched by 30 for MF; KRS, CEIDG and GUS calls are sequential.
   Registry failures are returned to the caller without caching them.
   """
 
@@ -27,13 +27,14 @@ defmodule Firmowid.Core.Services.CompanyRegister do
 
   @doc """
   Returns the cached register data of the valid Polish `nips` by NIP, first
-  looking up and storing those not cached yet.
+  looking up and storing those not cached yet or stale: without an activity
+  after 30 days, otherwise after a year.
   """
   @spec fetch([String.t()], Scope.t()) ::
           {:ok, %{String.t() => RegisteredCompany.t()}} | {:error, term()}
   def fetch(nips, scope) do
     nips = nips |> Enum.filter(&Nip.valid?/1) |> Enum.map(&Nip.normalize_digits/1) |> Enum.uniq()
-    cached = Core.list_registered_companies!(nips, scope: scope)
+    cached = nips |> Core.list_registered_companies!(scope: scope) |> Enum.reject(&stale?/1)
     missing = nips -- Enum.map(cached, & &1.nip)
 
     missing
@@ -50,6 +51,12 @@ defmodule Firmowid.Core.Services.CompanyRegister do
       {:ok, companies} -> {:ok, Map.new(companies, &{&1.nip, &1})}
       {:error, _reason} = error -> error
     end
+  end
+
+  # Registers fill in late and companies change activity, so cached answers are looked up again.
+  defp stale?(company) do
+    max_days = if company.pkd, do: 365, else: 30
+    DateTime.diff(DateTime.utc_now(), company.updated_at, :day) >= max_days
   end
 
   defp register_batch(nips, subjects, scope) do
