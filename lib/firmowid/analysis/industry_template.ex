@@ -41,13 +41,6 @@ defmodule Firmowid.Analysis.IndustryTemplate do
     retail: [:store, :online, :sales, :other_income]
   }
 
-  # Costs an owner in the industry watches as a share of income.
-  @key_costs %{
-    services: [people: [:payroll, :subcontractors], software: [:software], premises: [:premises]],
-    gastronomy: [food: [:goods], labour: [:payroll], premises: [:premises]],
-    retail: [goods: [:goods], labour: [:payroll], premises: [:premises]]
-  }
-
   # What each category covers, for the classifier choosing one from an entry's description.
   @descriptions %{
     goods: "Goods for resale, raw materials and ingredients",
@@ -100,10 +93,6 @@ defmodule Firmowid.Analysis.IndustryTemplate do
   end
 
   def categories(industry, :income), do: Map.fetch!(@income_categories, industry)
-
-  @doc "Lists the industry's key costs, each with the expense categories it sums."
-  @spec key_costs(industry()) :: [{atom(), [category()]}]
-  def key_costs(industry), do: Map.fetch!(@key_costs, industry)
 
   @doc "Describes what a category covers."
   @spec describe(category()) :: String.t()

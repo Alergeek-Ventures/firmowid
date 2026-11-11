@@ -148,24 +148,6 @@ defmodule Firmowid.Analysis.CategoryReview do
   end
 
   @doc """
-  Sums the industry's key costs from confirmed or suggested categories, with
-  their share of income (nil without income).
-  """
-  @spec key_costs(map()) :: [%{key: atom(), amount: Decimal.t(), share: Decimal.t() | nil}]
-  def key_costs(review) do
-    expenses = Enum.filter(review.groups, &(&1.side == :expenses))
-
-    for {key, categories} <- IndustryTemplate.key_costs(review.industry) do
-      amount = expenses |> Enum.filter(&((&1.category || &1.suggestion) in categories)) |> sum()
-
-      share =
-        if Decimal.positive?(review.income.total), do: Decimal.div(amount, review.income.total)
-
-      %{key: key, amount: amount, share: share}
-    end
-  end
-
-  @doc """
   Narrows the review's groups to `months`: `amount` becomes the sum over those
   months and `average` the group's mean monthly amount over `compared` months
   (nil without any). Groups absent from the period keep a zero amount, so
