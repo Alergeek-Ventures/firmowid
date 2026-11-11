@@ -28,8 +28,9 @@ defmodule Firmowid.Analysis.Services.CategoryClassifier do
   Classifies the year's entries still waiting for a category, and with
   `refresh` also re-suggests those the classifier already suggested, after the
   owner corrected a suggestion. Fails if any entry failed, or if the register
-  lookup of the entries' counterparties failed; only a complete run tells the
-  analysis to reload, so failing runs never queue themselves again.
+  lookup of the entries' counterparties failed; only a complete run that
+  classified entries tells the analysis to reload, so failing and empty runs
+  never queue themselves again.
   """
   @spec classify(integer(), boolean(), Scope.t()) ::
           :ok | {:error, :classification_failed | term()}
@@ -41,6 +42,11 @@ defmodule Firmowid.Analysis.Services.CategoryClassifier do
         do: review.unclassified ++ review.classifier_suggested,
         else: review.unclassified
 
+    # Nothing to classify tells no one to reload, so an open analysis does not queue the run again.
+    if entries == [], do: :ok, else: classify_entries(entries, review, scope)
+  end
+
+  defp classify_entries(entries, review, scope) do
     with {:ok, companies} <- CompanyRegister.fetch(Enum.map(entries, & &1.nip), scope) do
       examples = examples(review, scope)
 
