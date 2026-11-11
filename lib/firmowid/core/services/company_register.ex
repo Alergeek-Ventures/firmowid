@@ -68,6 +68,8 @@ defmodule Firmowid.Core.Services.CompanyRegister do
       with {:ok, attrs} <- vat_activity(nip, subject),
            {:ok, attrs} <- ceidg_fallback(attrs),
            {:ok, attrs} <- gus_fallback(attrs),
+           # A refreshed entry drops an activity the registers no longer report.
+           attrs = Map.merge(%{pkd: nil, pkd_name: nil}, attrs),
            {:ok, company} <- Core.register_company(attrs, scope: scope) do
         {:cont, {:ok, [company | companies]}}
       else
