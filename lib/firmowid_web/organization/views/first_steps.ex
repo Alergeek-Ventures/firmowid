@@ -16,6 +16,7 @@ defmodule FirmowidWeb.Organization.Views.FirstSteps do
   import FirmowidUI.Components.Link
   import FirmowidWeb.Organization.Components.CompanyCard
   import FirmowidWeb.Organization.Components.OnboardingHeader
+  import FirmowidWeb.Organization.Components.OnboardingStep
   import Phoenix.Component, except: [link: 1]
 
   alias Ash.Notifier.Notification
@@ -26,6 +27,7 @@ defmodule FirmowidWeb.Organization.Views.FirstSteps do
   alias Firmowid.Ksef.Credential
   alias FirmowidUI.Ksef.Connection
   alias FirmowidWeb.Core.Endpoint
+  alias FirmowidWeb.Inbox.Utilities.Navigation, as: InboxNavigation
   alias FirmowidWeb.Infrastructure.UserAuth
   alias FirmowidWeb.Infrastructure.Utilities.PosthogBusinessEvents
   alias FirmowidWeb.Organization.Utilities.Navigation, as: OrganizationNavigation
@@ -40,7 +42,7 @@ defmodule FirmowidWeb.Organization.Views.FirstSteps do
   @impl true
   def render(assigns) do
     ~H"""
-    <div class="mx-auto flex max-w-7xl flex-col gap-4 px-4 pb-8 sm:px-8 lg:px-20 lg:pb-10">
+    <div class="mx-auto flex w-full max-w-7xl flex-col gap-4 px-4 pb-8 sm:px-8 lg:px-20 lg:pb-10">
       <.onboarding_header exit_path={@exit_path} back={back_path(@step)} step={step_number(@step)} />
       <div class="grid items-start gap-10 lg:grid-cols-[minmax(0,1fr)_26rem] lg:gap-16">
         <%!-- The card stays under the header while the steps beside it scroll. --%>
@@ -62,8 +64,8 @@ defmodule FirmowidWeb.Organization.Views.FirstSteps do
                     rotate={6}
                     pressed={:ksef not in @stamped_on_arrival}
                   />
-                <% {:pending, hint} -> %>
-                  <.stamp_slot label="KSeF" hint={hint} state={:pending} />
+                <% :connecting -> %>
+                  <.stamp_slot label="KSeF" hint={gettext("connecting")} state={:active} />
                 <% state -> %>
                   <.stamp_slot label="KSeF" hint={gettext("waiting for a stamp")} state={state} />
               <% end %>
@@ -89,10 +91,9 @@ defmodule FirmowidWeb.Organization.Views.FirstSteps do
           </.company_card>
         </div>
         <section class="order-1 lg:order-2" aria-live="polite">
-          <%!-- A new id per step makes the panel enter anew. --%>
-          <div id={"step-#{@step}"} class="motion-safe:animate-step-in motion-reduce:animate-fade-in">
+          <.onboarding_step id={"step-#{@step}"}>
             <.step_panel {assigns} />
-          </div>
+          </.onboarding_step>
         </section>
       </div>
     </div>
@@ -160,14 +161,12 @@ defmodule FirmowidWeb.Organization.Views.FirstSteps do
           />
         </div>
     <% end %>
-    <.link
+    <.secondary_link
       :if={@ksef_auth_status not in [:working | @connecting]}
-      kind="unstyled"
       patch={OrganizationNavigation.first_steps_path(:bank)}
-      class="mt-6 inline-block text-[0.9375rem] text-grey-700 underline underline-offset-4"
     >
       {gettext("I will do it later. The stamp will wait.")}
-    </.link>
+    </.secondary_link>
     """
   end
 
@@ -175,9 +174,9 @@ defmodule FirmowidWeb.Organization.Views.FirstSteps do
     ~H"""
     <p
       :if={@ksef_auth_status == :working and @ksef_fetching?}
-      class="mb-6 flex w-fit items-center gap-2.5 rounded-full border border-moss-300 bg-moss-100 py-1.5 pr-3.5 pl-2.5 text-sm font-medium text-moss-800"
+      class="mb-6 flex w-fit items-center gap-2.5 rounded-full border border-grey-200 bg-white py-1.5 pr-3.5 pl-2.5 text-sm text-grey-600"
     >
-      <span class="size-3.5 rounded-full border-2 border-moss-300 border-t-moss-800 motion-safe:animate-spin"></span>
+      <span class="size-3.5 rounded-full border-2 border-grey-200 border-t-grey-500 motion-safe:animate-spin"></span>
       {ngettext(
         "KSeF: %{count} invoice so far, fetching more",
         "KSeF: %{count} invoices so far, fetching more",
@@ -241,7 +240,7 @@ defmodule FirmowidWeb.Organization.Views.FirstSteps do
       <%!-- Room for the full list, so the page does not jump while searching. --%>
       <div
         id="bank-results"
-        class="mt-3 grid min-h-78 auto-rows-[3.5rem] grid-cols-2 content-start gap-2"
+        class="mt-3 grid min-h-78 auto-rows-14 grid-cols-2 content-start gap-2"
       >
         <p
           :if={visible_institutions(@institutions, @bank_query) == [] and @institutions != []}
@@ -266,13 +265,9 @@ defmodule FirmowidWeb.Organization.Views.FirstSteps do
         </.button>
       </div>
 
-      <.link
-        kind="unstyled"
-        patch={OrganizationNavigation.first_steps_path(:plan)}
-        class="mt-6 inline-block text-[0.9375rem] text-grey-700 underline underline-offset-4"
-      >
+      <.secondary_link patch={OrganizationNavigation.first_steps_path(:plan)}>
         {gettext("Skip for now")}
-      </.link>
+      </.secondary_link>
     <% end %>
     """
   end
@@ -299,6 +294,11 @@ defmodule FirmowidWeb.Organization.Views.FirstSteps do
     <p class="mt-1.5 text-[0.9375rem]/relaxed text-grey-700">
       {gettext(
         "Only when the company outgrows the Free plan: a third person on the team, a second bank account or a fourth project. We will write to you as soon as you start going over the limits."
+      )}
+    </p>
+    <p class="mt-4 text-[0.9375rem]/relaxed font-medium text-grey-900">
+      {gettext(
+        "We believe in your success. We want your company to grow, and we want to grow with it."
       )}
     </p>
 
@@ -397,8 +397,8 @@ defmodule FirmowidWeb.Organization.Views.FirstSteps do
 
   defp lead_styles, do: "mt-4 text-[1.0625rem]/relaxed text-grey-700"
 
-  # KSeF has no way back: the company is already created by then.
-  defp back_path(:ksef), do: nil
+  # The company details are edited on the onboarding page, which saves them instead of creating a company.
+  defp back_path(:ksef), do: {:navigate, OrganizationNavigation.onboarding_path(:branza)}
   defp back_path(:bank), do: OrganizationNavigation.first_steps_path(:ksef)
   defp back_path(:plan), do: OrganizationNavigation.first_steps_path(:bank)
   defp back_path(:gotowe), do: OrganizationNavigation.first_steps_path(:plan)
@@ -406,6 +406,23 @@ defmodule FirmowidWeb.Organization.Views.FirstSteps do
   defp step_number(:ksef), do: 4
   defp step_number(:bank), do: 5
   defp step_number(_plan_or_gotowe), do: :done
+
+  attr :patch, :string, required: true
+  slot :inner_block, required: true
+
+  # A way past the step that is not its main action: a quiet text link on a
+  # wide screen, a full-width button on a phone, where a link is too small to tap.
+  defp secondary_link(assigns) do
+    ~H"""
+    <.link
+      kind="unstyled"
+      patch={@patch}
+      class="mt-6 inline-block text-[0.9375rem] text-grey-700 underline underline-offset-4 max-sm:flex max-sm:w-full max-sm:justify-center max-sm:rounded-xl max-sm:border max-sm:border-grey-300 max-sm:bg-white max-sm:py-3.5 max-sm:font-medium max-sm:text-grey-900 max-sm:no-underline"
+    >
+      {render_slot(@inner_block)}
+    </.link>
+    """
+  end
 
   attr :fetching?, :boolean, required: true
   attr :invoices, :integer, required: true
@@ -565,7 +582,8 @@ defmodule FirmowidWeb.Organization.Views.FirstSteps do
         socket
       end
 
-    {:noreply, push_navigate(socket, to: UserAuth.signed_in_path_for_user(user, organization.id))}
+    # The inbox gathers what the new company needs to do next.
+    {:noreply, push_navigate(socket, to: InboxNavigation.inbox_path(:company))}
   end
 
   def handle_event(event, params, socket)
@@ -687,12 +705,9 @@ defmodule FirmowidWeb.Organization.Views.FirstSteps do
 
   # ── Card content ─────────────────────────────────────────────────────
 
-  defp ksef_stamp(%{ksef_auth_status: :working, ksef_fetching?: false}), do: :done
-
-  defp ksef_stamp(%{ksef_auth_status: :working, invoice_count: count}),
-    do: {:pending, ngettext("%{count} invoice", "%{count} invoices", count)}
-
-  defp ksef_stamp(%{ksef_auth_status: status}) when status in @connecting, do: {:pending, gettext("connecting")}
+  # A connected KSeF earns the stamp; the step shows the invoices that keep arriving.
+  defp ksef_stamp(%{ksef_auth_status: :working}), do: :done
+  defp ksef_stamp(%{ksef_auth_status: status}) when status in @connecting, do: :connecting
 
   defp ksef_stamp(%{step: :ksef}), do: :active
   defp ksef_stamp(_assigns), do: :waiting
@@ -747,7 +762,9 @@ defmodule FirmowidWeb.Organization.Views.FirstSteps do
   end
 
   # The banks most Polish companies use come first; the rest keep GoCardless's order.
+  # GoCardless's mock bank, listed only in development, leads them.
   @popular_banks [
+    "sandbox finance",
     "pko",
     "mbank",
     "ing",

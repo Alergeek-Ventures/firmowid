@@ -6,6 +6,9 @@ defmodule FirmowidWeb.Organization.Views.Index do
   register data it finds, and the industry, hourly billing and VAT status. Creating
   the company switches to it and continues with the first steps (KSeF, bank). An
   employee joins with an invite code instead.
+
+  An admin who goes back from the first steps edits the company they are setting up
+  in the same two steps, instead of creating another one.
   """
   use FirmowidWeb, :live_view
 
@@ -14,13 +17,16 @@ defmodule FirmowidWeb.Organization.Views.Index do
   import FirmowidUI.Components.Link
   import FirmowidWeb.Organization.Components.CompanyCard
   import FirmowidWeb.Organization.Components.OnboardingHeader
+  import FirmowidWeb.Organization.Components.OnboardingStep
   import Phoenix.Component, except: [link: 1]
 
   alias Ash.Error.Invalid
   alias Firmowid.Analysis.IndustryTemplate
   alias Firmowid.Core
   alias Firmowid.Core.Nip
+  alias Firmowid.Core.Organization
   alias FirmowidWeb.Analysis.Utilities.Industry
+  alias FirmowidWeb.Infrastructure.Hooks.RequireOrganization
   alias FirmowidWeb.Infrastructure.UserAuth
   alias FirmowidWeb.Invoicing.Utilities.VatExemption
   alias FirmowidWeb.Organization.Utilities.Navigation, as: OrganizationNavigation
@@ -30,7 +36,11 @@ defmodule FirmowidWeb.Organization.Views.Index do
     ~H"""
     <div class="min-h-screen w-full bg-grey-100">
       <div class="mx-auto flex max-w-7xl flex-col gap-4 px-4 pb-8 sm:px-8 lg:px-20 lg:pb-10">
-        <.onboarding_header exit_path={@exit_path} back={back_path(@step)} step={step_number(@step)} />
+        <.onboarding_header
+          exit_path={@exit_path}
+          back={back_path(@step, @organization)}
+          step={step_number(@step)}
+        />
 
         <div class="grid items-start gap-10 lg:grid-cols-[minmax(0,1fr)_26rem] lg:gap-16">
           <%!-- The card stays under the header while the steps beside it scroll. --%>
@@ -38,13 +48,9 @@ defmodule FirmowidWeb.Organization.Views.Index do
             <.card_for_step {assigns} />
           </div>
           <section class="order-1 lg:order-2" aria-live="polite">
-            <%!-- A new id per step makes the panel enter anew. --%>
-            <div
-              id={"step-#{@step}"}
-              class="motion-safe:animate-step-in motion-reduce:animate-fade-in"
-            >
+            <.onboarding_step id={"step-#{@step}"}>
               <.step_panel {assigns} />
-            </div>
+            </.onboarding_step>
           </section>
         </div>
       </div>
@@ -89,17 +95,18 @@ defmodule FirmowidWeb.Organization.Views.Index do
     <.company_card
       id="company-card"
       name={@company && @company.name}
-      rows={company_rows(@company, @step)}
+      rows={company_rows(@company, @step, @organization)}
       source={@company && @company.source}
     >
       <:stamps :let={card}>
-        <%= if @step == :branza and @industry do %>
+        <%!-- A company being edited already has the stamp, so it is not pressed again. --%>
+        <%= if (@step == :branza or not is_nil(@organization)) and not is_nil(@industry) do %>
           <.stamp
             card={card}
             text={billing_stamp_text(@industry, @bills_hourly)}
             icon={billing_icon(@bills_hourly)}
             rotate={-9}
-            pressed
+            pressed={is_nil(@organization)}
           />
         <% else %>
           <.stamp_slot label={gettext("Industry")} hint={gettext("step %{number}", number: 3)} />
@@ -237,7 +244,8 @@ defmodule FirmowidWeb.Organization.Views.Index do
         </p>
       </div>
 
-      <div class="mt-5">
+      <%!-- The owner's name belongs to their member, which the company details do not change. --%>
+      <div :if={is_nil(@organization)} class="mt-5">
         <.input
           id="owner-name"
           name="owner_name"
@@ -264,11 +272,15 @@ defmodule FirmowidWeb.Organization.Views.Index do
       {gettext("What does your company do?")}
     </h1>
     <p class="mt-3 text-[1.0625rem]/relaxed text-grey-700">
-      {gettext(
-        "Choose how Analysis groups your income and costs. You can change it in the company settings."
-      )}
+      {gettext("Firmowid adapts to your industry. You can change it later in the company settings.")}
     </p>
-    <.form for={%{}} id="industry-form" phx-change="industry_changed" phx-submit="create" class="mt-5">
+    <.form
+      for={%{}}
+      id="industry-form"
+      phx-change="industry_changed"
+      phx-submit={if @organization, do: "update", else: "create"}
+      class="mt-5"
+    >
       <fieldset>
         <legend class="sr-only">{gettext("Industry")}</legend>
         <div class="grid gap-2">
@@ -278,6 +290,7 @@ defmodule FirmowidWeb.Organization.Views.Index do
             value={industry}
             checked={@industry == industry}
             title={label}
+            icon={Industry.icon(industry)}
             description={Industry.description(industry)}
             note={
               @company.pkd && @company.suggested_industry == industry &&
@@ -299,7 +312,7 @@ defmodule FirmowidWeb.Organization.Views.Index do
             title={gettext("Yes, I sell hours of work")}
             description={
               gettext(
-                "We will turn on time tracking and projects with an hours budget. Analysis will show revenue per hour."
+                "We will turn on time tracking and projects with an hours budget, and show revenue per hour."
               )
             }
           />
@@ -355,7 +368,13 @@ defmodule FirmowidWeb.Organization.Views.Index do
         class="mt-5 rounded-lg bg-brick-100 px-4 py-3 text-sm text-brick-800"
         role="alert"
       >
-        <p class="font-medium">{gettext("We could not create the company.")}</p>
+        <p class="font-medium">
+          <%= if @organization do %>
+            {gettext("We could not save the company.")}
+          <% else %>
+            {gettext("We could not create the company.")}
+          <% end %>
+        </p>
         <ul class="mt-1 list-disc pl-5">
           <li :for={message <- @create_errors}>{message}</li>
         </ul>
@@ -413,9 +432,11 @@ defmodule FirmowidWeb.Organization.Views.Index do
 
   # ── Building blocks ──────────────────────────────────────────────────
 
-  defp back_path(:start), do: nil
-  defp back_path(:branza), do: OrganizationNavigation.onboarding_path(:firma)
-  defp back_path(_firma_or_dolacz), do: OrganizationNavigation.onboarding_path()
+  defp back_path(:start, _organization), do: nil
+  defp back_path(:branza, _organization), do: OrganizationNavigation.onboarding_path(:firma)
+  # The company being edited exists already, so there is no path to choose any more.
+  defp back_path(:firma, %Organization{}), do: nil
+  defp back_path(_firma_or_dolacz, _organization), do: OrganizationNavigation.onboarding_path()
 
   defp step_number(:start), do: 1
   defp step_number(:firma), do: 2
@@ -462,6 +483,7 @@ defmodule FirmowidWeb.Organization.Views.Index do
   attr :value, :string, required: true
   attr :checked, :boolean, required: true
   attr :title, :string, required: true
+  attr :icon, :string, default: nil, doc: "a Lucide icon name shown at the end of the option"
   attr :description, :string, required: true
 
   attr :note, :any,
@@ -470,15 +492,21 @@ defmodule FirmowidWeb.Organization.Views.Index do
 
   defp option(assigns) do
     ~H"""
-    <label class="flex cursor-pointer items-start gap-3.5 rounded-xl border border-grey-300 bg-white px-4.5 py-3.5 has-checked:border-2 has-checked:border-black has-checked:px-4.25 has-checked:py-3.25 has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-black">
+    <label class="flex cursor-pointer items-center gap-3.5 rounded-xl border border-grey-300 bg-white px-4.5 py-3.5 has-checked:border-2 has-checked:border-black has-checked:px-4.25 has-checked:py-3.25 has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-black">
       <input type="radio" name={@name} value={@value} checked={@checked} class="peer sr-only" />
-      <span class="mt-0.5 size-4.5 shrink-0 rounded-full border-[1.5px] border-grey-400 peer-checked:border-[5px] peer-checked:border-black"></span>
-      <span>
+      <span class="size-4.5 shrink-0 rounded-full border-[1.5px] border-grey-400 peer-checked:border-[5px] peer-checked:border-black"></span>
+      <span class="min-w-0 flex-1">
         <span class="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
           <span class="text-[0.9375rem] text-grey-900">{@title}</span>
           <span :if={@note} class="text-xs font-medium text-moss-700">{@note}</span>
         </span>
         <span class="mt-0.5 block text-[0.8125rem] text-grey-600">{@description}</span>
+      </span>
+      <span
+        :if={@icon}
+        class="grid size-9 shrink-0 place-items-center rounded-lg bg-grey-100 text-grey-900"
+      >
+        <Lucideicons.render! name={@icon} class="size-4.5" aria-hidden="true" />
       </span>
     </label>
     """
@@ -531,12 +559,20 @@ defmodule FirmowidWeb.Organization.Views.Index do
     # A user adding another company is prefilled with the name they use in the current one.
     name = if user.member, do: user.member.name, else: ""
 
+    organization = organization_in_onboarding(socket.assigns)
+
     {:ok,
-     assign(socket,
+     socket
+     |> assign(
        # The wizard is a page of its own, without the app navigation.
        focused: true,
        no_padding: true,
-       exit_path: user.member && UserAuth.signed_in_path_for_user(user, user.member.organization_id),
+       organization: organization,
+       # Until the first steps are done every page leads back to them, so the way out is logging out.
+       exit_path:
+         if(user.member && is_nil(organization),
+           do: UserAuth.signed_in_path_for_user(user, user.member.organization_id)
+         ),
        page_title: gettext("Set up your company"),
        switch_to: nil,
        switch_target: nil,
@@ -555,12 +591,52 @@ defmodule FirmowidWeb.Organization.Views.Index do
        create_errors: [],
        invite: nil,
        join_form: to_form(%{"name" => name, "code" => ""})
-     )}
+     )
+     |> assign_organization(organization)
+     |> guard_organization(organization)}
+  end
+
+  # The admin of a company still before its first steps is setting that company up,
+  # so coming back here edits it. A member of a working company adds another one.
+  defp organization_in_onboarding(%{current_user: user, current_org: organization}) do
+    if UserAuth.first_steps_pending?(user, organization), do: organization
+  end
+
+  defp organization_in_onboarding(_no_organization), do: nil
+
+  # Editing the company acts on it, so every event checks the admin still belongs to it.
+  defp guard_organization(socket, nil), do: socket
+
+  defp guard_organization(socket, _organization), do: RequireOrganization.attach_access_hook(socket, :ash_scope)
+
+  defp assign_organization(socket, nil), do: socket
+
+  defp assign_organization(socket, organization) do
+    assign(socket,
+      nip: organization.nip,
+      company: %{
+        blank_company(organization.nip)
+        | name: organization.name,
+          address: organization.address,
+          vat_payer?: organization.is_vat_payer
+      },
+      manual?: true,
+      display_name: organization.display_name,
+      industry: organization.industry,
+      bills_hourly: organization.bills_hourly,
+      vat_payer: organization.is_vat_payer,
+      vat_exemption_type: organization.vat_exemption_type && Atom.to_string(organization.vat_exemption_type),
+      vat_exemption_basis: organization.vat_exemption_basis
+    )
   end
 
   @impl true
   def handle_params(params, _uri, socket) do
     case {params["krok"], socket.assigns.company} do
+      {krok, _company}
+      when krok not in ["firma", "branza"] and not is_nil(socket.assigns.organization) ->
+        {:noreply, push_patch(socket, to: OrganizationNavigation.onboarding_path(:firma), replace: true)}
+
       {"firma", _company} ->
         {:noreply, assign(socket, :step, :firma)}
 
@@ -603,7 +679,10 @@ defmodule FirmowidWeb.Organization.Views.Index do
   def handle_event("company_confirmed", params, socket) do
     socket =
       socket
-      |> assign(owner_name: params["owner_name"], display_name: params["display_name"] || "")
+      |> assign(
+        owner_name: params["owner_name"] || socket.assigns.owner_name,
+        display_name: params["display_name"] || ""
+      )
       |> update_manual_details(params)
 
     errors = company_errors(socket.assigns)
@@ -627,30 +706,34 @@ defmodule FirmowidWeb.Organization.Views.Index do
 
   def handle_event("create", params, socket) do
     socket = assign_industry_params(socket, params)
-    %{company: company, current_user: user} = socket.assigns
 
-    attrs = %{
-      name: company.name,
-      nip: Nip.normalize_digits(company.nip),
-      address: company.address,
-      display_name: socket.assigns.display_name,
-      # The owner goes on to the first steps, which every page leads back to until done.
-      start_onboarding: true,
-      owner_name: String.trim(socket.assigns.owner_name),
-      industry: socket.assigns.industry,
-      bills_hourly: socket.assigns.bills_hourly,
-      is_vat_payer: socket.assigns.vat_payer,
-      vat_exemption_type: socket.assigns.vat_exemption_type,
-      vat_exemption_basis: socket.assigns.vat_exemption_basis
-    }
+    attrs =
+      Map.merge(organization_attrs(socket.assigns), %{
+        # The owner goes on to the first steps, which every page leads back to until done.
+        start_onboarding: true,
+        owner_name: String.trim(socket.assigns.owner_name)
+      })
 
-    case Core.create_organization(attrs, actor: user) do
+    case Core.create_organization(attrs, actor: socket.assigns.current_user) do
       {:ok, organization} ->
         {:noreply,
          assign(socket,
            switch_to: organization.id,
            switch_target: OrganizationNavigation.first_steps_target()
          )}
+
+      {:error, %Invalid{} = error} ->
+        {:noreply, assign(socket, :create_errors, Enum.map(error.errors, &Exception.message/1))}
+    end
+  end
+
+  def handle_event("update", params, socket) do
+    socket = assign_industry_params(socket, params)
+    %{organization: organization, ash_scope: scope} = socket.assigns
+
+    case Core.update_basic_info(organization, organization_attrs(socket.assigns), scope: scope) do
+      {:ok, _organization} ->
+        {:noreply, redirect(socket, to: OrganizationNavigation.first_steps_path(:ksef))}
 
       {:error, %Invalid{} = error} ->
         {:noreply, assign(socket, :create_errors, Enum.map(error.errors, &Exception.message/1))}
@@ -758,6 +841,20 @@ defmodule FirmowidWeb.Organization.Views.Index do
     end
   end
 
+  defp organization_attrs(assigns) do
+    %{
+      name: assigns.company.name,
+      nip: Nip.normalize_digits(assigns.company.nip),
+      address: assigns.company.address,
+      display_name: assigns.display_name,
+      industry: assigns.industry,
+      bills_hourly: assigns.bills_hourly,
+      is_vat_payer: assigns.vat_payer,
+      vat_exemption_type: assigns.vat_exemption_type,
+      vat_exemption_basis: assigns.vat_exemption_basis
+    }
+  end
+
   defp update_manual_details(%{assigns: %{manual?: true, company: %{} = company}} = socket, params) do
     company = %{
       company
@@ -845,7 +942,7 @@ defmodule FirmowidWeb.Organization.Views.Index do
 
   # ── Card content ─────────────────────────────────────────────────────
 
-  defp company_rows(nil, _step) do
+  defp company_rows(nil, _step, _organization) do
     [
       %{label: "NIP", value: nil},
       %{label: gettext("Address"), value: nil},
@@ -854,10 +951,10 @@ defmodule FirmowidWeb.Organization.Views.Index do
     ]
   end
 
-  defp company_rows(company, step) do
+  defp company_rows(company, step, organization) do
     fresh? = company.fresh? and step == :firma
 
-    [
+    rows = [
       %{label: "NIP", value: format_nip(Nip.normalize_digits(company.nip)), fresh: fresh?},
       %{label: gettext("Address"), value: company.address, fresh: fresh?},
       %{
@@ -867,6 +964,9 @@ defmodule FirmowidWeb.Organization.Views.Index do
       },
       %{label: "VAT", value: vat_label(company.vat_payer?), fresh: fresh?}
     ]
+
+    # The company keeps no PKD, so the one being edited shows the rows it has, as on the first steps.
+    if organization, do: Enum.reject(rows, &(&1.label == "PKD" and is_nil(&1.value))), else: rows
   end
 
   defp invite_rows(nil), do: [%{label: gettext("Role"), value: nil}, %{label: gettext("Code valid until"), value: nil}]

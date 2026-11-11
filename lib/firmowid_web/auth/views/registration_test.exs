@@ -129,6 +129,36 @@ defmodule FirmowidWeb.Auth.Views.RegistrationTest do
 
       # Until the first steps are done, the rest of the app leads back to them.
       assert {:error, {:redirect, %{to: "/pierwsze-kroki"}}} = live(conn, ~p"/fakturowanie")
+
+      # Going back from KSeF edits the company instead of creating another one.
+      {:ok, first_steps_lv, _html} = live(conn, ~p"/pierwsze-kroki?krok=ksef")
+
+      {:ok, edit_lv, _html} =
+        first_steps_lv
+        |> element("#onboarding-back")
+        |> render_click()
+        |> follow_redirect(conn, ~p"/organizacja?krok=branza")
+
+      edit_lv |> element("#onboarding-back") |> render_click()
+      assert_patch(edit_lv, ~p"/organizacja?krok=firma")
+      assert has_element?(edit_lv, ~s(#company-form input[name="name"][value="Nowa Organizacja"]))
+
+      edit_lv
+      |> form("#company-form", %{company | "name" => "Nowa Organizacja Sp. z o.o."})
+      |> render_submit()
+
+      assert_patch(edit_lv, ~p"/organizacja?krok=branza")
+
+      edit_lv
+      |> form("#industry-form", %{"industry" => "retail", "bills_hourly" => "false"})
+      |> render_submit()
+
+      assert_redirect(edit_lv, ~p"/pierwsze-kroki?krok=ksef")
+
+      assert [%{id: organization_id, name: "Nowa Organizacja Sp. z o.o.", industry: :retail}] =
+               Core.list_organizations!(authorize?: false)
+
+      assert organization_id == organization.id
     end
 
     test "creates account and joins organization", %{conn: conn} do
