@@ -476,13 +476,11 @@ defmodule FirmowidWeb.Assistant.Utilities.Presentation do
         }
       end)
 
-    unchanged? = Enum.any?(previews, & &1.unchanged?)
     readable? = Enum.all?(previews, &Enum.all?(&1.records))
 
     %{
-      available?: readable? and not unchanged?,
+      available?: readable? and not Enum.any?(previews, & &1.unchanged?),
       readable?: readable?,
-      unchanged?: unchanged?,
       calls: previews
     }
   end
