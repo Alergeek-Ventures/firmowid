@@ -135,7 +135,8 @@ config :firmowid, Oban,
        {"0 6 1 * *", Firmowid.Billing.Workers.MonthlySnapshotDispatcher, args: %{}},
        {"15 * * * *", Firmowid.Invoicing.Workers.MatchingWorker, args: %{name: "matching"}},
        {"45 * * * *", Firmowid.Analysis.Workers.CategoryDispatcher, args: %{}},
-       {"0 */2 * * *", Firmowid.Ksef.Workers.FetchDispatcher, args: %{}}
+       {"0 */2 * * *", Firmowid.Ksef.Workers.FetchDispatcher, args: %{}},
+       {"30 5 * * *", Firmowid.Invoicing.Workers.VatIdCheckWorker, args: %{}}
      ]}
   ]
 

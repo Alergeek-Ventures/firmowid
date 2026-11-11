@@ -1,6 +1,8 @@
 defmodule Firmowid.Invoicing.EuVatReview do
   @moduledoc """
-  VAT findings for an EU buyer shown before an invoice is issued.
+  VAT problems of an EU buyer, shown before an invoice is issued and on issued invoices.
+
+  Only problems are reported; a number that passes every check produces no finding.
 
   Keeps three questions apart:
 
@@ -17,11 +19,12 @@ defmodule Firmowid.Invoicing.EuVatReview do
   alias Firmowid.Invoicing.CountryCodes
   alias Firmowid.Invoicing.EuVatNumber
   alias Firmowid.Invoicing.Services.VatEuApiClient
+  alias Firmowid.Invoicing.TaxId
 
   @type registration :: :active | :inactive | :unavailable | :pending | nil
   @type finding :: %{
           topic: :number | :registration | :rate,
-          level: :ok | :info | :warning | :error,
+          level: :warning | :error,
           code: atom()
         }
 
@@ -47,17 +50,34 @@ defmodule Firmowid.Invoicing.EuVatReview do
   end
 
   @doc """
-  Lists findings for an invoice with an EU buyer, given the VIES status.
+  The problem with an issued invoice's buyer EU VAT number: it breaks its country's
+  rules, or the buyer's counterparty failed the periodic VIES check for the same number.
+  """
+  @spec issued_problem(map(), map() | nil) :: :invalid | {:inactive, DateTime.t()} | nil
+  def issued_problem(invoice, counterparty) do
+    cond do
+      not applies?(invoice) -> nil
+      number_rejected?(invoice) -> :invalid
+      inactive_number?(invoice, counterparty) -> {:inactive, counterparty.vat_id_checked_at}
+      true -> nil
+    end
+  end
 
-  `invoice` needs the buyer fields, `is_reverse_charge` and item `vat_rate`s.
+  @doc """
+  Lists the problems of an invoice with an EU buyer, given the VIES status.
+
+  `invoice` needs the buyer fields and item `vat_rate`s.
   """
   @spec findings(map(), registration()) :: [finding()]
   def findings(invoice, registration) do
     if applies?(invoice) do
-      [
-        number_finding(invoice),
-        registration_finding(registration) | rate_findings(invoice, registration)
-      ]
+      Enum.filter(
+        [
+          number_finding(invoice),
+          registration_finding(registration) | rate_findings(invoice, registration)
+        ],
+        & &1
+      )
     else
       []
     end
@@ -82,26 +102,14 @@ defmodule Firmowid.Invoicing.EuVatReview do
 
   defp number_finding(invoice) do
     case EuVatNumber.check(invoice.buyer_country, invoice.buyer_id) do
-      {:ok, _number} ->
-        code =
-          if EuVatNumber.checksum_verified?(invoice.buyer_country),
-            do: :checksum_valid,
-            else: :format_valid
-
-        %{topic: :number, level: :ok, code: code}
-
-      {:error, rule, _suggestions} ->
-        %{topic: :number, level: :error, code: rule}
+      {:ok, _number} -> nil
+      {:error, rule, _suggestions} -> %{topic: :number, level: :error, code: rule}
     end
   end
 
-  defp registration_finding(:active), do: %{topic: :registration, level: :ok, code: :active}
-
   defp registration_finding(:inactive), do: %{topic: :registration, level: :warning, code: :inactive}
 
-  defp registration_finding(:unavailable), do: %{topic: :registration, level: :info, code: :unavailable}
-
-  defp registration_finding(_pending), do: %{topic: :registration, level: :info, code: :pending}
+  defp registration_finding(_other), do: nil
 
   defp rate_findings(invoice, registration) do
     rates = invoice.sales_invoice_items |> Enum.map(& &1.vat_rate) |> Enum.uniq()
@@ -116,6 +124,14 @@ defmodule Firmowid.Invoicing.EuVatReview do
       & &1
     )
   end
+
+  defp inactive_number?(invoice, %{vat_id_status: :inactive} = counterparty) do
+    TaxId.normalize(counterparty.tax_id) == TaxId.normalize(invoice.buyer_id) and
+      CountryCodes.normalize(counterparty.country) ==
+        CountryCodes.normalize(invoice.buyer_country)
+  end
+
+  defp inactive_number?(_invoice, _counterparty), do: false
 
   # VIES uses EL for Greece, as KSeF does.
   defp vies_country(country), do: CountryCodes.normalize(country)

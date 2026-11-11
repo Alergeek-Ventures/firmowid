@@ -87,10 +87,6 @@ defmodule Firmowid.Invoicing.EuVatNumber do
 
   def pattern(_country), do: nil
 
-  @doc "Whether the check digit of the country's VAT numbers is verified, not only their structure."
-  @spec checksum_verified?(String.t() | nil) :: boolean()
-  def checksum_verified?(country), do: CountryCodes.normalize(country) in ["SE"]
-
   @doc "Uppercases the number and removes separators, keeping the `+` and `*` some Irish numbers use."
   @spec normalize(String.t()) :: String.t()
   def normalize(number), do: number |> String.upcase() |> String.replace(~r/[^0-9A-Z+*]/, "")

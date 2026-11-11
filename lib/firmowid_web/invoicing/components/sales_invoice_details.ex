@@ -85,6 +85,7 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
           :buyer_id,
           :buyer_pesel,
           :buyer_country,
+          :counterparty_id,
           sales_invoice_items: [:net_value, :vat_value, :gross_value]
         ],
         scope: assigns.scope
@@ -112,6 +113,7 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
         description: description,
         latest_invoice_snapshot: latest_invoice_snapshot,
         buyer_vat_number_rejected?: EuVatReview.number_rejected?(latest_invoice_snapshot),
+        buyer_vat_problem: buyer_vat_problem(latest_invoice_snapshot, assigns.scope),
         invoices_for_preview: Enum.reverse([invoice | invoice.corrections]),
         internal_notes: internal_notes,
         cancelled?: cancelled?,
@@ -415,6 +417,16 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
               </span>
             </div>
 
+            <div
+              :if={@buyer_vat_problem}
+              id="invoice-buyer-vat-alert"
+              role="alert"
+              class="mbs-4 flex items-start gap-2 rounded-lg bg-brick-100 p-3 text-sm text-brick-700"
+            >
+              <Lucideicons.alert_triangle class="mbs-0.5 size-4 shrink-0" />
+              <span>{buyer_vat_problem_text(@buyer_vat_problem, @latest_invoice_snapshot)}</span>
+            </div>
+
             <InvoiceDetails.invoice_metadata>
               <InvoiceDetails.invoice_metadata_piece
                 :if={is_nil(@invoice.invoice_number)}
@@ -539,6 +551,33 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
     </div>
     """
   end
+
+  defp buyer_vat_problem(snapshot, scope) do
+    counterparty =
+      if EuVatReview.applies?(snapshot) and snapshot.counterparty_id do
+        Invoicing.get_counterparty!(snapshot.counterparty_id,
+          scope: scope,
+          not_found_error?: false
+        )
+      end
+
+    EuVatReview.issued_problem(snapshot, counterparty)
+  end
+
+  defp buyer_vat_problem_text(:invalid, snapshot),
+    do:
+      gettext(
+        "The buyer's EU VAT number %{number} does not match the %{country} format. If it is wrong, fix the counterparty and correct this invoice.",
+        number: snapshot.buyer_id,
+        country: CountryCodes.country_name(CountryCodes.normalize(snapshot.buyer_country))
+      )
+
+  defp buyer_vat_problem_text({:inactive, checked_at}, snapshot),
+    do:
+      gettext("VIES did not confirm the buyer's EU VAT number %{number} on %{date}. Check it with the buyer.",
+        number: snapshot.buyer_id,
+        date: Calendar.strftime(checked_at, "%d.%m.%Y")
+      )
 
   @impl true
   def handle_event("show_timeline", _params, socket) do

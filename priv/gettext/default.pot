@@ -79,6 +79,11 @@ msgstr ""
 msgid "%{confidence}% confidence"
 msgstr ""
 
+#: lib/firmowid_web/inbox/utilities/queue.ex
+#, elixir-autogen, elixir-format
+msgid "%{counterparty}: EU VAT number to check"
+msgstr ""
+
 #: lib/firmowid_web/assistant/utilities/presentation.ex
 #, elixir-autogen, elixir-format
 msgid "%{count} analysis entry"
@@ -381,6 +386,11 @@ msgstr ""
 #: lib/firmowid_web/assistant/utilities/changes.ex
 #, elixir-autogen, elixir-format
 msgid "%{name} · %{quantity} %{unit} × %{price} net"
+msgstr ""
+
+#: lib/firmowid_web/inbox/utilities/queue.ex
+#, elixir-autogen, elixir-format
+msgid "%{number} does not match the VAT number format of its country."
 msgstr ""
 
 #: lib/firmowid_web/invoicing/components/eu_vat_suggestions.ex
@@ -2158,6 +2168,11 @@ msgstr ""
 msgid "Check the KSeF connection"
 msgstr ""
 
+#: lib/firmowid_web/inbox/utilities/queue.ex
+#, elixir-autogen, elixir-format
+msgid "Check the counterparty"
+msgstr ""
+
 #: lib/firmowid_web/delegations/components/settlement_signature_page.ex
 #, elixir-autogen, elixir-format
 msgid "Check the generated document. Sign it with a Trusted Profile, upload the signed file and send the settlement to your employer."
@@ -2206,11 +2221,6 @@ msgstr ""
 #: lib/firmowid_web/delegations/components/settlement/expense.ex
 #, elixir-autogen, elixir-format
 msgid "Check-out"
-msgstr ""
-
-#: lib/firmowid_web/invoicing/sales_invoices/components/eu_vat_check.ex
-#, elixir-autogen, elixir-format
-msgid "Checking the number in VIES…"
 msgstr ""
 
 #: lib/firmowid_web/delegations/components/settlement_signature_page.ex
@@ -10628,6 +10638,11 @@ msgstr ""
 msgid "The buyer VAT number %{number} does not match the %{country} format. The correction repeats it to identify the corrected invoice. Issue a new invoice with the right number afterwards."
 msgstr ""
 
+#: lib/firmowid_web/invoicing/components/sales_invoice_details.ex
+#, elixir-autogen, elixir-format
+msgid "The buyer's EU VAT number %{number} does not match the %{country} format. If it is wrong, fix the counterparty and correct this invoice."
+msgstr ""
+
 #: lib/firmowid_web/landing/components/sections.ex
 #, elixir-autogen, elixir-format
 msgid "The code is public, your data stays with you. AGPL-3.0 license."
@@ -11009,16 +11024,6 @@ msgstr ""
 #: lib/firmowid_web/invoicing/sales_invoices/components/eu_vat_check.ex
 #, elixir-autogen, elixir-format
 msgid "The number has an invalid %{country} check digit. The invoice cannot be issued."
-msgstr ""
-
-#: lib/firmowid_web/invoicing/sales_invoices/components/eu_vat_check.ex
-#, elixir-autogen, elixir-format
-msgid "The number matches the %{country} format and its check digit is correct."
-msgstr ""
-
-#: lib/firmowid_web/invoicing/sales_invoices/components/eu_vat_check.ex
-#, elixir-autogen, elixir-format
-msgid "The number matches the %{country} format. Firmowid does not verify this country's check digit."
 msgstr ""
 
 #: lib/firmowid/delegations/changes/create_signed_command_blob.ex
@@ -12341,14 +12346,14 @@ msgstr ""
 msgid "VAT white list"
 msgstr ""
 
-#: lib/firmowid_web/invoicing/sales_invoices/components/eu_vat_check.ex
+#: lib/firmowid_web/inbox/utilities/queue.ex
 #, elixir-autogen, elixir-format
-msgid "VIES confirms the number is active."
+msgid "VIES did not confirm %{number} on %{date}."
 msgstr ""
 
-#: lib/firmowid_web/invoicing/sales_invoices/components/eu_vat_check.ex
+#: lib/firmowid_web/invoicing/components/sales_invoice_details.ex
 #, elixir-autogen, elixir-format
-msgid "VIES did not answer. This does not block issuing; check the number later."
+msgid "VIES did not confirm the buyer's EU VAT number %{number} on %{date}. Check it with the buyer."
 msgstr ""
 
 #: lib/firmowid_web/invoicing/sales_invoices/components/eu_vat_check.ex

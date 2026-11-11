@@ -24,6 +24,7 @@ defmodule Firmowid.Invoicing.Counterparty do
 
   alias Firmowid.Checks.ActorRole
   alias Firmowid.Checks.AtLeastRole
+  alias Firmowid.Checks.SystemActorRole
   alias Firmowid.Invoicing.Changes.ClearIrrelevantBuyerFields
   alias Firmowid.Invoicing.Changes.NormalizeBlankCounterpartyFields
   alias Firmowid.Invoicing.Changes.NormalizeCounterpartyTaxId
@@ -83,6 +84,13 @@ defmodule Firmowid.Invoicing.Counterparty do
         constraints min: 1, max: 100
       end
 
+      argument :vat_id_statuses, {:array, :atom},
+        constraints: [items: [one_of: [:active, :inactive, :invalid]]],
+        description: "Only counterparties whose last EU VAT number check gave one of these results."
+
+      argument :vat_id_due_before, :utc_datetime_usec,
+        description: "Only counterparties with an EU VAT number never checked or last checked before this time."
+
       prepare {Firmowid.Preparations.ParadeDBSearch,
                columns: ~w(display_name full_name given_name surname tax_id email)a,
                operator: :disjunction,
@@ -104,6 +112,20 @@ defmodule Firmowid.Invoicing.Counterparty do
 
       prepare build(limit: arg(:limit)) do
         where present(:limit)
+      end
+
+      prepare build(filter: expr(vat_id_status in ^arg(:vat_id_statuses))) do
+        where present(:vat_id_statuses)
+      end
+
+      prepare build(
+                filter:
+                  expr(
+                    tax_id_type == :eu_vat and not is_nil(tax_id) and
+                      (is_nil(vat_id_checked_at) or vat_id_checked_at < ^arg(:vat_id_due_before))
+                  )
+              ) do
+        where present(:vat_id_due_before)
       end
     end
 
@@ -190,12 +212,26 @@ defmodule Firmowid.Invoicing.Counterparty do
 
       change NormalizeCounterpartyTaxId
 
+      # A changed number or country has not been checked yet.
+      change set_attribute(:vat_id_status, nil) do
+        where any([changing(:tax_id), changing(:country)])
+      end
+
+      change set_attribute(:vat_id_checked_at, nil) do
+        where any([changing(:tax_id), changing(:country)])
+      end
+
       validate {ValidateTaxId, id_field: :tax_id, country_field: :country, pesel_field: :pesel, type_field: :type}
 
       validate {ValidateEuVatNumber, id_field: :tax_id, country_field: :country, pesel_field: :pesel, type_field: :type}
 
       validate {ValidateNameFields,
                 type_field: :type, full_name_field: :full_name, given_name_field: :given_name, surname_field: :surname}
+    end
+
+    update :record_vat_id_check do
+      description "Record the result of the periodic EU VAT number check."
+      accept [:vat_id_status, :vat_id_checked_at]
     end
 
     update :archive do
@@ -221,8 +257,12 @@ defmodule Firmowid.Invoicing.Counterparty do
     end
 
     # Invoicing system roles: read-only
-    bypass {Firmowid.Checks.SystemActorRole, roles: [:sales_invoice_processor, :cost_invoice_processor, :invoice_matcher]} do
+    bypass {SystemActorRole, roles: [:sales_invoice_processor, :cost_invoice_processor, :invoice_matcher]} do
       authorize_if action_type(:read)
+    end
+
+    bypass {SystemActorRole, roles: [:vat_id_checker]} do
+      authorize_if action([:list, :record_vat_id_check])
     end
 
     # Other system actors: no access
@@ -273,6 +313,13 @@ defmodule Firmowid.Invoicing.Counterparty do
     attribute :email, :string, public?: true
     attribute :phone, :string, public?: true
     attribute :description, :string, public?: true
+
+    attribute :vat_id_status, :atom,
+      public?: true,
+      constraints: [one_of: [:active, :inactive, :invalid]],
+      description: "Last EU VAT number check: active or inactive in VIES, or invalid for its country's rules."
+
+    attribute :vat_id_checked_at, :utc_datetime_usec, public?: true
 
     Resource.firmowid_timestamps()
   end
