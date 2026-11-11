@@ -231,8 +231,11 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
     review = Analysis.get_category_review(Date.range(from, Date.end_of_month(to)), scope)
 
     # A unique conflict returns the existing job, so reopening the view queues nothing new.
-    if review.unclassified != [] and can_tag?(socket.assigns),
-      do: for(year <- years(period), do: Analysis.classify_categories_later(year, false, scope))
+    # The previous year follows, so it is ready when the owner first looks back.
+    if review.unclassified != [] and can_tag?(socket.assigns) do
+      for year <- Enum.uniq(years(period) ++ [Date.utc_today().year - 1]),
+          do: Analysis.classify_categories_later(year, false, scope)
+    end
 
     assign(socket, :review, review)
   end
