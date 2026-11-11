@@ -123,40 +123,22 @@ defmodule FirmowidWeb.HoursRecord.Views.Index do
     month = selected_date.month
     year = selected_date.year
 
-    # User's projects with month duration, sorted by time descending
     projects =
-      %{member_id: member_id}
-      |> Timetracker.query_to_list_projects(scope: scope)
-      |> Ash.Query.aggregate(:duration, :sum, :sessions,
-        field: :duration,
-        default: 0,
-        query:
-          Timetracker.query_to_list_sessions(%{member_id: member_id, month: month, year: year},
-            scope: scope
-          )
-      )
-      |> Ash.read!(scope: scope)
+      member_id
+      |> Timetracker.projects_duration_for_month(selected_date, scope)
       |> Enum.map(fn project ->
-        seconds = project.aggregates[:duration] || 0
-
         # Eagerly fetch sessions grouped by title for this user+project+month
         grouped_sessions =
           %{member_id: member_id, project_id: project.id, month: month, year: year}
-          |> Timetracker.query_to_list_sessions(scope: scope)
-          |> Ash.Query.load(:duration)
-          |> Ash.read!(scope: scope)
+          |> Timetracker.list_sessions!(scope: scope)
           |> Enum.group_by(& &1.title)
           |> Enum.map(fn {title, ss} ->
             %{title: title, duration: ss |> Enum.map(& &1.duration) |> Enum.sum()}
           end)
           |> Enum.sort_by(& &1.duration, :desc)
 
-        project
-        |> Map.put(:duration, seconds)
-        |> Map.put(:expanded, false)
-        |> Map.put(:sessions, grouped_sessions)
+        Map.merge(project, %{expanded: false, sessions: grouped_sessions})
       end)
-      |> Enum.sort_by(& &1.duration, :desc)
 
     total_duration = Session.month_duration!(selected_date, scope: scope)
 
