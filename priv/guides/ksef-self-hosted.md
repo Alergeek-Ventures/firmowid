@@ -59,7 +59,7 @@ O tym, jak bezpiecznie przetestować KSeF, pisaliśmy już [w osobnym poradniku]
 | KSeF | wystawianie, wysyłanie, ponowienie wysyłki, PDF, numer KSeF, korekty i import faktur kosztowych |
 | bank | Open Banking przez GoCardless i automatyczne dopasowanie transakcji do faktur |
 | czas pracy | ewidencja według projektu i pracownika |
-| delegacje oraz analiza marży i rentowności | w publicznym kodzie; analiza w wersji beta |
+| delegacje oraz analiza marży i rentowności | w publicznym kodzie |
 | utrzymanie self-hostingu | po stronie użytkownika |
 
 ## Test przed przeniesieniem prawdziwych faktur
