@@ -13,6 +13,7 @@ defmodule FirmowidWeb.HoursRecord.Views.Index do
   alias Firmowid.TimeFormatter
   alias Firmowid.Timetracker
   alias Firmowid.Timetracker.HoursRecord
+  alias Firmowid.Timetracker.Session
   alias FirmowidWeb.Infrastructure.Utilities.QueryParams
   alias FirmowidWeb.Timetracker.Utilities.Navigation
 
@@ -157,14 +158,7 @@ defmodule FirmowidWeb.HoursRecord.Views.Index do
       end)
       |> Enum.sort_by(& &1.duration, :desc)
 
-    # Total duration for this user this month
-    total_query =
-      Timetracker.query_to_list_sessions(%{member_id: member_id, month: month, year: year},
-        scope: scope
-      )
-
-    %{total: total_duration} =
-      Ash.aggregate!(total_query, {:total, :sum, field: :duration, default: 0}, scope: scope)
+    total_duration = Session.month_duration!(selected_date, scope: scope)
 
     {:ok, current_month_hours_record} =
       HoursRecord.by_month(member_id, month, year,

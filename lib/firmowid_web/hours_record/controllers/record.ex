@@ -6,6 +6,7 @@ defmodule FirmowidWeb.HoursRecord.Controllers.Record do
   alias Firmowid.Payroll
   alias Firmowid.Timetracker
   alias Firmowid.Timetracker.HoursRecord
+  alias Firmowid.Timetracker.Session
   alias FirmowidWeb.Infrastructure.Utilities.PdfHelpers
 
   @dialyzer {:no_return, pdf: 2}
@@ -39,20 +40,7 @@ defmodule FirmowidWeb.HoursRecord.Controllers.Record do
     start_date = Date.beginning_of_month(date_parsed)
     end_date = Date.end_of_month(date_parsed)
 
-    session_query =
-      Timetracker.query_to_list_sessions(
-        %{
-          month: date_parsed.month,
-          year: date_parsed.year,
-          member_id: conn.assigns.current_user.member.id
-        },
-        scope: scope
-      )
-
-    %{total: duration_seconds} =
-      Ash.aggregate!(session_query, {:total, :sum, field: :duration, default: 0}, scope: scope)
-
-    total_hours = Timetracker.seconds_to_hours(duration_seconds)
+    total_hours = Timetracker.seconds_to_hours(Session.month_duration!(date_parsed, scope: scope))
 
     # Render HTML to string
     html_content =
@@ -91,16 +79,7 @@ defmodule FirmowidWeb.HoursRecord.Controllers.Record do
     start_date = Date.beginning_of_month(date)
     end_date = Date.end_of_month(date)
 
-    session_query =
-      Timetracker.query_to_list_sessions(
-        %{month: date.month, year: date.year, member_id: conn.assigns.current_user.member.id},
-        scope: scope
-      )
-
-    %{total: duration_seconds} =
-      Ash.aggregate!(session_query, {:total, :sum, field: :duration, default: 0}, scope: scope)
-
-    total_hours = Timetracker.seconds_to_hours(duration_seconds)
+    total_hours = Timetracker.seconds_to_hours(Session.month_duration!(date, scope: scope))
 
     render(conn, :preview,
       layout: false,
