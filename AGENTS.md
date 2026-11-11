@@ -5,6 +5,23 @@ This document contains instructions for AI agents working on this codebase.
 This is an Elixir LiveView app. It is focused on invoicing, bank accounts synchronization,
 and other tasks related to company management, like payroll or client's billing.
 
+## Never publish private data
+
+This repository is public. NEVER publish private data from production, a
+production dump, a local copy of it, or anything a user shares: names of
+organizations, counterparties or people, NIPs, PESELs, bank account numbers,
+amounts, invoice, transaction and payroll details, card or transfer references,
+email addresses, phone numbers.
+
+- This covers code, comments, tests, fixtures, seeds, commit messages, branch
+  names, PR titles, descriptions and comments, screenshots and attachments.
+- Use made-up examples ("Acme Sp. z o.o.", "Jan Kowalski", "1234567890"), never
+  real samples. Describe results from real data without names, numbers or
+  amounts.
+- Before every push, PR or comment, check the diff, commit messages and texts
+  for such data. A leak cannot be undone by editing: GitHub keeps PR edit
+  history and force-pushed commits.
+
 ## Worktree autonomy
 
 Within the agreed task, you have full autonomy to edit files, modify local
