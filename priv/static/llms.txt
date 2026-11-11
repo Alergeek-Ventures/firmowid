@@ -42,6 +42,9 @@ Firmowid to aplikacja webowa dla firm, prowadzona przez Alergeek Ventures sp. z 
 - [Dostęp do KSeF w jednoosobowej firmie i uprawnienia dla księgowej](https://firmowid.pl/poradnik/dostep-do-ksef-jdg-i-ksiegowa): Automatyczne uprawnienia właścicielskie JDG, logowanie, token i certyfikat oraz uprawnienia dla biura rachunkowego.
 - [KSeF na telefonie: co potrafi Aplikacja Mobilna KSeF](https://firmowid.pl/poradnik/aplikacja-mobilna-ksef): Funkcje bezpłatnej aplikacji mobilnej MF, logowanie przez login.gov.pl i skąd biorą się uprawnienia.
 - [Certyfikat KSeF: typ 1, typ 2 i token](https://firmowid.pl/poradnik/certyfikat-ksef-typ-1-i-2): Do czego służy każdy certyfikat, czym różni się token i dlaczego certyfikatu nie przekazuje się księgowej.
+- [Faktura dla firmy z UE w KSeF: np II i odwrotne obciążenie](https://firmowid.pl/poradnik/faktura-dla-firmy-z-ue-ksef): Stawka np II, adnotacja odwrotne obciążenie, VAT-UE, informacja podsumowująca i faktura w euro.
+- [Firma usługowa założona w 2027 r.: od pierwszej faktury w KSeF](https://firmowid.pl/poradnik/firma-uslugowa-2027): Co obowiązuje nową firmę od pierwszego dnia: faktury dla firm, osób prywatnych i klientów z zagranicy, numer KSeF w przelewie.
+- [Revolut i Wise w programie do faktur z KSeF](https://firmowid.pl/poradnik/revolut-wise-program-do-faktur): Połączenie kont Revolut i Wise przez Open Banking, faktury w 33 walutach i domyślne konto dla każdej waluty.
 - [KSeF w banku, aplikacja Ministerstwa Finansów czy program do faktur?](https://firmowid.pl/poradnik/ksef-w-banku-aplikacja-mf-czy-program): Porównanie narzędzi MF, modułów KSeF w Pekao i PKO oraz programu do faktur.
 - [Alternatywa dla Fakturowni za darmo](https://firmowid.pl/poradnik/alternatywa-dla-fakturowni): Plan Micro Fakturowni i 10 darmowych alternatyw z KSeF w tabeli, ceny sprawdzone 11.11.2026.
 
