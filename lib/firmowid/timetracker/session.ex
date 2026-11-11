@@ -28,7 +28,6 @@ defmodule Firmowid.Timetracker.Session do
   alias Firmowid.Timetracker.Project
   alias Firmowid.Timetracker.Session.Calculations
   alias Firmowid.Timetracker.Session.Overlap
-  alias Firmowid.Timetracker.Validations.DatetimeOrder
   alias Firmowid.Timetracker.Validations.ProjectAccess
   alias Firmowid.Timetracker.Validations.SessionMonthBoundaries
   alias Firmowid.Timetracker.Workers.StopSessionWorker
@@ -707,8 +706,10 @@ defmodule Firmowid.Timetracker.Session do
   end
 
   validations do
-    validate {DatetimeOrder, start_field: :start_datetime, end_field: :end_datetime},
-      on: [:create, :update]
+    validate compare(:start_datetime, less_than_or_equal_to: :end_datetime),
+      on: [:create, :update],
+      where: [present(:end_datetime)],
+      message: "must be before end datetime"
 
     validate {SessionMonthBoundaries, []}, on: [:create, :update]
 
