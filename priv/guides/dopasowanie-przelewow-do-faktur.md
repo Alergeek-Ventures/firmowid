@@ -2,7 +2,7 @@
 title: "Program do faktur z dopasowaniem przelewów: import to nie Open Banking"
 description: "Import MT940 to nie Open Banking. Porównanie programów, które łączą przelewy z fakturami, i limitów ich darmowych planów."
 published: 2026-11-06
-updated: 2026-11-06
+updated: 2026-11-11
 category: bank-i-platnosci
 ---
 
@@ -29,7 +29,7 @@ Można to zrobić wyciągiem MT940, CSV lub XML, wgrywanym ręcznie po pobraniu 
 | Afaktury | import MT940 | automatyczne przypisanie wpłat i aktualizacja statusów | Free: 3 dokumenty i 10 PDF / mies. | Open Banking niepotwierdzony |
 | ING Księgowość | historia transakcji z kont ING | podpowiada pasujące przelewy; łączenie bywa ręczne | fakturowanie 0 zł dla klientów ING | poza ING cena i limit niepodane |
 | SaldeoSMART | automatyczne pobieranie przez Banqup | łączenie transakcji z fakturami, także kilku faktur jedną wpłatą | cennik niepubliczny | narzędzie raczej dla większych firm i biur |
-| Fakturoza | import MT940 od planu Firma | dopasowanie po numerze faktury lub KSeF, rachunku, NIP i kwocie | Darmowy: 30 faktur sprzedaży / mies., bez banku | bank dopiero w płatnym planie |
+| Fakturoza | import MT940 | dopasowanie po numerze faktury lub KSeF, rachunku, NIP i kwocie | Darmowy: 5 faktur sprzedaży / mies., 1 wyciąg MT940 / mies. | więcej faktur i wyciągów w płatnym planie Firma |
 
 ## Kiedy Open Banking ma sens
 
@@ -45,4 +45,4 @@ O tym, kto może pobierać informacje z rachunku bankowego, rozstrzyga ustawa z 
 - Afaktury: [afaktury.pl/wgranie-pliku-mt940,0,52,10,203](https://afaktury.pl/wgranie-pliku-mt940,0,52,10,203/), [afaktury.pl/cennik,0,31](https://afaktury.pl/cennik,0,31/); dostęp 23.10.2026.
 - [ING Księgowość](https://www.ingksiegowosc.pl/fakturowanie/integracja-z-bankowoscia); dostęp 25.10.2026.
 - [SaldeoSMART](https://www.saldeosmart.pl/automatyzacja-rozliczen-i-rozrachunkow); dostęp 24.10.2026.
-- [Fakturoza](https://fakturoza.pl/); dostęp 25.10.2026.
+- [Fakturoza](https://fakturoza.pl/); dostęp 11.11.2026.
