@@ -92,6 +92,20 @@
     }
   }
 
+  /* Onboarding: the way back turning in where the logo stood. */
+  @keyframes swap-in {
+    0% {
+      opacity: 0;
+      scale: 0.6;
+      rotate: -90deg;
+    }
+    100% {
+      opacity: 1;
+      scale: 1;
+      rotate: 0deg;
+    }
+  }
+
   /* Easing: quick start, soft landing, for panels that slide or resize */
   --ease-out-quint: cubic-bezier(0.23, 1, 0.32, 1);
 
@@ -103,4 +117,5 @@
   --animate-stamp-press: stamp-press 640ms cubic-bezier(0.16, 1, 0.3, 1) both;
   --animate-marker: marker 650ms cubic-bezier(0.23, 1, 0.32, 1) both;
   --animate-step-in: step-in 320ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  --animate-swap-in: swap-in 280ms cubic-bezier(0.16, 1, 0.3, 1) both;
 }

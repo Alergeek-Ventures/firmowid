@@ -452,11 +452,11 @@ defmodule FirmowidUI.Components.KsefConnection do
       class="flex w-full cursor-pointer justify-center rounded-md border-2 border-dashed border-rust-700 px-6 py-8 focus-within:outline-2 focus-within:outline-rust-700 active:opacity-80"
       phx-drop-target={@upload.ref}
     >
-      <div class="text-center text-sm text-rust-700">
+      <div class="w-full min-w-0 text-center text-sm text-rust-700">
         <div :if={Enum.empty?(@upload.entries)} class={@prompt_class}>{@prompt}</div>
         <.live_file_input upload={@upload} class="sr-only" />
         <div :for={entry <- @upload.entries}>
-          <p>{entry.client_name}</p>
+          <p class="truncate" title={entry.client_name}>{entry.client_name}</p>
           <p :for={error <- if(@show_errors, do: upload_errors(@upload, entry), else: [])}>
             {present_upload_error(error)}
           </p>

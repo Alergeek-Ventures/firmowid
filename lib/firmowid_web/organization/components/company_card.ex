@@ -115,18 +115,17 @@ defmodule FirmowidWeb.Organization.Components.CompanyCard do
         <dl class="mt-8 grid grid-cols-[6rem_1fr] gap-y-3 text-base sm:mt-10 sm:grid-cols-[9rem_1fr]">
           <%= for {row, index} <- Enum.with_index(@rows) do %>
             <dt class="pt-0.5 text-sm text-grey-500">{row.label}</dt>
-            <dd
-              :if={row.value}
-              class={[
-                "text-grey-900",
-                if(row[:fresh],
-                  do:
-                    "w-fit bg-[linear-gradient(transparent_60%,var(--color-moss-200)_60%)] bg-no-repeat motion-safe:animate-marker"
-                )
-              ]}
-              style={row[:fresh] && "animation-delay: #{150 + index * 90}ms"}
-            >
-              {row.value}
+            <dd :if={row.value} class="text-grey-900">
+              <%!-- Inline and cloned per line, so a value that wraps is marked on every line. --%>
+              <span
+                class={[
+                  row[:fresh] &&
+                    "bg-[linear-gradient(transparent_60%,var(--color-moss-200)_60%)] box-decoration-clone bg-no-repeat motion-safe:animate-marker"
+                ]}
+                style={row[:fresh] && "animation-delay: #{150 + index * 90}ms"}
+              >
+                {row.value}
+              </span>
             </dd>
             <dd :if={is_nil(row.value)} class="mt-1.5 h-3 w-48 max-w-full rounded-full bg-grey-100">
             </dd>

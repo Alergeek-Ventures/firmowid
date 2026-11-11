@@ -12,13 +12,13 @@ defmodule Firmowid.Seeds.Voidstack do
   alias Firmowid.Core.Organization, as: CoreOrganization
   alias Firmowid.Core.User, as: CoreUser
   alias Firmowid.Invoicing.CostInvoice
+  alias Firmowid.Seeds.Helpers
   alias Firmowid.Timetracker.Project
   alias Firmowid.Timetracker.ProjectUser
-  alias Firmowid.Seeds.Helpers
 
   require Ash.Query
 
-  @seed_actor %Firmowid.Core.User{
+  @seed_actor %CoreUser{
     id: "00000000-0000-0000-0000-000000000000",
     member: %Firmowid.Core.Member{role: :admin}
   }
@@ -60,7 +60,10 @@ defmodule Firmowid.Seeds.Voidstack do
   end
 
   defp seed_org_membership(voidstack, dragan) do
-    Helpers.seed_member!(dragan.id, voidstack.id, :admin, %{name: "Dragan Krypt", phone: "+421 902 555 666"})
+    Helpers.seed_member!(dragan.id, voidstack.id, :admin, %{
+      name: "Dragan Krypt",
+      phone: "+421 902 555 666"
+    })
   end
 
   defp seed_project(member, voidstack) do
@@ -77,7 +80,11 @@ defmodule Firmowid.Seeds.Voidstack do
         nil ->
           Ash.Seed.seed!(
             Project,
-            %{name: "Shadow Protocol", organization_id: voidstack.id, tag_definition_id: tag_definition.id},
+            %{
+              name: "Shadow Protocol",
+              organization_id: voidstack.id,
+              tag_definition_id: tag_definition.id
+            },
             tenant: voidstack.id
           )
 

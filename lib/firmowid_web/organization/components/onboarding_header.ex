@@ -18,7 +18,11 @@ defmodule FirmowidWeb.Organization.Components.OnboardingHeader do
   @doc "Renders the header. `exit_path` leads a member into the app; without it the user can log out."
   @spec onboarding_header(map()) :: Rendered.t()
   attr :exit_path, :string, default: nil
-  attr :back, :string, default: nil, doc: "the previous step; the wordmark stands in its place without it"
+
+  attr :back, :any,
+    default: nil,
+    doc:
+      "the previous step, a path patched to on the same page or `{:navigate, path}` on another; the wordmark stands in its place without it"
 
   attr :step, :any,
     default: nil,
@@ -31,20 +35,25 @@ defmodule FirmowidWeb.Organization.Components.OnboardingHeader do
     <%!-- Stays at the top while the step below it scrolls. --%>
     <header class="sticky top-0 z-20 grid grid-cols-[1fr_auto_1fr] items-center gap-3 bg-grey-100 py-6 lg:py-8">
       <%= if @back do %>
+        <%!-- Turns in where the logo stood. On a phone only the arrow, as large as the way out. --%>
         <.link
           id="onboarding-back"
           kind="unstyled"
-          patch={@back}
-          class="group -ml-1 flex w-fit items-center gap-1.5 rounded-lg px-1 py-2 text-[0.9375rem] font-medium text-grey-700 transition-colors hover:text-black focus-visible:outline-2 focus-visible:outline-black"
+          {back_link(@back)}
+          class="group -ml-1 flex w-fit items-center gap-1.5 rounded-lg px-1 py-2 text-[0.9375rem] font-medium text-grey-700 transition-colors hover:text-black focus-visible:outline-2 focus-visible:outline-black motion-safe:animate-swap-in max-sm:ml-0 max-sm:size-10.5 max-sm:justify-center max-sm:border max-sm:border-grey-300 max-sm:bg-white max-sm:p-0 max-sm:text-grey-900"
         >
           <Lucideicons.arrow_left
-            class="size-4 transition-transform group-hover:-translate-x-0.5"
+            class="size-4 transition-transform group-hover:-translate-x-0.5 max-sm:size-4.5"
             aria-hidden="true"
           />
-          {gettext("Back")}
+          <span class="max-sm:sr-only">{gettext("Back")}</span>
         </.link>
       <% else %>
-        <span class="font-logo text-2xl font-bold tracking-tight text-grey-900">Firmowid</span>
+        <%!-- On a phone the wordmark gives way to the head, so the progress keeps its room. --%>
+        <span class="font-logo text-2xl font-bold tracking-tight text-grey-900 max-sm:hidden">
+          Firmowid
+        </span>
+        <img src={~p"/images/logo-head.svg"} alt="Firmowid" class="size-9 sm:hidden" />
       <% end %>
 
       <p :if={@step} class="flex items-center gap-1.5 text-sm text-grey-600 sm:gap-2">
@@ -66,7 +75,7 @@ defmodule FirmowidWeb.Organization.Components.OnboardingHeader do
           <.link
             kind="unstyled"
             navigate={@exit_path}
-            class="text-sm text-grey-900 underline underline-offset-4"
+            class="text-sm text-grey-900 underline underline-offset-4 max-sm:inline-flex max-sm:h-10.5 max-sm:items-center max-sm:rounded-lg max-sm:border max-sm:border-grey-300 max-sm:bg-white max-sm:px-3 max-sm:font-medium max-sm:no-underline"
           >
             {gettext("Go to Firmowid")}
           </.link>
@@ -78,13 +87,29 @@ defmodule FirmowidWeb.Organization.Components.OnboardingHeader do
             method="delete"
             data-posthog-reset-on-submit="true"
           >
-            <.button type="submit" variant="ghost" size="small" class="underline underline-offset-4">
-              {pgettext("organization onboarding", "Log out")}
-            </.button>
+            <.tooltip
+              id="organization-logout-tooltip"
+              title={pgettext("organization onboarding", "Log out")}
+              text={gettext("You will come back here after logging in again.")}
+              placement="bottom"
+            >
+              <.button
+                type="submit"
+                variant="ghost"
+                size="small"
+                aria-label={pgettext("organization onboarding", "Log out")}
+                class="max-sm:size-10.5 max-sm:rounded-lg max-sm:border-grey-300 max-sm:bg-white max-sm:text-grey-900"
+              >
+                <Lucideicons.log_out class="size-4.5" aria-hidden="true" />
+              </.button>
+            </.tooltip>
           </.form>
         <% end %>
       </div>
     </header>
     """
   end
+
+  defp back_link({:navigate, path}), do: %{navigate: path}
+  defp back_link(path), do: %{patch: path}
 end

@@ -10,13 +10,19 @@ defmodule Firmowid.Seeds.Bytecraft do
   alias Firmowid.Core.User, as: CoreUser
   alias Firmowid.Invoicing.Counterparty
   alias Firmowid.Ksef.Credential
+  alias Firmowid.Seeds.Helpers
   alias Firmowid.Timetracker.Project
   alias Firmowid.Timetracker.ProjectUser
-  alias Firmowid.Seeds.Helpers
 
   require Ash.Query
 
-  @roles %{kira: :admin, tomek: :accountant, sable: :employee, jules: :invoicing, maren: :employee}
+  @roles %{
+    kira: :admin,
+    tomek: :accountant,
+    sable: :employee,
+    jules: :invoicing,
+    maren: :employee
+  }
 
   @profiles %{
     kira: %{
@@ -63,7 +69,7 @@ defmodule Firmowid.Seeds.Bytecraft do
     }
   }
 
-  @seed_actor %Firmowid.Core.User{
+  @seed_actor %CoreUser{
     id: "00000000-0000-0000-0000-000000000000",
     member: %Firmowid.Core.Member{role: :admin}
   }
@@ -140,7 +146,14 @@ defmodule Firmowid.Seeds.Bytecraft do
 
   defp seed_org_membership(bytecraft, users) do
     Map.new(users, fn {key, user} ->
-      member = Helpers.seed_member!(user.id, bytecraft.id, Map.fetch!(@roles, key), Map.fetch!(@profiles, key))
+      member =
+        Helpers.seed_member!(
+          user.id,
+          bytecraft.id,
+          Map.fetch!(@roles, key),
+          Map.fetch!(@profiles, key)
+        )
+
       {key, %{user | member: member}}
     end)
   end
