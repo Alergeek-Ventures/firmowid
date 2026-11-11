@@ -298,7 +298,7 @@ defmodule Firmowid.Core.Organization do
     attribute :billing_plan, :atom,
       public?: true,
       allow_nil?: false,
-      default: :przedsiebiorca,
+      default: :free,
       constraints: [one_of: PlanCatalog.plans()]
 
     attribute :vat_exemption_type, :atom,

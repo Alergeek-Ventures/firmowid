@@ -15,6 +15,7 @@ defmodule FirmowidWeb.Delegations.Views.DelegationForm do
   alias Firmowid.Delegations.Delegation
   alias Firmowid.Invoicing.CountryCodes
   alias Firmowid.Payroll
+  alias FirmowidWeb.Infrastructure.Utilities.PosthogBusinessEvents
 
   @impl true
   def mount(%{"reference" => reference} = params, _session, socket) do
@@ -353,6 +354,11 @@ defmodule FirmowidWeb.Delegations.Views.DelegationForm do
   def handle_event("save", %{"delegation" => params}, socket) do
     case AshPhoenix.Form.submit(socket.assigns.form, params: params) do
       {:ok, _delegation} ->
+        socket =
+          if socket.assigns.delegation,
+            do: socket,
+            else: PosthogBusinessEvents.capture(socket, :delegation_created)
+
         {:noreply, push_navigate(socket, to: socket.assigns.back_path)}
 
       {:error, form} ->

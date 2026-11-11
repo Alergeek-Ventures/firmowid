@@ -23,7 +23,9 @@ defmodule Firmowid.Analytics do
     payroll_rates_updated: "payroll_rates_updated",
     counterparty_created: "counterparty_created",
     counterparty_updated: "counterparty_updated",
-    onboarding_completed: "onboarding_completed"
+    onboarding_completed: "onboarding_completed",
+    leave_request_created: "leave_request_created",
+    delegation_created: "delegation_created"
   }
 
   # Where the owner finishing the onboarding heard about Firmowid.
@@ -150,7 +152,9 @@ defmodule Firmowid.Analytics do
               :bank_connection_completed,
               :time_entry_created,
               :counterparty_created,
-              :counterparty_updated
+              :counterparty_updated,
+              :leave_request_created,
+              :delegation_created
             ] do
     if properties == %{}, do: {:ok, %{}}, else: :error
   end

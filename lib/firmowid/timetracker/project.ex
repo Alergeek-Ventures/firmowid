@@ -210,6 +210,11 @@ defmodule Firmowid.Timetracker.Project do
       authorize_if always()
     end
 
+    # Billing counts the active projects against the plan limit.
+    bypass [{SystemActorRole, roles: [:billing_snapshotter]}, action(:list)] do
+      authorize_if expr(not is_nil(^actor(:org_id)) and organization_id == ^actor(:org_id))
+    end
+
     # System actors have no access to employee timetracking data
     policy Firmowid.Checks.IsSystemActor do
       forbid_if always()

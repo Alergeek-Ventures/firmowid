@@ -9,8 +9,13 @@ defmodule FirmowidWeb.Admin.Utilities.OrganizationActivity do
   """
 
   alias Firmowid.Core
+  alias Firmowid.Core.OauthConsent
+  alias Firmowid.Delegations
   alias Firmowid.Invoicing
+  alias Firmowid.Payroll
   alias Firmowid.Timetracker
+
+  require Ash.Query
 
   @doc "Returns counts and latest persisted traces for a selected organization."
   @spec load!(binary(), map(), DateTime.t()) :: map()
@@ -30,8 +35,42 @@ defmodule FirmowidWeb.Admin.Utilities.OrganizationActivity do
       )
 
     sessions = Timetracker.list_sessions!(%{}, latest_options(:start_datetime, scope))
+    latest = latest_options(:inserted_at, scope)
 
     %{
+      leave_requests:
+        inserted_summary(
+          Timetracker.list_leave_requests!(%{}, latest),
+          Timetracker.query_to_list_leave_requests(%{}, scope: scope),
+          from,
+          now,
+          scope
+        ),
+      delegations:
+        inserted_summary(
+          Delegations.list_delegations!(%{}, latest),
+          Delegations.query_to_list_delegations(%{}, scope: scope),
+          from,
+          now,
+          scope
+        ),
+      employment_contracts:
+        inserted_summary(
+          Payroll.list_employment_contracts!(%{}, latest),
+          Payroll.query_to_list_employment_contracts(%{}, scope: scope),
+          from,
+          now,
+          scope
+        ),
+      assistant_connections:
+        summary(
+          OauthConsent.list!(%{}, latest_options(:granted_at, scope)),
+          %{}
+          |> OauthConsent.query_to_list(scope: scope)
+          |> Ash.Query.filter(granted_at >= ^from and granted_at < ^now),
+          :granted_at,
+          scope
+        ),
       last_sign_in: last_sign_in(scope),
       sales:
         summary(
@@ -73,6 +112,11 @@ defmodule FirmowidWeb.Admin.Utilities.OrganizationActivity do
       ]
     )
     |> List.first()
+  end
+
+  defp inserted_summary(latest_rows, query, from, now, scope) do
+    recent_query = Ash.Query.filter(query, inserted_at >= ^from and inserted_at < ^now)
+    summary(latest_rows, recent_query, :inserted_at, scope)
   end
 
   defp latest_options(field, scope) do

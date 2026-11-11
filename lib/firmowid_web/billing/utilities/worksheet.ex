@@ -1,6 +1,8 @@
 defmodule FirmowidWeb.Billing.Utilities.Worksheet do
   @moduledoc """
-  Shapes billing facts into a worksheet-oriented structure for billing views.
+  Shapes billing facts into a worksheet-oriented structure for billing views:
+  the plan, what the organization uses of each limited thing, and the cheapest
+  plan that covers that usage.
   """
 
   use Gettext, backend: Firmowid.Gettext
@@ -9,14 +11,12 @@ defmodule FirmowidWeb.Billing.Utilities.Worksheet do
 
   @type usage_source :: %{
           required(:billing_plan) => PlanCatalog.plan(),
-          required(:manual_external_invoices_count) => non_neg_integer(),
           required(:synced_bank_accounts_count) => non_neg_integer(),
           required(:active_non_owner_users_count) => non_neg_integer(),
           optional(atom()) => term()
         }
 
-  @type usage_row_key ::
-          :synced_bank_accounts | :active_non_owner_users | :manual_external_invoices
+  @limited [:synced_bank_accounts, :users, :active_projects]
 
   @doc """
   Builds worksheet sections for a selected month.
@@ -25,48 +25,25 @@ defmodule FirmowidWeb.Billing.Utilities.Worksheet do
   def build(source) do
     plan = source.billing_plan
     rules = PlanCatalog.plan!(plan)
+    usage = PlanCatalog.usage(source)
+    fitting_plan = PlanCatalog.fitting_plan(usage)
 
-    bank_row =
-      usage_row(
-        :synced_bank_accounts,
-        gettext("Bank accounts"),
-        source.synced_bank_accounts_count,
-        rules.synced_bank_accounts
-      )
-
-    employee_row =
-      usage_row(
-        :active_non_owner_users,
-        gettext("Employees"),
-        source.active_non_owner_users_count,
-        rules.active_non_owner_users
-      )
-
-    invoice_row =
-      usage_row(
-        :manual_external_invoices,
-        gettext("Cost invoices from outside KSeF"),
-        source.manual_external_invoices_count,
-        rules.manual_external_invoices
-      )
-
-    base_fee = base_fee_line(rules)
-    suggestions = suggestion_rows(source, rules)
-
-    base_value = if base_fee, do: base_fee.amount_value, else: Decimal.new(0)
-
-    month_total_value =
-      Enum.reduce(suggestions, base_value, fn row, acc -> Decimal.add(acc, row.amount_value) end)
+    # A month frozen before projects were counted has no project row.
+    usage_rows =
+      @limited
+      |> Enum.reject(&is_nil(usage[&1]))
+      |> Enum.map(&usage_row(&1, usage[&1], rules.limits[&1]))
 
     %{
       selected_plan: plan,
       selected_plan_label: plan_label(plan),
-      base_fee_line: base_fee,
-      usage_rows: [bank_row, employee_row, invoice_row],
-      suggestion_rows: suggestions,
-      month_total_value: month_total_value,
-      month_total_text: money_to_string(month_total_value),
-      no_plan_note: no_plan_note(plan)
+      monthly_price_text: money_to_string(rules.monthly_price_pln),
+      usage_rows: usage_rows,
+      # `:no_plan` marks a blocked organization, not an offer whose limits it can exceed.
+      over_limit?: plan != :no_plan and Enum.any?(usage_rows, &(&1.over_limit > 0)),
+      fitting_plan: fitting_plan,
+      fitting_plan_label: plan_label(fitting_plan),
+      fitting_plan_price_text: money_to_string(PlanCatalog.plan!(fitting_plan).monthly_price_pln)
     }
   end
 
@@ -75,142 +52,54 @@ defmodule FirmowidWeb.Billing.Utilities.Worksheet do
   """
   @spec plan_label(PlanCatalog.plan()) :: String.t()
   def plan_label(:no_plan), do: pgettext("billing plan", "No plan")
-  def plan_label(:start), do: pgettext("billing plan", "Start")
+  def plan_label(:free), do: gettext("Free")
   def plan_label(:przedsiebiorca), do: gettext("Entrepreneur")
   def plan_label(:firma), do: gettext("Company")
 
-  defp usage_row(key, label, count, %{included_units: included_units}) do
-    over_limit = max(count - included_units, 0)
+  defp usage_row(limited, count, limit) do
+    over_limit = over_limit(count, limit)
 
     %{
-      key: key,
-      label: label,
+      key: limited,
+      label: label(limited),
+      context: context(limited),
       count: count,
-      included_units: included_units,
+      limit_text: limit_text(limit),
       over_limit: over_limit,
-      total_text: usage_total_text(count, included_units),
-      usage_text: usage_text(count, included_units, over_limit),
-      bar_width: usage_bar_width(count, included_units)
+      total_text: total_text(count, limit),
+      usage_text: usage_text(count, limit, over_limit),
+      bar_width: bar_width(count, limit)
     }
   end
 
-  defp suggestion_rows(%{billing_plan: :no_plan}, _rules), do: []
+  defp label(:synced_bank_accounts), do: gettext("Bank accounts")
+  defp label(:users), do: gettext("Users")
+  defp label(:active_projects), do: gettext("Projects")
 
-  defp suggestion_rows(source, rules) do
-    Enum.reject(
-      [
-        bank_accounts_suggestion(source.synced_bank_accounts_count, rules.synced_bank_accounts),
-        employees_suggestion(source.active_non_owner_users_count, rules.active_non_owner_users),
-        external_invoices_suggestion(
-          source.manual_external_invoices_count,
-          rules.manual_external_invoices
-        )
-      ],
-      &is_nil/1
-    )
-  end
+  defp context(:synced_bank_accounts), do: gettext("Currently connected accounts with synchronization.")
 
-  defp bank_accounts_suggestion(count, %{included_units: included, billing: %{unit_price_pln: unit_price}}) do
-    over_limit = count - included
+  defp context(:users), do: gettext("Active people in the organization, including the owner.")
+  defp context(:active_projects), do: gettext("Projects that are not archived.")
 
-    if over_limit > 0 do
-      total = Decimal.mult(unit_price, Decimal.new(over_limit))
+  defp over_limit(_count, :unlimited), do: 0
+  defp over_limit(count, limit), do: max(count - limit, 0)
 
-      %{
-        label: gettext("Additional bank accounts"),
-        detail:
-          gettext("%{count} over the limit × %{price} / mo.",
-            count: over_limit,
-            price: money_to_string(unit_price)
-          ),
-        amount: money_to_string(total),
-        amount_value: total
-      }
-    end
-  end
+  defp limit_text(:unlimited), do: gettext("unlimited")
+  defp limit_text(limit), do: Integer.to_string(limit)
 
-  defp bank_accounts_suggestion(_count, _rule), do: nil
+  defp total_text(count, :unlimited), do: Integer.to_string(count)
+  defp total_text(count, limit), do: "#{count} / #{limit}"
 
-  defp employees_suggestion(count, %{included_units: included, billing: %{unit_price_pln: unit_price}}) do
-    over_limit = count - included
+  defp usage_text(_count, :unlimited, _over_limit), do: nil
+  defp usage_text(_count, _limit, over_limit) when over_limit > 0, do: gettext("Limit exceeded")
 
-    if over_limit > 0 do
-      total = Decimal.mult(unit_price, Decimal.new(over_limit))
+  defp usage_text(count, limit, _over_limit), do: gettext("%{count} remaining", count: limit - count)
 
-      %{
-        label: gettext("Additional employees"),
-        detail:
-          gettext("%{count} over the limit × %{price} / mo.",
-            count: over_limit,
-            price: money_to_string(unit_price)
-          ),
-        amount: money_to_string(total),
-        amount_value: total
-      }
-    end
-  end
-
-  defp employees_suggestion(_count, _rule), do: nil
-
-  defp external_invoices_suggestion(count, %{
-         included_units: included,
-         billing: %{pack_size: pack_size, pack_price_pln: pack_price}
-       }) do
-    over_limit = count - included
-
-    if over_limit > 0 do
-      packs = div(over_limit + pack_size - 1, pack_size)
-      total = Decimal.mult(pack_price, Decimal.new(packs))
-
-      %{
-        label: gettext("Excess cost invoices from outside KSeF"),
-        detail:
-          gettext("%{count} over the limit. Billing packs: %{packs} × %{pack_size} for %{price}.",
-            count: over_limit,
-            packs: packs,
-            pack_size: pack_size,
-            price: money_to_string(pack_price)
-          ),
-        amount: money_to_string(total),
-        amount_value: total
-      }
-    end
-  end
-
-  defp external_invoices_suggestion(_count, _rule), do: nil
-
-  defp base_fee_line(%{plan: :no_plan}), do: nil
-
-  defp base_fee_line(%{monthly_price_pln: monthly_price_pln}) do
-    %{
-      label: gettext("Monthly base fee"),
-      amount: money_to_string(monthly_price_pln),
-      amount_value: monthly_price_pln
-    }
-  end
-
-  defp no_plan_note(:no_plan), do: gettext("No plan — we only show raw usage data without automatic billing suggestions.")
-
-  defp no_plan_note(_plan), do: nil
-
-  defp usage_total_text(count, included_units), do: "#{count} / #{included_units}"
-
-  defp usage_text(_count, included_units, over_limit) when included_units > 0 and over_limit > 0,
-    do: gettext("Limit exceeded")
-
-  defp usage_text(count, included_units, _over_limit) when included_units > 0,
-    do: gettext("%{count} remaining", count: max(included_units - count, 0))
-
-  defp usage_text(count, _included_units, _over_limit) when count > 0, do: gettext("Outside the plan")
-
-  defp usage_text(_count, _included_units, _over_limit), do: gettext("No usage")
-
-  defp usage_bar_width(count, included_units) when included_units <= 0 and count <= 0, do: 0
-  defp usage_bar_width(count, included_units) when included_units <= 0 and count > 0, do: 100
-
-  defp usage_bar_width(count, included_units) do
-    min(trunc(count / included_units * 100), 100)
-  end
+  # A bar needs a limit to fill up to; an unlimited row has none.
+  defp bar_width(_count, :unlimited), do: nil
+  defp bar_width(0, 0), do: 0
+  defp bar_width(_count, 0), do: 100
+  defp bar_width(count, limit), do: min(trunc(count / limit * 100), 100)
 
   defp money_to_string(amount) do
     :PLN
