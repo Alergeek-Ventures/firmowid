@@ -141,7 +141,9 @@ defmodule FirmowidWeb.Infrastructure.UserAuth do
                OrganizationNavigation.first_steps_path(),
                ~p"/organizacja/przelacz"
              ] do
+          # The setup page then opens this company, whichever the session held before.
           conn
+          |> put_organization(user)
           |> redirect(to: OrganizationNavigation.setup_path())
           |> halt()
         else
