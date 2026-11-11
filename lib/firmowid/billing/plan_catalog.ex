@@ -10,7 +10,7 @@ defmodule Firmowid.Billing.PlanCatalog do
   @type plan :: :no_plan | :free | :przedsiebiorca | :firma
   @type offered_plan :: :free | :przedsiebiorca | :firma
   @type money_amount :: Decimal.t()
-  @type limited :: :users | :synced_bank_accounts | :active_projects
+  @type limited :: :users | :bank_institutions | :active_projects
   @type limit :: non_neg_integer() | :unlimited
 
   @type plan_rules :: %{
@@ -21,12 +21,12 @@ defmodule Firmowid.Billing.PlanCatalog do
         }
 
   @typedoc """
-  What an organization uses of each limited thing. `active_projects` is `nil`
-  for months frozen before projects were counted.
+  What an organization uses of each limited thing. `bank_institutions` and
+  `active_projects` are `nil` for months frozen before they were counted.
   """
   @type usage :: %{
           users: non_neg_integer(),
-          synced_bank_accounts: non_neg_integer(),
+          bank_institutions: non_neg_integer() | nil,
           active_projects: non_neg_integer() | nil
         }
 
@@ -34,6 +34,8 @@ defmodule Firmowid.Billing.PlanCatalog do
 
   # Cheapest first, so the first plan that covers the usage is the cheapest one.
   @offered_plans [:free, :przedsiebiorca, :firma]
+
+  @limited [:users, :bank_institutions, :active_projects]
 
   @doc """
   Returns all supported billing plans in stable order.
@@ -50,7 +52,7 @@ defmodule Firmowid.Billing.PlanCatalog do
       plan: :no_plan,
       monthly_price_pln: decimal("0"),
       yearly_price_pln: decimal("0"),
-      limits: %{users: 0, synced_bank_accounts: 0, active_projects: 0}
+      limits: %{users: 0, bank_institutions: 0, active_projects: 0}
     }
   end
 
@@ -59,7 +61,7 @@ defmodule Firmowid.Billing.PlanCatalog do
       plan: :free,
       monthly_price_pln: decimal("0"),
       yearly_price_pln: decimal("0"),
-      limits: %{users: 2, synced_bank_accounts: 1, active_projects: 3}
+      limits: %{users: 2, bank_institutions: 1, active_projects: 3}
     }
   end
 
@@ -68,7 +70,7 @@ defmodule Firmowid.Billing.PlanCatalog do
       plan: :przedsiebiorca,
       monthly_price_pln: decimal("29"),
       yearly_price_pln: decimal("276"),
-      limits: %{users: 5, synced_bank_accounts: 3, active_projects: :unlimited}
+      limits: %{users: 5, bank_institutions: 3, active_projects: :unlimited}
     }
   end
 
@@ -77,7 +79,7 @@ defmodule Firmowid.Billing.PlanCatalog do
       plan: :firma,
       monthly_price_pln: decimal("149"),
       yearly_price_pln: decimal("1428"),
-      limits: %{users: :unlimited, synced_bank_accounts: :unlimited, active_projects: :unlimited}
+      limits: %{users: :unlimited, bank_institutions: :unlimited, active_projects: :unlimited}
     }
   end
 
@@ -90,19 +92,25 @@ defmodule Firmowid.Billing.PlanCatalog do
   end
 
   @doc """
+  Returns the things the plans limit, in the order they are named to people.
+  """
+  @spec limited() :: [limited()]
+  def limited, do: @limited
+
+  @doc """
   Maps the usage facts of a billing snapshot to the things the plans limit.
 
-  The owner counts as a user, as on the pricing page.
+  The owner counts as a user, as on the pricing page. A bank counts once,
+  however many of its accounts are synchronized.
   """
   @spec usage(%{
-          required(:synced_bank_accounts_count) => non_neg_integer(),
           required(:active_non_owner_users_count) => non_neg_integer(),
           optional(atom()) => term()
         }) :: usage()
-  def usage(%{synced_bank_accounts_count: bank_accounts, active_non_owner_users_count: non_owner_users} = facts) do
+  def usage(%{active_non_owner_users_count: non_owner_users} = facts) do
     %{
       users: non_owner_users + 1,
-      synced_bank_accounts: bank_accounts,
+      bank_institutions: Map.get(facts, :synced_bank_institutions_count),
       active_projects: Map.get(facts, :active_projects_count)
     }
   end
@@ -112,9 +120,18 @@ defmodule Firmowid.Billing.PlanCatalog do
   """
   @spec fitting_plan(usage()) :: offered_plan()
   def fitting_plan(usage) do
-    Enum.find(@offered_plans, fn plan ->
-      Enum.all?(plan!(plan).limits, fn {limited, limit} -> within?(usage[limited], limit) end)
-    end)
+    Enum.find(@offered_plans, &(exceeded(usage, &1) == []))
+  end
+
+  @doc """
+  Returns the limited things whose usage is above what the plan includes, in
+  the order of `limited/0`.
+  """
+  @spec exceeded(usage(), plan()) :: [limited()]
+  def exceeded(usage, plan) do
+    limits = plan!(plan).limits
+
+    Enum.reject(@limited, &within?(usage[&1], limits[&1]))
   end
 
   defp within?(_count, :unlimited), do: true

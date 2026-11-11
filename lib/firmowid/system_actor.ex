@@ -100,6 +100,11 @@ defmodule Firmowid.SystemActor do
   - `:sign_in_recorder` — records that a session was just issued to `user_id`
     (see `Firmowid.Core.Token.Changes.RecordSignIn`). Can run only that update on
     that account, blocked or not.
+
+  - `:plan_limits` — keeps an organization within its plan (see
+    `Firmowid.Billing.PlanLimits`). Records when its admins must decide, emails
+    them, and switches members, projects and bank accounts above the limit off
+    and back on.
   """
 
   @type role ::
@@ -130,6 +135,7 @@ defmodule Firmowid.SystemActor do
           | :avatar_cleanup
           | :actor_member_loader
           | :sign_in_recorder
+          | :plan_limits
 
   @enforce_keys [:org_id, :role]
   defstruct [:org_id, :role, :blob_id, :user_id]

@@ -275,6 +275,7 @@ defmodule FirmowidWeb.Core.Router do
         {RequireOrganization, :default},
         {FeatureFlags, :default},
         {RequireOrganization, :first_steps},
+        {RequireOrganization, :plan_limit},
         {CurrentPath, :save_request_uri},
         Timezone
       ] do
@@ -308,10 +309,12 @@ defmodule FirmowidWeb.Core.Router do
         {RequireAdmin, :default},
         {FeatureFlags, :default},
         {RequireOrganization, :first_steps},
+        {RequireOrganization, :plan_limit},
         {CurrentPath, :save_request_uri},
         Timezone
       ] do
       live "/pierwsze-kroki", Organization.Views.FirstSteps, :index
+      live "/limit-planu", Billing.Views.PlanLimit, :index
       live "/zarzadzanie/pracownicy", Employees, :index
       live "/zarzadzanie/pracownicy/archiwum", Employees, :archive
       live "/zarzadzanie/pracownicy/:id", Employee, :projects
@@ -363,6 +366,7 @@ defmodule FirmowidWeb.Core.Router do
         {RequireOrganization, :default},
         {FeatureFlags, :default},
         {RequireOrganization, :first_steps},
+        {RequireOrganization, :plan_limit},
         {CurrentPath, :save_request_uri},
         Timezone
       ] do

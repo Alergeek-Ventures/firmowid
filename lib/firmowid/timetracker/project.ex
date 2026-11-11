@@ -165,7 +165,14 @@ defmodule Firmowid.Timetracker.Project do
       accept []
       require_atomic? false
 
+      argument :by_plan?, :boolean,
+        default: false,
+        description: "Whether the plan limit switches the project off, so a higher plan brings it back."
+
       change set_attribute(:archived_at, &Date.utc_today/0)
+
+      change set_attribute(:suspended_by_plan_at, &DateTime.utc_now/0),
+        where: [argument_equals(:by_plan?, true)]
     end
 
     update :unarchive do
@@ -174,6 +181,7 @@ defmodule Firmowid.Timetracker.Project do
       require_atomic? false
 
       change set_attribute(:archived_at, nil)
+      change set_attribute(:suspended_by_plan_at, nil)
     end
 
     update :link_tag do
@@ -212,6 +220,11 @@ defmodule Firmowid.Timetracker.Project do
 
     # Billing counts the active projects against the plan limit.
     bypass [{SystemActorRole, roles: [:billing_snapshotter]}, action(:list)] do
+      authorize_if expr(not is_nil(^actor(:org_id)) and organization_id == ^actor(:org_id))
+    end
+
+    # Keeping an organization within its plan archives and restores projects.
+    bypass [{SystemActorRole, roles: [:plan_limits]}, action([:list, :archive, :unarchive])] do
       authorize_if expr(not is_nil(^actor(:org_id)) and organization_id == ^actor(:org_id))
     end
 
@@ -259,6 +272,10 @@ defmodule Firmowid.Timetracker.Project do
     end
 
     attribute :archived_at, :date, public?: true
+
+    attribute :suspended_by_plan_at, :utc_datetime_usec,
+      public?: true,
+      description: "When the plan limit archived the project; a higher plan restores it."
 
     Resource.firmowid_timestamps()
   end

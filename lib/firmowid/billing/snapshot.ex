@@ -82,6 +82,7 @@ defmodule Firmowid.Billing.Snapshot do
         :billing_plan,
         :manual_external_invoices_count,
         :synced_bank_accounts_count,
+        :synced_bank_institutions_count,
         :active_non_owner_users_count,
         :active_projects_count,
         :frozen_at
@@ -140,6 +141,12 @@ defmodule Firmowid.Billing.Snapshot do
       public?: true,
       allow_nil?: false,
       default: 0,
+      constraints: [min: 0]
+
+    attribute :synced_bank_institutions_count, :integer,
+      public?: true,
+      description:
+        "Banks with a synchronized account at freeze time, which the plans limit; nil for months frozen before they were counted.",
       constraints: [min: 0]
 
     attribute :active_non_owner_users_count, :integer,

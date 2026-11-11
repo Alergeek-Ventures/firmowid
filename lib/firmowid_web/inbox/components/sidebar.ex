@@ -131,6 +131,7 @@ defmodule FirmowidWeb.Inbox.Components.Sidebar do
         module={SidebarNav}
         id={SidebarNav.id()}
         scope={@scope}
+        organization={@current_org}
         layer={@layer}
         layered?={@layered?}
         current_id={@current_id}

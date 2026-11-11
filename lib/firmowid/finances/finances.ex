@@ -157,6 +157,8 @@ defmodule Firmowid.Finances do
       define :update_bank_account, action: :update
       define :clear_bank_account_default, action: :clear_default
       define :destroy_bank_account, action: :destroy
+      define :suspend_bank_account_by_plan, action: :suspend_by_plan
+      define :restore_bank_account_from_plan, action: :restore_from_plan
       define :list_bank_accounts_for_sync, action: :read_global_for_sync
     end
 

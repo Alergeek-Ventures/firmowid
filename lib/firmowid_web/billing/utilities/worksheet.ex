@@ -11,12 +11,11 @@ defmodule FirmowidWeb.Billing.Utilities.Worksheet do
 
   @type usage_source :: %{
           required(:billing_plan) => PlanCatalog.plan(),
-          required(:synced_bank_accounts_count) => non_neg_integer(),
           required(:active_non_owner_users_count) => non_neg_integer(),
           optional(atom()) => term()
         }
 
-  @limited [:synced_bank_accounts, :users, :active_projects]
+  @limited [:bank_institutions, :users, :active_projects]
 
   @doc """
   Builds worksheet sections for a selected month.
@@ -28,7 +27,7 @@ defmodule FirmowidWeb.Billing.Utilities.Worksheet do
     usage = PlanCatalog.usage(source)
     fitting_plan = PlanCatalog.fitting_plan(usage)
 
-    # A month frozen before projects were counted has no project row.
+    # A month frozen before banks or projects were counted has no row for them.
     usage_rows =
       @limited
       |> Enum.reject(&is_nil(usage[&1]))
@@ -61,7 +60,7 @@ defmodule FirmowidWeb.Billing.Utilities.Worksheet do
 
     %{
       key: limited,
-      label: label(limited),
+      label: limited_label(limited),
       context: context(limited),
       count: count,
       limit_text: limit_text(limit),
@@ -72,12 +71,15 @@ defmodule FirmowidWeb.Billing.Utilities.Worksheet do
     }
   end
 
-  defp label(:synced_bank_accounts), do: gettext("Bank accounts")
-  defp label(:users), do: gettext("Users")
-  defp label(:active_projects), do: gettext("Projects")
+  @doc """
+  Returns the human label for a thing the plans limit.
+  """
+  @spec limited_label(PlanCatalog.limited()) :: String.t()
+  def limited_label(:bank_institutions), do: gettext("Banks")
+  def limited_label(:users), do: gettext("Users")
+  def limited_label(:active_projects), do: gettext("Projects")
 
-  defp context(:synced_bank_accounts), do: gettext("Currently connected accounts with synchronization.")
-
+  defp context(:bank_institutions), do: gettext("Banks with at least one synchronized account.")
   defp context(:users), do: gettext("Active people in the organization, including the owner.")
   defp context(:active_projects), do: gettext("Projects that are not archived.")
 
