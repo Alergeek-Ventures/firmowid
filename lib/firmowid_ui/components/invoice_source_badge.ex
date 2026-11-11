@@ -35,7 +35,7 @@ defmodule FirmowidUI.Components.InvoiceSourceBadge do
       class={[
         "relative inline-flex shrink-0 items-center justify-center",
         @size == "small" && "h-6 w-9 rounded-[2.286px]",
-        @size == "big" && "h-8 w-12 rounded-[3px]",
+        @size == "big" && "h-8 w-12 rounded-sm",
         @variant == "cost_external" && "bg-rust-200",
         @variant == "cost_ksef" && "bg-rust-200",
         @variant == "sales" && "bg-teal-200",

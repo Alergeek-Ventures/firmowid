@@ -357,7 +357,7 @@ defmodule FirmowidWeb.DesignSystem.Components.CoreComponents do
             checked={to_string(@field.value) == to_string(value)}
             class="peer sr-only"
           />
-          <div class="flex size-4 items-center justify-center rounded-[3px] border border-grey-700 text-grey-700 peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-(--focus-ring)">
+          <div class="flex size-4 items-center justify-center rounded-sm border border-grey-700 text-grey-700 peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-(--focus-ring)">
             <svg
               :if={to_string(@field.value) == to_string(value)}
               xmlns="http://www.w3.org/2000/svg"

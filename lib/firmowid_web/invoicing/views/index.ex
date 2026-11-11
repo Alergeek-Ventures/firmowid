@@ -335,7 +335,7 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
         phx-drop-target={can_write_invoicing?(@current_user) && @uploads.file.ref}
       >
         <div class="sticky top-0 flex size-full max-h-dvh items-center justify-center">
-          <div class="flex w-fit flex-col items-center gap-6 rounded-4xl bg-teal-200 px-10 pt-6 pb-8 text-teal-700">
+          <div class="flex w-fit flex-col items-center gap-6 rounded-sm bg-teal-200 px-10 pt-6 pb-8 text-teal-700">
             <.icon name="hero-cloud-arrow-up" class="size-16" />
             <p class="text-center text-xl font-medium">
               {@drop_before}<br />{@drop_after}

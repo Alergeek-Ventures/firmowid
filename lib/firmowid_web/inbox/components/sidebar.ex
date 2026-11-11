@@ -293,7 +293,7 @@ defmodule FirmowidWeb.Inbox.Components.Sidebar do
       "relative flex w-full items-center gap-3 px-2 py-1.5 text-left leading-5 transition-colors md:in-data-[sidebar=collapsed]:px-1.75",
       if(active?,
         do:
-          "rounded-[2px] bg-grey-900 text-white md:in-data-[sidebar=collapsed]:rounded-md md:in-data-[sidebar=collapsed]:bg-grey-800",
+          "rounded-sm bg-grey-900 text-white md:in-data-[sidebar=collapsed]:rounded-md md:in-data-[sidebar=collapsed]:bg-grey-800",
         else: "rounded-md text-grey-300 hover:bg-grey-900/60 hover:text-white"
       )
     ]

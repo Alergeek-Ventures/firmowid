@@ -4,11 +4,11 @@ defmodule FirmowidUI.Utilities.ButtonStyles do
   @doc "Returns the shared design-system size classes for button-like controls."
   @spec size_classes(String.t()) :: String.t()
   def size_classes("big") do
-    "h-11 gap-2.5 rounded-lg px-2.75 py-2 text-base/tight font-normal [&>svg]:size-5"
+    "h-9 gap-1.5 rounded-sm px-2.5 text-base/tight font-medium [&>svg]:size-6"
   end
 
   def size_classes("small") do
-    "h-8 rounded-md px-2 py-1.5 text-sm/tight font-normal gap-1.5 [&>svg]:size-4"
+    "h-7.5 gap-1.5 rounded-sm px-2 text-sm/tight font-medium [&>svg]:size-4"
   end
 
   @doc """
@@ -37,7 +37,7 @@ defmodule FirmowidUI.Utilities.ButtonStyles do
     [
       "border border-transparent",
       "bg-transparent text-grey-700",
-      "inline-flex items-center justify-center rounded-[3px] transition-colors",
+      "inline-flex items-center justify-center rounded-sm transition-colors",
       "hover:border-grey-700 active:text-grey-100 active:bg-grey-700"
     ]
   end

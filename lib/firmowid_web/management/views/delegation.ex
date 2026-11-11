@@ -583,7 +583,7 @@ defmodule FirmowidWeb.Management.Views.Delegation do
                   :if={@uploads.signed_command.entries == []}
                   for={@uploads.signed_command.ref}
                   phx-drop-target={@uploads.signed_command.ref}
-                  class="flex min-h-28 cursor-pointer items-center justify-center rounded-[5px] border border-dashed border-teal-200 px-4 text-center"
+                  class="flex min-h-28 cursor-pointer items-center justify-center rounded-sm border border-dashed border-teal-200 px-4 text-center"
                 >
                   <span class="text-teal-700 sm:hidden">{gettext("Choose a file")}</span>
                   <span class="hidden sm:inline">{@drop_before}<span class="text-teal-700">{gettext("choose from your computer")}</span>{@drop_after}</span>
@@ -708,7 +708,7 @@ defmodule FirmowidWeb.Management.Views.Delegation do
     ~H"""
     <div
       phx-drop-target={@upload.ref}
-      class="flex min-h-28 items-center justify-between rounded-[5px] bg-teal-100 px-4"
+      class="flex min-h-28 items-center justify-between rounded-sm bg-teal-100 px-4"
     >
       <span class="flex min-w-0 items-center gap-2 text-sm">
         <Lucideicons.file_text class="size-5 shrink-0" />
