@@ -11,33 +11,19 @@ defmodule Firmowid.Timetracker.Changes.CreateProjectTag do
   alias Firmowid.Analysis.TagDefinition
   alias Firmowid.Scope
   alias Firmowid.SystemActor
-
-  @impl true
-  def init(opts), do: {:ok, opts}
+  alias Firmowid.Timetracker.Project
 
   @impl true
   def change(changeset, _opts, context) do
     Ash.Changeset.after_action(changeset, fn _changeset, project ->
-      scope = build_scope(context)
+      scope = %Scope{
+        actor: %SystemActor{org_id: context.tenant, role: :project_tag_manager},
+        tenant: context.tenant
+      }
 
       with {:ok, tag_def} <- TagDefinition.create_for_project(project.name, scope: scope) do
-        link_tag_definition(project, tag_def.id, context)
+        Project.link_tag(project, %{tag_definition_id: tag_def.id}, scope: scope)
       end
     end)
-  end
-
-  defp link_tag_definition(project, tag_def_id, context) do
-    scope = build_scope(context)
-
-    project
-    |> Ash.Changeset.for_update(:link_tag, %{tag_definition_id: tag_def_id}, scope: scope)
-    |> Ash.update()
-  end
-
-  defp build_scope(context) do
-    %Scope{
-      actor: %SystemActor{org_id: context.tenant, role: :project_tag_manager},
-      tenant: context.tenant
-    }
   end
 end
