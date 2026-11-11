@@ -779,6 +779,11 @@ msgstr ""
 msgid "Active employment contract"
 msgstr ""
 
+#: lib/firmowid_web/management/views/counterparty.ex
+#, elixir-autogen, elixir-format
+msgid "Active in VIES on %{date}."
+msgstr ""
+
 #: lib/firmowid_web/management/views/employees.html.heex
 #: lib/firmowid_web/settings/components/company_tab.ex
 #, elixir-autogen, elixir-format
@@ -3553,6 +3558,12 @@ msgstr ""
 msgid "Country"
 msgstr ""
 
+#: lib/firmowid_web/management/views/counterparty.ex
+#, elixir-autogen, elixir-format
+msgctxt "EU VAT check"
+msgid "Country format"
+msgstr ""
+
 #: lib/firmowid/invoicing/wizard_state.ex
 #, elixir-autogen, elixir-format
 msgid "Country is required"
@@ -4028,6 +4039,11 @@ msgstr ""
 msgid "Documents added manually in the current billing month."
 msgstr ""
 
+#: lib/firmowid_web/management/views/counterparty.ex
+#, elixir-autogen, elixir-format
+msgid "Does not match the %{country} format (%{pattern}). Edit the counterparty to correct it."
+msgstr ""
+
 #: lib/firmowid_web/delegations/utilities/delegation_presentation.ex
 #, elixir-autogen, elixir-format
 msgid "Domestic per diem"
@@ -4248,6 +4264,11 @@ msgstr ""
 #: lib/firmowid_web/invoicing/sales_invoices/components/eu_vat_check.ex
 #, elixir-autogen, elixir-format
 msgid "EU VAT check"
+msgstr ""
+
+#: lib/firmowid_web/management/views/counterparty.ex
+#, elixir-autogen, elixir-format
+msgid "EU VAT number checks"
 msgstr ""
 
 #: lib/firmowid_web/landing/components/sections.ex
@@ -4690,6 +4711,11 @@ msgstr ""
 #: lib/firmowid_web/landing/components/sections.ex
 #, elixir-autogen, elixir-format
 msgid "Every transaction is automatically assigned to the right invoice. No more manually matching transfers at the end of the month."
+msgstr ""
+
+#: lib/firmowid_web/management/views/counterparty.ex
+#, elixir-autogen, elixir-format
+msgid "Every week we check the number in VIES again. A number that fails a check appears in the inbox."
 msgstr ""
 
 #: lib/firmowid_web/landing/components/hero.ex
@@ -5447,6 +5473,11 @@ msgstr ""
 #: lib/firmowid_web/core/toast.ex
 #, elixir-autogen, elixir-format
 msgid "Hang in there while we get back on track"
+msgstr ""
+
+#: lib/firmowid_web/management/views/counterparty.ex
+#, elixir-autogen, elixir-format
+msgid "Has an invalid %{country} check digit. Edit the counterparty to correct it."
 msgstr ""
 
 #: lib/firmowid_web/delegations/components/settlement/documents.ex
@@ -6829,6 +6860,11 @@ msgstr ""
 msgid "Matched"
 msgstr ""
 
+#: lib/firmowid_web/management/views/counterparty.ex
+#, elixir-autogen, elixir-format
+msgid "Matches the %{country} format (%{pattern})."
+msgstr ""
+
 #: lib/firmowid_web/invoicing/components/matching_components.ex
 #, elixir-autogen, elixir-format
 msgid "Matching"
@@ -7514,6 +7550,16 @@ msgstr ""
 #: lib/firmowid_web/management/components/employee_tax_details.ex
 #, elixir-autogen, elixir-format
 msgid "Not applied"
+msgstr ""
+
+#: lib/firmowid_web/management/views/counterparty.ex
+#, elixir-autogen, elixir-format
+msgid "Not checked in VIES while the number breaks its country format."
+msgstr ""
+
+#: lib/firmowid_web/management/views/counterparty.ex
+#, elixir-autogen, elixir-format
+msgid "Not checked in VIES yet. New numbers are checked every morning."
 msgstr ""
 
 #: lib/firmowid_web/management/components/employee_tax_details.ex
@@ -12356,9 +12402,20 @@ msgstr ""
 msgid "VIES did not confirm the buyer's EU VAT number %{number} on %{date}. Check it with the buyer."
 msgstr ""
 
+#: lib/firmowid_web/management/views/counterparty.ex
+#, elixir-autogen, elixir-format
+msgid "VIES did not confirm the number on %{date}. Check it with the counterparty."
+msgstr ""
+
 #: lib/firmowid_web/invoicing/sales_invoices/components/eu_vat_check.ex
 #, elixir-autogen, elixir-format
 msgid "VIES does not confirm this number. Check it with the buyer before you rely on it."
+msgstr ""
+
+#: lib/firmowid_web/management/views/counterparty.ex
+#, elixir-autogen, elixir-format
+msgctxt "EU VAT check"
+msgid "VIES registration"
 msgstr ""
 
 #: lib/firmowid_web/settings/components/profile_tab.ex
