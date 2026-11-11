@@ -52,7 +52,7 @@ defmodule Firmowid.Test.Support.SalesInvoiceEmailTestHelpers do
       seller_address: "ul. Testowa 1, 00-001 Warszawa",
       seller_account_number: "DE99123456781234567812",
       buyer_type: :company,
-      buyer_id: "DE123456789",
+      buyer_id: "123456789",
       buyer_full_name: "Buyer GmbH",
       buyer_display_name: "Buyer GmbH",
       buyer_address: "Teststrasse 1, 10115 Berlin",
@@ -87,7 +87,7 @@ defmodule Firmowid.Test.Support.SalesInvoiceEmailTestHelpers do
 
     base_attrs = %{
       type: :company,
-      tax_id: "DE123456789",
+      tax_id: "123456789",
       full_name: "Counterparty GmbH",
       display_name: "Counterparty GmbH",
       address: "Counterpartystrasse 1, 10115 Berlin",

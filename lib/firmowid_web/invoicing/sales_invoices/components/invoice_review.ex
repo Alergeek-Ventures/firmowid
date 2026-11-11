@@ -49,6 +49,12 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceReview do
               submit_event={if @ksef_connected?, do: "send_to_ksef", else: "update_invoice_number"}
             />
 
+            <.live_component
+              module={FirmowidWeb.Invoicing.SalesInvoices.Components.EuVatCheck}
+              id="eu-vat-check"
+              invoice={@preview_invoice}
+            />
+
             <FirmowidUI.Invoicing.Components.InvoiceNotes.invoice_notes
               invoice_note={@invoice.invoice_note}
               internal_note={@invoice.internal_note}

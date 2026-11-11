@@ -556,6 +556,8 @@ defmodule Firmowid.Invoicing.SalesInvoice do
       validate {Validations.ValidateTaxId,
                 id_field: :buyer_id, country_field: :buyer_country, pesel_field: :buyer_pesel, type_field: :buyer_type}
 
+      validate Validations.ValidateEuVatNumber
+
       validate {Validations.ValidateNameFields,
                 type_field: :buyer_type,
                 full_name_field: :buyer_full_name,
@@ -603,6 +605,10 @@ defmodule Firmowid.Invoicing.SalesInvoice do
       argument :confirmation_id, :uuid_v7
       argument :preview?, :boolean, default: false, public?: false
 
+      argument :confirm_corrected_buyer_vat_id, :boolean,
+        default: false,
+        description: "Repeat a corrected invoice's buyer VAT number that breaks its country's format."
+
       change Changes.ApplyInvoiceInput
       change set_new_attribute(:issue_date, &Date.utc_today/0)
 
@@ -645,6 +651,8 @@ defmodule Firmowid.Invoicing.SalesInvoice do
 
       validate {Validations.ValidateTaxId,
                 id_field: :buyer_id, country_field: :buyer_country, pesel_field: :buyer_pesel, type_field: :buyer_type}
+
+      validate {Validations.ValidateEuVatNumber, confirmation_argument: :confirm_corrected_buyer_vat_id}
 
       validate {Validations.ValidateNameFields,
                 type_field: :buyer_type,
@@ -772,6 +780,8 @@ defmodule Firmowid.Invoicing.SalesInvoice do
 
       validate {Validations.ValidateTaxId,
                 id_field: :buyer_id, country_field: :buyer_country, pesel_field: :buyer_pesel, type_field: :buyer_type}
+
+      validate Validations.ValidateEuVatNumber
 
       validate {Validations.ValidateNameFields,
                 type_field: :buyer_type,
@@ -953,6 +963,10 @@ defmodule Firmowid.Invoicing.SalesInvoice do
       argument :correction_reason, :string,
         description: "Reason stated on the correction; omit for the default cancellation reason."
 
+      argument :confirm_corrected_buyer_vat_id, :boolean,
+        default: false,
+        description: "Repeat a cancelled invoice's buyer VAT number that breaks its country's format."
+
       run fn input, context ->
         opts = Ash.Context.to_opts(context)
 
@@ -1025,7 +1039,8 @@ defmodule Firmowid.Invoicing.SalesInvoice do
               sale_date: latest.sale_date,
               due_date: latest.due_date,
               correction_reason: correction_reason,
-              sales_invoice_items: zeroed_items
+              sales_invoice_items: zeroed_items,
+              confirm_corrected_buyer_vat_id: input.arguments.confirm_corrected_buyer_vat_id
             },
             Keyword.put(opts, :action, :correct)
           )

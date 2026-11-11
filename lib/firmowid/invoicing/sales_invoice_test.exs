@@ -494,7 +494,7 @@ defmodule Firmowid.Invoicing.SalesInvoiceTest do
 
         original_xml = issued_invoice_xml(invoice, scope)
 
-        counterparty = company_counterparty_fixture(user, %{tax_id: "DE123456789", country: "DE"})
+        counterparty = company_counterparty_fixture(user, %{tax_id: "123456789", country: "DE"})
 
         assert {:ok, updated} =
                  Invoicing.attach_suggested_sales_invoice_counterparty(
@@ -524,7 +524,7 @@ defmodule Firmowid.Invoicing.SalesInvoiceTest do
       user = admin_fixture()
       scope = scope_for(user)
 
-      counterparty = company_counterparty_fixture(user, %{tax_id: "DE123456789", country: "DE"})
+      counterparty = company_counterparty_fixture(user, %{tax_id: "123456789", country: "DE"})
 
       non_matching_invoice =
         create_sales_invoice!(
@@ -553,16 +553,16 @@ defmodule Firmowid.Invoicing.SalesInvoiceTest do
       scope = scope_for(user)
 
       original_counterparty =
-        company_counterparty_fixture(user, %{tax_id: "DE123456789", country: "DE"})
+        company_counterparty_fixture(user, %{tax_id: "123456789", country: "DE"})
 
       other_counterparty =
-        company_counterparty_fixture(user, %{tax_id: "DE987654321", country: "DE"})
+        company_counterparty_fixture(user, %{tax_id: "987654321", country: "DE"})
 
       invoice =
         create_sales_invoice!(
           user,
           Map.merge(base_invoice_attrs(), %{
-            buyer_id: "DE123456789",
+            buyer_id: "123456789",
             buyer_country: "DE",
             buyer_type: :company,
             counterparty_id: original_counterparty.id,
@@ -579,6 +579,91 @@ defmodule Firmowid.Invoicing.SalesInvoiceTest do
 
       refetched = Invoicing.get_sales_invoice!(invoice.id, scope: scope)
       assert refetched.counterparty_id == original_counterparty.id
+    end
+  end
+
+  describe "EU VAT number guard" do
+    # Synthetic Swedish buyer: 1234567897 is a Luhn-valid organisation number; the VAT number appends 01.
+    defp swedish_input(buyer_id) do
+      issue_input()
+      |> Map.merge(%{buyer_id: buyer_id, buyer_country: "SE", buyer_full_name: "Testbolaget AB"})
+      |> Map.put(:invoice_number, "FV/#{System.unique_integer([:positive])}")
+    end
+
+    defp issue(user, input) do
+      Oban.Testing.with_testing_mode(:manual, fn ->
+        Invoicing.issue_sales_invoice(%{input: input}, scope: scope_for(user))
+      end)
+    end
+
+    test "issues a Swedish VAT number and blocks the organisation number alone" do
+      user = invoicing_admin_fixture()
+      InvoicingFixtures.connect_ksef!(user.member.organization_id)
+
+      assert {:ok, _invoice} = issue(user, swedish_input("123456789701"))
+
+      assert {:error, %Invalid{errors: errors}} = issue(user, swedish_input("1234567897"))
+      assert Enum.any?(errors, &match?(%InvalidAttribute{field: :buyer_id}, &1))
+
+      assert {:error, %Invalid{}} = issue(user, swedish_input("123456789101"))
+    end
+
+    test "blocks a number carrying its country prefix for another member state" do
+      user = invoicing_admin_fixture()
+      InvoicingFixtures.connect_ksef!(user.member.organization_id)
+
+      assert {:error, %Invalid{}} =
+               issue(
+                 user,
+                 "x"
+                 |> swedish_input()
+                 |> Map.put(:buyer_id, "DE123456789")
+                 |> Map.put(:buyer_country, "DE")
+               )
+    end
+
+    test "offers no confirmation to issue a new invoice with a broken number" do
+      user = invoicing_admin_fixture()
+      InvoicingFixtures.connect_ksef!(user.member.organization_id)
+
+      assert {:error, _error} =
+               Oban.Testing.with_testing_mode(:manual, fn ->
+                 Invoicing.issue_sales_invoice(
+                   %{input: swedish_input("1234567897"), confirm_corrected_buyer_vat_id: true},
+                   scope: scope_for(user)
+                 )
+               end)
+
+      assert [] = Invoicing.list_sales_invoices!(scope: scope_for(user))
+    end
+
+    test "cancels an invoice issued with a broken number only after confirmation" do
+      user = invoicing_admin_fixture()
+      InvoicingFixtures.connect_ksef!(user.member.organization_id)
+
+      original =
+        create_sales_invoice!(
+          user,
+          Map.merge(base_invoice_attrs(), %{
+            buyer_id: "1234567897",
+            buyer_country: "SE",
+            sales_invoice_items: [base_item_attrs(%{})]
+          })
+        )
+
+      Ash.Seed.update!(original, %{ksef_number: "5261040828-20260110-ABCDEF123456-AB"})
+
+      Oban.Testing.with_testing_mode(:manual, fn ->
+        assert {:error, %Invalid{errors: errors}} =
+                 SalesInvoice.cancel(original.id, scope: scope_for(user))
+
+        assert Enum.any?(errors, &match?(%{field: :confirm_corrected_buyer_vat_id}, &1))
+
+        assert {:ok, correction} =
+                 SalesInvoice.cancel(original.id, %{confirm_corrected_buyer_vat_id: true}, scope: scope_for(user))
+
+        assert correction.buyer_id == "1234567897"
+      end)
     end
   end
 
@@ -858,7 +943,7 @@ defmodule Firmowid.Invoicing.SalesInvoiceTest do
       seller_address: "ul. Testowa 1, 00-001 Warszawa",
       seller_account_number: "12345678901234567890123456",
       buyer_type: :company,
-      buyer_id: "DE123456789",
+      buyer_id: "123456789",
       buyer_full_name: "Buyer GmbH",
       buyer_address: "Teststrasse 1, 10115 Berlin",
       buyer_country: "DE",
@@ -904,7 +989,7 @@ defmodule Firmowid.Invoicing.SalesInvoiceTest do
       Map.merge(
         %{
           type: :company,
-          tax_id: "DE123456789",
+          tax_id: "123456789",
           full_name: "Counterparty GmbH",
           address: "Counterpartystrasse 1, 10115 Berlin",
           country: "DE"

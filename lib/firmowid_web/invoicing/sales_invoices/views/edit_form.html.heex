@@ -147,6 +147,29 @@
         <p class="mt-1 text-xs text-grey-400">
           {gettext("Required by law (Art. 106j(2)(3) of the VAT Act). Maximum 256 characters.")}
         </p>
+        <div
+          :if={Firmowid.Invoicing.EuVatReview.number_rejected?(@invoice)}
+          id="correction-eu-vat-confirmation"
+          class="mt-4 space-y-3 rounded-lg bg-rust-200 p-3 text-sm text-rust-700"
+        >
+          <p>
+            {gettext(
+              "The buyer VAT number %{number} does not match the %{country} format. The correction repeats it to identify the corrected invoice. Issue a new invoice with the right number afterwards.",
+              number: @invoice.buyer_id,
+              country:
+                Firmowid.Invoicing.CountryCodes.country_name(
+                  Firmowid.Invoicing.CountryCodes.normalize(@invoice.buyer_country)
+                )
+            )}
+          </p>
+          <.input
+            field={@form[:confirm_corrected_buyer_vat_id]}
+            type="checkbox"
+            label={
+              gettext("I confirm the correction repeats the number of the corrected invoice.")
+            }
+          />
+        </div>
       </div>
 
       <div class="col-start-2 col-end-9 grid grid-cols-2 gap-4">

@@ -384,6 +384,12 @@
           placeholder={id_placeholder}
           required={id_required?}
         />
+        <FirmowidWeb.Invoicing.Components.EuVatSuggestions.eu_vat_suggestions
+          :if={to_string(@counterparty_form[:buyer_type].value) == "company"}
+          id="buyer-eu-vat-suggestions"
+          country={@counterparty_form[:buyer_country].value}
+          number={@counterparty_form[:buyer_id].value}
+        />
 
         <.input
           :if={to_string(@counterparty_form[:buyer_type].value) == "company"}
