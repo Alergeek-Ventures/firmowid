@@ -13,6 +13,7 @@ defmodule Firmowid.Analysis.Services.CategoryClassifier do
   """
 
   alias Firmowid.Analysis
+  alias Firmowid.Analysis.CategoryReview
   alias Firmowid.Analysis.CounterpartyCategory
   alias Firmowid.Analysis.EntryCategory
   alias Firmowid.Analysis.IndustryTemplate
@@ -78,20 +79,22 @@ defmodule Firmowid.Analysis.Services.CategoryClassifier do
           into: %{},
           do: {{group.side, group.key}, line}
 
+    # The rule of each counterparty the review applies.
     {corrections, accepted} =
       [scope: scope]
       |> CounterpartyCategory.list!()
-      |> Enum.filter(&Map.has_key?(descriptions, {&1.side, &1.counterparty_key}))
-      |> Enum.sort_by(& &1.updated_at, {:desc, DateTime})
-      |> Enum.split_with(&(&1.category != &1.suggested_category))
+      |> CategoryReview.rules_by_key()
+      |> Enum.filter(fn {key, _rule} -> Map.has_key?(descriptions, key) end)
+      |> Enum.sort_by(fn {_key, rule} -> rule.updated_at end, {:desc, DateTime})
+      |> Enum.split_with(fn {_key, rule} -> rule.category != rule.suggested_category end)
 
     (corrections ++ accepted)
     |> Enum.take(@examples)
-    |> Enum.map(fn rule ->
+    |> Enum.map(fn {key, rule} ->
       %{
         side: rule.side,
         counterparty: rule.counterparty_name,
-        description: Map.fetch!(descriptions, {rule.side, rule.counterparty_key}),
+        description: Map.fetch!(descriptions, key),
         category: rule.category
       }
     end)

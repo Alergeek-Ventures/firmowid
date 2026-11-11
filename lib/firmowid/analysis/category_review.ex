@@ -71,12 +71,24 @@ defmodule Firmowid.Analysis.CategoryReview do
   """
   @spec resolve([entry()], [map()]) :: [{entry(), String.t(), resolution()}]
   def resolve(entries, rules) do
-    rules = Map.new(rules, &{{&1.side, &1.counterparty_key}, &1})
+    rules = rules_by_key(rules)
 
     Enum.map(entries, fn entry ->
       key = key(entry.name)
       {entry, key, resolution(entry, Map.get(rules, {entry.side, key}))}
     end)
+  end
+
+  @doc """
+  Returns the owner's `rules` by side and counterparty key. Keys come from the
+  confirmed name, so rules stored under an earlier key format still apply; of
+  rules with the same key the latest wins.
+  """
+  @spec rules_by_key([map()]) :: %{{IndustryTemplate.side(), String.t()} => map()}
+  def rules_by_key(rules) do
+    rules
+    |> Enum.sort_by(&{DateTime.to_unix(&1.updated_at, :microsecond), &1.id})
+    |> Map.new(&{{&1.side, key(&1.counterparty_name)}, &1})
   end
 
   @doc """
@@ -141,10 +153,21 @@ defmodule Firmowid.Analysis.CategoryReview do
       count: length(entries),
       suggestion: if(source != :confirmed, do: category),
       source: if(source != :confirmed, do: source),
-      reason: Enum.take(largest.lines, 1),
+      reason: reason(entries),
       status: status,
       category: if(status == :confirmed, do: category)
     }
+  end
+
+  # The largest described entry explains the group; transfers may come without a title.
+  defp reason(entries) do
+    case Enum.filter(entries, &(&1.lines != [])) do
+      [] ->
+        []
+
+      described ->
+        described |> Enum.max_by(& &1.amount, Decimal) |> Map.fetch!(:lines) |> Enum.take(1)
+    end
   end
 
   # The owner has the last word; a certain signal, else the classifier, only suggests.
@@ -153,9 +176,78 @@ defmodule Firmowid.Analysis.CategoryReview do
   defp resolution(%{classified: category}, nil) when category != nil, do: {category, :jev}
   defp resolution(_entry, nil), do: {nil, nil}
 
-  # Lowercase words separated by single spaces.
-  defp key(name) do
-    name |> String.downcase() |> String.split(~r/[^\p{L}\p{N}\-]+/u, trim: true) |> Enum.join(" ")
+  @doc """
+  Returns the key of a counterparty's name, the same for the ways invoices and
+  bank transfers write it: lowercase words without Polish letters, punctuation,
+  reference numbers or a trailing legal form.
+  """
+  @spec key(String.t()) :: String.t()
+  def key(name) do
+    name
+    |> String.downcase()
+    # "ł" has no decomposition to drop.
+    |> String.replace("ł", "l")
+    |> :unicode.characters_to_nfd_binary()
+    |> String.replace(~r/\p{Mn}/u, "")
+    |> String.split(~r/[^\p{L}\p{N}]+/u, trim: true)
+    |> distinctive_words()
+    |> Enum.join(" ")
+  end
+
+  # Card payments carry reference numbers, five or more digits with at most a letter before
+  # them ("AIRLINE 1234567890 WARSAW", "P123456789"). The name drops them and its legal form,
+  # unless nothing else tells it apart ("1234567890 Inc").
+  defp distinctive_words(words) do
+    [Enum.reject(words, &(&1 =~ ~r/^\p{L}?\d{5,}$/u)), words]
+    |> Enum.map(&strip_legal_form/1)
+    |> Enum.find(words, &(&1 != []))
+  end
+
+  # Without punctuation and Polish letters; several forms may follow each other.
+  @legal_forms [
+    ~w(spolka z ograniczona odpowiedzialnoscia),
+    ~w(spolka komandytowo akcyjna),
+    ~w(spolka komandytowa),
+    ~w(spolka jawna),
+    ~w(spolka akcyjna),
+    ~w(spolka z o o),
+    ~w(sp z o o),
+    ~w(sp z oo),
+    ~w(sp zoo),
+    ~w(sp k),
+    ~w(sp j),
+    ~w(s a),
+    ~w(pte ltd),
+    ~w(inc),
+    ~w(ltd),
+    ~w(limited),
+    ~w(llc),
+    ~w(pbc),
+    ~w(gmbh),
+    ~w(ab),
+    ~w(bv),
+    ~w(b v),
+    ~w(srl),
+    ~w(s r l),
+    ~w(s r o),
+    ~w(sarl)
+  ]
+
+  # Bank transfers cut long names short, so the start of a long legal form counts as one.
+  defp strip_legal_form([]), do: []
+
+  defp strip_legal_form(words) do
+    stripped =
+      Enum.find_value(@legal_forms, words, fn form ->
+        Enum.find_value(min(length(form), length(words))..1//-1, fn size ->
+          {name, tail} = Enum.split(words, -size)
+
+          if tail == form or (size >= 2 and length(form) >= 3 and List.starts_with?(form, tail)),
+            do: name
+        end)
+      end)
+
+    if stripped == words, do: words, else: strip_legal_form(stripped)
   end
 
   defp side_totals(groups, side, industry) do
