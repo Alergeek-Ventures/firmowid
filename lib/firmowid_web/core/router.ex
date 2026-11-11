@@ -246,6 +246,7 @@ defmodule FirmowidWeb.Core.Router do
         {CurrentPath, :save_request_uri}
       ] do
       live "/organizacja", Organization.Views.Index, :index
+      live "/organizacja/formularz", Organization.Views.LegacyForm, :index
     end
   end
 
@@ -273,6 +274,7 @@ defmodule FirmowidWeb.Core.Router do
         Locale,
         {RequireOrganization, :default},
         {FeatureFlags, :default},
+        {RequireOrganization, :first_steps},
         {CurrentPath, :save_request_uri},
         Timezone
       ] do
@@ -305,6 +307,7 @@ defmodule FirmowidWeb.Core.Router do
         {RequireOrganization, :default},
         {RequireAdmin, :default},
         {FeatureFlags, :default},
+        {RequireOrganization, :first_steps},
         {CurrentPath, :save_request_uri},
         Timezone
       ] do
@@ -359,6 +362,7 @@ defmodule FirmowidWeb.Core.Router do
         Locale,
         {RequireOrganization, :default},
         {FeatureFlags, :default},
+        {RequireOrganization, :first_steps},
         {CurrentPath, :save_request_uri},
         Timezone
       ] do

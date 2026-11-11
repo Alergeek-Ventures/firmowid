@@ -7,14 +7,16 @@ defmodule FirmowidWeb.Infrastructure.Hooks.RequireOrganization do
   2. Loads the member of the organization selected in the session (see
      `UserAuth.load_member/2`); redirects to /organizacja if there is none
   3. Loads avatar on user and organization via shared `UserAuth.load_scope_and_avatars/1`
-  4. Sends the admin of a company still before its first steps back to its setup
-     (see `UserAuth.first_steps_pending?/2`)
-  5. Assigns current_user, current_org, organizations (to switch between), ash_scope
+  4. Assigns current_user, current_org, organizations (to switch between), ash_scope
+
+  `:first_steps`, mounted after the feature flags, sends the admin of a company
+  still before its first steps back to its setup (see `UserAuth.first_steps_pending?/2`).
   """
 
   use FirmowidWeb, :verified_routes
   use Gettext, backend: Firmowid.Gettext
 
+  import FirmowidWeb.Infrastructure.Flags, only: [flag_enabled?: 2]
   import Phoenix.Component
   import Phoenix.LiveView
 
@@ -39,17 +41,25 @@ defmodule FirmowidWeb.Infrastructure.Hooks.RequireOrganization do
       {user, organizations} ->
         {user, org, scope} = UserAuth.load_scope_and_avatars(user)
 
-        if UserAuth.first_steps_pending?(user, org) and socket.view != FirstSteps do
-          {:halt, redirect(socket, to: OrganizationNavigation.setup_path())}
-        else
-          {:cont,
-           socket
-           |> assign(:current_user, user)
-           |> assign(:current_org, org)
-           |> assign(:organizations, organizations)
-           |> assign(:ash_scope, scope)
-           |> attach_access_hook(:ash_scope)}
-        end
+        {:cont,
+         socket
+         |> assign(:current_user, user)
+         |> assign(:current_org, org)
+         |> assign(:organizations, organizations)
+         |> assign(:ash_scope, scope)
+         |> attach_access_hook(:ash_scope)}
+    end
+  end
+
+  # Runs after the feature flags, since the setup is behind `inbox`.
+  def on_mount(:first_steps, _params, _session, socket) do
+    %{current_user: user, current_org: org} = socket.assigns
+
+    if flag_enabled?(:inbox, socket.assigns) and
+         UserAuth.first_steps_pending?(user, org) and socket.view != FirstSteps do
+      {:halt, redirect(socket, to: OrganizationNavigation.setup_path())}
+    else
+      {:cont, socket}
     end
   end
 

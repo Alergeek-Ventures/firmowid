@@ -1,12 +1,19 @@
 defmodule FirmowidWeb.Organization.Controllers.SwitchTest do
   @moduledoc false
-  use FirmowidWeb.ConnCase, async: true
+  use FirmowidWeb.ConnCase, async: false
 
   import Firmowid.AccountsFixtures
   import Phoenix.LiveViewTest
 
   alias Firmowid.Core
   alias Firmowid.Scope
+
+  # The setup wizard is behind the inbox flag. Flags are application config in
+  # tests, so this module runs alone.
+  setup do
+    Application.put_env(:firmowid, :enabled_feature_flags, [:inbox])
+    on_exit(fn -> Application.delete_env(:firmowid, :enabled_feature_flags) end)
+  end
 
   setup do
     # Sable owns her first organization and joins a second one as an admin; each

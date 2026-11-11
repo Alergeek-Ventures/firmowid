@@ -574,7 +574,7 @@ defmodule FirmowidWeb.Management.Views.EmployeesTest do
         actor: admin
       )
 
-    {:ok, lv, _html} = conn |> log_in_user(employee) |> live(~p"/organizacja?krok=dolacz")
+    {:ok, lv, _html} = conn |> log_in_user(employee) |> live(~p"/organizacja/formularz")
 
     lv
     |> form("#join_form", %{"name" => "Ada Lovelace", "code" => invite.invite_code})
