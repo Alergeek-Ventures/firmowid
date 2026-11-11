@@ -94,6 +94,9 @@ defmodule Firmowid.Invoicing.EuVatReview do
 
   @doc "Maps a VIES client result to a registration status."
   @spec registration_status({:ok, map()} | {:error, term()}) :: :active | :inactive | :unavailable
+  # VIES answers 200 and names a registry failure in `userError`, sometimes next to `valid: false`.
+  def registration_status({:ok, %{user_error: error}}) when error not in [nil, "VALID", "INVALID"], do: :unavailable
+
   def registration_status({:ok, %{valid: true}}), do: :active
   def registration_status({:ok, %{valid: false}}), do: :inactive
   # VIES answers 200 without `valid` when the member state's registry does not respond.
@@ -125,7 +128,8 @@ defmodule Firmowid.Invoicing.EuVatReview do
     )
   end
 
-  defp inactive_number?(invoice, %{vat_id_status: :inactive} = counterparty) do
+  # Archived counterparties are no longer checked, so their last result is stale.
+  defp inactive_number?(invoice, %{vat_id_status: :inactive, archived_at: nil} = counterparty) do
     TaxId.normalize(counterparty.tax_id) == TaxId.normalize(invoice.buyer_id) and
       CountryCodes.normalize(counterparty.country) ==
         CountryCodes.normalize(invoice.buyer_country)

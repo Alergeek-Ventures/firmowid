@@ -12,7 +12,7 @@ defmodule Firmowid.Invoicing.Workers.VatIdCheckWorker do
   week ago. A job with `counterparty_id` checks that counterparty only. When VIES
   does not answer, the previous result stays and the next daily run tries again.
   """
-  use Oban.Worker, queue: :invoicing, max_attempts: 3
+  use Oban.Worker, queue: :vat_id_checks, max_attempts: 3
 
   alias Firmowid.Core
   alias Firmowid.Invoicing

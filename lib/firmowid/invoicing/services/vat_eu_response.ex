@@ -15,6 +15,7 @@ defmodule Firmowid.Invoicing.Services.VatEuResponse do
           request_date: String.t() | nil,
           valid: boolean() | nil,
           request_identifier: String.t() | nil,
+          user_error: String.t() | nil,
           name: String.t() | nil,
           address: String.t() | nil,
           trader_name: String.t() | nil,
@@ -35,6 +36,7 @@ defmodule Firmowid.Invoicing.Services.VatEuResponse do
     field :request_date, :string
     field :valid, :boolean
     field :request_identifier, :string
+    field :user_error, :string
     field :name, :string
     field :address, :string
     field :trader_name, :string
@@ -57,6 +59,7 @@ defmodule Firmowid.Invoicing.Services.VatEuResponse do
       :request_date,
       :valid,
       :request_identifier,
+      :user_error,
       :name,
       :address,
       :trader_name,

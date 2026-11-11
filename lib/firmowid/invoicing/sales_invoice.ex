@@ -1115,9 +1115,11 @@ defmodule Firmowid.Invoicing.SalesInvoice do
       run fn input, context ->
         opts = Ash.Context.to_opts(context)
 
+        # A preview saves nothing; submitting the correction still requires the confirmation.
         %{
           input: input.arguments.invoice,
-          original_invoice_id: input.arguments.original_invoice_id
+          original_invoice_id: input.arguments.original_invoice_id,
+          confirm_corrected_buyer_vat_id: true
         }
         |> __MODULE__.changeset_to_correct(Keyword.put(opts, :private_arguments, %{preview?: true}))
         |> Preview.from_changeset(opts)

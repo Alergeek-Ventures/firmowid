@@ -5,7 +5,7 @@ defmodule Firmowid.Test.Support.ViesApiStub do
 
   Synthetic numbers decide the answer: the listed ones are active, numbers starting
   with `000` get the answer VIES gives when a member state's registry does not
-  respond, and any other number is inactive.
+  respond (`userError` next to `valid: false`), and any other number is inactive.
   """
 
   @behaviour Plug
@@ -21,7 +21,11 @@ defmodule Firmowid.Test.Support.ViesApiStub do
     %{"vatNumber" => number} = Jason.decode!(body)
 
     if String.starts_with?(number, "000") do
-      Req.Test.json(conn, %{"actionSucceed" => false})
+      Req.Test.json(conn, %{
+        "vatNumber" => number,
+        "valid" => false,
+        "userError" => "MS_UNAVAILABLE"
+      })
     else
       Req.Test.json(conn, %{"vatNumber" => number, "valid" => number in @active})
     end

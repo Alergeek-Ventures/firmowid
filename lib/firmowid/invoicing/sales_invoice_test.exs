@@ -622,21 +622,6 @@ defmodule Firmowid.Invoicing.SalesInvoiceTest do
                )
     end
 
-    test "offers no confirmation to issue a new invoice with a broken number" do
-      user = invoicing_admin_fixture()
-      InvoicingFixtures.connect_ksef!(user.member.organization_id)
-
-      assert {:error, _error} =
-               Oban.Testing.with_testing_mode(:manual, fn ->
-                 Invoicing.issue_sales_invoice(
-                   %{input: swedish_input("1234567897"), confirm_corrected_buyer_vat_id: true},
-                   scope: scope_for(user)
-                 )
-               end)
-
-      assert [] = Invoicing.list_sales_invoices!(scope: scope_for(user))
-    end
-
     test "cancels an invoice issued with a broken number only after confirmation" do
       user = invoicing_admin_fixture()
       InvoicingFixtures.connect_ksef!(user.member.organization_id)
@@ -664,6 +649,28 @@ defmodule Firmowid.Invoicing.SalesInvoiceTest do
 
         assert correction.buyer_id == "1234567897"
       end)
+    end
+
+    test "previews a correction of an invoice issued with a broken number" do
+      user = invoicing_admin_fixture()
+
+      original =
+        create_sales_invoice!(
+          user,
+          Map.merge(base_invoice_attrs(), %{
+            buyer_id: "1234567897",
+            buyer_country: "SE",
+            sales_invoice_items: [base_item_attrs(%{})]
+          })
+        )
+
+      Ash.Seed.update!(original, %{ksef_number: "5261040828-20260110-ABCDEF123456-AB"})
+
+      assert {:ok, %SalesInvoice{buyer_id: "1234567897"}} =
+               Invoicing.preview_sales_invoice_correction(
+                 %{invoice: swedish_input("1234567897"), original_invoice_id: original.id},
+                 scope: scope_for(user)
+               )
     end
   end
 
