@@ -170,7 +170,7 @@ defmodule FirmowidWeb.Organization.Controllers.SwitchTest do
       |> log_in_user(sable)
       |> Plug.Test.init_test_session(%{"organization_id" => pending.id})
 
-    assert {:error, {:redirect, %{to: "/pierwsze-kroki"}}} = live(conn, ~p"/fakturowanie")
+    assert {:error, {:redirect, %{to: "/organizacja?krok=firma"}}} = live(conn, ~p"/fakturowanie")
 
     conn = post(conn, ~p"/organizacja/przelacz", %{"organizacja" => first_id})
     assert redirected_to(conn) == ~p"/fakturowanie"

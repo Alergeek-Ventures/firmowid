@@ -128,7 +128,8 @@ defmodule FirmowidWeb.Auth.Views.RegistrationTest do
       assert redirected_to(conn) == ~p"/pierwsze-kroki"
 
       # Until the first steps are done, the rest of the app leads back to them.
-      assert {:error, {:redirect, %{to: "/pierwsze-kroki"}}} = live(conn, ~p"/fakturowanie")
+      assert {:error, {:redirect, %{to: "/organizacja?krok=firma"}}} =
+               live(conn, ~p"/fakturowanie")
 
       # Going back from KSeF edits the company instead of creating another one.
       {:ok, first_steps_lv, _html} = live(conn, ~p"/pierwsze-kroki?krok=ksef")

@@ -7,7 +7,7 @@ defmodule FirmowidWeb.Infrastructure.Hooks.RequireOrganization do
   2. Loads the member of the organization selected in the session (see
      `UserAuth.load_member/2`); redirects to /organizacja if there is none
   3. Loads avatar on user and organization via shared `UserAuth.load_scope_and_avatars/1`
-  4. Sends the admin of a company still before its first steps back to them
+  4. Sends the admin of a company still before its first steps back to its setup
      (see `UserAuth.first_steps_pending?/2`)
   5. Assigns current_user, current_org, organizations (to switch between), ash_scope
   """
@@ -40,7 +40,7 @@ defmodule FirmowidWeb.Infrastructure.Hooks.RequireOrganization do
         {user, org, scope} = UserAuth.load_scope_and_avatars(user)
 
         if UserAuth.first_steps_pending?(user, org) and socket.view != FirstSteps do
-          {:halt, redirect(socket, to: OrganizationNavigation.first_steps_path())}
+          {:halt, redirect(socket, to: OrganizationNavigation.setup_path())}
         else
           {:cont,
            socket

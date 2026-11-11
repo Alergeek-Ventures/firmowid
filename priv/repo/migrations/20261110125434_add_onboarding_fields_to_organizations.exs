@@ -14,8 +14,8 @@ defmodule Firmowid.Repo.Migrations.AddOnboardingFieldsToOrganizations do
       add :onboarding_completed_at, :utc_datetime_usec
     end
 
-    # Existing companies keep the name they showed and are past their first steps.
-    execute "UPDATE organizations SET display_name = name, onboarding_completed_at = now()"
+    # Existing companies keep the name they showed and still take the first steps.
+    execute "UPDATE organizations SET display_name = name"
 
     alter table(:organizations) do
       modify :display_name, :text, null: false
