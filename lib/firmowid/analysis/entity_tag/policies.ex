@@ -15,6 +15,14 @@ defmodule Firmowid.Analysis.EntityTag.Policies do
       authorize_if action_type(:read)
     end
 
+    # Gives untagged sales invoices their client's project, see `Analysis.Services.ClientProjects`.
+    bypass [
+      {SystemActorRole, roles: [:analysis_classifier]},
+      action([:assign_if_unassigned, :create_classified])
+    ] do
+      authorize_if always()
+    end
+
     policy Firmowid.Checks.IsSystemActor do
       forbid_if always()
     end
