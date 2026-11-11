@@ -5427,11 +5427,6 @@ msgctxt "time range column"
 msgid "From"
 msgstr ""
 
-#: lib/firmowid_web/organization/views/index.ex
-#, elixir-autogen, elixir-format
-msgid "From the VAT white list of the Ministry of Finance, %{date}"
-msgstr ""
-
 #: lib/firmowid_web/analysis/components/period_details.ex
 #, elixir-autogen, elixir-format
 msgid "From the document: %{text}"
@@ -12993,11 +12988,6 @@ msgstr ""
 #: lib/firmowid_web/invoicing/components/entries_table.ex
 #, elixir-autogen, elixir-format
 msgid "We synchronized transactions from your account - this means a document should be assigned to the expense. "
-msgstr ""
-
-#: lib/firmowid_web/organization/views/index.ex
-#, elixir-autogen, elixir-format
-msgid "We took the name, address and PKD from the VAT white list. They go onto every invoice of yours, so check that they are right."
 msgstr ""
 
 #: lib/firmowid_web/settings/components/account_tab.ex
