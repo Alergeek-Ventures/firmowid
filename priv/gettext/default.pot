@@ -38,19 +38,19 @@ msgctxt "landing card price"
 msgid "%{amount} PLN"
 msgstr ""
 
+#: lib/firmowid_web/analysis/components/period_details.ex
+#, elixir-autogen, elixir-format
+msgid "%{amount} of every 100"
+msgstr ""
+
+#: lib/firmowid_web/analysis/components/period_details.ex
+#, elixir-autogen, elixir-format
+msgid "%{amount} stayed"
+msgstr ""
+
 #: lib/firmowid_web/analysis/components/segment_ranking.ex
 #, elixir-autogen, elixir-format
 msgid "%{amount} without a project split across projects by tracked hours."
-msgstr ""
-
-#: lib/firmowid_web/analysis/components/period_details.ex
-#, elixir-autogen, elixir-format
-msgid "%{amount} · %{share}"
-msgstr ""
-
-#: lib/firmowid_web/analysis/components/period_details.ex
-#, elixir-autogen, elixir-format
-msgid "%{amount} · %{share} of income"
 msgstr ""
 
 #: lib/firmowid_web/inbox/utilities/queue.ex
@@ -347,6 +347,7 @@ msgstr ""
 msgid "%{employee} · %{month}"
 msgstr ""
 
+#: lib/firmowid_web/analysis/components/period_details.ex
 #: lib/firmowid_web/analysis/views/dashboard.ex
 #, elixir-autogen, elixir-format
 msgid "%{from} – %{to}"
@@ -5370,6 +5371,11 @@ msgstr ""
 msgid "For civil-contract payments up to PLN 200, the total contractual amount is needed to determine the tax regime."
 msgstr ""
 
+#: lib/firmowid_web/analysis/components/period_details.ex
+#, elixir-autogen, elixir-format
+msgid "For every %{hundred} of income, %{amount} went out."
+msgstr ""
+
 #: lib/firmowid_web/landing/components/pricing.ex
 #, elixir-autogen, elixir-format
 msgid "For everyone who issues invoices in KSeF"
@@ -8045,6 +8051,11 @@ msgstr ""
 #, elixir-autogen, elixir-format
 msgctxt "month name in a date"
 msgid "October"
+msgstr ""
+
+#: lib/firmowid_web/analysis/components/period_details.ex
+#, elixir-autogen, elixir-format
+msgid "Of every %{hundred} of income, %{amount} stayed."
 msgstr ""
 
 #: lib/firmowid_web/analysis/components/category_selector.ex
@@ -14314,6 +14325,11 @@ msgstr ""
 msgid "less administrative work per week"
 msgstr ""
 
+#: lib/firmowid_web/analysis/components/period_details.ex
+#, elixir-autogen, elixir-format
+msgid "loss %{amount}"
+msgstr ""
+
 #: lib/firmowid_web/organization/views/index.ex
 #, elixir-autogen, elixir-format
 msgid "matches PKD %{code}"
@@ -14633,6 +14649,11 @@ msgstr ""
 #: lib/firmowid_web/landing/components/sections.ex
 #, elixir-autogen, elixir-format
 msgid "software license"
+msgstr ""
+
+#: lib/firmowid_web/analysis/components/period_details.ex
+#, elixir-autogen, elixir-format
+msgid "stays in the company"
 msgstr ""
 
 #: lib/firmowid_web/organization/views/index.ex
