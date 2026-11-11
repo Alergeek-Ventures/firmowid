@@ -185,8 +185,4 @@ defmodule FirmowidWeb.HoursRecord.Views.Index do
     |> assign(:projects, projects)
     |> assign(:total_duration, total_duration)
   end
-
-  def error_to_string(:too_large), do: "Image too large"
-  def error_to_string(:too_many_files), do: "Too many files"
-  def error_to_string(:not_accepted), do: "Unacceptable file type"
 end
