@@ -17,6 +17,7 @@ defmodule FirmowidWeb.Inbox.Components.Queue do
   Only urgent items get the solid black navigation button.
   """
   attr :item, :map, required: true
+  attr :fresh, :boolean, default: false, doc: "arrived while the page was open; it lights up once"
 
   def item_row(assigns) do
     assigns = assign(assigns, :decisions, Map.get(assigns.item, :decisions, []))
@@ -24,7 +25,10 @@ defmodule FirmowidWeb.Inbox.Components.Queue do
     ~H"""
     <article
       id={"item-#{@item.id}"}
-      class="flex items-center gap-4 border-b border-grey-200 px-5 py-4 last:border-b-0 max-md:flex-col max-md:items-start max-md:gap-3 max-md:px-4"
+      class={[
+        "flex items-center gap-4 border-b border-grey-200 px-5 py-4 last:border-b-0 max-md:flex-col max-md:items-start max-md:gap-3 max-md:px-4",
+        @fresh && "motion-safe:animate-arrive"
+      ]}
     >
       <div class="flex w-full min-w-0 flex-1 items-start gap-4">
         <span class={[

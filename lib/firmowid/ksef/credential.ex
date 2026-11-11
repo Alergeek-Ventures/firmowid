@@ -12,6 +12,7 @@ defmodule Firmowid.Ksef.Credential do
   """
 
   use Ash.Resource,
+    simple_notifiers: [Firmowid.Core.Notifiers.InboxChanged],
     domain: Firmowid.Ksef,
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer],

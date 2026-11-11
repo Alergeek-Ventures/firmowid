@@ -15,6 +15,7 @@ defmodule FirmowidWeb.Core.Router do
   alias Delegations.Views.DelegationForm
   alias FirmowidMcp.Utilities.Authenticate
   alias FirmowidWeb.Core.Telemetry
+  alias FirmowidWeb.Inbox.Hooks.LiveQueue
   alias FirmowidWeb.Infrastructure.Hooks.CurrentPath
   alias FirmowidWeb.Infrastructure.Hooks.FeatureFlags
   alias FirmowidWeb.Infrastructure.Hooks.Locale
@@ -283,7 +284,8 @@ defmodule FirmowidWeb.Core.Router do
         {RequireOrganization, :first_steps},
         {RequireOrganization, :plan_limit},
         {CurrentPath, :save_request_uri},
-        Timezone
+        Timezone,
+        {LiveQueue, :default}
       ] do
       live "/skrzynka", Inbox.Views.Index, :index
       live "/asystent", Assistant.Views.Index, :index
@@ -311,6 +313,7 @@ defmodule FirmowidWeb.Core.Router do
       if Mix.env() == :dev do
         live "/development", Development.Views.Index, :index
         live "/development/design-system", Development.Views.DesignSystem, :index
+        live "/development/skrzynka", Development.Views.InboxScenarios, :index
       end
     end
 
@@ -323,7 +326,8 @@ defmodule FirmowidWeb.Core.Router do
         {RequireOrganization, :first_steps},
         {RequireOrganization, :plan_limit},
         {CurrentPath, :save_request_uri},
-        Timezone
+        Timezone,
+        {LiveQueue, :default}
       ] do
       live "/pierwsze-kroki", Organization.Views.FirstSteps, :index
       live "/limit-planu", Billing.Views.PlanLimit, :index

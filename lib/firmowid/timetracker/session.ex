@@ -12,6 +12,7 @@ defmodule Firmowid.Timetracker.Session do
   multitenancy).
   """
   use Ash.Resource,
+    simple_notifiers: [Firmowid.Core.Notifiers.InboxChanged],
     domain: Firmowid.Timetracker,
     authorizers: [Ash.Policy.Authorizer],
     extensions: [AshJsonApi.Resource, AshOban],

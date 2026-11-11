@@ -46,6 +46,7 @@ defmodule Firmowid.Invoicing.SalesInvoice do
     * `:validate_number` — validate an invoice number (format, duplicate, gap)
   """
   use Ash.Resource,
+    simple_notifiers: [Firmowid.Core.Notifiers.InboxChanged],
     domain: Firmowid.Invoicing,
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer],

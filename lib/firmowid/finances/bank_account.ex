@@ -10,6 +10,7 @@ defmodule Firmowid.Finances.BankAccount do
   Uses AshOban for periodic transaction sync from GoCardless.
   """
   use Ash.Resource,
+    simple_notifiers: [Firmowid.Core.Notifiers.InboxChanged],
     domain: Firmowid.Finances,
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer],

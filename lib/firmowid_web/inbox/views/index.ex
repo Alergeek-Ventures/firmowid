@@ -20,10 +20,15 @@ defmodule FirmowidWeb.Inbox.Views.Index do
   alias FirmowidWeb.Inbox.Utilities.Navigation
   alias FirmowidWeb.Inbox.Utilities.Queue
 
+  # Checks for what changes with time alone; writes are pushed right away.
+  @tick_ms to_timeout(minute: 5)
+
   @impl true
   def mount(_params, _session, socket) do
     if flag_enabled?(:inbox, socket.assigns) do
-      {:ok, assign(socket, :page_title, pgettext("sidebar", "Inbox"))}
+      if connected?(socket), do: schedule_tick()
+
+      {:ok, assign(socket, page_title: pgettext("sidebar", "Inbox"), items: [], fresh: MapSet.new())}
     else
       {:ok, push_navigate(socket, to: ~p"/fakturowanie")}
     end
@@ -31,13 +36,44 @@ defmodule FirmowidWeb.Inbox.Views.Index do
 
   @impl true
   def handle_params(params, _uri, socket) do
-    scope = socket.assigns.ash_scope
-    today = socket.assigns.timezone |> DateTime.now!() |> DateTime.to_date()
-
     layer =
       if socket.assigns.current_user.member.role == :employee,
         do: :me,
         else: Navigation.parse_layer(params["warstwa"])
+
+    {:noreply, socket |> assign(:fresh, MapSet.new()) |> load(layer)}
+  end
+
+  # Something the inbox shows changed elsewhere (see `FirmowidWeb.Inbox.Hooks.LiveQueue`).
+  @impl true
+  def handle_info(:inbox_refresh, socket), do: {:noreply, reload(socket)}
+
+  # Overdue invoices and expiring connections change with time alone, without
+  # any write to tell about it.
+  def handle_info(:inbox_tick, socket) do
+    schedule_tick()
+    send_update(SidebarNav, id: SidebarNav.id(), refresh: true)
+    {:noreply, reload(socket)}
+  end
+
+  defp schedule_tick, do: Process.send_after(self(), :inbox_tick, @tick_ms)
+
+  # Reloads the current layer and marks the items that were not there before,
+  # so the page can point them out.
+  defp reload(socket) do
+    seen = MapSet.new(socket.assigns.items, & &1.id)
+    socket = load(socket, socket.assigns.layer)
+
+    assign(
+      socket,
+      :fresh,
+      for(item <- socket.assigns.items, item.id not in seen, into: MapSet.new(), do: item.id)
+    )
+  end
+
+  defp load(socket, layer) do
+    scope = socket.assigns.ash_scope
+    today = socket.assigns.timezone |> DateTime.now!() |> DateTime.to_date()
 
     socket =
       case layer do
@@ -63,15 +99,12 @@ defmodule FirmowidWeb.Inbox.Views.Index do
           )
       end
 
-    presence = Session.team_presence!(today, scope: scope)
-
-    {:noreply,
-     assign(socket,
-       layer: layer,
-       today: today,
-       items: Queue.items(layer, scope, socket.assigns.current_org, today),
-       presence: presence
-     )}
+    assign(socket,
+      layer: layer,
+      today: today,
+      items: Queue.items(layer, scope, socket.assigns.current_org, today),
+      presence: Session.team_presence!(today, scope: scope)
+    )
   end
 
   @impl true
@@ -224,10 +257,11 @@ defmodule FirmowidWeb.Inbox.Views.Index do
               <.item_row
                 :for={item <- if(tier == :books, do: Enum.take(items, 5), else: items)}
                 item={item}
+                fresh={item.id in @fresh}
               />
               <%!-- The rest of the overdue invoices, revealed in place: the invoice list only shows one month. --%>
               <div :if={tier == :books and length(items) > 5} id="inbox-books-rest" class="hidden">
-                <.item_row :for={item <- Enum.drop(items, 5)} item={item} />
+                <.item_row :for={item <- Enum.drop(items, 5)} item={item} fresh={item.id in @fresh} />
               </div>
             </div>
             <.button

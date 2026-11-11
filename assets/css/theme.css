@@ -32,6 +32,25 @@
     }
   }
 
+  /* A queue item that arrived while the page was open: lit up, then settles */
+  @keyframes arrive {
+    0% {
+      opacity: 0;
+      background-color: var(--color-teal-200);
+      box-shadow: inset 3px 0 0 var(--color-teal-700);
+    }
+    15%,
+    55% {
+      opacity: 1;
+      background-color: var(--color-teal-200);
+      box-shadow: inset 3px 0 0 var(--color-teal-700);
+    }
+    100% {
+      background-color: transparent;
+      box-shadow: inset 3px 0 0 transparent;
+    }
+  }
+
   @keyframes appear {
     0% {
       opacity: 0;
@@ -113,6 +132,7 @@
   --animate-fade-in: appear 150ms ease-out forwards;
   /* Content that replaces other content in place, like the sidebar layers */
   --animate-dissolve: appear 300ms ease-out;
+  --animate-arrive: arrive 3s ease-out;
   --animate-error-pulse: error-pulse 2s ease-in-out infinite;
   --animate-stamp-press: stamp-press 640ms cubic-bezier(0.16, 1, 0.3, 1) both;
   --animate-marker: marker 650ms cubic-bezier(0.23, 1, 0.32, 1) both;

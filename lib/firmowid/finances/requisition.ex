@@ -7,6 +7,7 @@ defmodule Firmowid.Finances.Requisition do
   Tracks the lifecycle of a bank connection request.
   """
   use Ash.Resource,
+    simple_notifiers: [Firmowid.Core.Notifiers.InboxChanged],
     domain: Firmowid.Finances,
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer],
