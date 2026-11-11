@@ -16,6 +16,7 @@ defmodule FirmowidWeb.Assistant.Utilities.Changes do
   alias Firmowid.Core
   alias Firmowid.Finances
   alias Firmowid.Invoicing
+  alias Firmowid.Invoicing.SalesInvoice
   alias Firmowid.Invoicing.SalesInvoice.Preview
   alias Firmowid.Scope
   alias Firmowid.Timetracker.Project
@@ -185,13 +186,11 @@ defmodule FirmowidWeb.Assistant.Utilities.Changes do
       changes =
         for {field, label} <- profile_fields(),
             value = input[Atom.to_string(field)],
-            not is_nil(value) do
-          change(
-            label,
-            profile_value(field, Map.get(user.member, field)),
-            profile_value(field, value)
-          )
-        end
+            not is_nil(value),
+            before = profile_value(field, Map.get(user.member, field)),
+            later = profile_value(field, value),
+            before != later,
+            do: change(label, before, later)
 
       if changes == [], do: :unchanged, else: {:ok, [], changes}
     end
@@ -389,10 +388,12 @@ defmodule FirmowidWeb.Assistant.Utilities.Changes do
     ])
   end
 
-  # Decimals compare by value: a saved 1.0 is the proposed 1.
+  # Every field a revision can write, plus the reviewed ones it refreshes. Decimals compare by
+  # value: a saved 1.0 is the proposed 1.
   defp snapshot(invoice) do
     invoice
     |> Preview.review_snapshot()
+    |> Map.merge(Map.take(invoice, Ash.Resource.Info.action(SalesInvoice, :revise).accept))
     |> Map.update!(:items, fn items ->
       Enum.map(items, &Map.new(&1, fn {key, value} -> {key, normalize(value)} end))
     end)

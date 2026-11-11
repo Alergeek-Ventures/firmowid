@@ -522,7 +522,7 @@ defmodule FirmowidWeb.Assistant.Views.Floating do
       conversation: nil,
       subject: nil,
       turns: [],
-      plan: %{available?: true, readable?: true, unchanged?: false, calls: []},
+      plan: %{available?: true, readable?: true, calls: []},
       invoices: %{},
       open_invoice: nil,
       dismissed_invoices: MapSet.new()

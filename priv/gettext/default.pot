@@ -11256,6 +11256,11 @@ msgstr ""
 msgid "This cannot be undone."
 msgstr ""
 
+#: lib/firmowid_web/assistant/components/records.ex
+#, elixir-autogen, elixir-format
+msgid "This changes nothing. Reject the plan."
+msgstr ""
+
 #: lib/firmowid_web/payroll/components/monthly_payout.ex
 #, elixir-autogen, elixir-format
 msgid "This contract type is not supported."
@@ -11387,11 +11392,6 @@ msgstr ""
 #: lib/firmowid_web/payroll/components/monthly_payout.ex
 #, elixir-autogen, elixir-format
 msgid "This payout needs an individual review"
-msgstr ""
-
-#: lib/firmowid_web/assistant/components/records.ex
-#, elixir-autogen, elixir-format
-msgid "This plan changes nothing. Reject it."
 msgstr ""
 
 #: lib/firmowid_web/settings/components/subscription_tab.ex
