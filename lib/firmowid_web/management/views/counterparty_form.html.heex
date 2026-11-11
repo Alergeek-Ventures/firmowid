@@ -64,6 +64,12 @@
                 {gettext("Fetch data")}
               </.button>
             </div>
+            <FirmowidWeb.Invoicing.Components.EuVatSuggestions.eu_vat_suggestions
+              id="counterparty-eu-vat-suggestions"
+              country={@form[:country].value}
+              number={@form[:tax_id].value}
+              class="col-start-2"
+            />
 
             <label class="text-sm text-nowrap text-grey-700" for={@form[:type].id}>{gettext(
               "Type"

@@ -29,6 +29,7 @@ defmodule Firmowid.Invoicing.Counterparty do
   alias Firmowid.Invoicing.Changes.NormalizeCounterpartyTaxId
   alias Firmowid.Invoicing.Changes.ValidateCountryCode
   alias Firmowid.Invoicing.CountryCodes
+  alias Firmowid.Invoicing.Validations.ValidateEuVatNumber
   alias Firmowid.Invoicing.Validations.ValidateNameFields
   alias Firmowid.Invoicing.Validations.ValidateTaxId
   alias Firmowid.Resource
@@ -144,6 +145,8 @@ defmodule Firmowid.Invoicing.Counterparty do
 
       validate {ValidateTaxId, id_field: :tax_id, country_field: :country, pesel_field: :pesel, type_field: :type}
 
+      validate {ValidateEuVatNumber, id_field: :tax_id, country_field: :country, pesel_field: :pesel, type_field: :type}
+
       validate {ValidateNameFields,
                 type_field: :type, full_name_field: :full_name, given_name_field: :given_name, surname_field: :surname}
     end
@@ -151,6 +154,8 @@ defmodule Firmowid.Invoicing.Counterparty do
     update :update do
       description "Update counterparty details and validations."
       primary? true
+      # ValidateEuVatNumber checks the submitted number in Elixir.
+      require_atomic? false
 
       accept [
         :type,
@@ -186,6 +191,8 @@ defmodule Firmowid.Invoicing.Counterparty do
       change NormalizeCounterpartyTaxId
 
       validate {ValidateTaxId, id_field: :tax_id, country_field: :country, pesel_field: :pesel, type_field: :type}
+
+      validate {ValidateEuVatNumber, id_field: :tax_id, country_field: :country, pesel_field: :pesel, type_field: :type}
 
       validate {ValidateNameFields,
                 type_field: :type, full_name_field: :full_name, given_name_field: :given_name, surname_field: :surname}

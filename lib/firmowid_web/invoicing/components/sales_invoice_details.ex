@@ -12,6 +12,8 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
   import Phoenix.Component, except: [link: 1]
 
   alias Firmowid.Invoicing
+  alias Firmowid.Invoicing.CountryCodes
+  alias Firmowid.Invoicing.EuVatReview
   alias Firmowid.Invoicing.SalesInvoice
   alias Firmowid.Invoicing.Services.CorrectionReason
   alias Firmowid.Ksef
@@ -79,6 +81,10 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
           :due_date,
           :invoice_type,
           :buyer_display_name_label,
+          :buyer_type,
+          :buyer_id,
+          :buyer_pesel,
+          :buyer_country,
           sales_invoice_items: [:net_value, :vat_value, :gross_value]
         ],
         scope: assigns.scope
@@ -105,6 +111,7 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
         party_display_name: latest_invoice_snapshot.buyer_display_name_label,
         description: description,
         latest_invoice_snapshot: latest_invoice_snapshot,
+        buyer_vat_number_rejected?: EuVatReview.number_rejected?(latest_invoice_snapshot),
         invoices_for_preview: Enum.reverse([invoice | invoice.corrections]),
         internal_notes: internal_notes,
         cancelled?: cancelled?,
@@ -338,6 +345,34 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
                         value={CorrectionReason.cancellation(@latest_invoice_snapshot.invoice_type)}
                         maxlength="256"
                       />
+                    </div>
+                    <div
+                      :if={@buyer_vat_number_rejected?}
+                      id="cancel-invoice-eu-vat-confirmation"
+                      class="mt-4 space-y-3 rounded-lg bg-rust-200 p-3 text-sm text-rust-700"
+                    >
+                      <p>
+                        {gettext(
+                          "The buyer VAT number %{number} does not match the %{country} format. The correction repeats it to identify the corrected invoice. Issue a new invoice with the right number afterwards.",
+                          number: @latest_invoice_snapshot.buyer_id,
+                          country:
+                            CountryCodes.country_name(
+                              CountryCodes.normalize(@latest_invoice_snapshot.buyer_country)
+                            )
+                        )}
+                      </p>
+                      <label class="flex items-start gap-2 font-medium">
+                        <input
+                          type="checkbox"
+                          name="confirm_corrected_buyer_vat_id"
+                          value="true"
+                          required
+                          class="mbs-0.5 size-4 rounded border-grey-300 text-teal-600 focus:ring-teal-500"
+                        />
+                        <span>{gettext(
+                          "I confirm the correction repeats the number of the corrected invoice."
+                        )}</span>
+                      </label>
                     </div>
                     <div class="mt-6 flex justify-end gap-3">
                       <.button

@@ -847,6 +847,22 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
     {:noreply, assign(socket, :counterparty_form, form)}
   end
 
+  def handle_event("apply_eu_vat_suggestion", suggestion, socket) do
+    form = socket.assigns.counterparty_form.source
+
+    changes =
+      Map.reject(
+        %{"buyer_id" => suggestion["number"], "buyer_country" => suggestion["country"]},
+        fn {_field, value} ->
+          is_nil(value)
+        end
+      )
+
+    form = form |> AshPhoenix.Form.validate(Map.merge(form.params, changes)) |> to_form()
+
+    {:noreply, assign(socket, :counterparty_form, form)}
+  end
+
   def handle_event("close_counterparty_modal", _params, socket) do
     {:noreply, reset_counterparty_modal(socket)}
   end
@@ -1115,10 +1131,12 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
               |> AshPhoenix.Form.for_update(:update_counterparty, scope: scope)
               |> AshPhoenix.Form.validate(Map.new(attrs, fn {k, v} -> {to_string(k), v} end))
 
+            # The modal is already in the page, so `show` alone would not open it.
             socket =
               socket
               |> assign(:counterparty_form, to_form(form))
               |> assign(:open_counterparty_modal, true)
+              |> push_event("js-exec", %{to: "#counterparty-modal", attr: "phx-show"})
 
             {:noreply,
              LiveToast.put_toast(

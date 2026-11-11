@@ -383,6 +383,11 @@ msgstr ""
 msgid "%{name} · %{quantity} %{unit} × %{price} net"
 msgstr ""
 
+#: lib/firmowid_web/invoicing/components/eu_vat_suggestions.ex
+#, elixir-autogen, elixir-format
+msgid "%{number} is a VAT number from %{country}."
+msgstr ""
+
 #: lib/firmowid_web/management/views/project.ex
 #, elixir-autogen, elixir-format
 msgid "%{percent} compared to previous month (%{month})"
@@ -2072,6 +2077,11 @@ msgstr ""
 msgid "Change the cost invoice note"
 msgstr ""
 
+#: lib/firmowid_web/invoicing/components/eu_vat_suggestions.ex
+#, elixir-autogen, elixir-format
+msgid "Change the country"
+msgstr ""
+
 #: lib/firmowid_web/assistant/utilities/presentation.ex
 #, elixir-autogen, elixir-format
 msgid "Change the sales invoice note"
@@ -2196,6 +2206,11 @@ msgstr ""
 #: lib/firmowid_web/delegations/components/settlement/expense.ex
 #, elixir-autogen, elixir-format
 msgid "Check-out"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/sales_invoices/components/eu_vat_check.ex
+#, elixir-autogen, elixir-format
+msgid "Checking the number in VIES…"
 msgstr ""
 
 #: lib/firmowid_web/delegations/components/settlement_signature_page.ex
@@ -3876,6 +3891,11 @@ msgstr ""
 msgid "Developed by %{company} for"
 msgstr ""
 
+#: lib/firmowid_web/invoicing/components/eu_vat_suggestions.ex
+#, elixir-autogen, elixir-format
+msgid "Did you mean %{number}?"
+msgstr ""
+
 #: lib/firmowid_web/landing/components/faq.ex
 #, elixir-autogen, elixir-format
 msgid "Didn't find your question?"
@@ -4213,6 +4233,11 @@ msgstr ""
 #: lib/firmowid_web/settings/components/account_tab.ex
 #, elixir-autogen, elixir-format
 msgid "E-mail"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/sales_invoices/components/eu_vat_check.ex
+#, elixir-autogen, elixir-format
+msgid "EU VAT check"
 msgstr ""
 
 #: lib/firmowid_web/landing/components/sections.ex
@@ -5532,6 +5557,12 @@ msgstr ""
 msgid "I confirm that the organization is a test or abandoned one"
 msgstr ""
 
+#: lib/firmowid_web/invoicing/components/sales_invoice_details.ex
+#: lib/firmowid_web/invoicing/sales_invoices/views/edit_form.html.heex
+#, elixir-autogen, elixir-format
+msgid "I confirm the correction repeats the number of the corrected invoice."
+msgstr ""
+
 #: lib/firmowid_web/settings/components/account_tab.ex
 #, elixir-autogen, elixir-format
 msgid "I do not share it"
@@ -6228,6 +6259,11 @@ msgstr ""
 #: lib/firmowid_web/assistant/utilities/changes.ex
 #, elixir-autogen, elixir-format
 msgid "Items"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/sales_invoices/components/eu_vat_check.ex
+#, elixir-autogen, elixir-format
+msgid "Items use a Polish rate although the buyer has an EU VAT number. Check whether the buyer should account for VAT instead."
 msgstr ""
 
 #: lib/firmowid_web/timetracker/views/index.ex
@@ -10586,6 +10622,12 @@ msgstr ""
 msgid "The business trip order has changed since it was generated. Generate and sign it again."
 msgstr ""
 
+#: lib/firmowid_web/invoicing/components/sales_invoice_details.ex
+#: lib/firmowid_web/invoicing/sales_invoices/views/edit_form.html.heex
+#, elixir-autogen, elixir-format
+msgid "The buyer VAT number %{number} does not match the %{country} format. The correction repeats it to identify the corrected invoice. Issue a new invoice with the right number afterwards."
+msgstr ""
+
 #: lib/firmowid_web/landing/components/sections.ex
 #, elixir-autogen, elixir-format
 msgid "The code is public, your data stays with you. AGPL-3.0 license."
@@ -10609,6 +10651,11 @@ msgstr ""
 #: lib/firmowid_web/assistant/views/floating.ex
 #, elixir-autogen, elixir-format
 msgid "The conversation changed. Review its current state before continuing."
+msgstr ""
+
+#: lib/firmowid/invoicing/validations/validate_eu_vat_number.ex
+#, elixir-autogen, elixir-format
+msgid "The corrected invoice has a buyer VAT number that does not match the %{country} format (%{pattern}). The correction must repeat it: confirm that you are correcting that invoice and issue a new one with the right number."
 msgstr ""
 
 #: lib/firmowid_ui/invoicing/issuance.ex
@@ -10949,9 +10996,29 @@ msgstr ""
 msgid "The new session overlaps existing ones. Saving requires the changes below:"
 msgstr ""
 
+#: lib/firmowid_web/invoicing/sales_invoices/components/eu_vat_check.ex
+#, elixir-autogen, elixir-format
+msgid "The number does not match the %{country} format (%{pattern}). The invoice cannot be issued."
+msgstr ""
+
 #: lib/firmowid_ui/invoicing/components/invoice_number.ex
 #, elixir-autogen, elixir-format
 msgid "The number format may be invalid."
+msgstr ""
+
+#: lib/firmowid_web/invoicing/sales_invoices/components/eu_vat_check.ex
+#, elixir-autogen, elixir-format
+msgid "The number has an invalid %{country} check digit. The invoice cannot be issued."
+msgstr ""
+
+#: lib/firmowid_web/invoicing/sales_invoices/components/eu_vat_check.ex
+#, elixir-autogen, elixir-format
+msgid "The number matches the %{country} format and its check digit is correct."
+msgstr ""
+
+#: lib/firmowid_web/invoicing/sales_invoices/components/eu_vat_check.ex
+#, elixir-autogen, elixir-format
+msgid "The number matches the %{country} format. Firmowid does not verify this country's check digit."
 msgstr ""
 
 #: lib/firmowid/delegations/changes/create_signed_command_blob.ex
@@ -12180,6 +12247,11 @@ msgstr ""
 msgid "Use %{number}"
 msgstr ""
 
+#: lib/firmowid_web/invoicing/components/eu_vat_suggestions.ex
+#, elixir-autogen, elixir-format
+msgid "Use this number"
+msgstr ""
+
 #: lib/firmowid_web/organization/invites/views/index.html.heex
 #, elixir-autogen, elixir-format
 msgid "Used by"
@@ -12267,6 +12339,21 @@ msgstr ""
 #: lib/firmowid_web/management/views/counterparty_suggestions.ex
 #, elixir-autogen, elixir-format
 msgid "VAT white list"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/sales_invoices/components/eu_vat_check.ex
+#, elixir-autogen, elixir-format
+msgid "VIES confirms the number is active."
+msgstr ""
+
+#: lib/firmowid_web/invoicing/sales_invoices/components/eu_vat_check.ex
+#, elixir-autogen, elixir-format
+msgid "VIES did not answer. This does not block issuing; check the number later."
+msgstr ""
+
+#: lib/firmowid_web/invoicing/sales_invoices/components/eu_vat_check.ex
+#, elixir-autogen, elixir-format
+msgid "VIES does not confirm this number. Check it with the buyer before you rely on it."
 msgstr ""
 
 #: lib/firmowid_web/settings/components/profile_tab.ex
@@ -12527,6 +12614,11 @@ msgstr ""
 #: lib/firmowid_web/settings/components/profile_tab.ex
 #, elixir-autogen, elixir-format
 msgid "With a Trusted Profile"
+msgstr ""
+
+#: lib/firmowid_web/invoicing/sales_invoices/components/eu_vat_check.ex
+#, elixir-autogen, elixir-format
+msgid "With this rate the buyer accounts for VAT, which assumes a VAT-registered business. VIES does not confirm that. Keep other proof or reconsider the rate."
 msgstr ""
 
 #: lib/firmowid_web/analysis/components/financial_overview.ex
@@ -13190,6 +13282,11 @@ msgstr ""
 msgid "does not match confirmation"
 msgstr ""
 
+#: lib/firmowid/invoicing/validations/validate_eu_vat_number.ex
+#, elixir-autogen, elixir-format
+msgid "does not match the %{country} VAT number format (%{pattern})"
+msgstr ""
+
 #: lib/firmowid_web/invoicing/components/entries_table.ex
 #: lib/firmowid_web/invoicing/components/search_overlay.ex
 #, elixir-autogen, elixir-format
@@ -13262,6 +13359,11 @@ msgstr ""
 #: lib/firmowid_ui/components/inputs.ex
 #, elixir-autogen, elixir-format
 msgid "has already been taken"
+msgstr ""
+
+#: lib/firmowid/invoicing/validations/validate_eu_vat_number.ex
+#, elixir-autogen, elixir-format
+msgid "has an invalid check digit for a %{country} VAT number"
 msgstr ""
 
 #: lib/firmowid_ui/components/inputs.ex

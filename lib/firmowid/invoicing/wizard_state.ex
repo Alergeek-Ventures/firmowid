@@ -135,6 +135,7 @@ defmodule Firmowid.Invoicing.WizardState do
 
       validate present([:buyer_country]), message: gettext_noop("Country is required")
       validate present([:buyer_address]), message: gettext_noop("Address is required")
+      validate Validations.ValidateEuVatNumber
     end
 
     update :update_items do

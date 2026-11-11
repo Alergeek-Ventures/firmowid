@@ -93,6 +93,23 @@ defmodule FirmowidWeb.Management.Views.CounterpartyForm do
     end
   end
 
+  def handle_event("apply_eu_vat_suggestion", suggestion, socket) do
+    changes =
+      Map.reject(
+        %{"tax_id" => suggestion["number"], "country" => suggestion["country"]},
+        fn {_field, value} ->
+          is_nil(value)
+        end
+      )
+
+    form =
+      socket.assigns.form
+      |> AshPhoenix.Form.validate(Map.merge(socket.assigns.form.params, changes))
+      |> to_form()
+
+    {:noreply, assign(socket, :form, form)}
+  end
+
   def handle_event("fetch_by_nip", params, socket) do
     nip = Map.get(params, "nip", "")
 
