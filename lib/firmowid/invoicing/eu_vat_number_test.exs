@@ -31,6 +31,11 @@ defmodule Firmowid.Invoicing.EuVatNumberTest do
       assert {:error, :format, []} = EuVatNumber.check("NL", "123456789")
     end
 
+    test "rejects separators and lowercase letters, which KSeF would receive as written" do
+      assert {:error, :format, [number: "123456789"]} = EuVatNumber.check("DE", "123-456-789")
+      assert {:error, :format, [number: "123456789B01"]} = EuVatNumber.check("NL", "123456789b01")
+    end
+
     test "suggests removing the buyer country's prefix" do
       assert {:error, :format, [number: "123456789"]} = EuVatNumber.check("DE", "DE123456789")
       assert {:error, :format, [number: "123456789"]} = EuVatNumber.check("EL", "EL123456789")

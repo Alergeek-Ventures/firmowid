@@ -66,10 +66,9 @@ defmodule Firmowid.Invoicing.EuVatNumber do
   @spec check(String.t() | nil, String.t() | nil) :: result()
   def check(country, number) when is_binary(country) and is_binary(number) do
     country = CountryCodes.normalize(country)
-    number = normalize(number)
 
     case Map.fetch(@formats, country) do
-      {:ok, _format} -> check_number(country, number)
+      {:ok, _format} -> check_number(country, number, normalize(number))
       :error -> :not_applicable
     end
   end
@@ -91,9 +90,12 @@ defmodule Firmowid.Invoicing.EuVatNumber do
   @spec normalize(String.t()) :: String.t()
   def normalize(number), do: number |> String.upcase() |> String.replace(~r/[^0-9A-Z+*]/, "")
 
-  defp check_number(country, number) do
+  # KSeF receives the number as written, and `NrVatUE` takes only capital letters
+  # and digits, so a separator or a lowercase letter is a format error too.
+  defp check_number(country, written, number) do
     case validate(country, number) do
-      :ok -> {:ok, number}
+      :ok when written == number -> {:ok, number}
+      :ok -> {:error, :format, [{:number, number}]}
       {:error, rule} -> {:error, rule, suggestions(country, number)}
     end
   end
