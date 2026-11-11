@@ -38,7 +38,8 @@ defmodule Firmowid.SystemActor do
   - `:analysis_classifier` — keeps analysis entry categories current in the
     background. Reads what the category review reads and stores the categories
     the classifier chose per entry, and caches the register data of counterparties
-    that it looks up for them.
+    that it looks up for them. Reads sales invoices and gives untagged ones the
+    project their client always has.
   - `:company_lookup` — reads and caches the public register data of the NIP a
     signed-in user is creating an organization for.
 

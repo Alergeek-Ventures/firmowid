@@ -15,6 +15,7 @@ defmodule Firmowid.Analysis do
   alias Firmowid.Analysis.EntityTag
   alias Firmowid.Analysis.Entry
   alias Firmowid.Analysis.EntryCategory
+  alias Firmowid.Analysis.Services.ClientProjects
   alias Firmowid.Analysis.TagDefinition
   alias Firmowid.Analysis.Workers.CategoryWorker
   alias Firmowid.Analysis.YearSummary
@@ -398,7 +399,8 @@ defmodule Firmowid.Analysis do
   Queues classification of the current and previous year's new entries for an
   organization that already uses the analysis, i.e. has entries the classifier
   categorized or counterparty categories the owner confirmed. Entries enter the
-  analysis once reconciled, so this runs after matching.
+  analysis once reconciled, so this runs after matching. First gives untagged
+  sales invoices the project their client always has, see `ClientProjects`.
   """
   @spec classify_new_entries_later(Ash.UUID.t()) ::
           {:ok, Oban.Job.t() | :unused} | {:error, :classification_unavailable | term()}
@@ -408,7 +410,8 @@ defmodule Firmowid.Analysis do
 
     # The previous year too: owners compare with it, and its entries still get reconciled.
     if Ash.exists?(EntryCategory, scope: scope) or Ash.exists?(CounterpartyCategory, scope: scope) do
-      with {:ok, _job} <- classify_categories_later(year, false, scope),
+      with :ok <- ClientProjects.assign(scope),
+           {:ok, _job} <- classify_categories_later(year, false, scope),
            do: classify_categories_later(year - 1, false, scope)
     else
       {:ok, :unused}
