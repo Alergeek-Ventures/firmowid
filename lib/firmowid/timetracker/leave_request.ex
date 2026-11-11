@@ -103,23 +103,6 @@ defmodule Firmowid.Timetracker.LeaveRequest do
       end
     end
 
-    read :list_for_member do
-      description "Leave requests of a given organization member."
-      argument :member_id, :uuid, allow_nil?: false
-      argument :start_date, :date, allow_nil?: true
-      argument :end_date, :date, allow_nil?: true
-
-      prepare build(filter: expr(member_id == ^arg(:member_id)), sort: [inserted_at: :desc])
-
-      prepare build(filter: expr(ends_on >= ^arg(:start_date))) do
-        where present(:start_date)
-      end
-
-      prepare build(filter: expr(starts_on <= ^arg(:end_date))) do
-        where present(:end_date)
-      end
-    end
-
     read :list_current_user do
       description "Leave requests submitted by the acting user."
 

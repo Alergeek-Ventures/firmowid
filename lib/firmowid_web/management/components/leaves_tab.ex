@@ -37,10 +37,14 @@ defmodule FirmowidWeb.Management.Components.LeavesTab do
     active_years = Timetracker.years_with_leave_requests(socket.assigns.employee.member.id, scope)
 
     requests =
-      Timetracker.list_leave_requests_for_member!(
-        socket.assigns.employee.member.id,
-        %{start_date: Date.new!(year, 1, 1), end_date: Date.new!(year, 12, 31)},
-        scope: scope
+      Timetracker.list_leave_requests!(
+        %{
+          member_id: socket.assigns.employee.member.id,
+          start_date: Date.new!(year, 1, 1),
+          end_date: Date.new!(year, 12, 31)
+        },
+        scope: scope,
+        query: [sort: [inserted_at: :desc]]
       )
 
     {pending, others} = Enum.split_with(requests, &(&1.status == :pending))

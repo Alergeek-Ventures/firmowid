@@ -45,7 +45,6 @@ defmodule Firmowid.Timetracker do
 
       define :get_leave_request, action: :read, get_by: [:id]
       define :list_leave_requests, action: :list
-      define :list_leave_requests_for_member, action: :list_for_member, args: [:member_id]
       define :list_current_user_leave_requests, action: :list_current_user
       define :accept_leave_request, action: :accept, get_by: [:id]
       define :decline_leave_request, action: :decline, get_by: [:id]
@@ -217,13 +216,13 @@ defmodule Firmowid.Timetracker do
 
   def years_with_leave_requests(member_id, scope) do
     query =
-      member_id
-      |> query_to_list_leave_requests_for_member(scope: scope)
+      %{member_id: member_id}
+      |> query_to_list_leave_requests(scope: scope)
       |> Ash.Query.filter(status != :pending)
       |> Ash.Query.select([:starts_on, :ends_on])
 
-    member_id
-    |> list_leave_requests_for_member!(scope: scope, query: query)
+    %{member_id: member_id}
+    |> list_leave_requests!(scope: scope, query: query)
     |> Enum.flat_map(&[&1.starts_on.year, &1.ends_on.year])
     |> Enum.uniq()
     |> Enum.sort(:desc)

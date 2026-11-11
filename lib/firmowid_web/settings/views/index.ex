@@ -112,7 +112,10 @@ defmodule FirmowidWeb.Settings.Views.Index do
       if(admin?, do: list_bank_institutions(current_user, bank_accounts), else: %{})
 
     leave_requests =
-      Timetracker.list_leave_requests_for_member!(current_user.member.id, scope: scope)
+      Timetracker.list_leave_requests!(%{member_id: current_user.member.id},
+        scope: scope,
+        query: [sort: [inserted_at: :desc]]
+      )
 
     delegations = Delegations.list_delegations_for_member!(current_user.member.id, scope: scope)
 
@@ -889,9 +892,9 @@ defmodule FirmowidWeb.Settings.Views.Index do
     case result do
       {:ok, _request} ->
         leave_requests =
-          Timetracker.list_leave_requests_for_member!(
-            socket.assigns.current_user.member.id,
-            scope: scope
+          Timetracker.list_leave_requests!(%{member_id: socket.assigns.current_user.member.id},
+            scope: scope,
+            query: [sort: [inserted_at: :desc]]
           )
 
         {:noreply,
