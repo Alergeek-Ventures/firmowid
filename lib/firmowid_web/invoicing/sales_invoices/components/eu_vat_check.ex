@@ -1,6 +1,7 @@
 defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.EuVatCheck do
   @moduledoc """
-  Review panel for an EU buyer's VAT number: structure, VIES registration and rates.
+  Review panel listing problems with an EU buyer's VAT number: structure, VIES
+  registration and rates. Shows nothing when the number passes every check.
 
   Asks VIES once per buyer number, in the background, so a slow or unavailable
   registry never holds up the review.
@@ -64,8 +65,6 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.EuVatCheck do
             id={"#{@id}-#{finding.topic}-#{finding.code}"}
             class={[
               "flex items-start gap-2 rounded-lg p-3 text-sm",
-              finding.level == :ok && "bg-teal-100 text-teal-800",
-              finding.level == :info && "bg-grey-100 text-grey-700",
               finding.level == :warning && "bg-rust-200 text-rust-700",
               finding.level == :error && "bg-brick-100 text-brick-700"
             ]}
@@ -81,23 +80,9 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.EuVatCheck do
 
   attr :level, :atom, required: true
 
-  defp level_icon(%{level: :ok} = assigns), do: ~H|<Lucideicons.check class="mbs-0.5 size-4 shrink-0" />|
-
-  defp level_icon(%{level: :info} = assigns), do: ~H|<Lucideicons.info class="mbs-0.5 size-4 shrink-0" />|
-
   defp level_icon(%{level: :warning} = assigns), do: ~H|<Lucideicons.alert_triangle class="mbs-0.5 size-4 shrink-0" />|
 
   defp level_icon(%{level: :error} = assigns), do: ~H|<Lucideicons.circle_x class="mbs-0.5 size-4 shrink-0" />|
-
-  defp text(%{topic: :number, code: :checksum_valid}, invoice),
-    do: gettext("The number matches the %{country} format and its check digit is correct.", vars(invoice))
-
-  defp text(%{topic: :number, code: :format_valid}, invoice),
-    do:
-      gettext(
-        "The number matches the %{country} format. Firmowid does not verify this country's check digit.",
-        vars(invoice)
-      )
 
   defp text(%{topic: :number, code: :format}, invoice),
     do:
@@ -109,15 +94,8 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.EuVatCheck do
   defp text(%{topic: :number, code: :checksum}, invoice),
     do: gettext("The number has an invalid %{country} check digit. The invoice cannot be issued.", vars(invoice))
 
-  defp text(%{topic: :registration, code: :active}, _invoice), do: gettext("VIES confirms the number is active.")
-
   defp text(%{topic: :registration, code: :inactive}, _invoice),
     do: gettext("VIES does not confirm this number. Check it with the buyer before you rely on it.")
-
-  defp text(%{topic: :registration, code: :unavailable}, _invoice),
-    do: gettext("VIES did not answer. This does not block issuing; check the number later.")
-
-  defp text(%{topic: :registration, code: :pending}, _invoice), do: gettext("Checking the number in VIES…")
 
   defp text(%{topic: :rate, code: :domestic_rate}, _invoice),
     do:

@@ -3,7 +3,8 @@ defmodule FirmowidWeb.Inbox.Utilities.Queue do
   Builds the inbox: things that need attention, most important first, and this
   month's income and costs.
 
-  Uses policy-scoped domain reads for integration alerts, team approvals,
+  Uses policy-scoped domain reads for integration alerts, counterparty EU VAT
+  numbers that the periodic check rejected, team approvals,
   personal signatures and settlements, and overdue invoices. Each item links
   to the page where it is dealt with; pending leave requests also offer inline
   decisions.
@@ -70,6 +71,7 @@ defmodule FirmowidWeb.Inbox.Utilities.Queue do
   def attention_items(%{actor: %{member: %{role: :admin}}} = scope) do
     ksef_items(scope) ++
       bank_items(scope) ++
+      vat_id_items(scope) ++
       leave_items(scope) ++ hours_change_items(scope) ++ company_delegation_items(scope)
   end
 
@@ -122,6 +124,33 @@ defmodule FirmowidWeb.Inbox.Utilities.Queue do
         []
     end
   end
+
+  defp vat_id_items(scope) do
+    %{vat_id_statuses: [:invalid, :inactive]}
+    |> Invoicing.list_counterparties!(scope: scope, load: [:display_label])
+    |> Enum.map(fn counterparty ->
+      %{
+        id: "vat-id-#{counterparty.id}",
+        tier: :urgent,
+        icon: "id-card",
+        title:
+          gettext("%{counterparty}: EU VAT number to check",
+            counterparty: counterparty.display_label
+          ),
+        context: vat_id_context(counterparty),
+        person: nil,
+        action: gettext("Check the counterparty"),
+        href: ManagementNavigation.counterparty_edit_path(counterparty.id)
+      }
+    end)
+  end
+
+  defp vat_id_context(%{vat_id_status: :invalid, tax_id: tax_id}),
+    do: gettext("%{number} does not match the VAT number format of its country.", number: tax_id)
+
+  defp vat_id_context(%{vat_id_status: :inactive, tax_id: tax_id, vat_id_checked_at: checked_at}),
+    do:
+      gettext("VIES did not confirm %{number} on %{date}.", number: tax_id, date: Calendar.strftime(checked_at, "%d.%m"))
 
   defp bank_items(scope) do
     [scope: scope, load: [:broken?, :latest_successful_sync_at, :requisition]]

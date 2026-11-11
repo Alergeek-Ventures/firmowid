@@ -50,6 +50,9 @@ defmodule Firmowid.SystemActor do
   - `:project_tag_manager` — manages analysis tag definitions created as an
     implementation detail of timetracker projects.
 
+  - `:vat_id_checker` — lists an organization's counterparties and records the
+    result of the periodic EU VAT number check on them.
+
   - `:cross_tenant_reader` — reads data across organization boundaries. Used by the
     KSeF fetch dispatcher to enumerate all organizations and queue per-org work.
 
@@ -110,6 +113,7 @@ defmodule Firmowid.SystemActor do
           | :organization_owner_setup
           | :project_tag_manager
           | :cross_tenant_reader
+          | :vat_id_checker
           | :ksef_digest
           | :billing_snapshotter
           | :document_blob_processor
