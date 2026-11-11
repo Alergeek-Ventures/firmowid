@@ -38,7 +38,8 @@ defmodule FirmowidWeb.Infrastructure.Flags do
   Evaluates all supported feature flags for the given user.
 
   Returns a map keyed by local atom names, defaulting every flag to `false` when
-  PostHog is disabled or the evaluation fails.
+  the evaluation fails; without PostHog only `:enabled_feature_flags` from the
+  configuration are on.
   """
   @spec evaluate_for_user(map() | nil) :: %{optional(atom()) => boolean()}
   def evaluate_for_user(nil), do: empty_flags()
@@ -68,8 +69,15 @@ defmodule FirmowidWeb.Infrastructure.Flags do
           empty_flags()
       end
     else
-      empty_flags()
+      offline_flags()
     end
+  end
+
+  # Without PostHog (tests) only the flags the configuration enables are on, so a
+  # test can cover a flagged feature while the others stay off as in production.
+  defp offline_flags do
+    enabled = Application.get_env(:firmowid, :enabled_feature_flags, [])
+    Map.new(@flag_keys, fn {flag_name, _posthog_key} -> {flag_name, flag_name in enabled} end)
   end
 
   @doc """

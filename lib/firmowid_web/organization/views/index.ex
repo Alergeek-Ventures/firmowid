@@ -15,6 +15,7 @@ defmodule FirmowidWeb.Organization.Views.Index do
   import FirmowidUI.Components.Button
   import FirmowidUI.Components.Inputs
   import FirmowidUI.Components.Link
+  import FirmowidWeb.Infrastructure.Flags, only: [flag_enabled?: 2]
   import FirmowidWeb.Organization.Components.CompanyCard
   import FirmowidWeb.Organization.Components.OnboardingHeader
   import FirmowidWeb.Organization.Components.OnboardingStep
@@ -30,6 +31,7 @@ defmodule FirmowidWeb.Organization.Views.Index do
   alias FirmowidWeb.Infrastructure.UserAuth
   alias FirmowidWeb.Invoicing.Utilities.VatExemption
   alias FirmowidWeb.Organization.Utilities.Navigation, as: OrganizationNavigation
+  alias Phoenix.LiveView.Socket
 
   @impl true
   def render(assigns) do
@@ -559,6 +561,15 @@ defmodule FirmowidWeb.Organization.Views.Index do
 
   @impl true
   def mount(_params, _session, socket) do
+    # Without the flag the user keeps the organization form from before the wizard.
+    if flag_enabled?(:inbox, socket.assigns) do
+      mount_wizard(socket)
+    else
+      {:ok, push_navigate(socket, to: OrganizationNavigation.legacy_form_path())}
+    end
+  end
+
+  defp mount_wizard(socket) do
     user = socket.assigns.current_user
     # A user adding another company is prefilled with the name they use in the current one.
     name = if user.member, do: user.member.name, else: ""
@@ -645,7 +656,10 @@ defmodule FirmowidWeb.Organization.Views.Index do
         {:noreply, assign(socket, :step, :firma)}
 
       {"branza", nil} ->
-        {:noreply, push_patch(socket, to: OrganizationNavigation.onboarding_path(:firma), replace: true)}
+        {
+          :noreply,
+          push_patch(socket, to: OrganizationNavigation.onboarding_path(:firma), replace: true)
+        }
 
       {"branza", _company} ->
         {:noreply, assign(socket, :step, :branza)}
@@ -1002,7 +1016,10 @@ defmodule FirmowidWeb.Organization.Views.Index do
     end
   end
 
-  defp consume_invite(invite, invite_code, name, socket) do
+  @doc "Joins the invite's company; the organization form from before the wizard shares it."
+  @spec consume_invite(map(), String.t(), String.t(), Socket.t()) ::
+          {:noreply, Socket.t()}
+  def consume_invite(invite, invite_code, name, socket) do
     user = socket.assigns.current_user
     Logger.metadata(user_id: user.id, organization_id: invite.organization_id)
 

@@ -14,6 +14,7 @@ defmodule FirmowidWeb.Organization.Views.FirstSteps do
   import FirmowidUI.Components.Button
   import FirmowidUI.Components.KsefConnection
   import FirmowidUI.Components.Link
+  import FirmowidWeb.Infrastructure.Flags, only: [flag_enabled?: 2]
   import FirmowidWeb.Organization.Components.CompanyCard
   import FirmowidWeb.Organization.Components.OnboardingHeader
   import FirmowidWeb.Organization.Components.OnboardingStep
@@ -514,6 +515,15 @@ defmodule FirmowidWeb.Organization.Views.FirstSteps do
 
   @impl true
   def mount(_params, _session, socket) do
+    if flag_enabled?(:inbox, socket.assigns) do
+      mount_steps(socket)
+    else
+      %{current_user: user, ash_scope: scope} = socket.assigns
+      {:ok, push_navigate(socket, to: UserAuth.signed_in_path_for_user(user, scope.tenant))}
+    end
+  end
+
+  defp mount_steps(socket) do
     scope = socket.assigns.ash_scope
 
     if connected?(socket) do

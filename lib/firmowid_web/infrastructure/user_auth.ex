@@ -135,32 +135,20 @@ defmodule FirmowidWeb.Infrastructure.UserAuth do
       true ->
         {user, org, ash_scope} = load_scope_and_avatars(user)
 
-        # Switching stays open, so the admin can move to another company of theirs.
-        if first_steps_pending?(user, org) and
-             conn.request_path not in [
-               OrganizationNavigation.first_steps_path(),
-               ~p"/organizacja/przelacz"
-             ] do
-          # The setup page then opens this company, whichever the session held before.
-          conn
-          |> put_organization(user)
-          |> redirect(to: OrganizationNavigation.setup_path())
-          |> halt()
-        else
-          conn
-          |> put_organization(user)
-          |> assign(:current_user, user)
-          |> assign(:current_org, org)
-          |> assign(:organizations, organizations)
-          |> assign(:ash_scope, ash_scope)
-        end
+        conn
+        |> put_organization(user)
+        |> assign(:current_user, user)
+        |> assign(:current_org, org)
+        |> assign(:organizations, organizations)
+        |> assign(:ash_scope, ash_scope)
     end
   end
 
   @doc """
   Whether the admin of a company still has its setup ahead, a new company or one
-  that existed before the setup; every page leads them back to it until they
-  finish. Other members are not sent there, since the setup is the admin's.
+  that existed before the setup; with the `inbox` flag every page
+  leads them back to it until they finish (see `RequireOrganization`). Other
+  members are not sent there, since the setup is the admin's.
   """
   @spec first_steps_pending?(User.t(), Organization.t()) :: boolean()
   def first_steps_pending?(%User{member: %Member{role: :admin}}, %Organization{onboarding_completed_at: nil}), do: true
@@ -248,9 +236,6 @@ defmodule FirmowidWeb.Infrastructure.UserAuth do
 
   def signed_in_path_for_user(%User{} = user, organization_id) do
     case Core.load_member(user, organization_id).member do
-      %{role: :admin, organization: %{onboarding_completed_at: nil}} ->
-        OrganizationNavigation.setup_path()
-
       %{role: role} when role in [:invoicing, :accountant, :admin] ->
         ~p"/fakturowanie"
 

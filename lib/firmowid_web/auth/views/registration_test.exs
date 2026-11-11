@@ -1,10 +1,17 @@
 defmodule FirmowidWeb.Auth.Views.RegistrationTest do
-  use FirmowidWeb.ConnCase, async: true
+  use FirmowidWeb.ConnCase, async: false
 
   import Firmowid.AccountsFixtures
   import Phoenix.LiveViewTest
 
   alias Firmowid.Core
+
+  # The setup wizard is behind the inbox flag. Flags are application config in
+  # tests, so this module runs alone.
+  setup do
+    Application.put_env(:firmowid, :enabled_feature_flags, [:inbox])
+    on_exit(fn -> Application.delete_env(:firmowid, :enabled_feature_flags) end)
+  end
 
   describe "Registration page" do
     test "renders registration page", %{conn: conn} do

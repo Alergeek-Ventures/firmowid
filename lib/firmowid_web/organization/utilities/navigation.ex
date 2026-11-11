@@ -15,6 +15,10 @@ defmodule FirmowidWeb.Organization.Utilities.Navigation do
   def onboarding_path(nil), do: ~p"/organizacja"
   def onboarding_path(step), do: ~p"/organizacja?#{[krok: step]}"
 
+  @doc "Returns the organization form shown instead of the setup wizard while its flag is off."
+  @spec legacy_form_path() :: String.t()
+  def legacy_form_path, do: ~p"/organizacja/formularz"
+
   @doc "Returns the path of the setup steps that follow creating an organization."
   @spec first_steps_path(first_step() | nil) :: String.t()
   def first_steps_path(step \\ nil)
