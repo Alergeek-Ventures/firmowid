@@ -1,6 +1,6 @@
 ---
 title: "Revolut i Wise w programie do faktur z KSeF"
-description: "Jak połączyć konto Revolut albo Wise z programem do faktur przez Open Banking, faktury w euro i dolarach oraz co sprawdzić przed wyborem programu."
+description: "Konto Revolut albo Wise w programie do faktur: połączenie przez Open Banking, faktury w 33 walutach i domyślne konto dla każdej waluty."
 published: 2026-11-12
 updated: 2026-11-12
 category: bank-i-platnosci
