@@ -327,15 +327,9 @@ defmodule Firmowid.Timetracker.Session do
       prepare build(sort: [start_datetime: :desc], load: [:lockdown, :project])
       filter expr(member_id == ^actor([:member, :id]))
 
-      prepare fn query, _context ->
-        case Ash.Query.get_argument(query, :after_date) do
-          nil ->
-            query
-
-          date ->
-            dt = DateTime.new!(date, ~T[00:00:00], "Etc/UTC")
-            Ash.Query.do_filter(query, start_datetime: [greater_than_or_equal: dt])
-        end
+      # Ash casts the date to its midnight in UTC.
+      prepare build(filter: expr(start_datetime >= ^arg(:after_date))) do
+        where present(:after_date)
       end
     end
 
