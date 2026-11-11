@@ -27,7 +27,7 @@ Kwoty na fakturze w walucie obcej zostają w tej walucie, ale według art. 106e 
 
 ## Konto z zagranicznym IBAN
 
-Belgijskiego IBAN z Wise nie ma w wykazie podatników VAT. Klient z Polski, który płaci na taki rachunek ponad 15 000 zł, nie zaliczy wydatku w koszty, chyba że w 7 dni złoży ZAW-NR. Do faktur z obowiązkowym split paymentem potrzebny jest rachunek VAT, a ten prowadzą banki i SKOK-i.
+Konta w euro z Wise mają belgijski IBAN, z BE na początku, a takich numerów nie ma w wykazie podatników VAT. Klient z Polski, który płaci na taki rachunek ponad 15 000 zł, nie zaliczy wydatku w koszty, chyba że w 7 dni złoży ZAW-NR. Do faktur z obowiązkowym split paymentem potrzebny jest rachunek VAT, a ten prowadzą banki i SKOK-i.
 
 ## Źródła
 
