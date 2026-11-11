@@ -9,19 +9,25 @@ defmodule FirmowidWeb.Management.Views.Counterparty do
   import FirmowidWeb.DesignSystem.Components.CoreComponents
   import Phoenix.Component, except: [link: 1]
 
+  alias Ash.Notifier.Notification
   alias Firmowid.Invoicing
   alias Firmowid.Invoicing.CountryCodes
   alias Firmowid.Invoicing.EuVatNumber
   alias Firmowid.Invoicing.Services.CounterpartyInvoiceSuggestions
   alias FirmowidUI.Components.Inputs
+  alias FirmowidWeb.Core.Endpoint
   alias FirmowidWeb.Invoicing.Utilities.Navigation, as: InvoicingNavigation
   alias FirmowidWeb.Management.Utilities.CounterpartyHelpers
   alias FirmowidWeb.Management.Utilities.Navigation
+  alias Phoenix.Socket.Broadcast
 
   require Ash.Query
 
   @impl true
-  def mount(_params, _session, socket) do
+  def mount(%{"id" => id}, _session, socket) do
+    # VatIdCheckWorker checks a saved number right away; show its result when it lands.
+    if connected?(socket), do: Endpoint.subscribe("counterparty:vat_id_checked:#{id}")
+
     {:ok, assign(socket, :params, %{})}
   end
 
@@ -120,6 +126,20 @@ defmodule FirmowidWeb.Management.Views.Counterparty do
   end
 
   @impl true
+  def handle_info(%Broadcast{payload: %Notification{data: checked}}, socket) do
+    counterparty = %{
+      socket.assigns.counterparty
+      | vat_id_status: checked.vat_id_status,
+        vat_id_checked_at: checked.vat_id_checked_at
+    }
+
+    {:noreply,
+     socket
+     |> assign(:counterparty, counterparty)
+     |> assign(:vat_id, vat_id_status(counterparty))}
+  end
+
+  @impl true
   def render(assigns) do
     ~H"""
     <div class="mx-auto my-4 grid w-full max-w-screen-2xl grid-cols-[96px_minmax(0,1fr)_96px] grid-rows-[repeat(5,max-content)] gap-x-10 gap-y-5">
@@ -138,6 +158,8 @@ defmodule FirmowidWeb.Management.Views.Counterparty do
 
       <.details_and_stats
         counterparty={@counterparty}
+        vat_id={@vat_id}
+        params={@params}
         stats={@stats}
         class={[
           "col-start-2",
@@ -238,6 +260,12 @@ defmodule FirmowidWeb.Management.Views.Counterparty do
   end
 
   attr :counterparty, :map, required: true
+
+  attr :vat_id, :map,
+    required: true,
+    doc: "EU VAT number status from `vat_id_status/1`, nil when not applicable"
+
+  attr :params, :map, default: %{}
   attr :stats, :map, required: true
   attr :class, :any, default: nil
 
@@ -265,6 +293,15 @@ defmodule FirmowidWeb.Management.Views.Counterparty do
                   >
                     <.icon name="hero-document-duplicate" class="size-5" />
                   </.button>
+                </div>
+                <div
+                  :if={@vat_id}
+                  id="counterparty-vat-id-status"
+                  data-result={@vat_id.result}
+                  class="mbs-2 flex flex-col items-start gap-1"
+                >
+                  <.badge tone={@vat_id.tone}>{@vat_id.badge}</.badge>
+                  <p :if={@vat_id.meta} class="text-xs/snug text-grey-600">{@vat_id.meta}</p>
                 </div>
               </div>
 
@@ -307,12 +344,26 @@ defmodule FirmowidWeb.Management.Views.Counterparty do
               </div>
             </div>
           </div>
-        </section>
 
-        <.vat_id_checks
-          :if={@counterparty.tax_id_type == :eu_vat and @counterparty.tax_id not in [nil, ""]}
-          counterparty={@counterparty}
-        />
+          <.alert
+            :if={@vat_id && @vat_id.problem}
+            id="counterparty-vat-id-alert"
+            tone="danger"
+            class="mbs-6"
+          >
+            {@vat_id.problem}
+            <:actions :if={@vat_id.fix?}>
+              <.link
+                kind="button"
+                variant="outline"
+                size="small"
+                navigate={Navigation.counterparty_edit_path(@counterparty.id, @params)}
+              >
+                {gettext("Correct the number")}
+              </.link>
+            </:actions>
+          </.alert>
+        </section>
 
         <section class="rounded-lg bg-white p-6 shadow-card">
           <p class="mb-2 text-sm/snug text-grey-700">{gettext("Notes")}</p>
@@ -361,112 +412,94 @@ defmodule FirmowidWeb.Management.Views.Counterparty do
     """
   end
 
-  attr :counterparty, :map, required: true
+  # The country format is checked live; VIES by VatIdCheckWorker, whose result is
+  # stored on the counterparty. A number that breaks its country format is never
+  # sent to VIES, so its VIES result is not shown. Archived counterparties are not
+  # checked, so they show no status.
+  defp vat_id_status(%{tax_id_type: :eu_vat, tax_id: tax_id, archived_at: nil} = counterparty)
+       when tax_id not in [nil, ""] do
+    case EuVatNumber.check(counterparty.country, tax_id) do
+      {:ok, _number} -> vies_status(counterparty)
+      {:error, rule, suggestions} -> format_status(rule, suggestions, counterparty.country)
+    end
+  end
 
-  # The country format is checked live; VIES only by the periodic VatIdCheckWorker,
-  # whose result is stored on the counterparty.
-  defp vat_id_checks(assigns) do
-    %{country: country, tax_id: tax_id} = assigns.counterparty
-    format = EuVatNumber.check(country, tax_id)
+  defp vat_id_status(_counterparty), do: nil
 
-    assigns =
-      assign(assigns,
-        format: format_check(format, country),
-        vies: vies_check(format, assigns.counterparty)
+  defp vies_status(%{vat_id_status: :active, vat_id_checked_at: checked_at}),
+    do: %{
+      result: :active,
+      tone: "success",
+      badge: pgettext("EU VAT status", "Active in VIES"),
+      meta: checked_on(checked_at),
+      problem: nil,
+      fix?: false
+    }
+
+  defp vies_status(%{vat_id_status: :inactive, vat_id_checked_at: checked_at}),
+    do: %{
+      result: :inactive,
+      tone: "danger",
+      badge: pgettext("EU VAT status", "Inactive in VIES"),
+      meta: checked_on(checked_at),
+      problem: gettext("Before you issue the next invoice, ask the counterparty for a current EU VAT number."),
+      fix?: false
+    }
+
+  # Not checked yet: the check queued on save is running, or VIES did not answer
+  # and the next daily run tries again.
+  defp vies_status(_counterparty),
+    do: %{
+      result: :pending,
+      tone: "neutral",
+      badge: pgettext("EU VAT status", "Checking in VIES"),
+      meta: nil,
+      problem: nil,
+      fix?: false
+    }
+
+  defp format_status(rule, suggestions, country),
+    do: %{
+      result: rule,
+      tone: "danger",
+      badge:
+        if(rule == :checksum,
+          do: pgettext("EU VAT status", "Wrong number"),
+          else: pgettext("EU VAT status", "Wrong format")
+        ),
+      meta: nil,
+      problem: format_problem(rule, suggestions, country),
+      fix?: true
+    }
+
+  defp format_problem(:checksum, _suggestions, _country),
+    do:
+      gettext(
+        "The check digit does not match, probably because of a typo. We will check the number in VIES once it is corrected."
       )
 
-    ~H"""
-    <section
-      id="counterparty-vat-id-checks"
-      aria-labelledby="counterparty-vat-id-checks-title"
-      class="rounded-lg bg-white p-6 shadow-card"
-    >
-      <h3 id="counterparty-vat-id-checks-title" class="text-base/tight font-medium text-grey-900">
-        {gettext("EU VAT number checks")}
-      </h3>
-
-      <ul class="mt-4 space-y-4">
-        <.vat_id_check
-          id="counterparty-vat-id-check-format"
-          label={pgettext("EU VAT check", "Country format")}
-          check={@format}
-        />
-        <.vat_id_check
-          id="counterparty-vat-id-check-vies"
-          label={pgettext("EU VAT check", "VIES registration")}
-          check={@vies}
-        />
-      </ul>
-
-      <p class="mt-4 text-sm/snug text-grey-700">
-        {gettext(
-          "Every week we check the number in VIES again. A number that fails a check appears in the inbox."
-        )}
-      </p>
-    </section>
-    """
-  end
-
-  attr :id, :string, required: true
-  attr :label, :string, required: true
-  attr :check, :any, required: true, doc: "`{result, text}`, result `:ok | :problem | :pending`"
-
-  defp vat_id_check(assigns) do
-    {result, text} = assigns.check
-    assigns = assign(assigns, result: result, text: text)
-
-    ~H"""
-    <li id={@id} data-result={@result} class="flex items-start gap-3">
-      <Lucideicons.circle_check :if={@result == :ok} class="mbs-0.5 size-5 shrink-0 text-teal-700" />
-      <Lucideicons.circle_x :if={@result == :problem} class="mbs-0.5 size-5 shrink-0 text-brick-700" />
-      <Lucideicons.clock :if={@result == :pending} class="mbs-0.5 size-5 shrink-0 text-grey-500" />
-      <div class="space-y-0.5">
-        <p class="text-base/snug text-black">{@label}</p>
-        <p class={[
-          "text-sm/snug",
-          if(@result == :problem, do: "text-brick-700", else: "text-grey-700")
-        ]}>
-          {@text}
-        </p>
-      </div>
-    </li>
-    """
-  end
-
-  defp format_check({:ok, _number}, country),
-    do: {:ok, gettext("Matches the %{country} format (%{pattern}).", format_vars(country))}
-
-  defp format_check({:error, :format, _suggestions}, country),
+  defp format_problem(:format, [{:number, number} | _rest], _country),
     do:
-      {:problem,
-       gettext(
-         "Does not match the %{country} format (%{pattern}). Edit the counterparty to correct it.",
-         format_vars(country)
-       )}
+      gettext(
+        "The number does not match this country's pattern. Did you mean %{number}? We will check it in VIES once it is corrected.",
+        number: number
+      )
 
-  defp format_check({:error, :checksum, _suggestions}, country),
+  defp format_problem(:format, [{:country, other, _number} | _rest], _country),
     do:
-      {:problem,
-       gettext("Has an invalid %{country} check digit. Edit the counterparty to correct it.", format_vars(country))}
+      gettext(
+        "The number matches the pattern for %{country}, not the counterparty's country. Check that the country is right.",
+        country: CountryCodes.country_name(other)
+      )
 
-  defp format_vars(country),
-    do: [country: CountryCodes.country_name(CountryCodes.normalize(country)), pattern: EuVatNumber.pattern(country)]
-
-  defp vies_check({:error, _rule, _suggestions}, _counterparty),
-    do: {:pending, gettext("Not checked in VIES while the number breaks its country format.")}
-
-  defp vies_check({:ok, _number}, %{vat_id_status: :active, vat_id_checked_at: checked_at}),
-    do: {:ok, gettext("Active in VIES on %{date}.", date: format_date(checked_at))}
-
-  defp vies_check({:ok, _number}, %{vat_id_status: :inactive, vat_id_checked_at: checked_at}),
+  defp format_problem(:format, [], country),
     do:
-      {:problem,
-       gettext("VIES did not confirm the number on %{date}. Check it with the counterparty.",
-         date: format_date(checked_at)
-       )}
+      gettext(
+        "The number does not match this country's pattern: %{pattern}, where 9 is a digit and X a letter. We will check it in VIES once it is corrected.",
+        pattern: EuVatNumber.pattern(country)
+      )
 
-  defp vies_check({:ok, _number}, _counterparty),
-    do: {:pending, gettext("Not checked in VIES yet. New numbers are checked every morning.")}
+  defp checked_on(checked_at), do: gettext("Checked on %{date}", date: format_date(checked_at))
 
   attr :counterparty, :map, required: true
   attr :params, :map, default: %{}
@@ -647,6 +680,7 @@ defmodule FirmowidWeb.Management.Views.Counterparty do
 
     socket
     |> assign(:counterparty, counterparty)
+    |> assign(:vat_id, vat_id_status(counterparty))
     |> assign(:invoice_filter, invoice_filter)
     |> assign(:suggested_invoices, suggested_invoices)
     |> assign(:stats, build_stats(counterparty, stats_invoices))
