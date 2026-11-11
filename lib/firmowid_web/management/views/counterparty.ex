@@ -11,6 +11,7 @@ defmodule FirmowidWeb.Management.Views.Counterparty do
 
   alias Firmowid.Invoicing
   alias Firmowid.Invoicing.CountryCodes
+  alias Firmowid.Invoicing.EuVatNumber
   alias Firmowid.Invoicing.Services.CounterpartyInvoiceSuggestions
   alias FirmowidUI.Components.Inputs
   alias FirmowidWeb.Invoicing.Utilities.Navigation, as: InvoicingNavigation
@@ -308,6 +309,11 @@ defmodule FirmowidWeb.Management.Views.Counterparty do
           </div>
         </section>
 
+        <.vat_id_checks
+          :if={@counterparty.tax_id_type == :eu_vat and @counterparty.tax_id not in [nil, ""]}
+          counterparty={@counterparty}
+        />
+
         <section class="rounded-lg bg-white p-6 shadow-card">
           <p class="mb-2 text-sm/snug text-grey-700">{gettext("Notes")}</p>
           <p class="text-base/snug whitespace-pre-line text-black" phx-no-format>{@counterparty.description || "—"}</p>
@@ -354,6 +360,113 @@ defmodule FirmowidWeb.Management.Views.Counterparty do
     </div>
     """
   end
+
+  attr :counterparty, :map, required: true
+
+  # The country format is checked live; VIES only by the periodic VatIdCheckWorker,
+  # whose result is stored on the counterparty.
+  defp vat_id_checks(assigns) do
+    %{country: country, tax_id: tax_id} = assigns.counterparty
+    format = EuVatNumber.check(country, tax_id)
+
+    assigns =
+      assign(assigns,
+        format: format_check(format, country),
+        vies: vies_check(format, assigns.counterparty)
+      )
+
+    ~H"""
+    <section
+      id="counterparty-vat-id-checks"
+      aria-labelledby="counterparty-vat-id-checks-title"
+      class="rounded-lg bg-white p-6 shadow-card"
+    >
+      <h3 id="counterparty-vat-id-checks-title" class="text-base/tight font-medium text-grey-900">
+        {gettext("EU VAT number checks")}
+      </h3>
+
+      <ul class="mt-4 space-y-4">
+        <.vat_id_check
+          id="counterparty-vat-id-check-format"
+          label={pgettext("EU VAT check", "Country format")}
+          check={@format}
+        />
+        <.vat_id_check
+          id="counterparty-vat-id-check-vies"
+          label={pgettext("EU VAT check", "VIES registration")}
+          check={@vies}
+        />
+      </ul>
+
+      <p class="mt-4 text-sm/snug text-grey-700">
+        {gettext(
+          "Every week we check the number in VIES again. A number that fails a check appears in the inbox."
+        )}
+      </p>
+    </section>
+    """
+  end
+
+  attr :id, :string, required: true
+  attr :label, :string, required: true
+  attr :check, :any, required: true, doc: "`{result, text}`, result `:ok | :problem | :pending`"
+
+  defp vat_id_check(assigns) do
+    {result, text} = assigns.check
+    assigns = assign(assigns, result: result, text: text)
+
+    ~H"""
+    <li id={@id} data-result={@result} class="flex items-start gap-3">
+      <Lucideicons.circle_check :if={@result == :ok} class="mbs-0.5 size-5 shrink-0 text-teal-700" />
+      <Lucideicons.circle_x :if={@result == :problem} class="mbs-0.5 size-5 shrink-0 text-brick-700" />
+      <Lucideicons.clock :if={@result == :pending} class="mbs-0.5 size-5 shrink-0 text-grey-500" />
+      <div class="space-y-0.5">
+        <p class="text-base/snug text-black">{@label}</p>
+        <p class={[
+          "text-sm/snug",
+          if(@result == :problem, do: "text-brick-700", else: "text-grey-700")
+        ]}>
+          {@text}
+        </p>
+      </div>
+    </li>
+    """
+  end
+
+  defp format_check({:ok, _number}, country),
+    do: {:ok, gettext("Matches the %{country} format (%{pattern}).", format_vars(country))}
+
+  defp format_check({:error, :format, _suggestions}, country),
+    do:
+      {:problem,
+       gettext(
+         "Does not match the %{country} format (%{pattern}). Edit the counterparty to correct it.",
+         format_vars(country)
+       )}
+
+  defp format_check({:error, :checksum, _suggestions}, country),
+    do:
+      {:problem,
+       gettext("Has an invalid %{country} check digit. Edit the counterparty to correct it.", format_vars(country))}
+
+  defp format_vars(country),
+    do: [country: CountryCodes.country_name(CountryCodes.normalize(country)), pattern: EuVatNumber.pattern(country)]
+
+  defp vies_check({:error, _rule, _suggestions}, _counterparty),
+    do: {:pending, gettext("Not checked in VIES while the number breaks its country format.")}
+
+  defp vies_check({:ok, _number}, %{vat_id_status: :active, vat_id_checked_at: checked_at}),
+    do: {:ok, gettext("Active in VIES on %{date}.", date: format_date(checked_at))}
+
+  defp vies_check({:ok, _number}, %{vat_id_status: :inactive, vat_id_checked_at: checked_at}),
+    do:
+      {:problem,
+       gettext("VIES did not confirm the number on %{date}. Check it with the counterparty.",
+         date: format_date(checked_at)
+       )}
+
+  defp vies_check({:ok, _number}, _counterparty),
+    do: {:pending, gettext("Not checked in VIES yet. New numbers are checked every morning.")}
 
   attr :counterparty, :map, required: true
   attr :params, :map, default: %{}
@@ -524,7 +637,10 @@ defmodule FirmowidWeb.Management.Views.Counterparty do
     scope = socket.assigns.ash_scope
     invoice_filter = invoice_filter || socket.assigns[:invoice_filter] || :all
     invoice_limit = socket.assigns[:invoice_limit] || invoice_limit()
-    counterparty = Ash.load!(counterparty, [:display_label, :cooperation_value], scope: scope)
+
+    counterparty =
+      Ash.load!(counterparty, [:display_label, :cooperation_value, :tax_id_type], scope: scope)
+
     stats_invoices = list_counterparty_invoices(counterparty.id, :all, scope)
     visible_invoices = list_counterparty_invoices(counterparty.id, invoice_filter, scope)
     suggested_invoices = CounterpartyInvoiceSuggestions.list_for_counterparty(counterparty, scope)
