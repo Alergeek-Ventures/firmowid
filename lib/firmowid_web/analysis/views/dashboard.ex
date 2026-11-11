@@ -106,7 +106,7 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
       {:ok, month} ->
         month = Date.beginning_of_month(month)
 
-        if month in Navigation.months(params.period) do
+        if month in closed_months(socket.assigns.summary) do
           month = if month == params.month, do: nil, else: month
           {:noreply, push_patch(socket, to: build_path(socket, month: month))}
         else
@@ -217,8 +217,12 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
       |> Enum.reduce(%{}, &Map.merge/2)
 
     socket
-    |> assign(:profitability, ProjectProfitability.from_year_summary(summary, seconds))
+    |> assign(
+      :profitability,
+      ProjectProfitability.from_year_summary(%{summary | months: closed(summary)}, seconds)
+    )
     |> load_review()
+    |> update(:review, &closed_review(&1, closed_months(summary)))
   end
 
   # Categories come from unfiltered entries, so project filters leave them out.
@@ -228,6 +232,18 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
     if tag_filters == [],
       do: load_review(socket),
       else: assign(socket, :review, nil)
+  end
+
+  # Income channels, like the projects, count only closed months.
+  defp closed_review(review, months) do
+    groups = CategoryReview.period(review, months, [])
+
+    income =
+      groups
+      |> Enum.filter(&(&1.side == :income))
+      |> Enum.reduce(Decimal.new(0), &Decimal.add(&1.amount, &2))
+
+    %{review | groups: groups, income: %{review.income | total: income}}
   end
 
   # Entries without a category are classified in the background for members who may store categories.
@@ -245,7 +261,8 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
     assign(socket, :review, review)
   end
 
-  # The period's months from the year summaries it spans.
+  # The period's months from the year summaries it spans; totals cover only closed months,
+  # since a month still waiting for its invoices' payments would mislead.
   defp period_summary(period, tag_filters, scope) do
     months = Navigation.months(period)
 
@@ -258,9 +275,13 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
     %{
       currency: "PLN",
       months: months,
-      totals: months |> Enum.map(& &1.totals) |> CategoryTotals.combine()
+      totals: months |> Enum.filter(& &1.closed?) |> Enum.map(& &1.totals) |> CategoryTotals.combine()
     }
   end
+
+  defp closed(summary), do: Enum.filter(summary.months, & &1.closed?)
+
+  defp closed_months(summary), do: summary |> closed() |> Enum.map(& &1.month)
 
   defp years({from, to}), do: Enum.to_list(from.year..to.year)
 
@@ -275,23 +296,43 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
   defp view_for(params, :dashboard), do: %{view: :dashboard, period: params.period, month: nil}
   defp view_for(params, :segments), do: %{view: :segments, period: params.period}
 
-  defp details_months(%{month: %Date{} = month}), do: [month]
-  defp details_months(%{period: period}), do: Navigation.months(period)
-
-  # A month compares with the period's other completed months, its usual baseline.
-  defp compared_months(%{period: period, month: %Date{} = month}) do
-    current = Date.beginning_of_month(Date.utc_today())
-
-    for compared <- Navigation.months(period),
-        Date.before?(compared, current),
-        compared != month,
-        do: compared
+  # A month that is not closed has no result to show, so a link to one shows the whole period.
+  defp selected_month(%{month: %Date{} = month}, summary) do
+    if month in closed_months(summary), do: month
   end
 
-  defp compared_months(_params), do: []
+  defp selected_month(_params, _summary), do: nil
 
-  defp details_title(%{month: %Date{} = month}), do: month_name(month, "LLLL y")
-  defp details_title(%{period: period}), do: period_title(period)
+  defp details_months(params, summary) do
+    case selected_month(params, summary) do
+      nil -> closed_months(summary)
+      month -> [month]
+    end
+  end
+
+  # A month compares with the period's other closed months, its usual baseline.
+  defp compared_months(params, summary) do
+    case selected_month(params, summary) do
+      nil -> []
+      month -> closed_months(summary) -- [month]
+    end
+  end
+
+  # The details cover only closed months, so their title names those.
+  defp details_title(params, summary) do
+    closed = closed_months(summary)
+
+    cond do
+      month = selected_month(params, summary) ->
+        month_name(month, "LLLL y")
+
+      closed == [] or closed == Enum.map(summary.months, & &1.month) ->
+        period_title(params.period)
+
+      true ->
+        period_title({List.first(closed), List.last(closed)})
+    end
+  end
 
   defp period_title({month, month}), do: month_name(month, "LLLL y")
 
@@ -374,15 +415,18 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
         <FirmowidWeb.Analysis.Components.FinancialOverview.overview
           summary={@summary}
           tag_filters={@tag_filters}
-          selected_month={@params.month}
-          key_costs={if @review, do: CategoryReview.key_costs(@review), else: []}
+          selected_month={selected_month(@params, @summary)}
         />
         <FirmowidWeb.Analysis.Components.PeriodDetails.details
-          title={details_title(@params)}
-          months={Enum.filter(@summary.months, &(&1.month in details_months(@params)))}
+          title={details_title(@params, @summary)}
+          months={Enum.filter(@summary.months, &(&1.month in details_months(@params, @summary)))}
           groups={
             @review &&
-              CategoryReview.period(@review, details_months(@params), compared_months(@params))
+              CategoryReview.period(
+                @review,
+                details_months(@params, @summary),
+                compared_months(@params, @summary)
+              )
           }
           industry={@review && @review.industry}
           can_edit={can_tag?(assigns)}

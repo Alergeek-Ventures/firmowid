@@ -46,10 +46,18 @@ defmodule FirmowidWeb.Analysis.Components.PeriodDetails do
   def details(assigns) do
     %{months: months, groups: groups} = assigns
     income = sum(months, & &1.totals.total_income)
+    result = sum(months, & &1.totals.net_profit)
 
     assigns =
       assign(assigns,
-        result: sum(months, & &1.totals.net_profit),
+        result: result,
+        margin:
+          if(Decimal.positive?(income),
+            do:
+              result
+              |> Decimal.div(income)
+              |> Number.to_string!(format: :percent, fractional_digits: 1)
+          ),
         expenses:
           column(
             groups,
@@ -69,11 +77,22 @@ defmodule FirmowidWeb.Analysis.Components.PeriodDetails do
     >
       <header class="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2">
         <h2 id="analysis-period-title" class="text-2xl font-semibold text-grey-900">{@title}</h2>
-        <p id="analysis-period-result" class={result_styles(@result)}>
-          {gettext("Result %{amount}", amount: whole_money(@result))}
-        </p>
+        <div :if={@months != []} class="flex flex-col gap-0.5">
+          <p id="analysis-period-result" class={result_styles(@result)}>
+            {gettext("Result %{amount}", amount: whole_money(@result))}
+          </p>
+          <p :if={@margin} class="text-sm text-grey-700 tabular-nums">
+            {gettext("Margin %{margin}", margin: @margin)}
+          </p>
+        </div>
       </header>
-      <div class="grid grid-cols-[minmax(0,1fr)] gap-x-16 gap-y-12 @5xl:grid-cols-2">
+      <p :if={@months == []} id="analysis-period-open" class="text-sm text-grey-700">
+        {gettext("No month of this period is closed yet.")}
+      </p>
+      <div
+        :if={@months != []}
+        class="grid grid-cols-[minmax(0,1fr)] gap-x-16 gap-y-12 @5xl:grid-cols-2"
+      >
         <.column
           id="analysis-period-expenses"
           title={gettext("Costs")}
