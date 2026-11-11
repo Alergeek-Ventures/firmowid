@@ -290,9 +290,6 @@ defmodule FirmowidWeb.Timetracker.Components.Session do
   def format_time(%Time{} = time), do: Calendar.strftime(time, "%H:%M")
   def format_time(%DateTime{} = datetime), do: Calendar.strftime(datetime, "%H:%M")
 
-  def format_date(nil), do: nil
-  def format_date(%DateTime{} = datetime), do: datetime |> DateTime.to_date() |> Date.to_iso8601()
-
   defp overnight_session?(session) do
     start_date = session[:date].value
     end_date = session[:end_date].value
