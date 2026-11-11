@@ -695,14 +695,7 @@ defmodule FirmowidWeb.Timetracker.Views.Index do
     scope = socket.assigns.ash_scope
     now = DateTime.now!(socket.assigns.timezone)
 
-    total_query =
-      Timetracker.query_to_list_sessions(
-        %{month: now.month, year: now.year, member_id: socket.assigns.current_user.member.id},
-        scope: scope
-      )
-
-    %{total: total_seconds} =
-      Ash.aggregate!(total_query, {:total, :sum, field: :duration, default: 0}, scope: scope)
+    total_seconds = Session.month_duration!(DateTime.to_date(now), scope: scope)
 
     hours = div(total_seconds, 60 * 60)
     minutes = rem(div(total_seconds, 60), 60)
