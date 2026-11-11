@@ -182,6 +182,7 @@
             {pgettext("management navigation", "Employees")}
           </.link>
           <.link
+            :if={time_tracking_enabled?(assigns[:current_org])}
             kind="unstyled"
             navigate={~p"/zarzadzanie/projekty"}
             class={[

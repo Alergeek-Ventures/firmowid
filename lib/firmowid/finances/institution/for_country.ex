@@ -37,10 +37,6 @@ defmodule Firmowid.Finances.Institution.ForCountry do
         end)
 
       {:ok, results}
-    else
-      {:error, reason} ->
-        # credo:disable-for-next-line Credo.Check.Design.AliasUsage
-        {:error, Ash.Error.Unknown.exception(errors: [reason])}
     end
   end
 

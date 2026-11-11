@@ -243,6 +243,12 @@ defmodule FirmowidWeb.Organization.Views.FirstSteps do
         class="mt-3 grid min-h-78 auto-rows-14 grid-cols-2 content-start gap-2"
       >
         <p
+          :if={@institutions_failed?}
+          class="col-span-2 py-4 text-center text-[0.9375rem] text-grey-600"
+        >
+          {gettext("We cannot load the banks right now. Try again in a moment or skip this step.")}
+        </p>
+        <p
           :if={visible_institutions(@institutions, @bank_query) == [] and @institutions != []}
           class="col-span-2 py-4 text-center text-[0.9375rem] text-grey-600"
         >
@@ -534,6 +540,7 @@ defmodule FirmowidWeb.Organization.Views.FirstSteps do
          ),
        connecting: @connecting,
        institutions: [],
+       institutions_failed?: false,
        bank_query: "",
        fetch_check_scheduled?: false
      )
@@ -670,12 +677,19 @@ defmodule FirmowidWeb.Organization.Views.FirstSteps do
     )
   end
 
+  # Without the bank list the step still offers its skip; coming back to it tries again.
   defp assign_institutions(%{assigns: %{institutions: []}} = socket) do
-    assign(
-      socket,
-      :institutions,
-      Finances.list_institutions!("pl", actor: socket.assigns.current_user)
-    )
+    case Finances.list_institutions("pl", actor: socket.assigns.current_user) do
+      {:ok, institutions} ->
+        assign(socket, institutions: institutions, institutions_failed?: false)
+
+      {:error, error} ->
+        Logger.warning("Failed to load bank institutions",
+          error_kind: Firmowid.ErrorKind.classify(error)
+        )
+
+        assign(socket, :institutions_failed?, true)
+    end
   end
 
   defp assign_institutions(socket), do: socket
