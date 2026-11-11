@@ -98,7 +98,6 @@ defmodule FirmowidWeb.Organization.Views.Index do
       id="company-card"
       name={@company && @company.name}
       rows={company_rows(@company, @step, @organization)}
-      source={@company && @company.source}
     >
       <:stamps :let={card}>
         <%!-- The industry is stamped once confirmed, also for a company being edited. --%>
@@ -198,21 +197,16 @@ defmodule FirmowidWeb.Organization.Views.Index do
       </div>
       <.field_error :if={@errors[:nip]} message={@errors[:nip]} />
 
-      <p :if={@lookup == :found} class="mt-4 text-[1.0625rem]/relaxed text-grey-700">
-        {gettext(
-          "We took the name, address and PKD from the VAT white list. They go onto every invoice of yours, so check that they are right."
-        )}
-        <.button
-          :if={not @manual?}
-          id="edit-company-manually"
-          type="button"
-          variant="unstyled"
-          phx-click="edit_manually"
-          class="font-medium text-grey-900 underline underline-offset-4 hover:text-black"
-        >
-          {gettext("Correct the details")}
-        </.button>
-      </p>
+      <.button
+        :if={@lookup == :found and not @manual?}
+        id="edit-company-manually"
+        type="button"
+        variant="unstyled"
+        phx-click="edit_manually"
+        class="mt-4 text-[1.0625rem] font-medium text-grey-900 underline underline-offset-4 hover:text-black"
+      >
+        {gettext("Correct the details")}
+      </.button>
       <p :if={@lookup == :not_found} class="mt-4 text-[1.0625rem]/relaxed text-grey-700">
         {gettext("The VAT white list does not know this NIP. Enter the company details yourself.")}
       </p>
@@ -805,11 +799,7 @@ defmodule FirmowidWeb.Organization.Views.Index do
       pkd_name: found.pkd_name,
       suggested_industry: found.industry,
       vat_payer?: found.vat_payer?,
-      fresh?: true,
-      source:
-        gettext("From the VAT white list of the Ministry of Finance, %{date}",
-          date: Calendar.strftime(Date.utc_today(), "%d.%m.%Y")
-        )
+      fresh?: true
     }
 
     {:noreply,
@@ -921,8 +911,7 @@ defmodule FirmowidWeb.Organization.Views.Index do
       pkd_name: nil,
       suggested_industry: nil,
       vat_payer?: true,
-      fresh?: false,
-      source: nil
+      fresh?: false
     }
   end
 

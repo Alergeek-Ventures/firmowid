@@ -33,7 +33,6 @@ defmodule FirmowidWeb.Organization.Components.CompanyCard do
     default: [],
     doc: "`%{label:, value:, fresh: boolean}` maps; nil values render as blanks"
 
-  attr :source, :string, default: nil, doc: "where the data comes from, shown under the rows"
   attr :class, :any, default: nil
   slot :stamps
 
@@ -132,11 +131,6 @@ defmodule FirmowidWeb.Organization.Components.CompanyCard do
             </dd>
           <% end %>
         </dl>
-
-        <p :if={@source} class="mt-5 flex items-center gap-2 text-xs text-grey-500">
-          <Lucideicons.check class="size-3.5 text-moss-700" aria-hidden="true" />
-          {@source}
-        </p>
 
         <div
           :if={@stamps != []}
