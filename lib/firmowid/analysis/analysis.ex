@@ -351,6 +351,7 @@ defmodule Firmowid.Analysis do
           nip: counterparty_nip(entity),
           amount: amount |> Decimal.abs() |> Decimal.round(2),
           lines: entry_lines(entity),
+          salary_user_id: salary_user_id(entity),
           certain: certain_category(entity, tags, amount),
           classified: stored && stored.category,
           probability: stored && stored.probability
@@ -467,6 +468,11 @@ defmodule Firmowid.Analysis do
   defp entry_lines(%Transaction{remittance_information_unstructured: title}) when is_binary(title), do: [title]
 
   defp entry_lines(_entity), do: []
+
+  # A transfer pinned to a salary pays its user.
+  defp salary_user_id(%Transaction{salary_month: %Date{}} = transaction), do: transaction.salary_user_id
+
+  defp salary_user_id(_entity), do: nil
 
   defp certain_category(%Transaction{salary_month: %Date{}}, _tags, _amount), do: :payroll
 

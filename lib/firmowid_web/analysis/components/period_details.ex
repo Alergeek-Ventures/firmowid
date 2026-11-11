@@ -4,7 +4,8 @@ defmodule FirmowidWeb.Analysis.Components.PeriodDetails do
   its result, then costs and income by template category with their
   counterparties and shares of income. A single month compares each category
   with its usual monthly amount. Unpaid invoices are mentioned beside the
-  totals they are missing from. With `can_edit`, a counterparty row opens the
+  totals they are missing from. A category's counterparties expand from the
+  category. With `can_edit`, a counterparty row opens the
   categories of the organization's industry to confirm or move it to.
   Sends `confirm-category` (with the group's `side`, `key`, `suggestion` and
   `source`, and the chosen `category`).
@@ -14,6 +15,8 @@ defmodule FirmowidWeb.Analysis.Components.PeriodDetails do
   alias Firmowid.Analysis.IndustryTemplate
   alias Firmowid.Cldr.Number
 
+  @categories_at_once 4
+  @examples 3
   @notable_change Decimal.new("0.1")
   @material_share Decimal.new("0.02")
 
@@ -105,48 +108,215 @@ defmodule FirmowidWeb.Analysis.Components.PeriodDetails do
           {gettext("Not included: unpaid invoices %{amount}", amount: whole_money(@column.unpaid))}
         </p>
       </header>
-      <div
-        :for={category <- @column.categories}
-        id={"#{@id}-#{category.key || "unassigned"}"}
-        class="flex flex-col gap-1"
-      >
-        <div class="flex items-baseline justify-between gap-3">
-          <h4 class="min-w-0 truncate text-sm font-semibold text-grey-900">
-            {cond do
-              category.key -> category_label(category.key)
-              @can_edit -> gettext("Needs your choice")
-              true -> gettext("Uncategorized")
-            end}
-          </h4>
-          <span class="shrink-0 text-sm text-grey-700 tabular-nums">
-            {share_caption(category.amount, @column.total, @column.revenue)}
-          </span>
-        </div>
-        <div class="mb-1 h-1 rounded-full bg-grey-200" aria-hidden="true">
-          <div
-            class={bar_styles(@column.side)}
-            style={"inline-size: #{share_percent(category.amount, @column.total)}%"}
-          />
-        </div>
-        <p :if={category.average} class="text-sm text-grey-700 tabular-nums">
-          {usual_caption(category.amount, category.average, @column.total)}
-        </p>
-        <ul class="-mx-2 flex flex-col">
-          <.counterparty
-            :for={group <- category.groups}
-            group={group}
-            industry={@industry}
-            can_edit={@can_edit}
-          />
-        </ul>
-      </div>
+      <.level
+        id={"#{@id}-categories"}
+        categories={@column.categories}
+        section={@id}
+        column={@column}
+        industry={@industry}
+        can_edit={@can_edit}
+      />
     </section>
     """
   end
 
+  attr :id, :string, required: true
+  attr :categories, :list, required: true
+  attr :column, :map, required: true
+  attr :industry, :atom, required: true
+  attr :can_edit, :boolean, required: true
+  attr :section, :string, required: true, doc: "the column's id, prefixing its categories' ids"
+  attr :nested, :boolean, default: false
+  attr :parent, :string, default: nil, doc: "the id of the contents a nested level leads back to"
+
+  # At most four categories at once: the largest and the rest, which zooms in on its
+  # categories in their place; a nested level leads back.
+  defp level(assigns) do
+    {shown, rest} =
+      if length(assigns.categories) <= @categories_at_once,
+        do: {assigns.categories, []},
+        else: Enum.split(assigns.categories, @categories_at_once - 1)
+
+    # The browser keeps a toggled zoom across server renders by id; new rest categories reset it.
+    zoom = :erlang.phash2(Enum.map(rest, & &1.key))
+
+    assigns =
+      assign(assigns,
+        shown: shown,
+        rest: rest,
+        here: "#{assigns.id}-here-#{zoom}",
+        next: "#{assigns.id}-next-#{zoom}"
+      )
+
+    ~H"""
+    <div id={@id} class="flex flex-col gap-8" hidden={@nested}>
+      <div id={@here} class="contents">
+        <FirmowidUI.Components.Button.button
+          :if={@nested}
+          type="button"
+          variant="unstyled"
+          class="group -mb-4 flex cursor-pointer items-center gap-1 self-start text-sm text-grey-700 min-block-6"
+          phx-click={
+            JS.toggle_attribute({"hidden", ""}, to: "##{@parent}")
+            |> JS.toggle_attribute({"hidden", ""}, to: "##{@id}")
+            |> JS.focus(to: "##{@parent}-rest button")
+          }
+        >
+          <Lucideicons.chevron_left class="size-3.5" aria-hidden="true" />
+          <span class="underline-offset-[.2em] pointer-fine:group-hover:underline">{gettext("Back")}</span>
+        </FirmowidUI.Components.Button.button>
+        <.category
+          :for={category <- @shown}
+          id={"#{@section}-#{category.key || "unassigned"}"}
+          category={category}
+          column={@column}
+          industry={@industry}
+          can_edit={@can_edit}
+        />
+        <div :if={@rest != []} id={"#{@here}-rest"} class="flex flex-col gap-1">
+          <h4 class="text-sm">
+            <FirmowidUI.Components.Button.button
+              type="button"
+              variant="unstyled"
+              class="group flex w-full cursor-pointer items-baseline gap-1 text-start min-block-6"
+              aria-controls={@next}
+              phx-click={
+                JS.toggle_attribute({"hidden", ""}, to: "##{@here}")
+                |> JS.toggle_attribute({"hidden", ""}, to: "##{@next}")
+                |> JS.focus_first(to: "##{@next}")
+              }
+            >
+              <span class="font-semibold text-grey-900 underline-offset-[.2em] pointer-fine:group-hover:underline">
+                {ngettext(
+                  "The rest · %{count} category",
+                  "The rest · %{count} categories",
+                  length(@rest)
+                )}
+                <Lucideicons.chevron_right
+                  class="ms-0.5 inline size-3.5 align-[-0.15em] text-grey-700"
+                  aria-hidden="true"
+                />
+              </span>
+              <span class="ms-auto shrink-0 ps-2 text-grey-700 tabular-nums">
+                {share_caption(sum(@rest, & &1.amount), @column.total, @column.revenue)}
+              </span>
+            </FirmowidUI.Components.Button.button>
+          </h4>
+          <.share_bar amount={sum(@rest, & &1.amount)} column={@column} />
+          <p class="truncate text-sm text-grey-700">
+            {Enum.map_join(@rest, ", ", &label(&1.key, @can_edit))}
+          </p>
+        </div>
+      </div>
+      <.level
+        :if={@rest != []}
+        id={@next}
+        categories={@rest}
+        parent={@here}
+        section={@section}
+        column={@column}
+        industry={@industry}
+        can_edit={@can_edit}
+        nested
+      />
+    </div>
+    """
+  end
+
+  attr :id, :string, required: true
+  attr :category, :map, required: true
+  attr :column, :map, required: true
+  attr :industry, :atom, required: true
+  attr :can_edit, :boolean, required: true
+
+  # A few examples show what the category holds; the header lists all its counterparties.
+  defp category(assigns) do
+    {examples, more} = Enum.split(assigns.category.groups, @examples)
+    # As with zooming, other counterparties to expand get a fresh, collapsed list.
+    more_id = "#{assigns.id}-more-#{:erlang.phash2(Enum.map(more, & &1.key))}"
+    assigns = assign(assigns, examples: examples, more: more, more_id: more_id)
+
+    ~H"""
+    <div id={@id} class="flex flex-col gap-1">
+      <h4 class="text-sm">
+        <FirmowidUI.Components.Button.button
+          type="button"
+          variant="unstyled"
+          id={"#{@more_id}-toggle"}
+          disabled={@more == []}
+          class="group flex w-full cursor-pointer items-baseline gap-1 text-start min-block-6 disabled:cursor-default"
+          aria-expanded={@more != [] && "false"}
+          aria-controls={@more != [] && @more_id}
+          phx-click={
+            JS.toggle_attribute({"hidden", ""}, to: "##{@more_id}")
+            |> JS.toggle_attribute({"aria-expanded", "true", "false"})
+          }
+        >
+          <span class="min-w-0 font-semibold text-grey-900 underline-offset-[.2em] pointer-fine:group-enabled:group-hover:underline">
+            {label(@category.key, @can_edit)}
+            <Lucideicons.chevron_down
+              :if={@more != []}
+              class="ms-0.5 inline size-3.5 align-[-0.15em] text-grey-700 group-aria-expanded:rotate-180 motion-safe:transition-transform motion-safe:duration-200 motion-safe:ease-out"
+              aria-hidden="true"
+            />
+          </span>
+          <span class="ms-auto shrink-0 ps-2 text-grey-700 tabular-nums">
+            {share_caption(@category.amount, @column.total, @column.revenue)}
+          </span>
+        </FirmowidUI.Components.Button.button>
+      </h4>
+      <.share_bar amount={@category.amount} column={@column} />
+      <p :if={@category.average} class="text-sm text-grey-700 tabular-nums">
+        {usual_caption(@category.amount, @category.average, @column.total)}
+      </p>
+      <ul class="-mx-2 flex flex-col">
+        <.counterparty
+          :for={group <- @examples}
+          group={group}
+          industry={@industry}
+          can_edit={@can_edit}
+        />
+      </ul>
+      <ul :if={@more != []} id={@more_id} class="-mx-2 flex flex-col" hidden>
+        <.counterparty :for={group <- @more} group={group} industry={@industry} can_edit={@can_edit} />
+      </ul>
+    </div>
+    """
+  end
+
+  attr :amount, :any, required: true
+  attr :column, :map, required: true
+
+  defp share_bar(assigns) do
+    ~H"""
+    <div class="mb-1 h-1 rounded-full bg-grey-200" aria-hidden="true">
+      <div
+        class={bar_styles(@column.side)}
+        style={"inline-size: #{share_percent(@amount, @column.total)}%"}
+      />
+    </div>
+    """
+  end
+
+  defp label(nil, true), do: gettext("Needs your choice")
+  defp label(nil, false), do: gettext("Uncategorized")
+  defp label(key, _can_edit), do: category_label(key)
+
   attr :group, :map, required: true
   attr :industry, :atom, required: true
   attr :can_edit, :boolean, required: true
+
+  # Salaries paid through payroll are certain, so their row only names how many people.
+  defp counterparty(%{group: %{people: people}} = assigns) when people != nil do
+    ~H"""
+    <li class="flex items-center gap-2 px-2 text-sm min-block-9">
+      <span class="min-w-0 truncate text-grey-900">
+        {ngettext("Payroll · %{count} person", "Payroll · %{count} people", @group.people)}
+      </span>
+      <span class="ms-auto shrink-0 text-grey-700 tabular-nums">{whole_money(@group.amount)}</span>
+    </li>
+    """
+  end
 
   defp counterparty(%{can_edit: false} = assigns) do
     ~H"""

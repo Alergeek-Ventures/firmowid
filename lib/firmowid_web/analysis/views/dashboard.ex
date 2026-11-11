@@ -60,7 +60,7 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
   end
 
   @impl true
-  def handle_event("confirm-category", %{"key" => key, "side" => side} = params, socket) do
+  def handle_event("confirm-category", %{"key" => key, "side" => side} = params, socket) when is_binary(key) do
     with %{} = group <-
            Enum.find(
              review_groups(socket.assigns),
@@ -170,18 +170,23 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
   defp review_groups(_assigns), do: []
 
   defp confirm_category(socket, group, category) do
+    # Each of the counterparty's names gets the rule, so a period showing only one applies it too.
     result =
-      CounterpartyCategory.confirm(
+      Enum.reduce_while(group.names, nil, fn name, _result ->
         %{
           side: group.side,
-          counterparty_key: group.key,
-          counterparty_name: group.name,
+          counterparty_key: CategoryReview.key(name),
+          counterparty_name: name,
           category: category,
           suggested_category: group.suggestion,
           suggestion_source: group.source
-        },
-        scope: socket.assigns.ash_scope
-      )
+        }
+        |> CounterpartyCategory.confirm(scope: socket.assigns.ash_scope)
+        |> case do
+          {:ok, rule} -> {:cont, {:ok, rule}}
+          error -> {:halt, error}
+        end
+      end)
 
     # A corrected suggestion teaches the classifier, so its other suggestions are refreshed.
     if category != group.suggestion,
