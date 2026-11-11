@@ -52,7 +52,7 @@ Po wpłacie transakcja pojawia się w Firmowidzie przez połączenie z bankiem. 
 
 ![Schemat obiegu jednego projektu w Firmowidzie: czas pracy, faktura w KSeF, przelew z banku i wynik projektu. ChatGPT lub Claude przez MCP przygotowuje fakturę, a wysyłka do KSeF następuje po potwierdzeniu.](/images/guides/ksef-bank-czas-obieg-projektu.webp)
 
-MCP w Firmowidzie obejmuje obecnie przygotowanie, korekty i odczyt faktur. Analizy marży i rentowności projektów działają jako beta w aplikacji hostowanej. Nie są jeszcze częścią publicznej wersji open source i nie udostępniamy ich obecnie przez MCP.
+MCP w Firmowidzie obejmuje przygotowanie, korekty i odczyt faktur, a także przypisywanie kosztów i przychodów do projektów w [analizie rentowności](/poradnik/rentownosc-projektu-firma-uslugowa), która jest częścią publicznego kodu.
 
 ## Kiedy Firmowid pasuje, a kiedy nie
 
