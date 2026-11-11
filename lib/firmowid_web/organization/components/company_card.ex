@@ -97,7 +97,8 @@ defmodule FirmowidWeb.Organization.Components.CompanyCard do
 
       <div class="relative">
         <%= if @name do %>
-          <h2 class="text-3xl/tight font-semibold tracking-tight text-grey-900 sm:text-[2.875rem]/[1.05]">
+          <%!-- A long word breaks rather than leave the card. --%>
+          <h2 class="text-3xl/tight font-semibold tracking-tight wrap-anywhere text-grey-900 sm:text-[2.875rem]/[1.05]">
             {@base_name}
             <span
               :if={@legal_form}
@@ -317,7 +318,11 @@ defmodule FirmowidWeb.Organization.Components.CompanyCard do
 
   defp split_name(nil), do: %{base_name: nil, legal_form: nil}
 
+  # Registered names may hold non-breaking or repeated spaces, which the legal
+  # forms would not match, so the name is split with its spaces made plain.
   defp split_name(name) do
+    name = name |> String.replace(~r/\s+/u, " ") |> String.trim()
+
     case Regex.run(@legal_forms, name) do
       [suffix, legal_form] ->
         %{
