@@ -211,7 +211,6 @@ defmodule FirmowidWeb.Admin.Views.Settlement do
           selected_month={@selected_month}
           status={@status}
           worksheet={@worksheet}
-          selected_org={@selected_org}
         />
       <% else %>
         <SettlementComponents.empty_state />

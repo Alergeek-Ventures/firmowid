@@ -147,22 +147,35 @@ defmodule FirmowidWeb.Admin.Components.SettlementComponents do
           "Recorded events in the organization, independent of the selected billing month. The numbers cover the last 30 days (rolling 720 hours). These are not sign-in dates."
         )}
       </p>
-      <div class="mt-4 divide-y divide-grey-200 text-sm/snug">
-        <div
-          :for={{label, trace} <- activity_rows(@activity)}
-          class="flex flex-wrap justify-between gap-3 py-3"
-        >
-          <span class="text-grey-900">{label}</span>
-          <span class="text-grey-700">
-            {gettext("Last: %{last} · Last 30 days: %{count}",
-              last: format_activity_datetime(trace.last_at),
-              count: trace.count_30_days
-            )}
-          </span>
-        </div>
-      </div>
+      <.trace_rows rows={activity_rows(@activity)} />
       <p class="mt-3 text-sm/snug text-grey-700">{last_sign_in_text(@activity.last_sign_in)}</p>
+
+      <h3 class="mt-6 text-base/tight font-medium text-grey-900">{gettext("Paid features")}</h3>
+      <p class="mt-1 text-sm/snug text-grey-700">
+        {gettext(
+          "Features the pricing page offers only in paid plans. Today every plan can use them."
+        )}
+      </p>
+      <.trace_rows rows={paid_feature_rows(@activity)} />
     </section>
+    """
+  end
+
+  attr :rows, :list, required: true
+
+  defp trace_rows(assigns) do
+    ~H"""
+    <div class="mt-4 divide-y divide-grey-200 text-sm/snug">
+      <div :for={{label, trace} <- @rows} class="flex flex-wrap justify-between gap-3 py-3">
+        <span class="text-grey-900">{label}</span>
+        <span class="text-grey-700">
+          {gettext("Last: %{last} · Last 30 days: %{count}",
+            last: format_activity_datetime(trace.last_at),
+            count: trace.count_30_days
+          )}
+        </span>
+      </div>
+    </div>
     """
   end
 
@@ -171,6 +184,15 @@ defmodule FirmowidWeb.Admin.Components.SettlementComponents do
       {gettext("Sales invoice created"), activity.sales},
       {gettext("Manual cost invoice import (without KSeF)"), activity.costs},
       {gettext("Working time session started"), activity.sessions}
+    ]
+  end
+
+  defp paid_feature_rows(activity) do
+    [
+      {gettext("Leave requests"), activity.leave_requests},
+      {gettext("Business trips"), activity.delegations},
+      {gettext("Employment contracts"), activity.employment_contracts},
+      {gettext("AI assistant connections (ChatGPT, MCP)"), activity.assistant_connections}
     ]
   end
 
@@ -260,7 +282,6 @@ defmodule FirmowidWeb.Admin.Components.SettlementComponents do
   attr :selected_month, :any, required: true
   attr :status, :map, required: true
   attr :worksheet, :map, required: true
-  attr :selected_org, :map, required: true
 
   def worksheet_panel(assigns) do
     ~H"""
@@ -283,60 +304,28 @@ defmodule FirmowidWeb.Admin.Components.SettlementComponents do
                 <span class="font-medium text-black">{@worksheet.selected_plan_label}</span>
               </div>
 
-              <div
-                :if={@worksheet.base_fee_line}
-                class="flex items-center justify-between gap-4 py-3 text-sm/snug"
-              >
-                <span class="text-grey-700">{@worksheet.base_fee_line.label}</span>
-                <span class="font-medium text-black">{@worksheet.base_fee_line.amount}</span>
+              <div class="flex items-center justify-between gap-4 py-3 text-sm/snug">
+                <span class="text-grey-700">{gettext("Monthly fee (net)")}</span>
+                <span class="font-medium text-black">{@worksheet.monthly_price_text}</span>
               </div>
             </div>
-
-            <p :if={@worksheet.no_plan_note} class="text-sm/snug text-grey-700">
-              {@worksheet.no_plan_note}
-            </p>
           </div>
 
           <div class="space-y-4">
-            <h3 class="text-base/tight font-medium text-grey-900">{gettext("Interpretation")}</h3>
-
-            <div class="divide-y divide-grey-200">
-              <%= if @worksheet.suggestion_rows == [] do %>
-                <div class="py-3 text-sm/snug text-grey-700">
-                  {gettext("No additional items to show for the selected month.")}
-                </div>
-              <% else %>
-                <div
-                  :for={row <- @worksheet.suggestion_rows}
-                  class="flex items-start justify-between gap-4 py-3 text-sm/snug"
-                >
-                  <div class="min-w-0">
-                    <p class="font-medium text-black">{row.label}</p>
-                    <p :if={row.detail} class="text-grey-700">{row.detail}</p>
-                  </div>
-
-                  <span :if={row.amount} class="shrink-0 font-medium text-black">
-                    {row.amount}
-                  </span>
-                </div>
-              <% end %>
-            </div>
-          </div>
-
-          <div :if={@worksheet.selected_plan != :no_plan} class="space-y-4">
             <h3 class="text-base/tight font-medium text-grey-900">
-              {gettext("To pay for %{month}", month: format_month(@selected_month))}
+              {gettext("Plan that fits the usage")}
             </h3>
 
             <div class="divide-y divide-grey-200">
               <div class="flex items-center justify-between gap-4 py-3 text-sm/snug">
-                <span class="font-medium text-black">{gettext("Total")}</span>
-                <div class="flex shrink-0 items-center gap-2">
-                  <.billing_status_badge :if={@selected_org.on_trial?} status={:trial} />
-                  <span class="font-medium text-black">{@worksheet.month_total_text}</span>
-                </div>
+                <span class={fitting_plan_styles(@worksheet)}>{@worksheet.fitting_plan_label}</span>
+                <span class="font-medium text-black">{@worksheet.fitting_plan_price_text}</span>
               </div>
             </div>
+
+            <p :if={@worksheet.over_limit?} class="text-sm/snug text-grey-700">
+              {gettext("The usage is above the limits of the assigned plan.")}
+            </p>
           </div>
         </div>
 
@@ -348,7 +337,7 @@ defmodule FirmowidWeb.Admin.Components.SettlementComponents do
                 <div class="flex items-start justify-between gap-4 text-sm/snug">
                   <div class="min-w-0">
                     <p class="text-grey-900">{row.label}</p>
-                    <p class="text-grey-700">{counter_context(row.key)}</p>
+                    <p class="text-grey-700">{row.context}</p>
                   </div>
 
                   <div class="shrink-0 text-right">
@@ -359,13 +348,13 @@ defmodule FirmowidWeb.Admin.Components.SettlementComponents do
                   </div>
                 </div>
 
-                <div class="h-2 overflow-hidden rounded-full bg-grey-200">
+                <div :if={row.bar_width} class="h-2 overflow-hidden rounded-full bg-grey-200">
                   <div class={counter_bar_fill_styles(row)} style={"width: #{row.bar_width}%"}></div>
                 </div>
 
                 <div class="flex items-center justify-between gap-4 text-xs/snug text-grey-700">
-                  <span>{gettext("Included in the price: %{units}", units: row.included_units)}</span>
-                  <span>{row.usage_text}</span>
+                  <span>{gettext("Included in the price: %{units}", units: row.limit_text)}</span>
+                  <span :if={row.usage_text}>{row.usage_text}</span>
                 </div>
               </div>
             </div>
@@ -441,13 +430,8 @@ defmodule FirmowidWeb.Admin.Components.SettlementComponents do
   defp format_month(%Date{} = month), do: Calendar.strftime(month, "%m.%Y")
   defp format_datetime(%DateTime{} = datetime), do: Calendar.strftime(datetime, "%d.%m.%Y %H:%M")
 
-  defp counter_context(:synced_bank_accounts), do: gettext("Currently connected accounts with synchronization.")
-
-  defp counter_context(:active_non_owner_users), do: gettext("Active organization users other than the owner.")
-
-  defp counter_context(:manual_external_invoices) do
-    gettext("Documents added manually in the current billing month.")
-  end
+  defp fitting_plan_styles(%{over_limit?: true}), do: "font-medium text-rust-700"
+  defp fitting_plan_styles(_worksheet), do: "font-medium text-black"
 
   defp counter_bar_fill_styles(%{over_limit: over_limit}) when over_limit > 0, do: "h-full rounded-full bg-rust-500"
 

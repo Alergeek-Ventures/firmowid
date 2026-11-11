@@ -12,6 +12,7 @@ defmodule Firmowid.Billing.SnapshotCalculator do
   alias Firmowid.Invoicing
   alias Firmowid.Scope
   alias Firmowid.SystemActor
+  alias Firmowid.Timetracker
 
   require Ash.Query
 
@@ -31,14 +32,14 @@ defmodule Firmowid.Billing.SnapshotCalculator do
     %{
       month: month,
       # Intentionally capture the plan that is active when the monthly snapshot
-      # is generated. Billing invoices are derived from persisted snapshots, and
-      # `billing_plan` can only be changed by a superuser, so we accept the
+      # is generated. `billing_plan` can only be changed by a superuser, so we accept the
       # narrow gap between month end and the scheduled snapshot run instead of
       # modeling effective-dated subscription history.
       billing_plan: organization.billing_plan,
       manual_external_invoices_count: manual_external_invoices_count(scope, inserted_from, inserted_to),
       synced_bank_accounts_count: synced_bank_accounts_count(scope),
       active_non_owner_users_count: active_non_owner_users_count(scope, organization.owner_id),
+      active_projects_count: active_projects_count(scope),
       frozen_at: DateTime.utc_now()
     }
   end
@@ -109,6 +110,12 @@ defmodule Firmowid.Billing.SnapshotCalculator do
     %{status: :active}
     |> Core.query_to_list_users(scope: scope)
     |> Ash.Query.filter(id != ^owner_id)
+    |> Ash.count!(scope: scope)
+  end
+
+  defp active_projects_count(scope) do
+    %{status: :active}
+    |> Timetracker.query_to_list_projects(scope: scope)
     |> Ash.count!(scope: scope)
   end
 

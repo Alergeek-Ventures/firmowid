@@ -55,6 +55,11 @@ defmodule Firmowid.Core.OauthConsent do
       authorize_if always()
     end
 
+    # The superuser worksheet counts an organization's AI assistant connections.
+    bypass action(:list) do
+      authorize_if actor_attribute_equals(:system_role, :superuser)
+    end
+
     policy action([:read, :list, :destroy]) do
       authorize_if AccountCleanup
     end

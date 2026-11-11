@@ -83,6 +83,7 @@ defmodule Firmowid.Billing.Snapshot do
         :manual_external_invoices_count,
         :synced_bank_accounts_count,
         :active_non_owner_users_count,
+        :active_projects_count,
         :frozen_at
       ]
     end
@@ -145,6 +146,11 @@ defmodule Firmowid.Billing.Snapshot do
       public?: true,
       allow_nil?: false,
       default: 0,
+      constraints: [min: 0]
+
+    attribute :active_projects_count, :integer,
+      public?: true,
+      description: "Projects not archived at freeze time; nil for months frozen before they were counted.",
       constraints: [min: 0]
 
     attribute :frozen_at, :utc_datetime_usec, public?: true, allow_nil?: false

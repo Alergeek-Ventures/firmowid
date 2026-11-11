@@ -11,7 +11,6 @@ defmodule FirmowidWeb.Settings.Components.SubscriptionTab do
   Renders the owner-only subscription tab.
   """
   @spec subscription_tab(map()) :: Phoenix.LiveView.Rendered.t()
-  attr :month, :any, required: true
   attr :worksheet, :any, required: true
 
   attr :standalone, :boolean, default: false
@@ -30,9 +29,7 @@ defmodule FirmowidWeb.Settings.Components.SubscriptionTab do
             </h2>
 
             <p class="max-w-prose text-sm/snug text-grey-700">
-              {gettext(
-                "The plan assigned to your organization and the limits covered by the monthly billing snapshot."
-              )}
+              {gettext("The plan assigned to your organization and what it includes.")}
             </p>
           </div>
 
@@ -47,12 +44,8 @@ defmodule FirmowidWeb.Settings.Components.SubscriptionTab do
               </div>
             </Helpers.settings_display_field>
 
-            <Helpers.settings_display_field label={gettext("Monthly base fee")}>
-              <%= if @worksheet.base_fee_line do %>
-                {@worksheet.base_fee_line.amount}
-              <% else %>
-                {gettext("No base fee")}
-              <% end %>
+            <Helpers.settings_display_field label={gettext("Monthly fee (net)")}>
+              {@worksheet.monthly_price_text}
             </Helpers.settings_display_field>
           </div>
 
@@ -66,49 +59,31 @@ defmodule FirmowidWeb.Settings.Components.SubscriptionTab do
                 <div class="flex items-start justify-between gap-4 text-sm/snug">
                   <p class="min-w-0 text-grey-900">{row.label}</p>
                   <p class="shrink-0 text-right text-grey-700">
-                    {gettext("Included in the price: %{units}", units: row.included_units)}
+                    {gettext("Included in the price: %{units}", units: row.limit_text)}
                   </p>
                 </div>
               <% end %>
             </div>
           </div>
 
-          <div
-            :if={@worksheet.no_plan_note}
-            class="rounded-lg bg-grey-50 p-4 text-sm leading-[1.35] text-grey-700"
-          >
-            {@worksheet.no_plan_note}
-          </div>
-
-          <div
-            :if={@worksheet.suggestion_rows != []}
-            class="space-y-3 rounded-lg bg-rust-100 p-4"
-          >
-            <h3 class="text-sm leading-none font-medium text-grey-900">
-              {gettext("Current overages")}
+          <div :if={@worksheet.over_limit?} class="space-y-2 rounded-lg bg-rust-100 p-4 text-sm/snug">
+            <h3 class="leading-none font-medium text-grey-900">
+              {gettext("Above the plan limits")}
             </h3>
 
-            <div class="space-y-3">
-              <%= for row <- @worksheet.suggestion_rows do %>
-                <div class="flex items-start justify-between gap-4 text-sm/snug">
-                  <div class="min-w-0">
-                    <p class="font-medium text-grey-900">{row.label}</p>
-                    <p :if={row.detail} class="text-grey-700">{row.detail}</p>
-                  </div>
-
-                  <p :if={row.amount} class="shrink-0 text-right font-medium text-grey-900">
-                    {row.amount}
-                  </p>
-                </div>
-              <% end %>
-            </div>
+            <p class="text-grey-700">
+              {gettext("Your current usage fits the %{plan} plan (%{price} net / mo.).",
+                plan: @worksheet.fitting_plan_label,
+                price: @worksheet.fitting_plan_price_text
+              )}
+            </p>
           </div>
 
           <div
-            :if={@worksheet.suggestion_rows == []}
+            :if={!@worksheet.over_limit?}
             class="rounded-lg bg-grey-50 p-4 text-sm leading-[1.35] text-grey-700"
           >
-            {gettext("No additional overages compared to the plan in the current month.")}
+            {gettext("Your current usage is within the plan limits.")}
           </div>
         </section>
 
@@ -118,10 +93,7 @@ defmodule FirmowidWeb.Settings.Components.SubscriptionTab do
               {gettext("Current counters")}
             </h2>
             <p class="max-w-prose text-sm/snug text-grey-700">
-              {gettext(
-                "An indicative live preview for %{month}. We calculate the data with the same billing month logic from which the snapshot is created, but the final settlement is based solely on the recorded snapshot.",
-                month: month_label(@month)
-              )}
+              {gettext("What your organization uses right now.")}
             </p>
           </div>
 
@@ -132,7 +104,7 @@ defmodule FirmowidWeb.Settings.Components.SubscriptionTab do
                   <div class="flex items-start justify-between gap-4 text-sm/snug">
                     <div class="min-w-0">
                       <p class="text-grey-900">{row.label}</p>
-                      <p class="text-grey-700">{counter_context(row.key)}</p>
+                      <p class="text-grey-700">{row.context}</p>
                     </div>
 
                     <div class="shrink-0 text-right">
@@ -143,7 +115,7 @@ defmodule FirmowidWeb.Settings.Components.SubscriptionTab do
                     </div>
                   </div>
 
-                  <div class="h-2 overflow-hidden rounded-full bg-grey-200">
+                  <div :if={row.bar_width} class="h-2 overflow-hidden rounded-full bg-grey-200">
                     <div
                       class={counter_bar_fill_styles(row)}
                       style={"width: #{row.bar_width}%"}
@@ -152,8 +124,8 @@ defmodule FirmowidWeb.Settings.Components.SubscriptionTab do
                   </div>
 
                   <div class="flex items-center justify-between gap-4 text-xs/snug text-grey-700">
-                    <span>{gettext("Included in the price: %{units}", units: row.included_units)}</span>
-                    <span>{row.usage_text}</span>
+                    <span>{gettext("Included in the price: %{units}", units: row.limit_text)}</span>
+                    <span :if={row.usage_text}>{row.usage_text}</span>
                   </div>
                 </div>
               <% end %>
@@ -167,16 +139,6 @@ defmodule FirmowidWeb.Settings.Components.SubscriptionTab do
       </div>
     <% end %>
     """
-  end
-
-  defp month_label(%Date{} = month), do: Calendar.strftime(month, "%m.%Y")
-
-  defp counter_context(:synced_bank_accounts), do: gettext("Currently connected accounts with synchronization.")
-
-  defp counter_context(:active_non_owner_users), do: gettext("Active organization users other than the owner.")
-
-  defp counter_context(:manual_external_invoices) do
-    gettext("Documents added manually in the current billing month.")
   end
 
   defp plan_badge_label(:no_plan), do: gettext("no plan")

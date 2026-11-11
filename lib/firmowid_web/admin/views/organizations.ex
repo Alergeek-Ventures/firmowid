@@ -218,11 +218,7 @@ defmodule FirmowidWeb.Admin.Views.Organizations do
             <div class="space-y-1 text-sm/snug">
               <p class="font-medium">{row.worksheet.selected_plan_label}</p>
               <p class="text-grey-700">
-                <%= if row.worksheet.base_fee_line do %>
-                  {gettext("%{amount} / mo.", amount: row.worksheet.base_fee_line.amount)}
-                <% else %>
-                  {gettext("No base fee")}
-                <% end %>
+                {gettext("%{amount} / mo.", amount: row.worksheet.monthly_price_text)}
               </p>
             </div>
 
@@ -243,13 +239,12 @@ defmodule FirmowidWeb.Admin.Views.Organizations do
                   {over_limit_prefix(usage)}{usage.total_text}
                 </span>
               </div>
-              <p class="text-grey-700">
-                <%= if row.worksheet.suggestion_rows == [] do %>
-                  {gettext("No overages")}
-                <% else %>
-                  {gettext("Overages: %{count}", count: length(row.worksheet.suggestion_rows))}
-                <% end %>
-              </p>
+              <div class="flex items-center justify-between gap-4">
+                <span class={fitting_plan_label_styles(row.worksheet)}>{gettext("Fits the plan")}</span>
+                <span class={fitting_plan_name_styles(row.worksheet)}>
+                  {row.worksheet.fitting_plan_label}
+                </span>
+              </div>
             </div>
 
             <.link
@@ -316,7 +311,7 @@ defmodule FirmowidWeb.Admin.Views.Organizations do
       started_on: started_on,
       age_days: max(Date.diff(Date.utc_today(), started_on), 0),
       trial?: org.on_trial?,
-      over_limit?: Enum.any?(worksheet.usage_rows, &(&1.over_limit > 0))
+      over_limit?: worksheet.over_limit?
     }
   end
 
@@ -327,6 +322,13 @@ defmodule FirmowidWeb.Admin.Views.Organizations do
   defp usage_value_styles(%{over_limit: over_limit}) when over_limit > 0, do: "font-medium text-rust-700"
 
   defp usage_value_styles(_usage), do: "font-medium"
+
+  # Over the limit the whole line stands out; otherwise only the plan name does.
+  defp fitting_plan_label_styles(%{over_limit?: true}), do: "font-medium text-rust-700"
+  defp fitting_plan_label_styles(_worksheet), do: "text-grey-700"
+
+  defp fitting_plan_name_styles(%{over_limit?: true}), do: "font-medium text-rust-700"
+  defp fitting_plan_name_styles(_worksheet), do: "font-medium"
 
   defp over_limit_prefix(%{over_limit: over_limit}) when over_limit > 0, do: "(+#{over_limit}) "
   defp over_limit_prefix(_usage), do: ""

@@ -58,7 +58,7 @@ defmodule FirmowidWeb.Billing.Utilities.MonthContextTest do
       assert context.status == %{kind: :snapshot, frozen_at: snapshot.frozen_at}
       assert context.usage_source.id == snapshot.id
       assert context.worksheet.selected_plan == :firma
-      assert usage_row(context.worksheet, :manual_external_invoices).count == 17
+      assert usage_row(context.worksheet, :synced_bank_accounts).count == 5
     end
   end
 

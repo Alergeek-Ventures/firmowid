@@ -43,6 +43,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
   alias FirmowidWeb.Core.Endpoint
   alias FirmowidWeb.Documents.Components.DocumentsSection
   alias FirmowidWeb.Infrastructure.Components.BlobProcessingToasts
+  alias FirmowidWeb.Infrastructure.Utilities.PosthogBusinessEvents
   alias FirmowidWeb.Settings.Utilities.Navigation
   alias Phoenix.Socket.Broadcast
 
@@ -180,7 +181,6 @@ defmodule FirmowidWeb.Settings.Views.Index do
      |> assign(:editing_credentials, false)
      |> assign(:show_active_invites, false)
      |> assign(:settings_tab, :account)
-     |> assign(:subscription_month, nil)
      |> assign(:subscription_worksheet, nil)
      |> assign(:trigger_submit, false)
      |> assign(:delete_account_form, to_form(%{"current_password" => ""}, as: "user"))
@@ -898,6 +898,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
          socket
          |> assign(:leave_requests, leave_requests)
          |> assign(:leave_request_form, leave_request_form(socket.assigns.current_user, scope))
+         |> PosthogBusinessEvents.capture(:leave_request_created)
          |> push_event("js-exec", %{to: "#leave-request-modal", attr: "data-cancel"})}
 
       {:error, %Invalid{} = error} ->
@@ -1252,7 +1253,6 @@ defmodule FirmowidWeb.Settings.Views.Index do
         <% :subscription -> %>
           <.subscription_tab
             standalone={flag_enabled?(:inbox, assigns)}
-            month={@subscription_month}
             worksheet={@subscription_worksheet}
           />
         <% :account -> %>
@@ -1445,9 +1445,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
         |> Map.fetch!(:worksheet)
       end
 
-    socket
-    |> assign(:subscription_month, month)
-    |> assign(:subscription_worksheet, worksheet)
+    assign(socket, :subscription_worksheet, worksheet)
   end
 
   defp find_loaded_organization_user(users, user_id) do
