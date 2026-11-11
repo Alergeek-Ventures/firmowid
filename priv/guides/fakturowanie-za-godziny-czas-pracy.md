@@ -32,7 +32,7 @@ Klient dostaje fakturę, a do niej łatwo wygenerować raport godzin z projektu.
 | inFakt | nie | tak | MCP od 59,90 zł |
 | Kadromierz, RCPonline | tak | nie | nie |
 
-Asystent jest w wersji beta, a MCP działa od planu [Przedsiębiorca](/cennik).
+MCP działa od planu [Przedsiębiorca](/cennik).
 
 ## Źródła
 
