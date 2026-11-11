@@ -355,7 +355,7 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
                     >
                       <p>
                         {gettext(
-                          "The buyer VAT number %{number} does not match the %{country} format. The correction repeats it to identify the corrected invoice. Issue a new invoice with the right number afterwards.",
+                          "The buyer VAT number %{number} does not match the %{country} format. The cancellation repeats it to identify this invoice. Then issue a new invoice with the right number.",
                           number: @latest_invoice_snapshot.buyer_id,
                           country:
                             CountryCodes.country_name(
@@ -372,7 +372,7 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
                           class="mbs-0.5 size-4 rounded border-grey-300 text-teal-600 focus:ring-teal-500"
                         />
                         <span>{gettext(
-                          "I confirm the correction repeats the number of the corrected invoice."
+                          "I confirm the cancellation repeats the number of this invoice."
                         )}</span>
                       </label>
                     </div>
@@ -567,7 +567,7 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
   defp buyer_vat_problem_text(:invalid, snapshot),
     do:
       gettext(
-        "The buyer's EU VAT number %{number} does not match the %{country} format. If it is wrong, fix the counterparty and correct this invoice.",
+        "The buyer's EU VAT number %{number} does not match the %{country} format. If it is wrong, fix the counterparty, cancel this invoice and issue a new one.",
         number: snapshot.buyer_id,
         country: CountryCodes.country_name(CountryCodes.normalize(snapshot.buyer_country))
       )
