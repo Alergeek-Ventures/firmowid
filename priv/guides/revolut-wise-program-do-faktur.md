@@ -32,7 +32,6 @@ Belgijskiego IBAN z Wise nie ma w wykazie podatników VAT. Klient z Polski, któ
 ## Źródła
 
 - Art. 31a, art. 106e ust. 11 i art. 108a ustawy o VAT; art. 22p ustawy o PIT; art. 117ba Ordynacji podatkowej (ZAW-NR).
-
 - Lista instytucji GoCardless w aplikacji Firmowid, stan 11.11.2026.
 - [Firmowid: cennik](https://firmowid.pl/cennik), dostęp 11.11.2026.
 - Faktura w euro dla firmy z UE: [np II i odwrotne obciążenie](/poradnik/faktura-dla-firmy-z-ue-ksef).
