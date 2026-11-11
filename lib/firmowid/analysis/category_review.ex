@@ -6,8 +6,8 @@ defmodule Firmowid.Analysis.CategoryReview do
   counterparty. Otherwise it is only suggested one, from a certain signal
   (salaries, ZUS and tax payments) or else the one the classifier chose from
   its description, until the owner confirms. Entries are grouped by
-  counterparty and that outcome, so a mixed supplier shows each kind of
-  purchase.
+  counterparty and category, so a mixed supplier shows each kind of
+  purchase; salaries paid through payroll form one group.
   """
 
   alias Firmowid.Analysis.IndustryTemplate
@@ -20,6 +20,8 @@ defmodule Firmowid.Analysis.CategoryReview do
           name: String.t(),
           amount: Decimal.t(),
           lines: [String.t()],
+          nip: String.t() | nil,
+          salary_user_id: Ash.UUID.t() | nil,
           certain: IndustryTemplate.category() | nil,
           classified: IndustryTemplate.category() | nil,
           probability: float() | nil
@@ -31,23 +33,34 @@ defmodule Firmowid.Analysis.CategoryReview do
   Amounts are positive. Each side lists template categories (plus any other
   confirmed ones) with their amounts, and the amount still waiting for review.
   Groups are sorted by amount, largest first; `months` holds their amount per
-  month. `unclassified` lists the entries still waiting for the classifier:
+  month and `names` the names of its counterparty in any category, one per key. The salaries
+  group has no `key`, `name` or `names`, but `people`, the ids of the users
+  paid per month. `unclassified` lists the entries still waiting for the classifier:
   without a confirmed counterparty, a certain signal or a stored category;
   `classifier_suggested` the entries whose suggestion came from it.
+  `rules` holds the owner's rules by side and group key, the latest of a key.
   The result echoes `industry`.
   """
   @spec build([entry()], [map()], IndustryTemplate.industry()) :: map()
   def build(entries, rules, industry) do
-    resolved = resolve(entries, rules)
+    shared = shared_keys(entries)
+    rules = rules_by_key(rules, shared)
+    resolved = resolve_by(entries, rules, shared)
+
+    # All of a counterparty's names, also those in its other categories, so a rule covers each.
+    names =
+      resolved
+      |> Enum.group_by(fn {entry, key, _resolution} -> {entry.side, key} end, &elem(&1, 0))
+      |> Map.new(fn {side_key, entries} ->
+        {side_key, entries |> Enum.uniq_by(&key(&1.name)) |> Enum.map(& &1.name)}
+      end)
 
     groups =
       resolved
-      |> Enum.group_by(
-        fn {entry, key, resolution} -> {entry.side, key, resolution} end,
-        &elem(&1, 0)
-      )
-      |> Enum.map(fn {{side, key, resolution}, entries} ->
-        group(side, key, entries, resolution)
+      |> Enum.group_by(&group_by/1)
+      |> Enum.map(fn {{side, key, category, _status}, resolved} ->
+        entries = Enum.map(resolved, &elem(&1, 0))
+        group(side, key, entries, Map.get(names, {side, key}), {category, source(resolved)})
       end)
       |> Enum.sort_by(& &1.amount, {:desc, Decimal})
 
@@ -60,6 +73,7 @@ defmodule Firmowid.Analysis.CategoryReview do
       groups: groups,
       unclassified: unclassified,
       classifier_suggested: classifier_suggested,
+      rules: rules,
       industry: industry
     }
   end
@@ -67,28 +81,70 @@ defmodule Firmowid.Analysis.CategoryReview do
   @doc """
   Pairs each entry with its counterparty key and its category with where it
   comes from: `:confirmed` by the owner in `rules`, else a `:certain` signal,
-  else the classifier (`:jev`), else `{nil, nil}`.
+  else the classifier (`:jev`), else `{nil, nil}`. Names on invoices with the
+  same NIP are one counterparty: they share the first of their keys, and a
+  rule confirmed for any of them.
   """
   @spec resolve([entry()], [map()]) :: [{entry(), String.t(), resolution()}]
   def resolve(entries, rules) do
-    rules = rules_by_key(rules)
+    shared = shared_keys(entries)
+    resolve_by(entries, rules_by_key(rules, shared), shared)
+  end
 
+  defp resolve_by(entries, rules, shared) do
     Enum.map(entries, fn entry ->
-      key = key(entry.name)
+      key = Map.get(shared, {entry.side, key(entry.name)}, key(entry.name))
       {entry, key, resolution(entry, Map.get(rules, {entry.side, key}))}
     end)
   end
 
-  @doc """
-  Returns the owner's `rules` by side and counterparty key. Keys come from the
-  confirmed name, so rules stored under an earlier key format still apply; of
-  rules with the same key the latest wins.
-  """
-  @spec rules_by_key([map()]) :: %{{IndustryTemplate.side(), String.t()} => map()}
-  def rules_by_key(rules) do
+  # Keys come from the confirmed name, so rules stored under an earlier key format still
+  # apply; of rules with the same key the latest wins.
+  defp rules_by_key(rules, shared) do
     rules
     |> Enum.sort_by(&{DateTime.to_unix(&1.updated_at, :microsecond), &1.id})
-    |> Map.new(&{{&1.side, key(&1.counterparty_name)}, &1})
+    |> Map.new(fn rule ->
+      key = key(rule.counterparty_name)
+      {{rule.side, Map.get(shared, {rule.side, key}, key)}, rule}
+    end)
+  end
+
+  # Joins the keys of names written on invoices with the same NIP, transitively, under the
+  # alphabetically first of them. Transfers carry no NIP and join by their name's key.
+  defp shared_keys(entries) do
+    entries
+    |> Enum.flat_map(fn entry ->
+      case nip(entry.nip) do
+        nil -> []
+        nip -> [{{entry.side, nip}, key(entry.name)}]
+      end
+    end)
+    |> Enum.group_by(&elem(&1, 0), &elem(&1, 1))
+    |> Enum.reduce(%{}, fn {{side, _nip}, keys}, shared ->
+      joined =
+        keys |> Enum.map(&Map.get(shared, {side, &1}, &1)) |> Enum.concat(keys) |> Enum.uniq()
+
+      first = Enum.min(joined)
+
+      shared
+      |> Map.new(fn {{other_side, key}, to} ->
+        {{other_side, key}, if(other_side == side and to in joined, do: first, else: to)}
+      end)
+      |> Map.merge(Map.new(keys, &{{side, &1}, first}))
+    end)
+  end
+
+  # Invoices write a NIP with or without separators and the Polish prefix.
+  defp nip(nil), do: nil
+
+  defp nip(nip) do
+    nip =
+      nip
+      |> String.upcase()
+      |> String.replace(~r/[^A-Z0-9]/, "")
+      |> String.replace_prefix("PL", "")
+
+    if byte_size(nip) >= 8, do: nip
   end
 
   @doc """
@@ -113,7 +169,8 @@ defmodule Firmowid.Analysis.CategoryReview do
   Narrows the review's groups to `months`: `amount` becomes the sum over those
   months and `average` the group's mean monthly amount over `compared` months
   (nil without any). Groups absent from the period keep a zero amount, so
-  categories can still compare against their usual amount.
+  categories can still compare against their usual amount. The salaries
+  group's `people` becomes the number of people paid in those months.
   """
   @spec period(map(), [Date.t()], [Date.t()]) :: [map()]
   def period(review, months, compared) do
@@ -132,11 +189,32 @@ defmodule Firmowid.Analysis.CategoryReview do
         |> Enum.map(&Map.get(group.months, &1, Decimal.new(0)))
         |> Enum.reduce(Decimal.new(0), &Decimal.add/2)
 
-      Map.put(%{group | amount: amount}, :average, average)
+      people =
+        if group.people,
+          do:
+            months
+            |> Enum.map(&Map.get(group.people, &1, MapSet.new()))
+            |> Enum.reduce(MapSet.new(), &MapSet.union/2)
+            |> MapSet.size()
+
+      Map.put(%{group | amount: amount, people: people}, :average, average)
     end)
   end
 
-  defp group(side, key, entries, {category, source}) do
+  # Payroll salaries are one group, also of people the owner confirmed: each person's amount is
+  # nobody's business in the overview.
+  defp group_by({%{salary_user_id: user} = entry, _key, {:payroll, _source}}) when user != nil,
+    do: {entry.side, nil, :payroll, :salaries}
+
+  defp group_by({entry, key, {category, source}}), do: {entry.side, key, category, source == :confirmed}
+
+  # The strongest source of a group's suggestion; owner rules cover a whole counterparty.
+  defp source(resolved) do
+    sources = Enum.map(resolved, fn {_entry, _key, {_category, source}} -> source end)
+    Enum.find([:confirmed, :certain, :jev], &(&1 in sources))
+  end
+
+  defp group(side, key, entries, names, {category, source}) do
     status = if source == :confirmed, do: :confirmed, else: :pending
 
     largest = Enum.max_by(entries, & &1.amount, Decimal)
@@ -144,7 +222,15 @@ defmodule Firmowid.Analysis.CategoryReview do
     %{
       side: side,
       key: key,
-      name: largest.name,
+      name: if(key, do: largest.name),
+      names: if(key, do: names),
+      people:
+        if(key == nil,
+          do:
+            entries
+            |> Enum.group_by(& &1.month, & &1.salary_user_id)
+            |> Map.new(fn {month, users} -> {month, MapSet.new(users)} end)
+        ),
       amount: sum(entries),
       months:
         entries

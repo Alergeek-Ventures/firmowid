@@ -1608,6 +1608,7 @@ msgstr ""
 msgid "B2B — gross amount"
 msgstr ""
 
+#: lib/firmowid_web/analysis/components/period_details.ex
 #: lib/firmowid_web/design_system/components/core_components.ex
 #: lib/firmowid_web/invoicing/components/sales_invoice_details.ex
 #, elixir-autogen, elixir-format
@@ -8246,6 +8247,13 @@ msgstr ""
 msgid "Payroll view"
 msgstr ""
 
+#: lib/firmowid_web/analysis/components/period_details.ex
+#, elixir-autogen, elixir-format
+msgid "Payroll · %{count} person"
+msgid_plural "Payroll · %{count} people"
+msgstr[0] ""
+msgstr[1] ""
+
 #: lib/firmowid_web/delegations/utilities/delegation_presentation.ex
 #: lib/firmowid_web/documents/components/documents_section.ex
 #: lib/firmowid_web/landing/components/sections.ex
@@ -11037,6 +11045,13 @@ msgstr ""
 #, elixir-autogen, elixir-format
 msgid "The response was interrupted."
 msgstr ""
+
+#: lib/firmowid_web/analysis/components/period_details.ex
+#, elixir-autogen, elixir-format
+msgid "The rest · %{count} category"
+msgid_plural "The rest · %{count} categories"
+msgstr[0] ""
+msgstr[1] ""
 
 #: lib/firmowid_web/landing/views/terms_of_service.ex
 #, elixir-autogen, elixir-format

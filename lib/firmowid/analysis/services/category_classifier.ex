@@ -13,8 +13,6 @@ defmodule Firmowid.Analysis.Services.CategoryClassifier do
   """
 
   alias Firmowid.Analysis
-  alias Firmowid.Analysis.CategoryReview
-  alias Firmowid.Analysis.CounterpartyCategory
   alias Firmowid.Analysis.EntryCategory
   alias Firmowid.Analysis.IndustryTemplate
   alias Firmowid.Analysis.Services.Jev
@@ -49,7 +47,7 @@ defmodule Firmowid.Analysis.Services.CategoryClassifier do
 
   defp classify_entries(entries, review, scope) do
     with {:ok, companies} <- CompanyRegister.fetch(Enum.map(entries, & &1.nip), scope) do
-      examples = examples(review, scope)
+      examples = examples(review)
 
       results =
         entries
@@ -73,7 +71,7 @@ defmodule Firmowid.Analysis.Services.CategoryClassifier do
   end
 
   # Counterparties confirmed with entries described this year, corrected suggestions first.
-  defp examples(review, scope) do
+  defp examples(review) do
     descriptions =
       for %{status: :confirmed, reason: [line | _]} = group <- review.groups,
           into: %{},
@@ -81,9 +79,7 @@ defmodule Firmowid.Analysis.Services.CategoryClassifier do
 
     # The rule of each counterparty the review applies.
     {corrections, accepted} =
-      [scope: scope]
-      |> CounterpartyCategory.list!()
-      |> CategoryReview.rules_by_key()
+      review.rules
       |> Enum.filter(fn {key, _rule} -> Map.has_key?(descriptions, key) end)
       |> Enum.sort_by(fn {_key, rule} -> rule.updated_at end, {:desc, DateTime})
       |> Enum.split_with(fn {_key, rule} -> rule.category != rule.suggested_category end)
