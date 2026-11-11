@@ -4,6 +4,7 @@ defmodule Firmowid.Timetracker.LeaveRequest do
   @moduledoc "Represents an employee leave or absence request that an admin can accept or decline."
 
   use Ash.Resource,
+    simple_notifiers: [Firmowid.Core.Notifiers.InboxChanged],
     otp_app: :firmowid,
     domain: Firmowid.Timetracker,
     data_layer: AshPostgres.DataLayer,

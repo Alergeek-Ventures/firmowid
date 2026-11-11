@@ -5,6 +5,7 @@ defmodule Firmowid.Timetracker.HoursRecord do
   sessions. Scoped by `organization_id` (attribute multitenancy).
   """
   use Ash.Resource,
+    simple_notifiers: [Firmowid.Core.Notifiers.InboxChanged],
     domain: Firmowid.Timetracker,
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer]

@@ -11,6 +11,7 @@
 msgid ""
 msgstr ""
 
+#: lib/firmowid_web/development/views/inbox_scenarios.ex
 #: lib/firmowid_web/inbox/utilities/queue.ex
 #, elixir-autogen, elixir-format
 msgid "%{account}: synchronization stopped"
@@ -53,6 +54,7 @@ msgstr ""
 msgid "%{amount} without a project split across projects by tracked hours."
 msgstr ""
 
+#: lib/firmowid_web/development/views/inbox_scenarios.ex
 #: lib/firmowid_web/inbox/utilities/queue.ex
 #, elixir-autogen, elixir-format
 msgid "%{amount} · due %{date}"
@@ -129,6 +131,7 @@ msgid_plural "%{count} bank transactions"
 msgstr[0] ""
 msgstr[1] ""
 
+#: lib/firmowid_web/development/views/inbox_scenarios.ex
 #: lib/firmowid_web/inbox/utilities/queue.ex
 #, elixir-autogen, elixir-format
 msgid "%{count} calendar day"
@@ -734,6 +737,7 @@ msgstr ""
 msgid "Accept"
 msgstr ""
 
+#: lib/firmowid_web/development/views/inbox_scenarios.ex
 #: lib/firmowid_web/inbox/utilities/queue.ex
 #, elixir-autogen, elixir-format
 msgctxt "inbox decision"
@@ -1977,6 +1981,7 @@ msgstr ""
 msgid "Business trip order"
 msgstr ""
 
+#: lib/firmowid_web/development/views/inbox_scenarios.ex
 #: lib/firmowid_web/inbox/utilities/queue.ex
 #, elixir-autogen, elixir-format
 msgid "Business trip order awaiting approval"
@@ -1995,6 +2000,7 @@ msgstr ""
 msgid "Business trip settlement"
 msgstr ""
 
+#: lib/firmowid_web/development/views/inbox_scenarios.ex
 #: lib/firmowid_web/inbox/utilities/queue.ex
 #, elixir-autogen, elixir-format
 msgid "Business trip settlement awaiting review"
@@ -2831,6 +2837,7 @@ msgstr ""
 msgid "Congratulations!"
 msgstr ""
 
+#: lib/firmowid_web/development/views/inbox_scenarios.ex
 #: lib/firmowid_web/inbox/utilities/queue.ex
 #, elixir-autogen, elixir-format
 msgid "Connect"
@@ -3242,6 +3249,7 @@ msgstr ""
 msgid "Cost invoice"
 msgstr ""
 
+#: lib/firmowid_web/development/views/inbox_scenarios.ex
 #: lib/firmowid_web/inbox/utilities/queue.ex
 #, elixir-autogen, elixir-format
 msgid "Cost invoices do not arrive on their own and sales invoices cannot be sent to KSeF."
@@ -3258,6 +3266,7 @@ msgid "Cost invoices from the last 30 days will arrive by themselves, and you wi
 msgstr ""
 
 #: lib/firmowid_web/analysis/components/period_details.ex
+#: lib/firmowid_web/development/views/inbox_scenarios.ex
 #: lib/firmowid_web/inbox/utilities/queue.ex
 #, elixir-autogen, elixir-format
 msgid "Costs"
@@ -6092,6 +6101,7 @@ msgstr ""
 
 #: lib/firmowid_web/analysis/components/financial_overview.ex
 #: lib/firmowid_web/analysis/components/period_details.ex
+#: lib/firmowid_web/development/views/inbox_scenarios.ex
 #: lib/firmowid_web/inbox/utilities/queue.ex
 #, elixir-autogen, elixir-format
 msgid "Income"
@@ -6836,6 +6846,7 @@ msgstr ""
 msgid "KSeF is issuing the certificate."
 msgstr ""
 
+#: lib/firmowid_web/development/views/inbox_scenarios.ex
 #: lib/firmowid_web/inbox/utilities/queue.ex
 #, elixir-autogen, elixir-format
 msgid "KSeF is not connected"
@@ -6957,6 +6968,7 @@ msgctxt "employee tab"
 msgid "Leave"
 msgstr ""
 
+#: lib/firmowid_web/development/views/inbox_scenarios.ex
 #: lib/firmowid_web/inbox/utilities/queue.ex
 #, elixir-autogen, elixir-format
 msgid "Leave request"
@@ -7869,6 +7881,7 @@ msgstr ""
 msgid "No time worked this month."
 msgstr ""
 
+#: lib/firmowid_web/development/views/inbox_scenarios.ex
 #: lib/firmowid_web/inbox/utilities/queue.ex
 #, elixir-autogen, elixir-format
 msgid "No transactions have been fetched from this account yet."
@@ -8465,6 +8478,7 @@ msgctxt "transaction direction filter"
 msgid "Outgoing"
 msgstr ""
 
+#: lib/firmowid_web/development/views/inbox_scenarios.ex
 #: lib/firmowid_web/inbox/utilities/queue.ex
 #, elixir-autogen, elixir-format
 msgid "Overdue cost invoice %{number}"
@@ -8475,6 +8489,7 @@ msgstr ""
 msgid "Overdue invoices with no matched payment."
 msgstr ""
 
+#: lib/firmowid_web/development/views/inbox_scenarios.ex
 #: lib/firmowid_web/inbox/utilities/queue.ex
 #, elixir-autogen, elixir-format
 msgid "Overdue sales invoice %{number}"
@@ -9307,6 +9322,7 @@ msgstr ""
 
 #: lib/firmowid_web/assistant/components/invoice.ex
 #: lib/firmowid_web/assistant/components/records.ex
+#: lib/firmowid_web/development/views/inbox_scenarios.ex
 #: lib/firmowid_web/inbox/utilities/queue.ex
 #: lib/firmowid_web/landing/components/cookie_consent.ex
 #: lib/firmowid_web/management/components/leaves_tab.ex
@@ -9403,6 +9419,7 @@ msgstr ""
 msgid "Rename"
 msgstr ""
 
+#: lib/firmowid_web/development/views/inbox_scenarios.ex
 #: lib/firmowid_web/inbox/utilities/queue.ex
 #, elixir-autogen, elixir-format
 msgid "Renew consent"
@@ -9570,6 +9587,7 @@ msgstr ""
 msgid "Reverse charge for EU customers (automatic)"
 msgstr ""
 
+#: lib/firmowid_web/development/views/inbox_scenarios.ex
 #: lib/firmowid_web/inbox/utilities/queue.ex
 #: lib/firmowid_web/invoicing/components/dashboard_tiles.ex
 #, elixir-autogen, elixir-format
@@ -11009,6 +11027,7 @@ msgstr ""
 msgid "The KSeF certificate limit has been reached."
 msgstr ""
 
+#: lib/firmowid_web/development/views/inbox_scenarios.ex
 #: lib/firmowid_web/inbox/utilities/queue.ex
 #, elixir-autogen, elixir-format
 msgid "The KSeF connection has expired"
@@ -12237,6 +12256,7 @@ msgstr ""
 msgid "Timesheet %{date}"
 msgstr ""
 
+#: lib/firmowid_web/development/views/inbox_scenarios.ex
 #: lib/firmowid_web/inbox/utilities/queue.ex
 #, elixir-autogen, elixir-format
 msgid "Timesheet change request, %{month}"
@@ -12475,6 +12495,7 @@ msgstr ""
 msgid "Transactions to match"
 msgstr ""
 
+#: lib/firmowid_web/development/views/inbox_scenarios.ex
 #: lib/firmowid_web/inbox/utilities/queue.ex
 #, elixir-autogen, elixir-format
 msgid "Transactions were last fetched on %{date}."

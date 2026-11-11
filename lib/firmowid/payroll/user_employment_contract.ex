@@ -1,6 +1,7 @@
 defmodule Firmowid.Payroll.UserEmploymentContract do
   @moduledoc "Ash resource representing a user's employment contract."
   use Ash.Resource,
+    simple_notifiers: [Firmowid.Core.Notifiers.InboxChanged],
     otp_app: :firmowid,
     domain: Firmowid.Payroll,
     authorizers: [Ash.Policy.Authorizer],

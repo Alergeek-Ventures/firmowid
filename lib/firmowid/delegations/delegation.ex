@@ -4,6 +4,7 @@ defmodule Firmowid.Delegations.Delegation do
   @moduledoc "A company-funded business trip submitted by an employee."
 
   use Ash.Resource,
+    simple_notifiers: [Firmowid.Core.Notifiers.InboxChanged],
     otp_app: :firmowid,
     domain: Firmowid.Delegations,
     data_layer: AshPostgres.DataLayer,
