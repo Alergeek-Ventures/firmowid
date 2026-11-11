@@ -81,6 +81,7 @@ config :firmowid, :s3,
   secret_access_key: System.get_env("AWS_SECRET_ACCESS_KEY", "test")
 
 config :firmowid, :start_gocardless_token_manager, false
+config :firmowid, :vies_api_request_options, plug: Firmowid.Test.Support.ViesApiStub
 
 # No GUS register lookups in tests, so nothing reaches the GUS test server
 config :gusex, api_key: nil

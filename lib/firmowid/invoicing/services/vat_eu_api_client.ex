@@ -22,7 +22,13 @@ defmodule Firmowid.Invoicing.Services.VatEuApiClient do
       "vatNumber" => String.trim(vat_number)
     }
 
-    case Req.post(@endpoint, json: payload) do
+    request_options =
+      Keyword.merge(
+        [json: payload],
+        Application.get_env(:firmowid, :vies_api_request_options, [])
+      )
+
+    case Req.post(@endpoint, request_options) do
       {:ok, %Req.Response{status: 200, body: body}} ->
         normalize_response(body)
 
