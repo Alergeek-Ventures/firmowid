@@ -8,7 +8,7 @@ defmodule FirmowidWeb.DesignSystem.Components.IconButton do
   alias FirmowidUI.Utilities.ButtonStyles
 
   @doc """
-  Renders an icon-only button in the small (32px) or big (44px) control size.
+  Renders an icon-only button in the small (30px) or big (36px) control size.
   """
   @spec icon_button(map()) :: Phoenix.LiveView.Rendered.t()
   attr :label, :string, required: true, doc: "Accessible name, also shown as the native tooltip."
@@ -38,8 +38,8 @@ defmodule FirmowidWeb.DesignSystem.Components.IconButton do
     """
   end
 
-  defp icon_button_size_styles("small"), do: "size-8 rounded-md [&>svg]:size-4"
-  defp icon_button_size_styles("big"), do: "size-11 rounded-lg [&>svg]:size-5"
+  defp icon_button_size_styles("small"), do: "size-7.5 rounded-sm [&>svg]:size-4"
+  defp icon_button_size_styles("big"), do: "size-9 rounded-sm [&>svg]:size-6"
 
   defp icon_button_variant_styles(variant), do: ButtonStyles.variant_classes(variant, nil)
 end

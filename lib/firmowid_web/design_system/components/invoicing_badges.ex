@@ -170,7 +170,7 @@ defmodule FirmowidWeb.DesignSystem.Components.InvoicingBadges do
     resolved_root_class =
       cond do
         assigns.size == "full" ->
-          "relative flex h-[42px] w-[72px] content-stretch items-center gap-[16px] rounded-[4px] pr-[4px] pl-[8px]"
+          "relative flex h-[42px] w-[72px] content-stretch items-center gap-[16px] rounded-sm pr-[4px] pl-[8px]"
 
         is_binary(assigns.root) ->
           assigns.root

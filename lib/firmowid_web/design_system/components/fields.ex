@@ -30,7 +30,7 @@ defmodule FirmowidWeb.DesignSystem.Components.Fields do
   end
 
   @doc """
-  Renders a search input with a leading magnifier icon in the small (32px) or big (44px) size.
+  Renders a search input with a leading magnifier icon in the small (30px) or big (36px) size.
   The placeholder doubles as the accessible name.
   """
   @spec search_field(map()) :: Rendered.t()
@@ -52,7 +52,7 @@ defmodule FirmowidWeb.DesignSystem.Components.Fields do
         placeholder={@placeholder}
         aria-label={@placeholder}
         class={[
-          "w-full rounded-lg border border-grey-200 bg-grey-50 pr-3 pl-9 text-sm text-grey-900 placeholder:text-grey-500 focus:border-grey-700 focus:ring-0",
+          "w-full rounded-sm border border-grey-200 bg-grey-50 pr-3 pl-9 text-sm text-grey-900 placeholder:text-grey-500 focus:border-grey-700 focus:ring-0",
           search_field_size_styles(@size)
         ]}
         {@rest}
@@ -67,6 +67,6 @@ defmodule FirmowidWeb.DesignSystem.Components.Fields do
   defp field_row_label_styles("stacked"), do: "text-sm/snug text-grey-700"
   defp field_row_label_styles("inline"), do: "text-right text-sm/snug text-grey-700"
 
-  defp search_field_size_styles("small"), do: "h-8"
-  defp search_field_size_styles("big"), do: "h-11"
+  defp search_field_size_styles("small"), do: "h-7.5"
+  defp search_field_size_styles("big"), do: "h-9"
 end

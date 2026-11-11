@@ -104,70 +104,71 @@ typography:
     fontSize: "40px"
 rounded:
   sm: "0.25rem"
-  md: "0.375rem"
-  lg: "0.5rem"
-  xl: "0.75rem"
-  2xl: "1rem"
+  md: "0.25rem"
+  lg: "0.25rem"
+  xl: "0.25rem"
+  2xl: "0.25rem"
 components:
   button-primary-cost:
     backgroundColor: "{colors.rust-700}"
     textColor: "{colors.white}"
-    rounded: "{rounded.lg}"
-    padding: "8px 11px"
-    height: "44px"
+    rounded: "{rounded.sm}"
+    padding: "6px 10px"
+    height: "36px"
   button-primary-cost-hover:
     backgroundColor: "{colors.rust-800}"
   button-primary-sales:
     backgroundColor: "{colors.teal-700}"
     textColor: "{colors.white}"
-    rounded: "{rounded.lg}"
-    padding: "8px 11px"
-    height: "44px"
+    rounded: "{rounded.sm}"
+    padding: "6px 10px"
+    height: "36px"
   button-primary-sales-hover:
     backgroundColor: "{colors.teal-800}"
   button-secondary-cost:
     backgroundColor: "{colors.rust-200}"
     textColor: "{colors.rust-900}"
-    rounded: "{rounded.lg}"
-    padding: "8px 11px"
-    height: "44px"
+    rounded: "{rounded.sm}"
+    padding: "6px 10px"
+    height: "36px"
   button-secondary-sales:
     backgroundColor: "{colors.teal-200}"
     textColor: "{colors.teal-900}"
-    rounded: "{rounded.lg}"
-    padding: "8px 11px"
-    height: "44px"
+    rounded: "{rounded.sm}"
+    padding: "6px 10px"
+    height: "36px"
   button-neutral-special:
     backgroundColor: "{colors.black}"
     textColor: "{colors.white}"
-    rounded: "{rounded.lg}"
-    padding: "8px 11px"
-    height: "44px"
+    rounded: "{rounded.sm}"
+    padding: "6px 10px"
+    height: "36px"
   button-neutral-special-hover:
     backgroundColor: "{colors.grey-700}"
   button-neutral-tertiary:
     backgroundColor: "{colors.grey-700}"
     textColor: "{colors.white}"
-    rounded: "{rounded.lg}"
-    padding: "8px 11px"
-    height: "44px"
+    rounded: "{rounded.sm}"
+    padding: "6px 10px"
+    height: "36px"
   button-outline:
     backgroundColor: "{colors.white}"
     textColor: "{colors.grey-900}"
-    rounded: "{rounded.lg}"
-    padding: "8px 11px"
-    height: "44px"
+    rounded: "{rounded.sm}"
+    padding: "6px 10px"
+    height: "36px"
   button-outline-hover:
     backgroundColor: "{colors.grey-200}"
   button-destructive:
     backgroundColor: "{colors.brick-200}"
     textColor: "{colors.brick-700}"
-    rounded: "{rounded.lg}"
-    padding: "8px 11px"
-    height: "44px"
+    rounded: "{rounded.sm}"
+    padding: "6px 10px"
+    height: "36px"
   button-small:
-    rounded: "{rounded.md}"
+    rounded: "{rounded.sm}"
     padding: "6px 8px"
+    height: "30px"
     typography: "{typography.sm}"
   filter-chip:
     backgroundColor: "{colors.grey-100}"
@@ -181,12 +182,12 @@ components:
   input-field:
     backgroundColor: "{colors.grey-50}"
     textColor: "{colors.grey-900}"
-    rounded: "{rounded.lg}"
+    rounded: "{rounded.sm}"
     padding: "6px 12px"
     typography: "{typography.base}"
   card:
     backgroundColor: "{colors.white}"
-    rounded: "{rounded.md}"
+    rounded: "{rounded.sm}"
     padding: "24px"
   navbar:
     backgroundColor: "{colors.black}"
@@ -372,18 +373,22 @@ signal focus with their border (`grey-700`) instead of an outline.
 
 ## Control Sizes
 
-- **Big** (44px, `h-11`): the default button size and page-level actions.
-- **Small** (32px, `h-8`): toolbar, table and card actions.
+- **Big** (36px, `h-9`): the default button size and page-level actions; 10px side padding, 16px medium text.
+- **Small** (30px, `h-7.5`): toolbar, table, card and row actions; 8px side padding, 14px medium text, 16px icon, 6px between icon and text.
+- **Icon only**: a 36px or 30px square with the icon centred (`icon_button`).
+- Heights are fixed, not grown from padding. 44px touch targets are only for phone screens where an employee flow needs them.
 - **Chip** (24px, `h-6`): status chips and compact toggles.
 - Text fields are about 34px tall today; when a field sits in a row with buttons, match the button size explicitly.
 
 ## Shapes
 
-Gentle, consistent curvature:
-- 8px (`rounded-lg`) on big buttons, inputs, selects, textareas and admin panels.
-- 6px (`rounded-md`) on small buttons, cards (`Card`), modals and menu items.
-- 3px (`rounded-[3px]`) for checkboxes, radio squares, icon buttons and invoice source badges.
-- Full pills (`rounded-full`) for filter chips, toggle switches and avatars.
+One radius for everything with corners: 4px. Buttons, inputs, selects,
+checkboxes, cards, modals, tiles, menus, tooltips and status badges all use it.
+Every `rounded` token (`sm` to `2xl`) is 4px, so `rounded-sm` is the one to
+write in new code; do not add arbitrary radii like `rounded-[3px]`.
+
+Full pills (`rounded-full`) are only for toggle switches, avatars, filter chips
+and round counters. The marketing landing page keeps its own scaled radii.
 
 Borders are 1px `grey-200`. Dashed borders mark drop zones and empty
 placeholders.
@@ -393,8 +398,8 @@ placeholders.
 New code uses [Lucide](https://lucide.dev) through the `lucide_icons` package
 (`<Lucideicons.search />`). Heroicons (`<.icon name="hero-…" />`) are the older
 set and remain only in existing code until it is touched; do not add new ones,
-and do not mix both libraries inside one component. Icons are 20px next to big
-controls and 16px next to small ones; an icon that is the only content of a
+and do not mix both libraries inside one component. Icons are 24px in big
+buttons and 16px in small ones; an icon that is the only content of a
 control needs an accessible label (`icon_button` requires one).
 
 ## Components
@@ -430,7 +435,7 @@ writing markup by hand; a hand-rolled copy of one of them is drift.
 | Need | Primitive | Notes |
 |---|---|---|
 | Action | `FirmowidUI.Components.Button.button` / `Link.link kind="button"` | Variants and sizes below. |
-| Icon-only action | `icon_button` | `label` is required (accessible name and tooltip); small 32px, big 44px. |
+| Icon-only action | `icon_button` | `label` is required (accessible name and tooltip); a square, small 30px, big 36px. |
 | Row or record actions | `menu` + `menu_item` | Kebab trigger by default; `tone="danger"` for destructive items. |
 | Status | `badge` | 24px pill; tones `neutral`, `success`, `danger`, `cost`, `sales`. |
 | Inline notice | `alert` | Tones `neutral`, `success`, `danger`; `danger` uses `role="alert"`. Toasts stay for transient feedback. |
@@ -438,13 +443,13 @@ writing markup by hand; a hand-rolled copy of one of them is drift.
 | Sibling views of a page | `tabs` | Underline links; the selected view lives in the URL. |
 | Scope of a list | `segmented_control` | Pills, one active (for example active and archived). |
 | Label with value or control | `field_row` | `stacked` for forms, `inline` for detail and settings panels. |
-| Search | `search_field` | Leading magnifier; small 32px or big 44px. |
+| Search | `search_field` | Leading magnifier; small 30px or big 36px, level with buttons. |
 | Supplementary hint | `tooltip` | Tippy with one delay; never the only place for essential information. |
 | One self-contained record | `card` + `card_header` | The flat-by-default exception; never nested. |
 
 ### Buttons
 Warm and tactile: flat fills, no gradients, quick 100ms colour transitions.
-- **Shape:** gently rounded. Big buttons are 44px tall with an 8px radius; small buttons are 32px tall with a 6px radius at 14px text. Icons are 20px (big) or 16px (small).
+- **Shape:** 4px corners and fixed heights. Big buttons are 36px tall (10px side padding, 16px medium text, 24px icon); small buttons are 30px tall (8px side padding, 14px medium text, 16px icon). Icon and text sit 6px apart.
 - **Primary (directional):** a solid rust fill for cost-side actions and a solid teal fill for sales-side actions, with white text. Hover and active step to the deeper shades.
 - **Secondary (directional):** a pastel tint with deepest-shade text (rust or teal), or a grey tint for neutral.
 - **Special / Tertiary (neutral):** a black fill (hover graphite) or a graphite fill (hover charcoal) with white text. Use these for actions that belong to neither ledger side.

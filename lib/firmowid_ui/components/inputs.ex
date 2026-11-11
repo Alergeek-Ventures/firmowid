@@ -92,7 +92,7 @@ defmodule FirmowidUI.Components.Inputs do
           phx-disable-with=""
           checked={@checked}
           disabled={@rest[:disabled]}
-          class="size-4 rounded-[3px] border border-grey-700 text-grey-700 focus:ring-0 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--focus-ring)"
+          class="size-4 rounded-sm border border-grey-700 text-grey-700 focus:ring-0 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--focus-ring)"
           {@rest}
         />
         <span class="ml-1 text-sm text-grey-700">{@label}</span>
