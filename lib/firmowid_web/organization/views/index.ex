@@ -99,14 +99,14 @@ defmodule FirmowidWeb.Organization.Views.Index do
       source={@company && @company.source}
     >
       <:stamps :let={card}>
-        <%!-- A company being edited already has the stamp, so it is not pressed again. --%>
-        <%= if (@step == :branza or not is_nil(@organization)) and not is_nil(@industry) do %>
+        <%!-- The industry is stamped once confirmed, also for a company being edited. --%>
+        <%= if @step == :branza and not is_nil(@industry) do %>
           <.stamp
             card={card}
             text={billing_stamp_text(@industry, @bills_hourly)}
             icon={billing_icon(@bills_hourly)}
             rotate={-9}
-            pressed={is_nil(@organization)}
+            pressed
           />
         <% else %>
           <.stamp_slot label={gettext("Industry")} hint={gettext("step %{number}", number: 3)} />
@@ -157,7 +157,11 @@ defmodule FirmowidWeb.Organization.Views.Index do
   defp step_panel(%{step: :firma} = assigns) do
     ~H"""
     <h1 class="text-2xl/tight font-semibold tracking-tight text-balance text-grey-900 sm:text-[2.625rem]/[1.1]">
-      {gettext("Enter the NIP, we will find the rest.")}
+      <%= if @organization do %>
+        {gettext("Check the company details.")}
+      <% else %>
+        {gettext("Enter the NIP, we will find the rest.")}
+      <% end %>
     </h1>
     <.form
       for={%{}}
