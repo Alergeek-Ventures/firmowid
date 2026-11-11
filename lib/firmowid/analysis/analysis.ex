@@ -111,6 +111,9 @@ defmodule Firmowid.Analysis do
     require_actor? true
   end
 
+  # A month whose invoices mostly still wait for payment would show a misleading result.
+  @unpaid_invoices_in_closed_month 2
+
   @doc "Lists custom categories and tags of projects active in the selected month."
   @spec list_available_categories(Date.t(), Scope.t()) :: [TagDefinition.t()]
   def list_available_categories(month, scope) do
@@ -200,7 +203,9 @@ defmodule Firmowid.Analysis do
   Without tag filters each month also has `:unpaid`: positive PLN sums of the
   month's unpaid invoices (`:income` from confirmed sales invoices, `:expenses`
   from cost invoices, by sale date), which the totals omit. Unpaid invoices
-  carry no categories, so with tag filters `:unpaid` is `nil`.
+  carry no categories, so with tag filters `:unpaid` is `nil`. `:closed?` tells
+  whether the month has ended with at most two invoices still unpaid; until
+  then its result is incomplete.
 
   This orchestration expects an authorized scope, like the monthly helper.
   Request callers must use `YearSummary.get/3` for authorization and input validation.
@@ -208,7 +213,23 @@ defmodule Firmowid.Analysis do
   @spec get_organization_yearly_totals(integer(), keyword(), Scope.t()) :: map()
   def get_organization_yearly_totals(year, opts \\ [], scope) do
     tag_filters = Keyword.get(opts, :tag_filters, [])
-    unpaid = if tag_filters == [], do: unpaid_invoices_by_month(year, scope)
+    unrealized = get_unrealized_entries(Date.new!(year, 1, 1), Date.new!(year, 12, 31), scope)
+
+    unpaid_invoices =
+      Enum.reject(
+        unrealized.income_entries ++ unrealized.expense_entries,
+        &match?(%Transaction{}, &1)
+      )
+
+    open_invoices = Enum.frequencies_by(unpaid_invoices, &Date.beginning_of_month(&1.sale_date))
+    current_month = Date.beginning_of_month(Date.utc_today())
+
+    unpaid =
+      if tag_filters == [],
+        do: %{
+          income: unpaid_invoice_sums(unrealized.income_entries),
+          expenses: unpaid_invoice_sums(unrealized.expense_entries)
+        }
 
     months =
       Enum.map(1..12, fn number ->
@@ -221,7 +242,10 @@ defmodule Firmowid.Analysis do
           totals_by_currency: original_currency_totals(totals, tag_filters),
           unpaid:
             unpaid &&
-              Map.new(unpaid, fn {side, sums} -> {side, Map.get(sums, month, Decimal.new(0))} end)
+              Map.new(unpaid, fn {side, sums} -> {side, Map.get(sums, month, Decimal.new(0))} end),
+          closed?:
+            Date.before?(month, current_month) and
+              Map.get(open_invoices, month, 0) <= @unpaid_invoices_in_closed_month
         }
       end)
 
@@ -495,15 +519,6 @@ defmodule Firmowid.Analysis do
   end
 
   defp public_levy(_invoice), do: nil
-
-  defp unpaid_invoices_by_month(year, scope) do
-    unrealized = get_unrealized_entries(Date.new!(year, 1, 1), Date.new!(year, 12, 31), scope)
-
-    %{
-      income: unpaid_invoice_sums(unrealized.income_entries),
-      expenses: unpaid_invoice_sums(unrealized.expense_entries)
-    }
-  end
 
   defp unpaid_invoice_sums(entries) do
     entries

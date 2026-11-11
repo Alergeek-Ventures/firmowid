@@ -3177,11 +3177,6 @@ msgstr ""
 msgid "Cost invoices from the last 30 days will arrive by themselves, and you will send sales invoices in one click."
 msgstr ""
 
-#: lib/firmowid_web/analysis/components/financial_overview.ex
-#, elixir-autogen, elixir-format
-msgid "Cost of goods"
-msgstr ""
-
 #: lib/firmowid_web/analysis/components/period_details.ex
 #: lib/firmowid_web/inbox/utilities/queue.ex
 #, elixir-autogen, elixir-format
@@ -5286,11 +5281,6 @@ msgstr ""
 msgid "Following month"
 msgstr ""
 
-#: lib/firmowid_web/analysis/components/financial_overview.ex
-#, elixir-autogen, elixir-format
-msgid "Food cost"
-msgstr ""
-
 #: lib/firmowid_web/analysis/utilities/industry.ex
 #, elixir-autogen, elixir-format
 msgid "Food service"
@@ -5928,12 +5918,6 @@ msgstr ""
 #: lib/firmowid_web/landing/components/sections.ex
 #, elixir-autogen, elixir-format
 msgid "In one place."
-msgstr ""
-
-#: lib/firmowid_web/analysis/components/financial_overview.ex
-#, elixir-autogen, elixir-format
-msgctxt "month"
-msgid "In progress"
 msgstr ""
 
 #: lib/firmowid_web/analysis/components/period_details.ex
@@ -6787,11 +6771,6 @@ msgstr ""
 msgid "Labor costs visible in reports immediately"
 msgstr ""
 
-#: lib/firmowid_web/analysis/components/financial_overview.ex
-#, elixir-autogen, elixir-format
-msgid "Labour cost"
-msgstr ""
-
 #: lib/firmowid_web/landing/components/primitives.ex
 #: lib/firmowid_web/settings/components/account_tab.ex
 #, elixir-autogen, elixir-format
@@ -7124,7 +7103,7 @@ msgctxt "month name in a date"
 msgid "March"
 msgstr ""
 
-#: lib/firmowid_web/analysis/components/financial_overview.ex
+#: lib/firmowid_web/analysis/components/period_details.ex
 #, elixir-autogen, elixir-format
 msgid "Margin %{margin}"
 msgstr ""
@@ -7224,11 +7203,6 @@ msgstr ""
 #: lib/firmowid_web/invoicing/components/filter_bar.ex
 #, elixir-autogen, elixir-format
 msgid "Month closed"
-msgstr ""
-
-#: lib/firmowid_web/analysis/components/financial_overview.ex
-#, elixir-autogen, elixir-format
-msgid "Month in progress"
 msgstr ""
 
 #: lib/firmowid_web/landing/components/pricing.ex
@@ -7379,11 +7353,6 @@ msgstr ""
 #: lib/firmowid_web/landing/components/pricing.ex
 #, elixir-autogen, elixir-format
 msgid "Net prices. Save 20% with annual billing."
-msgstr ""
-
-#: lib/firmowid_web/analysis/components/financial_overview.ex
-#, elixir-autogen, elixir-format
-msgid "Net result"
 msgstr ""
 
 #: lib/firmowid_web/analysis/components/financial_overview.ex
@@ -7672,6 +7641,11 @@ msgstr ""
 msgid "No matches found."
 msgstr ""
 
+#: lib/firmowid_web/analysis/components/period_details.ex
+#, elixir-autogen, elixir-format
+msgid "No month of this period is closed yet."
+msgstr ""
+
 #: lib/firmowid_web/admin/views/organizations.ex
 #, elixir-autogen, elixir-format
 msgid "No organizations found for the selected filters."
@@ -7833,6 +7807,12 @@ msgstr ""
 msgid "Not applied"
 msgstr ""
 
+#: lib/firmowid_web/analysis/components/financial_overview.ex
+#, elixir-autogen, elixir-format
+msgctxt "month"
+msgid "Not closed"
+msgstr ""
+
 #: lib/firmowid_web/management/components/employee_tax_details.ex
 #, elixir-autogen, elixir-format
 msgid "Not collected"
@@ -7964,11 +7944,6 @@ msgstr ""
 #, elixir-autogen, elixir-format
 msgctxt "month name in a date"
 msgid "October"
-msgstr ""
-
-#: lib/firmowid_web/analysis/components/financial_overview.ex
-#, elixir-autogen, elixir-format
-msgid "Offset by unpaid invoices"
 msgstr ""
 
 #: lib/firmowid_web/analysis/components/category_selector.ex
@@ -8804,7 +8779,6 @@ msgstr ""
 msgid "Preferential advance declarations are recorded but not calculated."
 msgstr ""
 
-#: lib/firmowid_web/analysis/components/financial_overview.ex
 #: lib/firmowid_web/analysis/components/period_details.ex
 #, elixir-autogen, elixir-format
 msgid "Premises and utilities"
@@ -10065,11 +10039,6 @@ msgstr ""
 msgid "Settle"
 msgstr ""
 
-#: lib/firmowid_web/analysis/components/financial_overview.ex
-#, elixir-autogen, elixir-format
-msgid "Settled"
-msgstr ""
-
 #: lib/firmowid_web/admin/views/settlement.ex
 #, elixir-autogen, elixir-format
 msgid "Settlement"
@@ -10366,7 +10335,6 @@ msgstr ""
 msgid "Social media"
 msgstr ""
 
-#: lib/firmowid_web/analysis/components/financial_overview.ex
 #: lib/firmowid_web/analysis/components/period_details.ex
 #, elixir-autogen, elixir-format
 msgid "Software and IT"
@@ -10786,11 +10754,6 @@ msgstr ""
 #, elixir-autogen, elixir-format
 msgctxt "sidebar"
 msgid "Team"
-msgstr ""
-
-#: lib/firmowid_web/analysis/components/financial_overview.ex
-#, elixir-autogen, elixir-format
-msgid "Team and subcontractors"
 msgstr ""
 
 #: lib/firmowid_web/landing/components/pricing.ex
@@ -11569,6 +11532,11 @@ msgid "The rest · %{count} category"
 msgid_plural "The rest · %{count} categories"
 msgstr[0] ""
 msgstr[1] ""
+
+#: lib/firmowid_web/analysis/components/financial_overview.ex
+#, elixir-autogen, elixir-format
+msgid "The result appears once the month ends and at most two of its invoices wait for payment."
+msgstr ""
 
 #: lib/firmowid_web/landing/views/terms_of_service.ex
 #, elixir-autogen, elixir-format
@@ -13173,11 +13141,6 @@ msgstr ""
 #: lib/firmowid_web/invoicing/sales_invoices/components/eu_vat_check.ex
 #, elixir-autogen, elixir-format
 msgid "With this rate the buyer accounts for VAT, which assumes a VAT-registered business. VIES does not confirm that. Keep other proof or reconsider the rate."
-msgstr ""
-
-#: lib/firmowid_web/analysis/components/financial_overview.ex
-#, elixir-autogen, elixir-format
-msgid "With unpaid invoices"
 msgstr ""
 
 #: lib/firmowid_web/hours_record/components/change_request.ex
