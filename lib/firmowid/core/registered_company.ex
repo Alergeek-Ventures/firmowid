@@ -2,9 +2,9 @@ defmodule Firmowid.Core.RegisteredCompany do
   @moduledoc """
   Public register data of a company, shared by all organizations.
 
-  Caches what the public registers know about a NIP, so each NIP is looked up
-  once. A NIP the register does not know is stored without a `pkd`, so it is
-  never asked for again. `pkd` is the predominant activity, e.g. `"69.20.Z"`.
+  Caches what the public registers know about a NIP. A NIP the registers do not
+  know is stored without a `pkd` and looked up again after 30 days, any other
+  after a year. `pkd` is the predominant activity, e.g. `"69.20.Z"`.
   """
   use Ash.Resource,
     otp_app: :firmowid,
