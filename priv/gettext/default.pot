@@ -6127,6 +6127,7 @@ msgstr ""
 msgid "Issue correction invoice"
 msgstr ""
 
+#: lib/firmowid_web/assistant/utilities/changes.ex
 #: lib/firmowid_web/invoicing/components/cost_invoice_details.ex
 #: lib/firmowid_web/invoicing/components/sales_invoice_details.ex
 #: lib/firmowid_web/management/views/counterparty.ex
@@ -9493,6 +9494,7 @@ msgstr ""
 msgid "Self-host, open source (AGPL-3.0)"
 msgstr ""
 
+#: lib/firmowid_web/assistant/utilities/changes.ex
 #: lib/firmowid_web/invoicing/components/cost_invoice_details.ex
 #: lib/firmowid_web/landing/components/sections.ex
 #, elixir-autogen, elixir-format
@@ -11385,6 +11387,11 @@ msgstr ""
 #: lib/firmowid_web/payroll/components/monthly_payout.ex
 #, elixir-autogen, elixir-format
 msgid "This payout needs an individual review"
+msgstr ""
+
+#: lib/firmowid_web/assistant/components/records.ex
+#, elixir-autogen, elixir-format
+msgid "This plan changes nothing. Reject it."
 msgstr ""
 
 #: lib/firmowid_web/settings/components/subscription_tab.ex

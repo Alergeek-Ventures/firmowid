@@ -198,8 +198,11 @@ defmodule FirmowidWeb.Assistant.Components.Records do
         </div>
         <.changes :if={call.changes != []} changes={call.changes} />
       </div>
-      <p :if={!@plan.available?} class="text-sm/snug text-brick-700">
+      <p :if={!@plan.readable?} class="text-sm/snug text-brick-700">
         {gettext("Some records could not be read. Reject this plan and ask for a new one.")}
+      </p>
+      <p :if={@plan.readable? and @plan.unchanged?} class="text-sm/snug text-brick-700">
+        {gettext("This plan changes nothing. Reject it.")}
       </p>
       <div class="flex flex-wrap items-center justify-end gap-2">
         <p class="me-auto text-xs/snug text-grey-600">

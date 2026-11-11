@@ -4,8 +4,9 @@ defmodule FirmowidWeb.Assistant.Utilities.Changes do
   before and after, read with the user's permissions. Covers the writes whose effect the record
   rows alone do not show.
 
-  A malformed call or a record the user cannot read gives `:error`: the card stays rejectable
-  but not approvable.
+  A malformed call or a record the user cannot read gives `:error`, and a profile or draft update
+  that changes nothing gives `:unchanged`: either way the card stays rejectable but not
+  approvable.
   """
   use Gettext, backend: Firmowid.Gettext
 
@@ -15,6 +16,7 @@ defmodule FirmowidWeb.Assistant.Utilities.Changes do
   alias Firmowid.Core
   alias Firmowid.Finances
   alias Firmowid.Invoicing
+  alias Firmowid.Invoicing.SalesInvoice.Preview
   alias Firmowid.Scope
   alias Firmowid.Timetracker.Project
   alias Firmowid.Timetracker.Session
@@ -49,11 +51,11 @@ defmodule FirmowidWeb.Assistant.Utilities.Changes do
   def covers?(name), do: name in @tools
 
   @doc "Returns the records a covered write touches and its field changes."
-  @spec preview(map(), Scope.t()) :: {:ok, [record_ref()], [change()]} | :error
+  @spec preview(map(), Scope.t()) :: {:ok, [record_ref()], [change()]} | :error | :unchanged
   def preview(%{name: name, arguments: arguments}, scope) do
     case preview(name, arguments, scope) do
       {:ok, references, changes} -> {:ok, references, Enum.filter(changes, & &1)}
-      :error -> :error
+      failure -> failure
     end
   end
 
@@ -191,7 +193,7 @@ defmodule FirmowidWeb.Assistant.Utilities.Changes do
           )
         end
 
-      if changes == [], do: :error, else: {:ok, [], changes}
+      if changes == [], do: :unchanged, else: {:ok, [], changes}
     end
   end
 
@@ -211,7 +213,10 @@ defmodule FirmowidWeb.Assistant.Utilities.Changes do
                scope: scope
              )
            ) do
-      {:ok, [{:sales, id}], invoice_changes(saved, revised)}
+      # Compared on every reviewed field, not only those the card shows.
+      if snapshot(saved) == snapshot(revised),
+        do: :unchanged,
+        else: {:ok, [{:sales, id}], invoice_changes(saved, revised)}
     end
   end
 
@@ -368,7 +373,9 @@ defmodule FirmowidWeb.Assistant.Utilities.Changes do
   # items and total.
   defp invoice_changes(saved, revised) do
     [
+      {gettext("Seller"), & &1.seller_display_name},
       {gettext("Buyer"), & &1.buyer_full_name},
+      {gettext("Issue date"), &(&1.issue_date && date(&1.issue_date))},
       {gettext("Sale date"), &(&1.sale_date && date(&1.sale_date))},
       {gettext("Due date"), &(&1.due_date && date(&1.due_date))},
       {gettext("Invoice note"), & &1.invoice_note}
@@ -381,6 +388,18 @@ defmodule FirmowidWeb.Assistant.Utilities.Changes do
         change(gettext("Items"), saved && items(saved), items(revised))
     ])
   end
+
+  # Decimals compare by value: a saved 1.0 is the proposed 1.
+  defp snapshot(invoice) do
+    invoice
+    |> Preview.review_snapshot()
+    |> Map.update!(:items, fn items ->
+      Enum.map(items, &Map.new(&1, fn {key, value} -> {key, normalize(value)} end))
+    end)
+  end
+
+  defp normalize(%Decimal{} = value), do: Decimal.normalize(value)
+  defp normalize(value), do: value
 
   # Quantities and prices are compared as numbers: a saved 1.0 is the proposed 1.
   defp same_items?(nil, _revised), do: false
