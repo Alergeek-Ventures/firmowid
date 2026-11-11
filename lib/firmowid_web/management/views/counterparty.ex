@@ -126,7 +126,10 @@ defmodule FirmowidWeb.Management.Views.Counterparty do
   end
 
   @impl true
-  def handle_info(%Broadcast{payload: %Notification{data: checked}}, socket) do
+  def handle_info(
+        %Broadcast{payload: %Notification{data: %{id: id} = checked}},
+        %{assigns: %{counterparty: %{id: id}}} = socket
+      ) do
     counterparty = %{
       socket.assigns.counterparty
       | vat_id_status: checked.vat_id_status,
@@ -138,6 +141,8 @@ defmodule FirmowidWeb.Management.Views.Counterparty do
      |> assign(:counterparty, counterparty)
      |> assign(:vat_id, vat_id_status(counterparty))}
   end
+
+  def handle_info(%Broadcast{}, socket), do: {:noreply, socket}
 
   @impl true
   def render(assigns) do

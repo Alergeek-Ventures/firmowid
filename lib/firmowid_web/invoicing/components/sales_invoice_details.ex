@@ -112,8 +112,9 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
         party_display_name: latest_invoice_snapshot.buyer_display_name_label,
         description: description,
         latest_invoice_snapshot: latest_invoice_snapshot,
-        buyer_vat_number_rejected?: EuVatReview.number_rejected?(latest_invoice_snapshot),
-        buyer_vat_problem: buyer_vat_problem(latest_invoice_snapshot, assigns.scope),
+        buyer_vat_number_rejected?: not cancelled? and EuVatReview.number_rejected?(latest_invoice_snapshot),
+        # A cancelled invoice needs no more action on its buyer number.
+        buyer_vat_problem: if(not cancelled?, do: buyer_vat_problem(latest_invoice_snapshot, assigns.scope)),
         invoices_for_preview: Enum.reverse([invoice | invoice.corrections]),
         internal_notes: internal_notes,
         cancelled?: cancelled?,

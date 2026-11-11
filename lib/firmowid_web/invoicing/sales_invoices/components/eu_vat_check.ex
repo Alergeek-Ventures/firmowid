@@ -14,7 +14,8 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.EuVatCheck do
 
   @impl true
   def update(%{invoice: invoice} = assigns, socket) do
-    key = {invoice.buyer_country, invoice.buyer_id}
+    %{buyer_country: country, buyer_id: number} = invoice
+    key = {country, number}
 
     socket =
       socket
@@ -22,15 +23,21 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.EuVatCheck do
       |> assign(:applies?, EuVatReview.applies?(invoice))
 
     socket =
-      if socket.assigns[:checked_key] == key or not socket.assigns.applies? do
-        socket
-      else
-        socket
-        |> assign(:checked_key, key)
-        |> assign(:registration, :pending)
-        |> start_async(:registration, fn ->
-          EuVatReview.check_registration(invoice.buyer_country, invoice.buyer_id)
-        end)
+      cond do
+        socket.assigns[:checked_key] == key or not socket.assigns.applies? ->
+          socket
+
+        # Like the periodic check, VIES is asked only about numbers that pass their country's rules.
+        EuVatReview.number_rejected?(invoice) ->
+          socket
+          |> cancel_async(:registration)
+          |> assign(checked_key: key, registration: nil)
+
+        true ->
+          socket
+          |> assign(:checked_key, key)
+          |> assign(:registration, :pending)
+          |> start_async(:registration, fn -> EuVatReview.check_registration(country, number) end)
       end
 
     {:ok, socket}
