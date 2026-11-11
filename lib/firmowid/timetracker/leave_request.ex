@@ -13,7 +13,6 @@ defmodule Firmowid.Timetracker.LeaveRequest do
   use Gettext, backend: Firmowid.Gettext
 
   alias Firmowid.Blobs
-  alias Firmowid.Checks.ActorRole
   alias Firmowid.Checks.SystemActorRole
   alias Firmowid.Core.Member
   alias Firmowid.Resource
@@ -255,10 +254,6 @@ defmodule Firmowid.Timetracker.LeaveRequest do
       action([:read, :list, :destroy])
     ] do
       authorize_if expr(not is_nil(^actor(:org_id)) and organization_id == ^actor(:org_id))
-    end
-
-    bypass {ActorRole, role: :admin} do
-      authorize_if always()
     end
 
     # Who is on leave, for the team presence every member sees.
