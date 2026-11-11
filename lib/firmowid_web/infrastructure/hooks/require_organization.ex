@@ -11,6 +11,11 @@ defmodule FirmowidWeb.Infrastructure.Hooks.RequireOrganization do
 
   `:first_steps`, mounted after the feature flags, sends the admin of a company
   still before its first steps back to its setup (see `UserAuth.first_steps_pending?/2`).
+
+  `:plan_limit`, mounted after `:first_steps`, holds an admin on the plan limit
+  page once the company must decide about its usage above the plan (see
+  `Firmowid.Billing.PlanLimits.decision_due?/1`). Before that day the inbox
+  tells them (see `FirmowidWeb.Inbox.Utilities.Queue`). Other members work normally.
   """
 
   use FirmowidWeb, :verified_routes
@@ -20,7 +25,10 @@ defmodule FirmowidWeb.Infrastructure.Hooks.RequireOrganization do
   import Phoenix.Component
   import Phoenix.LiveView
 
+  alias Firmowid.Billing.PlanLimits
   alias Firmowid.Core
+  alias FirmowidWeb.Billing.Utilities.Navigation, as: BillingNavigation
+  alias FirmowidWeb.Billing.Views.PlanLimit
   alias FirmowidWeb.Infrastructure.UserAuth
   alias FirmowidWeb.Organization.Utilities.Navigation, as: OrganizationNavigation
   alias FirmowidWeb.Organization.Views.FirstSteps
@@ -51,13 +59,25 @@ defmodule FirmowidWeb.Infrastructure.Hooks.RequireOrganization do
     end
   end
 
-  # Runs after the feature flags, since the setup is behind `inbox`.
+  # Runs after the feature flags, since the setup is behind `inbox`. The plan limit
+  # page stays reachable, since `:plan_limit` holds a due admin there, first steps included.
   def on_mount(:first_steps, _params, _session, socket) do
     %{current_user: user, current_org: org} = socket.assigns
 
     if flag_enabled?(:inbox, socket.assigns) and
-         UserAuth.first_steps_pending?(user, org) and socket.view != FirstSteps do
+         UserAuth.first_steps_pending?(user, org) and socket.view not in [FirstSteps, PlanLimit] do
       {:halt, redirect(socket, to: OrganizationNavigation.setup_path())}
+    else
+      {:cont, socket}
+    end
+  end
+
+  def on_mount(:plan_limit, _params, _session, socket) do
+    %{current_user: user, current_org: org} = socket.assigns
+
+    if match?(%{member: %{role: :admin}}, user) and socket.view != PlanLimit and
+         PlanLimits.decision_due?(org) do
+      {:halt, redirect(socket, to: BillingNavigation.plan_limit_path())}
     else
       {:cont, socket}
     end

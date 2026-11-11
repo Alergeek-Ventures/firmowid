@@ -94,6 +94,13 @@ msgstr ""
 msgid "%{counterparty}: EU VAT number to check"
 msgstr ""
 
+#: lib/firmowid_web/billing/views/plan_limit.ex
+#, elixir-autogen, elixir-format
+msgid "%{count} account"
+msgid_plural "%{count} accounts"
+msgstr[0] ""
+msgstr[1] ""
+
 #: lib/firmowid_web/assistant/utilities/presentation.ex
 #, elixir-autogen, elixir-format
 msgid "%{count} analysis entry"
@@ -105,6 +112,13 @@ msgstr[1] ""
 #, elixir-autogen, elixir-format
 msgid "%{count} analysis tag"
 msgid_plural "%{count} analysis tags"
+msgstr[0] ""
+msgstr[1] ""
+
+#: lib/firmowid_web/billing/views/plan_limit.ex
+#, elixir-autogen, elixir-format
+msgid "%{count} bank"
+msgid_plural "%{count} banks"
 msgstr[0] ""
 msgstr[1] ""
 
@@ -238,7 +252,15 @@ msgid_plural "%{count} pages"
 msgstr[0] ""
 msgstr[1] ""
 
+#: lib/firmowid_web/billing/views/plan_limit.ex
+#, elixir-autogen, elixir-format
+msgid "%{count} person"
+msgid_plural "%{count} people"
+msgstr[0] ""
+msgstr[1] ""
+
 #: lib/firmowid_web/assistant/utilities/presentation.ex
+#: lib/firmowid_web/billing/views/plan_limit.ex
 #, elixir-autogen, elixir-format
 msgid "%{count} project"
 msgid_plural "%{count} projects"
@@ -375,6 +397,11 @@ msgstr ""
 msgid "%{label}: %{amount} at the NBP rate %{rate} of %{date}"
 msgstr ""
 
+#: lib/firmowid_web/inbox/utilities/queue.ex
+#, elixir-autogen, elixir-format
+msgid "%{label}: %{count}, the plan includes %{limit}"
+msgstr ""
+
 #: lib/firmowid_web/landing/components/hero.ex
 #, elixir-autogen, elixir-format
 msgid "%{minutes} min"
@@ -425,6 +452,11 @@ msgstr ""
 #: lib/firmowid_web/invoicing/components/dashboard_tiles.ex
 #, elixir-autogen, elixir-format
 msgid "%{percent}% confidence"
+msgstr ""
+
+#: lib/firmowid_web/billing/views/plan_limit.ex
+#, elixir-autogen, elixir-format
+msgid "%{price} PLN net / month"
 msgstr ""
 
 #: lib/firmowid_web/assistant/components/invoice.ex
@@ -688,6 +720,11 @@ msgstr ""
 #: lib/firmowid_web/landing/components/primitives.ex
 #, elixir-autogen, elixir-format
 msgid "About us"
+msgstr ""
+
+#: lib/firmowid_web/inbox/utilities/queue.ex
+#, elixir-autogen, elixir-format
+msgid "Above the %{plan} plan"
 msgstr ""
 
 #: lib/firmowid_web/settings/components/subscription_tab.ex
@@ -1741,7 +1778,6 @@ msgstr ""
 msgid "Bank account number copied"
 msgstr ""
 
-#: lib/firmowid_web/billing/utilities/worksheet.ex
 #: lib/firmowid_web/settings/components/company_tab.ex
 #: lib/firmowid_web/settings/utilities/navigation.ex
 #, elixir-autogen, elixir-format
@@ -1778,6 +1814,16 @@ msgstr ""
 #: lib/firmowid_web/landing/components/pricing.ex
 #, elixir-autogen, elixir-format
 msgid "Banking and payments"
+msgstr ""
+
+#: lib/firmowid_web/billing/utilities/worksheet.ex
+#, elixir-autogen, elixir-format
+msgid "Banks"
+msgstr ""
+
+#: lib/firmowid_web/billing/utilities/worksheet.ex
+#, elixir-autogen, elixir-format
+msgid "Banks with at least one synchronized account."
 msgstr ""
 
 #: lib/firmowid_web/management/components/roles.ex
@@ -2415,6 +2461,11 @@ msgstr ""
 #: lib/firmowid/delegations/validations/foreign_currency_settlement_complete.ex
 #, elixir-autogen, elixir-format
 msgid "Choose how to convert the currency."
+msgstr ""
+
+#: lib/firmowid_web/inbox/utilities/queue.ex
+#, elixir-autogen, elixir-format
+msgid "Choose now"
 msgstr ""
 
 #: lib/firmowid_web/organization/views/legacy_form.ex
@@ -3784,11 +3835,6 @@ msgstr ""
 msgid "Current plan"
 msgstr ""
 
-#: lib/firmowid_web/billing/utilities/worksheet.ex
-#, elixir-autogen, elixir-format
-msgid "Currently connected accounts with synchronization."
-msgstr ""
-
 #: lib/firmowid_web/invoicing/sales_invoices/views/creator_counterparty.html.heex
 #, elixir-autogen, elixir-format
 msgid "Customer NIP"
@@ -4867,6 +4913,11 @@ msgstr ""
 msgid "Everything in one place: invoices, banking, working hours, leave, and business trips."
 msgstr ""
 
+#: lib/firmowid_web/billing/views/plan_limit.ex
+#, elixir-autogen, elixir-format
+msgid "Everything works until %{date}; from that day a choice is needed."
+msgstr ""
+
 #: lib/firmowid_web/organization/views/first_steps.ex
 #, elixir-autogen, elixir-format
 msgid "Everything you set up is waiting there"
@@ -5568,6 +5619,11 @@ msgstr ""
 #: lib/firmowid_web/organization/views/first_steps.ex
 #, elixir-autogen, elixir-format
 msgid "Go to Firmowid"
+msgstr ""
+
+#: lib/firmowid_web/billing/views/plan_limit.ex
+#, elixir-autogen, elixir-format
+msgid "Go to another company:"
 msgstr ""
 
 #: lib/firmowid_web/timetracker/views/index.html.heex
@@ -7899,9 +7955,19 @@ msgstr ""
 msgid "Notes"
 msgstr ""
 
+#: lib/firmowid_web/billing/views/plan_limit.ex
+#, elixir-autogen, elixir-format
+msgid "Nothing is deleted. Whatever is switched off comes back once you buy a higher plan."
+msgstr ""
+
 #: lib/firmowid_web/inbox/components/queue.ex
 #, elixir-autogen, elixir-format
 msgid "Nothing is waiting for your decision. New items will show up here on their own."
+msgstr ""
+
+#: lib/firmowid_web/billing/views/plan_limit.ex
+#, elixir-autogen, elixir-format
+msgid "Nothing will be switched off."
 msgstr ""
 
 #: lib/firmowid_web/core/toast.ex
@@ -8370,6 +8436,7 @@ msgid "Overlapping sessions"
 msgstr ""
 
 #: lib/firmowid_web/admin/components/settlement_components.ex
+#: lib/firmowid_web/billing/views/plan_limit.ex
 #: lib/firmowid_web/settings/components/company_tab.ex
 #, elixir-autogen, elixir-format
 msgid "Owner"
@@ -8498,6 +8565,11 @@ msgstr ""
 #: lib/firmowid_ui/components/ksef_connection.ex
 #, elixir-autogen, elixir-format
 msgid "Paste the token"
+msgstr ""
+
+#: lib/firmowid_web/settings/components/company_tab.ex
+#, elixir-autogen, elixir-format
+msgid "Paused by the plan"
 msgstr ""
 
 #: lib/firmowid_web/invoicing/components/dashboard_tiles.ex
@@ -8726,6 +8798,11 @@ msgstr ""
 #: lib/firmowid_web/admin/components/settlement_components.ex
 #, elixir-autogen, elixir-format
 msgid "Plan for the selected month"
+msgstr ""
+
+#: lib/firmowid_web/billing/views/plan_limit.ex
+#, elixir-autogen, elixir-format
+msgid "Plan limit"
 msgstr ""
 
 #: lib/firmowid_web/admin/components/settlement_components.ex
@@ -9654,6 +9731,11 @@ msgstr ""
 msgid "Save and send to KSeF"
 msgstr ""
 
+#: lib/firmowid_web/billing/views/plan_limit.ex
+#, elixir-autogen, elixir-format
+msgid "Save and switch off the rest"
+msgstr ""
+
 #: lib/firmowid_web/delegations/views/delegation_form.ex
 #: lib/firmowid_web/management/views/counterparty_form.html.heex
 #: lib/firmowid_web/management/views/project_form.html.heex
@@ -9684,6 +9766,11 @@ msgstr ""
 msgid "Save plan"
 msgstr ""
 
+#: lib/firmowid_web/billing/views/plan_limit.ex
+#, elixir-autogen, elixir-format
+msgid "Saved. Whatever was switched off comes back with a higher plan."
+msgstr ""
+
 #: lib/firmowid_web/delegations/components/settlement_page.ex
 #, elixir-autogen, elixir-format
 msgid "Saving changes…"
@@ -9694,6 +9781,7 @@ msgstr ""
 msgid "Saving failed. Your draft remains in this tab. Edit a field to try again."
 msgstr ""
 
+#: lib/firmowid_web/billing/views/plan_limit.ex
 #: lib/firmowid_web/hours_record/components/change_request.ex
 #, elixir-autogen, elixir-format
 msgid "Saving..."
@@ -10533,6 +10621,11 @@ msgctxt "entries table column"
 msgid "Status"
 msgstr ""
 
+#: lib/firmowid_web/billing/views/plan_limit.ex
+#, elixir-autogen, elixir-format
+msgid "Stay on the %{plan} plan"
+msgstr ""
+
 #: lib/firmowid_web/organization/components/onboarding_header.ex
 #: lib/firmowid_web/organization/views/first_steps.ex
 #, elixir-autogen, elixir-format
@@ -10692,6 +10785,11 @@ msgstr ""
 #: lib/firmowid_web/landing/components/hero.ex
 #, elixir-autogen, elixir-format
 msgid "Supported banks and fintechs"
+msgstr ""
+
+#: lib/firmowid_web/billing/views/plan_limit.ex
+#, elixir-autogen, elixir-format
+msgid "Switched off after saving: %{items}."
 msgstr ""
 
 #: lib/firmowid_web/landing/views/terms_of_service.ex
@@ -11942,6 +12040,11 @@ msgstr ""
 msgid "This payout needs an individual review"
 msgstr ""
 
+#: lib/firmowid_web/billing/views/plan_limit.ex
+#, elixir-autogen, elixir-format
+msgid "This plan includes everything your company uses now."
+msgstr ""
+
 #: lib/firmowid_web/settings/components/subscription_tab.ex
 #, elixir-autogen, elixir-format
 msgid "This preview is available only to the organization owner."
@@ -11992,6 +12095,16 @@ msgstr ""
 #, elixir-autogen, elixir-format
 msgctxt "weekday name"
 msgid "Thursday"
+msgstr ""
+
+#: lib/firmowid_web/billing/views/plan_limit.ex
+#, elixir-autogen, elixir-format
+msgid "Tick no more than the plan includes."
+msgstr ""
+
+#: lib/firmowid_web/billing/views/plan_limit.ex
+#, elixir-autogen, elixir-format
+msgid "Tick what stays switched on. People switched off are archived and cannot sign in, projects are archived, and accounts in banks switched off stop synchronizing. Their history stays."
 msgstr ""
 
 #: lib/firmowid_web/delegations/components/settlement/expense.ex
@@ -13195,6 +13308,11 @@ msgstr ""
 msgid "Without KSeF your invoice stays a draft."
 msgstr ""
 
+#: lib/firmowid_web/billing/views/plan_limit.ex
+#, elixir-autogen, elixir-format
+msgid "Without a choice, on %{date} we will switch off the newest items above the limit."
+msgstr ""
+
 #: lib/firmowid_web/analysis/components/segment_ranking.ex
 #, elixir-autogen, elixir-format
 msgid "Without a project"
@@ -13341,6 +13459,12 @@ msgstr ""
 #: lib/firmowid_web/inbox/components/sidebar_nav.ex
 #, elixir-autogen, elixir-format
 msgctxt "sidebar layer"
+msgid "You"
+msgstr ""
+
+#: lib/firmowid_web/billing/views/plan_limit.ex
+#, elixir-autogen, elixir-format
+msgctxt "plan limit member"
 msgid "You"
 msgstr ""
 
@@ -13612,6 +13736,11 @@ msgstr ""
 #: lib/firmowid_web/organization/components/company_card.ex
 #, elixir-autogen, elixir-format
 msgid "Your company"
+msgstr ""
+
+#: lib/firmowid_web/billing/views/plan_limit.ex
+#, elixir-autogen, elixir-format
+msgid "Your company uses more than the %{plan} plan includes."
 msgstr ""
 
 #: lib/firmowid_web/settings/components/subscription_tab.ex
@@ -14431,6 +14560,11 @@ msgstr ""
 msgid "security audit"
 msgstr ""
 
+#: lib/firmowid_web/billing/views/plan_limit.ex
+#, elixir-autogen, elixir-format
+msgid "selected %{selected} of %{limit}"
+msgstr ""
+
 #: lib/firmowid_ui/components/inputs.ex
 #, elixir-autogen, elixir-format
 msgid "should be %{count} byte(s)"
@@ -14594,6 +14728,7 @@ msgid "under review"
 msgstr ""
 
 #: lib/firmowid_web/billing/utilities/worksheet.ex
+#: lib/firmowid_web/billing/views/plan_limit.ex
 #: lib/firmowid_web/landing/components/pricing.ex
 #: lib/firmowid_web/organization/views/first_steps.ex
 #, elixir-autogen, elixir-format

@@ -174,6 +174,18 @@ defmodule Firmowid.Finances.BankAccount do
       end
     end
 
+    update :suspend_by_plan do
+      description "Stop synchronizing the account because it is above the plan limit; its history stays."
+      accept []
+      change set_attribute(:suspended_by_plan_at, &DateTime.utc_now/0)
+    end
+
+    update :restore_from_plan do
+      description "Synchronize again an account the plan limit stopped."
+      accept []
+      change set_attribute(:suspended_by_plan_at, nil)
+    end
+
     update :sync_from_gocardless do
       require_atomic? false
 
@@ -225,6 +237,10 @@ defmodule Firmowid.Finances.BankAccount do
       authorize_if action(:read_global_for_sync)
     end
 
+    bypass action([:read, :suspend_by_plan, :restore_from_plan]) do
+      authorize_if expr(^actor(:role) == :plan_limits and organization_id == ^actor(:org_id))
+    end
+
     bypass {SystemActorRole, roles: [:bank_sync]} do
       authorize_if action(:sync_from_bank)
     end
@@ -273,6 +289,9 @@ defmodule Firmowid.Finances.BankAccount do
     attribute :name, :string, public?: true
     attribute :is_default, :boolean, public?: true, default: false
 
+    # Set while the plan limit stops the synchronization; a higher plan resumes it.
+    attribute :suspended_by_plan_at, :utc_datetime_usec, public?: true
+
     Resource.firmowid_timestamps()
   end
 
@@ -295,7 +314,7 @@ defmodule Firmowid.Finances.BankAccount do
     calculate :syncable?,
               :boolean,
               expr(
-                not is_nil(gocardless_id) and
+                not is_nil(gocardless_id) and is_nil(suspended_by_plan_at) and
                   (is_nil(requisition_id) or
                      exists(requisition, status == :accepted and is_nil(remote_deleted_at)))
               )

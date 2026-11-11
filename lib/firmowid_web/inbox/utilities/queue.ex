@@ -5,7 +5,8 @@ defmodule FirmowidWeb.Inbox.Utilities.Queue do
 
   Uses policy-scoped domain reads for integration alerts, counterparty EU VAT
   numbers that the periodic check rejected, team approvals,
-  personal signatures and settlements, and overdue invoices. Each item links
+  personal signatures and settlements, and overdue invoices; usage above the
+  billing plan comes from `Firmowid.Billing.PlanLimits`. Each item links
   to the page where it is dealt with; pending leave requests also offer inline
   decisions.
   """
@@ -13,12 +14,17 @@ defmodule FirmowidWeb.Inbox.Utilities.Queue do
   use Gettext, backend: Firmowid.Gettext
 
   alias Firmowid.Analysis
+  alias Firmowid.Billing.PlanCatalog
+  alias Firmowid.Billing.PlanLimits
+  alias Firmowid.Core.Organization
   alias Firmowid.Delegations
   alias Firmowid.Finances
   alias Firmowid.Invoicing
   alias Firmowid.Ksef
   alias Firmowid.Payroll
   alias Firmowid.Timetracker
+  alias FirmowidWeb.Billing.Utilities.Navigation, as: BillingNavigation
+  alias FirmowidWeb.Billing.Utilities.Worksheet
   alias FirmowidWeb.Delegations.Utilities.Navigation, as: DelegationNavigation
   alias FirmowidWeb.Inbox.Utilities.Navigation
   alias FirmowidWeb.Invoicing.Utilities.Navigation, as: InvoicingNavigation
@@ -52,30 +58,33 @@ defmodule FirmowidWeb.Inbox.Utilities.Queue do
   Team approvals and integrations are for admins; books are for admins and
   accountants. Every role can see their own actionable items.
   """
-  @spec items(:company | :me, Ash.Scope.t(), Date.t()) :: [item()]
-  def items(:company, %{actor: %{member: %{role: role}}} = scope, today) when role in [:admin, :accountant] do
-    attention_items(scope) ++ overdue_invoice_items(scope, today)
+  @spec items(:company | :me, Ash.Scope.t(), Organization.t(), Date.t()) :: [item()]
+  def items(:company, %{actor: %{member: %{role: role}}} = scope, organization, today)
+      when role in [:admin, :accountant] do
+    attention_items(scope, organization) ++ overdue_invoice_items(scope, today)
   end
 
-  def items(:me, %{actor: %{member: %{id: member_id}}} = scope, today) do
+  def items(:me, %{actor: %{member: %{id: member_id}}} = scope, _organization, today) do
     contract_items(member_id, scope) ++ personal_delegation_items(member_id, scope, today)
   end
 
-  def items(_layer, _scope, _today), do: []
+  def items(_layer, _scope, _organization, _today), do: []
 
   @doc """
   The company items that need someone now (urgent and approvals), without the
-  books. The sidebar counts these on every page, so they skip the invoice reads.
+  books. The sidebar counts these on every page, so they skip the invoice reads
+  and take the organization the page already loaded.
   """
-  @spec attention_items(Ash.Scope.t()) :: [item()]
-  def attention_items(%{actor: %{member: %{role: :admin}}} = scope) do
-    ksef_items(scope) ++
+  @spec attention_items(Ash.Scope.t(), Organization.t()) :: [item()]
+  def attention_items(%{actor: %{member: %{role: :admin}}} = scope, organization) do
+    plan_limit_items(organization) ++
+      ksef_items(scope) ++
       bank_items(scope) ++
       vat_id_items(scope) ++
       leave_items(scope) ++ hours_change_items(scope) ++ company_delegation_items(scope)
   end
 
-  def attention_items(_scope), do: []
+  def attention_items(_scope, _organization), do: []
 
   @doc "Groups items by tier, keeping tier order."
   @spec by_tier([item()]) :: [{tier(), [item()]}]
@@ -99,6 +108,38 @@ defmodule FirmowidWeb.Inbox.Utilities.Queue do
   def tier_hint(:people), do: gettext("Someone on the team is waiting for your decision.")
   def tier_hint(:personal), do: gettext("Waiting for your signature or settlement.")
   def tier_hint(:books), do: gettext("Overdue invoices with no matched payment.")
+
+  # Usage is counted only while a decision day is set. Nothing once the usage
+  # fits the plan again, until the scheduled check ends the decision.
+  defp plan_limit_items(%Organization{plan_limit_decision_on: nil}), do: []
+
+  defp plan_limit_items(%Organization{billing_plan: plan} = organization) do
+    usage = PlanLimits.usage(organization)
+
+    case PlanCatalog.exceeded(usage, plan) do
+      [] ->
+        []
+
+      [limited | _others] ->
+        [
+          %{
+            id: "plan-limit",
+            tier: :urgent,
+            icon: "gauge",
+            title: gettext("Above the %{plan} plan", plan: Worksheet.plan_label(plan)),
+            context:
+              gettext("%{label}: %{count}, the plan includes %{limit}",
+                label: Worksheet.limited_label(limited),
+                count: usage[limited],
+                limit: PlanCatalog.plan!(plan).limits[limited]
+              ),
+            person: nil,
+            action: gettext("Choose now"),
+            href: BillingNavigation.plan_limit_path()
+          }
+        ]
+    end
+  end
 
   defp ksef_items(scope) do
     case Ksef.connection_status(scope: scope) do

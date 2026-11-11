@@ -847,6 +847,9 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
           <span :if={@status not in [:broken, :disconnected]} class="inline-flex items-center gap-2">
             {format_last_sync_info(@status, @account.latest_successful_sync_at)}
           </span>
+          <.badge :if={@account.suspended_by_plan_at} class="ml-2">
+            {gettext("Paused by the plan")}
+          </.badge>
         </.bank_detail_row>
 
         <div class="col-span-2 pt-2">

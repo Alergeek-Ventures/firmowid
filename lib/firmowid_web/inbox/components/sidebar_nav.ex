@@ -52,11 +52,16 @@ defmodule FirmowidWeb.Inbox.Components.SidebarNav do
   end
 
   defp load_status(socket) do
-    scope = socket.assigns.scope
+    %{scope: scope, organization: organization} = socket.assigns
 
     assign_async(socket, :status, fn ->
       {:ok, session} = Session.get_current(scope: scope)
-      status = %{company: length(Queue.attention_items(scope)), running?: session != nil}
+
+      status = %{
+        company: length(Queue.attention_items(scope, organization)),
+        running?: session != nil
+      }
+
       Cachex.put(@cache, cache_key(scope), status)
       {:ok, %{status: status}}
     end)

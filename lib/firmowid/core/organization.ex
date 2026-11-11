@@ -14,6 +14,7 @@ defmodule Firmowid.Core.Organization do
 
   alias Firmowid.Analysis.IndustryTemplate
   alias Firmowid.Billing.PlanCatalog
+  alias Firmowid.Billing.PlanLimits
   alias Firmowid.Blobs.Blob
   alias Firmowid.Checks.ActorRole
   alias Firmowid.Checks.SystemActorRole
@@ -180,6 +181,17 @@ defmodule Firmowid.Core.Organization do
     update :update_billing_plan do
       description "Update the billing plan assigned to an organization."
       accept [:billing_plan]
+      require_atomic? false
+
+      # A higher plan brings back what the lower one switched off.
+      change after_action(fn changeset, organization, _context ->
+               PlanLimits.plan_changed(organization, changeset.data.billing_plan)
+             end)
+    end
+
+    update :update_plan_limit_decision do
+      description "Record when admins must decide about usage above the plan limits, or that it fits the plan again."
+      accept [:plan_limit_decision_on, :plan_limit_free_month_used_at]
     end
 
     update :update_avatar do
@@ -208,6 +220,13 @@ defmodule Firmowid.Core.Organization do
 
     bypass {SystemActorRole, roles: [:billing_snapshotter, :cross_tenant_reader, :ksef_session]} do
       authorize_if action_type(:read)
+    end
+
+    bypass [
+      {SystemActorRole, roles: [:plan_limits]},
+      action([:read, :update_plan_limit_decision])
+    ] do
+      authorize_if expr(id == ^actor(:org_id))
     end
 
     # Reads the industry whose categories the classifier chooses from.
@@ -300,6 +319,15 @@ defmodule Firmowid.Core.Organization do
       allow_nil?: false,
       default: :free,
       constraints: [one_of: PlanCatalog.plans()]
+
+    attribute :plan_limit_decision_on, :date,
+      public?: true,
+      description:
+        "The day from which admins must buy a higher plan or choose what stays switched on; nil while usage fits the plan."
+
+    attribute :plan_limit_free_month_used_at, :utc_datetime_usec,
+      public?: true,
+      description: "When usage first went above a plan limit, which postponed the decision to the next month, once."
 
     attribute :vat_exemption_type, :atom,
       public?: true,

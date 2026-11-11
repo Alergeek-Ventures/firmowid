@@ -490,7 +490,8 @@ defmodule Firmowid.Core.User do
                       :billing_snapshotter,
                       :leave_notifier,
                       :hours_record_change_notifier,
-                      :employment_contract_notifier
+                      :employment_contract_notifier,
+                      :plan_limits
                     ]}
     end
 
@@ -498,6 +499,22 @@ defmodule Firmowid.Core.User do
     bypass [{SystemActorRole, roles: [:presence_reader]}, action(:list)] do
       authorize_if expr(
                      not is_nil(^actor(:org_id)) and
+                       exists(member, organization_id == ^actor(:org_id))
+                   )
+    end
+
+    # Keeping an organization within its plan archives its members, which reads
+    # their accounts and revokes their access to that organization only.
+    bypass [{SystemActorRole, roles: [:plan_limits]}, action(:read)] do
+      authorize_if expr(
+                     not is_nil(^actor(:org_id)) and
+                       exists(member, organization_id == ^actor(:org_id))
+                   )
+    end
+
+    bypass [{SystemActorRole, roles: [:plan_limits]}, action(:leave_organization)] do
+      authorize_if expr(
+                     not is_nil(^actor(:org_id)) and ^arg(:organization_id) == ^actor(:org_id) and
                        exists(member, organization_id == ^actor(:org_id))
                    )
     end

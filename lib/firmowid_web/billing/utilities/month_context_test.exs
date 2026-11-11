@@ -38,6 +38,7 @@ defmodule FirmowidWeb.Billing.Utilities.MonthContextTest do
             billing_plan: :firma,
             manual_external_invoices_count: 17,
             synced_bank_accounts_count: 5,
+            synced_bank_institutions_count: 2,
             active_non_owner_users_count: 3,
             frozen_at: ~U[2026-04-02 09:30:00Z]
           },
@@ -58,7 +59,7 @@ defmodule FirmowidWeb.Billing.Utilities.MonthContextTest do
       assert context.status == %{kind: :snapshot, frozen_at: snapshot.frozen_at}
       assert context.usage_source.id == snapshot.id
       assert context.worksheet.selected_plan == :firma
-      assert usage_row(context.worksheet, :synced_bank_accounts).count == 5
+      assert usage_row(context.worksheet, :bank_institutions).count == 2
     end
   end
 

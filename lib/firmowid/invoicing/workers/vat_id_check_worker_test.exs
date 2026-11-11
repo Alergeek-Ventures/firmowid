@@ -4,6 +4,7 @@ defmodule Firmowid.Invoicing.Workers.VatIdCheckWorkerTest do
 
   import Firmowid.AccountsFixtures
 
+  alias Firmowid.Core
   alias Firmowid.Invoicing
   alias Firmowid.Invoicing.Counterparty
   alias Firmowid.Invoicing.Workers.VatIdCheckWorker
@@ -48,7 +49,8 @@ defmodule Firmowid.Invoicing.Workers.VatIdCheckWorkerTest do
              polish.id => nil
            }
 
-    inbox_ids = scope |> Queue.attention_items() |> Enum.map(& &1.id)
+    organization = Core.get_organization!(org_id, scope: scope)
+    inbox_ids = scope |> Queue.attention_items(organization) |> Enum.map(& &1.id)
     assert "vat-id-#{org_number_only.id}" in inbox_ids
     assert "vat-id-#{inactive.id}" in inbox_ids
     refute "vat-id-#{active.id}" in inbox_ids

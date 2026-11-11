@@ -18,9 +18,9 @@ defmodule Firmowid.Core.Member do
   """
   use Ash.Resource,
     domain: Firmowid.Core,
-    data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer],
-    simple_notifiers: [Firmowid.Core.Member.Notifiers.DisconnectLiveSessions]
+    simple_notifiers: [Firmowid.Core.Member.Notifiers.DisconnectLiveSessions],
+    fragments: [Firmowid.Core.Member.Persistence]
 
   alias Firmowid.Checks.OrganizationAdmin
   alias Firmowid.Checks.SystemActorRole
@@ -32,16 +32,6 @@ defmodule Firmowid.Core.Member do
   alias Firmowid.Resource
 
   require Resource
-
-  postgres do
-    table "members"
-    repo Firmowid.Repo
-
-    references do
-      reference :user, on_delete: :delete
-      reference :avatar_blob, on_delete: :nilify
-    end
-  end
 
   # The name, avatar and profile details carry the readers they had on the account:
   # the person, an organization admin, a superuser and the system actors that read
@@ -131,8 +121,9 @@ defmodule Firmowid.Core.Member do
       accept [:user_id, :role, :name]
       upsert? true
       upsert_identity :unique_user
-      upsert_fields [:role, :archived_at]
+      upsert_fields [:role, :archived_at, :suspended_by_plan_at]
       change set_attribute(:archived_at, nil)
+      change set_attribute(:suspended_by_plan_at, nil)
     end
 
     read :active do
@@ -211,6 +202,10 @@ defmodule Firmowid.Core.Member do
       accept []
       require_atomic? false
 
+      argument :by_plan?, :boolean,
+        default: false,
+        description: "Whether the plan limit switches the member off, so a higher plan brings them back."
+
       validate Firmowid.Core.Validations.NotSelfArchive
 
       # Only an active member is archived: the stored row must still be active, so
@@ -218,6 +213,9 @@ defmodule Firmowid.Core.Member do
       # the organization it works in now.
       change filter(expr(is_nil(archived_at)))
       change set_attribute(:archived_at, &Date.utc_today/0)
+
+      change set_attribute(:suspended_by_plan_at, &DateTime.utc_now/0),
+        where: [argument_equals(:by_plan?, true)]
 
       change after_action(fn _changeset, member, context ->
                opts = Ash.Context.to_opts(context)
@@ -236,6 +234,7 @@ defmodule Firmowid.Core.Member do
 
       change filter(expr(not is_nil(archived_at)))
       change set_attribute(:archived_at, nil)
+      change set_attribute(:suspended_by_plan_at, nil)
     end
   end
 
@@ -271,6 +270,7 @@ defmodule Firmowid.Core.Member do
                       :analysis_reader,
                       :ksef_digest,
                       :billing_snapshotter,
+                      :plan_limits,
                       :leave_notifier,
                       :hours_record_change_notifier,
                       :document_blob_processor,
@@ -302,6 +302,7 @@ defmodule Firmowid.Core.Member do
     policy action([:archive, :unarchive]) do
       forbid_if expr(organization.owner_id == user_id)
       authorize_if OrganizationAdmin
+      authorize_if expr(^actor(:role) == :plan_limits and organization_id == ^actor(:org_id))
     end
   end
 
@@ -320,6 +321,10 @@ defmodule Firmowid.Core.Member do
       default: :employee
 
     attribute :archived_at, :date, public?: true
+
+    attribute :suspended_by_plan_at, :utc_datetime_usec,
+      public?: true,
+      description: "When the plan limit archived the member; a higher plan restores them."
 
     attribute :name, :string, public?: true
     attribute :avatar_blob_id, :uuid, public?: true

@@ -37,7 +37,11 @@ defmodule Firmowid.Billing.SnapshotCalculator do
       # modeling effective-dated subscription history.
       billing_plan: organization.billing_plan,
       manual_external_invoices_count: manual_external_invoices_count(scope, inserted_from, inserted_to),
-      synced_bank_accounts_count: synced_bank_accounts_count(scope),
+      synced_bank_accounts_count: scope |> synced_bank_accounts_query() |> Ash.count!(scope: scope),
+      synced_bank_institutions_count:
+        scope
+        |> synced_bank_institution_accounts_query()
+        |> Ash.count!(field: :institution_id, uniq?: true, scope: scope),
       active_non_owner_users_count: active_non_owner_users_count(scope, organization.owner_id),
       active_projects_count: active_projects_count(scope),
       frozen_at: DateTime.utc_now()
@@ -99,11 +103,23 @@ defmodule Firmowid.Billing.SnapshotCalculator do
     |> Ash.count!(scope: scope)
   end
 
-  defp synced_bank_accounts_count(scope) do
+  # Accounts the plan limit paused do not count; manually added ones never do.
+  defp synced_bank_accounts_query(scope) do
     %{}
     |> Finances.query_to_list_bank_accounts(scope: scope)
-    |> Ash.Query.filter(not is_nil(gocardless_id))
-    |> Ash.count!(scope: scope)
+    |> Ash.Query.filter(not is_nil(gocardless_id) and is_nil(suspended_by_plan_at))
+  end
+
+  @doc """
+  Returns the query of the accounts that make up the synchronized banks the
+  plans limit: synchronized through GoCardless, not paused by the plan limit and
+  of a known bank (`institution_id`).
+  """
+  @spec synced_bank_institution_accounts_query(Scope.t()) :: Ash.Query.t()
+  def synced_bank_institution_accounts_query(scope) do
+    scope
+    |> synced_bank_accounts_query()
+    |> Ash.Query.filter(not is_nil(institution_id))
   end
 
   defp active_non_owner_users_count(scope, owner_id) do
