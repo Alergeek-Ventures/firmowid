@@ -45,6 +45,7 @@ Firmowid to aplikacja webowa dla firm, prowadzona przez Alergeek Ventures sp. z 
 - [Faktura dla firmy z UE w KSeF: np II i odwrotne obciążenie](https://firmowid.pl/poradnik/faktura-dla-firmy-z-ue-ksef): Stawka np II, adnotacja odwrotne obciążenie, VAT-UE, informacja podsumowująca i faktura w euro.
 - [Firma usługowa założona w 2027 r.: od pierwszej faktury w KSeF](https://firmowid.pl/poradnik/firma-uslugowa-2027): Co obowiązuje nową firmę od pierwszego dnia: faktury dla firm, osób prywatnych i klientów z zagranicy, numer KSeF w przelewie.
 - [Revolut i Wise w programie do faktur z KSeF](https://firmowid.pl/poradnik/revolut-wise-program-do-faktur): Połączenie kont Revolut i Wise przez Open Banking, faktury w 33 walutach i domyślne konto dla każdej waluty.
+- [Faktura za godziny pracy: jak liczymy czas projektów i wystawiamy fakturę w KSeF](https://firmowid.pl/poradnik/fakturowanie-za-godziny-czas-pracy): Licznik czasu w projekcie, raport godzin dla klienta i szkic faktury od asystenta albo Claude przez MCP, wysyłany do KSeF po potwierdzeniu.
 - [KSeF w banku, aplikacja Ministerstwa Finansów czy program do faktur?](https://firmowid.pl/poradnik/ksef-w-banku-aplikacja-mf-czy-program): Porównanie narzędzi MF, modułów KSeF w Pekao i PKO oraz programu do faktur.
 - [Alternatywa dla Fakturowni za darmo](https://firmowid.pl/poradnik/alternatywa-dla-fakturowni): Plan Micro Fakturowni i 10 darmowych alternatyw z KSeF w tabeli, ceny sprawdzone 11.11.2026.
 
