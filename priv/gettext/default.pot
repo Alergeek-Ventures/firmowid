@@ -12997,11 +12997,6 @@ msgstr ""
 msgid "Voluntary sickness insurance"
 msgstr ""
 
-#: lib/firmowid_web/timetracker/views/index.ex
-#, elixir-autogen, elixir-format
-msgid "WEEK %{start}-%{end}"
-msgstr ""
-
 #: lib/firmowid_web/assistant/utilities/presentation.ex
 #, elixir-autogen, elixir-format
 msgid "Wait for KSeF"

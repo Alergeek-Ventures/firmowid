@@ -4,8 +4,6 @@ defmodule FirmowidWeb.Timetracker.Utilities.GroupedSessionForm do
 
   import Ecto.Changeset
 
-  alias FirmowidWeb.Timetracker.Utilities.SessionForm
-
   @primary_key false
   embedded_schema do
     field :title, :string
@@ -61,20 +59,5 @@ defmodule FirmowidWeb.Timetracker.Utilities.GroupedSessionForm do
           }
         end)
     })
-  end
-
-  def from_changesets(changesets, %{start_end_times: start_end_times} = form, timezone) do
-    Enum.map(changesets, fn changeset ->
-      {start_datetime, end_datetime} =
-        start_end_times
-        |> Enum.find(fn s -> s.id == changeset.data.id end)
-        |> SessionForm.times_to_datetimes(timezone)
-
-      changeset
-      |> put_change(:title, form.title)
-      |> put_change(:project_id, form.project_id)
-      |> put_change(:start_datetime, start_datetime)
-      |> put_change(:end_datetime, end_datetime)
-    end)
   end
 end

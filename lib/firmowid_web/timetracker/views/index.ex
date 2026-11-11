@@ -599,10 +599,7 @@ defmodule FirmowidWeb.Timetracker.Views.Index do
     current_session = socket.assigns.current_session
 
     case Session.stop(current_session, scope: scope) do
-      {:ok, ended_session} ->
-        duration_seconds = DateTime.diff(ended_session.end_datetime, ended_session.start_datetime)
-        _duration_minutes = div(duration_seconds, 60)
-
+      {:ok, _ended_session} ->
         {:noreply,
          socket
          |> assign(is_form_extended: false)
@@ -682,22 +679,6 @@ defmodule FirmowidWeb.Timetracker.Views.Index do
     )
   end
 
-  def format_week_header(%Date{} = date) do
-    week_start = Date.beginning_of_week(date)
-    week_end = Date.end_of_week(date)
-
-    week_start_str =
-      if week_start.month == week_end.month do
-        Calendar.strftime(week_start, "%d")
-      else
-        Calendar.strftime(week_start, "%d.%m")
-      end
-
-    week_end_str = Calendar.strftime(week_end, "%d.%m.%Y")
-
-    gettext("WEEK %{start}-%{end}", start: week_start_str, end: week_end_str)
-  end
-
   # A form field that casts to its current value stays out of the changeset's
   # changes, so the form returns the raw "HH:MM" param instead of a %Time{}.
   def format_time(time) when is_binary(time), do: time
@@ -725,7 +706,6 @@ defmodule FirmowidWeb.Timetracker.Views.Index do
 
     hours = div(total_seconds, 60 * 60)
     minutes = rem(div(total_seconds, 60), 60)
-    percentage = round(total_seconds / (160 * 3600) * 100)
 
     current_month = month_name_after_in(now.month)
 
@@ -741,8 +721,6 @@ defmodule FirmowidWeb.Timetracker.Views.Index do
     |> assign(:month_stats, %{
       hours: hours,
       minutes: minutes,
-      elapsed: DateTime.shift(now, second: -total_seconds),
-      percentage: percentage,
       month: current_month
     })
     |> assign(:is_hours_record_submitted, hours_record != nil)
