@@ -161,16 +161,6 @@ defmodule Firmowid.Timetracker.LeaveRequest do
 
       # TODO: Determine category based on employment contract
 
-      validate one_of(:reason, [:sick, :vacation, :unpaid]) do
-        where [attribute_equals(:category, :leave)]
-        message gettext_noop("is not valid for this leave category")
-      end
-
-      validate one_of(:reason, [:indisposition, :rest, :other]) do
-        where [attribute_equals(:category, :absence)]
-        message gettext_noop("is not valid for this absence category")
-      end
-
       validate compare(:starts_on, greater_than_or_equal_to: &Date.utc_today/0) do
         message gettext_noop("must be today or later")
       end
@@ -221,16 +211,6 @@ defmodule Firmowid.Timetracker.LeaveRequest do
           {:error, error} ->
             Ash.Changeset.add_error(changeset, error)
         end
-      end
-
-      validate one_of(:reason, [:sick, :vacation, :unpaid]) do
-        where [attribute_equals(:category, :leave)]
-        message gettext_noop("is not valid for this leave category")
-      end
-
-      validate one_of(:reason, [:indisposition, :rest, :other]) do
-        where [attribute_equals(:category, :absence)]
-        message gettext_noop("is not valid for this absence category")
       end
 
       validate compare(:starts_on, greater_than_or_equal_to: &Date.utc_today/0) do
