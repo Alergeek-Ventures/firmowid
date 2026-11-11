@@ -27,7 +27,6 @@ defmodule Firmowid.Timetracker.Session do
   alias Firmowid.Timetracker.HoursRecord
   alias Firmowid.Timetracker.Project
   alias Firmowid.Timetracker.Session.Calculations
-  alias Firmowid.Timetracker.Session.Overlap
   alias Firmowid.Timetracker.Validations.ProjectAccess
   alias Firmowid.Timetracker.Validations.SessionMonthBoundaries
   alias Firmowid.Timetracker.Workers.StopSessionWorker
@@ -371,26 +370,21 @@ defmodule Firmowid.Timetracker.Session do
       description """
       Find sessions that overlap with a given time range for a member.
 
-      Used for pre-save conflict detection. See `Session.Overlap.filter/3` for the
-      overlap predicate that mirrors the DB trigger.
+      Used for pre-save conflict detection. Mirrors the DB trigger: a missing
+      end, of either range, extends it to infinity.
       """
 
       argument :member_id, :uuid, allow_nil?: false
       argument :start_datetime, :utc_datetime, allow_nil?: false
       argument :end_datetime, :utc_datetime
-      argument :exclude_id, :uuid
 
       prepare build(sort: [start_datetime: :asc], load: [:lockdown])
 
       filter expr(member_id == ^arg(:member_id))
+      filter expr(is_nil(end_datetime) or end_datetime > ^arg(:start_datetime))
 
-      prepare fn query, _context ->
-        exclude_id = Ash.Query.get_argument(query, :exclude_id)
-        new_end = Ash.Query.get_argument(query, :end_datetime)
-
-        query
-        |> Overlap.maybe_exclude_id(exclude_id)
-        |> Overlap.filter(Ash.Query.get_argument(query, :start_datetime), new_end)
+      prepare build(filter: expr(start_datetime < ^arg(:end_datetime))) do
+        where present(:end_datetime)
       end
     end
 
