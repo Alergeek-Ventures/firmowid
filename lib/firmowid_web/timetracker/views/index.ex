@@ -309,7 +309,7 @@ defmodule FirmowidWeb.Timetracker.Views.Index do
     attrs = normalize_session_attrs(attrs)
 
     # The overlap plan must use the exact boundaries persisted by Session.
-    {new_start, new_end} = effective_time_range(attrs)
+    %{start_datetime: new_start, end_datetime: new_end} = attrs
 
     case Session.list_overlapping(member_id, new_start, %{end_datetime: new_end}, scope: scope) do
       {:ok, []} ->
@@ -352,12 +352,6 @@ defmodule FirmowidWeb.Timetracker.Views.Index do
     end
   end
 
-  defp effective_time_range(attrs) do
-    start_dt = attrs[:start_datetime]
-    end_dt = attrs[:end_datetime]
-    {start_dt, end_dt}
-  end
-
   defp normalize_session_attrs(attrs) do
     attrs
     |> Map.put_new_lazy(:start_datetime, fn -> DateTime.utc_now() end)
@@ -369,7 +363,7 @@ defmodule FirmowidWeb.Timetracker.Views.Index do
     scope = socket.assigns.ash_scope
     socket = assign(socket, is_form_extended: false)
 
-    result = create_session(attrs, scope)
+    result = OverlapResolver.create_session(attrs, scope)
 
     handle_new_session_save_result(result, socket)
   end
@@ -381,14 +375,6 @@ defmodule FirmowidWeb.Timetracker.Views.Index do
   end
 
   defp handle_new_session_save_result(result, socket), do: handle_session_save_result(result, socket)
-
-  defp create_session(attrs, scope) do
-    OverlapResolver.create_session(attrs, scope)
-  end
-
-  def validate_and_update(params, socket) do
-    edit_session(params, socket)
-  end
 
   defp ash_update_sessions(session_updates, socket) do
     scope = socket.assigns.ash_scope
@@ -543,7 +529,7 @@ defmodule FirmowidWeb.Timetracker.Views.Index do
   end
 
   def handle_event("validate_and_update", %{"session_form" => form_params}, socket) do
-    validate_and_update(form_params, socket)
+    edit_session(form_params, socket)
   end
 
   def handle_event("save", %{"session_form" => session}, socket) do
