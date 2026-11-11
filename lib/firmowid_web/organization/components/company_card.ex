@@ -160,6 +160,9 @@ defmodule FirmowidWeb.Organization.Components.CompanyCard do
   attr :pressed, :boolean, default: false, doc: "animates the stamp being pressed onto the card"
   attr :class, :any, default: nil
 
+  # sobelow_skip ["XSS.Raw"]
+  # The raw markup is one of the SVG paths in the module's @icons constant, picked by
+  # an icon atom the attr restricts to that list; no user input reaches it.
   def stamp(assigns) do
     assigns =
       assigns

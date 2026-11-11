@@ -610,7 +610,8 @@ defmodule FirmowidWeb.Organization.Views.FirstSteps do
              "download_ksef_auth_token_request",
              "validate_signed_auth_token_request",
              "upload_signed_auth_token_request",
-             "save_ksef_certificate"
+             "save_ksef_certificate",
+             "disconnect_ksef"
            ] do
     Connection.handle_event(event, params, socket, socket.assigns.ash_scope)
   end
