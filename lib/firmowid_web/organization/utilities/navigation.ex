@@ -21,6 +21,13 @@ defmodule FirmowidWeb.Organization.Utilities.Navigation do
   def first_steps_path(nil), do: ~p"/pierwsze-kroki"
   def first_steps_path(step), do: ~p"/pierwsze-kroki?#{[krok: step]}"
 
+  @doc """
+  Where the admin of a company still before its first steps is led: they confirm
+  the company's details and industry, then go on to the first steps.
+  """
+  @spec setup_path() :: String.t()
+  def setup_path, do: onboarding_path(:firma)
+
   @doc "The `cel` value of the organization switch that continues with the first steps."
   @spec first_steps_target() :: String.t()
   def first_steps_target, do: "pierwsze-kroki"

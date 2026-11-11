@@ -142,7 +142,7 @@ defmodule FirmowidWeb.Infrastructure.UserAuth do
                ~p"/organizacja/przelacz"
              ] do
           conn
-          |> redirect(to: OrganizationNavigation.first_steps_path())
+          |> redirect(to: OrganizationNavigation.setup_path())
           |> halt()
         else
           conn
@@ -156,9 +156,9 @@ defmodule FirmowidWeb.Infrastructure.UserAuth do
   end
 
   @doc """
-  Whether the admin of a just created company still has its first steps ahead;
-  every page leads them back there until they finish. Other members are not
-  sent there, since the first steps are the admin's.
+  Whether the admin of a company still has its setup ahead, a new company or one
+  that existed before the setup; every page leads them back to it until they
+  finish. Other members are not sent there, since the setup is the admin's.
   """
   @spec first_steps_pending?(User.t(), Organization.t()) :: boolean()
   def first_steps_pending?(%User{member: %Member{role: :admin}}, %Organization{onboarding_completed_at: nil}), do: true
@@ -247,7 +247,7 @@ defmodule FirmowidWeb.Infrastructure.UserAuth do
   def signed_in_path_for_user(%User{} = user, organization_id) do
     case Core.load_member(user, organization_id).member do
       %{role: :admin, organization: %{onboarding_completed_at: nil}} ->
-        OrganizationNavigation.first_steps_path()
+        OrganizationNavigation.setup_path()
 
       %{role: role} when role in [:invoicing, :accountant, :admin] ->
         ~p"/fakturowanie"
