@@ -459,7 +459,7 @@ defmodule FirmowidWeb.Assistant.Utilities.Presentation do
       calls
       |> Enum.flat_map(fn
         {_call, {:ok, references}, _changes} -> references
-        {_call, :error, _changes} -> []
+        {_call, _unavailable, _changes} -> []
       end)
       |> Enum.uniq()
 
@@ -471,11 +471,20 @@ defmodule FirmowidWeb.Assistant.Utilities.Presentation do
           id: call.id,
           label: tool_label(call.name),
           records: preview_records(references, records),
-          changes: changes
+          changes: changes,
+          unchanged?: references == :unchanged
         }
       end)
 
-    %{available?: Enum.all?(previews, &Enum.all?(&1.records)), calls: previews}
+    unchanged? = Enum.any?(previews, & &1.unchanged?)
+    readable? = Enum.all?(previews, &Enum.all?(&1.records))
+
+    %{
+      available?: readable? and not unchanged?,
+      readable?: readable?,
+      unchanged?: unchanged?,
+      calls: previews
+    }
   end
 
   # Writes that change fields show them before and after; links show only the linked records.
@@ -483,7 +492,7 @@ defmodule FirmowidWeb.Assistant.Utilities.Presentation do
     if Changes.covers?(call.name) do
       case Changes.preview(call, scope) do
         {:ok, references, changes} -> {call, {:ok, references}, changes}
-        :error -> {call, :error, []}
+        failure -> {call, failure, []}
       end
     else
       {call, references(call), []}
@@ -493,6 +502,7 @@ defmodule FirmowidWeb.Assistant.Utilities.Presentation do
   defp preview_records({:ok, references}, records), do: Enum.map(references, &Map.get(records, &1))
 
   defp preview_records(:error, _records), do: [nil]
+  defp preview_records(:unchanged, _records), do: []
 
   defp references(%{name: name, arguments: %{"id" => id, "input" => %{"transaction_ids" => ids}}})
        when name in @sales_tools and is_list(ids) do
