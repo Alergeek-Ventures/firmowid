@@ -113,8 +113,12 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
         description: description,
         latest_invoice_snapshot: latest_invoice_snapshot,
         buyer_vat_number_rejected?: not cancelled? and EuVatReview.number_rejected?(latest_invoice_snapshot),
-        # A cancelled invoice needs no more action on its buyer number.
-        buyer_vat_problem: if(not cancelled?, do: buyer_vat_problem(latest_invoice_snapshot, assigns.scope)),
+        # Only issued invoices that are not cancelled need action on their buyer number;
+        # a draft (no number yet) with a broken number is stopped when it is issued.
+        buyer_vat_problem:
+          if(invoice.invoice_number && not cancelled?,
+            do: buyer_vat_problem(latest_invoice_snapshot, assigns.scope)
+          ),
         invoices_for_preview: Enum.reverse([invoice | invoice.corrections]),
         internal_notes: internal_notes,
         cancelled?: cancelled?,
