@@ -18,7 +18,8 @@ defmodule Firmowid.Invoicing.Counterparty do
   use Ash.Resource,
     domain: Firmowid.Invoicing,
     data_layer: AshPostgres.DataLayer,
-    authorizers: [Ash.Policy.Authorizer]
+    authorizers: [Ash.Policy.Authorizer],
+    notifiers: [Ash.Notifier.PubSub]
 
   use Gettext, backend: Firmowid.Gettext
 
@@ -26,6 +27,7 @@ defmodule Firmowid.Invoicing.Counterparty do
   alias Firmowid.Checks.AtLeastRole
   alias Firmowid.Checks.SystemActorRole
   alias Firmowid.Invoicing.Changes.ClearIrrelevantBuyerFields
+  alias Firmowid.Invoicing.Changes.EnqueueVatIdCheck
   alias Firmowid.Invoicing.Changes.NormalizeBlankCounterpartyFields
   alias Firmowid.Invoicing.Changes.NormalizeCounterpartyTaxId
   alias Firmowid.Invoicing.Changes.ValidateCountryCode
@@ -164,6 +166,7 @@ defmodule Firmowid.Invoicing.Counterparty do
               ]}
 
       change NormalizeCounterpartyTaxId
+      change EnqueueVatIdCheck
 
       validate {ValidateTaxId, id_field: :tax_id, country_field: :country, pesel_field: :pesel, type_field: :type}
 
@@ -218,6 +221,10 @@ defmodule Firmowid.Invoicing.Counterparty do
       end
 
       change set_attribute(:vat_id_checked_at, nil) do
+        where any([changing(:tax_id), changing(:country)])
+      end
+
+      change EnqueueVatIdCheck do
         where any([changing(:tax_id), changing(:country)])
       end
 
@@ -282,6 +289,13 @@ defmodule Firmowid.Invoicing.Counterparty do
     ] do
       authorize_if always()
     end
+  end
+
+  pub_sub do
+    module FirmowidWeb.Core.Endpoint
+    prefix "counterparty"
+
+    publish :record_vat_id_check, ["vat_id_checked", :id]
   end
 
   multitenancy do
