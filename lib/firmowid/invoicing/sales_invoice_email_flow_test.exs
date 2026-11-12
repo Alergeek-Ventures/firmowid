@@ -13,6 +13,16 @@ defmodule Firmowid.Invoicing.SalesInvoiceEmailFlowTest do
   alias Firmowid.Scope
   alias Firmowid.SystemActor
 
+  defmodule KeyAlreadyUsedAdapter do
+    @moduledoc "Answers like Resend does when a key was already used with another payload."
+    use Swoosh.Adapter
+
+    @impl Swoosh.Adapter
+    def deliver(_email, _config) do
+      {:error, %Resend.Error{name: "invalid_idempotent_request", status_code: 409}}
+    end
+  end
+
   setup_all do
     configure_test_adapters()
   end
@@ -103,6 +113,33 @@ defmodule Firmowid.Invoicing.SalesInvoiceEmailFlowTest do
       assert :ok = perform_sales_invoice_email_job(build_sales_invoice_email_job(invoice, :basic))
       assert_received {:email, %{provider_options: %{idempotency_key: other_key}}}
       assert other_key != first_key
+    end
+
+    test "a retry that Resend answers with an idempotency conflict is recorded as sent" do
+      admin = admin_fixture()
+      processor_scope = processor_scope(admin.member.organization_id)
+      counterparty = valid_counterparty_fixture!(admin)
+
+      invoice =
+        sales_invoice_fixture!(admin, %{
+          counterparty_id: counterparty.id,
+          should_send_emails: true
+        })
+
+      mailer_config = Application.get_env(:firmowid, Firmowid.Mailer)
+      Application.put_env(:firmowid, Firmowid.Mailer, adapter: __MODULE__.KeyAlreadyUsedAdapter)
+      on_exit(fn -> Application.put_env(:firmowid, Firmowid.Mailer, mailer_config) end)
+
+      job = build_sales_invoice_email_job(invoice, :basic)
+
+      # On a first attempt no earlier one can have sent the email: an ordinary failure.
+      assert {:error, _reason} = perform_sales_invoice_email_job(%{job | attempt: 1})
+      assert [] == email_deliveries_for(invoice, processor_scope)
+
+      assert :ok = perform_sales_invoice_email_job(%{job | attempt: 2})
+
+      assert [%{status: :sent, error_message: nil}] =
+               email_deliveries_for(invoice, processor_scope)
     end
 
     test "a repeated dispatch does not enqueue a second job while the first one waits" do
