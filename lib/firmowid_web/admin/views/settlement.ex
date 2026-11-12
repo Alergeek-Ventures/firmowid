@@ -263,14 +263,15 @@ defmodule FirmowidWeb.Admin.Views.Settlement do
     end
   end
 
-  defp parse_month(nil), do: nil
-
-  defp parse_month(month) do
+  defp parse_month(month) when is_binary(month) do
     case Date.from_iso8601(month) do
       {:ok, parsed_month} -> Date.beginning_of_month(parsed_month)
       _ -> nil
     end
   end
+
+  # Absent, or not a single value (`?miesiac[]=`).
+  defp parse_month(_month), do: nil
 
   defp cast_plan(plan_param) when is_binary(plan_param) do
     case Enum.find(PlanCatalog.plans(), &(Atom.to_string(&1) == plan_param)) do
