@@ -111,27 +111,9 @@ defmodule FirmowidWeb.DesignSystem.Components.InvoicingBankBadge do
   end
 
   # sobelow_skip ["XSS.Raw"]
-  # This <img> tag is assembled from static badge metadata and local asset paths
-  # defined in this module, not from any user-controlled input.
-  defp render_logo(%{tag: :img, attrs: attrs, asset: asset_name}) do
-    Phoenix.HTML.raw(["<img", render_attrs(Keyword.put(attrs, :src, asset(asset_name))), ">"])
-  end
-
-  # sobelow_skip ["XSS.Raw"]
-  # SVG/logo nodes are rendered from a fixed, internal badge tree shipped with
-  # the app. Tags, attrs, and children do not come from request parameters.
-  defp render_logo(%{tag: tag, attrs: attrs, children: children}) do
-    Phoenix.HTML.raw([
-      "<",
-      Atom.to_string(tag),
-      render_attrs(attrs),
-      ">",
-      Enum.map(children, &render_logo_iodata/1),
-      "</",
-      Atom.to_string(tag),
-      ">"
-    ])
-  end
+  # The logo tree is fixed badge metadata shipped with the app (tags, attrs and
+  # local asset paths), not request input; attribute values are still escaped.
+  defp render_logo(logo), do: Phoenix.HTML.raw(render_logo_iodata(logo))
 
   defp render_logo_iodata(%{tag: :img, attrs: attrs, asset: asset_name}) do
     ["<img", render_attrs(Keyword.put(attrs, :src, asset(asset_name))), ">"]
