@@ -164,7 +164,6 @@ defmodule Firmowid.MixProject do
       {:ex_slop, "~> 0.4.0", only: [:dev, :test], runtime: false},
       {:ex_dna, "~> 1.5.1", only: [:dev, :test], runtime: false},
       {:cachex, "~> 4.0"},
-      {:resend, "~> 1.0.0-rc.3"},
       {:csv, "~> 3.2"},
       {:lucide_icons, "~> 2.0"},
       {:eqrcode, "~> 0.2.1"},

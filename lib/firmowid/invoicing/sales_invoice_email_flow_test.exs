@@ -19,7 +19,7 @@ defmodule Firmowid.Invoicing.SalesInvoiceEmailFlowTest do
 
     @impl Swoosh.Adapter
     def deliver(_email, _config) do
-      {:error, %Resend.Error{name: "invalid_idempotent_request", status_code: 409}}
+      {:error, {409, %{"statusCode" => 409, "name" => "invalid_idempotent_request", "message" => "Key reused."}}}
     end
   end
 
