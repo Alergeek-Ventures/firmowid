@@ -19,11 +19,11 @@ Stawka np II dotyczy usług rozliczanych według ogólnej zasady z art. 28b. Us�
 
 ## VAT-UE i informacja podsumowująca
 
-Zgodnie z art. 97 ust. 3 ustawy o VAT przed pierwszą taką usługą sprzedawca, także zwolniony podmiotowo, rejestruje się jako podatnik VAT-UE, a sprzedaż wykazuje potem w informacji podsumowującej, którą składa do 25. dnia miesiąca po miesiącu, w którym powstał obowiązek podatkowy, czyli zwykle po miesiącu wykonania usługi, a przy zaliczce po miesiącu jej otrzymania. Numer nabywcy sprawdza się w unijnej bazie VIES.
+Zgodnie z art. 97 ust. 3 ustawy o VAT przed pierwszą taką usługą, o ile w kraju nabywcy nie jest ona zwolniona ani opodatkowana stawką 0%, sprzedawca, także zwolniony podmiotowo, rejestruje się jako podatnik VAT-UE, a sprzedaż wykazuje potem w informacji podsumowującej, którą składa do 25. dnia miesiąca po miesiącu, w którym powstał obowiązek podatkowy, czyli zwykle po miesiącu wykonania usługi, a przy zaliczce po miesiącu jej otrzymania. Numer nabywcy sprawdza się w unijnej bazie VIES.
 
 ## Faktura w euro
 
-Fakturę można wystawić w euro, a do ewidencji kwotę przelicza się na złote według art. 31a ustawy, po średnim kursie NBP z ostatniego dnia roboczego przed powstaniem obowiązku podatkowego, a gdy faktura powstała wcześniej, przed dniem jej wystawienia.
+Fakturę można wystawić w euro, a do ewidencji VAT kwotę przelicza się na złote według art. 31a ustawy, po średnim kursie NBP z ostatniego dnia roboczego przed powstaniem obowiązku podatkowego, a gdy faktura powstała wcześniej, przed dniem jej wystawienia.
 
 W [Firmowidzie](/cennik), naszym programie, stawka np II ustawia się sama, kiedy klient z UE ma numer VAT-UE.
 
