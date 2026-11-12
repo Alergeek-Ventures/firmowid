@@ -25,6 +25,7 @@ defmodule Firmowid.Invoicing.Services.CorrectionReason do
           | :items_changed
           | :buyer_data
           | :payment_method
+          | :cash_accounting
           | :sale_date
           | :due_date
 
@@ -38,6 +39,7 @@ defmodule Firmowid.Invoicing.Services.CorrectionReason do
     items_changed: {"korekta pozycji na fakturze", "invoice items correction"},
     buyer_data: {"korekta danych nabywcy", "buyer data correction"},
     payment_method: {"korekta formy płatności", "payment method correction"},
+    cash_accounting: {"korekta metody kasowej", "cash accounting correction"},
     sale_date: {"korekta daty sprzedaży", "sale date correction"},
     due_date: {"korekta terminu płatności", "payment deadline correction"}
   }
@@ -91,6 +93,7 @@ defmodule Firmowid.Invoicing.Services.CorrectionReason do
       |> maybe_add_item_changes(invoice, reference)
       |> maybe_add(:buyer_data, buyer_data_changed?(invoice, reference))
       |> maybe_add(:payment_method, invoice.payment_method != reference.payment_method)
+      |> maybe_add(:cash_accounting, invoice.is_cash_account != reference.is_cash_account)
       |> maybe_add(:sale_date, invoice.sale_date != reference.sale_date)
       |> maybe_add(:due_date, invoice.due_date != reference.due_date)
       |> Enum.reverse()

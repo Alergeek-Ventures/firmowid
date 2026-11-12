@@ -966,7 +966,7 @@ defmodule Firmowid.Invoicing.SalesInvoiceTest do
       assert draft.payment_method == :transfer
       assert draft.is_cash_account == false
 
-      saved = update_sales_invoice!(user, draft, %{payment_method: :cash, is_cash_account: true})
+      saved = update_sales_invoice!(user, draft, %{payment_method: :cash})
 
       revised =
         update_sales_invoice!(user, saved, %{
@@ -977,7 +977,97 @@ defmodule Firmowid.Invoicing.SalesInvoiceTest do
 
       assert revised.buyer_full_name == "Other GmbH"
       assert revised.payment_method == :cash
-      assert revised.is_cash_account == true
+      assert revised.is_cash_account == false
+    end
+  end
+
+  describe "cash accounting" do
+    defp domestic_input(overrides) do
+      issue_input()
+      |> Map.merge(%{
+        invoice_type: :poland,
+        invoice_number: "FV/#{System.unique_integer([:positive])}",
+        currency: "PLN",
+        buyer_id: "1111111111",
+        buyer_full_name: "Acme Sp. z o.o.",
+        buyer_address: "ul. Prosta 1, 00-001 Warszawa",
+        buyer_country: "PL"
+      })
+      |> Map.merge(overrides)
+    end
+
+    test "KSeF states the chosen cash accounting whatever the payment method" do
+      user = invoicing_admin_fixture()
+      scope = scope_for(user)
+      InvoicingFixtures.connect_ksef!(scope.tenant)
+
+      # The second invoice turns off what the first one made the organization remember.
+      for {payment_method, cash_accounting?, p_16} <- [
+            {:transfer, true, "1"},
+            {:cash, false, "2"}
+          ] do
+        input =
+          domestic_input(%{payment_method: payment_method, is_cash_account: cash_accounting?})
+
+        issued =
+          Oban.Testing.with_testing_mode(:manual, fn ->
+            Invoicing.issue_sales_invoice!(%{input: input}, scope: scope)
+          end)
+
+        assert issued.is_cash_account == cash_accounting?
+        assert issued_invoice_xml(issued, scope) =~ "<P_16>#{p_16}</P_16>"
+      end
+    end
+
+    test "a new domestic invoice starts with the cash accounting the organization issued last" do
+      user = invoicing_admin_fixture()
+      scope = scope_for(user)
+      InvoicingFixtures.connect_ksef!(scope.tenant)
+
+      Oban.Testing.with_testing_mode(:manual, fn ->
+        Invoicing.issue_sales_invoice!(%{input: domestic_input(%{is_cash_account: true})},
+          scope: scope
+        )
+      end)
+
+      assert Invoicing.draft_sales_invoice!(%{input: domestic_input(%{})}, scope: scope).is_cash_account
+
+      # A foreign invoice never uses it, also when asked to.
+      refute Invoicing.draft_sales_invoice!(
+               %{input: Map.put(issue_input(), :is_cash_account, true)},
+               scope: scope
+             ).is_cash_account
+
+      # Turning it off on one invoice is a choice too, not a missing answer.
+      refute Invoicing.draft_sales_invoice!(%{input: domestic_input(%{is_cash_account: false})},
+               scope: scope
+             ).is_cash_account
+    end
+
+    test "an organization outside VAT never uses cash accounting" do
+      user = invoicing_admin_fixture()
+      scope = scope_for(user)
+
+      scope.tenant
+      |> Firmowid.Core.get_organization!(scope: scope)
+      |> Ash.Seed.update!(%{
+        is_vat_payer: false,
+        vat_exemption_type: :art_113,
+        is_cash_account: true
+      })
+
+      refute Invoicing.draft_sales_invoice!(%{input: domestic_input(%{is_cash_account: true})},
+               scope: scope
+             ).is_cash_account
+
+      # Issuing such an invoice leaves what the organization remembered from its VAT days.
+      InvoicingFixtures.connect_ksef!(scope.tenant)
+
+      Oban.Testing.with_testing_mode(:manual, fn ->
+        Invoicing.issue_sales_invoice!(%{input: domestic_input(%{})}, scope: scope)
+      end)
+
+      assert Firmowid.Core.get_organization!(scope.tenant, scope: scope).is_cash_account
     end
   end
 

@@ -775,6 +775,56 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.CreatorTest do
     assert Invoicing.list_wizard_states!(scope: scope) == []
   end
 
+  test "items step chooses cash accounting whatever the payment method", %{conn: conn} do
+    admin = admin_fixture()
+    scope = scope_for(admin)
+
+    admin.member.organization_id
+    |> Core.get_organization!(scope: scope)
+    |> Ash.Seed.update!(%{address: "ul. Organizacyjna 1, Warszawa"})
+
+    draft = items_step_draft!(admin)
+    conn = log_in_user(conn, admin)
+
+    {:ok, view, _html} = live(conn, ~p"/sprzedazowe?szkic_kreatora=#{draft.id}&krok=2")
+    assert has_element?(view, "#form_is_cash_account")
+    refute has_element?(view, "#form_is_cash_account[checked]")
+
+    view
+    |> form("#invoice-form", %{
+      "form" => %{
+        "currency" => "PLN",
+        "is_cash_account" => "true",
+        "items" => %{
+          "0" => %{
+            "index" => "0",
+            "name" => "Usługa",
+            "quantity" => "1",
+            "unit" => "szt.",
+            "unit_price" => "100",
+            "vat_rate" => "23"
+          }
+        }
+      }
+    })
+    |> render_submit()
+
+    assert_patch(view)
+
+    {:ok, wizard_state} =
+      WizardState.update_payment(
+        Invoicing.get_wizard_state!(draft.id, scope: scope),
+        %{sale_date: ~D[2026-02-01], due_date: ~D[2026-02-14], payment_method: :card},
+        scope: scope
+      )
+
+    {:ok, view, _html} = live(conn, "/sprzedazowe?krok=4&szkic_kreatora=#{wizard_state.id}")
+    view |> element("#invoice-review button[phx-click='save_as_draft']") |> render_click()
+
+    assert [%{payment_method: :card, is_cash_account: true}] =
+             Invoicing.list_sales_invoices!(scope: scope)
+  end
+
   test "choosing the advance kind saves an advance invoice dated by its payment", %{conn: conn} do
     admin = admin_fixture()
     scope = scope_for(admin)

@@ -37,6 +37,7 @@ defmodule Firmowid.Invoicing.SalesInvoice.Preview do
     :buyer_address,
     :buyer_country,
     :is_reverse_charge,
+    :is_cash_account,
     :vat_exemption_type,
     :vat_exemption_basis,
     :invoice_note,

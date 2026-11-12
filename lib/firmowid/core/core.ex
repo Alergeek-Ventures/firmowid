@@ -67,6 +67,11 @@ defmodule Firmowid.Core do
       define :update_organization_billing_plan, action: :update_billing_plan
       define :update_organization_plan_limit_decision, action: :update_plan_limit_decision
       define :update_organization_avatar, action: :update_avatar
+
+      define :remember_cash_accounting,
+        action: :remember_cash_accounting,
+        args: [:is_cash_account]
+
       define :list_organizations, action: :list
     end
 

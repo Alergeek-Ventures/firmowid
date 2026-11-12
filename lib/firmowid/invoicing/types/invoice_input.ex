@@ -22,7 +22,11 @@ defmodule Firmowid.Invoicing.Types.InvoiceInput do
           constraints: [one_of: [:cash, :card, :voucher, :check, :credit, :transfer, :mobile]]
         ],
         currency: [type: :string],
-        is_cash_account: [type: :boolean],
+        is_cash_account: [
+          type: :boolean,
+          description:
+            "Cash accounting of VAT (metoda kasowa). Leave null to use the organization's usual choice; set it only when the user asks."
+        ],
         is_reverse_charge: [type: :boolean],
         skip_invoicing: [type: :boolean],
         counterparty_id: [type: :uuid_v7],

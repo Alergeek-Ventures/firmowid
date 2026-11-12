@@ -5,7 +5,8 @@ defmodule Firmowid.Invoicing.Changes.PrepareInvoiceSeller do
   An unnumbered document is issued on the day it is prepared, so its issue date is always today in Poland.
   A saved draft's date is only the day it was saved and must not backdate its later issuance.
   A transfer without a seller account uses the organization's default bank account for the currency,
-  as the invoice creator does.
+  as the invoice creator does. A new domestic invoice that does not choose cash accounting starts with
+  the organization's last choice.
   """
   use Ash.Resource.Change
   use Gettext, backend: Firmowid.Gettext
@@ -37,6 +38,7 @@ defmodule Firmowid.Invoicing.Changes.PrepareInvoiceSeller do
         })
         |> Ash.Changeset.force_change_attribute(:issue_date, LocalDate.today())
         |> new_invoice_defaults()
+        |> default_cash_accounting(organization)
         |> default_if_nil(:vat_exemption_type, organization.vat_exemption_type)
         |> default_if_nil(:vat_exemption_basis, organization.vat_exemption_basis)
         |> default_seller_account(context)
@@ -53,6 +55,27 @@ defmodule Firmowid.Invoicing.Changes.PrepareInvoiceSeller do
   end
 
   defp new_invoice_defaults(changeset), do: changeset
+
+  # Cash accounting is a way of settling VAT on domestic sales: an organization outside VAT and
+  # a foreign invoice never use it. On a new invoice the attribute's own default (false) is not
+  # a choice, so it gives way to the organization's last one.
+  defp default_cash_accounting(changeset, organization) do
+    cond do
+      not organization.is_vat_payer or
+          Ash.Changeset.get_attribute(changeset, :invoice_type) != :poland ->
+        Ash.Changeset.force_change_attribute(changeset, :is_cash_account, false)
+
+      :is_cash_account in changeset.defaults ->
+        Ash.Changeset.force_change_attribute(
+          changeset,
+          :is_cash_account,
+          organization.is_cash_account
+        )
+
+      true ->
+        changeset
+    end
+  end
 
   defp default_seller_account(changeset, context) do
     currency = Ash.Changeset.get_attribute(changeset, :currency)

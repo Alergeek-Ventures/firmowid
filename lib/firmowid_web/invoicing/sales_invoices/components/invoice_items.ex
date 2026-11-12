@@ -312,6 +312,26 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
             disabled={@invoice.buyer_id_type == :nip}
           />
           <.switch
+            :if={@show_vat and @invoice.invoice_type == :poland}
+            field={@items_form[:is_cash_account]}
+            color="teal"
+            class="flex-row-reverse gap-2 text-sm text-grey-700"
+          >
+            <:label_slot>
+              {gettext("Cash accounting")}
+              <Lucideicons.info
+                id="cash-accounting-tooltip"
+                phx-hook="Tippy"
+                data-tippy-content={
+                  gettext(
+                    "With cash accounting, VAT is due when the buyer pays the invoice, not when it is issued."
+                  )
+                }
+                class="ml-0.5 size-4"
+              />
+            </:label_slot>
+          </.switch>
+          <.switch
             :if={@invoice.buyer_country != "PL"}
             field={@items_form[:is_reverse_charge]}
             color="teal"
