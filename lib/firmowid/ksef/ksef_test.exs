@@ -91,4 +91,23 @@ defmodule Firmowid.KsefTest do
 
     assert :ok = Credential.destroy(credential, scope: scope)
   end
+
+  test "the cross-tenant reader lists only the organizations connected to KSeF" do
+    organization_id = admin_fixture().member.organization_id
+
+    Ash.Seed.seed!(Credential, %{
+      organization_id: organization_id,
+      status: :working,
+      auth_type: :certificate,
+      credentials: "{}"
+    })
+
+    scope = %Scope{actor: %SystemActor{org_id: nil, role: :cross_tenant_reader}, tenant: nil}
+
+    assert {:ok, credentials} = Credential.all_organization_ids(scope: scope)
+    assert organization_id in Enum.map(credentials, & &1.organization_id)
+
+    assert {:ok, %{results: []}} =
+             Credential.refreshable_certificates(scope: scope, page: [limit: 1])
+  end
 end
