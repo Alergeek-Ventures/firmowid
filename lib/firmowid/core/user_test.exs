@@ -167,10 +167,14 @@ defmodule Firmowid.Core.UserTest do
 
   describe "closing the account" do
     test "its holder may delete it, a superuser working as the holder may not" do
-      user = user_fixture()
+      user = with_session_claims(user_fixture())
 
       as_superuser =
-        Ash.Resource.put_metadata(user, :token_claims, %{"impersonator_id" => Ash.UUID.generate()})
+        Ash.Resource.put_metadata(
+          user,
+          :token_claims,
+          Map.put(user.__metadata__.token_claims, "impersonator_id", Ash.UUID.generate())
+        )
 
       assert Ash.can?({user, :destroy}, user)
       refute Ash.can?({user, :destroy}, as_superuser)

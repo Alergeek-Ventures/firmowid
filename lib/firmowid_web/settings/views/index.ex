@@ -361,6 +361,14 @@ defmodule FirmowidWeb.Settings.Views.Index do
       :ok ->
         {:noreply, redirect(socket, to: ~p"/")}
 
+      # The sign-in grew stale while the page was open: reloading it shows the way to
+      # sign in again (see the User destroy policy).
+      {:error, %Ash.Error.Forbidden.Policy{}} ->
+        {:noreply,
+         socket
+         |> put_flash(:info, gettext("Log in again to close your account."))
+         |> push_navigate(to: Navigation.canonical_path(:account))}
+
       {:error, error} ->
         LiveToast.send_toast(:error, gettext("An error occurred while deleting the account"))
 

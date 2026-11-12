@@ -120,6 +120,17 @@ defmodule Firmowid.AccountsFixtures do
   end
 
   @doc """
+  The user as the app loads them from their session (see
+  `FirmowidWeb.Infrastructure.UserAuth.load_member/2`): with the claims of the session
+  token they registered with, so they count as just signed in.
+  """
+  @spec with_session_claims(User.t()) :: User.t()
+  def with_session_claims(%User{} = user) do
+    {:ok, claims} = AshAuthentication.Jwt.peek(user.__metadata__.token)
+    Ash.Resource.put_metadata(user, :token_claims, claims)
+  end
+
+  @doc """
   Intercepts a token from a sent email for use in confirmation / reset-password tests.
   The `fun` receives a URL-building function and should return `{:ok, email}`.
   """

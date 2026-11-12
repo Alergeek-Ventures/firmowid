@@ -57,7 +57,7 @@ defmodule Firmowid.Timetracker.ProjectTest do
       {:ok, project} = Project.create(%{name: "Project Cleanup"}, scope: scope)
 
       assert project.tag_definition_id
-      assert :ok = Core.destroy_user(admin, scope: scope)
+      assert :ok = Core.destroy_user(admin, scope: %{scope | actor: with_session_claims(admin)})
 
       refute Core.User
              |> Ash.Query.filter(id == ^admin.id)
@@ -85,7 +85,10 @@ defmodule Firmowid.Timetracker.ProjectTest do
 
       assert {:error, %Ash.Error.Unknown.UnknownError{error: "unknown error: :forced_rollback"}} =
                Ash.transact([Core.User, Core.Organization, Project, TagDefinition], fn ->
-                 assert :ok = Core.destroy_user_in_transaction(admin, scope: scope)
+                 assert :ok =
+                          Core.destroy_user_in_transaction(admin,
+                            scope: %{scope | actor: with_session_claims(admin)}
+                          )
 
                  Ash.DataLayer.rollback(Core.User, :forced_rollback)
                end)

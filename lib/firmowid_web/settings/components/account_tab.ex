@@ -9,6 +9,7 @@ defmodule FirmowidWeb.Settings.Components.AccountTab do
   import FirmowidWeb.DesignSystem.Components.CoreComponents, except: [button: 1]
   import FirmowidWeb.Settings.Components.Helpers, only: [settings_section: 1, detail_row: 1]
 
+  alias Firmowid.Core
   alias Firmowid.TimeFormatter
   alias FirmowidUI.Components.Inputs
   alias FirmowidWeb.Settings.Components.Helpers
@@ -443,7 +444,10 @@ defmodule FirmowidWeb.Settings.Components.AccountTab do
   defp account_closure_section(assigns) do
     assigns =
       assign(assigns,
-        can_close?: Ash.can?({assigns.current_user, :destroy}, assigns.current_user),
+        # A superuser working as the user never may; the holder only right after signing
+        # in (see the User destroy policy), so the modal otherwise leads to the sign-in.
+        can_close?: is_nil(Core.impersonator_id(assigns.current_user)),
+        recent_sign_in?: Ash.can?({assigns.current_user, :destroy}, assigns.current_user),
         closure_parts:
           split_bold(
             gettext("Are you sure you want to close your account? %{warning}",
@@ -491,12 +495,19 @@ defmodule FirmowidWeb.Settings.Components.AccountTab do
           <% end %>
         </p>
 
+        <p :if={not @recent_sign_in?} class="mt-3 text-sm text-grey-700">
+          {gettext(
+            "To protect your account, log in again before closing it. After logging in you will come back here."
+          )}
+        </p>
+
         <div class="mt-6 flex w-full flex-col-reverse gap-3 sm:flex-row sm:justify-end">
           <.button type="button" variant="tertiary" phx-click={hide_modal("confirm_modal")}>
             {gettext("Cancel")}
           </.button>
 
           <.button
+            :if={@recent_sign_in?}
             type="button"
             variant="destructive"
             phx-click="delete_account"
@@ -504,6 +515,18 @@ defmodule FirmowidWeb.Settings.Components.AccountTab do
           >
             {gettext("Close account")}
           </.button>
+
+          <.form
+            :if={not @recent_sign_in?}
+            for={%{}}
+            id="sign_in_again_form"
+            action={~p"/zaloguj-ponownie"}
+            method="post"
+          >
+            <.button type="submit" variant="destructive" class="w-full">
+              {gettext("Log in again")}
+            </.button>
+          </.form>
         </div>
       </.modal>
     </.settings_section>
