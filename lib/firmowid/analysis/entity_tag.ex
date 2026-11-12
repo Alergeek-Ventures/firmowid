@@ -73,9 +73,7 @@ defmodule Firmowid.Analysis.EntityTag do
       argument :shares, {:array, :map}, allow_nil?: false
 
       run fn input, context ->
-        scope = build_scope(context)
-
-        transaction(input.arguments.entity_type, input.arguments.resource_id, scope, fn ->
+        with_locked_entity(input.arguments, context, fn scope ->
           case list!(
                  %{
                    entity_type: input.arguments.entity_type,
@@ -154,29 +152,11 @@ defmodule Firmowid.Analysis.EntityTag do
         constraints: [one_of: [:company, :taxes, :internal]]
 
       run fn input, context ->
-        transaction(
-          input.arguments.entity_type,
-          input.arguments.resource_id,
-          build_scope(context),
-          fn ->
-            table = table_for_entity_type(input.arguments.entity_type)
-            scope = build_scope(context)
+        with_locked_entity(input.arguments, context, fn scope ->
+          clear_tags(input.arguments, scope)
 
-            clear_tags_for_resources(table, [input.arguments.resource_id], scope)
-
-            result =
-              tag!(
-                %{
-                  entity_type: input.arguments.entity_type,
-                  kind: input.arguments.kind,
-                  resource_id: input.arguments.resource_id
-                },
-                scope: scope
-              )
-
-            {:ok, [result]}
-          end
-        )
+          {:ok, [tag!(Map.take(input.arguments, [:entity_type, :resource_id, :kind]), scope: scope)]}
+        end)
       end
     end
 
@@ -198,32 +178,24 @@ defmodule Firmowid.Analysis.EntityTag do
       argument :tag_definition_ids, {:array, :uuid}, allow_nil?: false
 
       run fn input, context ->
-        transaction(
-          input.arguments.entity_type,
-          input.arguments.resource_id,
-          build_scope(context),
-          fn ->
-            table = table_for_entity_type(input.arguments.entity_type)
-            scope = build_scope(context)
+        with_locked_entity(input.arguments, context, fn scope ->
+          clear_tags(input.arguments, scope)
 
-            clear_tags_for_resources(table, [input.arguments.resource_id], scope)
+          tags =
+            Enum.map(input.arguments.tag_definition_ids, fn tag_def_id ->
+              tag!(
+                %{
+                  entity_type: input.arguments.entity_type,
+                  kind: :project,
+                  resource_id: input.arguments.resource_id,
+                  tag_definition_id: tag_def_id
+                },
+                scope: scope
+              )
+            end)
 
-            tags =
-              Enum.map(input.arguments.tag_definition_ids, fn tag_def_id ->
-                tag!(
-                  %{
-                    entity_type: input.arguments.entity_type,
-                    kind: :project,
-                    resource_id: input.arguments.resource_id,
-                    tag_definition_id: tag_def_id
-                  },
-                  scope: scope
-                )
-              end)
-
-            {:ok, tags}
-          end
-        )
+          {:ok, tags}
+        end)
       end
     end
 
@@ -237,17 +209,7 @@ defmodule Firmowid.Analysis.EntityTag do
       argument :resource_id, :uuid, allow_nil?: false
 
       run fn input, context ->
-        transaction(
-          input.arguments.entity_type,
-          input.arguments.resource_id,
-          build_scope(context),
-          fn ->
-            table = table_for_entity_type(input.arguments.entity_type)
-            scope = build_scope(context)
-            count = clear_tags_for_resources(table, [input.arguments.resource_id], scope)
-            {:ok, count}
-          end
-        )
+        with_locked_entity(input.arguments, context, &{:ok, clear_tags(input.arguments, &1)})
       end
     end
   end
@@ -262,14 +224,10 @@ defmodule Firmowid.Analysis.EntityTag do
   @spec table_for_entity_type(atom()) :: String.t()
   def table_for_entity_type(entity_type), do: Map.fetch!(@entity_type_tables, entity_type)
 
-  defp build_scope(context) do
-    %Scope{
-      actor: context.actor,
-      tenant: context.tenant
-    }
-  end
+  # Locks the tagged entity, so concurrent changes of its tags apply one after another.
+  defp with_locked_entity(%{entity_type: type, resource_id: id}, context, fun) do
+    scope = %Scope{actor: context.actor, tenant: context.tenant}
 
-  defp transaction(type, id, scope, fun) do
     resource =
       case type do
         :sales_invoice -> Firmowid.Invoicing.SalesInvoice
@@ -293,7 +251,7 @@ defmodule Firmowid.Analysis.EntityTag do
                  Firmowid.Finances.get_transaction!(id, scope: scope, query: query)
              end
 
-             fun.()
+             fun.(scope)
            end,
            nil,
            %{type: :custom, metadata: %{}},
@@ -304,14 +262,14 @@ defmodule Firmowid.Analysis.EntityTag do
     end
   end
 
-  @doc "Deletes all tags of the given resources from one tag table."
-  @spec clear_tags_for_resources(String.t(), [Ecto.UUID.t()], Scope.t()) ::
-          non_neg_integer()
-  def clear_tags_for_resources(table, resource_ids, scope) do
+  # Deletes all tags of an entity and returns their count.
+  defp clear_tags(%{entity_type: type, resource_id: id}, scope) do
+    table = table_for_entity_type(type)
+
     query =
       __MODULE__
       |> Ash.Query.set_context(%{data_layer: %{table: table}})
-      |> Ash.Query.filter(resource_id in ^resource_ids)
+      |> Ash.Query.filter(resource_id == ^id)
 
     result =
       __MODULE__.destroy(query, %{},
