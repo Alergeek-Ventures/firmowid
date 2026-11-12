@@ -1037,7 +1037,11 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
         scope: scope
       )
 
-    invoices = Enum.sort_by(cost_invoices ++ sales_invoices, & &1.effective_due_date, Date)
+    # Sorting by id first keeps invoices with the same due date in a stable order (sort_by is stable).
+    invoices =
+      (cost_invoices ++ sales_invoices)
+      |> Enum.sort_by(& &1.id)
+      |> Enum.sort_by(& &1.effective_due_date, Date)
 
     %{entries: Enum.take(invoices, @dashboard_tile_limit), total_count: length(invoices)}
   end
@@ -1050,7 +1054,7 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
           :signed_amount,
           :counterparty_display_name
         ],
-        query: [sort: [booking_date: :desc]],
+        query: [sort: [booking_date: :desc, id: :asc]],
         scope: scope
       )
 
