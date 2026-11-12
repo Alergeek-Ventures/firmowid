@@ -93,30 +93,17 @@ defmodule FirmowidUI.Components.Button do
     """
   end
 
-  defp resolved_accent(%{accent: nil, variant: "primary"}), do: "rust"
-  defp resolved_accent(%{accent: accent}), do: accent
-
   defp button_classes(%{variant: "unstyled", class: class}), do: class
 
-  defp button_classes(%{variant: "filter", class: class}) do
-    [
-      ButtonStyles.variant_classes("filter", nil),
-      class
-    ]
-  end
-
-  defp button_classes(%{variant: "icon", class: class}) do
-    [
-      ButtonStyles.variant_classes("icon", nil),
-      class
-    ]
+  defp button_classes(%{variant: variant, class: class}) when variant in ["filter", "icon"] do
+    [ButtonStyles.variant_classes(variant, nil), class]
   end
 
   defp button_classes(assigns) do
     [
       "phx-click-loading:cursor-default phx-click-loading:opacity-75 phx-submit-loading:opacity-75 inline-flex cursor-pointer items-center justify-center border whitespace-nowrap transition duration-100 ease-out select-none disabled:pointer-events-none disabled:cursor-default",
       ButtonStyles.size_classes(assigns.size),
-      ButtonStyles.variant_classes(assigns.variant, resolved_accent(assigns)),
+      ButtonStyles.variant_classes(assigns.variant, assigns.accent),
       assigns.class
     ]
   end
@@ -124,17 +111,14 @@ defmodule FirmowidUI.Components.Button do
   defp label_classes(%{variant: "unstyled", class: class}), do: class
 
   defp label_classes(%{variant: "filter", class: class}) do
-    [
-      ButtonStyles.variant_classes("filter", nil),
-      class
-    ]
+    [ButtonStyles.variant_classes("filter", nil), class]
   end
 
   defp label_classes(assigns) do
     [
       "phx-click-loading:cursor-default phx-click-loading:opacity-75 inline-flex cursor-pointer items-center justify-center border whitespace-nowrap transition duration-100 ease-out select-none",
       ButtonStyles.size_classes(assigns.size),
-      ButtonStyles.variant_classes(assigns.variant, resolved_accent(assigns)),
+      ButtonStyles.variant_classes(assigns.variant, assigns.accent),
       assigns.class
     ]
   end
