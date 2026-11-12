@@ -18,6 +18,9 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
   alias FirmowidWeb.Delegations.Utilities.SettlementPresentation
   alias Phoenix.HTML.Form
 
+  # Expense documents by category, then the related document and the statement of an expense.
+  @document_uploads [:transport, :accommodation, :other, :related_document, :statement_document]
+
   @impl true
   def mount(%{"reference" => reference}, _session, socket) do
     case load_delegation(reference, socket) do
@@ -309,48 +312,10 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
 
     delegation = decorate_delegation(delegation, sort_active?)
 
-    transport =
-      if delegation.status == :in_progress,
-        do:
-          allow_upload(socket, :transport,
-            accept: ~w(.pdf .png .jpg .jpeg),
-            max_entries: 1,
-            auto_upload: true,
-            progress: guard_upload_progress(&handle_upload_progress/3, :ash_scope)
-          )
-
-    socket = if transport, do: transport, else: socket
-
     socket =
-      if delegation.status == :in_progress do
-        socket
-        |> allow_upload(:accommodation,
-          accept: ~w(.pdf .png .jpg .jpeg),
-          max_entries: 1,
-          auto_upload: true,
-          progress: guard_upload_progress(&handle_upload_progress/3, :ash_scope)
-        )
-        |> allow_upload(:other,
-          accept: ~w(.pdf .png .jpg .jpeg),
-          max_entries: 1,
-          auto_upload: true,
-          progress: guard_upload_progress(&handle_upload_progress/3, :ash_scope)
-        )
-        |> allow_upload(:related_document,
-          accept: ~w(.pdf .png .jpg .jpeg),
-          max_entries: 1,
-          auto_upload: true,
-          progress: guard_upload_progress(&handle_related_upload_progress/3, :ash_scope)
-        )
-        |> allow_upload(:statement_document,
-          accept: ~w(.pdf .png .jpg .jpeg),
-          max_entries: 1,
-          auto_upload: true,
-          progress: guard_upload_progress(&handle_statement_upload_progress/3, :ash_scope)
-        )
-      else
-        socket
-      end
+      if delegation.status == :in_progress,
+        do: Enum.reduce(@document_uploads, socket, &allow_document_upload(&2, &1)),
+        else: socket
 
     socket
     |> assign(
@@ -371,6 +336,15 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
     |> assign_complete_form(complete_form)
     |> assign_new(:description_visible?, fn -> %{} end)
     |> assign_summary()
+  end
+
+  defp allow_document_upload(socket, name) do
+    allow_upload(socket, name,
+      accept: ~w(.pdf .png .jpg .jpeg),
+      max_entries: 1,
+      auto_upload: true,
+      progress: guard_upload_progress(&handle_upload_progress/3, :ash_scope)
+    )
   end
 
   defp load_delegation(reference, socket) do
@@ -574,110 +548,84 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
     )
   end
 
-  defp handle_upload_progress(_kind, %{done?: false}, socket), do: {:noreply, assign(socket, :uploading?, true)}
+  defp handle_upload_progress(_name, %{done?: false}, socket), do: {:noreply, assign(socket, :uploading?, true)}
 
-  defp handle_upload_progress(kind, entry, socket) do
-    socket =
-      case consume_uploaded_entry(socket, entry, fn %{path: path} ->
-             {:ok,
-              create_expense(
-                kind,
-                socket.assigns.delegation.id,
-                entry.client_name,
-                entry.client_type,
-                path,
-                socket.assigns.delegation.start_date,
-                socket.assigns.delegation.end_date,
-                socket.assigns.ash_scope
-              )}
-           end) do
-        {:ok, _expense} -> refresh_delegation(socket)
-        {:error, _reason} -> put_flash(socket, :error, gettext("Could not add the document."))
-      end
-
+  defp handle_upload_progress(name, entry, socket) do
+    socket = consume_document(name, entry, socket)
     {:noreply, assign(socket, :uploading?, uploads_in_progress?(socket))}
   end
 
   defp handle_signed_upload_progress(_kind, _entry, socket), do: {:noreply, socket}
 
-  defp handle_statement_upload_progress(_kind, %{done?: false}, socket), do: {:noreply, assign(socket, :uploading?, true)}
-
-  defp handle_statement_upload_progress(_kind, entry, socket) do
-    expense_id = socket.assigns.statement_expense_id
-
-    socket =
-      case consume_statement_document(socket, entry, expense_id) do
-        {:ok, _expense} ->
-          socket |> refresh_delegation() |> assign(:statement_expense_id, nil)
-
-        {:error, _reason} ->
-          socket
-          |> assign(:statement_expense_id, nil)
-          |> put_flash(:error, gettext("Could not add the statement."))
-      end
-
-    {:noreply, assign(socket, :uploading?, uploads_in_progress?(socket))}
+  defp consume_document(:related_document, entry, socket) do
+    attach_document(
+      socket,
+      entry,
+      :related_expense_id,
+      &Delegations.add_related_document/3,
+      gettext("Could not add the related document.")
+    )
   end
 
-  defp handle_related_upload_progress(_kind, %{done?: false}, socket), do: {:noreply, assign(socket, :uploading?, true)}
-
-  defp handle_related_upload_progress(_kind, entry, socket) do
-    expense_id = socket.assigns.related_expense_id
-
-    socket =
-      case consume_related_document(socket, entry, expense_id) do
-        {:ok, _expense} ->
-          socket |> refresh_delegation() |> assign(:related_expense_id, nil)
-
-        {:error, _reason} ->
-          socket
-          |> assign(:related_expense_id, nil)
-          |> put_flash(:error, gettext("Could not add the related document."))
-      end
-
-    {:noreply, assign(socket, :uploading?, uploads_in_progress?(socket))}
+  defp consume_document(:statement_document, entry, socket) do
+    attach_document(
+      socket,
+      entry,
+      :statement_expense_id,
+      &Delegations.add_statement_document/3,
+      gettext("Could not add the statement.")
+    )
   end
 
-  defp consume_related_document(socket, entry, expense_id) when is_binary(expense_id) do
-    consume_uploaded_entry(socket, entry, fn %{path: path} ->
-      {:ok,
-       with {:ok, expense} <- get_expense(expense_id, socket.assigns.ash_scope) do
-         Delegations.add_related_document(
-           expense,
-           %{
-             upload_path: path,
-             content_type: entry.client_type,
-             original_filename: entry.client_name
-           },
-           scope: socket.assigns.ash_scope
-         )
-       end}
-    end)
+  defp consume_document(kind, entry, socket) do
+    case consume_uploaded_entry(socket, entry, fn %{path: path} ->
+           {:ok,
+            create_expense(
+              kind,
+              socket.assigns.delegation.id,
+              entry.client_name,
+              entry.client_type,
+              path,
+              socket.assigns.delegation.start_date,
+              socket.assigns.delegation.end_date,
+              socket.assigns.ash_scope
+            )}
+         end) do
+      {:ok, _expense} -> refresh_delegation(socket)
+      {:error, _reason} -> put_flash(socket, :error, gettext("Could not add the document."))
+    end
   end
 
-  defp consume_related_document(socket, entry, _expense_id) do
-    consume_uploaded_entry(socket, entry, fn _meta -> {:ok, {:error, :expense_not_selected}} end)
+  # Adds the upload to the expense whose menu or button the employee chose the file from.
+  defp attach_document(socket, entry, selected_expense, add_document, error_message) do
+    expense_id = Map.fetch!(socket.assigns, selected_expense)
+    scope = socket.assigns.ash_scope
+
+    result =
+      consume_uploaded_entry(socket, entry, fn %{path: path} ->
+        upload = %{
+          upload_path: path,
+          content_type: entry.client_type,
+          original_filename: entry.client_name
+        }
+
+        {:ok, add_to_expense(expense_id, add_document, upload, scope)}
+      end)
+
+    socket = assign(socket, selected_expense, nil)
+
+    case result do
+      {:ok, _expense} -> refresh_delegation(socket)
+      {:error, _reason} -> put_flash(socket, :error, error_message)
+    end
   end
 
-  defp consume_statement_document(socket, entry, expense_id) when is_binary(expense_id) do
-    consume_uploaded_entry(socket, entry, fn %{path: path} ->
-      {:ok,
-       with {:ok, expense} <- get_expense(expense_id, socket.assigns.ash_scope) do
-         Delegations.add_statement_document(
-           expense,
-           %{
-             upload_path: path,
-             content_type: entry.client_type,
-             original_filename: entry.client_name
-           },
-           scope: socket.assigns.ash_scope
-         )
-       end}
-    end)
-  end
+  defp add_to_expense(nil, _add_document, _upload, _scope), do: {:error, :expense_not_selected}
 
-  defp consume_statement_document(socket, entry, _expense_id) do
-    consume_uploaded_entry(socket, entry, fn _meta -> {:ok, {:error, :expense_not_selected}} end)
+  defp add_to_expense(expense_id, add_document, upload, scope) do
+    with {:ok, expense} <- get_expense(expense_id, scope) do
+      add_document.(expense, upload, scope: scope)
+    end
   end
 
   defp create_expense(kind, id, filename, content_type, path, start_date, end_date, scope) do
@@ -737,13 +685,10 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
   end
 
   defp uploads_in_progress?(socket) do
-    Enum.any?(
-      [:transport, :accommodation, :other, :related_document, :statement_document],
-      fn name ->
-        {_completed, in_progress} = uploaded_entries(socket, name)
-        in_progress != []
-      end
-    )
+    Enum.any?(@document_uploads, fn name ->
+      {_completed, in_progress} = uploaded_entries(socket, name)
+      in_progress != []
+    end)
   end
 
   defp expense_currencies(expenses) do
