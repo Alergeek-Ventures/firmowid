@@ -95,7 +95,7 @@ Porównuj cenę planu, którego będziesz używać za pół roku. Zobacz:
 Zanim przeniesiesz wszystko, zrób krótki test. Po nim będziesz wiedzieć, czy program obsłuży Twój typowy miesiąc: jedną fakturę, koszty, przelewy i eksport dla księgowej.
 
 1. Załóż konto i połącz KSeF (najpierw na środowisku testowym, zobacz [jak przetestować KSeF](/poradnik/jak-bezpiecznie-przetestowac-ksef)).
-2. Wystaw fakturę dla prawdziwego kontrahenta, łącznie z walutą i stawką, których używasz najczęściej.
+2. Wystaw fakturę testową taką jak Twoje typowe, łącznie z walutą i stawką, których używasz najczęściej.
 3. Sprawdź, czy pojawiły się faktury kosztowe z ostatnich tygodni.
 4. Podłącz bank i zobacz, czy przelewy same trafiły do faktur.
 5. Wygeneruj eksport za miesiąc i wyślij go księgowej z pytaniem, czy jej to wystarczy.
