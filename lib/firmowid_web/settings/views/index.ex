@@ -620,32 +620,25 @@ defmodule FirmowidWeb.Settings.Views.Index do
     scope = socket.assigns.ash_scope
     bank_account = Finances.get_bank_account!(account_id, scope: scope)
 
-    # If the account doesn't have an institution associated (legacy/imported),
-    # redirect the user to the standard bank connection flow.
+    # Without a known bank there is nothing to reconnect, so the bank connection starts anew.
     if is_nil(bank_account.institution_id) do
       {:noreply, push_navigate(socket, to: ~p"/ustawienia/bank/dodaj")}
     else
-      organization_id = socket.assigns.ash_scope.tenant
-      redirect_url = Endpoint.url() <> "/ustawienia/bank/dodaj"
-
-      # Determine the correct transaction horizon for this institution (as in /dodaj)
+      # The institution's transaction horizon, as the bank connection screen uses it.
       transaction_days =
         case ApiClient.get_institution(bank_account.institution_id) do
           {:ok, %{"transaction_total_days" => days}} when is_integer(days) -> days
           _ -> 90
         end
 
-      # Use Ash native code interface with authorization
       case Finances.create_requisition(
              bank_account.institution_id,
              transaction_days,
-             redirect_url,
-             tenant: organization_id,
-             actor: socket.assigns.current_user,
-             authorize?: true
+             Endpoint.url() <> ~p"/ustawienia/bank/dodaj",
+             scope: scope
            ) do
         {:ok, link} ->
-          {:noreply, Phoenix.LiveView.redirect(socket, external: link)}
+          {:noreply, redirect(socket, external: link)}
 
         {:error, _} ->
           LiveToast.send_toast(:error, gettext("Could not start reconnecting."))
