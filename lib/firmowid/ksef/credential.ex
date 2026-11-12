@@ -18,6 +18,8 @@ defmodule Firmowid.Ksef.Credential do
     extensions: [AshStateMachine, AshOban],
     notifiers: [Ash.Notifier.PubSub]
 
+  use Gettext, backend: Firmowid.Gettext
+
   alias AshOban.Checks.AshObanInteraction
   alias Firmowid.Checks.AtLeastRole
   alias Firmowid.Checks.OrganizationAdmin
@@ -272,6 +274,20 @@ defmodule Firmowid.Ksef.Credential do
       argument :private_key, :string, allow_nil?: false
       argument :private_key_password, :string, allow_nil?: true
 
+      validate fn changeset, _context ->
+        case changeset
+             |> Ash.Changeset.get_argument(:certificate)
+             |> X509.Certificate.from_pem() do
+          {:ok, _certificate} ->
+            :ok
+
+          {:error, _reason} ->
+            {:error,
+             field: :certificate,
+             message: gettext_noop("Could not sign in to KSeF. Check the files and the key password.")}
+        end
+      end
+
       change set_attribute(:auth_type, :certificate)
       change set_attribute(:organization_id, tenant())
 
@@ -369,7 +385,7 @@ defmodule Firmowid.Ksef.Credential do
   end
 
   changes do
-    change {SetCredentialExpiration, []}
+    change {SetCredentialExpiration, []}, only_when_valid?: true
   end
 
   attributes do
