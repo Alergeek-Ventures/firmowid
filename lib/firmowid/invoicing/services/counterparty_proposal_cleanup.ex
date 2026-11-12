@@ -10,15 +10,9 @@ defmodule Firmowid.Invoicing.Services.CounterpartyProposalCleanup do
   """
 
   alias Firmowid.ErrorKind
-  alias OpenaiEx.Responses
+  alias Firmowid.Invoicing.Services.OpenAIStructuredResponse
 
   require Logger
-
-  @web_search_tool %{
-    type: "web_search",
-    search_context_size: "low",
-    user_location: %{type: "approximate", country: "PL"}
-  }
 
   @fields ~w(display_name full_name given_name surname address)
 
@@ -57,28 +51,10 @@ defmodule Firmowid.Invoicing.Services.CounterpartyProposalCleanup do
   @doc "Returns the cleaned-up fields of one buyer, or nil when the model fails."
   @spec clean(input()) :: result() | nil
   def clean(input) do
-    request = %{
-      model: "gpt-6-luna",
-      reasoning: %{effort: "none"},
-      # Web search calls count towards this limit.
-      max_output_tokens: 1000,
-      instructions: instructions(),
-      input: prompt(input),
-      text: %{format: @response_format}
-    }
+    web_search = if input.type == :company, do: "low"
 
-    request =
-      if input.type == :company,
-        do: Map.merge(request, %{tools: [@web_search_tool], tool_choice: "required"}),
-        else: request
-
-    client()
-    |> Responses.create!(request)
-    |> Map.fetch!("output")
-    |> Enum.filter(&(&1["type"] == "message"))
-    |> Enum.flat_map(& &1["content"])
-    |> Enum.map_join(&(&1["text"] || ""))
-    |> Jason.decode!()
+    instructions()
+    |> OpenAIStructuredResponse.request!(prompt(input), @response_format, web_search: web_search)
     |> Map.new(fn {field, value} -> {String.to_existing_atom(field), blank_to_nil(value)} end)
   rescue
     error ->
@@ -87,22 +63,6 @@ defmodule Firmowid.Invoicing.Services.CounterpartyProposalCleanup do
       )
 
       nil
-  end
-
-  defp client do
-    openai =
-      :firmowid
-      |> Application.get_env(:openai_api_key)
-      |> OpenaiEx.new()
-      |> OpenaiEx.with_receive_timeout(60_000)
-
-    case Application.get_env(:firmowid, :openai_ex, [])[:base_url] do
-      base_url when is_binary(base_url) and base_url != "" ->
-        OpenaiEx.with_base_url(openai, base_url)
-
-      _ ->
-        openai
-    end
   end
 
   defp blank_to_nil(value) do
