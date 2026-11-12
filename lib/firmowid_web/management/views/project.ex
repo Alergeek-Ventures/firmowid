@@ -72,9 +72,7 @@ defmodule FirmowidWeb.Management.Views.Project do
               month: date.month,
               year: date.year
             }
-            |> Timetracker.query_to_list_sessions(scope: scope)
-            |> Ash.Query.load(:duration)
-            |> Ash.read!(scope: scope)
+            |> Timetracker.list_sessions!(scope: scope, load: :duration)
             |> group_sessions_by_title()
           end)
 
@@ -136,10 +134,10 @@ defmodule FirmowidWeb.Management.Views.Project do
     scope = socket.assigns.ash_scope
 
     sessions =
-      %{project_id: project.id}
-      |> Timetracker.query_to_list_sessions(scope: scope)
-      |> Ash.Query.load([:duration, :member])
-      |> Ash.read!(scope: scope)
+      Timetracker.list_sessions!(%{project_id: project.id},
+        scope: scope,
+        load: [:duration, :member]
+      )
 
     total_time_worked = sessions |> Enum.map(& &1.duration) |> Enum.sum()
 
@@ -174,19 +172,20 @@ defmodule FirmowidWeb.Management.Views.Project do
 
     # Current month sessions
     current_sessions =
-      %{project_id: project.id, month: date.month, year: date.year}
-      |> Timetracker.query_to_list_sessions(scope: scope)
-      |> Ash.Query.load([:duration, :member])
-      |> Ash.read!(scope: scope)
+      Timetracker.list_sessions!(%{project_id: project.id, month: date.month, year: date.year},
+        scope: scope,
+        load: [:duration, :member]
+      )
 
     current_total_time = current_sessions |> Enum.map(& &1.duration) |> Enum.sum()
 
     # Previous month sessions (for delta)
     prev_sessions =
-      %{project_id: project.id, month: previous_month.month, year: previous_month.year}
-      |> Timetracker.query_to_list_sessions(scope: scope)
-      |> Ash.Query.load([:duration, :member])
-      |> Ash.read!(scope: scope)
+      Timetracker.list_sessions!(
+        %{project_id: project.id, month: previous_month.month, year: previous_month.year},
+        scope: scope,
+        load: [:duration, :member]
+      )
 
     prev_total_time = prev_sessions |> Enum.map(& &1.duration) |> Enum.sum()
 

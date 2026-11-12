@@ -115,9 +115,7 @@ defmodule FirmowidWeb.Management.Views.ProjectForm do
           # Users with sessions for this project (may include removed members)
           session_user_ids =
             %{project_id: project.id}
-            |> Timetracker.query_to_list_sessions(scope: scope)
-            |> Ash.Query.load(:member)
-            |> Ash.read!(scope: scope)
+            |> Timetracker.list_sessions!(scope: scope, load: :member)
             |> MapSet.new(& &1.member.user_id)
 
           all_ids = MapSet.union(member_ids, session_user_ids)

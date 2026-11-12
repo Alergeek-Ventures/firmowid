@@ -225,10 +225,10 @@ defmodule FirmowidWeb.Management.Components.ProjectsTab do
 
     # 1. Sessions for this user+month, grouped by project+title
     sessions =
-      %{member_id: member_id, month: date.month, year: date.year}
-      |> Timetracker.query_to_list_sessions(scope: scope)
-      |> Ash.Query.load(:duration)
-      |> Ash.read!(scope: scope)
+      Timetracker.list_sessions!(%{member_id: member_id, month: date.month, year: date.year},
+        scope: scope,
+        load: :duration
+      )
 
     # 2. Group sessions by project_id, then by project+title for display
     sessions_by_project =
