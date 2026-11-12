@@ -4,6 +4,7 @@ defmodule FirmowidWeb.Documents.Components.DocumentsSection do
 
   import FirmowidUI.Components.Button
   import FirmowidUI.Components.Link
+  import FirmowidUI.Components.UploadErrors
   import FirmowidWeb.Infrastructure.Flags, only: [flag_enabled?: 2]
 
   import FirmowidWeb.Infrastructure.Hooks.RequireOrganization,
@@ -232,6 +233,11 @@ defmodule FirmowidWeb.Documents.Components.DocumentsSection do
             {gettext("Add contract")}
           <% end %>
         </.button>
+        <.upload_error_messages
+          upload={@document_upload}
+          not_accepted={gettext("Only PDF, DOC and DOCX files are allowed.")}
+          class="absolute top-full right-0 mt-1 w-max"
+        />
       </form>
     </div>
     """
