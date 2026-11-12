@@ -15,7 +15,6 @@ defmodule Firmowid.Blobs.Blob do
   use Gettext, backend: Firmowid.Gettext
 
   alias Firmowid.Blobs.Changes.DeleteFromS3
-  alias Firmowid.Blobs.Changes.EnqueueDocumentBlobProcessing
   alias Firmowid.Blobs.Changes.ProcessDocumentBlob
   alias Firmowid.Blobs.Changes.UploadToS3
   alias Firmowid.Blobs.Changes.ValidateProcessingStateTransition
@@ -142,7 +141,7 @@ defmodule Firmowid.Blobs.Blob do
       change UploadToS3
       change Firmowid.Blobs.Changes.SetProcessingDefaults
 
-      change EnqueueDocumentBlobProcessing do
+      change run_oban_trigger(:process_document_blobs) do
         where [attribute_does_not_equal(:processing_target, :none)]
       end
     end
@@ -162,6 +161,7 @@ defmodule Firmowid.Blobs.Blob do
       accept []
       change {ValidateProcessingStateTransition, to: :pending}
       change set_attribute(:processing_state, :pending)
+      change run_oban_trigger(:process_document_blobs)
     end
 
     update :mark_processing_succeeded do
