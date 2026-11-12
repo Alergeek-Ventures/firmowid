@@ -6,8 +6,6 @@ defmodule Firmowid.Payroll.Changes.SkipUnchangedRate do
 
   alias Firmowid.Payroll
 
-  require Ash.Query
-
   @impl true
   def change(changeset, _opts, context) do
     Ash.Changeset.before_action(changeset, fn changeset ->
@@ -25,12 +23,8 @@ defmodule Firmowid.Payroll.Changes.SkipUnchangedRate do
   end
 
   defp current_salary(member_id, context) do
-    opts = Ash.Context.to_opts(context)
-
     %{active_at: Date.utc_today()}
-    |> Payroll.query_to_list_salaries(opts)
-    |> Ash.Query.filter(member_id == ^member_id)
-    |> Ash.Query.limit(1)
-    |> Ash.read_one!(opts)
+    |> Payroll.list_salaries!(Ash.Context.to_opts(context, query: [filter: [member_id: member_id], limit: 1]))
+    |> List.first()
   end
 end
