@@ -4,9 +4,6 @@ defmodule FirmowidWeb.Management.Controllers.EmploymentContract do
 
   alias Firmowid.Payroll
 
-  # sobelow_skip ["XSS.SendResp"]
-  # Filename is sanitized before being placed in the header. The response body
-  # is the binary file content from S3, not user-controlled HTML/JS.
   def download(conn, %{"id" => id}) do
     scope = conn.assigns.ash_scope
     current_user = conn.assigns.current_user
@@ -25,15 +22,10 @@ defmodule FirmowidWeb.Management.Controllers.EmploymentContract do
 
         case Req.get(url) do
           {:ok, %{status: 200, body: body}} ->
-            safe_filename =
-              sanitize_filename("Umowa_#{record.member.name || "pracownik"}_#{record.starts_at}.pdf")
-
-            conn
-            |> put_resp_header(
-              "content-disposition",
-              "attachment; filename=\"#{safe_filename}\""
+            send_download(conn, {:binary, body},
+              filename: "Umowa_#{record.member.name || "pracownik"}_#{record.starts_at}.pdf",
+              content_type: "application/pdf"
             )
-            |> send_resp(200, body)
 
           {:ok, %{status: status}} ->
             conn
@@ -74,12 +66,5 @@ defmodule FirmowidWeb.Management.Controllers.EmploymentContract do
 
   defp documents_return_path(_user, _user_id) do
     ~p"/ustawienia/profil"
-  end
-
-  defp sanitize_filename(filename) do
-    filename
-    |> String.replace(~r/[\x00-\x1f\x7f\/\\<>|:"?*]/, "_")
-    |> String.replace(~r/\.+/, ".")
-    |> String.trim()
   end
 end
