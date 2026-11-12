@@ -139,16 +139,7 @@ defmodule Firmowid.Delegations.DelegationExpense do
 
       argument :blob_id, :uuid, allow_nil?: false
 
-      change fn changeset, _context ->
-        Ash.Changeset.manage_relationship(
-          changeset,
-          :related_blobs,
-          [%{id: Ash.Changeset.get_argument(changeset, :blob_id)}],
-          type: :remove,
-          on_match: :unrelate,
-          on_no_match: :ignore
-        )
-      end
+      change manage_relationship(:blob_id, :related_blobs, type: :remove, on_no_match: :ignore)
     end
   end
 
