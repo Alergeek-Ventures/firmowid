@@ -51,7 +51,8 @@ defmodule Firmowid.Checks.ActorRole do
   def member(actor, context) do
     case loaded_member(actor) do
       %{organization_id: organization_id} = member ->
-        if in_organization?(context, organization_id, actor.system_role), do: member
+        if actor.system_role == :superuser or in_organization?(context, organization_id),
+          do: member
 
       nil ->
         nil
@@ -71,11 +72,15 @@ defmodule Firmowid.Checks.ActorRole do
 
   defp loaded_member(_actor), do: nil
 
-  defp in_organization?(_context, _organization_id, :superuser), do: true
-
+  @doc """
+  Whether the policy context acts inside `organization_id`: its tenant, or no
+  tenant where the action still cannot reach another organization (a tenantless
+  check of a tenant-bound action, or a resource that is not multitenant).
+  """
+  @spec in_organization?(map(), binary()) :: boolean()
   # Field policies check a synthetic query without an action; the authorizer
   # carries the one being authorized.
-  defp in_organization?(%{subject: subject} = context, organization_id, _system_role) do
+  def in_organization?(%{subject: subject} = context, organization_id) do
     %{to_tenant: tenant, resource: resource} = subject
     multitenancy = Map.get(Map.get(context, :action) || subject.action, :multitenancy)
 

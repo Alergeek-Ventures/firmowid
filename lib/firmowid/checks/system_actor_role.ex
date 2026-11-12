@@ -3,6 +3,11 @@ defmodule Firmowid.Checks.SystemActorRole do
   Policy check that returns true when the actor is a `SystemActor` with one of
   the specified roles.
 
+  A system actor built for one organization (`org_id`) holds its role only
+  inside that organization, with the same tenant rule as `ActorRole.member/2`.
+  An actor without `org_id` is either deliberately cross-tenant or bound to a
+  user or record by its own policies, so its role counts everywhere.
+
   ## Options
 
   - `roles` — list of allowed `SystemActor` roles (required)
@@ -19,6 +24,7 @@ defmodule Firmowid.Checks.SystemActorRole do
   """
   use Ash.Policy.SimpleCheck
 
+  alias Firmowid.Checks.ActorRole
   alias Firmowid.SystemActor
 
   @impl true
@@ -28,11 +34,10 @@ defmodule Firmowid.Checks.SystemActorRole do
   end
 
   @impl true
-  def match?(%SystemActor{role: role}, _context, opts) do
-    case Keyword.fetch(opts, :roles) do
-      {:ok, roles} -> {:ok, role in roles}
-      :error -> {:ok, false}
-    end
+  def match?(%SystemActor{role: role, org_id: org_id}, context, opts) do
+    {:ok,
+     role in Keyword.fetch!(opts, :roles) and
+       (is_nil(org_id) or ActorRole.in_organization?(context, org_id))}
   end
 
   def match?(_actor, _context, _opts), do: {:ok, false}

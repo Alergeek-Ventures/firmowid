@@ -70,8 +70,8 @@ defmodule Firmowid.KsefTest do
     other_session = %SystemActor{org_id: other_organization_id, role: :ksef_session}
     scope = %Scope{actor: other_session, tenant: organization_id}
 
-    assert {:ok, nil} = Ksef.get_credential(scope: scope)
-    assert {:ok, nil} = Credential.get_internal(scope: scope)
+    assert {:error, %Forbidden{}} = Ksef.get_credential(scope: scope)
+    assert {:error, %Forbidden{}} = Credential.get_internal(scope: scope)
 
     own_scope = %{scope | actor: %{other_session | org_id: organization_id}}
     assert {:ok, %Credential{}} = Credential.get_internal(scope: own_scope)
