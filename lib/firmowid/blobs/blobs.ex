@@ -180,12 +180,10 @@ defmodule Firmowid.Blobs do
          _cost_invoice,
          opts
        ) do
-    with {:ok, pending_blob} <-
+    with {:ok, _pending_blob} <-
            blob
            |> Ash.Changeset.for_update(:mark_processing_pending, %{}, opts)
            |> Ash.update(opts) do
-      AshOban.run_trigger(pending_blob, :process_document_blobs, tenant: pending_blob.organization_id)
-
       {:ok, :blob_reprocessing_started}
     end
   end
