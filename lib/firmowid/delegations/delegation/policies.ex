@@ -13,7 +13,7 @@ defmodule Firmowid.Delegations.Delegation.Policies do
                    )
     end
 
-    bypass {SystemActorRole, roles: [:leave_notifier]} do
+    bypass {SystemActorRole, roles: [:delegation_notifier]} do
       authorize_if action_type(:read)
     end
 

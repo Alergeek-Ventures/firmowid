@@ -74,9 +74,14 @@ defmodule Firmowid.SystemActor do
     Can read/write blobs and read related records as needed for blob processing.
     Also looks up a stored file by checksum when an upload repeats its bytes.
 
-  - `:leave_notifier` — emails org admins about new leave/absence requests and
-    delegations, and employees about their reviewed delegations. Can read those
-    requests and the organization's users needed for delivery.
+  - `:leave_notifier` — emails org admins about new leave/absence requests. Can
+    read those requests, their attachments and the organization's users needed
+    for delivery.
+
+  - `:delegation_notifier` — emails org admins about new delegations and
+    submitted settlements, and employees about their reviewed delegations. Can
+    read the organization's delegations, their expenses and the users needed
+    for delivery.
 
   - `:hours_record_change_notifier` — reads submitted hours records and emails
     organization admins about correction/cancellation requests.
@@ -133,6 +138,7 @@ defmodule Firmowid.SystemActor do
           | :billing_snapshotter
           | :document_blob_processor
           | :leave_notifier
+          | :delegation_notifier
           | :hours_record_change_notifier
           | :employment_contract_notifier
           | :session_auto_stopper

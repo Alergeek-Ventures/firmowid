@@ -68,6 +68,7 @@ defmodule Firmowid.Core.Member do
                       :ksef_digest,
                       :billing_snapshotter,
                       :leave_notifier,
+                      :delegation_notifier,
                       :hours_record_change_notifier,
                       :document_blob_processor,
                       :employment_contract_notifier
@@ -88,6 +89,7 @@ defmodule Firmowid.Core.Member do
                       :ksef_digest,
                       :billing_snapshotter,
                       :leave_notifier,
+                      :delegation_notifier,
                       :hours_record_change_notifier,
                       :document_blob_processor,
                       :employment_contract_notifier,
@@ -271,6 +273,7 @@ defmodule Firmowid.Core.Member do
                       :billing_snapshotter,
                       :plan_limits,
                       :leave_notifier,
+                      :delegation_notifier,
                       :hours_record_change_notifier,
                       :document_blob_processor,
                       :employment_contract_notifier

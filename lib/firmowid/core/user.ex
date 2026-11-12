@@ -512,6 +512,7 @@ defmodule Firmowid.Core.User do
       {SystemActorRole,
        roles: [
          :leave_notifier,
+         :delegation_notifier,
          :hours_record_change_notifier,
          :document_blob_processor,
          :employment_contract_notifier,
@@ -536,6 +537,7 @@ defmodule Firmowid.Core.User do
                       :ksef_digest,
                       :billing_snapshotter,
                       :leave_notifier,
+                      :delegation_notifier,
                       :hours_record_change_notifier,
                       :employment_contract_notifier,
                       :plan_limits
