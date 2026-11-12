@@ -54,8 +54,6 @@ defmodule Firmowid.Invoicing.CostInvoice do
   alias Firmowid.Finances
   alias Firmowid.Invoicing.Changes.ComputeCostInvoiceDescription
   alias Firmowid.Invoicing.Changes.ComputeCostInvoiceSellerDisplayName
-  alias Firmowid.Invoicing.Changes.EnqueueMissingCostInvoiceDescriptionRefresh
-  alias Firmowid.Invoicing.Changes.EnqueueMissingCostInvoiceSellerDisplayNameRefresh
   alias Firmowid.Invoicing.Changes.RecordManualMatch
   alias Firmowid.Invoicing.Changes.RequireTransactionIds
   alias Firmowid.Invoicing.CostInvoiceTransaction
@@ -413,7 +411,9 @@ defmodule Firmowid.Invoicing.CostInvoice do
 
       change ComputeCostInvoiceDescription
 
-      change EnqueueMissingCostInvoiceDescriptionRefresh
+      change run_oban_trigger(:refresh_missing_description) do
+        where attribute_equals(:description, "")
+      end
 
       change fn changeset, _context ->
         validate_amount_sign(changeset)
@@ -467,7 +467,9 @@ defmodule Firmowid.Invoicing.CostInvoice do
       # A first KSeF import can hold thousands of invoices; generating names synchronously
       # would keep the fetch job running past its timeout.
       # The seller display name refresh also writes the description.
-      change EnqueueMissingCostInvoiceSellerDisplayNameRefresh
+      change run_oban_trigger(:refresh_missing_seller_display_name) do
+        where absent(:seller_display_name)
+      end
 
       change fn changeset, _context ->
         validate_amount_sign(changeset)
