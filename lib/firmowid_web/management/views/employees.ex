@@ -49,7 +49,6 @@ defmodule FirmowidWeb.Management.Views.Employees do
         :editable_months,
         [Date.beginning_of_month(Date.utc_today())]
       )
-      |> assign(:can_export_csv, socket.assigns.current_user.member.role == :admin)
       |> assign(:selected_user, nil)
       |> assign_invites()
       |> assign_form()
@@ -103,81 +102,77 @@ defmodule FirmowidWeb.Management.Views.Employees do
   end
 
   defp assign_employees(%{assigns: %{selected_date: date, search: search, ash_scope: scope}} = socket) do
-    if socket.assigns.current_user.member.role == :admin do
-      # 1. Users (with optional search filter)
-      list_filters =
-        case socket.assigns.live_action do
-          :index -> %{status: :active}
-          :archive -> %{status: :archived}
-        end
+    # 1. Users (with optional search filter)
+    list_filters =
+      case socket.assigns.live_action do
+        :index -> %{status: :active}
+        :archive -> %{status: :archived}
+      end
 
-      search_filters = if search in [nil, ""], do: %{}, else: %{search: search}
-      input = Map.merge(list_filters, search_filters)
+    search_filters = if search in [nil, ""], do: %{}, else: %{search: search}
+    input = Map.merge(list_filters, search_filters)
 
-      users =
-        input
-        |> Core.list_users!(scope: scope)
-        |> Ash.load!([member: [avatar_blob: [:url]]], scope: scope)
+    users =
+      input
+      |> Core.list_users!(scope: scope)
+      |> Ash.load!([member: [avatar_blob: [:url]]], scope: scope)
 
-      # 2. Time worked per user this month
-      sessions =
-        %{month: date.month, year: date.year}
-        |> Timetracker.query_to_list_sessions(scope: scope)
-        |> Ash.Query.load([:duration, :member])
-        |> Ash.read!(scope: scope)
+    # 2. Time worked per user this month
+    sessions =
+      %{month: date.month, year: date.year}
+      |> Timetracker.query_to_list_sessions(scope: scope)
+      |> Ash.Query.load([:duration, :member])
+      |> Ash.read!(scope: scope)
 
-      time_by_user =
-        sessions
-        |> Enum.group_by(& &1.member.user_id)
-        |> Map.new(fn {uid, ss} -> {uid, ss |> Enum.map(& &1.duration) |> Enum.sum()} end)
+    time_by_user =
+      sessions
+      |> Enum.group_by(& &1.member.user_id)
+      |> Map.new(fn {uid, ss} -> {uid, ss |> Enum.map(& &1.duration) |> Enum.sum()} end)
 
-      # 3. Salaries as of this month]
-      salaries =
-        Payroll.list_salaries!(%{active_at: Date.end_of_month(date)},
-          load: [monthly_amount: [month: date], monthly_payout: [month: date]],
-          scope: scope
-        )
+    # 3. Salaries as of this month]
+    salaries =
+      Payroll.list_salaries!(%{active_at: Date.end_of_month(date)},
+        load: [monthly_amount: [month: date], monthly_payout: [month: date]],
+        scope: scope
+      )
 
-      salary_by_member = Map.new(salaries, &{&1.member_id, &1.hourly_rate})
-      payout_by_member = Map.new(salaries, &{&1.member_id, &1.monthly_payout})
-      gross_by_member = Map.new(salaries, &{&1.member_id, &1.monthly_amount})
+    salary_by_member = Map.new(salaries, &{&1.member_id, &1.hourly_rate})
+    payout_by_member = Map.new(salaries, &{&1.member_id, &1.monthly_payout})
+    gross_by_member = Map.new(salaries, &{&1.member_id, &1.monthly_amount})
 
-      # 4. Hours records for this month
-      hours_records =
-        Timetracker.list_hours_records!(%{month: date.month, year: date.year},
-          load: [:member],
-          scope: scope
-        )
+    # 4. Hours records for this month
+    hours_records =
+      Timetracker.list_hours_records!(%{month: date.month, year: date.year},
+        load: [:member],
+        scope: scope
+      )
 
-      hr_by_user = Map.new(hours_records, &{&1.member.user_id, &1})
+    hr_by_user = Map.new(hours_records, &{&1.member.user_id, &1})
 
-      # 5. Compose
-      employees =
-        users
-        |> Enum.map(fn user ->
-          %{
-            user: user,
-            time_worked: Map.get(time_by_user, user.id, 0),
-            hourly_rate: Map.get(salary_by_member, user.member.id),
-            monthly_gross: Map.get(gross_by_member, user.member.id, Money.new!(:PLN, 0)),
-            monthly_payout: Map.get(payout_by_member, user.member.id),
-            hours_record: Map.get(hr_by_user, user.id)
-          }
-        end)
-        |> Enum.sort_by(fn employee ->
-          {
-            employee.time_worked == 0,
-            employee.user.member.name || employee.user.email ||
-              ""
-              |> to_string()
-              |> String.downcase()
-          }
-        end)
+    # 5. Compose
+    employees =
+      users
+      |> Enum.map(fn user ->
+        %{
+          user: user,
+          time_worked: Map.get(time_by_user, user.id, 0),
+          hourly_rate: Map.get(salary_by_member, user.member.id),
+          monthly_gross: Map.get(gross_by_member, user.member.id, Money.new!(:PLN, 0)),
+          monthly_payout: Map.get(payout_by_member, user.member.id),
+          hours_record: Map.get(hr_by_user, user.id)
+        }
+      end)
+      |> Enum.sort_by(fn employee ->
+        {
+          employee.time_worked == 0,
+          employee.user.member.name || employee.user.email ||
+            ""
+            |> to_string()
+            |> String.downcase()
+        }
+      end)
 
-      assign(socket, :employees, employees)
-    else
-      assign(socket, :employees, [])
-    end
+    assign(socket, :employees, employees)
   end
 
   # The new UI moves roles and invitations from the settings to this page.

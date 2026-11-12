@@ -40,7 +40,6 @@
 
       <div class="flex gap-4 max-md:contents">
         <.link
-          :if={@can_export_csv}
           kind="button"
           variant="secondary"
           size="big"
@@ -253,18 +252,14 @@
                 |> String.upcase()}
               </.avatar_fallback>
             </.avatar>
-            <%= if @can_export_csv do %>
-              <.link
-                kind="unstyled"
-                navigate={Navigation.employee_path(employee.user.id, %{miesiac: @selected_date})}
-                class="min-w-0 truncate hover:underline"
-                title={employee.user.member.name || to_string(employee.user.email)}
-              >
-                {employee.user.member.name || employee.user.email}
-              </.link>
-            <% else %>
-              <span>{employee.user.member.name || employee.user.email}</span>
-            <% end %>
+            <.link
+              kind="unstyled"
+              navigate={Navigation.employee_path(employee.user.id, %{miesiac: @selected_date})}
+              class="min-w-0 truncate hover:underline"
+              title={employee.user.member.name || to_string(employee.user.email)}
+            >
+              {employee.user.member.name || employee.user.email}
+            </.link>
             <span
               :if={
                 flag_enabled?(:accurate_salary_calculation, assigns) and @view != :standard and
@@ -359,22 +354,18 @@
             >
               {gettext("Restore")}
             </.button>
-            <%= if @can_export_csv do %>
-              <.link
-                kind="unstyled"
-                navigate={Navigation.employee_path(employee.user.id, %{miesiac: @selected_date})}
-                class="flex items-center"
-                aria-label={
-                  gettext("Show details of employee %{name}",
-                    name: employee.user.member.name || employee.user.email
-                  )
-                }
-              >
-                <Lucideicons.chevron_right class="size-4 shrink-0 text-grey-700" />
-              </.link>
-            <% else %>
-              <div />
-            <% end %>
+            <.link
+              kind="unstyled"
+              navigate={Navigation.employee_path(employee.user.id, %{miesiac: @selected_date})}
+              class="flex items-center"
+              aria-label={
+                gettext("Show details of employee %{name}",
+                  name: employee.user.member.name || employee.user.email
+                )
+              }
+            >
+              <Lucideicons.chevron_right class="size-4 shrink-0 text-grey-700" />
+            </.link>
           </div>
         </div>
 

@@ -48,52 +48,45 @@ defmodule FirmowidWeb.Management.Views.Employee do
 
   @impl true
   def handle_params(%{"id" => id} = params, _uri, socket) do
-    if socket.assigns.current_user.member.role == :admin do
-      scope = socket.assigns.ash_scope
-      params = Navigation.employee_params(params)
+    scope = socket.assigns.ash_scope
+    params = Navigation.employee_params(params)
 
-      selected_date = Navigation.parse_month(params)
+    selected_date = Navigation.parse_month(params)
 
-      user =
-        %{id: id}
-        |> Core.get_org_user!(scope: scope, not_found_error?: false)
-        |> case do
-          nil ->
-            nil
+    user =
+      %{id: id}
+      |> Core.get_org_user!(scope: scope, not_found_error?: false)
+      |> case do
+        nil ->
+          nil
 
-          loaded_user ->
-            Ash.load!(
-              loaded_user,
-              @employee_load,
-              scope: scope
-            )
-        end
-
-      socket =
-        if is_nil(user) do
-          push_navigate(socket,
-            to: Navigation.employees_path(:index, %{miesiac: Navigation.current_month()})
+        loaded_user ->
+          Ash.load!(
+            loaded_user,
+            @employee_load,
+            scope: scope
           )
-        else
-          active_months = Timetracker.months_with_sessions(%{member_id: user.member.id}, scope)
-          {:ok, current_contract} = Payroll.load_current_contract(user.member.id, scope: scope)
+      end
 
-          socket
-          |> assign(:employee, user)
-          |> assign(:active_months, active_months)
-          |> assign(:current_contract, current_contract)
-          |> assign(:projects_filter_date, selected_date)
-          |> assign(:projects_view, Navigation.parse_employee_projects_view(params["widok"]))
-          |> assign(:page_title, user.member.display_name)
-        end
+    socket =
+      if is_nil(user) do
+        push_navigate(socket,
+          to: Navigation.employees_path(:index, %{miesiac: Navigation.current_month()})
+        )
+      else
+        active_months = Timetracker.months_with_sessions(%{member_id: user.member.id}, scope)
+        {:ok, current_contract} = Payroll.load_current_contract(user.member.id, scope: scope)
 
-      {:noreply, socket}
-    else
-      {:noreply,
-       push_navigate(socket,
-         to: Navigation.employees_path(:index, %{miesiac: Navigation.current_month()})
-       )}
-    end
+        socket
+        |> assign(:employee, user)
+        |> assign(:active_months, active_months)
+        |> assign(:current_contract, current_contract)
+        |> assign(:projects_filter_date, selected_date)
+        |> assign(:projects_view, Navigation.parse_employee_projects_view(params["widok"]))
+        |> assign(:page_title, user.member.display_name)
+      end
+
+    {:noreply, socket}
   end
 
   def format_shared_birthday(%{day: day, month: month, year: year}) do

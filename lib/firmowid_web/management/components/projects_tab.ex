@@ -109,7 +109,7 @@ defmodule FirmowidWeb.Management.Components.ProjectsTab do
           >
             <.change_request
               record={record}
-              reviewable={@scope.actor.member.role == :admin}
+              reviewable
               target={@myself}
             />
           </.card>

@@ -69,7 +69,6 @@
       </p>
 
       <.button
-        :if={@current_user.member.role == :admin}
         variant="tertiary"
         size="small"
         type="button"
@@ -78,7 +77,6 @@
         {gettext("Restore project")}
       </.button>
       <.button
-        :if={@can_delete_project}
         variant="destructive"
         size="small"
         type="button"
@@ -319,7 +317,7 @@
   </div>
 </div>
 
-<.modal :if={@can_delete_project} id="delete_project_modal">
+<.modal id="delete_project_modal">
   <div class="space-y-6">
     <h3 class="text-lg font-medium">
       <.delete_project_prompt name={@project.name} />
