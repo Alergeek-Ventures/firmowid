@@ -37,4 +37,26 @@ defmodule FirmowidWeb.Admin.Views.SettlementTest do
     assert Core.get_organization!(owner.member.organization_id, authorize?: false).billing_plan ==
              :firma
   end
+
+  test "a superuser demoted while the settlement is open can no longer change the plan", %{
+    conn: conn
+  } do
+    owner = admin_fixture()
+    plan = Core.get_organization!(owner.member.organization_id, authorize?: false).billing_plan
+    superuser = Core.load_member(Ash.Seed.update!(admin_fixture(), %{system_role: :superuser}))
+
+    {:ok, lv, _html} =
+      live(
+        log_in_user(conn, superuser),
+        ~p"/admin/rozliczenia/#{owner.member.organization_id}?miesiac=#{Date.to_iso8601(Month.current())}"
+      )
+
+    Ash.Seed.update!(superuser, %{system_role: :user})
+
+    assert {:error, {:redirect, %{to: "/"}}} =
+             render_hook(lv, "save-current-plan", %{"plan" => %{"billing_plan" => "firma"}})
+
+    assert Core.get_organization!(owner.member.organization_id, authorize?: false).billing_plan ==
+             plan
+  end
 end
