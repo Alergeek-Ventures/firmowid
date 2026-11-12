@@ -154,6 +154,16 @@ defmodule Firmowid.Core.UserTest do
     end
   end
 
+  test "an organization admin cannot delete a member's account" do
+    admin = admin_fixture()
+    employee = user_in_org_fixture(admin.member.organization_id)
+
+    assert {:error, %Ash.Error.Forbidden.Policy{}} =
+             Core.destroy_user(employee, scope: Scope.new!(admin, admin.member.organization_id))
+
+    assert {:ok, _} = Core.get_user(employee.id, authorize?: false)
+  end
+
   describe "display_name" do
     test "uses the member's name when present and otherwise falls back to the email" do
       named_user = user_fixture()

@@ -564,7 +564,6 @@ defmodule Firmowid.Core.User do
 
     bypass action_type(:destroy) do
       authorize_if expr(id == ^actor(:id))
-      authorize_if {OrganizationMemberAdmin, active: true}
     end
   end
 
