@@ -609,6 +609,38 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.CreatorTest do
            )
   end
 
+  test "copying a recent invoice into a draft finished in another tab starts the wizard over", %{
+    conn: conn
+  } do
+    admin = admin_fixture()
+    scope = scope_for(admin)
+    issue_date = Date.utc_today() |> Map.put(:day, 1) |> Date.shift(month: -1, day: 14)
+
+    source_invoice =
+      sales_invoice_fixture!(admin, %{
+        issue_date: issue_date,
+        sale_date: issue_date,
+        due_date: Date.add(issue_date, 14)
+      })
+
+    {:ok, draft} =
+      WizardState.create(%{organization_id: admin.member.organization_id}, scope: scope)
+
+    conn = log_in_user(conn, admin)
+
+    {:ok, view, _html} =
+      live(conn, ~p"/sprzedazowe?szkic_kreatora=#{draft.id}&krok=1&karta=ostatnie_faktury")
+
+    :ok = Ash.destroy(draft, scope: scope)
+
+    view
+    |> element("button[phx-click='select_base_invoice'][phx-value-invoice_id='#{source_invoice.id}']")
+    |> render_click()
+
+    assert render(view) =~ "Szkic kreatora nie został znaleziony"
+    assert [_new_draft] = Invoicing.list_wizard_states!(scope: scope)
+  end
+
   test "copy with legacy invalid counterparty data opens correction modal and preserves items", %{
     conn: conn
   } do
