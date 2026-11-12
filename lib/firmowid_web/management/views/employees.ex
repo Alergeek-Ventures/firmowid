@@ -152,13 +152,8 @@ defmodule FirmowidWeb.Management.Views.Employees do
         }
       end)
       |> Enum.sort_by(fn employee ->
-        {
-          employee.time_worked == 0,
-          employee.user.member.name || employee.user.email ||
-            ""
-            |> to_string()
-            |> String.downcase()
-        }
+        name = employee.user.member.name || to_string(employee.user.email)
+        {employee.time_worked == 0, String.downcase(name)}
       end)
 
     assign(socket, :employees, employees)

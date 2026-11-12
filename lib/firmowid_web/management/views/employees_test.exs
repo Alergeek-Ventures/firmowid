@@ -172,6 +172,20 @@ defmodule FirmowidWeb.Management.Views.EmployeesTest do
     assert has_element?(lv, "img[src*='#{blob.blob_path}']")
   end
 
+  test "employees are listed by name regardless of letter case", %{conn: conn} do
+    admin = admin_fixture()
+
+    for name <- ["Zofia Zielińska", "beata Nowak", "Adam Adamski"],
+        do: user_in_org_fixture(admin.member.organization_id, %{name: name})
+
+    {:ok, _lv, html} = live(log_in_user(conn, admin), ~p"/zarzadzanie/pracownicy")
+
+    positions =
+      Enum.map(["Adam Adamski", "beata Nowak", "Zofia Zielińska"], &:binary.match(html, &1))
+
+    assert positions == Enum.sort(positions)
+  end
+
   test "admin cannot archive themselves", %{conn: conn} do
     admin = admin_fixture(%{name: "Admin Self"})
     conn = log_in_user(conn, admin)
