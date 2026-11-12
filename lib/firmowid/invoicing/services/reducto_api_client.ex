@@ -29,7 +29,7 @@ defmodule Firmowid.Invoicing.Services.ReductoApiClient do
   """
   @spec extract(String.t(), map(), extract_options) ::
           {:ok, map()} | {:error, term()}
-  def extract(file_url, json_schema, options \\ []) do
+  def extract(file_url, json_schema, options) do
     with :ok <- ensure_configured() do
       file_url
       |> upload_to_reducto(s3_host())
@@ -42,7 +42,7 @@ defmodule Firmowid.Invoicing.Services.ReductoApiClient do
   """
   @spec extract_file(Path.t(), map(), extract_options) ::
           {:ok, map()} | {:error, term()}
-  def extract_file(file_path, json_schema, options \\ []) do
+  def extract_file(file_path, json_schema, options) do
     with :ok <- ensure_configured(), {:ok, file_id} <- upload_file(file_path) do
       extract_input(file_id, json_schema, options)
     end
