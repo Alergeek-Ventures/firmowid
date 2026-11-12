@@ -1,14 +1,14 @@
 defmodule FirmowidWeb.Analysis.Views.Dashboard do
   @moduledoc """
-  Analysis of the company's money in three views: the summary of where every 100 zł of
-  income went by category, the trends month by month for the whole company or one project,
-  and the project results with the category review.
+  Analysis of the company's money in two views: the summary of where every 100 zł of
+  income went by category, and the trends month by month for the whole company or one
+  project.
 
   Views share the selected period, any run of months, built from the authorized
-  year summaries; a trends month opens the summary narrowed to it. Project
-  results always allocate over the whole company. Entries are assigned to
-  projects in invoicing; tax estimates stay separate from realized totals. Each
-  view can start an assistant conversation about what it shows.
+  year summaries; a trends month opens the summary narrowed to it. Entries are
+  assigned to projects in invoicing; tax estimates stay separate from realized
+  totals. Each view can start an assistant conversation about what it shows, and
+  suggests questions about its figures.
   """
   use FirmowidWeb, :live_view
 
@@ -26,7 +26,6 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
   alias FirmowidWeb.Analysis.Components.MonthlyResults
   alias FirmowidWeb.Analysis.Components.PeriodDetails
   alias FirmowidWeb.Analysis.Components.ProjectSwitcher
-  alias FirmowidWeb.Analysis.Components.SegmentRanking
   alias FirmowidWeb.Analysis.Utilities.Navigation
   alias FirmowidWeb.Analysis.Utilities.Periods
 
@@ -40,14 +39,11 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
         Phoenix.PubSub.subscribe(Firmowid.PubSub, "analysis-classification:#{scope.tenant}")
       end
 
-      tag_definitions = TagDefinition.list_tag_definitions!(scope: scope)
-
-      socket =
-        socket
-        |> assign(:tag_definitions, tag_definitions)
-        |> assign(:with_overhead, false)
-
-      {:ok, assign(socket, page_title: pgettext("main navigation", "Analysis"))}
+      {:ok,
+       assign(socket,
+         tag_definitions: TagDefinition.list_tag_definitions!(scope: scope),
+         page_title: pgettext("main navigation", "Analysis")
+       )}
     else
       {:ok, redirect(socket, to: ~p"/")}
     end
@@ -57,8 +53,7 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
   def handle_params(params, _uri, socket) do
     view = Navigation.parse_view(params)
 
-    # Only the trends show one project; the summary's categories and the projects' allocation
-    # need the whole company.
+    # Only the trends show one project; the summary's categories need the whole company.
     tag_filters =
       if view.view == :trends,
         do:
@@ -134,35 +129,6 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
 
   def handle_event("select-month", _params, socket), do: {:noreply, socket}
 
-  def handle_event("show-overhead", %{"overhead" => %{"with" => with_overhead}}, socket) do
-    {:noreply, assign(socket, :with_overhead, with_overhead == "true")}
-  end
-
-  # Company functions are chosen in the segments view, including forged events.
-  def handle_event("toggle-function", %{"id" => id}, %{assigns: %{params: %{view: :segments}}} = socket) do
-    definition = Enum.find(socket.assigns.tag_definitions, &(&1.id == id))
-
-    if definition != nil and can_tag?(socket.assigns) do
-      result =
-        TagDefinition.set_overhead(definition, not definition.overhead, scope: socket.assigns.ash_scope)
-
-      definitions = TagDefinition.list_tag_definitions!(scope: socket.assigns.ash_scope)
-      socket = socket |> assign(:tag_definitions, definitions) |> load_view()
-
-      case result do
-        {:ok, _definition} ->
-          {:noreply, socket}
-
-        {:error, _} ->
-          {:noreply, put_flash(socket, :error, gettext("Could not move the project."))}
-      end
-    else
-      {:noreply, socket}
-    end
-  end
-
-  def handle_event("toggle-function", _params, socket), do: {:noreply, socket}
-
   @impl true
   def handle_info(:analysis_classification_updated, socket), do: {:noreply, load_view(socket)}
 
@@ -216,24 +182,6 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
     end
   end
 
-  defp load_view(%{assigns: %{params: %{view: :segments, period: period}, ash_scope: scope}} = socket) do
-    summary = Analysis.period_summary(period, [], scope)
-
-    seconds =
-      period
-      |> years()
-      |> Enum.map(&Analysis.project_seconds_by_month(&1, scope))
-      |> Enum.reduce(%{}, &Map.merge/2)
-
-    socket
-    |> assign(
-      :profitability,
-      ProjectProfitability.from_year_summary(%{summary | months: closed(summary)}, seconds)
-    )
-    |> load_review()
-    |> update(:review, &closed_review(&1, closed_months(summary)))
-  end
-
   defp load_view(%{assigns: %{params: %{view: :trends} = params, tag_filters: tag_filters, ash_scope: scope}} = socket) do
     assign(socket,
       summary: Analysis.period_summary(params.period, tag_filters, scope),
@@ -274,18 +222,6 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
     end
   end
 
-  # Income channels, like the projects, count only closed months.
-  defp closed_review(review, months) do
-    groups = CategoryReview.period(review, months, [])
-
-    income =
-      groups
-      |> Enum.filter(&(&1.side == :income))
-      |> Enum.reduce(Decimal.new(0), &Decimal.add(&1.amount, &2))
-
-    %{review | groups: groups, income: %{review.income | total: income}}
-  end
-
   # Entries without a category are classified in the background for members who may store categories.
   defp load_review(socket) do
     %{params: %{period: {from, to} = period}, ash_scope: scope} = socket.assigns
@@ -300,6 +236,12 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
 
     assign(socket, :review, review)
   end
+
+  # The whole company's projects with their own income and costs; one project's trends have none.
+  defp projects(summary, []),
+    do: ProjectProfitability.from_year_summary(%{summary | months: closed(summary)}, %{}).annual.projects
+
+  defp projects(_summary, _tag_filters), do: []
 
   defp closed(summary), do: Enum.filter(summary.months, & &1.closed?)
 
@@ -317,7 +259,6 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
 
   defp view_for(params, :dashboard), do: %{view: :dashboard, period: params.period, month: nil}
   defp view_for(params, :trends), do: %{view: :trends, period: params.period}
-  defp view_for(params, :segments), do: %{view: :segments, period: params.period}
 
   defp month_path(period), do: &Navigation.view_path(%{view: :dashboard, period: period, month: &1}, [])
 
@@ -349,7 +290,6 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
       case params.view do
         :dashboard -> {"summary", pgettext("analysis view", "Summary")}
         :trends -> {"trends", pgettext("analysis view", "Trends")}
-        :segments -> {"projects", pgettext("analysis view", "Projects")}
       end
 
     month = if params.view == :dashboard, do: selected_month(params, summary)
@@ -446,13 +386,6 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
           >
             {pgettext("analysis view", "Trends")}
           </:tab>
-          <:tab
-            id="analysis-segments-tab"
-            patch={Navigation.view_path(view_for(@params, :segments), [])}
-            active={@params.view == :segments}
-          >
-            {pgettext("analysis view", "Projects")}
-          </:tab>
         </.filter_tabs>
         <div class="flex flex-wrap items-center gap-3">
           <ProjectSwitcher.switcher
@@ -475,14 +408,7 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
           />
           <AskAssistant.button
             id="analysis-ask-assistant"
-            context={
-              assistant_context(
-                @params,
-                @params.view != :segments && @summary,
-                @tag_filters,
-                @tag_definitions
-              )
-            }
+            context={assistant_context(@params, @summary, @tag_filters, @tag_definitions)}
           />
         </div>
       </div>
@@ -506,11 +432,17 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
         }
         industry={@review && @review.industry}
         can_edit={can_tag?(assigns)}
+        assistant={assistant_context(@params, @summary, @tag_filters, @tag_definitions)}
       />
       <%= if @params.view == :trends do %>
         <FinancialOverview.overview
           summary={@summary}
           tag_filters={@tag_filters}
+        />
+        <AskAssistant.tiles
+          id="analysis-trends-questions"
+          context={assistant_context(@params, @summary, @tag_filters, @tag_definitions)}
+          questions={AskAssistant.trends(@summary.months, projects(@summary, @tag_filters))}
         />
         <MonthlyResults.table
           months={@summary.months}
@@ -518,15 +450,6 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
           month_path={@tag_filters == [] && month_path(@params.period)}
         />
       <% end %>
-      <SegmentRanking.ranking
-        :if={@params.view == :segments}
-        profitability={@profitability}
-        review={@review}
-        period={@params.period}
-        with_overhead={@with_overhead}
-        functions={Enum.filter(@tag_definitions, & &1.overhead)}
-        can_edit={can_tag?(assigns)}
-      />
     </div>
     """
   end
