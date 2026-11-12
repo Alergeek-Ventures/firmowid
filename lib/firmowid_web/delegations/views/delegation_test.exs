@@ -861,6 +861,8 @@ defmodule FirmowidWeb.Delegations.Views.DelegationTest do
     assert [settled] = completed.expenses
     assert Money.equal?(settled.settlement_amount, Money.new!(:PLN, 40))
     assert Decimal.eq?(settled.nbp_rate, Decimal.new(4))
+    # The rate carries the date of the NBP table it comes from, not the day it was fetched.
+    assert settled.nbp_rate_date == ~D[2026-08-10]
   end
 
   test "binds an NBP calculation to the submitted amount and source currency", %{conn: conn} do
