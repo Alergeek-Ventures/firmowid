@@ -1,15 +1,9 @@
-alias Ash.Error.Invalid
-
-require Logger
-
 defmodule FirmowidWeb.Settings.Views.Index do
   @moduledoc """
-  Settings page LiveView.
-
-   TODO: This view handles ~15 distinct responsibilities (company settings,
-   user profile, email/password change, account deletion, bank accounts,
-   KSeF auth, Google linking, avatars,
-   requisition PubSub). Split into focused LiveComponents per section.
+  Settings: the member's account, HR details, documents and business trips, and
+  for an admin the company details, KSeF and bank accounts, and for the owner the
+  subscription. Behind the `inbox` flag each is a page of its own; without it they
+  are tabs of one page.
   """
   use FirmowidWeb, :live_view
 
@@ -22,6 +16,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
   import FirmowidWeb.Settings.Components.SubscriptionTab
   import Phoenix.Component, except: [link: 1]
 
+  alias Ash.Error.Invalid
   alias Ash.Notifier.Notification
   alias AshAuthentication.Argon2Provider
   alias Firmowid.Billing.Month
@@ -46,6 +41,8 @@ defmodule FirmowidWeb.Settings.Views.Index do
   alias FirmowidWeb.Infrastructure.Utilities.PosthogBusinessEvents
   alias FirmowidWeb.Settings.Utilities.Navigation
   alias Phoenix.Socket.Broadcast
+
+  require Logger
 
   @invite_load [issued_by: [:email], consumed_by: [:email]]
 
