@@ -1,5 +1,9 @@
 import { z } from "zod";
 
+// Zod compiles object parsers with `new Function` unless jitless, which the Content
+// Security Policy forbids (no 'unsafe-eval'); even its feature probe reports a violation.
+z.config({ jitless: true });
+
 const SCRIPT_SELECTOR = "script[data-telemetry-config='true']";
 
 const datasetBoolean = z.preprocess((value) => value === "true", z.boolean());

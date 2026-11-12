@@ -105,6 +105,9 @@ config :firmowid, Firmowid.Repo,
 
 config :firmowid, FirmowidMcp, endpoint: Endpoint
 
+# The policy is only reported while `false`; `true` makes browsers enforce it.
+config :firmowid, FirmowidWeb.Infrastructure.Plugs.ContentSecurityPolicy, enforce?: false
+
 config :firmowid, Oban,
   repo: Firmowid.Repo,
   prefix: "oban",
