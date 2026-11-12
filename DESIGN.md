@@ -439,11 +439,11 @@ writing markup by hand; a hand-rolled copy of one of them is drift.
 | Row or record actions | `menu` + `menu_item` | Kebab trigger by default; `tone="danger"` for destructive items. |
 | Status | `badge` | 24px pill; tones `neutral`, `success`, `danger`, `cost`, `sales`. |
 | Inline notice | `alert` | Tones `neutral`, `success`, `danger`; `danger` uses `role="alert"`. Toasts stay for transient feedback. |
-| Nothing to show | `empty_state` | Dashed placeholder: icon, title, one sentence, the action that fills it. |
+| Nothing to show | `empty_state` | Dashed placeholder: icon, title, one sentence, the action that fills it; `small` (24px icon, 14px text) inside panels and lists. |
 | Sibling views of a page | `tabs` | Underline links; the selected view lives in the URL. |
 | Scope of a list | `segmented_control` | Pills, one active (for example active and archived). |
 | Label with value or control | `field_row` | `stacked` for forms, `inline` for detail and settings panels. |
-| Search | `search_field` | Leading magnifier; small 30px or big 36px, level with buttons. |
+| Search | `search_field` | Grey field with a leading magnifier; small 32px (20px icon) or big 40px (24px icon); a 2px teal-300 border while focused. |
 | Supplementary hint | `tooltip` | Tippy with one delay; never the only place for essential information. |
 | One self-contained record | `card` + `card_header` | The flat-by-default exception; never nested. |
 

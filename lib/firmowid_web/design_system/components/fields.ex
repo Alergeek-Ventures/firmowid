@@ -30,7 +30,7 @@ defmodule FirmowidWeb.DesignSystem.Components.Fields do
   end
 
   @doc """
-  Renders a search input with a leading magnifier icon in the small (30px) or big (36px) size.
+  Renders a search input with a leading magnifier icon in the small (32px) or big (40px) size.
   The placeholder doubles as the accessible name.
   """
   @spec search_field(map()) :: Rendered.t()
@@ -44,7 +44,10 @@ defmodule FirmowidWeb.DesignSystem.Components.Fields do
   def search_field(assigns) do
     ~H"""
     <div class={["relative", @class]}>
-      <Lucideicons.search class="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-grey-600" />
+      <Lucideicons.search class={[
+        "pointer-events-none absolute top-1/2 -translate-y-1/2 text-grey-500",
+        search_field_icon_styles(@size)
+      ]} />
       <input
         type="search"
         name={@name}
@@ -52,7 +55,7 @@ defmodule FirmowidWeb.DesignSystem.Components.Fields do
         placeholder={@placeholder}
         aria-label={@placeholder}
         class={[
-          "w-full rounded-sm border border-grey-200 bg-grey-50 pr-3 pl-9 text-sm text-grey-900 placeholder:text-grey-500 focus:border-grey-700 focus:ring-0",
+          "w-full rounded-sm border border-grey-200 bg-grey-100 text-sm text-grey-700 transition-colors placeholder:text-grey-400 hover:placeholder:text-grey-500 focus:border-teal-300 focus:shadow-[inset_0_0_0_1px_var(--color-teal-300)] focus:ring-0 focus:outline-none",
           search_field_size_styles(@size)
         ]}
         {@rest}
@@ -67,6 +70,10 @@ defmodule FirmowidWeb.DesignSystem.Components.Fields do
   defp field_row_label_styles("stacked"), do: "text-sm/snug text-grey-700"
   defp field_row_label_styles("inline"), do: "text-right text-sm/snug text-grey-700"
 
-  defp search_field_size_styles("small"), do: "h-7.5"
-  defp search_field_size_styles("big"), do: "h-9"
+  # Figma "Search bar": the magnifier sits 6px (8px big) from the edge, 8px before the text.
+  defp search_field_size_styles("small"), do: "h-8 pr-1 pl-8.5"
+  defp search_field_size_styles("big"), do: "h-10 pr-2 pl-10"
+
+  defp search_field_icon_styles("small"), do: "left-1.5 size-5"
+  defp search_field_icon_styles("big"), do: "left-2 size-6"
 end

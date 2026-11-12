@@ -43,6 +43,7 @@ defmodule FirmowidWeb.Inbox.Utilities.Queue do
   @type item :: %{
           optional(:decisions) => [decision()],
           optional(:date_range) => String.t(),
+          optional(:days_late) => pos_integer(),
           id: String.t(),
           tier: tier(),
           icon: String.t(),
@@ -104,7 +105,7 @@ defmodule FirmowidWeb.Inbox.Utilities.Queue do
 
   @doc "One-line explanation of a tier."
   @spec tier_hint(tier()) :: String.t()
-  def tier_hint(:urgent), do: gettext("Something is blocked. Deal with it first.")
+  def tier_hint(:urgent), do: gettext("Something needs your urgent attention.")
   def tier_hint(:people), do: gettext("Someone on the team is waiting for your decision.")
   def tier_hint(:personal), do: gettext("Waiting for your signature or settlement.")
   def tier_hint(:books), do: gettext("Overdue invoices with no matched payment.")
@@ -379,20 +380,21 @@ defmodule FirmowidWeb.Inbox.Utilities.Queue do
       )
 
     Enum.sort_by(
-      Enum.map(sales, &overdue_invoice_item(&1, :sales)) ++
-        Enum.map(costs, &overdue_invoice_item(&1, :cost)),
+      Enum.map(sales, &overdue_invoice_item(&1, :sales, today)) ++
+        Enum.map(costs, &overdue_invoice_item(&1, :cost, today)),
       & &1.due_date,
       Date
     )
   end
 
-  defp overdue_invoice_item(invoice, side) do
+  defp overdue_invoice_item(invoice, side, today) do
     %{
       id: "overdue-#{side}-#{invoice.id}",
       tier: :books,
       side: side,
       due_date: invoice.effective_due_date,
-      icon: "file-clock",
+      days_late: Date.diff(today, invoice.effective_due_date),
+      icon: "file-chart-column",
       title: overdue_invoice_title(invoice, side),
       context:
         gettext("%{amount} · due %{date}",
