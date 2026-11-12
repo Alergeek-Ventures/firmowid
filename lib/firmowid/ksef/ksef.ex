@@ -435,11 +435,12 @@ defmodule Firmowid.Ksef do
 
     checksum = compute_fa3_checksum(invoice_xml)
 
-    SalesInvoice.record_ksef_submission!(
-      invoice,
-      %{ksef_invoice_checksum: checksum},
-      tenant: invoice.organization_id
-    )
+    scope = %Scope{
+      actor: %SystemActor{org_id: organization_id, role: :ksef_session},
+      tenant: organization_id
+    }
+
+    SalesInvoice.record_ksef_submission!(invoice, %{ksef_invoice_checksum: checksum}, scope: scope)
 
     checksum
   end
