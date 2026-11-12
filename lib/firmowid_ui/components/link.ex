@@ -16,9 +16,9 @@ defmodule FirmowidUI.Components.Link do
   - `external` for absolute external URLs (`http://` or `https://`)
   - `mailto` for e-mail links
 
-  Invalid attribute combinations are intentionally not handled by fallback clauses.
-  They fail via function clause mismatch, so the supported API should be treated as
-  strict and explicit.
+  Invalid attribute combinations, such as two targets or a variant on a non-button
+  link, are intentionally not handled by fallback clauses: they raise a function
+  clause error, so the supported API should be treated as strict and explicit.
   """
 
   use FirmowidUI, :html
@@ -80,390 +80,62 @@ defmodule FirmowidUI.Components.Link do
 
   slot :inner_block, required: true
 
-  def link(assigns), do: render_link(assigns)
+  def link(assigns) do
+    assigns =
+      assigns
+      |> assign(:href, href(assigns))
+      |> assign(:link_classes, link_classes(assigns))
 
-  defp render_link(
-         %{
-           kind: "unstyled",
-           variant: nil,
-           accent: nil,
-           navigate: navigate,
-           patch: nil,
-           redirect: nil,
-           external: nil,
-           mailto: nil
-         } = assigns
-       ) do
-    assigns
-    |> assign(:navigate, navigate)
-    |> assign(:link_classes, nil)
-    |> do_render_navigate_link()
-  end
-
-  defp render_link(
-         %{
-           kind: "unstyled",
-           variant: nil,
-           accent: nil,
-           navigate: nil,
-           patch: patch,
-           redirect: nil,
-           external: nil,
-           mailto: nil
-         } = assigns
-       ) do
-    assigns
-    |> assign(:patch, patch)
-    |> assign(:link_classes, nil)
-    |> do_render_patch_link()
-  end
-
-  defp render_link(
-         %{
-           kind: "unstyled",
-           variant: nil,
-           accent: nil,
-           navigate: nil,
-           patch: nil,
-           redirect: redirect,
-           external: nil,
-           mailto: nil
-         } = assigns
-       ) do
-    assigns
-    |> assign(:redirect, redirect)
-    |> assign(:link_classes, nil)
-    |> do_render_redirect_link()
-  end
-
-  defp render_link(
-         %{
-           kind: "unstyled",
-           variant: nil,
-           accent: nil,
-           navigate: nil,
-           patch: nil,
-           redirect: nil,
-           external: "http://" <> _external,
-           mailto: nil
-         } = assigns
-       ) do
-    assigns
-    |> assign(:link_classes, nil)
-    |> do_render_external_link()
-  end
-
-  defp render_link(
-         %{
-           kind: "unstyled",
-           variant: nil,
-           accent: nil,
-           navigate: nil,
-           patch: nil,
-           redirect: nil,
-           external: "https://" <> _external,
-           mailto: nil
-         } = assigns
-       ) do
-    assigns
-    |> assign(:link_classes, nil)
-    |> do_render_external_link()
-  end
-
-  defp render_link(
-         %{
-           kind: "unstyled",
-           variant: nil,
-           accent: nil,
-           navigate: nil,
-           patch: nil,
-           redirect: nil,
-           external: nil,
-           mailto: mailto
-         } = assigns
-       )
-       when is_binary(mailto) and byte_size(mailto) > 0 do
-    assigns
-    |> assign(:mailto_href, "mailto:" <> mailto)
-    |> assign(:link_classes, nil)
-    |> do_render_mailto_link()
-  end
-
-  defp render_link(
-         %{
-           kind: "text",
-           size: size,
-           variant: nil,
-           accent: nil,
-           navigate: navigate,
-           patch: nil,
-           redirect: nil,
-           external: nil,
-           mailto: nil
-         } = assigns
-       ) do
-    assigns
-    |> assign(:navigate, navigate)
-    |> assign(:link_classes, text_link_classes(size))
-    |> do_render_navigate_link()
-  end
-
-  defp render_link(
-         %{
-           kind: "text",
-           size: size,
-           variant: nil,
-           accent: nil,
-           navigate: nil,
-           patch: patch,
-           redirect: nil,
-           external: nil,
-           mailto: nil
-         } = assigns
-       ) do
-    assigns
-    |> assign(:patch, patch)
-    |> assign(:link_classes, text_link_classes(size))
-    |> do_render_patch_link()
-  end
-
-  defp render_link(
-         %{
-           kind: "text",
-           size: size,
-           variant: nil,
-           accent: nil,
-           navigate: nil,
-           patch: nil,
-           redirect: redirect,
-           external: nil,
-           mailto: nil
-         } = assigns
-       ) do
-    assigns
-    |> assign(:redirect, redirect)
-    |> assign(:link_classes, text_link_classes(size))
-    |> do_render_redirect_link()
-  end
-
-  defp render_link(
-         %{
-           kind: "text",
-           size: size,
-           variant: nil,
-           accent: nil,
-           navigate: nil,
-           patch: nil,
-           redirect: nil,
-           external: "http://" <> _external,
-           mailto: nil
-         } = assigns
-       ) do
-    assigns
-    |> assign(:link_classes, text_link_classes(size))
-    |> do_render_external_link()
-  end
-
-  defp render_link(
-         %{
-           kind: "text",
-           size: size,
-           variant: nil,
-           accent: nil,
-           navigate: nil,
-           patch: nil,
-           redirect: nil,
-           external: "https://" <> _external,
-           mailto: nil
-         } = assigns
-       ) do
-    assigns
-    |> assign(:link_classes, text_link_classes(size))
-    |> do_render_external_link()
-  end
-
-  defp render_link(
-         %{
-           kind: "text",
-           size: size,
-           variant: nil,
-           accent: nil,
-           navigate: nil,
-           patch: nil,
-           redirect: nil,
-           external: nil,
-           mailto: mailto
-         } = assigns
-       )
-       when is_binary(mailto) and byte_size(mailto) > 0 do
-    assigns
-    |> assign(:mailto_href, "mailto:" <> mailto)
-    |> assign(:link_classes, text_link_classes(size))
-    |> do_render_mailto_link()
-  end
-
-  defp render_link(
-         %{kind: "button", size: size, navigate: navigate, patch: nil, redirect: nil, external: nil, mailto: nil} =
-           assigns
-       ) do
-    accent = resolved_accent(assigns)
-
-    assigns
-    |> assign(:navigate, navigate)
-    |> assign(:variant, assigns.variant || "primary")
-    |> assign(:accent, accent)
-    |> assign(:link_classes, button_link_classes(size, assigns.variant || "primary", accent))
-    |> do_render_navigate_link()
-  end
-
-  defp render_link(
-         %{kind: "button", size: size, navigate: nil, patch: patch, redirect: nil, external: nil, mailto: nil} = assigns
-       ) do
-    accent = resolved_accent(assigns)
-
-    assigns
-    |> assign(:patch, patch)
-    |> assign(:variant, assigns.variant || "primary")
-    |> assign(:accent, accent)
-    |> assign(:link_classes, button_link_classes(size, assigns.variant || "primary", accent))
-    |> do_render_patch_link()
-  end
-
-  defp render_link(
-         %{kind: "button", size: size, navigate: nil, patch: nil, redirect: redirect, external: nil, mailto: nil} =
-           assigns
-       ) do
-    accent = resolved_accent(assigns)
-
-    assigns
-    |> assign(:redirect, redirect)
-    |> assign(:variant, assigns.variant || "primary")
-    |> assign(:accent, accent)
-    |> assign(:link_classes, button_link_classes(size, assigns.variant || "primary", accent))
-    |> do_render_redirect_link()
-  end
-
-  defp render_link(
-         %{
-           kind: "button",
-           size: size,
-           navigate: nil,
-           patch: nil,
-           redirect: nil,
-           external: "http://" <> _external,
-           mailto: nil
-         } = assigns
-       ) do
-    accent = resolved_accent(assigns)
-
-    assigns
-    |> assign(:variant, assigns.variant || "primary")
-    |> assign(:accent, accent)
-    |> assign(:link_classes, button_link_classes(size, assigns.variant || "primary", accent))
-    |> do_render_external_link()
-  end
-
-  defp render_link(
-         %{
-           kind: "button",
-           size: size,
-           navigate: nil,
-           patch: nil,
-           redirect: nil,
-           external: "https://" <> _external,
-           mailto: nil
-         } = assigns
-       ) do
-    accent = resolved_accent(assigns)
-
-    assigns
-    |> assign(:variant, assigns.variant || "primary")
-    |> assign(:accent, accent)
-    |> assign(:link_classes, button_link_classes(size, assigns.variant || "primary", accent))
-    |> do_render_external_link()
-  end
-
-  defp render_link(
-         %{kind: "button", size: size, navigate: nil, patch: nil, redirect: nil, external: nil, mailto: mailto} = assigns
-       )
-       when is_binary(mailto) and byte_size(mailto) > 0 do
-    accent = resolved_accent(assigns)
-
-    assigns
-    |> assign(:mailto_href, "mailto:" <> mailto)
-    |> assign(:variant, assigns.variant || "primary")
-    |> assign(:accent, accent)
-    |> assign(:link_classes, button_link_classes(size, assigns.variant || "primary", accent))
-    |> do_render_mailto_link()
-  end
-
-  defp do_render_navigate_link(assigns) do
     ~H"""
-    <Phoenix.Component.link navigate={@navigate} class={[@link_classes, @class]} {@rest}>
+    <Phoenix.Component.link
+      navigate={@navigate}
+      patch={@patch}
+      href={@href}
+      class={[@link_classes, @class]}
+      {@rest}
+    >
       {render_slot(@inner_block)}
     </Phoenix.Component.link>
     """
   end
 
-  defp do_render_patch_link(assigns) do
-    ~H"""
-    <Phoenix.Component.link patch={@patch} class={[@link_classes, @class]} {@rest}>
-      {render_slot(@inner_block)}
-    </Phoenix.Component.link>
-    """
-  end
+  defp href(%{patch: nil, redirect: nil, external: nil, mailto: nil}), do: nil
+  defp href(%{navigate: nil, redirect: nil, external: nil, mailto: nil}), do: nil
 
-  defp do_render_redirect_link(assigns) do
-    ~H"""
-    <Phoenix.Component.link href={@redirect} class={[@link_classes, @class]} {@rest}>
-      {render_slot(@inner_block)}
-    </Phoenix.Component.link>
-    """
-  end
+  defp href(%{navigate: nil, patch: nil, redirect: redirect, external: nil, mailto: nil}), do: redirect
 
-  defp do_render_external_link(assigns) do
-    ~H"""
-    <Phoenix.Component.link href={@external} class={[@link_classes, @class]} {@rest}>
-      {render_slot(@inner_block)}
-    </Phoenix.Component.link>
-    """
-  end
+  defp href(%{navigate: nil, patch: nil, redirect: nil, external: "http://" <> _ = external, mailto: nil}), do: external
 
-  defp do_render_mailto_link(assigns) do
-    ~H"""
-    <Phoenix.Component.link href={@mailto_href} class={[@link_classes, @class]} {@rest}>
-      {render_slot(@inner_block)}
-    </Phoenix.Component.link>
-    """
-  end
+  defp href(%{navigate: nil, patch: nil, redirect: nil, external: "https://" <> _ = external, mailto: nil}), do: external
 
-  defp text_link_classes("big") do
+  defp href(%{navigate: nil, patch: nil, redirect: nil, external: nil, mailto: mailto})
+       when is_binary(mailto) and byte_size(mailto) > 0, do: "mailto:" <> mailto
+
+  defp link_classes(%{kind: "unstyled", variant: nil, accent: nil}), do: nil
+
+  defp link_classes(%{kind: "text", variant: nil, accent: nil, size: size}) do
     [
       "inline-flex items-center justify-center gap-1 whitespace-nowrap select-none transition duration-100 ease-out",
-      "text-base/tight font-normal text-grey-700",
+      text_size_classes(size),
+      "font-normal text-grey-700",
       "hover:text-grey-900 active:text-rust-700",
       "[&>svg]:size-4"
     ]
   end
 
-  defp text_link_classes("small") do
-    [
-      "inline-flex items-center justify-center gap-1 whitespace-nowrap select-none transition duration-100 ease-out",
-      "text-sm/tight font-normal text-grey-700",
-      "hover:text-grey-900 active:text-rust-700",
-      "[&>svg]:size-4"
-    ]
-  end
+  defp link_classes(%{kind: "button", size: size, variant: variant} = assigns) do
+    variant = variant || "primary"
 
-  defp button_link_classes(size, variant, accent) do
     [
       "inline-flex items-center justify-center whitespace-nowrap select-none border transition duration-100 ease-out cursor-pointer disabled:pointer-events-none disabled:cursor-default phx-click-loading:opacity-75 phx-click-loading:cursor-default",
       ButtonStyles.size_classes(size),
-      ButtonStyles.variant_classes(variant, accent)
+      ButtonStyles.variant_classes(variant, resolved_accent(assigns.accent, variant))
     ]
   end
 
-  defp resolved_accent(%{accent: nil, variant: nil}), do: "rust"
-  defp resolved_accent(%{accent: nil, variant: "primary"}), do: "rust"
-  defp resolved_accent(%{accent: accent}), do: accent
+  defp text_size_classes("big"), do: "text-base/tight"
+  defp text_size_classes("small"), do: "text-sm/tight"
+
+  defp resolved_accent(nil, "primary"), do: "rust"
+  defp resolved_accent(accent, _variant), do: accent
 end
