@@ -443,6 +443,8 @@ defmodule Firmowid.Timetracker.Session do
       accept []
       require_atomic? false
 
+      # A caller's copy may be stale; never move the end of a finished session.
+      change filter(expr(is_nil(end_datetime)))
       change set_attribute(:end_datetime, &DateTime.utc_now/0)
       change ClampSessionBoundaries
       change NormalizeSessionBoundaries
