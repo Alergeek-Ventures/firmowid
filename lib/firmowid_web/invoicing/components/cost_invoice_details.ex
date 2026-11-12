@@ -37,6 +37,7 @@ defmodule FirmowidWeb.Invoicing.Components.CostInvoiceDetails do
         :can_write_invoicing?,
         Ash.can?({CostInvoice, :toggle_skip}, assigns.current_user)
       )
+      |> assign(:can_delete_invoice?, Ash.can?({CostInvoice, :destroy}, assigns.current_user))
 
     socket =
       if Map.has_key?(assigns, :invoice) do
@@ -110,7 +111,7 @@ defmodule FirmowidWeb.Invoicing.Components.CostInvoiceDetails do
                 </.link>
 
                 <.button
-                  :if={@can_write_invoicing? and @invoice.is_deletable}
+                  :if={@can_delete_invoice? and @invoice.is_deletable}
                   phx-click={show_modal("delete-invoice-modal")}
                   variant="secondary"
                   size="small"
@@ -122,7 +123,7 @@ defmodule FirmowidWeb.Invoicing.Components.CostInvoiceDetails do
                 </.button>
 
                 <div
-                  :if={@can_write_invoicing? and @invoice.is_deletable}
+                  :if={@can_delete_invoice? and @invoice.is_deletable}
                   class="absolute"
                 >
                   <.modal id="delete-invoice-modal" on_cancel={hide_modal("delete-invoice-modal")}>
