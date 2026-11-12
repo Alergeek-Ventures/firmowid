@@ -617,8 +617,18 @@ defmodule Firmowid.Invoicing.CostInvoice do
       authorize_if always()
     end
 
+    # Document and KSeF imports create and attach; the seller display name trigger runs as it.
     bypass {SystemActorRole, roles: [:cost_invoice_processor]} do
-      authorize_if always()
+      authorize_if action([
+                     :read,
+                     :list,
+                     :by_id,
+                     :by_checksum,
+                     :create,
+                     :create_from_ksef,
+                     :update_blob_id,
+                     :refresh_seller_display_name
+                   ])
     end
 
     bypass {SystemActorRole,
