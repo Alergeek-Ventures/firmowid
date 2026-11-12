@@ -1066,19 +1066,19 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
   end
 
   defp bank_attention_entries(scope, bank_accounts_path) do
-    [scope: scope, load: [:requisition, :broken?]]
+    [scope: scope, load: [:requisition, :sync_stopped?]]
     |> Finances.list_bank_accounts!()
     # Keep the latest outcome independent of the last-success aggregate's filter.
     |> Ash.load!(:latest_successful_sync_at, scope: scope)
     |> Enum.filter(fn account ->
       not is_nil(account.gocardless_id) and
-        (bank_connection_warning?(account) or awaiting_bank_sync?(account))
+        (account.sync_stopped? or awaiting_bank_sync?(account))
     end)
     |> Enum.group_by(&(&1.institution_id || &1.institution_name || &1.id))
     |> Enum.map(fn {_institution, accounts} ->
       account =
         Enum.find(accounts, &match?(%Requisition{status: :expired}, &1.requisition)) ||
-          Enum.find(accounts, &bank_connection_warning?/1) || hd(accounts)
+          Enum.find(accounts, & &1.sync_stopped?) || hd(accounts)
 
       # Show the oldest known gap among this bank's affected accounts.
       unsynced_since =
@@ -1091,7 +1091,7 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
       %{
         type: :bank_connection_attention,
         account: account,
-        warning?: Enum.any?(accounts, &bank_connection_warning?/1),
+        warning?: Enum.any?(accounts, & &1.sync_stopped?),
         unsynced_since: unsynced_since,
         navigate:
           if(scope.actor.member.role == :admin,
@@ -1143,14 +1143,6 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
 
     suggestions = ksef_warnings ++ bank_alerts ++ suggestions
     %{entries: suggestions, total_count: length(suggestions)}
-  end
-
-  defp bank_connection_warning?(account) do
-    account.broken? == true or
-      match?(
-        %Requisition{status: status} when status in [:expired, :rejected],
-        account.requisition
-      )
   end
 
   defp awaiting_bank_sync?(%{requisition: %Requisition{status: :accepted, inserted_at: connected_at}} = account) do

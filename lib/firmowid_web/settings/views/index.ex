@@ -1252,7 +1252,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
     accounts =
       Finances.list_bank_accounts!(
         scope: scope,
-        load: [:broken?, :has_successful_sync?, :requisition]
+        load: [:sync_stopped?, :has_successful_sync?, :requisition]
       )
 
     accounts

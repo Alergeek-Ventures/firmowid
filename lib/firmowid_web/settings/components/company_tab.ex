@@ -988,8 +988,7 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
 
   defp bank_account_status(account, _requisition_status) when is_nil(account.gocardless_id), do: :disconnected
 
-  defp bank_account_status(account, requisition_status)
-       when requisition_status in [:rejected, :expired] or account.broken?, do: :broken
+  defp bank_account_status(account, _requisition_status) when account.sync_stopped?, do: :broken
 
   defp bank_account_status(account, requisition_status)
        when requisition_status == :accepted and not account.has_successful_sync?, do: :processing
