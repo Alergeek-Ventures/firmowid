@@ -32,7 +32,6 @@ defmodule Firmowid.Delegations.Delegation do
   alias Firmowid.Delegations.Changes.SetPerDiemExchangeRate
   alias Firmowid.Delegations.Changes.SetSubmittedAt
   alias Firmowid.Delegations.Signals
-  alias Firmowid.Delegations.Validations.HasDateChangeReason
   alias Firmowid.Delegations.Validations.HasExpenses
   alias Firmowid.Delegations.Validations.PerDiemTimesComplete
   alias Firmowid.Invoicing.Changes.ValidateCountryCode
@@ -186,7 +185,11 @@ defmodule Firmowid.Delegations.Delegation do
 
       # Runs after Ash requires values, so the per diem it checks is calculated from cast inputs.
       validate {HasExpenses, []}, before_action?: true
-      validate {HasDateChangeReason, []}
+
+      validate present(:date_change_reason),
+        where: [present([:detected_start_date, :detected_end_date], at_least: 1)],
+        message: gettext_noop("This field is required")
+
       validate {PerDiemTimesComplete, []}
 
       change PrepareSettlement
