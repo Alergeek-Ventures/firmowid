@@ -23,11 +23,7 @@ defmodule Firmowid.Billing.Snapshot do
 
   code_interface do
     define :destroy, action: :destroy
-    define :read, action: :read
     define :list, action: :list
-    define :read_global, action: :read_global
-    define :by_month, args: [:month], action: :by_month
-    define :create, action: :create
   end
 
   actions do
