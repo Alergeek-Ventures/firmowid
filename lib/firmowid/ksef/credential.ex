@@ -39,6 +39,20 @@ defmodule Firmowid.Ksef.Credential do
     repo Firmowid.Repo
   end
 
+  # The decrypted material is for the KSeF session and its certificate rollover only.
+  field_policies do
+    private_fields :include
+
+    field_policy :credentials do
+      authorize_if {SystemActorRole, roles: [:ksef_session]}
+      authorize_if AshObanInteraction
+    end
+
+    field_policy :* do
+      authorize_if always()
+    end
+  end
+
   state_machine do
     state_attribute :status
     initial_states [:authenticating, :authenticating_epuap]

@@ -12,6 +12,7 @@ defmodule Firmowid.Ksef.CertificateAuthTest do
   alias Firmowid.Ksef.Workers.SessionWorker
   alias Firmowid.Repo
   alias Firmowid.Scope
+  alias Firmowid.SystemActor
 
   setup do
     admin = admin_fixture()
@@ -72,14 +73,22 @@ defmodule Firmowid.Ksef.CertificateAuthTest do
 
     assert credential.auth_type == :certificate
     assert credential.status == :authenticating
+    assert %Ash.ForbiddenField{} = credential.credentials
     assert Ksef.get_credential!(scope: scope) == nil
+
+    organization_id = admin.member.organization_id
+
+    session = %Scope{
+      actor: %SystemActor{org_id: organization_id, role: :ksef_session},
+      tenant: organization_id
+    }
 
     assert {:ok,
             %{
               "certificate" => certificate,
               "private_key" => private_key,
               "private_key_password" => password
-            }} = Jason.decode(credential.credentials)
+            }} = Jason.decode(Credential.get_internal!(scope: session).credentials)
 
     assert String.trim_trailing(certificate) == String.trim_trailing(credentials.certificate)
     assert String.trim_trailing(private_key) == String.trim_trailing(credentials.private_key)

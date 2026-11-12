@@ -122,4 +122,29 @@ defmodule Firmowid.KsefTest do
     assert {:ok, %{results: []}} =
              Credential.refreshable_certificates(scope: scope, page: [limit: 1])
   end
+
+  test "only the KSeF session reads the stored credential material" do
+    admin = admin_fixture()
+    organization_id = admin.member.organization_id
+
+    Ash.Seed.seed!(Credential, %{
+      organization_id: organization_id,
+      status: :working,
+      auth_type: :token,
+      credentials: "ksef-token-example"
+    })
+
+    admin_scope = %Scope{actor: admin, tenant: organization_id}
+
+    session_scope = %Scope{
+      actor: %SystemActor{org_id: organization_id, role: :ksef_session},
+      tenant: organization_id
+    }
+
+    assert %Credential{auth_type: :token, credentials: %Ash.ForbiddenField{}} =
+             Ksef.get_credential!(scope: admin_scope)
+
+    assert %Credential{credentials: "ksef-token-example"} =
+             Ksef.get_credential!(scope: session_scope)
+  end
 end
