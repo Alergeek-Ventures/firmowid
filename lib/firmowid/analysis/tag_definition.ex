@@ -1,11 +1,7 @@
 defmodule Firmowid.Analysis.TagDefinition do
   @moduledoc """
-  Custom category or project tag with a name and color.
-
-  Full CRUD Ash resource backed by the `tag_definitions` table.
-
-  Attribute multitenancy via `organization_id`. Names are unique per
-  organization (enforced by `tags_organization_id_name_index`).
+  Custom category or project tag with a name, unique in the organization, and
+  a color. A company function (`overhead`) counts its shares as overhead.
   """
   use Ash.Resource,
     domain: Firmowid.Analysis,
