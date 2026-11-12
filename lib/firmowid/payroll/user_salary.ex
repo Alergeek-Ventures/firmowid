@@ -1,12 +1,8 @@
 defmodule Firmowid.Payroll.UserSalary do
   @moduledoc """
-  Ash resource wrapping the existing `user_salaries` table.
+  A member's hourly rate from `starts_at` until the start of their next salary.
 
-  Attribute multitenancy via `organization_id`. Supports CRUD plus:
-
-  - `bulk_create_salaries` — admin-only action creating new salaries for multiple employees atomically
-
-  Each salary belongs to an organization member.
+  `bulk_create_salaries` sets new rates for several members in one transaction.
   """
   use Ash.Resource,
     domain: Firmowid.Payroll,
@@ -166,7 +162,7 @@ defmodule Firmowid.Payroll.UserSalary do
     end
 
     belongs_to :employment_contract, Firmowid.Payroll.UserEmploymentContract do
-      # dla istniejących rekordów bez kontraktu
+      # A rate set by hand has no contract.
       allow_nil? true
       attribute_writable? true
     end
@@ -199,7 +195,7 @@ defmodule Firmowid.Payroll.UserSalary do
     calculate :payout_estimates,
               {:array, Firmowid.Payroll.UserSalary.Types.PayoutEstimate},
               Firmowid.Payroll.UserSalary.Calculations.PayoutEstimates do
-      description "A complete current tax profile selects one estimate. Otherwise returns legacy hypothetical variants. No annual limits, progressive PIT or PPK are tracked."
+      description "A complete current tax profile selects one estimate. Otherwise returns hypothetical variants. No annual limits, progressive PIT or PPK are tracked."
       argument :month, :date, allow_nil?: false
     end
 
