@@ -382,8 +382,6 @@ defmodule Firmowid.Invoicing.Counterparty do
                 end
               )
 
-    calculate :list_all_order, :string, expr(fragment("COALESCE(?, ?)", display_name, surname))
-
     calculate :cooperation_value, :map, calculation: Firmowid.Invoicing.Calculations.CooperationValue
   end
 
