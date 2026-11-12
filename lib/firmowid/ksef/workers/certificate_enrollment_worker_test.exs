@@ -250,6 +250,38 @@ defmodule Firmowid.Ksef.Workers.CertificateEnrollmentWorkerTest do
     end)
   end
 
+  test "fails the enrollment when KSeF keeps the certificate pending past the polling limit", %{
+    organization_id: organization_id,
+    scope: scope
+  } do
+    Ash.Seed.seed!(Credential, %{
+      organization_id: organization_id,
+      status: :wait_for_certificate,
+      auth_type: :generated_certificate
+    })
+
+    Req.Test.stub(:ksef_certificate_refresh_api, fn conn ->
+      Req.Test.json(conn, %{"status" => %{"code" => 100}})
+    end)
+
+    encrypt = &(&1 |> Firmowid.Vault.encrypt!() |> Base.encode64())
+
+    args = %{
+      "action" => "poll_certificate_enrollment",
+      "organization_id" => organization_id,
+      "reference_number" => "ENROLLMENT-REF",
+      "access_token" => encrypt.(jwt(3_600)),
+      "private_key" => encrypt.("private key")
+    }
+
+    assert {:snooze, _seconds} = perform_job(CertificateEnrollmentWorker, args)
+
+    assert {:cancel, _reason} =
+             perform_job(CertificateEnrollmentWorker, args, attempt: 5, meta: %{"snoozed" => 720})
+
+    assert Credential.get_internal!(scope: scope) == nil
+  end
+
   defp ksef_scope(organization_id) do
     %Scope{
       actor: %SystemActor{org_id: organization_id, role: :ksef_session},

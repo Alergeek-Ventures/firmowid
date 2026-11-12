@@ -30,6 +30,8 @@ defmodule Firmowid.Ksef.Workers.CertificateEnrollmentWorker do
   require Logger
 
   @poll_interval_seconds 5
+  # An hour of polling (720 x 5 s), like the KSeF export and submission polls.
+  @max_poll_snoozes 720
 
   @doc "Enqueues the first stage with an encrypted signed XML document."
   @spec enqueue(String.t(), Ash.UUID.t()) :: {:ok, Oban.Job.t()} | {:error, term()}
@@ -88,7 +90,9 @@ defmodule Firmowid.Ksef.Workers.CertificateEnrollmentWorker do
     credential = Credential.get_internal!(scope: scope)
     authentication_token = decrypt!(args["authentication_token"])
 
-    case ApiClient.fetch_auth_status(args["reference_number"], authentication_token) do
+    case args["reference_number"]
+         |> ApiClient.fetch_auth_status(authentication_token)
+         |> within_poll_limit(job) do
       :pending ->
         {:snooze, @poll_interval_seconds}
 
@@ -165,7 +169,7 @@ defmodule Firmowid.Ksef.Workers.CertificateEnrollmentWorker do
     reference_number = args["reference_number"]
     private_key = decrypt!(args["private_key"])
 
-    case retrieve_certificate(access_token, reference_number) do
+    case access_token |> retrieve_certificate(reference_number) |> within_poll_limit(job) do
       :pending ->
         {:snooze, @poll_interval_seconds}
 
@@ -208,7 +212,7 @@ defmodule Firmowid.Ksef.Workers.CertificateEnrollmentWorker do
         reference_number = args["reference_number"]
         private_key = decrypt!(args["private_key"])
 
-        case retrieve_certificate(access_token, reference_number) do
+        case access_token |> retrieve_certificate(reference_number) |> within_poll_limit(job) do
           :pending ->
             {:snooze, @poll_interval_seconds}
 
@@ -262,6 +266,16 @@ defmodule Firmowid.Ksef.Workers.CertificateEnrollmentWorker do
       {:error, reason} -> {:error, reason}
     end
   end
+
+  # A snooze does not use up an attempt; Oban counts snoozes in the job's meta. Past the
+  # limit a pending operation fails like any other error of its stage.
+  defp within_poll_limit(:pending, %Oban.Job{meta: meta}) do
+    if Map.get(meta, "snoozed", 0) < @max_poll_snoozes,
+      do: :pending,
+      else: {:error, :poll_timeout}
+  end
+
+  defp within_poll_limit(result, _job), do: result
 
   defp certificate_credentials(certificate, private_key) do
     Jason.encode!(%{
