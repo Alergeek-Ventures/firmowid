@@ -53,8 +53,7 @@ defmodule Firmowid.Finances.DuplicateTransactionMatcher do
       parse_date(get_field(left, :value_date)) == parse_date(get_field(right, :value_date))
   end
 
-  @spec candidate_match?(transaction_like(), transaction_like(), keyword()) :: boolean()
-  def candidate_match?(left, right, opts \\ []) do
+  defp candidate_match?(left, right, opts) do
     same_amount?(left, right) and
       same_currency?(left, right) and
       same_counterparty_fields?(left, right, opts) and
@@ -73,36 +72,7 @@ defmodule Firmowid.Finances.DuplicateTransactionMatcher do
     end
   end
 
-  @spec within_candidate_date_bounds?(
-          transaction_like(),
-          Date.t() | nil,
-          Date.t() | nil,
-          keyword()
-        ) ::
-          boolean()
-  def within_candidate_date_bounds?(transaction, oldest_date, newest_date, opts \\ [])
-
-  def within_candidate_date_bounds?(_transaction, nil, nil, _opts), do: true
-
-  def within_candidate_date_bounds?(transaction, oldest_date, newest_date, opts) do
-    date_tolerance_days = Keyword.get(opts, :date_tolerance_days, @date_tolerance_days)
-
-    transaction
-    |> candidate_bound_dates()
-    |> case do
-      [] ->
-        true
-
-      dates ->
-        Enum.any?(dates, fn date ->
-          Date.compare(date, Date.add(oldest_date, -date_tolerance_days)) != :lt and
-            Date.compare(date, Date.add(newest_date, date_tolerance_days)) != :gt
-        end)
-    end
-  end
-
-  @spec normalize_remittance(term()) :: String.t()
-  def normalize_remittance(value) do
+  defp normalize_remittance(value) do
     value
     |> normalize_text()
     |> String.replace(~r/\s+/, " ")
@@ -111,10 +81,9 @@ defmodule Firmowid.Finances.DuplicateTransactionMatcher do
     |> String.trim()
   end
 
-  @spec normalize_text(term()) :: String.t()
-  def normalize_text(nil), do: ""
+  defp normalize_text(nil), do: ""
 
-  def normalize_text(value) do
+  defp normalize_text(value) do
     value
     |> to_string()
     |> String.downcase()
@@ -381,15 +350,6 @@ defmodule Firmowid.Finances.DuplicateTransactionMatcher do
       ],
       fn {left_date, right_date} -> is_nil(left_date) or is_nil(right_date) end
     )
-  end
-
-  defp candidate_bound_dates(transaction) do
-    [
-      parse_date(get_field(transaction, :booking_date)),
-      parse_date(get_field(transaction, :value_date))
-    ]
-    |> Enum.reject(&is_nil/1)
-    |> Enum.uniq()
   end
 
   defp dates_within_tolerance?({left_date, right_date}, date_tolerance_days) do

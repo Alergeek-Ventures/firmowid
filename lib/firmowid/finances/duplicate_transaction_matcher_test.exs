@@ -394,32 +394,6 @@ defmodule Firmowid.Finances.DuplicateTransactionMatcherTest do
     end
   end
 
-  describe "within_candidate_date_bounds?/3" do
-    test "keeps transactions within tolerance around incoming batch bounds" do
-      transaction = transaction(%{booking_date: ~D[2026-04-11]})
-
-      assert DuplicateTransactionMatcher.within_candidate_date_bounds?(
-               transaction,
-               ~D[2026-04-11],
-               ~D[2026-04-12]
-             )
-    end
-
-    test "keeps transactions when value date is within bounds even if booking date is outside" do
-      transaction =
-        transaction(%{
-          booking_date: ~D[2026-04-25],
-          value_date: ~D[2026-04-12]
-        })
-
-      assert DuplicateTransactionMatcher.within_candidate_date_bounds?(
-               transaction,
-               ~D[2026-04-11],
-               ~D[2026-04-12]
-             )
-    end
-  end
-
   defp transaction(overrides) do
     Map.merge(
       %{
