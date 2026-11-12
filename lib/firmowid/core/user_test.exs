@@ -205,6 +205,32 @@ defmodule Firmowid.Core.UserTest do
       assert Core.load_member(employee).member.name != "Ada Lovelace"
     end
 
+    test "stores an account number typed as 26 digits with the PL prefix" do
+      user = user_fixture()
+      scope = %Scope{actor: user, tenant: user.member.organization_id}
+
+      assert {:ok, updated} =
+               Core.update_current_profile(
+                 %{bank_account_number: " 23 1140 2004 0000 3002 0135 5362 "},
+                 scope: scope
+               )
+
+      assert updated.member.bank_account_number == "PL23 1140 2004 0000 3002 0135 5362"
+    end
+
+    test "refuses an account number with a wrong checksum with the validation message" do
+      user = user_fixture()
+      scope = %Scope{actor: user, tenant: user.member.organization_id}
+
+      assert {:error, error} =
+               Core.update_current_profile(%{bank_account_number: "23114020040000300201355363"},
+                 scope: scope
+               )
+
+      assert Exception.message(error) =~ "must be a valid bank account number (IBAN)"
+      assert Core.load_member(user).member.bank_account_number == nil
+    end
+
     test "keeps the name when the profile details are invalid" do
       user = user_fixture()
       scope = %Scope{actor: user, tenant: user.member.organization_id}
