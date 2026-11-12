@@ -190,6 +190,25 @@ defmodule Firmowid.Core do
     do: user.system_role == :superuser or organization.billing_plan != :no_plan
 
   @doc """
+  Adds the user to the organization with the role, restoring an archived
+  membership there, as the system actor limited to that assignment.
+  """
+  @spec add_to_organization!(binary(), binary(), atom(), String.t() | nil) :: User.t()
+  def add_to_organization!(user_id, organization_id, role, name) do
+    actor = %SystemActor{
+      org_id: organization_id,
+      role: :organization_owner_setup,
+      user_id: user_id
+    }
+
+    user_id
+    |> get_user!(actor: actor)
+    |> set_organization!(%{organization_id: organization_id, role: role, name: name},
+      actor: actor
+    )
+  end
+
+  @doc """
   Loads the member the user works as, whose organization is the tenant and which
   policies read the actor's role from.
 

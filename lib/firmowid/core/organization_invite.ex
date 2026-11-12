@@ -19,7 +19,6 @@ defmodule Firmowid.Core.OrganizationInvite do
   alias Firmowid.Core.User
   alias Firmowid.Core.UserRole
   alias Firmowid.Resource
-  alias Firmowid.SystemActor
 
   require Resource
 
@@ -84,43 +83,15 @@ defmodule Firmowid.Core.OrganizationInvite do
       change set_attribute(:consumed_by_id, actor(:id))
       change set_attribute(:consumed_at, &DateTime.utc_now/0)
 
-      change after_action(fn changeset, invite, context ->
-               user_id = invite.consumed_by_id
-               organization_id = invite.organization_id
+      change after_action(fn changeset, invite, _context ->
+               name = Ash.Changeset.get_argument(changeset, :name)
 
-               bridge_opts =
-                 case Map.get(context, :tenant) do
-                   nil ->
-                     [
-                       actor: %SystemActor{
-                         org_id: organization_id,
-                         role: :organization_owner_setup,
-                         user_id: user_id
-                       }
-                     ]
-
-                   tenant ->
-                     [
-                       actor: %SystemActor{
-                         org_id: organization_id,
-                         role: :organization_owner_setup,
-                         user_id: user_id
-                       },
-                       tenant: tenant
-                     ]
-                 end
-
-               user_id
-               |> Core.get_user!(bridge_opts)
-               |> Core.changeset_to_set_organization(
-                 %{
-                   organization_id: organization_id,
-                   role: invite.role,
-                   name: Ash.Changeset.get_argument(changeset, :name)
-                 },
-                 bridge_opts
+               Core.add_to_organization!(
+                 invite.consumed_by_id,
+                 invite.organization_id,
+                 invite.role,
+                 name
                )
-               |> Ash.update!()
 
                {:ok, invite}
              end)
