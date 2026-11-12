@@ -164,8 +164,7 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
     case NbpSettlement.calculate(
            socket.assigns.expense_forms,
            socket.assigns.expense_currencies,
-           expense_id,
-           "PLN"
+           expense_id
          ) do
       {:ok, settlement} ->
         {:noreply,

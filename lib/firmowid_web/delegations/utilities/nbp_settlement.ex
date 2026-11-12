@@ -3,22 +3,19 @@ defmodule FirmowidWeb.Delegations.Utilities.NbpSettlement do
 
   alias Firmowid.Currencies.NbpApiClient
 
-  @doc "Calculates a settlement amount in the requested target currency."
-  @spec calculate(map(), map(), String.t(), String.t()) ::
-          {:ok, map()} | {:error, :rate_unavailable}
-  def calculate(expense_forms, expense_currencies, expense_id, target_currency) do
-    with true <- target_currency == "PLN" or NbpApiClient.supported_currency?(target_currency),
-         %{expense: form} <- Map.fetch!(expense_forms, expense_id),
+  @doc "Converts an expense amount to PLN at the NBP rate."
+  @spec calculate(map(), map(), String.t()) :: {:ok, map()} | {:error, :rate_unavailable}
+  def calculate(expense_forms, expense_currencies, expense_id) do
+    with %{expense: form} <- Map.fetch!(expense_forms, expense_id),
          %Money{} = amount <- form[:expense_amount].value,
          source_currency = Map.get(expense_currencies, expense_id, "PLN"),
          date = Date.utc_today(),
-         {:ok, source_rate} <- nbp_rate(source_currency, date),
-         {:ok, target_rate} <- nbp_rate(target_currency, date) do
-      rate = source_rate |> Decimal.div(target_rate) |> Decimal.round(4)
+         {:ok, rate} <- nbp_rate(source_currency, date) do
+      rate = Decimal.round(rate, 4)
 
       {:ok,
        %{
-         amount: Money.new(target_currency, Decimal.mult(Money.to_decimal(amount), rate)),
+         amount: Money.new("PLN", Decimal.mult(Money.to_decimal(amount), rate)),
          source_currency: source_currency,
          rate: rate,
          date: date
