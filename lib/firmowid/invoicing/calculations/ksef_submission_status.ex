@@ -7,7 +7,6 @@ defmodule Firmowid.Invoicing.Calculations.KsefSubmissionStatus do
   use Ash.Resource.Calculation
 
   alias Ash.Resource.Calculation.Context
-  alias Firmowid.Ksef
   alias Firmowid.Ksef.SubmissionInfo
 
   @doc "Loads the invoice fields required by the shared submission information rules."
@@ -24,7 +23,7 @@ defmodule Firmowid.Invoicing.Calculations.KsefSubmissionStatus do
   @impl true
   def calculate(records, _opts, _context) do
     records
-    |> Ksef.get_submission_infos()
+    |> SubmissionInfo.for_invoices()
     |> Enum.map(& &1.status)
   end
 end

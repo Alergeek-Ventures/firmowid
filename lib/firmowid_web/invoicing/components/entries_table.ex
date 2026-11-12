@@ -11,7 +11,6 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
   alias Firmowid.Invoicing.CostInvoice
   alias Firmowid.Invoicing.SalesInvoice
   alias Firmowid.Invoicing.TransactionGroup
-  alias Firmowid.Ksef
   alias Firmowid.Ksef.SubmissionInfo
   alias FirmowidWeb.Analysis.Components.ProjectCell
   alias FirmowidWeb.Invoicing.Utilities.BankBadges
@@ -970,7 +969,7 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
   defp status_for_entry(%CostInvoice{}), do: "matched"
 
   defp status_for_entry(%SalesInvoice{} = invoice) do
-    submission_info = Ksef.get_submission_info(invoice)
+    submission_info = SubmissionInfo.for_invoice(invoice)
 
     cond do
       is_nil(invoice.invoice_number) -> "draft"

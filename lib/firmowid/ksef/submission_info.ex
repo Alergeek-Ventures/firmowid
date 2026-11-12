@@ -3,8 +3,8 @@ defmodule Firmowid.Ksef.SubmissionInfo do
   Struct representing the KSeF submission status for a sales invoice.
 
   Encapsulates all information about an invoice's KSeF submission lifecycle,
-  including timestamps, identifiers, and error details. This provides a unified
-  API for both the invoicing entries table and the timeline component.
+  including timestamps, identifiers, and error details. `for_invoice/1` and
+  `for_invoices/1` derive it from the invoice and its latest `SubmissionWorker` job.
 
   ## Statuses
 
@@ -38,6 +38,10 @@ defmodule Firmowid.Ksef.SubmissionInfo do
   """
 
   use Gettext, backend: Firmowid.Gettext
+
+  import Ecto.Query
+
+  alias Firmowid.Repo
 
   @type status :: :not_submitted | :submitting | :submitted | :failed
 
@@ -108,4 +112,219 @@ defmodule Firmowid.Ksef.SubmissionInfo do
   @spec attempted?(t()) :: boolean()
   def attempted?(%__MODULE__{status: :not_submitted}), do: false
   def attempted?(%__MODULE__{}), do: true
+
+  @doc """
+  Returns the submission information of a sales invoice. Takes any map with the
+  invoice's `id`, `ksef_number`, `ksef_session_reference_number` and `locked_at`.
+  """
+  @spec for_invoice(map()) :: t()
+  def for_invoice(invoice) do
+    [submission_info] = for_invoices([invoice])
+    submission_info
+  end
+
+  @doc """
+  Returns submission information in invoice order, fetching the latest submission
+  job of every invoice in one query.
+  """
+  @spec for_invoices([map()]) :: [t()]
+  def for_invoices([]), do: []
+
+  def for_invoices(invoices) do
+    jobs = get_latest_submission_jobs(Enum.map(invoices, & &1.id))
+
+    Enum.map(invoices, fn invoice ->
+      submission_info(invoice, Map.get(jobs, to_string(invoice.id)))
+    end)
+  end
+
+  defp submission_info(%{ksef_number: ksef_number} = invoice, job) when not is_nil(ksef_number) do
+    # Successfully submitted - has KSeF number
+    %__MODULE__{
+      status: :submitted,
+      ksef_number: ksef_number,
+      session_reference: invoice.ksef_session_reference_number,
+      submitted_at: get_job_timestamp(job, :inserted_at),
+      confirmed_at: get_job_timestamp(job, :completed_at) || invoice.locked_at
+    }
+  end
+
+  defp submission_info(%{ksef_session_reference_number: ref}, job) when not is_nil(ref) do
+    # Has session reference - check job status for submitting vs failed
+    case job_status(job) do
+      :failed ->
+        %__MODULE__{
+          status: :failed,
+          session_reference: ref,
+          submitted_at: get_job_timestamp(job, :inserted_at),
+          failed_at: get_job_failed_at(job),
+          error: format_job_error(job)
+        }
+
+      :pending ->
+        %__MODULE__{
+          status: :submitting,
+          session_reference: ref,
+          submitted_at: get_job_timestamp(job, :inserted_at)
+        }
+
+      :completed ->
+        # Job completed but no ksef_number - unusual state, treat as failed
+        %__MODULE__{
+          status: :failed,
+          session_reference: ref,
+          submitted_at: get_job_timestamp(job, :inserted_at),
+          failed_at: get_job_timestamp(job, :completed_at),
+          error: gettext("Submission finished without confirmation from KSeF")
+        }
+
+      nil ->
+        # No job found but has session reference - treat as failed
+        %__MODULE__{
+          status: :failed,
+          session_reference: ref,
+          error: gettext("No submission information")
+        }
+    end
+  end
+
+  defp submission_info(%{id: _id}, job) do
+    # No session reference - check if there's a pending job
+    case job_status(job) do
+      :pending ->
+        %__MODULE__{
+          status: :submitting,
+          submitted_at: get_job_timestamp(job, :inserted_at)
+        }
+
+      :failed ->
+        %__MODULE__{
+          status: :failed,
+          submitted_at: get_job_timestamp(job, :inserted_at),
+          failed_at: get_job_failed_at(job),
+          error: format_job_error(job)
+        }
+
+      _ ->
+        %__MODULE__{status: :not_submitted}
+    end
+  end
+
+  # Oban.Job is not an Ash resource — raw Ecto query is required here.
+  # TODO: Evaluate wrapping Oban job queries behind a dedicated module.
+  defp get_latest_submission_jobs(sales_invoice_ids) do
+    sales_invoice_ids = Enum.map(sales_invoice_ids, &to_string/1)
+
+    Oban.Job
+    |> where(
+      [j],
+      j.worker == "Firmowid.Ksef.Workers.SubmissionWorker" and
+        fragment("?->>'sales_invoice_id'", j.args) in ^sales_invoice_ids
+    )
+    |> distinct([j], fragment("?->>'sales_invoice_id'", j.args))
+    |> order_by([j], desc: j.inserted_at)
+    |> Repo.all(oban_jobs: true)
+    |> Map.new(fn job -> {job.args["sales_invoice_id"], job} end)
+  end
+
+  defp job_status(nil), do: nil
+
+  defp job_status(%Oban.Job{state: state}) when state in ["discarded", "cancelled"], do: :failed
+
+  defp job_status(%Oban.Job{state: state}) when state in ["available", "scheduled", "executing", "retryable"],
+    do: :pending
+
+  defp job_status(%Oban.Job{state: "completed"}), do: :completed
+  defp job_status(%Oban.Job{}), do: nil
+
+  defp get_job_timestamp(nil, _field), do: nil
+
+  defp get_job_timestamp(%Oban.Job{} = job, field) do
+    case Map.get(job, field) do
+      %NaiveDateTime{} = dt -> DateTime.from_naive!(dt, "Etc/UTC")
+      %DateTime{} = dt -> dt
+      nil -> nil
+    end
+  end
+
+  defp get_job_failed_at(%Oban.Job{errors: errors}) when is_list(errors) and errors != [] do
+    case List.last(errors) do
+      %{"at" => at_string} ->
+        case DateTime.from_iso8601(at_string) do
+          {:ok, dt, _offset} -> dt
+          _ -> nil
+        end
+
+      _ ->
+        nil
+    end
+  end
+
+  defp get_job_failed_at(%Oban.Job{}), do: nil
+
+  defp format_job_error(%Oban.Job{errors: []}), do: nil
+  defp format_job_error(%Oban.Job{errors: nil}), do: nil
+
+  defp format_job_error(%Oban.Job{errors: errors}) when is_list(errors) do
+    case List.last(errors) do
+      %{"error" => error_string} -> parse_error_string(error_string)
+      _ -> gettext("An unexpected error occurred while sending to KSeF")
+    end
+  end
+
+  defp parse_error_string(error_string) when is_binary(error_string) do
+    cond do
+      String.contains?(error_string, "invoice_processing_failed") ->
+        extract_ksef_validation_error(error_string)
+
+      String.contains?(error_string, "invoice_not_found") ->
+        gettext("The invoice was not found")
+
+      String.contains?(error_string, "invoice_is_draft") ->
+        gettext("The invoice is a draft - approve it first")
+
+      String.contains?(error_string, "invoice_already_locked") ->
+        gettext("The invoice has already been sent to KSeF")
+
+      String.contains?(error_string, "not_authenticated") ->
+        gettext("No connection to KSeF")
+
+      String.contains?(error_string, "invoice_duplicate") ->
+        gettext("KSeF rejected the submission as a duplicate. Change the invoice data and send it again.")
+
+      true ->
+        gettext("An unexpected error occurred while sending to KSeF")
+    end
+  end
+
+  defp extract_ksef_validation_error(error_string) do
+    # Try to extract details from error like:
+    # {:invoice_processing_failed, 450, %{"details" => ["error message"]}}
+    case Regex.run(~r/"details"\s*=>\s*\[(.*?)\]/, error_string) do
+      [_, details_content] ->
+        # Extract quoted strings from the details array
+        details =
+          ~r/"([^"]+)"/
+          |> Regex.scan(details_content)
+          |> Enum.map(fn [_, detail] -> detail end)
+          |> Enum.reject(&(&1 == "details"))
+
+        if details == [] do
+          extract_ksef_description(error_string)
+        else
+          gettext("KSeF validation error: %{details}", details: Enum.join(details, "; "))
+        end
+
+      nil ->
+        extract_ksef_description(error_string)
+    end
+  end
+
+  defp extract_ksef_description(error_string) do
+    # Try to extract description field
+    case Regex.run(~r/"description"\s*=>\s*"([^"]+)"/, error_string) do
+      [_, description] -> gettext("KSeF error: %{description}", description: description)
+      nil -> gettext("KSeF document validation error")
+    end
+  end
 end

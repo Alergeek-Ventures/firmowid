@@ -240,7 +240,7 @@ defmodule FirmowidUI.Invoicing.Issuance do
   defp previous_attempt(issuance) do
     # A withdrawn document keeps its terminal submission job. Reopening the same
     # confirmation must not issue it a second time.
-    info = Ksef.get_submission_info(%{id: issuance.confirmation_id})
+    info = SubmissionInfo.for_invoice(%{id: issuance.confirmation_id})
     {:ok, if(SubmissionInfo.attempted?(info), do: :withdrawn)}
   end
 
@@ -400,7 +400,7 @@ defmodule FirmowidUI.Invoicing.Issuance do
   end
 
   defp display_issued(issuance, invoice) do
-    info = Ksef.get_submission_info(invoice)
+    info = SubmissionInfo.for_invoice(invoice)
 
     %{
       issuance

@@ -6,7 +6,7 @@ defmodule Firmowid.Ksef.KsefAwarePruner do
   jobs from the `ksef_submissions` queue. This is necessary because:
 
   1. KSeF submission history is used to display error states in the UI
-  2. `Ksef.get_submission_info/1` queries job history to determine submission status
+  2. `SubmissionInfo.for_invoice/1` queries job history to determine submission status
   3. Users need to see the submission history for troubleshooting
 
   ## Usage

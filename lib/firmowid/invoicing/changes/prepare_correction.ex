@@ -21,7 +21,6 @@ defmodule Firmowid.Invoicing.Changes.PrepareCorrection do
   use Gettext, backend: Firmowid.Gettext
 
   alias Firmowid.Invoicing.SalesInvoice
-  alias Firmowid.Ksef
   alias Firmowid.Ksef.SubmissionInfo
 
   @copied_fields [
@@ -120,7 +119,7 @@ defmodule Firmowid.Invoicing.Changes.PrepareCorrection do
   end
 
   defp validate_submission(invoice) do
-    submission = Ksef.get_submission_info(invoice)
+    submission = SubmissionInfo.for_invoice(invoice)
 
     if SubmissionInfo.outside_ksef?(invoice, submission) or
          SubmissionInfo.editing_blocked?(invoice, submission) do

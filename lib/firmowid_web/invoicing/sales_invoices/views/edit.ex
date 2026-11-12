@@ -121,7 +121,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
          |> put_flash(:error, gettext("Invoice not found"))
          |> push_navigate(to: Navigation.sales_invoice_creator_path())}
 
-      SubmissionInfo.editing_blocked?(invoice, Ksef.get_submission_info(invoice)) ->
+      SubmissionInfo.editing_blocked?(invoice, SubmissionInfo.for_invoice(invoice)) ->
         {:ok,
          socket
          |> put_flash(

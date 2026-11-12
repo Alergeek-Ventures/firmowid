@@ -40,7 +40,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Summary do
 
     logo_url = Invoicing.get_logo_url(invoice.organization_id, scope: scope)
 
-    submission_info = Ksef.get_submission_info(invoice)
+    submission_info = SubmissionInfo.for_invoice(invoice)
 
     # Subscribe to KSeF status updates if submission is in progress
     if SubmissionInfo.submitting?(submission_info) do
@@ -287,7 +287,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Summary do
   end
 
   defp handle_existing_invoice_status(socket, invoice, _invoice_id, status) do
-    submission_info = Ksef.get_submission_info(invoice)
+    submission_info = SubmissionInfo.for_invoice(invoice)
 
     {previous_invoices, invoice} = get_previous_invoices(invoice, socket.assigns.ash_scope)
 
