@@ -7,34 +7,32 @@ defmodule FirmowidWeb.Landing.Components.Pricing do
 
   import FirmowidWeb.Landing.Components.Primitives, only: [landing_button: 1]
 
+  alias Firmowid.Billing.PlanCatalog
   alias Phoenix.LiveView.Rendered
 
   @plans [
     %{
       key: "no_plan",
+      plan: :free,
       name: gettext_noop("Free"),
-      monthly: 0,
-      yearly: 0,
-      free_detail: gettext_noop("No card, no trial period"),
+      monthly_detail: gettext_noop("No card, no trial period"),
       audience: gettext_noop("For everyone who issues invoices in KSeF"),
       cta: gettext_noop("Create a free account")
     },
     %{
       key: "przedsiebiorca",
+      plan: :przedsiebiorca,
       name: gettext_noop("Entrepreneur"),
-      monthly: 29,
-      yearly: 23,
-      free_detail: gettext_noop("Monthly, no commitment"),
+      monthly_detail: gettext_noop("Monthly, no commitment"),
       yearly_detail: gettext_noop("PLN 276 per year (save PLN 72)"),
       audience: gettext_noop("For sole traders with several accounts and small teams"),
       cta: gettext_noop("Try for free")
     },
     %{
       key: "firma",
+      plan: :firma,
       name: gettext_noop("Company"),
-      monthly: 149,
-      yearly: 119,
-      free_detail: gettext_noop("Monthly, no commitment"),
+      monthly_detail: gettext_noop("Monthly, no commitment"),
       yearly_detail: gettext_noop("PLN 1,428 per year (save PLN 360)"),
       audience: gettext_noop("For service companies with 6–20 people"),
       cta: gettext_noop("Try for free")
@@ -42,9 +40,8 @@ defmodule FirmowidWeb.Landing.Components.Pricing do
   ]
 
   @rows [
-    {gettext_noop("Users"), [gettext_noop("2"), gettext_noop("5"), gettext_noop("unlimited")]},
-    {gettext_noop("Bank accounts with transfer matching"),
-     [gettext_noop("1"), gettext_noop("3"), gettext_noop("unlimited")]},
+    {gettext_noop("Users"), :users},
+    {gettext_noop("Bank accounts with transfer matching"), :bank_institutions},
     {gettext_noop("Time tracking"),
      [gettext_noop("up to 3 projects"), gettext_noop("unlimited"), gettext_noop("unlimited")]},
     {gettext_noop("Leave requests with approval"), [false, true, true]},
@@ -392,15 +389,10 @@ defmodule FirmowidWeb.Landing.Components.Pricing do
 
   defp localize_plans(plans, yearly?) do
     Enum.map(plans, fn plan ->
-      free? = plan.monthly == 0
-      price = to_string(if yearly?, do: plan.yearly, else: plan.monthly)
-
-      detail =
-        cond do
-          free? -> plan.free_detail
-          yearly? -> plan.yearly_detail
-          true -> plan.free_detail
-        end
+      %{monthly_price_pln: monthly, yearly_price_pln: yearly} = PlanCatalog.plan!(plan.plan)
+      free? = Decimal.eq?(monthly, 0)
+      price = Decimal.to_string(if yearly?, do: Decimal.div(yearly, 12), else: monthly)
+      detail = if yearly? and not free?, do: plan.yearly_detail, else: plan.monthly_detail
 
       %{
         key: plan.key,
@@ -418,11 +410,24 @@ defmodule FirmowidWeb.Landing.Components.Pricing do
 
   defp localize_rows(rows) do
     Enum.map(rows, fn {label, values} ->
-      {Gettext.gettext(Firmowid.Gettext, label),
-       Enum.map(values, fn
-         value when is_boolean(value) -> value
-         value -> Gettext.gettext(Firmowid.Gettext, value)
-       end)}
+      {Gettext.gettext(Firmowid.Gettext, label), localize_values(values)}
+    end)
+  end
+
+  # A limited thing reads its per-plan limit from the billing catalog.
+  defp localize_values(limited) when is_atom(limited) do
+    Enum.map(@plans, fn plan ->
+      case PlanCatalog.plan!(plan.plan).limits[limited] do
+        :unlimited -> gettext("unlimited")
+        limit -> Integer.to_string(limit)
+      end
+    end)
+  end
+
+  defp localize_values(values) do
+    Enum.map(values, fn
+      value when is_boolean(value) -> value
+      value -> Gettext.gettext(Firmowid.Gettext, value)
     end)
   end
 end

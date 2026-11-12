@@ -597,11 +597,6 @@ msgid "/ month net"
 msgstr ""
 
 #: lib/firmowid_web/landing/components/pricing.ex
-#, elixir-autogen, elixir-format
-msgid "1"
-msgstr ""
-
-#: lib/firmowid_web/landing/components/pricing.ex
 #: lib/firmowid_web/organization/views/first_steps.ex
 #, elixir-autogen, elixir-format
 msgid "10 credits / month"
@@ -612,24 +607,9 @@ msgstr ""
 msgid "16 hours 23 min"
 msgstr ""
 
-#: lib/firmowid_web/landing/components/pricing.ex
-#, elixir-autogen, elixir-format
-msgid "2"
-msgstr ""
-
 #: lib/firmowid_web/landing/components/hero.ex
 #, elixir-autogen, elixir-format
 msgid "2 years"
-msgstr ""
-
-#: lib/firmowid_web/landing/components/pricing.ex
-#, elixir-autogen, elixir-format
-msgid "3"
-msgstr ""
-
-#: lib/firmowid_web/landing/components/pricing.ex
-#, elixir-autogen, elixir-format
-msgid "5"
 msgstr ""
 
 #: lib/firmowid_web/landing/components/pricing.ex
