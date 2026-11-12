@@ -13,20 +13,6 @@ defmodule Firmowid.Invoicing.RecommendationThresholds do
   @type confidence_level :: :manual | :high | :mid | :low | nil
 
   @doc """
-  Returns the confidence thresholds used for matching decisions.
-
-  Returned values are in `0.0..1.0` form.
-  """
-  @spec thresholds :: %{high: float(), mid: float(), highest_green: float()}
-  def thresholds do
-    %{
-      high: @confidence_high_threshold,
-      mid: @confidence_mid_threshold,
-      highest_green: @highest_green_threshold
-    }
-  end
-
-  @doc """
   Classifies a match pair into a chip type and human-readable percentage.
 
   Manual matches return `{:manual, 100}` regardless of score.
