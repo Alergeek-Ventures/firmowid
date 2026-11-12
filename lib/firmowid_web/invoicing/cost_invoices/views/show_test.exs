@@ -106,6 +106,22 @@ defmodule FirmowidWeb.Invoicing.CostInvoices.Views.ShowTest do
     assert skipped_invoice.skip_invoicing
   end
 
+  test "offers deletion only to a member who may delete the invoice", %{conn: conn} do
+    admin = admin_fixture()
+    invoice = cost_invoice_fixture!(admin)
+    accountant = user_in_org_fixture(admin.member.organization_id, %{role: :accountant})
+    delete_button = "button[phx-click*='delete-invoice-modal']"
+
+    {:ok, admin_view, _html} = conn |> log_in_user(admin) |> live(~p"/kosztowe/#{invoice.id}")
+    assert has_element?(admin_view, delete_button)
+
+    {:ok, accountant_view, _html} =
+      build_conn() |> log_in_user(accountant) |> live(~p"/kosztowe/#{invoice.id}")
+
+    assert has_element?(accountant_view, "button", "Pomiń")
+    refute has_element?(accountant_view, delete_button)
+  end
+
   test "preserves transaction return context for back navigation", %{conn: conn} do
     admin = admin_fixture()
     invoice = cost_invoice_fixture!(admin)
