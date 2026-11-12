@@ -672,6 +672,11 @@ msgstr ""
 msgid "A plan is ready for your decision."
 msgstr ""
 
+#: lib/firmowid/timetracker/validations/no_sessions.ex
+#, elixir-autogen, elixir-format
+msgid "A project with recorded time cannot be deleted."
+msgstr ""
+
 #: lib/firmowid_web/infrastructure/components/error_html.ex
 #, elixir-autogen, elixir-format
 msgid "A server error occurred"
