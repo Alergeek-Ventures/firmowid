@@ -51,6 +51,10 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
           :effective_sale_date,
           :effective_due_date,
           :internal_note,
+          :is_draft,
+          :is_paid_on_issue,
+          :is_correctable,
+          :is_cancellable,
           sales_invoice_items: [:net_value, :vat_value, :gross_value],
           corrections: [
             :net_value,
@@ -91,6 +95,7 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
       )
 
     cancelled? = Decimal.eq?(Money.to_decimal(latest_invoice_snapshot.amount), 0)
+    can_write_invoicing? = Ash.can?({SalesInvoice, :revise}, assigns.current_user)
 
     description =
       latest_invoice_snapshot.sales_invoice_items
@@ -122,7 +127,10 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
         internal_notes: internal_notes,
         cancelled?: cancelled?,
         show_timeline_button: show_timeline_button?(submission_info),
-        can_write_invoicing?: Ash.can?({SalesInvoice, :revise}, assigns.current_user)
+        can_write_invoicing?: can_write_invoicing?,
+        # A draft is edited; an issued invoice only through a correction.
+        can_edit?: can_write_invoicing? and (invoice.is_draft or invoice.is_correctable),
+        can_cancel?: can_write_invoicing? and invoice.is_cancellable and not cancelled?
       )
 
     {:ok, socket}
@@ -191,7 +199,7 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
                   <Lucideicons.copy /><span class="max-xl:sr-only">{gettext("Copy")}</span>
                 </.link>
 
-                <%= if @can_write_invoicing? do %>
+                <%= if @can_edit? do %>
                   <%= if SubmissionInfo.editing_blocked?(@invoice, @submission_info) or
                           SubmissionInfo.outside_ksef?(@invoice, @submission_info) do %>
                     <span
@@ -255,7 +263,7 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
                 </.button>
 
                 <.button
-                  :if={@can_write_invoicing? and !!@invoice.ksef_number and not @cancelled?}
+                  :if={@can_cancel?}
                   phx-click={show_modal("cancel-invoice-modal")}
                   variant="secondary"
                   size="small"
@@ -325,10 +333,7 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
                 </.modal>
               </div>
 
-              <div
-                :if={@can_write_invoicing? and !!@invoice.ksef_number and not @cancelled?}
-                class="absolute"
-              >
+              <div :if={@can_cancel?} class="absolute">
                 <.modal id="cancel-invoice-modal" on_cancel={hide_modal("cancel-invoice-modal")}>
                   <.form
                     for={%{}}
@@ -462,11 +467,16 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
                 piece_id="issue-date"
               />
               <InvoiceDetails.invoice_metadata_piece
-                label={gettext("Sale date")}
+                label={
+                  if @invoice.is_paid_on_issue,
+                    do: gettext("Payment date"),
+                    else: gettext("Sale date")
+                }
                 value={@invoice.effective_sale_date}
                 piece_id="sale-date"
               />
               <InvoiceDetails.invoice_metadata_piece
+                :if={not @invoice.is_paid_on_issue}
                 label={gettext("Payment due date")}
                 value={@invoice.effective_due_date}
                 piece_id="due-date"
@@ -475,6 +485,7 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
 
             <InvoiceDetails.invoice_amount
               is_cost_invoice={false}
+              paid={@invoice.is_paid_on_issue}
               amount={@latest_invoice_snapshot.amount}
             />
           <% end %>
@@ -525,6 +536,8 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
             feature_flags={@feature_flags}
           />
           <%= cond do %>
+            <%!-- Paid when issued: there is no transaction to match or skip. --%>
+            <% @invoice.is_paid_on_issue -> %>
             <% @invoice.skip_invoicing -> %>
               <InvoiceDetails.invoice_skipped_view
                 is_cost_invoice={false}

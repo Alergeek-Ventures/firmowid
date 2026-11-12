@@ -27,7 +27,7 @@ defmodule Firmowid.Analysis.Services.ClientProjects do
            # Drafts may still change client or vanish, and a correction repeats its invoice.
            |> Ash.Query.filter(
              not is_nil(counterparty_id) and not is_nil(invoice_number) and
-               is_nil(corrected_invoice_id) and ksef_invoice_kind == :vat
+               not is_correction
            )
            |> Ash.Query.select([:id, :counterparty_id])
            |> Ash.Query.load(entity_tags: [:kind, :tag_definition_id, :assignment_source])

@@ -66,6 +66,7 @@ defmodule Firmowid.Invoicing.Services.SalesInvoiceChain do
       :vat_value,
       :amount,
       :buyer_display_name_label,
+      :is_paid_on_issue,
       sales_invoice_items: [:net_value, :vat_value, :gross_value]
     ])
     |> then(

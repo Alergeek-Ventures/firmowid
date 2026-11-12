@@ -433,6 +433,34 @@ defmodule Firmowid.Ksef.Workers.FetchWorkerTest do
              Invoicing.list_skipped_ksef_sales_invoices!(scope: sales_invoice_scope(organization_id))
   end
 
+  test "recognizes its own invoice awaiting KSeF's confirmation when it cannot import that kind",
+       %{
+         organization_id: organization_id
+       } do
+    suffix = System.unique_integer([:positive])
+
+    pending =
+      seed_sales_invoice!(organization_id, "FZ/PENDING/#{suffix}",
+        ksef_invoice_kind: :advance,
+        locked_at: DateTime.utc_now()
+      )
+
+    assert :ok =
+             import_sales_package!(
+               [
+                 %{
+                   ksef_number: "KSEF-PENDING-#{suffix}",
+                   xml: sales_invoice_xml(pending.invoice_number, kind: "ZAL"),
+                   permanent_storage_date: "2026-03-08T09:00:00Z"
+                 }
+               ],
+               organization_id
+             )
+
+    assert [] =
+             Invoicing.list_skipped_ksef_sales_invoices!(scope: sales_invoice_scope(organization_id))
+  end
+
   test "imports corrections into the chain of the VAT invoice they correct", %{
     organization_id: organization_id
   } do

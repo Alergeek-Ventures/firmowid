@@ -103,8 +103,8 @@ defmodule Firmowid.Ksef.Services.SalesInvoiceImport do
     ksef_numbers = Enum.map(parsed, &elem(&1, 0))
 
     invoice_numbers =
-      for {_ksef_number, _xml, {:ok, %{invoice_number: number}}, _stored_at} <- parsed,
-          number,
+      for {_ksef_number, xml, attrs, _stored_at} <- parsed,
+          number = invoice_number(xml, attrs),
           do: number
 
     SalesInvoice
@@ -118,8 +118,8 @@ defmodule Firmowid.Ksef.Services.SalesInvoiceImport do
         record_storage_date(own, stored_at, scope)
 
       nil ->
-        with {:ok, attrs} <- attrs,
-             :ok <- check_number_free(attrs.invoice_number, known),
+        with :ok <- check_number_free(invoice_number(xml, attrs), known),
+             {:ok, attrs} <- attrs,
              {:ok, _invoice} <- create(attrs, ksef_number, xml, stored_at, scope) do
           :created
         else
@@ -133,6 +133,10 @@ defmodule Firmowid.Ksef.Services.SalesInvoiceImport do
         end
     end
   end
+
+  # Firmowid's own invoice is recognized by its number also when the parser rejects its kind.
+  defp invoice_number(_xml, {:ok, attrs}), do: attrs.invoice_number
+  defp invoice_number(xml, {:error, _reason}), do: SalesInvoiceParser.summary(xml).invoice_number
 
   defp record_skipped(ksef_number, xml, reason, stored_at, scope) do
     xml

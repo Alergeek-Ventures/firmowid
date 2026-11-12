@@ -23,6 +23,7 @@ defmodule FirmowidUI.Invoicing.Issuance do
 
   @invoice_loads [
     :buyer_id_type,
+    :is_paid_on_issue,
     :corrected_invoice,
     :net_value,
     :vat_value,

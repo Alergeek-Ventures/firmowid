@@ -302,6 +302,48 @@ defmodule Firmowid.Ksef.Services.InvoiceParserTest do
       assert attrs.original_invoice_ksef_number == "KSEF-ORIGINAL-123"
     end
 
+    test "reads an advance invoice's items from its order" do
+      xml = """
+      <?xml version="1.0" encoding="utf-8"?>
+      <Faktura xmlns="http://crd.gov.pl/wzor/2025/06/25/13775/">
+        <Podmiot1>
+          <DaneIdentyfikacyjne>
+            <NIP>1234567890</NIP>
+            <Nazwa>Test Seller</Nazwa>
+          </DaneIdentyfikacyjne>
+        </Podmiot1>
+        <Fa>
+          <KodWaluty>PLN</KodWaluty>
+          <P_1>2026-12-01</P_1>
+          <P_2>FZ/1/12/2026</P_2>
+          <P_15>121.77</P_15>
+          <RodzajFaktury>ZAL</RodzajFaktury>
+          <Platnosc>
+            <Zaplacono>1</Zaplacono>
+            <DataZaplaty>2026-12-01</DataZaplaty>
+            <FormaPlatnosci>2</FormaPlatnosci>
+          </Platnosc>
+          <Zamowienie>
+            <WartoscZamowienia>121.77</WartoscZamowienia>
+            <ZamowienieWiersz>
+              <NrWierszaZam>1</NrWierszaZam>
+              <P_7Z>Abonament</P_7Z>
+              <P_8BZ>1</P_8BZ>
+              <P_9AZ>99.00</P_9AZ>
+            </ZamowienieWiersz>
+          </Zamowienie>
+        </Fa>
+      </Faktura>
+      """
+
+      assert {:ok,
+              %{
+                invoice_type: :zal,
+                items_list: [%{name: "Abonament", quantity: 1.0, price: 99.0}]
+              }} =
+               InvoiceParser.parse(xml)
+    end
+
     test "returns error for unknown invoice type" do
       xml = """
       <?xml version="1.0" encoding="utf-8"?>

@@ -95,6 +95,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
                :gross_value,
                :amount,
                :is_editable,
+               :is_paid_on_issue,
                :buyer_id_type,
                :reference_invoice,
                sales_invoice_items: [:net_value, :vat_value, :gross_value],
@@ -198,8 +199,6 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
     end
   end
 
-  defp load_reference_invoice(%{ksef_invoice_kind: :vat}, _scope), do: nil
-
   defp load_reference_invoice(%{ksef_invoice_kind: :kor, reference_invoice: ref}, scope) do
     case ref do
       %SalesInvoice{id: id} ->
@@ -218,6 +217,8 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
         nil
     end
   end
+
+  defp load_reference_invoice(_invoice, _scope), do: nil
 
   # Build AshPhoenix.Form for edit — dispatches based on invoice state
   defp build_ash_form(invoice, scope) do
@@ -869,6 +870,10 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
     indexes = PriceInput.gross_value_indexes(params, :sales_invoice_items, target)
 
     PriceInput.normalize_gross_value_params(params, :sales_invoice_items, indexes)
+  end
+
+  defp not_editable_message(%SalesInvoice{is_paid_on_issue: true}) do
+    gettext("Firmowid cannot edit or correct an advance invoice.")
   end
 
   defp not_editable_message(%SalesInvoice{ksef_number: nil}), do: SubmissionInfo.outside_ksef_message()

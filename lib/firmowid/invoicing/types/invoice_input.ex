@@ -6,6 +6,13 @@ defmodule Firmowid.Invoicing.Types.InvoiceInput do
       preserve_nil_values?: true,
       fields: [
         invoice_type: [type: :atom, constraints: [one_of: [:poland, :foreign]]],
+        ksef_invoice_kind: [
+          type: :atom,
+          constraints: [one_of: [:vat, :advance]],
+          description:
+            "vat (default) for a regular invoice; advance for an advance invoice (KSeF ZAL) " <>
+              "documenting a payment received in full before the sale, with sale_date as the payment date."
+        ],
         invoice_number: [type: :string],
         issue_date: [type: :date],
         sale_date: [type: :date],

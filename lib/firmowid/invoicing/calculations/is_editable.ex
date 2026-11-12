@@ -11,14 +11,14 @@ defmodule Firmowid.Invoicing.Calculations.IsEditable do
   2. Numbered without a KSeF number → false: issued before KSeF was mandatory
      (kept only for reference) or still being submitted
   3. KOR → true only if this is the latest correction of the corrected invoice
-  4. VAT with corrections → false
-  5. Otherwise → false
+  4. Correctable (an issued VAT invoice) → true only without corrections
+  5. Otherwise → false, e.g. an advance invoice
   """
   use Ash.Resource.Calculation
 
   @impl true
   def load(_query, _opts, _context) do
-    [:corrections, corrected_invoice: :corrections]
+    [:corrections, :is_correctable, corrected_invoice: :corrections]
   end
 
   @impl true
@@ -37,7 +37,7 @@ defmodule Firmowid.Invoicing.Calculations.IsEditable do
     end
   end
 
-  defp editable?(%{ksef_invoice_kind: :vat, corrections: corrections}) when is_list(corrections) do
+  defp editable?(%{is_correctable: true, corrections: corrections}) when is_list(corrections) do
     Enum.empty?(corrections)
   end
 

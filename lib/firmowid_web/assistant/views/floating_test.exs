@@ -554,6 +554,47 @@ defmodule FirmowidWeb.Assistant.Views.FloatingTest do
     assert has_element?(plan.view, "#{plan.id} ins", "GTU_12")
   end
 
+  test "the card of a new advance invoice draft can be approved", %{conn: conn} do
+    owner = admin_fixture()
+    scope = Scope.new!(owner, owner.member.organization_id)
+
+    scope.tenant
+    |> Firmowid.Core.get_organization!(scope: scope)
+    |> Ash.Seed.update!(%{address: "ul. Sprzedawcy 3, Gdańsk"})
+
+    payment_date = Date.utc_today() |> Date.add(-1) |> Date.to_iso8601()
+
+    plan =
+      open_plan(conn, owner, "create_sales_invoice_draft", %{
+        input: %{
+          ksef_invoice_kind: "advance",
+          buyer_type: "company",
+          buyer_full_name: "Acme Sp. z o.o.",
+          buyer_id: "1234567819",
+          buyer_address: "ul. Przykładowa 1, 00-001 Warszawa",
+          sale_date: payment_date,
+          due_date: payment_date,
+          payment_method: "card",
+          sales_invoice_items: [
+            %{name: "Abonament", quantity: 1, unit: "szt", unit_price: 99, vat_rate: "23"}
+          ]
+        }
+      })
+
+    assert has_element?(plan.view, "#{plan.id} button[phx-click='approve']:not([disabled])")
+    assert has_element?(plan.view, "#{plan.id} ins", "Acme Sp. z o.o.")
+
+    # The sale date of an advance invoice is the day the payment was received; nothing is due.
+    payment_date_label =
+      Gettext.with_locale(Firmowid.Gettext, "pl", fn ->
+        Gettext.gettext(Firmowid.Gettext, "Payment date")
+      end)
+
+    assert has_element?(plan.view, "#{plan.id} dt", payment_date_label)
+    refute has_element?(plan.view, "#{plan.id} dt", "Data sprzedaży")
+    refute has_element?(plan.view, "#{plan.id} dt", "Termin płatności")
+  end
+
   test "a draft card shows the invoice type it changes", %{conn: conn} do
     owner = admin_fixture()
     draft = seed_draft(Scope.new!(owner, owner.member.organization_id))

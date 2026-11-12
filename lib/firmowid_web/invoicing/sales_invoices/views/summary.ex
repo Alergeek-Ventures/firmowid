@@ -25,6 +25,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Summary do
     :vat_value,
     :gross_value,
     :amount,
+    :is_paid_on_issue,
     sales_invoice_items: [:net_value, :vat_value, :gross_value],
     corrections: [:amount, sales_invoice_items: [:net_value, :vat_value, :gross_value]],
     corrected_invoice: :corrections,
@@ -350,7 +351,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Summary do
     {previous_invoices, invoice}
   end
 
-  defp get_previous_invoices(%{ksef_invoice_kind: :vat} = invoice, _scope), do: {[], invoice}
+  defp get_previous_invoices(invoice, _scope), do: {[], invoice}
 
   defp load_invoice!(id, scope), do: SalesInvoice.by_id!(id, load: @invoice_loads, scope: scope)
 end

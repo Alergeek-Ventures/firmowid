@@ -132,6 +132,7 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceDetails do
   attr :is_cost_invoice, :boolean
   attr :amount, :any, required: true
   attr :lang, :atom, default: :pl
+  attr :paid, :boolean, default: false, doc: "paid when issued, so nothing is due"
 
   def invoice_amount(assigns) do
     assigns = assign(assigns, :is_refund, refund?(assigns))
@@ -139,7 +140,7 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceDetails do
     ~H"""
     <div class="flex flex-col items-end justify-between gap-2 pl-1">
       <label class="text-sm/snug text-grey-700" for="total-amount">
-        {invoice_amount_label(@lang, @is_refund)}
+        {invoice_amount_label(@lang, @is_refund, @paid)}
       </label>
       <p
         id="total-amount"
@@ -155,7 +156,10 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceDetails do
     """
   end
 
-  defp invoice_amount_label(lang, is_refund) do
+  defp invoice_amount_label(:en, _is_refund, true), do: "Paid"
+  defp invoice_amount_label(:pl, _is_refund, true), do: "Zapłacono"
+
+  defp invoice_amount_label(lang, is_refund, false) do
     case {lang, is_refund} do
       {:en, true} -> "Total to refund"
       {:en, false} -> "Total to pay"
@@ -237,6 +241,8 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceDetails do
   attr :lang, :atom, default: :pl
 
   def sales_invoice_metadata(assigns) do
+    paid? = assigns.invoice.is_paid_on_issue == true
+
     labels =
       if assigns.lang == :en do
         %{
@@ -244,7 +250,7 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceDetails do
           ksef_id: "KSeF ID",
           buyer: "Buyer",
           issue_date: "Issue date",
-          sale_date: "Sale date",
+          sale_date: if(paid?, do: "Payment date", else: "Sale date"),
           due_date: "Payment deadline"
         }
       else
@@ -253,12 +259,12 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceDetails do
           ksef_id: "Identyfikator KSeF",
           buyer: "Kupujący",
           issue_date: "Data wystawienia",
-          sale_date: "Data sprzedaży",
+          sale_date: if(paid?, do: "Data zapłaty", else: "Data sprzedaży"),
           due_date: "Termin płatności"
         }
       end
 
-    assigns = assign(assigns, :labels, labels)
+    assigns = assign(assigns, labels: labels, paid?: paid?)
 
     ~H"""
     <div class="flex flex-col gap-4">
@@ -291,6 +297,7 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceDetails do
           piece_id="sale-date"
         />
         <.invoice_metadata_piece
+          :if={not @paid?}
           label={@labels.due_date}
           value={@invoice.due_date}
           piece_id="due-date"
@@ -300,6 +307,7 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceDetails do
       <.invoice_amount
         is_cost_invoice={false}
         lang={@lang}
+        paid={@paid?}
         amount={@invoice.amount}
       />
     </div>

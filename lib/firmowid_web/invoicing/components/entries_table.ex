@@ -822,6 +822,12 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
     """
   end
 
+  defp render_cell(%{invoicing_entry: %SalesInvoice{is_paid_on_issue: true}, column: "due_date"} = assigns) do
+    ~H"""
+    {gettext("Paid")}
+    """
+  end
+
   defp render_cell(%{invoicing_entry: %SalesInvoice{} = invoice, column: "due_date"} = assigns) do
     assigns = assign(assigns, :value, invoice.effective_due_date)
 
@@ -963,23 +969,29 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
   defp status_for_entry(%Transaction{reconciliation_status: status}) when status in [:matched, :skipped],
     do: Atom.to_string(status)
 
+  # Paid when issued: complete once issued, with no skip to undo.
+  defp status_for_entry(%SalesInvoice{is_paid_on_issue: true} = invoice), do: sales_invoice_status(invoice, "matched")
+
   defp status_for_entry(%{skip_invoicing: true}), do: "skipped"
 
   defp status_for_entry(%CostInvoice{transactions: []}), do: "unmatched"
   defp status_for_entry(%CostInvoice{}), do: "matched"
 
-  defp status_for_entry(%SalesInvoice{} = invoice) do
+  defp status_for_entry(%SalesInvoice{} = invoice),
+    do: sales_invoice_status(invoice, if(invoice.transactions == [], do: "unmatched", else: "matched"))
+
+  defp status_for_entry(_), do: "unmatched"
+
+  defp sales_invoice_status(invoice, issued_status) do
     submission_info = SubmissionInfo.for_invoice(invoice)
 
     cond do
       is_nil(invoice.invoice_number) -> "draft"
       SubmissionInfo.submitting?(submission_info) -> "ksef_sending"
       SubmissionInfo.failed?(submission_info) -> "ksef_failed"
-      true -> if invoice.transactions == [], do: "unmatched", else: "matched"
+      true -> issued_status
     end
   end
-
-  defp status_for_entry(_), do: "unmatched"
 
   attr :group, TransactionGroup, required: true
   attr :columns, :list, required: true

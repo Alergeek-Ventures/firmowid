@@ -19,17 +19,19 @@ defmodule Firmowid.Ksef.Workers.SubmissionWorkerTest do
     on_exit(fn -> Cachex.clear(:ksef) end)
   end
 
-  test "returns a VAT invoice KSeF rejected to an unnumbered draft" do
-    admin = admin_fixture()
-    invoice = submitted_invoice!(admin, %{ksef_invoice_kind: :vat})
+  for kind <- [:vat, :advance] do
+    test "returns the #{kind} invoice KSeF rejected to an unnumbered draft" do
+      admin = admin_fixture()
+      invoice = submitted_invoice!(admin, %{ksef_invoice_kind: unquote(kind)})
 
-    reject_verification!(admin.member.organization_id)
-    verify!(invoice)
+      reject_verification!(admin.member.organization_id)
+      verify!(invoice)
 
-    withdrawn = SalesInvoice.by_id!(invoice.id, scope: scope_for(admin))
-    assert is_nil(withdrawn.invoice_number)
-    assert is_nil(withdrawn.locked_at)
-    assert is_nil(withdrawn.ksef_number)
+      withdrawn = SalesInvoice.by_id!(invoice.id, scope: scope_for(admin))
+      assert is_nil(withdrawn.invoice_number)
+      assert is_nil(withdrawn.locked_at)
+      assert is_nil(withdrawn.ksef_number)
+    end
   end
 
   test "deletes a correction KSeF rejected" do

@@ -1,5 +1,5 @@
 defmodule Firmowid.Invoicing.Validations.InvoiceDraft do
-  @moduledoc "Restricts saved-draft operations to an unnumbered VAT invoice."
+  @moduledoc "Restricts saved-draft operations to an unnumbered invoice; a correction is never one."
   use Ash.Resource.Validation
   use Gettext, backend: Firmowid.Gettext
 
@@ -7,7 +7,7 @@ defmodule Firmowid.Invoicing.Validations.InvoiceDraft do
   @spec validate(Ash.Changeset.t(), keyword(), Ash.Resource.Validation.Context.t()) ::
           :ok | {:error, keyword()}
   @impl true
-  def validate(%{data: %{invoice_number: nil, ksef_invoice_kind: :vat}}, _opts, _context), do: :ok
+  def validate(%{data: %{invoice_number: nil}}, _opts, _context), do: :ok
 
   def validate(_changeset, _opts, _context) do
     {:error, field: :invoice_id, message: gettext_noop("Only an unnumbered invoice draft can be issued.")}

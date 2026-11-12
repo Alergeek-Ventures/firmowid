@@ -24,7 +24,7 @@ defmodule Firmowid.Invoicing.Services.SalesInvoiceEmailContentBuilder do
   @doc """
   Builds localized email content for a sales invoice delivery type.
 
-  The invoice must have `:amount` loaded.
+  The invoice must have `:amount`, `:is_paid_on_issue` and `:is_correction` loaded.
   """
   @spec build(SalesInvoice.t(), :basic | :reminder | :invoice_correction, String.t(), keyword()) ::
           {String.t(), String.t(), String.t()}
@@ -40,8 +40,10 @@ defmodule Firmowid.Invoicing.Services.SalesInvoiceEmailContentBuilder do
 
     # A correcting invoice's amount is the corrected total, not what is left to
     # pay, so emails about one (correction notices and their payment reminders)
-    # leave amounts to the PDF.
-    amount = if invoice.ksef_invoice_kind == :kor, do: nil, else: invoice.amount
+    # leave amounts to the PDF. An invoice paid on issue asks for nothing: no
+    # amount due, due date or transfer details.
+    paid? = invoice.is_paid_on_issue == true
+    amount = if paid? or invoice.is_correction == true, do: nil, else: invoice.amount
 
     %{
       lang: lang,
@@ -49,8 +51,8 @@ defmodule Firmowid.Invoicing.Services.SalesInvoiceEmailContentBuilder do
       headline: headline(delivery_type, lang, seller, number),
       lead: lead(delivery_type, lang, seller, number, invoice.buyer_display_name),
       amount: amount && Money.to_string!(amount, locale: lang),
-      due_date: format_date(invoice.due_date),
-      transfer: transfer(invoice, seller, lang),
+      due_date: if(paid?, do: nil, else: format_date(invoice.due_date)),
+      transfer: if(paid?, do: nil, else: transfer(invoice, seller, lang)),
       invoice_number: number,
       share_url: if(share_url in [nil, ""], do: nil, else: share_url),
       signup_url: url(~p"/zarejestruj")

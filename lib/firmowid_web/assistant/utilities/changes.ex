@@ -220,9 +220,10 @@ defmodule FirmowidWeb.Assistant.Utilities.Changes do
   defp preview("create_sales_invoice_draft", %{"input" => input}, scope) when is_map(input) do
     with {:ok, invoice} <- invoice_input(input),
          # Skipping the draft in matching has no row on the card, so it cannot be approved.
+         # An invoice paid on issue is always skipped, which its kind's row tells.
          {:ok, draft} <-
            result(Invoicing.preview_sales_invoice(%{invoice: invoice}, scope: scope)) do
-      if draft.skip_invoicing,
+      if draft.skip_invoicing and not draft.is_paid_on_issue,
         do: :error,
         else: {:ok, counterparty_reference(nil, draft), invoice_changes(nil, draft)}
     end
@@ -445,8 +446,12 @@ defmodule FirmowidWeb.Assistant.Utilities.Changes do
   # A draft is compared by the fields it writes that decide who is invoiced, for what and how
   # they pay.
   defp invoice_changes(saved, revised) do
+    # An invoice paid on issue has no due date: its sale date is the day the payment arrived.
+    paid? = revised.is_paid_on_issue == true
+
     [
       {gettext("Invoice type"), &invoice_type(&1.invoice_type)},
+      {gettext("Advance invoice"), &flag(&1.ksef_invoice_kind == :advance)},
       {gettext("Seller"), & &1.seller_display_name},
       {gettext("Buyer type"), &buyer_type(&1.buyer_type)},
       {gettext("Buyer"), & &1.buyer_full_name},
@@ -464,8 +469,8 @@ defmodule FirmowidWeb.Assistant.Utilities.Changes do
       {gettext("Phone"), & &1.buyer_phone},
       {gettext("Description"), & &1.buyer_description},
       {gettext("Issue date"), &(&1.issue_date && date(&1.issue_date))},
-      {gettext("Sale date"), &(&1.sale_date && date(&1.sale_date))},
-      {gettext("Due date"), &(&1.due_date && date(&1.due_date))},
+      {if(paid?, do: gettext("Payment date"), else: gettext("Sale date")), &(&1.sale_date && date(&1.sale_date))},
+      not paid? && {gettext("Due date"), &(&1.due_date && date(&1.due_date))},
       {gettext("Payment method"), &payment_method(&1.payment_method)},
       {gettext("Bank account number"), & &1.seller_account_number},
       {gettext("Cash accounting"), &flag(&1.is_cash_account)},
@@ -476,6 +481,7 @@ defmodule FirmowidWeb.Assistant.Utilities.Changes do
       {gettext("Internal note"), & &1.internal_note},
       {gettext("Email the invoice to the counterparty after receiving the KSeF number"), &flag(&1.should_send_emails)}
     ]
+    |> Enum.filter(& &1)
     |> Enum.map(fn {label, value} ->
       {label, saved && blank(value.(saved)), blank(value.(revised))}
     end)
