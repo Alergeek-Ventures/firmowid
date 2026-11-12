@@ -119,8 +119,9 @@ defmodule Firmowid.Ksef do
   @doc """
   Disconnects the given organization from KSeF.
 
-  Invalidates the cached access token, cancels all pending KSeF jobs,
-  and deletes the stored credential.
+  Invalidates the cached access token, cancels the pending session, certificate and fetch
+  jobs, and deletes the stored credential. Submissions stay queued: an invoice KSeF is still
+  processing is confirmed once the organization reconnects, and one not sent yet is withdrawn.
   """
   @spec unauthenticate(Scope.t()) :: {:ok, term()} | {:error, :not_connected | term()}
   def unauthenticate(scope) do
@@ -144,8 +145,7 @@ defmodule Firmowid.Ksef do
                   j.worker in [
                     "Firmowid.Ksef.Workers.SessionWorker",
                     "Firmowid.Ksef.Workers.CertificateEnrollmentWorker",
-                    "Firmowid.Ksef.Workers.FetchWorker",
-                    "Firmowid.Ksef.Workers.SubmissionWorker"
+                    "Firmowid.Ksef.Workers.FetchWorker"
                   ],
                 where: fragment("?->>'organization_id' = ?", j.args, ^org_id),
                 where: j.state in ["available", "scheduled", "executing", "retryable"]
@@ -388,8 +388,15 @@ defmodule Firmowid.Ksef do
   defp invoice_url(seller_nip, issue_date, checksum) do
     base_url = Application.get_env(:firmowid, :ksef)[:qr_code_base_url]
     issue_date = Calendar.strftime(issue_date, "%d-%m-%Y")
-    safe_checksum = URI.encode_www_form(checksum)
-    path = "/invoice/#{seller_nip}/#{issue_date}/#{safe_checksum}"
+
+    # KSeF reports an invoice's hash in standard Base64, while its link takes Base64URL without padding.
+    checksum =
+      checksum
+      |> String.replace("+", "-")
+      |> String.replace("/", "_")
+      |> String.trim_trailing("=")
+
+    path = "/invoice/#{seller_nip}/#{issue_date}/#{checksum}"
 
     base_url
     |> URI.new!()

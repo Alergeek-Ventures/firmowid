@@ -66,6 +66,31 @@ defmodule Firmowid.Ksef.Services.InvoiceRendererTest do
       assert :ok = validate_xml(xml, model)
     end
 
+    test "totals follow the FA(3) field order whatever the order of the lines", %{
+      model: model,
+      org_id: org_id
+    } do
+      invoice = build_domestic_invoice(vat_rate: "zw", org_id: org_id)
+
+      for {rate, index} <- [{"0 KR", 1}, {"23", 2}] do
+        Ash.Seed.seed!(SalesInvoiceItem, %{
+          sales_invoice_id: invoice.id,
+          organization_id: org_id,
+          index: index,
+          name: "Usluga #{rate}",
+          quantity: Decimal.new("1"),
+          unit: "szt.",
+          unit_price: Decimal.new("100.00"),
+          vat_rate: rate
+        })
+      end
+
+      xml = invoice |> InvoiceRenderer.render_fa3() |> IO.iodata_to_binary()
+
+      assert xml =~ ~r/<P_14_1>.*<P_13_6_1>.*<P_13_7>/s
+      assert :ok = validate_xml(xml, model)
+    end
+
     test "0% domestic rate (0 KR) passes XSD validation", %{model: model, org_id: org_id} do
       invoice = build_domestic_invoice(vat_rate: "0 KR", org_id: org_id)
       xml = InvoiceRenderer.render_fa3(invoice)
@@ -301,6 +326,29 @@ defmodule Firmowid.Ksef.Services.InvoiceRendererTest do
       # should include before+after rows for changed items
       assert length(Regex.scan(~r/<FaWiersz>/, xml)) >= 2
       assert xml =~ "<P_8B>0</P_8B>"
+    end
+  end
+
+  describe "render_fa3/1 - buyer correspondence address" do
+    test "states a correspondence address that differs from the buyer's address", %{
+      model: model,
+      org_id: org_id
+    } do
+      invoice =
+        [org_id: org_id]
+        |> build_domestic_invoice()
+        |> Ash.Seed.update!(%{
+          buyer_is_different_mail_address: true,
+          buyer_mail_address: "skr. poczt. 7, 00-950 Warszawa",
+          buyer_mail_country: "PL"
+        })
+
+      xml = invoice |> InvoiceRenderer.render_fa3() |> IO.iodata_to_binary()
+
+      assert xml =~
+               ~r|</Adres>\s*<AdresKoresp>\s*<KodKraju>PL</KodKraju>\s*<AdresL1>skr. poczt. 7, 00-950 Warszawa</AdresL1>|
+
+      assert :ok = validate_xml(xml, model)
     end
   end
 

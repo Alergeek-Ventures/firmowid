@@ -29,6 +29,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
   alias Firmowid.Invoicing.SalesInvoice
   alias Firmowid.Invoicing.WizardState
   alias Firmowid.Ksef
+  alias Firmowid.LocalDate
   alias FirmowidWeb.Infrastructure.Utilities.PolishValues
   alias FirmowidWeb.Infrastructure.Utilities.PosthogBusinessEvents
   alias FirmowidWeb.Invoicing.SalesInvoices.Components.InvoicePayment
@@ -486,7 +487,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
     invoice = socket.assigns.invoice
 
     # Generate preview data
-    issue_date = Date.utc_today()
+    issue_date = LocalDate.today()
     scope = socket.assigns.ash_scope
     actor = socket.assigns.current_user
 
@@ -891,7 +892,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
     with target when not is_nil(target) <- PaymentDateSuggestions.parse_target(field),
          suggestion_key when not is_nil(suggestion_key) <-
            PaymentDateSuggestions.parse_suggestion(suggestion) do
-      today = Date.utc_today()
+      today = LocalDate.today()
       current_params = socket.assigns.payment_form.source.params || %{}
 
       updated_params =

@@ -718,7 +718,7 @@ defmodule Firmowid.Invoicing.SalesInvoiceTest do
                  end)
 
         assert issued.id == draft.id
-        assert issued.issue_date == Date.utc_today()
+        assert issued.issue_date == Firmowid.LocalDate.today()
         assert issued.ksef_submission_status == :submitting
 
         assert Invoicing.get_sales_invoice!(draft.id, scope: scope).invoice_number ==

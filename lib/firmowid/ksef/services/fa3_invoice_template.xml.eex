@@ -31,6 +31,13 @@
 			</Adres>
 		<% end %>
 
+		<%= if @invoice.buyer_is_different_mail_address && @invoice.buyer_mail_address not in [nil, ""] && @invoice.buyer_mail_country not in [nil, ""] do %>
+			<AdresKoresp>
+				<KodKraju><%= @invoice.buyer_mail_country %></KodKraju>
+				<AdresL1><%= @invoice.buyer_mail_address %></AdresL1>
+			</AdresKoresp>
+		<% end %>
+
 		<%!-- Jednostka Samorządu Terytorialnego i Grupa Vat --%>
 		<JST>2</JST>
 		<GV>2</GV>

@@ -7,6 +7,8 @@ defmodule Firmowid.Ksef.Workers.SubmissionWorkerTest do
 
   alias Firmowid.Invoicing.SalesInvoice
   alias Firmowid.InvoicingFixtures
+  alias Firmowid.Ksef.Credential
+  alias Firmowid.Ksef.Services.InvoiceRenderer
   alias Firmowid.Ksef.Workers.SessionWorker
   alias Firmowid.Ksef.Workers.SubmissionWorker
   alias Firmowid.Scope
@@ -48,6 +50,171 @@ defmodule Firmowid.Ksef.Workers.SubmissionWorkerTest do
 
     assert {:ok, nil} =
              SalesInvoice.by_id(correction.id, scope: scope_for(admin), not_found_error?: false)
+  end
+
+  test "records the KSeF number of an invoice KSeF reports as a duplicate of itself" do
+    admin = admin_fixture()
+    invoice = submitted_invoice!(admin, %{ksef_invoice_kind: :vat})
+    stored = invoice |> InvoiceRenderer.render_fa3() |> IO.iodata_to_binary()
+
+    report_duplicate!(
+      admin.member.organization_id,
+      String.replace(
+        stored,
+        ~r/<DataWytworzeniaFa>[^<]*/,
+        "<DataWytworzeniaFa>2026-01-01T00:00:00Z"
+      )
+    )
+
+    assert :ok = verify!(invoice)
+
+    confirmed = SalesInvoice.by_id!(invoice.id, scope: scope_for(admin))
+    assert confirmed.ksef_number == "KSEF-FIRST-SENDING"
+    assert confirmed.invoice_number == invoice.invoice_number
+  end
+
+  test "returns an invoice whose number another KSeF document has to a draft" do
+    admin = admin_fixture()
+    invoice = submitted_invoice!(admin, %{ksef_invoice_kind: :vat})
+    stored = invoice |> InvoiceRenderer.render_fa3() |> IO.iodata_to_binary()
+
+    report_duplicate!(
+      admin.member.organization_id,
+      String.replace(stored, "<P_7>Service</P_7>", "<P_7>Goods</P_7>")
+    )
+
+    assert {:cancel, {:invoice_duplicate, "KSEF-FIRST-SENDING", _session}} = verify!(invoice)
+
+    withdrawn = SalesInvoice.by_id!(invoice.id, scope: scope_for(admin))
+    assert is_nil(withdrawn.invoice_number)
+    assert is_nil(withdrawn.ksef_number)
+  end
+
+  test "returns an invoice to a draft when KSeF does not give the document it duplicates" do
+    admin = admin_fixture()
+    invoice = submitted_invoice!(admin, %{ksef_invoice_kind: :vat})
+
+    report_duplicate!(admin.member.organization_id, :not_found)
+
+    assert {:error, {:unexpected_response, 404, _body}} = verify!(invoice)
+    assert SalesInvoice.by_id!(invoice.id, scope: scope_for(admin)).invoice_number
+
+    assert {:cancel, {:invoice_duplicate, "KSEF-FIRST-SENDING", _session}} =
+             verify!(invoice, attempt: 3)
+
+    assert is_nil(SalesInvoice.by_id!(invoice.id, scope: scope_for(admin)).invoice_number)
+  end
+
+  test "sends again an invoice KSeF cancelled on its side, up to a limit" do
+    admin = admin_fixture()
+    invoice = submitted_invoice!(admin, %{ksef_invoice_kind: :vat})
+    InvoicingFixtures.accept_ksef_submissions!(invoice.organization_id)
+
+    Req.Test.stub(:ksef_api, fn conn ->
+      Req.Test.json(conn, %{"status" => %{"code" => 550, "description" => "Cancelled"}})
+    end)
+
+    Oban.Testing.with_testing_mode(:manual, fn ->
+      assert :ok = verify!(invoice)
+
+      assert_enqueued(
+        worker: SubmissionWorker,
+        args: %{"action" => "submit", "sales_invoice_id" => invoice.id, "resends" => 1},
+        scheduled_at: {DateTime.shift(DateTime.utc_now(), minute: 1), delta: 5}
+      )
+
+      resent = SalesInvoice.by_id!(invoice.id, scope: scope_for(admin))
+      assert resent.invoice_number == invoice.invoice_number
+      assert is_nil(resent.locked_at)
+
+      resent
+      |> SalesInvoice.start_ksef_submission!(scope: ksef_scope(invoice.organization_id))
+      |> SalesInvoice.record_ksef_submission!(
+        %{
+          ksef_session_reference_number: "SESSION-REF",
+          ksef_invoice_checksum: "pending_ref:INVOICE-REF"
+        },
+        scope: ksef_scope(invoice.organization_id)
+      )
+
+      assert :ok = verify!(invoice, args: %{"resends" => 3})
+      assert is_nil(SalesInvoice.by_id!(invoice.id, scope: scope_for(admin)).invoice_number)
+    end)
+  end
+
+  test "a repeated verification leaves an invoice already sent again alone" do
+    admin = admin_fixture()
+    invoice = submitted_invoice!(admin, %{ksef_invoice_checksum: "pending_ref:RESENT-REF"})
+    InvoicingFixtures.accept_ksef_submissions!(invoice.organization_id)
+
+    Req.Test.stub(:ksef_api, fn conn ->
+      Req.Test.json(conn, %{"status" => %{"code" => 550, "description" => "Cancelled"}})
+    end)
+
+    Oban.Testing.with_testing_mode(:manual, fn ->
+      assert :ok = verify!(invoice, args: %{"resends" => 1})
+      refute_enqueued(worker: SubmissionWorker)
+    end)
+
+    kept = SalesInvoice.by_id!(invoice.id, scope: scope_for(admin))
+    assert kept.locked_at == invoice.locked_at
+    assert kept.ksef_invoice_checksum == "pending_ref:RESENT-REF"
+  end
+
+  test "keeps checking an invoice of a disconnected organization without reauthenticating" do
+    admin = admin_fixture()
+    invoice = submitted_invoice!(admin, %{ksef_invoice_kind: :vat})
+    scope = ksef_scope(invoice.organization_id)
+    scope |> then(&Credential.get_internal!(scope: &1)) |> Credential.destroy!(scope: scope)
+
+    Oban.Testing.with_testing_mode(:manual, fn ->
+      assert {:snooze, 3600} = verify!(invoice)
+      refute_enqueued(worker: SessionWorker)
+    end)
+
+    assert SalesInvoice.by_id!(invoice.id, scope: scope_for(admin)).locked_at == invoice.locked_at
+  end
+
+  test "keeps checking an invoice of an organization that is reconnecting without reauthenticating" do
+    admin = admin_fixture()
+    invoice = submitted_invoice!(admin, %{ksef_invoice_kind: :vat})
+
+    Firmowid.Repo.query!(
+      "UPDATE ksef_credentials SET status = 'wait_for_certificate' WHERE organization_id = $1",
+      [
+        Ecto.UUID.dump!(invoice.organization_id)
+      ]
+    )
+
+    Oban.Testing.with_testing_mode(:manual, fn ->
+      assert {:snooze, 3600} = verify!(invoice)
+      refute_enqueued(worker: SessionWorker)
+    end)
+
+    assert SalesInvoice.by_id!(invoice.id, scope: scope_for(admin)).locked_at == invoice.locked_at
+  end
+
+  test "disconnecting from KSeF keeps the verification of an invoice KSeF is processing" do
+    admin = admin_fixture()
+    invoice = submitted_invoice!(admin, %{ksef_invoice_kind: :vat})
+    InvoicingFixtures.accept_ksef_submissions!(invoice.organization_id)
+    Req.Test.stub(:ksef_api, &Plug.Conn.send_resp(&1, 204, ""))
+
+    Oban.Testing.with_testing_mode(:manual, fn ->
+      verification =
+        %{
+          "action" => "verify",
+          "organization_id" => invoice.organization_id,
+          "sales_invoice_id" => invoice.id,
+          "session_reference" => "SESSION-REF",
+          "invoice_reference" => "INVOICE-REF"
+        }
+        |> SubmissionWorker.new()
+        |> Firmowid.Oban.insert!(skip_organization_id: true)
+
+      assert {:ok, :disconnected} = Firmowid.Ksef.unauthenticate(scope_for(admin))
+      assert Firmowid.Repo.get!(Oban.Job, verification.id, oban_jobs: true).state == "available"
+    end)
   end
 
   test "keeps an invoice KSeF is still processing after the polling limit and checks it hourly" do
@@ -174,6 +341,52 @@ defmodule Firmowid.Ksef.Workers.SubmissionWorkerTest do
              "KSEF-CONFIRMED"
   end
 
+  test "sends again an invoice its interrupted earlier attempt left locked" do
+    admin = admin_fixture()
+
+    invoice =
+      submitted_invoice!(admin, %{ksef_session_reference_number: nil, ksef_invoice_checksum: nil})
+
+    InvoicingFixtures.accept_ksef_submissions!(invoice.organization_id)
+
+    Oban.Testing.with_testing_mode(:manual, fn ->
+      assert :ok =
+               perform_job(
+                 SubmissionWorker,
+                 %{
+                   "action" => "submit",
+                   "organization_id" => invoice.organization_id,
+                   "sales_invoice_id" => invoice.id
+                 },
+                 attempt: 2
+               )
+    end)
+
+    assert SalesInvoice.by_id!(invoice.id, scope: scope_for(admin)).ksef_invoice_checksum ==
+             "pending_ref:INVOICE-REF"
+  end
+
+  test "leaves a confirmed invoice alone when its submission is retried" do
+    admin = admin_fixture()
+
+    invoice =
+      submitted_invoice!(admin, %{ksef_number: "KSEF-CONFIRMED", ksef_invoice_checksum: "hash"})
+
+    assert {:cancel, :invoice_already_submitted} =
+             perform_job(
+               SubmissionWorker,
+               %{
+                 "action" => "submit",
+                 "organization_id" => invoice.organization_id,
+                 "sales_invoice_id" => invoice.id
+               },
+               attempt: 2
+             )
+
+    assert %{ksef_session_reference_number: "SESSION-REF", ksef_invoice_checksum: "hash"} =
+             SalesInvoice.by_id!(invoice.id, scope: scope_for(admin))
+  end
+
   test "retries a submission whose invoice cannot be read instead of cancelling it" do
     admin = admin_fixture()
 
@@ -204,6 +417,8 @@ defmodule Firmowid.Ksef.Workers.SubmissionWorkerTest do
   end
 
   defp submitted_invoice!(admin, attrs) do
+    InvoicingFixtures.connect_ksef!(admin.member.organization_id)
+
     %{
       invoice_number: "FV/#{System.unique_integer([:positive])}",
       issue_date: Date.utc_today(),
@@ -238,18 +453,56 @@ defmodule Firmowid.Ksef.Workers.SubmissionWorkerTest do
     end)
   end
 
+  # KSeF rejects the sending as a duplicate of the document it stores under the given XML.
+  defp report_duplicate!(organization_id, stored_xml) do
+    InvoicingFixtures.accept_ksef_submissions!(organization_id)
+
+    Req.Test.stub(:ksef_api, fn conn ->
+      case String.replace_prefix(conn.request_path, "/v2", "") do
+        "/sessions/SESSION-REF/invoices/INVOICE-REF" ->
+          Req.Test.json(conn, %{
+            "status" => %{
+              "code" => 440,
+              "extensions" => %{
+                "originalKsefNumber" => "KSEF-FIRST-SENDING",
+                "originalSessionReferenceNumber" => "FIRST-SESSION"
+              }
+            }
+          })
+
+        "/invoices/ksef/KSEF-FIRST-SENDING" when stored_xml == :not_found ->
+          Plug.Conn.send_resp(conn, 404, "")
+
+        "/invoices/ksef/KSEF-FIRST-SENDING" ->
+          Plug.Conn.send_resp(conn, 200, stored_xml)
+      end
+    end)
+  end
+
   defp verify!(invoice, opts \\ []) do
+    {args, opts} = Keyword.pop(opts, :args, %{})
+
     perform_job(
       SubmissionWorker,
-      %{
-        "action" => "verify",
-        "organization_id" => invoice.organization_id,
-        "sales_invoice_id" => invoice.id,
-        "session_reference" => "SESSION-REF",
-        "invoice_reference" => "INVOICE-REF"
-      },
+      Map.merge(
+        %{
+          "action" => "verify",
+          "organization_id" => invoice.organization_id,
+          "sales_invoice_id" => invoice.id,
+          "session_reference" => "SESSION-REF",
+          "invoice_reference" => "INVOICE-REF"
+        },
+        args
+      ),
       opts
     )
+  end
+
+  defp ksef_scope(organization_id) do
+    %Scope{
+      actor: %Firmowid.SystemActor{org_id: organization_id, role: :ksef_session},
+      tenant: organization_id
+    }
   end
 
   defp scope_for(user), do: %Scope{actor: user, tenant: user.member.organization_id}

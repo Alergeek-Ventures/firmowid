@@ -8,6 +8,7 @@ defmodule Firmowid.Invoicing.Actions.CancelInvoice do
 
   alias Firmowid.Invoicing.SalesInvoice
   alias Firmowid.Invoicing.Services.CorrectionReason
+  alias Firmowid.LocalDate
 
   @correction_snapshot_load [
     :sales_invoice_items,
@@ -54,7 +55,7 @@ defmodule Firmowid.Invoicing.Actions.CancelInvoice do
     if invoice.ksef_invoice_kind == :vat and invoice.ksef_number != nil do
       latest = Ash.load!(invoice.effective_snapshot, @correction_snapshot_load, opts)
 
-      issue_date = Date.utc_today()
+      issue_date = LocalDate.today()
 
       # Get next FK-series number
       {:ok, invoice_number} =
