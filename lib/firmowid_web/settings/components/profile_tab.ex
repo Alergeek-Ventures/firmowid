@@ -88,6 +88,7 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
       </div>
 
       <.projects_section
+        :if={!@standalone}
         projects={@projects}
         total_duration={@projects_total}
         date={@projects_date}
@@ -127,35 +128,30 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
 
   attr :delegations, :list, required: true
 
-  attr :standalone, :boolean,
-    default: false,
-    doc: "On its own page the page title names it, so it drops its heading and card shadow."
-
-  @doc "The member's business trips with a way to plan one; its own page behind the `inbox` flag."
-  def delegations_section(assigns) do
+  defp delegations_section(assigns) do
     ~H"""
-    <section class={[
-      "flex w-full flex-col gap-6 rounded-lg bg-white p-6 lg:col-span-2",
-      !@standalone && "shadow"
-    ]}>
-      <div class={[
-        "flex items-start gap-3",
-        if(@standalone, do: "justify-end", else: "justify-between")
-      ]}>
-        <h2 :if={!@standalone} class="text-base leading-none font-medium text-grey-900">
+    <section class="flex w-full flex-col gap-6 rounded-lg bg-white p-6 shadow lg:col-span-2">
+      <div class="flex items-start justify-between gap-3">
+        <h2 class="text-base leading-none font-medium text-grey-900">
           {gettext("Business trips")}
         </h2>
-        <.link
-          kind="button"
-          navigate={~p"/delegacje/dodaj"}
-          variant="secondary"
-          size="small"
-        >
-          <.icon name="hero-map" class="size-4" /> {gettext("Plan a business trip")}
-        </.link>
+        <.plan_business_trip_link />
       </div>
       <.delegations_list delegations={@delegations} />
     </section>
+    """
+  end
+
+  @doc """
+  Opens the form for a new business trip. Behind the `inbox` flag the trips have
+  their own page, which shows it next to the page title.
+  """
+  @spec plan_business_trip_link(map()) :: Rendered.t()
+  def plan_business_trip_link(assigns) do
+    ~H"""
+    <.link kind="button" navigate={~p"/delegacje/dodaj"} variant="secondary" size="small">
+      <.icon name="hero-map" class="size-4" /> {gettext("Plan a business trip")}
+    </.link>
     """
   end
 

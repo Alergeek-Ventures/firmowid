@@ -7,6 +7,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
   """
   use FirmowidWeb, :live_view
 
+  import FirmowidWeb.Delegations.Components.DelegationsList
   import FirmowidWeb.Infrastructure.Flags, only: [flag_enabled?: 2]
   import FirmowidWeb.Infrastructure.Hooks.RequireOrganization, only: [guard_upload_progress: 2]
   import FirmowidWeb.Settings.Components.AccountTab
@@ -1129,6 +1130,9 @@ defmodule FirmowidWeb.Settings.Views.Index do
       user_avatar_upload={@uploads.user_avatar}
       organization_avatar_upload={Map.get(@uploads, :organization_avatar)}
     >
+      <:actions :if={@settings_tab == :delegations}>
+        <.plan_business_trip_link />
+      </:actions>
       <%= if flag_enabled?(:inbox, assigns) do %>
         <.settings_avatar
           :if={@settings_tab == :organization}
@@ -1188,7 +1192,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
             current_password={@current_password}
           />
         <% :delegations -> %>
-          <.delegations_section delegations={@delegations} standalone />
+          <.delegations_list delegations={@delegations} />
         <% :documents -> %>
           <.live_component
             module={DocumentsSection}
@@ -1197,6 +1201,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
             scope={@ash_scope}
             feature_flags={@feature_flags}
             variant={:profile}
+            standalone
             current_contract_id={@current_contract && @current_contract.id}
           />
         <% :profile -> %>
