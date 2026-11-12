@@ -14,7 +14,7 @@ Aplikację Mobilną KSeF Ministerstwo Finansów udostępnia bezpłatnie od 1 lut
 | Kopie robocze faktur | tak |
 | Zapisani nabywcy, rachunki bankowe i profile przedsiębiorcy | tak |
 | Wyszukiwanie i pobieranie faktur wysłanych do KSeF | tak |
-| Wystawianie bez internetu i w czasie niedostępności KSeF | tak |
+| Wystawianie bez internetu i w czasie niedostępności KSeF | tak, z wcześniej pobranym certyfikatem KSeF typu 2 |
 | Podgląd szczegółów załącznika do faktury | nie |
 | Wystawianie faktur z załącznikiem | nie, tylko programy zintegrowane z API |
 | Wersja testowa do ćwiczeń | nie, tylko produkcyjna |
@@ -31,7 +31,7 @@ Logowanie idzie przez login.gov.pl: mObywatel, mojeID, e-dowód albo profil zauf
 
 Środowisko testowe działa tylko w przeglądarkowej Aplikacji Podatnika KSeF.
 
-![Aplikacja Mobilna KSeF wystawia faktury i korekty, zapisuje kopie robocze, nabywców i rachunki, pobiera faktury z KSeF i działa bez internetu. Nie pokazuje szczegółów załącznika, nie wystawia faktur z załącznikiem i nie ma wersji testowej.](/images/guides/aplikacja-mobilna-ksef-co-potrafi.webp)
+![Aplikacja Mobilna KSeF wystawia faktury i korekty, zapisuje kopie robocze, nabywców i rachunki, pobiera faktury z KSeF a bez internetu działa z wcześniej pobranym certyfikatem KSeF typu 2. Nie pokazuje szczegółów załącznika, nie wystawia faktur z załącznikiem i nie ma wersji testowej.](/images/guides/aplikacja-mobilna-ksef-co-potrafi.webp)
 
 ## Źródła
 
