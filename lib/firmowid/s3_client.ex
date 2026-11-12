@@ -163,6 +163,12 @@ defmodule Firmowid.S3Client do
       {:error, error}
   end
 
+  @doc """
+  The origin that presigned URLs point to, which browsers load previews from.
+  """
+  @spec browser_origin() :: String.t()
+  def browser_origin, do: endpoint_url() || "https://#{bucket()}.s3.amazonaws.com"
+
   defp req(options \\ []) do
     ReqS3.attach(Req.new(options), aws_sigv4: aws_sigv4(), aws_endpoint_url_s3: endpoint_url())
   end

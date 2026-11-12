@@ -47,6 +47,7 @@ defmodule FirmowidWeb.Core.Router do
     plug :put_root_layout, html: {FirmowidWeb.Infrastructure.Layouts, :root}
     plug :protect_from_forgery
     plug :put_secure_browser_headers
+    plug FirmowidWeb.Infrastructure.Plugs.ContentSecurityPolicy
 
     plug :sign_in_with_remember_me
     plug :load_from_session
@@ -185,6 +186,7 @@ defmodule FirmowidWeb.Core.Router do
     if Mix.env() != :dev do
       live_dashboard "/dashboard",
         metrics: Telemetry,
+        csp_nonce_assign_key: :csp_nonce,
         on_mount: [
           LiveSession,
           {RequireOrganization, :default},
@@ -193,6 +195,7 @@ defmodule FirmowidWeb.Core.Router do
 
       oban_dashboard("/oban",
         oban_name: Oban,
+        csp_nonce_assign_key: :csp_nonce,
         on_mount: [
           LiveSession,
           {RequireOrganization, :default},
@@ -220,9 +223,10 @@ defmodule FirmowidWeb.Core.Router do
     scope "/admin" do
       pipe_through :browser
 
-      live_dashboard "/dashboard", metrics: Telemetry
-      oban_dashboard("/oban", oban_name: Oban)
-      forward "/mailbox", Plug.Swoosh.MailboxPreview
+      live_dashboard "/dashboard", metrics: Telemetry, csp_nonce_assign_key: :csp_nonce
+      oban_dashboard("/oban", oban_name: Oban, csp_nonce_assign_key: :csp_nonce)
+
+      forward "/mailbox", Plug.Swoosh.MailboxPreview, csp_nonce_assign_key: %{script: :csp_nonce, style: :csp_nonce}
     end
   end
 
