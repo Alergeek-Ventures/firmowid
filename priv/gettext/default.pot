@@ -1235,6 +1235,7 @@ msgid "An error occurred while connecting the bank account. Please try again."
 msgstr ""
 
 #: lib/firmowid_web/bank_sync/views/create.ex
+#: lib/firmowid_web/organization/views/first_steps.ex
 #: lib/firmowid_web/settings/views/index.ex
 #, elixir-autogen, elixir-format
 msgid "An error occurred while connecting the bank account. Try again."
