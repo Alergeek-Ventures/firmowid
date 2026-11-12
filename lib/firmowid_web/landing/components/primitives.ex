@@ -20,8 +20,6 @@ defmodule FirmowidWeb.Landing.Components.Primitives do
   Renders the landing-page navbar.
   """
   @spec landing_navbar(map()) :: Rendered.t()
-  attr :class, :any, default: nil
-
   def landing_navbar(assigns) do
     assigns = assign(assigns, :repository, @repository)
 
@@ -29,10 +27,7 @@ defmodule FirmowidWeb.Landing.Components.Primitives do
     <header
       id="landing-navbar"
       phx-hook="LandingNavbarTheme"
-      class={[
-        "group/navbar sticky top-0 z-50 h-(--landing-nav-height) px-2 py-1.5 transition-none lg:px-8 lg:pt-5 lg:pb-2.5",
-        @class
-      ]}
+      class="group/navbar sticky top-0 z-50 h-(--landing-nav-height) px-2 py-1.5 transition-none lg:px-8 lg:pt-5 lg:pb-2.5"
     >
       <nav
         class="mx-auto flex h-13 max-w-324 items-center justify-between rounded-lg border border-white/50 bg-[rgb(203_203_203/0.6)] px-4 py-1.5 backdrop-blur-md transition-[background-color,border-color,box-shadow] duration-180 group-data-[theme=dark]/navbar:border-[rgb(245_241_234/0.28)] group-data-[theme=dark]/navbar:bg-[rgb(245_241_234/0.1)] group-data-[theme=dark]/navbar:shadow-[0_0.625rem_1.875rem_rgb(0_0_0/0.18)] lg:h-16.5 lg:px-6"
@@ -258,8 +253,6 @@ defmodule FirmowidWeb.Landing.Components.Primitives do
   Renders the final CTA and the footer.
   """
   @spec cta_footer(map()) :: Rendered.t()
-  attr :class, :any, default: nil
-
   def cta_footer(assigns) do
     assigns =
       assigns
@@ -270,7 +263,7 @@ defmodule FirmowidWeb.Landing.Components.Primitives do
     <section
       id="cta-footer"
       data-landing-dark-surface
-      class={["overflow-clip bg-grey-900 text-[#f5f1ea] lg:bg-[#0f0f0f]", @class]}
+      class="overflow-clip bg-grey-900 text-[#f5f1ea] lg:bg-[#0f0f0f]"
     >
       <div class="mx-auto w-[calc(100%-var(--spacing)*8)] max-w-284.75 lg:w-[calc(100%-var(--spacing)*16)]">
         <div class="flex flex-col gap-12 pt-18 pb-24 text-left lg:flex-row lg:items-start lg:gap-12 lg:pt-26 lg:pb-18 xl:gap-29.5">
