@@ -46,9 +46,6 @@ defmodule Firmowid.Payroll.MemberTaxDeclaration do
 
   code_interface do
     define :read, action: :read
-    define :create_tax_declaration, action: :create
-    define :list_tax_declarations, action: :list
-    define :correct_tax_declaration, action: :correct
     define :create_imported_tax_declaration, action: :import_create
     define :update_imported_tax_declaration, action: :import_update
     define :import_from_document, action: :import_from_document, args: [:attrs_map]

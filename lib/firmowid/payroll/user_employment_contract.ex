@@ -74,23 +74,8 @@ defmodule Firmowid.Payroll.UserEmploymentContract do
     define :read, action: :read
     define :list, action: :list
     define :destroy, action: :destroy
-    define :update_employment_contract, action: :update
-    define :submit_signed, action: :submit_signed
-    define :activate, action: :activate
     define :read_global, action: :read_global
     define :notify_admins, args: [:signal]
-
-    define :load_pending_contract,
-      action: :load_pending_contract,
-      args: [:member_id],
-      get?: true,
-      not_found_error?: false
-
-    define :load_current_contract,
-      action: :load_current_contract,
-      args: [:member_id],
-      get?: true,
-      not_found_error?: false
   end
 
   actions do

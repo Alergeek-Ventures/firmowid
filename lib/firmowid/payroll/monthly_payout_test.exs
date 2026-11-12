@@ -7,7 +7,6 @@ defmodule Firmowid.Payroll.MonthlyPayoutTest do
   alias Firmowid.Blobs.Blob
   alias Firmowid.Payroll
   alias Firmowid.Payroll.MemberPayrollInput
-  alias Firmowid.Payroll.MemberTaxDeclaration
   alias Firmowid.Payroll.UserEmploymentContract
   alias Firmowid.Payroll.UserSalary
   alias Firmowid.Scope
@@ -264,7 +263,7 @@ defmodule Firmowid.Payroll.MonthlyPayoutTest do
   end
 
   defp declaration_fixture!(employee, scope, attrs) do
-    MemberTaxDeclaration.create_tax_declaration!(
+    Payroll.create_tax_declaration!(
       Map.merge(
         %{
           member_id: employee.member.id,
