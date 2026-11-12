@@ -124,7 +124,7 @@ defmodule FirmowidWeb.Management.Components.Roles do
           <div class="flex flex-col-reverse gap-4 sm:flex-row sm:justify-end">
             <.button
               type="button"
-              variant="secondary"
+              variant="tertiary"
               size="small"
               phx-click={hide_modal("organization_invite_modal")}
             >
@@ -188,7 +188,7 @@ defmodule FirmowidWeb.Management.Components.Roles do
           <div class="flex flex-col-reverse gap-4 sm:flex-row sm:justify-end">
             <.button
               type="button"
-              variant="secondary"
+              variant="tertiary"
               size="small"
               phx-click={JS.push("clear_selected_user") |> hide_modal("update_role_modal")}
             >

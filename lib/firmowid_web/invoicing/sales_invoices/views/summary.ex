@@ -109,7 +109,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Summary do
               <FirmowidUI.Components.Button.button
                 id="edit-invoice-button"
                 type="button"
-                variant="secondary"
+                variant="tertiary"
                 size="small"
                 disabled
                 aria-describedby="edit-invoice-button-description"
@@ -124,7 +124,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Summary do
             <.link
               navigate={Navigation.sales_invoice_edit_path(@invoice, @return_to)}
               kind="button"
-              variant="secondary"
+              variant="tertiary"
               size="small"
             >
               <Lucideicons.pencil /> {gettext("Edit")}
@@ -132,7 +132,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Summary do
           <% end %>
           <.link
             kind="button"
-            variant="secondary"
+            variant="tertiary"
             size="small"
             redirect={Navigation.sales_invoice_pdf_download_path(@invoice, true)}
             download

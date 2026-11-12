@@ -32,7 +32,7 @@
           {gettext("Cancel")}
         </.link>
 
-        <.button variant="tertiary">
+        <.button variant="secondary">
           {case @live_action do
             :new -> gettext("Add project")
             :edit -> gettext("Save changes")
@@ -227,7 +227,7 @@
           <%= if entry.removed_from_project do %>
             <.button
               type="button"
-              variant="secondary"
+              variant="tertiary"
               size="small"
               class="ml-auto"
               phx-click="restore_user"

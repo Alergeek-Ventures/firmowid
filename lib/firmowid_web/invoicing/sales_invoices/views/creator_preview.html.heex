@@ -4,7 +4,7 @@
   } />
   <.render_header invoice={@invoice} step={@step_number} title={gettext("Invoice preview")} />
   <p role="alert" class="text-sm text-brick-600">{@preview_error}</p>
-  <.button type="button" phx-click="save_as_draft" variant="secondary">
+  <.button type="button" phx-click="save_as_draft" variant="tertiary">
     {gettext("Save draft")}
   </.button>
 </div>

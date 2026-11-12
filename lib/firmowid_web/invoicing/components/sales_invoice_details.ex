@@ -193,7 +193,7 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
                     Navigation.sales_invoice_creator_path(%{skopiuj: @latest_invoice_snapshot.id})
                   }
                   kind="button"
-                  variant="secondary"
+                  variant="tertiary"
                   size="small"
                 >
                   <Lucideicons.copy /><span class="max-xl:sr-only">{gettext("Copy")}</span>
@@ -215,7 +215,7 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
                       <.button
                         id="edit-invoice-button"
                         type="button"
-                        variant="secondary"
+                        variant="tertiary"
                         size="small"
                         disabled
                         aria-describedby="edit-invoice-button-description"
@@ -241,7 +241,7 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
                         Navigation.sales_invoice_edit_path(@latest_invoice_snapshot, @return_to)
                       }
                       kind="button"
-                      variant="secondary"
+                      variant="tertiary"
                       size="small"
                     >
                       <.icon name="hero-pencil-square" class="size-4" />
@@ -253,7 +253,7 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
                 <.button
                   :if={@can_write_invoicing? and @invoice.is_deletable}
                   phx-click={show_modal("delete-invoice-modal")}
-                  variant="secondary"
+                  variant="tertiary"
                   size="small"
                 >
                   <.icon name="hero-trash-solid" class="size-4" />
@@ -265,7 +265,7 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
                 <.button
                   :if={@can_cancel?}
                   phx-click={show_modal("cancel-invoice-modal")}
-                  variant="secondary"
+                  variant="tertiary"
                   size="small"
                 >
                   <.icon name="hero-trash-solid" class="size-4" />
@@ -279,7 +279,7 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
                   module={InvoiceDownloadModal}
                   id={"sales-download-#{@invoice.id}"}
                   download_path={Navigation.sales_invoice_pdf_path(@invoice)}
-                  trigger_variant="secondary"
+                  trigger_variant="tertiary"
                   trigger_size="small"
                   button_label={gettext("Download")}
                 />
@@ -292,7 +292,7 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
                   SubmissionInfo.failed?(@submission_info) &&
                     "text-brick-700 hover:bg-brick-700 hover:text-brick-200 hover:ring-brick-700"
                 ]}
-                variant="secondary"
+                variant="tertiary"
                 size="small"
                 phx-click="show_timeline"
                 phx-target={@myself}
@@ -314,7 +314,7 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
                   <div class="mt-6 flex justify-end gap-3">
                     <.button
                       type="button"
-                      variant="secondary"
+                      variant="tertiary"
                       phx-click={hide_modal("delete-invoice-modal")}
                     >
                       {gettext("Cancel")}
@@ -388,7 +388,7 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
                     <div class="mt-6 flex justify-end gap-3">
                       <.button
                         type="button"
-                        variant="secondary"
+                        variant="tertiary"
                         phx-click={hide_modal("cancel-invoice-modal")}
                       >
                         {gettext("Back")}
@@ -416,7 +416,7 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
                 <.button
                   id="share-invoice-button"
                   phx-hook="CopyToClipboard"
-                  variant={if @invoice.share_token, do: "primary", else: "secondary"}
+                  variant={if @invoice.share_token, do: "primary", else: "tertiary"}
                   accent="teal"
                   size="small"
                   phx-click="create_share_link"

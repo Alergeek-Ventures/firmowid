@@ -30,7 +30,7 @@ defmodule FirmowidWeb.Management.Components.Card do
       <.button
         form={@form}
         type="submit"
-        variant="secondary"
+        variant="tertiary"
         size="small"
         accent="rust"
         class="ml-2"

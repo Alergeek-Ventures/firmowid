@@ -43,7 +43,7 @@ defmodule FirmowidWeb.Infrastructure.Layouts do
         <.form for={%{}} action={~p"/admin/impersonacja"} method="delete">
           <.button
             type="submit"
-            variant="secondary"
+            variant="tertiary"
             size="small"
             class="bg-white text-black hover:bg-white/90 active:bg-white/80"
           >

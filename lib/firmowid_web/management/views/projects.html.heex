@@ -30,7 +30,7 @@
               JS.toggle_attribute({"data-expanded", "true", "false"}, to: "#search-container")
               |> JS.focus(to: "#search-container input")
             }
-            variant="secondary"
+            variant="tertiary"
           >
             <Lucideicons.search />
           </.button>
@@ -187,7 +187,7 @@
             <div class="flex flex-row items-center gap-3">
               <.button
                 type="button"
-                variant="secondary"
+                variant="tertiary"
                 size="small"
                 class="max-md:hidden"
                 phx-click="unarchive_project"
@@ -223,7 +223,7 @@
   <.link
     navigate={~p"/zarzadzanie/projekty/dodaj"}
     kind="button"
-    variant="secondary"
+    variant="tertiary"
     class="mt-6"
   >
     <Lucideicons.plus /> <span class="max-md:sr-only">{gettext("Add project")}</span>

@@ -420,7 +420,7 @@ defmodule FirmowidWeb.Invoicing.Components.DashboardTiles do
         {@label}
       </span>
 
-      <.button type="button" variant="secondary" size="small" class="text-caps-sm">
+      <.button type="button" variant="tertiary" size="small" class="text-caps-sm">
         {gettext("Review")}
       </.button>
     </div>
@@ -477,7 +477,7 @@ defmodule FirmowidWeb.Invoicing.Components.DashboardTiles do
       <.link
         navigate={~p"/sprzedazowe/nowa"}
         kind="button"
-        variant="secondary"
+        variant="tertiary"
         size="small"
         class="mt-1 w-full"
       >
@@ -613,7 +613,7 @@ defmodule FirmowidWeb.Invoicing.Components.DashboardTiles do
       <.link
         navigate={~p"/ustawienia/bank/dodaj"}
         kind="button"
-        variant="secondary"
+        variant="tertiary"
         size="small"
         class="mt-1 w-full"
       >
@@ -640,7 +640,7 @@ defmodule FirmowidWeb.Invoicing.Components.DashboardTiles do
       <.link
         navigate={~p"/ustawienia/ksef"}
         kind="button"
-        variant="secondary"
+        variant="tertiary"
         size="small"
         class="mt-1 w-full"
       >

@@ -42,7 +42,7 @@ defmodule FirmowidUI.Invoicing.Components.InvoiceNumber do
           type="button"
           phx-click="select_invoice_series"
           phx-value-number={next_number}
-          variant={if(@invoice_number == next_number, do: "secondary", else: "outline")}
+          variant={if(@invoice_number == next_number, do: "tertiary", else: "outline")}
           accent="teal"
           size="small"
           class={[
@@ -76,7 +76,7 @@ defmodule FirmowidUI.Invoicing.Components.InvoiceNumber do
               type="button"
               phx-click="select_invoice_series"
               phx-value-number={suggestion}
-              variant="secondary"
+              variant="tertiary"
               accent="teal"
               size="small"
               class="text-xs"

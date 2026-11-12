@@ -105,7 +105,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceReview do
                 phx-click="save_as_draft"
                 phx-disable-with={pgettext("sales invoice button", "Saving...")}
                 class="h-11 w-full"
-                variant="secondary"
+                variant="tertiary"
               >
                 {gettext("Save draft")}
               </.button>

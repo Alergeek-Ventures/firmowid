@@ -130,24 +130,55 @@ defmodule FirmowidWeb.Development.Views.DesignSystem do
             <.button type="button" size={size} variant="primary" accent="teal">
               Primary sprzedaż
             </.button>
-            <.button type="button" size={size} variant="secondary">Secondary</.button>
-            <.button type="button" size={size} variant="secondary" accent="rust">
-              Secondary koszt
-            </.button>
-            <.button type="button" size={size} variant="secondary" accent="teal">
-              Secondary sprzedaż
-            </.button>
             <.button type="button" size={size} variant="tertiary">Tertiary</.button>
+            <.button type="button" size={size} variant="tertiary" accent="rust">
+              Tertiary koszt
+            </.button>
+            <.button type="button" size={size} variant="tertiary" accent="teal">
+              Tertiary sprzedaż
+            </.button>
+            <.button type="button" size={size} variant="secondary">Secondary</.button>
             <.button type="button" size={size} variant="outline">Outline</.button>
             <.button type="button" size={size} variant="ghost">Ghost</.button>
             <.button type="button" size={size} variant="destructive">Usuń</.button>
             <.button type="button" size={size} variant="success">Zatwierdź</.button>
             <.button type="button" size={size} variant="primary" disabled>Wyłączony</.button>
           </div>
+          <div
+            :for={
+              {variant, accent} <- [
+                {"special", nil},
+                {"primary", "rust"},
+                {"primary", "teal"},
+                {"tertiary", nil},
+                {"secondary", nil},
+                {"outline", nil},
+                {"ghost", nil}
+              ]
+            }
+            class="flex flex-wrap items-center gap-3"
+          >
+            <span class="w-32 text-sm text-grey-600">{variant} {accent}</span>
+            <%= for size <- ~w(big small), disabled <- [false, true] do %>
+              <.button type="button" size={size} variant={variant} accent={accent} disabled={disabled}>
+                <Lucideicons.file_down /> Pobierz
+              </.button>
+              <.button
+                type="button"
+                size={size}
+                variant={variant}
+                accent={accent}
+                disabled={disabled}
+                aria-label="Pobierz"
+              >
+                <Lucideicons.file_down />
+              </.button>
+            <% end %>
+          </div>
           <div class="flex flex-wrap items-center gap-3">
             <.icon_button label="Edytuj" size="small"><Lucideicons.pencil /></.icon_button>
             <.icon_button label="Edytuj" size="big"><Lucideicons.pencil /></.icon_button>
-            <.icon_button label="Szukaj" variant="secondary" size="big">
+            <.icon_button label="Szukaj" variant="tertiary" size="big">
               <Lucideicons.search />
             </.icon_button>
             <.icon_button label="Pobierz" variant="outline"><Lucideicons.download /></.icon_button>
@@ -185,7 +216,7 @@ defmodule FirmowidWeb.Development.Views.DesignSystem do
             <:icon><Lucideicons.presentation /></:icon>
             Dodaj projekt, żeby przypisywać do niego godziny i koszty.
             <:action>
-              <.button type="button" variant="secondary"><Lucideicons.plus /> Dodaj projekt</.button>
+              <.button type="button" variant="tertiary"><Lucideicons.plus /> Dodaj projekt</.button>
             </:action>
           </.empty_state>
         </div>

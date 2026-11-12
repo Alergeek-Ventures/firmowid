@@ -4,11 +4,11 @@ defmodule FirmowidUI.Utilities.ButtonStyles do
   @doc "Returns the shared design-system size classes for button-like controls."
   @spec size_classes(String.t()) :: String.t()
   def size_classes("big") do
-    "h-9 gap-1.5 rounded-sm px-2.5 text-base/tight font-medium [&>svg]:size-6"
+    "h-9 gap-1.5 rounded-sm px-2.25 py-1.5 text-base/none font-medium [&>svg]:size-5"
   end
 
   def size_classes("small") do
-    "h-7.5 gap-1.5 rounded-sm px-2 text-sm/tight font-medium [&>svg]:size-4"
+    "h-7.5 gap-1.5 rounded-sm px-1.75 py-1.5 text-sm/none font-medium [&>svg]:size-4"
   end
 
   @doc """
@@ -21,8 +21,8 @@ defmodule FirmowidUI.Utilities.ButtonStyles do
     [
       "border-transparent",
       "bg-black text-white",
-      "hover:bg-grey-700 active:bg-grey-800",
-      "disabled:bg-grey-400 disabled:text-grey-400"
+      "hover:bg-rust-700 active:bg-rust-800",
+      "disabled:bg-grey-800 disabled:text-grey-400"
     ]
   end
 
@@ -47,7 +47,7 @@ defmodule FirmowidUI.Utilities.ButtonStyles do
       "border-transparent",
       "bg-rust-700 text-white",
       "hover:bg-rust-800 active:bg-rust-900",
-      "disabled:bg-rust-400"
+      "disabled:bg-rust-500 disabled:text-rust-200"
     ]
   end
 
@@ -56,11 +56,11 @@ defmodule FirmowidUI.Utilities.ButtonStyles do
       "border-transparent",
       "bg-teal-700 text-white",
       "hover:bg-teal-800 active:bg-teal-900",
-      "disabled:bg-teal-400"
+      "disabled:bg-teal-500 disabled:text-teal-200"
     ]
   end
 
-  def variant_classes("secondary", "teal") do
+  def variant_classes("tertiary", "teal") do
     [
       "border-transparent",
       "bg-teal-200 text-teal-900",
@@ -69,7 +69,7 @@ defmodule FirmowidUI.Utilities.ButtonStyles do
     ]
   end
 
-  def variant_classes("secondary", "rust") do
+  def variant_classes("tertiary", "rust") do
     [
       "border-transparent",
       "bg-rust-200 text-rust-900",
@@ -78,7 +78,7 @@ defmodule FirmowidUI.Utilities.ButtonStyles do
     ]
   end
 
-  def variant_classes("secondary", _accent) do
+  def variant_classes("tertiary", _accent) do
     [
       "border-transparent",
       "bg-grey-200 text-grey-900",
@@ -97,7 +97,7 @@ defmodule FirmowidUI.Utilities.ButtonStyles do
     ]
   end
 
-  def variant_classes("tertiary", _accent) do
+  def variant_classes("secondary", _accent) do
     [
       "border-transparent",
       "bg-grey-700 text-white",

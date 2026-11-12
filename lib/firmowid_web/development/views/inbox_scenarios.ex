@@ -136,7 +136,7 @@ defmodule FirmowidWeb.Development.Views.InboxScenarios do
           :if={@scenario != "ksiegowa"}
           type="button"
           size="small"
-          variant="secondary"
+          variant="tertiary"
           phx-click="simulate_new"
           class="ms-auto"
         >

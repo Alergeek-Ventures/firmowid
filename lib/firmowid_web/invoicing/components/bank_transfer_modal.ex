@@ -23,7 +23,7 @@ defmodule FirmowidWeb.Invoicing.Components.BankTransferModal do
         phx-click={show_modal("bank-transfer-modal")}
         type="button"
         class="w-full"
-        variant="tertiary"
+        variant="secondary"
         size="small"
       >
         {gettext("Copy details")}
@@ -56,7 +56,7 @@ defmodule FirmowidWeb.Invoicing.Components.BankTransferModal do
                 onclick="navigator.clipboard.writeText(this.dataset.copyValue)"
                 type="button"
                 class="size-6"
-                variant="secondary"
+                variant="tertiary"
                 size="small"
                 aria-label={gettext("Copy %{field}", field: label)}
               >

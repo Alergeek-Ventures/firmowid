@@ -6,7 +6,7 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceDownloadModal do
 
   attr :download_path, :string, required: true
   attr :button_label, :string, required: true
-  attr :trigger_variant, :string, default: "secondary"
+  attr :trigger_variant, :string, default: "tertiary"
   attr :trigger_size, :string, default: "small"
 
   @impl true

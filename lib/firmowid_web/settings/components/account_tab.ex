@@ -507,7 +507,7 @@ defmodule FirmowidWeb.Settings.Components.AccountTab do
             <div class="flex w-full flex-col-reverse gap-3 sm:flex-row sm:justify-end">
               <.button
                 type="button"
-                variant="secondary"
+                variant="tertiary"
                 phx-click={hide_modal("confirm_modal")}
               >
                 {gettext("Cancel")}

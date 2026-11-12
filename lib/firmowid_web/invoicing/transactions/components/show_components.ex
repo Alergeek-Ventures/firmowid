@@ -197,7 +197,7 @@ defmodule FirmowidWeb.Invoicing.Transactions.Components.ShowComponents do
             type="button"
             phx-click="connect_invoice"
             phx-value-invoice_id={candidate.id}
-            variant={if @green_idx == index, do: "tertiary", else: "secondary"}
+            variant={if @green_idx == index, do: "secondary", else: "tertiary"}
             size="small"
           >
             {gettext("Confirm")}
@@ -272,7 +272,7 @@ defmodule FirmowidWeb.Invoicing.Transactions.Components.ShowComponents do
               <.button
                 phx-click="toggle-invoicing"
                 class="size-full"
-                variant="secondary"
+                variant="tertiary"
                 size="small"
               >
                 {skip_transaction_button_label(@transaction)}

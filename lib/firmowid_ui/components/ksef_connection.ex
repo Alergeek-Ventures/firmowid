@@ -75,7 +75,7 @@ defmodule FirmowidUI.Components.KsefConnection do
                 :if={@allow_fetch?}
                 size="small"
                 type="button"
-                variant="secondary"
+                variant="tertiary"
                 phx-click="fetch_ksef_invoices"
                 disabled={@fetching?}
               >
@@ -186,7 +186,7 @@ defmodule FirmowidUI.Components.KsefConnection do
                   <div class="flex justify-end">
                     <.button
                       type="submit"
-                      variant="secondary"
+                      variant="tertiary"
                       size="small"
                       phx-disable-with={gettext("Connecting...")}
                     >
@@ -258,7 +258,7 @@ defmodule FirmowidUI.Components.KsefConnection do
                   <div :if={@ksef_auth_status in [:idle, :working, :failed]} class="flex justify-end">
                     <.button
                       type="submit"
-                      variant="secondary"
+                      variant="tertiary"
                       size="small"
                       phx-disable-with={gettext("Sending...")}
                     >
@@ -331,7 +331,7 @@ defmodule FirmowidUI.Components.KsefConnection do
                   <div class="flex justify-end">
                     <.button
                       type="submit"
-                      variant="secondary"
+                      variant="tertiary"
                       size="small"
                       phx-disable-with={gettext("Connecting...")}
                     >
@@ -362,7 +362,7 @@ defmodule FirmowidUI.Components.KsefConnection do
         <div class="mbs-6 flex flex-wrap justify-end gap-3">
           <.button
             type="button"
-            variant="secondary"
+            variant="tertiary"
             size="small"
             {%{popovertarget: "confirm_disconnect_ksef", popovertargetaction: "hide"}}
           >
@@ -500,7 +500,7 @@ defmodule FirmowidUI.Components.KsefConnection do
       role="tab"
       aria-selected={if(@current_method == @method, do: "true", else: "false")}
       aria-controls={@panel_id}
-      variant={if(@current_method == @method, do: "secondary", else: "outline")}
+      variant={if(@current_method == @method, do: "tertiary", else: "outline")}
       size="small"
       phx-click="select_ksef_auth_method"
       phx-value-method={@method}

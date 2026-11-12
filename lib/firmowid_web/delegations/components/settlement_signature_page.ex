@@ -182,7 +182,7 @@ defmodule FirmowidWeb.Delegations.Components.SettlementSignaturePage do
             <div class="mt-6 grid grid-cols-2 gap-4">
               <.button
                 type="button"
-                variant="secondary"
+                variant="tertiary"
                 size="big"
                 phx-click="edit-settlement"
               >{gettext("Edit document")}</.button>

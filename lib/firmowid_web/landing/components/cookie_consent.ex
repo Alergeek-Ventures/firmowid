@@ -59,7 +59,7 @@ defmodule FirmowidWeb.Landing.Components.CookieConsent do
               <FirmowidUI.Components.Button.button
                 id="cookie-consent-accept"
                 type="button"
-                variant="secondary"
+                variant="tertiary"
                 size="small"
                 class="bg-white text-black hover:bg-white/90 active:bg-white/80"
               >
