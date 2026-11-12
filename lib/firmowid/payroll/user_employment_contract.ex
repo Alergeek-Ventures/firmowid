@@ -100,19 +100,9 @@ defmodule Firmowid.Payroll.UserEmploymentContract do
       description "Returns all employment contracts given member_id."
 
       argument :member_id, :uuid
-      argument :month, :integer
-      argument :year, :integer
 
       prepare build(filter: expr(member_id == ^arg(:member_id))) do
         where present(:member_id)
-      end
-
-      prepare build(filter: expr(fragment("extract(month from ?) = ?", starts_at, ^arg(:month)))) do
-        where present(:month)
-      end
-
-      prepare build(filter: expr(fragment("extract(year from ?) = ?", starts_at, ^arg(:year)))) do
-        where present(:year)
       end
     end
 
