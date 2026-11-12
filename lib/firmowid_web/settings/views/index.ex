@@ -153,7 +153,6 @@ defmodule FirmowidWeb.Settings.Views.Index do
 
     socket = assign(socket, :member_form, form_member_form(current_user.member, scope))
 
-    # Load avatars using Ash.load!
     org_with_avatar =
       Ash.load!(current_org, [avatar_blob: [:url]], scope: scope)
 
@@ -180,7 +179,6 @@ defmodule FirmowidWeb.Settings.Views.Index do
      |> assign(:show_active_invites, false)
      |> assign(:settings_tab, :account)
      |> assign(:subscription_worksheet, nil)
-     |> assign(:trigger_submit, false)
      |> assign(:delete_account_form, to_form(%{"current_password" => ""}, as: "user"))
      |> assign(:owned_organizations, Core.list_owned_organizations(current_user))
      |> assign(:current_password, nil)
@@ -190,7 +188,6 @@ defmodule FirmowidWeb.Settings.Views.Index do
      |> assign(:organization_invites, organization_invites)
      |> assign(:selected_user, nil)
      |> assign(:google_connected?, google_connected?)
-     |> assign(:uploaded_files, [])
      |> assign(:no_padding, true)
      |> allow_upload(:user_avatar,
        accept: ~w(.jpg .jpeg .png),
@@ -256,7 +253,6 @@ defmodule FirmowidWeb.Settings.Views.Index do
     {:ok, updated} =
       Core.update_member_avatar(current_user.member, %{avatar_blob_id: blob_id}, scope: socket.assigns.ash_scope)
 
-    # Load avatar using Ash.load!
     updated_with_avatar =
       Ash.load!(updated, [avatar_blob: [:url]], scope: socket.assigns.ash_scope)
 
@@ -271,7 +267,6 @@ defmodule FirmowidWeb.Settings.Views.Index do
     {:ok, updated} =
       Core.update_organization_avatar(current_org, %{avatar_blob_id: blob_id}, scope: socket.assigns.ash_scope)
 
-    # Load avatar using Ash.load!
     updated_with_avatar =
       Ash.load!(updated, [avatar_blob: [:url]], scope: socket.assigns.ash_scope)
 
@@ -353,10 +348,6 @@ defmodule FirmowidWeb.Settings.Views.Index do
     Core.list_invites!(load: @invite_load, scope: scope)
   end
 
-  def handle_event("validate_upload", _params, socket) do
-    {:noreply, socket}
-  end
-
   def handle_event("delete_account", %{"user" => params}, socket) do
     user = socket.assigns.current_user
     password = params["current_password"]
@@ -436,7 +427,6 @@ defmodule FirmowidWeb.Settings.Views.Index do
 
     case AshPhoenix.Form.submit(socket.assigns.company_form, params: org_params, scope: scope) do
       {:ok, updated_org} ->
-        # Load avatar using Ash.load!
         updated_with_avatar =
           Ash.load!(updated_org, [avatar_blob: [:url]], scope: socket.assigns.ash_scope)
 
@@ -458,10 +448,6 @@ defmodule FirmowidWeb.Settings.Views.Index do
 
   def handle_event("save", %{"user" => user_params}, socket) do
     save_member_form(socket, merge_user_name_params(user_params), :editing_account_name)
-  end
-
-  def handle_event("save_profile_contact", %{"user" => user_params}, socket) do
-    save_member_form(socket, user_params, :editing_profile_contact)
   end
 
   def handle_event("save_profile_" <> section, %{"user" => user_params}, socket) do
@@ -756,7 +742,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
         {:noreply,
          socket
          |> put_flash(:info, gettext("The password has been changed successfully."))
-         |> push_navigate(to: password_return_path(socket.assigns.settings_tab))}
+         |> push_navigate(to: Navigation.canonical_path(:account))}
 
       {:error, form} ->
         {:noreply, assign(socket, password_form: form)}
@@ -1264,18 +1250,12 @@ defmodule FirmowidWeb.Settings.Views.Index do
     accounts
     # Keep the latest outcome independent of the last-success aggregate's filter.
     |> Ash.load!(:latest_successful_sync_at, scope: scope)
-    |> Enum.sort_by(&bank_account_sort_key/1)
-  end
-
-  defp bank_account_sort_key(account) do
-    {account.iban, account.id}
+    |> Enum.sort_by(&{&1.iban, &1.id})
   end
 
   defp list_pending_requisitions(scope) do
     Enum.filter(Finances.list_requisitions!(scope: scope), &(&1.status == :pending))
   end
-
-  defp list_bank_institutions(_current_user, []), do: %{}
 
   defp list_bank_institutions(current_user, bank_accounts) do
     institution_ids =
@@ -1302,8 +1282,6 @@ defmodule FirmowidWeb.Settings.Views.Index do
       end
     end
   end
-
-  defp password_return_path(_settings_tab), do: ~p"/ustawienia/konto"
 
   defp handle_resolved_section(tab, %{canonical?: canonical?, canonical_path: canonical_path}, socket) do
     cond do

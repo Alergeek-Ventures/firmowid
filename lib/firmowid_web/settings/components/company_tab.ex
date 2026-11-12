@@ -143,7 +143,6 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
   end
 
   attr :label, :string, required: true
-  attr :wide, :boolean, default: false
   slot :inner_block, required: true
 
   defp detail_row(assigns) do
@@ -299,36 +298,34 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
         </.form>
       <% else %>
         <div class="space-y-2">
-          <.detail_row label={gettext("Name on invoices")} wide>
+          <.detail_row label={gettext("Name on invoices")}>
             {present(@current_org.name)}
           </.detail_row>
-          <.detail_row label={gettext("Name in the app")} wide>
+          <.detail_row label={gettext("Name in the app")}>
             {present(@current_org.display_name)}
           </.detail_row>
-          <.detail_row label="NIP" wide>{present(@current_org.nip)}</.detail_row>
-          <.detail_row label={gettext("VAT payer")} wide>
+          <.detail_row label="NIP">{present(@current_org.nip)}</.detail_row>
+          <.detail_row label={gettext("VAT payer")}>
             {yes_no(@current_org.is_vat_payer)}
           </.detail_row>
           <.detail_row
             :if={exemption = present_vat_exemption(@current_org)}
             label={gettext("VAT exemption")}
-            wide
           >
             {exemption}
           </.detail_row>
-          <.detail_row label={gettext("Industry")} wide>
+          <.detail_row label={gettext("Industry")}>
             {Industry.label(@current_org.industry)}
           </.detail_row>
-          <.detail_row label={gettext("Billing by the hour")} wide>
+          <.detail_row label={gettext("Billing by the hour")}>
             {yes_no(@current_org.bills_hourly)}
           </.detail_row>
-          <.detail_row label={gettext("Address")} wide>
+          <.detail_row label={gettext("Address")}>
             {multiline_address(@current_org.address)}
           </.detail_row>
           <.detail_row
             :if={@current_org.correspondence_address not in [nil, ""]}
             label={gettext("Correspondence address")}
-            wide
           >
             {multiline_address(@current_org.correspondence_address)}
           </.detail_row>
