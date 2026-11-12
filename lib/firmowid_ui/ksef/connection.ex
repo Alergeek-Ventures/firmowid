@@ -45,22 +45,23 @@ defmodule FirmowidUI.Ksef.Connection do
     |> allow_upload(:signed_auth_token_request, accept: ~w(.xml), max_entries: 1)
   end
 
-  @doc "Clears connection state, pending uploads and subscriptions when interface authorization expires."
+  @doc """
+  Clears connection state, pending uploads and subscriptions of a socket set up by `init/2` when
+  interface authorization expires.
+  """
   @spec clear(Socket.t()) :: Socket.t()
   def clear(socket) do
-    if tenant = socket.assigns[:ksef_connection_tenant] do
-      for status <- @statuses do
-        Phoenix.PubSub.unsubscribe(Firmowid.PubSub, "credential:#{status}:#{tenant}")
-      end
+    %{ksef_connection_tenant: tenant, uploads: uploads} = socket.assigns
+
+    for status <- @statuses do
+      Phoenix.PubSub.unsubscribe(Firmowid.PubSub, "credential:#{status}:#{tenant}")
     end
 
     socket =
-      Enum.reduce([:ksef_credentials, :signed_auth_token_request], socket, fn name, socket ->
-        case socket.assigns[:uploads][name] do
-          nil -> socket
-          upload -> Enum.reduce(upload.entries, socket, &cancel_upload(&2, name, &1.ref))
-        end
-      end)
+      for name <- [:ksef_credentials, :signed_auth_token_request],
+          entry <- uploads[name].entries,
+          reduce: socket,
+          do: (socket -> cancel_upload(socket, name, entry.ref))
 
     socket
     |> assign(:ksef_connection_tenant, nil)
@@ -228,10 +229,7 @@ defmodule FirmowidUI.Ksef.Connection do
   @doc "Refreshes connection state from a tenant-matched credential PubSub notification."
   @spec handle_info(Broadcast.t(), Socket.t(), Scope.t()) :: {:noreply, Socket.t()}
   def handle_info(
-        %Broadcast{
-          topic: "credential:" <> topic,
-          payload: %Notification{resource: Credential, data: credential} = notification
-        },
+        %Broadcast{topic: "credential:" <> topic, payload: %Notification{resource: Credential} = notification},
         socket,
         scope
       ) do
@@ -241,14 +239,14 @@ defmodule FirmowidUI.Ksef.Connection do
       [status, tenant]
       when tenant == scope.tenant and tenant == socket.assigns.ksef_connection_tenant and
              status in @statuses ->
-        update_status(socket, String.to_existing_atom(status), credential, notification, scope)
+        update_status(socket, String.to_existing_atom(status), notification, scope)
 
       _ ->
         {:noreply, socket}
     end
   end
 
-  defp update_status(socket, status, credential, notification, scope) do
+  defp update_status(socket, status, notification, scope) do
     socket = assign(socket, :ksef_auth_status, status)
 
     case status do
@@ -267,7 +265,7 @@ defmodule FirmowidUI.Ksef.Connection do
 
         {:noreply,
          socket
-         |> assign(:ksef_failure, %{reason: reason, auth_type: credential.auth_type})
+         |> assign(:ksef_failure, %{reason: reason})
          |> assign(:ksef_credential, active_credential(scope))}
 
       :refreshing ->
