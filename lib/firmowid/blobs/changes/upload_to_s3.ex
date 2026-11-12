@@ -17,12 +17,18 @@ defmodule Firmowid.Blobs.Changes.UploadToS3 do
   alias Firmowid.Blobs.UploadFingerprint
   alias Firmowid.S3Client
 
-  # The object extension decides the Content-Type S3 serves, and the content type
-  # comes from the client. Only passive document and image types keep theirs.
+  # The content type and the file name come from the client, and a LiveView upload
+  # passes `accept` when either of them matches (`image/*` passes any `image/…`).
+  # The type is sent with the object, since an S3 server left to guess may sniff
+  # HTML from the content. Only passive document and image types the MIME table
+  # knows are served as such; anything else is a download. XML can carry script:
+  # the `+xml` types (SVG) are never passive, and `application/xml` keeps its
+  # `.xml` path only under a name that says so and is sent as plain text: the
+  # app reads KSeF invoices as text, and the storage server would turn a generic
+  # type back into XML from the path's extension.
   @document_types [
     "application/pdf",
     "application/xml",
-    "text/xml",
     "text/plain",
     "application/msword",
     "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
@@ -38,11 +44,11 @@ defmodule Firmowid.Blobs.Changes.UploadToS3 do
       original_filename = Ash.Changeset.get_argument(changeset, :original_filename)
       organization_id = changeset.tenant
 
-      extension = extension(content_type)
+      served_type = served_type(content_type, original_filename)
       {upload_path, blob_checksum} = UploadFingerprint.prepare_upload(upload_path, content_type)
-      blob_path = "#{organization_id}/#{blob_id}.#{extension}"
+      blob_path = "#{organization_id}/#{blob_id}.#{served_type |> MIME.extensions() |> hd()}"
 
-      upload_to_s3!(upload_path, blob_path)
+      S3Client.upload_file!(upload_path, blob_path, content_type: sent_type(served_type))
 
       changeset
       |> Ash.Changeset.force_change_attribute(:blob_path, blob_path)
@@ -51,17 +57,26 @@ defmodule Firmowid.Blobs.Changes.UploadToS3 do
     end)
   end
 
-  defp extension(content_type) do
-    if passive?(content_type),
-      do: content_type |> MIME.extensions() |> List.first("bin"),
-      else: "bin"
+  defp served_type(content_type, original_filename) do
+    type = content_type |> String.split(";") |> hd() |> String.trim() |> String.downcase()
+
+    cond do
+      type == "application/xml" and String.downcase(Path.extname(original_filename)) != ".xml" ->
+        "application/octet-stream"
+
+      passive?(type) and MIME.extensions(type) != [] ->
+        type
+
+      true ->
+        "application/octet-stream"
+    end
   end
 
-  defp passive?("image/svg+xml"), do: false
-  defp passive?("image/" <> _subtype), do: true
-  defp passive?(content_type), do: content_type in @document_types
+  defp sent_type("application/xml"), do: "text/plain"
+  defp sent_type(type), do: type
 
-  defp upload_to_s3!(upload_path, blob_path) do
-    S3Client.upload_file!(upload_path, blob_path)
+  defp passive?(type) do
+    (String.starts_with?(type, "image/") or type in @document_types) and
+      not String.ends_with?(type, "+xml")
   end
 end
