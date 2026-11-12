@@ -15,6 +15,7 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
   import FirmowidWeb.Settings.Components.Helpers,
     only: [settings_section: 1, detail_row: 1, row_input: 1, present: 1]
 
+  import FirmowidWeb.Timetracker.Components.Leave
   import Phoenix.Component, except: [link: 1]
 
   alias Firmowid.TimeFormatter
@@ -899,22 +900,6 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
     hours = div(seconds, 3600)
     minutes = div(rem(seconds, 3600), 60)
     pgettext("compact duration", "%{hours}h %{minutes}min", hours: hours, minutes: minutes)
-  end
-
-  attr :reason, :atom, required: true
-  attr :class, :string, default: "size-4"
-
-  defp reason_icon(assigns) do
-    ~H"""
-    <%= cond do %>
-      <% @reason in [:sick, :indisposition] -> %>
-        <Lucideicons.cross class={@class} />
-      <% @reason in [:rest, :vacation] -> %>
-        <Lucideicons.sun class={@class} />
-      <% @reason in [:unpaid, :other] -> %>
-        <Lucideicons.slash class={@class} />
-    <% end %>
-    """
   end
 
   defp leave_status_badge_styles(status) do
