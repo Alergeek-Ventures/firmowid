@@ -10,7 +10,10 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
   import FirmowidWeb.Delegations.Components.DelegationsList
   import FirmowidWeb.DesignSystem.Components.CoreComponents
   import FirmowidWeb.Infrastructure.Flags, only: [flag_enabled?: 2]
-  import FirmowidWeb.Settings.Components.EditButton
+
+  import FirmowidWeb.Settings.Components.Helpers,
+    only: [settings_section: 1, detail_row: 1, row_input: 1, present: 1]
+
   import Phoenix.Component, except: [link: 1]
 
   alias Firmowid.TimeFormatter
@@ -151,53 +154,6 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
       </div>
       <.delegations_list delegations={@delegations} />
     </section>
-    """
-  end
-
-  attr :title, :string, required: true
-  attr :action, :any, default: nil
-  attr :action_label, :string, default: nil
-  slot :inner_block, required: true
-
-  defp profile_section(assigns) do
-    ~H"""
-    <section class="space-y-4">
-      <div class="flex min-h-8 items-center gap-1">
-        <h2 class="text-base leading-none font-medium text-grey-900">{@title}</h2>
-
-        <span
-          :if={@action}
-          id={"settings-#{@action}-tooltip"}
-          phx-hook="Tippy"
-          data-tippy-content={@action_label || gettext("Edit %{section}", section: @title)}
-          data-tippy-delay="100"
-          data-tippy-theme="small"
-        >
-          <.edit_button
-            type="button"
-            phx-click={@action}
-            aria-label={@action_label || gettext("Edit %{section}", section: @title)}
-          />
-        </span>
-      </div>
-
-      {render_slot(@inner_block)}
-    </section>
-    """
-  end
-
-  attr :label, :string, required: true
-  slot :inner_block, required: true
-
-  defp detail_row(assigns) do
-    ~H"""
-    <Helpers.settings_display_field
-      label={@label}
-      class="justify-center"
-      value_class="break-words"
-    >
-      {render_slot(@inner_block)}
-    </Helpers.settings_display_field>
     """
   end
 
@@ -429,7 +385,7 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
       </div>
     </div>
 
-    <.profile_section
+    <.settings_section
       title={gettext("Employment information")}
       action={
         if(!@editing_profile_employment and can_edit_contract?(@current_contract, @ash_scope),
@@ -514,7 +470,7 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
           </.detail_row>
         </div>
       <% end %>
-    </.profile_section>
+    </.settings_section>
     """
   end
 
@@ -524,7 +480,7 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
 
   defp finance_section(assigns) do
     ~H"""
-    <.profile_section
+    <.settings_section
       title={gettext("Finances")}
       action={if(!@editing_profile_finance, do: "toggle_editing_profile_finance")}
       action_label={gettext("Edit finances")}
@@ -561,7 +517,7 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
           </.detail_row>
         </div>
       <% end %>
-    </.profile_section>
+    </.settings_section>
     """
   end
 
@@ -571,7 +527,7 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
 
   defp contact_section(assigns) do
     ~H"""
-    <.profile_section
+    <.settings_section
       title={gettext("Contact details")}
       action={if(!@editing_profile_contact, do: "toggle_editing_profile_contact")}
       action_label={gettext("Edit contact details")}
@@ -651,7 +607,7 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
           </.detail_row>
         </div>
       <% end %>
-    </.profile_section>
+    </.settings_section>
     """
   end
 
@@ -961,28 +917,6 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
       LeavePresentation.status_badge_styles(status)
     ]
   end
-
-  attr :field, :map, required: true
-  attr :label, :string, required: true
-  attr :type, :string, required: true
-  attr :label_class, :string, default: nil
-
-  defp row_input(assigns) do
-    ~H"""
-    <Helpers.settings_field
-      label={@label}
-      layout={:row}
-      for={@field.id}
-      label_class={@label_class}
-    >
-      <.input field={@field} type={@type} input_class="w-full" />
-    </Helpers.settings_field>
-    """
-  end
-
-  defp present(nil), do: "—"
-  defp present(""), do: "—"
-  defp present(value), do: to_string(value)
 
   defp present_date(nil), do: "—"
   defp present_date(value), do: TimeFormatter.format_date(value)

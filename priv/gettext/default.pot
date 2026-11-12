@@ -4443,8 +4443,7 @@ msgstr ""
 msgid "Edit"
 msgstr ""
 
-#: lib/firmowid_web/settings/components/company_tab.ex
-#: lib/firmowid_web/settings/components/profile_tab.ex
+#: lib/firmowid_web/settings/components/helpers.ex
 #, elixir-autogen, elixir-format
 msgid "Edit %{section}"
 msgstr ""
