@@ -165,6 +165,18 @@ defmodule Firmowid.Core.UserTest do
     assert {:ok, _} = Core.get_user(employee.id, authorize?: false)
   end
 
+  describe "closing the account" do
+    test "its holder may delete it, a superuser working as the holder may not" do
+      user = user_fixture()
+
+      as_superuser =
+        Ash.Resource.put_metadata(user, :token_claims, %{"impersonator_id" => Ash.UUID.generate()})
+
+      assert Ash.can?({user, :destroy}, user)
+      refute Ash.can?({user, :destroy}, as_superuser)
+    end
+  end
+
   describe "display_name" do
     test "uses the member's name when present and otherwise falls back to the email" do
       named_user = user_fixture()
