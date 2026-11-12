@@ -672,59 +672,6 @@ defmodule Firmowid.Ksef do
     end
   end
 
-  # Failed correction cleanup
-
-  @doc """
-  Attempts to delete a failed unsent correction invoice.
-
-  For correction invoices that never reached KSeF (no ksef_number), deletes the correction
-  so the user can retry from the original invoice's correction flow.
-
-  Returns:
-  - `{:ok, :deleted, corrected_invoice_id}` - correction was deleted, redirect to original invoice
-  - `{:ok, :not_correction}` - invoice is not a correction, no cleanup needed
-  - `{:ok, :already_submitted}` - invoice has ksef_number, cannot be deleted
-  - `{:ok, :not_found}` - invoice doesn't exist (may have been deleted already)
-  - `{:error, reason}` - deletion failed
-
-  ## Examples
-
-      iex> cleanup_failed_correction(correction_invoice_id, scope)
-      {:ok, :deleted, "original-invoice-uuid"}
-
-      iex> cleanup_failed_correction(vat_invoice_id, scope)
-      {:ok, :not_correction}
-  """
-  @spec cleanup_failed_correction(Ash.UUID.t(), Scope.t()) ::
-          {:ok, :deleted, Ash.UUID.t()}
-          | {:ok, :not_correction}
-          | {:ok, :already_submitted}
-          | {:ok, :not_found}
-          | {:error, term()}
-  def cleanup_failed_correction(sales_invoice_id, scope) do
-    opts = [scope: scope]
-
-    case SalesInvoice.by_id(sales_invoice_id, Keyword.put(opts, :not_found_error?, false)) do
-      {:ok, %{ksef_invoice_kind: :kor, ksef_number: nil} = invoice} ->
-        case SalesInvoice.destroy(invoice, opts) do
-          :ok -> {:ok, :deleted, invoice.corrected_invoice_id}
-          {:error, reason} -> {:error, reason}
-        end
-
-      {:ok, %{ksef_invoice_kind: :kor}} ->
-        {:ok, :already_submitted}
-
-      {:ok, nil} ->
-        {:ok, :not_found}
-
-      {:ok, _invoice} ->
-        {:ok, :not_correction}
-
-      {:error, reason} ->
-        {:error, reason}
-    end
-  end
-
   @doc """
   Returns a shorter message for cases when the correction was deleted by the worker.
   """

@@ -377,8 +377,9 @@ defmodule Firmowid.Ksef.Workers.SubmissionWorker do
         )
 
       {:ok, %{ksef_number: nil, ksef_invoice_kind: :kor} = invoice} ->
-        unlock_invoice(invoice, scope)
-        delete_failed_correction(sales_invoice_id, scope)
+        invoice
+        |> unlock_invoice(scope)
+        |> delete_failed_correction(scope)
 
       _accepted_or_missing ->
         :ok
@@ -387,16 +388,13 @@ defmodule Firmowid.Ksef.Workers.SubmissionWorker do
     Ksef.broadcast_ksef_status(scope.tenant, sales_invoice_id, :failed)
   end
 
-  defp delete_failed_correction(sales_invoice_id, scope) do
-    case Ksef.cleanup_failed_correction(sales_invoice_id, scope) do
-      {:ok, :deleted, _original_id} ->
-        Logger.info("Deleted correction KSeF did not accept", invoice_id: sales_invoice_id)
+  defp delete_failed_correction(correction, scope) do
+    case SalesInvoice.destroy(correction, scope: scope) do
+      :ok ->
+        Logger.info("Deleted correction KSeF did not accept", invoice_id: correction.id)
 
       {:error, reason} ->
-        FailureReporter.report(reason, :ksef_submission, scope.tenant, sales_invoice_id)
-
-      _ ->
-        :ok
+        FailureReporter.report(reason, :ksef_submission, scope.tenant, correction.id)
     end
   end
 
