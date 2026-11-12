@@ -224,7 +224,7 @@ defmodule Firmowid.Invoicing.Services.CounterpartyDetection do
   end
 
   # A counterparty keeps its country apart, so its EU VAT number is stored without
-  # the prefix invoices often carry (SE559441909401 fails the 12-character rule).
+  # the prefix invoices often carry (SE123456789001 fails the 12-character rule).
   # Polish NIPs may keep PL, which the NIP validation accepts.
   defp without_eu_vat_prefix(%{tax_id: tax_id, country: country} = attributes)
        when is_binary(tax_id) and country != "PL" do
@@ -406,8 +406,8 @@ defmodule Firmowid.Invoicing.Services.CounterpartyDetection do
     end
   end
 
-  # EU VAT numbers are written with or without the country prefix (BE0770337178
-  # and 0770337178); Greece uses EL.
+  # EU VAT numbers are written with or without the country prefix (BE0123456789
+  # and 0123456789); Greece uses EL.
   defp without_country_prefix(nil, _country), do: nil
 
   defp without_country_prefix(tax_id, country) do
@@ -421,8 +421,8 @@ defmodule Firmowid.Invoicing.Services.CounterpartyDetection do
 
   defp short_name(nil), do: nil
 
-  # Drops legal forms only from the end ("ONE LOGISTICS SPÓŁKA Z O.O. SPÓŁKA KOMANDYTOWA"),
-  # so "Answergrid, Inc d/b/a Kenley" keeps its middle.
+  # Drops legal forms only from the end ("ACME LOGISTYKA SPÓŁKA Z O.O. SPÓŁKA KOMANDYTOWA"),
+  # so "Example Corp, Inc d/b/a Brand" keeps its middle.
   defp short_name(full_name) do
     stripped =
       Enum.reduce(@legal_forms, full_name, fn form, acc ->
@@ -435,8 +435,8 @@ defmodule Firmowid.Invoicing.Services.CounterpartyDetection do
     end
   end
 
-  # Names written in capitals ("KOLOMOLO", "ONE LOGISTICS") read as "Kolomolo" and
-  # "One Logistics"; words of up to three letters stay as acronyms ("10 BPS").
+  # Names written in capitals ("ACME", "ACME LOGISTYKA") read as "Acme" and
+  # "Acme Logistyka"; words of up to three letters stay as acronyms ("10 ABC").
   defp capitalize(name) do
     if name == String.upcase(name) do
       name
