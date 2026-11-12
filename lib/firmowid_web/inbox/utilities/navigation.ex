@@ -186,7 +186,7 @@ defmodule FirmowidWeb.Inbox.Utilities.Navigation do
       %{
         id: :hours_record,
         layer: :me,
-        label: pgettext("sidebar", "My hours record"),
+        label: pgettext("hours record page", "Timesheet"),
         icon: "clipboard-list",
         path: ~p"/czasosledz/ewidencja",
         roles: UserRole.roles()
@@ -216,9 +216,17 @@ defmodule FirmowidWeb.Inbox.Utilities.Navigation do
         roles: UserRole.roles()
       },
       %{
+        id: :leaves,
+        layer: :me,
+        label: SettingsNavigation.page_title(:leaves),
+        icon: "calendar-days",
+        path: SettingsNavigation.canonical_path(:leaves),
+        roles: UserRole.roles()
+      },
+      %{
         id: :account,
         layer: :me,
-        label: pgettext("sidebar", "My account"),
+        label: SettingsNavigation.page_title(:account),
         icon: "settings",
         path: SettingsNavigation.canonical_path(:account),
         roles: UserRole.roles()

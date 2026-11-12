@@ -724,6 +724,7 @@ msgid "Absence request"
 msgstr ""
 
 #: lib/firmowid_web/settings/components/profile_tab.ex
+#: lib/firmowid_web/settings/utilities/navigation.ex
 #, elixir-autogen, elixir-format
 msgid "Absences"
 msgstr ""
@@ -763,6 +764,12 @@ msgstr ""
 #: lib/firmowid_web/delegations/components/settlement_page.ex
 #, elixir-autogen, elixir-format
 msgid "Accommodation"
+msgstr ""
+
+#: lib/firmowid_web/settings/utilities/navigation.ex
+#, elixir-autogen, elixir-format
+msgctxt "sidebar"
+msgid "Account"
 msgstr ""
 
 #: lib/firmowid_web/landing/views/privacy_policy.ex
@@ -1998,6 +2005,7 @@ msgstr ""
 #: lib/firmowid_web/landing/components/sections.ex
 #: lib/firmowid_web/management/views/employee.html.heex
 #: lib/firmowid_web/settings/components/profile_tab.ex
+#: lib/firmowid_web/settings/utilities/navigation.ex
 #, elixir-autogen, elixir-format
 msgid "Business trips"
 msgstr ""
@@ -4230,6 +4238,11 @@ msgstr ""
 #: lib/firmowid_web/management/views/employee.html.heex
 #, elixir-autogen, elixir-format
 msgctxt "employee tab"
+msgid "Documents"
+msgstr ""
+
+#: lib/firmowid_web/settings/utilities/navigation.ex
+#, elixir-autogen, elixir-format
 msgid "Documents"
 msgstr ""
 
@@ -7384,32 +7397,9 @@ msgstr ""
 msgid "Multiple payouts in one month require shared monthly tax costs and reductions."
 msgstr ""
 
-#: lib/firmowid_web/inbox/utilities/navigation.ex
-#: lib/firmowid_web/settings/utilities/navigation.ex
-#, elixir-autogen, elixir-format
-msgctxt "sidebar"
-msgid "My account"
-msgstr ""
-
 #: lib/firmowid_web/organization/views/first_steps.ex
 #, elixir-autogen, elixir-format
 msgid "My accountant"
-msgstr ""
-
-#: lib/firmowid_web/settings/utilities/navigation.ex
-#, elixir-autogen, elixir-format
-msgid "My business trips"
-msgstr ""
-
-#: lib/firmowid_web/settings/utilities/navigation.ex
-#, elixir-autogen, elixir-format
-msgid "My documents"
-msgstr ""
-
-#: lib/firmowid_web/inbox/utilities/navigation.ex
-#, elixir-autogen, elixir-format
-msgctxt "sidebar"
-msgid "My hours record"
 msgstr ""
 
 #: lib/firmowid/invoicing/changes/verify_imported_document.ex
@@ -8816,6 +8806,7 @@ msgstr ""
 
 #: lib/firmowid_web/analysis/views/dashboard.ex
 #: lib/firmowid_web/assistant/utilities/changes.ex
+#: lib/firmowid_web/settings/components/profile_tab.ex
 #, elixir-autogen, elixir-format
 msgid "Period"
 msgstr ""
@@ -10680,6 +10671,7 @@ msgstr ""
 #: lib/firmowid_web/management/components/profile_tab.ex
 #: lib/firmowid_web/management/views/counterparty.ex
 #: lib/firmowid_web/settings/components/company_tab.ex
+#: lib/firmowid_web/settings/components/profile_tab.ex
 #, elixir-autogen, elixir-format
 msgid "Status"
 msgstr ""
@@ -12228,6 +12220,7 @@ msgstr ""
 
 #: lib/firmowid_web/hours_record/views/index.ex
 #: lib/firmowid_web/hours_record/views/index.html.heex
+#: lib/firmowid_web/inbox/utilities/navigation.ex
 #, elixir-autogen, elixir-format
 msgctxt "hours record page"
 msgid "Timesheet"
@@ -12590,6 +12583,7 @@ msgstr ""
 
 #: lib/firmowid_web/invoicing/transactions/components/show_components.ex
 #: lib/firmowid_web/management/views/counterparty_form.html.heex
+#: lib/firmowid_web/settings/components/profile_tab.ex
 #, elixir-autogen, elixir-format
 msgid "Type"
 msgstr ""

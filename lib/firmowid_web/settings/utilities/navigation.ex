@@ -10,7 +10,8 @@ defmodule FirmowidWeb.Settings.Utilities.Navigation do
 
   @type role :: UserRole.t()
   @type tab_id :: :account | :profile | :organization | :subscription
-  @type page_id :: tab_id() | :ksef | :bank_accounts | :roles | :documents | :delegations
+  @type page_id ::
+          tab_id() | :ksef | :bank_accounts | :roles | :documents | :delegations | :leaves
   @type tab :: %{id: tab_id(), label: String.t(), path: String.t()}
   @type visibility_context :: %{
           required(:current_user) => %{
@@ -91,17 +92,19 @@ defmodule FirmowidWeb.Settings.Utilities.Navigation do
   def canonical_path(:roles), do: ~p"/zarzadzanie/pracownicy"
   def canonical_path(:documents), do: ~p"/ustawienia/dokumenty"
   def canonical_path(:delegations), do: ~p"/ustawienia/delegacje"
+  def canonical_path(:leaves), do: ~p"/ustawienia/nieobecnosci"
 
   @doc "Returns the title of a standalone settings page."
   @spec page_title(page_id()) :: String.t()
-  def page_title(:account), do: pgettext("sidebar", "My account")
+  def page_title(:account), do: pgettext("sidebar", "Account")
   def page_title(:profile), do: gettext("HR details")
   def page_title(:organization), do: gettext("Company details")
   def page_title(:subscription), do: pgettext("settings tab", "Subscription")
   def page_title(:ksef), do: "KSeF"
   def page_title(:bank_accounts), do: gettext("Bank accounts")
-  def page_title(:documents), do: gettext("My documents")
-  def page_title(:delegations), do: gettext("My business trips")
+  def page_title(:documents), do: gettext("Documents")
+  def page_title(:delegations), do: gettext("Business trips")
+  def page_title(:leaves), do: gettext("Absences")
 
   @doc """
   Resolves a settings section slug or legacy alias.
@@ -110,14 +113,16 @@ defmodule FirmowidWeb.Settings.Utilities.Navigation do
           {:ok, %{id: page_id(), canonical?: boolean(), canonical_path: String.t()}} | :error
   def resolve_section(section, standalone? \\ false)
 
-  def resolve_section(section, true) when section in ["ksef", "konta-bankowe", "role", "dokumenty", "delegacje"] do
+  def resolve_section(section, true)
+      when section in ["ksef", "konta-bankowe", "role", "dokumenty", "delegacje", "nieobecnosci"] do
     id =
       %{
         "ksef" => :ksef,
         "konta-bankowe" => :bank_accounts,
         "role" => :roles,
         "dokumenty" => :documents,
-        "delegacje" => :delegations
+        "delegacje" => :delegations,
+        "nieobecnosci" => :leaves
       }[section]
 
     {:ok, %{id: id, canonical?: true, canonical_path: canonical_path(id)}}
@@ -145,7 +150,8 @@ defmodule FirmowidWeb.Settings.Utilities.Navigation do
 
   defp tab_definition(id) when id in [:ksef, :bank_accounts, :roles], do: tab_definition(:organization)
 
-  defp tab_definition(id) when id in [:documents, :delegations], do: tab_definition(:profile)
+  defp tab_definition(id) when id in [:documents, :delegations, :leaves], do: tab_definition(:profile)
+
   defp tab_definition(tab_id), do: Enum.find(@tabs, &(&1.id == tab_id))
 
   defp visible_for_context?(%{roles: roles} = tab, %{current_user: %{member: %{role: role}}} = context) do
