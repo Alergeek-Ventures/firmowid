@@ -582,10 +582,20 @@ defmodule FirmowidWeb.Organization.Views.FirstSteps do
     # `ref` alone brings the owner back to the bank step.
     redirect_url = Endpoint.url() <> OrganizationNavigation.first_steps_path()
 
-    {:ok, link} =
-      Finances.create_requisition(institution_id, String.to_integer(days), redirect_url, scope: socket.assigns.ash_scope)
+    case Finances.create_requisition(institution_id, String.to_integer(days), redirect_url,
+           scope: socket.assigns.ash_scope
+         ) do
+      {:ok, link} ->
+        {:noreply, redirect(socket, external: link)}
 
-    {:noreply, redirect(socket, external: link)}
+      {:error, _error} ->
+        {:noreply,
+         LiveToast.put_toast(
+           socket,
+           :error,
+           gettext("An error occurred while connecting the bank account. Try again.")
+         )}
+    end
   end
 
   def handle_event("finish", params, socket) do
