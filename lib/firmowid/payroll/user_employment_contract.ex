@@ -96,16 +96,6 @@ defmodule Firmowid.Payroll.UserEmploymentContract do
   actions do
     defaults [:read, :destroy]
 
-    read :get_by_id do
-      description "Returns an employment contract given its id."
-      argument :id, :uuid
-      get? true
-
-      prepare build(filter: expr(id == ^arg(:id))) do
-        where present(:id)
-      end
-    end
-
     read :list do
       description "Returns all employment contracts given member_id."
 

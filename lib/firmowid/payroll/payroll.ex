@@ -31,7 +31,7 @@ defmodule Firmowid.Payroll do
     resource UserEmploymentContract do
       define :create_employment_contract, action: :create
       define :list_employment_contracts, action: :list
-      define :get_employment_contract, action: :get_by_id, args: [:id]
+      define :get_employment_contract, action: :read, get_by: [:id]
 
       define :load_pending_contract,
         action: :load_pending_contract,
