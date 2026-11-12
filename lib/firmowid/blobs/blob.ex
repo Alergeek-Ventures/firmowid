@@ -255,12 +255,8 @@ defmodule Firmowid.Blobs.Blob do
     prefix "blob"
 
     publish :create_blob, ["created", :_tenant]
+    publish_all :update, ["updated", :_tenant]
     publish :destroy, ["destroyed", :_tenant]
-    publish :mark_processing, ["updated", :_tenant]
-    publish :mark_processing_pending, ["updated", :_tenant]
-    publish :mark_processing_succeeded, ["updated", :_tenant]
-    publish :mark_processing_failed, ["updated", :_tenant]
-    publish :process_document_blob, ["updated", :_tenant]
   end
 
   multitenancy do
