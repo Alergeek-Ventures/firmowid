@@ -10,7 +10,7 @@ Na pytanie, czy fakturę dla kontrahenta z Niemiec też trzeba wystawić w KSeF,
 
 | Klient | Stawka w FA(3) | Adnotacja |
 |---|---|---|
-| Firma z UE z numerem VAT-UE | np II | odwrotne obciążenie |
+| Firma z UE z numerem VAT-UE, usługa z art. 28b | np II | odwrotne obciążenie |
 | Osoba prywatna z UE | polska stawka VAT (z wyjątkami, np. usługi elektroniczne) | brak |
 | Firma spoza UE | np I | zależnie od usługi |
 | Krajowe odwrotne obciążenie | oo | odwrotne obciążenie |
@@ -25,9 +25,9 @@ Zgodnie z art. 97 ust. 3 ustawy o VAT przed pierwszą taką usługą, o ile w kr
 
 Fakturę można wystawić w euro, a do ewidencji VAT kwotę przelicza się na złote według art. 31a ustawy, po średnim kursie NBP z ostatniego dnia roboczego przed powstaniem obowiązku podatkowego, a gdy faktura powstała wcześniej, przed dniem jej wystawienia.
 
-W [Firmowidzie](/cennik), naszym programie, stawka np II ustawia się sama, kiedy klient z UE ma numer VAT-UE.
+W [Firmowidzie](/cennik), naszym programie, stawka np II ustawia się sama, kiedy klient z UE ma numer VAT-UE, a przy usłudze z wyjątków warto ją sprawdzić.
 
-![Firma z UE z numerem VAT-UE: stawka np II i adnotacja odwrotne obciążenie. Osoba prywatna z UE: polska stawka VAT. Firma spoza UE: np I. Krajowe odwrotne obciążenie: oo. Przed pierwszą usługą dla firmy z UE trzeba zarejestrować się jako podatnik VAT-UE.](/images/guides/faktura-ue-ksef-stawka-np-ii.webp)
+![Usługa z art. 28b dla firmy z UE z numerem VAT-UE: stawka np II i adnotacja odwrotne obciążenie. Osoba prywatna z UE: polska stawka VAT. Firma spoza UE: np I. Krajowe odwrotne obciążenie: oo. Przed pierwszą usługą dla firmy z UE trzeba zarejestrować się jako podatnik VAT-UE.](/images/guides/faktura-ue-ksef-stawka-np-ii.webp)
 
 ## Źródła
 
