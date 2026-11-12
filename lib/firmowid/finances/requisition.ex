@@ -92,7 +92,6 @@ defmodule Firmowid.Finances.Requisition do
   end
 
   code_interface do
-    define :read, action: :read
     define :list, action: :list
     define :destroy, action: :destroy
     define :read_global, action: :read_global
@@ -130,7 +129,6 @@ defmodule Firmowid.Finances.Requisition do
       pagination keyset?: true
     end
 
-    # Generic action: calls GoCardless API, persists record, returns redirect link.
     action :create_requisition, :string do
       description "Create a GoCardless requisition and return its redirect URL."
       argument :institution_id, :string, allow_nil?: false
@@ -140,15 +138,12 @@ defmodule Firmowid.Finances.Requisition do
       run Firmowid.Finances.Actions.CreateRequisition
     end
 
-    # Internal create action used by CreateRequisition generic action.
-    # Protected by policy — never exposed through domain.
+    # Run only by the :create_requisition action with the id GoCardless returned.
     create :persist do
       description "Persist a requisition record created by the external requisition flow."
       accept [:id]
     end
 
-    # Polls GoCardless API and transitions based on status.
-    # Handles full lifecycle: pending → accepted/rejected.
     update :check_status do
       require_atomic? false
       description "AshOban trigger action — polls GoCardless API and transitions state."
@@ -156,9 +151,6 @@ defmodule Firmowid.Finances.Requisition do
       change Firmowid.Finances.Changes.CheckRequisitionStatus
     end
 
-    # Accepts a linked requisition — creates bank accounts and increments billing.
-    # Called by CheckRequisitionStatus when GoCardless returns "LN".
-    # Not exposed through domain.
     update :accept do
       description "Accept a requisition and create the linked bank accounts."
       require_atomic? false
@@ -166,17 +158,12 @@ defmodule Firmowid.Finances.Requisition do
       change Firmowid.Finances.Changes.CreateBankAccounts
     end
 
-    # Rejects a requisition — decrements billing (if was accepted) and queues cleanup.
-    # Called by CheckRequisitionStatus when GoCardless returns "RJ".
-    # Not exposed through domain.
     update :reject do
       description "Reject a requisition that cannot proceed."
       require_atomic? false
       change transition_state(:rejected)
     end
 
-    # Scheduled trigger: rejects stale pending requisitions.
-    # Not exposed through domain — internal only.
     update :auto_reject do
       require_atomic? false
       description "Scheduled trigger — rejects requisitions pending for >1 hour."
@@ -190,16 +177,12 @@ defmodule Firmowid.Finances.Requisition do
       change DeleteRemoteRequisition
     end
 
-    # Called from BankAccount sync when GoCardless returns invalid/expired requisition.
-    # Not exposed through domain — internal only.
     update :expire do
       require_atomic? false
       description "Expires a requisition when GoCardless reports it as invalid during sync."
       change transition_state(:expired)
     end
 
-    # Async remote cleanup — queued by other actions, never scheduled.
-    # Not exposed through domain — internal only.
     update :delete_remote do
       require_atomic? false
       description "Deletes remote requisition + agreement from GoCardless."
@@ -277,7 +260,6 @@ defmodule Firmowid.Finances.Requisition do
     # GoCardless assigns the UUID directly — not a UUIDv7.
     attribute :id, :uuid, primary_key?: true, writable?: true, public?: true, allow_nil?: false
 
-    # Managed by AshStateMachine — maps to the existing `requisition_status` PG enum.
     attribute :status, :atom,
       constraints: [one_of: [:pending, :accepted, :rejected, :expired]],
       default: :pending,
