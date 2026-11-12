@@ -34,21 +34,10 @@ defmodule Firmowid.Finances.Changes.CreateBankAccounts do
   end
 
   defp create_accounts(record, context) do
-    ash_opts = Ash.Context.to_opts(context)
+    opts = context |> Ash.Context.to_opts() |> Keyword.put(:tenant, record.organization_id)
 
     with {:ok, accounts} <- ApiClient.get_accounts_for_requisition(record.id) do
-      bank_accounts =
-        Enum.map(accounts, fn account ->
-          opts =
-            ash_opts |> Keyword.delete(:tenant) |> Keyword.put(:tenant, record.organization_id)
-
-          account
-          |> account_params(record.id)
-          |> Finances.changeset_to_sync_bank_account(opts)
-          |> Ash.create!(opts)
-        end)
-
-      {:ok, bank_accounts}
+      {:ok, Enum.map(accounts, &Finances.sync_bank_account!(account_params(&1, record.id), opts))}
     end
   end
 
