@@ -13,7 +13,9 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Summary do
   import Phoenix.Component, except: [link: 1]
 
   alias Firmowid.Invoicing
+  alias Firmowid.Invoicing.Calculations.AnnotatedCorrections
   alias Firmowid.Invoicing.SalesInvoice
+  alias Firmowid.Invoicing.Utilities.SafeTimestamp
   alias Firmowid.Ksef
   alias Firmowid.Ksef.SubmissionInfo
   alias FirmowidWeb.Invoicing.Utilities.Navigation
@@ -250,7 +252,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Summary do
   end
 
   @impl true
-  def handle_info({:ksef_invoice_status, %{invoice_id: invoice_id, status: :failed}}, socket)
+  def handle_info({:ksef_invoice_status, %{invoice_id: invoice_id}}, socket)
       when socket.assigns.invoice.id != invoice_id do
     {:noreply, socket}
   end
@@ -258,11 +260,9 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Summary do
   def handle_info({:ksef_invoice_status, %{invoice_id: invoice_id, status: :failed}}, socket) do
     # The worker may have already deleted a failed unsent correction.
     # If the invoice is gone, redirect back to the original invoice edit page.
-    # Existence check is intentionally sparse; reload with @invoice_loads before UI work.
-    case SalesInvoice.by_id(invoice_id, scope: socket.assigns.ash_scope) do
-      {:ok, _invoice} ->
-        invoice = load_invoice!(invoice_id, socket.assigns.ash_scope)
-        handle_existing_invoice_status(socket, invoice, invoice_id, :failed)
+    case SalesInvoice.by_id(invoice_id, load: @invoice_loads, scope: socket.assigns.ash_scope) do
+      {:ok, invoice} ->
+        handle_existing_invoice_status(socket, invoice, :failed)
 
       {:error, _} ->
         # Correction was deleted by the worker — redirect to original invoice
@@ -275,26 +275,16 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Summary do
     end
   end
 
-  def handle_info({:ksef_invoice_status, %{invoice_id: invoice_id, status: _status}}, socket)
-      when socket.assigns.invoice.id != invoice_id do
-    {:noreply, socket}
-  end
-
   def handle_info({:ksef_invoice_status, %{invoice_id: invoice_id, status: status}}, socket) do
     invoice = load_invoice!(invoice_id, socket.assigns.ash_scope)
 
-    handle_existing_invoice_status(socket, invoice, invoice_id, status)
+    handle_existing_invoice_status(socket, invoice, status)
   end
 
-  defp handle_existing_invoice_status(socket, invoice, _invoice_id, status) do
+  defp handle_existing_invoice_status(socket, invoice, status) do
     submission_info = SubmissionInfo.for_invoice(invoice)
 
     {previous_invoices, invoice} = get_previous_invoices(invoice, socket.assigns.ash_scope)
-
-    invoice = ensure_template_ready_invoice(invoice, socket.assigns.ash_scope)
-
-    previous_invoices =
-      Enum.map(previous_invoices, &ensure_template_ready_invoice(&1, socket.assigns.ash_scope))
 
     socket =
       socket
@@ -313,8 +303,6 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Summary do
   end
 
   defp get_previous_invoices(%{ksef_invoice_kind: :kor} = invoice, scope) do
-    alias Firmowid.Invoicing.Calculations.AnnotatedCorrections
-
     # Re-fetch corrected invoice to ensure all attributes are loaded,
     # then annotate corrections directly (avoids Ash.load! re-fetch issue).
     # Use the FK attribute — :corrected_invoice may be NotLoaded on sparse reloads.
@@ -341,7 +329,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Summary do
 
     previous_invoices =
       original_invoice.corrections
-      |> Enum.filter(&DateTime.before?(safe_timestamp(&1), safe_timestamp(invoice)))
+      |> Enum.filter(&DateTime.before?(SafeTimestamp.safe_timestamp(&1), SafeTimestamp.safe_timestamp(invoice)))
       |> List.insert_at(0, original_invoice)
       |> Enum.reverse()
 
@@ -364,31 +352,5 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Summary do
 
   defp get_previous_invoices(%{ksef_invoice_kind: :vat} = invoice, _scope), do: {[], invoice}
 
-  defp load_invoice!(id, scope) do
-    id
-    |> SalesInvoice.by_id!(load: @invoice_loads, scope: scope)
-    |> Ash.load!(@invoice_loads, scope: scope)
-  end
-
-  defp ensure_template_ready_invoice(invoice, scope) do
-    Ash.load!(
-      invoice,
-      [
-        :net_value,
-        :vat_value,
-        :gross_value,
-        :amount,
-        sales_invoice_items: [:net_value, :vat_value, :gross_value]
-      ],
-      scope: scope
-    )
-  end
-
-  defp safe_timestamp(record) do
-    case record do
-      %{locked_at: %DateTime{} = ts} -> ts
-      %{inserted_at: %DateTime{} = ts} -> ts
-      _ -> ~U[1970-01-01 00:00:00Z]
-    end
-  end
+  defp load_invoice!(id, scope), do: SalesInvoice.by_id!(id, load: @invoice_loads, scope: scope)
 end
