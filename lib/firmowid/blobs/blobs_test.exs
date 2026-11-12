@@ -45,6 +45,32 @@ defmodule Firmowid.Blobs.BlobsTest do
 
       assert blob.blob_checksum == expected_checksum
     end
+
+    test "serves a client's file only as a passive type and never as XML", %{scope: scope} do
+      {:ok, path} = Briefly.create()
+      File.write!(path, ~s(<html xmlns="http://www.w3.org/1999/xhtml"><script>1</script></html>))
+
+      for {content_type, filename, sent_type, extension} <- [
+            {"application/pdf", "skan.pdf", "application/pdf", ".pdf"},
+            {"application/pdf", "skan", "application/pdf", ".pdf"},
+            # A KSeF invoice keeps its path for the preview and is sent as text.
+            {"application/xml", "faktura.xml", "text/plain", ".xml"},
+            {"application/xml", "skan.pdf", "application/octet-stream", ".bin"},
+            {"image/SVG+xml;x=1", "obraz.png", "application/octet-stream", ".bin"},
+            {"image/x-anything", "obraz.png", "application/octet-stream", ".bin"},
+            {"text/html", "skan.html", "application/octet-stream", ".bin"}
+          ] do
+        {:ok, blob} = Blobs.create_or_reuse_blob(path, content_type, filename, scope: scope)
+        %{url: url} = Ash.load!(blob, :url, scope: scope)
+
+        assert Req.get!(url, retry: false, decode_body: false).headers["content-type"] ==
+                 [sent_type]
+
+        assert Path.extname(blob.blob_path) == extension
+
+        Blobs.destroy_blob(blob, scope: scope)
+      end
+    end
   end
 
   describe "get_blob" do
