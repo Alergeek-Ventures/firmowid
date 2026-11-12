@@ -7,6 +7,7 @@ defmodule Firmowid.Core.OrganizationPoliciesTest do
   alias Ash.Error.Forbidden
   alias Firmowid.Core
   alias Firmowid.Scope
+  alias Firmowid.SystemActor
 
   describe "update_billing_plan policy" do
     test "organization admin cannot update the billing plan" do
@@ -48,6 +49,21 @@ defmodule Firmowid.Core.OrganizationPoliciesTest do
 
       assert {:error, %Forbidden{}} =
                Core.update_organization(other_organization, %{name: "Przejęta organizacja"}, scope: admin_scope(admin))
+    end
+  end
+
+  test "KSeF and billing system actors read only their own organization" do
+    organization_id = admin_fixture().member.organization_id
+    other_organization_id = admin_fixture().member.organization_id
+
+    for role <- [:ksef_session, :billing_snapshotter] do
+      scope = %Scope{
+        actor: %SystemActor{org_id: organization_id, role: role},
+        tenant: organization_id
+      }
+
+      assert {:ok, _} = Core.get_organization(organization_id, scope: scope)
+      assert {:error, _} = Core.get_organization(other_organization_id, scope: scope)
     end
   end
 

@@ -218,7 +218,7 @@ defmodule Firmowid.Core.Organization do
       authorize_if always()
     end
 
-    bypass {SystemActorRole, roles: [:billing_snapshotter, :cross_tenant_reader, :ksef_session]} do
+    bypass {SystemActorRole, roles: [:cross_tenant_reader]} do
       authorize_if action_type(:read)
     end
 
@@ -229,8 +229,12 @@ defmodule Firmowid.Core.Organization do
       authorize_if expr(id == ^actor(:org_id))
     end
 
-    # Reads the industry whose categories the classifier chooses from.
-    bypass [{SystemActorRole, roles: [:analysis_classifier]}, action_type(:read)] do
+    # Actors built for one organization read only that organization; the classifier reads the
+    # industry whose categories it chooses from.
+    bypass [
+      {SystemActorRole, roles: [:analysis_classifier, :billing_snapshotter, :ksef_session]},
+      action_type(:read)
+    ] do
       authorize_if expr(id == ^actor(:org_id))
     end
 
