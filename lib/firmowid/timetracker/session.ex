@@ -1,15 +1,15 @@
 # credo:disable-for-this-file AshCredo.Check.Refactor.LargeResource
 defmodule Firmowid.Timetracker.Session do
   @moduledoc """
-  Ash resource wrapping the existing `sessions` table.
+  A member's work on a project from `start_datetime` to `end_datetime`; a
+  session without an end is running.
 
-  Attribute multitenancy via `organization_id`. Write actions include `start`
-  (begins a new session), `stop` (ends a running session), `stop_current`
-  (ends the actor's running session without a client-supplied id),
-  `add_completed_sessions` (the actor's past sessions, all or none), `create`
-  (full attrs), `update`, and `destroy`. A DB trigger rejects overlapping sessions;
-  an exclusion constraint also protects concurrent writes. Database errors are
-  surfaced by AshPostgres.
+  Boundaries are stored at minute precision and a session stays within one
+  calendar month. A running session is ended after 12 hours by the
+  `:auto_stop` trigger. A database trigger and an exclusion constraint reject
+  overlapping sessions of a member. Sessions in a month whose hours record was
+  submitted are locked (`lockdown`). Scoped by `organization_id` (attribute
+  multitenancy).
   """
   use Ash.Resource,
     domain: Firmowid.Timetracker,
@@ -536,9 +536,7 @@ defmodule Firmowid.Timetracker.Session do
       allow_nil? false
     end
 
-    # fragment() is required here because Ash expressions don't have a built-in
-    # EXTRACT function. The alternative would be adding month/year calculations
-    # to Session, but that's a larger refactor for a simple join condition.
+    # Ash expressions have no EXTRACT function, hence the fragments.
     has_many :hours_records, HoursRecord do
       no_attributes? true
 
