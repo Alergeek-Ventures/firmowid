@@ -1,32 +1,34 @@
-import { z } from "zod";
-
 const SCRIPT_SELECTOR = "script[data-telemetry-config='true']";
 
-const datasetBoolean = z.preprocess((value) => value === "true", z.boolean());
-const datasetString = z.preprocess(
-  (value) => (typeof value === "string" ? value : ""),
-  z.string()
-);
+// The server writes every value as a data attribute, so each one arrives as a
+// string or not at all.
+function datasetBoolean(value) {
+  return value === "true";
+}
 
-const telemetryConfigSchema = z.object({
-  posthogEnabled: datasetBoolean,
-  posthogApiKey: datasetString,
-  publicMarketing: datasetBoolean,
-  currentUserId: datasetString,
-  currentUserRole: datasetString,
-  currentOrganizationId: datasetString,
-  currentOrganizationPlan: datasetString,
-  sentryDsn: datasetString,
-  sentryEnvironment: datasetString,
-  sentryRelease: datasetString
-});
+function datasetString(value) {
+  return typeof value === "string" ? value : "";
+}
 
 function getAppScript() {
   return document.querySelector(SCRIPT_SELECTOR);
 }
 
 function readTelemetryConfig() {
-  return telemetryConfigSchema.parse(getAppScript()?.dataset ?? {});
+  const dataset = getAppScript()?.dataset ?? {};
+
+  return {
+    posthogEnabled: datasetBoolean(dataset.posthogEnabled),
+    posthogApiKey: datasetString(dataset.posthogApiKey),
+    publicMarketing: datasetBoolean(dataset.publicMarketing),
+    currentUserId: datasetString(dataset.currentUserId),
+    currentUserRole: datasetString(dataset.currentUserRole),
+    currentOrganizationId: datasetString(dataset.currentOrganizationId),
+    currentOrganizationPlan: datasetString(dataset.currentOrganizationPlan),
+    sentryDsn: datasetString(dataset.sentryDsn),
+    sentryEnvironment: datasetString(dataset.sentryEnvironment),
+    sentryRelease: datasetString(dataset.sentryRelease)
+  };
 }
 
 function currentUserProperties(config) {
