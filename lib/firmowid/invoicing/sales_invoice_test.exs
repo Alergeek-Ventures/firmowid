@@ -10,6 +10,7 @@ defmodule Firmowid.Invoicing.SalesInvoiceTest do
   alias Firmowid.Invoicing
   alias Firmowid.Invoicing.Counterparty
   alias Firmowid.Invoicing.SalesInvoice
+  alias Firmowid.Invoicing.SalesInvoice.Numbering
   alias Firmowid.InvoicingFixtures
   alias Firmowid.Ksef
   alias Firmowid.Ksef.Services.InvoiceRenderer
@@ -64,10 +65,10 @@ defmodule Firmowid.Invoicing.SalesInvoiceTest do
 
   describe "invoice numbering" do
     test "derives organization initials without legal-form words" do
-      assert SalesInvoice.organization_initials("Bytecraft Collective spółka z ograniczoną odpowiedzialnością") == "BC"
+      assert Numbering.organization_initials("Bytecraft Collective spółka z ograniczoną odpowiedzialnością") == "BC"
 
-      assert SalesInvoice.organization_initials("Łąka Ślusarska S.A.") == "LS"
-      assert SalesInvoice.organization_initials("sp. z o.o.") == nil
+      assert Numbering.organization_initials("Łąka Ślusarska S.A.") == "LS"
+      assert Numbering.organization_initials("sp. z o.o.") == nil
     end
 
     test "suggests the next number of every sequence, counting only its own format" do
