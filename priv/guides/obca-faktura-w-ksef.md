@@ -17,7 +17,7 @@ O tym, gdzie znaleźć faktury kosztowe w KSeF, pisaliśmy już w poradniku o pi
 | opis zakupu i kwota | porównasz je z umową, zamówieniem i historią płatności |
 | dane firmy w CEIDG, KRS lub wykazie podatników VAT | sprawdzisz, czy wystawca działa i podaje zgodne dane |
 
-Do czasu wyjaśnienia nie płać takiej faktury i nie przekazuj jej księgowej do rozliczenia. Jeżeli odbierasz koszty przez większość programów do faktur, w tym nasz Firmowid, zatrzymaj dokument przed dalszym rozliczeniem.
+Do czasu wyjaśnienia nie płać takiej faktury i nie przekazuj jej księgowej do rozliczenia. Jeżeli faktury kosztowe odbiera za Ciebie program do faktur, na przykład nasz Firmowid, zatrzymaj w nim dokument przed dalszym rozliczeniem.
 
 ![Cztery rzeczy do sprawdzenia przy nieznanej fakturze w KSeF: NIP nabywcy, nazwa wystawcy, opis i kwota, dane w rejestrach.](/images/guides/obca-faktura-ksef-co-sprawdzic.webp)
 *Do czasu wyjaśnienia nie płać faktury i nie przekazuj jej księgowej.*
@@ -38,12 +38,11 @@ Do czasu wyjaśnienia nie płać takiej faktury i nie przekazuj jej księgowej d
 |---|---|
 | prawdziwy zakup, ale błędne dane | napisz do sprzedawcy i poproś o korektę |
 | nie było transakcji, lecz wystawca odpowiada | wyjaśnij sprawę na piśmie i zachowaj korespondencję |
-| kilka przesłanek wskazuje na oszustwo | użyj „Zgłoszenia nadużycia” w aplikacji |
-| faktura scamowa | nie używaj już Formularza zgłoszeniowego KSeF |
+| kilka przesłanek wskazuje na oszustwo | użyj „Zgłoszenia nadużycia” w aplikacji; dawny Formularz zgłoszeniowy KSeF już do tego nie służy |
 
 ## Sygnały, które warto zestawić
 
-- nie współpracowałeś z wystawcą i nie było opisanego zakupu;
+- z wystawcą nie było współpracy ani opisanego zakupu;
 - nie udaje się skontaktować ze sprzedawcą;
 - dane firmy nie zgadzają się z publicznymi rejestrami;
 - termin płatności jest nietypowo krótki;
