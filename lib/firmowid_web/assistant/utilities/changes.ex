@@ -18,9 +18,11 @@ defmodule FirmowidWeb.Assistant.Utilities.Changes do
   alias Firmowid.Invoicing
   alias Firmowid.Invoicing.SalesInvoice
   alias Firmowid.Invoicing.SalesInvoice.Preview
+  alias Firmowid.Ksef.VatRate
   alias Firmowid.Scope
   alias Firmowid.Timetracker.Project
   alias Firmowid.Timetracker.Session
+  alias FirmowidWeb.Invoicing.Utilities.VatExemption
   alias FirmowidWeb.Timetracker.Utilities.LeavePresentation
 
   # Session times are shown in the app's default time zone; the assistant has no browser zone.
@@ -199,7 +201,7 @@ defmodule FirmowidWeb.Assistant.Utilities.Changes do
   defp preview("create_sales_invoice_draft", %{"input" => input}, scope) when is_map(input) do
     with {:ok, draft} <-
            result(Invoicing.preview_sales_invoice(%{invoice: invoice_input(input)}, scope: scope)) do
-      {:ok, [], invoice_changes(nil, draft)}
+      {:ok, counterparty_reference(nil, draft), invoice_changes(nil, draft)}
     end
   end
 
@@ -215,7 +217,7 @@ defmodule FirmowidWeb.Assistant.Utilities.Changes do
       # Compared on every reviewed field, not only those the card shows.
       if snapshot(saved) == snapshot(revised),
         do: :unchanged,
-        else: {:ok, [{:sales, id}], invoice_changes(saved, revised)}
+        else: {:ok, [{:sales, id} | counterparty_reference(saved, revised)], invoice_changes(saved, revised)}
     end
   end
 
@@ -368,25 +370,64 @@ defmodule FirmowidWeb.Assistant.Utilities.Changes do
   # `ApplyInvoiceInput` applies over them; the preview takes the same invoice as one InvoiceInput.
   defp invoice_input(input), do: Map.merge(Map.delete(input, "input"), input["input"] || %{})
 
-  # A draft is compared by what the user recognises on the document: buyer, dates, note,
-  # items and total.
+  # A draft is compared by the fields it writes that decide who is invoiced, for what and how
+  # they pay.
   defp invoice_changes(saved, revised) do
     [
       {gettext("Seller"), & &1.seller_display_name},
       {gettext("Buyer"), & &1.buyer_full_name},
+      {gettext("First name"), & &1.buyer_given_name},
+      {gettext("Last name"), & &1.buyer_surname},
+      {gettext("Display name"), & &1.buyer_display_name},
+      {pgettext("sales invoice creator", "Identifier"), & &1.buyer_id},
+      {gettext("Address"), & &1.buyer_address},
+      {pgettext("sales invoice creator", "Country"), & &1.buyer_country},
+      {gettext("Correspondence address"), & &1.buyer_mail_address},
+      {gettext("Email"), & &1.buyer_email},
+      {gettext("Phone"), & &1.buyer_phone},
+      {gettext("Description"), & &1.buyer_description},
       {gettext("Issue date"), &(&1.issue_date && date(&1.issue_date))},
       {gettext("Sale date"), &(&1.sale_date && date(&1.sale_date))},
       {gettext("Due date"), &(&1.due_date && date(&1.due_date))},
-      {gettext("Invoice note"), & &1.invoice_note}
+      {gettext("Payment method"), &payment_method(&1.payment_method)},
+      {gettext("Bank account number"), & &1.seller_account_number},
+      {gettext("Reverse charge"), &flag(&1.is_reverse_charge)},
+      {gettext("VAT exemption"), &(&1.vat_exemption_type && VatExemption.label(&1.vat_exemption_type))},
+      {gettext("Exemption basis"), & &1.vat_exemption_basis},
+      {gettext("Invoice note"), & &1.invoice_note},
+      {gettext("Internal note"), & &1.internal_note},
+      {gettext("Email the invoice to the counterparty after receiving the KSeF number"), &flag(&1.should_send_emails)}
     ]
-    |> Enum.map(fn {label, value} -> {label, saved && value.(saved), value.(revised)} end)
+    |> Enum.map(fn {label, value} ->
+      {label, saved && blank(value.(saved)), blank(value.(revised))}
+    end)
     |> Enum.reject(fn {_label, before, later} -> before == later end)
     |> Enum.map(fn {label, before, later} -> change(label, before, later) end)
-    |> Kernel.++([
-      not same_items?(saved, revised) &&
-        change(gettext("Items"), saved && items(saved), items(revised))
-    ])
+    |> Kernel.++(
+      if same_items?(saved, revised),
+        do: [],
+        else: [
+          change(gettext("Items"), saved && items(saved), items(revised)),
+          change(gettext("VAT"), saved && vat_rates(saved), vat_rates(revised))
+        ]
+    )
   end
+
+  # A linked counterparty is shown as its record when the call sets or changes it.
+  defp counterparty_reference(saved, %{counterparty_id: id}) when is_binary(id) do
+    if saved && saved.counterparty_id == id, do: [], else: [{:counterparty, id}]
+  end
+
+  defp counterparty_reference(_saved, _revised), do: []
+
+  defp payment_method(nil), do: nil
+  defp payment_method(:transfer), do: gettext("Transfer")
+  defp payment_method(:cash), do: gettext("Cash")
+  defp payment_method(:card), do: gettext("Card")
+  defp payment_method(method), do: Atom.to_string(method)
+
+  defp flag(true), do: gettext("Yes")
+  defp flag(_value), do: nil
 
   # Every field a revision can write, plus the reviewed ones it refreshes. Decimals compare by
   # value: a saved 1.0 is the proposed 1.
@@ -410,9 +451,11 @@ defmodule FirmowidWeb.Assistant.Utilities.Changes do
       Enum.all?(Enum.zip(saved.sales_invoice_items, revised.sales_invoice_items), fn {before, later} ->
         before.name == later.name and before.unit == later.unit and
           Decimal.eq?(before.quantity, later.quantity) and
-          Decimal.eq?(before.unit_price, later.unit_price)
+          Decimal.eq?(before.unit_price, later.unit_price) and before.vat_rate == later.vat_rate
       end) and saved.currency == revised.currency
   end
+
+  defp vat_rates(invoice), do: Enum.map_join(invoice.sales_invoice_items, "; ", &VatRate.label(&1.vat_rate))
 
   defp items(invoice) do
     Enum.map_join(invoice.sales_invoice_items, "; ", fn item ->
