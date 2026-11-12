@@ -807,6 +807,7 @@ msgstr ""
 msgid "Account · added"
 msgstr ""
 
+#: lib/firmowid_web/delegations/components/delegations_list.ex
 #: lib/firmowid_web/design_system/components/core_components.ex
 #, elixir-autogen, elixir-format
 msgid "Actions"
@@ -1941,6 +1942,12 @@ msgstr ""
 #: lib/firmowid_web/organization/views/legacy_form.ex
 #, elixir-autogen, elixir-format
 msgid "Business address"
+msgstr ""
+
+#: lib/firmowid_web/delegations/components/delegations_list.ex
+#, elixir-autogen, elixir-format
+msgctxt "business trips table"
+msgid "Business trip"
 msgstr ""
 
 #: lib/firmowid_web/delegations/components/settlement_page.ex
@@ -3886,6 +3893,12 @@ msgstr ""
 #: lib/firmowid_web/settings/components/account_tab.ex
 #, elixir-autogen, elixir-format
 msgid "Date of birth"
+msgstr ""
+
+#: lib/firmowid_web/delegations/components/delegations_list.ex
+#, elixir-autogen, elixir-format
+msgctxt "business trips table"
+msgid "Dates"
 msgstr ""
 
 #: lib/firmowid_web/delegations/components/settlement_page.ex
@@ -10640,6 +10653,7 @@ msgid "Statistics"
 msgstr ""
 
 #: lib/firmowid_ui/components/ksef_connection.ex
+#: lib/firmowid_web/delegations/components/delegations_list.ex
 #: lib/firmowid_web/landing/components/sections.ex
 #: lib/firmowid_web/management/components/profile_tab.ex
 #: lib/firmowid_web/management/views/counterparty.ex
