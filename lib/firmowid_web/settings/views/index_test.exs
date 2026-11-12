@@ -183,6 +183,18 @@ defmodule FirmowidWeb.Settings.Views.IndexTest do
     assert Core.load_member(admin).member.name != "Grace Hopper"
   end
 
+  test "a refused profile picture says why", %{conn: conn} do
+    {:ok, view, _html} = conn |> log_in_user(admin_fixture()) |> live(~p"/ustawienia/konto")
+
+    avatar =
+      file_input(view, "#settings-user_avatar-form", :user_avatar, [
+        %{name: "avatar.png", content: String.duplicate("a", 8_000_001), type: "image/png"}
+      ])
+
+    assert {:error, [[_ref, :too_large]]} = render_upload(avatar, "avatar.png")
+    assert has_element?(view, "p", "Plik jest za duży.")
+  end
+
   test "account deletion modal warns organization owner about deleting the organization", %{
     conn: conn
   } do

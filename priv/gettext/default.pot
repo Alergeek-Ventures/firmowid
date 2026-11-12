@@ -8078,9 +8078,20 @@ msgstr ""
 msgid "Only .crt and .key files are allowed."
 msgstr ""
 
+#: lib/firmowid_web/settings/components/settings_page.ex
+#, elixir-autogen, elixir-format
+msgid "Only JPG, JPEG and PNG images are allowed."
+msgstr ""
+
 #: lib/firmowid_web/settings/components/profile_tab.ex
 #, elixir-autogen, elixir-format
 msgid "Only PDF files are allowed."
+msgstr ""
+
+#: lib/firmowid_web/documents/components/documents_section.ex
+#: lib/firmowid_web/settings/components/profile_tab.ex
+#, elixir-autogen, elixir-format
+msgid "Only PDF, DOC and DOCX files are allowed."
 msgstr ""
 
 #: lib/firmowid_web/settings/views/index.ex
@@ -11355,6 +11366,7 @@ msgid "The file is too large (max 10 MB)."
 msgstr ""
 
 #: lib/firmowid_ui/components/ksef_connection.ex
+#: lib/firmowid_ui/components/upload_errors.ex
 #, elixir-autogen, elixir-format
 msgid "The file is too large."
 msgstr ""
@@ -13526,6 +13538,7 @@ msgstr ""
 msgid "You can turn time tracking on later in the company settings."
 msgstr ""
 
+#: lib/firmowid_ui/components/upload_errors.ex
 #: lib/firmowid_web/settings/components/profile_tab.ex
 #, elixir-autogen, elixir-format
 msgid "You can upload only one file."

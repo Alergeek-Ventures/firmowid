@@ -7,6 +7,7 @@ defmodule FirmowidWeb.Settings.Components.SettingsPage do
 
   import FirmowidUI.Components.Button
   import FirmowidUI.Components.Link
+  import FirmowidUI.Components.UploadErrors
   import FirmowidWeb.Settings.Components.Helpers, only: [initial: 1]
   import Phoenix.Component, except: [link: 1]
 
@@ -56,7 +57,12 @@ defmodule FirmowidWeb.Settings.Components.SettingsPage do
     <section class="container flex max-w-7xl flex-col gap-6 py-8 lg:gap-10 lg:py-10">
       <div class="flex items-center justify-between">
         <div class="flex flex-col gap-6 sm:flex-row sm:items-center sm:gap-8">
-          <form class="relative" phx-submit="upload" phx-change="upload">
+          <form
+            id="settings-user_avatar-form"
+            class="relative"
+            phx-submit="upload"
+            phx-change="upload"
+          >
             <.live_file_input
               upload={@user_avatar_upload}
               class="peer sr-only"
@@ -96,12 +102,17 @@ defmodule FirmowidWeb.Settings.Components.SettingsPage do
               {@greeting_before}<span class="font-bold">{@current_user.member.name || pgettext("greeting fallback", "user")}</span>{@greeting_after}
             </h1>
             <p class="text-grey-700">{@current_user.email}</p>
+            <.upload_error_messages
+              upload={@user_avatar_upload}
+              not_accepted={gettext("Only JPG, JPEG and PNG images are allowed.")}
+            />
           </div>
         </div>
 
         <div class="relative hidden lg:block">
           <form
             :if={@current_user.member.role == :admin && @organization_avatar_upload}
+            id="settings-organization_avatar-form"
             phx-submit="upload"
             phx-change="upload"
           >
@@ -140,6 +151,12 @@ defmodule FirmowidWeb.Settings.Components.SettingsPage do
           >
             <Lucideicons.square_pen class="size-6!" />
           </.button>
+          <.upload_error_messages
+            :if={@current_user.member.role == :admin && @organization_avatar_upload}
+            upload={@organization_avatar_upload}
+            not_accepted={gettext("Only JPG, JPEG and PNG images are allowed.")}
+            class="absolute top-full right-0 mt-4 w-max"
+          />
         </div>
       </div>
 
@@ -188,6 +205,11 @@ defmodule FirmowidWeb.Settings.Components.SettingsPage do
         </.avatar_fallback>
       </.avatar>
       <.button as="label" for={@upload.ref} variant="outline" size="small">{@label}</.button>
+      <.upload_error_messages
+        upload={@upload}
+        not_accepted={gettext("Only JPG, JPEG and PNG images are allowed.")}
+        class="basis-full"
+      />
     </form>
     """
   end

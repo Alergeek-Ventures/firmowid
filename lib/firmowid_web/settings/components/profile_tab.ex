@@ -7,6 +7,7 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
 
   import FirmowidUI.Components.Button
   import FirmowidUI.Components.Link
+  import FirmowidUI.Components.UploadErrors
   import FirmowidWeb.Delegations.Components.DelegationsList
   import FirmowidWeb.DesignSystem.Components.CoreComponents
   import FirmowidWeb.Infrastructure.Flags, only: [flag_enabled?: 2]
@@ -199,6 +200,11 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
           </.button>
         </form>
       </div>
+      <.upload_error_messages
+        :if={@document_upload}
+        upload={@document_upload}
+        not_accepted={gettext("Only PDF, DOC and DOCX files are allowed.")}
+      />
     </.detail_row>
     """
   end
