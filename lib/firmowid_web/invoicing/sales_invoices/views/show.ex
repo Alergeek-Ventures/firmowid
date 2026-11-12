@@ -263,12 +263,6 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Show do
     if socket.assigns.invoice.id == invoice_id do
       invoice = refresh_invoice(invoice_id, socket.assigns.ash_scope)
 
-      # Update component with new invoice data
-      send_update(FirmowidWeb.Invoicing.Components.SalesInvoiceDetails,
-        id: "invoice-show",
-        invoice: invoice
-      )
-
       socket =
         socket
         |> assign(:invoice, invoice)
