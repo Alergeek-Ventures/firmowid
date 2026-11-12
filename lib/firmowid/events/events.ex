@@ -1,9 +1,7 @@
 defmodule Firmowid.Events do
   @moduledoc """
-  Ash domain for the centralized event log.
-
-  Currently used by BankAccount for sync status derivation.
-  Other resources can opt into event tracking later.
+  Ash domain for the centralized event log: bank account synchronizations and
+  invoice to transaction matches.
   """
   use Ash.Domain
 
@@ -43,8 +41,6 @@ defmodule Firmowid.Events do
     end
   end
 
-  def last_successful_sync_at(_record, _opts), do: {:ok, nil}
-
   defp apply_sync_before_filter(query, nil), do: query
 
   defp apply_sync_before_filter(query, before) do
@@ -54,10 +50,6 @@ defmodule Firmowid.Events do
   resources do
     resource Event do
       define :list_events, action: :read
-
-      define :latest_successful_sync,
-        action: :latest_successful_sync,
-        args: [:organization_id, :record_id, :resource]
     end
   end
 
