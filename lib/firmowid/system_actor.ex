@@ -72,6 +72,7 @@ defmodule Firmowid.SystemActor do
 
   - `:document_blob_processor` — processes document blobs for various use cases.
     Can read/write blobs and read related records as needed for blob processing.
+    Also looks up a stored file by checksum when an upload repeats its bytes.
 
   - `:leave_notifier` — emails org admins about new leave/absence requests and
     delegations, and employees about their reviewed delegations. Can read those
