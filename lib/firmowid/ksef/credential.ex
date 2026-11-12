@@ -327,22 +327,25 @@ defmodule Firmowid.Ksef.Credential do
       authorize_if always()
     end
 
-    # ksef_session: manage the current organization's credential
-    bypass {SystemActorRole, roles: [:ksef_session]} do
-      authorize_if action([
-                     :destroy,
-                     :prepare_enrollment,
-                     :wait_for_certificate,
-                     :complete_certificate_enrollment,
-                     :mark_working,
-                     :refresh_certificate,
-                     :supersede_certificate,
-                     :recover_certificate_refresh,
-                     :backfill_expiration_metadata,
-                     :delete_failed,
-                     :get,
-                     :internal
-                   ])
+    # ksef_session: manage the credential of the organization the actor is bound to
+    bypass [
+      {SystemActorRole, roles: [:ksef_session]},
+      action([
+        :destroy,
+        :prepare_enrollment,
+        :wait_for_certificate,
+        :complete_certificate_enrollment,
+        :mark_working,
+        :refresh_certificate,
+        :supersede_certificate,
+        :recover_certificate_refresh,
+        :backfill_expiration_metadata,
+        :delete_failed,
+        :get,
+        :internal
+      ])
+    ] do
+      authorize_if expr(organization_id == ^actor(:org_id))
     end
 
     # cross_tenant_reader: enumerate org ids only
