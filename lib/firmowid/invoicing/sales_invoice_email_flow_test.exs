@@ -8,6 +8,7 @@ defmodule Firmowid.Invoicing.SalesInvoiceEmailFlowTest do
 
   alias Firmowid.Invoicing
   alias Firmowid.Invoicing.SalesInvoice.Dispatchers.Communication
+  alias Firmowid.Invoicing.Workers.SalesInvoiceEmailWorker
   alias Firmowid.InvoicingFixtures
   alias Firmowid.Scope
   alias Firmowid.SystemActor
@@ -102,6 +103,33 @@ defmodule Firmowid.Invoicing.SalesInvoiceEmailFlowTest do
       assert :ok = perform_sales_invoice_email_job(build_sales_invoice_email_job(invoice, :basic))
       assert_received {:email, %{provider_options: %{idempotency_key: other_key}}}
       assert other_key != first_key
+    end
+
+    test "a repeated dispatch does not enqueue a second job while the first one waits" do
+      Oban.Testing.with_testing_mode(:manual, fn ->
+        admin = admin_fixture()
+        processor_scope = processor_scope(admin.member.organization_id)
+        counterparty = valid_counterparty_fixture!(admin)
+
+        invoice =
+          admin
+          |> sales_invoice_fixture!(%{counterparty_id: counterparty.id, should_send_emails: true})
+          |> confirm_invoice_in_ksef!(processor_scope)
+
+        assert {:ok, :dispatched} =
+                 Communication.dispatch(invoice, :ksef_confirmed, processor_scope)
+
+        assert {:ok, :dispatched} =
+                 Communication.dispatch(invoice, :ksef_confirmed, processor_scope)
+
+        assert [_job] =
+                 Oban.Testing.all_enqueued(
+                   repo: Firmowid.Repo,
+                   prefix: "oban",
+                   worker: SalesInvoiceEmailWorker,
+                   args: %{sales_invoice_id: invoice.id, delivery_type: "basic"}
+                 )
+      end)
     end
   end
 

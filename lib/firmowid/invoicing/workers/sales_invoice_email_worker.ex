@@ -4,12 +4,14 @@ defmodule Firmowid.Invoicing.Workers.SalesInvoiceEmailWorker do
 
   Every attempt of a job sends the same Resend idempotency key, so a retry
   after the provider accepted the email (lost response, node stopped before
-  the job completed) does not send it again.
+  the job completed) does not send it again. A job is not enqueued while
+  another one for the same invoice and delivery type is waiting or running.
   """
 
   use Oban.Worker,
     queue: :sales_invoice_emails,
-    max_attempts: 2
+    max_attempts: 2,
+    unique: [keys: [:sales_invoice_id, :delivery_type], period: :infinity, states: :incomplete]
 
   alias Firmowid.ErrorKind
   alias Firmowid.Invoicing.SalesInvoiceEmailDelivery
