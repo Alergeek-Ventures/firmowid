@@ -26,11 +26,6 @@ defmodule Firmowid.Delegations.DelegationExpense do
     repo Firmowid.Repo
   end
 
-  code_interface do
-    define :read, action: :read
-    define :complete, action: :complete
-  end
-
   actions do
     defaults [:read]
 
