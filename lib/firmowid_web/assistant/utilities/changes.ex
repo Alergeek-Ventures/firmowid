@@ -65,7 +65,8 @@ defmodule FirmowidWeb.Assistant.Utilities.Changes do
   defp preview(name, %{"id" => id, "input" => %{"internal_note" => note}}, scope) when is_map_key(@note_kinds, name) do
     kind = Map.fetch!(@note_kinds, name)
 
-    with {:ok, record} <- read(kind, id, scope) do
+    with {:ok, note} <- text(note),
+         {:ok, record} <- read(kind, id, scope) do
       {:ok, [{kind, id}], [change(gettext("Internal note"), record.internal_note, note)]}
     end
   end
@@ -120,12 +121,13 @@ defmodule FirmowidWeb.Assistant.Utilities.Changes do
   end
 
   defp preview("start_session", %{"input" => %{"project_id" => project_id} = input}, scope) do
-    with {:ok, remote?} <- boolean(input["is_remote"]),
+    with {:ok, title} <- text(input["title"]),
+         {:ok, remote?} <- boolean(input["is_remote"]),
          {:ok, running} <- result(Session.get_current(scope: scope)) do
       {:ok, [{:project, project_id}],
        [
          running && change(gettext("Running session"), session_label(running), gettext("stopped")),
-         change(gettext("Title"), nil, input["title"]),
+         change(gettext("Title"), nil, title),
          change(gettext("Start"), nil, gettext("now")),
          remote? && change(gettext("Remote work"), nil, gettext("Yes"))
        ]}
@@ -143,14 +145,15 @@ defmodule FirmowidWeb.Assistant.Utilities.Changes do
   end
 
   defp preview("edit_session", %{"input" => %{"id" => id} = input}, scope) do
-    with {:ok, session} <- result(Session.current_session(id, scope: scope, load: [:project])),
+    with {:ok, title} <- text(input["title"]),
+         {:ok, session} <- result(Session.current_session(id, scope: scope, load: [:project])),
          {:ok, start} <- optional(input["start_datetime"], &datetime/1),
          {:ok, finish} <- optional(input["end_datetime"], &datetime/1),
          {:ok, project} <- optional(input["project_id"], &result(Project.get(&1, scope: scope))),
          {:ok, remote?} <- boolean(input["is_remote"]) do
       {:ok, [{:session, id}],
        [
-         input["title"] && change(gettext("Title"), session.title, input["title"]),
+         title && change(gettext("Title"), session.title, title),
          start && change(gettext("Start"), time(session.start_datetime), time(start)),
          finish && change(gettext("End"), time(session.end_datetime), time(finish)),
          project &&
@@ -171,12 +174,13 @@ defmodule FirmowidWeb.Assistant.Utilities.Changes do
     with %{"starts_on" => starts_on, "ends_on" => ends_on, "reason" => reason} <- input,
          {:ok, starts_on} <- parse(&Date.from_iso8601/1, starts_on),
          {:ok, ends_on} <- parse(&Date.from_iso8601/1, ends_on),
-         {:ok, reason} <- Map.fetch(@leave_reasons, reason) do
+         {:ok, reason} <- Map.fetch(@leave_reasons, reason),
+         {:ok, note} <- text(input["note"]) do
       {:ok, [],
        [
          change(gettext("Period"), nil, "#{date(starts_on)}–#{date(ends_on)}"),
          change(gettext("Leave type"), nil, LeavePresentation.reason_label(reason)),
-         change(gettext("Note"), nil, input["note"])
+         change(gettext("Note"), nil, note)
        ]}
     else
       _invalid -> :error
@@ -186,6 +190,8 @@ defmodule FirmowidWeb.Assistant.Utilities.Changes do
   # The member is read again: the actor's was loaded at mount, before earlier approved changes.
   defp preview("update_profile", %{"input" => input}, scope) when is_map(input) do
     with {:ok, same?} <- boolean(input["is_same_correspondence_address"]),
+         {:ok, _texts} <-
+           all(Map.values(Map.delete(input, "is_same_correspondence_address")), &text/1),
          {:ok, user} <-
            result(Core.get_org_user(%{id: scope.actor.id}, scope: scope, load: [:member])) do
       input = Map.put(input, "is_same_correspondence_address", same?)
@@ -265,6 +271,11 @@ defmodule FirmowidWeb.Assistant.Utilities.Changes do
 
   defp parse(_parse, _value), do: :error
 
+  # A tool argument the card shows as text; any other JSON value makes the card unavailable
+  # instead of failing to render.
+  defp text(value) when is_nil(value) or is_binary(value), do: {:ok, value}
+  defp text(_value), do: :error
+
   defp optional(nil, _fun), do: {:ok, nil}
   defp optional(value, fun), do: fun.(value)
 
@@ -315,6 +326,7 @@ defmodule FirmowidWeb.Assistant.Utilities.Changes do
     with %{"project_id" => project_id, "start_datetime" => from, "end_datetime" => to} <- session,
          {:ok, from} <- datetime(from),
          {:ok, to} <- datetime(to),
+         {:ok, title} <- text(session["title"]),
          {:ok, remote?} <- boolean(session["is_remote"]),
          {:ok, project} <- result(Project.get(project_id, scope: scope)) do
       {:ok,
@@ -326,7 +338,7 @@ defmodule FirmowidWeb.Assistant.Utilities.Changes do
              date: Calendar.strftime(local(from), "%d.%m.%Y"),
              from: Calendar.strftime(local(from), "%H:%M"),
              to: Calendar.strftime(local(to), "%H:%M"),
-             title: session["title"]
+             title: title
            )
          ),
          remote? && change(gettext("Remote work"), nil, gettext("Yes"))
