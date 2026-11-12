@@ -112,22 +112,14 @@ defmodule FirmowidWeb.Management.Views.Employees do
     search_filters = if search in [nil, ""], do: %{}, else: %{search: search}
     input = Map.merge(list_filters, search_filters)
 
-    users =
-      input
-      |> Core.list_users!(scope: scope)
-      |> Ash.load!([member: [avatar_blob: [:url]]], scope: scope)
+    users = Core.list_users!(input, scope: scope, load: [member: [avatar_blob: [:url]]])
 
-    # 2. Time worked per user this month
-    sessions =
+    # 2. Time worked per member this month
+    time_by_member =
       %{month: date.month, year: date.year}
-      |> Timetracker.query_to_list_sessions(scope: scope)
-      |> Ash.Query.load([:duration, :member])
-      |> Ash.read!(scope: scope)
-
-    time_by_user =
-      sessions
-      |> Enum.group_by(& &1.member.user_id)
-      |> Map.new(fn {uid, ss} -> {uid, ss |> Enum.map(& &1.duration) |> Enum.sum()} end)
+      |> Timetracker.list_sessions!(scope: scope)
+      |> Enum.group_by(& &1.member_id, & &1.duration)
+      |> Map.new(fn {member_id, durations} -> {member_id, Enum.sum(durations)} end)
 
     # 3. Salaries as of this month]
     salaries =
@@ -141,13 +133,10 @@ defmodule FirmowidWeb.Management.Views.Employees do
     gross_by_member = Map.new(salaries, &{&1.member_id, &1.monthly_amount})
 
     # 4. Hours records for this month
-    hours_records =
-      Timetracker.list_hours_records!(%{month: date.month, year: date.year},
-        load: [:member],
-        scope: scope
-      )
-
-    hr_by_user = Map.new(hours_records, &{&1.member.user_id, &1})
+    hr_by_member =
+      %{month: date.month, year: date.year}
+      |> Timetracker.list_hours_records!(scope: scope)
+      |> Map.new(&{&1.member_id, &1})
 
     # 5. Compose
     employees =
@@ -155,11 +144,11 @@ defmodule FirmowidWeb.Management.Views.Employees do
       |> Enum.map(fn user ->
         %{
           user: user,
-          time_worked: Map.get(time_by_user, user.id, 0),
+          time_worked: Map.get(time_by_member, user.member.id, 0),
           hourly_rate: Map.get(salary_by_member, user.member.id),
           monthly_gross: Map.get(gross_by_member, user.member.id, Money.new!(:PLN, 0)),
           monthly_payout: Map.get(payout_by_member, user.member.id),
-          hours_record: Map.get(hr_by_user, user.id)
+          hours_record: Map.get(hr_by_member, user.member.id)
         }
       end)
       |> Enum.sort_by(fn employee ->
