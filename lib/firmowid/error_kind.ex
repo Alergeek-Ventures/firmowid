@@ -49,6 +49,15 @@ defmodule Firmowid.ErrorKind do
 
   defp classify(%{__struct__: module}, _depth) when is_atom(module), do: Atom.to_string(module)
 
+  # An HTTP API's refusal as Swoosh adapters return it: the status and the decoded body.
+  defp classify({status, %{"name" => name}}, _depth) when is_integer(status) and is_binary(name) do
+    if Regex.match?(~r/\A[a-z_]{1,64}\z/, name),
+      do: "http:#{status}:#{name}",
+      else: "http:#{status}"
+  end
+
+  defp classify({status, _body}, _depth) when is_integer(status), do: "http:#{status}"
+
   defp classify({kind, nested}, depth) when is_atom(kind), do: Atom.to_string(kind) <> ":" <> classify(nested, depth + 1)
 
   defp classify(nil, _depth), do: "null"
