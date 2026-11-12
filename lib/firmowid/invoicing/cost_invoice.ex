@@ -45,6 +45,8 @@ defmodule Firmowid.Invoicing.CostInvoice do
     extensions: [AshOban, AshEvents.Events],
     notifiers: [Ash.Notifier.PubSub]
 
+  use Gettext, backend: Firmowid.Gettext
+
   alias AshMoney.Types.Money, as: MoneyType
   alias AshOban.Checks.AshObanInteraction
   alias Firmowid.Checks.ActorRole
@@ -55,7 +57,6 @@ defmodule Firmowid.Invoicing.CostInvoice do
   alias Firmowid.Invoicing.Changes.ComputeCostInvoiceDescription
   alias Firmowid.Invoicing.Changes.ComputeCostInvoiceSellerDisplayName
   alias Firmowid.Invoicing.Changes.RecordManualMatch
-  alias Firmowid.Invoicing.Changes.RequireTransactionIds
   alias Firmowid.Invoicing.CostInvoiceTransaction
   alias Firmowid.Invoicing.InvoiceMatching
   alias Firmowid.Invoicing.Signals
@@ -520,7 +521,9 @@ defmodule Firmowid.Invoicing.CostInvoice do
       change RecordManualMatch
       argument :transaction_ids, {:array, :uuid}, allow_nil?: false
 
-      change RequireTransactionIds
+      validate argument_does_not_equal(:transaction_ids, []),
+        message: gettext_noop("Select at least one transaction.")
+
       change Firmowid.Invoicing.Changes.ValidateTransactionAvailability
       change manage_relationship(:transaction_ids, :transactions, type: :append)
     end
@@ -531,7 +534,9 @@ defmodule Firmowid.Invoicing.CostInvoice do
       change RecordManualMatch
       argument :transaction_ids, {:array, :uuid}, allow_nil?: false
 
-      change RequireTransactionIds
+      validate argument_does_not_equal(:transaction_ids, []),
+        message: gettext_noop("Select at least one transaction.")
+
       change manage_relationship(:transaction_ids, :transactions, type: :remove)
     end
 

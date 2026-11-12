@@ -9980,7 +9980,8 @@ msgstr ""
 msgid "Select a country"
 msgstr ""
 
-#: lib/firmowid/invoicing/changes/require_transaction_ids.ex
+#: lib/firmowid/invoicing/cost_invoice.ex
+#: lib/firmowid/invoicing/sales_invoice.ex
 #, elixir-autogen, elixir-format
 msgid "Select at least one transaction."
 msgstr ""
