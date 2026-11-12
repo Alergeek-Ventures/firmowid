@@ -131,9 +131,12 @@ defmodule Firmowid.Blobs.Blob.Policies do
                        ^actor([:member, :role]) in [:invoicing, :accountant]
                    )
 
-      # A file just uploaded, before the record that holds it is saved.
+      # A file just uploaded, before the record that holds it is saved. Every flow
+      # attaches the file in the request that uploads it; the limit keeps a file
+      # that was later detached from its record from becoming readable by everyone.
       authorize_if expr(
                      processing_target == :none and
+                       inserted_at > ago(1, :hour) and
                        not exists(avatar_members, true) and
                        not exists(avatar_organizations, true) and
                        not exists(cost_invoices, true) and
