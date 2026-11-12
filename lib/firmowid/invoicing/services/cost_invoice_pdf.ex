@@ -19,8 +19,8 @@ defmodule Firmowid.Invoicing.Services.CostInvoicePdf do
   Generates a cost-invoice PDF with optional augmentations.
   """
   @spec generate(CostInvoice.t(), keyword()) :: {:ok, binary()} | {:error, term()}
-  def generate(%CostInvoice{} = invoice, opts \\ []) do
-    invoice = load_internal_note(invoice, opts)
+  def generate(%CostInvoice{} = invoice, opts) do
+    invoice = Ash.load!(invoice, [:internal_note], scope: Keyword.fetch!(opts, :scope))
     include_internal_note = Keyword.get(opts, :include_internal_note, true)
 
     with {:ok, base_pdf} <- generate_base_pdf(invoice, opts),
@@ -42,11 +42,4 @@ defmodule Firmowid.Invoicing.Services.CostInvoicePdf do
     do: Ksef.generate(invoice, opts)
 
   defp generate_base_pdf(%CostInvoice{} = invoice, opts), do: Blob.generate(invoice, opts)
-
-  defp load_internal_note(invoice, opts) do
-    case Keyword.get(opts, :scope) do
-      nil -> Ash.load!(invoice, [:internal_note], tenant: invoice.organization_id)
-      scope -> Ash.load!(invoice, [:internal_note], scope: scope)
-    end
-  end
 end

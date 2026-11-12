@@ -14,8 +14,8 @@ defmodule Firmowid.Invoicing.Services.CostInvoiceBasePdf.Ksef do
   Generates the base KSeF cost-invoice PDF.
   """
   @spec generate(CostInvoice.t(), keyword()) :: {:ok, binary()} | {:error, term()}
-  def generate(%CostInvoice{} = invoice, opts \\ []) do
-    ash_scope = Keyword.get(opts, :scope)
+  def generate(%CostInvoice{} = invoice, opts) do
+    ash_scope = Keyword.fetch!(opts, :scope)
 
     with {:ok, xml_content} <- load_xml_content(invoice, ash_scope),
          {:ok, xsl_content} <- load_xsl_content(),
