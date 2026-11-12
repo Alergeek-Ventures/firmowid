@@ -177,24 +177,26 @@ defmodule Firmowid.Timetracker.LeaveRequest do
       change set_attribute(:member_id, actor([:member, :id]))
       change set_attribute(:reason, arg(:reason))
 
-      change fn changeset, context ->
-        upload_path = Ash.Changeset.get_argument(changeset, :upload_path)
-        upload_filename = Ash.Changeset.get_argument(changeset, :upload_filename)
+      # After authorization, so a denied request stores no file. Outside the
+      # transaction, because reusing a blob recovers from a failed insert.
+      change before_transaction(fn changeset, context ->
+               upload_path = Ash.Changeset.get_argument(changeset, :upload_path)
+               upload_filename = Ash.Changeset.get_argument(changeset, :upload_filename)
 
-        case Blobs.create_or_reuse_blob(
-               upload_path,
-               "binary/octet-stream",
-               upload_filename,
-               tenant: context.tenant,
-               actor: context.actor
-             ) do
-          {:ok, blob} ->
-            Ash.Changeset.force_change_attribute(changeset, :blob_id, blob.id)
+               case Blobs.create_or_reuse_blob(
+                      upload_path,
+                      "binary/octet-stream",
+                      upload_filename,
+                      tenant: context.tenant,
+                      actor: context.actor
+                    ) do
+                 {:ok, blob} ->
+                   Ash.Changeset.force_change_attribute(changeset, :blob_id, blob.id)
 
-          {:error, error} ->
-            Ash.Changeset.add_error(changeset, error)
-        end
-      end
+                 {:error, error} ->
+                   Ash.Changeset.add_error(changeset, error)
+               end
+             end)
 
       validate compare(:starts_on, greater_than_or_equal_to: &Date.utc_today/0) do
         message gettext_noop("must be today or later")

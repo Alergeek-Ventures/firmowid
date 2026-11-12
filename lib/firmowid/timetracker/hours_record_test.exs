@@ -60,6 +60,30 @@ defmodule Firmowid.Timetracker.HoursRecordTest do
     end
   end
 
+  describe "create/2" do
+    test "stores no file when the actor may not create the record", %{user: user, scope: scope} do
+      organization_id = user.member.organization_id
+      other_user = user_in_org_fixture(organization_id)
+      upload_path = Briefly.create!(extname: ".pdf")
+      File.write!(upload_path, "%PDF-1.4 timesheet #{System.unique_integer()}")
+
+      assert {:error, %Ash.Error.Forbidden{}} =
+               HoursRecord.create(
+                 %{
+                   member_id: other_user.member.id,
+                   month: 3,
+                   year: 2025,
+                   number_of_hours: 160,
+                   upload_path: upload_path,
+                   upload_filename: "ewidencja.pdf"
+                 },
+                 scope: scope
+               )
+
+      assert Repo.aggregate(Blob, :count) == 0
+    end
+  end
+
   describe "submitted check" do
     test "by_month returns the record when submitted", %{user: user, scope: scope} do
       blob = seed_blob!(user.member.organization_id)

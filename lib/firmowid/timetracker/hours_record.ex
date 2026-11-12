@@ -183,24 +183,25 @@ defmodule Firmowid.Timetracker.HoursRecord do
         description "Original filename of the uploaded document."
       end
 
-      change fn changeset, context ->
-        upload_path = Ash.Changeset.get_argument(changeset, :upload_path)
-        upload_filename = Ash.Changeset.get_argument(changeset, :upload_filename)
+      # After authorization, so a denied request stores no file.
+      change before_transaction(fn changeset, context ->
+               upload_path = Ash.Changeset.get_argument(changeset, :upload_path)
+               upload_filename = Ash.Changeset.get_argument(changeset, :upload_filename)
 
-        case Blobs.create_blob(
-               upload_path,
-               "binary/octet-stream",
-               upload_filename,
-               tenant: context.tenant,
-               actor: context.actor
-             ) do
-          {:ok, blob} ->
-            Ash.Changeset.force_change_attribute(changeset, :blob_id, blob.id)
+               case Blobs.create_blob(
+                      upload_path,
+                      "binary/octet-stream",
+                      upload_filename,
+                      tenant: context.tenant,
+                      actor: context.actor
+                    ) do
+                 {:ok, blob} ->
+                   Ash.Changeset.force_change_attribute(changeset, :blob_id, blob.id)
 
-          {:error, reason} ->
-            Ash.Changeset.add_error(changeset, reason)
-        end
-      end
+                 {:error, reason} ->
+                   Ash.Changeset.add_error(changeset, reason)
+               end
+             end)
     end
 
     action :notify_admins do
