@@ -462,21 +462,22 @@ defmodule Firmowid.Core.User do
     end
 
     # Default :read action — used for loading the current user and explicit admin access.
-    # bypass so it short-circuits the deny catch-all below.
     bypass action(:read) do
       authorize_if expr(id == ^actor(:id))
       authorize_if OrganizationMemberAdmin
       authorize_if actor_attribute_equals(:system_role, :superuser)
     end
 
-    # The people a notification or a processed document of the organization names.
+    # Accounts of the actor's organization: the people a notification or a processed
+    # document names, and the members the plan limit archives.
     bypass [
       {SystemActorRole,
        roles: [
          :leave_notifier,
          :hours_record_change_notifier,
          :document_blob_processor,
-         :employment_contract_notifier
+         :employment_contract_notifier,
+         :plan_limits
        ]},
       action(:read)
     ] do
@@ -511,15 +512,7 @@ defmodule Firmowid.Core.User do
                    )
     end
 
-    # Keeping an organization within its plan archives its members, which reads
-    # their accounts and revokes their access to that organization only.
-    bypass [{SystemActorRole, roles: [:plan_limits]}, action(:read)] do
-      authorize_if expr(
-                     not is_nil(^actor(:org_id)) and
-                       exists(member, organization_id == ^actor(:org_id))
-                   )
-    end
-
+    # Archiving a member above the plan revokes their access to that organization only.
     bypass [{SystemActorRole, roles: [:plan_limits]}, action(:leave_organization)] do
       authorize_if expr(
                      not is_nil(^actor(:org_id)) and ^arg(:organization_id) == ^actor(:org_id) and
