@@ -35,11 +35,7 @@ defmodule FirmowidWeb.Assistant.Views.Floating do
             page?: page?,
             page_path: session["page_path"],
             open: page?,
-            form_error: nil,
-            history_open?: false,
-            invoices: %{},
             open_invoice: nil,
-            dismissed_invoices: MapSet.new(),
             ksef_subscribed?: false
           )
           |> load_history()
@@ -486,10 +482,7 @@ defmodule FirmowidWeb.Assistant.Views.Floating do
           do: select_conversation(socket, conversation),
           else: socket
 
-      {:error, %Invalid{}} ->
-        select_conversation(socket, nil)
-
-      {:error, %Forbidden{}} ->
+      {:error, %error{}} when error in [Invalid, Forbidden] ->
         select_conversation(socket, nil)
 
       {:error, error} ->
