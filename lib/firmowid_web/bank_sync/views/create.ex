@@ -238,7 +238,13 @@ defmodule FirmowidWeb.BankSync.Views.Create do
 
       {:error, error} ->
         Logger.warning("Failed to load bank institutions", error_kind: ErrorKind.classify(error))
-        assign(socket, available_institutions: [], institutions_failed?: true)
+        # A failed refresh keeps the banks already on the screen.
+        institutions = socket.assigns[:available_institutions] || []
+
+        assign(socket,
+          available_institutions: institutions,
+          institutions_failed?: institutions == []
+        )
     end
   end
 
