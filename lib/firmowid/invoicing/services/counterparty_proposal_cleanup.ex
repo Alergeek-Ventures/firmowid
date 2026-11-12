@@ -96,17 +96,17 @@ defmodule Firmowid.Invoicing.Services.CounterpartyProposalCleanup do
     Zwracasz (pusty tekst, gdy pole nie dotyczy albo brak danych):
     - display_name: krótka nazwa, pod którą klient jest znany. Marka zamiast nazwy prawnej,
       bez formy prawnej, bez kraju, bez opisu działalności. Słowa wielką literą, resztę małymi,
-      nawet gdy dane są wersalikami; akronimy wielkimi (np. "PGE", "10 BPS"). Dla osoby
-      fizycznej: imię i nazwisko. Przykłady: "KOLOMOLO SPÓŁKA Z OGRANICZONĄ
-      ODPOWIEDZIALNOŚCIĄ" -> "Kolomolo"; "Apple Polska Sp. z o.o." -> "Apple";
-      "VIKINGCO POLAND SP. Z O.O." -> "VikingCo"; "Answergrid, Inc d/b/a Kenley" -> "Kenley".
+      nawet gdy dane są wersalikami; akronimy wielkimi (np. "PGE", "10 XYZ"). Dla osoby
+      fizycznej: imię i nazwisko. Przykłady: "PRZYKŁADEX SPÓŁKA Z OGRANICZONĄ
+      ODPOWIEDZIALNOŚCIĄ" -> "Przykładex"; "Apple Polska Sp. z o.o." -> "Apple";
+      "ACMECO POLAND SP. Z O.O." -> "AcmeCo"; "Samplegrid, Inc d/b/a Demobrand" -> "Demobrand".
     - full_name: pełna nazwa prawna firmy z formą prawną, z poprawioną wielkością liter
-      i skróconą formą prawną ("Kolomolo sp. z o.o.", "One Logistics sp. z o.o. sp.k.",
-      "10 BPS, Inc."). Dla osoby fizycznej pusty tekst.
+      i skróconą formą prawną ("Przykładex sp. z o.o.", "Demo Logistics sp. z o.o. sp.k.",
+      "10 XYZ, Inc."). Dla osoby fizycznej pusty tekst.
     - given_name, surname: tylko dla osoby fizycznej, wielką literą ("Jan", "Kowalski").
     - address: jedna linia "ulica numer, kod miasto", dla zagranicy na końcu ", kraj" po polsku.
-      Usuń podwójne przecinki i spacje, popraw wielkość liter ("GRZEGÓRZECKA 8/2, 31-530 KRAKÓW"
-      -> "Grzegórzecka 8/2, 31-530 Kraków"), dodaj "ul." tylko gdy było w danych. Gdy adres
+      Usuń podwójne przecinki i spacje, popraw wielkość liter ("ŁĄKOWA 12/3, 00-001 WARSZAWA"
+      -> "Łąkowa 12/3, 00-001 Warszawa"), dodaj "ul." tylko gdy było w danych. Gdy adres
       z faktury jest niepełny, a z Białej listy pełny dla tej samej firmy, użyj pełnego.
       Nie zgaduj brakującego miasta ani kodu.
 
