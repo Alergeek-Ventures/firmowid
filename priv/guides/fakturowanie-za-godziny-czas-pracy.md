@@ -32,7 +32,7 @@ Klient dostaje fakturę, a do niej łatwo wygenerować raport godzin z projektu.
 | inFakt | nie | tak | MCP we wszystkich planach |
 | Kadromierz, RCPonline | tak | nie | nie |
 
-MCP działa od planu [Przedsiębiorca](/cennik).
+MCP jest we wczesnym dostępie w płatnych planach, od planu [Przedsiębiorca](/cennik).
 
 ![Porównanie programów: Firmowid ma czas pracy w projektach, KSeF i fakturę przez asystenta AI po potwierdzeniu. Fakturownia ma KSeF i czas pracy w module Zadania, inFakt ma KSeF i MCP, ale nie czas pracy w projektach. Kadromierz i RCPonline mają czas pracy, ale nie KSeF.](/images/guides/faktura-za-godziny-czas-pracy-programy.webp)
 
