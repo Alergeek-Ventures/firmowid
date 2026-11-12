@@ -9,7 +9,7 @@ defmodule Firmowid.Analysis.EntityTag do
   A tag's `kind` is `:project` (requires a `TagDefinition`), `:company` (the built-in
   "firma" category), `:taxes`, or `:internal` (excluded from calculations). Per-table database
   triggers enforce mutually exclusive categories: one or more project tags,
-  company, taxes, or internal. `assignment_source` separates human examples from Jev assignments.
+  company, taxes, or internal. `assignment_source` separates human tags from automatic ones (`:jev`).
   """
   use Ash.Resource,
     domain: Firmowid.Analysis,
@@ -32,14 +32,11 @@ defmodule Firmowid.Analysis.EntityTag do
     define :set_entity_category
     define :set_entity_project_tags
     define :clear_entity_tags
-    define :clear_month
     define :tag_sales_invoice
     define :tag_cost_invoice
     define :tag_transaction
     define :create_classified
     define :list
-    define :classify_month
-    define :assign_month
     define :assign_if_unassigned
   end
 
@@ -68,18 +65,6 @@ defmodule Firmowid.Analysis.EntityTag do
           ids -> Ash.Query.filter(query, resource_id in ^ids)
         end
       end
-    end
-
-    action :classify_month, :struct do
-      description "Start background classification of unassigned entities for a month."
-      argument :month, :date, allow_nil?: false
-      run Firmowid.Analysis.Actions.ClassifyMonth
-    end
-
-    action :assign_month, :boolean do
-      description "Assign classification shares to unassigned entities for a month."
-      argument :month, :date, allow_nil?: false
-      run Firmowid.Analysis.Actions.AssignMonth
     end
 
     action :assign_if_unassigned, {:array, :struct} do
@@ -290,12 +275,6 @@ defmodule Firmowid.Analysis.EntityTag do
           end
         )
       end
-    end
-
-    action :clear_month do
-      description "Removes all tags from a month's analysis entries."
-      argument :month, :date, allow_nil?: false
-      run Firmowid.Analysis.Actions.ClearMonth
     end
   end
 
