@@ -88,7 +88,6 @@ defmodule Firmowid.Invoicing.SalesInvoice do
   alias Firmowid.Scope
   alias Firmowid.SystemActor
 
-  require Ash.Query
   require Firmowid.Invoicing.SalesInvoice.EffectiveFields, as: EffectiveFields
   require Resource
 
@@ -1039,20 +1038,12 @@ defmodule Firmowid.Invoicing.SalesInvoice do
 
       run fn input, context ->
         %{date: date, format: format} = input.arguments
-        series = input.arguments[:series]
-        omit_invoice_id = input.arguments[:omit_invoice_id]
-        opts = Ash.Context.to_opts(context)
 
-        starting_num =
-          format
-          |> read_invoice_numbers_matching(date, series, omit_invoice_id, opts)
-          |> Enum.map(&Numbering.parse_invoice_number/1)
-          |> Enum.filter(&match?({:ok, _}, &1))
-          |> Enum.map(fn {:ok, %{num: num}} -> num end)
-          |> Enum.max(fn -> 0 end)
-          |> Kernel.+(1)
-
-        {:ok, find_free_invoice_number(starting_num, format, date, series, omit_invoice_id, opts)}
+        {:ok,
+         context
+         |> Ash.Context.to_opts()
+         |> Numbering.read_all_invoice_numbers(input.arguments[:omit_invoice_id])
+         |> Numbering.next_number(format, date, input.arguments[:series])}
       end
     end
 
@@ -1063,64 +1054,18 @@ defmodule Firmowid.Invoicing.SalesInvoice do
       argument :omit_invoice_id, :uuid
 
       run fn input, context ->
-        invoice_number = input.arguments.invoice_number
-        issue_date = input.arguments.issue_date
+        %{invoice_number: invoice_number, issue_date: issue_date} = input.arguments
         omit_invoice_id = input.arguments[:omit_invoice_id]
         opts = Ash.Context.to_opts(context)
 
-        all_suggestions =
+        suggestions =
           issue_date
-          |> InvoicingDomain.get_next_numbers_for_series(opts,
-            omit_invoice_id: omit_invoice_id
-          )
+          |> InvoicingDomain.get_next_numbers_for_series(opts, omit_invoice_id: omit_invoice_id)
           |> Enum.sort()
           |> Enum.map(fn {_format_and_series, number} -> number end)
 
-        parsed = Numbering.parse_invoice_number(invoice_number)
-
-        # TODO: Refactor sequential `warnings` accumulation into a pipeline
-        # or a list of check functions to reduce mutable-style reassignments.
-        warnings = []
-
-        warnings =
-          if parsed == :error do
-            [{:invalid_format, all_suggestions} | warnings]
-          else
-            warnings
-          end
-
-        warnings =
-          if invoice_number_exists?(invoice_number, omit_invoice_id, opts) do
-            [{:duplicate, all_suggestions} | warnings]
-          else
-            warnings
-          end
-
-        warnings =
-          case parsed do
-            {:ok, %{num: current_num, format: parsed_format, series: parsed_series}} ->
-              {:ok, expected} =
-                __MODULE__.get_next_number(
-                  issue_date,
-                  parsed_series,
-                  omit_invoice_id,
-                  %{format: parsed_format},
-                  opts
-                )
-
-              case Numbering.parse_invoice_number(expected) do
-                {:ok, %{num: expected_num}} when current_num > expected_num ->
-                  [{:gap, expected} | warnings]
-
-                _ ->
-                  warnings
-              end
-
-            :error ->
-              warnings
-          end
-
-        {:ok, Enum.reverse(warnings)}
+        numbers = Numbering.read_all_invoice_numbers(opts, omit_invoice_id)
+        {:ok, Numbering.warnings(invoice_number, issue_date, numbers, suggestions)}
       end
     end
 
@@ -1670,60 +1615,5 @@ defmodule Firmowid.Invoicing.SalesInvoice do
     identity :invoice_number_per_org, [:invoice_number, :organization_id],
       nils_distinct?: true,
       message: gettext_noop("the invoice number already exists for this organization")
-  end
-
-  defp build_series_pattern(:monthly, date, nil), do: "^\\d+/#{Numbering.pad_two(date.month)}/#{date.year}$"
-
-  defp build_series_pattern(:monthly, date, series),
-    do: "^\\d+/#{Numbering.pad_two(date.month)}/#{date.year}/#{Regex.escape(series)}$"
-
-  defp build_series_pattern(:yearly, date, nil), do: "^\\d+/#{date.year}$"
-
-  defp build_series_pattern(:yearly, date, series), do: "^#{Regex.escape(series)}/\\d+/#{date.year}$"
-
-  defp find_free_invoice_number(num, format, date, series, omit_invoice_id, opts) do
-    invoice_number = Numbering.format_invoice_number(num, format, date, series)
-
-    if invoice_number_exists?(invoice_number, omit_invoice_id, opts) do
-      find_free_invoice_number(num + 1, format, date, series, omit_invoice_id, opts)
-    else
-      invoice_number
-    end
-  end
-
-  defp invoice_number_exists?(invoice_number, omit_invoice_id, opts) do
-    query = Ash.Query.filter(__MODULE__, invoice_number == ^invoice_number)
-
-    query =
-      if omit_invoice_id do
-        Ash.Query.filter(query, id != ^omit_invoice_id)
-      else
-        query
-      end
-
-    Ash.exists?(query, opts)
-  end
-
-  # Reads all invoice numbers of one numbering format and series in the date's period.
-  # Uses fragment("? ~ ?", ...) for Postgres regex — Ash has no native regex operator.
-  # Same escape hatch pattern as ParadeDB `&&&`.
-  defp read_invoice_numbers_matching(format, date, series, omit_invoice_id, opts) do
-    series_pattern = build_series_pattern(format, date, series)
-
-    query =
-      __MODULE__
-      |> Ash.Query.filter(not is_nil(invoice_number))
-      |> Ash.Query.filter(fragment("? ~ ?", invoice_number, ^series_pattern))
-
-    query =
-      if omit_invoice_id do
-        Ash.Query.filter(query, id != ^omit_invoice_id)
-      else
-        query
-      end
-
-    query
-    |> then(&__MODULE__.list!(Keyword.put(opts, :query, &1)))
-    |> Enum.map(& &1.invoice_number)
   end
 end
