@@ -11,43 +11,14 @@ defmodule Firmowid.Invoicing.SalesInvoice.EffectiveFields do
   """
 
   @effective_fields [
-    invoice_type: :atom,
     sale_date: :date,
     due_date: :date,
     payment_method: :atom,
-    currency: :string,
     seller_nip: :string,
     seller_display_name: :string,
     seller_address: :string,
-    seller_name: :string,
-    seller_surname: :string,
-    seller_account_number: :string,
-    buyer_type: :atom,
-    buyer_id: :string,
-    buyer_full_name: :string,
-    buyer_given_name: :string,
-    buyer_surname: :string,
-    buyer_pesel: :string,
-    buyer_display_name: :string,
-    buyer_address: :string,
-    buyer_country: :string,
-    buyer_is_different_mail_address: :boolean,
-    buyer_mail_address: :string,
-    buyer_mail_country: :string,
-    buyer_email: :string,
-    buyer_phone: :string,
-    buyer_description: :string,
-    should_send_emails: :boolean,
-    is_cash_account: :boolean,
-    is_reverse_charge: :boolean
+    buyer_pesel: :string
   ]
-
-  @doc """
-  Returns the list of `{field, type}` pairs used by the macro.
-
-  Useful for runtime iteration (e.g., copying effective values back to plain field names).
-  """
-  def fields, do: @effective_fields
 
   @doc false
   defmacro effective_correction_calculations do

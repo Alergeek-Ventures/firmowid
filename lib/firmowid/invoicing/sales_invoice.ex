@@ -1366,10 +1366,6 @@ defmodule Firmowid.Invoicing.SalesInvoice do
                 end
               )
 
-    calculate :effective_items,
-              {:array, :struct},
-              Firmowid.Invoicing.Calculations.EffectiveItems
-
     calculate :effective_snapshot,
               :struct,
               Firmowid.Invoicing.Calculations.EffectiveSnapshot do
@@ -1390,7 +1386,6 @@ defmodule Firmowid.Invoicing.SalesInvoice do
     # Boolean status calculations — DB-pushable, filterable, sortable
     calculate :is_draft, :boolean, expr(is_nil(invoice_number))
     calculate :is_confirmed, :boolean, expr(not is_nil(invoice_number))
-    calculate :is_ksef_submitted, :boolean, expr(not is_nil(ksef_number))
 
     calculate :ksef_submission_status,
               :atom,
