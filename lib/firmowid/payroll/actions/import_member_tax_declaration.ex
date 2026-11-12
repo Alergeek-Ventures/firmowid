@@ -7,30 +7,7 @@ defmodule Firmowid.Payroll.Actions.ImportMemberTaxDeclaration do
   alias Firmowid.Payroll.MemberTaxDeclaration
   alias Firmowid.Scope
 
-  @declaration_fields [
-    :received_on,
-    :tax_residency,
-    :pit2,
-    :employee_costs,
-    :youth_relief,
-    :pit0,
-    :tax_mode,
-    :request_year,
-    :preferential,
-    :student,
-    :student_until,
-    :other_employment,
-    :own_employer,
-    :sickness,
-    :copyright_costs,
-    :ppk,
-    :ppk_employee_rate,
-    :applies_from
-  ]
-
   @date_fields [:received_on, :applies_from, :student_until]
-  @import_fields [:member_id, :source_blob_id | @declaration_fields]
-  @string_fields Map.new(@import_fields, &{Atom.to_string(&1), &1})
 
   @impl true
   def run(input, _opts, context) do
@@ -45,14 +22,14 @@ defmodule Firmowid.Payroll.Actions.ImportMemberTaxDeclaration do
   end
 
   defp normalize_attrs(attrs_map) do
+    fields = Map.new(accepted_fields(:import_create), &{Atom.to_string(&1), &1})
+
     attrs =
-      Enum.reduce(attrs_map, %{}, fn {key, value}, attrs ->
-        case declaration_field(key) do
-          nil -> attrs
-          _field when is_nil(value) -> attrs
-          field -> Map.put(attrs, field, value)
-        end
-      end)
+      for {key, value} <- attrs_map,
+          field = fields[to_string(key)],
+          not is_nil(field) and not is_nil(value),
+          into: %{},
+          do: {field, value}
 
     Enum.reduce_while(@date_fields, {:ok, attrs}, fn field, {:ok, attrs} ->
       case Map.fetch(attrs, field) do
@@ -67,10 +44,6 @@ defmodule Firmowid.Payroll.Actions.ImportMemberTaxDeclaration do
       end
     end)
   end
-
-  defp declaration_field(field) when field in @import_fields, do: field
-  defp declaration_field(field) when is_binary(field), do: Map.get(@string_fields, field)
-  defp declaration_field(_), do: nil
 
   defp parse_date(%Date{} = date), do: {:ok, date}
 
@@ -185,9 +158,12 @@ defmodule Firmowid.Payroll.Actions.ImportMemberTaxDeclaration do
   end
 
   defp declaration_values(declaration) do
-    @declaration_fields
+    :correct
+    |> accepted_fields()
     |> Map.new(fn field -> {field, Map.get(declaration, field)} end)
     |> Enum.reject(fn {_field, value} -> is_nil(value) end)
     |> Map.new()
   end
+
+  defp accepted_fields(action), do: Ash.Resource.Info.action(MemberTaxDeclaration, action).accept
 end
