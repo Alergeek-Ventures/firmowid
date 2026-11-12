@@ -17,6 +17,12 @@ defmodule FirmowidWeb.BankSync.Views.CreateTest do
   alias Firmowid.Finances
   alias Firmowid.Finances.Requisition
 
+  # The bank list is cached, and tests stub different lists.
+  setup do
+    Cachex.clear!(:institutions)
+    :ok
+  end
+
   describe "handle_params with ref" do
     setup %{conn: conn} do
       user = Firmowid.AccountsFixtures.admin_fixture()
@@ -154,6 +160,32 @@ defmodule FirmowidWeb.BankSync.Views.CreateTest do
   end
 
   describe "mount" do
+    test "asks GoCardless for the bank list once", %{conn: conn} do
+      list_calls = :counters.new(1, [])
+
+      Req.Test.stub(:bank_data_institutions, fn conn ->
+        :counters.add(list_calls, 1, 1)
+
+        Req.Test.json(conn, [
+          %{
+            id: "N26",
+            name: "N26 Bank",
+            logo: "https://example.test/n26.svg",
+            transaction_total_days: 90
+          }
+        ])
+      end)
+
+      conn = log_in_user(conn, Firmowid.AccountsFixtures.admin_fixture())
+
+      {:ok, first_view, _html} = live(conn, ~p"/ustawienia/bank/dodaj")
+      {:ok, second_view, _html} = live(conn, ~p"/ustawienia/bank/dodaj")
+
+      assert has_element?(first_view, "#institution-N26")
+      assert has_element?(second_view, "#institution-N26")
+      assert :counters.get(list_calls, 1) == 1
+    end
+
     test "shows the page without banks when GoCardless cannot list them", %{conn: conn} do
       Req.Test.stub(:bank_data_institutions, &Plug.Conn.send_resp(&1, 500, ""))
 
