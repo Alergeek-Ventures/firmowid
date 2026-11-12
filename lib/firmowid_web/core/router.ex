@@ -20,7 +20,6 @@ defmodule FirmowidWeb.Core.Router do
   alias FirmowidWeb.Infrastructure.Hooks.FeatureFlags
   alias FirmowidWeb.Infrastructure.Hooks.Locale
   alias FirmowidWeb.Infrastructure.Hooks.RedirectAuthenticated
-  alias FirmowidWeb.Infrastructure.Hooks.RequireAdmin
   alias FirmowidWeb.Infrastructure.Hooks.RequireOrganization
   alias FirmowidWeb.Infrastructure.Hooks.RequireSuperuser
   alias FirmowidWeb.Infrastructure.Hooks.RequireUser
@@ -310,25 +309,7 @@ defmodule FirmowidWeb.Core.Router do
       live "/delegacje/:reference/edycja", DelegationForm, :edit
       live "/delegacje/:reference", Delegations.Views.Delegation, :show
 
-      if Mix.env() == :dev do
-        live "/development", Development.Views.Index, :index
-        live "/development/design-system", Development.Views.DesignSystem, :index
-        live "/development/skrzynka", Development.Views.InboxScenarios, :index
-      end
-    end
-
-    ash_authentication_live_session :with_org_management,
-      on_mount: [
-        Locale,
-        {RequireOrganization, :default},
-        {RequireAdmin, :default},
-        {FeatureFlags, :default},
-        {RequireOrganization, :first_steps},
-        {RequireOrganization, :plan_limit},
-        {CurrentPath, :save_request_uri},
-        Timezone,
-        {LiveQueue, :default}
-      ] do
+      # Admin-only pages require the admin themselves (see RequireAdmin).
       live "/pierwsze-kroki", Organization.Views.FirstSteps, :index
       live "/limit-planu", Billing.Views.PlanLimit, :index
       live "/ustawienia/bank/dodaj", BankSync.Views.Create, :index
@@ -359,6 +340,12 @@ defmodule FirmowidWeb.Core.Router do
       live "/zarzadzanie/projekty/dodaj", ProjectForm, :new
       live "/zarzadzanie/projekty/:id", Management.Views.Project, :show
       live "/zarzadzanie/projekty/:id/edycja", ProjectForm, :edit
+
+      if Mix.env() == :dev do
+        live "/development", Development.Views.Index, :index
+        live "/development/design-system", Development.Views.DesignSystem, :index
+        live "/development/skrzynka", Development.Views.InboxScenarios, :index
+      end
     end
   end
 

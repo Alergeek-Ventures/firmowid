@@ -24,6 +24,8 @@ defmodule FirmowidWeb.Management.Views.Employee do
   alias FirmowidWeb.Management.Utilities.Navigation
   alias Phoenix.Socket.Broadcast
 
+  on_mount {FirmowidWeb.Infrastructure.Hooks.RequireAdmin, :default}
+
   @employee_load [
     member: [:display_name, :projects, :delegations, :shared_birthday, avatar_blob: [:url]]
   ]

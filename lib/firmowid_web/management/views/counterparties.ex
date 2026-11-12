@@ -15,6 +15,8 @@ defmodule FirmowidWeb.Management.Views.Counterparties do
   alias FirmowidWeb.Management.Utilities.CounterpartyHelpers
   alias FirmowidWeb.Management.Utilities.Navigation
 
+  on_mount {FirmowidWeb.Infrastructure.Hooks.RequireAdmin, :default}
+
   @impl true
   def mount(_params, _session, socket) do
     scope = socket.assigns.ash_scope

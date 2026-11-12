@@ -28,6 +28,8 @@ defmodule FirmowidWeb.Management.Views.Employees do
   alias FirmowidWeb.Timetracker.Utilities.Navigation, as: TimetrackerNavigation
   alias Phoenix.Socket.Broadcast
 
+  on_mount {FirmowidWeb.Infrastructure.Hooks.RequireAdmin, :default}
+
   @invite_load [issued_by: [:email]]
 
   @impl true

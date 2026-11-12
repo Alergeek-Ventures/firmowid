@@ -19,6 +19,8 @@ defmodule FirmowidWeb.Management.Views.CounterpartySuggestions do
   alias FirmowidWeb.Management.Utilities.CounterpartyHelpers
   alias FirmowidWeb.Management.Utilities.Navigation
 
+  on_mount {FirmowidWeb.Infrastructure.Hooks.RequireAdmin, :default}
+
   @editable ~w(display_name full_name given_name surname tax_id address email)
 
   @impl true

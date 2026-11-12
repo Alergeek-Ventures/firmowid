@@ -21,6 +21,8 @@ defmodule FirmowidWeb.Management.Views.Counterparty do
   alias FirmowidWeb.Management.Utilities.Navigation
   alias Phoenix.Socket.Broadcast
 
+  on_mount {FirmowidWeb.Infrastructure.Hooks.RequireAdmin, :default}
+
   @impl true
   def mount(%{"id" => id}, _session, socket) do
     # VatIdCheckWorker checks a saved number right away; show its result when it lands.

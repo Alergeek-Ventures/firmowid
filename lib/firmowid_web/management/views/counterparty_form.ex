@@ -19,6 +19,8 @@ defmodule FirmowidWeb.Management.Views.CounterpartyForm do
   alias FirmowidWeb.Invoicing.Utilities.Navigation, as: InvoicingNavigation
   alias FirmowidWeb.Management.Utilities.Navigation
 
+  on_mount {FirmowidWeb.Infrastructure.Hooks.RequireAdmin, :default}
+
   @impl true
   def mount(params, _session, %{assigns: %{live_action: :new}} = socket) do
     scope = socket.assigns.ash_scope

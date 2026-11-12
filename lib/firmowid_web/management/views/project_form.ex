@@ -11,6 +11,8 @@ defmodule FirmowidWeb.Management.Views.ProjectForm do
   alias Firmowid.Timetracker
   alias Firmowid.Timetracker.Project
 
+  on_mount {FirmowidWeb.Infrastructure.Hooks.RequireAdmin, :default}
+
   @impl true
   def mount(_params, _session, %{assigns: %{live_action: :new}} = socket) do
     scope = socket.assigns.ash_scope

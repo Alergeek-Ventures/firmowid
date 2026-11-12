@@ -21,6 +21,8 @@ defmodule FirmowidWeb.Management.Views.Project do
   alias FirmowidWeb.Management.Utilities.Navigation
   alias FirmowidWeb.Timetracker.Utilities.Navigation, as: TimetrackerNavigation
 
+  on_mount {FirmowidWeb.Infrastructure.Hooks.RequireAdmin, :default}
+
   @impl true
   def handle_params(%{"id" => project_id} = params, _url, socket) do
     scope = socket.assigns.ash_scope

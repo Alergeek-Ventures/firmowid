@@ -20,6 +20,8 @@ defmodule FirmowidWeb.Billing.Views.PlanLimit do
   alias FirmowidWeb.Billing.Utilities.Worksheet
   alias FirmowidWeb.Infrastructure.UserAuth
 
+  on_mount {FirmowidWeb.Infrastructure.Hooks.RequireAdmin, :default}
+
   @impl true
   def render(assigns) do
     ~H"""
