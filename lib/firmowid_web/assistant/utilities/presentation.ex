@@ -42,6 +42,30 @@ defmodule FirmowidWeb.Assistant.Utilities.Presentation do
 
   def suggestions(%{type: type}) when type in ["employee", "project"], do: []
 
+  def suggestions(%{type: "analysis", view: "summary"}) do
+    [
+      {"largest_costs", gettext("What takes the most of my money?")},
+      {"cut_costs", gettext("Where could I spend less?")},
+      {"unusual_costs", gettext("Which costs differ from the usual?")}
+    ]
+  end
+
+  def suggestions(%{type: "analysis", view: "trends"}) do
+    [
+      {"weakest_month", gettext("Which month was the weakest and why?")},
+      {"direction", gettext("Is my result getting better month by month?")},
+      {"recent_change", gettext("What changed in the last three months?")}
+    ]
+  end
+
+  def suggestions(%{type: "analysis", view: "projects"}) do
+    [
+      {"best_project", gettext("Which project earns the most for an hour of work?")},
+      {"losing_projects", gettext("Which projects lose money and why?")},
+      {"shared_costs", gettext("How do shared costs change the projects' results?")}
+    ]
+  end
+
   # Fixed scenarios the current tools answer.
   def suggestions(nil) do
     for tile <- tiles(), do: {tile.key, tile.question}
@@ -261,6 +285,10 @@ defmodule FirmowidWeb.Assistant.Utilities.Presentation do
 
   @doc "Loads the selected conversation subject with the current user's permissions."
   @spec subject(map(), Scope.t()) :: map() | nil
+  def subject(%{subject: %{"type" => "analysis"} = subject}, _scope) do
+    %{type: "analysis", view: subject["view"], analysis: subject}
+  end
+
   def subject(%{subject: subject}, scope) when not is_nil(subject) do
     %{type: subject["type"], record: subject_record(subject, scope)}
   end

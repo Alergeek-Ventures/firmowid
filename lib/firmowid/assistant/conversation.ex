@@ -10,6 +10,7 @@ defmodule Firmowid.Assistant.Conversation do
   alias Firmowid.Assistant
   alias Firmowid.Assistant.Changes.AppendMessage
   alias Firmowid.Assistant.Changes.RecordApproval
+  alias Firmowid.Assistant.Changes.SetAnalysisSubject
   alias Firmowid.Assistant.Changes.SetSubject
   alias Firmowid.Assistant.Transcript
   alias Firmowid.Checks.AtLeastRole
@@ -125,6 +126,23 @@ defmodule Firmowid.Assistant.Conversation do
       change SetSubject, only_when_valid?: true
     end
 
+    create :for_analysis do
+      description "Starts an idle conversation about an analysis view, awaiting the user's question."
+      accept []
+
+      argument :view, :atom,
+        allow_nil?: false,
+        constraints: [one_of: [:summary, :trends, :projects]]
+
+      argument :from, :date, allow_nil?: false
+      argument :to, :date, allow_nil?: false
+      argument :month, :date
+      argument :project_id, :uuid
+      argument :title, :string, allow_nil?: false, constraints: [max_length: 200]
+      change relate_actor(:user)
+      change SetAnalysisSubject, only_when_valid?: true
+    end
+
     update :send_message do
       description "Appends a user turn and enqueues its durable response at the rendered revision."
       primary? true
@@ -237,15 +255,27 @@ defmodule Firmowid.Assistant.Conversation do
       authorize_if AshOban.Checks.AshObanInteraction
     end
 
-    policy action([:start, :for_subject]) do
+    policy action([:start, :for_subject, :for_analysis]) do
       authorize_if relating_to_actor(:user)
+    end
+
+    # The analysis figures come from the year summaries, which members from invoicing up read.
+    policy action(:for_analysis) do
+      authorize_if {AtLeastRole, role: :invoicing}
     end
 
     policy action([:read, :list, :send_message, :respond_to_plan]) do
       authorize_if relates_to_actor_via(:user)
     end
 
-    policy action([:start, :for_subject, :read, :list, :send_message, :respond_to_plan]) do
+    policy action([
+             :start,
+             :for_subject,
+             :read,
+             :list,
+             :send_message,
+             :respond_to_plan
+           ]) do
       authorize_if {AtLeastRole, role: :employee}
     end
   end

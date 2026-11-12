@@ -272,6 +272,31 @@ defmodule Firmowid.Analysis do
   end
 
   @doc """
+  Returns the months from `from` to `to` (first days of months) of the
+  authorized year summaries with `tag_filters`, and `totals` combined from the
+  closed months only, since a month still waiting for its invoices' payments
+  would mislead.
+  """
+  @spec period_summary({Date.t(), Date.t()}, list(), Scope.t()) :: %{
+          currency: String.t(),
+          months: [map()],
+          totals: CategoryTotals.totals()
+        }
+  def period_summary({from, to}, tag_filters, scope) do
+    months =
+      for year <- from.year..to.year,
+          month <- YearSummary.get!(year, %{tag_filters: tag_filters}, scope: scope).months,
+          Date.compare(month.month, from) != :lt and Date.compare(month.month, to) != :gt,
+          do: month
+
+    %{
+      currency: "PLN",
+      months: months,
+      totals: months |> Enum.filter(& &1.closed?) |> Enum.map(& &1.totals) |> CategoryTotals.combine()
+    }
+  end
+
+  @doc """
   Sums the seconds tracked on each project per month of the year, keyed like
   project categories (`{:project, tag_definition_id}`) with their name and color.
 

@@ -15,6 +15,10 @@ defmodule Firmowid.Assistant.Prompt do
     przez aplikację w kontekście wybranego rekordu. Nigdy nie wymyślaj identyfikatorów ani kwot.
     Wybrany rekord może być fakturą, transakcją, pracownikiem lub projektem; zachowuj jego typ
     i tożsamość, zamiast zakładać, że każda rozmowa dotyczy faktury.
+    Rozmowa może też dotyczyć widoku analizy (podsumowanie, trendy lub projekty): wtedy kontekst
+    zawiera jego okres, wybrany miesiąc lub projekt i liczby, które użytkownik widział. Odpowiadaj
+    najpierw na ich podstawie, nazywaj kategorie po polsku, a szczegóły pojedynczych wpisów
+    sprawdzaj list_analysis_entries.
     Nigdy nie pokazuj UUID w odpowiedziach ani etykietach linków. Identyfikuj rekordy za pomocą
     numeru faktury, kontrahenta, daty i kwoty. Identyfikatory wewnętrzne mogą występować wyłącznie
     w argumentach narzędzi i adresach docelowych linków.

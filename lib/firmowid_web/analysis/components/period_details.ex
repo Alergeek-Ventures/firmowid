@@ -1,7 +1,7 @@
 defmodule FirmowidWeb.Analysis.Components.PeriodDetails do
   @moduledoc """
   The selected period of the analysis (a month, several months or the year):
-  its result, what is left of every 100 zł of income as a strip of the largest
+  what is left of every 100 zł of income as a strip of the largest
   costs (and the same for the last three months of a longer period), then
   costs and income by template category with their counterparties, monthly
   trend and amount out of every 100 zł of income. A single month compares each category
@@ -24,11 +24,23 @@ defmodule FirmowidWeb.Analysis.Components.PeriodDetails do
   @notable_change Decimal.new("0.1")
   @material_share Decimal.new("0.02")
 
-  attr :title, :string, required: true
+  attr :title, :string, required: true, doc: "the months the summary covers"
+
+  attr :title_shown, :boolean,
+    default: true,
+    doc: "whether the title is shown; otherwise it keeps its place, so the page does not jump"
+
+  attr :whole_period, :string,
+    default: nil,
+    doc: "path of the whole period's summary, shown as a link when the title names one of its months"
 
   attr :months, :list,
     required: true,
     doc: "the period's months of the `YearSummary.get/3` result"
+
+  attr :previous, :map,
+    default: nil,
+    doc: "the period compared with, as `%{period, income, result, groups}` with its `CategoryReview.period/3` groups"
 
   attr :groups, :list,
     required: true,
@@ -42,7 +54,7 @@ defmodule FirmowidWeb.Analysis.Components.PeriodDetails do
     default: false,
     doc: "whether the member may confirm counterparty categories"
 
-  @doc "Renders the period's result and its costs and income by category."
+  @doc "Renders what is left of the period's income and its costs and income by category."
   @spec details(map()) :: Phoenix.LiveView.Rendered.t()
   def details(assigns) do
     %{months: months, groups: groups} = assigns
@@ -52,14 +64,6 @@ defmodule FirmowidWeb.Analysis.Components.PeriodDetails do
 
     assigns =
       assign(assigns,
-        result: result,
-        margin:
-          if(Decimal.positive?(income),
-            do:
-              result
-              |> Decimal.div(income)
-              |> Number.to_string!(format: :percent, fractional_digits: 1)
-          ),
         expenses:
           column(
             groups,
@@ -81,7 +85,14 @@ defmodule FirmowidWeb.Analysis.Components.PeriodDetails do
         expenses: %{assigns.expenses | categories: costs},
         income: %{assigns.income | categories: incomes},
         story: story(costs, kept, income),
-        recent: recent(assigns.expenses.categories, months)
+        comparisons:
+          Enum.reject(
+            [
+              previous(assigns.expenses.categories, assigns.previous),
+              recent(assigns.expenses.categories, months)
+            ],
+            &is_nil/1
+          )
       )
 
     ~H"""
@@ -90,21 +101,25 @@ defmodule FirmowidWeb.Analysis.Components.PeriodDetails do
       aria-labelledby="analysis-period-title"
       class="@container flex flex-col gap-10"
     >
-      <header class="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2">
-        <h2 id="analysis-period-title" class="text-2xl font-semibold text-grey-900">{@title}</h2>
-        <div :if={@months != []} class="flex flex-col gap-0.5">
-          <p id="analysis-period-result" class={result_styles(@result)}>
-            {gettext("Result %{amount}", amount: whole_money(@result))}
-          </p>
-          <p :if={@margin} class="text-sm text-grey-700 tabular-nums">
-            {gettext("Margin %{margin}", margin: @margin)}
-          </p>
-        </div>
+      <header class={[
+        "-mb-6 flex flex-wrap items-baseline gap-x-4 gap-y-1",
+        !@title_shown && "invisible"
+      ]}>
+        <h2 id="analysis-period-title" class="text-sm font-medium text-grey-700">{@title}</h2>
+        <FirmowidUI.Components.Link.link
+          :if={@whole_period}
+          kind="unstyled"
+          id="analysis-whole-period"
+          patch={@whole_period}
+          class="text-sm text-grey-700 underline active:text-grey-900"
+        >
+          {gettext("Show the whole period")}
+        </FirmowidUI.Components.Link.link>
       </header>
       <p :if={@months == []} id="analysis-period-open" class="text-sm text-grey-700">
         {gettext("No month of this period is closed yet.")}
       </p>
-      <.story :if={@story} story={@story} recent={@recent} />
+      <.story :if={@story} story={@story} comparisons={@comparisons} />
       <div
         :if={@months != []}
         class="grid grid-cols-[minmax(0,1fr)] gap-x-16 gap-y-12 @5xl:grid-cols-2"
@@ -129,24 +144,31 @@ defmodule FirmowidWeb.Analysis.Components.PeriodDetails do
   end
 
   attr :story, :map, required: true
-  attr :recent, :map, default: nil
+  attr :comparisons, :list, required: true
 
-  # One sentence and one strip: where every 100 zł of income went and what stayed.
+  # One sentence and one strip: where every 100 zł of income went and what stayed. The amount
+  # takes the colour of what stayed in the strip, or of a loss.
   defp story(assigns) do
+    {sentence, amount, tone} =
+      if assigns.story.kept,
+        do:
+          {gettext("Of every %{hundred} of income, %{amount} stayed.",
+             hundred: whole_money(100),
+             amount: "__AMOUNT__"
+           ), assigns.story.kept, "bg-teal-600 text-white"},
+        else:
+          {gettext("For every %{hundred} of income, %{amount} went out.",
+             hundred: whole_money(100),
+             amount: "__AMOUNT__"
+           ), assigns.story.spent, "bg-brick-700 text-white"}
+
+    [before, rest] = String.split(sentence, "__AMOUNT__", parts: 2)
+    assigns = assign(assigns, before: before, amount: whole_money(amount), rest: rest, tone: tone)
+
     ~H"""
     <div id="analysis-period-story" class="flex flex-col gap-6">
       <p class="max-w-[22ch] text-2xl/tight font-semibold text-balance text-grey-900 @xl:text-3xl/tight">
-        {if @story.kept,
-          do:
-            gettext("Of every %{hundred} of income, %{amount} stayed.",
-              hundred: whole_money(100),
-              amount: whole_money(@story.kept)
-            ),
-          else:
-            gettext("For every %{hundred} of income, %{amount} went out.",
-              hundred: whole_money(100),
-              amount: whole_money(@story.spent)
-            )}
+        {@before}<span class={["rounded-md box-decoration-clone px-1.5 whitespace-nowrap", @tone]}>{@amount}</span>{@rest}
       </p>
       <div class="flex flex-col gap-3">
         <.strip segments={@story.segments} class="h-12 rounded-lg @2xl:h-14" />
@@ -170,18 +192,22 @@ defmodule FirmowidWeb.Analysis.Components.PeriodDetails do
           </li>
         </ul>
       </div>
-      <div :if={@recent} class="flex items-center gap-3 text-xs text-grey-700">
-        <span class="shrink-0 font-medium">{@recent.label}</span>
-        <.strip segments={@recent.segments} class="h-2 grow rounded-xs" />
-        <span :if={@recent.kept} class="shrink-0 font-medium text-teal-700 tabular-nums">
-          {gettext("%{amount} stayed", amount: whole_money(@recent.kept))}
-        </span>
-        <span
-          :if={!@recent.kept and @recent.spent > 100}
-          class="shrink-0 font-medium text-brick-700 tabular-nums"
-        >
-          {gettext("loss %{amount}", amount: whole_money(@recent.spent - 100))}
-        </span>
+      <div
+        :if={@comparisons != []}
+        class="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-3 gap-y-2 text-xs text-grey-700"
+      >
+        <%= for comparison <- @comparisons do %>
+          <span class="font-medium" title={comparison.months}>{comparison.label}</span>
+          <.strip segments={comparison.segments} class="h-2 rounded-xs" />
+          <span class="font-medium tabular-nums">
+            <span :if={comparison.kept} class="text-teal-700">
+              {gettext("%{amount} stayed", amount: whole_money(comparison.kept))}
+            </span>
+            <span :if={!comparison.kept and comparison.spent > 100} class="text-brick-700">
+              {gettext("loss %{amount}", amount: whole_money(comparison.spent - 100))}
+            </span>
+          </span>
+        <% end %>
       </div>
     </div>
     """
@@ -204,7 +230,16 @@ defmodule FirmowidWeb.Analysis.Components.PeriodDetails do
   end
 
   attr :id, :string, required: true
-  attr :title, :string, required: true
+  attr :title, :string, required: true, doc: "the months the summary covers"
+
+  attr :title_shown, :boolean,
+    default: true,
+    doc: "whether the title is shown; otherwise it keeps its place, so the page does not jump"
+
+  attr :whole_period, :string,
+    default: nil,
+    doc: "path of the whole period's summary, shown as a link when the title names one of its months"
+
   attr :column, :map, required: true
   attr :industry, :atom, required: true
   attr :can_edit, :boolean, required: true
@@ -628,13 +663,45 @@ defmodule FirmowidWeb.Analysis.Components.PeriodDetails do
   defp segment(key, label, amount, per_100, tone),
     do: %{key: key, label: label, per_100: per_100, share: Decimal.to_float(amount), tone: tone}
 
+  # The period compared with, a month before or the same months a year earlier, in the
+  # period's order and colours; its categories the period lacks join the rest.
+  defp previous(_categories, nil), do: nil
+
+  defp previous(categories, previous) do
+    amounts =
+      for {key, groups} <-
+            previous.groups
+            |> Enum.filter(&(&1.side == :expenses))
+            |> Enum.group_by(&(&1.category || &1.suggestion)),
+          into: %{},
+          do: {key, sum(groups, & &1.amount)}
+
+    keys = MapSet.new(categories, & &1.key)
+
+    costs =
+      Enum.map(categories, &%{&1 | amount: Map.get(amounts, &1.key, Decimal.new(0))}) ++
+        for {key, amount} <- amounts,
+            key not in keys,
+            Decimal.positive?(amount),
+            do: %{key: key, amount: amount, tone: {:expenses, @categories_at_once}}
+
+    {label, months} =
+      case previous.period do
+        {month, month} ->
+          {gettext("Previous mo."), "#{month_name(month)} #{month.year}"}
+
+        {from, to} ->
+          {gettext("Year before"), gettext("%{from} – %{to}", from: month_name(from), to: "#{month_name(to)} #{to.year}")}
+      end
+
+    comparison(label, months, costs, previous.income, previous.result)
+  end
+
   # A longer period also shows its last three months, the company's latest shape, in the
   # period's order and colours so each part matches its row.
   defp recent(categories, [_, _, _, _ | _] = months) do
     recent = Enum.take(months, -3)
     dates = Enum.map(recent, & &1.month)
-    income = sum(recent, & &1.totals.total_income)
-    result = sum(recent, & &1.totals.net_profit)
 
     costs =
       Enum.map(categories, fn category ->
@@ -644,15 +711,28 @@ defmodule FirmowidWeb.Analysis.Components.PeriodDetails do
         }
       end)
 
+    comparison(
+      gettext("Last 3 mo."),
+      gettext("%{from} – %{to}",
+        from: month_name(List.first(dates)),
+        to: month_name(List.last(dates))
+      ),
+      costs,
+      sum(recent, & &1.totals.total_income),
+      sum(recent, & &1.totals.net_profit)
+    )
+  end
+
+  defp recent(_categories, _months), do: nil
+
+  # A thin strip of where every 100 zł of another period's income went; `months` names them.
+  defp comparison(label, months, costs, income, result) do
     with true <- Decimal.positive?(income),
          {costs, kept} = per_100_of(costs, income, result),
          %{} = story <- story(costs, kept, income) do
       %{
-        label:
-          gettext("%{from} – %{to}",
-            from: month_name(List.first(dates)),
-            to: month_name(List.last(dates))
-          ),
+        label: label,
+        months: months,
         segments: story.segments,
         kept: story.kept,
         spent: story.spent
@@ -661,8 +741,6 @@ defmodule FirmowidWeb.Analysis.Components.PeriodDetails do
       _nothing -> nil
     end
   end
-
-  defp recent(_categories, _months), do: nil
 
   # Gives each category its whole złoty out of every 100 of income, and returns what stayed
   # the same way. While something stays, costs and result add up to exactly 100, so the
@@ -761,12 +839,6 @@ defmodule FirmowidWeb.Analysis.Components.PeriodDetails do
 
   defp name_styles(:confirmed), do: "min-w-0 truncate text-grey-900"
   defp name_styles(_status), do: "min-w-0 truncate text-grey-700"
-
-  defp result_styles(amount) do
-    if Decimal.negative?(amount),
-      do: "text-2xl font-semibold text-brick-700 tabular-nums",
-      else: "text-2xl font-semibold text-grey-900 tabular-nums"
-  end
 
   defp sum(rows, fun), do: Enum.reduce(rows, Decimal.new(0), &Decimal.add(fun.(&1), &2))
 

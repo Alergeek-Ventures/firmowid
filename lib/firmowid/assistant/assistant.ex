@@ -6,6 +6,7 @@ defmodule Firmowid.Assistant do
     resource Firmowid.Assistant.Conversation do
       define :start_conversation, action: :start
       define :start_subject_conversation, action: :for_subject
+      define :start_analysis_conversation, action: :for_analysis
       define :get_conversation, action: :read, get_by: [:id]
       define :list_conversations, action: :list
       define :send_message, action: :send_message
