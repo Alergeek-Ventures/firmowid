@@ -203,7 +203,12 @@ defmodule FirmowidWeb.Analysis.Components.CategorySelector do
           </div>
         </.popover>
       <% else %>
-        <.badges tags={@tags} colors={@colors} limit={@limit} />
+        <%!-- Spaced like the editable trigger, with the chevron's room kept, so read-only
+             badges line up with editable ones in the same column. --%>
+        <div class="flex min-h-9 w-full items-center justify-end gap-2 px-2 py-1">
+          <.badges tags={@tags} colors={@colors} limit={@limit} />
+          <span class="size-4 shrink-0" aria-hidden="true"></span>
+        </div>
       <% end %>
       <script :type={Phoenix.LiveView.ColocatedHook} name=".CategoryCombobox">
         export default {

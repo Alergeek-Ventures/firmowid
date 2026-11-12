@@ -162,13 +162,20 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
     ~H"""
     <div class={
       [
-        "sticky top-navbar z-10 flex justify-between bg-grey-100 py-4 max-md:static max-md:z-auto max-md:flex-col max-md:gap-3",
+        # from md the action labels show as the bar has room for them, which also
+        # depends on the sidebar: issuing an invoice keeps its label longest, then the
+        # invoice from outside KSeF, then the download; on phones the actions float and
+        # keep their labels
+        "sticky top-navbar z-10 flex justify-between bg-grey-100 py-4 max-md:static max-md:z-auto max-md:flex-col max-md:gap-3 md:@container md:gap-4",
         # above the bar as much room as between it and the column headings below it, the same
         # before and while scrolling: the bar starts at the top of the page, as it sticks there
         @all_months? && "md:-mt-4 md:pt-11 md:pb-3"
       ]
     }>
-      <div class="flex items-center gap-4 max-md:gap-3">
+      <div class={[
+        "flex items-center",
+        if(@all_months?, do: "gap-3 max-md:flex-wrap", else: "gap-4 max-md:gap-3")
+      ]}>
         <%!-- On the list of every month the label is the month scrolled to, set in the browser;
              the server renders the first one and leaves the input alone afterwards. --%>
         <.month_picker
@@ -179,7 +186,7 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
           value={@all_months? && EntriesTable.month_label(@params.month)}
           widest_value={@all_months? && widest_month_label(@params.month)}
           phx-update={@all_months? && "ignore"}
-          class="max-md:h-12 max-md:flex-1"
+          class="max-md:h-12 max-md:flex-1 md:[&>svg]:size-5!"
         />
 
         <.button
@@ -196,23 +203,29 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
         >
           <Lucideicons.search />
         </.button>
-      </div>
 
-      <%!-- On the list of every month, the picker scrolls to the month and the filters take the search's place, centred in the bar. --%>
-      <FirmowidWeb.Invoicing.Components.FilterBar.inbox_filters :if={@all_months?} params={@params} />
+        <%!-- On the list of every month, the picker scrolls to the month and the filters take the search's place beside it. --%>
+        <FirmowidWeb.Invoicing.Components.FilterBar.inbox_filters :if={@all_months?} params={@params} />
+      </div>
 
       <div
         phx-drop-target={can_write_invoicing?(@current_user) && @uploads.file.ref}
-        class="flex flex-row gap-4 max-md:contents"
+        class="flex flex-row gap-2 max-md:contents @min-[66.5rem]:gap-3"
       >
         <%= if @invoicing_entries != [] do %>
           <.live_component
             id="download-component"
             module={FirmowidWeb.Invoicing.Components.DownloadModal}
             month={(@all_months? && @visible_month) || @params.month}
+            icon_only
           />
         <% end %>
-        <.page_actions :if={can_write_invoicing?(@current_user)} label={gettext("Add invoice")}>
+        <%!-- The bar's actions sit closer together than page actions elsewhere. --%>
+        <.page_actions
+          :if={can_write_invoicing?(@current_user)}
+          label={gettext("Add invoice")}
+          class="md:gap-2! md:*:gap-2! @min-[66.5rem]:gap-3! @min-[66.5rem]:*:gap-3!"
+        >
           <:action>
             <form id="upload-form" phx-change="upload" phx-submit="upload">
               <div class="hidden">
@@ -223,7 +236,7 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
                 for={@uploads.file.ref}
                 variant="tertiary"
                 accent="rust"
-                class="relative"
+                class="relative md:[&>svg]:size-5!"
                 data-fab
               >
                 <%= if @currently_uploading_count > 0 or @processing_blobs_count > 0 do %>
@@ -260,8 +273,8 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
                     class="absolute top-0 left-0 size-full"
                   />
                 <% end %>
-                <Lucideicons.file_input />
-                <span class="block sm:grow sm:text-center md:max-lg:sr-only">
+                <Lucideicons.file />
+                <span class="block sm:grow sm:text-center md:@max-[62.5rem]:sr-only">
                   {gettext("Invoice from outside KSeF")}
                 </span>
               </FirmowidUI.Components.Button.button>
@@ -276,8 +289,8 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
               id="sales-invoice-link"
               data-fab
             >
-              <Lucideicons.file_pen_line class="size-5" />
-              <span class="max-xl:sr-only max-md:not-sr-only">
+              <Lucideicons.square_pen class="size-6 md:size-5!" />
+              <span class="md:@max-[51.5rem]:sr-only">
                 {gettext("Issue invoice")}
               </span>
             </.link>

@@ -9,10 +9,14 @@ defmodule FirmowidWeb.Invoicing.Components.DownloadModal do
 
   attr :month, :any, required: true
 
+  attr :icon_only, :boolean,
+    doc: "a bare icon with the label as its tooltip, as in a toolbar, labelled once the toolbar has room"
+
   @impl true
   def mount(socket) do
     socket =
       assign(socket,
+        icon_only: false,
         include_digital: true,
         include_ksef: false,
         include_photos: false,
@@ -41,6 +45,20 @@ defmodule FirmowidWeb.Invoicing.Components.DownloadModal do
     ~H"""
     <div class="max-md:hidden">
       <FirmowidUI.Components.Button.button
+        :if={@icon_only}
+        id="download-button"
+        type="button"
+        variant="secondary"
+        phx-click={show_modal("download-modal")}
+        data-tippy-content={gettext("Download")}
+        phx-hook="Tippy"
+        class="relative @max-[66.5rem]:px-2! [&>svg]:size-5!"
+      >
+        <Lucideicons.cloud_download />
+        <span class="@max-[66.5rem]:sr-only">{gettext("Download")}</span>
+      </FirmowidUI.Components.Button.button>
+      <FirmowidUI.Components.Button.button
+        :if={not @icon_only}
         id="download-button"
         type="button"
         variant="tertiary"
