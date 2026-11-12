@@ -20,10 +20,12 @@ defmodule Firmowid.Invoicing.Services.SalesInvoiceEmailSender do
 
   @doc """
   Sends a sales invoice email and returns attrs for the final delivery record.
+
+  Resend sends at most one email per `idempotency_key` within 24 hours.
   """
-  @spec deliver(Ash.UUID.t(), atom(), Scope.t()) ::
+  @spec deliver(Ash.UUID.t(), atom(), String.t(), Scope.t()) ::
           {:ok, map()} | {:error, map(), term()} | {:cancel, term()}
-  def deliver(sales_invoice_id, delivery_type, %Scope{} = scope) do
+  def deliver(sales_invoice_id, delivery_type, idempotency_key, %Scope{} = scope) do
     ash_opts = [scope: scope]
 
     case SalesInvoice.by_id(
@@ -39,7 +41,7 @@ defmodule Firmowid.Invoicing.Services.SalesInvoiceEmailSender do
         {:cancel, :sales_invoice_not_found}
 
       {:ok, invoice} ->
-        send_invoice_email(invoice, delivery_type, scope, ash_opts)
+        send_invoice_email(invoice, delivery_type, idempotency_key, scope, ash_opts)
 
       {:error, reason} ->
         {:error,
@@ -52,13 +54,14 @@ defmodule Firmowid.Invoicing.Services.SalesInvoiceEmailSender do
     end
   end
 
-  defp send_invoice_email(invoice, delivery_type, scope, ash_opts) do
+  defp send_invoice_email(invoice, delivery_type, idempotency_key, scope, ash_opts) do
     case EmailRecipientEligibility.fetch_valid_counterparty_email(invoice.counterparty_id, scope) do
       {:ok, recipient_email} ->
         send_invoice_email_to_valid_recipient(
           invoice,
           delivery_type,
           recipient_email,
+          idempotency_key,
           scope,
           ash_opts
         )
@@ -74,11 +77,19 @@ defmodule Firmowid.Invoicing.Services.SalesInvoiceEmailSender do
     end
   end
 
-  defp send_invoice_email_to_valid_recipient(invoice, delivery_type, recipient_email, scope, ash_opts) do
+  defp send_invoice_email_to_valid_recipient(invoice, delivery_type, recipient_email, idempotency_key, scope, ash_opts) do
     with {:ok, share_url} <- SalesInvoiceSharing.get_share_url_for_sales_invoice(invoice, scope),
          {:ok, pdf_binary} <- Pdf.generate(invoice, scope: scope, include_internal_note: false),
          {:ok, resend_response} <-
-           deliver_email(invoice, delivery_type, recipient_email, share_url, pdf_binary, ash_opts) do
+           deliver_email(
+             invoice,
+             delivery_type,
+             recipient_email,
+             share_url,
+             pdf_binary,
+             idempotency_key,
+             ash_opts
+           ) do
       {:ok,
        %{
          sales_invoice_id: invoice.id,
@@ -98,7 +109,7 @@ defmodule Firmowid.Invoicing.Services.SalesInvoiceEmailSender do
     end
   end
 
-  defp deliver_email(invoice, delivery_type, recipient_email, share_url, pdf_binary, ash_opts) do
+  defp deliver_email(invoice, delivery_type, recipient_email, share_url, pdf_binary, idempotency_key, ash_opts) do
     {subject, text_body, html_body} =
       SalesInvoiceEmailContentBuilder.build(invoice, delivery_type, share_url, ash_opts)
 
@@ -115,6 +126,7 @@ defmodule Firmowid.Invoicing.Services.SalesInvoiceEmailSender do
     |> text_body(text_body)
     |> html_body(html_body)
     |> attachment(pdf_attachment)
+    |> put_provider_option(:idempotency_key, idempotency_key)
     |> Mailer.deliver()
   end
 end
