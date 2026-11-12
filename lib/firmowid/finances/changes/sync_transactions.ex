@@ -263,9 +263,6 @@ defmodule Firmowid.Finances.Changes.SyncTransactions do
         error_kind: error_kind
       }
     )
-  rescue
-    _sentry_error ->
-      Logger.warning("Failed to report transaction parse error to Sentry")
   end
 
   defp report_upsert_errors(errors, bank_account) do
@@ -288,9 +285,6 @@ defmodule Firmowid.Finances.Changes.SyncTransactions do
         error_kinds: error_kinds(errors)
       }
     )
-  rescue
-    _sentry_error ->
-      Logger.warning("Failed to report transaction upsert error to Sentry")
   end
 
   defp error_kinds(errors), do: errors |> Enum.map(&ErrorKind.classify/1) |> Enum.uniq()
