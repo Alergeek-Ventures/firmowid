@@ -373,7 +373,7 @@ defmodule Firmowid.Invoicing.SalesInvoice do
         where present(:buyer_type)
       end
 
-      prepare build(filter: expr(is_cash_account == true)) do
+      prepare build(filter: expr(payment_method == :cash)) do
         where argument_equals(:is_cash, true)
       end
 
