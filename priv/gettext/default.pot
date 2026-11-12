@@ -1203,6 +1203,7 @@ msgctxt "currency list group"
 msgid "All"
 msgstr ""
 
+#: lib/firmowid_web/invoicing/components/filter_bar.ex
 #: lib/firmowid_web/management/views/counterparty.ex
 #, elixir-autogen, elixir-format
 msgctxt "counterparty invoice filter"
@@ -4488,7 +4489,6 @@ msgstr ""
 msgid "Downloading…"
 msgstr ""
 
-#: lib/firmowid_web/invoicing/components/entries_table.ex
 #: lib/firmowid_web/invoicing/components/sales_invoice_details.ex
 #: lib/firmowid_web/landing/components/sections.ex
 #, elixir-autogen, elixir-format
@@ -4507,6 +4507,7 @@ msgid "Draft invoice"
 msgstr ""
 
 #: lib/firmowid_web/delegations/components/delegations_list.ex
+#: lib/firmowid_web/invoicing/components/entries_table.ex
 #, elixir-autogen, elixir-format
 msgid "Draft version"
 msgstr ""
@@ -5266,6 +5267,7 @@ msgid "Fill in this field."
 msgstr ""
 
 #: lib/firmowid_web/design_system/components/filters.ex
+#: lib/firmowid_web/invoicing/components/filter_bar.ex
 #, elixir-autogen, elixir-format
 msgid "Filters"
 msgstr ""
