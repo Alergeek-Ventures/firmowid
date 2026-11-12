@@ -160,6 +160,33 @@ defmodule Firmowid.Blobs.BlobsTest do
                )
     end
 
+    test "recognizes a photo of an invoice uploaded again", %{scope: scope} do
+      previous_extract_result = Application.get_env(:firmowid, :reducto_extract_result)
+      previous_reducto_config = Application.get_env(:firmowid, :reducto_api_client)
+
+      configure_reducto_test_client()
+
+      on_exit(fn ->
+        restore_env(:reducto_extract_result, previous_extract_result)
+        restore_env(:reducto_api_client, previous_reducto_config)
+      end)
+
+      Application.put_env(
+        :firmowid,
+        :reducto_extract_result,
+        {:ok, %{"document_type" => "invalid"}}
+      )
+
+      {:ok, path} = Briefly.create(extname: ".png")
+      File.cp!("priv/static/images/favicon.png", path)
+
+      assert {:ok, %Blob{}} =
+               Blobs.create_or_retry_cost_invoice_blob(path, "image/png", "photo.png", scope: scope)
+
+      assert {:ok, :blob_reprocessing_started} =
+               Blobs.create_or_retry_cost_invoice_blob(path, "image/png", "photo-again.png", scope: scope)
+    end
+
     test "marks a PDF matching an imported KSeF invoice as a duplicate", %{
       user: user,
       scope: scope
