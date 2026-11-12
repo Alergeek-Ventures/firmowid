@@ -520,7 +520,10 @@ defmodule Firmowid.Invoicing.SalesInvoice do
       # Last, so the submission job is queued only after every other write of this transaction.
       change Changes.SubmitIssuedInvoice
 
-      validate Validations.InvoiceNumberRequired
+      validate present(:invoice_number) do
+        message gettext_noop("Choose an invoice number before issuing the invoice.")
+      end
+
       validate Validations.CompleteInvoice
       validate Validations.ValidatePositiveItemQuantities
 
@@ -690,7 +693,11 @@ defmodule Firmowid.Invoicing.SalesInvoice do
       change Changes.SubmitIssuedInvoice
 
       validate Validations.InvoiceDraft
-      validate Validations.InvoiceNumberRequired
+
+      validate present(:invoice_number) do
+        message gettext_noop("Choose an invoice number before issuing the invoice.")
+      end
+
       validate {Validations.CheckIfLocked, []}, always_atomic?: true
       validate Validations.CompleteInvoice
       validate Validations.ValidatePositiveItemQuantities
