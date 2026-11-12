@@ -166,6 +166,31 @@ defmodule Firmowid.Timetracker.LeaveRequestTest do
     end
   end
 
+  describe "create_with_upload" do
+    test "lets a member file their own request with an attachment", %{
+      user: user,
+      employee_scope: employee_scope
+    } do
+      upload_path = Briefly.create!(extname: ".pdf")
+      File.write!(upload_path, "%PDF-1.4 sick note #{System.unique_integer()}")
+
+      assert {:ok, request} =
+               Timetracker.create_leave_request_with_upload(
+                 %{
+                   starts_on: days_from_today(10),
+                   ends_on: days_from_today(11),
+                   reason: :indisposition,
+                   upload_path: upload_path,
+                   upload_filename: "zwolnienie.pdf"
+                 },
+                 scope: employee_scope
+               )
+
+      assert request.member_id == user.member.id
+      assert request.blob_id
+    end
+  end
+
   describe "create action input" do
     test "only accepts absence reasons", %{employee_scope: employee_scope} do
       assert {:ok, request} =
