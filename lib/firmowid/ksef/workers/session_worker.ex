@@ -7,8 +7,8 @@ defmodule Firmowid.Ksef.Workers.SessionWorker do
   - Session token management
   - Automatic session renewal before expiry
 
-  The worker uses the organization_id to uniquely identify sessions,
-  and the environment is determined from the active credential.
+  Sessions are per organization: the access token is cached under the organization ID and
+  the encrypted refresh token rides in the organization's scheduled reauthentication job.
   """
 
   use Oban.Worker,
@@ -111,13 +111,13 @@ defmodule Firmowid.Ksef.Workers.SessionWorker do
           %{access_token: String.t(), refresh_token: String.t()},
           Credential.t(),
           Scope.t()
-        ) :: {:ok, boolean()} | {:error, term()}
+        ) :: :ok | {:error, term()}
   defp establish_session(
          %{access_token: access_token, refresh_token: refresh_token},
          %Credential{organization_id: organization_id, status: status} = credential,
          scope
        ) do
-    with {:ok, _cached?} <- put_access_token!(organization_id, access_token),
+    with {:ok, _cached?} <- put_access_token(organization_id, access_token),
          {:ok, _job} <- schedule_reauthentication(refresh_token, organization_id),
          {:ok, _credential} <- Credential.mark_working(credential, scope: scope) do
       if status == :authenticating do
@@ -237,7 +237,7 @@ defmodule Firmowid.Ksef.Workers.SessionWorker do
     end
   end
 
-  defp put_access_token!(organization_id, access_token) do
+  defp put_access_token(organization_id, access_token) do
     expire = access_token_ttl(access_token)
     Cachex.put(:ksef, {:access_token, organization_id}, access_token, expire: expire)
   end
