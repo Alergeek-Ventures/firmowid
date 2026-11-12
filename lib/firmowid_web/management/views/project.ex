@@ -41,7 +41,6 @@ defmodule FirmowidWeb.Management.Views.Project do
       |> assign(:active_months, active_months)
       |> assign(:project, project)
       |> assign(:page_title, project.name)
-      |> assign(:can_delete_project, socket.assigns.current_user.member.role == :admin)
       |> assign_project_data()
 
     {:noreply, socket}
