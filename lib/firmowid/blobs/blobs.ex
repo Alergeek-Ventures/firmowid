@@ -54,23 +54,14 @@ defmodule Firmowid.Blobs do
   @spec find_blob_with_cost_invoice(String.t(), keyword()) ::
           {:ok, Blob.t(), CostInvoice.t() | nil} | {:error, :not_found}
   def find_blob_with_cost_invoice(checksum, opts) do
-    blob_query =
-      Blob
-      |> Ash.Query.filter(blob_checksum == ^checksum)
-      |> Ash.Query.for_read(:read, %{}, opts)
+    with {:ok, blob} <- find_blob_by_checksum(checksum, opts) do
+      cost_invoice =
+        case Invoicing.get_cost_invoice_by_blob_id(blob.id, opts) do
+          {:ok, invoice} -> invoice
+          {:error, _} -> nil
+        end
 
-    case Ash.read_one(blob_query, opts) do
-      {:ok, %Blob{} = blob} ->
-        cost_invoice =
-          case Invoicing.get_cost_invoice_by_blob_id(blob.id, opts) do
-            {:ok, invoice} -> invoice
-            {:error, _} -> nil
-          end
-
-        {:ok, blob, cost_invoice}
-
-      _ ->
-        {:error, :not_found}
+      {:ok, blob, cost_invoice}
     end
   end
 
