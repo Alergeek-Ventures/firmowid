@@ -162,8 +162,6 @@ defmodule FirmowidWeb.BankSync.Views.CreateTest do
           role: :invoicing
         })
 
-      Req.Test.stub(:bank_data_institutions, fn conn -> Req.Test.json(conn, []) end)
-
       assert {:error, {:redirect, %{flash: flash}}} =
                conn |> log_in_user(invoicing_user) |> live(~p"/ustawienia/bank/dodaj")
 
