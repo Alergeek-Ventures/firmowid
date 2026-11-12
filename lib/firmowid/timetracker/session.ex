@@ -752,15 +752,19 @@ defmodule Firmowid.Timetracker.Session do
       public? true
     end
 
-    calculate :month_start, :naive_datetime, Calculations.MonthStart do
+    calculate :month_start,
+              :naive_datetime,
+              expr(fragment("date_trunc('month', ?)", start_datetime)) do
       description "First day of the month this session belongs to (truncated start_datetime)."
     end
 
-    calculate :week_start, :naive_datetime, Calculations.WeekStart do
+    calculate :week_start,
+              :naive_datetime,
+              expr(fragment("date_trunc('week', ?)", start_datetime)) do
       description "Monday of the week this session belongs to (ISO week, truncated start_datetime)."
     end
 
-    calculate :lockdown, :boolean, Calculations.Lockdown do
+    calculate :lockdown, :boolean, expr(exists(hours_records, true)) do
       public? true
 
       description "Whether an hours record has been submitted for this session's month, locking edits."
